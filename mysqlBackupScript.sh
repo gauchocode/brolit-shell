@@ -26,9 +26,9 @@ if [ ! -d "$BAK" ]
 then
     echo "Folder doesn't exist. Creating now"
     mkdir $BAK
-    echo "Folder created"
-else
-    echo "Folder exists"
+    echo "Folder $BAK created"
+#else
+#    echo "Folder $BAK exists"
 fi
 
 ### Gzip and backup rotation ###
@@ -39,30 +39,47 @@ ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
 
 ### Get all databases name ###
 DBS="$($MYSQL -u $MUSER -h $MHOST -p$MPASS -Bse 'show databases')"
+COUNT=0
 for db in $DBS
 do
   if [ "${db}" != "information_schema" ] && [ "${db}" != "performance_schema" ] && [ "${db}" != "mysql" ] && [ "${db}" != "sys" ]; then
     ### Create tar for each database ###
     FILE=$BAK/db-$db-$NOW.gz
     rm -rf $BAK/db-$db-$ONEWEEKAGO.gz
+	### Create dump file###
     $MYSQLDUMP -u $MUSER -h $MHOST -p$MPASS $db | $GZIP -9 > $FILE
+    ### Upload to Dropbox ###
+    $SFOLDER/dropbox_uploader.sh upload $FILE /
+    $SFOLDER/dropbox_uploader.sh remove /db-$db-$ONEWEEKAGO.gz
+    COUNT=$((COUNT+1))
   fi
 done
-#DBSCLEAN="$DBSCLEAN,$db"
 
 AMOUNT=`ls -1R $BAK/ |  grep -i .*$NOW.gz | wc -l`
 BACKUPEDLIST=`ls -1R $BAK/ |  grep -i .*$NOW.gz`
 
-### Dropbox Uploader ###
-cd $SFOLDER
-./dropbox_uploader.sh upload $FILE /
-./dropbox_uploader.sh remove /db-$db-$ONEWEEKAGO.gz
+### Configure Email ###
+if [ $COUNT -ne $AMOUNT ]; then
+	STATUS="ERROR 💩"
+	CONTENT="<b>Ocurrio un error. Los archivos incluidos en el backup, son menos que la cantidad de esperada</b> <br />"
+	COLOR='red'
+	echo "Backup con errores. Se esperaban backupear $COUNT bases de datos y solo se hicieron $AMOUNT"
+else
+	STATUS="OK 😎"
+	CONTENT="<b>Los archivos incluidos en el backup diario son:</b><br />$BACKUPEDLIST2"
+	COLOR='#1DC6DF'
+	echo "Backup exitoso"
+fi
+HEADERTEXT="$VPSNAME [$NOWDISPLAY] - Database Backup - [$STATUS]"
+HEADEROPEN1='<html><body><div style="float:left;width:100%"><div style="font-size:13px;color:#FFF; float:left;font-family:Verdana,Helvetica,Arial;line-height:31px;background:'
+HEADEROPEN2=';padding:0 0 10px 10px;width:500px;height:20px">'
+HEADEROPEN=$HEADEROPEN1$COLOR$HEADEROPEN2
+HEADERCLOSE='</div>'
+BODYOPEN='<div style="color:#000;font-size:10px; float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px 0 0 10px;width:100%;height:130px">'
+BODYCLOSE='</div>'
+FOOTER='<div style="font-size:10px; float:left;font-family:Verdana,Helvetica,Arial;text-align:right;padding-right:5px;width:100%;height:20px">Broobe Team</div></div></body></html>'
+HEADER=$HEADEROPEN$HEADERTEXT$HEADERCLOSE
+BODY=$BODYOPEN$CONTENT$BODYCLOSE
 
 ### Send Email ###
-if [ 1 -ne $AMOUNT ]; then
-  echo "HUBO UN PROBLEMA CON EL BACKUP EN $VPSNAME" | mailx -v -r "no-reply@send.broobe.com" -a 'Content-Type: text/html' -s "BROOBE: $VPSNAME DB BACKUP --ERROR" -S smtp-use-starttls -S smtp="mx.bmailing.com.ar:587" -S smtp-auth=login -S smtp-auth-user="no-reply@send.broobe.com" -S smtp-auth-password="broobe2020*" -S ssl-verify=ignore $MAILA
-  echo "Backup con errores"
-else
-  echo "BACKUP REALIZADO CON EXITO EN $VPSNAME<br /><br /><b>Los archivos incluidos en el backup diario son:</b><br />$BACKUPEDLIST" | mailx -v -r "no-reply@send.broobe.com" -a 'Content-Type: text/html' -s "BROOBE: $VPSNAME DB BACKUP --OK" -S smtp-use-starttls -S smtp="mx.bmailing.com.ar:587" -S smtp-auth=login -S smtp-auth-user="no-reply@send.broobe.com" -S smtp-auth-password="broobe2020*" -S ssl-verify=ignore $MAILA
-  echo "Backup exitoso"
-fi
+sendEmail -f no-reply@send.broobe.com -t "soporte@broobe.com" -u "$VPSNAME [$NOWDISPLAY] - Database Backup - [$STATUS]" -o message-content-type=html -m "$HEADER $BODY $FOOTER" -s mx.bmailing.com.ar:587 -o tls=yes -xu no-reply@send.broobe.com -xp broobe2020*
