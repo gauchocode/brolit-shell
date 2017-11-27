@@ -1,95 +1,129 @@
 #! /bin/bash
 #
-# mysqlBackup.sh
-# Genera un archivo backup (dump) de la base configurada le agrega un
-# timestamp y lo sube por dropbox. Borra el backup de una semana atras.
-#
-# Autor: broobe. web + mobile development - http://broobe.com
+# Autor: broobe. web + mobile development - https://broobe.com
 #############################################################################
 
-### TO EDIT ###
-#VPSNAME="$HOSTNAME"
-VPSNAME="[VPS_NAME]"
-MUSER="[MYSQL_USER]"
-MPASS="[MYSQL_PASSWORD]"
-BAK="/root/tmp"
-SFOLDER="/root/backup-scripts/"
-MAILA="soporte@broobe.com"
+### Helpers ###
+count_dabases (){
+  TOTAL_DBS=0
+  for db in $DBS
+  do
+    if  [ "${db}" != "information_schema" ] &&
+        [ "${db}" != "performance_schema" ] &&
+        [ "${db}" != "mysql" ] &&
+        [ "${db}" != "sys" ]; then
+      TOTAL_DBS=$((TOTAL_DBS+1))
+    fi
+  done
+  return $TOTAL_DBS
+}
 
 ### MySQL CONFIG ###
 MHOST="localhost"
 MYSQL="$(which mysql)"
 MYSQLDUMP="$(which mysqldump)"
 
+### Global VARS ###
+DBS="$($MYSQL -u $MUSER -h $MHOST -p$MPASS -Bse 'show databases')"
+
 ### Starting Message ###
 echo " > Starting database backup script..."
 
-### Check BAK folder ###
-if [ ! -d "$BAK" ]
-then
-    echo " > Folder doesn't exist. Creating now"
-    mkdir $BAK
-    echo " > Folder $BAK created"
-fi
-
-### Gzip and backup rotation ###
-GZIP="$(which gzip)"
-NOW=$(date +"%Y-%m-%d")
-NOWDISPLAY=$(date +"%d-%m-%Y")
-ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
-
 ### Get all databases name ###
-DBS="$($MYSQL -u $MUSER -h $MHOST -p$MPASS -Bse 'show databases')"
 COUNT=0
-for db in $DBS
+count_dabases
+echo " > $TOTAL_DBS databases found ..."
+for DATABASE in $DBS
 do
-  if [ "${db}" != "information_schema" ] && [ "${db}" != "performance_schema" ] && [ "${db}" != "mysql" ] && [ "${db}" != "sys" ]; then
-    ### Create tar for each database ###
-    FILE=$BAK/db-$db-$NOW.gz
-    echo " > Deleting old database backup [$db] ..."
-    rm -f $BAK/db-$db-$ONEWEEKAGO.gz
-	  ### Create dump file###
-    echo " > Creating new database backup [$db] ..."
-    $MYSQLDUMP -u $MUSER -h $MHOST -p$MPASS $db | $GZIP -9 > $FILE
-    ### Upload to Dropbox ###
-    echo " > Uploading new database backup [$db] ..."
-    $SFOLDER/dropbox_uploader.sh upload $FILE /
-    $SFOLDER/dropbox_uploader.sh remove /db-$db-$ONEWEEKAGO.gz
+  if  [ "${DATABASE}" != "information_schema" ] &&
+      [ "${DATABASE}" != "performance_schema" ] &&
+      [ "${DATABASE}" != "mysql" ] &&
+      [ "${DATABASE}" != "mysql" ] &&
+      [ "${DATABASE}" != "sys" ]; then
+    ### Create zip for each database ###
+    FILE=$BAKWP/$NOW/db-${DATABASE}-$NOW.sql
+    ### Create dump file###
+    echo " > Creating new database backup in [$FILE] ..."
+    $MYSQLDUMP --max-allowed-packet=1073741824  -u $MUSER -h $MHOST -p$MPASS $DATABASE > $FILE
+    if [ "$?" -eq 0 ]
+    then
+        echo " > Mysqldump OK ..."
+    else
+        echo " > Mysqldump ERROR: $? ..."
+        echo " > Aborting ..."
+        exit 1
+    fi
+    if [ "$ONE_FILE_BK" = false ] ; then
+      ### Upload to Dropbox ###
+      echo " > Making a tar.bz2 file of [$FILE]..."
+      $TAR -jcvpf db-$NOW.tar.bz2 $FILE
+      echo " > Uploading new database backup [$FILE] ..."
+      $SFOLDER/dropbox_uploader.sh upload $FILE /
+      ### Delete old backups ###
+      echo " > Deleting old database backup [$BAKWP/db-$DATABASE-$ONEWEEKAGO.tar.bz2  ] ..."
+      $SFOLDER/dropbox_uploader.sh remove /db-$DATABASE-$ONEWEEKAGO.tar.bz2
+    fi
+    ### Count and echo ###
     COUNT=$((COUNT+1))
+    echo " > Backup $COUNT of $TOTAL_DBS ..."
   fi
 done
 
-### File Check ###
-AMOUNT=`ls -1R $BAK/ |  grep -i .*$NOW.gz | wc -l`
-BACKUPEDLIST=`ls -1R $BAK/ |  grep -i .*$NOW.gz`
-
-### Check if sendemail is installed ###
-SENDEMAIL="$(which sendemail)"
-if [ ! -x "${SENDEMAIL}" ]; then
-	apt-get install sendemail libio-socket-ssl-perl
+### Create new backups ###
+if [ "$ONE_FILE_BK" = true ] ; then
+  cd $BAKWP/$NOW
+  echo " > Making a tar.bz2 file with all databases ..."
+  $TAR -jcvpf databases-$NOW.tar.bz2 $BAKWP/$NOW
+  ### Upload new backups ###
+  echo " > Uploading all databases on tar.bz2 file ..."
+  $SFOLDER/dropbox_uploader.sh upload databases-$NOW.tar.bz2 /
 fi
+
+### File Check ###
+AMOUNT=`ls -1R $BAKWP/$NOW |  grep -i .*$NOW.sql | wc -l`
+BACKUPEDLIST=`ls -1R $BAKWP/$NOW |  grep -i .*$NOW.sql`
+
+### Remove server backups ###
+echo " > Deleting all .sql files ..."
+rm -r $BAKWP/$NOW/*.sql
+if [ "$DEL_UP" = true ] ; then
+  echo " > Deleting all backup files from server ..."
+  rm -r $BAKWP/$NOW/databases-$NOW.tar.bz2
+else
+  OLD_BK_DBS=$BAKWP/$ONEWEEKAGO/databases-$ONEWEEKAGO.tar.bz2
+  if [ ! -f $OLD_BK_DBS ]; then
+    echo " > Old backups not found in server ..."
+  else
+    echo " > Deleting old backup files from server ..."
+    rm -r $OLD_BK_DBS
+  fi
+fi
+
+### Remove old backups ###
+echo " > Removing old databases from Dropbox..."
+$SFOLDER/dropbox_uploader.sh remove /databases-$ONEWEEKAGO.tar.bz2
 
 ### Configure Email ###
 if [ $COUNT -ne $AMOUNT ]; then
   STATUS_ICON="💩"
 	STATUS="ERROR"
-	CONTENT="<b>Ocurrio un error. Los archivos incluidos en el backup, son menos que la cantidad de esperada</b> <br />"
+	CONTENT="<b>Server IP: $IP</b><br /><b>Backup with errors.<br />MySQL has $COUNT databases, but only $AMOUNT have a backup.<br />Please check log file.</b> <br />"
 	COLOR='red'
-	echo "Backup con errores. Se esperaban backupear $COUNT bases de datos y solo se hicieron $AMOUNT"
+	echo " > Backup with errors. MySQL has $COUNT databases, but only $AMOUNT have a backup."
 else
   STATUS_ICON="✅"
 	STATUS="OK"
-	CONTENT="<b>Los archivos incluidos en el backup diario son:</b><br />"
+	CONTENT="<b>Server IP: $IP</b><br /><b>Backup files included:</b><br />"
   FILES_INC=""
   for t in $(echo $BACKUPEDLIST | sed "s/,/ /g")
 	do
     FILES_INC="$FILES_INC $t<br />"
   done
 	COLOR='#1DC6DF'
-	echo "Backup exitoso"
+	echo " > Backup OK"
 fi
 HEADERTEXT="$STATUS_ICON $VPSNAME - Database Backup - [$NOWDISPLAY - $STATUS]"
-HEADEROPEN1='<html><body><div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF; float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
+HEADEROPEN1='<html><body><div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
 HEADEROPEN2=';padding:0 0 10px 10px;width:100%;height:30px">'
 HEADEROPEN=$HEADEROPEN1$COLOR$HEADEROPEN2
 HEADERCLOSE='</div>'
@@ -100,4 +134,4 @@ HEADER=$HEADEROPEN$HEADERTEXT$HEADERCLOSE
 BODY=$BODYOPEN$CONTENT$FILES_INC$BODYCLOSE
 
 ### Send Email ###
-sendEmail -f no-reply@send.broobe.com -t "soporte@broobe.com" -u "$STATUS_ICON $VPSNAME - Database Backup - [$NOWDISPLAY - $STATUS]" -o message-content-type=html -m "$HEADER $BODY $FOOTER" -s mx.bmailing.com.ar:587 -o tls=yes -xu no-reply@send.broobe.com -xp broobe2020*
+sendEmail -f no-reply@send.broobe.com -t "servidores@broobe.com" -u "$STATUS_ICON $VPSNAME - Database Backup - [$NOWDISPLAY - $STATUS]" -o message-content-type=html -m "$HEADER $BODY $FOOTER" -s mx.bmailing.com.ar:587 -o tls=yes -xu no-reply@send.broobe.com -xp broobe2020*
