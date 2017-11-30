@@ -15,6 +15,7 @@ SFOLDER="/root/backup-scripts"   	#Backup Scripts folder
 BAKWP="$SFOLDER/tmp"              #Temp folder to store Backups
 SITES="/var/www"                 	#Where sites are stored
 NGINX="/etc/nginx"               	#Nginx config files
+DROPBOX_FOLDER="/"								#Dropbox Folder Backup
 DUP_BK=false									    #Duplicity Backups true or false (bool)
 DUP_ROOT="/mnt/backup"						#Duplicity Backups destination folder
 DUP_SRC_BK="/var/www"							#Source of Directories to Backup
@@ -45,7 +46,7 @@ fi
 IP=`dig +short myip.opendns.com @resolver1.opendns.com	` 2> /dev/null
 
 ### EXPORT VARS ###
-export VPSNAME BAKWP SFOLDER SITES NGINX DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DEL_UP ONE_FILE_BK IP
+export VPSNAME BAKWP SFOLDER SITES NGINX DROPBOX_FOLDER DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DEL_UP ONE_FILE_BK IP
 
 ### Creating temporary folders ###
 if [ ! -d "$BAKWP" ]
