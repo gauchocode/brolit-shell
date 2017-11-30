@@ -58,10 +58,14 @@ do
       echo " > Making a tar.bz2 file of [$FILE]..."
       $TAR -jcvpf db-$NOW.tar.bz2 $FILE
       echo " > Uploading new database backup [$FILE] ..."
-      $SFOLDER/dropbox_uploader.sh upload $FILE /
+      $SFOLDER/dropbox_uploader.sh upload $FILE $DROPBOX_FOLDER
       ### Delete old backups ###
-      echo " > Deleting old database backup [$BAKWP/db-$DATABASE-$ONEWEEKAGO.tar.bz2  ] ..."
-      $SFOLDER/dropbox_uploader.sh remove /db-$DATABASE-$ONEWEEKAGO.tar.bz2
+      echo " > Trying to delete old database backup [db-$DATABASE-$ONEWEEKAGO.tar.bz2] ..."
+      if [ "$DROPBOX_FOLDER" != "/" ] ; then
+        $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/db-$DATABASE-$ONEWEEKAGO.tar.bz2
+      else
+        $SFOLDER/dropbox_uploader.sh remove /db-$DATABASE-$ONEWEEKAGO.tar.bz2
+      fi
     fi
     ### Count and echo ###
     COUNT=$((COUNT+1))
@@ -76,7 +80,14 @@ if [ "$ONE_FILE_BK" = true ] ; then
   $TAR -jcvpf databases-$NOW.tar.bz2 $BAKWP/$NOW
   ### Upload new backups ###
   echo " > Uploading all databases on tar.bz2 file ..."
-  $SFOLDER/dropbox_uploader.sh upload databases-$NOW.tar.bz2 /
+  $SFOLDER/dropbox_uploader.sh upload databases-$NOW.tar.bz2 $DROPBOX_FOLDER
+  ### Remove old backups ###
+  echo " > Trying to delete old [databases-$ONEWEEKAGO.tar.bz2] from Dropbox..."
+  if [ "$DROPBOX_FOLDER" != "/" ] ; then
+    $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/databases-$ONEWEEKAGO.tar.bz2
+  else
+    $SFOLDER/dropbox_uploader.sh remove /databases-$ONEWEEKAGO.tar.bz2
+  fi
 fi
 
 ### File Check ###
@@ -98,10 +109,6 @@ else
     rm -r $OLD_BK_DBS
   fi
 fi
-
-### Remove old backups ###
-echo " > Removing old databases from Dropbox..."
-$SFOLDER/dropbox_uploader.sh remove /databases-$ONEWEEKAGO.tar.bz2
 
 ### Configure Email ###
 if [ $COUNT -ne $AMOUNT ]; then
