@@ -13,8 +13,8 @@ $TAR -jcvpf $BAKWP/$NOW/files-$NOW.tar.bz2  --exclude .git --exclude "*.log" $SI
 
 ### Upload Backup Files ###
 echo " > Uploading TAR to Dropbox ..."
-$SFOLDER/dropbox_uploader.sh upload $BAKWP/$NOW/nginx-$NOW.tar.bz2 /
-$SFOLDER/dropbox_uploader.sh upload $BAKWP/$NOW/files-$NOW.tar.bz2 /
+$SFOLDER/dropbox_uploader.sh upload $BAKWP/$NOW/nginx-$NOW.tar.bz2 $DROPBOX_FOLDER
+$SFOLDER/dropbox_uploader.sh upload $BAKWP/$NOW/files-$NOW.tar.bz2 $DROPBOX_FOLDER
 if [ "$DEL_UP" = true ] ; then
   rm -r $BAKWP/$NOW
 else
@@ -32,8 +32,13 @@ fi
 
 ### Remove old backups from Dropbox ###
 echo " > Trying to delete old backups from Dropbox ..."
-$SFOLDER/dropbox_uploader.sh remove /nginx-$ONEWEEKAGO.tar.bz2
-$SFOLDER/dropbox_uploader.sh remove /files-$ONEWEEKAGO.tar.bz2
+if [ "$DROPBOX_FOLDER" != "/" ] ; then
+  $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/nginx-$ONEWEEKAGO.tar.bz2
+  $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/files-$ONEWEEKAGO.tar.bz2
+else
+  $SFOLDER/dropbox_uploader.sh remove /nginx-$ONEWEEKAGO.tar.bz2
+  $SFOLDER/dropbox_uploader.sh remove /files-$ONEWEEKAGO.tar.bz2
+fi
 
 ### DUPLICITY ###
 if [ "$DUP_BK" = true ] ; then
