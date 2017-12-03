@@ -1,6 +1,7 @@
 #! /bin/bash
 #
 # Autor: broobe. web + mobile development - https://broobe.com
+# Version: 1.4
 #############################################################################
 
 ### Helpers ###
@@ -141,4 +142,4 @@ HEADER=$HEADEROPEN$HEADERTEXT$HEADERCLOSE
 BODY=$BODYOPEN$CONTENT$FILES_INC$BODYCLOSE
 
 ### Send Email ###
-sendEmail -f no-reply@send.broobe.com -t "servidores@broobe.com" -u "$STATUS_ICON $VPSNAME - Database Backup - [$NOWDISPLAY - $STATUS]" -o message-content-type=html -m "$HEADER $BODY $FOOTER" -s mx.bmailing.com.ar:587 -o tls=yes -xu no-reply@send.broobe.com -xp broobe2020*
+sendEmail -f $SMTP_U -t "servidores@broobe.com" -u "$STATUS_ICON $VPSNAME - Database Backup - [$NOWDISPLAY - $STATUS]" -o message-content-type=html -m "$HEADER $BODY $FOOTER" -s $SMTP_SERVER -o tls=$SMTP_TLS -xu $SMTP_U -xp $SMTP_P

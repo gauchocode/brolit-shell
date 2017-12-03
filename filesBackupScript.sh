@@ -1,5 +1,6 @@
 #! /bin/bash
 # Autor: broobe. web + mobile development - https://broobe.com
+# Version: 1.4
 #############################################################################
 
 ### Starting Message ###
@@ -10,6 +11,11 @@ $TAR -jcvpf $BAKWP/$NOW/nginx-$NOW.tar.bz2 $NGINX
 
 ### TAR Sites ###
 $TAR -jcvpf $BAKWP/$NOW/files-$NOW.tar.bz2  --exclude .git --exclude "*.log" $SITES
+
+### File Check ###
+AMOUNT_FILES=`ls -1R $BAKWP/$NOW |  grep -i files-$NOW.tar.bz2 | wc -l`
+BACKUPEDLIST_FILES=`ls $BAKWP/$NOW | grep -i files-$NOW.tar.bz2`
+echo " > Number of backup files found: $AMOUNT_FILES ..."
 
 ### Upload Backup Files ###
 echo " > Uploading TAR to Dropbox ..."
@@ -63,11 +69,6 @@ if [ "$DUP_BK" = true ] ; then
 	done
 fi
 
-### File Check ###
-AMOUNT_FILES=`ls -1R $BAKWP/$NOW |  grep -i files-$NOW.tar.bz2 | wc -l`
-BACKUPEDLIST_FILES=`ls $BAKWP/$NOW | grep -i files-$NOW.tar.bz2`
-echo " > Number of backup files found: $AMOUNT_FILES ..."
-
 ##TODO: INCLUIR EN EL MAIL LOS BACKUPS DE DUPLICITY
 
 ### Configuring Email ###
@@ -101,4 +102,4 @@ HEADER=$HEADEROPEN$HEADERTEXT$HEADERCLOSE
 BODY=$BODYOPEN$CONTENT$FILES_INC$BODYCLOSE
 
 ### Sending Email ###
-sendEmail -f no-reply@send.broobe.com -t "servidores@broobe.com" -u "$STATUS_ICON $VPSNAME - Files Backup - [$NOWDISPLAY - $STATUS]" -o message-content-type=html -m "$HEADER $BODY $FOOTER" -s mx.bmailing.com.ar:587 -o tls=yes -xu no-reply@send.broobe.com -xp broobe2020*
+sendEmail -f $SMTP_U -t "servidores@broobe.com" -u "$STATUS_ICON $VPSNAME - Files Backup - [$NOWDISPLAY - $STATUS]" -o message-content-type=html -m "$HEADER $BODY $FOOTER" -s $SMTP_SERVER -o tls=$SMTP_TLS -xu $SMTP_U -xp $SMTP_P

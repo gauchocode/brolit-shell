@@ -1,33 +1,48 @@
 #! /bin/bash
 #
 # Autor: broobe. web + mobile development - https://broobe.com
+# Version: 1.4
 #############################################################################
 
 ### TO EDIT ###
 
-###TODO: Delete files after upload (var option).
-DEL_UP=false											#Delete backup files after upload?
 ###TODO: One tar for all databases or individual tar for database (var option).
 ONE_FILE_BK=true
 
-VPSNAME="$HOSTNAME"               #Or choose a name
-SFOLDER="/root/backup-scripts"   	#Backup Scripts folder
-BAKWP="$SFOLDER/tmp"              #Temp folder to store Backups
-SITES="/var/www"                 	#Where sites are stored
-NGINX="/etc/nginx"               	#Nginx config files
-DROPBOX_FOLDER="/"								#Dropbox Folder Backup
-DUP_BK=false									    #Duplicity Backups true or false (bool)
-DUP_ROOT="/mnt/backup"						#Duplicity Backups destination folder
-DUP_SRC_BK="/var/www"							#Source of Directories to Backup
-DUP_FOLDERS="FOLDER1,FOLDER2"	    #Folders to Backup
-MUSER="[MYSQL_USER]"              #MySQL User
-MPASS="[MYSQL_PASSWORD]"          #MySQL User Pass
-MAILA="servidores@broobe.com"     #Notification Email
+VPSNAME="$HOSTNAME"               		#Or choose a name
+SFOLDER="/root/backup-scripts"   			#Backup Scripts folder
+SITES="/var/www"                 			#Where sites are stored
+NGINX="/etc/nginx"               			#Nginx config files
+BAKWP="$SFOLDER/tmp"              		#Temp folder to store Backups
+DROPBOX_FOLDER="/"										#Dropbox Folder Backup
+DEL_UP=false													#Delete backup files after upload?
+
+### DUPLICITY CONFIG ###
+DUP_BK=false									    		#Duplicity Backups true or false (bool)
+DUP_ROOT="/mnt/backup"								#Duplicity Backups destination folder
+DUP_SRC_BK="/var/www"									#Source of Directories to Backup
+DUP_FOLDERS="FOLDER1,FOLDER2"	    		#Folders to Backup
+
+### MYSQL CONFIG ###
+MUSER="[MYSQL_USER]"              		#MySQL User
+MPASS="[MYSQL_PASSWORD]"          		#MySQL User Pass
+
+### SENDEMAIL CONFIG ###
+MAILA="servidores@broobe.com"     		#Notification Email
+SMTP_SERVER="mx.bmailing.com.ar:587"	#SMTP Server and Port
+SMTP_TLS="yes"												#TLS: yes or no
+SMTP_U="[SMTP_USER]"									#SMTP User
+SMTP_P="[SMTP_PASSWORD]"							#SMTP Password
 
 ### Backup rotation ###
 NOW=$(date +"%Y-%m-%d")
 NOWDISPLAY=$(date +"%d-%m-%Y")
 ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
+
+### chmod
+chmod +x dropbox_uploader.sh
+chmod +x mysqlBackupScript.sh
+chmod +x filesBackupScript.sh
 
 ### Check if sendemail is installed ###
 SENDEMAIL="$(which sendemail)"
@@ -46,7 +61,7 @@ fi
 IP=`dig +short myip.opendns.com @resolver1.opendns.com	` 2> /dev/null
 
 ### EXPORT VARS ###
-export VPSNAME BAKWP SFOLDER SITES NGINX DROPBOX_FOLDER DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DEL_UP ONE_FILE_BK IP
+export VPSNAME BAKWP SFOLDER SITES NGINX DROPBOX_FOLDER DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DEL_UP ONE_FILE_BK IP SMTP_SERVER SMTP_TLS SMTP_U SMTP_P
 
 ### Creating temporary folders ###
 if [ ! -d "$BAKWP" ]
