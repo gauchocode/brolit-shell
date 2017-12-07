@@ -1,16 +1,18 @@
 #! /bin/bash
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 1.4
+# Version: 1.6
 #############################################################################
 
 ### Starting Message ###
 echo " > Starting file backup script ..."
 
-### TAR Nginx Config ###
-$TAR -jcvpf $BAKWP/$NOW/nginx-$NOW.tar.bz2 $NGINX
+### TAR Webserver Config Files ###
+$TAR -jcvpf $BAKWP/$NOW/webserver-config-$NOW.tar.bz2 $WSERVER
 
-### TAR Sites ###
-$TAR -jcvpf $BAKWP/$NOW/files-$NOW.tar.bz2  --exclude .git --exclude "*.log" $SITES
+### TAR Sites Folders ###
+$TAR --exclude '.git' --exclude '*.log' -jcvpf $BAKWP/$NOW/files-$NOW.tar.bz2 $SITES
+BK_SIZE=$(ls -lah $BAKWP/$NOW/files-$NOW.tar.bz2 | awk '{ print $5}')
+echo " > Backup created, final size: $BK_SIZE ..."
 
 ### File Check ###
 AMOUNT_FILES=`ls -1R $BAKWP/$NOW |  grep -i files-$NOW.tar.bz2 | wc -l`
@@ -19,13 +21,13 @@ echo " > Number of backup files found: $AMOUNT_FILES ..."
 
 ### Upload Backup Files ###
 echo " > Uploading TAR to Dropbox ..."
-$SFOLDER/dropbox_uploader.sh upload $BAKWP/$NOW/nginx-$NOW.tar.bz2 $DROPBOX_FOLDER
+$SFOLDER/dropbox_uploader.sh upload $BAKWP/$NOW/webserver-config-$NOW.tar.bz2 $DROPBOX_FOLDER
 $SFOLDER/dropbox_uploader.sh upload $BAKWP/$NOW/files-$NOW.tar.bz2 $DROPBOX_FOLDER
 if [ "$DEL_UP" = true ] ; then
   rm -r $BAKWP/$NOW
 else
   OLD_BK=$BAKWP/$ONEWEEKAGO/files-$ONEWEEKAGO.tar.bz2
-  OLD_BK_NG=$BAKWP/$ONEWEEKAGO/nginx-$ONEWEEKAGO.tar.bz2
+  OLD_BK_NG=$BAKWP/$ONEWEEKAGO/webserver-config-$ONEWEEKAGO.tar.bz2
   if [ ! -f $OLD_BK ]; then
     echo " > Old backups not found in server ..."
   else
@@ -39,10 +41,10 @@ fi
 ### Remove old backups from Dropbox ###
 echo " > Trying to delete old backups from Dropbox ..."
 if [ "$DROPBOX_FOLDER" != "/" ] ; then
-  $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/nginx-$ONEWEEKAGO.tar.bz2
+  $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/webserver-config-$ONEWEEKAGO.tar.bz2
   $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/files-$ONEWEEKAGO.tar.bz2
 else
-  $SFOLDER/dropbox_uploader.sh remove /nginx-$ONEWEEKAGO.tar.bz2
+  $SFOLDER/dropbox_uploader.sh remove /webserver-config-$ONEWEEKAGO.tar.bz2
   $SFOLDER/dropbox_uploader.sh remove /files-$ONEWEEKAGO.tar.bz2
 fi
 
@@ -71,6 +73,9 @@ fi
 
 ##TODO: INCLUIR EN EL MAIL LOS BACKUPS DE DUPLICITY
 
+### Disk Usage ###
+DISK_UFL=$( df -h | grep "$MAIN_VOL" | awk {'print $5'} )
+
 ### Configuring Email ###
 if [ 1 -ne $AMOUNT_FILES ]; then
   STATUS_ICON="💩"
@@ -81,7 +86,10 @@ if [ 1 -ne $AMOUNT_FILES ]; then
 else
   STATUS_ICON="✅"
 	STATUS="OK"
-	CONTENT="<b>Server IP: $IP</b><br /><b>Files included on Backup:</b><br />"
+  CONTENT="<b>Server IP: $IP</b><br />"
+  SIZE="Backup file size: <b>$BK_SIZE</b><br />"
+  SPACE="Disk usage before the database backup: <b>$DISK_U</b>.<br />Disk usage after the database backup: <b>$DISK_UFL</b>.<br />"
+  FILES_LABEL="<b>Backup files included:</b><br />"
   FILES_INC=""
   for t in $(echo $BACKUPEDLIST_FILES | sed "s/,/ /g")
 	do
@@ -97,9 +105,12 @@ HEADEROPEN=$HEADEROPEN1$COLOR$HEADEROPEN2
 HEADERCLOSE='</div>'
 BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px 0 0 10px;width:100%;">'
 BODYCLOSE='</div>'
-FOOTER='<div style="font-size:10px; float:left;font-family:Verdana,Helvetica,Arial;text-align:right;padding-right:5px;width:100%;height:20px">Broobe Team</div></div></body></html>'
+FOOTEROPEN='<div style="font-size:10px; float:left;font-family:Verdana,Helvetica,Arial;text-align:right;padding-right:5px;width:100%;height:20px">'
+SCRIPTSTRING="Script Version: $SCRIPT_V by Broobe."
+FOOTERCLOSE='</div></div></body></html>'
 HEADER=$HEADEROPEN$HEADERTEXT$HEADERCLOSE
-BODY=$BODYOPEN$CONTENT$FILES_INC$BODYCLOSE
+BODY=$BODYOPEN$CONTENT$SIZE$SPACE$FILES_LABEL$FILES_INC$BODYCLOSE
+FOOTER=$FOOTEROPEN$SCRIPTSTRING$FOOTERCLOSE
 
 ### Sending Email ###
 sendEmail -f $SMTP_U -t "servidores@broobe.com" -u "$STATUS_ICON $VPSNAME - Files Backup - [$NOWDISPLAY - $STATUS]" -o message-content-type=html -m "$HEADER $BODY $FOOTER" -s $SMTP_SERVER -o tls=$SMTP_TLS -xu $SMTP_U -xp $SMTP_P
