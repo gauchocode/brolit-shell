@@ -10,9 +10,9 @@ echo " > Starting file backup script ..."
 $TAR -jcvpf $BAKWP/$NOW/webserver-config-files-$NOW.tar.bz2 $WSERVER
 
 ### TAR Sites Folders ###
-#$TAR --exclude '.git' --exclude '*.log' -jcvpf $BAKWP/$NOW/backup-files-$NOW.tar.bz2 $SITES
-#BK_SIZE=$(ls -lah $BAKWP/$NOW/backup-files-$NOW.tar.bz2 | awk '{ print $5}')
-#echo " > Backup created, final size: $BK_SIZE ..."
+$TAR --exclude '.git' --exclude '*.log' -jcvpf $BAKWP/$NOW/backup-files-$NOW.tar.bz2 $SITES
+BK_SIZE=$(ls -lah $BAKWP/$NOW/backup-files-$NOW.tar.bz2 | awk '{ print $5}')
+echo " > Backup created, final size: $BK_SIZE ..."
 
 ### File Check ###
 #AMOUNT_FILES=`ls -1R $BAKWP/$NOW |  grep -i *files-$NOW.tar.bz2 | wc -l`
@@ -22,7 +22,7 @@ echo " > Number of backup files found: $AMOUNT_FILES ..."
 ### Upload Backup Files ###
 echo " > Uploading TAR to Dropbox ..."
 $SFOLDER/dropbox_uploader.sh upload $BAKWP/$NOW/webserver-config-files-$NOW.tar.bz2 $DROPBOX_FOLDER
-#$SFOLDER/dropbox_uploader.sh upload $BAKWP/$NOW/backup-files-$NOW.tar.bz2 $DROPBOX_FOLDER
+$SFOLDER/dropbox_uploader.sh upload $BAKWP/$NOW/backup-files-$NOW.tar.bz2 $DROPBOX_FOLDER
 if [ "$DEL_UP" = true ] ; then
   rm -r $BAKWP/$NOW
 else
