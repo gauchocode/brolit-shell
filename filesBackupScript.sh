@@ -7,45 +7,43 @@
 echo " > Starting file backup script ..."
 
 ### TAR Webserver Config Files ###
-$TAR -jcvpf $BAKWP/$NOW/webserver-config-$NOW.tar.bz2 $WSERVER
+$TAR -jcvpf $BAKWP/$NOW/webserver-config-files-$NOW.tar.bz2 $WSERVER
 
 ### TAR Sites Folders ###
-$TAR --exclude '.git' --exclude '*.log' -jcvpf $BAKWP/$NOW/files-$NOW.tar.bz2 $SITES
-BK_SIZE=$(ls -lah $BAKWP/$NOW/files-$NOW.tar.bz2 | awk '{ print $5}')
-echo " > Backup created, final size: $BK_SIZE ..."
+#$TAR --exclude '.git' --exclude '*.log' -jcvpf $BAKWP/$NOW/backup-files-$NOW.tar.bz2 $SITES
+#BK_SIZE=$(ls -lah $BAKWP/$NOW/backup-files-$NOW.tar.bz2 | awk '{ print $5}')
+#echo " > Backup created, final size: $BK_SIZE ..."
 
 ### File Check ###
-AMOUNT_FILES=`ls -1R $BAKWP/$NOW |  grep -i files-$NOW.tar.bz2 | wc -l`
-BACKUPEDLIST_FILES=`ls $BAKWP/$NOW | grep -i files-$NOW.tar.bz2`
+#AMOUNT_FILES=`ls -1R $BAKWP/$NOW |  grep -i *files-$NOW.tar.bz2 | wc -l`
+AMOUNT_FILES=`ls -d $BAKWP/$NOW/*-files-$NOW.tar.bz2 | wc -l`
 echo " > Number of backup files found: $AMOUNT_FILES ..."
 
 ### Upload Backup Files ###
 echo " > Uploading TAR to Dropbox ..."
-$SFOLDER/dropbox_uploader.sh upload $BAKWP/$NOW/webserver-config-$NOW.tar.bz2 $DROPBOX_FOLDER
-$SFOLDER/dropbox_uploader.sh upload $BAKWP/$NOW/files-$NOW.tar.bz2 $DROPBOX_FOLDER
+$SFOLDER/dropbox_uploader.sh upload $BAKWP/$NOW/webserver-config-files-$NOW.tar.bz2 $DROPBOX_FOLDER
+#$SFOLDER/dropbox_uploader.sh upload $BAKWP/$NOW/backup-files-$NOW.tar.bz2 $DROPBOX_FOLDER
 if [ "$DEL_UP" = true ] ; then
   rm -r $BAKWP/$NOW
 else
-  OLD_BK=$BAKWP/$ONEWEEKAGO/files-$ONEWEEKAGO.tar.bz2
-  OLD_BK_NG=$BAKWP/$ONEWEEKAGO/webserver-config-$ONEWEEKAGO.tar.bz2
+  OLD_BK=$BAKWP/$ONEWEEKAGO/backup-files-$ONEWEEKAGO.tar.bz2
   if [ ! -f $OLD_BK ]; then
     echo " > Old backups not found in server ..."
   else
     ### Remove old backup from server ###
     echo " > Deleting old backups from server ..."
-    rm -f $OLD_BK
-    rm -f $OLD_BK_NG
+    rm -r $BAKWP/$ONEWEEKAGO
   fi
 fi
 
 ### Remove old backups from Dropbox ###
 echo " > Trying to delete old backups from Dropbox ..."
 if [ "$DROPBOX_FOLDER" != "/" ] ; then
-  $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/webserver-config-$ONEWEEKAGO.tar.bz2
-  $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/files-$ONEWEEKAGO.tar.bz2
+  $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/webserver-config-files-$ONEWEEKAGO.tar.bz2
+  $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/backup-files-$ONEWEEKAGO.tar.bz2
 else
-  $SFOLDER/dropbox_uploader.sh remove /webserver-config-$ONEWEEKAGO.tar.bz2
-  $SFOLDER/dropbox_uploader.sh remove /files-$ONEWEEKAGO.tar.bz2
+  $SFOLDER/dropbox_uploader.sh remove /webserver-config-files-$ONEWEEKAGO.tar.bz2
+  $SFOLDER/dropbox_uploader.sh remove /backup-files-$ONEWEEKAGO.tar.bz2
 fi
 
 ### DUPLICITY ###
@@ -89,23 +87,25 @@ else
   CONTENT="<b>Server IP: $IP</b><br />"
   SIZE="Backup file size: <b>$BK_SIZE</b><br />"
   SPACE="Disk usage before the database backup: <b>$DISK_U</b>.<br />Disk usage after the database backup: <b>$DISK_UFL</b>.<br />"
-  FILES_LABEL="<b>Backup files included:</b><br />"
+  FILES_LABEL='<b>Backup file includes:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
   FILES_INC=""
-  for t in $(echo $BACKUPEDLIST_FILES | sed "s/,/ /g")
-	do
-    FILES_INC="$FILES_INC $t<br />"
+  echo " > Folders included:"
+  for t in $(find $SITES -maxdepth 1 -type d)
+  do
+      FILES_INC="$FILES_INC $t<br />"
+      echo " > $t"
   done
 	COLOR='#1DC6DF'
 	echo " > File Backup OK"
 fi
 HEADERTEXT="$STATUS_ICON $VPSNAME - Files Backup - [$NOWDISPLAY - $STATUS]"
-HEADEROPEN1='<html><body><div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF; float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
+HEADEROPEN1='<html><body><div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
 HEADEROPEN2=';padding:0 0 10px 10px;width:100%;height:30px">'
 HEADEROPEN=$HEADEROPEN1$COLOR$HEADEROPEN2
 HEADERCLOSE='</div>'
-BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px 0 0 10px;width:100%;">'
-BODYCLOSE='</div>'
-FOOTEROPEN='<div style="font-size:10px; float:left;font-family:Verdana,Helvetica,Arial;text-align:right;padding-right:5px;width:100%;height:20px">'
+BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
+BODYCLOSE='</div></div>'
+FOOTEROPEN='<div style="font-size:10px;float:left;font-family:Verdana,Helvetica,Arial;text-align:right;padding-right:5px;width:100%;height:20px">'
 SCRIPTSTRING="Script Version: $SCRIPT_V by Broobe."
 FOOTERCLOSE='</div></div></body></html>'
 HEADER=$HEADEROPEN$HEADERTEXT$HEADERCLOSE
