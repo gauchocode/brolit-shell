@@ -1,7 +1,6 @@
 #! /bin/bash
-#
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 1.4
+# Version: 1.6
 #############################################################################
 
 ### Helpers ###
@@ -9,7 +8,8 @@ count_dabases (){
   TOTAL_DBS=0
   for db in $DBS
   do
-    if  [ "${db}" != "information_schema" ] &&
+    if  [ "${db}" != "phpmyadmin" ] &&
+        [ "${db}" != "information_schema" ] &&
         [ "${db}" != "performance_schema" ] &&
         [ "${db}" != "mysql" ] &&
         [ "${db}" != "sys" ]; then
@@ -58,6 +58,8 @@ do
       ### Upload to Dropbox ###
       echo " > Making a tar.bz2 file of [$FILE]..."
       $TAR -jcvpf db-$NOW.tar.bz2 $FILE
+      BK_SIZE[$COUNT]=$(ls -lah db-$NOW.tar.bz2 | awk '{ print $5}')
+      echo " > Backup created, final size: $BK_SIZE[$COUNT] ..."
       echo " > Uploading new database backup [$FILE] ..."
       $SFOLDER/dropbox_uploader.sh upload $FILE $DROPBOX_FOLDER
       ### Delete old backups ###
@@ -77,8 +79,12 @@ done
 ### Create new backups ###
 if [ "$ONE_FILE_BK" = true ] ; then
   cd $BAKWP/$NOW
+
   echo " > Making a tar.bz2 file with all databases ..."
-  $TAR -jcvpf databases-$NOW.tar.bz2 $BAKWP/$NOW
+  $TAR -jcvpf databases-$NOW.tar.bz2 $BAKWP/$NOW/*.sql
+  BK_SIZE[0]=$(ls -lah databases-$NOW.tar.bz2 | awk '{ print $5}')
+  echo " > Backup created, final size: $BK_SIZE ..."
+
   ### Upload new backups ###
   echo " > Uploading all databases on tar.bz2 file ..."
   $SFOLDER/dropbox_uploader.sh upload databases-$NOW.tar.bz2 $DROPBOX_FOLDER
@@ -111,6 +117,9 @@ else
   fi
 fi
 
+### Disk Usage ###
+DISK_UDB=$( df -h | grep "$MAIN_VOL" | awk {'print $5'} )
+
 ### Configure Email ###
 if [ $COUNT -ne $AMOUNT ]; then
   STATUS_ICON="💩"
@@ -119,13 +128,18 @@ if [ $COUNT -ne $AMOUNT ]; then
 	COLOR='red'
 	echo " > Backup with errors. MySQL has $COUNT databases, but only $AMOUNT have a backup."
 else
+  COUNT=0
   STATUS_ICON="✅"
 	STATUS="OK"
-	CONTENT="<b>Server IP: $IP</b><br /><b>Backup files included:</b><br />"
+	CONTENT="<b>Server IP: $IP</b><br />"
+  SIZE="Backup file size: <b>$BK_SIZE</b><br />"
+  SPACE="Disk usage before the database backup: <b>$DISK_U</b>.<br />Disk usage after the database backup: <b>$DISK_UDB</b>.<br />"
+  FILES_LABEL="<b>Backup files included:</b><br />"
   FILES_INC=""
   for t in $(echo $BACKUPEDLIST | sed "s/,/ /g")
 	do
     FILES_INC="$FILES_INC $t<br />"
+    COUNT=$((COUNT+1))
   done
 	COLOR='#1DC6DF'
 	echo " > Backup OK"
@@ -137,9 +151,12 @@ HEADEROPEN=$HEADEROPEN1$COLOR$HEADEROPEN2
 HEADERCLOSE='</div>'
 BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px 0 0 10px;width:100%;">'
 BODYCLOSE='</div>'
-FOOTER='<div style="font-size:10px; float:left;font-family:Verdana,Helvetica,Arial;text-align:right;padding-right:5px;width:100%;height:20px">Broobe Team</div></div></body></html>'
+FOOTEROPEN='<div style="font-size:10px; float:left;font-family:Verdana,Helvetica,Arial;text-align:right;padding-right:5px;width:100%;height:20px">'
+SCRIPTSTRING="Script Version: $SCRIPT_V by Broobe."
+FOOTERCLOSE='</div></div></body></html>'
 HEADER=$HEADEROPEN$HEADERTEXT$HEADERCLOSE
-BODY=$BODYOPEN$CONTENT$FILES_INC$BODYCLOSE
+BODY=$BODYOPEN$CONTENT$SIZE$SPACE$FILES_LABEL$FILES_INC$BODYCLOSE
+FOOTER=$FOOTEROPEN$SCRIPTSTRING$FOOTERCLOSE
 
 ### Send Email ###
 sendEmail -f $SMTP_U -t "servidores@broobe.com" -u "$STATUS_ICON $VPSNAME - Database Backup - [$NOWDISPLAY - $STATUS]" -o message-content-type=html -m "$HEADER $BODY $FOOTER" -s $SMTP_SERVER -o tls=$SMTP_TLS -xu $SMTP_U -xp $SMTP_P
