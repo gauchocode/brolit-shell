@@ -1,7 +1,12 @@
 #! /bin/bash
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 1.6
+# Version: 1.7
 #############################################################################
+
+### VARS ###
+BK_TYPE="Database"
+ERROR=false
+ERROR_TYPE=""
 
 ### Helpers ###
 count_dabases (){
@@ -28,7 +33,7 @@ MYSQLDUMP="$(which mysqldump)"
 DBS="$($MYSQL -u $MUSER -h $MHOST -p$MPASS -Bse 'show databases')"
 
 ### Starting Message ###
-echo " > Starting database backup script..."
+echo -e "\e[42m > Starting database backup script...\e[0m"
 
 ### Get all databases name ###
 COUNT=0
@@ -122,41 +127,41 @@ DISK_UDB=$( df -h | grep "$MAIN_VOL" | awk {'print $5'} )
 
 ### Configure Email ###
 if [ $COUNT -ne $AMOUNT ]; then
-  STATUS_ICON="💩"
-	STATUS="ERROR"
-	CONTENT="<b>Server IP: $IP</b><br /><b>Backup with errors.<br />MySQL has $COUNT databases, but only $AMOUNT have a backup.<br />Please check log file.</b> <br />"
-	COLOR='red'
+  STATUS_ICON_D="💩"
+	STATUS_D="ERROR"
+	CONTENT_D="<b>Backup with errors.<br />MySQL has $COUNT databases, but only $AMOUNT have a backup.<br />Please check log file.</b> <br />"
+	COLOR_D='red'
 	echo " > Backup with errors. MySQL has $COUNT databases, but only $AMOUNT have a backup."
 else
   COUNT=0
-  STATUS_ICON="✅"
-	STATUS="OK"
-	CONTENT="<b>Server IP: $IP</b><br />"
-  SIZE="Backup file size: <b>$BK_SIZE</b><br />"
-  SPACE="Disk usage before the database backup: <b>$DISK_U</b>.<br />Disk usage after the database backup: <b>$DISK_UDB</b>.<br />"
-  FILES_LABEL="<b>Backup files included:</b><br />"
-  FILES_INC=""
+  STATUS_ICON_D="✅"
+	STATUS_D="OK"
+	CONTENT_D=""
+  COLOR_D='#1DC6DF'
+  SIZE_D="Backup file size: <b>$BK_SIZE</b><br />"
+  FILES_LABEL_D="<b>Backup files included:</b><br />"
+  FILES_INC_D=""
   for t in $(echo $BACKUPEDLIST | sed "s/,/ /g")
 	do
-    FILES_INC="$FILES_INC $t<br />"
+    FILES_INC_D="$FILES_INC_D $t<br />"
     COUNT=$((COUNT+1))
   done
-	COLOR='#1DC6DF'
-	echo " > Backup OK"
+	echo -e "\e[42m > Database Backup OK\e[0m"
 fi
-HEADERTEXT="$STATUS_ICON $VPSNAME - Database Backup - [$NOWDISPLAY - $STATUS]"
-HEADEROPEN1='<html><body><div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
-HEADEROPEN2=';padding:0 0 10px 10px;width:100%;height:30px">'
-HEADEROPEN=$HEADEROPEN1$COLOR$HEADEROPEN2
-HEADERCLOSE='</div>'
-BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px 0 0 10px;width:100%;">'
-BODYCLOSE='</div>'
-FOOTEROPEN='<div style="font-size:10px; float:left;font-family:Verdana,Helvetica,Arial;text-align:right;padding-right:5px;width:100%;height:20px">'
-SCRIPTSTRING="Script Version: $SCRIPT_V by Broobe."
-FOOTERCLOSE='</div></div></body></html>'
-HEADER=$HEADEROPEN$HEADERTEXT$HEADERCLOSE
-BODY=$BODYOPEN$CONTENT$SIZE$SPACE$FILES_LABEL$FILES_INC$BODYCLOSE
-FOOTER=$FOOTEROPEN$SCRIPTSTRING$FOOTERCLOSE
 
-### Send Email ###
-sendEmail -f $SMTP_U -t "servidores@broobe.com" -u "$STATUS_ICON $VPSNAME - Database Backup - [$NOWDISPLAY - $STATUS]" -o message-content-type=html -m "$HEADER $BODY $FOOTER" -s $SMTP_SERVER -o tls=$SMTP_TLS -xu $SMTP_U -xp $SMTP_P
+HEADEROPEN1_D='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
+HEADEROPEN2_D=';padding:0 0 10px 10px;width:100%;height:30px">'
+HEADEROPEN_D=$HEADEROPEN1_D$COLOR_D$HEADEROPEN2_D
+HEADERTEXT_D="Database Backup -> $STATUS_D"
+HEADERCLOSE_D='</div>'
+
+BODYOPEN_D='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px 0 0 10px;width:100%;">'
+BODYCLOSE_D='</div>'
+
+HEADER_D=$HEADEROPEN_D$HEADERTEXT_D$HEADERCLOSE_D
+BODY_D=$BODYOPEN_D$CONTENT_D$SIZE_D$FILES_LABEL_D$FILES_INC_D$BODYCLOSE_D
+
+echo $HEADER_D > $BAKWP/db-bk-$NOW.mail
+echo $BODY_D >> $BAKWP/db-bk-$NOW.mail
+
+export STATUS_D STATUS_ICON_D HEADER_D BODY_D
