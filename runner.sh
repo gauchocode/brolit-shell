@@ -61,7 +61,7 @@ chmod +x filesBackupScript.sh
 
 ### Update package definitions ###
 echo " > Running apt-get update..."
-#apt-get update
+apt-get update
 
 ### Check if sendemail is installed ###
 SENDEMAIL="$(which sendemail)"
@@ -89,7 +89,8 @@ for pk in ${PACKAGES[@]}; do
 	if [ $PK_VI != $PK_VC ]; then
 		OUTDATED=true
 		echo " > $pk $PK_VI -> $PK_VC <br />" >> pkg-$NOW.mail
-	#else
+	else
+		OUTDATED=false
 		#echo " > $pk is is already the newest version... <br />" >> pkg-$NOW.mail
 	fi
 done
@@ -145,7 +146,7 @@ PKG_BODYCLOSE='</div>'
 
 PKG_HEADER=$PKG_HEADEROPEN$PKG_HEADERTEXT$PKG_HEADERCLOSE
 
-PKG_MAIL="pkg-$NOW.mail"
+PKG_MAIL="$BAKWP/pkg-$NOW.mail"
 PKG_MAIL_VAR=$(<$PKG_MAIL)
 
 BODY_PKG=$PKG_HEADER$PKG_BODYOPEN$PKG_MAIL_VAR$PKG_BODYCLOSE
@@ -159,7 +160,7 @@ then
           [Yy]* )
 					source $SFOLDER/mysqlBackupScript.sh;
 
-					DB_MAIL="tmp/db-bk-$NOW.mail"
+					DB_MAIL="$BAKWP/db-bk-$NOW.mail"
 					DB_MAIL_VAR=$(<$DB_MAIL)
 
 					HTMLOPEN='<html><body>'
@@ -181,7 +182,7 @@ then
           [Yy]* )
 					source $SFOLDER/filesBackupScript.sh;
 
-					FILE_MAIL="tmp/file-bk-$NOW.mail"
+					FILE_MAIL="$BAKWP/file-bk-$NOW.mail"
 					FILE_MAIL_VAR=$(<$FILE_MAIL)
 
 					HTMLOPEN='<html><body>'
@@ -203,10 +204,13 @@ else
     $SFOLDER/mysqlBackupScript.sh;
     $SFOLDER/filesBackupScript.sh;
 
-		DB_MAIL="tmp/db-bk-$NOW.mail"
+		# TODO: quizá lo mejor es sacar la parte de envio de mail fuera del if.
+		# Es decir, que siempre mande 1 mail (incluso corriendolo a mano), por mas que no se elija correr los 2 bakcups.
+
+		DB_MAIL="$BAKWP/db-bk-$NOW.mail"
 		DB_MAIL_VAR=$(<$DB_MAIL)
 
-		FILE_MAIL="tmp/file-bk-$NOW.mail"
+		FILE_MAIL="$BAKWP/file-bk-$NOW.mail"
 		FILE_MAIL_VAR=$(<$FILE_MAIL)
 
 		HTMLOPEN='<html><body>'
