@@ -128,6 +128,7 @@ HEADERCLOSE='</div>'
 BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
 BODYCLOSE='</div></div>'
 
+# TODO: el footer debería armarlo el runner u otro script que se dedique a armar la estructura del mail.
 FOOTEROPEN='<div style="font-size:10px;float:left;font-family:Verdana,Helvetica,Arial;text-align:right;padding-right:5px;width:100%;height:20px">'
 SCRIPTSTRING="Script Version: $SCRIPT_V by Broobe."
 FOOTERCLOSE='</div></div>'
