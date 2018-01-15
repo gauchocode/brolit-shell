@@ -22,7 +22,7 @@ WSERVER="/etc/nginx"               		#Webserver config files
 BAKWP="$SFOLDER/tmp"              		#Temp folder to store Backups
 DROPBOX_FOLDER="/"										#Dropbox Folder Backup
 MAIN_VOL="/dev/sda1"									#Main partition
-DEL_UP=false													#Delete backup files after upload?
+DEL_UP=true														#Delete backup files after upload?
 
 ### PACKAGES TO WATCH ###
 PACKAGES=(linux-firmware dpkg perl nginx php7.0-fpm mysql-server rsync curl openssl)
@@ -80,7 +80,7 @@ fi
 IP=`dig +short myip.opendns.com @resolver1.opendns.com	` 2> /dev/null
 
 ### Compare package versions ###
-echo "" > pkg-$NOW.mail
+echo "" > $BAKWP/pkg-$NOW.mail
 for pk in ${PACKAGES[@]}; do
 	#PK_VI=$( apt-cache policy $pk | grep Installed )
 	PK_VI=$(apt-cache policy $pk | grep Installed | cut -d ':' -f 2)
@@ -88,7 +88,7 @@ for pk in ${PACKAGES[@]}; do
 	PK_VC=$(apt-cache policy $pk | grep Candidate | cut -d ':' -f 2)
 	if [ $PK_VI != $PK_VC ]; then
 		OUTDATED=true
-		echo " > $pk $PK_VI -> $PK_VC <br />" >> pkg-$NOW.mail
+		echo " > $pk $PK_VI -> $PK_VC <br />" >> $BAKWP/pkg-$NOW.mail
 	else
 		OUTDATED=false
 		#echo " > $pk is is already the newest version... <br />" >> pkg-$NOW.mail
@@ -218,10 +218,15 @@ else
 
 		if [ "$STATUS_D" = "ERROR" ] || [ "$STATUS_F" = "ERROR" ]; then
 			STATUS="ERROR"
-			STATUS_ICON="💩"
+			STATUS_ICON="⛔"
 		else
-			STATUS="OK"
-			STATUS_ICON="✅"
+			if [ "$OUTDATED" = true ] ; then
+				STATUS="WARNING"
+				STATUS_ICON="⚠"
+			else
+				STATUS="OK"
+				STATUS_ICON="✅"
+			fi
 		fi
 		sendEmail -f $SMTP_U -t "servidores@broobe.com" -u "$STATUS_ICON $VPSNAME - Complete Backup - [$NOWDISPLAY]" -o message-content-type=html -m "$HTMLOPEN $BODY_SRV $BODY_PKG $DB_MAIL_VAR $FILE_MAIL_VAR $HTMLCLOSE" -s $SMTP_SERVER -o tls=$SMTP_TLS -xu $SMTP_U -xp $SMTP_P;
 
