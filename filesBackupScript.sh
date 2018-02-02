@@ -1,6 +1,6 @@
 #! /bin/bash
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 1.7
+# Version: 1.8
 #############################################################################
 
 ### VARS ###
@@ -84,17 +84,14 @@ if [ "$DUP_BK" = true ] ; then
 			duplicity incremental -v4 --no-encryption $DUP_SRC_BK$i file://$DUP_ROOT$i
       RETVAL=$?
 			echo " > Incremental Backup of $i OK, and was stored in $DUP_ROOT$i."
+      # TODO: Purge old backups
+      #duplicity remove-older-than 1M --force $DUP_ROOT/$i
 		fi
 	done
   [ $RETVAL -eq 0 ] && echo "*** DUPLICITY SUCCESS ***"
   [ $RETVAL -ne 0 ] && echo "*** DUPLICITY ERROR ***"
 
-  # TODO: Purge old backups
-  #duplicity remove-older-than 1M --force $BACKUP_DIR/$HOST
-
 fi
-
-##TODO: INCLUIR EN EL MAIL LOS BACKUPS DE DUPLICITY
 
 if [ "$ERROR" = true ] ; then
   STATUS_ICON_F="💩"
@@ -107,7 +104,7 @@ else
   STATUS_F="OK"
   CONTENT=""
   COLOR='#1DC6DF'
-  SIZE="Backup file size: <b>$BK_SIZE</b><br />"
+  SIZE_LABEL="Standard Backup file size: <b>$BK_SIZE</b><br />"
   FILES_LABEL='<b>Backup file includes:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
   FILES_INC=""
   echo " > Folders included:"
@@ -116,7 +113,14 @@ else
       FILES_INC="$FILES_INC $t<br />"
       echo " > $t"
   done
+  FILES_LABEL_END='</div>';
   echo -e "\e[42m > File Backup OK\e[0m"
+
+  if [ "$DUP_BK" = true ] ; then
+    DBK_SIZE=$(du -hs $DUP_ROOT | cut -f1)
+    DBK_SIZE_LABEL="Duplicity Backup size: <b>$DBK_SIZE</b><br /><b>Duplicity Backup includes:</b><br />$DUP_FOLDERS"
+  fi
+
 fi
 
 HEADEROPEN1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
@@ -134,7 +138,7 @@ SCRIPTSTRING="Script Version: $SCRIPT_V by Broobe."
 FOOTERCLOSE='</div></div>'
 
 HEADER=$HEADEROPEN$HEADERTEXT$HEADERCLOSE
-BODY=$BODYOPEN$CONTENT$SIZE$FILES_LABEL$FILES_INC$BODYCLOSE
+BODY=$BODYOPEN$CONTENT$SIZE_LABEL$FILES_LABEL$FILES_INC$FILES_LABEL_END$DBK_SIZE_LABEL$BODYCLOSE
 FOOTER=$FOOTEROPEN$SCRIPTSTRING$FOOTERCLOSE
 
 echo $HEADER > $BAKWP/file-bk-$NOW.mail

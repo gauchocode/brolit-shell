@@ -1,6 +1,6 @@
 #! /bin/bash
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 1.7
+# Version: 1.8
 #############################################################################
 
 ### VARS ###

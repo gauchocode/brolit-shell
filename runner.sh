@@ -1,10 +1,10 @@
 #! /bin/bash
 #
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 1.7
+# Version: 1.8
 #############################################################################
 
-SCRIPT_V="1.7"
+SCRIPT_V="1.8"
 
 ### TO EDIT ###
 
@@ -15,35 +15,35 @@ SCRIPT_V="1.7"
 ###TODO: One tar for all databases or individual tar for database (var option).
 ONE_FILE_BK=true
 
-VPSNAME="$HOSTNAME"               		#Or choose a name
-SFOLDER="/root/backup-scripts"   			#Backup Scripts folder
-SITES="/var/www"                 			#Where sites are stored
-WSERVER="/etc/nginx"               		#Webserver config files
-BAKWP="$SFOLDER/tmp"              		#Temp folder to store Backups
-DROPBOX_FOLDER="/"										#Dropbox Folder Backup
-MAIN_VOL="/dev/sda1"									#Main partition
-DEL_UP=true														#Delete backup files after upload?
+VPSNAME="$HOSTNAME"               						#Or choose a name
+SFOLDER="/root/backup-scripts"   							#Backup Scripts folder
+SITES="/var/www"                 							#Where sites are stored
+WSERVER="/etc/nginx"               						#Webserver config files
+BAKWP="$SFOLDER/tmp"              						#Temp folder to store Backups
+DROPBOX_FOLDER="/"														#Dropbox Folder Backup
+MAIN_VOL="/dev/sda1"													#Main partition
+DEL_UP=true																		#Delete backup files after upload?
 
 ### PACKAGES TO WATCH ###
-PACKAGES=(linux-firmware dpkg perl nginx php7.0-fpm mysql-server rsync curl openssl)
+PACKAGES=(linux-firmware dpkg perl nginx php7.0-fpm mysql-server curl openssl)
 
 ### DUPLICITY CONFIG ###
-DUP_BK=false									    		#Duplicity Backups true or false (bool)
-DUP_ROOT="/mnt/backup"								#Duplicity Backups destination folder
-DUP_SRC_BK="/var/www"									#Source of Directories to Backup
-DUP_FOLDERS="FOLDER1,FOLDER2"	    		#Folders to Backup
+DUP_BK=false									    						#Duplicity Backups true or false (bool)
+DUP_ROOT="/media/backups/PROJECT_NAME_OR_VPS"	#Duplicity Backups destination folder
+DUP_SRC_BK="/var/www/"												#Source of Directories to Backup
+DUP_FOLDERS="FOLDER1,FOLDER2"	    						#Folders to Backup
 
 ### MYSQL CONFIG ###
-MUSER="[MYSQL_USER]"              		#MySQL User
-MPASS="[MYSQL_PASSWORD]"          		#MySQL User Pass
+MUSER="[MYSQL_USER]"              						#MySQL User
+MPASS="[MYSQL_PASSWORD]"          						#MySQL User Pass
 
 ### SENDEMAIL CONFIG ###
 ###TODO: make MAILA work on "sendEmail" command.
-MAILA="servidores@broobe.com"     		#Notification Email
-SMTP_SERVER="mx.bmailing.com.ar:587"	#SMTP Server and Port
-SMTP_TLS="yes"												#TLS: yes or no
-SMTP_U="no-reply@send.broobe.com"			#SMTP User
-SMTP_P="[SMTP_PASSWORD]"							#SMTP Password
+MAILA="servidores@broobe.com"     						#Notification Email
+SMTP_SERVER="mx.bmailing.com.ar:587"					#SMTP Server and Port
+SMTP_TLS="yes"																#TLS: yes or no
+SMTP_U="no-reply@send.broobe.com"							#SMTP User
+SMTP_P="[SMTP_PASSWORD]"											#SMTP Password
 
 ### Backup rotation ###
 NOW=$(date +"%Y-%m-%d")
@@ -80,18 +80,14 @@ fi
 IP=`dig +short myip.opendns.com @resolver1.opendns.com	` 2> /dev/null
 
 ### Compare package versions ###
+OUTDATED=false
 echo "" > $BAKWP/pkg-$NOW.mail
 for pk in ${PACKAGES[@]}; do
-	#PK_VI=$( apt-cache policy $pk | grep Installed )
 	PK_VI=$(apt-cache policy $pk | grep Installed | cut -d ':' -f 2)
-	#PK_VC=$( apt-cache policy $pk | grep Candidate )
 	PK_VC=$(apt-cache policy $pk | grep Candidate | cut -d ':' -f 2)
 	if [ $PK_VI != $PK_VC ]; then
 		OUTDATED=true
 		echo " > $pk $PK_VI -> $PK_VC <br />" >> $BAKWP/pkg-$NOW.mail
-	else
-		OUTDATED=false
-		#echo " > $pk is is already the newest version... <br />" >> pkg-$NOW.mail
 	fi
 done
 
@@ -193,19 +189,15 @@ then
 
           [Nn]* )
 					echo -e "\e[31mAborting file backup...\e[0m";
-					exit;;
+					break;;
 
           * ) echo " > Please answer yes or no.";;
       esac
   done
 ### Running from cron ###
 else
-
     $SFOLDER/mysqlBackupScript.sh;
     $SFOLDER/filesBackupScript.sh;
-
-		# TODO: quizá lo mejor es sacar la parte de envio de mail fuera del if.
-		# Es decir, que siempre mande 1 mail (incluso corriendolo a mano), por mas que no se elija correr los 2 bakcups.
 
 		DB_MAIL="$BAKWP/db-bk-$NOW.mail"
 		DB_MAIL_VAR=$(<$DB_MAIL)
@@ -231,3 +223,7 @@ else
 		sendEmail -f $SMTP_U -t "servidores@broobe.com" -u "$STATUS_ICON $VPSNAME - Complete Backup - [$NOWDISPLAY]" -o message-content-type=html -m "$HTMLOPEN $BODY_SRV $BODY_PKG $DB_MAIL_VAR $FILE_MAIL_VAR $HTMLCLOSE" -s $SMTP_SERVER -o tls=$SMTP_TLS -xu $SMTP_U -xp $SMTP_P;
 
 fi
+
+echo " > Removing temp files..."
+rm $PKG_MAIL $DB_MAIL $FILE_MAIL
+echo -e "\e[42m > DONE \e[0m"
