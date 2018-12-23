@@ -1,6 +1,6 @@
-#! /bin/bash
+#!/bin/bash
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 1.8
+# Version: 1.9
 #############################################################################
 
 ### VARS ###
@@ -12,38 +12,73 @@ ERROR_TYPE=""
 echo -e "\e[42m > Starting file backup script...\e[0m"
 
 ### TAR Webserver Config Files ###
-if $TAR -jcvpf $BAKWP/$NOW/webserver-config-files-$NOW.tar.bz2 $WSERVER
-then
-    echo " > Config Files Backup created..."
-else
-    echo " > ERROR - No such directory or file"
-    ERROR=true
-    ERROR_TYPE="TAR ERROR"
+if [ -n "$WSERVER" ]; then
+  if $TAR -jcvpf $BAKWP/$NOW/webserver-config-files-$NOW.tar.bz2 $WSERVER
+  then
+      echo " > Config Files Backup created..."
+      echo " > Uploading TAR to Dropbox ..."
+      $SFOLDER/dropbox_uploader.sh upload $BAKWP/"$NOW"/webserver-config-files-"$NOW".tar.bz2 $DROPBOX_FOLDER
+      echo " > Trying to delete old backup from Dropbox ..."
+      $SFOLDER/dropbox_uploader.sh remove /webserver-config-files-"$ONEWEEKAGO".tar.bz2
+  else
+      echo " > ERROR - No such directory or file"
+      ERROR=true
+      ERROR_TYPE="TAR ERROR: No such directory or file $BAKWP/$NOW/webserver-config-files-$NOW.tar.bz2"
+  fi
 fi
 
 ### TAR Sites Folders ###
-if $TAR --exclude '.git' --exclude '*.log' -jcvpf $BAKWP/$NOW/backup-files-$NOW.tar.bz2 $SITES
-then
-    BK_SIZE=$(ls -lah $BAKWP/$NOW/backup-files-$NOW.tar.bz2 | awk '{ print $5}')
-    echo " > Backup created, final size: $BK_SIZE ..."
+if [ "$ONE_FILE_BK" = true ] ; then
+  if [ -n "$SITES" ]; then
+    if $TAR --exclude '.git' --exclude '*.log' -jcvpf $BAKWP/"$NOW"/backup-files_"$NOW".tar.bz2 $SITES; then
+        BK_SIZE=$(ls -lah $BAKWP/"$NOW"/backup-files_"$NOW".tar.bz2 | awk '{ print $5}')
+        echo " > Backup created, final size: $BK_SIZE ..."
+        echo " > Uploading TAR to Dropbox ..."
+        $SFOLDER/dropbox_uploader.sh upload $BAKWP/"$NOW"/backup-files_"$NOW".tar.bz2 $DROPBOX_FOLDER
+        echo " > Trying to delete old backup from Dropbox ..."
+        $SFOLDER/dropbox_uploader.sh remove /backup-files_"$ONEWEEKAGO".tar.bz2
+    else
+        echo " > ERROR - No such directory or file"
+        ERROR=true
+        ERROR_TYPE="TAR ERROR: No such directory or file $BAKWP/$NOW/backup-files_$NOW.tar.bz2"
+    fi
+  fi
 else
-    echo " > ERROR - No such directory or file"
-    ERROR=true
-    ERROR_TYPE="TAR ERROR"
+  k=0;
+  for j in $(find $SITES -maxdepth 1 -type d)
+  do
+      if [[ "$k" -gt 0 ]]; then
+        FOLDER_NAME=$(basename $j)
+        if $TAR --exclude '.git' --exclude '*.log' -jcvpf $BAKWP/"$NOW"/backup-"$FOLDER_NAME"_files_"$NOW".tar.bz2 $j; then
+            BK_SIZE=$(ls -lah $BAKWP/"$NOW"/backup-"$FOLDER_NAME"_files_"$NOW".tar.bz2 | awk '{ print $5}')
+            echo " > Backup created, final size: $BK_SIZE ..."
+            echo " > Uploading TAR to Dropbox ..."
+            $SFOLDER/dropbox_uploader.sh upload $BAKWP/"$NOW"/backup-"$FOLDER_NAME"_files_"$NOW".tar.bz2 $DROPBOX_FOLDER
+            echo " > Trying to delete old backup from Dropbox ..."
+            $SFOLDER/dropbox_uploader.sh remove /backup-"$FOLDER_NAME"_files_"$ONEWEEKAGO".tar.bz2
+            if [ "$DEL_UP" = true ] ; then
+              echo " > Deleting backup from server ..."
+              rm -r $BAKWP/"$NOW"/backup-"$FOLDER_NAME"_files_"$NOW".tar.bz2
+            fi
+        else
+            echo " > ERROR - No such directory or file"
+            ERROR=true
+            ERROR_TYPE="TAR ERROR: No such directory or file $BAKWP/$NOW/backup-"$FOLDER_NAME"_files_$NOW.tar.bz2"
+        fi
+      fi
+      k=$k+1;
+  done
 fi
 
 ### File Check ###
-AMOUNT_FILES=`ls -d $BAKWP/$NOW/*-files-$NOW.tar.bz2 | wc -l`
+AMOUNT_FILES=`ls -d $BAKWP/"$NOW"/*_files_"$NOW".tar.bz2 | wc -l`
 echo " > Number of backup files found: $AMOUNT_FILES ..."
 
-### Upload Backup Files ###
-echo " > Uploading TAR to Dropbox ..."
-$SFOLDER/dropbox_uploader.sh upload $BAKWP/$NOW/webserver-config-files-$NOW.tar.bz2 $DROPBOX_FOLDER
-$SFOLDER/dropbox_uploader.sh upload $BAKWP/$NOW/backup-files-$NOW.tar.bz2 $DROPBOX_FOLDER
+### Deleting old backup files ###
 if [ "$DEL_UP" = true ] ; then
   rm -r $BAKWP/$NOW
 else
-  OLD_BK=$BAKWP/$ONEWEEKAGO/backup-files-$ONEWEEKAGO.tar.bz2
+  OLD_BK="$BAKWP/$ONEWEEKAGO/"
   if [ ! -f $OLD_BK ]; then
     echo " > Old backups not found in server ..."
   else
@@ -51,16 +86,6 @@ else
     echo " > Deleting old backups from server ..."
     rm -r $BAKWP/$ONEWEEKAGO
   fi
-fi
-
-### Remove old backups from Dropbox ###
-echo " > Trying to delete old backups from Dropbox ..."
-if [ "$DROPBOX_FOLDER" != "/" ] ; then
-  $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/webserver-config-files-$ONEWEEKAGO.tar.bz2
-  $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/backup-files-$ONEWEEKAGO.tar.bz2
-else
-  $SFOLDER/dropbox_uploader.sh remove /webserver-config-files-$ONEWEEKAGO.tar.bz2
-  $SFOLDER/dropbox_uploader.sh remove /backup-files-$ONEWEEKAGO.tar.bz2
 fi
 
 ### DUPLICITY ###
@@ -111,7 +136,7 @@ else
   for t in $(find $SITES -maxdepth 1 -type d)
   do
       FILES_INC="$FILES_INC $t<br />"
-      echo " > $t"
+      echo " > $FILES_INC"
   done
   FILES_LABEL_END='</div>';
   echo -e "\e[42m > File Backup OK\e[0m"

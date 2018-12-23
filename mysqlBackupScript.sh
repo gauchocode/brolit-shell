@@ -1,6 +1,6 @@
 #! /bin/bash
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 1.8
+# Version: 1.9
 #############################################################################
 
 ### VARS ###
@@ -47,7 +47,7 @@ do
       [ "${DATABASE}" != "mysql" ] &&
       [ "${DATABASE}" != "sys" ]; then
     ### Create zip for each database ###
-    FILE=$BAKWP/$NOW/db-${DATABASE}-$NOW.sql
+    FILE=$BAKWP/"$NOW"/db-${DATABASE}_"$NOW".sql
     ### Create dump file###
     echo " > Creating new database backup in [$FILE] ..."
     $MYSQLDUMP --max-allowed-packet=1073741824  -u $MUSER -h $MHOST -p$MPASS $DATABASE > $FILE
@@ -60,45 +60,49 @@ do
         exit 1
     fi
     if [ "$ONE_FILE_BK" = false ] ; then
-      ### Upload to Dropbox ###
+      cd $BAKWP/$NOW
       echo " > Making a tar.bz2 file of [$FILE]..."
-      $TAR -jcvpf db-$NOW.tar.bz2 $FILE
-      BK_SIZE[$COUNT]=$(ls -lah db-$NOW.tar.bz2 | awk '{ print $5}')
+      $TAR -jcvpf $BAKWP/"$NOW"/db-${DATABASE}_"$NOW".tar.bz2 $FILE
+      BK_SIZE[$COUNT]=$(ls -lah db-${DATABASE}_"$NOW".tar.bz2 | awk '{ print $5}')
       echo " > Backup created, final size: $BK_SIZE[$COUNT] ..."
-      echo " > Uploading new database backup [$FILE] ..."
-      $SFOLDER/dropbox_uploader.sh upload $FILE $DROPBOX_FOLDER
+      ### Upload to Dropbox ###
+      echo " > Uploading new database backup [db-${DATABASE}_"$NOW"] ..."
+      $SFOLDER/dropbox_uploader.sh upload db-${DATABASE}_"$NOW".tar.bz2 $DROPBOX_FOLDER
       ### Delete old backups ###
-      echo " > Trying to delete old database backup [db-$DATABASE-$ONEWEEKAGO.tar.bz2] ..."
+      echo " > Trying to delete old database backup [db-$DATABASE_$ONEWEEKAGO.tar.bz2] ..."
       if [ "$DROPBOX_FOLDER" != "/" ] ; then
-        $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/db-$DATABASE-$ONEWEEKAGO.tar.bz2
+        $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/db-$DATABASE_"$ONEWEEKAGO".tar.bz2
       else
-        $SFOLDER/dropbox_uploader.sh remove /db-$DATABASE-$ONEWEEKAGO.tar.bz2
+        $SFOLDER/dropbox_uploader.sh remove /db-$DATABASE_"$ONEWEEKAGO".tar.bz2
+      fi
+      if [ "$DEL_UP" = true ] ; then
+        echo " > Deleting backup from server ..."
+        rm -r $BAKWP/"$NOW"/db-${DATABASE}_"$NOW".tar.bz2
       fi
     fi
     ### Count and echo ###
     COUNT=$((COUNT+1))
     echo " > Backup $COUNT of $TOTAL_DBS ..."
+    echo " ###################################################"
   fi
 done
 
 ### Create new backups ###
 if [ "$ONE_FILE_BK" = true ] ; then
   cd $BAKWP/$NOW
-
   echo " > Making a tar.bz2 file with all databases ..."
-  $TAR -jcvpf databases-$NOW.tar.bz2 $BAKWP/$NOW/*.sql
+  $TAR -jcvpf databases_$NOW.tar.bz2 $BAKWP/"$NOW"/*.sql
   BK_SIZE[0]=$(ls -lah databases-$NOW.tar.bz2 | awk '{ print $5}')
   echo " > Backup created, final size: $BK_SIZE ..."
-
   ### Upload new backups ###
   echo " > Uploading all databases on tar.bz2 file ..."
-  $SFOLDER/dropbox_uploader.sh upload databases-$NOW.tar.bz2 $DROPBOX_FOLDER
+  $SFOLDER/dropbox_uploader.sh upload databases_$NOW.tar.bz2 $DROPBOX_FOLDER
   ### Remove old backups ###
-  echo " > Trying to delete old [databases-$ONEWEEKAGO.tar.bz2] from Dropbox..."
+  echo " > Trying to delete old [databases_$ONEWEEKAGO.tar.bz2] from Dropbox..."
   if [ "$DROPBOX_FOLDER" != "/" ] ; then
-    $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/databases-$ONEWEEKAGO.tar.bz2
+    $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/databases_"$ONEWEEKAGO".tar.bz2
   else
-    $SFOLDER/dropbox_uploader.sh remove /databases-$ONEWEEKAGO.tar.bz2
+    $SFOLDER/dropbox_uploader.sh remove /databases_"$ONEWEEKAGO".tar.bz2
   fi
 fi
 
@@ -108,12 +112,12 @@ BACKUPEDLIST=`ls -1R $BAKWP/$NOW |  grep -i .*$NOW.sql`
 
 ### Remove server backups ###
 echo " > Deleting all .sql files ..."
-rm -r $BAKWP/$NOW/*.sql
+rm -r $BAKWP/"$NOW"/*.sql
 if [ "$DEL_UP" = true ] ; then
   echo " > Deleting all backup files from server ..."
-  rm -r $BAKWP/$NOW/databases-$NOW.tar.bz2
+  rm -r $BAKWP/"$NOW"/databases_"$NOW".tar.bz2
 else
-  OLD_BK_DBS=$BAKWP/$ONEWEEKAGO/databases-$ONEWEEKAGO.tar.bz2
+  OLD_BK_DBS=$BAKWP/"$ONEWEEKAGO"/databases_"$ONEWEEKAGO".tar.bz2
   if [ ! -f $OLD_BK_DBS ]; then
     echo " > Old backups not found in server ..."
   else

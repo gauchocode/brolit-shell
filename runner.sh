@@ -1,19 +1,16 @@
-#! /bin/bash
+#!/bin/bash
 #
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 1.8
+# Version: 1.9
 #############################################################################
 
-SCRIPT_V="1.8"
+SCRIPT_V="1.9"
 
 ### TO EDIT ###
 
 ###TODO: Check of other webserver config locations (apache? other s.o?)
 ###TODO: Check if you want file back, check if you want databases backups
 ###TODO: Check whitelist or blacklist of Files, DBS.
-###TODO: List folders to backup from "SITES"
-###TODO: One tar for all databases or individual tar for database (var option).
-ONE_FILE_BK=true
 
 VPSNAME="$HOSTNAME"               						#Or choose a name
 SFOLDER="/root/backup-scripts"   							#Backup Scripts folder
@@ -22,10 +19,13 @@ WSERVER="/etc/nginx"               						#Webserver config files
 BAKWP="$SFOLDER/tmp"              						#Temp folder to store Backups
 DROPBOX_FOLDER="/"														#Dropbox Folder Backup
 MAIN_VOL="/dev/sda1"													#Main partition
+
+ONE_FILE_BK=false															#One tar for all databases or individual tar for database
+DB_BK=true																		#Include database backup?
 DEL_UP=true																		#Delete backup files after upload?
 
 ### PACKAGES TO WATCH ###
-PACKAGES=(linux-firmware dpkg perl nginx php7.0-fpm mysql-server curl openssl)
+PACKAGES=(linux-firmware dpkg perl nginx php7.2-fpm mysql-server curl openssl)
 
 ### DUPLICITY CONFIG ###
 DUP_BK=false									    						#Duplicity Backups true or false (bool)
@@ -34,8 +34,8 @@ DUP_SRC_BK="/var/www/"												#Source of Directories to Backup
 DUP_FOLDERS="FOLDER1,FOLDER2"	    						#Folders to Backup
 
 ### MYSQL CONFIG ###
-MUSER="[MYSQL_USER]"              						#MySQL User
-MPASS="[MYSQL_PASSWORD]"          						#MySQL User Pass
+MUSER=""              												#MySQL User
+MPASS=""          														#MySQL User Pass
 
 ### SENDEMAIL CONFIG ###
 ###TODO: make MAILA work on "sendEmail" command.
@@ -43,7 +43,7 @@ MAILA="servidores@broobe.com"     						#Notification Email
 SMTP_SERVER="mx.bmailing.com.ar:587"					#SMTP Server and Port
 SMTP_TLS="yes"																#TLS: yes or no
 SMTP_U="no-reply@send.broobe.com"							#SMTP User
-SMTP_P="[SMTP_PASSWORD]"											#SMTP Password
+SMTP_P=""																			#SMTP Password
 
 ### Backup rotation ###
 NOW=$(date +"%Y-%m-%d")
@@ -55,18 +55,18 @@ DISK_U=$( df -h | grep "$MAIN_VOL" | awk {'print $5'} )
 echo " > Disk usage: $DISK_U ..."
 
 ### chmod
-chmod +x dropbox_uploader.sh
-chmod +x mysqlBackupScript.sh
-chmod +x filesBackupScript.sh
+chmod +x $SFOLDER/dropbox_uploader.sh
+chmod +x $SFOLDER/mysqlBackupScript.sh
+chmod +x $SFOLDER/filesBackupScript.sh
 
 ### Update package definitions ###
-echo " > Running apt-get update..."
-apt-get update
+echo " > Running apt update..."
+apt update
 
 ### Check if sendemail is installed ###
 SENDEMAIL="$(which sendemail)"
 if [ ! -x "${SENDEMAIL}" ]; then
-	apt-get install sendemail libio-socket-ssl-perl
+	apt install sendemail libio-socket-ssl-perl
 fi
 
 ### TAR ###
@@ -194,6 +194,23 @@ then
           * ) echo " > Please answer yes or no.";;
       esac
   done
+
+	### NEW RESTORE BACKUP OPTION ###
+	while true; do
+			read -p " > Do you want to run restore script? y/n" yn
+			case $yn in
+					[Yy]* )
+					source $SFOLDER/backupRestoreScript.sh;
+					break;;
+
+					[Nn]* )
+					echo -e "\e[31mAborting restore script...\e[0m";
+					break;;
+
+					* ) echo " > Please answer yes or no.";;
+			esac
+	done
+
 ### Running from cron ###
 else
     $SFOLDER/mysqlBackupScript.sh;
