@@ -8,9 +8,8 @@ SCRIPT_V="1.9"
 
 ### TO EDIT ###
 
-###TODO: Check of other webserver config locations (apache? other s.o?)
-###TODO: Check if you want file back, check if you want databases backups
-###TODO: Check whitelist or blacklist of Files, DBS.
+###TODO: Folder blacklist (phpMyAdmin, .cli, etc)
+###TODO: Database Blacklist.
 
 VPSNAME="$HOSTNAME"               						#Or choose a name
 SFOLDER="/root/backup-scripts"   							#Backup Scripts folder
