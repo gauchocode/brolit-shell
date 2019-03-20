@@ -9,19 +9,19 @@ ERROR=false
 ERROR_TYPE=""
 
 ### Starting Message ###
-echo -e "\e[42m > Starting file backup script...\e[0m"
+echo -e "\e[42m > Starting file backup script...\e[0m" >> $LOG
 
 ### TAR Webserver Config Files ###
 if [ -n "$WSERVER" ]; then
   if $TAR -jcvpf $BAKWP/$NOW/webserver-config-files-$NOW.tar.bz2 $WSERVER
   then
-      echo " > Config Files Backup created..."
-      echo " > Uploading TAR to Dropbox ..."
+      echo " > Config Files Backup created..." >> $LOG
+      echo " > Uploading TAR to Dropbox ..." >> $LOG
       $SFOLDER/dropbox_uploader.sh upload $BAKWP/"$NOW"/webserver-config-files-"$NOW".tar.bz2 $DROPBOX_FOLDER
-      echo " > Trying to delete old backup from Dropbox ..."
+      echo " > Trying to delete old backup from Dropbox ..." >> $LOG
       $SFOLDER/dropbox_uploader.sh remove /webserver-config-files-"$ONEWEEKAGO".tar.bz2
   else
-      echo " > ERROR - No such directory or file"
+      echo " > ERROR - No such directory or file" >> $LOG
       ERROR=true
       ERROR_TYPE="TAR ERROR: No such directory or file $BAKWP/$NOW/webserver-config-files-$NOW.tar.bz2"
   fi
@@ -32,13 +32,13 @@ if [ "$ONE_FILE_BK" = true ] ; then
   if [ -n "$SITES" ]; then
     if $TAR --exclude '.git' --exclude '*.log' -jcvpf $BAKWP/"$NOW"/backup-files_"$NOW".tar.bz2 $SITES; then
         BK_SIZE=$(ls -lah $BAKWP/"$NOW"/backup-files_"$NOW".tar.bz2 | awk '{ print $5}')
-        echo " > Backup created, final size: $BK_SIZE ..."
-        echo " > Uploading TAR to Dropbox ..."
+        echo " > Backup created, final size: $BK_SIZE ..." >> $LOG
+        echo " > Uploading TAR to Dropbox ..." >> $LOG
         $SFOLDER/dropbox_uploader.sh upload $BAKWP/"$NOW"/backup-files_"$NOW".tar.bz2 $DROPBOX_FOLDER
-        echo " > Trying to delete old backup from Dropbox ..."
+        echo " > Trying to delete old backup from Dropbox ..." >> $LOG
         $SFOLDER/dropbox_uploader.sh remove /backup-files_"$ONEWEEKAGO".tar.bz2
     else
-        echo " > ERROR - No such directory or file"
+        echo " > ERROR - No such directory or file" >> $LOG
         ERROR=true
         ERROR_TYPE="TAR ERROR: No such directory or file $BAKWP/$NOW/backup-files_$NOW.tar.bz2"
     fi
@@ -51,17 +51,17 @@ else
         FOLDER_NAME=$(basename $j)
         if $TAR --exclude '.git' --exclude '*.log' -jcvpf $BAKWP/"$NOW"/backup-"$FOLDER_NAME"_files_"$NOW".tar.bz2 $j; then
             BK_SIZE=$(ls -lah $BAKWP/"$NOW"/backup-"$FOLDER_NAME"_files_"$NOW".tar.bz2 | awk '{ print $5}')
-            echo " > Backup created, final size: $BK_SIZE ..."
-            echo " > Uploading TAR to Dropbox ..."
+            echo " > Backup created, final size: $BK_SIZE ..." >> $LOG
+            echo " > Uploading TAR to Dropbox ..." >> $LOG
             $SFOLDER/dropbox_uploader.sh upload $BAKWP/"$NOW"/backup-"$FOLDER_NAME"_files_"$NOW".tar.bz2 $DROPBOX_FOLDER
-            echo " > Trying to delete old backup from Dropbox ..."
+            echo " > Trying to delete old backup from Dropbox ..." >> $LOG
             $SFOLDER/dropbox_uploader.sh remove /backup-"$FOLDER_NAME"_files_"$ONEWEEKAGO".tar.bz2
             if [ "$DEL_UP" = true ] ; then
-              echo " > Deleting backup from server ..."
+              echo " > Deleting backup from server ..." >> $LOG
               rm -r $BAKWP/"$NOW"/backup-"$FOLDER_NAME"_files_"$NOW".tar.bz2
             fi
         else
-            echo " > ERROR - No such directory or file"
+            echo " > ERROR - No such directory or file" >> $LOG
             ERROR=true
             ERROR_TYPE="TAR ERROR: No such directory or file $BAKWP/$NOW/backup-"$FOLDER_NAME"_files_$NOW.tar.bz2"
         fi
@@ -72,7 +72,7 @@ fi
 
 ### File Check ###
 AMOUNT_FILES=`ls -d $BAKWP/"$NOW"/*_files_"$NOW".tar.bz2 | wc -l`
-echo " > Number of backup files found: $AMOUNT_FILES ..."
+echo " > Number of backup files found: $AMOUNT_FILES ..." >> $LOG
 
 ### Deleting old backup files ###
 if [ "$DEL_UP" = true ] ; then
@@ -80,10 +80,10 @@ if [ "$DEL_UP" = true ] ; then
 else
   OLD_BK="$BAKWP/$ONEWEEKAGO/"
   if [ ! -f $OLD_BK ]; then
-    echo " > Old backups not found in server ..."
+    echo " > Old backups not found in server ..." >> $LOG
   else
     ### Remove old backup from server ###
-    echo " > Deleting old backups from server ..."
+    echo " > Deleting old backups from server ..." >> $LOG
     rm -r $BAKWP/$ONEWEEKAGO
   fi
 fi
@@ -103,18 +103,18 @@ if [ "$DUP_BK" = true ] ; then
 			### If no MANIFEST is found, then create a full Backup ###
 			duplicity full -v4 --no-encryption $DUP_SRC_BK$i file://$DUP_ROOT$i
       RETVAL=$?
-			echo " > Full Backup of $i OK, and was stored in $DUP_ROOT$i."
+			echo " > Full Backup of $i OK, and was stored in $DUP_ROOT$i." >> $LOG
 		else
 			### Else, do an incremantal Backup ###
 			duplicity incremental -v4 --no-encryption $DUP_SRC_BK$i file://$DUP_ROOT$i
       RETVAL=$?
-			echo " > Incremental Backup of $i OK, and was stored in $DUP_ROOT$i."
+			echo " > Incremental Backup of $i OK, and was stored in $DUP_ROOT$i." >> $LOG
       # TODO: Purge old backups
       #duplicity remove-older-than 1M --force $DUP_ROOT/$i
 		fi
 	done
-  [ $RETVAL -eq 0 ] && echo "*** DUPLICITY SUCCESS ***"
-  [ $RETVAL -ne 0 ] && echo "*** DUPLICITY ERROR ***"
+  [ $RETVAL -eq 0 ] && echo "*** DUPLICITY SUCCESS ***" >> $LOG
+  [ $RETVAL -ne 0 ] && echo "*** DUPLICITY ERROR ***" >> $LOG
 
 fi
 
@@ -123,7 +123,7 @@ if [ "$ERROR" = true ] ; then
   STATUS_F="ERROR"
   CONTENT="<b>Server IP: $IP</b><br /><b>$BK_TYPE Backup Error: $ERROR_TYPE<br />Please check log file.</b> <br />"
   COLOR='red'
-  echo " > File Backup ERROR: $ERROR_TYPE"
+  echo " > File Backup ERROR: $ERROR_TYPE" >> $LOG
 else
   STATUS_ICON_F="✅"
   STATUS_F="OK"
@@ -132,14 +132,14 @@ else
   SIZE_LABEL="Standard Backup file size: <b>$BK_SIZE</b><br />"
   FILES_LABEL='<b>Backup file includes:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
   FILES_INC=""
-  echo " > Folders included:"
+  echo " > Folders included:" >> $LOG
   for t in $(find $SITES -maxdepth 1 -type d)
   do
       FILES_INC="$FILES_INC $t<br />"
-      echo " > $FILES_INC"
+      echo " > $FILES_INC" >> $LOG
   done
   FILES_LABEL_END='</div>';
-  echo -e "\e[42m > File Backup OK\e[0m"
+  echo -e "\e[42m > File Backup OK\e[0m" >> $LOG
 
   if [ "$DUP_BK" = true ] ; then
     DBK_SIZE=$(du -hs $DUP_ROOT | cut -f1)
