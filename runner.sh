@@ -1,19 +1,23 @@
 #!/bin/bash
 #
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 1.9
+# Script Name: Broobe Utils Scripts
+# Version: 2.0
 #############################################################################
 
-SCRIPT_V="1.9"
+SCRIPT_V="2.0"
 
 ### TO EDIT ###
 
-###TODO: Folder blacklist (phpMyAdmin, .cli, etc)
 ###TODO: Database Blacklist.
 
 VPSNAME="$HOSTNAME"               						#Or choose a name
-SFOLDER="/root/backup-scripts"   							#Backup Scripts folder
+SFOLDER="/root/broobe-utils-scripts"					#Backup Scripts folder
 SITES="/var/www"                 							#Where sites are stored
+
+###TODO: Folder blacklist
+SITES_BL=".cli,phpMyAdmin"										#Folder blacklist
+
 WSERVER="/etc/nginx"               						#Webserver config files
 BAKWP="$SFOLDER/tmp"              						#Temp folder to store Backups
 DROPBOX_FOLDER="/"														#Dropbox Folder Backup
@@ -44,22 +48,52 @@ SMTP_TLS="yes"																#TLS: yes or no
 SMTP_U="no-reply@send.broobe.com"							#SMTP User
 SMTP_P=""																			#SMTP Password
 
-### Backup rotation ###
+### Backup rotation vars ###
 NOW=$(date +"%Y-%m-%d")
 NOWDISPLAY=$(date +"%d-%m-%Y")
 ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
 
+### Colors ###
+YELLOW="\033[1;33m";
+RED="\033[0;31m";
+ENDCOLOR="\033[0m"
+
+### Check if user is root ###
+if [ $USER != root ]; then
+  echo -e $RED"Error: must be root! Exiting..."$ENDCOLOR
+  exit 0
+fi
+
+### Log Start ###
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+PATH_LOG="$SFOLDER/logs"
+if [ ! -d "$SFOLDER/logs" ]
+then
+    echo " > Folder $SFOLDER/logs doesn't exist. Creating now ..."
+    mkdir $SFOLDER/logs
+    echo " > Folder $SFOLDER/logs created ..."
+fi
+
+LOG_NAME=log_back_$TIMESTAMP.log
+LOG=$PATH_LOG/$LOG_NAME
+
+find $path -name "*.log"  -type f -mtime +7 -print -delete >> $LOG
+echo "Backup:: Script Start -- $(date +%Y%m%d_%H%M)" >> $LOG
+
+START_TIME=$(date +%s)
+
 ### Disk Usage ###
 DISK_U=$( df -h | grep "$MAIN_VOL" | awk {'print $5'} )
-echo " > Disk usage: $DISK_U ..."
+echo " > Disk usage: $DISK_U ..." >> $LOG
 
-### chmod
+### chmod ###
 chmod +x $SFOLDER/dropbox_uploader.sh
 chmod +x $SFOLDER/mysqlBackupScript.sh
 chmod +x $SFOLDER/filesBackupScript.sh
+chmod +x $SFOLDER/optimizationsScript.sh
 
 ### Update package definitions ###
-echo " > Running apt update..."
+echo " > Running apt update..." >> $LOG
 apt update
 
 ### Check if sendemail is installed ###
@@ -91,20 +125,20 @@ for pk in ${PACKAGES[@]}; do
 done
 
 ### EXPORT VARS ###
-export SCRIPT_V VPSNAME BAKWP SFOLDER SITES WSERVER DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U DEL_UP ONE_FILE_BK IP SMTP_SERVER SMTP_TLS SMTP_U SMTP_P
+export SCRIPT_V VPSNAME BAKWP SFOLDER SITES SITES_BL WSERVER DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U DEL_UP ONE_FILE_BK IP SMTP_SERVER SMTP_TLS SMTP_U SMTP_P LOG
 
 ### Creating temporary folders ###
 if [ ! -d "$BAKWP" ]
 then
-    echo " > Folder $BAKWP doesn't exist. Creating now ..."
+    echo " > Folder $BAKWP doesn't exist. Creating now ..." >> $LOG
     mkdir $BAKWP
-    echo " > Folder $BAKWP created ..."
+    echo " > Folder $BAKWP created ..." >> $LOG
 fi
 if [ ! -d "$BAKWP/$NOW" ]
 then
-    echo " > Folder $BAKWP/$NOW doesn't exist. Creating now ..."
+    echo " > Folder $BAKWP/$NOW doesn't exist. Creating now ..." >> $LOG
     mkdir $BAKWP/$NOW
-    echo " > Folder $BAKWP/$NOW created ..."
+    echo " > Folder $BAKWP/$NOW created ..." >> $LOG
 fi
 
 ### Configure Server Mail Part ###
@@ -210,10 +244,27 @@ then
 			esac
 	done
 
+	### NEW OPTIMIZATION OPTION ###
+	while true; do
+			read -p " > Do you want to run the optimization script? y/n" yn
+			case $yn in
+					[Yy]* )
+					source $SFOLDER/optimizationsScript.sh;
+					break;;
+
+					[Nn]* )
+					echo -e "\e[31mAborting optimization script...\e[0m";
+					break;;
+
+					* ) echo " > Please answer yes or no.";;
+			esac
+	done
+
 ### Running from cron ###
 else
     $SFOLDER/mysqlBackupScript.sh;
     $SFOLDER/filesBackupScript.sh;
+		$SFOLDER/optimizationsScript.sh;
 
 		DB_MAIL="$BAKWP/db-bk-$NOW.mail"
 		DB_MAIL_VAR=$(<$DB_MAIL)
@@ -243,3 +294,10 @@ fi
 echo " > Removing temp files..."
 rm $PKG_MAIL $DB_MAIL $FILE_MAIL
 echo -e "\e[42m > DONE \e[0m"
+
+### Log End ###
+END_TIME=$(date +%s)
+ELAPSED_TIME=$(expr $END_TIME - $START_TIME)
+
+echo "Backup :: Script End -- $(date +%Y%m%d_%H%M)" >> $LOG
+echo "Elapsed Time ::  $(date -d 00:00:$ELAPSED_TIME +%Hh:%Mm:%Ss) "  >> $LOG
