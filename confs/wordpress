@@ -1,0 +1,20 @@
+server {
+        listen 80;
+        server_name dominio.com www.dominio.com;
+        root /var/www/dominio.com;
+        index index.php index.html index.htm;
+
+    		#access_log /var/log/nginx/dominio.com.access.log;
+        error_log /var/log/nginx/dominio.com.error.log;
+        location / {
+                try_files $uri $uri/ /index.php?q=$uri&$args;
+                include /var/www/dominio.com/nginx.conf;
+        }
+        location ~ \.php$ {
+                include snippets/fastcgi-php.conf;
+                fastcgi_pass unix:/run/php/php7.2-fpm.sock;
+        }
+        location ~ /\.(ht|svn|git) {
+                deny all;
+        }
+}
