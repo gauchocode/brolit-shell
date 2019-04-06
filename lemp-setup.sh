@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: broobe. web + mobile development - https://example.com
-# Version: 1.1
+# Version: 2.1
 #############################################################################
 
 #conf vars
