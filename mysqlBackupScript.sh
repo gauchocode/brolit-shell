@@ -1,12 +1,13 @@
 #! /bin/bash
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 1.9
+# Version: 2.1
 #############################################################################
 
 ### VARS ###
 BK_TYPE="Database"
 ERROR=false
 ERROR_TYPE=""
+DBS_F="databases"
 
 ### Helpers ###
 count_dabases (){
@@ -65,15 +66,19 @@ do
       $TAR -jcvpf $BAKWP/"$NOW"/db-${DATABASE}_"$NOW".tar.bz2 $FILE
       BK_SIZE[$COUNT]=$(ls -lah db-${DATABASE}_"$NOW".tar.bz2 | awk '{ print $5}')
       echo " > Backup created, final size: $BK_SIZE[$COUNT] ..." >> $LOG
+      ### Creating Dropbox Folder ###
+      echo " > Creating Dropbox Databases Folder ..." >> $LOG
+      $SFOLDER/dropbox_uploader.sh mkdir $DBS_F
+      $SFOLDER/dropbox_uploader.sh mkdir $DBS_F/${DATABASE}
       ### Upload to Dropbox ###
       echo " > Uploading new database backup [db-${DATABASE}_"$NOW"] ..." >> $LOG
-      $SFOLDER/dropbox_uploader.sh upload db-${DATABASE}_"$NOW".tar.bz2 $DROPBOX_FOLDER
+      $SFOLDER/dropbox_uploader.sh upload db-${DATABASE}_"$NOW".tar.bz2 $DROPBOX_FOLDER/${DBS_F}/${DATABASE}
       ### Delete old backups ###
       echo " > Trying to delete old database backup [db-$DATABASE_$ONEWEEKAGO.tar.bz2] ..." >> $LOG
       if [ "$DROPBOX_FOLDER" != "/" ] ; then
-        $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/db-$DATABASE_"$ONEWEEKAGO".tar.bz2
+        $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/$DBS_F/${DATABASE}/db-$DATABASE_"$ONEWEEKAGO".tar.bz2
       else
-        $SFOLDER/dropbox_uploader.sh remove /db-$DATABASE_"$ONEWEEKAGO".tar.bz2
+        $SFOLDER/dropbox_uploader.sh remove /$DBS_F/${DATABASE}/db-$DATABASE_"$ONEWEEKAGO".tar.bz2
       fi
       if [ "$DEL_UP" = true ] ; then
         echo " > Deleting backup from server ..." >> $LOG

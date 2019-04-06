@@ -2,10 +2,10 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.0
+# Version: 2.1
 #############################################################################
 
-SCRIPT_V="2.0"
+SCRIPT_V="2.1"
 
 ### TO EDIT ###
 
@@ -15,10 +15,11 @@ VPSNAME="$HOSTNAME"               						#Or choose a name
 SFOLDER="/root/broobe-utils-scripts"					#Backup Scripts folder
 SITES="/var/www"                 							#Where sites are stored
 
-###TODO: Folder blacklist
-SITES_BL=".cli,phpMyAdmin"										#Folder blacklist
+SITES_BL=".wp-cli,phpmyadmin"									#Folder blacklist
 
-WSERVER="/etc/nginx"               						#Webserver config files
+WSERVER="/etc/nginx"               						#Webserver config files location
+MySQL_CF="/etc/mysql"                         #MySQL config files location
+PHP_CF="/etc/php/7.2/fpm"                     #PHP config files location
 BAKWP="$SFOLDER/tmp"              						#Temp folder to store Backups
 DROPBOX_FOLDER="/"														#Dropbox Folder Backup
 MAIN_VOL="/dev/sda1"													#Main partition
@@ -125,7 +126,7 @@ for pk in ${PACKAGES[@]}; do
 done
 
 ### EXPORT VARS ###
-export SCRIPT_V VPSNAME BAKWP SFOLDER SITES SITES_BL WSERVER DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U DEL_UP ONE_FILE_BK IP SMTP_SERVER SMTP_TLS SMTP_U SMTP_P LOG
+export SCRIPT_V VPSNAME BAKWP SFOLDER SITES SITES_BL WSERVER PHP_CF MySQL_CF DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U DEL_UP ONE_FILE_BK IP SMTP_SERVER SMTP_TLS SMTP_U SMTP_P LOG
 
 ### Creating temporary folders ###
 if [ ! -d "$BAKWP" ]
