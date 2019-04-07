@@ -4,32 +4,45 @@
 # Script Name: Broobe Utils Scripts
 # Version: 2.1
 #############################################################################
-BK_F_URL="http://wildbrain.net/backup-wildbrain.zip"
-BK_F_FILE="backup-wildbrain.zip"
-BK_F_EXT="zip"
-BK_DB_URL="http://wildbrain.net/wbrain_site.sql.gz"
-BK_DB_FILE="wbrain_site.sql.gz"
+
+### File Backup details ###
+BK_F_URL=""
+BK_F_FILE=""
+BK_F_EXT=""
+
+### Database Backup details ###
+BK_DB_URL=""
+BK_DB_FILE=""
 BK_F_EXT="gz"
-PROJECT_NAME="wildbrain"
-PROJECT_DOM="wildbrain.net"
-SFOLDER="/root/broobe-utils-scripts"					         #Backup Scripts folder
 
-function generatePassword(){
-    echo "$(openssl rand -base64 12)"
-}
+### Project details ###
+PROJECT_NAME=""
+PROJECT_DOM=""
+MySQL_ROOT_PASS=""          										        #MySQL root User Pass
+SFOLDER="/root/broobe-utils-scripts"					          #Backup Scripts folder
 
-$DB_PASS= $(generatePassword)
+### SENDEMAIL CONFIG ###
+###TODO: make MAILA work on "sendEmail" command.
+MAILA="servidores@broobe.com"     						          #Notification Email
+SMTP_SERVER="mx.bmailing.com.ar:587"				            #SMTP Server and Port
+SMTP_TLS="yes"															            #TLS: yes or no
+SMTP_U="no-reply@send.broobe.com"						            #SMTP User
+SMTP_P=""																		            #SMTP Password
+
+VPSNAME="$HOSTNAME"               					            #Or choose a name
+
+DB_PASS=$(openssl rand -base64 10)
 
 ### Log Start ###
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-PATH_LOG="$SFOLDER/logs"
-if [ ! -d "$SFOLDER/logs" ]
+PATH_LOG="${SFOLDER}/logs"
+if [ ! -d "${SFOLDER}/logs" ]
 then
-    echo " > Folder $SFOLDER/logs doesn't exist. Creating now ..."
-    mkdir $SFOLDER/logs
-    echo " > Folder $SFOLDER/logs created ..."
+    echo " > Folder ${SFOLDER}/logs doesn't exist. Creating now ..."
+    mkdir ${SFOLDER}/logs
+    echo " > Folder ${SFOLDER}/logs created ..."
 fi
-LOG_NAME= log_server_migration_$TIMESTAMP.log
+LOG_NAME="log_server_migration_${TIMESTAMP}.log"
 LOG=$PATH_LOG/$LOG_NAME
 
 echo "Backup:: Script Start -- $(date +%Y%m%d_%H%M)" >> $LOG
@@ -41,39 +54,71 @@ cd tmp >> $LOG
 wget $BK_F_URL >> $LOG
 
 #si BK_EXT es un zip
-unzip $BK_F_FILE >> $LOG
+echo "uncompressing backup files" >> $LOG
+unzip $BK_F_FILE
 #si BK_EXT es un tar.bz2
+
+rm $BK_F_FILE >> $LOG
 cd .. >> $LOG
-mv tmp $PROJECT_NAME >> $LOG
-chown -R www-data:www-data $PROJECT_NAME >> $LOG
+mv tmp $PROJECT_DOM >> $LOG
+chown -R www-data:www-data $PROJECT_DOM >> $LOG
 
 ### Download Database Backup
 wget $BK_DB_URL >> $LOG
-gunzip $BK_DB_FILE >> $LOG
 
 ### Vamos a crear el usuario y la base siguiendo el nuevo estandard de broobe
 SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_prod;"
 SQL2="CREATE USER '${PROJECT_NAME}_user'@'localhost' IDENTIFIED BY '${DB_PASS}';"
-SQL3="GRANT ALL PRIVILEGES ON playnet_prod . * TO '${PROJECT_NAME}_user'@'localhost';"
+SQL3="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_prod . * TO '${PROJECT_NAME}_user'@'localhost';"
 SQL4="FLUSH PRIVILEGES;"
 
-$BIN_MYSQL -h $DB_HOST -u root -p${rootPassword} -e "${SQL1}${SQL2}${SQL3}${SQL4}" >> $LOG
-$BIN_MYSQL -h $DB_HOST -u root -p${rootPassword}  ${PROJECT_NAME}_prod < $BK_DB_FILE >> $LOG
+echo "Creating database, and user ..." >> $LOG
+mysql -u root -p${MySQL_ROOT_PASS} -e "${SQL1}${SQL2}${SQL3}${SQL4}" >> $LOG
+
+echo "Importing dump file into database ..." >> $LOG
+gunzip < $BK_DB_FILE | mysql -u root -p${MySQL_ROOT_PASS} ${PROJECT_NAME}_prod
 
 #change wp-config.php database parameters
-sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" wp-config.php >> $LOG
-sed -i "/DB_NAME/s/'[^']*'/'${PROJECT_NAME}_prod'/2" wp-config.php >> $LOG
-sed -i "/DB_USER/s/'[^']*'/'${PROJECT_NAME}_user'/2" wp-config.php >> $LOG
-sed -i "/DB_PASSWORD/s/'[^']*'/'DB_PASS'/2" wp-config.php >> $LOG
+echo "Changing wp-config.php database parameters ..." >> $LOG
+sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" ${PROJECT_DOM}/wp-config.php >> $LOG
+sed -i "/DB_NAME/s/'[^']*'/'${PROJECT_NAME}_prod'/2" ${PROJECT_DOM}/wp-config.php >> $LOG
+sed -i "/DB_USER/s/'[^']*'/'${PROJECT_NAME}_user'/2" ${PROJECT_DOM}/wp-config.php >> $LOG
+sed -i "/DB_PASSWORD/s/'[^']*'/'${DB_PASS}'/2" ${PROJECT_DOM}/wp-config.php >> $LOG
+
+#rm $BK_DB_FILE
 
 #create nginx config files for site
-#ln -s /etc/nginx/sites-available/${PROJECT_DOM} /etc/nginx/sites-enabled/${PROJECT_DOM}
-#service nginx reload >> $LOG
+echo -e "\nCreating nginx configuration file...\n" >>$LOG
+sudo cp ${SFOLDER}/confs/default /etc/nginx/sites-available/${PROJECT_DOM}
+ln -s /etc/nginx/sites-available/${PROJECT_DOM} /etc/nginx/sites-enabled/${PROJECT_DOM}
 
+#replacing string to match domain name
+#sudo replace "domain.com" "$DOMAIN" -- /etc/nginx/sites-available/default
+sudo sed -i "s#dominio.com#${PROJECT_DOM}#" /etc/nginx/sites-available/${PROJECT_DOM}
+#es necesario correrlo dos veces para reemplazarlo dos veces en una misma linea
+sudo sed -i "s#dominio.com#${PROJECT_DOM}#" /etc/nginx/sites-available/${PROJECT_DOM}
+
+#reload webserver
+service nginx reload
+
+### Get server IPs ###
+DIG="$(which dig)"
+if [ ! -x "${DIG}" ]; then
+	apt-get install dnsutils
+fi
+IP=`dig +short myip.opendns.com @resolver1.opendns.com	` 2> /dev/null
 
 ### Log End ###
 END_TIME=$(date +%s)
 ELAPSED_TIME=$(expr $END_TIME - $START_TIME)
 
 echo "Backup :: Script End -- $(date +%Y%m%d_%H%M)" >> $LOG
-echo "Elapsed Time ::  $(date -d 00:00:$ELAPSED_TIME +%Hh:%Mm:%Ss) "  >> $LOG
+echo "Elapsed Time ::  $(date -d 00:00:${ELAPSED_TIME} +%Hh:%Mm:%Ss) "  >> $LOG
+
+HTMLOPEN='<html><body>'
+BODY_SRV_MIG='Migración finalizada en '${ELAPSED_TIME}'<br/>'
+BODY_DB='Database: '${PROJECT_NAME}'_prod <br/>Database User: '${PROJECT_NAME}'_user <br/>Database User Pass: '${DB_PASS}'<br/>'
+BODY_CLF='Ya podes cambiar la IP en CloudFlare: '${IP}'<br/>'
+HTMLCLOSE='</body></html>'
+
+sendEmail -f $SMTP_U -t "${MAILA}" -u "$VPSNAME - Migration Complete: ${PROJECT_NAME}" -o message-content-type=html -m "$HTMLOPEN $BODY_SRV_MIG $BODY_DB $BODY_CLF $HTMLCLOSE" -s $SMTP_SERVER -o tls=$SMTP_TLS -xu $SMTP_U -xp $SMTP_P;
