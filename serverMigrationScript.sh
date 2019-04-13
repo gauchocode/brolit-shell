@@ -22,7 +22,6 @@ MySQL_ROOT_PASS=""          										        #MySQL root User Pass
 SFOLDER="/root/broobe-utils-scripts"					          #Backup Scripts folder
 
 ### SENDEMAIL CONFIG ###
-###TODO: make MAILA work on "sendEmail" command.
 MAILA="servidores@broobe.com"     						          #Notification Email
 SMTP_SERVER="mx.bmailing.com.ar:587"				            #SMTP Server and Port
 SMTP_TLS="yes"															            #TLS: yes or no
@@ -121,4 +120,4 @@ BODY_DB='Database: '${PROJECT_NAME}'_prod <br/>Database User: '${PROJECT_NAME}'_
 BODY_CLF='Ya podes cambiar la IP en CloudFlare: '${IP}'<br/>'
 HTMLCLOSE='</body></html>'
 
-sendEmail -f $SMTP_U -t "${MAILA}" -u "$VPSNAME - Migration Complete: ${PROJECT_NAME}" -o message-content-type=html -m "$HTMLOPEN $BODY_SRV_MIG $BODY_DB $BODY_CLF $HTMLCLOSE" -s $SMTP_SERVER -o tls=$SMTP_TLS -xu $SMTP_U -xp $SMTP_P;
+sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${VPSNAME} - Migration Complete: ${PROJECT_NAME}" -o message-content-type=html -m "$HTMLOPEN $BODY_SRV_MIG $BODY_DB $BODY_CLF $HTMLCLOSE" -s ${SMTP_SERVER} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P};

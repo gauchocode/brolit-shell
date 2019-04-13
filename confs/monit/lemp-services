@@ -1,0 +1,14 @@
+check process nginx with pidfile /var/run/nginx.pid
+    group www-data
+    start program = "/etc/init.d/nginx start"
+    stop program = "/etc/init.d/nginx stop"
+
+check process mysql with pidfile /var/run/mysqld/mysqld.pid
+    start program = "/etc/init.d/mysql start"
+    stop program = "/etc/init.d/mysql stop"
+    if failed unixsocket /var/run/mysqld/mysqld.sock then restart
+    if 5 restarts within 5 cycles then timeout
+
+check process php7.2-fpm with pidfile /var/run/php/php7.2-fpm.pid
+    start program = "/etc/init.d/php7.2-fpm start"
+    stop program = "/etc/init.d/php7.2-fpm stop"
