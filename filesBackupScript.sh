@@ -71,9 +71,9 @@ if [ "$ONE_FILE_BK" = true ] ; then
         BK_SIZE=$(ls -lah $BAKWP/${NOW}/backup-files_${NOW}.tar.bz2 | awk '{ print $5}')
         echo " > Backup created, final size: $BK_SIZE ..." >> $LOG
         echo " > Uploading TAR to Dropbox ..." >> $LOG
-        $SFOLDER/dropbox_uploader.sh upload $BAKWP/${NOW}/backup-files_${NOW}.tar.bz2 $DROPBOX_FOLDER
+        $SFOLDER/dropbox_uploader.sh upload $BAKWP/${NOW}/backup-files_${NOW}.tar.bz2 $DROPBOX_FOLDER/${SITES_F}
         echo " > Trying to delete old backup from Dropbox ..." >> $LOG
-        $SFOLDER/dropbox_uploader.sh remove /backup-files_${ONEWEEKAGO}.tar.bz2
+        $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/${SITES_F}/backup-files_${ONEWEEKAGO}.tar.bz2
     else
         ERROR=true
         ERROR_TYPE="ERROR: No such directory or file $BAKWP/$NOW/backup-files_$NOW.tar.bz2"
@@ -88,9 +88,9 @@ else
         FOLDER_NAME=$(basename $j)
         if [[ $SITES_BL != *"$FOLDER_NAME"* ]]; then
           echo " > Making TAR from: $FOLDER_NAME ..." >> $LOG
-          TAR_FILE=$($TAR --exclude '.git' --exclude '*.log' -jcpf $BAKWP/"$NOW"/backup-"$FOLDER_NAME"_files_"$NOW".tar.bz2 $j >> $LOG)
+          TAR_FILE=$($TAR --exclude '.git' --exclude '*.log' -jcpf $BAKWP/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 $j >> $LOG)
           if $TAR_FILE; then
-              BK_SIZE=$(ls -lah $BAKWP/"$NOW"/backup-"$FOLDER_NAME"_files_"$NOW".tar.bz2 | awk '{ print $5}')
+              BK_SIZE=$(ls -lah $BAKWP/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 | awk '{ print $5}')
               echo " > Backup created, final size: $BK_SIZE ..." >> $LOG
 
               echo " > Creating Dropbox Folder $FOLDER_NAME ..." >> $LOG

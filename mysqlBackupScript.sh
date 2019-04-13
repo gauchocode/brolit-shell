@@ -48,7 +48,7 @@ do
       [ "${DATABASE}" != "mysql" ] &&
       [ "${DATABASE}" != "sys" ]; then
     ### Create zip for each database ###
-    FILE=$BAKWP/"$NOW"/db-${DATABASE}_"$NOW".sql
+    FILE=$BAKWP/${NOW}/db-${DATABASE}_${NOW}.sql
     ### Create dump file###
     echo " > Creating new database backup in [$FILE] ..." >> $LOG
     $MYSQLDUMP --max-allowed-packet=1073741824  -u $MUSER -h $MHOST -p$MPASS $DATABASE > $FILE
@@ -63,26 +63,26 @@ do
     if [ "$ONE_FILE_BK" = false ] ; then
       cd $BAKWP/$NOW
       echo " > Making a tar.bz2 file of [$FILE]..." >> $LOG
-      $TAR -jcvpf $BAKWP/"$NOW"/db-${DATABASE}_"$NOW".tar.bz2 $FILE
-      BK_SIZE[$COUNT]=$(ls -lah db-${DATABASE}_"$NOW".tar.bz2 | awk '{ print $5}')
+      $TAR -jcvpf $BAKWP/${NOW}/db-${DATABASE}_${NOW}.tar.bz2 $FILE
+      BK_SIZE[$COUNT]=$(ls -lah db-${DATABASE}_${NOW}.tar.bz2 | awk '{ print $5}')
       echo " > Backup created, final size: $BK_SIZE[$COUNT] ..." >> $LOG
       ### Creating Dropbox Folder ###
       echo " > Creating Dropbox Databases Folder ..." >> $LOG
       $SFOLDER/dropbox_uploader.sh mkdir $DBS_F
       $SFOLDER/dropbox_uploader.sh mkdir $DBS_F/${DATABASE}
       ### Upload to Dropbox ###
-      echo " > Uploading new database backup [db-${DATABASE}_"$NOW"] ..." >> $LOG
-      $SFOLDER/dropbox_uploader.sh upload db-${DATABASE}_"$NOW".tar.bz2 $DROPBOX_FOLDER/${DBS_F}/${DATABASE}
+      echo " > Uploading new database backup [db-${DATABASE}_${NOW}] ..." >> $LOG
+      $SFOLDER/dropbox_uploader.sh upload db-${DATABASE}_${NOW}.tar.bz2 $DROPBOX_FOLDER/${DBS_F}/${DATABASE}
       ### Delete old backups ###
       echo " > Trying to delete old database backup [db-$DATABASE_$ONEWEEKAGO.tar.bz2] ..." >> $LOG
       if [ "$DROPBOX_FOLDER" != "/" ] ; then
-        $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/$DBS_F/${DATABASE}/db-$DATABASE_"$ONEWEEKAGO".tar.bz2
+        $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/${DBS_F}/${DATABASE}/db-${DATABASE}_${ONEWEEKAGO}.tar.bz2
       else
-        $SFOLDER/dropbox_uploader.sh remove /$DBS_F/${DATABASE}/db-$DATABASE_"$ONEWEEKAGO".tar.bz2
+        $SFOLDER/dropbox_uploader.sh remove /${DBS_F}/${DATABASE}/db-${DATABASE}_${ONEWEEKAGO}.tar.bz2
       fi
       if [ "$DEL_UP" = true ] ; then
         echo " > Deleting backup from server ..." >> $LOG
-        rm -r $BAKWP/"$NOW"/db-${DATABASE}_"$NOW".tar.bz2
+        rm -r $BAKWP/${NOW}/db-${DATABASE}_${NOW}.tar.bz2
       fi
     fi
     ### Count and echo ###
@@ -96,18 +96,18 @@ done
 if [ "$ONE_FILE_BK" = true ] ; then
   cd $BAKWP/$NOW
   echo " > Making a tar.bz2 file with all databases ..." >> $LOG
-  $TAR -jcvpf databases_$NOW.tar.bz2 $BAKWP/"$NOW"/*.sql
-  BK_SIZE[0]=$(ls -lah databases-$NOW.tar.bz2 | awk '{ print $5}')
+  $TAR -jcvpf databases_${NOW}.tar.bz2 $BAKWP/${NOW}/*.sql
+  BK_SIZE[0]=$(ls -lah databases-${NOW}.tar.bz2 | awk '{ print $5}')
   echo " > Backup created, final size: $BK_SIZE ..." >> $LOG
   ### Upload new backups ###
   echo " > Uploading all databases on tar.bz2 file ..." >> $LOG
-  $SFOLDER/dropbox_uploader.sh upload databases_$NOW.tar.bz2 $DROPBOX_FOLDER
+  $SFOLDER/dropbox_uploader.sh upload databases_${NOW}.tar.bz2 $DROPBOX_FOLDER
   ### Remove old backups ###
-  echo " > Trying to delete old [databases_$ONEWEEKAGO.tar.bz2] from Dropbox..." >> $LOG
+  echo " > Trying to delete old [databases_${ONEWEEKAGO}.tar.bz2] from Dropbox..." >> $LOG
   if [ "$DROPBOX_FOLDER" != "/" ] ; then
-    $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/databases_"$ONEWEEKAGO".tar.bz2
+    $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/databases_${ONEWEEKAGO}.tar.bz2
   else
-    $SFOLDER/dropbox_uploader.sh remove /databases_"$ONEWEEKAGO".tar.bz2
+    $SFOLDER/dropbox_uploader.sh remove /databases_${ONEWEEKAGO}.tar.bz2
   fi
 fi
 
@@ -117,12 +117,12 @@ BACKUPEDLIST=`ls -1R $BAKWP/$NOW |  grep -i .*$NOW.sql`
 
 ### Remove server backups ###
 echo " > Deleting all .sql files ..." >> $LOG
-rm -r $BAKWP/"$NOW"/*.sql
+rm -r $BAKWP/${NOW}/*.sql
 if [ "$DEL_UP" = true ] ; then
   echo " > Deleting all backup files from server ..." >> $LOG
-  rm -r $BAKWP/"$NOW"/databases_"$NOW".tar.bz2
+  rm -r $BAKWP/${NOW}/databases_${NOW}.tar.bz2
 else
-  OLD_BK_DBS=$BAKWP/"$ONEWEEKAGO"/databases_"$ONEWEEKAGO".tar.bz2
+  OLD_BK_DBS=$BAKWP/${ONEWEEKAGO}/databases_${ONEWEEKAGO}.tar.bz2
   if [ ! -f $OLD_BK_DBS ]; then
     echo " > Old backups not found in server ..." >> $LOG
   else

@@ -42,7 +42,6 @@ MUSER=""              												#MySQL User
 MPASS=""          														#MySQL User Pass
 
 ### SENDEMAIL CONFIG ###
-###TODO: make MAILA work on "sendEmail" command.
 MAILA="servidores@broobe.com"     						#Notification Email
 SMTP_SERVER="mx.bmailing.com.ar:587"					#SMTP Server and Port
 SMTP_TLS="yes"																#TLS: yes or no
@@ -288,7 +287,7 @@ else
 				STATUS_ICON="✅"
 			fi
 		fi
-		sendEmail -f $SMTP_U -t "servidores@broobe.com" -u "$STATUS_ICON $VPSNAME - Complete Backup - [$NOWDISPLAY]" -o message-content-type=html -m "$HTMLOPEN $BODY_SRV $BODY_PKG $DB_MAIL_VAR $FILE_MAIL_VAR $HTMLCLOSE" -s $SMTP_SERVER -o tls=$SMTP_TLS -xu $SMTP_U -xp $SMTP_P;
+    sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${STATUS_ICON} ${VPSNAME} - Complete Backup - [${NOWDISPLAY}]" -o message-content-type=html -m "$HTMLOPEN $BODY_SRV $BODY_PKG $DB_MAIL_VAR $FILE_MAIL_VAR $HTMLCLOSE" -s ${SMTP_SERVER} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P};
 
 fi
 
@@ -298,7 +297,7 @@ echo -e "\e[42m > DONE \e[0m"
 
 ### Log End ###
 END_TIME=$(date +%s)
-ELAPSED_TIME=$(expr $END_TIME - $START_TIME)
+ELAPSED_TIME=$(expr ${END_TIME} - ${START_TIME})
 
 echo "Backup :: Script End -- $(date +%Y%m%d_%H%M)" >> $LOG
-echo "Elapsed Time ::  $(date -d 00:00:$ELAPSED_TIME +%Hh:%Mm:%Ss) "  >> $LOG
+echo "Elapsed Time ::  $(date -d 00:00:${ELAPSED_TIME} +%Hh:%Mm:%Ss) "  >> $LOG
