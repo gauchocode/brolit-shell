@@ -7,10 +7,9 @@
 #conf vars
 SERVER_MODEL=""                               #Options: cx11, cx21, cx31
 DOMAIN="DOMAIN_NAME"
+MySQL_ROOT_PASS=""          									#MySQL root User Pass
 COMPOSER="false"
 WP="false"
-#MUSER=""              												#MySQL User
-#MPASS=""          														#MySQL User Pass
 
 ### Log Start ###
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
@@ -31,15 +30,15 @@ export DOMAIN LOG
 #updating packages
 echo -e "\nUpdating package lists..\n" >>$LOG
 
-sudo apt --yes install software-properties-common
-sudo add-apt-repository ppa:certbot/certbot
-sudo apt --yes update
-sudo apt --yes dist-upgrade
+apt --yes install software-properties-common
+add-apt-repository ppa:certbot/certbot
+apt --yes update
+apt --yes dist-upgrade
 
-sudo apt --yes install nginx mysql-server php7.2-fpm php7.2-mysql php-xml php7.2-curl php7.2-mbstring php7.2-gd php-imagick php7.2-zip php7.2-bz2 php-bcmath php7.2-soap php7.2-dev php-pear zip clamav ncdu jpegoptim optipng python-certbot-nginx
+apt --yes install nginx mysql-server php7.2-fpm php7.2-mysql php-xml php7.2-curl php7.2-mbstring php7.2-gd php-imagick php7.2-zip php7.2-bz2 php-bcmath php7.2-soap php7.2-dev php-pear zip clamav ncdu jpegoptim optipng python-certbot-nginx monit
 
 configure timezone
-sudo dpkg-reconfigure tzdata
+dpkg-reconfigure tzdata
 
 #secure mysql installation
 sudo mysql_secure_installation
@@ -63,10 +62,10 @@ echo -e "\nMoving nginx configuration files...\n" >>$LOG
 #empty default site configuration
 echo " " >> /etc/nginx/sites-available/default
 #netdata proxy configuration
-sudo cp confs/monitor /etc/nginx/sites-available
+cp confs/monitor /etc/nginx/sites-available
 
 #new site configuration
-sudo cp confs/default /etc/nginx/sites-available/$DOMAIN
+cp confs/default /etc/nginx/sites-available/$DOMAIN
 ln -s /etc/nginx/sites-available/$DOMAIN /etc/nginx/sites-enabled/$DOMAIN
 
 if [ "$WP" = true ] ; then
@@ -91,35 +90,44 @@ fi
 
 #replacing string to match domain name
 #sudo replace "domain.com" "$DOMAIN" -- /etc/nginx/sites-available/default
-sudo sed -i "s#dominio.com#$DOMAIN#" /etc/nginx/sites-available/default
+sed -i "s#dominio.com#$DOMAIN#" /etc/nginx/sites-available/default
 #es necesario correrlo dos veces para reemplazarlo dos veces en una misma linea
-sudo sed -i "s#dominio.com#$DOMAIN#" /etc/nginx/sites-available/default
+sed -i "s#dominio.com#$DOMAIN#" /etc/nginx/sites-available/default
 
-sudo sed -i "s#dominio.com#$DOMAIN#" /etc/nginx/sites-available/monitor
+sed -i "s#dominio.com#$DOMAIN#" /etc/nginx/sites-available/monitor
 #sudo sed -i "s#dominio.com#$DOMAIN#" /etc/nginx/sites-available/phpmyadmin
 
 ln -s /etc/nginx/sites-available/monitor /etc/nginx/sites-enabled/monitor
 #ln -s /etc/nginx/sites-available/phpmyadmin /etc/nginx/sites-enabled/phpmyadmin
 
-echo -e "\nRestarting services...\n"
-sudo systemctl restart php7.2-fpm
-sudo systemctl restart nginx.service
+#configure monit
+cp confs/monit/lemp-services /etc/monit/conf.d/lemp-services
+rm /etc/monit/monitrc
+cp confs/monit/monitrc /etc/monit/monitrc
 
-#TODO: ya dejar configurada las extensiones de mysql y nginx
+echo -e "\nRestarting services...\n"
+systemctl restart php7.2-fpm
+systemctl restart nginx.service
+service monit restart
+
+#TODO: ya dejar configurada las extensiones
 echo -e "\nInstalling Netdata...\n"
-sudo apt --yes install zlib1g-dev uuid-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python-mysqldb
+apt --yes install zlib1g-dev uuid-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python-mysqldb
 git clone https://github.com/firehol/netdata.git --depth=1
 cd netdata && ./netdata-installer.sh --dont-wait
 killall netdata && cp system/netdata.service /etc/systemd/system/
 
-cat confs/netdata/mysql.conf > /usr/lib/netdata/conf.d/python.d/mysql.conf
-#TODO: Falta hacer esto:
+#TODO: Agregar otras confs y la config de las notificaciones
 #
-#mysql -u $MUSER -p $MPASS
-#MariaDB [(none)]> CREATE USER 'netdata'@'localhost';
-#MariaDB [(none)]> GRANT USAGE on *.* to 'netdata'@'localhost';
-#MariaDB [(none)]> FLUSH PRIVILEGES;
-#MariaDB [(none)]> exit
+cat confs/netdata/python.d/mysql.conf > /usr/lib/netdata/conf.d/python.d/mysql.conf
+cat confs/netdata/python.d/monit.conf > /usr/lib/netdata/conf.d/python.d/monit.conf
+
+SQL1="CREATE USER 'netdata'@'localhost';"
+SQL2="GRANT USAGE on *.* to 'netdata'@'localhost';"
+SQL3="FLUSH PRIVILEGES;"
+
+echo "Creating netdata user ..." >> $LOG
+mysql -u root -p${MySQL_ROOT_PASS} -e "${SQL1}${SQL2}${SQL3}" >> $LOG
 
 systemctl daemon-reload && systemctl enable netdata && service netdata start
 
