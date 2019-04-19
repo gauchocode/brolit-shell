@@ -56,6 +56,7 @@ wget $BK_F_URL >> $LOG
 echo "uncompressing backup files" >> $LOG
 unzip $BK_F_FILE
 #si BK_EXT es un tar.bz2
+#tar xvjf $BK_F_FILE
 
 rm $BK_F_FILE >> $LOG
 cd .. >> $LOG
