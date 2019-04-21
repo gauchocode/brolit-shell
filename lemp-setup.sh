@@ -101,9 +101,8 @@ ln -s /etc/nginx/sites-available/monitor /etc/nginx/sites-enabled/monitor
 #ln -s /etc/nginx/sites-available/phpmyadmin /etc/nginx/sites-enabled/phpmyadmin
 
 #configure monit
-cp confs/monit/lemp-services /etc/monit/conf.d/lemp-services
-rm /etc/monit/monitrc
-cp confs/monit/monitrc /etc/monit/monitrc
+cat confs/monit/lemp-services > /etc/monit/conf.d/lemp-services
+cat confs/monit/monitrc > /etc/monit/monitrc
 
 echo -e "\nRestarting services...\n"
 systemctl restart php7.2-fpm
@@ -118,15 +117,19 @@ cd netdata && ./netdata-installer.sh --dont-wait
 killall netdata && cp system/netdata.service /etc/systemd/system/
 
 #TODO: Agregar otras confs y la config de las notificaciones
-#
+#TODO: Checkear si mandando la conf a /usr/share/netdata hace que con un update de netdata no se borre la config
+#TODO: Acá hay que hacer un sed para agregar el pass de root (quiza hasta sea menor ni copiar el mysql.conf)
 cat confs/netdata/python.d/mysql.conf > /usr/lib/netdata/conf.d/python.d/mysql.conf
+
 cat confs/netdata/python.d/monit.conf > /usr/lib/netdata/conf.d/python.d/monit.conf
+
+cat confs/netdata/health_alarm_notify.conf > /usr/lib/netdata/conf.d/health_alarm_notify.conf
 
 SQL1="CREATE USER 'netdata'@'localhost';"
 SQL2="GRANT USAGE on *.* to 'netdata'@'localhost';"
 SQL3="FLUSH PRIVILEGES;"
 
-echo "Creating netdata user ..." >> $LOG
+echo "Creating netdata user in MySQL ..." >> $LOG
 mysql -u root -p${MySQL_ROOT_PASS} -e "${SQL1}${SQL2}${SQL3}" >> $LOG
 
 systemctl daemon-reload && systemctl enable netdata && service netdata start
