@@ -12,13 +12,13 @@ tar -xzxf latest.tar.gz
 rm latest.tar.gz
 mv wordpress $DOMAIN
 #cd $domain
-#cp /usr/share/nginx/html/wp-config-sample.php /usr/share/nginx/html/wp-config.php
-rm /var/www/$DOMAIN/wp-config-sample.php
-sudo chown -R root:www-data /var/www/$DOMAIN
-sudo find /var/www/$DOMAIN -type d -exec chmod g+s {} \;
-sudo chmod g+w /var/www/$DOMAIN/wp-content
-sudo chmod -R g+w /var/www/$DOMAIN/wp-content/themes
-sudo chmod -R g+w /var/www/$DOMAIN/wp-content/plugins
+#cp wp-config-sample.php /var/www/${DOMAIN}/wp-config.php
+rm /var/www/${DOMAIN}/wp-config-sample.php
+chown -R www-data:www-data /var/www/${DOMAIN}
+find /var/www/${DOMAIN} -type d -exec chmod g+s {} \;
+chmod g+w /var/www/${DOMAIN}/wp-content
+chmod -R g+w /var/www/${DOMAIN}/wp-content/themes
+chmod -R g+w /var/www/${DOMAIN}/wp-content/plugins
 echo "done."
 
 #echo "Database to be used: localhost"

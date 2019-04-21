@@ -45,13 +45,13 @@ do
   if  [ "${DATABASE}" != "information_schema" ] &&
       [ "${DATABASE}" != "performance_schema" ] &&
       [ "${DATABASE}" != "mysql" ] &&
-      [ "${DATABASE}" != "mysql" ] &&
       [ "${DATABASE}" != "sys" ]; then
     ### Create zip for each database ###
-    FILE=$BAKWP/${NOW}/db-${DATABASE}_${NOW}.sql
+    BK_FOLDER=${BAKWP}/${NOW}/
+    BK_FILE="db-${DATABASE}_${NOW}.sql"
     ### Create dump file###
-    echo " > Creating new database backup in [$FILE] ..." >> $LOG
-    $MYSQLDUMP --max-allowed-packet=1073741824  -u $MUSER -h $MHOST -p$MPASS $DATABASE > $FILE
+    echo " > Creating new database backup in [${BK_FOLDER}${BK_FILE}] ..." >> $LOG
+    $MYSQLDUMP --max-allowed-packet=1073741824  -u ${MUSER} -h ${MHOST} -p${MPASS} ${DATABASE} > ${BK_FOLDER}${BK_FILE}
     if [ "$?" -eq 0 ]
     then
         echo " > Mysqldump OK ..." >> $LOG
@@ -60,40 +60,42 @@ do
         echo " > Aborting ..." >> $LOG
         exit 1
     fi
-    if [ "$ONE_FILE_BK" = false ] ; then
-      cd $BAKWP/$NOW
-      echo " > Making a tar.bz2 file of [$FILE]..." >> $LOG
-      $TAR -jcvpf $BAKWP/${NOW}/db-${DATABASE}_${NOW}.tar.bz2 $FILE
+    if [ "${ONE_FILE_BK}" = false ] ; then
+      cd ${BAKWP}/${NOW}
+      echo " > Making a tar.bz2 file of [${FILE}]..." >> $LOG
+
+      echo " > $TAR -jcvpf ${BAKWP}/${NOW}/db-${DATABASE}_${NOW}.tar.bz2 --directory=${BK_FOLDER} ${BK_FILE}"
+      $TAR -jcvpf ${BAKWP}/${NOW}/db-${DATABASE}_${NOW}.tar.bz2 --directory=${BK_FOLDER} ${BK_FILE}
       BK_SIZE[$COUNT]=$(ls -lah db-${DATABASE}_${NOW}.tar.bz2 | awk '{ print $5}')
       echo " > Backup created, final size: $BK_SIZE[$COUNT] ..." >> $LOG
       ### Creating Dropbox Folder ###
       echo " > Creating Dropbox Databases Folder ..." >> $LOG
-      $SFOLDER/dropbox_uploader.sh mkdir $DBS_F
-      $SFOLDER/dropbox_uploader.sh mkdir $DBS_F/${DATABASE}
+      $SFOLDER/dropbox_uploader.sh mkdir ${DBS_F}
+      $SFOLDER/dropbox_uploader.sh mkdir ${DBS_F}/${DATABASE}
       ### Upload to Dropbox ###
       echo " > Uploading new database backup [db-${DATABASE}_${NOW}] ..." >> $LOG
       $SFOLDER/dropbox_uploader.sh upload db-${DATABASE}_${NOW}.tar.bz2 $DROPBOX_FOLDER/${DBS_F}/${DATABASE}
       ### Delete old backups ###
-      echo " > Trying to delete old database backup [db-$DATABASE_$ONEWEEKAGO.tar.bz2] ..." >> $LOG
+      echo " > Trying to delete old database backup [db-${DATABASE}_${ONEWEEKAGO}.tar.bz2] ..." >> $LOG
       if [ "$DROPBOX_FOLDER" != "/" ] ; then
         $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/${DBS_F}/${DATABASE}/db-${DATABASE}_${ONEWEEKAGO}.tar.bz2
       else
-        $SFOLDER/dropbox_uploader.sh remove /${DBS_F}/${DATABASE}/db-${DATABASE}_${ONEWEEKAGO}.tar.bz2
+        $SFOLDER/dropbox_uploader.sh remove ${DBS_F}/${DATABASE}/db-${DATABASE}_${ONEWEEKAGO}.tar.bz2
       fi
       if [ "$DEL_UP" = true ] ; then
         echo " > Deleting backup from server ..." >> $LOG
-        rm -r $BAKWP/${NOW}/db-${DATABASE}_${NOW}.tar.bz2
+        rm -r ${BAKWP}/${NOW}/db-${DATABASE}_${NOW}.tar.bz2
       fi
     fi
     ### Count and echo ###
     COUNT=$((COUNT+1))
-    echo " > Backup $COUNT of $TOTAL_DBS ..." >> $LOG
+    echo -e "\e[42m > Backup $COUNT of $TOTAL_DBS ... \e[0m" >> $LOG
     echo " ###################################################" >> $LOG
   fi
 done
 
 ### Create new backups ###
-if [ "$ONE_FILE_BK" = true ] ; then
+if [ "${ONE_FILE_BK}" = true ] ; then
   cd $BAKWP/$NOW
   echo " > Making a tar.bz2 file with all databases ..." >> $LOG
   $TAR -jcvpf databases_${NOW}.tar.bz2 $BAKWP/${NOW}/*.sql
@@ -105,7 +107,7 @@ if [ "$ONE_FILE_BK" = true ] ; then
   ### Remove old backups ###
   echo " > Trying to delete old [databases_${ONEWEEKAGO}.tar.bz2] from Dropbox..." >> $LOG
   if [ "$DROPBOX_FOLDER" != "/" ] ; then
-    $SFOLDER/dropbox_uploader.sh remove $DROPBOX_FOLDER/databases_${ONEWEEKAGO}.tar.bz2
+    $SFOLDER/dropbox_uploader.sh remove ${DROPBOX_FOLDER}/databases_${ONEWEEKAGO}.tar.bz2
   else
     $SFOLDER/dropbox_uploader.sh remove /databases_${ONEWEEKAGO}.tar.bz2
   fi
