@@ -12,7 +12,6 @@
 # DB: ${DBS_F}/${DATABASE}/db-${DATABASE}_${ONEWEEKAGO}.tar.bz2
 #
 #
-
 MySQL_ROOT_PASS=""
 FOLDER_TO_RESTORE="/var/www"
 
@@ -26,22 +25,20 @@ SFOLDER="/root/broobe-utils-scripts"					          #Backup Scripts folder
 RESTORE_TYPES="${CONFIG_F} ${DBS_F} ${SITES_F}"
 
 # Disaplay choose dialog with available backups
-CHOSEN_TYPE=$(whiptail --title "RESTORE BACKUP" --menu "Chose Backup Type" 20 78 10 `for x in ${RESTORE_TYPES}; do echo "$x backup" | sed 's/.*www-\(.*\).tar.gz/\1/'; done` 3>&1 1>&2 2>&3)
+CHOSEN_TYPE=$(whiptail --title "RESTORE BACKUP" --menu "Chose Backup Type" 20 78 10 `for x in ${RESTORE_TYPES}; do echo "$x [D]"; done` 3>&1 1>&2 2>&3)
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
         #Restore from Dropbox
         #echo "trying to run ${SFOLDER}/dropbox_uploader.sh list ${CHOSEN_TYPE}"
-        DROPBOX_PROJECT_LIST=$(${SFOLDER}/dropbox_uploader.sh list ${CHOSEN_TYPE})
+        DROPBOX_PROJECT_LIST=$(${SFOLDER}/dropbox_uploader.sh -hq list ${CHOSEN_TYPE})
 fi
-
-# if DROPBOX_PROJECT_LIST = ${CONFIG_F} then list, download, ucompress and ask for restore
-if [[ ${DROPBOX_PROJECT_LIST} == *"$CONFIG_F"* ]]; then
-  CHOSEN_CONFIG=$(whiptail --title "RESTORE BACKUP" --menu "Chose Backup Project" 20 78 10 `for x in ${DROPBOX_PROJECT_LIST}; do echo "$x backup" | sed 's/.*www-\(.*\).tar.gz/\1/'; done` 3>&1 1>&2 2>&3)
+if [[ ${CHOSEN_TYPE} == *"$CONFIG_F"* ]]; then
+  CHOSEN_CONFIG=$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Chose Configs Backup" 20 78 10 `for x in ${DROPBOX_PROJECT_LIST}; do echo "$x [F]"; done` 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
           #echo "trying to run ${SFOLDER}/dropbox_uploader.sh list ${CHOSEN_TYPE}/${CHOSEN_CONFIG}"
           #DROPBOX_BACKUP_LIST=$(${SFOLDER}/dropbox_uploader.sh list ${CHOSEN_TYPE}/${CHOSEN_CONFIG})
-          #echo "trying to run dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_CONFIG}"
+          echo "trying to run dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_CONFIG}"
           ./dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_CONFIG}
           mv ${CHOSEN_CONFIG} tmp/
           cd tmp/
@@ -50,14 +47,14 @@ if [[ ${DROPBOX_PROJECT_LIST} == *"$CONFIG_F"* ]]; then
   fi
 else
   #elijo proyecto
-  CHOSEN_PROJECT=$(whiptail --title "RESTORE BACKUP" --menu "Chose Backup Project" 20 78 10 `for x in ${DROPBOX_PROJECT_LIST}; do echo "$x backup" | sed 's/.*www-\(.*\).tar.gz/\1/'; done` 3>&1 1>&2 2>&3)
+  CHOSEN_PROJECT=$(whiptail --title "RESTORE BACKUP" --menu "Chose Backup Project" 20 78 10 `for x in ${DROPBOX_PROJECT_LIST}; do echo "$x [D]"; done` 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
           #echo "trying to run ${SFOLDER}/dropbox_uploader.sh list ${CHOSEN_TYPE}/${CHOSEN_PROJECT}"
-          DROPBOX_BACKUP_LIST=$(${SFOLDER}/dropbox_uploader.sh list ${CHOSEN_TYPE}/${CHOSEN_PROJECT})
+          DROPBOX_BACKUP_LIST=$(${SFOLDER}/dropbox_uploader.sh -hq list ${CHOSEN_TYPE}/${CHOSEN_PROJECT})
   fi
   #elijo backup a restaurar
-  CHOSEN_BACKUP=$(whiptail --title "RESTORE BACKUP" --menu "Chose Backup" 20 78 10 `for x in ${DROPBOX_BACKUP_LIST}; do echo "$x backup" | sed 's/.*www-\(.*\).tar.gz/\1/'; done` 3>&1 1>&2 2>&3)
+  CHOSEN_BACKUP=$(whiptail --title "RESTORE BACKUP" --menu "Chose Backup to Download" 20 78 10 `for x in ${DROPBOX_BACKUP_LIST}; do echo "$x [F]"; done` 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
@@ -89,21 +86,22 @@ else
             chown -R www-data:www-data ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT}
 
           else
-            # Si es una BD
-            # TODO: contemplar 2 opciones: base existente y base inexistente (habría que crear el usuario)
+            if [[ ${DROPBOX_PROJECT_LIST} == *"$SITES_F"* ]]; then
+              # Si es una BD
+              # TODO: contemplar 2 opciones: base existente y base inexistente (habría que crear el usuario)
 
-            # Restore DB
-            echo "Trying to restore ${CHOSEN_BACKUP} DB"
-            # importante:
-            # primero backupear base actual
-            echo "Executing mysqldump ..."
-            mysqldump -u root --password=${MySQL_ROOT_PASS} ${CHOSEN_PROJECT} > ${CHOSEN_PROJECT}_bk_before_restore.sql
-            # tercero importar la base a restaurar
-            echo "Restoring database ..."
-            mysql -u root --password=${MySQL_ROOT_PASS} ${CHOSEN_PROJECT} < ${CHOSEN_BACKUP%%.*}.sql
+              # Restore DB
+              echo "Trying to restore ${CHOSEN_BACKUP} DB"
+              # importante:
+              # primero backupear base actual
+              echo "Executing mysqldump ..."
+              mysqldump -u root --password=${MySQL_ROOT_PASS} ${CHOSEN_PROJECT} > ${CHOSEN_PROJECT}_bk_before_restore.sql
+              # tercero importar la base a restaurar
+              echo "Restoring database ..."
+              mysql -u root --password=${MySQL_ROOT_PASS} ${CHOSEN_PROJECT} < ${CHOSEN_BACKUP%%.*}.sql
 
-            echo "DB ${CHOSEN_BACKUP} restored!"
-
+              echo "DB ${CHOSEN_BACKUP} restored!"
+            fi
           fi
 
   fi

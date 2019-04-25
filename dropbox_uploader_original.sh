@@ -1137,9 +1137,8 @@ function db_list_outfile
 
                 local FILE=$(echo "$line" | sed -n 's/.*"path_display": *"\([^"]*\)".*/\1/p')
                 local TYPE=$(echo "$line" | sed -n 's/.*".tag": *"\([^"]*\).*/\1/p')
-                #local SIZE=$(convert_bytes $(echo "$line" | sed -n 's/.*"size": *\([0-9]*\).*/\1/p'))
+                local SIZE=$(convert_bytes $(echo "$line" | sed -n 's/.*"size": *\([0-9]*\).*/\1/p'))
 
-                #echo -e "$FILE:$TYPE;" >> "$OUT_FILE"
                 echo -e "$FILE:$TYPE;$SIZE" >> "$OUT_FILE"
 
             done < "$TEMP_FILE"
@@ -1204,8 +1203,7 @@ function db_list
 
         if [[ $TYPE == "folder" ]]; then
             FILE=$(echo -e "$FILE")
-            $PRINTF "%s\n" "$FILE"
-            #$PRINTF " [D] %-${padding}s %s\n" "$SIZE" "$FILE"
+            $PRINTF " [D] %-${padding}s %s\n" "$SIZE" "$FILE"
         fi
 
     done < "$OUT_FILE"
@@ -1223,8 +1221,7 @@ function db_list
 
         if [[ $TYPE == "file" ]]; then
             FILE=$(echo -e "$FILE")
-            $PRINTF "%s\n" "$FILE"
-            #$PRINTF " [F] %-${padding}s %s\n" "$SIZE" "$FILE"
+            $PRINTF " [F] %-${padding}s %s\n" "$SIZE" "$FILE"
         fi
 
     done < "$OUT_FILE"
@@ -1292,13 +1289,13 @@ function db_monitor_nonblock
 
                 if [[ $TYPE == "folder" ]]; then
                     FILE=$(echo -e "$FILE")
-                    $PRINTF " \n" "$FILE"
+                    $PRINTF " [D] %s\n" "$FILE"
                 elif [[ $TYPE == "file" ]]; then
                     FILE=$(echo -e "$FILE")
-                    $PRINTF " \n" "$FILE"
+                    $PRINTF " [F] %s %s\n" "$SIZE" "$FILE"
                 elif [[ $TYPE == "deleted" ]]; then
                     FILE=$(echo -e "$FILE")
-                    $PRINTF " \n" "$FILE"
+                    $PRINTF " [-] %s\n" "$FILE"
                 fi
 
             done < "$OUT_FILE"
