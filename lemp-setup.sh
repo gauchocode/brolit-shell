@@ -11,14 +11,24 @@ MySQL_ROOT_PASS=""          									#MySQL root User Pass
 COMPOSER="false"
 WP="false"
 
+### Checking some things... ###
+if [ $USER != root ]; then
+  echo -e $RED"Error: must be root! Exiting..."$ENDCOLOR
+  exit 0
+fi
+if [[ -z "${SERVER_MODEL}" || -z "${DOMAIN}" || -z "${MySQL_ROOT_PASS}" ]]; then
+  echo -e $RED"Error: SERVER_MODEL, DOMAIN and MySQL_ROOT_PASS must be set! Exiting..."$ENDCOLOR
+  exit 0
+fi
+
 ### Log Start ###
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-PATH_LOG="$SFOLDER/logs"
-if [ ! -d "$SFOLDER/logs" ]
+PATH_LOG="${SFOLDER}/logs"
+if [ ! -d "${SFOLDER}/logs" ]
 then
-    echo " > Folder $SFOLDER/logs doesn't exist. Creating now ..."
-    mkdir $SFOLDER/logs
-    echo " > Folder $SFOLDER/logs created ..."
+    echo " > Folder ${SFOLDER}/logs doesn't exist. Creating now ..."
+    mkdir ${SFOLDER}/logs
+    echo " > Folder ${SFOLDER}/logs created ..."
 fi
 
 LOG_NAME=log_lemp_$TIMESTAMP.log
@@ -36,6 +46,8 @@ apt --yes update
 apt --yes dist-upgrade
 
 apt --yes install nginx mysql-server php7.2-fpm php7.2-mysql php-xml php7.2-curl php7.2-mbstring php7.2-gd php-imagick php7.2-zip php7.2-bz2 php-bcmath php7.2-soap php7.2-dev php-pear zip clamav ncdu jpegoptim optipng python-certbot-nginx monit
+
+pear install mail mail_mime net_smtp
 
 configure timezone
 dpkg-reconfigure tzdata

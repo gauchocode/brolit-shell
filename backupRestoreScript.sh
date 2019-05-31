@@ -38,11 +38,15 @@ if [[ ${CHOSEN_TYPE} == *"$CONFIG_F"* ]]; then
   if [ $exitstatus = 0 ]; then
           #echo "trying to run ${SFOLDER}/dropbox_uploader.sh list ${CHOSEN_TYPE}/${CHOSEN_CONFIG}"
           #DROPBOX_BACKUP_LIST=$(${SFOLDER}/dropbox_uploader.sh list ${CHOSEN_TYPE}/${CHOSEN_CONFIG})
-          echo "trying to run dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_CONFIG}"
-          ./dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_CONFIG}
-          mv ${CHOSEN_CONFIG} tmp/
           cd tmp/
+
+          echo "trying to run dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_CONFIG}"
+          ${SFOLDER}/dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_CONFIG}
+
           # Restore files
+          mkdir ${CHOSEN_TYPE}
+          mv ${CHOSEN_CONFIG} ${CHOSEN_TYPE}
+          cd ${CHOSEN_TYPE}
           tar -xvjf ${CHOSEN_CONFIG}
   fi
 else
@@ -68,7 +72,7 @@ else
           echo "Ucompressing ${CHOSEN_BACKUP}"
           tar -xvjf ${CHOSEN_BACKUP}
 
-          if [[ ${DROPBOX_PROJECT_LIST} == *"$SITES_F"* ]]; then
+          if [[ ${CHOSEN_TYPE} == *"$SITES_F"* ]]; then
             # Si es un website
             # Restore files
             echo "Trying to restore ${CHOSEN_BACKUP} files"
@@ -82,25 +86,85 @@ else
             #echo "Executing: mv ${SFOLDER}/tmp/${CHOSEN_PROJECT} ${FOLDER_TO_RESTORE} ..."
             mv ${SFOLDER}/tmp/${CHOSEN_PROJECT} ${FOLDER_TO_RESTORE}
 
-            #echo "Executing: chown -R www-data:www-data ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT} ..."
+            echo "Executing: chown -R www-data:www-data ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT} ..."
             chown -R www-data:www-data ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT}
 
+            # TODO: no sirve restaurar un viejo backup del site-available de nginx cuando se usa Lets Encrypt
+            # TODO: lo que hay que hacer en este caso es crear una config con puerto 80 y correrle el certbot
+
+            echo "Trying to restore nginx config for ${CHOSEN_PROJECT} ..."
+            #new site configuration
+            cp ${SFOLDER}/confs/default /etc/nginx/sites-available/${CHOSEN_PROJECT}
+            ln -s /etc/nginx/sites-available/${CHOSEN_PROJECT} /etc/nginx/sites-enabled/${CHOSEN_PROJECT}
+            #replacing string to match domain name
+            sed -i "s#dominio.com#${CHOSEN_PROJECT}#" /etc/nginx/sites-available/${CHOSEN_PROJECT}
+            #es necesario correrlo dos veces para reemplazarlo dos veces en una misma linea
+            sed -i "s#dominio.com#${CHOSEN_PROJECT}#" /etc/nginx/sites-available/${CHOSEN_PROJECT}
+            service nginx reload
+
+            echo "Trying to execute certbot for ${CHOSEN_PROJECT} ..."
+            # TODO: certbot --nginx -d ${CHOSEN_PROJECT} -d www.${CHOSEN_PROJECT}
+            certbot --nginx -d ${CHOSEN_PROJECT} -d www.${CHOSEN_PROJECT}
+
           else
-            if [[ ${DROPBOX_PROJECT_LIST} == *"$SITES_F"* ]]; then
+            if [[ ${CHOSEN_TYPE} == *"$DBS_F"* ]]; then
               # Si es una BD
               # TODO: contemplar 2 opciones: base existente y base inexistente (habría que crear el usuario)
 
-              # Restore DB
               echo "Trying to restore ${CHOSEN_BACKUP} DB"
-              # importante:
-              # primero backupear base actual
-              echo "Executing mysqldump ..."
+
+              # Backupeamos base actual
+              echo "Executing mysqldump (will work if database exists)..."
               mysqldump -u root --password=${MySQL_ROOT_PASS} ${CHOSEN_PROJECT} > ${CHOSEN_PROJECT}_bk_before_restore.sql
+
+              ### Helper para extraer el nombre del proyecto
+              suffix="_prod"
+              PROJECT_NAME=${CHOSEN_PROJECT%"$suffix"}
+              #PROJECT_NAME="dacomunicaciones"
+              #echo "${PROJECT_NAME}"
+
+              ### Vamos a crear el usuario y la base siguiendo el nuevo estandard de broobe
+
+              ### TODO: ojo que me cambia el pass en el wp-config.php por más que el usuario exista, CORREGIR!!!
+              DB_PASS=$(openssl rand -hex 12)
+
+              #para cambiar pass de un user existente
+              #ALTER USER 'makana_user'@'localhost' IDENTIFIED BY '0p2eE2a0ed4d8=';
+
+              SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_prod;"
+              SQL2="CREATE USER IF NOT EXISTS '${PROJECT_NAME}_user'@'localhost' IDENTIFIED BY '${DB_PASS}';"
+              SQL3="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_prod . * TO '${PROJECT_NAME}_user'@'localhost';"
+              SQL4="FLUSH PRIVILEGES;"
+
+              echo "Creating database ${PROJECT_NAME}_prod, and user ${PROJECT_NAME}_user with pass ${DB_PASS} if they not exist ..."
+              mysql -u root --password=${MySQL_ROOT_PASS} -e "${SQL1}${SQL2}${SQL3}${SQL4}"
+
               # tercero importar la base a restaurar
               echo "Restoring database ..."
-              mysql -u root --password=${MySQL_ROOT_PASS} ${CHOSEN_PROJECT} < ${CHOSEN_BACKUP%%.*}.sql
+              mysql -u root --password=${MySQL_ROOT_PASS} ${PROJECT_NAME}_prod < ${CHOSEN_BACKUP%%.*}.sql
 
               echo "DB ${CHOSEN_BACKUP} restored!"
+
+              echo "Cleanning tmp files ..."
+              rm ${CHOSEN_BACKUP%%.*}.sql
+              rm ${CHOSEN_BACKUP}
+              echo "OK ..."
+
+              #buscamos la carpeta correspondiente al site de la DB importada (broobe estandard)
+              for j in $(find $FOLDER_TO_RESTORE -maxdepth 1 -type d)
+              do
+                FOLDER_NAME=$(basename $j)
+                if [[ ${FOLDER_NAME} == *"${PROJECT_NAME}"* ]]; then
+                  echo "Directory found: ${j}"
+                  #change wp-config.php database parameters
+                  echo "Changing wp-config.php database parameters ..."
+                  sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" ${j}/wp-config.php
+                  sed -i "/DB_NAME/s/'[^']*'/'${PROJECT_NAME}_prod'/2" ${j}/wp-config.php
+                  sed -i "/DB_USER/s/'[^']*'/'${PROJECT_NAME}_user'/2" ${j}/wp-config.php
+                  sed -i "/DB_PASSWORD/s/'[^']*'/'${DB_PASS}'/2" ${j}/wp-config.php
+                fi
+              done
+
             fi
           fi
 

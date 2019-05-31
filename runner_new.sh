@@ -12,7 +12,7 @@ SCRIPT_V="2.1"
 ###TODO: Database Blacklist.
 
 VPSNAME="$HOSTNAME"               						#Or choose a name
-SFOLDER="/root/broobe-utils-scripts"					#Backup Scripts folder
+SFOLDER="/mnt/d/Nextcloud/Personal/Workspace/broobe-utils-scripts"					#Backup Scripts folder
 SITES="/var/www"                 							#Where sites are stored
 
 SITES_BL=".wp-cli,phpmyadmin"									#Folder blacklist
@@ -38,8 +38,8 @@ DUP_SRC_BK="/var/www/"												#Source of Directories to Backup
 DUP_FOLDERS="FOLDER1,FOLDER2"	    						#Folders to Backup
 
 ### MYSQL CONFIG ###
-MUSER=""              												#MySQL User
-MPASS=""          														#MySQL User Pass
+MUSER="root"              												#MySQL User
+MPASS="dasda"          														#MySQL User Pass
 
 ### SENDEMAIL CONFIG ###
 MAILA="servidores@broobe.com"     						#Notification Email
@@ -97,14 +97,14 @@ chmod +x $SFOLDER/filesBackupScript.sh
 chmod +x $SFOLDER/optimizationsScript.sh
 
 ### Update package definitions ###
-echo " > Running apt update..." >> $LOG
-apt update
+#echo " > Running apt update..." >> $LOG
+#apt update
 
 ### Check if sendemail is installed ###
-SENDEMAIL="$(which sendemail)"
-if [ ! -x "${SENDEMAIL}" ]; then
-	apt install sendemail libio-socket-ssl-perl
-fi
+#SENDEMAIL="$(which sendemail)"
+#if [ ! -x "${SENDEMAIL}" ]; then
+#	apt install sendemail libio-socket-ssl-perl
+#fi
 
 ### TAR ###
 TAR="$(which tar)"
@@ -187,8 +187,19 @@ BODY_PKG=$PKG_HEADER$PKG_BODYOPEN$PKG_MAIL_VAR$PKG_BODYCLOSE
 ### Running from terminal ###
 if [ -t 1 ]
 then
+
+  RUNNER_OPTIONS="1 DATABASE_BACKUP 2 FILES_BACKUP 3 SERVER_OPTIMIZATIONS 4 BACKUP_RESTORE 5 HOSTING_TO_VPS 6 LEMP_SETUP"
+  CHOSEN_TYPE=$(whiptail --title "RESTORE BACKUP" --menu "Chose Backup Type" 20 78 10 `for x in ${RUNNER_OPTIONS}; do echo "$x"; done` 3>&1 1>&2 2>&3)
+  #exitstatus=$?
+  #if [ $exitstatus = 0 ]; then
+          #Restore from Dropbox
+          #echo "trying to run ${SFOLDER}/dropbox_uploader.sh list ${CHOSEN_TYPE}"
+          #DROPBOX_PROJECT_LIST=$(${SFOLDER}/dropbox_uploader.sh -hq list ${CHOSEN_TYPE})
+  #fi
+  if [[ ${CHOSEN_TYPE} == *"1"* ]]; then
+
     while true; do
-      read -p " > Do you want to run the database backup? y/n" yn
+      read -p " > Do you realy want to run the database backup? y/n" yn
       case $yn in
           [Yy]* )
 					source $SFOLDER/mysqlBackupScript.sh;
@@ -208,62 +219,100 @@ then
 
           * ) echo "Please answer yes or no.";;
       esac
-  done
-  while true; do
-      read -p " > Do you want to run the file backup? y/n" yn
-      case $yn in
-          [Yy]* )
-					source $SFOLDER/filesBackupScript.sh;
+    done
 
-					FILE_MAIL="$BAKWP/file-bk-$NOW.mail"
-					FILE_MAIL_VAR=$(<$FILE_MAIL)
+  fi
 
-					HTMLOPEN='<html><body>'
-					HTMLCLOSE='</body></html>'
+  if [[ ${CHOSEN_TYPE} == *"2"* ]]; then
+    while true; do
+        read -p " > Do you realy want to run the file backup? y/n" yn
+        case $yn in
+            [Yy]* )
+  					source $SFOLDER/filesBackupScript.sh;
 
-					sendEmail -f $SMTP_U -t "servidores@broobe.com" -u "$STATUS_ICON_F $VPSNAME - Files Backup [$NOWDISPLAY]" -o message-content-type=html -m "$HTMLOPEN $BODY_SRV $BODY_PKG $FILE_MAIL_VAR $HTMLCLOSE" -s $SMTP_SERVER -o tls=$SMTP_TLS -xu $SMTP_U -xp $SMTP_P;
-					break;;
+  					FILE_MAIL="$BAKWP/file-bk-$NOW.mail"
+  					FILE_MAIL_VAR=$(<$FILE_MAIL)
 
-          [Nn]* )
-					echo -e "\e[31mAborting file backup...\e[0m";
-					break;;
+  					HTMLOPEN='<html><body>'
+  					HTMLCLOSE='</body></html>'
 
-          * ) echo " > Please answer yes or no.";;
-      esac
-  done
+  					sendEmail -f $SMTP_U -t "servidores@broobe.com" -u "$STATUS_ICON_F $VPSNAME - Files Backup [$NOWDISPLAY]" -o message-content-type=html -m "$HTMLOPEN $BODY_SRV $BODY_PKG $FILE_MAIL_VAR $HTMLCLOSE" -s $SMTP_SERVER -o tls=$SMTP_TLS -xu $SMTP_U -xp $SMTP_P;
+  					break;;
 
-	### NEW RESTORE BACKUP OPTION ###
-	while true; do
-			read -p " > Do you want to run restore script? y/n" yn
-			case $yn in
-					[Yy]* )
-					source $SFOLDER/backupRestoreScript.sh;
-					break;;
+            [Nn]* )
+  					echo -e "\e[31mAborting file backup...\e[0m";
+  					break;;
 
-					[Nn]* )
-					echo -e "\e[31mAborting restore script...\e[0m";
-					break;;
+            * ) echo " > Please answer yes or no.";;
+        esac
+    done
+  fi
+  if [[ ${CHOSEN_TYPE} == *"3"* ]]; then
+  	### NEW RESTORE BACKUP OPTION ###
+  	while true; do
+  			read -p " > Do you realy want to run restore script? y/n" yn
+  			case $yn in
+  					[Yy]* )
+  					source $SFOLDER/backupRestoreScript.sh;
+  					break;;
 
-					* ) echo " > Please answer yes or no.";;
-			esac
-	done
+  					[Nn]* )
+  					echo -e "\e[31mAborting restore script...\e[0m";
+  					break;;
 
-	### NEW OPTIMIZATION OPTION ###
-	while true; do
-			read -p " > Do you want to run the optimization script? y/n" yn
-			case $yn in
-					[Yy]* )
-					source $SFOLDER/optimizationsScript.sh;
-					break;;
+  					* ) echo " > Please answer yes or no.";;
+  			esac
+  	done
+  fi
+  if [[ ${CHOSEN_TYPE} == *"4"* ]]; then
+  	### NEW OPTIMIZATION OPTION ###
+  	while true; do
+  			read -p " > Do you realy want to run the optimization script? y/n" yn
+  			case $yn in
+  					[Yy]* )
+  					source $SFOLDER/optimizationsScript.sh;
+  					break;;
 
-					[Nn]* )
-					echo -e "\e[31mAborting optimization script...\e[0m";
-					break;;
+  					[Nn]* )
+  					echo -e "\e[31mAborting optimization script...\e[0m";
+  					break;;
 
-					* ) echo " > Please answer yes or no.";;
-			esac
-	done
+  					* ) echo " > Please answer yes or no.";;
+  			esac
+  	done
+  fi
+  if [[ ${CHOSEN_TYPE} == *"5"* ]]; then
+  	while true; do
+  			read -p " > Do you realy want to run the server migration script (hosting to vps)? y/n" yn
+  			case $yn in
+  					[Yy]* )
+  					source $SFOLDER/serverMigrationScript.sh;
+  					break;;
 
+  					[Nn]* )
+  					echo -e "\e[31mAborting optimization script...\e[0m";
+  					break;;
+
+  					* ) echo " > Please answer yes or no.";;
+  			esac
+  	done
+  fi
+  if [[ ${CHOSEN_TYPE} == *"6"* ]]; then
+  	while true; do
+  			read -p " > Do you realy want to run the LEMP instalation script? y/n" yn
+  			case $yn in
+  					[Yy]* )
+  					source $SFOLDER/lemp-setup.sh;
+  					break;;
+
+  					[Nn]* )
+  					echo -e "\e[31mAborting optimization script...\e[0m";
+  					break;;
+
+  					* ) echo " > Please answer yes or no.";;
+  			esac
+  	done
+  fi
 ### Running from cron ###
 else
     $SFOLDER/mysqlBackupScript.sh;
