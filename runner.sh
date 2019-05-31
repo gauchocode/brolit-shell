@@ -58,9 +58,13 @@ YELLOW="\033[1;33m";
 RED="\033[0;31m";
 ENDCOLOR="\033[0m"
 
-### Check if user is root ###
+### Checking some things... ###
 if [ $USER != root ]; then
   echo -e $RED"Error: must be root! Exiting..."$ENDCOLOR
+  exit 0
+fi
+if [[ -z "${MUSER}" || -z "${MPASS}" ]]; then
+  echo -e $RED"Error: MUSER and MPASS must be set! Exiting..."$ENDCOLOR
   exit 0
 fi
 
