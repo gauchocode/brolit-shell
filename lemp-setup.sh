@@ -13,11 +13,11 @@ WP="false"
 
 ### Checking some things... ###
 if [ $USER != root ]; then
-  echo -e $RED"Error: must be root! Exiting..."$ENDCOLOR
+  echo -e ${RED}"Error: must be root! Exiting..."${ENDCOLOR}
   exit 0
 fi
 if [[ -z "${SERVER_MODEL}" || -z "${DOMAIN}" || -z "${MySQL_ROOT_PASS}" ]]; then
-  echo -e $RED"Error: SERVER_MODEL, DOMAIN and MySQL_ROOT_PASS must be set! Exiting..."$ENDCOLOR
+  echo -e ${RED}"Error: SERVER_MODEL, DOMAIN and MySQL_ROOT_PASS must be set! Exiting..."${ENDCOLOR}
   exit 0
 fi
 
@@ -31,8 +31,8 @@ then
     echo " > Folder ${SFOLDER}/logs created ..."
 fi
 
-LOG_NAME=log_lemp_$TIMESTAMP.log
-LOG=$PATH_LOG/$LOG_NAME
+LOG_NAME=log_lemp_${TIMESTAMP}.log
+LOG=${PATH_LOG}/${LOG_NAME}
 
 ### EXPORT VARS ###
 export DOMAIN LOG
@@ -61,7 +61,7 @@ cat confs/php.ini > /etc/php/7.2/fpm/php.ini
 
 #fpm broobe standard configuration
 echo -e "\nMoving fpm configuration file...\n" >>$LOG
-cat confs/$SERVER_MODEL/www.conf > /etc/php/7.2/fpm/pool.d/www.conf
+cat confs/${SERVER_MODEL}/www.conf > /etc/php/7.2/fpm/pool.d/www.conf
 
 #remove html default nginx folders
 rm -r /var/www/html
@@ -77,14 +77,14 @@ echo " " >> /etc/nginx/sites-available/default
 cp confs/monitor /etc/nginx/sites-available
 
 #new site configuration
-cp confs/default /etc/nginx/sites-available/$DOMAIN
-ln -s /etc/nginx/sites-available/$DOMAIN /etc/nginx/sites-enabled/$DOMAIN
+cp confs/default /etc/nginx/sites-available/${DOMAIN}
+ln -s /etc/nginx/sites-available/${DOMAIN} /etc/nginx/sites-enabled/${DOMAIN}
 
-if [ "$WP" = true ] ; then
+if [ "${WP}" = true ] ; then
   sh wordpress.sh
 fi
 
-if [ "$COMPOSER" = true ] ; then
+if [ "${COMPOSER}" = true ] ; then
   EXPECTED_SIGNATURE="$(wget -q -O - https://composer.github.io/installer.sig)"
   php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
   ACTUAL_SIGNATURE="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
@@ -102,11 +102,11 @@ fi
 
 #replacing string to match domain name
 #sudo replace "domain.com" "$DOMAIN" -- /etc/nginx/sites-available/default
-sed -i "s#dominio.com#$DOMAIN#" /etc/nginx/sites-available/default
+sed -i "s#dominio.com#${DOMAIN}#" /etc/nginx/sites-available/default
 #es necesario correrlo dos veces para reemplazarlo dos veces en una misma linea
-sed -i "s#dominio.com#$DOMAIN#" /etc/nginx/sites-available/default
+sed -i "s#dominio.com#${DOMAIN}#" /etc/nginx/sites-available/default
 
-sed -i "s#dominio.com#$DOMAIN#" /etc/nginx/sites-available/monitor
+sed -i "s#dominio.com#${DOMAIN}#" /etc/nginx/sites-available/monitor
 #sudo sed -i "s#dominio.com#$DOMAIN#" /etc/nginx/sites-available/phpmyadmin
 
 ln -s /etc/nginx/sites-available/monitor /etc/nginx/sites-enabled/monitor
@@ -146,4 +146,4 @@ mysql -u root -p${MySQL_ROOT_PASS} -e "${SQL1}${SQL2}${SQL3}" >> $LOG
 
 systemctl daemon-reload && systemctl enable netdata && service netdata start
 
-echo "Backup :: Script End -- $(date +%Y%m%d_%H%M)" >> $LOG
+echo "Backup: Script End -- $(date +%Y%m%d_%H%M)" >> $LOG

@@ -2,17 +2,26 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.3
+# Version: 2.5
 #############################################################################
 
-SCRIPT_V="2.3"
-
-###TODO: Database Blacklist.
+SCRIPT_V="2.5"
 
 ### TO EDIT ###
 VPSNAME="$HOSTNAME"               						#Or choose a name
 SFOLDER="/root/broobe-utils-scripts"					#Backup Scripts folder
 SITES="/var/www"                 							#Where sites are stored
+
+### MYSQL CONFIG ###
+MUSER="root"              							      #MySQL User
+MPASS=""          								            #MySQL User Pass
+
+### SENDEMAIL CONFIG ###
+MAILA="servidores@broobe.com"     						#Notification Email
+SMTP_SERVER="mail.bmailing.com.ar:587"				#SMTP Server and Port
+SMTP_TLS="yes"																#TLS: yes or no
+SMTP_U="no-reply@envios.broobe.com"						#SMTP User
+SMTP_P="broobe2020*"													#SMTP Password
 
 SITES_BL=".wp-cli,phpmyadmin"									#Folder blacklist
 
@@ -36,22 +45,6 @@ DUP_ROOT="/media/backups/PROJECT_NAME_OR_VPS"	#Duplicity Backups destination fol
 DUP_SRC_BK="/var/www/"												#Source of Directories to Backup
 DUP_FOLDERS="FOLDER1,FOLDER2"	    						#Folders to Backup
 
-### MYSQL CONFIG ###
-MUSER="root"              							      #MySQL User
-MPASS=""          								            #MySQL User Pass
-
-### SENDEMAIL CONFIG ###
-MAILA="servidores@broobe.com"     						#Notification Email
-SMTP_SERVER="mail.bmailing.com.ar:587"				#SMTP Server and Port
-SMTP_TLS="yes"																#TLS: yes or no
-SMTP_U="no-reply@envios.broobe.com"						#SMTP User
-SMTP_P="broobe2020*"													#SMTP Password
-
-### Backup rotation vars ###
-NOW=$(date +"%Y-%m-%d")
-NOWDISPLAY=$(date +"%d-%m-%Y")
-ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
-
 ### Setup Colours ###
 BLACK='\E[30;40m'
 RED='\E[31;40m'
@@ -61,10 +54,11 @@ BLUE='\E[34;40m'
 MAGENTA='\E[35;40m'
 CYAN='\E[36;40m'
 WHITE='\E[37;40m'
-###
-#YELLOW="\033[1;33m";
-#RED="\033[0;31m";
-#ENDCOLOR="\033[0m"
+
+### Backup rotation vars ###
+NOW=$(date +"%Y-%m-%d")
+NOWDISPLAY=$(date +"%d-%m-%Y")
+ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
 
 ### Checking some things... ###
 if [ ${USER} != root ]; then
@@ -300,14 +294,12 @@ then
   if [[ ${CHOSEN_TYPE} == *"7"* ]]; then
         URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
         exitstatus=$?
-        if [ $exitstatus = 0 ]; then
+        if [ ${exitstatus} = 0 ]; then
           source ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh gtmetrix ${URL_TO_TEST};
-        else
-          #echo "You chose Cancel."
         fi
   fi
   if [[ ${CHOSEN_TYPE} == *"8"* ]]; then
-          source ${SFOLDER}/replace_url_on_wordpress_db;
+    source ${SFOLDER}/replace_url_on_wordpress_db.sh;
   fi
 
 else
