@@ -2,11 +2,10 @@
 # CHANGE THESE
 auth_email="servidores@example.com"
 auth_key="0aefdc9e6b752a9d6ab658f7eda3d0a2118ac"
-zone_name="example.com"
-record_name="xxx.example.com"
+#zone_name="example.com"
+#record_name="xxx.example.com"
 
-ip='192.168.0.112'
-#ip=$(curl -s http://ipv4.icanhazip.com)
+ip=$(curl -s http://ipv4.icanhazip.com)
 
 ip_file="ip.txt"
 id_file="cloudflare.ids"
