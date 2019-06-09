@@ -28,7 +28,7 @@ SITES_BL=".wp-cli,phpmyadmin"									#Folder blacklist
 WSERVER="/etc/nginx"               						#Webserver config files location
 MySQL_CF="/etc/mysql"                         #MySQL config files location
 PHP_CF="/etc/php/7.2/fpm"                     #PHP config files location
-BAKWP="$SFOLDER/tmp"              						#Temp folder to store Backups
+BAKWP="${SFOLDER}/tmp"              						#Temp folder to store Backups
 DROPBOX_FOLDER="/"														#Dropbox Folder Backup
 MAIN_VOL="/dev/sda1"													#Main partition
 
