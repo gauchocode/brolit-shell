@@ -54,6 +54,7 @@ BLUE='\E[34;40m'
 MAGENTA='\E[35;40m'
 CYAN='\E[36;40m'
 WHITE='\E[37;40m'
+ENDCOLOR='\033[0m' # No Color
 
 ### Backup rotation vars ###
 NOW=$(date +"%Y-%m-%d")
@@ -161,9 +162,9 @@ PKG_BODYCLOSE='</div>'
 PKG_HEADER=$PKG_HEADEROPEN$PKG_HEADERTEXT$PKG_HEADERCLOSE
 
 PKG_MAIL="${BAKWP}/pkg-${NOW}.mail"
-PKG_MAIL_VAR=$(<$PKG_MAIL)
+PKG_MAIL_VAR=$(<$PKG_MAIL})
 
-BODY_PKG=$PKG_HEADER$PKG_BODYOPEN$PKG_MAIL_VAR$PKG_BODYCLOSE
+BODY_PKG=${PKG_HEADER}${PKG_BODYOPEN}${PKG_MAIL_VAR}${PKG_BODYCLOSE}
 
 ### chmod ###
 chmod +x ${SFOLDER}/dropbox_uploader.sh
@@ -172,10 +173,11 @@ chmod +x ${SFOLDER}/filesBackupScript.sh
 chmod +x ${SFOLDER}/optimizationsScript.sh
 chmod +x ${SFOLDER}/lemp-setup.sh
 chmod +x ${SFOLDER}/backupRestoreScript.sh
-chmod +x ${SFOLDER}/wordpress.sh
 chmod +x ${SFOLDER}/serverMigrationScript.sh
-chmod +x ${SFOLDER}/replace_url_on_wordpress_db.sh
 chmod +x ${SFOLDER}/utils/cloudflare_update_IP.sh
+chmod +x ${SFOLDER}/utils/netdata_installer.sh
+chmod +x ${SFOLDER}/utils/wordpress_installer.sh
+chmod +x ${SFOLDER}/utils/replace_url_on_wordpress_db.sh
 chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools.sh
 chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh
 
@@ -183,7 +185,7 @@ chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh
 if [ -t 1 ]
 then
 
-  RUNNER_OPTIONS="1 DATABASE_BACKUP 2 FILES_BACKUP 3 SERVER_OPTIMIZATIONS 4 BACKUP_RESTORE 5 HOSTING_TO_VPS 6 LEMP_SETUP 7 GTMETRIX_TEST 8 REPLACE_WP_URL"
+  RUNNER_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP 03 SERVER_OPTIMIZATIONS 04 BACKUP_RESTORE 05 HOSTING_TO_VPS 06 LEMP_SETUP 07 NETDATA_INSTALLATION 08 WORDPRESS_INSTALLATION 09 GTMETRIX_TEST 10 REPLACE_WP_URL"
   CHOSEN_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 `for x in ${RUNNER_OPTIONS}; do echo "$x"; done` 3>&1 1>&2 2>&3)
   #exitstatus=$?
   #if [ $exitstatus = 0 ]; then
@@ -191,15 +193,15 @@ then
           #echo "trying to run ${SFOLDER}/dropbox_uploader.sh list ${CHOSEN_TYPE}"
           #DROPBOX_PROJECT_LIST=$(${SFOLDER}/dropbox_uploader.sh -hq list ${CHOSEN_TYPE})
   #fi
-  if [[ ${CHOSEN_TYPE} == *"1"* ]]; then
+  if [[ ${CHOSEN_TYPE} == *"01"* ]]; then
     while true; do
       echo -e ${YELLOW}"> Do you really want to run the database backup?"${ENDCOLOR}
       read -p "Please type 'y' or 'n'" yn
       case $yn in
           [Yy]* )
-					source $SFOLDER/mysqlBackupScript.sh;
-					DB_MAIL="$BAKWP/db-bk-$NOW.mail"
-					DB_MAIL_VAR=$(<$DB_MAIL)
+					source ${SFOLDER}/mysqlBackupScript.sh;
+					DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
+					DB_MAIL_VAR=$(<${DB_MAIL})
 					HTMLOPEN='<html><body>'
 					HTMLCLOSE='</body></html>'
 					sendEmail -f ${SMTP_U} -t ${MAILA} -u "${VPSNAME} - Database Backup - [${NOWDISPLAY} - ${STATUS_D}]" -o message-content-type=html -m "${HTMLOPEN} ${DB_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P};
@@ -211,7 +213,7 @@ then
       esac
     done
   fi
-  if [[ ${CHOSEN_TYPE} == *"2"* ]]; then
+  if [[ ${CHOSEN_TYPE} == *"02"* ]]; then
     while true; do
         echo -e ${YELLOW}"> Do you really want to run the file backup?"${ENDCOLOR}
         read -p "Please type 'y' or 'n'" yn
@@ -231,7 +233,7 @@ then
         esac
     done
   fi
-  if [[ ${CHOSEN_TYPE} == *"3"* ]]; then
+  if [[ ${CHOSEN_TYPE} == *"03"* ]]; then
   	while true; do
         echo -e ${YELLOW}"> Do you really want to run the optimization script?"${ENDCOLOR}
         read -p "Please type 'y' or 'n'" yn
@@ -246,7 +248,7 @@ then
   			esac
   	done
   fi
-  if [[ ${CHOSEN_TYPE} == *"4"* ]]; then
+  if [[ ${CHOSEN_TYPE} == *"04"* ]]; then
   	while true; do
         echo -e ${YELLOW}"> Do you really want to run restore script?"${ENDCOLOR}
         read -p "Please type 'y' or 'n'" yn
@@ -261,7 +263,7 @@ then
   			esac
   	done
   fi
-  if [[ ${CHOSEN_TYPE} == *"5"* ]]; then
+  if [[ ${CHOSEN_TYPE} == *"05"* ]]; then
   	while true; do
         echo -e ${YELLOW}"> Do you really want to run the server migration script (hosting to vps)?"${ENDCOLOR}
         read -p "Please type 'y' or 'n'" yn
@@ -276,7 +278,7 @@ then
   			esac
   	done
   fi
-  if [[ ${CHOSEN_TYPE} == *"6"* ]]; then
+  if [[ ${CHOSEN_TYPE} == *"06"* ]]; then
   	while true; do
         echo -e ${YELLOW}" > Do you really want to run the LEMP instalation script?"${ENDCOLOR}
         read -p "Please type 'y' or 'n'" yn
@@ -291,15 +293,21 @@ then
   			esac
   	done
   fi
-  if [[ ${CHOSEN_TYPE} == *"7"* ]]; then
+  if [[ ${CHOSEN_TYPE} == *"07"* ]]; then
+        source ${SFOLDER}/utils/netdata_installer.sh;
+  fi
+  if [[ ${CHOSEN_TYPE} == *"08"* ]]; then
+        source ${SFOLDER}/utils/wordpress_installer.sh;
+  fi
+  if [[ ${CHOSEN_TYPE} == *"09"* ]]; then
         URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
         exitstatus=$?
         if [ ${exitstatus} = 0 ]; then
           source ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh gtmetrix ${URL_TO_TEST};
         fi
   fi
-  if [[ ${CHOSEN_TYPE} == *"8"* ]]; then
-    source ${SFOLDER}/replace_url_on_wordpress_db.sh;
+  if [[ ${CHOSEN_TYPE} == *"10"* ]]; then
+    source ${SFOLDER}/utils/replace_url_on_wordpress_db.sh;
   fi
 
 else
