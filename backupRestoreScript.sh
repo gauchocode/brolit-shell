@@ -11,20 +11,35 @@
 # FILES ONE SITE: ${SITES_F}/${FOLDER_NAME}/backup-${FOLDER_NAME}_files_${ONEWEEKAGO}.tar.bz2
 # DB: ${DBS_F}/${DATABASE}/db-${DATABASE}_${ONEWEEKAGO}.tar.bz2
 #
-#
+#############################################################################
+SCRIPT_V="2.5"
+
+### VARS ###
 MySQL_ROOT_PASS=""
 FOLDER_TO_RESTORE="/var/www"
+
+SFOLDER="/root/broobe-utils-scripts"					          #Backup Scripts folder
 
 SITES_F="sites"
 CONFIG_F="configs"
 DBS_F="databases"
-SFOLDER="/root/broobe-utils-scripts"					          #Backup Scripts folder
+
 #Restore Local?
 #$SFOLDER/tmp/backups/*.tar.gz
 
+### Setup Colours ###
+BLACK='\E[30;40m'
+RED='\E[31;40m'
+GREEN='\E[32;40m'
+YELLOW='\E[33;40m'
+BLUE='\E[34;40m'
+MAGENTA='\E[35;40m'
+CYAN='\E[36;40m'
+WHITE='\E[37;40m'
+
 RESTORE_TYPES="${CONFIG_F} ${DBS_F} ${SITES_F}"
 
-# Disaplay choose dialog with available backups
+# Display choose dialog with available backups
 CHOSEN_TYPE=$(whiptail --title "RESTORE BACKUP" --menu "Chose Backup Type" 20 78 10 `for x in ${RESTORE_TYPES}; do echo "$x [D]"; done` 3>&1 1>&2 2>&3)
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
@@ -118,9 +133,10 @@ else
               mysqldump -u root --password=${MySQL_ROOT_PASS} ${CHOSEN_PROJECT} > ${CHOSEN_PROJECT}_bk_before_restore.sql
 
               ### Helper para extraer el nombre del proyecto
+
+              ### TODO: debería extraer el sufijo real y no asumir que es _prod
               suffix="_prod"
               PROJECT_NAME=${CHOSEN_PROJECT%"$suffix"}
-              #PROJECT_NAME="dacomunicaciones"
               #echo "${PROJECT_NAME}"
 
               ### Vamos a crear el usuario y la base siguiendo el nuevo estandard de broobe
