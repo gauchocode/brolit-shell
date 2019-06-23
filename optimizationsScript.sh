@@ -25,10 +25,6 @@ if [ ${USER} != root ]; then
   echo -e ${RED}"Error: must be root! Exiting..."${ENDCOLOR}
   exit 0
 fi
-#if [[ -z "${MUSER}" || -z "${MPASS}" ]]; then
-#  echo -e ${RED}"Error: MUSER and MPASS must be set! Exiting..."${ENDCOLOR}
-#  exit 0
-#fi
 
 ### Remove old packages from system ###
 echo " > Cleanning old system packages ..." >> $LOG

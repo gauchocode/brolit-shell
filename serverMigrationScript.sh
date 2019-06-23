@@ -30,6 +30,16 @@ SMTP_P=""																		            #SMTP Password
 
 VPSNAME="$HOSTNAME"               					            #Or choose a name
 
+### Setup Colours ###
+BLACK='\E[30;40m'
+RED='\E[31;40m'
+GREEN='\E[32;40m'
+YELLOW='\E[33;40m'
+BLUE='\E[34;40m'
+MAGENTA='\E[35;40m'
+CYAN='\E[36;40m'
+WHITE='\E[37;40m'
+
 DB_PASS=$(openssl rand -base64 10)
 
 ### Log Start ###

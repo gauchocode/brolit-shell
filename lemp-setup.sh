@@ -1,23 +1,42 @@
 #!/bin/bash
 #
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 2.1
+# Version: 2.5
 #############################################################################
 
 #conf vars
-SERVER_MODEL=""                               #Options: cx11, cx21, cx31
-DOMAIN="DOMAIN_NAME"
-MySQL_ROOT_PASS=""          									#MySQL root User Pass
+
+#TODO: esto deberia deprecarse y calcularse con el hardware del server
+SERVER_MODEL=""                               # Options: cx11, cx21, cx31
+
+#TODO: el dominio debe preguntarse en los installers con whiptail
+DOMAIN=""
+#TODO: el pass de MySQL debe sacarse de una config
+MySQL_ROOT_PASS=""
+
 COMPOSER="false"
 WP="false"
+
+MARIADB="false"                               # If true MariaDB will be installed instead MySQL
+PHP_V="7.2"                                   # Ubuntu 18.04 LTS Default
+
+### Setup Colours ###
+BLACK='\E[30;40m'
+RED='\E[31;40m'
+GREEN='\E[32;40m'
+YELLOW='\E[33;40m'
+BLUE='\E[34;40m'
+MAGENTA='\E[35;40m'
+CYAN='\E[36;40m'
+WHITE='\E[37;40m'
 
 ### Checking some things... ###
 if [ $USER != root ]; then
   echo -e ${RED}"Error: must be root! Exiting..."${ENDCOLOR}
   exit 0
 fi
-if [[ -z "${SERVER_MODEL}" || -z "${DOMAIN}" || -z "${MySQL_ROOT_PASS}" ]]; then
-  echo -e ${RED}"Error: SERVER_MODEL, DOMAIN and MySQL_ROOT_PASS must be set! Exiting..."${ENDCOLOR}
+if [[ -z "${SERVER_MODEL}" || -z "${MySQL_ROOT_PASS}" ]]; then
+  echo -e ${RED}"Error: SERVER_MODEL and MySQL_ROOT_PASS must be set! Exiting..."${ENDCOLOR}
   exit 0
 fi
 
@@ -35,17 +54,26 @@ LOG_NAME=log_lemp_${TIMESTAMP}.log
 LOG=${PATH_LOG}/${LOG_NAME}
 
 ### EXPORT VARS ###
-export DOMAIN LOG
+export LOG
 
 #updating packages
-echo -e "\nUpdating package lists..\n" >>$LOG
-
+echo -e "\nAdding repos and updating package lists ...\n" >>$LOG
 apt --yes install software-properties-common
 add-apt-repository ppa:certbot/certbot
 apt --yes update
+
+echo -e "\nUpgrading packages before installation ...\n" >>$LOG
 apt --yes dist-upgrade
 
-apt --yes install nginx mysql-server php7.2-fpm php7.2-mysql php-xml php7.2-curl php7.2-mbstring php7.2-gd php-imagick php7.2-zip php7.2-bz2 php-bcmath php7.2-soap php7.2-dev php-pear zip clamav ncdu jpegoptim optipng python-certbot-nginx monit
+if [ "${MARIADB}" = false ] ; then
+  echo -e "\nLEMP installation with MySQL ...\n" >>$LOG
+  apt --yes install nginx mysql-server php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear zip clamav ncdu jpegoptim optipng python-certbot-nginx monit sendemail libio-socket-ssl-perl dnsutils
+
+else
+  echo -e "\nLEMP installation with MariaDB ...\n" >>$LOG
+  apt --yes install nginx mariadb-server mariadb-client php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear zip clamav ncdu jpegoptim optipng python-certbot-nginx monit sendemail libio-socket-ssl-perl dnsutils
+
+fi
 
 pear install mail mail_mime net_smtp
 
@@ -55,13 +83,17 @@ dpkg-reconfigure tzdata
 #secure mysql installation
 sudo mysql_secure_installation
 
+#getting server info
+CPUS=$(grep -c "processor" /proc/cpuinfo)
+RAM=$(grep MemTotal /proc/meminfo | awk '{print $2}' | xargs -I {} echo "scale=0; {}/1024^2" | bc)
+
 #php.ini broobe standard configuration
 echo -e "\nMoving php configuration file...\n" >>$LOG
-cat confs/php.ini > /etc/php/7.2/fpm/php.ini
+cat confs/php.ini > /etc/php/${PHP_V}/fpm/php.ini
 
 #fpm broobe standard configuration
 echo -e "\nMoving fpm configuration file...\n" >>$LOG
-cat confs/${SERVER_MODEL}/www.conf > /etc/php/7.2/fpm/pool.d/www.conf
+cat confs/${SERVER_MODEL}/www.conf > /etc/php/${PHP_V}/fpm/pool.d/www.conf
 
 #remove html default nginx folders
 rm -r /var/www/html
@@ -73,77 +105,24 @@ cat confs/nginx.conf > /etc/nginx/nginx.conf
 echo -e "\nMoving nginx configuration files...\n" >>$LOG
 #empty default site configuration
 echo " " >> /etc/nginx/sites-available/default
-#netdata proxy configuration
-cp confs/monitor /etc/nginx/sites-available
-
-#new site configuration
-cp confs/default /etc/nginx/sites-available/${DOMAIN}
-ln -s /etc/nginx/sites-available/${DOMAIN} /etc/nginx/sites-enabled/${DOMAIN}
 
 if [ "${WP}" = true ] ; then
-  sh wordpress.sh
+  ${SFOLDER}/utils/wordpress_installer.sh
 fi
 
 if [ "${COMPOSER}" = true ] ; then
-  EXPECTED_SIGNATURE="$(wget -q -O - https://composer.github.io/installer.sig)"
-  php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-  ACTUAL_SIGNATURE="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
-  if [ "$EXPECTED_SIGNATURE" != "$ACTUAL_SIGNATURE" ]
-  then
-      >&2 echo 'ERROR: Invalid installer signature' >>$LOG
-      rm composer-setup.php
-      exit 1
-  fi
-  php composer-setup.php --quiet
-  RESULT=$?
-  rm composer-setup.php
-  exit $RESULT
+  ${SFOLDER}/utils/composer_installer.sh
 fi
-
-#replacing string to match domain name
-#sudo replace "domain.com" "$DOMAIN" -- /etc/nginx/sites-available/default
-sed -i "s#dominio.com#${DOMAIN}#" /etc/nginx/sites-available/default
-#es necesario correrlo dos veces para reemplazarlo dos veces en una misma linea
-sed -i "s#dominio.com#${DOMAIN}#" /etc/nginx/sites-available/default
-
-sed -i "s#dominio.com#${DOMAIN}#" /etc/nginx/sites-available/monitor
-#sudo sed -i "s#dominio.com#$DOMAIN#" /etc/nginx/sites-available/phpmyadmin
-
-ln -s /etc/nginx/sites-available/monitor /etc/nginx/sites-enabled/monitor
-#ln -s /etc/nginx/sites-available/phpmyadmin /etc/nginx/sites-enabled/phpmyadmin
 
 #configure monit
 cat confs/monit/lemp-services > /etc/monit/conf.d/lemp-services
 cat confs/monit/monitrc > /etc/monit/monitrc
 
 echo -e "\nRestarting services...\n"
-systemctl restart php7.2-fpm
+systemctl restart php${PHP_V}-fpm
 systemctl restart nginx.service
 service monit restart
 
-#TODO: ya dejar configurada las extensiones
-echo -e "\nInstalling Netdata...\n"
-apt --yes install zlib1g-dev uuid-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python-mysqldb
-git clone https://github.com/firehol/netdata.git --depth=1
-cd netdata && ./netdata-installer.sh --dont-wait
-killall netdata && cp system/netdata.service /etc/systemd/system/
-
-#TODO: Agregar otras confs y la config de las notificaciones
-#TODO: Checkear si mandando la conf a /usr/share/netdata hace que con un update de netdata no se borre la config
-#TODO: Acá hay que hacer un sed para agregar el pass de root (quiza hasta sea menor ni copiar el mysql.conf)
-cat confs/netdata/python.d/mysql.conf > /usr/lib/netdata/conf.d/python.d/mysql.conf
-
-cat confs/netdata/python.d/monit.conf > /usr/lib/netdata/conf.d/python.d/monit.conf
-
-cat confs/netdata/health_alarm_notify.conf > /usr/lib/netdata/conf.d/health_alarm_notify.conf
-
-SQL1="CREATE USER 'netdata'@'localhost';"
-SQL2="GRANT USAGE on *.* to 'netdata'@'localhost';"
-SQL3="FLUSH PRIVILEGES;"
-
-echo "Creating netdata user in MySQL ..." >> $LOG
-mysql -u root -p${MySQL_ROOT_PASS} -e "${SQL1}${SQL2}${SQL3}" >> $LOG
-
-systemctl daemon-reload && systemctl enable netdata && service netdata start
+${SFOLDER}/utils/netdata_installer.sh
 
 echo "Backup: Script End -- $(date +%Y%m%d_%H%M)" >> $LOG
