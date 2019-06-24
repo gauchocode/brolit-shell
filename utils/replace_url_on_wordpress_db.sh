@@ -68,13 +68,14 @@ if [[ -z "${existing_URL}" ]]; then
         SQL0="USE ${CHOSEN_DB};"
         SQL1="UPDATE ${DB_PREFIX}_options SET option_value = replace(option_value, '${existing_URL}', '${new_URL}') WHERE option_name = 'home' OR option_name = 'siteurl';"
         SQL2="UPDATE ${DB_PREFIX}_posts SET post_content = replace(post_content, '${existing_URL}', '${new_URL}');"
-        SQL3="UPDATE ${DB_PREFIX}_postmeta SET meta_value = replace(meta_value,'${existing_URL}','${new_URL}');"
-        SQL4="UPDATE ${DB_PREFIX}_usermeta SET meta_value = replace(meta_value, '${existing_URL}','${new_URL}');"
-        SQL5="UPDATE ${DB_PREFIX}_links SET link_url = replace(link_url, '${existing_URL}','${new_URL}');"
-        SQL6="UPDATE ${DB_PREFIX}_comments SET comment_content = replace(comment_content , '${existing_URL}','${new_URL}');"
+        SQL3="UPDATE ${DB_PREFIX}_posts SET guid = replace(guid, '${existing_URL}', '${new_URL}');"
+        SQL4="UPDATE ${DB_PREFIX}_postmeta SET meta_value = replace(meta_value,'${existing_URL}','${new_URL}');"
+        SQL5="UPDATE ${DB_PREFIX}_usermeta SET meta_value = replace(meta_value, '${existing_URL}','${new_URL}');"
+        SQL6="UPDATE ${DB_PREFIX}_links SET link_url = replace(link_url, '${existing_URL}','${new_URL}');"
+        SQL7="UPDATE ${DB_PREFIX}_comments SET comment_content = replace(comment_content , '${existing_URL}','${new_URL}');"
 
         echo -e ${YELLOW}" > Replacing URLs in database ${PROJECT_NAME} ..."${ENDCOLOR}
-        ${MYSQL} -u ${MUSER} --password=${MPASS} -e "${SQL0}${SQL1}${SQL2}${SQL3}${SQL4}${SQL5}${SQL6}"
+        ${MYSQL} -u ${MUSER} --password=${MPASS} -e "${SQL0}${SQL1}${SQL2}${SQL3}${SQL4}${SQL5}${SQL6}${SQL7}"
 
       fi
 

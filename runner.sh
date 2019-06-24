@@ -12,31 +12,31 @@ VPSNAME="$HOSTNAME"               						#Or choose a name
 SFOLDER="/root/broobe-utils-scripts"					#Backup Scripts folder
 SITES="/var/www"                 							#Where sites are stored
 
-### MYSQL CONFIG ###
 MUSER="root"              							      #MySQL User
-MPASS=""          								            #MySQL User Pass
 
 ### SENDEMAIL CONFIG ###
 MAILA="servidores@broobe.com"     						#Notification Email
 SMTP_SERVER="mail.bmailing.com.ar:587"				#SMTP Server and Port
 SMTP_TLS="yes"																#TLS: yes or no
 SMTP_U="no-reply@envios.broobe.com"						#SMTP User
-SMTP_P="broobe2020*"													#SMTP Password
 
 SITES_BL=".wp-cli,phpmyadmin"									#Folder blacklist
 
 WSERVER="/etc/nginx"               						#Webserver config files location
 MySQL_CF="/etc/mysql"                         #MySQL config files location
 PHP_CF="/etc/php/7.2/fpm"                     #PHP config files location
-BAKWP="${SFOLDER}/tmp"              						#Temp folder to store Backups
+BAKWP="${SFOLDER}/tmp"              					#Temp folder to store Backups
 DROPBOX_FOLDER="/"														#Dropbox Folder Backup
 MAIN_VOL="/dev/sda1"													#Main partition
 
+#TODO: esta opcion debería deprecarse
 ONE_FILE_BK=false															#One tar for all databases or individual tar for database
+
 DB_BK=true																		#Include database backup?
 DEL_UP=true																		#Delete backup files after upload?
 
 ### PACKAGES TO WATCH ###
+# TODO: deberia poder elejirse desde las opciones version de php y motor de base de datos
 PACKAGES=(linux-firmware dpkg perl nginx php7.2-fpm mysql-server curl openssl)
 
 ### DUPLICITY CONFIG ###
@@ -44,6 +44,28 @@ DUP_BK=false									    						#Duplicity Backups true or false (bool)
 DUP_ROOT="/media/backups/PROJECT_NAME_OR_VPS"	#Duplicity Backups destination folder
 DUP_SRC_BK="/var/www/"												#Source of Directories to Backup
 DUP_FOLDERS="FOLDER1,FOLDER2"	    						#Folders to Backup
+
+if test -f /root/.broobe-utils-options ; then
+  source /root/.broobe-utils-options
+fi
+
+# Display dialog to imput MySQL root pass and then store it into a hidden file
+if [[ -z "${MPASS}" ]]; then
+  MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root Password" 10 60 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+          #TODO: testear el password antes de guardarlo
+          echo "MPASS="${MPASS} >> /root/.broobe-utils-options
+  fi
+fi
+
+if [[ -z "${SMTP_P}" ]]; then
+  SMTP_P=$(whiptail --title "SMTP Password" --inputbox "Please insert the SMTP user password" 10 60 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+          echo "SMTP_P="${SMTP_P} >> /root/.broobe-utils-options
+  fi
+fi
 
 ### Setup Colours ###
 BLACK='\E[30;40m'
@@ -175,7 +197,9 @@ chmod +x ${SFOLDER}/lemp-setup.sh
 chmod +x ${SFOLDER}/backupRestoreScript.sh
 chmod +x ${SFOLDER}/serverMigrationScript.sh
 chmod +x ${SFOLDER}/utils/cloudflare_update_IP.sh
+chmod +x ${SFOLDER}/utils/composer_installer.sh
 chmod +x ${SFOLDER}/utils/netdata_installer.sh
+chmod +x ${SFOLDER}/utils/php_optimizations.sh
 chmod +x ${SFOLDER}/utils/wordpress_installer.sh
 chmod +x ${SFOLDER}/utils/replace_url_on_wordpress_db.sh
 chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools.sh
