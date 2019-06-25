@@ -382,7 +382,7 @@ fi
 
 echo " > Removing temp files..."
 rm ${PKG_MAIL} ${DB_MAIL} ${FILE_MAIL}
-echo -e "\e[42m > DONE \e[0m"
+echo -e ${GREEN}" > DONE"${ENDCOLOR}
 
 ### Log End ###
 END_TIME=$(date +%s)

@@ -12,13 +12,10 @@
 SCRIPT_V="2.5"
 
 ### TO EDIT
-COPY_PROJECT="gacetabonaerense.com"                     # Proyect to copy. Example: test.broobe.com
-DOMAIN="dev.noticiashoy.com.ar"                         # Domain for WP installation. Example: landing.broobe.com
-ROOT_DOMAIN="noticiashoy.com.ar"                        # Only for Cloudflare API. Example: broobe.com
-PROJECT_NAME="noticiashoy"                              # Project Name. Example: landing_broobe
-
-### MySQL
-MySQL_ROOT_PASS="whiVmGhvg6bXSy"          							# MySQL root User Pass
+COPY_PROJECT=""                                         # Proyect to copy. Example: test.broobe.com
+DOMAIN=""                                               # Domain for WP installation. Example: landing.broobe.com
+ROOT_DOMAIN=""                                          # Only for Cloudflare API. Example: broobe.com
+PROJECT_NAME=""                                         # Project Name. Example: landing_broobe
 
 MHOST="localhost"
 MYSQL="$(which mysql)"
@@ -39,14 +36,29 @@ CYAN='\E[36;40m'
 WHITE='\E[37;40m'
 ENDCOLOR='\033[0m' # No Color
 
-### Checking some things... ###
+### Checking some things
 if [ $USER != root ]; then
   echo -e ${RED}"Error: must be root! Exiting..."${ENDCOLOR}
   exit 0
 fi
-if [[ -z "${COPY_PROJECT}" || -z "${DOMAIN}" || -z "${ROOT_DOMAIN}" || -z "${PROJECT_NAME}" || -z "${MySQL_ROOT_PASS}" ]]; then
-  echo -e ${RED}"Error: DOMAIN, ROOT_DOMAIN, PROJECT_NAME, PROJECT_STATE and MySQL_ROOT_PASS must be set! Exiting..."${ENDCOLOR}
+
+if test -f /root/.broobe-utils-options ; then
+  source /root/.broobe-utils-options
+fi
+
+if [[ -z "${COPY_PROJECT}" || -z "${DOMAIN}" || -z "${ROOT_DOMAIN}" || -z "${PROJECT_NAME}" ]]; then
+  echo -e ${RED}"Error: DOMAIN, ROOT_DOMAIN, PROJECT_NAME and COPY_PROJECT must be set! Exiting..."${ENDCOLOR}
   exit 0
+fi
+
+# Display dialog to imput MySQL root pass and then store it into a hidden file
+if [[ -z "${MPASS}" ]]; then
+  MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root Password" 10 60 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+          #TODO: testear el password antes de guardarlo
+          echo "MPASS="${MPASS} >> /root/.broobe-utils-options
+  fi
 fi
 
 # Project states
@@ -98,26 +110,47 @@ if [ $exitstatus = 0 ]; then
 
   echo -e ${GREEN}" > DONE"${ENDCOLOR}
 
-  ### TODO: ojo que me cambia el pass en el wp-config.php por más que el usuario exista, CORREGIR!!!
-  DB_PASS=$(openssl rand -hex 12)
-
-  #para cambiar pass de un user existente
-  #ALTER USER '_user'@'localhost' IDENTIFIED BY 'dadsada=';
-  SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_${PROJECT_STATE};"
-  SQL2="CREATE USER IF NOT EXISTS '${PROJECT_NAME}_user'@'localhost' IDENTIFIED BY '${DB_PASS}';"
-  SQL3="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
-  SQL4="FLUSH PRIVILEGES;"
-
-  echo -e ${YELLOW}" > Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS} if they not exist ..."${ENDCOLOR}
-  mysql -u root --password=${MySQL_ROOT_PASS} -e "${SQL1}${SQL2}${SQL3}${SQL4}"
-
-  echo -e ${YELLOW}" > Changing wp-config.php database parameters ..."${ENDCOLOR}
   WPCONFIG=${FOLDER_TO_INSTALL}/${DOMAIN}/wp-config.php
+
+  if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${PROJECT_NAME}_user';" | mysql -u root --password=${MPASS} | grep 1 &> /dev/null; then
+
+    DB_PASS=$(openssl rand -hex 12)
+
+    #para cambiar pass de un user existente
+    #ALTER USER '_user'@'localhost' IDENTIFIED BY 'dadsada=';
+    SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_${PROJECT_STATE};"
+    SQL2="CREATE USER '${PROJECT_NAME}_user'@'localhost' IDENTIFIED BY '${DB_PASS}';"
+    SQL3="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
+    SQL4="FLUSH PRIVILEGES;"
+
+    echo -e ${YELLOW}" > Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS} if they not exist ..."${ENDCOLOR}
+    mysql -u root --password=${MPASS} -e "${SQL1}${SQL2}${SQL3}${SQL4}"
+
+    echo -e ${GREEN}" > DONE"${ENDCOLOR}
+
+    echo -e ${YELLOW}" > Changing wp-config.php database parameters ..."${ENDCOLOR}
+    sed -i "/DB_PASSWORD/s/'[^']*'/'${DB_PASS}'/2" ${WPCONFIG}
+
+  else
+      echo "Database user already exist. Continue ..."
+
+      SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_${PROJECT_STATE};"
+      SQL2="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
+      SQL3="FLUSH PRIVILEGES;"
+
+      echo -e ${YELLOW}" > Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and granting privileges to user: ${PROJECT_NAME}_user ..."${ENDCOLOR}
+      mysql -u root --password=${MPASS} -e "${SQL1}${SQL2}${SQL3}"
+
+      echo -e ${GREEN}" > DONE"${ENDCOLOR}
+
+      echo -e ${YELLOW}" > Changing wp-config.php database parameters ..."${ENDCOLOR}
+      echo -e ${YELLOW}" > Leaving DB_USER untouched ..."${ENDCOLOR}
+
+  fi
 
   sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" ${WPCONFIG}
   sed -i "/DB_NAME/s/'[^']*'/'${PROJECT_NAME}_${PROJECT_STATE}'/2" ${WPCONFIG}
   sed -i "/DB_USER/s/'[^']*'/'${PROJECT_NAME}_user'/2" ${WPCONFIG}
-  sed -i "/DB_PASSWORD/s/'[^']*'/'${DB_PASS}'/2" ${WPCONFIG}
 
   # Set WP salts
   # English
@@ -147,16 +180,15 @@ if [ $exitstatus = 0 ]; then
     SOURCE_WPCONFIG=${FOLDER_TO_INSTALL}/${COPY_PROJECT}
     DB_TOCOPY=`cat ${SOURCE_WPCONFIG}/wp-config.php | grep DB_NAME | cut -d \' -f 4`
     BK_FILE="db-${DB_TOCOPY}.sql"
-    $MYSQLDUMP --max-allowed-packet=1073741824  -u root -p${MySQL_ROOT_PASS} ${DB_TOCOPY} > ${BK_FOLDER}${BK_FILE}
+    $MYSQLDUMP --max-allowed-packet=1073741824  -u root -p${MPASS} ${DB_TOCOPY} > ${BK_FOLDER}${BK_FILE}
     if [ "$?" -eq 0 ]
     then
         echo -e ${GREEN}" > Mysqldump OK ..."${ENDCOLOR}
         echo -e ${YELLOW}" > Trying to restore database ..."${ENDCOLOR}
-        mysql -u root --password=${MySQL_ROOT_PASS} ${PROJECT_NAME}_${PROJECT_STATE} < ${BK_FOLDER}${BK_FILE}
+        mysql -u root --password=${MPASS} ${PROJECT_NAME}_${PROJECT_STATE} < ${BK_FOLDER}${BK_FILE}
 
         echo -e ${YELLOW}" > Replacing URLs on the new database ..."${ENDCOLOR}
         MUSER="root"
-        MPASS=${MySQL_ROOT_PASS}
         TARGET_DB=${PROJECT_NAME}_${PROJECT_STATE}
         ### OJO: heredamos el prefijo de la base copiada y no la reemplazamos.
         ### Ref: https://www.cloudways.com/blog/change-wordpress-database-table-prefix-manually/
