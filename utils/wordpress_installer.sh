@@ -77,6 +77,12 @@ INSTALLATION_TYPE=$(whiptail --title "INSTALLATION TYPE" --menu "Chose an Instal
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
 
+  if [ -d "${FOLDER_TO_INSTALL}/${DOMAIN}" ]; then
+      echo -e ${RED}"ERROR: Destination folder already exist, aborting ..."${ENDCOLOR}
+      exit 1
+
+  fi
+
   if [[ ${INSTALLATION_TYPE} == *"COPY"* ]]; then
     echo -e ${YELLOW}"Trying to make a copy of ${COPY_PROJECT} ..."${ENDCOLOR}
     cd ${FOLDER_TO_INSTALL}
