@@ -1,31 +1,34 @@
 #!/bin/bash
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 2.1
+# Version: 2.9
 #############################################################################
 
-### VARS ###
+### VARS
 BK_TYPE="File"
 ERROR=false
 ERROR_TYPE=""
 SITES_F="sites"
 CONFIG_F="configs"
 
-### Starting Message ###
+### Dropbox Uploader Directory
+DPU_F="${SFOLDER}/utils/dropbox-uploader"
+
+### Starting Message
 echo -e "\e[42m > Starting file backup script...\e[0m" >> $LOG
 
-echo " > Creating Dropbox Folder ${CONFIG_F} ..." >> $LOG
-${SFOLDER}/dropbox_uploader.sh mkdir /${CONFIG_F}
+echo " > Creating Dropbox folder ${CONFIG_F} on Dropbox ..." >> $LOG
+${DPU_F}/dropbox_uploader.sh mkdir /${CONFIG_F}
 
-### TAR Webserver Config Files ###
+### TAR Webserver Config Files
 if [ -n "${WSERVER}" ]; then
   echo " > $TAR -jcpf ${BAKWP}/${NOW}/webserver-config-files-${NOW}.tar.bz2 --directory=${WSERVER} ."
   if $TAR -jcpf ${BAKWP}/${NOW}/webserver-config-files-${NOW}.tar.bz2 --directory=${WSERVER} .
   then
       echo " > Nginx Config Files Backup created..." >> $LOG
       echo " > Uploading TAR to Dropbox ..." >> $LOG
-      $SFOLDER/dropbox_uploader.sh upload ${BAKWP}/${NOW}/webserver-config-files-${NOW}.tar.bz2 ${DROPBOX_FOLDER}/${CONFIG_F}
+      ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/webserver-config-files-${NOW}.tar.bz2 ${DROPBOX_FOLDER}/${CONFIG_F}
       echo " > Trying to delete old backup from Dropbox ..." >> $LOG
-      $SFOLDER/dropbox_uploader.sh remove ${CONFIG_F}/webserver-config-files-${ONEWEEKAGO}.tar.bz2
+      ${DPU_F}/dropbox_uploader.sh remove ${CONFIG_F}/webserver-config-files-${ONEWEEKAGO}.tar.bz2
   else
       ERROR=true
       ERROR_TYPE="ERROR: No such directory or file ${BAKWP}/${NOW}/webserver-config-files-${NOW}.tar.bz2"
@@ -39,9 +42,9 @@ if [ -n "${PHP_CF}" ]; then
   then
       echo " > PHP Config Files Backup created..." >> $LOG
       echo " > Uploading TAR to Dropbox ..." >> $LOG
-      $SFOLDER/dropbox_uploader.sh upload ${BAKWP}/${NOW}/php-config-files-${NOW}.tar.bz2 ${DROPBOX_FOLDER}/${CONFIG_F}
+      ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/php-config-files-${NOW}.tar.bz2 ${DROPBOX_FOLDER}/${CONFIG_F}
       echo " > Trying to delete old backup from Dropbox ..." >> $LOG
-      $SFOLDER/dropbox_uploader.sh remove ${CONFIG_F}/php-config-files-${ONEWEEKAGO}.tar.bz2
+      ${DPU_F}/dropbox_uploader.sh remove ${CONFIG_F}/php-config-files-${ONEWEEKAGO}.tar.bz2
   else
       ERROR=true
       ERROR_TYPE="ERROR: No such directory or file ${BAKWP}/${NOW}/php-config-files-${NOW}.tar.bz2"
@@ -55,9 +58,9 @@ if [ -n "${MySQL_CF}" ]; then
   then
       echo " > MySQL Config Files Backup created..." >> $LOG
       echo " > Uploading TAR to Dropbox ..." >> $LOG
-      $SFOLDER/dropbox_uploader.sh upload ${BAKWP}/${NOW}/mysql-config-files-${NOW}.tar.bz2 ${DROPBOX_FOLDER}/${CONFIG_F}
+      ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/mysql-config-files-${NOW}.tar.bz2 ${DROPBOX_FOLDER}/${CONFIG_F}
       echo " > Trying to delete old backup from Dropbox ..." >> $LOG
-      $SFOLDER/dropbox_uploader.sh remove ${CONFIG_F}/mysql-config-files-${ONEWEEKAGO}.tar.bz2
+      ${DPU_F}/dropbox_uploader.sh remove ${CONFIG_F}/mysql-config-files-${ONEWEEKAGO}.tar.bz2
   else
       ERROR=true
       ERROR_TYPE="ERROR: No such directory or file ${BAKWP}/${NOW}/mysql-config-files-${NOW}.tar.bz2"
@@ -73,9 +76,9 @@ if [ "${ONE_FILE_BK}" = true ] ; then
         BK_SIZE=$(ls -lah ${BAKWP}/${NOW}/backup-files_${NOW}.tar.bz2 | awk '{ print $5}')
         echo " > Backup created, final size: ${BK_SIZE} ..." >> $LOG
         echo " > Uploading TAR to Dropbox ..." >> $LOG
-        $SFOLDER/dropbox_uploader.sh upload ${BAKWP}/${NOW}/backup-files_${NOW}.tar.bz2 ${DROPBOX_FOLDER}/${SITES_F}
+        ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/backup-files_${NOW}.tar.bz2 ${DROPBOX_FOLDER}/${SITES_F}
         echo " > Trying to delete old backup from Dropbox ..." >> $LOG
-        $SFOLDER/dropbox_uploader.sh remove ${DROPBOX_FOLDER}/${SITES_F}/backup-files_${ONEWEEKAGO}.tar.bz2
+        ${DPU_F}/dropbox_uploader.sh remove ${DROPBOX_FOLDER}/${SITES_F}/backup-files_${ONEWEEKAGO}.tar.bz2
     else
         ERROR=true
         ERROR_TYPE="ERROR: No such directory or file ${BAKWP}/${NOW}/backup-files_${NOW}.tar.bz2"
@@ -97,13 +100,13 @@ else
               echo " > Backup created, final size: $BK_SIZE ..." >> $LOG
 
               echo " > Creating Dropbox Folder ${FOLDER_NAME} ..." >> $LOG
-              ${SFOLDER}/dropbox_uploader.sh mkdir /${SITES_F}
-              ${SFOLDER}/dropbox_uploader.sh mkdir /${SITES_F}/${FOLDER_NAME}/
+              ${DPU_F}/dropbox_uploader.sh mkdir /${SITES_F}
+              ${DPU_F}/dropbox_uploader.sh mkdir /${SITES_F}/${FOLDER_NAME}/
 
               echo " > Uploading TAR to Dropbox ..." >> $LOG
-              ${SFOLDER}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 $DROPBOX_FOLDER/${SITES_F}/${FOLDER_NAME}/
+              ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 $DROPBOX_FOLDER/${SITES_F}/${FOLDER_NAME}/
               echo " > Trying to delete old backup from Dropbox ..." >> $LOG
-              ${SFOLDER}/dropbox_uploader.sh remove $DROPBOX_FOLDER/${SITES_F}/${FOLDER_NAME}/backup-${FOLDER_NAME}_files_${ONEWEEKAGO}.tar.bz2
+              ${DPU_F}/dropbox_uploader.sh remove $DROPBOX_FOLDER/${SITES_F}/${FOLDER_NAME}/backup-${FOLDER_NAME}_files_${ONEWEEKAGO}.tar.bz2
               if [ "$DEL_UP" = true ] ; then
                 echo " > Deleting backup from server ..." >> $LOG
                 rm -r ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2
