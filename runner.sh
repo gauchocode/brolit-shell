@@ -2,48 +2,50 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.5
+# Version: 2.9
 #############################################################################
 
-SCRIPT_V="2.5"
+SCRIPT_V="2.9"
 
-### TO EDIT ###
-VPSNAME="$HOSTNAME"               						#Or choose a name
-SFOLDER="/root/broobe-utils-scripts"					#Backup Scripts folder
-SITES="/var/www"                 							#Where sites are stored
+VPSNAME="$HOSTNAME"
 
-MUSER="root"              							      #MySQL User
+SFOLDER="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"  #Backup Scripts folder. Recomended: /root/broobe-utils-scripts
+SITES="/var/www"                                                      #Where sites are stored
 
-### SENDEMAIL CONFIG ###
-MAILA="servidores@broobe.com"     						#Notification Email
-SMTP_SERVER="mail.bmailing.com.ar:587"				#SMTP Server and Port
-SMTP_TLS="yes"																#TLS: yes or no
-SMTP_U="no-reply@envios.broobe.com"						#SMTP User
+MUSER="root"                                                          #MySQL User
 
-SITES_BL=".wp-cli,phpmyadmin"									#Folder blacklist
+SITES_BL=".wp-cli,phpmyadmin"                                         #Folder blacklist
 
-WSERVER="/etc/nginx"               						#Webserver config files location
-MySQL_CF="/etc/mysql"                         #MySQL config files location
-PHP_CF="/etc/php/7.2/fpm"                     #PHP config files location
-BAKWP="${SFOLDER}/tmp"              					#Temp folder to store Backups
-DROPBOX_FOLDER="/"														#Dropbox Folder Backup
-MAIN_VOL="/dev/sda1"													#Main partition
+WSERVER="/etc/nginx"                                                  #Webserver config files location
+MySQL_CF="/etc/mysql"                                                 #MySQL config files location
+PHP_CF="/etc/php/7.2/fpm"                                             #PHP config files location
+
+BAKWP="${SFOLDER}/tmp"                                                #Temp folder to store Backups
+DROPBOX_FOLDER="/"                                                    #Dropbox Folder Backup
+MAIN_VOL="/dev/sda1"                                                  #Main partition
 
 #TODO: esta opcion debería deprecarse
-ONE_FILE_BK=false															#One tar for all databases or individual tar for database
+ONE_FILE_BK=false                                                     #One tar for all databases or individual tar for database
 
-DB_BK=true																		#Include database backup?
-DEL_UP=true																		#Delete backup files after upload?
+DB_BK=true                                                            #Include database backup?
+DEL_UP=true                                                           #Delete backup files after upload?
 
-### PACKAGES TO WATCH ###
-# TODO: deberia poder elejirse desde las opciones version de php y motor de base de datos
+### DUPLICITY CONFIG
+DUP_BK=false                                                          #Duplicity Backups true or false (bool)
+DUP_ROOT="/media/backups/PROJECT_NAME_OR_VPS"                         #Duplicity Backups destination folder
+DUP_SRC_BK="/var/www/"                                                #Source of Directories to Backup
+DUP_FOLDERS="FOLDER1,FOLDER2"                                         #Folders to Backup
+
+### PACKAGES TO WATCH
+### TODO: deberia poder elejirse desde las opciones version de php y motor de base de datos
 PACKAGES=(linux-firmware dpkg perl nginx php7.2-fpm mysql-server curl openssl)
 
-### DUPLICITY CONFIG ###
-DUP_BK=false									    						#Duplicity Backups true or false (bool)
-DUP_ROOT="/media/backups/PROJECT_NAME_OR_VPS"	#Duplicity Backups destination folder
-DUP_SRC_BK="/var/www/"												#Source of Directories to Backup
-DUP_FOLDERS="FOLDER1,FOLDER2"	    						#Folders to Backup
+### SENDEMAIL CONFIG
+MAILA="servidores@broobe.com"                                         #Notification Email
+SMTP_SERVER="mail.bmailing.com.ar"                                    #SMTP Server
+SMTP_PORT="587"                                                       #SMTP Port
+SMTP_TLS="yes"                                                        #TLS: yes or no
+SMTP_U="no-reply@envios.broobe.com"                                   #SMTP User
 
 if test -f /root/.broobe-utils-options ; then
   source /root/.broobe-utils-options
@@ -133,7 +135,7 @@ fi
 IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
 
 ### EXPORT VARS ###
-export SCRIPT_V VPSNAME BAKWP SFOLDER SITES SITES_BL WSERVER PHP_CF MySQL_CF DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U DEL_UP ONE_FILE_BK IP SMTP_SERVER SMTP_TLS SMTP_U SMTP_P LOG
+export SCRIPT_V VPSNAME BAKWP SFOLDER SITES SITES_BL WSERVER PHP_CF MySQL_CF DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U DEL_UP ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P LOG
 
 ### Creating temporary folders ###
 if [ ! -d "${BAKWP}" ]
@@ -195,12 +197,12 @@ chmod +x ${SFOLDER}/filesBackupScript.sh
 chmod +x ${SFOLDER}/optimizationsScript.sh
 chmod +x ${SFOLDER}/lemp-setup.sh
 chmod +x ${SFOLDER}/backupRestoreScript.sh
-chmod +x ${SFOLDER}/serverMigrationScript.sh
 chmod +x ${SFOLDER}/utils/cloudflare_update_IP.sh
 chmod +x ${SFOLDER}/utils/composer_installer.sh
 chmod +x ${SFOLDER}/utils/netdata_installer.sh
 chmod +x ${SFOLDER}/utils/php_optimizations.sh
 chmod +x ${SFOLDER}/utils/wordpress_installer.sh
+chmod +x ${SFOLDER}/untils/wordpress_migration_from_URL.sh
 chmod +x ${SFOLDER}/utils/replace_url_on_wordpress_db.sh
 chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools.sh
 chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh
@@ -228,7 +230,7 @@ then
 					DB_MAIL_VAR=$(<${DB_MAIL})
 					HTMLOPEN='<html><body>'
 					HTMLCLOSE='</body></html>'
-					sendEmail -f ${SMTP_U} -t ${MAILA} -u "${VPSNAME} - Database Backup - [${NOWDISPLAY} - ${STATUS_D}]" -o message-content-type=html -m "${HTMLOPEN} ${DB_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P};
+					sendEmail -f ${SMTP_U} -t ${MAILA} -u "${VPSNAME} - Database Backup - [${NOWDISPLAY} - ${STATUS_D}]" -o message-content-type=html -m "${HTMLOPEN} ${DB_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P};
 					break;;
           [Nn]* )
 					echo -e "\e[31mAborting database backup...\e[0m";
@@ -248,7 +250,7 @@ then
   					FILE_MAIL_VAR=$(<$FILE_MAIL)
   					HTMLOPEN='<html><body>'
   					HTMLCLOSE='</body></html>'
-  					sendEmail -f ${SMTP_U} -t ${MAILA} -u "${STATUS_ICON_F} ${VPSNAME} - Files Backup [${NOWDISPLAY}]" -o message-content-type=html -m "${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${FILE_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P};
+  					sendEmail -f ${SMTP_U} -t ${MAILA} -u "${STATUS_ICON_F} ${VPSNAME} - Files Backup [${NOWDISPLAY}]" -o message-content-type=html -m "${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${FILE_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P};
   					break;;
             [Nn]* )
   					echo -e "\e[31mAborting file backup...\e[0m";
@@ -289,11 +291,11 @@ then
   fi
   if [[ ${CHOSEN_TYPE} == *"05"* ]]; then
   	while true; do
-        echo -e ${YELLOW}"> Do you really want to run the server migration script (hosting to vps)?"${ENDCOLOR}
+        echo -e ${YELLOW}"> Do you really want to run the server migration script?"${ENDCOLOR}
         read -p "Please type 'y' or 'n'" yn
   			case $yn in
   					[Yy]* )
-  					source ${SFOLDER}/serverMigrationScript.sh;
+  					source ${SFOLDER}/utils/wordpress_migration_from_URL.sh;
   					break;;
   					[Nn]* )
   					echo -e "\e[31mAborting optimization script...\e[0m";
@@ -376,7 +378,7 @@ else
       STATUS_ICON="✅"
     fi
   fi
-  sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${STATUS_ICON} ${VPSNAME} - Complete Backup - [${NOWDISPLAY}]" -o message-content-type=html -m "${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P};
+  sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${STATUS_ICON} ${VPSNAME} - Complete Backup - [${NOWDISPLAY}]" -o message-content-type=html -m "${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P};
 
 fi
 

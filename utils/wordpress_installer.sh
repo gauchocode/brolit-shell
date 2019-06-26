@@ -11,12 +11,6 @@
 #############################################################################
 SCRIPT_V="2.5"
 
-### TO EDIT
-COPY_PROJECT=""                                         # Proyect to copy. Example: test.broobe.com
-DOMAIN=""                                               # Domain for WP installation. Example: landing.broobe.com
-ROOT_DOMAIN=""                                          # Only for Cloudflare API. Example: broobe.com
-PROJECT_NAME=""                                         # Project Name. Example: landing_broobe
-
 MHOST="localhost"
 MYSQL="$(which mysql)"
 MYSQLDUMP="$(which mysqldump)"
@@ -46,11 +40,6 @@ if test -f /root/.broobe-utils-options ; then
   source /root/.broobe-utils-options
 fi
 
-if [[ -z "${COPY_PROJECT}" || -z "${DOMAIN}" || -z "${ROOT_DOMAIN}" || -z "${PROJECT_NAME}" ]]; then
-  echo -e ${RED}"Error: DOMAIN, ROOT_DOMAIN, PROJECT_NAME and COPY_PROJECT must be set! Exiting..."${ENDCOLOR}
-  exit 0
-fi
-
 # Display dialog to imput MySQL root pass and then store it into a hidden file
 if [[ -z "${MPASS}" ]]; then
   MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root Password" 10 60 3>&1 1>&2 2>&3)
@@ -61,15 +50,6 @@ if [[ -z "${MPASS}" ]]; then
   fi
 fi
 
-# Project states
-PROJECT_STATES="prod stage test dev"
-
-PROJECT_STATE=$(whiptail --title "PROJECT STATE" --menu "Chose a Project State" 20 78 10 `for x in ${PROJECT_STATES}; do echo "$x [X]"; done` 3>&1 1>&2 2>&3)
-exitstatus=$?
-if [ $exitstatus = 0 ]; then
-  echo -e ${YELLOW}"Project state selected: ${PROJECT_STATE} ..."${ENDCOLOR}
-
-fi
 # Installation types
 INSTALLATION_TYPES="CLEAN_INSTALL COPY_FROM_PROJECT"
 
@@ -77,18 +57,109 @@ INSTALLATION_TYPE=$(whiptail --title "INSTALLATION TYPE" --menu "Chose an Instal
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
 
-  if [ -d "${FOLDER_TO_INSTALL}/${DOMAIN}" ]; then
-      echo -e ${RED}"ERROR: Destination folder already exist, aborting ..."${ENDCOLOR}
-      exit 1
-
-  fi
-
   if [[ ${INSTALLATION_TYPE} == *"COPY"* ]]; then
+
+    COPY_PROJECT=$(whiptail --title "Project to Copy" --inputbox "Insert the domain of the project you want to copy. Example: dev.broobe.com" 10 60 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo "Setting COPY_PROJECT="${COPY_PROJECT}
+
+      DOMAIN=$(whiptail --title "Domain" --inputbox "Insert the domain of the Project. Example: landing.broobe.com" 10 60 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ $exitstatus = 0 ]; then
+        echo "Setting DOMAIN="${DOMAIN}
+
+        ROOT_DOMAIN=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
+        exitstatus=$?
+        if [ $exitstatus = 0 ]; then
+          echo "Setting ROOT_DOMAIN="${ROOT_DOMAIN}
+
+          PROJECT_NAME=$(whiptail --title "Project Name" --inputbox "Please insert a project name. Example: broobe" 10 60 3>&1 1>&2 2>&3)
+          exitstatus=$?
+          if [ $exitstatus = 0 ]; then
+            echo "Setting PROJECT_NAME="${PROJECT_NAME}
+
+            PROJECT_STATES="prod stage test dev"
+            PROJECT_STATE=$(whiptail --title "PROJECT STATE" --menu "Chose a Project State" 20 78 10 `for x in ${PROJECT_STATES}; do echo "$x [X]"; done` 3>&1 1>&2 2>&3)
+            exitstatus=$?
+            if [ $exitstatus = 0 ]; then
+              echo -e ${YELLOW}"Project state selected: ${PROJECT_STATE} ..."${ENDCOLOR}
+
+            else
+              exit 1
+            fi
+
+          else
+            exit 1
+          fi
+
+        else
+          exit 1
+        fi
+
+      else
+        exit 1
+      fi
+
+    else
+      exit 1
+    fi
+
+    if [ -d "${FOLDER_TO_INSTALL}/${DOMAIN}" ]; then
+        echo -e ${RED}"ERROR: Destination folder already exist, aborting ..."${ENDCOLOR}
+        exit 1
+
+    fi
+
     echo -e ${YELLOW}"Trying to make a copy of ${COPY_PROJECT} ..."${ENDCOLOR}
     cd ${FOLDER_TO_INSTALL}
     cp -r ${FOLDER_TO_INSTALL}/${COPY_PROJECT} ${FOLDER_TO_INSTALL}/${DOMAIN}
 
   else
+
+    DOMAIN=$(whiptail --title "Domain" --inputbox "Insert the domain of the Project. Example: landing.broobe.com" 10 60 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo "Setting DOMAIN="${DOMAIN}
+
+      ROOT_DOMAIN=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ $exitstatus = 0 ]; then
+        echo "Setting ROOT_DOMAIN="${ROOT_DOMAIN}
+
+        PROJECT_NAME=$(whiptail --title "Project Name" --inputbox "Please insert a project name. Example: broobe" 10 60 3>&1 1>&2 2>&3)
+        exitstatus=$?
+        if [ $exitstatus = 0 ]; then
+          echo "Setting PROJECT_NAME="${PROJECT_NAME}
+
+          PROJECT_STATES="prod stage test dev"
+          PROJECT_STATE=$(whiptail --title "PROJECT STATE" --menu "Chose a Project State" 20 78 10 `for x in ${PROJECT_STATES}; do echo "$x [X]"; done` 3>&1 1>&2 2>&3)
+          exitstatus=$?
+          if [ $exitstatus = 0 ]; then
+            echo -e ${YELLOW}"Project state selected: ${PROJECT_STATE} ..."${ENDCOLOR}
+
+          else
+            exit 1
+          fi
+
+        else
+          exit 1
+        fi
+
+      else
+        exit 1
+      fi
+
+    else
+      exit 1
+    fi
+
+    if [ -d "${FOLDER_TO_INSTALL}/${DOMAIN}" ]; then
+        echo -e ${RED}"ERROR: Destination folder already exist, aborting ..."${ENDCOLOR}
+        exit 1
+
+    fi
+
     echo -e ${YELLOW}"Trying to make a clean install of Wordpress ..."${ENDCOLOR}
     cd ${FOLDER_TO_INSTALL}
     curl -O https://wordpress.org/latest.tar.gz
@@ -129,7 +200,7 @@ if [ $exitstatus = 0 ]; then
     SQL3="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
     SQL4="FLUSH PRIVILEGES;"
 
-    echo -e ${YELLOW}" > Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS} if they not exist ..."${ENDCOLOR}
+    echo -e ${YELLOW}" > Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS} ..."${ENDCOLOR}
     mysql -u root --password=${MPASS} -e "${SQL1}${SQL2}${SQL3}${SQL4}"
 
     echo -e ${GREEN}" > DONE"${ENDCOLOR}
@@ -138,7 +209,7 @@ if [ $exitstatus = 0 ]; then
     sed -i "/DB_PASSWORD/s/'[^']*'/'${DB_PASS}'/2" ${WPCONFIG}
 
   else
-      echo "Database user already exist. Continue ..."
+      echo " > User: ${PROJECT_NAME}_user already exist. Continue ..." >> $LOG
 
       SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_${PROJECT_STATE};"
       SQL2="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
