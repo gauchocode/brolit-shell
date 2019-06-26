@@ -1,6 +1,6 @@
 #!/bin/bash
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 2.1
+# Version: 2.9
 #############################################################################
 #
 # BK TYPES:
@@ -12,9 +12,10 @@
 # DB: ${DBS_F}/${DATABASE}/db-${DATABASE}_${ONEWEEKAGO}.tar.bz2
 #
 #############################################################################
-SCRIPT_V="2.5"
 
-### VARS ###
+SCRIPT_V="2.9"
+
+### VARS
 MySQL_ROOT_PASS=""
 FOLDER_TO_RESTORE="/var/www"
 
@@ -27,7 +28,7 @@ DBS_F="databases"
 #Restore Local?
 #$SFOLDER/tmp/backups/*.tar.gz
 
-### Setup Colours ###
+### Setup Colours
 BLACK='\E[30;40m'
 RED='\E[31;40m'
 GREEN='\E[32;40m'
