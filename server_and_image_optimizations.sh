@@ -2,15 +2,15 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.3
+# Version: 2.9
 #############################################################################
 
-SCRIPT_V="2.3"
+SCRIPT_V="2.9"
 
-### VARS ###
+### VARS
 JPG_COMPRESS='80'
 
-### Setup Colours ###
+### Setup Colours
 BLACK='\E[30;40m'
 RED='\E[31;40m'
 GREEN='\E[32;40m'
@@ -20,13 +20,13 @@ MAGENTA='\E[35;40m'
 CYAN='\E[36;40m'
 WHITE='\E[37;40m'
 
-### Checking some things... ###
+### Checking some things...
 if [ ${USER} != root ]; then
   echo -e ${RED}"Error: must be root! Exiting..."${ENDCOLOR}
   exit 0
 fi
 
-### Remove old packages from system ###
+### Remove old packages from system
 echo " > Cleanning old system packages ..." >> $LOG
 echo -e ${YELLOW}" > Cleanning old system packages ..."${ENDCOLOR}
 apt clean

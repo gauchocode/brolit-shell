@@ -190,13 +190,12 @@ PKG_MAIL_VAR=$(<$PKG_MAIL})
 
 BODY_PKG=${PKG_HEADER}${PKG_BODYOPEN}${PKG_MAIL_VAR}${PKG_BODYCLOSE}
 
-### chmod ###
-chmod +x ${SFOLDER}/dropbox_uploader.sh
-chmod +x ${SFOLDER}/mysqlBackupScript.sh
-chmod +x ${SFOLDER}/filesBackupScript.sh
-chmod +x ${SFOLDER}/optimizationsScript.sh
-chmod +x ${SFOLDER}/lemp-setup.sh
+### chmod
+chmod +x ${SFOLDER}/mysql_backup.sh
+chmod +x ${SFOLDER}/files_backup.sh
+chmod +x ${SFOLDER}/lemp_setup.sh
 chmod +x ${SFOLDER}/backupRestoreScript.sh
+chmod +x ${SFOLDER}/server_and_image_optimizations.sh
 chmod +x ${SFOLDER}/utils/cloudflare_update_IP.sh
 chmod +x ${SFOLDER}/utils/composer_installer.sh
 chmod +x ${SFOLDER}/utils/netdata_installer.sh
@@ -204,10 +203,11 @@ chmod +x ${SFOLDER}/utils/php_optimizations.sh
 chmod +x ${SFOLDER}/utils/wordpress_installer.sh
 chmod +x ${SFOLDER}/untils/wordpress_migration_from_URL.sh
 chmod +x ${SFOLDER}/utils/replace_url_on_wordpress_db.sh
+chmod +x ${SFOLDER}/utils/dropbox-uploader/dropbox_uploader.sh
 chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools.sh
 chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh
 
-### Running from terminal ###
+### Running from terminal
 if [ -t 1 ]
 then
 
@@ -215,9 +215,7 @@ then
   CHOSEN_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 `for x in ${RUNNER_OPTIONS}; do echo "$x"; done` 3>&1 1>&2 2>&3)
   #exitstatus=$?
   #if [ $exitstatus = 0 ]; then
-          #Restore from Dropbox
-          #echo "trying to run ${SFOLDER}/dropbox_uploader.sh list ${CHOSEN_TYPE}"
-          #DROPBOX_PROJECT_LIST=$(${SFOLDER}/dropbox_uploader.sh -hq list ${CHOSEN_TYPE})
+          #DO
   #fi
   if [[ ${CHOSEN_TYPE} == *"01"* ]]; then
     while true; do
@@ -225,7 +223,7 @@ then
       read -p "Please type 'y' or 'n'" yn
       case $yn in
           [Yy]* )
-					source ${SFOLDER}/mysqlBackupScript.sh;
+					source ${SFOLDER}/mysql_backup.sh;
 					DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
 					DB_MAIL_VAR=$(<${DB_MAIL})
 					HTMLOPEN='<html><body>'
@@ -245,7 +243,7 @@ then
         read -p "Please type 'y' or 'n'" yn
         case $yn in
             [Yy]* )
-  					source ${SFOLDER}/filesBackupScript.sh;
+  					source ${SFOLDER}/files_backup.sh;
   					FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
   					FILE_MAIL_VAR=$(<$FILE_MAIL)
   					HTMLOPEN='<html><body>'
@@ -265,7 +263,7 @@ then
         read -p "Please type 'y' or 'n'" yn
   			case $yn in
   					[Yy]* )
-  					source ${SFOLDER}/optimizationsScript.sh;
+  					source ${SFOLDER}/server_and_image_optimizations.sh;
   					break;;
   					[Nn]* )
   					echo -e "\e[31mAborting optimization script...\e[0m";
@@ -310,7 +308,7 @@ then
         read -p "Please type 'y' or 'n'" yn
   			case $yn in
   					[Yy]* )
-  					source ${SFOLDER}/lemp-setup.sh;
+  					source ${SFOLDER}/lemp_setup.sh;
   					break;;
   					[Nn]* )
   					echo -e "\e[31mAborting optimization script...\e[0m";
@@ -353,9 +351,9 @@ else
   	fi
   done
 
-  ${SFOLDER}/mysqlBackupScript.sh;
-  ${SFOLDER}/filesBackupScript.sh;
-  ${SFOLDER}/optimizationsScript.sh;
+  ${SFOLDER}/mysql_backup.sh;
+  ${SFOLDER}/files_backup.sh;
+  ${SFOLDER}/server_and_image_optimizations.sh;
 
   DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
   DB_MAIL_VAR=$(<${DB_MAIL})
