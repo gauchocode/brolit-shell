@@ -194,7 +194,7 @@ BODY_PKG=${PKG_HEADER}${PKG_BODYOPEN}${PKG_MAIL_VAR}${PKG_BODYCLOSE}
 chmod +x ${SFOLDER}/mysql_backup.sh
 chmod +x ${SFOLDER}/files_backup.sh
 chmod +x ${SFOLDER}/lemp_setup.sh
-chmod +x ${SFOLDER}/backupRestoreScript.sh
+chmod +x ${SFOLDER}/restore_from_backup.sh
 chmod +x ${SFOLDER}/server_and_image_optimizations.sh
 chmod +x ${SFOLDER}/utils/cloudflare_update_IP.sh
 chmod +x ${SFOLDER}/utils/composer_installer.sh
@@ -273,19 +273,7 @@ then
   	done
   fi
   if [[ ${CHOSEN_TYPE} == *"04"* ]]; then
-  	while true; do
-        echo -e ${YELLOW}"> Do you really want to run restore script?"${ENDCOLOR}
-        read -p "Please type 'y' or 'n'" yn
-  			case $yn in
-  					[Yy]* )
-  					source ${SFOLDER}/backupRestoreScript.sh;
-  					break;;
-  					[Nn]* )
-  					echo -e "\e[31mAborting restore script...\e[0m";
-  					break;;
-  					* ) echo " > Please answer yes or no.";;
-  			esac
-  	done
+  	source ${SFOLDER}/restore_from_backup.sh;
   fi
   if [[ ${CHOSEN_TYPE} == *"05"* ]]; then
   	while true; do
