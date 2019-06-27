@@ -19,16 +19,6 @@
 PHP_V="7.2"                                   # Ubuntu 18.04 LTS Default
 RAM_BUFFER="512"
 
-### Setup Colours ###
-BLACK='\E[30;40m'
-RED='\E[31;40m'
-GREEN='\E[32;40m'
-YELLOW='\E[33;40m'
-BLUE='\E[34;40m'
-MAGENTA='\E[35;40m'
-CYAN='\E[36;40m'
-WHITE='\E[37;40m'
-
 #getting server info
 CPUS=$(grep -c "processor" /proc/cpuinfo)
 RAM=$(grep MemTotal /proc/meminfo | awk '{print $2}' | xargs -I {} echo "scale=0; {}/1024^2" | bc)
