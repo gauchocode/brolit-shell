@@ -9,11 +9,6 @@ MYSQL="$(which mysql)"
 MYSQLDUMP="$(which mysqldump)"
 
 ### Checking some things... ###
-if [ $USER != root ]; then
-  echo -e ${RED}" > Error: must be root! Exiting..."${ENDCOLOR}
-  exit 0
-fi
-
 if [[ -z "${MUSER}" ]]; then
   MUSER=$(whiptail --title "MySQL user with full Privileges" --inputbox "Please enter a MySQL user with full Privileges" 10 60 3>&1 1>&2 2>&3)
 fi
