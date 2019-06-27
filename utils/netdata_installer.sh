@@ -10,12 +10,12 @@ ROOT_DOMAIN=""                                   # Only for Cloudflare API. Exam
 
 ### Checking some things... ###
 if [[ -z "${NETDATA_SUBDOMAIN}" || -z "${ROOT_DOMAIN}" || -z "${MPASS}" ]]; then
-  echo -e ${RED}"Error: NETDATA_SUBDOMAIN, ROOT_DOMAIN and MPASS must be set! Exiting..."${ENDCOLOR}
+  echo -e ${RED}" > Error: NETDATA_SUBDOMAIN, ROOT_DOMAIN and MPASS must be set! Exiting..."${ENDCOLOR}
   exit 0
 fi
 
 #TODO: ya dejar configurada las extensiones
-echo -e "\nInstalling Netdata...\n"
+echo -e ${YELLOW}"\nInstalling Netdata...\n"${ENDCOLOR}
 apt --yes install zlib1g-dev uuid-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python-mysqldb
 git clone https://github.com/firehol/netdata.git --depth=1
 cd netdata && ./netdata-installer.sh --dont-wait
@@ -42,8 +42,10 @@ mysql -u root -p${MPASS} -e "${SQL1}${SQL2}${SQL3}" >> $LOG
 
 systemctl daemon-reload && systemctl enable netdata && service netdata start
 
+echo -e ${GREEN}" > DONE"${ENDCOLOR}
+
 # Usamos cloudflare API para modificar o agregar el registro de DNS sobre el dominio en cuestión
-echo -e ${YELLOW}"Trying to access Cloudflare API and change record ${NETDATA_SUBDOMAIN} ..."  >> $LOG
+echo -e ${YELLOW}" > Trying to access Cloudflare API and change record ${NETDATA_SUBDOMAIN} ..."  >> $LOG
 zone_name=${ROOT_DOMAIN}
 record_name=${NETDATA_SUBDOMAIN}
 export zone_name record_name
