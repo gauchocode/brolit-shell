@@ -2,53 +2,33 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.5
+# Version: 2.9
 #############################################################################
 #
 # https://github.com/AbhishekGhosh/Ubuntu-16.04-Nginx-WordPress-Autoinstall-Bash-Script/
 # https://alonganon.info/2018/11/17/make-a-super-fast-and-lightweight-wordpress-on-ubuntu-18-04-with-php-7-2-nginx-and-mariadb/
 #
 #############################################################################
-SCRIPT_V="2.5"
+SCRIPT_V="2.9"
 
-MHOST="localhost"
 MYSQL="$(which mysql)"
 MYSQLDUMP="$(which mysqldump)"
 
 ### Folders Setup
 FOLDER_TO_INSTALL="/var/www"
-SFOLDER="/root/broobe-utils-scripts"					          # Backup Scripts folder
-
-### Setup Colours
-BLACK='\E[30;40m'
-RED='\E[31;40m'
-GREEN='\E[32;40m'
-YELLOW='\E[33;40m'
-BLUE='\E[34;40m'
-MAGENTA='\E[35;40m'
-CYAN='\E[36;40m'
-WHITE='\E[37;40m'
-ENDCOLOR='\033[0m' # No Color
 
 ### Checking some things
 if [ $USER != root ]; then
   echo -e ${RED}"Error: must be root! Exiting..."${ENDCOLOR}
   exit 0
 fi
-
-if test -f /root/.broobe-utils-options ; then
-  source /root/.broobe-utils-options
+if [[ -z "${SFOLDER}" || -z "${MPASS}" ]]; then
+  echo -e ${RED}" > Error: SFOLDER and MPASS must be set! Exiting..."${ENDCOLOR}
+  exit 0
 fi
 
-# Display dialog to imput MySQL root pass and then store it into a hidden file
-if [[ -z "${MPASS}" ]]; then
-  MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root Password" 10 60 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-          #TODO: testear el password antes de guardarlo
-          echo "MPASS="${MPASS} >> /root/.broobe-utils-options
-  fi
-fi
+echo -e ${RED}"SFOLDER: ${SFOLDER}"${ENDCOLOR}
+echo -e ${RED}"MPASS: ${MPASS}"${ENDCOLOR}
 
 # Installation types
 INSTALLATION_TYPES="CLEAN_INSTALL COPY_FROM_PROJECT"
@@ -63,52 +43,44 @@ if [ $exitstatus = 0 ]; then
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
       echo "Setting COPY_PROJECT="${COPY_PROJECT}
+    else
+      exit 1
+    fi
 
-      DOMAIN=$(whiptail --title "Domain" --inputbox "Insert the domain of the Project. Example: landing.broobe.com" 10 60 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [ $exitstatus = 0 ]; then
-        echo "Setting DOMAIN="${DOMAIN}
-
-        ROOT_DOMAIN=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
-        exitstatus=$?
-        if [ $exitstatus = 0 ]; then
-          echo "Setting ROOT_DOMAIN="${ROOT_DOMAIN}
-
-          PROJECT_NAME=$(whiptail --title "Project Name" --inputbox "Please insert a project name. Example: broobe" 10 60 3>&1 1>&2 2>&3)
-          exitstatus=$?
-          if [ $exitstatus = 0 ]; then
-            echo "Setting PROJECT_NAME="${PROJECT_NAME}
-
-            PROJECT_STATES="prod stage test dev"
-            PROJECT_STATE=$(whiptail --title "PROJECT STATE" --menu "Chose a Project State" 20 78 10 `for x in ${PROJECT_STATES}; do echo "$x [X]"; done` 3>&1 1>&2 2>&3)
-            exitstatus=$?
-            if [ $exitstatus = 0 ]; then
-              echo -e ${YELLOW}"Project state selected: ${PROJECT_STATE} ..."${ENDCOLOR}
-
-            else
-              exit 1
-            fi
-
-          else
-            exit 1
-          fi
-
-        else
+    DOMAIN=$(whiptail --title "Domain" --inputbox "Insert the domain of the Project. Example: landing.broobe.com" 10 60 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      if [ -d "${FOLDER_TO_INSTALL}/${DOMAIN}" ]; then
+          echo -e ${RED}"ERROR: Destination folder already exist, aborting ..."${ENDCOLOR}
           exit 1
-        fi
-
       else
-        exit 1
+        echo "Setting DOMAIN="${DOMAIN}
       fi
 
     else
       exit 1
     fi
-
-    if [ -d "${FOLDER_TO_INSTALL}/${DOMAIN}" ]; then
-        echo -e ${RED}"ERROR: Destination folder already exist, aborting ..."${ENDCOLOR}
-        exit 1
-
+    ROOT_DOMAIN=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo "Setting ROOT_DOMAIN="${ROOT_DOMAIN}
+    else
+      exit 1
+    fi
+    PROJECT_NAME=$(whiptail --title "Project Name" --inputbox "Please insert a project name. Example: broobe" 10 60 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo "Setting PROJECT_NAME="${PROJECT_NAME}
+    else
+      exit 1
+    fi
+    PROJECT_STATES="prod stage test dev"
+    PROJECT_STATE=$(whiptail --title "PROJECT STATE" --menu "Chose a Project State" 20 78 10 `for x in ${PROJECT_STATES}; do echo "$x [X]"; done` 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo -e ${YELLOW}"Project state selected: ${PROJECT_STATE} ..."${ENDCOLOR}
+    else
+      exit 1
     fi
 
     echo -e ${YELLOW}"Trying to make a copy of ${COPY_PROJECT} ..."${ENDCOLOR}

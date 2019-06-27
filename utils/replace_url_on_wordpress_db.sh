@@ -2,18 +2,8 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.5
+# Version: 2.9
 #############################################################################
-
-### Setup Colours ###
-BLACK='\E[30;40m'
-RED='\E[31;40m'
-GREEN='\E[32;40m'
-YELLOW='\E[33;40m'
-BLUE='\E[34;40m'
-MAGENTA='\E[35;40m'
-CYAN='\E[36;40m'
-WHITE='\E[37;40m'
 
 MYSQL="$(which mysql)"
 MYSQLDUMP="$(which mysqldump)"

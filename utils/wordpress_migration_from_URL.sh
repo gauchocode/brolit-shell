@@ -20,28 +20,15 @@ BK_F_EXT="gz"
 ### Project details
 PROJECT_NAME=""
 PROJECT_DOM=""
-SFOLDER="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"  #Backup Scripts folder. Recomended: /root/broobe-utils-scripts
 SITES="/var/www"                                                      #Where sites are stored
 
-### SENDEMAIL CONFIG
-MAILA="servidores@broobe.com"                                         #Notification Email
-SMTP_SERVER="mail.bmailing.com.ar"                                    #SMTP Server
-SMTP_PORT="587"                                                       #SMTP Port
-SMTP_TLS="yes"                                                        #TLS: yes or no
-SMTP_U="no-reply@envios.broobe.com"                                   #SMTP User
-
-### Setup Colours ###
-BLACK='\E[30;40m'
-RED='\E[31;40m'
-GREEN='\E[32;40m'
-YELLOW='\E[33;40m'
-BLUE='\E[34;40m'
-MAGENTA='\E[35;40m'
-CYAN='\E[36;40m'
-WHITE='\E[37;40m'
-
-if [[ -z "${BK_DB_URL}" || -z "${PROJECT_NAME}" || -z "${PROJECT_DOM}" ]]; then
-  echo -e ${RED}" > Error: BK_DB_URL, PROJECT_NAME and PROJECT_DOM must be set! Exiting..."${ENDCOLOR}
+### Checking some things
+if [ $USER != root ]; then
+  echo -e ${RED}"Error: must be root! Exiting..."${ENDCOLOR}
+  exit 0
+fi
+if [[ -z "${SFOLDER}" || -z "${BK_DB_URL}" || -z "${PROJECT_NAME}" || -z "${PROJECT_DOM}" ]]; then
+  echo -e ${RED}" > Error: SFOLDER, BK_DB_URL, PROJECT_NAME and PROJECT_DOM must be set! Exiting..."${ENDCOLOR}
   exit 0
 fi
 

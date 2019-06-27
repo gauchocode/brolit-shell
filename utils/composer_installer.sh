@@ -2,14 +2,17 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.5
+# Version: 2.9
 #############################################################################
-#
-SCRIPT_V="2.5"
 
 DOMAIN=""                                    # Domain for WP installation. Example: landing.broobe.com
 ROOT_DOMAIN=""                               # Only for Cloudflare API. Example: broobe.com
 PROJECT_NAME=""                              # Project Name. Example: landing_broobe
+
+if [[ -z "${DOMAIN}" || -z "${ROOT_DOMAIN}" || -z "${PROJECT_NAME}" ]]; then
+  echo -e ${RED}"Error: DOMAIN, ROOT_DOMAIN and PROJECT_NAME must be set! Exiting..."${ENDCOLOR}
+  exit 0
+fi
 
 EXPECTED_SIGNATURE="$(wget -q -O - https://composer.github.io/installer.sig)"
 php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
