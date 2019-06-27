@@ -9,7 +9,7 @@
 #
 # 1- Listar Sitios instalados en el VPS donde se ejecuta el script
 # 2- Pedir que tipo de ambiente se va a querer replicar: test, dev o stage
-# 3- Preguntar si es local o remoto. En caso de ser remoto, pedir credenciales de VPS a donde se va a crear.
+# 3- Pedir credenciales de VPS a donde se va a crear
 # 4- Crear dump de BD en cuestión y dejarlo en un temp
 # 5- Tirar un rsync de los archivos y BD
 # 6- Usar esto: https://stackoverflow.com/questions/28360288/ssh-remotely-run-a-script-and-stay-there

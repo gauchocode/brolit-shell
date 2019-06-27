@@ -1,32 +1,16 @@
 #!/bin/bash
 #
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 2.5
+# Version: 2.9
 #############################################################################
-#
 
-#conf vars
-NETDATA_SUBDOMAIN=""                                    # Domain for Netdata. Example: monitor.broobe.com
-ROOT_DOMAIN=""                                          # Only for Cloudflare API. Example: broobe.com
-MySQL_ROOT_PASS=""          									          # MySQL root User Pass
-
-### Setup Colours ###
-BLACK='\E[30;40m'
-RED='\E[31;40m'
-GREEN='\E[32;40m'
-YELLOW='\E[33;40m'
-BLUE='\E[34;40m'
-MAGENTA='\E[35;40m'
-CYAN='\E[36;40m'
-WHITE='\E[37;40m'
+### VARS
+NETDATA_SUBDOMAIN=""                             # Domain for Netdata. Example: monitor.broobe.com
+ROOT_DOMAIN=""                                   # Only for Cloudflare API. Example: broobe.com
 
 ### Checking some things... ###
-if [ $USER != root ]; then
-  echo -e ${RED}"Error: must be root! Exiting..."${ENDCOLOR}
-  exit 0
-fi
-if [[ -z "${NETDATA_SUBDOMAIN}" || -z "${ROOT_DOMAIN}" || -z "${MySQL_ROOT_PASS}" ]]; then
-  echo -e ${RED}"Error: NETDATA_SUBDOMAIN, ROOT_DOMAIN and MySQL_ROOT_PASS must be set! Exiting..."${ENDCOLOR}
+if [[ -z "${NETDATA_SUBDOMAIN}" || -z "${ROOT_DOMAIN}" || -z "${MPASS}" ]]; then
+  echo -e ${RED}"Error: NETDATA_SUBDOMAIN, ROOT_DOMAIN and MPASS must be set! Exiting..."${ENDCOLOR}
   exit 0
 fi
 
@@ -54,7 +38,7 @@ SQL2="GRANT USAGE on *.* to 'netdata'@'localhost';"
 SQL3="FLUSH PRIVILEGES;"
 
 echo "Creating netdata user in MySQL ..." >> $LOG
-mysql -u root -p${MySQL_ROOT_PASS} -e "${SQL1}${SQL2}${SQL3}" >> $LOG
+mysql -u root -p${MPASS} -e "${SQL1}${SQL2}${SQL3}" >> $LOG
 
 systemctl daemon-reload && systemctl enable netdata && service netdata start
 

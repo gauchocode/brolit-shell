@@ -16,10 +16,7 @@
 SCRIPT_V="2.9"
 
 ### VARS
-MySQL_ROOT_PASS=""
 FOLDER_TO_RESTORE="/var/www"
-
-SFOLDER="/root/broobe-utils-scripts"					          #Backup Scripts folder
 
 SITES_F="sites"
 CONFIG_F="configs"
@@ -28,15 +25,25 @@ DBS_F="databases"
 #Restore Local?
 #$SFOLDER/tmp/backups/*.tar.gz
 
-### Setup Colours
-BLACK='\E[30;40m'
-RED='\E[31;40m'
-GREEN='\E[32;40m'
-YELLOW='\E[33;40m'
-BLUE='\E[34;40m'
-MAGENTA='\E[35;40m'
-CYAN='\E[36;40m'
-WHITE='\E[37;40m'
+### Checking some things
+if [ $USER != root ]; then
+  echo -e ${RED}"Error: must be root! Exiting..."${ENDCOLOR}
+  exit 0
+fi
+
+if test -f /root/.broobe-utils-options ; then
+  source /root/.broobe-utils-options
+fi
+
+# Display dialog to imput MySQL root pass and then store it into a hidden file
+if [[ -z "${MPASS}" ]]; then
+  MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root Password" 10 60 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+          #TODO: testear el password antes de guardarlo
+          echo "MPASS="${MPASS} >> /root/.broobe-utils-options
+  fi
+fi
 
 RESTORE_TYPES="${CONFIG_F} ${DBS_F} ${SITES_F}"
 
@@ -45,19 +52,16 @@ CHOSEN_TYPE=$(whiptail --title "RESTORE BACKUP" --menu "Chose Backup Type" 20 78
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
         #Restore from Dropbox
-        #echo "trying to run ${SFOLDER}/dropbox_uploader.sh list ${CHOSEN_TYPE}"
-        DROPBOX_PROJECT_LIST=$(${SFOLDER}/dropbox_uploader.sh -hq list ${CHOSEN_TYPE})
+        DROPBOX_PROJECT_LIST=$(${DPU_F}/dropbox_uploader.sh -hq list ${CHOSEN_TYPE})
 fi
 if [[ ${CHOSEN_TYPE} == *"$CONFIG_F"* ]]; then
   CHOSEN_CONFIG=$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Chose Configs Backup" 20 78 10 `for x in ${DROPBOX_PROJECT_LIST}; do echo "$x [F]"; done` 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-          #echo "trying to run ${SFOLDER}/dropbox_uploader.sh list ${CHOSEN_TYPE}/${CHOSEN_CONFIG}"
-          #DROPBOX_BACKUP_LIST=$(${SFOLDER}/dropbox_uploader.sh list ${CHOSEN_TYPE}/${CHOSEN_CONFIG})
           cd tmp/
 
           echo "trying to run dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_CONFIG}"
-          ${SFOLDER}/dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_CONFIG}
+          ${DPU_F}/dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_CONFIG}
 
           # Restore files
           mkdir ${CHOSEN_TYPE}
@@ -66,20 +70,20 @@ if [[ ${CHOSEN_TYPE} == *"$CONFIG_F"* ]]; then
           tar -xvjf ${CHOSEN_CONFIG}
   fi
 else
-  #elijo proyecto
+  # Select Project
   CHOSEN_PROJECT=$(whiptail --title "RESTORE BACKUP" --menu "Chose Backup Project" 20 78 10 `for x in ${DROPBOX_PROJECT_LIST}; do echo "$x [D]"; done` 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
           #echo "trying to run ${SFOLDER}/dropbox_uploader.sh list ${CHOSEN_TYPE}/${CHOSEN_PROJECT}"
-          DROPBOX_BACKUP_LIST=$(${SFOLDER}/dropbox_uploader.sh -hq list ${CHOSEN_TYPE}/${CHOSEN_PROJECT})
+          DROPBOX_BACKUP_LIST=$(${DPU_F}/dropbox_uploader.sh -hq list ${CHOSEN_TYPE}/${CHOSEN_PROJECT})
   fi
-  #elijo backup a restaurar
+  # Select Backup File
   CHOSEN_BACKUP=$(whiptail --title "RESTORE BACKUP" --menu "Chose Backup to Download" 20 78 10 `for x in ${DROPBOX_BACKUP_LIST}; do echo "$x [F]"; done` 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
           #echo "trying to run dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_PROJECT}/${CHOSEN_BACKUP}"
-          ./dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_PROJECT}/${CHOSEN_BACKUP}
+          ${DPU_F}/dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_PROJECT}/${CHOSEN_BACKUP}
 
           mv ${CHOSEN_BACKUP} tmp/
           cd tmp/
@@ -89,11 +93,10 @@ else
           tar -xvjf ${CHOSEN_BACKUP}
 
           if [[ ${CHOSEN_TYPE} == *"$SITES_F"* ]]; then
-            # Si es un website
             # Restore files
             echo "Trying to restore ${CHOSEN_BACKUP} files"
 
-            #moving old files
+            # Moving old files
             echo "Trying to execute: mkdir ${SFOLDER}/tmp/old_backup ..."
             mkdir ${SFOLDER}/tmp/old_backup
             #echo "Executing: mv ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT} ${SFOLDER}/tmp/old_backup ..."
@@ -109,12 +112,12 @@ else
             # TODO: lo que hay que hacer en este caso es crear una config con puerto 80 y correrle el certbot
 
             echo "Trying to restore nginx config for ${CHOSEN_PROJECT} ..."
-            #new site configuration
+            # New site configuration
             cp ${SFOLDER}/confs/default /etc/nginx/sites-available/${CHOSEN_PROJECT}
             ln -s /etc/nginx/sites-available/${CHOSEN_PROJECT} /etc/nginx/sites-enabled/${CHOSEN_PROJECT}
-            #replacing string to match domain name
+            # Replacing string to match domain name
             sed -i "s#dominio.com#${CHOSEN_PROJECT}#" /etc/nginx/sites-available/${CHOSEN_PROJECT}
-            #es necesario correrlo dos veces para reemplazarlo dos veces en una misma linea
+            # Need to be run twice
             sed -i "s#dominio.com#${CHOSEN_PROJECT}#" /etc/nginx/sites-available/${CHOSEN_PROJECT}
             service nginx reload
 
@@ -129,9 +132,8 @@ else
 
               echo "Trying to restore ${CHOSEN_BACKUP} DB"
 
-              # Backupeamos base actual
               echo "Executing mysqldump (will work if database exists)..."
-              mysqldump -u root --password=${MySQL_ROOT_PASS} ${CHOSEN_PROJECT} > ${CHOSEN_PROJECT}_bk_before_restore.sql
+              mysqldump -u root --password=${MPASS} ${CHOSEN_PROJECT} > ${CHOSEN_PROJECT}_bk_before_restore.sql
 
               ### Helper para extraer el nombre del proyecto
 
@@ -154,11 +156,11 @@ else
               SQL4="FLUSH PRIVILEGES;"
 
               echo "Creating database ${PROJECT_NAME}_prod, and user ${PROJECT_NAME}_user with pass ${DB_PASS} if they not exist ..."
-              mysql -u root --password=${MySQL_ROOT_PASS} -e "${SQL1}${SQL2}${SQL3}${SQL4}"
+              mysql -u root --password=${MPASS} -e "${SQL1}${SQL2}${SQL3}${SQL4}"
 
               # tercero importar la base a restaurar
               echo "Restoring database ..."
-              mysql -u root --password=${MySQL_ROOT_PASS} ${PROJECT_NAME}_prod < ${CHOSEN_BACKUP%%.*}.sql
+              mysql -u root --password=${MPASS} ${PROJECT_NAME}_prod < ${CHOSEN_BACKUP%%.*}.sql
 
               echo "DB ${CHOSEN_BACKUP} restored!"
 

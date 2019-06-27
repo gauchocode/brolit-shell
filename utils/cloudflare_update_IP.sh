@@ -2,12 +2,11 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.5
+# Version: 2.9
 #############################################################################
+
 auth_email="servidores@broobe.com"
 auth_key="0aefdc9e6b752a9d6ab658f7eda3d0a2118ac"
-#zone_name=""
-#record_name=""
 record_type="A"
 proxied_value="false"                               # Do you want to proxy your site through cloudflare? E.g., Orange Cloud (true), Grey Cloud (false)
 

@@ -14,7 +14,7 @@ CONFIG_F="configs"
 DPU_F="${SFOLDER}/utils/dropbox-uploader"
 
 ### Starting Message
-echo -e "\e[42m > Starting file backup script...\e[0m" >> $LOG
+echo " > Starting file backup script ..." >> $LOG
 
 echo " > Creating Dropbox folder ${CONFIG_F} on Dropbox ..." >> $LOG
 ${DPU_F}/dropbox_uploader.sh mkdir /${CONFIG_F}

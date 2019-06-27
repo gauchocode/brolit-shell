@@ -10,8 +10,11 @@ SCRIPT_V="2.9"
 VPSNAME="$HOSTNAME"
 
 SFOLDER="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"  #Backup Scripts folder. Recomended: /root/broobe-utils-scripts
+
+DPU_F="${SFOLDER}/utils/dropbox-uploader"                             #Dropbox Uploader Directory
 SITES="/var/www"                                                      #Where sites are stored
 
+MHOST="localhost"
 MUSER="root"                                                          #MySQL User
 
 SITES_BL=".wp-cli,phpmyadmin"                                         #Folder blacklist
@@ -40,36 +43,7 @@ DUP_FOLDERS="FOLDER1,FOLDER2"                                         #Folders t
 ### TODO: deberia poder elejirse desde las opciones version de php y motor de base de datos
 PACKAGES=(linux-firmware dpkg perl nginx php7.2-fpm mysql-server curl openssl)
 
-### SENDEMAIL CONFIG
-MAILA="servidores@broobe.com"                                         #Notification Email
-SMTP_SERVER="mail.bmailing.com.ar"                                    #SMTP Server
-SMTP_PORT="587"                                                       #SMTP Port
-SMTP_TLS="yes"                                                        #TLS: yes or no
-SMTP_U="no-reply@envios.broobe.com"                                   #SMTP User
-
-if test -f /root/.broobe-utils-options ; then
-  source /root/.broobe-utils-options
-fi
-
-# Display dialog to imput MySQL root pass and then store it into a hidden file
-if [[ -z "${MPASS}" ]]; then
-  MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root Password" 10 60 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-          #TODO: testear el password antes de guardarlo
-          echo "MPASS="${MPASS} >> /root/.broobe-utils-options
-  fi
-fi
-
-if [[ -z "${SMTP_P}" ]]; then
-  SMTP_P=$(whiptail --title "SMTP Password" --inputbox "Please insert the SMTP user password" 10 60 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-          echo "SMTP_P="${SMTP_P} >> /root/.broobe-utils-options
-  fi
-fi
-
-### Setup Colours ###
+### Setup Colours
 BLACK='\E[30;40m'
 RED='\E[31;40m'
 GREEN='\E[32;40m'
@@ -80,7 +54,7 @@ CYAN='\E[36;40m'
 WHITE='\E[37;40m'
 ENDCOLOR='\033[0m' # No Color
 
-### Backup rotation vars ###
+### Backup rotation vars
 NOW=$(date +"%Y-%m-%d")
 NOWDISPLAY=$(date +"%d-%m-%Y")
 ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
@@ -90,9 +64,94 @@ if [ ${USER} != root ]; then
   echo -e ${RED}" > Error: must be root! Exiting..."${ENDCOLOR}
   exit 0
 fi
-if [[ -z "${MUSER}" || -z "${MPASS}" || -z "${SMTP_P}" ]]; then
-  echo -e ${RED}" > Error: MUSER, MPASS and SMTP_P must be set! Exiting..."${ENDCOLOR}
-  exit 0
+
+if test -f /root/.broobe-utils-options ; then
+  source /root/.broobe-utils-options
+fi
+
+# Display dialog to imput MySQL root pass and then store it into a hidden file
+if [[ -z "${MPASS}" ]]; then
+  MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root Password" 10 60 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    #TODO: testear el password antes de guardarlo
+    echo "MPASS="${MPASS} >> /root/.broobe-utils-options
+  else
+    exit 1
+  fi
+fi
+
+### SENDEMAIL CONFIG
+if [[ -z "${SMTP_SERVER}" ]]; then
+  SMTP_SERVER=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server" 10 60 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    echo "SMTP_SERVER="${SMTP_SERVER} >> /root/.broobe-utils-options
+  else
+    exit 1
+
+  fi
+
+fi
+
+if [[ -z "${SMTP_PORT}" ]]; then
+  SMTP_PORT=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server Port" 10 60 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    echo "SMTP_PORT="${SMTP_PORT} >> /root/.broobe-utils-options
+  else
+    exit 1
+
+  fi
+
+fi
+
+if [[ -z "${SMTP_TLS}" ]]; then
+  SMTP_TLS=$(whiptail --title "SMTP TLS" --inputbox "SMTP yes or no:" 10 60 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    echo "SMTP_TLS="${SMTP_TLS} >> /root/.broobe-utils-options
+  else
+    exit 1
+
+  fi
+
+fi
+
+if [[ -z "${SMTP_U}" ]]; then
+  SMTP_U=$(whiptail --title "SMTP User" --inputbox "Please insert the SMTP user" 10 60 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    echo "SMTP_U="${SMTP_U} >> /root/.broobe-utils-options
+  else
+    exit 1
+
+  fi
+
+fi
+
+if [[ -z "${SMTP_P}" ]]; then
+  SMTP_P=$(whiptail --title "SMTP Password" --inputbox "Please insert the SMTP user password" 10 60 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    echo "SMTP_P="${SMTP_P} >> /root/.broobe-utils-options
+  else
+    exit 1
+
+  fi
+
+fi
+
+if [[ -z "${MAILA}" ]]; then
+  MAILA=$(whiptail --title "Notification Email" --inputbox "Please insert the email where you want to receive notifications." 10 60 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    echo "MAILA="${MAILA} >> /root/.broobe-utils-options
+  else
+    exit 1
+
+  fi
+
 fi
 
 ### Log Start ###
@@ -135,7 +194,7 @@ fi
 IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
 
 ### EXPORT VARS ###
-export SCRIPT_V VPSNAME BAKWP SFOLDER SITES SITES_BL WSERVER PHP_CF MySQL_CF DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U DEL_UP ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P LOG
+export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL WSERVER PHP_CF MHOST MySQL_CF DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U DEL_UP ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR
 
 ### Creating temporary folders ###
 if [ ! -d "${BAKWP}" ]
@@ -186,7 +245,7 @@ PKG_BODYCLOSE='</div>'
 PKG_HEADER=$PKG_HEADEROPEN$PKG_HEADERTEXT$PKG_HEADERCLOSE
 
 PKG_MAIL="${BAKWP}/pkg-${NOW}.mail"
-PKG_MAIL_VAR=$(<$PKG_MAIL})
+PKG_MAIL_VAR=$(<${PKG_MAIL})
 
 BODY_PKG=${PKG_HEADER}${PKG_BODYOPEN}${PKG_MAIL_VAR}${PKG_BODYCLOSE}
 
@@ -201,7 +260,7 @@ chmod +x ${SFOLDER}/utils/composer_installer.sh
 chmod +x ${SFOLDER}/utils/netdata_installer.sh
 chmod +x ${SFOLDER}/utils/php_optimizations.sh
 chmod +x ${SFOLDER}/utils/wordpress_installer.sh
-chmod +x ${SFOLDER}/untils/wordpress_migration_from_URL.sh
+chmod +x ${SFOLDER}/utils/wordpress_migration_from_URL.sh
 chmod +x ${SFOLDER}/utils/replace_url_on_wordpress_db.sh
 chmod +x ${SFOLDER}/utils/dropbox-uploader/dropbox_uploader.sh
 chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools.sh
@@ -211,7 +270,7 @@ chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh
 if [ -t 1 ]
 then
 
-  RUNNER_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP 03 SERVER_OPTIMIZATIONS 04 BACKUP_RESTORE 05 HOSTING_TO_VPS 06 LEMP_SETUP 07 NETDATA_INSTALLATION 08 WORDPRESS_INSTALLATION 09 GTMETRIX_TEST 10 REPLACE_WP_URL"
+  RUNNER_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP 03 SERVER_OPTIMIZATIONS 04 BACKUP_RESTORE 05 HOSTING_TO_VPS 06 LEMP_SETUP 07 NETDATA_INSTALLATION 08 WORDPRESS_INSTALLATION 09 GTMETRIX_TEST 10 REPLACE_WP_URL 11 RESET_SCRIPT_OPTIONS"
   CHOSEN_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 `for x in ${RUNNER_OPTIONS}; do echo "$x"; done` 3>&1 1>&2 2>&3)
   #exitstatus=$?
   #if [ $exitstatus = 0 ]; then
@@ -320,6 +379,22 @@ then
   fi
   if [[ ${CHOSEN_TYPE} == *"10"* ]]; then
     source ${SFOLDER}/utils/replace_url_on_wordpress_db.sh;
+  fi
+  if [[ ${CHOSEN_TYPE} == *"11"* ]]; then
+    while true; do
+        echo -e ${YELLOW}" > Do you really want to reset the script configuration?"${ENDCOLOR}
+        read -p "Please type 'y' or 'n'" yn
+        case $yn in
+            [Yy]* )
+            rm /root/.broobe-utils-options
+            break;;
+            [Nn]* )
+            echo -e "\e[31mAborting ...\e[0m";
+            break;;
+            * ) echo " > Please answer yes or no.";;
+        esac
+    done
+
   fi
 
 else
