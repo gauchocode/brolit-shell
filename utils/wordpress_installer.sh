@@ -24,9 +24,6 @@ if [[ -z "${SFOLDER}" || -z "${MPASS}" ]]; then
   exit 0
 fi
 
-echo -e ${RED}"SFOLDER: ${SFOLDER}"${ENDCOLOR}
-echo -e ${RED}"MPASS: ${MPASS}"${ENDCOLOR}
-
 # Installation types
 INSTALLATION_TYPES="CLEAN_INSTALL COPY_FROM_PROJECT"
 

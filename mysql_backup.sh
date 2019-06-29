@@ -40,11 +40,14 @@ echo " > $TOTAL_DBS databases found ..." >> $LOG
 for DATABASE in $DBS
 do
   if  [ "${DATABASE}" != "information_schema" ] && [ "${DATABASE}" != "performance_schema" ] && [ "${DATABASE}" != "mysql" ] && [ "${DATABASE}" != "sys" ]; then
+
     BK_FOLDER=${BAKWP}/${NOW}/
     BK_FILE="db-${DATABASE}_${NOW}.sql"
-                            ### Create dump file
+
+    ### Create dump file
     echo " > Creating new database backup in [${BK_FOLDER}${BK_FILE}] ..." >> $LOG
     $MYSQLDUMP --max-allowed-packet=1073741824  -u ${MUSER} -h ${MHOST} -p${MPASS} ${DATABASE} > ${BK_FOLDER}${BK_FILE}
+
     if [ "$?" -eq 0 ]; then
 
       echo -e ${GREEN}" > Mysqldump OK ..."${ENDCOLOR}
@@ -57,8 +60,9 @@ do
 
       BACKUPEDLIST[${COUNT}]=db-${DATABASE}_${NOW}.tar.bz2
       BK_SIZE[${COUNT}]=$(ls -lah db-${DATABASE}_${NOW}.tar.bz2 | awk '{ print $5}')
+      DB_BK_SIZE=$BK_SIZE[${COUNT}]
 
-      echo " > Backup created, final size: $BK_SIZE[$COUNT] ..."
+      echo " > Backup for ${DATABASE} created, final size: ${DB_BK_SIZE} ..."
 
       #echo " > Creating Dropbox Databases Folder ..." >> $LOG
       ${DPU_F}/dropbox_uploader.sh -q mkdir ${DBS_F}
@@ -110,13 +114,14 @@ if [ "${ERROR}" = true ]; then
 	CONTENT_D="<b>Backup with errors:<br />${ERROR_TYPE}<br /><br />Please check log file.</b> <br />"
 	COLOR_D='red'
 	echo " > Backup with errors: ${ERROR_TYPE}." >> $LOG
+
 else
   COUNT=0
   STATUS_ICON_D="✅"
 	STATUS_D="OK"
 	CONTENT_D=""
   COLOR_D='#1DC6DF'
-  SIZE_D="Backup file size: <b>$BK_SIZE</b><br />"
+  SIZE_D=""
   FILES_LABEL_D="<b>Backup files included:</b><br />"
   FILES_INC_D=""
   #for t in $(echo $BACKUPEDLIST | sed "s/,/ /g")
@@ -127,6 +132,7 @@ else
     COUNT=$((COUNT+1))
   done
 	echo -e ${GREEN}" > Database Backup OK"${ENDCOLOR}
+
 fi
 
 HEADEROPEN1_D='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
