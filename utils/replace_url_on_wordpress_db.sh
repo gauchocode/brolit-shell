@@ -5,10 +5,7 @@
 # Version: 2.9
 #############################################################################
 
-MYSQL="$(which mysql)"
-MYSQLDUMP="$(which mysqldump)"
-
-### Checking some things... ###
+### Checking some things...
 if [[ -z "${MUSER}" ]]; then
   MUSER=$(whiptail --title "MySQL user with full Privileges" --inputbox "Please enter a MySQL user with full Privileges" 10 60 3>&1 1>&2 2>&3)
 fi
