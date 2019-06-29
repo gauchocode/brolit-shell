@@ -19,16 +19,15 @@ MUSER="root"                                                          #MySQL Use
 
 SITES_BL=".wp-cli,phpmyadmin"                                         #Folder blacklist
 
+PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
+
 WSERVER="/etc/nginx"                                                  #Webserver config files location
 MySQL_CF="/etc/mysql"                                                 #MySQL config files location
-PHP_CF="/etc/php/7.2/fpm"                                             #PHP config files location
+PHP_CF="/etc/php/${PHP_V}/fpm"                                        #PHP config files location
 
 BAKWP="${SFOLDER}/tmp"                                                #Temp folder to store Backups
 DROPBOX_FOLDER="/"                                                    #Dropbox Folder Backup
 MAIN_VOL="/dev/sda1"                                                  #Main partition
-
-#TODO: esta opcion debería deprecarse
-ONE_FILE_BK=false                                                     #One tar for all databases or individual tar for database
 
 DB_BK=true                                                            #Include database backup?
 DEL_UP=true                                                           #Delete backup files after upload?
@@ -38,10 +37,12 @@ DUP_BK=false                                                          #Duplicity
 DUP_ROOT="/media/backups/PROJECT_NAME_OR_VPS"                         #Duplicity Backups destination folder
 DUP_SRC_BK="/var/www/"                                                #Source of Directories to Backup
 DUP_FOLDERS="FOLDER1,FOLDER2"                                         #Folders to Backup
+DUP_BK_FULL_FREQ="7D"                                                 #Create a new full backup every ...
+DUP_BK_FULL_LIFE="1M"                                                 #Delete any backup older than this
 
 ### PACKAGES TO WATCH
 ### TODO: deberia poder elejirse desde las opciones version de php y motor de base de datos
-PACKAGES=(linux-firmware dpkg perl nginx php7.2-fpm mysql-server curl openssl)
+PACKAGES=(linux-firmware dpkg perl nginx php${PHP_V}-fpm mysql-server curl openssl)
 
 ### Setup Colours
 BLACK='\E[30;40m'
@@ -59,7 +60,7 @@ NOW=$(date +"%Y-%m-%d")
 NOWDISPLAY=$(date +"%d-%m-%Y")
 ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
 
-### Checking some things... ###
+### Checking some things...
 if [ ${USER} != root ]; then
   echo -e ${RED}" > Error: must be root! Exiting..."${ENDCOLOR}
   exit 0
@@ -154,7 +155,7 @@ if [[ -z "${MAILA}" ]]; then
 
 fi
 
-### Log Start ###
+### Log Start
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 PATH_LOG="${SFOLDER}/logs"
 if [ ! -d "${SFOLDER}/logs" ]
@@ -172,31 +173,34 @@ echo -e ${GREEN}"Backup: Script Start -- $(date +%Y%m%d_%H%M)"${ENDCOLOR} >> $LO
 
 START_TIME=$(date +%s)
 
-### Disk Usage ###
+### Disk Usage
 DISK_U=$( df -h | grep "${MAIN_VOL}" | awk {'print $5'} )
 echo " > Disk usage: ${DISK_U} ..." >> ${LOG}
 
-### Check if sendemail is installed ###
+### Check if sendemail is installed
 SENDEMAIL="$(which sendemail)"
 if [ ! -x "${SENDEMAIL}" ]; then
 	apt install sendemail libio-socket-ssl-perl
 fi
 
-### TAR ###
+### MySQL
+MYSQL="$(which mysql)"
+MYSQLDUMP="$(which mysqldump)"
+
+### TAR
 TAR="$(which tar)"
 
-### Get server IPs ###
+### Get server IPs
 DIG="$(which dig)"
 if [ ! -x "${DIG}" ]; then
 	apt-get install dnsutils
 fi
-#IP=`dig +short myip.opendns.com @resolver1.opendns.com	` 2> /dev/null
 IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
 
-### EXPORT VARS ###
-export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL WSERVER PHP_CF MHOST MySQL_CF DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U DEL_UP ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR
+### EXPORT VARS
+export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL WSERVER PHP_CF MHOST MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U DEL_UP ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR
 
-### Creating temporary folders ###
+### Creating temporary folders
 if [ ! -d "${BAKWP}" ]
 then
     echo " > Folder ${BAKWP} doesn't exist. Creating now ..." >> $LOG
@@ -398,11 +402,11 @@ then
   fi
 
 else
-  ### Running from cron ###
+  ### Running from cron
   echo " > Running apt update..." >> ${LOG}
   apt update
 
-  ### Compare package versions ###
+  ### Compare package versions
   OUTDATED=false
   echo "" > ${BAKWP}/pkg-${NOW}.mail
   for pk in ${PACKAGES[@]}; do

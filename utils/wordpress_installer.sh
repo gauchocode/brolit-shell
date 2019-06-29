@@ -11,9 +11,6 @@
 #############################################################################
 SCRIPT_V="2.9"
 
-MYSQL="$(which mysql)"
-MYSQLDUMP="$(which mysqldump)"
-
 ### Folders Setup
 FOLDER_TO_INSTALL="/var/www"
 
