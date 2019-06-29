@@ -9,19 +9,13 @@ ERROR=false
 ERROR_TYPE=""
 DBS_F="databases"
 
-### Dropbox Uploader Directory
-DPU_F="${SFOLDER}/utils/dropbox-uploader"
-
 ### Helpers
 count_dabases (){
   TOTAL_DBS=0
   for db in $DBS
   do
-    if  [ "${db}" != "phpmyadmin" ] &&
-        [ "${db}" != "information_schema" ] &&
-        [ "${db}" != "performance_schema" ] &&
-        [ "${db}" != "mysql" ] &&
-        [ "${db}" != "sys" ]; then
+    if [[ $DB_BL != *"${db}"* ]]; then
+    #if [ "${db}" != "phpmyadmin" ] && [ "${db}" != "information_schema" ] && [ "${db}" != "performance_schema" ] && [ "${db}" != "mysql" ] && [ "${db}" != "sys" ]; then
       TOTAL_DBS=$((TOTAL_DBS+1))
     fi
   done
@@ -31,66 +25,90 @@ count_dabases (){
 DBS="$($MYSQL -u $MUSER -h $MHOST -p$MPASS -Bse 'show databases')"
 
 ### Starting Message
-echo -e ${GREEN}" > Starting database backup script ..."${ENDCOLOR} >> $LOG
+echo " > Starting database backup script ..." >> $LOG
+echo -e ${GREEN}" > Starting database backup script ..."${ENDCOLOR}
 
 ### Get all databases name
 COUNT=0
 count_dabases
 echo " > $TOTAL_DBS databases found ..." >> $LOG
+echo -e ${GREEN}" > $TOTAL_DBS databases found ..."${ENDCOLOR}
+
 for DATABASE in $DBS
 do
-  if  [ "${DATABASE}" != "information_schema" ] && [ "${DATABASE}" != "performance_schema" ] && [ "${DATABASE}" != "mysql" ] && [ "${DATABASE}" != "sys" ]; then
+  #if  [ "${DATABASE}" != "information_schema" ] && [ "${DATABASE}" != "performance_schema" ] && [ "${DATABASE}" != "mysql" ] && [ "${DATABASE}" != "sys" ]; then
+  echo -e ${YELLOW}" > Processing [${DATABASE}] ..."${ENDCOLOR}
+  if [[ $DB_BL != *"${DATABASE}"* ]]; then
 
     BK_FOLDER=${BAKWP}/${NOW}/
     BK_FILE="db-${DATABASE}_${NOW}.sql"
 
     ### Create dump file
     echo " > Creating new database backup in [${BK_FOLDER}${BK_FILE}] ..." >> $LOG
+    echo -e ${YELLOW}" > Creating new database backup in [${BK_FOLDER}${BK_FILE}] ..."${ENDCOLOR}
+
     $MYSQLDUMP --max-allowed-packet=1073741824  -u ${MUSER} -h ${MHOST} -p${MPASS} ${DATABASE} > ${BK_FOLDER}${BK_FILE}
 
     if [ "$?" -eq 0 ]; then
 
+      echo " > Mysqldump OK ..." >> $LOG
       echo -e ${GREEN}" > Mysqldump OK ..."${ENDCOLOR}
 
       cd ${BAKWP}/${NOW}
-      echo " > Making a tar.bz2 file of [${FILE}] ..." >> $LOG
+      echo " > Making a tar.bz2 file of [${BK_FILE}] ..." >> $LOG
+      echo -e ${YELLOW}" > Making a tar.bz2 file of [${BK_FILE}] ..."${ENDCOLOR}
 
       #echo " > $TAR -jcvpf ${BAKWP}/${NOW}/db-${DATABASE}_${NOW}.tar.bz2 --directory=${BK_FOLDER} ${BK_FILE}"
       $TAR -jcvpf ${BAKWP}/${NOW}/db-${DATABASE}_${NOW}.tar.bz2 --directory=${BK_FOLDER} ${BK_FILE}
 
-      BACKUPEDLIST[${COUNT}]=db-${DATABASE}_${NOW}.tar.bz2
-      BK_SIZE[${COUNT}]=$(ls -lah db-${DATABASE}_${NOW}.tar.bz2 | awk '{ print $5}')
-      DB_BK_SIZE=$BK_SIZE[${COUNT}]
+      BACKUPEDLIST[$COUNT]=db-${DATABASE}_${NOW}.tar.bz2
+      BK_SIZE[$COUNT]=$(ls -lah db-${DATABASE}_${NOW}.tar.bz2 | awk '{ print $5}')
+      DB_BK_SIZE=$BK_SIZE[$COUNT]
 
       echo " > Backup for ${DATABASE} created, final size: ${DB_BK_SIZE} ..."
+      echo -e ${GREEN}" > Backup for ${DATABASE} created, final size: ${DB_BK_SIZE} ..."${ENDCOLOR}
 
       #echo " > Creating Dropbox Databases Folder ..." >> $LOG
       ${DPU_F}/dropbox_uploader.sh -q mkdir ${DBS_F}
       ${DPU_F}/dropbox_uploader.sh -q mkdir ${DBS_F}/${DATABASE}
+
       ### Upload to Dropbox
       echo " > Uploading new database backup [db-${DATABASE}_${NOW}] ..."
       ${DPU_F}/dropbox_uploader.sh upload db-${DATABASE}_${NOW}.tar.bz2 $DROPBOX_FOLDER/${DBS_F}/${DATABASE}
+
       ### Delete old backups
       echo " > Trying to delete old database backup [db-${DATABASE}_${ONEWEEKAGO}.tar.bz2] ..."
+
       if [ "${DROPBOX_FOLDER}" != "/" ] ; then
         ${DPU_F}/dropbox_uploader.sh -q remove $DROPBOX_FOLDER/${DBS_F}/${DATABASE}/db-${DATABASE}_${ONEWEEKAGO}.tar.bz2
+
       else
         ${DPU_F}/dropbox_uploader.sh -q remove ${DBS_F}/${DATABASE}/db-${DATABASE}_${ONEWEEKAGO}.tar.bz2
+
       fi
       if [ "${DEL_UP}" = true ] ; then
         echo " > Deleting backup from server ..." >> $LOG
         rm ${BAKWP}/${NOW}/db-${DATABASE}_${NOW}.sql
         rm ${BAKWP}/${NOW}/db-${DATABASE}_${NOW}.tar.bz2
+
       fi
+
     else
+      echo " > Mysqldump ERROR: $? ..." >> $LOG
       echo -e ${RED}" > Mysqldump ERROR: $? ..."${ENDCOLOR}
       ERROR=true
       ERROR_TYPE="mysqldump error with ${DATABASE}"
+
     fi
       COUNT=$((COUNT+1))
-      echo -e ${CYAN}"> Backup ${COUNT} of ${TOTAL_DBS} ..."${ENDCOLOR}
+      echo -e ${CYAN}"> Backup ${COUNT} of ${TOTAL_DBS} DONE ..."${ENDCOLOR}
       echo " ###################################################" >> $LOG
+
+  else
+  echo -e ${YELLOW}" > Ommiting the blacklisted database: [${DATABASE}] ..."${ENDCOLOR}
+
   fi
+
 done
 
 ### Remove server backups
@@ -127,7 +145,7 @@ else
   #for t in $(echo $BACKUPEDLIST | sed "s/,/ /g")
   for t in $BACKUPEDLIST
 	do
-    DB_BK_SIZE=$BK_SIZE[${COUNT}]
+    DB_BK_SIZE=$BK_SIZE[$COUNT]
     FILES_INC_D="$FILES_INC_D $t ${DB_BK_SIZE}<br />"
     COUNT=$((COUNT+1))
   done
