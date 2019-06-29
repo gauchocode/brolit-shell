@@ -9,6 +9,8 @@ SCRIPT_V="2.9"
 
 VPSNAME="$HOSTNAME"
 
+# TODO: Checkear si estamos corriendo en Ubuntu 16.04 o superior
+
 SFOLDER="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"  #Backup Scripts folder. Recomended: /root/broobe-utils-scripts
 
 DPU_F="${SFOLDER}/utils/dropbox-uploader"                             #Dropbox Uploader Directory
@@ -171,8 +173,6 @@ LOG=${PATH_LOG}/${LOG_NAME}
 find ${PATH_LOG} -name "*.log"  -type f -mtime +7 -print -delete >> $LOG
 echo -e ${GREEN}"Backup: Script Start -- $(date +%Y%m%d_%H%M)"${ENDCOLOR} >> $LOG
 
-START_TIME=$(date +%s)
-
 ### Disk Usage
 DISK_U=$( df -h | grep "${MAIN_VOL}" | awk {'print $5'} )
 echo " > Disk usage: ${DISK_U} ..." >> ${LOG}
@@ -274,7 +274,8 @@ chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh
 if [ -t 1 ]
 then
 
-  RUNNER_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP 03 SERVER_OPTIMIZATIONS 04 BACKUP_RESTORE 05 HOSTING_TO_VPS 06 LEMP_SETUP 07 NETDATA_INSTALLATION 08 WORDPRESS_INSTALLATION 09 GTMETRIX_TEST 10 REPLACE_WP_URL 11 RESET_SCRIPT_OPTIONS"
+  #RUNNER_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP 03 SERVER_OPTIMIZATIONS 04 BACKUP_RESTORE 05 HOSTING_TO_VPS 06 LEMP_SETUP 07 NETDATA_INSTALLATION 08 WORDPRESS_INSTALLATION 09 GTMETRIX_TEST 10 REPLACE_WP_URL 11 RESET_SCRIPT_OPTIONS"
+  RUNNER_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP 03 SERVER_OPTIMIZATIONS 04 BACKUP_RESTORE 05 HOSTING_TO_VPS 06 LEMP_SETUP 07 WORDPRESS_INSTALLATION 08 NETDATA_INSTALLATION 09 COCKPIT_INSTALLATION 10 REPLACE_WP_URL 11 GTMETRIX_TEST 12 RESET_SCRIPT_OPTIONS"
   CHOSEN_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 `for x in ${RUNNER_OPTIONS}; do echo "$x"; done` 3>&1 1>&2 2>&3)
   #exitstatus=$?
   #if [ $exitstatus = 0 ]; then
@@ -294,7 +295,7 @@ then
 					sendEmail -f ${SMTP_U} -t ${MAILA} -u "${VPSNAME} - Database Backup - [${NOWDISPLAY} - ${STATUS_D}]" -o message-content-type=html -m "${HTMLOPEN} ${DB_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P};
 					break;;
           [Nn]* )
-					echo -e "\e[31mAborting database backup...\e[0m";
+					echo -e ${RED}"Aborting database backup script ..."${ENDCOLOR};
 					break;;
           * ) echo "Please answer yes or no.";;
       esac
@@ -314,7 +315,7 @@ then
   					sendEmail -f ${SMTP_U} -t ${MAILA} -u "${STATUS_ICON_F} ${VPSNAME} - Files Backup [${NOWDISPLAY}]" -o message-content-type=html -m "${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${FILE_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P};
   					break;;
             [Nn]* )
-  					echo -e "\e[31mAborting file backup...\e[0m";
+  					echo -e ${RED}"Aborting file backup script ..."${ENDCOLOR};
   					break;;
             * ) echo " > Please answer yes or no.";;
         esac
@@ -329,7 +330,7 @@ then
   					source ${SFOLDER}/server_and_image_optimizations.sh;
   					break;;
   					[Nn]* )
-  					echo -e "\e[31mAborting optimization script...\e[0m";
+            echo -e ${RED}"Aborting optimization script ..."${ENDCOLOR};
   					break;;
   					* ) echo " > Please answer yes or no.";;
   			esac
@@ -347,7 +348,7 @@ then
   					source ${SFOLDER}/utils/wordpress_migration_from_URL.sh;
   					break;;
   					[Nn]* )
-  					echo -e "\e[31mAborting optimization script...\e[0m";
+  					echo -e ${RED}"Aborting server migration script ..."${ENDCOLOR};
   					break;;
   					* ) echo " > Please answer yes or no.";;
   			esac
@@ -362,29 +363,36 @@ then
   					source ${SFOLDER}/lemp_setup.sh;
   					break;;
   					[Nn]* )
-  					echo -e "\e[31mAborting optimization script...\e[0m";
+  					echo -e ${RED}"Aborting LEMP script ..."${ENDCOLOR};
   					break;;
   					* ) echo " > Please answer yes or no.";;
   			esac
   	done
   fi
   if [[ ${CHOSEN_TYPE} == *"07"* ]]; then
-        source ${SFOLDER}/utils/netdata_installer.sh;
+    source ${SFOLDER}/utils/wordpress_installer.sh;
+
   fi
   if [[ ${CHOSEN_TYPE} == *"08"* ]]; then
-        source ${SFOLDER}/utils/wordpress_installer.sh;
+    source ${SFOLDER}/utils/netdata_installer.sh;
+
   fi
   if [[ ${CHOSEN_TYPE} == *"09"* ]]; then
+    source ${SFOLDER}/utils/cockpit_installer.sh;
+
+  fi
+  if [[ ${CHOSEN_TYPE} == *"10"* ]]; then
+    source ${SFOLDER}/utils/replace_url_on_wordpress_db.sh;
+
+  fi
+  if [[ ${CHOSEN_TYPE} == *"11"* ]]; then
         URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
         exitstatus=$?
         if [ ${exitstatus} = 0 ]; then
           source ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh gtmetrix ${URL_TO_TEST};
         fi
   fi
-  if [[ ${CHOSEN_TYPE} == *"10"* ]]; then
-    source ${SFOLDER}/utils/replace_url_on_wordpress_db.sh;
-  fi
-  if [[ ${CHOSEN_TYPE} == *"11"* ]]; then
+  if [[ ${CHOSEN_TYPE} == *"12"* ]]; then
     while true; do
         echo -e ${YELLOW}" > Do you really want to reset the script configuration?"${ENDCOLOR}
         read -p "Please type 'y' or 'n'" yn
@@ -393,12 +401,11 @@ then
             rm /root/.broobe-utils-options
             break;;
             [Nn]* )
-            echo -e "\e[31mAborting ...\e[0m";
+            echo -e ${RED}"Aborting ..."${ENDCOLOR};
             break;;
             * ) echo " > Please answer yes or no.";;
         esac
     done
-
   fi
 
 else
@@ -451,9 +458,5 @@ echo " > Removing temp files..."
 rm ${PKG_MAIL} ${DB_MAIL} ${FILE_MAIL}
 echo -e ${GREEN}" > DONE"${ENDCOLOR}
 
-### Log End ###
-END_TIME=$(date +%s)
-ELAPSED_TIME=$(expr ${END_TIME} - ${START_TIME})
-
+### Log End
 echo "Backup: Script End -- $(date +%Y%m%d_%H%M)" >> $LOG
-echo "Elapsed Time:  $(date -d 00:00:${ELAPSED_TIME} +%Hh:%Mm:%Ss) "  >> $LOG
