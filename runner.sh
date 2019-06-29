@@ -20,6 +20,7 @@ MHOST="localhost"
 MUSER="root"                                                          #MySQL User
 
 SITES_BL=".wp-cli,phpmyadmin"                                         #Folder blacklist
+DB_BL="phpmyadmin,information_schema,performance_schema,mysql,sys"    #Database blacklist
 
 PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
 
@@ -198,7 +199,7 @@ fi
 IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
 
 ### EXPORT VARS
-export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL WSERVER PHP_CF MHOST MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U DEL_UP ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR
+export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL DB_BL WSERVER PHP_CF MHOST MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U DEL_UP ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR
 
 ### Creating temporary folders
 if [ ! -d "${BAKWP}" ]
@@ -228,7 +229,7 @@ SRV_BODY=${SRV_BODYOPEN}${SRV_CONTENT}${SRV_BODYCLOSE}
 
 BODY_SRV=$SRV_HEADER$SRV_BODY
 
-### Configure PKGS Mail Part ###
+### Configure PKGS Mail Part
 if [ "${OUTDATED}" = true ] ; then
 	PKG_COLOR='red'
 	PKG_STATUS='OUTDATED'
@@ -259,9 +260,11 @@ chmod +x ${SFOLDER}/files_backup.sh
 chmod +x ${SFOLDER}/lemp_setup.sh
 chmod +x ${SFOLDER}/restore_from_backup.sh
 chmod +x ${SFOLDER}/server_and_image_optimizations.sh
+chmod +x ${SFOLDER}/utils/certbot_manager.sh
 chmod +x ${SFOLDER}/utils/cloudflare_update_IP.sh
 chmod +x ${SFOLDER}/utils/composer_installer.sh
 chmod +x ${SFOLDER}/utils/netdata_installer.sh
+chmod +x ${SFOLDER}/utils/cockpit_installer.sh
 chmod +x ${SFOLDER}/utils/php_optimizations.sh
 chmod +x ${SFOLDER}/utils/wordpress_installer.sh
 chmod +x ${SFOLDER}/utils/wordpress_migration_from_URL.sh
@@ -274,7 +277,6 @@ chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh
 if [ -t 1 ]
 then
 
-  #RUNNER_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP 03 SERVER_OPTIMIZATIONS 04 BACKUP_RESTORE 05 HOSTING_TO_VPS 06 LEMP_SETUP 07 NETDATA_INSTALLATION 08 WORDPRESS_INSTALLATION 09 GTMETRIX_TEST 10 REPLACE_WP_URL 11 RESET_SCRIPT_OPTIONS"
   RUNNER_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP 03 SERVER_OPTIMIZATIONS 04 BACKUP_RESTORE 05 HOSTING_TO_VPS 06 LEMP_SETUP 07 WORDPRESS_INSTALLATION 08 NETDATA_INSTALLATION 09 COCKPIT_INSTALLATION 10 REPLACE_WP_URL 11 GTMETRIX_TEST 12 RESET_SCRIPT_OPTIONS"
   CHOSEN_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 `for x in ${RUNNER_OPTIONS}; do echo "$x"; done` 3>&1 1>&2 2>&3)
   #exitstatus=$?
@@ -287,12 +289,18 @@ then
       read -p "Please type 'y' or 'n'" yn
       case $yn in
           [Yy]* )
+
 					source ${SFOLDER}/mysql_backup.sh;
+
 					DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
 					DB_MAIL_VAR=$(<${DB_MAIL})
 					HTMLOPEN='<html><body>'
 					HTMLCLOSE='</body></html>'
+
+          echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
+
 					sendEmail -f ${SMTP_U} -t ${MAILA} -u "${VPSNAME} - Database Backup - [${NOWDISPLAY} - ${STATUS_D}]" -o message-content-type=html -m "${HTMLOPEN} ${DB_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P};
+
 					break;;
           [Nn]* )
 					echo -e ${RED}"Aborting database backup script ..."${ENDCOLOR};
@@ -410,7 +418,8 @@ then
 
 else
   ### Running from cron
-  echo " > Running apt update..." >> ${LOG}
+  echo " > Running from cron ..." >> ${LOG}
+  echo " > Running apt update ..." >> ${LOG}
   apt update
 
   ### Compare package versions
@@ -450,12 +459,14 @@ else
       STATUS_ICON="✅"
     fi
   fi
+  echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
   sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${STATUS_ICON} ${VPSNAME} - Complete Backup - [${NOWDISPLAY}]" -o message-content-type=html -m "${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P};
 
 fi
 
 echo " > Removing temp files..."
 rm ${PKG_MAIL} ${DB_MAIL} ${FILE_MAIL}
+echo " > DONE" >> $LOG
 echo -e ${GREEN}" > DONE"${ENDCOLOR}
 
 ### Log End
