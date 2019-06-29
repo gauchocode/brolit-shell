@@ -36,7 +36,7 @@ if [ -n "${WSERVER}" ]; then
   fi
 fi
 
-### TAR PHP Config Files ###
+### TAR PHP Config Files
 if [ -n "${PHP_CF}" ]; then
   if $TAR -jcpf ${BAKWP}/${NOW}/php-config-files-${NOW}.tar.bz2 --directory=${PHP_CF} .
   then
@@ -52,7 +52,7 @@ if [ -n "${PHP_CF}" ]; then
   fi
 fi
 
-### TAR MySQL Config Files ###
+### TAR MySQL Config Files
 if [ -n "${MySQL_CF}" ]; then
   if $TAR -jcpf ${BAKWP}/${NOW}/mysql-config-files-${NOW}.tar.bz2 --directory=${MySQL_CF} .
   then
@@ -68,67 +68,48 @@ if [ -n "${MySQL_CF}" ]; then
   fi
 fi
 
-### TAR Sites Folders ###
-if [ "${ONE_FILE_BK}" = true ] ; then
-  if [ -n "${SITES}" ]; then
-    if $TAR --exclude '.git' --exclude '*.log' -jcpf ${BAKWP}/${NOW}/backup-files_${NOW}.tar.bz2 --directory=${SITES} .
-    then
-        BK_SIZE=$(ls -lah ${BAKWP}/${NOW}/backup-files_${NOW}.tar.bz2 | awk '{ print $5}')
-        echo " > Backup created, final size: ${BK_SIZE} ..." >> $LOG
+k=0;
+for j in $(find $SITES -maxdepth 1 -type d)
+do
+  if [[ "$k" -gt 0 ]]; then
+    FOLDER_NAME=$(basename $j)
+    if [[ $SITES_BL != *"${FOLDER_NAME}"* ]]; then
+      echo " > Making TAR from: $FOLDER_NAME ..." >> $LOG
+      echo " > $TAR --exclude '.git' --exclude '*.log' -jcpf ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 --directory=${SITES} ${FOLDER_NAME} ..."
+      TAR_FILE=$($TAR --exclude '.git' --exclude '*.log' -jcpf ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 --directory=${SITES} ${FOLDER_NAME} >> $LOG)
+      if ${TAR_FILE}; then
+        BK_SIZE=$(ls -lah ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 | awk '{ print $5}')
+        echo " > Backup created, final size: $BK_SIZE ..." >> $LOG
+
+        echo " > Creating Dropbox Folder ${FOLDER_NAME} ..." >> $LOG
+        ${DPU_F}/dropbox_uploader.sh mkdir /${SITES_F}
+        ${DPU_F}/dropbox_uploader.sh mkdir /${SITES_F}/${FOLDER_NAME}/
+
         echo " > Uploading TAR to Dropbox ..." >> $LOG
-        ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/backup-files_${NOW}.tar.bz2 ${DROPBOX_FOLDER}/${SITES_F}
+        ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 $DROPBOX_FOLDER/${SITES_F}/${FOLDER_NAME}/
         echo " > Trying to delete old backup from Dropbox ..." >> $LOG
-        ${DPU_F}/dropbox_uploader.sh remove ${DROPBOX_FOLDER}/${SITES_F}/backup-files_${ONEWEEKAGO}.tar.bz2
-    else
+        ${DPU_F}/dropbox_uploader.sh remove $DROPBOX_FOLDER/${SITES_F}/${FOLDER_NAME}/backup-${FOLDER_NAME}_files_${ONEWEEKAGO}.tar.bz2
+        if [ "$DEL_UP" = true ] ; then
+          echo " > Deleting backup from server ..." >> $LOG
+          rm -r ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2
+        fi
+      else
         ERROR=true
-        ERROR_TYPE="ERROR: No such directory or file ${BAKWP}/${NOW}/backup-files_${NOW}.tar.bz2"
+        ERROR_TYPE="ERROR: No such directory or file ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2"
         echo ${ERROR_TYPE} >> $LOG
+      fi
+    else
+      echo " > Omiting ${FOLDER_NAME} TAR file (blacklisted) ..." >> $LOG
     fi
   fi
-else
-  k=0;
-  for j in $(find $SITES -maxdepth 1 -type d)
-  do
-      if [[ "$k" -gt 0 ]]; then
-        FOLDER_NAME=$(basename $j)
-        if [[ $SITES_BL != *"${FOLDER_NAME}"* ]]; then
-          echo " > Making TAR from: $FOLDER_NAME ..." >> $LOG
-          echo " > $TAR --exclude '.git' --exclude '*.log' -jcpf ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 --directory=${SITES} ${FOLDER_NAME} ..."
-          TAR_FILE=$($TAR --exclude '.git' --exclude '*.log' -jcpf ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 --directory=${SITES} ${FOLDER_NAME} >> $LOG)
-          if ${TAR_FILE}; then
-              BK_SIZE=$(ls -lah ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 | awk '{ print $5}')
-              echo " > Backup created, final size: $BK_SIZE ..." >> $LOG
+k=$k+1;
+done
 
-              echo " > Creating Dropbox Folder ${FOLDER_NAME} ..." >> $LOG
-              ${DPU_F}/dropbox_uploader.sh mkdir /${SITES_F}
-              ${DPU_F}/dropbox_uploader.sh mkdir /${SITES_F}/${FOLDER_NAME}/
-
-              echo " > Uploading TAR to Dropbox ..." >> $LOG
-              ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 $DROPBOX_FOLDER/${SITES_F}/${FOLDER_NAME}/
-              echo " > Trying to delete old backup from Dropbox ..." >> $LOG
-              ${DPU_F}/dropbox_uploader.sh remove $DROPBOX_FOLDER/${SITES_F}/${FOLDER_NAME}/backup-${FOLDER_NAME}_files_${ONEWEEKAGO}.tar.bz2
-              if [ "$DEL_UP" = true ] ; then
-                echo " > Deleting backup from server ..." >> $LOG
-                rm -r ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2
-              fi
-          else
-              ERROR=true
-              ERROR_TYPE="ERROR: No such directory or file ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2"
-              echo ${ERROR_TYPE} >> $LOG
-          fi
-        else
-          echo " > Omiting ${FOLDER_NAME} TAR file (blacklisted) ..." >> $LOG
-        fi
-      fi
-      k=$k+1;
-  done
-fi
-
-### File Check ###
+### File Check
 AMOUNT_FILES=`ls -d ${BAKWP}/${NOW}/*_files_${NOW}.tar.bz2 | wc -l`
 echo " > Number of backup files found: ${AMOUNT_FILES} ..." >> $LOG
 
-### Deleting old backup files ###
+### Deleting old backup files
 if [ "$DEL_UP" = true ] ; then
   rm -r ${BAKWP}/${NOW}
 else
@@ -142,30 +123,20 @@ else
   fi
 fi
 
-### DUPLICITY ###
-if [ "$DUP_BK" = true ] ; then
-	### Check if DUPLICITY is installed ###
+### DUPLICITY
+if [ "${DUP_BK}" = true ] ; then
+	### Check if DUPLICITY is installed
 	DUPLICITY="$(which duplicity)"
 	if [ ! -x "${DUPLICITY}" ]; then
 	  apt-get install duplicity
 	fi
-	### Loop in to Directories ###
-	for i in $(echo $DUP_FOLDERS | sed "s/,/ /g")
+	### Loop in to Directories
+	for i in $(echo ${DUP_FOLDERS} | sed "s/,/ /g")
 	do
-		MANIFEST=`ls -1R $DUP_ROOT$i/ |  grep -i .*.manifest | wc -l`
-		if [ $MANIFEST == 0 ]; then
-			### If no MANIFEST is found, then create a full Backup ###
-			duplicity full -v4 --no-encryption $DUP_SRC_BK$i file://$DUP_ROOT$i
-      RETVAL=$?
-			echo " > Full Backup of $i OK, and was stored in $DUP_ROOT$i." >> $LOG
-		else
-			### Else, do an incremantal Backup ###
-			duplicity incremental -v4 --no-encryption $DUP_SRC_BK$i file://$DUP_ROOT$i
-      RETVAL=$?
-			echo " > Incremental Backup of $i OK, and was stored in $DUP_ROOT$i." >> $LOG
-      # TODO: Purge old backups
-      #duplicity remove-older-than 1M --force $DUP_ROOT/$i
-		fi
+    duplicity --full-if-older-than ${DUP_BK_FULL_FREQ} -v4 --no-encryption ${DUP_SRC_BK}$i file://${DUP_ROOT}$i
+    RETVAL=$?
+    duplicity remove-older-than ${DUP_BK_FULL_LIFE} --force ${DUP_ROOT}/$i
+
 	done
   [ $RETVAL -eq 0 ] && echo "*** DUPLICITY SUCCESS ***" >> $LOG
   [ $RETVAL -ne 0 ] && echo "*** DUPLICITY ERROR ***" >> $LOG
@@ -193,9 +164,10 @@ else
       echo " > $FILES_INC" >> $LOG
   done
   FILES_LABEL_END='</div>';
-  echo -e "\e[42m > File Backup OK\e[0m" >> $LOG
+  echo " > File Backup OK" >> $LOG
+  echo -e ${GREEN}" > File Backup OK"${ENDCOLOR}
 
-  if [ "$DUP_BK" = true ] ; then
+  if [ "${DUP_BK}" = true ] ; then
     DBK_SIZE=$(du -hs $DUP_ROOT | cut -f1)
     DBK_SIZE_LABEL="Duplicity Backup size: <b>$DBK_SIZE</b><br /><b>Duplicity Backup includes:</b><br />$DUP_FOLDERS"
   fi
@@ -220,8 +192,8 @@ HEADER=$HEADEROPEN$HEADERTEXT$HEADERCLOSE
 BODY=$BODYOPEN$CONTENT$SIZE_LABEL$FILES_LABEL$FILES_INC$FILES_LABEL_END$DBK_SIZE_LABEL$BODYCLOSE
 FOOTER=$FOOTEROPEN$SCRIPTSTRING$FOOTERCLOSE
 
-echo $HEADER > $BAKWP/file-bk-$NOW.mail
-echo $BODY >> $BAKWP/file-bk-$NOW.mail
-echo $FOOTER >> $BAKWP/file-bk-$NOW.mail
+echo $HEADER > ${BAKWP}/file-bk-${NOW}.mail
+echo $BODY >> ${BAKWP}/file-bk-${NOW}.mail
+echo $FOOTER >> ${BAKWP}/file-bk-${NOW}.mail
 
 export STATUS_F STATUS_ICON_F HTMLOPEN HEADER BODY FOOTER HTMLCLOSE
