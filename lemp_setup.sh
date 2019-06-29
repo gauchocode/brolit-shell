@@ -9,38 +9,24 @@
 #TODO: esto deberia deprecarse y calcularse con el hardware del server
 SERVER_MODEL=""                               # Options: cx11, cx21, cx31
 
-#TODO: el dominio debe preguntarse en los installers con whiptail
+#TODO: todo esto debe preguntarse en los installers con whiptail
 DOMAIN=""
-#TODO: el pass de MySQL debe sacarse de una config
-MySQL_ROOT_PASS=""
-
 COMPOSER="false"
 WP="false"
-
 MARIADB="false"                               # If true MariaDB will be installed instead MySQL
 PHP_V="7.2"                                   # Ubuntu 18.04 LTS Default
 
-### Setup Colours ###
-BLACK='\E[30;40m'
-RED='\E[31;40m'
-GREEN='\E[32;40m'
-YELLOW='\E[33;40m'
-BLUE='\E[34;40m'
-MAGENTA='\E[35;40m'
-CYAN='\E[36;40m'
-WHITE='\E[37;40m'
-
-### Checking some things... ###
+### Checking some things...
 if [ $USER != root ]; then
   echo -e ${RED}"Error: must be root! Exiting..."${ENDCOLOR}
   exit 0
 fi
-if [[ -z "${SERVER_MODEL}" || -z "${MySQL_ROOT_PASS}" ]]; then
-  echo -e ${RED}"Error: SERVER_MODEL and MySQL_ROOT_PASS must be set! Exiting..."${ENDCOLOR}
+if [[ -z "${SERVER_MODEL}" || -z "${MPASS}" ]]; then
+  echo -e ${RED}"Error: SERVER_MODEL and MPASS must be set! Exiting..."${ENDCOLOR}
   exit 0
 fi
 
-### Log Start ###
+### Log Start
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 PATH_LOG="${SFOLDER}/logs"
 if [ ! -d "${SFOLDER}/logs" ]
@@ -53,10 +39,10 @@ fi
 LOG_NAME=log_lemp_${TIMESTAMP}.log
 LOG=${PATH_LOG}/${LOG_NAME}
 
-### EXPORT VARS ###
+### EXPORT VARS
 export LOG
 
-#updating packages
+# Updating packages
 echo -e "\nAdding repos and updating package lists ...\n" >>$LOG
 apt --yes install software-properties-common
 add-apt-repository ppa:certbot/certbot
@@ -80,30 +66,30 @@ pear install mail mail_mime net_smtp
 configure timezone
 dpkg-reconfigure tzdata
 
-#secure mysql installation
+# Secure mysql installation
 sudo mysql_secure_installation
 
-#getting server info
+# Getting server info
 CPUS=$(grep -c "processor" /proc/cpuinfo)
 RAM=$(grep MemTotal /proc/meminfo | awk '{print $2}' | xargs -I {} echo "scale=0; {}/1024^2" | bc)
 
-#php.ini broobe standard configuration
+# php.ini broobe standard configuration
 echo -e "\nMoving php configuration file...\n" >>$LOG
 cat confs/php.ini > /etc/php/${PHP_V}/fpm/php.ini
 
-#fpm broobe standard configuration
+# fpm broobe standard configuration
 echo -e "\nMoving fpm configuration file...\n" >>$LOG
 cat confs/${SERVER_MODEL}/www.conf > /etc/php/${PHP_V}/fpm/pool.d/www.conf
 
-#remove html default nginx folders
+# Remove html default nginx folders
 rm -r /var/www/html
 
-#nginx.conf broobe standard configuration
+# nginx.conf broobe standard configuration
 cat confs/nginx.conf > /etc/nginx/nginx.conf
 
-#nginx conf file
+# nginx conf file
 echo -e "\nMoving nginx configuration files...\n" >>$LOG
-#empty default site configuration
+# Empty default site configuration
 echo " " >> /etc/nginx/sites-available/default
 
 if [ "${WP}" = true ] ; then
@@ -114,7 +100,7 @@ if [ "${COMPOSER}" = true ] ; then
   ${SFOLDER}/utils/composer_installer.sh
 fi
 
-#configure monit
+# Configure monit
 cat confs/monit/lemp-services > /etc/monit/conf.d/lemp-services
 cat confs/monit/monitrc > /etc/monit/monitrc
 
