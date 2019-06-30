@@ -43,20 +43,20 @@ LOG=${PATH_LOG}/${LOG_NAME}
 export LOG
 
 # Updating packages
-echo -e "\nAdding repos and updating package lists ...\n" >>$LOG
+echo " > Adding repos and updating package lists ..." >>$LOG
 apt --yes install software-properties-common
 add-apt-repository ppa:certbot/certbot
 apt --yes update
 
-echo -e "\nUpgrading packages before installation ...\n" >>$LOG
+echo " > Upgrading packages before installation ..." >>$LOG
 apt --yes dist-upgrade
 
 if [ "${MARIADB}" = false ] ; then
-  echo -e "\nLEMP installation with MySQL ...\n" >>$LOG
+  echo " > LEMP installation with MySQL ..." >>$LOG
   apt --yes install nginx mysql-server php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear zip clamav ncdu jpegoptim optipng python-certbot-nginx monit sendemail libio-socket-ssl-perl dnsutils
 
 else
-  echo -e "\nLEMP installation with MariaDB ...\n" >>$LOG
+  echo " > LEMP installation with MariaDB ..." >>$LOG
   apt --yes install nginx mariadb-server mariadb-client php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear zip clamav ncdu jpegoptim optipng python-certbot-nginx monit sendemail libio-socket-ssl-perl dnsutils
 
 fi
@@ -74,11 +74,11 @@ CPUS=$(grep -c "processor" /proc/cpuinfo)
 RAM=$(grep MemTotal /proc/meminfo | awk '{print $2}' | xargs -I {} echo "scale=0; {}/1024^2" | bc)
 
 # php.ini broobe standard configuration
-echo -e "\nMoving php configuration file...\n" >>$LOG
+echo " > Moving php configuration file ..." >>$LOG
 cat confs/php.ini > /etc/php/${PHP_V}/fpm/php.ini
 
 # fpm broobe standard configuration
-echo -e "\nMoving fpm configuration file...\n" >>$LOG
+echo " > Moving fpm configuration file ..." >>$LOG
 cat confs/${SERVER_MODEL}/www.conf > /etc/php/${PHP_V}/fpm/pool.d/www.conf
 
 # Remove html default nginx folders
@@ -88,27 +88,31 @@ rm -r /var/www/html
 cat confs/nginx.conf > /etc/nginx/nginx.conf
 
 # nginx conf file
-echo -e "\nMoving nginx configuration files...\n" >>$LOG
+echo " > Moving nginx configuration files ..." >>$LOG
 # Empty default site configuration
 echo " " >> /etc/nginx/sites-available/default
 
 if [ "${WP}" = true ] ; then
   ${SFOLDER}/utils/wordpress_installer.sh
+  
 fi
 
 if [ "${COMPOSER}" = true ] ; then
   ${SFOLDER}/utils/composer_installer.sh
+
 fi
 
 # Configure monit
 cat confs/monit/lemp-services > /etc/monit/conf.d/lemp-services
 cat confs/monit/monitrc > /etc/monit/monitrc
 
-echo -e "\nRestarting services...\n"
+echo -e ${YELLOW}" > Restarting services ..."${ENDCOLOR}
 systemctl restart php${PHP_V}-fpm
 systemctl restart nginx.service
 service monit restart
 
 ${SFOLDER}/utils/netdata_installer.sh
+
+echo -e ${GREEN}" > DONE ..."${ENDCOLOR}
 
 echo "Backup: Script End -- $(date +%Y%m%d_%H%M)" >> $LOG
