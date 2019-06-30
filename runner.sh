@@ -11,13 +11,19 @@ VPSNAME="$HOSTNAME"
 
 # TODO: Checkear si estamos corriendo en Ubuntu 16.04 o superior
 
-SFOLDER="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"  #Backup Scripts folder. Recomended: /root/broobe-utils-scripts
+#SFOLDER="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"  #Backup Scripts folder. Recomended: /root/broobe-utils-scripts
+
+SFOLDER="`dirname \"$0\"`"              # relative
+SFOLDER="`( cd \"$SFOLDER\" && pwd )`"  # absolutized and normalized
+if [ -z "$SFOLDER" ] ; then
+  # error; for some reason, the path is not accessible
+  # to the script (e.g. permissions re-evaled after suid)
+  exit 1  # fail
+fi
+#echo "$MY_PATH"
 
 DPU_F="${SFOLDER}/utils/dropbox-uploader"                             #Dropbox Uploader Directory
 SITES="/var/www"                                                      #Where sites are stored
-
-MHOST="localhost"
-MUSER="root"                                                          #MySQL User
 
 SITES_BL=".wp-cli,phpmyadmin"                                         #Folder blacklist
 DB_BL="phpmyadmin,information_schema,performance_schema,mysql,sys"    #Database blacklist
@@ -28,12 +34,8 @@ WSERVER="/etc/nginx"                                                  #Webserver
 MySQL_CF="/etc/mysql"                                                 #MySQL config files location
 PHP_CF="/etc/php/${PHP_V}/fpm"                                        #PHP config files location
 
-BAKWP="${SFOLDER}/tmp"                                                #Temp folder to store Backups
 DROPBOX_FOLDER="/"                                                    #Dropbox Folder Backup
 MAIN_VOL="/dev/sda1"                                                  #Main partition
-
-DB_BK=true                                                            #Include database backup?
-DEL_UP=true                                                           #Delete backup files after upload?
 
 ### DUPLICITY CONFIG
 DUP_BK=false                                                          #Duplicity Backups true or false (bool)
@@ -46,6 +48,13 @@ DUP_BK_FULL_LIFE="1M"                                                 #Delete an
 ### PACKAGES TO WATCH
 ### TODO: deberia poder elejirse desde las opciones version de php y motor de base de datos
 PACKAGES=(linux-firmware dpkg perl nginx php${PHP_V}-fpm mysql-server curl openssl)
+
+DB_BK=true                                                            #Include database backup?
+DEL_UP=true                                                           #Delete backup files after upload?
+BAKWP="${SFOLDER}/tmp"                                                #Temp folder to store Backups
+
+MHOST="localhost"
+MUSER="root"                                                          #MySQL User
 
 ### Setup Colours
 BLACK='\E[30;40m'
@@ -63,6 +72,8 @@ NOW=$(date +"%Y-%m-%d")
 NOWDISPLAY=$(date +"%d-%m-%Y")
 ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
 
+echo -e ${RED}" > SFOLDER: ${SFOLDER} "${ENDCOLOR}
+
 ### Checking some things...
 if [ ${USER} != root ]; then
   echo -e ${RED}" > Error: must be root! Exiting..."${ENDCOLOR}
@@ -73,85 +84,97 @@ if test -f /root/.broobe-utils-options ; then
   source /root/.broobe-utils-options
 fi
 
-# Display dialog to imput MySQL root pass and then store it into a hidden file
-if [[ -z "${MPASS}" ]]; then
-  MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root Password" 10 60 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-    #TODO: testear el password antes de guardarlo
-    echo "MPASS="${MPASS} >> /root/.broobe-utils-options
-  else
-    exit 1
-  fi
-fi
+if [ -t 1 ]; then
 
-### SENDEMAIL CONFIG
-if [[ -z "${SMTP_SERVER}" ]]; then
-  SMTP_SERVER=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server" 10 60 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-    echo "SMTP_SERVER="${SMTP_SERVER} >> /root/.broobe-utils-options
-  else
-    exit 1
+  if [[ -z "${MPASS}" ]]; then
+    MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root Password" 10 60 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      #TODO: testear el password antes de guardarlo
+      echo "MPASS="${MPASS} >> /root/.broobe-utils-options
+    else
+      exit 1
+
+    fi
 
   fi
 
-fi
+  if [[ -z "${SMTP_SERVER}" ]]; then
+    SMTP_SERVER=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server" 10 60 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo "SMTP_SERVER="${SMTP_SERVER} >> /root/.broobe-utils-options
+    else
+      exit 1
 
-if [[ -z "${SMTP_PORT}" ]]; then
-  SMTP_PORT=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server Port" 10 60 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-    echo "SMTP_PORT="${SMTP_PORT} >> /root/.broobe-utils-options
-  else
-    exit 1
-
-  fi
-
-fi
-
-if [[ -z "${SMTP_TLS}" ]]; then
-  SMTP_TLS=$(whiptail --title "SMTP TLS" --inputbox "SMTP yes or no:" 10 60 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-    echo "SMTP_TLS="${SMTP_TLS} >> /root/.broobe-utils-options
-  else
-    exit 1
+    fi
 
   fi
 
-fi
+  if [[ -z "${SMTP_PORT}" ]]; then
+    SMTP_PORT=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server Port" 10 60 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo "SMTP_PORT="${SMTP_PORT} >> /root/.broobe-utils-options
+    else
+      exit 1
 
-if [[ -z "${SMTP_U}" ]]; then
-  SMTP_U=$(whiptail --title "SMTP User" --inputbox "Please insert the SMTP user" 10 60 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-    echo "SMTP_U="${SMTP_U} >> /root/.broobe-utils-options
-  else
-    exit 1
-
-  fi
-
-fi
-
-if [[ -z "${SMTP_P}" ]]; then
-  SMTP_P=$(whiptail --title "SMTP Password" --inputbox "Please insert the SMTP user password" 10 60 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-    echo "SMTP_P="${SMTP_P} >> /root/.broobe-utils-options
-  else
-    exit 1
+    fi
 
   fi
 
-fi
+  if [[ -z "${SMTP_TLS}" ]]; then
+    SMTP_TLS=$(whiptail --title "SMTP TLS" --inputbox "SMTP yes or no:" 10 60 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo "SMTP_TLS="${SMTP_TLS} >> /root/.broobe-utils-options
+    else
+      exit 1
 
-if [[ -z "${MAILA}" ]]; then
-  MAILA=$(whiptail --title "Notification Email" --inputbox "Please insert the email where you want to receive notifications." 10 60 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-    echo "MAILA="${MAILA} >> /root/.broobe-utils-options
-  else
+    fi
+
+  fi
+
+  if [[ -z "${SMTP_U}" ]]; then
+    SMTP_U=$(whiptail --title "SMTP User" --inputbox "Please insert the SMTP user" 10 60 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo "SMTP_U="${SMTP_U} >> /root/.broobe-utils-options
+    else
+      exit 1
+
+    fi
+
+  fi
+
+  if [[ -z "${SMTP_P}" ]]; then
+    SMTP_P=$(whiptail --title "SMTP Password" --inputbox "Please insert the SMTP user password" 10 60 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo "SMTP_P="${SMTP_P} >> /root/.broobe-utils-options
+    else
+      exit 1
+
+    fi
+
+  fi
+
+  if [[ -z "${MAILA}" ]]; then
+    MAILA=$(whiptail --title "Notification Email" --inputbox "Please insert the email where you want to receive notifications." 10 60 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo "MAILA="${MAILA} >> /root/.broobe-utils-options
+    else
+      exit 1
+
+    fi
+
+  fi
+
+else
+
+  if [[ -z "${MPASS}" || -z "${SMTP_U}" || -z "${SMTP_P}" || -z "${SMTP_TLS}" || -z "${SMTP_PORT}" || -z "${SMTP_SERVER}" ]]; then
+    echo "Some required VARS need to be configured, please run de script manually to configure them." >> $LOG
     exit 1
 
   fi
@@ -172,7 +195,7 @@ LOG_NAME=log_back_${TIMESTAMP}.log
 LOG=${PATH_LOG}/${LOG_NAME}
 
 find ${PATH_LOG} -name "*.log"  -type f -mtime +7 -print -delete >> $LOG
-echo -e ${GREEN}"Backup: Script Start -- $(date +%Y%m%d_%H%M)"${ENDCOLOR} >> $LOG
+echo "Backup: Script Start -- $(date +%Y%m%d_%H%M)" >> $LOG
 
 ### Disk Usage
 DISK_U=$( df -h | grep "${MAIN_VOL}" | awk {'print $5'} )
@@ -274,8 +297,7 @@ chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools.sh
 chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh
 
 ### Running from terminal
-if [ -t 1 ]
-then
+if [ -t 1 ]; then
 
   RUNNER_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP 03 SERVER_OPTIMIZATIONS 04 BACKUP_RESTORE 05 HOSTING_TO_VPS 06 LEMP_SETUP 07 WORDPRESS_INSTALLATION 08 NETDATA_INSTALLATION 09 COCKPIT_INSTALLATION 10 REPLACE_WP_URL 11 GTMETRIX_TEST 12 RESET_SCRIPT_OPTIONS"
   CHOSEN_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 `for x in ${RUNNER_OPTIONS}; do echo "$x"; done` 3>&1 1>&2 2>&3)
@@ -419,6 +441,7 @@ then
 else
   ### Running from cron
   echo " > Running from cron ..." >> ${LOG}
+
   echo " > Running apt update ..." >> ${LOG}
   apt update
 

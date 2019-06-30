@@ -15,7 +15,6 @@ count_dabases (){
   for db in $DBS
   do
     if [[ $DB_BL != *"${db}"* ]]; then
-    #if [ "${db}" != "phpmyadmin" ] && [ "${db}" != "information_schema" ] && [ "${db}" != "performance_schema" ] && [ "${db}" != "mysql" ] && [ "${db}" != "sys" ]; then
       TOTAL_DBS=$((TOTAL_DBS+1))
     fi
   done
