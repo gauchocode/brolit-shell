@@ -121,9 +121,9 @@ else
             sed -i "s#dominio.com#${CHOSEN_PROJECT}#" /etc/nginx/sites-available/${CHOSEN_PROJECT}
             service nginx reload
 
-            echo "Trying to execute certbot for ${CHOSEN_PROJECT} ..."
+            # echo "Trying to execute certbot for ${CHOSEN_PROJECT} ..."
             # TODO: certbot --nginx -d ${CHOSEN_PROJECT} -d www.${CHOSEN_PROJECT}
-            certbot --nginx -d ${CHOSEN_PROJECT} -d www.${CHOSEN_PROJECT}
+            # certbot --nginx -d ${CHOSEN_PROJECT} -d www.${CHOSEN_PROJECT}
 
           else
             if [[ ${CHOSEN_TYPE} == *"$DBS_F"* ]]; then
