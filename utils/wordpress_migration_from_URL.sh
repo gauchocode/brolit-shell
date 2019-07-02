@@ -5,8 +5,6 @@
 # Version: 2.9
 #############################################################################
 
-VPSNAME="$HOSTNAME"
-
 ### File Backup details
 BK_F_URL=""
 BK_F_FILE=""
