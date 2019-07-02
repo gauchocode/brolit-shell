@@ -33,10 +33,13 @@ count_dabases
 echo " > $TOTAL_DBS databases found ..." >> $LOG
 echo -e ${GREEN}" > $TOTAL_DBS databases found ..."${ENDCOLOR}
 
-for DATABASE in $DBS
-do
-  #if  [ "${DATABASE}" != "information_schema" ] && [ "${DATABASE}" != "performance_schema" ] && [ "${DATABASE}" != "mysql" ] && [ "${DATABASE}" != "sys" ]; then
+declare -a BACKUPEDLIST
+declare -a BK_DB_SIZES
+
+for DATABASE in $DBS; do
+
   echo -e ${YELLOW}" > Processing [${DATABASE}] ..."${ENDCOLOR}
+
   if [[ $DB_BL != *"${DATABASE}"* ]]; then
 
     BK_FOLDER=${BAKWP}/${NOW}/
@@ -44,7 +47,7 @@ do
 
     ### Create dump file
     echo " > Creating new database backup in [${BK_FOLDER}${BK_FILE}] ..." >> $LOG
-    echo -e ${YELLOW}" > Creating new database backup in [${BK_FOLDER}${BK_FILE}] ..."${ENDCOLOR}
+    echo -e ${YELLOW}" > Creating new database backup [${BK_FILE}] ..."${ENDCOLOR}
 
     $MYSQLDUMP --max-allowed-packet=1073741824  -u ${MUSER} -h ${MHOST} -p${MPASS} ${DATABASE} > ${BK_FOLDER}${BK_FILE}
 
@@ -55,17 +58,17 @@ do
 
       cd ${BAKWP}/${NOW}
       echo " > Making a tar.bz2 file of [${BK_FILE}] ..." >> $LOG
-      echo -e ${YELLOW}" > Making a tar.bz2 file of [${BK_FILE}] ..."${ENDCOLOR}
+      echo " > Making a tar.bz2 file of [${BK_FILE}] ..."
 
       #echo " > $TAR -jcvpf ${BAKWP}/${NOW}/db-${DATABASE}_${NOW}.tar.bz2 --directory=${BK_FOLDER} ${BK_FILE}"
       $TAR -jcvpf ${BAKWP}/${NOW}/db-${DATABASE}_${NOW}.tar.bz2 --directory=${BK_FOLDER} ${BK_FILE}
 
       BACKUPEDLIST[$COUNT]=db-${DATABASE}_${NOW}.tar.bz2
-      BK_SIZE[$COUNT]=$(ls -lah db-${DATABASE}_${NOW}.tar.bz2 | awk '{ print $5}')
-      DB_BK_SIZE=$BK_SIZE[$COUNT]
+      BK_DB_SIZES[$COUNT]=$(ls -lah db-${DATABASE}_${NOW}.tar.bz2 | awk '{ print $5}')
+      BK_DB_SIZE=${BK_DB_SIZES[$COUNT]}
 
-      echo " > Backup for ${DATABASE} created, final size: ${DB_BK_SIZE} ..."
-      echo -e ${GREEN}" > Backup for ${DATABASE} created, final size: ${DB_BK_SIZE} ..."${ENDCOLOR}
+      echo " > Backup for ${DATABASE} created, final size: ${BK_DB_SIZE} ...">> $LOG
+      echo -e ${GREEN}" > Backup for ${DATABASE} created, final size: ${BK_DB_SIZE} ..."${ENDCOLOR}
 
       #echo " > Creating Dropbox Databases Folder ..." >> $LOG
       ${DPU_F}/dropbox_uploader.sh -q mkdir ${DBS_F}
@@ -141,11 +144,9 @@ else
   SIZE_D=""
   FILES_LABEL_D="<b>Backup files included:</b><br />"
   FILES_INC_D=""
-  #for t in $(echo $BACKUPEDLIST | sed "s/,/ /g")
-  for t in $BACKUPEDLIST
-	do
-    DB_BK_SIZE=$BK_SIZE[$COUNT]
-    FILES_INC_D="$FILES_INC_D $t ${DB_BK_SIZE}<br />"
+  for t in "${BACKUPEDLIST[@]}";	do
+    BK_DB_SIZE=${BK_DB_SIZES[$COUNT]}
+    FILES_INC_D="$FILES_INC_D $t ${BK_DB_SIZE}<br />"
     COUNT=$((COUNT+1))
   done
 	echo -e ${GREEN}" > Database Backup OK"${ENDCOLOR}
