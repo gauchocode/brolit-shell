@@ -10,18 +10,18 @@ ERROR_TYPE=""
 SITES_F="sites"
 CONFIG_F="configs"
 
-### Dropbox Uploader Directory
-DPU_F="${SFOLDER}/utils/dropbox-uploader"
-
 ### Starting Message
 echo " > Starting file backup script ..." >> $LOG
+echo -e ${GREEN}" > Starting file backup script ..."${ENDCOLOR}
 
 echo " > Creating Dropbox folder ${CONFIG_F} on Dropbox ..." >> $LOG
 ${DPU_F}/dropbox_uploader.sh mkdir /${CONFIG_F}
 
 ### TAR Webserver Config Files
 if [ -n "${WSERVER}" ]; then
-  echo " > $TAR -jcpf ${BAKWP}/${NOW}/webserver-config-files-${NOW}.tar.bz2 --directory=${WSERVER} ."
+  echo " > Trying to make an Nginx Config Files Backup ...">> $LOG
+  echo -e ${GREEN}" > Trying to make an Nginx Config Files Backup ..."${ENDCOLOR}
+
   if $TAR -jcpf ${BAKWP}/${NOW}/webserver-config-files-${NOW}.tar.bz2 --directory=${WSERVER} .
   then
       echo " > Nginx Config Files Backup created..." >> $LOG
@@ -29,10 +29,14 @@ if [ -n "${WSERVER}" ]; then
       ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/webserver-config-files-${NOW}.tar.bz2 ${DROPBOX_FOLDER}/${CONFIG_F}
       echo " > Trying to delete old backup from Dropbox ..." >> $LOG
       ${DPU_F}/dropbox_uploader.sh remove ${CONFIG_F}/webserver-config-files-${ONEWEEKAGO}.tar.bz2
+
+      echo -e ${GREEN}" > Nginx Config Files Backup OK"${ENDCOLOR}
+
   else
       ERROR=true
       ERROR_TYPE="ERROR: No such directory or file ${BAKWP}/${NOW}/webserver-config-files-${NOW}.tar.bz2"
       echo $ERROR_TYPE >> $LOG
+
   fi
 fi
 
@@ -45,10 +49,14 @@ if [ -n "${PHP_CF}" ]; then
       ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/php-config-files-${NOW}.tar.bz2 ${DROPBOX_FOLDER}/${CONFIG_F}
       echo " > Trying to delete old backup from Dropbox ..." >> $LOG
       ${DPU_F}/dropbox_uploader.sh remove ${CONFIG_F}/php-config-files-${ONEWEEKAGO}.tar.bz2
+
+      echo -e ${GREEN}" > PHP Config Files Backup OK"${ENDCOLOR}
+
   else
       ERROR=true
       ERROR_TYPE="ERROR: No such directory or file ${BAKWP}/${NOW}/php-config-files-${NOW}.tar.bz2"
       echo ${ERROR_TYPE} >> $LOG
+
   fi
 fi
 
@@ -61,25 +69,40 @@ if [ -n "${MySQL_CF}" ]; then
       ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/mysql-config-files-${NOW}.tar.bz2 ${DROPBOX_FOLDER}/${CONFIG_F}
       echo " > Trying to delete old backup from Dropbox ..." >> $LOG
       ${DPU_F}/dropbox_uploader.sh remove ${CONFIG_F}/mysql-config-files-${ONEWEEKAGO}.tar.bz2
+
+      echo -e ${GREEN}" > MySQL Config Files Backup OK"${ENDCOLOR}
+
   else
       ERROR=true
       ERROR_TYPE="ERROR: No such directory or file ${BAKWP}/${NOW}/mysql-config-files-${NOW}.tar.bz2"
       echo ${ERROR_TYPE} >> $LOG
+
   fi
 fi
 
 k=0;
-for j in $(find $SITES -maxdepth 1 -type d)
-do
+COUNT=0
+declare -a BACKUPED_LIST
+declare -a BK_FL_SIZES
+
+for j in $(find $SITES -maxdepth 1 -type d); do
   if [[ "$k" -gt 0 ]]; then
+
     FOLDER_NAME=$(basename $j)
+
     if [[ $SITES_BL != *"${FOLDER_NAME}"* ]]; then
+
       echo " > Making TAR from: $FOLDER_NAME ..." >> $LOG
       echo " > $TAR --exclude '.git' --exclude '*.log' -jcpf ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 --directory=${SITES} ${FOLDER_NAME} ..."
       TAR_FILE=$($TAR --exclude '.git' --exclude '*.log' -jcpf ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 --directory=${SITES} ${FOLDER_NAME} >> $LOG)
+
       if ${TAR_FILE}; then
-        BK_SIZE=$(ls -lah ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 | awk '{ print $5}')
-        echo " > Backup created, final size: $BK_SIZE ..." >> $LOG
+
+        BACKUPED_LIST[$COUNT]=backup-${FOLDER_NAME}_files_${NOW}.tar.bz2
+        BACKUPED_FL=${BACKUPED_LIST[$COUNT]}
+        BK_FL_SIZES[$COUNT]=$(ls -lah ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 | awk '{ print $5}')
+        BK_FL_SIZE=${BK_FL_SIZES[$COUNT]}
+        echo " > Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE} ..." >> $LOG
 
         echo " > Creating Dropbox Folder ${FOLDER_NAME} ..." >> $LOG
         ${DPU_F}/dropbox_uploader.sh mkdir /${SITES_F}
@@ -87,21 +110,37 @@ do
 
         echo " > Uploading TAR to Dropbox ..." >> $LOG
         ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 $DROPBOX_FOLDER/${SITES_F}/${FOLDER_NAME}/
+
         echo " > Trying to delete old backup from Dropbox ..." >> $LOG
         ${DPU_F}/dropbox_uploader.sh remove $DROPBOX_FOLDER/${SITES_F}/${FOLDER_NAME}/backup-${FOLDER_NAME}_files_${ONEWEEKAGO}.tar.bz2
+
         if [ "$DEL_UP" = true ] ; then
           echo " > Deleting backup from server ..." >> $LOG
           rm -r ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2
+
         fi
+
+        echo -e ${GREEN}"> DONE ..."${ENDCOLOR}
+
+        COUNT=$((COUNT+1))
+
       else
         ERROR=true
         ERROR_TYPE="ERROR: No such directory or file ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2"
         echo ${ERROR_TYPE} >> $LOG
+
       fi
+
     else
       echo " > Omiting ${FOLDER_NAME} TAR file (blacklisted) ..." >> $LOG
+
     fi
+
+    echo " ###################################################"
+    echo " ###################################################" >> $LOG
+
   fi
+
 k=$k+1;
 done
 
@@ -131,8 +170,7 @@ if [ "${DUP_BK}" = true ] ; then
 	  apt-get install duplicity
 	fi
 	### Loop in to Directories
-	for i in $(echo ${DUP_FOLDERS} | sed "s/,/ /g")
-	do
+	for i in $(echo ${DUP_FOLDERS} | sed "s/,/ /g"); do
     duplicity --full-if-older-than ${DUP_BK_FULL_FREQ} -v4 --no-encryption ${DUP_SRC_BK}$i file://${DUP_ROOT}$i
     RETVAL=$?
     duplicity remove-older-than ${DUP_BK_FULL_LIFE} --force ${DUP_ROOT}/$i
@@ -157,12 +195,13 @@ else
   SIZE_LABEL="Standard Backup file size: <b>$BK_SIZE</b><br />"
   FILES_LABEL='<b>Backup file includes:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
   FILES_INC=""
-  echo " > Folders included:" >> $LOG
-  for t in $(find $SITES -maxdepth 1 -type d)
-  do
-      FILES_INC="$FILES_INC $t<br />"
-      echo " > $FILES_INC" >> $LOG
+  COUNT=0
+  for t in "${BACKUPED_LIST[@]}"; do
+    BK_FL_SIZE=${BK_FL_SIZES[$COUNT]}
+    FILES_INC="$FILES_INC $t ${BK_FL_SIZE}<br />"
+    COUNT=$((COUNT+1))
   done
+
   FILES_LABEL_END='</div>';
   echo " > File Backup OK" >> $LOG
   echo -e ${GREEN}" > File Backup OK"${ENDCOLOR}
