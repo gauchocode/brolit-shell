@@ -136,7 +136,6 @@ if [ "${ERROR}" = true ]; then
 	echo " > Backup with errors: ${ERROR_TYPE}." >> $LOG
 
 else
-  COUNT=0
   STATUS_ICON_D="✅"
 	STATUS_D="OK"
 	CONTENT_D=""
@@ -144,6 +143,7 @@ else
   SIZE_D=""
   FILES_LABEL_D="<b>Backup files included:</b><br />"
   FILES_INC_D=""
+  COUNT=0
   for t in "${BACKUPEDLIST[@]}";	do
     BK_DB_SIZE=${BK_DB_SIZES[$COUNT]}
     FILES_INC_D="$FILES_INC_D $t ${BK_DB_SIZE}<br />"
