@@ -291,6 +291,7 @@ chmod +x ${SFOLDER}/utils/cockpit_installer.sh
 chmod +x ${SFOLDER}/utils/php_optimizations.sh
 chmod +x ${SFOLDER}/utils/wordpress_installer.sh
 chmod +x ${SFOLDER}/utils/wordpress_migration_from_URL.sh
+chmod +x ${SFOLDER}/utils/wordpress_wpcli_helper.sh;
 chmod +x ${SFOLDER}/utils/replace_url_on_wordpress_db.sh
 chmod +x ${SFOLDER}/utils/blacklist-checker/bl.sh
 chmod +x ${SFOLDER}/utils/dropbox-uploader/dropbox_uploader.sh
@@ -300,7 +301,7 @@ chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh
 ### Running from terminal
 if [ -t 1 ]; then
 
-  RUNNER_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP 03 SERVER_OPTIMIZATIONS 04 BACKUP_RESTORE 05 HOSTING_TO_VPS 06 LEMP_SETUP 07 WORDPRESS_INSTALLATION 08 NETDATA_INSTALLATION 09 COCKPIT_INSTALLATION 10 REPLACE_WP_URL 11 GTMETRIX_TEST 12 BLACKLIST_CHECKER 13 RESET_SCRIPT_OPTIONS"
+  RUNNER_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP 03 SERVER_OPTIMIZATIONS 04 BACKUP_RESTORE 05 HOSTING_TO_VPS 06 LEMP_SETUP 07 WORDPRESS_INSTALLATION 08 NETDATA_INSTALLATION 09 COCKPIT_INSTALLATION 10 REPLACE_WP_URL 11 WPCLI_HELPER 12 GTMETRIX_TEST 13 BLACKLIST_CHECKER 14 RESET_SCRIPT_OPTIONS"
   CHOSEN_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 `for x in ${RUNNER_OPTIONS}; do echo "$x"; done` 3>&1 1>&2 2>&3)
   #exitstatus=$?
   #if [ $exitstatus = 0 ]; then
@@ -417,20 +418,24 @@ if [ -t 1 ]; then
 
   fi
   if [[ ${CHOSEN_TYPE} == *"11"* ]]; then
+    source ${SFOLDER}/utils/wordpress_wpcli_helper.sh;
+
+  fi
+  if [[ ${CHOSEN_TYPE} == *"12"* ]]; then
         URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
         exitstatus=$?
         if [ ${exitstatus} = 0 ]; then
           source ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh gtmetrix ${URL_TO_TEST};
         fi
   fi
-  if [[ ${CHOSEN_TYPE} == *"12"* ]]; then
+  if [[ ${CHOSEN_TYPE} == *"13"* ]]; then
         IP_TO_TEST=$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)
         exitstatus=$?
         if [ ${exitstatus} = 0 ]; then
           source ${SFOLDER}/utils/blacklist-checker/bl.sh ${IP_TO_TEST};
         fi
   fi
-  if [[ ${CHOSEN_TYPE} == *"13"* ]]; then
+  if [[ ${CHOSEN_TYPE} == *"14"* ]]; then
     while true; do
         echo -e ${YELLOW}" > Do you really want to reset the script configuration?"${ENDCOLOR}
         read -p "Please type 'y' or 'n'" yn
