@@ -141,7 +141,7 @@ else
 	CONTENT_D=""
   COLOR_D='#1DC6DF'
   SIZE_D=""
-  FILES_LABEL_D="<b>Backup files included:</b><br />"
+  FILES_LABEL_D='<b>Backup files includes:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
   FILES_INC_D=""
   COUNT=0
   for t in "${BACKUPEDLIST[@]}";	do
@@ -149,7 +149,10 @@ else
     FILES_INC_D="$FILES_INC_D $t ${BK_DB_SIZE}<br />"
     COUNT=$((COUNT+1))
   done
-	echo -e ${GREEN}" > Database Backup OK"${ENDCOLOR}
+
+  FILES_LABEL_D_END='</div>';
+	echo " > Database Backup OK" >> $LOG
+  echo -e ${GREEN}" > Database Backup OK"${ENDCOLOR}
 
 fi
 
@@ -163,7 +166,7 @@ BODYOPEN_D='<div style="color:#000;font-size:12px;line-height:32px;float:left;fo
 BODYCLOSE_D='</div>'
 
 HEADER_D=$HEADEROPEN_D$HEADERTEXT_D$HEADERCLOSE_D
-BODY_D=$BODYOPEN_D$CONTENT_D$SIZE_D$FILES_LABEL_D$FILES_INC_D$BODYCLOSE_D
+BODY_D=$BODYOPEN_D$CONTENT_D$SIZE_D$FILES_LABEL_D$FILES_INC_D$FILES_LABEL_D_END$BODYCLOSE_D
 
 echo $HEADER_D > ${BAKWP}/db-bk-${NOW}.mail
 echo $BODY_D >> ${BAKWP}/db-bk-${NOW}.mail

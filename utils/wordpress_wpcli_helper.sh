@@ -49,7 +49,7 @@ if [ $USER != root ]; then
   exit 0
 fi
 if [ ! -d "${SITES}/.wp-cli" ]; then
-  cp -R wp-cli ${SITES}/.wp-cli
+  cp -R ${SFOLDER}/utils/wp-cli ${SITES}/.wp-cli
 fi
 
 # Checking permissions and updating wp-cli
@@ -63,9 +63,21 @@ WP_SITE=$filepath"/"$filename
 echo "Setting WP_SITE="${WP_SITE}
 
 #define array of plugin slugs to install
-WP_PLUGINS=("wordpress-seo" " " off "ewww-image-optimizer" " " off "better-wp-security" " " off "easy-wp-smtp" " " off "contact-form-7" " " off )
+WP_PLUGINS=("wordpress-seo" " " off
+            "ewww-image-optimizer" " " off
+            "easy-wp-smtp" " " off
+            "contact-form-7" " " off
+            "advanced-custom-fields" " " off
+            "acf-vc-integrator" " " off
+            "w3-total-cache" " " off
+            "fast-velocity-minify" " " off
+            "fresh-plugins" " " off
+            "wordfence" " " off
+            "better-wp-security" " " off
+            "quttera-web-malware-scanner" " " off
+            )
 
-WPCLI_OPTIONS="01 INSTALL_PLUGINS 02 DELETE_THEMES 03 DELETE_PLUGINS 04 UPDATE_PLUGINS 05 REINSTALL_PLUGINS 06 VERIFY_WP 07 UPDATE_WP 08 REINSTALL_WP 09 ITSEC_SCAN 10 SET_INDEX_OPTION 11 CLEAN_DB 12 PROFILE_DB"
+WPCLI_OPTIONS="01 INSTALL_PLUGINS 02 DELETE_THEMES 03 DELETE_PLUGINS 04 UPDATE_PLUGINS 05 REINSTALL_PLUGINS 06 VERIFY_WP 07 UPDATE_WP 08 REINSTALL_WP 09 SET_INDEX_OPTION 10 CLEAN_DB 11 PROFILE_DB 12 WP_DOCTOR"
 CHOSEN_WPCLI_OPTION=$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 `for x in ${WPCLI_OPTIONS}; do echo "$x"; done` 3>&1 1>&2 2>&3)
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
@@ -82,7 +94,7 @@ if [ $exitstatus = 0 ]; then
     #para listar themes instalados
     WP_DEL_THEMES=$(php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} theme list --quiet --field=name --status=inactive --allow-root)
     echo "Setting WP_DEL_THEMES="$WP_DEL_THEMES
-    CHOSEN_DEL_THEME_OPTION=$(whiptail --title "Plugin Selection" --checklist "Select the themes you want to delete." 20 78 15 "${WP_DEL_THEMES[@]}" 3>&1 1>&2 2>&3)
+    CHOSEN_DEL_THEME_OPTION=$(whiptail --title "Theme Selection" --checklist "Select the themes you want to delete." 20 78 15 "${WP_DEL_THEMES[@]}" 3>&1 1>&2 2>&3)
     echo "Setting CHOSEN_DEL_THEME_OPTION="$CHOSEN_DEL_THEME_OPTION
     for theme_del in $CHOSEN_DEL_THEME_OPTION; do
       #para borrar themes
@@ -100,43 +112,47 @@ if [ $exitstatus = 0 ]; then
   if [[ ${CHOSEN_WPCLI_OPTION} == *"04"* ]]; then
     #para listar plugins instalados
     #WP_DEL_PLUGINS=$(php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} plugin list -quiet --field=name --status=inactive --allow-root)
-    echo "option 4"
+    echo "option 4: updating plugins not implemented yet ..."
   fi
   if [[ ${CHOSEN_WPCLI_OPTION} == *"05"* ]]; then
     #para listar plugins instalados
     #WP_DEL_PLUGINS=$(php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} plugin list -quiet --field=name --status=inactive --allow-root)
-    echo "option 5"
+    echo "option 5: re-install plugins not implemented yet ..."
   fi
   if [[ ${CHOSEN_WPCLI_OPTION} == *"06"* ]]; then
-    #para ver si hay algo corrupto o viruseado
+    echo "Verifying Core Checksum ..."
     php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} core verify-checksums --allow-root
+    echo "Verifying Plugin Checksum ..."
     php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} plugin verify-checksums --all --allow-root
+    echo " > DONE"
   fi
   if [[ ${CHOSEN_WPCLI_OPTION} == *"07"* ]]; then
-    #para actualizar wp (ojo que se manda a actualizar y no hace backup ni nada antes)
+    echo "Updating WP ..."
     sudo -u www-data php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE}'/'${WP_SITE} core update
-    #para actualizar wp-db
+    echo "Updating WP DB ..."
     sudo -u www-data php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE}'/'${WP_SITE} core update-db
+    echo " > DONE"
   fi
   if [[ ${CHOSEN_WPCLI_OPTION} == *"08"* ]]; then
     #esto vuelve a bajar wp y pisa archivos, no borra los archivos actuales, ojo
     sudo -u www-data php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE}'/'${WP_SITE} core download --skip-content --force
   fi
   if [[ ${CHOSEN_WPCLI_OPTION} == *"09"* ]]; then
-    #checkear doc: https://ithemeshelp.zendesk.com/hc/en-us/articles/204289604-iThemes-Security-WP-CLI-Integration
-    #instalar previamente el itsec plugin y activar
-    echo "php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} itsec malwarescan --allow-root"
-    php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} itsec malwarescan --allow-root
+    #para evitar que los motores de busqueda indexen el sitio
+    echo " > Setting Index Option to Private ..."
+    sudo -u www-data php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} option set blog_public 0
+    echo " > Setting Index Option to Public ..."
+    sudo -u www-data php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} option set blog_public 1
+    echo " > DONE"
   fi
   if [[ ${CHOSEN_WPCLI_OPTION} == *"10"* ]]; then
-    #para evitar que los motores de busqueda indexen el sitio
-    sudo -u www-data php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} option set blog_public 0
+    echo " > Deleting transient ..."
+    php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} transient delete --expired --allow-root
+    echo " > Cache Flush ..."
+    php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} cache flush --allow-root
+    echo " > DONE"
   fi
   if [[ ${CHOSEN_WPCLI_OPTION} == *"11"* ]]; then
-    php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} transient delete --expired --allow-root
-    php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} cache flush --allow-root
-  fi
-  if [[ ${CHOSEN_WPCLI_OPTION} == *"12"* ]]; then
 
     #Install PROFILER_OPTIONS
     #https://guides.wp-bullet.com/using-wp-cli-wp-profile-to-diagnose-wordpress-performance-issues/
@@ -177,6 +193,22 @@ if [ $exitstatus = 0 ]; then
 
     fi
 
+  fi
+  if [[ ${CHOSEN_WPCLI_OPTION} == *"12"* ]]; then
+
+    #Install DOCTOR
+    #https://github.com/wp-cli/doctor-command
+    php ${SITES}/.wp-cli/wp-cli.phar package install git@github.com:wp-cli/doctor-command.git --allow-root
+
+    echo " > Checking WP Update ..."
+    php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} doctor check core-update --allow-root
+    echo " > Verify the site is public as expected ..."
+    php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} doctor check option-blog-public --allow-root
+    echo " > Verify cron count ..."
+    php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} doctor check cron-count --allow-root
+    echo " > Verify plugin active count ..."
+    php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} doctor check plugin-active-count --allow-root
+    echo " > DONE"
   fi
 
 else
