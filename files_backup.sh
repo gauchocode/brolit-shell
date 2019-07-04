@@ -93,7 +93,7 @@ for j in $(find $SITES -maxdepth 1 -type d); do
     if [[ $SITES_BL != *"${FOLDER_NAME}"* ]]; then
 
       echo " > Making TAR from: $FOLDER_NAME ..." >> $LOG
-      echo " > $TAR --exclude '.git' --exclude '*.log' -jcpf ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 --directory=${SITES} ${FOLDER_NAME} ..."
+      #echo " > $TAR --exclude '.git' --exclude '*.log' -jcpf ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 --directory=${SITES} ${FOLDER_NAME} ..."
       TAR_FILE=$($TAR --exclude '.git' --exclude '*.log' -jcpf ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 --directory=${SITES} ${FOLDER_NAME} >> $LOG)
 
       if ${TAR_FILE}; then
@@ -192,8 +192,8 @@ else
   STATUS_F="OK"
   CONTENT=""
   COLOR='#1DC6DF'
-  SIZE_LABEL="Standard Backup file size: <b>$BK_SIZE</b><br />"
-  FILES_LABEL='<b>Backup file includes:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
+  SIZE_LABEL=""
+  FILES_LABEL='<b>Backup files includes:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
   FILES_INC=""
   COUNT=0
   for t in "${BACKUPED_LIST[@]}"; do
