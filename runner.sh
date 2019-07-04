@@ -2,59 +2,76 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.9
-#############################################################################
+# Version: 2.9.4
+################################################################################
 
-SCRIPT_V="2.9"
+SCRIPT_V="2.9.4"
 
-VPSNAME="$HOSTNAME"
+### Checking some things...#####################################################
+if [ ${USER} != root ]; then
+  echo -e ${RED}" > Error: must be root! Exiting..."${ENDCOLOR}
+  exit 0
+fi
+# Running Ubuntu?
+DISTRO=$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $1}')
+if [ ! "$DISTRO" = "Ubuntu" ] ; then
+  echo " > ERROR: This script only run on Ubuntu ... Exiting"
+  exit 1
+else
+  echo "Setting DISTRO="$DISTRO
+  # Version?
+  MIN_V=$(echo "16.04" | awk -F "." '{print $1$2}')
+  DISTRO_V=$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $2}' | awk -F "." '{print $1$2}')
+  if [ ! "$DISTRO_V" -ge "$MIN_V" ] ; then
+    echo " > ERROR: Ubuntu version must  >= 16.04 ... Exiting"
+    exit 1
 
-# TODO: Checkear si estamos corriendo en Ubuntu 16.04 o superior
-
-#SFOLDER="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"  #Backup Scripts folder. Recomended: /root/broobe-utils-scripts
-
+  fi
+fi
 SFOLDER="`dirname \"$0\"`"              # relative
 SFOLDER="`( cd \"$SFOLDER\" && pwd )`"  # absolutized and normalized
 if [ -z "$SFOLDER" ] ; then
-  # error; for some reason, the path is not accessible
-  # to the script (e.g. permissions re-evaled after suid)
-  exit 1  # fail
+  # error; for some reason, the path is not accessible to the script
+  exit 1
 fi
-#echo "$MY_PATH"
+################################################################################
 
-DPU_F="${SFOLDER}/utils/dropbox-uploader"                             #Dropbox Uploader Directory
-SITES="/var/www"                                                      #Where sites are stored
+VPSNAME="$HOSTNAME"
 
-SITES_BL=".wp-cli,phpmyadmin"                                         #Folder blacklist
-DB_BL="phpmyadmin,information_schema,performance_schema,mysql,sys"    #Database blacklist
+DPU_F="${SFOLDER}/utils/dropbox-uploader"                                       #Dropbox Uploader Directory
+
+SITES_BL=".wp-cli,phpmyadmin"                                                   #Folder blacklist
+DB_BL="information_schema,performance_schema,mysql,sys"                         #Database blacklist
 
 PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
 
-WSERVER="/etc/nginx"                                                  #Webserver config files location
-MySQL_CF="/etc/mysql"                                                 #MySQL config files location
-PHP_CF="/etc/php/${PHP_V}/fpm"                                        #PHP config files location
-
-DROPBOX_FOLDER="/"                                                    #Dropbox Folder Backup
-MAIN_VOL="/dev/sda1"                                                  #Main partition
+WSERVER="/etc/nginx"                                                            #Webserver config files location
+MySQL_CF="/etc/mysql"                                                           #MySQL config files location
+PHP_CF="/etc/php/${PHP_V}/fpm"                                                  #PHP config files location
 
 ### DUPLICITY CONFIG
-DUP_BK=false                                                          #Duplicity Backups true or false (bool)
-DUP_ROOT="/media/backups/PROJECT_NAME_OR_VPS"                         #Duplicity Backups destination folder
-DUP_SRC_BK="/var/www/"                                                #Source of Directories to Backup
-DUP_FOLDERS="FOLDER1,FOLDER2"                                         #Folders to Backup
-DUP_BK_FULL_FREQ="7D"                                                 #Create a new full backup every ...
-DUP_BK_FULL_LIFE="1M"                                                 #Delete any backup older than this
+DUP_BK=false                                                                    #Duplicity Backups true or false (bool)
+DUP_ROOT="/media/backups/PROJECT_NAME_OR_VPS"                                   #Duplicity Backups destination folder
+DUP_SRC_BK="/var/www/"                                                          #Source of Directories to Backup
+DUP_FOLDERS="FOLDER1,FOLDER2"                                                   #Folders to Backup
+DUP_BK_FULL_FREQ="7D"                                                           #Create a new full backup every ...
+DUP_BK_FULL_LIFE="1M"                                                           #Delete any backup older than this
 
 ### PACKAGES TO WATCH
-### TODO: deberia poder elejirse desde las opciones version de php y motor de base de datos
+# TODO: poder elejir desde las opciones version de php y motor de base de datos
 PACKAGES=(linux-firmware dpkg perl nginx php${PHP_V}-fpm mysql-server curl openssl)
 
-DB_BK=true                                                            #Include database backup?
-DEL_UP=true                                                           #Delete backup files after upload?
-BAKWP="${SFOLDER}/tmp"                                                #Temp folder to store Backups
+#Main partition
+#MAIN_VOL="/dev/sda1"
+MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+')
+
+DROPBOX_FOLDER="/"                                                              #Dropbox Folder Backup
+DB_BK=true                                                                      #Include database backup?
+DEL_UP=true                                                                     #Delete backup files after upload?
+BAKWP="${SFOLDER}/tmp"                                                          #Temp folder to store Backups
 
 MHOST="localhost"
-MUSER="root"                                                          #MySQL User
+MUSER="root"
 
 ### Setup Colours
 BLACK='\E[30;40m'
@@ -72,14 +89,6 @@ NOW=$(date +"%Y-%m-%d")
 NOWDISPLAY=$(date +"%d-%m-%Y")
 ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
 
-echo -e ${RED}" > SFOLDER: ${SFOLDER} "${ENDCOLOR}
-
-### Checking some things...
-if [ ${USER} != root ]; then
-  echo -e ${RED}" > Error: must be root! Exiting..."${ENDCOLOR}
-  exit 0
-fi
-
 if test -f /root/.broobe-utils-options ; then
   source /root/.broobe-utils-options
 fi
@@ -94,11 +103,8 @@ if [ -t 1 ]; then
       echo "MPASS="${MPASS} >> /root/.broobe-utils-options
     else
       exit 1
-
     fi
-
   fi
-
   if [[ -z "${SMTP_SERVER}" ]]; then
     SMTP_SERVER=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server" 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
@@ -106,11 +112,8 @@ if [ -t 1 ]; then
       echo "SMTP_SERVER="${SMTP_SERVER} >> /root/.broobe-utils-options
     else
       exit 1
-
     fi
-
   fi
-
   if [[ -z "${SMTP_PORT}" ]]; then
     SMTP_PORT=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server Port" 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
@@ -118,11 +121,8 @@ if [ -t 1 ]; then
       echo "SMTP_PORT="${SMTP_PORT} >> /root/.broobe-utils-options
     else
       exit 1
-
     fi
-
   fi
-
   if [[ -z "${SMTP_TLS}" ]]; then
     SMTP_TLS=$(whiptail --title "SMTP TLS" --inputbox "SMTP yes or no:" 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
@@ -130,11 +130,8 @@ if [ -t 1 ]; then
       echo "SMTP_TLS="${SMTP_TLS} >> /root/.broobe-utils-options
     else
       exit 1
-
     fi
-
   fi
-
   if [[ -z "${SMTP_U}" ]]; then
     SMTP_U=$(whiptail --title "SMTP User" --inputbox "Please insert the SMTP user" 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
@@ -142,11 +139,8 @@ if [ -t 1 ]; then
       echo "SMTP_U="${SMTP_U} >> /root/.broobe-utils-options
     else
       exit 1
-
     fi
-
   fi
-
   if [[ -z "${SMTP_P}" ]]; then
     SMTP_P=$(whiptail --title "SMTP Password" --inputbox "Please insert the SMTP user password" 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
@@ -154,25 +148,30 @@ if [ -t 1 ]; then
       echo "SMTP_P="${SMTP_P} >> /root/.broobe-utils-options
     else
       exit 1
-
     fi
-
   fi
-
   if [[ -z "${MAILA}" ]]; then
-    MAILA=$(whiptail --title "Notification Email" --inputbox "Please insert the email where you want to receive notifications." 10 60 3>&1 1>&2 2>&3)
+    MAILA=$(whiptail --title "Notification Email" --inputbox "Iinsert the email where you want to receive notifications." 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
       echo "MAILA="${MAILA} >> /root/.broobe-utils-options
     else
       exit 1
-
     fi
+  fi
 
+  if [[ -z "${SITES}" ]]; then
+    SITES=$(whiptail --title "Websites Root Directory" --inputbox "Insert the path where websites are stored. Ex: /var/www or /usr/share/nginx" 10 60 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo "SITES="${SITES} >> /root/.broobe-utils-options
+    else
+      exit 1
+    fi
   fi
 
 else
-
+  #cron
   if [[ -z "${MPASS}" || -z "${SMTP_U}" || -z "${SMTP_P}" || -z "${SMTP_TLS}" || -z "${SMTP_PORT}" || -z "${SMTP_SERVER}" ]]; then
     echo "Some required VARS need to be configured, please run de script manually to configure them." >> $LOG
     exit 1
@@ -298,10 +297,10 @@ chmod +x ${SFOLDER}/utils/dropbox-uploader/dropbox_uploader.sh
 chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools.sh
 chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh
 
-### Running from terminal
 if [ -t 1 ]; then
-
-  RUNNER_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP 03 SERVER_OPTIMIZATIONS 04 BACKUP_RESTORE 05 HOSTING_TO_VPS 06 LEMP_SETUP 07 WORDPRESS_INSTALLATION 08 NETDATA_INSTALLATION 09 COCKPIT_INSTALLATION 10 REPLACE_WP_URL 11 WPCLI_HELPER 12 GTMETRIX_TEST 13 BLACKLIST_CHECKER 14 RESET_SCRIPT_OPTIONS"
+  
+  ### Running from terminal
+  RUNNER_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP 03 WORDPRESS_INSTALLATION 04 BACKUP_RESTORE 05 HOSTING_TO_VPS 06 LEMP_SETUP 07 SERVER_OPTIMIZATIONS 08 NETDATA_INSTALLATION 09 COCKPIT_INSTALLATION 10 REPLACE_WP_URL 11 WPCLI_HELPER 12 GTMETRIX_TEST 13 BLACKLIST_CHECKER 14 RESET_SCRIPT_OPTIONS"
   CHOSEN_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 `for x in ${RUNNER_OPTIONS}; do echo "$x"; done` 3>&1 1>&2 2>&3)
   #exitstatus=$?
   #if [ $exitstatus = 0 ]; then
@@ -354,19 +353,8 @@ if [ -t 1 ]; then
     done
   fi
   if [[ ${CHOSEN_TYPE} == *"03"* ]]; then
-  	while true; do
-        echo -e ${YELLOW}"> Do you really want to run the optimization script?"${ENDCOLOR}
-        read -p "Please type 'y' or 'n'" yn
-  			case $yn in
-  					[Yy]* )
-  					source ${SFOLDER}/server_and_image_optimizations.sh;
-  					break;;
-  					[Nn]* )
-            echo -e ${RED}"Aborting optimization script ..."${ENDCOLOR};
-  					break;;
-  					* ) echo " > Please answer yes or no.";;
-  			esac
-  	done
+  	source ${SFOLDER}/utils/wordpress_installer.sh;
+
   fi
   if [[ ${CHOSEN_TYPE} == *"04"* ]]; then
   	source ${SFOLDER}/restore_from_backup.sh;
@@ -402,7 +390,19 @@ if [ -t 1 ]; then
   	done
   fi
   if [[ ${CHOSEN_TYPE} == *"07"* ]]; then
-    source ${SFOLDER}/utils/wordpress_installer.sh;
+    while true; do
+        echo -e ${YELLOW}"> Do you really want to run the optimization script?"${ENDCOLOR}
+        read -p "Please type 'y' or 'n'" yn
+  			case $yn in
+  					[Yy]* )
+  					source ${SFOLDER}/server_and_image_optimizations.sh;
+  					break;;
+  					[Nn]* )
+            echo -e ${RED}"Aborting optimization script ..."${ENDCOLOR};
+  					break;;
+  					* ) echo " > Please answer yes or no.";;
+  			esac
+  	done
 
   fi
   if [[ ${CHOSEN_TYPE} == *"08"* ]]; then
