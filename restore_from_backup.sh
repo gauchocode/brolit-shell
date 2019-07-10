@@ -2,16 +2,6 @@
 # Autor: broobe. web + mobile development - https://broobe.com
 # Version: 2.9
 #############################################################################
-#
-# BK TYPES:
-# CONFIG WS: ${CONFIG_F}/webserver-config-files-${ONEWEEKAGO}.tar.bz2
-# CONFIG PHP: ${CONFIG_F}/php-config-files-${ONEWEEKAGO}.tar.bz2
-# CONFIG MYSQL: ${CONFIG_F}/mysql-config-files-${ONEWEEKAGO}.tar.bz2
-# FILES ALL SITES: ${SITES_F}/backup-files_${ONEWEEKAGO}.tar.bz2
-# FILES ONE SITE: ${SITES_F}/${FOLDER_NAME}/backup-${FOLDER_NAME}_files_${ONEWEEKAGO}.tar.bz2
-# DB: ${DBS_F}/${DATABASE}/db-${DATABASE}_${ONEWEEKAGO}.tar.bz2
-#
-#############################################################################
 
 SCRIPT_V="2.9"
 
@@ -21,6 +11,9 @@ FOLDER_TO_RESTORE="/var/www"
 SITES_F="sites"
 CONFIG_F="configs"
 DBS_F="databases"
+
+# TODO: otra opcion 'complete_site' para que intente restaurar archivos y base de un proyecto
+# TODO: otra opcion 'multi_sites' para que intente restaurar sitios que estan backupeados en dropbox
 
 #Restore Local?
 #$SFOLDER/tmp/backups/*.tar.gz
@@ -35,6 +28,7 @@ if test -f /root/.broobe-utils-options ; then
   source /root/.broobe-utils-options
 fi
 
+# TODO: en realidad no debo preguntarlo, debo cortar, la idea es que el script corra desde runner.sh y no individualmente
 # Display dialog to imput MySQL root pass and then store it into a hidden file
 if [[ -z "${MPASS}" ]]; then
   MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root Password" 10 60 3>&1 1>&2 2>&3)
@@ -60,7 +54,7 @@ if [[ ${CHOSEN_TYPE} == *"$CONFIG_F"* ]]; then
   if [ $exitstatus = 0 ]; then
           cd tmp/
 
-          echo "trying to run dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_CONFIG}"
+          #echo "Trying to run dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_CONFIG}"
           ${DPU_F}/dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_CONFIG}
 
           # Restore files
@@ -74,7 +68,7 @@ else
   CHOSEN_PROJECT=$(whiptail --title "RESTORE BACKUP" --menu "Chose Backup Project" 20 78 10 `for x in ${DROPBOX_PROJECT_LIST}; do echo "$x [D]"; done` 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-          #echo "trying to run ${SFOLDER}/dropbox_uploader.sh list ${CHOSEN_TYPE}/${CHOSEN_PROJECT}"
+          #echo "Trying to run ${SFOLDER}/dropbox_uploader.sh list ${CHOSEN_TYPE}/${CHOSEN_PROJECT}"
           DROPBOX_BACKUP_LIST=$(${DPU_F}/dropbox_uploader.sh -hq list ${CHOSEN_TYPE}/${CHOSEN_PROJECT})
   fi
   # Select Backup File
@@ -82,7 +76,7 @@ else
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
-          #echo "trying to run dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_PROJECT}/${CHOSEN_BACKUP}"
+          #echo "Trying to run dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_PROJECT}/${CHOSEN_BACKUP}"
           ${DPU_F}/dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_PROJECT}/${CHOSEN_BACKUP}
 
           mv ${CHOSEN_BACKUP} tmp/
@@ -97,7 +91,7 @@ else
             echo "Trying to restore ${CHOSEN_BACKUP} files"
 
             # Moving old files
-            echo "Trying to execute: mkdir ${SFOLDER}/tmp/old_backup ..."
+            # echo "Trying to execute: mkdir ${SFOLDER}/tmp/old_backup ..."
             mkdir ${SFOLDER}/tmp/old_backup
             #echo "Executing: mv ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT} ${SFOLDER}/tmp/old_backup ..."
             mv ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT} ${SFOLDER}/tmp/old_backup
@@ -108,8 +102,8 @@ else
             echo "Executing: chown -R www-data:www-data ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT} ..."
             chown -R www-data:www-data ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT}
 
-            # TODO: no sirve restaurar un viejo backup del site-available de nginx cuando se usa Lets Encrypt
-            # TODO: lo que hay que hacer en este caso es crear una config con puerto 80 y correrle el certbot
+            # TODO: ver si se puede restaurar un viejo backup del site-available de nginx y luego
+            # forzar al certbot (si existe manera, por que el renew no funciona y la instalacion normal tampoco)
 
             echo "Trying to restore nginx config for ${CHOSEN_PROJECT} ..."
             # New site configuration
@@ -120,10 +114,6 @@ else
             # Need to be run twice
             sed -i "s#dominio.com#${CHOSEN_PROJECT}#" /etc/nginx/sites-available/${CHOSEN_PROJECT}
             service nginx reload
-
-            # echo "Trying to execute certbot for ${CHOSEN_PROJECT} ..."
-            # TODO: certbot --nginx -d ${CHOSEN_PROJECT} -d www.${CHOSEN_PROJECT}
-            # certbot --nginx -d ${CHOSEN_PROJECT} -d www.${CHOSEN_PROJECT}
 
           else
             if [[ ${CHOSEN_TYPE} == *"$DBS_F"* ]]; then
@@ -139,6 +129,7 @@ else
 
               ### TODO: debería extraer el sufijo real y no asumir que es _prod
               suffix="_prod"
+              PROJECT_STAGE="prod"
               PROJECT_NAME=${CHOSEN_PROJECT%"$suffix"}
               #echo "${PROJECT_NAME}"
 
@@ -150,17 +141,17 @@ else
               #para cambiar pass de un user existente
               #ALTER USER 'makana_user'@'localhost' IDENTIFIED BY '0p2eE2a0ed4d8=';
 
-              SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_prod;"
+              SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_${PROJECT_STAGE};"
               SQL2="CREATE USER IF NOT EXISTS '${PROJECT_NAME}_user'@'localhost' IDENTIFIED BY '${DB_PASS}';"
-              SQL3="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_prod . * TO '${PROJECT_NAME}_user'@'localhost';"
+              SQL3="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STAGE} . * TO '${PROJECT_NAME}_user'@'localhost';"
               SQL4="FLUSH PRIVILEGES;"
 
-              echo "Creating database ${PROJECT_NAME}_prod, and user ${PROJECT_NAME}_user with pass ${DB_PASS} if they not exist ..."
+              echo "Creating database ${PROJECT_NAME}_${PROJECT_STAGE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS} if they not exist ..."
               mysql -u root --password=${MPASS} -e "${SQL1}${SQL2}${SQL3}${SQL4}"
 
               # tercero importar la base a restaurar
               echo "Restoring database ..."
-              mysql -u root --password=${MPASS} ${PROJECT_NAME}_prod < ${CHOSEN_BACKUP%%.*}.sql
+              mysql -u root --password=${MPASS} ${PROJECT_NAME}_${PROJECT_STAGE} < ${CHOSEN_BACKUP%%.*}.sql
 
               echo "DB ${CHOSEN_BACKUP} restored!"
 
@@ -169,20 +160,34 @@ else
               rm ${CHOSEN_BACKUP}
               echo "OK ..."
 
-              #buscamos la carpeta correspondiente al site de la DB importada (broobe estandard)
+              echo -e ${YELLOW}"Trying to find a directory matching the database imported ..."${ENDCOLOR}
               for j in $(find $FOLDER_TO_RESTORE -maxdepth 1 -type d)
               do
                 FOLDER_NAME=$(basename $j)
+
+                # TODO: quizarle al project name - y caracteres especiales
+
                 if [[ ${FOLDER_NAME} == *"${PROJECT_NAME}"* ]]; then
-                  echo "Directory found: ${j}"
+                  echo -e ${GREEN}" Matching directory found: ${FOLDER_NAME}"${ENDCOLOR}
                   #change wp-config.php database parameters
                   echo "Changing wp-config.php database parameters ..."
                   sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" ${j}/wp-config.php
-                  sed -i "/DB_NAME/s/'[^']*'/'${PROJECT_NAME}_prod'/2" ${j}/wp-config.php
+                  sed -i "/DB_NAME/s/'[^']*'/'${PROJECT_NAME}_${PROJECT_STAGE}'/2" ${j}/wp-config.php
                   sed -i "/DB_USER/s/'[^']*'/'${PROJECT_NAME}_user'/2" ${j}/wp-config.php
                   sed -i "/DB_PASSWORD/s/'[^']*'/'${DB_PASS}'/2" ${j}/wp-config.php
+
+                  # TODO: cambiar las secret encryption key
+
+                  echo -e ${GREEN}" > DONE"${ENDCOLOR}
+
                 fi
               done
+
+              # TODO: Checkeamos Cloudflare si es la misma IP y si no cambiamos?
+
+              # echo "Trying to execute certbot for ${CHOSEN_PROJECT} ..."
+              # TODO: certbot --nginx -d ${CHOSEN_PROJECT} -d www.${CHOSEN_PROJECT}
+              # certbot --nginx -d ${CHOSEN_PROJECT} -d www.${CHOSEN_PROJECT}
 
             fi
           fi

@@ -1,7 +1,7 @@
 server {
         listen 80;
         listen [::]:80;
-        server_name monitor.dominio.com;
+        server_name dominio.com;
         #error_log /var/log/nginx/monitor.error.log debug;
         location / {
                 proxy_set_header X-Real-IP $remote_addr;

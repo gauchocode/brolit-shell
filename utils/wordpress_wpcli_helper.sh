@@ -1,10 +1,12 @@
 #!/bin/bash
 # Autor: broobe. web + mobile development - https://broobe.com
 # Version: 2.9
-#############################################################################
+################################################################################
 
 startdir=${SITES}
 menutitle="Site Selection Menu"
+
+################################# HELPERS ######################################
 
 Filebrowser() {
   # first parameter is Menu Title
@@ -43,6 +45,24 @@ Filebrowser() {
   fi
 }
 
+declare -a checklist_array
+
+Array_to_checklist() {
+  i=0
+
+  for option in $1; do
+    checklist_array[$i]=$option
+    i=$((i+1))
+    checklist_array[$i]=" "
+    i=$((i+1))
+    checklist_array[$i]=off
+    i=$((i+1))
+  done
+  #echo ${checklist_array[@]}
+}
+
+################################################################################
+
 ### Checking some things
 if [ $USER != root ]; then
   echo -e ${RED}"Error: must be root! Exiting..."${ENDCOLOR}
@@ -77,7 +97,7 @@ WP_PLUGINS=("wordpress-seo" " " off
             "quttera-web-malware-scanner" " " off
             )
 
-WPCLI_OPTIONS="01 INSTALL_PLUGINS 02 DELETE_THEMES 03 DELETE_PLUGINS 04 UPDATE_PLUGINS 05 REINSTALL_PLUGINS 06 VERIFY_WP 07 UPDATE_WP 08 REINSTALL_WP 09 SET_INDEX_OPTION 10 CLEAN_DB 11 PROFILE_DB 12 WP_DOCTOR"
+WPCLI_OPTIONS="01 INSTALL_PLUGINS 02 DELETE_THEMES 03 DELETE_PLUGINS 04 REINSTALL_PLUGINS 05 VERIFY_WP 06 UPDATE_WP 07 REINSTALL_WP 08 SET_INDEX_OPTION 09 CLEAN_DB 10 PROFILE_WP 11 DB_CLI 12 WP_DOCTOR"
 CHOSEN_WPCLI_OPTION=$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 `for x in ${WPCLI_OPTIONS}; do echo "$x"; done` 3>&1 1>&2 2>&3)
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
@@ -93,51 +113,52 @@ if [ $exitstatus = 0 ]; then
   if [[ ${CHOSEN_WPCLI_OPTION} == *"02"* ]]; then
     #para listar themes instalados
     WP_DEL_THEMES=$(php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} theme list --quiet --field=name --status=inactive --allow-root)
-    echo "Setting WP_DEL_THEMES="$WP_DEL_THEMES
-    CHOSEN_DEL_THEME_OPTION=$(whiptail --title "Theme Selection" --checklist "Select the themes you want to delete." 20 78 15 "${WP_DEL_THEMES[@]}" 3>&1 1>&2 2>&3)
-    echo "Setting CHOSEN_DEL_THEME_OPTION="$CHOSEN_DEL_THEME_OPTION
+    Array_to_checklist "$WP_DEL_THEMES"
+    echo "Setting WP_DEL_THEMES=${checklist_array[@]}"
+    CHOSEN_DEL_THEME_OPTION=$(whiptail --title "Theme Selection" --checklist "Select the themes you want to delete." 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)
+    #echo "Setting CHOSEN_DEL_THEME_OPTION="$CHOSEN_DEL_THEME_OPTION
     for theme_del in $CHOSEN_DEL_THEME_OPTION; do
-      #para borrar themes
+      theme_del=$(sed -e 's/^"//' -e 's/"$//' <<<$theme_del) #needed to ommit double quotes
+      echo "theme delete $theme_del"
       sudo -u www-data php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} theme delete $theme_del
     done
-
   fi
   if [[ ${CHOSEN_WPCLI_OPTION} == *"03"* ]]; then
     #para listar plugins instalados
-    WP_DEL_PLUGINS=$(php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} plugin list -quiet --field=name --status=inactive --allow-root)
-    #para borrar plugins
-    #sudo -u www-data php ${SITES}/.wp-cli/wp-cli.phar --path=${SITES}'/'${WP_SITE} plugin delete hello
+    WP_DEL_PLUGINS=$(php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} plugin list --quiet --field=name --status=inactive --allow-root)
+    Array_to_checklist "$WP_DEL_PLUGINS"
+    CHOSEN_DEL_PLUGIN_OPTION=$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to delete." 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)
+    for plugin_del in $CHOSEN_DEL_PLUGIN_OPTION; do
+      plugin_del=$(sed -e 's/^"//' -e 's/"$//' <<<$plugin_del) #needed to ommit double quotes
+      echo "plugin delete $plugin_del"
+      sudo -u www-data php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} plugin delete $plugin_del
+    done
+  fi
 
-  fi
   if [[ ${CHOSEN_WPCLI_OPTION} == *"04"* ]]; then
-    #para listar plugins instalados
-    #WP_DEL_PLUGINS=$(php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} plugin list -quiet --field=name --status=inactive --allow-root)
-    echo "option 4: updating plugins not implemented yet ..."
-  fi
-  if [[ ${CHOSEN_WPCLI_OPTION} == *"05"* ]]; then
     #para listar plugins instalados
     #WP_DEL_PLUGINS=$(php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} plugin list -quiet --field=name --status=inactive --allow-root)
     echo "option 5: re-install plugins not implemented yet ..."
   fi
-  if [[ ${CHOSEN_WPCLI_OPTION} == *"06"* ]]; then
+  if [[ ${CHOSEN_WPCLI_OPTION} == *"05"* ]]; then
     echo "Verifying Core Checksum ..."
     php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} core verify-checksums --allow-root
     echo "Verifying Plugin Checksum ..."
     php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} plugin verify-checksums --all --allow-root
     echo " > DONE"
   fi
-  if [[ ${CHOSEN_WPCLI_OPTION} == *"07"* ]]; then
+  if [[ ${CHOSEN_WPCLI_OPTION} == *"06"* ]]; then
     echo "Updating WP ..."
     sudo -u www-data php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE}'/'${WP_SITE} core update
     echo "Updating WP DB ..."
     sudo -u www-data php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE}'/'${WP_SITE} core update-db
     echo " > DONE"
   fi
-  if [[ ${CHOSEN_WPCLI_OPTION} == *"08"* ]]; then
+  if [[ ${CHOSEN_WPCLI_OPTION} == *"07"* ]]; then
     #esto vuelve a bajar wp y pisa archivos, no borra los archivos actuales, ojo
     sudo -u www-data php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE}'/'${WP_SITE} core download --skip-content --force
   fi
-  if [[ ${CHOSEN_WPCLI_OPTION} == *"09"* ]]; then
+  if [[ ${CHOSEN_WPCLI_OPTION} == *"08"* ]]; then
     #para evitar que los motores de busqueda indexen el sitio
     echo " > Setting Index Option to Private ..."
     sudo -u www-data php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} option set blog_public 0
@@ -145,14 +166,14 @@ if [ $exitstatus = 0 ]; then
     sudo -u www-data php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} option set blog_public 1
     echo " > DONE"
   fi
-  if [[ ${CHOSEN_WPCLI_OPTION} == *"10"* ]]; then
+  if [[ ${CHOSEN_WPCLI_OPTION} == *"09"* ]]; then
     echo " > Deleting transient ..."
     php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} transient delete --expired --allow-root
     echo " > Cache Flush ..."
     php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} cache flush --allow-root
     echo " > DONE"
   fi
-  if [[ ${CHOSEN_WPCLI_OPTION} == *"11"* ]]; then
+  if [[ ${CHOSEN_WPCLI_OPTION} == *"10"* ]]; then
 
     #Install PROFILER_OPTIONS
     #https://guides.wp-bullet.com/using-wp-cli-wp-profile-to-diagnose-wordpress-performance-issues/
@@ -192,6 +213,11 @@ if [ $exitstatus = 0 ]; then
       fi
 
     fi
+
+  fi
+  if [[ ${CHOSEN_WPCLI_OPTION} == *"11"* ]]; then
+    #https://github.com/wp-cli/db-command
+    php ${SITES}/.wp-cli/wp-cli.phar package install git@github.com:wp-cli/db-command.git
 
   fi
   if [[ ${CHOSEN_WPCLI_OPTION} == *"12"* ]]; then

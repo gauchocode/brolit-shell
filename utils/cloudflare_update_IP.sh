@@ -5,6 +5,7 @@
 # Version: 2.9
 #############################################################################
 
+# TODO: parametrizar todo esto, debería preguntar por whiptail y guardarlo en el options
 auth_email="servidores@broobe.com"
 auth_key="0aefdc9e6b752a9d6ab658f7eda3d0a2118ac"
 record_type="A"
@@ -15,6 +16,8 @@ ip=$(curl -s http://ipv4.icanhazip.com)
 ip_file="ip.txt"
 id_file="cloudflare.ids"
 log_file="cloudflare.log"
+
+# TODO: Reemplazar por el logger que ya usamos en el runner.sh
 
 # LOGGER
 log() {
