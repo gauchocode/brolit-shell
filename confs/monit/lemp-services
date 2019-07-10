@@ -1,14 +1,65 @@
+#Nginx
 check process nginx with pidfile /var/run/nginx.pid
     group www-data
     start program = "/etc/init.d/nginx start"
     stop program = "/etc/init.d/nginx stop"
+    if cpu > 80% for 2 cycles then alert
+
+#check file nginx-error with path /var/log/nginx/error.log
+#  if match "^timed out" then alert
+
+#MySQL Monitoring
+check process mysqld with pidfile /var/run/mysqld/mysqld.pid
+    if cpu > 80% for 2 cycles then alert
 
 check process mysql with pidfile /var/run/mysqld/mysqld.pid
     start program = "/etc/init.d/mysql start"
     stop program = "/etc/init.d/mysql stop"
     if failed unixsocket /var/run/mysqld/mysqld.sock then restart
     if 5 restarts within 5 cycles then timeout
+    if cpu > 80% for 2 cycles then alert
 
+#PHP-FPM
 check process php7.2-fpm with pidfile /var/run/php/php7.2-fpm.pid
     start program = "/etc/init.d/php7.2-fpm start"
     stop program = "/etc/init.d/php7.2-fpm stop"
+    if failed unixsocket /var/run/php/php7.2-fpm.sock then restart
+    if cpu > 80% for 2 cycles then alert
+
+#System Monitoring
+check system HOSTNAME
+    if memory usage > 80% for 2 cycles then alert
+    if cpu usage (user) > 70% for 2 cycles then alert
+    if cpu usage (system) > 30% then alert
+    if cpu usage (wait) > 20% then alert
+    #if loadavg (1min) > 6 for 2 cycles then alert
+    #if loadavg (5min) > 4 for 2 cycles then alert
+    #if swap usage > 5% then alert
+
+check filesystem rootfs with path /                                             # alert if low on disk space.
+    if space usage > 60% then alert
+
+#Event queue
+set eventqueue
+    basedir /var/lib/monit/events                                               # set the base directory where events will be stored
+    slots 100                                                                   # optionally limit the queue size
+
+#Mail settings
+set mail-format {
+    from: SMTP_U
+    subject: monit alert --  $EVENT
+    message: $EVENT Service $SERVICE
+                    Date:        $DATE
+                    Action:      $ACTION
+                    Host:        $HOST
+                    Description: $DESCRIPTION
+
+              Your faithful employee,
+              Monit }
+set mailserver SMTP_SERVER port SMTP_PORT
+    username SMTP_U password "SMTP_P"
+    using TLSV1 with timeout 30 seconds
+    set alert MAILA                                                             # email address which will receive monit alerts
+
+#http settings
+set httpd port 2812 address 0.0.0.0                                             # allow connections on all adapters
