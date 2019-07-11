@@ -71,12 +71,10 @@ if [ ! -x "${NETDATA}" ]; then
           echo -e ${YELLOW}" > Updating packages before installation ..."${ENDCOLOR}
           apt --yes update
 
-          # TODO: probar nuevo método de instalación: bash <(curl -Ss https://my-netdata.io/kickstart.sh) all
           echo -e ${YELLOW}"\nInstalling Netdata...\n"${ENDCOLOR}
-          bash <(curl -Ss https://my-netdata.io/kickstart.sh) all
-          #apt --yes install zlib1g-dev uuid-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python-mysqldb
-          #git clone https://github.com/firehol/netdata.git --depth=1
-          #cd netdata && ./netdata-installer.sh --dont-wait
+          apt --yes install zlib1g-dev uuid-dev libuv1-dev liblz4-dev libjudy-dev libssl-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python python-mysqldb lm-sensors libmnl netcat nodejs python-ipaddress python-dnspython iproute2 python-beanstalkc libuv liblz4 Judy openssl
+          bash <(curl -Ss https://my-netdata.io/kickstart.sh) all --dont-wait
+
           killall netdata && cp system/netdata.service /etc/systemd/system/
 
           # Netdata nginx proxy configuration
@@ -94,6 +92,8 @@ if [ ! -x "${NETDATA}" ]; then
           export zone_name record_name
           ${SFOLDER}/utils/cloudflare_update_IP.sh
 
+          # TODO: correr el certbot_manager.sh
+
           break;;
           [Nn]* )
           echo -e ${RED}"Aborting netdata installation script ..."${ENDCOLOR};
@@ -104,7 +104,7 @@ if [ ! -x "${NETDATA}" ]; then
 
 else
 
-  NETDATA_OPTIONS="01 UPDATE_NETDATA 02 CONFIGURE_NETDATA 03 UNINSTALL_NETDATA"
+  NETDATA_OPTIONS="01 UPDATE_NETDATA 02 CONFIGURE_NETDATA 03 UNINSTALL_NETDATA 04 SEND_ALARM_TEST"
   NETDATA_CHOSEN_OPTION=$(whiptail --title "Netdata Installer" --menu "Netdata is already installed." 20 78 10 `for x in ${NETDATA_OPTIONS}; do echo "$x"; done` 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -131,9 +131,12 @@ else
               # TODO: Borrar usuario de la base de datos
               rm /etc/nginx/sites-enabled/monitor
               rm /etc/nginx/sites-available/monitor
-              source /usr/libexec/netdata-uninstaller.sh --yes
+
+              rm -R /etc/netdata
               rm /etc/systemd/system/netdata.service
               rm /usr/sbin/netdata
+
+              source /usr/libexec/netdata-uninstaller.sh --yes --dont-wait
 
               break;;
               [Nn]* )
@@ -143,6 +146,9 @@ else
           esac
       done
 
+    fi
+    if [[ ${NETDATA_CHOSEN_OPTION} == *"04"* ]]; then
+      /usr/libexec/netdata/plugins.d/alarm-notify.sh test
 
     fi
 

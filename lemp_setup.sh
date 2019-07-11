@@ -93,12 +93,17 @@ echo " > Moving nginx configuration files ..." >>$LOG
 echo " " >> /etc/nginx/sites-available/default
 
 ################################ OPTIMIZATIONS #################################
+
 # Getting server info
-CPUS=$(grep -c "processor" /proc/cpuinfo)
-RAM=$(grep MemTotal /proc/meminfo | awk '{print $2}' | xargs -I {} echo "scale=0; {}/1024^2" | bc)
+#CPUS=$(grep -c "processor" /proc/cpuinfo)
+#RAM=$(grep MemTotal /proc/meminfo | awk '{print $2}' | xargs -I {} echo "scale=0; {}/1024^2" | bc)
 
 # nginx.conf broobe standard configuration
 cat confs/nginx.conf > /etc/nginx/nginx.conf
+
+
+# TODO: reemplazar lo de abajo por el nuevo script
+# source utils/php_optimizations.sh
 
 # php.ini broobe standard configuration
 echo " > Moving php configuration file ..." >>$LOG
@@ -107,6 +112,7 @@ cat confs/php.ini > /etc/php/${PHP_V}/fpm/php.ini
 # fpm broobe standard configuration
 echo " > Moving fpm configuration file ..." >>$LOG
 cat confs/${SERVER_MODEL}/www.conf > /etc/php/${PHP_V}/fpm/pool.d/www.conf
+
 ################################################################################
 
 ################################## INSTALLERS ##################################
@@ -114,22 +120,18 @@ if [ "${WP}" = true ] ; then
   ${SFOLDER}/utils/wordpress_installer.sh
 
 fi
-
 if [ "${COMPOSER}" = true ] ; then
   ${SFOLDER}/utils/composer_installer.sh
 
 fi
-
-if [ "${NETDATA}" = true ] ; then
-  ${SFOLDER}/utils/netdata_installer.sh
-
-fi
-
 if [ "${MONIT}" = true ] ; then
   ${SFOLDER}/utils/monit_installer.sh
 
 fi
+if [ "${NETDATA}" = true ] ; then
+  ${SFOLDER}/utils/netdata_installer.sh
 
+fi
 ################################################################################
 
 echo -e ${GREEN}" > DONE ..."${ENDCOLOR}

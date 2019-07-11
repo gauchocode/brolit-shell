@@ -58,7 +58,7 @@ Array_to_checklist() {
     checklist_array[$i]=off
     i=$((i+1))
   done
-  #echo ${checklist_array[@]}
+
 }
 
 ################################################################################
@@ -96,6 +96,9 @@ WP_PLUGINS=("wordpress-seo" " " off
             "better-wp-security" " " off
             "quttera-web-malware-scanner" " " off
             )
+
+
+# TODO: Probar https://github.com/10up/wp-vulnerability-scanner
 
 WPCLI_OPTIONS="01 INSTALL_PLUGINS 02 DELETE_THEMES 03 DELETE_PLUGINS 04 REINSTALL_PLUGINS 05 VERIFY_WP 06 UPDATE_WP 07 REINSTALL_WP 08 SET_INDEX_OPTION 09 CLEAN_DB 10 PROFILE_WP 11 DB_CLI 12 WP_DOCTOR"
 CHOSEN_WPCLI_OPTION=$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 `for x in ${WPCLI_OPTIONS}; do echo "$x"; done` 3>&1 1>&2 2>&3)
