@@ -4,6 +4,25 @@
 # Script Name: Broobe Utils Scripts
 # Version: 2.9.4
 ################################################################################
+#
+# TODO: Para release 3.0
+#       1- VAR conf para CloudFlare api -- DONE
+#       2- VAR conf para Dropbox (pedirlo al inicio y no por el dropbox uploader) -- DONE
+#       3- Terminar certbot_manager.sh
+#       4- Refactor de menú principal del runner.sh
+#       5- VAR conf para el ID de Telegram (quizá habría que guiar todo el proceso)
+#       6- Terminar php_optimizations deprecando el modelo de Hetzner e integrandolo al Lemp Installer
+#       7- Corregir el bug que hay en el restore_from_backup.sh con los dominios con guion como (bes-ebike.com)
+#
+################################################################################
+#
+# TODO: Para release 3.1
+#       1- Repensar el server_and_image_optimizations.sh
+#       2- Terminar el wordpress_wpcli_helper.sh
+#       3- Terminar updater.sh
+#       4- phpmyadmin installer
+#       5- Optimizaciones de MySQL (instalacion de MySQL 8? https://phoenixnap.com/kb/how-to-install-mysql-on-ubuntu-18-04)
+#
 
 SCRIPT_V="2.9.4"
 
@@ -23,16 +42,15 @@ else
   MIN_V=$(echo "16.04" | awk -F "." '{print $1$2}')
   DISTRO_V=$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $2}' | awk -F "." '{print $1$2}')
   if [ ! "$DISTRO_V" -ge "$MIN_V" ] ; then
-    echo " > ERROR: Ubuntu version must  >= 16.04 ... Exiting"
+    echo -e ${RED}" > ERROR: Ubuntu version must  >= 16.04 ... Exiting"${ENDCOLOR}
     exit 1
 
   fi
 fi
-SFOLDER="`dirname \"$0\"`"              # relative
-SFOLDER="`( cd \"$SFOLDER\" && pwd )`"  # absolutized and normalized
+SFOLDER="`dirname \"$0\"`"                                                      # relative
+SFOLDER="`( cd \"$SFOLDER\" && pwd )`"                                          # absolutized and normalized
 if [ -z "$SFOLDER" ] ; then
-  # error; for some reason, the path is not accessible to the script
-  exit 1
+  exit 1                                                                        # error; the path is not accessible
 fi
 ################################################################################
 
@@ -89,6 +107,35 @@ NOW=$(date +"%Y-%m-%d")
 NOWDISPLAY=$(date +"%d-%m-%Y")
 ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
 
+#Dropbox Uploader config file
+DPU_CONFIG_FILE=~/.dropbox_uploader
+if [[ -e ${DPU_CONFIG_FILE} ]]; then
+  source ${DPU_CONFIG_FILE}
+
+else
+
+  OAUTH_ACCESS_TOKEN_STRING+= "\n \n"
+  OAUTH_ACCESS_TOKEN_STRING+=" 1) Log in: dropbox.com/developers/apps/create\n"
+  OAUTH_ACCESS_TOKEN_STRING+=" 2) Click on \"Create App\" and select \"Dropbox API\".\n"
+  OAUTH_ACCESS_TOKEN_STRING+=" 3) Choose the type of access you need.\n"
+  OAUTH_ACCESS_TOKEN_STRING+=" 4) Enter the \"App Name\".\n"
+  OAUTH_ACCESS_TOKEN_STRING+=" 5) Click on the \"Create App\" button.\n"
+  OAUTH_ACCESS_TOKEN_STRING+=" 6) Click on the Generate button.\n"
+  OAUTH_ACCESS_TOKEN_STRING+=" 7) Copy and paste the new access token here:\n\n"
+
+  OAUTH_ACCESS_TOKEN=$(whiptail --title "Dropbox Uploader Configuration" --inputbox "${OAUTH_ACCESS_TOKEN_STRING}" 15 60 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    echo "OAUTH_ACCESS_TOKEN=$OAUTH_ACCESS_TOKEN" > ${DPU_CONFIG_FILE}
+    echo -e ${GREEN}" > The configuration has been saved! ..."${ENDCOLOR}
+
+  else
+    exit 1
+
+  fi
+
+fi
+### Broobe Utils config file
 if test -f /root/.broobe-utils-options ; then
   source /root/.broobe-utils-options
 fi
@@ -136,12 +183,9 @@ fi
 IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
 
 ### EXPORT VARS
-export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL DB_BL WSERVER PHP_CF MHOST MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U DEL_UP ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR
+export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL DB_BL WSERVER PHP_CF MHOST MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U DEL_UP ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR auth_email auth_key
 
 if [ -t 1 ]; then
-  ### Running from terminal
-
-  #TODO: debería pedir la key de dropbox también
 
   ### Running from terminal
   if [[ -z "${MPASS}" || -z "${SMTP_U}" || -z "${SMTP_P}" || -z "${SMTP_TLS}" || -z "${SMTP_PORT}" || -z "${SMTP_SERVER}" || -z "${SMTP_P}" || -z "${MAILA}" || -z "${SITES}" ]]; then
@@ -449,6 +493,7 @@ if [ -t 1 ]; then
         case $yn in
             [Yy]* )
             rm /root/.broobe-utils-options
+            rm -fr ${DPU_CONFIG_FILE}
             break;;
             [Nn]* )
             echo -e ${RED}"Aborting ..."${ENDCOLOR};

@@ -2,7 +2,7 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Version: 2.5
-#############################################################################
+################################################################################
 #
 # Calculating pm.max_children
 # An example: if our cloud server has 4 GB RAM and a MariaDB database service is running as well that consumes at least 1 GB our best aim is to get 4 - 1 - 0,5 (marge) GB = 2,5 GB RAM or 2560 Mb.
@@ -15,17 +15,26 @@
 # pm.max_requests = 500
 # Restart the php-fpm service and see if the server behaves in a correct manner and allocates memory as configured.
 #
-#############################################################################
-PHP_V="7.2"                                   # Ubuntu 18.04 LTS Default
+################################################################################
+
+PHP_V="7.2"                                                                     # Ubuntu 18.04 LTS Default
 RAM_BUFFER="512"
 
-#getting server info
+# Getting server info
 CPUS=$(grep -c "processor" /proc/cpuinfo)
 RAM=$(grep MemTotal /proc/meminfo | awk '{print $2}' | xargs -I {} echo "scale=0; {}/1024^2" | bc)
 
-#calculating avg ram used by this process
+# Calculating avg ram used by this process
 PHP_AVG_RAM=$(ps --no-headers -o "rss,cmd" -C php-fpm${PHP_V} | awk '{ sum+=$1 } END { printf ("%d%s\n", sum/NR/1024,"Mb") }')
 MYSQL_AVG_RAM=$(ps --no-headers -o "rss,cmd" -C mysqld | awk '{ sum+=$1 } END { printf ("%d%s\n", sum/NR/1024,"Mb") }')
+
+# php.ini broobe standard configuration
+#echo " > Moving php configuration file ..." >>$LOG
+#cat confs/php.ini > /etc/php/${PHP_V}/fpm/php.ini
+
+# fpm broobe standard configuration
+#echo " > Moving fpm configuration file ..." >>$LOG
+#cat confs/${SERVER_MODEL}/www.conf > /etc/php/${PHP_V}/fpm/pool.d/www.conf
 
 # pm.max_children = (RAM*1024 - (MYSQL_AVG_RAM - RAM_BUFFER)) / PHP_AVG_RAM
 # pm.start_servers = pm.max_children / 4
