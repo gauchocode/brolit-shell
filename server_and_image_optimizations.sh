@@ -38,6 +38,10 @@ echo " > Deleting old system logs..." >> $LOG
 echo -e ${YELLOW}" > Deleting old system logs ..."${ENDCOLOR}
 find /var/log/ -mtime +7 -type f -delete
 
+
+# TODO: OJO EL -mtime -7 hace que no corra en todas las imagenes
+
+
 # Optimización de imágenes (.jpg) para archivos modificados en los últimos 7 días
 echo " > Running jpegoptim ..." >> $LOG
 echo -e ${YELLOW}" > Running jpegoptim ..."${ENDCOLOR}
@@ -49,7 +53,13 @@ echo " > Running optipng..." >> $LOG
 echo -e ${YELLOW}" > Running optipng ..."${ENDCOLOR}
 find -mtime -7 -type f -name "*.png" -exec optipng -o7 -strip all {} \;
 
-#fix files ownership
+# Fix files ownership
 echo " > Fixing ownership ..." >> $LOG
 echo -e ${YELLOW}" > Fixing ownership ..."${ENDCOLOR}
 chown -R www-data:www-data *
+
+# Cleanning Swap
+swapoff -a && swapon -a
+
+#Cleanning RAM
+sync; echo 1 > /proc/sys/vm/drop_caches

@@ -93,6 +93,10 @@ if [ ! -x "${NETDATA}" ]; then
           ${SFOLDER}/utils/cloudflare_update_IP.sh
 
           # TODO: correr el certbot_manager.sh
+          DOMAIN=${NETDATA_SUBDOMAIN}
+          CHOSEN_CB_OPTION="1"
+          export CHOSEN_CB_OPTION DOMAIN
+          ${SFOLDER}/utils/certbot_manager.sh
 
           break;;
           [Nn]* )

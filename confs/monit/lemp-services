@@ -9,9 +9,6 @@ check process nginx with pidfile /var/run/nginx.pid
 #  if match "^timed out" then alert
 
 #MySQL Monitoring
-check process mysqld with pidfile /var/run/mysqld/mysqld.pid
-    if cpu > 80% for 2 cycles then alert
-
 check process mysql with pidfile /var/run/mysqld/mysqld.pid
     start program = "/etc/init.d/mysql start"
     stop program = "/etc/init.d/mysql stop"
@@ -47,7 +44,7 @@ set eventqueue
 #Mail settings
 set mail-format {
     from: SMTP_U
-    subject: monit alert --  $EVENT
+    subject: $HOST - Monit Alert: $EVENT
     message: $EVENT Service $SERVICE
                     Date:        $DATE
                     Action:      $ACTION

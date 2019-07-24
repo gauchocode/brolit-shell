@@ -4,7 +4,17 @@
 # Version: 2.9
 ################################################################################
 
-#TODO: esto deberia deprecarse y calcularse con el hardware del server
+# TODO: permitir instalar multiples versiones de PHP
+#
+#add-apt-repository ppa:ondrej/php
+#apt-get update
+#
+#apt-get install -y php5.6 php5.6-mcrypt php5.6-mbstring php5.6-curl php5.6-cli php5.6-mysql php5.6-gd php5.6-intl php5.6-xsl php5.6-zip libapache2-mod-php5.6
+#
+# fastcgi_pass unix:/var/run/php/php5.6-fpm.sock;
+# fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;
+
+# TODO: esto deberia deprecarse y calcularse con el hardware del server
 SERVER_MODEL=""                                                                 # Options: cx11, cx21, cx31
 
 NETDATA="true"
@@ -12,6 +22,7 @@ MONIT="true"
 COMPOSER="false"
 WP="false"
 MARIADB="false"                                                                 # If true MariaDB will be installed instead MySQL
+MYSQL8="true"
 PHP_V="7.2"                                                                     # Ubuntu 18.04 LTS Default
 
 ### Checking some things...
@@ -61,13 +72,43 @@ echo " > Upgrading packages before installation ..." >>$LOG
 apt --yes dist-upgrade
 
 # Installing packages
-if [ "${MARIADB}" = false ] ; then
-  echo " > LEMP installation with MySQL ..." >>$LOG
-  apt --yes install nginx mysql-server php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear zip clamav ncdu jpegoptim optipng python-certbot-nginx sendemail libio-socket-ssl-perl dnsutils
+if [ "${MARIADB}" =  "true" ] ; then
+
+  echo " > LEMP installation with MariaDB ..." >>$LOG
+  apt --yes install mariadb-server mariadb-client
+
+  apt --yes nginx php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear zip clamav ncdu jpegoptim optipng python-certbot-nginx sendemail libio-socket-ssl-perl dnsutils ghostscript
 
 else
-  echo " > LEMP installation with MariaDB ..." >>$LOG
-  apt --yes install nginx mariadb-server mariadb-client php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear zip clamav ncdu jpegoptim optipng python-certbot-nginx sendemail libio-socket-ssl-perl dnsutils
+  if [ "${MYSQL8}" = "true" ] ; then
+
+    echo " > LEMP installation with MySQL 8 ..." >>$LOG
+    wget -c https://dev.mysql.com/get/mysql-apt-config_0.8.10-1_all.deb
+    sudo dpkg -i mysql-apt-config_0.8.10-1_all.deb
+
+    sudo apt-key adv --keyserver keys.gnupg.net --recv-keys 5072E1F5
+
+    apt --yes update
+    apt --yes install mysql-server
+
+    apt --yes nginx php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear zip clamav ncdu jpegoptim optipng python-certbot-nginx sendemail libio-socket-ssl-perl dnsutils ghostscript
+
+    mkdir -pv /etc/systemd/system/mysqld.service.d
+    cp ${SFOLDER}/confs/mysql/override.conf /etc/systemd/system/mysqld.service.d/override.conf
+    cp ${SFOLDER}/confs/mysql/mysql /etc/init.d/mysql
+    chmod +x /etc/init.d/mysql
+    systemctl daemon-reload
+    systemctl unmask mysql.service
+    systemctl restart mysql
+
+  else
+
+    echo " > LEMP installation with MySQL ..." >>$LOG
+    apt --yes install mysql-server
+
+    apt --yes nginx php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear zip clamav ncdu jpegoptim optipng python-certbot-nginx sendemail libio-socket-ssl-perl dnsutils ghostscript
+
+  fi
 
 fi
 

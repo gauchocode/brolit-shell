@@ -5,8 +5,8 @@
 # Version: 2.9
 ################################################################################
 
-#auth_email="servidores@broobe.com"
-#auth_key="0aefdc9e6b752a9d6ab658f7eda3d0a2118ac"
+# TODO: agregar opción de habilitar cloudflare-proxy
+# https://github.com/HillLiu/cloudflare-bash-util
 
 record_type="A"
 proxied_value="false"                                                           # Do you want to proxy your site through cloudflare? E.g., Orange Cloud (true), Grey Cloud (false)

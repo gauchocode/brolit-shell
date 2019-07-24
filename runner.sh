@@ -2,29 +2,31 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.9.4
+# Version: 2.9.6
 ################################################################################
 #
 # TODO: Para release 3.0
-#       1- VAR conf para CloudFlare api -- DONE
+#       1- VAR conf para CloudFlare api -- DONE pero falta TESTING
 #       2- VAR conf para Dropbox (pedirlo al inicio y no por el dropbox uploader) -- DONE
 #       3- Terminar certbot_manager.sh
-#       4- Refactor de menú principal del runner.sh
+#       4- Refactor de menú principal del runner.sh (ojo que si al lemp le activamos netdata o monit, necesita db pass de root)
 #       5- VAR conf para el ID de Telegram (quizá habría que guiar todo el proceso)
 #       6- Terminar php_optimizations deprecando el modelo de Hetzner e integrandolo al Lemp Installer
-#       7- Corregir el bug que hay en el restore_from_backup.sh con los dominios con guion como (bes-ebike.com)
+#       7- Permitir restore del backup con Duplicity
 #
 ################################################################################
 #
-# TODO: Para release 3.1
+# TODO: Para release 3.2
 #       1- Repensar el server_and_image_optimizations.sh
 #       2- Terminar el wordpress_wpcli_helper.sh
 #       3- Terminar updater.sh
 #       4- phpmyadmin installer
 #       5- Optimizaciones de MySQL (instalacion de MySQL 8? https://phoenixnap.com/kb/how-to-install-mysql-on-ubuntu-18-04)
+#       6- Corregir el bug que hay en el restore_from_backup.sh con los dominios con guion como (bes-ebike.com)
+#       7- Mejorar LEMP setup, para que requiera menos intervencion humana (tzdata y mysql_secure_installation)
 #
 
-SCRIPT_V="2.9.4"
+SCRIPT_V="2.9.6"
 
 ### Checking some things...#####################################################
 if [ ${USER} != root ]; then
@@ -38,13 +40,11 @@ if [ ! "$DISTRO" = "Ubuntu" ] ; then
   exit 1
 else
   echo "Setting DISTRO="$DISTRO
-  # Version?
   MIN_V=$(echo "16.04" | awk -F "." '{print $1$2}')
   DISTRO_V=$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $2}' | awk -F "." '{print $1$2}')
   if [ ! "$DISTRO_V" -ge "$MIN_V" ] ; then
     echo -e ${RED}" > ERROR: Ubuntu version must  >= 16.04 ... Exiting"${ENDCOLOR}
     exit 1
-
   fi
 fi
 SFOLDER="`dirname \"$0\"`"                                                      # relative
@@ -73,7 +73,7 @@ DUP_ROOT="/media/backups/PROJECT_NAME_OR_VPS"                                   
 DUP_SRC_BK="/var/www/"                                                          # Source of Directories to Backup
 DUP_FOLDERS="FOLDER1,FOLDER2"                                                   # Folders to Backup
 DUP_BK_FULL_FREQ="7D"                                                           # Create a new full backup every ...
-DUP_BK_FULL_LIFE="1M"                                                           # Delete any backup older than this
+DUP_BK_FULL_LIFE="14D"                                                          # Delete any backup older than this
 
 ### PACKAGES TO WATCH
 # TODO: poder elejir desde las opciones version de php y motor de base de datos
@@ -114,7 +114,7 @@ if [[ -e ${DPU_CONFIG_FILE} ]]; then
 
 else
 
-  OAUTH_ACCESS_TOKEN_STRING+= "\n \n"
+  OAUTH_ACCESS_TOKEN_STRING+= "\n . \n"
   OAUTH_ACCESS_TOKEN_STRING+=" 1) Log in: dropbox.com/developers/apps/create\n"
   OAUTH_ACCESS_TOKEN_STRING+=" 2) Click on \"Create App\" and select \"Dropbox API\".\n"
   OAUTH_ACCESS_TOKEN_STRING+=" 3) Choose the type of access you need.\n"
@@ -364,143 +364,147 @@ if [ -t 1 ]; then
   ### Running from terminal
   RUNNER_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP 03 WORDPRESS_INSTALLER 04 BACKUP_RESTORE 05 HOSTING_TO_VPS 06 SERVER_OPTIMIZATIONS 07 NETDATA_INSTALLER 08 MONIT_INSTALLER 09 COCKPIT_INSTALLER 10 REPLACE_WP_URL 11 WPCLI_HELPER 12 GTMETRIX_TEST 13 BLACKLIST_CHECKER 14 RESET_SCRIPT_OPTIONS"
   CHOSEN_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 `for x in ${RUNNER_OPTIONS}; do echo "$x"; done` 3>&1 1>&2 2>&3)
-  #exitstatus=$?
-  #if [ $exitstatus = 0 ]; then
-          #DO
-  #fi
-  if [[ ${CHOSEN_TYPE} == *"01"* ]]; then
-    while true; do
-      echo -e ${YELLOW}"> Do you really want to run the database backup?"${ENDCOLOR}
-      read -p "Please type 'y' or 'n'" yn
-      case $yn in
-          [Yy]* )
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
 
-					source ${SFOLDER}/mysql_backup.sh;
-
-					DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
-					DB_MAIL_VAR=$(<${DB_MAIL})
-					HTMLOPEN='<html><body>'
-					HTMLCLOSE='</body></html>'
-
-          echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
-
-					sendEmail -f ${SMTP_U} -t ${MAILA} -u "${VPSNAME} - Database Backup - [${NOWDISPLAY} - ${STATUS_D}]" -o message-content-type=html -m "${HTMLOPEN} ${DB_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P};
-
-					break;;
-          [Nn]* )
-					echo -e ${RED}"Aborting database backup script ..."${ENDCOLOR};
-					break;;
-          * ) echo "Please answer yes or no.";;
-      esac
-    done
-  fi
-  if [[ ${CHOSEN_TYPE} == *"02"* ]]; then
-    while true; do
-        echo -e ${YELLOW}"> Do you really want to run the file backup?"${ENDCOLOR}
+    if [[ ${CHOSEN_TYPE} == *"01"* ]]; then
+      while true; do
+        echo -e ${YELLOW}"> Do you really want to run the database backup?"${ENDCOLOR}
         read -p "Please type 'y' or 'n'" yn
         case $yn in
             [Yy]* )
-  					source ${SFOLDER}/files_backup.sh;
-  					FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
-  					FILE_MAIL_VAR=$(<$FILE_MAIL)
+
+  					source ${SFOLDER}/mysql_backup.sh;
+
+  					DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
+  					DB_MAIL_VAR=$(<${DB_MAIL})
   					HTMLOPEN='<html><body>'
   					HTMLCLOSE='</body></html>'
-  					sendEmail -f ${SMTP_U} -t ${MAILA} -u "${STATUS_ICON_F} ${VPSNAME} - Files Backup [${NOWDISPLAY}]" -o message-content-type=html -m "${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${FILE_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P};
+
+            echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
+
+  					sendEmail -f ${SMTP_U} -t ${MAILA} -u "${VPSNAME} - Database Backup - [${NOWDISPLAY} - ${STATUS_D}]" -o message-content-type=html -m "${HTMLOPEN} ${DB_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P};
+
   					break;;
             [Nn]* )
-  					echo -e ${RED}"Aborting file backup script ..."${ENDCOLOR};
+  					echo -e ${RED}"Aborting database backup script ..."${ENDCOLOR};
   					break;;
-            * ) echo " > Please answer yes or no.";;
+            * ) echo "Please answer yes or no.";;
         esac
-    done
-  fi
-  if [[ ${CHOSEN_TYPE} == *"03"* ]]; then
-  	source ${SFOLDER}/utils/wordpress_installer.sh;
+      done
+    fi
+    if [[ ${CHOSEN_TYPE} == *"02"* ]]; then
+      while true; do
+          echo -e ${YELLOW}"> Do you really want to run the file backup?"${ENDCOLOR}
+          read -p "Please type 'y' or 'n'" yn
+          case $yn in
+              [Yy]* )
+    					source ${SFOLDER}/files_backup.sh;
+    					FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
+    					FILE_MAIL_VAR=$(<$FILE_MAIL)
+    					HTMLOPEN='<html><body>'
+    					HTMLCLOSE='</body></html>'
+    					sendEmail -f ${SMTP_U} -t ${MAILA} -u "${STATUS_ICON_F} ${VPSNAME} - Files Backup [${NOWDISPLAY}]" -o message-content-type=html -m "${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${FILE_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P};
+    					break;;
+              [Nn]* )
+    					echo -e ${RED}"Aborting file backup script ..."${ENDCOLOR};
+    					break;;
+              * ) echo " > Please answer yes or no.";;
+          esac
+      done
+    fi
+    if [[ ${CHOSEN_TYPE} == *"03"* ]]; then
+    	source ${SFOLDER}/utils/wordpress_installer.sh;
 
-  fi
-  if [[ ${CHOSEN_TYPE} == *"04"* ]]; then
-  	source ${SFOLDER}/restore_from_backup.sh;
-  fi
-  if [[ ${CHOSEN_TYPE} == *"05"* ]]; then
-  	while true; do
-        echo -e ${YELLOW}"> Do you really want to run the server migration script?"${ENDCOLOR}
-        read -p "Please type 'y' or 'n'" yn
-  			case $yn in
-  					[Yy]* )
-  					source ${SFOLDER}/utils/wordpress_migration_from_URL.sh;
-  					break;;
-  					[Nn]* )
-  					echo -e ${RED}"Aborting server migration script ..."${ENDCOLOR};
-  					break;;
-  					* ) echo " > Please answer yes or no.";;
-  			esac
-  	done
-  fi
-  if [[ ${CHOSEN_TYPE} == *"06"* ]]; then
-    while true; do
-        echo -e ${YELLOW}"> Do you really want to run the optimization script?"${ENDCOLOR}
-        read -p "Please type 'y' or 'n'" yn
-  			case $yn in
-  					[Yy]* )
-  					source ${SFOLDER}/server_and_image_optimizations.sh;
-  					break;;
-  					[Nn]* )
-            echo -e ${RED}"Aborting optimization script ..."${ENDCOLOR};
-  					break;;
-  					* ) echo " > Please answer yes or no.";;
-  			esac
-  	done
+    fi
+    if [[ ${CHOSEN_TYPE} == *"04"* ]]; then
+    	source ${SFOLDER}/restore_from_backup.sh;
+    fi
+    if [[ ${CHOSEN_TYPE} == *"05"* ]]; then
+    	while true; do
+          echo -e ${YELLOW}"> Do you really want to run the server migration script?"${ENDCOLOR}
+          read -p "Please type 'y' or 'n'" yn
+    			case $yn in
+    					[Yy]* )
+    					source ${SFOLDER}/utils/wordpress_migration_from_URL.sh;
+    					break;;
+    					[Nn]* )
+    					echo -e ${RED}"Aborting server migration script ..."${ENDCOLOR};
+    					break;;
+    					* ) echo " > Please answer yes or no.";;
+    			esac
+    	done
+    fi
+    if [[ ${CHOSEN_TYPE} == *"06"* ]]; then
+      while true; do
+          echo -e ${YELLOW}"> Do you really want to run the optimization script?"${ENDCOLOR}
+          read -p "Please type 'y' or 'n'" yn
+    			case $yn in
+    					[Yy]* )
+    					source ${SFOLDER}/server_and_image_optimizations.sh;
+    					break;;
+    					[Nn]* )
+              echo -e ${RED}"Aborting optimization script ..."${ENDCOLOR};
+    					break;;
+    					* ) echo " > Please answer yes or no.";;
+    			esac
+    	done
 
-  fi
-  if [[ ${CHOSEN_TYPE} == *"07"* ]]; then
-    source ${SFOLDER}/utils/netdata_installer.sh;
+    fi
+    if [[ ${CHOSEN_TYPE} == *"07"* ]]; then
+      source ${SFOLDER}/utils/netdata_installer.sh;
 
-  fi
-  if [[ ${CHOSEN_TYPE} == *"08"* ]]; then
-    source ${SFOLDER}/utils/monit_installer.sh;
+    fi
+    if [[ ${CHOSEN_TYPE} == *"08"* ]]; then
+      source ${SFOLDER}/utils/monit_installer.sh;
 
-  fi
-  if [[ ${CHOSEN_TYPE} == *"09"* ]]; then
-    source ${SFOLDER}/utils/cockpit_installer.sh;
+    fi
+    if [[ ${CHOSEN_TYPE} == *"09"* ]]; then
+      source ${SFOLDER}/utils/cockpit_installer.sh;
 
-  fi
-  if [[ ${CHOSEN_TYPE} == *"10"* ]]; then
-    source ${SFOLDER}/utils/replace_url_on_wordpress_db.sh;
+    fi
+    if [[ ${CHOSEN_TYPE} == *"10"* ]]; then
+      source ${SFOLDER}/utils/replace_url_on_wordpress_db.sh;
 
-  fi
-  if [[ ${CHOSEN_TYPE} == *"11"* ]]; then
-    source ${SFOLDER}/utils/wordpress_wpcli_helper.sh;
+    fi
+    if [[ ${CHOSEN_TYPE} == *"11"* ]]; then
+      source ${SFOLDER}/utils/wordpress_wpcli_helper.sh;
 
-  fi
-  if [[ ${CHOSEN_TYPE} == *"12"* ]]; then
-        URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
-        exitstatus=$?
-        if [ ${exitstatus} = 0 ]; then
-          source ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh gtmetrix ${URL_TO_TEST};
-        fi
-  fi
-  if [[ ${CHOSEN_TYPE} == *"13"* ]]; then
-        IP_TO_TEST=$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)
-        exitstatus=$?
-        if [ ${exitstatus} = 0 ]; then
-          source ${SFOLDER}/utils/blacklist-checker/bl.sh ${IP_TO_TEST};
-        fi
-  fi
-  if [[ ${CHOSEN_TYPE} == *"14"* ]]; then
-    while true; do
-        echo -e ${YELLOW}" > Do you really want to reset the script configuration?"${ENDCOLOR}
-        read -p "Please type 'y' or 'n'" yn
-        case $yn in
-            [Yy]* )
-            rm /root/.broobe-utils-options
-            rm -fr ${DPU_CONFIG_FILE}
-            break;;
-            [Nn]* )
-            echo -e ${RED}"Aborting ..."${ENDCOLOR};
-            break;;
-            * ) echo " > Please answer yes or no.";;
-        esac
-    done
+    fi
+    if [[ ${CHOSEN_TYPE} == *"12"* ]]; then
+          URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
+          exitstatus=$?
+          if [ ${exitstatus} = 0 ]; then
+            source ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh gtmetrix ${URL_TO_TEST};
+          fi
+    fi
+    if [[ ${CHOSEN_TYPE} == *"13"* ]]; then
+          IP_TO_TEST=$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)
+          exitstatus=$?
+          if [ ${exitstatus} = 0 ]; then
+            source ${SFOLDER}/utils/blacklist-checker/bl.sh ${IP_TO_TEST};
+          fi
+    fi
+    if [[ ${CHOSEN_TYPE} == *"14"* ]]; then
+      while true; do
+          echo -e ${YELLOW}" > Do you really want to reset the script configuration?"${ENDCOLOR}
+          read -p "Please type 'y' or 'n'" yn
+          case $yn in
+              [Yy]* )
+              rm /root/.broobe-utils-options
+              rm -fr ${DPU_CONFIG_FILE}
+              break;;
+              [Nn]* )
+              echo -e ${RED}"Aborting ..."${ENDCOLOR};
+              break;;
+              * ) echo " > Please answer yes or no.";;
+          esac
+      done
+    fi
+
+  else
+    exit 1
+
   fi
 
 else

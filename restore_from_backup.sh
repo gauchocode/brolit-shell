@@ -1,12 +1,51 @@
 #!/bin/bash
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 2.9
+# Version: 2.9.5
 #############################################################################
 
-SCRIPT_V="2.9"
+SCRIPT_V="2.9.5"
 
-### VARS
-FOLDER_TO_RESTORE="/var/www"
+startdir=""
+menutitle="Config Selection Menu"
+
+################################# HELPERS ######################################
+
+Filebrowser() {
+  # first parameter is Menu Title
+  # second parameter is dir path to starting folder
+  if [ -z $2 ] ; then
+    dir_list=$(ls -lhp  | awk -F ' ' ' { print $9 " " $5 } ')
+  else
+    cd "$2"
+    dir_list=$(ls -lhp  | awk -F ' ' ' { print $9 " " $5 } ')
+  fi
+  curdir=$(pwd)
+  if [ "$curdir" == "/" ] ; then  # Check if you are at root folder
+    selection=$(whiptail --title "$1" \
+                          --menu "Select a Folder or Tab Key\n$curdir" 0 0 0 \
+                          --cancel-button Cancel \
+                          --ok-button Select $dir_list 3>&1 1>&2 2>&3)
+  else   # Not Root Dir so show ../ BACK Selection in Menu
+    selection=$(whiptail --title "$1" \
+                          --menu "Select a Folder or Tab Key\n$curdir" 0 0 0 \
+                          --cancel-button Cancel \
+                          --ok-button Select ../ BACK $dir_list 3>&1 1>&2 2>&3)
+  fi
+  RET=$?
+  if [ $RET -eq 1 ]; then  # Check if User Selected Cancel
+    return 1
+  elif [ $RET -eq 0 ]; then
+    if [[ -f "$selection" ]]; then  # Check if File Selected
+      if (whiptail --title "Confirm Selection" --yesno "Selection : $selection\n" 0 0 \
+                   --yes-button "Confirm" \
+                   --no-button "Retry"); then
+        filename="$selection"
+        filepath="$curdir"    # Return full filepath and filename as selection variables
+      fi
+    fi
+  fi
+}
+################################################################################
 
 SITES_F="sites"
 CONFIG_F="configs"
@@ -19,49 +58,117 @@ DBS_F="databases"
 #$SFOLDER/tmp/backups/*.tar.gz
 
 ### Checking some things
-if [ $USER != root ]; then
-  echo -e ${RED}"Error: must be root! Exiting..."${ENDCOLOR}
-  exit 0
-fi
-
 if test -f /root/.broobe-utils-options ; then
   source /root/.broobe-utils-options
 fi
 
-# TODO: en realidad no debo preguntarlo, debo cortar, la idea es que el script corra desde runner.sh y no individualmente
-# Display dialog to imput MySQL root pass and then store it into a hidden file
-if [[ -z "${MPASS}" ]]; then
-  MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root Password" 10 60 3>&1 1>&2 2>&3)
+if [[ -z "${FOLDER_TO_RESTORE}" ]]; then
+  FOLDER_TO_RESTORE=$(whiptail --title "Folder to Restore Backup" --inputbox "Please insert a folder to restore the backup files. Ex: /var/www" 10 60 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-          #TODO: testear el password antes de guardarlo
-          echo "MPASS="${MPASS} >> /root/.broobe-utils-options
+    echo "FOLDER_TO_RESTORE="${FOLDER_TO_RESTORE} >> $LOG
+  else
+    exit 0
   fi
 fi
 
-RESTORE_TYPES="${CONFIG_F} ${DBS_F} ${SITES_F}"
+RESTORE_TYPES="${CONFIG_F} ${SITES_F} ${DBS_F}"
 
 # Display choose dialog with available backups
-CHOSEN_TYPE=$(whiptail --title "RESTORE BACKUP" --menu "Chose Backup Type" 20 78 10 `for x in ${RESTORE_TYPES}; do echo "$x [D]"; done` 3>&1 1>&2 2>&3)
+CHOSEN_TYPE=$(whiptail --title "RESTORE BACKUP" --menu "Choose a backup type. If you want to restore an entire site, first restore config, then sites, and last the database." 20 78 10 `for x in ${RESTORE_TYPES}; do echo "$x [D]"; done` 3>&1 1>&2 2>&3)
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
         #Restore from Dropbox
         DROPBOX_PROJECT_LIST=$(${DPU_F}/dropbox_uploader.sh -hq list ${CHOSEN_TYPE})
 fi
+
 if [[ ${CHOSEN_TYPE} == *"$CONFIG_F"* ]]; then
   CHOSEN_CONFIG=$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Chose Configs Backup" 20 78 10 `for x in ${DROPBOX_PROJECT_LIST}; do echo "$x [F]"; done` 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-          cd tmp/
 
-          #echo "Trying to run dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_CONFIG}"
+  if [ $exitstatus = 0 ]; then
+
+          cd ${SFOLDER}/tmp
+
+          echo " > Downloading from Dropbox ${CHOSEN_TYPE}/${CHOSEN_CONFIG} ..." >> $LOG
+          echo -e ${YELLOW}" > Trying to run ${DPU_F}/dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_CONFIG}"${ENDCOLOR}
           ${DPU_F}/dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_CONFIG}
 
           # Restore files
           mkdir ${CHOSEN_TYPE}
           mv ${CHOSEN_CONFIG} ${CHOSEN_TYPE}
           cd ${CHOSEN_TYPE}
+
+          echo "Uncompressing ${CHOSEN_CONFIG}">> $LOG
+          echo -e ${YELLOW} "Uncompressing ${CHOSEN_CONFIG}" ${ENDCOLOR}
           tar -xvjf ${CHOSEN_CONFIG}
+
+          # TODO: intentar backupear config actual e instalar el nuevo (aplica a todo)
+
+          if [[ "${CHOSEN_CONFIG}" == *"webserver"* ]];then
+
+            # TODO: si es nginx, preguntar si queremos copiar nginx.conf
+
+            # Checking that default webserver folder exists
+            if [[ -n "${WSERVER}" ]]; then
+
+              echo -e ${GREEN} " > Folder ${WSERVER} exists ... OK" ${ENDCOLOR}
+
+              startdir="${SFOLDER}/tmp/${CHOSEN_TYPE}/sites-available"
+              Filebrowser "$menutitle" "$startdir"
+
+              to_restore=$filepath"/"$filename
+              echo -e ${YELLOW}" > File to restore: ${to_restore} ..."${ENDCOLOR}
+
+              if [[ -f "${WSERVER}/sites-available/${filename}" ]]; then
+
+                echo " > File ${WSERVER}/sites-available/${filename} already exists. Making a backup file ...">>$LOG
+                echo -e ${YELLOW}" > File ${WSERVER}/sites-available/${filename} already exists. Making a backup file ..."${ENDCOLOR}
+                mv ${WSERVER}/sites-available/${filename} ${WSERVER}/sites-available/${filename}_bk
+
+                echo " > Restoring backup: ${filename} ...">>$LOG
+                echo -e ${YELLOW}" > Restoring backup: ${filename} ..."${ENDCOLOR}
+                cp $to_restore ${WSERVER}/sites-available/$filename
+
+                echo " > Reloading webserver ...">>$LOG
+                echo -e ${YELLOW}" > Reloading webserver ..."${ENDCOLOR}
+                service nginx reload
+
+              else
+                echo -e ${GREEN}" > File ${WSERVER}/sites-available/${filename} does NOT exists ..."${ENDCOLOR}
+
+                echo " > Restoring backup: ${filename} ...">>$LOG
+                echo -e ${YELLOW}" > Restoring backup: ${filename} ..."${ENDCOLOR}
+                cp $to_restore ${WSERVER}/sites-available/$filename
+                ln -s ${WSERVER}/sites-available/$filename ${WSERVER}/sites-enabled/$filename
+
+                echo " > Reloading webserver ...">>$LOG
+                echo -e ${YELLOW}" > Reloading webserver ..."${ENDCOLOR}
+                service nginx reload
+
+              fi
+
+            else
+
+              echo -e ${RED} " /etc/nginx/sites-available NOT exist... Quiting!" ${ENDCOLOR}
+
+            fi
+
+          fi
+          if [[ "${CHOSEN_CONFIG}" == *"mysql"* ]];then
+            echo "TODO: RESTORE MYSQL CONFIG ..."
+          fi
+          if [[ "${CHOSEN_CONFIG}" == *"php"* ]];then
+            echo "TODO: RESTORE PHP CONFIG ..."
+          fi
+
+          echo " > Removing ${SFOLDER}/tmp/${CHOSEN_TYPE} ..." >> $LOG
+          echo -e ${GREEN}" > Removing ${SFOLDER}/tmp/${CHOSEN_TYPE} ..."${ENDCOLOR}
+          rm ${SFOLDER}/tmp/${CHOSEN_TYPE}
+
+          echo " > DONE ...">>$LOG
+          echo -e ${GREN}" > DONE ..."${ENDCOLOR}
+
   fi
 else
   # Select Project
@@ -70,6 +177,7 @@ else
   if [ $exitstatus = 0 ]; then
           #echo "Trying to run ${SFOLDER}/dropbox_uploader.sh list ${CHOSEN_TYPE}/${CHOSEN_PROJECT}"
           DROPBOX_BACKUP_LIST=$(${DPU_F}/dropbox_uploader.sh -hq list ${CHOSEN_TYPE}/${CHOSEN_PROJECT})
+
   fi
   # Select Backup File
   CHOSEN_BACKUP=$(whiptail --title "RESTORE BACKUP" --menu "Chose Backup to Download" 20 78 10 `for x in ${DROPBOX_BACKUP_LIST}; do echo "$x [F]"; done` 3>&1 1>&2 2>&3)
@@ -82,24 +190,33 @@ else
           mv ${CHOSEN_BACKUP} tmp/
           cd tmp/
 
-          # ucompress files
-          echo "Ucompressing ${CHOSEN_BACKUP}"
+          echo "Uncompressing ${CHOSEN_BACKUP}">> $LOG
           tar -xvjf ${CHOSEN_BACKUP}
 
           if [[ ${CHOSEN_TYPE} == *"$SITES_F"* ]]; then
-            # Restore files
-            echo "Trying to restore ${CHOSEN_BACKUP} files"
 
-            # Moving old files
-            # echo "Trying to execute: mkdir ${SFOLDER}/tmp/old_backup ..."
-            mkdir ${SFOLDER}/tmp/old_backup
-            #echo "Executing: mv ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT} ${SFOLDER}/tmp/old_backup ..."
-            mv ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT} ${SFOLDER}/tmp/old_backup
+            if [ -n "${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT}" ]; then
+
+              echo " > ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT} exist. Let's make a Backup ...">> $LOG
+              echo -e ${YELLOW}" > ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT} exist. Let's make a Backup ..."${ENDCOLOR}
+
+              mkdir ${SFOLDER}/tmp/old_backup
+              #echo "Executing: mv ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT} ${SFOLDER}/tmp/old_backup ...">> $LOG
+              mv ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT} ${SFOLDER}/tmp/old_backup
+
+              echo " > DONE ...">> $LOG
+              echo -e ${GREEN}" > DONE ..."${ENDCOLOR}
+
+            fi
+
+            # Restore files
+            echo "Trying to restore ${CHOSEN_BACKUP} files ...">> $LOG
+            echo -e ${YELLOW} "Trying to restore ${CHOSEN_BACKUP} files ..."${ENDCOLOR}
 
             #echo "Executing: mv ${SFOLDER}/tmp/${CHOSEN_PROJECT} ${FOLDER_TO_RESTORE} ..."
             mv ${SFOLDER}/tmp/${CHOSEN_PROJECT} ${FOLDER_TO_RESTORE}
 
-            echo "Executing: chown -R www-data:www-data ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT} ..."
+            echo -e ${YELLOW} "Executing: chown -R www-data:www-data ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT} ..."${ENDCOLOR}
             chown -R www-data:www-data ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT}
 
             # TODO: ver si se puede restaurar un viejo backup del site-available de nginx y luego
