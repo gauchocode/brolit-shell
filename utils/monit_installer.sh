@@ -3,7 +3,10 @@
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
 # Version: 2.9
-#############################################################################
+################################################################################
+
+# TODO: adentro de lemp-services está la version de php, checkear cualtenemos instalado antes de configurar
+# TODO: consultar por el monit user y pass y almacernarlo para que lo levante el netdata_installer
 
 Configure_monit(){
 

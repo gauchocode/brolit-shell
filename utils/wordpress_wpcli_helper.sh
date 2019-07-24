@@ -8,7 +8,7 @@ menutitle="Site Selection Menu"
 
 ################################# HELPERS ######################################
 
-Filebrowser() {
+Directorybrowser() {
   # first parameter is Menu Title
   # second parameter is dir path to starting folder
   if [ -z $2 ] ; then
@@ -78,7 +78,7 @@ chmod -R 777 ${SITES}/.wp-cli
 chmod +x ${SITES}/.wp-cli/wp-cli.phar
 sudo -u www-data php ${SITES}/.wp-cli/wp-cli.phar cli update
 
-Filebrowser "$menutitle" "$startdir"
+Directorybrowser "$menutitle" "$startdir"
 WP_SITE=$filepath"/"$filename
 echo "Setting WP_SITE="${WP_SITE}
 

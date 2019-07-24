@@ -17,7 +17,7 @@
 #
 ################################################################################
 
-PHP_V="7.2"                                                                     # Ubuntu 18.04 LTS Default
+PHP_V="7.2"  # TODO: Ubuntu 18.04 LTS Default pero habria que checkear cual está instalado
 RAM_BUFFER="512"
 
 # Getting server info
