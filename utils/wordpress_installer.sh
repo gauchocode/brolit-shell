@@ -2,14 +2,14 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.9
+# Version: 2.9.7
 ################################################################################
 #
 # https://github.com/AbhishekGhosh/Ubuntu-16.04-Nginx-WordPress-Autoinstall-Bash-Script/
 # https://alonganon.info/2018/11/17/make-a-super-fast-and-lightweight-wordpress-on-ubuntu-18-04-with-php-7-2-nginx-and-mariadb/
 #
 ################################################################################
-SCRIPT_V="2.9"
+SCRIPT_V="2.9.7"
 
 # TODO: esto necesita un fuerte refactor, re-utilizar funciones que ya estan en los otros Scripts,
 # y checkear que falla cuando ponemos www.DOMINIO.com y luego seleccionamos un stage distinto a prod.
@@ -24,33 +24,15 @@ SCRIPT_V="2.9"
 # define('PATH_CURRENT_SITE', '/');
 # define('SITE_ID_CURRENT_SITE', 1);
 #
-
-################################# HELPERS ######################################
-ChooseProjectState() {
-  PROJECT_STATES="prod stage test dev"
-  PROJECT_STATE=$(whiptail --title "PROJECT STATE" --menu "Chose a Project State" 20 78 10 `for x in ${PROJECT_STATES}; do echo "$x [X]"; done` 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-    echo -e ${YELLOW}"Project state selected: ${PROJECT_STATE} ..."${ENDCOLOR}
-
-  else
-    exit 1
-  fi
-}
+### Checking some things
+if [[ -z "${SFOLDER}" ]]; then
+  echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+  exit 0
+fi
 ################################################################################
 
 ### Folders Setup
 FOLDER_TO_INSTALL="/var/www"
-
-### Checking some things
-if [ $USER != root ]; then
-  echo -e ${RED}"Error: must be root! Exiting..."${ENDCOLOR}
-  exit 0
-fi
-if [[ -z "${SFOLDER}" || -z "${MPASS}" ]]; then
-  echo -e ${RED}" > Error: SFOLDER and MPASS must be set! Exiting..."${ENDCOLOR}
-  exit 0
-fi
 
 # Installation types
 INSTALLATION_TYPES="CLEAN_INSTALL COPY_FROM_PROJECT"

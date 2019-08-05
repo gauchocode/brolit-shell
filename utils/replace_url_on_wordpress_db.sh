@@ -35,15 +35,12 @@
 #UPDATE borealtech_dev.br_2_options SET option_value='https://dev.borealtech.com/dashboard' WHERE option_id='1';
 #UPDATE borealtech_dev.br_2_options SET option_value='https://dev.borealtech.com/dashboard' WHERE option_id='2';
 #
-
-### Checking some things...
-if [[ -z "${MUSER}" ]]; then
-  MUSER=$(whiptail --title "MySQL user with full Privileges" --inputbox "Please enter a MySQL user with full Privileges" 10 60 3>&1 1>&2 2>&3)
+### Checking some things
+if [[ -z "${SFOLDER}" ]]; then
+  echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+  exit 0
 fi
-
-if [[ -z "${MPASS}" ]]; then
-  MPASS=$(whiptail --title "MySQL user password" --inputbox "Please insert the MySQL user Password" 10 60 3>&1 1>&2 2>&3)
-fi
+################################################################################
 
 echo " > Starting replace_url_on_wordpress_db script ...">> $LOG
 

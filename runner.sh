@@ -2,7 +2,7 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.9.6
+# Version: 2.9.7
 ################################################################################
 #
 # TODO: Para release 3.0
@@ -26,33 +26,45 @@
 #       6- Corregir el bug que hay en el restore_from_backup.sh con los dominios con guion como (bes-ebike.com)
 #       7- Mejorar LEMP setup, para que requiera menos intervencion humana (tzdata y mysql_secure_installation)
 #
-
-SCRIPT_V="2.9.6"
+SCRIPT_V="2.9.7"
 
 ### Checking some things...#####################################################
-if [ ${USER} != root ]; then
-  echo -e ${RED}" > Error: must be root! Exiting..."${ENDCOLOR}
-  exit 0
-fi
-# Running Ubuntu?
-DISTRO=$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $1}')
-if [ ! "$DISTRO" = "Ubuntu" ] ; then
-  echo " > ERROR: This script only run on Ubuntu ... Exiting"
-  exit 1
-else
-  echo "Setting DISTRO="$DISTRO
-  MIN_V=$(echo "16.04" | awk -F "." '{print $1$2}')
-  DISTRO_V=$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $2}' | awk -F "." '{print $1$2}')
-  if [ ! "$DISTRO_V" -ge "$MIN_V" ] ; then
-    echo -e ${RED}" > ERROR: Ubuntu version must  >= 16.04 ... Exiting"${ENDCOLOR}
-    exit 1
-  fi
-fi
-SFOLDER="`dirname \"$0\"`"                                                      # relative
-SFOLDER="`( cd \"$SFOLDER\" && pwd )`"                                          # absolutized and normalized
+SFOLDER="`dirname \"$0\"`"
+SFOLDER="`( cd \"$SFOLDER\" && pwd )`"
 if [ -z "$SFOLDER" ] ; then
-  exit 1                                                                        # error; the path is not accessible
+  # error; the path is not accessible
+  exit 1
 fi
+
+chmod +x ${SFOLDER}/libs/commons.sh
+source ${SFOLDER}/libs/commons.sh
+
+check_root
+check_distro
+
+### chmod
+chmod +x ${SFOLDER}/mysql_backup.sh
+chmod +x ${SFOLDER}/files_backup.sh
+chmod +x ${SFOLDER}/lemp_setup.sh
+chmod +x ${SFOLDER}/restore_from_backup.sh
+chmod +x ${SFOLDER}/server_and_image_optimizations.sh
+chmod +x ${SFOLDER}/installers_and_configurators.sh;
+chmod +x ${SFOLDER}/utils/bench_scripts.sh
+chmod +x ${SFOLDER}/utils/certbot_manager.sh
+chmod +x ${SFOLDER}/utils/cloudflare_update_IP.sh
+chmod +x ${SFOLDER}/utils/composer_installer.sh
+chmod +x ${SFOLDER}/utils/netdata_installer.sh
+chmod +x ${SFOLDER}/utils/monit_installer.sh
+chmod +x ${SFOLDER}/utils/cockpit_installer.sh
+chmod +x ${SFOLDER}/utils/php_optimizations.sh
+chmod +x ${SFOLDER}/utils/wordpress_installer.sh
+chmod +x ${SFOLDER}/utils/wordpress_migration_from_URL.sh
+chmod +x ${SFOLDER}/utils/wordpress_wpcli_helper.sh;
+chmod +x ${SFOLDER}/utils/replace_url_on_wordpress_db.sh
+chmod +x ${SFOLDER}/utils/blacklist-checker/bl.sh
+chmod +x ${SFOLDER}/utils/dropbox-uploader/dropbox_uploader.sh
+chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools.sh
+chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh
 ################################################################################
 
 VPSNAME="$HOSTNAME"
@@ -92,17 +104,6 @@ BAKWP="${SFOLDER}/tmp"                                                          
 MHOST="localhost"
 MUSER="root"
 
-### Setup Colours
-BLACK='\E[30;40m'
-RED='\E[31;40m'
-GREEN='\E[32;40m'
-YELLOW='\E[33;40m'
-BLUE='\E[34;40m'
-MAGENTA='\E[35;40m'
-CYAN='\E[36;40m'
-WHITE='\E[37;40m'
-ENDCOLOR='\033[0m' # No Color
-
 ### Backup rotation vars
 NOW=$(date +"%Y-%m-%d")
 NOWDISPLAY=$(date +"%d-%m-%Y")
@@ -140,28 +141,6 @@ fi
 if test -f /root/.broobe-utils-options ; then
   source /root/.broobe-utils-options
 fi
-
-### chmod
-chmod +x ${SFOLDER}/mysql_backup.sh
-chmod +x ${SFOLDER}/files_backup.sh
-chmod +x ${SFOLDER}/lemp_setup.sh
-chmod +x ${SFOLDER}/restore_from_backup.sh
-chmod +x ${SFOLDER}/server_and_image_optimizations.sh
-chmod +x ${SFOLDER}/utils/certbot_manager.sh
-chmod +x ${SFOLDER}/utils/cloudflare_update_IP.sh
-chmod +x ${SFOLDER}/utils/composer_installer.sh
-chmod +x ${SFOLDER}/utils/netdata_installer.sh
-chmod +x ${SFOLDER}/utils/monit_installer.sh
-chmod +x ${SFOLDER}/utils/cockpit_installer.sh
-chmod +x ${SFOLDER}/utils/php_optimizations.sh
-chmod +x ${SFOLDER}/utils/wordpress_installer.sh
-chmod +x ${SFOLDER}/utils/wordpress_migration_from_URL.sh
-chmod +x ${SFOLDER}/utils/wordpress_wpcli_helper.sh;
-chmod +x ${SFOLDER}/utils/replace_url_on_wordpress_db.sh
-chmod +x ${SFOLDER}/utils/blacklist-checker/bl.sh
-chmod +x ${SFOLDER}/utils/dropbox-uploader/dropbox_uploader.sh
-chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools.sh
-chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh
 
 ### Check if sendemail is installed
 SENDEMAIL="$(which sendemail)"
@@ -211,7 +190,10 @@ if [ -t 1 ]; then
           MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root Password" 10 60 3>&1 1>&2 2>&3)
           exitstatus=$?
           if [ $exitstatus = 0 ]; then
-            #TODO: testear el password antes de guardarlo
+            #TODO: testear esto
+            until $MYSQL -u $MUSER -p$MPASS  -e ";" ; do
+              read -s -p "Can't connect to MySQL, please re-enter $MUSER password: " MPASS
+            done
             echo "MPASS="${MPASS} >> /root/.broobe-utils-options
           else
             exit 1
@@ -369,7 +351,7 @@ BODY_PKG=${PKG_HEADER}${PKG_BODYOPEN}${PKG_MAIL_VAR}${PKG_BODYCLOSE}
 if [ -t 1 ]; then
 
   ### Running from terminal
-  RUNNER_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP 03 WORDPRESS_INSTALLER 04 BACKUP_RESTORE 05 HOSTING_TO_VPS 06 SERVER_OPTIMIZATIONS 07 NETDATA_INSTALLER 08 MONIT_INSTALLER 09 COCKPIT_INSTALLER 10 REPLACE_WP_URL 11 WPCLI_HELPER 12 GTMETRIX_TEST 13 BLACKLIST_CHECKER 14 RESET_SCRIPT_OPTIONS"
+  RUNNER_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP 03 WORDPRESS_INSTALLER 04 BACKUP_RESTORE 05 HOSTING_TO_VPS 06 SERVER_OPTIMIZATIONS 07 INSTALLERS_AND_CONFIGS 08 REPLACE_WP_URL 09 WPCLI_HELPER 10 CERTBOT_MANAGER 11 BENCHMARKS 12 GTMETRIX_TEST 13 BLACKLIST_CHECKER 14 RESET_SCRIPT_OPTIONS"
   CHOSEN_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 `for x in ${RUNNER_OPTIONS}; do echo "$x"; done` 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
@@ -459,23 +441,23 @@ if [ -t 1 ]; then
 
     fi
     if [[ ${CHOSEN_TYPE} == *"07"* ]]; then
-      source ${SFOLDER}/utils/netdata_installer.sh;
+      source ${SFOLDER}/installers_and_configurators.sh;
 
     fi
     if [[ ${CHOSEN_TYPE} == *"08"* ]]; then
-      source ${SFOLDER}/utils/monit_installer.sh;
-
-    fi
-    if [[ ${CHOSEN_TYPE} == *"09"* ]]; then
-      source ${SFOLDER}/utils/cockpit_installer.sh;
-
-    fi
-    if [[ ${CHOSEN_TYPE} == *"10"* ]]; then
       source ${SFOLDER}/utils/replace_url_on_wordpress_db.sh;
 
     fi
-    if [[ ${CHOSEN_TYPE} == *"11"* ]]; then
+    if [[ ${CHOSEN_TYPE} == *"09"* ]]; then
       source ${SFOLDER}/utils/wordpress_wpcli_helper.sh;
+
+    fi
+    if [[ ${CHOSEN_TYPE} == *"10"* ]]; then
+      source ${SFOLDER}/utils/certbot_manager.sh;
+
+    fi
+    if [[ ${CHOSEN_TYPE} == *"11"* ]]; then
+      source ${SFOLDER}/utils/bench_scripts.sh;
 
     fi
     if [[ ${CHOSEN_TYPE} == *"12"* ]]; then

@@ -2,22 +2,23 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.9
+# Version: 2.9.7
 ################################################################################
 
 # TODO: Primero correr sin los parametros -mtime -7 y luego setear un option
 # para correrlo solo en archivos modificados los ultimos -7 días
 
-SCRIPT_V="2.9"
+SCRIPT_V="2.9.7"
+
+### Checking some things
+if [[ -z "${SFOLDER}" ]]; then
+  echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+  exit 0
+fi
+################################################################################
 
 ### VARS
 JPG_COMPRESS='90'
-
-### Checking some things...
-if [ ${USER} != root ]; then
-  echo -e ${RED}"Error: must be root! Exiting..."${ENDCOLOR}
-  exit 0
-fi
 
 ### Remove old packages from system
 echo " > Cleanning old system packages ..." >> $LOG
