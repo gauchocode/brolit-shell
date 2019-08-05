@@ -3,13 +3,41 @@
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
 # Version: 2.9
-#############################################################################
+################################################################################
 #
 # https://github.com/AbhishekGhosh/Ubuntu-16.04-Nginx-WordPress-Autoinstall-Bash-Script/
 # https://alonganon.info/2018/11/17/make-a-super-fast-and-lightweight-wordpress-on-ubuntu-18-04-with-php-7-2-nginx-and-mariadb/
 #
-#############################################################################
+################################################################################
 SCRIPT_V="2.9"
+
+# TODO: esto necesita un fuerte refactor, re-utilizar funciones que ya estan en los otros Scripts,
+# y checkear que falla cuando ponemos www.DOMINIO.com y luego seleccionamos un stage distinto a prod.
+#
+#
+# TODO: checkear si se trata de un multisite, para eso ver los siguientes
+# define del wp-config.php:
+#
+# define('MULTISITE', true);
+# define('SUBDOMAIN_INSTALL', false);
+# define('DOMAIN_CURRENT_SITE', 'borealtech.com');
+# define('PATH_CURRENT_SITE', '/');
+# define('SITE_ID_CURRENT_SITE', 1);
+#
+
+################################# HELPERS ######################################
+ChooseProjectState() {
+  PROJECT_STATES="prod stage test dev"
+  PROJECT_STATE=$(whiptail --title "PROJECT STATE" --menu "Chose a Project State" 20 78 10 `for x in ${PROJECT_STATES}; do echo "$x [X]"; done` 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    echo -e ${YELLOW}"Project state selected: ${PROJECT_STATE} ..."${ENDCOLOR}
+
+  else
+    exit 1
+  fi
+}
+################################################################################
 
 ### Folders Setup
 FOLDER_TO_INSTALL="/var/www"
@@ -68,14 +96,8 @@ if [ $exitstatus = 0 ]; then
     else
       exit 1
     fi
-    PROJECT_STATES="prod stage test dev"
-    PROJECT_STATE=$(whiptail --title "PROJECT STATE" --menu "Chose a Project State" 20 78 10 `for x in ${PROJECT_STATES}; do echo "$x [X]"; done` 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [ $exitstatus = 0 ]; then
-      echo "Project state selected: ${PROJECT_STATE} ..." >> $LOG
-    else
-      exit 1
-    fi
+
+    ChooseProjectState
 
     echo "Trying to make a copy of ${COPY_PROJECT} ..." >> $LOG
     echo -e ${YELLOW}"Trying to make a copy of ${COPY_PROJECT} ..."${ENDCOLOR}
@@ -102,15 +124,7 @@ if [ $exitstatus = 0 ]; then
         if [ $exitstatus = 0 ]; then
           echo "Setting PROJECT_NAME="${PROJECT_NAME}
 
-          PROJECT_STATES="prod stage test dev"
-          PROJECT_STATE=$(whiptail --title "PROJECT STATE" --menu "Chose a Project State" 20 78 10 `for x in ${PROJECT_STATES}; do echo "$x [X]"; done` 3>&1 1>&2 2>&3)
-          exitstatus=$?
-          if [ $exitstatus = 0 ]; then
-            echo -e ${YELLOW}"Project state selected: ${PROJECT_STATE} ..."${ENDCOLOR}
-
-          else
-            exit 1
-          fi
+          ChooseProjectState
 
         else
           exit 1
@@ -158,19 +172,27 @@ if [ $exitstatus = 0 ]; then
 
   WPCONFIG=${FOLDER_TO_INSTALL}/${DOMAIN}/wp-config.php
 
-  if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${PROJECT_NAME}_user';" | mysql -u root --password=${MPASS} | grep 1 &> /dev/null; then
+  if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${PROJECT_NAME}_user';" | mysql -u ${MUSER} --password=${MPASS} | grep 1 &> /dev/null; then
 
     DB_PASS=$(openssl rand -hex 12)
 
-    #para cambiar pass de un user existente
-    #ALTER USER '_user'@'localhost' IDENTIFIED BY 'dadsada=';
+    # HELPERS
+    # para cambiar pass de un user existente
+    # ALTER USER '_user'@'localhost' IDENTIFIED BY 'dadsada=';
+    #ALTER USER 'basfpoliuretanos_user'@'localhost' IDENTIFIED BY 'C73eac22f75efefd921c59f!';
+    CREATE USER 'basfpoliuretanos_user'@'localhost' IDENTIFIED BY 'c73eac22f75efefd921c59ff';
+    GRANT ALL PRIVILEGES ON basfpoliuretanos_dev . * TO 'basfpoliuretanos_user'@'localhost';
+    FLUSH PRIVILEGES;
+    # para borrar usuario existente
+    # DROP USER 'basfpoliuretanos_user'@'localhost';
+
     SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_${PROJECT_STATE};"
     SQL2="CREATE USER '${PROJECT_NAME}_user'@'localhost' IDENTIFIED BY '${DB_PASS}';"
     SQL3="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
     SQL4="FLUSH PRIVILEGES;"
 
     echo -e ${YELLOW}" > Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS} ..."${ENDCOLOR}
-    mysql -u root --password=${MPASS} -e "${SQL1}${SQL2}${SQL3}${SQL4}"
+    mysql -u ${MUSER} --password=${MPASS} -e "${SQL1}${SQL2}${SQL3}${SQL4}"
 
     echo -e ${GREEN}" > DONE"${ENDCOLOR}
 
@@ -185,7 +207,7 @@ if [ $exitstatus = 0 ]; then
       SQL3="FLUSH PRIVILEGES;"
 
       echo -e ${YELLOW}" > Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and granting privileges to user: ${PROJECT_NAME}_user ..."${ENDCOLOR}
-      mysql -u root --password=${MPASS} -e "${SQL1}${SQL2}${SQL3}"
+      mysql -u ${MUSER} --password=${MPASS} -e "${SQL1}${SQL2}${SQL3}"
 
       echo -e ${GREEN}" > DONE"${ENDCOLOR}
 
@@ -222,13 +244,13 @@ if [ $exitstatus = 0 ]; then
 
     echo " > Copying database ...">> $LOG
     echo -e ${YELLOW}" > Copying database ..."${ENDCOLOR}
-    ### Create dump file###
+    ### Create dump file
     BK_FOLDER=${SFOLDER}/tmp/
     ### We get the database name from the copied wp-config.php
     SOURCE_WPCONFIG=${FOLDER_TO_INSTALL}/${COPY_PROJECT}
     DB_TOCOPY=`cat ${SOURCE_WPCONFIG}/wp-config.php | grep DB_NAME | cut -d \' -f 4`
     BK_FILE="db-${DB_TOCOPY}.sql"
-    $MYSQLDUMP --max-allowed-packet=1073741824  -u root -p${MPASS} ${DB_TOCOPY} > ${BK_FOLDER}${BK_FILE}
+    $MYSQLDUMP --max-allowed-packet=1073741824  -u ${MUSER} -p${MPASS} ${DB_TOCOPY} > ${BK_FOLDER}${BK_FILE}
 
     if [ "$?" -eq 0 ]; then
 
@@ -237,9 +259,8 @@ if [ $exitstatus = 0 ]; then
       echo " > Trying to restore database ...">> $LOG
       echo -e ${YELLOW}" > Trying to restore database ..."${ENDCOLOR}
 
-      mysql -u root --password=${MPASS} ${PROJECT_NAME}_${PROJECT_STATE} < ${BK_FOLDER}${BK_FILE}
+      mysql -u ${MUSER} --password=${MPASS} ${PROJECT_NAME}_${PROJECT_STATE} < ${BK_FOLDER}${BK_FILE}
 
-      MUSER="root"
       TARGET_DB=${PROJECT_NAME}_${PROJECT_STATE}
       ### OJO: heredamos el prefijo de la base copiada y no la reemplazamos.
       ### Ref: https://www.cloudways.com/blog/change-wordpress-database-table-prefix-manually/

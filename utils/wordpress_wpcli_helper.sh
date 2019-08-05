@@ -2,6 +2,13 @@
 # Autor: broobe. web + mobile development - https://broobe.com
 # Version: 2.9
 ################################################################################
+#
+# Ref: https://kinsta.com/blog/wp-cli/
+#
+# TODO: en el profiler, dar opcion de profilear una URL específica:
+# Ex: php /var/www/.wp-cli/wp-cli.phar --path=/var/www/dev.bes-ebike.com/ profile hook --all --spotlight --url=https://dev.bes-ebike.com/shop-electric-bikes/ --allow-root
+#
+# Checkear si es red: https://developer.wordpress.org/cli/commands/core/is-installed/
 
 startdir=${SITES}
 menutitle="Site Selection Menu"
@@ -11,6 +18,7 @@ menutitle="Site Selection Menu"
 Directorybrowser() {
   # first parameter is Menu Title
   # second parameter is dir path to starting folder
+
   if [ -z $2 ] ; then
     dir_list=$(ls -lhp  | awk -F ' ' ' { print $9 " " $5 } ')
   else
@@ -211,6 +219,7 @@ if [ $exitstatus = 0 ]; then
       fi
       if [[ ${CHOSEN_PROF_OPTION} == *"05"* ]]; then
         #Here we dig into the wp hook
+        echo "Executing: php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} profile hook --all --spotlight --allow-root"
         php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} profile hook --all --spotlight --allow-root
 
       fi

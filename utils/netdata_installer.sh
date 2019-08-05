@@ -6,6 +6,9 @@
 
 Configure_netdata(){
 
+  # TODO: agregar en algun lugar link de config de Telegram: https://docs.netdata.cloud/health/notifications/telegram/
+  # TODO: agregar en algun lugar link de config de Discord: https://docs.netdata.cloud/health/notifications/discord/
+
   # TODO: creo que ya creando el usuario en la BD tocar el mysql.conf no es necesario
   # TODO: Acá hay que hacer un sed para agregar el pass de root (quiza hasta sea menor ni copiar el mysql.conf)
   #cat ${SFOLDER}/confs/netdata/python.d/mysql.conf > /usr/lib/netdata/conf.d/python.d/mysql.conf
