@@ -3,7 +3,38 @@
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
 # Version: 2.9
-#############################################################################
+################################################################################
+
+# TODO: MOVER ESTO A WP-Cli
+
+# TODO: para reemplazar URLs (normal o multisite)
+# Bash script: Search/replace production to development url (multisite compatible)
+#
+# https://developer.wordpress.org/cli/commands/search-replace/
+#
+#!/bin/bash
+#if $(wp --url=http://borealtech.com core is-installed --network); then
+#    wp search-replace --url=http://example.com 'http://example.com' 'http://example.test' --recurse-objects --network --skip-columns=guid --skip-tables=wp_users
+#else
+#    wp search-replace 'http://example.com' 'http://example.test' --recurse-objects --skip-columns=guid --skip-tables=wp_users
+#fi
+#
+# sudo -u www-data php /var/www/.wp-cli/wp-cli.phar --path=/var/www/dev.borealtech.com
+#
+# Ref manual multisite:
+#UPDATE borealtech_dev.br_blogs SET domain='dev.borealtech.com' WHERE blog_id='1';
+#UPDATE borealtech_dev.br_blogs SET domain='dev.borealtech.com' WHERE blog_id='2';
+#
+#UPDATE borealtech_dev.br_options SET option_value='https://dev.borealtech.com/' WHERE option_id='1';
+#UPDATE borealtech_dev.br_options SET option_value='https://dev.borealtech.com/' WHERE option_id='2';
+#
+#UPDATE borealtech_dev.br_site SET domain='dev.borealtech.com' WHERE id='1';
+#
+#UPDATE borealtech_dev.br_sitemeta SET meta_value='https://dev.borealtech.com/' WHERE meta_id='14';
+#
+#UPDATE borealtech_dev.br_2_options SET option_value='https://dev.borealtech.com/dashboard' WHERE option_id='1';
+#UPDATE borealtech_dev.br_2_options SET option_value='https://dev.borealtech.com/dashboard' WHERE option_id='2';
+#
 
 ### Checking some things...
 if [[ -z "${MUSER}" ]]; then

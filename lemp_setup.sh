@@ -6,23 +6,28 @@
 
 # TODO: permitir instalar multiples versiones de PHP
 #
-#add-apt-repository ppa:ondrej/php
-#apt-get update
+#add-apt-repository ppa:ondrej/php && apt-get update
 #
 #apt-get install -y php5.6 php5.6-mcrypt php5.6-mbstring php5.6-curl php5.6-cli php5.6-mysql php5.6-gd php5.6-intl php5.6-xsl php5.6-zip libapache2-mod-php5.6
 #
 # fastcgi_pass unix:/var/run/php/php5.6-fpm.sock;
 # fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;
+#
+#
+# TODO: permitir actualizar nginx
+#
+#add-apt-repository ppa:ondrej/nginx && apt-get update
+#
 
 # TODO: esto deberia deprecarse y calcularse con el hardware del server
-SERVER_MODEL=""                                                                 # Options: cx11, cx21, cx31
+SERVER_MODEL="cx11"                                                                 # Options: cx11, cx21, cx31
 
-NETDATA="true"
-MONIT="true"
+NETDATA="false"
+MONIT="false"
 COMPOSER="false"
 WP="false"
 MARIADB="false"                                                                 # If true MariaDB will be installed instead MySQL
-MYSQL8="true"
+MYSQL8="false"
 PHP_V="7.2"                                                                     # Ubuntu 18.04 LTS Default
 
 ### Checking some things...
@@ -77,7 +82,7 @@ if [ "${MARIADB}" =  "true" ] ; then
   echo " > LEMP installation with MariaDB ..." >>$LOG
   apt --yes install mariadb-server mariadb-client
 
-  apt --yes nginx php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear zip clamav ncdu jpegoptim optipng python-certbot-nginx sendemail libio-socket-ssl-perl dnsutils ghostscript
+  apt --yes install nginx php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear zip clamav ncdu jpegoptim optipng python-certbot-nginx sendemail libio-socket-ssl-perl dnsutils ghostscript
 
 else
   if [ "${MYSQL8}" = "true" ] ; then
@@ -91,7 +96,7 @@ else
     apt --yes update
     apt --yes install mysql-server
 
-    apt --yes nginx php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear zip clamav ncdu jpegoptim optipng python-certbot-nginx sendemail libio-socket-ssl-perl dnsutils ghostscript
+    apt --yes install nginx php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear zip clamav ncdu jpegoptim optipng python-certbot-nginx sendemail libio-socket-ssl-perl dnsutils ghostscript
 
     mkdir -pv /etc/systemd/system/mysqld.service.d
     cp ${SFOLDER}/confs/mysql/override.conf /etc/systemd/system/mysqld.service.d/override.conf
@@ -106,7 +111,7 @@ else
     echo " > LEMP installation with MySQL ..." >>$LOG
     apt --yes install mysql-server
 
-    apt --yes nginx php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear zip clamav ncdu jpegoptim optipng python-certbot-nginx sendemail libio-socket-ssl-perl dnsutils ghostscript
+    apt --yes install nginx php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear zip clamav ncdu jpegoptim optipng python-certbot-nginx sendemail libio-socket-ssl-perl dnsutils ghostscript
 
   fi
 
@@ -140,7 +145,7 @@ echo " " >> /etc/nginx/sites-available/default
 #RAM=$(grep MemTotal /proc/meminfo | awk '{print $2}' | xargs -I {} echo "scale=0; {}/1024^2" | bc)
 
 # nginx.conf broobe standard configuration
-cat confs/nginx.conf > /etc/nginx/nginx.conf
+cat ${SFOLDER}/confs/nginx.conf > /etc/nginx/nginx.conf
 
 
 # TODO: reemplazar lo de abajo por el nuevo script
@@ -148,11 +153,11 @@ cat confs/nginx.conf > /etc/nginx/nginx.conf
 
 # php.ini broobe standard configuration
 echo " > Moving php configuration file ..." >>$LOG
-cat confs/php.ini > /etc/php/${PHP_V}/fpm/php.ini
+cat ${SFOLDER}/confs/php.ini > /etc/php/${PHP_V}/fpm/php.ini
 
 # fpm broobe standard configuration
 echo " > Moving fpm configuration file ..." >>$LOG
-cat confs/${SERVER_MODEL}/www.conf > /etc/php/${PHP_V}/fpm/pool.d/www.conf
+cat ${SFOLDER}/confs/${SERVER_MODEL}/www.conf > /etc/php/${PHP_V}/fpm/pool.d/www.conf
 
 ################################################################################
 

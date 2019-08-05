@@ -3,22 +3,15 @@
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
 # Version: 2.9
-#############################################################################
+################################################################################
+
+# TODO: Primero correr sin los parametros -mtime -7 y luego setear un option
+# para correrlo solo en archivos modificados los ultimos -7 días
 
 SCRIPT_V="2.9"
 
 ### VARS
-JPG_COMPRESS='80'
-
-### Setup Colours
-BLACK='\E[30;40m'
-RED='\E[31;40m'
-GREEN='\E[32;40m'
-YELLOW='\E[33;40m'
-BLUE='\E[34;40m'
-MAGENTA='\E[35;40m'
-CYAN='\E[36;40m'
-WHITE='\E[37;40m'
+JPG_COMPRESS='90'
 
 ### Checking some things...
 if [ ${USER} != root ]; then
@@ -33,27 +26,20 @@ apt clean
 apt-get -y autoremove
 apt-get -y autoclean
 
-### Remove old log files from system ###
+### Remove old log files from system
 echo " > Deleting old system logs..." >> $LOG
 echo -e ${YELLOW}" > Deleting old system logs ..."${ENDCOLOR}
 find /var/log/ -mtime +7 -type f -delete
 
-
-# TODO: OJO EL -mtime -7 hace que no corra en todas las imagenes
-
-
-# Optimización de imágenes (.jpg) para archivos modificados en los últimos 7 días
 echo " > Running jpegoptim ..." >> $LOG
 echo -e ${YELLOW}" > Running jpegoptim ..."${ENDCOLOR}
 cd ${SITES}
 find -mtime -7 -type f -name "*.jpg" -exec jpegoptim --max=${JPG_COMPRESS} --strip-all {} \;
 
-# Optimización de imágenes (.png) para archivos modificados en los últimos 7 días
 echo " > Running optipng..." >> $LOG
 echo -e ${YELLOW}" > Running optipng ..."${ENDCOLOR}
 find -mtime -7 -type f -name "*.png" -exec optipng -o7 -strip all {} \;
 
-# Fix files ownership
 echo " > Fixing ownership ..." >> $LOG
 echo -e ${YELLOW}" > Fixing ownership ..."${ENDCOLOR}
 chown -R www-data:www-data *

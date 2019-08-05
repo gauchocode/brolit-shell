@@ -13,6 +13,7 @@
 #       5- VAR conf para el ID de Telegram (quizá habría que guiar todo el proceso)
 #       6- Terminar php_optimizations deprecando el modelo de Hetzner e integrandolo al Lemp Installer
 #       7- Permitir restore del backup con Duplicity
+#       8- Backup y Restore de archivos de Let's Encrypt (/etc/letsencrypt/)
 #
 ################################################################################
 #
@@ -166,6 +167,12 @@ chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh
 SENDEMAIL="$(which sendemail)"
 if [ ! -x "${SENDEMAIL}" ]; then
 	apt install sendemail libio-socket-ssl-perl
+fi
+
+### Check if pv is installed
+PV="$(which pv)"
+if [ ! -x "${PV}" ]; then
+	apt install pv
 fi
 
 ### MySQL
@@ -556,8 +563,11 @@ else
 
 fi
 
-echo " > Removing temp files..."
+echo " > Removing temp files ..." >> $LOG
+echo -e ${YELLOW}" > Removing temp files ..."${ENDCOLOR}
+
 rm ${PKG_MAIL} ${DB_MAIL} ${FILE_MAIL}
+
 echo " > DONE" >> $LOG
 echo -e ${GREEN}" > DONE"${ENDCOLOR}
 

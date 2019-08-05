@@ -1,7 +1,10 @@
 #!/bin/bash
 # Autor: broobe. web + mobile development - https://broobe.com
 # Version: 2.9.5
-#############################################################################
+################################################################################
+
+# TODO: ARREGLAR RESTORE DE BD! el matching directory es un peligro!
+# y ni hablar de cambiar el wp-config sin checkear los datos del usuario creado.
 
 SCRIPT_V="2.9.5"
 
@@ -45,6 +48,69 @@ Filebrowser() {
     fi
   fi
 }
+
+Directorybrowser() {
+  # first parameter is Menu Title
+  # second parameter is dir path to starting folder
+
+  if [ -z $2 ] ; then
+    dir_list=$(ls -lhp  | awk -F ' ' ' { print $9 " " $5 } ')
+  else
+    cd "$2"
+    dir_list=$(ls -lhp  | awk -F ' ' ' { print $9 " " $5 } ')
+  fi
+  curdir=$(pwd)
+  if [ "$curdir" == "/" ] ; then  # Check if you are at root folder
+    selection=$(whiptail --title "$1" \
+                          --menu "Select a Folder or Tab Key\n$curdir" 0 0 0 \
+                          --cancel-button Cancel \
+                          --ok-button Select $dir_list 3>&1 1>&2 2>&3)
+  else   # Not Root Dir so show ../ BACK Selection in Menu
+    selection=$(whiptail --title "$1" \
+                          --menu "Select a Folder or Tab Key\n$curdir" 0 0 0 \
+                          --cancel-button Cancel \
+                          --ok-button Select ../ BACK $dir_list 3>&1 1>&2 2>&3)
+  fi
+  RET=$?
+  if [ $RET -eq 1 ]; then  # Check if User Selected Cancel
+    return 1
+  elif [ $RET -eq 0 ]; then
+    if [[ -d "$selection" ]]; then  # Check if Directory Selected
+      if (whiptail --title "Confirm Selection" --yesno "Selection : $selection\n" 0 0 \
+                   --yes-button "Confirm" \
+                   --no-button "Retry"); then
+        filename="$selection"
+        filepath="$curdir"    # Return full filepath and filename as selection variables
+
+      fi
+    fi
+  fi
+}
+
+ChooseProjectState() {
+  PROJECT_STATES="prod stage test dev"
+  PROJECT_STATE=$(whiptail --title "PROJECT STATE" --menu "Chose a Project State" 20 78 10 `for x in ${PROJECT_STATES}; do echo "$x [X]"; done` 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    echo -e ${YELLOW}"Project state selected: ${PROJECT_STATE} ..."${ENDCOLOR}
+
+  else
+    exit 1
+  fi
+}
+
+FolderToRestore() {
+  if [[ -z "${FOLDER_TO_RESTORE}" ]]; then
+    FOLDER_TO_RESTORE=$(whiptail --title "Folder to Restore Backup" --inputbox "Please insert a folder to restore the backup files." 10 60 "/var/www" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo "FOLDER_TO_RESTORE="${FOLDER_TO_RESTORE} >> $LOG
+    else
+      exit 0
+    fi
+  fi
+}
+
 ################################################################################
 
 SITES_F="sites"
@@ -62,20 +128,10 @@ if test -f /root/.broobe-utils-options ; then
   source /root/.broobe-utils-options
 fi
 
-if [[ -z "${FOLDER_TO_RESTORE}" ]]; then
-  FOLDER_TO_RESTORE=$(whiptail --title "Folder to Restore Backup" --inputbox "Please insert a folder to restore the backup files. Ex: /var/www" 10 60 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-    echo "FOLDER_TO_RESTORE="${FOLDER_TO_RESTORE} >> $LOG
-  else
-    exit 0
-  fi
-fi
-
-RESTORE_TYPES="${CONFIG_F} ${SITES_F} ${DBS_F}"
+RESTORE_TYPES="${SITES_F} ${CONFIG_F} ${DBS_F}"
 
 # Display choose dialog with available backups
-CHOSEN_TYPE=$(whiptail --title "RESTORE BACKUP" --menu "Choose a backup type. If you want to restore an entire site, first restore config, then sites, and last the database." 20 78 10 `for x in ${RESTORE_TYPES}; do echo "$x [D]"; done` 3>&1 1>&2 2>&3)
+CHOSEN_TYPE=$(whiptail --title "RESTORE BACKUP" --menu "Choose a backup type. If you want to restore an entire site, first restore the site files, then the config, and last the database." 20 78 10 `for x in ${RESTORE_TYPES}; do echo "$x [D]"; done` 3>&1 1>&2 2>&3)
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
         #Restore from Dropbox
@@ -164,10 +220,10 @@ if [[ ${CHOSEN_TYPE} == *"$CONFIG_F"* ]]; then
 
           echo " > Removing ${SFOLDER}/tmp/${CHOSEN_TYPE} ..." >> $LOG
           echo -e ${GREEN}" > Removing ${SFOLDER}/tmp/${CHOSEN_TYPE} ..."${ENDCOLOR}
-          rm ${SFOLDER}/tmp/${CHOSEN_TYPE}
+          rm -R ${SFOLDER}/tmp/${CHOSEN_TYPE}
 
           echo " > DONE ...">>$LOG
-          echo -e ${GREN}" > DONE ..."${ENDCOLOR}
+          echo -e ${GREEN}" > DONE ..."${ENDCOLOR}
 
   fi
 else
@@ -180,32 +236,35 @@ else
 
   fi
   # Select Backup File
-  CHOSEN_BACKUP=$(whiptail --title "RESTORE BACKUP" --menu "Chose Backup to Download" 20 78 10 `for x in ${DROPBOX_BACKUP_LIST}; do echo "$x [F]"; done` 3>&1 1>&2 2>&3)
+  CHOSEN_BACKUP=$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 `for x in ${DROPBOX_BACKUP_LIST}; do echo "$x [F]"; done` 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
-          #echo "Trying to run dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_PROJECT}/${CHOSEN_BACKUP}"
+          cd ${SFOLDER}/tmp
+
+          echo " > Downloading from Dropbox ${CHOSEN_TYPE}/${CHOSEN_CONFIG} ..." >> $LOG
+          echo -e ${YELLOW} " > Trying to run ${DPU_F}/dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_PROJECT}/${CHOSEN_BACKUP}" ${ENDCOLOR}
           ${DPU_F}/dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_PROJECT}/${CHOSEN_BACKUP}
 
-          mv ${CHOSEN_BACKUP} tmp/
-          cd tmp/
-
-          echo "Uncompressing ${CHOSEN_BACKUP}">> $LOG
+          echo " > Uncompressing ${CHOSEN_BACKUP}">> $LOG
           tar -xvjf ${CHOSEN_BACKUP}
 
           if [[ ${CHOSEN_TYPE} == *"$SITES_F"* ]]; then
 
-            if [ -n "${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT}" ]; then
+            FolderToRestore
 
-              echo " > ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT} exist. Let's make a Backup ...">> $LOG
-              echo -e ${YELLOW}" > ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT} exist. Let's make a Backup ..."${ENDCOLOR}
+            ACTUAL_FOLDER="${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT}"
+
+            if [ -n "${ACTUAL_FOLDER}" ]; then
+
+              echo " > ${ACTUAL_FOLDER} exist. Let's make a Backup ...">> $LOG
+              echo -e ${YELLOW}" > ${ACTUAL_FOLDER} exist. Let's make a Backup ..."${ENDCOLOR}
 
               mkdir ${SFOLDER}/tmp/old_backup
-              #echo "Executing: mv ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT} ${SFOLDER}/tmp/old_backup ...">> $LOG
-              mv ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT} ${SFOLDER}/tmp/old_backup
+              mv ${ACTUAL_FOLDER} ${SFOLDER}/tmp/old_backup
 
-              echo " > DONE ...">> $LOG
-              echo -e ${GREEN}" > DONE ..."${ENDCOLOR}
+              echo " > Backup completed and stored here: ${SFOLDER}/tmp/old_backup ...">> $LOG
+              echo -e ${GREEN}" > Backup completed and stored here: ${SFOLDER}/tmp/old_backup ..."${ENDCOLOR}
 
             fi
 
@@ -222,35 +281,52 @@ else
             # TODO: ver si se puede restaurar un viejo backup del site-available de nginx y luego
             # forzar al certbot (si existe manera, por que el renew no funciona y la instalacion normal tampoco)
 
-            echo "Trying to restore nginx config for ${CHOSEN_PROJECT} ..."
+            #echo "Trying to restore nginx config for ${CHOSEN_PROJECT} ..."
             # New site configuration
-            cp ${SFOLDER}/confs/default /etc/nginx/sites-available/${CHOSEN_PROJECT}
-            ln -s /etc/nginx/sites-available/${CHOSEN_PROJECT} /etc/nginx/sites-enabled/${CHOSEN_PROJECT}
+            #cp ${SFOLDER}/confs/default /etc/nginx/sites-available/${CHOSEN_PROJECT}
+            #ln -s /etc/nginx/sites-available/${CHOSEN_PROJECT} /etc/nginx/sites-enabled/${CHOSEN_PROJECT}
             # Replacing string to match domain name
-            sed -i "s#dominio.com#${CHOSEN_PROJECT}#" /etc/nginx/sites-available/${CHOSEN_PROJECT}
+            #sed -i "s#dominio.com#${CHOSEN_PROJECT}#" /etc/nginx/sites-available/${CHOSEN_PROJECT}
             # Need to be run twice
-            sed -i "s#dominio.com#${CHOSEN_PROJECT}#" /etc/nginx/sites-available/${CHOSEN_PROJECT}
-            service nginx reload
+            #sed -i "s#dominio.com#${CHOSEN_PROJECT}#" /etc/nginx/sites-available/${CHOSEN_PROJECT}
+            #service nginx reload
 
           else
             if [[ ${CHOSEN_TYPE} == *"$DBS_F"* ]]; then
+
               # Si es una BD
               # TODO: contemplar 2 opciones: base existente y base inexistente (habría que crear el usuario)
 
-              echo "Trying to restore ${CHOSEN_BACKUP} DB"
+              if [ -d /var/lib/mysql/databasename ] ; then
+                echo -e ${YELLOW}" > Executing mysqldump (will work if database exists) ..."${ENDCOLOR}
+                mysqldump -u ${MUSER} --password=${MPASS} ${CHOSEN_PROJECT} > ${CHOSEN_PROJECT}_bk_before_restore.sql
+              fi
 
-              echo "Executing mysqldump (will work if database exists)..."
-              mysqldump -u root --password=${MPASS} ${CHOSEN_PROJECT} > ${CHOSEN_PROJECT}_bk_before_restore.sql
+              echo " > Trying to restore ${CHOSEN_BACKUP} DB">> $LOG
+              echo -e ${YELLOW}" > Trying to restore ${CHOSEN_BACKUP} DB"${ENDCOLOR}
 
-              ### Helper para extraer el nombre del proyecto
+              ### TODO?: debería extraer el sufijo real y no preguntar? mnmnm
+              ChooseProjectState
 
-              ### TODO: debería extraer el sufijo real y no asumir que es _prod
-              suffix="_prod"
-              PROJECT_STAGE="prod"
-              PROJECT_NAME=${CHOSEN_PROJECT%"$suffix"}
-              #echo "${PROJECT_NAME}"
+              suffix="$(cut -d'_' -f2 <<<"${CHOSEN_PROJECT}")"
+              #echo "$A"
+              #two
 
-              ### Vamos a crear el usuario y la base siguiendo el nuevo estandard de broobe
+              #suffix="_${PROJECT_STATE}"
+
+              ### Extract PROJECT_NAME
+              PROJECT_NAME=${CHOSEN_PROJECT%"_$suffix"}
+
+              PROJECT_NAME=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${PROJECT_NAME}" 3>&1 1>&2 2>&3)
+              exitstatus=$?
+              if [ $exitstatus = 0 ]; then
+                echo "Setting PROJECT_NAME="${PROJECT_NAME} >> $LOG
+              #else
+              #  exit 1
+              fi
+
+              echo " > Creating user and database ...">>$LOG
+              echo -e ${YELLOW}" > Creating user and database ..."${ENDCOLOR}
 
               ### TODO: ojo que me cambia el pass en el wp-config.php por más que el usuario exista, CORREGIR!!!
               DB_PASS=$(openssl rand -hex 12)
@@ -258,24 +334,43 @@ else
               #para cambiar pass de un user existente
               #ALTER USER 'makana_user'@'localhost' IDENTIFIED BY '0p2eE2a0ed4d8=';
 
-              SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_${PROJECT_STAGE};"
+              SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_${PROJECT_STATE};"
               SQL2="CREATE USER IF NOT EXISTS '${PROJECT_NAME}_user'@'localhost' IDENTIFIED BY '${DB_PASS}';"
-              SQL3="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STAGE} . * TO '${PROJECT_NAME}_user'@'localhost';"
+              SQL3="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
               SQL4="FLUSH PRIVILEGES;"
 
-              echo "Creating database ${PROJECT_NAME}_${PROJECT_STAGE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS} if they not exist ..."
-              mysql -u root --password=${MPASS} -e "${SQL1}${SQL2}${SQL3}${SQL4}"
+              echo "Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS} if they not exist ...">> $LOG
+              echo -e ${CYAN}"Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS} if they not exist ..."${ENDCOLOR}
 
-              # tercero importar la base a restaurar
-              echo "Restoring database ..."
-              mysql -u root --password=${MPASS} ${PROJECT_NAME}_${PROJECT_STAGE} < ${CHOSEN_BACKUP%%.*}.sql
+              mysql -u ${MUSER} --password=${MPASS} -e "${SQL1}${SQL2}${SQL3}${SQL4}"
 
-              echo "DB ${CHOSEN_BACKUP} restored!"
+              if [ $? -eq 0 ]; then
+                echo " > DONE!">>$LOG
+                echo -e ${GREN}" > DONE!"${ENDCOLOR}
+              else
+                echo " > Something went wrong!">>$LOG
+                echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
+                exit 1
+              fi
 
-              echo "Cleanning tmp files ..."
+              # Trying to restore Database
+              pv ${CHOSEN_BACKUP%%.*}.sql | mysql -f -u ${MUSER} --password=${MPASS} ${PROJECT_NAME}_${PROJECT_STATE}
+
+              if [ $? -eq 0 ]; then
+                echo " > DB ${CHOSEN_BACKUP} restored successfully!">>$LOG
+                echo -e ${GREN}" > DB ${CHOSEN_BACKUP} restored successfully!"${ENDCOLOR}
+              else
+                echo " > DB ${CHOSEN_BACKUP} restored failed!">>$LOG
+                echo -e ${RED}" > DB ${CHOSEN_BACKUP} restored failed!"${ENDCOLOR}
+                exit 1
+              fi
+
+              echo " > Cleanning tmp files ..."
               rm ${CHOSEN_BACKUP%%.*}.sql
               rm ${CHOSEN_BACKUP}
-              echo "OK ..."
+              echo " > DONE"
+
+              FolderToRestore
 
               echo -e ${YELLOW}"Trying to find a directory matching the database imported ..."${ENDCOLOR}
               for j in $(find $FOLDER_TO_RESTORE -maxdepth 1 -type d)
@@ -284,18 +379,21 @@ else
 
                 # TODO: quizarle al project name - y caracteres especiales
 
+                # TOFIX: ESTO ES SUPER PELIGROSO, NO SIRVE CUANDO HAY VARIOS SUBDOMINIOS DE UN MISMO PROYECTO
                 if [[ ${FOLDER_NAME} == *"${PROJECT_NAME}"* ]]; then
                   echo -e ${GREEN}" Matching directory found: ${FOLDER_NAME}"${ENDCOLOR}
                   #change wp-config.php database parameters
                   echo "Changing wp-config.php database parameters ..."
                   sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" ${j}/wp-config.php
-                  sed -i "/DB_NAME/s/'[^']*'/'${PROJECT_NAME}_${PROJECT_STAGE}'/2" ${j}/wp-config.php
+                  sed -i "/DB_NAME/s/'[^']*'/'${PROJECT_NAME}_${PROJECT_STATE}'/2" ${j}/wp-config.php
                   sed -i "/DB_USER/s/'[^']*'/'${PROJECT_NAME}_user'/2" ${j}/wp-config.php
                   sed -i "/DB_PASSWORD/s/'[^']*'/'${DB_PASS}'/2" ${j}/wp-config.php
 
                   # TODO: cambiar las secret encryption key
 
                   echo -e ${GREEN}" > DONE"${ENDCOLOR}
+                else
+                  echo -e ${RED}" > DIDN'T FIND A MATCHING DIRECTORY!"${ENDCOLOR}
 
                 fi
               done
