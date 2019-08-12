@@ -26,27 +26,27 @@ fi
 JPG_COMPRESS='90'
 
 ### Remove old packages from system
-echo " > Cleanning old system packages ..." >> $LOG
+echo " > Cleanning old system packages ..." >>$LOG
 echo -e ${YELLOW}" > Cleanning old system packages ..."${ENDCOLOR}
 apt clean
 apt-get -y autoremove
 apt-get -y autoclean
 
 ### Remove old log files from system
-echo " > Deleting old system logs..." >> $LOG
+echo " > Deleting old system logs..." >>$LOG
 echo -e ${YELLOW}" > Deleting old system logs ..."${ENDCOLOR}
 find /var/log/ -mtime +7 -type f -delete
 
-echo " > Running jpegoptim ..." >> $LOG
+echo " > Running jpegoptim ..." >>$LOG
 echo -e ${YELLOW}" > Running jpegoptim ..."${ENDCOLOR}
 cd ${SITES}
 find -mtime -7 -type f -name "*.jpg" -exec jpegoptim --max=${JPG_COMPRESS} --strip-all {} \;
 
-echo " > Running optipng..." >> $LOG
+echo " > Running optipng..." >>$LOG
 echo -e ${YELLOW}" > Running optipng ..."${ENDCOLOR}
 find -mtime -7 -type f -name "*.png" -exec optipng -o7 -strip all {} \;
 
-echo " > Fixing ownership ..." >> $LOG
+echo " > Fixing ownership ..." >>$LOG
 echo -e ${YELLOW}" > Fixing ownership ..."${ENDCOLOR}
 chown -R www-data:www-data *
 
@@ -54,4 +54,5 @@ chown -R www-data:www-data *
 swapoff -a && swapon -a
 
 #Cleanning RAM
-sync; echo 1 > /proc/sys/vm/drop_caches
+sync
+echo 1 >/proc/sys/vm/drop_caches
