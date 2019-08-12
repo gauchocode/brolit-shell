@@ -3,13 +3,12 @@
 # Version: 2.9.7
 ################################################################################
 
-# TODO: ARREGLAR RESTORE DE BD! el matching directory es un peligro!
-# y ni hablar de cambiar el wp-config sin checkear los datos del usuario creado.
+# TODO: NO cambiar el wp-config sin checkear los datos del usuario creado!
 
 SCRIPT_V="2.9.7"
 
-# TODO: otra opcion 'complete_site' para que intente restaurar archivos y base de un proyecto
-# TODO: otra opcion 'multi_sites' para que intente restaurar sitios que estan backupeados en dropbox
+# TODO: otra opcion 'complete_site' para que intente restaurar archivos y base de un mismo proyecto.
+# TODO: otra opcion 'multi_sites' para que intente restaurar varios sitios que estan backupeados en dropbox.
 
 #Restore Local?
 #$SFOLDER/tmp/backups/*.tar.gz
@@ -116,6 +115,9 @@ if [[ ${CHOSEN_TYPE} == *"$CONFIG_F"* ]]; then
           if [[ "${CHOSEN_CONFIG}" == *"php"* ]];then
             echo "TODO: RESTORE PHP CONFIG ..."
           fi
+          if [[ "${CHOSEN_CONFIG}" == *"letsencrypt"* ]];then
+            echo "TODO: RESTORE LETSENCRYPT CONFIG ..."
+          fi
 
           echo " > Removing ${SFOLDER}/tmp/${CHOSEN_TYPE} ..." >> $LOG
           echo -e ${GREEN}" > Removing ${SFOLDER}/tmp/${CHOSEN_TYPE} ..."${ENDCOLOR}
@@ -150,9 +152,9 @@ else
 
           if [[ ${CHOSEN_TYPE} == *"$SITES_F"* ]]; then
 
-            FolderToRestore
+            folder_to_install_sites
 
-            ACTUAL_FOLDER="${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT}"
+            ACTUAL_FOLDER="${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT}"
 
             if [ -n "${ACTUAL_FOLDER}" ]; then
 
@@ -171,11 +173,11 @@ else
             echo "Trying to restore ${CHOSEN_BACKUP} files ...">> $LOG
             echo -e ${YELLOW} "Trying to restore ${CHOSEN_BACKUP} files ..."${ENDCOLOR}
 
-            #echo "Executing: mv ${SFOLDER}/tmp/${CHOSEN_PROJECT} ${FOLDER_TO_RESTORE} ..."
-            mv ${SFOLDER}/tmp/${CHOSEN_PROJECT} ${FOLDER_TO_RESTORE}
+            #echo "Executing: mv ${SFOLDER}/tmp/${CHOSEN_PROJECT} ${FOLDER_TO_INSTALL} ..."
+            mv ${SFOLDER}/tmp/${CHOSEN_PROJECT} ${FOLDER_TO_INSTALL}
 
-            echo -e ${YELLOW} "Executing: chown -R www-data:www-data ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT} ..."${ENDCOLOR}
-            chown -R www-data:www-data ${FOLDER_TO_RESTORE}/${CHOSEN_PROJECT}
+            DOMAIN=${CHOSEN_PROJECT}
+            wp_change_ownership
 
             # TODO: ver si se puede restaurar un viejo backup del site-available de nginx y luego
             # forzar al certbot (si existe manera, por que el renew no funciona y la instalacion normal tampoco)
@@ -193,10 +195,15 @@ else
           else
             if [[ ${CHOSEN_TYPE} == *"$DBS_F"* ]]; then
 
+              # TODO: checkear si la BD es de una instalación de WP
+              # si lo es, preguntar a que carpeta de WP pertenece (directory_browser)
+              # si no selecciona no continuar.
+              # Si no es una BD de WP, crear BD, usuario y dejar datos en .txt
+
               # Si es una BD
               # TODO: contemplar 2 opciones: base existente y base inexistente (habría que crear el usuario)
 
-              if [ -d /var/lib/mysql/databasename ] ; then
+              if [ -d /var/lib/mysql/${CHOSEN_PROJECT} ] ; then
                 echo -e ${YELLOW}" > Executing mysqldump (will work if database exists) ..."${ENDCOLOR}
                 mysqldump -u ${MUSER} --password=${MPASS} ${CHOSEN_PROJECT} > ${CHOSEN_PROJECT}_bk_before_restore.sql
               fi
@@ -204,13 +211,10 @@ else
               echo " > Trying to restore ${CHOSEN_BACKUP} DB">> $LOG
               echo -e ${YELLOW}" > Trying to restore ${CHOSEN_BACKUP} DB"${ENDCOLOR}
 
-              ### TODO?: debería extraer el sufijo real y no preguntar? mnmnm
-              ChooseProjectState
+              # TODO: debería extraer el sufijo real y preguntar si se quiere cambiar
+              choose_project_state
 
               suffix="$(cut -d'_' -f2 <<<"${CHOSEN_PROJECT}")"
-              #echo "$A"
-              #two
-
               #suffix="_${PROJECT_STATE}"
 
               ### Extract PROJECT_NAME
@@ -227,14 +231,14 @@ else
               echo " > Creating user and database ...">>$LOG
               echo -e ${YELLOW}" > Creating user and database ..."${ENDCOLOR}
 
-              ### TODO: ojo que me cambia el pass en el wp-config.php por más que el usuario exista, CORREGIR!!!
+              # TODO: usar wp_database_creation
               DB_PASS=$(openssl rand -hex 12)
 
               #para cambiar pass de un user existente
               #ALTER USER 'makana_user'@'localhost' IDENTIFIED BY '0p2eE2a0ed4d8=';
 
               SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_${PROJECT_STATE};"
-              SQL2="CREATE USER IF NOT EXISTS '${PROJECT_NAME}_user'@'localhost' IDENTIFIED BY '${DB_PASS}';"
+              SQL2="CREATE USER '${PROJECT_NAME}_user'@'localhost' IDENTIFIED BY '${DB_PASS}';"
               SQL3="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
               SQL4="FLUSH PRIVILEGES;"
 
@@ -257,45 +261,39 @@ else
 
               if [ $? -eq 0 ]; then
                 echo " > DB ${CHOSEN_BACKUP} restored successfully!">>$LOG
-                echo -e ${GREN}" > DB ${CHOSEN_BACKUP} restored successfully!"${ENDCOLOR}
+                echo -e ${GREEN}" > DB ${CHOSEN_BACKUP} restored successfully!"${ENDCOLOR}
               else
                 echo " > DB ${CHOSEN_BACKUP} restored failed!">>$LOG
                 echo -e ${RED}" > DB ${CHOSEN_BACKUP} restored failed!"${ENDCOLOR}
                 exit 1
               fi
 
-              echo " > Cleanning tmp files ..."
+              echo -e ${YELLOW}" > Cleanning temp files ..."${ENDCOLOR}
               rm ${CHOSEN_BACKUP%%.*}.sql
               rm ${CHOSEN_BACKUP}
-              echo " > DONE"
+              echo -e ${GREEN}" > DONE"${ENDCOLOR}
 
-              FolderToRestore
+              folder_to_install_sites
 
-              echo -e ${YELLOW}"Trying to find a directory matching the database imported ..."${ENDCOLOR}
-              for j in $(find $FOLDER_TO_RESTORE -maxdepth 1 -type d)
-              do
-                FOLDER_NAME=$(basename $j)
+              # TODO: Acá usar el Directorybrowser en vez de buscar con find
+              startdir=${FOLDER_TO_INSTALL}
+              menutitle="Site Selection Menu"
+              Directorybrowser "$menutitle" "$startdir"
+              WP_SITE=$filepath"/"$filename
+              echo "Setting WP_SITE="${WP_SITE}
 
-                # TODO: quizarle al project name - y caracteres especiales
+              FOLDER_NAME=$(basename $WP_SITE)
 
-                # TOFIX: ESTO ES SUPER PELIGROSO, NO SIRVE CUANDO HAY VARIOS SUBDOMINIOS DE UN MISMO PROYECTO
-                if [[ ${FOLDER_NAME} == *"${PROJECT_NAME}"* ]]; then
-                  echo -e ${GREEN}" Matching directory found: ${FOLDER_NAME}"${ENDCOLOR}
-                  #change wp-config.php database parameters
-                  echo "Changing wp-config.php database parameters ..."
-                  sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" ${j}/wp-config.php
-                  sed -i "/DB_NAME/s/'[^']*'/'${PROJECT_NAME}_${PROJECT_STATE}'/2" ${j}/wp-config.php
-                  sed -i "/DB_USER/s/'[^']*'/'${PROJECT_NAME}_user'/2" ${j}/wp-config.php
-                  sed -i "/DB_PASSWORD/s/'[^']*'/'${DB_PASS}'/2" ${j}/wp-config.php
+              #change wp-config.php database parameters
+              echo "Changing wp-config.php database parameters ..."
+              sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" ${WP_SITE}/wp-config.php
+              sed -i "/DB_NAME/s/'[^']*'/'${PROJECT_NAME}_${PROJECT_STATE}'/2" ${WP_SITE}/wp-config.php
+              sed -i "/DB_USER/s/'[^']*'/'${PROJECT_NAME}_user'/2" ${WP_SITE}/wp-config.php
+              sed -i "/DB_PASSWORD/s/'[^']*'/'${DB_PASS}'/2" ${WP_SITE}/wp-config.php
 
-                  # TODO: cambiar las secret encryption key
+              # TODO: cambiar las secret encryption key
 
-                  echo -e ${GREEN}" > DONE"${ENDCOLOR}
-                else
-                  echo -e ${RED}" > DIDN'T FIND A MATCHING DIRECTORY!"${ENDCOLOR}
-
-                fi
-              done
+              echo -e ${GREEN}" > DONE"${ENDCOLOR}
 
               # TODO: Checkeamos Cloudflare si es la misma IP y si no cambiamos?
 

@@ -1,0 +1,51 @@
+[mysqld]
+
+# InnoDB Settings
+default_storage_engine          = InnoDB
+innodb_buffer_pool_instances    = 2     # Use 1 instance per 1GB of InnoDB pool size
+innodb_buffer_pool_size         = 2G    # Use up to 70-80% of RAM & optionally check if /proc/sys/vm/swappiness is set to 0
+innodb_file_per_table           = 1
+innodb_flush_log_at_trx_commit  = 0
+innodb_flush_method             = O_DIRECT
+innodb_log_buffer_size          = 16M
+innodb_log_file_size            = 512M
+innodb_stats_on_metadata        = 0
+
+#innodb_temp_data_file_path     = ibtmp1:64M:autoextend:max:20G # Control the maximum size for the ibtmp1 file
+#innodb_thread_concurrency      = 4     # Optional: Set to the number of CPUs on your system (minus 1 or 2) to better
+                                        # contain CPU usage. E.g. if your system has 8 CPUs, try 6 or 7 and check
+                                        # the overall load produced by MySQL/MariaDB.
+innodb_read_io_threads          = 64
+innodb_write_io_threads         = 64
+
+# MyISAM Settings
+query_cache_limit               = 4M    # UPD - Option supported up to MySQL v5.7
+query_cache_size                = 48M   # UPD - Option supported up to MySQL v5.7
+query_cache_type                = 1     # Option supported up to MySQL v5.7
+
+key_buffer_size                 = 48M   # UPD
+
+low_priority_updates            = 1
+concurrent_insert               = 2
+
+# Connection Settings
+max_connections                 = 100   # UPD
+
+back_log                        = 512
+thread_cache_size               = 100
+thread_stack                    = 192K
+
+interactive_timeout             = 180
+wait_timeout                    = 180
+
+# Buffer Settings
+join_buffer_size                = 4M    # UPD
+read_buffer_size                = 3M    # UPD
+read_rnd_buffer_size            = 4M    # UPD
+sort_buffer_size                = 4M    # UPD
+
+max_heap_table_size             = 128M
+tmp_table_size                  = 128M
+
+# Search Settings
+ft_min_word_len                 = 3     # Minimum length of words to be indexed for search results

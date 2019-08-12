@@ -8,20 +8,30 @@
 #
 #add-apt-repository ppa:ondrej/php && apt-get update
 #
-#apt-get install -y php5.6 php5.6-mcrypt php5.6-mbstring php5.6-curl php5.6-cli php5.6-mysql php5.6-gd php5.6-intl php5.6-xsl php5.6-zip libapache2-mod-php5.6
+#apt-get install -y php5.6 php5.6-fpm php5.6-mcrypt php5.6-mbstring php5.6-curl php5.6-cli php5.6-mysql php5.6-gd php5.6-intl php5.6-xsl php5.6-zip libapache2-mod-php5.6
+#apt-get install -y php7.3 php7.3-fpm php7.3-mcrypt php7.3-mbstring php7.3-curl php7.3-cli php7.3-mysql php7.3-gd php7.3-intl php7.3-xsl php7.3-zip libapache2-mod-php7.3
+
 #
 # fastcgi_pass unix:/var/run/php/php5.6-fpm.sock;
 # fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;
 #
 #
 # TODO: permitir actualizar nginx
-#
 #add-apt-repository ppa:ondrej/nginx && apt-get update
 #
+# TODO: los installers de PHP-FPM, NGINX y MySQL/MariaDB deberian estar en otro script para poder ejecutarlos de manera individual
+
+### Checking some things
+if [[ -z "${SFOLDER}" ]]; then
+  echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+  exit 0
+fi
+################################################################################
 
 # TODO: esto deberia deprecarse y calcularse con el hardware del server
-SERVER_MODEL="cx11"                                                                 # Options: cx11, cx21, cx31
+SERVER_MODEL="cx11"                                                             # Options: cx11, cx21, cx31
 
+CERTBOT="false"
 NETDATA="false"
 MONIT="false"
 COMPOSER="false"
@@ -30,11 +40,6 @@ MARIADB="false"                                                                 
 MYSQL8="false"
 PHP_V="7.2"                                                                     # Ubuntu 18.04 LTS Default
 
-### Checking some things...
-if [ $USER != root ]; then
-  echo -e ${RED}"Error: must be root! Exiting..."${ENDCOLOR}
-  exit 0
-fi
 if [[ -z "${SERVER_MODEL}" ]]; then
   echo -e ${RED}"Error: SERVER_MODEL must be set! Exiting..."${ENDCOLOR}
   exit 0
@@ -60,7 +65,7 @@ if [[ -z "${DOMAIN}" ]]; then
   DOMAIN=$(whiptail --title "Main Domain for LEMP Installation" --inputbox "Please insert the VPS main domain:" 10 60 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-    #TODO: testear el password antes de guardarlo
+    # TODO: para que lo usamos?
     echo "DOMAIN="${DOMAIN} >>$LOG
   else
     exit 1
@@ -70,19 +75,18 @@ fi
 # Updating packages
 echo " > Adding repos and updating package lists ..." >>$LOG
 apt --yes install software-properties-common
-add-apt-repository ppa:certbot/certbot
 apt --yes update
-
 echo " > Upgrading packages before installation ..." >>$LOG
 apt --yes dist-upgrade
+
+echo " > Installing basic packages ..." >>$LOG
+apt --yes install unzip zip clamav ncdu jpegoptim optipng sendemail libio-socket-ssl-perl dnsutils ghostscript pv
 
 # Installing packages
 if [ "${MARIADB}" =  "true" ] ; then
 
   echo " > LEMP installation with MariaDB ..." >>$LOG
   apt --yes install mariadb-server mariadb-client
-
-  apt --yes install nginx php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear zip clamav ncdu jpegoptim optipng python-certbot-nginx sendemail libio-socket-ssl-perl dnsutils ghostscript
 
 else
   if [ "${MYSQL8}" = "true" ] ; then
@@ -95,8 +99,6 @@ else
 
     apt --yes update
     apt --yes install mysql-server
-
-    apt --yes install nginx php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear zip clamav ncdu jpegoptim optipng python-certbot-nginx sendemail libio-socket-ssl-perl dnsutils ghostscript
 
     mkdir -pv /etc/systemd/system/mysqld.service.d
     cp ${SFOLDER}/confs/mysql/override.conf /etc/systemd/system/mysqld.service.d/override.conf
@@ -111,11 +113,11 @@ else
     echo " > LEMP installation with MySQL ..." >>$LOG
     apt --yes install mysql-server
 
-    apt --yes install nginx php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear zip clamav ncdu jpegoptim optipng python-certbot-nginx sendemail libio-socket-ssl-perl dnsutils ghostscript
-
   fi
 
 fi
+
+apt --yes install nginx php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear
 
 pear install mail mail_mime net_smtp
 
@@ -147,7 +149,6 @@ echo " " >> /etc/nginx/sites-available/default
 # nginx.conf broobe standard configuration
 cat ${SFOLDER}/confs/nginx.conf > /etc/nginx/nginx.conf
 
-
 # TODO: reemplazar lo de abajo por el nuevo script
 # source utils/php_optimizations.sh
 
@@ -159,9 +160,12 @@ cat ${SFOLDER}/confs/php.ini > /etc/php/${PHP_V}/fpm/php.ini
 echo " > Moving fpm configuration file ..." >>$LOG
 cat ${SFOLDER}/confs/${SERVER_MODEL}/www.conf > /etc/php/${PHP_V}/fpm/pool.d/www.conf
 
-################################################################################
-
 ################################## INSTALLERS ##################################
+
+if [ "${CERTBOT}" = true ] ; then
+  ${SFOLDER}/utils/certbot_installer.sh
+
+fi
 if [ "${WP}" = true ] ; then
   ${SFOLDER}/utils/wordpress_installer.sh
 

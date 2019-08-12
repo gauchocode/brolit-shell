@@ -3,6 +3,15 @@
 # Version: 2.9
 #############################################################################
 
+### Checking some things
+if [[ -z "${SFOLDER}" ]]; then
+  echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+  exit 0
+fi
+################################################################################
+
+source ${SFOLDER}/libs/commons.sh
+
 ### VARS
 BK_TYPE="File"
 ERROR=false
@@ -75,6 +84,26 @@ if [ -n "${MySQL_CF}" ]; then
   else
       ERROR=true
       ERROR_TYPE="ERROR: No such directory or file ${BAKWP}/${NOW}/mysql-config-files-${NOW}.tar.bz2"
+      echo ${ERROR_TYPE} >> $LOG
+
+  fi
+fi
+
+### TAR Let's Encrypt Config Files
+if [ -n "${LENCRYPT_CF}" ]; then
+  if $TAR -jcpf ${BAKWP}/${NOW}/letsencrypt-config-files-${NOW}.tar.bz2 --directory=${LENCRYPT_CF} .
+  then
+      echo " > Let's Encrypt Config Files Backup created..." >> $LOG
+      echo " > Uploading TAR to Dropbox ..." >> $LOG
+      ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/letsencrypt-config-files-${NOW}.tar.bz2 ${DROPBOX_FOLDER}/${CONFIG_F}
+      echo " > Trying to delete old backup from Dropbox ..." >> $LOG
+      ${DPU_F}/dropbox_uploader.sh remove ${CONFIG_F}/letsencrypt-config-files-${ONEWEEKAGO}.tar.bz2
+
+      echo -e ${GREEN}" > Let's Encrypt Config Files Backup OK"${ENDCOLOR}
+
+  else
+      ERROR=true
+      ERROR_TYPE="ERROR: No such directory or file ${BAKWP}/${NOW}/letsencrypt-config-files-${NOW}.tar.bz2"
       echo ${ERROR_TYPE} >> $LOG
 
   fi
