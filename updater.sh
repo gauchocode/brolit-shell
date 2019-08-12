@@ -1,6 +1,6 @@
 #!/bin/bash
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 3.0
+# Version: 4.0
 #############################################################################
 
 SCRIPT=$(readlink -f "$0")
@@ -28,7 +28,7 @@ self_update() {
 }
 
 main() {
-   echo "Running updater ..."
+    echo "Running updater ..."
 }
 
 self_update

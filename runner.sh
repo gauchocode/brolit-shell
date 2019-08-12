@@ -28,6 +28,8 @@
 #       7- Optimizaciones de MySQL
 #       8- Mejoras LEMP setup, que requiera menos intervencion tzdata y mysql_secure_installation
 #
+################################################################################
+#
 # TODO: Para release 4.0
 #       1- Permitir varias dropbox apps secundarias configuradas para restaurar desde cualquiera de ellas
 #       2- Soporte nginx 1.17
@@ -41,12 +43,14 @@
 #           https://github.com/thlisym/hetznercloud-py
 #           https://hcloud-python.readthedocs.io/en/latest/
 #
+################################################################################
+#
 # TODO: Release 5.0
 #       1- Web GUI:
 #           https://github.com/bugy/script-server
 #           https://github.com/joewalnes/websocketd
 #
-########################################################################
+################################################################################
 # Style Guide and refs
 #
 # https://google.github.io/styleguide/shell.xml
@@ -55,9 +59,9 @@
 SCRIPT_V="2.9.7"
 
 ### Checking some things...#####################################################
-SFOLDER="`dirname \"$0\"`"
-SFOLDER="`( cd \"$SFOLDER\" && pwd )`"
-if [ -z "$SFOLDER" ] ; then
+SFOLDER="$(dirname \"$0\")"
+SFOLDER="$( (cd \"$SFOLDER\" && pwd))"
+if [ -z "$SFOLDER" ]; then
   # error; the path is not accessible
   exit 1
 fi
@@ -74,35 +78,35 @@ checking_scripts_permissions
 
 VPSNAME="$HOSTNAME"
 
-SITES_BL=".wp-cli,phpmyadmin"                                                   # Folder blacklist
-DB_BL="information_schema,performance_schema,mysql,sys,phpmyadmin"              # Database blacklist
+SITES_BL=".wp-cli,phpmyadmin"                                      # Folder blacklist
+DB_BL="information_schema,performance_schema,mysql,sys,phpmyadmin" # Database blacklist
 
 PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
 
-WSERVER="/etc/nginx"                                                            # Webserver config files location
-MySQL_CF="/etc/mysql"                                                           # MySQL config files location
-PHP_CF="/etc/php/${PHP_V}/fpm"                                                  # PHP config files location
-LENCRYPT_CF="/etc/letsencrypt"                                                  # Let's Encrypt config files location
+WSERVER="/etc/nginx"                          # Webserver config files location
+MySQL_CF="/etc/mysql"                         # MySQL config files location
+PHP_CF="/etc/php/${PHP_V}/fpm"                # PHP config files location
+LENCRYPT_CF="/etc/letsencrypt"                # Let's Encrypt config files location
 
 ### DUPLICITY CONFIG
-DUP_BK=false                                                                    # Duplicity Backups true or false (bool)
-DUP_ROOT="/media/backups/PROJECT_NAME_OR_VPS"                                   # Duplicity Backups destination folder
-DUP_SRC_BK="/var/www/"                                                          # Source of Directories to Backup
-DUP_FOLDERS="FOLDER1,FOLDER2"                                                   # Folders to Backup
-DUP_BK_FULL_FREQ="7D"                                                           # Create a new full backup every ...
-DUP_BK_FULL_LIFE="14D"                                                          # Delete any backup older than this
+DUP_BK=false                                  # Duplicity Backups true or false (bool)
+DUP_ROOT="/media/backups/PROJECT_NAME_OR_VPS" # Duplicity Backups destination folder
+DUP_SRC_BK="/var/www/"                        # Source of Directories to Backup
+DUP_FOLDERS="FOLDER1,FOLDER2"                 # Folders to Backup
+DUP_BK_FULL_FREQ="7D"                         # Create a new full backup every ...
+DUP_BK_FULL_LIFE="14D"                        # Delete any backup older than this
 
 ### PACKAGES TO WATCH
 # TODO: poder elejir desde las opciones version de php y motor de base de datos
 PACKAGES=(linux-firmware dpkg perl nginx php${PHP_V}-fpm mysql-server curl openssl)
 
-MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+')                                    # Main partition
+MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+') # Main partition
 
-DROPBOX_FOLDER="/"                                                              # Dropbox Folder Backup
-DPU_F="${SFOLDER}/utils/dropbox-uploader"                                       # Dropbox Uploader Directory
-DB_BK=true                                                                      # Include database backup?
-DEL_UP=true                                                                     # Delete backup files after upload?
-BAKWP="${SFOLDER}/tmp"                                                          # Temp folder to store Backups
+DROPBOX_FOLDER="/"                        # Dropbox Folder Backup
+DPU_F="${SFOLDER}/utils/dropbox-uploader" # Dropbox Uploader Directory
+DB_BK=true                                # Include database backup?
+DEL_UP=true                               # Delete backup files after upload?
+BAKWP="${SFOLDER}/tmp"                    # Temp folder to store Backups
 
 MHOST="localhost"
 MUSER="root"
@@ -121,7 +125,7 @@ else
 fi
 
 ### Broobe Utils config file
-if test -f /root/.broobe-utils-options ; then
+if test -f /root/.broobe-utils-options; then
   source /root/.broobe-utils-options
 fi
 
@@ -146,12 +150,12 @@ if [ -t 1 ]; then
   if [[ -z "${MPASS}" || -z "${SMTP_U}" || -z "${SMTP_P}" || -z "${SMTP_TLS}" || -z "${SMTP_PORT}" || -z "${SMTP_SERVER}" || -z "${SMTP_P}" || -z "${MAILA}" || -z "${SITES}" ]]; then
 
     FIRST_RUN_OPTIONS="01 LEMP_SETUP 02 CONFIGURE_SCRIPT"
-    CHOSEN_FR_OPTION=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 `for x in ${FIRST_RUN_OPTIONS}; do echo "$x"; done` 3>&1 1>&2 2>&3)
+    CHOSEN_FR_OPTION=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 $(for x in ${FIRST_RUN_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
       if [[ ${CHOSEN_FR_OPTION} == *"01"* ]]; then
-        source ${SFOLDER}/lemp_setup.sh;
+        source ${SFOLDER}/lemp_setup.sh
         exit 1
 
       else
@@ -160,10 +164,10 @@ if [ -t 1 ]; then
           exitstatus=$?
           if [ $exitstatus = 0 ]; then
             #TODO: testear esto
-            until $MYSQL -u $MUSER -p$MPASS  -e ";" ; do
+            until $MYSQL -u $MUSER -p$MPASS -e ";"; do
               read -s -p "Can't connect to MySQL, please re-enter $MUSER password: " MPASS
             done
-            echo "MPASS="${MPASS} >> /root/.broobe-utils-options
+            echo "MPASS="${MPASS} >>/root/.broobe-utils-options
           else
             exit 1
           fi
@@ -172,7 +176,7 @@ if [ -t 1 ]; then
           SMTP_SERVER=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server" 10 60 3>&1 1>&2 2>&3)
           exitstatus=$?
           if [ $exitstatus = 0 ]; then
-            echo "SMTP_SERVER="${SMTP_SERVER} >> /root/.broobe-utils-options
+            echo "SMTP_SERVER="${SMTP_SERVER} >>/root/.broobe-utils-options
           else
             exit 1
           fi
@@ -181,7 +185,7 @@ if [ -t 1 ]; then
           SMTP_PORT=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server Port" 10 60 3>&1 1>&2 2>&3)
           exitstatus=$?
           if [ $exitstatus = 0 ]; then
-            echo "SMTP_PORT="${SMTP_PORT} >> /root/.broobe-utils-options
+            echo "SMTP_PORT="${SMTP_PORT} >>/root/.broobe-utils-options
           else
             exit 1
           fi
@@ -190,7 +194,7 @@ if [ -t 1 ]; then
           SMTP_TLS=$(whiptail --title "SMTP TLS" --inputbox "SMTP yes or no:" 10 60 3>&1 1>&2 2>&3)
           exitstatus=$?
           if [ $exitstatus = 0 ]; then
-            echo "SMTP_TLS="${SMTP_TLS} >> /root/.broobe-utils-options
+            echo "SMTP_TLS="${SMTP_TLS} >>/root/.broobe-utils-options
           else
             exit 1
           fi
@@ -199,7 +203,7 @@ if [ -t 1 ]; then
           SMTP_U=$(whiptail --title "SMTP User" --inputbox "Please insert the SMTP user" 10 60 3>&1 1>&2 2>&3)
           exitstatus=$?
           if [ $exitstatus = 0 ]; then
-            echo "SMTP_U="${SMTP_U} >> /root/.broobe-utils-options
+            echo "SMTP_U="${SMTP_U} >>/root/.broobe-utils-options
           else
             exit 1
           fi
@@ -208,7 +212,7 @@ if [ -t 1 ]; then
           SMTP_P=$(whiptail --title "SMTP Password" --inputbox "Please insert the SMTP user password" 10 60 3>&1 1>&2 2>&3)
           exitstatus=$?
           if [ $exitstatus = 0 ]; then
-            echo "SMTP_P="${SMTP_P} >> /root/.broobe-utils-options
+            echo "SMTP_P="${SMTP_P} >>/root/.broobe-utils-options
           else
             exit 1
           fi
@@ -217,7 +221,7 @@ if [ -t 1 ]; then
           MAILA=$(whiptail --title "Notification Email" --inputbox "Insert the email where you want to receive notifications." 10 60 3>&1 1>&2 2>&3)
           exitstatus=$?
           if [ $exitstatus = 0 ]; then
-            echo "MAILA="${MAILA} >> /root/.broobe-utils-options
+            echo "MAILA="${MAILA} >>/root/.broobe-utils-options
           else
             exit 1
           fi
@@ -226,7 +230,7 @@ if [ -t 1 ]; then
           SITES=$(whiptail --title "Websites Root Directory" --inputbox "Insert the path where websites are stored. Ex: /var/www or /usr/share/nginx" 10 60 3>&1 1>&2 2>&3)
           exitstatus=$?
           if [ $exitstatus = 0 ]; then
-            echo "SITES="${SITES} >> /root/.broobe-utils-options
+            echo "SITES="${SITES} >>/root/.broobe-utils-options
           else
             exit 1
           fi
@@ -237,7 +241,7 @@ if [ -t 1 ]; then
 else
   #cron
   if [[ -z "${MPASS}" || -z "${SMTP_U}" || -z "${SMTP_P}" || -z "${SMTP_TLS}" || -z "${SMTP_PORT}" || -z "${SMTP_SERVER}" || -z "${SMTP_P}" || -z "${MAILA}" || -z "${SITES}" ]]; then
-    echo "Some required VARS need to be configured, please run de script manually to configure them." >> $LOG
+    echo "Some required VARS need to be configured, please run de script manually to configure them." >>$LOG
     exit 1
 
   fi
@@ -247,35 +251,32 @@ fi
 ### Log Start
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 PATH_LOG="${SFOLDER}/logs"
-if [ ! -d "${SFOLDER}/logs" ]
-then
-    echo " > Folder ${SFOLDER}/logs doesn't exist. Creating now ..."
-    mkdir ${SFOLDER}/logs
-    echo " > Folder ${SFOLDER}/logs created ..."
+if [ ! -d "${SFOLDER}/logs" ]; then
+  echo " > Folder ${SFOLDER}/logs doesn't exist. Creating now ..."
+  mkdir ${SFOLDER}/logs
+  echo " > Folder ${SFOLDER}/logs created ..."
 fi
 
 LOG_NAME=log_back_${TIMESTAMP}.log
 LOG=${PATH_LOG}/${LOG_NAME}
 
-find ${PATH_LOG} -name "*.log"  -type f -mtime +7 -print -delete >> $LOG
-echo "Backup: Script Start -- $(date +%Y%m%d_%H%M)" >> $LOG
+find ${PATH_LOG} -name "*.log" -type f -mtime +7 -print -delete >>$LOG
+echo "Backup: Script Start -- $(date +%Y%m%d_%H%M)" >>$LOG
 
 ### Disk Usage
-DISK_U=$( df -h | grep "${MAIN_VOL}" | awk {'print $5'} )
-echo " > Disk usage: ${DISK_U} ..." >> ${LOG}
+DISK_U=$(df -h | grep "${MAIN_VOL}" | awk {'print $5'})
+echo " > Disk usage: ${DISK_U} ..." >>${LOG}
 
 ### Creating temporary folders
-if [ ! -d "${BAKWP}" ]
-then
-    echo " > Folder ${BAKWP} doesn't exist. Creating now ..." >> $LOG
-    mkdir ${BAKWP}
-    echo " > Folder ${BAKWP} created ..." >> $LOG
+if [ ! -d "${BAKWP}" ]; then
+  echo " > Folder ${BAKWP} doesn't exist. Creating now ..." >>$LOG
+  mkdir ${BAKWP}
+  echo " > Folder ${BAKWP} created ..." >>$LOG
 fi
-if [ ! -d "${BAKWP}/${NOW}" ]
-then
-    echo " > Folder ${BAKWP}/${NOW} doesn't exist. Creating now ..." >> $LOG
-    mkdir ${BAKWP}/${NOW}
-    echo " > Folder ${BAKWP}/${NOW} created ..." >> $LOG
+if [ ! -d "${BAKWP}/${NOW}" ]; then
+  echo " > Folder ${BAKWP}/${NOW} doesn't exist. Creating now ..." >>$LOG
+  mkdir ${BAKWP}/${NOW}
+  echo " > Folder ${BAKWP}/${NOW} created ..." >>$LOG
 fi
 
 ### Configure Server Mail Part
@@ -293,12 +294,12 @@ SRV_BODY=${SRV_BODYOPEN}${SRV_CONTENT}${SRV_BODYCLOSE}
 BODY_SRV=$SRV_HEADER$SRV_BODY
 
 ### Configure PKGS Mail Part
-if [ "${OUTDATED}" = true ] ; then
-	PKG_COLOR='red'
-	PKG_STATUS='OUTDATED'
+if [ "${OUTDATED}" = true ]; then
+  PKG_COLOR='red'
+  PKG_STATUS='OUTDATED'
 else
-	PKG_COLOR='#1DC6DF'
-	PKG_STATUS='OK'
+  PKG_COLOR='#1DC6DF'
+  PKG_STATUS='OK'
 fi
 
 PKG_HEADEROPEN1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
@@ -321,7 +322,7 @@ if [ -t 1 ]; then
 
   ### Running from terminal
   RUNNER_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP 03 WORDPRESS_INSTALLER 04 BACKUP_RESTORE 05 HOSTING_TO_VPS 06 SERVER_OPTIMIZATIONS 07 INSTALLERS_AND_CONFIGS 08 REPLACE_WP_URL 09 WPCLI_HELPER 10 CERTBOT_MANAGER 11 BENCHMARKS 12 GTMETRIX_TEST 13 BLACKLIST_CHECKER 14 RESET_SCRIPT_OPTIONS"
-  CHOSEN_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 `for x in ${RUNNER_OPTIONS}; do echo "$x"; done` 3>&1 1>&2 2>&3)
+  CHOSEN_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 $(for x in ${RUNNER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
@@ -330,133 +331,143 @@ if [ -t 1 ]; then
         echo -e ${YELLOW}"> Do you really want to run the database backup?"${ENDCOLOR}
         read -p "Please type 'y' or 'n'" yn
         case $yn in
-            [Yy]* )
+        [Yy]*)
 
-  					source ${SFOLDER}/mysql_backup.sh;
+          source ${SFOLDER}/mysql_backup.sh
 
-  					DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
-  					DB_MAIL_VAR=$(<${DB_MAIL})
-  					HTMLOPEN='<html><body>'
-  					HTMLCLOSE='</body></html>'
+          DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
+          DB_MAIL_VAR=$(<${DB_MAIL})
+          HTMLOPEN='<html><body>'
+          HTMLCLOSE='</body></html>'
 
-            echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
+          echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
 
-  					sendEmail -f ${SMTP_U} -t ${MAILA} -u "${VPSNAME} - Database Backup - [${NOWDISPLAY} - ${STATUS_D}]" -o message-content-type=html -m "${HTMLOPEN} ${DB_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P};
+          sendEmail -f ${SMTP_U} -t ${MAILA} -u "${VPSNAME} - Database Backup - [${NOWDISPLAY} - ${STATUS_D}]" -o message-content-type=html -m "${HTMLOPEN} ${DB_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}
 
-  					break;;
-            [Nn]* )
-  					echo -e ${RED}"Aborting database backup script ..."${ENDCOLOR};
-  					break;;
-            * ) echo "Please answer yes or no.";;
+          break
+          ;;
+        [Nn]*)
+          echo -e ${RED}"Aborting database backup script ..."${ENDCOLOR}
+          break
+          ;;
+        *) echo "Please answer yes or no." ;;
         esac
       done
     fi
     if [[ ${CHOSEN_TYPE} == *"02"* ]]; then
       while true; do
-          echo -e ${YELLOW}"> Do you really want to run the file backup?"${ENDCOLOR}
-          read -p "Please type 'y' or 'n'" yn
-          case $yn in
-              [Yy]* )
-    					source ${SFOLDER}/files_backup.sh;
-    					FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
-    					FILE_MAIL_VAR=$(<$FILE_MAIL)
-    					HTMLOPEN='<html><body>'
-    					HTMLCLOSE='</body></html>'
-    					sendEmail -f ${SMTP_U} -t ${MAILA} -u "${STATUS_ICON_F} ${VPSNAME} - Files Backup [${NOWDISPLAY}]" -o message-content-type=html -m "${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${FILE_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P};
-    					break;;
-              [Nn]* )
-    					echo -e ${RED}"Aborting file backup script ..."${ENDCOLOR};
-    					break;;
-              * ) echo " > Please answer yes or no.";;
-          esac
+        echo -e ${YELLOW}"> Do you really want to run the file backup?"${ENDCOLOR}
+        read -p "Please type 'y' or 'n'" yn
+        case $yn in
+        [Yy]*)
+          source ${SFOLDER}/files_backup.sh
+          FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
+          FILE_MAIL_VAR=$(<$FILE_MAIL)
+          HTMLOPEN='<html><body>'
+          HTMLCLOSE='</body></html>'
+          sendEmail -f ${SMTP_U} -t ${MAILA} -u "${STATUS_ICON_F} ${VPSNAME} - Files Backup [${NOWDISPLAY}]" -o message-content-type=html -m "${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${FILE_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}
+          break
+          ;;
+        [Nn]*)
+          echo -e ${RED}"Aborting file backup script ..."${ENDCOLOR}
+          break
+          ;;
+        *) echo " > Please answer yes or no." ;;
+        esac
       done
     fi
     if [[ ${CHOSEN_TYPE} == *"03"* ]]; then
-    	source ${SFOLDER}/utils/wordpress_installer.sh;
+      source ${SFOLDER}/utils/wordpress_installer.sh
 
     fi
     if [[ ${CHOSEN_TYPE} == *"04"* ]]; then
-    	source ${SFOLDER}/restore_from_backup.sh;
+      source ${SFOLDER}/restore_from_backup.sh
     fi
     if [[ ${CHOSEN_TYPE} == *"05"* ]]; then
-    	while true; do
-          echo -e ${YELLOW}"> Do you really want to run the server migration script?"${ENDCOLOR}
-          read -p "Please type 'y' or 'n'" yn
-    			case $yn in
-    					[Yy]* )
-    					source ${SFOLDER}/utils/wordpress_migration_from_URL.sh;
-    					break;;
-    					[Nn]* )
-    					echo -e ${RED}"Aborting server migration script ..."${ENDCOLOR};
-    					break;;
-    					* ) echo " > Please answer yes or no.";;
-    			esac
-    	done
+      while true; do
+        echo -e ${YELLOW}"> Do you really want to run the server migration script?"${ENDCOLOR}
+        read -p "Please type 'y' or 'n'" yn
+        case $yn in
+        [Yy]*)
+          source ${SFOLDER}/utils/wordpress_migration_from_URL.sh
+          break
+          ;;
+        [Nn]*)
+          echo -e ${RED}"Aborting server migration script ..."${ENDCOLOR}
+          break
+          ;;
+        *) echo " > Please answer yes or no." ;;
+        esac
+      done
     fi
     if [[ ${CHOSEN_TYPE} == *"06"* ]]; then
       while true; do
-          echo -e ${YELLOW}"> Do you really want to run the optimization script?"${ENDCOLOR}
-          read -p "Please type 'y' or 'n'" yn
-    			case $yn in
-    					[Yy]* )
-    					source ${SFOLDER}/server_and_image_optimizations.sh;
-    					break;;
-    					[Nn]* )
-              echo -e ${RED}"Aborting optimization script ..."${ENDCOLOR};
-    					break;;
-    					* ) echo " > Please answer yes or no.";;
-    			esac
-    	done
+        echo -e ${YELLOW}"> Do you really want to run the optimization script?"${ENDCOLOR}
+        read -p "Please type 'y' or 'n'" yn
+        case $yn in
+        [Yy]*)
+          source ${SFOLDER}/server_and_image_optimizations.sh
+          break
+          ;;
+        [Nn]*)
+          echo -e ${RED}"Aborting optimization script ..."${ENDCOLOR}
+          break
+          ;;
+        *) echo " > Please answer yes or no." ;;
+        esac
+      done
 
     fi
     if [[ ${CHOSEN_TYPE} == *"07"* ]]; then
-      source ${SFOLDER}/installers_and_configurators.sh;
+      source ${SFOLDER}/installers_and_configurators.sh
 
     fi
     if [[ ${CHOSEN_TYPE} == *"08"* ]]; then
-      source ${SFOLDER}/utils/replace_url_on_wordpress_db.sh;
+      source ${SFOLDER}/utils/replace_url_on_wordpress_db.sh
 
     fi
     if [[ ${CHOSEN_TYPE} == *"09"* ]]; then
-      source ${SFOLDER}/utils/wordpress_wpcli_helper.sh;
+      source ${SFOLDER}/utils/wordpress_wpcli_helper.sh
 
     fi
     if [[ ${CHOSEN_TYPE} == *"10"* ]]; then
-      source ${SFOLDER}/utils/certbot_manager.sh;
+      source ${SFOLDER}/utils/certbot_manager.sh
 
     fi
     if [[ ${CHOSEN_TYPE} == *"11"* ]]; then
-      source ${SFOLDER}/utils/bench_scripts.sh;
+      source ${SFOLDER}/utils/bench_scripts.sh
 
     fi
     if [[ ${CHOSEN_TYPE} == *"12"* ]]; then
-          URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
-          exitstatus=$?
-          if [ ${exitstatus} = 0 ]; then
-            source ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh gtmetrix ${URL_TO_TEST};
-          fi
+      URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ ${exitstatus} = 0 ]; then
+        source ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh gtmetrix ${URL_TO_TEST}
+      fi
     fi
     if [[ ${CHOSEN_TYPE} == *"13"* ]]; then
-          IP_TO_TEST=$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)
-          exitstatus=$?
-          if [ ${exitstatus} = 0 ]; then
-            source ${SFOLDER}/utils/blacklist-checker/bl.sh ${IP_TO_TEST};
-          fi
+      IP_TO_TEST=$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ ${exitstatus} = 0 ]; then
+        source ${SFOLDER}/utils/blacklist-checker/bl.sh ${IP_TO_TEST}
+      fi
     fi
     if [[ ${CHOSEN_TYPE} == *"14"* ]]; then
       while true; do
-          echo -e ${YELLOW}" > Do you really want to reset the script configuration?"${ENDCOLOR}
-          read -p "Please type 'y' or 'n'" yn
-          case $yn in
-              [Yy]* )
-              rm /root/.broobe-utils-options
-              rm -fr ${DPU_CONFIG_FILE}
-              break;;
-              [Nn]* )
-              echo -e ${RED}"Aborting ..."${ENDCOLOR};
-              break;;
-              * ) echo " > Please answer yes or no.";;
-          esac
+        echo -e ${YELLOW}" > Do you really want to reset the script configuration?"${ENDCOLOR}
+        read -p "Please type 'y' or 'n'" yn
+        case $yn in
+        [Yy]*)
+          rm /root/.broobe-utils-options
+          rm -fr ${DPU_CONFIG_FILE}
+          break
+          ;;
+        [Nn]*)
+          echo -e ${RED}"Aborting ..."${ENDCOLOR}
+          break
+          ;;
+        *) echo " > Please answer yes or no." ;;
+        esac
       done
     fi
 
@@ -467,26 +478,30 @@ if [ -t 1 ]; then
 
 else
   ### Running from cron
-  echo " > Running from cron ..." >> ${LOG}
-
-  echo " > Running apt update ..." >> ${LOG}
+  echo " > Running from cron ..." >>${LOG}
+  echo " > Running apt update ..." >>${LOG}
   apt update
 
   ### Compare package versions
+
+  # TODO: habria que separar la logica del armado del mail, del que calcula
+  # los paquetes sin actualizar
+  #
+  #compare_package_versions
   OUTDATED=false
-  echo "" > ${BAKWP}/pkg-${NOW}.mail
+  echo "" >${BAKWP}/pkg-${NOW}.mail
   for pk in ${PACKAGES[@]}; do
-  	PK_VI=$(apt-cache policy ${pk} | grep Installed | cut -d ':' -f 2)
-  	PK_VC=$(apt-cache policy ${pk} | grep Candidate | cut -d ':' -f 2)
-  	if [ ${PK_VI} != ${PK_VC} ]; then
-  		OUTDATED=true
-  		echo " > ${pk} ${PK_VI} -> ${PK_VC} <br />" >> ${BAKWP}/pkg-${NOW}.mail
-  	fi
+    PK_VI=$(apt-cache policy ${pk} | grep Installed | cut -d ':' -f 2)
+    PK_VC=$(apt-cache policy ${pk} | grep Candidate | cut -d ':' -f 2)
+    if [ ${PK_VI} != ${PK_VC} ]; then
+      OUTDATED=true
+      echo " > ${pk} ${PK_VI} -> ${PK_VC} <br />" >>${BAKWP}/pkg-${NOW}.mail
+    fi
   done
 
-  ${SFOLDER}/mysql_backup.sh;
-  ${SFOLDER}/files_backup.sh;
-  ${SFOLDER}/server_and_image_optimizations.sh;
+  ${SFOLDER}/mysql_backup.sh
+  ${SFOLDER}/files_backup.sh
+  ${SFOLDER}/server_and_image_optimizations.sh
 
   DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
   DB_MAIL_VAR=$(<${DB_MAIL})
@@ -501,7 +516,7 @@ else
     STATUS="ERROR"
     STATUS_ICON="⛔"
   else
-    if [ "${OUTDATED}" = true ] ; then
+    if [ "${OUTDATED}" = true ]; then
       STATUS="WARNING"
       STATUS_ICON="⚠"
     else
@@ -510,17 +525,18 @@ else
     fi
   fi
   echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
-  sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${STATUS_ICON} ${VPSNAME} - Complete Backup - [${NOWDISPLAY}]" -o message-content-type=html -m "${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P};
+  sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${STATUS_ICON} ${VPSNAME} - Complete Backup - [${NOWDISPLAY}]" -o message-content-type=html -m "${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}
 
 fi
 
-echo " > Removing temp files ..." >> $LOG
+echo " > Removing temp files ..." >>$LOG
 echo -e ${YELLOW}" > Removing temp files ..."${ENDCOLOR}
 
+# TODO: no siempre se crean estos archivos, entonces suele tirar un error, mejorar
 rm ${PKG_MAIL} ${DB_MAIL} ${FILE_MAIL}
 
-echo " > DONE" >> $LOG
+echo " > DONE" >>$LOG
 echo -e ${GREEN}" > DONE"${ENDCOLOR}
 
 ### Log End
-echo "Backup: Script End -- $(date +%Y%m%d_%H%M)" >> $LOG
+echo "Backup: Script End -- $(date +%Y%m%d_%H%M)" >>$LOG
