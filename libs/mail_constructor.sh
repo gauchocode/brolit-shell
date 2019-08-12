@@ -1,7 +1,5 @@
 #!/bin/bash
-#
 # Autor: broobe. web + mobile development - https://broobe.com
-# Script Name: Broobe Utils Scripts
 # Version: 2.9.7
 ################################################################################
 
