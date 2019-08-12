@@ -7,6 +7,11 @@
 
 # TODO: Primero correr sin los parametros -mtime -7 y luego setear un option
 # para correrlo solo en archivos modificados los ultimos -7 días
+#
+# Ref. de optimizacion de imagenes:
+# https://github.com/centminmod/optimise-images/blob/master/examples/examples-optimise-webp-nginx-300417.md
+# https://centminmod.com/webp/
+# https://ayudawp.com/usar-archivos-webp-wordpress-mejorar-los-tiempos-carga
 
 SCRIPT_V="2.9.7"
 

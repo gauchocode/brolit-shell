@@ -7,24 +7,50 @@
 #
 # TODO: Para release 3.0
 #       1- VAR conf para CloudFlare api -- DONE pero falta TESTING
-#       2- VAR conf para Dropbox (pedirlo al inicio y no por el dropbox uploader) -- DONE
-#       3- Terminar certbot_manager.sh
-#       4- Refactor de menú principal del runner.sh (ojo que si al lemp le activamos netdata o monit, necesita db pass de root)
-#       5- VAR conf para el ID de Telegram (quizá habría que guiar todo el proceso)
-#       6- Terminar php_optimizations deprecando el modelo de Hetzner e integrandolo al Lemp Installer
-#       7- Permitir restore del backup con Duplicity
-#       8- Backup y Restore de archivos de Let's Encrypt (/etc/letsencrypt/)
+#       2- Terminar certbot_manager.sh e incluir soporte a Cloudflare
+#       3- Refactor de menú principal del runner.sh (ojo que si al lemp le activamos netdata o monit, necesita db pass de root)
+#       4- VAR conf para el ID de Telegram (quizá habría que guiar todo el proceso)
+#       5- Terminar php_optimizations deprecando el modelo de Hetzner e integrandolo al Lemp Installer
+#       6- Permitir restore del backup con Duplicity
+#       7- Backup de archivos de Let's Encrypt (/etc/letsencrypt/) -- DONE
+#       8- Restore de archivos de configuración
+#       9- Checkear webserver instalado, si es apache u otro, aclarar que hay soporte parcial
 #
 ################################################################################
 #
-# TODO: Para release 3.2
+# TODO: Para release 3.5
 #       1- Repensar el server_and_image_optimizations.sh
 #       2- Terminar el wordpress_wpcli_helper.sh
 #       3- Terminar updater.sh
-#       4- phpmyadmin installer
-#       5- Optimizaciones de MySQL (instalacion de MySQL 8? https://phoenixnap.com/kb/how-to-install-mysql-on-ubuntu-18-04)
-#       6- Corregir el bug que hay en el restore_from_backup.sh con los dominios con guion como (bes-ebike.com)
-#       7- Mejorar LEMP setup, para que requiera menos intervencion humana (tzdata y mysql_secure_installation)
+#       4- php installer (soporte multiples versiones php)
+#       5- nginx installer (opcion de instalar de repo y configurar modulos)
+#       6- mysql installer (mysql/mariadb estandard o por repo)
+#       7- Optimizaciones de MySQL
+#       8- Mejoras LEMP setup, que requiera menos intervencion tzdata y mysql_secure_installation
+#
+# TODO: Para release 4.0
+#       1- Permitir varias dropbox apps secundarias configuradas para restaurar desde cualquiera de ellas
+#       2- Soporte nginx 1.17
+#       3- Soporte apache2
+#       4- Mejoras en notificaciones via email
+#       5- Opción de instalar modulo brotli en nginx
+#       6- Opción de cambiar puerto ssh en vps
+#       7- Hetzner cloud cli?
+#           https://github.com/hetznercloud/cli
+#           https://github.com/thabbs/hetzner-cloud-cli-sh
+#           https://github.com/thlisym/hetznercloud-py
+#           https://hcloud-python.readthedocs.io/en/latest/
+#
+# TODO: Release 5.0
+#       1- Web GUI:
+#           https://github.com/bugy/script-server
+#           https://github.com/joewalnes/websocketd
+#
+########################################################################
+# Style Guide and refs
+#
+# https://google.github.io/styleguide/shell.xml
+# https://github.com/niieani/bash-oo-framework
 #
 SCRIPT_V="2.9.7"
 
@@ -42,43 +68,21 @@ source ${SFOLDER}/libs/commons.sh
 check_root
 check_distro
 
-### chmod
-chmod +x ${SFOLDER}/mysql_backup.sh
-chmod +x ${SFOLDER}/files_backup.sh
-chmod +x ${SFOLDER}/lemp_setup.sh
-chmod +x ${SFOLDER}/restore_from_backup.sh
-chmod +x ${SFOLDER}/server_and_image_optimizations.sh
-chmod +x ${SFOLDER}/installers_and_configurators.sh;
-chmod +x ${SFOLDER}/utils/bench_scripts.sh
-chmod +x ${SFOLDER}/utils/certbot_manager.sh
-chmod +x ${SFOLDER}/utils/cloudflare_update_IP.sh
-chmod +x ${SFOLDER}/utils/composer_installer.sh
-chmod +x ${SFOLDER}/utils/netdata_installer.sh
-chmod +x ${SFOLDER}/utils/monit_installer.sh
-chmod +x ${SFOLDER}/utils/cockpit_installer.sh
-chmod +x ${SFOLDER}/utils/php_optimizations.sh
-chmod +x ${SFOLDER}/utils/wordpress_installer.sh
-chmod +x ${SFOLDER}/utils/wordpress_migration_from_URL.sh
-chmod +x ${SFOLDER}/utils/wordpress_wpcli_helper.sh;
-chmod +x ${SFOLDER}/utils/replace_url_on_wordpress_db.sh
-chmod +x ${SFOLDER}/utils/blacklist-checker/bl.sh
-chmod +x ${SFOLDER}/utils/dropbox-uploader/dropbox_uploader.sh
-chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools.sh
-chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh
+checking_scripts_permissions
+
 ################################################################################
 
 VPSNAME="$HOSTNAME"
 
-DPU_F="${SFOLDER}/utils/dropbox-uploader"                                       # Dropbox Uploader Directory
-
 SITES_BL=".wp-cli,phpmyadmin"                                                   # Folder blacklist
-DB_BL="information_schema,performance_schema,mysql,sys"                         # Database blacklist
+DB_BL="information_schema,performance_schema,mysql,sys,phpmyadmin"              # Database blacklist
 
 PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
 
 WSERVER="/etc/nginx"                                                            # Webserver config files location
 MySQL_CF="/etc/mysql"                                                           # MySQL config files location
 PHP_CF="/etc/php/${PHP_V}/fpm"                                                  # PHP config files location
+LENCRYPT_CF="/etc/letsencrypt"                                                  # Let's Encrypt config files location
 
 ### DUPLICITY CONFIG
 DUP_BK=false                                                                    # Duplicity Backups true or false (bool)
@@ -92,11 +96,10 @@ DUP_BK_FULL_LIFE="14D"                                                          
 # TODO: poder elejir desde las opciones version de php y motor de base de datos
 PACKAGES=(linux-firmware dpkg perl nginx php${PHP_V}-fpm mysql-server curl openssl)
 
-#Main partition
-#MAIN_VOL="/dev/sda1"
-MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+')
+MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+')                                    # Main partition
 
 DROPBOX_FOLDER="/"                                                              # Dropbox Folder Backup
+DPU_F="${SFOLDER}/utils/dropbox-uploader"                                       # Dropbox Uploader Directory
 DB_BK=true                                                                      # Include database backup?
 DEL_UP=true                                                                     # Delete backup files after upload?
 BAKWP="${SFOLDER}/tmp"                                                          # Temp folder to store Backups
@@ -113,46 +116,19 @@ ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
 DPU_CONFIG_FILE=~/.dropbox_uploader
 if [[ -e ${DPU_CONFIG_FILE} ]]; then
   source ${DPU_CONFIG_FILE}
-
 else
-
-  OAUTH_ACCESS_TOKEN_STRING+= "\n . \n"
-  OAUTH_ACCESS_TOKEN_STRING+=" 1) Log in: dropbox.com/developers/apps/create\n"
-  OAUTH_ACCESS_TOKEN_STRING+=" 2) Click on \"Create App\" and select \"Dropbox API\".\n"
-  OAUTH_ACCESS_TOKEN_STRING+=" 3) Choose the type of access you need.\n"
-  OAUTH_ACCESS_TOKEN_STRING+=" 4) Enter the \"App Name\".\n"
-  OAUTH_ACCESS_TOKEN_STRING+=" 5) Click on the \"Create App\" button.\n"
-  OAUTH_ACCESS_TOKEN_STRING+=" 6) Click on the Generate button.\n"
-  OAUTH_ACCESS_TOKEN_STRING+=" 7) Copy and paste the new access token here:\n\n"
-
-  OAUTH_ACCESS_TOKEN=$(whiptail --title "Dropbox Uploader Configuration" --inputbox "${OAUTH_ACCESS_TOKEN_STRING}" 15 60 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-    echo "OAUTH_ACCESS_TOKEN=$OAUTH_ACCESS_TOKEN" > ${DPU_CONFIG_FILE}
-    echo -e ${GREEN}" > The configuration has been saved! ..."${ENDCOLOR}
-
-  else
-    exit 1
-
-  fi
-
+  generate_dropbox_config
 fi
+
 ### Broobe Utils config file
 if test -f /root/.broobe-utils-options ; then
   source /root/.broobe-utils-options
 fi
 
-### Check if sendemail is installed
-SENDEMAIL="$(which sendemail)"
-if [ ! -x "${SENDEMAIL}" ]; then
-	apt install sendemail libio-socket-ssl-perl
-fi
+### Checking required packages to run
+check_packages_required
 
-### Check if pv is installed
-PV="$(which pv)"
-if [ ! -x "${PV}" ]; then
-	apt install pv
-fi
+IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
 
 ### MySQL
 MYSQL="$(which mysql)"
@@ -160,13 +136,6 @@ MYSQLDUMP="$(which mysqldump)"
 
 ### TAR
 TAR="$(which tar)"
-
-### Get server IPs
-DIG="$(which dig)"
-if [ ! -x "${DIG}" ]; then
-	apt-get install dnsutils
-fi
-IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
 
 ### EXPORT VARS
 export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL DB_BL WSERVER PHP_CF MHOST MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U DEL_UP ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR auth_email auth_key

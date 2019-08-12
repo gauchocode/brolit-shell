@@ -31,9 +31,6 @@ if [[ -z "${SFOLDER}" ]]; then
 fi
 ################################################################################
 
-### Folders Setup
-FOLDER_TO_INSTALL="/var/www"
-
 # Installation types
 INSTALLATION_TYPES="CLEAN_INSTALL COPY_FROM_PROJECT"
 
@@ -41,15 +38,26 @@ INSTALLATION_TYPE=$(whiptail --title "INSTALLATION TYPE" --menu "Chose an Instal
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
 
+  folder_to_install_sites
+
   if [[ ${INSTALLATION_TYPE} == *"COPY"* ]]; then
 
-    COPY_PROJECT=$(whiptail --title "Project to Copy" --inputbox "Insert the domain of the project you want to copy. Example: dev.broobe.com" 10 60 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [ $exitstatus = 0 ]; then
-      echo "Setting COPY_PROJECT="${COPY_PROJECT} >> $LOG
-    else
-      exit 1
-    fi
+    #COPY_PROJECT=$(whiptail --title "Project to Copy" --inputbox "Insert the domain of the project you want to copy. Example: dev.broobe.com" 10 60 3>&1 1>&2 2>&3)
+    #exitstatus=$?
+    #if [ $exitstatus = 0 ]; then
+    #  echo "Setting COPY_PROJECT="${COPY_PROJECT} >> $LOG
+    #else
+    #  exit 1
+    #fi
+
+    startdir=${FOLDER_TO_INSTALL}
+    menutitle="Site Selection Menu"
+    Directorybrowser "$menutitle" "$startdir"
+    COPY_PROJECT_PATH=$filepath"/"$filename
+    echo "Setting COPY_PROJECT_PATH="${COPY_PROJECT_PATH}
+
+    COPY_PROJECT=$(basename $COPY_PROJECT_PATH)
+    echo "Setting COPY_PROJECT="${COPY_PROJECT}
 
     DOMAIN=$(whiptail --title "Domain" --inputbox "Insert the domain of the Project. Example: landing.broobe.com" 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
@@ -79,7 +87,7 @@ if [ $exitstatus = 0 ]; then
       exit 1
     fi
 
-    ChooseProjectState
+    choose_project_state
 
     echo "Trying to make a copy of ${COPY_PROJECT} ..." >> $LOG
     echo -e ${YELLOW}"Trying to make a copy of ${COPY_PROJECT} ..."${ENDCOLOR}
@@ -106,7 +114,7 @@ if [ $exitstatus = 0 ]; then
         if [ $exitstatus = 0 ]; then
           echo "Setting PROJECT_NAME="${PROJECT_NAME}
 
-          ChooseProjectState
+          choose_project_state
 
         else
           exit 1
@@ -127,100 +135,19 @@ if [ $exitstatus = 0 ]; then
 
     fi
 
-    echo "Trying to make a clean install of Wordpress ..." >> $LOG
-    echo -e ${YELLOW}"Trying to make a clean install of Wordpress ..."${ENDCOLOR}
-    cd ${FOLDER_TO_INSTALL}
-    curl -O https://wordpress.org/latest.tar.gz
-    tar -xzxf latest.tar.gz
-    rm latest.tar.gz
-    mv wordpress ${DOMAIN}
-    cd ${DOMAIN}
-    cp wp-config-sample.php ${FOLDER_TO_INSTALL}/${DOMAIN}/wp-config.php
-    rm ${FOLDER_TO_INSTALL}/${DOMAIN}/wp-config-sample.php
+    wp_download_wordpress
 
   fi
 
-  echo "Changing folder owner to www-data ...">> $LOG
-  echo -e ${YELLOW}"Changing folder owner to www-data ..."${ENDCOLOR}
-
-  chown -R www-data:www-data ${FOLDER_TO_INSTALL}/${DOMAIN}
-  find ${FOLDER_TO_INSTALL}/${DOMAIN} -type d -exec chmod g+s {} \;
-  chmod g+w ${FOLDER_TO_INSTALL}/${DOMAIN}/wp-content
-  chmod -R g+w ${FOLDER_TO_INSTALL}/${DOMAIN}/wp-content/themes
-  chmod -R g+w ${FOLDER_TO_INSTALL}/${DOMAIN}/wp-content/plugins
-
-  echo " > DONE">> $LOG
-  echo -e ${GREEN}" > DONE"${ENDCOLOR}
+  wp_change_ownership
 
   WPCONFIG=${FOLDER_TO_INSTALL}/${DOMAIN}/wp-config.php
 
-  if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${PROJECT_NAME}_user';" | mysql -u ${MUSER} --password=${MPASS} | grep 1 &> /dev/null; then
-
-    DB_PASS=$(openssl rand -hex 12)
-
-    # HELPERS
-    # para cambiar pass de un user existente
-    # ALTER USER '_user'@'localhost' IDENTIFIED BY 'dadsada=';
-    #ALTER USER 'basfpoliuretanos_user'@'localhost' IDENTIFIED BY 'C73eac22f75efefd921c59f!';
-    CREATE USER 'basfpoliuretanos_user'@'localhost' IDENTIFIED BY 'c73eac22f75efefd921c59ff';
-    GRANT ALL PRIVILEGES ON basfpoliuretanos_dev . * TO 'basfpoliuretanos_user'@'localhost';
-    FLUSH PRIVILEGES;
-    # para borrar usuario existente
-    # DROP USER 'basfpoliuretanos_user'@'localhost';
-
-    SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_${PROJECT_STATE};"
-    SQL2="CREATE USER '${PROJECT_NAME}_user'@'localhost' IDENTIFIED BY '${DB_PASS}';"
-    SQL3="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
-    SQL4="FLUSH PRIVILEGES;"
-
-    echo -e ${YELLOW}" > Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS} ..."${ENDCOLOR}
-    mysql -u ${MUSER} --password=${MPASS} -e "${SQL1}${SQL2}${SQL3}${SQL4}"
-
-    echo -e ${GREEN}" > DONE"${ENDCOLOR}
-
-    echo -e ${YELLOW}" > Changing wp-config.php database parameters ..."${ENDCOLOR}
-    sed -i "/DB_PASSWORD/s/'[^']*'/'${DB_PASS}'/2" ${WPCONFIG}
-
-  else
-      echo " > User: ${PROJECT_NAME}_user already exist. Continue ...">> $LOG
-
-      SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_${PROJECT_STATE};"
-      SQL2="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
-      SQL3="FLUSH PRIVILEGES;"
-
-      echo -e ${YELLOW}" > Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and granting privileges to user: ${PROJECT_NAME}_user ..."${ENDCOLOR}
-      mysql -u ${MUSER} --password=${MPASS} -e "${SQL1}${SQL2}${SQL3}"
-
-      echo -e ${GREEN}" > DONE"${ENDCOLOR}
-
-      echo -e ${YELLOW}" > Changing wp-config.php database parameters ..."${ENDCOLOR}
-      echo -e ${YELLOW}" > Leaving DB_USER untouched ..."${ENDCOLOR}
-
-  fi
-
-  sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" ${WPCONFIG}
-  sed -i "/DB_NAME/s/'[^']*'/'${PROJECT_NAME}_${PROJECT_STATE}'/2" ${WPCONFIG}
-  sed -i "/DB_USER/s/'[^']*'/'${PROJECT_NAME}_user'/2" ${WPCONFIG}
+  # Create database and user
+  wp_database_creation
 
   # Set WP salts
-  # English
-  perl -i -pe'
-    BEGIN {
-      @chars = ("a" .. "z", "A" .. "Z", 0 .. 9);
-      push @chars, split //, "!@#$%^&*()-_ []{}<>~\`+=,.;:/?|";
-      sub salt { join "", map $chars[ rand @chars ], 1 .. 64 }
-    }
-    s/put your unique phrase here/salt()/ge
-  ' ${WPCONFIG}
-  # Spanish
-  perl -i -pe'
-    BEGIN {
-      @chars = ("a" .. "z", "A" .. "Z", 0 .. 9);
-      push @chars, split //, "!@#$%^&*()-_ []{}<>~\`+=,.;:/?|";
-      sub salt { join "", map $chars[ rand @chars ], 1 .. 64 }
-    }
-    s/pon aquí tu frase aleatoria/salt()/ge
-  ' ${WPCONFIG}
+  wp_set_salts
 
   if [[ ${INSTALLATION_TYPE} == *"COPY"* ]]; then
 
@@ -236,12 +163,12 @@ if [ $exitstatus = 0 ]; then
 
     if [ "$?" -eq 0 ]; then
 
-      echo " > Mysqldump OK ...">> $LOG
-      echo -e ${GREEN}" > Mysqldump OK ..."${ENDCOLOR}
+      echo " > mysqldump for ${DB_TOCOPY} OK ...">> $LOG
+      echo -e ${GREEN}" > mysqldump for ${DB_TOCOPY} OK ..."${ENDCOLOR}
       echo " > Trying to restore database ...">> $LOG
       echo -e ${YELLOW}" > Trying to restore database ..."${ENDCOLOR}
 
-      mysql -u ${MUSER} --password=${MPASS} ${PROJECT_NAME}_${PROJECT_STATE} < ${BK_FOLDER}${BK_FILE}
+      $MYSQL -u ${MUSER} --password=${MPASS} ${PROJECT_NAME}_${PROJECT_STATE} < ${BK_FOLDER}${BK_FILE}
 
       TARGET_DB=${PROJECT_NAME}_${PROJECT_STATE}
       ### OJO: heredamos el prefijo de la base copiada y no la reemplazamos.
@@ -257,8 +184,8 @@ if [ $exitstatus = 0 ]; then
 
     else
 
-      echo " > Mysqldump ERROR: $? ...">> $LOG
-      echo -e ${RED}" > Mysqldump ERROR: $? ..."${ENDCOLOR}
+      echo " > mysqldump ERROR: $? ...">> $LOG
+      echo -e ${RED}" > mysqldump ERROR: $? ..."${ENDCOLOR}
       echo -e ${RED}" > Aborting ..."${ENDCOLOR}
       exit 1
 
@@ -275,6 +202,8 @@ if [ $exitstatus = 0 ]; then
   export zone_name record_name
   ${SFOLDER}/utils/cloudflare_update_IP.sh
 
+  # TODO: que pasa si en vez de generarlo a partir de un template de conf de nginx, copio el del proyecto y reemplazo el dominio?
+
   # New site Nginx configuration
   echo " > Trying to generate nginx config for ${DOMAIN} ...">> $LOG
   echo -e ${YELLOW}" > Trying to generate nginx config for ${DOMAIN} ..."${ENDCOLOR}
@@ -288,7 +217,7 @@ if [ $exitstatus = 0 ]; then
   # Restart nginx service
   service nginx reload
 
-  echo " > DONE! ...">> $LOG
+  echo " > DONE">> $LOG
   echo -e ${GREEN}" > DONE! Now you can run the certbot."${ENDCOLOR}
 
   # HTTPS with Certbot

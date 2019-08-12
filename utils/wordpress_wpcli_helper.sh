@@ -1,6 +1,6 @@
 #!/bin/bash
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 2.9
+# Version: 2.9.7
 ################################################################################
 #
 # Ref: https://kinsta.com/blog/wp-cli/
@@ -10,72 +10,20 @@
 #
 # Checkear si es red: https://developer.wordpress.org/cli/commands/core/is-installed/
 
-startdir=${SITES}
-menutitle="Site Selection Menu"
-
-################################# HELPERS ######################################
-
-Directorybrowser() {
-  # first parameter is Menu Title
-  # second parameter is dir path to starting folder
-
-  if [ -z $2 ] ; then
-    dir_list=$(ls -lhp  | awk -F ' ' ' { print $9 " " $5 } ')
-  else
-    cd "$2"
-    dir_list=$(ls -lhp  | awk -F ' ' ' { print $9 " " $5 } ')
-  fi
-  curdir=$(pwd)
-  if [ "$curdir" == "/" ] ; then  # Check if you are at root folder
-    selection=$(whiptail --title "$1" \
-                          --menu "Select a Folder or Tab Key\n$curdir" 0 0 0 \
-                          --cancel-button Cancel \
-                          --ok-button Select $dir_list 3>&1 1>&2 2>&3)
-  else   # Not Root Dir so show ../ BACK Selection in Menu
-    selection=$(whiptail --title "$1" \
-                          --menu "Select a Folder or Tab Key\n$curdir" 0 0 0 \
-                          --cancel-button Cancel \
-                          --ok-button Select ../ BACK $dir_list 3>&1 1>&2 2>&3)
-  fi
-  RET=$?
-  if [ $RET -eq 1 ]; then  # Check if User Selected Cancel
-    return 1
-  elif [ $RET -eq 0 ]; then
-    if [[ -d "$selection" ]]; then  # Check if Directory Selected
-      if (whiptail --title "Confirm Selection" --yesno "Selection : $selection\n" 0 0 \
-                   --yes-button "Confirm" \
-                   --no-button "Retry"); then
-        filename="$selection"
-        filepath="$curdir"    # Return full filepath and filename as selection variables
-
-      fi
-    fi
-  fi
-}
-
-declare -a checklist_array
-
-Array_to_checklist() {
-  i=0
-
-  for option in $1; do
-    checklist_array[$i]=$option
-    i=$((i+1))
-    checklist_array[$i]=" "
-    i=$((i+1))
-    checklist_array[$i]=off
-    i=$((i+1))
-  done
-
-}
-
 ################################################################################
 
 ### Checking some things
-if [ $USER != root ]; then
-  echo -e ${RED}"Error: must be root! Exiting..."${ENDCOLOR}
+if [[ -z "${SFOLDER}" ]]; then
+  echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
   exit 0
 fi
+################################################################################
+
+source ${SFOLDER}/libs/commons.sh
+
+startdir=${SITES}
+menutitle="Site Selection Menu"
+
 if [ ! -d "${SITES}/.wp-cli" ]; then
   cp -R ${SFOLDER}/utils/wp-cli ${SITES}/.wp-cli
 fi
@@ -124,7 +72,7 @@ if [ $exitstatus = 0 ]; then
   if [[ ${CHOSEN_WPCLI_OPTION} == *"02"* ]]; then
     #para listar themes instalados
     WP_DEL_THEMES=$(php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} theme list --quiet --field=name --status=inactive --allow-root)
-    Array_to_checklist "$WP_DEL_THEMES"
+    array_to_checklist "$WP_DEL_THEMES"
     echo "Setting WP_DEL_THEMES=${checklist_array[@]}"
     CHOSEN_DEL_THEME_OPTION=$(whiptail --title "Theme Selection" --checklist "Select the themes you want to delete." 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)
     #echo "Setting CHOSEN_DEL_THEME_OPTION="$CHOSEN_DEL_THEME_OPTION
@@ -137,7 +85,7 @@ if [ $exitstatus = 0 ]; then
   if [[ ${CHOSEN_WPCLI_OPTION} == *"03"* ]]; then
     #para listar plugins instalados
     WP_DEL_PLUGINS=$(php ${SITES}/.wp-cli/wp-cli.phar --path=${WP_SITE} plugin list --quiet --field=name --status=inactive --allow-root)
-    Array_to_checklist "$WP_DEL_PLUGINS"
+    array_to_checklist "$WP_DEL_PLUGINS"
     CHOSEN_DEL_PLUGIN_OPTION=$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to delete." 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)
     for plugin_del in $CHOSEN_DEL_PLUGIN_OPTION; do
       plugin_del=$(sed -e 's/^"//' -e 's/"$//' <<<$plugin_del) #needed to ommit double quotes
