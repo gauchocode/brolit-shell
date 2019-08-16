@@ -208,7 +208,7 @@ if [ $exitstatus = 0 ]; then
   echo " > Trying to generate nginx config for ${DOMAIN} ...">> $LOG
   echo -e ${YELLOW}" > Trying to generate nginx config for ${DOMAIN} ..."${ENDCOLOR}
 
-  cp ${SFOLDER}/confs/default /etc/nginx/sites-available/${DOMAIN}
+  cp ${SFOLDER}/confs/nginx/sites-available/default /etc/nginx/sites-available/${DOMAIN}
   ln -s /etc/nginx/sites-available/${DOMAIN} /etc/nginx/sites-enabled/${DOMAIN}
   # Replacing string to match domain name
   sed -i "s#dominio.com#${DOMAIN}#" /etc/nginx/sites-available/${DOMAIN}
