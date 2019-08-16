@@ -147,18 +147,18 @@ echo " " >> /etc/nginx/sites-available/default
 #RAM=$(grep MemTotal /proc/meminfo | awk '{print $2}' | xargs -I {} echo "scale=0; {}/1024^2" | bc)
 
 # nginx.conf broobe standard configuration
-cat ${SFOLDER}/confs/nginx.conf > /etc/nginx/nginx.conf
+cat ${SFOLDER}/confs/nginx/nginx.conf > /etc/nginx/nginx.conf
 
 # TODO: reemplazar lo de abajo por el nuevo script
 # source utils/php_optimizations.sh
 
 # php.ini broobe standard configuration
 echo " > Moving php configuration file ..." >>$LOG
-cat ${SFOLDER}/confs/php.ini > /etc/php/${PHP_V}/fpm/php.ini
+cat ${SFOLDER}/confs/php/php.ini > /etc/php/${PHP_V}/fpm/php.ini
 
 # fpm broobe standard configuration
 echo " > Moving fpm configuration file ..." >>$LOG
-cat ${SFOLDER}/confs/${SERVER_MODEL}/www.conf > /etc/php/${PHP_V}/fpm/pool.d/www.conf
+cat ${SFOLDER}/confs/php/${SERVER_MODEL}/www.conf > /etc/php/${PHP_V}/fpm/pool.d/www.conf
 
 ################################## INSTALLERS ##################################
 

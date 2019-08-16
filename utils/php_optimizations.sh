@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 2.5
+# Version: 2.9
 ################################################################################
 #
 # Calculating pm.max_children
@@ -16,6 +16,10 @@
 # Restart the php-fpm service and see if the server behaves in a correct manner and allocates memory as configured.
 #
 ################################################################################
+
+# TODO: antes que nada deberiamos checkear donde está la config de php
+# TODO: checkear si existe más de una versión de php instalada
+# TODO: en caso de que exista más de una versión, preguntar cual vamos a optimizar
 
 PHP_V="7.2"  # TODO: Ubuntu 18.04 LTS Default pero habria que checkear cual está instalado
 RAM_BUFFER="512"
@@ -34,10 +38,22 @@ MYSQL_AVG_RAM=$(ps --no-headers -o "rss,cmd" -C mysqld | awk '{ sum+=$1 } END { 
 
 # fpm broobe standard configuration
 #echo " > Moving fpm configuration file ..." >>$LOG
-#cat confs/${SERVER_MODEL}/www.conf > /etc/php/${PHP_V}/fpm/pool.d/www.conf
+#cat confs/php/${SERVER_MODEL}/www.conf > /etc/php/${PHP_V}/fpm/pool.d/www.conf
 
 # pm.max_children = (RAM*1024 - (MYSQL_AVG_RAM - RAM_BUFFER)) / PHP_AVG_RAM
 # pm.start_servers = pm.max_children / 4
 # pm.min_spare_servers = pm.start_servers
 # pm.max_spare_servers = pm.start_servers * 2
 # pm.max_requests = 500
+#
+# PROBAR ESTO
+#
+#s/^\(pm.max_children = \).*/\15/               # va a escribir: pm.max_children = 5
+#s/^\(pm.start_servers = \).*/\11/
+#s/^\(pm.min_spare_servers = \).*/\11/
+#s/^\(pm.max_spare_servers = \).*/\13/
+#s/^\(pm.max_requests = \).*/\12000/
+#
+# O ESTO
+#
+#s/^[#;]*\(pm.max_children = \).*/\15/g

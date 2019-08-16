@@ -81,7 +81,7 @@ if [ ! -x "${NETDATA}" ]; then
           killall netdata && cp system/netdata.service /etc/systemd/system/
 
           # Netdata nginx proxy configuration
-          cp ${SFOLDER}/confs/monitor /etc/nginx/sites-available
+          cp ${SFOLDER}/confs/nginx/sites-available/monitor /etc/nginx/sites-available
           sed -i "s#dominio.com#${NETDATA_SUBDOMAIN}#" /etc/nginx/sites-available/monitor
           ln -s /etc/nginx/sites-available/monitor /etc/nginx/sites-enabled/monitor
 

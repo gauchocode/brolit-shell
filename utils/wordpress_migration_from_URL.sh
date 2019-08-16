@@ -133,7 +133,7 @@ sed -i "/DB_PASSWORD/s/'[^']*'/'${DB_PASS}'/2" ${PROJECT_DOM}/wp-config.php >> $
 
 #create nginx config files for site
 echo -e "\nCreating nginx configuration file...\n" >>$LOG
-sudo cp ${SFOLDER}/confs/default /etc/nginx/sites-available/${PROJECT_DOM}
+sudo cp ${SFOLDER}/confs/nginx/sites-available/default /etc/nginx/sites-available/${PROJECT_DOM}
 ln -s /etc/nginx/sites-available/${PROJECT_DOM} /etc/nginx/sites-enabled/${PROJECT_DOM}
 
 #replacing string to match domain name
