@@ -1,0 +1,68 @@
+server {
+        charset utf-8;
+       	listen 80;
+        #listen [::]:80 default_server ipv6only=on; ## listen for ipv6
+        root /var/www/dominio.com;
+        
+        index index.php;
+        server_name www.dominio.com dominio.com;
+
+       	error_log   /var/log/nginx/dominio.com-error.log;
+        location / {
+            try_files $uri $uri/ /index.php?q=$uri&$args;			
+        }
+        location ~ \.php$ {
+            include snippets/fastcgi-php.conf;
+        	fastcgi_pass unix:/run/php/php7.2-fpm.sock;
+            fastcgi_buffering off;
+        }
+
+        ## INC
+        #include /var/www/dominio.com/nginx.conf;
+
+        ### PERF
+        gzip_static on;
+
+        ### SEC
+        location /.git { deny all; }
+        location /.htaccess { deny all; }
+        location /.htpasswd { deny all; }
+        location /.user.ini { deny all; }
+
+        ### WP-SEC
+
+        # Restrict direct access to cached content
+        location /wp-content/cache/ { deny all; }
+        
+        # Restrict direct access to wp-config.php
+        location ~* wp-config.php { deny all; }
+
+        location ~* /wp-includes/.*.php$ {
+            deny all;
+            access_log off;
+            log_not_found off;
+        }
+        location ~* /wp-content/.*.php$ {
+            deny all;
+            access_log off;
+            log_not_found off;
+        }
+        location ~* /(?:uploads|files)/.*.php$ {
+            deny all;
+            access_log off;
+            log_not_found off;
+        }
+        location = /xmlrpc.php {
+            deny all;
+            access_log off;
+            log_not_found off;
+        }
+
+        ### Yoast SEO Sitemaps
+        location ~ ([^/]*)sitemap(.*).x(m|s)l$ {
+            ## this rewrites sitemap.xml to /sitemap_index.xml
+            rewrite ^/sitemap_index\.xml$ /index.php?sitemap=1 last;
+            rewrite ^/([^/]+?)-sitemap([0-9]+)?\.xml$ /index.php?sitemap=$1&sitemap_n=$2 last;
+        }
+
+}
