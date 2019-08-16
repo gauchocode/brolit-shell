@@ -146,10 +146,6 @@ sudo sed -i "s#dominio.com#${PROJECT_DOM}#" /etc/nginx/sites-available/${PROJECT
 service nginx reload
 
 ### Get server IPs ###
-DIG="$(which dig)"
-if [ ! -x "${DIG}" ]; then
-	apt-get install dnsutils
-fi
 IP=`dig +short myip.opendns.com @resolver1.opendns.com	` 2> /dev/null
 
 ### Log End ###
