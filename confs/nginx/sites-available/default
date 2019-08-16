@@ -58,6 +58,17 @@ server {
             log_not_found off;
         }
 
+        # Throttle wp-admin requests
+        location /wp-admin/ {
+            limit_req zone=one burst=3 nodelay;
+            limit_req_status 444;
+            include fastcgi_params;
+            fastcgi_pass unix:/run/php/php7.2-fpm.sock;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            fastcgi_index index.php;
+            try_files $uri $uri/ /wp-admin/index.php?q=$uri&$args;
+        }
+
         ### Yoast SEO Sitemaps
         location ~ ([^/]*)sitemap(.*).x(m|s)l$ {
             ## this rewrites sitemap.xml to /sitemap_index.xml
