@@ -10,18 +10,23 @@
 # Luego lo ideal es hacer un apt purge nginx && apt install -f y luego volver a instalarlo
 #
 
-SCRIPT_V="2.9.7"
+### Checking some things
+if [[ -z "${SFOLDER}" ]]; then
+  echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+  exit 0
+fi
+################################################################################
+
+source ${SFOLDER}/libs/commons.sh
 
 nginx_installer(){
     curl -L https://nginx.org/keys/nginx_signing.key | sudo apt-key add -
 
-    #vim /etc/apt/sources.list.d/nginx.list
-
-    #deb [arch=amd64] http://nginx.org/packages/ubuntu/ bionic nginx
-    #deb-src http://nginx.org/packages/ubuntu/ bionic nginx
+    cp ${SFOLDER}/assets/nginx.list /etc/apt/sources.list.d/nginx.list
 
     apt-get update
 
+    apt --yes install nginx
 }
 
 nginx_webp_installer(){
@@ -65,3 +70,19 @@ nginx_brotli_installer(){
     # Testing ...
     nginx -t
 }
+
+################################################################################
+
+# TODO: usar las funciones de arriba a través de un menú con whiptail
+apt --yes install nginx
+
+# Remove html default nginx folders
+rm -r /var/www/html
+
+# nginx.conf broobe standard configuration
+cat ${SFOLDER}/confs/nginx/nginx.conf > /etc/nginx/nginx.conf
+
+# nginx conf file
+echo " > Moving nginx configuration files ..." >>$LOG
+# New default nginx configuration
+cat ${SFOLDER}/confs/nginx/sites-available/default > /etc/nginx/sites-available/default

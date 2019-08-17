@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: broobe. web + mobile development - https://example.com
-# Version: 2.9
+# Version: 2.9.7
 ################################################################################
 #
 # Calculating pm.max_children
