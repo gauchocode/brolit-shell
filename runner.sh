@@ -59,8 +59,9 @@
 SCRIPT_V="2.9.7"
 
 ### Checking some things...#####################################################
-SFOLDER="$(dirname \"$0\")"
-SFOLDER="$( (cd \"$SFOLDER\" && pwd))"
+SFOLDER="`dirname \"$0\"`"
+SFOLDER="`( cd \"$SFOLDER\" && pwd )`"
+
 if [ -z "$SFOLDER" ]; then
   # error; the path is not accessible
   exit 1
