@@ -24,6 +24,10 @@ SCRIPT_V="2.9.7"
 #  exit 0
 #fi
 ################################################################################
+SFOLDER="/root/broobe-utils-scripts"
+source ${SFOLDER}/libs/commons.sh
+
+################################################################################
 
 # TODO: antes que nada deberiamos checkear donde está la config de php
 # TODO: checkear si existe más de una versión de php instalada
@@ -37,15 +41,23 @@ CPUS=$(grep -c "processor" /proc/cpuinfo)
 RAM=$(grep MemTotal /proc/meminfo | awk '{print $2}' | xargs -I {} echo "scale=0; {}/1024^2" | bc)
 
 # Calculating avg ram used by this process
-PHP_AVG_RAM=$(ps --no-headers -o "rss,cmd" -C php-fpm${PHP_V} | awk '{ sum+=$1 } END { printf ("%d%s\n", sum/NR/1024,"") }')
+PHP_AVG_RAM=$(ps --no-headers -o "rss,cmd" -C php-fpm7.2 | awk '{ sum+=$1 } END { printf ("%d%s\n", sum/NR/1024,"") }')
 MYSQL_AVG_RAM=$(ps --no-headers -o "rss,cmd" -C mysqld | awk '{ sum+=$1 } END { printf ("%d%s\n", sum/NR/1024,"") }')
 
+# MOCK
+#PHP_AVG_RAM=50
+#MYSQL_AVG_RAM=1500
+
+echo -e ${CYAN}"*******************************************"${ENDCOLOR}
+echo -e ${CYAN}"**************** VPS STATS ****************"${ENDCOLOR}
+echo -e ${CYAN}"*******************************************"${ENDCOLOR}
 echo -e ${CYAN}"PHP_V: ${PHP_V}"${ENDCOLOR}
 echo -e ${CYAN}"RAM_BUFFER: ${RAM_BUFFER}"${ENDCOLOR}
 echo -e ${CYAN}"CPUS: ${CPUS}"${ENDCOLOR}
 echo -e ${CYAN}"RAM: ${RAM}"${ENDCOLOR}
 echo -e ${CYAN}"PHP_AVG_RAM: ${PHP_AVG_RAM}"${ENDCOLOR}
 echo -e ${CYAN}"MYSQL_AVG_RAM: ${MYSQL_AVG_RAM}"${ENDCOLOR}
+echo -e ${CYAN}"*******************************************"${ENDCOLOR}
 
 # php.ini broobe standard configuration
 #echo " > Moving php configuration file ..." >>$LOG
@@ -55,17 +67,46 @@ echo -e ${CYAN}"MYSQL_AVG_RAM: ${MYSQL_AVG_RAM}"${ENDCOLOR}
 #echo " > Moving fpm configuration file ..." >>$LOG
 #cat confs/php/${SERVER_MODEL}/www.conf > /etc/php/${PHP_V}/fpm/pool.d/www.conf
 
-PM_MAX_CHILDREN=[${RAM}*1024-[${MYSQL_AVG_RAM}-${RAM_BUFFER}]]/${PHP_AVG_RAM}]
-PM_START_SERVERS=[${PM_MAX_CHILDREN}/4]
-PM_MIN_SPARE_SERVERS=${PM_START_SERVERS}
-PM_MAX_SPARE_SERVERS=[${PM_START_SERVERS}*2]
+PM_MAX_CHILDREN=$(( (${RAM}*1024-(${MYSQL_AVG_RAM}-${RAM_BUFFER}))/${PHP_AVG_RAM} ))
+PM_START_SERVERS=$((${PM_MAX_CHILDREN}/4))
+PM_MIN_SPARE_SERVERS=$((${PM_START_SERVERS}))
+PM_MAX_SPARE_SERVERS=$((${PM_START_SERVERS}*2))
 PM_MAX_REQUESTS=500
 
-echo -e ${CYAN}"PM_MAX_CHILDREN: ${PM_MAX_CHILDREN}"${ENDCOLOR}
-echo -e ${CYAN}"PM_START_SERVERS: ${PM_START_SERVERS}"${ENDCOLOR}
-echo -e ${CYAN}"RAPM_MIN_SPARE_SERVERSM: ${PM_MIN_SPARE_SERVERS}"${ENDCOLOR}
-echo -e ${CYAN}"PM_MAX_SPARE_SERVERS: ${PM_MAX_SPARE_SERVERS}"${ENDCOLOR}
-echo -e ${CYAN}"PM_MAX_REQUESTS: ${PM_MAX_REQUESTS}"${ENDCOLOR}
+echo -e ${GREEN}"************** OPTIMAL CONF ***************"${ENDCOLOR}
+echo -e ${GREEN}"*******************************************"${ENDCOLOR}
+echo -e ${GREEN}"PM_MAX_CHILDREN: ${PM_MAX_CHILDREN}"${ENDCOLOR}
+echo -e ${GREEN}"PM_START_SERVERS: ${PM_START_SERVERS}"${ENDCOLOR}
+echo -e ${GREEN}"PM_MIN_SPARE_SERVERS: ${PM_MIN_SPARE_SERVERS}"${ENDCOLOR}
+echo -e ${GREEN}"PM_MAX_SPARE_SERVERS: ${PM_MAX_SPARE_SERVERS}"${ENDCOLOR}
+echo -e ${GREEN}"PM_MAX_REQUESTS: ${PM_MAX_REQUESTS}"${ENDCOLOR}
+echo -e ${GREEN}"*******************************************"${ENDCOLOR}
+
+DELIMITER="="
+
+KEY="pm.max_children"
+PM_MAX_CHILDREN_ORIGIN=$(cat "/etc/php/${PHP_V}/fpm/pool.d/www.conf" | grep "^${KEY} ${DELIMITER}" | cut -f2- -d"$DELIMITER")
+
+KEY="pm.start_servers"
+PM_START_SERVERS_ORIGIN=$(cat "/etc/php/${PHP_V}/fpm/pool.d/www.conf" | grep "^${KEY} ${DELIMITER}" | cut -f2- -d"$DELIMITER")
+
+KEY="pm.min_spare_servers"
+PM_MIN_SPARE_SERVERS_ORIGIN=$(cat "/etc/php/${PHP_V}/fpm/pool.d/www.conf" | grep "^${KEY} ${DELIMITER}" | cut -f2- -d"$DELIMITER")
+
+KEY="pm.max_spare_servers"
+PM_MAX_SPARE_SERVERS_ORIGIN=$(cat "/etc/php/${PHP_V}/fpm/pool.d/www.conf" | grep "^${KEY} ${DELIMITER}" | cut -f2- -d"$DELIMITER")
+
+KEY="pm.max_requests"
+PM_MAX_REQUESTS_ORIGIN=$(cat "/etc/php/${PHP_V}/fpm/pool.d/www.conf" | grep "^${KEY} ${DELIMITER}" | cut -f2- -d"$DELIMITER")
+
+echo -e ${RED}"*************** ACTUAL CONF ***************"${ENDCOLOR}
+echo -e ${RED}"*******************************************"${ENDCOLOR}
+echo -e ${RED}"PM_MAX_CHILDREN: ${PM_MAX_CHILDREN_ORIGIN}"${ENDCOLOR}
+echo -e ${RED}"PM_START_SERVERS: ${PM_START_SERVERS_ORIGIN}"${ENDCOLOR}
+echo -e ${RED}"PM_MIN_SPARE_SERVERS: ${PM_MIN_SPARE_SERVERS_ORIGIN}"${ENDCOLOR}
+echo -e ${RED}"PM_MAX_SPARE_SERVERS: ${PM_MAX_SPARE_SERVERS_ORIGIN}"${ENDCOLOR}
+echo -e ${RED}"PM_MAX_REQUESTS: ${PM_MAX_REQUESTS_ORIGIN}"${ENDCOLOR}
+echo -e ${RED}"*******************************************"${ENDCOLOR}
 
 #
 # PROBAR ESTO
