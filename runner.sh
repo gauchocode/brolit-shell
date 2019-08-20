@@ -2,19 +2,18 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.9.7
+# Version: 2.9.8
 ################################################################################
 #
 # TODO: Para release 3.0
 #       1- VAR conf para CloudFlare api -- DONE pero falta TESTING
 #       2- Terminar certbot_manager.sh e incluir soporte a Cloudflare
 #       3- Refactor de menú principal del runner.sh (ojo que si al lemp le activamos netdata o monit, necesita db pass de root)
-#       4- VAR conf para el ID de Telegram (quizá habría que guiar todo el proceso)
-#       5- Terminar php_optimizations deprecando el modelo de Hetzner e integrandolo al Lemp Installer
-#       6- Permitir restore del backup con Duplicity
-#       7- Backup de archivos de Let's Encrypt (/etc/letsencrypt/) -- DONE
-#       8- Restore de archivos de configuración
-#       9- Checkear webserver instalado, si es apache u otro, aclarar que hay soporte parcial
+#       4- Terminar php_optimizations deprecando el modelo de Hetzner e integrandolo al Lemp Installer
+#       5- Permitir restore del backup con Duplicity
+#       6- Backup de archivos de Let's Encrypt (/etc/letsencrypt/) -- DONE
+#       7- Restore de archivos de configuración
+#       8- Checkear webserver instalado, si es apache u otro, aclarar que hay soporte parcial
 #
 ################################################################################
 #
@@ -56,7 +55,7 @@
 # https://google.github.io/styleguide/shell.xml
 # https://github.com/niieani/bash-oo-framework
 #
-SCRIPT_V="2.9.7"
+SCRIPT_V="2.9.8"
 
 ### Checking some things...#####################################################
 SFOLDER="`dirname \"$0\"`"
