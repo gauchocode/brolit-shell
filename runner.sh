@@ -8,7 +8,7 @@
 # TODO: Para release 3.0
 #       1- VAR conf para CloudFlare api -- DONE pero falta TESTING
 #       2- Terminar certbot_manager.sh e incluir soporte a Cloudflare
-#       3- Refactor de menú principal del runner.sh (ojo que si al lemp le activamos netdata o monit, necesita db pass de root)
+#       3- Refactor de menú principal del runner.sh (ojo que si al lemp le activamos netdata o monit, necesita db pass de root) -- DONE pero falta TESTING
 #       4- Terminar php_optimizations deprecando el modelo de Hetzner e integrandolo al Lemp Installer
 #       5- Permitir restore del backup con Duplicity
 #       6- Backup de archivos de Let's Encrypt (/etc/letsencrypt/) -- DONE
@@ -24,9 +24,8 @@
 #       3- Terminar updater.sh
 #       4- php installer (soporte multiples versiones php)
 #       5- nginx installer (opcion de instalar de repo y configurar modulos)
-#       6- mysql installer (mysql/mariadb estandard o por repo)
-#       7- Optimizaciones de MySQL
-#       8- Mejoras LEMP setup, que requiera menos intervencion tzdata y mysql_secure_installation
+#       6- Optimizaciones de MySQL
+#       7- Mejoras LEMP setup, que requiera menos intervencion tzdata y mysql_secure_installation
 #
 ################################################################################
 #
