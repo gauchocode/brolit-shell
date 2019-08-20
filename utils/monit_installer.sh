@@ -8,7 +8,7 @@
 # TODO: adentro de lemp-services está la version de php, checkear cualtenemos instalado antes de configurar
 # TODO: consultar por el monit user y pass y almacernarlo para que lo levante el netdata_installer
 
-Configure_monit(){
+configure_monit(){
 
   # Configuring monit
   echo -e ${YELLOW}" > Configuring monit ..."${ENDCOLOR}
@@ -55,7 +55,7 @@ if [ ! -x "${MONIT}" ]; then
           echo " > Installing monit ..." >>$LOG
           apt --yes install monit
 
-          Configure_monit
+          configure_monit
 
           break;;
           [Nn]* )
@@ -74,7 +74,7 @@ else
       case $yn in
           [Yy]* )
 
-          Configure_monit
+          configure_monit
 
           break;;
           [Nn]* )
