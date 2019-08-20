@@ -14,6 +14,7 @@
 #       6- Backup de archivos de Let's Encrypt (/etc/letsencrypt/) -- DONE
 #       7- Restore de archivos de configuración
 #       8- Checkear webserver instalado, si es apache u otro, aclarar que hay soporte parcial
+#       9- Refactor de estructura de archivos /utils
 #
 ################################################################################
 #

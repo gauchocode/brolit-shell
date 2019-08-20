@@ -4,6 +4,11 @@
 # Version: 2.9.7
 ################################################################################
 #
+# TODO: Nginx mejores prácticas
+# https://github.com/audioscavenger/nginx-server-config
+# https://github.com/A5hleyRich/wordpress-nginx
+# https://github.com/pothi/wordpress-nginx
+#
 # Brotli compression only supports the HTTPS site
 #
 # Para quitar repo de nginx de ondrej: add-apt-repository --remove ppa:ondrej/nginx && apt-get update
@@ -69,6 +74,13 @@ nginx_brotli_installer(){
 
     # Testing ...
     nginx -t
+
+    # Reloading Nginx ...
+    service nginx reload
+
+    # ponemos on hold el paquete
+    apt-mark hold nginx
+
 }
 
 ################################################################################
@@ -86,3 +98,16 @@ cat ${SFOLDER}/confs/nginx/nginx.conf > /etc/nginx/nginx.conf
 echo " > Moving nginx configuration files ..." >>$LOG
 # New default nginx configuration
 cat ${SFOLDER}/confs/nginx/sites-available/default > /etc/nginx/sites-available/default
+
+mkdir /etc/nginx/globals/
+
+cp ${SFOLDER}/confs/nginx/globals/logs.conf > /etc/nginx/globals/logs.conf
+cp ${SFOLDER}/confs/nginx/globals/security.conf > /etc/nginx/globals/security.conf
+cp ${SFOLDER}/confs/nginx/globals/wordpress_mu_subdirectory.conf > /etc/nginx/globals/wordpress_mu_subdirectory.conf
+cp ${SFOLDER}/confs/nginx/globals/wordpress_mu_subdomain.conf > /etc/nginx/globals/wordpress_mu_subdomain.conf
+cp ${SFOLDER}/confs/nginx/globals/wordpress_sec.conf > /etc/nginx/globals/wordpress_sec.conf
+cp ${SFOLDER}/confs/nginx/globals/wordpress_seo.conf > /etc/nginx/globals/wordpress_seo.conf
+
+#chown ??
+#sed para reemplazar los domain.com
+#si es network con subdominios hay que usar *.domain.com
