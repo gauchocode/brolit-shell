@@ -8,6 +8,8 @@
 # https://github.com/audioscavenger/nginx-server-config
 # https://github.com/A5hleyRich/wordpress-nginx
 # https://github.com/pothi/wordpress-nginx
+# https://www.digitalocean.com/community/questions/how-can-i-improve-the-ttfb
+#
 #
 # Brotli compression only supports the HTTPS site
 #
@@ -65,8 +67,14 @@ nginx_brotli_installer(){
     sudo dpkg -i *.deb
 
     # ACA AGREGAMOS CONFIG DE BROTLI
-    cd /etc/nginx/
-    vim nginx.conf
+    #cd /etc/nginx/
+    #vim nginx.conf
+    #
+    # TODO: quiza lo que haya que hacer es tenerlo en el nginx.conf y descomentarle las lineas con sed
+    # sed -i '/<pattern>/s/^/#/g' file #comment
+    # sed -i '/<pattern>/s/^#//g' file #uncomment
+    # o la otra es agregar lo siguiente a un .conf y simplemente agregarle una linea con include
+    #
     # brotli on;
     # brotli_comp_level 6;
     # brotli_static on;

@@ -1,14 +1,26 @@
-# Broobe Utils Scripts
+# LEMP Ubuntu Utils Scripts
 
-"Broobe Utils Scripts" is a **BASH** script which can be used to backup files and databases.
+"LEMP Ubuntu Utils Scripts" is a **BASH** script which can be used to automate backups (files and databases).
 It's written in BASH scripting language.
 
-## Features
+## Main Features
 
 * File backups
 * Database backups (MySQL or MariaDB)
-* Cross platform
-* Support for the official Dropbox API v2
+* Upload backups to Dropbox (API v2)
+* Restore backups
+* LEMP automated installer
+* WordPress automated installer
+* WP-CLI actions helper
+* Monit installer and configuration helper
+* Netdata installer and configuration helper
+* Certbot installer and configuration helper
+* Cockpit installer and configuration helper
+* Cloudflare support
+* PHP optimization tool
+* Image optimization tool
+* Blacklist checker
+* Benchmark tools
 * Simple step-by-step configuration wizard
 
 ## Getting started
