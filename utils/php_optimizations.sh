@@ -116,17 +116,6 @@ echo -e ${RED}"*******************************************"${ENDCOLOR}
 #sed -ie "s|^pm\.max_spare_servers =.*$|pm\.max_spare_servers = ${PM_MAX_SPARE_SERVERS}|g" /etc/php/${PHP_V}/fpm/pool.d/www.conf
 #sed -ie "s|^pm\.max_requests =.*$|pm\.max_requests = ${PM_MAX_REQUESTS}|g" /etc/php/${PHP_V}/fpm/pool.d/www.conf
 #
-# O ESTO
-#
-#s/^\(pm.max_children = \).*/\15/               # va a escribir: pm.max_children = 5
-#s/^\(pm.start_servers = \).*/\11/
-#s/^\(pm.min_spare_servers = \).*/\11/
-#s/^\(pm.max_spare_servers = \).*/\13/
-#s/^\(pm.max_requests = \).*/\12000/
-#
-# O ESTO
-#
-#s/^[#;]*\(pm.max_children = \).*/\15/g
 
 #Test the validity of your php-fpm configuration syntax
 php-fpm${PHP_V} -t
