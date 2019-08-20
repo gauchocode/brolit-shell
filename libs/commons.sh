@@ -99,7 +99,13 @@ check_packages_required() {
     apt install pv
   fi
 
-  ### Get server IPs
+  ### Check if bc is installed
+  BC="$(which bc)"
+  if [ ! -x "${BC}" ]; then
+    apt install bc
+  fi
+
+  ### Check if dig is installed
   DIG="$(which dig)"
   if [ ! -x "${DIG}" ]; then
     apt-get install dnsutils
