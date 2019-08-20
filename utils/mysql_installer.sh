@@ -2,16 +2,16 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.9.7
+# Version: 2.9.9
 ################################################################################
 
-standard_mysql_installation() {
+mysql_default_installer() {
     echo " > LEMP installation with MySQL ..." >>$LOG
     apt --yes install mysql-server
 
 }
 
-mysql8_installation() {
+mysql8_official_installer() {
     echo " > LEMP installation with MySQL 8 ..." >>$LOG
     wget -c https://dev.mysql.com/get/mysql-apt-config_0.8.10-1_all.deb
     sudo dpkg -i mysql-apt-config_0.8.10-1_all.deb
@@ -31,9 +31,14 @@ mysql8_installation() {
 
 }
 
-mariadb_installation() {
+mariadb_default_installer() {
     echo " > LEMP installation with MariaDB ..." >>$LOG
     apt --yes install mariadb-server mariadb-client
+}
+
+mariadb_official_installer() {
+  # TODO: https://www.linuxbabe.com/mariadb/install-mariadb-ubuntu-18-04-18-10
+
 }
 
 mysql_purge_installation() {
@@ -55,15 +60,15 @@ exitstatus=$?
 if [ $exitstatus = 0 ]; then
 
   if [[ ${CHOSEN_MYSQL_INSTALLER_OPTION} == *"01"* ]]; then
-    standard_mysql_installation
+    mysql_default_installer
     
   fi
   if [[ ${CHOSEN_MYSQL_INSTALLER_OPTION} == *"02"* ]]; then
-    mysql8_installation
+    mysql8_official_installer
     
   fi
   if [[ ${CHOSEN_MYSQL_INSTALLER_OPTION} == *"03"* ]]; then
-    mariadb_installation
+    mariadb_default_installer
     
   fi
 

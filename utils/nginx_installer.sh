@@ -19,14 +19,14 @@
 
 ### Checking some things
 if [[ -z "${SFOLDER}" ]]; then
-  echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
-  exit 0
+    echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+    exit 0
 fi
 ################################################################################
 
 source ${SFOLDER}/libs/commons.sh
 
-nginx_installer(){
+nginx_installer() {
     curl -L https://nginx.org/keys/nginx_signing.key | sudo apt-key add -
 
     cp ${SFOLDER}/assets/nginx.list /etc/apt/sources.list.d/nginx.list
@@ -36,11 +36,11 @@ nginx_installer(){
     apt --yes install nginx
 }
 
-nginx_webp_installer(){
+nginx_webp_installer() {
     apt -y install imagemagick webp
 }
 
-nginx_brotli_installer(){
+nginx_brotli_installer() {
 
     # TODO: https://www.howtoforge.com/tutorial/how-to-install-nginx-with-brotli-compression-on-ubuntu-1804/
 
@@ -57,7 +57,7 @@ nginx_brotli_installer(){
     cd /usr/local/src/nginx-*/
 
     vim debian/rules
-    #Now you will get two build environments for 'config.env.nginx' and 'config.env.nginx_debug'. 
+    #Now you will get two build environments for 'config.env.nginx' and 'config.env.nginx_debug'.
     # Add the '--add-module=' option for ngx_brotli to both built environments.
     #--add-module=/usr/local/src/ngx_brotli
 
@@ -91,6 +91,62 @@ nginx_brotli_installer(){
 
 }
 
+nginx_pagespeed_installer() {
+
+    # TODO: https://www.linuxbabe.com/nginx/compile-the-latest-nginx-with-ngx_pagespeed-module-on-ubuntu
+
+    apt update
+
+    cd /usr/local/src/nginx/
+
+    sudo apt install dpkg-dev
+
+    sudo apt source nginx
+
+    cd /usr/local/src
+
+    sudo apt install git
+
+    sudo git clone https://github.com/apache/incubator-pagespeed-ngx.git
+
+    cd incubator-pagespeed-ngx/
+
+    git checkout latest-stable
+
+    # Compiling
+
+    cd /usr/local/src/nginx/nginx-1.17.0
+
+    # Install build dependencies for Nginx.
+
+    sudo apt build-dep nginx
+    sudo apt install uuid-dev
+
+    sudo ./configure --with-compat --add-dynamic-module=/usr/local/src/incubator-pagespeed-ngx
+
+    make modules
+
+    cp objs/ngx_pagespeed.so /etc/nginx/modules/
+
+    # Edit the main Nginx configuration file.
+    sudo nano /etc/nginx/nginx.conf
+
+    #Add the following line at the beginning of the file.
+    load_module modules/ngx_pagespeed.so
+
+    #Save and close the file. Then test Nginx configuration.
+    sudo nginx -t
+
+    sudo systemctl reload nginx
+
+    sudo mkdir -p /var/ngx_pagespeed_cache
+
+    sudo chown -R www-data:www-data /var/ngx_pagespeed_cache
+
+    apt-mark hold nginx
+
+}
+
 ################################################################################
 
 # TODO: usar las funciones de arriba a través de un menú con whiptail
@@ -100,21 +156,21 @@ apt --yes install nginx
 rm -r /var/www/html
 
 # nginx.conf broobe standard configuration
-cat ${SFOLDER}/confs/nginx/nginx.conf > /etc/nginx/nginx.conf
+cat ${SFOLDER}/confs/nginx/nginx.conf >/etc/nginx/nginx.conf
 
 # nginx conf file
 echo " > Moving nginx configuration files ..." >>$LOG
 # New default nginx configuration
-cat ${SFOLDER}/confs/nginx/sites-available/default > /etc/nginx/sites-available/default
+cat ${SFOLDER}/confs/nginx/sites-available/default >/etc/nginx/sites-available/default
 
 mkdir /etc/nginx/globals/
 
-cp ${SFOLDER}/confs/nginx/globals/logs.conf > /etc/nginx/globals/logs.conf
-cp ${SFOLDER}/confs/nginx/globals/security.conf > /etc/nginx/globals/security.conf
-cp ${SFOLDER}/confs/nginx/globals/wordpress_mu_subdirectory.conf > /etc/nginx/globals/wordpress_mu_subdirectory.conf
-cp ${SFOLDER}/confs/nginx/globals/wordpress_mu_subdomain.conf > /etc/nginx/globals/wordpress_mu_subdomain.conf
-cp ${SFOLDER}/confs/nginx/globals/wordpress_sec.conf > /etc/nginx/globals/wordpress_sec.conf
-cp ${SFOLDER}/confs/nginx/globals/wordpress_seo.conf > /etc/nginx/globals/wordpress_seo.conf
+cp ${SFOLDER}/confs/nginx/globals/logs.conf >/etc/nginx/globals/logs.conf
+cp ${SFOLDER}/confs/nginx/globals/security.conf >/etc/nginx/globals/security.conf
+cp ${SFOLDER}/confs/nginx/globals/wordpress_mu_subdirectory.conf >/etc/nginx/globals/wordpress_mu_subdirectory.conf
+cp ${SFOLDER}/confs/nginx/globals/wordpress_mu_subdomain.conf >/etc/nginx/globals/wordpress_mu_subdomain.conf
+cp ${SFOLDER}/confs/nginx/globals/wordpress_sec.conf >/etc/nginx/globals/wordpress_sec.conf
+cp ${SFOLDER}/confs/nginx/globals/wordpress_seo.conf >/etc/nginx/globals/wordpress_seo.conf
 
 #chown ??
 #sed para reemplazar los domain.com

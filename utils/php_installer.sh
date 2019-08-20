@@ -14,12 +14,24 @@
 #
 
 php_installation() {
-    apt --yes install php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear
+  apt --yes install php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear
 
 }
 
-mail_utils_installation(){
-    pear install mail mail_mime net_smtp
+php_redis_installatino() {
+  #https://www.howtoforge.com/tutorial/how-to-install-nginx-with-brotli-compression-on-ubuntu-1804/
+
+  apt install redis-server php-redis
+  systemctl enable redis-server.service
+
+  cp ${SFOLDER}/confs/redis/redis.conf /etc/redis/redis.conf
+
+  systemctl restart redis-server.service
+
+}
+
+mail_utils_installation() {
+  pear install mail mail_mime net_smtp
 }
 
 ################################################################################
@@ -36,16 +48,15 @@ fi
 php_installation
 mail_utils_installation
 
-
 # TODO: acá simplemente habria que cambiar max_upload_size y el max_post_size en vez de pizar el php.ini
 # php.ini broobe standard configuration
 echo " > Moving php configuration file ..." >>$LOG
-cat ${SFOLDER}/confs/php/php.ini > /etc/php/${PHP_V}/fpm/php.ini
+cat ${SFOLDER}/confs/php/php.ini >/etc/php/${PHP_V}/fpm/php.ini
 
 # TODO: DEPRECAR, USAR php_optimizations.sh
 #${SFOLDER}/utils/php_optimizations.sh
 echo " > Moving fpm configuration file ..." >>$LOG
-cat ${SFOLDER}/confs/php/${SERVER_MODEL}/www.conf > /etc/php/${PHP_V}/fpm/pool.d/www.conf
+cat ${SFOLDER}/confs/php/${SERVER_MODEL}/www.conf >/etc/php/${PHP_V}/fpm/pool.d/www.conf
 
 # TODO: en caso de instalar una nueva version de PHP, dar opcion de reconfigurar los sites de nginx
 # reconfigure_nginx_sites()
