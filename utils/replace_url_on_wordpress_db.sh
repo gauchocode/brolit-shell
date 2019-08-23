@@ -55,8 +55,9 @@ if [[ -z "${DB_PREFIX}" ]]; then
 fi
 
 if [[ -z "${TARGET_DB}" ]]; then
-  DBS="$(${MYSQL} -u ${MUSER} -p${MPASS} -Bse 'show databases')"
-  CHOSEN_DB=$(whiptail --title "REPLACING URLS ON WP DATABASE" --menu "Chose a Database to work with" 20 78 10 `for x in ${DBS}; do echo "$x [DB]"; done` 3>&1 1>&2 2>&3)
+  
+  mysql_databases_list
+  CHOSEN_DB=$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to work with" 20 78 10 `for x in ${DBS}; do echo "$x [DB]"; done` 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
     echo "Setting CHOSEN_DB="${CHOSEN_DB} >> $LOG
@@ -116,3 +117,5 @@ if [[ -z "${existing_URL}" ]]; then
   fi
 
 fi
+
+#main_menu

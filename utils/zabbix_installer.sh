@@ -3,7 +3,14 @@
 # Version: 2.9.8
 ################################################################################
 #
-# TODO: Seguir https://zabbixtech.info/es/zabbix-es/como-instalar-zabbix-con-nginx-en-ubuntu-linux/
+# Seguir:
+#       https://zabbixtech.info/es/zabbix-es/como-instalar-zabbix-con-nginx-en-ubuntu-linux/
+#       https://linuxize.com/post/how-to-install-and-configure-zabbix-on-ubuntu-18-04/       
+#
+# Web Monitoring: 
+#       https://www.zabbix.com/documentation/4.2/manual/web_monitoring
+#
+################################################################################
 
 zabbix_create_database() {
 

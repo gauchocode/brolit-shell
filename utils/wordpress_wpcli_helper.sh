@@ -34,7 +34,7 @@ chmod -R 777 ${SITES}/.wp-cli
 chmod +x ${SITES}/.wp-cli/wp-cli.phar
 sudo -u www-data php ${SITES}/.wp-cli/wp-cli.phar cli update
 
-Directorybrowser "$menutitle" "$startdir"
+directory_browser "$menutitle" "$startdir"
 WP_SITE=$filepath"/"$filename
 echo "Setting WP_SITE="${WP_SITE}
 
@@ -201,3 +201,5 @@ else
   echo " > Exiting ..."
   exit 1
 fi
+
+main_menu

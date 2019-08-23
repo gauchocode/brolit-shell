@@ -2,10 +2,8 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.9.7
+# Version: 2.9.9
 ################################################################################
-
-# TODO: refactor para seguir el code style "function_name ()"
 
 ### Setup Colours
 BLACK='\E[30;40m'
@@ -20,6 +18,183 @@ ENDCOLOR='\033[0m'
 
 startdir=""
 menutitle="Config Selection Menu"
+
+################################################################################
+# MAIN MENU
+################################################################################
+
+main_menu() {
+  RUNNER_OPTIONS="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 DELETE_PROJECT 04 WORDPRESS_INSTALLER 05 HOSTING_TO_VPS 06 SERVER_OPTIMIZATIONS 07 INSTALLERS_AND_CONFIGS 08 REPLACE_WP_URL 09 WPCLI_HELPER 10 CERTBOT_MANAGER 11 BENCHMARKS 12 GTMETRIX_TEST 13 BLACKLIST_CHECKER 14 RESET_SCRIPT_OPTIONS"
+  CHOSEN_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 $(for x in ${RUNNER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+
+    if [[ ${CHOSEN_TYPE} == *"01"* ]]; then
+      backup_menu
+
+    fi
+    if [[ ${CHOSEN_TYPE} == *"02"* ]]; then
+      source ${SFOLDER}/restore_from_backup.sh
+    fi
+    if [[ ${CHOSEN_TYPE} == *"03"* ]]; then
+      source ${SFOLDER}/delete_project.sh
+
+    fi
+
+    if [[ ${CHOSEN_TYPE} == *"04"* ]]; then
+      source ${SFOLDER}/utils/wordpress_installer.sh
+
+    fi
+    if [[ ${CHOSEN_TYPE} == *"05"* ]]; then
+      source ${SFOLDER}/utils/wordpress_restore_from_source.sh
+
+    fi
+    if [[ ${CHOSEN_TYPE} == *"06"* ]]; then
+      while true; do
+        echo -e ${YELLOW}"> Do you really want to run the optimization script?"${ENDCOLOR}
+        read -p "Please type 'y' or 'n'" yn
+        case $yn in
+        [Yy]*)
+          source ${SFOLDER}/server_and_image_optimizations.sh
+          break
+          ;;
+        [Nn]*)
+          echo -e ${RED}"Aborting optimization script ..."${ENDCOLOR}
+          break
+          ;;
+        *) echo " > Please answer yes or no." ;;
+        esac
+      done
+
+    fi
+    if [[ ${CHOSEN_TYPE} == *"07"* ]]; then
+      source ${SFOLDER}/installers_and_configurators.sh
+
+    fi
+    if [[ ${CHOSEN_TYPE} == *"08"* ]]; then
+      source ${SFOLDER}/utils/replace_url_on_wordpress_db.sh
+
+    fi
+    if [[ ${CHOSEN_TYPE} == *"09"* ]]; then
+      source ${SFOLDER}/utils/wordpress_wpcli_helper.sh
+
+    fi
+    if [[ ${CHOSEN_TYPE} == *"10"* ]]; then
+      source ${SFOLDER}/utils/certbot_manager.sh
+
+    fi
+    if [[ ${CHOSEN_TYPE} == *"11"* ]]; then
+      source ${SFOLDER}/utils/bench_scripts.sh
+
+    fi
+    if [[ ${CHOSEN_TYPE} == *"12"* ]]; then
+      URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ ${exitstatus} = 0 ]; then
+        source ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh gtmetrix ${URL_TO_TEST}
+      fi
+    fi
+    if [[ ${CHOSEN_TYPE} == *"13"* ]]; then
+      IP_TO_TEST=$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ ${exitstatus} = 0 ]; then
+        source ${SFOLDER}/utils/blacklist-checker/bl.sh ${IP_TO_TEST}
+      fi
+    fi
+    if [[ ${CHOSEN_TYPE} == *"14"* ]]; then
+      while true; do
+        echo -e ${YELLOW}" > Do you really want to reset the script configuration?"${ENDCOLOR}
+        read -p "Please type 'y' or 'n'" yn
+        case $yn in
+        [Yy]*)
+          rm /root/.broobe-utils-options
+          rm -fr ${DPU_CONFIG_FILE}
+          break
+          ;;
+        [Nn]*)
+          echo -e ${RED}"Aborting ..."${ENDCOLOR}
+          break
+          ;;
+        *) echo " > Please answer yes or no." ;;
+        esac
+      done
+    fi
+
+  else
+    exit 1
+
+  fi
+}
+
+backup_menu() {
+
+  BACKUP_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP"
+  CHOSEN_BACKUP_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a Backup Type to run" 20 78 10 $(for x in ${BACKUP_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+
+    if [[ ${CHOSEN_BACKUP_TYPE} == *"01"* ]]; then
+
+      while true; do
+        echo -e ${YELLOW}"> Do you really want to run the database backup?"${ENDCOLOR}
+        read -p "Please type 'y' or 'n'" yn
+        case $yn in
+        [Yy]*)
+
+          source ${SFOLDER}/mysql_backup.sh
+
+          DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
+          DB_MAIL_VAR=$(<${DB_MAIL})
+          HTMLOPEN='<html><body>'
+          HTMLCLOSE='</body></html>'
+
+          echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
+
+          sendEmail -f ${SMTP_U} -t ${MAILA} -u "${VPSNAME} - Database Backup - [${NOWDISPLAY} - ${STATUS_D}]" -o message-content-type=html -m "${HTMLOPEN} ${DB_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}
+
+          break
+          ;;
+        [Nn]*)
+          echo -e ${RED}"Aborting database backup script ..."${ENDCOLOR}
+          break
+          ;;
+        *) echo "Please answer yes or no." ;;
+        esac
+      done
+
+    fi
+    if [[ ${CHOSEN_BACKUP_TYPE} == *"02"* ]]; then
+
+      while true; do
+        echo -e ${YELLOW}"> Do you really want to run the file backup?"${ENDCOLOR}
+        read -p "Please type 'y' or 'n'" yn
+        case $yn in
+        [Yy]*)
+          source ${SFOLDER}/files_backup.sh
+          FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
+          FILE_MAIL_VAR=$(<$FILE_MAIL)
+          HTMLOPEN='<html><body>'
+          HTMLCLOSE='</body></html>'
+          sendEmail -f ${SMTP_U} -t ${MAILA} -u "${STATUS_ICON_F} ${VPSNAME} - Files Backup [${NOWDISPLAY}]" -o message-content-type=html -m "${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${FILE_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}
+          break
+          ;;
+        [Nn]*)
+          echo -e ${RED}"Aborting file backup script ..."${ENDCOLOR}
+          break
+          ;;
+        *) echo " > Please answer yes or no." ;;
+        esac
+      done
+
+    fi
+
+  fi
+
+}
+################################################################################
+# CHECKERS
+################################################################################
 
 check_root() {
   if [ ${USER} != root ]; then
@@ -45,28 +220,20 @@ check_distro() {
   fi
 }
 
-declare -a checklist_array
-
-array_to_checklist() {
-  i=0
-  for option in $1; do
-    checklist_array[$i]=$option
-    i=$((i + 1))
-    checklist_array[$i]=" "
-    i=$((i + 1))
-    checklist_array[$i]=off
-    i=$((i + 1))
-  done
-}
-
 checking_scripts_permissions() {
   ### chmod
+
+  # TODO: reemplazamos por esto?
+  # find ./ -name "*.sh" -exec chmod +x {} \;
+
   chmod +x ${SFOLDER}/mysql_backup.sh
   chmod +x ${SFOLDER}/files_backup.sh
   chmod +x ${SFOLDER}/lemp_setup.sh
   chmod +x ${SFOLDER}/restore_from_backup.sh
   chmod +x ${SFOLDER}/server_and_image_optimizations.sh
   chmod +x ${SFOLDER}/installers_and_configurators.sh
+  chmod +x ${SFOLDER}/libs/mail_notification_helper.sh
+  chmod +x ${SFOLDER}/libs/mysql_helper.sh
   chmod +x ${SFOLDER}/utils/bench_scripts.sh
   chmod +x ${SFOLDER}/utils/certbot_manager.sh
   chmod +x ${SFOLDER}/utils/cloudflare_update_IP.sh
@@ -76,7 +243,7 @@ checking_scripts_permissions() {
   chmod +x ${SFOLDER}/utils/cockpit_installer.sh
   chmod +x ${SFOLDER}/utils/php_optimizations.sh
   chmod +x ${SFOLDER}/utils/wordpress_installer.sh
-  chmod +x ${SFOLDER}/utils/wordpress_migration_from_URL.sh
+  chmod +x ${SFOLDER}/utils/wordpress_restore_from_source.sh
   chmod +x ${SFOLDER}/utils/wordpress_wpcli_helper.sh
   chmod +x ${SFOLDER}/utils/replace_url_on_wordpress_db.sh
   chmod +x ${SFOLDER}/utils/blacklist-checker/bl.sh
@@ -128,6 +295,132 @@ compare_package_versions() {
 
 }
 
+################################################################################
+# VALIDATORS
+################################################################################
+
+is_domain_format_valid() {
+  object_name=${2-domain}
+  exclude="[!|@|#|$|^|&|*|(|)|+|=|{|}|:|,|<|>|?|_|/|\|\"|'|;|%|\`| ]"
+  if [[ $1 =~ $exclude ]] || [[ $1 =~ ^[0-9]+$ ]] || [[ $1 =~ "\.\." ]] || [[ $1 =~ "$(printf '\t')" ]]; then
+    check_result $E_INVALID "invalid $object_name format :: $1"
+  fi
+}
+
+is_ip_format_valid() {
+  object_name=${2-ip}
+  ip_regex='([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])'
+  ip_clean=$(echo "${1%/*}")
+  if ! [[ $ip_clean =~ ^$ip_regex\.$ip_regex\.$ip_regex\.$ip_regex$ ]]; then
+    check_result $E_INVALID "invalid $object_name format :: $1"
+  fi
+  if [ $1 != "$ip_clean" ]; then
+    ip_cidr="$ip_clean/"
+    ip_cidr=$(echo "${1#$ip_cidr}")
+    if [[ "$ip_cidr" -gt 32 ]] || [[ "$ip_cidr" =~ [:alnum:] ]]; then
+      check_result $E_INVALID "invalid $object_name format :: $1"
+    fi
+  fi
+}
+
+is_email_format_valid() {
+  if [[ ! "$1" =~ ^[A-Za-z0-9._%+-]+@[[:alnum:].-]+\.[A-Za-z]{2,63}$ ]]; then
+    check_result $E_INVALID "invalid email format :: $1"
+  fi
+}
+
+################################################################################
+# HELPERS
+################################################################################
+
+declare -a checklist_array
+
+array_to_checklist() {
+  i=0
+  for option in $1; do
+    checklist_array[$i]=$option
+    i=$((i + 1))
+    checklist_array[$i]=" "
+    i=$((i + 1))
+    checklist_array[$i]=off
+    i=$((i + 1))
+  done
+}
+
+file_browser() {
+  # first parameter is Menu Title
+  # second parameter is dir path to starting folder
+  if [ -z $2 ]; then
+    dir_list=$(ls -lhp | awk -F ' ' ' { print $9 " " $5 } ')
+  else
+    cd "$2"
+    dir_list=$(ls -lhp | awk -F ' ' ' { print $9 " " $5 } ')
+  fi
+  curdir=$(pwd)
+  if [ "$curdir" == "/" ]; then # Check if you are at root folder
+    selection=$(whiptail --title "$1" \
+      --menu "Select a Folder or Tab Key\n$curdir" 0 0 0 \
+      --cancel-button Cancel \
+      --ok-button Select $dir_list 3>&1 1>&2 2>&3)
+  else # Not Root Dir so show ../ BACK Selection in Menu
+    selection=$(whiptail --title "$1" \
+      --menu "Select a Folder or Tab Key\n$curdir" 0 0 0 \
+      --cancel-button Cancel \
+      --ok-button Select ../ BACK $dir_list 3>&1 1>&2 2>&3)
+  fi
+  RET=$?
+  if [ $RET -eq 1 ]; then # Check if User Selected Cancel
+    return 1
+  elif [ $RET -eq 0 ]; then
+    if [[ -f "$selection" ]]; then # Check if File Selected
+      if (whiptail --title "Confirm Selection" --yesno "Selection : $selection\n" 0 0 \
+        --yes-button "Confirm" \
+        --no-button "Retry"); then
+        filename="$selection"
+        filepath="$curdir" # Return full filepath and filename as selection variables
+      fi
+    fi
+  fi
+}
+
+directory_browser() {
+  # first parameter is Menu Title
+  # second parameter is dir path to starting folder
+
+  if [ -z $2 ]; then
+    dir_list=$(ls -lhp | awk -F ' ' ' { print $9 " " $5 } ')
+  else
+    cd "$2"
+    dir_list=$(ls -lhp | awk -F ' ' ' { print $9 " " $5 } ')
+  fi
+  curdir=$(pwd)
+  if [ "$curdir" == "/" ]; then # Check if you are at root folder
+    selection=$(whiptail --title "$1" \
+      --menu "Select a Folder or Tab Key\n$curdir" 0 0 0 \
+      --cancel-button Cancel \
+      --ok-button Select $dir_list 3>&1 1>&2 2>&3)
+  else # Not Root Dir so show ../ BACK Selection in Menu
+    selection=$(whiptail --title "$1" \
+      --menu "Select a Folder or Tab Key\n$curdir" 0 0 0 \
+      --cancel-button Cancel \
+      --ok-button Select ../ BACK $dir_list 3>&1 1>&2 2>&3)
+  fi
+  RET=$?
+  if [ $RET -eq 1 ]; then # Check if User Selected Cancel
+    return 1
+  elif [ $RET -eq 0 ]; then
+    if [[ -d "$selection" ]]; then # Check if Directory Selected
+      if (whiptail --title "Confirm Selection" --yesno "Selection : $selection\n" 0 0 \
+        --yes-button "Confirm" \
+        --no-button "Retry"); then
+        filename="$selection"
+        filepath="$curdir" # Return full filepath and filename as selection variables
+
+      fi
+    fi
+  fi
+}
+
 generate_dropbox_config() {
 
   OAUTH_ACCESS_TOKEN_STRING+= "\n . \n"
@@ -151,6 +444,10 @@ generate_dropbox_config() {
   fi
 
 }
+
+################################################################################
+# WP HELPERS
+################################################################################
 
 wp_download_wordpress() {
 
@@ -218,12 +515,6 @@ wp_database_creation() {
 
     DB_PASS=$(openssl rand -hex 12)
 
-    # HELPERS
-    # para cambiar pass de un user existente
-    # ALTER USER '_user'@'localhost' IDENTIFIED BY 'dadsada=';
-    # para borrar usuario existente
-    # DROP USER 'basfpoliuretanos_user'@'localhost';
-
     SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_${PROJECT_STATE};"
     SQL2="CREATE USER '${PROJECT_NAME}_user'@'localhost' IDENTIFIED BY '${DB_PASS}';"
     SQL3="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
@@ -277,12 +568,17 @@ wp_database_creation() {
 
 }
 
+################################################################################
+# ASK-FOR
+################################################################################
+
 # Used in:
 # restore_from_backup.sh
 # wordpress_installer.sh
-choose_project_state() {
+ask_project_state() {
+
   PROJECT_STATES="prod stage test dev"
-  PROJECT_STATE=$(whiptail --title "PROJECT STATE" --menu "Chose a Project State" 20 78 10 $(for x in ${PROJECT_STATES}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)
+  PROJECT_STATE=$(whiptail --title "PROJECT STATE" --menu "Choose a Project State" 20 78 10 $(for x in ${PROJECT_STATES}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
     echo -e ${YELLOW}"Project state selected: ${PROJECT_STATE} ..."${ENDCOLOR}
@@ -290,90 +586,32 @@ choose_project_state() {
   else
     exit 1
   fi
+
 }
 
-folder_to_install_sites() {
+ask_project_name() {
+
+  PROJECT_NAME=$(whiptail --title "Project Name" --inputbox "Please insert a project name. Example: broobe" 10 60 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    echo "Setting PROJECT_NAME="${PROJECT_NAME} >>$LOG
+  else
+    exit 1
+  fi
+
+}
+
+ask_folder_to_install_sites() {
+
   if [[ -z "${FOLDER_TO_INSTALL}" ]]; then
-    FOLDER_TO_INSTALL=$(whiptail --title "Folder to install Sites" --inputbox "Please insert a folder to restore the backup files." 10 60 "/var/www" 3>&1 1>&2 2>&3)
+    FOLDER_TO_INSTALL=$(whiptail --title "Folder to install" --inputbox "Please insert the full path where you want to install the site:" 10 60 "/var/www" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
+      echo "FOLDER_TO_INSTALL="${FOLDER_TO_INSTALL}
       echo "FOLDER_TO_INSTALL="${FOLDER_TO_INSTALL} >>$LOG
     else
       exit 0
     fi
   fi
-}
 
-Filebrowser() {
-  # first parameter is Menu Title
-  # second parameter is dir path to starting folder
-  if [ -z $2 ]; then
-    dir_list=$(ls -lhp | awk -F ' ' ' { print $9 " " $5 } ')
-  else
-    cd "$2"
-    dir_list=$(ls -lhp | awk -F ' ' ' { print $9 " " $5 } ')
-  fi
-  curdir=$(pwd)
-  if [ "$curdir" == "/" ]; then # Check if you are at root folder
-    selection=$(whiptail --title "$1" \
-      --menu "Select a Folder or Tab Key\n$curdir" 0 0 0 \
-      --cancel-button Cancel \
-      --ok-button Select $dir_list 3>&1 1>&2 2>&3)
-  else # Not Root Dir so show ../ BACK Selection in Menu
-    selection=$(whiptail --title "$1" \
-      --menu "Select a Folder or Tab Key\n$curdir" 0 0 0 \
-      --cancel-button Cancel \
-      --ok-button Select ../ BACK $dir_list 3>&1 1>&2 2>&3)
-  fi
-  RET=$?
-  if [ $RET -eq 1 ]; then # Check if User Selected Cancel
-    return 1
-  elif [ $RET -eq 0 ]; then
-    if [[ -f "$selection" ]]; then # Check if File Selected
-      if (whiptail --title "Confirm Selection" --yesno "Selection : $selection\n" 0 0 \
-        --yes-button "Confirm" \
-        --no-button "Retry"); then
-        filename="$selection"
-        filepath="$curdir" # Return full filepath and filename as selection variables
-      fi
-    fi
-  fi
-}
-
-Directorybrowser() {
-  # first parameter is Menu Title
-  # second parameter is dir path to starting folder
-
-  if [ -z $2 ]; then
-    dir_list=$(ls -lhp | awk -F ' ' ' { print $9 " " $5 } ')
-  else
-    cd "$2"
-    dir_list=$(ls -lhp | awk -F ' ' ' { print $9 " " $5 } ')
-  fi
-  curdir=$(pwd)
-  if [ "$curdir" == "/" ]; then # Check if you are at root folder
-    selection=$(whiptail --title "$1" \
-      --menu "Select a Folder or Tab Key\n$curdir" 0 0 0 \
-      --cancel-button Cancel \
-      --ok-button Select $dir_list 3>&1 1>&2 2>&3)
-  else # Not Root Dir so show ../ BACK Selection in Menu
-    selection=$(whiptail --title "$1" \
-      --menu "Select a Folder or Tab Key\n$curdir" 0 0 0 \
-      --cancel-button Cancel \
-      --ok-button Select ../ BACK $dir_list 3>&1 1>&2 2>&3)
-  fi
-  RET=$?
-  if [ $RET -eq 1 ]; then # Check if User Selected Cancel
-    return 1
-  elif [ $RET -eq 0 ]; then
-    if [[ -d "$selection" ]]; then # Check if Directory Selected
-      if (whiptail --title "Confirm Selection" --yesno "Selection : $selection\n" 0 0 \
-        --yes-button "Confirm" \
-        --no-button "Retry"); then
-        filename="$selection"
-        filepath="$curdir" # Return full filepath and filename as selection variables
-
-      fi
-    fi
-  fi
 }

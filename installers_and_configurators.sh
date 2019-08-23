@@ -29,3 +29,5 @@ if [ $exitstatus = 0 ]; then
 
   fi
 fi
+
+main_menu

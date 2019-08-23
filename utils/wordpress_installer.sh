@@ -31,28 +31,28 @@ if [[ -z "${SFOLDER}" ]]; then
 fi
 ################################################################################
 
+source ${SFOLDER}/libs/commons.sh
+source ${SFOLDER}/libs/mail_notification_helper.sh
+source ${SFOLDER}/libs/mysql_helper.sh
+
+#source ${SFOLDER}/utils/certbot_manager.sh
+
+################################################################################
+
 # Installation types
 INSTALLATION_TYPES="CLEAN_INSTALL COPY_FROM_PROJECT"
 
-INSTALLATION_TYPE=$(whiptail --title "INSTALLATION TYPE" --menu "Chose an Installation Type" 20 78 10 `for x in ${INSTALLATION_TYPES}; do echo "$x [X]"; done` 3>&1 1>&2 2>&3)
+INSTALLATION_TYPE=$(whiptail --title "INSTALLATION TYPE" --menu "Choose an Installation Type" 20 78 10 `for x in ${INSTALLATION_TYPES}; do echo "$x [X]"; done` 3>&1 1>&2 2>&3)
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
 
-  folder_to_install_sites
+  ask_folder_to_install_sites
 
   if [[ ${INSTALLATION_TYPE} == *"COPY"* ]]; then
 
-    #COPY_PROJECT=$(whiptail --title "Project to Copy" --inputbox "Insert the domain of the project you want to copy. Example: dev.broobe.com" 10 60 3>&1 1>&2 2>&3)
-    #exitstatus=$?
-    #if [ $exitstatus = 0 ]; then
-    #  echo "Setting COPY_PROJECT="${COPY_PROJECT} >> $LOG
-    #else
-    #  exit 1
-    #fi
-
     startdir=${FOLDER_TO_INSTALL}
     menutitle="Site Selection Menu"
-    Directorybrowser "$menutitle" "$startdir"
+    directory_browser "$menutitle" "$startdir"
     COPY_PROJECT_PATH=$filepath"/"$filename
     echo "Setting COPY_PROJECT_PATH="${COPY_PROJECT_PATH}
 
@@ -79,15 +79,10 @@ if [ $exitstatus = 0 ]; then
     else
       exit 1
     fi
-    PROJECT_NAME=$(whiptail --title "Project Name" --inputbox "Please insert a project name. Example: broobe" 10 60 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [ $exitstatus = 0 ]; then
-      echo "Setting PROJECT_NAME="${PROJECT_NAME} >> $LOG
-    else
-      exit 1
-    fi
+    
+    ask_project_name
 
-    choose_project_state
+    ask_project_state
 
     echo "Trying to make a copy of ${COPY_PROJECT} ..." >> $LOG
     echo -e ${YELLOW}"Trying to make a copy of ${COPY_PROJECT} ..."${ENDCOLOR}
@@ -114,7 +109,7 @@ if [ $exitstatus = 0 ]; then
         if [ $exitstatus = 0 ]; then
           echo "Setting PROJECT_NAME="${PROJECT_NAME}
 
-          choose_project_state
+          ask_project_state
 
         else
           exit 1
@@ -221,8 +216,9 @@ if [ $exitstatus = 0 ]; then
   echo -e ${GREEN}" > DONE! Now you can run the certbot."${ENDCOLOR}
 
   # HTTPS with Certbot
-  #echo -e ${YELLOW}" > Trying to execute certbot for ${CHOSEN_PROJECT} ..."${ENDCOLOR}
-  # TODO: certbot --nginx -d ${CHOSEN_PROJECT} -d www.${CHOSEN_PROJECT}
-  #certbot --nginx -d ${DOMAIN} -d www.${DOMAIN}
+  ${SFOLDER}/utils/certbot_manager.sh
+  #certbot_certificate_install "${MAILA}" "${DOMAIN}"
 
 fi
+
+main_menu
