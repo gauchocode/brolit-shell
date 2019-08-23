@@ -147,6 +147,7 @@ export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL DB_BL WSERVER PHP_CF 
 if [ -t 1 ]; then
 
   ### Running from terminal
+
   if [[ -z "${MPASS}" || -z "${SMTP_U}" || -z "${SMTP_P}" || -z "${SMTP_TLS}" || -z "${SMTP_PORT}" || -z "${SMTP_SERVER}" || -z "${SMTP_P}" || -z "${MAILA}" || -z "${SITES}" ]]; then
 
     FIRST_RUN_OPTIONS="01 LEMP_SETUP 02 CONFIGURE_SCRIPT"
@@ -159,85 +160,14 @@ if [ -t 1 ]; then
         exit 1
 
       else
-        if [[ -z "${MPASS}" ]]; then
-          MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root Password" 10 60 3>&1 1>&2 2>&3)
-          exitstatus=$?
-          if [ $exitstatus = 0 ]; then
-            #TODO: testear esto
-            until $MYSQL -u $MUSER -p$MPASS -e ";"; do
-              read -s -p "Can't connect to MySQL, please re-enter $MUSER password: " MPASS
-            done
-            echo "MPASS="${MPASS} >>/root/.broobe-utils-options
-          else
-            exit 1
-          fi
-        fi
-        if [[ -z "${SMTP_SERVER}" ]]; then
-          SMTP_SERVER=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server" 10 60 3>&1 1>&2 2>&3)
-          exitstatus=$?
-          if [ $exitstatus = 0 ]; then
-            echo "SMTP_SERVER="${SMTP_SERVER} >>/root/.broobe-utils-options
-          else
-            exit 1
-          fi
-        fi
-        if [[ -z "${SMTP_PORT}" ]]; then
-          SMTP_PORT=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server Port" 10 60 3>&1 1>&2 2>&3)
-          exitstatus=$?
-          if [ $exitstatus = 0 ]; then
-            echo "SMTP_PORT="${SMTP_PORT} >>/root/.broobe-utils-options
-          else
-            exit 1
-          fi
-        fi
-        if [[ -z "${SMTP_TLS}" ]]; then
-          SMTP_TLS=$(whiptail --title "SMTP TLS" --inputbox "SMTP yes or no:" 10 60 3>&1 1>&2 2>&3)
-          exitstatus=$?
-          if [ $exitstatus = 0 ]; then
-            echo "SMTP_TLS="${SMTP_TLS} >>/root/.broobe-utils-options
-          else
-            exit 1
-          fi
-        fi
-        if [[ -z "${SMTP_U}" ]]; then
-          SMTP_U=$(whiptail --title "SMTP User" --inputbox "Please insert the SMTP user" 10 60 3>&1 1>&2 2>&3)
-          exitstatus=$?
-          if [ $exitstatus = 0 ]; then
-            echo "SMTP_U="${SMTP_U} >>/root/.broobe-utils-options
-          else
-            exit 1
-          fi
-        fi
-        if [[ -z "${SMTP_P}" ]]; then
-          SMTP_P=$(whiptail --title "SMTP Password" --inputbox "Please insert the SMTP user password" 10 60 3>&1 1>&2 2>&3)
-          exitstatus=$?
-          if [ $exitstatus = 0 ]; then
-            echo "SMTP_P="${SMTP_P} >>/root/.broobe-utils-options
-          else
-            exit 1
-          fi
-        fi
-        if [[ -z "${MAILA}" ]]; then
-          MAILA=$(whiptail --title "Notification Email" --inputbox "Insert the email where you want to receive notifications." 10 60 3>&1 1>&2 2>&3)
-          exitstatus=$?
-          if [ $exitstatus = 0 ]; then
-            echo "MAILA="${MAILA} >>/root/.broobe-utils-options
-          else
-            exit 1
-          fi
-        fi
-        if [[ -z "${SITES}" ]]; then
-          SITES=$(whiptail --title "Websites Root Directory" --inputbox "Insert the path where websites are stored. Ex: /var/www or /usr/share/nginx" 10 60 3>&1 1>&2 2>&3)
-          exitstatus=$?
-          if [ $exitstatus = 0 ]; then
-            echo "SITES="${SITES} >>/root/.broobe-utils-options
-          else
-            exit 1
-          fi
-        fi
+        show_script_configuration_wizard
+        
       fi
+
     fi
+    
   fi
+
 else
   #cron
   if [[ -z "${MPASS}" || -z "${SMTP_U}" || -z "${SMTP_P}" || -z "${SMTP_TLS}" || -z "${SMTP_PORT}" || -z "${SMTP_SERVER}" || -z "${SMTP_P}" || -z "${MAILA}" || -z "${SITES}" ]]; then
