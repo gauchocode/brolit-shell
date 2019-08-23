@@ -24,7 +24,7 @@ menutitle="Config Selection Menu"
 ################################################################################
 
 main_menu() {
-  RUNNER_OPTIONS="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 DELETE_PROJECT 04 WORDPRESS_INSTALLER 05 HOSTING_TO_VPS 06 SERVER_OPTIMIZATIONS 07 INSTALLERS_AND_CONFIGS 08 REPLACE_WP_URL 09 WPCLI_HELPER 10 CERTBOT_MANAGER 11 BENCHMARKS 12 GTMETRIX_TEST 13 BLACKLIST_CHECKER 14 RESET_SCRIPT_OPTIONS"
+  RUNNER_OPTIONS="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 RESTORE_FROM_SOURCE 04 DELETE_PROJECT 05 WORDPRESS_INSTALLER 06 SERVER_OPTIMIZATIONS 07 INSTALLERS_AND_CONFIGS 08 REPLACE_WP_URL 09 WPCLI_HELPER 10 CERTBOT_MANAGER 11 BENCHMARKS 12 GTMETRIX_TEST 13 BLACKLIST_CHECKER 14 RESET_SCRIPT_OPTIONS"
   CHOSEN_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 $(for x in ${RUNNER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
@@ -37,16 +37,17 @@ main_menu() {
       source ${SFOLDER}/restore_from_backup.sh
     fi
     if [[ ${CHOSEN_TYPE} == *"03"* ]]; then
-      source ${SFOLDER}/delete_project.sh
+      source ${SFOLDER}/utils/wordpress_restore_from_source.sh
 
     fi
 
     if [[ ${CHOSEN_TYPE} == *"04"* ]]; then
-      source ${SFOLDER}/utils/wordpress_installer.sh
+      source ${SFOLDER}/delete_project.sh
 
     fi
+
     if [[ ${CHOSEN_TYPE} == *"05"* ]]; then
-      source ${SFOLDER}/utils/wordpress_restore_from_source.sh
+      source ${SFOLDER}/utils/wordpress_installer.sh
 
     fi
     if [[ ${CHOSEN_TYPE} == *"06"* ]]; then
@@ -107,8 +108,10 @@ main_menu() {
         read -p "Please type 'y' or 'n'" yn
         case $yn in
         [Yy]*)
-          rm /root/.broobe-utils-options
-          rm -fr ${DPU_CONFIG_FILE}
+          # TODO: acá deberia correr el wizard original y levantar las variables seteadas
+          show_script_configuration_wizard
+          #rm /root/.broobe-utils-options
+          #rm -fr ${DPU_CONFIG_FILE}
           break
           ;;
         [Nn]*)
@@ -192,6 +195,88 @@ backup_menu() {
   fi
 
 }
+
+show_script_configuration_wizard() {
+
+  if [[ -z "${MPASS}" ]]; then
+    MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root Password" 10 60 "${MPASS}" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      #TODO: testear esto
+      until $MYSQL -u $MUSER -p$MPASS -e ";"; do
+        read -s -p "Can't connect to MySQL, please re-enter $MUSER password: " MPASS
+      done
+      echo "MPASS="${MPASS} >>/root/.broobe-utils-options
+    else
+      exit 1
+    fi
+  fi
+  if [[ -z "${SMTP_SERVER}" ]]; then
+    SMTP_SERVER=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server" 10 60 "${SMTP_SERVER}" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo "SMTP_SERVER="${SMTP_SERVER} >>/root/.broobe-utils-options
+    else
+      exit 1
+    fi
+  fi
+  if [[ -z "${SMTP_PORT}" ]]; then
+    SMTP_PORT=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server Port" 10 60 "${SMTP_PORT}" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo "SMTP_PORT="${SMTP_PORT} >>/root/.broobe-utils-options
+    else
+      exit 1
+    fi
+  fi
+  if [[ -z "${SMTP_TLS}" ]]; then
+    SMTP_TLS=$(whiptail --title "SMTP TLS" --inputbox "SMTP yes or no:" 10 60 "${SMTP_TLS}" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo "SMTP_TLS="${SMTP_TLS} >>/root/.broobe-utils-options
+    else
+      exit 1
+    fi
+  fi
+  if [[ -z "${SMTP_U}" ]]; then
+    SMTP_U=$(whiptail --title "SMTP User" --inputbox "Please insert the SMTP user" 10 60 "${SMTP_U}" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo "SMTP_U="${SMTP_U} >>/root/.broobe-utils-options
+    else
+      exit 1
+    fi
+  fi
+  if [[ -z "${SMTP_P}" ]]; then
+    SMTP_P=$(whiptail --title "SMTP Password" --inputbox "Please insert the SMTP user password" 10 60 "${SMTP_P}" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo "SMTP_P="${SMTP_P} >>/root/.broobe-utils-options
+    else
+      exit 1
+    fi
+  fi
+  if [[ -z "${MAILA}" ]]; then
+    MAILA=$(whiptail --title "Notification Email" --inputbox "Insert the email where you want to receive notifications." 10 60 "${MAILA}" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo "MAILA="${MAILA} >>/root/.broobe-utils-options
+    else
+      exit 1
+    fi
+  fi
+  if [[ -z "${SITES}" ]]; then
+    SITES=$(whiptail --title "Websites Root Directory" --inputbox "Insert the path where websites are stored. Ex: /var/www or /usr/share/nginx" 10 60 "${SITES}" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo "SITES="${SITES} >>/root/.broobe-utils-options
+    else
+      exit 1
+    fi
+  fi
+
+}
+
 ################################################################################
 # CHECKERS
 ################################################################################
