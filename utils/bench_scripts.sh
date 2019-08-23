@@ -15,3 +15,5 @@ echo " > Running benchmark ..." >>$LOG
 
 echo -e ${GREEN} " > DONE" ${ENDCOLOR}
 echo " > DONE" >>$LOG
+
+main_menu
