@@ -35,6 +35,9 @@ echo -e ${GREEN}" > Project files stored: ${SFOLDER}/tmp-backup"${ENDCOLOR}
 rm -R $filepath"/"$filename
 echo -e ${GREEN}" > Project Files Deleted!"${ENDCOLOR}
 
+# Removing last slash from string
+filename=${filename%/}
+
 # Making a copy of nginx configuration file
 cp -r /etc/nginx/sites-available/${filename} ${SFOLDER}/tmp-backup
 
@@ -52,12 +55,16 @@ else
     exit 1
 fi
 
-# TODO: remove _STATE to make USER_DB
+# Removing DB prefix to find mysql user
+suffix="$(cut -d'_' -f2 <<<"${CHOSEN_DB}")"
+PROJECT_NAME=${CHOSEN_DB%"_$suffix"}
+USER_DB="${PROJECT_NAME}_user"
 
 # Making a database Backup
 mysql_database_export "${CHOSEN_DB}" "${filename}_DB.sql"
 
-#mysql_user_delete "${USER_DB}"
+# Deleting mysql user
+mysql_user_delete "${USER_DB}"
 
 # Deleting project database
 mysql_database_drop "${CHOSEN_DB}"
