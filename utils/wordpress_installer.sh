@@ -212,8 +212,7 @@ if [ $exitstatus = 0 ]; then
   # Restart nginx service
   service nginx reload
 
-  echo " > DONE">> $LOG
-  echo -e ${GREEN}" > DONE! Now you can run the certbot."${ENDCOLOR}
+  echo " > Nginx configuration loaded!">> $LOG
 
   # HTTPS with Certbot
   ${SFOLDER}/utils/certbot_manager.sh
