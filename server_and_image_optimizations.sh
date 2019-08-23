@@ -29,8 +29,8 @@ JPG_COMPRESS='90'
 echo " > Cleanning old system packages ..." >>$LOG
 echo -e ${YELLOW}" > Cleanning old system packages ..."${ENDCOLOR}
 apt clean
-apt-get -y autoremove
-apt-get -y autoclean
+apt -y autoremove
+apt -y autoclean
 
 ### Remove old log files from system
 echo " > Deleting old system logs..." >>$LOG

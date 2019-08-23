@@ -4,19 +4,10 @@
 # Script Name: Broobe Utils Scripts
 # Version: 2.9
 ################################################################################
-
+#
 # HTTPS with Certbot
-
-# TODO: checkear si vienen definidas variables, como para que otro script lo pueda correr desatendido
-
-# TODO: checkear si necesitamos backuper /etc/letsencrypt
-
-# TODO: checkear instalación de certbot
-
 # TODO: abria que preguntar si se quiere instalar certificado nginx only o nginx+cloudflare
-
 # TODO: soporte con Cloudflare: https://certbot-dns-cloudflare.readthedocs.io/en/stable/
-
 # TODO: si se elige nginx+cloudflare:
 # apt install python3-certbot-dns-cloudflare
 # vim /root/.cloudflare.conf
@@ -36,10 +27,35 @@
 # Reiniciamos nginx
 # Instalamos un cronjob:
 #14 5 * * * certbot renew --quiet --post-hook "service nginx reload" > /dev/null 2>&1
+#
+################################################################################
+
+certbot_certificate_install() {
+  certbot --nginx --non-interactive --agree-tos --redirect -m $1 -d $2
+  # TODO: Multiple domains/subdomains
+  # certbot --nginx -d ${DOMAIN} -d www.${DOMAIN}
+}
+
+certbot_certificate_force_install() {
+  certbot --nginx --non-interactive --agree-tos --redirect -m $1 -d $2
+
+}
+
+certbot_certificate_renew() {
+  certbot renew --nginx --non-interactive --agree-tos --preferred-challenges http -m $1 -d $2
+
+}
+
+certbot_certificate_force_renew() {
+  certbot --nginx --non-interactive --agree-tos --redirect -m $1 -d $2
+
+}
+
+################################################################################
 
 CERTBOT_OPTIONS="01 INSTALL_CERTIFICATE 02 FORCE_INSTALL_CERTIFICATE 03 RECONFIGURE_CERTIFICATE 04 RENEW_CERTIFICATE 05 FORCE_RENEW_CERTIFICATE"
 
-CHOSEN_CB_OPTION=$(whiptail --title "CERTBOT MANAGER" --menu "Please choose an option:" 20 78 10 `for x in ${CERTBOT_OPTIONS}; do echo "$x"; done` 3>&1 1>&2 2>&3)
+CHOSEN_CB_OPTION=$(whiptail --title "CERTBOT MANAGER" --menu "Please choose an option:" 20 78 10 $(for x in ${CERTBOT_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
@@ -51,13 +67,11 @@ if [ $exitstatus = 0 ]; then
     echo -e ${YELLOW}" > Trying to execute certbot for ${DOMAIN} ..."${ENDCOLOR}
 
     if [[ ${CHOSEN_CB_OPTION} == *"01"* ]]; then
-      certbot --nginx --non-interactive --agree-tos --redirect -m ${MAILA} -d ${DOMAIN}
-      # TODO: Multiple domains/subdomains
-      # certbot --nginx -d ${DOMAIN} -d www.${DOMAIN}
+      certbot_certificate_install "${MAILA}" "${DOMAIN}"
 
     fi
     if [[ ${CHOSEN_CB_OPTION} == *"02"* ]]; then
-      certbot --nginx --non-interactive --agree-tos --redirect -m ${MAILA} -d ${DOMAIN}
+      certbot_certificate_force_install "${MAILA}" "${DOMAIN}"
 
     fi
     if [[ ${CHOSEN_CB_OPTION} == *"03"* ]]; then
@@ -66,7 +80,7 @@ if [ $exitstatus = 0 ]; then
 
     fi
     if [[ ${CHOSEN_CB_OPTION} == *"04"* ]]; then
-      certbot renew --nginx --non-interactive --agree-tos --preferred-challenges http -m ${MAILA} -d ${DOMAIN}
+      certbot_certificate_renew "${MAILA}" "${DOMAIN}"
 
     fi
     if [[ ${CHOSEN_CB_OPTION} == *"05"* ]]; then
@@ -76,7 +90,7 @@ if [ $exitstatus = 0 ]; then
 
     fi
 
-    echo -e ${GREEN}" > Everything is DONE! ..."${ENDCOLOR}
+    #echo -e ${GREEN}" > Everything is DONE! ..."${ENDCOLOR}
 
   fi
 

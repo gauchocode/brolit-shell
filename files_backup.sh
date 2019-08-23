@@ -12,6 +12,8 @@ fi
 
 source ${SFOLDER}/libs/commons.sh
 
+################################################################################
+
 # TODO: refactor del manejo de ERRORES
 
 ### VARS

@@ -10,16 +10,16 @@ SCRIPT_V="2.9.7"
 # TODO: otra opcion 'complete_site' para que intente restaurar archivos y base de un mismo proyecto.
 # TODO: otra opcion 'multi_sites' para que intente restaurar varios sitios que estan backupeados en dropbox.
 
-#Restore Local?
-#$SFOLDER/tmp/backups/*.tar.gz
-
-source ${SFOLDER}/libs/commons.sh
-
 ### Checking some things
 if [[ -z "${SFOLDER}" ]]; then
   echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
   exit 0
 fi
+################################################################################
+
+source ${SFOLDER}/libs/commons.sh
+source ${SFOLDER}/libs/mysql_helper.sh
+
 ################################################################################
 
 SITES_F="sites"
@@ -69,7 +69,7 @@ if [[ ${CHOSEN_TYPE} == *"$CONFIG_F"* ]]; then
         echo -e ${GREEN} " > Folder ${WSERVER} exists ... OK" ${ENDCOLOR}
 
         startdir="${SFOLDER}/tmp/${CHOSEN_TYPE}/sites-available"
-        Filebrowser "$menutitle" "$startdir"
+        file_browser "$menutitle" "$startdir"
 
         to_restore=$filepath"/"$filename
         echo -e ${YELLOW}" > File to restore: ${to_restore} ..."${ENDCOLOR}
@@ -152,7 +152,7 @@ else
 
     if [[ ${CHOSEN_TYPE} == *"$SITES_F"* ]]; then
 
-      folder_to_install_sites
+      ask_folder_to_install_sites
 
       ACTUAL_FOLDER="${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT}"
 
@@ -177,6 +177,7 @@ else
       mv ${SFOLDER}/tmp/${CHOSEN_PROJECT} ${FOLDER_TO_INSTALL}
 
       DOMAIN=${CHOSEN_PROJECT}
+
       wp_change_ownership
 
       # TODO: ver si se puede restaurar un viejo backup del site-available de nginx y luego
@@ -212,7 +213,7 @@ else
         echo -e ${YELLOW}" > Trying to restore ${CHOSEN_BACKUP} DB"${ENDCOLOR}
 
         # TODO: debería extraer el sufijo real y preguntar si se quiere cambiar
-        choose_project_state
+        ask_project_state
 
         suffix="$(cut -d'_' -f2 <<<"${CHOSEN_PROJECT}")"
         #suffix="_${PROJECT_STATE}"
@@ -257,28 +258,20 @@ else
         fi
 
         # Trying to restore Database
-        pv ${CHOSEN_BACKUP%%.*}.sql | mysql -f -u ${MUSER} --password=${MPASS} ${PROJECT_NAME}_${PROJECT_STATE}
-
-        if [ $? -eq 0 ]; then
-          echo " > DB ${CHOSEN_BACKUP} restored successfully!" >>$LOG
-          echo -e ${GREEN}" > DB ${CHOSEN_BACKUP} restored successfully!"${ENDCOLOR}
-        else
-          echo " > DB ${CHOSEN_BACKUP} restored failed!" >>$LOG
-          echo -e ${RED}" > DB ${CHOSEN_BACKUP} restored failed!"${ENDCOLOR}
-          exit 1
-        fi
+        mysql_database_import "${PROJECT_NAME}_${PROJECT_STATE}" "${CHOSEN_BACKUP%%.*}.sql"
+        #pv ${CHOSEN_BACKUP%%.*}.sql | mysql -f -u ${MUSER} --password=${MPASS} ${PROJECT_NAME}_${PROJECT_STATE}
 
         echo -e ${YELLOW}" > Cleanning temp files ..."${ENDCOLOR}
         rm ${CHOSEN_BACKUP%%.*}.sql
         rm ${CHOSEN_BACKUP}
         echo -e ${GREEN}" > DONE"${ENDCOLOR}
 
-        folder_to_install_sites
+        ask_folder_to_install_sites
 
-        # TODO: Acá usar el Directorybrowser en vez de buscar con find
+        # TODO: Acá usar el directory_browser en vez de buscar con find
         startdir=${FOLDER_TO_INSTALL}
         menutitle="Site Selection Menu"
-        Directorybrowser "$menutitle" "$startdir"
+        directory_browser "$menutitle" "$startdir"
         WP_SITE=$filepath"/"$filename
         echo "Setting WP_SITE="${WP_SITE}
 
