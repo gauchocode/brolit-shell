@@ -12,7 +12,7 @@ fi
 
 ################################################################################
 
-install_netdata() {
+netdata_installer() {
 
   echo -e ${YELLOW}"\nInstalling Netdata...\n"${ENDCOLOR}
   apt --yes install zlib1g-dev uuid-dev libuv1-dev liblz4-dev libjudy-dev libssl-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python python-mysqldb lm-sensors libmnl netcat nodejs python-ipaddress python-dnspython iproute2 python-beanstalkc libuv liblz4 Judy openssl
@@ -22,7 +22,7 @@ install_netdata() {
 
 }
 
-configure_netdata() {
+netdata_configuration() {
 
   # TODO: agregar soporte a config de Discord: https://docs.netdata.cloud/health/notifications/discord/
 
@@ -50,7 +50,7 @@ configure_netdata() {
 
 netdata_alarm_level() {
   NETDATA_ALARM_LEVELS="warning critical"
-  NETDATA_ALARM_LEVEL=$(whiptail --title "NETDATA ALARM LEVEL" --menu "Chose the Alarm Level for Notifications" 20 78 10 $(for x in ${NETDATA_ALARM_LEVELS}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)
+  NETDATA_ALARM_LEVEL=$(whiptail --title "NETDATA ALARM LEVEL" --menu "Choose the Alarm Level for Notifications" 20 78 10 $(for x in ${NETDATA_ALARM_LEVELS}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
     echo "NETDATA_ALARM_LEVEL="${NETDATA_ALARM_LEVEL} >>/root/.broobe-utils-options
@@ -173,14 +173,14 @@ if [ ! -x "${NETDATA}" ]; then
       echo -e ${YELLOW}" > Updating packages before installation ..."${ENDCOLOR}
       apt --yes update
 
-      install_netdata
+      netdata_installer
 
       # Netdata nginx proxy configuration
       cp ${SFOLDER}/confs/nginx/sites-available/monitor /etc/nginx/sites-available
       sed -i "s#dominio.com#${NETDATA_SUBDOMAIN}#" /etc/nginx/sites-available/monitor
       ln -s /etc/nginx/sites-available/monitor /etc/nginx/sites-enabled/monitor
 
-      configure_netdata
+      netdata_configuration
 
       # Cloudflare API
       echo " > Trying to access Cloudflare API and change record ${NETDATA_SUBDOMAIN} ..." >>$LOG
@@ -216,11 +216,11 @@ else
 
     if [[ ${NETDATA_CHOSEN_OPTION} == *"01"* ]]; then
       cd netdata && git pull && ./netdata-installer.sh --dont-wait
-      configure_netdata
+      netdata_configuration
 
     fi
     if [[ ${NETDATA_CHOSEN_OPTION} == *"02"* ]]; then
-      configure_netdata
+      netdata_configuration
 
     fi
     if [[ ${NETDATA_CHOSEN_OPTION} == *"03"* ]]; then
