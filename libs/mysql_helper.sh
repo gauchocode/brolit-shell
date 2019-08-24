@@ -26,7 +26,7 @@ mysql_user_create() {
     # $1 USER (${PROJECT_NAME}_user)
 
     SQL1="CREATE USER '$1'@'localhost';"
-    SQL2="GRANT USAGE on *.* to '$1'@'localhost';"
+    SQL2="GRANT USAGE on *.* to '$1'@'localhost';" #GRANT USAGE on *.* to '$1'@'localhost';
     SQL3="FLUSH PRIVILEGES;"
 
     echo "Creating $1 user in MySQL ..." >>$LOG
@@ -166,7 +166,7 @@ mysql_database_import() {
     echo -e ${YELLOW}" > Importing dump file $2 into database: $1 ..."${ENDCOLOR}
     echo " > Importing dump file $2 into database: $1 ..." >>$LOG
     #mysql -u ${MUSER} -p${MPASS} $1 < $2
-    pv $2 | mysql -f -u ${MUSER} -p ${MPASS} $1
+    pv $2 | mysql -f -u ${MUSER} -p ${MPASS} -f -D $1
 
 }
 
