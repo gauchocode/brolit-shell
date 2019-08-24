@@ -10,12 +10,23 @@
 # https://stackoverflow.com/questions/34057123/difference-between-and-when-passing-arguments-to-bash-function
 #
 
-# TODO: agregar control de error de mysql y mysqldump
+source /root/.broobe-utils-options
 
-mysql_databases_list() {
+################################################################################
 
-    DBS="$(${MYSQL} -u ${MUSER} -p${MPASS} -Bse 'show databases')"
+count_dabases() {
 
+    # $1 - ${DBS}
+
+    TOTAL_DBS=0
+    for db in ${DBS}; do
+        if [[ $DB_BL != *"${db}"* ]]; then
+            TOTAL_DBS=$((TOTAL_DBS + 1))
+        fi
+    done
+
+    # return
+    echo $TOTAL_DBS
 }
 
 mysql_user_create() {
@@ -23,7 +34,7 @@ mysql_user_create() {
     # TODO: Checkear si el usuario ya existe
     # TODO: el GRANT USAGE debería ser otro método
 
-    # $1 USER (${PROJECT_NAME}_user)
+    # $1 - USER (${PROJECT_NAME}_user)
 
     SQL1="CREATE USER '$1'@'localhost';"
     SQL2="GRANT USAGE on *.* to '$1'@'localhost';" #GRANT USAGE on *.* to '$1'@'localhost';
@@ -149,7 +160,7 @@ mysql_database_drop() {
 
     if [ $? -eq 0 ]; then
         echo " > Database $1 deleted!" >>$LOG
-        echo -e ${GREN}" > Database $1 deleted!"${ENDCOLOR}
+        echo -e ${GREEN}" > Database $1 deleted!"${ENDCOLOR}
     else
         echo " > Something went wrong!" >>$LOG
         echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
@@ -165,8 +176,17 @@ mysql_database_import() {
 
     echo -e ${YELLOW}" > Importing dump file $2 into database: $1 ..."${ENDCOLOR}
     echo " > Importing dump file $2 into database: $1 ..." >>$LOG
-    #mysql -u ${MUSER} -p${MPASS} $1 < $2
+
     pv $2 | mysql -f -u ${MUSER} -p ${MPASS} -f -D $1
+
+    if [ $? -eq 0 ]; then
+        echo " > Import database $1 OK!" >>$LOG
+        echo -e ${GREEN}" > Import database $1 OK!"${ENDCOLOR}
+    else
+        echo " > Import database $1 failed!" >>$LOG
+        echo -e ${RED}" > Import database $1 failed!"${ENDCOLOR}
+        exit 1
+    fi
 
 }
 
