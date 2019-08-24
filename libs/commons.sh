@@ -131,7 +131,7 @@ main_menu() {
 
 backup_menu() {
 
-  BACKUP_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP"
+  BACKUP_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP 03 BACKUP_ALL"
   CHOSEN_BACKUP_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a Backup Type to run" 20 78 10 $(for x in ${BACKUP_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -154,7 +154,11 @@ backup_menu() {
 
           echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
 
-          sendEmail -f ${SMTP_U} -t ${MAILA} -u "${VPSNAME} - Database Backup - [${NOWDISPLAY} - ${STATUS_D}]" -o message-content-type=html -m "${HTMLOPEN} ${DB_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}
+          EMAIL_SUBJECT="${STATUS_ICON_D} ${VPSNAME} - Database Backup - [${NOWDISPLAY}]"
+          EMAIL_CONTENT="${HTMLOPEN} ${DB_MAIL_VAR} ${HTMLCLOSE}"
+
+          # Sending email notification
+          send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
 
           break
           ;;
@@ -174,12 +178,58 @@ backup_menu() {
         read -p "Please type 'y' or 'n'" yn
         case $yn in
         [Yy]*)
+
           source ${SFOLDER}/files_backup.sh
+
           FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
           FILE_MAIL_VAR=$(<$FILE_MAIL)
           HTMLOPEN='<html><body>'
           HTMLCLOSE='</body></html>'
-          sendEmail -f ${SMTP_U} -t ${MAILA} -u "${STATUS_ICON_F} ${VPSNAME} - Files Backup [${NOWDISPLAY}]" -o message-content-type=html -m "${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${FILE_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}
+
+          echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
+
+          EMAIL_SUBJECT="${STATUS_ICON_F} ${VPSNAME} - Files Backup - [${NOWDISPLAY}]"
+          EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${FILE_MAIL_VAR} ${HTMLCLOSE}"
+
+          # Sending email notification
+          send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
+
+          break
+          ;;
+        [Nn]*)
+          echo -e ${RED}"Aborting file backup script ..."${ENDCOLOR}
+          break
+          ;;
+        *) echo " > Please answer yes or no." ;;
+        esac
+      done
+
+    fi
+    if [[ ${CHOSEN_BACKUP_TYPE} == *"03"* ]]; then
+
+      while true; do
+        echo -e ${YELLOW}"> Do you really want to backup files and databases?"${ENDCOLOR}
+        read -p "Please type 'y' or 'n'" yn
+        case $yn in
+        [Yy]*)
+
+          # Running scripts
+          ${SFOLDER}/mysql_backup.sh
+          ${SFOLDER}/files_backup.sh
+
+          #FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
+          #FILE_MAIL_VAR=$(<$FILE_MAIL)
+          #HTMLOPEN='<html><body>'
+          #HTMLCLOSE='</body></html>'
+
+          #echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
+
+          #EMAIL_SUBJECT="${STATUS_ICON_F} ${VPSNAME} - Files Backup - [${NOWDISPLAY}]"
+          #EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${FILE_MAIL_VAR} ${HTMLCLOSE}"
+
+          # Sending email notification
+          #send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
+
           break
           ;;
         [Nn]*)
@@ -331,48 +381,6 @@ checking_scripts_permissions() {
 
 }
 
-check_packages_required() {
-  ### Check if sendemail is installed
-  SENDEMAIL="$(which sendemail)"
-  if [ ! -x "${SENDEMAIL}" ]; then
-    apt -y install sendemail libio-socket-ssl-perl
-  fi
-
-  ### Check if pv is installed
-  PV="$(which pv)"
-  if [ ! -x "${PV}" ]; then
-    apt -y install pv
-  fi
-
-  ### Check if bc is installed
-  BC="$(which bc)"
-  if [ ! -x "${BC}" ]; then
-    apt -y install bc
-  fi
-
-  ### Check if dig is installed
-  DIG="$(which dig)"
-  if [ ! -x "${DIG}" ]; then
-    apt -y install dnsutils
-  fi
-
-}
-
-compare_package_versions() {
-  OUTDATED=false
-  #echo "" >${BAKWP}/pkg-${NOW}.mail
-  for pk in ${PACKAGES[@]}; do
-    PK_VI=$(apt-cache policy ${pk} | grep Installed | cut -d ':' -f 2)
-    PK_VC=$(apt-cache policy ${pk} | grep Candidate | cut -d ':' -f 2)
-    if [ ${PK_VI} != ${PK_VC} ]; then
-      OUTDATED=true
-      # TODO: meterlo en un array para luego loopear
-      #echo " > ${pk} ${PK_VI} -> ${PK_VC} <br />" >>${BAKWP}/pkg-${NOW}.mail
-    fi
-  done
-
-}
-
 ################################################################################
 # VALIDATORS
 ################################################################################
@@ -520,6 +528,13 @@ generate_dropbox_config() {
     exit 1
 
   fi
+
+}
+
+calculate_disk_usage() {
+
+  DISK_U=$(df -h | grep "${MAIN_VOL}" | awk {'print $5'})
+  echo " > Disk usage: ${DISK_U} ..." >>${LOG}
 
 }
 

@@ -1085,7 +1085,7 @@ function db_mkdir
     elif grep -q "^HTTP/[12].* 403" "$RESPONSE_FILE"; then
         print "ALREADY EXISTS\n"
     else
-        print "FAILED\n"
+        print "FAILED, MAYBE ALREADY EXISTS\n"
         ERROR_STATUS=1
     fi
 }
