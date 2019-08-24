@@ -22,6 +22,84 @@ source ${SFOLDER}/libs/mysql_helper.sh
 
 ################################################################################
 
+make_temp_files_backup() {
+
+  mkdir ${SFOLDER}/tmp/old_backup
+  mv $1 ${SFOLDER}/tmp/old_backup
+
+  echo " > Backup completed and stored here: ${SFOLDER}/tmp/old_backup ..." >>$LOG
+  echo -e ${GREEN}" > Backup completed and stored here: ${SFOLDER}/tmp/old_backup ..."${ENDCOLOR}
+
+}
+
+make_temp_db_backup() {
+
+  if [ -d /var/lib/mysql/${CHOSEN_PROJECT} ]; then
+    echo -e ${YELLOW}" > Executing mysqldump (will work if database exists) ..."${ENDCOLOR}
+    mysqldump -u ${MUSER} --password=${MPASS} ${CHOSEN_PROJECT} >${CHOSEN_PROJECT}_bk_before_restore.sql
+
+  fi
+
+}
+
+restore_database_backup() {
+
+  echo " > Trying to restore ${CHOSEN_BACKUP} DB" >>$LOG
+  echo -e ${YELLOW}" > Trying to restore ${CHOSEN_BACKUP} DB"${ENDCOLOR}
+
+  # TODO: debería extraer el sufijo real y preguntar si se quiere cambiar
+  ask_project_state
+
+  suffix="$(cut -d'_' -f2 <<<"${CHOSEN_PROJECT}")"
+  #suffix="_${PROJECT_STATE}"
+
+  ### Extract PROJECT_NAME
+  PROJECT_NAME=${CHOSEN_PROJECT%"_$suffix"}
+
+  PROJECT_NAME=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${PROJECT_NAME}" 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    echo "Setting PROJECT_NAME="${PROJECT_NAME} >>$LOG
+  else
+    exit 1
+  fi
+
+  echo " > Creating user and database ..." >>$LOG
+  echo -e ${YELLOW}" > Creating user and database ..."${ENDCOLOR}
+
+  # TODO: usar wp_database_creation
+  DB_PASS=$(openssl rand -hex 12)
+
+  #para cambiar pass de un user existente
+  #ALTER USER 'makana_user'@'localhost' IDENTIFIED BY '0p2eE2a0ed4d8=';
+
+  SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_${PROJECT_STATE};"
+  SQL2="CREATE USER '${PROJECT_NAME}_user'@'localhost' IDENTIFIED BY '${DB_PASS}';"
+  SQL3="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
+  SQL4="FLUSH PRIVILEGES;"
+
+  echo "Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS} if they not exist ..." >>$LOG
+  echo -e ${CYAN}"Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS} if they not exist ..."${ENDCOLOR}
+
+  mysql -u ${MUSER} --password=${MPASS} -e "${SQL1}${SQL2}${SQL3}${SQL4}"
+
+  if [ $? -eq 0 ]; then
+    echo " > DONE!" >>$LOG
+    echo -e ${GREN}" > DONE!"${ENDCOLOR}
+  else
+    echo " > Something went wrong!" >>$LOG
+    echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
+    exit 1
+  fi
+
+  # Trying to restore Database
+  mysql_database_import "${PROJECT_NAME}_${PROJECT_STATE}" "${CHOSEN_BACKUP%%.*}.sql"
+  #pv ${CHOSEN_BACKUP%%.*}.sql | mysql -f -u ${MUSER} --password=${MPASS} ${PROJECT_NAME}_${PROJECT_STATE}
+
+}
+
+################################################################################
+
 SITES_F="sites"
 CONFIG_F="configs"
 DBS_F="databases"
@@ -143,9 +221,10 @@ else
 
     cd ${SFOLDER}/tmp
 
-    echo " > Downloading from Dropbox ${CHOSEN_TYPE}/${CHOSEN_CONFIG} ..." >>$LOG
-    echo -e ${YELLOW} " > Trying to run ${DPU_F}/dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_PROJECT}/${CHOSEN_BACKUP}" ${ENDCOLOR}
-    ${DPU_F}/dropbox_uploader.sh download ${CHOSEN_TYPE}/${CHOSEN_PROJECT}/${CHOSEN_BACKUP}
+    #echo " > Downloading from Dropbox ${CHOSEN_TYPE}/${CHOSEN_CONFIG} ..." >>$LOG
+    BK_TO_DOWNLOAD=${CHOSEN_TYPE}/${CHOSEN_PROJECT}/${CHOSEN_BACKUP}
+    echo -e ${YELLOW} " > Trying to run ${DPU_F}/dropbox_uploader.sh download ${BK_TO_DOWNLOAD}" ${ENDCOLOR}
+    ${DPU_F}/dropbox_uploader.sh download ${BK_TO_DOWNLOAD}
 
     echo " > Uncompressing ${CHOSEN_BACKUP}" >>$LOG
     tar -xvjf ${CHOSEN_BACKUP}
@@ -161,11 +240,7 @@ else
         echo " > ${ACTUAL_FOLDER} exist. Let's make a Backup ..." >>$LOG
         echo -e ${YELLOW}" > ${ACTUAL_FOLDER} exist. Let's make a Backup ..."${ENDCOLOR}
 
-        mkdir ${SFOLDER}/tmp/old_backup
-        mv ${ACTUAL_FOLDER} ${SFOLDER}/tmp/old_backup
-
-        echo " > Backup completed and stored here: ${SFOLDER}/tmp/old_backup ..." >>$LOG
-        echo -e ${GREEN}" > Backup completed and stored here: ${SFOLDER}/tmp/old_backup ..."${ENDCOLOR}
+        make_temp_files_backup "${ACTUAL_FOLDER}"
 
       fi
 
@@ -176,9 +251,7 @@ else
       #echo "Executing: mv ${SFOLDER}/tmp/${CHOSEN_PROJECT} ${FOLDER_TO_INSTALL} ..."
       mv ${SFOLDER}/tmp/${CHOSEN_PROJECT} ${FOLDER_TO_INSTALL}
 
-      DOMAIN=${CHOSEN_PROJECT}
-
-      wp_change_ownership
+      wp_change_ownership "${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT}"
 
       # TODO: ver si se puede restaurar un viejo backup del site-available de nginx y luego
       # forzar al certbot (si existe manera, por que el renew no funciona y la instalacion normal tampoco)
@@ -204,62 +277,9 @@ else
         # Si es una BD
         # TODO: contemplar 2 opciones: base existente y base inexistente (habría que crear el usuario)
 
-        if [ -d /var/lib/mysql/${CHOSEN_PROJECT} ]; then
-          echo -e ${YELLOW}" > Executing mysqldump (will work if database exists) ..."${ENDCOLOR}
-          mysqldump -u ${MUSER} --password=${MPASS} ${CHOSEN_PROJECT} >${CHOSEN_PROJECT}_bk_before_restore.sql
-        fi
+        make_temp_db_backup
 
-        echo " > Trying to restore ${CHOSEN_BACKUP} DB" >>$LOG
-        echo -e ${YELLOW}" > Trying to restore ${CHOSEN_BACKUP} DB"${ENDCOLOR}
-
-        # TODO: debería extraer el sufijo real y preguntar si se quiere cambiar
-        ask_project_state
-
-        suffix="$(cut -d'_' -f2 <<<"${CHOSEN_PROJECT}")"
-        #suffix="_${PROJECT_STATE}"
-
-        ### Extract PROJECT_NAME
-        PROJECT_NAME=${CHOSEN_PROJECT%"_$suffix"}
-
-        PROJECT_NAME=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${PROJECT_NAME}" 3>&1 1>&2 2>&3)
-        exitstatus=$?
-        if [ $exitstatus = 0 ]; then
-          echo "Setting PROJECT_NAME="${PROJECT_NAME} >>$LOG
-        #else
-        #  exit 1
-        fi
-
-        echo " > Creating user and database ..." >>$LOG
-        echo -e ${YELLOW}" > Creating user and database ..."${ENDCOLOR}
-
-        # TODO: usar wp_database_creation
-        DB_PASS=$(openssl rand -hex 12)
-
-        #para cambiar pass de un user existente
-        #ALTER USER 'makana_user'@'localhost' IDENTIFIED BY '0p2eE2a0ed4d8=';
-
-        SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_${PROJECT_STATE};"
-        SQL2="CREATE USER '${PROJECT_NAME}_user'@'localhost' IDENTIFIED BY '${DB_PASS}';"
-        SQL3="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
-        SQL4="FLUSH PRIVILEGES;"
-
-        echo "Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS} if they not exist ..." >>$LOG
-        echo -e ${CYAN}"Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS} if they not exist ..."${ENDCOLOR}
-
-        mysql -u ${MUSER} --password=${MPASS} -e "${SQL1}${SQL2}${SQL3}${SQL4}"
-
-        if [ $? -eq 0 ]; then
-          echo " > DONE!" >>$LOG
-          echo -e ${GREN}" > DONE!"${ENDCOLOR}
-        else
-          echo " > Something went wrong!" >>$LOG
-          echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
-          exit 1
-        fi
-
-        # Trying to restore Database
-        mysql_database_import "${PROJECT_NAME}_${PROJECT_STATE}" "${CHOSEN_BACKUP%%.*}.sql"
-        #pv ${CHOSEN_BACKUP%%.*}.sql | mysql -f -u ${MUSER} --password=${MPASS} ${PROJECT_NAME}_${PROJECT_STATE}
+        restore_database_backup
 
         echo -e ${YELLOW}" > Cleanning temp files ..."${ENDCOLOR}
         rm ${CHOSEN_BACKUP%%.*}.sql

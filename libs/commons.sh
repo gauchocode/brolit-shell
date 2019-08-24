@@ -198,19 +198,8 @@ backup_menu() {
 
 show_script_configuration_wizard() {
 
-  if [[ -z "${MPASS}" ]]; then
-    MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root Password" 10 60 "${MPASS}" 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [ $exitstatus = 0 ]; then
-      #TODO: testear esto
-      until $MYSQL -u $MUSER -p$MPASS -e ";"; do
-        read -s -p "Can't connect to MySQL, please re-enter $MUSER password: " MPASS
-      done
-      echo "MPASS="${MPASS} >>/root/.broobe-utils-options
-    else
-      exit 1
-    fi
-  fi
+  ask_mysql_root_psw
+
   if [[ -z "${SMTP_SERVER}" ]]; then
     SMTP_SERVER=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server" 10 60 "${SMTP_SERVER}" 3>&1 1>&2 2>&3)
     exitstatus=$?
@@ -321,12 +310,16 @@ checking_scripts_permissions() {
   chmod +x ${SFOLDER}/libs/mysql_helper.sh
   chmod +x ${SFOLDER}/utils/bench_scripts.sh
   chmod +x ${SFOLDER}/utils/certbot_manager.sh
+  chmod +x ${SFOLDER}/utils/certbot_installer.sh
   chmod +x ${SFOLDER}/utils/cloudflare_update_IP.sh
   chmod +x ${SFOLDER}/utils/composer_installer.sh
   chmod +x ${SFOLDER}/utils/netdata_installer.sh
   chmod +x ${SFOLDER}/utils/monit_installer.sh
   chmod +x ${SFOLDER}/utils/cockpit_installer.sh
   chmod +x ${SFOLDER}/utils/php_optimizations.sh
+  chmod +x ${SFOLDER}/utils/mysql_installer.sh
+  chmod +x ${SFOLDER}/utils/nginx_installer.sh
+  chmod +x ${SFOLDER}/utils/php_installer.sh
   chmod +x ${SFOLDER}/utils/wordpress_installer.sh
   chmod +x ${SFOLDER}/utils/wordpress_restore_from_source.sh
   chmod +x ${SFOLDER}/utils/wordpress_wpcli_helper.sh
@@ -342,25 +335,25 @@ check_packages_required() {
   ### Check if sendemail is installed
   SENDEMAIL="$(which sendemail)"
   if [ ! -x "${SENDEMAIL}" ]; then
-    apt install sendemail libio-socket-ssl-perl
+    apt -y install sendemail libio-socket-ssl-perl
   fi
 
   ### Check if pv is installed
   PV="$(which pv)"
   if [ ! -x "${PV}" ]; then
-    apt install pv
+    apt -y install pv
   fi
 
   ### Check if bc is installed
   BC="$(which bc)"
   if [ ! -x "${BC}" ]; then
-    apt install bc
+    apt -y install bc
   fi
 
   ### Check if dig is installed
   DIG="$(which dig)"
   if [ ! -x "${DIG}" ]; then
-    apt-get install dnsutils
+    apt -y install dnsutils
   fi
 
 }
@@ -554,14 +547,16 @@ wp_download_wordpress() {
 # wordpress_installer.sh
 wp_change_ownership() {
 
-  echo "Changing folder owner to www-data ..." >>$LOG
-  echo -e ${YELLOW}"Changing '${FOLDER_TO_INSTALL}/${DOMAIN}' owner to www-data ..."${ENDCOLOR}
+  # $1 ${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT} or ${FOLDER_TO_INSTALL}/${DOMAIN}
 
-  chown -R www-data:www-data ${FOLDER_TO_INSTALL}/${DOMAIN}
-  find ${FOLDER_TO_INSTALL}/${DOMAIN} -type d -exec chmod g+s {} \;
-  chmod g+w ${FOLDER_TO_INSTALL}/${DOMAIN}/wp-content
-  chmod -R g+w ${FOLDER_TO_INSTALL}/${DOMAIN}/wp-content/themes
-  chmod -R g+w ${FOLDER_TO_INSTALL}/${DOMAIN}/wp-content/plugins
+  echo "Changing folder owner to www-data ..." >>$LOG
+  echo -e ${YELLOW}"Changing '$1' owner to www-data ..."${ENDCOLOR}
+
+  chown -R www-data:www-data $1
+  find $1 -type d -exec chmod g+s {} \;
+  chmod g+w $1/wp-content
+  chmod -R g+w $1/wp-content/themes
+  chmod -R g+w $1/wp-content/plugins
 
   echo " > DONE" >>$LOG
   echo -e ${GREEN}" > DONE"${ENDCOLOR}
@@ -696,6 +691,24 @@ ask_folder_to_install_sites() {
       echo "FOLDER_TO_INSTALL="${FOLDER_TO_INSTALL} >>$LOG
     else
       exit 0
+    fi
+  fi
+
+}
+
+ask_mysql_root_psw() {
+
+  if [[ -z "${MPASS}" ]]; then
+    MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root Password" 10 60 "${MPASS}" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      #TODO: testear esto
+      until $MYSQL -u $MUSER -p$MPASS -e ";"; do
+        read -s -p "Can't connect to MySQL, please re-enter $MUSER password: " MPASS
+      done
+      echo "MPASS="${MPASS} >>/root/.broobe-utils-options
+    else
+      exit 1
     fi
   fi
 

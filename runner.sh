@@ -15,6 +15,8 @@
 #       7- Restore de archivos de configuración
 #       8- Checkear webserver instalado, si es apache u otro, aclarar que hay soporte parcial
 #       9- Refactor de estructura de archivos /utils
+#       10- Uptime Robot API
+#       11- Cuando borro un proyecto, que suba el backup temporal a dropbox, pero fuera de la estructura normal de backups
 #
 ################################################################################
 #
