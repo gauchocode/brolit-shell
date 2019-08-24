@@ -35,8 +35,6 @@ source ${SFOLDER}/libs/commons.sh
 source ${SFOLDER}/libs/mail_notification_helper.sh
 source ${SFOLDER}/libs/mysql_helper.sh
 
-#source ${SFOLDER}/utils/certbot_manager.sh
-
 ################################################################################
 
 # Installation types
@@ -134,7 +132,7 @@ if [ $exitstatus = 0 ]; then
 
   fi
 
-  wp_change_ownership
+  wp_change_ownership "${FOLDER_TO_INSTALL}/${DOMAIN}"
 
   WPCONFIG=${FOLDER_TO_INSTALL}/${DOMAIN}/wp-config.php
 

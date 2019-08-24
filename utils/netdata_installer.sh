@@ -4,11 +4,9 @@
 # Version: 2.9
 ################################################################################
 
-### Checking some things...
-if [[ -z "${MPASS}" ]]; then
-  echo -e ${RED}" > Error: MPASS must be set! Exiting..."${ENDCOLOR}
-  exit 0
-fi
+source ${SFOLDER}/libs/commons.sh
+#source ${SFOLDER}/libs/mail_notification_helper.sh
+#source ${SFOLDER}/libs/mysql_helper.sh
 
 ################################################################################
 
@@ -139,27 +137,29 @@ create_netdata_db_user() {
 
 ################################################################################
 
-if [[ -z "${NETDATA_SUBDOMAIN}" ]]; then
-
-  NETDATA_SUBDOMAIN=$(whiptail --title "Netdata Installer" --inputbox "Please insert the subdomain you want to install Netdata. Ex: monitor.broobe.com" 10 60 3>&1 1>&2 2>&3)
-  exitstatus=$?
-
-  if [ $exitstatus = 0 ]; then
-    echo "NETDATA_SUBDOMAIN="${NETDATA_SUBDOMAIN} >>/root/.broobe-utils-options
-
-  else
-    exit 1
-
-  fi
-fi
-
-# Only for Cloudflare API
-ROOT_DOMAIN=${NETDATA_SUBDOMAIN#[[:alpha:]]*.}
-
 ### Checking if Netdata is installed
 NETDATA="$(which netdata)"
 
 if [ ! -x "${NETDATA}" ]; then
+
+  if [[ -z "${NETDATA_SUBDOMAIN}" ]]; then
+
+    NETDATA_SUBDOMAIN=$(whiptail --title "Netdata Installer" --inputbox "Please insert the subdomain you want to install Netdata. Ex: monitor.broobe.com" 10 60 3>&1 1>&2 2>&3)
+    exitstatus=$?
+
+    if [ $exitstatus = 0 ]; then
+      echo "NETDATA_SUBDOMAIN="${NETDATA_SUBDOMAIN} >>/root/.broobe-utils-options
+
+    else
+      exit 1
+
+    fi
+  fi
+
+  # Only for Cloudflare API
+  ROOT_DOMAIN=${NETDATA_SUBDOMAIN#[[:alpha:]]*.}
+
+  ask_mysql_root_psw
 
   while true; do
 

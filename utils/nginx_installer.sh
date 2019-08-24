@@ -136,7 +136,6 @@ nginx_pagespeed_installer() {
 
     #Save and close the file. Then test Nginx configuration.
     sudo nginx -t
-
     sudo systemctl reload nginx
 
     sudo mkdir -p /var/ngx_pagespeed_cache
@@ -147,31 +146,92 @@ nginx_pagespeed_installer() {
 
 }
 
+nginx_purge_installation() {
+  echo " > Removing MySQL ..." >>$LOG
+  apt --yes purge nginx
+
+}
+
+nginx_check_if_installed() {
+
+  MYSQL="$(which nginx)"
+  if [ ! -x "${MYSQL}" ]; then
+    nginx_installed="false"
+  fi
+
+}
+
+nginx_check_installed_version() {
+  nginx --version | awk '{ print $5 }' | awk -F\, '{ print $1 }'
+
+}
+
 ################################################################################
 
-# TODO: usar las funciones de arriba a través de un menú con whiptail
-apt --yes install nginx
+nginx_installed="true"
+nginx_check_if_installed
 
-# Remove html default nginx folders
-rm -r /var/www/html
+if [ ${nginx_installed} == "false" ]; then
 
-# nginx.conf broobe standard configuration
-cat ${SFOLDER}/confs/nginx/nginx.conf >/etc/nginx/nginx.conf
+    NGINX_INSTALLER_OPTIONS="01 NGINX_STANDARD 02 NGINX_LAST_STABLE"
+    CHOSEN_NGINX_INSTALLER_OPTION=$(whiptail --title "MySQL INSTALLER" --menu "Choose a Nginx version to install" 20 78 10 $(for x in ${NGINX_INSTALLER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
 
-# nginx conf file
-echo " > Moving nginx configuration files ..." >>$LOG
-# New default nginx configuration
-cat ${SFOLDER}/confs/nginx/sites-available/default >/etc/nginx/sites-available/default
+        if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"01"* ]]; then
+            apt --yes install nginx
 
-mkdir /etc/nginx/globals/
+        fi
+        if [[ ${CHOSEN_MYSQL_INSTALLER_OPTION} == *"02"* ]]; then
+            nginx_installer
 
-cp ${SFOLDER}/confs/nginx/globals/logs.conf >/etc/nginx/globals/logs.conf
-cp ${SFOLDER}/confs/nginx/globals/security.conf >/etc/nginx/globals/security.conf
-cp ${SFOLDER}/confs/nginx/globals/wordpress_mu_subdirectory.conf >/etc/nginx/globals/wordpress_mu_subdirectory.conf
-cp ${SFOLDER}/confs/nginx/globals/wordpress_mu_subdomain.conf >/etc/nginx/globals/wordpress_mu_subdomain.conf
-cp ${SFOLDER}/confs/nginx/globals/wordpress_sec.conf >/etc/nginx/globals/wordpress_sec.conf
-cp ${SFOLDER}/confs/nginx/globals/wordpress_seo.conf >/etc/nginx/globals/wordpress_seo.conf
+        fi
 
-#chown ??
-#sed para reemplazar los domain.com
-#si es network con subdominios hay que usar *.domain.com
+        # Remove html default nginx folders
+        nginx_default_dir="/var/www/html"
+        if [ -d "${nginx_default_dir}" ]; then
+            rm -r $nginx_default_dir
+            echo "Directory ${nginx_default_dir} deleted ..." >>$LOG
+            echo -e ${CYAN}" > Directory ${nginx_default_dir} deleted ..."${ENDCOLOR}
+        fi
+
+        # nginx.conf broobe standard configuration
+        cat ${SFOLDER}/confs/nginx/nginx.conf >/etc/nginx/nginx.conf
+
+        # New default nginx configuration
+        echo " > Moving nginx configuration files ..." >>$LOG
+        cat ${SFOLDER}/confs/nginx/sites-available/default >/etc/nginx/sites-available/default
+
+        nginx_globals="/etc/nginx/globals/"
+        if [ -d "${nginx_globals}" ]; then
+            echo "Directory ${nginx_globals} already exists ..." >>$LOG
+            echo -e ${CYAN}" > Directory ${nginx_globals} already exists ..."${ENDCOLOR}
+            exit 1
+
+        else
+            mkdir ${nginx_globals}
+
+        fi
+
+        cp ${SFOLDER}/confs/nginx/globals/logs.conf /etc/nginx/globals/logs.conf
+        cp ${SFOLDER}/confs/nginx/globals/security.conf /etc/nginx/globals/security.conf
+        cp ${SFOLDER}/confs/nginx/globals/wordpress_mu_subdirectory.conf /etc/nginx/globals/wordpress_mu_subdirectory.conf
+        cp ${SFOLDER}/confs/nginx/globals/wordpress_mu_subdomain.conf /etc/nginx/globals/wordpress_mu_subdomain.conf
+        cp ${SFOLDER}/confs/nginx/globals/wordpress_sec.conf /etc/nginx/globals/wordpress_sec.conf
+        cp ${SFOLDER}/confs/nginx/globals/wordpress_seo.conf /etc/nginx/globals/wordpress_seo.conf
+
+        #chown ??
+        #sed para reemplazar los domain.com
+        #si es network con subdominios hay que usar *.domain.com
+
+    else
+        echo -e ${CYAN}" > Operation cancelled ..."${ENDCOLOR}
+        exit 1
+
+    fi
+
+else
+
+    echo -e ${MAGENTA}" > Nginx already installed ..."${ENDCOLOR}
+
+fi

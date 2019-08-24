@@ -37,12 +37,14 @@ mail_utils_installation() {
 ################################################################################
 
 # TODO: esto deberia deprecarse y calcularse con el hardware del server
-SERVER_MODEL="cx11" # Options: cx11, cx21, cx31
+SERVER_MODEL="cx21" # Options: cx11, cx21, cx31
 
 if [[ -z "${SERVER_MODEL}" ]]; then
   echo -e ${RED}"Error: SERVER_MODEL must be set! Exiting..."${ENDCOLOR}
   exit 0
 fi
+
+PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
 
 # Installing packages
 php_installation
