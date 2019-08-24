@@ -56,7 +56,8 @@ fi
 
 if [[ -z "${TARGET_DB}" ]]; then
   
-  mysql_databases_list
+  DBS="$(${MYSQL} -u ${MUSER} -p${MPASS} -Bse 'show databases')"
+  
   CHOSEN_DB=$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to work with" 20 78 10 `for x in ${DBS}; do echo "$x [DB]"; done` 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then

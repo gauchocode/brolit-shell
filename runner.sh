@@ -2,7 +2,7 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.9.8
+# Version: 2.9.9
 ################################################################################
 #
 # TODO: Para release 3.0
@@ -11,14 +11,9 @@
 #       3- Refactor de menú principal del runner.sh (ojo que si al lemp le activamos netdata o monit, necesita db pass de root) -- DONE pero falta TESTING
 #       4- Terminar php_optimizations deprecando el modelo de Hetzner e integrandolo al Lemp Installer
 #       5- Permitir restore del backup con Duplicity
-#       6- Backup de archivos de Let's Encrypt (/etc/letsencrypt/) -- DONE
-#       7- Restore de archivos de configuración
-#       8- Checkear webserver instalado, si es apache u otro, aclarar que hay soporte parcial
-#       9- Refactor de estructura de archivos /utils
-#       10- Uptime Robot API
-#       11- Cuando borro un proyecto, que suba el backup temporal a dropbox, pero fuera de la estructura normal de backups
-#
-################################################################################
+#       6- Restore de archivos de configuración
+#       7- Refactor de estructura de archivos /utils
+#       8- Cuando borro un proyecto, que suba el backup temporal a dropbox, pero fuera de la estructura normal de backups
 #
 # TODO: Para release 3.5
 #       1- Repensar el server_and_image_optimizations.sh
@@ -28,48 +23,47 @@
 #       5- nginx installer (opcion de instalar de repo y configurar modulos)
 #       6- Optimizaciones de MySQL
 #       7- Mejoras LEMP setup, que requiera menos intervencion tzdata y mysql_secure_installation
-#
-################################################################################
+#       8- Opción de cambiar puerto ssh en vps
+#       9- Uptime Robot API
 #
 # TODO: Para release 4.0
 #       1- Permitir varias dropbox apps secundarias configuradas para restaurar desde cualquiera de ellas
-#       2- Soporte nginx 1.17
-#       3- Soporte apache2
-#       4- Mejoras en notificaciones via email
-#       5- Opción de instalar modulo brotli en nginx
-#       6- Opción de cambiar puerto ssh en vps
-#       7- Hetzner cloud cli?
+#       2- Mejoras en notificaciones via email
+#       3- Opción de cambiar puerto ssh en vps
+#       4- Hetzner cloud cli?
 #           https://github.com/hetznercloud/cli
 #           https://github.com/thabbs/hetzner-cloud-cli-sh
 #           https://github.com/thlisym/hetznercloud-py
 #           https://hcloud-python.readthedocs.io/en/latest/
-#
-################################################################################
-#
-# TODO: Release 5.0
-#       1- Web GUI:
+#       5- Web GUI:
 #           https://github.com/bugy/script-server
 #           https://github.com/joewalnes/websocketd
 #
 ################################################################################
+#
 # Style Guide and refs
 #
 # https://google.github.io/styleguide/shell.xml
-# https://github.com/niieani/bash-oo-framework
 #
-SCRIPT_V="2.9.8"
+#
+
+SCRIPT_V="2.9.9"
 
 ### Checking some things...#####################################################
-SFOLDER="`dirname \"$0\"`"
-SFOLDER="`( cd \"$SFOLDER\" && pwd )`"
+SFOLDER="`dirname \"$0\"`"                                                      # relative
+SFOLDER="`( cd \"$SFOLDER\" && pwd )`"   
 
 if [ -z "$SFOLDER" ]; then
-  # error; the path is not accessible
-  exit 1
+  exit 1  # error; the path is not accessible
 fi
 
 chmod +x ${SFOLDER}/libs/commons.sh
+chmod +x ${SFOLDER}/libs/mail_notification_helper.sh
+chmod +x ${SFOLDER}/libs/packages_helper.sh
+
 source ${SFOLDER}/libs/commons.sh
+source ${SFOLDER}/libs/mail_notification_helper.sh
+source ${SFOLDER}/libs/packages_helper.sh
 
 check_root
 check_distro
@@ -80,17 +74,13 @@ checking_scripts_permissions
 
 VPSNAME="$HOSTNAME"
 
-SITES_BL=".wp-cli,phpmyadmin"                                      # Folder blacklist
-DB_BL="information_schema,performance_schema,mysql,sys,phpmyadmin" # Database blacklist
+# Folder blacklist
+SITES_BL=".wp-cli,phpmyadmin"
 
-PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
+# Database blacklist
+DB_BL="information_schema,performance_schema,mysql,sys,phpmyadmin"
 
-WSERVER="/etc/nginx"                          # Webserver config files location
-MySQL_CF="/etc/mysql"                         # MySQL config files location
-PHP_CF="/etc/php/${PHP_V}/fpm"                # PHP config files location
-LENCRYPT_CF="/etc/letsencrypt"                # Let's Encrypt config files location
-
-### DUPLICITY CONFIG
+# DUPLICITY CONFIG
 DUP_BK=false                                  # Duplicity Backups true or false (bool)
 DUP_ROOT="/media/backups/PROJECT_NAME_OR_VPS" # Duplicity Backups destination folder
 DUP_SRC_BK="/var/www/"                        # Source of Directories to Backup
@@ -98,27 +88,50 @@ DUP_FOLDERS="FOLDER1,FOLDER2"                 # Folders to Backup
 DUP_BK_FULL_FREQ="7D"                         # Create a new full backup every ...
 DUP_BK_FULL_LIFE="14D"                        # Delete any backup older than this
 
-### PACKAGES TO WATCH
-# TODO: poder elejir desde las opciones version de php y motor de base de datos
+# TODO: checkear si está instalado apache2, si está instalado lanzar error
+
+PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
+
+# NGINX config files location
+WSERVER_CONF=$(nginx -V 2>&1 | grep -o '\-\-conf-path=\(.*conf\)' | cut -d '=' -f2)
+WSERVER= dirname ${WSERVER_CONF}
+
+# MySQL config files location
+MySQL_CONF=$(mysql --help | grep "Default options" -A 1 | cut -d " " -f2)
+MySQL_CF= dirname ${MySQL_CONF}
+
+# PHP config files location
+PHP_CF="/etc/php"
+
+# Let's Encrypt config files location
+LENCRYPT_CF="/etc/letsencrypt"
+
+# Packages to watch
 PACKAGES=(linux-firmware dpkg perl nginx php${PHP_V}-fpm mysql-server curl openssl)
 
 MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+') # Main partition
 
-DROPBOX_FOLDER="/"                        # Dropbox Folder Backup
-DPU_F="${SFOLDER}/utils/dropbox-uploader" # Dropbox Uploader Directory
-DB_BK=true                                # Include database backup?
-DEL_UP=true                               # Delete backup files after upload?
-BAKWP="${SFOLDER}/tmp"                    # Temp folder to store Backups
+# Dropbox Folder Backup
+DROPBOX_FOLDER="/"
 
+# Dropbox Uploader Directory
+DPU_F="${SFOLDER}/utils/dropbox-uploader"
+
+# Temp folder
+BAKWP="${SFOLDER}/tmp"
+
+# MySQL host and user
 MHOST="localhost"
 MUSER="root"
+
+################################################################################
 
 ### Backup rotation vars
 NOW=$(date +"%Y-%m-%d")
 NOWDISPLAY=$(date +"%d-%m-%Y")
 ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
 
-#Dropbox Uploader config file
+### Dropbox Uploader config file
 DPU_CONFIG_FILE=~/.dropbox_uploader
 if [[ -e ${DPU_CONFIG_FILE} ]]; then
   source ${DPU_CONFIG_FILE}
@@ -144,7 +157,7 @@ MYSQLDUMP="$(which mysqldump)"
 TAR="$(which tar)"
 
 ### EXPORT VARS
-export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL DB_BL WSERVER PHP_CF MHOST MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U DEL_UP ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR auth_email auth_key
+export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL DB_BL WSERVER PHP_CF MHOST MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR auth_email auth_key
 
 if [ -t 1 ]; then
 
@@ -163,11 +176,11 @@ if [ -t 1 ]; then
 
       else
         show_script_configuration_wizard
-        
+
       fi
 
     fi
-    
+
   fi
 
 else
@@ -197,8 +210,7 @@ find ${PATH_LOG} -name "*.log" -type f -mtime +7 -print -delete >>$LOG
 echo "Backup: Script Start -- $(date +%Y%m%d_%H%M)" >>$LOG
 
 ### Disk Usage
-DISK_U=$(df -h | grep "${MAIN_VOL}" | awk {'print $5'})
-echo " > Disk usage: ${DISK_U} ..." >>${LOG}
+calculate_disk_usage
 
 ### Creating temporary folders
 if [ ! -d "${BAKWP}" ]; then
@@ -212,73 +224,28 @@ if [ ! -d "${BAKWP}/${NOW}" ]; then
   echo " > Folder ${BAKWP}/${NOW} created ..." >>$LOG
 fi
 
-### Configure Server Mail Part
-SRV_HEADEROPEN='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:#1DC6DF;padding:0 0 10px 10px;width:100%;height:30px">'
-SRV_HEADERTEXT="Server Info"
-SRV_HEADERCLOSE='</div>'
-
-SRV_HEADER=${SRV_HEADEROPEN}${SRV_HEADERTEXT}${SRV_HEADERCLOSE}
-
-SRV_BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
-SRV_CONTENT="<b>Server IP: ${IP}</b><br /><b>Disk usage before the file backup: ${DISK_U}</b>.<br />"
-SRV_BODYCLOSE='</div></div>'
-SRV_BODY=${SRV_BODYOPEN}${SRV_CONTENT}${SRV_BODYCLOSE}
-
-BODY_SRV=$SRV_HEADER$SRV_BODY
+### Configure Mail Header Part
+BODY_SRV=$(mail_server_status_section "${IP}" "${DISK_U}")
 
 ### Configure PKGS Mail Part
-if [ "${OUTDATED}" = true ]; then
-  PKG_COLOR='red'
-  PKG_STATUS='OUTDATED'
-else
-  PKG_COLOR='#1DC6DF'
-  PKG_STATUS='OK'
-fi
-
-PKG_HEADEROPEN1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
-PKG_HEADEROPEN2=';padding:0 0 10px 10px;width:100%;height:30px">'
-PKG_HEADEROPEN=${PKG_HEADEROPEN1}${PKG_COLOR}${PKG_HEADEROPEN2}
-PKG_HEADERTEXT="Packages Status -> ${PKG_STATUS}"
-PKG_HEADERCLOSE='</div>'
-
-PKG_BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px 0 0 10px;width:100%;">'
-PKG_BODYCLOSE='</div>'
-
-PKG_HEADER=$PKG_HEADEROPEN$PKG_HEADERTEXT$PKG_HEADERCLOSE
-
-PKG_MAIL="${BAKWP}/pkg-${NOW}.mail"
-PKG_MAIL_VAR=$(<${PKG_MAIL})
-
-BODY_PKG=${PKG_HEADER}${PKG_BODYOPEN}${PKG_MAIL_VAR}${PKG_BODYCLOSE}
+BODY_PKG=$(mail_package_status_section "${OUTDATED}")
 
 if [ -t 1 ]; then
 
-  ### Running from terminal
+  # Running from terminal
   main_menu
 
 else
-  ### Running from cron
+  # Running from cron
   echo " > Running from cron ..." >>${LOG}
+
   echo " > Running apt update ..." >>${LOG}
   apt update
 
-  ### Compare package versions
+  # Compare package versions
+  mail_package_section "${PACKAGES}"
 
-  # TODO: habria que separar la logica del armado del mail, del que calcula
-  # los paquetes sin actualizar
-  #
-  #compare_package_versions
-  OUTDATED=false
-  echo "" >${BAKWP}/pkg-${NOW}.mail
-  for pk in ${PACKAGES[@]}; do
-    PK_VI=$(apt-cache policy ${pk} | grep Installed | cut -d ':' -f 2)
-    PK_VC=$(apt-cache policy ${pk} | grep Candidate | cut -d ':' -f 2)
-    if [ ${PK_VI} != ${PK_VC} ]; then
-      OUTDATED=true
-      echo " > ${pk} ${PK_VI} -> ${PK_VC} <br />" >>${BAKWP}/pkg-${NOW}.mail
-    fi
-  done
-
+  # Running scripts
   ${SFOLDER}/mysql_backup.sh
   ${SFOLDER}/files_backup.sh
   ${SFOLDER}/server_and_image_optimizations.sh
@@ -289,9 +256,9 @@ else
   FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
   FILE_MAIL_VAR=$(<${FILE_MAIL})
 
-  HTMLOPEN='<html><body>'
-  HTMLCLOSE='</body></html>'
+  mail_footer_end
 
+  # Checking result status for mail subject
   if [ "${STATUS_D}" = "ERROR" ] || [ "${STATUS_F}" = "ERROR" ]; then
     STATUS="ERROR"
     STATUS_ICON="⛔"
@@ -304,16 +271,19 @@ else
       STATUS_ICON="✅"
     fi
   fi
+
+  # Preparing email to send
   echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
-  sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${STATUS_ICON} ${VPSNAME} - Complete Backup - [${NOWDISPLAY}]" -o message-content-type=html -m "${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${HTMLCLOSE}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}
+
+  EMAIL_SUBJECT="${STATUS_ICON} ${VPSNAME} - Complete Backup - [${NOWDISPLAY}]"
+  EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${HTMLCLOSE}"
+
+  # Sending email notification
+  send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
 
 fi
 
-echo " > Removing temp files ..." >>$LOG
-echo -e ${YELLOW}" > Removing temp files ..."${ENDCOLOR}
-
-# TODO: no siempre se crean estos archivos, entonces suele tirar un error, mejorar
-rm ${PKG_MAIL} ${DB_MAIL} ${FILE_MAIL}
+remove_mail_notifications_files
 
 echo " > DONE" >>$LOG
 echo -e ${GREEN}" > DONE"${ENDCOLOR}
