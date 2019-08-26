@@ -24,8 +24,10 @@ menutitle="Config Selection Menu"
 ################################################################################
 
 main_menu() {
+
   RUNNER_OPTIONS="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 RESTORE_FROM_SOURCE 04 DELETE_PROJECT 05 WORDPRESS_INSTALLER 06 SERVER_OPTIMIZATIONS 07 INSTALLERS_AND_CONFIGS 08 REPLACE_WP_URL 09 WPCLI_HELPER 10 CERTBOT_MANAGER 11 BENCHMARKS 12 GTMETRIX_TEST 13 BLACKLIST_CHECKER 14 RESET_SCRIPT_OPTIONS"
   CHOSEN_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 $(for x in ${RUNNER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
@@ -134,6 +136,11 @@ backup_menu() {
   BACKUP_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP 03 BACKUP_ALL"
   CHOSEN_BACKUP_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a Backup Type to run" 20 78 10 $(for x in ${BACKUP_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
+  # Preparing Mail Notifications Template
+  HTMLOPEN=$(mail_html_start)
+
+  MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
+
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
@@ -149,13 +156,11 @@ backup_menu() {
 
           DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
           DB_MAIL_VAR=$(<${DB_MAIL})
-          HTMLOPEN='<html><body>'
-          HTMLCLOSE='</body></html>'
 
           echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
 
           EMAIL_SUBJECT="${STATUS_ICON_D} ${VPSNAME} - Database Backup - [${NOWDISPLAY}]"
-          EMAIL_CONTENT="${HTMLOPEN} ${DB_MAIL_VAR} ${HTMLCLOSE}"
+          EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${DB_MAIL_VAR} ${MAIL_FOOTER}"
 
           # Sending email notification
           send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
@@ -183,13 +188,11 @@ backup_menu() {
 
           FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
           FILE_MAIL_VAR=$(<$FILE_MAIL)
-          HTMLOPEN='<html><body>'
-          HTMLCLOSE='</body></html>'
 
           echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
 
           EMAIL_SUBJECT="${STATUS_ICON_F} ${VPSNAME} - Files Backup - [${NOWDISPLAY}]"
-          EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${FILE_MAIL_VAR} ${HTMLCLOSE}"
+          EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
 
           # Sending email notification
           send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
@@ -217,18 +220,21 @@ backup_menu() {
           ${SFOLDER}/mysql_backup.sh
           ${SFOLDER}/files_backup.sh
 
-          #FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
-          #FILE_MAIL_VAR=$(<$FILE_MAIL)
-          #HTMLOPEN='<html><body>'
-          #HTMLCLOSE='</body></html>'
+          DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
+          DB_MAIL_VAR=$(<${DB_MAIL})
 
-          #echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
+          FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
+          FILE_MAIL_VAR=$(<${FILE_MAIL})
 
-          #EMAIL_SUBJECT="${STATUS_ICON_F} ${VPSNAME} - Files Backup - [${NOWDISPLAY}]"
-          #EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${FILE_MAIL_VAR} ${HTMLCLOSE}"
+          MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
+
+          echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
+
+          EMAIL_SUBJECT="${STATUS_ICON} ${VPSNAME} - Complete Backup - [${NOWDISPLAY}]"
+          EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
 
           # Sending email notification
-          #send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
+          send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
 
           break
           ;;
@@ -238,6 +244,7 @@ backup_menu() {
           ;;
         *) echo " > Please answer yes or no." ;;
         esac
+        
       done
 
     fi

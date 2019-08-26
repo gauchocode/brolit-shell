@@ -93,12 +93,12 @@ DUP_BK_FULL_LIFE="14D"                        # Delete any backup older than thi
 PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
 
 # NGINX config files location
-WSERVER_CONF=$(nginx -V 2>&1 | grep -o '\-\-conf-path=\(.*conf\)' | cut -d '=' -f2)
-WSERVER= dirname ${WSERVER_CONF}
+WSERVER="/etc/nginx"
+echo -e ${MAGENTA}" > WSERVER: ${WSERVER}"${ENDCOLOR}
 
 # MySQL config files location
-MySQL_CONF=$(mysql --help | grep "Default options" -A 1 | cut -d " " -f2)
-MySQL_CF= dirname ${MySQL_CONF}
+MySQL_CF="/etc/mysql"
+echo -e ${MAGENTA}" > MySQL_CF: ${MySQL_CF}"${ENDCOLOR}
 
 # PHP config files location
 PHP_CF="/etc/php"
@@ -224,10 +224,9 @@ if [ ! -d "${BAKWP}/${NOW}" ]; then
   echo " > Folder ${BAKWP}/${NOW} created ..." >>$LOG
 fi
 
-### Configure Mail Header Part
+# Preparing Mail Notifications Template
+HTMLOPEN=$(mail_html_start)
 BODY_SRV=$(mail_server_status_section "${IP}" "${DISK_U}")
-
-### Configure PKGS Mail Part
 BODY_PKG=$(mail_package_status_section "${OUTDATED}")
 
 if [ -t 1 ]; then
@@ -236,6 +235,7 @@ if [ -t 1 ]; then
   main_menu
 
 else
+
   # Running from cron
   echo " > Running from cron ..." >>${LOG}
 
@@ -249,34 +249,23 @@ else
   ${SFOLDER}/mysql_backup.sh
   ${SFOLDER}/files_backup.sh
   ${SFOLDER}/server_and_image_optimizations.sh
-
+  
   DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
   DB_MAIL_VAR=$(<${DB_MAIL})
 
   FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
   FILE_MAIL_VAR=$(<${FILE_MAIL})
 
-  mail_footer_end
+  MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
 
   # Checking result status for mail subject
-  if [ "${STATUS_D}" = "ERROR" ] || [ "${STATUS_F}" = "ERROR" ]; then
-    STATUS="ERROR"
-    STATUS_ICON="⛔"
-  else
-    if [ "${OUTDATED}" = true ]; then
-      STATUS="WARNING"
-      STATUS_ICON="⚠"
-    else
-      STATUS="OK"
-      STATUS_ICON="✅"
-    fi
-  fi
+  EMAIL_STATUS=$(mail_subject_status "${STATUS_D}" "${STATUS_F}" "${OUTDATED}")
 
   # Preparing email to send
   echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
 
-  EMAIL_SUBJECT="${STATUS_ICON} ${VPSNAME} - Complete Backup - [${NOWDISPLAY}]"
-  EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${HTMLCLOSE}"
+  EMAIL_SUBJECT="${EMAIL_STATUS} on ${VPSNAME} Running Complete Backup - [${NOWDISPLAY}]"
+  EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
 
   # Sending email notification
   send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"

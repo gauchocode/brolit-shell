@@ -9,7 +9,7 @@
 # https://github.com/A5hleyRich/wordpress-nginx
 # https://github.com/pothi/wordpress-nginx
 # https://www.digitalocean.com/community/questions/how-can-i-improve-the-ttfb
-#
+# https://haydenjames.io/nginx-tuning-tips-tls-ssl-https-ttfb-latency/
 #
 # Brotli compression only supports the HTTPS site
 #
@@ -27,9 +27,11 @@ fi
 source ${SFOLDER}/libs/commons.sh
 
 nginx_installer() {
-    curl -L https://nginx.org/keys/nginx_signing.key | sudo apt-key add -
 
-    cp ${SFOLDER}/assets/nginx.list /etc/apt/sources.list.d/nginx.list
+    #curl -L https://nginx.org/keys/nginx_signing.key | sudo apt-key add -
+    #cp ${SFOLDER}/assets/nginx.list /etc/apt/sources.list.d/nginx.list
+
+    add_ppa "nginx/stable"
 
     apt-get update
 
@@ -37,6 +39,7 @@ nginx_installer() {
 }
 
 nginx_webp_installer() {
+
     apt -y install imagemagick webp
 }
 
@@ -147,15 +150,15 @@ nginx_pagespeed_installer() {
 }
 
 nginx_purge_installation() {
-  echo " > Removing MySQL ..." >>$LOG
+  echo " > Removing Nginx ..." >>$LOG
   apt --yes purge nginx
 
 }
 
 nginx_check_if_installed() {
 
-  MYSQL="$(which nginx)"
-  if [ ! -x "${MYSQL}" ]; then
+  NGINX="$(which nginx)"
+  if [ ! -x "${NGINX}" ]; then
     nginx_installed="false"
   fi
 
@@ -174,7 +177,7 @@ nginx_check_if_installed
 if [ ${nginx_installed} == "false" ]; then
 
     NGINX_INSTALLER_OPTIONS="01 NGINX_STANDARD 02 NGINX_LAST_STABLE"
-    CHOSEN_NGINX_INSTALLER_OPTION=$(whiptail --title "MySQL INSTALLER" --menu "Choose a Nginx version to install" 20 78 10 $(for x in ${NGINX_INSTALLER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+    CHOSEN_NGINX_INSTALLER_OPTION=$(whiptail --title "NGINX INSTALLER" --menu "Choose a Nginx version to install" 20 78 10 $(for x in ${NGINX_INSTALLER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
 
@@ -182,7 +185,7 @@ if [ ${nginx_installed} == "false" ]; then
             apt --yes install nginx
 
         fi
-        if [[ ${CHOSEN_MYSQL_INSTALLER_OPTION} == *"02"* ]]; then
+        if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"02"* ]]; then
             nginx_installer
 
         fi
