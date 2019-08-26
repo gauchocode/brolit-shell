@@ -21,6 +21,20 @@ install_if_not() {
     fi
 }
 
+# Adding PPA (support multiple args)
+# Ex: add_ppa ondrej/php ondrej/nginx
+add_ppa() {
+  for i in "$@"; do
+    grep -h "^deb.*$i" /etc/apt/sources.list.d/* > /dev/null 2>&1
+    if [ $? -ne 0 ]
+    then
+      echo "Adding ppa:$i"
+      add-apt-repository -y ppa:$i
+    else
+      echo "ppa:$i already exists"
+    fi
+  done
+}
 
 check_packages_required() {
   ### Check if sendemail is installed
