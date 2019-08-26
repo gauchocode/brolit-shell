@@ -85,7 +85,7 @@ ${SFOLDER}/utils/nginx_installer.sh
 ${SFOLDER}/utils/php_installer.sh
 
 # Configuring packages
-#timezone_configuration
+timezone_configuration
 
 #${SFOLDER}/utils/php_optimizations.sh
 
