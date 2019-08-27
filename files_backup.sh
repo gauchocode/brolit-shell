@@ -11,6 +11,8 @@ fi
 ################################################################################
 
 source ${SFOLDER}/libs/commons.sh
+source ${SFOLDER}/libs/mysql_helper.sh
+source ${SFOLDER}/libs/mail_notification_helper.sh
 
 ################################################################################
 
@@ -138,12 +140,20 @@ make_files_backup "configs" "mysql" "${MySQL_CF}" "."
 ### TAR Let's Encrypt Config Files
 make_files_backup "configs" "letsencrypt" "${LENCRYPT_CF}" "."
 
+# Get all directories
+TOTAL_SITES=$(find ${SITES} -maxdepth 1 -type d)
+echo " > ${TOTAL_SITES} directory found ..." >>$LOG
+echo -e ${CYAN}" > ${TOTAL_SITES} directory found ..."${ENDCOLOR}
+
+# Settings some vars
 k=0
 COUNT=0
 declare -a BACKUPED_LIST
 declare -a BK_FL_SIZES
 
-for j in $(find ${SITES} -maxdepth 1 -type d); do
+for j in ${TOTAL_SITES}; do
+
+echo -e ${YELLOW}" > Processing [${j}] ..."${ENDCOLOR}
 
   if [[ "$k" -gt 0 ]]; then
 
@@ -185,9 +195,15 @@ for j in $(find ${SITES} -maxdepth 1 -type d); do
         echo " > Deleting backup from server ..." >>$LOG
         rm -r ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2
 
-        echo -e ${GREEN}"> DONE"${ENDCOLOR}
+        echo -e ${GREEN}" > DONE"${ENDCOLOR}
 
         COUNT=$((COUNT + 1))
+
+        echo -e ${GREEN}" > Backup ${COUNT} of ${TOTAL_SITES} DONE"${ENDCOLOR}
+        echo "> Backup ${COUNT} of ${TOTAL_SITES} DONE." >>$LOG
+
+        echo -e ${GREEN}"###################################################"${ENDCOLOR}
+        echo "###################################################" >>$LOG
 
       else
         ERROR=true

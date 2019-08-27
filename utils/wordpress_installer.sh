@@ -60,11 +60,16 @@ if [ $exitstatus = 0 ]; then
     DOMAIN=$(whiptail --title "Domain" --inputbox "Insert the domain of the Project. Example: landing.broobe.com" 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      if [ -d "${FOLDER_TO_INSTALL}/${DOMAIN}" ]; then
-          echo -e ${RED}"ERROR: Destination folder already exist, aborting ..."${ENDCOLOR}
+
+      PROJECT_DIR="${FOLDER_TO_INSTALL}/${DOMAIN}"
+
+      if [ -d "${PROJECT_DIR}" ]; then
+          echo -e ${RED}"ERROR: Destination folder '${PROJECT_DIR}' already exist, aborting ..."${ENDCOLOR}
           exit 1
+
       else
         echo "Setting DOMAIN="${DOMAIN} >> $LOG
+
       fi
 
     else
@@ -86,7 +91,7 @@ if [ $exitstatus = 0 ]; then
     echo -e ${YELLOW}"Trying to make a copy of ${COPY_PROJECT} ..."${ENDCOLOR}
 
     cd ${FOLDER_TO_INSTALL}
-    cp -r ${FOLDER_TO_INSTALL}/${COPY_PROJECT} ${FOLDER_TO_INSTALL}/${DOMAIN}
+    cp -r ${FOLDER_TO_INSTALL}/${COPY_PROJECT} ${PROJECT_DIR}
 
     echo "DONE" >> $LOG
 
@@ -121,9 +126,9 @@ if [ $exitstatus = 0 ]; then
       exit 1
     fi
 
-    if [ -d "${FOLDER_TO_INSTALL}/${DOMAIN}" ]; then
-      echo "ERROR: Destination folder already exist, aborting ..." >> $LOG
-      echo -e ${RED}"ERROR: Destination folder already exist, aborting ..."${ENDCOLOR}
+    if [ -d "${PROJECT_DIR}" ]; then
+      echo "ERROR: Destination folder '${PROJECT_DIR}' already exist, aborting ..." >> $LOG
+      echo -e ${RED}"ERROR: Destination folder '${PROJECT_DIR}' already exist, aborting ..."${ENDCOLOR}
       exit 1
 
     fi
@@ -132,9 +137,9 @@ if [ $exitstatus = 0 ]; then
 
   fi
 
-  wp_change_ownership "${FOLDER_TO_INSTALL}/${DOMAIN}"
+  wp_change_ownership "${PROJECT_DIR}"
 
-  WPCONFIG=${FOLDER_TO_INSTALL}/${DOMAIN}/wp-config.php
+  WPCONFIG=${PROJECT_DIR}/wp-config.php
 
   # Create database and user
   wp_database_creation

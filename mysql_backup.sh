@@ -3,6 +3,13 @@
 # Version: 2.9
 #############################################################################
 
+### Checking some things
+if [[ -z "${SFOLDER}" ]]; then
+  echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+  exit 0
+fi
+################################################################################
+
 source ${SFOLDER}/libs/commons.sh
 source ${SFOLDER}/libs/mysql_helper.sh
 source ${SFOLDER}/libs/mail_notification_helper.sh
@@ -115,7 +122,7 @@ for DATABASE in ${DBS}; do
 done
 
 # Disk Usage
-DISK_UDB=$(df -h | grep "${MAIN_VOL}" | awk {'print $5'})
+#DISK_UDB=$(df -h | grep "${MAIN_VOL}" | awk {'print $5'})
 
 # Configure Email
 mail_mysqlbackup_section "${ERROR}" "${ERROR_TYPE}" "${BACKUPEDLIST}" "${BK_DB_SIZES}"

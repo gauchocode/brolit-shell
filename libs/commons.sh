@@ -27,7 +27,7 @@ main_menu() {
 
   RUNNER_OPTIONS="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 RESTORE_FROM_SOURCE 04 DELETE_PROJECT 05 WORDPRESS_INSTALLER 06 SERVER_OPTIMIZATIONS 07 INSTALLERS_AND_CONFIGS 08 REPLACE_WP_URL 09 WPCLI_HELPER 10 CERTBOT_MANAGER 11 BENCHMARKS 12 GTMETRIX_TEST 13 BLACKLIST_CHECKER 14 RESET_SCRIPT_OPTIONS"
   CHOSEN_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 $(for x in ${RUNNER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
-  
+
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
@@ -228,9 +228,12 @@ backup_menu() {
 
           MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
 
+          # Checking result status for mail subject
+          EMAIL_STATUS=$(mail_subject_status "${STATUS_D}" "${STATUS_F}" "${OUTDATED}")
+
           echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
 
-          EMAIL_SUBJECT="${STATUS_ICON} ${VPSNAME} - Complete Backup - [${NOWDISPLAY}]"
+          EMAIL_SUBJECT="${EMAIL_STATUS} on ${VPSNAME} Running Complete Backup - [${NOWDISPLAY}]"
           EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
 
           # Sending email notification
@@ -244,7 +247,7 @@ backup_menu() {
           ;;
         *) echo " > Please answer yes or no." ;;
         esac
-        
+
       done
 
     fi
@@ -538,6 +541,42 @@ generate_dropbox_config() {
 
 }
 
+generate_cloudflare_config() {
+
+  CFL_EMAIL_STRING="Please insert the cloudflare email account here:\n\n"
+
+  CFL_EMAIL=$(whiptail --title "Cloudflare Configuration" --inputbox "${CFL_EMAIL_STRING}" 15 60 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+
+    echo "dns_cloudflare_email=$CFL_EMAIL" >${CLF_CONFIG_FILE}
+
+    GLOBAL_API_TOKEN_STRING+= "\n . \n"
+    GLOBAL_API_TOKEN_STRING+=" 1) Log in on: cloudflare.com\n"
+    GLOBAL_API_TOKEN_STRING+=" 2) Login and go to 'My Profile'.\n"
+    GLOBAL_API_TOKEN_STRING+=" 3) Choose the type of access you need.\n"
+    GLOBAL_API_TOKEN_STRING+=" 4) Click on 'API TOKENS' \n"
+    GLOBAL_API_TOKEN_STRING+=" 5) In 'Global API Key' click on \"View\" button.\n"
+    GLOBAL_API_TOKEN_STRING+=" 6) Copy the code and paste it here:\n\n"
+
+    GLOBAL_API_TOKEN=$(whiptail --title "Cloudflare Configuration" --inputbox "${GLOBAL_API_TOKEN_STRING}" 15 60 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo "dns_cloudflare_api_key=$GLOBAL_API_TOKEN" >>${CLF_CONFIG_FILE}
+      echo -e ${GREEN}" > The cloudflare configuration has been saved! ..."${ENDCOLOR}
+
+    else
+      exit 1
+
+    fi
+
+  else
+    exit 1
+
+  fi
+
+}
+
 calculate_disk_usage() {
 
   DISK_U=$(df -h | grep "${MAIN_VOL}" | awk {'print $5'})
@@ -569,16 +608,18 @@ wp_download_wordpress() {
 # wordpress_installer.sh
 wp_change_ownership() {
 
-  # $1 ${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT} or ${FOLDER_TO_INSTALL}/${DOMAIN}
+  # $1 = ${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT} or ${FOLDER_TO_INSTALL}/${DOMAIN}
+
+  PROJECT_DIR=$1
 
   echo "Changing folder owner to www-data ..." >>$LOG
-  echo -e ${YELLOW}"Changing '$1' owner to www-data ..."${ENDCOLOR}
+  echo -e ${YELLOW}"Changing '${PROJECT_DIR}' owner to www-data ..."${ENDCOLOR}
 
-  chown -R www-data:www-data $1
-  find $1 -type d -exec chmod g+s {} \;
-  chmod g+w $1/wp-content
-  chmod -R g+w $1/wp-content/themes
-  chmod -R g+w $1/wp-content/plugins
+  chown -R www-data:www-data ${PROJECT_DIR}
+  find ${PROJECT_DIR} -type d -exec chmod g+s {} \;
+  chmod g+w ${PROJECT_DIR}/wp-content
+  chmod -R g+w ${PROJECT_DIR}/wp-content/themes
+  chmod -R g+w ${PROJECT_DIR}/wp-content/plugins
 
   echo " > DONE" >>$LOG
   echo -e ${GREEN}" > DONE"${ENDCOLOR}

@@ -139,6 +139,14 @@ else
   generate_dropbox_config
 fi
 
+### Cloudflare config file
+CLF_CONFIG_FILE=~/.cloudflare.conf
+if [[ -e ${CLF_CONFIG_FILE} ]]; then
+  source ${CLF_CONFIG_FILE}
+else
+  generate_cloudflare_config
+fi
+
 ### Broobe Utils config file
 if test -f /root/.broobe-utils-options; then
   source /root/.broobe-utils-options
