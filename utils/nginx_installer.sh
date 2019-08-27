@@ -59,7 +59,8 @@ nginx_brotli_installer() {
     git clone --recursive https://github.com/google/ngx_brotli.git
     cd /usr/local/src/nginx-*/
 
-    vim debian/rules
+    # TODO:
+    #vim debian/rules
     #Now you will get two build environments for 'config.env.nginx' and 'config.env.nginx_debug'.
     # Add the '--add-module=' option for ngx_brotli to both built environments.
     #--add-module=/usr/local/src/ngx_brotli
@@ -69,27 +70,15 @@ nginx_brotli_installer() {
     cd /usr/local/src/
     sudo dpkg -i *.deb
 
-    # ACA AGREGAMOS CONFIG DE BROTLI
-    #cd /etc/nginx/
-    #vim nginx.conf
-    #
-    # TODO: quiza lo que haya que hacer es tenerlo en el nginx.conf y descomentarle las lineas con sed
-    # sed -i '/<pattern>/s/^/#/g' file #comment
-    # sed -i '/<pattern>/s/^#//g' file #uncomment
-    # o la otra es agregar lo siguiente a un .conf y simplemente agregarle una linea con include
-    #
-    # brotli on;
-    # brotli_comp_level 6;
-    # brotli_static on;
-    # brotli_types text/plain text/css application/javascript application/x-javascript text/xml application/xml application/xml+rss text/javascript image/x-icon image/vnd.microsoft.icon image/bmp image/svg+xml;
+    # TODO: con sed al nginx.conf hay que agregarle un include al globals/brotli.conf
 
-    # Testing ...
+    # Testing
     nginx -t
 
-    # Reloading Nginx ...
+    # Reloading Nginx
     service nginx reload
 
-    # ponemos on hold el paquete
+    # Nginx package on hold
     apt-mark hold nginx
 
 }
@@ -134,10 +123,10 @@ nginx_pagespeed_installer() {
     # Edit the main Nginx configuration file.
     sudo nano /etc/nginx/nginx.conf
 
-    #Add the following line at the beginning of the file.
+    # Add the following line at the beginning of the file.
     load_module modules/ngx_pagespeed.so
 
-    #Save and close the file. Then test Nginx configuration.
+    # Save and close the file. Then test Nginx configuration.
     sudo nginx -t
     sudo systemctl reload nginx
 
@@ -145,6 +134,7 @@ nginx_pagespeed_installer() {
 
     sudo chown -R www-data:www-data /var/ngx_pagespeed_cache
 
+    # Nginx package on hold
     apt-mark hold nginx
 
 }

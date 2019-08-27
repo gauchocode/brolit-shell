@@ -51,50 +51,72 @@ certbot_certificate_force_renew() {
 
 }
 
-################################################################################
+certbot_helper_menu() {
 
-CERTBOT_OPTIONS="01 INSTALL_CERTIFICATE 02 FORCE_INSTALL_CERTIFICATE 03 RECONFIGURE_CERTIFICATE 04 RENEW_CERTIFICATE 05 FORCE_RENEW_CERTIFICATE"
+  CERTBOT_OPTIONS="01 INSTALL_CERTIFICATE 02 FORCE_INSTALL_CERTIFICATE 03 RECONFIGURE_CERTIFICATE 04 RENEW_CERTIFICATE 05 FORCE_RENEW_CERTIFICATE"
+  CHOSEN_CB_OPTION=$(whiptail --title "CERTBOT MANAGER" --menu "Please choose an option:" 20 78 10 $(for x in ${CERTBOT_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
-CHOSEN_CB_OPTION=$(whiptail --title "CERTBOT MANAGER" --menu "Please choose an option:" 20 78 10 $(for x in ${CERTBOT_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
-
-exitstatus=$?
-if [ $exitstatus = 0 ]; then
-
-  DOMAIN=$(whiptail --title "CERTBOT MANAGER" --inputbox "Please insert the domain or subdomain where you want to install the certificate. Example: dev.broobe.com" 10 60 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
-    echo -e ${YELLOW}" > Trying to execute certbot for ${DOMAIN} ..."${ENDCOLOR}
+    DOMAIN=$(whiptail --title "CERTBOT MANAGER" --inputbox "Please insert the domain or subdomain where you want to install the certificate. Example: dev.broobe.com" 10 60 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
 
-    if [[ ${CHOSEN_CB_OPTION} == *"01"* ]]; then
-      certbot_certificate_install "${MAILA}" "${DOMAIN}"
+      #echo -e ${YELLOW}" > Trying to execute certbot for ${DOMAIN} ..."${ENDCOLOR}
+
+      if [[ ${CHOSEN_CB_OPTION} == *"01"* ]]; then
+        certbot_certificate_install "${MAILA}" "${DOMAIN}"
+        certbot_helper_menu
+
+      fi
+      if [[ ${CHOSEN_CB_OPTION} == *"02"* ]]; then
+        certbot_certificate_force_install "${MAILA}" "${DOMAIN}"
+        certbot_helper_menu
+
+      fi
+      if [[ ${CHOSEN_CB_OPTION} == *"03"* ]]; then
+        # TODO: en teoria instalando normal y luego apretando 1 lo reconfigurás...
+        certbot --nginx --non-interactive --agree-tos --redirect -m ${MAILA} -d ${DOMAIN}
+        certbot_helper_menu
+
+      fi
+      if [[ ${CHOSEN_CB_OPTION} == *"04"* ]]; then
+        certbot_certificate_renew "${MAILA}" "${DOMAIN}"
+        certbot_helper_menu
+
+      fi
+      if [[ ${CHOSEN_CB_OPTION} == *"05"* ]]; then
+        # TODO: testear
+        #certbot renew --force-renewal --nginx --dry-run --preferred-challenges http -d ${DOMAIN}
+        certbot renew --force-renewal --nginx --preferred-challenges http -d ${DOMAIN}
+        certbot_helper_menu
+
+      fi
+
+      #echo -e ${GREEN}" > Everything is DONE! ..."${ENDCOLOR}
 
     fi
-    if [[ ${CHOSEN_CB_OPTION} == *"02"* ]]; then
-      certbot_certificate_force_install "${MAILA}" "${DOMAIN}"
 
-    fi
-    if [[ ${CHOSEN_CB_OPTION} == *"03"* ]]; then
-      # TODO: en teoria instalando normal y luego apretando 1 lo reconfigurás...
-      certbot --nginx --non-interactive --agree-tos --redirect -m ${MAILA} -d ${DOMAIN}
-
-    fi
-    if [[ ${CHOSEN_CB_OPTION} == *"04"* ]]; then
-      certbot_certificate_renew "${MAILA}" "${DOMAIN}"
-
-    fi
-    if [[ ${CHOSEN_CB_OPTION} == *"05"* ]]; then
-      # TODO: testear
-      #certbot renew --force-renewal --nginx --dry-run --preferred-challenges http -d ${DOMAIN}
-      certbot renew --force-renewal --nginx --preferred-challenges http -d ${DOMAIN}
-
-    fi
-
-    #echo -e ${GREEN}" > Everything is DONE! ..."${ENDCOLOR}
+  else
+    exit 1
 
   fi
 
-else
-  exit 1
+}
 
-fi
+certbot_helper_check_cloudflare() {
+
+  
+}
+
+################################################################################
+
+# TODO: podemos hacer que reciba algún parametro, para permitir ejecutar sin que vuelva al menu
+#       ideal para que pueda ser ejecutado por otro script
+#
+# TODO: ojo, esto podría ser un certbot_helper.sh e ir a /libs
+
+certbot_helper_check_cloudflare
+
+certbot_helper_menu
