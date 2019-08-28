@@ -13,8 +13,6 @@
 # https://centminmod.com/webp/
 # https://ayudawp.com/usar-archivos-webp-wordpress-mejorar-los-tiempos-carga
 
-SCRIPT_V="2.9.7"
-
 ### Checking some things
 if [[ -z "${SFOLDER}" ]]; then
   echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
