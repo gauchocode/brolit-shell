@@ -9,8 +9,6 @@
 # https://alonganon.info/2018/11/17/make-a-super-fast-and-lightweight-wordpress-on-ubuntu-18-04-with-php-7-2-nginx-and-mariadb/
 #
 ################################################################################
-SCRIPT_V="2.9.7"
-
 # TODO: esto necesita un fuerte refactor, re-utilizar funciones que ya estan en los otros Scripts,
 # y checkear que falla cuando ponemos www.DOMINIO.com y luego seleccionamos un stage distinto a prod.
 #

@@ -7,7 +7,6 @@
 # Ref: https://serverfault.com/questions/939436/understand-correctly-pm-max-children-tuning
 #
 ################################################################################
-SCRIPT_V="2.9.9"
 
 ### Checking some things
 if [[ -z "${SFOLDER}" ]]; then
