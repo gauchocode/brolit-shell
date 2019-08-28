@@ -1,9 +1,9 @@
 #!/bin/bash
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 2.9.7
+# Version: 2.9.9
 #############################################################################
 
-### Checking some things
+### Checking Script Execution
 if [[ -z "${SFOLDER}" ]]; then
   echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
   exit 0
@@ -39,22 +39,27 @@ make_files_backup() {
 
   if [ -n "${BK_DIR}" ]; then
 
-    echo " > Trying to make a backup of ${BK_DIR} ..." >>$LOG
-    echo -e ${GREEN}" > Trying to make a backup of ${BK_DIR} ..."${ENDCOLOR}
+    OLD_BK_FILE="${BK_SUB_TYPE}-${BK_TYPE}-files-${ONEWEEKAGO}.tar.bz2"
+    BK_FILE="${BK_SUB_TYPE}-${BK_TYPE}-files-${NOW}.tar.bz2"
 
-    TAR_FILE=$($TAR -jcpf ${BAKWP}/${NOW}/${BK_SUB_TYPE}-${BK_TYPE}-files-${NOW}.tar.bz2 --directory=${BK_DIR} .)
+    echo -e ${GREEN}" > Trying to make a backup of ${BK_DIR} ..."${ENDCOLOR}
+    echo " > Trying to make a backup of ${BK_DIR} ..." >>$LOG
+    
+    TAR_FILE=$($TAR -jcpf ${BAKWP}/${NOW}/${BK_FILE} --directory=${BK_DIR} ${BK_FOLDER})
 
     if ${TAR_FILE}; then
 
-      echo " > ${BK_TYPE} backup created..." >>$LOG
-      echo " > Uploading TAR to Dropbox ..." >>$LOG
-      ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/${BK_SUB_TYPE}-${BK_TYPE}-files-${NOW}.tar.bz2 ${DROPBOX_FOLDER}/${BK_TYPE}
+      echo -e ${GREEN}" > ${BK_TYPE} backup created"${ENDCOLOR}
+      echo " > ${BK_TYPE} backup created" >>$LOG
 
-      echo " > Trying to delete old backup from Dropbox ..." >>$LOG
-      dropbox_delete_backup "${BK_TYPE}" "${CONFIG_F}" "${BK_SUB_TYPE}-${BK_TYPE}-files-${ONEWEEKAGO}.tar.bz2"
-      #${DPU_F}/dropbox_uploader.sh remove ${CONFIG_F}/webserver-config-files-${ONEWEEKAGO}.tar.bz2
+      echo -e ${CYAN}" > Uploading TAR to Dropbox ..."${ENDCOLOR}
+      echo " > Uploading TAR to Dropbox ..." >>$LOG
+      ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/${BK_FILE} ${DROPBOX_FOLDER}/${BK_TYPE}
+
+      dropbox_delete_backup "${BK_TYPE}" "${CONFIG_F}" "${OLD_BK_FILE}"
 
       echo -e ${GREEN}" > DONE"${ENDCOLOR}
+      echo " > DONE" >>$LOG
 
     else
 
@@ -62,7 +67,6 @@ make_files_backup() {
       ERROR_TYPE="ERROR: No such directory or file ${BAKWP}/${NOW}/${BK_SUB_TYPE}-${BK_TYPE}-files-${NOW}.tar.bz2"
 
       echo -e ${RED}" > ERROR: Can't make the backup!"${ENDCOLOR}
-
       echo $ERROR_TYPE >>$LOG
 
     fi
@@ -70,11 +74,88 @@ make_files_backup() {
   else
 
     echo -e ${RED}" > ERROR: Directory '${BK_DIR}' doesnt exists!"${ENDCOLOR}
+    echo " > ERROR: Directory '${BK_DIR}' doesnt exists!" >>$LOG
 
   fi
 
   echo -e ${CYAN}"###################################################"${ENDCOLOR}
-  echo " ###################################################" >>$LOG
+  echo "###################################################" >>$LOG
+
+}
+
+make_project_backup() {
+
+  # $1 = Backup Type
+  # $2 = Backup SubType
+  # $3 = Path folder to Backup
+  # $4 = Folder to Backup
+
+  BK_TYPE=$1     #configs,sites,databases
+  BK_SUB_TYPE=$2 #config_name,site_domain,database_name
+
+  SITES=$3
+  FOLDER_NAME=$4
+
+  echo -e ${CYAN}" > Making TAR from: ${FOLDER_NAME} ..."${ENDCOLOR}
+  echo " > Making TAR from: ${FOLDER_NAME} ..." >>$LOG
+
+  #tar cf - /folder-with-big-files -P | pv -s $(du -sb /folder-with-big-files | awk '{print $1}') | gzip > big-files.tar.gz
+
+  #(tar --exclude '.git' --exclude '*.log' -cpf --directory=/root/broobe-utils-scripts/tmp-backup maktub-clientes | pv -s $(du -sb /root/broobe-utils-scripts/tmp-backup/maktub-clientes | awk '{print $1}') | bzip2 > /root/broobe-utils-scripts/tmp-backup/backup-maktub_files.tar.bz2) 2>&1 | dialog --gauge 'Progress' 7 70
+  #tar -cpf --directory=/root/broobe-utils-scripts/tmp-backup maktub-clientes | pv -ns $(du -sb /root/broobe-utils-scripts/tmp-backup/maktub-clientes | awk '{print $1}') | bzip2 > /root/broobe-utils-scripts/tmp-backup/backup-maktub_files.tar.bz2
+  #tar -cvf --directory=/root/broobe-utils-scripts/ tmp | pv -p -s $(du -sk /root/broobe-utils-scripts/tmp | cut -f 1)k | bzip2 -c > /root/broobe-utils-scripts/tmp/backup-maktub_files.tar.bz2
+
+  OLD_BK_FILE="backup-${FOLDER_NAME}_${BK_TYPE}-files_${ONEWEEKAGO}.tar.bz2"
+  BK_FILE="backup-${FOLDER_NAME}_${BK_TYPE}-files_${NOW}.tar.bz2"
+
+  #TAR_FILE=$($TAR -jcpf ${BAKWP}/${NOW}/${BK_SUB_TYPE}-${BK_TYPE}-files-${NOW}.tar.bz2 --directory=${BK_DIR} .)
+
+  TAR_FILE=$($TAR --exclude '.git' --exclude '*.log' -jcpf ${BAKWP}/${NOW}/${BK_FILE} --directory=${SITES} ${FOLDER_NAME} >>$LOG)
+
+  if ${TAR_FILE}; then
+
+    # TODO: estas variables no deberian ser locales?
+    BACKUPED_LIST[$COUNT]=${BK_FILE}
+    BACKUPED_FL=${BACKUPED_LIST[$COUNT]}
+
+    # Calculate backup size
+    BK_FL_SIZES[$COUNT]=$(ls -lah ${BAKWP}/${NOW}/${BK_FILE} | awk '{ print $5}')
+    BK_FL_SIZE=${BK_FL_SIZES[$COUNT]}
+
+    echo -e ${GREEN}" > Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE} ..."${ENDCOLOR}
+    echo " > Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE} ..." >>$LOG
+
+    echo -e ${GREEN}" > Trying to create folder ${FOLDER_NAME} in Dropbox ..."${ENDCOLOR}
+    echo " > Trying to create folder ${FOLDER_NAME} in Dropbox ..." >>$LOG
+    ${DPU_F}/dropbox_uploader.sh mkdir /${SITES_F}
+    ${DPU_F}/dropbox_uploader.sh mkdir /${SITES_F}/${FOLDER_NAME}/
+
+    echo -e ${GREEN}" > Uploading ${FOLDER_NAME} to Dropbox ..."${ENDCOLOR}
+    echo " > Uploading ${FOLDER_NAME} to Dropbox ..." >>$LOG
+    ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/${BK_FILE} ${DROPBOX_FOLDER}/${SITES_F}/${FOLDER_NAME}/
+
+    echo " > Trying to delete old backup from Dropbox ..." >>$LOG
+    ${DPU_F}/dropbox_uploader.sh remove ${DROPBOX_FOLDER}/${SITES_F}/${FOLDER_NAME}/${OLD_BK_FILE}
+
+    echo " > Deleting backup from server ..." >>$LOG
+    rm -r ${BAKWP}/${NOW}/${BK_FILE}
+
+    echo -e ${GREEN}" > DONE"${ENDCOLOR}
+
+    COUNT=$((COUNT + 1))
+
+    echo -e ${GREEN}" > Processed ${COUNT} of ${COUNT_TOTAL_SITES} directories"${ENDCOLOR}
+    echo "> Processed ${COUNT} of ${COUNT_TOTAL_SITES} directories" >>$LOG
+
+    echo -e ${GREEN}"###################################################"${ENDCOLOR}
+    echo "###################################################" >>$LOG
+
+  else
+    ERROR=true
+    ERROR_TYPE="ERROR: No such directory or file ${BAKWP}/${NOW}/${BK_FILE}"
+    echo ${ERROR_TYPE} >>$LOG
+
+  fi
 
 }
 
@@ -110,40 +191,73 @@ dropbox_delete_backup() {
 
 }
 
+duplicity_backup() {
+
+  if [ "${DUP_BK}" = true ]; then
+
+    # Check if DUPLICITY is installed
+    DUPLICITY="$(which duplicity)"
+    if [ ! -x "${DUPLICITY}" ]; then
+      apt-get install duplicity
+    fi
+
+    # Loop in to Directories
+    for i in $(echo ${DUP_FOLDERS} | sed "s/,/ /g"); do
+      duplicity --full-if-older-than ${DUP_BK_FULL_FREQ} -v4 --no-encryption ${DUP_SRC_BK}$i file://${DUP_ROOT}$i
+      RETVAL=$?
+
+      # TODO: solo deberia borrar lo viejo si $RETVAL -eq 0
+      duplicity remove-older-than ${DUP_BK_FULL_LIFE} --force ${DUP_ROOT}/$i
+
+    done
+
+    [ $RETVAL -eq 0 ] && echo "*** DUPLICITY SUCCESS ***" >>$LOG
+    [ $RETVAL -ne 0 ] && echo "*** DUPLICITY ERROR ***" >>$LOG
+
+  fi
+
+}
+
 ################################################################################
 
-# TODO: refactor del manejo de ERRORES
-
-### VARS
+# VARS
 BK_TYPE="File"
 ERROR=false
 ERROR_TYPE=""
 SITES_F="sites"
 CONFIG_F="configs"
 
-### Starting Message
+# Starting Message
 echo " > Starting file backup script ..." >>$LOG
 echo -e ${GREEN}" > Starting file backup script ..."${ENDCOLOR}
 
 echo " > Creating Dropbox folder ${CONFIG_F} on Dropbox ..." >>$LOG
 ${DPU_F}/dropbox_uploader.sh mkdir /${CONFIG_F}
 
-### TAR Webserver Config Files
+# TODO: refactor del manejo de ERRORES
+# ojo que si de make_files_backup sale con error,
+# en el mail manda warning pero en ningun lugar se muestra el error
+
+# TAR Webserver Config Files
 make_files_backup "configs" "nginx" "${WSERVER}" "."
 
-### TAR PHP Config Files
+# TAR PHP Config Files
 make_files_backup "configs" "php" "${PHP_CF}" "."
 
-### TAR MySQL Config Files
+# TAR MySQL Config Files
 make_files_backup "configs" "mysql" "${MySQL_CF}" "."
 
-### TAR Let's Encrypt Config Files
+# TAR Let's Encrypt Config Files
 make_files_backup "configs" "letsencrypt" "${LENCRYPT_CF}" "."
 
 # Get all directories
 TOTAL_SITES=$(find ${SITES} -maxdepth 1 -type d)
-echo " > ${TOTAL_SITES} directory found ..." >>$LOG
-echo -e ${CYAN}" > ${TOTAL_SITES} directory found ..."${ENDCOLOR}
+
+## Get length of $TOTAL_SITES
+COUNT_TOTAL_SITES=$(find /var/www -maxdepth 1 -type d -printf '.' | wc -c)
+
+echo -e ${CYAN}" > ${COUNT_TOTAL_SITES} directory found ..."${ENDCOLOR}
+echo " > ${COUNT_TOTAL_SITES} directory found ..." >>$LOG
 
 # Settings some vars
 k=0
@@ -153,7 +267,7 @@ declare -a BK_FL_SIZES
 
 for j in ${TOTAL_SITES}; do
 
-echo -e ${YELLOW}" > Processing [${j}] ..."${ENDCOLOR}
+  echo -e ${YELLOW}" > Processing [${j}] ..."${ENDCOLOR}
 
   if [[ "$k" -gt 0 ]]; then
 
@@ -161,64 +275,16 @@ echo -e ${YELLOW}" > Processing [${j}] ..."${ENDCOLOR}
 
     if [[ $SITES_BL != *"${FOLDER_NAME}"* ]]; then
 
-      echo -e ${CYAN}" > Making TAR from: $FOLDER_NAME ..."${ENDCOLOR}
-      echo " > Making TAR from: $FOLDER_NAME ..." >>$LOG
-
-      #tar cf - /folder-with-big-files -P | pv -s $(du -sb /folder-with-big-files | awk '{print $1}') | gzip > big-files.tar.gz
-
-      #(tar --exclude '.git' --exclude '*.log' -cpf --directory=/root/broobe-utils-scripts/tmp-backup maktub-clientes | pv -s $(du -sb /root/broobe-utils-scripts/tmp-backup/maktub-clientes | awk '{print $1}') | bzip2 > /root/broobe-utils-scripts/tmp-backup/backup-maktub_files.tar.bz2) 2>&1 | dialog --gauge 'Progress' 7 70
-      #tar -cpf --directory=/root/broobe-utils-scripts/tmp-backup maktub-clientes | pv -ns $(du -sb /root/broobe-utils-scripts/tmp-backup/maktub-clientes | awk '{print $1}') | bzip2 > /root/broobe-utils-scripts/tmp-backup/backup-maktub_files.tar.bz2
-      #tar -cvf --directory=/root/broobe-utils-scripts/ tmp | pv -p -s $(du -sk /root/broobe-utils-scripts/tmp | cut -f 1)k | bzip2 -c > /root/broobe-utils-scripts/tmp/backup-maktub_files.tar.bz2
-
-      TAR_FILE=$($TAR --exclude '.git' --exclude '*.log' -jcpf ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 --directory=${SITES} ${FOLDER_NAME} >>$LOG)
-
-      if ${TAR_FILE}; then
-
-        BACKUPED_LIST[$COUNT]=backup-${FOLDER_NAME}_files_${NOW}.tar.bz2
-        BACKUPED_FL=${BACKUPED_LIST[$COUNT]}
-        BK_FL_SIZES[$COUNT]=$(ls -lah ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 | awk '{ print $5}')
-        BK_FL_SIZE=${BK_FL_SIZES[$COUNT]}
-
-        echo -e ${GREEN}" > Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE} ..."${ENDCOLOR}
-        echo " > Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE} ..." >>$LOG
-
-        echo " > Trying to create folder ${FOLDER_NAME} in Dropbox ..." >>$LOG
-        ${DPU_F}/dropbox_uploader.sh mkdir /${SITES_F}
-        ${DPU_F}/dropbox_uploader.sh mkdir /${SITES_F}/${FOLDER_NAME}/
-
-        echo " > Uploading backup to Dropbox ..." >>$LOG
-        ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2 $DROPBOX_FOLDER/${SITES_F}/${FOLDER_NAME}/
-
-        echo " > Trying to delete old backup from Dropbox ..." >>$LOG
-        ${DPU_F}/dropbox_uploader.sh remove $DROPBOX_FOLDER/${SITES_F}/${FOLDER_NAME}/backup-${FOLDER_NAME}_files_${ONEWEEKAGO}.tar.bz2
-
-        echo " > Deleting backup from server ..." >>$LOG
-        rm -r ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2
-
-        echo -e ${GREEN}" > DONE"${ENDCOLOR}
-
-        COUNT=$((COUNT + 1))
-
-        echo -e ${GREEN}" > Backup ${COUNT} of ${TOTAL_SITES} DONE"${ENDCOLOR}
-        echo "> Backup ${COUNT} of ${TOTAL_SITES} DONE." >>$LOG
-
-        echo -e ${GREEN}"###################################################"${ENDCOLOR}
-        echo "###################################################" >>$LOG
-
-      else
-        ERROR=true
-        ERROR_TYPE="ERROR: No such directory or file ${BAKWP}/${NOW}/backup-${FOLDER_NAME}_files_${NOW}.tar.bz2"
-        echo ${ERROR_TYPE} >>$LOG
-
-      fi
+      make_project_backup "sites" "${FOLDER_NAME}" "${SITES}" "${FOLDER_NAME}"
 
     else
       echo " > Omiting ${FOLDER_NAME} TAR file (blacklisted) ..." >>$LOG
+      COUNT=$((COUNT + 1))
 
     fi
 
     echo -e ${CYAN}"###################################################"${ENDCOLOR}
-    echo " ###################################################" >>$LOG
+    echo "###################################################" >>$LOG
 
   fi
 
@@ -226,34 +292,11 @@ echo -e ${YELLOW}" > Processing [${j}] ..."${ENDCOLOR}
 
 done
 
-# File Check
-#AMOUNT_FILES=$(ls -d ${BAKWP}/${NOW}/*_files_${NOW}.tar.bz2 | wc -l)
-#echo " > Number of backup files found: ${AMOUNT_FILES} ..." >>$LOG
-
 # Deleting old backup files
 rm -r ${BAKWP}/${NOW}
 
 # DUPLICITY
-if [ "${DUP_BK}" = true ]; then
-
-  # Check if DUPLICITY is installed
-  DUPLICITY="$(which duplicity)"
-  if [ ! -x "${DUPLICITY}" ]; then
-    apt-get install duplicity
-  fi
-
-  # Loop in to Directories
-  for i in $(echo ${DUP_FOLDERS} | sed "s/,/ /g"); do
-    duplicity --full-if-older-than ${DUP_BK_FULL_FREQ} -v4 --no-encryption ${DUP_SRC_BK}$i file://${DUP_ROOT}$i
-    RETVAL=$?
-    duplicity remove-older-than ${DUP_BK_FULL_LIFE} --force ${DUP_ROOT}/$i
-
-  done
-
-  [ $RETVAL -eq 0 ] && echo "*** DUPLICITY SUCCESS ***" >>$LOG
-  [ $RETVAL -ne 0 ] && echo "*** DUPLICITY ERROR ***" >>$LOG
-
-fi
+duplicity_backup
 
 # Configure Email
 mail_filesbackup_section "${ERROR}" "${ERROR_TYPE}" "${BACKUPED_LIST}" "${BK_FL_SIZES}"
