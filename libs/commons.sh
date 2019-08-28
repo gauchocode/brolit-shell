@@ -357,37 +357,7 @@ check_distro() {
 checking_scripts_permissions() {
   ### chmod
 
-  # TODO: reemplazamos por esto?
-  # find ./ -name "*.sh" -exec chmod +x {} \;
-
-  chmod +x ${SFOLDER}/mysql_backup.sh
-  chmod +x ${SFOLDER}/files_backup.sh
-  chmod +x ${SFOLDER}/lemp_setup.sh
-  chmod +x ${SFOLDER}/restore_from_backup.sh
-  chmod +x ${SFOLDER}/server_and_image_optimizations.sh
-  chmod +x ${SFOLDER}/installers_and_configurators.sh
-  chmod +x ${SFOLDER}/libs/mail_notification_helper.sh
-  chmod +x ${SFOLDER}/libs/mysql_helper.sh
-  chmod +x ${SFOLDER}/utils/bench_scripts.sh
-  chmod +x ${SFOLDER}/utils/certbot_manager.sh
-  chmod +x ${SFOLDER}/utils/certbot_installer.sh
-  chmod +x ${SFOLDER}/utils/cloudflare_update_IP.sh
-  chmod +x ${SFOLDER}/utils/composer_installer.sh
-  chmod +x ${SFOLDER}/utils/netdata_installer.sh
-  chmod +x ${SFOLDER}/utils/monit_installer.sh
-  chmod +x ${SFOLDER}/utils/cockpit_installer.sh
-  chmod +x ${SFOLDER}/utils/php_optimizations.sh
-  chmod +x ${SFOLDER}/utils/mysql_installer.sh
-  chmod +x ${SFOLDER}/utils/nginx_installer.sh
-  chmod +x ${SFOLDER}/utils/php_installer.sh
-  chmod +x ${SFOLDER}/utils/wordpress_installer.sh
-  chmod +x ${SFOLDER}/utils/wordpress_restore_from_source.sh
-  chmod +x ${SFOLDER}/utils/wordpress_wpcli_helper.sh
-  chmod +x ${SFOLDER}/utils/replace_url_on_wordpress_db.sh
-  chmod +x ${SFOLDER}/utils/blacklist-checker/bl.sh
-  chmod +x ${SFOLDER}/utils/dropbox-uploader/dropbox_uploader.sh
-  chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools.sh
-  chmod +x ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh
+  find ./ -name "*.sh" -exec chmod +x {} \;
 
 }
 

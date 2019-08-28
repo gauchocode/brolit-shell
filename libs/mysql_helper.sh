@@ -56,7 +56,11 @@ mysql_user_create() {
 
 mysql_user_wpass_create() {
 
-    if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${PROJECT_NAME}_user';" | mysql -u root --password=${MPASS} | grep 1 &>/dev/null; then
+    # $1 = ${DB_USER}
+
+    DB_USER=1
+
+    if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${DB_USER}';" | mysql -u ${MUSER} --password=${MPASS} | grep 1 &>/dev/null; then
 
         # $1 USER (${PROJECT_NAME}_user)
 
@@ -72,6 +76,9 @@ mysql_user_wpass_create() {
         if [ $? -eq 0 ]; then
             echo " > DONE!" >>$LOG
             echo -e ${GREN}" > DONE!"${ENDCOLOR}
+
+            return 0
+
         else
             echo " > Something went wrong!" >>$LOG
             echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
@@ -80,7 +87,9 @@ mysql_user_wpass_create() {
 
     else
 
-        echo -e ${YELLOW}" > User $1 already exists"${ENDCOLOR} >>$LOG
+        echo -e ${YELLOW}" > User ${DB_USER} already exists"${ENDCOLOR} >>$LOG
+
+        return 1
 
     fi
 
@@ -235,10 +244,13 @@ mysql_user_grant_privileges() {
     # $1 = ${USER}
     # $2 = ${DB}
 
-    SQL1="GRANT ALL PRIVILEGES ON $2 . * TO '$1'@'localhost';"
+    DB_USER=$1
+    DB_TARGET=$2
+
+    SQL1="GRANT ALL PRIVILEGES ON ${DB_TARGET}.* TO '${DB_USER}'@'localhost';"
     SQL2="FLUSH PRIVILEGES;"
 
-    echo "Granting privileges to $1 on $2 database in MySQL ..." >>$LOG
+    echo "Granting privileges to ${DB_USER} on ${DB_TARGET} database in MySQL ..." >>$LOG
     mysql -u ${MUSER} -p${MPASS} -e "${SQL1}${SQL2}" >>$LOG
 
     if [ $? -eq 0 ]; then

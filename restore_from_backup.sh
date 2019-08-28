@@ -1,12 +1,12 @@
 #!/bin/bash
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 2.9.7
+# Version: 2.9.9
 ################################################################################
 
 # TODO: NO cambiar el wp-config sin checkear los datos del usuario creado!
 
-SCRIPT_V="2.9.7"
-
+# TO-FIX: no restaura la base cuando falla la creación de usuario!
+# TO-FIX: A veces falla el GRANT PRIVILEGES, todos los metodos de mysql deberian usar el mysql_helper.sh
 # TODO: otra opcion 'complete_site' para que intente restaurar archivos y base de un mismo proyecto.
 # TODO: otra opcion 'multi_sites' para que intente restaurar varios sitios que estan backupeados en dropbox.
 
@@ -64,33 +64,23 @@ restore_database_backup() {
     exit 1
   fi
 
-  echo " > Creating user and database ..." >>$LOG
-  echo -e ${YELLOW}" > Creating user and database ..."${ENDCOLOR}
-
-  # TODO: usar wp_database_creation
+  # TODO: por que no usar wp_database_creation?
   DB_PASS=$(openssl rand -hex 12)
+  DB_USER="${PROJECT_NAME}_user"
+  DB_NAME="${PROJECT_NAME}_${PROJECT_STATE}"
 
-  #para cambiar pass de un user existente
-  #ALTER USER 'makana_user'@'localhost' IDENTIFIED BY '0p2eE2a0ed4d8=';
+  mysql_database_create "${DB_NAME}"
 
-  SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_${PROJECT_STATE};"
-  SQL2="CREATE USER '${PROJECT_NAME}_user'@'localhost' IDENTIFIED BY '${DB_PASS}';"
-  SQL3="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
-  SQL4="FLUSH PRIVILEGES;"
+  mysql_user_wpass_create "${DB_USER}"
 
-  echo "Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS} if they not exist ..." >>$LOG
-  echo -e ${CYAN}"Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS} if they not exist ..."${ENDCOLOR}
+  # TODO: esto lo vamos a usar para intentar obtener el pass de otro wp-config
+  # ya que no sabemos el pass del usuario
+  if [ $? -eq 1 ]; then
+    DB_USER_PREEXIST="true";
 
-  mysql -u ${MUSER} --password=${MPASS} -e "${SQL1}${SQL2}${SQL3}${SQL4}"
-
-  if [ $? -eq 0 ]; then
-    echo " > DONE!" >>$LOG
-    echo -e ${GREN}" > DONE!"${ENDCOLOR}
-  else
-    echo " > Something went wrong!" >>$LOG
-    echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
-    exit 1
   fi
+
+  mysql_user_grant_privileges "${DB_USER}" "${DB_NAME}"
 
   # Trying to restore Database
   mysql_database_import "${PROJECT_NAME}_${PROJECT_STATE}" "${CHOSEN_BACKUP%%.*}.sql"

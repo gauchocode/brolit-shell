@@ -7,8 +7,6 @@
 # Ref: https://linuxize.com/post/how-to-install-pip-on-ubuntu-18.04/
 #
 
-SCRIPT_V="2.9.9"
-
 ################################################################################
 
 python_installer() {

@@ -2,40 +2,35 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.9.9
+# Version: 3.0-alpha1
 ################################################################################
 #
-# TODO: Para release 3.0
+# TODO: Para release 3.2
 #       1- VAR conf para CloudFlare api -- DONE pero falta TESTING
-#       2- Terminar certbot_manager.sh e incluir soporte a Cloudflare
-#       3- Refactor de menú principal del runner.sh (ojo que si al lemp le activamos netdata o monit, necesita db pass de root) -- DONE pero falta TESTING
-#       4- Terminar php_optimizations deprecando el modelo de Hetzner e integrandolo al Lemp Installer
-#       5- Permitir restore del backup con Duplicity
-#       6- Restore de archivos de configuración
-#       7- Refactor de estructura de archivos /utils
-#       8- Cuando borro un proyecto, que suba el backup temporal a dropbox, pero fuera de la estructura normal de backups
-#
-# TODO: Para release 3.5
-#       1- Repensar el server_and_image_optimizations.sh
-#       2- Terminar el wordpress_wpcli_helper.sh
-#       3- Terminar updater.sh
-#       4- php installer (soporte multiples versiones php)
-#       5- nginx installer (opcion de instalar de repo y configurar modulos)
-#       6- Optimizaciones de MySQL
-#       7- Mejoras LEMP setup, que requiera menos intervencion tzdata y mysql_secure_installation
-#       8- Opción de cambiar puerto ssh en vps
-#       9- Uptime Robot API
+#       2- Refactor de menú principal del runner.sh (ojo que si al lemp le activamos netdata o monit, necesita db pass de root) -- DONE pero falta TESTING
+#       3- Terminar php_optimizations deprecando el modelo de Hetzner e integrandolo al Lemp Installer
+#       4- Permitir restore del backup con Duplicity
+#       5- Restore de archivos de configuración
+#       6- Refactor de estructura de archivos /utils
+#       7- Cuando borro un proyecto, que suba el backup temporal a dropbox, pero fuera de la estructura normal de backups
+#       8- Repensar el server_and_image_optimizations.sh
+#       9- Terminar el wordpress_wpcli_helper.sh
+#       10- Terminar updater.sh
+#       11- Optimizaciones de MySQL
+#       12- Mejoras LEMP setup, que requiera menos intervencion tzdata y mysql_secure_installation
+#       13- Opción de cambiar puerto ssh en vps
+#       14- En las notificaciones de mails agregar info de certificados instalados y sus vencimientos 
 #
 # TODO: Para release 4.0
 #       1- Permitir varias dropbox apps secundarias configuradas para restaurar desde cualquiera de ellas
 #       2- Mejoras en notificaciones via email
-#       3- Opción de cambiar puerto ssh en vps
-#       4- Hetzner cloud cli?
+#       3- Uptime Robot API
+#       3- Hetzner cloud cli?
 #           https://github.com/hetznercloud/cli
 #           https://github.com/thabbs/hetzner-cloud-cli-sh
 #           https://github.com/thlisym/hetznercloud-py
 #           https://hcloud-python.readthedocs.io/en/latest/
-#       5- Web GUI:
+#       4- Web GUI:
 #           https://github.com/bugy/script-server
 #           https://github.com/joewalnes/websocketd
 #
@@ -45,9 +40,8 @@
 #
 # https://google.github.io/styleguide/shell.xml
 #
-#
 
-SCRIPT_V="2.9.9"
+SCRIPT_V="3.0-alpha1"
 
 ### Checking some things...#####################################################
 SFOLDER="`dirname \"$0\"`"                                                      # relative
@@ -126,12 +120,12 @@ MUSER="root"
 
 ################################################################################
 
-### Backup rotation vars
+# Backup rotation vars
 NOW=$(date +"%Y-%m-%d")
 NOWDISPLAY=$(date +"%d-%m-%Y")
 ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
 
-### Dropbox Uploader config file
+# Dropbox Uploader config file
 DPU_CONFIG_FILE=~/.dropbox_uploader
 if [[ -e ${DPU_CONFIG_FILE} ]]; then
   source ${DPU_CONFIG_FILE}
@@ -139,7 +133,7 @@ else
   generate_dropbox_config
 fi
 
-### Cloudflare config file
+# Cloudflare config file
 CLF_CONFIG_FILE=~/.cloudflare.conf
 if [[ -e ${CLF_CONFIG_FILE} ]]; then
   source ${CLF_CONFIG_FILE}
@@ -147,25 +141,25 @@ else
   generate_cloudflare_config
 fi
 
-### Broobe Utils config file
+# Broobe Utils config file
 if test -f /root/.broobe-utils-options; then
   source /root/.broobe-utils-options
 fi
 
-### Checking required packages to run
+# Checking required packages to run
 check_packages_required
 
 IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
 
-### MySQL
+# MySQL
 MYSQL="$(which mysql)"
 MYSQLDUMP="$(which mysqldump)"
 
-### TAR
+# TAR
 TAR="$(which tar)"
 
-### EXPORT VARS
-export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL DB_BL WSERVER PHP_CF MHOST MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR auth_email auth_key
+# EXPORT VARS
+export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL DB_BL WSERVER PHP_CF LENCRYPT_CF MHOST MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR auth_email auth_key
 
 if [ -t 1 ]; then
 

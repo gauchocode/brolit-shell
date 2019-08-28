@@ -8,6 +8,24 @@
 # TODO: agregar opción de habilitar cloudflare-proxy
 # https://github.com/HillLiu/cloudflare-bash-util
 
+### Checking Script Execution
+if [[ -z "${SFOLDER}" ]]; then
+  echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+  exit 0
+fi
+
+################################################################################
+
+source ${SFOLDER}/libs/commons.sh
+
+################################################################################
+
+# Checking cloudflare credentials file
+if [[ -z "${auth_email}" ]]; then
+  generate_cloudflare_config
+
+fi
+
 record_type="A"
 proxied_value="false"                                                           # Do you want to proxy your site through cloudflare? E.g., Orange Cloud (true), Grey Cloud (false)
 
@@ -15,27 +33,6 @@ ip=$(curl -s http://ipv4.icanhazip.com)
 
 ip_file="ip.txt"
 id_file="cloudflare.ids"
-
-### Checking some things...#####################################################
-if [[ -z "${auth_email}" ]]; then
-  auth_email=$(whiptail --title "Cloudflare Configuration" --inputbox "Please insert the email from your Cloudflare account:" 10 60 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-    echo "auth_email="${auth_email} >> /root/.broobe-utils-options
-  else
-    exit 1
-  fi
-fi
-if [[ -z "${auth_key}" ]]; then
-  auth_key=$(whiptail --title "Cloudflare Configuration" --inputbox "Please insert the auth key from Cloudflare." 10 60 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-    echo "auth_key="${auth_key} >> /root/.broobe-utils-options
-  else
-    exit 1
-  fi
-fi
-################################################################################
 
 # SCRIPT START
 echo " > Cloudflare Script Initiated ...">>$LOG

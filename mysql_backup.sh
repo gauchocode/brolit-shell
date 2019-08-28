@@ -108,8 +108,8 @@ for DATABASE in ${DBS}; do
 
     COUNT=$((COUNT + 1))
 
-    echo -e ${GREEN}" > Backup ${COUNT} of ${TOTAL_DBS} DONE."${ENDCOLOR}
-    echo "> Backup ${COUNT} of ${TOTAL_DBS} DONE." >>$LOG
+    echo -e ${GREEN}" > Backup ${COUNT} of ${TOTAL_DBS} DONE"${ENDCOLOR}
+    echo "> Backup ${COUNT} of ${TOTAL_DBS} DONE" >>$LOG
 
     echo -e ${GREEN}"###################################################"${ENDCOLOR}
     echo "###################################################" >>$LOG
