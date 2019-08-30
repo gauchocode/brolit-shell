@@ -42,7 +42,7 @@ make_files_backup() {
     OLD_BK_FILE="${BK_SUB_TYPE}-${BK_TYPE}-files-${ONEWEEKAGO}.tar.bz2"
     BK_FILE="${BK_SUB_TYPE}-${BK_TYPE}-files-${NOW}.tar.bz2"
 
-    echo -e ${GREEN}" > Trying to make a backup of ${BK_DIR} ..."${ENDCOLOR}
+    echo -e ${CYAN}" > Trying to make a backup of ${BK_DIR} ..."${ENDCOLOR}
     echo " > Trying to make a backup of ${BK_DIR} ..." >>$LOG
     
     TAR_FILE=$($TAR -jcpf ${BAKWP}/${NOW}/${BK_FILE} --directory=${BK_DIR} ${BK_FOLDER})
@@ -125,15 +125,16 @@ make_project_backup() {
     echo -e ${GREEN}" > Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE} ..."${ENDCOLOR}
     echo " > Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE} ..." >>$LOG
 
-    echo -e ${GREEN}" > Trying to create folder ${FOLDER_NAME} in Dropbox ..."${ENDCOLOR}
+    echo -e ${CYAN}" > Trying to create folder ${FOLDER_NAME} in Dropbox ..."${ENDCOLOR}
     echo " > Trying to create folder ${FOLDER_NAME} in Dropbox ..." >>$LOG
     ${DPU_F}/dropbox_uploader.sh mkdir /${SITES_F}
     ${DPU_F}/dropbox_uploader.sh mkdir /${SITES_F}/${FOLDER_NAME}/
 
-    echo -e ${GREEN}" > Uploading ${FOLDER_NAME} to Dropbox ..."${ENDCOLOR}
+    echo -e ${CYAN}" > Uploading ${FOLDER_NAME} to Dropbox ..."${ENDCOLOR}
     echo " > Uploading ${FOLDER_NAME} to Dropbox ..." >>$LOG
     ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/${BK_FILE} ${DROPBOX_FOLDER}/${SITES_F}/${FOLDER_NAME}/
 
+    echo -e ${CYAN}" > Trying to delete old backup from Dropbox ..."${ENDCOLOR}
     echo " > Trying to delete old backup from Dropbox ..." >>$LOG
     ${DPU_F}/dropbox_uploader.sh remove ${DROPBOX_FOLDER}/${SITES_F}/${FOLDER_NAME}/${OLD_BK_FILE}
 
@@ -185,7 +186,7 @@ dropbox_delete_backup() {
   DP_BK_DIR=$2
   DP_BK_FILE=$3
 
-  echo -e ${YELLOW}" > Trying to delete old backup from Dropbox ..."${ENDCOLOR}
+  echo -e ${CYAN}" > Trying to delete old backup from Dropbox ..."${ENDCOLOR}
   echo " > Trying to delete old backup from Dropbox ..." >>$LOG
   ${DPU_F}/dropbox_uploader.sh remove ${DP_BK_DIR}/${DP_BK_FILE}
 
@@ -255,6 +256,7 @@ TOTAL_SITES=$(find ${SITES} -maxdepth 1 -type d)
 
 ## Get length of $TOTAL_SITES
 COUNT_TOTAL_SITES=$(find /var/www -maxdepth 1 -type d -printf '.' | wc -c)
+COUNT_TOTAL_SITES=$((${COUNT_TOTAL_SITES} - 1))
 
 echo -e ${CYAN}" > ${COUNT_TOTAL_SITES} directory found ..."${ENDCOLOR}
 echo " > ${COUNT_TOTAL_SITES} directory found ..." >>$LOG

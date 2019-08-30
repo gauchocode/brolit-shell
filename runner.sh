@@ -69,7 +69,7 @@ checking_scripts_permissions
 VPSNAME="$HOSTNAME"
 
 # Folder blacklist
-SITES_BL=".wp-cli,phpmyadmin"
+SITES_BL=".wp-cli,phpmyadmin,html"
 
 # Database blacklist
 DB_BL="information_schema,performance_schema,mysql,sys,phpmyadmin"
@@ -77,22 +77,20 @@ DB_BL="information_schema,performance_schema,mysql,sys,phpmyadmin"
 # DUPLICITY CONFIG
 DUP_BK=false                                  # Duplicity Backups true or false (bool)
 DUP_ROOT="/media/backups/PROJECT_NAME_OR_VPS" # Duplicity Backups destination folder
-DUP_SRC_BK="/var/www/"                        # Source of Directories to Backup
+DUP_SRC_BK="/var/www/"                        # Source of Directories to Backup ${SITES}?
 DUP_FOLDERS="FOLDER1,FOLDER2"                 # Folders to Backup
 DUP_BK_FULL_FREQ="7D"                         # Create a new full backup every ...
 DUP_BK_FULL_LIFE="14D"                        # Delete any backup older than this
 
-# TODO: checkear si está instalado apache2, si está instalado lanzar error
+# TODO: checkear si está instalado apache2, si está instalado mandar warning de soporte parcial
 
 PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
 
 # NGINX config files location
 WSERVER="/etc/nginx"
-echo -e ${MAGENTA}" > WSERVER: ${WSERVER}"${ENDCOLOR}
 
 # MySQL config files location
 MySQL_CF="/etc/mysql"
-echo -e ${MAGENTA}" > MySQL_CF: ${MySQL_CF}"${ENDCOLOR}
 
 # PHP config files location
 PHP_CF="/etc/php"
