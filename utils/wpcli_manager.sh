@@ -26,7 +26,7 @@ source ${SFOLDER}/libs/wpcli_helper.sh
 
 wpcli_main_menu() {
 
-  WPCLI_OPTIONS="01 INSTALL_PLUGINS 02 DELETE_THEMES 03 DELETE_PLUGINS 04 REINSTALL_PLUGINS 05 VERIFY_WP 06 UPDATE_WP 07 REINSTALL_WP 08 CLEAN_DB 09 PROFILE_WP 10 DB_CLI 11 WP_DOCTOR"
+  WPCLI_OPTIONS="01 INSTALL_PLUGINS 02 DELETE_THEMES 03 DELETE_PLUGINS 04 REINSTALL_PLUGINS 05 VERIFY_WP 06 UPDATE_WP 07 REINSTALL_WP 08 CLEAN_DB 09 PROFILE_WP 10 CHANGE_TABLES_PREFIX"
   CHOSEN_WPCLI_OPTION=$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 $(for x in ${WPCLI_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
@@ -165,26 +165,31 @@ wpcli_main_menu() {
 
     fi
     if [[ ${CHOSEN_WPCLI_OPTION} == *"10"* ]]; then
-      #https://github.com/wp-cli/db-command
-      wp package install git@github.com:wp-cli/db-command.git
+      
+      # Generate WP tables PREFIX
+      TABLES_PREFIX=$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)
+      # Change WP tables PREFIX
+      wpcli_change_tables_prefix "${WP_SITE}" "${TABLES_PREFIX}"
+
+      echo "New Tables prefix for ${WP_SITE}: ${TABLES_PREFIX}"
 
     fi
-    if [[ ${CHOSEN_WPCLI_OPTION} == *"11"* ]]; then
+    #if [[ ${CHOSEN_WPCLI_OPTION} == *"11"* ]]; then
 
       #Install DOCTOR
       #https://github.com/wp-cli/doctor-command
-      wp package install git@github.com:wp-cli/doctor-command.git --allow-root
+    #  wp package install git@github.com:wp-cli/doctor-command.git --allow-root
 
-      echo " > Checking WP Update ..."
-      wp --path=${WP_SITE} doctor check core-update --allow-root
-      echo " > Verify the site is public as expected ..."
-      wp --path=${WP_SITE} doctor check option-blog-public --allow-root
-      echo " > Verify cron count ..."
-      wp --path=${WP_SITE} doctor check cron-count --allow-root
-      echo " > Verify plugin active count ..."
-      wp --path=${WP_SITE} doctor check plugin-active-count --allow-root
-      echo " > DONE"
-    fi
+    #  echo " > Checking WP Update ..."
+    #  wp --path=${WP_SITE} doctor check core-update --allow-root
+    #  echo " > Verify the site is public as expected ..."
+    #  wp --path=${WP_SITE} doctor check option-blog-public --allow-root
+    #  echo " > Verify cron count ..."
+    #  wp --path=${WP_SITE} doctor check cron-count --allow-root
+    #  echo " > Verify plugin active count ..."
+    #  wp --path=${WP_SITE} doctor check plugin-active-count --allow-root
+    #  echo " > DONE"
+    #fi
 
     wpcli_main_menu
 
