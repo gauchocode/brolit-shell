@@ -2,7 +2,7 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 3.0-alpha1
+# Version: 3.0-alpha2
 ################################################################################
 #
 # TODO: Para release 3.2
@@ -11,26 +11,25 @@
 #       3- Terminar php_optimizations deprecando el modelo de Hetzner e integrandolo al Lemp Installer
 #       4- Permitir restore del backup con Duplicity
 #       5- Restore de archivos de configuración
-#       6- Refactor de estructura de archivos /utils
-#       7- Cuando borro un proyecto, que suba el backup temporal a dropbox, pero fuera de la estructura normal de backups
-#       8- Repensar el server_and_image_optimizations.sh
-#       9- Terminar el wordpress_wpcli_helper.sh
-#       10- Terminar updater.sh
-#       11- Optimizaciones de MySQL
-#       12- Mejoras LEMP setup, que requiera menos intervencion tzdata y mysql_secure_installation
-#       13- Opción de cambiar puerto ssh en vps
-#       14- En las notificaciones de mails agregar info de certificados instalados y sus vencimientos 
+#       6- Cuando borro un proyecto, que suba el backup temporal a dropbox, pero fuera de la estructura normal de backups
+#       7- Repensar el server_and_image_optimizations.sh
+#       8- Terminar el wpcli_manager.sh
+#       9- Optimizaciones de MySQL
+#       10- Mejoras LEMP setup, que requiera menos intervencion tzdata y mysql_secure_installation
+#       11- Opción de cambiar puerto ssh en vps
+#       12- En las notificaciones de mails agregar info de certificados instalados y sus vencimientos 
 #
 # TODO: Para release 4.0
 #       1- Permitir varias dropbox apps secundarias configuradas para restaurar desde cualquiera de ellas
-#       2- Mejoras en notificaciones via email
+#       2- Soporte para otros sistemas de compresión más rapidos (bz2 es muy lento)
 #       3- Uptime Robot API
-#       3- Hetzner cloud cli?
+#       4- Terminar updater.sh
+#       5- Hetzner cloud cli?
 #           https://github.com/hetznercloud/cli
 #           https://github.com/thabbs/hetzner-cloud-cli-sh
 #           https://github.com/thlisym/hetznercloud-py
 #           https://hcloud-python.readthedocs.io/en/latest/
-#       4- Web GUI:
+#       6- Web GUI:
 #           https://github.com/bugy/script-server
 #           https://github.com/joewalnes/websocketd
 #
@@ -41,7 +40,7 @@
 # https://google.github.io/styleguide/shell.xml
 #
 
-SCRIPT_V="3.0-alpha1"
+SCRIPT_V="3.0-alpha2"
 
 ### Checking some things...#####################################################
 SFOLDER="`dirname \"$0\"`"                                                      # relative
@@ -107,7 +106,7 @@ MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+') # Main partition
 DROPBOX_FOLDER="/"
 
 # Dropbox Uploader Directory
-DPU_F="${SFOLDER}/utils/dropbox-uploader"
+DPU_F="${SFOLDER}/utils/third-party/dropbox-uploader"
 
 # Temp folder
 BAKWP="${SFOLDER}/tmp"
@@ -156,7 +155,7 @@ MYSQLDUMP="$(which mysqldump)"
 # TAR
 TAR="$(which tar)"
 
-# EXPORT VARS
+# EXPORT VARS (GLOBALS)
 export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL DB_BL WSERVER PHP_CF LENCRYPT_CF MHOST MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR auth_email auth_key
 
 if [ -t 1 ]; then
