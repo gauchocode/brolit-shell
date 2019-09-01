@@ -53,7 +53,7 @@ restore_database_backup() {
   suffix="$(cut -d'_' -f2 <<<"${CHOSEN_PROJECT}")"
   #suffix="_${PROJECT_STATE}"
 
-  ### Extract PROJECT_NAME
+  # Extract PROJECT_NAME
   PROJECT_NAME=${CHOSEN_PROJECT%"_$suffix"}
 
   PROJECT_NAME=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${PROJECT_NAME}" 3>&1 1>&2 2>&3)
@@ -64,27 +64,34 @@ restore_database_backup() {
     exit 1
   fi
 
-  # TODO: por que no usar wp_database_creation?
   DB_PASS=$(openssl rand -hex 12)
   DB_USER="${PROJECT_NAME}_user"
   DB_NAME="${PROJECT_NAME}_${PROJECT_STATE}"
 
+  echo -e ${CYAN}" > Creating '${DB_NAME}' database in MySQL ..."${ENDCOLOR}
+  echo "Creating '${DB_NAME}' database in MySQL ..." >>$LOG
   mysql_database_create "${DB_NAME}"
 
-  mysql_user_wpass_create "${DB_USER}"
+  echo -e ${CYAN}" > Creating '${DB_USER}' user in MySQL with pass: ${DB_PASS}"${ENDCOLOR}
+  echo "Creating ${DB_USER} user in MySQL with pass: ${DB_PASS}" >>$LOG
 
-  # TODO: esto lo vamos a usar para intentar obtener el pass de otro wp-config
-  # ya que no sabemos el pass del usuario
-  if [ $? -eq 1 ]; then
-    DB_USER_PREEXIST="true";
+  USER_DB_EXISTS=mysql_user_exists "${DB_USER}"
+
+  if [[ ${USER_DB_EXISTS} -eq 0 ]]; then
+
+    mysql_user_create "${DB_USER}" "${DB_PASS}"
+
+    else
+
+    echo -e ${YELLOW}" > User ${DB_USER} already exists"${ENDCOLOR} >>$LOG
 
   fi
 
   mysql_user_grant_privileges "${DB_USER}" "${DB_NAME}"
 
   # Trying to restore Database
+
   mysql_database_import "${PROJECT_NAME}_${PROJECT_STATE}" "${CHOSEN_BACKUP%%.*}.sql"
-  #pv ${CHOSEN_BACKUP%%.*}.sql | mysql -f -u ${MUSER} --password=${MPASS} ${PROJECT_NAME}_${PROJECT_STATE}
 
 }
 

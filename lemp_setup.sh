@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 2.9.7
+# Version: 3.0
 ################################################################################
 
 ### Checking some things
@@ -57,6 +57,7 @@ APPS_TO_INSTALL=(
   "monit" " " off
   "netdata" " " off
   "cockpit" " " off
+  "wpcli" " " off
 )
 
 ### Log Start
@@ -78,11 +79,11 @@ checking_scripts_permissions
 
 #basic_packages_installation
 
-${SFOLDER}/utils/mysql_installer.sh
+${SFOLDER}/utils/installers/mysql_installer.sh
 
-${SFOLDER}/utils/nginx_installer.sh
+${SFOLDER}/utils/installers/nginx_installer.sh
 
-${SFOLDER}/utils/php_installer.sh
+${SFOLDER}/utils/installers/php_installer.sh
 
 # Configuring packages
 timezone_configuration
