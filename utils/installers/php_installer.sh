@@ -2,7 +2,7 @@
 #
 # Autor: broobe. web + mobile development - https://example.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.9.9
+# Version: 3.0
 ################################################################################
 
 ### Checking some things

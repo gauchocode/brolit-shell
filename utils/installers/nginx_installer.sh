@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: broobe. web + mobile development - https://example.com
-# Version: 2.9.7
+# Version: 3.0
 ################################################################################
 #
 # TODO: Nginx mejores prácticas
@@ -11,10 +11,15 @@
 # https://www.digitalocean.com/community/questions/how-can-i-improve-the-ttfb
 # https://haydenjames.io/nginx-tuning-tips-tls-ssl-https-ttfb-latency/
 #
+# TODO: Si cambiamos el repo oficial de nginx por este que tiene modulos de nginx?
+#       https://github.com/cryptofuture/nginx-hda-bundle
+#
 # Brotli compression only supports the HTTPS site
 #
-# Para quitar repo de nginx de ondrej: add-apt-repository --remove ppa:ondrej/nginx && apt-get update
-# Luego lo ideal es hacer un apt purge nginx && apt install -f y luego volver a instalarlo
+# Para quitar un repo viejo de nginx, ejemplo el de ondrej: 
+# add-apt-repository --remove ppa:ondrej/nginx && apt-get update
+# apt purge nginx && apt install -f 
+# y luego volver a instalar nginx
 #
 
 ### Checking some things
@@ -25,6 +30,8 @@ fi
 ################################################################################
 
 source ${SFOLDER}/libs/commons.sh
+
+################################################################################
 
 nginx_installer() {
 

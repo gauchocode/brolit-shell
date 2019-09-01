@@ -2,10 +2,10 @@
 #
 # Autor: broobe. web + mobile development - https://example.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.9.9
+# Version: 3.0
 ################################################################################
 
-source libs/commons.sh
+source ${SFOLDER}/libs/commons.sh
 #source ${SFOLDER}/libs/mail_notification_helper.sh
 #source ${SFOLDER}/libs/mysql_helper.sh
 
