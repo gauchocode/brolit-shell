@@ -39,7 +39,7 @@ main_menu() {
       source ${SFOLDER}/restore_from_backup.sh
     fi
     if [[ ${CHOSEN_TYPE} == *"03"* ]]; then
-      source ${SFOLDER}/utils/wordpress_restore_from_source.sh
+      source ${SFOLDER}/utils/installers/wordpress_restore_from_source.sh
 
     fi
 
@@ -49,7 +49,7 @@ main_menu() {
     fi
 
     if [[ ${CHOSEN_TYPE} == *"05"* ]]; then
-      source ${SFOLDER}/utils/wordpress_installer.sh
+      source ${SFOLDER}/utils/installers/wordpress_installer.sh
 
     fi
     if [[ ${CHOSEN_TYPE} == *"06"* ]]; then

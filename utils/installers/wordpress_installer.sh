@@ -158,30 +158,28 @@ if [ $exitstatus = 0 ]; then
 
       echo " > mysqldump for ${DB_TOCOPY} OK ..." >>$LOG
       echo -e ${GREEN}" > mysqldump for ${DB_TOCOPY} OK ..."${ENDCOLOR}
+
       echo " > Trying to restore database ..." >>$LOG
       echo -e ${YELLOW}" > Trying to restore database ..."${ENDCOLOR}
 
-      $MYSQL -u ${MUSER} --password=${MPASS} ${PROJECT_NAME}_${PROJECT_STATE} <${BK_FOLDER}${BK_FILE}
+      $MYSQL -u ${MUSER} --password=${MPASS} ${NEW_PROJECT_DB} <${BK_FOLDER}${BK_FILE}
 
-      TARGET_DB=${PROJECT_NAME}_${PROJECT_STATE}
-      ### OJO: heredamos el prefijo de la base copiada y no la reemplazamos.
-      ### Ref: https://www.cloudways.com/blog/change-wordpress-database-table-prefix-manually/
-      ### Cuando se implemento eso, debemos obtener el prefijo para la config de wp así:
-      ### DB_PREFIX=$(cat ${FOLDER_TO_INSTALL}/${DOMAIN}/wp-config.php | grep "\$table_prefix" | cut -d \' -f 2)
-      DB_PREFIX=$(cat ${FOLDER_TO_INSTALL}/${COPY_PROJECT}/wp-config.php | grep "\$table_prefix" | cut -d \' -f 2)
+      TARGET_DB="${PROJECT_NAME}_${PROJECT_STATE}"
 
-      ### TODO: CHANGE DB PREFIX
+      # Generate WP tables PREFIX
+      TABLES_PREFIX=$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)
+      # Change WP tables PREFIX
+      wpcli_change_tables_prefix "${PROJECT_DIR}" "${TABLES_PREFIX}"
+
       ### echo "Changing database prefix on wp-config.php ..."
-      export existing_URL new_URL MUSER MPASS TARGET_DB DB_PREFIX
+      #export existing_URL new_URL MUSER MPASS TARGET_DB DB_PREFIX
 
       ### TODO: cambiar este backup por algun helper
-      echo "Executing mysqldump of ${CHOSEN_DB} before replace urls ..." >>$LOG
-      ${MYSQLDUMP} -u ${MUSER} --password=${MPASS} ${CHOSEN_DB} >${CHOSEN_DB}_bk_before_replace_urls.sql
-      echo "Database backup created: ${CHOSEN_DB}_bk_before_replace_urls.sql" >>$LOG
+      echo "Executing mysqldump of ${TARGET_DB} before replace urls ..." >>$LOG
+      ${MYSQLDUMP} -u ${MUSER} --password=${MPASS} ${TARGET_DB} >${TARGET_DB}_bk_before_replace_urls.sql
+      echo "Database backup created: ${TARGET_DB}_bk_before_replace_urls.sql" >>$LOG
 
-      ### TODO: cambiar por wp-cli
       ask_url_search_and_replace "${PROJECT_DIR}"
-      #${SFOLDER}/utils/replace_url_on_wordpress_db.sh
 
     else
 
