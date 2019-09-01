@@ -120,7 +120,7 @@ wpcli_get_db_prefix() {
 
 }
 
-wpcli_change_db_prefix() {
+wpcli_change_tables_prefix() {
 
     # $1 = ${WP_SITE} (site path)
     # $2 = ${DB_PREFIX}
@@ -145,7 +145,9 @@ wpcli_search_and_replace() {
     # Folder Name need to be the Site URL
     WP_SITE_URL=$(basename ${WP_SITE})
 
-    if $(wp --url=http://${WP_SITE_URL} core is-installed --network); then
+    # TODO: por algún motivo cuando tiro comandos con el parametro --url siempre falla
+    # entonces o ver que pasa o checkear si es multisite de otra manera.
+    if $(wp --allow-root --url=http://${WP_SITE_URL} core is-installed --network); then
         wp --allow-root --path=${WP_SITE} search-replace ${SEARCH} ${REPLACE} --network
 
     else
