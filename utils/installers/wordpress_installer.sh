@@ -2,26 +2,18 @@
 #
 # Autor: broobe. web + mobile development - https://example.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.9.7
+# Version: 3.0
 ################################################################################
 #
 # https://github.com/AbhishekGhosh/Ubuntu-16.04-Nginx-WordPress-Autoinstall-Bash-Script/
 # https://alonganon.info/2018/11/17/make-a-super-fast-and-lightweight-wordpress-on-ubuntu-18-04-with-php-7-2-nginx-and-mariadb/
 #
 ################################################################################
-# TODO: esto necesita un fuerte refactor, re-utilizar funciones que ya estan en los otros Scripts,
-# y checkear que falla cuando ponemos www.DOMINIO.com y luego seleccionamos un stage distinto a prod.
 #
+# TODO: checkear que falla cuando ponemos www.DOMINIO.com y luego seleccionamos un stage distinto a prod.
+# TODO: checkear si se trata de un multisite
 #
-# TODO: checkear si se trata de un multisite, para eso ver los siguientes
-# define del wp-config.php:
-#
-# define('MULTISITE', true);
-# define('SUBDOMAIN_INSTALL', false);
-# define('DOMAIN_CURRENT_SITE', 'borealtech.com');
-# define('PATH_CURRENT_SITE', '/');
-# define('SITE_ID_CURRENT_SITE', 1);
-#
+
 ### Checking some things
 if [[ -z "${SFOLDER}" ]]; then
   echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
@@ -32,13 +24,16 @@ fi
 source ${SFOLDER}/libs/commons.sh
 source ${SFOLDER}/libs/mail_notification_helper.sh
 source ${SFOLDER}/libs/mysql_helper.sh
+source ${SFOLDER}/libs/wpcli_helper.sh
+
+################################################################################
 
 ################################################################################
 
 # Installation types
 INSTALLATION_TYPES="CLEAN_INSTALL COPY_FROM_PROJECT"
 
-INSTALLATION_TYPE=$(whiptail --title "INSTALLATION TYPE" --menu "Choose an Installation Type" 20 78 10 `for x in ${INSTALLATION_TYPES}; do echo "$x [X]"; done` 3>&1 1>&2 2>&3)
+INSTALLATION_TYPE=$(whiptail --title "INSTALLATION TYPE" --menu "Choose an Installation Type" 20 78 10 $(for x in ${INSTALLATION_TYPES}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
 
@@ -62,11 +57,11 @@ if [ $exitstatus = 0 ]; then
       PROJECT_DIR="${FOLDER_TO_INSTALL}/${DOMAIN}"
 
       if [ -d "${PROJECT_DIR}" ]; then
-          echo -e ${RED}"ERROR: Destination folder '${PROJECT_DIR}' already exist, aborting ..."${ENDCOLOR}
-          exit 1
+        echo -e ${RED}"ERROR: Destination folder '${PROJECT_DIR}' already exist, aborting ..."${ENDCOLOR}
+        exit 1
 
       else
-        echo "Setting DOMAIN="${DOMAIN} >> $LOG
+        echo "Setting DOMAIN="${DOMAIN} >>$LOG
 
       fi
 
@@ -76,22 +71,22 @@ if [ $exitstatus = 0 ]; then
     ROOT_DOMAIN=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: example.com" 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      echo "Setting ROOT_DOMAIN="${ROOT_DOMAIN} >> $LOG
+      echo "Setting ROOT_DOMAIN="${ROOT_DOMAIN} >>$LOG
     else
       exit 1
     fi
-    
+
     ask_project_name
 
     ask_project_state
 
-    echo "Trying to make a copy of ${COPY_PROJECT} ..." >> $LOG
+    echo "Trying to make a copy of ${COPY_PROJECT} ..." >>$LOG
     echo -e ${YELLOW}"Trying to make a copy of ${COPY_PROJECT} ..."${ENDCOLOR}
 
     cd ${FOLDER_TO_INSTALL}
     cp -r ${FOLDER_TO_INSTALL}/${COPY_PROJECT} ${PROJECT_DIR}
 
-    echo "DONE" >> $LOG
+    echo "DONE" >>$LOG
 
   else
 
@@ -125,7 +120,7 @@ if [ $exitstatus = 0 ]; then
     fi
 
     if [ -d "${PROJECT_DIR}" ]; then
-      echo "ERROR: Destination folder '${PROJECT_DIR}' already exist, aborting ..." >> $LOG
+      echo "ERROR: Destination folder '${PROJECT_DIR}' already exist, aborting ..." >>$LOG
       echo -e ${RED}"ERROR: Destination folder '${PROJECT_DIR}' already exist, aborting ..."${ENDCOLOR}
       exit 1
 
@@ -147,24 +142,26 @@ if [ $exitstatus = 0 ]; then
 
   if [[ ${INSTALLATION_TYPE} == *"COPY"* ]]; then
 
-    echo " > Copying database ...">> $LOG
+    echo " > Copying database ..." >>$LOG
     echo -e ${YELLOW}" > Copying database ..."${ENDCOLOR}
+
     ### Create dump file
     BK_FOLDER=${SFOLDER}/tmp/
+
     ### We get the database name from the copied wp-config.php
     SOURCE_WPCONFIG=${FOLDER_TO_INSTALL}/${COPY_PROJECT}
-    DB_TOCOPY=`cat ${SOURCE_WPCONFIG}/wp-config.php | grep DB_NAME | cut -d \' -f 4`
+    DB_TOCOPY=$(cat ${SOURCE_WPCONFIG}/wp-config.php | grep DB_NAME | cut -d \' -f 4)
     BK_FILE="db-${DB_TOCOPY}.sql"
-    $MYSQLDUMP --max-allowed-packet=1073741824  -u ${MUSER} -p${MPASS} ${DB_TOCOPY} > ${BK_FOLDER}${BK_FILE}
+    $MYSQLDUMP --max-allowed-packet=1073741824 -u ${MUSER} -p${MPASS} ${DB_TOCOPY} >${BK_FOLDER}${BK_FILE}
 
     if [ "$?" -eq 0 ]; then
 
-      echo " > mysqldump for ${DB_TOCOPY} OK ...">> $LOG
+      echo " > mysqldump for ${DB_TOCOPY} OK ..." >>$LOG
       echo -e ${GREEN}" > mysqldump for ${DB_TOCOPY} OK ..."${ENDCOLOR}
-      echo " > Trying to restore database ...">> $LOG
+      echo " > Trying to restore database ..." >>$LOG
       echo -e ${YELLOW}" > Trying to restore database ..."${ENDCOLOR}
 
-      $MYSQL -u ${MUSER} --password=${MPASS} ${PROJECT_NAME}_${PROJECT_STATE} < ${BK_FOLDER}${BK_FILE}
+      $MYSQL -u ${MUSER} --password=${MPASS} ${PROJECT_NAME}_${PROJECT_STATE} <${BK_FOLDER}${BK_FILE}
 
       TARGET_DB=${PROJECT_NAME}_${PROJECT_STATE}
       ### OJO: heredamos el prefijo de la base copiada y no la reemplazamos.
@@ -173,14 +170,22 @@ if [ $exitstatus = 0 ]; then
       ### DB_PREFIX=$(cat ${FOLDER_TO_INSTALL}/${DOMAIN}/wp-config.php | grep "\$table_prefix" | cut -d \' -f 2)
       DB_PREFIX=$(cat ${FOLDER_TO_INSTALL}/${COPY_PROJECT}/wp-config.php | grep "\$table_prefix" | cut -d \' -f 2)
 
-      ### TODO:
+      ### TODO: CHANGE DB PREFIX
       ### echo "Changing database prefix on wp-config.php ..."
       export existing_URL new_URL MUSER MPASS TARGET_DB DB_PREFIX
-      ${SFOLDER}/utils/replace_url_on_wordpress_db.sh
+
+      ### TODO: cambiar este backup por algun helper
+      echo "Executing mysqldump of ${CHOSEN_DB} before replace urls ..." >>$LOG
+      ${MYSQLDUMP} -u ${MUSER} --password=${MPASS} ${CHOSEN_DB} >${CHOSEN_DB}_bk_before_replace_urls.sql
+      echo "Database backup created: ${CHOSEN_DB}_bk_before_replace_urls.sql" >>$LOG
+
+      ### TODO: cambiar por wp-cli
+      ask_url_search_and_replace "${PROJECT_DIR}"
+      #${SFOLDER}/utils/replace_url_on_wordpress_db.sh
 
     else
 
-      echo " > mysqldump ERROR: $? ...">> $LOG
+      echo " > mysqldump ERROR: $? ..." >>$LOG
       echo -e ${RED}" > mysqldump ERROR: $? ..."${ENDCOLOR}
       echo -e ${RED}" > Aborting ..."${ENDCOLOR}
       exit 1
@@ -190,7 +195,7 @@ if [ $exitstatus = 0 ]; then
   fi
 
   # Cloudflare API to change DNS records
-  echo "Trying to access Cloudflare API and change record ${DOMAIN} ...">> $LOG
+  echo "Trying to access Cloudflare API and change record ${DOMAIN} ..." >>$LOG
   echo -e ${YELLOW}"Trying to access Cloudflare API and change record ${DOMAIN} ..."${ENDCOLOR}
 
   zone_name=${ROOT_DOMAIN}
@@ -201,7 +206,7 @@ if [ $exitstatus = 0 ]; then
   # TODO: que pasa si en vez de generarlo a partir de un template de conf de nginx, copio el del proyecto y reemplazo el dominio?
 
   # New site Nginx configuration
-  echo " > Trying to generate nginx config for ${DOMAIN} ...">> $LOG
+  echo " > Trying to generate nginx config for ${DOMAIN} ..." >>$LOG
   echo -e ${YELLOW}" > Trying to generate nginx config for ${DOMAIN} ..."${ENDCOLOR}
 
   cp ${SFOLDER}/confs/nginx/sites-available/default /etc/nginx/sites-available/${DOMAIN}
@@ -213,7 +218,7 @@ if [ $exitstatus = 0 ]; then
   # Restart nginx service
   service nginx reload
 
-  echo " > Nginx configuration loaded!">> $LOG
+  echo " > Nginx configuration loaded!" >>$LOG
 
   # HTTPS with Certbot
   ${SFOLDER}/utils/certbot_manager.sh

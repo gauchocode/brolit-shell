@@ -25,7 +25,7 @@ menutitle="Config Selection Menu"
 
 main_menu() {
 
-  RUNNER_OPTIONS="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 RESTORE_FROM_SOURCE 04 DELETE_PROJECT 05 WORDPRESS_INSTALLER 06 SERVER_OPTIMIZATIONS 07 INSTALLERS_AND_CONFIGS 08 REPLACE_WP_URL 09 WPCLI_HELPER 10 CERTBOT_MANAGER 11 BENCHMARKS 12 GTMETRIX_TEST 13 BLACKLIST_CHECKER 14 RESET_SCRIPT_OPTIONS"
+  RUNNER_OPTIONS="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 RESTORE_FROM_SOURCE 04 DELETE_PROJECT 05 WORDPRESS_INSTALLER 06 SERVER_OPTIMIZATIONS 07 INSTALLERS_AND_CONFIGS 08 WPCLI_MANAGER 09 CERTBOT_MANAGER 10 BENCHMARKS 11 GTMETRIX_TEST 12 BLACKLIST_CHECKER 13 RESET_SCRIPT_OPTIONS"
   CHOSEN_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 $(for x in ${RUNNER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -75,36 +75,32 @@ main_menu() {
 
     fi
     if [[ ${CHOSEN_TYPE} == *"08"* ]]; then
-      source ${SFOLDER}/utils/replace_url_on_wordpress_db.sh
+      source ${SFOLDER}/utils/wpcli_manager.sh
 
     fi
     if [[ ${CHOSEN_TYPE} == *"09"* ]]; then
-      source ${SFOLDER}/utils/wordpress_wpcli_helper.sh
-
-    fi
-    if [[ ${CHOSEN_TYPE} == *"10"* ]]; then
       source ${SFOLDER}/utils/certbot_manager.sh
 
     fi
-    if [[ ${CHOSEN_TYPE} == *"11"* ]]; then
+    if [[ ${CHOSEN_TYPE} == *"10"* ]]; then
       source ${SFOLDER}/utils/bench_scripts.sh
 
     fi
-    if [[ ${CHOSEN_TYPE} == *"12"* ]]; then
+    if [[ ${CHOSEN_TYPE} == *"11"* ]]; then
       URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [ ${exitstatus} = 0 ]; then
-        source ${SFOLDER}/utils/google-insights-api-tools/gitools_v5.sh gtmetrix ${URL_TO_TEST}
+        source ${SFOLDER}/utils/third-party/google-insights-api-tools/gitools_v5.sh gtmetrix ${URL_TO_TEST}
       fi
     fi
-    if [[ ${CHOSEN_TYPE} == *"13"* ]]; then
+    if [[ ${CHOSEN_TYPE} == *"12"* ]]; then
       IP_TO_TEST=$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [ ${exitstatus} = 0 ]; then
-        source ${SFOLDER}/utils/blacklist-checker/bl.sh ${IP_TO_TEST}
+        source ${SFOLDER}/utils/third-party/blacklist-checker/bl.sh ${IP_TO_TEST}
       fi
     fi
-    if [[ ${CHOSEN_TYPE} == *"14"* ]]; then
+    if [[ ${CHOSEN_TYPE} == *"13"* ]]; then
       while true; do
         echo -e ${YELLOW}" > Do you really want to reset the script configuration?"${ENDCOLOR}
         read -p "Please type 'y' or 'n'" yn
@@ -356,7 +352,6 @@ check_distro() {
 
 checking_scripts_permissions() {
   ### chmod
-
   find ./ -name "*.sh" -exec chmod +x {} \;
 
 }
@@ -743,6 +738,40 @@ ask_mysql_root_psw() {
     else
       exit 1
     fi
+  fi
+
+}
+
+ask_url_search_and_replace() {
+
+  # $1 = WP_PATH
+
+  WP_PATH=$1
+
+  if [[ -z "${existing_URL}" ]]; then
+    existing_URL=$(whiptail --title "URL TO CHANGE" --inputbox "Insert the URL you want to change, including http:// or https://" 10 60 3>&1 1>&2 2>&3)
+    exitstatus=$?
+
+    echo "Setting existing_URL="${existing_URL} >>$LOG
+
+    if [ ${exitstatus} = 0 ]; then
+
+      if [[ -z "${new_URL}" ]]; then
+        new_URL=$(whiptail --title "THE NEW URL" --inputbox "Insert the new URL , including http:// or https://" 10 60 3>&1 1>&2 2>&3)
+        exitstatus=$?
+
+        if [ ${exitstatus} = 0 ]; then
+
+          echo "Setting new_URL="${new_URL} >>$LOG
+
+          wpcli_search_and_replace "${WP_PATH}" "${existing_URL}" "${new_URL}"
+
+        fi
+
+      fi
+
+    fi
+
   fi
 
 }
