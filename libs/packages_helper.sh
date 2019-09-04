@@ -61,6 +61,12 @@ check_packages_required() {
     apt -y install dnsutils
   fi
 
+  ### Check if lbzip2 is installed
+  LBZIP2="$(which lbzip2)"
+  if [ ! -x "${LBZIP2}" ]; then
+    apt -y install lbzip2
+  fi
+
 }
 
 compare_package_versions() {
