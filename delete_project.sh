@@ -2,7 +2,7 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.9.9
+# Version: 3.0
 ################################################################################
 
 ### Checking some things
@@ -38,7 +38,7 @@ else
 
     # Making a backup of project files
     echo -e ${CYAN}" > Making a backup ..."${ENDCOLOR}
-    #cp -r $filepath"/"$filename ${SFOLDER}/tmp-backup
+
     TAR_FILE=$($TAR --exclude '.git' --exclude '*.log' -jcpf ${SFOLDER}/tmp-backup/backup-${filename}_files.tar.bz2 --directory=${FOLDER_TO_INSTALL} ${filename} >>$LOG)
 
     if ${TAR_FILE}; then
@@ -53,16 +53,17 @@ else
         echo " > Uploading backup to Dropbox ..." >>$LOG
         ${DPU_F}/dropbox_uploader.sh upload ${SFOLDER}/tmp-backup/backup-${filename}_files.tar.bz2 ${OLD_SITES_DP_F}/${filename}/
 
-        # Deleting project files
-        #rm -R $filepath"/"$filename
+        # Delete project files
+        rm -R $filepath"/"$filename
         echo -e ${GREEN}" > Project files deleted from ${FOLDER_TO_INSTALL}!"${ENDCOLOR}
 
-        # Making a copy of nginx configuration file
+        # Make a copy of nginx configuration file
         cp -r /etc/nginx/sites-available/${filename} ${SFOLDER}/tmp-backup
 
-        # Deleting nginx configuration file
+        # Delete nginx configuration file
         rm /etc/nginx/sites-available/${filename}
         rm /etc/nginx/sites-enabled/${filename}
+
     fi
 
 fi
@@ -74,20 +75,20 @@ exitstatus=$?
 if [ $exitstatus = 0 ]; then
     echo "Setting CHOSEN_DB="${CHOSEN_DB} >>$LOG
 
-    # Removing DB prefix to find mysql user
+    # Remove DB prefix to find mysql user
     suffix="$(cut -d'_' -f2 <<<"${CHOSEN_DB}")"
     PROJECT_NAME=${CHOSEN_DB%"_$suffix"}
     USER_DB="${PROJECT_NAME}_user"
 
-    # Making a database Backup
+    # Make a database Backup
     mysql_database_export "${CHOSEN_DB}" "${SFOLDER}/tmp-backup/${CHOSEN_DB}_DB.sql"
 
     # TODO: TAR Backup and Upload to Dropbox
-    
-    # Deleting project database
+
+    # Delete project database
     mysql_database_drop "${CHOSEN_DB}"
 
-    # Deleting mysql user
+    # Delete mysql user
 
     # TODO: need to ask
     #mysql_user_delete "${USER_DB}"
@@ -96,3 +97,6 @@ else
     exit 1
 
 fi
+
+# Delete tmp backups
+#rm -R ${SFOLDER}/tmp-backup

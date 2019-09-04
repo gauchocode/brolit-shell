@@ -1,6 +1,6 @@
 #!/bin/bash
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 2.9.9
+# Version: 3.0
 #############################################################################
 
 ### Checking Script Execution
@@ -44,7 +44,7 @@ make_files_backup() {
 
     echo -e ${CYAN}" > Trying to make a backup of ${BK_DIR} ..."${ENDCOLOR}
     echo " > Trying to make a backup of ${BK_DIR} ..." >>$LOG
-    
+
     TAR_FILE=$($TAR -jcpf ${BAKWP}/${NOW}/${BK_FILE} --directory=${BK_DIR} ${BK_FOLDER})
 
     if ${TAR_FILE}; then
@@ -90,37 +90,33 @@ make_project_backup() {
   # $3 = Path folder to Backup
   # $4 = Folder to Backup
 
-  BK_TYPE=$1     #configs,sites,databases
-  BK_SUB_TYPE=$2 #config_name,site_domain,database_name
+  local BK_TYPE=$1     #configs,sites,databases
+  local BK_SUB_TYPE=$2 #config_name,site_domain,database_name
 
-  SITES=$3
-  FOLDER_NAME=$4
+  local SITES=$3
+  local FOLDER_NAME=$4
+
+  local OLD_BK_FILE="${FOLDER_NAME}_${BK_TYPE}-files_${ONEWEEKAGO}.tar.bz2"
+  local BK_FILE="${FOLDER_NAME}_${BK_TYPE}-files_${NOW}.tar.bz2"
 
   echo -e ${CYAN}" > Making TAR from: ${FOLDER_NAME} ..."${ENDCOLOR}
   echo " > Making TAR from: ${FOLDER_NAME} ..." >>$LOG
 
-  #tar cf - /folder-with-big-files -P | pv -s $(du -sb /folder-with-big-files | awk '{print $1}') | gzip > big-files.tar.gz
+  #tar -cvf --directory=/root/broobe-utils-scripts/ tmp | pv -p -s $(du -sk /root/broobe-utils-scripts/tmp | cut -f 1)k | lbzip2 -c > /root/broobe-utils-scripts/tmp/backup-maktub_files.tar.bz2
 
-  #(tar --exclude '.git' --exclude '*.log' -cpf --directory=/root/broobe-utils-scripts/tmp-backup maktub-clientes | pv -s $(du -sb /root/broobe-utils-scripts/tmp-backup/maktub-clientes | awk '{print $1}') | bzip2 > /root/broobe-utils-scripts/tmp-backup/backup-maktub_files.tar.bz2) 2>&1 | dialog --gauge 'Progress' 7 70
-  #tar -cpf --directory=/root/broobe-utils-scripts/tmp-backup maktub-clientes | pv -ns $(du -sb /root/broobe-utils-scripts/tmp-backup/maktub-clientes | awk '{print $1}') | bzip2 > /root/broobe-utils-scripts/tmp-backup/backup-maktub_files.tar.bz2
-  #tar -cvf --directory=/root/broobe-utils-scripts/ tmp | pv -p -s $(du -sk /root/broobe-utils-scripts/tmp | cut -f 1)k | bzip2 -c > /root/broobe-utils-scripts/tmp/backup-maktub_files.tar.bz2
-
-  OLD_BK_FILE="backup-${FOLDER_NAME}_${BK_TYPE}-files_${ONEWEEKAGO}.tar.bz2"
-  BK_FILE="backup-${FOLDER_NAME}_${BK_TYPE}-files_${NOW}.tar.bz2"
-
-  #TAR_FILE=$($TAR -jcpf ${BAKWP}/${NOW}/${BK_SUB_TYPE}-${BK_TYPE}-files-${NOW}.tar.bz2 --directory=${BK_DIR} .)
-
-  TAR_FILE=$($TAR --exclude '.git' --exclude '*.log' -jcpf ${BAKWP}/${NOW}/${BK_FILE} --directory=${SITES} ${FOLDER_NAME} >>$LOG)
+    TAR_FILE=$($TAR --exclude '.git' --exclude '*.log' -cpf ${BAKWP}/${NOW}/${BK_FILE} --directory=${SITES} ${FOLDER_NAME} --use-compress-program=lbzip2)
 
   if ${TAR_FILE}; then
 
-    # TODO: estas variables no deberian ser locales?
-    BACKUPED_LIST[$COUNT]=${BK_FILE}
-    BACKUPED_FL=${BACKUPED_LIST[$COUNT]}
+    #echo -e ${ORANGE}" > FILE_BK_INDEX: ${FILE_BK_INDEX}"${ENDCOLOR}
+    echo -e ${ORANGE}" > FILE_BK_INDEX: ${FILE_BK_INDEX}"${ENDCOLOR}
+
+    BACKUPED_LIST[$FILE_BK_INDEX]=${BK_FILE}
+    BACKUPED_FL=${BACKUPED_LIST[$FILE_BK_INDEX]}
 
     # Calculate backup size
-    BK_FL_SIZES[$COUNT]=$(ls -lah ${BAKWP}/${NOW}/${BK_FILE} | awk '{ print $5}')
-    BK_FL_SIZE=${BK_FL_SIZES[$COUNT]}
+    BK_FL_SIZES[$FILE_BK_INDEX]=$(ls -lah ${BAKWP}/${NOW}/${BK_FILE} | awk '{ print $5}')
+    BK_FL_SIZE=${BK_FL_SIZES[$FILE_BK_INDEX]}
 
     echo -e ${GREEN}" > Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE} ..."${ENDCOLOR}
     echo " > Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE} ..." >>$LOG
@@ -142,14 +138,6 @@ make_project_backup() {
     rm -r ${BAKWP}/${NOW}/${BK_FILE}
 
     echo -e ${GREEN}" > DONE"${ENDCOLOR}
-
-    COUNT=$((COUNT + 1))
-
-    echo -e ${GREEN}" > Processed ${COUNT} of ${COUNT_TOTAL_SITES} directories"${ENDCOLOR}
-    echo "> Processed ${COUNT} of ${COUNT_TOTAL_SITES} directories" >>$LOG
-
-    echo -e ${GREEN}"###################################################"${ENDCOLOR}
-    echo "###################################################" >>$LOG
 
   else
     ERROR=true
@@ -221,7 +209,7 @@ duplicity_backup() {
 
 ################################################################################
 
-# VARS
+# GLOBALS
 BK_TYPE="File"
 ERROR=false
 ERROR_TYPE=""
@@ -261,11 +249,13 @@ COUNT_TOTAL_SITES=$((${COUNT_TOTAL_SITES} - 1))
 echo -e ${CYAN}" > ${COUNT_TOTAL_SITES} directory found ..."${ENDCOLOR}
 echo " > ${COUNT_TOTAL_SITES} directory found ..." >>$LOG
 
-# Settings some vars
-k=0
-COUNT=0
+# MORE GLOBALS
+FILE_BK_INDEX=0
 declare -a BACKUPED_LIST
 declare -a BK_FL_SIZES
+
+# LOCALS
+local k=0
 
 for j in ${TOTAL_SITES}; do
 
@@ -277,18 +267,22 @@ for j in ${TOTAL_SITES}; do
 
     if [[ $SITES_BL != *"${FOLDER_NAME}"* ]]; then
 
-      make_project_backup "sites" "${FOLDER_NAME}" "${SITES}" "${FOLDER_NAME}"
+      make_project_backup "site" "${FOLDER_NAME}" "${SITES}" "${FOLDER_NAME}"
+
+      echo -e ${GREEN}" > Processed ${FILE_BK_INDEX} of ${COUNT_TOTAL_SITES} directories"${ENDCOLOR}
+      echo "> Processed ${FILE_BK_INDEX} of ${COUNT_TOTAL_SITES} directories" >>$LOG
 
     else
       echo " > Omiting ${FOLDER_NAME} TAR file (blacklisted) ..." >>$LOG
-      COUNT=$((COUNT + 1))
-
+      
     fi
 
-    echo -e ${CYAN}"###################################################"${ENDCOLOR}
-    echo "###################################################" >>$LOG
+    FILE_BK_INDEX=$((FILE_BK_INDEX + 1))
 
   fi
+
+  echo -e ${CYAN}"###################################################"${ENDCOLOR}
+  echo "###################################################" >>$LOG
 
   k=$k+1
 
@@ -301,6 +295,4 @@ rm -r ${BAKWP}/${NOW}
 duplicity_backup
 
 # Configure Email
-mail_filesbackup_section "${ERROR}" "${ERROR_TYPE}" "${BACKUPED_LIST}" "${BK_FL_SIZES}"
-
-#export STATUS_F STATUS_ICON_F HTMLOPEN HEADER BODY FOOTER HTMLCLOSE
+mail_filesbackup_section "${ERROR}" "${ERROR_TYPE}" ${BACKUPED_LIST} ${BK_FL_SIZES}

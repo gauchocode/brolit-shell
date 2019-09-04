@@ -10,6 +10,7 @@ BLACK='\E[30;40m'
 RED='\E[31;40m'
 GREEN='\E[32;40m'
 YELLOW='\E[33;40m'
+ORANGE='\033[0;33m'
 BLUE='\E[34;40m'
 MAGENTA='\E[35;40m'
 CYAN='\E[36;40m'
@@ -566,6 +567,29 @@ wp_download_wordpress() {
   cp wp-config-sample.php ${FOLDER_TO_INSTALL}/${DOMAIN}/wp-config.php
   rm ${FOLDER_TO_INSTALL}/${DOMAIN}/wp-config-sample.php
 
+}
+
+wp_update_wpconfig() {
+
+  # $1 = ${WP_SITE}
+  # $2 = ${WP_PROJECT_NAME}
+  # $3 = ${WP_PROJECT_STATE}
+  # $4 = ${DB_USER_PASS}
+
+  WP_SITE_PATH=$1
+  WP_PROJECT_NAME=$2
+  WP_PROJECT_STATE=$3
+  DB_USER_PASS=$3
+
+  # Change wp-config.php database parameters
+  echo -e ${YELLOW}"Changing wp-config.php database parameters ..."${ENDCOLOR}
+  echo " > Changing wp-config.php database parameters ..." >>$LOG
+
+  sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" ${WP_SITE_PATH}/wp-config.php
+  sed -i "/DB_NAME/s/'[^']*'/'${WP_PROJECT_NAME}_${WP_PROJECT_STATE}'/2" ${WP_SITE_PATH}/wp-config.php
+  sed -i "/DB_USER/s/'[^']*'/'${WP_PROJECT_NAME}_user'/2" ${WP_SITE_PATH}/wp-config.php
+  sed -i "/DB_PASSWORD/s/'[^']*'/'${DB_USER_PASS}'/2" ${WP_SITE_PATH}/wp-config.php
+ 
 }
 
 # Used in:

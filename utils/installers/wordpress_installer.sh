@@ -152,17 +152,21 @@ if [ $exitstatus = 0 ]; then
     SOURCE_WPCONFIG=${FOLDER_TO_INSTALL}/${COPY_PROJECT}
     DB_TOCOPY=$(cat ${SOURCE_WPCONFIG}/wp-config.php | grep DB_NAME | cut -d \' -f 4)
     BK_FILE="db-${DB_TOCOPY}.sql"
-    $MYSQLDUMP --max-allowed-packet=1073741824 -u ${MUSER} -p${MPASS} ${DB_TOCOPY} >${BK_FOLDER}${BK_FILE}
+
+    # Make a database Backup 
+    #$MYSQLDUMP --max-allowed-packet=1073741824 -u ${MUSER} -p${MPASS} ${DB_TOCOPY} >${BK_FOLDER}${BK_FILE}
+    mysql_database_export "${DB_TOCOPY}" "${BK_FOLDER}${BK_FILE}"
 
     if [ "$?" -eq 0 ]; then
 
       echo " > mysqldump for ${DB_TOCOPY} OK ..." >>$LOG
       echo -e ${GREEN}" > mysqldump for ${DB_TOCOPY} OK ..."${ENDCOLOR}
 
-      echo " > Trying to restore database ..." >>$LOG
-      echo -e ${YELLOW}" > Trying to restore database ..."${ENDCOLOR}
+      echo " > Trying to import database ..." >>$LOG
+      echo -e ${YELLOW}" > Trying to import database ..."${ENDCOLOR}
 
-      $MYSQL -u ${MUSER} --password=${MPASS} ${NEW_PROJECT_DB} <${BK_FOLDER}${BK_FILE}
+      #$MYSQL -u ${MUSER} --password=${MPASS} ${NEW_PROJECT_DB} <${BK_FOLDER}${BK_FILE}
+      mysql_database_import "${NEW_PROJECT_DB}" "${BK_FOLDER}${BK_FILE}"
 
       TARGET_DB="${PROJECT_NAME}_${PROJECT_STATE}"
 
@@ -171,13 +175,11 @@ if [ $exitstatus = 0 ]; then
       # Change WP tables PREFIX
       wpcli_change_tables_prefix "${PROJECT_DIR}" "${TABLES_PREFIX}"
 
-      ### echo "Changing database prefix on wp-config.php ..."
-      #export existing_URL new_URL MUSER MPASS TARGET_DB DB_PREFIX
+      # Create tmp directory
+      mkdir ${SFOLDER}/tmp-backup
 
-      ### TODO: cambiar este backup por algun helper
-      echo "Executing mysqldump of ${TARGET_DB} before replace urls ..." >>$LOG
-      ${MYSQLDUMP} -u ${MUSER} --password=${MPASS} ${TARGET_DB} >${TARGET_DB}_bk_before_replace_urls.sql
-      echo "Database backup created: ${TARGET_DB}_bk_before_replace_urls.sql" >>$LOG
+      # Make a database Backup before replace URLs
+      mysql_database_export "${TARGET_DB}" "${SFOLDER}/tmp-backup/${TARGET_DB}_bk_before_replace_urls.sql"
 
       ask_url_search_and_replace "${PROJECT_DIR}"
 
@@ -209,10 +211,12 @@ if [ $exitstatus = 0 ]; then
 
   cp ${SFOLDER}/confs/nginx/sites-available/default /etc/nginx/sites-available/${DOMAIN}
   ln -s /etc/nginx/sites-available/${DOMAIN} /etc/nginx/sites-enabled/${DOMAIN}
+  
   # Replacing string to match domain name
   sed -i "s#dominio.com#${DOMAIN}#" /etc/nginx/sites-available/${DOMAIN}
   # Need to run twice
   sed -i "s#dominio.com#${DOMAIN}#" /etc/nginx/sites-available/${DOMAIN}
+
   # Restart nginx service
   service nginx reload
 

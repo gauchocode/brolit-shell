@@ -1,6 +1,6 @@
 #! /bin/bash
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 2.9
+# Version: 3.0
 #############################################################################
 
 ### Checking some things
@@ -16,8 +16,95 @@ source ${SFOLDER}/libs/mail_notification_helper.sh
 
 #############################################################################
 
-# VARS
-BK_TYPE="Database"
+make_database_backup() {
+
+  # $1 = Backup Type
+  # $2 = Database
+
+  local BK_TYPE=$1 #configs,sites,databases
+  local DATABASE=$2
+
+  local BK_FOLDER=${BAKWP}/${NOW}/
+  local DB_FILE="${DATABASE}_${BK_TYPE}_${NOW}.sql"
+
+  local OLD_BK_FILE="${DATABASE}_${BK_TYPE}_${ONEWEEKAGO}.tar.bz2"
+  local BK_FILE="${DATABASE}_${BK_TYPE}_${NOW}.tar.bz2"
+
+  #echo -e ${YELLOW}" > Creating new database backup in [${BK_FOLDER}${DB_FILE}] ..."${ENDCOLOR}
+  #echo " > Creating new database backup in [${BK_FOLDER}${DB_FILE}] ..." >>$LOG
+
+  # Create dump file
+  $MYSQLDUMP --max-allowed-packet=1073741824 -u ${MUSER} -h ${MHOST} -p${MPASS} ${DATABASE} >${BK_FOLDER}${DB_FILE}
+
+  if [ "$?" -eq 0 ]; then
+
+    echo -e ${GREEN}" > mysqldump OK ..."${ENDCOLOR}
+    echo " > mysqldump OK ..." >>$LOG
+
+    cd ${BAKWP}/${NOW}
+
+    echo -e ${CYAN}" > Making a tar.bz2 file of [${DB_FILE}] ..."${ENDCOLOR}
+    echo " > Making a tar.bz2 file of [${DB_FILE}] ..." >>$LOG
+
+    TAR_FILE=$($TAR -cpf ${BAKWP}/${NOW}/${BK_FILE} --directory=${BK_FOLDER} ${DB_FILE} --use-compress-program=lbzip2)
+
+    if ${TAR_FILE}; then
+
+      BACKUPED_DB_LIST[$DB_BK_INDEX]=${BK_FILE}
+      BK_DB_SIZES[$DB_BK_INDEX]=$(ls -lah ${BK_FILE} | awk '{ print $5}')
+      BK_DB_SIZE=${BK_DB_SIZES[$DB_BK_INDEX]}
+
+      echo -e ${MAGENTA}" > BK_FILE: ${BK_FILE}"${ENDCOLOR}
+      echo -e ${MAGENTA}" > DB_BK_INDEX: ${DB_BK_INDEX}"${ENDCOLOR}
+      echo -e ${MAGENTA}" > BACKUPED_DB_LIST[$DB_BK_INDEX]:${BACKUPED_DB_LIST[$DB_BK_INDEX]}"${ENDCOLOR}
+
+      echo -e ${MAGENTA}" > BACKUPED_DB_LIST[0]: ${BACKUPED_DB_LIST[0]}"${ENDCOLOR}
+      echo -e ${MAGENTA}" > BACKUPED_DB_LIST[1]: ${BACKUPED_DB_LIST[1]}"${ENDCOLOR}
+
+      echo -e ${CYAN}" > Backup for ${DATABASE} created, final size: ${BK_DB_SIZE} ..."${ENDCOLOR}
+      echo " > Backup for ${DATABASE} created, final size: ${BK_DB_SIZE} ..." >>$LOG
+
+      #echo " > Creating Dropbox Databases Folder ..." >> $LOG
+      ${DPU_F}/dropbox_uploader.sh -q mkdir ${DBS_F}
+      ${DPU_F}/dropbox_uploader.sh -q mkdir ${DBS_F}/${DATABASE}
+
+      # Upload to Dropbox
+      echo " > Uploading new database backup [${BK_FILE}] ..."
+      ${DPU_F}/dropbox_uploader.sh upload ${BK_FILE} $DROPBOX_FOLDER/${DBS_F}/${DATABASE}
+
+      # Delete old backups
+      echo " > Trying to delete old database backup [${OLD_BK_FILE}] ..."
+
+      if [ "${DROPBOX_FOLDER}" != "/" ]; then
+        ${DPU_F}/dropbox_uploader.sh -q remove $DROPBOX_FOLDER/${DBS_F}/${DATABASE}/${OLD_BK_FILE}
+
+      else
+        ${DPU_F}/dropbox_uploader.sh -q remove ${DBS_F}/${DATABASE}/${OLD_BK_FILE}
+
+      fi
+
+      echo -e ${CYAN}" > Deleting backup from server ..."${ENDCOLOR}
+      echo " > Deleting backup from server ..." >>$LOG
+      rm ${BAKWP}/${NOW}/${DB_FILE}
+      rm ${BAKWP}/${NOW}/${BK_FILE}
+
+    fi
+
+  else
+
+    echo " > mysqldump ERROR: $? ..." >>$LOG
+    echo -e ${RED}" > mysqldump ERROR: $? ..."${ENDCOLOR}
+    ERROR=true
+    ERROR_TYPE="mysqldump error with ${DATABASE}"
+
+  fi
+
+}
+
+#############################################################################
+
+# GLOBALS
+BK_TYPE="database"
 ERROR=false
 ERROR_TYPE=""
 DBS_F="databases"
@@ -34,9 +121,9 @@ TOTAL_DBS=$(count_dabases "${DBS}")
 echo " > ${TOTAL_DBS} databases found ..." >>$LOG
 echo -e ${CYAN}" > ${TOTAL_DBS} databases found ..."${ENDCOLOR}
 
-# Settings some vars
-COUNT=0
-declare -a BACKUPEDLIST
+# MORE GLOBALS
+DB_BK_INDEX=0
+declare -a BACKUPED_DB_LIST
 declare -a BK_DB_SIZES
 
 for DATABASE in ${DBS}; do
@@ -45,71 +132,12 @@ for DATABASE in ${DBS}; do
 
   if [[ ${DB_BL} != *"${DATABASE}"* ]]; then
 
-    BK_FOLDER=${BAKWP}/${NOW}/
-    BK_FILE="db-${DATABASE}_${NOW}.sql"
+    make_database_backup "database" "${DATABASE}"
 
-    # Create dump file
-    echo " > Creating new database backup in [${BK_FOLDER}${BK_FILE}] ..." >>$LOG
-    echo -e ${YELLOW}" > Creating new database backup [${BK_FILE}] ..."${ENDCOLOR}
+    DB_BK_INDEX=$((DB_BK_INDEX + 1))
 
-    $MYSQLDUMP --max-allowed-packet=1073741824 -u ${MUSER} -h ${MHOST} -p${MPASS} ${DATABASE} >${BK_FOLDER}${BK_FILE}
-
-    if [ "$?" -eq 0 ]; then
-
-      echo " > Mysqldump OK ..." >>$LOG
-      echo -e ${WHITE}" > Mysqldump OK ..."${ENDCOLOR}
-
-      cd ${BAKWP}/${NOW}
-
-      echo " > Making a tar.bz2 file of [${BK_FILE}] ..." >>$LOG
-      echo -e ${WHITE}" > Making a tar.bz2 file of [${BK_FILE}] ..."${ENDCOLOR}
-
-      #echo " > $TAR -jcvpf ${BAKWP}/${NOW}/db-${DATABASE}_${NOW}.tar.bz2 --directory=${BK_FOLDER} ${BK_FILE}"
-      $TAR -jcvpf ${BAKWP}/${NOW}/db-${DATABASE}_${NOW}.tar.bz2 --directory=${BK_FOLDER} ${BK_FILE}
-
-      BACKUPEDLIST[$COUNT]=db-${DATABASE}_${NOW}.tar.bz2
-      BK_DB_SIZES[$COUNT]=$(ls -lah db-${DATABASE}_${NOW}.tar.bz2 | awk '{ print $5}')
-      BK_DB_SIZE=${BK_DB_SIZES[$COUNT]}
-
-      echo " > Backup for ${DATABASE} created, final size: ${BK_DB_SIZE} ..." >>$LOG
-      echo -e ${CYAN}" > Backup for ${DATABASE} created, final size: ${BK_DB_SIZE} ..."${ENDCOLOR}
-
-      #echo " > Creating Dropbox Databases Folder ..." >> $LOG
-      ${DPU_F}/dropbox_uploader.sh -q mkdir ${DBS_F}
-      ${DPU_F}/dropbox_uploader.sh -q mkdir ${DBS_F}/${DATABASE}
-
-      ### Upload to Dropbox
-      echo " > Uploading new database backup [db-${DATABASE}_${NOW}] ..."
-      ${DPU_F}/dropbox_uploader.sh upload db-${DATABASE}_${NOW}.tar.bz2 $DROPBOX_FOLDER/${DBS_F}/${DATABASE}
-
-      ### Delete old backups
-      echo " > Trying to delete old database backup [db-${DATABASE}_${ONEWEEKAGO}.tar.bz2] ..."
-
-      if [ "${DROPBOX_FOLDER}" != "/" ]; then
-        ${DPU_F}/dropbox_uploader.sh -q remove $DROPBOX_FOLDER/${DBS_F}/${DATABASE}/db-${DATABASE}_${ONEWEEKAGO}.tar.bz2
-
-      else
-        ${DPU_F}/dropbox_uploader.sh -q remove ${DBS_F}/${DATABASE}/db-${DATABASE}_${ONEWEEKAGO}.tar.bz2
-
-      fi
-
-      echo " > Deleting backup from server ..." >>$LOG
-      rm ${BAKWP}/${NOW}/db-${DATABASE}_${NOW}.sql
-      rm ${BAKWP}/${NOW}/db-${DATABASE}_${NOW}.tar.bz2
-
-    else
-
-      echo " > Mysqldump ERROR: $? ..." >>$LOG
-      echo -e ${RED}" > Mysqldump ERROR: $? ..."${ENDCOLOR}
-      ERROR=true
-      ERROR_TYPE="mysqldump error with ${DATABASE}"
-
-    fi
-
-    COUNT=$((COUNT + 1))
-
-    echo -e ${GREEN}" > Backup ${COUNT} of ${TOTAL_DBS} DONE"${ENDCOLOR}
-    echo "> Backup ${COUNT} of ${TOTAL_DBS} DONE" >>$LOG
+    echo -e ${GREEN}" > Backup ${DB_BK_INDEX} of ${TOTAL_DBS} DONE"${ENDCOLOR}
+    echo "> Backup ${DB_BK_INDEX} of ${TOTAL_DBS} DONE" >>$LOG
 
     echo -e ${GREEN}"###################################################"${ENDCOLOR}
     echo "###################################################" >>$LOG
@@ -121,10 +149,7 @@ for DATABASE in ${DBS}; do
 
 done
 
-# Disk Usage
-#DISK_UDB=$(df -h | grep "${MAIN_VOL}" | awk {'print $5'})
-
 # Configure Email
-mail_mysqlbackup_section "${ERROR}" "${ERROR_TYPE}" "${BACKUPEDLIST}" "${BK_DB_SIZES}"
+echo -e ${CYAN}" > BACKUPED_DB_LIST: ${BACKUPED_DB_LIST}"${ENDCOLOR}
 
-#export STATUS_D STATUS_ICON_D HEADER_D BODY_D
+mail_mysqlbackup_section "${ERROR}" "${ERROR_TYPE}" ${BACKUPED_DB_LIST} ${BK_DB_SIZES}

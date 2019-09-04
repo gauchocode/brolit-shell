@@ -2,34 +2,32 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 3.0-alpha2
+# Version: 3.0-alpha3
 ################################################################################
 #
 # TODO: Para release 3.2
-#       1- VAR conf para CloudFlare api -- DONE pero falta TESTING
-#       2- Refactor de menú principal del runner.sh (ojo que si al lemp le activamos netdata o monit, necesita db pass de root) -- DONE pero falta TESTING
-#       3- Terminar php_optimizations deprecando el modelo de Hetzner e integrandolo al Lemp Installer
-#       4- Permitir restore del backup con Duplicity
-#       5- Restore de archivos de configuración
-#       6- Cuando borro un proyecto, que suba el backup temporal a dropbox, pero fuera de la estructura normal de backups
-#       7- Repensar el server_and_image_optimizations.sh
-#       8- Terminar el wpcli_manager.sh
-#       9- Optimizaciones de MySQL
-#       10- Mejoras LEMP setup, que requiera menos intervencion tzdata y mysql_secure_installation
-#       11- Opción de cambiar puerto ssh en vps
-#       12- En las notificaciones de mails agregar info de certificados instalados y sus vencimientos 
+#       1- Terminar php_optimizations deprecando el modelo de Hetzner e integrandolo al Lemp Installer
+#       2- Permitir restore del backup con Duplicity
+#       3- Restore de archivos de configuración
+#       4- Cuando borro un proyecto, que suba el backup temporal a dropbox, pero fuera de la estructura normal de backups -- FALTA PULIR
+#       5- Repensar el server_and_image_optimizations.sh
+#       6- Optimizaciones de MySQL
+#       8- En las notificaciones de mails agregar info de certificados instalados y sus vencimientos 
 #
 # TODO: Para release 4.0
 #       1- Permitir varias dropbox apps secundarias configuradas para restaurar desde cualquiera de ellas
 #       2- Soporte para otros sistemas de compresión más rapidos (bz2 es muy lento)
 #       3- Uptime Robot API
 #       4- Terminar updater.sh
-#       5- Hetzner cloud cli?
+#       5- Opción de cambiar puerto ssh en vps
+#       6- Soporte notificaciones via Telegram: https://adevnull.com/enviar-mensajes-a-telegram-con-bash/
+#       7- Mejoras LEMP setup, que requiera menos intervencion tzdata y mysql_secure_installation
+#       8- Hetzner cloud cli?
 #           https://github.com/hetznercloud/cli
 #           https://github.com/thabbs/hetzner-cloud-cli-sh
 #           https://github.com/thlisym/hetznercloud-py
 #           https://hcloud-python.readthedocs.io/en/latest/
-#       6- Web GUI:
+#       9- Web GUI:
 #           https://github.com/bugy/script-server
 #           https://github.com/joewalnes/websocketd
 #
@@ -40,7 +38,7 @@
 # https://google.github.io/styleguide/shell.xml
 #
 
-SCRIPT_V="3.0-alpha2"
+SCRIPT_V="3.0-alpha3"
 
 ### Checking some things...#####################################################
 SFOLDER="`dirname \"$0\"`"                                                      # relative
