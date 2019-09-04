@@ -2,7 +2,7 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.9
+# Version: 3.0
 #############################################################################
 
 ### Checking some things
@@ -95,7 +95,6 @@ PROJECT_NAME="adler"
 PROJECT_DOM="adler.broobe.com"
 PROJECT_STATE="dev"
 
-
 wp_migration_source
 
 ask_folder_to_install_sites
@@ -107,7 +106,7 @@ mkdir tmp
 if [ ${WP_MIGRATION_SOURCE} = "DIRECTORY" ]; then
 
   unzip \*.zip \* -d ${SOURCE_DIR}/tmp
-  # TODO: acá habría que checkear si la instalación es un WP 
+  # TODO: acá habría que checkear si la instalación es un WP
   # y si está en la raiz o dentro de una carpeta del zip
 
   cd ${FOLDER_TO_INSTALL}
@@ -178,39 +177,54 @@ fi
 
 # DB
 mysql_database_import "${PROJECT_NAME}_${PROJECT_STATE}" "${BK_F_FILE}"
-#mysql -u root -p${MPASS} ${PROJECT_NAME}_${PROJECT_STATE} < ${BK_F_FILE}
 
-#change wp-config.php database parameters
-echo " > Changing wp-config.php database parameters ..." >>$LOG
-sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" ${FOLDER_TO_INSTALL}/${PROJECT_DOM}/wp-config.php >>$LOG
-sed -i "/DB_NAME/s/'[^']*'/'${PROJECT_NAME}_${PROJECT_STATE}'/2" ${FOLDER_TO_INSTALL}/${PROJECT_DOM}/wp-config.php >>$LOG
-sed -i "/DB_USER/s/'[^']*'/'${PROJECT_NAME}_user'/2" ${FOLDER_TO_INSTALL}/${PROJECT_DOM}/wp-config.php >>$LOG
-sed -i "/DB_PASSWORD/s/'[^']*'/'${DB_PASS}'/2" ${FOLDER_TO_INSTALL}/${PROJECT_DOM}/wp-config.php >>$LOG
+# Change wp-config.php database parameters
+wp_update_wpconfig "${FOLDER_TO_INSTALL}/${PROJECT_DOM}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
 
 #rm $BK_DB_FILE
 
-#create nginx config files for site
+# Create nginx config files for site
 echo -e "\nCreating nginx configuration file...\n" >>$LOG
 sudo cp ${SFOLDER}/confs/nginx/sites-available/default /etc/nginx/sites-available/${PROJECT_DOM}
 ln -s /etc/nginx/sites-available/${PROJECT_DOM} /etc/nginx/sites-enabled/${PROJECT_DOM}
 
-#replacing string to match domain name
+# Replace string to match domain name
 #sudo replace "domain.com" "$DOMAIN" -- /etc/nginx/sites-available/default
 sudo sed -i "s#dominio.com#${PROJECT_DOM}#" /etc/nginx/sites-available/${PROJECT_DOM}
 #es necesario correrlo dos veces para reemplazarlo dos veces en una misma linea
 sudo sed -i "s#dominio.com#${PROJECT_DOM}#" /etc/nginx/sites-available/${PROJECT_DOM}
 
-#reload webserver
+# Reload webserver
 service nginx reload
 
-### Get server IPs ###
+# Get server IP
 IP=$(dig +short myip.opendns.com @resolver1.opendns.com) 2>/dev/null
 
-# TODO: run cloudflare script
-# TODO: run certbot script
+# Ask for Cloudflare Root Domain
+ROOT_DOMAIN=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
+exitstatus=$?
+if [ $exitstatus = 0 ]; then
+
+  echo "Setting ROOT_DOMAIN="${ROOT_DOMAIN}
+
+  # Cloudflare API to change DNS records
+  echo "Trying to access Cloudflare API and change record ${PROJECT_DOM} ..." >>$LOG
+  echo -e ${YELLOW}"Trying to access Cloudflare API and change record ${PROJECT_DOM} ..."${ENDCOLOR}
+
+  zone_name=${ROOT_DOMAIN}
+  record_name=${PROJECT_DOM}
+  export zone_name record_name
+  ${SFOLDER}/utils/cloudflare_update_IP.sh
+
+fi
+
+# HTTPS with Certbot
+${SFOLDER}/utils/certbot_manager.sh
+#certbot_certificate_install "${MAILA}" "${DOMAIN}"
+
 # TODO: run url_replace script
 
-### Log End ###
+# Log End
 END_TIME=$(date +%s)
 ELAPSED_TIME=$(expr $END_TIME - $START_TIME)
 

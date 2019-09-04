@@ -1,9 +1,10 @@
 #!/bin/bash
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 2.9.9
+# Version: 3.0
 ################################################################################
 
 source /root/.broobe-utils-options
+source ${SFOLDER}/libs/commons.sh
 
 ################################################################################
 
@@ -101,17 +102,19 @@ mail_package_status_section() {
     local OUTDATED=$1
 
     if [ "${OUTDATED}" = true ]; then
-        PKG_COLOR='red'
+        PKG_COLOR='#fb2f2f'
         PKG_STATUS='OUTDATED'
+        PKG_STATUS_ICON="⚠"
     else
         PKG_COLOR='#1DC6DF'
         PKG_STATUS='OK'
+        PKG_STATUS_ICON="✅"
     fi
 
     PKG_HEADEROPEN1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
     PKG_HEADEROPEN2=';padding:5px 0 10px 10px;width:100%;height:30px">'
     PKG_HEADEROPEN=${PKG_HEADEROPEN1}${PKG_COLOR}${PKG_HEADEROPEN2}
-    PKG_HEADERTEXT="Packages Status: ${PKG_STATUS}"
+    PKG_HEADERTEXT="Packages Status: ${PKG_STATUS} ${PKG_STATUS_ICON}"
     PKG_HEADERCLOSE='</div>'
 
     PKG_BODYOPEN=$(mail_section_start)
@@ -150,22 +153,21 @@ mail_filesbackup_section() {
 
     # $1 - ${ERROR}
     # $2 - ${ERROR_TYPE}
-    # $3 - ${BACKUPED_LIST}
+    # $3 - ${BACKUPED_LIST[@]}
     # $4 - ${BK_FL_SIZES}
 
     local ERROR=$1
     local ERROR_TYPE=$2
-    local BACKUPED_LIST=$3
-    local BK_FL_SIZES=$4
+    local -n BACKUPED_LIST=$3
+    local -n BK_FL_SIZES=$4
 
-    local BK_TYPE="Files"
+    BK_TYPE="Files"
 
     if [ "$ERROR" = true ]; then
         STATUS_ICON_F="💩"
         STATUS_F="ERROR"
         CONTENT="<b>$BK_TYPE Backup Error: $ERROR_TYPE<br />Please check log file.</b> <br />"
         COLOR='red'
-        #echo " > File Backup ERROR: $ERROR_TYPE" >>$LOG
     else
         STATUS_ICON_F="✅"
         STATUS_F="OK"
@@ -177,13 +179,11 @@ mail_filesbackup_section() {
         COUNT=0
         for t in "${BACKUPED_LIST[@]}"; do
             BK_FL_SIZE=${BK_FL_SIZES[$COUNT]}
-            FILES_INC="$FILES_INC $t ${BK_FL_SIZE}<br />"
+            FILES_INC="${FILES_INC} $t ${BK_FL_SIZE}<br />"
             COUNT=$((COUNT + 1))
         done
 
         FILES_LABEL_END='</div>'
-        #echo " > File Backup OK" >>$LOG
-        #echo -e ${GREEN}" > File Backup OK"${ENDCOLOR}
 
         if [ "${DUP_BK}" = true ]; then
             DBK_SIZE=$(du -hs $DUP_ROOT | cut -f1)
@@ -207,6 +207,7 @@ mail_filesbackup_section() {
     BODY=$BODYOPEN$CONTENT$SIZE_LABEL$FILES_LABEL$FILES_INC$FILES_LABEL_END$DBK_SIZE_LABEL$BODYCLOSE
     FOOTER=$FOOTEROPEN$SCRIPTSTRING$FOOTERCLOSE
 
+    # Write e-mail parts files
     echo $HEADER >${BAKWP}/file-bk-${NOW}.mail
     echo $BODY >>${BAKWP}/file-bk-${NOW}.mail
     echo $FOOTER >>${BAKWP}/file-bk-${NOW}.mail
@@ -217,13 +218,16 @@ mail_mysqlbackup_section() {
 
     # $1 - ${ERROR}
     # $2 - ${ERROR_TYPE}
-    # $3 - ${BACKUPEDLIST}
+    # $3 - ${BACKUPED_DB_LIST}
     # $4 - ${BK_DB_SIZES}
 
     local ERROR=$1
     local ERROR_TYPE=$2
-    local BACKUPEDLIST=$3
-    local BK_DB_SIZES=$4
+    local -n BACKUPED_DB_LIST=$3
+    local -n BK_DB_SIZES=$4
+
+    #echo -e ${MAGENTA}" > ERROR: ${ERROR}"${ENDCOLOR}
+    #echo -e ${MAGENTA}" > BACKUPED_DB_LIST: ${BACKUPED_DB_LIST}"${ENDCOLOR}
 
     BK_TYPE="Database"
 
@@ -232,7 +236,6 @@ mail_mysqlbackup_section() {
         STATUS_D="ERROR"
         CONTENT_D="<b>${BK_TYPE} Backup with errors:<br />${ERROR_TYPE}<br /><br />Please check log file.</b> <br />"
         COLOR_D='red'
-        #echo " > Backup with errors: $2." >>$LOG
 
     else
         STATUS_ICON_D="✅"
@@ -244,15 +247,15 @@ mail_mysqlbackup_section() {
         FILES_INC_D=""
 
         COUNT=0
-        for t in "${BACKUPEDLIST[@]}"; do
+
+        for t in "${BACKUPED_DB_LIST[@]}"; do
+            #echo -e ${MAGENTA}" > t: ${t}"${ENDCOLOR}
             BK_DB_SIZE=${BK_DB_SIZES[$COUNT]}
-            FILES_INC_D="$FILES_INC_D $t ${BK_DB_SIZE}<br />"
+            FILES_INC_D="${FILES_INC_D} $t ${BK_DB_SIZE}<br />"
             COUNT=$((COUNT + 1))
         done
 
         FILES_LABEL_D_END='</div>'
-        #echo " > Database Backup OK" >>$LOG
-        #echo -e ${GREEN}" > Database Backup OK"${ENDCOLOR}
 
     fi
 
@@ -266,8 +269,9 @@ mail_mysqlbackup_section() {
     BODYCLOSE_D='</div>'
 
     HEADER_D=${HEADEROPEN_D}${HEADERTEXT_D}${HEADERCLOSE_D}
-    BODY_D=$BODYOPEN_D$CONTENT_D$SIZE_D$FILES_LABEL_D$FILES_INC_D$FILES_LABEL_D_END$BODYCLOSE_D
+    BODY_D=${BODYOPEN_D}${CONTENT_D}${SIZE_D}${FILES_LABEL_D}${FILES_INC_D}${FILES_LABEL_D_END}${BODYCLOSE_D}
 
+    # Write e-mail parts files
     echo $HEADER_D >${BAKWP}/db-bk-${NOW}.mail
     echo $BODY_D >>${BAKWP}/db-bk-${NOW}.mail
 

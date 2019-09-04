@@ -1,6 +1,6 @@
 #!/bin/bash
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 2.9.9
+# Version: 3.0
 ################################################################################
 
 # TODO: NO cambiar el wp-config sin checkear los datos del usuario creado!
@@ -19,6 +19,8 @@ fi
 
 source ${SFOLDER}/libs/commons.sh
 source ${SFOLDER}/libs/mysql_helper.sh
+source ${SFOLDER}/libs/wpcli_helper.sh
+source ${SFOLDER}/libs/mail_notification_helper.sh
 
 ################################################################################
 
@@ -81,7 +83,7 @@ restore_database_backup() {
 
     mysql_user_create "${DB_USER}" "${DB_PASS}"
 
-    else
+  else
 
     echo -e ${YELLOW}" > User ${DB_USER} already exists"${ENDCOLOR} >>$LOG
 
@@ -220,11 +222,14 @@ else
 
     #echo " > Downloading from Dropbox ${CHOSEN_TYPE}/${CHOSEN_CONFIG} ..." >>$LOG
     BK_TO_DOWNLOAD=${CHOSEN_TYPE}/${CHOSEN_PROJECT}/${CHOSEN_BACKUP}
-    echo -e ${YELLOW} " > Trying to run ${DPU_F}/dropbox_uploader.sh download ${BK_TO_DOWNLOAD}" ${ENDCOLOR}
+    echo -e ${YELLOW}" > Trying to run ${DPU_F}/dropbox_uploader.sh download ${BK_TO_DOWNLOAD}"${ENDCOLOR}
     ${DPU_F}/dropbox_uploader.sh download ${BK_TO_DOWNLOAD}
 
+
+    echo -e ${CYAN}" > Uncompressing ${CHOSEN_BACKUP}"${ENDCOLOR}
     echo " > Uncompressing ${CHOSEN_BACKUP}" >>$LOG
-    tar -xvjf ${CHOSEN_BACKUP}
+    #tar -xvjf ${CHOSEN_BACKUP}
+    tar xf ${CHOSEN_BACKUP} --use-compress-program=lbzip2 -C linux-lbzip2 
 
     if [[ ${CHOSEN_TYPE} == *"$SITES_F"* ]]; then
 
@@ -285,7 +290,6 @@ else
 
         ask_folder_to_install_sites
 
-        # TODO: Acá usar el directory_browser en vez de buscar con find
         startdir=${FOLDER_TO_INSTALL}
         menutitle="Site Selection Menu"
         directory_browser "$menutitle" "$startdir"
@@ -294,22 +298,34 @@ else
 
         FOLDER_NAME=$(basename $WP_SITE)
 
-        #change wp-config.php database parameters
-        echo "Changing wp-config.php database parameters ..."
-        sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" ${WP_SITE}/wp-config.php
-        sed -i "/DB_NAME/s/'[^']*'/'${PROJECT_NAME}_${PROJECT_STATE}'/2" ${WP_SITE}/wp-config.php
-        sed -i "/DB_USER/s/'[^']*'/'${PROJECT_NAME}_user'/2" ${WP_SITE}/wp-config.php
-        sed -i "/DB_PASSWORD/s/'[^']*'/'${DB_PASS}'/2" ${WP_SITE}/wp-config.php
+        # Change wp-config.php database parameters
+        wp_update_wpconfig "${WP_SITE}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
 
         # TODO: cambiar las secret encryption key
 
         echo -e ${GREEN}" > DONE"${ENDCOLOR}
 
-        # TODO: Checkeamos Cloudflare si es la misma IP y si no cambiamos?
+        # Ask for Cloudflare Root Domain
+        ROOT_DOMAIN=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
+        exitstatus=$?
+        if [ $exitstatus = 0 ]; then
 
-        # echo "Trying to execute certbot for ${CHOSEN_PROJECT} ..."
-        # TODO: certbot --nginx -d ${CHOSEN_PROJECT} -d www.${CHOSEN_PROJECT}
-        # certbot --nginx -d ${CHOSEN_PROJECT} -d www.${CHOSEN_PROJECT}
+          echo "Setting ROOT_DOMAIN="${ROOT_DOMAIN}
+
+          # Cloudflare API to change DNS records
+          echo "Trying to access Cloudflare API and change record ${DOMAIN} ..." >>$LOG
+          echo -e ${YELLOW}"Trying to access Cloudflare API and change record ${DOMAIN} ..."${ENDCOLOR}
+
+          zone_name=${ROOT_DOMAIN}
+          record_name=${DOMAIN}
+          export zone_name record_name
+          ${SFOLDER}/utils/cloudflare_update_IP.sh
+
+        fi
+
+        # HTTPS with Certbot
+        ${SFOLDER}/utils/certbot_manager.sh
+        #certbot_certificate_install "${MAILA}" "${DOMAIN}"
 
       fi
     fi
