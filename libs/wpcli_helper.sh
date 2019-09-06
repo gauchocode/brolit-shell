@@ -5,6 +5,38 @@
 # Version: 3.0
 ################################################################################
 
+wpcli_install() {
+
+    curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+
+    chmod +x wp-cli.phar
+    sudo mv wp-cli.phar /usr/local/bin/wp
+
+}
+
+wpcli_update() {
+    wp cli update
+
+}
+
+wpcli_uninstall() {
+    rm /usr/local/bin/wp
+
+}
+
+wpcli_install_needed_extensions() {
+
+    # Rename DB Prefix
+    wp --allow-root package install iandunn/wp-cli-rename-db-prefix
+    # Image Optimization
+    wp --allow-root package install typisttech/image-optimize-command:@stable
+    # Salts
+    wp --allow-root package install sebastiaandegeus/wp-cli-salts-comman
+    # Vulnerability Scanner
+    #wp --allow-root package install git@github.com:10up/wp-vulnerability-scanner.git
+
+}
+
 wpcli_check_if_installed() {
 
     WPCLI_INSTALLED="true"

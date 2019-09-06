@@ -92,7 +92,6 @@ make_project_backup() {
 
   local BK_TYPE=$1     #configs,sites,databases
   local BK_SUB_TYPE=$2 #config_name,site_domain,database_name
-
   local SITES=$3
   local FOLDER_NAME=$4
 
@@ -104,15 +103,15 @@ make_project_backup() {
 
   #tar -cvf --directory=/root/broobe-utils-scripts/ tmp | pv -p -s $(du -sk /root/broobe-utils-scripts/tmp | cut -f 1)k | lbzip2 -c > /root/broobe-utils-scripts/tmp/backup-maktub_files.tar.bz2
 
-    TAR_FILE=$($TAR --exclude '.git' --exclude '*.log' -cpf ${BAKWP}/${NOW}/${BK_FILE} --directory=${SITES} ${FOLDER_NAME} --use-compress-program=lbzip2)
+  TAR_FILE=$($TAR --exclude '.git' --exclude '*.log' -cpf ${BAKWP}/${NOW}/${BK_FILE} --directory=${SITES} ${FOLDER_NAME} --use-compress-program=lbzip2)
 
   if ${TAR_FILE}; then
 
-    #echo -e ${ORANGE}" > FILE_BK_INDEX: ${FILE_BK_INDEX}"${ENDCOLOR}
-    echo -e ${ORANGE}" > FILE_BK_INDEX: ${FILE_BK_INDEX}"${ENDCOLOR}
-
     BACKUPED_LIST[$FILE_BK_INDEX]=${BK_FILE}
     BACKUPED_FL=${BACKUPED_LIST[$FILE_BK_INDEX]}
+
+    echo -e ${MAGENTA}" > FILE_BK_INDEX: ${FILE_BK_INDEX}"${ENDCOLOR}
+    echo -e ${MAGENTA}" > BACKUPED_FL: ${BACKUPED_FL}"${ENDCOLOR}
 
     # Calculate backup size
     BK_FL_SIZES[$FILE_BK_INDEX]=$(ls -lah ${BAKWP}/${NOW}/${BK_FILE} | awk '{ print $5}')
@@ -123,8 +122,8 @@ make_project_backup() {
 
     echo -e ${CYAN}" > Trying to create folder ${FOLDER_NAME} in Dropbox ..."${ENDCOLOR}
     echo " > Trying to create folder ${FOLDER_NAME} in Dropbox ..." >>$LOG
-    ${DPU_F}/dropbox_uploader.sh mkdir /${SITES_F}
-    ${DPU_F}/dropbox_uploader.sh mkdir /${SITES_F}/${FOLDER_NAME}/
+    ${DPU_F}/dropbox_uploader.sh -q mkdir /${SITES_F}
+    ${DPU_F}/dropbox_uploader.sh -q mkdir /${SITES_F}/${FOLDER_NAME}/
 
     echo -e ${CYAN}" > Uploading ${FOLDER_NAME} to Dropbox ..."${ENDCOLOR}
     echo " > Uploading ${FOLDER_NAME} to Dropbox ..." >>$LOG

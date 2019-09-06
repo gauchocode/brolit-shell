@@ -186,23 +186,6 @@ wpcli_main_menu() {
 
     fi
 
-    #if [[ ${CHOSEN_WPCLI_OPTION} == *"12"* ]]; then
-
-    #Install DOCTOR
-    #https://github.com/wp-cli/doctor-command
-    #  wp package install git@github.com:wp-cli/doctor-command.git --allow-root
-
-    #  echo " > Checking WP Update ..."
-    #  wp --path=${WP_SITE} doctor check core-update --allow-root
-    #  echo " > Verify the site is public as expected ..."
-    #  wp --path=${WP_SITE} doctor check option-blog-public --allow-root
-    #  echo " > Verify cron count ..."
-    #  wp --path=${WP_SITE} doctor check cron-count --allow-root
-    #  echo " > Verify plugin active count ..."
-    #  wp --path=${WP_SITE} doctor check plugin-active-count --allow-root
-    #  echo " > DONE"
-    #fi
-
     wpcli_main_menu
 
   else
@@ -243,7 +226,5 @@ WP_PLUGINS=(
   "better-wp-security" " " off
   "quttera-web-malware-scanner" " " off
 )
-
-# TODO: Probar https://github.com/10up/wp-vulnerability-scanner
 
 wpcli_main_menu

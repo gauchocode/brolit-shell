@@ -11,38 +11,6 @@ source ${SFOLDER}/libs/wpcli_helper.sh
 
 ################################################################################
 
-wpcli_install() {
-
-    curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-
-    chmod +x wp-cli.phar
-    sudo mv wp-cli.phar /usr/local/bin/wp
-
-}
-
-wpcli_update() {
-    wp cli update
-
-}
-
-wpcli_uninstall() {
-    rm /usr/local/bin/wp
-
-}
-
-wpcli_install_needed_extensions() {
-     wp --allow-root package install iandunn/wp-cli-rename-db-prefix
-
-}
-
-# moved to wpcli_helper.sh
-#wpcli_check_if_installed() {
-#    php wp-cli.phar --info
-#
-#}
-
-################################################################################
-
 wpcli_installed="false"
 #wpcli_check_if_installed
 

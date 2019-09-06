@@ -2,7 +2,7 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.9.7
+# Version: 3.0
 ################################################################################
 
 # TODO: Primero correr sin los parametros -mtime -7 y luego setear un option
@@ -20,30 +20,37 @@ if [[ -z "${SFOLDER}" ]]; then
 fi
 ################################################################################
 
-### VARS
+source ${SFOLDER}/libs/commons.sh
+source ${SFOLDER}/libs/mail_notification_helper.sh
+
+################################################################################
+
+# VARS
 JPG_COMPRESS='90'
 
-### Remove old packages from system
-echo " > Cleanning old system packages ..." >>$LOG
-echo -e ${YELLOW}" > Cleanning old system packages ..."${ENDCOLOR}
-apt clean
-apt -y autoremove
-apt -y autoclean
+# Remove old packages from system
+remove_old_packages
 
-### Remove old log files from system
+# Install image optimize packages
+install_image_optimize_packages
+
+# Remove old log files from system
 echo " > Deleting old system logs..." >>$LOG
 echo -e ${YELLOW}" > Deleting old system logs ..."${ENDCOLOR}
 find /var/log/ -mtime +7 -type f -delete
 
+# Run jpegoptim
 echo " > Running jpegoptim ..." >>$LOG
 echo -e ${YELLOW}" > Running jpegoptim ..."${ENDCOLOR}
 cd ${SITES}
-find -mtime -7 -type f -name "*.jpg" -exec jpegoptim --max=${JPG_COMPRESS} --strip-all {} \;
+find -mtime -7 -type f -name "*.jpg" -exec jpegoptim --max=${JPG_COMPRESS} --strip-all --all-progressive {} \;
 
-echo " > Running optipng..." >>$LOG
+# Run optipng
+echo " > Running optipng ..." >>$LOG
 echo -e ${YELLOW}" > Running optipng ..."${ENDCOLOR}
 find -mtime -7 -type f -name "*.png" -exec optipng -o7 -strip all {} \;
 
+# Fix ownership
 echo " > Fixing ownership ..." >>$LOG
 echo -e ${YELLOW}" > Fixing ownership ..."${ENDCOLOR}
 chown -R www-data:www-data *
@@ -51,6 +58,6 @@ chown -R www-data:www-data *
 # Cleanning Swap
 swapoff -a && swapon -a
 
-#Cleanning RAM
+# Cleanning RAM
 sync
 echo 1 >/proc/sys/vm/drop_caches
