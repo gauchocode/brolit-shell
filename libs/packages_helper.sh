@@ -7,27 +7,26 @@
 
 # Check if program is installed (is_this_installed apache2)
 is_this_installed() {
-    if [ "$(dpkg-query -W -f='${Status}' "${1}" 2>/dev/null | grep -c "ok installed")" == "1" ]; then
-        print_text_in_color "$IRed" "${1} is installed, it must be a clean server."
-        exit 1
-    fi
+  if [ "$(dpkg-query -W -f='${Status}' "${1}" 2>/dev/null | grep -c "ok installed")" == "1" ]; then
+    print_text_in_color "$IRed" "${1} is installed, it must be a clean server."
+    exit 1
+  fi
 }
 
 # Install_if_not program
 install_if_not() {
-    if [[ "$(is_this_installed "${1}")" != "${1} is installed, it must be a clean server." ]]; then
-        apt update -q4 &
-        spinner_loading && apt install "${1}" -y
-    fi
+  if [[ "$(is_this_installed "${1}")" != "${1} is installed, it must be a clean server." ]]; then
+    apt update -q4 &
+    spinner_loading && apt install "${1}" -y
+  fi
 }
 
 # Adding PPA (support multiple args)
 # Ex: add_ppa ondrej/php ondrej/nginx
 add_ppa() {
   for i in "$@"; do
-    grep -h "^deb.*$i" /etc/apt/sources.list.d/* > /dev/null 2>&1
-    if [ $? -ne 0 ]
-    then
+    grep -h "^deb.*$i" /etc/apt/sources.list.d/* >/dev/null 2>&1
+    if [ $? -ne 0 ]; then
       echo "Adding ppa:$i"
       add-apt-repository -y ppa:$i
     else
@@ -81,5 +80,21 @@ compare_package_versions() {
       #echo " > ${pk} ${PK_VI} -> ${PK_VC} <br />" >>${BAKWP}/pkg-${NOW}.mail
     fi
   done
+
+}
+
+remove_old_packages() {
+
+  echo " > Cleanning old system packages ..." >>$LOG
+  echo -e ${YELLOW}" > Cleanning old system packages ..."${ENDCOLOR}
+  apt clean
+  apt -y autoremove
+  apt -y autoclean
+
+}
+
+install_image_optimize_packages() {
+
+  apt -y install jpegoptim optipng pngquant gifsicle
 
 }
