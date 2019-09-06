@@ -34,7 +34,7 @@ selected_package_installation() {
   for app in $CHOSEN_APPS; do
     app=$(sed -e 's/^"//' -e 's/"$//' <<<$app) #needed to ommit double quotes
     echo -e ${CYAN}" > Executing ${app} installer ..."${ENDCOLOR}
-    ${SFOLDER}/utils/${app}_installer.sh
+    ${SFOLDER}/utils/installers/${app}_installer.sh
 
   done
 

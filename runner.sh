@@ -274,5 +274,5 @@ remove_mail_notifications_files
 echo " > DONE" >>$LOG
 echo -e ${GREEN}" > DONE"${ENDCOLOR}
 
-### Log End
+# Log End
 echo "Backup: Script End -- $(date +%Y%m%d_%H%M)" >>$LOG

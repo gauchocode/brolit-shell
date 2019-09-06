@@ -176,8 +176,10 @@ mail_filesbackup_section() {
         SIZE_LABEL=""
         FILES_LABEL='<b>Backup files includes:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
         FILES_INC=""
+
         COUNT=0
         for t in "${BACKUPED_LIST[@]}"; do
+            echo -e ${MAGENTA}" > t: ${t}"${ENDCOLOR}
             BK_FL_SIZE=${BK_FL_SIZES[$COUNT]}
             FILES_INC="${FILES_INC} $t ${BK_FL_SIZE}<br />"
             COUNT=$((COUNT + 1))
@@ -225,9 +227,6 @@ mail_mysqlbackup_section() {
     local ERROR_TYPE=$2
     local -n BACKUPED_DB_LIST=$3
     local -n BK_DB_SIZES=$4
-
-    #echo -e ${MAGENTA}" > ERROR: ${ERROR}"${ENDCOLOR}
-    #echo -e ${MAGENTA}" > BACKUPED_DB_LIST: ${BACKUPED_DB_LIST}"${ENDCOLOR}
 
     BK_TYPE="Database"
 
