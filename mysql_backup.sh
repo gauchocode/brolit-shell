@@ -14,7 +14,7 @@ source ${SFOLDER}/libs/commons.sh
 source ${SFOLDER}/libs/mysql_helper.sh
 source ${SFOLDER}/libs/mail_notification_helper.sh
 
-#############################################################################
+################################################################################
 
 make_database_backup() {
 
@@ -51,15 +51,10 @@ make_database_backup() {
     if ${TAR_FILE}; then
 
       BACKUPED_DB_LIST[$DB_BK_INDEX]=${BK_FILE}
+
+      # Calculate backup size
       BK_DB_SIZES[$DB_BK_INDEX]=$(ls -lah ${BK_FILE} | awk '{ print $5}')
       BK_DB_SIZE=${BK_DB_SIZES[$DB_BK_INDEX]}
-
-      echo -e ${MAGENTA}" > BK_FILE: ${BK_FILE}"${ENDCOLOR}
-      echo -e ${MAGENTA}" > DB_BK_INDEX: ${DB_BK_INDEX}"${ENDCOLOR}
-      echo -e ${MAGENTA}" > BACKUPED_DB_LIST[$DB_BK_INDEX]:${BACKUPED_DB_LIST[$DB_BK_INDEX]}"${ENDCOLOR}
-
-      echo -e ${MAGENTA}" > BACKUPED_DB_LIST[0]: ${BACKUPED_DB_LIST[0]}"${ENDCOLOR}
-      echo -e ${MAGENTA}" > BACKUPED_DB_LIST[1]: ${BACKUPED_DB_LIST[1]}"${ENDCOLOR}
 
       echo -e ${CYAN}" > Backup for ${DATABASE} created, final size: ${BK_DB_SIZE} ..."${ENDCOLOR}
       echo " > Backup for ${DATABASE} created, final size: ${BK_DB_SIZE} ..." >>$LOG
