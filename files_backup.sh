@@ -253,8 +253,7 @@ FILE_BK_INDEX=0
 declare -a BACKUPED_LIST
 declare -a BK_FL_SIZES
 
-# LOCALS
-local k=0
+k=0
 
 for j in ${TOTAL_SITES}; do
 
