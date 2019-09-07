@@ -72,7 +72,7 @@ mysql_user_create() {
 
     fi
 
-    mysql -u ${MUSER} -p${MPASS} -e "${SQL1}" >>$LOG
+    mysql -u ${MUSER} -p${MPASS} -e "${SQL1}"
 
     if [ $? -eq 0 ]; then
         #return o if done
@@ -237,10 +237,11 @@ mysql_database_import() {
     DB_NAME=$1
     DUMP_FILE=$2
 
-    echo -e ${YELLOW}" > Importing dump file ${DUMP_FILE} into database: ${DB_NAME} ..."${ENDCOLOR}
+    echo -e ${CYAN}" > Importing dump file ${DUMP_FILE} into database: ${DB_NAME} ..."${ENDCOLOR}
     echo " > Importing dump file ${DUMP_FILE} into database: ${DB_NAME} ..." >>$LOG
 
-    pv ${DUMP_FILE} | mysql -f -u ${MUSER} -p ${MPASS} -f -D ${DB_NAME}
+    #echo -e ${YELLOW}" > RUNNING: pv ${DUMP_FILE} | mysql -f -u${MUSER} -p${MPASS} -f -D ${DB_NAME}"${ENDCOLOR}
+    pv ${DUMP_FILE} | mysql -f -u${MUSER} -p${MPASS} -f -D ${DB_NAME}
 
     if [ $? -eq 0 ]; then
         echo " > Import database ${DB_NAME} OK!" >>$LOG

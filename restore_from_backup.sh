@@ -77,7 +77,7 @@ restore_database_backup() {
   echo -e ${CYAN}" > Creating '${DB_USER}' user in MySQL with pass: ${DB_PASS}"${ENDCOLOR}
   echo "Creating ${DB_USER} user in MySQL with pass: ${DB_PASS}" >>$LOG
 
-  USER_DB_EXISTS=mysql_user_exists "${DB_USER}"
+  USER_DB_EXISTS=$(mysql_user_exists "${DB_USER}")
 
   if [[ ${USER_DB_EXISTS} -eq 0 ]]; then
 
@@ -92,8 +92,8 @@ restore_database_backup() {
   mysql_user_grant_privileges "${DB_USER}" "${DB_NAME}"
 
   # Trying to restore Database
-
-  mysql_database_import "${PROJECT_NAME}_${PROJECT_STATE}" "${CHOSEN_BACKUP%%.*}.sql"
+  CHOSEN_BACKUP="${CHOSEN_BACKUP%%.*}.sql"
+  mysql_database_import "${PROJECT_NAME}_${PROJECT_STATE}" "${CHOSEN_BACKUP}"
 
 }
 
