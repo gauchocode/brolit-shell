@@ -34,7 +34,7 @@ apt --yes update
 echo -e ${GREEN}" > Installing python3-certbot-dns-cloudflare and python3-certbot-nginx ..."${ENDCOLOR}
 echo " > Installing python3-certbot-dns-cloudflare and python3-certbot-nginx ..." >>$LOG
 
-apt install python3-certbot-dns-cloudflare python3-certbot-nginx
+apt --yes install python3-certbot-dns-cloudflare python3-certbot-nginx
 
 echo " > DONE" >>$LOG
 echo -e ${GREEN}" > DONE"${ENDCOLOR}

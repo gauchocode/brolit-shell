@@ -1,23 +1,41 @@
 #!/bin/bash
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 2.9.8
+# Version: 3.0
 ################################################################################
 #
 # Seguir:
 #       https://zabbixtech.info/es/zabbix-es/como-instalar-zabbix-con-nginx-en-ubuntu-linux/
-#       https://linuxize.com/post/how-to-install-and-configure-zabbix-on-ubuntu-18-04/       
+#       https://linuxize.com/post/how-to-install-and-configure-zabbix-on-ubuntu-18-04/
 #
-# Web Monitoring: 
+# Web Monitoring:
 #       https://www.zabbix.com/documentation/4.2/manual/web_monitoring
 #
 ################################################################################
 
-zabbix_create_database() {
+### Checking some things
+if [[ -z "${SFOLDER}" ]]; then
+    echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+    exit 0
+fi
+################################################################################
 
-    #CREATE DATABASE zabbix CHARACTER SET UTF8 COLLATE UTF8_BIN;
-    #CREATE USER 'zabbix'@'%' IDENTIFIED BY 'kamisama123';
-    #GRANT ALL PRIVILEGES ON zabbix.* TO 'zabbix'@'%';
-    #quit;
+source ${SFOLDER}/libs/commons.sh
+source ${SFOLDER}/libs/mysql_helper.sh
+source ${SFOLDER}/libs/mail_notification_helper.sh
+
+################################################################################
+
+zabbix_prepare_database() {
+
+    SQL1="CREATE DATABASE zabbix CHARACTER SET UTF8 COLLATE UTF8_BIN;"
+    SQL2="CREATE USER 'zabbix'@'%' IDENTIFIED BY 'zabbix2020*';"
+    SQL3="GRANT ALL PRIVILEGES ON zabbix.* TO 'zabbix'@'%';"
+
+    mysql -u ${MUSER} -p${MPASS} -e "${SQL1}${SQL2}${SQL3}"
+
+    cd /usr/share/doc/zabbix-server-mysql/
+
+    zcat create.sql.gz | mysql -u${MUSER} zabbix -p${MPASS}
 
 }
 
@@ -31,15 +49,15 @@ zabbix_prepare_database() {
 
 }
 
+# Zabbix 4.2
 zabbix_download_installer() {
 
-    mkdir /downloads
-    cd /downloads
-    wget https://ufpr.dl.sourceforge.net/project/zabbix/ZABBIX%20Latest%20Stable/4.0.3/zabbix-4.0.3.tar.gz
+    cd ${SFOLDER}/tmp/
+    wget http://repo.zabbix.com/zabbix/4.2/ubuntu/pool/main/z/zabbix-release/zabbix-release_4.2-1%2Bbionic_all.deb
 
 }
 
-zabbix_installer() {
+zabbix_server_installer() {
     # groupadd zabbix
     # useradd -g zabbix -s /bin/bash zabbix
 
@@ -47,7 +65,25 @@ zabbix_installer() {
     # apt-get install libopenipmi-dev libcurl4-openssl-dev libxml2-dev libssh2-1-dev libpcre3-dev
     # apt-get install libldap2-dev libiksemel-dev libcurl4-openssl-dev libgnutls28-dev
 
-    # cd /downloads/zabbix-4.0.3/
+    cd ${SFOLDER}/tmp/
+    dpkg -i zabbix-release_4.2-1+bionic_all.deb
+
+    apt update
+
+    apt --yes install zabbix-server-mysql zabbix-frontend-php
+
+    # TODO: ASK FOR SUBDOMAIN
+    ln -s /usr/share/zabbix/ /var/www/${SUBDOMAIN}
+
+    cp ${SFOLDER}/confs/nginx/sites-available/zabbix /etc/nginx/sites-available/${SUBDOMAIN}
+
+    # TODO: REPLACE DOMAIN WITH SED
+
+    ln -s /etc/nginx/sites-available/${SUBDOMAIN} /etc/nginx/sites-enabled/${SUBDOMAIN}
+
+    cd /var/www
+    chown -R www-data:www-data *
+
     # ./configure --enable-server --enable-agent --with-mysql --with-openssl --with-net-snmp --with-openipmi --with-libcurl --with-libxml2 --with-ssh2 --with-ldap
     # make
     # make install
@@ -71,5 +107,16 @@ zabbix_installer() {
     # service nginx start
 
     # http://DOMINIO.COM/zabbix
+
+}
+
+zabbix_agent_installer() {
+
+    cd ${SFOLDER}/tmp/
+    dpkg -i zabbix-release_4.2-1+bionic_all.deb
+
+    apt update
+
+    apt --yes install zabbix-agent
 
 }
