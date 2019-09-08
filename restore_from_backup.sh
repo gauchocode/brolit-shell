@@ -3,8 +3,6 @@
 # Version: 3.0
 ################################################################################
 
-# TODO: NO cambiar el wp-config sin checkear los datos del usuario creado!
-
 # TO-FIX: no restaura la base cuando falla la creación de usuario!
 # TO-FIX: A veces falla el GRANT PRIVILEGES, todos los metodos de mysql deberian usar el mysql_helper.sh
 # TODO: otra opcion 'complete_site' para que intente restaurar archivos y base de un mismo proyecto.
@@ -66,7 +64,6 @@ restore_database_backup() {
     exit 1
   fi
 
-  DB_PASS=$(openssl rand -hex 12)
   DB_USER="${PROJECT_NAME}_user"
   DB_NAME="${PROJECT_NAME}_${PROJECT_STATE}"
 
@@ -74,12 +71,14 @@ restore_database_backup() {
   echo "Creating '${DB_NAME}' database in MySQL ..." >>$LOG
   mysql_database_create "${DB_NAME}"
 
-  echo -e ${CYAN}" > Creating '${DB_USER}' user in MySQL with pass: ${DB_PASS}"${ENDCOLOR}
-  echo "Creating ${DB_USER} user in MySQL with pass: ${DB_PASS}" >>$LOG
-
   USER_DB_EXISTS=$(mysql_user_exists "${DB_USER}")
 
   if [[ ${USER_DB_EXISTS} -eq 0 ]]; then
+
+    DB_PASS=$(openssl rand -hex 12)
+
+    echo -e ${CYAN}" > Creating '${DB_USER}' user in MySQL with pass: ${DB_PASS}"${ENDCOLOR}
+    echo "Creating ${DB_USER} user in MySQL with pass: ${DB_PASS}" >>$LOG
 
     mysql_user_create "${DB_USER}" "${DB_PASS}"
 
@@ -94,6 +93,30 @@ restore_database_backup() {
   # Trying to restore Database
   CHOSEN_BACKUP="${CHOSEN_BACKUP%%.*}.sql"
   mysql_database_import "${PROJECT_NAME}_${PROJECT_STATE}" "${CHOSEN_BACKUP}"
+
+  echo -e ${YELLOW}" > Cleanning temp files ..."${ENDCOLOR}
+  rm ${CHOSEN_BACKUP%%.*}.sql
+  rm ${CHOSEN_BACKUP}
+  echo -e ${GREEN}" > DONE"${ENDCOLOR}
+
+  ask_folder_to_install_sites
+
+  startdir=${FOLDER_TO_INSTALL}
+  menutitle="Site Selection Menu"
+  directory_browser "$menutitle" "$startdir"
+  WP_SITE=$filepath"/"$filename
+  echo "Setting WP_SITE="${WP_SITE}
+
+  #FOLDER_NAME=$(basename $WP_SITE)
+
+  # TODO: NO cambiar el wp-config sin checkear los datos del usuario creado!
+  
+  # Change wp-config.php database parameters
+  wp_update_wpconfig "${WP_SITE}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
+
+  # TODO: cambiar las secret encryption key
+
+  echo -e ${GREEN}" > DONE"${ENDCOLOR}
 
 }
 
@@ -197,9 +220,9 @@ if [[ ${CHOSEN_TYPE} == *"$CONFIG_F"* ]]; then
       echo "TODO: RESTORE LETSENCRYPT CONFIG ..."
     fi
 
-    echo " > Removing ${SFOLDER}/tmp/${CHOSEN_TYPE} ..." >>$LOG
-    echo -e ${GREEN}" > Removing ${SFOLDER}/tmp/${CHOSEN_TYPE} ..."${ENDCOLOR}
-    rm -R ${SFOLDER}/tmp/${CHOSEN_TYPE}
+    #echo " > Removing ${SFOLDER}/tmp/${CHOSEN_TYPE} ..." >>$LOG
+    #echo -e ${GREEN}" > Removing ${SFOLDER}/tmp/${CHOSEN_TYPE} ..."${ENDCOLOR}
+    #rm -R ${SFOLDER}/tmp/${CHOSEN_TYPE}
 
     echo " > DONE ..." >>$LOG
     echo -e ${GREEN}" > DONE ..."${ENDCOLOR}
@@ -225,7 +248,6 @@ else
     BK_TO_DOWNLOAD=${CHOSEN_TYPE}/${CHOSEN_PROJECT}/${CHOSEN_BACKUP}
     echo -e ${YELLOW}" > Trying to run ${DPU_F}/dropbox_uploader.sh download ${BK_TO_DOWNLOAD}"${ENDCOLOR}
     ${DPU_F}/dropbox_uploader.sh download ${BK_TO_DOWNLOAD}
-
 
     echo -e ${CYAN}" > Uncompressing ${CHOSEN_BACKUP}"${ENDCOLOR}
     echo " > Uncompressing ${CHOSEN_BACKUP}" >>$LOG
@@ -283,28 +305,6 @@ else
         make_temp_db_backup
 
         restore_database_backup
-
-        echo -e ${YELLOW}" > Cleanning temp files ..."${ENDCOLOR}
-        rm ${CHOSEN_BACKUP%%.*}.sql
-        rm ${CHOSEN_BACKUP}
-        echo -e ${GREEN}" > DONE"${ENDCOLOR}
-
-        ask_folder_to_install_sites
-
-        startdir=${FOLDER_TO_INSTALL}
-        menutitle="Site Selection Menu"
-        directory_browser "$menutitle" "$startdir"
-        WP_SITE=$filepath"/"$filename
-        echo "Setting WP_SITE="${WP_SITE}
-
-        FOLDER_NAME=$(basename $WP_SITE)
-
-        # Change wp-config.php database parameters
-        wp_update_wpconfig "${WP_SITE}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
-
-        # TODO: cambiar las secret encryption key
-
-        echo -e ${GREEN}" > DONE"${ENDCOLOR}
 
         # Ask for Cloudflare Root Domain
         ROOT_DOMAIN=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
