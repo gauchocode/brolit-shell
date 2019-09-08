@@ -27,7 +27,7 @@ php_installer() {
 
   PHP_V=$1
 
-  apt --yes install php${PHP_V}-fpm php${PHP_V}-mysql php-imagick php${PHP_V}-xml php${PHP_V}-mcrypt php${PHP_V}-cli php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php${PHP_V}-intl php${PHP_V}-zip php${PHP_V}-bz2 php${PHP_V}-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear
+  apt --yes install php${PHP_V}-fpm php${PHP_V}-mysql php-imagick php${PHP_V}-xml php${PHP_V}-cli php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php${PHP_V}-intl php${PHP_V}-zip php${PHP_V}-bz2 php${PHP_V}-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear
 
 }
 
@@ -84,7 +84,7 @@ php_purge_all_installations() {
 
 php_purge_installation() {
   echo " > Removing PHP ${PHP_V} ..." >>$LOG
-  apt --yes purge php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-xml php${PHP_V}-mcrypt php${PHP_V}-cli php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-intl php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear
+  apt --yes purge php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-xml php${PHP_V}-cli php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-intl php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear
 
 }
 
@@ -114,8 +114,10 @@ exitstatus=$?
 if [ $exitstatus = 0 ]; then
 
   if [[ ${CHOSEN_PHP_INSTALLER_OPTION} == *"01"* ]]; then
-    PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
-
+    
+    #PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
+    PHP_V="7.2"
+    
     # Installing packages
     php_installer "${PHP_V}"
     mail_utils_installer
