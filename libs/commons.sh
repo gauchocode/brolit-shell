@@ -579,7 +579,7 @@ wp_update_wpconfig() {
   WP_SITE_PATH=$1
   WP_PROJECT_NAME=$2
   WP_PROJECT_STATE=$3
-  DB_USER_PASS=$3
+  DB_USER_PASS=$4
 
   # Change wp-config.php database parameters
   echo -e ${YELLOW}"Changing wp-config.php database parameters ..."${ENDCOLOR}
