@@ -16,22 +16,21 @@ source ${SFOLDER}/libs/mail_notification_helper.sh
 
 ################################################################################
 
-make_files_backup() {
+make_server_files_backup() {
 
-  # TODO: separar a otra funcion el upload de dropbox y el delete del viejo backup
   # TODO: la funcion deberia retornar el path completo al archivo backupeado. Ej: /root/tmp/bk.tar.bz2
   # TODO: en caso de error debería retornar algo también, quizá el error_type
 
   # TODO: BK_TYPE debería ser "archive, project, server_conf"
   #       BK_SUB_TYPE (pensar si es necesario)
 
-  # $1 = Backup Type
-  # $2 = Backup SubType
+  # $1 = Backup Type: configs, logs, data
+  # $2 = Backup SubType: php,nginx,mysql
   # $3 = Path folder to Backup
   # $4 = Folder to Backup
 
-  BK_TYPE=$1     #configs,sites,databases
-  BK_SUB_TYPE=$2 #config_name,site_domain,database_name
+  BK_TYPE=$1
+  BK_SUB_TYPE=$2
   BK_DIR=$3
   BK_FOLDER=$4
 
@@ -45,12 +44,15 @@ make_files_backup() {
     echo -e ${CYAN}" > Trying to make a backup of ${BK_DIR} ..."${ENDCOLOR}
     echo " > Trying to make a backup of ${BK_DIR} ..." >>$LOG
 
-    TAR_FILE=$($TAR -jcpf ${BAKWP}/${NOW}/${BK_FILE} --directory=${BK_DIR} ${BK_FOLDER})
+    $TAR -cf ${BAKWP}/${NOW}/${BK_FILE} - --directory=${BK_DIR} ${BK_FOLDER} --use-compress-program=lbzip2
 
-    if ${TAR_FILE}; then
+    # Test backup file
+    lbzip2 -t ${BAKWP}/${NOW}/${BK_FILE}
 
-      echo -e ${GREEN}" > ${BK_TYPE} backup created"${ENDCOLOR}
-      echo " > ${BK_TYPE} backup created" >>$LOG
+    if [ $? -eq 0 ]; then
+
+      echo -e ${GREEN}" > ${BK_FILE} backup created"${ENDCOLOR}
+      echo " > ${BK_FILE} backup created" >>$LOG
 
       echo -e ${CYAN}" > Uploading TAR to Dropbox ..."${ENDCOLOR}
       echo " > Uploading TAR to Dropbox ..." >>$LOG
@@ -64,7 +66,7 @@ make_files_backup() {
     else
 
       ERROR=true
-      ERROR_TYPE="ERROR: No such directory or file ${BAKWP}/${NOW}/${BK_SUB_TYPE}-${BK_TYPE}-files-${NOW}.tar.bz2"
+      ERROR_TYPE="ERROR: No such directory or file ${BAKWP}/${NOW}/${BK_FILE}"
 
       echo -e ${RED}" > ERROR: Can't make the backup!"${ENDCOLOR}
       echo $ERROR_TYPE >>$LOG
@@ -83,7 +85,7 @@ make_files_backup() {
 
 }
 
-make_project_backup() {
+make_site_backup() {
 
   # $1 = Backup Type
   # $2 = Backup SubType
@@ -98,20 +100,25 @@ make_project_backup() {
   local OLD_BK_FILE="${FOLDER_NAME}_${BK_TYPE}-files_${ONEWEEKAGO}.tar.bz2"
   local BK_FILE="${FOLDER_NAME}_${BK_TYPE}-files_${NOW}.tar.bz2"
 
-  echo -e ${CYAN}" > Making TAR from: ${FOLDER_NAME} ..."${ENDCOLOR}
-  echo " > Making TAR from: ${FOLDER_NAME} ..." >>$LOG
+  #echo -e ${CYAN}" > Making TAR.BZ2 from: ${FOLDER_NAME} ..."${ENDCOLOR}
+  echo " > Making TAR.BZ2 from: ${FOLDER_NAME} ..." >>$LOG
 
-  #tar -cvf --directory=/root/broobe-utils-scripts/ tmp | pv -p -s $(du -sk /root/broobe-utils-scripts/tmp | cut -f 1)k | lbzip2 -c > /root/broobe-utils-scripts/tmp/backup-maktub_files.tar.bz2
+  (tar --exclude '.git' --exclude '*.log' -cf - --directory=${SITES} ${FOLDER_NAME} | pv -ns $(du -sb ${SITES}/${FOLDER_NAME} | awk '{print $1}') | lbzip2 >${BAKWP}/${NOW}/${BK_FILE}) 2>&1 | dialog --gauge 'Processing '${FILE_BK_INDEX}' of '${COUNT_TOTAL_SITES}' directories. Making tar.bz2 from: '${FOLDER_NAME} 7 70
+  #TAR_FILE=$($TAR --exclude '.git' --exclude '*.log' -cpf ${BAKWP}/${NOW}/${BK_FILE} --directory=${SITES} ${FOLDER_NAME} --use-compress-program=lbzip2)
 
-  TAR_FILE=$($TAR --exclude '.git' --exclude '*.log' -cpf ${BAKWP}/${NOW}/${BK_FILE} --directory=${SITES} ${FOLDER_NAME} --use-compress-program=lbzip2)
+  # Test backup file
+  lbzip2 -t ${BAKWP}/${NOW}/${BK_FILE}
 
-  if ${TAR_FILE}; then
+  if [ $? -eq 0 ]; then
+
+    echo -e ${GREEN}" > ${BK_FILE} OK!"${ENDCOLOR}
+    echo " > ${BK_FILE} OK!" >>$LOG
+
+    #if "${BAKWP}/${NOW}/${BK_FILE}"; then
+    #if ${TAR_FILE}; then
 
     BACKUPED_LIST[$FILE_BK_INDEX]=${BK_FILE}
     BACKUPED_FL=${BACKUPED_LIST[$FILE_BK_INDEX]}
-
-    echo -e ${MAGENTA}" > FILE_BK_INDEX: ${FILE_BK_INDEX}"${ENDCOLOR}
-    echo -e ${MAGENTA}" > BACKUPED_FL: ${BACKUPED_FL}"${ENDCOLOR}
 
     # Calculate backup size
     BK_FL_SIZES[$FILE_BK_INDEX]=$(ls -lah ${BAKWP}/${NOW}/${BK_FILE} | awk '{ print $5}')
@@ -120,17 +127,23 @@ make_project_backup() {
     echo -e ${GREEN}" > Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE} ..."${ENDCOLOR}
     echo " > Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE} ..." >>$LOG
 
-    echo -e ${CYAN}" > Trying to create folder ${FOLDER_NAME} in Dropbox ..."${ENDCOLOR}
-    echo " > Trying to create folder ${FOLDER_NAME} in Dropbox ..." >>$LOG
+    echo -e ${CYAN}" > Trying to create folder in Dropbox ..."${ENDCOLOR}
+    echo " > Trying to create folders in Dropbox ..." >>$LOG
+
     ${DPU_F}/dropbox_uploader.sh -q mkdir /${SITES_F}
-    ${DPU_F}/dropbox_uploader.sh -q mkdir /${SITES_F}/${FOLDER_NAME}/
+
+    # New folder structure with date
+    ${DPU_F}/dropbox_uploader.sh -q mkdir /${SITES_F}/${FOLDER_NAME}
+    #${DPU_F}/dropbox_uploader.sh -q mkdir /${SITES_F}/${FOLDER_NAME}/${NOW}
 
     echo -e ${CYAN}" > Uploading ${FOLDER_NAME} to Dropbox ..."${ENDCOLOR}
     echo " > Uploading ${FOLDER_NAME} to Dropbox ..." >>$LOG
-    ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/${BK_FILE} ${DROPBOX_FOLDER}/${SITES_F}/${FOLDER_NAME}/
+    ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/${BK_FILE} $DROPBOX_FOLDER/${SITES_F}/${FOLDER_NAME}/
+    #${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/${BK_FILE} ${DROPBOX_FOLDER}/${SITES_F}/${FOLDER_NAME}/${NOW}
 
-    echo -e ${CYAN}" > Trying to delete old backup from Dropbox ..."${ENDCOLOR}
-    echo " > Trying to delete old backup from Dropbox ..." >>$LOG
+    echo -e ${CYAN}" > Trying to delete old backup from Dropbox with date ${ONEWEEKAGO} ..."${ENDCOLOR}
+    echo " > Trying to delete old backup from Dropbox with date ${ONEWEEKAGO} ..." >>$LOG
+    #${DPU_F}/dropbox_uploader.sh delete ${DROPBOX_FOLDER}/${SITES_F}/${FOLDER_NAME}/${ONEWEEKAGO}
     ${DPU_F}/dropbox_uploader.sh remove ${DROPBOX_FOLDER}/${SITES_F}/${FOLDER_NAME}/${OLD_BK_FILE}
 
     echo " > Deleting backup from server ..." >>$LOG
@@ -140,7 +153,7 @@ make_project_backup() {
 
   else
     ERROR=true
-    ERROR_TYPE="ERROR: No such directory or file ${BAKWP}/${NOW}/${BK_FILE}"
+    ERROR_TYPE="ERROR: Making backup ${BAKWP}/${NOW}/${BK_FILE}"
     echo ${ERROR_TYPE} >>$LOG
 
   fi
@@ -223,20 +236,20 @@ echo " > Creating Dropbox folder ${CONFIG_F} on Dropbox ..." >>$LOG
 ${DPU_F}/dropbox_uploader.sh mkdir /${CONFIG_F}
 
 # TODO: refactor del manejo de ERRORES
-# ojo que si de make_files_backup sale con error,
+# ojo que si de make_server_files_backup sale con error,
 # en el mail manda warning pero en ningun lugar se muestra el error
 
 # TAR Webserver Config Files
-make_files_backup "configs" "nginx" "${WSERVER}" "."
+make_server_files_backup "configs" "nginx" "${WSERVER}" "."
 
 # TAR PHP Config Files
-make_files_backup "configs" "php" "${PHP_CF}" "."
+make_server_files_backup "configs" "php" "${PHP_CF}" "."
 
 # TAR MySQL Config Files
-make_files_backup "configs" "mysql" "${MySQL_CF}" "."
+make_server_files_backup "configs" "mysql" "${MySQL_CF}" "."
 
 # TAR Let's Encrypt Config Files
-make_files_backup "configs" "letsencrypt" "${LENCRYPT_CF}" "."
+make_server_files_backup "configs" "letsencrypt" "${LENCRYPT_CF}" "."
 
 # Get all directories
 TOTAL_SITES=$(find ${SITES} -maxdepth 1 -type d)
@@ -249,7 +262,7 @@ echo -e ${CYAN}" > ${COUNT_TOTAL_SITES} directory found ..."${ENDCOLOR}
 echo " > ${COUNT_TOTAL_SITES} directory found ..." >>$LOG
 
 # MORE GLOBALS
-FILE_BK_INDEX=0
+FILE_BK_INDEX=1
 declare -a BACKUPED_LIST
 declare -a BK_FL_SIZES
 
@@ -265,15 +278,15 @@ for j in ${TOTAL_SITES}; do
 
     if [[ $SITES_BL != *"${FOLDER_NAME}"* ]]; then
 
-      make_project_backup "site" "${FOLDER_NAME}" "${SITES}" "${FOLDER_NAME}"
-
-      echo -e ${GREEN}" > Processed ${FILE_BK_INDEX} of ${COUNT_TOTAL_SITES} directories"${ENDCOLOR}
-      echo "> Processed ${FILE_BK_INDEX} of ${COUNT_TOTAL_SITES} directories" >>$LOG
+      make_site_backup "site" "${FOLDER_NAME}" "${SITES}" "${FOLDER_NAME}"
 
     else
       echo " > Omiting ${FOLDER_NAME} TAR file (blacklisted) ..." >>$LOG
-      
+
     fi
+
+    echo -e ${GREEN}" > Processed ${FILE_BK_INDEX} of ${COUNT_TOTAL_SITES} directories"${ENDCOLOR}
+    echo "> Processed ${FILE_BK_INDEX} of ${COUNT_TOTAL_SITES} directories" >>$LOG
 
     FILE_BK_INDEX=$((FILE_BK_INDEX + 1))
 

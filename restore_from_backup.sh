@@ -153,12 +153,11 @@ if [[ ${CHOSEN_TYPE} == *"$CONFIG_F"* ]]; then
     mv ${CHOSEN_CONFIG} ${CHOSEN_TYPE}
     cd ${CHOSEN_TYPE}
 
-    echo "Uncompressing ${CHOSEN_CONFIG}" >>$LOG
     echo -e ${YELLOW} "Uncompressing ${CHOSEN_CONFIG}" ${ENDCOLOR}
-    #tar -xvjf ${CHOSEN_CONFIG}
-    tar xf ${CHOSEN_CONFIG} --use-compress-program=lbzip2
-
-    # TODO: intentar backupear config actual e instalar el nuevo (aplica a todo)
+    echo "Uncompressing ${CHOSEN_CONFIG}" >>$LOG
+    
+    pv ${CHOSEN_CONFIG} | tar xp -C ${SFOLDER}/tmp/${CHOSEN_TYPE} --use-compress-program=lbzip2
+    #tar xf ${CHOSEN_CONFIG} --use-compress-program=lbzip2
 
     if [[ "${CHOSEN_CONFIG}" == *"webserver"* ]]; then
 
@@ -251,8 +250,9 @@ else
 
     echo -e ${CYAN}" > Uncompressing ${CHOSEN_BACKUP}"${ENDCOLOR}
     echo " > Uncompressing ${CHOSEN_BACKUP}" >>$LOG
-    #tar -xvjf ${CHOSEN_BACKUP}
-    tar xf ${CHOSEN_BACKUP} --use-compress-program=lbzip2
+
+    pv ${CHOSEN_BACKUP} | tar xp -C ${SFOLDER}/tmp/ --use-compress-program=lbzip2
+    #tar xf ${CHOSEN_BACKUP} --use-compress-program=lbzip2
 
     if [[ ${CHOSEN_TYPE} == *"$SITES_F"* ]]; then
 
