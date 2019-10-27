@@ -2,10 +2,16 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 3.0-alpha3
+# Version: 3.0-beta4
 ################################################################################
 #
-# TODO: Para release 3.2
+# TODO: Para release 3.0 final
+#       1- FIX: el status del SUBJECT de los mails, siempre llega OK
+#       2- Cuando restauramos un backup para la base pregunta el STATUS, pero no para los archivos, 
+#          deberia preguntarte para armar ambientes facil desde un backup.
+#       3- FIX: índice de backups procesados roto y cuenta incluso los que están en BL.
+#
+# TODO: Para release 3.5
 #       1- Terminar php_optimizations deprecando el modelo de Hetzner e integrandolo al Lemp Installer
 #       2- Permitir restore del backup con Duplicity
 #       3- Restore de archivos de configuración
@@ -13,21 +19,22 @@
 #       5- Repensar el server_and_image_optimizations.sh
 #       6- Optimizaciones de MySQL
 #       8- En las notificaciones de mails agregar info de certificados instalados y sus vencimientos 
+#       9- Helper para cambiar nombre de base de datos
+#       10- Utils para tareas de IT (cambiar hostname, asignar IP flotante)
 #
 # TODO: Para release 4.0
 #       1- Permitir varias dropbox apps secundarias configuradas para restaurar desde cualquiera de ellas
-#       2- Soporte para otros sistemas de compresión más rapidos (bz2 es muy lento)
-#       3- Uptime Robot API
-#       4- Terminar updater.sh
-#       5- Opción de cambiar puerto ssh en vps
-#       6- Soporte notificaciones via Telegram: https://adevnull.com/enviar-mensajes-a-telegram-con-bash/
-#       7- Mejoras LEMP setup, que requiera menos intervencion tzdata y mysql_secure_installation
-#       8- Hetzner cloud cli?
+#       2- Uptime Robot API
+#       3- Terminar updater.sh
+#       4- Opción de cambiar puerto ssh en vps
+#       5- Soporte notificaciones via Telegram: https://adevnull.com/enviar-mensajes-a-telegram-con-bash/
+#       6- Mejoras LEMP setup, que requiera menos intervencion tzdata y mysql_secure_installation
+#       7- Hetzner cloud cli?
 #           https://github.com/hetznercloud/cli
 #           https://github.com/thabbs/hetzner-cloud-cli-sh
 #           https://github.com/thlisym/hetznercloud-py
 #           https://hcloud-python.readthedocs.io/en/latest/
-#       9- Web GUI:
+#       8- Web GUI:
 #           https://github.com/bugy/script-server
 #           https://github.com/joewalnes/websocketd
 #
@@ -38,7 +45,7 @@
 # https://google.github.io/styleguide/shell.xml
 #
 
-SCRIPT_V="3.0-alpha3"
+SCRIPT_V="3.0-beta2"
 
 ### Checking some things...#####################################################
 SFOLDER="`dirname \"$0\"`"                                                      # relative
@@ -115,6 +122,12 @@ MUSER="root"
 
 ################################################################################
 
+# Status (STATUS_D, STATUS_F, STATUS_S, OUTDATED)
+STATUS_D=""
+STATUS_F=""
+STATUS_S=""
+OUTDATED=false
+
 # Backup rotation vars
 NOW=$(date +"%Y-%m-%d")
 NOWDISPLAY=$(date +"%d-%m-%Y")
@@ -154,7 +167,7 @@ MYSQLDUMP="$(which mysqldump)"
 TAR="$(which tar)"
 
 # EXPORT VARS (GLOBALS)
-export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL DB_BL WSERVER PHP_CF LENCRYPT_CF MHOST MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR auth_email auth_key
+export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL DB_BL WSERVER PHP_CF LENCRYPT_CF MHOST MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR auth_email auth_key
 
 if [ -t 1 ]; then
 
@@ -256,7 +269,7 @@ else
   MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
 
   # Checking result status for mail subject
-  EMAIL_STATUS=$(mail_subject_status "${STATUS_D}" "${STATUS_F}" "${OUTDATED}")
+  EMAIL_STATUS=$(mail_subject_status "${STATUS_D}" "${STATUS_F}" "${STATUS_S}" "${OUTDATED}")
 
   # Preparing email to send
   echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}

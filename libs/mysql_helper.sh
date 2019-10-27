@@ -47,7 +47,7 @@ count_dabases() {
 #
 #    if [ $? -eq 0 ]; then
 #        echo " > DONE!" >>$LOG
-#        echo -e ${GREN}" > DONE!"${ENDCOLOR}
+#        echo -e ${GREEN}" > DONE!"${ENDCOLOR}
 #    else
 #        echo " > Something went wrong!" >>$LOG
 #        echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
@@ -100,7 +100,7 @@ mysql_user_delete() {
 
     if [ $? -eq 0 ]; then
         echo " > DONE!" >>$LOG
-        echo -e ${GREN}" > DONE!"${ENDCOLOR}
+        echo -e ${GREEN}" > DONE!"${ENDCOLOR}
     else
         echo " > Something went wrong!" >>$LOG
         echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
@@ -125,7 +125,7 @@ mysql_user_psw_change() {
 
     if [ $? -eq 0 ]; then
         echo " > DONE!" >>$LOG
-        echo -e ${GREN}" > DONE!"${ENDCOLOR}
+        echo -e ${GREEN}" > DONE!"${ENDCOLOR}
     else
         echo " > Something went wrong!" >>$LOG
         echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
@@ -150,7 +150,7 @@ mysql_user_grant_privileges() {
 
     if [ $? -eq 0 ]; then
         echo " > DONE!" >>$LOG
-        echo -e ${GREN}" > DONE!"${ENDCOLOR}
+        echo -e ${GREEN}" > DONE!"${ENDCOLOR}
 
         return 0
 
@@ -198,7 +198,7 @@ mysql_database_create() {
 
     if [ $? -eq 0 ]; then
         echo " > DONE!" >>$LOG
-        echo -e ${GREN}" > DONE!"${ENDCOLOR}
+        echo -e ${GREEN}" > DONE!"${ENDCOLOR}
     else
         echo " > Something went wrong!" >>$LOG
         echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
@@ -231,7 +231,7 @@ mysql_database_drop() {
 
 mysql_database_import() {
 
-    # $1 = ${DATABASE}
+    # $1 = ${DATABASE} (.sql)
     # $2 = ${DUMP_FILE}
 
     DB_NAME=$1
@@ -240,7 +240,6 @@ mysql_database_import() {
     echo -e ${CYAN}" > Importing dump file ${DUMP_FILE} into database: ${DB_NAME} ..."${ENDCOLOR}
     echo " > Importing dump file ${DUMP_FILE} into database: ${DB_NAME} ..." >>$LOG
 
-    #echo -e ${YELLOW}" > RUNNING: pv ${DUMP_FILE} | mysql -f -u${MUSER} -p${MPASS} -f -D ${DB_NAME}"${ENDCOLOR}
     pv ${DUMP_FILE} | mysql -f -u${MUSER} -p${MPASS} -f -D ${DB_NAME}
 
     if [ $? -eq 0 ]; then
@@ -280,10 +279,12 @@ mysql_database_export() {
     if [ $? -eq 0 ]; then
         echo " > DB ${DATABASE} exported successfully!" >>$LOG
         echo -e ${GREEN}" > DB ${DATABASE} exported successfully!"${ENDCOLOR}
+    
     else
         echo " > DB ${DATABASE} export failed!" >>$LOG
         echo -e ${RED}" > DB ${DATABASE} export failed!"${ENDCOLOR}
         exit 1
+
     fi
 
 }
@@ -298,7 +299,7 @@ mysql_get_disk_usage() {
 
     if [ $? -eq 0 ]; then
         echo " > DONE!" >>$LOG
-        echo -e ${GREN}" > DONE!"${ENDCOLOR}
+        echo -e ${GREEN}" > DONE!"${ENDCOLOR}
     else
         echo " > Something went wrong!" >>$LOG
         echo -e ${RED}" > Something went wrong!"${ENDCOLOR}

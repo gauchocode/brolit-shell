@@ -197,12 +197,7 @@ wpcli_main_menu() {
 
 ################################################################################
 
-WPCLI_INSTALLED=$(wpcli_check_if_installed)
-
-if [[ "${WPCLI_INSTALLED}" == "false" ]]; then
-  ${SFOLDER}/utils/installers/wpcli_installer.sh
-
-fi
+wpcli_install_if_not_installed
 
 startdir=${SITES}
 menutitle="Site Selection Menu"
