@@ -167,9 +167,11 @@ certbot_certonly() {
 
   # Ref: https://mangolassi.it/topic/18355/setup-letsencrypt-certbot-with-cloudflare-dns-authentication-ubuntu/2
 
-  # $1 = DOMAINS (domain.com,www.domain.com)
+  # $1 = EMAIL
+  # $2 = DOMAINS (domain.com,www.domain.com)
 
-  DOMAINS=$1
+  EMAIL=$1
+  DOMAINS=$2
 
   certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m ${EMAIL} -d ${DOMAINS} --preferred-challenges dns-01
 

@@ -22,15 +22,17 @@ send_mail_notification() {
 
 mail_subject_status() {
 
-    # $1 = ${STATUS_D}
-    # $2 = ${STATUS_F}
-    # $3 = ${OUTDATED}
+    # $1 = ${STATUS_D} // Database backup status
+    # $2 = ${STATUS_F} // Files backup status
+    # $3 = ${STATUS_S} // Server status
+    # $4 = ${OUTDATED} // System Packages status
 
     local STATUS_D=$1
     local STATUS_F=$2
-    local OUTDATED=$3
+    local STATUS_S=$3
+    local OUTDATED=$4
 
-    if [ "${STATUS_D}" = "ERROR" ] || [ "${STATUS_F}" = "ERROR" ]; then
+    if [ "${STATUS_D}" == *"ERROR"* ] || [ "${STATUS_F}" == *"ERROR"* ] || [ "${STATUS_S}" == *"ERROR"* ]; then
         STATUS="⛔ ERROR"
         #STATUS_ICON="⛔"
     else
@@ -65,23 +67,31 @@ mail_server_status_section() {
     local IP=$1
     local DISK_U=$2
 
-    # extract % to compare
+    # Extract % to compare
     local DISK_U_NS=$(echo ${DISK_U} | cut -f1 -d'%')
 
     if [ "$DISK_U_NS" -gt "45" ]; then
-        SRV_COLOR='#fb2f2f'
-        SRV_STATUS='WARNING'
-        SRV_STATUS_ICON="⚠"
+        # Changing global
+        STATUS_S='WARNING'
+
+        # Changing locals
+        STATUS_S_ICON="⚠"
+        STATUS_S_COLOR='#fb2f2f'
+
     else
-        SRV_COLOR='#1DC6DF'
-        SRV_STATUS='OK'
-        SRV_STATUS_ICON="✅"
+        # Changing global
+        STATUS_S='OK'
+
+        # Changing locals
+        STATUS_S_ICON="✅"
+        STATUS_S_COLOR='#1DC6DF'
+        
     fi
 
     SRV_HEADEROPEN_1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
-    SRV_HEADEROPEN_2=${SRV_COLOR}
+    SRV_HEADEROPEN_2=${STATUS_S_COLOR}
     SRV_HEADEROPEN_3=';padding:5px 0 10px 10px;width:100%;height:30px">'
-    SRV_HEADERTEXT="Server Status: ${SRV_STATUS} ${SRV_STATUS_ICON}"
+    SRV_HEADERTEXT="Server Status: ${STATUS_S} ${STATUS_S_ICON}"
     SRV_HEADERCLOSE='</div>'
     SRV_HEADER=${SRV_HEADEROPEN_1}${SRV_HEADEROPEN_2}${SRV_HEADEROPEN_3}${SRV_HEADERTEXT}${SRV_HEADERCLOSE}
 
@@ -136,15 +146,24 @@ mail_package_section() {
 
     local PACKAGES=$1
 
-    OUTDATED=false
+    #OUTDATED=false
+
     echo "" >${BAKWP}/pkg-${NOW}.mail
+
     for pk in ${PACKAGES[@]}; do
+
         PK_VI=$(apt-cache policy ${pk} | grep Installed | cut -d ':' -f 2)
         PK_VC=$(apt-cache policy ${pk} | grep Candidate | cut -d ':' -f 2)
+
         if [ ${PK_VI} != ${PK_VC} ]; then
+
+            # Changing global
             OUTDATED=true
+
             echo " > ${pk} ${PK_VI} -> ${PK_VC} <br />" >>${BAKWP}/pkg-${NOW}.mail
+
         fi
+
     done
 
 }
@@ -164,13 +183,22 @@ mail_filesbackup_section() {
     BK_TYPE="Files"
 
     if [ "$ERROR" = true ]; then
-        STATUS_ICON_F="💩"
+
+        # Changing global
         STATUS_F="ERROR"
-        CONTENT="<b>$BK_TYPE Backup Error: $ERROR_TYPE<br />Please check log file.</b> <br />"
+
+        # Changing locals
+        STATUS_ICON_F="💩"        
+        CONTENT="<b>${BK_TYPE} Backup Error: ${ERROR_TYPE}<br />Please check log file.</b> <br />"
         COLOR='red'
+
     else
-        STATUS_ICON_F="✅"
+
+        # Changing global
         STATUS_F="OK"
+
+        # Changing locals
+        STATUS_ICON_F="✅"        
         CONTENT=""
         COLOR='#1DC6DF'
         SIZE_LABEL=""
@@ -179,17 +207,19 @@ mail_filesbackup_section() {
 
         COUNT=0
         for t in "${BACKUPED_LIST[@]}"; do
-            echo -e ${MAGENTA}" > t: ${t}"${ENDCOLOR}
+            #echo -e ${MAGENTA}" > t: ${t}"${ENDCOLOR}
             BK_FL_SIZE=${BK_FL_SIZES[$COUNT]}
             FILES_INC="${FILES_INC} $t ${BK_FL_SIZE}<br />"
             COUNT=$((COUNT + 1))
+
         done
 
         FILES_LABEL_END='</div>'
 
         if [ "${DUP_BK}" = true ]; then
-            DBK_SIZE=$(du -hs $DUP_ROOT | cut -f1)
-            DBK_SIZE_LABEL="Duplicity Backup size: <b>$DBK_SIZE</b><br /><b>Duplicity Backup includes:</b><br />$DUP_FOLDERS"
+            DBK_SIZE=$(du -hs ${DUP_ROOT} | cut -f1)
+            DBK_SIZE_LABEL="Duplicity Backup size: <b>${DBK_SIZE}</b><br /><b>Duplicity Backup includes:</b><br />${DUP_FOLDERS}"
+
         fi
 
     fi
@@ -231,14 +261,20 @@ mail_mysqlbackup_section() {
     BK_TYPE="Database"
 
     if [ "${ERROR}" = true ]; then
-        STATUS_ICON_D="💩"
+        # Changing global
         STATUS_D="ERROR"
+
+        # Changing locals
+        STATUS_ICON_D="💩"
         CONTENT_D="<b>${BK_TYPE} Backup with errors:<br />${ERROR_TYPE}<br /><br />Please check log file.</b> <br />"
         COLOR_D='red'
 
     else
-        STATUS_ICON_D="✅"
+        # Changing global
         STATUS_D="OK"
+
+        # Changing locals
+        STATUS_ICON_D="✅"
         CONTENT_D=""
         COLOR_D='#1DC6DF'
         SIZE_D=""

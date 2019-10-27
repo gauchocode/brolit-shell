@@ -37,6 +37,8 @@ INSTALLATION_TYPE=$(whiptail --title "INSTALLATION TYPE" --menu "Choose an Insta
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
 
+  wpcli_install_if_not_installed
+
   ask_folder_to_install_sites
 
   if [[ ${INSTALLATION_TYPE} == *"COPY"* ]]; then
@@ -50,83 +52,57 @@ if [ $exitstatus = 0 ]; then
     COPY_PROJECT=$(basename $COPY_PROJECT_PATH)
     echo "Setting COPY_PROJECT="${COPY_PROJECT}
 
-    DOMAIN=$(whiptail --title "Domain" --inputbox "Insert the domain of the Project. Example: landing.broobe.com" 10 60 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    ask_domain_to_install_site
 
-      PROJECT_DIR="${FOLDER_TO_INSTALL}/${DOMAIN}"
-
-      if [ -d "${PROJECT_DIR}" ]; then
-        echo -e ${RED}"ERROR: Destination folder '${PROJECT_DIR}' already exist, aborting ..."${ENDCOLOR}
-        exit 1
-
-      else
-        echo "Setting DOMAIN="${DOMAIN} >>$LOG
-
-      fi
-
-    else
-      exit 1
-    fi
-    ROOT_DOMAIN=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [ $exitstatus = 0 ]; then
-      echo "Setting ROOT_DOMAIN="${ROOT_DOMAIN} >>$LOG
-    else
-      exit 1
-    fi
+    ask_domain_to_cloudflare_config
 
     ask_project_name
 
     ask_project_state
 
-    echo "Trying to make a copy of ${COPY_PROJECT} ..." >>$LOG
-    echo -e ${YELLOW}"Trying to make a copy of ${COPY_PROJECT} ..."${ENDCOLOR}
+    check_if_folder_exists "${FOLDER_TO_INSTALL}" "${DOMAIN}"
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
 
-    cd ${FOLDER_TO_INSTALL}
-    cp -r ${FOLDER_TO_INSTALL}/${COPY_PROJECT} ${PROJECT_DIR}
+      echo "Trying to make a copy of ${COPY_PROJECT} ..." >>$LOG
+      echo -e ${YELLOW}"Trying to make a copy of ${COPY_PROJECT} ..."${ENDCOLOR}
 
-    echo "DONE" >>$LOG
+      cd ${FOLDER_TO_INSTALL}
+      cp -r ${FOLDER_TO_INSTALL}/${COPY_PROJECT} ${PROJECT_DIR}
+
+      echo "DONE" >>$LOG
+
+    else
+
+      echo "FAIL" >>$LOG
+      exit 1
+
+    fi
 
   else
 
-    DOMAIN=$(whiptail --title "Domain" --inputbox "Insert the domain of the Project. Example: landing.broobe.com" 10 60 3>&1 1>&2 2>&3)
+    ask_domain_to_install_site
+
+    ask_domain_to_cloudflare_config
+
+    ask_project_name
+
+    ask_project_state
+
+    check_if_folder_exists "${FOLDER_TO_INSTALL}" "${DOMAIN}"
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      echo "Setting DOMAIN="${DOMAIN}
 
-      ROOT_DOMAIN=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [ $exitstatus = 0 ]; then
-        echo "Setting ROOT_DOMAIN="${ROOT_DOMAIN}
+      wp_download_wordpress
 
-        PROJECT_NAME=$(whiptail --title "Project Name" --inputbox "Please insert a project name. Example: broobe" 10 60 3>&1 1>&2 2>&3)
-        exitstatus=$?
-        if [ $exitstatus = 0 ]; then
-          echo "Setting PROJECT_NAME="${PROJECT_NAME}
-
-          ask_project_state
-
-        else
-          exit 1
-        fi
-
-      else
-        exit 1
-      fi
+      echo "DONE" >>$LOG
 
     else
-      exit 1
-    fi
 
-    if [ -d "${PROJECT_DIR}" ]; then
-      echo "ERROR: Destination folder '${PROJECT_DIR}' already exist, aborting ..." >>$LOG
-      echo -e ${RED}"ERROR: Destination folder '${PROJECT_DIR}' already exist, aborting ..."${ENDCOLOR}
+      echo "FAIL" >>$LOG
       exit 1
 
     fi
-
-    wp_download_wordpress
 
   fi
 
@@ -145,16 +121,15 @@ if [ $exitstatus = 0 ]; then
     echo " > Copying database ..." >>$LOG
     echo -e ${YELLOW}" > Copying database ..."${ENDCOLOR}
 
-    ### Create dump file
+    # Create dump file
     BK_FOLDER=${SFOLDER}/tmp/
 
-    ### We get the database name from the copied wp-config.php
+    # We get the database name from the copied wp-config.php
     SOURCE_WPCONFIG=${FOLDER_TO_INSTALL}/${COPY_PROJECT}
     DB_TOCOPY=$(cat ${SOURCE_WPCONFIG}/wp-config.php | grep DB_NAME | cut -d \' -f 4)
     BK_FILE="db-${DB_TOCOPY}.sql"
 
-    # Make a database Backup 
-    #$MYSQLDUMP --max-allowed-packet=1073741824 -u ${MUSER} -p${MPASS} ${DB_TOCOPY} >${BK_FOLDER}${BK_FILE}
+    # Make a database Backup
     mysql_database_export "${DB_TOCOPY}" "${BK_FOLDER}${BK_FILE}"
 
     if [ "$?" -eq 0 ]; then
@@ -165,10 +140,11 @@ if [ $exitstatus = 0 ]; then
       echo " > Trying to import database ..." >>$LOG
       echo -e ${YELLOW}" > Trying to import database ..."${ENDCOLOR}
 
-      #$MYSQL -u ${MUSER} --password=${MPASS} ${NEW_PROJECT_DB} <${BK_FOLDER}${BK_FILE}
-      mysql_database_import "${NEW_PROJECT_DB}" "${BK_FOLDER}${BK_FILE}"
-
       TARGET_DB="${PROJECT_NAME}_${PROJECT_STATE}"
+      #$MYSQL -u ${MUSER} --password=${MPASS} ${NEW_PROJECT_DB} <${BK_FOLDER}${BK_FILE}
+
+      # Importing dump file
+      mysql_database_import "${TARGET_DB}" "${BK_FOLDER}${BK_FILE}"
 
       # Generate WP tables PREFIX
       TABLES_PREFIX=$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)
@@ -207,11 +183,11 @@ if [ $exitstatus = 0 ]; then
 
   # New site Nginx configuration
   echo " > Trying to generate nginx config for ${DOMAIN} ..." >>$LOG
-  echo -e ${YELLOW}" > Trying to generate nginx config for ${DOMAIN} ..."${ENDCOLOR}
+  echo -e ${CYAN}" > Trying to generate nginx config for ${DOMAIN} ..."${ENDCOLOR}
 
   cp ${SFOLDER}/confs/nginx/sites-available/default /etc/nginx/sites-available/${DOMAIN}
   ln -s /etc/nginx/sites-available/${DOMAIN} /etc/nginx/sites-enabled/${DOMAIN}
-  
+
   # Replacing string to match domain name
   sed -i "s#dominio.com#${DOMAIN}#" /etc/nginx/sites-available/${DOMAIN}
   # Need to run twice
@@ -225,6 +201,8 @@ if [ $exitstatus = 0 ]; then
   # HTTPS with Certbot
   ${SFOLDER}/utils/certbot_manager.sh
   #certbot_certificate_install "${MAILA}" "${DOMAIN}"
+
+  echo -e ${GREEN}" > DONE"${ENDCOLOR}
 
 fi
 

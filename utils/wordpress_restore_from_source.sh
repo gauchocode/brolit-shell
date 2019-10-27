@@ -12,6 +12,14 @@ if [[ -z "${SFOLDER}" ]]; then
 fi
 ################################################################################
 
+source ${SFOLDER}/libs/commons.sh
+source ${SFOLDER}/libs/mysql_helper.sh
+source ${SFOLDER}/libs/mail_notification_helper.sh
+source ${SFOLDER}/libs/packages_helper.sh
+source ${SFOLDER}/libs/wpcli_helper.sh
+
+################################################################################
+
 wp_migration_source() {
 
   WP_MIGRATION_SOURCE="URL DIRECTORY"
@@ -39,10 +47,11 @@ wp_migration_source() {
       if [ $exitstatus = 0 ]; then
         echo "SOURCE_FILES_URL="${SOURCE_FILES_URL} >>$LOG
 
-        SOURCE_DB_URL=$(whiptail --title "Source DB URL" --inputbox "Please insert the URL where backup db is stored." 10 60 "http://example.com/backup-db.zip" 3>&1 1>&2 2>&3)
+        SOURCE_DB_URL=$(whiptail --title "Source DB URL" --inputbox "Please insert the URL where backup db is stored." 10 60 "http://example.com/backup-db.sql.gz" 3>&1 1>&2 2>&3)
         exitstatus=$?
         if [ $exitstatus = 0 ]; then
           echo "SOURCE_DB_URL="${SOURCE_DB_URL} >>$LOG
+
         else
           exit 0
         fi
@@ -83,70 +92,85 @@ if test -f /root/.broobe-utils-options; then
   source /root/.broobe-utils-options
 fi
 
-# TODO: Pedir estos datos con whiptail
+# Project details
+ask_project_name
+echo -e ${MAGENTA}" > PROJECT_NAME= $PROJECT_NAME ..."${ENDCOLOR}
 
-### Database Backup details
-#BK_DB_URL=""
-BK_DB_FILE="adlerDB-2.sql"
-#BK_F_EXT="gz"
+ask_project_domain
+echo -e ${MAGENTA}" > PROJECT_DOMAIN= $PROJECT_DOMAIN ..."${ENDCOLOR}
 
-### Project details
-PROJECT_NAME="adler"
-PROJECT_DOM="adler.broobe.com"
-PROJECT_STATE="dev"
+ask_project_state
+echo -e ${MAGENTA}" > PROJECT_STATE= $PROJECT_STATE ..."${ENDCOLOR}
 
 wp_migration_source
+
+# Database Backup details
+BK_DB_FILE=${SOURCE_DB_URL##*/}
+echo -e ${MAGENTA}" > BK_DB_FILE= ${BK_DB_FILE} ..."${ENDCOLOR}
+
+# File Backup details
+BK_F_FILE=${SOURCE_FILES_URL##*/}
+echo -e ${MAGENTA}" > BK_F_FILE= ${BK_F_FILE} ..."${ENDCOLOR}
 
 ask_folder_to_install_sites
 
 echo " > CREATING TMP DIRECTORY ..."
-cd ${SOURCE_DIR}
-mkdir tmp
+mkdir ${SFOLDER}/tmp
+mkdir ${SFOLDER}/tmp/${PROJECT_DOMAIN}
+cd ${SFOLDER}/tmp/${PROJECT_DOMAIN}
 
 if [ ${WP_MIGRATION_SOURCE} = "DIRECTORY" ]; then
 
-  unzip \*.zip \* -d ${SOURCE_DIR}/tmp
+  unzip \*.zip \* -d ${SFOLDER}/tmp/${PROJECT_DOMAIN}
   # TODO: acá habría que checkear si la instalación es un WP
   # y si está en la raiz o dentro de una carpeta del zip
 
+  # TODO: habria que levantar el seleccionador de archivos para que busque el backup de la BD
+
+  # DB
+  mysql_database_import "${PROJECT_NAME}_${PROJECT_STATE}" "${WP_MIGRATION_SOURCE}/${BK_DB_FILE}"
+
   cd ${FOLDER_TO_INSTALL}
 
-  mkdir ${PROJECT_DOM}
+  #mkdir ${PROJECT_DOMAIN}
 
-  cp -r ${SOURCE_DIR}/tmp ${FOLDER_TO_INSTALL}/${PROJECT_DOM}
-
-  # TODO: ask to remove backup files
+  cp -r ${SFOLDER}/tmp/${PROJECT_DOMAIN} ${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}
 
 else
 
-  echo -e ${YELLOW}" > Downloading file backup ..."${ENDCOLOR}
-  wget $BK_F_URL >>$LOG
+  # Download File Backup
+  echo -e ${CYAN}" > Downloading file backup ..."${ENDCOLOR}
+  wget ${SOURCE_FILES_URL} >>$LOG
 
-  #si BK_EXT es un zip
-  echo -e ${YELLOW}" > Uncompressing file backup ..."${ENDCOLOR}
-  unzip $BK_F_FILE
+  # Uncompressing
+  echo -e ${CYAN}" > Uncompressing file backup ..."${ENDCOLOR}
+  unzip ${BK_F_FILE}
 
-  #si BK_EXT es un tar.bz2
-  #tar xvjf $BK_F_FILE
+  # Download Database Backup
+  echo -e ${CYAN}" > Downloading database backup ..."${ENDCOLOR} >>$LOG
+  wget ${SOURCE_DB_URL} >>$LOG
 
-  ### Download Database Backup
-  echo -e ${YELLOW}" > Downloading database backup ..."${ENDCOLOR} >>$LOG
-  wget $BK_DB_URL >>$LOG
+  # Importing dump file
+  gunzip -c ${BK_DB_FILE} > "${PROJECT_NAME}.sql"
+  mysql_database_import "${PROJECT_NAME}_${PROJECT_STATE}" "${PROJECT_NAME}.sql"
 
-  echo " > Importing dump file into database ..." >>$LOG
-  gunzip <$BK_DB_FILE | mysql -u root -p${MPASS} ${PROJECT_NAME}_${PROJECT_STATE}
+  # Remove downloaded files
+  echo -e ${CYAN}" > Removing downloaded files ..."${ENDCOLOR}
+  rm ${SFOLDER}/tmp/${PROJECT_DOMAIN}/${BK_F_FILE}
+  rm ${SFOLDER}/tmp/${PROJECT_DOMAIN}/${BK_DB_FILE}
 
-  # TODO: ask to remove backup files
+  # Move to ${FOLDER_TO_INSTALL}
+  echo -e ${CYAN}" > Moving ${PROJECT_DOMAIN} to ${FOLDER_TO_INSTALL} ..."${ENDCOLOR}
+  mv ${SFOLDER}/tmp/${PROJECT_DOMAIN} ${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}
 
 fi
 
-chown -R www-data:www-data ${FOLDER_TO_INSTALL}/${PROJECT_DOM}
+chown -R www-data:www-data ${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}
 
 if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${PROJECT_NAME}_user';" | mysql -u root --password=${MPASS} | grep 1 &>/dev/null; then
 
   DB_PASS=$(openssl rand -hex 12)
 
-  ### Vamos a crear el usuario y la base siguiendo el nuevo estandard de broobe
   SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_${PROJECT_STATE};"
   SQL2="CREATE USER '${PROJECT_NAME}_user'@'localhost' IDENTIFIED BY '${DB_PASS}';"
   SQL3="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
@@ -154,7 +178,7 @@ if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${PROJECT_NAME}_user';"
 
   echo -e ${YELLOW}" > Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS} ..."${ENDCOLOR} >>$LOG
 
-  mysql -u root -p${MPASS} -e "${SQL1}${SQL2}${SQL3}${SQL4}" >>$LOG
+  mysql -u${MUSER} -p${MPASS} -e "${SQL1}${SQL2}${SQL3}${SQL4}" >>$LOG
 
   echo -e ${GREEN}" > DONE"${ENDCOLOR}
 
@@ -163,36 +187,31 @@ else
 
   ### Vamos a crear el usuario y la base siguiendo el nuevo estandard de broobe
   SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_${PROJECT_STATE};"
-  SQL2="CREATE USER '${PROJECT_NAME}_user'@'localhost' IDENTIFIED BY '${DB_PASS}';"
-  SQL3="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
-  SQL4="FLUSH PRIVILEGES;"
+  SQL2="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
+  SQL3="FLUSH PRIVILEGES;"
 
   echo -e ${YELLOW}" > Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and granting privileges to user: ${PROJECT_NAME}_user ..."${ENDCOLOR} >>$LOG
 
-  mysql -u root -p${MPASS} -e "${SQL1}${SQL2}${SQL3}${SQL4}" >>$LOG
+  mysql -u${MUSER} -p${MPASS} -e "${SQL1}${SQL2}${SQL3}" >>$LOG
 
   echo -e ${GREEN}" > DONE"${ENDCOLOR}
 
 fi
 
-# DB
-mysql_database_import "${PROJECT_NAME}_${PROJECT_STATE}" "${BK_F_FILE}"
-
 # Change wp-config.php database parameters
-wp_update_wpconfig "${FOLDER_TO_INSTALL}/${PROJECT_DOM}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
-
-#rm $BK_DB_FILE
+wp_update_wpconfig "${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
 
 # Create nginx config files for site
 echo -e "\nCreating nginx configuration file...\n" >>$LOG
-sudo cp ${SFOLDER}/confs/nginx/sites-available/default /etc/nginx/sites-available/${PROJECT_DOM}
-ln -s /etc/nginx/sites-available/${PROJECT_DOM} /etc/nginx/sites-enabled/${PROJECT_DOM}
+sudo cp ${SFOLDER}/confs/nginx/sites-available/default /etc/nginx/sites-available/${PROJECT_DOMAIN}
+ln -s /etc/nginx/sites-available/${PROJECT_DOMAIN} /etc/nginx/sites-enabled/${PROJECT_DOMAIN}
 
 # Replace string to match domain name
+
 #sudo replace "domain.com" "$DOMAIN" -- /etc/nginx/sites-available/default
-sudo sed -i "s#dominio.com#${PROJECT_DOM}#" /etc/nginx/sites-available/${PROJECT_DOM}
+sudo sed -i "s#dominio.com#${PROJECT_DOMAIN}#" /etc/nginx/sites-available/${PROJECT_DOMAIN}
 #es necesario correrlo dos veces para reemplazarlo dos veces en una misma linea
-sudo sed -i "s#dominio.com#${PROJECT_DOM}#" /etc/nginx/sites-available/${PROJECT_DOM}
+sudo sed -i "s#dominio.com#${PROJECT_DOMAIN}#" /etc/nginx/sites-available/${PROJECT_DOMAIN}
 
 # Reload webserver
 service nginx reload
@@ -208,11 +227,11 @@ if [ $exitstatus = 0 ]; then
   echo "Setting ROOT_DOMAIN="${ROOT_DOMAIN}
 
   # Cloudflare API to change DNS records
-  echo "Trying to access Cloudflare API and change record ${PROJECT_DOM} ..." >>$LOG
-  echo -e ${YELLOW}"Trying to access Cloudflare API and change record ${PROJECT_DOM} ..."${ENDCOLOR}
+  echo "Trying to access Cloudflare API and change record ${PROJECT_DOMAIN} ..." >>$LOG
+  echo -e ${YELLOW}"Trying to access Cloudflare API and change record ${PROJECT_DOMAIN} ..."${ENDCOLOR}
 
   zone_name=${ROOT_DOMAIN}
-  record_name=${PROJECT_DOM}
+  record_name=${PROJECT_DOMAIN}
   export zone_name record_name
   ${SFOLDER}/utils/cloudflare_update_IP.sh
 
@@ -232,8 +251,8 @@ echo "Backup :: Script End -- $(date +%Y%m%d_%H%M)" >>$LOG
 
 HTMLOPEN='<html><body>'
 BODY_SRV_MIG='Migración finalizada en '${ELAPSED_TIME}'<br/>'
-BODY_DB='Database: '${PROJECT_NAME}'_prod <br/>Database User: '${PROJECT_NAME}'_user <br/>Database User Pass: '${DB_PASS}'<br/>'
-BODY_CLF='Ya podes cambiar la IP en CloudFlare: '${IP}'<br/>'
+BODY_DB='Database: '${PROJECT_NAME}'_'${PROJECT_STATE}'<br/>Database User: '${PROJECT_NAME}'_user <br/>Database User Pass: '${DB_PASS}'<br/>'
+#BODY_CLF='Ya podes cambiar la IP en CloudFlare: '${IP}'<br/>'
 HTMLCLOSE='</body></html>'
 
 sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${VPSNAME} - Migration Complete: ${PROJECT_NAME}" -o message-content-type=html -m "$HTMLOPEN $BODY_SRV_MIG $BODY_DB $BODY_CLF $HTMLCLOSE" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}

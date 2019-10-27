@@ -40,7 +40,7 @@ main_menu() {
       source ${SFOLDER}/restore_from_backup.sh
     fi
     if [[ ${CHOSEN_TYPE} == *"03"* ]]; then
-      source ${SFOLDER}/utils/installers/wordpress_restore_from_source.sh
+      source ${SFOLDER}/utils/wordpress_restore_from_source.sh
 
     fi
 
@@ -130,7 +130,7 @@ main_menu() {
 
 backup_menu() {
 
-  BACKUP_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP 03 BACKUP_ALL"
+  BACKUP_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP 03 BACKUP_ALL 04 PROJECT_BACKUP"
   CHOSEN_BACKUP_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a Backup Type to run" 20 78 10 $(for x in ${BACKUP_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   # Preparing Mail Notifications Template
@@ -246,6 +246,13 @@ backup_menu() {
         esac
 
       done
+
+    fi
+
+    if [[ ${CHOSEN_BACKUP_TYPE} == *"04"* ]]; then
+
+      # Running script
+      ${SFOLDER}/project_backup.sh
 
     fi
 
@@ -550,6 +557,26 @@ calculate_disk_usage() {
 
 }
 
+check_if_folder_exists() {
+
+  # $1 = ${FOLDER_TO_INSTALL}
+  # $2 = ${DOMAIN}
+
+  FOLDER_TO_INSTALL=$1
+  DOMAIN=$2
+
+  PROJECT_DIR="${FOLDER_TO_INSTALL}/${DOMAIN}"
+  if [ -d "${PROJECT_DIR}" ]; then
+    echo -e ${RED}"ERROR: Destination folder '${PROJECT_DIR}' already exist, aborting ..."${ENDCOLOR}
+    return 1
+
+  else
+    echo -e ${YELLOW}"OK: Destination folder '${PROJECT_DIR}' ..."${ENDCOLOR}
+    return 0
+
+  fi
+}
+
 ################################################################################
 # WP HELPERS
 ################################################################################
@@ -589,7 +616,7 @@ wp_update_wpconfig() {
   sed -i "/DB_NAME/s/'[^']*'/'${WP_PROJECT_NAME}_${WP_PROJECT_STATE}'/2" ${WP_SITE_PATH}/wp-config.php
   sed -i "/DB_USER/s/'[^']*'/'${WP_PROJECT_NAME}_user'/2" ${WP_SITE_PATH}/wp-config.php
   sed -i "/DB_PASSWORD/s/'[^']*'/'${DB_USER_PASS}'/2" ${WP_SITE_PATH}/wp-config.php
- 
+
 }
 
 # Used in:
@@ -652,8 +679,11 @@ wp_database_creation() {
     SQL3="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
     SQL4="FLUSH PRIVILEGES;"
 
-    echo -e ${YELLOW}" > Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS} ..."${ENDCOLOR}
-    echo " > Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS} ..." >>$LOG
+    echo -e ${CYAN}"***********************************************************************************************"${ENDCOLOR}
+    echo -e ${CYAN}" > Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS}"${ENDCOLOR}
+    echo -e ${CYAN}"***********************************************************************************************"${ENDCOLOR}
+
+    echo " > Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS}" >>$LOG
 
     $MYSQL -u ${MUSER} --password=${MPASS} -e "${SQL1}${SQL2}${SQL3}${SQL4}"
 
@@ -714,9 +744,12 @@ ask_project_state() {
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
     echo -e ${YELLOW}"Project state selected: ${PROJECT_STATE} ..."${ENDCOLOR}
+    echo "Setting PROJECT_STATE="${PROJECT_STATE} >>$LOG
+    return 0
 
   else
-    exit 1
+    return 1
+
   fi
 
 }
@@ -726,9 +759,57 @@ ask_project_name() {
   PROJECT_NAME=$(whiptail --title "Project Name" --inputbox "Please insert a project name. Example: broobe" 10 60 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-    echo "Setting PROJECT_NAME="${PROJECT_NAME} >>$LOG
+    echo -e ${YELLOW}"PROJECT_NAME= ${PROJECT_NAME}"${ENDCOLOR}
+    echo "Setting PROJECT_NAME= "${PROJECT_NAME} >>$LOG
+    return 0
+
+  else
+    return 1
+
+  fi
+
+}
+
+ask_project_domain() {
+
+  PROJECT_DOMAIN=$(whiptail --title "Project Domain" --inputbox "Please insert a project domain. Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    echo "Setting PROJECT_DOMAIN="${PROJECT_DOMAIN} >>$LOG
+    return 0
+
+  else
+    return 1
+
+  fi
+
+}
+
+ask_domain_to_install_site() {
+
+  DOMAIN=$(whiptail --title "Domain" --inputbox "Insert the domain of the Project. Example: landing.broobe.com" 10 60 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    echo "Setting DOMAIN="${DOMAIN} >>$LOG
+    return 0
+
+  else
+    return 1
+
+  fi
+
+}
+
+ask_domain_to_cloudflare_config() {
+
+  ROOT_DOMAIN=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    echo "Setting ROOT_DOMAIN="${ROOT_DOMAIN} >>$LOG
+
   else
     exit 1
+
   fi
 
 }

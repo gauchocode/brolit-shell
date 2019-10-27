@@ -36,49 +36,64 @@ add_ppa() {
 }
 
 check_packages_required() {
-  ### Check if sendemail is installed
+
+  # Check if sendemail is installed
   SENDEMAIL="$(which sendemail)"
   if [ ! -x "${SENDEMAIL}" ]; then
     apt -y install sendemail libio-socket-ssl-perl
   fi
 
-  ### Check if pv is installed
+  # Check if pv is installed
   PV="$(which pv)"
   if [ ! -x "${PV}" ]; then
     apt -y install pv
   fi
 
-  ### Check if bc is installed
+  # Check if bc is installed
   BC="$(which bc)"
   if [ ! -x "${BC}" ]; then
     apt -y install bc
   fi
 
-  ### Check if dig is installed
+  # Check if dig is installed
   DIG="$(which dig)"
   if [ ! -x "${DIG}" ]; then
     apt -y install dnsutils
   fi
 
-  ### Check if lbzip2 is installed
+  # Check if lbzip2 is installed
   LBZIP2="$(which lbzip2)"
   if [ ! -x "${LBZIP2}" ]; then
     apt -y install lbzip2
   fi
 
+  # Check if dialog is installed
+  DIALOG="$(which dialog)"
+  if [ ! -x "${DIALOG}" ]; then
+    apt -y install dialog
+  fi
+
 }
 
 compare_package_versions() {
+
   OUTDATED=false
+
   #echo "" >${BAKWP}/pkg-${NOW}.mail
+
   for pk in ${PACKAGES[@]}; do
+
     PK_VI=$(apt-cache policy ${pk} | grep Installed | cut -d ':' -f 2)
     PK_VC=$(apt-cache policy ${pk} | grep Candidate | cut -d ':' -f 2)
+
     if [ ${PK_VI} != ${PK_VC} ]; then
+
       OUTDATED=true
       # TODO: meterlo en un array para luego loopear
       #echo " > ${pk} ${PK_VI} -> ${PK_VC} <br />" >>${BAKWP}/pkg-${NOW}.mail
+
     fi
+
   done
 
 }
