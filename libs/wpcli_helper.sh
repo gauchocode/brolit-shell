@@ -5,6 +5,16 @@
 # Version: 3.0
 ################################################################################
 
+wpcli_install_if_not_installed() {
+
+    # Check if wp-cli is installed
+    WPCLI="$(which wp)"
+    if [ ! -x "${WPCLI}" ]; then
+        wpcli_install
+    fi
+
+}
+
 wpcli_install() {
 
     curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
@@ -189,3 +199,13 @@ wpcli_search_and_replace() {
 
 }
 
+wpcli_export_db(){
+
+    # $1 = ${WP_SITE} (site path)
+    # $2 = ${DB}
+
+    WP_SITE=$1
+    DB=$2
+
+    wp --allow-root --path=${WP_SITE} db export ${DB}
+}
