@@ -101,10 +101,14 @@ mysql_user_delete() {
     if [ $? -eq 0 ]; then
         echo " > DONE!" >>$LOG
         echo -e ${GREEN}" > DONE!"${ENDCOLOR}
+        return 0
+
     else
         echo " > Something went wrong!" >>$LOG
         echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
         exit 1
+        #return 1
+
     fi
 
 }
@@ -126,10 +130,13 @@ mysql_user_psw_change() {
     if [ $? -eq 0 ]; then
         echo " > DONE!" >>$LOG
         echo -e ${GREEN}" > DONE!"${ENDCOLOR}
+        return 0
+
     else
         echo " > Something went wrong!" >>$LOG
         echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
         exit 1
+
     fi
 
 }
@@ -151,13 +158,11 @@ mysql_user_grant_privileges() {
     if [ $? -eq 0 ]; then
         echo " > DONE!" >>$LOG
         echo -e ${GREEN}" > DONE!"${ENDCOLOR}
-
         return 0
 
     else
         echo " > Something went wrong!" >>$LOG
         echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
-
         return 1
 
     fi
@@ -173,12 +178,10 @@ mysql_user_exists() {
     DB_PASS=$2
 
     if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${DB_USER}';" | mysql -u ${MUSER} --password=${MPASS} | grep 1 &>/dev/null; then
-
         #return 0 if user don't exists
         return 0
 
     else
-
         #return 1 if user already exists
         return 1
 
@@ -199,10 +202,13 @@ mysql_database_create() {
     if [ $? -eq 0 ]; then
         echo " > DONE!" >>$LOG
         echo -e ${GREEN}" > DONE!"${ENDCOLOR}
+        return 0
+
     else
         echo " > Something went wrong!" >>$LOG
         echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
         exit 1
+
     fi
 
 }
@@ -221,10 +227,13 @@ mysql_database_drop() {
     if [ $? -eq 0 ]; then
         echo " > Database ${DB} deleted!" >>$LOG
         echo -e ${GREEN}" > Database ${DB} deleted!"${ENDCOLOR}
+        return 0
+
     else
         echo " > Something went wrong!" >>$LOG
         echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
         exit 1
+        
     fi
 
 }
@@ -245,6 +254,7 @@ mysql_database_import() {
     if [ $? -eq 0 ]; then
         echo " > Import database ${DB_NAME} OK!" >>$LOG
         echo -e ${GREEN}" > Import database ${DB_NAME} OK!"${ENDCOLOR}
+        return 0
 
     else
         echo " > Import database ${DB_NAME} failed!" >>$LOG
@@ -300,10 +310,13 @@ mysql_get_disk_usage() {
     if [ $? -eq 0 ]; then
         echo " > DONE!" >>$LOG
         echo -e ${GREEN}" > DONE!"${ENDCOLOR}
+        return 0
+
     else
         echo " > Something went wrong!" >>$LOG
         echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
         exit 1
+
     fi
 
 }

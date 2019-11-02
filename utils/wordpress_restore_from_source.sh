@@ -36,8 +36,10 @@ wp_migration_source() {
       exitstatus=$?
       if [ $exitstatus = 0 ]; then
         echo "SOURCE_DIR="${SOURCE_DIR} >>$LOG
+
       else
-        exit 0
+        exit 1
+
       fi
 
     else
@@ -94,13 +96,10 @@ fi
 
 # Project details
 ask_project_name
-echo -e ${MAGENTA}" > PROJECT_NAME= $PROJECT_NAME ..."${ENDCOLOR}
 
 ask_project_domain
-echo -e ${MAGENTA}" > PROJECT_DOMAIN= $PROJECT_DOMAIN ..."${ENDCOLOR}
 
 ask_project_state
-echo -e ${MAGENTA}" > PROJECT_STATE= $PROJECT_STATE ..."${ENDCOLOR}
 
 wp_migration_source
 
@@ -150,6 +149,9 @@ else
   echo -e ${CYAN}" > Downloading database backup ..."${ENDCOLOR} >>$LOG
   wget ${SOURCE_DB_URL} >>$LOG
 
+  # Create database and user
+  wp_database_creation "${PROJECT_NAME}" "${PROJECT_STATE}"
+
   # Importing dump file
   gunzip -c ${BK_DB_FILE} > "${PROJECT_NAME}.sql"
   mysql_database_import "${PROJECT_NAME}_${PROJECT_STATE}" "${PROJECT_NAME}.sql"
@@ -167,39 +169,16 @@ fi
 
 chown -R www-data:www-data ${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}
 
-if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${PROJECT_NAME}_user';" | mysql -u root --password=${MPASS} | grep 1 &>/dev/null; then
-
-  DB_PASS=$(openssl rand -hex 12)
-
-  SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_${PROJECT_STATE};"
-  SQL2="CREATE USER '${PROJECT_NAME}_user'@'localhost' IDENTIFIED BY '${DB_PASS}';"
-  SQL3="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
-  SQL4="FLUSH PRIVILEGES;"
-
-  echo -e ${YELLOW}" > Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS} ..."${ENDCOLOR} >>$LOG
-
-  mysql -u${MUSER} -p${MPASS} -e "${SQL1}${SQL2}${SQL3}${SQL4}" >>$LOG
-
-  echo -e ${GREEN}" > DONE"${ENDCOLOR}
-
-else
-  echo " > User: ${PROJECT_NAME}_user already exist. Continue ..." >>$LOG
-
-  ### Vamos a crear el usuario y la base siguiendo el nuevo estandard de broobe
-  SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_${PROJECT_STATE};"
-  SQL2="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
-  SQL3="FLUSH PRIVILEGES;"
-
-  echo -e ${YELLOW}" > Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and granting privileges to user: ${PROJECT_NAME}_user ..."${ENDCOLOR} >>$LOG
-
-  mysql -u${MUSER} -p${MPASS} -e "${SQL1}${SQL2}${SQL3}" >>$LOG
-
-  echo -e ${GREEN}" > DONE"${ENDCOLOR}
-
-fi
-
 # Change wp-config.php database parameters
-wp_update_wpconfig "${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
+#wp_update_wpconfig "${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
+PROJECT_DIR="${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}"
+if [[ -z "${DB_PASS}" ]]; then
+  wp_update_wpconfig "${PROJECT_DIR}" "${PROJECT_NAME}" "${PROJECT_STATE}" ""
+  
+else
+  wp_update_wpconfig "${PROJECT_DIR}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
+  
+fi
 
 # Create nginx config files for site
 echo -e "\nCreating nginx configuration file...\n" >>$LOG
