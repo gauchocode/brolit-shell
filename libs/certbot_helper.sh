@@ -8,18 +8,6 @@
 # Ref: https://certbot.eff.org/docs/using.html
 #
 
-### Checking some things
-if [[ -z "${SFOLDER}" ]]; then
-  echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
-  exit 0
-fi
-################################################################################
-
-source ${SFOLDER}/libs/commons.sh
-source ${SFOLDER}/libs/packages_helper.sh
-
-################################################################################
-
 certbot_certificate_install() {
 
   #$1 = EMAIL
