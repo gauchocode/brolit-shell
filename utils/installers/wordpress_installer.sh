@@ -25,6 +25,7 @@ source ${SFOLDER}/libs/commons.sh
 source ${SFOLDER}/libs/mail_notification_helper.sh
 source ${SFOLDER}/libs/mysql_helper.sh
 source ${SFOLDER}/libs/wpcli_helper.sh
+source ${SFOLDER}/libs/certbot_helper.sh
 
 ################################################################################
 
@@ -63,7 +64,7 @@ if [ $exitstatus = 0 ]; then
     check_if_folder_exists "${FOLDER_TO_INSTALL}" "${DOMAIN}"
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-
+      # Make a copy of the existing project
       echo "Trying to make a copy of ${COPY_PROJECT} ..." >>$LOG
       echo -e ${YELLOW}"Trying to make a copy of ${COPY_PROJECT} ..."${ENDCOLOR}
 
@@ -92,13 +93,11 @@ if [ $exitstatus = 0 ]; then
     check_if_folder_exists "${FOLDER_TO_INSTALL}" "${DOMAIN}"
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-
+      # Download WP
       wp_download_wordpress
-
       echo "DONE" >>$LOG
 
     else
-
       echo "FAIL" >>$LOG
       exit 1
 
@@ -111,8 +110,18 @@ if [ $exitstatus = 0 ]; then
   WPCONFIG=${PROJECT_DIR}/wp-config.php
 
   # Create database and user
-  wp_database_creation
+  wp_database_creation "${PROJECT_NAME}" "${PROJECT_STATE}"
 
+  # Update wp-config.php
+  #if [[ ${DB_PASS} != "" ]]; then
+  if [[ -z "${DB_PASS}" ]]; then
+    wp_update_wpconfig "${PROJECT_DIR}" "${PROJECT_NAME}" "${PROJECT_STATE}" ""
+  
+  else
+    wp_update_wpconfig "${PROJECT_DIR}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
+  
+  fi
+  
   # Set WP salts
   wp_set_salts
 
@@ -131,7 +140,6 @@ if [ $exitstatus = 0 ]; then
 
     # Make a database Backup
     mysql_database_export "${DB_TOCOPY}" "${BK_FOLDER}${BK_FILE}"
-
     if [ "$?" -eq 0 ]; then
 
       echo " > mysqldump for ${DB_TOCOPY} OK ..." >>$LOG
@@ -160,7 +168,6 @@ if [ $exitstatus = 0 ]; then
       ask_url_search_and_replace "${PROJECT_DIR}"
 
     else
-
       echo " > mysqldump ERROR: $? ..." >>$LOG
       echo -e ${RED}" > mysqldump ERROR: $? ..."${ENDCOLOR}
       echo -e ${RED}" > Aborting ..."${ENDCOLOR}
@@ -199,8 +206,7 @@ if [ $exitstatus = 0 ]; then
   echo " > Nginx configuration loaded!" >>$LOG
 
   # HTTPS with Certbot
-  ${SFOLDER}/utils/certbot_manager.sh
-  #certbot_certificate_install "${MAILA}" "${DOMAIN}"
+  certbot_certificate_install "${MAILA}" "${DOMAIN}"
 
   echo -e ${GREEN}" > DONE"${ENDCOLOR}
 
