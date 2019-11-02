@@ -45,7 +45,7 @@
 # https://google.github.io/styleguide/shell.xml
 #
 
-SCRIPT_V="3.0-beta2"
+SCRIPT_V="3.0-beta4"
 
 ### Checking some things...#####################################################
 SFOLDER="`dirname \"$0\"`"                                                      # relative

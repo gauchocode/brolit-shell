@@ -611,18 +611,24 @@ wp_update_wpconfig() {
   # Change wp-config.php database parameters
   echo -e ${YELLOW}"Changing wp-config.php database parameters ..."${ENDCOLOR}
   echo " > Changing wp-config.php database parameters ..." >>$LOG
-
+  
   sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" ${WP_SITE_PATH}/wp-config.php
-  sed -i "/DB_NAME/s/'[^']*'/'${WP_PROJECT_NAME}_${WP_PROJECT_STATE}'/2" ${WP_SITE_PATH}/wp-config.php
-  sed -i "/DB_USER/s/'[^']*'/'${WP_PROJECT_NAME}_user'/2" ${WP_SITE_PATH}/wp-config.php
-  sed -i "/DB_PASSWORD/s/'[^']*'/'${DB_USER_PASS}'/2" ${WP_SITE_PATH}/wp-config.php
+  
+  if [[ ${WP_PROJECT_NAME} != "" ]]; then
+    sed -i "/DB_NAME/s/'[^']*'/'${WP_PROJECT_NAME}_${WP_PROJECT_STATE}'/2" ${WP_SITE_PATH}/wp-config.php
+  fi
+  if [[ ${DB_USER_PASS} != "" ]]; then
+    sed -i "/DB_USER/s/'[^']*'/'${WP_PROJECT_NAME}_user'/2" ${WP_SITE_PATH}/wp-config.php
+    sed -i "/DB_PASSWORD/s/'[^']*'/'${DB_USER_PASS}'/2" ${WP_SITE_PATH}/wp-config.php
+  fi
 
 }
 
-# Used in:
-# restore_from_backup.sh
-# wordpress_installer.sh
 wp_change_ownership() {
+
+  # Used in:
+  # restore_from_backup.sh
+  # wordpress_installer.sh
 
   # $1 = ${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT} or ${FOLDER_TO_INSTALL}/${DOMAIN}
 
@@ -641,10 +647,12 @@ wp_change_ownership() {
   echo -e ${GREEN}" > DONE"${ENDCOLOR}
 }
 
-# Used in:
-# wordpress_installer.sh
 # TODO: ver como hacer eso independientemente del idioma
 wp_set_salts() {
+
+  # Used in:
+  # wordpress_installer.sh
+
   # English
   perl -i -pe'
     BEGIN {
@@ -665,10 +673,23 @@ wp_set_salts() {
   ' ${WPCONFIG}
 }
 
-# Used in:
-# restore_from_backup.sh
-# wordpress_installer.sh
 wp_database_creation() {
+
+  # Used in:
+  # restore_from_backup.sh
+  # wordpress_installer.sh
+  # wordpress_restore_from_source.sh
+
+  # Parameters
+  # $1 = ${PROJECT_NAME}
+  # $2 = ${PROJECT_STATE}
+
+  # Return: 
+  # 0 if DB_USER not exits
+  # 1 if DB_USER already exists
+
+  PROJECT_NAME=$1
+  PROJECT_STATE=$2
 
   if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${PROJECT_NAME}_user';" | $MYSQL -u ${MUSER} --password=${MPASS} | grep 1 &>/dev/null; then
 
@@ -689,15 +710,18 @@ wp_database_creation() {
 
     if [ $? -eq 0 ]; then
       echo " > DONE!" >>$LOG
-      echo -e ${GREN}" > DONE!"${ENDCOLOR}
+      echo -e ${GREEN}" > DONE!"${ENDCOLOR}
+      return 0
+
     else
       echo " > Something went wrong!" >>$LOG
       echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
       exit 1
+
     fi
 
-    echo -e ${YELLOW}" > Changing wp-config.php database parameters ..."${ENDCOLOR}
-    sed -i "/DB_PASSWORD/s/'[^']*'/'${DB_PASS}'/2" ${WPCONFIG}
+    #echo -e ${YELLOW}" > Changing wp-config.php database parameters ..."${ENDCOLOR}
+    #sed -i "/DB_PASSWORD/s/'[^']*'/'${DB_PASS}'/2" ${WPCONFIG}
 
   else
     echo " > User: ${PROJECT_NAME}_user already exist. Continue ..." >>$LOG
@@ -713,20 +737,23 @@ wp_database_creation() {
     if [ $? -eq 0 ]; then
       echo " > DONE!" >>$LOG
       echo -e ${GREN}" > DONE!"${ENDCOLOR}
+      return 1
+
     else
       echo " > Something went wrong!" >>$LOG
       echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
       exit 1
+
     fi
 
-    echo -e ${YELLOW}" > Changing wp-config.php database parameters ..."${ENDCOLOR}
-    echo -e ${YELLOW}" > Leaving DB_USER untouched ..."${ENDCOLOR}
+    #echo -e ${YELLOW}" > Changing wp-config.php database parameters ..."${ENDCOLOR}
+    #echo -e ${YELLOW}" > Leaving DB_USER untouched ..."${ENDCOLOR}
 
   fi
 
-  sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" ${WPCONFIG}
-  sed -i "/DB_NAME/s/'[^']*'/'${PROJECT_NAME}_${PROJECT_STATE}'/2" ${WPCONFIG}
-  sed -i "/DB_USER/s/'[^']*'/'${PROJECT_NAME}_user'/2" ${WPCONFIG}
+  #sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" ${WPCONFIG}
+  #sed -i "/DB_NAME/s/'[^']*'/'${PROJECT_NAME}_${PROJECT_STATE}'/2" ${WPCONFIG}
+  #sed -i "/DB_USER/s/'[^']*'/'${PROJECT_NAME}_user'/2" ${WPCONFIG}
 
 }
 
@@ -822,8 +849,10 @@ ask_folder_to_install_sites() {
     if [ $exitstatus = 0 ]; then
       echo "FOLDER_TO_INSTALL="${FOLDER_TO_INSTALL}
       echo "FOLDER_TO_INSTALL="${FOLDER_TO_INSTALL} >>$LOG
+
     else
-      exit 0
+      exit 1
+
     fi
   fi
 
@@ -838,10 +867,13 @@ ask_mysql_root_psw() {
       #TODO: testear esto
       until $MYSQL -u $MUSER -p$MPASS -e ";"; do
         read -s -p "Can't connect to MySQL, please re-enter $MUSER password: " MPASS
+      
       done
       echo "MPASS="${MPASS} >>/root/.broobe-utils-options
+
     else
       exit 1
+
     fi
   fi
 
