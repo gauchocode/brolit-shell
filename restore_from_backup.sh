@@ -109,8 +109,6 @@ restore_database_backup() {
 
   #FOLDER_NAME=$(basename $WP_SITE)
 
-  # TODO: NO cambiar el wp-config sin checkear los datos del usuario creado!
-  
   # Change wp-config.php database parameters
   wp_update_wpconfig "${WP_SITE}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
 
