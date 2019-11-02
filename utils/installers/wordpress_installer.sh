@@ -53,15 +53,17 @@ if [ $exitstatus = 0 ]; then
     COPY_PROJECT=$(basename $COPY_PROJECT_PATH)
     echo "Setting COPY_PROJECT="${COPY_PROJECT}
 
-    ask_domain_to_install_site
+    #ask_domain_to_install_site
+    ask_project_domain
 
-    ask_domain_to_cloudflare_config
+    POSSIBLE_ROOT_DOMAIN=${PROJECT_DOMAIN#[[:alpha:]]*.}
+    ask_rootdomain_to_cloudflare_config "${POSSIBLE_ROOT_DOMAIN}"
 
     ask_project_name
 
     ask_project_state
 
-    check_if_folder_exists "${FOLDER_TO_INSTALL}" "${DOMAIN}"
+    check_if_folder_exists "${FOLDER_TO_INSTALL}" "${PROJECT_DOMAIN}"
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
       # Make a copy of the existing project
@@ -82,19 +84,20 @@ if [ $exitstatus = 0 ]; then
 
   else
 
-    ask_domain_to_install_site
+    ask_project_domain
 
-    ask_domain_to_cloudflare_config
+    POSSIBLE_ROOT_DOMAIN=${PROJECT_DOMAIN#[[:alpha:]]*.}
+    ask_rootdomain_to_cloudflare_config "${POSSIBLE_ROOT_DOMAIN}"
 
     ask_project_name
 
     ask_project_state
 
-    check_if_folder_exists "${FOLDER_TO_INSTALL}" "${DOMAIN}"
+    check_if_folder_exists "${FOLDER_TO_INSTALL}" "${PROJECT_DOMAIN}"
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
       # Download WP
-      wp_download_wordpress
+      wp_download_wordpress "${FOLDER_TO_INSTALL}" "${PROJECT_DOMAIN}"
       echo "DONE" >>$LOG
 
     else
@@ -178,27 +181,27 @@ if [ $exitstatus = 0 ]; then
   fi
 
   # Cloudflare API to change DNS records
-  echo "Trying to access Cloudflare API and change record ${DOMAIN} ..." >>$LOG
-  echo -e ${YELLOW}"Trying to access Cloudflare API and change record ${DOMAIN} ..."${ENDCOLOR}
+  echo "Trying to access Cloudflare API and change record ${PROJECT_DOMAIN} ..." >>$LOG
+  echo -e ${YELLOW}"Trying to access Cloudflare API and change record ${PROJECT_DOMAIN} ..."${ENDCOLOR}
 
   zone_name=${ROOT_DOMAIN}
-  record_name=${DOMAIN}
+  record_name=${PROJECT_DOMAIN}
   export zone_name record_name
   ${SFOLDER}/utils/cloudflare_update_IP.sh
 
   # TODO: que pasa si en vez de generarlo a partir de un template de conf de nginx, copio el del proyecto y reemplazo el dominio?
 
   # New site Nginx configuration
-  echo " > Trying to generate nginx config for ${DOMAIN} ..." >>$LOG
-  echo -e ${CYAN}" > Trying to generate nginx config for ${DOMAIN} ..."${ENDCOLOR}
+  echo " > Trying to generate nginx config for ${PROJECT_DOMAIN} ..." >>$LOG
+  echo -e ${CYAN}" > Trying to generate nginx config for ${PROJECT_DOMAIN} ..."${ENDCOLOR}
 
-  cp ${SFOLDER}/confs/nginx/sites-available/default /etc/nginx/sites-available/${DOMAIN}
-  ln -s /etc/nginx/sites-available/${DOMAIN} /etc/nginx/sites-enabled/${DOMAIN}
+  cp ${SFOLDER}/confs/nginx/sites-available/default /etc/nginx/sites-available/${PROJECT_DOMAIN}
+  ln -s /etc/nginx/sites-available/${PROJECT_DOMAIN} /etc/nginx/sites-enabled/${PROJECT_DOMAIN}
 
-  # Replacing string to match domain name
-  sed -i "s#dominio.com#${DOMAIN}#" /etc/nginx/sites-available/${DOMAIN}
+  # Replacing string to match PROJECT_DOMAIN name
+  sed -i "s#dominio.com#${PROJECT_DOMAIN}#" /etc/nginx/sites-available/${PROJECT_DOMAIN}
   # Need to run twice
-  sed -i "s#dominio.com#${DOMAIN}#" /etc/nginx/sites-available/${DOMAIN}
+  sed -i "s#dominio.com#${PROJECT_DOMAIN}#" /etc/nginx/sites-available/${PROJECT_DOMAIN}
 
   # Restart nginx service
   service nginx reload
@@ -206,7 +209,7 @@ if [ $exitstatus = 0 ]; then
   echo " > Nginx configuration loaded!" >>$LOG
 
   # HTTPS with Certbot
-  certbot_certificate_install "${MAILA}" "${DOMAIN}"
+  certbot_certificate_install "${MAILA}" "${PROJECT_DOMAIN}"
 
   echo -e ${GREEN}" > DONE"${ENDCOLOR}
 

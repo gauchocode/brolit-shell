@@ -583,16 +583,28 @@ check_if_folder_exists() {
 
 wp_download_wordpress() {
 
+  # Used in:
+  # wordpress_installer.sh
+
+  # $1 = ${FOLDER_TO_INSTALL}
+  # $2 = ${PROJECT_DOMAIN}
+
+  FOLDER_TO_INSTALL=$1
+  PROJECT_DOMAIN=$2
+
   echo "Trying to make a clean install of Wordpress ..." >>$LOG
-  echo -e ${YELLOW}"Trying to make a clean install of Wordpress ..."${ENDCOLOR}
+  echo -e ${CYAN}"Trying to make a clean install of Wordpress ..."${ENDCOLOR}
+
   cd ${FOLDER_TO_INSTALL}
   curl -O https://wordpress.org/latest.tar.gz
   tar -xzxf latest.tar.gz
   rm latest.tar.gz
-  mv wordpress ${DOMAIN}
-  cd ${DOMAIN}
-  cp wp-config-sample.php ${FOLDER_TO_INSTALL}/${DOMAIN}/wp-config.php
-  rm ${FOLDER_TO_INSTALL}/${DOMAIN}/wp-config-sample.php
+  mv wordpress ${PROJECT_DOMAIN}
+  cd ${PROJECT_DOMAIN}
+
+  # Setup wp-config.php
+  cp wp-config-sample.php ${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}/wp-config.php
+  rm ${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}/wp-config-sample.php
 
 }
 
@@ -799,7 +811,8 @@ ask_project_name() {
 
 ask_project_domain() {
 
-  PROJECT_DOMAIN=$(whiptail --title "Project Domain" --inputbox "Please insert a project domain. Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
+  #PROJECT_DOMAIN=$(whiptail --title "Project Domain" --inputbox "Please insert a project domain. Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
+  PROJECT_DOMAIN=$(whiptail --title "Domain" --inputbox "Insert the domain of the Project. Example: landing.broobe.com" 10 60 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
     echo "Setting PROJECT_DOMAIN="${PROJECT_DOMAIN} >>$LOG
@@ -812,12 +825,34 @@ ask_project_domain() {
 
 }
 
-ask_domain_to_install_site() {
+#ask_domain_to_install_site() {
+#
+#  DOMAIN=$(whiptail --title "Domain" --inputbox "Insert the domain of the Project. Example: landing.broobe.com" 10 60 3>&1 1>&2 2>&3)
+#  exitstatus=$?
+#  if [ $exitstatus = 0 ]; then
+#    echo "Setting DOMAIN="${DOMAIN} >>$LOG
+#    return 0
+#
+#  else
+#    return 1
+#
+#  fi
+#
+#}
 
-  DOMAIN=$(whiptail --title "Domain" --inputbox "Insert the domain of the Project. Example: landing.broobe.com" 10 60 3>&1 1>&2 2>&3)
+ask_rootdomain_to_cloudflare_config() {
+
+  # $1 = ${POSSIBLE_ROOT_DOMAIN} (could be empty)
+
+  POSSIBLE_ROOT_DOMAIN=$1
+  if [[ -z "${POSSIBLE_ROOT_DOMAIN}" ]]; then
+    ROOT_DOMAIN=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
+  else
+    ROOT_DOMAIN=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 "${POSSIBLE_ROOT_DOMAIN}" 3>&1 1>&2 2>&3)
+  fi
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-    echo "Setting DOMAIN="${DOMAIN} >>$LOG
+    echo "Setting ROOT_DOMAIN="${ROOT_DOMAIN} >>$LOG
     return 0
 
   else
@@ -827,15 +862,16 @@ ask_domain_to_install_site() {
 
 }
 
-ask_domain_to_cloudflare_config() {
+ask_subdomains_to_cloudflare_config() {
 
-  ROOT_DOMAIN=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
+  ROOT_DOMAIN=$(whiptail --title "Cloudflare Subdomains" --inputbox "Insert the subdomains you want to update in Cloudflare (comma separated). Example: www.broobe.com,broobe.com" 10 60 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
     echo "Setting ROOT_DOMAIN="${ROOT_DOMAIN} >>$LOG
+    return 0
 
   else
-    exit 1
+    return 1
 
   fi
 

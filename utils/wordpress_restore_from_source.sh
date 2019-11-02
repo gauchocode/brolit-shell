@@ -95,9 +95,12 @@ if test -f /root/.broobe-utils-options; then
 fi
 
 # Project details
-ask_project_name
-
 ask_project_domain
+
+POSSIBLE_ROOT_DOMAIN=${PROJECT_DOMAIN#[[:alpha:]]*.}
+ask_rootdomain_to_cloudflare_config "${POSSIBLE_ROOT_DOMAIN}"
+
+ask_project_name
 
 ask_project_state
 
@@ -170,7 +173,6 @@ fi
 chown -R www-data:www-data ${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}
 
 # Change wp-config.php database parameters
-#wp_update_wpconfig "${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
 PROJECT_DIR="${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}"
 if [[ -z "${DB_PASS}" ]]; then
   wp_update_wpconfig "${PROJECT_DIR}" "${PROJECT_NAME}" "${PROJECT_STATE}" ""
