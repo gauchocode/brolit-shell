@@ -1,6 +1,7 @@
 #!/bin/bash
-# Autor: broobe. web + mobile development - https://broobe.com
-# Version: 3.0
+#
+# Autor: BROOBE. web + mobile development - https://broobe.com
+# Version: 3.0-beta7
 ################################################################################
 #
 # Ref: https://kinsta.com/blog/wp-cli/

@@ -1,8 +1,7 @@
 #!/bin/bash
 #
-# Autor: broobe. web + mobile development - https://broobe.com
-# Script Name: Broobe Utils Scripts
-# Version: 3.0
+# Autor: BROOBE. web + mobile development - https://broobe.com
+# Version: 3.0-beta7
 ################################################################################
 #
 # Ref: https://certbot.eff.org/docs/using.html
@@ -16,6 +15,8 @@ certbot_certificate_install() {
   EMAIL=$1
   DOMAINS=$2
 
+  echo -e ${CYAN}" > Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${EMAIL} -d ${DOMAINS}"${ENDCOLOR}
+  echo " > Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${EMAIL} -d ${DOMAINS}" >>$LOG
   certbot --nginx --non-interactive --agree-tos --redirect -m ${EMAIL} -d ${DOMAINS}
 
 }
@@ -28,6 +29,8 @@ certbot_certificate_force_install() {
   EMAIL=$1
   DOMAINS=$2
 
+  echo -e ${CYAN}" > Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${EMAIL} -d ${DOMAINS}"${ENDCOLOR}
+  echo " > Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${EMAIL} -d ${DOMAINS}" >>$LOG
   certbot --nginx --non-interactive --agree-tos --redirect -m ${EMAIL} -d ${DOMAINS}
 
 }
@@ -38,6 +41,8 @@ certbot_certificate_renew() {
 
   DOMAINS=$1
 
+  echo -e ${CYAN}" > Running: certbot renew -d ${DOMAINS}"${ENDCOLOR}
+  echo " > Running: certbot renew -d ${DOMAINS}" >>$LOG
   certbot renew -d ${DOMAINS}
 
 }
@@ -48,6 +53,8 @@ certbot_certificate_force_renew() {
 
   DOMAINS=$1
 
+  echo -e ${CYAN}" > Running: certbot renew --force-renewal -d ${DOMAINS}"${ENDCOLOR}
+  echo " > Running: certbot renew --force-renewal -d ${DOMAINS}" >>$LOG
   certbot renew --force-renewal -d ${DOMAINS}
 
 }

@@ -11,7 +11,6 @@ source ${SFOLDER}/libs/wpcli_helper.sh
 
 ################################################################################
 
-#wpcli_installed="false"
 wpcli_check_if_installed
 
 if [ ${wpcli_installed} == "true" ]; then

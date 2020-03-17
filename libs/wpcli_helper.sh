@@ -1,8 +1,7 @@
 #!/bin/bash
 #
-# Autor: broobe. web + mobile development - https://broobe.com
-# Script Name: Broobe Utils Scripts
-# Version: 3.0
+# Autor: BROOBE. web + mobile development - https://broobe.com
+# Version: 3.0-beta7
 ################################################################################
 
 wpcli_install_if_not_installed() {
@@ -190,9 +189,13 @@ wpcli_search_and_replace() {
     # TODO: por algún motivo cuando tiro comandos con el parametro --url siempre falla
     # entonces o ver que pasa o checkear si es multisite de otra manera.
     if $(wp --allow-root --url=http://${WP_SITE_URL} core is-installed --network); then
+
+        echo "Running: wp --allow-root --path=${WP_SITE} search-replace ${SEARCH} ${REPLACE} --network"
         wp --allow-root --path=${WP_SITE} search-replace ${SEARCH} ${REPLACE} --network
 
     else
+
+        echo "Running: wp --allow-root --path=${WP_SITE} search-replace ${SEARCH} ${REPLACE}"
         wp --allow-root --path=${WP_SITE} search-replace ${SEARCH} ${REPLACE}
 
     fi

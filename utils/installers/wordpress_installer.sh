@@ -211,6 +211,9 @@ if [ $exitstatus = 0 ]; then
   # HTTPS with Certbot
   certbot_certificate_install "${MAILA}" "${PROJECT_DOMAIN}"
 
+  # WP Search and Replace URL
+  ask_url_search_and_replace
+
   echo -e ${GREEN}" > DONE"${ENDCOLOR}
 
 fi

@@ -1,8 +1,7 @@
 #!/bin/bash
 #
-# Autor: broobe. web + mobile development - https://broobe.com
-# Script Name: Broobe Utils Scripts
-# Version: 3.0
+# Autor: BROOBE. web + mobile development - https://broobe.com
+# Version: 3.0-beta7
 ################################################################################
 
 ### Checking some things
@@ -14,6 +13,7 @@ fi
 
 source ${SFOLDER}/libs/commons.sh
 source ${SFOLDER}/libs/mysql_helper.sh
+source ${SFOLDER}/libs/backup_helper.sh
 
 ################################################################################
 
@@ -63,6 +63,7 @@ else
         # Delete nginx configuration file
         rm /etc/nginx/sites-available/${filename}
         rm /etc/nginx/sites-enabled/${filename}
+        echo -e ${GREEN}" > Nginx config files deleted!"${ENDCOLOR}
 
     fi
 
@@ -83,14 +84,19 @@ if [ $exitstatus = 0 ]; then
     # Make a database Backup
     mysql_database_export "${CHOSEN_DB}" "${SFOLDER}/tmp-backup/${CHOSEN_DB}_DB.sql"
 
-    # TODO: TAR Backup and Upload to Dropbox
+    # TO-TEST
+    make_database_backup "database" "${CHOSEN_DB}"
 
     # Delete project database
     mysql_database_drop "${CHOSEN_DB}"
 
     # Delete mysql user
-
-    # TODO: need to ask
+    # TODO (steps): 
+    # 1- Read user form wp-config if exists (if not show message)
+    # 2- Check if user exists, 
+    # 3- Ask if you want delete it}
+    # 4- Remove it or ignore it
+    #mysql_user_exists "" ""
     #mysql_user_delete "${USER_DB}"
 
 else

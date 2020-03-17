@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# Autor: broobe. web + mobile development - https://broobe.com
-# Version: 3.0
+# Autor: BROOBE. web + mobile development - https://broobe.com
+# Version: 3.0-beta7
 ################################################################################
 
 ### Checking some things
@@ -92,6 +92,6 @@ timezone_configuration
 
 selected_package_installation
 
-echo -e ${GREEN}" > DONE ..."${ENDCOLOR}
+echo -e ${GREEN}" > LEMP SETUP COMPLETED ..."${ENDCOLOR}
 
 echo "Backup: Script End -- $(date +%Y%m%d_%H%M)" >>$LOG

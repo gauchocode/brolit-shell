@@ -1,6 +1,7 @@
 #!/bin/bash
-# Autor: broobe. web + mobile development - https://broobe.com
-# Version: 3.0
+#
+# Autor: BROOBE. web + mobile development - https://broobe.com
+# Version: 3.0-beta7
 ################################################################################
 
 INSTALLER_OPTIONS="01 LEMP_INSTALLER 02 PHPMYADMIN_INSTALLER 03 NETDATA_INSTALLER 04 MONIT_INSTALLER 05 COCKPIT_INSTALLER 06 CERTBOT_INSTALLER 07 WPCLI_INSTALLER"
