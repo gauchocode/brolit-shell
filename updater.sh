@@ -1,6 +1,7 @@
 #!/bin/bash
-# Autor: broobe. web + mobile development - https://example.com
-# Version: 4.0
+#
+# Autor: BROOBE. web + mobile development - https://example.com
+# Version: 3.0-beta7
 #############################################################################
 
 SCRIPT=$(readlink -f "$0")
