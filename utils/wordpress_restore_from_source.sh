@@ -200,29 +200,23 @@ service nginx reload
 # Get server IP
 IP=$(dig +short myip.opendns.com @resolver1.opendns.com) 2>/dev/null
 
-# Ask for Cloudflare Root Domain
-ROOT_DOMAIN=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
-exitstatus=$?
-if [ $exitstatus = 0 ]; then
+# TODO: Ask for subdomains to change in Cloudflare (root domain asked before)
+# SUGGEST "${PROJECT_DOMAIN}" and "www${PROJECT_DOMAIN}"
 
-  echo "Setting ROOT_DOMAIN="${ROOT_DOMAIN}
+# Cloudflare API to change DNS records
+echo "Trying to access Cloudflare API and change record ${PROJECT_DOMAIN} ..." >>$LOG
+echo -e ${YELLOW}"Trying to access Cloudflare API and change record ${PROJECT_DOMAIN} ..."${ENDCOLOR}
 
-  # Cloudflare API to change DNS records
-  echo "Trying to access Cloudflare API and change record ${PROJECT_DOMAIN} ..." >>$LOG
-  echo -e ${YELLOW}"Trying to access Cloudflare API and change record ${PROJECT_DOMAIN} ..."${ENDCOLOR}
-
-  zone_name=${ROOT_DOMAIN}
-  record_name=${PROJECT_DOMAIN}
-  export zone_name record_name
-  ${SFOLDER}/utils/cloudflare_update_IP.sh
-
-fi
+zone_name=${ROOT_DOMAIN}
+record_name=${PROJECT_DOMAIN}
+export zone_name record_name
+${SFOLDER}/utils/cloudflare_update_IP.sh
 
 # HTTPS with Certbot
-${SFOLDER}/utils/certbot_manager.sh
-#certbot_certificate_install "${MAILA}" "${DOMAIN}"
+certbot_certificate_install "${MAILA}" "${PROJECT_DOMAIN}"
 
-# TODO: run url_replace script
+# WP Search and Replace URL
+ask_url_search_and_replace
 
 # Log End
 END_TIME=$(date +%s)

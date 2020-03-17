@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# Autor: broobe. web + mobile development - https://broobe.com
-# Script Name: Broobe Utils Scripts
-# Version: 3.0-beta4
+# Autor: BROOBE. web + mobile development - https://broobe.com
+# Script Name: BROOBE Utils Scripts
+# Version: 3.0-beta7
 ################################################################################
 #
 # TODO: Para release 3.0 final
@@ -45,7 +45,7 @@
 # https://google.github.io/styleguide/shell.xml
 #
 
-SCRIPT_V="3.0-beta4"
+SCRIPT_V="3.0-beta7"
 
 ### Checking some things...#####################################################
 SFOLDER="`dirname \"$0\"`"                                                      # relative
@@ -85,6 +85,16 @@ DUP_SRC_BK="/var/www/"                        # Source of Directories to Backup 
 DUP_FOLDERS="FOLDER1,FOLDER2"                 # Folders to Backup
 DUP_BK_FULL_FREQ="7D"                         # Create a new full backup every ...
 DUP_BK_FULL_LIFE="14D"                        # Delete any backup older than this
+
+#MAILCOW BACKUP
+MAILCOW_BK=false
+MAILCOW="/opt/mailcow-dockerized"             # MailCow files location
+MAILCOW_TMP_BK="${SFOLDER}/tmp/mailcow"
+if [ ! -d "${MAILCOW_TMP_BK}" ]; then
+  echo " > Folder ${MAILCOW_TMP_BK} doesn't exist. Creating now ..."
+  mkdir ${MAILCOW_TMP_BK}
+  echo " > Folder ${MAILCOW_TMP_BK} created ..."
+fi
 
 # TODO: checkear si está instalado apache2, si está instalado mandar warning de soporte parcial
 
@@ -167,7 +177,7 @@ MYSQLDUMP="$(which mysqldump)"
 TAR="$(which tar)"
 
 # EXPORT VARS (GLOBALS)
-export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL DB_BL WSERVER PHP_CF LENCRYPT_CF MHOST MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR auth_email auth_key
+export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL DB_BL WSERVER PHP_CF LENCRYPT_CF MHOST MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MAILCOW_BK MAILCOW MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR auth_email auth_key
 
 if [ -t 1 ]; then
 
