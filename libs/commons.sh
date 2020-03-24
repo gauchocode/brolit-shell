@@ -2,10 +2,10 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 2.9.9
+# Version: 3.0-beta7
 ################################################################################
 
-### Setup Colours
+### Setup Foreground Colours
 BLACK='\E[30;40m'
 RED='\E[31;40m'
 GREEN='\E[32;40m'
@@ -16,6 +16,18 @@ MAGENTA='\E[35;40m'
 CYAN='\E[36;40m'
 WHITE='\E[37;40m'
 ENDCOLOR='\033[0m'
+
+### Setup Background Colours
+B_BLACK='\E[40m'
+B_RED='\E[41m'
+B_GREEN='\E[42m'
+B_YELLOW='\E[43m'
+B_ORANGE='\043[0m'
+B_BLUE='\E[44m'
+B_MAGENTA='\E[45m'
+B_CYAN='\E[46m'
+B_WHITE='\E[47m'
+B_ENDCOLOR='\e[0m'
 
 startdir=""
 menutitle="Config Selection Menu"
@@ -900,8 +912,8 @@ ask_mysql_root_psw() {
     MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root Password" 10 60 "${MPASS}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      #TODO: testear esto
-      until $MYSQL -u $MUSER -p$MPASS -e ";"; do
+      #echo "> Running: mysql -u root -p${MPASS} -e"
+      until mysql -u root -p${MPASS}S -e ";"; do
         read -s -p "Can't connect to MySQL, please re-enter $MUSER password: " MPASS
       
       done
