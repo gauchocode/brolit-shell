@@ -49,6 +49,18 @@ echo " > Running optipng ..." >>$LOG
 echo -e ${YELLOW}" > Running optipng ..."${ENDCOLOR}
 find -mtime -7 -type f -name "*.png" -exec optipng -o7 -strip all {} \;
 
+# Run pdf optimizer
+#echo " > Running pdfwrite ..." >>$LOG
+#echo -e ${YELLOW}" > Running pdfwrite ..."${ENDCOLOR}
+
+#Here is a solution for getting the output of find into a bash array:
+#array=()
+#while IFS=  read -r -d $'\0'; do
+#    array+=("$REPLY")
+#done < <(find . -name "${input}" -print0)
+#for %f in (*) do gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dQUIET -dBATCH -sOutputFile=%f %f
+#find -mtime -7 -type f -name "*.pdf" -exec gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dPDFSETTINGS=/screen -dNOPAUSE -dPrinted=false -dQUIET -sOutputFile=compressed.%f %f
+
 # Fix ownership
 echo " > Fixing ownership ..." >>$LOG
 echo -e ${YELLOW}" > Fixing ownership ..."${ENDCOLOR}
