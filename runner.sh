@@ -159,7 +159,7 @@ else
   generate_cloudflare_config
 fi
 
-# Broobe Utils config file
+# BROOBE Utils config file
 if test -f /root/.broobe-utils-options; then
   source /root/.broobe-utils-options
 fi
