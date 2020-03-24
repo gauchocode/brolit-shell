@@ -77,14 +77,15 @@ restore_database_backup() {
 
     DB_PASS=$(openssl rand -hex 12)
 
-    echo -e ${CYAN}" > Creating '${DB_USER}' user in MySQL with pass: ${DB_PASS}"${ENDCOLOR}
+    echo -e ${B_CYAN}" > Creating '${DB_USER}' user in MySQL with pass: ${DB_PASS}"${B_ENDCOLOR}
     echo "Creating ${DB_USER} user in MySQL with pass: ${DB_PASS}" >>$LOG
 
     mysql_user_create "${DB_USER}" "${DB_PASS}"
 
   else
 
-    echo -e ${YELLOW}" > User ${DB_USER} already exists"${ENDCOLOR} >>$LOG
+    echo -e ${B_GREEN}" > User ${DB_USER} already exists"${B_ENDCOLOR}
+    echo " > User ${DB_USER} already exists"${ENDCOLOR} >>$LOG
 
   fi
 
@@ -114,7 +115,7 @@ restore_database_backup() {
 
   # TODO: cambiar las secret encryption key
 
-  echo -e ${GREEN}" > DONE"${ENDCOLOR}
+  echo -e ${B_GREEN}" > DONE"${B_ENDCOLOR}
 
 }
 

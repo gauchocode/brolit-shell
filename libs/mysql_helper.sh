@@ -179,11 +179,11 @@ mysql_user_exists() {
 
     if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${DB_USER}';" | mysql -u ${MUSER} --password=${MPASS} | grep 1 &>/dev/null; then
         #return 0 if user don't exists
-        return 0
+        echo 0
 
     else
         #return 1 if user already exists
-        return 1
+        echo 1
 
     fi
 
