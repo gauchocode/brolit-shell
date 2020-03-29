@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# Autor: broobe. web + mobile development - https://broobe.com
-# Version: 2.9.9
+# Autor: BROOBE. web + mobile development - https://broobe.com
+# Version: 3.0-beta10
 ################################################################################
 #
 # Ref: https://serverfault.com/questions/939436/understand-correctly-pm-max-children-tuning

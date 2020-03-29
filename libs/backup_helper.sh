@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta7
+# Version: 3.0-beta10
 #############################################################################
 
 ### Checking some things
@@ -61,7 +61,7 @@ make_server_files_backup() {
 
       dropbox_delete_backup "${BK_TYPE}" "${CONFIG_F}" "${OLD_BK_FILE}"
 
-      echo -e ${GREEN}" > DONE"${ENDCOLOR}
+      echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
       echo " > DONE" >>$LOG
 
     else
@@ -69,14 +69,14 @@ make_server_files_backup() {
       ERROR=true
       ERROR_TYPE="ERROR: No such directory or file ${BAKWP}/${NOW}/${BK_FILE}"
 
-      echo -e ${RED}" > ERROR: Can't make the backup!"${ENDCOLOR}
+      echo -e ${B_RED}" > ERROR: Can't make the backup!"${ENDCOLOR}
       echo $ERROR_TYPE >>$LOG
 
     fi
 
   else
 
-    echo -e ${RED}" > ERROR: Directory '${BK_DIR}' doesnt exists!"${ENDCOLOR}
+    echo -e ${B_RED}" > ERROR: Directory '${BK_DIR}' doesnt exists!"${ENDCOLOR}
     echo " > ERROR: Directory '${BK_DIR}' doesnt exists!" >>$LOG
 
   fi
@@ -182,57 +182,70 @@ make_site_backup() {
   local OLD_BK_FILE="${FOLDER_NAME}_${BK_TYPE}-files_${ONEWEEKAGO}.tar.bz2"
   local BK_FILE="${FOLDER_NAME}_${BK_TYPE}-files_${NOW}.tar.bz2"
 
+  SHOW_BK_FILE_INDEX=$((BK_FILE_INDEX + 1))
+
   echo " > Making TAR.BZ2 from: ${FOLDER_NAME} ..." >>$LOG
-  (tar --exclude '.git' --exclude '*.log' -cf - --directory=${SITES} ${FOLDER_NAME} | pv -ns $(du -sb ${SITES}/${FOLDER_NAME} | awk '{print $1}') | lbzip2 >${BAKWP}/${NOW}/${BK_FILE}) 2>&1 | dialog --gauge 'Processing '${FILE_BK_INDEX}' of '${COUNT_TOTAL_SITES}' directories. Making tar.bz2 from: '${FOLDER_NAME} 7 70
+  (tar --exclude '.git' --exclude '*.log' -cf - --directory=${SITES} ${FOLDER_NAME} | pv -ns $(du -sb ${SITES}/${FOLDER_NAME} | awk '{print $1}') | lbzip2 >${BAKWP}/${NOW}/${BK_FILE}) 2>&1 | dialog --gauge 'Processing '${SHOW_BK_FILE_INDEX}' of '${COUNT_TOTAL_SITES}' directories. Making tar.bz2 from: '${FOLDER_NAME} 7 70
 
   # Test backup file
   lbzip2 -t ${BAKWP}/${NOW}/${BK_FILE}
 
   if [ $? -eq 0 ]; then
 
-    echo -e ${GREEN}" > ${BK_FILE} OK!"${ENDCOLOR}
+    echo -e ${B_GREEN}" > ${BK_FILE} OK!"${ENDCOLOR}
     echo " > ${BK_FILE} OK!" >>$LOG
 
-    #if "${BAKWP}/${NOW}/${BK_FILE}"; then
-    #if ${TAR_FILE}; then
-
-    BACKUPED_LIST[$FILE_BK_INDEX]=${BK_FILE}
-    BACKUPED_FL=${BACKUPED_LIST[$FILE_BK_INDEX]}
+    BACKUPED_LIST[$BK_FILE_INDEX]=${BK_FILE}
+    BACKUPED_FL=${BACKUPED_LIST[$BK_FILE_INDEX]}
 
     # Calculate backup size
-    BK_FL_SIZES[$FILE_BK_INDEX]=$(ls -lah ${BAKWP}/${NOW}/${BK_FILE} | awk '{ print $5}')
-    BK_FL_SIZE=${BK_FL_SIZES[$FILE_BK_INDEX]}
+    BK_FL_SIZE=$(ls -lah ${BAKWP}/${NOW}/${BK_FILE} | awk '{ print $5}')
 
-    echo -e ${GREEN}" > Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE} ..."${ENDCOLOR}
-    echo " > Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE} ..." >>$LOG
+    if [[ ${BK_FL_SIZE} == *"ERROR"* ]]; then
 
-    echo -e ${CYAN}" > Trying to create folder in Dropbox ..."${ENDCOLOR}
-    echo " > Trying to create folders in Dropbox ..." >>$LOG
+      echo -e ${B_RED}" > ${BK_FL_SIZE}"${ENDCOLOR}
+      echo " > ${BK_FL_SIZE}" >>$LOG
 
-    ${DPU_F}/dropbox_uploader.sh -q mkdir /${SITES_F}
+      BK_FL_SIZE="ERROR"
+      ERROR=true
 
-    # New folder structure with date
-    ${DPU_F}/dropbox_uploader.sh -q mkdir /${SITES_F}/${FOLDER_NAME}
-    #${DPU_F}/dropbox_uploader.sh -q mkdir /${SITES_F}/${FOLDER_NAME}/${NOW}
+      exit 1
 
-    echo -e ${CYAN}" > Uploading ${FOLDER_NAME} to Dropbox ..."${ENDCOLOR}
-    echo " > Uploading ${FOLDER_NAME} to Dropbox ..." >>$LOG
-    ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/${BK_FILE} $DROPBOX_FOLDER/${SITES_F}/${FOLDER_NAME}/
-    #${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/${BK_FILE} ${DROPBOX_FOLDER}/${SITES_F}/${FOLDER_NAME}/${NOW}
+    else
 
-    echo -e ${CYAN}" > Trying to delete old backup from Dropbox with date ${ONEWEEKAGO} ..."${ENDCOLOR}
-    echo " > Trying to delete old backup from Dropbox with date ${ONEWEEKAGO} ..." >>$LOG
-    #${DPU_F}/dropbox_uploader.sh delete ${DROPBOX_FOLDER}/${SITES_F}/${FOLDER_NAME}/${ONEWEEKAGO}
-    ${DPU_F}/dropbox_uploader.sh remove ${DROPBOX_FOLDER}/${SITES_F}/${FOLDER_NAME}/${OLD_BK_FILE}
+      BK_FL_SIZES[$BK_FL_ARRAY_INDEX]="${BK_FL_SIZE}"
 
-    echo " > Deleting backup from server ..." >>$LOG
-    rm -r ${BAKWP}/${NOW}/${BK_FILE}
+      echo -e ${GREEN}" > Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE} ..."${ENDCOLOR}
+      echo " > Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE} ..." >>$LOG
 
-    echo -e ${GREEN}" > DONE"${ENDCOLOR}
+      echo -e ${CYAN}" > Trying to create folder in Dropbox ..."${ENDCOLOR}
+      echo " > Trying to create folders in Dropbox ..." >>$LOG
+
+      ${DPU_F}/dropbox_uploader.sh -q mkdir /${SITES_F}
+
+      # New folder structure with date
+      ${DPU_F}/dropbox_uploader.sh -q mkdir /${SITES_F}/${FOLDER_NAME}
+
+      echo -e ${CYAN}" > Uploading ${FOLDER_NAME} to Dropbox ..."${ENDCOLOR}
+      echo " > Uploading ${FOLDER_NAME} to Dropbox ..." >>$LOG
+      ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/${BK_FILE} $DROPBOX_FOLDER/${SITES_F}/${FOLDER_NAME}/
+
+      echo -e ${CYAN}" > Trying to delete old backup from Dropbox with date ${ONEWEEKAGO} ..."${ENDCOLOR}
+      echo " > Trying to delete old backup from Dropbox with date ${ONEWEEKAGO} ..." >>$LOG
+      ${DPU_F}/dropbox_uploader.sh remove ${DROPBOX_FOLDER}/${SITES_F}/${FOLDER_NAME}/${OLD_BK_FILE}
+
+      echo " > Deleting backup from server ..." >>$LOG
+      rm -r ${BAKWP}/${NOW}/${BK_FILE}
+
+      echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
+
+    fi
 
   else
     ERROR=true
     ERROR_TYPE="ERROR: Making backup ${BAKWP}/${NOW}/${BK_FILE}"
+
+    echo -e ${B_RED}" > ERROR! Please see the log file."${ENDCOLOR}
     echo ${ERROR_TYPE} >>$LOG
 
   fi
@@ -328,10 +341,7 @@ make_database_backup() {
     echo -e ${CYAN}" > Making a tar.bz2 file of [${DB_FILE}] ..."${ENDCOLOR}
     echo " > Making a tar.bz2 file of [${DB_FILE}] ..." >>$LOG
 
-    #echo -e ${MAGENTA}" > tar -cf - --directory=${BK_FOLDER} ${DB_FILE} | pv -s $(du -sb ${BAKWP}/${NOW}/${DB_FILE} | awk '{print $1}') | lbzip2 >${BAKWP}/${NOW}/${BK_FILE}"${ENDCOLOR}
     tar -cf - --directory=${BK_FOLDER} ${DB_FILE} | pv -s $(du -sb ${BAKWP}/${NOW}/${DB_FILE} | awk '{print $1}') | lbzip2 >${BAKWP}/${NOW}/${BK_FILE}
-    #(tar -cf - ${BAKWP}/${NOW}/${DB_FILE} | pv -ns $(du -sb ${BAKWP}/${NOW}/${DB_FILE} | awk '{print $1}') | lbzip2 >${BAKWP}/${NOW}/${BK_FILE}) 2>&1 | dialog --gauge 'Making backup of '${DB_FILE} 7 70
-    #TAR_FILE=$($TAR -cpf ${BAKWP}/${NOW}/${BK_FILE} --directory=${BK_FOLDER} ${DB_FILE} --use-compress-program=lbzip2)
 
     # Test backup file
     echo -e ${CYAN}" > Testing backup file: ${DB_FILE} ..."${ENDCOLOR}
@@ -343,11 +353,11 @@ make_database_backup() {
       echo -e ${GREEN}" > ${BK_FILE} OK!"${ENDCOLOR}
       echo " > ${BK_FILE} OK!" >>$LOG
 
-      BACKUPED_DB_LIST[$DB_BK_INDEX]=${BK_FILE}
+      BACKUPED_DB_LIST[$BK_DB_INDEX]=${BK_FILE}
 
       # Calculate backup size
-      BK_DB_SIZES[$DB_BK_INDEX]=$(ls -lah ${BK_FILE} | awk '{ print $5}')
-      BK_DB_SIZE=${BK_DB_SIZES[$DB_BK_INDEX]}
+      BK_DB_SIZES[$BK_DB_INDEX]=$(ls -lah ${BK_FILE} | awk '{ print $5}')
+      BK_DB_SIZE=${BK_DB_SIZES[$BK_DB_INDEX]}
 
       echo -e ${GREEN}" > Backup for ${DATABASE} created, final size: ${BK_DB_SIZE} ..."${ENDCOLOR}
       echo " > Backup for ${DATABASE} created, final size: ${BK_DB_SIZE} ..." >>$LOG
@@ -409,7 +419,7 @@ make_project_backup() {
     echo -e ${CYAN}" > Making TAR.BZ2 from: ${FOLDER_NAME} ..."${ENDCOLOR}
     echo " > Making TAR.BZ2 from: ${FOLDER_NAME} ..." >>$LOG
 
-    (tar --exclude '.git' --exclude '*.log' -cf - --directory=${SITES} ${FOLDER_NAME} | pv -ns $(du -sb ${SITES}/${FOLDER_NAME} | awk '{print $1}') | lbzip2 >${BAKWP}/${NOW}/${BK_FILE}) 2>&1 | dialog --gauge 'Processing '${FILE_BK_INDEX}' of '${COUNT_TOTAL_SITES}' directories. Making tar.bz2 from: '${FOLDER_NAME} 7 70
+    (tar --exclude '.git' --exclude '*.log' -cf - --directory=${SITES} ${FOLDER_NAME} | pv -ns $(du -sb ${SITES}/${FOLDER_NAME} | awk '{print $1}') | lbzip2 >${BAKWP}/${NOW}/${BK_FILE}) 2>&1 | dialog --gauge 'Processing '${BK_FILE_INDEX}' of '${COUNT_TOTAL_SITES}' directories. Making tar.bz2 from: '${FOLDER_NAME} 7 70
 
     # Test backup file
     lbzip2 -t ${BAKWP}/${NOW}/${BK_FILE}
@@ -419,12 +429,15 @@ make_project_backup() {
         echo -e ${GREEN}" > ${BK_FILE} OK!"${ENDCOLOR}
         echo " > ${BK_FILE} OK!" >>$LOG
 
-        BACKUPED_LIST[$FILE_BK_INDEX]=${BK_FILE}
-        BACKUPED_FL=${BACKUPED_LIST[$FILE_BK_INDEX]}
+        BACKUPED_LIST[$BK_FILE_INDEX]=${BK_FILE}
+        BACKUPED_FL=${BACKUPED_LIST[$BK_FILE_INDEX]}
+
+        echo -e ${B_ORANGE}" > BACKUPED_LIST: ${BACKUPED_LIST}"${ENDCOLOR}
+        echo -e ${B_ORANGE}" > BACKUPED_FL: ${BACKUPED_FL}"${ENDCOLOR}
 
         # Calculate backup size
-        BK_FL_SIZES[$FILE_BK_INDEX]=$(ls -lah ${BAKWP}/${NOW}/${BK_FILE} | awk '{ print $5}')
-        BK_FL_SIZE=${BK_FL_SIZES[$FILE_BK_INDEX]}
+        BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=$(ls -lah ${BAKWP}/${NOW}/${BK_FILE} | awk '{ print $5}')
+        BK_FL_SIZE=${BK_FL_SIZES[$BK_FL_ARRAY_INDEX]}
 
         echo -e ${GREEN}" > File backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE} ..."${ENDCOLOR}
         echo " > File backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE} ..." >>$LOG
@@ -444,9 +457,11 @@ make_project_backup() {
             # Create dump file
             echo -e ${CYAN}" > Creating a dump file of: ${DB_NAME}"${ENDCOLOR}
             echo " > Creating a dump file of: ${DB_NAME}" >>$LOG
-            $MYSQLDUMP --max-allowed-packet=1073741824 -u ${MUSER} -h ${MHOST} -p${MPASS} ${DB_NAME} >${BK_FOLDER}${DB_FILE}
 
-            # TODO: control dump OK (deberia usar helper mysql)
+            # TODO: Need to control output of mysqldump 
+            # TODO: Use mysql helper
+
+            $MYSQLDUMP --max-allowed-packet=1073741824 -u ${MUSER} -h ${MHOST} -p${MPASS} ${DB_NAME} >${BK_FOLDER}${DB_FILE}            
 
         else
 

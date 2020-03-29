@@ -1,19 +1,17 @@
 #!/bin/bash
 #
-# Autor: broobe. web + mobile development - https://broobe.com
-# Script Name: Broobe Utils Scripts
-# Version: 3.0
+# Autor: BROOBE. web + mobile development - https://broobe.com
+# Version: 3.0-beta10
 ################################################################################
 
 source ${SFOLDER}/libs/commons.sh
-#source ${SFOLDER}/libs/mail_notification_helper.sh
 source ${SFOLDER}/libs/wpcli_helper.sh
 
 ################################################################################
 
-wpcli_check_if_installed
+WPCLI_INSTALLED=$(wpcli_check_if_installed)
 
-if [ ${wpcli_installed} == "true" ]; then
+if [ ${WPCLI_INSTALLED} = "true" ]; then
 
     WPCLI_INSTALLER_OPTIONS="01 UPDATE_WPCLI 02 UNINSTALL_WPCLI"
     CHOSEN_WPCLI_INSTALLER_OPTION=$(whiptail --title "WPCLI INSTALLER" --menu "Choose an option:" 20 78 10 $(for x in ${WPCLI_INSTALLER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)

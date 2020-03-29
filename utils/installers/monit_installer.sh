@@ -1,8 +1,7 @@
 #!/bin/bash
 #
-# Autor: broobe. web + mobile development - https://broobe.com
-# Script Name: Broobe Utils Scripts
-# Version: 2.9
+# Autor: BROOBE. web + mobile development - https://broobe.com
+# Version: 3.0-beta10
 ################################################################################
 
 # TODO: adentro de lemp-services está la version de php, checkear cualtenemos instalado antes de configurar

@@ -203,7 +203,7 @@ if [[ ${CHOSEN_TYPE} == *"$CONFIG_F"* ]]; then
 
       else
 
-        echo -e ${RED} " /etc/nginx/sites-available NOT exist... Quiting!" ${ENDCOLOR}
+        echo -e ${RED} " /etc/nginx/sites-available NOT exist... Skipping!" ${ENDCOLOR}
 
       fi
 

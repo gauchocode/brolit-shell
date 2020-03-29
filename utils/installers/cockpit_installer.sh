@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# Autor: broobe. web + mobile development - https://broobe.com
-# Version: 2.9
+# Autor: BROOBE. web + mobile development - https://broobe.com
+# Version: 3.0-beta10
 #############################################################################
 
 echo " > Installing cockpit" >> $LOG

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta7
+# Version: 3.0-beta10
 ################################################################################
 #
 # Ref: https://kinsta.com/blog/wp-cli/
@@ -10,6 +10,9 @@
 # Ex: php /var/www/.wp-cli/wp-cli.phar --path=/var/www/dev.bes-ebike.com/ profile hook --all --spotlight --url=https://dev.bes-ebike.com/shop-electric-bikes/ --allow-root
 #
 # Checkear si es red: https://developer.wordpress.org/cli/commands/core/is-installed/
+#
+# TODO: Hacer healthchecks con wp doctor
+# Ref: https://guides.wp-bullet.com/automating-wordpress-health-checks-with-wp-cli-doctor-command/
 
 ################################################################################
 
@@ -97,28 +100,51 @@ wpcli_main_menu() {
 
     if [[ ${CHOSEN_WPCLI_OPTION} == *"06"* ]]; then
 
-      echo "Updating WP ..."
-      sudo -u www-data wp --path=${WP_SITE}'/'${WP_SITE} core update
-      echo "Updating WP DB ..."
-      sudo -u www-data wp --path=${WP_SITE}'/'${WP_SITE} core update-db
-      echo " > DONE"
+      #Run wp doctor before
+      echo -e ${B_CYAN}" > Checking WP Update ..."${ENDCOLOR}
+      #echo -e ${B_CYAN}" > Executing: sudo -u www-data wp --path=${WP_SITE} doctor check core-update"${ENDCOLOR}
+      echo -e ${B_CYAN}" > Executing: wp --path=${WP_SITE} doctor check core-update --allow-root"${ENDCOLOR}
+      #sudo -u www-data wp --path=${WP_SITE} doctor check core-update
+      wp --path=${WP_SITE} doctor check core-update --allow-root
+
+      echo -e ${B_CYAN}" > Updating WP ..."${ENDCOLOR}
+      #echo -e ${B_CYAN}" > Executing: sudo -u www-data wp --path=${WP_SITE} core update"${ENDCOLOR}
+      echo -e ${B_CYAN}" > Executing: wp --path=${WP_SITE} core update --allow-root"${ENDCOLOR}
+      #sudo -u www-data wp --path=${WP_SITE} core update
+      wp --path=${WP_SITE} core update --allow-root
+
+      echo -e ${B_CYAN}" > Updating WP DB ..."${ENDCOLOR}
+      #echo -e ${B_CYAN}" > Executing: sudo -u www-data wp --path=${WP_SITE} core update-db"${ENDCOLOR}
+      echo -e ${B_CYAN}" > Executing: wp --path=${WP_SITE} core update-db --allow-root"${ENDCOLOR}
+      #sudo -u www-data wp --path=${WP_SITE} core update-db
+      wp --path=${WP_SITE} core update-db --allow-root
+
+      #TODO: run chown after executing with --allow-root
+      #chown -R www-data:www-data ${WP_SITE}
+
+      echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
 
     fi
 
     if [[ ${CHOSEN_WPCLI_OPTION} == *"07"* ]]; then
 
-      #esto vuelve a bajar wp y pisa archivos, no borra los archivos actuales, ojo
-      sudo -u www-data wp --path=${WP_SITE}'/'${WP_SITE} core download --skip-content --force
+      #It will download wordpress and replace core files (didnt delete other files)
+      echo -e ${B_CYAN}" > Reinstalling WP on: ${WP_SITE}"${ENDCOLOR}
+      sudo wp --path=${WP_SITE} core download --skip-content --force --allow-root
+
+      echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
 
     fi
 
     if [[ ${CHOSEN_WPCLI_OPTION} == *"08"* ]]; then
 
-      echo " > Deleting transient ..."
+      echo -e ${B_CYAN}" > Deleting transient ..."${ENDCOLOR}
       wp --path=${WP_SITE} transient delete --expired --allow-root
-      echo " > Cache Flush ..."
+
+      echo -e ${B_CYAN}" > Cache Flush ..."${ENDCOLOR}
       wp --path=${WP_SITE} cache flush --allow-root
-      echo " > DONE"
+      
+      echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
 
     fi
 
@@ -187,9 +213,12 @@ wpcli_main_menu() {
 
     fi
 
+    prompt_return_or_finish
     wpcli_main_menu
 
   else
+
+    prompt_return_or_finish
     main_menu
 
   fi
@@ -205,7 +234,7 @@ menutitle="Site Selection Menu"
 
 directory_browser "$menutitle" "$startdir"
 WP_SITE=$filepath"/"$filename
-echo "Working with WP_SITE="${WP_SITE}
+echo -e ${B_CYAN}"Working with WP_SITE="${WP_SITE}${ENDCOLOR}
 
 # Array of plugin slugs to install
 WP_PLUGINS=(
