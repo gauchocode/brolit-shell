@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta7
+# Version: 3.0-beta10
 ################################################################################
 
 wpcli_install_if_not_installed() {
@@ -42,7 +42,9 @@ wpcli_install_needed_extensions() {
     # Salts
     wp --allow-root package install sebastiaandegeus/wp-cli-salts-comman
     # Vulnerability Scanner
-    #wp --allow-root package install git@github.com:10up/wp-vulnerability-scanner.git
+    wp --allow-root package install git@github.com:10up/wp-vulnerability-scanner.git
+    # Doctor
+    wp --allow-root package install wp-cli/doctor-command
 
 }
 

@@ -1,12 +1,12 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta7
+# Version: 3.0-beta10
 #############################################################################
 
 ### Checking Script Execution
 if [[ -z "${SFOLDER}" ]]; then
-  echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+  echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
   exit 0
 fi
 ################################################################################
@@ -27,31 +27,69 @@ CONFIG_F="configs"
 
 # Starting Message
 echo " > Starting file backup script ..." >>$LOG
-echo -e ${GREEN}" > Starting file backup script ..."${ENDCOLOR}
+echo -e ${B_GREEN}" > Starting file backup script ..."${ENDCOLOR}
 
 # MAILCOW Files
 if [[ "${MAILCOW_BK}" = true ]]; then
+
+  if [ ! -d "${MAILCOW_TMP_BK}" ]; then
+    echo " > Folder ${MAILCOW_TMP_BK} doesn't exist. Creating now ..."
+    mkdir ${MAILCOW_TMP_BK}
+    echo " > Folder ${MAILCOW_TMP_BK} created ..."
+  fi
+
   make_mailcow_backup "${MAILCOW}"
+
 fi
 
 echo " > Creating Dropbox folder ${CONFIG_F} on Dropbox ..." >>$LOG
 ${DPU_F}/dropbox_uploader.sh mkdir /${CONFIG_F}
 
-# TODO: refactor del manejo de ERRORES
-# ojo que si de make_server_files_backup sale con error,
-# en el mail manda warning pero en ningun lugar se muestra el error
+# TODO: error_type needs refactoring
+# TODO: results of make_server_files_backup "configs" need to be on final mail notification
 
 # TAR Webserver Config Files
-make_server_files_backup "configs" "nginx" "${WSERVER}" "."
+if [[ ! -d "${WSERVER}" ]]; then
+  echo -e ${B_YELLOW}" > Warning: WSERVER var not defined! Skipping webserver config files backup ..."${ENDCOLOR}
+  echo "> Warning: WSERVER var not defined! Skipping webserver config files backup ..." >>$LOG
+
+ else
+  make_server_files_backup "${CONFIG_F}" "nginx" "${WSERVER}" "."
+
+fi
 
 # TAR PHP Config Files
-make_server_files_backup "configs" "php" "${PHP_CF}" "."
+if [[ ! -d "${PHP_CF}" ]]; then
+  echo -e ${B_YELLOW}" > Warning: PHP_CF var not defined! Skipping PHP config files backup ..."${ENDCOLOR}
+  echo "> Warning: PHP_CF var not defined! Skipping PHP config files backup ..." >>$LOG
+
+ else
+  make_server_files_backup "${CONFIG_F}" "php" "${PHP_CF}" "."
+
+fi
+
 
 # TAR MySQL Config Files
-make_server_files_backup "configs" "mysql" "${MySQL_CF}" "."
+if [[ ! -d "${MySQL_CF}" ]]; then
+  echo -e ${B_YELLOW}" > Warning: MySQL_CF var not defined! Skipping MySQL config files backup ..."${ENDCOLOR}
+  echo "> Warning: MySQL_CF var not defined! Skipping MySQL config files backup ..." >>$LOG
+
+ else
+  make_server_files_backup "${CONFIG_F}" "mysql" "${MySQL_CF}" "."
+
+fi
 
 # TAR Let's Encrypt Config Files
-make_server_files_backup "configs" "letsencrypt" "${LENCRYPT_CF}" "."
+if [[ ! -d "${LENCRYPT_CF}" ]]; then
+  echo -e ${B_YELLOW}" > Warning: LENCRYPT_CF var not defined! Skipping Letsencrypt config files backup ..."${ENDCOLOR}
+  echo "> Warning: LENCRYPT_CF var not defined! Skipping Letsencrypt config files backup ..." >>$LOG
+
+ else
+  
+  echo "LENCRYPT_CF: ${LENCRYPT_CF}"
+  make_server_files_backup "${CONFIG_F}" "letsencrypt" "${LENCRYPT_CF}" "."
+
+fi
 
 # Get all directories
 TOTAL_SITES=$(find ${SITES} -maxdepth 1 -type d)
@@ -64,7 +102,8 @@ echo -e ${CYAN}" > ${COUNT_TOTAL_SITES} directory found ..."${ENDCOLOR}
 echo " > ${COUNT_TOTAL_SITES} directory found ..." >>$LOG
 
 # MORE GLOBALS
-FILE_BK_INDEX=1
+BK_FILE_INDEX=0
+BK_FL_ARRAY_INDEX=0
 declare -a BACKUPED_LIST
 declare -a BK_FL_SIZES
 
@@ -72,7 +111,7 @@ k=0
 
 for j in ${TOTAL_SITES}; do
 
-  echo -e ${YELLOW}" > Processing [${j}] ..."${ENDCOLOR}
+  echo -e ${CYAN}" > Processing [${j}] ..."${ENDCOLOR}
 
   if [[ "$k" -gt 0 ]]; then
 
@@ -81,21 +120,23 @@ for j in ${TOTAL_SITES}; do
     if [[ $SITES_BL != *"${FOLDER_NAME}"* ]]; then
 
       make_site_backup "site" "${FOLDER_NAME}" "${SITES}" "${FOLDER_NAME}"
+      BK_FL_ARRAY_INDEX=$((BK_FL_ARRAY_INDEX + 1))
 
     else
-      echo " > Omiting ${FOLDER_NAME} TAR file (blacklisted) ..." >>$LOG
+      echo -e ${GREEN}" > Omitting ${FOLDER_NAME} TAR file (blacklisted) ..."${ENDCOLOR}
+      echo " > Omitting ${FOLDER_NAME} TAR file (blacklisted) ..." >>$LOG
 
     fi
 
-    echo -e ${GREEN}" > Processed ${FILE_BK_INDEX} of ${COUNT_TOTAL_SITES} directories"${ENDCOLOR}
-    echo "> Processed ${FILE_BK_INDEX} of ${COUNT_TOTAL_SITES} directories" >>$LOG
+    BK_FILE_INDEX=$((BK_FILE_INDEX + 1))
 
-    FILE_BK_INDEX=$((FILE_BK_INDEX + 1))
+    echo -e ${GREEN}" > Processed ${BK_FILE_INDEX} of ${COUNT_TOTAL_SITES} directories"${ENDCOLOR}
+    echo "> Processed ${BK_FILE_INDEX} of ${COUNT_TOTAL_SITES} directories" >>$LOG
 
   fi
 
-  echo -e ${CYAN}"###################################################"${ENDCOLOR}
-  echo "###################################################" >>$LOG
+  echo -e ${MAGENTA}"######################################################################################################"${ENDCOLOR}
+  echo "######################################################################################################" >>$LOG
 
   k=$k+1
 
@@ -108,4 +149,19 @@ rm -r ${BAKWP}/${NOW}
 duplicity_backup
 
 # Configure Email
-mail_filesbackup_section "${ERROR}" "${ERROR_TYPE}" ${BACKUPED_LIST} ${BK_FL_SIZES}
+COUNT=0
+for t in "${BACKUPED_LIST[@]}"; do
+                     
+    BK_FL_SIZE=${BK_FL_SIZES[$COUNT]}
+
+    echo -e ${ORANGE}"************************************"${ENDCOLOR}
+    echo -e ${ORANGE}" > BACKUPED_LIST ITEM: ${t}"${ENDCOLOR}
+    echo -e ${ORANGE}" > BK_FL_SIZE: ${BK_FL_SIZE}"${ENDCOLOR}
+    echo -e ${ORANGE}"************************************"${ENDCOLOR}
+
+    COUNT=$((COUNT + 1))
+
+done
+
+echo -e ${CYAN}"> Preparing mail files backup section ..."${ENDCOLOR}
+mail_filesbackup_section "${BACKUPED_LIST[@]}" "${BK_FL_SIZES[@]}" "${ERROR}" "${ERROR_TYPE}"

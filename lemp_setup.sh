@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta7
+# Version: 3.0-beta10
 ################################################################################
 
 ### Checking some things
@@ -42,7 +42,7 @@ selected_package_installation() {
 
 timezone_configuration() {
 
-  configure timezone
+  #configure timezone
   dpkg-reconfigure tzdata
 
 }
@@ -77,7 +77,7 @@ export LOG SFOLDER
 
 checking_scripts_permissions
 
-#basic_packages_installation
+basic_packages_installation
 
 ${SFOLDER}/utils/installers/mysql_installer.sh
 

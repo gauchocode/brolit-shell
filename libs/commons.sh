@@ -2,7 +2,7 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 3.0-beta7
+# Version: 3.0-beta10
 ################################################################################
 
 ### Setup Foreground Colours
@@ -155,115 +155,66 @@ backup_menu() {
 
     if [[ ${CHOSEN_BACKUP_TYPE} == *"01"* ]]; then
 
-      while true; do
-        echo -e ${YELLOW}"> Do you really want to run the database backup?"${ENDCOLOR}
-        read -p "Please type 'y' or 'n'" yn
-        case $yn in
-        [Yy]*)
+      source ${SFOLDER}/mysql_backup.sh
 
-          source ${SFOLDER}/mysql_backup.sh
+      DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
+      DB_MAIL_VAR=$(<${DB_MAIL})
 
-          DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
-          DB_MAIL_VAR=$(<${DB_MAIL})
+      echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
 
-          echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
+      EMAIL_SUBJECT="${STATUS_ICON_D} ${VPSNAME} - Database Backup - [${NOWDISPLAY}]"
+      EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${DB_MAIL_VAR} ${MAIL_FOOTER}"
 
-          EMAIL_SUBJECT="${STATUS_ICON_D} ${VPSNAME} - Database Backup - [${NOWDISPLAY}]"
-          EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${DB_MAIL_VAR} ${MAIL_FOOTER}"
-
-          # Sending email notification
-          send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
-
-          break
-          ;;
-        [Nn]*)
-          echo -e ${RED}"Aborting database backup script ..."${ENDCOLOR}
-          break
-          ;;
-        *) echo "Please answer yes or no." ;;
-        esac
-      done
+      # Sending email notification
+      send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
 
     fi
     if [[ ${CHOSEN_BACKUP_TYPE} == *"02"* ]]; then
 
-      while true; do
-        echo -e ${YELLOW}"> Do you really want to run the file backup?"${ENDCOLOR}
-        read -p "Please type 'y' or 'n'" yn
-        case $yn in
-        [Yy]*)
+      source ${SFOLDER}/files_backup.sh
 
-          source ${SFOLDER}/files_backup.sh
+      FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
+      FILE_MAIL_VAR=$(<$FILE_MAIL)
 
-          FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
-          FILE_MAIL_VAR=$(<$FILE_MAIL)
+      echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
 
-          echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
+      EMAIL_SUBJECT="${STATUS_ICON_F} ${VPSNAME} - Files Backup - [${NOWDISPLAY}]"
+      EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
 
-          EMAIL_SUBJECT="${STATUS_ICON_F} ${VPSNAME} - Files Backup - [${NOWDISPLAY}]"
-          EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
-
-          # Sending email notification
-          send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
-
-          break
-          ;;
-        [Nn]*)
-          echo -e ${RED}"Aborting file backup script ..."${ENDCOLOR}
-          break
-          ;;
-        *) echo " > Please answer yes or no." ;;
-        esac
-      done
+      # Sending email notification
+      send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
 
     fi
     if [[ ${CHOSEN_BACKUP_TYPE} == *"03"* ]]; then
 
-      while true; do
-        echo -e ${YELLOW}"> Do you really want to backup files and databases?"${ENDCOLOR}
-        read -p "Please type 'y' or 'n'" yn
-        case $yn in
-        [Yy]*)
+      # Running scripts
+      ${SFOLDER}/mysql_backup.sh
+      ${SFOLDER}/files_backup.sh
 
-          # Running scripts
-          ${SFOLDER}/mysql_backup.sh
-          ${SFOLDER}/files_backup.sh
+      DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
+      DB_MAIL_VAR=$(<${DB_MAIL})
 
-          DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
-          DB_MAIL_VAR=$(<${DB_MAIL})
+      FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
+      FILE_MAIL_VAR=$(<${FILE_MAIL})
 
-          FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
-          FILE_MAIL_VAR=$(<${FILE_MAIL})
+      MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
 
-          MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
+      # Checking result status for mail subject
+      EMAIL_STATUS=$(mail_subject_status "${STATUS_D}" "${STATUS_F}" "${OUTDATED}")
 
-          # Checking result status for mail subject
-          EMAIL_STATUS=$(mail_subject_status "${STATUS_D}" "${STATUS_F}" "${OUTDATED}")
+      echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
 
-          echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
+      EMAIL_SUBJECT="${EMAIL_STATUS} on ${VPSNAME} Running Complete Backup - [${NOWDISPLAY}]"
+      EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
 
-          EMAIL_SUBJECT="${EMAIL_STATUS} on ${VPSNAME} Running Complete Backup - [${NOWDISPLAY}]"
-          EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
-
-          # Sending email notification
-          send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
-
-          break
-          ;;
-        [Nn]*)
-          echo -e ${RED}"Aborting file backup script ..."${ENDCOLOR}
-          break
-          ;;
-        *) echo " > Please answer yes or no." ;;
-        esac
-
-      done
+      # Sending email notification
+      send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
 
     fi
 
     if [[ ${CHOSEN_BACKUP_TYPE} == *"04"* ]]; then
 
-      # Running script
+      # Running project_backup script
       ${SFOLDER}/project_backup.sh
 
     fi
@@ -587,6 +538,26 @@ check_if_folder_exists() {
     return 0
 
   fi
+}
+
+prompt_return_or_finish() {
+
+  while true; do
+    echo -e ${YELLOW}"> Do you want to return to menu?"${ENDCOLOR}
+    read -p "Please type 'y' or 'n'" yn
+    case $yn in
+      [Yy]*)
+        echo -e ${CYAN}"Returning to menu ..."${ENDCOLOR}
+        break
+        ;;
+      [Nn]*)
+        echo -e ${RED}"Exiting script ..."${ENDCOLOR}
+        exit 0
+        ;;
+      *) echo "Please answer yes or no." ;;
+    esac
+  done
+
 }
 
 ################################################################################

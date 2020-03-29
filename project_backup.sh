@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta7
+# Version: 3.0-beta10
 #############################################################################
 #
 # Este script va a sustituir varias de las tareas que hoy hacen 
@@ -51,7 +51,8 @@ echo -e ${CYAN}" > ${COUNT_TOTAL_SITES} directory found ..."${ENDCOLOR}
 echo " > ${COUNT_TOTAL_SITES} directory found ..." >>$LOG
 
 # MORE GLOBALS
-FILE_BK_INDEX=1
+BK_FILE_INDEX=0
+BK_FL_ARRAY_INDEX=0
 declare -a BACKUPED_LIST
 declare -a BK_FL_SIZES
 
@@ -68,16 +69,17 @@ for j in ${TOTAL_SITES}; do
         if [[ $SITES_BL != *"${FOLDER_NAME}"* ]]; then
 
             make_project_backup "site" "${FOLDER_NAME}" "${SITES}" "${FOLDER_NAME}"
+            BK_FL_ARRAY_INDEX=$((BK_FL_ARRAY_INDEX + 1))
 
         else
             echo " > Omiting ${FOLDER_NAME} TAR file (blacklisted) ..." >>$LOG
 
         fi
 
-        echo -e ${GREEN}" > Processed ${FILE_BK_INDEX} of ${COUNT_TOTAL_SITES} directories"${ENDCOLOR}
-        echo "> Processed ${FILE_BK_INDEX} of ${COUNT_TOTAL_SITES} directories" >>$LOG
+        echo -e ${GREEN}" > Processed ${BK_FILE_INDEX} of ${COUNT_TOTAL_SITES} directories"${ENDCOLOR}
+        echo "> Processed ${BK_FILE_INDEX} of ${COUNT_TOTAL_SITES} directories" >>$LOG
 
-        FILE_BK_INDEX=$((FILE_BK_INDEX + 1))
+        BK_FILE_INDEX=$((BK_FILE_INDEX + 1))
 
     fi
 
@@ -91,5 +93,6 @@ done
 # Deleting old backup files
 rm -r ${BAKWP}/${NOW}
 
-# Configure Email
-mail_filesbackup_section "${ERROR}" "${ERROR_TYPE}" ${BACKUPED_LIST} ${BK_FL_SIZES}
+# Configure Email        
+echo -e ${CYAN}"> Preparing mail files backup section ..."${ENDCOLOR}
+mail_filesbackup_section "${BACKUPED_LIST[@]}" "${BK_FL_SIZES[@]}" "${ERROR}" "${ERROR_TYPE}"

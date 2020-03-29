@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta7
+# Version: 3.0-beta10
 #############################################################################
 
 ### Checking some things
@@ -40,22 +40,22 @@ echo " > ${TOTAL_DBS} databases found ..." >>$LOG
 echo -e ${CYAN}" > ${TOTAL_DBS} databases found ..."${ENDCOLOR}
 
 # MORE GLOBALS
-DB_BK_INDEX=0
+BK_DB_INDEX=0
 declare -a BACKUPED_DB_LIST
 declare -a BK_DB_SIZES
 
 for DATABASE in ${DBS}; do
 
-  echo -e ${YELLOW}" > Processing [${DATABASE}] ..."${ENDCOLOR}
+  echo -e ${CYAN}" > Processing [${DATABASE}] ..."${ENDCOLOR}
 
   if [[ ${DB_BL} != *"${DATABASE}"* ]]; then
 
     make_database_backup "database" "${DATABASE}"
 
-    DB_BK_INDEX=$((DB_BK_INDEX + 1))
+    BK_DB_INDEX=$((BK_DB_INDEX + 1))
 
-    echo -e ${GREEN}" > Backup ${DB_BK_INDEX} of ${TOTAL_DBS} DONE"${ENDCOLOR}
-    echo "> Backup ${DB_BK_INDEX} of ${TOTAL_DBS} DONE" >>$LOG
+    echo -e ${GREEN}" > Backup ${BK_DB_INDEX} of ${TOTAL_DBS} DONE"${ENDCOLOR}
+    echo "> Backup ${BK_DB_INDEX} of ${TOTAL_DBS} DONE" >>$LOG
 
     echo -e ${GREEN}"###################################################"${ENDCOLOR}
     echo "###################################################" >>$LOG
@@ -68,6 +68,6 @@ for DATABASE in ${DBS}; do
 done
 
 # Configure Email
-echo -e ${CYAN}" > BACKUPED_DB_LIST: ${BACKUPED_DB_LIST}"${ENDCOLOR}
-
-mail_mysqlbackup_section "${ERROR}" "${ERROR_TYPE}" ${BACKUPED_DB_LIST} ${BK_DB_SIZES}
+echo -e ${CYAN}"> Preparing mail databases backup section ..."${ENDCOLOR}
+#mail_mysqlbackup_section "${ERROR}" "${ERROR_TYPE}" ${BACKUPED_DB_LIST} ${BK_DB_SIZES}
+mail_mysqlbackup_section "${BACKUPED_DB_LIST[@]}" "${BK_DB_SIZES[@]}" "${ERROR}" "${ERROR_TYPE}"

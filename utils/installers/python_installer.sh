@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 2.9.9
+# Version: 3.0-beta10
 ################################################################################
 #
 # Ref: https://linuxize.com/post/how-to-install-pip-on-ubuntu-18.04/
@@ -15,10 +15,10 @@ python_installer() {
 
 }
 
-python_module_check_installation() {
-    #pip install wetransferpy
-
-}
+#python_module_check_installation() {
+#    pip install wetransferpy
+#
+#}
 
 python_module_install_wetransfer() {
     #https://github.com/sirowain/py-transmat

@@ -2,39 +2,42 @@
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Script Name: BROOBE Utils Scripts
-# Version: 3.0-beta7
+# Version: 3.0-beta10
 ################################################################################
 #
 # TODO: Para release 3.0 final
-#       1- FIX: el status del SUBJECT de los mails, siempre llega OK
-#       2- Cuando restauramos un backup para la base pregunta el STATUS, pero no para los archivos, 
-#          deberia preguntarte para armar ambientes facil desde un backup.
-#       3- FIX: índice de backups procesados roto y cuenta incluso los que están en BL.
+#       1- FIX: subject status broken, not always show the correct status
+#       2- TODO: include server config backups on mail notification
+#
+# TODO: Para release 3.1
+#       1- Need to ask for STATUS on files backup (PROD, STAGE, etc)
+#       2- On backup failure, the email must show what files fails and what files are correct backuped
+#       3- Support for dailys, weeklys y monthlys backups
 #
 # TODO: Para release 3.5
-#       1- Terminar php_optimizations deprecando el modelo de Hetzner e integrandolo al Lemp Installer
-#       2- Permitir restore del backup con Duplicity
-#       3- Restore de archivos de configuración
+#       1- Finish php_optimizations (deprecate Hetzner model mode) and integrate with Lemp Installer
+#       2- Expand Duplicity support with a restore option
+#       3- Full support for restore server config files
 #       4- Cuando borro un proyecto, que suba el backup temporal a dropbox, pero fuera de la estructura normal de backups -- FALTA PULIR
-#       5- Repensar el server_and_image_optimizations.sh
-#       6- Optimizaciones de MySQL
-#       8- En las notificaciones de mails agregar info de certificados instalados y sus vencimientos 
-#       9- Helper para cambiar nombre de base de datos
-#       10- Utils para tareas de IT (cambiar hostname, asignar IP flotante)
+#       5- Rethink server_and_image_optimizations.sh (maybe add a pdf optimization files too)
+#       6- MySQL optimization script
+#       8- If LetsEncrypt is installed, mail notification must include certificates info
+#       9- Rename database helper (with and without WP)
+#       10- Add some IT utils (change hostname, add floating IP, change SSH port)
 #
 # TODO: Para release 4.0
-#       1- Permitir varias dropbox apps secundarias configuradas para restaurar desde cualquiera de ellas
-#       2- Uptime Robot API
-#       3- Terminar updater.sh
-#       4- Opción de cambiar puerto ssh en vps
-#       5- Soporte notificaciones via Telegram: https://adevnull.com/enviar-mensajes-a-telegram-con-bash/
-#       6- Mejoras LEMP setup, que requiera menos intervencion tzdata y mysql_secure_installation
-#       7- Hetzner cloud cli?
+#       1- Refactor of backups/restore structure, maybe, with could think of one backup dropbox app for all servers?
+#           Example: NOMBRE_VPS -> SITE_DOMAIN (WEBSITE - DB - CONFIG)
+#       2- Uptime Robot API?
+#       3- Autoupdate script option
+#       4- Telegram notifications support: https://adevnull.com/enviar-mensajes-a-telegram-con-bash/
+#       5- Better LEMP setup, tzdata y mysql_secure_installation without human intervention
+#       6- Hetzner cloud cli support:
 #           https://github.com/hetznercloud/cli
 #           https://github.com/thabbs/hetzner-cloud-cli-sh
 #           https://github.com/thlisym/hetznercloud-py
 #           https://hcloud-python.readthedocs.io/en/latest/
-#       8- Web GUI:
+#       7- Web GUI:
 #           https://github.com/bugy/script-server
 #           https://github.com/joewalnes/websocketd
 #
@@ -45,7 +48,7 @@
 # https://google.github.io/styleguide/shell.xml
 #
 
-SCRIPT_V="3.0-beta7"
+SCRIPT_V="3.0-beta10"
 
 ### Checking some things...#####################################################
 SFOLDER="`dirname \"$0\"`"                                                      # relative
@@ -90,11 +93,6 @@ DUP_BK_FULL_LIFE="14D"                        # Delete any backup older than thi
 MAILCOW_BK=false
 MAILCOW="/opt/mailcow-dockerized"             # MailCow files location
 MAILCOW_TMP_BK="${SFOLDER}/tmp/mailcow"
-if [ ! -d "${MAILCOW_TMP_BK}" ]; then
-  echo " > Folder ${MAILCOW_TMP_BK} doesn't exist. Creating now ..."
-  mkdir ${MAILCOW_TMP_BK}
-  echo " > Folder ${MAILCOW_TMP_BK} created ..."
-fi
 
 # TODO: checkear si está instalado apache2, si está instalado mandar warning de soporte parcial
 
@@ -177,7 +175,7 @@ MYSQLDUMP="$(which mysqldump)"
 TAR="$(which tar)"
 
 # EXPORT VARS (GLOBALS)
-export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL DB_BL WSERVER PHP_CF LENCRYPT_CF MHOST MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MAILCOW_BK MAILCOW MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR auth_email auth_key
+export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL DB_BL WSERVER PHP_CF LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MAILCOW_BK MAILCOW MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR auth_email auth_key
 
 if [ -t 1 ]; then
 
@@ -258,7 +256,6 @@ else
 
   # Running from cron
   echo " > Running from cron ..." >>${LOG}
-
   echo " > Running apt update ..." >>${LOG}
   apt update
 
@@ -292,10 +289,10 @@ else
 
 fi
 
-remove_mail_notifications_files
+#remove_mail_notifications_files
 
 echo " > DONE" >>$LOG
-echo -e ${GREEN}" > DONE"${ENDCOLOR}
+echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
 
 # Log End
 echo "Backup: Script End -- $(date +%Y%m%d_%H%M)" >>$LOG

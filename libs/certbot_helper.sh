@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta7
+# Version: 3.0-beta10
 ################################################################################
 #
 # Ref: https://certbot.eff.org/docs/using.html
@@ -142,12 +142,11 @@ certbot_helper_menu() {
 
       fi
 
-      #echo -e ${GREEN}" > Everything is DONE! ..."${ENDCOLOR}
-
     fi
 
   else
-    exit 1
+    prompt_return_or_finish
+    certbot_helper_menu
 
   fi
 
@@ -168,20 +167,16 @@ certbot_certonly() {
   EMAIL=$1
   DOMAINS=$2
 
+  echo -e ${CYAN}"Running: certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m ${EMAIL} -d ${DOMAINS} --preferred-challenges dns-01"${ENDCOLOR}
   certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m ${EMAIL} -d ${DOMAINS} --preferred-challenges dns-01
 
-  # TODO: probar con: --non-interactive --agree-tos --redirect
+  # Maybe add a non interactive mode?
   # certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf --non-interactive --agree-tos --redirect -m ${EMAIL} -d ${DOMAINS} --preferred-challenges dns-01
 
-  # TODO: checkear si es necesario cronear renovación
-  # por que en teoría ahora el certbot te instala ya acá: /etc/cron.d/certbot una renovación automática
-
-  # 14 5 * * * certbot renew --quiet --post-hook "systemctl reload nginx" > /dev/null 2>&1
-
-  echo -e ${CYAN}"Now you need to follow the next steps:"${ENDCOLOR}
-  echo -e ${CYAN}"1- Login to your Cloudflare account and select the domain we want to work."${ENDCOLOR}
-  echo -e ${CYAN}"2- Go to de 'DNS' option panel and Turn ON the proxy Cloudflare setting over the domain/s"${ENDCOLOR}
-  echo -e ${CYAN}"3- Go to 'SSL/TLS' option panel and change the SSL setting from 'Flexible' to 'Full'."${ENDCOLOR}
+  echo -e ${MAGENTA}"Now you need to follow the next steps:"${ENDCOLOR}
+  echo -e ${MAGENTA}"1- Login to your Cloudflare account and select the domain we want to work."${ENDCOLOR}
+  echo -e ${MAGENTA}"2- Go to de 'DNS' option panel and Turn ON the proxy Cloudflare setting over the domain/s"${ENDCOLOR}
+  echo -e ${MAGENTA}"3- Go to 'SSL/TLS' option panel and change the SSL setting from 'Flexible' to 'Full'."${ENDCOLOR}
 
 }
 
@@ -190,6 +185,7 @@ certbot_show_certificates_info() {
   #CERT_DOMAINS=$(certbot certificates |& grep Domains | cut -d ':' -f2)
   #CERT_DOMAINS_EXP=$(certbot certificates |& grep Expiry | cut -d ':' -f2)
 
+  echo -e ${CYAN}"Running: certbot certificates"${ENDCOLOR}
   certbot certificates
 
 }
