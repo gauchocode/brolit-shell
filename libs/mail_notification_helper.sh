@@ -170,15 +170,15 @@ mail_package_section() {
 
 mail_filesbackup_section() {
 
-    # $1 - ${ERROR}
-    # $2 - ${ERROR_TYPE}
-    # $3 - ${BACKUPED_LIST[@]}
-    # $4 - ${BK_FL_SIZES}
+    # $1 - ${BACKUPED_LIST[@]}
+    # $2 - ${BK_FL_SIZES}
+    # $3 - ${ERROR}
+    # $4 - ${ERROR_TYPE}
 
-    local ERROR=$1
-    local ERROR_TYPE=$2
-    local -n BACKUPED_LIST=$3
-    local -n BK_FL_SIZES=$4
+    local -n BACKUPED_LIST=$1
+    local -n BK_FL_SIZES=$2
+    local ERROR=$3
+    local ERROR_TYPE=$4
 
     BK_TYPE="Files"
 
@@ -206,10 +206,12 @@ mail_filesbackup_section() {
         FILES_INC=""
 
         COUNT=0
+
         for t in "${BACKUPED_LIST[@]}"; do
-            #echo -e ${MAGENTA}" > t: ${t}"${ENDCOLOR}
+                     
             BK_FL_SIZE=${BK_FL_SIZES[$COUNT]}
             FILES_INC="${FILES_INC} $t ${BK_FL_SIZE}<br />"
+
             COUNT=$((COUNT + 1))
 
         done
@@ -248,15 +250,15 @@ mail_filesbackup_section() {
 
 mail_mysqlbackup_section() {
 
-    # $1 - ${ERROR}
-    # $2 - ${ERROR_TYPE}
-    # $3 - ${BACKUPED_DB_LIST}
-    # $4 - ${BK_DB_SIZES}
+    # $1 - ${BACKUPED_DB_LIST}
+    # $2 - ${BK_DB_SIZES}
+    # $3 - ${ERROR}
+    # $4 - ${ERROR_TYPE}
 
-    local ERROR=$1
-    local ERROR_TYPE=$2
-    local -n BACKUPED_DB_LIST=$3
-    local -n BK_DB_SIZES=$4
+    local -n BACKUPED_DB_LIST=$1
+    local -n BK_DB_SIZES=$2
+    local ERROR=$3
+    local ERROR_TYPE=$4
 
     BK_TYPE="Database"
 
@@ -284,10 +286,11 @@ mail_mysqlbackup_section() {
         COUNT=0
 
         for t in "${BACKUPED_DB_LIST[@]}"; do
-            #echo -e ${MAGENTA}" > t: ${t}"${ENDCOLOR}
+
             BK_DB_SIZE=${BK_DB_SIZES[$COUNT]}
             FILES_INC_D="${FILES_INC_D} $t ${BK_DB_SIZE}<br />"
             COUNT=$((COUNT + 1))
+
         done
 
         FILES_LABEL_D_END='</div>'
@@ -334,7 +337,7 @@ mail_footer() {
     local SCRIPT_V=$1
 
     FOOTEROPEN='<div style="font-size:10px;float:left;font-family:Verdana,Helvetica,Arial;text-align:right;padding-right:5px;width:100%;height:20px">'
-    SCRIPTSTRING="Script Version: ${SCRIPT_V} by Broobe."
+    SCRIPTSTRING="Script Version: ${SCRIPT_V} by BROOBE."
     FOOTERCLOSE='</div></div>'
 
     HTMLCLOSE=$(mail_html_end)

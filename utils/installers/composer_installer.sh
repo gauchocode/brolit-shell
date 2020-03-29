@@ -1,8 +1,7 @@
 #!/bin/bash
 #
-# Autor: broobe. web + mobile development - https://example.com
-# Script Name: Broobe Utils Scripts
-# Version: 2.9
+# Autor: BROOBE. web + mobile development - https://example.com
+# Version: 3.0-beta10
 #############################################################################
 
 DOMAIN=""                                    # Domain for WP installation. Example: landing.example.com
