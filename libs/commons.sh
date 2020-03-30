@@ -516,7 +516,7 @@ generate_cloudflare_config() {
 calculate_disk_usage() {
 
   DISK_U=$(df -h | grep "${MAIN_VOL}" | awk {'print $5'})
-  echo " > Disk usage: ${DISK_U} ..." >>${LOG}
+  echo " > Disk usage: ${DISK_U} ..." >>"${LOG}"
 
 }
 

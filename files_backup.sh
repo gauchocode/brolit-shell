@@ -149,19 +149,15 @@ rm -r ${BAKWP}/${NOW}
 duplicity_backup
 
 # Configure Email
-COUNT=0
-for t in "${BACKUPED_LIST[@]}"; do
-                     
-    BK_FL_SIZE=${BK_FL_SIZES[$COUNT]}
-
-    echo -e ${ORANGE}"************************************"${ENDCOLOR}
-    echo -e ${ORANGE}" > BACKUPED_LIST ITEM: ${t}"${ENDCOLOR}
-    echo -e ${ORANGE}" > BK_FL_SIZE: ${BK_FL_SIZE}"${ENDCOLOR}
-    echo -e ${ORANGE}"************************************"${ENDCOLOR}
-
-    COUNT=$((COUNT + 1))
-
-done
+#COUNT=0
+#for t in "${BACKUPED_LIST[@]}"; do                
+#    BK_FL_SIZE=${BK_FL_SIZES[$COUNT]}
+#    echo -e ${ORANGE}"************************************"${ENDCOLOR}
+#    echo -e ${ORANGE}" > BACKUPED_LIST ITEM: ${t}"${ENDCOLOR}
+#    echo -e ${ORANGE}" > BK_FL_SIZE: ${BK_FL_SIZE}"${ENDCOLOR}
+#    echo -e ${ORANGE}"************************************"${ENDCOLOR}
+#    COUNT=$((COUNT + 1))
+#done
 
 echo -e ${CYAN}"> Preparing mail files backup section ..."${ENDCOLOR}
 mail_filesbackup_section "${BACKUPED_LIST[@]}" "${BK_FL_SIZES[@]}" "${ERROR}" "${ERROR_TYPE}"
