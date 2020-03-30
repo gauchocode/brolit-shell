@@ -84,7 +84,7 @@ mail_server_status_section() {
 
         # Changing locals
         STATUS_S_ICON="✅"
-        STATUS_S_COLOR='#1DC6DF'
+        STATUS_S_COLOR='#503fe0'
         
     fi
 
@@ -112,11 +112,11 @@ mail_package_status_section() {
     local OUTDATED=$1
 
     if [ "${OUTDATED}" = true ]; then
-        PKG_COLOR='#fb2f2f'
+        PKG_COLOR='#b51c1c'
         PKG_STATUS='OUTDATED'
         PKG_STATUS_ICON="⚠"
     else
-        PKG_COLOR='#1DC6DF'
+        PKG_COLOR='#503fe0'
         PKG_STATUS='OK'
         PKG_STATUS_ICON="✅"
     fi
@@ -148,9 +148,9 @@ mail_package_section() {
 
     #OUTDATED=false
 
-    echo "" >${BAKWP}/pkg-${NOW}.mail
+    echo "" >"${BAKWP}/pkg-${NOW}.mail"
 
-    for pk in ${PACKAGES[@]}; do
+    for pk in "${PACKAGES[@]}"; do
 
         PK_VI=$(apt-cache policy ${pk} | grep Installed | cut -d ':' -f 2)
         PK_VC=$(apt-cache policy ${pk} | grep Candidate | cut -d ':' -f 2)
@@ -200,7 +200,7 @@ mail_filesbackup_section() {
         # Changing locals
         STATUS_ICON_F="✅"        
         CONTENT=""
-        COLOR='#1DC6DF'
+        COLOR='#503fe0'
         SIZE_LABEL=""
         FILES_LABEL='<b>Backup files includes:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
         FILES_INC=""
@@ -210,7 +210,14 @@ mail_filesbackup_section() {
         for t in "${BACKUPED_LIST[@]}"; do
                      
             BK_FL_SIZE=${BK_FL_SIZES[$COUNT]}
-            FILES_INC="${FILES_INC} $t ${BK_FL_SIZE}<br />"
+
+            FILES_INC_LINE_P1='<div><span style="margin-right:5px;">'
+            FILES_INC_LINE_P2="${FILES_INC}$t"
+            FILES_INC_LINE_P3='</span><span style="background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;">'
+            FILES_INC_LINE_P4=${BK_FL_SIZE}
+            FILES_INC_LINE_P5='</span></div>'
+
+            FILES_INC="${FILES_INC_LINE_P1}${FILES_INC_LINE_P2}${FILES_INC_LINE_P3}${FILES_INC_LINE_P4}${FILES_INC_LINE_P5}"
 
             COUNT=$((COUNT + 1))
 
@@ -242,9 +249,9 @@ mail_filesbackup_section() {
     FOOTER=$FOOTEROPEN$SCRIPTSTRING$FOOTERCLOSE
 
     # Write e-mail parts files
-    echo $HEADER >${BAKWP}/file-bk-${NOW}.mail
-    echo $BODY >>${BAKWP}/file-bk-${NOW}.mail
-    echo $FOOTER >>${BAKWP}/file-bk-${NOW}.mail
+    echo ${HEADER} >"${BAKWP}/file-bk-${NOW}.mail"
+    echo ${BODY} >>"${BAKWP}/file-bk-${NOW}.mail"
+    echo ${FOOTER} >>"${BAKWP}/file-bk-${NOW}.mail"
 
 }
 
@@ -269,7 +276,7 @@ mail_mysqlbackup_section() {
         # Changing locals
         STATUS_ICON_D="💩"
         CONTENT_D="<b>${BK_TYPE} Backup with errors:<br />${ERROR_TYPE}<br /><br />Please check log file.</b> <br />"
-        COLOR_D='red'
+        COLOR_D='#b51c1c'
 
     else
         # Changing global
@@ -278,7 +285,7 @@ mail_mysqlbackup_section() {
         # Changing locals
         STATUS_ICON_D="✅"
         CONTENT_D=""
-        COLOR_D='#1DC6DF'
+        COLOR_D='#503fe0'
         SIZE_D=""
         FILES_LABEL_D='<b>Backup files includes:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
         FILES_INC_D=""
@@ -288,7 +295,15 @@ mail_mysqlbackup_section() {
         for t in "${BACKUPED_DB_LIST[@]}"; do
 
             BK_DB_SIZE=${BK_DB_SIZES[$COUNT]}
-            FILES_INC_D="${FILES_INC_D} $t ${BK_DB_SIZE}<br />"
+
+            FILES_INC_D_LINE_P1='<div><span style="margin-right:5px;">'
+            FILES_INC_D_LINE_P2="${FILES_INC_D}$t"
+            FILES_INC_D_LINE_P3='</span><span style="background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;">'
+            FILES_INC_D_LINE_P4=${BK_DB_SIZE}
+            FILES_INC_D_LINE_P5='</span></div>'
+
+            FILES_INC_D="${FILES_INC_D_LINE_P1}${FILES_INC_D_LINE_P2}${FILES_INC_D_LINE_P3}${FILES_INC_D_LINE_P4}${FILES_INC_D_LINE_P5}"
+
             COUNT=$((COUNT + 1))
 
         done
@@ -299,7 +314,7 @@ mail_mysqlbackup_section() {
 
     HEADEROPEN1_D='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
     HEADEROPEN2_D=';padding:5px 0 10px 10px;width:100%;height:30px">'
-    HEADEROPEN_D=${HEADEROPEN1_D}${COLOR_D}${HEADEROPEN2_D}
+    HEADEROPEN_D="${HEADEROPEN1_D}${COLOR_D}${HEADEROPEN2_D}"
     HEADERTEXT_D="Database Backup: ${STATUS_D} ${STATUS_ICON_D}"
     HEADERCLOSE_D='</div>'
 
@@ -310,8 +325,8 @@ mail_mysqlbackup_section() {
     BODY_D=${BODYOPEN_D}${CONTENT_D}${SIZE_D}${FILES_LABEL_D}${FILES_INC_D}${FILES_LABEL_D_END}${BODYCLOSE_D}
 
     # Write e-mail parts files
-    echo $HEADER_D >${BAKWP}/db-bk-${NOW}.mail
-    echo $BODY_D >>${BAKWP}/db-bk-${NOW}.mail
+    echo ${HEADER_D} >"${BAKWP}/db-bk-${NOW}.mail"
+    echo ${BODY_D} >>"${BAKWP}/db-bk-${NOW}.mail"
 
 }
 
@@ -336,9 +351,9 @@ mail_footer() {
 
     local SCRIPT_V=$1
 
-    FOOTEROPEN='<div style="font-size:10px;float:left;font-family:Verdana,Helvetica,Arial;text-align:right;padding-right:5px;width:100%;height:20px">'
-    SCRIPTSTRING="Script Version: ${SCRIPT_V} by BROOBE."
-    FOOTERCLOSE='</div></div>'
+    FOOTEROPEN='<div style="font-size:10px;float:left;font-family:Verdana,Helvetica,Arial;text-align:right;padding-right:5px;width:100%;height:20px"><a href="https://www.broobe.com" style="color: #503fe0;font-weight: bold;font-style: italic;">'
+    SCRIPTSTRING="Script Version: ${SCRIPT_V} by BROOBE"
+    FOOTERCLOSE='</a></div></div>'
 
     HTMLCLOSE=$(mail_html_end)
 
