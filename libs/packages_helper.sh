@@ -75,28 +75,19 @@ check_packages_required() {
 
 }
 
-compare_package_versions() {
-
-  OUTDATED=false
-
-  #echo "" >${BAKWP}/pkg-${NOW}.mail
-
-  for pk in ${PACKAGES[@]}; do
-
-    PK_VI=$(apt-cache policy ${pk} | grep Installed | cut -d ':' -f 2)
-    PK_VC=$(apt-cache policy ${pk} | grep Candidate | cut -d ':' -f 2)
-
-    if [ ${PK_VI} != ${PK_VC} ]; then
-
-      OUTDATED=true
-      # TODO: meterlo en un array para luego loopear
-      #echo " > ${pk} ${PK_VI} -> ${PK_VC} <br />" >>${BAKWP}/pkg-${NOW}.mail
-
-    fi
-
-  done
-
-}
+#compare_package_versions() {
+#  OUTDATED=true
+#  #echo "" >${BAKWP}/pkg-${NOW}.mail
+#  for pk in ${PACKAGES[@]}; do
+#    PK_VI=$(apt-cache policy ${pk} | grep Installed | cut -d ':' -f 2)
+#    PK_VC=$(apt-cache policy ${pk} | grep Candidate | cut -d ':' -f 2)
+#    if [ ${PK_VI} != ${PK_VC} ]; then
+#      OUTDATED=false
+#      # TODO: meterlo en un array para luego loopear
+#      #echo " > ${pk} ${PK_VI} -> ${PK_VC} <br />" >>${BAKWP}/pkg-${NOW}.mail
+#    fi
+#  done
+#}
 
 remove_old_packages() {
 
