@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta10
+# Version: 3.0-beta11
 #############################################################################
 
 ### Checking some things...#####################################################
@@ -12,17 +12,47 @@ if [ -z "$SFOLDER" ]; then
   exit 1  # error; the path is not accessible
 fi
 
+# Temp folder
+BAKWP="${SFOLDER}/tmp"
+
 # MySQL host and user
 MHOST="localhost"
 MUSER="root"
+
+# Backup rotation vars
+NOW=$(date +"%Y-%m-%d")
+NOWDISPLAY=$(date +"%d-%m-%Y")
+ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
 
 # BROOBE Utils config file
 if test -f /root/.broobe-utils-options; then
   source /root/.broobe-utils-options
 fi
 
-source ${SFOLDER}/libs/commons.sh
-source ${SFOLDER}/libs/mysql_helper.sh
+source "${SFOLDER}/libs/commons.sh"
+source "${SFOLDER}/libs/mail_notification_helper.sh"
+source "${SFOLDER}/libs/packages_helper.sh"
+source "${SFOLDER}/libs/mysql_helper.sh"
+
+####################### TEST FOR mail_cert_section #######################
+
+test_cert_mail(){
+    echo -e ${B_CYAN}" > TESTING FUNCTION: test_cert_mail"${B_ENDCOLOR}
+    mail_cert_section
+
+    CERT_MAIL="${BAKWP}/cert-${NOW}.mail"
+    CERT_MAIL_VAR=$(<${CERT_MAIL})
+
+    echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
+
+    EMAIL_SUBJECT="${STATUS_ICON_D} ${VPSNAME} - Cert Expiration Info - [${NOWDISPLAY}]"
+    EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${CERT_MAIL_VAR} ${MAIL_FOOTER}"
+
+    # Sending email notification
+    echo -e ${B_GREEN}" > send_mail_notification: ${EMAIL_SUBJECT}"${ENDCOLOR}
+    send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
+
+}
 
 ####################### TEST FOR ask_mysql_root_psw #######################
 
@@ -58,3 +88,5 @@ test_mysql_user_exists(){
 ################################################################################
 
 #test_mysql_user_exists
+
+#test_cert_mail

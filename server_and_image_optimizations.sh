@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta10
+# Version: 3.0-beta11
 ################################################################################
 
 # TODO: Primero correr sin los parametros -mtime -7 y luego setear un option

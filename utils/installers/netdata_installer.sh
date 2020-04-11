@@ -1,18 +1,17 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta10
+# Version: 3.0-beta11
 ################################################################################
 
 source ${SFOLDER}/libs/commons.sh
-#source ${SFOLDER}/libs/mail_notification_helper.sh
 #source ${SFOLDER}/libs/mysql_helper.sh
 
 ################################################################################
 
 netdata_installer() {
 
-  echo -e ${YELLOW}"\nInstalling Netdata...\n"${ENDCOLOR}
+  echo -e ${B_CYAN}"\nInstalling Netdata...\n"${ENDCOLOR}
   apt --yes install zlib1g-dev uuid-dev libuv1-dev liblz4-dev libjudy-dev libssl-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python python-mysqldb lm-sensors libmnl netcat nodejs python-ipaddress python-dnspython iproute2 python-beanstalkc libuv liblz4 Judy openssl
   bash <(curl -Ss https://my-netdata.io/kickstart.sh) all --dont-wait
 
@@ -22,27 +21,31 @@ netdata_installer() {
 
 netdata_configuration() {
 
-  # TODO: agregar soporte a config de Discord: https://docs.netdata.cloud/health/notifications/discord/
+  # TODO: Discord support: https://docs.netdata.cloud/health/notifications/discord/
 
-  # TODO: creo que ya creando el usuario en la BD tocar el mysql.conf no es necesario
-  # TODO: Acá hay que hacer un sed para agregar el pass de root (quiza hasta sea menor ni copiar el mysql.conf)
-  #cat ${SFOLDER}/confs/netdata/python.d/mysql.conf > /usr/lib/netdata/conf.d/python.d/mysql.conf
-
-  # TODO: Agregar otras confs y la config de las notificaciones
-
-  # Ojo, fijarse si funciona o probar con /usr/lib/netdata/conf.d si no se pisa con cada update de netdata
-  cat ${SFOLDER}/confs/netdata/python.d/monit.conf >/usr/lib/netdata/conf.d/python.d/monit.conf
-
-  # Esto parece que anda OK
-  #cat ${SFOLDER}/confs/netdata/health_alarm_notify.conf >/etc/netdata/health_alarm_notify.conf
-
-  netdata_discord_config
-
+  # MySQL
   create_netdata_db_user
+  cat ${SFOLDER}/confs/netdata/python.d/mysql.conf > /usr/lib/netdata/conf.d/python.d/mysql.conf
+  echo -e ${GREEN}" > MySQL config DONE!"${ENDCOLOR}
+
+  # monit
+  cat ${SFOLDER}/confs/netdata/python.d/monit.conf >/usr/lib/netdata/conf.d/python.d/monit.conf
+  echo -e ${GREEN}" > Monit config DONE!"${ENDCOLOR}
+
+  # web_log
+  cat ${SFOLDER}/confs/netdata/python.d/web_log.conf >/usr/lib/netdata/conf.d/python.d/web_log.conf
+  echo -e ${GREEN}" > Nginx Web Log config DONE!"${ENDCOLOR}
+
+  # health_alarm_notify
+  cat ${SFOLDER}/confs/netdata/health_alarm_notify.conf >/etc/netdata/health_alarm_notify.conf
+  echo -e ${GREEN}" > Health alarm config DONE!"${ENDCOLOR}
+
+  # telegram
+  netdata_telegram_config
 
   systemctl daemon-reload && systemctl enable netdata && service netdata start
 
-  echo -e ${GREEN}" > DONE"${ENDCOLOR}
+  echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
 
 }
 
@@ -59,7 +62,9 @@ netdata_alarm_level() {
   fi
 }
 
-netdata_discord_config() {
+netdata_telegram_config() {
+
+  HEALTH_ALARM_NOTIFY_CONF="/etc/netdata/health_alarm_notify.conf"
 
   DELIMITER="="
 
@@ -72,13 +77,6 @@ netdata_discord_config() {
   KEY="DEFAULT_RECIPIENT_TELEGRAM"
   DEFAULT_RECIPIENT_TELEGRAM=$(cat "/etc/netdata/health_alarm_notify.conf" | grep "^${KEY}${DELIMITER}" | cut -f2- -d"$DELIMITER")
 
-  echo -e ${RED}"****************** OLD DISCORD CONF ***************"${ENDCOLOR}
-  echo -e ${RED}"***************************************************"${ENDCOLOR}
-  echo -e ${RED}"SEND_TELEGRAM=${SEND_TELEGRAM}"${ENDCOLOR}
-  echo -e ${RED}"TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}"${ENDCOLOR}
-  echo -e ${RED}"DEFAULT_RECIPIENT_TELEGRAM=${DEFAULT_RECIPIENT_TELEGRAM}"${ENDCOLOR}
-  echo -e ${RED}"**************************************************"${ENDCOLOR}
-
   NETDATA_CONFIG_1_STRING+= "\n . \n"
   NETDATA_CONFIG_1_STRING+=" Configure Telegram Notifications? You will need:\n"
   NETDATA_CONFIG_1_STRING+=" 1) Get a bot token. Contact @BotFather (https://t.me/BotFather) and send the command /newbot.\n"
@@ -90,8 +88,8 @@ netdata_discord_config() {
   if [ $exitstatus = 0 ]; then
 
     SEND_TELEGRAM="YES"
-    sed -i "s/^\(SEND_TELEGRAM\s*=\s*\).*\$/\1\"$SEND_TELEGRAM\"/" /etc/netdata/health_alarm_notify.conf
-    sed -i "s/^\(TELEGRAM_BOT_TOKEN\s*=\s*\).*\$/\1\"$TELEGRAM_BOT_TOKEN\"/" /etc/netdata/health_alarm_notify.conf
+    sed -i "s/^\(SEND_TELEGRAM\s*=\s*\).*\$/\1\"$SEND_TELEGRAM\"/" $HEALTH_ALARM_NOTIFY_CONF
+    sed -i "s/^\(TELEGRAM_BOT_TOKEN\s*=\s*\).*\$/\1\"$TELEGRAM_BOT_TOKEN\"/" $HEALTH_ALARM_NOTIFY_CONF
 
     NETDATA_CONFIG_2_STRING+= "\n . \n"
     NETDATA_CONFIG_2_STRING+=" 2) Contact the @myidbot (https://t.me/myidbot) bot and send the command /getid to get \n"
@@ -102,9 +100,16 @@ netdata_discord_config() {
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
 
+      # choose the netdata alarm level
       netdata_alarm_level
 
-      sed -i "s/^\(DEFAULT_RECIPIENT_TELEGRAM\s*=\s*\).*\$/\1\"$DEFAULT_RECIPIENT_TELEGRAM|$NETDATA_ALARM_LEVEL\"/" /etc/netdata/health_alarm_notify.conf
+      # making changes on health_alarm_notify.conf
+      sed -i "s/^\(DEFAULT_RECIPIENT_TELEGRAM\s*=\s*\).*\$/\1\"$DEFAULT_RECIPIENT_TELEGRAM|$NETDATA_ALARM_LEVEL\"/" $HEALTH_ALARM_NOTIFY_CONF
+      
+      # Uncomment the clear_alarm_always='YES' parameter on health_alarm_notify.conf
+      if grep -q '^#.*clear_alarm_always' $HEALTH_ALARM_NOTIFY_CONF; then 
+        sed -i '/^#.*clear_alarm_always/ s/^#//' $HEALTH_ALARM_NOTIFY_CONF
+      fi
 
     else
       exit 1
@@ -114,18 +119,19 @@ netdata_discord_config() {
     exit 1
   fi
 
-  echo -e ${GREEN}"***************** NEW CONF ****************"${ENDCOLOR}
-  echo -e ${GREEN}"*******************************************"${ENDCOLOR}
-  echo -e ${GREEN}"SEND_TELEGRAM=${SEND_TELEGRAM}"${ENDCOLOR}
-  echo -e ${GREEN}"TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}"${ENDCOLOR}
-  echo -e ${GREEN}"DEFAULT_RECIPIENT_TELEGRAM=${DEFAULT_RECIPIENT_TELEGRAM}"${ENDCOLOR}
-  echo -e ${GREEN}"*******************************************"${ENDCOLOR}
+  # Uncomment for debug
+  #echo -e ${GREEN}"***************** NEW CONF ****************"${ENDCOLOR}
+  #echo -e ${GREEN}"*******************************************"${ENDCOLOR}
+  #echo -e ${GREEN}"SEND_TELEGRAM=${SEND_TELEGRAM}"${ENDCOLOR}
+  #echo -e ${GREEN}"TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}"${ENDCOLOR}
+  #echo -e ${GREEN}"DEFAULT_RECIPIENT_TELEGRAM=${DEFAULT_RECIPIENT_TELEGRAM}"${ENDCOLOR}
+  #echo -e ${GREEN}"*******************************************"${ENDCOLOR}
 
 }
 
 create_netdata_db_user() {
 
-  # TODO: Checkear si el usuario ya existe
+  # TODO: must check if user exists
   SQL1="CREATE USER 'netdata'@'localhost';"
   SQL2="GRANT USAGE on *.* to 'netdata'@'localhost';"
   SQL3="FLUSH PRIVILEGES;"
@@ -232,7 +238,9 @@ else
         [Yy]*)
 
           echo -e ${YELLOW}"\nUninstalling Netdata...\n"${ENDCOLOR}
-          # TODO: Borrar usuario de la base de datos
+
+          # TODO: remove MySQL user
+          
           rm /etc/nginx/sites-enabled/monitor
           rm /etc/nginx/sites-available/monitor
 

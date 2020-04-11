@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta10
+# Version: 3.0-beta11
 #############################################################################
 
 DOMAIN=""                                    # Domain for WP installation. Example: landing.broobe.com

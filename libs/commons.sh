@@ -2,7 +2,7 @@
 #
 # Autor: broobe. web + mobile development - https://broobe.com
 # Script Name: Broobe Utils Scripts
-# Version: 3.0-beta10
+# Version: 3.0-beta11
 ################################################################################
 
 ### Setup Foreground Colours
@@ -114,24 +114,8 @@ main_menu() {
       fi
     fi
     if [[ ${CHOSEN_TYPE} == *"13"* ]]; then
-      while true; do
-        echo -e ${YELLOW}" > Do you really want to reset the script configuration?"${ENDCOLOR}
-        read -p "Please type 'y' or 'n'" yn
-        case $yn in
-        [Yy]*)
-          # TODO: acá deberia correr el wizard original y levantar las variables seteadas
-          show_script_configuration_wizard
-          #rm /root/.broobe-utils-options
-          #rm -fr ${DPU_CONFIG_FILE}
-          break
-          ;;
-        [Nn]*)
-          echo -e ${RED}"Aborting ..."${ENDCOLOR}
-          break
-          ;;
-        *) echo " > Please answer yes or no." ;;
-        esac
-      done
+      script_configuration_wizard "reconfigure"
+
     fi
 
   else
@@ -171,7 +155,10 @@ backup_menu() {
     fi
     if [[ ${CHOSEN_BACKUP_TYPE} == *"02"* ]]; then
 
-      source ${SFOLDER}/files_backup.sh
+      source "${SFOLDER}/files_backup.sh"
+
+      CONFIG_MAIL="${BAKWP}/config-bk-${NOW}.mail"
+      CONFIG_MAIL_VAR=$(<$CONFIG_MAIL)
 
       FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
       FILE_MAIL_VAR=$(<$FILE_MAIL)
@@ -179,7 +166,7 @@ backup_menu() {
       echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
 
       EMAIL_SUBJECT="${STATUS_ICON_F} ${VPSNAME} - Files Backup - [${NOWDISPLAY}]"
-      EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
+      EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${CERT_MAIL_VAR} ${CONFIG_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
 
       # Sending email notification
       send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
@@ -194,6 +181,9 @@ backup_menu() {
       DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
       DB_MAIL_VAR=$(<${DB_MAIL})
 
+      CONFIG_MAIL="${BAKWP}/config-bk-${NOW}.mail"
+      CONFIG_MAIL_VAR=$(<$CONFIG_MAIL)
+
       FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
       FILE_MAIL_VAR=$(<${FILE_MAIL})
 
@@ -205,7 +195,7 @@ backup_menu() {
       echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
 
       EMAIL_SUBJECT="${EMAIL_STATUS} on ${VPSNAME} Running Complete Backup - [${NOWDISPLAY}]"
-      EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
+      EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${DB_MAIL_VAR} ${CONFIG_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
 
       # Sending email notification
       send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
@@ -223,12 +213,41 @@ backup_menu() {
 
 }
 
-show_script_configuration_wizard() {
+script_configuration_wizard() {
+
+  #$1 = options: initial or reconfigure
+
+  CONFIG_MODE=$1
+
+  if [[ ${CONFIG_MODE} == "reconfigure" ]]; then
+    #Old Vars
+    SMTP_SERVER_OLD=${SMTP_SERVER}
+    SMTP_PORT_OLD=${SMTP_PORT}
+    SMTP_TLS_OLD=${SMTP_TLS}
+    SMTP_U_OLD=${SMTP_U}
+    SMTP_P_OLD=${SMTP_P}
+    MAILA=_OLD=${MAILA}
+    SITES=_OLD=${SITES}
+
+    #Reset Config Vars
+    SMTP_SERVER=""
+    SMTP_PORT=""
+    SMTP_TLS=""
+    SMTP_U=""
+    SMTP_P=""
+    MAILA=""
+    SITES=""
+
+    #Delet old Config File
+    rm /root/.broobe-utils-options
+    echo -e ${YELLOW}" > Script config file deleted: /root/.broobe-utils-options"${B_ENDCOLOR}
+
+  fi
 
   ask_mysql_root_psw
 
   if [[ -z "${SMTP_SERVER}" ]]; then
-    SMTP_SERVER=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server" 10 60 "${SMTP_SERVER}" 3>&1 1>&2 2>&3)
+    SMTP_SERVER=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server" 10 60 "${SMTP_SERVER_OLD}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
       echo "SMTP_SERVER="${SMTP_SERVER} >>/root/.broobe-utils-options
@@ -237,7 +256,7 @@ show_script_configuration_wizard() {
     fi
   fi
   if [[ -z "${SMTP_PORT}" ]]; then
-    SMTP_PORT=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server Port" 10 60 "${SMTP_PORT}" 3>&1 1>&2 2>&3)
+    SMTP_PORT=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server Port" 10 60 "${SMTP_PORT_OLD}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
       echo "SMTP_PORT="${SMTP_PORT} >>/root/.broobe-utils-options
@@ -246,7 +265,7 @@ show_script_configuration_wizard() {
     fi
   fi
   if [[ -z "${SMTP_TLS}" ]]; then
-    SMTP_TLS=$(whiptail --title "SMTP TLS" --inputbox "SMTP yes or no:" 10 60 "${SMTP_TLS}" 3>&1 1>&2 2>&3)
+    SMTP_TLS=$(whiptail --title "SMTP TLS" --inputbox "SMTP yes or no:" 10 60 "${SMTP_TLS_OLD}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
       echo "SMTP_TLS="${SMTP_TLS} >>/root/.broobe-utils-options
@@ -255,7 +274,7 @@ show_script_configuration_wizard() {
     fi
   fi
   if [[ -z "${SMTP_U}" ]]; then
-    SMTP_U=$(whiptail --title "SMTP User" --inputbox "Please insert the SMTP user" 10 60 "${SMTP_U}" 3>&1 1>&2 2>&3)
+    SMTP_U=$(whiptail --title "SMTP User" --inputbox "Please insert the SMTP user" 10 60 "${SMTP_U_OLD}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
       echo "SMTP_U="${SMTP_U} >>/root/.broobe-utils-options
@@ -264,7 +283,7 @@ show_script_configuration_wizard() {
     fi
   fi
   if [[ -z "${SMTP_P}" ]]; then
-    SMTP_P=$(whiptail --title "SMTP Password" --inputbox "Please insert the SMTP user password" 10 60 "${SMTP_P}" 3>&1 1>&2 2>&3)
+    SMTP_P=$(whiptail --title "SMTP Password" --inputbox "Please insert the SMTP user password" 10 60 "${SMTP_P_OLD}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
       echo "SMTP_P="${SMTP_P} >>/root/.broobe-utils-options
@@ -273,7 +292,7 @@ show_script_configuration_wizard() {
     fi
   fi
   if [[ -z "${MAILA}" ]]; then
-    MAILA=$(whiptail --title "Notification Email" --inputbox "Insert the email where you want to receive notifications." 10 60 "${MAILA}" 3>&1 1>&2 2>&3)
+    MAILA=$(whiptail --title "Notification Email" --inputbox "Insert the email where you want to receive notifications." 10 60 "${MAILA_OLD}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
       echo "MAILA="${MAILA} >>/root/.broobe-utils-options
@@ -282,7 +301,7 @@ show_script_configuration_wizard() {
     fi
   fi
   if [[ -z "${SITES}" ]]; then
-    SITES=$(whiptail --title "Websites Root Directory" --inputbox "Insert the path where websites are stored. Ex: /var/www or /usr/share/nginx" 10 60 "${SITES}" 3>&1 1>&2 2>&3)
+    SITES=$(whiptail --title "Websites Root Directory" --inputbox "Insert the path where websites are stored. Ex: /var/www or /usr/share/nginx" 10 60 "${SITES_OLD}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
       echo "SITES="${SITES} >>/root/.broobe-utils-options
@@ -451,6 +470,18 @@ directory_browser() {
       fi
     fi
   fi
+}
+
+get_all_directories() {
+
+  # $1 = ${SITES}
+
+  MAIN_DIRECTORY=$1
+
+  FIRST_LEVEL_DIRECTORIES=$(find ${MAIN_DIRECTORY} -maxdepth 1 -type d)
+
+  echo "${FIRST_LEVEL_DIRECTORIES}"
+
 }
 
 generate_dropbox_config() {

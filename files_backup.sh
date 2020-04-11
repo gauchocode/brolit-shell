@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta10
+# Version: 3.0-beta11
 #############################################################################
 
 ### Checking Script Execution
@@ -48,6 +48,14 @@ ${DPU_F}/dropbox_uploader.sh mkdir /${CONFIG_F}
 # TODO: error_type needs refactoring
 # TODO: results of make_server_files_backup "configs" need to be on final mail notification
 
+################################### SERVER CONFIG FILES ###################################
+
+# SERVER CONFIG FILES GLOBALS
+BK_SCF_INDEX=0
+BK_SCF_ARRAY_INDEX=0
+declare -a BACKUPED_SCF_LIST
+declare -a BK_SCF_SIZES
+
 # TAR Webserver Config Files
 if [[ ! -d "${WSERVER}" ]]; then
   echo -e ${B_YELLOW}" > Warning: WSERVER var not defined! Skipping webserver config files backup ..."${ENDCOLOR}
@@ -64,6 +72,8 @@ if [[ ! -d "${PHP_CF}" ]]; then
   echo "> Warning: PHP_CF var not defined! Skipping PHP config files backup ..." >>$LOG
 
  else
+  BK_SCF_INDEX=$BK_SCF_INDEX+1
+  BK_SCF_ARRAY_INDEX=$BK_SCF_ARRAY_INDEX+1
   make_server_files_backup "${CONFIG_F}" "php" "${PHP_CF}" "."
 
 fi
@@ -75,6 +85,8 @@ if [[ ! -d "${MySQL_CF}" ]]; then
   echo "> Warning: MySQL_CF var not defined! Skipping MySQL config files backup ..." >>$LOG
 
  else
+  BK_SCF_INDEX=$BK_SCF_INDEX+1
+  BK_SCF_ARRAY_INDEX=$BK_SCF_ARRAY_INDEX+1
   make_server_files_backup "${CONFIG_F}" "mysql" "${MySQL_CF}" "."
 
 fi
@@ -85,14 +97,20 @@ if [[ ! -d "${LENCRYPT_CF}" ]]; then
   echo "> Warning: LENCRYPT_CF var not defined! Skipping Letsencrypt config files backup ..." >>$LOG
 
  else
-  
-  echo "LENCRYPT_CF: ${LENCRYPT_CF}"
+  BK_SCF_INDEX=$BK_SCF_INDEX+1
+  BK_SCF_ARRAY_INDEX=$BK_SCF_ARRAY_INDEX+1
   make_server_files_backup "${CONFIG_F}" "letsencrypt" "${LENCRYPT_CF}" "."
 
 fi
 
+# Configure Files Backup Section for Email Notification
+echo -e ${CYAN}"> Preparing mail server configs section ..."${ENDCOLOR}
+mail_configbackup_section "${BACKUPED_SCF_LIST[@]}" "${BK_SCF_SIZES[@]}" "${ERROR}" "${ERROR_TYPE}"
+
+################################### SITES FILES ###################################
+
 # Get all directories
-TOTAL_SITES=$(find ${SITES} -maxdepth 1 -type d)
+TOTAL_SITES=$(get_all_directories "${SITES}")
 
 ## Get length of $TOTAL_SITES
 COUNT_TOTAL_SITES=$(find ${SITES} -maxdepth 1 -type d -printf '.' | wc -c)
@@ -101,7 +119,7 @@ COUNT_TOTAL_SITES=$((${COUNT_TOTAL_SITES} - 1))
 echo -e ${CYAN}" > ${COUNT_TOTAL_SITES} directory found ..."${ENDCOLOR}
 echo " > ${COUNT_TOTAL_SITES} directory found ..." >>$LOG
 
-# MORE GLOBALS
+# FILES BACKUP GLOBALS
 BK_FILE_INDEX=0
 BK_FL_ARRAY_INDEX=0
 declare -a BACKUPED_LIST
@@ -119,7 +137,7 @@ for j in ${TOTAL_SITES}; do
 
     if [[ $SITES_BL != *"${FOLDER_NAME}"* ]]; then
 
-      make_site_backup "site" "${FOLDER_NAME}" "${SITES}" "${FOLDER_NAME}"
+      make_files_backup "site" "${SITES}" "${FOLDER_NAME}"
       BK_FL_ARRAY_INDEX=$((BK_FL_ARRAY_INDEX + 1))
 
     else
@@ -148,16 +166,6 @@ rm -r ${BAKWP}/${NOW}
 # DUPLICITY
 duplicity_backup
 
-# Configure Email
-#COUNT=0
-#for t in "${BACKUPED_LIST[@]}"; do                
-#    BK_FL_SIZE=${BK_FL_SIZES[$COUNT]}
-#    echo -e ${ORANGE}"************************************"${ENDCOLOR}
-#    echo -e ${ORANGE}" > BACKUPED_LIST ITEM: ${t}"${ENDCOLOR}
-#    echo -e ${ORANGE}" > BK_FL_SIZE: ${BK_FL_SIZE}"${ENDCOLOR}
-#    echo -e ${ORANGE}"************************************"${ENDCOLOR}
-#    COUNT=$((COUNT + 1))
-#done
-
+# Configure Files Backup Section for Email Notification
 echo -e ${CYAN}"> Preparing mail files backup section ..."${ENDCOLOR}
 mail_filesbackup_section "${BACKUPED_LIST[@]}" "${BK_FL_SIZES[@]}" "${ERROR}" "${ERROR_TYPE}"
