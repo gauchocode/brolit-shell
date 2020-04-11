@@ -2,6 +2,7 @@ server {
         listen 80;
         listen [::]:80;
         server_name dominio.com;
+        access_log off;
         #error_log /var/log/nginx/monitor.error.log debug;
         location / {
                 proxy_set_header X-Real-IP $remote_addr;
@@ -16,16 +17,17 @@ server {
         listen 80;
         listen [::]:80;
         server_name localhost 127.0.0.1;
+        access_log off;
         #error_log /var/log/nginx/php.error.log debug;
         location /stub_status {
                 stub_status on;
-                access_log off;
+                #access_log off;
                 #allow 127.0.0.1;
                 #allow 138.201.174.125;
                 #deny all;
         }
         location ~ ^/(status|ping)$ {
-                access_log off;
+                #access_log off;
                 #allow 127.0.0.1;
                 #deny all;
                 include /etc/nginx/fastcgi_params;

@@ -1,10 +1,12 @@
 #!/bin/bash
-# Autor: broobe. web + mobile development - https://broobe.com
-# Version: 3.0
+#
+# Autor: BROOBE. web + mobile development - https://broobe.com
+# Version: 3.0-beta11
 ################################################################################
 
-source /root/.broobe-utils-options
-source ${SFOLDER}/libs/commons.sh
+source "/root/.broobe-utils-options"
+source "${SFOLDER}/libs/commons.sh"
+source "${SFOLDER}/libs/certbot_helper.sh"
 
 ################################################################################
 
@@ -16,6 +18,9 @@ send_mail_notification() {
     local EMAIL_SUBJECT=$1
     local EMAIL_CONTENT=$2
 
+    echo -e ${YELLOW}" > Running: sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${EMAIL_SUBJECT}" -o message-content-type=html -m "${EMAIL_CONTENT}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}"${ENDCOLOR}
+    
+    # You could use -l "/var/log/sendemail.log" for custom log file
     sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${EMAIL_SUBJECT}" -o message-content-type=html -m "${EMAIL_CONTENT}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}
 
 }
@@ -45,7 +50,7 @@ mail_subject_status() {
         fi
     fi
 
-    echo $STATUS
+    echo "${STATUS}"
 
 }
 
@@ -103,15 +108,23 @@ mail_server_status_section() {
     BODY_SRV=${SRV_HEADER}${SRV_BODY}
 
     echo ${BODY_SRV}
+
+    # Write e-mail parts files
+    #echo "${BODY_SRV}" >"${BAKWP}/pkg-${NOW}.mail"
+
 }
 
 mail_package_status_section() {
 
-    # $1 - ${OUTDATED}
+    # $1 - ${PKG_DETAILS}
 
-    local OUTDATED=$1
+    local PKG_DETAILS=$1
 
-    if [ "${OUTDATED}" = true ]; then
+    #if not empty, system is outdated
+    if [ "${PKG_DETAILS}" != "" ]; then
+        
+        OUTDATED=true
+
         PKG_COLOR='#b51c1c'
         PKG_STATUS='OUTDATED'
         PKG_STATUS_ICON="⚠"
@@ -128,43 +141,138 @@ mail_package_status_section() {
     PKG_HEADERCLOSE='</div>'
 
     PKG_BODYOPEN=$(mail_section_start)
-    PKG_BODYOPEN=$(mail_section_end)
+    
+    PKG_DETAILS='<div>'${PKG_DETAILS}'</div>'
+
+    PKG_BODYCLOSE=$(mail_section_end)
 
     PKG_HEADER=$PKG_HEADEROPEN$PKG_HEADERTEXT$PKG_HEADERCLOSE
 
-    PKG_MAIL="${BAKWP}/pkg-${NOW}.mail"
-    PKG_MAIL_VAR=$(<${PKG_MAIL})
+    BODY_PKG=${PKG_HEADER}${PKG_BODYOPEN}${PKG_DETAILS}${PKG_BODYCLOSE}
 
-    BODY_PKG=${PKG_HEADER}${PKG_BODYOPEN}${PKG_MAIL_VAR}${PKG_BODYCLOSE}
+    #echo ${BODY_PKG}
 
-    echo ${BODY_PKG}
+    # Write e-mail parts files
+    echo "${BODY_PKG}" >"${BAKWP}/pkg-${NOW}.mail"
+
 }
 
 mail_package_section() {
 
     # $1 - ${PACKAGES}
 
-    local PACKAGES=$1
+    local -n PACKAGES=$1
 
-    #OUTDATED=false
-
-    echo "" >"${BAKWP}/pkg-${NOW}.mail"
+    #echo "" >"${BAKWP}/pkg-${NOW}.mail"
 
     for pk in "${PACKAGES[@]}"; do
 
         PK_VI=$(apt-cache policy ${pk} | grep Installed | cut -d ':' -f 2)
         PK_VC=$(apt-cache policy ${pk} | grep Candidate | cut -d ':' -f 2)
 
-        if [ ${PK_VI} != ${PK_VC} ]; then
+        if [ "${PK_VI}" != "${PK_VC}" ]; then
 
-            # Changing global
-            OUTDATED=true
-
-            echo " > ${pk} ${PK_VI} -> ${PK_VC} <br />" >>${BAKWP}/pkg-${NOW}.mail
+            echo "${pk} ${PK_VI} -> ${PK_VC}"
 
         fi
 
     done
+
+}
+
+mail_cert_section() {
+
+#    # Changing global
+#    STATUS_CERT="OK"
+#
+#    # Changing locals
+#    STATUS_ICON_CERT="✅"        
+    CONTENT=""
+    COLOR='#503fe0'
+    SIZE_LABEL=""
+    FILES_LABEL='<b>Sites certificate expiration days:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
+    CERT_LINE=""
+
+#    if [ "$ERROR" = true ]; then
+#
+#        # Changing global
+#        STATUS_F="ERROR"
+#
+#        # Changing locals
+#        STATUS_ICON_F="💩"        
+#        CONTENT="<b>${BK_TYPE} Backup Error: ${ERROR_TYPE}<br />Please check log file.</b> <br />"
+#        COLOR='red'
+#
+#    else
+
+        #This fix avoid getting the first parent directory, maybe we could find a better solution
+        k="skip"
+
+        ALL_SITES=$(get_all_directories "${SITES}")
+
+        for SITE in ${ALL_SITES}; do
+
+            if [ "${k}" != "skip" ]; then
+
+                domain=$(basename "$SITE")
+                
+                CERT_NEW_LINE='<div style="float:left;width:100%">'
+                CERT_DOMAIN='<div>'$domain
+                
+                CERT_DAYS=$(certbot_show_domain_certificates_valid_days "$domain")
+                if [ "${CERT_DAYS}" != "" ]; then
+
+                    if (( "${CERT_DAYS}" >= 14 )); then
+                        # GREEN LABEL
+                        CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#27b50d;border-radius:12px;padding:0 5px 0 5px;">'
+                    else
+                        if (( "${CERT_DAYS}" >= 7 )); then
+                            # ORANGE LABEL
+                            CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#df761d;border-radius:12px;padding:0 5px 0 5px;">'
+                        else
+                            # RED LABEL
+                            CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;">'
+                        fi
+
+                    fi
+                    CERT_DAYS=${CERT_DAYS_CONTAINER}${CERT_DAYS}" days"
+
+                else
+                    # GREY LABEL
+                    CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;">'
+                    CERT_DAYS=${CERT_DAYS_CONTAINER}" no certificate"
+
+                fi
+
+                CERT_END_LINE="</span></div>"
+                CERT_LINE=$CERT_LINE$CERT_NEW_LINE$CERT_DOMAIN$CERT_DAYS$CERT_END_LINE
+
+            else
+                k=""
+
+            fi
+
+        done
+
+        FILES_LABEL_END='</div>'
+
+#    fi
+
+    HEADEROPEN1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
+    HEADEROPEN2=';padding:5px 0 10px 10px;width:100%;height:30px">'
+    HEADEROPEN=$HEADEROPEN1$COLOR$HEADEROPEN2
+    HEADERTEXT="Certificates on server: ${STATUS_F} ${STATUS_ICON_F}"
+    HEADERCLOSE='</div>'
+
+    BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
+    BODYCLOSE='</div></div>'
+
+    HEADER=$HEADEROPEN$HEADERTEXT$HEADERCLOSE
+    BODY=$BODYOPEN$CONTENT$FILES_LABEL$CERT_LINE$FILES_LABEL_END$BODYCLOSE
+
+    # Write e-mail parts files
+    echo "${HEADER}" >"${BAKWP}/cert-${NOW}.mail"
+    echo "${BODY}" >>"${BAKWP}/cert-${NOW}.mail"
 
 }
 
@@ -252,6 +360,87 @@ mail_filesbackup_section() {
     echo ${HEADER} >"${BAKWP}/file-bk-${NOW}.mail"
     echo ${BODY} >>"${BAKWP}/file-bk-${NOW}.mail"
     echo ${FOOTER} >>"${BAKWP}/file-bk-${NOW}.mail"
+
+}
+
+mail_configbackup_section() {
+
+    # $1 - ${BACKUPED_LIST[@]}
+    # $2 - ${BK_FL_SIZES}
+    # $3 - ${ERROR}
+    # $4 - ${ERROR_TYPE}
+
+    local -n BACKUPED_SCF_LIST=$1
+    local -n BK_SCF_SIZE=$2
+    local ERROR=$3
+    local ERROR_TYPE=$4
+
+    BK_TYPE="Config"
+
+    if [ "$ERROR" = true ]; then
+
+        # Changing global
+        STATUS_F="ERROR"
+
+        # Changing locals
+        STATUS_ICON_F="💩"        
+        CONTENT="<b>${BK_TYPE} Backup Error: ${ERROR_TYPE}<br />Please check log file.</b> <br />"
+        COLOR='red'
+
+    else
+
+        # Changing global
+        STATUS_F="OK"
+
+        # Changing locals
+        STATUS_ICON_F="✅"        
+        CONTENT=""
+        COLOR='#503fe0'
+        SIZE_LABEL=""
+        FILES_LABEL='<b>Backup files includes:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
+        FILES_INC=""
+
+        COUNT=0
+
+        for t in "${BACKUPED_SCF_LIST[@]}"; do
+                     
+            BK_SCF_SIZE=${BK_SCF_SIZES[$COUNT]}
+
+            FILES_INC_LINE_P1='<div><span style="margin-right:5px;">'
+            FILES_INC_LINE_P2="${FILES_INC}$t"
+            FILES_INC_LINE_P3='</span><span style="background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;">'
+            FILES_INC_LINE_P4=${BK_SCF_SIZE}
+            FILES_INC_LINE_P5='</span></div>'
+
+            FILES_INC="${FILES_INC_LINE_P1}${FILES_INC_LINE_P2}${FILES_INC_LINE_P3}${FILES_INC_LINE_P4}${FILES_INC_LINE_P5}"
+
+            COUNT=$((COUNT + 1))
+
+        done
+
+        FILES_LABEL_END='</div>'
+
+    fi
+
+    HEADEROPEN1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
+    HEADEROPEN2=';padding:5px 0 10px 10px;width:100%;height:30px">'
+    HEADEROPEN=$HEADEROPEN1$COLOR$HEADEROPEN2
+    HEADERTEXT="Config Backup: ${STATUS_F} ${STATUS_ICON_F}"
+    HEADERCLOSE='</div>'
+
+    BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
+    BODYCLOSE='</div></div>'
+
+    MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
+
+    HEADER=$HEADEROPEN$HEADERTEXT$HEADERCLOSE
+    BODY=$BODYOPEN$CONTENT$SIZE_LABEL$FILES_LABEL$FILES_INC$FILES_LABEL_END$DBK_SIZE_LABEL$BODYCLOSE
+    FOOTER=$FOOTEROPEN$SCRIPTSTRING$FOOTERCLOSE
+
+    # Write e-mail parts files
+    echo "${HEADER}" >"${BAKWP}/config-bk-${NOW}.mail"
+    echo "${BODY}" >>"${BAKWP}/config-bk-${NOW}.mail"
+    echo "${FOOTER}" >>"${BAKWP}/config-bk-${NOW}.mail"
 
 }
 
@@ -351,7 +540,7 @@ mail_footer() {
 
     local SCRIPT_V=$1
 
-    FOOTEROPEN='<div style="font-size:10px;float:left;font-family:Verdana,Helvetica,Arial;text-align:right;padding-right:5px;width:100%;height:20px"><a href="https://www.broobe.com" style="color: #503fe0;font-weight: bold;font-style: italic;">'
+    FOOTEROPEN='<div style="font-size:10px;float:left;font-family:Verdana,Helvetica,Arial;text-align:right;padding-right:5px;width:100%;height:20px"><a href="https://www.broobe.com/web-mobile-development/?utm_source=linux-script&utm_medium=email&utm_campaign=landing_it" style="color: #503fe0;font-weight: bold;font-style: italic;">'
     SCRIPTSTRING="Script Version: ${SCRIPT_V} by BROOBE"
     FOOTERCLOSE='</a></div></div>'
 

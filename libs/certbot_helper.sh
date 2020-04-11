@@ -1,10 +1,12 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta10
+# Version: 3.0-beta11
 ################################################################################
 #
-# Ref: https://certbot.eff.org/docs/using.html
+# Refs: 
+#       https://certbot.eff.org/docs/using.html
+#       https://certbot.eff.org/docs/using.html#certbot-commands
 #
 
 certbot_certificate_install() {
@@ -167,7 +169,7 @@ certbot_certonly() {
   EMAIL=$1
   DOMAINS=$2
 
-  echo -e ${CYAN}"Running: certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m ${EMAIL} -d ${DOMAINS} --preferred-challenges dns-01"${ENDCOLOR}
+  echo -e ${B_CYAN}"Running: certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m ${EMAIL} -d ${DOMAINS} --preferred-challenges dns-01"${ENDCOLOR}
   certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m ${EMAIL} -d ${DOMAINS} --preferred-challenges dns-01
 
   # Maybe add a non interactive mode?
@@ -182,12 +184,30 @@ certbot_certonly() {
 
 certbot_show_certificates_info() {
 
-  #CERT_DOMAINS=$(certbot certificates |& grep Domains | cut -d ':' -f2)
-  #CERT_DOMAINS_EXP=$(certbot certificates |& grep Expiry | cut -d ':' -f2)
-
-  echo -e ${CYAN}"Running: certbot certificates"${ENDCOLOR}
+  echo -e ${B_CYAN}"Running: certbot certificates"${ENDCOLOR}
   certbot certificates
 
+}
+
+certbot_show_domain_certificates_expiration_date() {
+
+  # $1 = DOMAINS (domain.com,www.domain.com)
+
+  DOMAINS=$1
+
+  #echo -e ${CYAN}"Running: certbot certificates --cert-name ${DOMAINS}"${ENDCOLOR}
+  certbot certificates --cert-name ${DOMAINS} | grep 'Expiry' | cut -d ':' -f2 | cut -d ' ' -f2
+
+}
+
+certbot_show_domain_certificates_valid_days() {
+
+  # $1 = DOMAINS (domain.com,www.domain.com)
+
+  DOMAINS=$1
+
+  #echo -e ${CYAN}"Running: certbot certificates --cert-name ${DOMAINS}"${ENDCOLOR}
+  certbot certificates --cert-name ${DOMAINS} | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2
 }
 
 certbot_certificate_delete() {

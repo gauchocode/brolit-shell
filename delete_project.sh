@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta10
+# Version: 3.0-beta11
 ################################################################################
 
 ### Checking some things
@@ -16,6 +16,28 @@ source ${SFOLDER}/libs/mysql_helper.sh
 source ${SFOLDER}/libs/backup_helper.sh
 
 ################################################################################
+
+# TODO: esto requiere hacer un refactor con la siguiente lógica:
+# Backup de archivos con funciones de file_backups y checkear si es un WP
+# Backup de base de datos con funciones de mysql_backup y si los archivos eran de WP, intentar sacar BD por wp-config
+# Si se obtiene la BD y USER, backupear y luego de subir, pedir confirmación para borrar todos los archivos temporales.
+#
+# IMPORTANTE: Pensar en nueva estructura SUGERIDA:
+#
+# VPS_NAME -> SERVER_CONFIGS (PHP, MySQL, Custom Status Log)
+#          -> PROYECTS -> ACTIVE
+#                      -> INACTIVE
+#                      -> ACTIVE/INACTIVE  -> DATABASE
+#                                          -> FILES
+#                                          -> CONFIGS (nginx, letsencrypt)
+#          -> DATABASES
+#          -> SITES_NO_DB
+#
+# El desafío que tiene esta estructura, es que antes de subir los archivos, necesito saber si se trata
+# de un PROYECTO o de un sitio sin BD o de una BD sin sitio.
+#
+# Sitios symphony, config de BD en /var/www/PROJECT/app/config/parameters.yml
+#
 
 # Folder where sites are hosted
 ask_folder_to_install_sites
@@ -33,37 +55,64 @@ if [[ -z "${filepath}" || ${filepath} == "" ]]; then
 
 else
 
+    BK_TYPE="sites"
+
     # Removing last slash from string
-    filename=${filename%/}
+    FILENAME=${filename%/}
 
     # Making a backup of project files
     echo -e ${CYAN}" > Making a backup ..."${ENDCOLOR}
 
-    TAR_FILE=$($TAR --exclude '.git' --exclude '*.log' -jcpf ${SFOLDER}/tmp-backup/backup-${filename}_files.tar.bz2 --directory=${FOLDER_TO_INSTALL} ${filename} >>$LOG)
+    #TAR_FILE=$($TAR --exclude '.git' --exclude '*.log' -jcpf ${SFOLDER}/tmp-backup/backup-${filename}_files.tar.bz2 --directory=${FOLDER_TO_INSTALL} ${filename} >>$LOG)
+    make_files_backup "${BK_TYPE}" "${SITES}" "${FILENAME}"
 
-    if ${TAR_FILE}; then
+    # if ${TAR_FILE}; then
 
-        echo -e ${GREEN}" > Backup project files stored: ${SFOLDER}/tmp-backup"${ENDCOLOR}
+    #     echo -e ${GREEN}" > Backup project files stored: ${SFOLDER}/tmp-backup"${ENDCOLOR}
 
-        echo " > Trying to create folder ${FOLDER_NAME} in Dropbox ..." >>$LOG
-        OLD_SITES_DP_F="/old-sites"
-        ${DPU_F}/dropbox_uploader.sh mkdir /${OLD_SITES_DP_F}
-        ${DPU_F}/dropbox_uploader.sh mkdir /${OLD_SITES_DP_F}/${filename}/
+    #     echo " > Trying to create folder ${FOLDER_NAME} in Dropbox ..." >>$LOG
+    #     OLD_SITES_DP_F="/old-sites"
+    #     ${DPU_F}/dropbox_uploader.sh mkdir /${OLD_SITES_DP_F}
+    #     ${DPU_F}/dropbox_uploader.sh mkdir /${OLD_SITES_DP_F}/${filename}/
 
-        echo " > Uploading backup to Dropbox ..." >>$LOG
-        ${DPU_F}/dropbox_uploader.sh upload ${SFOLDER}/tmp-backup/backup-${filename}_files.tar.bz2 ${OLD_SITES_DP_F}/${filename}/
+    #     echo " > Uploading backup to Dropbox ..." >>$LOG
+    #     ${DPU_F}/dropbox_uploader.sh upload ${SFOLDER}/tmp-backup/backup-${filename}_files.tar.bz2 ${OLD_SITES_DP_F}/${filename}/
+
+    #     # Delete project files
+    #     rm -R $filepath"/"$filename
+    #     echo -e ${GREEN}" > Project files deleted from ${FOLDER_TO_INSTALL}!"${ENDCOLOR}
+
+    #     # Make a copy of nginx configuration file
+    #     cp -r /etc/nginx/sites-available/${filename} ${SFOLDER}/tmp-backup
+
+    #     # Delete nginx configuration file
+    #     rm /etc/nginx/sites-available/${filename}
+    #     rm /etc/nginx/sites-enabled/${filename}
+    #     echo -e ${GREEN}" > Nginx config files deleted!"${ENDCOLOR}
+
+    # fi
+
+    if [ $? -eq 0 ]; then
+
+        # Creating new folder structure for old projects
+        ${DPU_F}/dropbox_uploader.sh -q mkdir "/old-sites"
+
+        # Moving deleted project backups to another dropbox directory
+        #move <REMOTE_FILE/DIR> <REMOTE_FILE/DIR>
+        echo -e ${B_CYAN}" > Running: ${DPU_F}/dropbox_uploader.sh move ${BK_TYPE}/${FILENAME} /old-sites"${ENDCOLOR}
+        ${DPU_F}/dropbox_uploader.sh move "${BK_TYPE}/${FILENAME}" "/old-sites"
 
         # Delete project files
-        rm -R $filepath"/"$filename
-        echo -e ${GREEN}" > Project files deleted from ${FOLDER_TO_INSTALL}!"${ENDCOLOR}
+        rm -R $filepath"/"$FILENAME
+        echo -e ${GREEN}" > Project files deleted for ${FILENAME}!"${ENDCOLOR}
 
         # Make a copy of nginx configuration file
-        cp -r /etc/nginx/sites-available/${filename} ${SFOLDER}/tmp-backup
+        cp -r /etc/nginx/sites-available/${FILENAME} ${SFOLDER}/tmp-backup
 
         # Delete nginx configuration file
-        rm /etc/nginx/sites-available/${filename}
-        rm /etc/nginx/sites-enabled/${filename}
-        echo -e ${GREEN}" > Nginx config files deleted!"${ENDCOLOR}
+        rm /etc/nginx/sites-available/${FILENAME}
+        rm /etc/nginx/sites-enabled/${FILENAME}
+        echo -e ${B_GREEN}" > Nginx config files for ${FILENAME} deleted!"${ENDCOLOR}
 
     fi
 

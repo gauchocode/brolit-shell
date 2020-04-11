@@ -2,7 +2,7 @@
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Script Name: BROOBE Utils Scripts
-# Version: 3.0-beta10
+# Version: 3.0-beta11
 ################################################################################
 #
 # TODO: Para release 3.0 final
@@ -21,9 +21,8 @@
 #       4- Cuando borro un proyecto, que suba el backup temporal a dropbox, pero fuera de la estructura normal de backups -- FALTA PULIR
 #       5- Rethink server_and_image_optimizations.sh (maybe add a pdf optimization files too)
 #       6- MySQL optimization script
-#       8- If LetsEncrypt is installed, mail notification must include certificates info
-#       9- Rename database helper (with and without WP)
-#       10- Add some IT utils (change hostname, add floating IP, change SSH port)
+#       7- Rename database helper (with and without WP)
+#       8- Add some IT utils (change hostname, add floating IP, change SSH port)
 #
 # TODO: Para release 4.0
 #       1- Refactor of backups/restore structure, maybe, with could think of one backup dropbox app for all servers?
@@ -48,7 +47,7 @@
 # https://google.github.io/styleguide/shell.xml
 #
 
-SCRIPT_V="3.0-beta10"
+SCRIPT_V="3.0-beta11"
 
 ### Checking some things...#####################################################
 SFOLDER="`dirname \"$0\"`"                                                      # relative
@@ -111,7 +110,7 @@ PHP_CF="/etc/php"
 LENCRYPT_CF="/etc/letsencrypt"
 
 # Packages to watch
-PACKAGES=(linux-firmware dpkg perl nginx php${PHP_V}-fpm mysql-server curl openssl)
+PACKAGES=(linux-firmware dpkg perl nginx php${PHP_V}-fpm mysql-server curl openssl libssh-4)
 
 MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+') # Main partition
 
@@ -193,7 +192,7 @@ if [ -t 1 ]; then
         exit 1
 
       else
-        show_script_configuration_wizard
+        script_configuration_wizard "initial"
 
       fi
 
@@ -245,7 +244,6 @@ fi
 # Preparing Mail Notifications Template
 HTMLOPEN=$(mail_html_start)
 BODY_SRV=$(mail_server_status_section "${IP}" "${DISK_U}")
-BODY_PKG=$(mail_package_status_section "${OUTDATED}")
 
 if [ -t 1 ]; then
 
@@ -260,7 +258,15 @@ else
   apt update
 
   # Compare package versions
-  mail_package_section "${PACKAGES}"
+  PKG_DETAILS=$(mail_package_section "${PACKAGES[@]}")
+  mail_package_status_section "${PKG_DETAILS}"
+  PKG_MAIL="${BAKWP}/pkg-${NOW}.mail"
+  PKG_MAIL_VAR=$(<${PKG_MAIL})
+
+  # Check certificates installed
+  mail_cert_section
+  CERT_MAIL="${BAKWP}/cert-${NOW}.mail"
+  CERT_MAIL_VAR=$(<${CERT_MAIL})
 
   # Running scripts
   ${SFOLDER}/mysql_backup.sh
@@ -269,6 +275,9 @@ else
   
   DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
   DB_MAIL_VAR=$(<${DB_MAIL})
+
+  CONFIG_MAIL="${BAKWP}/config-bk-${NOW}.mail"
+  CONFIG_MAIL_VAR=$(<${CONFIG_MAIL})
 
   FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
   FILE_MAIL_VAR=$(<${FILE_MAIL})
@@ -282,7 +291,7 @@ else
   echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
 
   EMAIL_SUBJECT="${EMAIL_STATUS} on ${VPSNAME} Running Complete Backup - [${NOWDISPLAY}]"
-  EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
+  EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${PKG_MAIL_VAR} ${CERT_MAIL_VAR} ${DB_MAIL_VAR} ${CONFIG_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
 
   # Sending email notification
   send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
