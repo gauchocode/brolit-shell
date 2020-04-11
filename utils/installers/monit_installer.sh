@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://example.com
-# Version: 3.0-beta10
+# Version: 3.0-beta11
 ################################################################################
 
 # TODO: adentro de lemp-services está la version de php, checkear cualtenemos instalado antes de configurar
