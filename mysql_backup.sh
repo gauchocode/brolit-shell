@@ -11,10 +11,10 @@ if [[ -z "${SFOLDER}" ]]; then
 fi
 ################################################################################
 
-source ${SFOLDER}/libs/commons.sh
-source ${SFOLDER}/libs/mysql_helper.sh
-source ${SFOLDER}/libs/backup_helper.sh
-source ${SFOLDER}/libs/mail_notification_helper.sh
+source "${SFOLDER}/libs/commons.sh"
+source "${SFOLDER}/libs/mysql_helper.sh"
+source "${SFOLDER}/libs/backup_helper.sh"
+source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 #############################################################################
 
@@ -24,8 +24,7 @@ ERROR=false
 ERROR_TYPE=""
 DBS_F="databases"
 
-# TODO: esto hacerlos globales en runner.sh?
-SITES_F="sites"
+#SITES_F="sites"
 
 # Starting Message
 echo " > Starting database backup script ..." >>$LOG
