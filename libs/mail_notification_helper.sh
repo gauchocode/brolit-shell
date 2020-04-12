@@ -4,7 +4,7 @@
 # Version: 3.0-beta11
 ################################################################################
 
-source "/root/.broobe-utils-options"
+#source "/root/.broobe-utils-options"
 source "${SFOLDER}/libs/commons.sh"
 source "${SFOLDER}/libs/certbot_helper.sh"
 
@@ -107,10 +107,7 @@ mail_server_status_section() {
 
     BODY_SRV=${SRV_HEADER}${SRV_BODY}
 
-    echo ${BODY_SRV}
-
-    # Write e-mail parts files
-    #echo "${BODY_SRV}" >"${BAKWP}/pkg-${NOW}.mail"
+    echo "${BODY_SRV}"
 
 }
 
@@ -232,7 +229,7 @@ mail_cert_section() {
 
             fi
 
-            CERT_END_LINE="</span></div>"
+            CERT_END_LINE="</span></div></div>"
             CERT_LINE=$CERT_LINE$CERT_NEW_LINE$CERT_DOMAIN$CERT_DAYS$CERT_END_LINE
 
         else
@@ -246,7 +243,7 @@ mail_cert_section() {
 
     HEADEROPEN1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
     HEADEROPEN2=';padding:5px 0 10px 10px;width:100%;height:30px">'
-    HEADEROPEN=$HEADEROPEN1$COLOR$HEADEROPEN2
+    HEADEROPEN=${HEADEROPEN1}${COLOR}${HEADEROPEN2}
     HEADERTEXT="Certificates on server: ${STATUS_F} ${STATUS_ICON_F}"
     HEADERCLOSE='</div>'
 
@@ -301,13 +298,13 @@ mail_filesbackup_section() {
 
         COUNT=0
 
-        for t in "${BACKUPED_LIST[@]}"; do
+        for backup_file in "${BACKUPED_LIST[@]}"; do
                      
             BK_FL_SIZE=${BK_FL_SIZES[$COUNT]}
 
             FILES_INC_LINE_P1='<div><span style="margin-right:5px;">'
-            FILES_INC_LINE_P2="${FILES_INC}$t"
-            FILES_INC_LINE_P3='</span><span style="background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;">'
+            FILES_INC_LINE_P2="${FILES_INC}${backup_file}"
+            FILES_INC_LINE_P3='</span> <span style="background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;">'
             FILES_INC_LINE_P4=${BK_FL_SIZE}
             FILES_INC_LINE_P5='</span></div>'
 
@@ -320,7 +317,7 @@ mail_filesbackup_section() {
         FILES_LABEL_END='</div>'
 
         if [ "${DUP_BK}" = true ]; then
-            DBK_SIZE=$(du -hs ${DUP_ROOT} | cut -f1)
+            DBK_SIZE=$(du -hs "${DUP_ROOT}" | cut -f1)
             DBK_SIZE_LABEL="Duplicity Backup size: <b>${DBK_SIZE}</b><br /><b>Duplicity Backup includes:</b><br />${DUP_FOLDERS}"
 
         fi
@@ -343,9 +340,9 @@ mail_filesbackup_section() {
     FOOTER=$FOOTEROPEN$SCRIPTSTRING$FOOTERCLOSE
 
     # Write e-mail parts files
-    echo ${HEADER} >"${BAKWP}/file-bk-${NOW}.mail"
-    echo ${BODY} >>"${BAKWP}/file-bk-${NOW}.mail"
-    echo ${FOOTER} >>"${BAKWP}/file-bk-${NOW}.mail"
+    echo "${HEADER}" >"${BAKWP}/file-bk-${NOW}.mail"
+    echo "${BODY}" >>"${BAKWP}/file-bk-${NOW}.mail"
+    echo "${FOOTER}" >>"${BAKWP}/file-bk-${NOW}.mail"
 
 }
 
@@ -467,14 +464,14 @@ mail_mysqlbackup_section() {
 
         COUNT=0
 
-        for t in "${BACKUPED_DB_LIST[@]}"; do
+        for backup_file in "${BACKUPED_DB_LIST[@]}"; do
 
             BK_DB_SIZE=${BK_DB_SIZES[$COUNT]}
 
             FILES_INC_D_LINE_P1='<div><span style="margin-right:5px;">'
-            FILES_INC_D_LINE_P2="${FILES_INC_D}$t"
-            FILES_INC_D_LINE_P3='</span><span style="background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;">'
-            FILES_INC_D_LINE_P4=${BK_DB_SIZE}
+            FILES_INC_D_LINE_P2="${FILES_INC_D}${backup_file}"
+            FILES_INC_D_LINE_P3='</span> <span style="background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;">'
+            FILES_INC_D_LINE_P4="${BK_DB_SIZE}"
             FILES_INC_D_LINE_P5='</span></div>'
 
             FILES_INC_D="${FILES_INC_D_LINE_P1}${FILES_INC_D_LINE_P2}${FILES_INC_D_LINE_P3}${FILES_INC_D_LINE_P4}${FILES_INC_D_LINE_P5}"
@@ -500,8 +497,8 @@ mail_mysqlbackup_section() {
     BODY_D=${BODYOPEN_D}${CONTENT_D}${SIZE_D}${FILES_LABEL_D}${FILES_INC_D}${FILES_LABEL_D_END}${BODYCLOSE_D}
 
     # Write e-mail parts files
-    echo ${HEADER_D} >"${BAKWP}/db-bk-${NOW}.mail"
-    echo ${BODY_D} >>"${BAKWP}/db-bk-${NOW}.mail"
+    echo "${HEADER_D}" >"${BAKWP}/db-bk-${NOW}.mail"
+    echo "${BODY_D}" >>"${BAKWP}/db-bk-${NOW}.mail"
 
 }
 
@@ -509,14 +506,14 @@ mail_section_start() {
 
     BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px 0 0 10px;width:100%;">'
 
-    echo ${BODYOPEN}
+    echo "${BODYOPEN}"
 }
 
 mail_section_end() {
 
     BODYCLOSE='</div>'
 
-    echo ${BODYCLOSE}
+    echo "${BODYCLOSE}"
 
 }
 
@@ -534,19 +531,19 @@ mail_footer() {
 
     MAIL_FOOTER=${FOOTEROPEN}${SCRIPTSTRING}${FOOTERCLOSE}${HTMLCLOSE}
 
-    echo ${MAIL_FOOTER}
+    echo "${MAIL_FOOTER}"
 }
 
 mail_html_start() {
 
     HTMLOPEN='<html><body>'
 
-    echo ${HTMLOPEN}
+    echo "${HTMLOPEN}"
 }
 
 mail_html_end() {
 
     HTMLCLOSE='</body></html>'
 
-    echo ${HTMLCLOSE}
+    echo "${HTMLCLOSE}"
 }
