@@ -4,15 +4,12 @@
 # Version: 3.0-beta11
 ################################################################################
 
-# TODO: adentro de lemp-services está la version de php, checkear cualtenemos instalado antes de configurar
-# TODO: consultar por el monit user y pass y almacernarlo para que lo levante el netdata_installer
-
 configure_monit(){
 
   # Configuring monit
   echo -e ${YELLOW}" > Configuring monit ..."${ENDCOLOR}
-  cat ${SFOLDER}/confs/monit/lemp-services > /etc/monit/conf.d/lemp-services
-  cat ${SFOLDER}/confs/monit/monitrc > /etc/monit/monitrc
+  cat "${SFOLDER}/confs/monit/lemp-services" > /etc/monit/conf.d/lemp-services
+  cat "${SFOLDER}/confs/monit/monitrc" > /etc/monit/monitrc
 
   sed -i "s#HOSTNAME#${VPSNAME}#" /etc/monit/conf.d/lemp-services
   sed -i "s#SMTP_SERVER#${SMTP_SERVER}#" /etc/monit/conf.d/lemp-services
