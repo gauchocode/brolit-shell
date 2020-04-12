@@ -11,18 +11,19 @@ if [[ -z "${SFOLDER}" ]]; then
 fi
 ################################################################################
 
-source ${SFOLDER}/libs/commons.sh
-source ${SFOLDER}/libs/mysql_helper.sh
-source ${SFOLDER}/libs/backup_helper.sh
+source "${SFOLDER}/libs/commons.sh"
+source "${SFOLDER}/libs/mysql_helper.sh"
+source "${SFOLDER}/libs/backup_helper.sh"
 
 ################################################################################
 
-# TODO: esto requiere hacer un refactor con la siguiente lógica:
-# Backup de archivos con funciones de file_backups y checkear si es un WP
-# Backup de base de datos con funciones de mysql_backup y si los archivos eran de WP, intentar sacar BD por wp-config
-# Si se obtiene la BD y USER, backupear y luego de subir, pedir confirmación para borrar todos los archivos temporales.
+# TODO: NEED REFACTOR
+# 1- Files backup with file_backups functions, checking if site is WP or what.
+# 2- MySQL backup with mysql_backup functions, try to search for a wp-config or another parameter file on site.
+# 3- If BD and USER is found, backup and upload DB, and ask for confirm user deletion.
+# 4- Ask for confirm delete temp files.
 #
-# IMPORTANTE: Pensar en nueva estructura SUGERIDA:
+# IMPORTANT: POSIBLE NEW BACKUP STRUCTURE
 #
 # VPS_NAME -> SERVER_CONFIGS (PHP, MySQL, Custom Status Log)
 #          -> PROYECTS -> ACTIVE
@@ -33,10 +34,9 @@ source ${SFOLDER}/libs/backup_helper.sh
 #          -> DATABASES
 #          -> SITES_NO_DB
 #
-# El desafío que tiene esta estructura, es que antes de subir los archivos, necesito saber si se trata
-# de un PROYECTO o de un sitio sin BD o de una BD sin sitio.
+# The problem with this new structure is that you need to match FILES-BD.
 #
-# Sitios symphony, config de BD en /var/www/PROJECT/app/config/parameters.yml
+# Symphony, config BD on /var/www/PROJECT/app/config/parameters.yml
 #
 
 # Folder where sites are hosted
