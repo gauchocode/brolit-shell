@@ -97,7 +97,7 @@ zabbix_server_installer() {
 
     #/etc/init.d/zabbix-server start
 
-    # TODO: pensar bien como configuramos nginx
+    # TODO: configure with nginx
 
     # cd /downloads/zabbix-4.0.3/frontends
     # mv php /var/www/html/zabbix

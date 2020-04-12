@@ -11,9 +11,9 @@ if [[ -z "${SFOLDER}" ]]; then
 fi
 ################################################################################
 
-source ${SFOLDER}/libs/commons.sh
-source ${SFOLDER}/libs/mysql_helper.sh
-source ${SFOLDER}/libs/mail_notification_helper.sh
+source "${SFOLDER}/libs/commons.sh"
+source "${SFOLDER}/libs/mysql_helper.sh"
+source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 ################################################################################
 #
@@ -73,11 +73,26 @@ make_server_files_backup() {
       BK_SCF_SIZE=$(ls -lah ${BAKWP}/${NOW}/${BK_FILE} | awk '{ print $5}')
       BK_SCF_SIZES[$BK_SCF_ARRAY_INDEX]="${BK_SCF_SIZE}"
 
+      # New folder with $VPSNAME
+      ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}"
+      
+      # New folder with $BK_TYPE
+      ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}"
+
+      # New folder with $BK_SUB_TYPE (php, nginx, mysql)
+      ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}/${BK_SUB_TYPE}"
+
+      DROPBOX_PATH="/${VPSNAME}/${BK_TYPE}/${BK_SUB_TYPE}"
+
       echo -e ${CYAN}" > Uploading TAR to Dropbox ..."${ENDCOLOR}
       echo " > Uploading TAR to Dropbox ..." >>$LOG
-      ${DPU_F}/dropbox_uploader.sh upload "${BAKWP}/${NOW}/${BK_FILE}" "${DROPBOX_FOLDER}/${BK_TYPE}"
+      ${DPU_F}/dropbox_uploader.sh upload "${BAKWP}/${NOW}/${BK_FILE}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}"
 
-      dropbox_delete_backup "${BK_TYPE}" "${CONFIG_F}" "${OLD_BK_FILE}"
+      echo -e ${CYAN}" > Trying to delete old backup from Dropbox ..."${ENDCOLOR}
+      echo " > Trying to delete old backup from Dropbox ..." >>$LOG
+      ${DPU_F}/dropbox_uploader.sh remove "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${OLD_BK_FILE}"
+
+      #dropbox_delete_backup "${BK_TYPE}" "${CONFIG_F}" "${OLD_BK_FILE}"
 
       echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
       echo " > DONE" >>$LOG
@@ -112,14 +127,12 @@ make_server_files_backup() {
 
 make_mailcow_backup() {
 
-  # TODO: la funcion deberia retornar el path completo al archivo backupeado. Ej: /root/tmp/bk.tar.bz2
-
   # $1 = Path folder to Backup
 
   BK_FOLDER=$1
 
   # VAR $BK_TYPE rewrited
-  BK_TYPE="mailcow"
+  local BK_TYPE="mailcow"
 
   echo -e ${CYAN}"###################################################"${ENDCOLOR}
 
@@ -148,7 +161,7 @@ make_mailcow_backup() {
       echo -e ${CYAN}"###################################################"${ENDCOLOR}
       echo " > Runnning: (tar -cf - --directory=${MAILCOW_TMP_BK} ${MAILCOW_TMP_FOLDER} | pv -ns $(du -sb ${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER} | awk '{print $1}') | lbzip2 >${MAILCOW_TMP_BK}/${BK_FILE}) 2>&1 | dialog --gauge ' > Making tar.bz2 from: '${MAILCOW_TMP_FOLDER} 7 70">>$LOG
 
-      (tar -cf - --directory=${MAILCOW_TMP_BK} ${MAILCOW_TMP_FOLDER} | pv -ns $(du -sb ${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER} | awk '{print $1}') | lbzip2 >${MAILCOW_TMP_BK}/${BK_FILE}) 2>&1 | dialog --gauge ' > Making tar.bz2 from: '${MAILCOW_TMP_FOLDER} 7 70
+      (tar -cf - --directory="${MAILCOW_TMP_BK}" "${MAILCOW_TMP_FOLDER}" | pv -ns $(du -sb "${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER}" | awk '{print $1}') | lbzip2 >${MAILCOW_TMP_BK}/${BK_FILE}) 2>&1 | dialog --gauge ' > Making tar.bz2 from: '${MAILCOW_TMP_FOLDER} 7 70
 
       # Test backup file
       lbzip2 -t "${MAILCOW_TMP_BK}/${BK_FILE}"
@@ -158,12 +171,23 @@ make_mailcow_backup() {
         echo -e ${GREEN}" > ${MAILCOW_TMP_BK}/${BK_FILE} backup created"${ENDCOLOR}
         echo " > ${MAILCOW_TMP_BK}/${BK_FILE} backup created" >>$LOG
 
+        # New folder with $VPSNAME
+        ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}"
+      
+        # New folder with $BK_TYPE
+        ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}"
+
+        DROPBOX_PATH="/${VPSNAME}/${BK_TYPE}"
+
         echo -e ${CYAN}" > Uploading Backup to Dropbox ..."${ENDCOLOR}
         echo " > Uploading Backup to Dropbox ..." >>$LOG
-        ${DPU_F}/dropbox_uploader.sh upload ${MAILCOW_TMP_BK}/${BK_FILE} ${DROPBOX_FOLDER}
+        ${DPU_F}/dropbox_uploader.sh upload "${MAILCOW_TMP_BK}/${BK_FILE}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}"
 
-        dropbox_delete_backup "${BK_TYPE}" "" "${OLD_BK_FILE}"
-        rm -R ${MAILCOW_TMP_BK}
+        echo -e ${CYAN}" > Trying to delete old backup from Dropbox ..."${ENDCOLOR}
+        echo " > Trying to delete old backup from Dropbox ..." >>$LOG
+        ${DPU_F}/dropbox_uploader.sh remove "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${BK_FILE}"
+
+        rm -R "${MAILCOW_TMP_BK}"
 
         echo -e ${GREEN}" > DONE"${ENDCOLOR}
         echo " > DONE" >>$LOG
@@ -200,11 +224,11 @@ make_mailcow_backup() {
 
 make_files_backup() {
 
-  # $1 = Backup Type
+  # $1 = Backup Type (site_configs or sites)
   # $2 = Path where directories to backup are stored
   # $3 = The specific folder/file to backup
 
-  local BK_TYPE=$1     #site_configs or sites
+  local BK_TYPE=$1
   local SITES=$2
   local F_NAME=$3
 
@@ -213,11 +237,11 @@ make_files_backup() {
 
   SHOW_BK_FILE_INDEX=$((BK_FILE_INDEX + 1))
 
-  echo " > Making TAR.BZ2 from: ${F_NAME} ..." >>$LOG
-  (tar --exclude '.git' --exclude '*.log' -cf - --directory=${SITES} ${F_NAME} | pv -ns $(du -sb ${SITES}/${F_NAME} | awk '{print $1}') | lbzip2 >${BAKWP}/${NOW}/${BK_FILE}) 2>&1 | dialog --gauge 'Processing '${SHOW_BK_FILE_INDEX}' of '${COUNT_TOTAL_SITES}' directories. Making tar.bz2 from: '${F_NAME} 7 70
+  echo " > Making TAR.BZ2 with lbzip2 from: ${F_NAME} ..." >>$LOG
+  (tar --exclude '.git' --exclude '*.log' -cf - --directory="${SITES}" "${F_NAME}" | pv -ns $(du -sb ${SITES}/${F_NAME} | awk '{print $1}') | lbzip2 >"${BAKWP}/${NOW}/${BK_FILE}") 2>&1 | dialog --gauge 'Processing '${SHOW_BK_FILE_INDEX}' of '${COUNT_TOTAL_SITES}' directories. Making tar.bz2 from: '${F_NAME} 7 70
 
   # Test backup file
-  lbzip2 -t ${BAKWP}/${NOW}/${BK_FILE}
+  lbzip2 -t "${BAKWP}/${NOW}/${BK_FILE}"
 
   if [ $? -eq 0 ]; then
 
@@ -228,7 +252,7 @@ make_files_backup() {
     BACKUPED_FL=${BACKUPED_LIST[$BK_FILE_INDEX]}
 
     # Calculate backup size
-    BK_FL_SIZE=$(ls -lah ${BAKWP}/${NOW}/${BK_FILE} | awk '{ print $5}')
+    BK_FL_SIZE=$(ls -lah "${BAKWP}/${NOW}/${BK_FILE}" | awk '{ print $5}')
 
     if [[ ${BK_FL_SIZE} == *"ERROR"* ]]; then
 
@@ -247,26 +271,30 @@ make_files_backup() {
       echo -e ${GREEN}" > Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE} ..."${ENDCOLOR}
       echo " > Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE} ..." >>$LOG
 
-      echo -e ${CYAN}" > Trying to create folder in Dropbox ..."${ENDCOLOR}
-      echo " > Trying to create folders in Dropbox ..." >>$LOG
+      echo -e ${CYAN}" > Creating folders in Dropbox ..."${ENDCOLOR}
+      echo " > Creating folders in Dropbox ..." >>$LOG
 
-      ${DPU_F}/dropbox_uploader.sh -q mkdir "/${BK_TYPE}"
+      # New folder with $VPSNAME
+      ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}"
+      
+      # New folder with $BK_TYPE
+      ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}"
 
-      # New folder structure with date
-      ${DPU_F}/dropbox_uploader.sh -q mkdir "/${BK_TYPE}/${F_NAME}"
+      # New folder with $F_NAME (project folder)
+      ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}/${F_NAME}"
+
+      DROPBOX_PATH="/${VPSNAME}/${BK_TYPE}/${F_NAME}"
 
       echo -e ${CYAN}" > Uploading ${F_NAME} to Dropbox ..."${ENDCOLOR}
       echo " > Uploading ${F_NAME} to Dropbox ..." >>$LOG
-      ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/${BK_FILE} ${DROPBOX_FOLDER}/${BK_TYPE}/${F_NAME}/
-
-      #dropbox_upload_backup "${BAKWP}/${NOW}/${BK_FILE}" "${DROPBOX_FOLDER}" "${BK_TYPE}/${F_NAME}/"
+      ${DPU_F}/dropbox_uploader.sh upload "${BAKWP}/${NOW}/${BK_FILE}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}/"
 
       echo -e ${CYAN}" > Trying to delete old backup from Dropbox with date ${ONEWEEKAGO} ..."${ENDCOLOR}
       echo " > Trying to delete old backup from Dropbox with date ${ONEWEEKAGO} ..." >>$LOG
-      ${DPU_F}/dropbox_uploader.sh remove ${DROPBOX_FOLDER}/${BK_TYPE}/${F_NAME}/${OLD_BK_FILE}
+      ${DPU_F}/dropbox_uploader.sh remove "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${OLD_BK_FILE}"
 
       echo " > Deleting backup from server ..." >>$LOG
-      rm -r ${BAKWP}/${NOW}/${BK_FILE}
+      rm -r "${BAKWP}/${NOW}/${BK_FILE}"
 
       echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
 
@@ -284,38 +312,6 @@ make_files_backup() {
     return 1
 
   fi
-
-}
-
-dropbox_upload_backup() {
-
-  # $1 = Backup Type
-  # $2 = Dropbox Folder to upload backup
-  # $3 = Backup File to upload (entire path)
-
-  DP_BK_TYPE=$1
-  DP_BK_DIR=$2
-  DP_BK_FILE=$3
-
-  echo -e ${CYAN}" > Uploading backup to Dropbox ..."${ENDCOLOR}
-  echo " > Uploading backup to Dropbox ..." >>$LOG
-  ${DPU_F}/dropbox_uploader.sh upload ${DP_BK_FILE} ${DROPBOX_FOLDER}/${DP_BK_DIR}
-
-}
-
-dropbox_delete_backup() {
-
-  # $1 = Backup Type
-  # $2 = Dropbox Folder to delete backup
-  # $3 = Backup File to delete (entire path)
-
-  DP_BK_TYPE=$1
-  DP_BK_DIR=$2
-  DP_BK_FILE=$3
-
-  echo -e ${CYAN}" > Trying to delete old backup from Dropbox ..."${ENDCOLOR}
-  echo " > Trying to delete old backup from Dropbox ..." >>$LOG
-  ${DPU_F}/dropbox_uploader.sh remove ${DP_BK_DIR}/${DP_BK_FILE}
 
 }
 
@@ -354,7 +350,7 @@ make_database_backup() {
   local BK_TYPE=$1 #configs,sites,databases
   local DATABASE=$2
 
-  local BK_FOLDER=${BAKWP}/${NOW}/
+  local BK_FOLDER="${BAKWP}/${NOW}/"
   local DB_FILE="${DATABASE}_${BK_TYPE}_${NOW}.sql"
 
   local OLD_BK_FILE="${DATABASE}_${BK_TYPE}_${ONEWEEKAGO}.tar.bz2"
@@ -371,17 +367,17 @@ make_database_backup() {
     echo -e ${GREEN}" > mysqldump OK!"${ENDCOLOR}
     echo " > mysqldump OK!" >>$LOG
 
-    cd ${BAKWP}/${NOW}
+    cd "${BAKWP}/${NOW}"
 
     echo -e ${CYAN}" > Making a tar.bz2 file of [${DB_FILE}] ..."${ENDCOLOR}
     echo " > Making a tar.bz2 file of [${DB_FILE}] ..." >>$LOG
 
-    tar -cf - --directory=${BK_FOLDER} ${DB_FILE} | pv -s $(du -sb ${BAKWP}/${NOW}/${DB_FILE} | awk '{print $1}') | lbzip2 >${BAKWP}/${NOW}/${BK_FILE}
+    tar -cf - --directory="${BK_FOLDER}" "${DB_FILE}" | pv -s $(du -sb ${BAKWP}/${NOW}/${DB_FILE} | awk '{print $1}') | lbzip2 >${BAKWP}/${NOW}/${BK_FILE}
 
     # Test backup file
     echo -e ${CYAN}" > Testing backup file: ${DB_FILE} ..."${ENDCOLOR}
     echo " > Testing backup file: ${DB_FILE} ..." >>$LOG
-    lbzip2 -t ${BAKWP}/${NOW}/${BK_FILE}
+    lbzip2 -t "${BAKWP}/${NOW}/${BK_FILE}"
 
     if [ $? -eq 0 ]; then
 
@@ -397,29 +393,35 @@ make_database_backup() {
       echo -e ${GREEN}" > Backup for ${DATABASE} created, final size: ${BK_DB_SIZE} ..."${ENDCOLOR}
       echo " > Backup for ${DATABASE} created, final size: ${BK_DB_SIZE} ..." >>$LOG
 
-      #echo " > Creating Dropbox Databases Folder ..." >> $LOG
-      ${DPU_F}/dropbox_uploader.sh -q mkdir ${DBS_F}
-      ${DPU_F}/dropbox_uploader.sh -q mkdir ${DBS_F}/${DATABASE}
+      echo -e ${CYAN}" > Creating folders in Dropbox ..."${ENDCOLOR}
+      echo " > Creating folders in Dropbox ..." >>$LOG
 
-      # New folder structure with date
-      #${DPU_F}/dropbox_uploader.sh -q mkdir /${BK_TYPE}/${F_NAME}
-      #${DPU_F}/dropbox_uploader.sh -q mkdir /${BK_TYPE}/${F_NAME}/${NOW}
+      # New folder with $VPSNAME
+      ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}"
+      
+      # New folder with $BK_TYPE
+      ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}"
+
+      # New folder with $DATABASE (project DB)
+      ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}/${DATABASE}"
+
+      DROPBOX_PATH="/${VPSNAME}/${BK_TYPE}/${DATABASE}"
+
+      #${DPU_F}/dropbox_uploader.sh -q mkdir "${DBS_F}"
+      #${DPU_F}/dropbox_uploader.sh -q mkdir "${DBS_F}/${DATABASE}"
 
       # Upload to Dropbox
-      echo " > Uploading new database backup [${BK_FILE}] ..."
-      #${DPU_F}/dropbox_uploader.sh upload ${BK_FILE} /${BK_TYPE}/${F_NAME}/${NOW}
-      ${DPU_F}/dropbox_uploader.sh upload ${BK_FILE} $DROPBOX_FOLDER/${DBS_F}/${DATABASE}
+      echo -e ${CYAN}" > Uploading new database backup [${BK_FILE}] ..."${ENDCOLOR}
+      ${DPU_F}/dropbox_uploader.sh upload "${BK_FILE}" "$DROPBOX_FOLDER/${DROPBOX_PATH}"
 
       # Delete old backups
-      echo " > Trying to delete old database backup [${OLD_BK_FILE}] ..."
-      #${DPU_F}/dropbox_uploader.sh delete ${DROPBOX_FOLDER}/${BK_TYPE}/${F_NAME}/${ONEWEEKAGO}
-
-      ${DPU_F}/dropbox_uploader.sh -q remove ${DBS_F}/${DATABASE}/${OLD_BK_FILE}
+      echo -e ${CYAN}" > Deleting old database backup [${OLD_BK_FILE}] ..."${ENDCOLOR}
+      ${DPU_F}/dropbox_uploader.sh -q remove "$DROPBOX_FOLDER/${DROPBOX_PATH}/${OLD_BK_FILE}"
 
       echo -e ${CYAN}" > Deleting backup from server ..."${ENDCOLOR}
       echo " > Deleting backup from server ..." >>$LOG
-      rm ${BAKWP}/${NOW}/${DB_FILE}
-      rm ${BAKWP}/${NOW}/${BK_FILE}
+      rm "${BAKWP}/${NOW}/${DB_FILE}"
+      rm "${BAKWP}/${NOW}/${BK_FILE}"
 
     fi
 

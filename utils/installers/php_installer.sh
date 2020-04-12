@@ -1,8 +1,7 @@
 #!/bin/bash
 #
-# Autor: broobe. web + mobile development - https://broobe.com
-# Script Name: Broobe Utils Scripts
-# Version: 3.0
+# Autor: BROOBE. web + mobile development - https://broobe.com
+# Version: 3.0-beta11
 ################################################################################
 
 ### Checking some things
@@ -21,7 +20,7 @@ fi
 
 ################################################################################
 
-source ${SFOLDER}/libs/commons.sh
+source "${SFOLDER}/libs/commons.sh"
 
 php_installer() {
 
@@ -43,6 +42,7 @@ php_custom_installer() {
 php_select_version_to_install() {
 
   PHPV_TO_INSTALL=(
+    "7.4" " " off
     "7.3" " " off
     "7.2" " " off
     "7.1" " " off
@@ -66,7 +66,7 @@ php_redis_installer() {
   apt install redis-server php-redis
   systemctl enable redis-server.service
 
-  cp ${SFOLDER}/confs/redis/redis.conf /etc/redis/redis.conf
+  cp "${SFOLDER}/confs/redis/redis.conf" "/etc/redis/redis.conf"
 
   systemctl restart redis-server.service
 
@@ -132,19 +132,17 @@ if [ $exitstatus = 0 ]; then
 fi
 #fi
 
-# TODO: acá simplemente habria que cambiar max_upload_size y el max_post_size en vez de pizar el php.ini
-# php.ini broobe standard configuration
-echo -e ${MAGENTA}" > Moving php configuration file ..."${ENDCOLOR}
-echo " > Moving php configuration file ..." >>$LOG
-cat ${SFOLDER}/confs/php/php.ini >/etc/php/${PHP_V}/fpm/php.ini
-
-# TODO: DEPRECAR, USAR php_optimizations.sh
+# TODO: need refactor, using php_optimizations.sh
 #${SFOLDER}/utils/php_optimizations.sh
-echo -e ${MAGENTA}" > Moving fpm configuration file ..."${ENDCOLOR}
+echo -e ${CYAN}" > Moving php configuration file ..."${ENDCOLOR}
+echo " > Moving php configuration file ..." >>$LOG
+cat "${SFOLDER}/confs/php/php.ini" >/etc/php/${PHP_V}/fpm/php.ini
+
+echo -e ${CYAN}" > Moving fpm configuration file ..."${ENDCOLOR}
 echo " > Moving fpm configuration file ..." >>$LOG
 cat ${SFOLDER}/confs/php/${SERVER_MODEL}/www.conf >/etc/php/${PHP_V}/fpm/pool.d/www.conf
 
-# TODO: en caso de instalar una nueva version de PHP, dar opcion de reconfigurar los sites de nginx
+# TODO: if you install a new PHP version, you need  to reconfigure nginx sites
 # reconfigure_nginx_sites()
 # fastcgi_pass unix:/var/run/php/php5.6-fpm.sock;
 # fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;

@@ -1,14 +1,13 @@
 #!/bin/bash
 #
-# Autor: broobe. web + mobile development - https://broobe.com
-# Script Name: Broobe Utils Scripts
-# Version: 3.0
-################################################################################
+# Autor: BROOBE. web + mobile development - https://broobe.com
+# Version: 3.0-beta11
+#############################################################################
 #
 # Ref: https://github.com/nelson6e65/bash-mysql-helper/blob/master/src/main.sh
 #
 
-source ${SFOLDER}/libs/commons.sh
+source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
 
@@ -28,33 +27,6 @@ count_dabases() {
     # return
     echo $TOTAL_DBS
 }
-
-#mysql_user_create() {
-#
-#    # TODO: Checkear si el usuario ya existe
-#    # TODO: el GRANT USAGE debería ser otro método
-#
-#    # $1 = USER (${PROJECT_NAME}_user)
-#
-#    DB_USER=$1
-#
-#    SQL1="CREATE USER '${DB_USER}'@'localhost';"
-#    SQL2="GRANT USAGE on *.* to '${DB_USER}'@'localhost';"
-#    SQL3="FLUSH PRIVILEGES;"
-#
-#    echo "Creating ${DB_USER} user in MySQL ..." >>$LOG
-#    mysql -u ${MUSER} -p${MPASS} -e "${SQL1}${SQL2}${SQL3}" >>$LOG
-#
-#    if [ $? -eq 0 ]; then
-#        echo " > DONE!" >>$LOG
-#        echo -e ${GREEN}" > DONE!"${ENDCOLOR}
-#    else
-#        echo " > Something went wrong!" >>$LOG
-#        echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
-#        exit 1
-#    fi
-#
-#}
 
 mysql_user_create() {
 
@@ -266,14 +238,6 @@ mysql_database_import() {
 
 }
 
-#mysql_database_check() {
-#
-#    # $1 = ${DATABASE}
-#
-#    # TODO: check if database exists
-#
-#}
-
 mysql_database_export() {
 
     # $1 = ${DATABASE}
@@ -299,24 +263,23 @@ mysql_database_export() {
 
 }
 
-# TODO: PROBAR ESTO Y RETORNAR VARIABLE
-mysql_get_disk_usage() {
-
-    SQL1="SELECT SUM( data_length + index_length ) / 1024 / 1024 'Size'
-        FROM information_schema.TABLES WHERE table_schema='$1'"
-
-    mysql -u ${MUSER} -p${MPASS} -e "${SQL1}" >>$LOG
-
-    if [ $? -eq 0 ]; then
-        echo " > DONE!" >>$LOG
-        echo -e ${GREEN}" > DONE!"${ENDCOLOR}
-        return 0
-
-    else
-        echo " > Something went wrong!" >>$LOG
-        echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
-        exit 1
-
-    fi
-
-}
+# TODO: NEED TEST
+#mysql_get_disk_usage() {
+#
+#    SQL1="SELECT SUM( data_length + index_length ) / 1024 / 1024 'Size'
+#        FROM information_schema.TABLES WHERE table_schema='$1'"
+#
+#    mysql -u ${MUSER} -p${MPASS} -e "${SQL1}" >>$LOG
+#
+#    if [ $? -eq 0 ]; then
+#
+#        return 0
+#
+#    else
+#        echo " > Something went wrong!" >>$LOG
+#        echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
+#        exit 1
+#
+#    fi
+#
+#}

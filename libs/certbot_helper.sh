@@ -8,6 +8,11 @@
 #       https://certbot.eff.org/docs/using.html
 #       https://certbot.eff.org/docs/using.html#certbot-commands
 #
+################################################################################
+
+source "${SFOLDER}/libs/commons.sh"
+
+################################################################################
 
 certbot_certificate_install() {
 

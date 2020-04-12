@@ -1,7 +1,6 @@
 #!/bin/bash
 #
-# Autor: broobe. web + mobile development - https://broobe.com
-# Script Name: Broobe Utils Scripts
+# Autor: BROOBE. web + mobile development - https://broobe.com
 # Version: 3.0-beta11
 ################################################################################
 
@@ -49,20 +48,20 @@ main_menu() {
 
     fi
     if [[ ${CHOSEN_TYPE} == *"02"* ]]; then
-      source ${SFOLDER}/restore_from_backup.sh
+      source "${SFOLDER}/restore_from_backup.sh"
     fi
     if [[ ${CHOSEN_TYPE} == *"03"* ]]; then
-      source ${SFOLDER}/utils/wordpress_restore_from_source.sh
+      source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
 
     fi
 
     if [[ ${CHOSEN_TYPE} == *"04"* ]]; then
-      source ${SFOLDER}/delete_project.sh
+      source "${SFOLDER}/delete_project.sh"
 
     fi
 
     if [[ ${CHOSEN_TYPE} == *"05"* ]]; then
-      source ${SFOLDER}/utils/installers/wordpress_installer.sh
+      source "${SFOLDER}/utils/installers/wordpress_installer.sh"
 
     fi
     if [[ ${CHOSEN_TYPE} == *"06"* ]]; then
@@ -71,7 +70,7 @@ main_menu() {
         read -p "Please type 'y' or 'n'" yn
         case $yn in
         [Yy]*)
-          source ${SFOLDER}/server_and_image_optimizations.sh
+          source "${SFOLDER}/server_and_image_optimizations.sh"
           break
           ;;
         [Nn]*)
@@ -84,19 +83,19 @@ main_menu() {
 
     fi
     if [[ ${CHOSEN_TYPE} == *"07"* ]]; then
-      source ${SFOLDER}/installers_and_configurators.sh
+      source "${SFOLDER}/installers_and_configurators.sh"
 
     fi
     if [[ ${CHOSEN_TYPE} == *"08"* ]]; then
-      source ${SFOLDER}/utils/wpcli_manager.sh
+      source "${SFOLDER}/utils/wpcli_manager.sh"
 
     fi
     if [[ ${CHOSEN_TYPE} == *"09"* ]]; then
-      source ${SFOLDER}/utils/certbot_manager.sh
+      source "${SFOLDER}/utils/certbot_manager.sh"
 
     fi
     if [[ ${CHOSEN_TYPE} == *"10"* ]]; then
-      source ${SFOLDER}/utils/bench_scripts.sh
+      source "${SFOLDER}/utils/bench_scripts.sh"
 
     fi
     if [[ ${CHOSEN_TYPE} == *"11"* ]]; then
@@ -305,6 +304,30 @@ script_configuration_wizard() {
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
       echo "SITES="${SITES} >>/root/.broobe-utils-options
+    else
+      exit 1
+    fi
+  fi
+  if [[ -z "${MAILCOW_BK}" ]]; then
+    MAILCOW_BK_DEFAULT=false
+    MAILCOW_BK=$(whiptail --title "Mailcow Backup Support?" --inputbox "Insert the path where websites are stored. Ex: /var/www or /usr/share/nginx" 10 60 "${MAILCOW_BK_DEFAULT}" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo "MAILCOW_BK="${MAILCOW_BK} >>/root/.broobe-utils-options
+      
+      if [[ -z "${MAILCOW}" && "${MAILCOW_BK}" = true ]]; then
+
+        # MailCow Dockerized default files location
+        MAILCOW_DEFAULT="/opt/mailcow-dockerized"
+        MAILCOW=$(whiptail --title "Mailcow Installation Path" --inputbox "Insert the path where websites are stored. Ex: /var/www or /usr/share/nginx" 10 60 "${MAILCOW_DEFAULT}" 3>&1 1>&2 2>&3)
+        exitstatus=$?
+        if [ $exitstatus = 0 ]; then
+          echo "MAILCOW="${MAILCOW} >>/root/.broobe-utils-options
+        else
+          exit 1
+        fi
+      fi
+
     else
       exit 1
     fi

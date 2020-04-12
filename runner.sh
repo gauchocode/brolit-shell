@@ -5,30 +5,28 @@
 # Version: 3.0-beta11
 ################################################################################
 #
-# TODO: Para release 3.0 final
-#       1- FIX: subject status broken, not always show the correct status
-#       2- TODO: include server config backups on mail notification
-#
-# TODO: Para release 3.1
+# TODO: For release 3.1
 #       1- Need to ask for STATUS on files backup (PROD, STAGE, etc)
 #       2- On backup failure, the email must show what files fails and what files are correct backuped
 #       3- Support for dailys, weeklys y monthlys backups
+#       4- Mail notification when a new site is installed
+#       5- Warning if script run on non default installation (no webserver or another than nginx)
+#       6- Option to install script on crontab
 #
-# TODO: Para release 3.5
+# TODO: For release 3.5
 #       1- Finish php_optimizations (deprecate Hetzner model mode) and integrate with Lemp Installer
 #       2- Expand Duplicity support with a restore option
 #       3- Full support for restore server config files
-#       4- Cuando borro un proyecto, que suba el backup temporal a dropbox, pero fuera de la estructura normal de backups -- FALTA PULIR
-#       5- Rethink server_and_image_optimizations.sh (maybe add a pdf optimization files too)
-#       6- MySQL optimization script
-#       7- Rename database helper (with and without WP)
-#       8- Add some IT utils (change hostname, add floating IP, change SSH port)
+#       4- Rethink server_and_image_optimizations.sh (maybe add a pdf optimization files too)
+#       5- MySQL optimization script
+#       6- Rename database helper (with and without WP)
+#       7- Add some IT utils (change hostname, add floating IP, change SSH port)
 #
-# TODO: Para release 4.0
+# TODO: For release 4.0
 #       1- Refactor of backups/restore structure, maybe, with could think of one backup dropbox app for all servers?
 #           Example: NOMBRE_VPS -> SITE_DOMAIN (WEBSITE - DB - CONFIG)
 #       2- Uptime Robot API?
-#       3- Autoupdate script option
+#       3- Auto-update script option
 #       4- Telegram notifications support: https://adevnull.com/enviar-mensajes-a-telegram-con-bash/
 #       5- Better LEMP setup, tzdata y mysql_secure_installation without human intervention
 #       6- Hetzner cloud cli support:
@@ -57,13 +55,13 @@ if [ -z "$SFOLDER" ]; then
   exit 1  # error; the path is not accessible
 fi
 
-chmod +x ${SFOLDER}/libs/commons.sh
-chmod +x ${SFOLDER}/libs/mail_notification_helper.sh
-chmod +x ${SFOLDER}/libs/packages_helper.sh
+chmod +x "${SFOLDER}/libs/commons.sh"
+chmod +x "${SFOLDER}/libs/mail_notification_helper.sh"
+chmod +x "${SFOLDER}/libs/packages_helper.sh"
 
-source ${SFOLDER}/libs/commons.sh
-source ${SFOLDER}/libs/mail_notification_helper.sh
-source ${SFOLDER}/libs/packages_helper.sh
+source "${SFOLDER}/libs/commons.sh"
+source "${SFOLDER}/libs/mail_notification_helper.sh"
+source "${SFOLDER}/libs/packages_helper.sh"
 
 check_root
 check_distro
@@ -89,11 +87,7 @@ DUP_BK_FULL_FREQ="7D"                         # Create a new full backup every .
 DUP_BK_FULL_LIFE="14D"                        # Delete any backup older than this
 
 #MAILCOW BACKUP
-MAILCOW_BK=false
-MAILCOW="/opt/mailcow-dockerized"             # MailCow files location
 MAILCOW_TMP_BK="${SFOLDER}/tmp/mailcow"
-
-# TODO: checkear si está instalado apache2, si está instalado mandar warning de soporte parcial
 
 PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
 
@@ -158,7 +152,7 @@ fi
 
 # BROOBE Utils config file
 if test -f /root/.broobe-utils-options; then
-  source /root/.broobe-utils-options
+  source "/root/.broobe-utils-options"
 fi
 
 # Checking required packages to run
@@ -174,7 +168,7 @@ MYSQLDUMP="$(which mysqldump)"
 TAR="$(which tar)"
 
 # EXPORT VARS (GLOBALS)
-export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL DB_BL WSERVER PHP_CF LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MAILCOW_BK MAILCOW MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR auth_email auth_key
+export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL DB_BL WSERVER PHP_CF LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR auth_email auth_key
 
 if [ -t 1 ]; then
 
@@ -188,7 +182,7 @@ if [ -t 1 ]; then
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
       if [[ ${CHOSEN_FR_OPTION} == *"01"* ]]; then
-        source ${SFOLDER}/lemp_setup.sh
+        source "${SFOLDER}/lemp_setup.sh"
         exit 1
 
       else

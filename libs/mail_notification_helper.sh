@@ -37,11 +37,11 @@ mail_subject_status() {
     local STATUS_S=$3
     local OUTDATED=$4
 
-    if [ "${STATUS_D}" == *"ERROR"* ] || [ "${STATUS_F}" == *"ERROR"* ] || [ "${STATUS_S}" == *"ERROR"* ]; then
+    if [[ "${STATUS_D}" == *"ERROR"* ]] || [[ "${STATUS_F}" == *"ERROR"* ]] || [[ "${STATUS_S}" == *"ERROR"* ]]; then
         STATUS="⛔ ERROR"
         #STATUS_ICON="⛔"
     else
-        if [ "${OUTDATED}" = true ]; then
+        if [[ "${OUTDATED}" = true ]]; then
             STATUS="⚠ WARNING"
             #STATUS_ICON="⚠"
         else
@@ -57,10 +57,10 @@ mail_subject_status() {
 remove_mail_notifications_files() {
 
     echo "  Removing temp files ..." >>$LOG
-    echo -e ${YELLOW}" > Removing temp files ..."${ENDCOLOR}
+    echo -e ${C_YELLOW}" > Removing temp files ..."${ENDCOLOR}
 
-    # TODO: no siempre se crean estos archivos, entonces suele tirar un error, mejorar
-    rm ${PKG_MAIL} ${DB_MAIL} ${FILE_MAIL}
+    # TODO: remove only if they are created
+    rm "${PKG_MAIL}" "${DB_MAIL}" "${FILE_MAIL}"
 
 }
 
@@ -193,70 +193,56 @@ mail_cert_section() {
     FILES_LABEL='<b>Sites certificate expiration days:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
     CERT_LINE=""
 
-#    if [ "$ERROR" = true ]; then
-#
-#        # Changing global
-#        STATUS_F="ERROR"
-#
-#        # Changing locals
-#        STATUS_ICON_F="💩"        
-#        CONTENT="<b>${BK_TYPE} Backup Error: ${ERROR_TYPE}<br />Please check log file.</b> <br />"
-#        COLOR='red'
-#
-#    else
+    #This fix avoid getting the first parent directory, maybe we could find a better solution
+    k="skip"
 
-        #This fix avoid getting the first parent directory, maybe we could find a better solution
-        k="skip"
+    ALL_SITES=$(get_all_directories "${SITES}")
 
-        ALL_SITES=$(get_all_directories "${SITES}")
+    for SITE in ${ALL_SITES}; do
 
-        for SITE in ${ALL_SITES}; do
+        if [ "${k}" != "skip" ]; then
 
-            if [ "${k}" != "skip" ]; then
+            domain=$(basename "$SITE")
+            
+            CERT_NEW_LINE='<div style="float:left;width:100%">'
+            CERT_DOMAIN='<div>'$domain
+            
+            CERT_DAYS=$(certbot_show_domain_certificates_valid_days "$domain")
+            if [ "${CERT_DAYS}" != "" ]; then
 
-                domain=$(basename "$SITE")
-                
-                CERT_NEW_LINE='<div style="float:left;width:100%">'
-                CERT_DOMAIN='<div>'$domain
-                
-                CERT_DAYS=$(certbot_show_domain_certificates_valid_days "$domain")
-                if [ "${CERT_DAYS}" != "" ]; then
-
-                    if (( "${CERT_DAYS}" >= 14 )); then
-                        # GREEN LABEL
-                        CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#27b50d;border-radius:12px;padding:0 5px 0 5px;">'
-                    else
-                        if (( "${CERT_DAYS}" >= 7 )); then
-                            # ORANGE LABEL
-                            CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#df761d;border-radius:12px;padding:0 5px 0 5px;">'
-                        else
-                            # RED LABEL
-                            CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;">'
-                        fi
-
-                    fi
-                    CERT_DAYS=${CERT_DAYS_CONTAINER}${CERT_DAYS}" days"
-
+                if (( "${CERT_DAYS}" >= 14 )); then
+                    # GREEN LABEL
+                    CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#27b50d;border-radius:12px;padding:0 5px 0 5px;">'
                 else
-                    # GREY LABEL
-                    CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;">'
-                    CERT_DAYS=${CERT_DAYS_CONTAINER}" no certificate"
+                    if (( "${CERT_DAYS}" >= 7 )); then
+                        # ORANGE LABEL
+                        CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#df761d;border-radius:12px;padding:0 5px 0 5px;">'
+                    else
+                        # RED LABEL
+                        CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;">'
+                    fi
 
                 fi
-
-                CERT_END_LINE="</span></div>"
-                CERT_LINE=$CERT_LINE$CERT_NEW_LINE$CERT_DOMAIN$CERT_DAYS$CERT_END_LINE
+                CERT_DAYS=${CERT_DAYS_CONTAINER}${CERT_DAYS}" days"
 
             else
-                k=""
+                # GREY LABEL
+                CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;">'
+                CERT_DAYS=${CERT_DAYS_CONTAINER}" no certificate"
 
             fi
 
-        done
+            CERT_END_LINE="</span></div>"
+            CERT_LINE=$CERT_LINE$CERT_NEW_LINE$CERT_DOMAIN$CERT_DAYS$CERT_END_LINE
 
-        FILES_LABEL_END='</div>'
+        else
+            k=""
 
-#    fi
+        fi
+
+    done
+
+    FILES_LABEL_END='</div>'
 
     HEADEROPEN1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
     HEADEROPEN2=';padding:5px 0 10px 10px;width:100%;height:30px">'
