@@ -5,6 +5,10 @@
 # Version: 3.0-beta11
 ################################################################################
 #
+# TODO: For release 3.0-final
+#       1- Complete restore_from_backup and delete_project scripts
+#       2- Support for Ubuntu 20.04 LTS
+#
 # TODO: For release 3.1
 #       1- Need to ask for STATUS on files backup (PROD, STAGE, etc)
 #       2- On backup failure, the email must show what files fails and what files are correct backuped
@@ -23,8 +27,7 @@
 #       7- Add some IT utils (change hostname, add floating IP, change SSH port)
 #
 # TODO: For release 4.0
-#       1- Refactor of backups/restore structure, maybe, with could think of one backup dropbox app for all servers?
-#           Example: NOMBRE_VPS -> SITE_DOMAIN (WEBSITE - DB - CONFIG)
+#       1- Refactor of backups/restore structure, see backup_helper.sh comments
 #       2- Uptime Robot API?
 #       3- Auto-update script option
 #       4- Telegram notifications support: https://adevnull.com/enviar-mensajes-a-telegram-con-bash/
@@ -104,7 +107,7 @@ PHP_CF="/etc/php"
 LENCRYPT_CF="/etc/letsencrypt"
 
 # Packages to watch
-PACKAGES=(linux-firmware dpkg perl nginx php${PHP_V}-fpm mysql-server curl openssl libssh-4)
+PACKAGES=(linux-firmware dpkg perl nginx php${PHP_V}-fpm mysql-server curl openssl)
 
 MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+') # Main partition
 
@@ -174,7 +177,7 @@ if [ -t 1 ]; then
 
   ### Running from terminal
 
-  if [[ -z "${MPASS}" || -z "${SMTP_U}" || -z "${SMTP_P}" || -z "${SMTP_TLS}" || -z "${SMTP_PORT}" || -z "${SMTP_SERVER}" || -z "${SMTP_P}" || -z "${MAILA}" || -z "${SITES}" ]]; then
+  if [[ -z "${MPASS}" || -z "${SMTP_U}" || -z "${SMTP_P}" || -z "${SMTP_TLS}" || -z "${SMTP_PORT}" || -z "${SMTP_SERVER}" || -z "${SMTP_P}" || -z "${MAILA}" || -z "${SITES}"|| -z "${MAILCOW_BK}" ]]; then
 
     FIRST_RUN_OPTIONS="01 LEMP_SETUP 02 CONFIGURE_SCRIPT"
     CHOSEN_FR_OPTION=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 $(for x in ${FIRST_RUN_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
@@ -285,7 +288,7 @@ else
   echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
 
   EMAIL_SUBJECT="${EMAIL_STATUS} on ${VPSNAME} Running Complete Backup - [${NOWDISPLAY}]"
-  EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${PKG_MAIL_VAR} ${CERT_MAIL_VAR} ${DB_MAIL_VAR} ${CONFIG_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
+  EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${PKG_MAIL_VAR} ${CERT_MAIL_VAR} ${CONFIG_MAIL_VAR} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
 
   # Sending email notification
   send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"

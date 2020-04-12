@@ -4,6 +4,10 @@
 # Version: 3.0-beta11
 ################################################################################
 
+################################################################################
+# GLOBALS
+################################################################################
+
 ### Setup Foreground Colours
 BLACK='\E[30;40m'
 RED='\E[31;40m'
@@ -310,7 +314,7 @@ script_configuration_wizard() {
   fi
   if [[ -z "${MAILCOW_BK}" ]]; then
     MAILCOW_BK_DEFAULT=false
-    MAILCOW_BK=$(whiptail --title "Mailcow Backup Support?" --inputbox "Insert the path where websites are stored. Ex: /var/www or /usr/share/nginx" 10 60 "${MAILCOW_BK_DEFAULT}" 3>&1 1>&2 2>&3)
+    MAILCOW_BK=$(whiptail --title "Mailcow Backup Support?" --inputbox "Please insert true or false" 10 60 "${MAILCOW_BK_DEFAULT}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
       echo "MAILCOW_BK="${MAILCOW_BK} >>/root/.broobe-utils-options
@@ -319,7 +323,7 @@ script_configuration_wizard() {
 
         # MailCow Dockerized default files location
         MAILCOW_DEFAULT="/opt/mailcow-dockerized"
-        MAILCOW=$(whiptail --title "Mailcow Installation Path" --inputbox "Insert the path where websites are stored. Ex: /var/www or /usr/share/nginx" 10 60 "${MAILCOW_DEFAULT}" 3>&1 1>&2 2>&3)
+        MAILCOW=$(whiptail --title "Mailcow Installation Path" --inputbox "Insert the path where Mailcow is installed" 10 60 "${MAILCOW_DEFAULT}" 3>&1 1>&2 2>&3)
         exitstatus=$?
         if [ $exitstatus = 0 ]; then
           echo "MAILCOW="${MAILCOW} >>/root/.broobe-utils-options
