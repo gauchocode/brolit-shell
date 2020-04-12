@@ -145,14 +145,15 @@ if [ $exitstatus = 0 ]; then
   #Restore from Dropbox
   DROPBOX_PROJECT_LIST=$(${DPU_F}/dropbox_uploader.sh -hq list "${CHOSEN_SERVER}/${CHOSEN_TYPE}")
 fi
-echo -e ${B_RED}" > CHOSEN_TYPE: ${CHOSEN_TYPE}"${ENDCOLOR}
+
+#echo -e ${B_RED}" > CHOSEN_TYPE: ${CHOSEN_TYPE}"${ENDCOLOR}
 if [[ ${CHOSEN_TYPE} == *"$CONFIG_F"* ]]; then
   CHOSEN_CONFIG=$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Chose Configs Backup" 20 78 10 $(for x in ${DROPBOX_PROJECT_LIST}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
 
   if [ $exitstatus = 0 ]; then
 
-    cd ${SFOLDER}/tmp
+    cd "${SFOLDER}/tmp"
 
     echo " > Downloading from Dropbox ${CHOSEN_SERVER}/${CHOSEN_TYPE}/${CHOSEN_CONFIG} ..." >>$LOG
     echo -e ${YELLOW}" > Trying to run dropbox_uploader.sh download ${CHOSEN_SERVER}/${CHOSEN_TYPE}/${CHOSEN_CONFIG}"${ENDCOLOR}
@@ -264,9 +265,9 @@ else
     echo -e ${CYAN}" > Uncompressing ${CHOSEN_BACKUP}"${ENDCOLOR}
     echo " > Uncompressing ${CHOSEN_BACKUP}" >>$LOG
 
-    pv ${CHOSEN_BACKUP} | tar xp -C ${SFOLDER}/tmp/ --use-compress-program=lbzip2
-    #tar xf ${CHOSEN_BACKUP} --use-compress-program=lbzip2
+    pv "${CHOSEN_BACKUP}" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
 
+    # Site Restore
     if [[ ${CHOSEN_TYPE} == *"$SITES_F"* ]]; then
 
       ask_folder_to_install_sites
@@ -287,12 +288,12 @@ else
       echo -e ${YELLOW} "Trying to restore ${CHOSEN_BACKUP} files ..."${ENDCOLOR}
 
       #echo "Executing: mv ${SFOLDER}/tmp/${CHOSEN_PROJECT} ${FOLDER_TO_INSTALL} ..."
-      mv ${SFOLDER}/tmp/${CHOSEN_PROJECT} ${FOLDER_TO_INSTALL}
+      mv "${SFOLDER}/tmp/${CHOSEN_PROJECT}" "${FOLDER_TO_INSTALL}"
 
       wp_change_ownership "${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT}"
 
-      # TODO: ver si se puede restaurar un viejo backup del site-available de nginx y luego
-      # forzar al certbot (si existe manera, por que el renew no funciona y la instalacion normal tampoco)
+      # TODO: ask to choose between regenerate nginx config or restore backup
+      # If choose restore config and has https, need to restore letsencrypt config and run cerbot
 
       #echo "Trying to restore nginx config for ${CHOSEN_PROJECT} ..."
       # New site configuration
@@ -337,6 +338,8 @@ else
 
         fi
 
+        #TODO: ask for Certbot
+        
         # HTTPS with Certbot
         ${SFOLDER}/utils/certbot_manager.sh
         #certbot_certificate_install "${MAILA}" "${DOMAIN}"
