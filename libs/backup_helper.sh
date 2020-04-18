@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta11
+# Version: 3.0-beta12
 #############################################################################
 
 ### Checking some things
@@ -43,23 +43,27 @@ make_server_files_backup() {
 
   BK_TYPE=$1
   BK_SUB_TYPE=$2
-  BK_DIR=$3
+  BK_PATH=$3
   BK_FOLDER=$4
 
   echo -e ${CYAN}"###################################################"${ENDCOLOR}
 
-  if [ -n "${BK_DIR}" ]; then
+  if [ -n "${BK_PATH}" ]; then
 
     OLD_BK_FILE="${BK_SUB_TYPE}-${BK_TYPE}-files-${ONEWEEKAGO}.tar.bz2"
     BK_FILE="${BK_SUB_TYPE}-${BK_TYPE}-files-${NOW}.tar.bz2"
 
-    echo -e ${CYAN}" > Trying to make a backup of ${BK_DIR} ..."${ENDCOLOR}
-    echo " > Trying to make a backup of ${BK_DIR} ..." >>$LOG
+    # Here we use tar.bz2 with bzip2 compression method
+    echo -e ${CYAN}" > Making TAR.BZ2 from: ${BK_PATH} ..."${ENDCOLOR}
+    echo " > Making TAR.BZ2 from: ${BK_PATH} ..." >>$LOG
 
-    $TAR -cf "${BAKWP}/${NOW}/${BK_FILE}" - --directory="${BK_DIR}" "${BK_FOLDER}" --use-compress-program=lbzip2
+    #echo -e ${CYAN}" > Running: $TAR cjf "${BAKWP}/${NOW}/${BK_FILE}" --directory="${BK_PATH}" "${BK_FOLDER}" ..."${ENDCOLOR}
+    $TAR cjf "${BAKWP}/${NOW}/${BK_FILE}" --directory="${BK_PATH}" "${BK_FOLDER}"
 
     # Test backup file
-    lbzip2 -t "${BAKWP}/${NOW}/${BK_FILE}"
+    echo -e ${CYAN}" > Testing backup file: ${BK_FILE} ..."${ENDCOLOR}
+    echo " > Testing backup file: ${BK_FILE} ..." >>$LOG
+    bzip2 -t "${BAKWP}/${NOW}/${BK_FILE}"
 
     if [ $? -eq 0 ]; then
 
@@ -74,25 +78,25 @@ make_server_files_backup() {
       BK_SCF_SIZES[$BK_SCF_ARRAY_INDEX]="${BK_SCF_SIZE}"
 
       # New folder with $VPSNAME
-      ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}"
+      output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}" 2>&1)
       
       # New folder with $BK_TYPE
-      ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}"
+      output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}" 2>&1)
 
       # New folder with $BK_SUB_TYPE (php, nginx, mysql)
-      ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}/${BK_SUB_TYPE}"
+      output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}/${BK_SUB_TYPE}" 2>&1)
 
       DROPBOX_PATH="/${VPSNAME}/${BK_TYPE}/${BK_SUB_TYPE}"
 
-      echo -e ${CYAN}" > Uploading TAR to Dropbox ..."${ENDCOLOR}
       echo " > Uploading TAR to Dropbox ..." >>$LOG
+      echo -e "${CYAN}"
       ${DPU_F}/dropbox_uploader.sh upload "${BAKWP}/${NOW}/${BK_FILE}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}"
+      echo -e "${ENDCOLOR}"
 
-      echo -e ${CYAN}" > Trying to delete old backup from Dropbox ..."${ENDCOLOR}
       echo " > Trying to delete old backup from Dropbox ..." >>$LOG
+      echo -e "${CYAN}"
       ${DPU_F}/dropbox_uploader.sh remove "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${OLD_BK_FILE}"
-
-      #dropbox_delete_backup "${BK_TYPE}" "${CONFIG_F}" "${OLD_BK_FILE}"
+      echo -e "${ENDCOLOR}"
 
       echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
       echo " > DONE" >>$LOG
@@ -105,7 +109,7 @@ make_server_files_backup() {
       ERROR_TYPE="ERROR: No such directory or file ${BAKWP}/${NOW}/${BK_FILE}"
 
       echo -e ${B_RED}" > ERROR: Can't make the backup!"${ENDCOLOR}
-      echo $ERROR_TYPE >>$LOG
+      echo "${ERROR_TYPE}" >>$LOG
 
       return 1
 
@@ -113,8 +117,8 @@ make_server_files_backup() {
 
   else
 
-    echo -e ${B_RED}" > ERROR: Directory '${BK_DIR}' doesnt exists!"${ENDCOLOR}
-    echo " > ERROR: Directory '${BK_DIR}' doesnt exists!" >>$LOG
+    echo -e ${B_RED}" > ERROR: Directory '${BK_PATH}' doesnt exists!"${ENDCOLOR}
+    echo " > ERROR: Directory '${BK_PATH}' doesnt exists!" >>$LOG
 
     return 1
 
@@ -141,8 +145,8 @@ make_mailcow_backup() {
     OLD_BK_FILE="${BK_TYPE}_files-${ONEWEEKAGO}.tar.bz2"
     BK_FILE="${BK_TYPE}_files-${NOW}.tar.bz2"
 
-    echo -e ${CYAN}" > Trying to make a backup of ${BK_DIR} ..."${ENDCOLOR}
-    echo " > Trying to make a backup of ${BK_DIR} ..." >>$LOG
+    echo -e ${CYAN}" > Trying to make a backup of ${MAILCOW} ..."${ENDCOLOR}
+    echo " > Trying to make a backup of ${MAILCOW} ..." >>$LOG
 
     MAILCOW_BACKUP_LOCATION=${MAILCOW_TMP_BK} ${MAILCOW}/helper-scripts/backup_and_restore.sh backup all
 
@@ -157,13 +161,14 @@ make_mailcow_backup() {
       echo -e ${CYAN}" > Making TAR.BZ2 from: ${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER} ..."${ENDCOLOR}
       echo " > Making TAR.BZ2 from: ${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER} ..." >>$LOG
 
-      echo -e ${CYAN}" > Runnning: (tar -cf - --directory=${MAILCOW_TMP_BK} ${MAILCOW_TMP_FOLDER} | pv -ns $(du -sb ${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER} | awk '{print $1}') | lbzip2 >${MAILCOW_TMP_BK}/${BK_FILE}) 2>&1 | dialog --gauge ' > Making tar.bz2 from: '${MAILCOW_TMP_FOLDER} 7 70"${ENDCOLOR}
-      echo -e ${CYAN}"###################################################"${ENDCOLOR}
-      echo " > Runnning: (tar -cf - --directory=${MAILCOW_TMP_BK} ${MAILCOW_TMP_FOLDER} | pv -ns $(du -sb ${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER} | awk '{print $1}') | lbzip2 >${MAILCOW_TMP_BK}/${BK_FILE}) 2>&1 | dialog --gauge ' > Making tar.bz2 from: '${MAILCOW_TMP_FOLDER} 7 70">>$LOG
+      #echo -e ${CYAN}" > Runnning: (tar -cf - --directory=${MAILCOW_TMP_BK} ${MAILCOW_TMP_FOLDER} | pv -ns $(du -sb ${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER} | awk '{print $1}') | lbzip2 >${MAILCOW_TMP_BK}/${BK_FILE}) 2>&1 | dialog --gauge ' > Making tar.bz2 from: '${MAILCOW_TMP_FOLDER} 7 70"${ENDCOLOR}
+      #echo -e ${CYAN}"###################################################"${ENDCOLOR}
 
       (tar -cf - --directory="${MAILCOW_TMP_BK}" "${MAILCOW_TMP_FOLDER}" | pv -ns $(du -sb "${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER}" | awk '{print $1}') | lbzip2 >${MAILCOW_TMP_BK}/${BK_FILE}) 2>&1 | dialog --gauge ' > Making tar.bz2 from: '${MAILCOW_TMP_FOLDER} 7 70
 
       # Test backup file
+      echo -e ${CYAN}" > Testing backup file: ${BK_FILE} ..."${ENDCOLOR}
+      echo " > Testing backup file: ${BK_FILE} ..." >>$LOG
       lbzip2 -t "${MAILCOW_TMP_BK}/${BK_FILE}"
 
       if [ $? -eq 0 ]; then
@@ -199,10 +204,10 @@ make_mailcow_backup() {
     else
 
       ERROR=true
-      ERROR_TYPE="ERROR: No such directory or file ${BK_FILE}"
+      ERROR_TYPE="ERROR: No such directory or file ${MAILCOW_TMP_BK}"
 
-      echo -e ${RED}" > ERROR: Can't make the backup!"${ENDCOLOR}
-      echo $ERROR_TYPE >>$LOG
+      echo -e ${B_RED}" > ERROR: Can't make the backup!"${ENDCOLOR}
+      echo "$ERROR_TYPE" >>$LOG
 
       return 1
 
@@ -210,8 +215,8 @@ make_mailcow_backup() {
 
   else
 
-    echo -e ${RED}" > ERROR: Directory '${BK_DIR}' doesnt exists!"${ENDCOLOR}
-    echo " > ERROR: Directory '${BK_DIR}' doesnt exists!" >>$LOG
+    echo -e ${B_RED}" > ERROR: Directory '${MAILCOW}' doesnt exists!"${ENDCOLOR}
+    echo " > ERROR: Directory '${MAILCOW}' doesnt exists!" >>$LOG
 
     return 1
 
@@ -241,6 +246,8 @@ make_files_backup() {
   (tar --exclude '.git' --exclude '*.log' -cf - --directory="${SITES}" "${F_NAME}" | pv -ns $(du -sb ${SITES}/${F_NAME} | awk '{print $1}') | lbzip2 >"${BAKWP}/${NOW}/${BK_FILE}") 2>&1 | dialog --gauge 'Processing '${SHOW_BK_FILE_INDEX}' of '${COUNT_TOTAL_SITES}' directories. Making tar.bz2 from: '${F_NAME} 7 70
 
   # Test backup file
+  echo -e ${CYAN}" > Testing backup file: ${BK_FILE} ..."${ENDCOLOR}
+  echo " > Testing backup file: ${BK_FILE} ..." >>$LOG
   lbzip2 -t "${BAKWP}/${NOW}/${BK_FILE}"
 
   if [ $? -eq 0 ]; then
@@ -360,7 +367,7 @@ make_database_backup() {
   echo " > Creating new database backup of ${DATABASE} ..." >>$LOG
 
   # Create dump file
-  $MYSQLDUMP --max-allowed-packet=1073741824 -u ${MUSER} -h ${MHOST} -p${MPASS} ${DATABASE} >${BK_FOLDER}${DB_FILE}
+  $MYSQLDUMP --max-allowed-packet=1073741824 -u ${MUSER} -h ${MHOST} -p${MPASS} ${DATABASE} >"${BK_FOLDER}${DB_FILE}"
 
   if [ "$?" -eq 0 ]; then
 
@@ -407,9 +414,6 @@ make_database_backup() {
 
       DROPBOX_PATH="/${VPSNAME}/${BK_TYPE}/${DATABASE}"
 
-      #${DPU_F}/dropbox_uploader.sh -q mkdir "${DBS_F}"
-      #${DPU_F}/dropbox_uploader.sh -q mkdir "${DBS_F}/${DATABASE}"
-
       # Upload to Dropbox
       echo -e ${CYAN}" > Uploading new database backup [${BK_FILE}] ..."${ENDCOLOR}
       ${DPU_F}/dropbox_uploader.sh upload "${BK_FILE}" "$DROPBOX_FOLDER/${DROPBOX_PATH}"
@@ -448,7 +452,7 @@ make_project_backup() {
     local SITES=$3
     local F_NAME=$4
 
-    local BK_FOLDER=${BAKWP}/${NOW}/
+    local BK_FOLDER="${BAKWP}/${NOW}/"
 
     local OLD_BK_FILE="${F_NAME}_${BK_TYPE}-files_${ONEWEEKAGO}.tar.bz2"
     local BK_FILE="${F_NAME}_${BK_TYPE}-files_${NOW}.tar.bz2"
@@ -459,7 +463,9 @@ make_project_backup() {
     (tar --exclude '.git' --exclude '*.log' -cf - --directory=${SITES} ${F_NAME} | pv -ns $(du -sb ${SITES}/${F_NAME} | awk '{print $1}') | lbzip2 >${BAKWP}/${NOW}/${BK_FILE}) 2>&1 | dialog --gauge 'Processing '${BK_FILE_INDEX}' of '${COUNT_TOTAL_SITES}' directories. Making tar.bz2 from: '${F_NAME} 7 70
 
     # Test backup file
-    lbzip2 -t ${BAKWP}/${NOW}/${BK_FILE}
+    echo -e ${CYAN}" > Testing backup file: ${BK_FILE} ..."${ENDCOLOR}
+    echo " > Testing backup file: ${BK_FILE} ..." >>$LOG
+    lbzip2 -t "${BAKWP}/${NOW}/${BK_FILE}"
 
     if [ $? -eq 0 ]; then
 
@@ -524,7 +530,9 @@ make_project_backup() {
         tar -cf - --directory=${BK_FOLDER} ${DB_FILE} | pv -s $(du -sb ${BAKWP}/${NOW}/${DB_FILE} | awk '{print $1}') | lbzip2 >${BAKWP}/${NOW}/${BK_DB_FILE}
 
         # Test backup file
-        lbzip2 -t ${BAKWP}/${NOW}/${BK_DB_FILE}
+        echo -e ${CYAN}" > Testing backup file: ${BK_DB_FILE} ..."${ENDCOLOR}
+        echo " > Testing backup file: ${BK_DB_FILE} ..." >>$LOG
+        lbzip2 -t "${BAKWP}/${NOW}/${BK_DB_FILE}"
 
         # TODO: control de lbzip2 ok
 
@@ -533,29 +541,31 @@ make_project_backup() {
         echo -e ${CYAN}" > Trying to create folder in Dropbox ..."${ENDCOLOR}
         echo " > Trying to create folders in Dropbox ..." >>$LOG
 
-        ${DPU_F}/dropbox_uploader.sh -q mkdir /${BK_TYPE}
+        # New folder with $VPSNAME
+        ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}"
+        ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}"
 
         # New folder structure with date
-        ${DPU_F}/dropbox_uploader.sh -q mkdir /${BK_TYPE}/${F_NAME}
-        ${DPU_F}/dropbox_uploader.sh -q mkdir /${BK_TYPE}/${F_NAME}/${NOW}
+        ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}/${F_NAME}"
+        #${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}/${F_NAME}/${NOW}"
 
         echo -e ${CYAN}" > Uploading file backup ${BK_FILE} to Dropbox ..."${ENDCOLOR}
         echo " > Uploading file backup ${BK_FILE} to Dropbox ..." >>$LOG
-        ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/${BK_FILE} $DROPBOX_FOLDER/${BK_TYPE}/${F_NAME}/${NOW}
+        ${DPU_F}/dropbox_uploader.sh upload "${BAKWP}/${NOW}/${BK_FILE}" "${DROPBOX_FOLDER}/${VPSNAME}/${BK_TYPE}/${F_NAME}/${NOW}"
 
         echo -e ${CYAN}" > Uploading database backup ${BK_DB_FILE} to Dropbox ..."${ENDCOLOR}
         echo " > Uploading database backup ${BK_DB_FILE} to Dropbox ..." >>$LOG
-        ${DPU_F}/dropbox_uploader.sh upload ${BAKWP}/${NOW}/${BK_DB_FILE} ${DROPBOX_FOLDER}/${BK_TYPE}/${F_NAME}/${NOW}
+        ${DPU_F}/dropbox_uploader.sh upload "${BAKWP}/${NOW}/${BK_DB_FILE}" "${DROPBOX_FOLDER}/${VPSNAME}/${BK_TYPE}/${F_NAME}/${NOW}"
 
         echo -e ${CYAN}" > Trying to delete old backup from Dropbox with date ${ONEWEEKAGO} ..."${ENDCOLOR}
         echo " > Trying to delete old backup from Dropbox with date ${ONEWEEKAGO} ..." >>$LOG
-        ${DPU_F}/dropbox_uploader.sh delete ${DROPBOX_FOLDER}/${BK_TYPE}/${F_NAME}/${ONEWEEKAGO}
+        ${DPU_F}/dropbox_uploader.sh delete "${DROPBOX_FOLDER}/${VPSNAME}/${BK_TYPE}/${F_NAME}/${ONEWEEKAGO}"
         #${DPU_F}/dropbox_uploader.sh remove ${DROPBOX_FOLDER}/${BK_TYPE}/${F_NAME}/${OLD_BK_DB_FILE}
 
         echo " > Deleting backup from server ..." >>$LOG
-        rm -r ${BAKWP}/${NOW}/${BK_FILE}
+        rm -r "${BAKWP}/${NOW}/${BK_FILE}"
 
-        echo -e ${GREEN}" > DONE"${ENDCOLOR}
+        echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
 
     else
         ERROR=true

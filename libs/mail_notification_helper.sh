@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta11
+# Version: 3.0-beta12
 ################################################################################
 
 #source "/root/.broobe-utils-options"
@@ -18,7 +18,7 @@ send_mail_notification() {
     local EMAIL_SUBJECT=$1
     local EMAIL_CONTENT=$2
 
-    echo -e ${YELLOW}" > Running: sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${EMAIL_SUBJECT}" -o message-content-type=html -m "${EMAIL_CONTENT}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}"${ENDCOLOR}
+    #echo -e ${YELLOW}" > Running: sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${EMAIL_SUBJECT}" -o message-content-type=html -m "${EMAIL_CONTENT}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}"${ENDCOLOR}
     
     # You could use -l "/var/log/sendemail.log" for custom log file
     sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${EMAIL_SUBJECT}" -o message-content-type=html -m "${EMAIL_CONTENT}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}
@@ -200,38 +200,53 @@ mail_cert_section() {
         if [ "${k}" != "skip" ]; then
 
             domain=$(basename "$SITE")
-            
-            CERT_NEW_LINE='<div style="float:left;width:100%">'
-            CERT_DOMAIN='<div>'$domain
-            
-            CERT_DAYS=$(certbot_show_domain_certificates_valid_days "$domain")
-            if [ "${CERT_DAYS}" != "" ]; then
 
-                if (( "${CERT_DAYS}" >= 14 )); then
-                    # GREEN LABEL
-                    CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#27b50d;border-radius:12px;padding:0 5px 0 5px;">'
-                else
-                    if (( "${CERT_DAYS}" >= 7 )); then
-                        # ORANGE LABEL
-                        CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#df761d;border-radius:12px;padding:0 5px 0 5px;">'
+            #checking blacklist
+            if [[ $SITES_BL != *"${domain}"* ]]; then
+
+                make_files_backup "site" "${SITES}" "${FOLDER_NAME}"
+                BK_FL_ARRAY_INDEX=$((BK_FL_ARRAY_INDEX + 1))
+
+                CERT_NEW_LINE='<div style="float:left;width:100%">'
+                CERT_DOMAIN='<div>'$domain
+                
+                CERT_DAYS=$(certbot_show_domain_certificates_valid_days "$domain")
+                if [ "${CERT_DAYS}" == "" ]; then
+                    #new try with www on it
+                    CERT_DAYS=$(certbot_show_domain_certificates_valid_days "www.$domain")
+                fi
+                if [ "${CERT_DAYS}" == "" ]; then
+                    # GREY LABEL
+                    CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;">'
+                    CERT_DAYS=${CERT_DAYS_CONTAINER}" no certificate"
+                
+                else #certificate found
+
+                    if (( "${CERT_DAYS}" >= 14 )); then
+                        # GREEN LABEL
+                        CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#27b50d;border-radius:12px;padding:0 5px 0 5px;">'
                     else
-                        # RED LABEL
-                        CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;">'
+                        if (( "${CERT_DAYS}" >= 7 )); then
+                            # ORANGE LABEL
+                            CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#df761d;border-radius:12px;padding:0 5px 0 5px;">'
+                        else
+                            # RED LABEL
+                            CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;">'
+                        fi
+
                     fi
+                    CERT_DAYS=${CERT_DAYS_CONTAINER}${CERT_DAYS}" days"
 
                 fi
-                CERT_DAYS=${CERT_DAYS_CONTAINER}${CERT_DAYS}" days"
 
+                CERT_END_LINE="</span></div></div>"
+                CERT_LINE=$CERT_LINE$CERT_NEW_LINE$CERT_DOMAIN$CERT_DAYS$CERT_END_LINE
+            
             else
-                # GREY LABEL
-                CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;">'
-                CERT_DAYS=${CERT_DAYS_CONTAINER}" no certificate"
+                echo -e ${GREEN}" > Omitting ${FOLDER_NAME} TAR file (blacklisted) ..."${ENDCOLOR}
+                echo " > Omitting ${FOLDER_NAME} TAR file (blacklisted) ..." >>$LOG
 
             fi
-
-            CERT_END_LINE="</span></div></div>"
-            CERT_LINE=$CERT_LINE$CERT_NEW_LINE$CERT_DOMAIN$CERT_DAYS$CERT_END_LINE
-
         else
             k=""
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta11
+# Version: 3.0-beta12
 #############################################################################
 #
 # Este script va a sustituir varias de las tareas que hoy hacen 

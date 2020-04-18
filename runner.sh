@@ -2,7 +2,7 @@
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Script Name: BROOBE Utils Scripts
-# Version: 3.0-beta11
+# Version: 3.0-beta12
 ################################################################################
 #
 # TODO: For release 3.0-final
@@ -48,7 +48,7 @@
 # https://google.github.io/styleguide/shell.xml
 #
 
-SCRIPT_V="3.0-beta11"
+SCRIPT_V="3.0-beta12"
 
 ### Checking some things...#####################################################
 SFOLDER="`dirname \"$0\"`"                                                      # relative

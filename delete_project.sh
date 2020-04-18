@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta11
+# Version: 3.0-beta12
 ################################################################################
 
 ### Checking some things
@@ -46,7 +46,7 @@ MENU_TITLE="PROJECT TO DELETE"
 directory_browser "${MENU_TITLE}" "${FOLDER_TO_INSTALL}"
 
 # Creating a tmp directory
-mkdir ${SFOLDER}/tmp-backup
+mkdir "${SFOLDER}/tmp-backup"
 
 echo "directory_broser returns: " $filepath"/"$filename
 if [[ -z "${filepath}" || ${filepath} == "" ]]; then
@@ -55,7 +55,7 @@ if [[ -z "${filepath}" || ${filepath} == "" ]]; then
 
 else
 
-    BK_TYPE="sites"
+    BK_TYPE="site"
 
     # Removing last slash from string
     FILENAME=${filename%/}
@@ -63,55 +63,27 @@ else
     # Making a backup of project files
     echo -e ${CYAN}" > Making a backup ..."${ENDCOLOR}
 
-    #TAR_FILE=$($TAR --exclude '.git' --exclude '*.log' -jcpf ${SFOLDER}/tmp-backup/backup-${filename}_files.tar.bz2 --directory=${FOLDER_TO_INSTALL} ${filename} >>$LOG)
     make_files_backup "${BK_TYPE}" "${SITES}" "${FILENAME}"
-
-    # if ${TAR_FILE}; then
-
-    #     echo -e ${GREEN}" > Backup project files stored: ${SFOLDER}/tmp-backup"${ENDCOLOR}
-
-    #     echo " > Trying to create folder ${FOLDER_NAME} in Dropbox ..." >>$LOG
-    #     OLD_SITES_DP_F="/old-sites"
-    #     ${DPU_F}/dropbox_uploader.sh mkdir /${OLD_SITES_DP_F}
-    #     ${DPU_F}/dropbox_uploader.sh mkdir /${OLD_SITES_DP_F}/${filename}/
-
-    #     echo " > Uploading backup to Dropbox ..." >>$LOG
-    #     ${DPU_F}/dropbox_uploader.sh upload ${SFOLDER}/tmp-backup/backup-${filename}_files.tar.bz2 ${OLD_SITES_DP_F}/${filename}/
-
-    #     # Delete project files
-    #     rm -R $filepath"/"$filename
-    #     echo -e ${GREEN}" > Project files deleted from ${FOLDER_TO_INSTALL}!"${ENDCOLOR}
-
-    #     # Make a copy of nginx configuration file
-    #     cp -r /etc/nginx/sites-available/${filename} ${SFOLDER}/tmp-backup
-
-    #     # Delete nginx configuration file
-    #     rm /etc/nginx/sites-available/${filename}
-    #     rm /etc/nginx/sites-enabled/${filename}
-    #     echo -e ${GREEN}" > Nginx config files deleted!"${ENDCOLOR}
-
-    # fi
 
     if [ $? -eq 0 ]; then
 
         # Creating new folder structure for old projects
-        ${DPU_F}/dropbox_uploader.sh -q mkdir "/old-sites"
+        ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}/offline-site"
 
         # Moving deleted project backups to another dropbox directory
-        #move <REMOTE_FILE/DIR> <REMOTE_FILE/DIR>
-        echo -e ${B_CYAN}" > Running: ${DPU_F}/dropbox_uploader.sh move ${BK_TYPE}/${FILENAME} /old-sites"${ENDCOLOR}
-        ${DPU_F}/dropbox_uploader.sh move "${BK_TYPE}/${FILENAME}" "/old-sites"
+        echo -e ${B_CYAN}" > Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${FILENAME} /offline-site"${ENDCOLOR}
+        ${DPU_F}/dropbox_uploader.sh move "/${VPSNAME}/${BK_TYPE}/${FILENAME}" "/offline-site"
 
         # Delete project files
         rm -R $filepath"/"$FILENAME
         echo -e ${GREEN}" > Project files deleted for ${FILENAME}!"${ENDCOLOR}
 
         # Make a copy of nginx configuration file
-        cp -r /etc/nginx/sites-available/${FILENAME} ${SFOLDER}/tmp-backup
+        cp -r "/etc/nginx/sites-available/${FILENAME}" "${SFOLDER}/tmp-backup"
 
         # Delete nginx configuration file
-        rm /etc/nginx/sites-available/${FILENAME}
-        rm /etc/nginx/sites-enabled/${FILENAME}
+        rm "/etc/nginx/sites-available/${FILENAME}"
+        rm "/etc/nginx/sites-enabled/${FILENAME}"
         echo -e ${B_GREEN}" > Nginx config files for ${FILENAME} deleted!"${ENDCOLOR}
 
     fi
@@ -123,6 +95,9 @@ DBS="$(${MYSQL} -u ${MUSER} -p${MPASS} -Bse 'show databases')"
 CHOSEN_DB=$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to work with" 20 78 10 $(for x in ${DBS}; do echo "$x [DB]"; done) 3>&1 1>&2 2>&3)
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
+
+    BK_TYPE="database"
+
     echo "Setting CHOSEN_DB="${CHOSEN_DB} >>$LOG
 
     # Remove DB prefix to find mysql user
@@ -131,10 +106,7 @@ if [ $exitstatus = 0 ]; then
     USER_DB="${PROJECT_NAME}_user"
 
     # Make a database Backup
-    mysql_database_export "${CHOSEN_DB}" "${SFOLDER}/tmp-backup/${CHOSEN_DB}_DB.sql"
-
-    # TO-TEST
-    make_database_backup "database" "${CHOSEN_DB}"
+    make_database_backup "${BK_TYPE}" "${CHOSEN_DB}"
 
     # Delete project database
     mysql_database_drop "${CHOSEN_DB}"
@@ -153,5 +125,6 @@ else
 
 fi
 
+#TODO: ask for deleting tmp-backup folder
 # Delete tmp backups
 #rm -R ${SFOLDER}/tmp-backup
