@@ -224,10 +224,10 @@ make_mailcow_backup() {
         echo " > ${MAILCOW_TMP_BK}/${BK_FILE} backup created" >>$LOG
 
         # New folder with $VPSNAME
-        ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}"
+        output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}" 2>&1)
       
         # New folder with $BK_TYPE
-        ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}"
+        output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}" 2>&1)
 
         DROPBOX_PATH="/${VPSNAME}/${BK_TYPE}"
 
@@ -329,13 +329,13 @@ make_files_backup() {
       echo " > Creating folders in Dropbox ..." >>$LOG
 
       # New folder with $VPSNAME
-      ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}"
+      output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}" 2>&1)
       
       # New folder with $BK_TYPE
-      ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}"
+      output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}" 2>&1)
 
       # New folder with $F_NAME (project folder)
-      ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}/${F_NAME}"
+      output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}/${F_NAME}" 2>&1)
 
       DROPBOX_PATH="/${VPSNAME}/${BK_TYPE}/${F_NAME}"
 
@@ -589,11 +589,13 @@ make_project_backup() {
         echo " > Trying to create folders in Dropbox ..." >>$LOG
 
         # New folder with $VPSNAME
-        ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}"
-        ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}"
+        output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}" 2>&1)
+        
+        # New folder with $BK_TYPE
+        output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}" 2>&1)
 
-        # New folder structure with date
-        ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}/${F_NAME}"
+        # New folder with $F_NAME
+        output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}/${F_NAME}" 2>&1)
         #${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}/${F_NAME}/${NOW}"
 
         echo -e ${CYAN}" > Uploading file backup ${BK_FILE} to Dropbox ..."${ENDCOLOR}
@@ -616,7 +618,7 @@ make_project_backup() {
 
     else
         ERROR=true
-        ERROR_TYPE="ERROR: Making backup ${BAKWP}/${NOW}/${BK_FILE}"
+        ERROR_TYPE=" > ERROR: Making backup ${BAKWP}/${NOW}/${BK_FILE}"
         echo ${ERROR_TYPE} >>$LOG
 
     fi
