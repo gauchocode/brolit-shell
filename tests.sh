@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta12
+# Version: 3.0-rc01
 #############################################################################
 
 ### Checking some things...#####################################################
@@ -32,6 +32,7 @@ fi
 source "${SFOLDER}/libs/commons.sh"
 source "${SFOLDER}/libs/mail_notification_helper.sh"
 source "${SFOLDER}/libs/packages_helper.sh"
+source "${SFOLDER}/libs/backup_helper.sh"
 source "${SFOLDER}/libs/mysql_helper.sh"
 
 ####################### TEST FOR mail_cert_section #######################
@@ -83,10 +84,36 @@ test_mysql_user_exists(){
 
 }
 
+####################### TEST FOR mysql_database_exists #######################
+
+test_mysql_database_exists(){
+
+    echo -e ${B_CYAN}" > TESTING FUNCTION: mysql_database_exists"${B_ENDCOLOR}
+
+    MYSQL_DB_TO_TEST="multiplacas_test2"
+    
+    DB_EXISTS=$(mysql_database_exists "${MYSQL_DB_TO_TEST}")
+
+    echo "${DB_EXISTS}"
+
+    if [[ ${DB_EXISTS} -eq 1 ]]; then
+        echo -e ${B_RED}" > MySQL DB: ${MYSQL_DB_TO_TEST} doesn't exists!"${ENDCOLOR}
+
+    else
+        echo -e ${B_GREEN}" > MySQL DB ${MYSQL_DB_TO_TEST} already exists"${ENDCOLOR}
+
+    fi
+
+}
+
 ################################################################################
 # MAIN
 ################################################################################
 
 #test_mysql_user_exists
+#test_mysql_database_exists
 
 #test_cert_mail
+
+#to_test="/var/www/goseries-master"
+#is_wp_project "$to_test"

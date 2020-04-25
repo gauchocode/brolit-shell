@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta12
+# Version: 3.0-rc01
 ################################################################################
 
 ### Checking some things
@@ -68,11 +68,11 @@ else
     if [ $? -eq 0 ]; then
 
         # Creating new folder structure for old projects
-        ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}/offline-site"
+        output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}/offline-site" 2>&1)
 
         # Moving deleted project backups to another dropbox directory
-        echo -e ${B_CYAN}" > Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${FILENAME} /offline-site"${ENDCOLOR}
-        ${DPU_F}/dropbox_uploader.sh move "/${VPSNAME}/${BK_TYPE}/${FILENAME}" "/offline-site"
+        echo -e ${B_CYAN}" > Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${FILENAME} /${VPSNAME}/offline-site"${ENDCOLOR}
+        ${DPU_F}/dropbox_uploader.sh move "/${VPSNAME}/${BK_TYPE}/${FILENAME}" "/${VPSNAME}/offline-site"
 
         # Delete project files
         rm -R $filepath"/"$FILENAME
@@ -108,6 +108,10 @@ if [ $exitstatus = 0 ]; then
     # Make a database Backup
     make_database_backup "${BK_TYPE}" "${CHOSEN_DB}"
 
+    # Moving deleted project backups to another dropbox directory
+    echo -e ${B_CYAN}" > Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${CHOSEN_DB} /${VPSNAME}/offline-site"${ENDCOLOR}
+    ${DPU_F}/dropbox_uploader.sh move "/${VPSNAME}/${BK_TYPE}/${CHOSEN_DB}" "/${VPSNAME}/offline-site"
+
     # Delete project database
     mysql_database_drop "${CHOSEN_DB}"
 
@@ -117,7 +121,7 @@ if [ $exitstatus = 0 ]; then
     # 2- Check if user exists, 
     # 3- Ask if you want delete it}
     # 4- Remove it or ignore it
-    #mysql_user_exists "" ""
+    #mysql_user_exists ""
     #mysql_user_delete "${USER_DB}"
 
 else

@@ -1,8 +1,7 @@
 #!/bin/bash
 #
-# Autor: broobe. web + mobile development - https://broobe.com
-# Script Name: Broobe Utils Scripts
-# Version: 3.0
+# Autor: BROOBE. web + mobile development - https://broobe.com
+# Version: 3.0-rc01
 #############################################################################
 
 ### Checking some things
@@ -12,11 +11,11 @@ if [[ -z "${SFOLDER}" ]]; then
 fi
 ################################################################################
 
-source ${SFOLDER}/libs/commons.sh
-source ${SFOLDER}/libs/mysql_helper.sh
-source ${SFOLDER}/libs/mail_notification_helper.sh
-source ${SFOLDER}/libs/packages_helper.sh
-source ${SFOLDER}/libs/wpcli_helper.sh
+source "${SFOLDER}/libs/commons.sh"
+source "${SFOLDER}/libs/mysql_helper.sh"
+source "${SFOLDER}/libs/mail_notification_helper.sh"
+source "${SFOLDER}/libs/packages_helper.sh"
+source "${SFOLDER}/libs/wpcli_helper.sh"
 
 ################################################################################
 
@@ -35,7 +34,7 @@ wp_migration_source() {
       SOURCE_DIR=$(whiptail --title "Source Directory" --inputbox "Please insert the directory where backup is stored (Files and DB)." 10 60 "/root/backups" 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [ $exitstatus = 0 ]; then
-        echo "SOURCE_DIR="${SOURCE_DIR} >>$LOG
+        echo "SOURCE_DIR=${SOURCE_DIR}" >>$LOG
 
       else
         exit 1
@@ -73,15 +72,15 @@ wp_migration_source() {
 
 #############################################################################
 
-source ${SFOLDER}/libs/commons.sh
-source ${SFOLDER}/libs/mysql_helper.sh
+source "${SFOLDER}/libs/commons.sh"
+source "${SFOLDER}/libs/mysql_helper.sh"
 
 ### Log Start
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 PATH_LOG="${SFOLDER}/logs"
 if [ ! -d "${SFOLDER}/logs" ]; then
   echo " > Folder ${SFOLDER}/logs doesn't exist. Creating now ..."
-  mkdir ${SFOLDER}/logs
+  mkdir "${SFOLDER}/logs"
   echo " > Folder ${SFOLDER}/logs created ..."
 fi
 LOG_NAME="log_server_migration_${TIMESTAMP}.log"
@@ -91,7 +90,7 @@ echo "Server Migration:: Script Start -- $(date +%Y%m%d_%H%M)" >>$LOG
 START_TIME=$(date +%s)
 
 if test -f /root/.broobe-utils-options; then
-  source /root/.broobe-utils-options
+  source "/root/.broobe-utils-options"
 fi
 
 # Project details
@@ -102,7 +101,7 @@ ask_rootdomain_to_cloudflare_config "${POSSIBLE_ROOT_DOMAIN}"
 
 ask_project_name
 
-ask_project_state
+ask_project_state ""
 
 wp_migration_source
 
@@ -117,13 +116,13 @@ echo -e ${MAGENTA}" > BK_F_FILE= ${BK_F_FILE} ..."${ENDCOLOR}
 ask_folder_to_install_sites
 
 echo " > CREATING TMP DIRECTORY ..."
-mkdir ${SFOLDER}/tmp
-mkdir ${SFOLDER}/tmp/${PROJECT_DOMAIN}
-cd ${SFOLDER}/tmp/${PROJECT_DOMAIN}
+mkdir "${SFOLDER}/tmp"
+mkdir "${SFOLDER}/tmp/${PROJECT_DOMAIN}"
+cd "${SFOLDER}/tmp/${PROJECT_DOMAIN}"
 
-if [ ${WP_MIGRATION_SOURCE} = "DIRECTORY" ]; then
+if [ "${WP_MIGRATION_SOURCE}" = "DIRECTORY" ]; then
 
-  unzip \*.zip \* -d ${SFOLDER}/tmp/${PROJECT_DOMAIN}
+  unzip \*.zip \* -d "${SFOLDER}/tmp/${PROJECT_DOMAIN}"
   # TODO: acá habría que checkear si la instalación es un WP
   # y si está en la raiz o dentro de una carpeta del zip
 
@@ -132,11 +131,11 @@ if [ ${WP_MIGRATION_SOURCE} = "DIRECTORY" ]; then
   # DB
   mysql_database_import "${PROJECT_NAME}_${PROJECT_STATE}" "${WP_MIGRATION_SOURCE}/${BK_DB_FILE}"
 
-  cd ${FOLDER_TO_INSTALL}
+  cd "${FOLDER_TO_INSTALL}"
 
   #mkdir ${PROJECT_DOMAIN}
 
-  cp -r ${SFOLDER}/tmp/${PROJECT_DOMAIN} ${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}
+  cp -r "${SFOLDER}/tmp/${PROJECT_DOMAIN}" "${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}"
 
 else
 
@@ -146,31 +145,31 @@ else
 
   # Uncompressing
   echo -e ${CYAN}" > Uncompressing file backup ..."${ENDCOLOR}
-  unzip ${BK_F_FILE}
+  unzip "${BK_F_FILE}"
 
   # Download Database Backup
   echo -e ${CYAN}" > Downloading database backup ..."${ENDCOLOR} >>$LOG
-  wget ${SOURCE_DB_URL} >>$LOG
+  wget "${SOURCE_DB_URL}" >>$LOG
 
   # Create database and user
   wp_database_creation "${PROJECT_NAME}" "${PROJECT_STATE}"
 
   # Importing dump file
-  gunzip -c ${BK_DB_FILE} > "${PROJECT_NAME}.sql"
+  gunzip -c "${BK_DB_FILE}" > "${PROJECT_NAME}.sql"
   mysql_database_import "${PROJECT_NAME}_${PROJECT_STATE}" "${PROJECT_NAME}.sql"
 
   # Remove downloaded files
   echo -e ${CYAN}" > Removing downloaded files ..."${ENDCOLOR}
-  rm ${SFOLDER}/tmp/${PROJECT_DOMAIN}/${BK_F_FILE}
-  rm ${SFOLDER}/tmp/${PROJECT_DOMAIN}/${BK_DB_FILE}
+  rm "${SFOLDER}/tmp/${PROJECT_DOMAIN}/${BK_F_FILE}"
+  rm "${SFOLDER}/tmp/${PROJECT_DOMAIN}/${BK_DB_FILE}"
 
   # Move to ${FOLDER_TO_INSTALL}
   echo -e ${CYAN}" > Moving ${PROJECT_DOMAIN} to ${FOLDER_TO_INSTALL} ..."${ENDCOLOR}
-  mv ${SFOLDER}/tmp/${PROJECT_DOMAIN} ${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}
+  mv "${SFOLDER}/tmp/${PROJECT_DOMAIN}" "${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}"
 
 fi
 
-chown -R www-data:www-data ${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}
+chown -R www-data:www-data "${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}"
 
 # Change wp-config.php database parameters
 PROJECT_DIR="${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}"
@@ -184,8 +183,8 @@ fi
 
 # Create nginx config files for site
 echo -e "\nCreating nginx configuration file...\n" >>$LOG
-sudo cp ${SFOLDER}/confs/nginx/sites-available/default /etc/nginx/sites-available/${PROJECT_DOMAIN}
-ln -s /etc/nginx/sites-available/${PROJECT_DOMAIN} /etc/nginx/sites-enabled/${PROJECT_DOMAIN}
+sudo cp "${SFOLDER}/confs/nginx/sites-available/default" "/etc/nginx/sites-available/${PROJECT_DOMAIN}"
+ln -s "/etc/nginx/sites-available/${PROJECT_DOMAIN}" "/etc/nginx/sites-enabled/${PROJECT_DOMAIN}"
 
 # Replace string to match domain name
 
@@ -210,7 +209,7 @@ echo -e ${YELLOW}"Trying to access Cloudflare API and change record ${PROJECT_DO
 zone_name=${ROOT_DOMAIN}
 record_name=${PROJECT_DOMAIN}
 export zone_name record_name
-${SFOLDER}/utils/cloudflare_update_IP.sh
+"${SFOLDER}/utils/cloudflare_update_IP.sh"
 
 # HTTPS with Certbot
 certbot_certificate_install "${MAILA}" "${PROJECT_DOMAIN}"

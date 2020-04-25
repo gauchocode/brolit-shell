@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta12
+# Version: 3.0-rc01
 #############################################################################
 #
 # Ref: https://github.com/nelson6e65/bash-mysql-helper/blob/master/src/main.sh
@@ -144,19 +144,34 @@ mysql_user_grant_privileges() {
 mysql_user_exists() {
 
     # $1 = ${DB_USER}
-    # $2 = ${DB_PASS}
 
     DB_USER=$1
-    DB_PASS=$2
 
-    if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${DB_USER}';" | mysql -u ${MUSER} --password=${MPASS} | grep 1 &>/dev/null; then
+    if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${DB_USER}';" | mysql -u "${MUSER}" --password="${MPASS}" | grep 1 &>/dev/null; then
         #return 0 if user don't exists
         echo 0
-
     else
         #return 1 if user already exists
         echo 1
+    fi
 
+}
+
+mysql_database_exists() {
+
+    # $1 = ${DB}
+
+    DB=$1
+
+    result=$(mysql -u "${MUSER}" --password="${MPASS}" -e "SHOW DATABASES LIKE '${DB}';")
+
+    if [[ -z "${result}" || "${result}" = "" ]]; then
+        #return 1 if database don't exists
+        echo 1
+        
+    else
+        #return 0 if database exists
+        echo 0
     fi
 
 }
@@ -172,13 +187,13 @@ mysql_database_create() {
     mysql -u ${MUSER} -p${MPASS} -e "${SQL1}" >>$LOG
 
     if [ $? -eq 0 ]; then
-        echo " > DONE!" >>$LOG
-        echo -e ${GREEN}" > DONE!"${ENDCOLOR}
+        echo " > Database ${DB} created OK!" >>$LOG
+        echo -e ${B_GREEN}" > Database ${DB} created OK!"${ENDCOLOR}
         return 0
 
     else
-        echo " > Something went wrong!" >>$LOG
-        echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
+        echo " > Something went wrong creating database: ${DB}!" >>$LOG
+        echo -e ${B_RED}" > Something went wrong creating database: ${DB}!"${ENDCOLOR}
         exit 1
 
     fi

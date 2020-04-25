@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta12
+# Version: 3.0-rc01
 ################################################################################
 #
 # Refs: 
@@ -73,11 +73,15 @@ certbot_renew_test() {
 
   DOMAINS=$1
 
-  certbot renew --dry-run -d ${DOMAIN}
+  certbot renew --dry-run -d "${DOMAINS}"
 
 }
 
 certbot_helper_installer_menu() {
+
+  #$1 = DOMAINS
+
+  DOMAINS=$1
 
   CB_INSTALLER_OPTIONS="01 INSTALL_WITH_NGINX 02 INSTALL_WITH_CLOUDFLARE"
   CHOSEN_CB_INSTALLER_OPTION=$(whiptail --title "CERTBOT INSTALLER OPTIONS" --menu "Please choose an option:" 20 78 10 $(for x in ${CB_INSTALLER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
@@ -113,7 +117,7 @@ certbot_helper_menu() {
     if [ $exitstatus = 0 ]; then
 
       if [[ ${CHOSEN_CB_OPTION} == *"01"* ]]; then
-        certbot_helper_installer_menu
+        certbot_helper_installer_menu "${DOMAINS}"
         #certbot_helper_menu
 
       fi

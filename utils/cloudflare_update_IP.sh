@@ -1,10 +1,10 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta12
+# Version: 3.0-rc01
 ################################################################################
 
-# TODO: agregar opción de habilitar cloudflare-proxy
+# TODO: add option for cloudflare-proxy
 # https://github.com/HillLiu/cloudflare-bash-util
 
 ### Checking Script Execution
@@ -15,9 +15,16 @@ fi
 
 ################################################################################
 
-source ${SFOLDER}/libs/commons.sh
+source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
+
+#TODO: in the future we must rewrite the vars and remove this ugly replace
+
+#We need to do this, because certbot use this file with this vars
+#And this script need this others var names 
+auth_email=${dns_cloudflare_email}
+auth_key=${dns_cloudflare_api_key}
 
 # Checking cloudflare credentials file
 if [[ -z "${auth_email}" ]]; then

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta12
+# Version: 3.0-rc01
 #############################################################################
 
 ### Checking some things
@@ -14,6 +14,53 @@ fi
 source "${SFOLDER}/libs/commons.sh"
 source "${SFOLDER}/libs/mysql_helper.sh"
 source "${SFOLDER}/libs/mail_notification_helper.sh"
+
+################################################################################
+
+is_wp_project() {
+
+  # $1 = project directory
+
+  project_dir=$1
+  is_wp="false"
+
+  # Check if user is root
+  if [[ -f "${project_dir}/wp-config.php" ]]; then
+    is_wp="true"
+
+  fi
+
+  echo "${is_wp}"
+
+}
+
+is_laravel_project() {
+
+  # $1 = project directory
+
+  project_dir=$1
+  is_laravel="false"
+
+  # Check if user is root
+  if [[ -f "${project_dir}/artisan" ]]; then
+    is_laravel="true"
+
+  fi
+
+  echo "${is_laravel}"
+
+}
+
+check_laravel_version() {
+
+  # $1 = project directory
+
+  project_dir=$1
+  laravel_v=$(php ${project_dir}/artisan --version)
+
+  echo "${laravel_v}"
+
+}
 
 ################################################################################
 #
@@ -404,13 +451,13 @@ make_database_backup() {
       echo " > Creating folders in Dropbox ..." >>$LOG
 
       # New folder with $VPSNAME
-      ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}"
+      output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}" 2>&1)
       
       # New folder with $BK_TYPE
-      ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}"
+      output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}" 2>&1)
 
       # New folder with $DATABASE (project DB)
-      ${DPU_F}/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}/${DATABASE}"
+      output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}/${BK_TYPE}/${DATABASE}" 2>&1)
 
       DROPBOX_PATH="/${VPSNAME}/${BK_TYPE}/${DATABASE}"
 
