@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta12
+# Version: 3.0-rc01
 #############################################################################
 
 ### Checking Script Execution
@@ -34,16 +34,13 @@ if [[ "${MAILCOW_BK}" = true ]]; then
 
   if [ ! -d "${MAILCOW_TMP_BK}" ]; then
     echo " > Folder ${MAILCOW_TMP_BK} doesn't exist. Creating now ..."
-    mkdir ${MAILCOW_TMP_BK}
+    mkdir "${MAILCOW_TMP_BK}"
     echo " > Folder ${MAILCOW_TMP_BK} created ..."
   fi
 
   make_mailcow_backup "${MAILCOW}"
 
 fi
-
-echo " > Creating Dropbox folder ${CONFIG_F} on Dropbox ..." >>$LOG
-${DPU_F}/dropbox_uploader.sh mkdir /${CONFIG_F}
 
 # TODO: error_type needs refactoring
 # TODO: results of make_server_files_backup "configs" need to be on final mail notification
@@ -55,6 +52,9 @@ BK_SCF_INDEX=0
 BK_SCF_ARRAY_INDEX=0
 declare -a BACKUPED_SCF_LIST
 declare -a BK_SCF_SIZES
+
+#echo " > Creating Dropbox folder ${CONFIG_F} on Dropbox ..." >>$LOG
+#${DPU_F}/dropbox_uploader.sh mkdir /${CONFIG_F}
 
 # TAR Webserver Config Files
 if [[ ! -d "${WSERVER}" ]]; then
@@ -77,7 +77,6 @@ if [[ ! -d "${PHP_CF}" ]]; then
   make_server_files_backup "${CONFIG_F}" "php" "${PHP_CF}" "."
 
 fi
-
 
 # TAR MySQL Config Files
 if [[ ! -d "${MySQL_CF}" ]]; then

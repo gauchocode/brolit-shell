@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta12
+# Version: 3.0-rc01
 ################################################################################
 
 ### Checking some things
@@ -115,8 +115,12 @@ if [ $exitstatus = 0 ]; then
 
   if [[ ${CHOSEN_PHP_INSTALLER_OPTION} == *"01"* ]]; then
     
-    #PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
-    PHP_V="7.2"
+    DISTRO_V=$(get_ubuntu_version)
+    if [ ! "$DISTRO_V" -e "1804" ]; then
+      PHP_V="7.2"  #Ubuntu 18.04 LTS Default
+    else
+      PHP_V="7.4"  #Ubuntu 20.04 LTS Default
+    fi
     
     # Installing packages
     php_installer "${PHP_V}"

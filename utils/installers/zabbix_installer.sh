@@ -1,11 +1,13 @@
 #!/bin/bash
-# Autor: broobe. web + mobile development - https://broobe.com
-# Version: 3.0
+#
+# Autor: BROOBE. web + mobile development - https://broobe.com
+# Version: 3.0-rc01
 ################################################################################
 #
 # Seguir:
 #       https://zabbixtech.info/es/zabbix-es/como-instalar-zabbix-con-nginx-en-ubuntu-linux/
 #       https://linuxize.com/post/how-to-install-and-configure-zabbix-on-ubuntu-18-04/
+#       https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-zabbix-to-securely-monitor-remote-servers-on-ubuntu-18-04
 #
 # Web Monitoring:
 #       https://www.zabbix.com/documentation/4.2/manual/web_monitoring

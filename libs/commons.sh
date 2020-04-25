@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta12
+# Version: 3.0-rc01
 ################################################################################
 
 ################################################################################
@@ -41,7 +41,7 @@ menutitle="Config Selection Menu"
 
 main_menu() {
 
-  RUNNER_OPTIONS="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 RESTORE_FROM_SOURCE 04 DELETE_PROJECT 05 WORDPRESS_INSTALLER 06 SERVER_OPTIMIZATIONS 07 INSTALLERS_AND_CONFIGS 08 WPCLI_MANAGER 09 CERTBOT_MANAGER 10 BENCHMARKS 11 GTMETRIX_TEST 12 BLACKLIST_CHECKER 13 RESET_SCRIPT_OPTIONS"
+  RUNNER_OPTIONS="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 DELETE_PROJECT 04 WORDPRESS_INSTALLER 05 SERVER_OPTIMIZATIONS 06 INSTALLERS_AND_CONFIGS 07 WPCLI_MANAGER 08 CERTBOT_MANAGER 09 BENCHMARKS 10 GTMETRIX_TEST 11 BLACKLIST_CHECKER 12 RESET_SCRIPT_OPTIONS"
   CHOSEN_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 $(for x in ${RUNNER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -52,23 +52,20 @@ main_menu() {
 
     fi
     if [[ ${CHOSEN_TYPE} == *"02"* ]]; then
-      source "${SFOLDER}/restore_from_backup.sh"
+      restore_menu
+
     fi
+
     if [[ ${CHOSEN_TYPE} == *"03"* ]]; then
-      source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
-
-    fi
-
-    if [[ ${CHOSEN_TYPE} == *"04"* ]]; then
       source "${SFOLDER}/delete_project.sh"
 
     fi
 
-    if [[ ${CHOSEN_TYPE} == *"05"* ]]; then
+    if [[ ${CHOSEN_TYPE} == *"04"* ]]; then
       source "${SFOLDER}/utils/installers/wordpress_installer.sh"
 
     fi
-    if [[ ${CHOSEN_TYPE} == *"06"* ]]; then
+    if [[ ${CHOSEN_TYPE} == *"05"* ]]; then
       while true; do
         echo -e ${YELLOW}"> Do you really want to run the optimization script?"${ENDCOLOR}
         read -p "Please type 'y' or 'n'" yn
@@ -86,37 +83,41 @@ main_menu() {
       done
 
     fi
-    if [[ ${CHOSEN_TYPE} == *"07"* ]]; then
+    if [[ ${CHOSEN_TYPE} == *"06"* ]]; then
       source "${SFOLDER}/installers_and_configurators.sh"
 
     fi
-    if [[ ${CHOSEN_TYPE} == *"08"* ]]; then
+    if [[ ${CHOSEN_TYPE} == *"07"* ]]; then
       source "${SFOLDER}/utils/wpcli_manager.sh"
 
     fi
-    if [[ ${CHOSEN_TYPE} == *"09"* ]]; then
+    if [[ ${CHOSEN_TYPE} == *"08"* ]]; then
       source "${SFOLDER}/utils/certbot_manager.sh"
 
     fi
-    if [[ ${CHOSEN_TYPE} == *"10"* ]]; then
+    if [[ ${CHOSEN_TYPE} == *"09"* ]]; then
       source "${SFOLDER}/utils/bench_scripts.sh"
 
     fi
-    if [[ ${CHOSEN_TYPE} == *"11"* ]]; then
+    if [[ ${CHOSEN_TYPE} == *"10"* ]]; then
+
       URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [ ${exitstatus} = 0 ]; then
-        source ${SFOLDER}/utils/third-party/google-insights-api-tools/gitools_v5.sh gtmetrix ${URL_TO_TEST}
+        source "${SFOLDER}/utils/third-party/google-insights-api-tools/gitools_v5.sh" gtmetrix ${URL_TO_TEST}
       fi
+
     fi
-    if [[ ${CHOSEN_TYPE} == *"12"* ]]; then
+    if [[ ${CHOSEN_TYPE} == *"11"* ]]; then
+    
       IP_TO_TEST=$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [ ${exitstatus} = 0 ]; then
-        source ${SFOLDER}/utils/third-party/blacklist-checker/bl.sh ${IP_TO_TEST}
+        source "${SFOLDER}/utils/third-party/blacklist-checker/bl.sh" ${IP_TO_TEST}
       fi
+
     fi
-    if [[ ${CHOSEN_TYPE} == *"13"* ]]; then
+    if [[ ${CHOSEN_TYPE} == *"12"* ]]; then
       script_configuration_wizard "reconfigure"
 
     fi
@@ -142,7 +143,7 @@ backup_menu() {
 
     if [[ ${CHOSEN_BACKUP_TYPE} == *"01"* ]]; then
 
-      source ${SFOLDER}/mysql_backup.sh
+      source "${SFOLDER}/mysql_backup.sh"
 
       DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
       DB_MAIL_VAR=$(<${DB_MAIL})
@@ -210,6 +211,26 @@ backup_menu() {
       # Running project_backup script
       ${SFOLDER}/project_backup.sh
 
+    fi
+
+  fi
+
+}
+
+restore_menu () {
+
+  RESTORE_OPTIONS="01 RESTORE_FROM_DROPBOX 02 RESTORE_FROM_SOURCE"
+  CHOSEN_RESTORE_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a Restore Option to run" 20 78 10 $(for x in ${RESTORE_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+
+    if [[ ${CHOSEN_RESTORE_TYPE} == *"01"* ]]; then
+      source "${SFOLDER}/restore_from_backup.sh"
+    fi
+
+    if [[ ${CHOSEN_RESTORE_TYPE} == *"02"* ]]; then
+      source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
     fi
 
   fi
@@ -344,10 +365,12 @@ script_configuration_wizard() {
 ################################################################################
 
 check_root() {
+  # Check if user is root
   if [ ${USER} != root ]; then
     echo -e ${RED}" > Error: must be root! Exiting..."${ENDCOLOR}
     exit 0
   fi
+
 }
 
 check_distro() {
@@ -357,11 +380,11 @@ check_distro() {
     echo " > ERROR: This script only run on Ubuntu ... Exiting"
     exit 1
   else
-    echo "Setting DISTRO="$DISTRO
     MIN_V=$(echo "16.04" | awk -F "." '{print $1$2}')
-    DISTRO_V=$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $2}' | awk -F "." '{print $1$2}')
+    DISTRO_V=$(get_ubuntu_version)
+    echo "ACTUAL DISTRO: ${DISTRO} ${DISTRO_V}"
     if [ ! "$DISTRO_V" -ge "$MIN_V" ]; then
-      echo -e ${RED}" > ERROR: Ubuntu version must  >= 16.04 ... Exiting"${ENDCOLOR}
+      echo -e ${B_RED}" > ERROR: Ubuntu version must  >= 16.04 ... Exiting"${ENDCOLOR}
       exit 1
     fi
   fi
@@ -410,6 +433,12 @@ is_email_format_valid() {
 ################################################################################
 # HELPERS
 ################################################################################
+
+get_ubuntu_version() {
+
+  lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $2}' | awk -F "." '{print $1$2}'
+
+}
 
 declare -a checklist_array
 
@@ -543,7 +572,7 @@ generate_cloudflare_config() {
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
-    echo "dns_cloudflare_email=$CFL_EMAIL" >${CLF_CONFIG_FILE}
+    echo "dns_cloudflare_email=$CFL_EMAIL">"${CLF_CONFIG_FILE}"
 
     GLOBAL_API_TOKEN_STRING+= "\n . \n"
     GLOBAL_API_TOKEN_STRING+=" 1) Log in on: cloudflare.com\n"
@@ -556,8 +585,8 @@ generate_cloudflare_config() {
     GLOBAL_API_TOKEN=$(whiptail --title "Cloudflare Configuration" --inputbox "${GLOBAL_API_TOKEN_STRING}" 15 60 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      echo "dns_cloudflare_api_key=$GLOBAL_API_TOKEN" >>${CLF_CONFIG_FILE}
-      echo -e ${GREEN}" > The cloudflare configuration has been saved! ..."${ENDCOLOR}
+      echo "dns_cloudflare_api_key=$GLOBAL_API_TOKEN">>"${CLF_CONFIG_FILE}"
+      echo -e ${B_GREEN}" > The cloudflare configuration has been saved! ..."${ENDCOLOR}
 
     else
       exit 1
@@ -616,6 +645,38 @@ prompt_return_or_finish() {
     esac
   done
 
+}
+
+extract () {
+  
+  #1 - File to uncompress or extract
+  #2- Optional compress-program (ex: lbzip2)
+
+    if [ -f $1 ]; then
+        case $1 in
+            *.tar.bz2)  
+              if [ -z $2 ]; then
+                 tar xp -C $1 --use-compress-program=$2
+              else
+                 tar xjf $1
+              fi;;
+            *.tar.gz)     tar xzf $1   ;;
+            *.bz2)        bunzip2 $1   ;;
+            *.rar)        unrar x $1   ;;
+            *.gz)         gunzip $1    ;;
+            *.tar)        tar xf $1    ;;  
+            *.tbz2)       tar xjf $1   ;;
+            *.tgz)        tar xzf $1   ;;
+            *.zip)        unzip $1     ;;
+            *.Z)          uncompress $1;;
+            *.7z)         7z x $1      ;;
+            *.tar.gz)     tar J $1     ;;
+            *.xz)         tar xvf $1   ;;
+            *)            echo "'$1' cannot be extracted via extract()" ;;
+        esac
+    else
+        echo "'$1' is not a valid file"
+    fi
 }
 
 ################################################################################
@@ -819,12 +880,15 @@ wp_database_creation() {
 # wordpress_installer.sh
 ask_project_state() {
 
-  PROJECT_STATES="prod stage test dev"
-  PROJECT_STATE=$(whiptail --title "PROJECT STATE" --menu "Choose a Project State" 20 78 10 $(for x in ${PROJECT_STATES}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)
+  #$1 = ${state} optional to select default option
+
+  local state=$1
+
+  PROJECT_STATES="prod stage beta test dev"
+  PROJECT_STATE=$(whiptail --title "PROJECT STATE" --menu "Choose a Project State" 20 78 10 $(for x in ${PROJECT_STATES}; do echo "$x [X]"; done) --default-item "${state}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-    echo -e ${YELLOW}"Project state selected: ${PROJECT_STATE} ..."${ENDCOLOR}
-    echo "Setting PROJECT_STATE="${PROJECT_STATE} >>$LOG
+    echo " > Setting PROJECT_STATE=${PROJECT_STATE}" >>$LOG
     return 0
 
   else
@@ -836,11 +900,14 @@ ask_project_state() {
 
 ask_project_name() {
 
-  PROJECT_NAME=$(whiptail --title "Project Name" --inputbox "Please insert a project name. Example: broobe" 10 60 3>&1 1>&2 2>&3)
+  #$1 = ${project_name} optional to select default option
+
+  local name=$1
+
+  PROJECT_NAME=$(whiptail --title "Project Name" --inputbox "Please insert a project name. Example: broobe" 10 60 "${name}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-    echo -e ${YELLOW}"PROJECT_NAME= ${PROJECT_NAME}"${ENDCOLOR}
-    echo "Setting PROJECT_NAME= "${PROJECT_NAME} >>$LOG
+    echo "Setting PROJECT_NAME=${PROJECT_NAME}" >>$LOG
     return 0
 
   else
@@ -852,8 +919,11 @@ ask_project_name() {
 
 ask_project_domain() {
 
-  #PROJECT_DOMAIN=$(whiptail --title "Project Domain" --inputbox "Please insert a project domain. Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
-  PROJECT_DOMAIN=$(whiptail --title "Domain" --inputbox "Insert the domain of the Project. Example: landing.broobe.com" 10 60 3>&1 1>&2 2>&3)
+  #$1 = ${project_domain} optional to select default option
+
+  local domain=$1
+  
+  PROJECT_DOMAIN=$(whiptail --title "Domain" --inputbox "Insert the domain of the Project. Example: landing.broobe.com" 10 60 "${domain}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
     echo "Setting PROJECT_DOMAIN="${PROJECT_DOMAIN} >>$LOG
@@ -866,26 +936,12 @@ ask_project_domain() {
 
 }
 
-#ask_domain_to_install_site() {
-#
-#  DOMAIN=$(whiptail --title "Domain" --inputbox "Insert the domain of the Project. Example: landing.broobe.com" 10 60 3>&1 1>&2 2>&3)
-#  exitstatus=$?
-#  if [ $exitstatus = 0 ]; then
-#    echo "Setting DOMAIN="${DOMAIN} >>$LOG
-#    return 0
-#
-#  else
-#    return 1
-#
-#  fi
-#
-#}
-
 ask_rootdomain_to_cloudflare_config() {
 
   # $1 = ${POSSIBLE_ROOT_DOMAIN} (could be empty)
 
-  POSSIBLE_ROOT_DOMAIN=$1
+  local POSSIBLE_ROOT_DOMAIN=$1
+
   if [[ -z "${POSSIBLE_ROOT_DOMAIN}" ]]; then
     ROOT_DOMAIN=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
   else

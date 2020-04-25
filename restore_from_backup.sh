@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta12
+# Version: 3.0-rc01
 ################################################################################
 
 # TO-FIX: mysql restore fail when cant create mysql user
@@ -47,22 +47,27 @@ make_temp_db_backup() {
 
 restore_database_backup() {
 
-  echo " > Trying to restore ${CHOSEN_BACKUP} DB" >>$LOG
-  echo -e ${YELLOW}" > Trying to restore ${CHOSEN_BACKUP} DB"${ENDCOLOR}
+  #$1 = ${CHOSEN_PROJECT}
+  #$2 = ${CHOSEN_BACKUP}
 
-  # TODO: extract real db sufix, and ask if we want to change it
-  ask_project_state
+  CHOSEN_PROJECT=$1
+  CHOSEN_BACKUP=$2
 
+  echo " > Running restore_database_backup for ${CHOSEN_BACKUP} DB" >>$LOG
+  echo -e "${CYAN} > Running restore_database_backup for ${CHOSEN_BACKUP} DB ${ENDCOLOR}"
+
+  # Asking project state with suggested actual state
   suffix="$(cut -d'_' -f2 <<<"${CHOSEN_PROJECT}")"
-  #suffix="_${PROJECT_STATE}"
+  ask_project_state "${suffix}"
 
-  # Extract PROJECT_NAME
+  # Extract PROJECT_NAME (its removes last part of db name with "_" char)
+
   PROJECT_NAME=${CHOSEN_PROJECT%"_$suffix"}
 
   PROJECT_NAME=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${PROJECT_NAME}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-    echo "Setting PROJECT_NAME="${PROJECT_NAME} >>$LOG
+    echo "Setting PROJECT_NAME=${PROJECT_NAME}" >>$LOG
   else
     exit 1
   fi
@@ -70,12 +75,22 @@ restore_database_backup() {
   DB_USER="${PROJECT_NAME}_user"
   DB_NAME="${PROJECT_NAME}_${PROJECT_STATE}"
 
-  echo -e ${CYAN}" > Creating '${DB_NAME}' database in MySQL ..."${ENDCOLOR}
-  echo "Creating '${DB_NAME}' database in MySQL ..." >>$LOG
-  mysql_database_create "${DB_NAME}"
+  # Check if database already exists
+  DB_EXISTS=$(mysql_database_exists "${DB_NAME}")
+  if [[ ${DB_EXISTS} -eq 1 ]]; then  
+    echo -e ${CYAN}" > Creating '${DB_NAME}' database in MySQL ..."${ENDCOLOR}
+    echo "Creating '${DB_NAME}' database in MySQL ..." >>$LOG
+    mysql_database_create "${DB_NAME}"
 
+  else
+    echo -e ${B_GREEN}" > MySQL DB ${MYSQL_DB_TO_TEST} already exists"${ENDCOLOR}
+
+    #TODO: ask what to do, if continue make a database backup
+
+  fi
+
+  # Check if user database already exists
   USER_DB_EXISTS=$(mysql_user_exists "${DB_USER}")
-
   if [[ ${USER_DB_EXISTS} -eq 0 ]]; then
 
     DB_PASS=$(openssl rand -hex 12)
@@ -86,12 +101,12 @@ restore_database_backup() {
     mysql_user_create "${DB_USER}" "${DB_PASS}"
 
   else
-
     echo -e ${B_GREEN}" > User ${DB_USER} already exists"${B_ENDCOLOR}
     echo " > User ${DB_USER} already exists"${ENDCOLOR} >>$LOG
 
   fi
 
+  # Grant privileges to database user
   mysql_user_grant_privileges "${DB_USER}" "${DB_NAME}"
 
   # Trying to restore Database
@@ -102,23 +117,6 @@ restore_database_backup() {
   rm ${CHOSEN_BACKUP%%.*}.sql
   rm "${CHOSEN_BACKUP}"
   echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
-
-  ask_folder_to_install_sites
-
-  startdir=${FOLDER_TO_INSTALL}
-  menutitle="Site Selection Menu"
-  directory_browser "$menutitle" "$startdir"
-  WP_SITE=$filepath"/"$filename
-  echo "Setting WP_SITE="${WP_SITE}
-
-  #FOLDER_NAME=$(basename $WP_SITE)
-
-  # Change wp-config.php database parameters
-  wp_update_wpconfig "${WP_SITE}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
-
-  # TODO: change the secret encryption keys
-
-  echo -e ${B_GREEN}" > DONE"${B_ENDCOLOR}
 
 }
 
@@ -156,7 +154,6 @@ if [[ ${CHOSEN_TYPE} == *"$CONFIG_F"* ]]; then
     cd "${SFOLDER}/tmp"
 
     echo " > Downloading from Dropbox ${CHOSEN_SERVER}/${CHOSEN_TYPE}/${CHOSEN_CONFIG} ..." >>$LOG
-    echo -e ${YELLOW}" > Trying to run dropbox_uploader.sh download ${CHOSEN_SERVER}/${CHOSEN_TYPE}/${CHOSEN_CONFIG}"${ENDCOLOR}
     ${DPU_F}/dropbox_uploader.sh download "${CHOSEN_SERVER}/${CHOSEN_TYPE}/${CHOSEN_CONFIG}"
 
     # Restore files
@@ -173,7 +170,7 @@ if [[ ${CHOSEN_TYPE} == *"$CONFIG_F"* ]]; then
 
       # TODO: if nginx is installed, ask if nginx.conf must be replace
 
-      # Checking that default webserver folder exists
+      # Checking if default webserver folder exists
       if [[ -n "${WSERVER}" ]]; then
 
         echo -e ${GREEN} " > Folder ${WSERVER} exists ... OK" ${ENDCOLOR}
@@ -203,8 +200,8 @@ if [[ ${CHOSEN_TYPE} == *"$CONFIG_F"* ]]; then
 
           echo " > Restoring backup: ${filename} ..." >>$LOG
           echo -e ${YELLOW}" > Restoring backup: ${filename} ..."${ENDCOLOR}
-          cp $to_restore ${WSERVER}/sites-available/$filename
-          ln -s ${WSERVER}/sites-available/$filename ${WSERVER}/sites-enabled/$filename
+          cp "$to_restore" "${WSERVER}/sites-available/$filename"
+          ln -s "${WSERVER}/sites-available/$filename" "${WSERVER}/sites-enabled/$filename"
 
           echo " > Reloading webserver ..." >>$LOG
           echo -e ${YELLOW}" > Reloading webserver ..."${ENDCOLOR}
@@ -270,6 +267,24 @@ else
     # Site Restore
     if [[ ${CHOSEN_TYPE} == *"$SITES_F"* ]]; then
 
+      #TODO: is this ok? or copy from project instead?
+
+      PROJECT_TMP_FOLDER="${SFOLDER}/tmp/${CHOSEN_PROJECT}"
+
+      CHOSEN_PROJECT=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${CHOSEN_PROJECT}" 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ $exitstatus = 0 ]; then
+        
+        echo "Setting CHOSEN_PROJECT="${CHOSEN_PROJECT} >>$LOG
+        echo -e ${CYAN}" > Renaming ${PROJECT_TMP_FOLDER} to "${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT}"..."${ENDCOLOR}    
+        
+        mv "${PROJECT_TMP_FOLDER}" "${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT}"
+        PROJECT_TMP_FOLDER="${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT}"
+
+      else
+        exit 1
+      fi
+
       ask_folder_to_install_sites
 
       ACTUAL_FOLDER="${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT}"
@@ -284,13 +299,14 @@ else
       fi
 
       # Restore files
-      echo "Trying to restore ${CHOSEN_BACKUP} files ..." >>$LOG
-      echo -e ${YELLOW} "Trying to restore ${CHOSEN_BACKUP} files ..."${ENDCOLOR}
+      echo "Executing: mv ${SFOLDER}/tmp/${CHOSEN_PROJECT} ${FOLDER_TO_INSTALL} ..." >>$LOG
+      echo -e ${CYAN}"Executing: mv ${SFOLDER}/tmp/${CHOSEN_PROJECT} ${FOLDER_TO_INSTALL} ..."${ENDCOLOR}
+      
+      mv "${PROJECT_TMP_FOLDER}" "${FOLDER_TO_INSTALL}"
 
-      #echo "Executing: mv ${SFOLDER}/tmp/${CHOSEN_PROJECT} ${FOLDER_TO_INSTALL} ..."
-      mv "${SFOLDER}/tmp/${CHOSEN_PROJECT}" "${FOLDER_TO_INSTALL}"
+      echo -e ${B_GREEN}"DONE"${ENDCOLOR}
 
-      wp_change_ownership "${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT}"
+      wp_change_ownership "${ACTUAL_FOLDER}"
 
       # TODO: ask to choose between regenerate nginx config or restore backup
       # If choose restore config and has https, need to restore letsencrypt config and run cerbot
@@ -308,24 +324,32 @@ else
     else
       if [[ ${CHOSEN_TYPE} == *"$DBS_F"* ]]; then
 
-        # TODO: checkear si la BD es de una instalación de WP
-        # si lo es, preguntar a que carpeta de WP pertenece (directory_browser)
-        # si no selecciona no continuar.
-        # Si no es una BD de WP, crear BD, usuario y dejar datos en .txt
-
-        # Si es una BD
-        # TODO: contemplar 2 opciones: base existente y base inexistente (habría que crear el usuario)
+        # TODO: check project type (WP? Laravel? other?)
+        # ask for directory_browser if apply
+        # add credentials on external txt and send email
 
         make_temp_db_backup
 
-        restore_database_backup
+        restore_database_backup "${CHOSEN_PROJECT}" "${CHOSEN_BACKUP}"
+
+        ask_folder_to_install_sites
+
+        startdir=${FOLDER_TO_INSTALL}
+        menutitle="Site Selection Menu"
+        directory_browser "$menutitle" "$startdir"
+        WP_SITE=$filepath"/"$filename
+        echo "Setting WP_SITE="${WP_SITE}
+
+        # Change wp-config.php database parameters
+        wp_update_wpconfig "${WP_SITE}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
+
+        # TODO: change the secret encryption keys
+        #echo -e ${B_GREEN}" > DONE"${B_ENDCOLOR}
 
         # Ask for Cloudflare Root Domain
         ROOT_DOMAIN=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
         exitstatus=$?
         if [ $exitstatus = 0 ]; then
-
-          echo "Setting ROOT_DOMAIN="${ROOT_DOMAIN}
 
           # Cloudflare API to change DNS records
           echo "Trying to access Cloudflare API and change record ${DOMAIN} ..." >>$LOG
@@ -334,15 +358,12 @@ else
           zone_name=${ROOT_DOMAIN}
           record_name=${DOMAIN}
           export zone_name record_name
-          ${SFOLDER}/utils/cloudflare_update_IP.sh
+          "${SFOLDER}/utils/cloudflare_update_IP.sh"
 
         fi
-
-        #TODO: ask for Certbot
-        
+       
         # HTTPS with Certbot
-        ${SFOLDER}/utils/certbot_manager.sh
-        #certbot_certificate_install "${MAILA}" "${DOMAIN}"
+        certbot_helper_installer_menu "${DOMAIN}"
 
       fi
     fi

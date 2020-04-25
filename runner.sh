@@ -2,7 +2,7 @@
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Script Name: BROOBE Utils Scripts
-# Version: 3.0-beta12
+# Version: 3.0-rc01
 ################################################################################
 #
 # TODO: For release 3.0-final
@@ -48,7 +48,7 @@
 # https://google.github.io/styleguide/shell.xml
 #
 
-SCRIPT_V="3.0-beta12"
+SCRIPT_V="3.0-rc01"
 
 ### Checking some things...#####################################################
 SFOLDER="`dirname \"$0\"`"                                                      # relative
@@ -140,7 +140,7 @@ ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
 # Dropbox Uploader config file
 DPU_CONFIG_FILE=~/.dropbox_uploader
 if [[ -e ${DPU_CONFIG_FILE} ]]; then
-  source ${DPU_CONFIG_FILE}
+  source "${DPU_CONFIG_FILE}"
 else
   generate_dropbox_config
 fi
@@ -148,7 +148,7 @@ fi
 # Cloudflare config file
 CLF_CONFIG_FILE=~/.cloudflare.conf
 if [[ -e ${CLF_CONFIG_FILE} ]]; then
-  source ${CLF_CONFIG_FILE}
+  source "${CLF_CONFIG_FILE}"
 else
   generate_cloudflare_config
 fi
@@ -171,7 +171,7 @@ MYSQLDUMP="$(which mysqldump)"
 TAR="$(which tar)"
 
 # EXPORT VARS (GLOBALS)
-export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL DB_BL WSERVER PHP_CF LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR auth_email auth_key
+export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL DB_BL WSERVER PHP_CF LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
 
 if [ -t 1 ]; then
 

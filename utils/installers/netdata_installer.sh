@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta12
+# Version: 3.0-rc01
 ################################################################################
 
 source ${SFOLDER}/libs/commons.sh
@@ -154,7 +154,7 @@ if [ ! -x "${NETDATA}" ]; then
     exitstatus=$?
 
     if [ $exitstatus = 0 ]; then
-      echo "NETDATA_SUBDOMAIN="${NETDATA_SUBDOMAIN} >>/root/.broobe-utils-options
+      echo "NETDATA_SUBDOMAIN=${NETDATA_SUBDOMAIN}" >>/root/.broobe-utils-options
 
     else
       exit 1
@@ -182,9 +182,9 @@ if [ ! -x "${NETDATA}" ]; then
       netdata_installer
 
       # Netdata nginx proxy configuration
-      cp ${SFOLDER}/confs/nginx/sites-available/monitor /etc/nginx/sites-available
-      sed -i "s#dominio.com#${NETDATA_SUBDOMAIN}#" /etc/nginx/sites-available/monitor
-      ln -s /etc/nginx/sites-available/monitor /etc/nginx/sites-enabled/monitor
+      cp "${SFOLDER}/confs/nginx/sites-available/monitor" "/etc/nginx/sites-available"
+      sed -i "s#dominio.com#${NETDATA_SUBDOMAIN}#" "/etc/nginx/sites-available/monitor"
+      ln -s "/etc/nginx/sites-available/monitor" "/etc/nginx/sites-enabled/monitor"
 
       netdata_configuration
 
@@ -194,13 +194,15 @@ if [ ! -x "${NETDATA}" ]; then
       zone_name=${ROOT_DOMAIN}
       record_name=${NETDATA_SUBDOMAIN}
       export zone_name record_name
-      ${SFOLDER}/utils/cloudflare_update_IP.sh
+      "${SFOLDER}/utils/cloudflare_update_IP.sh"
 
-      # TODO: correr el certbot_manager.sh
       DOMAIN=${NETDATA_SUBDOMAIN}
-      CHOSEN_CB_OPTION="1"
-      export CHOSEN_CB_OPTION DOMAIN
-      ${SFOLDER}/utils/certbot_manager.sh
+      #CHOSEN_CB_OPTION="1"
+      #export CHOSEN_CB_OPTION DOMAIN
+
+      # HTTPS with Certbot
+      #"${SFOLDER}/utils/certbot_manager.sh"
+      certbot_certificate_install "${MAILA}" "${DOMAIN}"
 
       break
       ;;
@@ -241,12 +243,12 @@ else
 
           # TODO: remove MySQL user
           
-          rm /etc/nginx/sites-enabled/monitor
-          rm /etc/nginx/sites-available/monitor
+          rm "/etc/nginx/sites-enabled/monitor"
+          rm "/etc/nginx/sites-available/monitor"
 
-          rm -R /etc/netdata
-          rm /etc/systemd/system/netdata.service
-          rm /usr/sbin/netdata
+          rm -R "/etc/netdata"
+          rm "/etc/systemd/system/netdata.service"
+          rm "/usr/sbin/netdata"
 
           source /usr/libexec/netdata-uninstaller.sh --yes --dont-wait
 

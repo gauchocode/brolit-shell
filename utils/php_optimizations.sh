@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-beta12
+# Version: 3.0-rc01
 ################################################################################
 #
 # Ref: https://serverfault.com/questions/939436/understand-correctly-pm-max-children-tuning
@@ -16,15 +16,19 @@ fi
 ################################################################################
 
 SFOLDER="/root/broobe-utils-scripts"
-source ${SFOLDER}/libs/commons.sh
+source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
 
-# TODO: antes que nada deberiamos checkear donde está la config de php
-# TODO: checkear si existe más de una versión de php instalada
-# TODO: en caso de que exista más de una versión, preguntar cual vamos a optimizar
+# TODO: need to check php versions installed (could be more than one)
 
-PHP_V="7.2"  # TODO: Ubuntu 18.04 LTS Default pero habria que checkear cual está instalado
+DISTRO_V=$(get_ubuntu_version)
+if [ "$DISTRO_V" = "1804" ]; then
+  PHP_V="7.2"  #Ubuntu 18.04 LTS Default
+else
+  PHP_V="7.4"  #Ubuntu 20.04 LTS Default
+fi
+
 RAM_BUFFER="512"
 
 # Getting server info

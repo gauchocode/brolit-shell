@@ -1,8 +1,7 @@
 #!/bin/bash
 #
-# Autor: broobe. web + mobile development - https://broobe.com
-# Script Name: Broobe Utils Scripts
-# Version: 3.0
+# Autor: BROOBE. web + mobile development - https://broobe.com
+# Version: 3.0-rc01
 ################################################################################
 #
 # https://github.com/AbhishekGhosh/Ubuntu-16.04-Nginx-WordPress-Autoinstall-Bash-Script/
@@ -10,8 +9,8 @@
 #
 ################################################################################
 #
-# TODO: checkear que falla cuando ponemos www.DOMINIO.com y luego seleccionamos un stage distinto a prod.
-# TODO: checkear si se trata de un multisite
+# TODO: check when add www.DOMINIO.com and then select other stage != prod
+# TODO: add multisite support
 #
 
 ### Checking some things
@@ -21,11 +20,11 @@ if [[ -z "${SFOLDER}" ]]; then
 fi
 ################################################################################
 
-source ${SFOLDER}/libs/commons.sh
-source ${SFOLDER}/libs/mail_notification_helper.sh
-source ${SFOLDER}/libs/mysql_helper.sh
-source ${SFOLDER}/libs/wpcli_helper.sh
-source ${SFOLDER}/libs/certbot_helper.sh
+source "${SFOLDER}/libs/commons.sh"
+source "${SFOLDER}/libs/mail_notification_helper.sh"
+source "${SFOLDER}/libs/mysql_helper.sh"
+source "${SFOLDER}/libs/wpcli_helper.sh"
+source "${SFOLDER}/libs/certbot_helper.sh"
 
 ################################################################################
 
@@ -61,7 +60,7 @@ if [ $exitstatus = 0 ]; then
 
     ask_project_name
 
-    ask_project_state
+    ask_project_state ""
 
     check_if_folder_exists "${FOLDER_TO_INSTALL}" "${PROJECT_DOMAIN}"
     exitstatus=$?
@@ -70,8 +69,8 @@ if [ $exitstatus = 0 ]; then
       echo "Trying to make a copy of ${COPY_PROJECT} ..." >>$LOG
       echo -e ${YELLOW}"Trying to make a copy of ${COPY_PROJECT} ..."${ENDCOLOR}
 
-      cd ${FOLDER_TO_INSTALL}
-      cp -r ${FOLDER_TO_INSTALL}/${COPY_PROJECT} ${PROJECT_DIR}
+      cd "${FOLDER_TO_INSTALL}"
+      cp -r "${FOLDER_TO_INSTALL}/${COPY_PROJECT}" "${PROJECT_DIR}"
 
       echo "DONE" >>$LOG
 
@@ -91,7 +90,7 @@ if [ $exitstatus = 0 ]; then
 
     ask_project_name
 
-    ask_project_state
+    ask_project_state ""
 
     check_if_folder_exists "${FOLDER_TO_INSTALL}" "${PROJECT_DOMAIN}"
     exitstatus=$?
@@ -110,13 +109,10 @@ if [ $exitstatus = 0 ]; then
 
   wp_change_ownership "${PROJECT_DIR}"
 
-  WPCONFIG=${PROJECT_DIR}/wp-config.php
-
   # Create database and user
   wp_database_creation "${PROJECT_NAME}" "${PROJECT_STATE}"
 
   # Update wp-config.php
-  #if [[ ${DB_PASS} != "" ]]; then
   if [[ -z "${DB_PASS}" ]]; then
     wp_update_wpconfig "${PROJECT_DIR}" "${PROJECT_NAME}" "${PROJECT_STATE}" ""
   
@@ -137,7 +133,7 @@ if [ $exitstatus = 0 ]; then
     BK_FOLDER=${SFOLDER}/tmp/
 
     # We get the database name from the copied wp-config.php
-    SOURCE_WPCONFIG=${FOLDER_TO_INSTALL}/${COPY_PROJECT}
+    SOURCE_WPCONFIG="${FOLDER_TO_INSTALL}/${COPY_PROJECT}"
     DB_TOCOPY=$(cat ${SOURCE_WPCONFIG}/wp-config.php | grep DB_NAME | cut -d \' -f 4)
     BK_FILE="db-${DB_TOCOPY}.sql"
 
@@ -163,7 +159,7 @@ if [ $exitstatus = 0 ]; then
       wpcli_change_tables_prefix "${PROJECT_DIR}" "${TABLES_PREFIX}"
 
       # Create tmp directory
-      mkdir ${SFOLDER}/tmp-backup
+      mkdir "${SFOLDER}/tmp-backup"
 
       # Make a database Backup before replace URLs
       mysql_database_export "${TARGET_DB}" "${SFOLDER}/tmp-backup/${TARGET_DB}_bk_before_replace_urls.sql"
