@@ -6,16 +6,21 @@
 ################################################################################
 #
 # TODO: For release 3.0-final
-#       1- Complete restore_from_backup and delete_project scripts
+#       1- Complete refactor of restore_from_backup and delete_project scripts
 #       2- Support for Ubuntu 20.04 LTS
+#       3- When restore or create a new project and the db_user already exists, we need to ask what todo
+#       4- Menu refactor (Group IT Utils) and New item "Create Project" (WP, Laravel, Simphony, Empty -only nginx+db-)
 #
 # TODO: For release 3.1
-#       1- Need to ask for STATUS on files backup (PROD, STAGE, etc)
-#       2- On backup failure, the email must show what files fails and what files are correct backuped
-#       3- Support for dailys, weeklys y monthlys backups
-#       4- Mail notification when a new site is installed
-#       5- Warning if script run on non default installation (no webserver or another than nginx)
-#       6- Option to install script on crontab
+#       1- Refactor of RESTORE_FROM_SOURCE
+#       2- Refactor of WORDPRESS_INSTALLER - COPY_FROM_PROJECT
+#
+# TODO: For release 3.2
+#       1- On backup failure, the email must show what files fails and what files are correct backuped
+#       2- Support for dailys, weeklys y monthlys backups
+#       3- Mail notification when a new site is installed
+#       4- Warning if script run on non default installation (no webserver or another than nginx)
+#       5- Option to install script on crontab
 #
 # TODO: For release 3.5
 #       1- Finish php_optimizations (deprecate Hetzner model mode) and integrate with Lemp Installer
