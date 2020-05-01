@@ -23,27 +23,14 @@ source "${SFOLDER}/libs/backup_helper.sh"
 # 3- If BD and USER is found, backup and upload DB, and ask for confirm user deletion.
 # 4- Ask for confirm delete temp files.
 #
-# IMPORTANT: POSIBLE NEW BACKUP STRUCTURE
-#
-# VPS_NAME -> SERVER_CONFIGS (PHP, MySQL, Custom Status Log)
-#          -> PROYECTS -> ACTIVE
-#                      -> INACTIVE
-#                      -> ACTIVE/INACTIVE  -> DATABASE
-#                                          -> FILES
-#                                          -> CONFIGS (nginx, letsencrypt)
-#          -> DATABASES
-#          -> SITES_NO_DB
-#
-# The problem with this new structure is that you need to match FILES-BD.
-#
 # Symphony, config BD on /var/www/PROJECT/app/config/parameters.yml
 #
 
 # Folder where sites are hosted
-ask_folder_to_install_sites
+FOLDER_TO_WORK=$(ask_folder_to_install_sites "${SITES}")
 
 MENU_TITLE="PROJECT TO DELETE"
-directory_browser "${MENU_TITLE}" "${FOLDER_TO_INSTALL}"
+directory_browser "${MENU_TITLE}" "${FOLDER_TO_WORK}"
 
 # Creating a tmp directory
 mkdir "${SFOLDER}/tmp-backup"

@@ -21,9 +21,9 @@ if [[ -z "${SFOLDER}" ]]; then
 fi
 ################################################################################
 
-source ${SFOLDER}/libs/commons.sh
-source ${SFOLDER}/libs/mysql_helper.sh
-source ${SFOLDER}/libs/mail_notification_helper.sh
+source "${SFOLDER}/libs/commons.sh"
+source "${SFOLDER}/libs/mysql_helper.sh"
+source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 ################################################################################
 
@@ -35,27 +35,27 @@ zabbix_prepare_database() {
 
     mysql -u ${MUSER} -p${MPASS} -e "${SQL1}${SQL2}${SQL3}"
 
-    cd /usr/share/doc/zabbix-server-mysql/
+    cd "/usr/share/doc/zabbix-server-mysql/"
 
-    zcat create.sql.gz | mysql -u${MUSER} zabbix -p${MPASS}
+    zcat "create.sql.gz" | mysql -u${MUSER} zabbix -p${MPASS}
 
 }
 
 zabbix_prepare_database() {
 
-    # tar -zxvf zabbix-4.0.3.tar.gz
-    # cd zabbix-4.0.3/database/mysql/
-    # mysql -u zabbix -p zabbix < schema.sql
-    # mysql -u zabbix -p zabbix < images.sql
-    # mysql -u zabbix -p zabbix < data.sql
+    tar -zxvf "zabbix-4.0.3.tar.gz"
+    cd "zabbix-4.0.3/database/mysql/"
+    mysql -u zabbix -p zabbix < schema.sql
+    mysql -u zabbix -p zabbix < images.sql
+    mysql -u zabbix -p zabbix < data.sql
 
 }
 
 # Zabbix 4.2
 zabbix_download_installer() {
 
-    cd ${SFOLDER}/tmp/
-    wget http://repo.zabbix.com/zabbix/4.2/ubuntu/pool/main/z/zabbix-release/zabbix-release_4.2-1%2Bbionic_all.deb
+    cd "${SFOLDER}/tmp/"
+    wget "http://repo.zabbix.com/zabbix/4.2/ubuntu/pool/main/z/zabbix-release/zabbix-release_4.2-1%2Bbionic_all.deb"
 
 }
 
@@ -75,15 +75,15 @@ zabbix_server_installer() {
     apt --yes install zabbix-server-mysql zabbix-frontend-php
 
     # TODO: ASK FOR SUBDOMAIN
-    ln -s /usr/share/zabbix/ /var/www/${SUBDOMAIN}
+    ln -s "/usr/share/zabbix/" "/var/www/${SUBDOMAIN}"
 
-    cp ${SFOLDER}/confs/nginx/sites-available/zabbix /etc/nginx/sites-available/${SUBDOMAIN}
+    cp "${SFOLDER}/confs/nginx/sites-available/zabbix" "/etc/nginx/sites-available/${SUBDOMAIN}"
 
     # TODO: REPLACE DOMAIN WITH SED
 
-    ln -s /etc/nginx/sites-available/${SUBDOMAIN} /etc/nginx/sites-enabled/${SUBDOMAIN}
+    ln -s "/etc/nginx/sites-available/${SUBDOMAIN}" "/etc/nginx/sites-enabled/${SUBDOMAIN}"
 
-    cd /var/www
+    cd "/var/www"
     chown -R www-data:www-data *
 
     # ./configure --enable-server --enable-agent --with-mysql --with-openssl --with-net-snmp --with-openipmi --with-libcurl --with-libxml2 --with-ssh2 --with-ldap
@@ -114,7 +114,7 @@ zabbix_server_installer() {
 
 zabbix_agent_installer() {
 
-    cd ${SFOLDER}/tmp/
+    cd "${SFOLDER}/tmp/"
     dpkg -i zabbix-release_4.2-1+bionic_all.deb
 
     apt update
@@ -122,3 +122,9 @@ zabbix_agent_installer() {
     apt --yes install zabbix-agent
 
 }
+
+################################################################################
+
+zabbix_download_installer
+
+zabbix_server_installer

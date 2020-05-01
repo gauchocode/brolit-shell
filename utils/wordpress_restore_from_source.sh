@@ -16,6 +16,7 @@ source "${SFOLDER}/libs/mysql_helper.sh"
 source "${SFOLDER}/libs/mail_notification_helper.sh"
 source "${SFOLDER}/libs/packages_helper.sh"
 source "${SFOLDER}/libs/wpcli_helper.sh"
+source "${SFOLDER}/libs/nginx_helper.sh"
 
 ################################################################################
 
@@ -84,7 +85,7 @@ if [ ! -d "${SFOLDER}/logs" ]; then
   echo " > Folder ${SFOLDER}/logs created ..."
 fi
 LOG_NAME="log_server_migration_${TIMESTAMP}.log"
-LOG=$PATH_LOG/$LOG_NAME
+LOG="$PATH_LOG/$LOG_NAME"
 
 echo "Server Migration:: Script Start -- $(date +%Y%m%d_%H%M)" >>$LOG
 START_TIME=$(date +%s)
@@ -99,7 +100,7 @@ ask_project_domain
 POSSIBLE_ROOT_DOMAIN=${PROJECT_DOMAIN#[[:alpha:]]*.}
 ask_rootdomain_to_cloudflare_config "${POSSIBLE_ROOT_DOMAIN}"
 
-ask_project_name
+ask_project_name "${PROJECT_DOMAIN}"
 
 ask_project_state ""
 
@@ -113,7 +114,7 @@ echo -e ${MAGENTA}" > BK_DB_FILE= ${BK_DB_FILE} ..."${ENDCOLOR}
 BK_F_FILE=${SOURCE_FILES_URL##*/}
 echo -e ${MAGENTA}" > BK_F_FILE= ${BK_F_FILE} ..."${ENDCOLOR}
 
-ask_folder_to_install_sites
+FOLDER_TO_INSTALL=$(ask_folder_to_install_sites "${SITES}")
 
 echo " > CREATING TMP DIRECTORY ..."
 mkdir "${SFOLDER}/tmp"
@@ -182,19 +183,7 @@ else
 fi
 
 # Create nginx config files for site
-echo -e "\nCreating nginx configuration file...\n" >>$LOG
-sudo cp "${SFOLDER}/confs/nginx/sites-available/default" "/etc/nginx/sites-available/${PROJECT_DOMAIN}"
-ln -s "/etc/nginx/sites-available/${PROJECT_DOMAIN}" "/etc/nginx/sites-enabled/${PROJECT_DOMAIN}"
-
-# Replace string to match domain name
-
-#sudo replace "domain.com" "$DOMAIN" -- /etc/nginx/sites-available/default
-sudo sed -i "s#dominio.com#${PROJECT_DOMAIN}#" /etc/nginx/sites-available/${PROJECT_DOMAIN}
-#es necesario correrlo dos veces para reemplazarlo dos veces en una misma linea
-sudo sed -i "s#dominio.com#${PROJECT_DOMAIN}#" /etc/nginx/sites-available/${PROJECT_DOMAIN}
-
-# Reload webserver
-service nginx reload
+create_nginx_server "${PROJECT_DOMAIN}" "wordpress"
 
 # Get server IP
 IP=$(dig +short myip.opendns.com @resolver1.opendns.com) 2>/dev/null

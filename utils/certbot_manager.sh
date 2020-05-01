@@ -1,9 +1,8 @@
 #!/bin/bash
 #
-# Autor: broobe. web + mobile development - https://example.com
-# Script Name: Broobe Utils Scripts
-# Version: 3.0
-################################################################################
+# Autor: BROOBE. web + mobile development - https://example.com
+# Version: 3.0-rc01
+#############################################################################
 #
 # Ref: https://certbot.eff.org/docs/using.html
 #
@@ -15,7 +14,7 @@ if [[ -z "${SFOLDER}" ]]; then
 fi
 ################################################################################
 
-source ${SFOLDER}/libs/certbot_helper.sh
+source "${SFOLDER}/libs/certbot_helper.sh"
 
 ################################################################################
 
