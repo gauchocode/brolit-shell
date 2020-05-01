@@ -1,0 +1,18 @@
+#!/bin/bash
+#
+# Autor: BROOBE. web + mobile development - https://example.com
+# Version: 3.0-rc01
+################################################################################
+
+### Checking some things
+if [[ -z "${SFOLDER}" ]]; then
+  echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+  exit 0
+fi
+################################################################################
+
+source "${SFOLDER}/libs/commons.sh"
+
+################################################################################
+
+#it_utils_menu

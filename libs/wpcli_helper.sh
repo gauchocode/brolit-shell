@@ -19,7 +19,7 @@ wpcli_install() {
     curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
 
     chmod +x wp-cli.phar
-    sudo mv wp-cli.phar /usr/local/bin/wp
+    sudo mv wp-cli.phar "/usr/local/bin/wp"
 
 }
 
@@ -29,22 +29,22 @@ wpcli_update() {
 }
 
 wpcli_uninstall() {
-    rm /usr/local/bin/wp
+    rm "/usr/local/bin/wp"
 
 }
 
 wpcli_install_needed_extensions() {
 
     # Rename DB Prefix
-    wp --allow-root package install iandunn/wp-cli-rename-db-prefix
+    wp --allow-root package install "iandunn/wp-cli-rename-db-prefix"
     # Image Optimization
-    wp --allow-root package install typisttech/image-optimize-command:@stable
+    wp --allow-root package install "typisttech/image-optimize-command:@stable"
     # Salts
-    wp --allow-root package install sebastiaandegeus/wp-cli-salts-comman
+    wp --allow-root package install "sebastiaandegeus/wp-cli-salts-comman"
     # Vulnerability Scanner
-    wp --allow-root package install git@github.com:10up/wp-vulnerability-scanner.git
+    wp --allow-root package install "git@github.com:10up/wp-vulnerability-scanner.git"
     # Doctor
-    wp --allow-root package install wp-cli/doctor-command
+    wp --allow-root package install "wp-cli/doctor-command"
 
 }
 
@@ -67,7 +67,7 @@ wpcli_check_version() {
 
     WPCLI_V=$(sudo -u www-data wp --info | grep "WP-CLI version:" | cut -d ':' -f2)
 
-    echo ${WPCLI_V}
+    echo "${WPCLI_V}"
 
 }
 
@@ -77,7 +77,7 @@ wpcli_verify_wp_core_installation() {
 
     WP_SITE=$1
 
-    sudo -u www-data wp --path=${WP_SITE} core verify-checksums --allow-root
+    sudo -u www-data wp --path="${WP_SITE}" core verify-checksums --allow-root
 
 }
 
@@ -87,7 +87,7 @@ wpcli_verify_wp_plugins_installation() {
 
     WP_SITE=$1
 
-    sudo -u www-data wp --path=${WP_SITE} plugin verify-checksums --all --allow-root
+    sudo -u www-data wp --path="${WP_SITE}" plugin verify-checksums --all --allow-root
 
 }
 
@@ -99,7 +99,7 @@ wpcli_install_plugin() {
     WP_SITE=$1
     PLUGIN=$2
 
-    sudo -u www-data wp --path=${WP_SITE} plugin install ${PLUGIN} --activate
+    sudo -u www-data wp --path="${WP_SITE}" plugin install "${PLUGIN}" --activate
 
 }
 
@@ -111,7 +111,7 @@ wpcli_delete_plugin() {
     WP_SITE=$1
     PLUGIN=$2
 
-    sudo -u www-data wp --path=${WP_SITE} plugin delete ${PLUGIN}
+    sudo -u www-data wp --path="${WP_SITE}" plugin delete "${PLUGIN}"
 
 }
 
@@ -123,7 +123,7 @@ wpcli_install_theme() {
     WP_SITE=$1
     THEME=$2
 
-    sudo -u www-data wp --path=${WP_SITE} theme install ${THEME} --activate
+    sudo -u www-data wp --path="${WP_SITE}" theme install "${THEME}" --activate
 
 }
 
@@ -135,7 +135,7 @@ wpcli_delete_theme() {
     WP_SITE=$1
     THEME=$2
 
-    sudo -u www-data wp --path=${WP_SITE} theme delete ${THEME}
+    sudo -u www-data wp --path="${WP_SITE}" theme delete "${THEME}"
 
 }
 
@@ -147,7 +147,7 @@ wpcli_change_wp_seo_visibility() {
     WP_SITE=$1
     VISIBILITY=$2
 
-    sudo -u www-data wp --path=${WP_SITE} option set blog_public ${VISIBILITY}
+    sudo -u www-data wp --path="${WP_SITE}" option set blog_public "${VISIBILITY}"
 
 }
 
@@ -159,7 +159,7 @@ wpcli_get_db_prefix() {
 
     DB_PREFIX=$(sudo -u www-data wp --path=${WP_SITE} db prefix)
 
-    echo ${DB_PREFIX}
+    echo "${DB_PREFIX}"
 
 }
 
@@ -171,7 +171,7 @@ wpcli_change_tables_prefix() {
     WP_SITE=$1
     DB_PREFIX=$2
 
-    wp --allow-root --path=${WP_SITE} rename-db-prefix ${DB_PREFIX}
+    wp --allow-root --path="${WP_SITE}" rename-db-prefix "${DB_PREFIX}"
 
 }
 
@@ -186,19 +186,19 @@ wpcli_search_and_replace() {
     REPLACE=$3
 
     # Folder Name need to be the Site URL
-    WP_SITE_URL=$(basename ${WP_SITE})
+    WP_SITE_URL=$(basename "${WP_SITE}")
 
     # TODO: por algún motivo cuando tiro comandos con el parametro --url siempre falla
     # entonces o ver que pasa o checkear si es multisite de otra manera.
     if $(wp --allow-root --url=http://${WP_SITE_URL} core is-installed --network); then
 
         echo "Running: wp --allow-root --path=${WP_SITE} search-replace ${SEARCH} ${REPLACE} --network"
-        wp --allow-root --path=${WP_SITE} search-replace ${SEARCH} ${REPLACE} --network
+        wp --allow-root --path="${WP_SITE}" search-replace "${SEARCH}" "${REPLACE}" --network
 
     else
 
         echo "Running: wp --allow-root --path=${WP_SITE} search-replace ${SEARCH} ${REPLACE}"
-        wp --allow-root --path=${WP_SITE} search-replace ${SEARCH} ${REPLACE}
+        wp --allow-root --path="${WP_SITE}" search-replace "${SEARCH}" "${REPLACE}"
 
     fi
 
@@ -212,5 +212,5 @@ wpcli_export_db(){
     WP_SITE=$1
     DB=$2
 
-    wp --allow-root --path=${WP_SITE} db export ${DB}
+    wp --allow-root --path="${WP_SITE}" db export "${DB}"
 }
