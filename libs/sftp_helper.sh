@@ -1,9 +1,8 @@
 #!/bin/bash
 #
-# Autor: broobe. web + mobile development - https://broobe.com
-# Script Name: Broobe Utils Scripts
-# Version: 3.0
-################################################################################
+# Autor: BROOBE. web + mobile development - https://broobe.com
+# Version: 3.0-rc01
+#############################################################################
 
 #without-shell-access
 sftp_add_user() {

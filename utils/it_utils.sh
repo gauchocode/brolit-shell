@@ -2,10 +2,7 @@
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Version: 3.0-rc01
-#############################################################################
-#
-# Ref: https://certbot.eff.org/docs/using.html
-#
+################################################################################
 
 ### Checking some things
 if [[ -z "${SFOLDER}" ]]; then
@@ -14,10 +11,8 @@ if [[ -z "${SFOLDER}" ]]; then
 fi
 ################################################################################
 
-source "${SFOLDER}/libs/certbot_helper.sh"
+source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
 
-################################################################################
-
-certbot_helper_menu
+#it_utils_menu
