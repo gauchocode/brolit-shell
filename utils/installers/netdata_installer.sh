@@ -12,7 +12,7 @@ source ${SFOLDER}/libs/commons.sh
 netdata_installer() {
 
   echo -e ${B_CYAN}"\nInstalling Netdata...\n"${ENDCOLOR}
-  apt --yes install zlib1g-dev uuid-dev libuv1-dev liblz4-dev libjudy-dev libssl-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python python-mysqldb lm-sensors libmnl netcat nodejs python-ipaddress python-dnspython iproute2 python-beanstalkc libuv liblz4 Judy openssl
+  #apt --yes install zlib1g-dev uuid-dev libuv1-dev liblz4-dev libjudy-dev libssl-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python python-mysqldb lm-sensors libmnl netcat nodejs python-ipaddress python-dnspython iproute2 python-beanstalkc libuv liblz4 Judy openssl
   bash <(curl -Ss https://my-netdata.io/kickstart.sh) all --dont-wait
 
   killall netdata && cp system/netdata.service /etc/systemd/system/
@@ -25,19 +25,19 @@ netdata_configuration() {
 
   # MySQL
   create_netdata_db_user
-  cat ${SFOLDER}/confs/netdata/python.d/mysql.conf > /usr/lib/netdata/conf.d/python.d/mysql.conf
+  cat "${SFOLDER}/confs/netdata/python.d/mysql.conf" > "/usr/lib/netdata/conf.d/python.d/mysql.conf"
   echo -e ${GREEN}" > MySQL config DONE!"${ENDCOLOR}
 
   # monit
-  cat ${SFOLDER}/confs/netdata/python.d/monit.conf >/usr/lib/netdata/conf.d/python.d/monit.conf
+  cat "${SFOLDER}/confs/netdata/python.d/monit.conf" >"/usr/lib/netdata/conf.d/python.d/monit.conf"
   echo -e ${GREEN}" > Monit config DONE!"${ENDCOLOR}
 
   # web_log
-  cat ${SFOLDER}/confs/netdata/python.d/web_log.conf >/usr/lib/netdata/conf.d/python.d/web_log.conf
+  cat "${SFOLDER}/confs/netdata/python.d/web_log.conf" >"/usr/lib/netdata/conf.d/python.d/web_log.conf"
   echo -e ${GREEN}" > Nginx Web Log config DONE!"${ENDCOLOR}
 
   # health_alarm_notify
-  cat ${SFOLDER}/confs/netdata/health_alarm_notify.conf >/etc/netdata/health_alarm_notify.conf
+  cat "${SFOLDER}/confs/netdata/health_alarm_notify.conf" >"/etc/netdata/health_alarm_notify.conf"
   echo -e ${GREEN}" > Health alarm config DONE!"${ENDCOLOR}
 
   # telegram
@@ -119,14 +119,6 @@ netdata_telegram_config() {
     exit 1
   fi
 
-  # Uncomment for debug
-  #echo -e ${GREEN}"***************** NEW CONF ****************"${ENDCOLOR}
-  #echo -e ${GREEN}"*******************************************"${ENDCOLOR}
-  #echo -e ${GREEN}"SEND_TELEGRAM=${SEND_TELEGRAM}"${ENDCOLOR}
-  #echo -e ${GREEN}"TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}"${ENDCOLOR}
-  #echo -e ${GREEN}"DEFAULT_RECIPIENT_TELEGRAM=${DEFAULT_RECIPIENT_TELEGRAM}"${ENDCOLOR}
-  #echo -e ${GREEN}"*******************************************"${ENDCOLOR}
-
 }
 
 create_netdata_db_user() {
@@ -137,7 +129,7 @@ create_netdata_db_user() {
   SQL3="FLUSH PRIVILEGES;"
 
   echo "Creating netdata user in MySQL ..." >>$LOG
-  mysql -u root -p${MPASS} -e "${SQL1}${SQL2}${SQL3}" >>$LOG
+  mysql -u root -p"${MPASS}" -e "${SQL1}${SQL2}${SQL3}" >>$LOG
 
 }
 
@@ -201,7 +193,6 @@ if [ ! -x "${NETDATA}" ]; then
       #export CHOSEN_CB_OPTION DOMAIN
 
       # HTTPS with Certbot
-      #"${SFOLDER}/utils/certbot_manager.sh"
       certbot_certificate_install "${MAILA}" "${DOMAIN}"
 
       break
@@ -250,12 +241,12 @@ else
           rm "/etc/systemd/system/netdata.service"
           rm "/usr/sbin/netdata"
 
-          source /usr/libexec/netdata-uninstaller.sh --yes --dont-wait
+          source "/usr/libexec/netdata-uninstaller.sh" --yes --dont-wait
 
           break
           ;;
         [Nn]*)
-          echo -e ${RED}"Aborting netdata script ..."${ENDCOLOR}
+          echo -e ${B_RED}"Aborting netdata script ..."${ENDCOLOR}
           break
           ;;
         *) echo " > Please answer yes or no." ;;

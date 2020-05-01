@@ -380,7 +380,7 @@ duplicity_backup() {
     fi
 
     # Loop in to Directories
-    for i in $(echo ${DUP_FOLDERS} | sed "s/,/ /g"); do
+    for i in $(echo "${DUP_FOLDERS}" | sed "s/,/ /g"); do
       duplicity --full-if-older-than ${DUP_BK_FULL_FREQ} -v4 --no-encryption ${DUP_SRC_BK}$i file://${DUP_ROOT}$i
       RETVAL=$?
 
@@ -540,7 +540,7 @@ make_project_backup() {
             # Yii Project
             echo -e ${CYAN}" > Trying to get database name from project ..."${ENDCOLOR}
             echo " > Trying to get database name from project ..." >>$LOG
-            DB_NAME=$(grep 'dbname=' ${SITES}/${F_NAME}/common/config/main-local.php | tail -1 | sed 's/$dbname=//g;s/,//g' | cut -d "'" -f4 | cut -d "=" -f3)
+            DB_NAME=$(grep 'dbname=' "${SITES}/${F_NAME}/common/config/main-local.php" | tail -1 | sed 's/$dbname=//g;s/,//g' | cut -d "'" -f4 | cut -d "=" -f3)
 
             local DB_FILE="${DB_NAME}.sql"
 
@@ -549,13 +549,13 @@ make_project_backup() {
             echo " > Creating a dump file of: ${DB_NAME}" >>$LOG
 
             # TODO: Need to control output of mysqldump 
-            # TODO: Use mysql helper
+            # TODO: Use mysql_helper
 
             $MYSQLDUMP --max-allowed-packet=1073741824 -u ${MUSER} -h ${MHOST} -p${MPASS} ${DB_NAME} >${BK_FOLDER}${DB_FILE}            
 
         else
 
-            DB_NAME=$(wp --allow-root --path=${SITES}/${F_NAME} eval 'echo DB_NAME;')
+            DB_NAME=$(wp --allow-root --path="${SITES}/${F_NAME}" eval 'echo DB_NAME;')
 
             local DB_FILE="${DB_NAME}.sql"
 
@@ -580,8 +580,6 @@ make_project_backup() {
         echo -e ${CYAN}" > Testing backup file: ${BK_DB_FILE} ..."${ENDCOLOR}
         echo " > Testing backup file: ${BK_DB_FILE} ..." >>$LOG
         lbzip2 -t "${BAKWP}/${NOW}/${BK_DB_FILE}"
-
-        # TODO: control de lbzip2 ok
 
         # TODO: backup nginx
 

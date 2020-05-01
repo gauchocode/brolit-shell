@@ -41,7 +41,7 @@ menutitle="Config Selection Menu"
 
 main_menu() {
 
-  RUNNER_OPTIONS="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 DELETE_PROJECT 04 WORDPRESS_INSTALLER 05 SERVER_OPTIMIZATIONS 06 INSTALLERS_AND_CONFIGS 07 WPCLI_MANAGER 08 CERTBOT_MANAGER 09 BENCHMARKS 10 GTMETRIX_TEST 11 BLACKLIST_CHECKER 12 RESET_SCRIPT_OPTIONS"
+  RUNNER_OPTIONS="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 DELETE_PROJECT 04 WORDPRESS_INSTALLER 05 WPCLI_MANAGER 06 CERTBOT_MANAGER 07 IT_UTILS 08 SCRIPT_OPTIONS"
   CHOSEN_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 $(for x in ${RUNNER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -65,59 +65,22 @@ main_menu() {
       source "${SFOLDER}/utils/installers/wordpress_installer.sh"
 
     fi
+
     if [[ ${CHOSEN_TYPE} == *"05"* ]]; then
-      while true; do
-        echo -e ${YELLOW}"> Do you really want to run the optimization script?"${ENDCOLOR}
-        read -p "Please type 'y' or 'n'" yn
-        case $yn in
-        [Yy]*)
-          source "${SFOLDER}/server_and_image_optimizations.sh"
-          break
-          ;;
-        [Nn]*)
-          echo -e ${RED}"Aborting optimization script ..."${ENDCOLOR}
-          break
-          ;;
-        *) echo " > Please answer yes or no." ;;
-        esac
-      done
-
-    fi
-    if [[ ${CHOSEN_TYPE} == *"06"* ]]; then
-      source "${SFOLDER}/installers_and_configurators.sh"
-
-    fi
-    if [[ ${CHOSEN_TYPE} == *"07"* ]]; then
       source "${SFOLDER}/utils/wpcli_manager.sh"
 
     fi
-    if [[ ${CHOSEN_TYPE} == *"08"* ]]; then
+    if [[ ${CHOSEN_TYPE} == *"06"* ]]; then
       source "${SFOLDER}/utils/certbot_manager.sh"
 
     fi
-    if [[ ${CHOSEN_TYPE} == *"09"* ]]; then
-      source "${SFOLDER}/utils/bench_scripts.sh"
+    if [[ ${CHOSEN_TYPE} == *"07"* ]]; then
+      #source "${SFOLDER}/utils/it_utils.sh"
+      it_utils_menu
 
     fi
-    if [[ ${CHOSEN_TYPE} == *"10"* ]]; then
 
-      URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
-        source "${SFOLDER}/utils/third-party/google-insights-api-tools/gitools_v5.sh" gtmetrix ${URL_TO_TEST}
-      fi
-
-    fi
-    if [[ ${CHOSEN_TYPE} == *"11"* ]]; then
-    
-      IP_TO_TEST=$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
-        source "${SFOLDER}/utils/third-party/blacklist-checker/bl.sh" ${IP_TO_TEST}
-      fi
-
-    fi
-    if [[ ${CHOSEN_TYPE} == *"12"* ]]; then
+    if [[ ${CHOSEN_TYPE} == *"08"* ]]; then
       script_configuration_wizard "reconfigure"
 
     fi
@@ -179,8 +142,8 @@ backup_menu() {
     if [[ ${CHOSEN_BACKUP_TYPE} == *"03"* ]]; then
 
       # Running scripts
-      ${SFOLDER}/mysql_backup.sh
-      ${SFOLDER}/files_backup.sh
+      "${SFOLDER}/mysql_backup.sh"
+      "${SFOLDER}/files_backup.sh"
 
       DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
       DB_MAIL_VAR=$(<${DB_MAIL})
@@ -209,7 +172,7 @@ backup_menu() {
     if [[ ${CHOSEN_BACKUP_TYPE} == *"04"* ]]; then
 
       # Running project_backup script
-      ${SFOLDER}/project_backup.sh
+      "${SFOLDER}/project_backup.sh"
 
     fi
 
@@ -235,6 +198,63 @@ restore_menu () {
 
   fi
 
+}
+
+it_utils_menu() {
+
+  IT_UTIL_OPTIONS="01 INSTALLERS_AND_CONFIGS 02 SERVER_OPTIMIZATIONS 03 BLACKLIST_CHECKER 04 BENCHMARK_SERVER"
+  CHOSEN_IT_UTIL_TYPE=$(whiptail --title "IT UTILS MENU" --menu "Choose a script to Run" 20 78 10 $(for x in ${IT_UTIL_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+
+    if [[ ${CHOSEN_IT_UTIL_TYPE} == *"01"* ]]; then
+      source "${SFOLDER}/installers_and_configurators.sh"
+
+    fi
+
+    if [[ ${CHOSEN_IT_UTIL_TYPE} == *"02"* ]]; then
+      while true; do
+        echo -e ${YELLOW}"> Do you really want to run the optimization script?"${ENDCOLOR}
+        read -p "Please type 'y' or 'n'" yn
+        case $yn in
+        [Yy]*)
+          source "${SFOLDER}/server_and_image_optimizations.sh"
+          break
+          ;;
+        [Nn]*)
+          echo -e ${RED}"Aborting optimization script ..."${ENDCOLOR}
+          break
+          ;;
+        *) echo " > Please answer yes or no." ;;
+        esac
+      done
+
+    fi
+
+    if [[ ${CHOSEN_IT_UTIL_TYPE} == *"03"* ]]; then
+
+      URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ ${exitstatus} = 0 ]; then
+        source "${SFOLDER}/utils/third-party/google-insights-api-tools/gitools_v5.sh" gtmetrix "${URL_TO_TEST}"
+      fi
+
+    fi
+    if [[ ${CHOSEN_IT_UTIL_TYPE} == *"04"* ]]; then
+    
+      IP_TO_TEST=$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ ${exitstatus} = 0 ]; then
+        source "${SFOLDER}/utils/third-party/blacklist-checker/bl.sh" "${IP_TO_TEST}"
+      fi
+
+    fi
+
+  else
+    exit 1
+
+  fi
 }
 
 script_configuration_wizard() {
@@ -361,6 +381,22 @@ script_configuration_wizard() {
 }
 
 ################################################################################
+# LOGGERS
+################################################################################
+
+function __msg_error() {
+    [[ "${ERROR}" == "1" ]] && echo -e "[ERROR]: $*"
+}
+
+function __msg_debug() {
+    [[ "${DEBUG}" == "1" ]] && echo -e "[DEBUG]: $*"
+}
+
+function __msg_info() {
+    [[ "${INFO}" == "1" ]] && echo -e "[INFO]: $*"
+}
+
+################################################################################
 # CHECKERS
 ################################################################################
 
@@ -374,18 +410,29 @@ check_root() {
 }
 
 check_distro() {
+
+  #for ext check
+  distro_old="false"
+
   # Running Ubuntu?
   DISTRO=$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $1}')
   if [ ! "$DISTRO" = "Ubuntu" ]; then
     echo " > ERROR: This script only run on Ubuntu ... Exiting"
     exit 1
   else
-    MIN_V=$(echo "16.04" | awk -F "." '{print $1$2}')
+    MIN_V=$(echo "18.04" | awk -F "." '{print $1$2}')
     DISTRO_V=$(get_ubuntu_version)
     echo "ACTUAL DISTRO: ${DISTRO} ${DISTRO_V}"
     if [ ! "$DISTRO_V" -ge "$MIN_V" ]; then
-      echo -e ${B_RED}" > ERROR: Ubuntu version must  >= 16.04 ... Exiting"${ENDCOLOR}
-      exit 1
+      whiptail --title "UBUNTU VERSION WARNING" --msgbox "Ubuntu version must be 18.04 or 20.04! Use this script only for backup or restore purpose." 8 78
+      exitstatus=$?
+      if [ $exitstatus = 0 ]; then
+        #echo " > Setting distro_old=true" >>$LOG
+        distro_old="true"
+      else
+        exit 0
+      fi
+      
     fi
   fi
 }
@@ -680,198 +727,6 @@ extract () {
 }
 
 ################################################################################
-# WP HELPERS
-################################################################################
-
-wp_download_wordpress() {
-
-  # Used in:
-  # wordpress_installer.sh
-
-  # $1 = ${FOLDER_TO_INSTALL}
-  # $2 = ${PROJECT_DOMAIN}
-
-  FOLDER_TO_INSTALL=$1
-  PROJECT_DOMAIN=$2
-
-  echo "Trying to make a clean install of Wordpress ..." >>$LOG
-  echo -e ${CYAN}"Trying to make a clean install of Wordpress ..."${ENDCOLOR}
-
-  cd ${FOLDER_TO_INSTALL}
-  curl -O https://wordpress.org/latest.tar.gz
-  tar -xzxf latest.tar.gz
-  rm latest.tar.gz
-  mv wordpress ${PROJECT_DOMAIN}
-  cd ${PROJECT_DOMAIN}
-
-  # Setup wp-config.php
-  cp wp-config-sample.php ${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}/wp-config.php
-  rm ${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}/wp-config-sample.php
-
-}
-
-wp_update_wpconfig() {
-
-  # $1 = ${WP_SITE}
-  # $2 = ${WP_PROJECT_NAME}
-  # $3 = ${WP_PROJECT_STATE}
-  # $4 = ${DB_USER_PASS}
-
-  WP_SITE_PATH=$1
-  WP_PROJECT_NAME=$2
-  WP_PROJECT_STATE=$3
-  DB_USER_PASS=$4
-
-  # Change wp-config.php database parameters
-  echo -e ${YELLOW}"Changing wp-config.php database parameters ..."${ENDCOLOR}
-  echo " > Changing wp-config.php database parameters ..." >>$LOG
-  
-  sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" ${WP_SITE_PATH}/wp-config.php
-  
-  if [[ ${WP_PROJECT_NAME} != "" ]]; then
-    sed -i "/DB_NAME/s/'[^']*'/'${WP_PROJECT_NAME}_${WP_PROJECT_STATE}'/2" ${WP_SITE_PATH}/wp-config.php
-  fi
-  if [[ ${DB_USER_PASS} != "" ]]; then
-    sed -i "/DB_USER/s/'[^']*'/'${WP_PROJECT_NAME}_user'/2" ${WP_SITE_PATH}/wp-config.php
-    sed -i "/DB_PASSWORD/s/'[^']*'/'${DB_USER_PASS}'/2" ${WP_SITE_PATH}/wp-config.php
-  fi
-
-}
-
-wp_change_ownership() {
-
-  # Used in:
-  # restore_from_backup.sh
-  # wordpress_installer.sh
-
-  # $1 = ${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT} or ${FOLDER_TO_INSTALL}/${DOMAIN}
-
-  PROJECT_DIR=$1
-
-  echo "Changing folder owner to www-data ..." >>$LOG
-  echo -e ${YELLOW}"Changing '${PROJECT_DIR}' owner to www-data ..."${ENDCOLOR}
-
-  chown -R www-data:www-data ${PROJECT_DIR}
-  find ${PROJECT_DIR} -type d -exec chmod g+s {} \;
-  chmod g+w ${PROJECT_DIR}/wp-content
-  chmod -R g+w ${PROJECT_DIR}/wp-content/themes
-  chmod -R g+w ${PROJECT_DIR}/wp-content/plugins
-
-  echo " > DONE" >>$LOG
-  echo -e ${GREEN}" > DONE"${ENDCOLOR}
-}
-
-# TODO: ver como hacer eso independientemente del idioma
-wp_set_salts() {
-
-  # Used in:
-  # wordpress_installer.sh
-
-  # English
-  perl -i -pe'
-    BEGIN {
-      @chars = ("a" .. "z", "A" .. "Z", 0 .. 9);
-      push @chars, split //, "!@#$%^&*()-_ []{}<>~\`+=,.;:/?|";
-      sub salt { join "", map $chars[ rand @chars ], 1 .. 64 }
-    }
-    s/put your unique phrase here/salt()/ge
-  ' ${WPCONFIG}
-  # Spanish
-  perl -i -pe'
-    BEGIN {
-      @chars = ("a" .. "z", "A" .. "Z", 0 .. 9);
-      push @chars, split //, "!@#$%^&*()-_ []{}<>~\`+=,.;:/?|";
-      sub salt { join "", map $chars[ rand @chars ], 1 .. 64 }
-    }
-    s/pon aquí tu frase aleatoria/salt()/ge
-  ' ${WPCONFIG}
-}
-
-wp_database_creation() {
-
-  # Used in:
-  # restore_from_backup.sh
-  # wordpress_installer.sh
-  # wordpress_restore_from_source.sh
-
-  # Parameters
-  # $1 = ${PROJECT_NAME}
-  # $2 = ${PROJECT_STATE}
-
-  # Return: 
-  # 0 if DB_USER not exits
-  # 1 if DB_USER already exists
-
-  PROJECT_NAME=$1
-  PROJECT_STATE=$2
-
-  if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${PROJECT_NAME}_user';" | $MYSQL -u ${MUSER} --password=${MPASS} | grep 1 &>/dev/null; then
-
-    DB_PASS=$(openssl rand -hex 12)
-
-    SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_${PROJECT_STATE};"
-    SQL2="CREATE USER '${PROJECT_NAME}_user'@'localhost' IDENTIFIED BY '${DB_PASS}';"
-    SQL3="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
-    SQL4="FLUSH PRIVILEGES;"
-
-    echo -e ${CYAN}"***********************************************************************************************"${ENDCOLOR}
-    echo -e ${CYAN}" > Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS}"${ENDCOLOR}
-    echo -e ${CYAN}"***********************************************************************************************"${ENDCOLOR}
-
-    echo " > Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and user ${PROJECT_NAME}_user with pass ${DB_PASS}" >>$LOG
-
-    $MYSQL -u ${MUSER} --password=${MPASS} -e "${SQL1}${SQL2}${SQL3}${SQL4}"
-
-    if [ $? -eq 0 ]; then
-      echo " > DONE!" >>$LOG
-      echo -e ${GREEN}" > DONE!"${ENDCOLOR}
-      return 0
-
-    else
-      echo " > Something went wrong!" >>$LOG
-      echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
-      exit 1
-
-    fi
-
-    #echo -e ${YELLOW}" > Changing wp-config.php database parameters ..."${ENDCOLOR}
-    #sed -i "/DB_PASSWORD/s/'[^']*'/'${DB_PASS}'/2" ${WPCONFIG}
-
-  else
-    echo " > User: ${PROJECT_NAME}_user already exist. Continue ..." >>$LOG
-
-    SQL1="CREATE DATABASE IF NOT EXISTS ${PROJECT_NAME}_${PROJECT_STATE};"
-    SQL2="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
-    SQL3="FLUSH PRIVILEGES;"
-
-    echo -e ${YELLOW}" > Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and granting privileges to user: ${PROJECT_NAME}_user ..."${ENDCOLOR}
-
-    $MYSQL -u ${MUSER} --password=${MPASS} -e "${SQL1}${SQL2}${SQL3}"
-
-    if [ $? -eq 0 ]; then
-      echo " > DONE!" >>$LOG
-      echo -e ${GREN}" > DONE!"${ENDCOLOR}
-      return 1
-
-    else
-      echo " > Something went wrong!" >>$LOG
-      echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
-      exit 1
-
-    fi
-
-    #echo -e ${YELLOW}" > Changing wp-config.php database parameters ..."${ENDCOLOR}
-    #echo -e ${YELLOW}" > Leaving DB_USER untouched ..."${ENDCOLOR}
-
-  fi
-
-  #sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" ${WPCONFIG}
-  #sed -i "/DB_NAME/s/'[^']*'/'${PROJECT_NAME}_${PROJECT_STATE}'/2" ${WPCONFIG}
-  #sed -i "/DB_USER/s/'[^']*'/'${PROJECT_NAME}_user'/2" ${WPCONFIG}
-
-}
-
-################################################################################
 # ASK-FOR
 ################################################################################
 
@@ -885,7 +740,7 @@ ask_project_state() {
   local state=$1
 
   PROJECT_STATES="prod stage beta test dev"
-  PROJECT_STATE=$(whiptail --title "PROJECT STATE" --menu "Choose a Project State" 20 78 10 $(for x in ${PROJECT_STATES}; do echo "$x [X]"; done) --default-item "${state}" 3>&1 1>&2 2>&3)
+  PROJECT_STATE=$(whiptail --title "Project State" --menu "Choose a Project State" 20 78 10 $(for x in ${PROJECT_STATES}; do echo "$x [X]"; done) --default-item "${state}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
     echo " > Setting PROJECT_STATE=${PROJECT_STATE}" >>$LOG
@@ -893,9 +748,7 @@ ask_project_state() {
 
   else
     return 1
-
   fi
-
 }
 
 ask_project_name() {
@@ -904,14 +757,17 @@ ask_project_name() {
 
   local name=$1
 
-  PROJECT_NAME=$(whiptail --title "Project Name" --inputbox "Please insert a project name. Example: broobe" 10 60 "${name}" 3>&1 1>&2 2>&3)
+  # Replace '-' and '.' chars
+  name=$(echo "${name}" | sed -r 's/[.-]+/_/g')
+
+  PROJECT_NAME=$(whiptail --title "Project Name" --inputbox "Insert a project name (only separator allow is '_'). Ex: my_domain" 10 60 "${name}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
     echo "Setting PROJECT_NAME=${PROJECT_NAME}" >>$LOG
     return 0
 
   else
-    return 1
+    exit 1
 
   fi
 
@@ -923,14 +779,14 @@ ask_project_domain() {
 
   local domain=$1
   
-  PROJECT_DOMAIN=$(whiptail --title "Domain" --inputbox "Insert the domain of the Project. Example: landing.broobe.com" 10 60 "${domain}" 3>&1 1>&2 2>&3)
+  PROJECT_DOMAIN=$(whiptail --title "Domain" --inputbox "Insert the project's domain. Example: landing.domain.com" 10 60 "${domain}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
     echo "Setting PROJECT_DOMAIN="${PROJECT_DOMAIN} >>$LOG
     return 0
 
   else
-    return 1
+    exit 1
 
   fi
 
@@ -953,7 +809,7 @@ ask_rootdomain_to_cloudflare_config() {
     return 0
 
   else
-    return 1
+    exit 1
 
   fi
 
@@ -961,14 +817,18 @@ ask_rootdomain_to_cloudflare_config() {
 
 ask_subdomains_to_cloudflare_config() {
 
-  ROOT_DOMAIN=$(whiptail --title "Cloudflare Subdomains" --inputbox "Insert the subdomains you want to update in Cloudflare (comma separated). Example: www.broobe.com,broobe.com" 10 60 3>&1 1>&2 2>&3)
+  # $1 = ${DOMAIN} optional to select default option (could be empty)
+
+  local DOMAIN=$1;
+
+  ROOT_DOMAIN=$(whiptail --title "Cloudflare Subdomains" --inputbox "Insert the subdomains you want to update in Cloudflare (comma separated). Example: www.broobe.com,broobe.com" 10 60 "${DOMAIN}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-    echo "Setting ROOT_DOMAIN="${ROOT_DOMAIN} >>$LOG
+    echo "Setting ROOT_DOMAIN=${ROOT_DOMAIN}" >>$LOG
     return 0
 
   else
-    return 1
+    exit 1
 
   fi
 
@@ -976,17 +836,22 @@ ask_subdomains_to_cloudflare_config() {
 
 ask_folder_to_install_sites() {
 
+  # $1 = ${FOLDER_TO_INSTALL} optional to select default option (could be empty)
+
+  local FOLDER_TO_INSTALL=$1
+
   if [[ -z "${FOLDER_TO_INSTALL}" ]]; then
-    FOLDER_TO_INSTALL=$(whiptail --title "Folder to install" --inputbox "Please insert the full path where you want to install the site:" 10 60 "/var/www" 3>&1 1>&2 2>&3)
+    FOLDER_TO_INSTALL=$(whiptail --title "Folder to install" --inputbox "Please insert the full path where you want to install the site:" 10 60 "${FOLDER_TO_INSTALL}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      echo "FOLDER_TO_INSTALL="${FOLDER_TO_INSTALL}
-      echo "FOLDER_TO_INSTALL="${FOLDER_TO_INSTALL} >>$LOG
-
+      echo "FOLDER_TO_INSTALL=${FOLDER_TO_INSTALL}" >>$LOG
+      echo "${FOLDER_TO_INSTALL}"
     else
       exit 1
-
     fi
+  else
+    echo "FOLDER_TO_INSTALL=${FOLDER_TO_INSTALL}" >>$LOG
+    echo "${FOLDER_TO_INSTALL}"
   fi
 
 }
@@ -1022,7 +887,7 @@ ask_url_search_and_replace() {
     existing_URL=$(whiptail --title "URL TO CHANGE" --inputbox "Insert the URL you want to change, including http:// or https://" 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
 
-    echo "Setting existing_URL="${existing_URL} >>$LOG
+    echo "Setting existing_URL=${existing_URL}" >>$LOG
 
     if [ ${exitstatus} = 0 ]; then
 
@@ -1032,7 +897,7 @@ ask_url_search_and_replace() {
 
         if [ ${exitstatus} = 0 ]; then
 
-          echo "Setting new_URL="${new_URL} >>$LOG
+          echo "Setting new_URL=${new_URL}" >>$LOG
 
           wpcli_search_and_replace "${WP_PATH}" "${existing_URL}" "${new_URL}"
 

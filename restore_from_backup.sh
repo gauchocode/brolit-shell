@@ -9,7 +9,7 @@
 
 ### Checking some things
 if [[ -z "${SFOLDER}" ]]; then
-  echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+  echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
   exit 0
 fi
 ################################################################################
@@ -17,6 +17,7 @@ fi
 source "${SFOLDER}/libs/commons.sh"
 source "${SFOLDER}/libs/mysql_helper.sh"
 source "${SFOLDER}/libs/wpcli_helper.sh"
+source "${SFOLDER}/libs/wordpress_helper.sh"
 source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 ################################################################################
@@ -37,7 +38,7 @@ make_temp_files_backup() {
 
 make_temp_db_backup() {
 
-  if [ -d /var/lib/mysql/${CHOSEN_PROJECT} ]; then
+  if [ -d "/var/lib/mysql/${CHOSEN_PROJECT}" ]; then
     echo -e ${YELLOW}" > Executing mysqldump (will work if database exists) ..."${ENDCOLOR}
     mysqldump -u ${MUSER} --password=${MPASS} ${CHOSEN_PROJECT} >${CHOSEN_PROJECT}_bk_before_restore.sql
 
@@ -120,62 +121,52 @@ restore_database_backup() {
 
 }
 
-################################################################################
+select_and_restore_config_from_dropbox(){
 
-SITES_F="site"
-CONFIG_F="configs"
-DBS_F="database"
-#RESTORE_TYPES="${SITES_F} ${CONFIG_F} ${DBS_F}"
+  #$1 = ${DROPBOX_CHOSEN_TYPE_PATH}
+  #$2 = ${DROPBOX_PROJECT_LIST}
 
-DROPBOX_SERVER_LIST=$(${DPU_F}/dropbox_uploader.sh -hq list "/")
-# Select SERVER
-CHOSEN_SERVER=$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 $(for x in ${DROPBOX_SERVER_LIST}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
-exitstatus=$?
-if [ $exitstatus = 0 ]; then
-  DROPBOX_TYPE_LIST=$(${DPU_F}/dropbox_uploader.sh -hq list "${CHOSEN_SERVER}")
+  DROPBOX_CHOSEN_TYPE_PATH=$1
+  DROPBOX_PROJECT_LIST=$2
 
-fi
+  # Select config backup type
+  CHOSEN_CONFIG_TYPE=$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Choose a config backup type." 20 78 10 $(for x in ${DROPBOX_PROJECT_LIST}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    #Restore from Dropbox
+    DROPBOX_BK_LIST=$(${DPU_F}/dropbox_uploader.sh -hq list "${DROPBOX_CHOSEN_TYPE_PATH}/${CHOSEN_CONFIG_TYPE}")
+  fi
 
-# Display choose dialog with available backups
-CHOSEN_TYPE=$(whiptail --title "RESTORE BACKUP" --menu "Choose a backup type. If you want to restore an entire site, first restore the site files, then the config, and last the database." 20 78 10 $(for x in ${DROPBOX_TYPE_LIST}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
-exitstatus=$?
-if [ $exitstatus = 0 ]; then
-  #Restore from Dropbox
-  DROPBOX_PROJECT_LIST=$(${DPU_F}/dropbox_uploader.sh -hq list "${CHOSEN_SERVER}/${CHOSEN_TYPE}")
-fi
-
-#echo -e ${B_RED}" > CHOSEN_TYPE: ${CHOSEN_TYPE}"${ENDCOLOR}
-if [[ ${CHOSEN_TYPE} == *"$CONFIG_F"* ]]; then
-  CHOSEN_CONFIG=$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Chose Configs Backup" 20 78 10 $(for x in ${DROPBOX_PROJECT_LIST}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
+  CHOSEN_CONFIG_BK=$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Choose a config backup file to restore." 20 78 10 $(for x in ${DROPBOX_BK_LIST}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
 
   if [ $exitstatus = 0 ]; then
 
     cd "${SFOLDER}/tmp"
 
-    echo " > Downloading from Dropbox ${CHOSEN_SERVER}/${CHOSEN_TYPE}/${CHOSEN_CONFIG} ..." >>$LOG
-    ${DPU_F}/dropbox_uploader.sh download "${CHOSEN_SERVER}/${CHOSEN_TYPE}/${CHOSEN_CONFIG}"
+    echo " > Downloading from Dropbox ${DROPBOX_CHOSEN_TYPE_PATH}/${CHOSEN_CONFIG_TYPE}/${CHOSEN_CONFIG_BK} ..." >>$LOG
+    ${DPU_F}/dropbox_uploader.sh download "${DROPBOX_CHOSEN_TYPE_PATH}/${CHOSEN_CONFIG_TYPE}/${CHOSEN_CONFIG_BK}"
 
     # Restore files
-    mkdir "${CHOSEN_TYPE}"
-    mv "${CHOSEN_CONFIG}" "${CHOSEN_TYPE}"
-    cd "${CHOSEN_TYPE}"
+    mkdir "${CHOSEN_CONFIG_TYPE}"
+    mv "${CHOSEN_CONFIG_BK}" "${CHOSEN_CONFIG_TYPE}"
+    cd "${CHOSEN_CONFIG_TYPE}"
 
-    echo -e ${YELLOW} " > Uncompressing ${CHOSEN_CONFIG}" ${ENDCOLOR}
-    echo " > Uncompressing ${CHOSEN_CONFIG}" >>$LOG
+    echo -e ${YELLOW} " > Uncompressing ${CHOSEN_CONFIG_BK}" ${ENDCOLOR}
+    echo " > Uncompressing ${CHOSEN_CONFIG_BK}" >>$LOG
     
-    pv "${CHOSEN_CONFIG}" | tar xp -C "${SFOLDER}/tmp/${CHOSEN_TYPE}" --use-compress-program=lbzip2
+    pv "${CHOSEN_CONFIG_BK}" | tar xp -C "${SFOLDER}/tmp/${CHOSEN_CONFIG_TYPE}" --use-compress-program=lbzip2
 
-    if [[ "${CHOSEN_CONFIG}" == *"webserver"* ]]; then
+    if [[ "${CHOSEN_CONFIG_BK}" == *"nginx"* ]]; then
 
       # TODO: if nginx is installed, ask if nginx.conf must be replace
 
-      # Checking if default webserver folder exists
+      # Checking if default nginx folder exists
       if [[ -n "${WSERVER}" ]]; then
 
-        echo -e ${GREEN} " > Folder ${WSERVER} exists ... OK" ${ENDCOLOR}
+        echo -e ${GREEN}" > Folder ${WSERVER} exists ... OK"${ENDCOLOR}
 
-        startdir="${SFOLDER}/tmp/${CHOSEN_TYPE}/sites-available"
+        startdir="${SFOLDER}/tmp/${CHOSEN_CONFIG_TYPE}/sites-available"
         file_browser "$menutitle" "$startdir"
 
         to_restore=$filepath"/"$filename
@@ -238,135 +229,207 @@ if [[ ${CHOSEN_TYPE} == *"$CONFIG_F"* ]]; then
     echo -e ${B_GREEN}" > DONE ..."${ENDCOLOR}
 
   fi
-else
-  
-  # Select Project
-  CHOSEN_PROJECT=$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${DROPBOX_PROJECT_LIST}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
+
+}
+
+select_and_restore_site_from_dropbox(){
+
+  #TODO: is this ok? or copy from project instead?
+
+  # $1 = CHOSEN_PROJECT
+
+  CHOSEN_PROJECT=$1
+
+  PROJECT_TMP_FOLDER="${SFOLDER}/tmp/${CHOSEN_PROJECT}"
+
+  CHOSEN_PROJECT=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${CHOSEN_PROJECT}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-    DROPBOX_BACKUP_LIST=$(${DPU_F}/dropbox_uploader.sh -hq list "${CHOSEN_SERVER}/${CHOSEN_TYPE}/${CHOSEN_PROJECT}")
+    
+    echo "Setting CHOSEN_PROJECT=${CHOSEN_PROJECT}" >>$LOG
+    echo -e ${CYAN}" > Renaming ${PROJECT_TMP_FOLDER} to ${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT}..."${ENDCOLOR}    
+    
+    mv "${PROJECT_TMP_FOLDER}" "${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT}"
+    PROJECT_TMP_FOLDER="${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT}"
+
+  else
+    exit 1
+  fi
+
+  FOLDER_TO_INSTALL=$(ask_folder_to_install_sites "${SITES}")
+
+  ACTUAL_FOLDER="${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT}"
+
+  if [ -d "${ACTUAL_FOLDER}" ]; then
+
+    echo " > ${ACTUAL_FOLDER} exist. Let's make a Backup ..." >>$LOG
+    echo -e ${YELLOW}" > ${ACTUAL_FOLDER} exist. Let's make a Backup ..."${ENDCOLOR}
+
+    make_temp_files_backup "${ACTUAL_FOLDER}"
 
   fi
-  # Select Backup File
-  CHOSEN_BACKUP=$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${DROPBOX_BACKUP_LIST}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
+
+  # Restore files
+  echo "Executing: mv ${SFOLDER}/tmp/${CHOSEN_PROJECT} ${FOLDER_TO_INSTALL} ..." >>$LOG
+  echo -e ${CYAN}"Executing: mv ${SFOLDER}/tmp/${CHOSEN_PROJECT} ${FOLDER_TO_INSTALL} ..."${ENDCOLOR}
+  
+  mv "${PROJECT_TMP_FOLDER}" "${FOLDER_TO_INSTALL}"
+
+  install_path=$(search_wp_config "${ACTUAL_FOLDER}")
+
+  if [ -z "${install_path}" ]; then
+
+    echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND"${ENDCOLOR}
+    wp_change_ownership "${ACTUAL_FOLDER}/install_path"
+
+  fi
+
+  # TODO: ask to choose between regenerate nginx config or restore backup
+  # If choose restore config and has https, need to restore letsencrypt config and run cerbot
+
+  #echo "Trying to restore nginx config for ${CHOSEN_PROJECT} ..."
+  # New site configuration
+  #cp ${SFOLDER}/confs/default /etc/nginx/sites-available/${CHOSEN_PROJECT}
+  #ln -s /etc/nginx/sites-available/${CHOSEN_PROJECT} /etc/nginx/sites-enabled/${CHOSEN_PROJECT}
+  # Replacing string to match domain name
+  #sed -i "s#dominio.com#${CHOSEN_PROJECT}#" /etc/nginx/sites-available/${CHOSEN_PROJECT}
+  # Need to be run twice
+  #sed -i "s#dominio.com#${CHOSEN_PROJECT}#" /etc/nginx/sites-available/${CHOSEN_PROJECT}
+  #service nginx reload
+
+  echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
+
+}
+
+select_and_restore_database_from_dropbox(){
+  
+  # TODO: check project type (WP? Laravel? other?)
+  # ask for directory_browser if apply
+  # add credentials on external txt and send email
+
+  # $1 = CHOSEN_PROJECT
+  # $2 = CHOSEN_BACKUP_TO_RESTORE
+
+  CHOSEN_PROJECT=$1
+  CHOSEN_BACKUP_TO_RESTORE=$2
+  
+
+  make_temp_db_backup
+
+  restore_database_backup "${CHOSEN_PROJECT}" "${CHOSEN_BACKUP_TO_RESTORE}"
+
+  FOLDER_TO_INSTALL=$(ask_folder_to_install_sites "${SITES}")
+
+  startdir=${FOLDER_TO_INSTALL}
+  menutitle="Site Selection Menu"
+  directory_browser "$menutitle" "$startdir"
+  PROJECT_SITE=$filepath"/"$filename
+  #echo "Setting PROJECT_SITE=${PROJECT_SITE}"
+
+  install_path=$(search_wp_config "${filepath}")
+
+  if [ -z "${install_path}" ]; then
+
+    echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND"${ENDCOLOR}
+
+    # Change wp-config.php database parameters
+    wp_update_wpconfig "${PROJECT_SITE}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
+
+    # TODO: change the secret encryption keys
+
+  fi
+
+  # Ask for Cloudflare Root Domain
+  ROOT_DOMAIN=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    # Cloudflare API to change DNS records
+    echo "Trying to access Cloudflare API and change record ${DOMAIN} ..." >>$LOG
+    echo -e ${YELLOW}"Trying to access Cloudflare API and change record ${DOMAIN} ..."${ENDCOLOR}
+
+    zone_name=${ROOT_DOMAIN}
+    record_name=${DOMAIN}
+    export zone_name record_name
+    "${SFOLDER}/utils/cloudflare_update_IP.sh"
+
+  fi
+  
+  # HTTPS with Certbot
+  certbot_helper_installer_menu "${DOMAIN}"
+
+}
+
+################################################################################
+
+SITES_F="site"
+CONFIG_F="configs"
+DBS_F="database"
+
+DROPBOX_SERVER_LIST=$("${DPU_F}/dropbox_uploader.sh" -hq list "/")
+
+# Select SERVER
+CHOSEN_SERVER=$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 $(for x in ${DROPBOX_SERVER_LIST}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
+exitstatus=$?
+if [ $exitstatus = 0 ]; then
+  DROPBOX_TYPE_LIST=$(${DPU_F}/dropbox_uploader.sh -hq list "${CHOSEN_SERVER}")
+
+  # Select backup type
+  CHOSEN_TYPE=$(whiptail --title "RESTORE BACKUP" --menu "Choose a backup type. If you want to restore an entire site, first restore the site files, then the config, and last the database." 20 78 10 $(for x in ${DROPBOX_TYPE_LIST}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
-    cd "${SFOLDER}/tmp"
+    DROPBOX_CHOSEN_TYPE_PATH="${CHOSEN_SERVER}/${CHOSEN_TYPE}"
+    DROPBOX_PROJECT_LIST=$("${DPU_F}/dropbox_uploader.sh" -hq list "${DROPBOX_CHOSEN_TYPE_PATH}")
+    
+    if [[ ${CHOSEN_TYPE} == *"$CONFIG_F"* ]]; then
 
-    #echo " > Downloading from Dropbox ${CHOSEN_TYPE}/${CHOSEN_CONFIG} ..." >>$LOG
-    BK_TO_DOWNLOAD="${CHOSEN_SERVER}/${CHOSEN_TYPE}/${CHOSEN_PROJECT}/${CHOSEN_BACKUP}"
-    echo -e ${YELLOW}" > Trying to run dropbox_uploader.sh download ${BK_TO_DOWNLOAD}"${ENDCOLOR}
-    ${DPU_F}/dropbox_uploader.sh download "${BK_TO_DOWNLOAD}"
+      select_and_restore_config_from_dropbox "${DROPBOX_CHOSEN_TYPE_PATH}" "${DROPBOX_PROJECT_LIST}"
 
-    echo -e ${CYAN}" > Uncompressing ${CHOSEN_BACKUP}"${ENDCOLOR}
-    echo " > Uncompressing ${CHOSEN_BACKUP}" >>$LOG
+    else # DB or SITE
 
-    pv "${CHOSEN_BACKUP}" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
-
-    # Site Restore
-    if [[ ${CHOSEN_TYPE} == *"$SITES_F"* ]]; then
-
-      #TODO: is this ok? or copy from project instead?
-
-      PROJECT_TMP_FOLDER="${SFOLDER}/tmp/${CHOSEN_PROJECT}"
-
-      CHOSEN_PROJECT=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${CHOSEN_PROJECT}" 3>&1 1>&2 2>&3)
+      # Select Project
+      CHOSEN_PROJECT=$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${DROPBOX_PROJECT_LIST}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [ $exitstatus = 0 ]; then
-        
-        echo "Setting CHOSEN_PROJECT="${CHOSEN_PROJECT} >>$LOG
-        echo -e ${CYAN}" > Renaming ${PROJECT_TMP_FOLDER} to "${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT}"..."${ENDCOLOR}    
-        
-        mv "${PROJECT_TMP_FOLDER}" "${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT}"
-        PROJECT_TMP_FOLDER="${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT}"
-
-      else
-        exit 1
-      fi
-
-      ask_folder_to_install_sites
-
-      ACTUAL_FOLDER="${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT}"
-
-      if [ -n "${ACTUAL_FOLDER}" ]; then
-
-        echo " > ${ACTUAL_FOLDER} exist. Let's make a Backup ..." >>$LOG
-        echo -e ${YELLOW}" > ${ACTUAL_FOLDER} exist. Let's make a Backup ..."${ENDCOLOR}
-
-        make_temp_files_backup "${ACTUAL_FOLDER}"
+        DROPBOX_CHOSEN_BACKUP_PATH="${DROPBOX_CHOSEN_TYPE_PATH}/${CHOSEN_PROJECT}"
+        DROPBOX_BACKUP_LIST=$(${DPU_F}/dropbox_uploader.sh -hq list "${DROPBOX_CHOSEN_BACKUP_PATH}")
 
       fi
+      # Select Backup File
+      CHOSEN_BACKUP_TO_RESTORE=$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${DROPBOX_BACKUP_LIST}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ $exitstatus = 0 ]; then
 
-      # Restore files
-      echo "Executing: mv ${SFOLDER}/tmp/${CHOSEN_PROJECT} ${FOLDER_TO_INSTALL} ..." >>$LOG
-      echo -e ${CYAN}"Executing: mv ${SFOLDER}/tmp/${CHOSEN_PROJECT} ${FOLDER_TO_INSTALL} ..."${ENDCOLOR}
-      
-      mv "${PROJECT_TMP_FOLDER}" "${FOLDER_TO_INSTALL}"
+        cd "${SFOLDER}/tmp"
 
-      echo -e ${B_GREEN}"DONE"${ENDCOLOR}
+        BK_TO_DOWNLOAD="${CHOSEN_SERVER}/${CHOSEN_TYPE}/${CHOSEN_PROJECT}/${CHOSEN_BACKUP_TO_RESTORE}"
 
-      wp_change_ownership "${ACTUAL_FOLDER}"
+        echo " > Running dropbox_uploader.sh download ${BK_TO_DOWNLOAD}" >>$LOG
 
-      # TODO: ask to choose between regenerate nginx config or restore backup
-      # If choose restore config and has https, need to restore letsencrypt config and run cerbot
+        ${DPU_F}/dropbox_uploader.sh download "${BK_TO_DOWNLOAD}"
 
-      #echo "Trying to restore nginx config for ${CHOSEN_PROJECT} ..."
-      # New site configuration
-      #cp ${SFOLDER}/confs/default /etc/nginx/sites-available/${CHOSEN_PROJECT}
-      #ln -s /etc/nginx/sites-available/${CHOSEN_PROJECT} /etc/nginx/sites-enabled/${CHOSEN_PROJECT}
-      # Replacing string to match domain name
-      #sed -i "s#dominio.com#${CHOSEN_PROJECT}#" /etc/nginx/sites-available/${CHOSEN_PROJECT}
-      # Need to be run twice
-      #sed -i "s#dominio.com#${CHOSEN_PROJECT}#" /etc/nginx/sites-available/${CHOSEN_PROJECT}
-      #service nginx reload
+        echo -e ${CYAN}" > Uncompressing ${CHOSEN_BACKUP_TO_RESTORE}"${ENDCOLOR}
+        echo " > Uncompressing ${CHOSEN_BACKUP_TO_RESTORE}" >>$LOG
 
-    else
-      if [[ ${CHOSEN_TYPE} == *"$DBS_F"* ]]; then
+        pv "${CHOSEN_BACKUP_TO_RESTORE}" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
 
-        # TODO: check project type (WP? Laravel? other?)
-        # ask for directory_browser if apply
-        # add credentials on external txt and send email
+        if [[ ${CHOSEN_TYPE} == *"$DBS_F"* ]]; then
 
-        make_temp_db_backup
+          select_and_restore_database_from_dropbox "${CHOSEN_PROJECT}" "${CHOSEN_BACKUP_TO_RESTORE}"
 
-        restore_database_backup "${CHOSEN_PROJECT}" "${CHOSEN_BACKUP}"
+        else # site
 
-        ask_folder_to_install_sites
-
-        startdir=${FOLDER_TO_INSTALL}
-        menutitle="Site Selection Menu"
-        directory_browser "$menutitle" "$startdir"
-        WP_SITE=$filepath"/"$filename
-        echo "Setting WP_SITE="${WP_SITE}
-
-        # Change wp-config.php database parameters
-        wp_update_wpconfig "${WP_SITE}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
-
-        # TODO: change the secret encryption keys
-        #echo -e ${B_GREEN}" > DONE"${B_ENDCOLOR}
-
-        # Ask for Cloudflare Root Domain
-        ROOT_DOMAIN=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
-        exitstatus=$?
-        if [ $exitstatus = 0 ]; then
-
-          # Cloudflare API to change DNS records
-          echo "Trying to access Cloudflare API and change record ${DOMAIN} ..." >>$LOG
-          echo -e ${YELLOW}"Trying to access Cloudflare API and change record ${DOMAIN} ..."${ENDCOLOR}
-
-          zone_name=${ROOT_DOMAIN}
-          record_name=${DOMAIN}
-          export zone_name record_name
-          "${SFOLDER}/utils/cloudflare_update_IP.sh"
+          select_and_restore_site_from_dropbox "${CHOSEN_PROJECT}"
 
         fi
-       
-        # HTTPS with Certbot
-        certbot_helper_installer_menu "${DOMAIN}"
-
+      
       fi
+
     fi
 
   fi
+
+else
+  exit 0
+  # TODO: return to backup menu?
 fi

@@ -24,6 +24,8 @@ source "${SFOLDER}/libs/commons.sh"
 source "${SFOLDER}/libs/mail_notification_helper.sh"
 source "${SFOLDER}/libs/mysql_helper.sh"
 source "${SFOLDER}/libs/wpcli_helper.sh"
+source "${SFOLDER}/libs/wordpress_helper.sh"
+source "${SFOLDER}/libs/nginx_helper.sh"
 source "${SFOLDER}/libs/certbot_helper.sh"
 
 ################################################################################
@@ -39,7 +41,7 @@ if [ $exitstatus = 0 ]; then
 
   wpcli_install_if_not_installed
 
-  ask_folder_to_install_sites
+  FOLDER_TO_INSTALL=$(ask_folder_to_install_sites "${SITES}")
 
   if [[ ${INSTALLATION_TYPE} == *"COPY"* ]]; then
 
@@ -47,10 +49,10 @@ if [ $exitstatus = 0 ]; then
     menutitle="Site Selection Menu"
     directory_browser "$menutitle" "$startdir"
     COPY_PROJECT_PATH=$filepath"/"$filename
-    echo "Setting COPY_PROJECT_PATH="${COPY_PROJECT_PATH}
+    echo "Setting COPY_PROJECT_PATH=${COPY_PROJECT_PATH}"
 
     COPY_PROJECT=$(basename $COPY_PROJECT_PATH)
-    echo "Setting COPY_PROJECT="${COPY_PROJECT}
+    echo "Setting COPY_PROJECT=${COPY_PROJECT}"
 
     #ask_domain_to_install_site
     ask_project_domain
@@ -58,7 +60,7 @@ if [ $exitstatus = 0 ]; then
     POSSIBLE_ROOT_DOMAIN=${PROJECT_DOMAIN#[[:alpha:]]*.}
     ask_rootdomain_to_cloudflare_config "${POSSIBLE_ROOT_DOMAIN}"
 
-    ask_project_name
+    ask_project_name "${PROJECT_DOMAIN}"
 
     ask_project_state ""
 
@@ -66,8 +68,8 @@ if [ $exitstatus = 0 ]; then
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
       # Make a copy of the existing project
-      echo "Trying to make a copy of ${COPY_PROJECT} ..." >>$LOG
-      echo -e ${YELLOW}"Trying to make a copy of ${COPY_PROJECT} ..."${ENDCOLOR}
+      echo "Making a copy of ${COPY_PROJECT} ..." >>$LOG
+      echo -e ${CYAN}"Making a copy of ${COPY_PROJECT} ..."${ENDCOLOR}
 
       cd "${FOLDER_TO_INSTALL}"
       cp -r "${FOLDER_TO_INSTALL}/${COPY_PROJECT}" "${PROJECT_DIR}"
@@ -81,14 +83,14 @@ if [ $exitstatus = 0 ]; then
 
     fi
 
-  else
+  else # Clean Install
 
     ask_project_domain
 
     POSSIBLE_ROOT_DOMAIN=${PROJECT_DOMAIN#[[:alpha:]]*.}
     ask_rootdomain_to_cloudflare_config "${POSSIBLE_ROOT_DOMAIN}"
 
-    ask_project_name
+    ask_project_name "${PROJECT_DOMAIN}"
 
     ask_project_state ""
 
@@ -183,26 +185,10 @@ if [ $exitstatus = 0 ]; then
   zone_name=${ROOT_DOMAIN}
   record_name=${PROJECT_DOMAIN}
   export zone_name record_name
-  ${SFOLDER}/utils/cloudflare_update_IP.sh
-
-  # TODO: que pasa si en vez de generarlo a partir de un template de conf de nginx, copio el del proyecto y reemplazo el dominio?
+  "${SFOLDER}/utils/cloudflare_update_IP.sh"
 
   # New site Nginx configuration
-  echo " > Trying to generate nginx config for ${PROJECT_DOMAIN} ..." >>$LOG
-  echo -e ${CYAN}" > Trying to generate nginx config for ${PROJECT_DOMAIN} ..."${ENDCOLOR}
-
-  cp ${SFOLDER}/confs/nginx/sites-available/default /etc/nginx/sites-available/${PROJECT_DOMAIN}
-  ln -s /etc/nginx/sites-available/${PROJECT_DOMAIN} /etc/nginx/sites-enabled/${PROJECT_DOMAIN}
-
-  # Replacing string to match PROJECT_DOMAIN name
-  sed -i "s#dominio.com#${PROJECT_DOMAIN}#" /etc/nginx/sites-available/${PROJECT_DOMAIN}
-  # Need to run twice
-  sed -i "s#dominio.com#${PROJECT_DOMAIN}#" /etc/nginx/sites-available/${PROJECT_DOMAIN}
-
-  # Restart nginx service
-  service nginx reload
-
-  echo " > Nginx configuration loaded!" >>$LOG
+  create_nginx_server "${PROJECT_DOMAIN}" "wordpress"
 
   # HTTPS with Certbot
   certbot_certificate_install "${MAILA}" "${PROJECT_DOMAIN}"
@@ -210,7 +196,7 @@ if [ $exitstatus = 0 ]; then
   # WP Search and Replace URL
   ask_url_search_and_replace
 
-  echo -e ${GREEN}" > DONE"${ENDCOLOR}
+  echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
 
 fi
 

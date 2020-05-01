@@ -1,9 +1,8 @@
 #!/bin/bash
 #
-# Autor: broobe. web + mobile development - https://broobe.com
-# Script Name: Broobe Utils Scripts
-# Version: 3.0
-################################################################################
+# Autor: BROOBE. web + mobile development - https://broobe.com
+# Version: 3.0-rc01
+#############################################################################
 
 # Check if program is installed (is_this_installed apache2)
 is_this_installed() {
@@ -72,6 +71,42 @@ check_packages_required() {
   if [ ! -x "${DIALOG}" ]; then
     apt -y install dialog
   fi
+
+}
+
+basic_packages_installation() {
+  # Updating packages
+  echo " > Adding repos and updating package lists ..." >>$LOG
+  apt --yes install software-properties-common
+  apt --yes update
+  echo " > Upgrading packages before installation ..." >>$LOG
+  apt --yes dist-upgrade
+
+  echo " > Installing basic packages ..." >>$LOG
+  apt --yes install vim unzip zip clamav ncdu jpegoptim optipng webp sendemail libio-socket-ssl-perl dnsutils ghostscript pv ppa-purge
+}
+
+selected_package_installation() {
+
+  #$1 = ${APPS_TO_INSTALL[@]}
+
+  local -n APPS_TO_INSTALL=$1
+
+  CHOSEN_APPS=$(whiptail --title "Apps Selection" --checklist "Select the apps you want to install after LEMP setup:" 20 78 15 "${APPS_TO_INSTALL[@]}" 3>&1 1>&2 2>&3)
+  echo "Setting CHOSEN_APPS="$CHOSEN_APPS
+  for app in $CHOSEN_APPS; do
+    app=$(sed -e 's/^"//' -e 's/"$//' <<<$app) #needed to ommit double quotes
+    echo -e ${CYAN}" > Executing ${app} installer ..."${ENDCOLOR}
+    "${SFOLDER}/utils/installers/${app}_installer.sh"
+
+  done
+
+}
+
+timezone_configuration() {
+
+  #configure timezone
+  dpkg-reconfigure tzdata
 
 }
 

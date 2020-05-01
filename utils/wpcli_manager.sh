@@ -6,12 +6,12 @@
 #
 # Ref: https://kinsta.com/blog/wp-cli/
 #
-# TODO: en el profiler, dar opcion de profilear una URL específica:
+# TODO: option to profile specific URL:
 # Ex: php /var/www/.wp-cli/wp-cli.phar --path=/var/www/dev.bes-ebike.com/ profile hook --all --spotlight --url=https://dev.bes-ebike.com/shop-electric-bikes/ --allow-root
 #
-# Checkear si es red: https://developer.wordpress.org/cli/commands/core/is-installed/
+# TODO: check if is network project: https://developer.wordpress.org/cli/commands/core/is-installed/
 #
-# TODO: Hacer healthchecks con wp doctor
+# TODO: Healthchecks with wp doctor
 # Ref: https://guides.wp-bullet.com/automating-wordpress-health-checks-with-wp-cli-doctor-command/
 
 ################################################################################
@@ -23,8 +23,9 @@ if [[ -z "${SFOLDER}" ]]; then
 fi
 ################################################################################
 
-source ${SFOLDER}/libs/commons.sh
-source ${SFOLDER}/libs/wpcli_helper.sh
+source "${SFOLDER}/libs/commons.sh"
+source "${SFOLDER}/libs/wpcli_helper.sh"
+source "${SFOLDER}/libs/wordpress_helper.sh"
 
 ################################################################################
 
@@ -38,7 +39,7 @@ wpcli_main_menu() {
     if [[ ${CHOSEN_WPCLI_OPTION} == *"01"* ]]; then
 
       CHOSEN_PLUGIN_OPTION=$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to install." 20 78 15 "${WP_PLUGINS[@]}" 3>&1 1>&2 2>&3)
-      echo "Setting CHOSEN_PLUGIN_OPTION="$CHOSEN_PLUGIN_OPTION
+      echo "Setting CHOSEN_PLUGIN_OPTION=$CHOSEN_PLUGIN_OPTION"
 
       for plugin in $CHOSEN_PLUGIN_OPTION; do
         #echo "sudo -u www-data wp --path=${WP_SITE} plugin install $plugin --activate"
@@ -234,22 +235,40 @@ menutitle="Site Selection Menu"
 
 directory_browser "$menutitle" "$startdir"
 WP_SITE=$filepath"/"$filename
-echo -e ${B_CYAN}"Working with WP_SITE="${WP_SITE}${ENDCOLOR}
 
-# Array of plugin slugs to install
-WP_PLUGINS=(
-  "wordpress-seo" " " off
-  "ewww-image-optimizer" " " off
-  "easy-wp-smtp" " " off
-  "contact-form-7" " " off
-  "advanced-custom-fields" " " off
-  "acf-vc-integrator" " " off
-  "w3-total-cache" " " off
-  "fast-velocity-minify" " " off
-  "fresh-plugins" " " off
-  "wordfence" " " off
-  "better-wp-security" " " off
-  "quttera-web-malware-scanner" " " off
-)
+install_path=$(search_wp_config "${WP_SITE}")
 
-wpcli_main_menu
+if [[ -z "${install_path}" || "${install_path}" = '' ]]; then
+
+  echo " > Not WordPress Installation Found! Returning to Main Menu ...">>$LOG
+  
+  whiptail --title "WARNING" --msgbox "Not WordPress Installation Found! Press Enter to return to the Main Menu." 8 78
+  
+  main_menu
+  
+else
+
+  WP_SITE=${install_path}
+
+  echo -e ${CYAN}" > Working with WP_SITE=${WP_SITE}"${ENDCOLOR}
+  echo " > Working with WP_SITE=${WP_SITE}" >>$LOG
+
+  # Array of plugin slugs to install
+  WP_PLUGINS=(
+    "wordpress-seo" " " off
+    "ewww-image-optimizer" " " off
+    "easy-wp-smtp" " " off
+    "contact-form-7" " " off
+    "advanced-custom-fields" " " off
+    "acf-vc-integrator" " " off
+    "w3-total-cache" " " off
+    "fast-velocity-minify" " " off
+    "fresh-plugins" " " off
+    "wordfence" " " off
+    "better-wp-security" " " off
+    "quttera-web-malware-scanner" " " off
+  )
+
+  wpcli_main_menu
+
+fi

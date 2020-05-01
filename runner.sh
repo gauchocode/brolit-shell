@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Script Name: BROOBE Utils Scripts
+# Script Name: LEMP Ubuntu Utils Scripts
 # Version: 3.0-rc01
 ################################################################################
 #
@@ -9,11 +9,14 @@
 #       1- Complete refactor of restore_from_backup and delete_project scripts
 #       2- Support for Ubuntu 20.04 LTS
 #       3- When restore or create a new project and the db_user already exists, we need to ask what todo
-#       4- Menu refactor (Group IT Utils) and New item "Create Project" (WP, Laravel, Simphony, Empty -only nginx+db-)
+#       4- Menu refactor (Group IT Utils)
+#       5- Option to install Bashtop and other utils: http://packages.azlux.fr/
 #
 # TODO: For release 3.1
 #       1- Refactor of RESTORE_FROM_SOURCE
 #       2- Refactor of WORDPRESS_INSTALLER - COPY_FROM_PROJECT
+#          We need to replace then with PROJECT_GENERATOR (or something like that)
+#          The idea is that you could create different kind of projects (WP, Laravel, Standalone)
 #
 # TODO: For release 3.2
 #       1- On backup failure, the email must show what files fails and what files are correct backuped
@@ -32,7 +35,7 @@
 #       7- Add some IT utils (change hostname, add floating IP, change SSH port)
 #
 # TODO: For release 4.0
-#       1- Refactor of backups/restore structure, see backup_helper.sh comments
+#       1- Support for Rclone? https://github.com/rclone/rclone
 #       2- Uptime Robot API?
 #       3- Auto-update script option
 #       4- Telegram notifications support: https://adevnull.com/enviar-mensajes-a-telegram-con-bash/
@@ -45,6 +48,7 @@
 #       7- Web GUI:
 #           https://github.com/bugy/script-server
 #           https://github.com/joewalnes/websocketd
+#           https://github.com/ncarlier/webhookd
 #
 ################################################################################
 #
@@ -271,9 +275,9 @@ else
   CERT_MAIL_VAR=$(<${CERT_MAIL})
 
   # Running scripts
-  ${SFOLDER}/mysql_backup.sh
-  ${SFOLDER}/files_backup.sh
-  ${SFOLDER}/server_and_image_optimizations.sh
+  "${SFOLDER}/mysql_backup.sh"
+  "${SFOLDER}/files_backup.sh"
+  "${SFOLDER}/server_and_image_optimizations.sh"
   
   DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
   DB_MAIL_VAR=$(<${DB_MAIL})

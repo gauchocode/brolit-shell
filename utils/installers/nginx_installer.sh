@@ -196,11 +196,11 @@ if [ ${nginx_installed} == "false" ]; then
         fi
 
         # nginx.conf broobe standard configuration
-        cat ${SFOLDER}/confs/nginx/nginx.conf >/etc/nginx/nginx.conf
+        cat "${SFOLDER}/confs/nginx/nginx.conf" >"/etc/nginx/nginx.conf"
 
         # New default nginx configuration
         echo " > Moving nginx configuration files ..." >>$LOG
-        cat ${SFOLDER}/confs/nginx/sites-available/default >/etc/nginx/sites-available/default
+        cat "${SFOLDER}/confs/nginx/sites-available/default" >"/etc/nginx/sites-available/default"
 
         nginx_globals="/etc/nginx/globals/"
         if [ -d "${nginx_globals}" ]; then
@@ -213,12 +213,12 @@ if [ ${nginx_installed} == "false" ]; then
 
         fi
 
-        cp ${SFOLDER}/confs/nginx/globals/logs.conf /etc/nginx/globals/logs.conf
-        cp ${SFOLDER}/confs/nginx/globals/security.conf /etc/nginx/globals/security.conf
-        cp ${SFOLDER}/confs/nginx/globals/wordpress_mu_subdirectory.conf /etc/nginx/globals/wordpress_mu_subdirectory.conf
-        cp ${SFOLDER}/confs/nginx/globals/wordpress_mu_subdomain.conf /etc/nginx/globals/wordpress_mu_subdomain.conf
-        cp ${SFOLDER}/confs/nginx/globals/wordpress_sec.conf /etc/nginx/globals/wordpress_sec.conf
-        cp ${SFOLDER}/confs/nginx/globals/wordpress_seo.conf /etc/nginx/globals/wordpress_seo.conf
+        cp "${SFOLDER}/confs/nginx/globals/logs.conf" "/etc/nginx/globals/logs.conf"
+        cp "${SFOLDER}/confs/nginx/globals/security.conf /etc/nginx/globals/security.conf"
+        cp "${SFOLDER}/confs/nginx/globals/wordpress_mu_subdirectory.conf" "/etc/nginx/globals/wordpress_mu_subdirectory.conf"
+        cp "${SFOLDER}/confs/nginx/globals/wordpress_mu_subdomain.conf" "/etc/nginx/globals/wordpress_mu_subdomain.conf"
+        cp "${SFOLDER}/confs/nginx/globals/wordpress_sec.conf" "/etc/nginx/globals/wordpress_sec.conf"
+        cp "${SFOLDER}/confs/nginx/globals/wordpress_seo.conf" "/etc/nginx/globals/wordpress_seo.conf"
 
         #chown ??
         #sed para reemplazar los domain.com

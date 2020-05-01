@@ -4,14 +4,17 @@
 # Version: 3.0-rc01
 #############################################################################
 #
-# Este script va a sustituir varias de las tareas que hoy hacen 
-# files_backup y mysql_backup, pero antes habría que implementar:
+# TODO: This script need a good refactor.
+# 
+# The script main function need to be backup an entire project
+# (files, database, nginx and let's encrypt configuration)
 #
-#    1- Backup de proyecto individual (seleccionándolo).
-#    2- Si no encuentro la BD, pedir que se seleccione por prompt y quizá deberia 
-#       generar un archivo en el proyecto para ya dejar el matching.
-#    3- Backup de archivos que no tienen BD.
-#    4- Backup de DB que no tiene archivos asociados.
+# Funtion steps:
+#    1- Select a project to backup (selecting a directory from $SITES).
+#    2- Then try to extract DB config from (wp-config, parameters.yml, etc)
+#       If can't find, ask if has database or not. If has, select one from db list.
+#    3- Then we could write a custom config file to match directory, with db.
+#    3- Backup nginx and let's encrypts config.
 #
 
 ### Checking Script Execution
@@ -21,11 +24,11 @@ if [[ -z "${SFOLDER}" ]]; then
 fi
 ################################################################################
 
-source ${SFOLDER}/libs/commons.sh
-source ${SFOLDER}/libs/mysql_helper.sh
-source ${SFOLDER}/libs/backup_helper.sh
-source ${SFOLDER}/libs/wpcli_helper.sh
-source ${SFOLDER}/libs/mail_notification_helper.sh
+source "${SFOLDER}/libs/commons.sh"
+source "${SFOLDER}/libs/mysql_helper.sh"
+source "${SFOLDER}/libs/backup_helper.sh"
+source "${SFOLDER}/libs/wpcli_helper.sh"
+source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 ################################################################################
 
@@ -44,7 +47,7 @@ echo -e ${GREEN}" > Starting project backup script ..."${ENDCOLOR}
 TOTAL_SITES=$(find ${SITES} -maxdepth 1 -type d)
 
 ## Get length of $TOTAL_SITES
-COUNT_TOTAL_SITES=$(find /var/www -maxdepth 1 -type d -printf '.' | wc -c)
+COUNT_TOTAL_SITES=$(find ${SITES} -maxdepth 1 -type d -printf '.' | wc -c)
 COUNT_TOTAL_SITES=$((${COUNT_TOTAL_SITES} - 1))
 
 echo -e ${CYAN}" > ${COUNT_TOTAL_SITES} directory found ..."${ENDCOLOR}
@@ -91,7 +94,7 @@ for j in ${TOTAL_SITES}; do
 done
 
 # Deleting old backup files
-rm -r ${BAKWP}/${NOW}
+rm -r "${BAKWP}/${NOW}"
 
 # Configure Email        
 echo -e ${CYAN}"> Preparing mail files backup section ..."${ENDCOLOR}
