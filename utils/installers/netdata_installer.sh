@@ -4,7 +4,8 @@
 # Version: 3.0-rc01
 ################################################################################
 
-source ${SFOLDER}/libs/commons.sh
+source "${SFOLDER}/libs/commons.sh"
+source "${SFOLDER}/libs/nginx_helper.sh"
 #source ${SFOLDER}/libs/mysql_helper.sh
 
 ################################################################################
@@ -168,15 +169,17 @@ if [ ! -x "${NETDATA}" ]; then
     [Yy]*)
 
       echo " > Updating packages before installation ..." >>$LOG
-      echo -e ${YELLOW}" > Updating packages before installation ..."${ENDCOLOR}
+      echo -e ${CYAN}" > Updating packages before installation ..."${ENDCOLOR}
       apt --yes update
 
       netdata_installer
 
       # Netdata nginx proxy configuration
-      cp "${SFOLDER}/confs/nginx/sites-available/monitor" "/etc/nginx/sites-available"
-      sed -i "s#dominio.com#${NETDATA_SUBDOMAIN}#" "/etc/nginx/sites-available/monitor"
-      ln -s "/etc/nginx/sites-available/monitor" "/etc/nginx/sites-enabled/monitor"
+      create_nginx_server "${NETDATA_SUBDOMAIN}" "netdata"
+
+      #cp "${SFOLDER}/confs/nginx/sites-available/monitor" "/etc/nginx/sites-available"
+      #sed -i "s#dominio.com#${NETDATA_SUBDOMAIN}#" "/etc/nginx/sites-available/monitor"
+      #ln -s "/etc/nginx/sites-available/monitor" "/etc/nginx/sites-enabled/monitor"
 
       netdata_configuration
 
