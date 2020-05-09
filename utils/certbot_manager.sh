@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc01
+# Version: 3.0-rc02
 #############################################################################
 #
 # Ref: https://certbot.eff.org/docs/using.html

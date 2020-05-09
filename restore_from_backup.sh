@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc01
+# Version: 3.0-rc02
 ################################################################################
 
 # TO-FIX: mysql restore fail when cant create mysql user
