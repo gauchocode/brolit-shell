@@ -1,35 +1,28 @@
 #!/bin/bash
 #
-# Autor: broobe. web + mobile development - https://broobe.com
-# Version: 3.0
+# Autor: BROOBE. web + mobile development - https://broobe.com
+# Version: 3.0-rc02
 ################################################################################
 #
-# TODO: Nginx mejores prácticas
+# TODO: Nginx best practices
 # https://github.com/audioscavenger/nginx-server-config
 # https://github.com/A5hleyRich/wordpress-nginx
 # https://github.com/pothi/wordpress-nginx
 # https://www.digitalocean.com/community/questions/how-can-i-improve-the-ttfb
 # https://haydenjames.io/nginx-tuning-tips-tls-ssl-https-ttfb-latency/
 #
-# TODO: Si cambiamos el repo oficial de nginx por este que tiene modulos de nginx?
-#       https://github.com/cryptofuture/nginx-hda-bundle
-#
 # Brotli compression only supports the HTTPS site
-#
-# Para quitar un repo viejo de nginx, ejemplo el de ondrej: 
-# add-apt-repository --remove ppa:ondrej/nginx && apt-get update
-# apt purge nginx && apt install -f 
-# y luego volver a instalar nginx
 #
 
 ### Checking some things
 if [[ -z "${SFOLDER}" ]]; then
-    echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+    echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
     exit 0
 fi
 ################################################################################
 
-source ${SFOLDER}/libs/commons.sh
+source "${SFOLDER}/libs/commons.sh"
+source "${SFOLDER}/libs/nginx_helper.sh"
 
 ################################################################################
 
@@ -96,7 +89,7 @@ nginx_pagespeed_installer() {
 
     apt update
 
-    cd /usr/local/src/nginx/
+    cd "/usr/local/src/nginx/"
 
     sudo apt install dpkg-dev
 
@@ -108,7 +101,7 @@ nginx_pagespeed_installer() {
 
     sudo git clone https://github.com/apache/incubator-pagespeed-ngx.git
 
-    cd incubator-pagespeed-ngx/
+    cd "incubator-pagespeed-ngx/"
 
     git checkout latest-stable
 
@@ -195,34 +188,13 @@ if [ ${nginx_installed} == "false" ]; then
             echo -e ${CYAN}" > Directory ${nginx_default_dir} deleted ..."${ENDCOLOR}
         fi
 
-        # nginx.conf broobe standard configuration
-        cat "${SFOLDER}/confs/nginx/nginx.conf" >"/etc/nginx/nginx.conf"
+        reconfigure_nginx
 
         # New default nginx configuration
         echo " > Moving nginx configuration files ..." >>$LOG
         cat "${SFOLDER}/confs/nginx/sites-available/default" >"/etc/nginx/sites-available/default"
 
-        nginx_globals="/etc/nginx/globals/"
-        if [ -d "${nginx_globals}" ]; then
-            echo "Directory ${nginx_globals} already exists ..." >>$LOG
-            echo -e ${CYAN}" > Directory ${nginx_globals} already exists ..."${ENDCOLOR}
-            exit 1
-
-        else
-            mkdir ${nginx_globals}
-
-        fi
-
-        cp "${SFOLDER}/confs/nginx/globals/logs.conf" "/etc/nginx/globals/logs.conf"
-        cp "${SFOLDER}/confs/nginx/globals/security.conf /etc/nginx/globals/security.conf"
-        cp "${SFOLDER}/confs/nginx/globals/wordpress_mu_subdirectory.conf" "/etc/nginx/globals/wordpress_mu_subdirectory.conf"
-        cp "${SFOLDER}/confs/nginx/globals/wordpress_mu_subdomain.conf" "/etc/nginx/globals/wordpress_mu_subdomain.conf"
-        cp "${SFOLDER}/confs/nginx/globals/wordpress_sec.conf" "/etc/nginx/globals/wordpress_sec.conf"
-        cp "${SFOLDER}/confs/nginx/globals/wordpress_seo.conf" "/etc/nginx/globals/wordpress_seo.conf"
-
-        #chown ??
-        #sed para reemplazar los domain.com
-        #si es network con subdominios hay que usar *.domain.com
+        create_nginx_globals_confs
 
     else
         echo -e ${CYAN}" > Operation cancelled ..."${ENDCOLOR}

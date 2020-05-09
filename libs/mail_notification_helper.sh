@@ -4,7 +4,6 @@
 # Version: 3.0-rc02
 ################################################################################
 
-#source "/root/.broobe-utils-options"
 source "${SFOLDER}/libs/commons.sh"
 source "${SFOLDER}/libs/certbot_helper.sh"
 
@@ -12,8 +11,8 @@ source "${SFOLDER}/libs/certbot_helper.sh"
 
 send_mail_notification() {
 
-    # $1- ${EMAIL_SUBJECT}
-    # $2- ${EMAIL_CONTENT}
+    # $1 = ${EMAIL_SUBJECT}
+    # $2 = ${EMAIL_CONTENT}
 
     local EMAIL_SUBJECT=$1
     local EMAIL_CONTENT=$2
@@ -57,7 +56,7 @@ mail_subject_status() {
 remove_mail_notifications_files() {
 
     echo "  Removing temp files ..." >>$LOG
-    echo -e ${C_YELLOW}" > Removing temp files ..."${ENDCOLOR}
+    echo -e ${YELLOW}" > Removing temp files ..."${ENDCOLOR}
 
     # TODO: remove only if they are created
     rm "${PKG_MAIL}" "${DB_MAIL}" "${FILE_MAIL}"
@@ -66,8 +65,8 @@ remove_mail_notifications_files() {
 
 mail_server_status_section() {
 
-    # $1 - ${IP}
-    # $2 - ${DISK_U}
+    # $1 = ${IP}
+    # $2 = ${DISK_U}
 
     local IP=$1
     local DISK_U=$2
@@ -113,7 +112,7 @@ mail_server_status_section() {
 
 mail_package_status_section() {
 
-    # $1 - ${PKG_DETAILS}
+    # $1 = ${PKG_DETAILS}
 
     local PKG_DETAILS=$1
 
@@ -156,7 +155,7 @@ mail_package_status_section() {
 
 mail_package_section() {
 
-    # $1 - ${PACKAGES}
+    # $1 = ${PACKAGES}
 
     local -n PACKAGES=$1
 
@@ -363,10 +362,10 @@ mail_filesbackup_section() {
 
 mail_configbackup_section() {
 
-    # $1 - ${BACKUPED_LIST[@]}
-    # $2 - ${BK_FL_SIZES}
-    # $3 - ${ERROR}
-    # $4 - ${ERROR_TYPE}
+    # $1 = ${BACKUPED_LIST[@]}
+    # $2 = ${BK_FL_SIZES}
+    # $3 = ${ERROR}
+    # $4 = ${ERROR_TYPE}
 
     local -n BACKUPED_SCF_LIST=$1
     local -n BK_SCF_SIZE=$2
@@ -444,10 +443,10 @@ mail_configbackup_section() {
 
 mail_mysqlbackup_section() {
 
-    # $1 - ${BACKUPED_DB_LIST}
-    # $2 - ${BK_DB_SIZES}
-    # $3 - ${ERROR}
-    # $4 - ${ERROR_TYPE}
+    # $1 = ${BACKUPED_DB_LIST}
+    # $2 = ${BK_DB_SIZES}
+    # $3 = ${ERROR}
+    # $4 = ${ERROR_TYPE}
 
     local -n BACKUPED_DB_LIST=$1
     local -n BK_DB_SIZES=$2
