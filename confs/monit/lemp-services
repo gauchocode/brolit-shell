@@ -17,10 +17,10 @@ check process mysql with pidfile /var/run/mysqld/mysqld.pid
     if cpu > 80% for 2 cycles then alert
 
 #PHP-FPM
-check process php7.2-fpm with pidfile /var/run/php/php7.2-fpm.pid
-    start program = "/etc/init.d/php7.2-fpm start"
-    stop program = "/etc/init.d/php7.2-fpm stop"
-    if failed unixsocket /var/run/php/php7.2-fpm.sock then restart
+check process phpPHP_V-fpm with pidfile /var/run/php/phpPHP_V-fpm.pid
+    start program = "/etc/init.d/phpPHP_V-fpm start"
+    stop program = "/etc/init.d/phpPHP_V-fpm stop"
+    if failed unixsocket /var/run/php/phpPHP_V-fpm.sock then restart
     if cpu > 80% for 2 cycles then alert
 
 #System Monitoring

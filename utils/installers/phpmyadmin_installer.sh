@@ -36,7 +36,7 @@ unzip "phpMyAdmin-latest-all-languages.zip"
 
 rm "phpMyAdmin-latest-all-languages.zip"
 
-mv phpMyAdmin-* ${DOMAIN}
+mv phpMyAdmin-* "${DOMAIN}"
 
 # Cloudflare API to change DNS records
 echo "Trying to access Cloudflare API and change record ${DOMAIN} ..." >>$LOG

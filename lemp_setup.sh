@@ -6,7 +6,7 @@
 
 ### Checking some things
 if [[ -z "${SFOLDER}" ]]; then
-  echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+  echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
   exit 0
 fi
 ################################################################################

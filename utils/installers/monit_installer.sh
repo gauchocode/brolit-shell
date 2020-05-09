@@ -7,20 +7,31 @@
 configure_monit(){
 
   # Configuring monit
-  echo -e ${YELLOW}" > Configuring monit ..."${ENDCOLOR}
+  echo -e ${CYAN}" > Configuring monit ..."${ENDCOLOR}
   cat "${SFOLDER}/confs/monit/lemp-services" > /etc/monit/conf.d/lemp-services
   cat "${SFOLDER}/confs/monit/monitrc" > /etc/monit/monitrc
 
   sed -i "s#HOSTNAME#${VPSNAME}#" /etc/monit/conf.d/lemp-services
+
+  # Run five times to cober all var appearance
+  sed -i "s#PHP_V#${PHP_V}#" /etc/monit/conf.d/lemp-services
+  sed -i "s#PHP_V#${PHP_V}#" /etc/monit/conf.d/lemp-services
+  sed -i "s#PHP_V#${PHP_V}#" /etc/monit/conf.d/lemp-services
+  sed -i "s#PHP_V#${PHP_V}#" /etc/monit/conf.d/lemp-services
+  sed -i "s#PHP_V#${PHP_V}#" /etc/monit/conf.d/lemp-services
+
   sed -i "s#SMTP_SERVER#${SMTP_SERVER}#" /etc/monit/conf.d/lemp-services
   sed -i "s#SMTP_PORT#${SMTP_PORT}#" /etc/monit/conf.d/lemp-services
+  
+  # Run two times to cober all var appearance
   sed -i "s#SMTP_U#${SMTP_U}#" /etc/monit/conf.d/lemp-services
-  sed -i "s#SMTP_U#${SMTP_U}#" /etc/monit/conf.d/lemp-services                    # twice to cober double appearance
+  sed -i "s#SMTP_U#${SMTP_U}#" /etc/monit/conf.d/lemp-services
+
   sed -i "s#SMTP_P#${SMTP_P}#" /etc/monit/conf.d/lemp-services
   sed -i "s#MAILA#${MAILA}#" /etc/monit/conf.d/lemp-services
 
   echo -e ${YELLOW}" > Restarting services ..."${ENDCOLOR}
-  systemctl restart php${PHP_V}-fpm
+  systemctl restart "php${PHP_V}-fpm"
   systemctl restart nginx.service
   service monit restart
 

@@ -236,7 +236,7 @@ mysql_database_import() {
     echo -e ${CYAN}" > Importing dump file ${DUMP_FILE} into database: ${DB_NAME} ..."${ENDCOLOR}
     echo " > Importing dump file ${DUMP_FILE} into database: ${DB_NAME} ..." >>$LOG
 
-    pv ${DUMP_FILE} | mysql -f -u${MUSER} -p${MPASS} -f -D ${DB_NAME}
+    pv "${DUMP_FILE}" | mysql -f -u${MUSER} -p${MPASS} -f -D "${DB_NAME}"
 
     if [ $? -eq 0 ]; then
         echo " > Import database ${DB_NAME} OK!" >>$LOG
@@ -261,9 +261,9 @@ mysql_database_export() {
     DATABASE=$1
     DUMP_FILE=$2
 
-    echo -e ${YELLOW}" > Exporting database ${DATABASE} into dump file ${DUMP_FILE} ..."${ENDCOLOR}
+    echo -e ${CYAN}" > Exporting database ${DATABASE} into dump file ${DUMP_FILE} ..."${ENDCOLOR}
     echo " > Exporting database ${DATABASE} into dump file ${DUMP_FILE} ..." >>$LOG
-    mysqldump -u ${MUSER} -p${MPASS} ${DATABASE} >${DUMP_FILE}
+    mysqldump -u ${MUSER} -p${MPASS} "${DATABASE}" > "${DUMP_FILE}"
 
     if [ $? -eq 0 ]; then
         echo " > DB ${DATABASE} exported successfully!" >>$LOG
@@ -271,7 +271,7 @@ mysql_database_export() {
     
     else
         echo " > DB ${DATABASE} export failed!" >>$LOG
-        echo -e ${RED}" > DB ${DATABASE} export failed!"${ENDCOLOR}
+        echo -e ${B_RED}" > DB ${DATABASE} export failed!"${ENDCOLOR}
         exit 1
 
     fi
