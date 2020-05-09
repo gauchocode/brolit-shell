@@ -40,7 +40,7 @@ make_temp_db_backup() {
 
   if [ -d "/var/lib/mysql/${CHOSEN_PROJECT}" ]; then
     echo -e ${YELLOW}" > Executing mysqldump (will work if database exists) ..."${ENDCOLOR}
-    mysqldump -u ${MUSER} --password=${MPASS} ${CHOSEN_PROJECT} >${CHOSEN_PROJECT}_bk_before_restore.sql
+    mysqldump -u "${MUSER}" --password="${MPASS}" "${CHOSEN_PROJECT}" >"${CHOSEN_PROJECT}_bk_before_restore.sql"
 
   fi
 
@@ -279,8 +279,8 @@ select_and_restore_site_from_dropbox(){
 
   if [ -z "${install_path}" ]; then
 
-    echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND"${ENDCOLOR}
-    wp_change_ownership "${ACTUAL_FOLDER}/install_path"
+    echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND ON PATH: ${ACTUAL_FOLDER}/${install_path}"${ENDCOLOR}
+    wp_change_ownership "${ACTUAL_FOLDER}/${install_path}"
 
   fi
 
@@ -312,7 +312,6 @@ select_and_restore_database_from_dropbox(){
 
   CHOSEN_PROJECT=$1
   CHOSEN_BACKUP_TO_RESTORE=$2
-  
 
   make_temp_db_backup
 
@@ -330,10 +329,10 @@ select_and_restore_database_from_dropbox(){
 
   if [ -z "${install_path}" ]; then
 
-    echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND"${ENDCOLOR}
+    echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND ON PATH: ${PROJECT_SITE}/${install_path}"${ENDCOLOR}
 
     # Change wp-config.php database parameters
-    wp_update_wpconfig "${PROJECT_SITE}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
+    wp_update_wpconfig "${PROJECT_SITE}/${install_path}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
 
     # TODO: change the secret encryption keys
 
