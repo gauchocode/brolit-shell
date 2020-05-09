@@ -782,7 +782,7 @@ ask_project_domain() {
   PROJECT_DOMAIN=$(whiptail --title "Domain" --inputbox "Insert the project's domain. Example: landing.domain.com" 10 60 "${domain}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-    echo "Setting PROJECT_DOMAIN="${PROJECT_DOMAIN} >>$LOG
+    echo "Setting PROJECT_DOMAIN=${PROJECT_DOMAIN}" >>$LOG
     return 0
 
   else
