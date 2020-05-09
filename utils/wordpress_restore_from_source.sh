@@ -6,17 +6,18 @@
 
 ### Checking some things
 if [[ -z "${SFOLDER}" ]]; then
-  echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+  echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
   exit 0
 fi
 ################################################################################
 
 source "${SFOLDER}/libs/commons.sh"
 source "${SFOLDER}/libs/mysql_helper.sh"
-source "${SFOLDER}/libs/mail_notification_helper.sh"
 source "${SFOLDER}/libs/packages_helper.sh"
+source "${SFOLDER}/libs/wordpress_helper.sh"
 source "${SFOLDER}/libs/wpcli_helper.sh"
 source "${SFOLDER}/libs/nginx_helper.sh"
+source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 ################################################################################
 
@@ -30,7 +31,7 @@ wp_migration_source() {
 
     echo -e ${YELLOW}"WP_MIGRATION_SOURCE: ${WP_MIGRATION_SOURCE} ..."${ENDCOLOR}
 
-    if [ ${WP_MIGRATION_SOURCE} = "DIRECTORY" ]; then
+    if [ "${WP_MIGRATION_SOURCE}" = "DIRECTORY" ]; then
 
       SOURCE_DIR=$(whiptail --title "Source Directory" --inputbox "Please insert the directory where backup is stored (Files and DB)." 10 60 "/root/backups" 3>&1 1>&2 2>&3)
       exitstatus=$?
@@ -47,12 +48,12 @@ wp_migration_source() {
       SOURCE_FILES_URL=$(whiptail --title "Source File URL" --inputbox "Please insert the URL where backup files are stored." 10 60 "http://example.com/backup-files.zip" 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [ $exitstatus = 0 ]; then
-        echo "SOURCE_FILES_URL="${SOURCE_FILES_URL} >>$LOG
+        echo "SOURCE_FILES_URL=${SOURCE_FILES_URL}" >>$LOG
 
         SOURCE_DB_URL=$(whiptail --title "Source DB URL" --inputbox "Please insert the URL where backup db is stored." 10 60 "http://example.com/backup-db.sql.gz" 3>&1 1>&2 2>&3)
         exitstatus=$?
         if [ $exitstatus = 0 ]; then
-          echo "SOURCE_DB_URL="${SOURCE_DB_URL} >>$LOG
+          echo "SOURCE_DB_URL=${SOURCE_DB_URL}" >>$LOG
 
         else
           exit 0
@@ -72,9 +73,6 @@ wp_migration_source() {
 }
 
 #############################################################################
-
-source "${SFOLDER}/libs/commons.sh"
-source "${SFOLDER}/libs/mysql_helper.sh"
 
 ### Log Start
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
@@ -124,10 +122,6 @@ cd "${SFOLDER}/tmp/${PROJECT_DOMAIN}"
 if [ "${WP_MIGRATION_SOURCE}" = "DIRECTORY" ]; then
 
   unzip \*.zip \* -d "${SFOLDER}/tmp/${PROJECT_DOMAIN}"
-  # TODO: acá habría que checkear si la instalación es un WP
-  # y si está en la raiz o dentro de una carpeta del zip
-
-  # TODO: habria que levantar el seleccionador de archivos para que busque el backup de la BD
 
   # DB
   mysql_database_import "${PROJECT_NAME}_${PROJECT_STATE}" "${WP_MIGRATION_SOURCE}/${BK_DB_FILE}"
@@ -141,22 +135,26 @@ if [ "${WP_MIGRATION_SOURCE}" = "DIRECTORY" ]; then
 else
 
   # Download File Backup
-  echo -e ${CYAN}" > Downloading file backup ..."${ENDCOLOR}
-  wget ${SOURCE_FILES_URL} >>$LOG
+  echo -e ${CYAN}" > Downloading file backup ${SOURCE_FILES_URL} ..."${ENDCOLOR}
+  wget "${SOURCE_FILES_URL}" >>$LOG
 
   # Uncompressing
   echo -e ${CYAN}" > Uncompressing file backup ..."${ENDCOLOR}
-  unzip "${BK_F_FILE}"
+  #unzip "${BK_F_FILE}"
+  extract "${BK_F_FILE}"
 
   # Download Database Backup
-  echo -e ${CYAN}" > Downloading database backup ..."${ENDCOLOR} >>$LOG
+  echo -e ${CYAN}" > Downloading database backup ${SOURCE_DB_URL}..."${ENDCOLOR} >>$LOG
   wget "${SOURCE_DB_URL}" >>$LOG
 
   # Create database and user
   wp_database_creation "${PROJECT_NAME}" "${PROJECT_STATE}"
 
-  # Importing dump file
+  # Extract
   gunzip -c "${BK_DB_FILE}" > "${PROJECT_NAME}.sql"
+  #extract "${BK_DB_FILE}"
+
+  # Import dump file
   mysql_database_import "${PROJECT_NAME}_${PROJECT_STATE}" "${PROJECT_NAME}.sql"
 
   # Remove downloaded files
@@ -172,15 +170,26 @@ fi
 
 chown -R www-data:www-data "${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}"
 
-# Change wp-config.php database parameters
-PROJECT_DIR="${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}"
-if [[ -z "${DB_PASS}" ]]; then
-  wp_update_wpconfig "${PROJECT_DIR}" "${PROJECT_NAME}" "${PROJECT_STATE}" ""
-  
-else
-  wp_update_wpconfig "${PROJECT_DIR}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
-  
-fi
+install_path=$(search_wp_config "${ACTUAL_FOLDER}")
+if [ -z "${install_path}" ]; then
+
+    echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND"${ENDCOLOR}
+
+    # Change file and dir permissions
+    wp_change_ownership "${ACTUAL_FOLDER}/${install_path}"
+
+    # Change wp-config.php database parameters
+    #PROJECT_DIR="${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}"
+
+    if [[ -z "${DB_PASS}" ]]; then
+      wp_update_wpconfig "${ACTUAL_FOLDER}/${install_path}" "${PROJECT_NAME}" "${PROJECT_STATE}" ""
+      
+    else
+      wp_update_wpconfig "${ACTUAL_FOLDER}/${install_path}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
+      
+    fi
+
+  fi
 
 # Create nginx config files for site
 create_nginx_server "${PROJECT_DOMAIN}" "wordpress"
@@ -208,7 +217,7 @@ ask_url_search_and_replace
 
 # Log End
 END_TIME=$(date +%s)
-ELAPSED_TIME=$(expr $END_TIME - $START_TIME)
+ELAPSED_TIME=$(expr "${END_TIME}" - "${START_TIME}")
 
 echo "Backup :: Script End -- $(date +%Y%m%d_%H%M)" >>$LOG
 
