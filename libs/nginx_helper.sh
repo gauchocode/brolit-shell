@@ -26,6 +26,11 @@ create_nginx_server() {
     # need to run twice
     sudo sed -i "s#dominio.com#${PROJECT_DOMAIN}#" "${WSERVER}/sites-available/${PROJECT_DOMAIN}"
 
+    # TODO: ask wich version of php want to work with
+    
+    # Replace string to match PHP version
+    sudo sed -i "s#PHP_V#${PHP_V}#" "${WSERVER}/sites-available/${PROJECT_DOMAIN}"
+
     # Reload webserver
     service nginx reload
 

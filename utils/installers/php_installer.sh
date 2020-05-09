@@ -6,11 +6,11 @@
 
 ### Checking some things
 if [[ -z "${SFOLDER}" ]]; then
-  echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+  echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
   exit 0
 fi
 
-# TODO: esto deberia deprecarse y calcularse con el hardware del server
+# TODO: stop doing this, calculate based on vps specifications
 SERVER_MODEL="cx21" # Options: cx11, cx21, cx31
 
 if [[ -z "${SERVER_MODEL}" ]]; then
@@ -24,9 +24,9 @@ source "${SFOLDER}/libs/commons.sh"
 
 php_installer() {
 
-  PHP_V=$1
+  local PHP_V=$1
 
-  apt --yes install php${PHP_V}-fpm php${PHP_V}-mysql php-imagick php${PHP_V}-xml php${PHP_V}-cli php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php${PHP_V}-intl php${PHP_V}-zip php${PHP_V}-bz2 php${PHP_V}-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear
+  apt --yes install "php${PHP_V}-fpm" "php${PHP_V}-mysql" php-imagick "php${PHP_V}-xml" "php${PHP_V}-cli" "php${PHP_V}-curl" "php${PHP_V}-mbstring" "php${PHP_V}-gd" "php${PHP_V}-intl" "php${PHP_V}-zip" "php${PHP_V}-bz2" "php${PHP_V}-bcmath" "php${PHP_V}-soap" "php${PHP_V}-dev" php-pear
 
 }
 
@@ -51,9 +51,9 @@ php_select_version_to_install() {
     "5.5" " " off
   )
 
-  CHOSEN_PHPV=$(whiptail --title "PHP Version Selection" --checklist "Select the versions of PHP you want to install:" 20 78 15 "${PHPV_TO_INSTALL[@]}" 3>&1 1>&2 2>&3)
-  echo "Setting CHOSEN_PHPV="$CHOSEN_PHPV
-  for phpv in $CHOSEN_PHPV; do
+  CHOOSEN_PHPV=$(whiptail --title "PHP Version Selection" --checklist "Select the versions of PHP you want to install:" 20 78 15 "${PHPV_TO_INSTALL[@]}" 3>&1 1>&2 2>&3)
+  echo "Setting CHOSEN_PHPV=$CHOOSEN_PHPV"
+  for phpv in $CHOOSEN_PHPV; do
     phpv=$(sed -e 's/^"//' -e 's/"$//' <<<$phpv) #needed to ommit double quotes
 
     php_installer "${phpv}"
@@ -84,7 +84,7 @@ php_purge_all_installations() {
 
 php_purge_installation() {
   echo " > Removing PHP ${PHP_V} ..." >>$LOG
-  apt --yes purge php${PHP_V}-fpm php${PHP_V}-mysql php-xml php${PHP_V}-xml php${PHP_V}-cli php${PHP_V}-curl php${PHP_V}-mbstring php${PHP_V}-gd php-imagick php${PHP_V}-intl php${PHP_V}-zip php${PHP_V}-bz2 php-bcmath php${PHP_V}-soap php${PHP_V}-dev php-pear
+  apt --yes purge "php${PHP_V}-fpm" "php${PHP_V}-mysql" php-xml "php${PHP_V}-xml" "php${PHP_V}-cli" "php${PHP_V}-curl" "php${PHP_V}-mbstring" "php${PHP_V}-gd" php-imagick "php${PHP_V}-intl" "php${PHP_V}-zip" "php${PHP_V}-bz2" php-bcmath "php${PHP_V}-soap" "php${PHP_V}-dev" php-pear
 
 }
 
@@ -140,13 +140,24 @@ fi
 #${SFOLDER}/utils/php_optimizations.sh
 echo -e ${CYAN}" > Moving php configuration file ..."${ENDCOLOR}
 echo " > Moving php configuration file ..." >>$LOG
-cat "${SFOLDER}/confs/php/php.ini" >/etc/php/${PHP_V}/fpm/php.ini
+cat "${SFOLDER}/confs/php/php.ini" >"/etc/php/${PHP_V}/fpm/php.ini"
 
 echo -e ${CYAN}" > Moving fpm configuration file ..."${ENDCOLOR}
 echo " > Moving fpm configuration file ..." >>$LOG
-cat ${SFOLDER}/confs/php/${SERVER_MODEL}/www.conf >/etc/php/${PHP_V}/fpm/pool.d/www.conf
+cat "${SFOLDER}/confs/php/php-fpm.conf" >"/etc/php/${PHP_V}/fpm/php-fpm.conf"
 
-# TODO: if you install a new PHP version, you need  to reconfigure nginx sites
+# Replace string to match PHP version
+sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
+sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
+sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
+
+# TODO: need refactor, stop using SERVER_MODEL
+cat "${SFOLDER}/confs/php/${SERVER_MODEL}/www.conf" >"/etc/php/${PHP_V}/fpm/pool.d/www.conf"
+
+# Replace string to match PHP version
+sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
+
+# TODO: if you install a new PHP version, maybe you want to reconfigure an specific nginx_server
 # reconfigure_nginx_sites()
 # fastcgi_pass unix:/var/run/php/php5.6-fpm.sock;
-# fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;
+# fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;

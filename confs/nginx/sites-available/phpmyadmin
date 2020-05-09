@@ -4,12 +4,12 @@ server {
         #listen [::]:80 default_server ipv6only=on;
         root /var/www/phpmyadmin;
         index index.php index.html index.htm;
-        server_name db.dominio.com;
+        server_name dominio.com;
         location / {
                 try_files $uri $uri/ /index.php?q=$uri&$args;
         }
         location ~ \.php$ {
                 include snippets/fastcgi-php.conf;
-                fastcgi_pass unix:/run/php/php7.2-fpm.sock;
+                fastcgi_pass unix:/run/php/phpPHP_V-fpm.sock;
         }
 }
