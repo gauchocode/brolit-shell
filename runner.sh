@@ -2,22 +2,19 @@
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Script Name: LEMP Ubuntu Utils Scripts
-# Version: 3.0-rc01
+# Version: 3.0-rc02
 ################################################################################
 #
 # TODO: For release 3.0-final
-#       0- FIX PHP VERSION WHEN COPY PHP AND NGINX CONFIG!! 7.2-socks not change on different version!
 #       1- Complete refactor of restore_from_backup and delete_project scripts
-#       2- Support for Ubuntu 20.04 LTS
-#       3- When restore or create a new project and the db_user already exists, we need to ask what todo
-#       4- Menu refactor (Group IT Utils)
-#       5- Option to install Bashtop and other utils: http://packages.azlux.fr/
+#       2- When restore or create a new project and the db_user already exists, we need to ask what todo
 #
 # TODO: For release 3.1
 #       1- Refactor of RESTORE_FROM_SOURCE
 #       2- Refactor of WORDPRESS_INSTALLER - COPY_FROM_PROJECT
 #          We need to replace then with PROJECT_GENERATOR (or something like that)
 #          The idea is that you could create different kind of projects (WP, Laravel, Standalone)
+#       3- Option to install Bashtop and other utils: http://packages.azlux.fr/
 #
 # TODO: For release 3.2
 #       1- On backup failure, the email must show what files fails and what files are correct backuped
@@ -58,7 +55,7 @@
 # https://google.github.io/styleguide/shell.xml
 #
 
-SCRIPT_V="3.0-rc01"
+SCRIPT_V="3.0-rc02"
 
 ### Checking some things...#####################################################
 SFOLDER="`dirname \"$0\"`"                                                      # relative

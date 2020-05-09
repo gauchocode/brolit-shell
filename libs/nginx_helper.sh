@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc01
+# Version: 3.0-rc02
 ################################################################################
 
 source "${SFOLDER}/libs/commons.sh"
@@ -27,7 +27,7 @@ create_nginx_server() {
     sudo sed -i "s#dominio.com#${PROJECT_DOMAIN}#" "${WSERVER}/sites-available/${PROJECT_DOMAIN}"
 
     # TODO: ask wich version of php want to work with
-    
+
     # Replace string to match PHP version
     sudo sed -i "s#PHP_V#${PHP_V}#" "${WSERVER}/sites-available/${PROJECT_DOMAIN}"
 
