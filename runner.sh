@@ -6,6 +6,7 @@
 ################################################################################
 #
 # TODO: For release 3.0-final
+#       0- FIX PHP VERSION WHEN COPY PHP AND NGINX CONFIG!! 7.2-socks not change on different version!
 #       1- Complete refactor of restore_from_backup and delete_project scripts
 #       2- Support for Ubuntu 20.04 LTS
 #       3- When restore or create a new project and the db_user already exists, we need to ask what todo
@@ -221,14 +222,14 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 PATH_LOG="${SFOLDER}/logs"
 if [ ! -d "${SFOLDER}/logs" ]; then
   echo " > Folder ${SFOLDER}/logs doesn't exist. Creating now ..."
-  mkdir ${SFOLDER}/logs
+  mkdir "${SFOLDER}/logs"
   echo " > Folder ${SFOLDER}/logs created ..."
 fi
 
-LOG_NAME=log_back_${TIMESTAMP}.log
-LOG=${PATH_LOG}/${LOG_NAME}
+LOG_NAME="log_back_${TIMESTAMP}.log"
+LOG="${PATH_LOG}/${LOG_NAME}"
 
-find ${PATH_LOG} -name "*.log" -type f -mtime +7 -print -delete >>$LOG
+find "${PATH_LOG}" -name "*.log" -type f -mtime +7 -print -delete >>$LOG
 
 echo "Backup: Script Start -- $(date +%Y%m%d_%H%M)" >>$LOG
 
@@ -238,12 +239,12 @@ calculate_disk_usage
 ### Creating temporary folders
 if [ ! -d "${BAKWP}" ]; then
   echo " > Folder ${BAKWP} doesn't exist. Creating now ..." >>$LOG
-  mkdir ${BAKWP}
+  mkdir "${BAKWP}"
   echo " > Folder ${BAKWP} created ..." >>$LOG
 fi
 if [ ! -d "${BAKWP}/${NOW}" ]; then
   echo " > Folder ${BAKWP}/${NOW} doesn't exist. Creating now ..." >>$LOG
-  mkdir ${BAKWP}/${NOW}
+  mkdir "${BAKWP}/${NOW}"
   echo " > Folder ${BAKWP}/${NOW} created ..." >>$LOG
 fi
 

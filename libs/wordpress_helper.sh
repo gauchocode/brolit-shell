@@ -163,7 +163,7 @@ wp_database_creation() {
     SQL2="GRANT ALL PRIVILEGES ON ${PROJECT_NAME}_${PROJECT_STATE} . * TO '${PROJECT_NAME}_user'@'localhost';"
     SQL3="FLUSH PRIVILEGES;"
 
-    echo -e ${YELLOW}" > Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and granting privileges to user: ${PROJECT_NAME}_user ..."${ENDCOLOR}
+    echo -e ${CYAN}" > Creating database ${PROJECT_NAME}_${PROJECT_STATE}, and granting privileges to user: ${PROJECT_NAME}_user ..."${ENDCOLOR}
 
     $MYSQL -u "${MUSER}" --password="${MPASS}" -e "${SQL1}${SQL2}${SQL3}"
 
