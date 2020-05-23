@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc02
+# Version: 3.0-rc03
 ################################################################################
 
 ### Checking some things
@@ -59,7 +59,7 @@ else
 
         # Moving deleted project backups to another dropbox directory
         echo -e ${B_CYAN}" > Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${FILENAME} /${VPSNAME}/offline-site"${ENDCOLOR}
-        ${DPU_F}/dropbox_uploader.sh move "/${VPSNAME}/${BK_TYPE}/${FILENAME}" "/${VPSNAME}/offline-site"
+        $DROPBOX_UPLOADER move "/${VPSNAME}/${BK_TYPE}/${FILENAME}" "/${VPSNAME}/offline-site"
 
         # Delete project files
         rm -R $filepath"/"$FILENAME
@@ -97,7 +97,7 @@ if [ $exitstatus = 0 ]; then
 
     # Moving deleted project backups to another dropbox directory
     echo -e ${B_CYAN}" > Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${CHOSEN_DB} /${VPSNAME}/offline-site"${ENDCOLOR}
-    ${DPU_F}/dropbox_uploader.sh move "/${VPSNAME}/${BK_TYPE}/${CHOSEN_DB}" "/${VPSNAME}/offline-site"
+    $DROPBOX_UPLOADER move "/${VPSNAME}/${BK_TYPE}/${CHOSEN_DB}" "/${VPSNAME}/offline-site"
 
     # Delete project database
     mysql_database_drop "${CHOSEN_DB}"

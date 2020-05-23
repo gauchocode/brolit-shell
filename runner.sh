@@ -2,7 +2,7 @@
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Script Name: LEMP Ubuntu Utils Scripts
-# Version: 3.0-rc02
+# Version: 3.0-rc03
 ################################################################################
 #
 # TODO: For release 3.0-final
@@ -10,6 +10,8 @@
 #       2- When restore or create a new project and the db_user already exists, we need to ask what todo
 #       3- On php_installer if multiple php versions are installed de PHP_V need to be an array
 #          So, if you need to install a new site, must ask what php_v to use.
+#       4- Fix project creation when use a project name like this: xyz_sub_domain (could be a problem with sed on wordpress installer)
+#       5- Test VALIDATORS (commons.sh) and use functions on user prompt
 #
 # TODO: For release 3.1
 #       1- Refactor of RESTORE_FROM_SOURCE
@@ -24,7 +26,7 @@
 #       2- Support for dailys, weeklys y monthlys backups
 #       3- Mail notification when a new site is installed
 #       4- Warning if script run on non default installation (no webserver or another than nginx)
-#       5- Option to install script on crontab
+#       5- Option to install script on crontab (use cron_this function)
 #
 # TODO: For release 3.5
 #       1- Finish php_optimizations (deprecate Hetzner model mode) and integrate with Lemp Installer
@@ -33,23 +35,27 @@
 #       4- Rethink server_and_image_optimizations.sh (maybe add a pdf optimization files too)
 #       5- MySQL optimization script
 #       6- Rename database helper (with and without WP)
-#       7- Add some IT utils (change hostname, add floating IP, change SSH port)
+#       7- Fallback for replace on wp database (if wp-cli fails, use old script version)
+#       8- Add some IT utils (change hostname, add floating IP, change SSH port)
 #
 # TODO: For release 4.0
-#       1- Support for Rclone? https://github.com/rclone/rclone
-#       2- Uptime Robot API?
-#       3- Auto-update script option
-#       4- Telegram notifications support: https://adevnull.com/enviar-mensajes-a-telegram-con-bash/
-#       5- Better LEMP setup, tzdata y mysql_secure_installation without human intervention
-#       6- Hetzner cloud cli support:
+#       1- Need a refactor to let the script be runned with flags
+#          Ex: ./runner.sh --backup-project="/var/www/some.domain.com"
+#       2- Support for Rclone? https://github.com/rclone/rclone
+#       3- Uptime Robot API?
+#       4- Auto-update script option
+#       5- Telegram notifications support: https://adevnull.com/enviar-mensajes-a-telegram-con-bash/
+#       6- Better LEMP setup, tzdata y mysql_secure_installation without human intervention
+#       7- Hetzner cloud cli support:
 #           https://github.com/hetznercloud/cli
 #           https://github.com/thabbs/hetzner-cloud-cli-sh
 #           https://github.com/thlisym/hetznercloud-py
 #           https://hcloud-python.readthedocs.io/en/latest/
-#       7- Web GUI:
+#       8- Web GUI, some options:
 #           https://github.com/bugy/script-server
 #           https://github.com/joewalnes/websocketd
 #           https://github.com/ncarlier/webhookd
+#           https://www.php.net/manual/en/function.shell-exec.php
 #
 ################################################################################
 #
@@ -57,7 +63,7 @@
 #
 ################################################################################
 
-SCRIPT_V="3.0-rc02"
+SCRIPT_V="3.0-rc03"
 
 ### Init #######################################################################
 
@@ -134,6 +140,22 @@ BAKWP="${SFOLDER}/tmp"
 MHOST="localhost"
 MUSER="root"
 
+### Log #######################################################################
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+PATH_LOG="${SFOLDER}/logs"
+if [ ! -d "${SFOLDER}/logs" ]; then
+  echo " > Folder ${SFOLDER}/logs doesn't exist. Creating now ..."
+  mkdir "${SFOLDER}/logs"
+  echo " > Folder ${SFOLDER}/logs created ..."
+fi
+
+LOG_NAME="log_back_${TIMESTAMP}.log"
+LOG="${PATH_LOG}/${LOG_NAME}"
+
+find "${PATH_LOG}" -name "*.log" -type f -mtime +7 -print -delete >>$LOG
+
+echo "Backup: Script Start -- $(date +%Y%m%d_%H%M)" >>$LOG
+
 ################################################################################
 
 # Status (STATUS_D, STATUS_F, STATUS_S, OUTDATED)
@@ -154,6 +176,7 @@ if [[ -e ${DPU_CONFIG_FILE} ]]; then
 else
   generate_dropbox_config
 fi
+DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
 
 # Cloudflare config file
 CLF_CONFIG_FILE=~/.cloudflare.conf
@@ -181,7 +204,7 @@ MYSQLDUMP="$(which mysqldump)"
 TAR="$(which tar)"
 
 # EXPORT VARS (GLOBALS)
-export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F SITES SITES_BL DB_BL WSERVER PHP_CF LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
+export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER PHP_CF LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
 
 if [ -t 1 ]; then
 
@@ -216,22 +239,6 @@ else
   fi
 
 fi
-
-### Log Start
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-PATH_LOG="${SFOLDER}/logs"
-if [ ! -d "${SFOLDER}/logs" ]; then
-  echo " > Folder ${SFOLDER}/logs doesn't exist. Creating now ..."
-  mkdir "${SFOLDER}/logs"
-  echo " > Folder ${SFOLDER}/logs created ..."
-fi
-
-LOG_NAME="log_back_${TIMESTAMP}.log"
-LOG="${PATH_LOG}/${LOG_NAME}"
-
-find "${PATH_LOG}" -name "*.log" -type f -mtime +7 -print -delete >>$LOG
-
-echo "Backup: Script Start -- $(date +%Y%m%d_%H%M)" >>$LOG
 
 ### Disk Usage
 calculate_disk_usage

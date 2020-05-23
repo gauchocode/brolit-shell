@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc02
+# Version: 3.0-rc03
 ################################################################################
 
 source "${SFOLDER}/libs/commons.sh"
@@ -146,12 +146,12 @@ wp_database_creation() {
 
     if [ $? -eq 0 ]; then
       echo " > DONE!" >>$LOG
-      echo -e ${GREEN}" > DONE!"${ENDCOLOR}
+      echo -e ${B_GREEN}" > DONE!"${ENDCOLOR}
       return 0
 
     else
       echo " > Something went wrong!" >>$LOG
-      echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
+      echo -e ${B_RED}" > Something went wrong!"${ENDCOLOR}
       exit 1
 
     fi

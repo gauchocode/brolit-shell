@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc02
+# Version: 3.0-rc03
 #############################################################################
 
 ### Checking Script Execution
@@ -11,10 +11,10 @@ if [[ -z "${SFOLDER}" ]]; then
 fi
 ################################################################################
 
-source ${SFOLDER}/libs/commons.sh
-source ${SFOLDER}/libs/mysql_helper.sh
-source ${SFOLDER}/libs/backup_helper.sh
-source ${SFOLDER}/libs/mail_notification_helper.sh
+source "${SFOLDER}/libs/commons.sh"
+source "${SFOLDER}/libs/mysql_helper.sh"
+source "${SFOLDER}/libs/backup_helper.sh"
+source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 ################################################################################
 
@@ -52,9 +52,6 @@ BK_SCF_INDEX=0
 BK_SCF_ARRAY_INDEX=0
 declare -a BACKUPED_SCF_LIST
 declare -a BK_SCF_SIZES
-
-#echo " > Creating Dropbox folder ${CONFIG_F} on Dropbox ..." >>$LOG
-#${DPU_F}/dropbox_uploader.sh mkdir /${CONFIG_F}
 
 # TAR Webserver Config Files
 if [[ ! -d "${WSERVER}" ]]; then
