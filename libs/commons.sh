@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc02
+# Version: 3.0-rc03
 ################################################################################
 
 ################################################################################
@@ -444,42 +444,34 @@ checking_scripts_permissions() {
 }
 
 ################################################################################
-# VALIDATORS
-################################################################################
-
-is_domain_format_valid() {
-  object_name=${2-domain}
-  exclude="[!|@|#|$|^|&|*|(|)|+|=|{|}|:|,|<|>|?|_|/|\|\"|'|;|%|\`| ]"
-  if [[ $1 =~ $exclude ]] || [[ $1 =~ ^[0-9]+$ ]] || [[ $1 =~ "\.\." ]] || [[ $1 =~ "$(printf '\t')" ]]; then
-    check_result $E_INVALID "invalid $object_name format :: $1"
-  fi
-}
-
-is_ip_format_valid() {
-  object_name=${2-ip}
-  ip_regex='([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])'
-  ip_clean=$(echo "${1%/*}")
-  if ! [[ $ip_clean =~ ^$ip_regex\.$ip_regex\.$ip_regex\.$ip_regex$ ]]; then
-    check_result $E_INVALID "invalid $object_name format :: $1"
-  fi
-  if [ $1 != "$ip_clean" ]; then
-    ip_cidr="$ip_clean/"
-    ip_cidr=$(echo "${1#$ip_cidr}")
-    if [[ "$ip_cidr" -gt 32 ]] || [[ "$ip_cidr" =~ [:alnum:] ]]; then
-      check_result $E_INVALID "invalid $object_name format :: $1"
-    fi
-  fi
-}
-
-is_email_format_valid() {
-  if [[ ! "$1" =~ ^[A-Za-z0-9._%+-]+@[[:alnum:].-]+\.[A-Za-z]{2,63}$ ]]; then
-    check_result $E_INVALID "invalid email format :: $1"
-  fi
-}
-
-################################################################################
 # HELPERS
 ################################################################################
+
+log_event() {
+    if [ -z "$time" ]; then
+        LOG_TIME="$(date +'%F %T') $(basename $0)"
+    else
+        LOG_TIME="$date $time $(basename $0)"
+    fi
+    if [ "$1" -eq 0 ]; then
+        echo "$LOG_TIME $2" >> $VESTA/log/system.log
+    else
+        echo "$LOG_TIME $2 [Error $1]" >> $VESTA/log/error.log
+    fi
+}
+
+check_result() {
+    if [ $1 -ne 0 ]; then
+        echo "Error: $2"
+        if [ ! -z "$3" ]; then
+            log_event "$3" "$ARGUMENTS"
+            exit $3
+        else
+            log_event "$1" "$ARGUMENTS"
+            exit $1
+        fi
+    fi
+}
 
 get_ubuntu_version() {
 
@@ -659,17 +651,16 @@ check_if_folder_exists() {
   # $1 = ${FOLDER_TO_INSTALL}
   # $2 = ${DOMAIN}
 
-  FOLDER_TO_INSTALL=$1
-  DOMAIN=$2
+  local FOLDER_TO_INSTALL=$1
+  local DOMAIN=$2
 
-  PROJECT_DIR="${FOLDER_TO_INSTALL}/${DOMAIN}"
+  local PROJECT_DIR="${FOLDER_TO_INSTALL}/${DOMAIN}"
+  
   if [ -d "${PROJECT_DIR}" ]; then
-    echo -e ${RED}"ERROR: Destination folder '${PROJECT_DIR}' already exist, aborting ..."${ENDCOLOR}
-    return 1
+    echo "ERROR"
 
   else
-    echo -e ${YELLOW}"OK: Destination folder '${PROJECT_DIR}' ..."${ENDCOLOR}
-    return 0
+    echo "${PROJECT_DIR}"
 
   fi
 }
@@ -685,7 +676,7 @@ prompt_return_or_finish() {
         break
         ;;
       [Nn]*)
-        echo -e ${RED}"Exiting script ..."${ENDCOLOR}
+        echo -e ${B_RED}"Exiting script ..."${ENDCOLOR}
         exit 0
         ;;
       *) echo "Please answer yes or no." ;;
@@ -697,7 +688,7 @@ prompt_return_or_finish() {
 extract () {
   
   #1 - File to uncompress or extract
-  #2- Optional compress-program (ex: lbzip2)
+  #2 - Optional compress-program (ex: lbzip2)
 
     if [ -f $1 ]; then
         case $1 in
@@ -724,6 +715,81 @@ extract () {
     else
         echo "'$1' is not a valid file"
     fi
+}
+
+cron_this () {
+
+  #1 - croncmd ("/home/me/myfunction myargs > /home/me/myfunction.log 2>&1")
+  #2 - crontime ("0 */15 * * *")
+
+  croncmd=$1
+  crontime=$2
+
+  local cronjob="$crontime $croncmd"
+  
+  #Add it to the crontab, with no duplication
+  ( crontab -l | grep -v -F "$croncmd" ; echo "$cronjob" ) | crontab -
+
+}
+
+cron_remove () {
+
+  #1 - croncmd ("/home/me/myfunction myargs > /home/me/myfunction.log 2>&1")
+
+  croncmd=$1
+  
+  #Remove it from the crontab whatever its current schedule
+  ( crontab -l | grep -v -F "$croncmd" ) | crontab -
+
+}
+
+################################################################################
+# VALIDATORS
+################################################################################
+
+is_domain_format_valid() {
+
+  # $1 = domain
+
+  local domain=$1
+
+  object_name=${2-domain}
+  exclude="[!|@|#|$|^|&|*|(|)|+|=|{|}|:|,|<|>|?|_|/|\|\"|'|;|%|\`| ]"
+  if [[ ${domain} =~ $exclude ]] || [[ ${domain} =~ ^[0-9]+$ ]] || [[ ${domain} =~ "\.\." ]] || [[ ${domain} =~ "$(printf '\t')" ]]; then
+    check_result $E_INVALID "invalid $object_name format :: ${domain}"
+  fi
+}
+
+is_ip_format_valid() {
+
+  # $1 = ip
+
+  local ip=$1
+
+  object_name=${2-ip}
+  ip_regex='([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])'
+  ip_clean=$(echo "${ip%/*}")
+  if ! [[ $ip_clean =~ ^$ip_regex\.$ip_regex\.$ip_regex\.$ip_regex$ ]]; then
+    check_result $E_INVALID "invalid $object_name format :: ${ip}"
+  fi
+  if [ "${ip}" != "$ip_clean" ]; then
+    ip_cidr="$ip_clean/"
+    ip_cidr=$(echo "${1#$ip_cidr}")
+    if [[ "$ip_cidr" -gt 32 ]] || [[ "$ip_cidr" =~ [:alnum:] ]]; then
+      check_result $E_INVALID "invalid $object_name format :: ${ip}"
+    fi
+  fi
+}
+
+is_email_format_valid() {
+
+  # $1 = email
+
+  local email=$1
+
+  if [[ ! "${email}" =~ ^[A-Za-z0-9._%+-]+@[[:alnum:].-]+\.[A-Za-z]{2,63}$ ]]; then
+    check_result $E_INVALID "invalid email format :: ${email}"
+  fi
 }
 
 ################################################################################

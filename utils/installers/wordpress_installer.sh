@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc02
+# Version: 3.0-rc03
 ################################################################################
 #
 # https://github.com/AbhishekGhosh/Ubuntu-16.04-Nginx-WordPress-Autoinstall-Bash-Script/
@@ -64,20 +64,19 @@ if [ $exitstatus = 0 ]; then
 
     ask_project_state ""
 
-    check_if_folder_exists "${FOLDER_TO_INSTALL}" "${PROJECT_DOMAIN}"
-    exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    project_dir=$(check_if_folder_exists "${FOLDER_TO_INSTALL}" "${PROJECT_DOMAIN}")
+    if [ "${project_dir}" != 'ERROR' ]; then
       # Make a copy of the existing project
       echo "Making a copy of ${COPY_PROJECT} ..." >>$LOG
       echo -e ${CYAN}"Making a copy of ${COPY_PROJECT} ..."${ENDCOLOR}
 
       cd "${FOLDER_TO_INSTALL}"
-      cp -r "${FOLDER_TO_INSTALL}/${COPY_PROJECT}" "${PROJECT_DIR}"
+      cp -r "${FOLDER_TO_INSTALL}/${COPY_PROJECT}" "${project_dir}"
 
       echo "DONE" >>$LOG
 
     else
-
+      echo -e ${B_RED}"ERROR: Destination folder '${project_dir}' already exist, aborting ..."${ENDCOLOR}
       echo "FAIL" >>$LOG
       exit 1
 
@@ -94,14 +93,14 @@ if [ $exitstatus = 0 ]; then
 
     ask_project_state ""
 
-    check_if_folder_exists "${FOLDER_TO_INSTALL}" "${PROJECT_DOMAIN}"
-    exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    project_dir=$(check_if_folder_exists "${FOLDER_TO_INSTALL}" "${PROJECT_DOMAIN}")
+    if [ "${project_dir}" != 'ERROR' ]; then
       # Download WP
       wp_download_wordpress "${FOLDER_TO_INSTALL}" "${PROJECT_DOMAIN}"
-      echo "DONE" >>$LOG
+      echo "WordPress downloaded OK!" >>$LOG
 
     else
+      echo -e ${B_RED}"ERROR: Destination folder '${project_dir}' already exist, aborting ..."${ENDCOLOR}
       echo "FAIL" >>$LOG
       exit 1
 
@@ -109,17 +108,17 @@ if [ $exitstatus = 0 ]; then
 
   fi
 
-  wp_change_ownership "${PROJECT_DIR}"
+  wp_change_ownership "${project_dir}"
 
   # Create database and user
   wp_database_creation "${PROJECT_NAME}" "${PROJECT_STATE}"
 
   # Update wp-config.php
   if [[ -z "${DB_PASS}" ]]; then
-    wp_update_wpconfig "${PROJECT_DIR}" "${PROJECT_NAME}" "${PROJECT_STATE}" ""
+    wp_update_wpconfig "${project_dir}" "${PROJECT_NAME}" "${PROJECT_STATE}" ""
   
   else
-    wp_update_wpconfig "${PROJECT_DIR}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
+    wp_update_wpconfig "${project_dir}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
   
   fi
   
@@ -158,7 +157,7 @@ if [ $exitstatus = 0 ]; then
       # Generate WP tables PREFIX
       TABLES_PREFIX=$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)
       # Change WP tables PREFIX
-      wpcli_change_tables_prefix "${PROJECT_DIR}" "${TABLES_PREFIX}"
+      wpcli_change_tables_prefix "${project_dir}" "${TABLES_PREFIX}"
 
       # Create tmp directory
       mkdir "${SFOLDER}/tmp-backup"
@@ -166,12 +165,13 @@ if [ $exitstatus = 0 ]; then
       # Make a database Backup before replace URLs
       mysql_database_export "${TARGET_DB}" "${SFOLDER}/tmp-backup/${TARGET_DB}_bk_before_replace_urls.sql"
 
-      ask_url_search_and_replace "${PROJECT_DIR}"
+      # WP Search and Replace URL
+      ask_url_search_and_replace "${project_dir}"
 
     else
       echo " > mysqldump ERROR: $? ..." >>$LOG
-      echo -e ${RED}" > mysqldump ERROR: $? ..."${ENDCOLOR}
-      echo -e ${RED}" > Aborting ..."${ENDCOLOR}
+      echo -e ${B_RED}" > mysqldump ERROR: $? ..."${ENDCOLOR}
+      echo -e ${B_RED}" > Aborting ..."${ENDCOLOR}
       exit 1
 
     fi
@@ -193,10 +193,8 @@ if [ $exitstatus = 0 ]; then
   # HTTPS with Certbot
   certbot_certificate_install "${MAILA}" "${PROJECT_DOMAIN}"
 
-  # WP Search and Replace URL
-  ask_url_search_and_replace
-
-  echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
+  echo " > WORDPRESS INSTALLATION FINISHED!" >>$LOG
+  echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FINISHED!"${ENDCOLOR}
 
 fi
 

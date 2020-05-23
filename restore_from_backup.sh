@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc02
+# Version: 3.0-rc03
 ################################################################################
 
 # TO-FIX: mysql restore fail when cant create mysql user
@@ -134,7 +134,7 @@ select_and_restore_config_from_dropbox(){
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
     #Restore from Dropbox
-    DROPBOX_BK_LIST=$(${DPU_F}/dropbox_uploader.sh -hq list "${DROPBOX_CHOSEN_TYPE_PATH}/${CHOSEN_CONFIG_TYPE}")
+    DROPBOX_BK_LIST=$($DROPBOX_UPLOADER -hq list "${DROPBOX_CHOSEN_TYPE_PATH}/${CHOSEN_CONFIG_TYPE}")
   fi
 
   CHOSEN_CONFIG_BK=$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Choose a config backup file to restore." 20 78 10 $(for x in ${DROPBOX_BK_LIST}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
@@ -145,7 +145,7 @@ select_and_restore_config_from_dropbox(){
     cd "${SFOLDER}/tmp"
 
     echo " > Downloading from Dropbox ${DROPBOX_CHOSEN_TYPE_PATH}/${CHOSEN_CONFIG_TYPE}/${CHOSEN_CONFIG_BK} ..." >>$LOG
-    ${DPU_F}/dropbox_uploader.sh download "${DROPBOX_CHOSEN_TYPE_PATH}/${CHOSEN_CONFIG_TYPE}/${CHOSEN_CONFIG_BK}"
+    $DROPBOX_UPLOADER download "${DROPBOX_CHOSEN_TYPE_PATH}/${CHOSEN_CONFIG_TYPE}/${CHOSEN_CONFIG_BK}"
 
     # Restore files
     mkdir "${CHOSEN_CONFIG_TYPE}"
@@ -364,13 +364,14 @@ SITES_F="site"
 CONFIG_F="configs"
 DBS_F="database"
 
-DROPBOX_SERVER_LIST=$("${DPU_F}/dropbox_uploader.sh" -hq list "/")
+DROPBOX_SERVER_LIST=$($DROPBOX_UPLOADER -hq list "/")
 
 # Select SERVER
 CHOSEN_SERVER=$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 $(for x in ${DROPBOX_SERVER_LIST}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
-  DROPBOX_TYPE_LIST=$(${DPU_F}/dropbox_uploader.sh -hq list "${CHOSEN_SERVER}")
+
+  DROPBOX_TYPE_LIST=$($DROPBOX_UPLOADER -hq list "${CHOSEN_SERVER}")
 
   # Select backup type
   CHOSEN_TYPE=$(whiptail --title "RESTORE BACKUP" --menu "Choose a backup type. If you want to restore an entire site, first restore the site files, then the config, and last the database." 20 78 10 $(for x in ${DROPBOX_TYPE_LIST}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
@@ -378,7 +379,7 @@ if [ $exitstatus = 0 ]; then
   if [ $exitstatus = 0 ]; then
 
     DROPBOX_CHOSEN_TYPE_PATH="${CHOSEN_SERVER}/${CHOSEN_TYPE}"
-    DROPBOX_PROJECT_LIST=$("${DPU_F}/dropbox_uploader.sh" -hq list "${DROPBOX_CHOSEN_TYPE_PATH}")
+    DROPBOX_PROJECT_LIST=$($DROPBOX_UPLOADER -hq list "${DROPBOX_CHOSEN_TYPE_PATH}")
     
     if [[ ${CHOSEN_TYPE} == *"$CONFIG_F"* ]]; then
 
@@ -391,7 +392,7 @@ if [ $exitstatus = 0 ]; then
       exitstatus=$?
       if [ $exitstatus = 0 ]; then
         DROPBOX_CHOSEN_BACKUP_PATH="${DROPBOX_CHOSEN_TYPE_PATH}/${CHOSEN_PROJECT}"
-        DROPBOX_BACKUP_LIST=$(${DPU_F}/dropbox_uploader.sh -hq list "${DROPBOX_CHOSEN_BACKUP_PATH}")
+        DROPBOX_BACKUP_LIST=$($DROPBOX_UPLOADER -hq list "${DROPBOX_CHOSEN_BACKUP_PATH}")
 
       fi
       # Select Backup File
@@ -405,7 +406,7 @@ if [ $exitstatus = 0 ]; then
 
         echo " > Running dropbox_uploader.sh download ${BK_TO_DOWNLOAD}" >>$LOG
 
-        ${DPU_F}/dropbox_uploader.sh download "${BK_TO_DOWNLOAD}"
+        $DROPBOX_UPLOADER download "${BK_TO_DOWNLOAD}"
 
         echo -e ${CYAN}" > Uncompressing ${CHOSEN_BACKUP_TO_RESTORE}"${ENDCOLOR}
         echo " > Uncompressing ${CHOSEN_BACKUP_TO_RESTORE}" >>$LOG

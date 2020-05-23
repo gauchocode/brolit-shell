@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc02
+# Version: 3.0-rc03
 ################################################################################
 
 source "${SFOLDER}/libs/commons.sh"
@@ -87,7 +87,7 @@ create_nginx_globals_confs() {
         exit 1
 
     else
-        mkdir ${nginx_globals}
+        mkdir "${nginx_globals}"
 
     fi
 
