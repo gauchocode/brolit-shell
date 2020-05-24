@@ -14,12 +14,13 @@
 #       5- Test VALIDATORS (commons.sh) and use functions on user prompt
 #
 # TODO: For release 3.1
-#       1- Refactor of RESTORE_FROM_SOURCE
+#       1- Refactor of RESTORE_FROM_SOURCE and complete server config restore
 #       2- Implement on restore_from_backup easy way to restore all sites
 #       3- Refactor of WORDPRESS_INSTALLER - COPY_FROM_PROJECT
 #          We need to replace then with PROJECT_GENERATOR (or something like that)
 #          The idea is that you could create different kind of projects (WP, Laravel, Standalone)
-#       4- Option to install Bashtop and other utils: http://packages.azlux.fr/
+#       4- Better log with check_result and log_event functions (commons.sh)
+#       5- Option to install Bashtop and other utils: http://packages.azlux.fr/
 #
 # TODO: For release 3.2
 #       1- On backup failure, the email must show what files fails and what files are correct backuped
@@ -31,12 +32,11 @@
 # TODO: For release 3.5
 #       1- Finish php_optimizations (deprecate Hetzner model mode) and integrate with Lemp Installer
 #       2- Expand Duplicity support with a restore option
-#       3- Full support for restore server config files
-#       4- Rethink server_and_image_optimizations.sh (maybe add a pdf optimization files too)
-#       5- MySQL optimization script
-#       6- Rename database helper (with and without WP)
-#       7- Fallback for replace on wp database (if wp-cli fails, use old script version)
-#       8- Add some IT utils (change hostname, add floating IP, change SSH port)
+#       3- Rethink server_and_image_optimizations.sh (maybe add a pdf optimization files too)
+#       4- MySQL optimization script
+#       5- Rename database helper (with and without WP)
+#       6- Fallback for replace strings on wp database (if wp-cli fails, use old script version)
+#       7- Add some IT utils (change hostname, add floating IP, change SSH port)
 #
 # TODO: For release 4.0
 #       1- Need a refactor to let the script be runned with flags

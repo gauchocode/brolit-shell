@@ -4,9 +4,6 @@
 # Version: 3.0-rc03
 ################################################################################
 
-# TO-FIX: mysql restore fail when cant create mysql user
-# TO-FIX: sometimes GRANT PRIVILEGES fails, use mysql_helper.sh
-
 ### Checking some things
 if [[ -z "${SFOLDER}" ]]; then
   echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
