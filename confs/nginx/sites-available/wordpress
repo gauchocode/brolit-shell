@@ -1,7 +1,7 @@
 server {
         charset utf-8;
        	listen 80;
-        #listen [::]:80 default_server ipv6only=on; ## listen for ipv6
+        listen [::]:80 ipv6only=on; ## listen for ipv6
         root /var/www/dominio.com;
         
         index index.php;
