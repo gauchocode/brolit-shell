@@ -10,17 +10,11 @@ if [[ -z "${SFOLDER}" ]]; then
   exit 0
 fi
 
-# TODO: stop doing this, calculate based on vps specifications
-SERVER_MODEL="cx21" # Options: cx11, cx21, cx31
-
-if [[ -z "${SERVER_MODEL}" ]]; then
-  echo -e ${RED}"Error: SERVER_MODEL must be set! Exiting..."${ENDCOLOR}
-  exit 0
-fi
-
 ################################################################################
 
 source "${SFOLDER}/libs/commons.sh"
+
+################################################################################
 
 php_installer() {
 
@@ -137,7 +131,6 @@ fi
 #fi
 
 # TODO: need refactor, using php_optimizations.sh
-#${SFOLDER}/utils/php_optimizations.sh
 echo -e ${CYAN}" > Moving php configuration file ..."${ENDCOLOR}
 echo " > Moving php configuration file ..." >>$LOG
 cat "${SFOLDER}/confs/php/php.ini" >"/etc/php/${PHP_V}/fpm/php.ini"
@@ -151,11 +144,8 @@ sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
 sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
 sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
 
-# TODO: need refactor, stop using SERVER_MODEL
-cat "${SFOLDER}/confs/php/${SERVER_MODEL}/www.conf" >"/etc/php/${PHP_V}/fpm/pool.d/www.conf"
-
-# Replace string to match PHP version
-sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
+# Run php_optimizations.sh
+${SFOLDER}/utils/php_optimizations.sh
 
 # TODO: if you install a new PHP version, maybe you want to reconfigure an specific nginx_server
 # reconfigure_nginx_sites()

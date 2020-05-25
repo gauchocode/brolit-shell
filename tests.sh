@@ -29,11 +29,20 @@ if test -f /root/.broobe-utils-options; then
   source /root/.broobe-utils-options
 fi
 
+# Cloudflare config file
+CLF_CONFIG_FILE=~/.cloudflare.conf
+if [[ -e ${CLF_CONFIG_FILE} ]]; then
+  source "${CLF_CONFIG_FILE}"
+else
+  generate_cloudflare_config
+fi
+
 source "${SFOLDER}/libs/commons.sh"
 source "${SFOLDER}/libs/mail_notification_helper.sh"
 source "${SFOLDER}/libs/packages_helper.sh"
 source "${SFOLDER}/libs/backup_helper.sh"
 source "${SFOLDER}/libs/mysql_helper.sh"
+source "${SFOLDER}/libs/cloudflare_helper.sh"
 
 ####################### TEST FOR mail_cert_section #######################
 
@@ -117,3 +126,5 @@ test_mysql_database_exists(){
 
 #to_test="/var/www/goseries-master"
 #is_wp_project "$to_test"
+
+cloudflare_change_a_record "dwell.com.ar" "test.dwell.com.ar"

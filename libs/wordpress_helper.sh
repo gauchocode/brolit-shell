@@ -11,11 +11,11 @@ source "${SFOLDER}/libs/wpcli_helper.sh"
 
 search_wp_config () {
 
-    # $1 = ${DIR_TO_SEARCH}
+    # $1 = ${dir_to_search}
 
-    DIR_TO_SEARCH=$1
+    local dir_to_search=$1
 
-    find "${DIR_TO_SEARCH}" -name "wp-config.php" | sed 's|/[^/]*$||'
+    find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||'
 
 }
 
@@ -51,10 +51,10 @@ wp_update_wpconfig() {
   # $3 = ${WP_PROJECT_STATE}
   # $4 = ${DB_USER_PASS}
 
-  WP_SITE_PATH=$1
-  WP_PROJECT_NAME=$2
-  WP_PROJECT_STATE=$3
-  DB_USER_PASS=$4
+  local WP_SITE_PATH=$1
+  local WP_PROJECT_NAME=$2
+  local WP_PROJECT_STATE=$3
+  local DB_USER_PASS=$4
 
   # Change wp-config.php database parameters
   echo -e ${YELLOW}"Changing wp-config.php database parameters ..."${ENDCOLOR}

@@ -6,7 +6,7 @@
 
 source "${SFOLDER}/libs/commons.sh"
 source "${SFOLDER}/libs/nginx_helper.sh"
-#source ${SFOLDER}/libs/mysql_helper.sh
+source "${SFOLDER}/libs/cloudflare_helper.sh"
 
 ################################################################################
 
@@ -184,12 +184,7 @@ if [ ! -x "${NETDATA}" ]; then
       netdata_configuration
 
       # Cloudflare API
-      echo " > Trying to access Cloudflare API and change record ${NETDATA_SUBDOMAIN} ..." >>$LOG
-      echo -e ${YELLOW}" > Trying to access Cloudflare API and change record ${NETDATA_SUBDOMAIN} ..."${ENDCOLOR}
-      zone_name=${ROOT_DOMAIN}
-      record_name=${NETDATA_SUBDOMAIN}
-      export zone_name record_name
-      "${SFOLDER}/utils/cloudflare_update_IP.sh"
+      cloudflare_change_a_record "${ROOT_DOMAIN}" "${NETDATA_SUBDOMAIN}"
 
       DOMAIN=${NETDATA_SUBDOMAIN}
       #CHOSEN_CB_OPTION="1"

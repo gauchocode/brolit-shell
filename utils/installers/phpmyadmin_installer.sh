@@ -13,6 +13,7 @@ fi
 
 source "${SFOLDER}/libs/commons.sh"
 source "${SFOLDER}/libs/nginx_helper.sh"
+source "${SFOLDER}/libs/cloudflare_helper.sh"
 source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 ################################################################################
@@ -39,13 +40,7 @@ rm "phpMyAdmin-latest-all-languages.zip"
 mv phpMyAdmin-* "${DOMAIN}"
 
 # Cloudflare API to change DNS records
-echo "Trying to access Cloudflare API and change record ${DOMAIN} ..." >>$LOG
-echo -e ${YELLOW}"Trying to access Cloudflare API and change record ${DOMAIN} ..."${ENDCOLOR}
-
-zone_name=${ROOT_DOMAIN}
-record_name=${DOMAIN}
-export zone_name record_name
-"${SFOLDER}/utils/cloudflare_update_IP.sh"
+cloudflare_change_a_record "${ROOT_DOMAIN}" "${DOMAIN}"
 
 # New site Nginx configuration
 create_nginx_server "${PROJECT_DOMAIN}" "phpmyadmin"
