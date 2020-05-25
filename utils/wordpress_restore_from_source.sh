@@ -17,6 +17,7 @@ source "${SFOLDER}/libs/packages_helper.sh"
 source "${SFOLDER}/libs/wordpress_helper.sh"
 source "${SFOLDER}/libs/wpcli_helper.sh"
 source "${SFOLDER}/libs/nginx_helper.sh"
+source "${SFOLDER}/libs/cloudflare_helper.sh"
 source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 ################################################################################
@@ -195,19 +196,13 @@ if [ -z "${install_path}" ]; then
 create_nginx_server "${PROJECT_DOMAIN}" "wordpress"
 
 # Get server IP
-IP=$(dig +short myip.opendns.com @resolver1.opendns.com) 2>/dev/null
+#IP=$(dig +short myip.opendns.com @resolver1.opendns.com) 2>/dev/null
 
 # TODO: Ask for subdomains to change in Cloudflare (root domain asked before)
 # SUGGEST "${PROJECT_DOMAIN}" and "www${PROJECT_DOMAIN}"
 
 # Cloudflare API to change DNS records
-echo "Trying to access Cloudflare API and change record ${PROJECT_DOMAIN} ..." >>$LOG
-echo -e ${YELLOW}"Trying to access Cloudflare API and change record ${PROJECT_DOMAIN} ..."${ENDCOLOR}
-
-zone_name=${ROOT_DOMAIN}
-record_name=${PROJECT_DOMAIN}
-export zone_name record_name
-"${SFOLDER}/utils/cloudflare_update_IP.sh"
+cloudflare_change_a_record "${ROOT_DOMAIN}" "${PROJECT_DOMAIN}"
 
 # HTTPS with Certbot
 certbot_certificate_install "${MAILA}" "${PROJECT_DOMAIN}"
