@@ -15,6 +15,8 @@ source "${SFOLDER}/libs/commons.sh"
 source "${SFOLDER}/libs/mysql_helper.sh"
 source "${SFOLDER}/libs/wpcli_helper.sh"
 source "${SFOLDER}/libs/wordpress_helper.sh"
+source "${SFOLDER}/libs/certbot_helper.sh"
+source "${SFOLDER}/libs/cloudflare_helper.sh"
 source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 ################################################################################
@@ -231,70 +233,68 @@ select_and_restore_config_from_dropbox(){
 
 select_and_restore_site_from_dropbox(){
 
-  #TODO: is this ok? or copy from project instead?
+  # $1 = ${chosen_domain} Here, should match with PROJECT_DOMAIN
 
-  # $1 = CHOSEN_PROJECT
+  local chosen_domain=$1
 
-  CHOSEN_PROJECT=$1
+  local project_tmp_folder="${SFOLDER}/tmp/${chosen_domain}"
+  local actual_folder folder_to_install
 
-  PROJECT_TMP_FOLDER="${SFOLDER}/tmp/${CHOSEN_PROJECT}"
 
-  CHOSEN_PROJECT=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${CHOSEN_PROJECT}" 3>&1 1>&2 2>&3)
+  chosen_domain=$(whiptail --title "Project Name" --inputbox "Want to change the project's domain? Default:" 10 60 "${chosen_domain}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
     
-    echo "Setting CHOSEN_PROJECT=${CHOSEN_PROJECT}" >>$LOG
-    echo -e ${CYAN}" > Renaming ${PROJECT_TMP_FOLDER} to ${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT}..."${ENDCOLOR}    
+    echo "Setting chosen_domain=${chosen_domain}" >>$LOG
+      
+    # Ask folder to install
+    folder_to_install=$(ask_folder_to_install_sites "${SITES}")
+
+    actual_folder="${folder_to_install}/${chosen_domain}"
+
+    # Check if destination folder exist
+    if [ -d "${actual_folder}" ]; then
+
+      echo " > ${actual_folder} exist. Let's make a Backup ..." >>$LOG
+      echo -e ${YELLOW}" > ${actual_folder} exist. Let's make a Backup ..."${ENDCOLOR}
+
+      make_temp_files_backup "${actual_folder}"
+
+    fi
+
+    # Restore files
+    echo " > Moving files from ${project_tmp_folder} to ${folder_to_install} ..." >>$LOG
+    echo -e ${CYAN}" > Moving files from ${project_tmp_folder} to ${folder_to_install} ..."${ENDCOLOR}
     
-    mv "${PROJECT_TMP_FOLDER}" "${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT}"
-    PROJECT_TMP_FOLDER="${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT}"
+    mv "${project_tmp_folder}" "${folder_to_install}"
+
+    install_path=$(search_wp_config "${actual_folder}")
+
+    if [ -z "${install_path}" ]; then
+
+      echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND ON PATH: ${actual_folder}/${install_path}"${ENDCOLOR}
+      wp_change_ownership "${install_path}"
+
+    fi
+
+    # TODO: ask to choose between regenerate nginx config or restore backup
+    # If choose restore config and has https, need to restore letsencrypt config and run cerbot
+
+    #echo "Trying to restore nginx config for ${CHOSEN_PROJECT} ..."
+    # New site configuration
+    #cp ${SFOLDER}/confs/default /etc/nginx/sites-available/${CHOSEN_PROJECT}
+    #ln -s /etc/nginx/sites-available/${CHOSEN_PROJECT} /etc/nginx/sites-enabled/${CHOSEN_PROJECT}
+    # Replacing string to match domain name
+    #sed -i "s#dominio.com#${CHOSEN_PROJECT}#" /etc/nginx/sites-available/${CHOSEN_PROJECT}
+    # Need to be run twice
+    #sed -i "s#dominio.com#${CHOSEN_PROJECT}#" /etc/nginx/sites-available/${CHOSEN_PROJECT}
+    #service nginx reload
+
+    echo -e ${B_GREEN}" > FILE RESTORED ON ${install_path}!"${ENDCOLOR}
 
   else
     exit 1
   fi
-
-  FOLDER_TO_INSTALL=$(ask_folder_to_install_sites "${SITES}")
-
-  ACTUAL_FOLDER="${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT}"
-
-  if [ -d "${ACTUAL_FOLDER}" ]; then
-
-    echo " > ${ACTUAL_FOLDER} exist. Let's make a Backup ..." >>$LOG
-    echo -e ${YELLOW}" > ${ACTUAL_FOLDER} exist. Let's make a Backup ..."${ENDCOLOR}
-
-    make_temp_files_backup "${ACTUAL_FOLDER}"
-
-  fi
-
-  # Restore files
-  echo "Executing: mv ${SFOLDER}/tmp/${CHOSEN_PROJECT} ${FOLDER_TO_INSTALL} ..." >>$LOG
-  echo -e ${CYAN}"Executing: mv ${SFOLDER}/tmp/${CHOSEN_PROJECT} ${FOLDER_TO_INSTALL} ..."${ENDCOLOR}
-  
-  mv "${PROJECT_TMP_FOLDER}" "${FOLDER_TO_INSTALL}"
-
-  install_path=$(search_wp_config "${ACTUAL_FOLDER}")
-
-  if [ -z "${install_path}" ]; then
-
-    echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND ON PATH: ${ACTUAL_FOLDER}/${install_path}"${ENDCOLOR}
-    wp_change_ownership "${ACTUAL_FOLDER}/${install_path}"
-
-  fi
-
-  # TODO: ask to choose between regenerate nginx config or restore backup
-  # If choose restore config and has https, need to restore letsencrypt config and run cerbot
-
-  #echo "Trying to restore nginx config for ${CHOSEN_PROJECT} ..."
-  # New site configuration
-  #cp ${SFOLDER}/confs/default /etc/nginx/sites-available/${CHOSEN_PROJECT}
-  #ln -s /etc/nginx/sites-available/${CHOSEN_PROJECT} /etc/nginx/sites-enabled/${CHOSEN_PROJECT}
-  # Replacing string to match domain name
-  #sed -i "s#dominio.com#${CHOSEN_PROJECT}#" /etc/nginx/sites-available/${CHOSEN_PROJECT}
-  # Need to be run twice
-  #sed -i "s#dominio.com#${CHOSEN_PROJECT}#" /etc/nginx/sites-available/${CHOSEN_PROJECT}
-  #service nginx reload
-
-  echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
 
 }
 
@@ -313,45 +313,6 @@ select_and_restore_database_from_dropbox(){
   make_temp_db_backup
 
   restore_database_backup "${CHOSEN_PROJECT}" "${CHOSEN_BACKUP_TO_RESTORE}"
-
-  FOLDER_TO_INSTALL=$(ask_folder_to_install_sites "${SITES}")
-
-  startdir=${FOLDER_TO_INSTALL}
-  menutitle="Site Selection Menu"
-  directory_browser "$menutitle" "$startdir"
-  PROJECT_SITE=$filepath"/"$filename
-  #echo "Setting PROJECT_SITE=${PROJECT_SITE}"
-
-  install_path=$(search_wp_config "${filepath}")
-
-  if [ -z "${install_path}" ]; then
-
-    echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND ON PATH: ${PROJECT_SITE}/${install_path}"${ENDCOLOR}
-
-    # Change wp-config.php database parameters
-    wp_update_wpconfig "${PROJECT_SITE}/${install_path}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
-
-    # TODO: change the secret encryption keys
-
-  fi
-
-  # Ask for Cloudflare Root Domain
-  ROOT_DOMAIN=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-    # Cloudflare API to change DNS records
-    echo "Trying to access Cloudflare API and change record ${DOMAIN} ..." >>$LOG
-    echo -e ${YELLOW}"Trying to access Cloudflare API and change record ${DOMAIN} ..."${ENDCOLOR}
-
-    zone_name=${ROOT_DOMAIN}
-    record_name=${DOMAIN}
-    export zone_name record_name
-    "${SFOLDER}/utils/cloudflare_update_IP.sh"
-
-  fi
-  
-  # HTTPS with Certbot
-  certbot_helper_installer_menu "${DOMAIN}"
 
 }
 
@@ -414,9 +375,58 @@ if [ $exitstatus = 0 ]; then
 
           select_and_restore_database_from_dropbox "${CHOSEN_PROJECT}" "${CHOSEN_BACKUP_TO_RESTORE}"
 
+          # TODO: check project type (WP, Laravel, etc)
+
+          FOLDER_TO_INSTALL=$(ask_folder_to_install_sites "${SITES}")
+
+          startdir=${FOLDER_TO_INSTALL}
+          menutitle="Site Selection Menu"
+          directory_browser "$menutitle" "$startdir"
+          PROJECT_SITE=$filepath"/"$filename
+
+          install_path=$(search_wp_config "${FOLDER_TO_INSTALL}/${filename}")
+
+          echo -e ${B_CYAN}" > install_path: ${install_path}"${ENDCOLOR}
+          echo -e ${B_CYAN}" > filename: ${filename}"${ENDCOLOR}
+
+          # TODO: search_wp_config could be an array of dir paths, need to check that
+          if [ "${install_path}" != "" ]; then
+
+            echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND ON PATH: ${PROJECT_SITE}/${install_path}"${ENDCOLOR}
+
+            # Change wp-config.php database parameters
+            wp_update_wpconfig "${PROJECT_SITE}/${install_path}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
+
+            # TODO: change the secret encryption keys
+
+          else
+
+            echo -e ${B_RED}" > WORDPRESS INSTALLATION NOT FOUND!"${ENDCOLOR}
+
+          fi
+
+          #TODO: ask if want to change IP from Cloudflare then ask for Cloudflare Root Domain
+
+          # Asume that project main folder name is the project's domain, removing "/" char
+          DOMAIN="${filename::-1}"
+          
+          # Only for Cloudflare API
+          #suggested_root_domain=${DOMAIN#[[:alpha:]]*.}
+          suggested_root_domain=${DOMAIN}
+
+          root_domain=$(cloudflare_ask_root_domain "${suggested_root_domain}")
+
+          cloudflare_change_a_record "${root_domain}" "${DOMAIN}"
+          
+          # HTTPS with Certbot
+          certbot_helper_installer_menu "${DOMAIN}"
+
         else # site
 
-          select_and_restore_site_from_dropbox "${CHOSEN_PROJECT}"
+          # Here, for convention, CHOSEN_PROJECT should be CHOSEN_DOMAIN... 
+          # Only for better code reading, i assign this new var:
+          chosen_domain=${CHOSEN_PROJECT}
+          select_and_restore_site_from_dropbox "${chosen_domain}"
 
         fi
       

@@ -9,6 +9,7 @@
 
 source "${SFOLDER}/libs/commons.sh"
 source "${SFOLDER}/libs/nginx_helper.sh"
+source "${SFOLDER}/libs/cloudflare_helper.sh"
 
 ################################################################################
 
@@ -46,13 +47,7 @@ install_jellyfin(){
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
         # Cloudflare API to change DNS records
-        echo "Trying to access Cloudflare API and change record ${PROJECT_DOMAIN} ..." >>$LOG
-        echo -e ${YELLOW}"Trying to access Cloudflare API and change record ${PROJECT_DOMAIN} ..."${ENDCOLOR}
-
-        zone_name=${ROOT_DOMAIN}
-        record_name=${PROJECT_DOMAIN}
-        export zone_name record_name
-        "${SFOLDER}/utils/cloudflare_update_IP.sh"
+        cloudflare_change_a_record "${ROOT_DOMAIN}" "${PROJECT_DOMAIN}"
 
     fi
     

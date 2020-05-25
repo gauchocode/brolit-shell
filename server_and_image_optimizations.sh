@@ -4,27 +4,20 @@
 # Version: 3.0-rc03
 ################################################################################
 
-# TODO: Primero correr sin los parametros -mtime -7 y luego setear un option
-# para correrlo solo en archivos modificados los ultimos -7 días
-#
-# Ref. de optimizacion de imagenes:
-# https://github.com/centminmod/optimise-images/blob/master/examples/examples-optimise-webp-nginx-300417.md
-# https://centminmod.com/webp/
-# https://ayudawp.com/usar-archivos-webp-wordpress-mejorar-los-tiempos-carga
-
 ### Checking some things
 if [[ -z "${SFOLDER}" ]]; then
-  echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+  echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
   exit 0
 fi
 ################################################################################
 
-source ${SFOLDER}/libs/commons.sh
-source ${SFOLDER}/libs/mail_notification_helper.sh
+source "${SFOLDER}/libs/commons.sh"
+source "${SFOLDER}/libs/packages_helper.sh"
+source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 ################################################################################
 
-# VARS
+# TODO: extract this to an option
 JPG_COMPRESS='90'
 
 # Remove old packages from system
@@ -32,6 +25,8 @@ remove_old_packages
 
 # Install image optimize packages
 install_image_optimize_packages
+
+# TODO: First need to run without the parameter -mtime -7
 
 # Remove old log files from system
 echo " > Deleting old system logs..." >>$LOG
@@ -49,6 +44,8 @@ echo " > Running optipng ..." >>$LOG
 echo -e ${YELLOW}" > Running optipng ..."${ENDCOLOR}
 find -mtime -7 -type f -name "*.png" -exec optipng -o7 -strip all {} \;
 
+# TODO: pdf optimization
+
 # Run pdf optimizer
 #echo " > Running pdfwrite ..." >>$LOG
 #echo -e ${YELLOW}" > Running pdfwrite ..."${ENDCOLOR}
@@ -63,12 +60,21 @@ find -mtime -7 -type f -name "*.png" -exec optipng -o7 -strip all {} \;
 
 # Fix ownership
 echo " > Fixing ownership ..." >>$LOG
-echo -e ${YELLOW}" > Fixing ownership ..."${ENDCOLOR}
+echo -e ${CYAN}" > Fixing ownership ..."${ENDCOLOR}
 chown -R www-data:www-data *
 
+# Restarting services
+echo " > Restarting services ..." >>$LOG
+echo -e ${CYAN}" > Restarting services ..."${ENDCOLOR}
+service php"${PHP_V}"-fpm restart
+
 # Cleanning Swap
+echo " > Cleanning Swap ..." >>$LOG
+echo -e ${CYAN}" > Cleanning Swap ..."${ENDCOLOR}
 swapoff -a && swapon -a
 
 # Cleanning RAM
+echo " > Cleanning RAM ..." >>$LOG
+echo -e ${CYAN}" > Cleanning RAM ..."${ENDCOLOR}
 sync
 echo 1 >/proc/sys/vm/drop_caches

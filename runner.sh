@@ -6,12 +6,16 @@
 ################################################################################
 #
 # TODO: For release 3.0-final
-#       1- Complete refactor of delete_project script
+#       1- Refactor for restore from dropbox: 5 options (server_config, site_config, files, database and project)
 #       2- When restore or create a new project and the db_user already exists, we need to ask what todo
 #       3- On php_installer if multiple php versions are installed de PHP_V need to be an array
 #          So, if you need to install a new site, must ask what php_v to use.
 #       4- Fix project creation when use a project name like this: xyz_sub_domain (could be a problem with sed on wordpress installer)
 #       5- Test VALIDATORS (commons.sh) and use functions on user prompt
+#       6- LEMP installer fails last step, when ask optional packages installation
+#       7- When restore files from dropbox, ask you want to change project name. Better ask if want to change destination folder name. 
+#       8- When restore database changing DB user pass fails.
+#       9- Restoring nginx configuration need a refactor, its fails with HTTPS and has a fixed PHP_V 
 #
 # TODO: For release 3.1
 #       1- Refactor of RESTORE_FROM_SOURCE and complete server config restore
@@ -20,7 +24,8 @@
 #          We need to replace then with PROJECT_GENERATOR (or something like that)
 #          The idea is that you could create different kind of projects (WP, Laravel, Standalone)
 #       4- Better log with check_result and log_event functions (commons.sh)
-#       5- Option to install Bashtop and other utils: http://packages.azlux.fr/
+#       5- Complete refactor of delete_project script
+#       6- Option to install Bashtop and other utils: http://packages.azlux.fr/
 #
 # TODO: For release 3.2
 #       1- On backup failure, the email must show what files fails and what files are correct backuped
