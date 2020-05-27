@@ -11,12 +11,19 @@ if [[ -z "${SFOLDER}" ]]; then
 fi
 ################################################################################
 
+# shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
+# shellcheck source=${SFOLDER}/libs/mysql_helper.sh
 source "${SFOLDER}/libs/mysql_helper.sh"
+# shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
 source "${SFOLDER}/libs/wpcli_helper.sh"
+# shellcheck source=${SFOLDER}/libs/wordpress_helper.sh
 source "${SFOLDER}/libs/wordpress_helper.sh"
+# shellcheck source=${SFOLDER}/libs/certbot_helper.sh
 source "${SFOLDER}/libs/certbot_helper.sh"
+# shellcheck source=${SFOLDER}/libs/cloudflare_helper.sh
 source "${SFOLDER}/libs/cloudflare_helper.sh"
+# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
 source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 ################################################################################
@@ -395,7 +402,7 @@ if [ $exitstatus = 0 ]; then
             echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND ON PATH: ${PROJECT_SITE}/${install_path}"${ENDCOLOR}
 
             # Change wp-config.php database parameters
-            wp_update_wpconfig "${PROJECT_SITE}/${install_path}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
+            wp_update_wpconfig "${install_path}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
 
             # TODO: change the secret encryption keys
 
