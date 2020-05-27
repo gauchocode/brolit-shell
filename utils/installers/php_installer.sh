@@ -12,6 +12,7 @@ fi
 
 ################################################################################
 
+# shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
@@ -145,7 +146,7 @@ sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
 sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
 
 # Run php_optimizations.sh
-${SFOLDER}/utils/php_optimizations.sh
+"${SFOLDER}/utils/php_optimizations.sh"
 
 # TODO: if you install a new PHP version, maybe you want to reconfigure an specific nginx_server
 # reconfigure_nginx_sites()

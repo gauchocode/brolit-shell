@@ -11,9 +11,13 @@ if [[ -z "${SFOLDER}" ]]; then
 fi
 ################################################################################
 
+# shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
+# shellcheck source=${SFOLDER}/libs/mysql_helper.sh
 source "${SFOLDER}/libs/mysql_helper.sh"
+# shellcheck source=${SFOLDER}/libs/backup_helper.sh
 source "${SFOLDER}/libs/backup_helper.sh"
+# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
 source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 #############################################################################
@@ -24,7 +28,7 @@ ERROR=false
 ERROR_TYPE=""
 DBS_F="databases"
 
-#SITES_F="sites"
+export BK_TYPE DBS_F
 
 # Starting Message
 echo " > Starting database backup script ..." >>$LOG
