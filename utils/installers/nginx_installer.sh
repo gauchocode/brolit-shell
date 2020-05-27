@@ -21,7 +21,9 @@ if [[ -z "${SFOLDER}" ]]; then
 fi
 ################################################################################
 
+# shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
+# shellcheck source=${SFOLDER}/libs/nginx_helper.sh
 source "${SFOLDER}/libs/nginx_helper.sh"
 
 ################################################################################

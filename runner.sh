@@ -14,8 +14,7 @@
 #       5- Test VALIDATORS (commons.sh) and use functions on user prompt
 #       6- LEMP installer fails last step, when ask optional packages installation
 #       7- When restore files from dropbox, ask you want to change project name. Better ask if want to change destination folder name. 
-#       8- When restore database changing DB user pass fails.
-#       9- Restoring nginx configuration need a refactor, its fails with HTTPS and has a fixed PHP_V 
+#       8- Restoring nginx configuration need a refactor, its fails with HTTPS and has a fixed PHP_V 
 #
 # TODO: For release 3.1
 #       1- Refactor of RESTORE_FROM_SOURCE and complete server config restore
@@ -25,7 +24,6 @@
 #          The idea is that you could create different kind of projects (WP, Laravel, Standalone)
 #       4- Better log with check_result and log_event functions (commons.sh)
 #       5- Complete refactor of delete_project script
-#       6- Option to install Bashtop and other utils: http://packages.azlux.fr/
 #
 # TODO: For release 3.2
 #       1- On backup failure, the email must show what files fails and what files are correct backuped
@@ -33,15 +31,15 @@
 #       3- Mail notification when a new site is installed
 #       4- Warning if script run on non default installation (no webserver or another than nginx)
 #       5- Option to install script on crontab (use cron_this function)
+#       6- Option to install Bashtop and other utils: http://packages.azlux.fr/
 #
 # TODO: For release 3.5
-#       1- Finish php_optimizations (deprecate Hetzner model mode) and integrate with Lemp Installer
-#       2- Expand Duplicity support with a restore option
-#       3- Rethink server_and_image_optimizations.sh (maybe add a pdf optimization files too)
-#       4- MySQL optimization script
-#       5- Rename database helper (with and without WP)
-#       6- Fallback for replace strings on wp database (if wp-cli fails, use old script version)
-#       7- Add some IT utils (change hostname, add floating IP, change SSH port)
+#       1- Expand Duplicity support with a restore option
+#       2- Rethink server_and_image_optimizations.sh (maybe add a pdf optimization files too)
+#       3- MySQL optimization script
+#       4- Rename database helper (with and without WP)
+#       5- Fallback for replace strings on wp database (if wp-cli fails, use old script version)
+#       6- Add some IT utils (change hostname, add floating IP, change SSH port)
 #
 # TODO: For release 4.0
 #       1- Need a refactor to let the script be runned with flags
@@ -83,8 +81,11 @@ chmod +x "${SFOLDER}/libs/commons.sh"
 chmod +x "${SFOLDER}/libs/mail_notification_helper.sh"
 chmod +x "${SFOLDER}/libs/packages_helper.sh"
 
+# shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
+# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
 source "${SFOLDER}/libs/mail_notification_helper.sh"
+# shellcheck source=${SFOLDER}/libs/packages_helper.sh
 source "${SFOLDER}/libs/packages_helper.sh"
 
 check_root
@@ -177,6 +178,7 @@ ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
 # Dropbox Uploader config file
 DPU_CONFIG_FILE=~/.dropbox_uploader
 if [[ -e ${DPU_CONFIG_FILE} ]]; then
+  # shellcheck source=${DPU_CONFIG_FILE}
   source "${DPU_CONFIG_FILE}"
 else
   generate_dropbox_config
@@ -186,6 +188,7 @@ DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
 # Cloudflare config file
 CLF_CONFIG_FILE=~/.cloudflare.conf
 if [[ -e ${CLF_CONFIG_FILE} ]]; then
+  # shellcheck source=${CLF_CONFIG_FILE}
   source "${CLF_CONFIG_FILE}"
 else
   generate_cloudflare_config
@@ -223,6 +226,7 @@ if [ -t 1 ]; then
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
       if [[ ${CHOSEN_FR_OPTION} == *"01"* ]]; then
+        # shellcheck source=${SFOLDER}/lemp_setup.sh
         source "${SFOLDER}/lemp_setup.sh"
         exit 1
 

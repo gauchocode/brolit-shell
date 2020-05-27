@@ -24,6 +24,8 @@ NOW=$(date +"%Y-%m-%d")
 NOWDISPLAY=$(date +"%d-%m-%Y")
 ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
 
+export MHOST MUSER NOW NOWDISPLAY ONEWEEKAGO
+
 # BROOBE Utils config file
 if test -f /root/.broobe-utils-options; then
   source /root/.broobe-utils-options
@@ -32,16 +34,23 @@ fi
 # Cloudflare config file
 CLF_CONFIG_FILE=~/.cloudflare.conf
 if [[ -e ${CLF_CONFIG_FILE} ]]; then
-  source "${CLF_CONFIG_FILE}"
+    # shellcheck source=${CLF_CONFIG_FILE}
+    source "${CLF_CONFIG_FILE}"
 else
-  generate_cloudflare_config
+    generate_cloudflare_config
 fi
 
+# shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
+# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
 source "${SFOLDER}/libs/mail_notification_helper.sh"
+# shellcheck source=${SFOLDER}/libs/packages_helper.sh
 source "${SFOLDER}/libs/packages_helper.sh"
+# shellcheck source=${SFOLDER}/libs/backup_helper.sh
 source "${SFOLDER}/libs/backup_helper.sh"
+# shellcheck source=${SFOLDER}/libs/mysql_helper.sh
 source "${SFOLDER}/libs/mysql_helper.sh"
+# shellcheck source=${SFOLDER}/libs/cloudflare_helper.sh
 source "${SFOLDER}/libs/cloudflare_helper.sh"
 
 ####################### TEST FOR mail_cert_section #######################
