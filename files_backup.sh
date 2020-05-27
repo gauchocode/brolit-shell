@@ -11,9 +11,13 @@ if [[ -z "${SFOLDER}" ]]; then
 fi
 ################################################################################
 
+# shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
+# shellcheck source=${SFOLDER}/libs/mysql_helper.sh
 source "${SFOLDER}/libs/mysql_helper.sh"
+# shellcheck source=${SFOLDER}/libs/backup_helper.sh
 source "${SFOLDER}/libs/backup_helper.sh"
+# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
 source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 ################################################################################
@@ -24,6 +28,8 @@ ERROR=false
 ERROR_TYPE=""
 SITES_F="sites"
 CONFIG_F="configs"
+
+export BK_TYPE SITES_F
 
 # Starting Message
 echo " > Starting file backup script ..." >>$LOG
@@ -157,7 +163,7 @@ for j in ${TOTAL_SITES}; do
 done
 
 # Deleting old backup files
-rm -r ${BAKWP}/${NOW}
+rm -r "${BAKWP:?}/${NOW}"
 
 # DUPLICITY
 duplicity_backup

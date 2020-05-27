@@ -11,8 +11,11 @@ if [[ -z "${SFOLDER}" ]]; then
 fi
 ################################################################################
 
+# shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
+# shellcheck source=${SFOLDER}/libs/packages_helper.sh
 source "${SFOLDER}/libs/packages_helper.sh"
+# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
 source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 ################################################################################
@@ -33,10 +36,11 @@ echo " > Deleting old system logs..." >>$LOG
 echo -e ${YELLOW}" > Deleting old system logs ..."${ENDCOLOR}
 find /var/log/ -mtime +7 -type f -delete
 
+cd "${SITES}"
+
 # Run jpegoptim
 echo " > Running jpegoptim ..." >>$LOG
 echo -e ${YELLOW}" > Running jpegoptim ..."${ENDCOLOR}
-cd ${SITES}
 find -mtime -7 -type f -name "*.jpg" -exec jpegoptim --max=${JPG_COMPRESS} --strip-all --all-progressive {} \;
 
 # Run optipng

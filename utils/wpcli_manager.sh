@@ -23,8 +23,11 @@ if [[ -z "${SFOLDER}" ]]; then
 fi
 ################################################################################
 
+# shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
+# shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
 source "${SFOLDER}/libs/wpcli_helper.sh"
+# shellcheck source=${SFOLDER}/libs/wordpress_helper.sh
 source "${SFOLDER}/libs/wordpress_helper.sh"
 
 ################################################################################
@@ -162,30 +165,30 @@ wpcli_main_menu() {
 
         if [[ ${CHOSEN_PROF_OPTION} == *"01"* ]]; then
           #This command shows the stages of loading WordPress.
-          wp --path=${WP_SITE} profile stage --allow-root
+          wp --path="${WP_SITE}" profile stage --allow-root
 
         fi
         if [[ ${CHOSEN_PROF_OPTION} == *"02"* ]]; then
           #Can drill down into each stage, here we drill down into the bootstrap stage
-          wp --path=${WP_SITE} profile stage bootstrap --allow-root
+          wp --path="${WP_SITE}" profile stage bootstrap --allow-root
 
         fi
         if [[ ${CHOSEN_PROF_OPTION} == *"03"* ]]; then
           #All stage
           #sudo -u www-data wp --path=${SITES}'/'${WP_SITE} profile stage --all --orderby=time --allow-root
           #You can also use the --spotlight flag to filter out zero-like values for easier reading
-          wp --path=${WP_SITE} profile stage --all --spotlight --orderby=time --allow-root
+          wp --path="${WP_SITE}" profile stage --all --spotlight --orderby=time --allow-root
 
         fi
         if [[ ${CHOSEN_PROF_OPTION} == *"04"* ]]; then
           #Here we dig into the wp hook
-          wp --path=${WP_SITE} profile hook wp --allow-root
+          wp --path="${WP_SITE}" profile hook wp --allow-root
 
         fi
         if [[ ${CHOSEN_PROF_OPTION} == *"05"* ]]; then
           #Here we dig into the wp hook
           echo "Executing: wp --path=${WP_SITE} profile hook --all --spotlight --allow-root"
-          wp --path=${WP_SITE} profile hook --all --spotlight --allow-root
+          wp --path="${WP_SITE}" profile hook --all --spotlight --allow-root
 
         fi
 
