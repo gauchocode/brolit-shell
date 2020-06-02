@@ -9,24 +9,32 @@
 #
 ################################################################################
 #
-# TODO: check when add www.DOMINIO.com and then select other stage != prod
+# TODO: check when add www.DOMAIN.com and then select other stage != prod
 # TODO: add multisite support
 #
 
 ### Checking some things
 if [[ -z "${SFOLDER}" ]]; then
-  echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+  echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
   exit 0
 fi
 ################################################################################
 
+# shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
+# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
 source "${SFOLDER}/libs/mail_notification_helper.sh"
+# shellcheck source=${SFOLDER}/libs/mysql_helper.sh
 source "${SFOLDER}/libs/mysql_helper.sh"
+# shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
 source "${SFOLDER}/libs/wpcli_helper.sh"
+# shellcheck source=${SFOLDER}/libs/wordpress_helper.sh
 source "${SFOLDER}/libs/wordpress_helper.sh"
+# shellcheck source=${SFOLDER}/libs/nginx_helper.sh
 source "${SFOLDER}/libs/nginx_helper.sh"
+# shellcheck source=${SFOLDER}/libs/certbot_helper.sh
 source "${SFOLDER}/libs/certbot_helper.sh"
+# shellcheck source=${SFOLDER}/libs/cloudflare_helper.sh
 source "${SFOLDER}/libs/cloudflare_helper.sh"
 
 ################################################################################
@@ -63,14 +71,18 @@ if [ $exitstatus = 0 ]; then
 
     ask_project_state ""
 
+    # TODO: maybe if project state != prod we want to disable some plugins and block search engines
+
+    # TODO: ask if want to exclude directory
+
     project_dir=$(check_if_folder_exists "${FOLDER_TO_INSTALL}" "${PROJECT_DOMAIN}")
     if [ "${project_dir}" != 'ERROR' ]; then
       # Make a copy of the existing project
-      echo "Making a copy of ${COPY_PROJECT} ..." >>$LOG
-      echo -e ${CYAN}"Making a copy of ${COPY_PROJECT} ..."${ENDCOLOR}
+      echo "Making a copy of ${COPY_PROJECT} on ${project_dir} ..." >>$LOG
+      echo -e ${CYAN}"Making a copy of ${COPY_PROJECT} on ${project_dir} ..."${ENDCOLOR}
 
-      cd "${FOLDER_TO_INSTALL}"
-      cp -r "${FOLDER_TO_INSTALL}/${COPY_PROJECT}" "${project_dir}"
+      #cd "${FOLDER_TO_INSTALL}"
+      copy_project_files "${FOLDER_TO_INSTALL}/${COPY_PROJECT}" "${project_dir}"
 
       echo "DONE" >>$LOG
 
@@ -122,7 +134,7 @@ if [ $exitstatus = 0 ]; then
   fi
   
   # Set WP salts
-  wp_set_salts
+  wp_set_salts "${project_dir}/wp-config.php"
 
   if [[ ${INSTALLATION_TYPE} == *"COPY"* ]]; then
 

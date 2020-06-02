@@ -10,6 +10,7 @@
 #
 ################################################################################
 
+# shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
@@ -19,12 +20,12 @@ certbot_certificate_install() {
   #$1 = EMAIL
   #$2 = DOMAINS
 
-  EMAIL=$1
-  DOMAINS=$2
+  local email=$1
+  local domains=$2
 
-  echo -e ${CYAN}" > Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${EMAIL} -d ${DOMAINS}"${ENDCOLOR}
-  echo " > Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${EMAIL} -d ${DOMAINS}" >>$LOG
-  certbot --nginx --non-interactive --agree-tos --redirect -m ${EMAIL} -d ${DOMAINS}
+  echo -e ${B_CYAN}" > Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains}"${ENDCOLOR}
+  echo " > Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains}" >>$LOG
+  certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}"
 
 }
 
@@ -33,12 +34,26 @@ certbot_certificate_force_install() {
   #$1 = EMAIL
   #$2 = DOMAINS
 
-  EMAIL=$1
-  DOMAINS=$2
+  local email=$1
+  local domains=$2
 
-  echo -e ${CYAN}" > Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${EMAIL} -d ${DOMAINS}"${ENDCOLOR}
-  echo " > Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${EMAIL} -d ${DOMAINS}" >>$LOG
-  certbot --nginx --non-interactive --agree-tos --redirect -m ${EMAIL} -d ${DOMAINS}
+  echo -e ${B_CYAN}" > Running: certbot --nginx --non-interactive --agree-tos --expand --redirect -m ${email} -d ${domains}"${ENDCOLOR}
+  echo " > Running: certbot --nginx --non-interactive --agree-tos --expand --redirect -m ${email} -d ${domains}" >>$LOG
+  certbot --nginx --non-interactive --agree-tos --expand --redirect -m "${email}" -d "${domains}"
+
+}
+
+certbot_certificate_expand(){
+  
+  #$1 = EMAIL
+  #$2 = DOMAINS
+
+  local email=$1
+  local domains=$2
+
+  echo -e ${B_CYAN}" > Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains}"${ENDCOLOR}
+  echo " > Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains}" >>$LOG
+  certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}"
 
 }
 
@@ -46,11 +61,11 @@ certbot_certificate_renew() {
 
   #$1 = DOMAINS
 
-  DOMAINS=$1
+  local domains=$1
 
-  echo -e ${CYAN}" > Running: certbot renew -d ${DOMAINS}"${ENDCOLOR}
-  echo " > Running: certbot renew -d ${DOMAINS}" >>$LOG
-  certbot renew -d ${DOMAINS}
+  echo -e ${B_CYAN}" > Running: certbot renew -d ${domains}"${ENDCOLOR}
+  echo " > Running: certbot renew -d ${domains}" >>$LOG
+  certbot renew -d "${domains}"
 
 }
 
@@ -58,30 +73,31 @@ certbot_certificate_force_renew() {
 
   #$1 = DOMAINS
 
-  DOMAINS=$1
+  local domains=$1
 
-  echo -e ${CYAN}" > Running: certbot renew --force-renewal -d ${DOMAINS}"${ENDCOLOR}
-  echo " > Running: certbot renew --force-renewal -d ${DOMAINS}" >>$LOG
-  certbot renew --force-renewal -d ${DOMAINS}
+  echo -e ${CYAN}" > Running: certbot renew --force-renewal -d ${domains}"${ENDCOLOR}
+  echo " > Running: certbot renew --force-renewal -d ${domains}" >>$LOG
+  certbot renew --force-renewal -d "${domains}"
 
 }
 
-# TODO: habria que ver como implementar las pruebas con dry-run
 certbot_renew_test() {
 
   #$1 = DOMAINS
 
-  DOMAINS=$1
+  local domains=$1
 
-  certbot renew --dry-run -d "${DOMAINS}"
+  certbot renew --dry-run -d "${domains}"
 
 }
 
 certbot_helper_installer_menu() {
 
-  #$1 = DOMAINS
+  #$1 = EMAIL
+  #$2 = DOMAINS
 
-  DOMAINS=$1
+  local email=$1
+  local domains=$2
 
   CB_INSTALLER_OPTIONS="01 INSTALL_WITH_NGINX 02 INSTALL_WITH_CLOUDFLARE"
   CHOSEN_CB_INSTALLER_OPTION=$(whiptail --title "CERTBOT INSTALLER OPTIONS" --menu "Please choose an option:" 20 78 10 $(for x in ${CB_INSTALLER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
@@ -90,12 +106,12 @@ certbot_helper_installer_menu() {
   if [ $exitstatus = 0 ]; then
 
     if [[ ${CHOSEN_CB_INSTALLER_OPTION} == *"01"* ]]; then
-      certbot_certificate_install "${MAILA}" "${DOMAINS}"
+      certbot_certificate_install "${email}" "${domains}"
       #certbot_helper_installer_menu
 
     fi
     if [[ ${CHOSEN_CB_INSTALLER_OPTION} == *"02"* ]]; then
-      certbot_certonly "${MAILA}" "${DOMAINS}"
+      certbot_certonly "${email}" "${domains}"
       #certbot_helper_installer_menu
 
     fi
@@ -106,44 +122,43 @@ certbot_helper_installer_menu() {
 
 certbot_helper_menu() {
 
-  CERTBOT_OPTIONS="01 INSTALL_CERTIFICATE 02 FORCE_INSTALL_CERTIFICATE 03 RECONFIGURE_CERTIFICATE 04 RENEW_CERTIFICATE 05 FORCE_RENEW_CERTIFICATE 06 DELETE_CERTIFICATE 07 SHOW_INSTALLED_CERTIFICATES"
+  CERTBOT_OPTIONS="01 INSTALL_CERTIFICATE 02 FORCE_INSTALL_CERTIFICATE 03 EXPAND_CERTIFICATE 04 RENEW_CERTIFICATE 05 FORCE_RENEW_CERTIFICATE 06 DELETE_CERTIFICATE 07 SHOW_INSTALLED_CERTIFICATES"
   CHOSEN_CB_OPTION=$(whiptail --title "CERTBOT MANAGER" --menu "Please choose an option:" 20 78 10 $(for x in ${CERTBOT_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
-    DOMAINS=$(whiptail --title "CERTBOT MANAGER" --inputbox "Insert the domain and/or subdomains that you want to work with. Ex: broobe.com,www.broobe.com" 10 60 3>&1 1>&2 2>&3)
+    domains=$(whiptail --title "CERTBOT MANAGER" --inputbox "Insert the domain and/or subdomains that you want to work with. Ex: broobe.com,www.broobe.com" 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
 
       if [[ ${CHOSEN_CB_OPTION} == *"01"* ]]; then
-        certbot_helper_installer_menu "${DOMAINS}"
+        certbot_helper_installer_menu "${MAILA}" "${domains}"
         #certbot_helper_menu
 
       fi
       if [[ ${CHOSEN_CB_OPTION} == *"02"* ]]; then
-        certbot_certificate_force_install "${MAILA}" "${DOMAINS}"
+        certbot_certificate_force_install "${MAILA}" "${domains}"
         #certbot_helper_menu
 
       fi
       if [[ ${CHOSEN_CB_OPTION} == *"03"* ]]; then
-        # TODO: en teoria instalando normal y luego apretando 1 lo reconfigurás...
-        certbot --nginx --non-interactive --agree-tos --redirect -m ${MAILA} -d ${DOMAINS}
+        certbot_certificate_expand "${MAILA}" "${domains}"
         #certbot_helper_menu
 
       fi
       if [[ ${CHOSEN_CB_OPTION} == *"04"* ]]; then
-        certbot_certificate_renew "${DOMAINS}"
+        certbot_certificate_renew "${domains}"
         #certbot_helper_menu
 
       fi
       if [[ ${CHOSEN_CB_OPTION} == *"05"* ]]; then
-        certbot_certificate_force_renew "${DOMAINS}"
+        certbot_certificate_force_renew "${domains}"
         #certbot_helper_menu
 
       fi
       if [[ ${CHOSEN_CB_OPTION} == *"06"* ]]; then
-        certbot_certificate_delete "${DOMAINS}"
+        certbot_certificate_delete "${domains}"
         #certbot_helper_menu
 
       fi
@@ -175,11 +190,11 @@ certbot_certonly() {
   # $1 = EMAIL
   # $2 = DOMAINS (domain.com,www.domain.com)
 
-  EMAIL=$1
-  DOMAINS=$2
+  local email=$1
+  local domains=$2
 
-  echo -e ${B_CYAN}"Running: certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m ${EMAIL} -d ${DOMAINS} --preferred-challenges dns-01"${ENDCOLOR}
-  certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m ${EMAIL} -d ${DOMAINS} --preferred-challenges dns-01
+  echo -e ${B_CYAN}"Running: certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m ${email} -d ${domains} --preferred-challenges dns-01"${ENDCOLOR}
+  certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m ${email} -d ${domains} --preferred-challenges dns-01
 
   # Maybe add a non interactive mode?
   # certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf --non-interactive --agree-tos --redirect -m ${EMAIL} -d ${DOMAINS} --preferred-challenges dns-01
@@ -202,10 +217,10 @@ certbot_show_domain_certificates_expiration_date() {
 
   # $1 = DOMAINS (domain.com,www.domain.com)
 
-  DOMAINS=$1
+  local domains=$1
 
   #echo -e ${CYAN}"Running: certbot certificates --cert-name ${DOMAINS}"${ENDCOLOR}
-  certbot certificates --cert-name ${DOMAINS} | grep 'Expiry' | cut -d ':' -f2 | cut -d ' ' -f2
+  certbot certificates --cert-name "${domains}" | grep 'Expiry' | cut -d ':' -f2 | cut -d ' ' -f2
 
 }
 
@@ -213,25 +228,25 @@ certbot_show_domain_certificates_valid_days() {
 
   # $1 = DOMAINS (domain.com,www.domain.com)
 
-  DOMAINS=$1
+  local domains=$1
 
   #echo -e ${CYAN}"Running: certbot certificates --cert-name ${DOMAINS}"${ENDCOLOR}
-  certbot certificates --cert-name ${DOMAINS} | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2
+  certbot certificates --cert-name "${domains}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2
 }
 
 certbot_certificate_delete() {
 
   # $1 = DOMAINS (domain.com,www.domain.com)
 
-  DOMAINS=$1
+  local domains=$1
 
   while true; do
-    echo -e ${YELLOW}"> Do you really want to delete de certificates for ${DOMAINS}?"${ENDCOLOR}
+    echo -e ${YELLOW}"> Do you really want to delete de certificates for ${domains}?"${ENDCOLOR}
     read -p "Please type 'y' or 'n'" yn
 
     case $yn in
     [Yy]*)
-      certbot delete --cert-name ${DOMAINS}
+      certbot delete --cert-name "${domains}"
       break
       ;;
     [Nn]*)

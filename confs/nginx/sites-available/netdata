@@ -1,9 +1,9 @@
 server {
         listen 80;
         listen [::]:80;
-        server_name dominio.com;
+        server_name domain.com;
         access_log off;
-        #error_log /var/log/nginx/dominio.com.error.log debug;
+        #error_log /var/log/nginx/domain.com.error.log debug;
         location / {
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

@@ -2,12 +2,12 @@ server {
         charset utf-8;
        	listen 80;
         listen [::]:80 ipv6only=on; ## listen for ipv6
-        root /var/www/dominio.com;
+        root /var/www/domain.com;
         
         index index.php;
-        server_name www.dominio.com dominio.com;
+        server_name www.domain.com domain.com;
 
-       	error_log   /var/log/nginx/dominio.com-error.log;
+       	error_log   /var/log/nginx/domain.com-error.log;
         location / {
             try_files $uri $uri/ /index.php?q=$uri&$args;			
         }
@@ -18,7 +18,7 @@ server {
         }
 
         ## INC
-        #include /var/www/dominio.com/nginx.conf;
+        #include /var/www/domain.com/nginx.conf;
         
         ### PERF
         gzip_static on;

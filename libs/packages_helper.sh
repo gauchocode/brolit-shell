@@ -83,7 +83,7 @@ basic_packages_installation() {
   apt --yes dist-upgrade
 
   echo " > Installing basic packages ..." >>$LOG
-  apt --yes install vim unzip zip clamav ncdu jpegoptim optipng webp sendemail libio-socket-ssl-perl dnsutils ghostscript pv ppa-purge
+  apt --yes install vim unzip zip clamav ncdu imagemagick-* jpegoptim optipng webp sendemail libio-socket-ssl-perl dnsutils ghostscript pv ppa-purge
 }
 
 selected_package_installation() {

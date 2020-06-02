@@ -6,13 +6,16 @@
 
 ### Checking some things
 if [[ -z "${SFOLDER}" ]]; then
-    echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+    echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
     exit 0
 fi
 ################################################################################
 
+# shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
+# shellcheck source=${SFOLDER}/libs/mysql_helper.sh
 source "${SFOLDER}/libs/mysql_helper.sh"
+# shellcheck source=${SFOLDER}/libs/backup_helper.sh
 source "${SFOLDER}/libs/backup_helper.sh"
 
 ################################################################################
@@ -69,8 +72,7 @@ else
         cp -r "/etc/nginx/sites-available/${FILENAME}" "${SFOLDER}/tmp-backup"
 
         # Delete nginx configuration file
-        rm "/etc/nginx/sites-available/${FILENAME}"
-        rm "/etc/nginx/sites-enabled/${FILENAME}"
+        delete_nginx_server "${FILENAME}"
         echo -e ${B_GREEN}" > Nginx config files for ${FILENAME} deleted!"${ENDCOLOR}
 
     fi
@@ -106,7 +108,7 @@ if [ $exitstatus = 0 ]; then
     # TODO (steps): 
     # 1- Read user form wp-config if exists (if not show message)
     # 2- Check if user exists, 
-    # 3- Ask if you want delete it}
+    # 3- Ask if you want delete it (maybe we should search in al wp-config.php if user is used?)
     # 4- Remove it or ignore it
     #mysql_user_exists ""
     #mysql_user_delete "${USER_DB}"
