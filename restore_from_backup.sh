@@ -426,7 +426,7 @@ if [ $exitstatus = 0 ]; then
           cloudflare_change_a_record "${root_domain}" "${DOMAIN}"
           
           # HTTPS with Certbot
-          certbot_helper_installer_menu "${DOMAIN}"
+          certbot_helper_installer_menu "${MAILA}" "${DOMAIN}"
 
         else # site
 

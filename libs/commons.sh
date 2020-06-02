@@ -579,6 +579,28 @@ get_all_directories() {
 
 }
 
+copy_project_files() {
+
+  # $1 = ${SOURCE_PATH}
+  # $2 = ${DESTINATION_PATH}
+  # $3 = ${EXCLUDED_PATH} - Neet to be a relative path
+
+  local source_path=$1
+  local destination_path=$2
+  local excluded_path=$3
+
+  #cp -r "${source_path}" "${destination_path}"
+
+  if [ "${excluded_path}" != "" ];then
+    rsync -ax --exclude "${excluded_path}" "${source_path}" "${destination_path}"
+
+  else
+    rsync -ax "${source_path}" "${destination_path}"
+
+  fi
+
+}
+
 generate_dropbox_config() {
 
   OAUTH_ACCESS_TOKEN_STRING+= "\n . \n"
@@ -665,6 +687,22 @@ check_if_folder_exists() {
   fi
 }
 
+change_ownership(){
+
+  #$1 = ${user}
+  #$2 = ${group}
+  #$3 = ${path}
+
+  local user=$1
+  local group=$2
+  local path=$3
+
+  echo " > Changing ownership ..." >>$LOG
+  echo -e ${CYAN}" > Changing ownership ..."${ENDCOLOR}
+  chown -R "${user}":"${group}" "${path}"
+
+}
+
 prompt_return_or_finish() {
 
   while true; do
@@ -687,33 +725,38 @@ prompt_return_or_finish() {
 
 extract () {
   
-  #1 - File to uncompress or extract
-  #2 - Optional compress-program (ex: lbzip2)
+  # $1 - File to uncompress or extract
+  # $2 - Dir to uncompress file
+  # $3 - Optional compress-program (ex: lbzip2)
 
-    if [ -f $1 ]; then
-        case $1 in
+  local file=$1
+  local directory=$2
+  local compress_type=$3
+
+    if [ -f "${file}" ]; then
+        case "${file}" in
             *.tar.bz2)  
-              if [ -z $2 ]; then
-                 tar xp -C $1 --use-compress-program=$2
+              if [ -z "${compress_type}" ]; then
+                 tar xp "${file}" -C "${directory}" --use-compress-program="${compress_type}"
               else
-                 tar xjf $1
+                 tar xjf "${file}" -C "${directory}"
               fi;;
-            *.tar.gz)     tar xzf $1   ;;
-            *.bz2)        bunzip2 $1   ;;
-            *.rar)        unrar x $1   ;;
-            *.gz)         gunzip $1    ;;
-            *.tar)        tar xf $1    ;;  
-            *.tbz2)       tar xjf $1   ;;
-            *.tgz)        tar xzf $1   ;;
-            *.zip)        unzip $1     ;;
-            *.Z)          uncompress $1;;
-            *.7z)         7z x $1      ;;
-            *.tar.gz)     tar J $1     ;;
-            *.xz)         tar xvf $1   ;;
-            *)            echo "'$1' cannot be extracted via extract()" ;;
+            *.tar.gz)     tar -xzvf "${file}" -C "${directory}";;
+            *.bz2)        bunzip2 "${file}";;
+            *.rar)        unrar x "${file}";;
+            *.gz)         gunzip "${file}";;
+            *.tar)        tar xf "${file}" -C "${directory}";;  
+            *.tbz2)       tar xjf "${file}" -C "${directory}";;
+            *.tgz)        tar xzf "${file}" -C "${directory}";;
+            *.zip)        unzip "${file}";;
+            *.Z)          uncompress "${file}";;
+            *.7z)         7z x "${file}";;
+            *.tar.gz)     tar J "${file}" -C "${directory}";;
+            *.xz)         tar xvf "${file}" -C "${directory}";;
+            *)            echo "${file} cannot be extracted via extract()" ;;
         esac
     else
-        echo "'$1' is not a valid file"
+        echo "${file} is not a valid file"
     fi
 }
 
@@ -796,21 +839,17 @@ is_email_format_valid() {
 # ASK-FOR
 ################################################################################
 
-# Used in:
-# restore_from_backup.sh
-# wordpress_installer.sh
 ask_project_state() {
 
   #$1 = ${state} optional to select default option
 
   local state=$1
 
-  PROJECT_STATES="prod stage beta test dev"
-  PROJECT_STATE=$(whiptail --title "Project State" --menu "Choose a Project State" 20 78 10 $(for x in ${PROJECT_STATES}; do echo "$x [X]"; done) --default-item "${state}" 3>&1 1>&2 2>&3)
+  project_states="prod stage beta test dev"
+  project_state=$(whiptail --title "Project State" --menu "Choose a Project State" 20 78 10 $(for x in ${project_states}; do echo "$x [X]"; done) --default-item "${state}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-    echo " > Setting PROJECT_STATE=${PROJECT_STATE}" >>$LOG
-    return 0
+    echo "${project_state}"
 
   else
     return 1
@@ -826,11 +865,10 @@ ask_project_name() {
   # Replace '-' and '.' chars
   name=$(echo "${name}" | sed -r 's/[.-]+/_/g')
 
-  PROJECT_NAME=$(whiptail --title "Project Name" --inputbox "Insert a project name (only separator allow is '_'). Ex: my_domain" 10 60 "${name}" 3>&1 1>&2 2>&3)
+  project_name=$(whiptail --title "Project Name" --inputbox "Insert a project name (only separator allow is '_'). Ex: my_domain" 10 60 "${name}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-    echo "Setting PROJECT_NAME=${PROJECT_NAME}" >>$LOG
-    return 0
+    echo "${project_name}"
 
   else
     exit 1
@@ -843,13 +881,12 @@ ask_project_domain() {
 
   #$1 = ${project_domain} optional to select default option
 
-  local domain=$1
+  local project_domain=$1
   
-  PROJECT_DOMAIN=$(whiptail --title "Domain" --inputbox "Insert the project's domain. Example: landing.domain.com" 10 60 "${domain}" 3>&1 1>&2 2>&3)
+  project_domain=$(whiptail --title "Domain" --inputbox "Insert the project's domain. Example: landing.domain.com" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-    echo "Setting PROJECT_DOMAIN=${PROJECT_DOMAIN}" >>$LOG
-    return 0
+    echo "${project_domain}"
 
   else
     exit 1
@@ -860,19 +897,18 @@ ask_project_domain() {
 
 ask_rootdomain_to_cloudflare_config() {
 
-  # $1 = ${POSSIBLE_ROOT_DOMAIN} (could be empty)
+  # $1 = ${root_domain} (could be empty)
 
-  local POSSIBLE_ROOT_DOMAIN=$1
+  local root_domain=$1
 
-  if [[ -z "${POSSIBLE_ROOT_DOMAIN}" ]]; then
-    ROOT_DOMAIN=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
+  if [[ -z "${root_domain}" ]]; then
+    root_domain=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
   else
-    ROOT_DOMAIN=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 "${POSSIBLE_ROOT_DOMAIN}" 3>&1 1>&2 2>&3)
+    root_domain=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 "${root_domain}" 3>&1 1>&2 2>&3)
   fi
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-    echo "Setting ROOT_DOMAIN="${ROOT_DOMAIN} >>$LOG
-    return 0
+    echo "${root_domain}"
 
   else
     exit 1

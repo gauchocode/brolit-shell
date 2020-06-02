@@ -1,7 +1,7 @@
 server {
     listen 80;
     listen [::]:80;
-    server_name dominio.com;
+    server_name domain.com;
 
     # Security / XSS Mitigation Headers
     add_header X-Frame-Options "SAMEORIGIN";

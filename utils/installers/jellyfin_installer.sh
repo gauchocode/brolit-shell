@@ -52,7 +52,7 @@ install_jellyfin(){
     fi
     
     # HTTPS with Certbot
-    certbot_helper_installer_menu "${PROJECT_DOMAIN}"
+    certbot_helper_installer_menu "${MAILA}" "${PROJECT_DOMAIN}"
 
     echo -" > DONE">>$LOG
     echo -e ${GREEN}" > DONE"${ENDCOLOR}

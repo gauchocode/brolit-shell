@@ -4,7 +4,9 @@
 # Version: 3.0-rc03
 ################################################################################
 
+# shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
+# shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
 source "${SFOLDER}/libs/wpcli_helper.sh"
 
 ################################################################################

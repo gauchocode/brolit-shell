@@ -30,55 +30,89 @@ source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 ################################################################################
 
-wp_migration_source() {
+ask_migration_source_type() {
 
-  WP_MIGRATION_SOURCE="URL DIRECTORY"
-  WP_MIGRATION_SOURCE=$(whiptail --title "WP Migration Source" --menu "Choose the source of the WP to restore/migrate:" 20 78 10 $(for x in ${WP_MIGRATION_SOURCE}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)
-
+  local migration_source_type="URL DIRECTORY"
+  
+  migration_source_type=$(whiptail --title "Migration Source" --menu "Choose the source of the project to restore/migrate:" 20 78 10 $(for x in ${migration_source_type}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
-    echo -e ${YELLOW}"WP_MIGRATION_SOURCE: ${WP_MIGRATION_SOURCE} ..."${ENDCOLOR}
-
-    if [ "${WP_MIGRATION_SOURCE}" = "DIRECTORY" ]; then
-
-      SOURCE_DIR=$(whiptail --title "Source Directory" --inputbox "Please insert the directory where backup is stored (Files and DB)." 10 60 "/root/backups" 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [ $exitstatus = 0 ]; then
-        echo "SOURCE_DIR=${SOURCE_DIR}" >>$LOG
-
-      else
-        exit 1
-
-      fi
-
-    else
-
-      SOURCE_FILES_URL=$(whiptail --title "Source File URL" --inputbox "Please insert the URL where backup files are stored." 10 60 "http://example.com/backup-files.zip" 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [ $exitstatus = 0 ]; then
-        echo "SOURCE_FILES_URL=${SOURCE_FILES_URL}" >>$LOG
-
-        SOURCE_DB_URL=$(whiptail --title "Source DB URL" --inputbox "Please insert the URL where backup db is stored." 10 60 "http://example.com/backup-db.sql.gz" 3>&1 1>&2 2>&3)
-        exitstatus=$?
-        if [ $exitstatus = 0 ]; then
-          echo "SOURCE_DB_URL=${SOURCE_DB_URL}" >>$LOG
-
-        else
-          exit 0
-        fi
-
-      else
-        exit 0
-      fi
-
-    fi
+    echo "${migration_source_type}"
 
   else
 
     exit 1
 
   fi
+}
+
+ask_migration_source_file() {
+
+  # $1 = ${source_type}
+
+  local source_type=$1
+  local source_files_dir source_files_url
+
+  if [ "${source_type}" = "DIRECTORY" ]; then
+
+  source_files_dir=$(whiptail --title "Source Directory" --inputbox "Please insert the directory where files backup are stored." 10 60 "/root/backups/backup.zip" 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    echo "${source_files_dir}"
+
+  else
+    exit 1
+
+  fi
+
+else
+
+  source_files_url=$(whiptail --title "Source File URL" --inputbox "Please insert the URL where backup files are stored." 10 60 "http://example.com/backup-files.zip" 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    echo "${source_files_url}"
+
+  else
+    exit 0
+  fi
+
+fi
+
+}
+
+ask_migration_source_db() {
+
+  # $1 = ${source_type}
+
+  local source_type=$1
+  local source_db_dir source_db_url
+
+  if [ "${source_type}" = "DIRECTORY" ]; then
+
+  source_db_dir=$(whiptail --title "Source Directory" --inputbox "Please insert the directory where database backup is stored." 10 60 "/root/backups/db.sql.gz" 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    echo "${source_db_dir}"
+
+  else
+    exit 1
+
+  fi
+
+else
+
+  source_db_url=$(whiptail --title "Source DB URL" --inputbox "Please insert the URL where database backup is stored." 10 60 "http://example.com/backup-db.sql.gz" 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    echo "${source_db_url}"
+
+  else
+    exit 0
+  fi
+
+fi
+
 }
 
 #############################################################################
@@ -102,118 +136,123 @@ if test -f /root/.broobe-utils-options; then
 fi
 
 # Project details
-ask_project_domain
+project_domain=$(ask_project_domain)
 
-POSSIBLE_ROOT_DOMAIN=${PROJECT_DOMAIN#[[:alpha:]]*.}
-ask_rootdomain_to_cloudflare_config "${POSSIBLE_ROOT_DOMAIN}"
+possible_root_domain=${PROJECT_DOMAIN#[[:alpha:]]*.}
 
-ask_project_name "${PROJECT_DOMAIN}"
+root_domain=$(ask_rootdomain_to_cloudflare_config "${possible_root_domain}")
 
-ask_project_state ""
+project_name=$(ask_project_name "${project_domain}")
 
-wp_migration_source
+project_state=$(ask_project_state "")
 
-# Database Backup details
-BK_DB_FILE=${SOURCE_DB_URL##*/}
-echo -e ${MAGENTA}" > BK_DB_FILE= ${BK_DB_FILE} ..."${ENDCOLOR}
+source_type=$(ask_migration_source_type)
 
-# File Backup details
-BK_F_FILE=${SOURCE_FILES_URL##*/}
-echo -e ${MAGENTA}" > BK_F_FILE= ${BK_F_FILE} ..."${ENDCOLOR}
+source_files=$(ask_migration_source_file "$source_type")
 
-FOLDER_TO_INSTALL=$(ask_folder_to_install_sites "${SITES}")
+source_database=$(ask_migration_source_db "$source_type")
+
+folder_to_install=$(ask_folder_to_install_sites "${SITES}")
 
 echo " > CREATING TMP DIRECTORY ..."
 mkdir "${SFOLDER}/tmp"
-mkdir "${SFOLDER}/tmp/${PROJECT_DOMAIN}"
-cd "${SFOLDER}/tmp/${PROJECT_DOMAIN}"
+mkdir "${SFOLDER}/tmp/${project_domain}"
+cd "${SFOLDER}/tmp/${project_domain}"
 
-if [ "${WP_MIGRATION_SOURCE}" = "DIRECTORY" ]; then
+if [ "${source_type}" = "DIRECTORY" ]; then
 
-  unzip \*.zip \* -d "${SFOLDER}/tmp/${PROJECT_DOMAIN}"
+  unzip \*.zip \* -d "${SFOLDER}/tmp/${project_domain}"
 
   # DB
-  mysql_database_import "${PROJECT_NAME}_${PROJECT_STATE}" "${WP_MIGRATION_SOURCE}/${BK_DB_FILE}"
+  mysql_database_import "${project_name}_${project_state}" "${WP_MIGRATION_SOURCE}/${BK_DB_FILE}"
 
-  cd "${FOLDER_TO_INSTALL}"
+  cd "${folder_to_install}"
 
-  #mkdir ${PROJECT_DOMAIN}
+  #mkdir ${project_domain}
 
-  cp -r "${SFOLDER}/tmp/${PROJECT_DOMAIN}" "${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}"
+  cp -r "${SFOLDER}/tmp/${project_domain}" "${folder_to_install}/${project_domain}"
 
 else
 
+  # Database Backup details
+  bk_db_file=${source_database##*/}
+  echo -e ${MAGENTA}" > bk_db_file= ${bk_db_file} ..."${ENDCOLOR}
+
+  # File Backup details
+  bk_f_file=${source_files##*/}
+  echo -e ${MAGENTA}" > bk_f_file= ${bk_f_file} ..."${ENDCOLOR}
+
   # Download File Backup
-  echo -e ${CYAN}" > Downloading file backup ${SOURCE_FILES_URL} ..."${ENDCOLOR}
-  wget "${SOURCE_FILES_URL}" >>$LOG
+  echo -e ${CYAN}" > Downloading file backup ${source_files} ..."${ENDCOLOR}
+  wget "${source_files}" >>$LOG
 
   # Uncompressing
   echo -e ${CYAN}" > Uncompressing file backup ..."${ENDCOLOR}
-  #unzip "${BK_F_FILE}"
-  extract "${BK_F_FILE}"
+  #unzip "${bk_f_file}"
+  extract "${bk_f_file}"
 
   # Download Database Backup
-  echo -e ${CYAN}" > Downloading database backup ${SOURCE_DB_URL}..."${ENDCOLOR} >>$LOG
-  wget "${SOURCE_DB_URL}" >>$LOG
+  echo -e ${CYAN}" > Downloading database backup ${source_database}..."${ENDCOLOR} >>$LOG
+  wget "${source_database}" >>$LOG
 
   # Create database and user
-  wp_database_creation "${PROJECT_NAME}" "${PROJECT_STATE}"
+  wp_database_creation "${project_name}" "${project_state}"
 
   # Extract
-  gunzip -c "${BK_DB_FILE}" > "${PROJECT_NAME}.sql"
-  #extract "${BK_DB_FILE}"
+  gunzip -c "${bk_db_file}" > "${project_name}.sql"
+  #extract "${bk_db_file}"
 
   # Import dump file
-  mysql_database_import "${PROJECT_NAME}_${PROJECT_STATE}" "${PROJECT_NAME}.sql"
+  mysql_database_import "${project_name}_${project_state}" "${project_name}.sql"
 
   # Remove downloaded files
   echo -e ${CYAN}" > Removing downloaded files ..."${ENDCOLOR}
-  rm "${SFOLDER}/tmp/${PROJECT_DOMAIN}/${BK_F_FILE}"
-  rm "${SFOLDER}/tmp/${PROJECT_DOMAIN}/${BK_DB_FILE}"
+  rm "${SFOLDER}/tmp/${project_domain}/${bk_f_file}"
+  rm "${SFOLDER}/tmp/${project_domain}/${bk_db_file}"
 
-  # Move to ${FOLDER_TO_INSTALL}
-  echo -e ${CYAN}" > Moving ${PROJECT_DOMAIN} to ${FOLDER_TO_INSTALL} ..."${ENDCOLOR}
-  mv "${SFOLDER}/tmp/${PROJECT_DOMAIN}" "${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}"
+  # Move to ${folder_to_install}
+  echo -e ${CYAN}" > Moving ${project_domain} to ${folder_to_install} ..."${ENDCOLOR}
+  mv "${SFOLDER}/tmp/${project_domain}" "${folder_to_install}/${project_domain}"
 
 fi
 
-chown -R www-data:www-data "${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}"
+change_ownership "www-data" "www-data" "${folder_to_install}/${project_domain}"
 
-install_path=$(search_wp_config "${ACTUAL_FOLDER}")
+actual_folder="${folder_to_install}/${project_domain}"
+
+install_path=$(search_wp_config "${actual_folder}")
 if [ -z "${install_path}" ]; then
 
     echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND"${ENDCOLOR}
 
     # Change file and dir permissions
-    wp_change_ownership "${ACTUAL_FOLDER}/${install_path}"
+    wp_change_ownership "${actual_folder}/${install_path}"
 
     # Change wp-config.php database parameters
-    #PROJECT_DIR="${FOLDER_TO_INSTALL}/${PROJECT_DOMAIN}"
-
     if [[ -z "${DB_PASS}" ]]; then
-      wp_update_wpconfig "${ACTUAL_FOLDER}/${install_path}" "${PROJECT_NAME}" "${PROJECT_STATE}" ""
+      wp_update_wpconfig "${actual_folder}/${install_path}" "${project_name}" "${project_state}" ""
       
     else
-      wp_update_wpconfig "${ACTUAL_FOLDER}/${install_path}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
+      wp_update_wpconfig "${actual_folder}/${install_path}" "${project_name}" "${project_state}" "${DB_PASS}"
       
     fi
 
   fi
 
 # Create nginx config files for site
-create_nginx_server "${PROJECT_DOMAIN}" "wordpress"
+create_nginx_server "${project_domain}" "wordpress"
 
 # Get server IP
 #IP=$(dig +short myip.opendns.com @resolver1.opendns.com) 2>/dev/null
 
 # TODO: Ask for subdomains to change in Cloudflare (root domain asked before)
-# SUGGEST "${PROJECT_DOMAIN}" and "www${PROJECT_DOMAIN}"
+# SUGGEST "${project_domain}" and "www${project_domain}"
 
 # Cloudflare API to change DNS records
-cloudflare_change_a_record "${ROOT_DOMAIN}" "${PROJECT_DOMAIN}"
+cloudflare_change_a_record "${root_domain}" "${project_domain}"
 
 # HTTPS with Certbot
-certbot_certificate_install "${MAILA}" "${PROJECT_DOMAIN}"
+certbot_helper_installer_menu "${MAILA}" "${project_domain}"
 
 # WP Search and Replace URL
 ask_url_search_and_replace
@@ -226,8 +265,8 @@ echo "Backup :: Script End -- $(date +%Y%m%d_%H%M)" >>$LOG
 
 HTMLOPEN='<html><body>'
 BODY_SRV_MIG='Migración finalizada en '${ELAPSED_TIME}'<br/>'
-BODY_DB='Database: '${PROJECT_NAME}'_'${PROJECT_STATE}'<br/>Database User: '${PROJECT_NAME}'_user <br/>Database User Pass: '${DB_PASS}'<br/>'
+BODY_DB='Database: '${project_name}'_'${project_state}'<br/>Database User: '${project_name}'_user <br/>Database User Pass: '${DB_PASS}'<br/>'
 #BODY_CLF='Ya podes cambiar la IP en CloudFlare: '${IP}'<br/>'
 HTMLCLOSE='</body></html>'
 
-sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${VPSNAME} - Migration Complete: ${PROJECT_NAME}" -o message-content-type=html -m "$HTMLOPEN $BODY_SRV_MIG $BODY_DB $BODY_CLF $HTMLCLOSE" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}
+sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${VPSNAME} - Migration Complete: ${project_name}" -o message-content-type=html -m "$HTMLOPEN $BODY_SRV_MIG $BODY_DB $BODY_CLF $HTMLCLOSE" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}
