@@ -2,14 +2,19 @@ server {
         charset utf-8;
         listen 80;
         listen [::]:80 ipv6only=on;
-        root /var/www/phpmyadmin;
+
+        root /var/www/domain.com;
         index index.php index.html index.htm;
-        server_name dominio.com;
+
+        server_name domain.com;
+
         location / {
                 try_files $uri $uri/ /index.php?q=$uri&$args;
         }
+
         location ~ \.php$ {
                 include snippets/fastcgi-php.conf;
                 fastcgi_pass unix:/run/php/phpPHP_V-fpm.sock;
         }
+
 }
