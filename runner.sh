@@ -14,7 +14,7 @@
 #       5- Test VALIDATORS (commons.sh) and use functions on user prompt
 #       6- LEMP installer fails last step, when ask optional packages installation
 #       7- When restore files from dropbox, ask you want to change project name. Better ask if want to change destination folder name. 
-#       8- Restoring nginx configuration need a refactor, its fails with HTTPS and has a fixed PHP_V 
+#       8- Restoring nginx configuration need a refactor, its fails with HTTPS and has a fixed PHP_V
 #
 # TODO: For release 3.1
 #       1- Refactor of RESTORE_FROM_SOURCE and complete server config restore
@@ -24,6 +24,9 @@
 #          The idea is that you could create different kind of projects (WP, Laravel, Standalone)
 #       4- Better log with check_result and log_event functions (commons.sh)
 #       5- Complete refactor of delete_project script
+#       6- COPY_FROM_PROJECT option to exclude uploads directory: 
+#           rsync -ax --exclude [relative path to directory to exclude] /path/from /path/to
+#       7- An option to generate o regenerate a new nginx server configuration
 #
 # TODO: For release 3.2
 #       1- On backup failure, the email must show what files fails and what files are correct backuped
@@ -40,13 +43,17 @@
 #       4- Rename database helper (with and without WP)
 #       5- Fallback for replace strings on wp database (if wp-cli fails, use old script version)
 #       6- Add some IT utils (change hostname, add floating IP, change SSH port)
+#           Ref: https://wiki.hetzner.de/index.php/Cloud_floating_IP_persistent/en
+#       7- Option to change php version on installed site. 
+#          See this implementation: https://easyengine.io/blog/easyengine-v4-0-15-released/
+#       8- Option to enable or disable OpCache
 #
 # TODO: For release 4.0
 #       1- Need a refactor to let the script be runned with flags
 #          Ex: ./runner.sh --backup-project="/var/www/some.domain.com"
 #       2- Support for Rclone? https://github.com/rclone/rclone
 #       3- Uptime Robot API?
-#       4- Auto-update script option
+#       4- Auto-update script option. See: https://github.com/centminmod/centminmod/blob/master/updatecm.sh
 #       5- Telegram notifications support: https://adevnull.com/enviar-mensajes-a-telegram-con-bash/
 #       6- Better LEMP setup, tzdata y mysql_secure_installation without human intervention
 #       7- Hetzner cloud cli support:
@@ -211,8 +218,11 @@ MYSQLDUMP="$(which mysqldump)"
 # TAR
 TAR="$(which tar)"
 
+# FIND
+FIND="$(which find)"
+
 # EXPORT VARS (GLOBALS)
-export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER PHP_CF LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
+export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER PHP_CF LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR FIND DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
 
 if [ -t 1 ]; then
 
