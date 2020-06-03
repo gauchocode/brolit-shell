@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc03
+# Version: 3.0-rc04
 #############################################################################
 #
 # TODO: This script need a good refactor.
