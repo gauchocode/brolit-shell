@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc03
+# Version: 3.0-rc04
 #############################################################################
 
 # Check if program is installed (is_this_installed apache2)
@@ -75,28 +75,43 @@ check_packages_required() {
 }
 
 basic_packages_installation() {
+  
   # Updating packages
   echo " > Adding repos and updating package lists ..." >>$LOG
   apt --yes install software-properties-common
   apt --yes update
+
+  # Upgrading packages
   echo " > Upgrading packages before installation ..." >>$LOG
   apt --yes dist-upgrade
 
+  # Installing packages
   echo " > Installing basic packages ..." >>$LOG
   apt --yes install vim unzip zip clamav ncdu imagemagick-* jpegoptim optipng webp sendemail libio-socket-ssl-perl dnsutils ghostscript pv ppa-purge
 }
 
 selected_package_installation() {
 
-  #$1 = ${APPS_TO_INSTALL[@]}
+  # Define array of Apps to install
+  local -n APPS_TO_INSTALL=(
+    "certbot" " " off
+    "monit" " " off
+    "netdata" " " off
+    "cockpit" " " off
+    "wpcli" " " off
+    "zabbix" " " off
+  )
 
-  local -n APPS_TO_INSTALL=$1
-
-  CHOSEN_APPS=$(whiptail --title "Apps Selection" --checklist "Select the apps you want to install after LEMP setup:" 20 78 15 "${APPS_TO_INSTALL[@]}" 3>&1 1>&2 2>&3)
-  echo "Setting CHOSEN_APPS="$CHOSEN_APPS
+  CHOSEN_APPS=$(whiptail --title "Apps Selection" --checklist "Select the apps you want to install:" 20 78 15 "${APPS_TO_INSTALL[@]}" 3>&1 1>&2 2>&3)
+  #echo "Setting CHOSEN_APPS=$CHOSEN_APPS"
+  
   for app in $CHOSEN_APPS; do
+    
     app=$(sed -e 's/^"//' -e 's/"$//' <<<$app) #needed to ommit double quotes
+    
+    echo " > Executing ${app} installer ..."
     echo -e ${CYAN}" > Executing ${app} installer ..."${ENDCOLOR}
+    
     "${SFOLDER}/utils/installers/${app}_installer.sh"
 
   done
@@ -136,6 +151,6 @@ remove_old_packages() {
 
 install_image_optimize_packages() {
 
-  apt -y install jpegoptim optipng pngquant gifsicle
+  apt -y install jpegoptim optipng pngquant gifsicle imagemagick-*
 
 }

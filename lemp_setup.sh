@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc03
+# Version: 3.0-rc04
 ################################################################################
 
 ### Checking some things
@@ -17,15 +17,6 @@ source "${SFOLDER}/libs/commons.sh"
 source "${SFOLDER}/libs/packages_helper.sh"
 
 ################################################################################
-
-# Define array of Apps to install
-APPS_TO_INSTALL=(
-  "certbot" " " off
-  "monit" " " off
-  "netdata" " " off
-  "cockpit" " " off
-  "wpcli" " " off
-)
 
 ### Log Start
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
@@ -44,21 +35,23 @@ export LOG SFOLDER
 
 checking_scripts_permissions
 
-basic_packages_installation
-
-"${SFOLDER}/utils/installers/mysql_installer.sh"
-
-"${SFOLDER}/utils/installers/nginx_installer.sh"
-
-"${SFOLDER}/utils/installers/php_installer.sh"
-
 # Configuring packages
 timezone_configuration
 
-#${SFOLDER}/utils/php_optimizations.sh
+# Installing basic packages
+basic_packages_installation
 
-selected_package_installation "${APPS_TO_INSTALL[@]}"
+# MySQL Installer
+"${SFOLDER}/utils/installers/mysql_installer.sh"
 
-echo -e ${GREEN}" > LEMP SETUP COMPLETED ..."${ENDCOLOR}
+# Nginx Installer
+"${SFOLDER}/utils/installers/nginx_installer.sh"
+
+# PHP Installer
+"${SFOLDER}/utils/installers/php_installer.sh"
+
+selected_package_installation
+
+echo -e ${B_GREEN}" > LEMP SETUP COMPLETED!"${ENDCOLOR}
 
 echo "Backup: Script End -- $(date +%Y%m%d_%H%M)" >>$LOG

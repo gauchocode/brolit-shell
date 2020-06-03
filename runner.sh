@@ -2,7 +2,7 @@
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Script Name: LEMP Ubuntu Utils Scripts
-# Version: 3.0-rc03
+# Version: 3.0-rc04
 ################################################################################
 #
 # TODO: For release 3.0-final
@@ -12,9 +12,8 @@
 #          So, if you need to install a new site, must ask what php_v to use.
 #       4- Fix project creation when use a project name like this: xyz_sub_domain (could be a problem with sed on wordpress installer)
 #       5- Test VALIDATORS (commons.sh) and use functions on user prompt
-#       6- LEMP installer fails last step, when ask optional packages installation
-#       7- When restore files from dropbox, ask you want to change project name. Better ask if want to change destination folder name. 
-#       8- Restoring nginx configuration need a refactor, its fails with HTTPS and has a fixed PHP_V
+#       6- When restore files from dropbox, ask you want to change project name. Better ask if want to change destination folder name. 
+#       7- Restoring nginx configuration need a refactor, its fails with HTTPS and has a fixed PHP_V
 #
 # TODO: For release 3.1
 #       1- Refactor of RESTORE_FROM_SOURCE and complete server config restore
@@ -73,7 +72,7 @@
 #
 ################################################################################
 
-SCRIPT_V="3.0-rc03"
+SCRIPT_V="3.0-rc04"
 
 ### Init #######################################################################
 

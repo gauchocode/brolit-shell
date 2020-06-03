@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc03
+# Version: 3.0-rc04
 ################################################################################
 #
 # Ref: https://kinsta.com/blog/wp-cli/
@@ -54,7 +54,7 @@ wpcli_main_menu() {
     if [[ ${CHOSEN_WPCLI_OPTION} == *"02"* ]]; then
 
       # Listing installed themes
-      WP_DEL_THEMES=$(wp --path=${WP_SITE} theme list --quiet --field=name --status=inactive --allow-root)
+      WP_DEL_THEMES=$(wp --path="${WP_SITE}" theme list --quiet --field=name --status=inactive --allow-root)
       array_to_checklist "$WP_DEL_THEMES"
       echo "Setting WP_DEL_THEMES=${checklist_array[@]}"
       CHOSEN_DEL_THEME_OPTION=$(whiptail --title "Theme Selection" --checklist "Select the themes you want to delete." 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)
