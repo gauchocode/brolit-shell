@@ -33,16 +33,16 @@ wp_download_wordpress() {
   echo "Trying to make a clean install of Wordpress ..." >>$LOG
   echo -e ${CYAN}"Trying to make a clean install of Wordpress ..."${ENDCOLOR}
 
-  #cd "${folder_to_install}"
-  #curl -O "https://wordpress.org/latest.tar.gz"
-
+  # Download WP
   wget -P "${folder_to_install}" "https://wordpress.org/latest.tar.gz"
 
-  #tar -xzxf "${folder_to_install}/latest.tar.gz"
-
+  # Extract WP
   extract "${folder_to_install}/latest.tar.gz" "${folder_to_install}"
 
+  # Move to project directory
   mv "${folder_to_install}/wordpress" "${folder_to_install}/${project_domain}"
+
+  # Delete wp installer files
   rm "${folder_to_install}/latest.tar.gz"
 
   # Setup wp-config.php
@@ -51,6 +51,7 @@ wp_download_wordpress() {
 
 }
 
+#TODO: why not use https://developer.wordpress.org/cli/commands/config/create/ ?
 wp_update_wpconfig() {
 
   # $1 = ${project_dir}
