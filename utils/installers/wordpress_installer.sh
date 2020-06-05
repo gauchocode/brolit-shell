@@ -4,11 +4,6 @@
 # Version: 3.0-rc04
 ################################################################################
 #
-# https://github.com/AbhishekGhosh/Ubuntu-16.04-Nginx-WordPress-Autoinstall-Bash-Script/
-# https://alonganon.info/2018/11/17/make-a-super-fast-and-lightweight-wordpress-on-ubuntu-18-04-with-php-7-2-nginx-and-mariadb/
-#
-################################################################################
-#
 # TODO: check when add www.DOMAIN.com and then select other stage != prod
 # TODO: add multisite support
 #
@@ -48,71 +43,75 @@ if [ $exitstatus = 0 ]; then
 
   wpcli_install_if_not_installed
 
-  FOLDER_TO_INSTALL=$(ask_folder_to_install_sites "${SITES}")
+  folder_to_install=$(ask_folder_to_install_sites "${SITES}")
 
   if [[ ${INSTALLATION_TYPE} == *"COPY"* ]]; then
 
-    startdir=${FOLDER_TO_INSTALL}
+    startdir=${folder_to_install}
     menutitle="Site Selection Menu"
     directory_browser "$menutitle" "$startdir"
-    COPY_PROJECT_PATH=$filepath"/"$filename
-    echo "Setting COPY_PROJECT_PATH=${COPY_PROJECT_PATH}"
+    copy_project_path=$filepath"/"$filename
+    echo "Setting copy_project_path=${copy_project_path}"
 
-    COPY_PROJECT=$(basename $COPY_PROJECT_PATH)
-    echo "Setting COPY_PROJECT=${COPY_PROJECT}"
+    copy_project=$(basename $copy_project_path)
+    echo "Setting copy_project=${copy_project}"
 
     #ask_domain_to_install_site
-    ask_project_domain
+    project_domain=$(ask_project_domain)
 
-    POSSIBLE_ROOT_DOMAIN=${PROJECT_DOMAIN#[[:alpha:]]*.}
-    ask_rootdomain_to_cloudflare_config "${POSSIBLE_ROOT_DOMAIN}"
+    possible_root_domain=${project_domain#[[:alpha:]]*.}
+    root_domain=$(ask_rootdomain_to_cloudflare_config "${possible_root_domain}")
 
-    ask_project_name "${PROJECT_DOMAIN}"
+    project_name=$(ask_project_name "${project_domain}")
 
-    ask_project_state ""
+    project_state=$(ask_project_state "")
 
     # TODO: maybe if project state != prod we want to disable some plugins and block search engines
 
     # TODO: ask if want to exclude directory
 
-    project_dir=$(check_if_folder_exists "${FOLDER_TO_INSTALL}" "${PROJECT_DOMAIN}")
+    project_dir=$(check_if_folder_exists "${folder_to_install}" "${project_domain}")
+
     if [ "${project_dir}" != 'ERROR' ]; then
       # Make a copy of the existing project
-      echo "Making a copy of ${COPY_PROJECT} on ${project_dir} ..." >>$LOG
-      echo -e ${CYAN}"Making a copy of ${COPY_PROJECT} on ${project_dir} ..."${ENDCOLOR}
+      echo "Making a copy of ${copy_project} on ${project_dir} ..." >>$LOG
+      echo -e ${CYAN}"Making a copy of ${copy_project} on ${project_dir} ..."${ENDCOLOR}
 
-      #cd "${FOLDER_TO_INSTALL}"
-      copy_project_files "${FOLDER_TO_INSTALL}/${COPY_PROJECT}" "${project_dir}"
+      #cd "${folder_to_install}"
+      copy_project_files "${folder_to_install}/${copy_project}" "${project_dir}"
 
-      echo "DONE" >>$LOG
+      echo -e ${B_GREEN}" > WordPress copy OK!"${ENDCOLOR}
+      echo " > WordPress copy OK!" >>$LOG
 
     else
-      echo -e ${B_RED}"ERROR: Destination folder '${project_dir}' already exist, aborting ..."${ENDCOLOR}
-      echo "FAIL" >>$LOG
+      echo -e ${B_RED}" > ERROR: Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..."${ENDCOLOR}
+      echo " > ERROR: Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..." >>$LOG
       exit 1
 
     fi
 
   else # Clean Install
 
-    ask_project_domain
+    project_domain=$(ask_project_domain)
 
-    POSSIBLE_ROOT_DOMAIN=${PROJECT_DOMAIN#[[:alpha:]]*.}
-    ask_rootdomain_to_cloudflare_config "${POSSIBLE_ROOT_DOMAIN}"
+    possible_root_domain=${project_domain#[[:alpha:]]*.}
+    root_domain=$(ask_rootdomain_to_cloudflare_config "${possible_root_domain}")
 
-    ask_project_name "${PROJECT_DOMAIN}"
+    project_name=$(ask_project_name "${project_domain}")
 
-    ask_project_state ""
+    project_state=$(ask_project_state "")
 
-    project_dir=$(check_if_folder_exists "${FOLDER_TO_INSTALL}" "${PROJECT_DOMAIN}")
+    project_dir=$(check_if_folder_exists "${folder_to_install}" "${project_domain}")
+
     if [ "${project_dir}" != 'ERROR' ]; then
       # Download WP
-      wp_download_wordpress "${FOLDER_TO_INSTALL}" "${PROJECT_DOMAIN}"
-      echo "WordPress downloaded OK!" >>$LOG
+      wp_download_wordpress "${folder_to_install}" "${project_domain}"
+      echo -e ${B_GREEN}" > WordPress downloaded OK!"${ENDCOLOR}
+      echo " > WordPress downloaded OK!" >>$LOG
 
     else
-      echo -e ${B_RED}"ERROR: Destination folder '${project_dir}' already exist, aborting ..."${ENDCOLOR}
-      echo "FAIL" >>$LOG
+      echo -e ${B_RED}" > ERROR: Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..."${ENDCOLOR}
+      echo " > ERROR: Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..." >>$LOG
       exit 1
 
     fi
@@ -122,14 +121,14 @@ if [ $exitstatus = 0 ]; then
   wp_change_ownership "${project_dir}"
 
   # Create database and user
-  wp_database_creation "${PROJECT_NAME}" "${PROJECT_STATE}"
+  wp_database_creation "${project_name}" "${project_state}"
 
   # Update wp-config.php
   if [[ -z "${DB_PASS}" ]]; then
-    wp_update_wpconfig "${project_dir}" "${PROJECT_NAME}" "${PROJECT_STATE}" ""
+    wp_update_wpconfig "${project_dir}" "${project_name}" "${project_state}" ""
   
   else
-    wp_update_wpconfig "${project_dir}" "${PROJECT_NAME}" "${PROJECT_STATE}" "${DB_PASS}"
+    wp_update_wpconfig "${project_dir}" "${project_name}" "${project_state}" "${DB_PASS}"
   
   fi
   
@@ -142,39 +141,38 @@ if [ $exitstatus = 0 ]; then
     echo -e ${YELLOW}" > Copying database ..."${ENDCOLOR}
 
     # Create dump file
-    BK_FOLDER=${SFOLDER}/tmp/
+    bk_folder="${SFOLDER}/tmp/"
 
     # We get the database name from the copied wp-config.php
-    SOURCE_WPCONFIG="${FOLDER_TO_INSTALL}/${COPY_PROJECT}"
-    DB_TOCOPY=$(cat ${SOURCE_WPCONFIG}/wp-config.php | grep DB_NAME | cut -d \' -f 4)
-    BK_FILE="db-${DB_TOCOPY}.sql"
+    source_wpconfig="${folder_to_install}/${copy_project}"
+    db_tocopy=$(cat ${source_wpconfig}/wp-config.php | grep DB_NAME | cut -d \' -f 4)
+    bk_file="db-${db_tocopy}.sql"
 
     # Make a database Backup
-    mysql_database_export "${DB_TOCOPY}" "${BK_FOLDER}${BK_FILE}"
+    mysql_database_export "${db_tocopy}" "${bk_folder}${bk_file}"
     if [ "$?" -eq 0 ]; then
 
-      echo " > mysqldump for ${DB_TOCOPY} OK ..." >>$LOG
-      echo -e ${GREEN}" > mysqldump for ${DB_TOCOPY} OK ..."${ENDCOLOR}
+      echo " > mysqldump for ${db_tocopy} OK ..." >>$LOG
+      echo -e ${GREEN}" > mysqldump for ${db_tocopy} OK ..."${ENDCOLOR}
 
       echo " > Trying to import database ..." >>$LOG
       echo -e ${YELLOW}" > Trying to import database ..."${ENDCOLOR}
 
-      TARGET_DB="${PROJECT_NAME}_${PROJECT_STATE}"
-      #$MYSQL -u ${MUSER} --password=${MPASS} ${NEW_PROJECT_DB} <${BK_FOLDER}${BK_FILE}
+      target_db="${project_name}_${project_state}"
 
       # Importing dump file
-      mysql_database_import "${TARGET_DB}" "${BK_FOLDER}${BK_FILE}"
+      mysql_database_import "${target_db}" "${bk_folder}${bk_file}"
 
       # Generate WP tables PREFIX
-      TABLES_PREFIX=$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)
+      tables_prefix=$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)
       # Change WP tables PREFIX
-      wpcli_change_tables_prefix "${project_dir}" "${TABLES_PREFIX}"
+      wpcli_change_tables_prefix "${project_dir}" "${tables_prefix}"
 
       # Create tmp directory
       mkdir "${SFOLDER}/tmp-backup"
 
       # Make a database Backup before replace URLs
-      mysql_database_export "${TARGET_DB}" "${SFOLDER}/tmp-backup/${TARGET_DB}_bk_before_replace_urls.sql"
+      mysql_database_export "${target_db}" "${SFOLDER}/tmp-backup/${target_db}_bk_before_replace_urls.sql"
 
       # WP Search and Replace URL
       ask_url_search_and_replace "${project_dir}"
@@ -190,13 +188,13 @@ if [ $exitstatus = 0 ]; then
   fi
 
   # Cloudflare API to change DNS records
-  cloudflare_change_a_record "${ROOT_DOMAIN}" "${PROJECT_DOMAIN}"
+  cloudflare_change_a_record "${root_domain}" "${project_domain}"
 
   # New site Nginx configuration
-  create_nginx_server "${PROJECT_DOMAIN}" "wordpress"
+  create_nginx_server "${project_domain}" "wordpress"
 
   # HTTPS with Certbot
-  certbot_certificate_install "${MAILA}" "${PROJECT_DOMAIN}"
+  certbot_certificate_install "${MAILA}" "${project_domain}"
 
   echo " > WORDPRESS INSTALLATION FINISHED!" >>$LOG
   echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FINISHED!"${ENDCOLOR}
