@@ -161,6 +161,7 @@ cd "${SFOLDER}/tmp/${project_domain}"
 
 if [ "${source_type}" = "DIRECTORY" ]; then
 
+  # TODO: use extract function
   unzip \*.zip \* -d "${SFOLDER}/tmp/${project_domain}"
 
   # DB

@@ -41,7 +41,7 @@ menutitle="Config Selection Menu"
 
 main_menu() {
 
-  RUNNER_OPTIONS="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 DELETE_PROJECT 04 WORDPRESS_INSTALLER 05 WPCLI_MANAGER 06 CERTBOT_MANAGER 07 IT_UTILS 08 SCRIPT_OPTIONS"
+  RUNNER_OPTIONS="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 DELETE_PROJECT 04 PROJECT_UTILS 05 WPCLI_MANAGER 06 CERTBOT_MANAGER 07 IT_UTILS 08 SCRIPT_OPTIONS"
   CHOSEN_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 $(for x in ${RUNNER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -62,7 +62,7 @@ main_menu() {
     fi
 
     if [[ ${CHOSEN_TYPE} == *"04"* ]]; then
-      source "${SFOLDER}/utils/installers/wordpress_installer.sh"
+      project_utils_menu
 
     fi
 
@@ -189,16 +189,45 @@ restore_menu () {
   if [ $exitstatus = 0 ]; then
 
     if [[ ${CHOSEN_RESTORE_TYPE} == *"01"* ]]; then
+      # shellcheck source=${SFOLDER}/restore_from_backup.sh
       source "${SFOLDER}/restore_from_backup.sh"
     fi
 
     if [[ ${CHOSEN_RESTORE_TYPE} == *"02"* ]]; then
+      # shellcheck source=${SFOLDER}/utils/wordpress_restore_from_source.sh
       source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
     fi
 
   fi
 
 }
+
+project_utils_menu () {
+
+  PROJECT_UTILS_OPTIONS="01 WORDPRESS_INSTALLER 02 RESTORE_FROM_SOURCE 03 TURN_PROJECT_OFFLINE"
+  CHOSEN_PROJECT_UTILS_OPTION=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a Restore Option to run" 20 78 10 $(for x in ${PROJECT_UTILS_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+
+    if [[ ${CHOSEN_PROJECT_UTILS_OPTION} == *"01"* ]]; then
+      # shellcheck source=${SFOLDER}/installers/wordpress_installer.sh
+      source "${SFOLDER}/utils/installers/wordpress_installer.sh"
+    fi
+
+    if [[ ${CHOSEN_PROJECT_UTILS_OPTION} == *"02"* ]]; then
+      # shellcheck source=${SFOLDER}/utils/wordpress_restore_from_source.sh
+      source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
+    fi
+
+    if [[ ${CHOSEN_PROJECT_UTILS_OPTION} == *"03"* ]]; then
+      #source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
+      echo -e ${B_RED}"TODO: IMPLEMENT THIS OPTION"${ENDCOLOR}
+    fi
+
+  fi
+
+} 
 
 it_utils_menu() {
 
@@ -209,6 +238,7 @@ it_utils_menu() {
   if [ $exitstatus = 0 ]; then
 
     if [[ ${CHOSEN_IT_UTIL_TYPE} == *"01"* ]]; then
+      # shellcheck source=${SFOLDER}/installers_and_configurators.sh
       source "${SFOLDER}/installers_and_configurators.sh"
 
     fi
@@ -219,11 +249,12 @@ it_utils_menu() {
         read -p "Please type 'y' or 'n'" yn
         case $yn in
         [Yy]*)
+          # shellcheck source=${SFOLDER}/server_and_image_optimizations.sh
           source "${SFOLDER}/server_and_image_optimizations.sh"
           break
           ;;
         [Nn]*)
-          echo -e ${RED}"Aborting optimization script ..."${ENDCOLOR}
+          echo -e ${YELLOW}"Aborting optimization script ..."${ENDCOLOR}
           break
           ;;
         *) echo " > Please answer yes or no." ;;
@@ -237,6 +268,7 @@ it_utils_menu() {
       URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [ ${exitstatus} = 0 ]; then
+        # shellcheck source=${SFOLDER}/utils/third-party/google-insights-api-tools/gitools_v5.sh
         source "${SFOLDER}/utils/third-party/google-insights-api-tools/gitools_v5.sh" gtmetrix "${URL_TO_TEST}"
       fi
 
@@ -246,6 +278,7 @@ it_utils_menu() {
       IP_TO_TEST=$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [ ${exitstatus} = 0 ]; then
+        # shellcheck source=${SFOLDER}/utils/third-party/blacklist-checker/bl.sh
         source "${SFOLDER}/utils/third-party/blacklist-checker/bl.sh" "${IP_TO_TEST}"
       fi
 
@@ -348,17 +381,111 @@ script_configuration_wizard() {
     SITES=$(whiptail --title "Websites Root Directory" --inputbox "Insert the path where websites are stored. Ex: /var/www or /usr/share/nginx" 10 60 "${SITES_OLD}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      echo "SITES="${SITES} >>/root/.broobe-utils-options
+      echo "SITES=${SITES}" >>/root/.broobe-utils-options
     else
       exit 1
     fi
   fi
+
+  # DUPLICITY CONFIG
+  if [[ -z "${DUP_BK}" ]]; then
+
+    DUP_BK_DEFAULT=false
+    DUP_BK=$(whiptail --title "Duplicity Backup Support?" --inputbox "Please insert true or false" 10 60 "${DUP_BK_DEFAULT}" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo "DUP_BK=${DUP_BK}" >>/root/.broobe-utils-options
+
+      if [[ "${DUP_BK}" = true ]]; then
+
+        if [[ -z "${DUP_ROOT}" ]]; then
+
+          # Duplicity Backups Directory
+          DUP_ROOT_DEFAULT="/media/backups/PROJECT_NAME"
+          DUP_ROOT=$(whiptail --title "Duplicity Backup Directory" --inputbox "Insert the directory path to storage duplicity Backup" 10 60 "${DUP_ROOT_DEFAULT}" 3>&1 1>&2 2>&3)
+          exitstatus=$?
+          if [ $exitstatus = 0 ]; then
+            echo "DUP_ROOT=${DUP_ROOT}" >>/root/.broobe-utils-options
+          else
+            exit 1
+          fi
+        fi
+
+        if [[ -z "${DUP_SRC_BK}" ]]; then
+
+          # Source of Directories to Backup
+          DUP_SRC_BK_DEFAULT="${SITES}"
+          DUP_SRC_BK=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_SRC_BK_DEFAULT}" 3>&1 1>&2 2>&3)
+          exitstatus=$?
+          if [ $exitstatus = 0 ]; then
+            echo "DUP_SRC_BK=${DUP_SRC_BK}" >>/root/.broobe-utils-options
+          else
+            exit 1
+          fi
+        fi
+
+        if [[ -z "${DUP_FOLDERS}" ]]; then
+
+          # Folders to Backup
+          DUP_FOLDERS_DEFAULT="FOLDER1,FOLDER2"
+          DUP_FOLDERS=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_FOLDERS_DEFAULT}" 3>&1 1>&2 2>&3)
+          exitstatus=$?
+          if [ $exitstatus = 0 ]; then
+            echo "DUP_FOLDERS=${DUP_FOLDERS}" >>/root/.broobe-utils-options
+          else
+            exit 1
+          fi
+        fi
+
+        if [[ -z "${DUP_BK_FULL_FREQ}" ]]; then
+
+          # Create a new full backup every ...
+          DUP_BK_FULL_FREQ_DEFAULT="7D"
+          DUP_BK_FULL_FREQ=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_BK_FULL_FREQ_DEFAULT}" 3>&1 1>&2 2>&3)
+          exitstatus=$?
+          if [ $exitstatus = 0 ]; then
+            echo "DUP_BK_FULL_FREQ=${DUP_BK_FULL_FREQ}" >>/root/.broobe-utils-options
+          else
+            exit 1
+          fi
+        fi
+
+        if [[ -z "${DUP_BK_FULL_LIFE}" ]]; then
+
+          # Delete any backup older than this
+          DUP_BK_FULL_LIFE_DEFAULT="14D"
+          DUP_BK_FULL_LIFE=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_BK_FULL_LIFE_DEFAULT}" 3>&1 1>&2 2>&3)
+          exitstatus=$?
+          if [ $exitstatus = 0 ]; then
+            echo "DUP_BK_FULL_LIFE=${DUP_BK_FULL_LIFE}" >>/root/.broobe-utils-options
+          else
+            exit 1
+          fi
+        fi
+
+      else
+
+        echo "DUP_ROOT=none" >>/root/.broobe-utils-options
+        echo "DUP_SRC_BK=none" >>/root/.broobe-utils-options
+        echo "DUP_FOLDERS=none" >>/root/.broobe-utils-options
+        echo "DUP_BK_FULL_FREQ=none" >>/root/.broobe-utils-options
+        echo "DUP_BK_FULL_LIFE=none" >>/root/.broobe-utils-options
+        
+      fi
+
+    fi
+  
+  fi
+
+  # TODO: MAKE TRUE OR FALSE
   if [[ -z "${MAILCOW_BK}" ]]; then
+
     MAILCOW_BK_DEFAULT=false
+    
     MAILCOW_BK=$(whiptail --title "Mailcow Backup Support?" --inputbox "Please insert true or false" 10 60 "${MAILCOW_BK_DEFAULT}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      echo "MAILCOW_BK="${MAILCOW_BK} >>/root/.broobe-utils-options
+      echo "MAILCOW_BK=${MAILCOW_BK}" >>/root/.broobe-utils-options
       
       if [[ -z "${MAILCOW}" && "${MAILCOW_BK}" = true ]]; then
 
@@ -367,7 +494,7 @@ script_configuration_wizard() {
         MAILCOW=$(whiptail --title "Mailcow Installation Path" --inputbox "Insert the path where Mailcow is installed" 10 60 "${MAILCOW_DEFAULT}" 3>&1 1>&2 2>&3)
         exitstatus=$?
         if [ $exitstatus = 0 ]; then
-          echo "MAILCOW="${MAILCOW} >>/root/.broobe-utils-options
+          echo "MAILCOW=${MAILCOW}" >>/root/.broobe-utils-options
         else
           exit 1
         fi
@@ -673,16 +800,16 @@ check_if_folder_exists() {
   # $1 = ${FOLDER_TO_INSTALL}
   # $2 = ${DOMAIN}
 
-  local FOLDER_TO_INSTALL=$1
-  local DOMAIN=$2
+  local folder_to_install=$1
+  local domain=$2
 
-  local PROJECT_DIR="${FOLDER_TO_INSTALL}/${DOMAIN}"
+  local project_dir="${folder_to_install}/${domain}"
   
-  if [ -d "${PROJECT_DIR}" ]; then
+  if [ -d "${project_dir}" ]; then
     echo "ERROR"
 
   else
-    echo "${PROJECT_DIR}"
+    echo "${project_dir}"
 
   fi
 }
