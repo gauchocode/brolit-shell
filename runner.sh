@@ -7,27 +7,30 @@
 #
 # TODO: For release 3.0-final
 #       1- Refactor for restore from dropbox: 5 options (server_config, site_config, files, database and project)
-#       2- When restore or create a new project and the db_user already exists, we need to ask what todo
-#       3- On php_installer if multiple php versions are installed de PHP_V need to be an array
-#          So, if you need to install a new site, must ask what php_v to use.
-#       4- Fix project creation when use a project name like this: xyz_sub_domain (could be a problem with sed on wordpress installer)
-#       5- Test VALIDATORS (commons.sh) and use functions on user prompt
-#       6- When restore files from dropbox, ask you want to change project name. Better ask if want to change destination folder name. 
-#       7- Restoring nginx configuration need a refactor, its fails with HTTPS and has a fixed PHP_V
+#       2- Restoring nginx configuration need a refactor, its fails with HTTPS and has a fixed PHP_V
+#       3- When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?)
+#       4- WordPress install fails when set a project name like: xyz_sub_domain (could be a problem with sed on wordpress installer)
+#       5- WP-CLI is required to the script works propperly, must install on script setup.
+#       6- New option to put a website offline 
+#           Maybe comment nginx server file, rename project_dir to domain-OFFLINE and restart nginx service
 #
-# TODO: For release 3.1
+# TODO: For release 3.2
 #       1- Refactor of RESTORE_FROM_SOURCE and complete server config restore
 #       2- Implement on restore_from_backup easy way to restore all sites
 #       3- Refactor of WORDPRESS_INSTALLER - COPY_FROM_PROJECT
-#          We need to replace then with PROJECT_GENERATOR (or something like that)
-#          The idea is that you could create different kind of projects (WP, Laravel, Standalone)
+#          We need to replace then with PROJECT_UTILS (or something like that)
+#          The idea is that you could create/delete/update different kind of projects (WP, Laravel, Standalone)
+#          Important: if create a project with stage different than prod, block search engine indexation
 #       4- Better log with check_result and log_event functions (commons.sh)
 #       5- Complete refactor of delete_project script
 #       6- COPY_FROM_PROJECT option to exclude uploads directory: 
 #           rsync -ax --exclude [relative path to directory to exclude] /path/from /path/to
 #       7- An option to generate o regenerate a new nginx server configuration
+#       8- On php_installer if multiple php versions are installed de PHP_V need to be an array
+#          So, if you need to install a new site, must ask what php_v to use.
+#       9- Test VALIDATORS (commons.sh) and use functions on user prompt
 #
-# TODO: For release 3.2
+# TODO: For release 3.4
 #       1- On backup failure, the email must show what files fails and what files are correct backuped
 #       2- Support for dailys, weeklys y monthlys backups
 #       3- Mail notification when a new site is installed
@@ -35,9 +38,9 @@
 #       5- Option to install script on crontab (use cron_this function)
 #       6- Option to install Bashtop and other utils: http://packages.azlux.fr/
 #
-# TODO: For release 3.5
+# TODO: For release 3.6
 #       1- Expand Duplicity support with a restore option
-#       2- Rethink server_and_image_optimizations.sh (maybe add a pdf optimization files too)
+#       2- Whiptail options for server_and_image_optimizations.sh and complete the pdf optimization process
 #       3- MySQL optimization script
 #       4- Rename database helper (with and without WP)
 #       5- Fallback for replace strings on wp database (if wp-cli fails, use old script version)
@@ -108,14 +111,6 @@ SITES_BL=".wp-cli,phpmyadmin,html"
 
 # Database blacklist
 DB_BL="information_schema,performance_schema,mysql,sys,phpmyadmin"
-
-# DUPLICITY CONFIG
-DUP_BK=false                                  # Duplicity Backups true or false (bool)
-DUP_ROOT="/media/backups/PROJECT_NAME_OR_VPS" # Duplicity Backups destination folder
-DUP_SRC_BK="/var/www/"                        # Source of Directories to Backup ${SITES}?
-DUP_FOLDERS="FOLDER1,FOLDER2"                 # Folders to Backup
-DUP_BK_FULL_FREQ="7D"                         # Create a new full backup every ...
-DUP_BK_FULL_LIFE="14D"                        # Delete any backup older than this
 
 #MAILCOW BACKUP
 MAILCOW_TMP_BK="${SFOLDER}/tmp/mailcow"
@@ -221,13 +216,16 @@ TAR="$(which tar)"
 FIND="$(which find)"
 
 # EXPORT VARS (GLOBALS)
-export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER PHP_CF LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR FIND DROPBOX_FOLDER MAIN_VOL DUP_BK DUP_ROOT DUP_SRC_BK DUP_FOLDERS DUP_BK_FULL_FREQ DUP_BK_FULL_LIFE MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
+export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER PHP_CF LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR FIND DROPBOX_FOLDER MAIN_VOL MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
 
 if [ -t 1 ]; then
 
   ### Running from terminal
 
-  if [[ -z "${MPASS}" || -z "${SMTP_U}" || -z "${SMTP_P}" || -z "${SMTP_TLS}" || -z "${SMTP_PORT}" || -z "${SMTP_SERVER}" || -z "${SMTP_P}" || -z "${MAILA}" || -z "${SITES}"|| -z "${MAILCOW_BK}" ]]; then
+  if [[ -z "${MPASS}" || -z "${SITES}"|| 
+        -z "${SMTP_U}" || -z "${SMTP_P}" || -z "${SMTP_TLS}" || -z "${SMTP_PORT}" || -z "${SMTP_SERVER}" || -z "${SMTP_P}" || -z "${MAILA}" ||
+        -z "${DUP_BK}" || -z "${DUP_ROOT}" || -z "${DUP_SRC_BK}"|| -z "${DUP_FOLDERS}"|| -z "${DUP_BK_FULL_FREQ}"|| -z "${DUP_BK_FULL_LIFE}"|| 
+        -z "${MAILCOW_BK}" ]]; then
 
     FIRST_RUN_OPTIONS="01 LEMP_SETUP 02 CONFIGURE_SCRIPT"
     CHOSEN_FR_OPTION=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 $(for x in ${FIRST_RUN_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
