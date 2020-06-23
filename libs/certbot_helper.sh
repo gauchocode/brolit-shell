@@ -106,59 +106,6 @@ certbot_helper_installer_menu() {
 
 }
 
-certbot_helper_menu() {
-
-  CERTBOT_OPTIONS="01 INSTALL_CERTIFICATE 02 EXPAND_CERTIFICATE 03 RENEW_CERTIFICATE 04 FORCE_RENEW_CERTIFICATE 05 DELETE_CERTIFICATE 06 SHOW_INSTALLED_CERTIFICATES"
-  CHOSEN_CB_OPTION=$(whiptail --title "CERTBOT MANAGER" --menu "Please choose an option:" 20 78 10 $(for x in ${CERTBOT_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
-
-  exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-
-    domains=$(whiptail --title "CERTBOT MANAGER" --inputbox "Insert the domain and/or subdomains that you want to work with. Ex: broobe.com,www.broobe.com" 10 60 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [ $exitstatus = 0 ]; then
-
-      if [[ ${CHOSEN_CB_OPTION} == *"01"* ]]; then
-        certbot_helper_installer_menu "${MAILA}" "${domains}"
-        #certbot_helper_menu
-
-      fi
-      if [[ ${CHOSEN_CB_OPTION} == *"02"* ]]; then
-        certbot_certificate_expand "${MAILA}" "${domains}"
-        #certbot_helper_menu
-
-      fi
-      if [[ ${CHOSEN_CB_OPTION} == *"03"* ]]; then
-        certbot_certificate_renew "${domains}"
-        #certbot_helper_menu
-
-      fi
-      if [[ ${CHOSEN_CB_OPTION} == *"04"* ]]; then
-        certbot_certificate_force_renew "${domains}"
-        #certbot_helper_menu
-
-      fi
-      if [[ ${CHOSEN_CB_OPTION} == *"05"* ]]; then
-        certbot_certificate_delete "${domains}"
-        #certbot_helper_menu
-
-      fi
-      if [[ ${CHOSEN_CB_OPTION} == *"06"* ]]; then
-        certbot_show_certificates_info
-        #certbot_helper_menu
-
-      fi
-
-    fi
-
-  else
-    prompt_return_or_finish
-    certbot_helper_menu
-
-  fi
-
-}
-
 certbot_certonly() {
 
   # ATENCION: creo que el mejor camino es correr primero el certbot --nginx y luego el certbot certonly
@@ -247,5 +194,79 @@ certbot_certificate_delete() {
     done
 
 fi
+
+}
+
+certbot_helper_ask_domains() {
+
+  local domains
+
+  domains=$(whiptail --title "CERTBOT MANAGER" --inputbox "Insert the domain and/or subdomains that you want to work with. Ex: broobe.com,www.broobe.com" 10 60 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+
+    echo "${domains}"
+    #exit 0;
+
+  else
+
+    exit 1;
+
+  fi
+
+}
+
+certbot_helper_menu() {
+
+  local domains certbot_options chosen_cb_options
+
+  certbot_options="01 INSTALL_CERTIFICATE 02 EXPAND_CERTIFICATE 03 RENEW_CERTIFICATE 04 FORCE_RENEW_CERTIFICATE 05 DELETE_CERTIFICATE 06 SHOW_INSTALLED_CERTIFICATES"
+  chosen_cb_options=$(whiptail --title "CERTBOT MANAGER" --menu "Please choose an option:" 20 78 10 $(for x in ${certbot_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+
+    if [[ ${chosen_cb_options} == *"01"* ]]; then
+      domains=$(certbot_helper_ask_domains)
+      certbot_helper_installer_menu "${MAILA}" "${domains}"
+      #certbot_helper_menu
+
+    fi
+    if [[ ${chosen_cb_options} == *"02"* ]]; then
+      domains=$(certbot_helper_ask_domains)
+      certbot_certificate_expand "${MAILA}" "${domains}"
+      #certbot_helper_menu
+
+    fi
+    if [[ ${chosen_cb_options} == *"03"* ]]; then
+      domains=$(certbot_helper_ask_domains)
+      certbot_certificate_renew "${domains}"
+      #certbot_helper_menu
+
+    fi
+    if [[ ${chosen_cb_options} == *"04"* ]]; then
+      domains=$(certbot_helper_ask_domains)
+      certbot_certificate_force_renew "${domains}"
+      #certbot_helper_menu
+
+    fi
+    if [[ ${chosen_cb_options} == *"05"* ]]; then
+      domains=$(certbot_helper_ask_domains)
+      certbot_certificate_delete "${domains}"
+      #certbot_helper_menu
+
+    fi
+    if [[ ${chosen_cb_options} == *"06"* ]]; then
+      certbot_show_certificates_info
+      read -n 1 -p "Press any key to return to the certbot menu" "mainmenuinput"
+      certbot_helper_menu
+
+    fi
+
+  else
+    prompt_return_or_finish
+    certbot_helper_menu
+
+  fi
 
 }
