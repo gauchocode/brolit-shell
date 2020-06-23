@@ -30,15 +30,15 @@ source "${SFOLDER}/libs/backup_helper.sh"
 #
 
 # Folder where sites are hosted
-FOLDER_TO_WORK=$(ask_folder_to_install_sites "${SITES}")
+folder_to_work=$(ask_folder_to_install_sites "${SITES}")
 
-MENU_TITLE="PROJECT TO DELETE"
-directory_browser "${MENU_TITLE}" "${FOLDER_TO_WORK}"
+menu_title="PROJECT TO DELETE"
+directory_browser "${menu_title}" "${folder_to_work}"
 
 # Creating a tmp directory
 mkdir "${SFOLDER}/tmp-backup"
 
-echo "directory_broser returns: " $filepath"/"$filename
+#echo "directory_broser returns: " $filepath"/"$filename
 if [[ -z "${filepath}" || ${filepath} == "" ]]; then
 
     echo -e ${YELLOW}" > Skipped!"${ENDCOLOR}
@@ -48,12 +48,21 @@ else
     BK_TYPE="site"
 
     # Removing last slash from string
-    FILENAME=${filename%/}
+    filename=${filename%/}
+
+    # Trying to know project type
+    project_type=$(get_project_type "${SITES}/${filename}")
+
+    # TODO: if project_type = wordpress, get database credentials from wp-config.php
+    project_db_name=$(get_project_db_name "${project_type}")
+    project_db_user=$(get_project_db_user "${project_type}")
+    project_db_pass=$(get_project_db_pass "${project_type}")
+
+    echo -e ${CYAN}" > Project Type: ${project_type}"${ENDCOLOR}
+    echo " > Project Type: ${project_type}!">>$LOG
 
     # Making a backup of project files
-    echo -e ${CYAN}" > Making a backup ..."${ENDCOLOR}
-
-    make_files_backup "${BK_TYPE}" "${SITES}" "${FILENAME}"
+    make_files_backup "${BK_TYPE}" "${SITES}" "${filename}"
 
     if [ $? -eq 0 ]; then
 
@@ -61,23 +70,31 @@ else
         output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}/offline-site" 2>&1)
 
         # Moving deleted project backups to another dropbox directory
-        echo -e ${B_CYAN}" > Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${FILENAME} /${VPSNAME}/offline-site"${ENDCOLOR}
-        $DROPBOX_UPLOADER move "/${VPSNAME}/${BK_TYPE}/${FILENAME}" "/${VPSNAME}/offline-site"
+        echo -e ${B_CYAN}" > Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${filename} /${VPSNAME}/offline-site"${ENDCOLOR}
+        $DROPBOX_UPLOADER move "/${VPSNAME}/${BK_TYPE}/${filename}" "/${VPSNAME}/offline-site"
 
         # Delete project files
-        rm -R $filepath"/"$FILENAME
-        echo -e ${GREEN}" > Project files deleted for ${FILENAME}!"${ENDCOLOR}
+        rm -R $filepath"/"$filename
+        echo -e ${GREEN}" > Project files deleted for ${filename}"${ENDCOLOR}
+        echo " > Project files deleted for ${filename}">>$LOG
 
         # Make a copy of nginx configuration file
-        cp -r "/etc/nginx/sites-available/${FILENAME}" "${SFOLDER}/tmp-backup"
+        cp -r "/etc/nginx/sites-available/${filename}" "${SFOLDER}/tmp-backup"
+
+        # TODO: make a copy of letsencrypt files?
+
+        # TODO: upload to dropbox config_file ??
 
         # Delete nginx configuration file
-        delete_nginx_server "${FILENAME}"
-        echo -e ${B_GREEN}" > Nginx config files for ${FILENAME} deleted!"${ENDCOLOR}
+        delete_nginx_server "${filename}"
+        echo -e ${B_GREEN}" > Nginx config files for ${filename} deleted!"${ENDCOLOR}
 
     fi
 
 fi
+
+# TODO: if project_db_name, project_db_user and project_db_pass are defined 
+#       and can connect to db, only ask for delete confirmation
 
 # List databases
 DBS="$(${MYSQL} -u ${MUSER} -p${MPASS} -Bse 'show databases')"
@@ -91,8 +108,8 @@ if [ $exitstatus = 0 ]; then
 
     # Remove DB prefix to find mysql user
     suffix="$(cut -d'_' -f2 <<<"${CHOSEN_DB}")"
-    PROJECT_NAME=${CHOSEN_DB%"_$suffix"}
-    USER_DB="${PROJECT_NAME}_user"
+    project_name=${CHOSEN_DB%"_$suffix"}
+    user_db="${project_name}_user"
 
     # Make a database Backup
     make_database_backup "${BK_TYPE}" "${CHOSEN_DB}"
@@ -111,7 +128,7 @@ if [ $exitstatus = 0 ]; then
     # 3- Ask if you want delete it (maybe we should search in al wp-config.php if user is used?)
     # 4- Remove it or ignore it
     #mysql_user_exists ""
-    #mysql_user_delete "${USER_DB}"
+    #mysql_user_delete "${user_db}"
 
 else
     exit 1

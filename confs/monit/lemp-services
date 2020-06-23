@@ -22,6 +22,8 @@ check process phpPHP_V-fpm with pidfile /var/run/php/phpPHP_V-fpm.pid
     stop program = "/etc/init.d/phpPHP_V-fpm stop"
     if failed unixsocket /var/run/php/phpPHP_V-fpm.sock then restart
     if cpu > 80% for 2 cycles then alert
+    if memory usage > 70% for 5 cycles then restart
+    #if totalmem > 1000 MB for 2 cycles then restart
 
 #System Monitoring
 check system HOSTNAME
@@ -29,7 +31,6 @@ check system HOSTNAME
     if cpu usage (user) > 70% for 2 cycles then alert
     if cpu usage (system) > 30% then alert
     if cpu usage (wait) > 20% then alert
-    #if loadavg (1min) > 6 for 2 cycles then alert
     #if loadavg (5min) > 4 for 2 cycles then alert
     #if swap usage > 5% then alert
 
