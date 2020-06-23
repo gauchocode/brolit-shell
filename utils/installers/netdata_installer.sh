@@ -13,10 +13,25 @@ source "${SFOLDER}/libs/cloudflare_helper.sh"
 
 ################################################################################
 
+netdata_required_packages() {
+
+  local ubuntu_version
+
+  ubuntu_version=$(get_ubuntu_version)
+
+  if [ "${ubuntu_version}" = "1804" ]; then
+    apt --yes install zlib1g-dev uuid-dev libuv1-dev liblz4-dev libjudy-dev libssl-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python python-mysqldb lm-sensors libmnl netcat nodejs python-ipaddress python-dnspython iproute2 python-beanstalkc libuv liblz4 Judy openssl
+  
+  elif [ "${ubuntu_version}" = "2004" ]; then
+    apt --yes install curl python3-mysqldb lm-sensors libmnl netcat openssl
+
+  fi
+
+}
+
 netdata_installer() {
 
   echo -e ${B_CYAN}"\nInstalling Netdata...\n"${ENDCOLOR}
-  #apt --yes install zlib1g-dev uuid-dev libuv1-dev liblz4-dev libjudy-dev libssl-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python python-mysqldb lm-sensors libmnl netcat nodejs python-ipaddress python-dnspython iproute2 python-beanstalkc libuv liblz4 Judy openssl
   bash <(curl -Ss https://my-netdata.io/kickstart.sh) all --dont-wait
 
   killall netdata && cp system/netdata.service /etc/systemd/system/
@@ -25,19 +40,21 @@ netdata_installer() {
 
 netdata_configuration() {
 
+  # Ref about netdata config dir: https://github.com/netdata/netdata/issues/4182
+
   # TODO: Discord support: https://docs.netdata.cloud/health/notifications/discord/
 
   # MySQL
   create_netdata_db_user
-  cat "${SFOLDER}/confs/netdata/python.d/mysql.conf" > "/usr/lib/netdata/conf.d/python.d/mysql.conf"
+  cat "${SFOLDER}/confs/netdata/python.d/mysql.conf" > "/etc/netdata/python.d/mysql.conf"
   echo -e ${GREEN}" > MySQL config DONE!"${ENDCOLOR}
 
   # monit
-  cat "${SFOLDER}/confs/netdata/python.d/monit.conf" >"/usr/lib/netdata/conf.d/python.d/monit.conf"
+  cat "${SFOLDER}/confs/netdata/python.d/monit.conf" >"/etc/netdata/python.d/monit.conf"
   echo -e ${GREEN}" > Monit config DONE!"${ENDCOLOR}
 
   # web_log
-  cat "${SFOLDER}/confs/netdata/python.d/web_log.conf" >"/usr/lib/netdata/conf.d/python.d/web_log.conf"
+  cat "${SFOLDER}/confs/netdata/python.d/web_log.conf" >"/etc/netdata/python.d/web_log.conf"
   echo -e ${GREEN}" > Nginx Web Log config DONE!"${ENDCOLOR}
 
   # health_alarm_notify
@@ -49,17 +66,18 @@ netdata_configuration() {
 
   systemctl daemon-reload && systemctl enable netdata && service netdata start
 
-  echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
+  echo -e ${B_GREEN}" > Netdata Configuration OK!"${ENDCOLOR}
 
 }
 
 netdata_alarm_level() {
+
   NETDATA_ALARM_LEVELS="warning critical"
   NETDATA_ALARM_LEVEL=$(whiptail --title "NETDATA ALARM LEVEL" --menu "Choose the Alarm Level for Notifications" 20 78 10 $(for x in ${NETDATA_ALARM_LEVELS}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-    echo "NETDATA_ALARM_LEVEL="${NETDATA_ALARM_LEVEL} >>/root/.broobe-utils-options
-    echo -e ${YELLOW}"Alarm Level for Notifications: ${NETDATA_ALARM_LEVEL} ..."${ENDCOLOR}
+    echo "NETDATA_ALARM_LEVEL=${NETDATA_ALARM_LEVEL}" >>/root/.broobe-utils-options
+    echo -e ${CYAN}"Alarm Level for Notifications: ${NETDATA_ALARM_LEVEL} ..."${ENDCOLOR}
 
   else
     exit 1
@@ -175,6 +193,7 @@ if [ ! -x "${NETDATA}" ]; then
       echo -e ${CYAN}" > Updating packages before installation ..."${ENDCOLOR}
       apt --yes update
 
+      netdata_required_packages
       netdata_installer
 
       # Netdata nginx proxy configuration
@@ -220,6 +239,7 @@ else
 
     fi
     if [[ ${NETDATA_CHOSEN_OPTION} == *"02"* ]]; then
+      netdata_required_packages
       netdata_configuration
 
     fi

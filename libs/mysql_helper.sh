@@ -7,6 +7,7 @@
 # Ref: https://github.com/nelson6e65/bash-mysql-helper/blob/master/src/main.sh
 #
 
+# shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
@@ -230,22 +231,22 @@ mysql_database_import() {
     # $1 = ${DATABASE} (.sql)
     # $2 = ${DUMP_FILE}
 
-    DB_NAME=$1
-    DUMP_FILE=$2
+    local db_name=$1
+    local dump_file=$2
 
-    echo -e ${CYAN}" > Importing dump file ${DUMP_FILE} into database: ${DB_NAME} ..."${ENDCOLOR}
-    echo " > Importing dump file ${DUMP_FILE} into database: ${DB_NAME} ..." >>$LOG
+    echo -e ${CYAN}" > Importing dump file ${dump_file} into database: ${db_name} ..."${ENDCOLOR}
+    echo " > Importing dump file ${dump_file} into database: ${db_name} ..." >>$LOG
 
-    pv "${DUMP_FILE}" | mysql -f -u${MUSER} -p${MPASS} -f -D "${DB_NAME}"
+    pv "${dump_file}" | mysql -f -u"${MUSER}" -p"${MPASS}" -f -D "${db_name}"
 
     if [ $? -eq 0 ]; then
-        echo " > Import database ${DB_NAME} OK!" >>$LOG
-        echo -e ${GREEN}" > Import database ${DB_NAME} OK!"${ENDCOLOR}
+        echo " > Import database ${db_name} OK!" >>$LOG
+        echo -e ${GREEN}" > Import database ${db_name} OK!"${ENDCOLOR}
         return 0
 
     else
-        echo " > Import database ${DB_NAME} failed!" >>$LOG
-        echo -e ${RED}" > Import database ${DB_NAME} failed!"${ENDCOLOR}
+        echo " > Import database ${db_name} failed!" >>$LOG
+        echo -e ${B_RED}" > Import database ${db_name} failed!"${ENDCOLOR}
 
         exit 1
 

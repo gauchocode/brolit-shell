@@ -6,6 +6,11 @@
 
 configure_monit(){
 
+  if [ ! -x "${PHP_V}" ]; then
+    PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
+  
+  fi
+
   # Configuring monit
   echo -e ${CYAN}" > Configuring monit ..."${ENDCOLOR}
   cat "${SFOLDER}/confs/monit/lemp-services" > /etc/monit/conf.d/lemp-services
@@ -30,13 +35,13 @@ configure_monit(){
   sed -i "s#SMTP_P#${SMTP_P}#" /etc/monit/conf.d/lemp-services
   sed -i "s#MAILA#${MAILA}#" /etc/monit/conf.d/lemp-services
 
-  echo -e ${YELLOW}" > Restarting services ..."${ENDCOLOR}
+  echo -e ${CYAN}" > Restarting services ..."${ENDCOLOR}
   systemctl restart "php${PHP_V}-fpm"
   systemctl restart nginx.service
   service monit restart
 
-  echo -" > DONE">>$LOG
-  echo -e ${GREEN}" > DONE"${ENDCOLOR}
+  echo -" > Monit configure OK!">>$LOG
+  echo -e ${GREEN}" > Monit configure OK!"${ENDCOLOR}
 
 }
 
@@ -54,11 +59,11 @@ if [ ! -x "${MONIT}" ]; then
           [Yy]* )
 
           echo " > Updating packages before installation ..." >>$LOG
-          echo -e ${YELLOW}" > Updating packages before installation ..."${ENDCOLOR}
+          echo -e ${CYAN}" > Updating packages before installation ..."${ENDCOLOR}
           apt --yes update
 
           # Installing packages
-          echo -e ${YELLOW}" > Installing monit ..."${ENDCOLOR}
+          echo -e ${CYAN}" > Installing monit ..."${ENDCOLOR}
           echo " > Installing monit ..." >>$LOG
           apt --yes install monit
 
@@ -66,7 +71,7 @@ if [ ! -x "${MONIT}" ]; then
 
           break;;
           [Nn]* )
-          echo -e ${RED}"Aborting monit installation script ..."${ENDCOLOR};
+          echo -e ${B_RED}"Aborting monit installation script ..."${ENDCOLOR};
           break;;
           * ) echo " > Please answer yes or no.";;
       esac
@@ -85,7 +90,7 @@ else
 
           break;;
           [Nn]* )
-          echo -e ${RED}"Aborting monit installation script ..."${ENDCOLOR};
+          echo -e ${B_RED}"Aborting monit installation script ..."${ENDCOLOR};
           break;;
           * ) echo " > Please answer yes or no.";;
       esac
