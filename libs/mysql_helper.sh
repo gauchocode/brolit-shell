@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc04
+# Version: 3.0-rc05
 #############################################################################
 #
 # Ref: https://github.com/nelson6e65/bash-mysql-helper/blob/master/src/main.sh

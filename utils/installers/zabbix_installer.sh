@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc04
+# Version: 3.0-rc05
 ################################################################################
 #
 # Seguir:
