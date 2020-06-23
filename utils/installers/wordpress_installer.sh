@@ -35,9 +35,9 @@ source "${SFOLDER}/libs/cloudflare_helper.sh"
 ################################################################################
 
 # Installation types
-INSTALLATION_TYPES="CLEAN_INSTALL COPY_FROM_PROJECT"
+installation_types="CLEAN_INSTALL COPY_FROM_PROJECT"
 
-INSTALLATION_TYPE=$(whiptail --title "INSTALLATION TYPE" --menu "Choose an Installation Type" 20 78 10 $(for x in ${INSTALLATION_TYPES}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)
+installation_type=$(whiptail --title "INSTALLATION TYPE" --menu "Choose an Installation Type" 20 78 10 $(for x in ${installation_types}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
 
@@ -45,7 +45,7 @@ if [ $exitstatus = 0 ]; then
 
   folder_to_install=$(ask_folder_to_install_sites "${SITES}")
 
-  if [[ ${INSTALLATION_TYPE} == *"COPY"* ]]; then
+  if [[ ${installation_type} == *"COPY"* ]]; then
 
     startdir=${folder_to_install}
     menutitle="Site Selection Menu"
@@ -135,7 +135,7 @@ if [ $exitstatus = 0 ]; then
   # Set WP salts
   wp_set_salts "${project_dir}/wp-config.php"
 
-  if [[ ${INSTALLATION_TYPE} == *"COPY"* ]]; then
+  if [[ ${installation_type} == *"COPY"* ]]; then
 
     echo " > Copying database ..." >>$LOG
     echo -e ${YELLOW}" > Copying database ..."${ENDCOLOR}

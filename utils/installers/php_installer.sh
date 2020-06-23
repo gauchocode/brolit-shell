@@ -109,6 +109,8 @@ exitstatus=$?
 if [ $exitstatus = 0 ]; then
 
   if [[ ${CHOSEN_PHP_INSTALLER_OPTION} == *"01"* ]]; then
+
+    #TODO: FIX VERSION ISSUE
     
     DISTRO_V=$(get_ubuntu_version)
     if [ ! "$DISTRO_V" -e "1804" ]; then
