@@ -50,12 +50,13 @@ create_nginx_server() {
 
 delete_nginx_server() {
 
-    #$1 = ${PROJECT_DOMAIN}
+    #$1 = ${filename}
 
     local filename=$1
 
     if [ "${filename}" != "" ]; then
 
+        # TODO: check if file exists
         rm "/etc/nginx/sites-available/${filename}"
         rm "/etc/nginx/sites-enabled/${filename}"
 
@@ -67,19 +68,19 @@ delete_nginx_server() {
 
 change_phpv_nginx_server() {
 
-    #$1 = ${PROJECT_DOMAIN}
-    #$2 = ${NEW_PHP_V}
+    #$1 = ${project_domain}
+    #$2 = ${new_php_v}
 
-    local PROJECT_DOMAIN=$1
-    local NEW_PHP_V=$2
+    local project_domain=$1
+    local new_php_v=$2
 
     # Updating nginx server file
-    echo -e "\nUpdating nginx ${PROJECT_DOMAIN} server file...\n" >>$LOG
+    echo -e "\nUpdating nginx ${project_domain} server file...\n" >>$LOG
 
     # TODO: ask wich version of php want to work with
 
     # Replace string to match PHP version
-    sudo sed -i "s#PHP_V#${NEW_PHP_V}#" "${WSERVER}/sites-available/${PROJECT_DOMAIN}"
+    sudo sed -i "s#PHP_V#${new_php_v}#" "${WSERVER}/sites-available/${project_domain}"
 
     # Reload webserver
     service nginx reload

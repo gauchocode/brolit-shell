@@ -34,6 +34,8 @@ source "${SFOLDER}/libs/wordpress_helper.sh"
 
 wpcli_main_menu() {
 
+  local WPCLI_OPTIONS CHOSEN_WPCLI_OPTION CHOSEN_PLUGIN_OPTION
+
   WPCLI_OPTIONS="01 INSTALL_PLUGINS 02 DELETE_THEMES 03 DELETE_PLUGINS 04 REINSTALL_PLUGINS 05 VERIFY_WP 06 UPDATE_WP 07 REINSTALL_WP 08 CLEAN_DB 09 PROFILE_WP 10 CHANGE_TABLES_PREFIX 11 REPLACE_URLs"
   CHOSEN_WPCLI_OPTION=$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 $(for x in ${WPCLI_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
@@ -109,19 +111,19 @@ wpcli_main_menu() {
       #echo -e ${B_CYAN}" > Executing: sudo -u www-data wp --path=${WP_SITE} doctor check core-update"${ENDCOLOR}
       echo -e ${B_CYAN}" > Executing: wp --path=${WP_SITE} doctor check core-update --allow-root"${ENDCOLOR}
       #sudo -u www-data wp --path=${WP_SITE} doctor check core-update
-      wp --path=${WP_SITE} doctor check core-update --allow-root
+      wp --path="${WP_SITE}" doctor check core-update --allow-root
 
       echo -e ${B_CYAN}" > Updating WP ..."${ENDCOLOR}
       #echo -e ${B_CYAN}" > Executing: sudo -u www-data wp --path=${WP_SITE} core update"${ENDCOLOR}
       echo -e ${B_CYAN}" > Executing: wp --path=${WP_SITE} core update --allow-root"${ENDCOLOR}
       #sudo -u www-data wp --path=${WP_SITE} core update
-      wp --path=${WP_SITE} core update --allow-root
+      wp --path="${WP_SITE}" core update --allow-root
 
       echo -e ${B_CYAN}" > Updating WP DB ..."${ENDCOLOR}
       #echo -e ${B_CYAN}" > Executing: sudo -u www-data wp --path=${WP_SITE} core update-db"${ENDCOLOR}
       echo -e ${B_CYAN}" > Executing: wp --path=${WP_SITE} core update-db --allow-root"${ENDCOLOR}
       #sudo -u www-data wp --path=${WP_SITE} core update-db
-      wp --path=${WP_SITE} core update-db --allow-root
+      wp --path="${WP_SITE}" core update-db --allow-root
 
       #TODO: run chown after executing with --allow-root
       #chown -R www-data:www-data ${WP_SITE}
@@ -134,7 +136,7 @@ wpcli_main_menu() {
 
       #It will download wordpress and replace core files (didnt delete other files)
       echo -e ${B_CYAN}" > Reinstalling WP on: ${WP_SITE}"${ENDCOLOR}
-      sudo wp --path=${WP_SITE} core download --skip-content --force --allow-root
+      sudo wp --path="${WP_SITE}" core download --skip-content --force --allow-root
 
       echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
 
@@ -259,6 +261,7 @@ else
   # Array of plugin slugs to install
   WP_PLUGINS=(
     "wordpress-seo" " " off
+    "duracelltomi-google-tag-manager" " " off
     "ewww-image-optimizer" " " off
     "easy-wp-smtp" " " off
     "contact-form-7" " " off
@@ -266,6 +269,7 @@ else
     "acf-vc-integrator" " " off
     "w3-total-cache" " " off
     "fast-velocity-minify" " " off
+    "iwp-client" " " off
     "fresh-plugins" " " off
     "wordfence" " " off
     "better-wp-security" " " off

@@ -41,46 +41,45 @@ menutitle="Config Selection Menu"
 
 main_menu() {
 
-  RUNNER_OPTIONS="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 DELETE_PROJECT 04 PROJECT_UTILS 05 WPCLI_MANAGER 06 CERTBOT_MANAGER 07 IT_UTILS 08 SCRIPT_OPTIONS"
-  CHOSEN_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 $(for x in ${RUNNER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  local runner_options chosen_type
+
+  runner_options="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 PROJECT_UTILS 04 WPCLI_MANAGER 05 CERTBOT_MANAGER 06 IT_UTILS 07 SCRIPT_OPTIONS"
+  chosen_type=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 $(for x in ${runner_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
-    if [[ ${CHOSEN_TYPE} == *"01"* ]]; then
+    if [[ ${chosen_type} == *"01"* ]]; then
       backup_menu
 
     fi
-    if [[ ${CHOSEN_TYPE} == *"02"* ]]; then
+    if [[ ${chosen_type} == *"02"* ]]; then
       restore_menu
 
     fi
 
-    if [[ ${CHOSEN_TYPE} == *"03"* ]]; then
-      source "${SFOLDER}/delete_project.sh"
-
-    fi
-
-    if [[ ${CHOSEN_TYPE} == *"04"* ]]; then
+    if [[ ${chosen_type} == *"03"* ]]; then
       project_utils_menu
 
     fi
 
-    if [[ ${CHOSEN_TYPE} == *"05"* ]]; then
+    if [[ ${chosen_type} == *"04"* ]]; then
+      # shellcheck source=${SFOLDER}/utils/wpcli_manager.sh
       source "${SFOLDER}/utils/wpcli_manager.sh"
 
     fi
-    if [[ ${CHOSEN_TYPE} == *"06"* ]]; then
+    if [[ ${chosen_type} == *"05"* ]]; then
+      # shellcheck source=${SFOLDER}/utils/certbot_manager.sh
       source "${SFOLDER}/utils/certbot_manager.sh"
 
     fi
-    if [[ ${CHOSEN_TYPE} == *"07"* ]]; then
+    if [[ ${chosen_type} == *"06"* ]]; then
       #source "${SFOLDER}/utils/it_utils.sh"
       it_utils_menu
 
     fi
 
-    if [[ ${CHOSEN_TYPE} == *"08"* ]]; then
+    if [[ ${chosen_type} == *"07"* ]]; then
       script_configuration_wizard "reconfigure"
 
     fi
@@ -93,8 +92,10 @@ main_menu() {
 
 backup_menu() {
 
-  BACKUP_OPTIONS="01 DATABASE_BACKUP 02 FILES_BACKUP 03 BACKUP_ALL 04 PROJECT_BACKUP"
-  CHOSEN_BACKUP_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a Backup Type to run" 20 78 10 $(for x in ${BACKUP_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  local backup_options chosen_backup_type
+
+  backup_options="01 DATABASE_BACKUP 02 FILES_BACKUP 03 BACKUP_ALL 04 PROJECT_BACKUP"
+  chosen_backup_type=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a Backup Type to run" 20 78 10 $(for x in ${backup_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   # Preparing Mail Notifications Template
   HTMLOPEN=$(mail_html_start)
@@ -104,8 +105,9 @@ backup_menu() {
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
-    if [[ ${CHOSEN_BACKUP_TYPE} == *"01"* ]]; then
+    if [[ ${chosen_backup_type} == *"01"* ]]; then
 
+      # shellcheck source=${SFOLDER}/mysql_backup.sh
       source "${SFOLDER}/mysql_backup.sh"
 
       DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
@@ -120,8 +122,9 @@ backup_menu() {
       send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
 
     fi
-    if [[ ${CHOSEN_BACKUP_TYPE} == *"02"* ]]; then
+    if [[ ${chosen_backup_type} == *"02"* ]]; then
 
+      # shellcheck source=${SFOLDER}/files_backup.sh
       source "${SFOLDER}/files_backup.sh"
 
       CONFIG_MAIL="${BAKWP}/config-bk-${NOW}.mail"
@@ -139,10 +142,12 @@ backup_menu() {
       send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
 
     fi
-    if [[ ${CHOSEN_BACKUP_TYPE} == *"03"* ]]; then
+    if [[ ${chosen_backup_type} == *"03"* ]]; then
 
       # Running scripts
+      # shellcheck source=${SFOLDER}/mysql_backup.sh
       "${SFOLDER}/mysql_backup.sh"
+      # shellcheck source=${SFOLDER}/files_backup.sh
       "${SFOLDER}/files_backup.sh"
 
       DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
@@ -169,7 +174,7 @@ backup_menu() {
 
     fi
 
-    if [[ ${CHOSEN_BACKUP_TYPE} == *"04"* ]]; then
+    if [[ ${chosen_backup_type} == *"04"* ]]; then
 
       # Running project_backup script
       "${SFOLDER}/project_backup.sh"
@@ -182,45 +187,86 @@ backup_menu() {
 
 restore_menu () {
 
-  RESTORE_OPTIONS="01 RESTORE_FROM_DROPBOX 02 RESTORE_FROM_SOURCE"
-  CHOSEN_RESTORE_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a Restore Option to run" 20 78 10 $(for x in ${RESTORE_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  local restore_options chosen_restore_options
+
+  restore_options="01 RESTORE_FROM_DROPBOX 02 RESTORE_FROM_URL"
+  chosen_restore_options=$(whiptail --title "RESTORE SOURCE" --menu "Choose a Restore Source to run" 20 78 10 $(for x in ${restore_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
-    if [[ ${CHOSEN_RESTORE_TYPE} == *"01"* ]]; then
-      # shellcheck source=${SFOLDER}/restore_from_backup.sh
-      source "${SFOLDER}/restore_from_backup.sh"
-    fi
+    # shellcheck source=${SFOLDER}/libs/backup_restore_helper.sh
+    source "${SFOLDER}/libs/backup_restore_helper.sh"
 
-    if [[ ${CHOSEN_RESTORE_TYPE} == *"02"* ]]; then
+    if [[ ${chosen_restore_options} == *"01"* ]]; then
+      server_selection_restore_menu
+
+    elif [[ ${chosen_restore_options} == *"02"* ]]; then
       # shellcheck source=${SFOLDER}/utils/wordpress_restore_from_source.sh
       source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
+
     fi
 
   fi
 
 }
 
+server_selection_restore_menu () {
+
+  SITES_F="site"
+  CONFIG_F="configs"
+  DBS_F="database"
+
+  local dropbox_server_list
+  
+  # Select SERVER
+  dropbox_server_list=$($DROPBOX_UPLOADER -hq list "/")
+  chosen_server=$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 $(for x in ${dropbox_server_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+
+    dropbox_type_list=$($DROPBOX_UPLOADER -hq list "${chosen_server}")
+    dropbox_type_list='project '$dropbox_type_list
+
+    # Select backup type
+    select_restore_type_from_dropbox "${chosen_server}" "${dropbox_type_list}"
+
+  else
+    exit 0
+    # TODO: return to backup menu?
+  fi
+
+}
+
 project_utils_menu () {
 
-  PROJECT_UTILS_OPTIONS="01 WORDPRESS_INSTALLER 02 RESTORE_FROM_SOURCE 03 TURN_PROJECT_OFFLINE"
-  CHOSEN_PROJECT_UTILS_OPTION=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a Restore Option to run" 20 78 10 $(for x in ${PROJECT_UTILS_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  local project_utils_options chosen_project_utils_options
+
+  project_utils_options="01 WORDPRESS_INSTALLER 02 RESTORE_FROM_SOURCE 03 CREATE_PROJECT 04 DELETE_PROJECT 05 TURN_PROJECT_OFFLINE"
+  chosen_project_utils_options=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a Restore Option to run" 20 78 10 $(for x in ${project_utils_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
-    if [[ ${CHOSEN_PROJECT_UTILS_OPTION} == *"01"* ]]; then
+    if [[ ${chosen_project_utils_options} == *"01"* ]]; then
       # shellcheck source=${SFOLDER}/installers/wordpress_installer.sh
       source "${SFOLDER}/utils/installers/wordpress_installer.sh"
     fi
 
-    if [[ ${CHOSEN_PROJECT_UTILS_OPTION} == *"02"* ]]; then
+    if [[ ${chosen_project_utils_options} == *"02"* ]]; then
       # shellcheck source=${SFOLDER}/utils/wordpress_restore_from_source.sh
       source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
     fi
 
-    if [[ ${CHOSEN_PROJECT_UTILS_OPTION} == *"03"* ]]; then
+    if [[ ${chosen_project_utils_options} == *"03"* ]]; then
+      #source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
+      echo -e ${B_RED}"TODO: IMPLEMENT THIS OPTION"${ENDCOLOR}
+    fi
+    if [[ ${chosen_project_utils_options} == *"04"* ]]; then
+    # shellcheck source=${SFOLDER}/delete_project.sh
+      source "${SFOLDER}/delete_project.sh"
+    fi
+    if [[ ${chosen_project_utils_options} == *"05"* ]]; then
       #source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
       echo -e ${B_RED}"TODO: IMPLEMENT THIS OPTION"${ENDCOLOR}
     fi
@@ -231,19 +277,26 @@ project_utils_menu () {
 
 it_utils_menu() {
 
-  IT_UTIL_OPTIONS="01 INSTALLERS_AND_CONFIGS 02 SERVER_OPTIMIZATIONS 03 BLACKLIST_CHECKER 04 BENCHMARK_SERVER"
-  CHOSEN_IT_UTIL_TYPE=$(whiptail --title "IT UTILS MENU" --menu "Choose a script to Run" 20 78 10 $(for x in ${IT_UTIL_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  local it_util_options chosen_it_util_options
+
+  it_util_options="01 INSTALLERS_AND_CONFIGS 02 SERVER_OPTIMIZATIONS 03 BLACKLIST_CHECKER 04 BENCHMARK_SERVER"
+  chosen_it_util_options=$(whiptail --title "IT UTILS MENU" --menu "Choose a script to Run" 20 78 10 $(for x in ${it_util_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
-    if [[ ${CHOSEN_IT_UTIL_TYPE} == *"01"* ]]; then
+    if [[ ${chosen_it_util_options} == *"01"* ]]; then
       # shellcheck source=${SFOLDER}/installers_and_configurators.sh
       source "${SFOLDER}/installers_and_configurators.sh"
 
     fi
 
-    if [[ ${CHOSEN_IT_UTIL_TYPE} == *"02"* ]]; then
+    if [[ ${chosen_it_util_options} == *"02"* ]]; then
+
+      # TODO: add options (IMAGE, PHP, ETC)
+      # Run php_optimizations.sh
+      #"${SFOLDER}/utils/php_optimizations.sh"
+
       while true; do
         echo -e ${YELLOW}"> Do you really want to run the optimization script?"${ENDCOLOR}
         read -p "Please type 'y' or 'n'" yn
@@ -263,7 +316,7 @@ it_utils_menu() {
 
     fi
 
-    if [[ ${CHOSEN_IT_UTIL_TYPE} == *"03"* ]]; then
+    if [[ ${chosen_it_util_options} == *"03"* ]]; then
 
       URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
@@ -273,7 +326,7 @@ it_utils_menu() {
       fi
 
     fi
-    if [[ ${CHOSEN_IT_UTIL_TYPE} == *"04"* ]]; then
+    if [[ ${chosen_it_util_options} == *"04"* ]]; then
     
       IP_TO_TEST=$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
@@ -698,11 +751,11 @@ get_all_directories() {
 
   # $1 = ${SITES}
 
-  MAIN_DIRECTORY=$1
+  local main_dir=$1
 
-  FIRST_LEVEL_DIRECTORIES=$(find ${MAIN_DIRECTORY} -maxdepth 1 -type d)
+  first_level_dir=$(find ${main_dir} -maxdepth 1 -type d)
 
-  echo "${FIRST_LEVEL_DIRECTORIES}"
+  echo "${first_level_dir}"
 
 }
 
@@ -727,6 +780,36 @@ copy_project_files() {
   fi
 
 }
+
+get_project_type() {
+
+  # $1 = ${dir_path}
+
+  local dir_path=$1
+
+  local project_type is_wp
+
+  if [ "${dir_path}" != "" ];then
+
+    is_wp=$(search_wp_config "${dir_path}")
+
+    if [ "${is_wp}" != "" ];then
+
+      project_type="wordpress"
+
+      else
+
+      # TODO: implements laravel, yii, and others php framework support
+      project_type="project_type_unknown"
+
+    fi
+
+  fi
+
+  echo ${project_type}
+
+}
+
 
 generate_dropbox_config() {
 
@@ -797,8 +880,8 @@ calculate_disk_usage() {
 
 check_if_folder_exists() {
 
-  # $1 = ${FOLDER_TO_INSTALL}
-  # $2 = ${DOMAIN}
+  # $1 = ${folder_to_install}
+  # $2 = ${domain}
 
   local folder_to_install=$1
   local domain=$2
@@ -1065,38 +1148,40 @@ ask_subdomains_to_cloudflare_config() {
 
 ask_folder_to_install_sites() {
 
-  # $1 = ${FOLDER_TO_INSTALL} optional to select default option (could be empty)
+  # $1 = ${folder_to_install} optional to select default option (could be empty)
 
-  local FOLDER_TO_INSTALL=$1
+  local folder_to_install=$1
 
-  if [[ -z "${FOLDER_TO_INSTALL}" ]]; then
-    FOLDER_TO_INSTALL=$(whiptail --title "Folder to install" --inputbox "Please insert the full path where you want to install the site:" 10 60 "${FOLDER_TO_INSTALL}" 3>&1 1>&2 2>&3)
+  if [[ -z "${folder_to_install}" ]]; then
+    folder_to_install=$(whiptail --title "Folder to install" --inputbox "Please insert the full path where you want to install the site:" 10 60 "${folder_to_install}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      echo "FOLDER_TO_INSTALL=${FOLDER_TO_INSTALL}" >>$LOG
-      echo "${FOLDER_TO_INSTALL}"
+      echo "folder_to_install=${folder_to_install}" >>$LOG
+      echo "${folder_to_install}"
     else
       exit 1
     fi
   else
-    echo "FOLDER_TO_INSTALL=${FOLDER_TO_INSTALL}" >>$LOG
-    echo "${FOLDER_TO_INSTALL}"
+    echo "folder_to_install=${folder_to_install}" >>$LOG
+    echo "${folder_to_install}"
   fi
 
 }
 
 ask_mysql_root_psw() {
 
+  # MPASS is defined globally
+
   if [[ -z "${MPASS}" ]]; then
     MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root Password" 10 60 "${MPASS}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
       #echo "> Running: mysql -u root -p${MPASS} -e"
-      until mysql -u root -p${MPASS}S -e ";"; do
+      until mysql -u root -p"${MPASS}" -e ";"; do
         read -s -p "Can't connect to MySQL, please re-enter $MUSER password: " MPASS
       
       done
-      echo "MPASS="${MPASS} >>/root/.broobe-utils-options
+      echo "MPASS=${MPASS}" >>/root/.broobe-utils-options
 
     else
       exit 1
@@ -1108,9 +1193,9 @@ ask_mysql_root_psw() {
 
 ask_url_search_and_replace() {
 
-  # $1 = WP_PATH
+  # $1 = wp_path
 
-  WP_PATH=$1
+  local wp_path=$1
 
   if [[ -z "${existing_URL}" ]]; then
     existing_URL=$(whiptail --title "URL TO CHANGE" --inputbox "Insert the URL you want to change, including http:// or https://" 10 60 3>&1 1>&2 2>&3)
@@ -1128,7 +1213,7 @@ ask_url_search_and_replace() {
 
           echo "Setting new_URL=${new_URL}" >>$LOG
 
-          wpcli_search_and_replace "${WP_PATH}" "${existing_URL}" "${new_URL}"
+          wpcli_search_and_replace "${wp_path}" "${existing_URL}" "${new_URL}"
 
         fi
 

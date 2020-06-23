@@ -29,8 +29,8 @@ certbot_certificate_install() {
 
 }
 
-certbot_certificate_force_install() {
-
+certbot_certificate_expand(){
+  
   #$1 = EMAIL
   #$2 = DOMAINS
 
@@ -40,20 +40,6 @@ certbot_certificate_force_install() {
   echo -e ${B_CYAN}" > Running: certbot --nginx --non-interactive --agree-tos --expand --redirect -m ${email} -d ${domains}"${ENDCOLOR}
   echo " > Running: certbot --nginx --non-interactive --agree-tos --expand --redirect -m ${email} -d ${domains}" >>$LOG
   certbot --nginx --non-interactive --agree-tos --expand --redirect -m "${email}" -d "${domains}"
-
-}
-
-certbot_certificate_expand(){
-  
-  #$1 = EMAIL
-  #$2 = DOMAINS
-
-  local email=$1
-  local domains=$2
-
-  echo -e ${B_CYAN}" > Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains}"${ENDCOLOR}
-  echo " > Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains}" >>$LOG
-  certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}"
 
 }
 
@@ -75,9 +61,9 @@ certbot_certificate_force_renew() {
 
   local domains=$1
 
-  echo -e ${CYAN}" > Running: certbot renew --force-renewal -d ${domains}"${ENDCOLOR}
-  echo " > Running: certbot renew --force-renewal -d ${domains}" >>$LOG
-  certbot renew --force-renewal -d "${domains}"
+  echo -e ${B_CYAN}" > Running: certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m ${email} -d ${domains}"${ENDCOLOR}
+  echo " > Running: certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m ${email} -d ${domains}" >>$LOG
+  certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m "${email}" -d "${domains}"
 
 }
 
@@ -122,7 +108,7 @@ certbot_helper_installer_menu() {
 
 certbot_helper_menu() {
 
-  CERTBOT_OPTIONS="01 INSTALL_CERTIFICATE 02 FORCE_INSTALL_CERTIFICATE 03 EXPAND_CERTIFICATE 04 RENEW_CERTIFICATE 05 FORCE_RENEW_CERTIFICATE 06 DELETE_CERTIFICATE 07 SHOW_INSTALLED_CERTIFICATES"
+  CERTBOT_OPTIONS="01 INSTALL_CERTIFICATE 02 EXPAND_CERTIFICATE 03 RENEW_CERTIFICATE 04 FORCE_RENEW_CERTIFICATE 05 DELETE_CERTIFICATE 06 SHOW_INSTALLED_CERTIFICATES"
   CHOSEN_CB_OPTION=$(whiptail --title "CERTBOT MANAGER" --menu "Please choose an option:" 20 78 10 $(for x in ${CERTBOT_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -138,31 +124,26 @@ certbot_helper_menu() {
 
       fi
       if [[ ${CHOSEN_CB_OPTION} == *"02"* ]]; then
-        certbot_certificate_force_install "${MAILA}" "${domains}"
-        #certbot_helper_menu
-
-      fi
-      if [[ ${CHOSEN_CB_OPTION} == *"03"* ]]; then
         certbot_certificate_expand "${MAILA}" "${domains}"
         #certbot_helper_menu
 
       fi
-      if [[ ${CHOSEN_CB_OPTION} == *"04"* ]]; then
+      if [[ ${CHOSEN_CB_OPTION} == *"03"* ]]; then
         certbot_certificate_renew "${domains}"
         #certbot_helper_menu
 
       fi
-      if [[ ${CHOSEN_CB_OPTION} == *"05"* ]]; then
+      if [[ ${CHOSEN_CB_OPTION} == *"04"* ]]; then
         certbot_certificate_force_renew "${domains}"
         #certbot_helper_menu
 
       fi
-      if [[ ${CHOSEN_CB_OPTION} == *"06"* ]]; then
+      if [[ ${CHOSEN_CB_OPTION} == *"05"* ]]; then
         certbot_certificate_delete "${domains}"
         #certbot_helper_menu
 
       fi
-      if [[ ${CHOSEN_CB_OPTION} == *"07"* ]]; then
+      if [[ ${CHOSEN_CB_OPTION} == *"06"* ]]; then
         certbot_show_certificates_info
         #certbot_helper_menu
 
@@ -240,22 +221,31 @@ certbot_certificate_delete() {
 
   local domains=$1
 
-  while true; do
-    echo -e ${YELLOW}"> Do you really want to delete de certificates for ${domains}?"${ENDCOLOR}
-    read -p "Please type 'y' or 'n'" yn
+  if [[ -z "${domains}" ]]; then
 
-    case $yn in
-    [Yy]*)
-      certbot delete --cert-name "${domains}"
-      break
-      ;;
-    [Nn]*)
-      echo -e ${YELLOW}"Aborting ..."${ENDCOLOR}
-      break
-      ;;
-    *) echo " > Please answer yes or no." ;;
-    esac
+    #Run certbot delete wizard
+    certbot --nginx delete
 
-  done
+  else
+
+    while true; do
+      echo -e ${YELLOW}"> Do you really want to delete de certificates for ${domains}?"${ENDCOLOR}
+      read -p "Please type 'y' or 'n'" yn
+
+      case $yn in
+      [Yy]*)
+        certbot delete --cert-name "${domains}"
+        break
+        ;;
+      [Nn]*)
+        echo -e ${YELLOW}"Aborting ..."${ENDCOLOR}
+        break
+        ;;
+      *) echo " > Please answer yes or no." ;;
+      esac
+
+    done
+
+fi
 
 }

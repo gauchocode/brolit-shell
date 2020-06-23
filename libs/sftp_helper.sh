@@ -7,59 +7,81 @@
 #without-shell-access
 sftp_add_user() {
 
-    # $1 = USERNAME
-    # $2 = GROUPNAME
-    # $3 = SHELL_ACCESS (true,false)
+    # $1 = username
+    # $2 = groupname
+    # $3 = shell_access (true,false)
 
-    USERNAME=$1
-    GROUPNAME=$2
+    local username=$1
+    local groupname=$2
+    local shell_access=$3 #no or yes
 
-    #adduser --shell /bin/false ${USERNAME}
-    adduser ${USERNAME}
+    # TODO: non-interactive
+    # ref: https://askubuntu.com/questions/94060/run-adduser-non-interactively
+    adduser "${username}"
 
-    # add user to the groups
-    usermod -aG ${GROUPNAME} ${USERNAME}
-    usermod -aG www-data ${USERNAME}
+    # Add user to the groups
+    usermod -aG "${groupname}" "${username}"
+    #usermod -aG www-data "${username}"
 
-    # create home dir
-    #mkdir -p /var/sftp/${USERNAME}
+    # Backup actual config
+    mv /etc/ssh/sshd_config /etc/ssh/sshd_config.bk
 
-    # In /etc/ssh/sshd_config
-    # Comment: #Subsystem sftp  /usr/lib/openssh/sftp-server
-    # Write:    Subsystem sftp internal-sftp
-    #
-    # At the end add:
-    #
-    # Match User webdev
-    #    ChrootDirectory /var/www/
-    #    ForceCommand internal-sftp -u 0022  #will prevent this user from logging in over SSH
-    #    X11Forwarding no
-    #    AllowTcpForwarding no
-    #    PasswordAuthentication yes
+    # Copy new config
+    cp "${SFOLDER}/confs/sftp/sshd_config" /etc/ssh/sshd_config
+
+    # Replace SFTP_U to new sftp user
+    if [[ ${username} != "" ]]; then
+        sed -i "/SFTP_U/s/'[^']*'/'${username}'/2" "/etc/ssh/sshd_config"
+    fi
+    if [[ ${shell_access} = "" || ${shell_access} = "no" ]]; then
+        sed -i "/SHELL_ACCESS/s/'[^']*'/'${shell_access}'/2" "/etc/ssh/sshd_config"
+    else
+        sed -i "/SHELL_ACCESS/s/'[^']*'/'${shell_access}'/2" "/etc/ssh/sshd_config"
+    fi
 
     service sshd restart
-
-    # The command below will set the document root and all subfolders to 775
-    find /var/www/ -type d -exec chmod g+s {} \;
-    # We want any new files created in the document root from now on to inherit the group name
-    chmod g+s /var/www/
 
 }
 
 sftp_create_group() {
 
-    # $1 = GROUPNAME #sftp_users
-    GROUPNAME=$1
+    # $1 = groupname #sftp_users
+    local groupname=$1
 
-    groupadd ${GROUPNAME}
+    groupadd "${groupname}"
 
 }
 
 sftp_test_conection() {
 
-    # $1 = USERNAME
+    # $1 = username
 
-    USERNAME=$1
+    local username=$1
 
-    sftp ${USERNAME}@localhost
+    sftp "${username}@localhost"
+}
+
+sftp_add_folder_permission() {
+
+    # $1 = username
+    # $2 = dir_path
+    # $3 = folder
+
+    local username=$1
+    local dir_path=$2
+    local folder=$3
+
+    #mkdir
+    mkdir "/home/${username}/${folder}"
+
+    # mount
+    mount --bind "${dir_path}/${folder}" "/home/${username}/${folder}"
+
+    # mount permanent
+    #cat "${dir_path}/${folder} /home/${username}/${folder} none bind   0      0"  >>"/etc/fstab"
+
+    # The command below will set the document root and all subfolders to 775
+    #find "${dir_path}/${folder}" -type d -exec chmod g+s {} \;
+    # We want any new files created in the document root from now on to inherit the group name
+    #chmod g+s "${dir_path}/${folder}"
 }
