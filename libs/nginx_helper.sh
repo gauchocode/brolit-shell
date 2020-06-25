@@ -69,10 +69,12 @@ delete_nginx_server() {
 change_phpv_nginx_server() {
 
     #$1 = ${project_domain}
-    #$2 = ${new_php_v}
+    #$2 = ${new_php_v} optional
 
     local project_domain=$1
     local new_php_v=$2
+
+    # TODO: if $new_php_v is not set, must ask wich PHP_V
 
     # Updating nginx server file
     echo -e "\nUpdating nginx ${project_domain} server file...\n" >>$LOG
@@ -81,6 +83,12 @@ change_phpv_nginx_server() {
 
     # Replace string to match PHP version
     sudo sed -i "s#PHP_V#${new_php_v}#" "${WSERVER}/sites-available/${project_domain}"
+
+    # TODO: sed not only for generic server config, also an old config must be supported like:
+    # sudo sed -i "s#7.0#${new_php_v}#" "${WSERVER}/sites-available/${project_domain}"
+    # sudo sed -i "s#7.1#${new_php_v}#" "${WSERVER}/sites-available/${project_domain}"
+    # sudo sed -i "s#7.2#${new_php_v}#" "${WSERVER}/sites-available/${project_domain}"
+    # sudo sed -i "s#7.3#${new_php_v}#" "${WSERVER}/sites-available/${project_domain}"
 
     # Reload webserver
     service nginx reload

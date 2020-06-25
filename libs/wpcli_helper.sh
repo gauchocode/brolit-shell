@@ -95,7 +95,7 @@ wpcli_maintenance_mode() {
 
 wpcli_verify_wp_core_installation() {
 
-    # $1 = ${WP_SITE} (site path)
+    # $1 = ${wp_site} (site path)
 
     local wp_site=$1
 
@@ -105,7 +105,7 @@ wpcli_verify_wp_core_installation() {
 
 wpcli_verify_wp_plugins_installation() {
 
-    # $1 = ${WP_SITE} (site path)
+    # $1 = ${wp_site} (site path)
 
     local wp_site=$1
 
@@ -115,8 +115,8 @@ wpcli_verify_wp_plugins_installation() {
 
 wpcli_install_plugin() {
 
-    # $1 = ${WP_SITE} (site path)
-    # $2 = ${PLUGIN} (plugin to delete)
+    # $1 = ${wp_site} (site path)
+    # $2 = ${plugin} (plugin to delete)
 
     local wp_site=$1
     local plugin=$2
@@ -127,8 +127,8 @@ wpcli_install_plugin() {
 
 wpcli_delete_plugin() {
 
-    # $1 = ${WP_SITE} (site path)
-    # $2 = ${PLUGIN} (plugin to delete)
+    # $1 = ${wp_site} (site path)
+    # $2 = ${plugin} (plugin to delete)
 
     local wp_site=$1
     local plugin=$2
@@ -139,8 +139,8 @@ wpcli_delete_plugin() {
 
 wpcli_install_theme() {
 
-    # $1 = ${WP_SITE} (site path)
-    # $2 = ${THEME} (theme to delete)
+    # $1 = ${wp_site} (site path)
+    # $2 = ${theme} (theme to delete)
 
     local wp_site=$1
     local theme=$2
@@ -151,8 +151,8 @@ wpcli_install_theme() {
 
 wpcli_delete_theme() {
 
-    # $1 = ${WP_SITE} (site path)
-    # $2 = ${THEME} (theme to delete)
+    # $1 = ${wp_site} (site path)
+    # $2 = ${theme} (theme to delete)
 
     local wp_site=$1
     local theme=$2
@@ -163,8 +163,8 @@ wpcli_delete_theme() {
 
 wpcli_change_wp_seo_visibility() {
 
-    # $1 = ${WP_SITE} (site path)
-    # $2 = ${VISIBILITY} (0=off or 1=on)
+    # $1 = ${wp_site} (site path)
+    # $2 = ${visibility} (0=off or 1=on)
 
     local wp_site=$1
     local visibility=$2
@@ -175,7 +175,7 @@ wpcli_change_wp_seo_visibility() {
 
 wpcli_get_db_prefix() {
 
-    # $1 = ${WP_SITE} (site path)
+    # $1 = ${wp_site} (site path)
 
     local wp_site=$1
 
@@ -187,8 +187,8 @@ wpcli_get_db_prefix() {
 
 wpcli_change_tables_prefix() {
 
-    # $1 = ${WP_SITE} (site path)
-    # $2 = ${DB_PREFIX}
+    # $1 = ${wp_site} (site path)
+    # $2 = ${db_prefix}
 
     local wp_site=$1
     local db_prefix=$2
@@ -199,9 +199,9 @@ wpcli_change_tables_prefix() {
 
 wpcli_search_and_replace() {
 
-    # $1 = ${WP_SITE} (site path)
-    # $2 = ${SEARCH}
-    # $3 = ${REPLACE}
+    # $1 = ${wp_site} (site path)
+    # $2 = ${search}
+    # $3 = ${replace}
 
     local wp_site=$1
     local search=$2
@@ -230,8 +230,8 @@ wpcli_search_and_replace() {
 
 wpcli_export_db(){
 
-    # $1 = ${WP_SITE} (site path)
-    # $2 = ${DB}
+    # $1 = ${wp_site} (site path)
+    # $2 = ${db}
 
     local wp_site=$1
     local db=$2

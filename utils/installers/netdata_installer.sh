@@ -99,7 +99,7 @@ netdata_telegram_config() {
   KEY="DEFAULT_RECIPIENT_TELEGRAM"
   DEFAULT_RECIPIENT_TELEGRAM=$(cat "/etc/netdata/health_alarm_notify.conf" | grep "^${KEY}${DELIMITER}" | cut -f2- -d"$DELIMITER")
 
-  NETDATA_CONFIG_1_STRING+= "\n . \n"
+  NETDATA_CONFIG_1_STRING+="\n . \n"
   NETDATA_CONFIG_1_STRING+=" Configure Telegram Notifications? You will need:\n"
   NETDATA_CONFIG_1_STRING+=" 1) Get a bot token. Contact @BotFather (https://t.me/BotFather) and send the command /newbot.\n"
   NETDATA_CONFIG_1_STRING+=" Follow the instructions and paste the token to access the HTTP API:\n"
@@ -113,7 +113,7 @@ netdata_telegram_config() {
     sed -i "s/^\(SEND_TELEGRAM\s*=\s*\).*\$/\1\"$SEND_TELEGRAM\"/" $HEALTH_ALARM_NOTIFY_CONF
     sed -i "s/^\(TELEGRAM_BOT_TOKEN\s*=\s*\).*\$/\1\"$TELEGRAM_BOT_TOKEN\"/" $HEALTH_ALARM_NOTIFY_CONF
 
-    NETDATA_CONFIG_2_STRING+= "\n . \n"
+    NETDATA_CONFIG_2_STRING+="\n . \n"
     NETDATA_CONFIG_2_STRING+=" 2) Contact the @myidbot (https://t.me/myidbot) bot and send the command /getid to get \n"
     NETDATA_CONFIG_2_STRING+=" your personal chat id or invite him into a group and issue the same command to get the group chat id.\n"
     NETDATA_CONFIG_2_STRING+=" 3) Paste the ID here:\n"
@@ -162,13 +162,13 @@ NETDATA="$(which netdata)"
 
 if [ ! -x "${NETDATA}" ]; then
 
-  if [[ -z "${NETDATA_SUBDOMAIN}" ]]; then
+  if [[ -z "${netdata_subdomain}" ]]; then
 
-    NETDATA_SUBDOMAIN=$(whiptail --title "Netdata Installer" --inputbox "Please insert the subdomain you want to install Netdata. Ex: monitor.broobe.com" 10 60 3>&1 1>&2 2>&3)
+    netdata_subdomain=$(whiptail --title "Netdata Installer" --inputbox "Please insert the subdomain you want to install Netdata. Ex: monitor.broobe.com" 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
 
     if [ $exitstatus = 0 ]; then
-      echo "NETDATA_SUBDOMAIN=${NETDATA_SUBDOMAIN}" >>/root/.broobe-utils-options
+      echo "netdata_subdomain=${netdata_subdomain}" >>/root/.broobe-utils-options
 
     else
       exit 1
@@ -177,7 +177,7 @@ if [ ! -x "${NETDATA}" ]; then
   fi
 
   # Only for Cloudflare API
-  ROOT_DOMAIN=${NETDATA_SUBDOMAIN#[[:alpha:]]*.}
+  suggested_root_domain=${netdata_subdomain#[[:alpha:]]*.}
 
   ask_mysql_root_psw
 
@@ -197,18 +197,21 @@ if [ ! -x "${NETDATA}" ]; then
       netdata_installer
 
       # Netdata nginx proxy configuration
-      create_nginx_server "${NETDATA_SUBDOMAIN}" "netdata"
+      create_nginx_server "${netdata_subdomain}" "netdata"
 
       #cp "${SFOLDER}/confs/nginx/sites-available/monitor" "/etc/nginx/sites-available"
-      #sed -i "s#dominio.com#${NETDATA_SUBDOMAIN}#" "/etc/nginx/sites-available/monitor"
+      #sed -i "s#dominio.com#${netdata_subdomain}#" "/etc/nginx/sites-available/monitor"
       #ln -s "/etc/nginx/sites-available/monitor" "/etc/nginx/sites-enabled/monitor"
 
       netdata_configuration
 
-      # Cloudflare API
-      cloudflare_change_a_record "${ROOT_DOMAIN}" "${NETDATA_SUBDOMAIN}"
+      # Confirm ROOT_DOMAIN
+      root_domain=$(cloudflare_ask_root_domain "${suggested_root_domain}")
 
-      DOMAIN=${NETDATA_SUBDOMAIN}
+      # Cloudflare API
+      cloudflare_change_a_record "${root_domain}" "${netdata_subdomain}"
+
+      DOMAIN=${netdata_subdomain}
       #CHOSEN_CB_OPTION="1"
       #export CHOSEN_CB_OPTION DOMAIN
 

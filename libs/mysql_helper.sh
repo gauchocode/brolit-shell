@@ -125,17 +125,17 @@ mysql_user_grant_privileges() {
     SQL1="GRANT ALL PRIVILEGES ON ${DB_TARGET}.* TO '${DB_USER}'@'localhost';"
     SQL2="FLUSH PRIVILEGES;"
 
-    echo "Granting privileges to ${DB_USER} on ${DB_TARGET} database in MySQL ..." >>$LOG
-    mysql -u ${MUSER} -p${MPASS} -e "${SQL1}${SQL2}" >>$LOG
+    echo " > Granting privileges to ${DB_USER} on ${DB_TARGET} database in MySQL ..." >>$LOG
+    mysql -u "${MUSER}" -p"${MPASS}" -e "${SQL1}${SQL2}" >>$LOG
 
     if [ $? -eq 0 ]; then
-        echo " > DONE!" >>$LOG
-        echo -e ${GREEN}" > DONE!"${ENDCOLOR}
+        echo " > Privileges granted ok!" >>$LOG
+        echo -e ${GREEN}" > Privileges granted ok!"${ENDCOLOR}
         return 0
 
     else
-        echo " > Something went wrong!" >>$LOG
-        echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
+        echo " > Something went wrong granting privileges to ${DB_USER}!" >>$LOG
+        echo -e ${B_RED}" > Something went wrong granting privileges to ${DB_USER}!"${ENDCOLOR}
         return 1
 
     fi

@@ -38,7 +38,7 @@ make_temp_files_backup() {
   mv "${folder_to_backup}" "${SFOLDER}/tmp/old_backup"
 
   echo " > Backup completed and stored here: ${SFOLDER}/tmp/old_backup ..." >>$LOG
-  echo -e ${GREEN}" > Backup completed and stored here: ${SFOLDER}/tmp/old_backup ..."${ENDCOLOR}
+  echo -e ${GREEN}" > Backup completed and stored here: ${SFOLDER}/tmp/old_backup ..."${ENDCOLOR}>&2
 
 }
 
@@ -49,7 +49,7 @@ make_temp_db_backup() {
   local chosen_project=$1
 
   if [ -d "/var/lib/mysql/${chosen_project}" ]; then
-    echo -e ${YELLOW}" > Executing mysqldump (will work if database exists) ..."${ENDCOLOR}
+    echo -e ${CYAN}" > Executing mysqldump (will work if database exists) ..."${ENDCOLOR}>&2
     mysqldump -u "${MUSER}" --password="${MPASS}" "${chosen_project}" >"${chosen_project}_bk_before_restore.sql"
 
   fi
@@ -67,7 +67,7 @@ restore_database_backup() {
   local project_name project_state db_user db_name db_exists user_db_exists db_pass
 
   echo " > Running restore_database_backup for ${chosen_backup} DB" >>$LOG
-  echo -e "${CYAN} > Running restore_database_backup for ${chosen_backup} DB ${ENDCOLOR}"
+  echo -e "${CYAN} > Running restore_database_backup for ${chosen_backup} DB ${ENDCOLOR}">&2
 
   # Asking project state with suggested actual state
   suffix="$(cut -d'_' -f2 <<<"${chosen_project}")"
@@ -80,10 +80,12 @@ restore_database_backup() {
   project_name=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${project_name}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-    echo "Setting project_name=${project_name}" >>$LOG
+    echo " > Setting project_name=${project_name}" >>$LOG
   else
     exit 1
   fi
+
+  make_temp_db_backup "${project_name}"
 
   db_user="${project_name}_user"
   db_name="${project_name}_${project_state}"
@@ -91,12 +93,12 @@ restore_database_backup() {
   # Check if database already exists
   db_exists=$(mysql_database_exists "${db_name}")
   if [[ ${db_exists} -eq 1 ]]; then  
-    echo -e ${CYAN}" > Creating '${db_name}' database in MySQL ..."${ENDCOLOR}
-    echo "Creating '${db_name}' database in MySQL ..." >>$LOG
+    echo -e ${CYAN}" > Creating ${db_name} database in MySQL ..."${ENDCOLOR}>&2
+    echo " > Creating ${db_name} database in MySQL ..." >>$LOG
     mysql_database_create "${db_name}"
 
   else
-    echo -e ${B_GREEN}" > MySQL DB ${db_name} already exists"${ENDCOLOR}
+    echo -e ${B_GREEN}" > MySQL DB ${db_name} already exists"${ENDCOLOR}>&2
 
     #TODO: ask what to do, if continue make a database backup
 
@@ -108,13 +110,13 @@ restore_database_backup() {
 
     db_pass=$(openssl rand -hex 12)
 
-    echo -e ${B_CYAN}" > Creating '${db_user}' user in MySQL with pass: ${db_pass}"${B_ENDCOLOR}
+    echo -e ${B_CYAN}" > Creating '${db_user}' user in MySQL with pass: ${db_pass}"${B_ENDCOLOR}>&2
     echo " > Creating ${db_user} user in MySQL with pass: ${db_pass}" >>$LOG
 
     mysql_user_create "${db_user}" "${db_pass}"
 
   else
-    echo -e ${B_GREEN}" > User ${db_user} already exists"${B_ENDCOLOR}
+    echo -e ${B_GREEN}" > User ${db_user} already exists"${B_ENDCOLOR}>&2
     echo " > User ${db_user} already exists"${ENDCOLOR} >>$LOG
 
   fi
@@ -126,10 +128,11 @@ restore_database_backup() {
   chosen_backup="${chosen_backup%%.*}.sql"
   mysql_database_import "${project_name}_${project_state}" "${chosen_backup}"
 
-  echo -e ${CYAN}" > Cleanning temp files ..."${ENDCOLOR}
+  echo -e ${CYAN}" > Cleanning temp files ..."${ENDCOLOR}>&2
   rm ${chosen_backup%%.*}.sql
+  rm ${chosen_backup%%.*}.tar.bz2
   rm "${chosen_backup}"
-  echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
+  echo -e ${B_GREEN}" > DONE"${ENDCOLOR}>&2
 
 }
 
@@ -165,7 +168,7 @@ download_and_restore_config_files_from_dropbox(){
     mv "${chosen_config_bk}" "${chosen_config_type}"
     cd "${chosen_config_type}"
 
-    echo -e ${YELLOW} " > Uncompressing ${chosen_config_bk}" ${ENDCOLOR}
+    echo -e ${YELLOW} " > Uncompressing ${chosen_config_bk}" ${ENDCOLOR}>&2
     echo " > Uncompressing ${chosen_config_bk}" >>$LOG
     
     pv "${chosen_config_bk}" | tar xp -C "${SFOLDER}/tmp/${chosen_config_type}" --use-compress-program=lbzip2
@@ -176,17 +179,16 @@ download_and_restore_config_files_from_dropbox(){
 
     fi
     if [[ "${CHOSEN_CONFIG}" == *"mysql"* ]]; then
-      echo -e ${B_RED}" > TODO: RESTORE MYSQL CONFIG ..."${ENDCOLOR}
+      echo -e ${B_RED}" > TODO: RESTORE MYSQL CONFIG ..."${ENDCOLOR}>&2
 
     fi
     if [[ "${CHOSEN_CONFIG}" == *"php"* ]]; then
-      echo -e ${B_RED}" > TODO: RESTORE PHP CONFIG ..."${ENDCOLOR}
+      echo -e ${B_RED}" > TODO: RESTORE PHP CONFIG ..."${ENDCOLOR}>&2
 
     fi
     if [[ "${CHOSEN_CONFIG}" == *"letsencrypt"* ]]; then
-      echo -e ${B_RED}" > TODO: RESTORE LETSENCRYPT CONFIG ..."${ENDCOLOR}
-
-      #restore_letsencrypt_site_files ""
+      echo -e ${B_RED}" > TODO: RESTORE LETSENCRYPT ..."${ENDCOLOR}>&2
+      #restore_letsencrypt_site_files "" ""
 
     fi
 
@@ -204,17 +206,30 @@ download_and_restore_config_files_from_dropbox(){
 
 restore_nginx_site_files() {
 
-  #$1 = ${domain} optional
+  # $1 = ${domain} optional
+  # $2 = ${date} optional
 
   local domain=$1
+  local date=$2
 
-  # TODO: support for domain parameter
+  local bk_file bk_to_download filename to_restore
+
+  bk_file="nginx-configs-files-${date}.tar.bz2"
+  bk_to_download="${chosen_server}/configs/nginx/${bk_file}"
+
+  echo " > Running dropbox_uploader.sh download ${bk_to_download}" >>$LOG
+  $DROPBOX_UPLOADER download "${bk_to_download}"
+
+  # Extract tar.bz2 with lbzip2
+  mkdir "${SFOLDER}/tmp/nginx"
+  extract "${bk_file}" "${SFOLDER}/tmp/nginx" "lbzip2"
+
   # TODO: if nginx is installed, ask if nginx.conf must be replace
 
   # Checking if default nginx folder exists
   if [[ -n "${WSERVER}" ]]; then
 
-    echo -e ${GREEN}" > Folder ${WSERVER} exists ... OK"${ENDCOLOR}
+    echo -e ${CYAN}" > Folder ${WSERVER} exists ... OK"${ENDCOLOR}>&2
 
     if [[ -z "${domain}" ]]; then
 
@@ -222,46 +237,56 @@ restore_nginx_site_files() {
       file_browser "$menutitle" "$startdir"
 
       to_restore=$filepath"/"$filename
-      echo -e ${YELLOW}" > File to restore: ${to_restore} ..."${ENDCOLOR}
+      echo -e ${CYAN}" > File to restore: ${to_restore} ..."${ENDCOLOR}>&2
 
     else
 
-      filename=${domain}
+      to_restore="${SFOLDER}/tmp/nginx/sites-available/${domain}"
 
-    fi
+      filename=${domain}
+      echo -e ${CYAN}" > File to restore: ${to_restore} ..."${ENDCOLOR}>&2
+
+    fi    
 
     if [[ -f "${WSERVER}/sites-available/${filename}" ]]; then
 
       echo " > File ${WSERVER}/sites-available/${filename} already exists. Making a backup file ..." >>$LOG
-      echo -e ${CYAN}" > File ${WSERVER}/sites-available/${filename} already exists. Making a backup file ..."${ENDCOLOR}
+      echo -e ${CYAN}" > File ${WSERVER}/sites-available/${filename} already exists. Making a backup file ..."${ENDCOLOR}>&2
+
       mv "${WSERVER}/sites-available/${filename}" "${WSERVER}/sites-available/${filename}_bk"
 
       echo " > Restoring backup: ${filename} ..." >>$LOG
-      echo -e ${CYAN}" > Restoring backup: ${filename} ..."${ENDCOLOR}
-      cp "$to_restore" "${WSERVER}/sites-available/$filename"
+      echo -e ${CYAN}" > Restoring backup: ${filename} ..."${ENDCOLOR}>&2
+
+      cp "${to_restore}" "${WSERVER}/sites-available/$filename"
 
       echo " > Reloading webserver ..." >>$LOG
-      echo -e ${CYAN}" > Reloading webserver ..."${ENDCOLOR}
+      echo -e ${CYAN}" > Reloading webserver ..."${ENDCOLOR}>&2
       service nginx reload
 
     else
 
-      echo -e ${GREEN}" > File ${WSERVER}/sites-available/${filename} does NOT exists ..."${ENDCOLOR}
+      echo -e ${CYAN}" > File ${WSERVER}/sites-available/${filename} does not exists ..."${ENDCOLOR}>&2
 
       echo " > Restoring backup: ${filename} ..." >>$LOG
-      echo -e ${CYAN}" > Restoring backup: ${filename} ..."${ENDCOLOR}
-      cp "$to_restore" "${WSERVER}/sites-available/$filename"
-      ln -s "${WSERVER}/sites-available/$filename" "${WSERVER}/sites-enabled/$filename"
+      echo -e ${CYAN}" > Restoring backup: ${filename} ..."${ENDCOLOR}>&2
+
+      cp "${to_restore}" "${WSERVER}/sites-available/${filename}"
+      ln -s "${WSERVER}/sites-available/${filename}" "${WSERVER}/sites-enabled/${filename}"
+
+      # TODO: change_phpv_nginx_server function must be fixed
+      change_phpv_nginx_server "${domain}"
 
       echo " > Reloading webserver ..." >>$LOG
-      echo -e ${YELLOW}" > Reloading webserver ..."${ENDCOLOR}
+      echo -e ${CYAN}" > Reloading webserver ..."${ENDCOLOR}>&2
       service nginx reload
 
     fi
 
   else
 
-    echo -e ${B_RED}" > /etc/nginx/sites-available NOT exist... Skipping!"${ENDCOLOR}
+    echo -e ${B_RED}" > /etc/nginx/sites-available NOT exist... Skipping!"${ENDCOLOR}>&2
+    echo "ERROR: nginx main dir is not present!"
 
   fi
 
@@ -270,19 +295,43 @@ restore_nginx_site_files() {
 restore_letsencrypt_site_files() {
 
   # $1 = ${domain}
+  # $2 = ${date}
 
   local domain=$1
+  local date=$2
+
+  local bk_file bk_to_download
+
+  bk_file="letsencrypt-configs-files-${date}.tar.bz2"
+  bk_to_download="${chosen_server}/configs/letsencrypt/${bk_file}"
+
+  echo " > Running dropbox_uploader.sh download ${bk_to_download}" >>$LOG
+  $DROPBOX_UPLOADER download "${bk_to_download}"
+
+  # Extract tar.bz2 with lbzip2
+  echo " > Extracting ${bk_file} on ${SFOLDER}/tmp/" >>$LOG
+  echo -e ${CYAN}" > Extracting ${bk_file} on ${SFOLDER}/tmp/"${ENDCOLOR} >&2
+  mkdir "${SFOLDER}/tmp/letsencrypt"
+  extract "${bk_file}" "${SFOLDER}/tmp/letsencrypt" "lbzip2"
+
+  mkdir "/etc/letsencrypt/archive/"
+  mkdir "/etc/letsencrypt/live/"
 
   mkdir "/etc/letsencrypt/archive/${domain}"
   mkdir "/etc/letsencrypt/live/${domain}"
 
-  cp -r "${SFOLDER}/tmp/letsencrypt/archive/${domain}" "/etc/letsencrypt/archive/${domain}/"
-  cp -r "${SFOLDER}/tmp/letsencrypt/live/${domain}" "/etc/letsencrypt/live/${domain}/"
+  # Check if file exist
+  if [ ! -f "/etc/letsencrypt/options-ssl-nginx.conf" ]; then
+    cp -r "${SFOLDER}/tmp/letsencrypt/options-ssl-nginx.conf" "/etc/letsencrypt/"
 
-  #cp "${SFOLDER}/tmp/letsencrypt/live/${domain}/fullchain.pem" "/etc/letsencrypt/live/${domain}/cert.pem"
-  #cp "${SFOLDER}/tmp/letsencrypt/live/${domain}/fullchain.pem" "/etc/letsencrypt/live/${domain}/chain.pem"
-  #cp "${SFOLDER}/tmp/letsencrypt/live/${domain}/fullchain.pem" "/etc/letsencrypt/live/${domain}/fullchain.pem"
-  #cp "${SFOLDER}/tmp/letsencrypt/live/${domain}/privkey.pem" "/etc/letsencrypt/live/${domain}/privkey.pem"
+  fi
+  if [ ! -f "/etc/letsencrypt/ssl-dhparams.pem" ]; then
+    cp -r "${SFOLDER}/tmp/letsencrypt/ssl-dhparams.pem" "/etc/letsencrypt/"
+    
+  fi
+
+  cp -r "${SFOLDER}/tmp/letsencrypt/archive/${domain}" "/etc/letsencrypt/archive/"
+  cp -r "${SFOLDER}/tmp/letsencrypt/live/${domain}" "/etc/letsencrypt/live/"
 
 }
 
@@ -298,7 +347,7 @@ restore_site_files() {
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
-    echo "Setting chosen_domain=${chosen_domain}" >>$LOG
+    echo " > Setting chosen_domain=${chosen_domain}" >>$LOG
 
     # New tmp folder
     project_tmp_folder="${SFOLDER}/tmp/${chosen_domain}"
@@ -316,7 +365,7 @@ restore_site_files() {
     if [ -d "${actual_folder}" ]; then
 
       echo " > ${actual_folder} exist. Let's make a Backup ..." >>$LOG
-      echo -e ${YELLOW}" > ${actual_folder} exist. Let's make a Backup ..."${ENDCOLOR}
+      echo -e ${YELLOW}" > ${actual_folder} exist. Let's make a Backup ..."${ENDCOLOR} >&2
 
       make_temp_files_backup "${actual_folder}"
 
@@ -324,51 +373,33 @@ restore_site_files() {
 
     # Restore files
     echo " > Moving files from ${project_tmp_folder} to ${folder_to_install} ..." >>$LOG
-    echo -e ${CYAN}" > Moving files from ${project_tmp_folder} to ${folder_to_install} ..."${ENDCOLOR}
+    echo -e ${CYAN}" > Moving files from ${project_tmp_folder} to ${folder_to_install} ..."${ENDCOLOR} >&2
     
     mv "${project_tmp_folder}" "${folder_to_install}"
 
     install_path=$(search_wp_config "${actual_folder}")
 
-    if [ -z "${install_path}" ]; then
+    echo " > install_path=${install_path}" >>$LOG
+    echo -e ${CYAN}" > install_path=${install_path}"${ENDCOLOR} >&2
 
-      echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND ON PATH: ${actual_folder}/${install_path}"${ENDCOLOR}
-      wp_change_ownership "${install_path}"
+    if [ -d "${install_path}" ]; then
 
+      echo " > Wordpress intallation found on: ${install_path}" >>$LOG
+      echo -e ${B_GREEN}" > Wordpress intallation found on: ${install_path}"${ENDCOLOR} >&2
+      wp_change_ownership "${install_path}" 
+
+      echo " > Files backup restored on: ${install_path}" >>$LOG
+      echo -e ${B_GREEN}" > Files backup restored on: ${install_path}"${ENDCOLOR} >&2
+
+      # Returned var
+      echo "${install_path}"
+    
     fi
-
-    # TODO: ask to choose between regenerate nginx config or restore backup
-    # If choose restore config and has https, need to restore letsencrypt config and run cerbot
-
-    #echo "Trying to restore nginx config for ${chosen_project} ..."
-    # New site configuration
-    #cp ${SFOLDER}/confs/default /etc/nginx/sites-available/${chosen_project}
-    #ln -s /etc/nginx/sites-available/${chosen_project} /etc/nginx/sites-enabled/${chosen_project}
-    # Replacing string to match domain name
-    #sed -i "s#dominio.com#${chosen_project}#" /etc/nginx/sites-available/${chosen_project}
-    # Need to be run twice
-    #sed -i "s#dominio.com#${chosen_project}#" /etc/nginx/sites-available/${chosen_project}
-    #service nginx reload
-
-    echo -e ${B_GREEN}" > FILE RESTORED ON ${install_path}!"${ENDCOLOR}
 
   else
     exit 1
+
   fi
-
-}
-
-restore_database() {
-  
-  # $1 = chosen_project
-  # $2 = chosen_backup_to_restore
-
-  local chosen_project=$1
-  local chosen_backup_to_restore=$2
-
-  make_temp_db_backup "${chosen_project}"
-
-  restore_database_backup "${chosen_project}" "${chosen_backup_to_restore}"
 
 }
 
@@ -426,7 +457,6 @@ select_restore_type_from_dropbox() {
           bk_to_dowload="${chosen_server}/${chosen_type}/${chosen_project}/${CHOSEN_BACKUP_TO_RESTORE}"
 
           echo " > Running dropbox_uploader.sh download ${bk_to_dowload}" >>$LOG
-
           $DROPBOX_UPLOADER download "${bk_to_dowload}"
 
           echo -e ${CYAN}" > Uncompressing ${CHOSEN_BACKUP_TO_RESTORE}"${ENDCOLOR}
@@ -436,7 +466,7 @@ select_restore_type_from_dropbox() {
 
           if [[ ${chosen_type} == *"$DBS_F"* ]]; then
 
-            restore_database "${chosen_project}" "${CHOSEN_BACKUP_TO_RESTORE}"
+            restore_database_backup "${chosen_project}" "${CHOSEN_BACKUP_TO_RESTORE}"
 
             # TODO: ask if want to change project db parameters and make cloudflare changes
 
@@ -457,7 +487,7 @@ select_restore_type_from_dropbox() {
             # TODO: search_wp_config could be an array of dir paths, need to check that
             if [ "${install_path}" != "" ]; then
 
-              echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND ON PATH: ${PROJECT_SITE}/${install_path}"${ENDCOLOR}
+              echo -e ${B_GREEN}" > WordPress installation found: ${PROJECT_SITE}/${install_path}"${ENDCOLOR}
 
               # Change wp-config.php database parameters
               wp_update_wpconfig "${install_path}" "${project_name}" "${project_state}" "${DB_PASS}"
@@ -466,7 +496,7 @@ select_restore_type_from_dropbox() {
 
             else
 
-              echo -e ${B_RED}" > WORDPRESS INSTALLATION NOT FOUND!"${ENDCOLOR}
+              echo -e ${B_RED}" > WordPress installation not found!"${ENDCOLOR}
 
             fi
 
@@ -535,7 +565,6 @@ project_restore() {
     bk_to_dowload="${chosen_server}/site/${chosen_project}/${chosen_backup_to_restore}"
 
     echo " > Running dropbox_uploader.sh download ${bk_to_dowload}" >>$LOG
-
     $DROPBOX_UPLOADER download "${bk_to_dowload}"
 
     echo -e ${CYAN}" > Uncompressing ${chosen_backup_to_restore}"${ENDCOLOR}
@@ -548,8 +577,9 @@ project_restore() {
     echo -e ${B_CYAN}" > Project Type: ${project_type}"${ENDCOLOR}
     echo " > Project Type: ${project_type}" >>$LOG
 
-    echo -e ${B_CYAN}"TRYING TO EXTRACT DB PARAMETERS ..."
-    
+    echo -e ${CYAN}" > Trying to get database parameters from ${SFOLDER}/tmp/${chosen_project}/wp-config.php"${ENDCOLOR}
+    echo " > Trying to get database parameters from ${SFOLDER}/tmp/${chosen_project}/wp-config.php" >>$LOG
+
     case $project_type in
 
       wordpress)
@@ -574,17 +604,25 @@ project_restore() {
     # Here, for convention, chosen_project should be CHOSEN_DOMAIN... 
     # Only for better code reading, i assign this new var:
     chosen_domain=${chosen_project}
-    restore_site_files "${chosen_domain}"
+    project_path=$(restore_site_files "${chosen_domain}")
 
-    backup_date=$(echo ${chosen_backup_to_restore} |grep -Eo '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')
+    backup_date=$(echo "${chosen_backup_to_restore}" |grep -Eo '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')
 
     db_to_download="${chosen_server}/database/${db_name}/${db_name}_database_${backup_date}.tar.bz2"
 
-    echo -e ${B_CYAN}"BACKUP DATE: ${backup_date}"
-    echo -e ${B_CYAN}"DB NAME: ${db_name}"
-    echo -e ${B_CYAN}"DB USER: ${db_user}"
-    echo -e ${B_CYAN}"DB PASS: ${db_pass}"
-    echo -e ${B_CYAN}"TRYING TO DOWNLOAD: ${db_to_download}"
+    # Extracting project_state from
+    project_state="$(cut -d'_' -f2 <<<"${db_name}")"
+
+    echo -e ${CYAN}"*****************************"${ENDCOLOR}
+    echo -e ${CYAN}"project_path: ${project_path}"${ENDCOLOR}
+    echo -e ${CYAN}"chosen_project: ${chosen_project}"${ENDCOLOR}
+    echo -e ${CYAN}"project_state: ${project_state}"${ENDCOLOR}
+    echo -e ${CYAN}"backup_date: ${backup_date}"${ENDCOLOR}
+    echo -e ${CYAN}"DB NAME: ${db_name}"${ENDCOLOR}
+    echo -e ${CYAN}"DB USER: ${db_user}"${ENDCOLOR}
+    echo -e ${CYAN}"DB PASS: ${db_pass}"${ENDCOLOR}
+    echo -e ${CYAN}"TRYING TO DOWNLOAD: ${db_to_download}"${ENDCOLOR}
+    echo -e ${CYAN}"*****************************"${ENDCOLOR}
 
     $DROPBOX_UPLOADER download "${db_to_download}"
 
@@ -593,16 +631,32 @@ project_restore() {
 
     pv "${db_name}_database_${backup_date}.tar.bz2" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
 
-    restore_database "${chosen_project}" "${db_name}_database_${backup_date}.tar.bz2"
+    # Extract project name from domain
+    chosen_project="$(cut -d'.' -f1 <<<"${chosen_project}")"
+
+    # Restore database function
+    restore_database_backup "${chosen_project}" "${db_name}_database_${backup_date}.tar.bz2"
 
     # Change wp-config.php database parameters
-    #wp_update_wpconfig "${install_path}" "${project_name}" "${project_state}" "${db_pass}"
+    wp_update_wpconfig "${project_path}" "${chosen_project}" "${project_state}" "${db_pass}"
 
     #TODO: try to restore nginx_server config from project (now, need to download all, extract, and then select from project_name)
 
-    restore_letsencrypt_site_files "${chosen_domain}"
+    restore_letsencrypt_site_files "${chosen_domain}" "${backup_date}"
 
-    restore_nginx_site_files "${chosen_domain}"
+    # TODO: ask to choose between regenerate nginx config or restore backup
+    # If choose restore config and has https, need to restore letsencrypt config and run cerbot
+    restore_nginx_site_files "${chosen_domain}" "${backup_date}"
+
+    #TODO: ask if want to change IP from Cloudflare then ask for Cloudflare Root Domain
+
+    # Only for Cloudflare API
+    root_domain=$(cloudflare_ask_root_domain "${chosen_domain}")
+
+    cloudflare_change_a_record "${root_domain}" "${chosen_domain}"
+    
+    # HTTPS with Certbot
+    #certbot_helper_installer_menu "${MAILA}" "${domain}"
 
   fi
 
