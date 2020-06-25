@@ -64,9 +64,11 @@ wp_update_wpconfig() {
   local wp_project_state=$3
   local db_user_pass=$4
 
+  # TODO: must check if ${wp_project_dir}/wp-config.php exists
+
   # Change wp-config.php database parameters
-  echo -e ${CYAN}"Changing wp-config.php database parameters ..."${ENDCOLOR}
-  echo " > Changing wp-config.php database parameters ..." >>$LOG
+  echo -e ${CYAN}" > Changing database parameters on ${wp_project_dir}/wp-config.php"${ENDCOLOR} >&2
+  echo " > Changing database parameters on ${wp_project_dir}/wp-config.php" >>$LOG
   
   sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" "${wp_project_dir}/wp-config.php"
   
@@ -94,8 +96,8 @@ wp_change_ownership() {
   chmod -R g+w "${project_dir}/wp-content/themes"
   chmod -R g+w "${project_dir}/wp-content/plugins"
 
-  echo " > DONE" >>$LOG
-  echo -e ${GREEN}" > DONE"${ENDCOLOR}
+  #echo " > DONE" >>$LOG
+  #echo -e ${GREEN}" > DONE"${ENDCOLOR}
 }
 
 # TODO: Change this, because only works on english or spanish version of WP
