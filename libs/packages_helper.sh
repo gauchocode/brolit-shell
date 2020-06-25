@@ -97,6 +97,7 @@ selected_package_installation() {
     "certbot" " " off
     "monit" " " off
     "netdata" " " off
+    "clamav" " " off
     "cockpit" " " off
     "wpcli" " " off
     "zabbix" " " off

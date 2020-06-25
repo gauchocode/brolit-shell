@@ -907,8 +907,8 @@ change_ownership(){
   local group=$2
   local path=$3
 
-  echo " > Changing ownership ..." >>$LOG
-  echo -e ${CYAN}" > Changing ownership ..."${ENDCOLOR}
+  echo " > Running chown -R ${user}:${group} ${path}" >>$LOG
+  echo -e ${CYAN}" > Running chown -R ${user}:${group} ${path}"${ENDCOLOR}>&2
   chown -R "${user}":"${group}" "${path}"
 
 }
@@ -1156,13 +1156,13 @@ ask_folder_to_install_sites() {
     folder_to_install=$(whiptail --title "Folder to install" --inputbox "Please insert the full path where you want to install the site:" 10 60 "${folder_to_install}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      echo "folder_to_install=${folder_to_install}" >>$LOG
+      echo " > Folder to install: ${folder_to_install}" >>$LOG
       echo "${folder_to_install}"
     else
       exit 1
     fi
   else
-    echo "folder_to_install=${folder_to_install}" >>$LOG
+    echo " > Folder to install: ${folder_to_install}" >>$LOG
     echo "${folder_to_install}"
   fi
 
