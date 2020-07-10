@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc05
+# Version: 3.0-rc06
 ################################################################################
 #
 # Refs: 
@@ -54,6 +54,18 @@ certbot_certificate_renew() {
   certbot renew -d "${domains}"
 
 }
+
+certbot_certificate_renew_test() {
+
+  # Test renew for all installed certificates
+
+  echo -e ${B_CYAN}" > certbot renew --dry-run"${ENDCOLOR}
+  echo " > Running: certbot renew --dry-run" >>$LOG
+  certbot renew --dry-run
+
+}
+
+
 
 certbot_certificate_force_renew() {
 
@@ -220,7 +232,7 @@ certbot_helper_menu() {
 
   local domains certbot_options chosen_cb_options
 
-  certbot_options="01 INSTALL_CERTIFICATE 02 EXPAND_CERTIFICATE 03 RENEW_CERTIFICATE 04 FORCE_RENEW_CERTIFICATE 05 DELETE_CERTIFICATE 06 SHOW_INSTALLED_CERTIFICATES"
+  certbot_options="01 INSTALL_CERTIFICATE 02 EXPAND_CERTIFICATE 03 TEST_RENEW_ALL_CERTIFICATES 04 FORCE_RENEW_CERTIFICATE 05 DELETE_CERTIFICATE 06 SHOW_INSTALLED_CERTIFICATES"
   chosen_cb_options=$(whiptail --title "CERTBOT MANAGER" --menu "Please choose an option:" 20 78 10 $(for x in ${certbot_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -239,8 +251,7 @@ certbot_helper_menu() {
 
     fi
     if [[ ${chosen_cb_options} == *"03"* ]]; then
-      domains=$(certbot_helper_ask_domains)
-      certbot_certificate_renew "${domains}"
+      certbot_certificate_renew_test
       #certbot_helper_menu
 
     fi

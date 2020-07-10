@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc05
+# Version: 3.0-rc06
 ################################################################################
 
 wpcli_install_if_not_installed() {
@@ -71,6 +71,40 @@ wpcli_check_version() {
 
 }
 
+wpcli_core_update() {
+
+    local verify_core_update
+
+    verify_core_update=$(sudo -u www-data wp core check-update | grep ":" | cut -d ':' -f1)
+
+    echo "${verify_core_update}" #if ok, return "Success"
+
+}
+
+wpcli_core_verify() {
+
+    local verify_core
+
+    verify_core=$(sudo -u www-data wp core verify-checksums | grep ":" | cut -d ':' -f1)
+
+    echo "${verify_core}" #if ok, return "Success"
+
+}
+
+wpcli_plugin_verify() {
+
+    # $1 = ${plugin} could be --all?
+
+    local verify_plugin plugin
+
+    plugin=$1
+
+    verify_plugin=$(sudo -u www-data wp plugin verify-checksums "${plugin}" | grep ":" | cut -d ':' -f1)
+
+    echo "${verify_plugin}" #if ok, return "Success"
+
+}
+
 wpcli_maintenance_mode_status() {
 
     WPCLI_V=$(sudo -u www-data wp --info | grep "WP-CLI version:" | cut -d ':' -f2)
@@ -90,6 +124,16 @@ wpcli_maintenance_mode() {
     maintenance_mode=$(sudo -u www-data wp maintenance-mode "${mode}")
 
     echo "${maintenance_mode}"
+
+}
+
+wpcli_seoyoast_reindex() {
+
+    # $1 = ${wp_site} (site path)
+
+    local wp_site=$1
+
+    sudo -u www-data wp --path="${wp_site}" yoast index --reindex
 
 }
 
@@ -134,6 +178,36 @@ wpcli_delete_plugin() {
     local plugin=$2
 
     sudo -u www-data wp --path="${wp_site}" plugin delete "${plugin}"
+
+}
+
+wpcli_is_active_plugin() {
+
+    # Check whether plugin is active; exit status 0 if active, otherwise 1
+
+    # $1 = ${wp_site} (site path)
+    # $2 = ${plugin} (plugin to delete)
+
+    local wp_site=$1
+    local plugin=$2
+
+    sudo -u www-data wp --path="${wp_site}" plugin is-installed "${plugin}"
+    echo $?
+
+}
+
+wpcli_is_installed_plugin() {
+
+    # Check whether plugin is installed; exit status 0 if installed, otherwise 1
+
+    # $1 = ${wp_site} (site path)
+    # $2 = ${plugin} (plugin to delete)
+
+    local wp_site=$1
+    local plugin=$2
+
+    sudo -u www-data wp --path="${wp_site}" plugin is-installed "${plugin}"
+    echo $?
 
 }
 
@@ -212,8 +286,7 @@ wpcli_search_and_replace() {
     # Folder Name need to be the Site URL
     wp_site_url=$(basename "${wp_site}")
 
-    # TODO: por algún motivo cuando tiro comandos con el parametro --url siempre falla
-    # entonces o ver que pasa o checkear si es multisite de otra manera.
+    # TODO: for some reason when it's run with --url always fails
     if $(wp --allow-root --url=http://${wp_site_url} core is-installed --network); then
 
         echo "Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace} --network"
@@ -237,4 +310,19 @@ wpcli_export_db(){
     local db=$2
 
     wp --allow-root --path="${wp_site}" db export "${db}"
+
+}
+
+wpcli_reset_user_passw(){
+
+    # $1 = ${wp_site} (site path)
+    # $2 = ${wp_user}
+    # $3 = ${wp_user_pass}
+
+    local wp_site=$1
+    local wp_user=$2
+    local wp_user_pass=$3
+
+    wp --allow-root --path="${wp_site}" user update "${wp_user}" --user_pass="${wp_user_pass}"
+    
 }

@@ -1,58 +1,59 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc05
+# Version: 3.0-rc06
 #############################################################################
-#
-# Ref: https://github.com/nelson6e65/bash-mysql-helper/blob/master/src/main.sh
-#
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
 
-count_dabases() {
+mysql_count_dabases() {
 
-    # $1 = ${DBS}
+    # $1 = ${databases}
 
-    DBS=$1
+    local databases=$1
+    local total_databases=0
 
-    TOTAL_DBS=0
-    for db in ${DBS}; do
+    for db in ${databases}; do
         if [[ $DB_BL != *"${db}"* ]]; then
-            TOTAL_DBS=$((TOTAL_DBS + 1))
+            total_databases=$((total_databases + 1))
         fi
     done
 
     # return
-    echo $TOTAL_DBS
+    echo "${total_databases}"
 }
 
 mysql_user_create() {
 
-    # $1 = ${DB_USER}
-    # $2 = ${DB_PASS}
+    # $1 = ${db_user}
+    # $2 = ${db_user_psw}
 
-    DB_USER=$1
-    DB_PASS=$2
+    local db_user=$1
+    local db_user_psw=$2
 
-    if [[ -z ${DB_PASS} || ${DB_PASS} == "" ]]; then
-        SQL1="CREATE USER '${DB_USER}'@'localhost';"
+    local sql_1
+
+    if [[ -z ${db_user_psw} || ${db_user_psw} == "" ]]; then
+        sql_1="CREATE USER '${db_user}'@'localhost';"
 
     else
-        SQL1="CREATE USER '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASS}';"
+        sql_1="CREATE USER '${db_user}'@'localhost' IDENTIFIED BY '${db_user_psw}';"
 
     fi
 
-    mysql -u ${MUSER} -p${MPASS} -e "${SQL1}"
+    mysql -u "${MUSER}" -p"${MPASS}" -e "${sql_1}"
 
     if [ $? -eq 0 ]; then
-        #return o if done
+        echo " > MySQL user: ${db_user} created ok!" >>$LOG
+        echo -e ${GREEN}" > MySQL user: ${db_user} created ok!"${ENDCOLOR} >&2
         return 0
 
     else
-        #return 1 if something went wrong
+        echo " > Something went wrong creating user: ${db_user}" >>$LOG
+        echo -e ${B_RED}" > Something went wrong creating user: ${db_user}"${ENDCOLOR} >&2
         return 1
 
     fi
@@ -61,24 +62,24 @@ mysql_user_create() {
 
 mysql_user_delete() {
 
-    # $1 = ${USER_DB}
+    # $1 = ${db_user}
 
-    USER_DB=$1
+    local db_user=$1
 
-    SQL1="DROP USER '${USER_DB}'@'localhost';"
-    SQL2="FLUSH PRIVILEGES;"
+    local sql_1="DROP USER '${db_user}'@'localhost';"
+    local sql_2="FLUSH PRIVILEGES;"
 
-    echo "Deleting ${USER_DB} user in MySQL ..." >>$LOG
-    mysql -u ${MUSER} -p${MPASS} -e "${SQL1}${SQL2}" >>$LOG
+    echo "Deleting ${db_user} user in MySQL ..." >>$LOG
+    mysql -u "${MUSER}" -p"${MPASS}" -e "${sql_1}${sql_2}" >>$LOG
 
     if [ $? -eq 0 ]; then
-        echo " > DONE!" >>$LOG
-        echo -e ${GREEN}" > DONE!"${ENDCOLOR}
+        echo " > Database user: ${db_user} deleted ok!" >>$LOG
+        echo -e ${GREEN}" > Database user: ${db_user} deleted ok!"${ENDCOLOR} >&2
         return 0
 
     else
-        echo " > Something went wrong!" >>$LOG
-        echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
+        echo " > Something went wrong deleting user: ${db_user}" >>$LOG
+        echo -e ${B_RED}" > Something went wrong deleting user: ${db_user}"${ENDCOLOR} >&2
         exit 1
         #return 1
 
@@ -88,17 +89,17 @@ mysql_user_delete() {
 
 mysql_user_psw_change() {
 
-    # $1 = ${USER_DB}
-    # $2 = ${USER_DB_PSW}
+    # $1 = ${db_user}
+    # $2 = ${db_user_psw}
 
-    USER_DB=$1
-    USER_DB_PSW=$2
+    local db_user=$1
+    local db_user_psw=$2
 
-    SQL1="ALTER USER '${USER_DB}'@'localhost' IDENTIFIED BY '${USER_DB_PSW}';"
+    SQL1="ALTER USER '${db_user}'@'localhost' IDENTIFIED BY '${db_user_psw}';"
     SQL2="FLUSH PRIVILEGES;"
 
-    echo "Deleting ${USER_DB} user in MySQL ..." >>$LOG
-    mysql -u ${MUSER} -p${MPASS} -e "${SQL1}${SQL2}" >>$LOG
+    echo " > Deleting ${db_user} user in MySQL ..." >>$LOG
+    mysql -u "${MUSER}" -p"${MPASS}" -e "${SQL1}${SQL2}" >>$LOG
 
     if [ $? -eq 0 ]; then
         echo " > DONE!" >>$LOG
@@ -107,7 +108,7 @@ mysql_user_psw_change() {
 
     else
         echo " > Something went wrong!" >>$LOG
-        echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
+        echo -e ${B_RED}" > Something went wrong!"${ENDCOLOR}
         exit 1
 
     fi
@@ -119,13 +120,13 @@ mysql_user_grant_privileges() {
     # $1 = ${USER}
     # $2 = ${DB}
 
-    DB_USER=$1
-    DB_TARGET=$2
+    local db_user=$1
+    local db_target=$2
 
-    SQL1="GRANT ALL PRIVILEGES ON ${DB_TARGET}.* TO '${DB_USER}'@'localhost';"
+    SQL1="GRANT ALL PRIVILEGES ON ${db_target}.* TO '${db_user}'@'localhost';"
     SQL2="FLUSH PRIVILEGES;"
 
-    echo " > Granting privileges to ${DB_USER} on ${DB_TARGET} database in MySQL ..." >>$LOG
+    echo " > Granting privileges to ${db_user} on ${db_target} database in MySQL ..." >>$LOG
     mysql -u "${MUSER}" -p"${MPASS}" -e "${SQL1}${SQL2}" >>$LOG
 
     if [ $? -eq 0 ]; then
@@ -134,8 +135,8 @@ mysql_user_grant_privileges() {
         return 0
 
     else
-        echo " > Something went wrong granting privileges to ${DB_USER}!" >>$LOG
-        echo -e ${B_RED}" > Something went wrong granting privileges to ${DB_USER}!"${ENDCOLOR}
+        echo " > Something went wrong granting privileges to ${db_user}!" >>$LOG
+        echo -e ${B_RED}" > Something went wrong granting privileges to ${db_user}!"${ENDCOLOR}
         return 1
 
     fi
@@ -146,9 +147,9 @@ mysql_user_exists() {
 
     # $1 = ${DB_USER}
 
-    DB_USER=$1
+    local db_user=$1
 
-    if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${DB_USER}';" | mysql -u "${MUSER}" --password="${MPASS}" | grep 1 &>/dev/null; then
+    if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${db_user}';" | mysql -u "${MUSER}" --password="${MPASS}" | grep 1 &>/dev/null; then
         #return 0 if user don't exists
         echo 0
     else
@@ -162,9 +163,9 @@ mysql_database_exists() {
 
     # $1 = ${DB}
 
-    DB=$1
+    local database=$1
 
-    result=$(mysql -u "${MUSER}" --password="${MPASS}" -e "SHOW DATABASES LIKE '${DB}';")
+    result=$(mysql -u "${MUSER}" --password="${MPASS}" -e "SHOW DATABASES LIKE '${database}';")
 
     if [[ -z "${result}" || "${result}" = "" ]]; then
         #return 1 if database don't exists
@@ -181,20 +182,20 @@ mysql_database_create() {
 
     # $1 = ${DB}
 
-    DB=$1
+    local database=$1
 
-    SQL1="CREATE DATABASE IF NOT EXISTS ${DB};"
+    SQL1="CREATE DATABASE IF NOT EXISTS ${database};"
 
-    mysql -u ${MUSER} -p${MPASS} -e "${SQL1}" >>$LOG
+    mysql -u "${MUSER}" -p"${MPASS}" -e "${SQL1}" >>$LOG
 
     if [ $? -eq 0 ]; then
-        echo " > Database ${DB} created OK!" >>$LOG
-        echo -e ${B_GREEN}" > Database ${DB} created OK!"${ENDCOLOR}
+        echo " > Database ${database} created OK!" >>$LOG
+        echo -e ${B_GREEN}" > Database ${database} created OK!"${ENDCOLOR}>&2
         return 0
 
     else
-        echo " > Something went wrong creating database: ${DB}!" >>$LOG
-        echo -e ${B_RED}" > Something went wrong creating database: ${DB}!"${ENDCOLOR}
+        echo " > Something went wrong creating database: ${database}!" >>$LOG
+        echo -e ${B_RED}" > Something went wrong creating database: ${database}!"${ENDCOLOR}>&2
         exit 1
 
     fi
@@ -205,21 +206,23 @@ mysql_database_drop() {
 
     # $1 = ${DB}
 
-    DB=$1
+    local database=$1
 
-    SQL1="DROP DATABASE ${DB};"
+    SQL1="DROP DATABASE ${database};"
 
-    echo "Droping database ${DB} ..." >>$LOG
-    mysql -u ${MUSER} -p${MPASS} -e "${SQL1}" >>$LOG
+    echo " > Droping the database: ${database} ..." >>$LOG
+    echo -e ${GREEN}" > Droping the database: ${database} ..."${ENDCOLOR} >&2
+
+    mysql -u "${MUSER}" -p"${MPASS}" -e "${SQL1}" >>$LOG
 
     if [ $? -eq 0 ]; then
-        echo " > Database ${DB} deleted!" >>$LOG
-        echo -e ${GREEN}" > Database ${DB} deleted!"${ENDCOLOR}
+        echo " > Database ${database} deleted!" >>$LOG
+        echo -e ${GREEN}" > Database ${database} deleted!"${ENDCOLOR} >&2
         return 0
 
     else
-        echo " > Something went wrong!" >>$LOG
-        echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
+        echo " > Something went wrong deleting the database: ${database}!" >>$LOG
+        echo -e ${B_RED}" > Something went wrong deleting the database: ${database}!"${ENDCOLOR} >&2
         exit 1
         
     fi
@@ -234,19 +237,19 @@ mysql_database_import() {
     local db_name=$1
     local dump_file=$2
 
-    echo -e ${CYAN}" > Importing dump file ${dump_file} into database: ${db_name} ..."${ENDCOLOR}
+    echo -e ${CYAN}" > Importing dump file ${dump_file} into database: ${db_name} ..."${ENDCOLOR}>&2
     echo " > Importing dump file ${dump_file} into database: ${db_name} ..." >>$LOG
 
     pv "${dump_file}" | mysql -f -u"${MUSER}" -p"${MPASS}" -f -D "${db_name}"
 
     if [ $? -eq 0 ]; then
         echo " > Import database ${db_name} OK!" >>$LOG
-        echo -e ${GREEN}" > Import database ${db_name} OK!"${ENDCOLOR}
+        echo -e ${GREEN}" > Import database ${db_name} OK!"${ENDCOLOR}>&2
         return 0
 
     else
         echo " > Import database ${db_name} failed!" >>$LOG
-        echo -e ${B_RED}" > Import database ${db_name} failed!"${ENDCOLOR}
+        echo -e ${B_RED}" > Import database ${db_name} failed!"${ENDCOLOR}>&2
 
         exit 1
 
@@ -256,23 +259,23 @@ mysql_database_import() {
 
 mysql_database_export() {
 
-    # $1 = ${DATABASE}
-    # $2 = ${DUMP_FILE}
+    # $1 = ${database}
+    # $2 = ${dump_file}
 
-    DATABASE=$1
-    DUMP_FILE=$2
+    local database=$1
+    local dump_file=$2
 
-    echo -e ${CYAN}" > Exporting database ${DATABASE} into dump file ${DUMP_FILE} ..."${ENDCOLOR}
-    echo " > Exporting database ${DATABASE} into dump file ${DUMP_FILE} ..." >>$LOG
-    mysqldump -u ${MUSER} -p${MPASS} "${DATABASE}" > "${DUMP_FILE}"
+    echo -e ${CYAN}" > Exporting database ${database} into dump file ${dump_file} ..."${ENDCOLOR}
+    echo " > Exporting database ${database} into dump file ${dump_file} ..." >>$LOG
+    mysqldump -u "${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}"
 
     if [ $? -eq 0 ]; then
-        echo " > DB ${DATABASE} exported successfully!" >>$LOG
-        echo -e ${GREEN}" > DB ${DATABASE} exported successfully!"${ENDCOLOR}
+        echo " > DB ${database} exported successfully!" >>$LOG
+        echo -e ${GREEN}" > DB ${database} exported successfully!"${ENDCOLOR}
     
     else
-        echo " > DB ${DATABASE} export failed!" >>$LOG
-        echo -e ${B_RED}" > DB ${DATABASE} export failed!"${ENDCOLOR}
+        echo " > DB ${database} export failed!" >>$LOG
+        echo -e ${B_RED}" > DB ${database} export failed!"${ENDCOLOR}
         exit 1
 
     fi

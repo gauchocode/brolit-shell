@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc05
+# Version: 3.0-rc06
 ################################################################################
 #
 # Ref: https://kinsta.com/blog/wp-cli/
@@ -36,7 +36,7 @@ wpcli_main_menu() {
 
   local WPCLI_OPTIONS CHOSEN_WPCLI_OPTION CHOSEN_PLUGIN_OPTION
 
-  WPCLI_OPTIONS="01 INSTALL_PLUGINS 02 DELETE_THEMES 03 DELETE_PLUGINS 04 REINSTALL_PLUGINS 05 VERIFY_WP 06 UPDATE_WP 07 REINSTALL_WP 08 CLEAN_DB 09 PROFILE_WP 10 CHANGE_TABLES_PREFIX 11 REPLACE_URLs"
+  WPCLI_OPTIONS="01 INSTALL_PLUGINS 02 DELETE_THEMES 03 DELETE_PLUGINS 04 REINSTALL_PLUGINS 05 VERIFY_WP 06 UPDATE_WP 07 REINSTALL_WP 08 CLEAN_DB 09 PROFILE_WP 10 CHANGE_TABLES_PREFIX 11 REPLACE_URLs 12 SEOYOAST_REINDEX"
   CHOSEN_WPCLI_OPTION=$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 $(for x in ${WPCLI_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
@@ -216,6 +216,12 @@ wpcli_main_menu() {
       #mysql_database_export "${TARGET_DB}" "${SFOLDER}/tmp-backup/${TARGET_DB}_bk_before_replace_urls.sql"
 
       ask_url_search_and_replace "${WP_SITE}"
+
+    fi
+
+    if [[ ${CHOSEN_WPCLI_OPTION} == *"12"* ]]; then
+
+      wpcli_seoyoast_reindex "${WP_SITE}"
 
     fi
 
