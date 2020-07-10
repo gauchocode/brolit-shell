@@ -1,9 +1,0 @@
-{
-    "shellcheck.enable": true,
-    "shellcheck.run": "onSave",
-    "shellcheck.executablePath": "shellcheck",
-    "shellcheck.exclude": [],
-    "shellcheck.customArgs": [],
-    "shellcheck.ignorePatterns": {},
-    "shellcheck.useWSL": false
-}
