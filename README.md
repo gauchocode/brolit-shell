@@ -3,6 +3,8 @@
 "LEMP Ubuntu Utils Scripts" is a **BASH** script which can be used to automate backups (files and databases), restore backups, create clean installation of WordPress projects, and other useful tasks.
 It's written in BASH scripting language.
 
+![ScreenShot](./screenshot.png)
+
 ## Main Features
 
 * File backups
@@ -121,9 +123,4 @@ Please read CONTRIBUTING.md for details on our code of conduct, and the process 
 * **Leandro Padula** - *Initial work* - [BROOBE](https://www.broobe.com)
 
 ## License
-This project is licensed under the MIT License - see the LICENSE.md file for details
-
-## Acknowledgments
-Hat tip to anyone whose code was used
-Inspiration
-etc
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details
