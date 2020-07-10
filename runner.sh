@@ -21,6 +21,7 @@
 #       5- Complete refactor of "Options Wizard"
 #       6- Mailcow installer and backup
 #       7- Implements wpcli_rollback_plugin_version (on wpcli_helper.sh)
+#       8- Mail notifications after install a new project (with credentials info.)
 #
 # TODO: For release 3.2
 #       1- Refactor of RESTORE_FROM_SOURCE and complete server config restore
