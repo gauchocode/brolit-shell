@@ -1,6 +1,6 @@
 # LEMP Ubuntu Utils Scripts
 
-"LEMP Ubuntu Utils Scripts" is a **BASH** script which can be used to automate backups (files and databases), restore backups, create clean installation of WordPress Projects, and other useful tasks.
+"LEMP Ubuntu Utils Scripts" is a **BASH** script which can be used to automate backups (files and databases), restore backups, create clean installation of WordPress projects, and other useful tasks.
 It's written in BASH scripting language.
 
 ## Main Features
@@ -25,14 +25,52 @@ It's written in BASH scripting language.
 
 ## Supports
 
-Works on Ubuntu 18.04 LTS and Ubuntu 20.04 LTS (partial support)
+Works on Ubuntu 18.04 LTS and Ubuntu 20.04 LTS.
+
+## Installation
+
+If git is not installed:
+
+```
+sudo apt-get update && sudo apt-get install git -y
+```
+
+Configure the username, replace First Last:
+
+```
+git config --global user.name "First Last"
+```
+
+Configure the email, replace example@example.com:
+
+```
+git config --global user.email "example@example.com"
+```
+
+Cloning repo:
+
+```
+git clone https://github.com/broobe/lemp-utils-script.git
+```
+
+Change directories to the new ~/test-repo-789 directory:
+
+```
+cd ~/lemp-utils-script
+```
 
 ## Getting started
 
-Give the execution permission to the script and run it:
+Give the execution permission to the script:
 
 ```bash
  $chmod +x runner.sh
+```
+
+Run it:
+
+```bash
+ ./runner.sh
 ```
 
 The first time you run `runner.sh`, you'll be guided through a wizard in order to configure it. This configuration will be stored in `~/.broobe-utils-script`.
