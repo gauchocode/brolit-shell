@@ -1,36 +1,39 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc05
+# Version: 3.0-rc06
 #############################################################################
 
-SCRIPT=$(readlink -f "$0")
-SCRIPTPATH=$(dirname "$SCRIPT")
+SCRIPT="$(readlink -f "$0")"
+SCRIPTFILE="$(basename "$SCRIPT")"
+SCRIPTPATH="$(dirname "$SCRIPT")"
 SCRIPTNAME="$0"
-ARGS="$@"
-BRANCH="https://github.com/lpadula/lemp-ubuntu-utils.git"
+ARGS=( "$@" )
+BRANCH="master"
 
 self_update() {
-    cd ${SCRIPTPATH}
+
+    cd "$SCRIPTPATH"
     git fetch
 
-    [ -n "$(git diff --name-only origin/$BRANCH | grep ${SCRIPTNAME})" ] && {
-        echo "Found a new version, updating ..."
+    [ -n "$(git diff --name-only "origin/$BRANCH" "$SCRIPTFILE")" ] && {
+        echo "Found a new version of me, updating myself..."
         git pull --force
-        git checkout ${BRANCH}
+        git checkout "$BRANCH"
         git pull --force
         echo "Running the new version..."
-        exec "${SCRIPTNAME}" "$@"
+        cd -                                   # return to original working dir
+        exec "$SCRIPTNAME" "${ARGS[@]}"
 
-        # Now exit this old instance
         exit 1
     }
+    
     echo "Already the latest version."
+
 }
 
-main() {
-    echo "Running updater ..."
-}
+#############################################################################
 
 self_update
-main
+echo "Running ..."
+

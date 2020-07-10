@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc05
+# Version: 3.0-rc06
 ################################################################################
 
 ### Checking some things
@@ -77,18 +77,22 @@ change_phpv_nginx_server() {
     # TODO: if $new_php_v is not set, must ask wich PHP_V
 
     # Updating nginx server file
-    echo -e "\nUpdating nginx ${project_domain} server file...\n" >>$LOG
+    echo -e ${CYAN}" > Updating nginx ${project_domain} server file ..."${ENDCOLOR}>&2
+    echo -e " > Updating nginx ${project_domain} server file ..." >>$LOG
 
     # TODO: ask wich version of php want to work with
 
     # Replace string to match PHP version
-    sudo sed -i "s#PHP_V#${new_php_v}#" "${WSERVER}/sites-available/${project_domain}"
+    current_php_v_string=$(cat ${WSERVER}/sites-available/${project_domain} | grep fastcgi_pass | cut -d '/' -f 4 | cut -d '-' -f 1)
+    current_php_v=${current_php_v_string#"php"}
+    
+    sudo sed -i "s#${current_php_v}#${new_php_v}#" "${WSERVER}/sites-available/${project_domain}"
 
-    # TODO: sed not only for generic server config, also an old config must be supported like:
-    # sudo sed -i "s#7.0#${new_php_v}#" "${WSERVER}/sites-available/${project_domain}"
-    # sudo sed -i "s#7.1#${new_php_v}#" "${WSERVER}/sites-available/${project_domain}"
-    # sudo sed -i "s#7.2#${new_php_v}#" "${WSERVER}/sites-available/${project_domain}"
-    # sudo sed -i "s#7.3#${new_php_v}#" "${WSERVER}/sites-available/${project_domain}"
+    echo -e ${CYAN}" > PHP version for ${project_domain} changed from ${current_php_v} to ${new_php_v}"${ENDCOLOR}>&2
+    echo -e " > PHP version for ${project_domain} changed from ${current_php_v} to ${new_php_v}" >>$LOG
+
+    echo " > Reloading webserver ..." >>$LOG
+    echo -e ${CYAN}" > Reloading webserver ..."${ENDCOLOR}>&2
 
     # Reload webserver
     service nginx reload

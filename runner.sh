@@ -2,24 +2,26 @@
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Script Name: LEMP Ubuntu Utils Scripts
-# Version: 3.0-rc05
+# Version: 3.0-rc06
 ################################################################################
 #
 # TODO: For release 3.0-final
-#       1- Refactor for restore from dropbox: 5 options (server_config, site_config, files, database and project)
-#       2- Restoring nginx configuration need a refactor, its fails with HTTPS and has a fixed PHP_V
+#       1- Refactor for restore from dropbox: 5 options (server_config, site_config, site, database and project)
+#       2- Restoring nginx configuration need a refactor, its fails with a fixed PHP_V
 #       3- When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?)
 #       4- WordPress install fails when set a project name like: xyz_sub_domain (could be a problem with sed on wordpress installer)
 #       5- WP-CLI is required to the script works propperly, must install on script setup.
 #       6- New option to put a website offline 
 #           Maybe comment nginx server file, rename project_dir to domain-OFFLINE and restart nginx service
+#       7- Check wp integrity files
+#       8- Option to change hostname: https://www.cyberciti.biz/faq/ubuntu-20-04-lts-change-hostname-permanently/
 #
 # TODO: For release 3.2
 #       1- Refactor of RESTORE_FROM_SOURCE and complete server config restore
 #       2- Implement on restore_from_backup easy way to restore all sites
 #       3- Refactor of WORDPRESS_INSTALLER - COPY_FROM_PROJECT
-#          We need to replace then with PROJECT_UTILS (or something like that)
 #          The idea is that you could create/delete/update different kind of projects (WP, Laravel, Standalone)
+#          Maybe add this for Laravel: https://gitlab.com/broobe/laravel-boilerplate/-/tree/master
 #          Important: if create a project with stage different than prod, block search engine indexation
 #       4- Better log with check_result and log_event functions (commons.sh)
 #       5- Complete refactor of delete_project script
@@ -40,11 +42,11 @@
 #
 # TODO: For release 3.6
 #       1- Expand Duplicity support with a restore option
-#       2- Whiptail options for server_and_image_optimizations.sh and complete the pdf optimization process
+#       2- Complete the pdf optimization process
 #       3- MySQL optimization script
 #       4- Rename database helper (with and without WP)
 #       5- Fallback for replace strings on wp database (if wp-cli fails, use old script version)
-#       6- Add some IT utils (change hostname, add floating IP, change SSH port)
+#       6- Add others IT utils (change hostname, add floating IP, change SSH port)
 #           Ref: https://wiki.hetzner.de/index.php/Cloud_floating_IP_persistent/en
 #       7- Option to change php version on installed site. 
 #          See this implementation: https://easyengine.io/blog/easyengine-v4-0-15-released/

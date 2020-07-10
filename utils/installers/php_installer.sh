@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc05
+# Version: 3.0-rc06
 ################################################################################
 
 ### Checking some things
@@ -58,12 +58,12 @@ php_select_version_to_install() {
 }
 
 php_redis_installer() {
-  apt install redis-server php-redis
+  apt --yes install redis-server php-redis
   systemctl enable redis-server.service
 
   cp "${SFOLDER}/confs/redis/redis.conf" "/etc/redis/redis.conf"
 
-  systemctl restart redis-server.service
+  service redis-server restart
 
 }
 
@@ -84,10 +84,19 @@ php_purge_installation() {
 }
 
 php_check_if_installed() {
-  PHP="$(which php)"
-  if [ ! -x "${PHP}" ]; then
+
+  local php_installed php
+
+  php="$(which php)"
+  if [ ! -x "${php}" ]; then
     php_installed="false"
+
+  else
+    php_installed="true"
+
   fi
+
+  echo ${php_installed}
 
 }
 
@@ -100,6 +109,8 @@ php_check_installed_version() {
 
 #php_installed="true"
 #php_check_if_installed
+
+# TODO: if installed, option to reinstall, remove, or reconfigure
 
 #if [ ${php_installed} == "false" ]; then
 
@@ -122,12 +133,14 @@ if [ $exitstatus = 0 ]; then
     # Installing packages
     php_installer "${PHP_V}"
     mail_utils_installer
+    php_redis_installer
 
   fi
   if [[ ${CHOSEN_PHP_INSTALLER_OPTION} == *"02"* ]]; then
     # Installing packages
     php_custom_installer
     mail_utils_installer
+    #php_redis_installer
 
   fi
 fi

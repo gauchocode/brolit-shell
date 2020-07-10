@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc05
+# Version: 3.0-rc06
 ################################################################################
 
 ### Checking some things
@@ -64,7 +64,7 @@ restore_database_backup() {
   local chosen_project=$1
   local chosen_backup=$2
 
-  local project_name project_state db_user db_name db_exists user_db_exists db_pass
+  local project_name project_state db_name db_exists user_db_exists db_pass
 
   echo " > Running restore_database_backup for ${chosen_backup} DB" >>$LOG
   echo -e "${CYAN} > Running restore_database_backup for ${chosen_backup} DB ${ENDCOLOR}">&2
@@ -87,7 +87,6 @@ restore_database_backup() {
 
   make_temp_db_backup "${project_name}"
 
-  db_user="${project_name}_user"
   db_name="${project_name}_${project_state}"
 
   # Check if database already exists
@@ -103,26 +102,6 @@ restore_database_backup() {
     #TODO: ask what to do, if continue make a database backup
 
   fi
-
-  # Check if user database already exists
-  user_db_exists=$(mysql_user_exists "${db_user}")
-  if [[ ${user_db_exists} -eq 0 ]]; then
-
-    db_pass=$(openssl rand -hex 12)
-
-    echo -e ${B_CYAN}" > Creating '${db_user}' user in MySQL with pass: ${db_pass}"${B_ENDCOLOR}>&2
-    echo " > Creating ${db_user} user in MySQL with pass: ${db_pass}" >>$LOG
-
-    mysql_user_create "${db_user}" "${db_pass}"
-
-  else
-    echo -e ${B_GREEN}" > User ${db_user} already exists"${B_ENDCOLOR}>&2
-    echo " > User ${db_user} already exists"${ENDCOLOR} >>$LOG
-
-  fi
-
-  # Grant privileges to database user
-  mysql_user_grant_privileges "${db_user}" "${db_name}"
 
   # Trying to restore Database
   chosen_backup="${chosen_backup%%.*}.sql"
@@ -274,12 +253,7 @@ restore_nginx_site_files() {
       cp "${to_restore}" "${WSERVER}/sites-available/${filename}"
       ln -s "${WSERVER}/sites-available/${filename}" "${WSERVER}/sites-enabled/${filename}"
 
-      # TODO: change_phpv_nginx_server function must be fixed
       change_phpv_nginx_server "${domain}"
-
-      echo " > Reloading webserver ..." >>$LOG
-      echo -e ${CYAN}" > Reloading webserver ..."${ENDCOLOR}>&2
-      service nginx reload
 
     fi
 
@@ -468,6 +442,28 @@ select_restore_type_from_dropbox() {
 
             restore_database_backup "${chosen_project}" "${CHOSEN_BACKUP_TO_RESTORE}"
 
+            db_user="${chosen_project}_user"
+
+            # Check if user database already exists
+            user_db_exists=$(mysql_user_exists "${db_user}")
+            if [[ ${user_db_exists} -eq 0 ]]; then
+
+              db_pass=$(openssl rand -hex 12)
+
+              echo -e ${B_CYAN}" > Creating '${db_user}' user in MySQL with pass: ${db_pass}"${B_ENDCOLOR}>&2
+              echo " > Creating ${db_user} user in MySQL with pass: ${db_pass}" >>$LOG
+
+              mysql_user_create "${db_user}" "${db_pass}"
+
+            else
+              echo -e ${B_GREEN}" > User ${db_user} already exists"${B_ENDCOLOR}>&2
+              echo " > User ${db_user} already exists"${ENDCOLOR} >>$LOG
+
+            fi
+
+            # Grant privileges to database user
+            mysql_user_grant_privileges "${db_user}" "${db_name}"
+
             # TODO: ask if want to change project db parameters and make cloudflare changes
 
             # TODO: check project type (WP, Laravel, etc)
@@ -621,7 +617,7 @@ project_restore() {
     echo -e ${CYAN}"DB NAME: ${db_name}"${ENDCOLOR}
     echo -e ${CYAN}"DB USER: ${db_user}"${ENDCOLOR}
     echo -e ${CYAN}"DB PASS: ${db_pass}"${ENDCOLOR}
-    echo -e ${CYAN}"TRYING TO DOWNLOAD: ${db_to_download}"${ENDCOLOR}
+    #echo -e ${CYAN}"TRYING TO DOWNLOAD: ${db_to_download}"${ENDCOLOR}
     echo -e ${CYAN}"*****************************"${ENDCOLOR}
 
     $DROPBOX_UPLOADER download "${db_to_download}"
@@ -636,6 +632,28 @@ project_restore() {
 
     # Restore database function
     restore_database_backup "${chosen_project}" "${db_name}_database_${backup_date}.tar.bz2"
+
+    db_user="${chosen_project}_user"
+
+    # Check if user database already exists
+    user_db_exists=$(mysql_user_exists "${db_user}")
+    if [[ ${user_db_exists} -eq 0 ]]; then
+
+      db_pass=$(openssl rand -hex 12)
+
+      echo -e ${B_CYAN}" > Creating '${db_user}' user in MySQL with pass: ${db_pass}"${B_ENDCOLOR}>&2
+      echo " > Creating ${db_user} user in MySQL with pass: ${db_pass}" >>$LOG
+
+      mysql_user_create "${db_user}" "${db_pass}"
+
+    else
+      echo -e ${B_GREEN}" > User ${db_user} already exists"${B_ENDCOLOR}>&2
+      echo " > User ${db_user} already exists"${ENDCOLOR} >>$LOG
+
+    fi
+
+    # Grant privileges to database user
+    mysql_user_grant_privileges "${db_user}" "${db_name}"
 
     # Change wp-config.php database parameters
     wp_update_wpconfig "${project_path}" "${chosen_project}" "${project_state}" "${db_pass}"
@@ -656,7 +674,7 @@ project_restore() {
     cloudflare_change_a_record "${root_domain}" "${chosen_domain}"
     
     # HTTPS with Certbot
-    #certbot_helper_installer_menu "${MAILA}" "${domain}"
+    #certbot_helper_installer_menu "${MAILA}" "${chosen_domain}"
 
   fi
 

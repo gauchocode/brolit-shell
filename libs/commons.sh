@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc05
+# Version: 3.0-rc06
 ################################################################################
 
 ################################################################################
@@ -74,8 +74,9 @@ main_menu() {
 
     fi
     if [[ ${chosen_type} == *"06"* ]]; then
-      #source "${SFOLDER}/utils/it_utils.sh"
-      it_utils_menu
+      # shellcheck source=${SFOLDER}/utils/it_utils.sh
+      source "${SFOLDER}/utils/it_utils.sh"
+      #it_utils_menu
 
     fi
 
@@ -242,7 +243,7 @@ project_utils_menu () {
 
   local project_utils_options chosen_project_utils_options
 
-  project_utils_options="01 WORDPRESS_INSTALLER 02 RESTORE_FROM_SOURCE 03 CREATE_PROJECT 04 DELETE_PROJECT 05 TURN_PROJECT_OFFLINE"
+  project_utils_options="01 CREATE_WP_PROJECT 02 CREATE_PHP_PROJECT 03 DELETE_PROJECT 04 TURN_PROJECT_OFFLINE"
   chosen_project_utils_options=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a Restore Option to run" 20 78 10 $(for x in ${project_utils_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -254,94 +255,24 @@ project_utils_menu () {
     fi
 
     if [[ ${chosen_project_utils_options} == *"02"* ]]; then
-      # shellcheck source=${SFOLDER}/utils/wordpress_restore_from_source.sh
-      source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
-    fi
 
-    if [[ ${chosen_project_utils_options} == *"03"* ]]; then
-      #source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
+      # TODO: create empty dir on $SITES, create nginx server file, ask for database
       echo -e ${B_RED}"TODO: IMPLEMENT THIS OPTION"${ENDCOLOR}
+
     fi
-    if [[ ${chosen_project_utils_options} == *"04"* ]]; then
-    # shellcheck source=${SFOLDER}/delete_project.sh
+    if [[ ${chosen_project_utils_options} == *"03"* ]]; then
+      # shellcheck source=${SFOLDER}/delete_project.sh
       source "${SFOLDER}/delete_project.sh"
     fi
-    if [[ ${chosen_project_utils_options} == *"05"* ]]; then
-      #source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
+    if [[ ${chosen_project_utils_options} == *"04"* ]]; then
+
       echo -e ${B_RED}"TODO: IMPLEMENT THIS OPTION"${ENDCOLOR}
+
     fi
 
   fi
 
 } 
-
-it_utils_menu() {
-
-  local it_util_options chosen_it_util_options
-
-  it_util_options="01 INSTALLERS_AND_CONFIGS 02 SERVER_OPTIMIZATIONS 03 BLACKLIST_CHECKER 04 BENCHMARK_SERVER"
-  chosen_it_util_options=$(whiptail --title "IT UTILS MENU" --menu "Choose a script to Run" 20 78 10 $(for x in ${it_util_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
-
-  exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-
-    if [[ ${chosen_it_util_options} == *"01"* ]]; then
-      # shellcheck source=${SFOLDER}/installers_and_configurators.sh
-      source "${SFOLDER}/installers_and_configurators.sh"
-
-    fi
-
-    if [[ ${chosen_it_util_options} == *"02"* ]]; then
-
-      # TODO: add options (IMAGE, PHP, ETC)
-      # Run php_optimizations.sh
-      #"${SFOLDER}/utils/php_optimizations.sh"
-
-      while true; do
-        echo -e ${YELLOW}"> Do you really want to run the optimization script?"${ENDCOLOR}
-        read -p "Please type 'y' or 'n'" yn
-        case $yn in
-        [Yy]*)
-          # shellcheck source=${SFOLDER}/server_and_image_optimizations.sh
-          source "${SFOLDER}/server_and_image_optimizations.sh"
-          break
-          ;;
-        [Nn]*)
-          echo -e ${YELLOW}"Aborting optimization script ..."${ENDCOLOR}
-          break
-          ;;
-        *) echo " > Please answer yes or no." ;;
-        esac
-      done
-
-    fi
-
-    if [[ ${chosen_it_util_options} == *"03"* ]]; then
-
-      URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
-        # shellcheck source=${SFOLDER}/utils/third-party/google-insights-api-tools/gitools_v5.sh
-        source "${SFOLDER}/utils/third-party/google-insights-api-tools/gitools_v5.sh" gtmetrix "${URL_TO_TEST}"
-      fi
-
-    fi
-    if [[ ${chosen_it_util_options} == *"04"* ]]; then
-    
-      IP_TO_TEST=$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
-        # shellcheck source=${SFOLDER}/utils/third-party/blacklist-checker/bl.sh
-        source "${SFOLDER}/utils/third-party/blacklist-checker/bl.sh" "${IP_TO_TEST}"
-      fi
-
-    fi
-
-  else
-    exit 1
-
-  fi
-}
 
 script_configuration_wizard() {
 

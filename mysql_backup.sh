@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc05
+# Version: 3.0-rc06
 #############################################################################
 
 ### Checking some things
@@ -38,7 +38,7 @@ echo -e ${GREEN}" > Starting database backup script ..."${ENDCOLOR}
 DBS="$(${MYSQL} -u ${MUSER} -p${MPASS} -Bse 'show databases')"
 
 # Get all databases name
-TOTAL_DBS=$(count_dabases "${DBS}")
+TOTAL_DBS=$(mysql_count_dabases "${DBS}")
 echo " > ${TOTAL_DBS} databases found ..." >>$LOG
 echo -e ${CYAN}" > ${TOTAL_DBS} databases found ..."${ENDCOLOR}
 

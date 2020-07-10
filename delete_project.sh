@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc05
+# Version: 3.0-rc06
 ################################################################################
 
 ### Checking some things
@@ -27,6 +27,8 @@ source "${SFOLDER}/libs/backup_helper.sh"
 # 4- Ask for confirm delete temp files.
 #
 # Symphony, config BD on /var/www/PROJECT/app/config/parameters.yml
+#
+# TODO: What to do with letsencrypt and nginx server config files?
 #
 
 # Folder where sites are hosted

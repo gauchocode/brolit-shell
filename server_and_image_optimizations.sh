@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc05
+# Version: 3.0-rc06
 ################################################################################
 
 ### Checking some things
@@ -83,6 +83,8 @@ img_compress='80'
 img_max_width='1920'
 img_max_height='1080'
 
+# TODO: add an option to run image_optimization with cron
+
 # mogrify
 MOGRIFY="$(which mogrify)"
 
@@ -92,41 +94,69 @@ JPEGOPTIM="$(which jpegoptim)"
 # optipng
 OPTIPNG="$(which optipng)"
 
-# Remove old packages from system
-remove_old_packages
+server_optimizations_options="01 PHP_OPTIMIZATION 02 IMAGE_OPTIMIZATION 03 PDF_OPTIMIZATION 04 DELETE_OLD_LOGS 05 REMOVE_OLD_PACKAGES 06 CLEAN_RAM_CACHE"
+chosen_server_optimizations_options=$(whiptail --title "PHP INSTALLER" --menu "Choose a PHP version to install" 20 78 10 $(for x in ${server_optimizations_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+exitstatus=$?
+if [ $exitstatus = 0 ]; then
 
-# Install image optimize packages
-install_image_optimize_packages
+  if [[ ${chosen_server_optimizations_options} == *"01"* ]]; then
+    # Run php_optimizations.sh
+    "${SFOLDER}/utils/php_optimizations.sh"
 
-# Remove old log files from system
-delete_old_logs
+  fi
+  if [[ ${chosen_server_optimizations_options} == *"02"* ]]; then
+    # Install image optimize packages
+    install_image_optimize_packages
 
-# Ref: https://github.com/centminmod/optimise-images
-# Ref: https://stackoverflow.com/questions/6384729/only-shrink-larger-images-using-imagemagick-to-a-ratio
+    # Ref: https://github.com/centminmod/optimise-images
+    # Ref: https://stackoverflow.com/questions/6384729/only-shrink-larger-images-using-imagemagick-to-a-ratio
 
-# TODO: First need to run without the parameter -mtime -7
+    # TODO: First need to run without the parameter -mtime -7
 
-optimize_image_size "${SITES}" "jpg" "${img_max_width}" "${img_max_height}"
+    optimize_image_size "${SITES}" "jpg" "${img_max_width}" "${img_max_height}"
 
-optimize_images "${SITES}" "jpg" "${img_compress}"
+    optimize_images "${SITES}" "jpg" "${img_compress}"
 
-optimize_images "${SITES}" "png" ""
+    optimize_images "${SITES}" "png" ""
 
-# TODO: pdf optimization
-# Ref: https://github.com/or-yarok/reducepdf
+    # Fix ownership
+    change_ownership "www-data" "www-data" "${SITES}"
 
-optimize_pdfs
+  fi
+  if [[ ${chosen_server_optimizations_options} == *"03"* ]]; then
+    # TODO: pdf optimization
+    # Ref: https://github.com/or-yarok/reducepdf
 
-# Fix ownership
-change_ownership "www-data" "www-data" "${SITES}"
+    optimize_pdfs
 
-# Restarting services
-echo " > Restarting services ..." >>$LOG
-echo -e ${CYAN}" > Restarting services ..."${ENDCOLOR}
-service php"${PHP_V}"-fpm restart
+    # Fix ownership
+    change_ownership "www-data" "www-data" "${SITES}"
 
-# Cleanning Swap
-clean_swap
+  fi
+  if [[ ${chosen_server_optimizations_options} == *"04"* ]]; then
+    # Remove old log files from system
+    delete_old_logs
 
-# Cleanning RAM
-clean_ram_cache
+  fi
+  if [[ ${chosen_server_optimizations_options} == *"05"* ]]; then
+    # Remove old packages from system
+    remove_old_packages
+
+  fi
+  if [[ ${chosen_server_optimizations_options} == *"06"* ]]; then
+    # Restarting services
+    echo " > Restarting services ..." >>$LOG
+    echo -e ${CYAN}" > Restarting services ..."${ENDCOLOR}
+    service php"${PHP_V}"-fpm restart
+
+    # Cleanning Swap
+    clean_swap
+
+    # Cleanning RAM
+    clean_ram_cache
+
+  fi
+
+fi
+
+
