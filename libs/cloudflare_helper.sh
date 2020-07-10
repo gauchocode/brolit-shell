@@ -4,6 +4,7 @@
 # Version: 3.0-rc06
 ################################################################################
 
+# shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
@@ -33,8 +34,8 @@ cloudflare_change_a_record () {
     local domain=$2
 
     # Cloudflare API to change DNS records
-    echo "Trying to access Cloudflare API and change record ${domain} ..." >>$LOG
-    echo -e ${CYAN}"Trying to access Cloudflare API and change record ${domain} ..."${ENDCOLOR}
+    echo " > Trying to access Cloudflare API and change record ${domain} ..." >>$LOG
+    echo -e ${CYAN}" > Trying to access Cloudflare API and change record ${domain} ..."${ENDCOLOR} >&2
 
     zone_name=${root_domain}
     record_name=${domain}
@@ -64,7 +65,7 @@ cloudflare_change_a_record () {
 
     # SCRIPT START
     echo " > Cloudflare Script Initiated ...">>$LOG
-    echo -e ${GREN}" > Cloudflare Script Initiated ..."${ENDCOLOR}
+    echo -e ${GREN}" > Cloudflare Script Initiated ..."${ENDCOLOR} >&2
 
     # TODO: uncomment to check if server IP has change (extract to another function)
     
@@ -107,18 +108,18 @@ cloudflare_change_a_record () {
     #fi
 
     # RETRIEVE/ SAVE zone_id AND record_id
-    echo -e ${CYAN}" > CHECKING FOR ZONE & RECORD ID's..."${ENDCOLOR}
+    echo -e ${CYAN}" > CHECKING FOR ZONE & RECORD ID's..."${ENDCOLOR} >&2
     #if [ -f $id_file ] && [ $(wc -l $id_file | cut -d " " -f 1) == 2 ]; then
     if [[ -f $id_file ]] && [[ $(wc -l $id_file | awk '{print $1}') == 2 ]]; then
 
         zone_id=$(head -1 $id_file)
         record_id=$(tail -1 $id_file)
-        echo -e ${GREEN} " > ZONE_ID FOUND: ${zone_id} \n"${ENDCOLOR}
-        echo -e ${GREEN} " > RECORD_ID FOUND: ${record_id} \n"${ENDCOLOR}
+        echo -e ${GREEN} " > ZONE_ID FOUND: ${zone_id} \n"${ENDCOLOR} >&2
+        echo -e ${GREEN} " > RECORD_ID FOUND: ${record_id} \n"${ENDCOLOR} >&2
 
     else
 
-        echo -e ${CYAN}" > GETTING ZONE & RECORD ID'S..."${ENDCOLOR}
+        echo -e ${CYAN}" > GETTING ZONE & RECORD ID'S..."${ENDCOLOR} >&2
 
         zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=$zone_name" -H "X-Auth-Email: $auth_email" -H "X-Auth-Key: $auth_key" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
         record_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$zone_id/dns_records?name=$record_name" -H "X-Auth-Email: $auth_email" -H "X-Auth-Key: $auth_key" -H "Content-Type: application/json"  | grep -Po '(?<="id":")[^"]*')
@@ -131,7 +132,7 @@ cloudflare_change_a_record () {
 
         if [[ -z "${record_id}" || ${record_id} == "" ]]; then
 
-            echo -e " > RECORD_ID not found: Trying to add the entry... \n"
+            echo -e " > RECORD_ID not found: Trying to add the entry... \n" >&2
 
             update=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
             -H "X-Auth-Email: ${auth_email}" \
@@ -141,8 +142,8 @@ cloudflare_change_a_record () {
 
         else
 
-            echo -e ${CYAN} " > RECORD_ID found: ${record_id} \n"${ENDCOLOR}
-            echo -e ${CYAN} " > Trying to change the domain IP... \n"${ENDCOLOR}
+            echo -e ${CYAN} " > RECORD_ID found: ${record_id} \n"${ENDCOLOR} >&2
+            echo -e ${CYAN} " > Trying to change the domain IP... \n"${ENDCOLOR} >&2
 
             delete=$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/$zone_id/dns_records/$record_id" \
             -H "X-Auth-Email: $auth_email" \
@@ -167,16 +168,16 @@ cloudflare_change_a_record () {
     fi
 
     if [[ $update == *"\"success\":false"* ]]; then
-        message="API UPDATE FAILED. RESULTS:\n$update"
+        message=" > API UPDATE FAILED. RESULTS:\n$update"
         echo "$message">>$LOG
-        echo -e ${CYAN}"$message"${ENDCOLOR}
+        echo -e ${CYAN}"$message"${ENDCOLOR} >&2
         exit 1
 
     else
-        message="IP changed to: $ip."
+        message=" > IP changed to: $ip."
         #echo "$ip" > $ip_file
         echo "$message">>$LOG
-        echo -e ${CYAN}"$message"${ENDCOLOR}
+        echo -e ${CYAN}"$message"${ENDCOLOR} >&2
 
     fi
 

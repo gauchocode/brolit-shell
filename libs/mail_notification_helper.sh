@@ -55,8 +55,8 @@ mail_subject_status() {
 
 remove_mail_notifications_files() {
 
-    echo "  Removing temp files ..." >>$LOG
-    echo -e ${YELLOW}" > Removing temp files ..."${ENDCOLOR}
+    echo " > Removing temp files ..." >>$LOG
+    echo -e ${YELLOW}" > Removing temp files ..."${ENDCOLOR} >&2
 
     # TODO: remove only if they are created
     rm "${PKG_MAIL}" "${DB_MAIL}" "${FILE_MAIL}"

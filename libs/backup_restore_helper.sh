@@ -21,6 +21,8 @@ source "${SFOLDER}/libs/wpcli_helper.sh"
 source "${SFOLDER}/libs/wordpress_helper.sh"
 # shellcheck source=${SFOLDER}/libs/certbot_helper.sh
 source "${SFOLDER}/libs/certbot_helper.sh"
+# shellcheck source=${SFOLDER}/libs/nginx_helper.sh
+source "${SFOLDER}/libs/nginx_helper.sh"
 # shellcheck source=${SFOLDER}/libs/cloudflare_helper.sh
 source "${SFOLDER}/libs/cloudflare_helper.sh"
 # shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
