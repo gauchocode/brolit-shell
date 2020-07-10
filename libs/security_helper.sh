@@ -21,7 +21,7 @@ source "${SFOLDER}/libs/commons.sh"
 
 security_install() {
 
-  apt-get install clamav
+  apt-get install clamav lynis
 
 }
 
@@ -35,5 +35,11 @@ security_clamav_scan() {
   freshclam
   # Run on specific directory
   clamscan -r -i "${directory}"
+
+}
+
+security_system_audit() {
+
+  lynis audit system
 
 }
