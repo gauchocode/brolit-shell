@@ -1,20 +1,26 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Script Name: LEMP Ubuntu Utils Scripts
+# Script Name: LEMP Utils Script
 # Version: 3.0-rc06
 ################################################################################
 #
 # TODO: For release 3.0-final
-#       1- Refactor for restore from dropbox: 5 options (server_config, site_config, site, database and project)
-#       2- Restoring nginx configuration need a refactor, its fails with a fixed PHP_V
-#       3- When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?)
-#       4- WordPress install fails when set a project name like: xyz_sub_domain (could be a problem with sed on wordpress installer)
-#       5- WP-CLI is required to the script works propperly, must install on script setup.
-#       6- New option to put a website offline 
-#           Maybe comment nginx server file, rename project_dir to domain-OFFLINE and restart nginx service
-#       7- Check wp integrity files
-#       8- Option to change hostname: https://www.cyberciti.biz/faq/ubuntu-20-04-lts-change-hostname-permanently/
+#       1- When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?)
+#       2- WordPress install fails when set a project name like: xyz_sub_domain (could be a problem with sed on wordpress installer)
+#       3- WP-CLI is required to the script works propperly, must install on script setup.
+#       4- New option to put a website offline 
+#          Maybe comment nginx server file, rename project_dir to domain-OFFLINE and restart nginx service
+#       5- On LEMP setup, afther basic installation must init plugin options wizard before ask to install aditional packages
+#
+# TODO: For release 3.1
+#       1- Auto-update script option.
+#       2- Refactor for restore from dropbox: 5 options (server_config, site_config, site, database and project)
+#       3- Check wp integrity files
+#       4- Option to change hostname: https://www.cyberciti.biz/faq/ubuntu-20-04-lts-change-hostname-permanently/
+#       5- Complete refactor of "Options Wizard"
+#       6- Mailcow installer and backup
+#       7- Implements wpcli_rollback_plugin_version (on wpcli_helper.sh)
 #
 # TODO: For release 3.2
 #       1- Refactor of RESTORE_FROM_SOURCE and complete server config restore
@@ -57,9 +63,9 @@
 #          Ex: ./runner.sh --backup-project="/var/www/some.domain.com"
 #       2- Support for Rclone? https://github.com/rclone/rclone
 #       3- Uptime Robot API?
-#       4- Auto-update script option. See: https://github.com/centminmod/centminmod/blob/master/updatecm.sh
-#       5- Telegram notifications support: https://adevnull.com/enviar-mensajes-a-telegram-con-bash/
-#       6- Better LEMP setup, tzdata y mysql_secure_installation without human intervention
+#       4- Telegram notifications support: https://adevnull.com/enviar-mensajes-a-telegram-con-bash/
+#       5- Better LEMP setup, tzdata y mysql_secure_installation without human intervention
+#       6- Add support to change dropbox to another storage service (Google Drive, SFTP, etc)
 #       7- Hetzner cloud cli support:
 #           https://github.com/hetznercloud/cli
 #           https://github.com/thabbs/hetzner-cloud-cli-sh

@@ -157,6 +157,36 @@ wpcli_verify_wp_plugins_installation() {
 
 }
 
+wpcli_get_plugin_version() {
+
+    # $1 = ${wp_site} (site path)
+    # $2 = ${plugin}
+
+    local wp_site=$1
+    local plugin=$2
+
+    local plugin_version
+
+    plugin_version=$(sudo -u www-data wp --path="${wp_site}" plugin get "${plugin}" --format=json | cut -d "," -f 4 | cut -d ":" -f 2)
+
+    echo "${plugin_version}"
+
+}
+
+wpcli_get_wpcore_version(){
+
+    # $1 = ${wp_site} (site path)
+
+    local wp_site=$1
+
+    local core_version
+
+    core_version=$(sudo -u www-data wp --path="${wp_site}" core version)
+
+    echo "${core_version}"
+
+}
+
 wpcli_install_plugin() {
 
     # $1 = ${wp_site} (site path)
@@ -325,4 +355,30 @@ wpcli_reset_user_passw(){
 
     wp --allow-root --path="${wp_site}" user update "${wp_user}" --user_pass="${wp_user_pass}"
     
+}
+
+# The idea is that when you update wordpress or a plugin, get the actual version,
+# then run a dry-run update, if success, update but show a message if you want to
+# persist the update or want to do a rollback
+
+wpcli_rollback_plugin_version(){
+
+    # TODO: implement this
+    # $1= wp_site
+    # $2= wp_plugin
+    # $3= wp_plugin_v (version to install)
+
+    #sudo -u www-data wp --path="${wp_site}" plugin update "${wp_plugin}" --version="${wp_plugin_v}" --dry-run
+    #sudo -u www-data wp --path="${wp_site}" plugin update "${wp_plugin}" --version="${wp_plugin_v}"
+
+    wpcli_get_plugin_version "" ""
+
+}
+
+wpcli_rollback_wpcore_version(){
+
+    # TODO: implement this
+
+    wpcli_get_wp_version
+
 }
