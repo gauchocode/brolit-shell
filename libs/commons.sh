@@ -43,7 +43,7 @@ main_menu() {
 
   local runner_options chosen_type
 
-  runner_options="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 PROJECT_UTILS 04 WPCLI_MANAGER 05 CERTBOT_MANAGER 06 IT_UTILS 07 SCRIPT_OPTIONS"
+  runner_options="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 PROJECT_UTILS 04 WPCLI_MANAGER 05 CERTBOT_MANAGER 06 INSTALLERS_AND_CONFIGS 07 IT_UTILS 08 SCRIPT_OPTIONS"
   chosen_type=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 $(for x in ${runner_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -74,13 +74,18 @@ main_menu() {
 
     fi
     if [[ ${chosen_type} == *"06"* ]]; then
+      # shellcheck source=${SFOLDER}/installers_and_configurators.sh
+      source "${SFOLDER}/installers_and_configurators.sh"
+
+    fi
+    if [[ ${chosen_type} == *"07"* ]]; then
       # shellcheck source=${SFOLDER}/utils/it_utils.sh
       source "${SFOLDER}/utils/it_utils.sh"
       #it_utils_menu
 
     fi
 
-    if [[ ${chosen_type} == *"07"* ]]; then
+    if [[ ${chosen_type} == *"08"* ]]; then
       script_configuration_wizard "reconfigure"
 
     fi
@@ -211,6 +216,48 @@ restore_menu () {
   fi
 
 }
+
+security_utils_menu () {
+
+  local security_options chosen_security_options
+
+  security_options="01 MALWARE_SCAN 02 AUDIT_SYSTEM"
+  chosen_security_options=$(whiptail --title "SECURITY TOOLS" --menu "Choose an option to run" 20 78 10 $(for x in ${security_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+
+    # shellcheck source=${SFOLDER}/libs/security_helper.sh
+    source "${SFOLDER}/libs/security_helper.sh"
+
+    security_install
+
+    if [[ ${chosen_security_options} == *"01"* ]]; then
+      security_clamav_scan_menu
+
+    elif [[ ${chosen_security_options} == *"02"* ]]; then
+      security_system_audit
+
+    fi
+
+  fi
+
+}
+
+security_clamav_scan_menu () {
+
+  local to_scan
+
+  startdir="${SITES}"
+  directory_browser "${menutitle}" "${startdir}"
+
+  to_scan=$filepath"/"$filename
+  echo -e ${CYAN}" > Directory to scan: ${to_scan} ..."${ENDCOLOR}>&2
+
+  security_clamav_scan "${to_scan}"
+
+}
+
 
 server_selection_restore_menu () {
 
@@ -605,22 +652,27 @@ array_to_checklist() {
 }
 
 file_browser() {
-  # first parameter is Menu Title
-  # second parameter is dir path to starting folder
-  if [ -z $2 ]; then
+
+  # $1= ${menutitle}
+  # $2= ${startdir}
+
+  local menutitle=$1
+  local startdir=$2
+
+  if [ -z "${startdir}" ]; then
     dir_list=$(ls -lhp | awk -F ' ' ' { print $9 " " $5 } ')
   else
-    cd "$2"
+    cd "${startdir}"
     dir_list=$(ls -lhp | awk -F ' ' ' { print $9 " " $5 } ')
   fi
   curdir=$(pwd)
   if [ "$curdir" == "/" ]; then # Check if you are at root folder
-    selection=$(whiptail --title "$1" \
+    selection=$(whiptail --title "${menutitle}" \
       --menu "Select a Folder or Tab Key\n$curdir" 0 0 0 \
       --cancel-button Cancel \
       --ok-button Select $dir_list 3>&1 1>&2 2>&3)
   else # Not Root Dir so show ../ BACK Selection in Menu
-    selection=$(whiptail --title "$1" \
+    selection=$(whiptail --title "${menutitle}" \
       --menu "Select a Folder or Tab Key\n$curdir" 0 0 0 \
       --cancel-button Cancel \
       --ok-button Select ../ BACK $dir_list 3>&1 1>&2 2>&3)
@@ -641,23 +693,27 @@ file_browser() {
 }
 
 directory_browser() {
-  # first parameter is Menu Title
-  # second parameter is dir path to starting folder
 
-  if [ -z $2 ]; then
+  # $1= ${menutitle}
+  # $2= ${startdir}
+
+  local menutitle=$1
+  local startdir=$2
+
+  if [ -z "${startdir}" ]; then
     dir_list=$(ls -lhp | awk -F ' ' ' { print $9 " " $5 } ')
   else
-    cd "$2"
+    cd "${startdir}"
     dir_list=$(ls -lhp | awk -F ' ' ' { print $9 " " $5 } ')
   fi
   curdir=$(pwd)
   if [ "$curdir" == "/" ]; then # Check if you are at root folder
-    selection=$(whiptail --title "$1" \
+    selection=$(whiptail --title "${menutitle}" \
       --menu "Select a Folder or Tab Key\n$curdir" 0 0 0 \
       --cancel-button Cancel \
       --ok-button Select $dir_list 3>&1 1>&2 2>&3)
   else # Not Root Dir so show ../ BACK Selection in Menu
-    selection=$(whiptail --title "$1" \
+    selection=$(whiptail --title "${menutitle}" \
       --menu "Select a Folder or Tab Key\n$curdir" 0 0 0 \
       --cancel-button Cancel \
       --ok-button Select ../ BACK $dir_list 3>&1 1>&2 2>&3)
