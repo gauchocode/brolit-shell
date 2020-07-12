@@ -7,23 +7,27 @@ It's written in BASH scripting language.
 
 ## Main Features
 
-* File backups
-* Database backups (MySQL or MariaDB)
-* Upload backups to Dropbox (API v2)
-* Restore backups
 * LEMP automated installer
+* Files and database backups (MySQL or MariaDB)
+* Upload backups to Dropbox (API v2)
+* Restore backups from URL or Dropbox
 * WordPress automated installer
 * WP-CLI actions helper
+* Let's Encrypt actions helper
 * Monit installer and configuration helper
 * Netdata installer and configuration helper
 * Certbot installer and configuration helper
 * Cockpit installer and configuration helper
-* Cloudflare support
+* Cloudflare support (via API)
 * PHP optimization tool (beta)
-* Image optimization tool
+* Image optimization tools
 * Blacklist checker
 * Benchmark tools
+* Malware scanners
 * Simple step-by-step configuration wizard
+
+## TODO List
+![TODO](./TODO.md)
 
 ## Supports
 
