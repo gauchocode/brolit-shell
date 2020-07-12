@@ -27,7 +27,7 @@ It's written in BASH scripting language.
 * Simple step-by-step configuration wizard
 
 ## TODO List
-![TODO](./TODO.md)
+[TODO List](./TODO.md)
 
 ## Supports
 
