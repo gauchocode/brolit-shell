@@ -1,4 +1,3 @@
-
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
@@ -74,8 +73,7 @@ it_utils_menu() {
       new_server_hostname=$(whiptail --title "CHANGE SERVER HOSTNAME" --inputbox "Insert the new hostname:" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [ ${exitstatus} = 0 ]; then
-        echo "TODO: IMPLEMENT change_server_hostname"
-        #change_server_hostname "${new_server_hostname}"
+        change_server_hostname "${new_server_hostname}"
 
       fi
     fi
@@ -84,8 +82,7 @@ it_utils_menu() {
       floating_IP=$(whiptail --title "ADD FLOATING IP" --inputbox "Insert the floating IP:" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [ ${exitstatus} = 0 ]; then
-        echo "TODO: IMPLEMENT add_floating_IP"
-        #add_floating_IP "${floating_IP}"
+        add_floating_IP "${floating_IP}"
 
       fi
     fi
@@ -113,6 +110,58 @@ change_current_ssh_port() {
 
   # restart ssh service
   sudo service ssh restart
+
+}
+
+change_server_hostname() {
+
+  #$1 = ${new_hostname}
+
+  local new_hostname=$1
+
+  sudo hostnamectl set-hostname "${new_hostname}"
+
+}
+
+add_floating_IP() {
+
+  #$1 = ${floating_IP}
+
+  local floating_IP=$1
+
+  local ubuntu_v
+
+  ubuntu_v=$(get_ubuntu_version)
+
+  echo " > Trying to add ${floating_IP} as floating ip on Ubuntu ${ubuntu_v}" >>$LOG
+  echo -e ${B_CYAN}" > Trying to add ${floating_IP} as floating ip on Ubuntu ${ubuntu_v}"${ENDCOLOR} >&2
+
+  if [ "${ubuntu_v}" == "1804" ]; then
+   
+   cp "${SFOLDER}/confs/networking/60-my-floating-ip.cfg" /etc/network/interfaces.d/60-my-floating-ip.cfg
+   sudo sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/network/interfaces.d/60-my-floating-ip.cfg
+   
+   sudo service networking restart
+   
+  else
+
+    if [ "${ubuntu_v}" == "2004" ]; then
+      
+      cp "${SFOLDER}/confs/networking/60-floating-ip.yaml" /etc/netplan/60-floating-ip.yaml
+      sudo sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/netplan/60-floating-ip.yaml
+      
+      sudo netplan apply
+
+    else
+
+      echo " > ERROR: This script only run on Ubuntu 20.04 or 18.04 ... Exiting"
+      exit 1
+
+    fi
+
+  fi
+
+  # TODO: reboot message
 
 }
 

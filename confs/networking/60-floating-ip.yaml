@@ -1,0 +1,6 @@
+network:
+  version: 2
+  ethernets:
+    eth0:
+      addresses:
+      - your.float.ing.ip/32
