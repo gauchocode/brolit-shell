@@ -255,7 +255,7 @@ restore_nginx_site_files() {
       cp "${to_restore}" "${WSERVER}/sites-available/${filename}"
       ln -s "${WSERVER}/sites-available/${filename}" "${WSERVER}/sites-enabled/${filename}"
 
-      change_phpv_nginx_server "${domain}"
+      change_phpv_nginx_server "${domain}" ""
 
     fi
 

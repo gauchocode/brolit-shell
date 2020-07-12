@@ -26,7 +26,7 @@ create_nginx_server() {
     local server_type=$2
 
     # Create nginx config files for site
-    echo -e "\nCreating nginx configuration file...\n" >>$LOG
+    echo " > Creating nginx configuration file ..." >>$LOG
     cp "${SFOLDER}/confs/nginx/sites-available/${server_type}" "${WSERVER}/sites-available/${domain}"
     ln -s "${WSERVER}/sites-available/${domain}" "${WSERVER}/sites-enabled/${domain}"
 
@@ -75,6 +75,11 @@ change_phpv_nginx_server() {
     local new_php_v=$2
 
     # TODO: if $new_php_v is not set, must ask wich PHP_V
+
+    if [[ ${new_php_v} = "" ]]; then
+        new_php_v=$(check_default_php_version)
+
+    fi
 
     # Updating nginx server file
     echo -e ${CYAN}" > Updating nginx ${project_domain} server file ..."${ENDCOLOR}>&2
