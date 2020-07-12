@@ -74,6 +74,12 @@ check_packages_required() {
 
 }
 
+check_default_php_version() {
+
+  php -v | head -n 1 | cut -d " " -f 2 | cut -f1-2 -d"."
+
+}
+
 basic_packages_installation() {
   
   # Updating packages

@@ -36,7 +36,9 @@ php_custom_installer() {
 
 php_select_version_to_install() {
 
-  PHPV_TO_INSTALL=(
+  local phpv_to_install chosen_phpv phpv
+
+  phpv_to_install=(
     "7.4" " " off
     "7.3" " " off
     "7.2" " " off
@@ -46,9 +48,9 @@ php_select_version_to_install() {
     "5.5" " " off
   )
 
-  CHOOSEN_PHPV=$(whiptail --title "PHP Version Selection" --checklist "Select the versions of PHP you want to install:" 20 78 15 "${PHPV_TO_INSTALL[@]}" 3>&1 1>&2 2>&3)
-  echo "Setting CHOSEN_PHPV=$CHOOSEN_PHPV"
-  for phpv in $CHOOSEN_PHPV; do
+  chosen_phpv=$(whiptail --title "PHP Version Selection" --checklist "Select the versions of PHP you want to install:" 20 78 15 "${phpv_to_install[@]}" 3>&1 1>&2 2>&3)
+  echo "Setting CHOSEN_PHPV=$chosen_phpv"
+  for phpv in $chosen_phpv; do
     phpv=$(sed -e 's/^"//' -e 's/"$//' <<<$phpv) #needed to ommit double quotes
 
     php_installer "${phpv}"
@@ -58,6 +60,7 @@ php_select_version_to_install() {
 }
 
 php_redis_installer() {
+
   apt --yes install redis-server php-redis
   systemctl enable redis-server.service
 
@@ -68,16 +71,20 @@ php_redis_installer() {
 }
 
 mail_utils_installer() {
+
   pear install mail mail_mime net_smtp
+
 }
 
 php_purge_all_installations() {
+
   echo " > Removing All PHP versions installed ..." >>$LOG
   apt --yes purge php*
 
 }
 
 php_purge_installation() {
+
   echo " > Removing PHP ${PHP_V} ..." >>$LOG
   apt --yes purge "php${PHP_V}-fpm" "php${PHP_V}-mysql" php-xml "php${PHP_V}-xml" "php${PHP_V}-cli" "php${PHP_V}-curl" "php${PHP_V}-mbstring" "php${PHP_V}-gd" php-imagick "php${PHP_V}-intl" "php${PHP_V}-zip" "php${PHP_V}-bz2" php-bcmath "php${PHP_V}-soap" "php${PHP_V}-dev" php-pear
 
@@ -101,6 +108,7 @@ php_check_if_installed() {
 }
 
 php_check_installed_version() {
+  
   php --version | awk '{ print $5 }' | awk -F\, '{ print $1 }'
 
 }
