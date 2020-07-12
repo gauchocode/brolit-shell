@@ -4,6 +4,7 @@
 # Version: 3.0-rc06
 #############################################################################
 
+# shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
@@ -76,6 +77,29 @@ if [ ${mysql_installed} == "false" ]; then
 
 else
 
-  echo -e ${YELLOW}" > MySQL already installed, skipping ..."${ENDCOLOR}
+  while true; do
+
+      echo -e ${YELLOW}" > MySQL already installed, do you want to remove it?"${ENDCOLOR}
+      read -p "Please type 'y' or 'n'" yn
+
+      case $yn in
+          [Yy]* )
+
+          echo " > Purging mysql-* packages ..." >>$LOG
+          echo -e ${CYAN}" > Purging mysql-* packages ..."${ENDCOLOR}
+
+          sudo apt-get purge mysql-server mysql-client mysql-common mysql-server-core-* mysql-client-core-*
+          sudo rm -rf /etc/mysql /var/lib/mysql
+          sudo apt-get autoremove
+          sudo apt-get autoclean
+
+          break;;
+          [Nn]* )
+          echo -e ${B_RED}"Aborting monit installation script ..."${ENDCOLOR};
+          break;;
+          * ) echo " > Please answer yes or no.";;
+      esac
+  done
+
 
 fi
