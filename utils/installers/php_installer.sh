@@ -155,11 +155,11 @@ fi
 #fi
 
 # TODO: need refactor, using php_optimizations.sh
-echo -e ${CYAN}" > Moving php configuration file ..."${ENDCOLOR}
+echo -e ${CYAN}" > Moving php configuration file ..."${ENDCOLOR} >&2
 echo " > Moving php configuration file ..." >>$LOG
 cat "${SFOLDER}/confs/php/php.ini" >"/etc/php/${PHP_V}/fpm/php.ini"
 
-echo -e ${CYAN}" > Moving fpm configuration file ..."${ENDCOLOR}
+echo -e ${CYAN}" > Moving fpm configuration file ..."${ENDCOLOR} >&2
 echo " > Moving fpm configuration file ..." >>$LOG
 cat "${SFOLDER}/confs/php/php-fpm.conf" >"/etc/php/${PHP_V}/fpm/php-fpm.conf"
 
@@ -167,6 +167,11 @@ cat "${SFOLDER}/confs/php/php-fpm.conf" >"/etc/php/${PHP_V}/fpm/php-fpm.conf"
 sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
 sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
 sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
+
+# Unccoment /status from fpm configuration
+echo -e ${CYAN}" > Unccoment /status from fpm configuration ..."${ENDCOLOR} >&2
+echo " > Unccoment /status from fpm configuration ..." >>$LOG
+sed -i '/status_path/s/^;//g' "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
 
 # Run php_optimizations.sh
 "${SFOLDER}/utils/php_optimizations.sh"

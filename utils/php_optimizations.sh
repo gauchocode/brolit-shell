@@ -55,14 +55,6 @@ echo -e ${CYAN}"PHP_AVG_RAM: ${PHP_AVG_RAM}"${ENDCOLOR}
 echo -e ${CYAN}"MYSQL_AVG_RAM: ${MYSQL_AVG_RAM}"${ENDCOLOR}
 echo -e ${CYAN}"*******************************************"${ENDCOLOR}
 
-# php.ini broobe standard configuration
-#echo " > Moving php configuration file ..." >>$LOG
-#cat confs/php.ini > /etc/php/${PHP_V}/fpm/php.ini
-
-# fpm broobe standard configuration
-#echo " > Moving fpm configuration file ..." >>$LOG
-#cat confs/php/${SERVER_MODEL}/www.conf > /etc/php/${PHP_V}/fpm/pool.d/www.conf
-
 #Setting	Value
 #max_children	(Total RAM - Memory used for Linux, DB, etc.) / process size
 #start_servers	Number of CPU cores x 4
