@@ -69,7 +69,7 @@ mysql_user_delete() {
     local sql_1="DROP USER '${db_user}'@'localhost';"
     local sql_2="FLUSH PRIVILEGES;"
 
-    echo "Deleting ${db_user} user in MySQL ..." >>$LOG
+    echo " > Deleting ${db_user} user in MySQL ..." >>$LOG
     mysql -u "${MUSER}" -p"${MPASS}" -e "${sql_1}${sql_2}" >>$LOG
 
     if [ $? -eq 0 ]; then

@@ -19,6 +19,9 @@ BAKWP="${SFOLDER}/tmp"
 MHOST="localhost"
 MUSER="root"
 
+# Nginx
+WSERVER="/etc/nginx"
+
 # Backup rotation vars
 NOW=$(date +"%Y-%m-%d")
 NOWDISPLAY=$(date +"%d-%m-%Y")
@@ -50,6 +53,8 @@ source "${SFOLDER}/libs/packages_helper.sh"
 source "${SFOLDER}/libs/backup_helper.sh"
 # shellcheck source=${SFOLDER}/libs/mysql_helper.sh
 source "${SFOLDER}/libs/mysql_helper.sh"
+# shellcheck source=${SFOLDER}/libs/nginx_helper.sh
+source "${SFOLDER}/libs/nginx_helper.sh"
 # shellcheck source=${SFOLDER}/libs/cloudflare_helper.sh
 source "${SFOLDER}/libs/cloudflare_helper.sh"
 
@@ -136,4 +141,6 @@ test_mysql_database_exists(){
 #to_test="/var/www/goseries-master"
 #is_wp_project "$to_test"
 
-cloudflare_change_a_record "dwell.com.ar" "test.dwell.com.ar"
+#cloudflare_change_a_record "domain.com" "test.domain.com"
+
+#change_phpv_nginx_server "domain.com" "7.4"

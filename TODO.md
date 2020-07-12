@@ -2,11 +2,13 @@
 
 ### In Progress
 
-- [ ] Option to change hostname: https://www.cyberciti.biz/faq/ubuntu-20-04-lts-change-hostname-permanently/
+- [ ] New option to put a website offline. Maybe comment nginx server file, rename project_dir to domain-OFFLINE and restart nginx service
 
 ### Done ✓
 
 - [x] Create TODO.md
+- [x] Option to change hostname: https://www.cyberciti.biz/faq/ubuntu-20-04-lts-change-hostname-permanently/
+
 
 ## TODO
 
@@ -15,7 +17,6 @@
 - [ ] When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?)
 - [ ] WordPress install fails when set a project name like: xyz_sub_domain (could be a problem with sed on wordpress installer)
 - [ ] WP-CLI is required to the script works propperly, must install on script setup.
-- [ ] New option to put a website offline. Maybe comment nginx server file, rename project_dir to domain-OFFLINE and restart nginx service
 - [ ] On LEMP setup, afther basic installation must init plugin options wizard before ask to install aditional packages
 
 ### For release 3.1

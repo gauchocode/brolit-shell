@@ -150,7 +150,7 @@ create_netdata_db_user() {
   SQL2="GRANT USAGE on *.* to 'netdata'@'localhost';"
   SQL3="FLUSH PRIVILEGES;"
 
-  echo "Creating netdata user in MySQL ..." >>$LOG
+  echo " > Creating netdata user in MySQL ..." >>$LOG
   mysql -u root -p"${MPASS}" -e "${SQL1}${SQL2}${SQL3}" >>$LOG
 
 }
