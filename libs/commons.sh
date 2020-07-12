@@ -560,14 +560,16 @@ function __msg_info() {
 
 check_root() {
   # Check if user is root
-  if [ ${USER} != root ]; then
-    echo -e ${RED}" > Error: must be root! Exiting..."${ENDCOLOR}
+  if [ "${USER}" != root ]; then
+    echo -e ${B_RED}" > Error: must be root! Exiting..."${ENDCOLOR}
     exit 0
   fi
 
 }
 
 check_distro() {
+
+  local distro_old
 
   #for ext check
   distro_old="false"
