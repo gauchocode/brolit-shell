@@ -3,12 +3,12 @@
 ### In Progress
 
 - [ ] New option to put a website offline. Maybe comment nginx server file, rename project_dir to domain-OFFLINE and restart nginx service
+- [ ] Netdata reporta los CRITICAL pero nunca los CLEAR (osea cuando se resuelve la alerta)
 
 ### Done ✓
 
 - [x] Create TODO.md
 - [x] Option to change hostname: https://www.cyberciti.biz/faq/ubuntu-20-04-lts-change-hostname-permanently/
-
 
 ## TODO
 
@@ -21,20 +21,25 @@
 
 ### For release 3.1
 
-- [ ] Auto-update script option.
+- [ ] Auto-update script option
+- [ ] Option to install script on crontab (use cron_this function)
 - [ ] Refactor for restore from dropbox: 5 options (server_config, site_config, site, database and project)
 - [ ] Check wp integrity files
 - [ ] Complete refactor of "Options Wizard"
 - [ ] Mailcow installer and backup
 - [ ] Implements wpcli_rollback_plugin_version (on wpcli_helper.sh)
-- [ ] Mail notifications after install a new project (with credentials info.)
+- [ ] Mail notifications after install a new project (with credentials info)
+- [ ] On backup failure, the email must show what files fails and what files are correct backuped
+- [ ] Refactor of server_optimizations:
+        - [ ] Email with optimization results
+        - [ ] Option to run every day, week, month or never
 
 ### For release 3.2
 
 - [ ] Refactor of RESTORE_FROM_SOURCE and complete server config restore
 - [ ] Implement on restore_from_backup easy way to restore all sites
 - [ ] Refactor of WORDPRESS_INSTALLER - COPY_FROM_PROJECT
-        The idea is that you could create/delete/update different kind of projects (WP, Laravel, Standalone)
+        The idea is that you could create/delete/update different kind of projects (WP, Laravel, React, Composer, Standalone)
         Maybe add this for Laravel: https://gitlab.com/broobe/laravel-boilerplate/-/tree/master
         Important: if create a project with stage different than prod, block search engine indexation
 - [ ] Better log with check_result and log_event functions (commons.sh)
@@ -48,25 +53,31 @@
 
 ### For release 3.4
 
-- [ ] On backup failure, the email must show what files fails and what files are correct backuped
 - [ ] Support for dailys, weeklys y monthlys backups
-- [ ] Mail notification when a new site is installed
+- [ ] Directory Blacklist with whiptail (for backup configuration)
 - [ ] Warning if script run on non default installation (no webserver or another than nginx)
-- [ ] Option to install script on crontab (use cron_this function)
-- [ ] Option to install Bashtop and other utils: http://packages.azlux.fr/
-
-### For release 3.6
-
-- [ ] Expand Duplicity support with a restore option
 - [ ] Complete the pdf optimization process
 - [ ] MySQL optimization script
 - [ ] Rename database helper (with and without WP)
 - [ ] Fallback for replace strings on wp database (if wp-cli fails, use old script version)
+- [ ] Multidomain support for nginx
+- [ ] WP Network support (nginx config, and wp-cli commands)
+- [ ] Control of mounted partitions or directories
+
+### For release 3.6
+
+- [ ] Expand Duplicity support with a restore option
+- [ ] Option to install Bashtop and other utils: http://packages.azlux.fr/
 - [ ] Add others IT utils (change hostname, add floating IP, change SSH port)
         Ref: https://wiki.hetzner.de/index.php/Cloud_floating_IP_persistent/en
-- [ ] Option to change php version on installed site. 
+- [ ] Option to change php version on installed site.
         See this implementation: https://easyengine.io/blog/easyengine-v4-0-15-released/
 - [ ] Option to enable or disable OpCache
+- [ ] Option to auto-install security updates on Ubuntu: 
+        https://help.ubuntu.com/lts/serverguide/automatic-updates.html
+- [ ] Nginx bad bot blocker:
+         https://github.com/mitchellkrogza/nginx-ultimate-bad-bot-blocker
+
 
 ### For release 4.0
 
