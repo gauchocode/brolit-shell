@@ -109,8 +109,6 @@ echo -e ${RED}"PM_MAX_REQUESTS: ${PM_MAX_REQUESTS_ORIGIN}"${ENDCOLOR}
 echo -e ${RED}"PM_PROCESS_IDDLE_TIMEOUT: ${PM_PROCESS_IDDLE_TIMEOUT_ORIGIN}"${ENDCOLOR}
 echo -e ${RED}"*******************************************"${ENDCOLOR}
 
-
-
 while true; do
   echo -e ${YELLOW}"> Do you want to apply this optimizations?"${ENDCOLOR}
   read -p "Please type 'y' or 'n'" yn

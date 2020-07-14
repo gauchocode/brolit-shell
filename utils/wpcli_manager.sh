@@ -94,10 +94,10 @@ wpcli_main_menu() {
 
     if [[ ${CHOSEN_WPCLI_OPTION} == *"05"* ]]; then
 
-      echo "Verifying Core Checksum ..."
+      echo -e ${B_CYAN}" > Verifying Core Checksum ..."${ENDCOLOR} >&2
       wpcli_verify_wp_core_installation "${WP_SITE}"
 
-      echo "Verifying Plugin Checksum ..."
+      echo -e ${B_CYAN}" > Verifying Plugin Checksum ..."${ENDCOLOR} >&2
       wpcli_verify_wp_plugins_installation "${WP_SITE}"
 
       echo " > DONE"
@@ -107,28 +107,28 @@ wpcli_main_menu() {
     if [[ ${CHOSEN_WPCLI_OPTION} == *"06"* ]]; then
 
       #Run wp doctor before
-      echo -e ${B_CYAN}" > Checking WP Update ..."${ENDCOLOR}
+      echo -e ${B_CYAN}" > Checking WP Update ..."${ENDCOLOR} >&2
       #echo -e ${B_CYAN}" > Executing: sudo -u www-data wp --path=${WP_SITE} doctor check core-update"${ENDCOLOR}
-      echo -e ${B_CYAN}" > Executing: wp --path=${WP_SITE} doctor check core-update --allow-root"${ENDCOLOR}
+      echo -e ${B_CYAN}" > Executing: wp --path=${WP_SITE} doctor check core-update --allow-root"${ENDCOLOR} >&2
       #sudo -u www-data wp --path=${WP_SITE} doctor check core-update
       wp --path="${WP_SITE}" doctor check core-update --allow-root
 
-      echo -e ${B_CYAN}" > Updating WP ..."${ENDCOLOR}
+      echo -e ${B_CYAN}" > Updating WP ..."${ENDCOLOR} >&2
       #echo -e ${B_CYAN}" > Executing: sudo -u www-data wp --path=${WP_SITE} core update"${ENDCOLOR}
-      echo -e ${B_CYAN}" > Executing: wp --path=${WP_SITE} core update --allow-root"${ENDCOLOR}
+      echo -e ${B_CYAN}" > Executing: wp --path=${WP_SITE} core update --allow-root"${ENDCOLOR} >&2
       #sudo -u www-data wp --path=${WP_SITE} core update
       wp --path="${WP_SITE}" core update --allow-root
 
-      echo -e ${B_CYAN}" > Updating WP DB ..."${ENDCOLOR}
+      echo -e ${B_CYAN}" > Updating WP DB ..."${ENDCOLOR} >&2
       #echo -e ${B_CYAN}" > Executing: sudo -u www-data wp --path=${WP_SITE} core update-db"${ENDCOLOR}
-      echo -e ${B_CYAN}" > Executing: wp --path=${WP_SITE} core update-db --allow-root"${ENDCOLOR}
+      echo -e ${B_CYAN}" > Executing: wp --path=${WP_SITE} core update-db --allow-root"${ENDCOLOR} >&2
       #sudo -u www-data wp --path=${WP_SITE} core update-db
       wp --path="${WP_SITE}" core update-db --allow-root
 
       #TODO: run chown after executing with --allow-root
       #chown -R www-data:www-data ${WP_SITE}
 
-      echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
+      echo -e ${B_GREEN}" > DONE"${ENDCOLOR} >&2
 
     fi
 
@@ -189,7 +189,7 @@ wpcli_main_menu() {
         fi
         if [[ ${CHOSEN_PROF_OPTION} == *"05"* ]]; then
           #Here we dig into the wp hook
-          echo "Executing: wp --path=${WP_SITE} profile hook --all --spotlight --allow-root"
+          echo " > Executing: wp --path=${WP_SITE} profile hook --all --spotlight --allow-root"
           wp --path="${WP_SITE}" profile hook --all --spotlight --allow-root
 
         fi
@@ -204,7 +204,7 @@ wpcli_main_menu() {
       # Change WP tables PREFIX
       wpcli_change_tables_prefix "${WP_SITE}" "${TABLES_PREFIX}"
 
-      echo "New Tables prefix for ${WP_SITE}: ${TABLES_PREFIX}"
+      echo " > New Tables prefix for ${WP_SITE}: ${TABLES_PREFIX}"
 
     fi
     if [[ ${CHOSEN_WPCLI_OPTION} == *"11"* ]]; then
@@ -261,7 +261,7 @@ else
 
   WP_SITE=${install_path}
 
-  echo -e ${CYAN}" > Working with WP_SITE=${WP_SITE}"${ENDCOLOR}
+  echo -e ${CYAN}" > Working with WP_SITE=${WP_SITE}"${ENDCOLOR} >&2
   echo " > Working with WP_SITE=${WP_SITE}" >>$LOG
 
   # Array of plugin slugs to install
@@ -269,7 +269,7 @@ else
     "wordpress-seo" " " off
     "duracelltomi-google-tag-manager" " " off
     "ewww-image-optimizer" " " off
-    "easy-wp-smtp" " " off
+    "post-smtp" " " off
     "contact-form-7" " " off
     "advanced-custom-fields" " " off
     "acf-vc-integrator" " " off
