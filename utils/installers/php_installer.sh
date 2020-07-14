@@ -113,6 +113,29 @@ php_check_installed_version() {
 
 }
 
+php_reconfigure() {
+  
+  # TODO: need refactor, using php_optimizations.sh
+  echo -e ${CYAN}" > Moving php configuration file ..."${ENDCOLOR} >&2
+  echo " > Moving php configuration file ..." >>$LOG
+  cat "${SFOLDER}/confs/php/php.ini" >"/etc/php/${PHP_V}/fpm/php.ini"
+
+  echo -e ${CYAN}" > Moving fpm configuration file ..."${ENDCOLOR} >&2
+  echo " > Moving fpm configuration file ..." >>$LOG
+  cat "${SFOLDER}/confs/php/php-fpm.conf" >"/etc/php/${PHP_V}/fpm/php-fpm.conf"
+
+  # Replace string to match PHP version
+  sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
+  sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
+  sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
+
+  # Unccoment /status from fpm configuration
+  echo -e ${CYAN}" > Unccoment /status from fpm configuration ..."${ENDCOLOR} >&2
+  echo " > Unccoment /status from fpm configuration ..." >>$LOG
+  sed -i '/status_path/s/^;//g' "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
+
+}
+
 ################################################################################
 
 #php_installed="true"
@@ -122,7 +145,7 @@ php_check_installed_version() {
 
 #if [ ${php_installed} == "false" ]; then
 
-PHP_INSTALLER_OPTIONS="01 PHP_DISTRO_STANDARD 02 PHP_CUSTOM"
+PHP_INSTALLER_OPTIONS="01 INSTALL_PHP_STANDARD 02 INSTALL_PHP_CUSTOM 03 RECONFIGURE_PHP 04 OPTIMIZE_PHP"
 CHOSEN_PHP_INSTALLER_OPTION=$(whiptail --title "PHP INSTALLER" --menu "Choose a PHP version to install" 20 78 10 $(for x in ${PHP_INSTALLER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
@@ -151,30 +174,18 @@ if [ $exitstatus = 0 ]; then
     #php_redis_installer
 
   fi
+   if [[ ${CHOSEN_PHP_INSTALLER_OPTION} == *"03"* ]]; then
+    # PHP reconfigure
+    php_reconfigure
+
+  fi
+   if [[ ${CHOSEN_PHP_INSTALLER_OPTION} == *"04"* ]]; then
+    # Run php_optimizations.sh
+    "${SFOLDER}/utils/php_optimizations.sh"
+
+  fi
 fi
 #fi
-
-# TODO: need refactor, using php_optimizations.sh
-echo -e ${CYAN}" > Moving php configuration file ..."${ENDCOLOR} >&2
-echo " > Moving php configuration file ..." >>$LOG
-cat "${SFOLDER}/confs/php/php.ini" >"/etc/php/${PHP_V}/fpm/php.ini"
-
-echo -e ${CYAN}" > Moving fpm configuration file ..."${ENDCOLOR} >&2
-echo " > Moving fpm configuration file ..." >>$LOG
-cat "${SFOLDER}/confs/php/php-fpm.conf" >"/etc/php/${PHP_V}/fpm/php-fpm.conf"
-
-# Replace string to match PHP version
-sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
-sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
-sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
-
-# Unccoment /status from fpm configuration
-echo -e ${CYAN}" > Unccoment /status from fpm configuration ..."${ENDCOLOR} >&2
-echo " > Unccoment /status from fpm configuration ..." >>$LOG
-sed -i '/status_path/s/^;//g' "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
-
-# Run php_optimizations.sh
-"${SFOLDER}/utils/php_optimizations.sh"
 
 # TODO: if you install a new PHP version, maybe you want to reconfigure an specific nginx_server
 # reconfigure_nginx_sites()

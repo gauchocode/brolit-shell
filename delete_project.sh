@@ -15,6 +15,8 @@ fi
 source "${SFOLDER}/libs/commons.sh"
 # shellcheck source=${SFOLDER}/libs/mysql_helper.sh
 source "${SFOLDER}/libs/mysql_helper.sh"
+# shellcheck source=${SFOLDER}/libs/nginx_helper.sh
+source "${SFOLDER}/libs/nginx_helper.sh"
 # shellcheck source=${SFOLDER}/libs/backup_helper.sh
 source "${SFOLDER}/libs/backup_helper.sh"
 
