@@ -4,7 +4,7 @@
 # Version: 3.0-rc06
 #############################################################################
 #
-# TODO: This script need a good refactor.
+# TODO: This script need a refactor
 # 
 # The script main function need to be backup an entire project
 # (files, database, nginx and let's encrypt configuration)
@@ -19,15 +19,20 @@
 
 ### Checking Script Execution
 if [[ -z "${SFOLDER}" ]]; then
-    echo -e ${RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+    echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
     exit 0
 fi
 ################################################################################
 
+# shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
+# shellcheck source=${SFOLDER}/libs/mysql_helper.sh
 source "${SFOLDER}/libs/mysql_helper.sh"
+# shellcheck source=${SFOLDER}/libs/backup_helper.sh
 source "${SFOLDER}/libs/backup_helper.sh"
+# shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
 source "${SFOLDER}/libs/wpcli_helper.sh"
+# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
 source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 ################################################################################

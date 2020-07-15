@@ -60,32 +60,18 @@ make_temp_db_backup() {
 
 restore_database_backup() {
 
-  #$1 = ${chosen_project}
-  #$2 = ${chosen_backup}
+  #$1 = ${project_name}
+  #$2 = ${project_state}
+  #$3 = ${project_backup}
 
-  local chosen_project=$1
-  local chosen_backup=$2
+  local project_name=$1
+  local project_state=$2
+  local project_backup=$3
 
-  local project_name project_state db_name db_exists user_db_exists db_pass
+  local db_name db_exists user_db_exists db_pass
 
-  echo " > Running restore_database_backup for ${chosen_backup} DB" >>$LOG
-  echo -e "${CYAN} > Running restore_database_backup for ${chosen_backup} DB ${ENDCOLOR}">&2
-
-  # Asking project state with suggested actual state
-  suffix="$(cut -d'_' -f2 <<<"${chosen_project}")"
-  project_state=$(ask_project_state "${suffix}")
-
-  # Extract project_name (its removes last part of db name with "_" char)
-
-  project_name=${chosen_project%"_$suffix"}
-
-  project_name=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${project_name}" 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-    echo " > Setting project_name=${project_name}" >>$LOG
-  else
-    exit 1
-  fi
+  echo " > Running restore_database_backup for ${project_backup} DB" >>$LOG
+  echo -e "${CYAN} > Running restore_database_backup for ${project_backup} DB ${ENDCOLOR}">&2
 
   make_temp_db_backup "${project_name}"
 
@@ -106,14 +92,14 @@ restore_database_backup() {
   fi
 
   # Trying to restore Database
-  chosen_backup="${chosen_backup%%.*}.sql"
-  mysql_database_import "${project_name}_${project_state}" "${chosen_backup}"
+  project_backup="${project_backup%%.*}.sql"
+  mysql_database_import "${project_name}_${project_state}" "${project_backup}"
 
   echo -e ${CYAN}" > Cleanning temp files ..."${ENDCOLOR}>&2
-  rm ${chosen_backup%%.*}.sql
-  rm ${chosen_backup%%.*}.tar.bz2
-  rm "${chosen_backup}"
-  echo -e ${B_GREEN}" > DONE"${ENDCOLOR}>&2
+  rm ${project_backup%%.*}.sql
+  rm ${project_backup%%.*}.tar.bz2
+  rm "${project_backup}"
+  echo -e ${B_GREEN}" > restore_database_backup DONE"${ENDCOLOR}>&2
 
 }
 
@@ -262,7 +248,7 @@ restore_nginx_site_files() {
   else
 
     echo -e ${B_RED}" > /etc/nginx/sites-available NOT exist... Skipping!"${ENDCOLOR}>&2
-    echo "ERROR: nginx main dir is not present!"
+    #echo "ERROR: nginx main dir is not present!"
 
   fi
 
@@ -442,7 +428,22 @@ select_restore_type_from_dropbox() {
 
           if [[ ${chosen_type} == *"$DBS_F"* ]]; then
 
-            restore_database_backup "${chosen_project}" "${CHOSEN_BACKUP_TO_RESTORE}"
+            # Asking project state with suggested actual state
+            suffix="$(cut -d'_' -f2 <<<"${chosen_project}")"
+            project_state=$(ask_project_state "${suffix}")
+
+            # Extract project_name (its removes last part of db name with "_" char)
+            project_name=${chosen_project%"_$suffix"}
+
+            project_name=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${project_name}" 3>&1 1>&2 2>&3)
+            exitstatus=$?
+            if [ $exitstatus = 0 ]; then
+              echo " > Setting project_name=${project_name}" >>$LOG
+            else
+              exit 1
+            fi
+
+            restore_database_backup "${project_name}" "${project_state}" "${CHOSEN_BACKUP_TO_RESTORE}"
 
             db_user="${chosen_project}_user"
 
@@ -565,17 +566,17 @@ project_restore() {
     echo " > Running dropbox_uploader.sh download ${bk_to_dowload}" >>$LOG
     $DROPBOX_UPLOADER download "${bk_to_dowload}"
 
-    echo -e ${CYAN}" > Uncompressing ${chosen_backup_to_restore}"${ENDCOLOR}
+    echo -e ${CYAN}" > Uncompressing ${chosen_backup_to_restore}"${ENDCOLOR} >&2
     echo " > Uncompressing ${chosen_backup_to_restore}" >>$LOG
 
     pv "${chosen_backup_to_restore}" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
 
     project_type=$(get_project_type "${SFOLDER}/tmp/${chosen_project}")
 
-    echo -e ${B_CYAN}" > Project Type: ${project_type}"${ENDCOLOR}
+    echo -e ${B_CYAN}" > Project Type: ${project_type}"${ENDCOLOR} >&2
     echo " > Project Type: ${project_type}" >>$LOG
 
-    echo -e ${CYAN}" > Trying to get database parameters from ${SFOLDER}/tmp/${chosen_project}/wp-config.php"${ENDCOLOR}
+    echo -e ${CYAN}" > Trying to get database parameters from ${SFOLDER}/tmp/${chosen_project}/wp-config.php"${ENDCOLOR} >&2
     echo " > Trying to get database parameters from ${SFOLDER}/tmp/${chosen_project}/wp-config.php" >>$LOG
 
     case $project_type in
@@ -629,13 +630,28 @@ project_restore() {
 
     pv "${db_name}_database_${backup_date}.tar.bz2" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
 
-    # Extract project name from domain
+    # Trying to extract project name from domain
     chosen_project="$(cut -d'.' -f1 <<<"${chosen_project}")"
 
-    # Restore database function
-    restore_database_backup "${chosen_project}" "${db_name}_database_${backup_date}.tar.bz2"
+    # Asking project state with suggested actual state
+    suffix="$(cut -d'_' -f2 <<<"${chosen_project}")"
+    project_state=$(ask_project_state "${suffix}")
 
-    db_user="${chosen_project}_user"
+    # Extract project_name (its removes last part of db name with "_" char)
+    project_name=${chosen_project%"_$suffix"}
+
+    project_name=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${project_name}" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      echo " > Setting project_name=${project_name}" >>$LOG
+    else
+      exit 1
+    fi
+
+    # Restore database function
+    restore_database_backup "${project_name}" "${project_state}" "${db_name}_database_${backup_date}.tar.bz2"
+
+    db_user="${project_name}_user"
 
     # Check if user database already exists
     user_db_exists=$(mysql_user_exists "${db_user}")
@@ -658,10 +674,9 @@ project_restore() {
     mysql_user_grant_privileges "${db_user}" "${db_name}"
 
     # Change wp-config.php database parameters
-    wp_update_wpconfig "${project_path}" "${chosen_project}" "${project_state}" "${db_pass}"
+    wp_update_wpconfig "${project_path}" "${project_name}" "${project_state}" "${db_pass}"
 
-    #TODO: try to restore nginx_server config from project (now, need to download all, extract, and then select from project_name)
-
+    #TODO: ask if restore backuped let's encrypt conf or create a new one
     restore_letsencrypt_site_files "${chosen_domain}" "${backup_date}"
 
     # TODO: ask to choose between regenerate nginx config or restore backup

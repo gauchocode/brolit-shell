@@ -139,7 +139,7 @@ php_reconfigure() {
 ################################################################################
 
 #php_installed="true"
-#php_check_if_installed
+php_is_installed=$(php_check_if_installed)
 
 # TODO: if installed, option to reinstall, remove, or reconfigure
 
@@ -174,16 +174,21 @@ if [ $exitstatus = 0 ]; then
     #php_redis_installer
 
   fi
-   if [[ ${CHOSEN_PHP_INSTALLER_OPTION} == *"03"* ]]; then
-    # PHP reconfigure
-    php_reconfigure
+  if [[ ${php_is_installed} = "true" ]]; then
+
+    if [[ ${CHOSEN_PHP_INSTALLER_OPTION} == *"03"* ]]; then
+      # PHP reconfigure
+      php_reconfigure
+
+    fi
+    if [[ ${CHOSEN_PHP_INSTALLER_OPTION} == *"04"* ]]; then
+      # Run php_optimizations.sh
+      "${SFOLDER}/utils/php_optimizations.sh"
+
+    fi
 
   fi
-   if [[ ${CHOSEN_PHP_INSTALLER_OPTION} == *"04"* ]]; then
-    # Run php_optimizations.sh
-    "${SFOLDER}/utils/php_optimizations.sh"
 
-  fi
 fi
 #fi
 
