@@ -119,7 +119,25 @@ change_server_hostname() {
 
   local new_hostname=$1
 
-  sudo hostnamectl set-hostname "${new_hostname}"
+  local cur_hostname
+  
+  cur_hostname=$(cat /etc/hostname)
+
+  # Display the current hostname
+  echo " > Current hostname: ${cur_hostname}" >>$LOG
+  echo -e "${CYAN} > Current hostname: ${cur_hostname}">&2
+
+  # Change the hostname
+  hostnamectl set-hostname "${new_hostname}"
+  hostname "${new_hostname}"
+
+  # Change hostname in /etc/hosts & /etc/hostname
+  sed -i "s/${cur_hostname}/${new_hostname}/g" /etc/hosts
+  sed -i "s/${cur_hostname}/${new_hostname}/g" /etc/hostname
+
+  # Display new hostname
+  echo " > New hostname: ${new_hostname}" >>$LOG
+  echo -e "${CYAN} > New hostname: ${new_hostname}">&2
 
 }
 
