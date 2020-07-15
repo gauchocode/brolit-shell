@@ -23,8 +23,9 @@
 
 - [ ] Auto-update script option
 - [ ] Option to install script on crontab (use cron_this function)
-- [ ] Refactor for restore from dropbox: 5 options (server_config, site_config, site, database and project)
+- [ ] Refactor for backup/restore: 5 options (server_config, site_config, site, database and project)
 - [ ] Check wp integrity files
+- [ ] Nginx globals configs support
 - [ ] Complete refactor of "Options Wizard"
 - [ ] Mailcow installer and backup
 - [ ] Implements wpcli_rollback_plugin_version (on wpcli_helper.sh)
@@ -87,7 +88,9 @@
 - [ ] Uptime Robot API?
 - [ ] Telegram notifications support: https://adevnull.com/enviar-mensajes-a-telegram-con-bash/
 - [ ] Better LEMP setup, tzdata y mysql_secure_installation without human intervention
+- [ ] User authentication support with roles (admin, backup-only, project-creation-only)
 - [ ] Add support to change dropbox to another storage service (Google Drive, SFTP, etc)
+        Ref. Google Drive script: https://github.com/labbots/google-drive-upload
 - [ ] Hetzner cloud cli support. Refs:
         https://github.com/hetznercloud/cli
         https://github.com/thabbs/hetzner-cloud-cli-sh
