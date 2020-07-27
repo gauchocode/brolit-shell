@@ -377,7 +377,7 @@ select_restore_type_from_dropbox() {
   local chosen_server=$1
   local dropbox_type_list=$2
 
-  local chosen_type dropbox_chosen_type_path dropbox_project_list domain bk_to_dowload
+  local chosen_type dropbox_chosen_type_path dropbox_project_list domain db_project_name bk_to_dowload
 
   chosen_type=$(whiptail --title "RESTORE FROM BACKUP" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 $(for x in ${dropbox_type_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
@@ -443,9 +443,13 @@ select_restore_type_from_dropbox() {
               exit 1
             fi
 
-            restore_database_backup "${project_name}" "${project_state}" "${CHOSEN_BACKUP_TO_RESTORE}"
+            # Running mysql_name_sanitize $for project_name
+            db_project_name=$(mysql_name_sanitize "${project_name}")
+            
+            # Restore database
+            restore_database_backup "${db_project_name}" "${project_state}" "${CHOSEN_BACKUP_TO_RESTORE}"
 
-            db_user="${chosen_project}_user"
+            db_user="${db_project_name}_user"
 
             # Check if user database already exists
             user_db_exists=$(mysql_user_exists "${db_user}")
@@ -612,7 +616,7 @@ project_restore() {
     # Extracting project_state from
     project_state="$(cut -d'_' -f2 <<<"${db_name}")"
 
-    echo -e ${CYAN}"*****************************"${ENDCOLOR}
+    echo -e ${CYAN}"*********** wp-config.php ***************"${ENDCOLOR}
     echo -e ${CYAN}"project_path: ${project_path}"${ENDCOLOR}
     echo -e ${CYAN}"chosen_project: ${chosen_project}"${ENDCOLOR}
     echo -e ${CYAN}"project_state: ${project_state}"${ENDCOLOR}
@@ -620,8 +624,7 @@ project_restore() {
     echo -e ${CYAN}"DB NAME: ${db_name}"${ENDCOLOR}
     echo -e ${CYAN}"DB USER: ${db_user}"${ENDCOLOR}
     echo -e ${CYAN}"DB PASS: ${db_pass}"${ENDCOLOR}
-    #echo -e ${CYAN}"TRYING TO DOWNLOAD: ${db_to_download}"${ENDCOLOR}
-    echo -e ${CYAN}"*****************************"${ENDCOLOR}
+    echo -e ${CYAN}"*****************************************"${ENDCOLOR}
 
     $DROPBOX_UPLOADER download "${db_to_download}"
 
@@ -648,10 +651,14 @@ project_restore() {
       exit 1
     fi
 
-    # Restore database function
-    restore_database_backup "${project_name}" "${project_state}" "${db_name}_database_${backup_date}.tar.bz2"
+    # Sanitize $project_name
+    db_project_name=$(mysql_name_sanitize "${project_name}")
 
-    db_user="${project_name}_user"
+    # Restore database function
+    restore_database_backup "${db_project_name}" "${project_state}" "${db_name}_database_${backup_date}.tar.bz2"
+
+    db_name="${db_project_name}_${project_state}"
+    db_user="${db_project_name}_user"
 
     # Check if user database already exists
     user_db_exists=$(mysql_user_exists "${db_user}")
@@ -674,7 +681,7 @@ project_restore() {
     mysql_user_grant_privileges "${db_user}" "${db_name}"
 
     # Change wp-config.php database parameters
-    wp_update_wpconfig "${project_path}" "${project_name}" "${project_state}" "${db_pass}"
+    wp_update_wpconfig "${project_path}" "${db_project_name}" "${project_state}" "${db_pass}"
 
     #TODO: ask if restore backuped let's encrypt conf or create a new one
     restore_letsencrypt_site_files "${chosen_domain}" "${backup_date}"
