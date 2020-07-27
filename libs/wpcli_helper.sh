@@ -33,12 +33,67 @@ wpcli_uninstall() {
 
 }
 
+wpcli_run_startup_script(){
+
+    # $1 = ${site_name}
+    # $2 = ${site_url}
+    # $3 = ${wp_user_name}
+    # $4 = ${wp_user_passw}
+    # $5 = ${wp_user_mail}
+
+    local site_name=$1
+    local site_url=$2
+    local wp_user_name=$3
+    local wp_user_passw=$4
+    local wp_user_mail=$5
+
+    wp core install --url="${site_url}" --title="${site_name}" --admin_user="${wp_user_name}" --admin_password="${wp_user_passw}" --admin_email="${wp_user_mail}" --allow-root
+
+    # Delete default post, page, and comment
+    wp site empty --yes --allow-root
+
+    # Delete default themes
+    wp theme delete twentyseventeen --allow-root
+    wp theme delete twentynineteen --allow-root
+
+    wp site empty --yes --allow-root
+    
+    # Delete default plugins
+    wp plugin delete akismet --allow-root
+    wp plugin delete hello --allow-root
+    
+    wp rewrite structure '/%postname%/' --allow-root
+    wp option update default_comment_status closed --allow-root
+    #wp post create --post_type=page --post_status=publish --post_title='Home' --allow-root
+
+}
+
+wpcli_create_config(){
+
+    # $1 = ${wp_site}
+    # $2 = ${database}
+    # $3 = ${db_user_name}
+    # $4 = ${db_user_passw}
+    # $4 = ${wp_locale}
+
+    local wp_site=$1
+    local database=$2
+    local db_user_name=$3
+    local db_user_passw=$4
+    local wp_locale=$5
+
+    if [ "${wp_locale}" = "" ]; then
+        wp_locale="es_ES"
+    fi
+
+    wp --path="${wp_site}" config create --dbname="${database}" --dbuser="${db_user_name}" --dbpass="${db_user_passw}" --locale="${wp_locale}"
+
+}
+
 wpcli_install_needed_extensions() {
 
     # Rename DB Prefix
     wp --allow-root package install "iandunn/wp-cli-rename-db-prefix"
-    # Image Optimization
-    wp --allow-root package install "typisttech/image-optimize-command:@stable"
     # Salts
     wp --allow-root package install "sebastiaandegeus/wp-cli-salts-comman"
     # Vulnerability Scanner
@@ -71,11 +126,59 @@ wpcli_check_version() {
 
 }
 
+wpcli_core_install() {
+
+    # $1 = ${wp_site}
+
+    local wp_site=$1
+
+    sudo -u www-data wp --path="${wp_site}" core download 
+
+}
+
+wpcli_core_reinstall() {
+
+    # This will replace wordpress core files (didnt delete other files)
+    # Ref: https://github.com/wp-cli/wp-cli/issues/221
+
+    # $1 = ${wp_site}
+
+    local wp_site=$1
+
+    sudo -u www-data wp --path="${wp_site}" core download --skip-content --force 
+
+}
+
 wpcli_core_update() {
 
+    # $1 = ${wp_site}
+
+    local wp_site=$1
     local verify_core_update
 
-    verify_core_update=$(sudo -u www-data wp core check-update | grep ":" | cut -d ':' -f1)
+    verify_core_update=$(sudo -u www-data wp --path="${wp_site}" update | grep ":" | cut -d ':' -f1)
+
+    if [ "${verify_core_update}" = "Success" ];then
+
+        # Translations update
+        sudo -u www-data wp --path="${wp_site}" language core update
+
+        # Update database
+        sudo -u www-data wp --path="${wp_site}" core update-db
+
+        # Cache Flush
+        sudo -u www-data wp --path="${wp_site}" cache flush
+
+        # Rewrite Flush
+        sudo -u www-data wp --path="${wp_site}" rewrite flush
+
+        echo -e ${B_GREEN}" > Wordpress Core Updated!"${ENDCOLOR}
+
+    else
+
+        echo -e ${B_RED}" > Wordpress Core Update Failed!"${ENDCOLOR}
+    
+    fi
 
     echo "${verify_core_update}" #if ok, return "Success"
 
@@ -83,25 +186,38 @@ wpcli_core_update() {
 
 wpcli_core_verify() {
 
+    # $1 = ${wp_site}
+
+    local wp_site=$1
     local verify_core
 
-    verify_core=$(sudo -u www-data wp core verify-checksums | grep ":" | cut -d ':' -f1)
+    echo -e ${B_GREEN}" > Running: sudo -u www-data wp --path="${wp_site}" core verify-checksums"${ENDCOLOR} >&2
+    mapfile verify_core < <(sudo -u www-data wp --path="${wp_site}" core verify-checksums 2>&1)
 
-    echo "${verify_core}" #if ok, return "Success"
+    # Return an array with wp-cli output
+    echo "${verify_core[@]}"
 
 }
 
 wpcli_plugin_verify() {
 
-    # $1 = ${plugin} could be --all?
+    # $1 = ${wp_site}
+    # $2 = ${plugin} could be --all?
 
-    local verify_plugin plugin
+    local wp_site=$1
+    local plugin=$2
 
-    plugin=$1
+    local verify_plugin   
 
-    verify_plugin=$(sudo -u www-data wp plugin verify-checksums "${plugin}" | grep ":" | cut -d ':' -f1)
+    if [ "${plugin}" = "" ]; then
+        plugin="--all"
+    fi
 
-    echo "${verify_plugin}" #if ok, return "Success"
+    echo -e ${B_GREEN}" > Running: sudo -u www-data wp --path="${wp_site}" plugin verify-checksums ${plugin}"${ENDCOLOR} >&2
+    mapfile verify_plugin < <(sudo -u www-data wp --path="${wp_site}" plugin verify-checksums "${plugin}" 2>&1)
+
+    # Return an array with wp-cli output
+    echo "${verify_plugin[@]}"
 
 }
 
@@ -137,23 +253,25 @@ wpcli_seoyoast_reindex() {
 
 }
 
-wpcli_verify_wp_core_installation() {
+wpcli_update_plugin(){
 
-    # $1 = ${wp_site} (site path)
-
-    local wp_site=$1
-
-    sudo -u www-data wp --path="${wp_site}" core verify-checksums --allow-root
-
-}
-
-wpcli_verify_wp_plugins_installation() {
-
-    # $1 = ${wp_site} (site path)
+    # $1 = ${wp_site}
+    # $2 = ${plugin} could be --all?
 
     local wp_site=$1
+    local plugin=$2
 
-    sudo -u www-data wp --path="${wp_site}" plugin verify-checksums --all --allow-root
+    local plugin_update   
+
+    if [ "${plugin}" = "" ]; then
+        plugin="--all"
+    fi
+
+    echo -e ${B_GREEN}" > Running: sudo -u www-data wp --path="${wp_site}" plugin update ${plugin} --format=json --quiet"${ENDCOLOR} >&2
+    mapfile plugin_update < <(sudo -u www-data wp --path="${wp_site}" plugin update "${plugin}" --format=json --quiet 2>&1)
+
+    # Return an array with wp-cli output
+    echo "${plugin_update[@]}"
 
 }
 
@@ -319,12 +437,12 @@ wpcli_search_and_replace() {
     # TODO: for some reason when it's run with --url always fails
     if $(wp --allow-root --url=http://${wp_site_url} core is-installed --network); then
 
-        echo "Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace} --network"
+        echo -e ${B_GREEN}" > Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace} --network"${ENDCOLOR} >&2
         wp --allow-root --path="${wp_site}" search-replace "${search}" "${replace}" --network
 
     else
 
-        echo "Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace}"
+        echo -e ${B_GREEN}" > Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace}"${ENDCOLOR} >&2
         wp --allow-root --path="${wp_site}" search-replace "${search}" "${replace}"
 
     fi
@@ -357,11 +475,37 @@ wpcli_reset_user_passw(){
     
 }
 
+wpcli_force_reinstall_plugins() {
+
+   # $1 = ${wp_site}
+   # $2 = ${plugin}
+
+    local wp_site=$1
+    local plugin=$2
+
+    local verify_plugin   
+
+    if [ "${plugin}" = "" ]; then
+        echo -e ${B_GREEN}" > Running: sudo -u www-data wp --path="${wp_site}" plugin install $(ls -1p ${wp_site}/wp-content/plugins | grep '/$' | sed 's/\/$//') --force"${ENDCOLOR} >&2
+        sudo -u www-data wp --path="${wp_site}" plugin install $(ls -1p ${wp_site}/wp-content/plugins | grep '/$' | sed 's/\/$//') --force
+    
+    else
+        echo -e ${B_GREEN}" > Running: sudo -u www-data wp --path="${wp_site}" plugin install "${plugin}" --force"${ENDCOLOR} >&2
+        sudo -u www-data wp --path="${wp_site}" plugin install "${plugin}" --force
+    
+    fi
+
+    # TODO: save ouput on array with mapfile
+    #mapfile verify_plugin < <(sudo -u www-data wp --path="${wp_site}" plugin verify-checksums "${plugin}" 2>&1)
+    #echo "${verify_plugin[@]}"
+
+}
+
 # The idea is that when you update wordpress or a plugin, get the actual version,
 # then run a dry-run update, if success, update but show a message if you want to
 # persist the update or want to do a rollback
 
-wpcli_rollback_plugin_version(){
+wpcli_rollback_plugin_version() {
 
     # TODO: implement this
     # $1= wp_site
@@ -375,7 +519,7 @@ wpcli_rollback_plugin_version(){
 
 }
 
-wpcli_rollback_wpcore_version(){
+wpcli_rollback_wpcore_version() {
 
     # TODO: implement this
 

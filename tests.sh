@@ -22,6 +22,8 @@ MUSER="root"
 # Nginx
 WSERVER="/etc/nginx"
 
+SITES="/var/www"
+
 # Backup rotation vars
 NOW=$(date +"%Y-%m-%d")
 NOWDISPLAY=$(date +"%d-%m-%Y")
@@ -55,6 +57,10 @@ source "${SFOLDER}/libs/backup_helper.sh"
 source "${SFOLDER}/libs/mysql_helper.sh"
 # shellcheck source=${SFOLDER}/libs/nginx_helper.sh
 source "${SFOLDER}/libs/nginx_helper.sh"
+# shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
+source "${SFOLDER}/libs/wpcli_helper.sh"
+# shellcheck source=${SFOLDER}/libs/wordpress_helper.sh
+source "${SFOLDER}/libs/wordpress_helper.sh"
 # shellcheck source=${SFOLDER}/libs/cloudflare_helper.sh
 source "${SFOLDER}/libs/cloudflare_helper.sh"
 
@@ -144,3 +150,29 @@ test_mysql_database_exists(){
 #cloudflare_change_a_record "domain.com" "test.domain.com"
 
 #change_phpv_nginx_server "domain.com" "7.4"
+
+startdir=${SITES}
+menutitle="Site Selection Menu"
+
+directory_browser "$menutitle" "$startdir"
+WP_SITE=$filepath"/"$filename
+
+echo -e ${B_GREEN}" > WP_SITE=${WP_SITE}"${ENDCOLOR}
+install_path=$(search_wp_config "${WP_SITE}")
+echo -e ${B_GREEN}" > install_path=${install_path}"${ENDCOLOR}
+
+mapfile -t wpcli_core_verify_results < <( wpcli_core_verify "${install_path}" )
+
+for wpcli_core_verify_result in "${wpcli_core_verify_results[@]}"
+do
+   echo " > ${wpcli_core_verify_result}"
+done
+
+mapfile -t wpcli_plugin_verify_results < <( wpcli_plugin_verify "${install_path}" )
+
+for wpcli_plugin_verify_result in "${wpcli_plugin_verify_results[@]}"
+do
+   echo " > ${wpcli_plugin_verify_result}"
+done
+
+wpcli_force_reinstall_plugins "${install_path}"
