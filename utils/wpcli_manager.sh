@@ -36,13 +36,14 @@ wpcli_main_menu() {
 
   local WPCLI_OPTIONS CHOSEN_WPCLI_OPTION CHOSEN_PLUGIN_OPTION
 
-  WPCLI_OPTIONS="01 INSTALL_PLUGINS 02 DELETE_THEMES 03 DELETE_PLUGINS 04 REINSTALL_PLUGINS 05 VERIFY_WP 06 UPDATE_WP 07 REINSTALL_WP 08 CLEAN_DB 09 PROFILE_WP 10 CHANGE_TABLES_PREFIX 11 REPLACE_URLs 12 SEOYOAST_REINDEX"
+  WPCLI_OPTIONS="01 INSTALL_PLUGINS 02 DELETE_THEMES 03 DELETE_PLUGINS 04 REINSTALL_ALL_PLUGINS 05 VERIFY_WP 06 UPDATE_WP 07 REINSTALL_WP 08 CLEAN_WP_DB 09 PROFILE_WP 10 CHANGE_TABLES_PREFIX 11 REPLACE_URLs 12 SEOYOAST_REINDEX"
   CHOSEN_WPCLI_OPTION=$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 $(for x in ${WPCLI_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
     if [[ ${CHOSEN_WPCLI_OPTION} == *"01"* ]]; then
 
+      # INSTALL_PLUGINS
       CHOSEN_PLUGIN_OPTION=$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to install." 20 78 15 "${WP_PLUGINS[@]}" 3>&1 1>&2 2>&3)
       echo "Setting CHOSEN_PLUGIN_OPTION=$CHOSEN_PLUGIN_OPTION"
 
@@ -54,6 +55,8 @@ wpcli_main_menu() {
     fi
 
     if [[ ${CHOSEN_WPCLI_OPTION} == *"02"* ]]; then
+
+      # DELETE_THEMES
 
       # Listing installed themes
       WP_DEL_THEMES=$(wp --path="${WP_SITE}" theme list --quiet --field=name --status=inactive --allow-root)
@@ -71,6 +74,8 @@ wpcli_main_menu() {
     fi
     if [[ ${CHOSEN_WPCLI_OPTION} == *"03"* ]]; then
 
+      # DELETE_PLUGINS
+
       # Listing installed plugins
       WP_DEL_PLUGINS=$(wp --path=${WP_SITE} plugin list --quiet --field=name --status=inactive --allow-root)
       array_to_checklist "$WP_DEL_PLUGINS"
@@ -86,47 +91,31 @@ wpcli_main_menu() {
 
     if [[ ${CHOSEN_WPCLI_OPTION} == *"04"* ]]; then
 
-      # Listing installed plugins
-      #WP_DEL_PLUGINS=$(wp --path=${WP_SITE} plugin list -quiet --field=name --status=inactive --allow-root)
-      echo "option 5: re-install plugins not implemented yet ..."
+      #REINSTALL_PLUGINS
+
+      wpcli_force_reinstall_plugins "${WP_SITE}"
 
     fi
 
     if [[ ${CHOSEN_WPCLI_OPTION} == *"05"* ]]; then
 
+      # VERIFY_WP
+
       echo -e ${B_CYAN}" > Verifying Core Checksum ..."${ENDCOLOR} >&2
-      wpcli_verify_wp_core_installation "${WP_SITE}"
+      wpcli_core_verify "${WP_SITE}"
 
       echo -e ${B_CYAN}" > Verifying Plugin Checksum ..."${ENDCOLOR} >&2
-      wpcli_verify_wp_plugins_installation "${WP_SITE}"
-
-      echo " > DONE"
+      wpcli_plugin_verify "${WP_SITE}"
 
     fi
 
     if [[ ${CHOSEN_WPCLI_OPTION} == *"06"* ]]; then
 
+      # UPDATE_WP
+
       #Run wp doctor before
-      echo -e ${B_CYAN}" > Checking WP Update ..."${ENDCOLOR} >&2
-      #echo -e ${B_CYAN}" > Executing: sudo -u www-data wp --path=${WP_SITE} doctor check core-update"${ENDCOLOR}
-      echo -e ${B_CYAN}" > Executing: wp --path=${WP_SITE} doctor check core-update --allow-root"${ENDCOLOR} >&2
-      #sudo -u www-data wp --path=${WP_SITE} doctor check core-update
-      wp --path="${WP_SITE}" doctor check core-update --allow-root
-
-      echo -e ${B_CYAN}" > Updating WP ..."${ENDCOLOR} >&2
-      #echo -e ${B_CYAN}" > Executing: sudo -u www-data wp --path=${WP_SITE} core update"${ENDCOLOR}
-      echo -e ${B_CYAN}" > Executing: wp --path=${WP_SITE} core update --allow-root"${ENDCOLOR} >&2
-      #sudo -u www-data wp --path=${WP_SITE} core update
-      wp --path="${WP_SITE}" core update --allow-root
-
-      echo -e ${B_CYAN}" > Updating WP DB ..."${ENDCOLOR} >&2
-      #echo -e ${B_CYAN}" > Executing: sudo -u www-data wp --path=${WP_SITE} core update-db"${ENDCOLOR}
-      echo -e ${B_CYAN}" > Executing: wp --path=${WP_SITE} core update-db --allow-root"${ENDCOLOR} >&2
-      #sudo -u www-data wp --path=${WP_SITE} core update-db
-      wp --path="${WP_SITE}" core update-db --allow-root
-
-      #TODO: run chown after executing with --allow-root
-      #chown -R www-data:www-data ${WP_SITE}
+      echo -e ${B_CYAN}" > WP Update ..."${ENDCOLOR} >&2
+      wpcli_core_update "${WP_SITE}"
 
       echo -e ${B_GREEN}" > DONE"${ENDCOLOR} >&2
 
@@ -134,15 +123,19 @@ wpcli_main_menu() {
 
     if [[ ${CHOSEN_WPCLI_OPTION} == *"07"* ]]; then
 
-      #It will download wordpress and replace core files (didnt delete other files)
-      echo -e ${B_CYAN}" > Reinstalling WP on: ${WP_SITE}"${ENDCOLOR}
-      sudo wp --path="${WP_SITE}" core download --skip-content --force --allow-root
+      # REINSTALL_WP
 
-      echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
+      echo -e ${B_CYAN}" > Reinstalling WP on: ${WP_SITE}"${ENDCOLOR} >&2
+
+      wpcli_core_reinstall "${WP_SITE}"
+
+      echo -e ${B_GREEN}" > DONE"${ENDCOLOR} >&2
 
     fi
 
     if [[ ${CHOSEN_WPCLI_OPTION} == *"08"* ]]; then
+
+      # CLEAN_DB
 
       echo -e ${B_CYAN}" > Deleting transient ..."${ENDCOLOR}
       wp --path=${WP_SITE} transient delete --expired --allow-root
@@ -155,6 +148,8 @@ wpcli_main_menu() {
     fi
 
     if [[ ${CHOSEN_WPCLI_OPTION} == *"09"* ]]; then
+
+      # PROFILE_WP
 
       #Install PROFILER_OPTIONS
       #https://guides.wp-bullet.com/using-wp-cli-wp-profile-to-diagnose-wordpress-performance-issues/
@@ -199,8 +194,11 @@ wpcli_main_menu() {
     fi
     if [[ ${CHOSEN_WPCLI_OPTION} == *"10"* ]]; then
 
+      # CHANGE_TABLES_PREFIX
+
       # Generate WP tables PREFIX
       TABLES_PREFIX=$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)
+
       # Change WP tables PREFIX
       wpcli_change_tables_prefix "${WP_SITE}" "${TABLES_PREFIX}"
 
@@ -208,6 +206,8 @@ wpcli_main_menu() {
 
     fi
     if [[ ${CHOSEN_WPCLI_OPTION} == *"11"* ]]; then
+
+      # REPLACE_URLs
 
       # Create tmp directory
       #mkdir ${SFOLDER}/tmp-backup
@@ -220,6 +220,8 @@ wpcli_main_menu() {
     fi
 
     if [[ ${CHOSEN_WPCLI_OPTION} == *"12"* ]]; then
+
+      # SEOYOAST_REINDEX
 
       wpcli_seoyoast_reindex "${WP_SITE}"
 

@@ -561,7 +561,7 @@ function __msg_info() {
 check_root() {
   # Check if user is root
   if [ "${USER}" != root ]; then
-    echo -e ${B_RED}" > Error: must be root! Exiting..."${ENDCOLOR}
+    echo -e ${B_RED}" > Error: Script runned by ${USER}, but must be root! Exiting..."${ENDCOLOR}
     exit 0
   fi
 
@@ -959,29 +959,34 @@ extract () {
     fi
 }
 
-cron_this () {
+install_crontab_script() {
 
-  #1 - croncmd ("/home/me/myfunction myargs > /home/me/myfunction.log 2>&1")
-  #2 - crontime ("0 */15 * * *")
+  # $1 = script
+  # $2 = hh (hour)
+  # $3 = mm (minutes)
 
-  croncmd=$1
-  crontime=$2
+  local script=$1
+  local hh=$2
+  local mm=$3
 
-  local cronjob="$crontime $croncmd"
-  
-  #Add it to the crontab, with no duplication
-  ( crontab -l | grep -v -F "$croncmd" ; echo "$cronjob" ) | crontab -
+  local cron_file
 
-}
+  cron_file="/var/spool/cron/crontabs/root"
 
-cron_remove () {
+  if [ ! -f ${cron_file} ]; then
+	  echo " > Cron file for root does not exist, creating ..."
+	  touch "${cron_file}"
+	  /usr/bin/crontab "${cron_file}"
+	fi
 
-  #1 - croncmd ("/home/me/myfunction myargs > /home/me/myfunction.log 2>&1")
-
-  croncmd=$1
-  
-  #Remove it from the crontab whatever its current schedule
-  ( crontab -l | grep -v -F "$croncmd" ) | crontab -
+  grep -qi "${script}" "${cron_file}"
+	if [ $? != 0 ]; then
+    echo " > Updating cron job for script ..."
+    /bin/echo "${mm} ${hh} * * * ${script}" >> "${cron_file}"
+    
+  else
+    echo " > Script already installed ..."
+	fi
 
 }
 
@@ -1167,7 +1172,7 @@ ask_mysql_root_psw() {
     if [ $exitstatus = 0 ]; then
       #echo "> Running: mysql -u root -p${MPASS} -e"
       until mysql -u root -p"${MPASS}" -e ";"; do
-        read -s -p "Can't connect to MySQL, please re-enter $MUSER password: " MPASS
+        read -s -p " > Can't connect to MySQL, please re-enter $MUSER password: " MPASS
       
       done
       echo "MPASS=${MPASS}" >>/root/.broobe-utils-options

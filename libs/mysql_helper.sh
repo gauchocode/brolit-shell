@@ -70,18 +70,20 @@ mysql_user_delete() {
     local sql_2="FLUSH PRIVILEGES;"
 
     echo " > Deleting ${db_user} user in MySQL ..." >>$LOG
+
     mysql -u "${MUSER}" -p"${MPASS}" -e "${sql_1}${sql_2}" >>$LOG
 
     if [ $? -eq 0 ]; then
         echo " > Database user: ${db_user} deleted ok!" >>$LOG
         echo -e ${GREEN}" > Database user: ${db_user} deleted ok!"${ENDCOLOR} >&2
-        return 0
+        
+        echo 0
 
     else
         echo " > Something went wrong deleting user: ${db_user}" >>$LOG
         echo -e ${B_RED}" > Something went wrong deleting user: ${db_user}"${ENDCOLOR} >&2
-        exit 1
-        #return 1
+        
+        echo 1
 
     fi
 
@@ -98,18 +100,21 @@ mysql_user_psw_change() {
     SQL1="ALTER USER '${db_user}'@'localhost' IDENTIFIED BY '${db_user_psw}';"
     SQL2="FLUSH PRIVILEGES;"
 
-    echo " > Deleting ${db_user} user in MySQL ..." >>$LOG
+    echo " > Changing password for ${db_user} user in MySQL ..." >>$LOG
+
     mysql -u "${MUSER}" -p"${MPASS}" -e "${SQL1}${SQL2}" >>$LOG
 
     if [ $? -eq 0 ]; then
         echo " > DONE!" >>$LOG
-        echo -e ${GREEN}" > DONE!"${ENDCOLOR}
-        return 0
+        echo -e ${GREEN}" > DONE!"${ENDCOLOR} >&2
+        
+        echo 0
 
     else
-        echo " > Something went wrong!" >>$LOG
-        echo -e ${B_RED}" > Something went wrong!"${ENDCOLOR}
-        exit 1
+        echo " > Something went wrong changing mysql user pass!" >>$LOG
+        echo -e ${B_RED}" > Something went wrong changing mysql user pass!"${ENDCOLOR} >&2
+        
+        echo 1
 
     fi
 
@@ -131,13 +136,15 @@ mysql_user_grant_privileges() {
 
     if [ $? -eq 0 ]; then
         echo " > Privileges granted ok!" >>$LOG
-        echo -e ${GREEN}" > Privileges granted ok!"${ENDCOLOR}
-        return 0
+        echo -e ${GREEN}" > Privileges granted ok!"${ENDCOLOR} >&2
+        
+        echo 0
 
     else
         echo " > Something went wrong granting privileges to ${db_user}!" >>$LOG
-        echo -e ${B_RED}" > Something went wrong granting privileges to ${db_user}!"${ENDCOLOR}
-        return 1
+        echo -e ${B_RED}" > Something went wrong granting privileges to ${db_user}!"${ENDCOLOR} >&2
+        
+        echo 1
 
     fi
 
@@ -175,6 +182,34 @@ mysql_database_exists() {
         #return 0 if database exists
         echo 0
     fi
+
+}
+
+mysql_name_sanitize(){
+
+    # $1 = ${name} database_name or user_name
+
+    local string=$1
+
+    local clean
+
+    echo -e ${B_CYAN}" > Running mysql_name_sanitize for ${string}"${ENDCOLOR}>&2
+
+    # first, strip "-"
+    clean=${string//-/}
+
+    # next, replace "." with "_"
+    clean=${clean//./_}
+
+    # now, clean out anything that's not alphanumeric or an underscore
+    clean=${clean//[^a-zA-Z0-9_]/}
+
+    # finally, lowercase with TR
+    clean=$(echo -n "${clean}" | tr A-Z a-z)
+
+    echo -e ${B_CYAN}" > Sanitized name: ${clean}"${ENDCOLOR}>&2
+
+    echo "${clean}"
 
 }
 

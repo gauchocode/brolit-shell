@@ -71,7 +71,20 @@ if [ $exitstatus = 0 ]; then
   change_ownership "www-data" "www-data" "${project_dir}"
 
   # Create database and user
-  wp_database_creation "${project_name}" "${project_state}"
+  db_project_name=$(mysql_name_sanitize "${project_name}")
+  database_name="${db_project_name}_${project_state}" 
+  database_user="${db_project_name}_user"
+  database_user_passw=$(openssl rand -hex 12)
+
+  echo -e ${CYAN}"******************************************************************************************"${ENDCOLOR} >&2
+  echo -e ${CYAN}" > Creating database ${database_name}, and user ${database_user} with pass ${database_user_passw}"${ENDCOLOR} >&2
+  echo -e ${CYAN}"******************************************************************************************"${ENDCOLOR} >&2
+
+  echo " > Creating database ${database_name}, and user ${database_user} with pass ${database_user_passw}" >>$LOG
+
+  mysql_database_create "${database_name}"
+  mysql_user_create "${database_user}" "${database_user_passw}"
+  mysql_user_grant_privileges "${database_user}" "${database_name}"
 
   # Cloudflare API to change DNS records
   cloudflare_change_a_record "${root_domain}" "${project_domain}"

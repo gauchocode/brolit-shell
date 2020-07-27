@@ -9,7 +9,7 @@
 #
 ################################################################################
 
-SCRIPT_V="3.0-rc05"
+SCRIPT_V="3.0-rc06"
 
 ### Init #######################################################################
 
@@ -31,7 +31,6 @@ source "${SFOLDER}/libs/mail_notification_helper.sh"
 # shellcheck source=${SFOLDER}/libs/packages_helper.sh
 source "${SFOLDER}/libs/packages_helper.sh"
 
-check_root
 check_distro
 
 checking_scripts_permissions
@@ -155,6 +154,8 @@ export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_B
 if [ -t 1 ]; then
 
   ### Running from terminal
+
+  check_root #moved here, because if runned by cron, sometimes fails
 
   if [[ -z "${MPASS}" || -z "${SITES}"|| 
         -z "${SMTP_U}" || -z "${SMTP_P}" || -z "${SMTP_TLS}" || -z "${SMTP_PORT}" || -z "${SMTP_SERVER}" || -z "${SMTP_P}" || -z "${MAILA}" ||
