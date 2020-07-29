@@ -36,7 +36,7 @@ wpcli_main_menu() {
 
   local WPCLI_OPTIONS CHOSEN_WPCLI_OPTION CHOSEN_PLUGIN_OPTION
 
-  WPCLI_OPTIONS="01 INSTALL_PLUGINS 02 DELETE_THEMES 03 DELETE_PLUGINS 04 REINSTALL_ALL_PLUGINS 05 VERIFY_WP 06 UPDATE_WP 07 REINSTALL_WP 08 CLEAN_WP_DB 09 PROFILE_WP 10 CHANGE_TABLES_PREFIX 11 REPLACE_URLs 12 SEOYOAST_REINDEX"
+  WPCLI_OPTIONS="01 INSTALL_PLUGINS 02 DELETE_THEMES 03 DELETE_PLUGINS 04 REINSTALL_ALL_PLUGINS 05 VERIFY_WP 06 UPDATE_WP 07 REINSTALL_WP 08 CLEAN_WP_DB 09 PROFILE_WP 10 CHANGE_TABLES_PREFIX 11 REPLACE_URLs 12 SEOYOAST_REINDEX 13 DELETE_NOT_CORE_FILES"
   CHOSEN_WPCLI_OPTION=$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 $(for x in ${WPCLI_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
@@ -227,12 +227,25 @@ wpcli_main_menu() {
 
     fi
 
+    if [[ ${CHOSEN_WPCLI_OPTION} == *"13"* ]]; then
+
+      # DELETE_NOT_CORE_FILES
+
+      echo -e ${B_RED} " > This script will delete all non-core wordpress files (except wp-content). Do you want to continue? [y/n]" ${ENDCOLOR}
+      read -r answer
+      
+      if [[ $answer == "y" ]]; then
+          wpcli_delete_not_core_files "${WP_SITE}"
+      
+      fi   
+
+    fi
+
     prompt_return_or_finish
     wpcli_main_menu
 
   else
 
-    prompt_return_or_finish
     main_menu
 
   fi

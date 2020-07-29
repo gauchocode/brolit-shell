@@ -145,7 +145,11 @@ wpcli_core_reinstall() {
 
     local wp_site=$1
 
+    echo -e ${B_GREEN}" > Running: sudo -u www-data wp --path="${wp_site}" core download --skip-content --force "${ENDCOLOR} >&2
+
     sudo -u www-data wp --path="${wp_site}" core download --skip-content --force 
+
+    echo -e ${B_GREEN}" > DONE!"${ENDCOLOR} >&2
 
 }
 
@@ -172,11 +176,11 @@ wpcli_core_update() {
         # Rewrite Flush
         sudo -u www-data wp --path="${wp_site}" rewrite flush
 
-        echo -e ${B_GREEN}" > Wordpress Core Updated!"${ENDCOLOR}
+        echo -e ${B_GREEN}" > Wordpress Core Updated!"${ENDCOLOR} >&2
 
     else
 
-        echo -e ${B_RED}" > Wordpress Core Update Failed!"${ENDCOLOR}
+        echo -e ${B_RED}" > Wordpress Core Update Failed!"${ENDCOLOR} >&2
     
     fi
 
@@ -218,6 +222,31 @@ wpcli_plugin_verify() {
 
     # Return an array with wp-cli output
     echo "${verify_plugin[@]}"
+
+}
+
+wpcli_delete_not_core_files() {
+
+    # $1 = ${wp_site}
+
+    local wp_site=$1
+
+    mapfile -t wpcli_core_verify_results < <( wpcli_core_verify "${wp_site}" )
+
+    for wpcli_core_verify_result in "${wpcli_core_verify_results[@]}"
+    do
+        # Check results
+        wpcli_core_verify_result_file=$(echo "${wpcli_core_verify_result}" |  grep "should not exist" | cut -d ":" -f3)
+        
+        # Remove white space
+        wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
+        
+        if test -f "${install_path}/${wpcli_core_verify_result_file}"; then
+            echo " > Deleting not core file: ${install_path}/${wpcli_core_verify_result_file}"
+            rm "${install_path}/${wpcli_core_verify_result_file}"
+        fi
+
+    done
 
 }
 
