@@ -151,28 +151,25 @@ test_mysql_database_exists(){
 
 #change_phpv_nginx_server "domain.com" "7.4"
 
-startdir=${SITES}
-menutitle="Site Selection Menu"
+#startdir=${SITES}
+#menutitle="Site Selection Menu"
 
-directory_browser "$menutitle" "$startdir"
-WP_SITE=$filepath"/"$filename
+#directory_browser "$menutitle" "$startdir"
+#WP_SITE=$filepath"/"$filename
 
-echo -e ${B_GREEN}" > WP_SITE=${WP_SITE}"${ENDCOLOR}
-install_path=$(search_wp_config "${WP_SITE}")
-echo -e ${B_GREEN}" > install_path=${install_path}"${ENDCOLOR}
+#echo -e ${B_GREEN}" > WP_SITE=${WP_SITE}"${ENDCOLOR}
+#install_path=$(search_wp_config "${WP_SITE}")
+#echo -e ${B_GREEN}" > install_path=${install_path}"${ENDCOLOR}
 
-mapfile -t wpcli_core_verify_results < <( wpcli_core_verify "${install_path}" )
+#wpcli_core_reinstall "${install_path}"
 
-for wpcli_core_verify_result in "${wpcli_core_verify_results[@]}"
-do
-   echo " > ${wpcli_core_verify_result}"
-done
+#wpcli_delete_not_core_files "${install_path}"
 
-mapfile -t wpcli_plugin_verify_results < <( wpcli_plugin_verify "${install_path}" )
+#mapfile -t wpcli_plugin_verify_results < <( wpcli_plugin_verify "${install_path}" )
 
-for wpcli_plugin_verify_result in "${wpcli_plugin_verify_results[@]}"
-do
-   echo " > ${wpcli_plugin_verify_result}"
-done
+#for wpcli_plugin_verify_result in "${wpcli_plugin_verify_results[@]}"
+#do
+#   echo " > ${wpcli_plugin_verify_result}"
+#done
 
-wpcli_force_reinstall_plugins "${install_path}"
+#wpcli_force_reinstall_plugins "${install_path}"
