@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc06
+# Version: 3.0-rc07
 ################################################################################
 #
 # https://www.cyberciti.biz/faq/ubuntu-20-04-lts-change-hostname-permanently/
@@ -87,9 +87,6 @@ it_utils_menu() {
       fi
     fi
 
-  else
-    exit 1
-
   fi
 }
 
@@ -99,17 +96,27 @@ change_current_ssh_port() {
 
   local new_ssh_port=$1
 
+  local current_ssh_port
+
+  log_event "info" "Trying to change current SSH port" "true"
+
   # get current ssh port
-  #CURRENT_SSH_PORT=$(grep "Port" /etc/ssh/sshd_config | awk -F " " '{print $2}')
+  current_ssh_port=$(grep "Port" /etc/ssh/sshd_config | awk -F " " '{print $2}')
+  log_event "info" "Current SSH port: ${current_ssh_port}" "true"
 
   # download secure sshd_config
   sudo cp -f "assets/ssh/sshd_config" "/etc/ssh/sshd_config"
 
   # change ssh default port
   sudo sed -i "s/Port 22/Port ${new_ssh_port}/" "/etc/ssh/sshd_config"
+  log_event "info" "Changes made on /etc/ssh/sshd_config" "true"
+
+  log_event "info" "New SSH port: ${new_ssh_port}" "true"
 
   # restart ssh service
   sudo service ssh restart
+
+  log_event "info" "SSH service restarted" "true"
 
 }
 
@@ -124,8 +131,7 @@ change_server_hostname() {
   cur_hostname=$(cat /etc/hostname)
 
   # Display the current hostname
-  echo " > Current hostname: ${cur_hostname}" >>$LOG
-  echo -e "${CYAN} > Current hostname: ${cur_hostname}">&2
+  log_event "info" "Current hostname: ${cur_hostname}" "true"
 
   # Change the hostname
   hostnamectl set-hostname "${new_hostname}"
@@ -136,8 +142,7 @@ change_server_hostname() {
   sed -i "s/${cur_hostname}/${new_hostname}/g" /etc/hostname
 
   # Display new hostname
-  echo " > New hostname: ${new_hostname}" >>$LOG
-  echo -e "${CYAN} > New hostname: ${new_hostname}">&2
+  log_event "info" "New hostname: ${new_hostname}" "true"
 
 }
 
@@ -151,8 +156,7 @@ add_floating_IP() {
 
   ubuntu_v=$(get_ubuntu_version)
 
-  echo " > Trying to add ${floating_IP} as floating ip on Ubuntu ${ubuntu_v}" >>$LOG
-  echo -e ${B_CYAN}" > Trying to add ${floating_IP} as floating ip on Ubuntu ${ubuntu_v}"${ENDCOLOR} >&2
+  log_event "info" "Trying to add ${floating_IP} as floating ip on Ubuntu ${ubuntu_v}" "true"
 
   if [ "${ubuntu_v}" == "1804" ]; then
    
@@ -160,6 +164,8 @@ add_floating_IP() {
    sudo sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/network/interfaces.d/60-my-floating-ip.cfg
    
    sudo service networking restart
+
+   log_event "success" "New IP ${floating_IP} added" "true"
    
   else
 
@@ -170,16 +176,19 @@ add_floating_IP() {
       
       sudo netplan apply
 
+      log_event "success" "New IP ${floating_IP} added" "true"
+
     else
 
-      echo " > ERROR: This script only run on Ubuntu 20.04 or 18.04 ... Exiting"
-      exit 1
+      log_event "error" "This script only run on Ubuntu 20.04 or 18.04 ... Exiting" "true"
+      return 1
 
     fi
 
   fi
 
-  # TODO: reboot message
+  # TODO: reboot prompt
+  #log_event "info" "Is recommended reboot, do you want to do it now?" "true"
 
 }
 

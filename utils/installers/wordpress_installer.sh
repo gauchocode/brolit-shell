@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc06
+# Version: 3.0-rc07
 ################################################################################
 #
 # TODO: check when add www.DOMAIN.com and then select other stage != prod
@@ -80,13 +80,11 @@ if [ $exitstatus = 0 ]; then
       #cd "${folder_to_install}"
       copy_project_files "${folder_to_install}/${copy_project}" "${project_dir}"
 
-      echo -e ${B_GREEN}" > WordPress copy OK!"${ENDCOLOR}
-      echo " > WordPress copy OK!" >>$LOG
+      log_event "success" "WordPress files copied" "true"
 
     else
-      echo -e ${B_RED}" > ERROR: Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..."${ENDCOLOR}
-      echo " > ERROR: Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..." >>$LOG
-      exit 1
+      log_event "error" "Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..." "true"
+      return 1
 
     fi
 
@@ -127,12 +125,9 @@ if [ $exitstatus = 0 ]; then
   database_user_passw=$(openssl rand -hex 12)
 
   echo -e ${CYAN}"******************************************************************************************"${ENDCOLOR} >&2
-  echo -e ${CYAN}" > Creating database ${database_name}, and user ${database_user} with pass ${database_user_passw}"${ENDCOLOR} >&2
+  log_event "info" "Creating database ${database_name}, and user ${database_user} with pass ${database_user_passw}" "true"
   echo -e ${CYAN}"******************************************************************************************"${ENDCOLOR} >&2
 
-  echo " > Creating database ${database_name}, and user ${database_user} with pass ${database_user_passw}" >>$LOG
-
-  #wp_database_creation "${project_name}" "${project_state}"
   mysql_database_create "${database_name}"
   mysql_user_create "${database_user}" "${database_user_passw}"
   mysql_user_grant_privileges "${database_user}" "${database_name}"
@@ -144,8 +139,7 @@ if [ $exitstatus = 0 ]; then
 
   if [[ ${installation_type} == *"COPY"* ]]; then
 
-    echo " > Copying database ..." >>$LOG
-    echo -e ${YELLOW}" > Copying database ..."${ENDCOLOR}
+    log_event "info" "Copying database ${database_name} ..." "true"
 
     # Create dump file
     bk_folder="${SFOLDER}/tmp/"
@@ -159,13 +153,12 @@ if [ $exitstatus = 0 ]; then
     mysql_database_export "${db_tocopy}" "${bk_folder}${bk_file}"
     if [ "$?" -eq 0 ]; then
 
-      echo " > mysqldump for ${db_tocopy} OK ..." >>$LOG
-      echo -e ${GREEN}" > mysqldump for ${db_tocopy} OK ..."${ENDCOLOR}
+      log_event "success" "mysqldump for ${db_tocopy} OK" "true"
 
-      echo " > Trying to import database ..." >>$LOG
-      echo -e ${YELLOW}" > Trying to import database ..."${ENDCOLOR}
-
+      # Target database
       target_db="${project_name}_${project_state}"
+
+      log_event "info" "Trying to import database: ${target_db}" "true"
 
       # Importing dump file
       mysql_database_import "${target_db}" "${bk_folder}${bk_file}"
@@ -185,17 +178,17 @@ if [ $exitstatus = 0 ]; then
       ask_url_search_and_replace "${project_dir}"
 
     else
-      echo " > mysqldump ERROR: $? ..." >>$LOG
-      echo -e ${B_RED}" > mysqldump ERROR: $? ..."${ENDCOLOR}
-      echo -e ${B_RED}" > Aborting ..."${ENDCOLOR}
-      exit 1
+      log_event "error" "mysqldump message: $?" "true"
+      return 1
 
     fi
 
   fi
 
+  # TODO: ask for Cloudflare support
+
   # Cloudflare API to change DNS records
-  cloudflare_change_a_record "${root_domain}" "${project_domain}"
+  cloudflare_change_a_record "${root_domain}" "${project_domain}" "false"
 
   # New site Nginx configuration
   create_nginx_server "${project_domain}" "wordpress"
@@ -203,8 +196,9 @@ if [ $exitstatus = 0 ]; then
   # HTTPS with Certbot
   certbot_certificate_install "${MAILA}" "${project_domain}"
 
-  echo " > WORDPRESS INSTALLATION FINISHED!" >>$LOG
-  echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FINISHED!"${ENDCOLOR}
+  #cloudflare_change_a_record "${root_domain}" "${project_domain}" "true"
+
+  log_event "success" "Wordpress installation finished!" "true"
 
 fi
 

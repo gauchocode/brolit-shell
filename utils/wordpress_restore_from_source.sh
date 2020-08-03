@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc06
+# Version: 3.0-rc07
 #############################################################################
 
 ### Checking some things
@@ -177,23 +177,22 @@ else
 
   # Database Backup details
   bk_db_file=${source_database##*/}
-  echo -e ${MAGENTA}" > bk_db_file= ${bk_db_file} ..."${ENDCOLOR}
+  #echo -e ${MAGENTA}" > bk_db_file= ${bk_db_file} ..."${ENDCOLOR}
 
   # File Backup details
   bk_f_file=${source_files##*/}
-  echo -e ${MAGENTA}" > bk_f_file= ${bk_f_file} ..."${ENDCOLOR}
+  #echo -e ${MAGENTA}" > bk_f_file= ${bk_f_file} ..."${ENDCOLOR}
 
   # Download File Backup
-  echo -e ${CYAN}" > Downloading file backup ${source_files} ..."${ENDCOLOR}
+  log_event "info" "Downloading file backup ${source_files}" "true"
   wget "${source_files}" >>$LOG
 
   # Uncompressing
-  echo -e ${CYAN}" > Uncompressing file backup ..."${ENDCOLOR}
-  #unzip "${bk_f_file}"
+  log_event "info" "Uncompressing file backup: ${bk_f_file}" "true"
   extract "${bk_f_file}"
 
   # Download Database Backup
-  echo -e ${CYAN}" > Downloading database backup ${source_database}..."${ENDCOLOR} >>$LOG
+  log_event "info" "Downloading database backup ${source_database}" "true"
   wget "${source_database}" >>$LOG
 
   # Create database and user
@@ -271,12 +270,6 @@ certbot_helper_installer_menu "${MAILA}" "${project_domain}"
 # WP Search and Replace URL
 ask_url_search_and_replace
 
-# Log End
-END_TIME=$(date +%s)
-ELAPSED_TIME=$(expr "${END_TIME}" - "${START_TIME}")
-
-echo "Backup :: Script End -- $(date +%Y%m%d_%H%M)" >>$LOG
-
 HTMLOPEN='<html><body>'
 BODY_SRV_MIG='Migración finalizada en '${ELAPSED_TIME}'<br/>'
 BODY_DB='Database: '${project_name}'_'${project_state}'<br/>Database User: '${project_name}'_user <br/>Database User Pass: '${DB_PASS}'<br/>'
@@ -284,3 +277,8 @@ BODY_DB='Database: '${project_name}'_'${project_state}'<br/>Database User: '${pr
 HTMLCLOSE='</body></html>'
 
 sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${VPSNAME} - Migration Complete: ${project_name}" -o message-content-type=html -m "$HTMLOPEN $BODY_SRV_MIG $BODY_DB $BODY_CLF $HTMLCLOSE" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}
+
+# Log End
+#END_TIME=$(date +%s)
+#ELAPSED_TIME=$(expr "${END_TIME}" - "${START_TIME}")
+#log_event "info" "Backup: Script End -- $(date +%Y%m%d_%H%M)" "true"

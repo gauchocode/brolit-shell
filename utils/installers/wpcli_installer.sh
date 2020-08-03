@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc06
+# Version: 3.0-rc07
 ################################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
@@ -25,21 +25,18 @@ if [ "${WPCLI_INSTALLED}" = "true" ]; then
 
         fi
         if [[ ${CHOSEN_WPCLI_INSTALLER_OPTION} == *"02"* ]]; then
-
-            echo -e ${CYAN}" > Uninstalling wp-cli ..."${ENDCOLOR}
             wpcli_uninstall
 
         fi
 
     else
-        echo -e ${YELLOW}" > Operation cancelled ..."${ENDCOLOR}
-        exit 1
+        log_event "info" "Operation cancelled ..." "true"
+        return 1
 
     fi
 
 else
 
-    echo -e ${CYAN}" > Installing wp-cli ..."${ENDCOLOR}
     wpcli_install
 
 fi

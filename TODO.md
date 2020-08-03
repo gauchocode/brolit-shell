@@ -1,26 +1,29 @@
 # TODO List
 
+### Need more testing
+- [ ] WordPress install fails when set a project name like: xyz_sub_domain (could be a problem with sed on wordpress installer)
+
 ### In Progress
 
-- [ ] Option to install script on crontab (use cron_this function)
-- [ ] Option to change SSH port: https://wiki.hetzner.de/index.php/Cloud_floating_IP_persistent/en
-- [ ] WordPress install fails when set a project name like: xyz_sub_domain (could be a problem with sed on wordpress installer)
+- [ ] Better log with log_event functions (commons.sh)
+- [ ] make_project_backup is broken, need a refactor asap!
 
 ### Done ✓
 
-- [x] Create TODO.md
+- [x] Option to change SSH port.
 - [x] Option to change hostname: https://www.cyberciti.biz/faq/ubuntu-20-04-lts-change-hostname-permanently/
 - [x] Option to floating IP: https://wiki.hetzner.de/index.php/Cloud_floating_IP_persistent/en
+- [x] WP-CLI is required to the script works propperly, must install on script setup.
+- [x] New option to put a website offline/online.
+- [x] Option to install script on crontab (use cron_this function)
 
 ## TODO
 
 ### For release 3.0-final
 
 - [ ] When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?)
-- [ ] WP-CLI is required to the script works propperly, must install on script setup.
-- [ ] New option to put a website offline. Removing nginx/sites-enabled site file, renaming /var/www/domain to domain-OFFLINE and finally restarting nginx service.
-- [ ] New option to put a website online. Adding nginx/sites-enabled site file, renaming /var/www/domain-OFFLINE to domain and finally restarting nginx service.
-- [ ] On LEMP setup, afther basic installation must init plugin options wizard before ask to install aditional packages
+- [ ] On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages
+- [ ] php_reconfigure refactor (replace strings instead of replace entired config files)
 
 ### For release 3.1
 
@@ -49,7 +52,6 @@
         The idea is that you could create/copy/delete/update different kind of projects (WP, Laravel, React, Composer, Empty)
         Maybe add this for Laravel: https://gitlab.com/broobe/laravel-boilerplate/-/tree/master
         Important: if create a project with stage different than prod, block search engine indexation
-- [ ] Better log with check_result and log_event functions (commons.sh)
 - [ ] Complete refactor of delete_project script
 - [ ] COPY_FROM_PROJECT option to exclude uploads directory: 
         rsync -ax --exclude [relative path to directory to exclude] /path/from /path/to

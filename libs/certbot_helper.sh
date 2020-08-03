@@ -1,12 +1,10 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc06
+# Version: 3.0-rc07
 ################################################################################
 #
-# Refs: 
-#       https://certbot.eff.org/docs/using.html
-#       https://certbot.eff.org/docs/using.html#certbot-commands
+# Ref: https://certbot.eff.org/docs/using.html#certbot-commands
 #
 ################################################################################
 
@@ -17,40 +15,40 @@ source "${SFOLDER}/libs/commons.sh"
 
 certbot_certificate_install() {
 
-  #$1 = EMAIL
-  #$2 = DOMAINS
+  #$1 = ${email}
+  #$2 = ${domains}
 
   local email=$1
   local domains=$2
 
-  echo -e ${B_CYAN}" > Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains}"${ENDCOLOR}
-  echo " > Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains}" >>$LOG
+  log_event "info" "Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains}" "true"
+  
   certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}"
 
 }
 
 certbot_certificate_expand(){
   
-  #$1 = EMAIL
-  #$2 = DOMAINS
+  #$1 = ${email}
+  #$2 = ${domains}
 
   local email=$1
   local domains=$2
 
-  echo -e ${B_CYAN}" > Running: certbot --nginx --non-interactive --agree-tos --expand --redirect -m ${email} -d ${domains}"${ENDCOLOR}
-  echo " > Running: certbot --nginx --non-interactive --agree-tos --expand --redirect -m ${email} -d ${domains}" >>$LOG
+  log_event "info" "Running: certbot --nginx --non-interactive --agree-tos --expand --redirect -m ${email} -d ${domains}" "true"
+
   certbot --nginx --non-interactive --agree-tos --expand --redirect -m "${email}" -d "${domains}"
 
 }
 
 certbot_certificate_renew() {
 
-  #$1 = DOMAINS
+  #$1 = ${domains}
 
   local domains=$1
 
-  echo -e ${B_CYAN}" > Running: certbot renew -d ${domains}"${ENDCOLOR}
-  echo " > Running: certbot renew -d ${domains}" >>$LOG
+  log_event "info" "Running: certbot renew -d ${domains}" "true"
+
   certbot renew -d "${domains}"
 
 }
@@ -59,40 +57,28 @@ certbot_certificate_renew_test() {
 
   # Test renew for all installed certificates
 
-  echo -e ${B_CYAN}" > certbot renew --dry-run"${ENDCOLOR}
-  echo " > Running: certbot renew --dry-run" >>$LOG
-  certbot renew --dry-run
+  log_event "info" "Running: certbot renew --dry-run -d "${domains}"" "true"
+  
+  certbot renew --dry-run -d "${domains}"
 
 }
-
-
 
 certbot_certificate_force_renew() {
 
-  #$1 = DOMAINS
+  #$1 = ${domains}
 
   local domains=$1
 
-  echo -e ${B_CYAN}" > Running: certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m ${email} -d ${domains}"${ENDCOLOR}
-  echo " > Running: certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m ${email} -d ${domains}" >>$LOG
+  log_event "info" "Running: certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m ${email} -d ${domains}" "true"
+  
   certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m "${email}" -d "${domains}"
-
-}
-
-certbot_renew_test() {
-
-  #$1 = DOMAINS
-
-  local domains=$1
-
-  certbot renew --dry-run -d "${domains}"
 
 }
 
 certbot_helper_installer_menu() {
 
-  #$1 = EMAIL
-  #$2 = DOMAINS
+  #$1 = ${email}
+  #$2 = ${domains}
 
   local email=$1
   local domains=$2
@@ -105,12 +91,10 @@ certbot_helper_installer_menu() {
 
     if [[ ${CHOSEN_CB_INSTALLER_OPTION} == *"01"* ]]; then
       certbot_certificate_install "${email}" "${domains}"
-      #certbot_helper_installer_menu
 
     fi
     if [[ ${CHOSEN_CB_INSTALLER_OPTION} == *"02"* ]]; then
       certbot_certonly "${email}" "${domains}"
-      #certbot_helper_installer_menu
 
     fi
 
@@ -120,58 +104,59 @@ certbot_helper_installer_menu() {
 
 certbot_certonly() {
 
-  # ATENCION: creo que el mejor camino es correr primero el certbot --nginx y luego el certbot certonly
-  # por que el certbot --nginx ya te modifica los archivos de configuracion de nginx y agrega los .pem etc
-  # entonces al quedar ya agregados luego el certonly solo pisa esos .pem pero las referencias a esos archivos
-  # ya quedaron en los archivos de conf de nginx
+  # IMPORTANT: maybe we could create a certbot_cloudflare_certificate that runs first the nginx certbot
+  # and then the certonly with cloudflare credentials
 
   # Ref: https://mangolassi.it/topic/18355/setup-letsencrypt-certbot-with-cloudflare-dns-authentication-ubuntu/2
 
-  # $1 = EMAIL
-  # $2 = DOMAINS (domain.com,www.domain.com)
+  # $1 = email
+  # $2 = domains (domain.com,www.domain.com)
 
   local email=$1
   local domains=$2
 
-  echo -e ${B_CYAN}"Running: certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m ${email} -d ${domains} --preferred-challenges dns-01"${ENDCOLOR}
-  certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m ${email} -d ${domains} --preferred-challenges dns-01
+  log_event "info" "Running: certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m ${email} -d ${domains} --preferred-challenges dns-01" "true"
+  
+  certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m "${email}" -d "${domains}" --preferred-challenges dns-01
 
   # Maybe add a non interactive mode?
   # certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf --non-interactive --agree-tos --redirect -m ${EMAIL} -d ${DOMAINS} --preferred-challenges dns-01
 
-  echo -e ${MAGENTA}"Now you need to follow the next steps:"${ENDCOLOR}
-  echo -e ${MAGENTA}"1- Login to your Cloudflare account and select the domain we want to work."${ENDCOLOR}
-  echo -e ${MAGENTA}"2- Go to de 'DNS' option panel and Turn ON the proxy Cloudflare setting over the domain/s"${ENDCOLOR}
-  echo -e ${MAGENTA}"3- Go to 'SSL/TLS' option panel and change the SSL setting from 'Flexible' to 'Full'."${ENDCOLOR}
+  #echo -e ${MAGENTA}"Now you need to follow the next steps:"${ENDCOLOR}
+  #echo -e ${MAGENTA}"1- Login to your Cloudflare account and select the domain we want to work."${ENDCOLOR}
+  #echo -e ${MAGENTA}"2- Go to de 'DNS' option panel and Turn ON the proxy Cloudflare setting over the domain/s"${ENDCOLOR}
+  #echo -e ${MAGENTA}"3- Go to 'SSL/TLS' option panel and change the SSL setting from 'Flexible' to 'Full'."${ENDCOLOR}
 
 }
 
 certbot_show_certificates_info() {
 
-  echo -e ${B_CYAN}"Running: certbot certificates"${ENDCOLOR}
+  log_event "info" "Running: certbot certificates" "true"
+
   certbot certificates
 
 }
 
 certbot_show_domain_certificates_expiration_date() {
 
-  # $1 = DOMAINS (domain.com,www.domain.com)
+  # $1 = domains (domain.com,www.domain.com)
 
   local domains=$1
 
-  #echo -e ${CYAN}"Running: certbot certificates --cert-name ${DOMAINS}"${ENDCOLOR}
+  log_event "info" "Running: certbot certificates --cert-name ${domains}" "true"
+
   certbot certificates --cert-name "${domains}" | grep 'Expiry' | cut -d ':' -f2 | cut -d ' ' -f2
 
 }
 
 certbot_show_domain_certificates_valid_days() {
 
-  # $1 = DOMAINS (domain.com,www.domain.com)
+  # $1 = domains (domain.com,www.domain.com)
 
   local domains=$1
 
-  #echo -e ${CYAN}"Running: certbot certificates --cert-name ${DOMAINS}"${ENDCOLOR}
   certbot certificates --cert-name "${domains}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2
+
 }
 
 certbot_certificate_delete() {
@@ -269,15 +254,19 @@ certbot_helper_menu() {
     fi
     if [[ ${chosen_cb_options} == *"06"* ]]; then
       certbot_show_certificates_info
-      read -n 1 -p "Press any key to return to the certbot menu" "mainmenuinput"
-      certbot_helper_menu
+      #read -n 1 -p "Press any key to return to the certbot menu" "mainmenuinput"
+      #certbot_helper_menu
 
     fi
 
-  else
     prompt_return_or_finish
+
+  else
+    
     certbot_helper_menu
 
   fi
+
+  main_menu
 
 }

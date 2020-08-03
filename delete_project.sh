@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc06
+# Version: 3.0-rc07
 ################################################################################
 
 ### Checking some things
@@ -62,8 +62,7 @@ else
     project_db_user=$(get_project_db_user "${project_type}")
     project_db_pass=$(get_project_db_pass "${project_type}")
 
-    echo -e ${CYAN}" > Project Type: ${project_type}"${ENDCOLOR}
-    echo " > Project Type: ${project_type}!">>$LOG
+    log_event "info" "Project Type: ${project_type}" "true"
 
     # Making a backup of project files
     make_files_backup "${BK_TYPE}" "${SITES}" "${filename}"
@@ -74,13 +73,12 @@ else
         output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}/offline-site" 2>&1)
 
         # Moving deleted project backups to another dropbox directory
-        echo -e ${B_CYAN}" > Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${filename} /${VPSNAME}/offline-site"${ENDCOLOR}
+        log_event "info" "dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${filename} /${VPSNAME}/offline-site" "true"
         $DROPBOX_UPLOADER move "/${VPSNAME}/${BK_TYPE}/${filename}" "/${VPSNAME}/offline-site"
 
         # Delete project files
         rm -R $filepath"/"$filename
-        echo -e ${GREEN}" > Project files deleted for ${filename}"${ENDCOLOR}
-        echo " > Project files deleted for ${filename}">>$LOG
+        log_event "info" "Project files deleted for ${filename}" "true"
 
         # Make a copy of nginx configuration file
         cp -r "/etc/nginx/sites-available/${filename}" "${SFOLDER}/tmp-backup"
@@ -91,7 +89,7 @@ else
 
         # Delete nginx configuration file
         delete_nginx_server "${filename}"
-        echo -e ${B_GREEN}" > Nginx config files for ${filename} deleted!"${ENDCOLOR}
+        log_event "info" "Nginx config files for ${filename} deleted" "true"
 
     fi
 

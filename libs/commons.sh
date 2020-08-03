@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc06
+# Version: 3.0-rc07
 ################################################################################
 
 ################################################################################
@@ -43,7 +43,7 @@ main_menu() {
 
   local runner_options chosen_type
 
-  runner_options="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 PROJECT_UTILS 04 WPCLI_MANAGER 05 CERTBOT_MANAGER 06 INSTALLERS_AND_CONFIGS 07 IT_UTILS 08 SCRIPT_OPTIONS"
+  runner_options="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 PROJECT_UTILS 04 WPCLI_MANAGER 05 CERTBOT_MANAGER 06 CLOUDFLARE_MANAGER 07 INSTALLERS_AND_CONFIGS 08 IT_UTILS 09 SCRIPT_OPTIONS 10 CRON_THIS_SCRIPT"
   chosen_type=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 $(for x in ${runner_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -74,26 +74,33 @@ main_menu() {
 
     fi
     if [[ ${chosen_type} == *"06"* ]]; then
+      # shellcheck source=${SFOLDER}/utils/cloudflare_manager.sh
+      source "${SFOLDER}/utils/cloudflare_manager.sh"
+
+    fi
+    if [[ ${chosen_type} == *"07"* ]]; then
       # shellcheck source=${SFOLDER}/installers_and_configurators.sh
       source "${SFOLDER}/installers_and_configurators.sh"
 
     fi
-    if [[ ${chosen_type} == *"07"* ]]; then
+    if [[ ${chosen_type} == *"08"* ]]; then
       # shellcheck source=${SFOLDER}/utils/it_utils.sh
       source "${SFOLDER}/utils/it_utils.sh"
-      #it_utils_menu
 
     fi
-
-    if [[ ${chosen_type} == *"08"* ]]; then
+    if [[ ${chosen_type} == *"09"* ]]; then
       script_configuration_wizard "reconfigure"
 
     fi
+    if [[ ${chosen_type} == *"10"* ]]; then
+      # CRON_THIS_SCRIPT
+      install_crontab_script "${SFOLDER}/runner.sh" "00" "45"
 
-  else
-    exit 1
+    fi
+    
 
   fi
+
 }
 
 backup_menu() {
@@ -189,6 +196,8 @@ backup_menu() {
 
   fi
 
+  main_menu
+
 }
 
 restore_menu () {
@@ -214,6 +223,8 @@ restore_menu () {
     fi
 
   fi
+
+  main_menu
 
 }
 
@@ -242,6 +253,8 @@ security_utils_menu () {
 
   fi
 
+  main_menu
+
 }
 
 security_clamav_scan_menu () {
@@ -252,7 +265,9 @@ security_clamav_scan_menu () {
   directory_browser "${menutitle}" "${startdir}"
 
   to_scan=$filepath"/"$filename
-  echo -e ${CYAN}" > Directory to scan: ${to_scan} ..."${ENDCOLOR}>&2
+
+  log_event "info" "Starting clamav scan" "true"
+  log_event "info" "Directory to scan: ${to_scan}" "true"
 
   security_clamav_scan "${to_scan}"
 
@@ -290,7 +305,7 @@ project_utils_menu () {
 
   local project_utils_options chosen_project_utils_options
 
-  project_utils_options="01 CREATE_WP_PROJECT 02 CREATE_PHP_PROJECT 03 DELETE_PROJECT 04 TURN_PROJECT_OFFLINE"
+  project_utils_options="01 CREATE_WP_PROJECT 02 CREATE_PHP_PROJECT 03 DELETE_PROJECT 04 PUT_PROJECT_ONLINE 05 PUT_PROJECT_OFFLINE"
   chosen_project_utils_options=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a Restore Option to run" 20 78 10 $(for x in ${project_utils_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -304,22 +319,51 @@ project_utils_menu () {
     if [[ ${chosen_project_utils_options} == *"02"* ]]; then
 
       # TODO: create empty dir on $SITES, create nginx server file, ask for database
-      echo -e ${B_RED}"TODO: IMPLEMENT THIS OPTION"${ENDCOLOR}
+      log_event "error" "TODO: CREATE_PHP_PROJECT MUST BE IMPLEMENTED SOON" "true"
 
     fi
+
     if [[ ${chosen_project_utils_options} == *"03"* ]]; then
       # shellcheck source=${SFOLDER}/delete_project.sh
       source "${SFOLDER}/delete_project.sh"
     fi
-    if [[ ${chosen_project_utils_options} == *"04"* ]]; then
 
-      echo -e ${B_RED}"TODO: IMPLEMENT THIS OPTION"${ENDCOLOR}
+    if [[ ${chosen_project_utils_options} == *"04"* ]]; then
+      # shellcheck source=${SFOLDER}/libs/nginx_helper.sh
+      source "${SFOLDER}/libs/nginx_helper.sh"
+      change_project_status "online"
+
+    fi
+
+    if [[ ${chosen_project_utils_options} == *"05"* ]]; then
+      # shellcheck source=${SFOLDER}/libs/nginx_helper.sh
+      source "${SFOLDER}/libs/nginx_helper.sh"
+      change_project_status "offline"
 
     fi
 
   fi
 
-} 
+  main_menu
+
+}
+
+change_project_status () {
+
+  #$1 = ${project_status}
+
+  local project_status=$1
+
+  local to_change
+
+  startdir="${SITES}"
+  directory_browser "${menutitle}" "${startdir}"
+
+  to_change=${filename%/}
+
+  change_status_nginx_server "${to_change}" "${project_status}"
+
+}
 
 script_configuration_wizard() {
 
@@ -577,12 +621,15 @@ check_distro() {
   # Running Ubuntu?
   DISTRO=$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $1}')
   if [ ! "$DISTRO" = "Ubuntu" ]; then
-    echo " > ERROR: This script only run on Ubuntu ... Exiting"
+    log_event "critical" "This script only run on Ubuntu ... Exiting" "true"
     exit 1
+
   else
     MIN_V=$(echo "18.04" | awk -F "." '{print $1$2}')
     DISTRO_V=$(get_ubuntu_version)
-    echo "ACTUAL DISTRO: ${DISTRO} ${DISTRO_V}"
+    
+    log_event "info" "ACTUAL DISTRO: ${DISTRO} ${DISTRO_V}" "false"
+
     if [ ! "$DISTRO_V" -ge "$MIN_V" ]; then
       whiptail --title "UBUNTU VERSION WARNING" --msgbox "Ubuntu version must be 18.04 or 20.04! Use this script only for backup or restore purpose." 8 78
       exitstatus=$?
@@ -608,29 +655,57 @@ checking_scripts_permissions() {
 ################################################################################
 
 log_event() {
-    if [ -z "$time" ]; then
-        LOG_TIME="$(date +'%F %T') $(basename $0)"
-    else
-        LOG_TIME="$date $time $(basename $0)"
-    fi
-    if [ "$1" -eq 0 ]; then
-        echo "$LOG_TIME $2" >> $VESTA/log/system.log
-    else
-        echo "$LOG_TIME $2 [Error $1]" >> $VESTA/log/error.log
-    fi
-}
 
-check_result() {
-    if [ $1 -ne 0 ]; then
-        echo "Error: $2"
-        if [ ! -z "$3" ]; then
-            log_event "$3" "$ARGUMENTS"
-            exit $3
-        else
-            log_event "$1" "$ARGUMENTS"
-            exit $1
+  # $1 = {log_type} options: success, info, warning, error, critical
+  # $2 = {message}
+  # $3 = {console_display} optional (true or false, emtpy equals false)
+
+  local log_type=$1
+  local message=$2
+  local console_display=$3
+
+   case $log_type in
+
+   success)
+        echo " > SUCCESS: ${message}" >> "${LOG}"
+        if [ "${console_display}" = "true" ]; then
+          echo -e "${B_GREEN} > ${message}${ENDCOLOR}" >&2
         fi
-    fi
+        ;;
+
+      info)
+        echo " > INFO: ${message}" >> "${LOG}"
+        if [ "${console_display}" = "true" ]; then
+          echo -e "${B_CYAN} > ${message}${ENDCOLOR}" >&2
+        fi
+        ;;
+
+      warning)
+        echo " > WARNING: ${message}" >> "${LOG}"
+        if [ "${console_display}" = "true" ]; then
+          echo -e "${YELLOW} > ${message}${ENDCOLOR}" >&2
+        fi
+        ;;
+
+      error)
+        echo " > ERROR: ${message}" >> "${LOG}"
+        if [ "${console_display}" = "true" ]; then
+          echo -e "${RED} > ${message}${ENDCOLOR}" >&2
+        fi
+        ;;
+
+      critical)
+        echo " > CRITICAL: ${message}" >> "${LOG}"
+        if [ "${console_display}" = "true" ]; then
+          echo -e "${B_RED} > ${message}${ENDCOLOR}" >&2
+        fi
+        ;;
+
+      *)
+        echo -n "Log Type Unknown"
+        ;;
+    esac
+
 }
 
 get_ubuntu_version() {
@@ -862,8 +937,18 @@ generate_cloudflare_config() {
 
 calculate_disk_usage() {
 
-  DISK_U=$(df -h | grep "${MAIN_VOL}" | awk {'print $5'})
-  echo " > Disk usage: ${DISK_U} ..." >>"${LOG}"
+  # $1 = ${disk_volume}
+
+  local disk_volume=$1
+
+  local disk_u
+
+  # Need to use grep with -w to exact match of the main volume
+  disk_u=$(df -h | grep -w "${disk_volume}" | awk {'print $5'})
+
+  log_event "info" "Disk usage of ${disk_volume}: ${disk_u} ..." "true"
+
+  echo "${disk_u}"
 
 }
 
@@ -974,18 +1059,23 @@ install_crontab_script() {
   cron_file="/var/spool/cron/crontabs/root"
 
   if [ ! -f ${cron_file} ]; then
-	  echo " > Cron file for root does not exist, creating ..."
+    log_event "info" "Cron file for root does not exist, creating ..." "true"
+
 	  touch "${cron_file}"
 	  /usr/bin/crontab "${cron_file}"
+
+    log_event "success" "Cron file created" "true"
+
 	fi
 
   grep -qi "${script}" "${cron_file}"
 	if [ $? != 0 ]; then
-    echo " > Updating cron job for script ..."
+    log_event "info" "Updating cron job for script ..." "true"
     /bin/echo "${mm} ${hh} * * * ${script}" >> "${cron_file}"
     
   else
-    echo " > Script already installed ..."
+    log_event "warning" "Script already installed" "true"
+
 	fi
 
 }
@@ -1123,18 +1213,20 @@ ask_rootdomain_to_cloudflare_config() {
 
 ask_subdomains_to_cloudflare_config() {
 
-  # $1 = ${DOMAIN} optional to select default option (could be empty)
+  # TODO: MAKE IT WORKS
 
-  local DOMAIN=$1;
+  # $1 = ${subdomains} optional to select default option (could be empty)
 
-  ROOT_DOMAIN=$(whiptail --title "Cloudflare Subdomains" --inputbox "Insert the subdomains you want to update in Cloudflare (comma separated). Example: www.broobe.com,broobe.com" 10 60 "${DOMAIN}" 3>&1 1>&2 2>&3)
+  local subdomains=$1;
+
+  subdomains=$(whiptail --title "Cloudflare Subdomains" --inputbox "Insert the subdomains you want to update in Cloudflare (comma separated). Example: www.broobe.com,broobe.com" 10 60 "${DOMAIN}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-    echo "Setting ROOT_DOMAIN=${ROOT_DOMAIN}" >>$LOG
+    log_event "info" "Setting subdomains=${subdomains}" "true"
     return 0
 
   else
-    exit 1
+    return 1
 
   fi
 
@@ -1147,17 +1239,28 @@ ask_folder_to_install_sites() {
   local folder_to_install=$1
 
   if [[ -z "${folder_to_install}" ]]; then
+    
     folder_to_install=$(whiptail --title "Folder to install" --inputbox "Please insert the full path where you want to install the site:" 10 60 "${folder_to_install}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      echo " > Folder to install: ${folder_to_install}" >>$LOG
+
+      log_event "info" "Folder to install: ${folder_to_install}" "true"
+
+      # Return
       echo "${folder_to_install}"
+
     else
-      exit 1
+      return 1
+
     fi
+
   else
-    echo " > Folder to install: ${folder_to_install}" >>$LOG
+
+    log_event "info" "Folder to install: ${folder_to_install}" "true"
+    
+    # Return
     echo "${folder_to_install}"
+    
   fi
 
 }
@@ -1195,7 +1298,7 @@ ask_url_search_and_replace() {
     existing_URL=$(whiptail --title "URL TO CHANGE" --inputbox "Insert the URL you want to change, including http:// or https://" 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
 
-    echo "Setting existing_URL=${existing_URL}" >>$LOG
+    #echo "Setting existing_URL=${existing_URL}" >>$LOG
 
     if [ ${exitstatus} = 0 ]; then
 
@@ -1205,7 +1308,7 @@ ask_url_search_and_replace() {
 
         if [ ${exitstatus} = 0 ]; then
 
-          echo "Setting new_URL=${new_URL}" >>$LOG
+          log_event "info" "Setting the new URL ${new_URL} on wordpress database" "true"
 
           wpcli_search_and_replace "${wp_path}" "${existing_URL}" "${new_URL}"
 
