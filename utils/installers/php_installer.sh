@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc06
+# Version: 3.0-rc07
 ################################################################################
 
 ### Checking some things
@@ -115,23 +115,20 @@ php_check_installed_version() {
 
 php_reconfigure() {
   
-  # TODO: need refactor, using php_optimizations.sh
-  echo -e ${CYAN}" > Moving php configuration file ..."${ENDCOLOR} >&2
-  echo " > Moving php configuration file ..." >>$LOG
+  log_event "info" "Moving php.ini configuration file ..." "true"
   cat "${SFOLDER}/confs/php/php.ini" >"/etc/php/${PHP_V}/fpm/php.ini"
 
-  echo -e ${CYAN}" > Moving fpm configuration file ..."${ENDCOLOR} >&2
-  echo " > Moving fpm configuration file ..." >>$LOG
+  log_event "info" "Moving php-fpm.conf configuration file ..." "true"
   cat "${SFOLDER}/confs/php/php-fpm.conf" >"/etc/php/${PHP_V}/fpm/php-fpm.conf"
 
   # Replace string to match PHP version
+  log_event "info" "Replace string to match PHP version ..." "true"
   sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
   sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
   sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
 
   # Unccoment /status from fpm configuration
-  echo -e ${CYAN}" > Unccoment /status from fpm configuration ..."${ENDCOLOR} >&2
-  echo " > Unccoment /status from fpm configuration ..." >>$LOG
+  log_event "info" "Unccoment /status from fpm configuration ..." "true"
   sed -i '/status_path/s/^;//g' "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
 
 }

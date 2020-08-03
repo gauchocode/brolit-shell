@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc06
+# Version: 3.0-rc07
 #############################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
@@ -94,6 +94,7 @@ else
           sudo apt-get autoclean
 
           break;;
+          
           [Nn]* )
           echo -e ${B_RED}"Aborting monit installation script ..."${ENDCOLOR};
           break;;

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc06
+# Version: 3.0-rc07
 ################################################################################
 
 ### Checking some things
@@ -19,21 +19,19 @@ source "${SFOLDER}/libs/commons.sh"
 
 create_nginx_server() {
 
-    #$1 = ${PROJECT_DOMAIN}
-    #$2 = ${SERVER_TYPE} (default, wordpress, symphony, phpmyadmin, zabbix, netdata, jellyfin)
+    #$1 = ${project_domain}
+    #$2 = ${server_type} (default, wordpress, symphony, phpmyadmin, zabbix, netdata, jellyfin)
 
     local domain=$1
     local server_type=$2
 
+    local result debug
+
     # Create nginx config files for site
-    echo " > Creating nginx configuration file ..." >>$LOG
+    log_event "info" "Creating nginx configuration file ..." "true"
+
     cp "${SFOLDER}/confs/nginx/sites-available/${server_type}" "${WSERVER}/sites-available/${domain}"
     ln -s "${WSERVER}/sites-available/${domain}" "${WSERVER}/sites-enabled/${domain}"
-
-    # Replace string to match domain name
-    #sed -i "s#domain.com#${domain}#" "${WSERVER}/sites-available/${domain}"
-    # need to run twice
-    #sed -i "s#domain.com#${domain}#" "${WSERVER}/sites-available/${domain}"
 
     # Search and Replace sed command
     sed -i "s/domain.com/${domain}/g" "${WSERVER}/sites-available/${domain}"
@@ -43,8 +41,19 @@ create_nginx_server() {
     # Replace string to match PHP version
     sed -i "s#PHP_V#${PHP_V}#" "${WSERVER}/sites-available/${domain}"
 
-    # Reload webserver
-    service nginx reload
+    #Test the validity of the nginx configuration
+    result=$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)
+
+    if [ "${result}" = "success" ];then
+        log_event "success" "nginx configuration created" "true"
+
+        # Reload webserver
+        service nginx reload
+
+    else
+        debug=$(nginx -t 2>&1)
+        log_event "error" "nginx configuration fail: $debug" "true"
+    fi
 
 }
 
@@ -66,6 +75,65 @@ delete_nginx_server() {
 
 }
 
+change_status_nginx_server() {
+
+    # File test operators
+    # -d FILE - True if the FILE exists and is a directory.
+    # -f FILE - True if the FILE exists and is a regular file (not a directory or device).
+    # -h FILE - True if the FILE exists and is a symbolic link.
+
+    #$1 = ${project_domain}
+    #$2 = ${project_status} (online,offline)
+
+    local project_domain=$1
+    local project_status=$2
+
+    local result debug
+
+    case ${project_status} in
+
+    online)
+        log_event "info" "Project Status: ${project_status}" "true"
+        if [ -f "${WSERVER}/sites-available/${project_domain}" ]; then
+            ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
+            log_event "info" "Project config added to ${WSERVER}/sites-enabled/${project_domain}" "true"
+        else
+            log_event "error" "${WSERVER}/sites-available/${project_domain} does not exist" "true"
+        fi
+        ;;
+
+      offline)
+        log_event "info" "Project Status: ${project_status}" "true"
+        if [ -h "${WSERVER}/sites-enabled/${project_domain}" ]; then
+            rm "${WSERVER}/sites-enabled/${project_domain}"
+            log_event "info" "Project config deleted from ${WSERVER}/sites-enabled/${project_domain}" "true"
+        else
+            log_event "error" "${WSERVER}/sites-enabled/${project_domain} does not exist" "true"
+        fi
+        ;;
+
+      *)
+        log_event "info" "Project Status Unknown" "true"
+        return 1
+        ;;
+    esac
+
+    #Test the validity of the nginx configuration
+    result=$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)
+
+    if [ "${result}" = "successful" ];then
+        log_event "success" "Project configuration status changed to ${project_status} for ${project_domain}" "true"
+
+        # Reload webserver
+        service nginx reload
+
+    else
+        debug=$(nginx -t 2>&1)
+        log_event "error" "Problem changing project status for ${project_domain}: ${debug}" "true"
+    fi
+
+}
+
 change_phpv_nginx_server() {
 
     #$1 = ${project_domain}
@@ -82,8 +150,7 @@ change_phpv_nginx_server() {
     fi
 
     # Updating nginx server file
-    echo -e ${CYAN}" > Updating nginx ${project_domain} server file ..."${ENDCOLOR}>&2
-    echo -e " > Updating nginx ${project_domain} server file ..." >>$LOG
+    log_event "info" "Updating nginx ${project_domain} server file ..." "true"
 
     # TODO: ask wich version of php want to work with
 
@@ -91,7 +158,7 @@ change_phpv_nginx_server() {
     current_php_v_string=$(cat ${WSERVER}/sites-available/${project_domain} | grep fastcgi_pass | cut -d '/' -f 4 | cut -d '-' -f 1)
     current_php_v=${current_php_v_string#"php"}
     
-    sudo sed -i "s#${current_php_v}#${new_php_v}#" "${WSERVER}/sites-available/${project_domain}"
+    sed -i "s#${current_php_v}#${new_php_v}#" "${WSERVER}/sites-available/${project_domain}"
 
     echo -e ${CYAN}" > PHP version for ${project_domain} changed from ${current_php_v} to ${new_php_v}"${ENDCOLOR}>&2
     echo -e " > PHP version for ${project_domain} changed from ${current_php_v} to ${new_php_v}" >>$LOG

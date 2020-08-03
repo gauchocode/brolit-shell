@@ -1,28 +1,61 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc06
+# Version: 3.0-rc07
 #############################################################################
 
-# Check if program is installed (is_this_installed apache2)
+# shellcheck source=${SFOLDER}/libs/commons.sh
+source "${SFOLDER}/libs/commons.sh"
+# shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
+source "${SFOLDER}/libs/wpcli_helper.sh"
+
+################################################################################
+
+# Check if program is installed (is_this_installed "mysql-server")
 is_this_installed() {
-  if [ "$(dpkg-query -W -f='${Status}' "${1}" 2>/dev/null | grep -c "ok installed")" == "1" ]; then
-    print_text_in_color "$IRed" "${1} is installed, it must be a clean server."
-    exit 1
+
+  # $1 = ${package}
+
+  local package=$1
+
+  if [ "$(dpkg-query -W -f='${Status}' "${package}" 2>/dev/null | grep -c "ok installed")" == "1" ]; then
+
+    log_event "info" "${package} is installed" "true"
+
+    # Return
+    echo "true"
+
+  else
+
+    log_event "info" "${package} is not installed" "true"
+
+    # Return
+    echo "false"
+
   fi
 }
 
-# Install_if_not program
-install_if_not() {
-  if [[ "$(is_this_installed "${1}")" != "${1} is installed, it must be a clean server." ]]; then
+install_package_if_not() {
+
+  # $1 = ${package}
+
+  local package=$1
+
+  if [[ "$(is_this_installed "${package}")" != "${package} is installed, it must be a clean server." ]]; then
+
     apt update -q4 &
     spinner_loading && apt install "${1}" -y
+
+    log_event "info" "${package} installed" "true"
+
   fi
+
 }
 
 # Adding PPA (support multiple args)
 # Ex: add_ppa ondrej/php ondrej/nginx
 add_ppa() {
+
   for i in "$@"; do
     grep -h "^deb.*$i" /etc/apt/sources.list.d/* >/dev/null 2>&1
     if [ $? -ne 0 ]; then
@@ -32,6 +65,7 @@ add_ppa() {
       echo "ppa:$i already exists"
     fi
   done
+  
 }
 
 check_packages_required() {
@@ -72,6 +106,18 @@ check_packages_required() {
     apt -y install dialog
   fi
 
+  WPCLI_INSTALLED=$(wpcli_check_if_installed)
+
+  if [ "${WPCLI_INSTALLED}" = "true" ]; then
+
+    wpcli_update
+
+  else
+
+    wpcli_install
+
+  fi
+
 }
 
 check_default_php_version() {
@@ -82,18 +128,19 @@ check_default_php_version() {
 
 basic_packages_installation() {
   
-  # Updating packages
-  echo " > Adding repos and updating package lists ..." >>$LOG
+  # Updating packages lists
+  log_event "info" "Adding repos and updating package lists ..." "true"
   apt --yes install software-properties-common
   apt --yes update
 
   # Upgrading packages
-  echo " > Upgrading packages before installation ..." >>$LOG
+  log_event "info" "Upgrading packages before installation ..." "true"
   apt --yes dist-upgrade
 
   # Installing packages
-  echo " > Installing basic packages ..." >>$LOG
+  log_event "info" "Installing basic packages ..." "true"
   apt --yes install vim unzip zip clamav ncdu imagemagick-* jpegoptim optipng webp sendemail libio-socket-ssl-perl dnsutils ghostscript pv ppa-purge
+
 }
 
 selected_package_installation() {
@@ -109,15 +156,15 @@ selected_package_installation() {
     "zabbix" " " off
   )
 
-  CHOSEN_APPS=$(whiptail --title "Apps Selection" --checklist "Select the apps you want to install:" 20 78 15 "${APPS_TO_INSTALL[@]}" 3>&1 1>&2 2>&3)
-  #echo "Setting CHOSEN_APPS=$CHOSEN_APPS"
+  local chosen_apps
+
+  chosen_apps=$(whiptail --title "Apps Selection" --checklist "Select the apps you want to install:" 20 78 15 "${APPS_TO_INSTALL[@]}" 3>&1 1>&2 2>&3)
   
-  for app in $CHOSEN_APPS; do
+  for app in $chosen_apps; do
     
     app=$(sed -e 's/^"//' -e 's/"$//' <<<$app) #needed to ommit double quotes
-    
-    echo " > Executing ${app} installer ..."
-    echo -e ${CYAN}" > Executing ${app} installer ..."${ENDCOLOR}
+
+    log_event "info" "Executing ${app} installer ..." "true"
     
     "${SFOLDER}/utils/installers/${app}_installer.sh"
 
@@ -148,11 +195,13 @@ timezone_configuration() {
 
 remove_old_packages() {
 
-  echo " > Cleanning old system packages ..." >>$LOG
-  echo -e ${YELLOW}" > Cleanning old system packages ..."${ENDCOLOR}
+  log_event "info" "Cleanning old system packages ..." "true"
+
   apt clean
   apt -y autoremove
   apt -y autoclean
+
+  log_event "info" "System packages cleaned" "true"
 
 }
 

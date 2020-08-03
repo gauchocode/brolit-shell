@@ -1,35 +1,76 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc06
+# Version: 3.0-rc07
 ################################################################################
 
 wpcli_install_if_not_installed() {
 
-    # Check if wp-cli is installed
-    WPCLI="$(which wp)"
-    if [ ! -x "${WPCLI}" ]; then
+    local wpcli 
+    
+    wpcli="$(which wp)"
+
+    if [ ! -x "${wpcli}" ]; then
         wpcli_install
     fi
 
 }
 
+wpcli_check_if_installed() {
+
+    local wpcli_installed wpcli_v
+    
+    wpcli_installed="true"
+
+    wpcli_v=$(wpcli_check_version)
+
+    if [[ -z "${wpcli_v}" ]]; then
+        wpcli_installed="false"
+
+    fi
+
+    echo "${wpcli_installed}"
+
+}
+
+wpcli_check_version() {
+
+    local wpcli_v
+
+    wpcli_v=$(sudo -u www-data wp --info | grep "WP-CLI version:" | cut -d ':' -f2)
+
+    echo "${wpcli_v}"
+
+}
+
 wpcli_install() {
+
+    log_event "info" "Installing wp-cli ..." "true"
 
     curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
 
     chmod +x wp-cli.phar
     sudo mv wp-cli.phar "/usr/local/bin/wp"
 
+    log_event "success" "wp-cli installed" "true"
+
 }
 
 wpcli_update() {
+
+    log_event "info" "Running: wp-cli update" "true"
+
     wp cli update
 
 }
 
 wpcli_uninstall() {
+
+    log_event "warning" "Uninstalling wp-cli ..." "true"
+
     rm "/usr/local/bin/wp"
+
+    log_event "warning" "wp-cli uninstalled" "true"
 
 }
 
@@ -103,29 +144,6 @@ wpcli_install_needed_extensions() {
 
 }
 
-wpcli_check_if_installed() {
-
-    WPCLI_INSTALLED="true"
-
-    WPCLI_V=$(wpcli_check_version)
-
-    if [[ -z "${WPCLI_V}" ]]; then
-        WPCLI_INSTALLED="false"
-
-    fi
-
-    echo ${WPCLI_INSTALLED}
-
-}
-
-wpcli_check_version() {
-
-    WPCLI_V=$(sudo -u www-data wp --info | grep "WP-CLI version:" | cut -d ':' -f2)
-
-    echo "${WPCLI_V}"
-
-}
-
 wpcli_core_install() {
 
     # $1 = ${wp_site}
@@ -145,11 +163,11 @@ wpcli_core_reinstall() {
 
     local wp_site=$1
 
-    echo -e ${B_GREEN}" > Running: sudo -u www-data wp --path="${wp_site}" core download --skip-content --force "${ENDCOLOR} >&2
+    log_event "info" "Running: sudo -u www-data wp --path="${wp_site}" core download --skip-content --force" "true"
 
     sudo -u www-data wp --path="${wp_site}" core download --skip-content --force 
 
-    echo -e ${B_GREEN}" > DONE!"${ENDCOLOR} >&2
+    log_event "success" "Wordpress re-installed" "true"
 
 }
 
@@ -176,11 +194,11 @@ wpcli_core_update() {
         # Rewrite Flush
         sudo -u www-data wp --path="${wp_site}" rewrite flush
 
-        echo -e ${B_GREEN}" > Wordpress Core Updated!"${ENDCOLOR} >&2
+        log_event "success" "Wordpress core updated" "true"
 
     else
 
-        echo -e ${B_RED}" > Wordpress Core Update Failed!"${ENDCOLOR} >&2
+        log_event "error" "Wordpress core failed" "true"
     
     fi
 
@@ -195,7 +213,7 @@ wpcli_core_verify() {
     local wp_site=$1
     local verify_core
 
-    echo -e ${B_GREEN}" > Running: sudo -u www-data wp --path="${wp_site}" core verify-checksums"${ENDCOLOR} >&2
+    log_event "info" "Running: sudo -u www-data wp --path="${wp_site}" core verify-checksums" "true"
     mapfile verify_core < <(sudo -u www-data wp --path="${wp_site}" core verify-checksums 2>&1)
 
     # Return an array with wp-cli output
@@ -242,7 +260,7 @@ wpcli_delete_not_core_files() {
         wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
         
         if test -f "${install_path}/${wpcli_core_verify_result_file}"; then
-            echo " > Deleting not core file: ${install_path}/${wpcli_core_verify_result_file}"
+            echo " > Deleting not core file: ${install_path}/${wpcli_core_verify_result_file}" >&2
             rm "${install_path}/${wpcli_core_verify_result_file}"
         fi
 

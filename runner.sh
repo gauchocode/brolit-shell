@@ -2,14 +2,14 @@
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Script Name: LEMP Utils Script
-# Version: 3.0-rc06
+# Version: 3.0-rc07
 ################################################################################
 #
 # Style Guide and refs: https://google.github.io/styleguide/shell.xml
 #
 ################################################################################
 
-SCRIPT_V="3.0-rc06"
+SCRIPT_V="3.0-rc07"
 
 ### Init #######################################################################
 
@@ -30,10 +30,6 @@ source "${SFOLDER}/libs/commons.sh"
 source "${SFOLDER}/libs/mail_notification_helper.sh"
 # shellcheck source=${SFOLDER}/libs/packages_helper.sh
 source "${SFOLDER}/libs/packages_helper.sh"
-
-check_distro
-
-checking_scripts_permissions
 
 ### Vars #######################################################################
 
@@ -82,19 +78,31 @@ MUSER="root"
 
 ### Log #######################################################################
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-PATH_LOG="${SFOLDER}/logs"
-if [ ! -d "${SFOLDER}/logs" ]; then
-  echo " > Folder ${SFOLDER}/logs doesn't exist. Creating now ..."
-  mkdir "${SFOLDER}/logs"
-  echo " > Folder ${SFOLDER}/logs created ..."
+PATH_LOG="${SFOLDER}/log"
+if [ ! -d "${SFOLDER}/log" ]; then
+  echo " > Folder ${SFOLDER}/log doesn't exist. Creating now ..."
+  mkdir "${SFOLDER}/log"
+  echo " > Folder ${SFOLDER}/log created ..."
 fi
 
-LOG_NAME="log_back_${TIMESTAMP}.log"
+LOG_NAME="log_lemp_utils_${TIMESTAMP}.log"
 LOG="${PATH_LOG}/${LOG_NAME}"
 
-find "${PATH_LOG}" -name "*.log" -type f -mtime +7 -print -delete >>$LOG
+find "${PATH_LOG}" -name "*.log" -type f -mtime +7 -print -delete >>"${LOG}"
 
-echo "Backup: Script Start -- $(date +%Y%m%d_%H%M)" >>$LOG
+# Log Start
+log_event "info" "LEMP UTILS SCRIPT Start -- $(date +%Y%m%d_%H%M)" "true"
+
+### Welcome #######################################################################
+
+echo "                                                 "; 
+echo "██████╗ ██████╗  ██████╗  ██████╗ ██████╗ ███████"; 
+echo "██╔══██╗██╔══██╗██╔═══██╗██╔═══██╗██╔══██╗██╔══"; 
+echo "██████╔╝██████╔╝██║   ██║██║   ██║██████╔╝█████"
+echo "██╔══██╗██╔══██╗██║   ██║██║   ██║██╔══██╗██╔"
+echo "██████╔╝██║  ██║╚██████╔╝╚██████╔╝██████╔╝███████"
+echo "╚═════╝ ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═════╝ ╚══════"
+echo "                                                 "; 
 
 ################################################################################
 
@@ -133,6 +141,13 @@ if test -f /root/.broobe-utils-options; then
   source "/root/.broobe-utils-options"
 fi
 
+
+# Checking distro
+check_distro
+
+# Checking script permissions
+checking_scripts_permissions
+
 # Checking required packages to run
 check_packages_required
 
@@ -149,7 +164,7 @@ TAR="$(which tar)"
 FIND="$(which find)"
 
 # EXPORT VARS (GLOBALS)
-export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER PHP_CF LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR FIND DROPBOX_FOLDER MAIN_VOL MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
+export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER PHP_CF LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
 
 if [ -t 1 ]; then
 
@@ -192,23 +207,19 @@ else
 fi
 
 ### Disk Usage
-calculate_disk_usage
+disk_u=$(calculate_disk_usage "${MAIN_VOL}")
 
 ### Creating temporary folders
 if [ ! -d "${BAKWP}" ]; then
-  echo " > Folder ${BAKWP} doesn't exist. Creating now ..." >>$LOG
   mkdir "${BAKWP}"
-  echo " > Folder ${BAKWP} created ..." >>$LOG
 fi
 if [ ! -d "${BAKWP}/${NOW}" ]; then
-  echo " > Folder ${BAKWP}/${NOW} doesn't exist. Creating now ..." >>$LOG
   mkdir "${BAKWP}/${NOW}"
-  echo " > Folder ${BAKWP}/${NOW} created ..." >>$LOG
 fi
 
 # Preparing Mail Notifications Template
 HTMLOPEN=$(mail_html_start)
-BODY_SRV=$(mail_server_status_section "${IP}" "${DISK_U}")
+BODY_SRV=$(mail_server_status_section "${IP}" "${disk_u}")
 
 if [ -t 1 ]; then
 
@@ -218,8 +229,10 @@ if [ -t 1 ]; then
 else
 
   # Running from cron
-  echo " > Running from cron ..." >>${LOG}
-  echo " > Running apt update ..." >>${LOG}
+  log_event "info" "Running from cron ..." "false"
+  log_event "info" "Running apt update ..." "false"
+
+  # Update packages index
   apt update
 
   # Compare package versions
@@ -253,7 +266,7 @@ else
   EMAIL_STATUS=$(mail_subject_status "${STATUS_D}" "${STATUS_F}" "${STATUS_S}" "${OUTDATED}")
 
   # Preparing email to send
-  echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
+  log_event "info" "Sending Email to ${MAILA} ..." "true"
 
   EMAIL_SUBJECT="${EMAIL_STATUS} on ${VPSNAME} Running Complete Backup - [${NOWDISPLAY}]"
   EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${PKG_MAIL_VAR} ${CERT_MAIL_VAR} ${CONFIG_MAIL_VAR} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
@@ -265,8 +278,5 @@ fi
 
 remove_mail_notifications_files
 
-echo " > DONE" >>$LOG
-echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
-
 # Log End
-echo "Backup: Script End -- $(date +%Y%m%d_%H%M)" >>$LOG
+log_event "info" "LEMP UTILS SCRIPT End -- $(date +%Y%m%d_%H%M)" "true"

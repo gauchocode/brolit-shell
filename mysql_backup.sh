@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc06
+# Version: 3.0-rc07
 #############################################################################
 
 ### Checking some things
@@ -31,16 +31,14 @@ DBS_F="databases"
 export BK_TYPE DBS_F
 
 # Starting Message
-echo " > Starting database backup script ..." >>$LOG
-echo -e ${GREEN}" > Starting database backup script ..."${ENDCOLOR}
+log_event "info" "Starting database backup script" "true"
 
 # Get MySQL DBS
 DBS="$(${MYSQL} -u ${MUSER} -p${MPASS} -Bse 'show databases')"
 
 # Get all databases name
 TOTAL_DBS=$(mysql_count_dabases "${DBS}")
-echo " > ${TOTAL_DBS} databases found ..." >>$LOG
-echo -e ${CYAN}" > ${TOTAL_DBS} databases found ..."${ENDCOLOR}
+log_event "info" "${TOTAL_DBS} databases found ..." "true"
 
 # MORE GLOBALS
 BK_DB_INDEX=0
@@ -49,7 +47,7 @@ declare -a BK_DB_SIZES
 
 for DATABASE in ${DBS}; do
 
-  echo -e ${CYAN}" > Processing [${DATABASE}] ..."${ENDCOLOR}
+  log_event "info" "Processing [${DATABASE}] ..." "true"
 
   if [[ ${DB_BL} != *"${DATABASE}"* ]]; then
 
@@ -57,20 +55,18 @@ for DATABASE in ${DBS}; do
 
     BK_DB_INDEX=$((BK_DB_INDEX + 1))
 
-    echo -e ${GREEN}" > Backup ${BK_DB_INDEX} of ${TOTAL_DBS} DONE"${ENDCOLOR}
-    echo "> Backup ${BK_DB_INDEX} of ${TOTAL_DBS} DONE" >>$LOG
+    log_event "success" "Backup ${BK_DB_INDEX} of ${TOTAL_DBS} done" "true"
 
     echo -e ${GREEN}"###################################################"${ENDCOLOR}
     echo "###################################################" >>$LOG
 
   else
-    echo -e ${YELLOW}" > Ommiting the blacklisted database: [${DATABASE}] ..."${ENDCOLOR}
+    log_event "info" "Ommiting the blacklisted database: [${DATABASE}]" "true"
 
   fi
 
 done
 
 # Configure Email
-echo -e ${CYAN}"> Preparing mail databases backup section ..."${ENDCOLOR}
-#mail_mysqlbackup_section "${ERROR}" "${ERROR_TYPE}" ${BACKUPED_DB_LIST} ${BK_DB_SIZES}
+log_event "info" "Preparing mail databases backup section ..." "true"
 mail_mysqlbackup_section "${BACKUPED_DB_LIST[@]}" "${BK_DB_SIZES[@]}" "${ERROR}" "${ERROR_TYPE}"

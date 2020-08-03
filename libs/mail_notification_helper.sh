@@ -1,62 +1,66 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc06
+# Version: 3.0-rc07
 ################################################################################
 
+# shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
+# shellcheck source=${SFOLDER}/libs/certbot_helper.sh
 source "${SFOLDER}/libs/certbot_helper.sh"
 
 ################################################################################
 
 send_mail_notification() {
 
-    # $1 = ${EMAIL_SUBJECT}
-    # $2 = ${EMAIL_CONTENT}
+    # $1 = ${email_subject}
+    # $2 = ${email_content}
 
-    local EMAIL_SUBJECT=$1
-    local EMAIL_CONTENT=$2
+    local email_subject=$1
+    local email_content=$2
 
-    #echo -e ${YELLOW}" > Running: sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${EMAIL_SUBJECT}" -o message-content-type=html -m "${EMAIL_CONTENT}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}"${ENDCOLOR}
-    
-    # You could use -l "/var/log/sendemail.log" for custom log file
-    sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${EMAIL_SUBJECT}" -o message-content-type=html -m "${EMAIL_CONTENT}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}
+    log_event "info" "Running: sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${email_subject}" -o message-content-type=html -m "${EMAIL_CONTENT}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}" "true"
+
+    # We could use -l "/var/log/sendemail.log" for custom log file
+    sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${email_subject}" -o message-content-type=html -m "${email_content}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls="${SMTP_TLS}" -xu "${SMTP_U}" -xp "${SMTP_P}"
 
 }
 
 mail_subject_status() {
 
-    # $1 = ${STATUS_D} // Database backup status
-    # $2 = ${STATUS_F} // Files backup status
-    # $3 = ${STATUS_S} // Server status
-    # $4 = ${OUTDATED} // System Packages status
+    # $1 = ${status_d} // Database backup status
+    # $2 = ${status_f} // Files backup status
+    # $3 = ${status_s} // Server status
+    # $4 = ${outdated} // System Packages status
 
-    local STATUS_D=$1
-    local STATUS_F=$2
-    local STATUS_S=$3
-    local OUTDATED=$4
+    local status_d=$1
+    local status_f=$2
+    local status_s=$3
+    local outdated=$4
 
-    if [[ "${STATUS_D}" == *"ERROR"* ]] || [[ "${STATUS_F}" == *"ERROR"* ]] || [[ "${STATUS_S}" == *"ERROR"* ]]; then
-        STATUS="⛔ ERROR"
+    local status
+
+    if [[ "${status_d}" == *"ERROR"* ]] || [[ "${status_f}" == *"ERROR"* ]] || [[ "${status_s}" == *"ERROR"* ]]; then
+        status="⛔ ERROR"
         #STATUS_ICON="⛔"
     else
-        if [[ "${OUTDATED}" = true ]]; then
-            STATUS="⚠ WARNING"
+        if [[ "${outdated}" = true ]]; then
+            status="⚠ WARNING"
             #STATUS_ICON="⚠"
         else
-            STATUS="✅ OK"
+            status="✅ OK"
             #STATUS_ICON="✅"
         fi
     fi
 
-    echo "${STATUS}"
+    # Return
+    echo "${status}"
 
 }
 
 remove_mail_notifications_files() {
 
-    echo " > Removing temp files ..." >>$LOG
-    echo -e ${YELLOW}" > Removing temp files ..."${ENDCOLOR} >&2
+    log_event "info" "Removing temp files ..." "true"
 
     # TODO: remove only if they are created
     rm "${PKG_MAIL}" "${DB_MAIL}" "${FILE_MAIL}"
@@ -106,6 +110,7 @@ mail_server_status_section() {
 
     BODY_SRV=${SRV_HEADER}${SRV_BODY}
 
+    # Return
     echo "${BODY_SRV}"
 
 }
@@ -241,9 +246,8 @@ mail_cert_section() {
                 CERT_END_LINE="</span></div></div>"
                 CERT_LINE=$CERT_LINE$CERT_NEW_LINE$CERT_DOMAIN$CERT_DAYS$CERT_END_LINE
             
-            else
-                echo -e ${GREEN}" > Omitting ${FOLDER_NAME} TAR file (blacklisted) ..."${ENDCOLOR}
-                echo " > Omitting ${FOLDER_NAME} TAR file (blacklisted) ..." >>$LOG
+            #else
+            #    echo " > Omitting ${FOLDER_NAME} TAR file (blacklisted) ..." >&2
 
             fi
         else
@@ -264,8 +268,8 @@ mail_cert_section() {
     BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
     BODYCLOSE='</div></div>'
 
-    HEADER=$HEADEROPEN$HEADERTEXT$HEADERCLOSE
-    BODY=$BODYOPEN$CONTENT$FILES_LABEL$CERT_LINE$FILES_LABEL_END$BODYCLOSE
+    HEADER=${HEADEROPEN}${HEADERTEXT}${HEADERCLOSE}
+    BODY=${BODYOPEN}${CONTENT}${FILES_LABEL}${CERT_LINE}${FILES_LABEL_END}${BODYCLOSE}
 
     # Write e-mail parts files
     echo "${HEADER}" >"${BAKWP}/cert-${NOW}.mail"
@@ -340,7 +344,7 @@ mail_filesbackup_section() {
 
     HEADEROPEN1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
     HEADEROPEN2=';padding:5px 0 10px 10px;width:100%;height:30px">'
-    HEADEROPEN=$HEADEROPEN1$COLOR$HEADEROPEN2
+    HEADEROPEN=${HEADEROPEN1}${COLOR}${HEADEROPEN2}
     HEADERTEXT="Files Backup: ${STATUS_F} ${STATUS_ICON_F}"
     HEADERCLOSE='</div>'
 
@@ -349,9 +353,9 @@ mail_filesbackup_section() {
 
     MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
 
-    HEADER=$HEADEROPEN$HEADERTEXT$HEADERCLOSE
-    BODY=$BODYOPEN$CONTENT$SIZE_LABEL$FILES_LABEL$FILES_INC$FILES_LABEL_END$DBK_SIZE_LABEL$BODYCLOSE
-    FOOTER=$FOOTEROPEN$SCRIPTSTRING$FOOTERCLOSE
+    HEADER=${HEADEROPEN}${HEADERTEXT}${HEADERCLOSE}
+    BODY=${BODYOPEN}${CONTENT}${SIZE_LABEL}${FILES_LABEL}${FILES_INC}${FILES_LABEL_END}${DBK_SIZE_LABEL}${BODYCLOSE}
+    FOOTER=${FOOTEROPEN}${SCRIPTSTRING}${FOOTERCLOSE}
 
     # Write e-mail parts files
     echo "${HEADER}" >"${BAKWP}/file-bk-${NOW}.mail"
@@ -421,7 +425,7 @@ mail_configbackup_section() {
 
     HEADEROPEN1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
     HEADEROPEN2=';padding:5px 0 10px 10px;width:100%;height:30px">'
-    HEADEROPEN=$HEADEROPEN1$COLOR$HEADEROPEN2
+    HEADEROPEN=${HEADEROPEN1}${COLOR}${HEADEROPEN2}
     HEADERTEXT="Config Backup: ${STATUS_F} ${STATUS_ICON_F}"
     HEADERCLOSE='</div>'
 
@@ -430,9 +434,9 @@ mail_configbackup_section() {
 
     MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
 
-    HEADER=$HEADEROPEN$HEADERTEXT$HEADERCLOSE
+    HEADER=${HEADEROPEN}${HEADERTEXT}${HEADERCLOSE}
     BODY=$BODYOPEN$CONTENT$SIZE_LABEL$FILES_LABEL$FILES_INC$FILES_LABEL_END$DBK_SIZE_LABEL$BODYCLOSE
-    FOOTER=$FOOTEROPEN$SCRIPTSTRING$FOOTERCLOSE
+    FOOTER=${FOOTEROPEN}${SCRIPTSTRING}${FOOTERCLOSE}
 
     # Write e-mail parts files
     echo "${HEADER}" >"${BAKWP}/config-bk-${NOW}.mail"
@@ -518,16 +522,23 @@ mail_mysqlbackup_section() {
 
 mail_section_start() {
 
-    BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px 0 0 10px;width:100%;">'
+    local body_open
 
-    echo "${BODYOPEN}"
+    body_open='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px 0 0 10px;width:100%;">'
+
+    # Return
+    echo "${body_open}"
+
 }
 
 mail_section_end() {
 
-    BODYCLOSE='</div>'
+    local body_close
 
-    echo "${BODYCLOSE}"
+    body_close='</div>'
+
+    # Return
+    echo "${body_close}"
 
 }
 
@@ -535,29 +546,41 @@ mail_footer() {
 
     # $1 = ${SCRIPT_V}
 
-    local SCRIPT_V=$1
+    local script_v=$1
 
-    FOOTEROPEN='<div style="font-size:10px;float:left;font-family:Verdana,Helvetica,Arial;text-align:right;padding-right:5px;width:100%;height:20px"><a href="https://www.broobe.com/web-mobile-development/?utm_source=linux-script&utm_medium=email&utm_campaign=landing_it" style="color: #503fe0;font-weight: bold;font-style: italic;">'
-    SCRIPTSTRING="Script Version: ${SCRIPT_V} by BROOBE"
-    FOOTERCLOSE='</a></div></div>'
+    local footer_open script_string footer_close html_close mail_footer
 
-    HTMLCLOSE=$(mail_html_end)
+    footer_open='<div style="font-size:10px;float:left;font-family:Verdana,Helvetica,Arial;text-align:right;padding-right:5px;width:100%;height:20px"><a href="https://www.broobe.com/web-mobile-development/?utm_source=linux-script&utm_medium=email&utm_campaign=landing_it" style="color: #503fe0;font-weight: bold;font-style: italic;">'
+    script_string="LEMP UTILS SCRIPT Version: ${script_v} by BROOBE"
+    footer_close='</a></div></div>'
 
-    MAIL_FOOTER=${FOOTEROPEN}${SCRIPTSTRING}${FOOTERCLOSE}${HTMLCLOSE}
+    html_close=$(mail_html_end)
 
-    echo "${MAIL_FOOTER}"
+    mail_footer=${footer_open}${script_string}${footer_close}${html_close}
+
+    # Return
+    echo "${mail_footer}"
+
 }
 
 mail_html_start() {
 
-    HTMLOPEN='<html><body>'
+    local html_open
 
-    echo "${HTMLOPEN}"
+    html_open='<html><body>'
+
+    # Return
+    echo "${html_open}"
+
 }
 
 mail_html_end() {
 
-    HTMLCLOSE='</body></html>'
+    local html_close
 
-    echo "${HTMLCLOSE}"
+    html_close='</body></html>'
+
+    # Return
+    echo "${html_close}"
+
 }

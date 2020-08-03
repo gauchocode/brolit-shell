@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc06
+# Version: 3.0-rc07
 ################################################################################
 
 ### Checking some things
@@ -30,6 +30,7 @@ source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 ################################################################################
 
+#This is executed if we want to restore a file backup on directory with the same name
 make_temp_files_backup() {
 
   # $1 = Folder to backup
@@ -39,22 +40,7 @@ make_temp_files_backup() {
   mkdir "${SFOLDER}/tmp/old_backup"
   mv "${folder_to_backup}" "${SFOLDER}/tmp/old_backup"
 
-  echo " > Backup completed and stored here: ${SFOLDER}/tmp/old_backup ..." >>$LOG
-  echo -e ${GREEN}" > Backup completed and stored here: ${SFOLDER}/tmp/old_backup ..."${ENDCOLOR}>&2
-
-}
-
-make_temp_db_backup() {
-
-  #$1 = ${chosen_project}
-
-  local chosen_project=$1
-
-  if [ -d "/var/lib/mysql/${chosen_project}" ]; then
-    echo -e ${CYAN}" > Executing mysqldump (will work if database exists) ..."${ENDCOLOR}>&2
-    mysqldump -u "${MUSER}" --password="${MPASS}" "${chosen_project}" >"${chosen_project}_bk_before_restore.sql"
-
-  fi
+  log_event "info" "Temp backup completed and stored here: ${SFOLDER}/tmp/old_backup" "true"
 
 }
 
@@ -70,36 +56,34 @@ restore_database_backup() {
 
   local db_name db_exists user_db_exists db_pass
 
-  echo " > Running restore_database_backup for ${project_backup} DB" >>$LOG
-  echo -e "${CYAN} > Running restore_database_backup for ${project_backup} DB ${ENDCOLOR}">&2
-
-  make_temp_db_backup "${project_name}"
+  log_event "info" "Running restore_database_backup for ${project_backup} DB ${ENDCOLOR}" "true"
 
   db_name="${project_name}_${project_state}"
 
   # Check if database already exists
   db_exists=$(mysql_database_exists "${db_name}")
   if [[ ${db_exists} -eq 1 ]]; then  
-    echo -e ${CYAN}" > Creating ${db_name} database in MySQL ..."${ENDCOLOR}>&2
-    echo " > Creating ${db_name} database in MySQL ..." >>$LOG
+    
     mysql_database_create "${db_name}"
 
   else
-    echo -e ${B_GREEN}" > MySQL DB ${db_name} already exists"${ENDCOLOR}>&2
 
-    #TODO: ask what to do, if continue make a database backup
+    log_event "info" "MySQL database ${db_name} already exists" "true"
+    mysql_database_export "${db_name}" "${db_name}_bk_before_restore.sql"
 
   fi
 
-  # Trying to restore Database
+  # Restore database
   project_backup="${project_backup%%.*}.sql"
   mysql_database_import "${project_name}_${project_state}" "${project_backup}"
 
-  echo -e ${CYAN}" > Cleanning temp files ..."${ENDCOLOR}>&2
+  log_event "info" "Cleanning temp files ..." "true"
+  
   rm ${project_backup%%.*}.sql
   rm ${project_backup%%.*}.tar.bz2
   rm "${project_backup}"
-  echo -e ${B_GREEN}" > restore_database_backup DONE"${ENDCOLOR}>&2
+
+  log_event "success" "restore_database_backup done" "true"
 
 }
 
@@ -163,9 +147,6 @@ download_and_restore_config_files_from_dropbox(){
     #echo " > Removing ${SFOLDER}/tmp/${chosen_type} ..." >>$LOG
     #echo -e ${GREEN}" > Removing ${SFOLDER}/tmp/${chosen_type} ..."${ENDCOLOR}
     #rm -R ${SFOLDER}/tmp/${chosen_type}
-
-    echo " > DONE ..." >>$LOG
-    echo -e ${B_GREEN}" > DONE ..."${ENDCOLOR}
 
   fi
 
@@ -418,11 +399,11 @@ select_restore_type_from_dropbox() {
 
           bk_to_dowload="${chosen_server}/${chosen_type}/${chosen_project}/${CHOSEN_BACKUP_TO_RESTORE}"
 
-          echo " > Running dropbox_uploader.sh download ${bk_to_dowload}" >>$LOG
+          log_event "info" "Running dropbox_uploader.sh download ${bk_to_dowload}" "true"
+
           $DROPBOX_UPLOADER download "${bk_to_dowload}"
 
-          echo -e ${CYAN}" > Uncompressing ${CHOSEN_BACKUP_TO_RESTORE}"${ENDCOLOR}
-          echo " > Uncompressing ${CHOSEN_BACKUP_TO_RESTORE}" >>$LOG
+          log_event "info" "Uncompressing ${CHOSEN_BACKUP_TO_RESTORE}" "true"
 
           pv "${CHOSEN_BACKUP_TO_RESTORE}" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
 
@@ -455,16 +436,13 @@ select_restore_type_from_dropbox() {
             user_db_exists=$(mysql_user_exists "${db_user}")
             if [[ ${user_db_exists} -eq 0 ]]; then
 
+              # Passw generator
               db_pass=$(openssl rand -hex 12)
-
-              echo -e ${B_CYAN}" > Creating '${db_user}' user in MySQL with pass: ${db_pass}"${B_ENDCOLOR}>&2
-              echo " > Creating ${db_user} user in MySQL with pass: ${db_pass}" >>$LOG
 
               mysql_user_create "${db_user}" "${db_pass}"
 
             else
-              echo -e ${B_GREEN}" > User ${db_user} already exists"${B_ENDCOLOR}>&2
-              echo " > User ${db_user} already exists"${ENDCOLOR} >>$LOG
+              log_event "error" "User ${db_user} already exists" "true"
 
             fi
 
@@ -483,9 +461,6 @@ select_restore_type_from_dropbox() {
             PROJECT_SITE=$filepath"/"$filename
 
             install_path=$(search_wp_config "${FOLDER_TO_INSTALL}/${filename}")
-
-            echo -e ${B_CYAN}" > install_path: ${install_path}"${ENDCOLOR}
-            echo -e ${B_CYAN}" > filename: ${filename}"${ENDCOLOR}
 
             # TODO: search_wp_config could be an array of dir paths, need to check that
             if [ "${install_path}" != "" ]; then
@@ -506,18 +481,18 @@ select_restore_type_from_dropbox() {
             #TODO: ask if want to change IP from Cloudflare then ask for Cloudflare Root Domain
 
             # Asume that project main folder name is the project's domain, removing "/" char
-            domain="${filename::-1}"
+            #domain="${filename::-1}"
             
             # Only for Cloudflare API
             #suggested_root_domain=${domain#[[:alpha:]]*.}
-            suggested_root_domain=${domain}
+            #suggested_root_domain=${domain}
 
-            root_domain=$(cloudflare_ask_root_domain "${suggested_root_domain}")
+            #root_domain=$(cloudflare_ask_root_domain "${suggested_root_domain}")
 
-            cloudflare_change_a_record "${root_domain}" "${domain}"
+            #cloudflare_change_a_record "${root_domain}" "${domain}"
             
             # HTTPS with Certbot
-            certbot_helper_installer_menu "${MAILA}" "${domain}"
+            #certbot_helper_installer_menu "${MAILA}" "${domain}"
 
           else # site
 

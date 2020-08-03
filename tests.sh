@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc06
+# Version: 3.0-rc07
 #############################################################################
 
 ### Checking some things...#####################################################
@@ -67,6 +67,7 @@ source "${SFOLDER}/libs/cloudflare_helper.sh"
 ####################### TEST FOR mail_cert_section #######################
 
 test_cert_mail(){
+    
     echo -e ${B_CYAN}" > TESTING FUNCTION: test_cert_mail"${B_ENDCOLOR}
     mail_cert_section
 
@@ -173,3 +174,5 @@ test_mysql_database_exists(){
 #done
 
 #wpcli_force_reinstall_plugins "${install_path}"
+
+#install_crontab_script "${SFOLDER}/test.sh" "01" "00"

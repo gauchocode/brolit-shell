@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc06
+# Version: 3.0-rc07
 #############################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
@@ -22,7 +22,7 @@ mysql_count_dabases() {
         fi
     done
 
-    # return
+    # Return
     echo "${total_databases}"
 }
 
@@ -34,26 +34,26 @@ mysql_user_create() {
     local db_user=$1
     local db_user_psw=$2
 
-    local sql_1
+    local sql1
+
+    log_event "info" "Creating ${db_user} user in MySQL with pass: ${db_user_psw}" "true"
 
     if [[ -z ${db_user_psw} || ${db_user_psw} == "" ]]; then
-        sql_1="CREATE USER '${db_user}'@'localhost';"
+        sql1="CREATE USER '${db_user}'@'localhost';"
 
     else
-        sql_1="CREATE USER '${db_user}'@'localhost' IDENTIFIED BY '${db_user_psw}';"
+        sql1="CREATE USER '${db_user}'@'localhost' IDENTIFIED BY '${db_user_psw}';"
 
     fi
 
-    mysql -u "${MUSER}" -p"${MPASS}" -e "${sql_1}"
+    mysql -u "${MUSER}" -p"${MPASS}" -e "${sql1}"
 
     if [ $? -eq 0 ]; then
-        echo " > MySQL user: ${db_user} created ok!" >>$LOG
-        echo -e ${GREEN}" > MySQL user: ${db_user} created ok!"${ENDCOLOR} >&2
+        log_event "success" " MySQL user ${db_user} created" "true"
         return 0
 
     else
-        echo " > Something went wrong creating user: ${db_user}" >>$LOG
-        echo -e ${B_RED}" > Something went wrong creating user: ${db_user}"${ENDCOLOR} >&2
+        log_event "error" "Something went wrong creating user: ${db_user}" "true"
         return 1
 
     fi
@@ -66,24 +66,20 @@ mysql_user_delete() {
 
     local db_user=$1
 
-    local sql_1="DROP USER '${db_user}'@'localhost';"
-    local sql_2="FLUSH PRIVILEGES;"
+    local sql1="DROP USER '${db_user}'@'localhost';"
+    local sql2="FLUSH PRIVILEGES;"
 
-    echo " > Deleting ${db_user} user in MySQL ..." >>$LOG
+    log_event "info" "Deleting ${db_user} user in MySQL ..." "true"
 
-    mysql -u "${MUSER}" -p"${MPASS}" -e "${sql_1}${sql_2}" >>$LOG
+    mysql -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" >>"${LOG}"
 
     if [ $? -eq 0 ]; then
-        echo " > Database user: ${db_user} deleted ok!" >>$LOG
-        echo -e ${GREEN}" > Database user: ${db_user} deleted ok!"${ENDCOLOR} >&2
-        
-        echo 0
+        log_event "success" " Database user ${db_user} deleted" "true"
+        return 0
 
     else
-        echo " > Something went wrong deleting user: ${db_user}" >>$LOG
-        echo -e ${B_RED}" > Something went wrong deleting user: ${db_user}"${ENDCOLOR} >&2
-        
-        echo 1
+        log_event "error" "Something went wrong deleting user: ${db_user}" "true"
+        return 1
 
     fi
 
@@ -97,24 +93,22 @@ mysql_user_psw_change() {
     local db_user=$1
     local db_user_psw=$2
 
-    SQL1="ALTER USER '${db_user}'@'localhost' IDENTIFIED BY '${db_user_psw}';"
-    SQL2="FLUSH PRIVILEGES;"
+    local sql1 sql2
 
-    echo " > Changing password for ${db_user} user in MySQL ..." >>$LOG
+    log_event "info" "Changing password for user ${db_user} in MySQL" "true"
 
-    mysql -u "${MUSER}" -p"${MPASS}" -e "${SQL1}${SQL2}" >>$LOG
+    sql1="ALTER USER '${db_user}'@'localhost' IDENTIFIED BY '${db_user_psw}';"
+    sql2="FLUSH PRIVILEGES;"
+
+    mysql -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" >>"${LOG}"
 
     if [ $? -eq 0 ]; then
-        echo " > DONE!" >>$LOG
-        echo -e ${GREEN}" > DONE!"${ENDCOLOR} >&2
-        
-        echo 0
+        log_event "success" "Password changed for user ${db_user}" "true" 
+        return 0
 
     else
-        echo " > Something went wrong changing mysql user pass!" >>$LOG
-        echo -e ${B_RED}" > Something went wrong changing mysql user pass!"${ENDCOLOR} >&2
-        
-        echo 1
+        log_event "error" "Something went wrong changing MySQL password to user ${db_user}" "true"
+        return 1
 
     fi
 
@@ -128,23 +122,22 @@ mysql_user_grant_privileges() {
     local db_user=$1
     local db_target=$2
 
-    SQL1="GRANT ALL PRIVILEGES ON ${db_target}.* TO '${db_user}'@'localhost';"
-    SQL2="FLUSH PRIVILEGES;"
+    local sql1 sql2
 
-    echo " > Granting privileges to ${db_user} on ${db_target} database in MySQL ..." >>$LOG
-    mysql -u "${MUSER}" -p"${MPASS}" -e "${SQL1}${SQL2}" >>$LOG
+    log_event "info" "Granting privileges to ${db_user} on ${db_target} database in MySQL" "true"
+
+    sql1="GRANT ALL PRIVILEGES ON ${db_target}.* TO '${db_user}'@'localhost';"
+    sql2="FLUSH PRIVILEGES;"
+
+    mysql -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" >>$LOG
 
     if [ $? -eq 0 ]; then
-        echo " > Privileges granted ok!" >>$LOG
-        echo -e ${GREEN}" > Privileges granted ok!"${ENDCOLOR} >&2
-        
-        echo 0
+        log_event "success" "Privileges granted to user ${db_user}" "true"
+        return 0
 
     else
-        echo " > Something went wrong granting privileges to ${db_user}!" >>$LOG
-        echo -e ${B_RED}" > Something went wrong granting privileges to ${db_user}!"${ENDCOLOR} >&2
-        
-        echo 1
+        log_event "error" "Something went wrong granting privileges to user ${db_user}" "true"
+        return 1
 
     fi
 
@@ -193,45 +186,48 @@ mysql_name_sanitize(){
 
     local clean
 
-    echo -e ${B_CYAN}" > Running mysql_name_sanitize for ${string}"${ENDCOLOR}>&2
+    log_event "info" "Running mysql_name_sanitize for ${string}" "true"
 
-    # first, strip "-"
+    # First, strip "-"
     clean=${string//-/}
 
-    # next, replace "." with "_"
+    # Next, replace "." with "_"
     clean=${clean//./_}
 
-    # now, clean out anything that's not alphanumeric or an underscore
+    # Now, clean out anything that's not alphanumeric or an underscore
     clean=${clean//[^a-zA-Z0-9_]/}
 
-    # finally, lowercase with TR
+    # Finally, lowercase with TR
     clean=$(echo -n "${clean}" | tr A-Z a-z)
 
-    echo -e ${B_CYAN}" > Sanitized name: ${clean}"${ENDCOLOR}>&2
+    log_event "info" "Sanitized name: ${clean}" "true"
 
+    # Return
     echo "${clean}"
 
 }
 
 mysql_database_create() {
 
-    # $1 = ${DB}
+    # $1 = ${database}
 
     local database=$1
 
-    SQL1="CREATE DATABASE IF NOT EXISTS ${database};"
+    local sql1
 
-    mysql -u "${MUSER}" -p"${MPASS}" -e "${SQL1}" >>$LOG
+    log_event "info" "Creating ${database} database in MySQL ..." "true"
+
+    sql1="CREATE DATABASE IF NOT EXISTS ${database};"
+
+    mysql -u "${MUSER}" -p"${MPASS}" -e "${sql1}" >>$LOG
 
     if [ $? -eq 0 ]; then
-        echo " > Database ${database} created OK!" >>$LOG
-        echo -e ${B_GREEN}" > Database ${database} created OK!"${ENDCOLOR}>&2
+        log_event "success" "Database ${database} created successfully" "true"
         return 0
 
     else
-        echo " > Something went wrong creating database: ${database}!" >>$LOG
-        echo -e ${B_RED}" > Something went wrong creating database: ${database}!"${ENDCOLOR}>&2
-        exit 1
+        log_event "error" "Something went wrong creating database: ${database}" "true"
+        return 1
 
     fi
 
@@ -243,22 +239,20 @@ mysql_database_drop() {
 
     local database=$1
 
-    SQL1="DROP DATABASE ${database};"
+    local sql1
 
-    echo " > Droping the database: ${database} ..." >>$LOG
-    echo -e ${GREEN}" > Droping the database: ${database} ..."${ENDCOLOR} >&2
+    log_event "info" "Droping the database: ${database}" "true"
 
-    mysql -u "${MUSER}" -p"${MPASS}" -e "${SQL1}" >>$LOG
+    sql1="DROP DATABASE ${database};"
+    mysql -u "${MUSER}" -p"${MPASS}" -e "${sql1}" >>$LOG
 
     if [ $? -eq 0 ]; then
-        echo " > Database ${database} deleted!" >>$LOG
-        echo -e ${GREEN}" > Database ${database} deleted!"${ENDCOLOR} >&2
+        log_event "success" "Database ${database} deleted successfully" "true"
         return 0
 
     else
-        echo " > Something went wrong deleting the database: ${database}!" >>$LOG
-        echo -e ${B_RED}" > Something went wrong deleting the database: ${database}!"${ENDCOLOR} >&2
-        exit 1
+        log_event "error" "Something went wrong deleting database: ${database}" "true"
+        return 1
         
     fi
 
@@ -266,27 +260,24 @@ mysql_database_drop() {
 
 mysql_database_import() {
 
-    # $1 = ${DATABASE} (.sql)
-    # $2 = ${DUMP_FILE}
+    # $1 = ${database} (.sql)
+    # $2 = ${dump_file}
 
-    local db_name=$1
+    local database=$1
     local dump_file=$2
 
-    echo -e ${CYAN}" > Importing dump file ${dump_file} into database: ${db_name} ..."${ENDCOLOR}>&2
-    echo " > Importing dump file ${dump_file} into database: ${db_name} ..." >>$LOG
+    log_event "info" "Importing dump file ${dump_file} into database: ${database}" "true"
 
-    pv "${dump_file}" | mysql -f -u"${MUSER}" -p"${MPASS}" -f -D "${db_name}"
+    pv "${dump_file}" | mysql -f -u"${MUSER}" -p"${MPASS}" -f -D "${database}"
 
-    if [ $? -eq 0 ]; then
-        echo " > Import database ${db_name} OK!" >>$LOG
-        echo -e ${GREEN}" > Import database ${db_name} OK!"${ENDCOLOR}>&2
+    import_status=$?
+    if [ $import_status -eq 0 ]; then
+        log_event "success" "Database ${database} imported successfully" "true"
         return 0
 
     else
-        echo " > Import database ${db_name} failed!" >>$LOG
-        echo -e ${B_RED}" > Import database ${db_name} failed!"${ENDCOLOR}>&2
-
-        exit 1
+        log_event "error" "Something went wrong importing database: ${database}" "true"
+        return 1
 
     fi
 
@@ -300,18 +291,19 @@ mysql_database_export() {
     local database=$1
     local dump_file=$2
 
-    echo -e ${CYAN}" > Exporting database ${database} into dump file ${dump_file} ..."${ENDCOLOR}
-    echo " > Exporting database ${database} into dump file ${dump_file} ..." >>$LOG
-    mysqldump -u "${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}"
+    local dump_status
 
-    if [ $? -eq 0 ]; then
-        echo " > DB ${database} exported successfully!" >>$LOG
-        echo -e ${GREEN}" > DB ${database} exported successfully!"${ENDCOLOR}
+    log_event "info" "Creating a dump file of: ${database}" "true"
+    $MYSQLDUMP -u "${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}"
+    
+    dump_status=$?
+    if [ $dump_status -eq 0 ]; then
+        log_event "success" "Database ${database} exported successfully" "true"
+        return 0
     
     else
-        echo " > DB ${database} export failed!" >>$LOG
-        echo -e ${B_RED}" > DB ${database} export failed!"${ENDCOLOR}
-        exit 1
+        log_event "error" "Something went wrong exporting database: ${database}" "true"
+        return 1
 
     fi
 
