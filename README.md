@@ -2,7 +2,7 @@
 
 "LEMP Ubuntu Utils Scripts" is a **BASH** script which can be used to quickly install a LEMP Stack on Ubuntu 18.04 and 20.04 servers, automate backups (files and databases), restore backups, install WordPress projects, and other useful tasks.
 
-![ScreenShot](./screenshot.png)
+![ScreenShot](./screenshot.jpg)
 
 ## Motivation
 

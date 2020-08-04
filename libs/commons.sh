@@ -708,6 +708,26 @@ log_event() {
 
 }
 
+whiptail_event() {
+
+  # $1 = {whip_title}
+  # $2 = {whip_message}
+
+  local whip_title=$1
+  local whip_message=$2
+
+  whip_message_result=$(whiptail --title "${whip_title}" --msgbox "${whip_message}" 15 60 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    log_event "info" "whip_message_result for ${whip_title}=$whip_message_result" "true"
+
+  else
+    return 1
+
+  fi
+
+}
+
 get_ubuntu_version() {
 
   lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $2}' | awk -F "." '{print $1$2}'
