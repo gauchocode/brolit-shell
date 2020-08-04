@@ -419,9 +419,11 @@ select_restore_type_from_dropbox() {
             project_name=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${project_name}" 3>&1 1>&2 2>&3)
             exitstatus=$?
             if [ $exitstatus = 0 ]; then
-              echo " > Setting project_name=${project_name}" >>$LOG
+              log_event "info" "Setting project_name=${project_name}" "true"
+
             else
-              exit 1
+              return 1
+
             fi
 
             # Running mysql_name_sanitize $for project_name
@@ -442,7 +444,8 @@ select_restore_type_from_dropbox() {
               mysql_user_create "${db_user}" "${db_pass}"
 
             else
-              log_event "error" "User ${db_user} already exists" "true"
+              log_event "warning" "MySQL user ${db_user} already exists" "true"
+              whiptail_event "WARNING" "MySQL user ${db_user} already exists. Please after the script ends, check project configuration files."
 
             fi
 
@@ -465,7 +468,7 @@ select_restore_type_from_dropbox() {
             # TODO: search_wp_config could be an array of dir paths, need to check that
             if [ "${install_path}" != "" ]; then
 
-              echo -e ${B_GREEN}" > WordPress installation found: ${PROJECT_SITE}/${install_path}"${ENDCOLOR}
+              log_event "info" "WordPress installation found: ${PROJECT_SITE}/${install_path}" "true"
 
               # Change wp-config.php database parameters
               wp_update_wpconfig "${install_path}" "${project_name}" "${project_state}" "${DB_PASS}"
@@ -474,7 +477,7 @@ select_restore_type_from_dropbox() {
 
             else
 
-              echo -e ${B_RED}" > WordPress installation not found!"${ENDCOLOR}
+              log_event "error" "WordPress installation not found!" "true"
 
             fi
 
@@ -542,21 +545,18 @@ project_restore() {
 
     bk_to_dowload="${chosen_server}/site/${chosen_project}/${chosen_backup_to_restore}"
 
-    echo " > Running dropbox_uploader.sh download ${bk_to_dowload}" >>$LOG
+    log_event "info" "Running dropbox_uploader.sh download ${bk_to_dowload}" "false"
+
     $DROPBOX_UPLOADER download "${bk_to_dowload}"
 
-    echo -e ${CYAN}" > Uncompressing ${chosen_backup_to_restore}"${ENDCOLOR} >&2
-    echo " > Uncompressing ${chosen_backup_to_restore}" >>$LOG
+    log_event "info" "Uncompressing ${chosen_backup_to_restore}" "true"
 
     pv "${chosen_backup_to_restore}" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
 
     project_type=$(get_project_type "${SFOLDER}/tmp/${chosen_project}")
 
-    echo -e ${B_CYAN}" > Project Type: ${project_type}"${ENDCOLOR} >&2
-    echo " > Project Type: ${project_type}" >>$LOG
-
-    echo -e ${CYAN}" > Trying to get database parameters from ${SFOLDER}/tmp/${chosen_project}/wp-config.php"${ENDCOLOR} >&2
-    echo " > Trying to get database parameters from ${SFOLDER}/tmp/${chosen_project}/wp-config.php" >>$LOG
+    log_event "info" "Project Type: ${project_type}" "true"
+    log_event "info" "Trying to get database parameters from ${SFOLDER}/tmp/${chosen_project}/wp-config.php" "true"
 
     case $project_type in
 
@@ -603,8 +603,7 @@ project_restore() {
 
     $DROPBOX_UPLOADER download "${db_to_download}"
 
-    echo -e ${CYAN}" > Uncompressing ${db_to_download}"${ENDCOLOR}
-    echo " > Uncompressing ${db_to_download}" >>$LOG
+    log_event "info" "Uncompressing ${db_to_download}" "true"
 
     pv "${db_name}_database_${backup_date}.tar.bz2" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
 
@@ -621,12 +620,14 @@ project_restore() {
     project_name=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${project_name}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      echo " > Setting project_name=${project_name}" >>$LOG
+      log_event "info" "Setting project_name=${project_name}" "true"
+
     else
-      exit 1
+      return 1
+
     fi
 
-    # Sanitize $project_name
+    # Sanitize ${project_name}
     db_project_name=$(mysql_name_sanitize "${project_name}")
 
     # Restore database function
@@ -641,14 +642,14 @@ project_restore() {
 
       db_pass=$(openssl rand -hex 12)
 
-      echo -e ${B_CYAN}" > Creating '${db_user}' user in MySQL with pass: ${db_pass}"${B_ENDCOLOR}>&2
-      echo " > Creating ${db_user} user in MySQL with pass: ${db_pass}" >>$LOG
+      log_event "info" "Creating ${db_user} user in MySQL with pass: ${db_pass}" "true"
 
       mysql_user_create "${db_user}" "${db_pass}"
 
     else
-      echo -e ${B_GREEN}" > User ${db_user} already exists"${B_ENDCOLOR}>&2
-      echo " > User ${db_user} already exists"${ENDCOLOR} >>$LOG
+
+      log_event "warning" "MySQL user ${db_user} already exists" "true"
+      whiptail_event "WARNING" "MySQL user ${db_user} already exists. Please after the script ends, check project configuration files."
 
     fi
 

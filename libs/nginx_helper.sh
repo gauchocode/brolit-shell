@@ -93,7 +93,7 @@ change_status_nginx_server() {
     case ${project_status} in
 
     online)
-        log_event "info" "Project Status: ${project_status}" "true"
+        log_event "info" "New project status: ${project_status}" "true"
         if [ -f "${WSERVER}/sites-available/${project_domain}" ]; then
             ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
             log_event "info" "Project config added to ${WSERVER}/sites-enabled/${project_domain}" "true"
@@ -103,7 +103,7 @@ change_status_nginx_server() {
         ;;
 
       offline)
-        log_event "info" "Project Status: ${project_status}" "true"
+        log_event "info" "New project status: ${project_status}" "true"
         if [ -h "${WSERVER}/sites-enabled/${project_domain}" ]; then
             rm "${WSERVER}/sites-enabled/${project_domain}"
             log_event "info" "Project config deleted from ${WSERVER}/sites-enabled/${project_domain}" "true"
@@ -113,7 +113,7 @@ change_status_nginx_server() {
         ;;
 
       *)
-        log_event "info" "Project Status Unknown" "true"
+        log_event "info" "New project status: Unknown" "true"
         return 1
         ;;
     esac

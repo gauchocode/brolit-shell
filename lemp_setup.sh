@@ -18,20 +18,9 @@ source "${SFOLDER}/libs/packages_helper.sh"
 
 ################################################################################
 
-### Log Start
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-PATH_LOG="${SFOLDER}/logs"
-if [ ! -d "${SFOLDER}/logs" ]; then
-  echo " > Folder ${SFOLDER}/logs doesn't exist. Creating now ..."
-  mkdir "${SFOLDER}/logs"
-  echo " > Folder ${SFOLDER}/logs created ..."
-fi
-
-LOG_NAME=log_lemp_${TIMESTAMP}.log
-LOG=${PATH_LOG}/${LOG_NAME}
-
-### exoirt LOG and SFOLDER vars
-export LOG SFOLDER
+log_event "info" "************************************************" "true"
+log_event "info" "************** LEMP SETUP STARTED **************" "true"
+log_event "info" "************************************************" "true"
 
 checking_scripts_permissions
 
@@ -50,8 +39,10 @@ basic_packages_installation
 # PHP Installer
 "${SFOLDER}/utils/installers/php_installer.sh"
 
+log_event "info" "************************************************" "true"
+log_event "info" "************* LEMP SETUP COMPLETED *************" "true"
+log_event "info" "************************************************" "true"
+
+script_configuration_wizard "initial"
+
 selected_package_installation
-
-echo -e ${B_GREEN}" > LEMP SETUP COMPLETED!"${ENDCOLOR}
-
-echo "Backup: Script End -- $(date +%Y%m%d_%H%M)" >>$LOG

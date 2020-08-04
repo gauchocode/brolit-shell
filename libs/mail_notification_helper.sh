@@ -60,10 +60,9 @@ mail_subject_status() {
 
 remove_mail_notifications_files() {
 
-    log_event "info" "Removing temp files ..." "true"
+    log_event "info" "Removing notifications temp files ..." "true"
 
-    # TODO: remove only if they are created
-    rm "${PKG_MAIL}" "${DB_MAIL}" "${FILE_MAIL}"
+    rm -f "${PKG_MAIL}" "${DB_MAIL}" "${FILE_MAIL}"
 
 }
 
