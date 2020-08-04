@@ -2,6 +2,8 @@
 
 ### Need more testing
 - [ ] WordPress install fails when set a project name like: xyz_sub_domain (could be a problem with sed on wordpress installer)
+- [ ] When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?)
+- [ ] On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages
 
 ### In Progress
 
@@ -21,20 +23,19 @@
 
 ### For release 3.0-final
 
-- [ ] When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?)
-- [ ] On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages
 - [ ] php_reconfigure refactor (replace strings instead of replace entired config files)
 
 ### For release 3.1
 
 - [ ] Auto-update script option
+- [ ] Solve small "TODOs" comments on the project
 - [ ] Netdata only reports CRITICAL message, (CLEAR are not reported)
 - [ ] Option to select netdata metrics to be reported
 - [ ] Refactor for backup/restore: 5 options (server_config, site_config, site, database and project)
 - [ ] Better wp-cli support 
  - [ ] Rollback plugins and core updates (wpcli_rollback_plugin_version on wpcli_helper.sh)
  - [ ] Buddypress support: https://github.com/buddypress/wp-cli-buddypress
-- [ ] An option to generate o regenerate a new nginx server configuration
+- [ ] Option to copyy or generate a new nginx server configuration
 - [ ] Nginx globals configs support
 - [ ] Complete refactor of "Options Wizard"
 - [ ] Mailcow installer and backup

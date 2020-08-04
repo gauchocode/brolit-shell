@@ -185,7 +185,6 @@ if [ -t 1 ]; then
       if [[ ${CHOSEN_FR_OPTION} == *"01"* ]]; then
         # shellcheck source=${SFOLDER}/lemp_setup.sh
         source "${SFOLDER}/lemp_setup.sh"
-        exit 1
 
       else
         script_configuration_wizard "initial"
@@ -199,7 +198,8 @@ if [ -t 1 ]; then
 else
   #cron
   if [[ -z "${MPASS}" || -z "${SMTP_U}" || -z "${SMTP_P}" || -z "${SMTP_TLS}" || -z "${SMTP_PORT}" || -z "${SMTP_SERVER}" || -z "${SMTP_P}" || -z "${MAILA}" || -z "${SITES}" ]]; then
-    echo "Some required VARS need to be configured, please run de script manually to configure them." >>$LOG
+    log_event "critical" "Some required options need to be configured, please run de script manually to configure them." "false"
+    # TODO: send email with error
     exit 1
 
   fi
