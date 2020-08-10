@@ -64,7 +64,7 @@ telegram_send_message() {
 	# Check if telegram is config before run
 	telegram_notifications_config
 
-	DISPLAY_MODE="HTML"
+	display_mode="HTML"
 	
 	# API timeout
 	timeout="10"
@@ -87,8 +87,21 @@ telegram_send_message() {
 	
 	log_event "info" "Sending Telegram notification ..." "true"
 
-	curl --silent --insecure --max-time "${timeout}" --data chat_id="${telegram_user_id}" --data "disable_notification=${notif_sound}" --data "parse_mode=${DISPLAY_MODE}" --data "text=${notif_text}" "${notif_url}"
+	telegram_notif_response=$(curl --silent --insecure --max-time "${timeout}" --data chat_id="${telegram_user_id}" --data "disable_notification=${notif_sound}" --data "parse_mode=${display_mode}" --data "text=${notif_text}" "${notif_url}")
+	telegram_notif_result=$(echo "${telegram_notif_response}" | grep "ok" | cut -d ":" -f2 | cut -d "," -f1)
 
-	log_event "info" "Telegram notification sent" "true"
+	#log_event "debug" "Telegram notification response: ${telegram_notif_response}" "true"
+	#log_event "debug" "Telegram notification result: ${telegram_notif_result}" "true"
+
+	if [ "${telegram_notif_result}" = "true" ]; then
+		# Log success
+		log_event "success" "Telegram notification sent!" "true"
+	
+	false
+		# Log failure
+		log_event "error" "Telegram notification error!" "true"
+
+	fi
+	
 
 }

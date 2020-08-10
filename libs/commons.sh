@@ -246,12 +246,47 @@ main_menu() {
     fi
     if [[ ${chosen_type} == *"10"* ]]; then
       # CRON_SCRIPT_TASKS
-      install_crontab_script "${SFOLDER}/cron/backups_tasks.sh" "00" "45"
+      cron_script_tasks
 
     fi
     
 
   fi
+
+}
+
+cron_script_tasks() {
+
+  local runner_options chosen_type
+
+  runner_options="01 BACKUPS_TASKS 02 OPTIMIZER_TASKS 03 WORDPRESS_TASKS"
+  chosen_type=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to configure" 20 78 10 $(for x in ${runner_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+
+    if [[ ${chosen_type} == *"01"* ]]; then
+
+      # BACKUPS_TASKS
+      install_crontab_script "${SFOLDER}/cron/backups_tasks.sh" "00" "45"
+
+    fi
+    if [[ ${chosen_type} == *"02"* ]]; then
+
+      # OPTIMIZER_TASKS
+      install_crontab_script "${SFOLDER}/cron/optimizer_tasks.sh" "04" "45"
+
+    fi
+    if [[ ${chosen_type} == *"03"* ]]; then
+
+      # WORDPRESS_TASKS
+      install_crontab_script "${SFOLDER}/cron/wordpress_tasks.sh" "23" "45"
+
+    fi
+
+  fi
+
+  main_menu
 
 }
 
@@ -602,7 +637,7 @@ log_event() {
 
    case $log_type in
 
-   success)
+      success)
         echo " > SUCCESS: ${message}" >> "${LOG}"
         if [ "${console_display}" = "true" ]; then
           echo -e "${B_GREEN} > ${message}${ENDCOLOR}" >&2
@@ -634,6 +669,14 @@ log_event() {
         echo " > CRITICAL: ${message}" >> "${LOG}"
         if [ "${console_display}" = "true" ]; then
           echo -e "${B_RED} > ${message}${ENDCOLOR}" >&2
+        fi
+        ;;
+
+      debug)
+        # TODO: Add a debug support
+        echo " > DEBUG: ${message}" >> "${LOG}"
+        if [ "${console_display}" = "true" ]; then
+          echo -e "${B_MAGENTA} > ${message}${ENDCOLOR}" >&2
         fi
         ;;
 
