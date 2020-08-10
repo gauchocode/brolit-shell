@@ -11,6 +11,30 @@ source "${SFOLDER}/libs/wpcli_helper.sh"
 
 ################################################################################
 
+is_wp_project() {
+
+  # $1 = project directory
+
+  local project_dir=$1
+
+  log_event "info" "Checking if ${project_dir} is a WordPress project ..." "true"
+
+  # Check if it has wp-config.php
+  if [[ -f "${project_dir}/wp-config.php" ]]; then
+    is_wp="true"
+    log_event "info" "${project_dir} is a WordPress project" "true"
+
+  else
+    is_wp="false"
+    log_event "info" "${project_dir} is not a WordPress project" "true"
+
+  fi
+
+  # Return
+  echo "${is_wp}"
+
+}
+
 search_wp_config () {
 
     # $1 = ${dir_to_search}

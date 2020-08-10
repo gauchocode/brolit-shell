@@ -20,23 +20,6 @@ source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 ################################################################################
 
-is_wp_project() {
-
-  # $1 = project directory
-
-  local project_dir=$1
-  is_wp="false"
-
-  # Check if user is root
-  if [[ -f "${project_dir}/wp-config.php" ]]; then
-    is_wp="true"
-
-  fi
-
-  echo "${is_wp}"
-
-}
-
 is_laravel_project() {
 
   # $1 = project directory
@@ -50,6 +33,7 @@ is_laravel_project() {
 
   fi
 
+  # Return
   echo "${is_laravel}"
 
 }
