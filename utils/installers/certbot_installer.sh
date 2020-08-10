@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 ################################################################################
 
 ### Checking some things
@@ -32,36 +32,36 @@ if ! grep -q "^deb .*$the_ppa" /etc/apt/sources.list /etc/apt/sources.list.d/*; 
 
   apt --yes update
 
-  echo -e ${GREEN}" > Installing python3-certbot-dns-cloudflare and python3-certbot-nginx ..."${ENDCOLOR}
-  echo " > Installing python3-certbot-dns-cloudflare and python3-certbot-nginx ..." >>$LOG
+  log_event "info" "Installing python3-certbot-dns-cloudflare and python3-certbot-nginx" "true"
 
   apt --yes install python3-certbot-dns-cloudflare python3-certbot-nginx
 
-  echo " > DONE" >>$LOG
-  echo -e ${GREEN}" > DONE"${ENDCOLOR}
+  log_event "info" "certbot installation done!" "true"
 
 else
-  echo -e ${GREEN}" > ppa:certbot/certbot already added ..."${ENDCOLOR}
+
+  log_event "warning" "ppa:certbot/certbot already added!" "true"
   
   while true; do
+  
     echo -e ${YELLOW}"> Do you want to remove the ppa:certbot/certbot?"${ENDCOLOR}
     read -p "Please type 'y' or 'n'" yn
     case $yn in
     [Yy]*)
 
-      echo -e ${CYAN}"\nRemoving ppa:certbot/certbot and packages provided ...\n"${ENDCOLOR}
-
+      log_event "warning" "\nRemoving ppa:certbot/certbot and packages provided ...\n" "true"
       # This will uninstall packages provided by the PPA, but not those provided by the official repositories
       ppa-purge ppa:certbot/certbot
 
       break
       ;;
     [Nn]*)
-      echo -e ${CYAN}" > Nothing to do, continue ..."${ENDCOLOR}
+      log_event "warning" "Aborting script ..." "true"
       break
       ;;
     *) echo " > Please answer yes or no." ;;
     esac
+
   done
 
 fi

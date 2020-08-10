@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 #############################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
@@ -10,19 +10,26 @@ source "${SFOLDER}/libs/commons.sh"
 ################################################################################
 
 mysql_default_installer() {
-  echo " > LEMP installation with MySQL ..." >>$LOG
+  log_event "info" "Running MySQL default installer" "true"
   apt --yes install mysql-server
 
 }
 
 mariadb_default_installer() {
-  echo " > LEMP installation with MariaDB ..." >>$LOG
+  log_event "info" "Running MariaDB default installer" "true"
   apt --yes install mariadb-server mariadb-client
 }
 
 mysql_purge_installation() {
-  echo " > Removing MySQL ..." >>$LOG
-  apt --yes purge mysql-server
+
+  log_event "warning" "Purging mysql-* packages ..." "true"
+
+  apt --yes purge mysql-server mysql-client mysql-common mysql-server-core-* mysql-client-core-*
+  rm -rf /etc/mysql /var/lib/mysql
+  apt-get autoremove
+  apt-get autoclean
+
+  log_event "info" "mysql-* packages purged!" "true"
 
 }
 
@@ -70,8 +77,8 @@ if [ ${mysql_installed} == "false" ]; then
     mysql_secure_installation
 
   else
-    echo -e ${CYAN}" > Operation cancelled ..."${ENDCOLOR}
-    exit 1
+    log_event "warning" "Operation cancelled" "true"
+    return 1
 
   fi
 
@@ -84,19 +91,11 @@ else
 
       case $yn in
           [Yy]* )
-
-          echo " > Purging mysql-* packages ..." >>$LOG
-          echo -e ${CYAN}" > Purging mysql-* packages ..."${ENDCOLOR}
-
-          sudo apt-get purge mysql-server mysql-client mysql-common mysql-server-core-* mysql-client-core-*
-          sudo rm -rf /etc/mysql /var/lib/mysql
-          sudo apt-get autoremove
-          sudo apt-get autoclean
-
+          mysql_purge_installation
           break;;
-          
+                 
           [Nn]* )
-          echo -e ${B_RED}"Aborting monit installation script ..."${ENDCOLOR};
+          log_event "warning" "Operation cancelled" "true"
           break;;
           * ) echo " > Please answer yes or no.";;
       esac

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 ################################################################################
 
 ### Checking some things
@@ -27,8 +27,7 @@ optimize_image_size() {
   local last_run
 
   # Run ImageMagick mogrify
-  echo " > Running mogrify ..." >>$LOG
-  echo -e ${CYAN}" > Running mogrify ..."${ENDCOLOR}
+  log_event "info" "Running mogrify to optimize image sizes ..." "true"
 
   last_run=$(check_last_optimization_date)
   
@@ -66,8 +65,7 @@ optimize_images() {
   if [ "${file_extension}" == "jpg" ]; then
 
     # Run jpegoptim
-    echo " > Running jpegoptim ..." >>$LOG
-    echo -e ${CYAN}" > Running jpegoptim ..."${ENDCOLOR}
+    log_event "info" "Running jpegoptim to optimize images ..." "true"
 
     if [[ "${last_run}" == "never" ]]; then
 
@@ -84,8 +82,7 @@ optimize_images() {
   elif [ "${file_extension}" == "png" ]; then
 
     # Run optipng
-    echo " > Running optipng ..." >>$LOG
-    echo -e ${CYAN}" > Running optipng ..."${ENDCOLOR}
+    log_event "info" "Running optipng to optimize images ..." "true"
 
     if [[ "${last_run}" == "never" ]]; then
     
@@ -101,8 +98,7 @@ optimize_images() {
 
   else
 
-    echo " > Unsopported file extension ${file_extension} ..."
-    echo -e ${YELLOW}" > Unsopported file extension ${file_extension} ..."${ENDCOLOR}
+    log_event "warning" "Unsopported file extension ${file_extension}" "true"    
 
   fi
 
@@ -123,8 +119,7 @@ optimize_pdfs() {
   last_run=$(check_last_optimization_date)
 
   # Run pdf optimizer
-  echo " > TODO: Running pdfwrite ..." >>$LOG
-  echo -e ${YELLOW}" > TODO: Running pdfwrite ..."${ENDCOLOR}
+  log_event "error" "TODO: Running pdfwrite ..." "true"    
 
   #Here is a solution for getting the output of find into a bash array:
   #array=()

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 #############################################################################
 
 ### Checking some things...#####################################################
@@ -49,6 +49,8 @@ fi
 source "${SFOLDER}/libs/commons.sh"
 # shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
 source "${SFOLDER}/libs/mail_notification_helper.sh"
+# shellcheck source=${SFOLDER}/libs/telegram_notification_helper.sh
+source "${SFOLDER}/libs/telegram_notification_helper.sh"
 # shellcheck source=${SFOLDER}/libs/packages_helper.sh
 source "${SFOLDER}/libs/packages_helper.sh"
 # shellcheck source=${SFOLDER}/libs/backup_helper.sh
@@ -176,3 +178,5 @@ test_mysql_database_exists(){
 #wpcli_force_reinstall_plugins "${install_path}"
 
 #install_crontab_script "${SFOLDER}/test.sh" "01" "00"
+
+#telegram_send_message "LEMPT UTILS SCRIPT NOTIFICATION TEST"

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 #############################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
@@ -46,14 +46,15 @@ mysql_user_create() {
 
     fi
 
-    mysql -u "${MUSER}" -p"${MPASS}" -e "${sql1}"
-
-    if [ $? -eq 0 ]; then
+    ${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}"
+    mysql_result=$?
+    
+    if [ "${mysql_result}" -eq 0 ]; then
         log_event "success" " MySQL user ${db_user} created" "true"
         return 0
 
     else
-        log_event "error" "Something went wrong creating user: ${db_user}" "true"
+        log_event "error" "Something went wrong creating user: ${db_user}. MySQL output: ${mysql_result}" "true"
         return 1
 
     fi
@@ -71,14 +72,15 @@ mysql_user_delete() {
 
     log_event "info" "Deleting ${db_user} user in MySQL ..." "true"
 
-    mysql -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" >>"${LOG}"
-
-    if [ $? -eq 0 ]; then
+    ${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" >>"${LOG}"
+    mysql_result=$?
+    
+    if [ "${mysql_result}" -eq 0 ]; then
         log_event "success" " Database user ${db_user} deleted" "true"
         return 0
 
     else
-        log_event "error" "Something went wrong deleting user: ${db_user}" "true"
+        log_event "error" "Something went wrong deleting user: ${db_user}. MySQL output: ${mysql_result}" "true"
         return 1
 
     fi
@@ -100,14 +102,15 @@ mysql_user_psw_change() {
     sql1="ALTER USER '${db_user}'@'localhost' IDENTIFIED BY '${db_user_psw}';"
     sql2="FLUSH PRIVILEGES;"
 
-    mysql -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" >>"${LOG}"
-
-    if [ $? -eq 0 ]; then
-        log_event "success" "Password changed for user ${db_user}" "true" 
+    ${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}"
+    mysql_result=$?
+    
+    if [ "${mysql_result}" -eq 0 ]; then
+        log_event "success" "New password for user ${db_user}: ${db_user_psw}" "true" 
         return 0
 
     else
-        log_event "error" "Something went wrong changing MySQL password to user ${db_user}" "true"
+        log_event "error" "Something went wrong changing MySQL password to user ${db_user}. MySQL output: ${mysql_result}" "true"
         return 1
 
     fi
@@ -122,16 +125,17 @@ mysql_user_grant_privileges() {
     local db_user=$1
     local db_target=$2
 
-    local sql1 sql2
+    local sql1 sql2 mysql_result
 
     log_event "info" "Granting privileges to ${db_user} on ${db_target} database in MySQL" "true"
 
     sql1="GRANT ALL PRIVILEGES ON ${db_target}.* TO '${db_user}'@'localhost';"
     sql2="FLUSH PRIVILEGES;"
 
-    mysql -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" >>$LOG
-
-    if [ $? -eq 0 ]; then
+    ${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}"
+    mysql_result=$?
+    
+    if [ "${mysql_result}" -eq 0 ]; then
         log_event "success" "Privileges granted to user ${db_user}" "true"
         return 0
 
@@ -213,20 +217,21 @@ mysql_database_create() {
 
     local database=$1
 
-    local sql1
+    local sql1 mysql_result
 
     log_event "info" "Creating ${database} database in MySQL ..." "true"
 
     sql1="CREATE DATABASE IF NOT EXISTS ${database};"
 
-    mysql -u "${MUSER}" -p"${MPASS}" -e "${sql1}" >>$LOG
+    ${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}"
+    mysql_result=$?
 
-    if [ $? -eq 0 ]; then
+    if [ "${mysql_result}" -eq 0 ]; then
         log_event "success" "Database ${database} created successfully" "true"
         return 0
 
     else
-        log_event "error" "Something went wrong creating database: ${database}" "true"
+        log_event "error" "Something went wrong creating database: ${database}. MySQL output: ${mysql_result}" "true"
         return 1
 
     fi
@@ -239,19 +244,21 @@ mysql_database_drop() {
 
     local database=$1
 
-    local sql1
+    local sql1 mysql_result
 
     log_event "info" "Droping the database: ${database}" "true"
 
     sql1="DROP DATABASE ${database};"
-    mysql -u "${MUSER}" -p"${MPASS}" -e "${sql1}" >>$LOG
+    
+    ${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}"
+    mysql_result=$?
 
-    if [ $? -eq 0 ]; then
+    if [ "${mysql_result}" -eq 0 ]; then
         log_event "success" "Database ${database} deleted successfully" "true"
         return 0
 
     else
-        log_event "error" "Something went wrong deleting database: ${database}" "true"
+        log_event "error" "Something went wrong deleting database: ${database}. MySQL output: ${mysql_result}" "true"
         return 1
         
     fi
@@ -266,17 +273,19 @@ mysql_database_import() {
     local database=$1
     local dump_file=$2
 
+    local import_status
+
     log_event "info" "Importing dump file ${dump_file} into database: ${database}" "true"
 
-    pv "${dump_file}" | mysql -f -u"${MUSER}" -p"${MPASS}" -f -D "${database}"
-
+    pv "${dump_file}" | ${MYSQL} -f -u"${MUSER}" -p"${MPASS}" -f -D "${database}"
     import_status=$?
-    if [ $import_status -eq 0 ]; then
+
+    if [ ${import_status} -eq 0 ]; then
         log_event "success" "Database ${database} imported successfully" "true"
         return 0
 
     else
-        log_event "error" "Something went wrong importing database: ${database}" "true"
+        log_event "error" "Something went wrong importing database: ${database}. Import output: ${import_status}" "true"
         return 1
 
     fi
@@ -294,15 +303,15 @@ mysql_database_export() {
     local dump_status
 
     log_event "info" "Creating a dump file of: ${database}" "true"
-    $MYSQLDUMP -u "${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}"
+    ${MYSQLDUMP} -u "${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}"
     
     dump_status=$?
-    if [ $dump_status -eq 0 ]; then
+    if [ ${dump_status} -eq 0 ]; then
         log_event "success" "Database ${database} exported successfully" "true"
         return 0
     
     else
-        log_event "error" "Something went wrong exporting database: ${database}" "true"
+        log_event "error" "Something went wrong exporting database: ${database}. MySQL dump output: ${dump_status}" "true"
         return 1
 
     fi

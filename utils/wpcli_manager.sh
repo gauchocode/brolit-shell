@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 ################################################################################
 #
 # Ref: https://kinsta.com/blog/wp-cli/
@@ -29,125 +29,135 @@ source "${SFOLDER}/libs/commons.sh"
 source "${SFOLDER}/libs/wpcli_helper.sh"
 # shellcheck source=${SFOLDER}/libs/wordpress_helper.sh
 source "${SFOLDER}/libs/wordpress_helper.sh"
+# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
+source "${SFOLDER}/libs/mail_notification_helper.sh"
+# shellcheck source=${SFOLDER}/libs/telegram_notification_helper.sh
+source "${SFOLDER}/libs/telegram_notification_helper.sh"
 
 ################################################################################
 
 wpcli_main_menu() {
 
-  local WPCLI_OPTIONS CHOSEN_WPCLI_OPTION CHOSEN_PLUGIN_OPTION
+  # $1 = ${wp_site}
 
-  WPCLI_OPTIONS="01 INSTALL_PLUGINS 02 DELETE_THEMES 03 DELETE_PLUGINS 04 REINSTALL_ALL_PLUGINS 05 VERIFY_WP 06 UPDATE_WP 07 REINSTALL_WP 08 CLEAN_WP_DB 09 PROFILE_WP 10 CHANGE_TABLES_PREFIX 11 REPLACE_URLs 12 SEOYOAST_REINDEX 13 DELETE_NOT_CORE_FILES"
-  CHOSEN_WPCLI_OPTION=$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 $(for x in ${WPCLI_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  local wp_site=$1
+
+  local wpcli_options chosen_wpcli_options wp_plugins chosen_plugin_option
+
+  # Array of plugin slugs to install
+  wp_plugins=(
+    "wordpress-seo" " " off
+    "duracelltomi-google-tag-manager" " " off
+    "ewww-image-optimizer" " " off
+    "post-smtp" " " off
+    "contact-form-7" " " off
+    "advanced-custom-fields" " " off
+    "acf-vc-integrator" " " off
+    "w3-total-cache" " " off
+    "fast-velocity-minify" " " off
+    "iwp-client" " " off
+    "fresh-plugins" " " off
+    "wordfence" " " off
+    "better-wp-security" " " off
+    "quttera-web-malware-scanner" " " off
+  )
+
+  wpcli_options="01 INSTALL_PLUGINS 02 DELETE_THEMES 03 DELETE_PLUGINS 04 REINSTALL_ALL_PLUGINS 05 VERIFY_WP 06 UPDATE_WP 07 REINSTALL_WP 08 CLEAN_WP_DB 09 PROFILE_WP 10 CHANGE_TABLES_PREFIX 11 REPLACE_URLs 12 SEOYOAST_REINDEX 13 DELETE_NOT_CORE_FILES"
+  chosen_wpcli_options=$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 $(for x in ${wpcli_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
-    if [[ ${CHOSEN_WPCLI_OPTION} == *"01"* ]]; then
+    if [[ ${chosen_wpcli_options} == *"01"* ]]; then
 
       # INSTALL_PLUGINS
-      CHOSEN_PLUGIN_OPTION=$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to install." 20 78 15 "${WP_PLUGINS[@]}" 3>&1 1>&2 2>&3)
-      echo "Setting CHOSEN_PLUGIN_OPTION=$CHOSEN_PLUGIN_OPTION"
+      chosen_plugin_option=$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to install." 20 78 15 "${wp_plugins[@]}" 3>&1 1>&2 2>&3)
 
-      for plugin in $CHOSEN_PLUGIN_OPTION; do
-        #echo "sudo -u www-data wp --path=${WP_SITE} plugin install $plugin --activate"
-        wpcli_install_plugin "${WP_SITE}" "$plugin"
+      for plugin in $chosen_plugin_option; do
+
+        wpcli_install_plugin "${wp_site}" "$plugin"
+
       done
 
     fi
 
-    if [[ ${CHOSEN_WPCLI_OPTION} == *"02"* ]]; then
+    if [[ ${chosen_wpcli_options} == *"02"* ]]; then
 
       # DELETE_THEMES
 
       # Listing installed themes
-      WP_DEL_THEMES=$(wp --path="${WP_SITE}" theme list --quiet --field=name --status=inactive --allow-root)
+      WP_DEL_THEMES=$(wp --path="${wp_site}" theme list --quiet --field=name --status=inactive --allow-root)
       array_to_checklist "$WP_DEL_THEMES"
-      echo "Setting WP_DEL_THEMES=${checklist_array[@]}"
       CHOSEN_DEL_THEME_OPTION=$(whiptail --title "Theme Selection" --checklist "Select the themes you want to delete." 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)
       #echo "Setting CHOSEN_DEL_THEME_OPTION="$CHOSEN_DEL_THEME_OPTION
 
       for theme_del in $CHOSEN_DEL_THEME_OPTION; do
         theme_del=$(sed -e 's/^"//' -e 's/"$//' <<<$theme_del) #needed to ommit double quotes
         echo "theme delete $theme_del"
-        wpcli_delete_theme "${WP_SITE}" "$theme_del"
+        wpcli_delete_theme "${wp_site}" "$theme_del"
       done
 
     fi
-    if [[ ${CHOSEN_WPCLI_OPTION} == *"03"* ]]; then
+    if [[ ${chosen_wpcli_options} == *"03"* ]]; then
 
       # DELETE_PLUGINS
 
       # Listing installed plugins
-      WP_DEL_PLUGINS=$(wp --path=${WP_SITE} plugin list --quiet --field=name --status=inactive --allow-root)
-      array_to_checklist "$WP_DEL_PLUGINS"
-      CHOSEN_DEL_PLUGIN_OPTION=$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to delete." 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)
+      wp_del_plugins=$(wp --path="${wp_site}" plugin list --quiet --field=name --status=inactive --allow-root)
+      array_to_checklist "${wp_del_plugins}"
+      chosen_del_plugin_option=$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to delete:" 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)
 
-      for plugin_del in $CHOSEN_DEL_PLUGIN_OPTION; do
-        plugin_del=$(sed -e 's/^"//' -e 's/"$//' <<<$plugin_del) #needed to ommit double quotes
-        echo "plugin delete $plugin_del"
-        wpcli_delete_plugin "${WP_SITE}" "$plugin_del"
+      for plugin_del in ${chosen_del_plugin_option}; do
+        plugin_del=$(sed -e 's/^"//' -e 's/"$//' <<<"${plugin_del}") #needed to ommit double quotes
+        log_event "info" "Deleting plugin: ${plugin_del}" "true"
+        wpcli_delete_plugin "${wp_site}" "${plugin_del}"
+
       done
 
     fi
 
-    if [[ ${CHOSEN_WPCLI_OPTION} == *"04"* ]]; then
+    if [[ ${chosen_wpcli_options} == *"04"* ]]; then
 
       #REINSTALL_PLUGINS
-
-      wpcli_force_reinstall_plugins "${WP_SITE}"
+      wpcli_force_reinstall_plugins "${wp_site}"
 
     fi
 
-    if [[ ${CHOSEN_WPCLI_OPTION} == *"05"* ]]; then
+    if [[ ${chosen_wpcli_options} == *"05"* ]]; then
 
       # VERIFY_WP
-
-      echo -e ${B_CYAN}" > Verifying Core Checksum ..."${ENDCOLOR} >&2
-      wpcli_core_verify "${WP_SITE}"
-
-      echo -e ${B_CYAN}" > Verifying Plugin Checksum ..."${ENDCOLOR} >&2
-      wpcli_plugin_verify "${WP_SITE}"
+      wpcli_core_verify_result=$(wpcli_core_verify "${wp_site}")
+      telegram_send_message "$wpcli_core_verify_result"
+      wpcli_plugin_verify "${wp_site}"
 
     fi
 
-    if [[ ${CHOSEN_WPCLI_OPTION} == *"06"* ]]; then
+    if [[ ${chosen_wpcli_options} == *"06"* ]]; then
 
       # UPDATE_WP
-
-      #Run wp doctor before
-      echo -e ${B_CYAN}" > WP Update ..."${ENDCOLOR} >&2
-      wpcli_core_update "${WP_SITE}"
-
-      echo -e ${B_GREEN}" > DONE"${ENDCOLOR} >&2
+      wpcli_core_update "${wp_site}"
 
     fi
 
-    if [[ ${CHOSEN_WPCLI_OPTION} == *"07"* ]]; then
+    if [[ ${chosen_wpcli_options} == *"07"* ]]; then
 
       # REINSTALL_WP
-
-      echo -e ${B_CYAN}" > Reinstalling WP on: ${WP_SITE}"${ENDCOLOR} >&2
-
-      wpcli_core_reinstall "${WP_SITE}"
-
-      echo -e ${B_GREEN}" > DONE"${ENDCOLOR} >&2
+      wpcli_core_reinstall "${wp_site}"
+      telegram_send_message "WordPress re-install for site: ${wp_site} on ${VPSNAME}"
 
     fi
 
-    if [[ ${CHOSEN_WPCLI_OPTION} == *"08"* ]]; then
+    if [[ ${chosen_wpcli_options} == *"08"* ]]; then
 
       # CLEAN_DB
+      log_event "info" "Executing: wp --path=${wp_site} transient delete --expired --allow-root" "true"
+      wp --path="${wp_site}" transient delete --expired --allow-root
 
-      echo -e ${B_CYAN}" > Deleting transient ..."${ENDCOLOR}
-      wp --path=${WP_SITE} transient delete --expired --allow-root
-
-      echo -e ${B_CYAN}" > Cache Flush ..."${ENDCOLOR}
-      wp --path=${WP_SITE} cache flush --allow-root
-      
-      echo -e ${B_GREEN}" > DONE"${ENDCOLOR}
+      log_event "info" "Executing: wp --path=${wp_site} cache flush --allow-root" "true"
+      wp --path="${wp_site}" cache flush --allow-root
 
     fi
 
-    if [[ ${CHOSEN_WPCLI_OPTION} == *"09"* ]]; then
+    if [[ ${chosen_wpcli_options} == *"09"* ]]; then
 
       # PROFILE_WP
 
@@ -161,38 +171,42 @@ wpcli_main_menu() {
       if [ $exitstatus = 0 ]; then
 
         if [[ ${CHOSEN_PROF_OPTION} == *"01"* ]]; then
-          #This command shows the stages of loading WordPress.
-          wp --path="${WP_SITE}" profile stage --allow-root
+          #This command shows the stages of loading WordPress
+          log_event "info" "Executing: wp --path=${wp_site} profile stage --allow-root" "true"
+          wp --path="${wp_site}" profile stage --allow-root
 
         fi
         if [[ ${CHOSEN_PROF_OPTION} == *"02"* ]]; then
           #Can drill down into each stage, here we drill down into the bootstrap stage
-          wp --path="${WP_SITE}" profile stage bootstrap --allow-root
+          log_event "info" "Executing: wp --path=${wp_site} profile stage bootstrap --allow-root" "true"
+          wp --path="${wp_site}" profile stage bootstrap --allow-root
 
         fi
         if [[ ${CHOSEN_PROF_OPTION} == *"03"* ]]; then
           #All stage
-          #sudo -u www-data wp --path=${SITES}'/'${WP_SITE} profile stage --all --orderby=time --allow-root
+          #sudo -u www-data wp --path=${SITES}'/'${wp_site} profile stage --all --orderby=time --allow-root
           #You can also use the --spotlight flag to filter out zero-like values for easier reading
-          wp --path="${WP_SITE}" profile stage --all --spotlight --orderby=time --allow-root
+          log_event "info" "Executing: wp --path=${wp_site} profile stage --all --spotlight --orderby=time --allow-root" "true"
+          wp --path="${wp_site}" profile stage --all --spotlight --orderby=time --allow-root
 
         fi
         if [[ ${CHOSEN_PROF_OPTION} == *"04"* ]]; then
           #Here we dig into the wp hook
-          wp --path="${WP_SITE}" profile hook wp --allow-root
+          log_event "info" "Executing: wp --path=${wp_site} profile hook wp --allow-root" "true"
+          wp --path="${wp_site}" profile hook wp --allow-root
 
         fi
         if [[ ${CHOSEN_PROF_OPTION} == *"05"* ]]; then
           #Here we dig into the wp hook
-          echo " > Executing: wp --path=${WP_SITE} profile hook --all --spotlight --allow-root"
-          wp --path="${WP_SITE}" profile hook --all --spotlight --allow-root
+          log_event "info" "Executing: wp --path=${wp_site} profile hook --all --spotlight --allow-root" "true"
+          wp --path="${wp_site}" profile hook --all --spotlight --allow-root
 
         fi
 
       fi
 
     fi
-    if [[ ${CHOSEN_WPCLI_OPTION} == *"10"* ]]; then
+    if [[ ${chosen_wpcli_options} == *"10"* ]]; then
 
       # CHANGE_TABLES_PREFIX
 
@@ -200,12 +214,12 @@ wpcli_main_menu() {
       TABLES_PREFIX=$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)
 
       # Change WP tables PREFIX
-      wpcli_change_tables_prefix "${WP_SITE}" "${TABLES_PREFIX}"
+      wpcli_change_tables_prefix "${wp_site}" "${TABLES_PREFIX}"
 
-      echo " > New Tables prefix for ${WP_SITE}: ${TABLES_PREFIX}"
+      echo " > New Tables prefix for ${wp_site}: ${TABLES_PREFIX}"
 
     fi
-    if [[ ${CHOSEN_WPCLI_OPTION} == *"11"* ]]; then
+    if [[ ${chosen_wpcli_options} == *"11"* ]]; then
 
       # REPLACE_URLs
 
@@ -215,27 +229,25 @@ wpcli_main_menu() {
       # TODO: Make a database Backup before replace URLs (con wp-cli)
       #mysql_database_export "${TARGET_DB}" "${SFOLDER}/tmp-backup/${TARGET_DB}_bk_before_replace_urls.sql"
 
-      ask_url_search_and_replace "${WP_SITE}"
+      ask_url_search_and_replace "${wp_site}"
 
     fi
 
-    if [[ ${CHOSEN_WPCLI_OPTION} == *"12"* ]]; then
+    if [[ ${chosen_wpcli_options} == *"12"* ]]; then
 
       # SEOYOAST_REINDEX
-
-      wpcli_seoyoast_reindex "${WP_SITE}"
+      wpcli_seoyoast_reindex "${wp_site}"
 
     fi
 
-    if [[ ${CHOSEN_WPCLI_OPTION} == *"13"* ]]; then
+    if [[ ${chosen_wpcli_options} == *"13"* ]]; then
 
       # DELETE_NOT_CORE_FILES
-
       echo -e ${B_RED} " > This script will delete all non-core wordpress files (except wp-content). Do you want to continue? [y/n]" ${ENDCOLOR}
       read -r answer
       
       if [[ $answer == "y" ]]; then
-          wpcli_delete_not_core_files "${WP_SITE}"
+          wpcli_delete_not_core_files "${wp_site}"
       
       fi   
 
@@ -256,17 +268,21 @@ wpcli_main_menu() {
 
 wpcli_install_if_not_installed
 
+# Directory Browser
 startdir=${SITES}
 menutitle="Site Selection Menu"
+directory_browser "${menutitle}" "${startdir}"
 
-directory_browser "$menutitle" "$startdir"
-WP_SITE=$filepath"/"$filename
+wp_site="${filepath}/${filename}"
 
-install_path=$(search_wp_config "${WP_SITE}")
+log_event "info" "Searching WordPress Installation on directory: ${wp_site}" "true"
+
+# Search a wordpress installation on selected directory
+install_path=$(search_wp_config "${wp_site}")
 
 if [[ -z "${install_path}" || "${install_path}" = '' ]]; then
 
-  echo " > Not WordPress Installation Found! Returning to Main Menu ...">>$LOG
+  log_event "info" "Not WordPress Installation Found! Returning to Main Menu" "false"
   
   whiptail --title "WARNING" --msgbox "Not WordPress Installation Found! Press Enter to return to the Main Menu." 8 78
   
@@ -274,29 +290,11 @@ if [[ -z "${install_path}" || "${install_path}" = '' ]]; then
   
 else
 
-  WP_SITE=${install_path}
+  # WordPress installation path
+  wp_site=${install_path}
 
-  echo -e ${CYAN}" > Working with WP_SITE=${WP_SITE}"${ENDCOLOR} >&2
-  echo " > Working with WP_SITE=${WP_SITE}" >>$LOG
+  log_event "info" "Working with wp_site=${wp_site}" "true"
 
-  # Array of plugin slugs to install
-  WP_PLUGINS=(
-    "wordpress-seo" " " off
-    "duracelltomi-google-tag-manager" " " off
-    "ewww-image-optimizer" " " off
-    "post-smtp" " " off
-    "contact-form-7" " " off
-    "advanced-custom-fields" " " off
-    "acf-vc-integrator" " " off
-    "w3-total-cache" " " off
-    "fast-velocity-minify" " " off
-    "iwp-client" " " off
-    "fresh-plugins" " " off
-    "wordfence" " " off
-    "better-wp-security" " " off
-    "quttera-web-malware-scanner" " " off
-  )
-
-  wpcli_main_menu
+  wpcli_main_menu "${wp_site}"
 
 fi

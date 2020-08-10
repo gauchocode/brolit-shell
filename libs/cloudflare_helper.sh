@@ -1,7 +1,11 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
+################################################################################
+#
+#   Ref: https://api.cloudflare.com/
+#
 ################################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
@@ -74,10 +78,10 @@ cloudflare_clear_cache() {
 cloudflare_development_mode() {
 
     # $1 = ${root_domain}
-    # $2 = ${cf_mode}
+    # $2 = ${dev_mode}
 
     local root_domain=$1
-    local cf_mode=$2
+    local dev_mode=$2
 
     local zone_name purge_cache
 
@@ -100,19 +104,67 @@ cloudflare_development_mode() {
 
     log_event "info" "Zone ID found: ${zone_id}" "true"
 
-    dev_mode=$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/development_mode" \
+    dev_mode_result=$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/development_mode" \
      -H "X-Auth-Email: ${auth_email}" \
      -H "X-Auth-Key: ${auth_key}" \
      -H "Content-Type: application/json" \
-     --data "{\"value\":\"${cf_mode}\"}")
+     --data "{\"value\":\"${dev_mode}\"}")
 
-    if [[ $dev_mode == *"\"success\":false"* ]]; then
-        message="Error trying to change development mode for ${root_domain}. Results:\n $dev_mode"
+    if [[ $dev_mode_result == *"\"success\":false"* ]]; then
+        message="Error trying to change development mode for ${root_domain}. Results:\n $dev_mode_result"
         log_event "error" "$message" "true"
         return 1
 
     else
-        message="Development mode for ${root_domain} is ${cf_mode}"
+        message="Development mode for ${root_domain} is ${dev_mode}"
+        log_event "success" "$message" "true"
+
+    fi
+
+}
+
+cloudflare_ssl_mode() {
+
+    # $1 = ${root_domain}
+    # $2 = ${ssl_mode} default value: off, valid values: off, flexible, full, strict
+
+    local root_domain=$1
+    local ssl_mode=$2
+
+    local zone_name ssl_mode_result
+
+    zone_name=${root_domain}
+
+    #We need to do this, because certbot use this file with this vars
+    #And this script need this others var names 
+    auth_email=${dns_cloudflare_email}
+    auth_key=${dns_cloudflare_api_key}
+
+    # Checking cloudflare credentials file
+    if [[ -z "${auth_email}" ]]; then
+        generate_cloudflare_config
+
+    fi
+
+    log_event "info" "Getting Zone & Record ID's for domain: ${root_domain}" "true"
+
+    zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
+
+    log_event "info" "Zone ID found: ${zone_id}" "true"
+
+    ssl_mode_result=$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/ssl" \
+     -H "X-Auth-Email: ${auth_email}" \
+     -H "X-Auth-Key: ${auth_key}" \
+     -H "Content-Type: application/json" \
+     --data "{\"value\":\"${ssl_mode}\"}")
+
+    if [[ $ssl_mode_result == *"\"success\":false"* ]]; then
+        message="Error trying to change ssl mode for ${root_domain}. Results:\n $ssl_mode_result"
+        log_event "error" "$message" "true"
+        return 1
+
+    else
+        message="SSL mode for ${root_domain} is ${ssl_mode}"
         log_event "success" "$message" "true"
 
     fi

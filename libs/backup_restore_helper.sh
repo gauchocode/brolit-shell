@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 ################################################################################
 
 ### Checking some things
@@ -29,6 +29,61 @@ source "${SFOLDER}/libs/cloudflare_helper.sh"
 source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 ################################################################################
+
+restore_menu () {
+
+  local restore_options chosen_restore_options
+
+  restore_options="01 RESTORE_FROM_DROPBOX 02 RESTORE_FROM_URL"
+  chosen_restore_options=$(whiptail --title "RESTORE SOURCE" --menu "Choose a Restore Source to run" 20 78 10 $(for x in ${restore_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+
+    # shellcheck source=${SFOLDER}/libs/backup_restore_helper.sh
+    source "${SFOLDER}/libs/backup_restore_helper.sh"
+
+    if [[ ${chosen_restore_options} == *"01"* ]]; then
+      server_selection_restore_menu
+
+    elif [[ ${chosen_restore_options} == *"02"* ]]; then
+      # shellcheck source=${SFOLDER}/utils/wordpress_restore_from_source.sh
+      source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
+
+    fi
+
+  fi
+
+  main_menu
+
+}
+
+server_selection_restore_menu () {
+
+  SITES_F="site"
+  CONFIG_F="configs"
+  DBS_F="database"
+
+  local dropbox_server_list
+  
+  # Select SERVER
+  dropbox_server_list=$($DROPBOX_UPLOADER -hq list "/")
+  chosen_server=$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 $(for x in ${dropbox_server_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+
+    dropbox_type_list=$($DROPBOX_UPLOADER -hq list "${chosen_server}")
+    dropbox_type_list='project '$dropbox_type_list
+
+    # Select backup type
+    select_restore_type_from_dropbox "${chosen_server}" "${dropbox_type_list}"
+
+  else
+    return 0
+    # TODO: return to backup menu?
+  fi
+
+}
 
 #This is executed if we want to restore a file backup on directory with the same name
 make_temp_files_backup() {
@@ -165,7 +220,7 @@ restore_nginx_site_files() {
   bk_file="nginx-configs-files-${date}.tar.bz2"
   bk_to_download="${chosen_server}/configs/nginx/${bk_file}"
 
-  echo " > Running dropbox_uploader.sh download ${bk_to_download}" >>$LOG
+  log_event "info" "Running dropbox_uploader.sh download ${bk_to_download} ..." "false"
   $DROPBOX_UPLOADER download "${bk_to_download}"
 
   # Extract tar.bz2 with lbzip2
@@ -185,40 +240,33 @@ restore_nginx_site_files() {
       file_browser "$menutitle" "$startdir"
 
       to_restore=$filepath"/"$filename
-      echo -e ${CYAN}" > File to restore: ${to_restore} ..."${ENDCOLOR}>&2
+      log_event "info" "File to restore: ${to_restore} ..." "true"
 
     else
 
       to_restore="${SFOLDER}/tmp/nginx/sites-available/${domain}"
-
       filename=${domain}
-      echo -e ${CYAN}" > File to restore: ${to_restore} ..."${ENDCOLOR}>&2
+
+      log_event "info" "File to restore: ${to_restore} ..." "true"
 
     fi    
 
     if [[ -f "${WSERVER}/sites-available/${filename}" ]]; then
 
-      echo " > File ${WSERVER}/sites-available/${filename} already exists. Making a backup file ..." >>$LOG
-      echo -e ${CYAN}" > File ${WSERVER}/sites-available/${filename} already exists. Making a backup file ..."${ENDCOLOR}>&2
-
+      log_event "info" "File ${WSERVER}/sites-available/${filename} already exists. Making a backup file ..." "true"
       mv "${WSERVER}/sites-available/${filename}" "${WSERVER}/sites-available/${filename}_bk"
 
-      echo " > Restoring backup: ${filename} ..." >>$LOG
-      echo -e ${CYAN}" > Restoring backup: ${filename} ..."${ENDCOLOR}>&2
-
+      log_event "info" "Restoring backup: ${filename} ..." "true"
       cp "${to_restore}" "${WSERVER}/sites-available/$filename"
 
-      echo " > Reloading webserver ..." >>$LOG
-      echo -e ${CYAN}" > Reloading webserver ..."${ENDCOLOR}>&2
+      log_event "info" "Reloading webserver ..." "true"
       service nginx reload
 
     else
 
       echo -e ${CYAN}" > File ${WSERVER}/sites-available/${filename} does not exists ..."${ENDCOLOR}>&2
 
-      echo " > Restoring backup: ${filename} ..." >>$LOG
-      echo -e ${CYAN}" > Restoring backup: ${filename} ..."${ENDCOLOR}>&2
-
+      log_event "info" "Restoring backup: ${filename}" "true"
       cp "${to_restore}" "${WSERVER}/sites-available/${filename}"
       ln -s "${WSERVER}/sites-available/${filename}" "${WSERVER}/sites-enabled/${filename}"
 
@@ -228,7 +276,7 @@ restore_nginx_site_files() {
 
   else
 
-    echo -e ${B_RED}" > /etc/nginx/sites-available NOT exist... Skipping!"${ENDCOLOR}>&2
+    log_event "error" "/etc/nginx/sites-available NOT exist... Skipping!" "true"
     #echo "ERROR: nginx main dir is not present!"
 
   fi

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 ################################################################################
 #
 # TODO: check when add www.DOMAIN.com and then select other stage != prod
@@ -43,7 +43,7 @@ if [ $exitstatus = 0 ]; then
     project_domain=$(ask_project_domain)
 
     possible_root_domain=${project_domain#[[:alpha:]]*.}
-    root_domain=$(ask_rootdomain_to_cloudflare_config "${possible_root_domain}")
+    root_domain=$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")
 
     project_name=$(ask_project_name "${project_domain}")
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 ################################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
@@ -31,7 +31,7 @@ netdata_required_packages() {
 
 netdata_installer() {
 
-  echo -e ${B_CYAN}"\nInstalling Netdata...\n"${ENDCOLOR}
+  log_event "info" "\nInstalling Netdata...\n" "true"
   bash <(curl -Ss https://my-netdata.io/kickstart.sh) all --dont-wait
 
   killall netdata && cp system/netdata.service /etc/systemd/system/
@@ -47,26 +47,26 @@ netdata_configuration() {
   # MySQL
   create_netdata_db_user
   cat "${SFOLDER}/confs/netdata/python.d/mysql.conf" > "/etc/netdata/python.d/mysql.conf"
-  echo -e ${GREEN}" > MySQL config DONE!"${ENDCOLOR}
+  log_event "info" "MySQL config done!" "true"
 
   # monit
   cat "${SFOLDER}/confs/netdata/python.d/monit.conf" >"/etc/netdata/python.d/monit.conf"
-  echo -e ${GREEN}" > Monit config DONE!"${ENDCOLOR}
+  log_event "info" "Monit config done!" "true"
 
   # web_log
   cat "${SFOLDER}/confs/netdata/python.d/web_log.conf" >"/etc/netdata/python.d/web_log.conf"
-  echo -e ${GREEN}" > Nginx Web Log config DONE!"${ENDCOLOR}
+  log_event "info" "Nginx Web Log config done!" "true"
 
   # health_alarm_notify
   cat "${SFOLDER}/confs/netdata/health_alarm_notify.conf" >"/etc/netdata/health_alarm_notify.conf"
-  echo -e ${GREEN}" > Health alarm config DONE!"${ENDCOLOR}
+  log_event "info" "Health alarm config done!" "true"
 
   # telegram
   netdata_telegram_config
 
   systemctl daemon-reload && systemctl enable netdata && service netdata start
 
-  echo -e ${B_GREEN}" > Netdata Configuration OK!"${ENDCOLOR}
+  log_event "info" "Netdata Configuration done!" "true"
 
 }
 
@@ -77,11 +77,13 @@ netdata_alarm_level() {
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
     echo "NETDATA_ALARM_LEVEL=${NETDATA_ALARM_LEVEL}" >>/root/.broobe-utils-options
-    echo -e ${CYAN}"Alarm Level for Notifications: ${NETDATA_ALARM_LEVEL} ..."${ENDCOLOR}
+    log_event "info" "Alarm Level for Notifications: ${NETDATA_ALARM_LEVEL}" "true"
 
   else
-    exit 1
+    return 1
+
   fi
+
 }
 
 netdata_telegram_config() {
@@ -135,22 +137,26 @@ netdata_telegram_config() {
 
     else
       exit 1
+
     fi
 
   else
     exit 1
+
   fi
 
 }
 
 create_netdata_db_user() {
 
+  local SQL1 SQL2 SQL3
+
   # TODO: must check if user exists
   SQL1="CREATE USER 'netdata'@'localhost';"
   SQL2="GRANT USAGE on *.* to 'netdata'@'localhost';"
   SQL3="FLUSH PRIVILEGES;"
 
-  echo " > Creating netdata user in MySQL ..." >>$LOG
+  log_event "info" "Creating netdata user in MySQL" "true"
   mysql -u root -p"${MPASS}" -e "${SQL1}${SQL2}${SQL3}" >>$LOG
 
 }
@@ -171,9 +177,10 @@ if [ ! -x "${NETDATA}" ]; then
       echo "netdata_subdomain=${netdata_subdomain}" >>/root/.broobe-utils-options
 
     else
-      exit 1
+      return 1
 
     fi
+
   fi
 
   # Only for Cloudflare API
@@ -254,7 +261,7 @@ else
         case $yn in
         [Yy]*)
 
-          echo -e ${YELLOW}"\nUninstalling Netdata...\n"${ENDCOLOR}
+          log_event "warning" "Uninstalling Netdata ..." "true"
 
           # TODO: remove MySQL user
           
@@ -266,6 +273,8 @@ else
           rm "/usr/sbin/netdata"
 
           source "/usr/libexec/netdata-uninstaller.sh" --yes --dont-wait
+
+          log_event "info" "Netdata removed ok!" "true"
 
           break
           ;;

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 #############################################################################
 #
 # TODO: This script need a refactor
@@ -45,8 +45,7 @@ SITES_F="sites"
 CONFIG_F="configs"
 
 # Starting Message
-echo " > Starting project backup script ..." >>$LOG
-echo -e ${GREEN}" > Starting project backup script ..."${ENDCOLOR}
+log_event "info" "Starting project backup script" "true"
 
 # Get all directories
 TOTAL_SITES=$(find ${SITES} -maxdepth 1 -type d)
@@ -55,8 +54,7 @@ TOTAL_SITES=$(find ${SITES} -maxdepth 1 -type d)
 COUNT_TOTAL_SITES=$(find ${SITES} -maxdepth 1 -type d -printf '.' | wc -c)
 COUNT_TOTAL_SITES=$((${COUNT_TOTAL_SITES} - 1))
 
-echo -e ${CYAN}" > ${COUNT_TOTAL_SITES} directory found ..."${ENDCOLOR}
-echo " > ${COUNT_TOTAL_SITES} directory found ..." >>$LOG
+log_event "info" "${COUNT_TOTAL_SITES} directory found" "true"
 
 # MORE GLOBALS
 BK_FILE_INDEX=0
@@ -68,7 +66,7 @@ k=0
 
 for j in ${TOTAL_SITES}; do
 
-    echo -e ${YELLOW}" > Processing [${j}] ..."${ENDCOLOR}
+    log_event "info" "Processing [${j}] ..." "true"
 
     if [[ "$k" -gt 0 ]]; then
 
@@ -84,15 +82,12 @@ for j in ${TOTAL_SITES}; do
 
         fi
 
-        echo -e ${GREEN}" > Processed ${BK_FILE_INDEX} of ${COUNT_TOTAL_SITES} directories"${ENDCOLOR}
-        echo "> Processed ${BK_FILE_INDEX} of ${COUNT_TOTAL_SITES} directories" >>$LOG
-
+        log_event "info" "Processed ${BK_FILE_INDEX} of ${COUNT_TOTAL_SITES} directories" "true"
         BK_FILE_INDEX=$((BK_FILE_INDEX + 1))
 
     fi
 
-    echo -e ${CYAN}"###################################################"${ENDCOLOR}
-    echo "###################################################" >>$LOG
+    log_event "info" "###################################################" "true"
 
     k=$k+1
 
@@ -102,5 +97,4 @@ done
 rm -r "${BAKWP}/${NOW}"
 
 # Configure Email        
-echo -e ${CYAN}"> Preparing mail files backup section ..."${ENDCOLOR}
 mail_filesbackup_section "${BACKUPED_LIST[@]}" "${BK_FL_SIZES[@]}" "${ERROR}" "${ERROR_TYPE}"

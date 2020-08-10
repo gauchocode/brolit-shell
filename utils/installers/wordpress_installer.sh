@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 ################################################################################
 #
 # TODO: check when add www.DOMAIN.com and then select other stage != prod
@@ -54,13 +54,13 @@ if [ $exitstatus = 0 ]; then
     echo "Setting copy_project_path=${copy_project_path}"
 
     copy_project=$(basename $copy_project_path)
-    echo "Setting copy_project=${copy_project}"
+    log_event "info" "Setting copy_project=${copy_project}" "true"
 
     #ask_domain_to_install_site
     project_domain=$(ask_project_domain)
 
     possible_root_domain=${project_domain#[[:alpha:]]*.}
-    root_domain=$(ask_rootdomain_to_cloudflare_config "${possible_root_domain}")
+    root_domain=$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")
 
     project_name=$(ask_project_name "${project_domain}")
 
@@ -74,8 +74,7 @@ if [ $exitstatus = 0 ]; then
 
     if [ "${project_dir}" != 'ERROR' ]; then
       # Make a copy of the existing project
-      echo "Making a copy of ${copy_project} on ${project_dir} ..." >>$LOG
-      echo -e ${CYAN}"Making a copy of ${copy_project} on ${project_dir} ..."${ENDCOLOR}
+      log_event "info" "Making a copy of ${copy_project} on ${project_dir} ..." "true"
 
       #cd "${folder_to_install}"
       copy_project_files "${folder_to_install}/${copy_project}" "${project_dir}"
@@ -93,7 +92,7 @@ if [ $exitstatus = 0 ]; then
     project_domain=$(ask_project_domain)
 
     possible_root_domain=${project_domain#[[:alpha:]]*.}
-    root_domain=$(ask_rootdomain_to_cloudflare_config "${possible_root_domain}")
+    root_domain=$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")
 
     project_name=$(ask_project_name "${project_domain}")
 
@@ -104,13 +103,11 @@ if [ $exitstatus = 0 ]; then
     if [ "${project_dir}" != 'ERROR' ]; then
       # Download WP
       wp_download_wordpress "${folder_to_install}" "${project_domain}"
-      echo -e ${B_GREEN}" > WordPress downloaded OK!"${ENDCOLOR}
-      echo " > WordPress downloaded OK!" >>$LOG
+      log_event "success" "WordPress downloaded OK!" "true"
 
     else
-      echo -e ${B_RED}" > ERROR: Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..."${ENDCOLOR}
-      echo " > ERROR: Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..." >>$LOG
-      exit 1
+      log_event "error" "Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..." "true"
+      return 1
 
     fi
 
@@ -124,9 +121,9 @@ if [ $exitstatus = 0 ]; then
   database_user="${db_project_name}_user"
   database_user_passw=$(openssl rand -hex 12)
 
-  echo -e ${CYAN}"******************************************************************************************"${ENDCOLOR} >&2
+  log_event "info" "******************************************************************************************" "true"
   log_event "info" "Creating database ${database_name}, and user ${database_user} with pass ${database_user_passw}" "true"
-  echo -e ${CYAN}"******************************************************************************************"${ENDCOLOR} >&2
+  log_event "info" "******************************************************************************************" "true"
 
   mysql_database_create "${database_name}"
   mysql_user_create "${database_user}" "${database_user_passw}"

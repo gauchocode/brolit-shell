@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 #############################################################################
 
 ### Checking some things
@@ -31,14 +31,15 @@ DBS_F="databases"
 export BK_TYPE DBS_F
 
 # Starting Message
+log_event "info" "######################################################################################################" "true"
 log_event "info" "Starting database backup script" "true"
 
 # Get MySQL DBS
-DBS="$(${MYSQL} -u ${MUSER} -p${MPASS} -Bse 'show databases')"
+DBS="$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -Bse 'show databases')"
 
 # Get all databases name
 TOTAL_DBS=$(mysql_count_dabases "${DBS}")
-log_event "info" "${TOTAL_DBS} databases found ..." "true"
+log_event "info" "Databases found: ${TOTAL_DBS}" "true"
 
 # MORE GLOBALS
 BK_DB_INDEX=0
@@ -57,8 +58,7 @@ for DATABASE in ${DBS}; do
 
     log_event "success" "Backup ${BK_DB_INDEX} of ${TOTAL_DBS} done" "true"
 
-    echo -e ${GREEN}"###################################################"${ENDCOLOR}
-    echo "###################################################" >>$LOG
+    log_event "info" "######################################################################################################" "true"
 
   else
     log_event "info" "Ommiting the blacklisted database: [${DATABASE}]" "true"

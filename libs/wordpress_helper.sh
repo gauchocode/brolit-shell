@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 ################################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
@@ -67,8 +67,7 @@ wp_update_wpconfig() {
   # TODO: must check if ${wp_project_dir}/wp-config.php exists
 
   # Change wp-config.php database parameters
-  echo -e ${CYAN}" > Changing database parameters on ${wp_project_dir}/wp-config.php"${ENDCOLOR} >&2
-  echo " > Changing database parameters on ${wp_project_dir}/wp-config.php" >>$LOG
+  log_event "info" "Changing database parameters on ${wp_project_dir}/wp-config.php" "true"
   
   sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" "${wp_project_dir}/wp-config.php"
   
@@ -150,31 +149,35 @@ wp_replace_string_on_database() {
   local db_prefix=$1
   local target_db=$2
 
+  local chosen_db
+
   if [[ -z "${db_prefix}" ]]; then
+   
     db_prefix=$(whiptail --title "WordPress DB Prefix" --inputbox "Please insert the WordPress Database Prefix. Example: wp_" 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      echo "Setting db_prefix=${db_prefix}" >> $LOG
+      log_event "info" "Setting db_prefix=${db_prefix}" "false"
     else
-      exit 1
+      return 1
     fi
+
   fi
 
 
   if [[ -z "${target_db}" ]]; then
     
-    DBS="$(${MYSQL} -u ${MUSER} -p${MPASS} -Bse 'show databases')"
+    DBS="$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -Bse 'show databases')"
     
-    CHOSEN_DB=$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to work with" 20 78 10 `for x in ${DBS}; do echo "$x [DB]"; done` 3>&1 1>&2 2>&3)
+    chosen_db=$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to work with" 20 78 10 `for x in ${DBS}; do echo "$x [DB]"; done` 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      echo "Setting CHOSEN_DB=${CHOSEN_DB}" >> $LOG
+      log_event "info" "Setting chosen_db=${chosen_db}" "false"
     else
-      exit 1
+      return 1
     fi
 
   else
-    CHOSEN_DB=${target_db};
+    chosen_db=${target_db};
 
   fi
 
@@ -182,7 +185,7 @@ wp_replace_string_on_database() {
     existing_URL=$(whiptail --title "URL TO CHANGE" --inputbox "Insert the URL you want to change, including http:// or https://" 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
 
-    echo "Setting existing_URL=${existing_URL}" >> $LOG
+    log_event "info" "Setting existing_URL=${existing_URL}" "false"
 
     if [ ${exitstatus} = 0 ]; then
 
@@ -192,16 +195,15 @@ wp_replace_string_on_database() {
 
         if [ ${exitstatus} = 0 ]; then
 
-          echo "Setting new_URL=${new_URL}" >> $LOG
+          log_event "info" "Setting new_URL=${new_URL}" "false"
+          log_event "info" "Executing mysqldump of ${chosen_db} before replace urls ..." "false"
 
-          echo "Executing mysqldump of ${CHOSEN_DB} before replace urls ...">> $LOG
-          ${MYSQLDUMP} -u "${MUSER}" --password="${MPASS}" "${CHOSEN_DB}" > "${CHOSEN_DB}_bk_before_replace_urls.sql"
+          ${MYSQLDUMP} -u "${MUSER}" --password="${MPASS}" "${chosen_db}" > "${chosen_db}_bk_before_replace_urls.sql"
 
-          echo "Database backup created: ${CHOSEN_DB}_bk_before_replace_urls.sql">> $LOG
-          echo -e ${YELLOW}" > Database backup created: ${CHOSEN_DB}_bk_before_replace_urls.sql"${ENDCOLOR}
+          log_event "success" "Database backup created: ${chosen_db}_bk_before_replace_urls.sql" "true"
 
           # Queries
-          SQL0="USE ${CHOSEN_DB};"
+          SQL0="USE ${chosen_db};"
           SQL1="UPDATE ${db_prefix}options SET option_value = replace(option_value, '${existing_URL}', '${new_URL}') WHERE option_name = 'home' OR option_name = 'siteurl';"
           SQL2="UPDATE ${db_prefix}posts SET post_content = replace(post_content, '${existing_URL}', '${new_URL}');"
           SQL3="UPDATE ${db_prefix}posts SET guid = replace(guid, '${existing_URL}', '${new_URL}');"
@@ -210,13 +212,11 @@ wp_replace_string_on_database() {
           SQL6="UPDATE ${db_prefix}links SET link_url = replace(link_url, '${existing_URL}','${new_URL}');"
           SQL7="UPDATE ${db_prefix}comments SET comment_content = replace(comment_content , '${existing_URL}','${new_URL}');"
 
-          echo "Replacing URLs in database ${CHOSEN_DB} ...">> $LOG
-          echo -e ${YELLOW}" > Replacing URLs in database ${CHOSEN_DB} ..."${ENDCOLOR}
+          log_event "info" "Replacing URLs in database ${chosen_db} ..." "true"
 
           ${MYSQL} -u "${MUSER}" --password="${MPASS}" -e "${SQL0}${SQL1}${SQL2}${SQL3}${SQL4}${SQL5}${SQL6}${SQL7}"
 
-          echo " > STRING REPLACED OK">> $LOG
-          echo -e ${B_GREEN}" > STRING REPLACED OK"${ENDCOLOR}
+          log_event "success" "String replaced on database ${chosen_db} ..." "true"
 
         fi
 

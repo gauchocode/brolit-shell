@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 ################################################################################
 
 wpcli_install_if_not_installed() {
@@ -235,7 +235,7 @@ wpcli_plugin_verify() {
         plugin="--all"
     fi
 
-    echo -e ${B_GREEN}" > Running: sudo -u www-data wp --path="${wp_site}" plugin verify-checksums ${plugin}"${ENDCOLOR} >&2
+    log_event "info" "Running: sudo -u www-data wp --path="${wp_site}" plugin verify-checksums ${plugin}" "true"
     mapfile verify_plugin < <(sudo -u www-data wp --path="${wp_site}" plugin verify-checksums "${plugin}" 2>&1)
 
     # Return an array with wp-cli output

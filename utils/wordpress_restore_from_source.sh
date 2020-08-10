@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 #############################################################################
 
 ### Checking some things
@@ -42,7 +42,7 @@ ask_migration_source_type() {
 
   else
 
-    exit 1
+    return 1
 
   fi
 }
@@ -62,7 +62,7 @@ ask_migration_source_file() {
     echo "${source_files_dir}"
 
   else
-    exit 1
+    return 1
 
   fi
 
@@ -74,7 +74,8 @@ else
     echo "${source_files_url}"
 
   else
-    exit 0
+    return 1
+
   fi
 
 fi
@@ -96,7 +97,7 @@ ask_migration_source_db() {
     echo "${source_db_dir}"
 
   else
-    exit 1
+    return 1
 
   fi
 
@@ -108,7 +109,8 @@ else
     echo "${source_db_url}"
 
   else
-    exit 0
+    return 1
+
   fi
 
 fi
@@ -117,30 +119,12 @@ fi
 
 #############################################################################
 
-### Log Start
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-PATH_LOG="${SFOLDER}/logs"
-if [ ! -d "${SFOLDER}/logs" ]; then
-  echo " > Folder ${SFOLDER}/logs doesn't exist. Creating now ..."
-  mkdir "${SFOLDER}/logs"
-  echo " > Folder ${SFOLDER}/logs created ..."
-fi
-LOG_NAME="log_server_migration_${TIMESTAMP}.log"
-LOG="$PATH_LOG/$LOG_NAME"
-
-echo "Server Migration:: Script Start -- $(date +%Y%m%d_%H%M)" >>$LOG
-START_TIME=$(date +%s)
-
-if test -f /root/.broobe-utils-options; then
-  source "/root/.broobe-utils-options"
-fi
-
 # Project details
 project_domain=$(ask_project_domain)
 
 possible_root_domain=${PROJECT_DOMAIN#[[:alpha:]]*.}
 
-root_domain=$(ask_rootdomain_to_cloudflare_config "${possible_root_domain}")
+root_domain=$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")
 
 project_name=$(ask_project_name "${project_domain}")
 
@@ -277,8 +261,3 @@ BODY_DB='Database: '${project_name}'_'${project_state}'<br/>Database User: '${pr
 HTMLCLOSE='</body></html>'
 
 sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${VPSNAME} - Migration Complete: ${project_name}" -o message-content-type=html -m "$HTMLOPEN $BODY_SRV_MIG $BODY_DB $BODY_CLF $HTMLCLOSE" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}
-
-# Log End
-#END_TIME=$(date +%s)
-#ELAPSED_TIME=$(expr "${END_TIME}" - "${START_TIME}")
-#log_event "info" "Backup: Script End -- $(date +%Y%m%d_%H%M)" "true"

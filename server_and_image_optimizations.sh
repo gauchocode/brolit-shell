@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 ################################################################################
 
 ### Checking some things
@@ -51,8 +51,7 @@ update_last_optimization_date() {
 delete_old_logs() {
 
   # Remove old log files from system
-  echo " > Deleting old system logs..." >>$LOG
-  echo -e ${YELLOW}" > Deleting old system logs ..."${ENDCOLOR}
+  log_event "info" "Deleting old system logs ..." "true"
   ${FIND} /var/log/ -mtime +7 -type f -delete
 
 }
@@ -60,8 +59,7 @@ delete_old_logs() {
 clean_swap() {
 
   # Cleanning Swap
-  echo " > Cleanning Swap ..." >>$LOG
-  echo -e ${CYAN}" > Cleanning Swap ..."${ENDCOLOR}
+  log_event "info" "Cleanning Swap ..." "true"
   swapoff -a && swapon -a
 
 }
@@ -69,8 +67,7 @@ clean_swap() {
 clean_ram_cache() {
 
   # Cleanning RAM
-  echo " > Cleanning RAM ..." >>$LOG
-  echo -e ${CYAN}" > Cleanning RAM ..."${ENDCOLOR}
+  log_event "info" "Cleanning RAM ..." "true"
   sync
   echo 1 >/proc/sys/vm/drop_caches
 
@@ -145,8 +142,7 @@ if [ $exitstatus = 0 ]; then
   fi
   if [[ ${chosen_server_optimizations_options} == *"06"* ]]; then
     # Restarting services
-    echo " > Restarting services ..." >>$LOG
-    echo -e ${CYAN}" > Restarting services ..."${ENDCOLOR}
+    log_event "info" "Restarting services ..." "true"
     service php"${PHP_V}"-fpm restart
 
     # Cleanning Swap
