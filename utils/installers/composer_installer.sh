@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 ################################################################################
 
 ### Checking some things
@@ -21,37 +21,55 @@ source "${SFOLDER}/libs/commons.sh"
 #
 
 composer_install () {
+
+  local composer_result expected_signature actual_signature
+
+  log_event "info" "Running composer installer" "true"
   
-  if [[ -z "${DOMAIN}" || -z "${ROOT_DOMAIN}" || -z "${PROJECT_NAME}" ]]; then
-    echo -e ${B_RED}"Error: DOMAIN, ROOT_DOMAIN and PROJECT_NAME must be set! Exiting..."${ENDCOLOR}
-    exit 0
-  fi
-
-  EXPECTED_SIGNATURE="$(wget -q -O - https://composer.github.io/installer.sig)"
+  expected_signature="$(wget -q -O - https://composer.github.io/installer.sig)"
   php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-  ACTUAL_SIGNATURE="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
+  actual_signature="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
 
-  if [ "$EXPECTED_SIGNATURE" != "$ACTUAL_SIGNATURE" ]; then
+  if [ "$expected_signature" != "$actual_signature" ]; then
       >&2 echo 'ERROR: Invalid installer signature' >>$LOG
       rm composer-setup.php
-      exit 1
+      return 1
 
   fi
   
-  php composer-setup.php --quiet
-  RESULT=$?
-  rm composer-setup.php
+  php composer-setup.php --quiet --install-dir=/usr/local/bin --filename=composer
+  composer_result=$?
+
+  if [ "${composer_result}" -eq 0 ]; then
+    rm composer-setup.php
+
+    log_event "success" "composer installer finished ok!" "true"
+
+  else
+    log_event "error" "composer installer failed" "true"
+
+  fi
   
-  exit $RESULT
+  return "${composer_result}"
+
+}
+
+composer_update_version () {
+
+  composer self-update
+
+}
+
+composer_update () {
+
+  composer update
 
 }
 
 ################################################################################
 
-DOMAIN=""                                    # Domain for WP installation. Example: landing.broobe.com
-ROOT_DOMAIN=""                               # Only for Cloudflare API. Example: broobe.com
-PROJECT_NAME=""                              # Project Name. Example: landing_broobe
+#DOMAIN=""                                    # Domain for WP installation. Example: landing.broobe.com
+#ROOT_DOMAIN=""                               # Only for Cloudflare API. Example: broobe.com
+#PROJECT_NAME=""                              # Project Name. Example: landing_broobe
 
-composer_install "" "" ""
-
-echo -e ${GREEN}" > Everything is DONE! ..."${ENDCOLOR}
+composer_install 

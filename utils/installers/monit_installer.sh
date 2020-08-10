@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 ################################################################################
 
 configure_monit(){
@@ -12,7 +12,7 @@ configure_monit(){
   fi
 
   # Configuring monit
-  echo -e ${CYAN}" > Configuring monit ..."${ENDCOLOR}
+  log_event "info" "Configuring monit ..." "true"
   cat "${SFOLDER}/confs/monit/lemp-services" > /etc/monit/conf.d/lemp-services
   cat "${SFOLDER}/confs/monit/monitrc" > /etc/monit/monitrc
 
@@ -35,17 +35,18 @@ configure_monit(){
   sed -i "s#SMTP_P#${SMTP_P}#" /etc/monit/conf.d/lemp-services
   sed -i "s#MAILA#${MAILA}#" /etc/monit/conf.d/lemp-services
 
-  echo -e ${CYAN}" > Restarting services ..."${ENDCOLOR}
+  log_event "info" "Restarting services ..." "true"
   systemctl restart "php${PHP_V}-fpm"
   systemctl restart nginx.service
   service monit restart
 
-  echo -" > Monit configure OK!">>$LOG
-  echo -e ${GREEN}" > Monit configure OK!"${ENDCOLOR}
+  log_event "success" "Monit configured OK!" "true"
 
 }
 
-### Checking if Netdata is installed
+################################################################################
+
+### Checking if Monit is installed
 MONIT="$(which monit)"
 
 if [ ! -x "${MONIT}" ]; then
@@ -58,20 +59,18 @@ if [ ! -x "${MONIT}" ]; then
       case $yn in
           [Yy]* )
 
-          echo " > Updating packages before installation ..." >>$LOG
-          echo -e ${CYAN}" > Updating packages before installation ..."${ENDCOLOR}
+          log_event "info" "Updating packages before installation ..." "true"
           apt --yes update
 
           # Installing packages
-          echo -e ${CYAN}" > Installing monit ..."${ENDCOLOR}
-          echo " > Installing monit ..." >>$LOG
+          log_event "info" "Installing monit ..." "true"
           apt --yes install monit
 
           configure_monit
 
           break;;
           [Nn]* )
-          echo -e ${B_RED}"Aborting monit installation script ..."${ENDCOLOR};
+          log_event "warning" "Aborting monit installation script ..." "true"
           break;;
           * ) echo " > Please answer yes or no.";;
       esac
@@ -90,7 +89,7 @@ else
 
           break;;
           [Nn]* )
-          echo -e ${B_RED}"Aborting monit installation script ..."${ENDCOLOR};
+          log_event "warning" "Aborting monit configuration script ..." "true"
           break;;
           * ) echo " > Please answer yes or no.";;
       esac

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 ################################################################################
 
 ### Checking some things
@@ -45,10 +45,11 @@ create_nginx_server() {
     result=$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)
 
     if [ "${result}" = "success" ];then
-        log_event "success" "nginx configuration created" "true"
-
+        
         # Reload webserver
         service nginx reload
+
+        log_event "success" "nginx configuration created" "true"
 
     else
         debug=$(nginx -t 2>&1)
@@ -122,10 +123,11 @@ change_status_nginx_server() {
     result=$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)
 
     if [ "${result}" = "successful" ];then
-        log_event "success" "Project configuration status changed to ${project_status} for ${project_domain}" "true"
-
+        
         # Reload webserver
         service nginx reload
+
+        log_event "success" "Project configuration status changed to ${project_status} for ${project_domain}" "true"
 
     else
         debug=$(nginx -t 2>&1)
@@ -160,14 +162,24 @@ change_phpv_nginx_server() {
     
     sed -i "s#${current_php_v}#${new_php_v}#" "${WSERVER}/sites-available/${project_domain}"
 
-    echo -e ${CYAN}" > PHP version for ${project_domain} changed from ${current_php_v} to ${new_php_v}"${ENDCOLOR}>&2
-    echo -e " > PHP version for ${project_domain} changed from ${current_php_v} to ${new_php_v}" >>$LOG
+    log_event "info" "PHP version for ${project_domain} changed from ${current_php_v} to ${new_php_v}" "true"
 
-    echo " > Reloading webserver ..." >>$LOG
-    echo -e ${CYAN}" > Reloading webserver ..."${ENDCOLOR}>&2
+    #Test the validity of the nginx configuration
+    result=$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)
 
-    # Reload webserver
-    service nginx reload
+    if [ "${result}" = "successful" ];then
+
+        # Reload webserver
+        service nginx reload
+
+        log_event "success" "Nginx configuration changed!" "true"
+
+    else
+        debug=$(nginx -t 2>&1)
+        whiptail_event "WARNING" "Something went wrong changing Nginx configuration. Please check manually nginx config files."
+        log_event "error" "Problem changing Nginx configuration. Debug: ${debug}" "true"
+
+    fi
 
 }
 
@@ -187,13 +199,11 @@ create_nginx_globals_confs() {
     nginx_globals="/etc/nginx/globals/"
 
     if [ -d "${nginx_globals}" ]; then
-        echo "Directory ${nginx_globals} already exists ..." >>$LOG
-        echo -e ${YELLOW}" > Directory ${nginx_globals} already exists ..."${ENDCOLOR}
-        exit 1
+        log_event "warning" "Directory ${nginx_globals} already exists ..." "true"
+        return 1
 
     else
-        echo "Creating directory ${nginx_globals} ..." >>$LOG
-        echo -e ${CYAN}" > Creating directory ${nginx_globals} exists ..."${ENDCOLOR}
+        log_event "info" "Creating directory ${nginx_globals} exists ..." "true"
         mkdir "${nginx_globals}"
 
     fi
@@ -208,7 +218,21 @@ create_nginx_globals_confs() {
     # Change ownership
     change_ownership "www-data" "www-data" "/etc/nginx/globals/"
 
-    # Reload webserver
-    service nginx reload
+    #Test the validity of the nginx configuration
+    result=$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)
+
+    if [ "${result}" = "successful" ];then
+        
+        # Reload webserver
+        service nginx reload
+
+        log_event "success" "Nginx configuration changed!" "true"
+
+    else
+        debug=$(nginx -t 2>&1)
+        whiptail_event "WARNING" "Something went wrong changing Nginx configuration. Please check manually nginx config files."
+        log_event "error" "Problem changing Nginx configuration. Debug: ${debug}" "true"
+
+    fi
 
 }

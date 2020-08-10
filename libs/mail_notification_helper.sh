@@ -1,11 +1,11 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 ################################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
-source "${SFOLDER}/libs/commons.sh"
+#source "${SFOLDER}/libs/commons.sh"
 # shellcheck source=${SFOLDER}/libs/certbot_helper.sh
 source "${SFOLDER}/libs/certbot_helper.sh"
 
@@ -22,7 +22,7 @@ send_mail_notification() {
     log_event "info" "Running: sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${email_subject}" -o message-content-type=html -m "${EMAIL_CONTENT}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}" "true"
 
     # We could use -l "/var/log/sendemail.log" for custom log file
-    sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${email_subject}" -o message-content-type=html -m "${email_content}" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls="${SMTP_TLS}" -xu "${SMTP_U}" -xp "${SMTP_P}"
+    sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${email_subject}" -o message-content-type=html -m "${email_content}" -s "${SMTP_SERVER}:${SMTP_PORT}" -o tls="${SMTP_TLS}" -xu "${SMTP_U}" -xp "${SMTP_P}"
 
 }
 
@@ -62,22 +62,33 @@ remove_mail_notifications_files() {
 
     log_event "info" "Removing notifications temp files ..." "true"
 
-    rm -f "${PKG_MAIL}" "${DB_MAIL}" "${FILE_MAIL}"
+    # Remove one per line only for better readibility
+    rm -f "${BAKWP}/cert-${NOW}.mail" 
+    rm -f "${BAKWP}/pkg-${NOW}.mail"
+    rm -f "${BAKWP}/file-bk-${NOW}.mail"
+    rm -f "${BAKWP}/config-bk-${NOW}.mail"
+    rm -f "${BAKWP}/db-bk-${NOW}.mail"
+
+    log_event "info" "Temp files removed" "true"
 
 }
 
 mail_server_status_section() {
 
     # $1 = ${IP}
-    # $2 = ${DISK_U}
+    # $2 = ${disk_u}
 
     local IP=$1
-    local DISK_U=$2
+
+    local disk_u disk_u_ns
+
+    ### Disk Usage
+    disk_u=$(calculate_disk_usage "${MAIN_VOL}")
 
     # Extract % to compare
-    local DISK_U_NS=$(echo ${DISK_U} | cut -f1 -d'%')
+    disk_u_ns=$(echo "${disk_u}" | cut -f1 -d'%')
 
-    if [ "$DISK_U_NS" -gt "45" ]; then
+    if [ "${disk_u_ns}" -gt "45" ]; then
         # Changing global
         STATUS_S='WARNING'
 
@@ -103,7 +114,7 @@ mail_server_status_section() {
     SRV_HEADER=${SRV_HEADEROPEN_1}${SRV_HEADEROPEN_2}${SRV_HEADEROPEN_3}${SRV_HEADERTEXT}${SRV_HEADERCLOSE}
 
     SRV_BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
-    SRV_CONTENT="<b>Server IP: ${IP}</b><br /><b>Disk usage: ${DISK_U}</b><br />"
+    SRV_CONTENT="<b>Server IP: ${IP}</b><br /><b>Disk usage: ${disk_u}</b><br />"
     SRV_BODYCLOSE='</div></div>'
     SRV_BODY=${SRV_BODYOPEN}${SRV_CONTENT}${SRV_BODYCLOSE}
 
@@ -116,12 +127,13 @@ mail_server_status_section() {
 
 mail_package_status_section() {
 
-    # $1 = ${PKG_DETAILS}
+    local pkg_details
 
-    local PKG_DETAILS=$1
+    # Check for important packages updates
+    pkg_details=$(mail_package_section "${PACKAGES[@]}") # ${PACKAGES[@]} is a Global array with packages names
 
     #if not empty, system is outdated
-    if [ "${PKG_DETAILS}" != "" ]; then
+    if [ "${pkg_details}" != "" ]; then
         
         OUTDATED=true
 
@@ -142,15 +154,13 @@ mail_package_status_section() {
 
     PKG_BODYOPEN=$(mail_section_start)
     
-    PKG_DETAILS='<div>'${PKG_DETAILS}'</div>'
+    pkg_details='<div>'${pkg_details}'</div>'
 
     PKG_BODYCLOSE=$(mail_section_end)
 
-    PKG_HEADER=$PKG_HEADEROPEN$PKG_HEADERTEXT$PKG_HEADERCLOSE
+    PKG_HEADER=${PKG_HEADEROPEN}${PKG_HEADERTEXT}${PKG_HEADERCLOSE}
 
-    BODY_PKG=${PKG_HEADER}${PKG_BODYOPEN}${PKG_DETAILS}${PKG_BODYCLOSE}
-
-    #echo ${BODY_PKG}
+    BODY_PKG=${PKG_HEADER}${PKG_BODYOPEN}${pkg_details}${PKG_BODYCLOSE}
 
     # Write e-mail parts files
     echo "${BODY_PKG}" >"${BAKWP}/pkg-${NOW}.mail"
@@ -163,15 +173,14 @@ mail_package_section() {
 
     local -n PACKAGES=$1
 
-    #echo "" >"${BAKWP}/pkg-${NOW}.mail"
-
     for pk in "${PACKAGES[@]}"; do
 
-        PK_VI=$(apt-cache policy ${pk} | grep Installed | cut -d ':' -f 2)
-        PK_VC=$(apt-cache policy ${pk} | grep Candidate | cut -d ':' -f 2)
+        PK_VI=$(apt-cache policy "${pk}" | grep Installed | cut -d ':' -f 2)
+        PK_VC=$(apt-cache policy "${pk}" | grep Candidate | cut -d ':' -f 2)
 
         if [ "${PK_VI}" != "${PK_VC}" ]; then
 
+            # Return
             echo "${pk} ${PK_VI} -> ${PK_VC}"
 
         fi
@@ -182,6 +191,8 @@ mail_package_section() {
 
 mail_cert_section() {
 
+    local domain all_sites cert_days email_cert_line email_cert_new_line
+
 #    # Changing global
 #    STATUS_CERT="OK"
 #
@@ -191,63 +202,59 @@ mail_cert_section() {
     COLOR='#503fe0'
     SIZE_LABEL=""
     FILES_LABEL='<b>Sites certificate expiration days:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
-    CERT_LINE=""
+    email_cert_line=""
 
-    #This fix avoid getting the first parent directory, maybe we could find a better solution
+    # This fix avoid getting the first parent directory, maybe we could find a better solution
     k="skip"
 
-    ALL_SITES=$(get_all_directories "${SITES}")
+    all_sites=$(get_all_directories "${SITES}")
 
-    for SITE in ${ALL_SITES}; do
+    for site in ${all_sites}; do
 
         if [ "${k}" != "skip" ]; then
 
-            domain=$(basename "$SITE")
+            domain=$(basename "${site}")
 
-            #checking blacklist
-            if [[ $SITES_BL != *"${domain}"* ]]; then
+            # Check blacklist ${SITES_BL}
+            if [[ "${SITES_BL}" != *"${domain}"* ]]; then
 
-                make_files_backup "site" "${SITES}" "${FOLDER_NAME}"
+                log_event "info" "Getting certificate info for: ${domain}" "true"
+
+                #make_files_backup "site" "${SITES}" "${FOLDER_NAME}"
                 BK_FL_ARRAY_INDEX=$((BK_FL_ARRAY_INDEX + 1))
 
-                CERT_NEW_LINE='<div style="float:left;width:100%">'
-                CERT_DOMAIN='<div>'$domain
+                email_cert_new_line='<div style="float:left;width:100%">'
+                email_cert_domain='<div>'"${domain}"
                 
-                CERT_DAYS=$(certbot_show_domain_certificates_valid_days "$domain")
-                if [ "${CERT_DAYS}" == "" ]; then
-                    #new try with www on it
-                    CERT_DAYS=$(certbot_show_domain_certificates_valid_days "www.$domain")
-                fi
-                if [ "${CERT_DAYS}" == "" ]; then
+                cert_days=$(certbot_certificate_valid_days "${domain}")
+                
+                if [ "${cert_days}" == "" ]; then
                     # GREY LABEL
-                    CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;">'
-                    CERT_DAYS=${CERT_DAYS_CONTAINER}" no certificate"
+                    email_cert_days_container=' <span style="color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;">'
+                    email_cert_days="${email_cert_days_container} no certificate"
                 
                 else #certificate found
 
-                    if (( "${CERT_DAYS}" >= 14 )); then
+                    if (( "${cert_days}" >= 14 )); then
                         # GREEN LABEL
-                        CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#27b50d;border-radius:12px;padding:0 5px 0 5px;">'
+                        email_cert_days_container=' <span style="color:white;background-color:#27b50d;border-radius:12px;padding:0 5px 0 5px;">'
                     else
-                        if (( "${CERT_DAYS}" >= 7 )); then
+                        if (( "${cert_days}" >= 7 )); then
                             # ORANGE LABEL
-                            CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#df761d;border-radius:12px;padding:0 5px 0 5px;">'
+                            email_cert_days_container=' <span style="color:white;background-color:#df761d;border-radius:12px;padding:0 5px 0 5px;">'
                         else
                             # RED LABEL
-                            CERT_DAYS_CONTAINER=' <span style="color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;">'
+                            email_cert_days_container=' <span style="color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;">'
                         fi
 
                     fi
-                    CERT_DAYS=${CERT_DAYS_CONTAINER}${CERT_DAYS}" days"
+                    email_cert_days="${email_cert_days_container}${cert_days} days"
 
                 fi
 
-                CERT_END_LINE="</span></div></div>"
-                CERT_LINE=$CERT_LINE$CERT_NEW_LINE$CERT_DOMAIN$CERT_DAYS$CERT_END_LINE
+                email_cert_end_line="</span></div></div>"
+                email_cert_line=${email_cert_line}${email_cert_new_line}${email_cert_domain}${email_cert_days}${email_cert_end_line}
             
-            #else
-            #    echo " > Omitting ${FOLDER_NAME} TAR file (blacklisted) ..." >&2
-
             fi
         else
             k=""
@@ -260,15 +267,15 @@ mail_cert_section() {
 
     HEADEROPEN1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
     HEADEROPEN2=';padding:5px 0 10px 10px;width:100%;height:30px">'
-    HEADEROPEN=${HEADEROPEN1}${COLOR}${HEADEROPEN2}
-    HEADERTEXT="Certificates on server: ${STATUS_F} ${STATUS_ICON_F}"
-    HEADERCLOSE='</div>'
+    email_cert_header_open="${HEADEROPEN1}${COLOR}${HEADEROPEN2}"
+    email_cert_header_text="Certificates on server: ${STATUS_F} ${STATUS_ICON_F}"
+    email_cert_header_close='</div>'
 
     BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
     BODYCLOSE='</div></div>'
 
-    HEADER=${HEADEROPEN}${HEADERTEXT}${HEADERCLOSE}
-    BODY=${BODYOPEN}${CONTENT}${FILES_LABEL}${CERT_LINE}${FILES_LABEL_END}${BODYCLOSE}
+    HEADER="${email_cert_header_open}${email_cert_header_text}${email_cert_header_close}"
+    BODY="${BODYOPEN}${CONTENT}${FILES_LABEL}${email_cert_line}${FILES_LABEL_END}${BODYCLOSE}"
 
     # Write e-mail parts files
     echo "${HEADER}" >"${BAKWP}/cert-${NOW}.mail"
@@ -350,7 +357,7 @@ mail_filesbackup_section() {
     BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
     BODYCLOSE='</div></div>'
 
-    MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
+    #MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
 
     HEADER=${HEADEROPEN}${HEADERTEXT}${HEADERCLOSE}
     BODY=${BODYOPEN}${CONTENT}${SIZE_LABEL}${FILES_LABEL}${FILES_INC}${FILES_LABEL_END}${DBK_SIZE_LABEL}${BODYCLOSE}
@@ -375,6 +382,8 @@ mail_configbackup_section() {
     local ERROR=$3
     local ERROR_TYPE=$4
 
+    local count files_inc files_inc_line_p1 files_inc_line_p2 files_inc_line_p3 files_inc_line_p4 files_inc_line_p5 bk_scf_size
+
     BK_TYPE="Config"
 
     if [ "$ERROR" = true ]; then
@@ -398,23 +407,23 @@ mail_configbackup_section() {
         COLOR='#503fe0'
         SIZE_LABEL=""
         FILES_LABEL='<b>Backup files includes:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
-        FILES_INC=""
+        files_inc=""
 
-        COUNT=0
+        count=0
 
-        for t in "${BACKUPED_SCF_LIST[@]}"; do
+        for backup_line in "${BACKUPED_SCF_LIST[@]}"; do
                      
-            BK_SCF_SIZE=${BK_SCF_SIZES[$COUNT]}
+            bk_scf_size=${BK_SCF_SIZES[$count]}
 
-            FILES_INC_LINE_P1='<div><span style="margin-right:5px;">'
-            FILES_INC_LINE_P2="${FILES_INC}$t"
-            FILES_INC_LINE_P3='</span><span style="background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;">'
-            FILES_INC_LINE_P4=${BK_SCF_SIZE}
-            FILES_INC_LINE_P5='</span></div>'
+            files_inc_line_p1='<div><span style="margin-right:5px;">'
+            files_inc_line_p2="${files_inc}${backup_line}"
+            files_inc_line_p3='</span><span style="background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;">'
+            files_inc_line_p4="${bk_scf_size}"
+            files_inc_line_p5='</span></div>'
 
-            FILES_INC="${FILES_INC_LINE_P1}${FILES_INC_LINE_P2}${FILES_INC_LINE_P3}${FILES_INC_LINE_P4}${FILES_INC_LINE_P5}"
+            files_inc="${files_inc_line_p1}${files_inc_line_p2}${files_inc_line_p3}${files_inc_line_p4}${files_inc_line_p5}"
 
-            COUNT=$((COUNT + 1))
+            count=$((count + 1))
 
         done
 
@@ -431,10 +440,10 @@ mail_configbackup_section() {
     BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
     BODYCLOSE='</div></div>'
 
-    MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
+    #MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
 
     HEADER=${HEADEROPEN}${HEADERTEXT}${HEADERCLOSE}
-    BODY=$BODYOPEN$CONTENT$SIZE_LABEL$FILES_LABEL$FILES_INC$FILES_LABEL_END$DBK_SIZE_LABEL$BODYCLOSE
+    BODY=${BODYOPEN}${CONTENT}${SIZE_LABEL}${FILES_LABEL}${files_inc}${FILES_LABEL_END}${DBK_SIZE_LABEL}${BODYCLOSE}
     FOOTER=${FOOTEROPEN}${SCRIPTSTRING}${FOOTERCLOSE}
 
     # Write e-mail parts files

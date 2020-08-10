@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 ################################################################################
 #
 # Ref: https://certbot.eff.org/docs/using.html#certbot-commands
@@ -94,15 +94,22 @@ certbot_helper_installer_menu() {
 
     fi
     if [[ ${CHOSEN_CB_INSTALLER_OPTION} == *"02"* ]]; then
-      certbot_certonly "${email}" "${domains}"
+      certbot_certonly_cloudflare "${email}" "${domains}"
+      root_domain=$(ask_rootdomain_for_cloudflare_config "${domains}")
+      cloudflare_ssl_mode "${root_domain}" "full"
 
     fi
 
+    prompt_return_or_finish
+    certbot_helper_installer_menu
+
   fi
+
+  main_menu
 
 }
 
-certbot_certonly() {
+certbot_certonly_cloudflare() {
 
   # IMPORTANT: maybe we could create a certbot_cloudflare_certificate that runs first the nginx certbot
   # and then the certonly with cloudflare credentials
@@ -149,13 +156,35 @@ certbot_show_domain_certificates_expiration_date() {
 
 }
 
-certbot_show_domain_certificates_valid_days() {
+certbot_certificate_valid_days() {
 
   # $1 = domains (domain.com,www.domain.com)
 
-  local domains=$1
+  local domain=$1
 
-  certbot certificates --cert-name "${domains}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2
+  local cert_days
+
+  log_event "info" "Running: certbot certificates --cert-name ${domain}" "true"
+
+  cert_days=$(certbot certificates --cert-name "${domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
+
+  if [ "${cert_days}" == "" ]; then
+      #new try with www on it
+      cert_days=$(certbot certificates --cert-name "www.${domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
+      if [ "${cert_days}" == "" ]; then
+          #new try with -0001
+          cert_days=$(certbot certificates --cert-name "${domain}-0001" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
+          if [ "${cert_days}" == "" ]; then
+            #new try with www and -0001
+            cert_days=$(certbot certificates --cert-name "www.${domain}-0001" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
+          fi
+      fi
+  fi
+
+  log_event "info" "Certificate valid for: ${cert_days} days" "true"
+
+  # Return
+  echo "${cert_days}"
 
 }
 
@@ -260,10 +289,6 @@ certbot_helper_menu() {
     fi
 
     prompt_return_or_finish
-
-  else
-    
-    certbot_helper_menu
 
   fi
 

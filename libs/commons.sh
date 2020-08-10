@@ -1,14 +1,12 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 ################################################################################
 
-################################################################################
-# GLOBALS
-################################################################################
+### GLOBALS
 
-### Setup Foreground Colours
+# Foreground Colours
 BLACK='\E[30;40m'
 RED='\E[31;40m'
 GREEN='\E[32;40m'
@@ -20,7 +18,7 @@ CYAN='\E[36;40m'
 WHITE='\E[37;40m'
 ENDCOLOR='\033[0m'
 
-### Setup Background Colours
+# Background Colours
 B_BLACK='\E[40m'
 B_RED='\E[41m'
 B_GREEN='\E[42m'
@@ -36,24 +34,178 @@ startdir=""
 menutitle="Config Selection Menu"
 
 ################################################################################
-# MAIN MENU
-################################################################################
+
+script_init() {
+
+  ### Vars
+
+  # Hostname
+  VPSNAME="$HOSTNAME"
+
+  # Time Vars
+  NOW=$(date +"%Y-%m-%d")
+  NOWDISPLAY=$(date +"%d-%m-%Y")
+  ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
+
+  # Folder blacklist
+  SITES_BL=".wp-cli,phpmyadmin,html"
+
+  # Database blacklist
+  DB_BL="information_schema,performance_schema,mysql,sys,phpmyadmin"
+
+  #MAILCOW BACKUP
+  MAILCOW_TMP_BK="${SFOLDER}/tmp/mailcow"
+
+  PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
+
+  # NGINX config files location
+  WSERVER="/etc/nginx"
+
+  # MySQL config files location
+  MySQL_CF="/etc/mysql"
+
+  # PHP config files location
+  PHP_CF="/etc/php"
+
+  # Let's Encrypt config files location
+  LENCRYPT_CF="/etc/letsencrypt"
+
+  # Packages to watch
+  PACKAGES=(linux-firmware dpkg perl nginx "php${PHP_V}-fpm" mysql-server curl openssl)
+
+  MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+') # Main partition
+
+  # Dropbox Folder Backup
+  DROPBOX_FOLDER="/"
+
+  # Dropbox Uploader Directory
+  DPU_F="${SFOLDER}/utils/third-party/dropbox-uploader"
+
+  # Temp folders
+  BAKWP="${SFOLDER}/tmp"
+
+  ### Creating temporary folders
+  if [ ! -d "${BAKWP}" ]; then
+    echo " > Folder ${BAKWP} doesn't exist. Creating now ..."
+    mkdir "${BAKWP}"
+  fi
+  if [ ! -d "${BAKWP}/${NOW}" ]; then
+    echo " > Folder ${BAKWP}/${NOW} doesn't exist. Creating now ..."
+    mkdir "${BAKWP}/${NOW}"
+  fi
+
+  # MySQL host and user
+  MHOST="localhost"
+  MUSER="root"
+
+  ### Log
+  TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+  PATH_LOG="${SFOLDER}/log"
+  if [ ! -d "${SFOLDER}/log" ]; then
+    echo " > Folder ${SFOLDER}/log doesn't exist. Creating now ..."
+    mkdir "${SFOLDER}/log"
+    echo " > Folder ${SFOLDER}/log created ..."
+  fi
+
+  LOG_NAME="log_lemp_utils_${TIMESTAMP}.log"
+  LOG="${PATH_LOG}/${LOG_NAME}"
+
+  find "${PATH_LOG}" -name "*.log" -type f -mtime +7 -print -delete >>"${LOG}"
+
+  # Log Start
+  log_event "info" "LEMP UTILS SCRIPT Start -- $(date +%Y%m%d_%H%M)" "true"
+
+  ### Welcome #######################################################################
+
+  log_event "" "                                                 " "true"
+  log_event "" "██████╗ ██████╗  ██████╗  ██████╗ ██████╗ ███████" "true"
+  log_event "" "██╔══██╗██╔══██╗██╔═══██╗██╔═══██╗██╔══██╗██╔══  " "true"
+  log_event "" "██████╔╝██████╔╝██║   ██║██║   ██║██████╔╝█████  " "true"
+  log_event "" "██╔══██╗██╔══██╗██║   ██║██║   ██║██╔══██╗██╔    " "true"
+  log_event "" "██████╔╝██║  ██║╚██████╔╝╚██████╔╝██████╔╝███████" "true"
+  log_event "" "╚═════╝ ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═════╝ ╚══════" "true"
+  log_event "" "                                                 " "true"
+
+  # Ref: http://patorjk.com/software/taag/
+  ################################################################################
+
+  # Status (STATUS_D, STATUS_F, STATUS_S, OUTDATED)
+  STATUS_D=""
+  STATUS_F=""
+  STATUS_S=""
+  OUTDATED=false
+
+  # Dropbox Uploader config file
+  DPU_CONFIG_FILE=~/.dropbox_uploader
+  if [[ -e ${DPU_CONFIG_FILE} ]]; then
+    # shellcheck source=${DPU_CONFIG_FILE}
+    source "${DPU_CONFIG_FILE}"
+  else
+    generate_dropbox_config
+  fi
+  DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
+
+  # Cloudflare config file
+  CLF_CONFIG_FILE=~/.cloudflare.conf
+  if [[ -e ${CLF_CONFIG_FILE} ]]; then
+    # shellcheck source=${CLF_CONFIG_FILE}
+    source "${CLF_CONFIG_FILE}"
+  else
+    generate_cloudflare_config
+  fi
+
+  # BROOBE Utils config file
+  if test -f /root/.broobe-utils-options; then
+    source "/root/.broobe-utils-options"
+  fi
+
+  # Checking distro
+  check_distro
+
+  # Checking script permissions
+  checking_scripts_permissions
+
+  # Checking required packages to run
+  # shellcheck source=${SFOLDER}/libs/packages_helper.sh
+  source "${SFOLDER}/libs/packages_helper.sh"
+  check_packages_required
+
+  IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
+
+  # MySQL
+  MYSQL="$(which mysql)"
+  MYSQLDUMP="$(which mysqldump)"
+
+  # TAR
+  TAR="$(which tar)"
+
+  # FIND
+  FIND="$(which find)"
+
+  # EXPORT VARS (GLOBALS)
+  export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
+
+}
 
 main_menu() {
 
   local runner_options chosen_type
 
-  runner_options="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 PROJECT_UTILS 04 WPCLI_MANAGER 05 CERTBOT_MANAGER 06 CLOUDFLARE_MANAGER 07 INSTALLERS_AND_CONFIGS 08 IT_UTILS 09 SCRIPT_OPTIONS 10 CRON_THIS_SCRIPT"
+  runner_options="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 PROJECT_UTILS 04 WPCLI_MANAGER 05 CERTBOT_MANAGER 06 CLOUDFLARE_MANAGER 07 INSTALLERS_AND_CONFIGS 08 IT_UTILS 09 SCRIPT_OPTIONS 10 CRON_SCRIPT_TASKS"
   chosen_type=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 $(for x in ${runner_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
     if [[ ${chosen_type} == *"01"* ]]; then
+      # shellcheck source=${SFOLDER}/libs/backup_helper.sh
+      source "${SFOLDER}/libs/backup_helper.sh"
       backup_menu
 
     fi
     if [[ ${chosen_type} == *"02"* ]]; then
+      # shellcheck source=${SFOLDER}/libs/backup_restore_helper.sh
+      source "${SFOLDER}/libs/backup_restore_helper.sh"
       restore_menu
 
     fi
@@ -93,138 +245,13 @@ main_menu() {
 
     fi
     if [[ ${chosen_type} == *"10"* ]]; then
-      # CRON_THIS_SCRIPT
-      install_crontab_script "${SFOLDER}/runner.sh" "00" "45"
+      # CRON_SCRIPT_TASKS
+      install_crontab_script "${SFOLDER}/cron/backups_tasks.sh" "00" "45"
 
     fi
     
 
   fi
-
-}
-
-backup_menu() {
-
-  local backup_options chosen_backup_type
-
-  backup_options="01 DATABASE_BACKUP 02 FILES_BACKUP 03 BACKUP_ALL 04 PROJECT_BACKUP"
-  chosen_backup_type=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a Backup Type to run" 20 78 10 $(for x in ${backup_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
-
-  # Preparing Mail Notifications Template
-  HTMLOPEN=$(mail_html_start)
-
-  MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
-
-  exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-
-    if [[ ${chosen_backup_type} == *"01"* ]]; then
-
-      # shellcheck source=${SFOLDER}/mysql_backup.sh
-      source "${SFOLDER}/mysql_backup.sh"
-
-      DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
-      DB_MAIL_VAR=$(<${DB_MAIL})
-
-      echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
-
-      EMAIL_SUBJECT="${STATUS_ICON_D} ${VPSNAME} - Database Backup - [${NOWDISPLAY}]"
-      EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${DB_MAIL_VAR} ${MAIL_FOOTER}"
-
-      # Sending email notification
-      send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
-
-    fi
-    if [[ ${chosen_backup_type} == *"02"* ]]; then
-
-      # shellcheck source=${SFOLDER}/files_backup.sh
-      source "${SFOLDER}/files_backup.sh"
-
-      CONFIG_MAIL="${BAKWP}/config-bk-${NOW}.mail"
-      CONFIG_MAIL_VAR=$(<$CONFIG_MAIL)
-
-      FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
-      FILE_MAIL_VAR=$(<$FILE_MAIL)
-
-      echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
-
-      EMAIL_SUBJECT="${STATUS_ICON_F} ${VPSNAME} - Files Backup - [${NOWDISPLAY}]"
-      EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${CERT_MAIL_VAR} ${CONFIG_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
-
-      # Sending email notification
-      send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
-
-    fi
-    if [[ ${chosen_backup_type} == *"03"* ]]; then
-
-      # Running scripts
-      # shellcheck source=${SFOLDER}/mysql_backup.sh
-      "${SFOLDER}/mysql_backup.sh"
-      # shellcheck source=${SFOLDER}/files_backup.sh
-      "${SFOLDER}/files_backup.sh"
-
-      DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
-      DB_MAIL_VAR=$(<${DB_MAIL})
-
-      CONFIG_MAIL="${BAKWP}/config-bk-${NOW}.mail"
-      CONFIG_MAIL_VAR=$(<$CONFIG_MAIL)
-
-      FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
-      FILE_MAIL_VAR=$(<${FILE_MAIL})
-
-      MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
-
-      # Checking result status for mail subject
-      EMAIL_STATUS=$(mail_subject_status "${STATUS_D}" "${STATUS_F}" "${OUTDATED}")
-
-      echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
-
-      EMAIL_SUBJECT="${EMAIL_STATUS} on ${VPSNAME} Running Complete Backup - [${NOWDISPLAY}]"
-      EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${DB_MAIL_VAR} ${CONFIG_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
-
-      # Sending email notification
-      send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
-
-    fi
-
-    if [[ ${chosen_backup_type} == *"04"* ]]; then
-
-      # Running project_backup script
-      "${SFOLDER}/project_backup.sh"
-
-    fi
-
-  fi
-
-  main_menu
-
-}
-
-restore_menu () {
-
-  local restore_options chosen_restore_options
-
-  restore_options="01 RESTORE_FROM_DROPBOX 02 RESTORE_FROM_URL"
-  chosen_restore_options=$(whiptail --title "RESTORE SOURCE" --menu "Choose a Restore Source to run" 20 78 10 $(for x in ${restore_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
-
-  exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-
-    # shellcheck source=${SFOLDER}/libs/backup_restore_helper.sh
-    source "${SFOLDER}/libs/backup_restore_helper.sh"
-
-    if [[ ${chosen_restore_options} == *"01"* ]]; then
-      server_selection_restore_menu
-
-    elif [[ ${chosen_restore_options} == *"02"* ]]; then
-      # shellcheck source=${SFOLDER}/utils/wordpress_restore_from_source.sh
-      source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
-
-    fi
-
-  fi
-
-  main_menu
 
 }
 
@@ -270,34 +297,6 @@ security_clamav_scan_menu () {
   log_event "info" "Directory to scan: ${to_scan}" "true"
 
   security_clamav_scan "${to_scan}"
-
-}
-
-
-server_selection_restore_menu () {
-
-  SITES_F="site"
-  CONFIG_F="configs"
-  DBS_F="database"
-
-  local dropbox_server_list
-  
-  # Select SERVER
-  dropbox_server_list=$($DROPBOX_UPLOADER -hq list "/")
-  chosen_server=$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 $(for x in ${dropbox_server_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-
-    dropbox_type_list=$($DROPBOX_UPLOADER -hq list "${chosen_server}")
-    dropbox_type_list='project '$dropbox_type_list
-
-    # Select backup type
-    select_restore_type_from_dropbox "${chosen_server}" "${dropbox_type_list}"
-
-  else
-    exit 0
-    # TODO: return to backup menu?
-  fi
 
 }
 
@@ -392,7 +391,8 @@ script_configuration_wizard() {
 
     #Delet old Config File
     rm /root/.broobe-utils-options
-    echo -e ${YELLOW}" > Script config file deleted: /root/.broobe-utils-options"${B_ENDCOLOR}
+
+    log_event "warning" "Script config file deleted: /root/.broobe-utils-options" "true"
 
   fi
 
@@ -571,87 +571,23 @@ script_configuration_wizard() {
         if [ $exitstatus = 0 ]; then
           echo "MAILCOW=${MAILCOW}" >>/root/.broobe-utils-options
         else
-          exit 1
+          return 1
+
         fi
+
       fi
 
     else
-      exit 1
+      return 1
+      
     fi
+
   fi
 
 }
 
 ################################################################################
 # LOGGERS
-################################################################################
-
-function __msg_error() {
-    [[ "${ERROR}" == "1" ]] && echo -e "[ERROR]: $*"
-}
-
-function __msg_debug() {
-    [[ "${DEBUG}" == "1" ]] && echo -e "[DEBUG]: $*"
-}
-
-function __msg_info() {
-    [[ "${INFO}" == "1" ]] && echo -e "[INFO]: $*"
-}
-
-################################################################################
-# CHECKERS
-################################################################################
-
-check_root() {
-  # Check if user is root
-  if [ "${USER}" != root ]; then
-    echo -e ${B_RED}" > Error: Script runned by ${USER}, but must be root! Exiting..."${ENDCOLOR}
-    exit 0
-  fi
-
-}
-
-check_distro() {
-
-  local distro_old
-
-  #for ext check
-  distro_old="false"
-
-  # Running Ubuntu?
-  DISTRO=$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $1}')
-  if [ ! "$DISTRO" = "Ubuntu" ]; then
-    log_event "critical" "This script only run on Ubuntu ... Exiting" "true"
-    exit 1
-
-  else
-    MIN_V=$(echo "18.04" | awk -F "." '{print $1$2}')
-    DISTRO_V=$(get_ubuntu_version)
-    
-    log_event "info" "ACTUAL DISTRO: ${DISTRO} ${DISTRO_V}" "false"
-
-    if [ ! "$DISTRO_V" -ge "$MIN_V" ]; then
-      whiptail --title "UBUNTU VERSION WARNING" --msgbox "Ubuntu version must be 18.04 or 20.04! Use this script only for backup or restore purpose." 8 78
-      exitstatus=$?
-      if [ $exitstatus = 0 ]; then
-        #echo " > Setting distro_old=true" >>$LOG
-        distro_old="true"
-      else
-        exit 0
-      fi
-      
-    fi
-  fi
-}
-
-checking_scripts_permissions() {
-  ### chmod
-  find ./ -name "*.sh" -exec chmod +x {} \;
-
-}
-
-################################################################################
-# HELPERS
 ################################################################################
 
 log_event() {
@@ -702,11 +638,72 @@ log_event() {
         ;;
 
       *)
-        echo -n "Log Type Unknown"
+        echo " > ${message}" >> "${LOG}"
+        if [ "${console_display}" = "true" ]; then
+          echo -e "${CYAN} > ${message}${ENDCOLOR}" >&2
+        fi
         ;;
     esac
 
 }
+
+################################################################################
+# CHECKERS
+################################################################################
+
+check_root() {
+  # Check if user is root
+  if [ "${USER}" != root ]; then
+    echo -e ${B_RED}" > Error: Script runned by ${USER}, but must be root! Exiting..."${ENDCOLOR}
+    exit 1
+  fi
+
+}
+
+check_distro() {
+
+  local distro_old
+
+  #for ext check
+  distro_old="false"
+
+  # Running Ubuntu?
+  DISTRO=$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $1}')
+  if [ ! "$DISTRO" = "Ubuntu" ]; then
+    log_event "critical" "This script only run on Ubuntu ... Exiting" "true"
+    exit 1
+
+  else
+    MIN_V=$(echo "18.04" | awk -F "." '{print $1$2}')
+    DISTRO_V=$(get_ubuntu_version)
+    
+    log_event "info" "ACTUAL DISTRO: ${DISTRO} ${DISTRO_V}" "false"
+
+    if [ ! "$DISTRO_V" -ge "$MIN_V" ]; then
+      whiptail --title "UBUNTU VERSION WARNING" --msgbox "Ubuntu version must be 18.04 or 20.04! Use this script only for backup or restore purpose." 8 78
+      exitstatus=$?
+      if [ $exitstatus = 0 ]; then
+        distro_old="true"
+        log_event "info" "Setting distro_old: ${distro_old}" "false"
+        
+      else
+        return 0
+
+      fi
+      
+    fi
+  fi
+}
+
+checking_scripts_permissions() {
+  ### chmod
+  find ./ -name "*.sh" -exec chmod +x {} \;
+
+}
+
+################################################################################
+# HELPERS
+################################################################################
 
 whiptail_event() {
 
@@ -734,9 +731,13 @@ get_ubuntu_version() {
 
 }
 
+# TODO: refactor this
 declare -a checklist_array
 
 array_to_checklist() {
+
+  local i
+
   i=0
   for option in $1; do
     checklist_array[$i]=$option
@@ -746,6 +747,9 @@ array_to_checklist() {
     checklist_array[$i]=off
     i=$((i + 1))
   done
+
+  # checklist_array returned
+
 }
 
 file_browser() {
@@ -782,11 +786,18 @@ file_browser() {
       if (whiptail --title "Confirm Selection" --yesno "Selection : $selection\n" 0 0 \
         --yes-button "Confirm" \
         --no-button "Retry"); then
+
+        # Return 1
         filename="$selection"
+        # Return 2
         filepath="$curdir" # Return full filepath and filename as selection variables
+      
       fi
+    
     fi
+  
   fi
+
 }
 
 directory_browser() {
@@ -823,12 +834,18 @@ directory_browser() {
       if (whiptail --title "Confirm Selection" --yesno "Selection : $selection\n" 0 0 \
         --yes-button "Confirm" \
         --no-button "Retry"); then
+
+        # Return 1
         filename="$selection"
+        # Return 2
         filepath="$curdir" # Return full filepath and filename as selection variables
 
       fi
+
     fi
+
   fi
+
 }
 
 get_all_directories() {
@@ -839,6 +856,7 @@ get_all_directories() {
 
   first_level_dir=$(find ${main_dir} -maxdepth 1 -type d)
 
+  # Return
   echo "${first_level_dir}"
 
 }
@@ -890,27 +908,30 @@ get_project_type() {
 
   fi
 
-  echo ${project_type}
+  # Return
+  echo "${project_type}"
 
 }
 
 
 generate_dropbox_config() {
 
-  OAUTH_ACCESS_TOKEN_STRING+= "\n . \n"
-  OAUTH_ACCESS_TOKEN_STRING+=" 1) Log in: dropbox.com/developers/apps/create\n"
-  OAUTH_ACCESS_TOKEN_STRING+=" 2) Click on \"Create App\" and select \"Dropbox API\".\n"
-  OAUTH_ACCESS_TOKEN_STRING+=" 3) Choose the type of access you need.\n"
-  OAUTH_ACCESS_TOKEN_STRING+=" 4) Enter the \"App Name\".\n"
-  OAUTH_ACCESS_TOKEN_STRING+=" 5) Click on the \"Create App\" button.\n"
-  OAUTH_ACCESS_TOKEN_STRING+=" 6) Click on the Generate button.\n"
-  OAUTH_ACCESS_TOKEN_STRING+=" 7) Copy and paste the new access token here:\n\n"
+  local oauth_access_token_string OAUTH_ACCESS_TOKEN
 
-  OAUTH_ACCESS_TOKEN=$(whiptail --title "Dropbox Uploader Configuration" --inputbox "${OAUTH_ACCESS_TOKEN_STRING}" 15 60 3>&1 1>&2 2>&3)
+  oauth_access_token_string+="\n . \n"
+  oauth_access_token_string+=" 1) Log in: dropbox.com/developers/apps/create\n"
+  oauth_access_token_string+=" 2) Click on \"Create App\" and select \"Dropbox API\".\n"
+  oauth_access_token_string+=" 3) Choose the type of access you need.\n"
+  oauth_access_token_string+=" 4) Enter the \"App Name\".\n"
+  oauth_access_token_string+=" 5) Click on the \"Create App\" button.\n"
+  oauth_access_token_string+=" 6) Click on the Generate button.\n"
+  oauth_access_token_string+=" 7) Copy and paste the new access token here:\n\n"
+
+  OAUTH_ACCESS_TOKEN=$(whiptail --title "Dropbox Uploader Configuration" --inputbox "${oauth_access_token_string}" 15 60 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
     echo "OAUTH_ACCESS_TOKEN=$OAUTH_ACCESS_TOKEN" >${DPU_CONFIG_FILE}
-    echo -e ${GREEN}" > The configuration has been saved! ..."${ENDCOLOR}
+    log_event "info" "Dropbox configuration has been saved!" "true"
 
   else
     exit 1
@@ -944,12 +965,12 @@ generate_cloudflare_config() {
       echo -e ${B_GREEN}" > The cloudflare configuration has been saved! ..."${ENDCOLOR}
 
     else
-      exit 1
+      return 1
 
     fi
 
   else
-    exit 1
+    return 1
 
   fi
 
@@ -1001,8 +1022,7 @@ change_ownership(){
   local group=$2
   local path=$3
 
-  echo " > Running chown -R ${user}:${group} ${path}" >>$LOG
-  echo -e ${CYAN}" > Running chown -R ${user}:${group} ${path}"${ENDCOLOR}>&2
+  log_event "info" "Running: chown -R ${user}:${group} ${path}" "true"
   chown -R "${user}":"${group}" "${path}"
 
 }
@@ -1089,7 +1109,8 @@ install_crontab_script() {
 	fi
 
   grep -qi "${script}" "${cron_file}"
-	if [ $? != 0 ]; then
+  grep_result=$?
+	if [ ${grep_result} != 0 ]; then
     log_event "info" "Updating cron job for script ..." "true"
     /bin/echo "${mm} ${hh} * * * ${script}" >> "${cron_file}"
     
@@ -1115,6 +1136,7 @@ is_domain_format_valid() {
   if [[ ${domain} =~ $exclude ]] || [[ ${domain} =~ ^[0-9]+$ ]] || [[ ${domain} =~ "\.\." ]] || [[ ${domain} =~ "$(printf '\t')" ]]; then
     check_result $E_INVALID "invalid $object_name format :: ${domain}"
   fi
+
 }
 
 is_ip_format_valid() {
@@ -1136,6 +1158,7 @@ is_ip_format_valid() {
       check_result $E_INVALID "invalid $object_name format :: ${ip}"
     fi
   fi
+
 }
 
 is_email_format_valid() {
@@ -1147,6 +1170,7 @@ is_email_format_valid() {
   if [[ ! "${email}" =~ ^[A-Za-z0-9._%+-]+@[[:alnum:].-]+\.[A-Za-z]{2,63}$ ]]; then
     check_result $E_INVALID "invalid email format :: ${email}"
   fi
+
 }
 
 ################################################################################
@@ -1185,7 +1209,7 @@ ask_project_name() {
     echo "${project_name}"
 
   else
-    exit 1
+    return 1
 
   fi
 
@@ -1209,7 +1233,9 @@ ask_project_domain() {
 
 }
 
-ask_rootdomain_to_cloudflare_config() {
+ask_rootdomain_for_cloudflare_config() {
+
+  # TODO: check with CF API if root domain exists
 
   # $1 = ${root_domain} (could be empty)
 
@@ -1222,10 +1248,11 @@ ask_rootdomain_to_cloudflare_config() {
   fi
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
+    # Return
     echo "${root_domain}"
 
   else
-    exit 1
+    return 1
 
   fi
 
@@ -1243,7 +1270,8 @@ ask_subdomains_to_cloudflare_config() {
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
     log_event "info" "Setting subdomains=${subdomains}" "true"
-    return 0
+    # Return
+    echo "${subdomains}"
 
   else
     return 1
@@ -1260,11 +1288,11 @@ ask_folder_to_install_sites() {
 
   if [[ -z "${folder_to_install}" ]]; then
     
-    folder_to_install=$(whiptail --title "Folder to install" --inputbox "Please insert the full path where you want to install the site:" 10 60 "${folder_to_install}" 3>&1 1>&2 2>&3)
+    folder_to_install=$(whiptail --title "Folder to work with" --inputbox "Please insert the full path where you want to install the site:" 10 60 "${folder_to_install}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
 
-      log_event "info" "Folder to install: ${folder_to_install}" "true"
+      log_event "info" "Folder to work with: ${folder_to_install}" "true"
 
       # Return
       echo "${folder_to_install}"

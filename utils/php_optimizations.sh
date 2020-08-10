@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc07
+# Version: 3.0-rc08
 ################################################################################
 
 ### Checking some things
@@ -10,8 +10,6 @@
 #  exit 0
 #fi
 ################################################################################
-
-SFOLDER="/root/broobe-utils-scripts"
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
