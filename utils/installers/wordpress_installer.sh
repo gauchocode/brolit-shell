@@ -19,6 +19,8 @@ fi
 source "${SFOLDER}/libs/commons.sh"
 # shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
 source "${SFOLDER}/libs/mail_notification_helper.sh"
+# shellcheck source=${SFOLDER}/libs/telegram_notification_helper.sh
+source "${SFOLDER}/libs/telegram_notification_helper.sh"
 # shellcheck source=${SFOLDER}/libs/mysql_helper.sh
 source "${SFOLDER}/libs/mysql_helper.sh"
 # shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
@@ -196,6 +198,7 @@ if [ $exitstatus = 0 ]; then
   #cloudflare_change_a_record "${root_domain}" "${project_domain}" "true"
 
   log_event "success" "Wordpress installation finished!" "true"
+  telegram_send_message "${VPSNAME}: WordPress installation for domain ${project_domain} finished"
 
 fi
 

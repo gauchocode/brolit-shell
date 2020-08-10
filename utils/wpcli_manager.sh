@@ -125,8 +125,7 @@ wpcli_main_menu() {
     if [[ ${chosen_wpcli_options} == *"05"* ]]; then
 
       # VERIFY_WP
-      wpcli_core_verify_result=$(wpcli_core_verify "${wp_site}")
-      telegram_send_message "$wpcli_core_verify_result"
+      wpcli_core_verify "${wp_site}"
       wpcli_plugin_verify "${wp_site}"
 
     fi
@@ -142,7 +141,7 @@ wpcli_main_menu() {
 
       # REINSTALL_WP
       wpcli_core_reinstall "${wp_site}"
-      telegram_send_message "WordPress re-install for site: ${wp_site} on ${VPSNAME}"
+      telegram_send_message "WordPress reinstalled on site: ${wp_site} on ${VPSNAME}"
 
     fi
 

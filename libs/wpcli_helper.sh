@@ -163,7 +163,7 @@ wpcli_core_reinstall() {
 
     local wp_site=$1
 
-    log_event "info" "Running: sudo -u www-data wp --path="${wp_site}" core download --skip-content --force" "true"
+    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core download --skip-content --force" "true"
 
     sudo -u www-data wp --path="${wp_site}" core download --skip-content --force 
 
@@ -213,7 +213,7 @@ wpcli_core_verify() {
     local wp_site=$1
     local verify_core
 
-    log_event "info" "Running: sudo -u www-data wp --path="${wp_site}" core verify-checksums" "true"
+    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core verify-checksums" "true"
     mapfile verify_core < <(sudo -u www-data wp --path="${wp_site}" core verify-checksums 2>&1)
 
     # Return an array with wp-cli output

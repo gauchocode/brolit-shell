@@ -18,7 +18,6 @@ export SCRIPT_V
 
 ### Main dir check
 SFOLDER=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-SFOLDER=$( cd "$( dirname "${SFOLDER}" )" && pwd )
 if [ -z "${SFOLDER}" ]; then
   exit 1  # error; the path is not accessible
 fi
