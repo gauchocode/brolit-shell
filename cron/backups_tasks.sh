@@ -42,7 +42,7 @@ else
 
   # Preparing Mail Notifications Template
   HTMLOPEN=$(mail_html_start)
-  BODY_SRV=$(mail_server_status_section "${IP}")
+  BODY_SRV=$(mail_server_status_section "${SERVER_IP}")
 
   # Compare package versions
   mail_package_status_section "${PKG_DETAILS}"

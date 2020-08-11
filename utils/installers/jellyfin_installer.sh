@@ -32,12 +32,10 @@ install_jellyfin(){
     # Configuring nginx for jellyfin
     create_nginx_server "${PROJECT_DOMAIN}" "jellyfin"
 
-    # Extra configuration for proxy
-    SERVER_IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
     # Replace string to match domain name
-    sudo sed -i "s#SERVER_IP_ADDRESS#${SERVER_IP}#" "${WSERVER}/sites-available/${PROJECT_DOMAIN}"
+    sed -i "s#SERVER_IP_ADDRESS#${SERVER_IP}#" "${WSERVER}/sites-available/${PROJECT_DOMAIN}"
     # need to run twice
-    sudo sed -i "s#SERVER_IP_ADDRESS#${SERVER_IP}#" "${WSERVER}/sites-available/${PROJECT_DOMAIN}"
+    sed -i "s#SERVER_IP_ADDRESS#${SERVER_IP}#" "${WSERVER}/sites-available/${PROJECT_DOMAIN}"
 
     # Reload webserver
     service nginx reload
