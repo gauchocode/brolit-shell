@@ -13,8 +13,8 @@ configure_monit(){
 
   # Configuring monit
   log_event "info" "Configuring monit ..." "true"
-  cat "${SFOLDER}/confs/monit/lemp-services" > /etc/monit/conf.d/lemp-services
-  cat "${SFOLDER}/confs/monit/monitrc" > /etc/monit/monitrc
+  cat "${SFOLDER}/config/monit/lemp-services" > /etc/monit/conf.d/lemp-services
+  cat "${SFOLDER}/config/monit/monitrc" > /etc/monit/monitrc
 
   sed -i "s#HOSTNAME#${VPSNAME}#" /etc/monit/conf.d/lemp-services
 

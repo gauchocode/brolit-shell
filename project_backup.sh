@@ -78,7 +78,7 @@ for j in ${TOTAL_SITES}; do
             BK_FL_ARRAY_INDEX=$((BK_FL_ARRAY_INDEX + 1))
 
         else
-            echo " > Omiting ${FOLDER_NAME} TAR file (blacklisted) ..." >>$LOG
+            echo " > Omiting ${FOLDER_NAME} (blacklisted) ..." >>$LOG
 
         fi
 

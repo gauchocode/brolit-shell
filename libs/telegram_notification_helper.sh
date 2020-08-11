@@ -18,7 +18,7 @@ telegram_notifications_config() {
 
 	if [[ -z "${botfather_key}" ]]; then
 
-		botfather_whip_line+="\n . \n"
+		botfather_whip_line+=" "
 		botfather_whip_line+=" Configure Telegram Notifications? You will need:\n"
 		botfather_whip_line+=" 1) Get a bot token. Contact @BotFather (https://t.me/BotFather) and send the command /newbot.\n"
 		botfather_whip_line+=" Follow the instructions and paste the token to access the HTTP API:\n"
@@ -34,7 +34,7 @@ telegram_notifications_config() {
 	fi
 	if [[ -z "${telegram_user_id}" ]]; then
 
-		telegram_id_whip_line+="\n . \n"
+		telegram_id_whip_line+=" "
 		telegram_id_whip_line+=" 2) Contact the @myidbot (https://t.me/myidbot) bot and send the command /getid to get \n"
 		telegram_id_whip_line+=" your personal chat id or invite him into a group and issue the same command to get the group chat id.\n"
 		telegram_id_whip_line+=" 3) Paste the ID here:\n"
@@ -97,7 +97,7 @@ telegram_send_message() {
 		# Log success
 		log_event "success" "Telegram notification sent!" "true"
 	
-	false
+	else
 		# Log failure
 		log_event "error" "Telegram notification error!" "true"
 
