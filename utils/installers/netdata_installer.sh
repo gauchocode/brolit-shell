@@ -46,19 +46,19 @@ netdata_configuration() {
 
   # MySQL
   create_netdata_db_user
-  cat "${SFOLDER}/confs/netdata/python.d/mysql.conf" > "/etc/netdata/python.d/mysql.conf"
+  cat "${SFOLDER}/config/netdata/python.d/mysql.conf" > "/etc/netdata/python.d/mysql.conf"
   log_event "info" "MySQL config done!" "true"
 
   # monit
-  cat "${SFOLDER}/confs/netdata/python.d/monit.conf" >"/etc/netdata/python.d/monit.conf"
+  cat "${SFOLDER}/config/netdata/python.d/monit.conf" >"/etc/netdata/python.d/monit.conf"
   log_event "info" "Monit config done!" "true"
 
   # web_log
-  cat "${SFOLDER}/confs/netdata/python.d/web_log.conf" >"/etc/netdata/python.d/web_log.conf"
+  cat "${SFOLDER}/config/netdata/python.d/web_log.conf" >"/etc/netdata/python.d/web_log.conf"
   log_event "info" "Nginx Web Log config done!" "true"
 
   # health_alarm_notify
-  cat "${SFOLDER}/confs/netdata/health_alarm_notify.conf" >"/etc/netdata/health_alarm_notify.conf"
+  cat "${SFOLDER}/config/netdata/health_alarm_notify.conf" >"/etc/netdata/health_alarm_notify.conf"
   log_event "info" "Health alarm config done!" "true"
 
   # telegram
@@ -206,7 +206,7 @@ if [ ! -x "${NETDATA}" ]; then
       # Netdata nginx proxy configuration
       create_nginx_server "${netdata_subdomain}" "netdata"
 
-      #cp "${SFOLDER}/confs/nginx/sites-available/monitor" "/etc/nginx/sites-available"
+      #cp "${SFOLDER}/config/nginx/sites-available/monitor" "/etc/nginx/sites-available"
       #sed -i "s#dominio.com#${netdata_subdomain}#" "/etc/nginx/sites-available/monitor"
       #ln -s "/etc/nginx/sites-available/monitor" "/etc/nginx/sites-enabled/monitor"
 

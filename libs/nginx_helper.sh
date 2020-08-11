@@ -30,7 +30,7 @@ create_nginx_server() {
     # Create nginx config files for site
     log_event "info" "Creating nginx configuration file ..." "true"
 
-    cp "${SFOLDER}/confs/nginx/sites-available/${server_type}" "${WSERVER}/sites-available/${domain}"
+    cp "${SFOLDER}/config/nginx/sites-available/${server_type}" "${WSERVER}/sites-available/${domain}"
     ln -s "${WSERVER}/sites-available/${domain}" "${WSERVER}/sites-enabled/${domain}"
 
     # Search and Replace sed command
@@ -44,7 +44,7 @@ create_nginx_server() {
     #Test the validity of the nginx configuration
     result=$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)
 
-    if [ "${result}" = "success" ];then
+    if [ "${result}" = "successful" ];then
         
         # Reload webserver
         service nginx reload
@@ -186,14 +186,14 @@ change_phpv_nginx_server() {
 reconfigure_nginx() {
 
     # nginx.conf broobe standard configuration
-    cat "${SFOLDER}/confs/nginx/nginx.conf" >"/etc/nginx/nginx.conf"
+    cat "${SFOLDER}/config/nginx/nginx.conf" >"/etc/nginx/nginx.conf"
 
     # Reload webserver
     service nginx reload
 
 }
 
-create_nginx_globals_confs() {
+create_nginx_globals_config() {
 
     # nginx.conf broobe standard configuration
     nginx_globals="/etc/nginx/globals/"
@@ -208,9 +208,9 @@ create_nginx_globals_confs() {
 
     fi
 
-    cp "${SFOLDER}/confs/nginx/globals/security.conf /etc/nginx/globals/security.conf"
-    cp "${SFOLDER}/confs/nginx/globals/wordpress_sec.conf" "/etc/nginx/globals/wordpress_sec.conf"
-    cp "${SFOLDER}/confs/nginx/globals/wordpress_seo.conf" "/etc/nginx/globals/wordpress_seo.conf"
+    cp "${SFOLDER}/config/nginx/globals/security.conf /etc/nginx/globals/security.conf"
+    cp "${SFOLDER}/config/nginx/globals/wordpress_sec.conf" "/etc/nginx/globals/wordpress_sec.conf"
+    cp "${SFOLDER}/config/nginx/globals/wordpress_seo.conf" "/etc/nginx/globals/wordpress_seo.conf"
 
     # Replace string to match PHP version
     sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/nginx/globals/wordpress_sec.conf"

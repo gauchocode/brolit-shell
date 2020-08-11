@@ -163,11 +163,40 @@ wpcli_core_reinstall() {
 
     local wp_site=$1
 
-    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core download --skip-content --force" "true"
+    local wpcli_result
 
-    sudo -u www-data wp --path="${wp_site}" core download --skip-content --force 
+    if [ "${wp_site}" != "" ]; then
 
-    log_event "success" "Wordpress re-installed" "true"
+        log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core download --skip-content --force" "true"
+
+        wpcli_result=$(sudo -u www-data wp --path="${wp_site}" core download --skip-content --force 2>&1 | grep "Success" | cut -d ":" -f1)
+
+        if [ "${wpcli_result}" = "Success" ]; then
+
+            # Log Success
+            log_event "success" "Wordpress re-installed" "true"
+
+            # Return
+            echo "success"
+
+        else
+
+            # Log failure
+            log_event "fail" "Something went wrong installing WordPress" "true"
+
+            # Return
+            echo "fail"
+
+        fi
+        
+    else
+        # Log failure
+        log_event "fail" "wp_site can't be empty!" "true"
+
+        # Return
+        echo "fail"
+
+    fi
 
 }
 
@@ -260,9 +289,11 @@ wpcli_delete_not_core_files() {
         wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
         
         if test -f "${install_path}/${wpcli_core_verify_result_file}"; then
-            echo " > Deleting not core file: ${install_path}/${wpcli_core_verify_result_file}" >&2
+            log_event "info" "Deleting not core file: ${install_path}/${wpcli_core_verify_result_file}" "true"
             rm "${install_path}/${wpcli_core_verify_result_file}"
         fi
+
+        log_event "info" "All not core files for ${wp_site} deleted!" "true"
 
     done
 
