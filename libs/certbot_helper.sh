@@ -83,20 +83,33 @@ certbot_helper_installer_menu() {
   local email=$1
   local domains=$2
 
-  CB_INSTALLER_OPTIONS="01 INSTALL_WITH_NGINX 02 INSTALL_WITH_CLOUDFLARE"
-  CHOSEN_CB_INSTALLER_OPTION=$(whiptail --title "CERTBOT INSTALLER OPTIONS" --menu "Please choose an option:" 20 78 10 $(for x in ${CB_INSTALLER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  local cb_installer_options chosen_cb_installer_option cb_warning_text
+
+  cb_installer_options="01 INSTALL_WITH_NGINX 02 INSTALL_WITH_CLOUDFLARE"
+  chosen_cb_installer_option=$(whiptail --title "CERTBOT INSTALLER OPTIONS" --menu "Please choose an installation method:" 20 78 10 $(for x in ${cb_installer_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
-    if [[ ${CHOSEN_CB_INSTALLER_OPTION} == *"01"* ]]; then
+    if [[ ${chosen_cb_installer_option} == *"01"* ]]; then
       certbot_certificate_install "${email}" "${domains}"
 
     fi
-    if [[ ${CHOSEN_CB_INSTALLER_OPTION} == *"02"* ]]; then
+    if [[ ${chosen_cb_installer_option} == *"02"* ]]; then
       certbot_certonly_cloudflare "${email}" "${domains}"
-      root_domain=$(ask_rootdomain_for_cloudflare_config "${domains}")
-      cloudflare_ssl_mode "${root_domain}" "full"
+
+      cb_warning_text+="\n Now you need to follow the next steps: \n"
+      cb_warning_text+="1- Login to your Cloudflare account and select the domain we want to work. \n"
+      cb_warning_text+="2- Go to de 'DNS' option panel and Turn ON the proxy Cloudflare setting over the domain/s \n"
+      cb_warning_text+="3- Go to 'SSL/TLS' option panel and change the SSL setting from 'Flexible' to 'Full'. \n"
+
+      whiptail_event "${cb_warning_text}"
+      #root_domain=$(ask_rootdomain_for_cloudflare_config "${domains}")
+      # TODO: list entries to add proxy on cloudflare records
+      #cloudflare_change_a_record "${root_domain}" "" "true"
+
+      # Changing SSL Mode flor Cloudflare record
+      #cloudflare_ssl_mode "${root_domain}" "full"
 
     fi
 
@@ -128,11 +141,6 @@ certbot_certonly_cloudflare() {
 
   # Maybe add a non interactive mode?
   # certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf --non-interactive --agree-tos --redirect -m ${EMAIL} -d ${DOMAINS} --preferred-challenges dns-01
-
-  #echo -e ${MAGENTA}"Now you need to follow the next steps:"${ENDCOLOR}
-  #echo -e ${MAGENTA}"1- Login to your Cloudflare account and select the domain we want to work."${ENDCOLOR}
-  #echo -e ${MAGENTA}"2- Go to de 'DNS' option panel and Turn ON the proxy Cloudflare setting over the domain/s"${ENDCOLOR}
-  #echo -e ${MAGENTA}"3- Go to 'SSL/TLS' option panel and change the SSL setting from 'Flexible' to 'Full'."${ENDCOLOR}
 
 }
 
@@ -255,40 +263,35 @@ certbot_helper_menu() {
     if [[ ${chosen_cb_options} == *"01"* ]]; then
       domains=$(certbot_helper_ask_domains)
       certbot_helper_installer_menu "${MAILA}" "${domains}"
-      #certbot_helper_menu
 
     fi
     if [[ ${chosen_cb_options} == *"02"* ]]; then
       domains=$(certbot_helper_ask_domains)
       certbot_certificate_expand "${MAILA}" "${domains}"
-      #certbot_helper_menu
 
     fi
     if [[ ${chosen_cb_options} == *"03"* ]]; then
       certbot_certificate_renew_test
-      #certbot_helper_menu
 
     fi
     if [[ ${chosen_cb_options} == *"04"* ]]; then
       domains=$(certbot_helper_ask_domains)
       certbot_certificate_force_renew "${domains}"
-      #certbot_helper_menu
 
     fi
     if [[ ${chosen_cb_options} == *"05"* ]]; then
       domains=$(certbot_helper_ask_domains)
       certbot_certificate_delete "${domains}"
-      #certbot_helper_menu
 
     fi
     if [[ ${chosen_cb_options} == *"06"* ]]; then
       certbot_show_certificates_info
       #read -n 1 -p "Press any key to return to the certbot menu" "mainmenuinput"
-      #certbot_helper_menu
 
     fi
 
     prompt_return_or_finish
+    certbot_helper_menu
 
   fi
 

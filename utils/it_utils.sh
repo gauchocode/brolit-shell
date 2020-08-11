@@ -25,32 +25,50 @@ it_utils_menu() {
 
   local it_util_options chosen_it_util_options new_ssh_port
 
-  it_util_options="01 SECURITY_TOOLS 02 SERVER_OPTIMIZATIONS 03 BLACKLIST_CHECKER 04 BENCHMARK_SERVER 05 CHANGE_SSH_PORT 06 CHANGE_HOSTNAME 07 ADD_FLOATING_IP"
+  it_util_options="01 SECURITY_TOOLS 02 SERVER_OPTIMIZATIONS 03 CHANGE_SSH_PORT 04 CHANGE_HOSTNAME 05 ADD_FLOATING_IP 06 BLACKLIST_CHECKER 07 BENCHMARK_SERVER"
   chosen_it_util_options=$(whiptail --title "IT UTILS MENU" --menu "Choose a script to Run" 20 78 10 $(for x in ${it_util_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
+    # SECURITY_TOOLS
     if [[ ${chosen_it_util_options} == *"01"* ]]; then
       security_utils_menu
-
     fi
+    # SERVER_OPTIMIZATIONS
     if [[ ${chosen_it_util_options} == *"02"* ]]; then
       # shellcheck source=${SFOLDER}/server_and_image_optimizations.sh
       source "${SFOLDER}/server_and_image_optimizations.sh"
-
     fi
+    # CHANGE_SSH_PORT
     if [[ ${chosen_it_util_options} == *"03"* ]]; then
-
-      URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
+    
+      new_ssh_port=$(whiptail --title "CHANGE SSH PORT" --inputbox "Insert the new SSH port:" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [ ${exitstatus} = 0 ]; then
-        # shellcheck source=${SFOLDER}/tools/third-party/google-insights-api-tools/gitools_v5.sh
-        source "${SFOLDER}/tools/third-party/google-insights-api-tools/gitools_v5.sh" gtmetrix "${URL_TO_TEST}"
+        change_current_ssh_port "${new_ssh_port}"
       fi
-
     fi
+    # CHANGE_HOSTNAME
     if [[ ${chosen_it_util_options} == *"04"* ]]; then
+    
+      new_server_hostname=$(whiptail --title "CHANGE SERVER HOSTNAME" --inputbox "Insert the new hostname:" 10 60 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ ${exitstatus} = 0 ]; then
+        change_server_hostname "${new_server_hostname}"
+      fi
+    fi
+    # ADD_FLOATING_IP
+    if [[ ${chosen_it_util_options} == *"05"* ]]; then
+    
+      floating_IP=$(whiptail --title "ADD FLOATING IP" --inputbox "Insert the floating IP:" 10 60 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ ${exitstatus} = 0 ]; then
+        add_floating_IP "${floating_IP}"
+      fi
+    fi
+    # BLACKLIST_CHECKER
+    if [[ ${chosen_it_util_options} == *"06"* ]]; then
     
       IP_TO_TEST=$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
@@ -59,35 +77,20 @@ it_utils_menu() {
         source "${SFOLDER}/tools/third-party/blacklist-checker/bl.sh" "${IP_TO_TEST}"
       fi
     fi
-    if [[ ${chosen_it_util_options} == *"05"* ]]; then
-    
-      new_ssh_port=$(whiptail --title "CHANGE SSH PORT" --inputbox "Insert the new SSH port:" 10 60 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
-        change_current_ssh_port "${new_ssh_port}"
+    # BENCHMARK_SERVER
+    if [[ ${chosen_it_util_options} == *"07"* ]]; then
+      # shellcheck source=${SFOLDER}/tools/bench_scripts.sh
+      source "${SFOLDER}/tools/bench_scripts.sh"
 
-      fi
     fi
-       if [[ ${chosen_it_util_options} == *"06"* ]]; then
-    
-      new_server_hostname=$(whiptail --title "CHANGE SERVER HOSTNAME" --inputbox "Insert the new hostname:" 10 60 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
-        change_server_hostname "${new_server_hostname}"
 
-      fi
-    fi
-       if [[ ${chosen_it_util_options} == *"07"* ]]; then
-    
-      floating_IP=$(whiptail --title "ADD FLOATING IP" --inputbox "Insert the floating IP:" 10 60 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
-        add_floating_IP "${floating_IP}"
-
-      fi
-    fi
+    prompt_return_or_finish
+    it_utils_menu
 
   fi
+
+  main_menu
+
 }
 
 change_current_ssh_port() {
@@ -100,21 +103,21 @@ change_current_ssh_port() {
 
   log_event "info" "Trying to change current SSH port" "true"
 
-  # get current ssh port
+  # Get current ssh port
   current_ssh_port=$(grep "Port" /etc/ssh/sshd_config | awk -F " " '{print $2}')
   log_event "info" "Current SSH port: ${current_ssh_port}" "true"
 
-  # download secure sshd_config
-  sudo cp -f "assets/ssh/sshd_config" "/etc/ssh/sshd_config"
+  # Download secure sshd_config
+  cp -f "${SFOLDER}/config/sshd_config" "/etc/ssh/sshd_config"
 
-  # change ssh default port
-  sudo sed -i "s/Port 22/Port ${new_ssh_port}/" "/etc/ssh/sshd_config"
+  # Change ssh default port
+  sed -i "s/Port 22/Port ${new_ssh_port}/" "/etc/ssh/sshd_config"
   log_event "info" "Changes made on /etc/ssh/sshd_config" "true"
 
   log_event "info" "New SSH port: ${new_ssh_port}" "true"
 
-  # restart ssh service
-  sudo service ssh restart
+  # Restart ssh service
+  service ssh restart
 
   log_event "info" "SSH service restarted" "true"
 
@@ -161,9 +164,9 @@ add_floating_IP() {
   if [ "${ubuntu_v}" == "1804" ]; then
    
    cp "${SFOLDER}/config/networking/60-my-floating-ip.cfg" /etc/network/interfaces.d/60-my-floating-ip.cfg
-   sudo sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/network/interfaces.d/60-my-floating-ip.cfg
+   sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/network/interfaces.d/60-my-floating-ip.cfg
    
-   sudo service networking restart
+   service networking restart
 
    log_event "success" "New IP ${floating_IP} added" "true"
    
@@ -172,9 +175,9 @@ add_floating_IP() {
     if [ "${ubuntu_v}" == "2004" ]; then
       
       cp "${SFOLDER}/config/networking/60-floating-ip.yaml" /etc/netplan/60-floating-ip.yaml
-      sudo sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/netplan/60-floating-ip.yaml
+      sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/netplan/60-floating-ip.yaml
       
-      sudo netplan apply
+      netplan apply
 
       log_event "success" "New IP ${floating_IP} added" "true"
 

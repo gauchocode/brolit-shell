@@ -62,14 +62,14 @@ cloudflare_clear_cache() {
     -H "Content-Type:application/json" \
     --data '{"purge_everything":true}')
 
-    if [[ $purge_cache == *"\"success\":false"* ]]; then
-        message="Error trying to clear Cloudflare cache. Results:\n$update"
-        log_event "error" "$message" "true"
+    if [[ ${purge_cache} == *"\"success\":false"* ]]; then
+        message="Error trying to clear Cloudflare cache. Results:\n${update}"
+        log_event "error" "${message}" "true"
         return 1
 
     else
         message="Cache cleared for domain: ${root_domain}"
-        log_event "success" "$message" "true"
+        log_event "success" "${message}" "true"
 
     fi
 
@@ -110,14 +110,14 @@ cloudflare_development_mode() {
      -H "Content-Type: application/json" \
      --data "{\"value\":\"${dev_mode}\"}")
 
-    if [[ $dev_mode_result == *"\"success\":false"* ]]; then
-        message="Error trying to change development mode for ${root_domain}. Results:\n $dev_mode_result"
-        log_event "error" "$message" "true"
+    if [[ ${dev_mode_result} == *"\"success\":false"* ]]; then
+        message="Error trying to change development mode for ${root_domain}. Results:\n ${dev_mode_result}"
+        log_event "error" "${message}" "true"
         return 1
 
     else
         message="Development mode for ${root_domain} is ${dev_mode}"
-        log_event "success" "$message" "true"
+        log_event "success" "${message}" "true"
 
     fi
 
@@ -159,13 +159,13 @@ cloudflare_ssl_mode() {
      --data "{\"value\":\"${ssl_mode}\"}")
 
     if [[ $ssl_mode_result == *"\"success\":false"* ]]; then
-        message="Error trying to change ssl mode for ${root_domain}. Results:\n $ssl_mode_result"
-        log_event "error" "$message" "true"
+        message="Error trying to change ssl mode for ${root_domain}. Results:\n ${ssl_mode_result}"
+        log_event "error" "${message}" "true"
         return 1
 
     else
         message="SSL mode for ${root_domain} is ${ssl_mode}"
-        log_event "success" "$message" "true"
+        log_event "success" "${message}" "true"
 
     fi
 
@@ -203,9 +203,6 @@ cloudflare_change_a_record () {
     record_type="A"
     ttl=1 #1 for Auto
 
-    ip=$(curl -s http://ipv4.icanhazip.com)
-    #ip=$(dig +short myip.opendns.com @resolver1.opendns.com) 2>/dev/null
-
     #ip_file="ip.txt"
     id_file="cloudflare.ids"
 
@@ -214,7 +211,7 @@ cloudflare_change_a_record () {
 
     # FOR IPV6 EDIT THE LINK TO THIS -> (https://api6.ipify.org)
     #cur_ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
-    cur_ip=$ip
+    cur_ip=${SERVER_IP}
 
     # RETRIEVE/ SAVE zone_id AND record_id
     log_event "info" "CHECKING FOR ZONE & RECORD ID's ..." "true"
@@ -247,7 +244,7 @@ cloudflare_change_a_record () {
             -H "X-Auth-Email: ${auth_email}" \
             -H "X-Auth-Key: ${auth_key}" \
             -H "Content-Type: application/json" \
-            --data "{\"type\":\"$record_type\",\"name\":\"$record_name\",\"content\":\"$cur_ip\",\"ttl\":$ttl,\"priority\":10,\"proxied\":$proxy_status}")
+            --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":$proxy_status}")
 
         else
 
@@ -255,15 +252,15 @@ cloudflare_change_a_record () {
             log_event "info" "Trying to change the domain IP ..." "true"
 
             delete=$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/$zone_id/dns_records/$record_id" \
-            -H "X-Auth-Email: $auth_email" \
-            -H "X-Auth-Key: $auth_key" \
+            -H "X-Auth-Email: ${auth_email}" \
+            -H "X-Auth-Key: ${auth_key}" \
             -H "Content-Type: application/json")
             
             update=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
             -H "X-Auth-Email: ${auth_email}" \
             -H "X-Auth-Key: ${auth_key}" \
             -H "Content-Type: application/json" \
-            --data "{\"type\":\"$record_type\",\"name\":\"$record_name\",\"content\":\"$cur_ip\",\"ttl\":$ttl,\"priority\":10,\"proxied\":$proxy_status}")
+            --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":$proxy_status}")
 
             #update=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$zone_id/dns_records/$record_id" \
             #-H "X-Auth-Email: $auth_email" \
@@ -276,19 +273,19 @@ cloudflare_change_a_record () {
 
     fi
 
-    if [[ $update == *"\"success\":false"* ]]; then
-        message=" > API UPDATE FAILED. RESULTS:\n$update"
-        log_event "error" "$message" "true"
+    if [[ ${update} == *"\"success\":false"* ]]; then
+        message=" > API UPDATE FAILED. RESULTS:\n${update}"
+        log_event "error" "${message}" "true"
         return 1
 
     else
-        message=" > IP changed to: $ip."
-        #echo "$ip" > $ip_file
-        log_event "success" "$message" "true"
+        message=" > IP changed to: ${SERVER_IP}."
+        #echo "$SERVER_IP" > $ip_file
+        log_event "success" "${message}" "true"
 
     fi
 
-    rm $id_file
+    rm ${id_file}
 
     return 0
 
@@ -325,27 +322,24 @@ cloudflare_delete_a_record () {
     ttl=1 #1 for Auto
     proxied_value="false"
 
-    ip=$(curl -s http://ipv4.icanhazip.com)
-    #ip=$(dig +short myip.opendns.com @resolver1.opendns.com) 2>/dev/null
-
     #ip_file="ip.txt"
     id_file="cloudflare.ids"
 
     # SCRIPT START
     log_event "info" "Cloudflare Script Initiated" "true"
 
-    cur_ip=$ip
+    cur_ip=${SERVER_IP}
 
     # RETRIEVE/ SAVE zone_id AND record_id
     log_event "info" "Getting Zone & Record ID's ..." "true"
-    zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=$zone_name" -H "X-Auth-Email: $auth_email" -H "X-Auth-Key: $auth_key" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
-    record_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$zone_id/dns_records?name=$record_name" -H "X-Auth-Email: $auth_email" -H "X-Auth-Key: $auth_key" -H "Content-Type: application/json"  | grep -Po '(?<="id":")[^"]*')
+    zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: $auth_key" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
+    record_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: $auth_email" -H "X-Auth-Key: $auth_key" -H "Content-Type: application/json"  | grep -Po '(?<="id":")[^"]*')
 
     log_event "info" "ZONE_ID: ${zone_id}" "true"
     log_event "info" "RECORD_ID: ${record_id}" "true"
 
-    echo "$zone_id" > $id_file
-    echo "$record_id" >> $id_file
+    echo "${zone_id}" > ${id_file}
+    echo "${record_id}" >> ${id_file}
 
     if [[ -z "${record_id}" || ${record_id} == "" ]]; then
 
@@ -356,26 +350,26 @@ cloudflare_delete_a_record () {
         log_event "info" "RECORD_ID found: ${record_id}" "true"
         log_event "info" "Trying to delete the record ..." "true"
 
-        delete=$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/$zone_id/dns_records/$record_id" \
-        -H "X-Auth-Email: $auth_email" \
-        -H "X-Auth-Key: $auth_key" \
+        delete=$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
+        -H "X-Auth-Email: ${auth_email}" \
+        -H "X-Auth-Key: ${auth_key}" \
         -H "Content-Type: application/json")
         
     fi
 
-    if [[ $delete == *"\"success\":false"* ]]; then
-        message="API UPDATE FAILED. RESULTS:\n$delete"
-        log_event "error" "$message" "true"
+    if [[ ${delete} == *"\"success\":false"* ]]; then
+        message="API UPDATE FAILED. RESULTS:\n${delete}"
+        log_event "error" "${message}" "true"
         return 1
 
     else
-        message="IP changed to: $ip."
-        #echo "$ip" > $ip_file
-        log_event "success" "$message" "true"
+        message="IP changed to: ${SERVER_IP}."
+        #echo "$SERVER_IP" > $ip_file
+        log_event "success" "${message}" "true"
 
     fi
 
-    rm $id_file
+    rm ${id_file}
     #rm $ip_file
 
 }

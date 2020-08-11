@@ -193,6 +193,26 @@ reconfigure_nginx() {
 
 }
 
+nginx_new_default_server() {
+    
+    # New default nginx configuration
+    log_event "info" "Moving nginx configuration files ..." "true"
+    cat "${SFOLDER}/config/nginx/sites-available/default" >"/etc/nginx/sites-available/default"
+
+}
+
+nginx_delete_default_directory() {
+
+    # Remove html default nginx folders
+    nginx_default_dir="/var/www/html"
+    if [ -d "${nginx_default_dir}" ]; then
+        rm -r $nginx_default_dir
+        log_event "info" "Directory ${nginx_default_dir} deleted" "true"
+
+    fi
+
+}
+
 create_nginx_globals_config() {
 
     # nginx.conf broobe standard configuration
