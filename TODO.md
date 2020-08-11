@@ -26,6 +26,7 @@
 ### For release 3.0-final
 
 - [ ] php_reconfigure refactor (replace strings instead of replace entired config files)
+- [ ] New default nginx configuration for wordpress projects
 
 ### For release 3.1
 
@@ -64,7 +65,6 @@
         rsync -ax --exclude [relative path to directory to exclude] /path/from /path/to
 - [ ] On php_installer if multiple php versions are installed de PHP_V need to be an array
         So, if you need to install a new site, must ask what php_v to use.
-- [ ] Test VALIDATORS (commons.sh) and use functions on user prompt
 - [ ] Option to install Bashtop and other utils: http://packages.azlux.fr/
 
 ### For release 3.4

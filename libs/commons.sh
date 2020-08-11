@@ -1231,58 +1231,6 @@ install_crontab_script() {
 }
 
 ################################################################################
-# VALIDATORS
-################################################################################
-
-is_domain_format_valid() {
-
-  # $1 = domain
-
-  local domain=$1
-
-  object_name=${2-domain}
-  exclude="[!|@|#|$|^|&|*|(|)|+|=|{|}|:|,|<|>|?|_|/|\|\"|'|;|%|\`| ]"
-  if [[ ${domain} =~ $exclude ]] || [[ ${domain} =~ ^[0-9]+$ ]] || [[ ${domain} =~ "\.\." ]] || [[ ${domain} =~ "$(printf '\t')" ]]; then
-    check_result $E_INVALID "invalid $object_name format :: ${domain}"
-  fi
-
-}
-
-is_ip_format_valid() {
-
-  # $1 = ip
-
-  local ip=$1
-
-  object_name=${2-ip}
-  ip_regex='([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])'
-  ip_clean=$(echo "${ip%/*}")
-  if ! [[ $ip_clean =~ ^$ip_regex\.$ip_regex\.$ip_regex\.$ip_regex$ ]]; then
-    check_result $E_INVALID "invalid $object_name format :: ${ip}"
-  fi
-  if [ "${ip}" != "$ip_clean" ]; then
-    ip_cidr="$ip_clean/"
-    ip_cidr=$(echo "${1#$ip_cidr}")
-    if [[ "$ip_cidr" -gt 32 ]] || [[ "$ip_cidr" =~ [:alnum:] ]]; then
-      check_result $E_INVALID "invalid $object_name format :: ${ip}"
-    fi
-  fi
-
-}
-
-is_email_format_valid() {
-
-  # $1 = email
-
-  local email=$1
-
-  if [[ ! "${email}" =~ ^[A-Za-z0-9._%+-]+@[[:alnum:].-]+\.[A-Za-z]{2,63}$ ]]; then
-    check_result $E_INVALID "invalid email format :: ${email}"
-  fi
-
-}
-
-################################################################################
 # ASK-FOR
 ################################################################################
 
