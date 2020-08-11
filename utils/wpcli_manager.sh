@@ -42,7 +42,7 @@ wpcli_main_menu() {
 
   local wp_site=$1
 
-  local wpcli_options chosen_wpcli_options wp_plugins chosen_plugin_option
+  local wpcli_options wp_result chosen_wpcli_options wp_plugins chosen_plugin_option
 
   # Array of plugin slugs to install
   wp_plugins=(
@@ -140,8 +140,11 @@ wpcli_main_menu() {
     if [[ ${chosen_wpcli_options} == *"07"* ]]; then
 
       # REINSTALL_WP
-      wpcli_core_reinstall "${wp_site}"
-      telegram_send_message "WordPress reinstalled on site: ${wp_site} on ${VPSNAME}"
+      wp_result=$(wpcli_core_reinstall "${wp_site}")
+      if [ "${wp_result}" = "success" ]; then
+        telegram_send_message "⚠️ ${VPSNAME}: WordPress reinstalled on site: ${wp_site}"
+
+      fi
 
     fi
 
@@ -253,7 +256,7 @@ wpcli_main_menu() {
     fi
 
     prompt_return_or_finish
-    wpcli_main_menu
+    wpcli_main_menu "${wp_site}"
 
   else
 

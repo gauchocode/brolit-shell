@@ -194,9 +194,9 @@ if [ ${nginx_installed} == "false" ]; then
 
         # New default nginx configuration
         echo " > Moving nginx configuration files ..." >>$LOG
-        cat "${SFOLDER}/confs/nginx/sites-available/default" >"/etc/nginx/sites-available/default"
+        cat "${SFOLDER}/config/nginx/sites-available/default" >"/etc/nginx/sites-available/default"
 
-        create_nginx_globals_confs
+        create_nginx_globals_config
 
     else
         echo -e ${CYAN}" > Operation cancelled ..."${ENDCOLOR}

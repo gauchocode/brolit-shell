@@ -64,7 +64,7 @@ php_redis_installer() {
   apt --yes install redis-server php-redis
   systemctl enable redis-server.service
 
-  cp "${SFOLDER}/confs/redis/redis.conf" "/etc/redis/redis.conf"
+  cp "${SFOLDER}/config/redis/redis.conf" "/etc/redis/redis.conf"
 
   service redis-server restart
 
@@ -116,10 +116,10 @@ php_check_installed_version() {
 php_reconfigure() {
   
   log_event "info" "Moving php.ini configuration file ..." "true"
-  cat "${SFOLDER}/confs/php/php.ini" >"/etc/php/${PHP_V}/fpm/php.ini"
+  cat "${SFOLDER}/config/php/php.ini" >"/etc/php/${PHP_V}/fpm/php.ini"
 
   log_event "info" "Moving php-fpm.conf configuration file ..." "true"
-  cat "${SFOLDER}/confs/php/php-fpm.conf" >"/etc/php/${PHP_V}/fpm/php-fpm.conf"
+  cat "${SFOLDER}/config/php/php-fpm.conf" >"/etc/php/${PHP_V}/fpm/php-fpm.conf"
 
   # Replace string to match PHP version
   log_event "info" "Replace string to match PHP version ..." "true"
