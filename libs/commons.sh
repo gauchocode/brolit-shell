@@ -172,7 +172,14 @@ script_init() {
   source "${SFOLDER}/libs/packages_helper.sh"
   check_packages_required
 
-  IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
+  # OLD METHOD (DEPRECATED)
+  #SERVER_IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
+
+  # METHOD TO GET PUBLIC IP
+  #SERVER_IP=$(curl -s http://ipv4.icanhazip.com)
+
+  # METHOD TO GET PUBLIC IP (if server has configured a floating ip, it will return this)
+  SERVER_IP=$(ifconfig eth0 | grep 'inet ' | awk '{print $2}' | sed 's/addr://')
 
   # MySQL
   MYSQL="$(which mysql)"
@@ -185,7 +192,7 @@ script_init() {
   FIND="$(which find)"
 
   # EXPORT VARS (GLOBALS)
-  export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
+  export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK SERVER_IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
 
 }
 
@@ -347,7 +354,7 @@ project_utils_menu () {
 
   local project_utils_options chosen_project_utils_options
 
-  project_utils_options="01 CREATE_WP_PROJECT 02 CREATE_PHP_PROJECT 03 DELETE_PROJECT 04 PUT_PROJECT_ONLINE 05 PUT_PROJECT_OFFLINE"
+  project_utils_options="01 CREATE_WP_PROJECT 02 CREATE_PHP_PROJECT 03 DELETE_PROJECT 04 PUT_PROJECT_ONLINE 05 PUT_PROJECT_OFFLINE 06 BENCH_PROJECT_GTMETRIX"
   chosen_project_utils_options=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a Restore Option to run" 20 78 10 $(for x in ${project_utils_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -381,6 +388,17 @@ project_utils_menu () {
       # shellcheck source=${SFOLDER}/libs/nginx_helper.sh
       source "${SFOLDER}/libs/nginx_helper.sh"
       change_project_status "offline"
+
+    fi
+
+    if [[ ${chosen_project_utils_options} == *"06"* ]]; then
+
+      URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ ${exitstatus} = 0 ]; then
+        # shellcheck source=${SFOLDER}/tools/third-party/google-insights-api-tools/gitools_v5.sh
+        source "${SFOLDER}/tools/third-party/google-insights-api-tools/gitools_v5.sh" gtmetrix "${URL_TO_TEST}"
+      fi
 
     fi
 
