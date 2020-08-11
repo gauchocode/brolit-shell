@@ -80,7 +80,7 @@ zabbix_server_installer() {
     # TODO: ASK FOR SUBDOMAIN
     ln -s "/usr/share/zabbix/" "/var/www/${SUBDOMAIN}"
 
-    cp "${SFOLDER}/confs/nginx/sites-available/zabbix" "/etc/nginx/sites-available/${SUBDOMAIN}"
+    cp "${SFOLDER}/config/nginx/sites-available/zabbix" "/etc/nginx/sites-available/${SUBDOMAIN}"
 
     # TODO: REPLACE DOMAIN WITH SED
 

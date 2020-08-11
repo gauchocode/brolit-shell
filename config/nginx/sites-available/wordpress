@@ -5,7 +5,7 @@ server {
         root /var/www/domain.com;
         
         index index.php;
-        server_name www.domain.com domain.com;
+        server_name www.domain.com;
 
        	error_log   /var/log/nginx/domain.com-error.log;
         location / {
@@ -31,5 +31,14 @@ server {
 
         ### WP-SEO
         #include /etc/nginx/globals/wordpress_seo.conf;
+
+}
+server {
+        listen 80;
+        listen [::]:80 ipv6only=on; ## listen for ipv6
+        
+        server_name www.domain.com;
+
+       	return 301 http://domain.com$request_uri;
 
 }

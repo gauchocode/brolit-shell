@@ -45,8 +45,8 @@ it_utils_menu() {
       URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [ ${exitstatus} = 0 ]; then
-        # shellcheck source=${SFOLDER}/utils/third-party/google-insights-api-tools/gitools_v5.sh
-        source "${SFOLDER}/utils/third-party/google-insights-api-tools/gitools_v5.sh" gtmetrix "${URL_TO_TEST}"
+        # shellcheck source=${SFOLDER}/tools/third-party/google-insights-api-tools/gitools_v5.sh
+        source "${SFOLDER}/tools/third-party/google-insights-api-tools/gitools_v5.sh" gtmetrix "${URL_TO_TEST}"
       fi
 
     fi
@@ -55,8 +55,8 @@ it_utils_menu() {
       IP_TO_TEST=$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [ ${exitstatus} = 0 ]; then
-        # shellcheck source=${SFOLDER}/utils/third-party/blacklist-checker/bl.sh
-        source "${SFOLDER}/utils/third-party/blacklist-checker/bl.sh" "${IP_TO_TEST}"
+        # shellcheck source=${SFOLDER}/tools/third-party/blacklist-checker/bl.sh
+        source "${SFOLDER}/tools/third-party/blacklist-checker/bl.sh" "${IP_TO_TEST}"
       fi
     fi
     if [[ ${chosen_it_util_options} == *"05"* ]]; then
@@ -160,7 +160,7 @@ add_floating_IP() {
 
   if [ "${ubuntu_v}" == "1804" ]; then
    
-   cp "${SFOLDER}/confs/networking/60-my-floating-ip.cfg" /etc/network/interfaces.d/60-my-floating-ip.cfg
+   cp "${SFOLDER}/config/networking/60-my-floating-ip.cfg" /etc/network/interfaces.d/60-my-floating-ip.cfg
    sudo sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/network/interfaces.d/60-my-floating-ip.cfg
    
    sudo service networking restart
@@ -171,7 +171,7 @@ add_floating_IP() {
 
     if [ "${ubuntu_v}" == "2004" ]; then
       
-      cp "${SFOLDER}/confs/networking/60-floating-ip.yaml" /etc/netplan/60-floating-ip.yaml
+      cp "${SFOLDER}/config/networking/60-floating-ip.yaml" /etc/netplan/60-floating-ip.yaml
       sudo sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/netplan/60-floating-ip.yaml
       
       sudo netplan apply

@@ -37,15 +37,12 @@ menutitle="Config Selection Menu"
 
 script_init() {
 
-  ### Vars
+  ### Globals
+
+  SCRIPT_V="3.0-rc08"
 
   # Hostname
   VPSNAME="$HOSTNAME"
-
-  # Time Vars
-  NOW=$(date +"%Y-%m-%d")
-  NOWDISPLAY=$(date +"%d-%m-%Y")
-  ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
 
   # Folder blacklist
   SITES_BL=".wp-cli,phpmyadmin,html"
@@ -70,6 +67,10 @@ script_init() {
   # Let's Encrypt config files location
   LENCRYPT_CF="/etc/letsencrypt"
 
+  # MySQL host and user
+  MHOST="localhost"
+  MUSER="root"
+
   # Packages to watch
   PACKAGES=(linux-firmware dpkg perl nginx "php${PHP_V}-fpm" mysql-server curl openssl)
 
@@ -79,30 +80,31 @@ script_init() {
   DROPBOX_FOLDER="/"
 
   # Dropbox Uploader Directory
-  DPU_F="${SFOLDER}/utils/third-party/dropbox-uploader"
+  DPU_F="${SFOLDER}/tools/third-party/dropbox-uploader"
+
+  # Time Vars
+  NOW=$(date +"%Y-%m-%d")
+  NOWDISPLAY=$(date +"%d-%m-%Y")
+  ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
 
   # Temp folders
   BAKWP="${SFOLDER}/tmp"
 
   ### Creating temporary folders
   if [ ! -d "${BAKWP}" ]; then
-    echo " > Folder ${BAKWP} doesn't exist. Creating now ..."
+    echo " > Folder ${BAKWP} doesn't exist. Creating ..."
     mkdir "${BAKWP}"
   fi
   if [ ! -d "${BAKWP}/${NOW}" ]; then
-    echo " > Folder ${BAKWP}/${NOW} doesn't exist. Creating now ..."
+    echo " > Folder ${BAKWP}/${NOW} doesn't exist. Creating ..."
     mkdir "${BAKWP}/${NOW}"
   fi
-
-  # MySQL host and user
-  MHOST="localhost"
-  MUSER="root"
 
   ### Log
   TIMESTAMP=$(date +%Y%m%d_%H%M%S)
   PATH_LOG="${SFOLDER}/log"
   if [ ! -d "${SFOLDER}/log" ]; then
-    echo " > Folder ${SFOLDER}/log doesn't exist. Creating now ..."
+    echo " > Folder ${SFOLDER}/log doesn't exist. Creating ..."
     mkdir "${SFOLDER}/log"
     echo " > Folder ${SFOLDER}/log created ..."
   fi
@@ -284,6 +286,9 @@ cron_script_tasks() {
 
     fi
 
+    prompt_return_or_finish
+    cron_script_tasks
+
   fi
 
   main_menu
@@ -312,6 +317,9 @@ security_utils_menu () {
       security_system_audit
 
     fi
+
+    prompt_return_or_finish
+    security_utils_menu
 
   fi
 
@@ -375,6 +383,9 @@ project_utils_menu () {
       change_project_status "offline"
 
     fi
+
+    prompt_return_or_finish
+    project_utils_menu
 
   fi
 
@@ -959,9 +970,9 @@ get_project_type() {
 
 generate_dropbox_config() {
 
-  local oauth_access_token_string OAUTH_ACCESS_TOKEN
+  local oauth_access_token_string oauth_access_token
 
-  oauth_access_token_string+="\n . \n"
+  oauth_access_token_string+="\n Please, provide a Dropbox Access Token ID.\n"
   oauth_access_token_string+=" 1) Log in: dropbox.com/developers/apps/create\n"
   oauth_access_token_string+=" 2) Click on \"Create App\" and select \"Dropbox API\".\n"
   oauth_access_token_string+=" 3) Choose the type of access you need.\n"
@@ -970,10 +981,10 @@ generate_dropbox_config() {
   oauth_access_token_string+=" 6) Click on the Generate button.\n"
   oauth_access_token_string+=" 7) Copy and paste the new access token here:\n\n"
 
-  OAUTH_ACCESS_TOKEN=$(whiptail --title "Dropbox Uploader Configuration" --inputbox "${oauth_access_token_string}" 15 60 3>&1 1>&2 2>&3)
+  oauth_access_token=$(whiptail --title "Dropbox Uploader Configuration" --inputbox "${oauth_access_token_string}" 15 60 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-    echo "OAUTH_ACCESS_TOKEN=$OAUTH_ACCESS_TOKEN" >${DPU_CONFIG_FILE}
+    echo "OAUTH_ACCESS_TOKEN=$oauth_access_token" >${DPU_CONFIG_FILE}
     log_event "info" "Dropbox configuration has been saved!" "true"
 
   else
@@ -985,27 +996,31 @@ generate_dropbox_config() {
 
 generate_cloudflare_config() {
 
-  CFL_EMAIL_STRING="Please insert the cloudflare email account here:\n\n"
+  # ${CLF_CONFIG_FILE} is a Global var
 
-  CFL_EMAIL=$(whiptail --title "Cloudflare Configuration" --inputbox "${CFL_EMAIL_STRING}" 15 60 3>&1 1>&2 2>&3)
+  local cfl_email cfl_api_token cfl_email_string cfl_api_token_string
+
+  cfl_email_string="\n\nPlease insert the Cloudflare email account here:\n\n"
+
+  cfl_email=$(whiptail --title "Cloudflare Configuration" --inputbox "${cfl_email_string}" 15 60 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
-    echo "dns_cloudflare_email=$CFL_EMAIL">"${CLF_CONFIG_FILE}"
+    echo "dns_cloudflare_email=${cfl_email}">"${CLF_CONFIG_FILE}"
 
-    GLOBAL_API_TOKEN_STRING+= "\n . \n"
-    GLOBAL_API_TOKEN_STRING+=" 1) Log in on: cloudflare.com\n"
-    GLOBAL_API_TOKEN_STRING+=" 2) Login and go to 'My Profile'.\n"
-    GLOBAL_API_TOKEN_STRING+=" 3) Choose the type of access you need.\n"
-    GLOBAL_API_TOKEN_STRING+=" 4) Click on 'API TOKENS' \n"
-    GLOBAL_API_TOKEN_STRING+=" 5) In 'Global API Key' click on \"View\" button.\n"
-    GLOBAL_API_TOKEN_STRING+=" 6) Copy the code and paste it here:\n\n"
+    cfl_api_token_string+= "\n Please insert the Cloudflare Global API Key.\n"
+    cfl_api_token_string+=" 1) Log in on: cloudflare.com\n"
+    cfl_api_token_string+=" 2) Login and go to 'My Profile'.\n"
+    cfl_api_token_string+=" 3) Choose the type of access you need.\n"
+    cfl_api_token_string+=" 4) Click on 'API TOKENS' \n"
+    cfl_api_token_string+=" 5) In 'Global API Key' click on \"View\" button.\n"
+    cfl_api_token_string+=" 6) Copy the code and paste it here:\n\n"
 
-    GLOBAL_API_TOKEN=$(whiptail --title "Cloudflare Configuration" --inputbox "${GLOBAL_API_TOKEN_STRING}" 15 60 3>&1 1>&2 2>&3)
+    cfl_api_token=$(whiptail --title "Cloudflare Configuration" --inputbox "${cfl_api_token_string}" 15 60 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      echo "dns_cloudflare_api_key=$GLOBAL_API_TOKEN">>"${CLF_CONFIG_FILE}"
-      echo -e ${B_GREEN}" > The cloudflare configuration has been saved! ..."${ENDCOLOR}
+      echo "dns_cloudflare_api_key=${cfl_api_token}">>"${CLF_CONFIG_FILE}"
+      log_event "success" "The Cloudflare configuration has been saved!" "true"
 
     else
       return 1
@@ -1032,6 +1047,7 @@ calculate_disk_usage() {
 
   log_event "info" "Disk usage of ${disk_volume}: ${disk_u} ..." "true"
 
+  # Return
   echo "${disk_u}"
 
 }
@@ -1047,9 +1063,13 @@ check_if_folder_exists() {
   local project_dir="${folder_to_install}/${domain}"
   
   if [ -d "${project_dir}" ]; then
+
+    # Return
     echo "ERROR"
 
   else
+
+    # Return
     echo "${project_dir}"
 
   fi
@@ -1100,30 +1120,58 @@ extract () {
   local directory=$2
   local compress_type=$3
 
+  log_event "info" "Trying to extract compressed file: ${file}" "true"
+
     if [ -f "${file}" ]; then
         case "${file}" in
-            *.tar.bz2)  
+            *.tar.bz2)
               if [ -z "${compress_type}" ]; then
-                 tar xp "${file}" -C "${directory}" --use-compress-program="${compress_type}"
+                tar xp "${file}" -C "${directory}" --use-compress-program="${compress_type}"
               else
-                 tar xjf "${file}" -C "${directory}"
+                tar xjf "${file}" -C "${directory}"
               fi;;
-            *.tar.gz)     tar -xzvf "${file}" -C "${directory}";;
-            *.bz2)        bunzip2 "${file}";;
-            *.rar)        unrar x "${file}";;
-            *.gz)         gunzip "${file}";;
-            *.tar)        tar xf "${file}" -C "${directory}";;  
-            *.tbz2)       tar xjf "${file}" -C "${directory}";;
-            *.tgz)        tar xzf "${file}" -C "${directory}";;
-            *.zip)        unzip "${file}";;
-            *.Z)          uncompress "${file}";;
-            *.7z)         7z x "${file}";;
-            *.tar.gz)     tar J "${file}" -C "${directory}";;
-            *.xz)         tar xvf "${file}" -C "${directory}";;
-            *)            echo "${file} cannot be extracted via extract()" ;;
+
+            *.tar.gz)
+                tar -xzvf "${file}" -C "${directory}";;
+
+            *.bz2)
+                bunzip2 "${file}";;
+
+            *.rar)
+                unrar x "${file}";;
+
+            *.gz)
+                gunzip "${file}";;
+
+            *.tar)
+                tar xf "${file}" -C "${directory}";;
+
+            *.tbz2)
+                tar xjf "${file}" -C "${directory}";;
+
+            *.tgz)
+                tar xzf "${file}" -C "${directory}";;
+
+            *.zip)
+                unzip "${file}";;
+
+            *.Z)
+                uncompress "${file}";;
+
+            *.7z)
+                7z x "${file}";;
+
+            *.tar.gz)
+                tar J "${file}" -C "${directory}";;
+
+            *.xz)
+                tar xvf "${file}" -C "${directory}";;
+
+            *)
+                echo "${file} cannot be extracted via extract()";;
         esac
     else
-        echo "${file} is not a valid file"
+        log_event "error" "${file} is not a valid file" "true"
     fi
 }
 
