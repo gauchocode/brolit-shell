@@ -127,7 +127,9 @@ wpcli_create_config(){
         wp_locale="es_ES"
     fi
 
-    wp --path="${wp_site}" config create --dbname="${database}" --dbuser="${db_user_name}" --dbpass="${db_user_passw}" --locale="${wp_locale}"
+    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} config create --dbname=${database} --dbuser=${db_user_name} --dbpass=${db_user_passw} --locale=${wp_locale}" "true"
+
+    sudo -u www-data wp --path="${wp_site}" config create --dbname="${database}" --dbuser="${db_user_name}" --dbpass="${db_user_passw}" --locale="${wp_locale}"
 
 }
 
@@ -147,10 +149,37 @@ wpcli_install_needed_extensions() {
 wpcli_core_install() {
 
     # $1 = ${wp_site}
+    # $2 = ${wp_version} optional
 
     local wp_site=$1
+    local wp_version=$2
 
-    sudo -u www-data wp --path="${wp_site}" core download 
+    local wpcli_result
+
+    if [ "${wp_site}" != "" ]; then
+
+        if [ "${wp_version}" != "" ];then
+
+            log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core download --skip-content --version=${wp_version}" "true"
+
+            sudo -u www-data wp --path="${wp_site}" core download --skip-content --version="${wp_version}"
+
+        else
+
+            log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core download --skip-content" "true"
+
+            sudo -u www-data wp --path="${wp_site}" core download --skip-content
+
+        fi
+
+    else
+        # Log failure
+        log_event "fail" "wp_site can't be empty!" "true"
+
+        # Return
+        echo "fail"
+
+    fi
 
 }
 
@@ -160,8 +189,10 @@ wpcli_core_reinstall() {
     # Ref: https://github.com/wp-cli/wp-cli/issues/221
 
     # $1 = ${wp_site}
+    # $2 = ${wp_version} optional
 
     local wp_site=$1
+    local wp_version=$2
 
     local wpcli_result
 
@@ -288,14 +319,14 @@ wpcli_delete_not_core_files() {
         # Remove white space
         wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
         
-        if test -f "${install_path}/${wpcli_core_verify_result_file}"; then
-            log_event "info" "Deleting not core file: ${install_path}/${wpcli_core_verify_result_file}" "true"
-            rm "${install_path}/${wpcli_core_verify_result_file}"
+        if test -f "${wp_site}/${wpcli_core_verify_result_file}"; then
+            log_event "info" "Deleting not core file: ${wp_site}/${wpcli_core_verify_result_file}" "true"
+            rm "${wp_site}/${wpcli_core_verify_result_file}"
         fi
 
-        log_event "info" "All not core files for ${wp_site} deleted!" "true"
-
     done
+
+    log_event "info" "All unknown files in WordPress core deleted!" "true"
 
 }
 
@@ -515,15 +546,18 @@ wpcli_search_and_replace() {
     # TODO: for some reason when it's run with --url always fails
     if $(wp --allow-root --url=http://${wp_site_url} core is-installed --network); then
 
-        echo -e ${B_GREEN}" > Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace} --network"${ENDCOLOR} >&2
+        log_event "info" "Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace} --network" "true"
         wp --allow-root --path="${wp_site}" search-replace "${search}" "${replace}" --network
 
     else
 
-        echo -e ${B_GREEN}" > Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace}"${ENDCOLOR} >&2
+        log_event "info" "Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace}" "true"
         wp --allow-root --path="${wp_site}" search-replace "${search}" "${replace}"
 
     fi
+
+    log_event "info" "Running: wp --allow-root --path="${wp_site}" cache flush" "true"
+    wp --allow-root --path="${wp_site}" cache flush
 
 }
 

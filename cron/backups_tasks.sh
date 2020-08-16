@@ -55,9 +55,9 @@ else
   CERT_MAIL_VAR=$(<"${CERT_MAIL}")
 
   # Running scripts
-  "${SFOLDER}/mysql_backup.sh"
-  "${SFOLDER}/files_backup.sh"
-  #"${SFOLDER}/server_and_image_optimizations.sh"
+  "${SFOLDER}/utils/mysql_backup.sh"
+  "${SFOLDER}/utils/files_backup.sh"
+  #"${SFOLDER}/utils/server_and_image_optimizations.sh"
   
   # Mail section for Database Backup
   DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"

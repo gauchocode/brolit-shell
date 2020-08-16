@@ -37,8 +37,8 @@ it_utils_menu() {
     fi
     # SERVER_OPTIMIZATIONS
     if [[ ${chosen_it_util_options} == *"02"* ]]; then
-      # shellcheck source=${SFOLDER}/server_and_image_optimizations.sh
-      source "${SFOLDER}/server_and_image_optimizations.sh"
+      # shellcheck source=${SFOLDER}/utils/server_and_image_optimizations.sh
+      source "${SFOLDER}/utils/server_and_image_optimizations.sh"
     fi
     # CHANGE_SSH_PORT
     if [[ ${chosen_it_util_options} == *"03"* ]]; then
@@ -80,7 +80,7 @@ it_utils_menu() {
     # BENCHMARK_SERVER
     if [[ ${chosen_it_util_options} == *"07"* ]]; then
       # shellcheck source=${SFOLDER}/tools/bench_scripts.sh
-      source "${SFOLDER}/tools/bench_scripts.sh"
+      source "${SFOLDER}/tools/third-party/bench_scripts.sh"
 
     fi
 

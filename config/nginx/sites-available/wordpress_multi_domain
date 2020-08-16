@@ -1,11 +1,11 @@
 server {
         charset utf-8;
        	listen 80;
-        listen [::]:80 ipv6only=on; ## listen for ipv6
+        #listen [::]:80 ipv6only=on; ## listen for ipv6
         root /var/www/domain.com;
         
         index index.php;
-        server_name www.domain.com;
+        server_name domain.com;
 
        	error_log   /var/log/nginx/domain.com-error.log;
         location / {
@@ -35,10 +35,10 @@ server {
 }
 server {
         listen 80;
-        listen [::]:80 ipv6only=on; ## listen for ipv6
+        #listen [::]:80 ipv6only=on; ## listen for ipv6
         
-        server_name www.domain.com;
+        server_name domain.com;
 
-       	return 301 http://domain.com$request_uri;
+       	return 301 http://www.domain.com$request_uri;
 
 }
