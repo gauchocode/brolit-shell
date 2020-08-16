@@ -607,7 +607,7 @@ make_project_backup() {
 
             local db_file="${DB_NAME}.sql"
 
-            wpcli_export_db "${bk_path}/${directory_to_backup}" "${directory_to_backup}${db_file}"
+            wpcli_export_database "${bk_path}/${directory_to_backup}" "${directory_to_backup}${db_file}"
 
         fi
 
