@@ -252,7 +252,7 @@ cloudflare_change_a_record "${root_domain}" "${project_domain}"
 certbot_helper_installer_menu "${MAILA}" "${project_domain}"
 
 # WP Search and Replace URL
-ask_url_search_and_replace
+wp_ask_url_search_and_replace
 
 HTMLOPEN='<html><body>'
 BODY_SRV_MIG='Migración finalizada en '${ELAPSED_TIME}'<br/>'

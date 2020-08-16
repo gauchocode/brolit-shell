@@ -224,14 +224,7 @@ wpcli_main_menu() {
     if [[ ${chosen_wpcli_options} == *"11"* ]]; then
 
       # REPLACE_URLs
-
-      # Create tmp directory
-      #mkdir ${SFOLDER}/tmp-backup
-
-      # TODO: Make a database Backup before replace URLs (con wp-cli)
-      #mysql_database_export "${TARGET_DB}" "${SFOLDER}/tmp-backup/${TARGET_DB}_bk_before_replace_urls.sql"
-
-      ask_url_search_and_replace "${wp_site}"
+      wp_ask_url_search_and_replace "${wp_site}"
 
     fi
 

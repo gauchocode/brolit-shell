@@ -1,10 +1,10 @@
 # TODO List
 
 ### Need more testing
-- [ ] WordPress: Install fails when set a project name like: xyz_sub_domain (could be a problem with sed on wordpress installer)
-- [ ] Backups: When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?)
-- [ ] Installers: On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages
-- [ ] Nginx: New default nginx configuration for wordpress projects
+- [ ] WordPress: Install fails when set a project name like: xyz_sub_domain.
+- [ ] Backups: When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?).
+- [ ] Installers: On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages.
+- [ ] Nginx: New default nginx configuration for wordpress projects.
 
 ### In Progress
 
@@ -27,16 +27,17 @@
 ### For release 3.0-final
 
 - [ ] PHP: php_reconfigure refactor (replace strings instead of replace entired config files)
+- [ ] Scheduled options: Add option to run on specific time.
 
 ### For release 3.1
 
 - [ ] Complete refactor of "Options Wizard": (Backup Options, Notification Options, Cloudflare Config)
-- [ ] Nginx: Add http2 support on nginx server config files
+- [ ] Nginx: Add http2 support on nginx server config files.
 - [ ] Scheduled options: backups, malware scans, image optimizations and wp actions (core and plugins updates, checksum and wp re-installation)
 - [ ] Backups: Support for dailys, weeklys y monthlys backups.
 - [ ] Notifications: malware scans and others scheduled options.
 - [ ] Installers: Netdata only reports CRITICAL message, (CLEAR are not reported).
-- [ ] Installers:Option to select netdata metrics to be reported.
+- [ ] Installers: Option to select netdata metrics to be reported.
 - [ ] Backups: Refactor for backup/restore: 5 options (server_config, site_config, site, database and project).
 - [ ] Complete refactor of delete_project script.
 - [ ] Auto-update script option.

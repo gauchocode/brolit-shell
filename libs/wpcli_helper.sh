@@ -137,12 +137,12 @@ wpcli_install_needed_extensions() {
 
     # Rename DB Prefix
     wp --allow-root package install "iandunn/wp-cli-rename-db-prefix"
+    
     # Salts
     wp --allow-root package install "sebastiaandegeus/wp-cli-salts-comman"
+    
     # Vulnerability Scanner
     wp --allow-root package install "git@github.com:10up/wp-vulnerability-scanner.git"
-    # Doctor
-    wp --allow-root package install "wp-cli/doctor-command"
 
 }
 
@@ -320,8 +320,10 @@ wpcli_delete_not_core_files() {
         wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
         
         if test -f "${wp_site}/${wpcli_core_verify_result_file}"; then
+
             log_event "info" "Deleting not core file: ${wp_site}/${wpcli_core_verify_result_file}" "true"
             rm "${wp_site}/${wpcli_core_verify_result_file}"
+
         fi
 
     done
@@ -376,7 +378,6 @@ wpcli_update_plugin(){
         plugin="--all"
     fi
 
-    echo -e ${B_GREEN}" > Running: sudo -u www-data wp --path="${wp_site}" plugin update ${plugin} --format=json --quiet"${ENDCOLOR} >&2
     mapfile plugin_update < <(sudo -u www-data wp --path="${wp_site}" plugin update "${plugin}" --format=json --quiet 2>&1)
 
     # Return an array with wp-cli output
@@ -434,6 +435,7 @@ wpcli_delete_plugin() {
     local wp_site=$1
     local plugin=$2
 
+    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} plugin delete ${plugin}" "true"
     sudo -u www-data wp --path="${wp_site}" plugin delete "${plugin}"
 
 }
@@ -476,6 +478,7 @@ wpcli_install_theme() {
     local wp_site=$1
     local theme=$2
 
+    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} theme install ${theme} --activate" "true"
     sudo -u www-data wp --path="${wp_site}" theme install "${theme}" --activate
 
 }
@@ -488,6 +491,7 @@ wpcli_delete_theme() {
     local wp_site=$1
     local theme=$2
 
+    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} theme delete ${theme}" "true"
     sudo -u www-data wp --path="${wp_site}" theme delete "${theme}"
 
 }
@@ -500,6 +504,7 @@ wpcli_change_wp_seo_visibility() {
     local wp_site=$1
     local visibility=$2
 
+    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} option set blog_public ${visibility}" "true"
     sudo -u www-data wp --path="${wp_site}" option set blog_public "${visibility}"
 
 }
@@ -524,6 +529,7 @@ wpcli_change_tables_prefix() {
     local wp_site=$1
     local db_prefix=$2
 
+    log_event "info" "Running: wp --allow-root --path=${wp_site} rename-db-prefix ${db_prefix}" "true"
     wp --allow-root --path="${wp_site}" rename-db-prefix "${db_prefix}"
 
 }
@@ -561,15 +567,16 @@ wpcli_search_and_replace() {
 
 }
 
-wpcli_export_db(){
+wpcli_export_database(){
 
     # $1 = ${wp_site} (site path)
-    # $2 = ${db}
+    # $2 = ${dump_file}
 
     local wp_site=$1
-    local db=$2
+    local dump_file=$2
 
-    wp --allow-root --path="${wp_site}" db export "${db}"
+    log_event "info" "Running: wp --allow-root --path=${wp_site} db export ${dump_file}" "true"
+    wp --allow-root --path="${wp_site}" db export "${dump_file}"
 
 }
 
