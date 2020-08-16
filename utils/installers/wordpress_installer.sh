@@ -49,9 +49,11 @@ if [ $exitstatus = 0 ]; then
     menutitle="Site Selection Menu"
     directory_browser "${menutitle}" "${startdir}"
     copy_project_path=$filepath"/"$filename
-    echo "Setting copy_project_path=${copy_project_path}"
+
+    log_event "info" "Setting copy_project_path=${copy_project_path}" "true"
 
     copy_project=$(basename "${copy_project_path}")
+
     log_event "info" "Setting copy_project=${copy_project}" "true"
 
     #ask_domain_to_install_site
@@ -143,9 +145,8 @@ if [ $exitstatus = 0 ]; then
 
     # Make a database Backup
     mysql_database_export "${db_tocopy}" "${bk_folder}${bk_file}"
-    if [ "$?" -eq 0 ]; then
-
-      log_event "success" "mysqldump for ${db_tocopy} OK" "true"
+    mysql_database_export_result=$?
+    if [ "${mysql_database_export_result}" -eq 0 ]; then
 
       # Target database
       target_db="${project_name}_${project_state}"
@@ -160,14 +161,8 @@ if [ $exitstatus = 0 ]; then
       # Change WP tables PREFIX
       wpcli_change_tables_prefix "${project_dir}" "${tables_prefix}"
 
-      # Create tmp directory
-      mkdir "${SFOLDER}/tmp-backup"
-
-      # Make a database Backup before replace URLs
-      mysql_database_export "${target_db}" "${SFOLDER}/tmp-backup/${target_db}_bk_before_replace_urls.sql"
-
       # WP Search and Replace URL
-      ask_url_search_and_replace "${project_dir}"
+      wp_ask_url_search_and_replace "${project_dir}"
 
     else
       log_event "error" "mysqldump message: $?" "true"

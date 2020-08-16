@@ -488,7 +488,7 @@ script_configuration_wizard() {
     SMTP_PORT=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server Port" 10 60 "${SMTP_PORT_OLD}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      echo "SMTP_PORT="${SMTP_PORT} >>/root/.broobe-utils-options
+      echo "SMTP_PORT=${SMTP_PORT}" >>/root/.broobe-utils-options
     else
       exit 1
     fi
@@ -497,7 +497,7 @@ script_configuration_wizard() {
     SMTP_TLS=$(whiptail --title "SMTP TLS" --inputbox "SMTP yes or no:" 10 60 "${SMTP_TLS_OLD}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      echo "SMTP_TLS="${SMTP_TLS} >>/root/.broobe-utils-options
+      echo "SMTP_TLS=${SMTP_TLS}" >>/root/.broobe-utils-options
     else
       exit 1
     fi
@@ -506,7 +506,7 @@ script_configuration_wizard() {
     SMTP_U=$(whiptail --title "SMTP User" --inputbox "Please insert the SMTP user" 10 60 "${SMTP_U_OLD}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      echo "SMTP_U="${SMTP_U} >>/root/.broobe-utils-options
+      echo "SMTP_U=${SMTP_U}" >>/root/.broobe-utils-options
     else
       exit 1
     fi
@@ -515,7 +515,7 @@ script_configuration_wizard() {
     SMTP_P=$(whiptail --title "SMTP Password" --inputbox "Please insert the SMTP user password" 10 60 "${SMTP_P_OLD}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      echo "SMTP_P="${SMTP_P} >>/root/.broobe-utils-options
+      echo "SMTP_P=${SMTP_P}" >>/root/.broobe-utils-options
     else
       exit 1
     fi
@@ -524,7 +524,7 @@ script_configuration_wizard() {
     MAILA=$(whiptail --title "Notification Email" --inputbox "Insert the email where you want to receive notifications." 10 60 "${MAILA_OLD}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      echo "MAILA="${MAILA} >>/root/.broobe-utils-options
+      echo "MAILA=${MAILA}" >>/root/.broobe-utils-options
     else
       exit 1
     fi
@@ -1408,43 +1408,9 @@ ask_mysql_root_psw() {
       echo "MPASS=${MPASS}" >>/root/.broobe-utils-options
 
     else
-      exit 1
+      return 1
 
     fi
-  fi
-
-}
-
-ask_url_search_and_replace() {
-
-  # $1 = wp_path
-
-  local wp_path=$1
-
-  if [[ -z "${existing_URL}" ]]; then
-    existing_URL=$(whiptail --title "URL TO CHANGE" --inputbox "Insert the URL you want to change, including http:// or https://" 10 60 3>&1 1>&2 2>&3)
-    exitstatus=$?
-
-    #echo "Setting existing_URL=${existing_URL}" >>$LOG
-
-    if [ ${exitstatus} = 0 ]; then
-
-      if [[ -z "${new_URL}" ]]; then
-        new_URL=$(whiptail --title "THE NEW URL" --inputbox "Insert the new URL , including http:// or https://" 10 60 3>&1 1>&2 2>&3)
-        exitstatus=$?
-
-        if [ ${exitstatus} = 0 ]; then
-
-          log_event "info" "Setting the new URL ${new_URL} on wordpress database" "true"
-
-          wpcli_search_and_replace "${wp_path}" "${existing_URL}" "${new_URL}"
-
-        fi
-
-      fi
-
-    fi
-
   fi
 
 }

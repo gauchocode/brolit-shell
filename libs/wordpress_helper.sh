@@ -252,3 +252,47 @@ wp_replace_string_on_database() {
   fi
 
 }
+
+wp_ask_url_search_and_replace() {
+
+  # $1 = wp_path
+
+  local wp_path=$1
+
+  if [[ -z "${existing_URL}" ]]; then
+    existing_URL=$(whiptail --title "URL TO CHANGE" --inputbox "Insert the URL you want to change, including http:// or https://" 10 60 3>&1 1>&2 2>&3)
+    exitstatus=$?
+
+    #echo "Setting existing_URL=${existing_URL}" >>$LOG
+
+    if [ ${exitstatus} = 0 ]; then
+
+      if [[ -z "${new_URL}" ]]; then
+        new_URL=$(whiptail --title "THE NEW URL" --inputbox "Insert the new URL , including http:// or https://" 10 60 3>&1 1>&2 2>&3)
+        exitstatus=$?
+
+        if [ ${exitstatus} = 0 ]; then
+
+          ### Creating temporary folders
+          if [ ! -d "${SFOLDER}/tmp-backup" ]; then
+              mkdir "${SFOLDER}/tmp-backup"
+              log_event "info" "Temp files directory created: ${SFOLDER}/tmp-backup" "true"
+          fi
+
+          project_name=$(basename "${wp_path}")
+
+          wpcli_export_database "${wp_path}" "${SFOLDER}/tmp-backup/${project_name}_bk_before_replace_urls.sql"
+
+          log_event "info" "Setting the new URL ${new_URL} on wordpress database" "true"
+
+          wpcli_search_and_replace "${wp_path}" "${existing_URL}" "${new_URL}"
+
+        fi
+
+      fi
+
+    fi
+
+  fi
+
+}

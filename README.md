@@ -12,7 +12,7 @@
 
 ## Main Features
 
-* LEMP automated installer.
+* LEMP automated installer (Nginx, MySQL/MariaDB, PHP).
 * Files and database backups (MySQL or MariaDB).
 * Upload backups to Dropbox (API v2).
 * Restore backups from URL or Dropbox.
@@ -22,14 +22,14 @@
 * Monit installer and configuration helper.
 * Netdata installer and configuration helper.
 * Certbot installer and configuration helper.
-* Cockpit installer and configuration helper.
 * Cloudflare support (via API).
-* PHP optimization tool (beta).
+* PHP-FPM optimization tool (beta).
 * Image optimization tools.
-* Blacklist checker.
-* Benchmark tools.
-* Malware scanners.
+* Security Tools with malware scanners (beta).
+* IP/Domain blacklist checker.
+* Benchmark tool.
 * Simple step-by-step configuration wizard.
+* And more ...
 
 ## TODO List
 [TODO List](./TODO.md)
@@ -38,7 +38,11 @@
 
 Works on Ubuntu 18.04 LTS and Ubuntu 20.04 LTS.
 
-## IMPORTANT
+## Code: Bash best practices
+
+https://bertvv.github.io/cheat-sheets/Bash.html
+
+## IMPORTANT: Read before install
 
 The script is based on this standard:
 
