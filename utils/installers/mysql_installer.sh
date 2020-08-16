@@ -54,7 +54,7 @@ mysql_check_if_installed
 
 if [ ${mysql_installed} == "false" ]; then
 
-  MYSQL_INSTALLER_OPTIONS="01 MYSQL_STANDARD 02 MARIADB_STANDARD"
+  MYSQL_INSTALLER_OPTIONS="01 INSTALL_MYSQL 02 INSTALL_MARIADB"
   CHOSEN_MYSQL_INSTALLER_OPTION=$(whiptail --title "MySQL INSTALLER" --menu "Choose a MySQL version to install" 20 78 10 $(for x in ${MYSQL_INSTALLER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
@@ -68,11 +68,6 @@ if [ ${mysql_installed} == "false" ]; then
 
     fi
 
-    # TODO: Unattended
-    # https://gist.github.com/coderua/5592d95970038944d099
-    # https://gist.github.com/Mins/4602864
-    # https://stackoverflow.com/questions/24270733/automate-mysql-secure-installation-with-echo-command-via-a-shell-script
-    
     # Secure mysql installation
     mysql_secure_installation
 

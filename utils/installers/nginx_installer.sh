@@ -95,11 +95,11 @@ if [ ${nginx_installed} == "false" ]; then
 
             nginx_delete_default_directory
 
-            reconfigure_nginx
+            nginx_reconfigure
 
             nginx_new_default_server
 
-            create_nginx_globals_config
+            nginx_create_globals_config
 
         fi
 
@@ -107,6 +107,6 @@ if [ ${nginx_installed} == "false" ]; then
 
 else
 
-    log_event "info" " Nginx is already installed" "true"
+    log_event "info" "Nginx is already installed" "true"
 
 fi

@@ -102,11 +102,11 @@ test_mysql_user_exists(){
 
     MYSQL_USER_TO_TEST="modernschool_user"
     
-    USER_DB_EXISTS=$(mysql_user_exists "${MYSQL_USER_TO_TEST}")
+    mysql_user_exists "${MYSQL_USER_TO_TEST}"
+    
+    user_db_exists=$?
 
-    echo $USER_DB_EXISTS
-
-    if [[ ${USER_DB_EXISTS} -eq 0 ]]; then
+    if [[ ${user_db_exists} -eq 0 ]]; then
         echo -e ${B_RED}" > MySQL user: ${MYSQL_USER_TO_TEST} doesn't exists!"${ENDCOLOR}
 
     else
@@ -124,11 +124,10 @@ test_mysql_database_exists(){
 
     MYSQL_DB_TO_TEST="multiplacas_test2"
     
-    DB_EXISTS=$(mysql_database_exists "${MYSQL_DB_TO_TEST}")
+    mysql_database_exists "${MYSQL_DB_TO_TEST}"
 
-    echo "${DB_EXISTS}"
-
-    if [[ ${DB_EXISTS} -eq 1 ]]; then
+    db_exists=$?
+    if [[ ${db_exists} -eq 1 ]]; then 
         echo -e ${B_RED}" > MySQL DB: ${MYSQL_DB_TO_TEST} doesn't exists!"${ENDCOLOR}
 
     else
@@ -152,7 +151,7 @@ test_mysql_database_exists(){
 
 #cloudflare_change_a_record "domain.com" "test.domain.com"
 
-#change_phpv_nginx_server "domain.com" "7.4"
+#nginx_server_change_phpv "domain.com" "7.4"
 
 #startdir=${SITES}
 #menutitle="Site Selection Menu"

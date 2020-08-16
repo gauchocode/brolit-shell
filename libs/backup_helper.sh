@@ -67,7 +67,7 @@ backup_menu() {
     if [[ ${chosen_backup_type} == *"01"* ]]; then
 
       # shellcheck source=${SFOLDER}/mysql_backup.sh
-      source "${SFOLDER}/mysql_backup.sh"
+      source "${SFOLDER}/utils/mysql_backup.sh"
 
       DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
       DB_MAIL_VAR=$(<"${DB_MAIL}")
@@ -84,13 +84,13 @@ backup_menu() {
     if [[ ${chosen_backup_type} == *"02"* ]]; then
 
       # shellcheck source=${SFOLDER}/files_backup.sh
-      source "${SFOLDER}/files_backup.sh"
+      source "${SFOLDER}/utils/files_backup.sh"
 
       CONFIG_MAIL="${BAKWP}/config-bk-${NOW}.mail"
-      CONFIG_MAIL_VAR=$(<$CONFIG_MAIL)
+      CONFIG_MAIL_VAR=$(<"${CONFIG_MAIL}")
 
       FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
-      FILE_MAIL_VAR=$(<$FILE_MAIL)
+      FILE_MAIL_VAR=$(<"${FILE_MAIL}")
 
       log_event "info" "Sending Email to ${MAILA} ..." "true"
 
@@ -104,10 +104,10 @@ backup_menu() {
     if [[ ${chosen_backup_type} == *"03"* ]]; then
 
       # Running scripts
-      # shellcheck source=${SFOLDER}/mysql_backup.sh
-      "${SFOLDER}/mysql_backup.sh"
-      # shellcheck source=${SFOLDER}/files_backup.sh
-      "${SFOLDER}/files_backup.sh"
+      # shellcheck source=${SFOLDER}/utils/mysql_backup.sh
+      "${SFOLDER}/utils/mysql_backup.sh"
+      # shellcheck source=${SFOLDER}/utils/files_backup.sh
+      "${SFOLDER}/utils/files_backup.sh"
 
       DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
       DB_MAIL_VAR=$(<"${DB_MAIL}")
@@ -136,7 +136,7 @@ backup_menu() {
     if [[ ${chosen_backup_type} == *"04"* ]]; then
 
       # Running project_backup script
-      "${SFOLDER}/project_backup.sh"
+      "${SFOLDER}/utils/project_backup.sh"
 
     fi
 
@@ -179,7 +179,7 @@ make_server_files_backup() {
 
   local bk_file old_bk_file
 
-  log_event "info" "###################################################" "true"
+  log_event "" "################################################################################################" "true"
 
   if [ -n "${bk_path}" ]; then
 
@@ -251,7 +251,7 @@ make_server_files_backup() {
 
   fi
 
-  log_event "info" "###################################################" "true"
+  log_event "" "################################################################################################" "true"
   
 }
 
@@ -266,7 +266,7 @@ make_mailcow_backup() {
 
   local mailcow_backup_location
 
-  log_event "info" "###################################################" "true"
+  log_event "" "################################################################################################" "true"
 
   if [ -n "${MAILCOW}" ]; then
 
@@ -325,8 +325,7 @@ make_mailcow_backup() {
       ERROR=true
       ERROR_TYPE="ERROR: No such directory or file ${MAILCOW_TMP_BK}"
 
-      echo -e ${B_RED}" > ERROR: Can't make the backup!"${ENDCOLOR} >&2
-      echo "$ERROR_TYPE" >>$LOG
+      log_event "error" "Can't make the backup!" "true"
 
       return 1
 
@@ -334,14 +333,13 @@ make_mailcow_backup() {
 
   else
 
-    echo -e ${B_RED}" > ERROR: Directory '${MAILCOW}' doesnt exists!"${ENDCOLOR} >&2
-    echo " > ERROR: Directory '${MAILCOW}' doesnt exists!" >>$LOG
+    log_event "error" "Directory '${MAILCOW}' doesnt exists!" "true"
 
     return 1
 
   fi
 
-  log_event "info" "###################################################" "true"
+  log_event "" "################################################################################################" "true"
 
 }
 
@@ -367,7 +365,8 @@ make_files_backup() {
   log_event "info" "Testing backup file: ${bk_file} ..." "true"
   lbzip2 -t "${BAKWP}/${NOW}/${bk_file}"
 
-  if [ $? -eq 0 ]; then
+  lbzip_result=$?
+  if [ "${lbzip_result}" -eq 0 ]; then
 
     log_event "success" "${bk_file} backup created" "true"
 
@@ -415,6 +414,7 @@ make_files_backup() {
 
       # Delete temp backup
       rm -r "${BAKWP}/${NOW}/${bk_file}"
+
       log_event "info" "Temp backup deleted from server" "true"
 
       log_event "success" "Backup uploaded" "true"
@@ -470,6 +470,8 @@ make_database_backup() {
   local bk_type=$1 #configs,sites,databases
   local database=$2
 
+  local mysql_export_result
+
   local directory_to_backup="${BAKWP}/${NOW}/"
   local db_file="${database}_${bk_type}_${NOW}.sql"
 
@@ -478,13 +480,11 @@ make_database_backup() {
 
   log_event "info" "Creating new database backup of ${database} ..." "true"
 
-  # Create dump file
-  $MYSQLDUMP --max-allowed-packet=1073741824 -u "${MUSER}" -h "${MHOST}" -p"${MPASS}" "${database}" >"${directory_to_backup}${db_file}"
-  mysqldump_result=$?
+  # Create dump file 
+  mysql_database_export "${database}" "${directory_to_backup}${db_file}"
 
-  if [ "${mysqldump_result}" -eq 0 ]; then
-
-    log_event "success" "mysqldump OK!" "true"
+  mysql_export_result=$?
+  if [ "${mysql_export_result}" -eq 0 ]; then
 
     cd "${BAKWP}/${NOW}"
 

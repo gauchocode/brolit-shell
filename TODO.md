@@ -1,71 +1,74 @@
 # TODO List
 
 ### Need more testing
-- [ ] WordPress install fails when set a project name like: xyz_sub_domain (could be a problem with sed on wordpress installer)
-- [ ] When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?)
-- [ ] On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages
-- [ ] Refactor for better dependencies management, and cleaner code in runner.sh
+- [ ] WordPress: Install fails when set a project name like: xyz_sub_domain (could be a problem with sed on wordpress installer)
+- [ ] Backups: When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?)
+- [ ] Installers: On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages
+- [ ] Nginx: New default nginx configuration for wordpress projects
 
 ### In Progress
 
-- [ ] Telegram notifications support.
-- [ ] make_project_backup is broken, need a refactor asap!
+- [ ] Notifications: Telegram notifications support.
+- [ ] Backups: make_project_backup is broken, need a refactor asap!
 
 ### Done ✓
 
-- [x] Option to change SSH port.
-- [x] Option to change hostname.
-- [x] Option to config a floating IP.
-- [x] WP-CLI is required to the script works propperly, must install on script setup.
-- [x] New option to put a website offline/online.
-- [x] Option to install script on crontab.
+- [x] IT: Option to change SSH port.
+- [x] IT: Option to change hostname.
+- [x] IT: Option to config a floating IP.
+- [x] IT: Option to install script on crontab.
+- [x] WordPress: WP-CLI is required to the script works propperly, must install on script setup.
+- [x] Nginx: New option to put a website offline/online.
 - [x] Better log with log_event functions.
+- [x] Refactor for better dependencies management, and cleaner code in runner.sh
 
 ## TODO
 
 ### For release 3.0-final
 
-- [ ] php_reconfigure refactor (replace strings instead of replace entired config files)
-- [ ] New default nginx configuration for wordpress projects
+- [ ] PHP: php_reconfigure refactor (replace strings instead of replace entired config files)
 
 ### For release 3.1
 
+- [ ] Complete refactor of "Options Wizard": (Backup Options, Notification Options, Cloudflare Config)
+- [ ] Nginx: Add http2 support on nginx server config files
 - [ ] Scheduled options: backups, malware scans, image optimizations and wp actions (core and plugins updates, checksum and wp re-installation)
-- [ ] Backups: Support for dailys, weeklys y monthlys backups
-- [ ] Notifications for: malware scans and others scheduled options
-- [ ] Auto-update script option
-- [ ] Solve small "TODOs" comments on the project
-- [ ] Netdata only reports CRITICAL message, (CLEAR are not reported)
-- [ ] Option to select netdata metrics to be reported
-- [ ] Refactor for backup/restore: 5 options (server_config, site_config, site, database and project)
-- [ ] Complete refactor of delete_project script
-- [ ] Complete refactor of "Options Wizard"
+- [ ] Backups: Support for dailys, weeklys y monthlys backups.
+- [ ] Notifications: malware scans and others scheduled options.
+- [ ] Installers: Netdata only reports CRITICAL message, (CLEAR are not reported).
+- [ ] Installers:Option to select netdata metrics to be reported.
+- [ ] Backups: Refactor for backup/restore: 5 options (server_config, site_config, site, database and project).
+- [ ] Complete refactor of delete_project script.
+- [ ] Auto-update script option.
+- [ ] Solve small "TODOs" comments on the project.
 
 ### For release 3.2
 
-- [ ] Support for phpservermon: https://github.com/phpservermon/phpservermon
-- [ ] Better wp-cli support 
+- [ ] Utils: Support for phpservermon: https://github.com/phpservermon/phpservermon
+- [ ] Nginx: Option to copy or generate a new nginx server configuration.
+- [ ] Nginx: Globals configs support.
+- [ ] Installers: Mailcow installer and backup.
+- [ ] Notifications: After install a new project (with credentials info).
+- [ ] Backups: On backup failure, the email must show what files fails and what files are correct backuped.
+- [ ] Backups: Implement on restore_from_backup easy way to restore all sites.
+- [ ] Refactor of RESTORE_FROM_SOURCE and complete server config restore.
+- [ ] Wordpress: Better wp-cli support 
  - [ ] Rollback plugins and core updates (wpcli_rollback_plugin_version on wpcli_helper.sh)
  - [ ] Buddypress support: https://github.com/buddypress/wp-cli-buddypress
-- [ ] Option to copy or generate a new nginx server configuration
-- [ ] Nginx globals configs support
-- [ ] Mailcow installer and backup
-- [ ] Notifications after install a new project (with credentials info)
-- [ ] On backup failure, the email must show what files fails and what files are correct backuped
-- [ ] Refactor of RESTORE_FROM_SOURCE and complete server config restore
-- [ ] Implement on restore_from_backup easy way to restore all sites
 
 ### For release 3.3
 
-- [ ] Refactor of WORDPRESS_INSTALLER - COPY_FROM_PROJECT
+- [ ] Wordpress: When restore or create a project on PROD state, ask if want to run "wpcli_run_startup_script"
+- [ ] PHP: Option to enable or disable OpCache
+- [ ] Installers: Refactor of WORDPRESS_INSTALLER - COPY_FROM_PROJECT
         The idea is that you could create/copy/delete/update different kind of projects (WP, Laravel, React, Composer, Empty)
         Maybe add this for Laravel: https://gitlab.com/broobe/laravel-boilerplate/-/tree/master
         Important: if create a project with stage different than prod, block search engine indexation
-- [ ] COPY_FROM_PROJECT option to exclude uploads directory: 
+- [ ] Installers: COPY_FROM_PROJECT option to exclude uploads directory
         rsync -ax --exclude [relative path to directory to exclude] /path/from /path/to
-- [ ] On php_installer if multiple php versions are installed de PHP_V need to be an array
+- [ ] Installers: On php_installer if multiple php versions are installed de PHP_V need to be an array
         So, if you need to install a new site, must ask what php_v to use.
-- [ ] Option to install Bashtop and other utils: http://packages.azlux.fr/
+- [ ] Installers: Option to install Bashtop and other utils: http://packages.azlux.fr/
 
 ### For release 3.4
 
@@ -83,8 +86,9 @@
 
 - [ ] Backups: Expand Duplicity support with a restore option
 - [ ] PHP: Option to change php version on installed site.
-        See this: https://easyengine.io/blog/easyengine-v4-0-15-released/
-- [ ] PHP: Option to enable or disable OpCache
+        https://easyengine.io/blog/easyengine-v4-0-15-released/
+- [ ] Notifications: Discord support
+        https://docs.netdata.cloud/health/notifications/discord/
 - [ ] Security: Option to auto-install security updates on Ubuntu: 
         https://help.ubuntu.com/lts/serverguide/automatic-updates.html
 - [ ] Nginx: bad bot blocker.

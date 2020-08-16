@@ -54,8 +54,7 @@ wp_download_wordpress() {
   local folder_to_install=$1
   local project_domain=$2
 
-  echo "Trying to make a clean install of Wordpress ..." >>$LOG
-  echo -e ${CYAN}"Trying to make a clean install of Wordpress ..."${ENDCOLOR}
+  log_event "info" "Downloading Wordpress for ${project_domain}" "true"
 
   # Download WP
   wget -P "${folder_to_install}" "https://wordpress.org/latest.tar.gz"
@@ -70,8 +69,10 @@ wp_download_wordpress() {
   rm "${folder_to_install}/latest.tar.gz"
 
   # Setup wp-config.php
-  cp "${folder_to_install}/${project_domain}/wp-config-sample.php" "${folder_to_install}/${project_domain}/wp-config.php"
-  rm "${folder_to_install}/${project_domain}/wp-config-sample.php"
+  #cp "${folder_to_install}/${project_domain}/wp-config-sample.php" "${folder_to_install}/${project_domain}/wp-config.php"
+  #rm "${folder_to_install}/${project_domain}/wp-config-sample.php"
+
+  log_event "info" "Wordpress donwloaded ok!" "true"
 
 }
 

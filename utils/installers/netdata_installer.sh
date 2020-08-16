@@ -40,9 +40,7 @@ netdata_installer() {
 
 netdata_configuration() {
 
-  # Ref about netdata config dir: https://github.com/netdata/netdata/issues/4182
-
-  # TODO: Discord support: https://docs.netdata.cloud/health/notifications/discord/
+  # Ref: netdata config dir https://github.com/netdata/netdata/issues/4182
 
   # MySQL
   create_netdata_db_user
@@ -196,19 +194,15 @@ if [ ! -x "${NETDATA}" ]; then
     case $yn in
     [Yy]*)
 
-      echo " > Updating packages before installation ..." >>$LOG
-      echo -e ${CYAN}" > Updating packages before installation ..."${ENDCOLOR}
+      log_event "info" "Updating packages before installation ..." "true"
+
       apt --yes update
 
       netdata_required_packages
       netdata_installer
 
       # Netdata nginx proxy configuration
-      create_nginx_server "${netdata_subdomain}" "netdata"
-
-      #cp "${SFOLDER}/config/nginx/sites-available/monitor" "/etc/nginx/sites-available"
-      #sed -i "s#dominio.com#${netdata_subdomain}#" "/etc/nginx/sites-available/monitor"
-      #ln -s "/etc/nginx/sites-available/monitor" "/etc/nginx/sites-enabled/monitor"
+      nginx_server_create "${netdata_subdomain}" "netdata" "single"
 
       netdata_configuration
 
@@ -228,7 +222,7 @@ if [ ! -x "${NETDATA}" ]; then
       break
       ;;
     [Nn]*)
-      echo -e ${RED}"Aborting netdata installation script ..."${ENDCOLOR}
+      log_event "warning" "Aborting netdata installer script ..." "true"
       break
       ;;
     *) echo " > Please answer yes or no." ;;
@@ -279,7 +273,8 @@ else
           break
           ;;
         [Nn]*)
-          echo -e ${B_RED}"Aborting netdata script ..."${ENDCOLOR}
+          log_event "warning" "Aborting netdata installer script ..." "true"
+
           break
           ;;
         *) echo " > Please answer yes or no." ;;

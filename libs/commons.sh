@@ -175,11 +175,15 @@ script_init() {
   # OLD METHOD (DEPRECATED)
   #SERVER_IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
 
-  # METHOD TO GET PUBLIC IP
-  #SERVER_IP=$(curl -s http://ipv4.icanhazip.com)
-
   # METHOD TO GET PUBLIC IP (if server has configured a floating ip, it will return this)
   SERVER_IP=$(ifconfig eth0 | grep 'inet ' | awk '{print $2}' | sed 's/addr://')
+
+  if [ "${SERVER_IP}" == "" ]; then
+
+    # Alternative method to get public IP
+    SERVER_IP=$(curl -s http://ipv4.icanhazip.com)
+
+  fi
 
   # MySQL
   MYSQL="$(which mysql)"
@@ -198,10 +202,13 @@ script_init() {
 
 main_menu() {
 
-  local runner_options chosen_type
+  local whip_title whip_description runner_options chosen_type
+
+  whip_title="BROOBE UTILS SCRIPT"
+  whip_description=" \n "
 
   runner_options="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 PROJECT_UTILS 04 WPCLI_MANAGER 05 CERTBOT_MANAGER 06 CLOUDFLARE_MANAGER 07 INSTALLERS_AND_CONFIGS 08 IT_UTILS 09 SCRIPT_OPTIONS 10 CRON_SCRIPT_TASKS"
-  chosen_type=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 $(for x in ${runner_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  chosen_type=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 $(for x in ${runner_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
@@ -240,8 +247,8 @@ main_menu() {
 
     fi
     if [[ ${chosen_type} == *"07"* ]]; then
-      # shellcheck source=${SFOLDER}/installers_and_configurators.sh
-      source "${SFOLDER}/installers_and_configurators.sh"
+      # shellcheck source=${SFOLDER}/utils/installers_and_configurators.sh
+      source "${SFOLDER}/utils/installers_and_configurators.sh"
 
     fi
     if [[ ${chosen_type} == *"08"* ]]; then
@@ -258,7 +265,10 @@ main_menu() {
       cron_script_tasks
 
     fi
-    
+  
+  else
+
+    return 1  
 
   fi
 
@@ -352,10 +362,13 @@ security_clamav_scan_menu () {
 
 project_utils_menu () {
 
-  local project_utils_options chosen_project_utils_options
+  local whip_title whip_description project_utils_options chosen_project_utils_options
+
+  whip_title="BROOBE UTILS SCRIPT"
+  whip_description="\nChoose a project action to run\n"
 
   project_utils_options="01 CREATE_WP_PROJECT 02 CREATE_PHP_PROJECT 03 DELETE_PROJECT 04 PUT_PROJECT_ONLINE 05 PUT_PROJECT_OFFLINE 06 BENCH_PROJECT_GTMETRIX"
-  chosen_project_utils_options=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a Restore Option to run" 20 78 10 $(for x in ${project_utils_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  chosen_project_utils_options=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 $(for x in ${project_utils_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
@@ -373,8 +386,8 @@ project_utils_menu () {
     fi
 
     if [[ ${chosen_project_utils_options} == *"03"* ]]; then
-      # shellcheck source=${SFOLDER}/delete_project.sh
-      source "${SFOLDER}/delete_project.sh"
+      # shellcheck source=${SFOLDER}/utils/delete_project.sh
+      source "${SFOLDER}/utils/delete_project.sh"
     fi
 
     if [[ ${chosen_project_utils_options} == *"04"* ]]; then
@@ -424,7 +437,7 @@ change_project_status () {
 
   to_change=${filename%/}
 
-  change_status_nginx_server "${to_change}" "${project_status}"
+  nginx_server_change_status "${to_change}" "${project_status}"
 
 }
 
@@ -880,6 +893,8 @@ directory_browser() {
   local menutitle=$1
   local startdir=$2
 
+  log_event "info" "Starting directory_browser ..." "true"
+
   if [ -z "${startdir}" ]; then
     dir_list=$(ls -lhp | awk -F ' ' ' { print $9 " " $5 } ')
   else
@@ -902,21 +917,25 @@ directory_browser() {
   if [ $RET -eq 1 ]; then # Check if User Selected Cancel
     return 1
   elif [ $RET -eq 0 ]; then
-    if [[ -d "$selection" ]]; then # Check if Directory Selected
-      if (whiptail --title "Confirm Selection" --yesno "Selection : $selection\n" 0 0 \
-        --yes-button "Confirm" \
-        --no-button "Retry"); then
-
-        # Return 1
-        filename="$selection"
+    if [[ -d "${selection}" ]]; then # Check if Directory Selected
+      whiptail --title "Confirm Selection" --yesno "${selection}" --yes-button "Confirm" --no-button "Retry" 10 60 3>&1 1>&2 2>&3
+      exitstatus=$?
+      if [ $exitstatus = 0 ]; then
+          # Return 1
+        filename="${selection}"
         # Return 2
-        filepath="$curdir" # Return full filepath and filename as selection variables
+        filepath="${curdir}" # Return full filepath and filename as selection variables
+
+      else
+        return 1
 
       fi
 
     fi
 
   fi
+
+  log_event "info" "Exiting directory_browser ..." "true"
 
 }
 
@@ -962,6 +981,9 @@ get_project_type() {
   local dir_path=$1
 
   local project_type is_wp
+
+  # shellcheck source=${SFOLDER}/libs/wordpress_helper.sh
+  source "${SFOLDER}/libs/wordpress_helper.sh"
 
   if [ "${dir_path}" != "" ];then
 
@@ -1345,7 +1367,7 @@ ask_folder_to_install_sites() {
 
   if [[ -z "${folder_to_install}" ]]; then
     
-    folder_to_install=$(whiptail --title "Folder to work with" --inputbox "Please insert the full path where you want to install the site:" 10 60 "${folder_to_install}" 3>&1 1>&2 2>&3)
+    folder_to_install=$(whiptail --title "Folder to work with" --inputbox "Please select the project folder you want to work with:" 10 60 "${folder_to_install}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
 

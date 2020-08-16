@@ -4,6 +4,18 @@
 # Version: 3.0-rc08
 ################################################################################
 
+### Main dir check
+SFOLDER=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+SFOLDER=$( cd "$( dirname "${SFOLDER}" )" && pwd )
+if [ -z "${SFOLDER}" ]; then
+  exit 1  # error; the path is not accessible
+fi
+
+# shellcheck source=${SFOLDER}/libs/commons.sh
+source "${SFOLDER}/libs/commons.sh"
+
+################################################################################
+
 if [ -t 1 ]; then
 
   # Running from terminal
@@ -26,7 +38,7 @@ else
   #CERT_MAIL_VAR=$(<"${CERT_MAIL}")
 
   # Running scripts
-  "${SFOLDER}/server_and_image_optimizations.sh"
+  "${SFOLDER}/utils/server_and_image_optimizations.sh"
   
   #DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
   #DB_MAIL_VAR=$(<"${DB_MAIL}")

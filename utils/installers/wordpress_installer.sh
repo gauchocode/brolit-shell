@@ -3,10 +3,6 @@
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Version: 3.0-rc08
 ################################################################################
-#
-# TODO: check when add www.DOMAIN.com and then select other stage != prod
-# TODO: add multisite support
-#
 
 ### Checking some things
 if [[ -z "${SFOLDER}" ]]; then
@@ -51,11 +47,11 @@ if [ $exitstatus = 0 ]; then
 
     startdir=${folder_to_install}
     menutitle="Site Selection Menu"
-    directory_browser "$menutitle" "$startdir"
+    directory_browser "${menutitle}" "${startdir}"
     copy_project_path=$filepath"/"$filename
     echo "Setting copy_project_path=${copy_project_path}"
 
-    copy_project=$(basename $copy_project_path)
+    copy_project=$(basename "${copy_project_path}")
     log_event "info" "Setting copy_project=${copy_project}" "true"
 
     #ask_domain_to_install_site
@@ -67,8 +63,6 @@ if [ $exitstatus = 0 ]; then
     project_name=$(ask_project_name "${project_domain}")
 
     project_state=$(ask_project_state "")
-
-    # TODO: maybe if project state != prod we want to disable some plugins and block search engines
 
     # TODO: ask if want to exclude directory
 
@@ -105,7 +99,6 @@ if [ $exitstatus = 0 ]; then
     if [ "${project_dir}" != 'ERROR' ]; then
       # Download WP
       wp_download_wordpress "${folder_to_install}" "${project_domain}"
-      log_event "success" "WordPress downloaded OK!" "true"
 
     else
       log_event "error" "Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..." "true"
@@ -131,7 +124,7 @@ if [ $exitstatus = 0 ]; then
   mysql_user_create "${database_user}" "${database_user_passw}"
   mysql_user_grant_privileges "${database_user}" "${database_name}"
 
-  wpcli_create_config "${project_dir}" "${database_name}" "${database_user}" "${DB_PASS}" "es_ES"
+  wpcli_create_config "${project_dir}" "${database_name}" "${database_user}" "${database_user_passw}" "es_ES"
   
   # Set WP salts
   wp_set_salts "${project_dir}/wp-config.php"
@@ -186,18 +179,38 @@ if [ $exitstatus = 0 ]; then
 
   # TODO: ask for Cloudflare support
 
-  # Cloudflare API to change DNS records
-  cloudflare_change_a_record "${root_domain}" "${project_domain}" "false"
+  # TODO: if domain contains www, must work without www too
+  common_subdomain='www'
+  if [[ "${project_domain}" == *"${common_subdomain}"* ]]; then
 
-  # New site Nginx configuration
-  create_nginx_server "${project_domain}" "wordpress"
+    # Cloudflare API to change DNS records
+    cloudflare_change_a_record "${root_domain}" "${project_domain}" "false"
 
-  # HTTPS with Certbot
-  certbot_certificate_install "${MAILA}" "${project_domain}"
+    # Cloudflare API to change DNS records
+    cloudflare_change_a_record "${root_domain}" "${root_domain}" "false"
+
+    # New site Nginx configuration
+    nginx_server_create "${project_domain}" "wordpress" "root_domain" "${root_domain}"
+
+    # HTTPS with Certbot
+    certbot_certificate_install "${MAILA}" "${project_domain},${root_domain}"
+
+  else
+
+    # Cloudflare API to change DNS records
+    cloudflare_change_a_record "${root_domain}" "${project_domain}" "false"
+
+    # New site Nginx configuration
+    nginx_server_create "${project_domain}" "wordpress" "single" ""
+
+    # HTTPS with Certbot
+    certbot_certificate_install "${MAILA}" "${project_domain}"
+    
+  fi
 
   #cloudflare_change_a_record "${root_domain}" "${project_domain}" "true"
 
-  log_event "success" "Wordpress installation finished!" "true"
+  log_event "success" "WordPress installation for domain ${project_domain} finished" "true"
   telegram_send_message "${VPSNAME}: WordPress installation for domain ${project_domain} finished"
 
 fi

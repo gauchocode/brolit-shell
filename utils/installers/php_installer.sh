@@ -148,11 +148,9 @@ exitstatus=$?
 if [ $exitstatus = 0 ]; then
 
   if [[ ${CHOSEN_PHP_INSTALLER_OPTION} == *"01"* ]]; then
-
-    #TODO: FIX VERSION ISSUE
     
     DISTRO_V=$(get_ubuntu_version)
-    if [ ! "$DISTRO_V" -e "1804" ]; then
+    if [ ! "$DISTRO_V" == "1804" ]; then
       PHP_V="7.2"  #Ubuntu 18.04 LTS Default
     else
       PHP_V="7.4"  #Ubuntu 20.04 LTS Default
@@ -190,6 +188,6 @@ fi
 #fi
 
 # TODO: if you install a new PHP version, maybe you want to reconfigure an specific nginx_server
-# reconfigure_nginx_sites()
+# nginx_reconfigure_sites()
 # fastcgi_pass unix:/var/run/php/php5.6-fpm.sock;
 # fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
