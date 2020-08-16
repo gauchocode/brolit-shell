@@ -31,7 +31,7 @@ DBS_F="databases"
 export BK_TYPE DBS_F
 
 # Starting Message
-log_event "info" "######################################################################################################" "true"
+log_event "" "################################################################################################" "true"
 log_event "info" "Starting database backup script" "true"
 
 # Get MySQL DBS
@@ -58,7 +58,7 @@ for DATABASE in ${DBS}; do
 
     log_event "success" "Backup ${BK_DB_INDEX} of ${TOTAL_DBS} done" "true"
 
-    log_event "info" "######################################################################################################" "true"
+    log_event "" "################################################################################################" "true"
 
   else
     log_event "info" "Ommiting the blacklisted database: [${DATABASE}]" "true"

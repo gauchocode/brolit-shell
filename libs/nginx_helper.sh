@@ -17,34 +17,71 @@ source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
 
-create_nginx_server() {
+nginx_server_create() {
 
-    #$1 = ${project_domain}
-    #$2 = ${server_type} (default, wordpress, symphony, phpmyadmin, zabbix, netdata, jellyfin)
+    # $1 = ${project_domain}
+    # $2 = ${project_type} (default, wordpress, symphony, phpmyadmin, zabbix, netdata)
+    # $3 = ${server_type} (single, root_domain, multi_domain) optional
+    # $4 = ${redirect_domains} (list of domains or subdomains that will be redirect to project_domain) optional
 
-    local domain=$1
-    local server_type=$2
+    local project_domain=$1
+    local project_type=$2
+    local server_type=$3
+    local redirect_domains=$4
 
-    local result debug
+    local nginx_result debug
 
     # Create nginx config files for site
-    log_event "info" "Creating nginx configuration file ..." "true"
+    log_event "info" "Creating nginx configuration file for domain: ${project_domain}" "true"
+    log_event "info" "Project Type: ${project_type}" "true"
+    log_event "info" "Server Type: ${server_type}" "true"
+    log_event "info" "List of domains or subdomains that will be redirect to project_domain: ${redirect_domains}" "true"
 
-    cp "${SFOLDER}/config/nginx/sites-available/${server_type}" "${WSERVER}/sites-available/${domain}"
-    ln -s "${WSERVER}/sites-available/${domain}" "${WSERVER}/sites-enabled/${domain}"
+    case $server_type in
 
-    # Search and Replace sed command
-    sed -i "s/domain.com/${domain}/g" "${WSERVER}/sites-available/${domain}"
+        single)
+            cp "${SFOLDER}/config/nginx/sites-available/${project_type}" "${WSERVER}/sites-available/${project_domain}"
+            ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
+
+            # Search and replace domain.com string with correct project_domain
+            sed -i "s/domain.com/${project_domain}/g" "${WSERVER}/sites-available/${project_domain}"
+        ;;
+
+        root_domain)
+            cp "${SFOLDER}/config/nginx/sites-available/${project_type}_${server_type}" "${WSERVER}/sites-available/${project_domain}"
+            ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
+
+            # Search and replace root_domain.com string with correct redirect_domains (must be root_domain here)
+            sed -i "s/root_domain.com/${redirect_domains}/g" "${WSERVER}/sites-available/${project_domain}"
+
+            # Search and replace domain.com string with correct project_domain
+            sed -i "s/domain.com/${project_domain}/g" "${WSERVER}/sites-available/${project_domain}"
+
+        ;;
+
+        multi_domain)
+            log_event "info" "TODO" "true"
+
+        ;;
+
+        *)
+            log_event "error" "Nginx server type unknow!" "true"
+            return 1
+        ;;
+
+    esac
 
     # TODO: ask wich version of php want to work with
 
+    # TODO: in the future, maybe we want this only on PHP projects
+
     # Replace string to match PHP version
-    sed -i "s#PHP_V#${PHP_V}#" "${WSERVER}/sites-available/${domain}"
+    sed -i "s#PHP_V#${PHP_V}#" "${WSERVER}/sites-available/${project_domain}"
 
     #Test the validity of the nginx configuration
-    result=$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)
+    nginx_result=$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)
 
-    if [ "${result}" = "successful" ];then
+    if [ "${nginx_result}" = "successful" ];then
         
         # Reload webserver
         service nginx reload
@@ -58,7 +95,7 @@ create_nginx_server() {
 
 }
 
-delete_nginx_server() {
+nginx_server_delete() {
 
     #$1 = ${filename}
 
@@ -72,11 +109,14 @@ delete_nginx_server() {
 
         # Reload webserver
         service nginx reload
+
+        log_event "info" "Nginx config files for ${filename} deleted!" "true"
+
     fi
 
 }
 
-change_status_nginx_server() {
+nginx_server_change_status() {
 
     # File test operators
     # -d FILE - True if the FILE exists and is a directory.
@@ -136,7 +176,7 @@ change_status_nginx_server() {
 
 }
 
-change_phpv_nginx_server() {
+nginx_server_change_phpv() {
 
     #$1 = ${project_domain}
     #$2 = ${new_php_v} optional
@@ -183,7 +223,7 @@ change_phpv_nginx_server() {
 
 }
 
-reconfigure_nginx() {
+nginx_reconfigure() {
 
     # nginx.conf broobe standard configuration
     cat "${SFOLDER}/config/nginx/nginx.conf" >"/etc/nginx/nginx.conf"
@@ -213,7 +253,7 @@ nginx_delete_default_directory() {
 
 }
 
-create_nginx_globals_config() {
+nginx_create_globals_config() {
 
     # nginx.conf broobe standard configuration
     nginx_globals="/etc/nginx/globals/"

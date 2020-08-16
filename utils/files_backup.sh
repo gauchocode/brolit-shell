@@ -34,7 +34,7 @@ CONFIG_F="configs"
 export BK_TYPE SITES_F
 
 # Starting Message
-log_event "info" "######################################################################################################" "true"
+log_event "" "################################################################################################" "true"
 log_event "info" "Starting files backup script" "true"
 
 # MAILCOW Files
@@ -133,7 +133,7 @@ for j in ${TOTAL_SITES}; do
 
     FOLDER_NAME=$(basename $j)
 
-    if [[ $SITES_BL != *"${FOLDER_NAME}"* ]]; then
+    if [[ ${SITES_BL} != *"${FOLDER_NAME}"* ]]; then
 
       make_files_backup "site" "${SITES}" "${FOLDER_NAME}"
       BK_FL_ARRAY_INDEX=$((BK_FL_ARRAY_INDEX + 1))
@@ -149,7 +149,7 @@ for j in ${TOTAL_SITES}; do
 
   fi
 
-  log_event "info" "######################################################################################################" "true"
+  log_event "" "################################################################################################" "true"
 
   k=$k+1
 

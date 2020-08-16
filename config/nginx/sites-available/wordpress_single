@@ -1,0 +1,35 @@
+server {
+        charset utf-8;
+       	listen 80;
+        #listen [::]:80 ipv6only=on; ## listen for ipv6
+        root /var/www/domain.com;
+        
+        index index.php;
+        server_name domain.com;
+
+       	error_log   /var/log/nginx/domain.com-error.log;
+        location / {
+            try_files $uri $uri/ /index.php?q=$uri&$args;			
+        }
+        location ~ \.php$ {
+            include snippets/fastcgi-php.conf;
+        	fastcgi_pass unix:/run/php/phpPHP_V-fpm.sock;
+            fastcgi_buffering off;
+        }
+
+        ## INC
+        #include /var/www/domain.com/nginx.conf;
+        
+        ### PERF
+        gzip_static on;
+
+        ### SEC
+        #include /etc/nginx/globals/security.conf;
+
+        ### WP-SEC
+        #include /etc/nginx/globals/wordpress_sec.conf;
+
+        ### WP-SEO
+        #include /etc/nginx/globals/wordpress_seo.conf;
+
+}

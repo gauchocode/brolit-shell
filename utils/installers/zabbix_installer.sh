@@ -70,7 +70,7 @@ zabbix_server_installer() {
     # apt-get install libopenipmi-dev libcurl4-openssl-dev libxml2-dev libssh2-1-dev libpcre3-dev
     # apt-get install libldap2-dev libiksemel-dev libcurl4-openssl-dev libgnutls28-dev
 
-    cd ${SFOLDER}/tmp/
+    cd "${SFOLDER}/tmp/"
     dpkg -i zabbix-release_4.2-1+bionic_all.deb
 
     apt update

@@ -22,39 +22,47 @@ source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 ################################################################################
 
-log_event "info" "Running phpmyadmin installer" "true"
+phpmyadmin_installer () {
 
-domain=$(whiptail --title "Domain" --inputbox "Insert the domain for PhpMyAdmin. Example: sql.domain.com" 10 60 3>&1 1>&2 2>&3)
-exitstatus=$?
-if [ $exitstatus = 0 ]; then
-  log_event "info" "Setting domain=${domain}" "true"
+  local project_domain possible_root_domain root_domain
 
-  root_domain=$(whiptail --title "Root Domain" --inputbox "Insert the root project's domain (Only for Cloudflare API). Example: domain.com" 10 60 3>&1 1>&2 2>&3)
-  #exitstatus=$?
+  log_event "info" "Running phpmyadmin installer" "true"
 
-else
-  return 1
+  project_domain=$(whiptail --title "Domain" --inputbox "Insert the domain for PhpMyAdmin. Example: sql.domain.com" 10 60 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+    log_event "info" "Setting project_domain=${project_domain}" "true"
 
-fi
+    possible_root_domain=${project_domain#[[:alpha:]]*.}
+    root_domain=$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")
 
-# Download phpMyAdmin
-cd "${SITES}"
-wget "https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip"
-unzip "phpMyAdmin-latest-all-languages.zip"
+  else
+    return 1
 
-rm "phpMyAdmin-latest-all-languages.zip"
+  fi
 
-mv phpMyAdmin-* "${domain}"
+  # Download phpMyAdmin
+  cd "${SITES}"
+  wget "https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip"
+  unzip "phpMyAdmin-latest-all-languages.zip"
 
-# New site Nginx configuration
-create_nginx_server "${domain}" "phpmyadmin"
+  rm "phpMyAdmin-latest-all-languages.zip"
 
-# Cloudflare API to change DNS records
-cloudflare_change_a_record "${root_domain}" "${domain}"
+  mv phpMyAdmin-* "${project_domain}"
 
-# HTTPS with Certbot
-certbot_helper_installer_menu "${MAILA}" "${domain}"
+  # New site Nginx configuration
+  nginx_server_create "${project_domain}" "phpmyadmin" "single"
 
-log_event "info" "phpmyadmin installer finished" "true"
+  # Cloudflare API to change DNS records
+  cloudflare_change_a_record "${root_domain}" "${project_domain}"
 
-main_menu
+  # HTTPS with Certbot
+  certbot_helper_installer_menu "${MAILA}" "${project_domain}"
+
+  log_event "info" "phpmyadmin installer finished!" "true"
+
+}
+
+################################################################################
+
+phpmyadmin_installer

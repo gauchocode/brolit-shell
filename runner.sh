@@ -42,8 +42,8 @@ if [ -t 1 ]; then
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
       if [[ ${CHOSEN_FR_OPTION} == *"01"* ]]; then
-        # shellcheck source=${SFOLDER}/lemp_setup.sh
-        source "lemp_setup.sh"
+        # shellcheck source=${SFOLDER}/utils/lemp_setup.sh
+        source "${SFOLDER}/utils/lemp_setup.sh"
 
       else
         script_configuration_wizard "initial"

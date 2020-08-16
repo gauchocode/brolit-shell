@@ -117,7 +117,9 @@ restore_database_backup() {
   db_name="${project_name}_${project_state}"
 
   # Check if database already exists
-  db_exists=$(mysql_database_exists "${db_name}")
+  mysql_database_exists "${db_name}"
+  
+  db_exists=$?
   if [[ ${db_exists} -eq 1 ]]; then  
     
     mysql_database_create "${db_name}"
@@ -271,7 +273,7 @@ restore_nginx_site_files() {
 
       ln -s "${WSERVER}/sites-available/${filename}" "${WSERVER}/sites-enabled/${filename}"
 
-      change_phpv_nginx_server "${domain}" ""
+      nginx_server_change_phpv "${domain}" ""
 
     fi
 
@@ -480,7 +482,9 @@ select_restore_type_from_dropbox() {
             db_user="${db_project_name}_user"
 
             # Check if user database already exists
-            user_db_exists=$(mysql_user_exists "${db_user}")
+            mysql_user_exists "${db_user}"
+            
+            user_db_exists=$?
             if [[ ${user_db_exists} -eq 0 ]]; then
 
               # Passw generator
@@ -680,7 +684,9 @@ project_restore() {
     db_user="${db_project_name}_user"
 
     # Check if user database already exists
-    user_db_exists=$(mysql_user_exists "${db_user}")
+    mysql_user_exists "${db_user}"
+    
+    user_db_exists=$?
     if [[ ${user_db_exists} -eq 0 ]]; then
 
       db_pass=$(openssl rand -hex 12)
