@@ -43,7 +43,7 @@ else
   
   ## Get length of $all_sites
   count_all_sites=$(find "${SITES}" -maxdepth 1 -type d -printf '.' | wc -c)
-  count_all_sites=$((${count_all_sites} - 1))
+  count_all_sites=$((count_all_sites - 1))
 
   log_event "info" "Found ${count_all_sites} directories" "true"
 
@@ -121,7 +121,7 @@ else
 
     fi
 
-    log_event "" "######################################################################################################" "true"
+    log_event "" "################################################################################################" "true"
 
     k=$k+1
 

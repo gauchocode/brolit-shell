@@ -90,13 +90,13 @@ if [ $exitstatus = 0 ]; then
   cloudflare_change_a_record "${root_domain}" "${project_domain}"
 
   # New site Nginx configuration
-  create_nginx_server "${project_domain}" "wordpress"
+  nginx_server_create "${project_domain}" "wordpress" "single" ""
 
   # HTTPS with Certbot
   certbot_certificate_install "${MAILA}" "${project_domain}"
 
-  echo " > INSTALLATION FINISHED!" >>$LOG
-  echo -e ${B_GREEN}" > INSTALLATION FINISHED!"${ENDCOLOR}
+  log_event "success" "INSTALLATION FINISHED!" "true"
+
 
 fi
 

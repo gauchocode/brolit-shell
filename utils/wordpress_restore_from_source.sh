@@ -237,7 +237,7 @@ if [ -z "${install_path}" ]; then
   fi
 
 # Create nginx config files for site
-create_nginx_server "${project_domain}" "wordpress"
+nginx_server_create "${project_domain}" "wordpress" "single"
 
 # Get server IP
 #IP=$(dig +short myip.opendns.com @resolver1.opendns.com) 2>/dev/null

@@ -196,8 +196,7 @@ cloudflare_change_a_record () {
 
     # Checking cloudflare credentials file
     if [[ -z "${auth_email}" ]]; then
-    generate_cloudflare_config
-
+        generate_cloudflare_config
     fi
 
     record_type="A"
