@@ -146,6 +146,18 @@ wpcli_install_needed_extensions() {
 
 }
 
+wpcli_set_salts() {
+
+    # $1 = ${wp_site}
+
+    local wp_site=$1
+
+    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} config shuffle-salts" "true"
+
+    sudo -u www-data wp --path="${wp_site}" config shuffle-salts
+
+}
+
 wpcli_core_install() {
 
     # $1 = ${wp_site}

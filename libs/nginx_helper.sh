@@ -40,7 +40,7 @@ nginx_server_create() {
     case $server_type in
 
         single)
-            cp "${SFOLDER}/config/nginx/sites-available/${project_type}" "${WSERVER}/sites-available/${project_domain}"
+            cp "${SFOLDER}/config/nginx/sites-available/${project_type}_${server_type}" "${WSERVER}/sites-available/${project_domain}"
             ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
 
             # Search and replace domain.com string with correct project_domain

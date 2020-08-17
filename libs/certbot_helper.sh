@@ -215,11 +215,14 @@ certbot_certificate_delete() {
 
       case $yn in
       [Yy]*)
+
+        log_event "info" "Running: certbot delete --cert-name ${domains}" "true"
         certbot delete --cert-name "${domains}"
         break
         ;;
       [Nn]*)
-        echo -e ${YELLOW}"Aborting ..."${ENDCOLOR}
+
+        log_event "info" "Aborting ..." "true"
         break
         ;;
       *) echo " > Please answer yes or no." ;;
@@ -261,32 +264,36 @@ certbot_helper_menu() {
   if [ $exitstatus = 0 ]; then
 
     if [[ ${chosen_cb_options} == *"01"* ]]; then
+      # INSTALL_CERTIFICATE
       domains=$(certbot_helper_ask_domains)
       certbot_helper_installer_menu "${MAILA}" "${domains}"
 
     fi
     if [[ ${chosen_cb_options} == *"02"* ]]; then
+      # EXPAND_CERTIFICATE
       domains=$(certbot_helper_ask_domains)
       certbot_certificate_expand "${MAILA}" "${domains}"
 
     fi
     if [[ ${chosen_cb_options} == *"03"* ]]; then
+      # TEST_RENEW_ALL_CERTIFICATES
       certbot_certificate_renew_test
 
     fi
     if [[ ${chosen_cb_options} == *"04"* ]]; then
+      # FORCE_RENEW_CERTIFICATE
       domains=$(certbot_helper_ask_domains)
       certbot_certificate_force_renew "${domains}"
 
     fi
     if [[ ${chosen_cb_options} == *"05"* ]]; then
-      domains=$(certbot_helper_ask_domains)
+      # DELETE_CERTIFICATE
       certbot_certificate_delete "${domains}"
 
     fi
     if [[ ${chosen_cb_options} == *"06"* ]]; then
+      # SHOW_INSTALLED_CERTIFICATES
       certbot_show_certificates_info
-      #read -n 1 -p "Press any key to return to the certbot menu" "mainmenuinput"
 
     fi
 
