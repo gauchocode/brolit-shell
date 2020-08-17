@@ -223,7 +223,7 @@ if [ -z "${install_path}" ]; then
     echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND"${ENDCOLOR}
 
     # Change file and dir permissions
-    wp_change_ownership "${actual_folder}/${install_path}"
+    wp_change_permissions "${actual_folder}/${install_path}"
 
     # Change wp-config.php database parameters
     if [[ -z "${DB_PASS}" ]]; then

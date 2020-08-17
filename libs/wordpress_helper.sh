@@ -45,7 +45,7 @@ search_wp_config () {
 
 }
 
-
+# DEPRECATED
 wp_download_wordpress() {
 
   # $1 = ${folder_to_install}
@@ -69,8 +69,8 @@ wp_download_wordpress() {
   rm "${folder_to_install}/latest.tar.gz"
 
   # Setup wp-config.php
-  #cp "${folder_to_install}/${project_domain}/wp-config-sample.php" "${folder_to_install}/${project_domain}/wp-config.php"
-  #rm "${folder_to_install}/${project_domain}/wp-config-sample.php"
+  cp "${folder_to_install}/${project_domain}/wp-config-sample.php" "${folder_to_install}/${project_domain}/wp-config.php"
+  rm "${folder_to_install}/${project_domain}/wp-config-sample.php"
 
   log_event "info" "Wordpress donwloaded ok!" "true"
 
@@ -106,7 +106,7 @@ wp_update_wpconfig() {
 
 }
 
-wp_change_ownership() {
+wp_change_permissions() {
 
   # $1 = ${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT} or ${FOLDER_TO_INSTALL}/${DOMAIN}
 
@@ -116,15 +116,20 @@ wp_change_ownership() {
   change_ownership "www-data" "www-data" "${project_dir}"
   
   find "${project_dir}" -type d -exec chmod g+s {} \;
-  chmod g+w "${project_dir}/wp-content"
-  chmod -R g+w "${project_dir}/wp-content/themes"
-  chmod -R g+w "${project_dir}/wp-content/plugins"
 
-  #echo " > DONE" >>$LOG
-  #echo -e ${GREEN}" > DONE"${ENDCOLOR}
+  if [ -d "${project_dir}/wp-content" ]; then
+
+    chmod g+w "${project_dir}/wp-content"
+    chmod -R g+w "${project_dir}/wp-content/themes"
+    chmod -R g+w "${project_dir}/wp-content/plugins"
+
+  fi
+
+  log_event "info" "Permissions changes for: ${project_dir}" "true"
+  
 }
 
-# TODO: Change this, because only works on english or spanish version of WP
+# DEPRECATED
 wp_set_salts() {
 
   # $1 = ${WPCONFIG}
