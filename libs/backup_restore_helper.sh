@@ -377,7 +377,7 @@ restore_site_files() {
 
       log_event "info" "Wordpress intallation found on: ${install_path}" "true"
 
-      wp_change_ownership "${install_path}" 
+      wp_change_permissions "${install_path}" 
 
       log_event "info" "Files backup restored on: ${install_path}" "true"
 

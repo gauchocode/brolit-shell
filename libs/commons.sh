@@ -353,8 +353,7 @@ security_clamav_scan_menu () {
 
   to_scan=$filepath"/"$filename
 
-  log_event "info" "Starting clamav scan" "true"
-  log_event "info" "Directory to scan: ${to_scan}" "true"
+  log_event "info" "Starting clamav scan on: ${to_scan}" "true"
 
   security_clamav_scan "${to_scan}"
 
@@ -374,11 +373,16 @@ project_utils_menu () {
   if [ $exitstatus = 0 ]; then
 
     if [[ ${chosen_project_utils_options} == *"01"* ]]; then
+      
+      # CREATE_WP_PROJECT
+
       # shellcheck source=${SFOLDER}/installers/wordpress_installer.sh
       source "${SFOLDER}/utils/installers/wordpress_installer.sh"
     fi
 
     if [[ ${chosen_project_utils_options} == *"02"* ]]; then
+
+      # CREATE_PHP_PROJECT
 
       # TODO: create empty dir on $SITES, create nginx server file, ask for database
       log_event "error" "TODO: CREATE_PHP_PROJECT MUST BE IMPLEMENTED SOON" "true"
@@ -386,11 +390,18 @@ project_utils_menu () {
     fi
 
     if [[ ${chosen_project_utils_options} == *"03"* ]]; then
+
+      # DELETE_PROJECT
+
       # shellcheck source=${SFOLDER}/utils/delete_project.sh
       source "${SFOLDER}/utils/delete_project.sh"
+
     fi
 
     if [[ ${chosen_project_utils_options} == *"04"* ]]; then
+
+      # PUT_PROJECT_ONLINE
+
       # shellcheck source=${SFOLDER}/libs/nginx_helper.sh
       source "${SFOLDER}/libs/nginx_helper.sh"
       change_project_status "online"
@@ -398,6 +409,9 @@ project_utils_menu () {
     fi
 
     if [[ ${chosen_project_utils_options} == *"05"* ]]; then
+
+      # PUT_PROJECT_OFFLINE
+
       # shellcheck source=${SFOLDER}/libs/nginx_helper.sh
       source "${SFOLDER}/libs/nginx_helper.sh"
       change_project_status "offline"
@@ -405,6 +419,8 @@ project_utils_menu () {
     fi
 
     if [[ ${chosen_project_utils_options} == *"06"* ]]; then
+
+      # BENCH_PROJECT_GTMETRIX
 
       URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
@@ -893,7 +909,7 @@ directory_browser() {
   local menutitle=$1
   local startdir=$2
 
-  log_event "info" "Starting directory_browser ..." "true"
+  #log_event "info" "Starting directory_browser ..." "true"
 
   if [ -z "${startdir}" ]; then
     dir_list=$(ls -lhp | awk -F ' ' ' { print $9 " " $5 } ')
@@ -935,7 +951,7 @@ directory_browser() {
 
   fi
 
-  log_event "info" "Exiting directory_browser ..." "true"
+  #log_event "info" "Exiting directory_browser ..." "true"
 
 }
 

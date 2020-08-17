@@ -100,7 +100,10 @@ if [ $exitstatus = 0 ]; then
 
     if [ "${project_dir}" != 'ERROR' ]; then
       # Download WP
-      wp_download_wordpress "${folder_to_install}" "${project_domain}"
+      #wp_download_wordpress "${folder_to_install}" "${project_domain}"
+      mkdir "${folder_to_install}/${project_domain}"
+      change_ownership "www-data" "www-data" "${folder_to_install}/${project_domain}"
+      wpcli_core_install "${folder_to_install}/${project_domain}"
 
     else
       log_event "error" "Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..." "true"
@@ -110,7 +113,7 @@ if [ $exitstatus = 0 ]; then
 
   fi
 
-  wp_change_ownership "${project_dir}"
+  wp_change_permissions "${project_dir}"
 
   # Create database and user
   db_project_name=$(mysql_name_sanitize "${project_name}")
@@ -129,7 +132,7 @@ if [ $exitstatus = 0 ]; then
   wpcli_create_config "${project_dir}" "${database_name}" "${database_user}" "${database_user_passw}" "es_ES"
   
   # Set WP salts
-  wp_set_salts "${project_dir}/wp-config.php"
+  wpcli_set_salts "${project_dir}"
 
   if [[ ${installation_type} == *"COPY"* ]]; then
 

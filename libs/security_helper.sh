@@ -31,10 +31,17 @@ security_clamav_scan() {
 
   local directory=$1
 
+  # Stop service
+  systemctl stop clamav-freshclam.service
+
   # Update clamav database
   freshclam
-  # Run on specific directory
-  clamscan -r -i "${directory}"
+
+  # Run on specific directory with parameters:
+  # -r recursive (Scan subdirectories recursively)
+  # --infected (Only print infected files)
+  log_event "info" "Running: clamscan -r --infected ${directory}" "true"
+  clamscan -r --infected "${directory}"
 
 }
 
