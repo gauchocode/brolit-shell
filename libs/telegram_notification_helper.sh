@@ -4,53 +4,6 @@
 # Version: 3.0-rc08
 ################################################################################
 
-# TODO: make this function works!
-
-telegram_notifications_config() {
-
-	source "/root/.telegram.conf"
-
-	# BotFather API Key
-	botfather_key="1175005548:AAFAjqU8KP2Dqwu9XNq8GoIFeofnPZrOIF0" 
-
-	# Chat ID, use @myidbot to get it
-	telegram_user_id="-455549357"
-
-	if [[ -z "${botfather_key}" ]]; then
-
-		botfather_whip_line+=" "
-		botfather_whip_line+=" Configure Telegram Notifications? You will need:\n"
-		botfather_whip_line+=" 1) Get a bot token. Contact @BotFather (https://t.me/BotFather) and send the command /newbot.\n"
-		botfather_whip_line+=" Follow the instructions and paste the token to access the HTTP API:\n"
-
-		botfather_key=$(whiptail --title "Netdata: Telegram Configuration" --inputbox "${botfather_whip_line}" 15 60 3>&1 1>&2 2>&3)
-		exitstatus=$?
-		if [ $exitstatus = 0 ]; then
-			echo "botfather_key=${botfather_key}" >>"/root/.telegram.conf"
-		else
-			exit 1
-		fi
-
-	fi
-	if [[ -z "${telegram_user_id}" ]]; then
-
-		telegram_id_whip_line+=" "
-		telegram_id_whip_line+=" 2) Contact the @myidbot (https://t.me/myidbot) bot and send the command /getid to get \n"
-		telegram_id_whip_line+=" your personal chat id or invite him into a group and issue the same command to get the group chat id.\n"
-		telegram_id_whip_line+=" 3) Paste the ID here:\n"
-		
-		telegram_user_id=$(whiptail --title "Netdata: Telegram Configuration" --inputbox "${telegram_id_whip_line}" 15 60 3>&1 1>&2 2>&3)
-		exitstatus=$?
-		if [ $exitstatus = 0 ]; then
-			echo "telegram_user_id=${telegram_user_id}" >>"/root/.telegram.conf"
-		else
-			exit 1
-		fi
-
-	fi
-
-}
-
 telegram_send_message() {
 
 	# $1 = {notification_text}
@@ -60,9 +13,6 @@ telegram_send_message() {
 	local notification_type=$2
 
 	local timeout notif_sound notif_text notif_url notif_date
-
-	# Check if telegram is config before run
-	telegram_notifications_config
 
 	display_mode="HTML"
 	

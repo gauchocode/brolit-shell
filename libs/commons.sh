@@ -156,6 +156,15 @@ script_init() {
     generate_cloudflare_config
   fi
 
+  # Telegram config file
+  TEL_CONFIG_FILE=~/.telegram.conf
+  if [[ -e ${TEL_CONFIG_FILE} ]]; then
+    # shellcheck source=${CLF_CONFIG_FILE}
+    source "${TEL_CONFIG_FILE}"
+  else
+    generate_telegram_config
+  fi
+
   # BROOBE Utils config file
   if test -f /root/.broobe-utils-options; then
     source "/root/.broobe-utils-options"
@@ -1090,6 +1099,48 @@ generate_cloudflare_config() {
 
 }
 
+generate_telegram_config() {
+
+  # ${TEL_CONFIG_FILE} is a Global var
+
+  local botfather_whip_line botfather_key
+
+  botfather_whip_line+=" \n "
+  botfather_whip_line+=" Open Telegram and follow the next steps:\n\n"
+  botfather_whip_line+=" 1) Get a bot token. Contact @BotFather (https://t.me/BotFather) and send the command /newbot.\n"
+  botfather_whip_line+=" 2) Follow the instructions and paste the token to access the HTTP API:\n\n"
+
+  botfather_key=$(whiptail --title "Telegram BotFather Configuration" --inputbox "${botfather_whip_line}" 15 60 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+
+    # Write config file
+    echo "botfather_key=${botfather_key}" >>"/root/.telegram.conf"
+
+    telegram_id_whip_line+=" \n\n "
+		telegram_id_whip_line+=" 3) Contact the @myidbot (https://t.me/myidbot) bot and send the command /getid to get \n"
+		telegram_id_whip_line+=" your personal chat id or invite him into a group and issue the same command to get the group chat id.\n"
+		telegram_id_whip_line+=" 4) Paste the ID here:\n\n"
+		
+		telegram_user_id=$(whiptail --title "Telegram: BotID Configuration" --inputbox "${telegram_id_whip_line}" 15 60 3>&1 1>&2 2>&3)
+		exitstatus=$?
+		if [ $exitstatus = 0 ]; then
+
+      # Write config file
+			echo "telegram_user_id=${telegram_user_id}" >>"/root/.telegram.conf"
+
+		else
+			return 1
+
+		fi
+
+  else
+    return 1
+
+  fi
+
+}
+
 calculate_disk_usage() {
 
   # $1 = ${disk_volume}
@@ -1297,6 +1348,8 @@ ask_project_name() {
 
   # Replace '-' and '.' chars
   name=$(echo "${name}" | sed -r 's/[.-]+/_/g')
+
+  # TODO: remove some suffix keywords '_com' '_ar' '_es' ... and prefix 'www_'
 
   project_name=$(whiptail --title "Project Name" --inputbox "Insert a project name (only separator allow is '_'). Ex: my_domain" 10 60 "${name}" 3>&1 1>&2 2>&3)
   exitstatus=$?
