@@ -32,19 +32,15 @@ source "${SFOLDER}/libs/backup_helper.sh"
 
 delete_project_files() {
 
-    log_event "info" "Running delete_project script" "true"
+    local project_domain
+
+    log_event "info" "Starting delete_project_files script" "true"
 
     # Folder where sites are hosted: $SITES
     menu_title="PROJECT TO DELETE"
     directory_browser "${menu_title}" "${SITES}"
 
-    ### Creating temporary folders
-    if [ ! -d "${SFOLDER}/tmp-backup" ]; then
-        mkdir "${SFOLDER}/tmp-backup"
-        log_event "info" "Temp files directory created: ${SFOLDER}/tmp-backup" "true"
-    fi
-
-    #echo "directory_broser returns: " $filepath"/"$filename
+    # Directory_broser returns: " $filepath"/"$filename
     if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
 
         log_event "info" "Skipped!" "true"
@@ -54,15 +50,21 @@ delete_project_files() {
 
     else
 
+        ### Creating temporary folders
+        if [ ! -d "${SFOLDER}/tmp-backup" ]; then
+            mkdir "${SFOLDER}/tmp-backup"
+            log_event "info" "Temp files directory created: ${SFOLDER}/tmp-backup" "true"
+        fi
+
         BK_TYPE="site"
 
         # Removing last slash from string
-        filename=${filename%/}
+        project_domain=${filename%/}
 
-        log_event "info" "Project to delete: ${filename}" "true"
+        log_event "info" "Project to delete: ${project_domain}" "true"
 
         # Trying to know project type
-        project_type=$(get_project_type "${SITES}/${filename}")
+        project_type=$(get_project_type "${SITES}/${project_domain}")
 
         # TODO: if project_type = wordpress, get database credentials from wp-config.php
         #project_db_name=$(get_project_db_name "${project_type}")
@@ -71,7 +73,7 @@ delete_project_files() {
         log_event "info" "Project Type: ${project_type}" "true"
 
         # Making a backup of project files
-        make_files_backup "${BK_TYPE}" "${SITES}" "${filename}"
+        make_files_backup "${BK_TYPE}" "${SITES}" "${project_domain}"
 
         if [ $? -eq 0 ]; then
 
@@ -79,27 +81,41 @@ delete_project_files() {
             output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}/offline-site" 2>&1)
 
             # Moving deleted project backups to another dropbox directory
-            log_event "info" "dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${filename} /${VPSNAME}/offline-site" "true"
-            $DROPBOX_UPLOADER move "/${VPSNAME}/${BK_TYPE}/${filename}" "/${VPSNAME}/offline-site"
+            log_event "info" "dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${project_domain} /${VPSNAME}/offline-site" "true"
+            $DROPBOX_UPLOADER move "/${VPSNAME}/${BK_TYPE}/${project_domain}" "/${VPSNAME}/offline-site"
 
             # Delete project files
-            rm -R $filepath"/"$filename
-            log_event "info" "Project files deleted for ${filename}" "true"
+            rm -R $filepath"/"${project_domain}
+            log_event "info" "Project files deleted for ${project_domain}" "true"
 
             # Make a copy of nginx configuration file
-            cp -r "/etc/nginx/sites-available/${filename}" "${SFOLDER}/tmp-backup"
+            cp -r "/etc/nginx/sites-available/${project_domain}" "${SFOLDER}/tmp-backup"
 
             # TODO: make a copy of letsencrypt files?
 
             # TODO: upload to dropbox config_file ??
 
             # Delete nginx configuration file
-            nginx_server_delete "${filename}"
+            nginx_server_delete "${project_domain}"
 
-            telegram_send_message "⚠️ ${VPSNAME}: Project files deleted for: ${filename}"
+            # Cloudflare Manager
+            project_domain=$(whiptail --title "CLOUDFLARE MANAGER" --inputbox "Do you want to delete the Cloudflare entries for the followings subdomains?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
+            exitstatus=$?
+            if [ $exitstatus = 0 ]; then
+            
+                # Delete Cloudflare entries
+                cloudflare_delete_a_record "${project_domain}"
+
+            else
+
+                log_event "info" "Cloudflare entries not deleted." "true"
+
+            fi
+
+            telegram_send_message "⚠️ ${VPSNAME}: Project files deleted for: ${project_domain}"
 
             # Return
-            echo "${filename}"
+            echo "${project_domain}"
         
         else
 
@@ -182,16 +198,15 @@ delete_project() {
 
     delete_files_result=$(delete_project_files)
 
-    #log_event "debug" "delete_files_result=$delete_files_result" "true"
-
     if [ "${delete_files_result}" != "error" ]; then
 
+        # Delete Database
         delete_project_database "${delete_files_result}"
 
     else
 
         log_event "error" "Error deleting project ..." "true"
-        exit 1
+        return 1
 
     fi
  

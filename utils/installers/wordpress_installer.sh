@@ -175,9 +175,9 @@ if [ $exitstatus = 0 ]; then
 
   fi
 
-  # TODO: ask for Cloudflare support
+  # TODO: ask for Cloudflare support and check if root_domain is configured on the cf account
 
-  # TODO: if domain contains www, must work without www too
+  # If domain contains www, should work without www too
   common_subdomain='www'
   if [[ "${project_domain}" == *"${common_subdomain}"* ]]; then
 
@@ -191,7 +191,17 @@ if [ $exitstatus = 0 ]; then
     nginx_server_create "${project_domain}" "wordpress" "root_domain" "${root_domain}"
 
     # HTTPS with Certbot
-    certbot_certificate_install "${MAILA}" "${project_domain},${root_domain}"
+    project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${root_domain}" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+
+      certbot_certificate_install "${MAILA}" "${project_domain},${root_domain}"
+
+    else
+
+      log_event "info" "No HTTPS support for ${project_domain}" "true"
+
+    fi  
 
   else
 
@@ -202,15 +212,23 @@ if [ $exitstatus = 0 ]; then
     nginx_server_create "${project_domain}" "wordpress" "single" ""
 
     # HTTPS with Certbot
-    certbot_certificate_install "${MAILA}" "${project_domain}"
+    project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus = 0 ]; then
+      
+      certbot_certificate_install "${MAILA}" "${project_domain}"
+
+    else
+
+      log_event "info" "No HTTPS support for ${project_domain}" "true"
+
+    fi
     
   fi
-
-  #cloudflare_change_a_record "${root_domain}" "${project_domain}" "true"
 
   log_event "success" "WordPress installation for domain ${project_domain} finished" "true"
   telegram_send_message "${VPSNAME}: WordPress installation for domain ${project_domain} finished"
 
 fi
 
-main_menu
+#main_menu

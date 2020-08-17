@@ -103,7 +103,7 @@ certbot_helper_installer_menu() {
       cb_warning_text+="2- Go to de 'DNS' option panel and Turn ON the proxy Cloudflare setting over the domain/s \n"
       cb_warning_text+="3- Go to 'SSL/TLS' option panel and change the SSL setting from 'Flexible' to 'Full'. \n"
 
-      whiptail_event "${cb_warning_text}"
+      whiptail_event "CERTBOT MANAGER" "${cb_warning_text}"
       #root_domain=$(ask_rootdomain_for_cloudflare_config "${domains}")
       # TODO: list entries to add proxy on cloudflare records
       #cloudflare_change_a_record "${root_domain}" "" "true"
@@ -242,12 +242,12 @@ certbot_helper_ask_domains() {
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
+    # Return
     echo "${domains}"
-    #exit 0;
 
   else
 
-    exit 1;
+    return 1;
 
   fi
 
@@ -261,36 +261,52 @@ certbot_helper_menu() {
   chosen_cb_options=$(whiptail --title "CERTBOT MANAGER" --menu "Please choose an option:" 20 78 10 $(for x in ${certbot_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [ ${exitstatus} = 0 ]; then
 
     if [[ ${chosen_cb_options} == *"01"* ]]; then
+
       # INSTALL_CERTIFICATE
       domains=$(certbot_helper_ask_domains)
-      certbot_helper_installer_menu "${MAILA}" "${domains}"
+      exitstatus=$?
+      if [ ${exitstatus} = 0 ]; then
+        certbot_helper_installer_menu "${MAILA}" "${domains}"
+      fi
 
     fi
+
     if [[ ${chosen_cb_options} == *"02"* ]]; then
       # EXPAND_CERTIFICATE
       domains=$(certbot_helper_ask_domains)
-      certbot_certificate_expand "${MAILA}" "${domains}"
+      exitstatus=$?
+      if [ ${exitstatus} = 0 ]; then
+        certbot_certificate_expand "${MAILA}" "${domains}"
+      fi
 
     fi
+
     if [[ ${chosen_cb_options} == *"03"* ]]; then
       # TEST_RENEW_ALL_CERTIFICATES
       certbot_certificate_renew_test
 
     fi
+
     if [[ ${chosen_cb_options} == *"04"* ]]; then
       # FORCE_RENEW_CERTIFICATE
       domains=$(certbot_helper_ask_domains)
-      certbot_certificate_force_renew "${domains}"
+      exitstatus=$?
+      if [ ${exitstatus} = 0 ]; then
+        certbot_certificate_force_renew "${domains}"
+      fi
+      
 
     fi
+
     if [[ ${chosen_cb_options} == *"05"* ]]; then
       # DELETE_CERTIFICATE
       certbot_certificate_delete "${domains}"
 
     fi
+
     if [[ ${chosen_cb_options} == *"06"* ]]; then
       # SHOW_INSTALLED_CERTIFICATES
       certbot_show_certificates_info
