@@ -17,6 +17,7 @@ MAGENTA='\E[35;40m'
 CYAN='\E[36;40m'
 WHITE='\E[37;40m'
 ENDCOLOR='\033[0m'
+NORMAL="\033[m"
 
 # Background Colours
 B_BLACK='\E[40m'
@@ -694,9 +695,10 @@ script_configuration_wizard() {
 
 log_event() {
 
-  # $1 = {log_type} options: success, info, warning, error, critical
+  # Parameters
+  # $1 = {log_type} (success, info, warning, error, critical)
   # $2 = {message}
-  # $3 = {console_display} optional (true or false, emtpy equals false)
+  # $3 = {console_display} optional (true or false, default is false)
 
   local log_type=$1
   local message=$2
@@ -755,6 +757,97 @@ log_event() {
         ;;
     esac
 
+}
+
+log_break() {
+
+  # Parameters
+  # $1 = {console_display} optional (true or false, emtpy equals false)
+
+  local console_display=$1
+
+  local log_break
+  
+  log_break="################################################################################################"
+  
+  echo "${log_break}" >> "${LOG}"
+  if [ "${console_display}" = "true" ]; then
+    echo -e "${CYAN} > ${message}${ENDCOLOR}" >&2
+  fi
+
+}
+
+display() {
+  INDENT=0; TEXT=""; RESULT=""; COLOR=""; SPACES=0; SHOWDEBUG=0; CRONJOB=0;
+  while [ $# -ge 1 ]; do
+      case $1 in
+          --color)
+              shift
+                  case $1 in
+                    GREEN)   COLOR=$GREEN   ;;
+                    RED)     COLOR=$RED     ;;
+                    WHITE)   COLOR=$WHITE   ;;
+                    YELLOW)  COLOR=$YELLOW  ;;
+                  esac
+          ;;
+          --debug)
+              SHOWDEBUG=1
+          ;;
+          --indent)
+              shift
+              INDENT=$1
+          ;;
+          --result)
+              shift
+              RESULT=$1
+          ;;
+          --text)
+              shift
+              TEXT=$1
+          ;;
+          *)
+              echo "INVALID OPTION (Display): $1"
+              ExitFatal
+          ;;
+      esac
+      # Go to next parameter
+      shift
+  done
+
+  if [ -z "${RESULT}" ]; then
+      RESULTPART=""
+  else
+      if [ ${CRONJOB} -eq 0 ]; then
+          RESULTPART=" [ ${COLOR}${RESULT}${NORMAL} ]"
+      else
+          RESULTPART=" [ ${RESULT} ]"
+      fi
+  fi
+
+  if [ -n "${TEXT}" ]; then
+      SHOW=0
+      #if [ ${SHOW_WARNINGS_ONLY} -eq 1 ]; then
+      #    if [ "${RESULT}" = "WARNING" ]; then SHOW=1; fi
+      #    elif [ ${QUIET} -eq 0 ]; then SHOW=1
+      #fi
+
+      if [ ${SHOW} -eq 0 ]; then
+          # Display:
+          # - for full shells, count with -m instead of -c, to support language locale (older busybox does not have -m)
+          # - wc needs LANG to deal with multi-bytes characters but LANG has been unset in include/consts
+          LINESIZE=$(export LC_ALL= ; echo "${TEXT}" | wc -m | tr -d ' ')
+          if [ "${SHOWDEBUG}" -eq 1 ]; then DEBUGTEXT=" [${PURPLE}DEBUG${NORMAL}]"; else DEBUGTEXT=""; fi
+          if [ "${INDENT}" -gt 0 ]; then SPACES=$((62 - INDENT - LINESIZE)); fi
+          if [ "${SPACES}" -lt 0 ]; then SPACES=0; fi
+          if [ "${CRONJOB}" -eq 0 ]; then
+            # Check if we already have already discovered a proper echo command tool. It not, set it default to 'echo'.
+            #if [ "${ECHOCMD}" = "" ]; then ECHOCMD="echo"; fi
+            echo -e "\033[${INDENT}C${TEXT}\033[${SPACES}C${RESULTPART}${DEBUGTEXT}"
+          else
+            echo "${TEXT}${RESULTPART}"
+          fi
+      fi
+  fi
 }
 
 ################################################################################
