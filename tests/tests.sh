@@ -4,67 +4,28 @@
 # Version: 3.0-rc08
 #############################################################################
 
-### Checking some things...#####################################################
-SFOLDER="`dirname \"$0\"`"                                                      # relative
-SFOLDER="`( cd \"$SFOLDER\" && pwd )`"   
-
-if [ -z "$SFOLDER" ]; then
+### Main dir check
+SFOLDER=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+SFOLDER=$( cd "$( dirname "${SFOLDER}" )" && pwd )
+if [ -z "${SFOLDER}" ]; then
   exit 1  # error; the path is not accessible
-fi
-
-# Temp folder
-BAKWP="${SFOLDER}/tmp"
-
-# MySQL host and user
-MHOST="localhost"
-MUSER="root"
-
-# Nginx
-WSERVER="/etc/nginx"
-
-SITES="/var/www"
-
-# Backup rotation vars
-NOW=$(date +"%Y-%m-%d")
-NOWDISPLAY=$(date +"%d-%m-%Y")
-ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
-
-export MHOST MUSER NOW NOWDISPLAY ONEWEEKAGO
-
-# BROOBE Utils config file
-if test -f /root/.broobe-utils-options; then
-  source /root/.broobe-utils-options
-fi
-
-# Cloudflare config file
-CLF_CONFIG_FILE=~/.cloudflare.conf
-if [[ -e ${CLF_CONFIG_FILE} ]]; then
-    # shellcheck source=${CLF_CONFIG_FILE}
-    source "${CLF_CONFIG_FILE}"
-else
-    generate_cloudflare_config
 fi
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
+
+################################################################################
+
+script_init
+
 # shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
 source "${SFOLDER}/libs/mail_notification_helper.sh"
 # shellcheck source=${SFOLDER}/libs/telegram_notification_helper.sh
 source "${SFOLDER}/libs/telegram_notification_helper.sh"
-# shellcheck source=${SFOLDER}/libs/packages_helper.sh
-source "${SFOLDER}/libs/packages_helper.sh"
-# shellcheck source=${SFOLDER}/libs/backup_helper.sh
-source "${SFOLDER}/libs/backup_helper.sh"
-# shellcheck source=${SFOLDER}/libs/mysql_helper.sh
-source "${SFOLDER}/libs/mysql_helper.sh"
-# shellcheck source=${SFOLDER}/libs/nginx_helper.sh
-source "${SFOLDER}/libs/nginx_helper.sh"
-# shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
-source "${SFOLDER}/libs/wpcli_helper.sh"
 # shellcheck source=${SFOLDER}/libs/wordpress_helper.sh
 source "${SFOLDER}/libs/wordpress_helper.sh"
-# shellcheck source=${SFOLDER}/libs/cloudflare_helper.sh
-source "${SFOLDER}/libs/cloudflare_helper.sh"
+# shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
+source "${SFOLDER}/libs/wpcli_helper.sh"
 
 ####################### TEST FOR mail_cert_section #######################
 
@@ -179,3 +140,5 @@ test_mysql_database_exists(){
 #install_crontab_script "${SFOLDER}/test.sh" "01" "00"
 
 #telegram_send_message "LEMPT UTILS SCRIPT NOTIFICATION TEST"
+
+display --indent 2 --text "- Testing message on console" --result "DONE" --color GREEN

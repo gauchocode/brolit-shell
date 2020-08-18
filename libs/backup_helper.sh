@@ -179,7 +179,7 @@ make_server_files_backup() {
 
   local bk_file old_bk_file
 
-  log_event "" "################################################################################################" "true"
+  log_break "true"
 
   if [ -n "${bk_path}" ]; then
 
@@ -251,7 +251,7 @@ make_server_files_backup() {
 
   fi
 
-  log_event "" "################################################################################################" "true"
+  log_break "true"
   
 }
 
@@ -266,7 +266,7 @@ make_mailcow_backup() {
 
   local mailcow_backup_location
 
-  log_event "" "################################################################################################" "true"
+  log_break "true"
 
   if [ -n "${MAILCOW}" ]; then
 
@@ -339,7 +339,7 @@ make_mailcow_backup() {
 
   fi
 
-  log_event "" "################################################################################################" "true"
+  log_break "true"
 
 }
 
