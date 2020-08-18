@@ -34,7 +34,7 @@ CONFIG_F="configs"
 export BK_TYPE SITES_F
 
 # Starting Message
-log_event "" "################################################################################################" "true"
+log_break "true"
 log_event "info" "Starting files backup script" "true"
 
 # MAILCOW Files
@@ -149,7 +149,7 @@ for j in ${TOTAL_SITES}; do
 
   fi
 
-  log_event "" "################################################################################################" "true"
+  log_break "true"
 
   k=$k+1
 

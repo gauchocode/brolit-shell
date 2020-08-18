@@ -1,15 +1,19 @@
 # TODO List
 
+## For release 3.0-final
+
+### In Progress
+
+- [ ] Better code documentation.
+- [ ] Complete refactor of delete_project script.
+- [ ] Notifications: Subject status dont't change on error or warning.
+- [ ] Backups: make_project_backup is broken, need a refactor asap!
+
 ### Need more testing
 - [ ] WordPress: Install fails when set a project name like: xyz_sub_domain.
 - [ ] Backups: When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?).
 - [ ] Installers: On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages.
 - [ ] Nginx: New default nginx configuration for wordpress projects.
-
-### In Progress
-
-- [ ] Notifications: Telegram notifications support.
-- [ ] Backups: make_project_backup is broken, need a refactor asap!
 
 ### Done ✓
 
@@ -21,16 +25,11 @@
 - [x] Nginx: New option to put a website offline/online.
 - [x] Better log with log_event functions.
 - [x] Refactor for better dependencies management, and cleaner code in runner.sh
+- [x] Notifications: Telegram notifications support.
 
-## TODO
+## For release 3.1
 
-### For release 3.0-final
-
-- [ ] PHP: php_reconfigure refactor (replace strings instead of replace entired config files)
-- [ ] Scheduled options: Add option to run on specific time.
-
-### For release 3.1
-
+- [ ] Log/Display: better logg handling and display improvements.
 - [ ] Complete refactor of "Options Wizard": (Backup Options, Notification Options, Cloudflare Config)
 - [ ] Nginx: Add http2 support on nginx server config files.
 - [ ] Scheduled options: backups, malware scans, image optimizations and wp actions (core and plugins updates, checksum and wp re-installation)
@@ -39,11 +38,12 @@
 - [ ] Installers: Netdata only reports CRITICAL message, (CLEAR are not reported).
 - [ ] Installers: Option to select netdata metrics to be reported.
 - [ ] Backups: Refactor for backup/restore: 5 options (server_config, site_config, site, database and project).
-- [ ] Complete refactor of delete_project script.
 - [ ] Auto-update script option.
 - [ ] Solve small "TODOs" comments on the project.
+- [ ] PHP: php_reconfigure refactor (replace strings instead of replace entired config files)
+- [ ] Scheduled options: Add option to run on specific time.
 
-### For release 3.2
+## For release 3.2
 
 - [ ] Utils: Support for phpservermon: https://github.com/phpservermon/phpservermon
 - [ ] Nginx: Option to copy or generate a new nginx server configuration.
@@ -57,7 +57,7 @@
  - [ ] Rollback plugins and core updates (wpcli_rollback_plugin_version on wpcli_helper.sh)
  - [ ] Buddypress support: https://github.com/buddypress/wp-cli-buddypress
 
-### For release 3.3
+## For release 3.3
 
 - [ ] Wordpress: When restore or create a project on PROD state, ask if want to run "wpcli_run_startup_script"
 - [ ] PHP: Option to enable or disable OpCache
@@ -71,7 +71,7 @@
         So, if you need to install a new site, must ask what php_v to use.
 - [ ] Installers: Option to install Bashtop and other utils: http://packages.azlux.fr/
 
-### For release 3.4
+## For release 3.4
 
 - [ ] Backups: Directory Blacklist with whiptail (for backup configuration)
 - [ ] Warning if script run on non default installation (no webserver or another than nginx)
@@ -83,7 +83,7 @@
 - [ ] Nginx: Multidomain support for nginx
 - [ ] IT Utils: Control of mounted partitions or directories
 
-### For release 3.5
+## For release 3.5
 
 - [ ] Backups: Expand Duplicity support with a restore option
 - [ ] PHP: Option to change php version on installed site.
@@ -95,7 +95,7 @@
 - [ ] Nginx: bad bot blocker.
         https://github.com/mitchellkrogza/nginx-ultimate-bad-bot-blocker
 
-### For release 4.0
+## For release 4.0
 
 - [ ] Refactor to let the script be runned with flags
         Ex: ./runner.sh --backup-project="/var/www/some.domain.com"
