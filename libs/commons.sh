@@ -1,10 +1,81 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc08
+# Version: 3.0-rc09
 ################################################################################
 
-### GLOBALS
+#
+#################################################################################
+#
+# * Globals
+#
+#################################################################################
+#
+
+SCRIPT_V="3.0-rc09"
+
+# Hostname
+VPSNAME="$HOSTNAME"
+
+#
+#################################################################################
+#
+# * Options
+#
+#################################################################################
+#
+CRONJOB=0                           # Run as a cronjob
+DEBUG=0                             # Debugging mode (to screen)
+QUICKMODE=1                         # Don't wait for user input
+QUIET=0                             # Show normal messages and warnings as well
+SKIPLOGTEST=0                       # Skip logging for one test
+
+WSERVER="/etc/nginx"                # NGINX config files location
+MySQL_CF="/etc/mysql"               # MySQL config files location
+PHP_CF="/etc/php"                   # PHP config files location
+LENCRYPT_CF="/etc/letsencrypt"      # Let's Encrypt config files location
+
+# Folder blacklist
+SITES_BL=".wp-cli,html"
+
+# Database blacklist
+DB_BL="information_schema,performance_schema,mysql,sys,phpmyadmin"
+
+#MAILCOW BACKUP
+MAILCOW_TMP_BK="${SFOLDER}/tmp/mailcow"
+
+PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
+
+# MySQL host and user
+MHOST="localhost"
+MUSER="root"
+
+# Packages to watch
+PACKAGES=(linux-firmware dpkg perl nginx "php${PHP_V}-fpm" mysql-server curl openssl)
+
+MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+') # Main partition
+
+# Dropbox Folder Backup
+DROPBOX_FOLDER="/"
+
+# Dropbox Uploader Directory
+DPU_F="${SFOLDER}/tools/third-party/dropbox-uploader"
+
+# Time Vars
+NOW=$(date +"%Y-%m-%d")
+NOWDISPLAY=$(date +"%d-%m-%Y")
+ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
+
+startdir=""
+menutitle="Config Selection Menu"
+
+#
+#################################################################################
+#
+# * Colours
+#
+#################################################################################
+#
 
 # Foreground Colours
 BLACK='\E[30;40m'
@@ -31,62 +102,15 @@ B_CYAN='\E[46m'
 B_WHITE='\E[47m'
 B_ENDCOLOR='\e[0m'
 
-startdir=""
-menutitle="Config Selection Menu"
-
-################################################################################
+#
+#################################################################################
+#
+# * Functions
+#
+#################################################################################
+#
 
 script_init() {
-
-  ### Globals
-
-  SCRIPT_V="3.0-rc08"
-
-  # Hostname
-  VPSNAME="$HOSTNAME"
-
-  # Folder blacklist
-  SITES_BL=".wp-cli,phpmyadmin,html"
-
-  # Database blacklist
-  DB_BL="information_schema,performance_schema,mysql,sys,phpmyadmin"
-
-  #MAILCOW BACKUP
-  MAILCOW_TMP_BK="${SFOLDER}/tmp/mailcow"
-
-  PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
-
-  # NGINX config files location
-  WSERVER="/etc/nginx"
-
-  # MySQL config files location
-  MySQL_CF="/etc/mysql"
-
-  # PHP config files location
-  PHP_CF="/etc/php"
-
-  # Let's Encrypt config files location
-  LENCRYPT_CF="/etc/letsencrypt"
-
-  # MySQL host and user
-  MHOST="localhost"
-  MUSER="root"
-
-  # Packages to watch
-  PACKAGES=(linux-firmware dpkg perl nginx "php${PHP_V}-fpm" mysql-server curl openssl)
-
-  MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+') # Main partition
-
-  # Dropbox Folder Backup
-  DROPBOX_FOLDER="/"
-
-  # Dropbox Uploader Directory
-  DPU_F="${SFOLDER}/tools/third-party/dropbox-uploader"
-
-  # Time Vars
-  NOW=$(date +"%Y-%m-%d")
-  NOWDISPLAY=$(date +"%d-%m-%Y")
-  ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
 
   # Temp folders
   BAKWP="${SFOLDER}/tmp"
@@ -105,9 +129,7 @@ script_init() {
   TIMESTAMP=$(date +%Y%m%d_%H%M%S)
   PATH_LOG="${SFOLDER}/log"
   if [ ! -d "${SFOLDER}/log" ]; then
-    echo " > Folder ${SFOLDER}/log doesn't exist. Creating ..."
     mkdir "${SFOLDER}/log"
-    echo " > Folder ${SFOLDER}/log created ..."
   fi
 
   LOG_NAME="log_lemp_utils_${TIMESTAMP}.log"
@@ -116,7 +138,8 @@ script_init() {
   find "${PATH_LOG}" -name "*.log" -type f -mtime +7 -print -delete >>"${LOG}"
 
   # Log Start
-  log_event "info" "LEMP UTILS SCRIPT Start -- $(date +%Y%m%d_%H%M)" "true"
+  log_event "" "WELCOME TO LEMP UTILS SCRIPT" "true"
+  log_event "info" "Script Start -- $(date +%Y%m%d_%H%M)" "false"
 
   ### Welcome #######################################################################
 
@@ -128,6 +151,8 @@ script_init() {
   log_event "" "██████╔╝██║  ██║╚██████╔╝╚██████╔╝██████╔╝███████" "true"
   log_event "" "╚═════╝ ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═════╝ ╚══════" "true"
   log_event "" "                                                 " "true"
+
+  log_event "" "-------------------------------------------------" "true"
 
   # Ref: http://patorjk.com/software/taag/
   ################################################################################
@@ -206,7 +231,7 @@ script_init() {
   FIND="$(which find)"
 
   # EXPORT VARS (GLOBALS)
-  export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK SERVER_IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
+  export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK SERVER_IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
 
 }
 
@@ -772,13 +797,30 @@ log_break() {
   
   echo "${log_break}" >> "${LOG}"
   if [ "${console_display}" = "true" ]; then
-    echo -e "${CYAN} > ${message}${ENDCOLOR}" >&2
+    echo -e "${CYAN} > ${log_break}${ENDCOLOR}" >&2
   fi
 
 }
 
+log_section() {
+
+  # Parameters
+  # $1 = {message}
+
+  local message=$1
+
+    if [ "${QUIET}" -eq 0 ]; then
+        echo ""
+        echo -e "[+] Performing Action: ${YELLOW}${message}${NORMAL}"
+        echo "------------------------------------"
+    fi
+
+}
+
 display() {
+
   INDENT=0; TEXT=""; RESULT=""; COLOR=""; SPACES=0; SHOWDEBUG=0; CRONJOB=0;
+  
   while [ $# -ge 1 ]; do
       case $1 in
           --color)
@@ -826,10 +868,6 @@ display() {
 
   if [ -n "${TEXT}" ]; then
       SHOW=0
-      #if [ ${SHOW_WARNINGS_ONLY} -eq 1 ]; then
-      #    if [ "${RESULT}" = "WARNING" ]; then SHOW=1; fi
-      #    elif [ ${QUIET} -eq 0 ]; then SHOW=1
-      #fi
 
       if [ ${SHOW} -eq 0 ]; then
           # Display:
@@ -855,6 +893,7 @@ display() {
 ################################################################################
 
 check_root() {
+
   # Check if user is root
   if [ "${USER}" != root ]; then
     echo -e ${B_RED}" > Error: Script runned by ${USER}, but must be root! Exiting..."${ENDCOLOR}
@@ -874,7 +913,7 @@ check_distro() {
   DISTRO=$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $1}')
   if [ ! "$DISTRO" = "Ubuntu" ]; then
     log_event "critical" "This script only run on Ubuntu ... Exiting" "true"
-    exit 1
+    return 1
 
   else
     MIN_V=$(echo "18.04" | awk -F "." '{print $1$2}')
@@ -882,7 +921,7 @@ check_distro() {
     
     log_event "info" "ACTUAL DISTRO: ${DISTRO} ${DISTRO_V}" "false"
 
-    if [ ! "$DISTRO_V" -ge "$MIN_V" ]; then
+    if [ ! "${DISTRO_V}" -ge "${MIN_V}" ]; then
       whiptail --title "UBUNTU VERSION WARNING" --msgbox "Ubuntu version must be 18.04 or 20.04! Use this script only for backup or restore purpose." 8 78
       exitstatus=$?
       if [ $exitstatus = 0 ]; then
@@ -890,15 +929,18 @@ check_distro() {
         log_event "info" "Setting distro_old: ${distro_old}" "false"
         
       else
-        return 0
+        return 1
 
       fi
       
     fi
+
   fi
+
 }
 
 checking_scripts_permissions() {
+
   ### chmod
   find ./ -name "*.sh" -exec chmod +x {} \;
 
@@ -1142,11 +1184,13 @@ generate_dropbox_config() {
   oauth_access_token=$(whiptail --title "Dropbox Uploader Configuration" --inputbox "${oauth_access_token_string}" 15 60 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
+
+    # Write config file
     echo "OAUTH_ACCESS_TOKEN=$oauth_access_token" >${DPU_CONFIG_FILE}
-    log_event "info" "Dropbox configuration has been saved!" "true"
+    log_event "info" "Dropbox configuration has been saved!" "false"
 
   else
-    exit 1
+    return 1
 
   fi
 
@@ -1177,8 +1221,10 @@ generate_cloudflare_config() {
     cfl_api_token=$(whiptail --title "Cloudflare Configuration" --inputbox "${cfl_api_token_string}" 15 60 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
+
+      # Write config file
       echo "dns_cloudflare_api_key=${cfl_api_token}">>"${CLF_CONFIG_FILE}"
-      log_event "success" "The Cloudflare configuration has been saved!" "true"
+      log_event "success" "The Cloudflare configuration has been saved!" "false"
 
     else
       return 1
@@ -1221,6 +1267,7 @@ generate_telegram_config() {
 
       # Write config file
 			echo "telegram_user_id=${telegram_user_id}" >>"/root/.telegram.conf"
+      log_event "success" "The Telegram configuration has been saved!" "false"
 
 		else
 			return 1
@@ -1242,10 +1289,12 @@ calculate_disk_usage() {
 
   local disk_u
 
+  log_event "info" "Calculating disk usage of ${disk_volume}" "true"
+
   # Need to use grep with -w to exact match of the main volume
   disk_u=$(df -h | grep -w "${disk_volume}" | awk {'print $5'})
 
-  log_event "info" "Disk usage of ${disk_volume}: ${disk_u} ..." "true"
+  log_event "info" "Disk usage of ${disk_volume}: ${disk_u}" "false"
 
   # Return
   echo "${disk_u}"
@@ -1267,12 +1316,17 @@ check_if_folder_exists() {
     # Return
     echo "ERROR"
 
+    log_event "info" "Project directory not found on: ${project_dir}" "false"
+
   else
 
     # Return
     echo "${project_dir}"
 
+    log_event "info" "Project directory found on: ${project_dir}" "false"
+
   fi
+
 }
 
 change_ownership(){
@@ -1285,8 +1339,11 @@ change_ownership(){
   local group=$2
   local path=$3
 
-  log_event "info" "Running: chown -R ${user}:${group} ${path}" "true"
+  log_event "info" "Running: chown -R ${user}:${group} ${path}" "false"
+
   chown -R "${user}":"${group}" "${path}"
+
+  display --indent 2 --text "- Changing ownership of ${path} to ${user}:${group}" --result "DONE" --color GREEN
 
 }
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc08
+# Version: 3.0-rc09
 ################################################################################
 
 ### Checking some things
@@ -18,9 +18,7 @@ source "${SFOLDER}/libs/packages_helper.sh"
 
 ################################################################################
 
-log_event "info" "************************************************" "true"
-log_event "info" "************** LEMP SETUP STARTED **************" "true"
-log_event "info" "************************************************" "true"
+log_section "LEMP SETUP"
 
 checking_scripts_permissions
 
@@ -39,9 +37,7 @@ basic_packages_installation
 # PHP Installer
 "${SFOLDER}/utils/installers/php_installer.sh"
 
-log_event "info" "************************************************" "true"
-log_event "info" "************* LEMP SETUP COMPLETED *************" "true"
-log_event "info" "************************************************" "true"
+log_event "success" "************* LEMP SETUP COMPLETED *************" "true"
 
 script_configuration_wizard "initial"
 

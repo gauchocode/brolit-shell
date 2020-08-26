@@ -2,12 +2,17 @@
 
 ## For release 3.0-final
 
+### TODO
+
+- [ ] Notifications: Email HTML breaks sometimes.
+- [ ] Backups: make_project_backup is broken, need a refactor asap!
+- [ ] Nginx: put_project_offline need another aproach. Maybe put an index.html with message.
+
 ### In Progress
 
 - [ ] Better code documentation.
-- [ ] Complete refactor of delete_project script.
+- [ ] Complete refactor on delete_project script.
 - [ ] Notifications: Subject status dont't change on error or warning.
-- [ ] Backups: make_project_backup is broken, need a refactor asap!
 
 ### Need more testing
 - [ ] WordPress: Install fails when set a project name like: xyz_sub_domain.
@@ -28,15 +33,15 @@
 - [x] Notifications: Telegram notifications support.
 
 ## For release 3.1
-
+- [ ] Warning if script run on non default installation (no webserver or another than nginx)
 - [ ] Log/Display: better logg handling and display improvements.
 - [ ] Complete refactor of "Options Wizard": (Backup Options, Notification Options, Cloudflare Config)
 - [ ] Nginx: Add http2 support on nginx server config files.
+- [ ] Nginx: New option to put website on maintenance.
+- [ ] LetsEncrypt: Need a better way to re-install a certificate after a website migration.
 - [ ] Scheduled options: backups, malware scans, image optimizations and wp actions (core and plugins updates, checksum and wp re-installation)
 - [ ] Backups: Support for dailys, weeklys y monthlys backups.
 - [ ] Notifications: malware scans and others scheduled options.
-- [ ] Installers: Netdata only reports CRITICAL message, (CLEAR are not reported).
-- [ ] Installers: Option to select netdata metrics to be reported.
 - [ ] Backups: Refactor for backup/restore: 5 options (server_config, site_config, site, database and project).
 - [ ] Auto-update script option.
 - [ ] Solve small "TODOs" comments on the project.
@@ -49,6 +54,8 @@
 - [ ] Nginx: Option to copy or generate a new nginx server configuration.
 - [ ] Nginx: Globals configs support.
 - [ ] Installers: Mailcow installer and backup.
+- [ ] Installers: Netdata only reports CRITICAL message, (CLEAR are not reported).
+- [ ] Installers: Option to select netdata metrics to be reported.
 - [ ] Notifications: After install a new project (with credentials info).
 - [ ] Backups: On backup failure, the email must show what files fails and what files are correct backuped.
 - [ ] Backups: Implement on restore_from_backup easy way to restore all sites.
@@ -67,25 +74,26 @@
         Important: if create a project with stage different than prod, block search engine indexation
 - [ ] Installers: COPY_FROM_PROJECT option to exclude uploads directory
         rsync -ax --exclude [relative path to directory to exclude] /path/from /path/to
-- [ ] Installers: On php_installer if multiple php versions are installed de PHP_V need to be an array
+- [ ] Installers: On php_installer if multiple php versions are installed de PHP_V need to be an array.
         So, if you need to install a new site, must ask what php_v to use.
 - [ ] Installers: Option to install Bashtop and other utils: http://packages.azlux.fr/
 
 ## For release 3.4
 
-- [ ] Backups: Directory Blacklist with whiptail (for backup configuration)
-- [ ] Warning if script run on non default installation (no webserver or another than nginx)
-- [ ] Server Optimization: Complete the pdf optimization process
-- [ ] MySQL: Optimization script
-- [ ] MySQL: Rename database helper (with and without WP)
-- [ ] WordPress: Fallback for replace strings on wp database (if wp-cli fails, use old script version)
-- [ ] WordPress: WP Network support (nginx config, and wp-cli commands)
-- [ ] Nginx: Multidomain support for nginx
-- [ ] IT Utils: Control of mounted partitions or directories
+- [ ] Backups: Directory Blacklist with whiptail (for backup configuration).
+- [ ] Server Optimization: Complete the pdf optimization process.
+- [ ] MySQL: Optimization script.
+- [ ] MySQL: Rename database helper (with and without WP).
+- [ ] WordPress: Fallback for replace strings on wp database (if wp-cli fails, use old script version).
+- [ ] WordPress: WP Network support (nginx config, and wp-cli commands).
+- [ ] Nginx: Multidomain support for nginx.
+- [ ] IT Utils: Control of mounted partitions or directories.
+- [ ] IT Utils: Better malware detection with https://github.com/rfxn/linux-malware-detect
 
 ## For release 3.5
 
-- [ ] Backups: Expand Duplicity support with a restore option
+- [ ] Backups: Expand Duplicity support with a restore option.
+- [ ] Backups: Rsync support on mounted device or with SSH config.
 - [ ] PHP: Option to change php version on installed site.
         https://easyengine.io/blog/easyengine-v4-0-15-released/
 - [ ] Notifications: Discord support

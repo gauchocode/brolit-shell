@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc08
+# Version: 3.0-rc09
 ################################################################################
 #
 # TODO: Nginx best practices
@@ -28,9 +28,11 @@ source "${SFOLDER}/libs/nginx_helper.sh"
 
 ################################################################################
 
-nginx_default_installer() {
+nginx_default_installer() { 
 
-    apt --yes install nginx
+    apt --yes install nginx -qq
+  
+    display --indent 2 --text "- Nginx default installation" --result "DONE" --color GREEN
 
 }
 
@@ -41,42 +43,46 @@ nginx_custom_installer() {
 
     add_ppa "nginx/stable"
 
-    apt-get update
+    apt-get update -qq
 
-    apt --yes install nginx
+    apt --yes install nginx -qq
+
 }
 
 nginx_webp_installer() {
 
     apt -y install imagemagick webp
+
 }
 
 nginx_purge_installation() {
-  echo " > Removing Nginx ..." >>$LOG
-  apt --yes purge nginx
+
+    echo " > Removing Nginx ..." >>$LOG
+    apt --yes purge nginx
 
 }
 
 nginx_check_if_installed() {
 
-  NGINX="$(which nginx)"
-  if [ ! -x "${NGINX}" ]; then
-    nginx_installed="false"
-  fi
+    NGINX="$(which nginx)"
+    if [ ! -x "${NGINX}" ]; then
+        nginx_installed="false"
+    fi
 
 }
 
 nginx_check_installed_version() {
-  nginx --version | awk '{ print $5 }' | awk -F\, '{ print $1 }'
+
+    nginx --version | awk '{ print $5 }' | awk -F\, '{ print $1 }'
 
 }
 
 ################################################################################
 
-nginx_installed="true"
-nginx_check_if_installed
+#nginx_installed="true"
+#nginx_check_if_installed
 
-if [ ${nginx_installed} == "false" ]; then
+#if [ ${nginx_installed} == "false" ]; then
 
     NGINX_INSTALLER_OPTIONS="01 NGINX_STANDARD 02 NGINX_LAST_STABLE 03 NGINX_RECONFIGURE"
     CHOSEN_NGINX_INSTALLER_OPTION=$(whiptail --title "NGINX INSTALLER" --menu "Choose a Nginx version to install" 20 78 10 $(for x in ${NGINX_INSTALLER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
@@ -84,14 +90,21 @@ if [ ${nginx_installed} == "false" ]; then
     if [ $exitstatus = 0 ]; then
 
         if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"01"* ]]; then
+
+            log_section "Nginx Installer"
             nginx_default_installer
+
 
         fi
         if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"02"* ]]; then
+
+            log_section "Nginx Installer"
             nginx_custom_installer
 
         fi
         if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"03"* ]]; then
+
+            log_section "Nginx Installer"
 
             nginx_delete_default_directory
 
@@ -105,8 +118,8 @@ if [ ${nginx_installed} == "false" ]; then
 
     fi
 
-else
-
-    log_event "info" "Nginx is already installed" "true"
-
-fi
+#else
+#
+#    log_event "info" "Nginx is already installed" "true"
+#
+#fi

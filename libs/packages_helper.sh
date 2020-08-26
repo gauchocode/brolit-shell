@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc08
+# Version: 3.0-rc09
 #############################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
@@ -70,41 +70,57 @@ add_ppa() {
 
 check_packages_required() {
 
+  log_event "info" "Checking required packages ..." "true"
+
   # Check if sendemail is installed
   SENDEMAIL="$(which sendemail)"
   if [ ! -x "${SENDEMAIL}" ]; then
-    apt -y install sendemail libio-socket-ssl-perl
+    apt -y install sendemail libio-socket-ssl-perl -qq
   fi
 
   # Check if pv is installed
   PV="$(which pv)"
   if [ ! -x "${PV}" ]; then
-    apt -y install pv
+    apt -y install pv -qq
   fi
 
   # Check if bc is installed
   BC="$(which bc)"
   if [ ! -x "${BC}" ]; then
-    apt -y install bc
+    apt -y install bc -qq
   fi
 
   # Check if dig is installed
   DIG="$(which dig)"
   if [ ! -x "${DIG}" ]; then
-    apt -y install dnsutils
+    apt -y install dnsutils -qq
   fi
 
   # Check if lbzip2 is installed
   LBZIP2="$(which lbzip2)"
   if [ ! -x "${LBZIP2}" ]; then
-    apt -y install lbzip2
+    apt -y install lbzip2 -qq
   fi
 
   # Check if dialog is installed
   DIALOG="$(which dialog)"
   if [ ! -x "${DIALOG}" ]; then
-    apt -y install dialog
+    apt -y install dialog -qq
   fi
+
+  # Check if zip is installed
+  ZIP="$(which zip)"
+  if [ ! -x "${ZIP}" ]; then
+    apt -y install zip -qq
+  fi
+
+  # Check if unzip is installed
+  UNZIP="$(which unzip)"
+  if [ ! -x "${UNZIP}" ]; then
+    apt -y install unzip -qq
+  fi
+
+  # TODO: check if php is installed before ask for wp-cli
 
   WPCLI_INSTALLED=$(wpcli_check_if_installed)
 
@@ -118,6 +134,8 @@ check_packages_required() {
 
   fi
 
+  log_event "success" "All required packages are installed" "true"
+
 }
 
 check_default_php_version() {
@@ -127,19 +145,30 @@ check_default_php_version() {
 }
 
 basic_packages_installation() {
+
+  log_section "Basic Packages Installation"
   
   # Updating packages lists
-  log_event "info" "Adding repos and updating package lists ..." "true"
+  log_event "info" "Adding repos and updating package lists ..." "false"
+
   apt --yes install software-properties-common
-  apt --yes update
+  apt --yes update -qq
+
+  display --indent 2 --text "- Adding repos and updating package lists" --result "DONE" --color GREEN
 
   # Upgrading packages
-  log_event "info" "Upgrading packages before installation ..." "true"
-  apt --yes dist-upgrade
+  log_event "info" "Upgrading packages before installation ..." "false"
+
+  apt --yes dist-upgrade -qq
+
+  display --indent 2 --text "- Upgrading packages before installation" --result "DONE" --color GREEN
 
   # Installing packages
-  log_event "info" "Installing basic packages ..." "true"
-  apt --yes install vim unzip zip clamav ncdu imagemagick-* jpegoptim optipng webp sendemail libio-socket-ssl-perl dnsutils ghostscript pv ppa-purge
+  log_event "info" "Installing basic packages ..." "false"
+  
+  apt --yes install vim unzip zip clamav ncdu imagemagick-* jpegoptim optipng webp sendemail libio-socket-ssl-perl dnsutils ghostscript pv ppa-purge -qq > /dev/null
+
+  display --indent 2 --text "- Installing basic packages" --result "DONE" --color GREEN
 
 }
 
@@ -150,9 +179,7 @@ selected_package_installation() {
     "certbot" " " off
     "monit" " " off
     "netdata" " " off
-    "clamav" " " off
     "cockpit" " " off
-    "wpcli" " " off
     "zabbix" " " off
   )
 
@@ -162,7 +189,7 @@ selected_package_installation() {
   
   for app in $chosen_apps; do
     
-    app=$(sed -e 's/^"//' -e 's/"$//' <<<$app) #needed to ommit double quotes
+    app=$(sed -e 's/^"//' -e 's/"$//' <<<${app}) #needed to ommit double quotes
 
     log_event "info" "Executing ${app} installer ..." "true"
     
@@ -176,6 +203,8 @@ timezone_configuration() {
 
   #configure timezone
   dpkg-reconfigure tzdata
+  
+  display --indent 2 --text "- Time Zone configuration" --result "DONE" --color GREEN
 
 }
 

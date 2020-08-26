@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc08
+# Version: 3.0-rc09
 #############################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
@@ -10,14 +10,27 @@ source "${SFOLDER}/libs/commons.sh"
 ################################################################################
 
 mysql_default_installer() {
-  log_event "info" "Running MySQL default installer" "true"
+
+  log_section "MySQL Installer"
+
+  log_event "info" "Running MySQL default installer" "false"
+
   apt --yes install mysql-server
+  
+  display --indent 2 --text "- MySQL default installation" --result "DONE" --color GREEN
 
 }
 
 mariadb_default_installer() {
-  log_event "info" "Running MariaDB default installer" "true"
-  apt --yes install mariadb-server mariadb-client
+  
+  log_section "MySQL Installer"
+
+  log_event "info" "Running MariaDB default installer" "false"
+
+  apt --yes install mariadb-server mariadb-client -qq
+
+  display --indent 2 --text "- MariaDB default installation" --result "DONE" --color GREEN
+
 }
 
 mysql_purge_installation() {
@@ -43,6 +56,7 @@ mysql_check_if_installed() {
 }
 
 mysql_check_installed_version() {
+  
   mysql --version | awk '{ print $5 }' | awk -F\, '{ print $1 }'
 
 }
