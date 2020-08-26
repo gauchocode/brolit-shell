@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc08
+# Version: 3.0-rc09
 #############################################################################
 
 ### Main dir check
@@ -141,4 +141,13 @@ test_mysql_database_exists(){
 
 #telegram_send_message "LEMPT UTILS SCRIPT NOTIFICATION TEST"
 
+log_section "Testing Titles"
+
 display --indent 2 --text "- Testing message on console" --result "DONE" --color GREEN
+
+display --indent 2 --text "- Testing message on console" --result "WARNING" --color YELLOW
+
+display --indent 2 --text "- Testing message on console" --result "ERROR" --color RED
+
+
+log_break "true"

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc08
+# Version: 3.0-rc09
 ################################################################################
 #
 # Ref: https://certbot.eff.org/docs/using.html#certbot-commands
@@ -27,7 +27,50 @@ certbot_certificate_install() {
 
 }
 
-certbot_certificate_expand(){
+certbot_certificate_force_install() {
+
+  #$1 = ${email}
+  #$2 = ${domains}
+
+  local email=$1
+  local domains=$2
+
+  certbot_certificate_delete_old_config "${domains}"
+
+  certbot_certificate_install "${email}" "${domains}"
+
+}
+
+certbot_certificate_delete_old_config() {
+
+  # $1 = ${domains}
+
+  local domains=$1
+
+  log_section "Certbot Manager"
+
+  for domain in ${domains}; do
+
+    # Check if directories exist
+    if [ -d "/etc/letsencrypt/archive/${domain}" ]; then
+      # Delete
+      rm -R "/etc/letsencrypt/archive/${domain}"
+      #log_event "info" "/etc/letsencrypt/archive/${domain} deleted" "true"
+      display --indent 2 --text "- Deleting /etc/letsencrypt/archive/${domain}" --result "DONE" --color GREEN
+
+    fi
+    if [ -d "/etc/letsencrypt/live/${domain}" ]; then
+      # Delete
+      rm -R "/etc/letsencrypt/live/${domain}"
+      #log_event "info" "/etc/letsencrypt/live/${domain} deleted" "true"
+      display --indent 2 --text "- Deleting /etc/letsencrypt/live/${domain}" --result "DONE" --color GREEN
+    fi
+
+  done
+
+}
+
+certbot_certificate_expand() {
   
   #$1 = ${email}
   #$2 = ${domains}
@@ -83,7 +126,7 @@ certbot_helper_installer_menu() {
   local email=$1
   local domains=$2
 
-  local cb_installer_options chosen_cb_installer_option cb_warning_text
+  local cb_installer_options chosen_cb_installer_option cb_warning_text certbot_result
 
   cb_installer_options="01 INSTALL_WITH_NGINX 02 INSTALL_WITH_CLOUDFLARE"
   chosen_cb_installer_option=$(whiptail --title "CERTBOT INSTALLER OPTIONS" --menu "Please choose an installation method:" 20 78 10 $(for x in ${cb_installer_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
@@ -92,10 +135,19 @@ certbot_helper_installer_menu() {
   if [ $exitstatus = 0 ]; then
 
     if [[ ${chosen_cb_installer_option} == *"01"* ]]; then
+
+      # INSTALL_WITH_NGINX
       certbot_certificate_install "${email}" "${domains}"
+      certbot_result=$?
+      if [ ${certbot_result} -eq 1 ]; then
+        log_event "warning" "Certbot failed, trying force-install ..." "true"
+        certbot_certificate_force_install "${email}" "${domains}"
+      fi
 
     fi
     if [[ ${chosen_cb_installer_option} == *"02"* ]]; then
+
+      # INSTALL_WITH_CLOUDFLARE
       certbot_certonly_cloudflare "${email}" "${domains}"
 
       cb_warning_text+="\n Now you need to follow the next steps: \n"
@@ -175,6 +227,8 @@ certbot_certificate_valid_days() {
   log_event "info" "Running: certbot certificates --cert-name ${domain}" "true"
 
   cert_days=$(certbot certificates --cert-name "${domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
+
+  # TODO: need refactor, must check if ${domain} contains www
 
   if [ "${cert_days}" == "" ]; then
       #new try with www on it

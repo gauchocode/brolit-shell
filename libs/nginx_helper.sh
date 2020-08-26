@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc08
+# Version: 3.0-rc09
 ################################################################################
 
 ### Checking some things
@@ -75,9 +75,15 @@ nginx_server_create() {
 
     # TODO: in the future, maybe we want this only on PHP projects
 
-    # Replace string to match PHP version
-    sed -i "s#PHP_V#${PHP_V}#" "${WSERVER}/sites-available/${project_domain}"
+    if [ "${PHP_V}" != "" ]; then
+        # Replace string to match PHP version
+        sed -i "s#PHP_V#${PHP_V}#" "${WSERVER}/sites-available/${project_domain}"
+    else
 
+        log_event "critical" "PHP_V not defined! Is PHP installed?" "true"
+
+    fi
+    
     #Test the validity of the nginx configuration
     nginx_result=$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc08
+# Version: 3.0-rc09
 ################################################################################
 
 ### Checking some things
@@ -21,7 +21,11 @@ php_installer() {
 
   local PHP_V=$1
 
+  log_event "info" "Installing PHP-${PHP_V} and other libraries ..." "false"
+
   apt --yes install "php${PHP_V}-fpm" "php${PHP_V}-mysql" php-imagick "php${PHP_V}-xml" "php${PHP_V}-cli" "php${PHP_V}-curl" "php${PHP_V}-mbstring" "php${PHP_V}-gd" "php${PHP_V}-intl" "php${PHP_V}-zip" "php${PHP_V}-bz2" "php${PHP_V}-bcmath" "php${PHP_V}-soap" "php${PHP_V}-dev" php-pear
+
+  log_event "info" "PHP-${PHP_V} installed!" "false"
 
 }
 
@@ -32,6 +36,7 @@ php_custom_installer() {
   apt-get update
 
   php_select_version_to_install
+
 }
 
 php_select_version_to_install() {
@@ -50,8 +55,10 @@ php_select_version_to_install() {
 
   chosen_phpv=$(whiptail --title "PHP Version Selection" --checklist "Select the versions of PHP you want to install:" 20 78 15 "${phpv_to_install[@]}" 3>&1 1>&2 2>&3)
   echo "Setting CHOSEN_PHPV=$chosen_phpv"
+  
   for phpv in $chosen_phpv; do
-    phpv=$(sed -e 's/^"//' -e 's/"$//' <<<$phpv) #needed to ommit double quotes
+
+    phpv=$(sed -e 's/^"//' -e 's/"$//' <<<${phpv}) #needed to ommit double quotes
 
     php_installer "${phpv}"
 
@@ -78,15 +85,21 @@ mail_utils_installer() {
 
 php_purge_all_installations() {
 
-  echo " > Removing All PHP versions installed ..." >>$LOG
-  apt --yes purge php*
+  log_event "info" "Removing all PHP versions and libraries ..." "true"
+
+  apt-get --yes purge php* -qq
+
+  log_event "info" "PHP purged!" "true"
 
 }
 
 php_purge_installation() {
 
-  echo " > Removing PHP ${PHP_V} ..." >>$LOG
-  apt --yes purge "php${PHP_V}-fpm" "php${PHP_V}-mysql" php-xml "php${PHP_V}-xml" "php${PHP_V}-cli" "php${PHP_V}-curl" "php${PHP_V}-mbstring" "php${PHP_V}-gd" php-imagick "php${PHP_V}-intl" "php${PHP_V}-zip" "php${PHP_V}-bz2" php-bcmath "php${PHP_V}-soap" "php${PHP_V}-dev" php-pear
+  log_event "info" "Removing PHP-${PHP_V} and libraries ..." "true"
+
+  apt-get --yes purge "php${PHP_V}-fpm" "php${PHP_V}-mysql" php-xml "php${PHP_V}-xml" "php${PHP_V}-cli" "php${PHP_V}-curl" "php${PHP_V}-mbstring" "php${PHP_V}-gd" php-imagick "php${PHP_V}-intl" "php${PHP_V}-zip" "php${PHP_V}-bz2" php-bcmath "php${PHP_V}-soap" "php${PHP_V}-dev" php-pear
+
+  log_event "info" "PHP-${PHP_V} deleted!" "true"
 
 }
 
@@ -103,7 +116,8 @@ php_check_if_installed() {
 
   fi
 
-  echo ${php_installed}
+  # Return
+  echo "${php_installed}"
 
 }
 
@@ -123,9 +137,9 @@ php_reconfigure() {
 
   # Replace string to match PHP version
   log_event "info" "Replace string to match PHP version ..." "true"
-  sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
-  sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
-  sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
+  sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
+  sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
+  sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
 
   # Unccoment /status from fpm configuration
   log_event "info" "Unccoment /status from fpm configuration ..." "true"
@@ -142,7 +156,7 @@ php_is_installed=$(php_check_if_installed)
 
 #if [ ${php_installed} == "false" ]; then
 
-PHP_INSTALLER_OPTIONS="01 INSTALL_PHP_STANDARD 02 INSTALL_PHP_CUSTOM 03 RECONFIGURE_PHP 04 OPTIMIZE_PHP"
+PHP_INSTALLER_OPTIONS="01 INSTALL_PHP_STANDARD 02 INSTALL_PHP_CUSTOM 03 RECONFIGURE_PHP 04 OPTIMIZE_PHP 05 REMOVE_PHP"
 CHOSEN_PHP_INSTALLER_OPTION=$(whiptail --title "PHP INSTALLER" --menu "Choose a PHP version to install" 20 78 10 $(for x in ${PHP_INSTALLER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
@@ -150,10 +164,14 @@ if [ $exitstatus = 0 ]; then
   if [[ ${CHOSEN_PHP_INSTALLER_OPTION} == *"01"* ]]; then
     
     DISTRO_V=$(get_ubuntu_version)
-    if [ ! "$DISTRO_V" == "1804" ]; then
+    if [ "${DISTRO_V}" == "1804" ]; then
       PHP_V="7.2"  #Ubuntu 18.04 LTS Default
-    else
+    elif [ "${DISTRO_V}" == "2004" ]; then
       PHP_V="7.4"  #Ubuntu 20.04 LTS Default
+    else
+      log_event "critical" "Non standard distro!" "true"
+      sleep
+      return 1
     fi
     
     # Installing packages
@@ -163,7 +181,8 @@ if [ $exitstatus = 0 ]; then
 
   fi
   if [[ ${CHOSEN_PHP_INSTALLER_OPTION} == *"02"* ]]; then
-    # Installing packages
+
+    # INSTALL_PHP_CUSTOM
     php_custom_installer
     mail_utils_installer
     #php_redis_installer
@@ -172,13 +191,21 @@ if [ $exitstatus = 0 ]; then
   if [[ ${php_is_installed} = "true" ]]; then
 
     if [[ ${CHOSEN_PHP_INSTALLER_OPTION} == *"03"* ]]; then
-      # PHP reconfigure
+      
+      # RECONFIGURE_PHP
       php_reconfigure
 
     fi
     if [[ ${CHOSEN_PHP_INSTALLER_OPTION} == *"04"* ]]; then
-      # Run php_optimizations.sh
+      
+      # OPTIMIZE_PHP
       "${SFOLDER}/utils/php_optimizations.sh"
+
+    fi
+    if [[ ${CHOSEN_PHP_INSTALLER_OPTION} == *"05"* ]]; then
+      
+      # REMOVE_PHP
+      php_purge_installation
 
     fi
 

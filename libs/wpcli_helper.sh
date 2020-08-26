@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc08
+# Version: 3.0-rc09
 ################################################################################
 
 wpcli_install_if_not_installed() {
@@ -29,6 +29,7 @@ wpcli_check_if_installed() {
 
     fi
 
+    # Return
     echo "${wpcli_installed}"
 
 }
@@ -39,6 +40,7 @@ wpcli_check_version() {
 
     wpcli_v=$(sudo -u www-data wp --info | grep "WP-CLI version:" | cut -d ':' -f2)
 
+    # Return
     echo "${wpcli_v}"
 
 }

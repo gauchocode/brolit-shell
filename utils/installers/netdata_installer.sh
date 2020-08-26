@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc08
+# Version: 3.0-rc09
 ################################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
@@ -20,10 +20,10 @@ netdata_required_packages() {
   ubuntu_version=$(get_ubuntu_version)
 
   if [ "${ubuntu_version}" = "1804" ]; then
-    apt --yes install zlib1g-dev uuid-dev libuv1-dev liblz4-dev libjudy-dev libssl-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python python-mysqldb lm-sensors libmnl netcat nodejs python-ipaddress python-dnspython iproute2 python-beanstalkc libuv liblz4 Judy openssl
+    apt --yes install zlib1g-dev uuid-dev libuv1-dev liblz4-dev libjudy-dev libssl-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python python-mysqldb lm-sensors libmnl netcat nodejs python-ipaddress python-dnspython iproute2 python-beanstalkc libuv liblz4 Judy openssl -qq
   
   elif [ "${ubuntu_version}" = "2004" ]; then
-    apt --yes install curl python3-mysqldb lm-sensors libmnl netcat openssl
+    apt --yes install curl python3-mysqldb lm-sensors libmnl netcat openssl -qq
 
   fi
 
@@ -31,10 +31,13 @@ netdata_required_packages() {
 
 netdata_installer() {
 
-  log_event "info" "\nInstalling Netdata...\n" "true"
+  log_event "info" "Installing Netdata ..." "true"
+
   bash <(curl -Ss https://my-netdata.io/kickstart.sh) all --dont-wait
 
   killall netdata && cp system/netdata.service /etc/systemd/system/
+
+  log_event "info" "Netdata Installed" "true"
 
 }
 
@@ -134,17 +137,18 @@ netdata_telegram_config() {
       fi
 
     else
-      exit 1
+      return 1
 
     fi
 
   else
-    exit 1
+    return 1
 
   fi
 
 }
 
+# TODO: replace with mysql_helper function
 create_netdata_db_user() {
 
   local SQL1 SQL2 SQL3
@@ -155,7 +159,7 @@ create_netdata_db_user() {
   SQL3="FLUSH PRIVILEGES;"
 
   log_event "info" "Creating netdata user in MySQL" "true"
-  mysql -u root -p"${MPASS}" -e "${SQL1}${SQL2}${SQL3}" >>$LOG
+  mysql -u root -p"${MPASS}" -e "${SQL1}${SQL2}${SQL3}"
 
 }
 
@@ -172,7 +176,7 @@ if [ ! -x "${NETDATA}" ]; then
     exitstatus=$?
 
     if [ $exitstatus = 0 ]; then
-      echo "netdata_subdomain=${netdata_subdomain}" >>/root/.broobe-utils-options
+      echo "netdata_subdomain=${netdata_subdomain}" >>"/root/.broobe-utils-options"
 
     else
       return 1
@@ -196,9 +200,10 @@ if [ ! -x "${NETDATA}" ]; then
 
       log_event "info" "Updating packages before installation ..." "true"
 
-      apt --yes update
+      apt --yes update -qq
 
       netdata_required_packages
+
       netdata_installer
 
       # Netdata nginx proxy configuration

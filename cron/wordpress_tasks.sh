@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc08
+# Version: 3.0-rc09
 ################################################################################
 
 ### Main dir check
@@ -81,8 +81,6 @@ else
             # Ommit empty elements created by spaces on mapfile
             if [ "${wpcli_core_verify_result}" != "" ]; then
 
-              #log_event "debug" "wpcli_core_verify_result: ${wpcli_core_verify_result}" "false"
-
               # Check results
               wpcli_core_verify_result_file=$(echo "${wpcli_core_verify_result}" |  grep "File doesn't" | cut -d ":" -f3)
               
@@ -92,7 +90,7 @@ else
               # Ommit empty elements
               if [ "${wpcli_core_verify_result_file}" != "" ] && [[ "${whitelisted_wp_files}" != *"${wpcli_core_verify_result_file}"* ]]; then
 
-                #log_event "debug" "wpcli_core_verify_result_file: ${wpcli_core_verify_result_file}" "false"
+                log_event "info" "${wpcli_core_verify_result_file}" "false"
                 
                 # Telegram text
                 telegram_text+="${wpcli_core_verify_result} "
@@ -105,6 +103,9 @@ else
 
           if [ "${telegram_text}" != "" ]; then
             telegram_send_message "⛔ WordPress Checksum failed for site ${project_name} on ${VPSNAME}: ${telegram_text} "
+
+          else
+            log_event "info" "WordPress Checksum OK!" "false"
 
           fi
 
