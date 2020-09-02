@@ -1,0 +1,61 @@
+#!/bin/bash
+#
+#    00-header - create the header of the MOTD
+#    Copyright (C) 2009-2010 Canonical Ltd.
+#
+#    Authors: Dustin Kirkland <kirkland@canonical.com>
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License along
+#    with this program; if not, write to the Free Software Foundation, Inc.,
+#    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+# Foreground Colours
+BLACK='\E[30;40m'
+RED='\E[31;40m'
+GREEN='\E[32;40m'
+YELLOW='\E[33;40m'
+ORANGE='\033[0;33m'
+BLUE='\E[34;40m'
+MAGENTA='\E[35;40m'
+CYAN='\E[36;40m'
+WHITE='\E[37;40m'
+ENDCOLOR='\033[0m'
+NORMAL="\033[m"
+
+[ -r /etc/lsb-release ] && . /etc/lsb-release
+
+if [ -z "$DISTRIB_DESCRIPTION" ] && [ -x /usr/bin/lsb_release ]; then
+	# Fall back to using the very slow lsb_release utility
+	DISTRIB_DESCRIPTION=$(lsb_release -s -d)
+fi
+
+echo -e "${CYAN}                                                 ${ENDCOLOR}" >&2
+
+printf "Welcome to %s (%s %s %s)\n" "$DISTRIB_DESCRIPTION" "$(uname -o)" "$(uname -r)" "$(uname -m)"
+
+echo -e "${CYAN}                                                 ${ENDCOLOR}" >&2
+echo -e "${CYAN}██████╗ ██████╗  ██████╗  ██████╗ ██████╗ ███████${ENDCOLOR}" >&2
+echo -e "${CYAN}██╔══██╗██╔══██╗██╔═══██╗██╔═══██╗██╔══██╗██╔══  ${ENDCOLOR}" >&2
+echo -e "${CYAN}██████╔╝██████╔╝██║   ██║██║   ██║██████╔╝█████  ${ENDCOLOR}" >&2
+echo -e "${CYAN}██╔══██╗██╔══██╗██║   ██║██║   ██║██╔══██╗██╔    ${ENDCOLOR}" >&2
+echo -e "${CYAN}██████╔╝██║  ██║╚██████╔╝╚██████╔╝██████╔╝███████${ENDCOLOR}" >&2
+echo -e "${CYAN}╚═════╝ ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═════╝ ╚══════${ENDCOLOR}" >&2
+echo -e "${CYAN}                                                 ${ENDCOLOR}" >&2
+
+# if it is non-root user, skip
+if [ $(id -u) -ne 0 ]; then
+    exit 0
+fi
+
+echo -e "${RED}You are loggedin as root, please don't do anything stupid...${ENDCOLOR}" >&2
+echo -e "${CYAN}                                                 ${ENDCOLOR}" >&2
