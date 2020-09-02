@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc09
+# Version: 3.0-rc10
 ################################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
@@ -125,7 +125,9 @@ wp_change_permissions() {
 
   fi
 
-  log_event "info" "Permissions changes for: ${project_dir}" "true"
+  log_event "info" "Permissions changes for: ${project_dir}" "false"
+  display --indent 2 --text "- Setting proper permissions for: ${project_dir}" --result "DONE" --color GREEN
+
   
 }
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc09
+# Version: 3.0-rc10
 ################################################################################
 
 #
@@ -12,7 +12,7 @@
 #################################################################################
 #
 
-SCRIPT_V="3.0-rc09"
+SCRIPT_V="3.0-rc10"
 
 # Hostname
 VPSNAME="$HOSTNAME"
@@ -50,8 +50,9 @@ PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
 MHOST="localhost"
 MUSER="root"
 
+# TODO: must be an option
 # Packages to watch
-PACKAGES=(linux-firmware dpkg perl nginx "php${PHP_V}-fpm" mysql-server curl openssl)
+PACKAGES=(linux-firmware dpkg nginx "php${PHP_V}-fpm" mysql-server openssl)
 
 MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+') # Main partition
 
@@ -205,7 +206,13 @@ script_init() {
   # Checking required packages to run
   # shellcheck source=${SFOLDER}/libs/packages_helper.sh
   source "${SFOLDER}/libs/packages_helper.sh"
+  
   check_packages_required
+  packages_output=$?
+  if [ ${packages_output} -eq 1 ];then
+    log_event "warning" "Some script dependencies are not setisfied." "true"
+    prompt_return_or_finish
+  fi
 
   # OLD METHOD (DEPRECATED)
   #SERVER_IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
@@ -220,18 +227,34 @@ script_init() {
 
   fi
 
-  # MySQL
-  MYSQL="$(which mysql)"
-  MYSQLDUMP="$(which mysqldump)"
-
-  # TAR
-  TAR="$(which tar)"
-
-  # FIND
-  FIND="$(which find)"
-
   # EXPORT VARS (GLOBALS)
   export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK SERVER_IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
+
+}
+
+customize_ubuntu_login_message() {
+
+  # TODO: screenfetch support?
+
+  # Remove unnecesary messages
+  if [ -d "/etc/update-motd.d/10-help-text " ]; then
+    rm "/etc/update-motd.d/10-help-text "
+
+  fi
+  if [ -d "/etc/update-motd.d/50-motd-news" ]; then
+    rm "/etc/update-motd.d/50-motd-news"
+
+  fi
+  if [ -d "/etc/update-motd.d/00-header" ]; then
+    rm "/etc/update-motd.d/00-header"
+
+  fi
+
+  # Copy new login message
+  cp "${SFOLDER}/config/motd/00-header" "/etc/update-motd.d"
+
+  # Force update
+  run-parts "/etc/update-motd.d"
 
 }
 
@@ -767,10 +790,13 @@ log_event() {
         ;;
 
       debug)
-        # TODO: Add a debug support
-        echo " > DEBUG: ${message}" >> "${LOG}"
-        if [ "${console_display}" = "true" ]; then
-          echo -e "${B_MAGENTA} > ${message}${ENDCOLOR}" >&2
+        if [ "${DEBUG}" -eq 1 ]; then
+
+          echo " > DEBUG: ${message}" >> "${LOG}"
+          if [ "${console_display}" = "true" ]; then
+            echo -e "${B_MAGENTA} > ${message}${ENDCOLOR}" >&2
+          fi
+
         fi
         ;;
 
@@ -793,7 +819,7 @@ log_break() {
 
   local log_break
   
-  log_break="################################################################################################"
+  log_break="--------------------------------------------------------------"
   
   echo "${log_break}" >> "${LOG}"
   if [ "${console_display}" = "true" ]; then
@@ -849,7 +875,7 @@ display() {
           ;;
           *)
               echo "INVALID OPTION (Display): $1"
-              ExitFatal
+              #ExitFatal
           ;;
       esac
       # Go to next parameter
@@ -958,10 +984,10 @@ whiptail_event() {
   local whip_title=$1
   local whip_message=$2
 
-  whip_message_result=$(whiptail --title "${whip_title}" --msgbox "${whip_message}" 15 60 3>&1 1>&2 2>&3)
+  whiptail --title "${whip_title}" --msgbox "${whip_message}" 15 60 3>&1 1>&2 2>&3
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-    log_event "info" "whip_message_result for ${whip_title}=$whip_message_result" "true"
+    return 0
 
   else
     return 1
@@ -1349,16 +1375,17 @@ change_ownership(){
 
 prompt_return_or_finish() {
 
+  log_break "true"
+
   while true; do
-    echo -e ${YELLOW}"> Do you want to return to menu?"${ENDCOLOR}
+    echo -e "${YELLOW}> Do you want to return to menu?${ENDCOLOR}"
     read -p "Please type 'y' or 'n'" yn
     case $yn in
       [Yy]*)
-        echo -e ${CYAN}"Returning to menu ..."${ENDCOLOR}
         break
         ;;
       [Nn]*)
-        echo -e ${B_RED}"Exiting script ..."${ENDCOLOR}
+        echo -e "${B_RED}Exiting script ...${ENDCOLOR}"
         exit 0
         ;;
       *) echo "Please answer yes or no." ;;
@@ -1590,7 +1617,7 @@ ask_folder_to_install_sites() {
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
 
-      log_event "info" "Folder to work with: ${folder_to_install}" "true"
+      log_event "info" "Folder to work with: ${folder_to_install}" "false"
 
       # Return
       echo "${folder_to_install}"
@@ -1602,7 +1629,7 @@ ask_folder_to_install_sites() {
 
   else
 
-    log_event "info" "Folder to install: ${folder_to_install}" "true"
+    log_event "info" "Folder to install: ${folder_to_install}" "false"
     
     # Return
     echo "${folder_to_install}"

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc09
+# Version: 3.0-rc10
 ################################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
@@ -295,30 +295,30 @@ mail_filesbackup_section() {
     local ERROR=$3
     local ERROR_TYPE=$4
 
-    BK_TYPE="Files"
+    BK_TYPE='Files'
 
     if [ "$ERROR" = true ]; then
 
         # Changing global
-        STATUS_F="ERROR"
+        STATUS_F='ERROR'
 
         # Changing locals
         STATUS_ICON_F="💩"        
-        CONTENT="<b>${BK_TYPE} Backup Error: ${ERROR_TYPE}<br />Please check log file.</b> <br />"
+        CONTENT='<b>'${BK_TYPE}' Backup Error: '${ERROR_TYPE}'<br />Please check log file.</b> <br />'
         COLOR='red'
 
     else
 
         # Changing global
-        STATUS_F="OK"
+        STATUS_F='OK'
 
         # Changing locals
-        STATUS_ICON_F="✅"        
-        CONTENT=""
+        STATUS_ICON_F='✅'
+        CONTENT=''
         COLOR='#503fe0'
-        SIZE_LABEL=""
+        SIZE_LABEL=''
         FILES_LABEL='<b>Backup files includes:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
-        FILES_INC=""
+        FILES_INC=''
 
         COUNT=0
 
@@ -327,7 +327,7 @@ mail_filesbackup_section() {
             BK_FL_SIZE=${BK_FL_SIZES[$COUNT]}
 
             FILES_INC_LINE_P1='<div><span style="margin-right:5px;">'
-            FILES_INC_LINE_P2="${FILES_INC}${backup_file}"
+            FILES_INC_LINE_P2=${FILES_INC}${backup_file}
             FILES_INC_LINE_P3='</span> <span style="background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;">'
             FILES_INC_LINE_P4=${BK_FL_SIZE}
             FILES_INC_LINE_P5='</span></div>'
@@ -351,7 +351,7 @@ mail_filesbackup_section() {
     HEADEROPEN1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
     HEADEROPEN2=';padding:5px 0 10px 10px;width:100%;height:30px">'
     HEADEROPEN=${HEADEROPEN1}${COLOR}${HEADEROPEN2}
-    HEADERTEXT="Files Backup: ${STATUS_F} ${STATUS_ICON_F}"
+    HEADERTEXT='Files Backup: ${STATUS_F} ${STATUS_ICON_F}'
     HEADERCLOSE='</div>'
 
     BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
@@ -384,30 +384,30 @@ mail_configbackup_section() {
 
     local count files_inc files_inc_line_p1 files_inc_line_p2 files_inc_line_p3 files_inc_line_p4 files_inc_line_p5 bk_scf_size
 
-    BK_TYPE="Config"
+    BK_TYPE='Config'
 
-    if [ "$ERROR" = true ]; then
+    if [ "${ERROR}" = true ]; then
 
         # Changing global
-        STATUS_F="ERROR"
+        STATUS_F='ERROR'
 
         # Changing locals
         STATUS_ICON_F="💩"        
-        CONTENT="<b>${BK_TYPE} Backup Error: ${ERROR_TYPE}<br />Please check log file.</b> <br />"
+        CONTENT='<b>'${BK_TYPE}' Backup Error: '${ERROR_TYPE}'<br />Please check log file.</b> <br />'
         COLOR='red'
 
     else
 
         # Changing global
-        STATUS_F="OK"
+        STATUS_F='OK'
 
         # Changing locals
-        STATUS_ICON_F="✅"        
-        CONTENT=""
+        STATUS_ICON_F='✅'
+        CONTENT=''
         COLOR='#503fe0'
-        SIZE_LABEL=""
+        SIZE_LABEL=''
         FILES_LABEL='<b>Backup files includes:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
-        files_inc=""
+        files_inc=''
 
         count=0
 
@@ -416,12 +416,12 @@ mail_configbackup_section() {
             bk_scf_size=${BK_SCF_SIZES[$count]}
 
             files_inc_line_p1='<div><span style="margin-right:5px;">'
-            files_inc_line_p2="${files_inc}${backup_line}"
+            files_inc_line_p2=${files_inc}${backup_line}
             files_inc_line_p3='</span><span style="background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;">'
-            files_inc_line_p4="${bk_scf_size}"
+            files_inc_line_p4=${bk_scf_size}
             files_inc_line_p5='</span></div>'
 
-            files_inc="${files_inc_line_p1}${files_inc_line_p2}${files_inc_line_p3}${files_inc_line_p4}${files_inc_line_p5}"
+            files_inc=${files_inc_line_p1}${files_inc_line_p2}${files_inc_line_p3}${files_inc_line_p4}${files_inc_line_p5}
 
             count=$((count + 1))
 
@@ -434,7 +434,7 @@ mail_configbackup_section() {
     HEADEROPEN1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
     HEADEROPEN2=';padding:5px 0 10px 10px;width:100%;height:30px">'
     HEADEROPEN=${HEADEROPEN1}${COLOR}${HEADEROPEN2}
-    HEADERTEXT="Config Backup: ${STATUS_F} ${STATUS_ICON_F}"
+    HEADERTEXT='Config Backup: '${STATUS_F} ${STATUS_ICON_F}
     HEADERCLOSE='</div>'
 
     BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
@@ -465,28 +465,28 @@ mail_mysqlbackup_section() {
     local ERROR=$3
     local ERROR_TYPE=$4
 
-    BK_TYPE="Database"
+    BK_TYPE='Database'
 
     if [ "${ERROR}" = true ]; then
         # Changing global
-        STATUS_D="ERROR"
+        STATUS_D='ERROR'
 
         # Changing locals
-        STATUS_ICON_D="💩"
-        CONTENT_D="<b>${BK_TYPE} Backup with errors:<br />${ERROR_TYPE}<br /><br />Please check log file.</b> <br />"
+        STATUS_ICON_D='💩'
+        CONTENT_D='<b>'${BK_TYPE}' Backup with errors:<br />'${ERROR_TYPE}'<br /><br />Please check log file.</b> <br />'
         COLOR_D='#b51c1c'
 
     else
         # Changing global
-        STATUS_D="OK"
+        STATUS_D='OK'
 
         # Changing locals
-        STATUS_ICON_D="✅"
-        CONTENT_D=""
+        STATUS_ICON_D='✅'
+        CONTENT_D=''
         COLOR_D='#503fe0'
-        SIZE_D=""
+        SIZE_D=''
         FILES_LABEL_D='<b>Backup files includes:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
-        FILES_INC_D=""
+        FILES_INC_D=''
 
         COUNT=0
 
@@ -495,9 +495,9 @@ mail_mysqlbackup_section() {
             BK_DB_SIZE=${BK_DB_SIZES[$COUNT]}
 
             FILES_INC_D_LINE_P1='<div><span style="margin-right:5px;">'
-            FILES_INC_D_LINE_P2="${FILES_INC_D}${backup_file}"
+            FILES_INC_D_LINE_P2=${FILES_INC_D}${backup_file}
             FILES_INC_D_LINE_P3='</span> <span style="background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;">'
-            FILES_INC_D_LINE_P4="${BK_DB_SIZE}"
+            FILES_INC_D_LINE_P4=${BK_DB_SIZE}
             FILES_INC_D_LINE_P5='</span></div>'
 
             FILES_INC_D="${FILES_INC_D_LINE_P1}${FILES_INC_D_LINE_P2}${FILES_INC_D_LINE_P3}${FILES_INC_D_LINE_P4}${FILES_INC_D_LINE_P5}"
@@ -513,14 +513,14 @@ mail_mysqlbackup_section() {
     HEADEROPEN1_D='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
     HEADEROPEN2_D=';padding:5px 0 10px 10px;width:100%;height:30px">'
     HEADEROPEN_D="${HEADEROPEN1_D}${COLOR_D}${HEADEROPEN2_D}"
-    HEADERTEXT_D="Database Backup: ${STATUS_D} ${STATUS_ICON_D}"
+    HEADERTEXT_D='Database Backup: '${STATUS_D} ${STATUS_ICON_D}
     HEADERCLOSE_D='</div>'
 
     BODYOPEN_D='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px 0 0 10px;width:100%;">'
     BODYCLOSE_D='</div>'
 
-    HEADER_D=${HEADEROPEN_D}${HEADERTEXT_D}${HEADERCLOSE_D}
-    BODY_D=${BODYOPEN_D}${CONTENT_D}${SIZE_D}${FILES_LABEL_D}${FILES_INC_D}${FILES_LABEL_D_END}${BODYCLOSE_D}
+    HEADER_D="${HEADEROPEN_D}${HEADERTEXT_D}${HEADERCLOSE_D}"
+    BODY_D="${BODYOPEN_D}${CONTENT_D}${SIZE_D}${FILES_LABEL_D}${FILES_INC_D}${FILES_LABEL_D_END}${BODYCLOSE_D}"
 
     # Write e-mail parts files
     echo "${HEADER_D}" >"${BAKWP}/db-bk-${NOW}.mail"
