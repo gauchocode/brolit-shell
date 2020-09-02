@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc09
+# Version: 3.0-rc10
 ################################################################################
 #
 # Ref: https://certbot.eff.org/docs/using.html#certbot-commands
@@ -21,23 +21,39 @@ certbot_certificate_install() {
   local email=$1
   local domains=$2
 
+  local certbot_result
+
   log_event "info" "Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains}" "true"
   
   certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}"
 
-}
+  certbot_result=$?
+  if [ ${certbot_result} -eq 0 ];then
+    log_event "success" "Certificate installation for ${domains} ok" "false"
+    display --indent 2 --text "- Certificate installation" --result "DONE" --color GREEN
 
-certbot_certificate_force_install() {
+  else
+    log_event "warning" "Certificate installation failed, trying force-install ..." "false"
+    display --indent 2 --text "- Installing certificate on domains" --result "FAIL" --color RED
 
-  #$1 = ${email}
-  #$2 = ${domains}
+    # Deleting old config
+    certbot_certificate_delete_old_config "${domains}"
+    
+    # Running certbot again
+    certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}"
+    
+    certbot_result=$?
+    if [ ${certbot_result} -eq 0 ];then
+      log_event "success" "Certificate installation for ${domains} ok" "false"
+      display --indent 2 --text "- Certificate installation" --result "DONE" --color GREEN
 
-  local email=$1
-  local domains=$2
+    else
+      log_event "error" "Certificate installation for ${domains} failed!" "false"
+      display --indent 2 --text "- Installing certificate on domains" --result "FAIL" --color RED
 
-  certbot_certificate_delete_old_config "${domains}"
+    fi
 
-  certbot_certificate_install "${email}" "${domains}"
+  fi
 
 }
 
@@ -47,23 +63,24 @@ certbot_certificate_delete_old_config() {
 
   local domains=$1
 
-  log_section "Certbot Manager"
-
   for domain in ${domains}; do
 
     # Check if directories exist
     if [ -d "/etc/letsencrypt/archive/${domain}" ]; then
       # Delete
       rm -R "/etc/letsencrypt/archive/${domain}"
-      #log_event "info" "/etc/letsencrypt/archive/${domain} deleted" "true"
       display --indent 2 --text "- Deleting /etc/letsencrypt/archive/${domain}" --result "DONE" --color GREEN
 
     fi
     if [ -d "/etc/letsencrypt/live/${domain}" ]; then
       # Delete
       rm -R "/etc/letsencrypt/live/${domain}"
-      #log_event "info" "/etc/letsencrypt/live/${domain} deleted" "true"
       display --indent 2 --text "- Deleting /etc/letsencrypt/live/${domain}" --result "DONE" --color GREEN
+    fi
+    if [ -f "/etc/letsencrypt/renewal/${domain}.conf" ]; then
+      # Delete
+      rm "/etc/letsencrypt/renewal/${domain}.conf"
+      display --indent 2 --text "- Deleting /etc/letsencrypt/renewal/${domain}.conf" --result "DONE" --color GREEN
     fi
 
   done
@@ -137,17 +154,18 @@ certbot_helper_installer_menu() {
     if [[ ${chosen_cb_installer_option} == *"01"* ]]; then
 
       # INSTALL_WITH_NGINX
+      
+      log_section "Certificate Installation with Certbot Nginx"
+
       certbot_certificate_install "${email}" "${domains}"
-      certbot_result=$?
-      if [ ${certbot_result} -eq 1 ]; then
-        log_event "warning" "Certbot failed, trying force-install ..." "true"
-        certbot_certificate_force_install "${email}" "${domains}"
-      fi
 
     fi
     if [[ ${chosen_cb_installer_option} == *"02"* ]]; then
 
       # INSTALL_WITH_CLOUDFLARE
+      
+      log_section "Certificate Installation with Certbot Cloudflare"
+
       certbot_certonly_cloudflare "${email}" "${domains}"
 
       cb_warning_text+="\n Now you need to follow the next steps: \n"
@@ -166,11 +184,8 @@ certbot_helper_installer_menu() {
     fi
 
     prompt_return_or_finish
-    certbot_helper_installer_menu
 
   fi
-
-  main_menu
 
 }
 
@@ -193,6 +208,34 @@ certbot_certonly_cloudflare() {
 
   # Maybe add a non interactive mode?
   # certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf --non-interactive --agree-tos --redirect -m ${EMAIL} -d ${DOMAINS} --preferred-challenges dns-01
+
+  certbot_result=$?
+  if [ ${certbot_result} -eq 0 ];then
+    log_event "success" "Certificate installation for ${domains} ok" "false"
+    display --indent 2 --text "- Certificate installation" --result "DONE" --color GREEN
+
+  else
+    log_event "warning" "Certificate installation failed, trying force-install ..." "false"
+    display --indent 2 --text "- Installing certificate on domains" --result "FAIL" --color RED
+
+    # Deleting old config
+    certbot_certificate_delete_old_config "${domains}"
+    
+    # Running certbot again
+    certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m "${email}" -d "${domains}" --preferred-challenges dns-01
+    
+    certbot_result=$?
+    if [ ${certbot_result} -eq 0 ];then
+      log_event "success" "Certificate installation for ${domains} ok" "false"
+      display --indent 2 --text "- Certificate installation" --result "DONE" --color GREEN
+
+    else
+      log_event "error" "Certificate installation for ${domains} failed!" "false"
+      display --indent 2 --text "- Installing certificate on domains" --result "FAIL" --color RED
+
+    fi
+
+  fi
 
 }
 
@@ -264,8 +307,8 @@ certbot_certificate_delete() {
   else
 
     while true; do
-      echo -e ${YELLOW}"> Do you really want to delete de certificates for ${domains}?"${ENDCOLOR}
-      read -p "Please type 'y' or 'n'" yn
+      echo -e "${YELLOW}> Do you really want to delete de certificates for ${domains}?${ENDCOLOR}"
+      read -p -r "Please type 'y' or 'n'" yn
 
       case $yn in
       [Yy]*)

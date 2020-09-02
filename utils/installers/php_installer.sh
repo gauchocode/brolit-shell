@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc09
+# Version: 3.0-rc10
 ################################################################################
 
 ### Checking some things
@@ -170,7 +170,6 @@ if [ $exitstatus = 0 ]; then
       PHP_V="7.4"  #Ubuntu 20.04 LTS Default
     else
       log_event "critical" "Non standard distro!" "true"
-      sleep
       return 1
     fi
     

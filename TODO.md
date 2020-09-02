@@ -7,6 +7,8 @@
 - [ ] Notifications: Email HTML breaks sometimes.
 - [ ] Backups: make_project_backup is broken, need a refactor asap!
 - [ ] Nginx: put_project_offline need another aproach. Maybe put an index.html with message.
+- [ ] SFTP: Support sftp_add_user
+- [ ] Add a method to auto-load scripts from /utils
 
 ### In Progress
 

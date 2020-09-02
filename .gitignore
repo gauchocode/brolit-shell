@@ -1,2 +1,6 @@
 .vscode/
 settings.json
+res
+tmp/
+tmp-backup/
+log/

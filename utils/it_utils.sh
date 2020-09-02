@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc09
+# Version: 3.0-rc10
 ################################################################################
 #
 # https://www.cyberciti.biz/faq/ubuntu-20-04-lts-change-hostname-permanently/
@@ -9,7 +9,7 @@
 
 ### Checking some things
 if [[ -z "${SFOLDER}" ]]; then
-  echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+  echo -e "${B_RED} > Error: The script can only be runned by runner.sh! Exiting ...${ENDCOLOR}"
   exit 0
 fi
 
@@ -25,7 +25,7 @@ it_utils_menu() {
 
   local it_util_options chosen_it_util_options new_ssh_port
 
-  it_util_options="01 SECURITY_TOOLS 02 SERVER_OPTIMIZATIONS 03 CHANGE_SSH_PORT 04 CHANGE_HOSTNAME 05 ADD_FLOATING_IP 06 BLACKLIST_CHECKER 07 BENCHMARK_SERVER"
+  it_util_options="01 SECURITY_TOOLS 02 SERVER_OPTIMIZATIONS 03 CHANGE_SSH_PORT 04 CHANGE_HOSTNAME 05 ADD_FLOATING_IP 06 RESET_MYSQL_ROOT_PSW 07 BLACKLIST_CHECKER 08 BENCHMARK_SERVER"
   chosen_it_util_options=$(whiptail --title "IT UTILS MENU" --menu "Choose a script to Run" 20 78 10 $(for x in ${it_util_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -67,8 +67,19 @@ it_utils_menu() {
         add_floating_IP "${floating_IP}"
       fi
     fi
-    # BLACKLIST_CHECKER
+    # RESET_MYSQL_ROOT_PSW
     if [[ ${chosen_it_util_options} == *"06"* ]]; then
+    
+      db_root_psw=$(whiptail --title "MYSQL ROOT PASSWORD" --inputbox "Insert the new root password for MySQL:" 10 60 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ ${exitstatus} = 0 ]; then
+        # shellcheck source=${SFOLDER}/libs/mysql_helper.sh
+        source "${SFOLDER}/libs/mysql_helper.sh" "${IP_TO_TEST}"
+        mysql_root_psw_change "${db_root_psw}"
+      fi
+    fi
+    # BLACKLIST_CHECKER
+    if [[ ${chosen_it_util_options} == *"07"* ]]; then
     
       IP_TO_TEST=$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
@@ -78,7 +89,7 @@ it_utils_menu() {
       fi
     fi
     # BENCHMARK_SERVER
-    if [[ ${chosen_it_util_options} == *"07"* ]]; then
+    if [[ ${chosen_it_util_options} == *"08"* ]]; then
       # shellcheck source=${SFOLDER}/tools/bench_scripts.sh
       source "${SFOLDER}/tools/third-party/bench_scripts.sh"
 

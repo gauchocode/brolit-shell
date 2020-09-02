@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc09
+# Version: 3.0-rc10
 #############################################################################
 
 #without-shell-access
@@ -34,9 +34,13 @@ sftp_add_user() {
         sed -i "/SFTP_U/s/'[^']*'/'${username}'/2" "/etc/ssh/sshd_config"
     fi
     if [[ ${shell_access} = "" || ${shell_access} = "no" ]]; then
+
         sed -i "/SHELL_ACCESS/s/'[^']*'/'${shell_access}'/2" "/etc/ssh/sshd_config"
+
     else
+    
         sed -i "/SHELL_ACCESS/s/'[^']*'/'${shell_access}'/2" "/etc/ssh/sshd_config"
+
     fi
 
     service sshd restart

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc09
+# Version: 3.0-rc10
 ################################################################################
 
 wpcli_install_if_not_installed() {
@@ -47,22 +47,27 @@ wpcli_check_version() {
 
 wpcli_install() {
 
-    log_event "info" "Installing wp-cli ..." "true"
+    log_event "info" "Installing wp-cli ..." "false"
 
     curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
 
     chmod +x wp-cli.phar
     sudo mv wp-cli.phar "/usr/local/bin/wp"
 
-    log_event "success" "wp-cli installed" "true"
-
+    log_event "success" "wp-cli installed" "false"
+    display --indent 2 --text "- Installing wp-cli" --result "DONE" --color GREEN
+    
 }
 
 wpcli_update() {
 
-    log_event "info" "Running: wp-cli update" "true"
+    log_event "info" "Running: wp-cli update" "false"
+    display --indent 2 --text "- Updating wp-cli" --result "DONE" --color GREEN
 
-    wp cli update
+    wp cli update --quiet
+
+    log_event "success" "wp-cli installed" "false"
+    
 
 }
 
@@ -176,15 +181,17 @@ wpcli_core_install() {
 
             log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core download --skip-content --version=${wp_version}" "true"
 
-            sudo -u www-data wp --path="${wp_site}" core download --skip-content --version="${wp_version}"
+            sudo -u www-data wp --path="${wp_site}" core download --skip-content --version="${wp_version}" --quiet
 
         else
 
             log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core download --skip-content" "true"
 
-            sudo -u www-data wp --path="${wp_site}" core download --skip-content
+            sudo -u www-data wp --path="${wp_site}" core download --skip-content --quiet
 
         fi
+
+        display --indent 2 --text "- Wordpress installation for ${wp_site}" --result "DONE" --color GREEN
 
     else
         # Log failure
@@ -233,6 +240,8 @@ wpcli_core_reinstall() {
             echo "fail"
 
         fi
+
+        display --indent 2 --text "- Wordpress re-install for ${wp_site}" --result "DONE" --color GREEN
         
     else
         # Log failure
@@ -252,27 +261,37 @@ wpcli_core_update() {
     local wp_site=$1
     local verify_core_update
 
-    verify_core_update=$(sudo -u www-data wp --path="${wp_site}" update | grep ":" | cut -d ':' -f1)
+    log_section "WordPress Updater"
 
+    verify_core_update=$(sudo -u www-data wp --path="${wp_site}" update | grep ":" | cut -d ':' -f1)
+    
     if [ "${verify_core_update}" = "Success" ];then
+
+        display --indent 2 --text "- Download new WordPress version" --result "DONE" --color GREEN
 
         # Translations update
         sudo -u www-data wp --path="${wp_site}" language core update
+        display --indent 2 --text "- Language update" --result "DONE" --color GREEN
 
         # Update database
         sudo -u www-data wp --path="${wp_site}" core update-db
+        display --indent 2 --text "- Database update" --result "DONE" --color GREEN
 
         # Cache Flush
         sudo -u www-data wp --path="${wp_site}" cache flush
+        display --indent 2 --text "- Flush cache" --result "DONE" --color GREEN
 
         # Rewrite Flush
         sudo -u www-data wp --path="${wp_site}" rewrite flush
+        display --indent 2 --text "- Flush rewrite" --result "DONE" --color GREEN
 
-        log_event "success" "Wordpress core updated" "true"
+        log_event "success" "Wordpress core updated" "false"
+        display --indent 2 --text "- Finishing update" --result "DONE" --color GREEN
 
     else
 
-        log_event "error" "Wordpress core failed" "true"
+        log_event "error" "Wordpress update failed" "false"
+        display --indent 2 --text "- Download new WordPress version" --result "FAIL" --color RED
     
     fi
 
@@ -566,17 +585,17 @@ wpcli_search_and_replace() {
     # TODO: for some reason when it's run with --url always fails
     if $(wp --allow-root --url=http://${wp_site_url} core is-installed --network); then
 
-        log_event "info" "Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace} --network" "true"
+        log_event "debug" "Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace} --network" "true"
         wp --allow-root --path="${wp_site}" search-replace "${search}" "${replace}" --network
 
     else
 
-        log_event "info" "Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace}" "true"
+        log_event "debug" "Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace}" "true"
         wp --allow-root --path="${wp_site}" search-replace "${search}" "${replace}"
 
     fi
 
-    log_event "info" "Running: wp --allow-root --path="${wp_site}" cache flush" "true"
+    log_event "debug" "Running: wp --allow-root --path="${wp_site}" cache flush" "true"
     wp --allow-root --path="${wp_site}" cache flush
 
 }
@@ -604,6 +623,7 @@ wpcli_reset_user_passw(){
     local wp_user=$2
     local wp_user_pass=$3
 
+    log_event "info" "User password reset for ${wp_user}. New password: ${wp_user_pass}" "true"
     wp --allow-root --path="${wp_site}" user update "${wp_user}" --user_pass="${wp_user_pass}"
     
 }
@@ -619,11 +639,12 @@ wpcli_force_reinstall_plugins() {
     local verify_plugin   
 
     if [ "${plugin}" = "" ]; then
-        echo -e ${B_GREEN}" > Running: sudo -u www-data wp --path="${wp_site}" plugin install $(ls -1p ${wp_site}/wp-content/plugins | grep '/$' | sed 's/\/$//') --force"${ENDCOLOR} >&2
+
+        log_event "info" "Running: sudo -u www-data wp --path=${wp_site} plugin install $(ls -1p ${wp_site}/wp-content/plugins | grep '/$' | sed 's/\/$//') --force" "true"
         sudo -u www-data wp --path="${wp_site}" plugin install $(ls -1p ${wp_site}/wp-content/plugins | grep '/$' | sed 's/\/$//') --force
     
     else
-        echo -e ${B_GREEN}" > Running: sudo -u www-data wp --path="${wp_site}" plugin install "${plugin}" --force"${ENDCOLOR} >&2
+        log_event "info" "Running: sudo -u www-data wp --path=${wp_site} plugin install ${plugin} --force" "true"
         sudo -u www-data wp --path="${wp_site}" plugin install "${plugin}" --force
     
     fi

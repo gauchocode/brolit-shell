@@ -1,13 +1,8 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc09
+# Version: 3.0-rc10
 #############################################################################
-
-# shellcheck source=${SFOLDER}/libs/commons.sh
-source "${SFOLDER}/libs/commons.sh"
-
-################################################################################
 
 mysql_count_dabases() {
 
@@ -117,6 +112,59 @@ mysql_user_psw_change() {
 
 }
 
+mysql_root_psw_change() {
+
+    # $1 = ${db_root_psw}
+
+    local db_root_psw=$1
+
+    log_event "info" "Changing password for root in MySQL" "true"
+
+    # Kill any mysql processes currently running
+	echo 'Shutting down any mysql processes...'
+	service mysql stop
+	killall -vw mysqld
+	
+	# Start mysql without grant tables
+	mysqld_safe --skip-grant-tables >res 2>&1 &
+	
+	echo 'Resetting password... hold on'
+	
+	# Sleep for 5 while the new mysql process loads (if get a connection error you might need to increase this.)
+	sleep 5
+	
+	# Creating new password if db_root_psw is empty
+    if [ "${db_root_psw}" = "" ];then
+        db_root_psw_len=$(shuf -i 20-30 -n 1)
+        db_root_psw=$(pwgen -scn "${db_root_psw_len}" 1)
+        db_root_user='root'
+    fi
+	
+	# Update root user with new password
+	mysql mysql -e "USE mysql;UPDATE user SET Password=PASSWORD('$db_root_psw') WHERE User='$db_root_user';FLUSH PRIVILEGES;"
+	
+	echo 'Cleaning up...'
+	
+	# Kill the insecure mysql process
+	killall -v mysqld
+	
+	# Starting mysql again
+	service mysql restart
+	
+    mysql_result=$?
+    
+    if [ "${mysql_result}" -eq 0 ]; then
+        log_event "success" "New password for root: ${db_root_psw}" "true" 
+        return 0
+
+    else
+        log_event "error" "Something went wrong changing MySQL root password. MySQL output: ${mysql_result}" "true"
+        return 1
+
+    fi
+
+}
+
 mysql_user_grant_privileges() {
 
     # $1 = ${USER}
@@ -190,7 +238,7 @@ mysql_name_sanitize(){
 
     local clean
 
-    log_event "info" "Running mysql_name_sanitize for ${string}" "true"
+    #log_event "debug" "Running mysql_name_sanitize for ${string}" "true"
 
     # First, strip "-"
     clean=${string//-/}
@@ -204,7 +252,7 @@ mysql_name_sanitize(){
     # Finally, lowercase with TR
     clean=$(echo -n "${clean}" | tr A-Z a-z)
 
-    log_event "info" "Sanitized name: ${clean}" "true"
+    #log_event "debug" "Sanitized name: ${clean}" "true"
 
     # Return
     echo "${clean}"

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc09
+# Version: 3.0-rc10
 #############################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
@@ -57,6 +57,7 @@ install_package_if_not() {
 add_ppa() {
 
   for i in "$@"; do
+
     grep -h "^deb.*$i" /etc/apt/sources.list.d/* >/dev/null 2>&1
     if [ $? -ne 0 ]; then
       echo "Adding ppa:$i"
@@ -64,13 +65,15 @@ add_ppa() {
     else
       echo "ppa:$i already exists"
     fi
+
   done
   
 }
 
 check_packages_required() {
 
-  log_event "info" "Checking required packages ..." "true"
+  log_event "info" "Checking required packages ..." "false"
+  log_section "Script Package Manager"
 
   # Check if sendemail is installed
   SENDEMAIL="$(which sendemail)"
@@ -120,6 +123,36 @@ check_packages_required() {
     apt -y install unzip -qq
   fi
 
+  # TAR
+  TAR="$(which TAR)"
+
+  # FIND
+  FIND="$(which find)"
+
+  # MySQL
+  MYSQL="$(which mysql)"
+  MYSQLDUMP="$(which mysqldump)"
+  if [ ! -x "${MYSQL}" ]; then
+    display --indent 2 --text "- Checking MySQL installation" --result "ERROR" --color RED
+    return 1
+  fi
+
+ # PHP
+  PHP="$(which php)"
+  if [ ! -x "${PHP}" ]; then
+    display --indent 2 --text "- Checking PHP installation" --result "ERROR" --color RED
+    return 1
+  fi
+
+  # CERTBOT
+  CERTBOT="$(which certbot)"
+  if [ ! -x "${CERTBOT}" ]; then
+    display --indent 2 --text "- Checking CERTBOT installation" --result "WARNING" --color YELLOW
+    return 1
+  fi
+
+  display --indent 2 --text "- Checking script dependencies" --result "DONE" --color GREEN
+
   # TODO: check if php is installed before ask for wp-cli
 
   WPCLI_INSTALLED=$(wpcli_check_if_installed)
@@ -134,7 +167,7 @@ check_packages_required() {
 
   fi
 
-  log_event "success" "All required packages are installed" "true"
+  log_event "success" "All required packages are installed" "false"
 
 }
 
@@ -236,6 +269,6 @@ remove_old_packages() {
 
 install_image_optimize_packages() {
 
-  apt -y install jpegoptim optipng pngquant gifsicle imagemagick-*
+  apt -y install jpegoptim optipng pngquant gifsicle imagemagick-* -qq
 
 }

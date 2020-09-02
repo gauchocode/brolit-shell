@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc09
+# Version: 3.0-rc10
 ################################################################################
 
 ### Checking some things
@@ -38,6 +38,8 @@ installation_types="CLEAN_INSTALL COPY_FROM_PROJECT"
 installation_type=$(whiptail --title "INSTALLATION TYPE" --menu "Choose an Installation Type" 20 78 10 $(for x in ${installation_types}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
+
+  log_section "WordPress Installer"
 
   wpcli_install_if_not_installed
 
@@ -121,9 +123,9 @@ if [ $exitstatus = 0 ]; then
   database_user="${db_project_name}_user"
   database_user_passw=$(openssl rand -hex 12)
 
-  log_event "" "******************************************************************************************" "true"
+  log_break "true"
   log_event "info" "Creating database ${database_name}, and user ${database_user} with pass ${database_user_passw}" "true"
-  log_event "" "******************************************************************************************" "true"
+  log_break "true"
 
   mysql_database_create "${database_name}"
   mysql_user_create "${database_user}" "${database_user_passw}"
