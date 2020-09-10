@@ -4,11 +4,16 @@
 
 ### TODO
 
+- [ ] IMPORTANT! When restore a backup and change project_name or/and project_domain the script fails:
+        To create a propper nginx congiguration
+        To replace wp-config.php parameters
+        To change cloudflare config
+        Need to re-run let's encrypt
+        Need to run "search and replace" script from wp-cli
 - [ ] Notifications: Email HTML breaks sometimes.
 - [ ] Backups: make_project_backup is broken, need a refactor asap!
 - [ ] Nginx: put_project_offline need another aproach. Maybe put an index.html with message.
-- [ ] SFTP: Support sftp_add_user
-- [ ] Add a method to auto-load scripts from /utils
+- [ ] Secure store for MySQL password: https://www.dokry.com/27126
 
 ### In Progress
 
@@ -35,9 +40,9 @@
 - [x] Notifications: Telegram notifications support.
 
 ## For release 3.1
-- [ ] Warning if script run on non default installation (no webserver or another than nginx)
+- [ ] Warning if script run on non default installation (no webserver or another than nginx).
 - [ ] Log/Display: better logg handling and display improvements.
-- [ ] Complete refactor of "Options Wizard": (Backup Options, Notification Options, Cloudflare Config)
+- [ ] Complete refactor of "Options Wizard": (Backup Options, Notification Options, Cloudflare Config).
 - [ ] Nginx: Add http2 support on nginx server config files.
 - [ ] Nginx: New option to put website on maintenance.
 - [ ] LetsEncrypt: Need a better way to re-install a certificate after a website migration.
@@ -49,6 +54,8 @@
 - [ ] Solve small "TODOs" comments on the project.
 - [ ] PHP: php_reconfigure refactor (replace strings instead of replace entired config files)
 - [ ] Scheduled options: Add option to run on specific time.
+- [ ] SFTP: Support sftp_add_user
+- [ ] Add a method to auto-load scripts from /utils
 
 ## For release 3.2
 

@@ -124,7 +124,7 @@ check_packages_required() {
   fi
 
   # TAR
-  TAR="$(which TAR)"
+  TAR="$(which tar)"
 
   # FIND
   FIND="$(which find)"

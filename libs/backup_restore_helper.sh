@@ -36,8 +36,8 @@ restore_menu () {
 
   local restore_options chosen_restore_options
 
-  restore_options="01 RESTORE_FROM_DROPBOX 02 RESTORE_FROM_URL"
-  chosen_restore_options=$(whiptail --title "RESTORE SOURCE" --menu "Choose a Restore Source to run" 20 78 10 $(for x in ${restore_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  restore_options="01) RESTORE-FROM-DROPBOX 02) RESTORE-FROM-URL"
+  chosen_restore_options=$(whiptail --title "RESTORE TYPE" --menu " " 20 78 10 $(for x in ${restore_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
@@ -169,7 +169,7 @@ download_and_restore_config_files_from_dropbox(){
 
     cd "${SFOLDER}/tmp"
 
-    echo " > Downloading from Dropbox ${dropbox_chosen_type_path}/${chosen_config_type}/${chosen_config_bk} ..." >>$LOG
+    #echo " > Downloading from Dropbox ${dropbox_chosen_type_path}/${chosen_config_type}/${chosen_config_bk} ..." >>$LOG
     ${DROPBOX_UPLOADER} download "${dropbox_chosen_type_path}/${chosen_config_type}/${chosen_config_bk}"
 
     # Restore files
@@ -177,7 +177,7 @@ download_and_restore_config_files_from_dropbox(){
     mv "${chosen_config_bk}" "${chosen_config_type}"
     cd "${chosen_config_type}"
 
-    log_event "info" "Uncompressing ${chosen_config_bk} ..." "true"
+    log_event "info" "Uncompressing ${chosen_config_bk} ..." "false"
     
     pv "${chosen_config_bk}" | tar xp -C "${SFOLDER}/tmp/${chosen_config_type}" --use-compress-program=lbzip2
 
@@ -187,15 +187,15 @@ download_and_restore_config_files_from_dropbox(){
 
     fi
     if [[ "${CHOSEN_CONFIG}" == *"mysql"* ]]; then
-      echo -e ${B_RED}" > TODO: RESTORE MYSQL CONFIG ..."${ENDCOLOR}>&2
+      echo -e "${B_RED} > TODO: RESTORE MYSQL CONFIG ...${ENDCOLOR}">&2
 
     fi
     if [[ "${CHOSEN_CONFIG}" == *"php"* ]]; then
-      echo -e ${B_RED}" > TODO: RESTORE PHP CONFIG ..."${ENDCOLOR}>&2
+      echo -e "${B_RED} > TODO: RESTORE PHP CONFIG ...${ENDCOLOR}">&2
 
     fi
     if [[ "${CHOSEN_CONFIG}" == *"letsencrypt"* ]]; then
-      echo -e ${B_RED}" > TODO: RESTORE LETSENCRYPT ..."${ENDCOLOR}>&2
+      echo -e "${B_RED} > TODO: RESTORE LETSENCRYPT CONFIG ...${ENDCOLOR}">&2
       #restore_letsencrypt_site_files "" ""
 
     fi

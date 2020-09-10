@@ -22,8 +22,8 @@ cloudflare_helper_menu() {
 
     local cf_options chosen_cf_options root_domain
 
-    cf_options="01 SET_DEVELOPMENT_MODE 02 DELETE_CF_CACHE 03 SET_SSL_MODE"
-    chosen_cf_options=$(whiptail --title "CLOUDFLARE HELPER" --menu "Choose an option to run" 20 78 10 $(for x in ${cf_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+    cf_options="01) SET_DEVELOPMENT_MODE 02) DELETE_CF_CACHE 03) SET_SSL_MODE"
+    chosen_cf_options=$(whiptail --title "CLOUDFLARE MANAGER" --menu " " 20 78 10 $(for x in ${cf_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
     exitstatus=$?
 
     if [ $exitstatus = 0 ]; then
@@ -87,7 +87,12 @@ cloudflare_helper_menu() {
 
         fi
 
+        prompt_return_or_finish
+        cloudflare_helper_menu
+
     fi
+
+    main_menu
 
 }
 

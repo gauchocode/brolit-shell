@@ -354,8 +354,8 @@ certbot_helper_menu() {
 
   local domains certbot_options chosen_cb_options
 
-  certbot_options="01 INSTALL_CERTIFICATE 02 EXPAND_CERTIFICATE 03 TEST_RENEW_ALL_CERTIFICATES 04 FORCE_RENEW_CERTIFICATE 05 DELETE_CERTIFICATE 06 SHOW_INSTALLED_CERTIFICATES"
-  chosen_cb_options=$(whiptail --title "CERTBOT MANAGER" --menu "Please choose an option:" 20 78 10 $(for x in ${certbot_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  certbot_options="01) INSTALL-CERTIFICATE 02) EXPAND-CERTIFICATE 03) TEST-RENEW-ALL-CERTIFICATES 04) FORCE-RENEW-CERTIFICATE 05) DELETE-CERTIFICATE 06) SHOW-INSTALLED-CERTIFICATES"
+  chosen_cb_options=$(whiptail --title "CERTBOT MANAGER" --menu " " 20 78 10 $(for x in ${certbot_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [ ${exitstatus} = 0 ]; then
