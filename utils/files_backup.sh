@@ -34,8 +34,8 @@ CONFIG_F="configs"
 export BK_TYPE SITES_F
 
 # Starting Message
-log_break "true"
-log_event "info" "Starting files backup script" "true"
+log_break
+log_event "info" "Starting files backup script" "false"
 
 # MAILCOW Files
 if [[ "${MAILCOW_BK}" = true ]]; then
@@ -115,7 +115,8 @@ TOTAL_SITES=$(get_all_directories "${SITES}")
 COUNT_TOTAL_SITES=$(find "${SITES}" -maxdepth 1 -type d -printf '.' | wc -c)
 COUNT_TOTAL_SITES=$((${COUNT_TOTAL_SITES} - 1))
 
-log_event "info" "Found ${COUNT_TOTAL_SITES} directories" "true"
+log_event "info" "Found ${COUNT_TOTAL_SITES} directories" "false"
+display --indent 2 --text "- Directories found" --result "${COUNT_TOTAL_SITES}" --color YELLOW
 
 # FILES BACKUP GLOBALS
 BK_FILE_INDEX=0
@@ -127,29 +128,29 @@ k=0
 
 for j in ${TOTAL_SITES}; do
 
-  log_event "info" "Processing [${j}] ..." "true"
+  log_event "info" "Processing [${j}] ..." "false"
 
   if [[ "$k" -gt 0 ]]; then
 
-    FOLDER_NAME=$(basename $j)
+    FOLDER_NAME=$(basename "${j}")
 
     if [[ ${SITES_BL} != *"${FOLDER_NAME}"* ]]; then
 
       make_files_backup "site" "${SITES}" "${FOLDER_NAME}"
       BK_FL_ARRAY_INDEX=$((BK_FL_ARRAY_INDEX + 1))
 
+      log_break "true"
+
     else
-      log_event "info" "Omitting ${FOLDER_NAME} TAR file (blacklisted) ..." "true"
+      log_event "info" "Omitting ${FOLDER_NAME} (blacklisted) ..." "false"
 
     fi
 
     BK_FILE_INDEX=$((BK_FILE_INDEX + 1))
 
-    log_event "info" "Processed ${BK_FILE_INDEX} of ${COUNT_TOTAL_SITES} directories" "true"
+    log_event "info" "Processed ${BK_FILE_INDEX} of ${COUNT_TOTAL_SITES} directories" "false"
 
   fi
-
-  log_break "true"
 
   k=$k+1
 
