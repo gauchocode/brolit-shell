@@ -25,8 +25,8 @@ it_utils_menu() {
 
   local it_util_options chosen_it_util_options new_ssh_port
 
-  it_util_options="01 SECURITY_TOOLS 02 SERVER_OPTIMIZATIONS 03 CHANGE_SSH_PORT 04 CHANGE_HOSTNAME 05 ADD_FLOATING_IP 06 RESET_MYSQL_ROOT_PSW 07 BLACKLIST_CHECKER 08 BENCHMARK_SERVER"
-  chosen_it_util_options=$(whiptail --title "IT UTILS MENU" --menu "Choose a script to Run" 20 78 10 $(for x in ${it_util_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  it_util_options="01) SECURITY-TOOLS 02) SERVER-OPTIMIZATIONS 03) CHANGE-SSH_PORT 04) CHANGE-HOSTNAME 05) ADD-FLOATING-IP 06) RESET-MYSQL-ROOT_PSW 07) BLACKLIST-CHECKER 08) BENCHMARK-SERVER"
+  chosen_it_util_options=$(whiptail --title "IT UTILS" --menu "Choose a script to Run" 20 78 10 $(for x in ${it_util_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [ $exitstatus = 0 ]; then

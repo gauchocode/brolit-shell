@@ -255,13 +255,6 @@ cloudflare_change_a_record () {
             -H "Content-Type: application/json" \
             --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":$proxy_status}" 1>&2)
 
-            #update=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$zone_id/dns_records/$record_id" \
-            #-H "X-Auth-Email: $auth_email" \
-            #-H "X-Auth-Key: $auth_key" \
-            #-H "Content-Type: application/json" \
-            #--data "{\"type\":\"$record_type\",\"name\":\"$record_name\",\"content\":\"$cur_ip\",\"ttl\":$ttl,\"priority\":10,\"proxied\":$proxied_value}")
-            #--data "{\"id\":\"$zone_id\",\"type\":\"$record_type\",\"name\":\"$record_name\",\"content\":\"$cur_ip\",\"ttl\":$ttl,\"proxied\":$proxied_value}")
-
         fi
 
     fi
@@ -272,9 +265,11 @@ cloudflare_change_a_record () {
         return 1
 
     else
-        message="IP changed to: ${SERVER_IP}."
+        message="IP changed to: ${SERVER_IP}"
         #echo "$SERVER_IP" > $ip_file
-        log_event "success" "${message}" "true"
+        log_event "success" "${message}" "false"
+        display --indent 2 --text "- Changing IP on Cloudflare" --result "DONE" --color GREEN
+        display --indent 4 --text "New IP: ${SERVER_IP}" --tcolor YELLOW
 
     fi
 
@@ -358,7 +353,9 @@ cloudflare_delete_a_record () {
     else
         message="A record deleted: ${record_name}"
         #echo "$SERVER_IP" > $ip_file
-        log_event "success" "${message}" "true"
+        log_event "success" "${message}" "false"
+        display --indent 2 --text "- Deleting A record from Cloudflare" --result "DONE" --color GREEN
+        display --indent 4 --text "Record deleted: ${record_name}" --tcolor YELLOW
 
     fi
 

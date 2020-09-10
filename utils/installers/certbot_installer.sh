@@ -34,7 +34,7 @@ if ! grep -q "^deb .*$the_ppa" /etc/apt/sources.list /etc/apt/sources.list.d/*; 
 
   log_event "info" "Installing python3-certbot-dns-cloudflare and python3-certbot-nginx" "true"
 
-  apt --yes install python3-certbot-dns-cloudflare python3-certbot-nginx
+  apt --yes install python3-certbot-dns-cloudflare python3-certbot-nginx -qq
 
   log_event "info" "certbot installation done!" "true"
 

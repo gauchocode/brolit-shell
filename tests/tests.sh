@@ -147,7 +147,16 @@ display --indent 2 --text "- Testing message on console" --result "DONE" --color
 
 display --indent 2 --text "- Testing message on console" --result "WARNING" --color YELLOW
 
-display --indent 2 --text "- Testing message on console" --result "ERROR" --color RED
+display --indent 2 --text "- Testing message on console" --tcolor RED --result "ERROR" --color RED
 
+display --indent 2 --text "- Testing message on console" --result "WARNING" --color YELLOW
+
+sleep 5
+
+clear_last_line
 
 log_break "true"
+
+#clear_screen
+
+#log_break "true"

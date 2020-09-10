@@ -116,7 +116,8 @@ nginx_server_delete() {
         # Reload webserver
         service nginx reload
 
-        log_event "info" "Nginx config files for ${filename} deleted!" "true"
+        log_event "info" "Nginx config files for ${filename} deleted!" "false"
+        display --indent 2 --text "- Deleting nginx files" --result "DONE" --color GREEN
 
     fi
 

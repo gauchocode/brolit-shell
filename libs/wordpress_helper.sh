@@ -126,7 +126,7 @@ wp_change_permissions() {
   fi
 
   log_event "info" "Permissions changes for: ${project_dir}" "false"
-  display --indent 2 --text "- Setting proper permissions for: ${project_dir}" --result "DONE" --color GREEN
+  display --indent 2 --text "- Setting default permissions on wordpress" --result "DONE" --color GREEN
 
   
 }
@@ -283,7 +283,7 @@ wp_ask_url_search_and_replace() {
           ### Creating temporary folders
           if [ ! -d "${SFOLDER}/tmp-backup" ]; then
               mkdir "${SFOLDER}/tmp-backup"
-              log_event "info" "Temp files directory created: ${SFOLDER}/tmp-backup" "true"
+              log_event "info" "Temp files directory created: ${SFOLDER}/tmp-backup" "false"
           fi
 
           project_name=$(basename "${wp_path}")

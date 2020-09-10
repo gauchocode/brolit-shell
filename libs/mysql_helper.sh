@@ -31,7 +31,7 @@ mysql_user_create() {
 
     local sql1
 
-    log_event "info" "Creating ${db_user} user in MySQL with pass: ${db_user_psw}" "true"
+    log_event "info" "Creating ${db_user} user in MySQL with pass: ${db_user_psw}" "false"
 
     if [[ -z ${db_user_psw} || ${db_user_psw} == "" ]]; then
         sql1="CREATE USER '${db_user}'@'localhost';"
@@ -41,15 +41,15 @@ mysql_user_create() {
 
     fi
 
-    ${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}"
+    mysql_output=$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}" 2>&1)
     mysql_result=$?
     
     if [ "${mysql_result}" -eq 0 ]; then
-        log_event "success" " MySQL user ${db_user} created" "true"
+        log_event "success" " MySQL user ${db_user} created" "false"
         return 0
 
     else
-        log_event "error" "Something went wrong creating user: ${db_user}. MySQL output: ${mysql_result}" "true"
+        log_event "error" "Something went wrong creating user: ${db_user}. MySQL output: ${mysql_output}" "false"
         return 1
 
     fi
@@ -65,17 +65,17 @@ mysql_user_delete() {
     local sql1="DROP USER '${db_user}'@'localhost';"
     local sql2="FLUSH PRIVILEGES;"
 
-    log_event "info" "Deleting ${db_user} user in MySQL ..." "true"
+    log_event "info" "Deleting ${db_user} user in MySQL ..." "false"
 
-    ${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" >>"${LOG}"
+    mysql_output=$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" 2>&1)
     mysql_result=$?
     
     if [ "${mysql_result}" -eq 0 ]; then
-        log_event "success" " Database user ${db_user} deleted" "true"
+        log_event "success" " Database user ${db_user} deleted" "false"
         return 0
 
     else
-        log_event "error" "Something went wrong deleting user: ${db_user}. MySQL output: ${mysql_result}" "true"
+        log_event "error" "Something went wrong deleting user: ${db_user}. MySQL output: ${mysql_output}" "false"
         return 1
 
     fi
@@ -92,20 +92,20 @@ mysql_user_psw_change() {
 
     local sql1 sql2
 
-    log_event "info" "Changing password for user ${db_user} in MySQL" "true"
+    log_event "info" "Changing password for user ${db_user} in MySQL" "false"
 
     sql1="ALTER USER '${db_user}'@'localhost' IDENTIFIED BY '${db_user_psw}';"
     sql2="FLUSH PRIVILEGES;"
 
-    ${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}"
+    mysql_output=$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" 1>&2)
     mysql_result=$?
     
     if [ "${mysql_result}" -eq 0 ]; then
-        log_event "success" "New password for user ${db_user}: ${db_user_psw}" "true" 
+        log_event "success" "New password for user ${db_user}: ${db_user_psw}" "false" 
         return 0
 
     else
-        log_event "error" "Something went wrong changing MySQL password to user ${db_user}. MySQL output: ${mysql_result}" "true"
+        log_event "error" "Something went wrong changing MySQL password to user ${db_user}. MySQL output: ${mysql_output}" "false"
         return 1
 
     fi
@@ -175,20 +175,20 @@ mysql_user_grant_privileges() {
 
     local sql1 sql2 mysql_result
 
-    log_event "info" "Granting privileges to ${db_user} on ${db_target} database in MySQL" "true"
+    log_event "info" "Granting privileges to ${db_user} on ${db_target} database in MySQL" "false"
 
     sql1="GRANT ALL PRIVILEGES ON ${db_target}.* TO '${db_user}'@'localhost';"
     sql2="FLUSH PRIVILEGES;"
 
-    ${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}"
+    mysql_output=$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" 1>&2)
     mysql_result=$?
     
     if [ "${mysql_result}" -eq 0 ]; then
-        log_event "success" "Privileges granted to user ${db_user}" "true"
+        log_event "success" "Privileges granted to user ${db_user}" "false"
         return 0
 
     else
-        log_event "error" "Something went wrong granting privileges to user ${db_user}" "true"
+        log_event "error" "Something went wrong granting privileges to user ${db_user}. MySQL output: ${mysql_output}" "false"
         return 1
 
     fi
@@ -267,19 +267,22 @@ mysql_database_create() {
 
     local sql1 mysql_result
 
-    log_event "info" "Creating ${database} database in MySQL ..." "true"
+    log_event "info" "Creating ${database} database in MySQL ..." "false"
 
     sql1="CREATE DATABASE IF NOT EXISTS ${database};"
 
-    ${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}"
+    mysql_output=$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}" 2>&1)
     mysql_result=$?
 
     if [ "${mysql_result}" -eq 0 ]; then
-        log_event "success" "Database ${database} created successfully" "true"
+        log_event "success" "Database ${database} created successfully" "false"
+        display --indent 2 --text " - Creating database: ${database}" --result "DONE" --color GREEN
         return 0
 
     else
-        log_event "error" "Something went wrong creating database: ${database}. MySQL output: ${mysql_result}" "true"
+        log_event "error" "Something went wrong creating database: ${database}. MySQL output: ${mysql_output}" "false"
+        display --indent 2 --text " - Creating database: ${database}" --result "ERROR" --color RED
+        display --indent 4 --text "MySQL output: ${mysql_output}" --tcolor RED
         return 1
 
     fi
@@ -294,19 +297,23 @@ mysql_database_drop() {
 
     local sql1 mysql_result
 
-    log_event "info" "Droping the database: ${database}" "true"
+    log_event "info" "Droping the database: ${database}" "false"
+    display --indent 2 --text "- Droping database: ${database}" --tcolor YELLOW
 
     sql1="DROP DATABASE ${database};"
     
-    ${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}"
+    mysql_output=$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}" 2>&1)
     mysql_result=$?
 
     if [ "${mysql_result}" -eq 0 ]; then
-        log_event "success" "Database ${database} deleted successfully" "true"
+        log_event "success" "Database ${database} deleted successfully" "false"
+        display --indent 2 --text "Droping database: ${database}" --result "DONE" --color GREEN
         return 0
 
     else
-        log_event "error" "Something went wrong deleting database: ${database}. MySQL output: ${mysql_result}" "true"
+        log_event "error" "Something went wrong deleting database: ${database}. MySQL output: ${mysql_output}" "false"
+        display --indent 2 --text "Droping database: ${database}" --result "ERROR" --color RED
+        display --indent 4 --text "MySQL import output: ${mysql_output}" --tcolor RED
         return 1
         
     fi
@@ -323,17 +330,27 @@ mysql_database_import() {
 
     local import_status
 
-    log_event "info" "Importing dump file ${dump_file} into database: ${database}" "true"
+    log_event "info" "Importing dump file ${dump_file} into database: ${database}" "false"
+    display --indent 2 --text "- Importing backup into database: ${database}" --tcolor YELLOW
 
-    pv "${dump_file}" | ${MYSQL} -f -u"${MUSER}" -p"${MPASS}" -f -D "${database}"
+    pv "${dump_file}" | ${MYSQL} -f -u"${MUSER}" -p"${MPASS}" -f -D "${database}" 2>&1
     import_status=$?
 
     if [ ${import_status} -eq 0 ]; then
-        log_event "success" "Database ${database} imported successfully" "true"
+        log_event "success" "Database ${database} imported successfully" "false"
+
+        clear_last_line
+        display --indent 2 --text "Database backup import" --result "DONE" --color GREEN
+
         return 0
 
     else
-        log_event "error" "Something went wrong importing database: ${database}. Import output: ${import_status}" "true"
+        log_event "error" "Something went wrong importing database: ${database}. Import output: ${import_status}" "false"
+
+        clear_last_line
+        display --indent 2 --text "Database backup import" --result "ERROR" --color RED
+        display --indent 4 --text "MySQL import output: ${import_status}" --tcolor RED
+
         return 1
 
     fi
@@ -350,16 +367,27 @@ mysql_database_export() {
 
     local dump_status
 
-    log_event "info" "Creating a dump file of: ${database}" "true"
-    ${MYSQLDUMP} -u "${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}"
-    
+    log_event "info" "Creating a database backup of: ${database}" "false"
+    display --indent 2 --text "- Creating a backup of: ${database}"
+
+    dump_output=$(${MYSQLDUMP} -u "${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}" 2>&1)
+   
     dump_status=$?
     if [ ${dump_status} -eq 0 ]; then
-        log_event "success" "Database ${database} exported successfully" "true"
+        log_event "success" "Database ${database} exported successfully" "false"
+        
+        #clear_last_line
+        display --indent 2 --text "- Database backup for ${database}" --result "DONE" --color GREEN
+
         return 0
     
     else
-        log_event "error" "Something went wrong exporting database: ${database}. MySQL dump output: ${dump_status}" "true"
+        log_event "error" "Something went wrong exporting database: ${database}. MySQL dump output: ${dump_status}" "false"
+
+        #clear_last_line
+        display --indent 2 --text "- Database backup for ${database}" --result "ERROR" --color RED
+        display --indent 4 --text "MySQL dump output: ${dump_output}" --tcolor RED
+
         return 1
 
     fi

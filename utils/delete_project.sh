@@ -6,7 +6,7 @@
 
 ### Checking some things
 if [[ -z "${SFOLDER}" ]]; then
-    echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+    echo -e "${B_RED} > Error: The script can only be runned by runner.sh! Exiting ...${ENDCOLOR}"
     exit 0
 fi
 ################################################################################
@@ -19,6 +19,10 @@ source "${SFOLDER}/libs/mysql_helper.sh"
 source "${SFOLDER}/libs/nginx_helper.sh"
 # shellcheck source=${SFOLDER}/libs/backup_helper.sh
 source "${SFOLDER}/libs/backup_helper.sh"
+# shellcheck source=${SFOLDER}/libs/cloudflare_helper.sh
+source "${SFOLDER}/libs/cloudflare_helper.sh"
+# shellcheck source=${SFOLDER}/libs/telegram_notification_helper.sh
+source "${SFOLDER}/libs/telegram_notification_helper.sh"
 
 ################################################################################
 
@@ -34,7 +38,9 @@ delete_project_files() {
 
     local project_domain
 
-    log_event "info" "Starting delete_project_files script" "true"
+    log_event "info" "Performing Action: Delete Project" "false"
+
+    log_section "Delete Project"
 
     # Folder where sites are hosted: $SITES
     menu_title="PROJECT TO DELETE"
@@ -43,17 +49,17 @@ delete_project_files() {
     # Directory_broser returns: " $filepath"/"$filename
     if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
 
-        log_event "info" "Skipped!" "true"
+        log_event "info" "Delete project cancelled" "false"
 
         # Return
-        echo "error"
+        return 1
 
     else
 
         ### Creating temporary folders
         if [ ! -d "${SFOLDER}/tmp-backup" ]; then
             mkdir "${SFOLDER}/tmp-backup"
-            log_event "info" "Temp files directory created: ${SFOLDER}/tmp-backup" "true"
+            log_event "info" "Temp files directory created: ${SFOLDER}/tmp-backup" "false"
         fi
 
         BK_TYPE="site"
@@ -61,7 +67,8 @@ delete_project_files() {
         # Removing last slash from string
         project_domain=${filename%/}
 
-        log_event "info" "Project to delete: ${project_domain}" "true"
+        log_event "info" "Project to delete: ${project_domain}" "false"
+        display --indent 2 --text "- Selecting ${project_domain} for deletion" --result "DONE" --color GREEN
 
         # Trying to know project type
         project_type=$(get_project_type "${SITES}/${project_domain}")
@@ -70,7 +77,7 @@ delete_project_files() {
         #project_db_name=$(get_project_db_name "${project_type}")
         #project_db_user=$(get_project_db_user "${project_type}")
 
-        log_event "info" "Project Type: ${project_type}" "true"
+        log_event "info" "Project Type: ${project_type}" "false"
 
         # Making a backup of project files
         make_files_backup "${BK_TYPE}" "${SITES}" "${project_domain}"
@@ -81,12 +88,16 @@ delete_project_files() {
             output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}/offline-site" 2>&1)
 
             # Moving deleted project backups to another dropbox directory
-            log_event "info" "dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${project_domain} /${VPSNAME}/offline-site" "true"
+            log_event "info" "dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${project_domain} /${VPSNAME}/offline-site" "false"
             $DROPBOX_UPLOADER move "/${VPSNAME}/${BK_TYPE}/${project_domain}" "/${VPSNAME}/offline-site"
+
+            display --indent 2 --text "- Moving to offline projects on Dropbox" --result "DONE" --color GREEN
 
             # Delete project files
             rm -R $filepath"/"${project_domain}
-            log_event "info" "Project files deleted for ${project_domain}" "true"
+            log_event "info" "Project files deleted for ${project_domain}" "false"
+            display --indent 2 --text "- Deleting project files on server" --result "DONE" --color GREEN
+
 
             # Make a copy of nginx configuration file
             cp -r "/etc/nginx/sites-available/${project_domain}" "${SFOLDER}/tmp-backup"
@@ -97,6 +108,7 @@ delete_project_files() {
 
             # Delete nginx configuration file
             nginx_server_delete "${project_domain}"
+            display --indent 2 --text "- Deleting nginx server configuration" --result "DONE" --color GREEN
 
             # Cloudflare Manager
             project_domain=$(whiptail --title "CLOUDFLARE MANAGER" --inputbox "Do you want to delete the Cloudflare entries for the followings subdomains?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
@@ -114,14 +126,11 @@ delete_project_files() {
 
             telegram_send_message "⚠️ ${VPSNAME}: Project files deleted for: ${project_domain}"
 
-            # Return
-            echo "${project_domain}"
+            # TODO: Maybe return database name? extracted from wp-config or something?
         
         else
 
-            # Return
-            echo "error"
-            
+            return 1
 
         fi
 
@@ -155,7 +164,7 @@ delete_project_database() {
         make_database_backup "${BK_TYPE}" "${CHOSEN_DB}"
 
         # Moving deleted project backups to another dropbox directory
-        log_event "info" "Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${CHOSEN_DB} /${VPSNAME}/offline-site" "true"
+        log_event "info" "Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${CHOSEN_DB} /${VPSNAME}/offline-site" "false"
         ${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${CHOSEN_DB}" "/${VPSNAME}/offline-site"
 
         # Delete project database
@@ -194,21 +203,11 @@ delete_project_database() {
 
 delete_project() {
 
-    local delete_files_result
+    # Delete Files
+    delete_project_files
 
-    delete_files_result=$(delete_project_files)
-
-    if [ "${delete_files_result}" != "error" ]; then
-
-        # Delete Database
-        delete_project_database "${delete_files_result}"
-
-    else
-
-        log_event "error" "Error deleting project ..." "true"
-        return 1
-
-    fi
+    # Delete Database
+    delete_project_database "${delete_files_result}"
  
     #TODO: ask for deleting tmp-backup folder
     # Delete tmp backups

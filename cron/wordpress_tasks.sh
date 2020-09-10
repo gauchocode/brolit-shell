@@ -45,7 +45,8 @@ else
   count_all_sites=$(find "${SITES}" -maxdepth 1 -type d -printf '.' | wc -c)
   count_all_sites=$((count_all_sites - 1))
 
-  log_event "info" "Found ${count_all_sites} directories" "true"
+  log_event "info" "Found ${count_all_sites} directories" "false"
+  display --indent 2 --text "- Directories found" --result "${count_all_sites}" --color YELLOW
 
   # GLOBALS
   whitelisted_wp_files="readme.html,license.txt,wp-config-sample.php"
@@ -112,17 +113,17 @@ else
         fi
 
       else
-        log_event "info" "Omitting ${project_name} project (blacklisted) ..." "true"
+        log_event "info" "Omitting ${project_name} project (blacklisted) ..." "false"
 
       fi
 
       file_index=$((file_index + 1))
 
-      log_event "info" "Processed ${file_index} of ${count_all_sites} projects" "true"
+      log_event "info" "Processed ${file_index} of ${count_all_sites} projects" "false"
 
     fi
 
-    log_break "true"
+    log_break
 
     k=$k+1
 

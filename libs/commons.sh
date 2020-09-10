@@ -138,6 +138,9 @@ script_init() {
 
   find "${PATH_LOG}" -name "*.log" -type f -mtime +7 -print -delete >>"${LOG}"
 
+  # Clear Screen
+  clear_screen
+
   # Log Start
   log_event "" "WELCOME TO LEMP UTILS SCRIPT" "true"
   log_event "info" "Script Start -- $(date +%Y%m%d_%H%M)" "false"
@@ -228,7 +231,7 @@ script_init() {
   fi
 
   # EXPORT VARS (GLOBALS)
-  export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL TAR DISK_U ONE_FILE_BK SERVER_IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
+  export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL DISK_U ONE_FILE_BK SERVER_IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
 
 }
 
@@ -262,11 +265,11 @@ main_menu() {
 
   local whip_title whip_description runner_options chosen_type
 
-  whip_title="BROOBE UTILS SCRIPT"
-  whip_description=" \n "
+  whip_title="LEMP UTILS SCRIPT"
+  whip_description=" "
 
-  runner_options="01 MAKE_A_BACKUP 02 RESTORE_A_BACKUP 03 PROJECT_UTILS 04 WPCLI_MANAGER 05 CERTBOT_MANAGER 06 CLOUDFLARE_MANAGER 07 INSTALLERS_AND_CONFIGS 08 IT_UTILS 09 SCRIPT_OPTIONS 10 CRON_SCRIPT_TASKS"
-  chosen_type=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 $(for x in ${runner_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  runner_options=("01)" "BACKUP-OPTIONS" "02)" "RESTORE-OPTIONS" "03)" "PROJECT-UTILS" "04)" "WPCLI-MANAGER" "05)" "CERTBOT-MANAGER" "06)" "CLOUDFLARE-MANAGER" "07)" "INSTALLERS-AND-CONFIGS" "08)" "IT-UTILS" "09)" "SCRIPT-OPTIONS" "10)" "CRON-TASKS")
+  chosen_type=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 $(for x in "${runner_options[@]}"; do echo "${x}"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
@@ -336,8 +339,8 @@ cron_script_tasks() {
 
   local runner_options chosen_type
 
-  runner_options="01 BACKUPS_TASKS 02 OPTIMIZER_TASKS 03 WORDPRESS_TASKS"
-  chosen_type=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to configure" 20 78 10 $(for x in ${runner_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  runner_options="01) BACKUPS-TASKS 02) OPTIMIZER-TASKS 03) WORDPRESS-TASKS"
+  chosen_type=$(whiptail --title "CRONEABLE TASKS" --menu "\nPlease, choose a task to cron:" 20 78 10 $(for x in ${runner_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
@@ -421,10 +424,10 @@ project_utils_menu () {
 
   local whip_title whip_description project_utils_options chosen_project_utils_options
 
-  whip_title="BROOBE UTILS SCRIPT"
-  whip_description="\nChoose a project action to run\n"
+  whip_title="PROJECT UTILS"
+  whip_description=" "
 
-  project_utils_options="01 CREATE_WP_PROJECT 02 CREATE_PHP_PROJECT 03 DELETE_PROJECT 04 PUT_PROJECT_ONLINE 05 PUT_PROJECT_OFFLINE 06 BENCH_PROJECT_GTMETRIX"
+  project_utils_options="01) CREATE-WP-PROJECT 02) CREATE-PHP-PROJECT 03) DELETE-PROJECT 04) PUT-PROJECT-ONLINE 05) PUT-PROJECT-OFFLINE 06) BENCH-PROJECT-GTMETRIX"
   chosen_project_utils_options=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 $(for x in ${project_utils_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -819,11 +822,11 @@ log_break() {
 
   local log_break
   
-  log_break="--------------------------------------------------------------"
+  log_break="-------------------------------------------------------------------------"
   
   echo "${log_break}" >> "${LOG}"
   if [ "${console_display}" = "true" ]; then
-    echo -e "${CYAN} > ${log_break}${ENDCOLOR}" >&2
+    echo -e "${MAGENTA}${log_break}${ENDCOLOR}" >&2
   fi
 
 }
@@ -838,24 +841,39 @@ log_section() {
     if [ "${QUIET}" -eq 0 ]; then
         echo ""
         echo -e "[+] Performing Action: ${YELLOW}${message}${NORMAL}"
-        echo "------------------------------------"
+        echo "----------------------------------------------"
     fi
+
+}
+
+clear_screen() {
+
+  echo -en "\ec"
+
+}
+
+clear_last_line() {
+
+  printf "\033[1A"
+  echo "                                                                                             "
+  printf "\033[1A"
 
 }
 
 display() {
 
-  INDENT=0; TEXT=""; RESULT=""; COLOR=""; SPACES=0; SHOWDEBUG=0; CRONJOB=0;
+  INDENT=0; TEXT=""; RESULT=""; TCOLOR=""; COLOR=""; SPACES=0; SHOWDEBUG=0; CRONJOB=0;
   
   while [ $# -ge 1 ]; do
       case $1 in
           --color)
               shift
                   case $1 in
-                    GREEN)   COLOR=$GREEN   ;;
-                    RED)     COLOR=$RED     ;;
-                    WHITE)   COLOR=$WHITE   ;;
-                    YELLOW)  COLOR=$YELLOW  ;;
+                    GREEN)    COLOR=$GREEN   ;;
+                    RED)      COLOR=$RED     ;;
+                    WHITE)    COLOR=$WHITE   ;;
+                    YELLOW)   COLOR=$YELLOW  ;;
+                    MAGENTA)  COLOR=$MAGENTA  ;
                   esac
           ;;
           --debug)
@@ -868,6 +886,16 @@ display() {
           --result)
               shift
               RESULT=$1
+          ;;
+          --tcolor)
+            shift
+                case $1 in
+                  GREEN)    COLOR=$GREEN   ;;
+                  RED)      COLOR=$RED     ;;
+                  WHITE)    COLOR=$WHITE   ;;
+                  YELLOW)   COLOR=$YELLOW  ;;
+                  MAGENTA)  COLOR=$MAGENTA  ;
+                esac
           ;;
           --text)
               shift
@@ -906,7 +934,7 @@ display() {
           if [ "${CRONJOB}" -eq 0 ]; then
             # Check if we already have already discovered a proper echo command tool. It not, set it default to 'echo'.
             #if [ "${ECHOCMD}" = "" ]; then ECHOCMD="echo"; fi
-            echo -e "\033[${INDENT}C${TEXT}\033[${SPACES}C${RESULTPART}${DEBUGTEXT}"
+            echo -e "\033[${INDENT}C${TCOLOR}${TEXT}${NORMAL}\033[${SPACES}C${RESULTPART}${DEBUGTEXT}"
           else
             echo "${TEXT}${RESULTPART}"
           fi
@@ -1315,7 +1343,7 @@ calculate_disk_usage() {
 
   local disk_u
 
-  log_event "info" "Calculating disk usage of ${disk_volume}" "true"
+  log_event "info" "Calculating disk usage of ${disk_volume}" "false"
 
   # Need to use grep with -w to exact match of the main volume
   disk_u=$(df -h | grep -w "${disk_volume}" | awk {'print $5'})
@@ -1369,7 +1397,7 @@ change_ownership(){
 
   chown -R "${user}":"${group}" "${path}"
 
-  display --indent 2 --text "- Changing ownership of ${path} to ${user}:${group}" --result "DONE" --color GREEN
+  #display --indent 2 --text "- Changing ownership of ${path} to ${user}:${group}" --result "DONE" --color GREEN
 
 }
 
