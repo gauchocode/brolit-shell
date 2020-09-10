@@ -179,13 +179,13 @@ wpcli_core_install() {
 
         if [ "${wp_version}" != "" ];then
 
-            log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core download --skip-content --version=${wp_version}" "true"
+            log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core download --skip-content --version=${wp_version}" "false"
 
             sudo -u www-data wp --path="${wp_site}" core download --skip-content --version="${wp_version}" --quiet
 
         else
 
-            log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core download --skip-content" "true"
+            log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core download --skip-content" "false"
 
             sudo -u www-data wp --path="${wp_site}" core download --skip-content --quiet
 

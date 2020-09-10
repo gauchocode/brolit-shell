@@ -60,7 +60,7 @@ mail_subject_status() {
 
 remove_mail_notifications_files() {
 
-    log_event "info" "Removing notifications temp files ..." "true"
+    log_event "info" "Removing notifications temp files ..." "false"
 
     # Remove one per line only for better readibility
     rm -f "${BAKWP}/cert-${NOW}.mail" 
@@ -69,7 +69,7 @@ remove_mail_notifications_files() {
     rm -f "${BAKWP}/config-bk-${NOW}.mail"
     rm -f "${BAKWP}/db-bk-${NOW}.mail"
 
-    log_event "info" "Temp files removed" "true"
+    log_event "info" "Temp files removed" "false"
 
 }
 
@@ -88,37 +88,40 @@ mail_server_status_section() {
     # Extract % to compare
     disk_u_ns=$(echo "${disk_u}" | cut -f1 -d'%')
 
-    if [ "${disk_u_ns}" -gt "45" ]; then
+    # Cast to int
+    casted_disk_u_ns=$(int(){ printf '%d' "${disk_u_ns:-}" 2>/dev/null || :; })
+
+    if [[ "$casted_disk_u_ns" -gt 45 ]]; then
         # Changing global
-        STATUS_S='WARNING'
+        STATUS_S="WARNING"
 
         # Changing locals
         STATUS_S_ICON="⚠"
-        STATUS_S_COLOR='#fb2f2f'
+        STATUS_S_COLOR="#fb2f2f"
 
     else
         # Changing global
-        STATUS_S='OK'
+        STATUS_S="OK"
 
         # Changing locals
         STATUS_S_ICON="✅"
-        STATUS_S_COLOR='#503fe0'
+        STATUS_S_COLOR="#503fe0"
         
     fi
 
     SRV_HEADEROPEN_1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
-    SRV_HEADEROPEN_2=${STATUS_S_COLOR}
+    SRV_HEADEROPEN_2="${STATUS_S_COLOR}"
     SRV_HEADEROPEN_3=';padding:5px 0 10px 10px;width:100%;height:30px">'
     SRV_HEADERTEXT="Server Status: ${STATUS_S} ${STATUS_S_ICON}"
-    SRV_HEADERCLOSE='</div>'
-    SRV_HEADER=${SRV_HEADEROPEN_1}${SRV_HEADEROPEN_2}${SRV_HEADEROPEN_3}${SRV_HEADERTEXT}${SRV_HEADERCLOSE}
+    SRV_HEADERCLOSE="</div>"
+    SRV_HEADER="${SRV_HEADEROPEN_1}${SRV_HEADEROPEN_2}${SRV_HEADEROPEN_3}${SRV_HEADERTEXT}${SRV_HEADERCLOSE}"
 
     SRV_BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
     SRV_CONTENT="<b>Server IP: ${IP}</b><br /><b>Disk usage: ${disk_u}</b><br />"
-    SRV_BODYCLOSE='</div></div>'
-    SRV_BODY=${SRV_BODYOPEN}${SRV_CONTENT}${SRV_BODYCLOSE}
+    SRV_BODYCLOSE="</div></div>"
+    SRV_BODY="${SRV_BODYOPEN}${SRV_CONTENT}${SRV_BODYCLOSE}"
 
-    BODY_SRV=${SRV_HEADER}${SRV_BODY}
+    BODY_SRV="${SRV_HEADER}${SRV_BODY}"
 
     # Return
     echo "${BODY_SRV}"
@@ -290,8 +293,8 @@ mail_filesbackup_section() {
     # $3 - ${ERROR}
     # $4 - ${ERROR_TYPE}
 
-    local -n BACKUPED_LIST=$1
-    local -n BK_FL_SIZES=$2
+    local -a BACKUPED_LIST=$1
+    local -a BK_FL_SIZES=$2
     local ERROR=$3
     local ERROR_TYPE=$4
 
@@ -372,7 +375,7 @@ mail_filesbackup_section() {
 
 mail_configbackup_section() {
 
-    # $1 = ${BACKUPED_LIST[@]}
+    # $1 = ${BACKUPED_SCF_LIST[@]}
     # $2 = ${BK_FL_SIZES}
     # $3 = ${ERROR}
     # $4 = ${ERROR_TYPE}
@@ -460,8 +463,8 @@ mail_mysqlbackup_section() {
     # $3 = ${ERROR}
     # $4 = ${ERROR_TYPE}
 
-    local -n BACKUPED_DB_LIST=$1
-    local -n BK_DB_SIZES=$2
+    local -a BACKUPED_DB_LIST=$1
+    local -a BK_DB_SIZES=$2
     local ERROR=$3
     local ERROR_TYPE=$4
 
@@ -469,24 +472,24 @@ mail_mysqlbackup_section() {
 
     if [ "${ERROR}" = true ]; then
         # Changing global
-        STATUS_D='ERROR'
+        STATUS_D="ERROR"
 
         # Changing locals
-        STATUS_ICON_D='💩'
+        STATUS_ICON_D="💩"
         CONTENT_D='<b>'${BK_TYPE}' Backup with errors:<br />'${ERROR_TYPE}'<br /><br />Please check log file.</b> <br />'
-        COLOR_D='#b51c1c'
+        COLOR_D="#b51c1c"
 
     else
         # Changing global
-        STATUS_D='OK'
+        STATUS_D="OK"
 
         # Changing locals
-        STATUS_ICON_D='✅'
-        CONTENT_D=''
-        COLOR_D='#503fe0'
-        SIZE_D=''
+        STATUS_ICON_D="✅"
+        CONTENT_D=""
+        COLOR_D="#503fe0"
+        SIZE_D=""
         FILES_LABEL_D='<b>Backup files includes:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
-        FILES_INC_D=''
+        FILES_INC_D=""
 
         COUNT=0
 
@@ -495,10 +498,10 @@ mail_mysqlbackup_section() {
             BK_DB_SIZE=${BK_DB_SIZES[$COUNT]}
 
             FILES_INC_D_LINE_P1='<div><span style="margin-right:5px;">'
-            FILES_INC_D_LINE_P2=${FILES_INC_D}${backup_file}
+            FILES_INC_D_LINE_P2="${FILES_INC_D}${backup_file}"
             FILES_INC_D_LINE_P3='</span> <span style="background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;">'
-            FILES_INC_D_LINE_P4=${BK_DB_SIZE}
-            FILES_INC_D_LINE_P5='</span></div>'
+            FILES_INC_D_LINE_P4="${BK_DB_SIZE}"
+            FILES_INC_D_LINE_P5="</span></div>"
 
             FILES_INC_D="${FILES_INC_D_LINE_P1}${FILES_INC_D_LINE_P2}${FILES_INC_D_LINE_P3}${FILES_INC_D_LINE_P4}${FILES_INC_D_LINE_P5}"
 
@@ -513,11 +516,11 @@ mail_mysqlbackup_section() {
     HEADEROPEN1_D='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
     HEADEROPEN2_D=';padding:5px 0 10px 10px;width:100%;height:30px">'
     HEADEROPEN_D="${HEADEROPEN1_D}${COLOR_D}${HEADEROPEN2_D}"
-    HEADERTEXT_D='Database Backup: '${STATUS_D} ${STATUS_ICON_D}
-    HEADERCLOSE_D='</div>'
+    HEADERTEXT_D="Database Backup: ${STATUS_D} ${STATUS_ICON_D}"
+    HEADERCLOSE_D="</div>"
 
     BODYOPEN_D='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px 0 0 10px;width:100%;">'
-    BODYCLOSE_D='</div>'
+    BODYCLOSE_D="</div>"
 
     HEADER_D="${HEADEROPEN_D}${HEADERTEXT_D}${HEADERCLOSE_D}"
     BODY_D="${BODYOPEN_D}${CONTENT_D}${SIZE_D}${FILES_LABEL_D}${FILES_INC_D}${FILES_LABEL_D_END}${BODYCLOSE_D}"

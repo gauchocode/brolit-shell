@@ -14,8 +14,8 @@ fi
 
 installers_and_configurators() {
 
-  INSTALLER_OPTIONS="01 PHP_INSTALLER 02 MYSQL_INSTALLER 03 NGINX_INSTALLER 04 PHPMYADMIN_INSTALLER 05 NETDATA_INSTALLER 06 MONIT_INSTALLER 07 COCKPIT_INSTALLER 08 CERTBOT_INSTALLER 09 WPCLI_INSTALLER"
-  INSTALLER_TYPE=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "\nThis script has been designed to easily install and configure the following utilities and programs: \n" 20 78 10 $(for x in ${INSTALLER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  INSTALLER_OPTIONS="01) PHP-FPM 02) MYSQL/MARIADB 03) NGINX 04) PHPMYADMIN 05) NETDATA 06) MONIT 07) COCKPIT 08) CERTBOT 09) WPCLI"
+  INSTALLER_TYPE=$(whiptail --title "INSTALLERS AND CONFIGURATORS" --menu "\nPlease select the utility or programs you want to install or config: \n" 20 78 10 $(for x in ${INSTALLER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 

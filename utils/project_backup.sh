@@ -82,12 +82,12 @@ for j in ${TOTAL_SITES}; do
 
         fi
 
-        log_event "info" "Processed ${BK_FILE_INDEX} of ${COUNT_TOTAL_SITES} directories" "true"
+        log_event "info" "Processed ${BK_FILE_INDEX} of ${COUNT_TOTAL_SITES} directories" "false"
         BK_FILE_INDEX=$((BK_FILE_INDEX + 1))
 
     fi
 
-    log_break "true"
+    log_break
 
     k=$k+1
 
