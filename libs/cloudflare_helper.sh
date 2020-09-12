@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc10
+# Version: 3.0.1
 ################################################################################
 #
 #   Ref: https://api.cloudflare.com/
@@ -288,7 +288,7 @@ cloudflare_delete_a_record () {
     local domain=$2
 
     # Cloudflare API to change DNS records
-    log_event "info" "Trying to access Cloudflare API and change record ${domain}" "true"
+    log_event "info" "Accessing to Cloudflare API to change record ${domain}" "false"
 
     zone_name=${root_domain}
     record_name=${domain}
@@ -314,7 +314,7 @@ cloudflare_delete_a_record () {
     id_file="cloudflare.ids"
 
     # SCRIPT START
-    log_event "info" "Cloudflare Script Initiated" "true"
+    log_event "info" "Cloudflare Script Initiated" "false"
 
     cur_ip=${SERVER_IP}
 
@@ -331,7 +331,10 @@ cloudflare_delete_a_record () {
 
     if [[ -z "${record_id}" || ${record_id} == "" ]]; then
 
-        log_event "info" "RECORD_ID not found ..." "false"
+        log_event "info" "Record not found on Cloudflare" "false"
+        display --indent 2 --text "- Record not found on Cloudflare" --result "FAIL" --color RED
+
+        return 1
 
     else
      
@@ -346,8 +349,11 @@ cloudflare_delete_a_record () {
     fi
 
     if [[ ${delete} == *"\"success\":false"* ]]; then
+
         message="A record delete failed. RESULTS:\n${delete}"
-        log_event "error" "${message}" "true"
+        log_event "error" "${message}" "false"
+        display --indent 2 --text "- Deleting A record from Cloudflare" --result "FAIL" --color RED
+
         return 1
 
     else

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc10
+# Version: 3.0.1
 #############################################################################
 
 ### Checking Script Execution
@@ -33,9 +33,9 @@ CONFIG_F="configs"
 
 export BK_TYPE SITES_F
 
-# Starting Message
-log_break
+# Starting Messages
 log_event "info" "Starting files backup script" "false"
+display --indent 2 --text "- Initializing files backup script" --result "DONE" --color GREEN
 
 # MAILCOW Files
 if [[ "${MAILCOW_BK}" = true ]]; then
@@ -54,6 +54,8 @@ fi
 # TODO: results of make_server_files_backup "configs" need to be on final mail notification
 
 ################################### SERVER CONFIG FILES ###################################
+
+log_subsection "Backup Server Files"
 
 # SERVER CONFIG FILES GLOBALS
 BK_SCF_INDEX=0
@@ -107,6 +109,8 @@ fi
 mail_configbackup_section "${BACKUPED_SCF_LIST[@]}" "${BK_SCF_SIZES[@]}" "${ERROR}" "${ERROR_TYPE}"
 
 ################################### SITES FILES ###################################
+
+log_subsection "Backup Sites Files"
 
 # Get all directories
 TOTAL_SITES=$(get_all_directories "${SITES}")

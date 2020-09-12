@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc10
+# Version: 3.0.1
 #############################################################################
 
 ### Checking some things
@@ -30,9 +30,10 @@ DBS_F="databases"
 
 export BK_TYPE DBS_F
 
-# Starting Message
+# Starting Messages
 log_break
 log_event "info" "Starting database backup script" "false"
+log_subsection "Backup Databases"
 display --indent 2 --text "- Initializing database backup script" --result "DONE" --color GREEN
 
 # Get MySQL DBS

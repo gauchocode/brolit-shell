@@ -1,0 +1,32 @@
+server {
+    listen      80;
+    #listen      [::]:80;
+
+    server_name domain.com;
+
+    root        /var/www/domain.com;
+
+    index index.php;
+
+    # handle .php
+    location / {
+            try_files $uri $uri/ /index.php?q=$uri&$args;
+    }
+
+    location ~ \.php$ {
+            include snippets/fastcgi-php.conf;
+            fastcgi_pass unix:/run/php/phpPHP_V-fpm.sock;
+    }
+
+    # Security
+    #include /etc/nginx/globals/security.conf;
+
+}
+
+# subdomains redirect
+server {
+    listen      80;
+    #listen      [::]:80;
+    server_name *.domain.com;
+    return      301 http://domain.com$request_uri;
+}

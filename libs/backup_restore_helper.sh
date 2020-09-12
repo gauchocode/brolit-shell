@@ -1,18 +1,9 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc10
+# Version: 3.0.1
 ################################################################################
 
-### Checking some things
-if [[ -z "${SFOLDER}" ]]; then
-  echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
-  exit 0
-fi
-################################################################################
-
-# shellcheck source=${SFOLDER}/libs/commons.sh
-source "${SFOLDER}/libs/commons.sh"
 # shellcheck source=${SFOLDER}/libs/mysql_helper.sh
 source "${SFOLDER}/libs/mysql_helper.sh"
 # shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
@@ -96,7 +87,8 @@ make_temp_files_backup() {
   mkdir "${SFOLDER}/tmp/old_backup"
   mv "${folder_to_backup}" "${SFOLDER}/tmp/old_backup"
 
-  log_event "info" "Temp backup completed and stored here: ${SFOLDER}/tmp/old_backup" "true"
+  log_event "info" "Temp backup completed and stored here: ${SFOLDER}/tmp/old_backup" "false"
+  display --indent 2 --text "- Creating backup on temp directory" --result "DONE" --color GREEN
 
 }
 
@@ -112,7 +104,8 @@ restore_database_backup() {
 
   local db_name db_exists user_db_exists db_pass
 
-  log_event "info" "Running restore_database_backup for ${project_backup} DB ${ENDCOLOR}" "true"
+  log_event "info" "Running restore_database_backup for ${project_backup} DB ${ENDCOLOR}" "false"
+  log_subsection "Database Restore"
 
   db_name="${project_name}_${project_state}"
 
@@ -126,7 +119,7 @@ restore_database_backup() {
 
   else
 
-    log_event "info" "MySQL database ${db_name} already exists" "true"
+    log_event "info" "MySQL database ${db_name} already exists" "false"
     mysql_database_export "${db_name}" "${db_name}_bk_before_restore.sql"
 
   fi
@@ -135,13 +128,15 @@ restore_database_backup() {
   project_backup="${project_backup%%.*}.sql"
   mysql_database_import "${project_name}_${project_state}" "${project_backup}"
 
-  log_event "info" "Cleanning temp files ..." "true"
+  log_event "info" "Cleanning temp files ..." "fañse"
   
-  rm ${project_backup%%.*}.sql
-  rm ${project_backup%%.*}.tar.bz2
+  rm "${project_backup%%.*}.sql"
+  rm "${project_backup%%.*}.tar.bz2"
   rm "${project_backup}"
 
-  log_event "success" "restore_database_backup done" "true"
+  display --indent 2 --text "- Cleanning temp files" --result "DONE" --color GREEN
+
+  log_event "success" "restore_database_backup done" "false"
 
 }
 

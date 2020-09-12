@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: broobe. web + mobile development - https://broobe.com
-# Version: 3.0-rc10
+# Version: 3.0.1
 ################################################################################
 #
 # Ref: https://linuxize.com/post/how-to-install-pip-on-ubuntu-18.04/
