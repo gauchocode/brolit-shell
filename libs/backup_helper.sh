@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc10
+# Version: 3.0.1
 #############################################################################
 
 ### Checking some things
@@ -228,10 +228,10 @@ make_server_files_backup() {
     bzip2_result=$?
     if [ ${bzip2_result} -eq 0 ]; then
 
-      log_event "success" "${bk_file} backup created OK!" "false"
-      display --indent 2 --text "- Testing nginx backup file" --result "DONE" --color GREEN
+      log_event "success" "${bk_file} backup creation finished" "false"
+      display --indent 2 --text "- Testing compressed backup file" --result "DONE" --color GREEN
 
-      BACKUPED_SCF_LIST[$BK_SCF_INDEX]=${bk_file}
+      BACKUPED_SCF_LIST[$BK_SCF_INDEX]="${bk_file}"
       BACKUPED_SCF_FL=${BACKUPED_SCF_LIST[$BK_SCF_INDEX]}
 
       # Calculate backup size
@@ -269,7 +269,7 @@ make_server_files_backup() {
 
         display --indent 2 --text "- Deleting old backup from Dropbox" --result "DONE" --color GREEN
 
-        log_event "success" "Server files backup ok!" "false"
+        log_event "success" "Server files backup finished" "false"
 
       else
 
@@ -295,7 +295,7 @@ make_server_files_backup() {
 
   else
 
-    log_event "error" "Directory '${bk_path}' doesnt exists!" "true"
+    log_event "error" "Directory '${bk_path}' doesnt exists!" "false"
 
     display --indent 2 --text "- Creating backup file" --result "FAIL" --color RED
     display --indent 4 --text "Result: Directory '${bk_path}' doesnt exists"
@@ -317,7 +317,7 @@ make_mailcow_backup() {
   # VAR $bk_type rewrited
   local bk_type="mailcow"
 
-  local mailcow_backup_location
+  local mailcow_backup_result
 
   log_break
 
@@ -329,9 +329,10 @@ make_mailcow_backup() {
     log_event "info" "Trying to make a backup of ${MAILCOW} ..." "false"
     display --indent 2 --text "- Preparing ${MAILCOW} for backup" --tcolor YELLOW --result "DONE" --color GREEN
 
-    mailcow_backup_location=${MAILCOW_TMP_BK} "${MAILCOW}/helper-scripts/backup_and_restore.sh" backup all
+    "${MAILCOW}/helper-scripts/backup_and_restore.sh" backup all
 
-    if [ $? -eq 0 ]; then
+    mailcow_backup_result=$?
+    if [ "${mailcow_backup_result}" -eq 0 ]; then
 
       # Con un pequeño truco vamos a obtener el nombre de la carpeta que crea mailcow
       cd "${MAILCOW_TMP_BK}"
@@ -341,36 +342,38 @@ make_mailcow_backup() {
 
       log_event "info" "Making TAR.BZ2 from: ${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER} ..." "false"
 
-      (tar -cf - --directory="${MAILCOW_TMP_BK}" "${MAILCOW_TMP_FOLDER}" | pv --width 60 -ns $(du -sb "${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER}" | awk '{print $1}') | lbzip2 >${MAILCOW_TMP_BK}/${bk_file}) 2>&1 | dialog --gauge ' > Making tar.bz2 from: '${MAILCOW_TMP_FOLDER} 7 70
+      ${TAR} -cf - --directory="${MAILCOW_TMP_BK}" "${MAILCOW_TMP_FOLDER}" | pv --width 70 -ns $(du -sb "${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER}" | awk '{print $1}') | lbzip2 >"${MAILCOW_TMP_BK}/${bk_file}"
+
+      # Clear pipe output
+      clear_last_line
 
       # Test backup file
       log_event "info" "Testing backup file: ${bk_file} ..." "false"
       
       lbzip2 -t "${MAILCOW_TMP_BK}/${bk_file}"
-
-      if [ $? -eq 0 ]; then
+      
+      lbzip2_result=$?
+      if [[ "${lbzip2_result}" -eq 0 ]]; then
 
         log_event "success" "${MAILCOW_TMP_BK}/${bk_file} backup created" "false"
 
         # New folder with $VPSNAME
-        output=$($DROPBOX_UPLOADER -q mkdir "/${VPSNAME}" 2>&1)
+        output=$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}" 2>&1)
       
         # New folder with $bk_type
-        output=$($DROPBOX_UPLOADER -q mkdir "/${VPSNAME}/${bk_type}" 2>&1)
+        output=$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}/${bk_type}" 2>&1)
 
         DROPBOX_PATH="/${VPSNAME}/${bk_type}"
 
         log_event "info" "Uploading Backup to Dropbox ..." "false"
-        $DROPBOX_UPLOADER upload "${MAILCOW_TMP_BK}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}"
+        output=$(${DROPBOX_UPLOADER} upload "${MAILCOW_TMP_BK}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}" 2>&1)
 
-        log_event "info" "Trying to delete old backup from Dropbox ..." "false"
-        $DROPBOX_UPLOADER remove "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${bk_file}"
+        log_event "info" "Deleting old backup from Dropbox ..." "false"
+        output=$(${DROPBOX_UPLOADER} remove "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${bk_file}" 2>&1)
 
         rm -R "${MAILCOW_TMP_BK}"
 
-        log_event "info" "Mailcow backup ok!" "false"
-
-        return 0
+        log_event "info" "Mailcow backup finished" "false"
 
       fi
   
@@ -387,7 +390,7 @@ make_mailcow_backup() {
 
   else
 
-    log_event "error" "Directory '${MAILCOW}' doesnt exists!" "true"
+    log_event "error" "Directory '${MAILCOW}' doesnt exists!" "false"
 
     return 1
 
@@ -415,8 +418,7 @@ make_files_backup() {
   log_event "info" "Making backup file from: ${directory_to_backup} ..." "false"
   display --indent 2 --text "- Preparing ${directory_to_backup} for backup" --tcolor YELLOW --result "DONE" --color GREEN
 
-  #(${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv -ns $(du -sb ${bk_path}/${directory_to_backup} | awk '{print $1}') | lbzip2 >"${BAKWP}/${NOW}/${bk_file}") 2>&1 | dialog --gauge 'Processing '${SHOW_BK_FILE_INDEX}' of '${COUNT_TOTAL_SITES}' directories. Making tar.bz2 from: '${directory_to_backup} 7 70
-  ${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv --width 60 --size $(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}') | lbzip2 >"${BAKWP}/${NOW}/${bk_file}"
+  ${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv --width 70 --size $(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}') | lbzip2 >"${BAKWP}/${NOW}/${bk_file}"
   
   # Clear pipe output
   clear_last_line
@@ -432,8 +434,8 @@ make_files_backup() {
 
     log_event "success" "${bk_file} backup created" "false"
     
-    BACKUPED_LIST[$BK_FILE_INDEX]=${bk_file}
-    BACKUPED_FL=${BACKUPED_LIST[$BK_FILE_INDEX]}
+    BACKUPED_LIST[$BK_FILE_INDEX]="${bk_file}"
+    BACKUPED_FL=${BACKUPED_LIST[${BK_FILE_INDEX}]}
 
     # Calculate backup size
     BK_FL_SIZE=$(ls -la --human-readable "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')
@@ -601,7 +603,7 @@ make_database_backup() {
 
       # Delete old backups
       log_event "info" "Deleting old database backup [${old_bk_file}] from dropbox ..." "false"
-      $DROPBOX_UPLOADER -q remove "$DROPBOX_FOLDER/${DROPBOX_PATH}/${old_bk_file}"
+      output=$(${DROPBOX_UPLOADER} -q remove "$DROPBOX_FOLDER/${DROPBOX_PATH}/${old_bk_file}" 2>&1)
       display --indent 2 --text "- Delete old database backup" --result "DONE" --color GREEN
 
       log_event "info" "Deleting old database backup [${old_bk_file}] from server ..." "false"
@@ -698,7 +700,7 @@ make_project_backup() {
         log_event "info" "Making TAR.BZ2 for database: ${db_file} ..." "false"
 
         #echo " > tar -cf - --directory=${directory_to_backup} ${db_file} | pv -s $(du -sb ${BAKWP}/${NOW}/${db_file} | awk '{print $1}') | lbzip2 >${BAKWP}/${NOW}/${BK_DB_FILE}" >>$LOG
-        ${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 60 -s $(du -sb "${BAKWP}/${NOW}/${db_file}" | awk '{print $1}') | lbzip2 >"${BAKWP}/${NOW}/${BK_DB_FILE}"
+        ${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s $(du -sb "${BAKWP}/${NOW}/${db_file}" | awk '{print $1}') | lbzip2 >"${BAKWP}/${NOW}/${BK_DB_FILE}"
 
         # Test backup file
         log_event "info" "Testing backup file: ${BK_DB_FILE} ..." "false"

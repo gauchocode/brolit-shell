@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc10
+# Version: 3.0.1
 #############################################################################
 
 ### Main dir check
@@ -144,16 +144,18 @@ test_mysql_database_exists(){
 log_section "Testing Titles"
 
 display --indent 2 --text "- Testing message on console" --result "DONE" --color GREEN
-
 display --indent 2 --text "- Testing message on console" --result "WARNING" --color YELLOW
-
 display --indent 2 --text "- Testing message on console" --tcolor RED --result "ERROR" --color RED
 
+log_subsection "Databases"
+
+display --indent 2 --text "- Testing message on console" --result "DONE" --color GREEN
+display --indent 2 --text "- Testing message on console" --result "DONE" --color GREEN
 display --indent 2 --text "- Testing message on console" --result "WARNING" --color YELLOW
 
-sleep 5
+#sleep 3
 
-clear_last_line
+#clear_last_line
 
 log_break "true"
 

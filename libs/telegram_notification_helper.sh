@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc10
+# Version: 3.0.1
 ################################################################################
 
 telegram_send_message() {
@@ -35,7 +35,7 @@ telegram_send_message() {
 	#notif_text="<b>${notif_date}:</b>\n<pre>${notification_text}</pre>"
 	notif_text="<pre>${notification_text}</pre>"
 	
-	log_event "info" "Sending Telegram notification ..." "true"
+	log_event "info" "Sending Telegram notification ..." "false"
 
 	telegram_notif_response=$(curl --silent --insecure --max-time "${timeout}" --data chat_id="${telegram_user_id}" --data "disable_notification=${notif_sound}" --data "parse_mode=${display_mode}" --data "text=${notif_text}" "${notif_url}")
 	telegram_notif_result=$(echo "${telegram_notif_response}" | grep "ok" | cut -d ":" -f2 | cut -d "," -f1)
@@ -45,11 +45,13 @@ telegram_send_message() {
 
 	if [ "${telegram_notif_result}" = "true" ]; then
 		# Log success
-		log_event "success" "Telegram notification sent!" "true"
+		log_event "success" "Telegram notification sent!" "false"
+		display --indent 2 --text "- Sending Telegram notification" --result "DONE" --color GREEN
 	
 	else
 		# Log failure
-		log_event "error" "Telegram notification error!" "true"
+		log_event "error" "Telegram notification error!" "false"
+		display --indent 2 --text "- Sending Telegram notification" --result "FAIL" --color RED
 
 	fi
 	

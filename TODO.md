@@ -1,6 +1,6 @@
 # TODO List
 
-## For release 3.0-final
+## For release 3.0.1
 
 ### TODO
 
@@ -20,6 +20,7 @@
 - [ ] Better code documentation.
 - [ ] Complete refactor on delete_project script.
 - [ ] Notifications: Subject status dont't change on error or warning.
+- [ ] Log/Display: better log handling and display improvements.
 
 ### Need more testing
 - [ ] WordPress: Install fails when set a project name like: xyz_sub_domain.
@@ -41,7 +42,7 @@
 
 ## For release 3.1
 - [ ] Warning if script run on non default installation (no webserver or another than nginx).
-- [ ] Log/Display: better logg handling and display improvements.
+- [ ] Finish function: download_and_restore_config_files_from_dropbox
 - [ ] Complete refactor of "Options Wizard": (Backup Options, Notification Options, Cloudflare Config).
 - [ ] Nginx: Add http2 support on nginx server config files.
 - [ ] Nginx: New option to put website on maintenance.

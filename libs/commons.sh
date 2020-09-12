@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc10
+# Version: 3.0.1
 ################################################################################
 
 #
@@ -12,7 +12,7 @@
 #################################################################################
 #
 
-SCRIPT_V="3.0-rc10"
+SCRIPT_V="3.0.1"
 
 # Hostname
 VPSNAME="$HOSTNAME"
@@ -78,7 +78,15 @@ menutitle="Config Selection Menu"
 #################################################################################
 #
 
-# Foreground Colours
+# Text Styles
+#NORMAL='\x1b[2m normal'
+NORMAL="\033[m"
+BOLD='\x1b[1m'
+ITALIC='\x1b[3m'
+UNDERLINED='\x1b[4m'
+INVERTED='\x1b[7m'
+
+# Text Colours
 BLACK='\E[30;40m'
 RED='\E[31;40m'
 GREEN='\E[32;40m'
@@ -89,7 +97,6 @@ MAGENTA='\E[35;40m'
 CYAN='\E[36;40m'
 WHITE='\E[37;40m'
 ENDCOLOR='\033[0m'
-NORMAL="\033[m"
 
 # Background Colours
 B_BLACK='\E[40m'
@@ -427,7 +434,7 @@ project_utils_menu () {
   whip_title="PROJECT UTILS"
   whip_description=" "
 
-  project_utils_options="01) CREATE-WP-PROJECT 02) CREATE-PHP-PROJECT 03) DELETE-PROJECT 04) PUT-PROJECT-ONLINE 05) PUT-PROJECT-OFFLINE 06) BENCH-PROJECT-GTMETRIX"
+  project_utils_options="01) CREATE-WP-PROJECT 02) CREATE-PHP-PROJECT 03) DELETE-PROJECT 04) PUT-PROJECT-ONLINE 05) PUT-PROJECT-OFFLINE 06) REGENERATE-NGINX-SERVER 07) BENCH-PROJECT-GTMETRIX"
   chosen_project_utils_options=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 $(for x in ${project_utils_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -435,7 +442,7 @@ project_utils_menu () {
 
     if [[ ${chosen_project_utils_options} == *"01"* ]]; then
       
-      # CREATE_WP_PROJECT
+      # CREATE-WP-PROJECT
 
       # shellcheck source=${SFOLDER}/installers/wordpress_installer.sh
       source "${SFOLDER}/utils/installers/wordpress_installer.sh"
@@ -443,7 +450,7 @@ project_utils_menu () {
 
     if [[ ${chosen_project_utils_options} == *"02"* ]]; then
 
-      # CREATE_PHP_PROJECT
+      # CREATE-PHP-PROJECT
 
       # TODO: create empty dir on $SITES, create nginx server file, ask for database
       log_event "error" "TODO: CREATE_PHP_PROJECT MUST BE IMPLEMENTED SOON" "true"
@@ -452,7 +459,7 @@ project_utils_menu () {
 
     if [[ ${chosen_project_utils_options} == *"03"* ]]; then
 
-      # DELETE_PROJECT
+      # DELETE-PROJECT
 
       # shellcheck source=${SFOLDER}/utils/delete_project.sh
       source "${SFOLDER}/utils/delete_project.sh"
@@ -461,7 +468,7 @@ project_utils_menu () {
 
     if [[ ${chosen_project_utils_options} == *"04"* ]]; then
 
-      # PUT_PROJECT_ONLINE
+      # PUT-PROJECT-ONLINE
 
       # shellcheck source=${SFOLDER}/libs/nginx_helper.sh
       source "${SFOLDER}/libs/nginx_helper.sh"
@@ -471,7 +478,7 @@ project_utils_menu () {
 
     if [[ ${chosen_project_utils_options} == *"05"* ]]; then
 
-      # PUT_PROJECT_OFFLINE
+      # PUT-PROJECT-OFFLINE
 
       # shellcheck source=${SFOLDER}/libs/nginx_helper.sh
       source "${SFOLDER}/libs/nginx_helper.sh"
@@ -481,7 +488,43 @@ project_utils_menu () {
 
     if [[ ${chosen_project_utils_options} == *"06"* ]]; then
 
-      # BENCH_PROJECT_GTMETRIX
+      # REGENERATE-NGINX-SERVER
+
+      log_section "Nginx Manager"
+
+      # shellcheck source=${SFOLDER}/libs/nginx_helper.sh
+      source "${SFOLDER}/libs/nginx_helper.sh"
+
+      # Select project to work with
+      directory_browser "Select a Website to work with" "${SITES}" #return $filename
+
+      if [ "${filename}" != "" ]; then
+
+        filename="${filename::-1}" # remove '/'
+        
+        display --indent 2 --text "- Selecting website to work with" --result DONE --color GREEN
+        display --indent 4 --text "Selected website: ${filename}"
+
+        # Aks project domain
+        project_domain=$(ask_project_domain "${filename}")
+
+        # Aks project type
+        project_type=$(ask_project_type)
+        
+        # New site Nginx configuration
+        nginx_server_create "${project_domain}" "${project_type}" "single" ""
+
+      else
+
+        display --indent 2 "Selecting website to work with" --result SKIPPED --color YELLOW
+
+      fi
+
+    fi
+
+    if [[ ${chosen_project_utils_options} == *"07"* ]]; then
+
+      # BENCH-PROJECT-GTMETRIX
 
       URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
@@ -822,7 +865,7 @@ log_break() {
 
   local log_break
   
-  log_break="-------------------------------------------------------------------------"
+  log_break="    -------------------------------------------------------------------"
   
   echo "${log_break}" >> "${LOG}"
   if [ "${console_display}" = "true" ]; then
@@ -846,6 +889,21 @@ log_section() {
 
 }
 
+log_subsection() {
+
+  # Parameters
+  # $1 = {message}
+
+  local message=$1
+
+    if [ "${QUIET}" -eq 0 ]; then
+        echo ""
+        echo -e "    [·] ${CYAN}${message}${NORMAL}"
+        echo "    ------------------------------------------"
+    fi
+
+}
+
 clear_screen() {
 
   echo -en "\ec"
@@ -856,6 +914,7 @@ clear_last_line() {
 
   printf "\033[1A"
   echo "                                                                                             "
+  printf "\033[1A"
   printf "\033[1A"
 
 }
@@ -1323,6 +1382,8 @@ generate_telegram_config() {
 			echo "telegram_user_id=${telegram_user_id}" >>"/root/.telegram.conf"
       log_event "success" "The Telegram configuration has been saved!" "false"
 
+      telegram_send_message "✅ ${VPSNAME}: Telegram notifications configured!"
+
 		else
 			return 1
 
@@ -1577,10 +1638,35 @@ ask_project_domain() {
   project_domain=$(whiptail --title "Domain" --inputbox "Insert the project's domain. Example: landing.domain.com" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
+
+    # Return
     echo "${project_domain}"
 
   else
-    exit 1
+    return 1
+
+  fi
+
+}
+
+ask_project_type() {
+
+  local project_types project_type
+
+  project_types="WordPress X Laravel X Basic-PHP X HTML X"
+  
+  project_type=$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 $(for x in ${project_types}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+
+    # Lowercase
+    project_type="$(echo "${project_type}" | tr '[A-Z]' '[a-z]')"
+
+    # Return
+    echo "${project_type}"
+
+  else
+    return 1
 
   fi
 

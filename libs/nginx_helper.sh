@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0-rc10
+# Version: 3.0.1
 ################################################################################
 
 ### Checking some things
@@ -32,10 +32,15 @@ nginx_server_create() {
     local nginx_result debug
 
     # Create nginx config files for site
-    log_event "info" "Creating nginx configuration file for domain: ${project_domain}" "true"
-    log_event "info" "Project Type: ${project_type}" "true"
-    log_event "info" "Server Type: ${server_type}" "true"
-    log_event "info" "List of domains or subdomains that will be redirect to project_domain: ${redirect_domains}" "true"
+    log_event "info" "Creating nginx configuration file for domain: ${project_domain}" "false"
+    log_event "info" "Project Type: ${project_type}" "false"
+    log_event "info" "Server Type: ${server_type}" "false"
+    log_event "info" "List of domains or subdomains that will be redirect to project_domain: ${redirect_domains}" "false"
+
+    if [ -f "${WSERVER}/sites-available/${project_domain}" ]; then
+        mv "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-available/${project_domain}_backup"
+        rm "${WSERVER}/sites-enabled/${project_domain}"
+    fi
 
     case $server_type in
 
@@ -80,7 +85,7 @@ nginx_server_create() {
         sed -i "s#PHP_V#${PHP_V}#" "${WSERVER}/sites-available/${project_domain}"
     else
 
-        log_event "critical" "PHP_V not defined! Is PHP installed?" "true"
+        log_event "critical" "PHP_V not defined! Is PHP installed?" "false"
 
     fi
     
@@ -92,11 +97,15 @@ nginx_server_create() {
         # Reload webserver
         service nginx reload
 
-        log_event "success" "nginx configuration created" "true"
+        log_event "success" "nginx configuration created" "false"
+        display --indent 2 --text "- Nginx server configuration" --result DONE --color GREEN
 
     else
+
         debug=$(nginx -t 2>&1)
-        log_event "error" "nginx configuration fail: $debug" "true"
+        log_event "error" "nginx configuration fail: $debug" "false"
+        display --indent 2 --text "- Nginx server configuration" --result FAIL --color RED
+
     fi
 
 }
