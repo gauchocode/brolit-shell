@@ -15,7 +15,7 @@ mysql_default_installer() {
 
   log_event "info" "Running MySQL default installer" "false"
 
-  apt --yes install mysql-server
+  apt-get --yes install mysql-server -qq > /dev/null
   
   display --indent 2 --text "- MySQL default installation" --result "DONE" --color GREEN
 
@@ -27,7 +27,7 @@ mariadb_default_installer() {
 
   log_event "info" "Running MariaDB default installer" "false"
 
-  apt --yes install mariadb-server mariadb-client -qq
+  apt-get --yes install mariadb-server mariadb-client -qq > /dev/null
 
   display --indent 2 --text "- MariaDB default installation" --result "DONE" --color GREEN
 
@@ -35,14 +35,17 @@ mariadb_default_installer() {
 
 mysql_purge_installation() {
 
-  log_event "warning" "Purging mysql-* packages ..." "true"
+  log_event "warning" "Purging mysql-* packages ..." "false"
+  display --indent 2 --text "- Purging MySQL packages"
 
-  apt --yes purge mysql-server mysql-client mysql-common mysql-server-core-* mysql-client-core-*
+  apt-get --yes purge mysql-server mysql-client mysql-common mysql-server-core-* mysql-client-core-* -qq > /dev/null
   rm -rf /etc/mysql /var/lib/mysql
-  apt-get autoremove
-  apt-get autoclean
+  apt-get autoremove -qq > /dev/null
+  apt-get autoclean -qq > /dev/null
 
-  log_event "info" "mysql-* packages purged!" "true"
+  log_event "info" "mysql-* packages purged!" "false"
+  clear_last_line
+  display --indent 2 --text "- Purging MySQL packages" --result "DONE" --color GREEN
 
 }
 
@@ -86,7 +89,7 @@ if [ ${mysql_installed} == "false" ]; then
     mysql_secure_installation
 
   else
-    log_event "warning" "Operation cancelled" "true"
+    log_event "warning" "Operation cancelled" "false"
     return 1
 
   fi
@@ -95,7 +98,7 @@ else
 
   while true; do
 
-      echo -e ${YELLOW}" > MySQL already installed, do you want to remove it?"${ENDCOLOR}
+      echo -e "${YELLOW} > MySQL already installed, do you want to remove it?${ENDCOLOR}"
       read -p "Please type 'y' or 'n'" yn
 
       case $yn in
@@ -104,7 +107,7 @@ else
           break;;
                  
           [Nn]* )
-          log_event "warning" "Operation cancelled" "true"
+          log_event "warning" "Operation cancelled" "false"
           break;;
           * ) echo " > Please answer yes or no.";;
       esac

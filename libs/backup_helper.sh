@@ -574,10 +574,10 @@ make_database_backup() {
       clear_last_line
       display --indent 2 --text "- Compressing database backup" --result "DONE" --color GREEN
 
-      BACKUPED_DB_LIST[$BK_DB_INDEX]=${bk_file}
+      BACKUPED_DB_LIST[$BK_DB_INDEX]="${bk_file}"
 
       # Calculate backup size
-      BK_DB_SIZES[$BK_DB_INDEX]=$(ls -lah ${bk_file} | awk '{ print $5}')
+      BK_DB_SIZES[$BK_DB_INDEX]=$(ls -lah "${bk_file}" | awk '{ print $5}')
       BK_DB_SIZE=${BK_DB_SIZES[$BK_DB_INDEX]}
 
       log_event "success" "Backup for ${database} created, final size: ${BK_DB_SIZE}" "false"
@@ -602,7 +602,7 @@ make_database_backup() {
       display --indent 2 --text "- Uploading new database backup to dropbox" --result "DONE" --color GREEN
 
       # Delete old backups
-      log_event "info" "Deleting old database backup [${old_bk_file}] from dropbox ..." "false"
+      log_event "info" "Deleting old database backup ${old_bk_file} from dropbox ..." "false"
       output=$(${DROPBOX_UPLOADER} -q remove "$DROPBOX_FOLDER/${DROPBOX_PATH}/${old_bk_file}" 2>&1)
       display --indent 2 --text "- Delete old database backup" --result "DONE" --color GREEN
 
@@ -638,6 +638,8 @@ make_project_backup() {
     local bk_path=$3
     local directory_to_backup=$4
 
+    local dropbox_output
+
     local directory_to_backup="${BAKWP}/${NOW}/"
 
     local old_bk_file="${directory_to_backup}_${bk_type}-files_${ONEWEEKAGO}.tar.bz2"
@@ -645,9 +647,7 @@ make_project_backup() {
 
     log_event "info" "Making TAR.BZ2 from: ${directory_to_backup} ..." "true"
 
-    #(${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv -ns $(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}') | lbzip2 >"${BAKWP}/${NOW}/${bk_file}") 2>&1 | dialog --gauge 'Processing '${BK_FILE_INDEX}' of '${COUNT_TOTAL_SITES}' directories. Making tar.bz2 from: '${directory_to_backup} 7 70
     (${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv -ns $(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}') | lbzip2 >"${BAKWP}/${NOW}/${bk_file}") 2>&1
-
 
     # Test backup file
     log_event "info" "Testing backup file: ${bk_file}" "false"
@@ -709,22 +709,22 @@ make_project_backup() {
         log_event "info" "Trying to create folders in Dropbox ..." "false"
 
         # New folder with $VPSNAME
-        output=$($DROPBOX_UPLOADER -q mkdir "/${VPSNAME}" 2>&1)
+        dropbox_output=$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}" 2>&1)
         
         # New folder with $bk_type
-        output=$($DROPBOX_UPLOADER -q mkdir "/${VPSNAME}/${bk_type}" 2>&1)
+        dropbox_output=$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}/${bk_type}" 2>&1)
 
         # New folder with $directory_to_backup
-        output=$($DROPBOX_UPLOADER -q mkdir "/${VPSNAME}/${bk_type}/${directory_to_backup}" 2>&1)
+        dropbox_output=$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}/${bk_type}/${directory_to_backup}" 2>&1)
 
         log_event "info" "Uploading file backup ${bk_file} to Dropbox ..." "true"
-        $DROPBOX_UPLOADER upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${NOW}"
+        dropbox_output=$(${DROPBOX_UPLOADER} upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${NOW}" 2>&1)
 
         log_event "info" "Uploading database backup ${BK_DB_FILE} to Dropbox ..." "true"
-        $DROPBOX_UPLOADER upload "${BAKWP}/${NOW}/${BK_DB_FILE}" "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${NOW}"
+        dropbox_output=$(${DROPBOX_UPLOADER} upload "${BAKWP}/${NOW}/${BK_DB_FILE}" "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${NOW}" 2>&1)
 
         log_event "info" "Trying to delete old backup from Dropbox with date ${ONEWEEKAGO} ..." "true"
-        $DROPBOX_UPLOADER delete "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${ONEWEEKAGO}"
+        dropbox_output=$(${DROPBOX_UPLOADER} delete "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${ONEWEEKAGO}" 2>&1)
 
         log_event "info" "Deleting backup from server ..." "true"
         rm -r "${BAKWP}/${NOW}/${bk_file}"

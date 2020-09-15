@@ -36,7 +36,7 @@ source "${SFOLDER}/libs/telegram_notification_helper.sh"
 
 delete_project_files() {
 
-    local project_domain
+    local project_domain dropbox_output
 
     log_event "info" "Performing Action: Delete Project" "false"
 
@@ -85,16 +85,16 @@ delete_project_files() {
         if [ $? -eq 0 ]; then
 
             # Creating new folder structure for old projects
-            output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}/offline-site" 2>&1)
+            dropbox_output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}/offline-site" 2>&1)
 
             # Moving deleted project backups to another dropbox directory
             log_event "info" "dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${project_domain} /${VPSNAME}/offline-site" "false"
-            $DROPBOX_UPLOADER move "/${VPSNAME}/${BK_TYPE}/${project_domain}" "/${VPSNAME}/offline-site"
-
+            dropbox_output=$(${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${project_domain}" "/${VPSNAME}/offline-site" 2>&1)
+            # TODO: if destination folder already exists, it fails
             display --indent 2 --text "- Moving to offline projects on Dropbox" --result "DONE" --color GREEN
 
             # Delete project files
-            rm -R $filepath"/"${project_domain}
+            rm -R "${filepath}/${project_domain}"
             log_event "info" "Project files deleted for ${project_domain}" "false"
             display --indent 2 --text "- Deleting project files on server" --result "DONE" --color GREEN
 
@@ -120,7 +120,7 @@ delete_project_files() {
 
             else
 
-                log_event "info" "Cloudflare entries not deleted." "true"
+                log_event "info" "Cloudflare entries not deleted. Skipped by user." "false"
 
             fi
 
@@ -153,6 +153,10 @@ delete_project_database() {
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
 
+        # Log
+        log_subsection "Delete Database"
+        display --indent 2 --text "- Initializing database deletion" --result "DONE" --color GREEN
+
         BK_TYPE="database"
 
         # Remove DB prefix to get project_name
@@ -165,7 +169,8 @@ delete_project_database() {
 
         # Moving deleted project backups to another dropbox directory
         log_event "info" "Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${CHOSEN_DB} /${VPSNAME}/offline-site" "false"
-        ${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${CHOSEN_DB}" "/${VPSNAME}/offline-site"
+        dropbox_output=$(${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${CHOSEN_DB}" "/${VPSNAME}/offline-site" 1>&2)
+        display --indent 2 --text "- Moving dropbox backup to offline directory" --result "DONE" --color GREEN
 
         # Delete project database
         mysql_database_drop "${CHOSEN_DB}"
@@ -173,7 +178,7 @@ delete_project_database() {
         # Delete mysql user
         while true; do
 
-            echo -e ${YELLOW}"> Do you want to remove database user? It could be used on another project."${ENDCOLOR}
+            echo -e "${YELLOW} > Do you want to remove database user? Maybe is used by another project.${ENDCOLOR}"
             read -p "Please type 'y' or 'n'" yn
 
             case $yn in
@@ -184,14 +189,13 @@ delete_project_database() {
                 
                 [Nn]* )
 
-                log_event "warning" "Aborting MySQL user deletion ..." "true"
+                log_event "warning" "Aborting MySQL user deletion ..." "false"
                 break;;
 
                 * ) echo " > Please answer yes or no.";;
             esac
-        done
 
-        telegram_send_message "⚠️ ${VPSNAME}: Database ${CHOSEN_DB} deleted!"
+        done
 
     else
         # Return
