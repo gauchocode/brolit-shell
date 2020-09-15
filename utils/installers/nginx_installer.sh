@@ -30,7 +30,7 @@ source "${SFOLDER}/libs/nginx_helper.sh"
 
 nginx_default_installer() { 
 
-    apt --yes install nginx -qq
+    apt-get --yes install nginx -qq > /dev/null
   
     display --indent 2 --text "- Nginx default installation" --result "DONE" --color GREEN
 
@@ -43,22 +43,33 @@ nginx_custom_installer() {
 
     add_ppa "nginx/stable"
 
-    apt-get update -qq
+    apt-get update -qq > /dev/null
 
-    apt --yes install nginx -qq
+    apt-get --yes install nginx -qq > /dev/null
+
+    display --indent 2 --text "- Nginx custom installation" --result "DONE" --color GREEN
 
 }
 
 nginx_webp_installer() {
 
-    apt -y install imagemagick webp
+    display --indent 2 --text "- Installing imagemagick and webp package"
+
+    apt-get --yes install imagemagick webp -qq > /dev/null
+
+    clear_last_line
+    display --indent 2 --text "- Installing imagemagick and webp package" --result "DONE" --color GREEN
 
 }
 
 nginx_purge_installation() {
 
-    echo " > Removing Nginx ..." >>$LOG
-    apt --yes purge nginx
+    display --indent 2 --text "- Purgin nginx from system"
+
+    apt-get --yes purge nginx -qq > /dev/null
+
+    clear_last_line
+    display --indent 2 --text "- Purgin nginx from system" --result "DONE" --color GREEN
 
 }
 
@@ -84,7 +95,7 @@ nginx_check_installed_version() {
 
 #if [ ${nginx_installed} == "false" ]; then
 
-    NGINX_INSTALLER_OPTIONS="01 NGINX_STANDARD 02 NGINX_LAST_STABLE 03 NGINX_RECONFIGURE"
+    NGINX_INSTALLER_OPTIONS="01) NGINX-STANDARD 02) NGINX-LAST-STABLE 03) NGINX-RECONFIGURE"
     CHOSEN_NGINX_INSTALLER_OPTION=$(whiptail --title "NGINX INSTALLER" --menu "Choose a Nginx version to install" 20 78 10 $(for x in ${NGINX_INSTALLER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then

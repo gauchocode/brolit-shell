@@ -212,13 +212,16 @@ restore_nginx_site_files() {
   local domain=$1
   local date=$2
 
-  local bk_file bk_to_download filename to_restore
+  local bk_file bk_to_download filename to_restore dropbox_output
 
   bk_file="nginx-configs-files-${date}.tar.bz2"
   bk_to_download="${chosen_server}/configs/nginx/${bk_file}"
 
+  log_subsection "Nginx Server Configuration Restore"
+
   log_event "info" "Running dropbox_uploader.sh download ${bk_to_download} ..." "false"
-  ${DROPBOX_UPLOADER} download "${bk_to_download}"
+  dropbox_output=$(${DROPBOX_UPLOADER} download "${bk_to_download}" 1>&2)
+  display --indent 2 --text "- Dropbox backup downloaded" --result "DONE" --color GREEN
 
   # Extract tar.bz2 with lbzip2
   mkdir "${SFOLDER}/tmp/nginx"
@@ -229,7 +232,7 @@ restore_nginx_site_files() {
   # Checking if default nginx folder exists
   if [[ -n "${WSERVER}" ]]; then
 
-    log_event "info" "Folder ${WSERVER} exists ... OK" "true"
+    log_event "info" "Folder ${WSERVER} exists ... OK" "false"
 
     if [[ -z "${domain}" ]]; then
 
@@ -237,44 +240,45 @@ restore_nginx_site_files() {
       file_browser "$menutitle" "$startdir"
 
       to_restore=${filepath}"/"${filename}
-      log_event "info" "File to restore: ${to_restore} ..." "true"
+      log_event "info" "File to restore: ${to_restore} ..." "false"
 
     else
 
       to_restore="${SFOLDER}/tmp/nginx/sites-available/${domain}"
       filename=${domain}
 
-      log_event "info" "File to restore: ${to_restore} ..." "true"
+      log_event "info" "File to restore: ${to_restore} ..." "false"
 
     fi    
 
     if [[ -f "${WSERVER}/sites-available/${filename}" ]]; then
 
-      log_event "info" "File ${WSERVER}/sites-available/${filename} already exists. Making a backup file ..." "true"
+      log_event "info" "File ${WSERVER}/sites-available/${filename} already exists. Making a backup file ..." "false"
       mv "${WSERVER}/sites-available/${filename}" "${WSERVER}/sites-available/${filename}_bk"
 
-      log_event "info" "Restoring backup: ${filename} ..." "true"
-      cp "${to_restore}" "${WSERVER}/sites-available/$filename"
-
-      log_event "info" "Reloading webserver ..." "true"
-      service nginx reload
-
-    else
-
-      log_event "info" "File ${WSERVER}/sites-available/${filename} does not exists" "true"
-      log_event "info" "Restoring nginx configuration from backup: ${filename}" "true"
-      
-      cp "${to_restore}" "${WSERVER}/sites-available/${filename}"
-
-      ln -s "${WSERVER}/sites-available/${filename}" "${WSERVER}/sites-enabled/${filename}"
-
-      nginx_server_change_phpv "${domain}" ""
+      display --indent 2 --text "- Making backup of existing config" --result "DONE" --color GREEN
 
     fi
 
+
+    log_event "info" "Restoring nginx configuration from backup: ${filename}" "false"
+    
+    cp "${to_restore}" "${WSERVER}/sites-available/${filename}"
+
+    ln -s "${WSERVER}/sites-available/${filename}" "${WSERVER}/sites-enabled/${filename}"
+
+    display --indent 2 --text "- Restoring Nginx server config" --result "DONE" --color GREEN
+
+    nginx_server_change_phpv "${domain}" ""
+
+    log_event "info" "Reloading webserver ..." "false"
+    service nginx reload
+
+    display --indent 2 --text "- Reloading nginx" --result "DONE" --color GREEN
+
   else
 
-    log_event "error" "/etc/nginx/sites-available NOT exist... Skipping!" "true"
+    log_event "error" "/etc/nginx/sites-available NOT exist... Skipping!" "false"
     #echo "ERROR: nginx main dir is not present!"
 
   fi
@@ -298,7 +302,7 @@ restore_letsencrypt_site_files() {
   ${DROPBOX_UPLOADER} download "${bk_to_download}"
 
   # Extract tar.bz2 with lbzip2
-  log_event "info" "Extracting ${bk_file} on ${SFOLDER}/tmp/" "true"
+  log_event "info" "Extracting ${bk_file} on ${SFOLDER}/tmp/" "false"
 
   mkdir "${SFOLDER}/tmp/letsencrypt"
   extract "${bk_file}" "${SFOLDER}/tmp/letsencrypt" "lbzip2"
@@ -337,7 +341,10 @@ restore_site_files() {
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
-    log_event "info" "Setting chosen_domain=${chosen_domain}" "true"
+    # Log
+    log_subsection "Site Files Restore"
+    log_event "info" "Setting chosen_domain=${chosen_domain}" "false"
+    display --indent 2 --text "- Selecting project domain" --result "DONE" --color GREEN
 
     # New tmp folder
     project_tmp_folder="${SFOLDER}/tmp/${chosen_domain}"
@@ -354,28 +361,33 @@ restore_site_files() {
     # Check if destination folder exist
     if [ -d "${actual_folder}" ]; then
 
-      log_event "warning" "${actual_folder} exist. Let's make a Backup ..." "true"
+      log_event "warning" "${actual_folder} exist. Let's make a Backup ..." "false"
 
       make_temp_files_backup "${actual_folder}"
 
     fi
 
     # Restore files
-    log_event "info" "Moving files from ${project_tmp_folder} to ${folder_to_install} ..." "true"
+    log_event "info" "Moving files from ${project_tmp_folder} to ${folder_to_install} ..." "false"
+
+    display --indent 2 --text "- Restoring backup files"
     
     mv "${project_tmp_folder}" "${folder_to_install}"
 
+    clear_last_line
+    display --indent 2 --text "- Restoring backup files" --result "DONE" --color GREEN
+
     install_path=$(search_wp_config "${actual_folder}")
 
-    log_event "info" "install_path=${install_path}" "true"
+    log_event "info" "install_path=${install_path}" "false"
 
     if [ -d "${install_path}" ]; then
 
-      log_event "info" "Wordpress intallation found on: ${install_path}" "true"
+      log_event "info" "Wordpress intallation found on: ${install_path}" "false"
 
       wp_change_permissions "${install_path}" 
 
-      log_event "info" "Files backup restored on: ${install_path}" "true"
+      log_event "info" "Files backup restored on: ${install_path}" "false"
 
       # Return
       echo "${install_path}"
@@ -383,7 +395,8 @@ restore_site_files() {
     fi
 
   else
-    exit 1
+
+    return 1
 
   fi
 
@@ -409,13 +422,13 @@ select_restore_type_from_dropbox() {
 
     dropbox_chosen_type_path="${chosen_server}/${chosen_type}"
 
-    echo "dropbox_chosen_type_path: ${dropbox_chosen_type_path}"
-
     if [[ ${chosen_type} == "project" ]]; then
 
       project_restore "${chosen_server}"
 
     elif [[ ${chosen_type} != "project" ]]; then
+
+      log_section "Restore ${chosen_type} Backup"
 
       dropbox_project_list=$(${DROPBOX_UPLOADER} -hq list "${dropbox_chosen_type_path}")
       
@@ -442,11 +455,11 @@ select_restore_type_from_dropbox() {
 
           bk_to_dowload="${chosen_server}/${chosen_type}/${chosen_project}/${CHOSEN_BACKUP_TO_RESTORE}"
 
-          log_event "info" "Running dropbox_uploader.sh download ${bk_to_dowload}" "true"
+          log_event "info" "Running dropbox_uploader.sh download ${bk_to_dowload}" "false"
 
           ${DROPBOX_UPLOADER} download "${bk_to_dowload}"
 
-          log_event "info" "Uncompressing ${CHOSEN_BACKUP_TO_RESTORE}" "true"
+          log_event "info" "Uncompressing ${CHOSEN_BACKUP_TO_RESTORE}" "false"
 
           pv "${CHOSEN_BACKUP_TO_RESTORE}" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
 
@@ -462,7 +475,7 @@ select_restore_type_from_dropbox() {
             project_name=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${project_name}" 3>&1 1>&2 2>&3)
             exitstatus=$?
             if [ $exitstatus = 0 ]; then
-              log_event "info" "Setting project_name=${project_name}" "true"
+              log_event "info" "Setting project_name=${project_name}" "false"
 
             else
               return 1
@@ -489,7 +502,7 @@ select_restore_type_from_dropbox() {
               mysql_user_create "${db_user}" "${db_pass}"
 
             else
-              log_event "warning" "MySQL user ${db_user} already exists" "true"
+              log_event "warning" "MySQL user ${db_user} already exists" "false"
               whiptail_event "WARNING" "MySQL user ${db_user} already exists. Please after the script ends, check project configuration files."
 
             fi
@@ -513,7 +526,7 @@ select_restore_type_from_dropbox() {
             # TODO: search_wp_config could be an array of dir paths, need to check that
             if [ "${install_path}" != "" ]; then
 
-              log_event "info" "WordPress installation found: ${project_site}/${install_path}" "true"
+              log_event "info" "WordPress installation found: ${project_site}/${install_path}" "false"
 
               # Change wp-config.php database parameters
               wp_update_wpconfig "${install_path}" "${project_name}" "${project_state}" "${DB_PASS}"
@@ -522,7 +535,7 @@ select_restore_type_from_dropbox() {
 
             else
 
-              log_event "error" "WordPress installation not found!" "true"
+              log_event "error" "WordPress installation not found!" "false"
 
             fi
 
@@ -569,37 +582,52 @@ project_restore() {
 
   local dropbox_project_list chosen_project dropbox_chosen_backup_path dropbox_backup_list bk_to_dowload chosen_backup_to_restore db_to_download
 
+  log_section "Restore Project Backup"
+
   dropbox_project_list=$(${DROPBOX_UPLOADER} -hq list "${chosen_server}/site")
 
   # Select Project
-  chosen_project=$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${dropbox_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
+  chosen_project=$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${dropbox_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
     dropbox_chosen_backup_path="${chosen_server}/site/${chosen_project}"
     dropbox_backup_list=$(${DROPBOX_UPLOADER} -hq list "${dropbox_chosen_backup_path}")
+  
+  else
+
+    display --indent 2 --text "- Restore project backup" --result "SKIPPED" --color YELLOW
+    return 1
 
   fi
   # Select Backup File
-  chosen_backup_to_restore=$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${dropbox_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
+  chosen_backup_to_restore=$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${dropbox_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [ ${exitstatus} -eq 0 ]; then
+
+    display --indent 2 --text "- Selecting project backup" --result "DONE" --color GREEN
+    display --indent 4 --text "Backup selected: ${chosen_backup_to_restore}"
 
     cd "${SFOLDER}/tmp"
 
+    # Download backup
     bk_to_dowload="${chosen_server}/site/${chosen_project}/${chosen_backup_to_restore}"
-
     log_event "info" "Running dropbox_uploader.sh download ${bk_to_dowload}" "false"
+    display --indent 2 --text "- Downloading backup from dropbox"
+    dropbox_output=$(${DROPBOX_UPLOADER} download "${bk_to_dowload}" 1>&2)
+    clear_last_line
+    display --indent 2 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
 
-    ${DROPBOX_UPLOADER} download "${bk_to_dowload}"
+    # Uncompress backup file
+    log_event "info" "Uncompressing ${chosen_backup_to_restore}" "false"
+    pv "${chosen_backup_to_restore}" | ${TAR} xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
+    clear_last_line
+    display --indent 2 --text "- Uncompressing backup file" --result "DONE" --color GREEN
 
-    log_event "info" "Uncompressing ${chosen_backup_to_restore}" "true"
-
-    pv "${chosen_backup_to_restore}" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
-
+    # Project Type
     project_type=$(get_project_type "${SFOLDER}/tmp/${chosen_project}")
 
-    log_event "info" "Project Type: ${project_type}" "true"
-    log_event "info" "Trying to get database parameters from ${SFOLDER}/tmp/${chosen_project}/wp-config.php" "true"
+    log_event "info" "Project Type: ${project_type}" "false"
+    log_event "info" "Trying to get database parameters from ${SFOLDER}/tmp/${chosen_project}/wp-config.php" "false"
 
     case $project_type in
 
@@ -625,30 +653,38 @@ project_restore() {
     # Here, for convention, chosen_project should be CHOSEN_DOMAIN... 
     # Only for better code reading, i assign this new var:
     chosen_domain=${chosen_project}
+
+    # Restore site files
     project_path=$(restore_site_files "${chosen_domain}")
 
+    # Database Backup
     backup_date=$(echo "${chosen_backup_to_restore}" |grep -Eo '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')
-
     db_to_download="${chosen_server}/database/${db_name}/${db_name}_database_${backup_date}.tar.bz2"
 
     # Extracting project_state from
     project_state="$(cut -d'_' -f2 <<<"${db_name}")"
 
-    echo -e ${CYAN}"*********** wp-config.php ***************"${ENDCOLOR}
-    echo -e ${CYAN}"project_path: ${project_path}"${ENDCOLOR}
-    echo -e ${CYAN}"chosen_project: ${chosen_project}"${ENDCOLOR}
-    echo -e ${CYAN}"project_state: ${project_state}"${ENDCOLOR}
-    echo -e ${CYAN}"backup_date: ${backup_date}"${ENDCOLOR}
-    echo -e ${CYAN}"DB NAME: ${db_name}"${ENDCOLOR}
-    echo -e ${CYAN}"DB USER: ${db_user}"${ENDCOLOR}
-    echo -e ${CYAN}"DB PASS: ${db_pass}"${ENDCOLOR}
-    echo -e ${CYAN}"*****************************************"${ENDCOLOR}
+    log_event "" "*************** wp-config.php ***************" "true"
+    log_event "" "project_path: ${project_path}" "true"
+    log_event "" "chosen_project: ${chosen_project}" "true"
+    log_event "" "project_state: ${project_state}" "true"
+    log_event "" "backup_date: ${backup_date}" "true"
+    log_event "" "Old db_name: ${db_name}" "true"
+    log_event "" "Old db_user: ${db_user}" "true"
+    log_event "" "Old db_pass: ${db_pass}" "true"
+    log_event "" "********************************************" "true"
 
-    ${DROPBOX_UPLOADER} download "${db_to_download}"
+    # Downloading Database Backup
+    display --indent 2 --text "- Downloading backup from dropbox"
+    dropbox_output=$(${DROPBOX_UPLOADER} download "${db_to_download}" 1>&2)
+    clear_last_line
+    display --indent 2 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
 
-    log_event "info" "Uncompressing ${db_to_download}" "true"
-
+    # Uncompress backup file
+    log_event "info" "Uncompressing ${db_to_download}" "false"
     pv "${db_name}_database_${backup_date}.tar.bz2" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
+    clear_last_line
+    display --indent 2 --text "- Uncompressing backup file" --result "DONE" --color GREEN
 
     # Trying to extract project name from domain
     chosen_project="$(cut -d'.' -f1 <<<"${chosen_project}")"
@@ -660,10 +696,14 @@ project_restore() {
     # Extract project_name (its removes last part of db name with "_" char)
     project_name=${chosen_project%"_$suffix"}
 
+    # TODO: extract to function
+    # Extract reserved substrings
+    project_name=$(echo "${project_name}" | sed s/"_org"// | sed s/"_ar"// | sed s/"_com"// | sed s/"_net"// | sed s/"_edu"//)
+
     project_name=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${project_name}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      log_event "info" "Setting project_name=${project_name}" "true"
+      log_event "info" "Setting project_name=${project_name}" "false"
 
     else
       return 1
@@ -687,13 +727,16 @@ project_restore() {
 
       db_pass=$(openssl rand -hex 12)
 
-      log_event "info" "Creating ${db_user} user in MySQL with pass: ${db_pass}" "true"
+      log_event "info" "Creating ${db_user} user in MySQL with pass: ${db_pass}" "false"
 
       mysql_user_create "${db_user}" "${db_pass}"
 
     else
 
-      log_event "warning" "MySQL user ${db_user} already exists" "true"
+      log_event "warning" "MySQL user ${db_user} already exists" "false"
+      display --indent 2 --text "- Creating ${db_user} user in MySQL" --result "FAIL" --color RED
+      display --indent 4 --text "MySQL user ${db_user} already exists."
+
       whiptail_event "WARNING" "MySQL user ${db_user} already exists. Please after the script ends, check project configuration files."
 
     fi
@@ -721,7 +764,7 @@ project_restore() {
     # HTTPS with Certbot
     certbot_helper_installer_menu "${MAILA}" "${chosen_domain}"
 
-    telegram_send_message "⚠️ ${VPSNAME}: Project ${project_name} restored on: ${project_path}"
+    telegram_send_message "✅ ${VPSNAME}: Project ${chosen_domain} restored on ${project_path}"
 
   fi
 

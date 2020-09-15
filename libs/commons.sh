@@ -149,7 +149,7 @@ script_init() {
   clear_screen
 
   # Log Start
-  log_event "" "WELCOME TO LEMP UTILS SCRIPT" "true"
+  log_event "" "WELCOME TO LEMP UTILS SCRIPT v${SCRIPT_V}" "true"
   log_event "info" "Script Start -- $(date +%Y%m%d_%H%M)" "false"
 
   ### Welcome #######################################################################
@@ -882,9 +882,9 @@ log_section() {
   local message=$1
 
     if [ "${QUIET}" -eq 0 ]; then
-        echo ""
-        echo -e "[+] Performing Action: ${YELLOW}${message}${NORMAL}"
-        echo "----------------------------------------------"
+        echo "" >&2
+        echo -e "[+] Performing Action: ${YELLOW}${message}${NORMAL}" >&2
+        echo "----------------------------------------------" >&2
     fi
 
 }
@@ -897,25 +897,25 @@ log_subsection() {
   local message=$1
 
     if [ "${QUIET}" -eq 0 ]; then
-        echo ""
-        echo -e "    [·] ${CYAN}${message}${NORMAL}"
-        echo "    ------------------------------------------"
+        echo "" >&2
+        echo -e "    [·] ${CYAN}${message}${NORMAL}" >&2
+        echo "    ------------------------------------------" >&2
     fi
 
 }
 
 clear_screen() {
 
-  echo -en "\ec"
+  echo -en "\ec" >&2
 
 }
 
 clear_last_line() {
 
-  printf "\033[1A"
-  echo "                                                                                             "
-  printf "\033[1A"
-  printf "\033[1A"
+  printf "\033[1A" >&2
+  echo "                                                                                             " >&2
+  printf "\033[1A" >&2
+  printf "\033[1A" >&2
 
 }
 
@@ -961,7 +961,7 @@ display() {
               TEXT=$1
           ;;
           *)
-              echo "INVALID OPTION (Display): $1"
+              echo "INVALID OPTION (Display): $1" >&2
               #ExitFatal
           ;;
       esac
@@ -993,12 +993,16 @@ display() {
           if [ "${CRONJOB}" -eq 0 ]; then
             # Check if we already have already discovered a proper echo command tool. It not, set it default to 'echo'.
             #if [ "${ECHOCMD}" = "" ]; then ECHOCMD="echo"; fi
-            echo -e "\033[${INDENT}C${TCOLOR}${TEXT}${NORMAL}\033[${SPACES}C${RESULTPART}${DEBUGTEXT}"
+            echo -e "\033[${INDENT}C${TCOLOR}${TEXT}${NORMAL}\033[${SPACES}C${RESULTPART}${DEBUGTEXT}" >&2
+
           else
-            echo "${TEXT}${RESULTPART}"
+            echo "${TEXT}${RESULTPART}" >&2
+
           fi
       fi
+
   fi
+
 }
 
 ################################################################################
@@ -1009,7 +1013,7 @@ check_root() {
 
   # Check if user is root
   if [ "${USER}" != root ]; then
-    echo -e ${B_RED}" > Error: Script runned by ${USER}, but must be root! Exiting..."${ENDCOLOR}
+    echo -e "${B_RED} > Error: Script runned by ${USER}, but must be root! Exiting ...${ENDCOLOR}"
     exit 1
   fi
 
@@ -1325,10 +1329,10 @@ generate_cloudflare_config() {
 
     cfl_api_token_string+= "\n Please insert the Cloudflare Global API Key.\n"
     cfl_api_token_string+=" 1) Log in on: cloudflare.com\n"
-    cfl_api_token_string+=" 2) Login and go to 'My Profile'.\n"
+    cfl_api_token_string+=" 2) Login and go to \"My Profile\".\n"
     cfl_api_token_string+=" 3) Choose the type of access you need.\n"
-    cfl_api_token_string+=" 4) Click on 'API TOKENS' \n"
-    cfl_api_token_string+=" 5) In 'Global API Key' click on \"View\" button.\n"
+    cfl_api_token_string+=" 4) Click on \"API TOKENS\" \n"
+    cfl_api_token_string+=" 5) In \"Global API Key\" click on \"View\" button.\n"
     cfl_api_token_string+=" 6) Copy the code and paste it here:\n\n"
 
     cfl_api_token=$(whiptail --title "Cloudflare Configuration" --inputbox "${cfl_api_token_string}" 15 60 3>&1 1>&2 2>&3)
@@ -1381,6 +1385,9 @@ generate_telegram_config() {
       # Write config file
 			echo "telegram_user_id=${telegram_user_id}" >>"/root/.telegram.conf"
       log_event "success" "The Telegram configuration has been saved!" "false"
+
+      # shellcheck source=${SFOLDER}/libs/telegram_notification_helper.sh
+      source "${SFOLDER}/libs/telegram_notification_helper.sh"
 
       telegram_send_message "✅ ${VPSNAME}: Telegram notifications configured!"
 
@@ -1493,7 +1500,7 @@ extract () {
   local directory=$2
   local compress_type=$3
 
-  log_event "info" "Trying to extract compressed file: ${file}" "true"
+  log_event "info" "Trying to extract compressed file: ${file}" "false"
 
     if [ -f "${file}" ]; then
         case "${file}" in
@@ -1544,7 +1551,7 @@ extract () {
                 echo "${file} cannot be extracted via extract()";;
         esac
     else
-        log_event "error" "${file} is not a valid file" "true"
+        log_event "error" "${file} is not a valid file" "false"
     fi
 }
 

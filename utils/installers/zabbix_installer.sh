@@ -16,7 +16,7 @@
 
 ### Checking some things
 if [[ -z "${SFOLDER}" ]]; then
-    echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+    echo -e "${B_RED} > Error: The script can only be runned by runner.sh! Exiting ...${ENDCOLOR}"
     exit 0
 fi
 ################################################################################
@@ -75,7 +75,7 @@ zabbix_server_installer() {
 
     apt update
 
-    apt --yes install zabbix-server-mysql zabbix-frontend-php
+    apt-get --yes install zabbix-server-mysql zabbix-frontend-php -qq > /dev/null
 
     # TODO: ASK FOR SUBDOMAIN
     ln -s "/usr/share/zabbix/" "/var/www/${SUBDOMAIN}"
@@ -122,7 +122,7 @@ zabbix_agent_installer() {
 
     apt update
 
-    apt --yes install zabbix-agent
+    apt-get --yes install zabbix-agent
 
 }
 

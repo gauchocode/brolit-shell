@@ -65,12 +65,12 @@ nginx_server_create() {
         ;;
 
         multi_domain)
-            log_event "info" "TODO" "true"
+            log_event "info" "TODO" "false"
 
         ;;
 
         *)
-            log_event "error" "Nginx server type unknow!" "true"
+            log_event "error" "Nginx server type unknow!" "false"
             return 1
         ;;
 
@@ -86,7 +86,7 @@ nginx_server_create() {
     else
 
         log_event "critical" "PHP_V not defined! Is PHP installed?" "false"
-
+        
     fi
     
     #Test the validity of the nginx configuration
@@ -150,27 +150,27 @@ nginx_server_change_status() {
     case ${project_status} in
 
     online)
-        log_event "info" "New project status: ${project_status}" "true"
+        log_event "info" "New project status: ${project_status}" "false"
         if [ -f "${WSERVER}/sites-available/${project_domain}" ]; then
             ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
-            log_event "info" "Project config added to ${WSERVER}/sites-enabled/${project_domain}" "true"
+            log_event "info" "Project config added to ${WSERVER}/sites-enabled/${project_domain}" "false"
         else
-            log_event "error" "${WSERVER}/sites-available/${project_domain} does not exist" "true"
+            log_event "error" "${WSERVER}/sites-available/${project_domain} does not exist" "false"
         fi
         ;;
 
       offline)
-        log_event "info" "New project status: ${project_status}" "true"
+        log_event "info" "New project status: ${project_status}" "false"
         if [ -h "${WSERVER}/sites-enabled/${project_domain}" ]; then
             rm "${WSERVER}/sites-enabled/${project_domain}"
-            log_event "info" "Project config deleted from ${WSERVER}/sites-enabled/${project_domain}" "true"
+            log_event "info" "Project config deleted from ${WSERVER}/sites-enabled/${project_domain}" "false"
         else
-            log_event "error" "${WSERVER}/sites-enabled/${project_domain} does not exist" "true"
+            log_event "error" "${WSERVER}/sites-enabled/${project_domain} does not exist" "false"
         fi
         ;;
 
       *)
-        log_event "info" "New project status: Unknown" "true"
+        log_event "info" "New project status: Unknown" "false"
         return 1
         ;;
     esac
@@ -183,11 +183,18 @@ nginx_server_change_status() {
         # Reload webserver
         service nginx reload
 
-        log_event "success" "Project configuration status changed to ${project_status} for ${project_domain}" "true"
+        log_event "success" "Project configuration status changed to ${project_status} for ${project_domain}" "false"
+        #clear_last_line
+        display --indent 2 --text "- Changing Project configuration status" --result "DONE" --color GREEN
+        display --indent 4 --text "Status changed to ${project_status} for ${project_domain}"
 
     else
         debug=$(nginx -t 2>&1)
-        log_event "error" "Problem changing project status for ${project_domain}: ${debug}" "true"
+        log_event "error" "Problem changing project status for ${project_domain}: ${debug}" "false"
+        #clear_last_line
+        display --indent 2 --text "- Changing Project configuration status" --result "FAIL" --color RED
+        display --indent 4 --text "Nginx configuration fails. Result: ${result}"
+
     fi
 
 }
@@ -208,7 +215,8 @@ nginx_server_change_phpv() {
     fi
 
     # Updating nginx server file
-    log_event "info" "Updating nginx ${project_domain} server file ..." "true"
+    log_event "info" "Chaning PHP version on nginx server file" "false"
+    display --indent 2 --text "- Chaning PHP version on nginx server file"
 
     # TODO: ask wich version of php want to work with
 
@@ -218,7 +226,11 @@ nginx_server_change_phpv() {
     
     sed -i "s#${current_php_v}#${new_php_v}#" "${WSERVER}/sites-available/${project_domain}"
 
-    log_event "info" "PHP version for ${project_domain} changed from ${current_php_v} to ${new_php_v}" "true"
+    log_event "info" "PHP version for ${project_domain} changed from ${current_php_v} to ${new_php_v}" "false"
+
+    clear_last_line
+    display --indent 2 --text "- Changing PHP version on nginx server file" --result "DONE" --color GREEN
+    display --indent 4 --text "PHP version changed to ${new_php_v}"
 
     #Test the validity of the nginx configuration
     result=$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)
@@ -228,12 +240,15 @@ nginx_server_change_phpv() {
         # Reload webserver
         service nginx reload
 
-        log_event "success" "Nginx configuration changed!" "true"
+        log_event "success" "Nginx configuration changed!" "false"
+        display --indent 2 --text "- Testing nginx configuration" --result "DONE" --color GREEN
 
     else
         debug=$(nginx -t 2>&1)
         whiptail_event "WARNING" "Something went wrong changing Nginx configuration. Please check manually nginx config files."
-        log_event "error" "Problem changing Nginx configuration. Debug: ${debug}" "true"
+        log_event "error" "Problem changing Nginx configuration. Debug: ${debug}" "false"
+
+        display --indent 2 --text "- Testing nginx configuration" --result "FAIL" --color RED
 
     fi
 
@@ -252,8 +267,9 @@ nginx_reconfigure() {
 nginx_new_default_server() {
     
     # New default nginx configuration
-    log_event "info" "Moving nginx configuration files ..." "true"
+    log_event "info" "Moving nginx configuration files ..." "false"
     cat "${SFOLDER}/config/nginx/sites-available/default" >"/etc/nginx/sites-available/default"
+    display --indent 2 --text "- Creating default nginx server" --result "DONE" --color GREEN
 
 }
 
@@ -263,8 +279,8 @@ nginx_delete_default_directory() {
     nginx_default_dir="/var/www/html"
     if [ -d "${nginx_default_dir}" ]; then
         rm -r $nginx_default_dir
-        log_event "info" "Directory ${nginx_default_dir} deleted" "true"
-
+        log_event "info" "Directory ${nginx_default_dir} deleted" "false"
+        display --indent 2 --text "- Removing nginx default directory" --result "DONE" --color GREEN
     fi
 
 }
@@ -275,11 +291,11 @@ nginx_create_globals_config() {
     nginx_globals="/etc/nginx/globals/"
 
     if [ -d "${nginx_globals}" ]; then
-        log_event "warning" "Directory ${nginx_globals} already exists ..." "true"
+        log_event "warning" "Directory ${nginx_globals} already exists ..." "false"
         return 1
 
     else
-        log_event "info" "Creating directory ${nginx_globals} exists ..." "true"
+        log_event "info" "Creating directory ${nginx_globals} exists ..." "false"
         mkdir "${nginx_globals}"
 
     fi
@@ -287,6 +303,8 @@ nginx_create_globals_config() {
     cp "${SFOLDER}/config/nginx/globals/security.conf /etc/nginx/globals/security.conf"
     cp "${SFOLDER}/config/nginx/globals/wordpress_sec.conf" "/etc/nginx/globals/wordpress_sec.conf"
     cp "${SFOLDER}/config/nginx/globals/wordpress_seo.conf" "/etc/nginx/globals/wordpress_seo.conf"
+
+    display --indent 2 --text "- Creating nginx globals config" --result "DONE" --color GREEN
 
     # Replace string to match PHP version
     sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/nginx/globals/wordpress_sec.conf"
@@ -302,12 +320,12 @@ nginx_create_globals_config() {
         # Reload webserver
         service nginx reload
 
-        log_event "success" "Nginx configuration changed!" "true"
+        log_event "success" "Nginx configuration changed!" "false"
 
     else
         debug=$(nginx -t 2>&1)
         whiptail_event "WARNING" "Something went wrong changing Nginx configuration. Please check manually nginx config files."
-        log_event "error" "Problem changing Nginx configuration. Debug: ${debug}" "true"
+        log_event "error" "Problem changing Nginx configuration. Debug: ${debug}" "false"
 
     fi
 
