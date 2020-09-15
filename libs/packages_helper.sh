@@ -138,6 +138,15 @@ check_packages_required() {
     display --indent 2 --text "- Installing unzip" --result "DONE" --color GREEN
   fi
 
+  # Check if unzip is installed
+  GIT="$(which git)"
+  if [ ! -x "${GIT}" ]; then
+    display --indent 2 --text "- Installing git"
+    apt-get --yes install git -qq > /dev/null
+    clear_last_line
+    display --indent 2 --text "- Installing git" --result "DONE" --color GREEN
+  fi
+
   # TAR
   TAR="$(which tar)"
 
