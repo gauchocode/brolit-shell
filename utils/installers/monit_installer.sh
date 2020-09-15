@@ -60,11 +60,11 @@ if [ ! -x "${MONIT}" ]; then
           [Yy]* )
 
           log_event "info" "Updating packages before installation ..." "true"
-          apt --yes update
+          apt-get --yes update
 
           # Installing packages
           log_event "info" "Installing monit ..." "true"
-          apt --yes install monit
+          apt-get --yes install monit
 
           configure_monit
 

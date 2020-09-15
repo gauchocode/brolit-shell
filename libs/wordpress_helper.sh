@@ -89,19 +89,27 @@ wp_update_wpconfig() {
   local wp_project_state=$3
   local db_user_pass=$4
 
-  # TODO: must check if ${wp_project_dir}/wp-config.php exists
+  local sed_output
 
   # Change wp-config.php database parameters
-  log_event "info" "Changing database parameters on ${wp_project_dir}/wp-config.php" "true"
+  log_event "info" "Changing database parameters on ${wp_project_dir}/wp-config.php" "false"
   
   sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" "${wp_project_dir}/wp-config.php"
   
   if [[ ${wp_project_name} != "" ]]; then
-    sed -i "/DB_NAME/s/'[^']*'/'${wp_project_name}_${wp_project_state}'/2" "${wp_project_dir}/wp-config.php"
+    sed_output=$(sed -i "/DB_NAME/s/'[^']*'/'${wp_project_name}_${wp_project_state}'/2" "${wp_project_dir}/wp-config.php")
   fi
   if [[ ${db_user_pass} != "" ]]; then
-    sed -i "/DB_USER/s/'[^']*'/'${wp_project_name}_user'/2" "${wp_project_dir}/wp-config.php"
-    sed -i "/DB_PASSWORD/s/'[^']*'/'${db_user_pass}'/2" "${wp_project_dir}/wp-config.php"
+    sed_output=$(sed -i "/DB_USER/s/'[^']*'/'${wp_project_name}_user'/2" "${wp_project_dir}/wp-config.php")
+    sed_output=$(sed -i "/DB_PASSWORD/s/'[^']*'/'${db_user_pass}'/2" "${wp_project_dir}/wp-config.php")
+  fi
+
+  sed_result=$?
+  if [ ${sed_result} -eq 0 ]; then
+    display --indent 2 --text " - Changing database parameters on ${wp_project_dir}/wp-config.php" --result "DONE" --color GREEN
+  else
+    display --indent 2 --text " - Changing database parameters on ${wp_project_dir}/wp-config.php" --result "FAIL" --color RED
+    display --indent 4 --text "sed output: ${sed_output}"
   fi
 
 }
