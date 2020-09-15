@@ -1,6 +1,6 @@
 # TODO List
 
-## For release 3.0.1
+## For release 3.0.2
 
 ### TODO
 
@@ -27,6 +27,7 @@
 - [ ] Backups: When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?).
 - [ ] Installers: On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages.
 - [ ] Nginx: New default nginx configuration for wordpress projects.
+- [ ] BUG: Netdata only reports CRITICAL message, (CLEAR are not reported).
 
 ### Done ✓
 
@@ -39,13 +40,17 @@
 - [x] Better log with log_event functions.
 - [x] Refactor for better dependencies management, and cleaner code in runner.sh
 - [x] Notifications: Telegram notifications support.
+- [x] Installers: add git to the required packages.
 
 ## For release 3.1
 - [ ] Warning if script run on non default installation (no webserver or another than nginx).
 - [ ] Finish function: download_and_restore_config_files_from_dropbox
 - [ ] Complete refactor of "Options Wizard": (Backup Options, Notification Options, Cloudflare Config).
+- [ ] Nginx-PHP: Ask PHP version before create a server config.
 - [ ] Nginx: Add http2 support on nginx server config files.
 - [ ] Nginx: New option to put website on maintenance.
+- [ ] Nginx: Better nginx config: https://www.digitalocean.com/community/tools/nginx
+- [ ] Nginx: Multidomain support for nginx.
 - [ ] LetsEncrypt: Need a better way to re-install a certificate after a website migration.
 - [ ] Scheduled options: backups, malware scans, image optimizations and wp actions (core and plugins updates, checksum and wp re-installation)
 - [ ] Backups: Support for dailys, weeklys y monthlys backups.
@@ -64,7 +69,6 @@
 - [ ] Nginx: Option to copy or generate a new nginx server configuration.
 - [ ] Nginx: Globals configs support.
 - [ ] Installers: Mailcow installer and backup.
-- [ ] Installers: Netdata only reports CRITICAL message, (CLEAR are not reported).
 - [ ] Installers: Option to select netdata metrics to be reported.
 - [ ] Notifications: After install a new project (with credentials info).
 - [ ] Backups: On backup failure, the email must show what files fails and what files are correct backuped.
@@ -77,7 +81,7 @@
 ## For release 3.3
 
 - [ ] Wordpress: When restore or create a project on PROD state, ask if want to run "wpcli_run_startup_script"
-- [ ] PHP: Option to enable or disable OpCache
+- [ ] PHP: Option to enable or disable OpCache.
 - [ ] Installers: Refactor of WORDPRESS_INSTALLER - COPY_FROM_PROJECT
         The idea is that you could create/copy/delete/update different kind of projects (WP, Laravel, React, Composer, Empty)
         Maybe add this for Laravel: https://gitlab.com/broobe/laravel-boilerplate/-/tree/master
@@ -96,7 +100,6 @@
 - [ ] MySQL: Rename database helper (with and without WP).
 - [ ] WordPress: Fallback for replace strings on wp database (if wp-cli fails, use old script version).
 - [ ] WordPress: WP Network support (nginx config, and wp-cli commands).
-- [ ] Nginx: Multidomain support for nginx.
 - [ ] IT Utils: Control of mounted partitions or directories.
 - [ ] IT Utils: Better malware detection with https://github.com/rfxn/linux-malware-detect
 
