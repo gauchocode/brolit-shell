@@ -32,6 +32,7 @@ mysql_user_create() {
     local sql1
 
     log_event "info" "Creating ${db_user} user in MySQL with pass: ${db_user_psw}" "false"
+    display --indent 2 --text "- Creating ${db_user} user in MySQL"
 
     if [[ -z ${db_user_psw} || ${db_user_psw} == "" ]]; then
         sql1="CREATE USER '${db_user}'@'localhost';"
@@ -46,10 +47,15 @@ mysql_user_create() {
     
     if [ "${mysql_result}" -eq 0 ]; then
         log_event "success" " MySQL user ${db_user} created" "false"
+        clear_last_line
+        display --indent 2 --text "- Creating ${db_user} user in MySQL" --result "DONE" --color GREEN
+        display --indent 4 --text "User created with pass: ${db_user_psw}"
         return 0
 
     else
         log_event "error" "Something went wrong creating user: ${db_user}. MySQL output: ${mysql_output}" "false"
+        clear_last_line
+        display --indent 2 --text "- Creating ${db_user} user in MySQL" --result "FAIL" --color RED
         return 1
 
     fi
@@ -158,7 +164,7 @@ mysql_root_psw_change() {
         return 0
 
     else
-        log_event "error" "Something went wrong changing MySQL root password. MySQL output: ${mysql_result}" "true"
+        log_event "error" "Something went wrong changing MySQL root password. MySQL output: ${mysql_result}" "false"
         return 1
 
     fi
@@ -185,10 +191,12 @@ mysql_user_grant_privileges() {
     
     if [ "${mysql_result}" -eq 0 ]; then
         log_event "success" "Privileges granted to user ${db_user}" "false"
+        display --indent 2 --text " - Granting privileges to ${db_user}" --result "DONE" --color GREEN
         return 0
 
     else
         log_event "error" "Something went wrong granting privileges to user ${db_user}. MySQL output: ${mysql_output}" "false"
+        display --indent 2 --text " - Granting privileges to ${db_user}" --result "FAIL" --color RED
         return 1
 
     fi
@@ -298,7 +306,6 @@ mysql_database_drop() {
     local sql1 mysql_result
 
     log_event "info" "Droping the database: ${database}" "false"
-    display --indent 2 --text "- Droping database: ${database}" --tcolor YELLOW
 
     sql1="DROP DATABASE ${database};"
     

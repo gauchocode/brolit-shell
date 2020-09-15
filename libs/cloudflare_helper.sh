@@ -178,7 +178,7 @@ cloudflare_change_a_record () {
 
     # Cloudflare API to change DNS records
     log_event "info" "Accessing Cloudflare API and change record ${domain}" "false"
-    display --indent 2 --text "- Accessing Cloudflare API and change record ${domain}" --result "DONE" --color GREEN
+    display --indent 2 --text "- Accessing Cloudflare API" --result "DONE" --color GREEN
 
     zone_name=${root_domain}
     record_name=${domain}
@@ -231,13 +231,13 @@ cloudflare_change_a_record () {
 
         if [[ -z "${record_id}" || ${record_id} == "" ]]; then
 
-            log_event "info" "RECORD_ID not found: Trying to add the entry ..." "true"
+            log_event "info" "RECORD_ID not found: Trying to add the entry ..." "false"
 
             update=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
             -H "X-Auth-Email: ${auth_email}" \
             -H "X-Auth-Key: ${auth_key}" \
             -H "Content-Type: application/json" \
-            --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":$proxy_status}" 1>&2)
+            --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}" 1>&2)
 
         else
 
@@ -253,7 +253,7 @@ cloudflare_change_a_record () {
             -H "X-Auth-Email: ${auth_email}" \
             -H "X-Auth-Key: ${auth_key}" \
             -H "Content-Type: application/json" \
-            --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":$proxy_status}" 1>&2)
+            --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}" 1>&2)
 
         fi
 
@@ -326,8 +326,8 @@ cloudflare_delete_a_record () {
     log_event "info" "ZONE_ID: ${zone_id}" "false"
     log_event "info" "RECORD_ID: ${record_id}" "false"
 
-    echo "${zone_id}" > ${id_file}
-    echo "${record_id}" >> ${id_file}
+    echo "${zone_id}" > "${id_file}"
+    echo "${record_id}" >> "${id_file}"
 
     if [[ -z "${record_id}" || ${record_id} == "" ]]; then
 
@@ -350,7 +350,7 @@ cloudflare_delete_a_record () {
 
     if [[ ${delete} == *"\"success\":false"* ]]; then
 
-        message="A record delete failed. RESULTS:\n${delete}"
+        message="A record delete failed. Results:\n${delete}"
         log_event "error" "${message}" "false"
         display --indent 2 --text "- Deleting A record from Cloudflare" --result "FAIL" --color RED
 

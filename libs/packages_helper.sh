@@ -78,49 +78,64 @@ check_packages_required() {
   # Check if sendemail is installed
   SENDEMAIL="$(which sendemail)"
   if [ ! -x "${SENDEMAIL}" ]; then
-    apt -y install sendemail libio-socket-ssl-perl -qq
+    display --indent 2 --text "- Installing sendemail"
+    apt-get --yes install sendemail libio-socket-ssl-perl -qq > /dev/null
+    clear_last_line
+    display --indent 2 --text "- Installing sendemail" --result "DONE" --color GREEN
   fi
 
   # Check if pv is installed
   PV="$(which pv)"
   if [ ! -x "${PV}" ]; then
-    apt -y install pv -qq
+    display --indent 2 --text "- Installing pv"
+    apt-get --yes install pv -qq > /dev/null
+    clear_last_line
+    display --indent 2 --text "- Installing pv" --result "DONE" --color GREEN
   fi
 
   # Check if bc is installed
   BC="$(which bc)"
   if [ ! -x "${BC}" ]; then
-    apt -y install bc -qq
+    display --indent 2 --text "- Installing bc"
+    apt-get --yes install bc -qq > /dev/null
+    clear_last_line
+    display --indent 2 --text "- Installing bc" --result "DONE" --color GREEN
   fi
 
   # Check if dig is installed
   DIG="$(which dig)"
   if [ ! -x "${DIG}" ]; then
-    apt -y install dnsutils -qq
+    display --indent 2 --text "- Installing dnsutils"
+    apt-get --yes install dnsutils -qq > /dev/null
+    clear_last_line
+    display --indent 2 --text "- Installing dnsutils" --result "DONE" --color GREEN
   fi
 
   # Check if lbzip2 is installed
   LBZIP2="$(which lbzip2)"
   if [ ! -x "${LBZIP2}" ]; then
-    apt -y install lbzip2 -qq
-  fi
-
-  # Check if dialog is installed
-  DIALOG="$(which dialog)"
-  if [ ! -x "${DIALOG}" ]; then
-    apt -y install dialog -qq
+    display --indent 2 --text "- Installing lbzip2"
+    apt-get --yes install lbzip2 -qq > /dev/null
+    clear_last_line
+    display --indent 2 --text "- Installing lbzip2" --result "DONE" --color GREEN
   fi
 
   # Check if zip is installed
   ZIP="$(which zip)"
   if [ ! -x "${ZIP}" ]; then
-    apt -y install zip -qq
+    display --indent 2 --text "- Installing zip"
+    apt-get --yes install zip -qq > /dev/null
+    clear_last_line
+    display --indent 2 --text "- Installing zip" --result "DONE" --color GREEN
   fi
 
   # Check if unzip is installed
   UNZIP="$(which unzip)"
   if [ ! -x "${UNZIP}" ]; then
-    apt -y install unzip -qq
+    display --indent 2 --text "- Installing unzip"
+    apt-get --yes install unzip -qq > /dev/null
+    clear_last_line
+    display --indent 2 --text "- Installing unzip" --result "DONE" --color GREEN
   fi
 
   # TAR
@@ -184,22 +199,22 @@ basic_packages_installation() {
   # Updating packages lists
   log_event "info" "Adding repos and updating package lists ..." "false"
 
-  apt --yes install software-properties-common
-  apt --yes update -qq
+  apt-get --yes install software-properties-common > /dev/null
+  apt-get --yes update -qq > /dev/null
 
   display --indent 2 --text "- Adding repos and updating package lists" --result "DONE" --color GREEN
 
   # Upgrading packages
   log_event "info" "Upgrading packages before installation ..." "false"
 
-  apt --yes dist-upgrade -qq
+  apt-get --yes dist-upgrade -qq > /dev/null
 
   display --indent 2 --text "- Upgrading packages before installation" --result "DONE" --color GREEN
 
   # Installing packages
   log_event "info" "Installing basic packages ..." "false"
   
-  apt --yes install vim unzip zip clamav ncdu imagemagick-* jpegoptim optipng webp sendemail libio-socket-ssl-perl dnsutils ghostscript pv ppa-purge -qq > /dev/null
+  apt-get --yes install vim unzip zip clamav ncdu imagemagick-* jpegoptim optipng webp sendemail libio-socket-ssl-perl dnsutils ghostscript pv ppa-purge -qq > /dev/null
 
   display --indent 2 --text "- Installing basic packages" --result "DONE" --color GREEN
 
@@ -257,18 +272,18 @@ timezone_configuration() {
 
 remove_old_packages() {
 
-  log_event "info" "Cleanning old system packages ..." "true"
+  log_event "info" "Cleanning old system packages ..." "false"
 
-  apt clean
-  apt -y autoremove
-  apt -y autoclean
+  apt-get --yes clean -qq > /dev/null
+  apt-get --yes autoremove -qq > /dev/null
+  apt-get --yes autoclean -qq > /dev/null
 
-  log_event "info" "System packages cleaned" "true"
+  log_event "info" "System packages cleaned" "false"
 
 }
 
 install_image_optimize_packages() {
 
-  apt -y install jpegoptim optipng pngquant gifsicle imagemagick-* -qq
+  apt-get --yes install jpegoptim optipng pngquant gifsicle imagemagick-* -qq > /dev/null
 
 }

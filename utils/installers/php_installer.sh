@@ -6,8 +6,8 @@
 
 ### Checking some things
 if [[ -z "${SFOLDER}" ]]; then
-  echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
-  exit 0
+  echo -e "${B_RED} > Error: The script can only be runned by runner.sh! Exiting ...${ENDCOLOR}"
+  exit 1
 fi
 
 ################################################################################
@@ -23,7 +23,7 @@ php_installer() {
 
   log_event "info" "Installing PHP-${PHP_V} and other libraries ..." "false"
 
-  apt --yes install "php${PHP_V}-fpm" "php${PHP_V}-mysql" php-imagick "php${PHP_V}-xml" "php${PHP_V}-cli" "php${PHP_V}-curl" "php${PHP_V}-mbstring" "php${PHP_V}-gd" "php${PHP_V}-intl" "php${PHP_V}-zip" "php${PHP_V}-bz2" "php${PHP_V}-bcmath" "php${PHP_V}-soap" "php${PHP_V}-dev" php-pear
+  apt-get --yes install "php${PHP_V}-fpm" "php${PHP_V}-mysql" "php-imagick" "php${PHP_V}-xml" "php${PHP_V}-cli" "php${PHP_V}-curl" "php${PHP_V}-mbstring" "php${PHP_V}-gd" "php${PHP_V}-intl" "php${PHP_V}-zip" "php${PHP_V}-bz2" "php${PHP_V}-bcmath" "php${PHP_V}-soap" "php${PHP_V}-dev" "php-pear" -qq > /dev/null
 
   log_event "info" "PHP-${PHP_V} installed!" "false"
 
@@ -33,7 +33,7 @@ php_custom_installer() {
   
   add_ppa "ondrej/php"
   
-  apt-get update
+  apt-get update -qq > /dev/null
 
   php_select_version_to_install
 
@@ -68,7 +68,7 @@ php_select_version_to_install() {
 
 php_redis_installer() {
 
-  apt --yes install redis-server php-redis
+  apt-get --yes install redis-server php-redis -qq > /dev/null
   systemctl enable redis-server.service
 
   cp "${SFOLDER}/config/redis/redis.conf" "/etc/redis/redis.conf"
@@ -79,27 +79,41 @@ php_redis_installer() {
 
 mail_utils_installer() {
 
-  pear install mail mail_mime net_smtp
+  log_event "info" "Installing mail mail_mime and net_smtp ..." "false"
+  display --indent 2 --text "- Installing mail smtp"
+
+  # Creating tmp directory
+  # Ref: https://stackoverflow.com/questions/59720692/php-7-4-1-pecl-is-not-working-trying-to-access-array-offset-on-value-of-type
+  mkdir -p /tmp/pear/cache
+
+  pear -q install mail mail_mime net_smtp
+
+  log_event "info" "mail mail_mime and net_smtp installed" "false"
+  clear_last_line
+  display --indent 2 --text "- Installing mail smtp" --result "DONE" --color GREEN
 
 }
 
 php_purge_all_installations() {
 
-  log_event "info" "Removing all PHP versions and libraries ..." "true"
+  log_event "info" "Removing all PHP versions and libraries ..." "false"
 
-  apt-get --yes purge php* -qq
+  apt-get --yes purge php* -qq > /dev/null
 
-  log_event "info" "PHP purged!" "true"
+  log_event "info" "PHP purged!" "false"
 
 }
 
 php_purge_installation() {
 
-  log_event "info" "Removing PHP-${PHP_V} and libraries ..." "true"
+  log_event "info" "Removing PHP-${PHP_V} and libraries ..." "false"
+  display --indent 2 --text "- Removing PHP-${PHP_V} and libraries"
 
-  apt-get --yes purge "php${PHP_V}-fpm" "php${PHP_V}-mysql" php-xml "php${PHP_V}-xml" "php${PHP_V}-cli" "php${PHP_V}-curl" "php${PHP_V}-mbstring" "php${PHP_V}-gd" php-imagick "php${PHP_V}-intl" "php${PHP_V}-zip" "php${PHP_V}-bz2" php-bcmath "php${PHP_V}-soap" "php${PHP_V}-dev" php-pear
+  apt-get --yes purge "php${PHP_V}-fpm" "php${PHP_V}-mysql" php-xml "php${PHP_V}-xml" "php${PHP_V}-cli" "php${PHP_V}-curl" "php${PHP_V}-mbstring" "php${PHP_V}-gd" php-imagick "php${PHP_V}-intl" "php${PHP_V}-zip" "php${PHP_V}-bz2" php-bcmath "php${PHP_V}-soap" "php${PHP_V}-dev" php-pear -qq > /dev/null
 
-  log_event "info" "PHP-${PHP_V} deleted!" "true"
+  log_event "info" "PHP-${PHP_V} deleted!" "false"
+  clear_last_line
+  display --indent 2 --text "- Removing PHP-${PHP_V} and libraries" --result "DONE" --color GREEN
 
 }
 
@@ -128,21 +142,26 @@ php_check_installed_version() {
 }
 
 php_reconfigure() {
-  
-  log_event "info" "Moving php.ini configuration file ..." "true"
-  cat "${SFOLDER}/config/php/php.ini" >"/etc/php/${PHP_V}/fpm/php.ini"
 
-  log_event "info" "Moving php-fpm.conf configuration file ..." "true"
+  log_subsection "PHP Reconfigure"
+  
+  log_event "info" "Moving php.ini configuration file ..." "false"
+  cat "${SFOLDER}/config/php/php.ini" >"/etc/php/${PHP_V}/fpm/php.ini"
+  display --indent 2 --text "- Moving php.ini configuration file" --result "DONE" --color GREEN
+
+  log_event "info" "Moving php-fpm.conf configuration file ..." "false"
   cat "${SFOLDER}/config/php/php-fpm.conf" >"/etc/php/${PHP_V}/fpm/php-fpm.conf"
+  display --indent 2 --text "- Moving php-fpm.conf configuration file" --result "DONE" --color GREEN
 
   # Replace string to match PHP version
-  log_event "info" "Replace string to match PHP version ..." "true"
+  log_event "info" "Replacing string to match PHP version" "false"
   sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
   sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
   sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
+  display --indent 2 --text "- Replacing string to match PHP version" --result "DONE" --color GREEN
 
   # Unccoment /status from fpm configuration
-  log_event "info" "Unccoment /status from fpm configuration ..." "true"
+  log_event "info" "Uncommenting /status from fpm configuration ..." "false"
   sed -i '/status_path/s/^;//g' "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
 
 }
@@ -156,7 +175,7 @@ php_is_installed=$(php_check_if_installed)
 
 #if [ ${php_installed} == "false" ]; then
 
-PHP_INSTALLER_OPTIONS="01 INSTALL_PHP_STANDARD 02 INSTALL_PHP_CUSTOM 03 RECONFIGURE_PHP 04 OPTIMIZE_PHP 05 REMOVE_PHP"
+PHP_INSTALLER_OPTIONS="01) INSTALL-PHP-DEFAULT 02) INSTALL-PHP-CUSTOM 03) RECONFIGURE-PHP 04) OPTIMIZE-PHP 05) REMOVE-PHP"
 CHOSEN_PHP_INSTALLER_OPTION=$(whiptail --title "PHP INSTALLER" --menu "Choose a PHP version to install" 20 78 10 $(for x in ${PHP_INSTALLER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
@@ -164,9 +183,9 @@ if [ $exitstatus = 0 ]; then
   if [[ ${CHOSEN_PHP_INSTALLER_OPTION} == *"01"* ]]; then
     
     DISTRO_V=$(get_ubuntu_version)
-    if [ "${DISTRO_V}" == "1804" ]; then
+    if [ "${DISTRO_V}" -eq "1804" ]; then
       PHP_V="7.2"  #Ubuntu 18.04 LTS Default
-    elif [ "${DISTRO_V}" == "2004" ]; then
+    elif [ "${DISTRO_V}" -eq "2004" ]; then
       PHP_V="7.4"  #Ubuntu 20.04 LTS Default
     else
       log_event "critical" "Non standard distro!" "true"

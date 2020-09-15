@@ -20,10 +20,10 @@ netdata_required_packages() {
   ubuntu_version=$(get_ubuntu_version)
 
   if [ "${ubuntu_version}" = "1804" ]; then
-    apt --yes install zlib1g-dev uuid-dev libuv1-dev liblz4-dev libjudy-dev libssl-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python python-mysqldb lm-sensors libmnl netcat nodejs python-ipaddress python-dnspython iproute2 python-beanstalkc libuv liblz4 Judy openssl -qq
+    apt-get --yes install zlib1g-dev uuid-dev libuv1-dev liblz4-dev libjudy-dev libssl-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python python-mysqldb lm-sensors libmnl netcat nodejs python-ipaddress python-dnspython iproute2 python-beanstalkc libuv liblz4 Judy openssl -qq > /dev/null
   
   elif [ "${ubuntu_version}" = "2004" ]; then
-    apt --yes install curl python3-mysqldb lm-sensors libmnl netcat openssl -qq
+    apt-get --yes install curl python3-mysqldb lm-sensors libmnl netcat openssl -qq > /dev/null
 
   fi
 
@@ -200,7 +200,7 @@ if [ ! -x "${NETDATA}" ]; then
 
       log_event "info" "Updating packages before installation ..." "true"
 
-      apt --yes update -qq
+      apt-get --yes update -qq > /dev/null
 
       netdata_required_packages
 
