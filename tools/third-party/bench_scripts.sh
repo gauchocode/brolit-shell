@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.1
+# Version: 3.0.2
 ################################################################################
 #
 # Ref: https://github.com/haydenjames/bench-scripts
