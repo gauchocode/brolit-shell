@@ -296,8 +296,8 @@ mail_filesbackup_section() {
     # $3 = ${ERROR}
     # $4 = ${ERROR_TYPE}
 
-    local -a BACKUPED_LIST=$1
-    local -a BK_FL_SIZES=$2
+    local -n BACKUPED_LIST=$1
+    local -n BK_FL_SIZES=$2
     local ERROR=$3
     local ERROR_TYPE=$4
 
@@ -412,7 +412,7 @@ mail_configbackup_section() {
         CONTENT=""
         COLOR="#503fe0"
         SIZE_LABEL=""
-        FILES_LABEL='<b>Backup files includes:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
+        FILES_LABEL="<b>Backup files includes:</b><br /><div style=\"color:#000;font-size:12px;line-height:24px;padding-left:10px;\">"
         files_inc=""
 
         count=0
@@ -421,9 +421,9 @@ mail_configbackup_section() {
                      
             bk_scf_size="${BK_SCF_SIZES[$count]}"
 
-            files_inc_line_p1='<div><span style="margin-right:5px;">'
+            files_inc_line_p1="<div><span style=\"margin-right:5px;\">"
             files_inc_line_p2="${files_inc}${backup_line}"
-            files_inc_line_p3='</span><span style="background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;">'
+            files_inc_line_p3="</span><span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\">"
             files_inc_line_p4="${bk_scf_size}"
             files_inc_line_p5="</span></div>"
 
@@ -466,12 +466,12 @@ mail_mysqlbackup_section() {
     # $3 = ${ERROR}
     # $4 = ${ERROR_TYPE}
 
-    local -a BACKUPED_DB_LIST=$1
-    local -a BK_DB_SIZES=$2
+    local -n BACKUPED_DB_LIST=$1
+    local -n BK_DB_SIZES=$2
     local ERROR=$3
     local ERROR_TYPE=$4
 
-    BK_TYPE='Database'
+    BK_TYPE="Database"
 
     if [ "${ERROR}" = true ]; then
         # Changing global
@@ -498,9 +498,9 @@ mail_mysqlbackup_section() {
 
         for backup_file in "${BACKUPED_DB_LIST[@]}"; do
 
-            BK_DB_SIZE=${BK_DB_SIZES[$COUNT]}
+            BK_DB_SIZE="${BK_DB_SIZES[$COUNT]}"
 
-            FILES_INC_D_LINE_P1='<div><span style="margin-right:5px;">'
+            FILES_INC_D_LINE_P1="<div><span style=\"margin-right:5px;\">"
             FILES_INC_D_LINE_P2="${FILES_INC_D}${backup_file}"
             FILES_INC_D_LINE_P3='</span> <span style="background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;">'
             FILES_INC_D_LINE_P4="${BK_DB_SIZE}"
@@ -512,12 +512,12 @@ mail_mysqlbackup_section() {
 
         done
 
-        FILES_LABEL_D_END='</div>'
+        FILES_LABEL_D_END="</div>"
 
     fi
 
-    HEADEROPEN1_D='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
-    HEADEROPEN2_D=';padding:5px 0 10px 10px;width:100%;height:30px">'
+    HEADEROPEN1_D="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
+    HEADEROPEN2_D=";padding:5px 0 10px 10px;width:100%;height:30px\">"
     HEADEROPEN_D="${HEADEROPEN1_D}${COLOR_D}${HEADEROPEN2_D}"
     HEADERTEXT_D="Database Backup: ${STATUS_D} ${STATUS_ICON_D}"
     HEADERCLOSE_D="</div>"
@@ -538,7 +538,7 @@ mail_section_start() {
 
     local body_open
 
-    body_open='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px 0 0 10px;width:100%;">'
+    body_open="<div style=\"color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px 0 0 10px;width:100%;\">"
 
     # Return
     echo "${body_open}"
@@ -549,7 +549,7 @@ mail_section_end() {
 
     local body_close
 
-    body_close='</div>'
+    body_close="</div>"
 
     # Return
     echo "${body_close}"
@@ -564,13 +564,13 @@ mail_footer() {
 
     local footer_open script_string footer_close html_close mail_footer
 
-    footer_open='<div style="font-size:10px;float:left;font-family:Verdana,Helvetica,Arial;text-align:right;padding-right:5px;width:100%;height:20px"><a href="https://www.broobe.com/web-mobile-development/?utm_source=linux-script&utm_medium=email&utm_campaign=landing_it" style="color: #503fe0;font-weight: bold;font-style: italic;">'
+    footer_open="<div style=\"font-size:10px;float:left;font-family:Verdana,Helvetica,Arial;text-align:right;padding-right:5px;width:100%;height:20px\"><a href=\"https://www.broobe.com/web-mobile-development/?utm_source=linux-script&utm_medium=email&utm_campaign=landing_it\" style=\"color: #503fe0;font-weight: bold;font-style: italic;\">"
     script_string="LEMP UTILS SCRIPT Version: ${script_v} by BROOBE"
-    footer_close='</a></div></div>'
+    footer_close="</a></div></div>"
 
-    html_close=$(mail_html_end)
+    html_close="$(mail_html_end)"
 
-    mail_footer=${footer_open}${script_string}${footer_close}${html_close}
+    mail_footer="${footer_open}${script_string}${footer_close}${html_close}"
 
     # Return
     echo "${mail_footer}"
@@ -581,7 +581,7 @@ mail_html_start() {
 
     local html_open
 
-    html_open='<html><body>'
+    html_open="<html><body>"
 
     # Return
     echo "${html_open}"
@@ -592,7 +592,7 @@ mail_html_end() {
 
     local html_close
 
-    html_close='</body></html>'
+    html_close="</body></html>"
 
     # Return
     echo "${html_close}"

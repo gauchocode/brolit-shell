@@ -231,12 +231,12 @@ make_server_files_backup() {
       log_event "success" "Backup created [${bk_file}]" "false"
       display --indent 2 --text "- Testing compressed backup file" --result "DONE" --color GREEN
 
-      BACKUPED_SCF_LIST[$BK_SCF_INDEX]="${bk_file}"
-      BACKUPED_SCF_FL=${BACKUPED_SCF_LIST[$BK_SCF_INDEX]}
+      BACKUPED_SCF_LIST[${BK_SCF_INDEX}]="${bk_file}"
+      BACKUPED_SCF_FL=${BACKUPED_SCF_LIST[${BK_SCF_INDEX}]}
 
       # Calculate backup size
       BK_SCF_SIZE=$(ls -lah "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')
-      BK_SCF_SIZES[$BK_SCF_ARRAY_INDEX]="${BK_SCF_SIZE}"
+      BK_SCF_SIZES[${BK_SCF_ARRAY_INDEX}]="${BK_SCF_SIZE}"
 
       # New folder with $VPSNAME
       output=$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}" 2>&1)
@@ -252,9 +252,11 @@ make_server_files_backup() {
       # Uploading backup files
 
       log_event "info" "Uploading backup to Dropbox ..." "false"
+      display --indent 2 --text "- Uploading backup file to Dropbox"
 
       output=$(${DROPBOX_UPLOADER} upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}" 2>&1)
 
+      clear_last_line
       display --indent 2 --text "- Uploading backup file to Dropbox" --result "DONE" --color GREEN
 
       # Deleting old backup files
@@ -367,7 +369,11 @@ make_mailcow_backup() {
         DROPBOX_PATH="/${VPSNAME}/${bk_type}"
 
         log_event "info" "Uploading Backup to Dropbox ..." "false"
+        display --indent 2 --text "- Uploading backup file to Dropbox"
+
         output=$(${DROPBOX_UPLOADER} upload "${MAILCOW_TMP_BK}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}" 2>&1)
+        clear_last_line
+        display --indent 2 --text "- Uploading backup file to Dropbox" --result "DONE" --color GREEN
 
         log_event "info" "Deleting old backup from Dropbox ..." "false"
         output=$(${DROPBOX_UPLOADER} remove "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${bk_file}" 2>&1)
@@ -475,8 +481,10 @@ make_files_backup() {
       DROPBOX_PATH="/${VPSNAME}/${bk_type}/${directory_to_backup}"
 
       log_event "info" "Uploading ${directory_to_backup} to Dropbox" "false"
+      display --indent 2 --text "- Uploading backup to dropbox"
       output=$(${DROPBOX_UPLOADER} upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}/" 2>&1)
       log_event "success" "${directory_to_backup} uploaded to Dropbox" "false"
+      clear_last_line
       display --indent 2 --text "- Uploading backup to dropbox" --result "DONE" --color GREEN
 
       # Delete old backup from Dropbox
