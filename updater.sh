@@ -26,6 +26,8 @@ self_update() {
         git pull --ff-only --force
 
         #exec "${SCRIPTNAME}" "${ARGS[@]}"
+        
+        chmod +x runner.sh updater.sh
 
         exit 1
     }
