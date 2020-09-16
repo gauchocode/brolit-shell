@@ -34,6 +34,9 @@ source "${SFOLDER}/libs/commons.sh"
   # shellcheck source=${SFOLDER}/libs/telegram_notification_helper.sh
   source "${SFOLDER}/libs/telegram_notification_helper.sh"
 
+  #Log
+  log_section "Uptime Robot"
+
   # Get all directories
   all_sites=$(get_all_directories "${SITES}")
   
@@ -41,7 +44,8 @@ source "${SFOLDER}/libs/commons.sh"
   count_all_sites=$(find "${SITES}" -maxdepth 1 -type d -printf '.' | wc -c)
   count_all_sites=$((count_all_sites - 1))
 
-  log_event "info" "Found ${count_all_sites} directories" "true"
+  log_event "info" "Found ${count_all_sites} directories" "false"
+  display --indent 2 --text "- Directories found" --result "${count_all_sites}" --color YELLOW
 
   # GLOBALS
   keyword="wp-content"
@@ -69,17 +73,20 @@ source "${SFOLDER}/libs/commons.sh"
 
         if [ ${curl_output} == 0 ]; then
 
-          log_event "info" "Website ${project_name} is online" "true"
+          log_event "info" "Website ${project_name} is online" "false"
+          display --indent 2 --text "- Testing ${project_name}" --result "UP" --color GREEN
 
         else
 
-          log_event "error" "Website ${project_name} is offline" "true"
+          log_event "error" "Website ${project_name} is offline" "false"
+          display --indent 2 --text "- Testing ${project_name}" --result "DOWN" --color RED
+          telegram_send_message "⛔ ${VPSNAME}: Website ${project_name} is offline"
 
         fi
 
       else
 
-        log_event "error" "Found ${project_name} on blacklist, skipping ..." "true"
+        log_event "error" "Found ${project_name} on blacklist, skipping ..." "false"
 
       fi
 

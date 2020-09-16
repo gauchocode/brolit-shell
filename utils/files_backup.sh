@@ -77,8 +77,10 @@ if [[ ! -d "${PHP_CF}" ]]; then
   log_event "warning" "PHP_CF var not defined! Skipping PHP config files backup ..." "true"
 
  else
-  BK_SCF_INDEX=$BK_SCF_INDEX+1
-  BK_SCF_ARRAY_INDEX=$BK_SCF_ARRAY_INDEX+1
+  #BK_SCF_INDEX=${BK_SCF_INDEX}+1
+  BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
+  #BK_SCF_ARRAY_INDEX=${BK_SCF_ARRAY_INDEX}+1
+  BK_SCF_ARRAY_INDEX=$((BK_SCF_ARRAY_INDEX + 1))
   make_server_files_backup "${CONFIG_F}" "php" "${PHP_CF}" "."
 
 fi
@@ -88,8 +90,10 @@ if [[ ! -d "${MySQL_CF}" ]]; then
   log_event "warning" "MySQL_CF var not defined! Skipping MySQL config files backup ..." "true"
 
  else
-  BK_SCF_INDEX=$BK_SCF_INDEX+1
-  BK_SCF_ARRAY_INDEX=$BK_SCF_ARRAY_INDEX+1
+  #BK_SCF_INDEX=${BK_SCF_INDEX}+1
+  BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
+  #BK_SCF_ARRAY_INDEX=${BK_SCF_ARRAY_INDEX}+1
+  BK_SCF_ARRAY_INDEX=$((BK_SCF_ARRAY_INDEX + 1))
   make_server_files_backup "${CONFIG_F}" "mysql" "${MySQL_CF}" "."
 
 fi
@@ -99,8 +103,10 @@ if [[ ! -d "${LENCRYPT_CF}" ]]; then
   log_event "warning" "LENCRYPT_CF var not defined! Skipping Letsencrypt config files backup ..." "true"
 
  else
-  BK_SCF_INDEX=$BK_SCF_INDEX+1
-  BK_SCF_ARRAY_INDEX=$BK_SCF_ARRAY_INDEX+1
+  #BK_SCF_INDEX=${BK_SCF_INDEX}+1
+  BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
+  #BK_SCF_ARRAY_INDEX=${BK_SCF_ARRAY_INDEX}+1
+  BK_SCF_ARRAY_INDEX=$((BK_SCF_ARRAY_INDEX + 1))
   make_server_files_backup "${CONFIG_F}" "letsencrypt" "${LENCRYPT_CF}" "."
 
 fi

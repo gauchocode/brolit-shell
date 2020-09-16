@@ -89,7 +89,7 @@ mail_server_status_section() {
     # Cast to int
     casted_disk_u_ns=$(int(){ printf '%d' "${disk_u_ns:-}" 2>/dev/null || :; })
 
-    if [[ "$casted_disk_u_ns" -gt 45 ]]; then
+    if [[ "${casted_disk_u_ns}" -gt 45 ]]; then
         # Changing global
         STATUS_S="WARNING"
 
@@ -107,14 +107,14 @@ mail_server_status_section() {
         
     fi
 
-    SRV_HEADEROPEN_1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
+    SRV_HEADEROPEN_1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
     SRV_HEADEROPEN_2="${STATUS_S_COLOR}"
-    SRV_HEADEROPEN_3=';padding:5px 0 10px 10px;width:100%;height:30px">'
+    SRV_HEADEROPEN_3=";padding:5px 0 10px 10px;width:100%;height:30px\">"
     SRV_HEADERTEXT="Server Status: ${STATUS_S} ${STATUS_S_ICON}"
     SRV_HEADERCLOSE="</div>"
     SRV_HEADER="${SRV_HEADEROPEN_1}${SRV_HEADEROPEN_2}${SRV_HEADEROPEN_3}${SRV_HEADERTEXT}${SRV_HEADERCLOSE}"
 
-    SRV_BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
+    SRV_BODYOPEN="<div style=\"color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;\">"
     SRV_CONTENT="<b>Server IP: ${IP}</b><br /><b>Disk usage: ${disk_u}</b><br />"
     SRV_BODYCLOSE="</div></div>"
     SRV_BODY="${SRV_BODYOPEN}${SRV_CONTENT}${SRV_BODYCLOSE}"
@@ -143,12 +143,12 @@ mail_package_status_section() {
         PKG_STATUS_ICON="⚠"
     else
         PKG_COLOR='#503fe0'
-        PKG_STATUS='OK'
+        PKG_STATUS="OK"
         PKG_STATUS_ICON="✅"
     fi
 
-    PKG_HEADEROPEN1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
-    PKG_HEADEROPEN2=';padding:5px 0 10px 10px;width:100%;height:30px">'
+    PKG_HEADEROPEN1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
+    PKG_HEADEROPEN2=";padding:5px 0 10px 10px;width:100%;height:30px\">"
     PKG_HEADEROPEN="${PKG_HEADEROPEN1}${PKG_COLOR}${PKG_HEADEROPEN2}"
     PKG_HEADERTEXT="Packages Status: ${PKG_STATUS} ${PKG_STATUS_ICON}"
     PKG_HEADERCLOSE="</div>"
@@ -177,6 +177,11 @@ mail_package_section() {
     for pk in "${PACKAGES[@]}"; do
 
         PK_VI=$(apt-cache policy "${pk}" | grep Installed | cut -d ':' -f 2)
+        if [[ $PK_VI = "(none)" && "${pk}" = "mysql-server" ]];then
+            pk="mariadb-server"
+            PK_VI=$(apt-cache policy "${pk}" | grep Installed | cut -d ':' -f 2)
+        fi
+
         PK_VC=$(apt-cache policy "${pk}" | grep Candidate | cut -d ':' -f 2)
 
         if [ "${PK_VI}" != "${PK_VC}" ]; then
@@ -200,9 +205,9 @@ mail_cert_section() {
 #    # Changing locals
 #    STATUS_ICON_CERT="✅"        
     CONTENT=""
-    COLOR='#503fe0'
+    COLOR="#503fe0"
     SIZE_LABEL=""
-    FILES_LABEL='<b>Sites certificate expiration days:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
+    FILES_LABEL="<b>Sites certificate expiration days:</b><br /><div style=\"color:#000;font-size:12px;line-height:24px;padding-left:10px;\">"
     email_cert_line=""
 
     # This fix avoid getting the first parent directory, maybe we could find a better solution
@@ -219,33 +224,33 @@ mail_cert_section() {
             # Check blacklist ${SITES_BL}
             if [[ "${SITES_BL}" != *"${domain}"* ]]; then
 
-                log_event "info" "Getting certificate info for: ${domain}" "true"
+                log_event "info" "Getting certificate info for: ${domain}" "false"
 
                 #make_files_backup "site" "${SITES}" "${FOLDER_NAME}"
                 BK_FL_ARRAY_INDEX=$((BK_FL_ARRAY_INDEX + 1))
 
-                email_cert_new_line='<div style="float:left;width:100%">'
-                email_cert_domain='<div>'"${domain}"
+                email_cert_new_line="<div style=\"float:left;width:100%\">"
+                email_cert_domain="<div>${domain}"
                 
                 cert_days=$(certbot_certificate_valid_days "${domain}")
                 
                 if [ "${cert_days}" == "" ]; then
                     # GREY LABEL
-                    email_cert_days_container=' <span style="color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;">'
+                    email_cert_days_container=" <span style=\"color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;\">"
                     email_cert_days="${email_cert_days_container} no certificate"
                 
                 else #certificate found
 
                     if (( "${cert_days}" >= 14 )); then
                         # GREEN LABEL
-                        email_cert_days_container=' <span style="color:white;background-color:#27b50d;border-radius:12px;padding:0 5px 0 5px;">'
+                        email_cert_days_container=" <span style=\"color:white;background-color:#27b50d;border-radius:12px;padding:0 5px 0 5px;\">"
                     else
                         if (( "${cert_days}" >= 7 )); then
                             # ORANGE LABEL
-                            email_cert_days_container=' <span style="color:white;background-color:#df761d;border-radius:12px;padding:0 5px 0 5px;">'
+                            email_cert_days_container=" <span style=\"color:white;background-color:#df761d;border-radius:12px;padding:0 5px 0 5px;\">"
                         else
                             # RED LABEL
-                            email_cert_days_container=' <span style="color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;">'
+                            email_cert_days_container=" <span style=\"color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;\">"
                         fi
 
                     fi
@@ -254,7 +259,7 @@ mail_cert_section() {
                 fi
 
                 email_cert_end_line="</span></div></div>"
-                email_cert_line=${email_cert_line}${email_cert_new_line}${email_cert_domain}${email_cert_days}${email_cert_end_line}
+                email_cert_line="${email_cert_line}${email_cert_new_line}${email_cert_domain}${email_cert_days}${email_cert_end_line}"
             
             fi
         else
@@ -264,16 +269,16 @@ mail_cert_section() {
 
     done
 
-    FILES_LABEL_END='</div>'
+    FILES_LABEL_END="</div>"
 
-    HEADEROPEN1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
-    HEADEROPEN2=';padding:5px 0 10px 10px;width:100%;height:30px">'
+    HEADEROPEN1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
+    HEADEROPEN2=";padding:5px 0 10px 10px;width:100%;height:30px\">"
     email_cert_header_open="${HEADEROPEN1}${COLOR}${HEADEROPEN2}"
     email_cert_header_text="Certificates on server: ${STATUS_F} ${STATUS_ICON_F}"
-    email_cert_header_close='</div>'
+    email_cert_header_close="</div>"
 
-    BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
-    BODYCLOSE='</div></div>'
+    BODYOPEN="<div style=\"color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;\">"
+    BODYCLOSE="</div></div>"
 
     HEADER="${email_cert_header_open}${email_cert_header_text}${email_cert_header_close}"
     BODY="${BODYOPEN}${CONTENT}${FILES_LABEL}${email_cert_line}${FILES_LABEL_END}${BODYCLOSE}"
@@ -286,10 +291,10 @@ mail_cert_section() {
 
 mail_filesbackup_section() {
 
-    # $1 - ${BACKUPED_LIST[@]}
-    # $2 - ${BK_FL_SIZES}
-    # $3 - ${ERROR}
-    # $4 - ${ERROR_TYPE}
+    # $1 = ${BACKUPED_LIST[@]}
+    # $2 = ${BK_FL_SIZES}
+    # $3 = ${ERROR}
+    # $4 = ${ERROR_TYPE}
 
     local -a BACKUPED_LIST=$1
     local -a BK_FL_SIZES=$2
@@ -301,7 +306,7 @@ mail_filesbackup_section() {
     if [ "$ERROR" = true ]; then
 
         # Changing global
-        STATUS_F='ERROR'
+        STATUS_F="ERROR"
 
         # Changing locals
         STATUS_ICON_F="💩"        
@@ -311,14 +316,14 @@ mail_filesbackup_section() {
     else
 
         # Changing global
-        STATUS_F='OK'
+        STATUS_F="OK"
 
         # Changing locals
-        STATUS_ICON_F='✅'
-        CONTENT=''
-        COLOR='#503fe0'
+        STATUS_ICON_F="✅"
+        CONTENT=""
+        COLOR="#503fe0"
         SIZE_LABEL=""
-        FILES_LABEL='<b>Backup files includes:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
+        FILES_LABEL="<b>Backup files includes:</b><br /><div style=\"color:#000;font-size:12px;line-height:24px;padding-left:10px;\">"
         FILES_INC=""
 
         COUNT=0
@@ -327,9 +332,9 @@ mail_filesbackup_section() {
                      
             BK_FL_SIZE="${BK_FL_SIZES[$COUNT]}"
 
-            FILES_INC_LINE_P1='<div><span style="margin-right:5px;">'
+            FILES_INC_LINE_P1="<div><span style=\"margin-right:5px;\">"
             FILES_INC_LINE_P2="${FILES_INC}${backup_file}"
-            FILES_INC_LINE_P3='</span> <span style="background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;">'
+            FILES_INC_LINE_P3="</span> <span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\">"
             FILES_INC_LINE_P4="${BK_FL_SIZE}"
             FILES_INC_LINE_P5="</span></div>"
 
@@ -339,7 +344,7 @@ mail_filesbackup_section() {
 
         done
 
-        FILES_LABEL_END='</div>'
+        FILES_LABEL_END="</div>"
 
         if [ "${DUP_BK}" = true ]; then
             DBK_SIZE=$(du -hs "${DUP_ROOT}" | cut -f1)
