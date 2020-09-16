@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.1
+# Version: 3.0.2
 #############################################################################
 
 SCRIPT="$(readlink -f "$0")"
@@ -13,7 +13,11 @@ BRANCH="master"
 
 self_update() {
 
-    cd "${SCRIPTPATH}"
+    #cd "${SCRIPTPATH}"
+
+    # Store credentials on first git pull
+    git config --global credential.helper store
+
     git fetch
 
     [ -n "$(git diff --name-only "origin/${BRANCH}" "${SCRIPTFILE}")" ] && {
@@ -35,5 +39,3 @@ self_update() {
 #############################################################################
 
 self_update
-echo "Running ..."
-

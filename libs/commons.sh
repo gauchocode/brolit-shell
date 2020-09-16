@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.1
+# Version: 3.0.2
 ################################################################################
 
 #
@@ -12,7 +12,7 @@
 #################################################################################
 #
 
-SCRIPT_V="3.0.1"
+SCRIPT_V="3.0.2"
 
 # Hostname
 VPSNAME="$HOSTNAME"
@@ -346,7 +346,7 @@ cron_script_tasks() {
 
   local runner_options chosen_type
 
-  runner_options="01) BACKUPS-TASKS 02) OPTIMIZER-TASKS 03) WORDPRESS-TASKS"
+  runner_options="01) BACKUPS-TASKS 02) OPTIMIZER-TASKS 03) WORDPRESS-TASKS 04) UPTIME-TASKS 05) SCRIPT-UPDATER"
   chosen_type=$(whiptail --title "CRONEABLE TASKS" --menu "\nPlease, choose a task to cron:" 20 78 10 $(for x in ${runner_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -354,20 +354,32 @@ cron_script_tasks() {
 
     if [[ ${chosen_type} == *"01"* ]]; then
 
-      # BACKUPS_TASKS
+      # BACKUPS-TASKS
       install_crontab_script "${SFOLDER}/cron/backups_tasks.sh" "00" "45"
 
     fi
     if [[ ${chosen_type} == *"02"* ]]; then
 
-      # OPTIMIZER_TASKS
+      # OPTIMIZER-TASKS
       install_crontab_script "${SFOLDER}/cron/optimizer_tasks.sh" "04" "45"
 
     fi
     if [[ ${chosen_type} == *"03"* ]]; then
 
-      # WORDPRESS_TASKS
+      # WORDPRESS-TASKS
       install_crontab_script "${SFOLDER}/cron/wordpress_tasks.sh" "23" "45"
+
+    fi
+    if [[ ${chosen_type} == *"04"* ]]; then
+
+      # UPTIME-TASKS
+      install_crontab_script "${SFOLDER}/cron/uptime_tasks.sh" "23" "45"
+
+    fi
+    if [[ ${chosen_type} == *"05"* ]]; then
+
+      # SCRIPT-UPDATER
+      install_crontab_script "${SFOLDER}/updater.sh" "23" "45"
 
     fi
 
