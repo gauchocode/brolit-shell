@@ -24,6 +24,7 @@ self_update() {
         echo "Found a new version of me, updating myself..."
         #git pull --force
         git checkout "${BRANCH}"
+        git reset --hard origin/master
         git pull --ff-only --force
         #echo "Running the new version..."
         #cd -                                   # return to original working dir
