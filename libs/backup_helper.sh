@@ -206,7 +206,7 @@ make_server_files_backup() {
 
   local bk_file old_bk_file
 
-  log_break
+  #log_break
 
   if [ -n "${bk_path}" ]; then
 
@@ -214,7 +214,7 @@ make_server_files_backup() {
     bk_file="${bk_sup_type}-${bk_type}-files-${NOW}.tar.bz2"
 
     # Here we use tar.bz2 with bzip2 compression method
-    log_event "info" "Making config backup (${bk_path})" "false"
+    log_event "info" "Making config backup [${bk_path}]" "false"
     display --indent 2 --text "- Preparing ${bk_sup_type} backup" --tcolor YELLOW --result "DONE" --color GREEN
 
     ${TAR} cjf "${BAKWP}/${NOW}/${bk_file}" --directory="${bk_path}" "${directory_to_backup}"
@@ -228,7 +228,7 @@ make_server_files_backup() {
     bzip2_result=$?
     if [ ${bzip2_result} -eq 0 ]; then
 
-      log_event "success" "${bk_file} backup creation finished" "false"
+      log_event "success" "Backup created [${bk_file}]" "false"
       display --indent 2 --text "- Testing compressed backup file" --result "DONE" --color GREEN
 
       BACKUPED_SCF_LIST[$BK_SCF_INDEX]="${bk_file}"
@@ -277,6 +277,7 @@ make_server_files_backup() {
         display --indent 4 --text "Maybe backup file doesn't exists" --tcolor YELLOW
 
         log_event "warning" "Can't remove ${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file} from dropbox. Maybe backup file doesn't exists." "false"
+        log_event "warning" "Last command executed: ${DROPBOX_UPLOADER} remove ${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file}" "false"
 
       fi
 
@@ -479,7 +480,7 @@ make_files_backup() {
       display --indent 2 --text "- Uploading backup to dropbox" --result "DONE" --color GREEN
 
       # Delete old backup from Dropbox
-      output=$($DROPBOX_UPLOADER remove "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file}" 2>&1)
+      output=$(${DROPBOX_UPLOADER} remove "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file}" 2>&1)
       log_event "info" "Old backup from Dropbox with date ${ONEWEEKAGO} deleted" "false"
       display --indent 2 --text "- Deleting old dropbox backup" --result "DONE" --color GREEN
 
@@ -517,16 +518,16 @@ duplicity_backup() {
 
     # Loop in to Directories
     for i in $(echo "${DUP_FOLDERS}" | sed "s/,/ /g"); do
-      duplicity --full-if-older-than ${DUP_BK_FULL_FREQ} -v4 --no-encryption ${DUP_SRC_BK}$i file://${DUP_ROOT}$i
+      duplicity --full-if-older-than "${DUP_BK_FULL_FREQ}" -v4 --no-encryption" ${DUP_SRC_BK}""${i}" file://"${DUP_ROOT}""${i}"
       RETVAL=$?
 
       # TODO: solo deberia borrar lo viejo si $RETVAL -eq 0
-      duplicity remove-older-than ${DUP_BK_FULL_LIFE} --force ${DUP_ROOT}/$i
+      duplicity remove-older-than "${DUP_BK_FULL_LIFE}" --force "${DUP_ROOT}"/"${i}"
 
     done
 
-    [ $RETVAL -eq 0 ] && echo "*** DUPLICITY SUCCESS ***" >>$LOG
-    [ $RETVAL -ne 0 ] && echo "*** DUPLICITY ERROR ***" >>$LOG
+    [ $RETVAL -eq 0 ] && echo "*** DUPLICITY SUCCESS ***" >>"${LOG}"
+    [ $RETVAL -ne 0 ] && echo "*** DUPLICITY ERROR ***" >>"${LOG}"
 
   fi
 
@@ -597,16 +598,16 @@ make_database_backup() {
       DROPBOX_PATH="/${VPSNAME}/${bk_type}/${database}"
 
       # Upload to Dropbox
-      log_event "info" "Uploading new database backup [${bk_file}] ..." "false"
+      log_event "info" "Uploading new database backup ${bk_file}" "false"
       output=$($DROPBOX_UPLOADER upload "${bk_file}" "$DROPBOX_FOLDER/${DROPBOX_PATH}" 2>&1)
       display --indent 2 --text "- Uploading new database backup to dropbox" --result "DONE" --color GREEN
 
       # Delete old backups
-      log_event "info" "Deleting old database backup ${old_bk_file} from dropbox ..." "false"
+      log_event "info" "Deleting old database backup ${old_bk_file} from dropbox" "false"
       output=$(${DROPBOX_UPLOADER} -q remove "$DROPBOX_FOLDER/${DROPBOX_PATH}/${old_bk_file}" 2>&1)
       display --indent 2 --text "- Delete old database backup" --result "DONE" --color GREEN
 
-      log_event "info" "Deleting old database backup [${old_bk_file}] from server ..." "false"
+      log_event "info" "Deleting old database backup ${old_bk_file} from server" "false"
       rm "${BAKWP}/${NOW}/${db_file}"
       rm "${BAKWP}/${NOW}/${bk_file}"
       display --indent 2 --text "- Delete old database backup from server" --result "DONE" --color GREEN
