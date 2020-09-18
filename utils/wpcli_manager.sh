@@ -62,7 +62,7 @@ wpcli_main_menu() {
     "quttera-web-malware-scanner" " " off
   )
 
-  wpcli_options="01 INSTALL_PLUGINS 02 DELETE_THEMES 03 DELETE_PLUGINS 04 REINSTALL_ALL_PLUGINS 05 VERIFY_WP 06 UPDATE_WP 07 REINSTALL_WP 08 CLEAN_WP_DB 09 PROFILE_WP 10 CHANGE_TABLES_PREFIX 11 REPLACE_URLs 12 SEOYOAST_REINDEX 13 DELETE_NOT_CORE_FILES"
+  wpcli_options="01) INSTALL-PLUGINS 02) DELETE-THEMES 03) DELETE-PLUGINS 04) REINSTALL-ALL-PLUGINS 05) VERIFY-WP 06) UPDATE-WP 07) REINSTALL-WP 08) CLEAN-WP-DB 09) PROFILE-WP 10) CHANGE-TABLES-PREFIX 11) REPLACE-URLs 12) SEOYOAST-REINDEX 13) DELETE-NOT-CORE-FILES"
   chosen_wpcli_options=$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 $(for x in ${wpcli_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
@@ -92,7 +92,7 @@ wpcli_main_menu() {
 
       for theme_del in $CHOSEN_DEL_THEME_OPTION; do
         theme_del=$(sed -e 's/^"//' -e 's/"$//' <<<$theme_del) #needed to ommit double quotes
-        echo "theme delete $theme_del"
+        #echo "theme delete $theme_del"
         wpcli_delete_theme "${wp_site}" "$theme_del"
       done
 
@@ -107,8 +107,9 @@ wpcli_main_menu() {
       chosen_del_plugin_option=$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to delete:" 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)
 
       for plugin_del in ${chosen_del_plugin_option}; do
+        
         plugin_del=$(sed -e 's/^"//' -e 's/"$//' <<<"${plugin_del}") #needed to ommit double quotes
-        log_event "info" "Deleting plugin: ${plugin_del}" "true"
+        
         wpcli_delete_plugin "${wp_site}" "${plugin_del}"
 
       done
@@ -218,8 +219,6 @@ wpcli_main_menu() {
       # Change WP tables PREFIX
       wpcli_change_tables_prefix "${wp_site}" "${TABLES_PREFIX}"
 
-      echo " > New Tables prefix for ${wp_site}: ${TABLES_PREFIX}"
-
     fi
     if [[ ${chosen_wpcli_options} == *"11"* ]]; then
 
@@ -238,7 +237,7 @@ wpcli_main_menu() {
     if [[ ${chosen_wpcli_options} == *"13"* ]]; then
 
       # DELETE_NOT_CORE_FILES
-      echo -e ${B_RED} " > This script will delete all non-core wordpress files (except wp-content). Do you want to continue? [y/n]" ${ENDCOLOR}
+      echo -e "${B_RED} > This script will delete all non-core wordpress files (except wp-content). Do you want to continue? [y/n]${ENDCOLOR}"
       read -r answer
       
       if [[ $answer == "y" ]]; then
@@ -270,7 +269,7 @@ directory_browser "${menutitle}" "${startdir}"
 
 wp_site="${filepath}/${filename}"
 
-log_event "info" "Searching WordPress Installation on directory: ${wp_site}" "true"
+log_event "info" "Searching WordPress Installation on directory: ${wp_site}" "false"
 
 # Search a wordpress installation on selected directory
 install_path=$(search_wp_config "${wp_site}")
@@ -278,6 +277,7 @@ install_path=$(search_wp_config "${wp_site}")
 if [[ -z "${install_path}" || "${install_path}" = '' ]]; then
 
   log_event "info" "Not WordPress Installation Found! Returning to Main Menu" "false"
+  display --indent 2 --text "- Searching WordPress Installation" --result "FAIL" --color RED
   
   whiptail --title "WARNING" --msgbox "Not WordPress Installation Found! Press Enter to return to the Main Menu." 8 78
   
@@ -288,7 +288,9 @@ else
   # WordPress installation path
   wp_site=${install_path}
 
-  log_event "info" "Working with wp_site=${wp_site}" "true"
+  log_event "info" "Working with wp_site=${wp_site}" "false"
+  display --indent 2 --text "- Searching WordPress Installation" --result "DONE" --color GREEN
+  display --indent 4 --text "Working on ${wp_site}"
 
   wpcli_main_menu "${wp_site}"
 
