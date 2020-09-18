@@ -62,22 +62,21 @@ wpcli_install() {
 wpcli_update() {
 
     log_event "info" "Running: wp-cli update" "false"
-    display --indent 2 --text "- Updating wp-cli" --result "DONE" --color GREEN
 
     wp cli update --quiet
 
     log_event "success" "wp-cli installed" "false"
-    
+    display --indent 2 --text "- Updating wp-cli" --result "DONE" --color GREEN
 
 }
 
 wpcli_uninstall() {
 
-    log_event "warning" "Uninstalling wp-cli ..." "true"
+    log_event "warning" "Uninstalling wp-cli ..." "false"
 
     rm "/usr/local/bin/wp"
 
-    log_event "warning" "wp-cli uninstalled" "true"
+    display --indent 2 --text "- Uninstalling wp-cli" --result "DONE" --color GREEN
 
 }
 
@@ -100,18 +99,27 @@ wpcli_run_startup_script(){
     # Delete default post, page, and comment
     wp site empty --yes --allow-root
 
+    display --indent 2 --text "- Deleting default content" --result "DONE" --color GREEN
+
     # Delete default themes
     wp theme delete twentyseventeen --allow-root
     wp theme delete twentynineteen --allow-root
+
+    display --indent 2 --text "- Deleting default themes" --result "DONE" --color GREEN
 
     wp site empty --yes --allow-root
     
     # Delete default plugins
     wp plugin delete akismet --allow-root
     wp plugin delete hello --allow-root
+
+    display --indent 2 --text "- Deleting default plugins" --result "DONE" --color GREEN
     
     wp rewrite structure '/%postname%/' --allow-root
+    display --indent 2 --text "- Changing rewrite structure" --result "DONE" --color GREEN
+
     wp option update default_comment_status closed --allow-root
+    display --indent 2 --text "- Setting comments off" --result "DONE" --color GREEN
     #wp post create --post_type=page --post_status=publish --post_title='Home' --allow-root
 
 }
@@ -134,9 +142,11 @@ wpcli_create_config(){
         wp_locale="es_ES"
     fi
 
-    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} config create --dbname=${database} --dbuser=${db_user_name} --dbpass=${db_user_passw} --locale=${wp_locale}" "true"
+    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} config create --dbname=${database} --dbuser=${db_user_name} --dbpass=${db_user_passw} --locale=${wp_locale}" "false"
 
     sudo -u www-data wp --path="${wp_site}" config create --dbname="${database}" --dbuser="${db_user_name}" --dbpass="${db_user_passw}" --locale="${wp_locale}"
+
+    display --indent 2 --text "- Creating wp-config" --result "DONE" --color GREEN
 
 }
 
@@ -159,9 +169,11 @@ wpcli_set_salts() {
 
     local wp_site=$1
 
-    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} config shuffle-salts" "true"
+    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} config shuffle-salts" "false"
 
     sudo -u www-data wp --path="${wp_site}" config shuffle-salts
+
+    display --indent 2 --text "- Shuffle salts" --result "DONE" --color GREEN
 
 }
 
@@ -330,7 +342,7 @@ wpcli_plugin_verify() {
         plugin="--all"
     fi
 
-    log_event "info" "Running: sudo -u www-data wp --path="${wp_site}" plugin verify-checksums ${plugin}" "true"
+    log_event "info" "Running: sudo -u www-data wp --path="${wp_site}" plugin verify-checksums ${plugin}" "false"
     mapfile verify_plugin < <(sudo -u www-data wp --path="${wp_site}" plugin verify-checksums "${plugin}" 2>&1)
 
     display --indent 2 --text "- WordPress plugin verify-checksums" --result "DONE" --color GREEN

@@ -23,7 +23,7 @@ certbot_certificate_install() {
 
   local certbot_result
 
-  log_event "info" "Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains}" "true"
+  log_event "info" "Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains}" "false"
   
   certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}"
 
@@ -359,6 +359,8 @@ certbot_helper_menu() {
 
   exitstatus=$?
   if [ ${exitstatus} = 0 ]; then
+
+    log_section "Certbot Manager"
 
     if [[ ${chosen_cb_options} == *"01"* ]]; then
 
