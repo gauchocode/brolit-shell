@@ -41,18 +41,28 @@ php_fpm_optimizations() {
   NETDATA_AVG_RAM=$(ps --no-headers -o "rss,cmd" -C netdata | awk '{ sum+=$1 } END { printf ("%d%s\n", sum/NR/1024,"") }')
 
   # Show/Log Server Info
-  log_event "" "**************************************************" "true"
-  log_event "" "****************** SERVER INFO  ******************" "true"
-  log_event "" "**************************************************" "true"
-  log_event "info" "PHP_V: ${PHP_V}" "true"
-  log_event "info" "RAM_BUFFER: ${RAM_BUFFER}" "true"
-  log_event "info" "CPUS: ${CPUS}" "true"
-  log_event "info" "RAM: ${RAM}" "true"
-  log_event "info" "PHP_AVG_RAM: ${PHP_AVG_RAM}" "true"
-  log_event "info" "MYSQL_AVG_RAM: ${MYSQL_AVG_RAM}" "true"
-  log_event "info" "NGINX_AVG_RAM: ${NGINX_AVG_RAM}" "true"
-  log_event "info" "REDIS_AVG_RAM: ${REDIS_AVG_RAM}" "true"
-  log_event "info" "NETDATA_AVG_RAM: ${NETDATA_AVG_RAM}" "true"
+  #display --indent 2 --text "- Creating user in MySQL: ${db_user}" --result "DONE" --color GREEN
+  display --indent 2 --text "Getting server info ..."
+  display --indent 4 --text "PHP_V: ${PHP_V}"
+  display --indent 4 --text "RAM_BUFFER: ${RAM_BUFFER}"
+  display --indent 4 --text "CPUS: ${CPUS}"
+  display --indent 4 --text "RAM: ${RAM}"
+  display --indent 4 --text "PHP_AVG_RAM: ${PHP_AVG_RAM}"
+  display --indent 4 --text "MYSQL_AVG_RAM: ${MYSQL_AVG_RAM}"
+  display --indent 4 --text "NGINX_AVG_RAM: ${NGINX_AVG_RAM}"
+  display --indent 4 --text "REDIS_AVG_RAM: ${REDIS_AVG_RAM}"
+  display --indent 4 --text "NETDATA_AVG_RAM: ${NETDATA_AVG_RAM}"
+
+  log_event "" "****************** SERVER INFO  ******************" "false"
+  log_event "info" "PHP_V: ${PHP_V}" "false"
+  log_event "info" "RAM_BUFFER: ${RAM_BUFFER}" "false"
+  log_event "info" "CPUS: ${CPUS}" "false"
+  log_event "info" "RAM: ${RAM}" "false"
+  log_event "info" "PHP_AVG_RAM: ${PHP_AVG_RAM}" "false"
+  log_event "info" "MYSQL_AVG_RAM: ${MYSQL_AVG_RAM}" "false"
+  log_event "info" "NGINX_AVG_RAM: ${NGINX_AVG_RAM}" "false"
+  log_event "info" "REDIS_AVG_RAM: ${REDIS_AVG_RAM}" "false"
+  log_event "info" "NETDATA_AVG_RAM: ${NETDATA_AVG_RAM}" "false"
   
   #Settings	Value Explanation
   #max_children	(Total RAM - Memory used for Linux, DB, etc.) / process size
@@ -68,9 +78,15 @@ php_fpm_optimizations() {
   PM_PROCESS_IDDLE_TIMEOUT="10s"
 
   # Show/Log PHP-FPM optimal config
-  log_event "" "**************************************************" "true"
-  log_event "" "************* PHP-FPM OPTIMAL CONFIG *************" "true"
-  log_event "" "**************************************************" "true"
+  display --indent 2 --text "Calculating PHP optimal configuration ..."
+  display --indent 4 --text "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN}"
+  display --indent 4 --text "PM_START_SERVERS: ${PM_START_SERVERS}"
+  display --indent 4 --text "PM_MIN_SPARE_SERVERS: ${PM_MIN_SPARE_SERVERS}"
+  display --indent 4 --text "PM_MAX_SPARE_SERVERS: ${PM_MAX_SPARE_SERVERS}"
+  display --indent 4 --text "PM_MAX_REQUESTS: ${PM_MAX_REQUESTS}"
+  display --indent 4 --text "PM_PROCESS_IDDLE_TIMEOUT: ${PM_PROCESS_IDDLE_TIMEOUT}"
+
+  log_event "" "************* PHP-FPM OPTIMAL CONFIG *************" "false"
   log_event "info" "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN}" "true"
   log_event "info" "PM_START_SERVERS: ${PM_START_SERVERS}" "true"
   log_event "info" "PM_MIN_SPARE_SERVERS: ${PM_MIN_SPARE_SERVERS}" "true"
@@ -99,18 +115,24 @@ php_fpm_optimizations() {
   PM_PROCESS_IDDLE_TIMEOUT_ORIGIN=$(cat "/etc/php/${PHP_V}/fpm/pool.d/www.conf" | grep "^${KEY} ${DELIMITER}" | cut -f2- -d"$DELIMITER")
 
   # Show/Log PHP-FPM actual config
-  log_event "" "**************************************************" "true"
-  log_event "" "************* PHP-FPM ACTUAL CONFIG **************" "true"
-  log_event "" "**************************************************" "true"
-  log_event "info" "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN_ORIGIN}" "true"
-  log_event "info" "PM_START_SERVERS: ${PM_START_SERVERS_ORIGIN}" "true"
-  log_event "info" "PM_MIN_SPARE_SERVERS: ${PM_MIN_SPARE_SERVERS_ORIGIN}" "true"
-  log_event "info" "PM_MAX_SPARE_SERVERS: ${PM_MAX_SPARE_SERVERS_ORIGIN}" "true"
-  log_event "info" "PM_MAX_REQUESTS: ${PM_MAX_REQUESTS_ORIGIN}" "true"
-  log_event "info" "PM_PROCESS_IDDLE_TIMEOUT: ${PM_PROCESS_IDDLE_TIMEOUT_ORIGIN}" "true"
+  display --indent 2 --text "Getting PHP actual configuration ..."
+  display --indent 4 --text "PM_MAX_CHILDREN_ORIGIN: ${PM_MAX_CHILDREN_ORIGIN}"
+  display --indent 4 --text "PM_START_SERVERS_ORIGIN: ${PM_START_SERVERS_ORIGIN}"
+  display --indent 4 --text "PM_MIN_SPARE_SERVERS_ORIGIN: ${PM_MIN_SPARE_SERVERS_ORIGIN}"
+  display --indent 4 --text "PM_MAX_SPARE_SERVERS_ORIGIN: ${PM_MAX_SPARE_SERVERS_ORIGIN}"
+  display --indent 4 --text "PM_MAX_REQUESTS_ORIGIN: ${PM_MAX_REQUESTS_ORIGIN}"
+  display --indent 4 --text "PM_PROCESS_IDDLE_TIMEOUT_ORIGIN: ${PM_PROCESS_IDDLE_TIMEOUT_ORIGIN}"
+
+  log_event "" "************* PHP-FPM ACTUAL CONFIG **************" "false"
+  log_event "info" "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN_ORIGIN}" "false"
+  log_event "info" "PM_START_SERVERS: ${PM_START_SERVERS_ORIGIN}" "false"
+  log_event "info" "PM_MIN_SPARE_SERVERS: ${PM_MIN_SPARE_SERVERS_ORIGIN}" "false"
+  log_event "info" "PM_MAX_SPARE_SERVERS: ${PM_MAX_SPARE_SERVERS_ORIGIN}" "false"
+  log_event "info" "PM_MAX_REQUESTS: ${PM_MAX_REQUESTS_ORIGIN}" "false"
+  log_event "info" "PM_PROCESS_IDDLE_TIMEOUT: ${PM_PROCESS_IDDLE_TIMEOUT_ORIGIN}" "false"
 
   while true; do
-    echo -e ${YELLOW}"> Do you want to apply this optimizations?"${ENDCOLOR}
+    echo -e "${YELLOW} > Do you want to apply this optimizations?${ENDCOLOR}"
     read -p "Please type 'y' or 'n'" yn
 
     case $yn in
@@ -123,23 +145,26 @@ php_fpm_optimizations() {
       sed -ie "s|^pm\.max_spare_servers =.*$|pm\.max_spare_servers = ${PM_MAX_SPARE_SERVERS}|g" "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
       sed -ie "s|^pm\.max_requests =.*$|pm\.max_requests = ${PM_MAX_REQUESTS}|g" "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
       
-      log_event "info" "PHP optimizations applied ..." "true"
-
       #Test the validity of your php-fpm configuration
       result=$(php-fpm"${PHP_V}" -t 2>&1 | grep -w "test" | cut -d"." -f3 | cut -d" " -f4)
 
       if [ "${result}" = "successful" ];then
-        log_event "success" "PHP optimizations applied!" "true"
+        log_event "success" "PHP optimizations applied!" "false"
+        display --indent 2 --text "- Applying optimizations" --result "DONE" --color GREEN
+
       else
         debug=$(php-fpm"${PHP_V}" -t 2>&1)
-        log_event "error" "PHP optimizations fail: $debug" "true"
+        log_event "error" "PHP optimizations fail: $debug" "false"
+        display --indent 2 --text "- Applying optimizations" --result "FAIL" --color RED
+
       fi
 
       break
       ;;
 
     [Nn]*)
-      log_event "info" "Skipping optimization ..." "true"
+      log_event "info" "Skipping optimization ..." "false"
+      display --indent 2 --text "- Applying optimizations" --result "SKIPPED" --color YELLOW
       break
       ;;
 
@@ -153,6 +178,8 @@ php_fpm_optimizations() {
 
 ################################################################################
 
-log_event "" "********* RUNNING PHP OPTIMIZATION TOOL  *********" "true"
+log_event "" "RUNNING PHP OPTIMIZATION TOOL" "false"
+
+log_section "PHP Optimization Tool"
 
 php_fpm_optimizations
