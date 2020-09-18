@@ -48,7 +48,7 @@ mysql_user_create() {
     if [ "${mysql_result}" -eq 0 ]; then
         log_event "success" " MySQL user ${db_user} created" "false"
         clear_last_line
-        display --indent 2 --text "- Creating ${db_user} user in MySQL" --result "DONE" --color GREEN
+        display --indent 2 --text "- Creating user in MySQL: ${db_user}" --result "DONE" --color GREEN
         display --indent 4 --text "User created with pass: ${db_user_psw}"
         return 0
 
@@ -73,7 +73,7 @@ mysql_user_delete() {
 
     log_event "info" "Deleting ${db_user} user in MySQL ..." "false"
 
-    mysql_output=$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" 2>&1)
+    mysql_output="$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" 2>&1)"
     mysql_result=$?
     
     if [ "${mysql_result}" -eq 0 ]; then
@@ -186,17 +186,17 @@ mysql_user_grant_privileges() {
     sql1="GRANT ALL PRIVILEGES ON ${db_target}.* TO '${db_user}'@'localhost';"
     sql2="FLUSH PRIVILEGES;"
 
-    mysql_output=$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" 1>&2)
+    mysql_output="$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" 1>&2)"
     mysql_result=$?
     
     if [ "${mysql_result}" -eq 0 ]; then
         log_event "success" "Privileges granted to user ${db_user}" "false"
-        display --indent 2 --text " - Granting privileges to ${db_user}" --result "DONE" --color GREEN
+        display --indent 2 --text "- Granting privileges to ${db_user}" --result "DONE" --color GREEN
         return 0
 
     else
         log_event "error" "Something went wrong granting privileges to user ${db_user}. MySQL output: ${mysql_output}" "false"
-        display --indent 2 --text " - Granting privileges to ${db_user}" --result "FAIL" --color RED
+        display --indent 2 --text "- Granting privileges to ${db_user}" --result "FAIL" --color RED
         return 1
 
     fi
@@ -284,12 +284,12 @@ mysql_database_create() {
 
     if [ "${mysql_result}" -eq 0 ]; then
         log_event "success" "Database ${database} created successfully" "false"
-        display --indent 2 --text " - Creating database: ${database}" --result "DONE" --color GREEN
+        display --indent 2 --text "- Creating database: ${database}" --result "DONE" --color GREEN
         return 0
 
     else
         log_event "error" "Something went wrong creating database: ${database}. MySQL output: ${mysql_output}" "false"
-        display --indent 2 --text " - Creating database: ${database}" --result "ERROR" --color RED
+        display --indent 2 --text "- Creating database: ${database}" --result "ERROR" --color RED
         display --indent 4 --text "MySQL output: ${mysql_output}" --tcolor RED
         return 1
 

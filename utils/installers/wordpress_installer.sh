@@ -201,7 +201,8 @@ if [ $exitstatus = 0 ]; then
 
     else
 
-      log_event "info" "No HTTPS support for ${project_domain}" "true"
+      log_event "info" "HTTPS support for ${project_domain} skipped" "false"
+      display --indent 2 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
     fi  
 
@@ -214,22 +215,25 @@ if [ $exitstatus = 0 ]; then
     nginx_server_create "${project_domain}" "wordpress" "single" ""
 
     # HTTPS with Certbot
-    project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
+    cert_project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
       
-      certbot_certificate_install "${MAILA}" "${project_domain}"
+      certbot_certificate_install "${MAILA}" "${cert_project_domain}"
 
     else
 
-      log_event "info" "No HTTPS support for ${project_domain}" "true"
+      log_event "info" "HTTPS support for ${project_domain} skipped" "false"
+      display --indent 2 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
     fi
     
   fi
 
-  log_event "success" "WordPress installation for domain ${project_domain} finished" "true"
-  telegram_send_message "${VPSNAME}: WordPress installation for domain ${project_domain} finished"
+  log_event "success" "WordPress installation for domain ${project_domain} finished" "false"
+  display --indent 2 --text "- WordPress installation for domain ${project_domain}" --result "DONE" --color GREEN
+
+  telegram_send_message "${VPSNAME}: WordPress installation for domain ${project_domain} finished."
 
 fi
 
