@@ -97,9 +97,9 @@ project_install() {
   database_user="${db_project_name}_user"
   database_user_passw=$(openssl rand -hex 12)
 
-  log_event "info" "******************************************************************************************" "true"
-  log_event "info" "Creating database ${database_name}, and user ${database_user} with pass ${database_user_passw}" "true"
-  log_event "info" "******************************************************************************************" "true"
+  #log_event "info" "******************************************************************************************" "true"
+  #log_event "info" "Creating database ${database_name}, and user ${database_user} with pass ${database_user_passw}" "true"
+  #log_event "info" "******************************************************************************************" "true"
 
   mysql_database_create "${database_name}"
   mysql_user_create "${database_user}" "${database_user_passw}"
@@ -114,6 +114,6 @@ project_install() {
   # HTTPS with Certbot
   certbot_certificate_install "${MAILA}" "${project_domain}"
 
-  log_event "success" "INSTALLATION FINISHED!" "true"
+  log_event "success" "INSTALLATION FINISHED!" "false"
 
 }
