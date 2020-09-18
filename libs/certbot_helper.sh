@@ -364,7 +364,7 @@ certbot_helper_menu() {
 
     if [[ ${chosen_cb_options} == *"01"* ]]; then
 
-      # INSTALL_CERTIFICATE
+      # INSTALL-CERTIFICATE
       domains=$(certbot_helper_ask_domains)
       exitstatus=$?
       if [ ${exitstatus} = 0 ]; then
@@ -374,7 +374,7 @@ certbot_helper_menu() {
     fi
 
     if [[ ${chosen_cb_options} == *"02"* ]]; then
-      # EXPAND_CERTIFICATE
+      # EXPAND-CERTIFICATE
       domains=$(certbot_helper_ask_domains)
       exitstatus=$?
       if [ ${exitstatus} = 0 ]; then
@@ -384,13 +384,13 @@ certbot_helper_menu() {
     fi
 
     if [[ ${chosen_cb_options} == *"03"* ]]; then
-      # TEST_RENEW_ALL_CERTIFICATES
+      # TEST-RENEW-ALL-CERTIFICATES
       certbot_certificate_renew_test
 
     fi
 
     if [[ ${chosen_cb_options} == *"04"* ]]; then
-      # FORCE_RENEW_CERTIFICATE
+      # FORCE-RENEW-CERTIFICATE
       domains=$(certbot_helper_ask_domains)
       exitstatus=$?
       if [ ${exitstatus} = 0 ]; then
@@ -401,13 +401,13 @@ certbot_helper_menu() {
     fi
 
     if [[ ${chosen_cb_options} == *"05"* ]]; then
-      # DELETE_CERTIFICATE
+      # DELETE-CERTIFICATE
       certbot_certificate_delete "${domains}"
 
     fi
 
     if [[ ${chosen_cb_options} == *"06"* ]]; then
-      # SHOW_INSTALLED_CERTIFICATES
+      # SHOW-INSTALLED-CERTIFICATES
       certbot_show_certificates_info
 
     fi
