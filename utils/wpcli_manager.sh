@@ -3,22 +3,10 @@
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Version: 3.0.2
 ################################################################################
-#
-# Ref: https://kinsta.com/blog/wp-cli/
-#
-# TODO: option to profile specific URL:
-# Ex: php /var/www/.wp-cli/wp-cli.phar --path=/var/www/dev.bes-ebike.com/ profile hook --all --spotlight --url=https://dev.bes-ebike.com/shop-electric-bikes/ --allow-root
-#
-# TODO: check if is network project: https://developer.wordpress.org/cli/commands/core/is-installed/
-#
-# TODO: Healthchecks with wp doctor
-# Ref: https://guides.wp-bullet.com/automating-wordpress-health-checks-with-wp-cli-doctor-command/
-
-################################################################################
 
 ### Checking some things
 if [[ -z "${SFOLDER}" ]]; then
-  echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+  echo -e "${B_RED} > Error: The script can only be runned by runner.sh! Exiting ...${ENDCOLOR}"
   exit 0
 fi
 ################################################################################
@@ -152,11 +140,15 @@ wpcli_main_menu() {
     if [[ ${chosen_wpcli_options} == *"08"* ]]; then
 
       # CLEAN_DB
-      log_event "info" "Executing: wp --path=${wp_site} transient delete --expired --allow-root" "true"
+      log_event "info" "Executing: wp --path=${wp_site} transient delete --expired --allow-root" "false"
       wp --path="${wp_site}" transient delete --expired --allow-root
 
-      log_event "info" "Executing: wp --path=${wp_site} cache flush --allow-root" "true"
+      display --indent 2 --text "- Deleting transient" --result "DONE" --color GREEN
+
+      log_event "info" "Executing: wp --path=${wp_site} cache flush --allow-root" "false"
       wp --path="${wp_site}" cache flush --allow-root
+
+      display --indent 2 --text "- Flushing cache" --result "DONE" --color GREEN
 
     fi
 
@@ -168,20 +160,20 @@ wpcli_main_menu() {
       #https://guides.wp-bullet.com/using-wp-cli-wp-profile-to-diagnose-wordpress-performance-issues/
       wp package install wp-cli/profile-command --allow-root
 
-      PROFILER_OPTIONS="01 PROFILE_STAGE 02 PROFILE_STAGE_BOOTSTRAP 03 PROFILE_STAGE_ALL 04 PROFILE_STAGE_HOOK_WP 05 PROFILE_STAGE_HOOK_ALL"
+      PROFILER_OPTIONS="01) PROFILE-STAGE 02) PROFILE-STAGE-BOOTSTRAP 03) PROFILE-STAGE-ALL 04) PROFILE-STAGE-HOOK-WP 05) PROFILE-STAGE-HOOK-ALL"
       CHOSEN_PROF_OPTION=$(whiptail --title "WP-CLI PROFILER HELPER" --menu "Choose an option to run" 20 78 10 $(for x in ${PROFILER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
       if [ $exitstatus = 0 ]; then
 
         if [[ ${CHOSEN_PROF_OPTION} == *"01"* ]]; then
           #This command shows the stages of loading WordPress
-          log_event "info" "Executing: wp --path=${wp_site} profile stage --allow-root" "true"
+          log_event "info" "Executing: wp --path=${wp_site} profile stage --allow-root" "false"
           wp --path="${wp_site}" profile stage --allow-root
 
         fi
         if [[ ${CHOSEN_PROF_OPTION} == *"02"* ]]; then
           #Can drill down into each stage, here we drill down into the bootstrap stage
-          log_event "info" "Executing: wp --path=${wp_site} profile stage bootstrap --allow-root" "true"
+          log_event "info" "Executing: wp --path=${wp_site} profile stage bootstrap --allow-root" "false"
           wp --path="${wp_site}" profile stage bootstrap --allow-root
 
         fi
@@ -189,19 +181,19 @@ wpcli_main_menu() {
           #All stage
           #sudo -u www-data wp --path=${SITES}'/'${wp_site} profile stage --all --orderby=time --allow-root
           #You can also use the --spotlight flag to filter out zero-like values for easier reading
-          log_event "info" "Executing: wp --path=${wp_site} profile stage --all --spotlight --orderby=time --allow-root" "true"
+          log_event "info" "Executing: wp --path=${wp_site} profile stage --all --spotlight --orderby=time --allow-root" "false"
           wp --path="${wp_site}" profile stage --all --spotlight --orderby=time --allow-root
 
         fi
         if [[ ${CHOSEN_PROF_OPTION} == *"04"* ]]; then
           #Here we dig into the wp hook
-          log_event "info" "Executing: wp --path=${wp_site} profile hook wp --allow-root" "true"
+          log_event "info" "Executing: wp --path=${wp_site} profile hook wp --allow-root" "false"
           wp --path="${wp_site}" profile hook wp --allow-root
 
         fi
         if [[ ${CHOSEN_PROF_OPTION} == *"05"* ]]; then
           #Here we dig into the wp hook
-          log_event "info" "Executing: wp --path=${wp_site} profile hook --all --spotlight --allow-root" "true"
+          log_event "info" "Executing: wp --path=${wp_site} profile hook --all --spotlight --allow-root" "false"
           wp --path="${wp_site}" profile hook --all --spotlight --allow-root
 
         fi
@@ -269,6 +261,8 @@ directory_browser "${menutitle}" "${startdir}"
 
 wp_site="${filepath}/${filename}"
 
+log_section "WP-CLI Manager"
+
 log_event "info" "Searching WordPress Installation on directory: ${wp_site}" "false"
 
 # Search a wordpress installation on selected directory
@@ -276,10 +270,10 @@ install_path=$(search_wp_config "${wp_site}")
 
 if [[ -z "${install_path}" || "${install_path}" = '' ]]; then
 
-  log_event "info" "Not WordPress Installation Found! Returning to Main Menu" "false"
-  display --indent 2 --text "- Searching WordPress Installation" --result "FAIL" --color RED
+  log_event "info" "WordPress installation not found! Returning to Main Menu" "false"
+  display --indent 2 --text "- Searching WordPress installation" --result "FAIL" --color RED
   
-  whiptail --title "WARNING" --msgbox "Not WordPress Installation Found! Press Enter to return to the Main Menu." 8 78
+  whiptail --title "WARNING" --msgbox "WordPress installation not found! Press Enter to return to the Main Menu." 8 78
   
   main_menu
   
