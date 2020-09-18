@@ -232,7 +232,7 @@ make_server_files_backup() {
       display --indent 2 --text "- Testing compressed backup file" --result "DONE" --color GREEN
 
       BACKUPED_SCF_LIST[${BK_SCF_INDEX}]="${bk_file}"
-      BACKUPED_SCF_FL=${BACKUPED_SCF_LIST[${BK_SCF_INDEX}]}
+      BACKUPED_SCF_FL="${BACKUPED_SCF_LIST[${BK_SCF_INDEX}]}"
 
       # Calculate backup size
       BK_SCF_SIZE=$(ls -lah "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')

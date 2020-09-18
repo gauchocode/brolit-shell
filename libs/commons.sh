@@ -344,7 +344,7 @@ main_menu() {
 
 cron_script_tasks() {
 
-  local runner_options chosen_type
+  local runner_options chosen_type scheduled_time
 
   runner_options="01) BACKUPS-TASKS 02) OPTIMIZER-TASKS 03) WORDPRESS-TASKS 04) UPTIME-TASKS 05) SCRIPT-UPDATER"
   chosen_type=$(whiptail --title "CRONEABLE TASKS" --menu "\nPlease, choose a task to cron:" 20 78 10 $(for x in ${runner_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
@@ -355,31 +355,66 @@ cron_script_tasks() {
     if [[ ${chosen_type} == *"01"* ]]; then
 
       # BACKUPS-TASKS
-      install_crontab_script "${SFOLDER}/cron/backups_tasks.sh" "00" "45"
+      suggested_cron="45 00 * * *" # Every day at 00:45 AM
+      scheduled_time=$(whiptail --title "CRON BACKUPS-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ ${exitstatus} = 0 ]; then
+        
+        install_crontab_script "${SFOLDER}/cron/backups_tasks.sh" "${scheduled_time}"
+
+      fi
 
     fi
     if [[ ${chosen_type} == *"02"* ]]; then
 
       # OPTIMIZER-TASKS
-      install_crontab_script "${SFOLDER}/cron/optimizer_tasks.sh" "04" "45"
+      suggested_cron="45 04 * * *" # Every day at 04:45 AM
+      scheduled_time=$(whiptail --title "CRON OPTIMIZER-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ ${exitstatus} = 0 ]; then
+        
+        install_crontab_script "${SFOLDER}/cron/optimizer_tasks.sh" "${scheduled_time}"
+
+      fi
 
     fi
     if [[ ${chosen_type} == *"03"* ]]; then
 
       # WORDPRESS-TASKS
-      install_crontab_script "${SFOLDER}/cron/wordpress_tasks.sh" "23" "45"
+      suggested_cron="45 23 * * *" # Every day at 23:45 AM
+      scheduled_time=$(whiptail --title "CRON WORDPRESS-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ ${exitstatus} = 0 ]; then
+        
+        install_crontab_script "${SFOLDER}/cron/wordpress_tasks.sh" "${scheduled_time}"
+
+      fi
 
     fi
     if [[ ${chosen_type} == *"04"* ]]; then
 
       # UPTIME-TASKS
-      install_crontab_script "${SFOLDER}/cron/uptime_tasks.sh" "23" "45"
+      suggested_cron="45 22 * * *" # Every day at 22:45 AM
+      scheduled_time=$(whiptail --title "CRON UPTIME-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ ${exitstatus} = 0 ]; then
+        
+        install_crontab_script "${SFOLDER}/cron/uptime_tasks.sh" "${scheduled_time}"
+
+      fi
 
     fi
     if [[ ${chosen_type} == *"05"* ]]; then
 
       # SCRIPT-UPDATER
-      install_crontab_script "${SFOLDER}/updater.sh" "23" "45"
+      suggested_cron="45 22 * * *" # Every day at 22:45 AM
+      scheduled_time=$(whiptail --title "CRON UPTIME-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ ${exitstatus} = 0 ]; then
+        
+        install_crontab_script "${SFOLDER}/cron/updater.sh" "${scheduled_time}"
+
+      fi
 
     fi
 
@@ -1569,36 +1604,34 @@ extract () {
 
 install_crontab_script() {
 
-  # $1 = script
-  # $2 = hh (hour)
-  # $3 = mm (minutes)
+  # $1 = ${script}
+  # $2 = ${scheduled_time}
 
   local script=$1
-  local hh=$2
-  local mm=$3
+  local scheduled_time=$2
 
   local cron_file
 
   cron_file="/var/spool/cron/crontabs/root"
 
   if [ ! -f ${cron_file} ]; then
-    log_event "info" "Cron file for root does not exist, creating ..." "true"
+    log_event "info" "Cron file for root does not exist, creating ..." "false"
 
 	  touch "${cron_file}"
 	  /usr/bin/crontab "${cron_file}"
 
-    log_event "success" "Cron file created" "true"
+    log_event "success" "Cron file created" "false"
 
 	fi
 
   grep -qi "${script}" "${cron_file}"
   grep_result=$?
 	if [ ${grep_result} != 0 ]; then
-    log_event "info" "Updating cron job for script ..." "true"
-    /bin/echo "${mm} ${hh} * * * ${script}" >> "${cron_file}"
+    log_event "info" "Updating cron job for script: ${script}" "false"
+    /bin/echo "${scheduled_time} ${script}" >> "${cron_file}"
     
   else
-    log_event "warning" "Script already installed" "true"
+    log_event "warning" "Script already installed" "false"
 
 	fi
 
