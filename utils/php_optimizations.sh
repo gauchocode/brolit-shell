@@ -42,7 +42,8 @@ php_fpm_optimizations() {
 
   # Show/Log Server Info
   #display --indent 2 --text "- Creating user in MySQL: ${db_user}" --result "DONE" --color GREEN
-  display --indent 2 --text "Getting server info ..."
+  #display --indent 2 --text "Getting server info ..."
+  log_subsection "Server Specs"
   display --indent 4 --text "PHP_V: ${PHP_V}"
   display --indent 4 --text "RAM_BUFFER: ${RAM_BUFFER}"
   display --indent 4 --text "CPUS: ${CPUS}"
@@ -52,8 +53,9 @@ php_fpm_optimizations() {
   display --indent 4 --text "NGINX_AVG_RAM: ${NGINX_AVG_RAM}"
   display --indent 4 --text "REDIS_AVG_RAM: ${REDIS_AVG_RAM}"
   display --indent 4 --text "NETDATA_AVG_RAM: ${NETDATA_AVG_RAM}"
+  log_break "true"
 
-  log_event "" "****************** SERVER INFO  ******************" "false"
+  log_event "" "##### SERVER INFO" "false"
   log_event "info" "PHP_V: ${PHP_V}" "false"
   log_event "info" "RAM_BUFFER: ${RAM_BUFFER}" "false"
   log_event "info" "CPUS: ${CPUS}" "false"
@@ -63,36 +65,6 @@ php_fpm_optimizations() {
   log_event "info" "NGINX_AVG_RAM: ${NGINX_AVG_RAM}" "false"
   log_event "info" "REDIS_AVG_RAM: ${REDIS_AVG_RAM}" "false"
   log_event "info" "NETDATA_AVG_RAM: ${NETDATA_AVG_RAM}" "false"
-  
-  #Settings	Value Explanation
-  #max_children	(Total RAM - Memory used for Linux, DB, etc.) / process size
-  #start_servers	Number of CPU cores x 4
-  #min_spare_servers	Number of CPU cores x 2
-  #max_spare_servers	Same as start_servers
-
-  PM_MAX_CHILDREN=$(( ("${RAM}"*1024-("${MYSQL_AVG_RAM}"-"${NGINX_AVG_RAM}"-"${REDIS_AVG_RAM}"-"${NETDATA_AVG_RAM}"-"${RAM_BUFFER}"))/"${PHP_AVG_RAM}" ))
-  PM_START_SERVERS=$(("${CPUS}"*4))
-  PM_MIN_SPARE_SERVERS=$(("${CPUS}*2"))
-  PM_MAX_SPARE_SERVERS=$(("${PM_START_SERVERS}"*2))
-  PM_MAX_REQUESTS=500
-  PM_PROCESS_IDDLE_TIMEOUT="10s"
-
-  # Show/Log PHP-FPM optimal config
-  display --indent 2 --text "Calculating PHP optimal configuration ..."
-  display --indent 4 --text "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN}"
-  display --indent 4 --text "PM_START_SERVERS: ${PM_START_SERVERS}"
-  display --indent 4 --text "PM_MIN_SPARE_SERVERS: ${PM_MIN_SPARE_SERVERS}"
-  display --indent 4 --text "PM_MAX_SPARE_SERVERS: ${PM_MAX_SPARE_SERVERS}"
-  display --indent 4 --text "PM_MAX_REQUESTS: ${PM_MAX_REQUESTS}"
-  display --indent 4 --text "PM_PROCESS_IDDLE_TIMEOUT: ${PM_PROCESS_IDDLE_TIMEOUT}"
-
-  log_event "" "************* PHP-FPM OPTIMAL CONFIG *************" "false"
-  log_event "info" "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN}" "true"
-  log_event "info" "PM_START_SERVERS: ${PM_START_SERVERS}" "true"
-  log_event "info" "PM_MIN_SPARE_SERVERS: ${PM_MIN_SPARE_SERVERS}" "true"
-  log_event "info" "PM_MAX_SPARE_SERVERS: ${PM_MAX_SPARE_SERVERS}" "true"
-  log_event "info" "PM_MAX_REQUESTS: ${PM_MAX_REQUESTS}" "true"
-  log_event "info" "PM_PROCESS_IDDLE_TIMEOUT: ${PM_PROCESS_IDDLE_TIMEOUT}" "true"
 
   DELIMITER="="
 
@@ -115,21 +87,55 @@ php_fpm_optimizations() {
   PM_PROCESS_IDDLE_TIMEOUT_ORIGIN=$(cat "/etc/php/${PHP_V}/fpm/pool.d/www.conf" | grep "^${KEY} ${DELIMITER}" | cut -f2- -d"$DELIMITER")
 
   # Show/Log PHP-FPM actual config
-  display --indent 2 --text "Getting PHP actual configuration ..."
+  #display --indent 2 --text "Getting PHP actual configuration ..."
+  log_subsection "PHP actual configuration"
   display --indent 4 --text "PM_MAX_CHILDREN_ORIGIN: ${PM_MAX_CHILDREN_ORIGIN}"
   display --indent 4 --text "PM_START_SERVERS_ORIGIN: ${PM_START_SERVERS_ORIGIN}"
   display --indent 4 --text "PM_MIN_SPARE_SERVERS_ORIGIN: ${PM_MIN_SPARE_SERVERS_ORIGIN}"
   display --indent 4 --text "PM_MAX_SPARE_SERVERS_ORIGIN: ${PM_MAX_SPARE_SERVERS_ORIGIN}"
   display --indent 4 --text "PM_MAX_REQUESTS_ORIGIN: ${PM_MAX_REQUESTS_ORIGIN}"
   display --indent 4 --text "PM_PROCESS_IDDLE_TIMEOUT_ORIGIN: ${PM_PROCESS_IDDLE_TIMEOUT_ORIGIN}"
+  log_break "true"
 
-  log_event "" "************* PHP-FPM ACTUAL CONFIG **************" "false"
+  log_event "" "##### PHP-FPM ACTUAL CONFIG" "false"
   log_event "info" "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN_ORIGIN}" "false"
   log_event "info" "PM_START_SERVERS: ${PM_START_SERVERS_ORIGIN}" "false"
   log_event "info" "PM_MIN_SPARE_SERVERS: ${PM_MIN_SPARE_SERVERS_ORIGIN}" "false"
   log_event "info" "PM_MAX_SPARE_SERVERS: ${PM_MAX_SPARE_SERVERS_ORIGIN}" "false"
   log_event "info" "PM_MAX_REQUESTS: ${PM_MAX_REQUESTS_ORIGIN}" "false"
   log_event "info" "PM_PROCESS_IDDLE_TIMEOUT: ${PM_PROCESS_IDDLE_TIMEOUT_ORIGIN}" "false"
+
+  #Settings	Value Explanation
+  #max_children	(Total RAM - Memory used for Linux, DB, etc.) / process size
+  #start_servers	Number of CPU cores x 4
+  #min_spare_servers	Number of CPU cores x 2
+  #max_spare_servers	Same as start_servers
+
+  PM_MAX_CHILDREN=$(( ("${RAM}"*1024-("${MYSQL_AVG_RAM}"-"${NGINX_AVG_RAM}"-"${REDIS_AVG_RAM}"-"${NETDATA_AVG_RAM}"-"${RAM_BUFFER}"))/"${PHP_AVG_RAM}" ))
+  PM_START_SERVERS=$(("${CPUS}"*4))
+  PM_MIN_SPARE_SERVERS=$(("${CPUS}*2"))
+  PM_MAX_SPARE_SERVERS=$(("${PM_START_SERVERS}"*2))
+  PM_MAX_REQUESTS=500
+  PM_PROCESS_IDDLE_TIMEOUT="10s"
+
+  # Show/Log PHP-FPM optimal config
+  #display --indent 2 --text "Calculating PHP optimal configuration ..."
+  log_subsection "PHP optimal configuration"
+  display --indent 4 --text "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN}"
+  display --indent 4 --text "PM_START_SERVERS: ${PM_START_SERVERS}"
+  display --indent 4 --text "PM_MIN_SPARE_SERVERS: ${PM_MIN_SPARE_SERVERS}"
+  display --indent 4 --text "PM_MAX_SPARE_SERVERS: ${PM_MAX_SPARE_SERVERS}"
+  display --indent 4 --text "PM_MAX_REQUESTS: ${PM_MAX_REQUESTS}"
+  display --indent 4 --text "PM_PROCESS_IDDLE_TIMEOUT: ${PM_PROCESS_IDDLE_TIMEOUT}"
+  log_break "true"
+
+  log_event "" "##### PHP-FPM OPTIMAL CONFIG" "false"
+  log_event "info" "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN}" "false"
+  log_event "info" "PM_START_SERVERS: ${PM_START_SERVERS}" "false"
+  log_event "info" "PM_MIN_SPARE_SERVERS: ${PM_MIN_SPARE_SERVERS}" "false"
+  log_event "info" "PM_MAX_SPARE_SERVERS: ${PM_MAX_SPARE_SERVERS}" "false"
+  log_event "info" "PM_MAX_REQUESTS: ${PM_MAX_REQUESTS}" "false"
+  log_event "info" "PM_PROCESS_IDDLE_TIMEOUT: ${PM_PROCESS_IDDLE_TIMEOUT}" "false"
 
   while true; do
     echo -e "${YELLOW} > Do you want to apply this optimizations?${ENDCOLOR}"
