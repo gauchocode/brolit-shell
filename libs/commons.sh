@@ -1533,9 +1533,10 @@ prompt_return_or_finish() {
         ;;
       *) echo "Please answer yes or no." ;;
     esac
-    clear_last_line
-    clear_last_line
   done
+
+  clear_last_line
+  clear_last_line
 
 }
 
