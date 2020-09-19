@@ -178,7 +178,7 @@ delete_project_database() {
         # Delete mysql user
         while true; do
 
-            echo -e "${YELLOW} > Do you want to remove database user? Maybe is used by another project.${ENDCOLOR}"
+            echo -e "${YELLOW}${ITALIC} > Do you want to remove database user? Maybe is used by another project.${ENDCOLOR}"
             read -p "Please type 'y' or 'n'" yn
 
             case $yn in
