@@ -1521,7 +1521,7 @@ prompt_return_or_finish() {
   log_break "true"
 
   while true; do
-    echo -e "${YELLOW}> Do you want to return to menu?${ENDCOLOR}"
+    echo -e "${YELLOW}${ITALIC} > Do you want to return to menu?${ENDCOLOR}"
     read -p "Please type 'y' or 'n'" yn
     case $yn in
       [Yy]*)
@@ -1533,6 +1533,8 @@ prompt_return_or_finish() {
         ;;
       *) echo "Please answer yes or no." ;;
     esac
+    clear_last_line
+    clear_last_line
   done
 
 }
