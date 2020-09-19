@@ -71,7 +71,7 @@ mysql_check_if_installed
 
 if [ ${mysql_installed} == "false" ]; then
 
-  MYSQL_INSTALLER_OPTIONS="01 INSTALL_MYSQL 02 INSTALL_MARIADB"
+  MYSQL_INSTALLER_OPTIONS="01) INSTALL-MYSQL 02) INSTALL-MARIADB"
   CHOSEN_MYSQL_INSTALLER_OPTION=$(whiptail --title "MySQL INSTALLER" --menu "Choose a MySQL version to install" 20 78 10 $(for x in ${MYSQL_INSTALLER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
@@ -98,20 +98,25 @@ else
 
   while true; do
 
-      echo -e "${YELLOW} > MySQL already installed, do you want to remove it?${ENDCOLOR}"
+      echo -e "${YELLOW}${ITALIC} > MySQL already installed, do you want to remove it?${ENDCOLOR}"
       read -p "Please type 'y' or 'n'" yn
 
       case $yn in
           [Yy]* )
-          mysql_purge_installation
+            clear_last_line
+            clear_last_line
+            mysql_purge_installation
           break;;
                  
           [Nn]* )
-          log_event "warning" "Operation cancelled" "false"
+            clear_last_line
+            clear_last_line
+            log_event "warning" "Operation cancelled" "false"
           break;;
+          
           * ) echo " > Please answer yes or no.";;
       esac
-  done
 
+  done
 
 fi
