@@ -47,11 +47,15 @@ cloudflare_clear_cache() {
 
     fi
 
-    log_event "info" "Getting Zone & Record ID's for domain: ${root_domain}" "false"
+    log_event "info" "Getting Zone ID for domain: ${root_domain}" "false"
+    display --indent 2 --text "- Getting Zone ID"
 
     zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
 
     log_event "info" "Zone ID found: ${zone_id}" "false"
+    #clear_last_line
+    display --indent 2 --text "- Getting Zone ID for ${root_domain}" --result "DONE" --color GREEN
+    isplay --indent 2 --text "Zone ID found: ${zone_id}" --result "DONE" --color GREEN
 
     purge_cache=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/purge_cache" \
     -H "X-Auth-Email: ${auth_email}" \
