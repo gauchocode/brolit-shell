@@ -31,6 +31,8 @@ it_utils_menu() {
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
+    log_section "IT Utils"
+
     # SECURITY_TOOLS
     if [[ ${chosen_it_util_options} == *"01"* ]]; then
       security_utils_menu
@@ -112,25 +114,30 @@ change_current_ssh_port() {
 
   local current_ssh_port
 
-  log_event "info" "Trying to change current SSH port" "true"
+  log_subsection "SSH Port"
+  log_event "info" "Trying to change current SSH port" "false"
 
   # Get current ssh port
   current_ssh_port=$(grep "Port" /etc/ssh/sshd_config | awk -F " " '{print $2}')
-  log_event "info" "Current SSH port: ${current_ssh_port}" "true"
+  log_event "info" "Current SSH port: ${current_ssh_port}" "false"
+  display --indent 4 --text "- Current SSH port: ${current_ssh_port}"
 
   # Download secure sshd_config
   cp -f "${SFOLDER}/config/sshd_config" "/etc/ssh/sshd_config"
 
   # Change ssh default port
   sed -i "s/Port 22/Port ${new_ssh_port}/" "/etc/ssh/sshd_config"
-  log_event "info" "Changes made on /etc/ssh/sshd_config" "true"
-
-  log_event "info" "New SSH port: ${new_ssh_port}" "true"
+  log_event "info" "Changes made on /etc/ssh/sshd_config" "false"
+  display --indent 2 --text "- Making changes on sshd_config" --result "DONE" --color GREEN
 
   # Restart ssh service
   service ssh restart
 
-  log_event "info" "SSH service restarted" "true"
+  log_event "info" "SSH service restarted" "false"
+  display --indent 2 --text "- Restarting ssh service" --result "DONE" --color GREEN
+
+  log_event "info" "New SSH port: ${new_ssh_port}" "false"
+  display --indent 4 --text "- New SSH port: ${new_ssh_port}"
 
 }
 
@@ -141,11 +148,14 @@ change_server_hostname() {
   local new_hostname=$1
 
   local cur_hostname
+
+  log_subsection "Change Hostname"
   
   cur_hostname=$(cat /etc/hostname)
 
   # Display the current hostname
-  log_event "info" "Current hostname: ${cur_hostname}" "true"
+  log_event "info" "Current hostname: ${cur_hostname}" "false"
+  display --indent 4 --text "- Current hostname: ${cur_hostname}"
 
   # Change the hostname
   hostnamectl set-hostname "${new_hostname}"
@@ -156,7 +166,9 @@ change_server_hostname() {
   sed -i "s/${cur_hostname}/${new_hostname}/g" /etc/hostname
 
   # Display new hostname
-  log_event "info" "New hostname: ${new_hostname}" "true"
+  log_event "info" "New hostname: ${new_hostname}" "false"
+  display --indent 2 --text "- Changing hostname" --result "DONE" --color GREEN
+  display --indent 4 --text "New hostname: ${new_hostname}"
 
 }
 
