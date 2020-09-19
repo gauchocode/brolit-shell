@@ -28,6 +28,8 @@ cloudflare_helper_menu() {
 
     if [ $exitstatus = 0 ]; then
 
+        log_section "Cloudflare Manager"
+
         if [[ ${chosen_cf_options} == *"01"* ]]; then
 
             # SET_DEVELOPMENT_MODE

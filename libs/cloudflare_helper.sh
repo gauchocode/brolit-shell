@@ -18,6 +18,8 @@ cloudflare_ask_root_domain () {
     root_domain=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 "${suggested_root_domain}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
+
+        # Return
         echo "${root_domain}"
 
     fi
@@ -45,11 +47,11 @@ cloudflare_clear_cache() {
 
     fi
 
-    log_event "info" "Getting Zone & Record ID's for domain: ${root_domain}" "true"
+    log_event "info" "Getting Zone & Record ID's for domain: ${root_domain}" "false"
 
     zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
 
-    log_event "info" "Zone ID found: ${zone_id}" "true"
+    log_event "info" "Zone ID found: ${zone_id}" "false"
 
     purge_cache=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/purge_cache" \
     -H "X-Auth-Email: ${auth_email}" \
@@ -59,13 +61,14 @@ cloudflare_clear_cache() {
 
     if [[ ${purge_cache} == *"\"success\":false"* ]]; then
         message="Error trying to clear Cloudflare cache. Results:\n${update}"
-        log_event "error" "${message}" "true"
+        log_event "error" "${message}" "false"
+        display --indent 2 --text "- Clearing Cloudflare cache" --result "FAIL" --color RED
         return 1
 
     else
         message="Cache cleared for domain: ${root_domain}"
-        log_event "success" "${message}" "true"
-
+        log_event "success" "${message}" "false"
+        display --indent 2 --text "- Clearing Cloudflare cache" --result "DONE" --color GREEN
     fi
 
 }
@@ -93,11 +96,11 @@ cloudflare_development_mode() {
 
     fi
 
-    log_event "info" "Getting Zone & Record ID's for domain: ${root_domain}" "true"
+    log_event "info" "Getting Zone & Record ID's for domain: ${root_domain}" "false"
 
     zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
 
-    log_event "info" "Zone ID found: ${zone_id}" "true"
+    log_event "info" "Zone ID found: ${zone_id}" "false"
 
     dev_mode_result=$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/development_mode" \
      -H "X-Auth-Email: ${auth_email}" \
@@ -107,12 +110,14 @@ cloudflare_development_mode() {
 
     if [[ ${dev_mode_result} == *"\"success\":false"* ]]; then
         message="Error trying to change development mode for ${root_domain}. Results:\n ${dev_mode_result}"
-        log_event "error" "${message}" "true"
+        log_event "error" "${message}" "false"
+        display --indent 2 --text "- Enabling development mode" --result "FAIL" --color RED
         return 1
 
     else
         message="Development mode for ${root_domain} is ${dev_mode}"
-        log_event "success" "${message}" "true"
+        log_event "success" "${message}" "false"
+        display --indent 2 --text "- Enabling development mode" --result "DONE" --color GREEN
 
     fi
 

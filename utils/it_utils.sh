@@ -114,7 +114,7 @@ change_current_ssh_port() {
 
   local current_ssh_port
 
-  log_subsection "SSH Port"
+  log_subsection "Change SSH Port"
   log_event "info" "Trying to change current SSH port" "false"
 
   # Get current ssh port
@@ -182,16 +182,20 @@ add_floating_IP() {
 
   ubuntu_v=$(get_ubuntu_version)
 
-  log_event "info" "Trying to add ${floating_IP} as floating ip on Ubuntu ${ubuntu_v}" "true"
+  log_subsection "Adding Floating IP"
+  log_event "info" "Trying to add ${floating_IP} as floating ip on Ubuntu ${ubuntu_v}" "false"
 
   if [ "${ubuntu_v}" == "1804" ]; then
    
    cp "${SFOLDER}/config/networking/60-my-floating-ip.cfg" /etc/network/interfaces.d/60-my-floating-ip.cfg
    sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/network/interfaces.d/60-my-floating-ip.cfg
+   display --indent 2 --text "- Making network config changes" --result "DONE" --color GREEN
    
    service networking restart
 
-   log_event "success" "New IP ${floating_IP} added" "true"
+   log_event "success" "New IP ${floating_IP} added" "false"
+   display --indent 2 --text "- Restarting networking service" --result "DONE" --color GREEN
+   display --indent 4 --text "New IP ${floating_IP} added"
    
   else
 
@@ -199,14 +203,19 @@ add_floating_IP() {
       
       cp "${SFOLDER}/config/networking/60-floating-ip.yaml" /etc/netplan/60-floating-ip.yaml
       sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/netplan/60-floating-ip.yaml
+      display --indent 2 --text "- Making network config changes" --result "DONE" --color GREEN
       
       netplan apply
 
-      log_event "success" "New IP ${floating_IP} added" "true"
+      log_event "success" "New IP ${floating_IP} added" "false"
+      display --indent 2 --text "- Restarting networking service" --result "DONE" --color GREEN
+      display --indent 4 --text "New IP ${floating_IP} added"
 
     else
 
-      log_event "error" "This script only run on Ubuntu 20.04 or 18.04 ... Exiting" "true"
+      log_event "error" "This script only works on Ubuntu 20.04 or 18.04 ... Exiting" "false"
+      display --indent 2 --text "- Making network config changes" --result "FAIL" --color RED
+      display --indent 4 --text "This script works on Ubuntu 20.04 or 18.04"
       return 1
 
     fi
