@@ -53,7 +53,6 @@ php_fpm_optimizations() {
   display --indent 4 --text "NGINX_AVG_RAM: ${NGINX_AVG_RAM}"
   display --indent 4 --text "REDIS_AVG_RAM: ${REDIS_AVG_RAM}"
   display --indent 4 --text "NETDATA_AVG_RAM: ${NETDATA_AVG_RAM}"
-  log_break "true"
 
   log_event "" "##### SERVER INFO" "false"
   log_event "info" "PHP_V: ${PHP_V}" "false"
@@ -95,7 +94,6 @@ php_fpm_optimizations() {
   display --indent 4 --text "PM_MAX_SPARE_SERVERS_ORIGIN: ${PM_MAX_SPARE_SERVERS_ORIGIN}"
   display --indent 4 --text "PM_MAX_REQUESTS_ORIGIN: ${PM_MAX_REQUESTS_ORIGIN}"
   display --indent 4 --text "PM_PROCESS_IDDLE_TIMEOUT_ORIGIN: ${PM_PROCESS_IDDLE_TIMEOUT_ORIGIN}"
-  log_break "true"
 
   log_event "" "##### PHP-FPM ACTUAL CONFIG" "false"
   log_event "info" "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN_ORIGIN}" "false"
@@ -118,6 +116,9 @@ php_fpm_optimizations() {
   PM_MAX_REQUESTS=500
   PM_PROCESS_IDDLE_TIMEOUT="10s"
 
+  # TO-FIX
+  # ALERT: [pool www] pm.min_spare_servers(8) and pm.max_spare_servers(32) cannot be greater than pm.max_children(30)
+
   # Show/Log PHP-FPM optimal config
   #display --indent 2 --text "Calculating PHP optimal configuration ..."
   log_subsection "PHP optimal configuration"
@@ -127,7 +128,6 @@ php_fpm_optimizations() {
   display --indent 4 --text "PM_MAX_SPARE_SERVERS: ${PM_MAX_SPARE_SERVERS}"
   display --indent 4 --text "PM_MAX_REQUESTS: ${PM_MAX_REQUESTS}"
   display --indent 4 --text "PM_PROCESS_IDDLE_TIMEOUT: ${PM_PROCESS_IDDLE_TIMEOUT}"
-  log_break "true"
 
   log_event "" "##### PHP-FPM OPTIMAL CONFIG" "false"
   log_event "info" "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN}" "false"
@@ -137,6 +137,8 @@ php_fpm_optimizations() {
   log_event "info" "PM_MAX_REQUESTS: ${PM_MAX_REQUESTS}" "false"
   log_event "info" "PM_PROCESS_IDDLE_TIMEOUT: ${PM_PROCESS_IDDLE_TIMEOUT}" "false"
 
+  log_break "true"
+
   while true; do
     echo -e "${YELLOW} > Do you want to apply this optimizations?${ENDCOLOR}"
     read -p "Please type 'y' or 'n'" yn
@@ -144,6 +146,9 @@ php_fpm_optimizations() {
     case $yn in
 
     [Yy]*)
+
+      clear_last_line
+      clear_last_line
       
       sed -ie "s|^pm\.max_children =.*$|pm\.max_children = ${PM_MAX_CHILDREN}|g" "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
       sed -ie "s|^pm\.start_servers =.*$|pm\.start_servers = ${PM_START_SERVERS}|g" "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
@@ -160,7 +165,7 @@ php_fpm_optimizations() {
 
       else
         debug=$(php-fpm"${PHP_V}" -t 2>&1)
-        log_event "error" "PHP optimizations fail: $debug" "false"
+        log_event "error" "PHP optimizations fail: ${debug}" "false"
         display --indent 2 --text "- Applying optimizations" --result "FAIL" --color RED
 
       fi

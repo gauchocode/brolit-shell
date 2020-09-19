@@ -7,17 +7,27 @@ server {
         index index.php;
         server_name domain.com;
 
+        # LOG
        	error_log   /var/log/nginx/domain.com-error.log;
+
+
         location / {
             try_files $uri $uri/ /index.php?q=$uri&$args;			
         }
+
+        # PHP-FPM
         location ~ \.php$ {
             include snippets/fastcgi-php.conf;
         	fastcgi_pass unix:/run/php/phpPHP_V-fpm.sock;
             fastcgi_buffering off;
         }
 
-        ## INC
+        # CORS headers
+        location ~* \.(eot|otf|ttf|woff|woff2)$ {
+            add_header Access-Control-Allow-Origin *;
+        }
+
+        # INC
         #include /var/www/domain.com/nginx.conf;
         
         ### PERF
