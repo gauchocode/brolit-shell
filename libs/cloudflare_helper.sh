@@ -48,20 +48,20 @@ cloudflare_clear_cache() {
     fi
 
     log_event "info" "Getting Zone ID for domain: ${root_domain}" "false"
-    display --indent 2 --text "- Getting Zone ID"
+    #display --indent 2 --text "- Getting Zone ID"
 
     zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
 
     log_event "info" "Zone ID found: ${zone_id}" "false"
     #clear_last_line
     display --indent 2 --text "- Getting Zone ID for ${root_domain}" --result "DONE" --color GREEN
-    isplay --indent 2 --text "Zone ID found: ${zone_id}" --result "DONE" --color GREEN
+    display --indent 2 --text "Zone ID found: ${zone_id}" --result "DONE" --color GREEN
 
-    purge_cache=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/purge_cache" \
+    purge_cache="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/purge_cache" \
     -H "X-Auth-Email: ${auth_email}" \
     -H "X-Auth-Key: ${auth_key}" \
     -H "Content-Type:application/json" \
-    --data '{"purge_everything":true}' 1>&2)
+    --data '{"purge_everything":true}' >/dev/null)"
 
     if [[ ${purge_cache} == *"\"success\":false"* ]]; then
         message="Error trying to clear Cloudflare cache. Results:\n${update}"
@@ -110,7 +110,7 @@ cloudflare_development_mode() {
      -H "X-Auth-Email: ${auth_email}" \
      -H "X-Auth-Key: ${auth_key}" \
      -H "Content-Type: application/json" \
-     --data "{\"value\":\"${dev_mode}\"}" 1>&2)
+     --data "{\"value\":\"${dev_mode}\"}" >/dev/null)
 
     if [[ ${dev_mode_result} == *"\"success\":false"* ]]; then
         message="Error trying to change development mode for ${root_domain}. Results:\n ${dev_mode_result}"
@@ -160,7 +160,7 @@ cloudflare_ssl_mode() {
      -H "X-Auth-Email: ${auth_email}" \
      -H "X-Auth-Key: ${auth_key}" \
      -H "Content-Type: application/json" \
-     --data "{\"value\":\"${ssl_mode}\"}" 1>&2)
+     --data "{\"value\":\"${ssl_mode}\"}" >/dev/null)
 
     if [[ $ssl_mode_result == *"\"success\":false"* ]]; then
         message="Error trying to change ssl mode for ${root_domain}. Results:\n ${ssl_mode_result}"
@@ -246,7 +246,7 @@ cloudflare_change_a_record () {
             -H "X-Auth-Email: ${auth_email}" \
             -H "X-Auth-Key: ${auth_key}" \
             -H "Content-Type: application/json" \
-            --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}" 1>&2)
+            --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}" >/dev/null)
 
         else
 
@@ -256,13 +256,13 @@ cloudflare_change_a_record () {
             delete=$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/$zone_id/dns_records/$record_id" \
             -H "X-Auth-Email: ${auth_email}" \
             -H "X-Auth-Key: ${auth_key}" \
-            -H "Content-Type: application/json" 1>&2)
+            -H "Content-Type: application/json" >/dev/null)
             
             update=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
             -H "X-Auth-Email: ${auth_email}" \
             -H "X-Auth-Key: ${auth_key}" \
             -H "Content-Type: application/json" \
-            --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}" 1>&2)
+            --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}" >/dev/null)
 
         fi
 
@@ -353,7 +353,7 @@ cloudflare_delete_a_record () {
         delete=$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
         -H "X-Auth-Email: ${auth_email}" \
         -H "X-Auth-Key: ${auth_key}" \
-        -H "Content-Type: application/json" 1>&2)
+        -H "Content-Type: application/json" >/dev/null)
         
     fi
 
