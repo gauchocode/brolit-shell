@@ -569,7 +569,7 @@ make_database_backup() {
 
     log_event "info" "Making a tar.bz2 file of ${db_file} ..." "false"
 
-    ${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv -s $(du -sb "${BAKWP}/${NOW}/${db_file}" | awk '{print $1}') | lbzip2 >"${BAKWP}/${NOW}/${bk_file}"
+    ${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s $(du -sb "${BAKWP}/${NOW}/${db_file}" | awk '{print $1}') | lbzip2 >"${BAKWP}/${NOW}/${bk_file}"
 
     # Test backup file
     log_event "info" "Testing backup file: ${db_file} ..." "false"
@@ -708,7 +708,6 @@ make_project_backup() {
 
         log_event "info" "Making TAR.BZ2 for database: ${db_file} ..." "false"
 
-        #echo " > tar -cf - --directory=${directory_to_backup} ${db_file} | pv -s $(du -sb ${BAKWP}/${NOW}/${db_file} | awk '{print $1}') | lbzip2 >${BAKWP}/${NOW}/${BK_DB_FILE}" >>$LOG
         ${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s $(du -sb "${BAKWP}/${NOW}/${db_file}" | awk '{print $1}') | lbzip2 >"${BAKWP}/${NOW}/${BK_DB_FILE}"
 
         # Test backup file

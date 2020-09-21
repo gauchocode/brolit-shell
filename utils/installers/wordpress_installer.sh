@@ -102,7 +102,6 @@ if [ $exitstatus = 0 ]; then
 
     if [ "${project_dir}" != 'ERROR' ]; then
       # Download WP
-      #wp_download_wordpress "${folder_to_install}" "${project_domain}"
       mkdir "${folder_to_install}/${project_domain}"
       change_ownership "www-data" "www-data" "${folder_to_install}/${project_domain}"
       wpcli_core_install "${folder_to_install}/${project_domain}"

@@ -431,7 +431,7 @@ security_utils_menu () {
 
   local security_options chosen_security_options
 
-  security_options="01 MALWARE_SCAN 02 AUDIT_SYSTEM"
+  security_options="01) CLAMAV-MALWARE-SCAN 02) CUSTOM-MALWARE-SCAN 03) LYNIS-SYSTEM-AUDIT"
   chosen_security_options=$(whiptail --title "SECURITY TOOLS" --menu "Choose an option to run" 20 78 10 $(for x in ${security_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -445,7 +445,12 @@ security_utils_menu () {
     if [[ ${chosen_security_options} == *"01"* ]]; then
       security_clamav_scan_menu
 
-    elif [[ ${chosen_security_options} == *"02"* ]]; then
+    fi
+    if [[ ${chosen_security_options} == *"02"* ]]; then
+      security_custom_scan
+
+    fi
+    if [[ ${chosen_security_options} == *"03"* ]]; then
       security_system_audit
 
     fi
