@@ -447,7 +447,7 @@ security_utils_menu () {
 
     fi
     if [[ ${chosen_security_options} == *"02"* ]]; then
-      security_custom_scan
+      security_custom_scan_menu
 
     fi
     if [[ ${chosen_security_options} == *"03"* ]]; then
@@ -473,9 +473,24 @@ security_clamav_scan_menu () {
 
   to_scan=$filepath"/"$filename
 
-  log_event "info" "Starting clamav scan on: ${to_scan}" "true"
+  log_event "info" "Starting clamav scan on: ${to_scan}" "false"
 
   security_clamav_scan "${to_scan}"
+
+}
+
+security_custom_scan_menu () {
+
+  local to_scan
+
+  startdir="${SITES}"
+  directory_browser "${menutitle}" "${startdir}"
+
+  to_scan=$filepath"/"$filename
+
+  log_event "info" "Starting custom scan on: ${to_scan}" "false"
+
+  security_custom_scan "${to_scan}"
 
 }
 
