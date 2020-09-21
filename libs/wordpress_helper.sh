@@ -17,16 +17,16 @@ is_wp_project() {
 
   local project_dir=$1
 
-  log_event "info" "Checking if ${project_dir} is a WordPress project ..." "true"
+  log_event "info" "Checking if ${project_dir} is a WordPress project ..." "false"
 
   # Check if it has wp-config.php
   if [[ -f "${project_dir}/wp-config.php" ]]; then
     is_wp="true"
-    log_event "info" "${project_dir} is a WordPress project" "true"
+    log_event "info" "${project_dir} is a WordPress project" "false"
 
   else
     is_wp="false"
-    log_event "info" "${project_dir} is not a WordPress project" "true"
+    log_event "info" "${project_dir} is not a WordPress project" "false"
 
   fi
 
@@ -42,37 +42,6 @@ search_wp_config () {
     local dir_to_search=$1
 
     find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||'
-
-}
-
-# DEPRECATED
-wp_download_wordpress() {
-
-  # $1 = ${folder_to_install}
-  # $2 = ${project_domain}
-
-  local folder_to_install=$1
-  local project_domain=$2
-
-  log_event "info" "Downloading Wordpress for ${project_domain}" "true"
-
-  # Download WP
-  wget -P "${folder_to_install}" "https://wordpress.org/latest.tar.gz"
-
-  # Extract WP
-  extract "${folder_to_install}/latest.tar.gz" "${folder_to_install}"
-
-  # Move to project directory
-  mv "${folder_to_install}/wordpress" "${folder_to_install}/${project_domain}"
-
-  # Delete wp installer files
-  rm "${folder_to_install}/latest.tar.gz"
-
-  # Setup wp-config.php
-  cp "${folder_to_install}/${project_domain}/wp-config-sample.php" "${folder_to_install}/${project_domain}/wp-config.php"
-  rm "${folder_to_install}/${project_domain}/wp-config-sample.php"
-
-  log_event "info" "Wordpress donwloaded ok!" "true"
 
 }
 
@@ -137,33 +106,6 @@ wp_change_permissions() {
   display --indent 2 --text "- Setting default permissions on wordpress" --result "DONE" --color GREEN
 
   
-}
-
-# DEPRECATED
-wp_set_salts() {
-
-  # $1 = ${WPCONFIG}
-
-  local wp_config=$1
-
-  # English
-  perl -i -pe'
-    BEGIN {
-      @chars = ("a" .. "z", "A" .. "Z", 0 .. 9);
-      push @chars, split //, "!@#$%^&*()-_ []{}<>~\`+=,.;:/?|";
-      sub salt { join "", map $chars[ rand @chars ], 1 .. 64 }
-    }
-    s/put your unique phrase here/salt()/ge
-  ' "${wp_config}"
-  # Spanish
-  perl -i -pe'
-    BEGIN {
-      @chars = ("a" .. "z", "A" .. "Z", 0 .. 9);
-      push @chars, split //, "!@#$%^&*()-_ []{}<>~\`+=,.;:/?|";
-      sub salt { join "", map $chars[ rand @chars ], 1 .. 64 }
-    }
-    s/pon aquí tu frase aleatoria/salt()/ge
-  ' "${wp_config}"
 }
 
 # Ref manual multisite: https://multilingualpress.org/docs/wordpress-multisite-database-tables/
