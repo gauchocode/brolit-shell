@@ -68,6 +68,7 @@
 - [ ] Utils: Support for phpservermon: https://github.com/phpservermon/phpservermon
 - [ ] Nginx: Option to copy or generate a new nginx server configuration.
 - [ ] Nginx: Globals configs support.
+- [ ] Nginx: Cron option to put a website offline.
 - [ ] Installers: Mailcow installer and backup.
 - [ ] Installers: Option to select netdata metrics to be reported.
 - [ ] Notifications: After install a new project (with credentials info).
