@@ -174,20 +174,22 @@ mail_package_section() {
 
     local -n PACKAGES=$1
 
-    for pk in "${PACKAGES[@]}"; do
+    local package package_version_installed package_version_candidate
 
-        PK_VI=$(apt-cache policy "${pk}" | grep Installed | cut -d ':' -f 2)
-        if [[ $PK_VI = "(none)" && "${pk}" = "mysql-server" ]];then
-            pk="mariadb-server"
-            PK_VI=$(apt-cache policy "${pk}" | grep Installed | cut -d ':' -f 2)
+    for package in "${PACKAGES[@]}"; do
+
+        package_version_installed=$(apt-cache policy "${package}" | grep Installed | cut -d ':' -f 2)
+        if [ "${package_version_installed}" = "(none)" ] && [ "${package}" = "mysql-server" ];then
+            package="mariadb-server"
+            package_version_installed=$(apt-cache policy "${package}" | grep Installed | cut -d ':' -f 2)
         fi
 
-        PK_VC=$(apt-cache policy "${pk}" | grep Candidate | cut -d ':' -f 2)
+        package_version_candidate=$(apt-cache policy "${package}" | grep Candidate | cut -d ':' -f 2)
 
-        if [ "${PK_VI}" != "${PK_VC}" ]; then
+        if [ "${package_version_installed}" != "${package_version_candidate}" ]; then
 
             # Return
-            echo "${pk} ${PK_VI} -> ${PK_VC}"
+            echo "${package} ${package_version_installed} -> ${package_version_candidate}"
 
         fi
 
