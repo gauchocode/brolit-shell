@@ -4,14 +4,6 @@
 # Version: 3.0.2
 ################################################################################
 
-### Checking some things
-if [[ -z "${SFOLDER}" ]]; then
-  echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
-  exit 0
-fi
-################################################################################
-
-
 optimize_image_size() {
 
   # $1 = ${path}
@@ -33,12 +25,12 @@ optimize_image_size() {
   
   if [[ "${last_run}" == "never" ]]; then
   
-    echo " > Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;">>$LOG
+    log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;" "false"
     ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \;
   
   else
   
-    echo " > Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;">>$LOG
+    log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;" "false"
     ${FIND} "${path}" -mtime -7 -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \;
   
   fi
@@ -65,16 +57,16 @@ optimize_images() {
   if [ "${file_extension}" == "jpg" ]; then
 
     # Run jpegoptim
-    log_event "info" "Running jpegoptim to optimize images ..." "true"
+    log_event "info" "Running jpegoptim to optimize images ..." "false"
 
     if [[ "${last_run}" == "never" ]]; then
 
-      echo " > Executing: ${FIND} ${path} -mtime -7 -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;">>$LOG
+      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;" "false"
       ${FIND} "${path}" -type f -regex ".*\.\(jpg\|jpeg\)" -exec "${JPEGOPTIM}" --max="${img_compress}" --strip-all --all-progressive {} \;
 
     else
 
-      echo " > Executing: ${FIND} ${path} -mtime -7 -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;">>$LOG
+      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;" "false"
       ${FIND} "${path}" -mtime -7 -type f -regex ".*\.\(jpg\|jpeg\)" -exec "${JPEGOPTIM}" --max="${img_compress}" --strip-all --all-progressive {} \;
 
     fi
@@ -82,16 +74,16 @@ optimize_images() {
   elif [ "${file_extension}" == "png" ]; then
 
     # Run optipng
-    log_event "info" "Running optipng to optimize images ..." "true"
+    log_event "info" "Running optipng to optimize images ..." "false"
 
     if [[ "${last_run}" == "never" ]]; then
     
-      echo " > Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${OPTIPNG} -strip-all {} \;">>$LOG
+      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${OPTIPNG} -strip-all {} \;" "false"
       ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${OPTIPNG}" -o7 -strip all {} \;
     
     else
 
-      echo " > Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${OPTIPNG} -strip-all {} \;">>$LOG
+      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${OPTIPNG} -strip-all {} \;" "false"
       ${FIND} "${path}" -mtime -7 -type f -name "*.${file_extension}" -exec "${OPTIPNG}" -o7 -strip all {} \;
     
     fi
@@ -119,7 +111,7 @@ optimize_pdfs() {
   last_run=$(check_last_optimization_date)
 
   # Run pdf optimizer
-  log_event "error" "TODO: Running pdfwrite ..." "true"    
+  log_event "error" "TODO: Running pdfwrite ..." "false"    
 
   #Here is a solution for getting the output of find into a bash array:
   #array=()

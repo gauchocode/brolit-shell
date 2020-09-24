@@ -313,13 +313,13 @@ mysql_database_drop() {
     mysql_result=$?
 
     if [ "${mysql_result}" -eq 0 ]; then
-        log_event "success" "Database ${database} deleted successfully" "false"
-        display --indent 2 --text "Droping database: ${database}" --result "DONE" --color GREEN
+        log_event "success" "- Database ${database} deleted successfully" "false"
+        display --indent 2 --text "- Droping database: ${database}" --result "DONE" --color GREEN
         return 0
 
     else
         log_event "error" "Something went wrong deleting database: ${database}. MySQL output: ${mysql_output}" "false"
-        display --indent 2 --text "Droping database: ${database}" --result "ERROR" --color RED
+        display --indent 2 --text "- Droping database: ${database}" --result "ERROR" --color RED
         display --indent 4 --text "MySQL import output: ${mysql_output}" --tcolor RED
         return 1
         

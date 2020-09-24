@@ -19,7 +19,7 @@ security_install() {
 
   apt-get --yes install clamav lynis -qq > /dev/null
 
-  clear_last_line
+  #clear_last_line
   display --indent 2 --text "- Installing clamav and lynis" --result "DONE" --color GREEN
 
 }
@@ -59,17 +59,17 @@ security_custom_scan() {
   log_event "info" "Running custom malware scanner" "false"
   display --indent 2 --text "- Running custom malware scanner"
 
+  display --indent 2 --text "Result for base64_decode:"
   grep -lr --include=*.php "eval(base64_decode" "${directory}"
-  #grep -lr --include=*.php "eval" .
-  #grep -lr --include=*.php "base64" .
 
+  display --indent 2 --text "Result for gzinflate:"
   grep -lr --include=*.php "gzinflate(" "${directory}"
   grep -lr --include=*.php "gzinflate (" "${directory}"
 
+  display --indent 2 --text "Result for shell_exec:"
   grep -lr --include=*.php "shell_exec(" "${directory}"
   grep -lr --include=*.php "shell_exec (" "${directory}"
 
-  clear_last_line
   display --indent 2 --text "- Custom malware scanner" --result "DONE" --color GREEN
 
 }

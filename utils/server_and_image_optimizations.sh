@@ -6,7 +6,7 @@
 
 ### Checking some things
 if [[ -z "${SFOLDER}" ]]; then
-  echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
+  echo -e "${B_RED} > Error: The script can only be runned by runner.sh! Exiting ...${ENDCOLOR}"
   exit 0
 fi
 ################################################################################
@@ -91,7 +91,7 @@ JPEGOPTIM="$(which jpegoptim)"
 # optipng
 OPTIPNG="$(which optipng)"
 
-server_optimizations_options="01 PHP_OPTIMIZATION 02 IMAGE_OPTIMIZATION 03 PDF_OPTIMIZATION 04 DELETE_OLD_LOGS 05 REMOVE_OLD_PACKAGES 06 CLEAN_RAM_CACHE"
+server_optimizations_options="01) PHP-OPTIMIZATION 02) IMAGE-OPTIMIZATION 03) PDF-OPTIMIZATION 04) DELETE-OLD-LOGS 05) REMOVE-OLD-PACKAGES 06) CLEAN-RAM-CACHE"
 chosen_server_optimizations_options=$(whiptail --title "PHP INSTALLER" --menu "Choose a PHP version to install" 20 78 10 $(for x in ${server_optimizations_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 exitstatus=$?
 if [ $exitstatus = 0 ]; then
