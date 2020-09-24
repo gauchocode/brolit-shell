@@ -27,51 +27,80 @@ source "${SFOLDER}/libs/wordpress_helper.sh"
 # shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
 source "${SFOLDER}/libs/wpcli_helper.sh"
 
-####################### TEST FOR mail_cert_section #######################
+####################### Test for Mails #######################
 
-test_cert_mail(){
+test_mail_cert_section() {
     
-    echo -e ${B_CYAN}" > TESTING FUNCTION: test_cert_mail"${B_ENDCOLOR}
+    display --indent 2 --text "- Running test_mail_cert_section"
+
     mail_cert_section
 
     CERT_MAIL="${BAKWP}/cert-${NOW}.mail"
-    CERT_MAIL_VAR=$(<${CERT_MAIL})
+    CERT_MAIL_VAR=$(<"${CERT_MAIL}")
 
-    echo -e ${GREEN}" > Sending Email to ${MAILA} ..."${ENDCOLOR}
+    # Preparing email to send
+    log_event "info" "Sending Email to ${MAILA} ..." "false"
 
     EMAIL_SUBJECT="${STATUS_ICON_D} ${VPSNAME} - Cert Expiration Info - [${NOWDISPLAY}]"
     EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${CERT_MAIL_VAR} ${MAIL_FOOTER}"
 
     # Sending email notification
-    echo -e ${B_GREEN}" > send_mail_notification: ${EMAIL_SUBJECT}"${ENDCOLOR}
     send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
+
+    clear_last_line
+    display --indent 2 --text "- Running test_mail_cert_section" --result "DONE" --color GREEN
+
+}
+
+test_mail_package_section() {
+
+    display --indent 2 --text "- Running test_mail_package_section"
+
+    # Compare package versions
+    mail_package_status_section "${PKG_DETAILS}"
+    PKG_MAIL="${BAKWP}/pkg-${NOW}.mail"
+    PKG_MAIL_VAR=$(<"${PKG_MAIL}")
+
+    # Preparing email to send
+    log_event "info" "Sending Email to ${MAILA} ..." "false"
+
+    EMAIL_SUBJECT="${EMAIL_STATUS} on ${VPSNAME} Packages Status Info - [${NOWDISPLAY}]"
+    EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${PKG_MAIL_VAR} ${MAIL_FOOTER}"
+
+    # Sending email notification
+    send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
+
+    clear_last_line
+    display --indent 2 --text "- Running test_mail_package_section" --result "DONE" --color GREEN
 
 }
 
 ####################### TEST FOR ask_mysql_root_psw #######################
 
-test_ask_mysql_root_psw(){
-    echo -e ${B_CYAN}" > TESTING FUNCTION: ask_mysql_root_psw"${B_ENDCOLOR}
+test_ask_mysql_root_psw() {
+    echo -e "${B_CYAN} > TESTING FUNCTION: ask_mysql_root_psw${B_ENDCOLOR}"
     ask_mysql_root_psw
 }
 
 ####################### TEST FOR mysql_user_exists #######################
 
-test_mysql_user_exists(){
+test_mysql_user_exists() {
 
-    echo -e ${B_CYAN}" > TESTING FUNCTION: mysql_user_exists"${B_ENDCOLOR}
+    local mysql_user_test
 
-    MYSQL_USER_TO_TEST="modernschool_user"
+    echo -e "${B_CYAN} > TESTING FUNCTION: mysql_user_exists${B_ENDCOLOR}"
+
+    mysql_user_test="modernschool_user"
     
-    mysql_user_exists "${MYSQL_USER_TO_TEST}"
+    mysql_user_exists "${mysql_user_test}"
     
     user_db_exists=$?
 
     if [[ ${user_db_exists} -eq 0 ]]; then
-        echo -e ${B_RED}" > MySQL user: ${MYSQL_USER_TO_TEST} doesn't exists!"${ENDCOLOR}
+        log_event "warning" "MySQL User ${mysql_user_test} doesn't exists" "false"
 
     else
-        echo -e ${B_GREEN}" > User ${MYSQL_USER_TO_TEST} already exists"${ENDCOLOR}
+        log_event "warning" "MySQL User ${mysql_user_test} already exists" "false"
 
     fi
 
@@ -79,22 +108,52 @@ test_mysql_user_exists(){
 
 ####################### TEST FOR mysql_database_exists #######################
 
-test_mysql_database_exists(){
+test_mysql_database_exists() {
 
-    echo -e ${B_CYAN}" > TESTING FUNCTION: mysql_database_exists"${B_ENDCOLOR}
+    local mysql_db_test
 
-    MYSQL_DB_TO_TEST="multiplacas_test2"
+    log_event "warning" "TESTING FUNCTION: mysql_database_exists" "false"
+
+    mysql_db_test="multiplacas_test2"
     
-    mysql_database_exists "${MYSQL_DB_TO_TEST}"
+    mysql_database_exists "${mysql_db_test}"
 
     db_exists=$?
     if [[ ${db_exists} -eq 1 ]]; then 
-        echo -e ${B_RED}" > MySQL DB: ${MYSQL_DB_TO_TEST} doesn't exists!"${ENDCOLOR}
+        log_event "warning" "MySQL DB ${mysql_db_test} doesn't exists" "false"
 
     else
-        echo -e ${B_GREEN}" > MySQL DB ${MYSQL_DB_TO_TEST} already exists"${ENDCOLOR}
+        log_event "warning" "MySQL DB ${mysql_db_test} already exists" "false"
 
     fi
+
+}
+
+test_display_functions() {
+
+    test_mail_package_section
+
+    log_subsection "Testing display 1"
+
+    display --indent 2 --text "- Testing message on console" --result "DONE" --color GREEN
+    display --indent 2 --text "- Testing message on console" --result "WARNING" --color YELLOW
+    display --indent 2 --text "- Testing message on console" --tcolor RED --result "ERROR" --color RED
+
+    log_subsection "Testing display 2"
+
+    display --indent 2 --text "- Testing message on console" --result "DONE" --color GREEN
+    display --indent 2 --text "- Testing message on console" --result "DONE" --color GREEN
+    display --indent 2 --text "- Testing message on console" --result "WARNING" --color YELLOW
+
+    #sleep 3
+
+    #clear_last_line
+
+    log_break "true"
+
+    #clear_screen
+
+    #log_break "true"
 
 }
 
@@ -102,10 +161,20 @@ test_mysql_database_exists(){
 # MAIN
 ################################################################################
 
+log_section "Running Tests"
+
+log_subsection "Testing display functions"
+
+test_display_functions
+
+log_subsection "Testing mail functions"
+
+test_mail_cert_section
+
+test_mail_package_section
+
 #test_mysql_user_exists
 #test_mysql_database_exists
-
-#test_cert_mail
 
 #to_test="/var/www/goseries-master"
 #is_wp_project "$to_test"
@@ -141,24 +210,3 @@ test_mysql_database_exists(){
 
 #telegram_send_message "LEMPT UTILS SCRIPT NOTIFICATION TEST"
 
-log_section "Testing Titles"
-
-display --indent 2 --text "- Testing message on console" --result "DONE" --color GREEN
-display --indent 2 --text "- Testing message on console" --result "WARNING" --color YELLOW
-display --indent 2 --text "- Testing message on console" --tcolor RED --result "ERROR" --color RED
-
-log_subsection "Databases"
-
-display --indent 2 --text "- Testing message on console" --result "DONE" --color GREEN
-display --indent 2 --text "- Testing message on console" --result "DONE" --color GREEN
-display --indent 2 --text "- Testing message on console" --result "WARNING" --color YELLOW
-
-#sleep 3
-
-#clear_last_line
-
-log_break "true"
-
-#clear_screen
-
-#log_break "true"
