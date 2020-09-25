@@ -10,6 +10,8 @@ source "${SFOLDER}/libs/commons.sh"
 source "${SFOLDER}/libs/nginx_helper.sh"
 # shellcheck source=${SFOLDER}/libs/cloudflare_helper.sh
 source "${SFOLDER}/libs/cloudflare_helper.sh"
+# shellcheck source=${SFOLDER}/libs/certbot_helper.sh
+source "${SFOLDER}/libs/certbot_helper.sh"
 
 ################################################################################
 
@@ -38,7 +40,7 @@ netdata_installer() {
 
   log_event "info" "Installing Netdata ..." "false"
 
-  bash <(curl -Ss https://my-netdata.io/kickstart.sh) all --dont-wait --disable-telemetry
+  bash <(curl -Ss https://my-netdata.io/kickstart.sh) all --dont-wait --disable-telemetry &>/dev/null
 
   killall netdata && cp system/netdata.service /etc/systemd/system/
 
@@ -53,7 +55,9 @@ netdata_configuration() {
   # Ref: netdata config dir https://github.com/netdata/netdata/issues/4182
 
   # MySQL
-  create_netdata_db_user
+  mysql_user_create "netdata"
+  mysql_user_grant_privileges "netdata" "*"
+
   cat "${SFOLDER}/config/netdata/python.d/mysql.conf" > "/etc/netdata/python.d/mysql.conf"
   log_event "info" "MySQL config done!" "false"
   display --indent 2 --text "- MySQL configuration" --result "DONE" --color GREEN
@@ -161,21 +165,6 @@ netdata_telegram_config() {
     return 1
 
   fi
-
-}
-
-# TODO: replace with mysql_helper function
-create_netdata_db_user() {
-
-  local SQL1 SQL2 SQL3
-
-  # TODO: must check if user exists
-  SQL1="CREATE USER 'netdata'@'localhost';"
-  SQL2="GRANT USAGE on *.* to 'netdata'@'localhost';"
-  SQL3="FLUSH PRIVILEGES;"
-
-  log_event "info" "Creating netdata user in MySQL" "true"
-  mysql -u root -p"${MPASS}" -e "${SQL1}${SQL2}${SQL3}"
 
 }
 
