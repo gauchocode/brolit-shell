@@ -241,7 +241,7 @@ certbot_certonly_cloudflare() {
 
 certbot_show_certificates_info() {
 
-  log_event "info" "Running: certbot certificates" "true"
+  log_event "info" "Running: certbot certificates" "false"
 
   certbot certificates
 
@@ -253,7 +253,7 @@ certbot_show_domain_certificates_expiration_date() {
 
   local domains=$1
 
-  log_event "info" "Running: certbot certificates --cert-name ${domains}" "true"
+  log_event "info" "Running: certbot certificates --cert-name ${domains}" "false"
 
   certbot certificates --cert-name "${domains}" | grep 'Expiry' | cut -d ':' -f2 | cut -d ' ' -f2
 
@@ -267,7 +267,7 @@ certbot_certificate_valid_days() {
 
   local cert_days
 
-  log_event "info" "Running: certbot certificates --cert-name ${domain}" "true"
+  log_event "info" "Running: certbot certificates --cert-name ${domain}" "false"
 
   cert_days=$(certbot certificates --cert-name "${domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
 
@@ -286,7 +286,7 @@ certbot_certificate_valid_days() {
       fi
   fi
 
-  log_event "info" "Certificate valid for: ${cert_days} days" "true"
+  log_event "info" "Certificate valid for: ${cert_days} days" "false"
 
   # Return
   echo "${cert_days}"
