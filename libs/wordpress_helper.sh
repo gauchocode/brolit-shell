@@ -4,13 +4,6 @@
 # Version: 3.0.2
 ################################################################################
 
-# shellcheck source=${SFOLDER}/libs/commons.sh
-source "${SFOLDER}/libs/commons.sh"
-# shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
-source "${SFOLDER}/libs/wpcli_helper.sh"
-
-################################################################################
-
 is_wp_project() {
 
   # $1 = project directory
