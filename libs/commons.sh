@@ -41,6 +41,8 @@ source "${SFOLDER}/libs/mail_notification_helper.sh"
 source "${SFOLDER}/libs/mysql_helper.sh"
 # shellcheck source=${SFOLDER}/libs/nginx_helper.sh
 source "${SFOLDER}/libs/nginx_helper.sh"
+# shellcheck source=${SFOLDER}/libs/packages_helper.sh
+source "${SFOLDER}/libs/packages_helper.sh"
 # shellcheck source=${SFOLDER}/libs/project_helper.sh
 source "${SFOLDER}/libs/project_helper.sh"
 # shellcheck source=${SFOLDER}/libs/security_helper.sh
@@ -565,9 +567,6 @@ project_utils_menu () {
     if [[ ${chosen_project_utils_options} == *"04"* ]]; then
 
       # PUT-PROJECT-ONLINE
-
-      # shellcheck source=${SFOLDER}/libs/nginx_helper.sh
-      source "${SFOLDER}/libs/nginx_helper.sh"
       change_project_status "online"
 
     fi
@@ -575,9 +574,6 @@ project_utils_menu () {
     if [[ ${chosen_project_utils_options} == *"05"* ]]; then
 
       # PUT-PROJECT-OFFLINE
-
-      # shellcheck source=${SFOLDER}/libs/nginx_helper.sh
-      source "${SFOLDER}/libs/nginx_helper.sh"
       change_project_status "offline"
 
     fi
@@ -587,9 +583,6 @@ project_utils_menu () {
       # REGENERATE-NGINX-SERVER
 
       log_section "Nginx Manager"
-
-      # shellcheck source=${SFOLDER}/libs/nginx_helper.sh
-      source "${SFOLDER}/libs/nginx_helper.sh"
 
       # Select project to work with
       directory_browser "Select a Website to work with" "${SITES}" #return $filename
