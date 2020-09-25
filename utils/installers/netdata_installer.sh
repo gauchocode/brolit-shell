@@ -208,7 +208,7 @@ if [ ! -x "${NETDATA}" ]; then
 
   while true; do
 
-    echo -e ${YELLOW}"> Do you really want to install netdata?"${ENDCOLOR}
+    echo -e "${YELLOW} > Do you really want to install netdata?${ENDCOLOR}"
     read -p "Please type 'y' or 'n'" yn
 
     case $yn in
@@ -225,7 +225,7 @@ if [ ! -x "${NETDATA}" ]; then
       netdata_installer
 
       # Netdata nginx proxy configuration
-      nginx_server_create "${netdata_subdomain}" "netdata" "single"
+      nginx_server_create "${netdata_subdomain}" "netdata" "tool"
 
       netdata_configuration
 
@@ -256,7 +256,7 @@ if [ ! -x "${NETDATA}" ]; then
 
 else
 
-  NETDATA_OPTIONS="01 UPDATE_NETDATA 02 CONFIGURE_NETDATA 03 UNINSTALL_NETDATA 04 SEND_ALARM_TEST"
+  NETDATA_OPTIONS="01) UPDATE-NETDATA 02) CONFIGURE-NETDATA 03) UNINSTALL-NETDATA 04) SEND-ALARM-TEST"
   NETDATA_CHOSEN_OPTION=$(whiptail --title "Netdata Installer" --menu "Netdata is already installed." 20 78 10 $(for x in ${NETDATA_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -275,12 +275,12 @@ else
     if [[ ${NETDATA_CHOSEN_OPTION} == *"03"* ]]; then
 
       while true; do
-        echo -e ${YELLOW}"> Do you really want to uninstall netdata?"${ENDCOLOR}
+        echo -e "${YELLOW} > Do you really want to uninstall netdata?${ENDCOLOR}"
         read -p "Please type 'y' or 'n'" yn
         case $yn in
         [Yy]*)
 
-          log_event "warning" "Uninstalling Netdata ..." "true"
+          log_event "warning" "Uninstalling Netdata ..." "false"
 
           # TODO: remove MySQL user
           
@@ -293,7 +293,8 @@ else
 
           source "/usr/libexec/netdata-uninstaller.sh" --yes --dont-wait
 
-          log_event "info" "Netdata removed ok!" "true"
+          log_event "info" "Netdata removed ok!" "false"
+          display --indent 2 --text "- Uninstalling netdata" --result "DONE" --color GREEN
 
           break
           ;;
