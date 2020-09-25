@@ -39,6 +39,7 @@ netdata_required_packages() {
 netdata_installer() {
 
   log_event "info" "Installing Netdata ..." "false"
+  display --indent 2 --text "- Downloading and compiling netdata"
 
   bash <(curl -Ss https://my-netdata.io/kickstart.sh) all --dont-wait --disable-telemetry &>/dev/null
 
