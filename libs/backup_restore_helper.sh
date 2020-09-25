@@ -148,9 +148,12 @@ download_and_restore_config_files_from_dropbox(){
 
     cd "${SFOLDER}/tmp"
 
-    #echo " > Downloading from Dropbox ${dropbox_chosen_type_path}/${chosen_config_type}/${chosen_config_bk} ..." >>$LOG
-    ${DROPBOX_UPLOADER} download "${dropbox_chosen_type_path}/${chosen_config_type}/${chosen_config_bk}"
-
+    # Downloading Config Backup
+    display --indent 2 --text "- Downloading config backup from dropbox"
+    dropbox_output=$(${DROPBOX_UPLOADER} download "${dropbox_chosen_type_path}/${chosen_config_type}/${chosen_config_bk}" 1>&2)
+    clear_last_line
+    display --indent 2 --text "- Downloading config backup from dropbox" --result "DONE" --color GREEN
+    
     # Restore files
     mkdir "${chosen_config_type}"
     mv "${chosen_config_bk}" "${chosen_config_type}"
@@ -201,11 +204,15 @@ restore_nginx_site_files() {
   bk_file="nginx-configs-files-${date}.tar.bz2"
   bk_to_download="${chosen_server}/configs/nginx/${bk_file}"
 
+  # Subsection
   log_subsection "Nginx Server Configuration Restore"
 
-  log_event "info" "Running dropbox_uploader.sh download ${bk_to_download} ..." "false"
+  # Downloading Config Backup
+  log_event "info" "Downloading nginx backup from dropbox" "false"
+  display --indent 2 --text "- Downloading nginx backup from dropbox"
   dropbox_output=$(${DROPBOX_UPLOADER} download "${bk_to_download}" 1>&2)
-  display --indent 2 --text "- Dropbox backup downloaded" --result "DONE" --color GREEN
+  clear_last_line
+  display --indent 2 --text "- Downloading nginx backup from dropbox" --result "DONE" --color GREEN
 
   # Extract tar.bz2 with lbzip2
   mkdir "${SFOLDER}/tmp/nginx"
@@ -283,7 +290,8 @@ restore_letsencrypt_site_files() {
   bk_to_download="${chosen_server}/configs/letsencrypt/${bk_file}"
 
   log_event "info" "Running dropbox_uploader.sh download ${bk_to_download}" "false"
-  ${DROPBOX_UPLOADER} download "${bk_to_download}"
+  
+  dropbox_output=$(${DROPBOX_UPLOADER} download "${bk_to_download}" 1>&2)
 
   # Extract tar.bz2 with lbzip2
   log_event "info" "Extracting ${bk_file} on ${SFOLDER}/tmp/" "false"
@@ -438,9 +446,12 @@ select_restore_type_from_dropbox() {
 
           bk_to_dowload="${chosen_server}/${chosen_type}/${chosen_project}/${CHOSEN_BACKUP_TO_RESTORE}"
 
-          log_event "info" "Running dropbox_uploader.sh download ${bk_to_dowload}" "false"
-
-          ${DROPBOX_UPLOADER} download "${bk_to_dowload}"
+          # Downloading Backup
+          log_event "info" "Downloading backup from dropbox" "false"
+          display --indent 2 --text "- Downloading backup from dropbox"
+          dropbox_output=$(${DROPBOX_UPLOADER} download "${bk_to_dowload}" 1>&2)
+          clear_last_line
+          display --indent 2 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
 
           log_event "info" "Uncompressing ${CHOSEN_BACKUP_TO_RESTORE}" "false"
 
@@ -522,21 +533,6 @@ select_restore_type_from_dropbox() {
 
             fi
 
-            #TODO: ask if want to change IP from Cloudflare then ask for Cloudflare Root Domain
-
-            # Asume that project main folder name is the project's domain, removing "/" char
-            #domain="${filename::-1}"
-            
-            # Only for Cloudflare API
-            #suggested_root_domain=${domain#[[:alpha:]]*.}
-            #suggested_root_domain=${domain}
-
-            #root_domain=$(cloudflare_ask_root_domain "${suggested_root_domain}")
-
-            #cloudflare_change_a_record "${root_domain}" "${domain}"
-            
-            # HTTPS with Certbot
-            #certbot_helper_installer_menu "${MAILA}" "${domain}"
 
           else # site
 
@@ -594,7 +590,7 @@ project_restore() {
 
     # Download backup
     bk_to_dowload="${chosen_server}/site/${chosen_project}/${chosen_backup_to_restore}"
-    log_event "info" "Running dropbox_uploader.sh download ${bk_to_dowload}" "false"
+    log_event "info" "Downloading backup from dropbox: ${bk_to_dowload}" "false"
     display --indent 2 --text "- Downloading backup from dropbox"
     dropbox_output=$(${DROPBOX_UPLOADER} download "${bk_to_dowload}" 1>&2)
     clear_last_line
