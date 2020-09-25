@@ -17,13 +17,6 @@
 #    3- Backup nginx and let's encrypts config.
 #
 
-### Checking Script Execution
-if [[ -z "${SFOLDER}" ]]; then
-    echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
-    exit 0
-fi
-################################################################################
-
 # shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
 # shellcheck source=${SFOLDER}/libs/mysql_helper.sh

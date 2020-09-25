@@ -8,11 +8,6 @@
 #
 ################################################################################
 
-# shellcheck source=${SFOLDER}/libs/commons.sh
-source "${SFOLDER}/libs/commons.sh"
-
-################################################################################
-
 certbot_certificate_install() {
 
   #$1 = ${email}
