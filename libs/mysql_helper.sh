@@ -138,17 +138,15 @@ mysql_root_psw_change() {
 
     local db_root_psw=$1
 
-    log_event "info" "Changing password for root in MySQL" "true"
+    log_event "info" "Changing password for root in MySQL" "false"
 
     # Kill any mysql processes currently running
-	echo 'Shutting down any mysql processes...'
 	service mysql stop
 	killall -vw mysqld
+    display --indent 2 --text "- Shutting down any mysql processes" --result "DONE" --color GREEN
 	
 	# Start mysql without grant tables
 	mysqld_safe --skip-grant-tables >res 2>&1 &
-	
-	echo 'Resetting password... hold on'
 	
 	# Sleep for 5 while the new mysql process loads (if get a connection error you might need to increase this.)
 	sleep 5
@@ -163,8 +161,6 @@ mysql_root_psw_change() {
 	# Update root user with new password
 	mysql mysql -e "USE mysql;UPDATE user SET Password=PASSWORD('$db_root_psw') WHERE User='$db_root_user';FLUSH PRIVILEGES;"
 	
-	echo 'Cleaning up...'
-	
 	# Kill the insecure mysql process
 	killall -v mysqld
 	
@@ -174,11 +170,16 @@ mysql_root_psw_change() {
     mysql_result=$?
     
     if [ "${mysql_result}" -eq 0 ]; then
-        log_event "success" "New password for root: ${db_root_psw}" "true" 
+        log_event "success" "New password for root: ${db_root_psw}" "false" 
+        display --indent 2 --text "- Setting new password for root" --result "DONE" --color GREEN
+        display --indent 4 --text "New password: ${db_root_psw}"
+
         return 0
 
     else
         log_event "error" "Something went wrong changing MySQL root password. MySQL output: ${mysql_result}" "false"
+        display --indent 2 --text "- Setting new password for root" --result "FAIL" --color RED
+
         return 1
 
     fi
