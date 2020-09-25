@@ -6,10 +6,6 @@
 #
 # Refs: https://www.tecmint.com/scan-linux-for-malware-and-rootkits/
 #
-
-# shellcheck source=${SFOLDER}/libs/commons.sh
-source "${SFOLDER}/libs/commons.sh"
-
 ################################################################################
 
 security_install() {

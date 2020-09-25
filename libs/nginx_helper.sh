@@ -4,11 +4,6 @@
 # Version: 3.0.2
 ################################################################################
 
-# shellcheck source=${SFOLDER}/libs/commons.sh
-source "${SFOLDER}/libs/commons.sh"
-
-################################################################################
-
 nginx_server_create() {
 
     # $1 = ${project_domain}
