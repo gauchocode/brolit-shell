@@ -4,11 +4,6 @@
 # Version: 3.0.2
 ################################################################################
 
-# shellcheck source=${SFOLDER}/libs/certbot_helper.sh
-source "${SFOLDER}/libs/certbot_helper.sh"
-
-################################################################################
-
 send_mail_notification() {
 
     # $1 = ${email_subject}
