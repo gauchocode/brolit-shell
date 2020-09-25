@@ -201,6 +201,8 @@ if [ ! -x "${NETDATA}" ]; then
     echo -e "${YELLOW} > Do you really want to install netdata?${ENDCOLOR}"
     read -p "Please type 'y' or 'n'" yn
 
+    log_section "Netdata Installer"
+
     case $yn in
     [Yy]*)
 
