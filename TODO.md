@@ -13,7 +13,6 @@
 - [ ] Notifications: Email HTML breaks sometimes.
 - [ ] Backups: make_project_backup is broken, need a refactor asap!
 - [ ] Nginx: put_project_offline need another aproach. Maybe put an index.html with message.
-- [ ] Secure store for MySQL password: https://www.dokry.com/27126
 
 ### In Progress
 
@@ -27,22 +26,16 @@
 - [ ] Backups: When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?).
 - [ ] Installers: On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages.
 - [ ] Nginx: New default nginx configuration for wordpress projects.
-- [ ] BUG: Netdata only reports CRITICAL message, (CLEAR are not reported).
 
 ### Done ✓
 
-- [x] IT: Option to change SSH port.
-- [x] IT: Option to change hostname.
-- [x] IT: Option to config a floating IP.
-- [x] IT: Option to install script on crontab.
 - [x] WordPress: WP-CLI is required to the script works propperly, must install on script setup.
 - [x] Nginx: New option to put a website offline/online.
-- [x] Better log with log_event functions.
-- [x] Refactor for better dependencies management, and cleaner code in runner.sh
-- [x] Notifications: Telegram notifications support.
-- [x] Installers: add git to the required packages.
 
 ## For release 3.1
+- [ ] IMPORTANT: make new standard directory structure for projects "${SITES}/${DOMAIN}/public"
+      Logs could be stored on "${SITES}/${DOMAIN}/log"
+- [ ] IMPORTANT: Secure store for MySQL password: https://www.dokry.com/27126
 - [ ] Warning if script run on non default installation (no webserver or another than nginx).
 - [ ] Finish function: download_and_restore_config_files_from_dropbox
 - [ ] Complete refactor of "Options Wizard": (Backup Options, Notification Options, Cloudflare Config).
