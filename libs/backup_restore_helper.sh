@@ -4,25 +4,6 @@
 # Version: 3.0.2
 ################################################################################
 
-# shellcheck source=${SFOLDER}/libs/mysql_helper.sh
-source "${SFOLDER}/libs/mysql_helper.sh"
-# shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
-source "${SFOLDER}/libs/wpcli_helper.sh"
-# shellcheck source=${SFOLDER}/libs/wordpress_helper.sh
-source "${SFOLDER}/libs/wordpress_helper.sh"
-# shellcheck source=${SFOLDER}/libs/certbot_helper.sh
-source "${SFOLDER}/libs/certbot_helper.sh"
-# shellcheck source=${SFOLDER}/libs/nginx_helper.sh
-source "${SFOLDER}/libs/nginx_helper.sh"
-# shellcheck source=${SFOLDER}/libs/cloudflare_helper.sh
-source "${SFOLDER}/libs/cloudflare_helper.sh"
-# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
-source "${SFOLDER}/libs/mail_notification_helper.sh"
-# shellcheck source=${SFOLDER}/libs/telegram_notification_helper.sh
-source "${SFOLDER}/libs/telegram_notification_helper.sh"
-
-################################################################################
-
 restore_menu () {
 
   local restore_options chosen_restore_options
@@ -84,10 +65,13 @@ make_temp_files_backup() {
 
   local folder_to_backup=$1
 
+  display --indent 2 --text "- Creating backup on temp directory"
+
   mkdir "${SFOLDER}/tmp/old_backup"
   mv "${folder_to_backup}" "${SFOLDER}/tmp/old_backup"
 
   log_event "info" "Temp backup completed and stored here: ${SFOLDER}/tmp/old_backup" "false"
+  clear_last_line
   display --indent 2 --text "- Creating backup on temp directory" --result "DONE" --color GREEN
 
 }
@@ -337,7 +321,7 @@ restore_site_files() {
 
   local actual_folder folder_to_install chosen_domain
 
-  chosen_domain=$(whiptail --title "Project Name" --inputbox "Want to change the project's domain? Default:" 10 60 "${domain}" 3>&1 1>&2 2>&3)
+  chosen_domain=$(whiptail --title "Project Domain" --inputbox "Want to change the project's domain? Default:" 10 60 "${domain}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
@@ -361,36 +345,35 @@ restore_site_files() {
     # Check if destination folder exist
     if [ -d "${actual_folder}" ]; then
 
-      log_event "warning" "${actual_folder} exist. Let's make a Backup ..." "false"
-
       make_temp_files_backup "${actual_folder}"
 
     fi
 
     # Restore files
-    log_event "info" "Moving files from ${project_tmp_folder} to ${folder_to_install} ..." "false"
-
+    log_event "info" "Restoring backup files on ${folder_to_install} ..." "false"
     display --indent 2 --text "- Restoring backup files"
     
     mv "${project_tmp_folder}" "${folder_to_install}"
 
     clear_last_line
     display --indent 2 --text "- Restoring backup files" --result "DONE" --color GREEN
-
+    
+    # TODO: we need another aproach for other kind of projects
+    # Search wp-config.php (to find wp installation on sub-folders)
     install_path=$(search_wp_config "${actual_folder}")
 
     log_event "info" "install_path=${install_path}" "false"
+    display --indent 4 --text "Restored on: ${install_path}"
 
     if [ -d "${install_path}" ]; then
 
       log_event "info" "Wordpress intallation found on: ${install_path}" "false"
+      log_event "info" "Files backup restored on: ${install_path}" "false"
 
       wp_change_permissions "${install_path}" 
 
-      log_event "info" "Files backup restored on: ${install_path}" "false"
-
       # Return
-      echo "${install_path}"
+      echo "${chosen_domain}"
     
     fi
 
@@ -655,7 +638,8 @@ project_restore() {
     chosen_domain=${chosen_project}
 
     # Restore site files
-    project_path=$(restore_site_files "${chosen_domain}")
+    new_project_domain=$(restore_site_files "${chosen_domain}")
+    project_path="${SITES}/${new_project_domain}"
 
     # Database Backup
     backup_date=$(echo "${chosen_backup_to_restore}" |grep -Eo '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')
@@ -664,15 +648,15 @@ project_restore() {
     # Extracting project_state from
     project_state="$(cut -d'_' -f2 <<<"${db_name}")"
 
-    log_event "" "*************** wp-config.php ***************" "true"
-    log_event "" "project_path: ${project_path}" "true"
-    log_event "" "chosen_project: ${chosen_project}" "true"
-    log_event "" "project_state: ${project_state}" "true"
-    log_event "" "backup_date: ${backup_date}" "true"
-    log_event "" "Old db_name: ${db_name}" "true"
-    log_event "" "Old db_user: ${db_user}" "true"
-    log_event "" "Old db_pass: ${db_pass}" "true"
-    log_event "" "********************************************" "true"
+    log_event "" "*************** reading wp-config.php ***************" "false"
+    log_event "" "project_path: ${project_path}" "false"
+    log_event "" "chosen_project: ${chosen_project}" "false"
+    log_event "" "project_state: ${project_state}" "false"
+    log_event "" "backup_date: ${backup_date}" "false"
+    log_event "" "Old db_name: ${db_name}" "false"
+    log_event "" "Old db_user: ${db_user}" "false"
+    log_event "" "Old db_pass: ${db_pass}" "false"
+    log_event "" "*****************************************************" "false"
 
     # Downloading Database Backup
     display --indent 2 --text "- Downloading backup from dropbox"
@@ -747,24 +731,53 @@ project_restore() {
     # Change wp-config.php database parameters
     wp_update_wpconfig "${project_path}" "${db_project_name}" "${project_state}" "${db_pass}"
 
-    #TODO: ask if restore backuped let's encrypt conf or create a new one
-    restore_letsencrypt_site_files "${chosen_domain}" "${backup_date}"
+    if [[ "${new_project_domain}" = "${chosen_domain}" ]]; then
 
-    # TODO: ask to choose between regenerate nginx config or restore backup
-    # If choose restore config and has https, need to restore letsencrypt config and run cerbot
-    restore_nginx_site_files "${chosen_domain}" "${backup_date}"
+      letsencrypt_opt_text="Do you want to restore let's encrypt certificates or generate a new ones?"
+      letsencrypt_opt="01) RESTORE-CERTIFICATES 02) GENERATE-NEW-CERTIFICATES"
+      letsencrypt_chosen_opt=$(whiptail --title "Let's Encrypt Certificates" --menu "${letsencrypt_opt_text}" 20 78 10 $(for x in ${letsencrypt_opt}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+
+      exitstatus=$?
+      if [ $exitstatus = 0 ]; then
+        
+        if [[ ${letsencrypt_chosen_opt} == *"01"* ]]; then
+          
+          restore_letsencrypt_site_files "${chosen_domain}" "${backup_date}"
+
+          # If choose restore config, need to restore nginx config and run cerbot
+          restore_nginx_site_files "${chosen_domain}" "${backup_date}"
+
+        fi
+        if [[ ${letsencrypt_chosen_opt} == *"02"* ]]; then
+
+          # TODO: need to remove hardcoded parameters "wordpress" and "single"
+          nginx_server_create "${new_project_domain}" "wordpress" "single"
+          certbot_certificate_install "${MAILA}" "${chosen_domain}"
+
+        fi
+      #else
+
+      fi
+
+    else
+
+      # Need to create new configs
+      
+      # TODO: need to remove hardcoded parameters "wordpress" and "single"
+      nginx_server_create "${new_project_domain}" "wordpress" "single"
+      certbot_certificate_install "${MAILA}" "${new_project_domain}"
+
+    fi
+    
 
     #TODO: ask if want to change IP from Cloudflare then ask for Cloudflare Root Domain
 
     # Only for Cloudflare API
-    root_domain=$(cloudflare_ask_root_domain "${chosen_domain}")
+    root_domain=$(cloudflare_ask_root_domain "${new_project_domain}")
 
-    cloudflare_change_a_record "${root_domain}" "${chosen_domain}"
+    cloudflare_change_a_record "${root_domain}" "${new_project_domain}"
     
-    # HTTPS with Certbot
-    certbot_helper_installer_menu "${MAILA}" "${chosen_domain}"
-
-    telegram_send_message "✅ ${VPSNAME}: Project ${chosen_domain} restored on ${project_path}"
+    telegram_send_message "✅ ${VPSNAME}: Project ${new_project_domain} restored"
 
   fi
 
