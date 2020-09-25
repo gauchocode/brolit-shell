@@ -8,7 +8,7 @@ nginx_server_create() {
 
     # $1 = ${project_domain}
     # $2 = ${project_type} (default, wordpress, symphony, phpmyadmin, zabbix, netdata)
-    # $3 = ${server_type} (single, root_domain, multi_domain) optional
+    # $3 = ${server_type} (single, root_domain, multi_domain, tool) optional
     # $4 = ${redirect_domains} (list of domains or subdomains that will be redirect to project_domain) optional
 
     local project_domain=$1
@@ -56,6 +56,11 @@ nginx_server_create() {
 
         ;;
 
+        tool)
+            cp "${SFOLDER}/config/nginx/sites-available/${project_type}" "${WSERVER}/sites-available/${project_type}"
+            ln -s "${WSERVER}/sites-available/${project_type}" "${WSERVER}/sites-enabled/${project_type}"
+
+        ;;
         *)
             log_event "error" "Nginx server type unknow!" "false"
             return 1
