@@ -244,15 +244,23 @@ selected_package_installation() {
 
   chosen_apps=$(whiptail --title "Apps Selection" --checklist "Select the apps you want to install:" 20 78 15 "${APPS_TO_INSTALL[@]}" 3>&1 1>&2 2>&3)
   
-  for app in $chosen_apps; do
-    
-    app=$(sed -e 's/^"//' -e 's/"$//' <<<${app}) #needed to ommit double quotes
+  exitstatus=$?
 
-    log_event "info" "Executing ${app} installer ..." "true"
-    
-    "${SFOLDER}/utils/installers/${app}_installer.sh"
+    if [ $exitstatus = 0 ]; then
 
-  done
+      log_subsection "Package Installer"
+
+      for app in $chosen_apps; do
+        
+        app=$(sed -e 's/^"//' -e 's/"$//' <<<${app}) #needed to ommit double quotes
+
+        log_event "info" "Executing ${app} installer ..." "false"
+        
+        "${SFOLDER}/utils/installers/${app}_installer.sh"
+
+      done
+  
+  fi
 
 }
 

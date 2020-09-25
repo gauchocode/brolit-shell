@@ -86,6 +86,8 @@ mail_utils_installer() {
   # Ref: https://stackoverflow.com/questions/59720692/php-7-4-1-pecl-is-not-working-trying-to-access-array-offset-on-value-of-type
   mkdir -p /tmp/pear/cache
 
+  pear channel-update pear.php.net
+
   pear -q install mail mail_mime net_smtp
 
   log_event "info" "mail mail_mime and net_smtp installed" "false"
@@ -174,6 +176,8 @@ php_is_installed=$(php_check_if_installed)
 # TODO: if installed, option to reinstall, remove, or reconfigure
 
 #if [ ${php_installed} == "false" ]; then
+
+log_subsection "PHP Installer"
 
 PHP_INSTALLER_OPTIONS="01) INSTALL-PHP-DEFAULT 02) INSTALL-PHP-CUSTOM 03) RECONFIGURE-PHP 04) OPTIMIZE-PHP 05) REMOVE-PHP"
 CHOSEN_PHP_INSTALLER_OPTION=$(whiptail --title "PHP INSTALLER" --menu "Choose a PHP version to install" 20 78 10 $(for x in ${PHP_INSTALLER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)

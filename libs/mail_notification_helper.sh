@@ -228,7 +228,6 @@ mail_cert_section() {
 
                 log_event "info" "Getting certificate info for: ${domain}" "false"
 
-                #make_files_backup "site" "${SITES}" "${FOLDER_NAME}"
                 BK_FL_ARRAY_INDEX=$((BK_FL_ARRAY_INDEX + 1))
 
                 email_cert_new_line="<div style=\"float:left;width:100%\">"
