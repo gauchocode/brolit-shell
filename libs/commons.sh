@@ -20,6 +20,45 @@ VPSNAME="$HOSTNAME"
 #
 #################################################################################
 #
+# * Sources
+#
+#################################################################################
+#
+
+# shellcheck source=${SFOLDER}/libs/backup_helper.sh
+source "${SFOLDER}/libs/backup_helper.sh"
+# shellcheck source=${SFOLDER}/libs/backup_restore_helper.sh
+source "${SFOLDER}/libs/backup_restore_helper.sh"
+# shellcheck source=${SFOLDER}/libs/certbot_helper.sh
+source "${SFOLDER}/libs/certbot_helper.sh"
+# shellcheck source=${SFOLDER}/libs/cloudflare_helper.sh
+source "${SFOLDER}/libs/cloudflare_helper.sh"
+# shellcheck source=${SFOLDER}/libs/image_reduce_helper.sh
+source "${SFOLDER}/libs/image_reduce_helper.sh"
+# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
+source "${SFOLDER}/libs/mail_notification_helper.sh"
+# shellcheck source=${SFOLDER}/libs/mysql_helper.sh
+source "${SFOLDER}/libs/mysql_helper.sh"
+# shellcheck source=${SFOLDER}/libs/nginx_helper.sh
+source "${SFOLDER}/libs/nginx_helper.sh"
+# shellcheck source=${SFOLDER}/libs/project_helper.sh
+source "${SFOLDER}/libs/project_helper.sh"
+# shellcheck source=${SFOLDER}/libs/security_helper.sh
+source "${SFOLDER}/libs/security_helper.sh"
+# shellcheck source=${SFOLDER}/libs/sftp_helper.sh
+source "${SFOLDER}/libs/sftp_helper.sh"
+# shellcheck source=${SFOLDER}/libs/telegram_notification_helper.sh
+source "${SFOLDER}/libs/telegram_notification_helper.sh"
+# shellcheck source=${SFOLDER}/libs/wordpress_helper.sh
+source "${SFOLDER}/libs/wordpress_helper.sh"
+# shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
+source "${SFOLDER}/libs/wpcli_helper.sh"
+
+################################################################################
+
+#
+#################################################################################
+#
 # * Options
 #
 #################################################################################
@@ -214,9 +253,6 @@ script_init() {
   checking_scripts_permissions
 
   # Checking required packages to run
-  # shellcheck source=${SFOLDER}/libs/packages_helper.sh
-  source "${SFOLDER}/libs/packages_helper.sh"
-  
   check_packages_required
   packages_output=$?
   if [ ${packages_output} -eq 1 ];then
@@ -282,14 +318,10 @@ main_menu() {
   if [ $exitstatus = 0 ]; then
 
     if [[ ${chosen_type} == *"01"* ]]; then
-      # shellcheck source=${SFOLDER}/libs/backup_helper.sh
-      source "${SFOLDER}/libs/backup_helper.sh"
       backup_menu
 
     fi
     if [[ ${chosen_type} == *"02"* ]]; then
-      # shellcheck source=${SFOLDER}/libs/backup_restore_helper.sh
-      source "${SFOLDER}/libs/backup_restore_helper.sh"
       restore_menu
 
     fi
@@ -436,9 +468,6 @@ security_utils_menu () {
 
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-
-    # shellcheck source=${SFOLDER}/libs/security_helper.sh
-    source "${SFOLDER}/libs/security_helper.sh"
 
     security_install
 
