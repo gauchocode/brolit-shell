@@ -21,6 +21,20 @@ mysql_count_dabases() {
     echo "${total_databases}"
 }
 
+# TODO: replace with mysql_helper function
+#create_netdata_db_user() {
+#
+#  local SQL1 SQL2 SQL3
+#
+#  SQL1="CREATE USER 'netdata'@'localhost';"
+#  SQL2="GRANT USAGE on *.* to 'netdata'@'localhost';"
+#  SQL3="FLUSH PRIVILEGES;"
+#
+#  log_event "info" "Creating netdata user in MySQL" "false"
+#  mysql -u root -p"${MPASS}" -e "${SQL1}${SQL2}${SQL3}"
+#
+#}
+
 mysql_user_create() {
 
     # $1 = ${db_user}
