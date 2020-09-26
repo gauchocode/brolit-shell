@@ -3,33 +3,23 @@
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Version: 3.0.3
 ################################################################################
-#
-# https://www.cyberciti.biz/faq/ubuntu-20-04-lts-change-hostname-permanently/
-#
-
-### Checking some things
-if [[ -z "${SFOLDER}" ]]; then
-  echo -e "${B_RED} > Error: The script can only be runned by runner.sh! Exiting ...${ENDCOLOR}"
-  exit 0
-fi
-
-################################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
 
-
 it_utils_menu() {
 
-  local it_util_options chosen_it_util_options new_ssh_port
+  local it_util_options 
+  local chosen_it_util_options 
+  local new_ssh_port
 
-  it_util_options="01) SECURITY-TOOLS 02) SERVER-OPTIMIZATIONS 03) CHANGE-SSH_PORT 04) CHANGE-HOSTNAME 05) ADD-FLOATING-IP 06) RESET-MYSQL-ROOT_PSW 07) BLACKLIST-CHECKER 08) BENCHMARK-SERVER"
-  chosen_it_util_options=$(whiptail --title "IT UTILS" --menu "Choose a script to Run" 20 78 10 $(for x in ${it_util_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  it_util_options=("01)" "SECURITY TOOLS" "02)" "SERVER OPTIMIZATIONS" "03)" "CHANGE SSH PORT" "04)" "CHANGE HOSTNAME" "05)" "ADD FLOATING IP" "06)" "RESET MYSQL ROOT PSW" "07)" "BLACKLIST CHECKER" "08)" "BENCHMARK SERVER")
+  chosen_it_util_options=$(whiptail --title "IT UTILS" --menu "Choose a script to Run" 20 78 10 "${it_util_options[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [ ${exitstatus} = 0 ]; then
 
     log_section "IT Utils"
 

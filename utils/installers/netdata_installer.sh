@@ -248,8 +248,8 @@ if [ ! -x "${NETDATA}" ]; then
 
 else
 
-  NETDATA_OPTIONS="01) UPDATE-NETDATA 02) CONFIGURE-NETDATA 03) UNINSTALL-NETDATA 04) SEND-ALARM-TEST"
-  NETDATA_CHOSEN_OPTION=$(whiptail --title "Netdata Installer" --menu "Netdata is already installed." 20 78 10 $(for x in ${NETDATA_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  NETDATA_OPTIONS=("01)" "UPDATE NETDATA" "02)" "CONFIGURE NETDATA" "03)" "UNINSTALL NETDATA" "04)" "SEND ALARM TEST")
+  NETDATA_CHOSEN_OPTION=$(whiptail --title "Netdata Installer" --menu "Netdata is already installed." 20 78 10 "${NETDATA_OPTIONS[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
@@ -274,15 +274,19 @@ else
 
           log_event "warning" "Uninstalling Netdata ..." "false"
 
-          # TODO: remove MySQL user
+          # Deleting mysql user
+          mysql_user_delete "netdata"
           
+          # Deleting nginx server files
           rm "/etc/nginx/sites-enabled/monitor"
           rm "/etc/nginx/sites-available/monitor"
 
+          # Deleting installation files
           rm -R "/etc/netdata"
           rm "/etc/systemd/system/netdata.service"
           rm "/usr/sbin/netdata"
 
+          # Running uninstaller
           source "/usr/libexec/netdata-uninstaller.sh" --yes --dont-wait
 
           log_event "info" "Netdata removed ok!" "false"
@@ -291,7 +295,7 @@ else
           break
           ;;
         [Nn]*)
-          log_event "warning" "Aborting netdata installer script ..." "true"
+          log_event "warning" "Aborting netdata installer script ..." "false"
 
           break
           ;;
