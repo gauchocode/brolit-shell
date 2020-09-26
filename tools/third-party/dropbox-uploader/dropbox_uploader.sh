@@ -1005,6 +1005,7 @@ function db_delete
     #Check
     if grep -q "^HTTP/[12].* 200" "$RESPONSE_FILE"; then
     #    print "DONE\n"
+        ERROR_STATUS=0
     else
     #    print "FAILED\n"
         ERROR_STATUS=1
@@ -1034,6 +1035,7 @@ function db_move
     #Check
     if grep -q "^HTTP/[12].* 200" "$RESPONSE_FILE"; then
     #    print "DONE\n"
+        ERROR_STATUS=0
     else
     #    print "FAILED\n"
         ERROR_STATUS=1
@@ -1063,6 +1065,7 @@ function db_copy
     #Check
     if grep -q "^HTTP/[12].* 200" "$RESPONSE_FILE"; then
     #    print "DONE\n"
+        ERROR_STATUS=0
     else
     #    print "FAILED\n"
         ERROR_STATUS=1
