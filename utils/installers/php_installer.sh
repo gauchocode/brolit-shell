@@ -41,7 +41,9 @@ php_custom_installer() {
 
 php_select_version_to_install() {
 
-  local phpv_to_install chosen_phpv phpv
+  local phpv_to_install 
+  local chosen_phpv
+  local phpv
 
   phpv_to_install=(
     "7.4" " " off
@@ -50,11 +52,10 @@ php_select_version_to_install() {
     "7.1" " " off
     "7.0" " " off
     "5.6" " " off
-    "5.5" " " off
   )
 
   chosen_phpv=$(whiptail --title "PHP Version Selection" --checklist "Select the versions of PHP you want to install:" 20 78 15 "${phpv_to_install[@]}" 3>&1 1>&2 2>&3)
-  echo "Setting CHOSEN_PHPV=$chosen_phpv"
+  echo "Setting CHOSEN_PHPV=${chosen_phpv}"
   
   for phpv in $chosen_phpv; do
 
@@ -68,12 +69,17 @@ php_select_version_to_install() {
 
 php_redis_installer() {
 
+  display --indent 2 --text "- Installing redis server"
+
   apt-get --yes install redis-server php-redis -qq > /dev/null
   systemctl enable redis-server.service
 
   cp "${SFOLDER}/config/redis/redis.conf" "/etc/redis/redis.conf"
 
   service redis-server restart
+
+  clear_last_line
+  display --indent 2 --text "- Installing redis server" --result "DONE" --color GREEN
 
 }
 
@@ -99,10 +105,13 @@ mail_utils_installer() {
 php_purge_all_installations() {
 
   log_event "info" "Removing all PHP versions and libraries ..." "false"
+  display --indent 2 --text "- Purging PHP and libraries"
 
   apt-get --yes purge php* -qq > /dev/null
 
   log_event "info" "PHP purged!" "false"
+  clear_last_line
+  display --indent 2 --text "- Purging PHP and libraries" --result "DONE" --color GREEN
 
 }
 
@@ -170,21 +179,25 @@ php_reconfigure() {
 
 ################################################################################
 
-#php_installed="true"
 php_is_installed=$(php_check_if_installed)
 
-# TODO: if installed, option to reinstall, remove, or reconfigure
+if [ "${php_is_installed}" == "false" ]; then
+  log_subsection "PHP Installer"
+  php_installer_title="PHP INSTALLER"
+  php_installer_message="Choose a PHP version to install:"
+  php_installer_options=("01)" "INSTALL PHP DEFAULT" "02)" "INSTALL PHP CUSTOM")
+else
+  log_subsection "PHP Configurator"
+  php_installer_title="PHP CONFIGURATOR"
+  php_installer_message="Choose an option to run:"
+  php_installer_options=("01)" "INSTALL PHP DEFAULT" "02)" "INSTALL PHP CUSTOM" "03)" "RECONFIGURE PHP" "04)" "OPTIMIZE PHP" "05)" "REMOVE PHP")
+fi
 
-#if [ ${php_installed} == "false" ]; then
-
-log_subsection "PHP Installer"
-
-PHP_INSTALLER_OPTIONS="01) INSTALL-PHP-DEFAULT 02) INSTALL-PHP-CUSTOM 03) RECONFIGURE-PHP 04) OPTIMIZE-PHP 05) REMOVE-PHP"
-CHOSEN_PHP_INSTALLER_OPTION=$(whiptail --title "PHP INSTALLER" --menu "Choose a PHP version to install" 20 78 10 $(for x in ${PHP_INSTALLER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+chosen_php_installer_options=$(whiptail --title "${php_installer_title}" --menu "${php_installer_message}" 20 78 10 "${php_installer_options[@]}" 3>&1 1>&2 2>&3)
 exitstatus=$?
-if [ $exitstatus = 0 ]; then
+if [ ${exitstatus} = 0 ]; then
 
-  if [[ ${CHOSEN_PHP_INSTALLER_OPTION} == *"01"* ]]; then
+  if [[ ${chosen_php_installer_options} == *"01"* ]]; then
     
     DISTRO_V=$(get_ubuntu_version)
     if [ "${DISTRO_V}" -eq "1804" ]; then
@@ -202,41 +215,41 @@ if [ $exitstatus = 0 ]; then
     php_redis_installer
 
   fi
-  if [[ ${CHOSEN_PHP_INSTALLER_OPTION} == *"02"* ]]; then
+  if [[ ${chosen_php_installer_options} == *"02"* ]]; then
 
-    # INSTALL_PHP_CUSTOM
+    # INSTALL PHP CUSTOM
     php_custom_installer
     mail_utils_installer
     #php_redis_installer
 
-  fi
-  if [[ ${php_is_installed} = "true" ]]; then
-
-    if [[ ${CHOSEN_PHP_INSTALLER_OPTION} == *"03"* ]]; then
-      
-      # RECONFIGURE_PHP
-      php_reconfigure
-
-    fi
-    if [[ ${CHOSEN_PHP_INSTALLER_OPTION} == *"04"* ]]; then
-      
-      # OPTIMIZE_PHP
-      "${SFOLDER}/utils/php_optimizations.sh"
-
-    fi
-    if [[ ${CHOSEN_PHP_INSTALLER_OPTION} == *"05"* ]]; then
-      
-      # REMOVE_PHP
-      php_purge_installation
-
-    fi
+    # TODO: if you install a new PHP version, maybe you want to reconfigure an specific nginx_server
+    # nginx_reconfigure_sites()
+    # fastcgi_pass unix:/var/run/php/php5.6-fpm.sock;
+    # fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
 
   fi
+
+  # Will only show if php is installed
+  if [[ ${chosen_php_installer_options} == *"03"* ]]; then
+    
+    # RECONFIGURE PHP
+    php_reconfigure
+
+  fi
+  if [[ ${chosen_php_installer_options} == *"04"* ]]; then
+    
+    # OPTIMIZE PHP
+    "${SFOLDER}/utils/php_optimizations.sh"
+
+  fi
+  if [[ ${chosen_php_installer_options} == *"05"* ]]; then
+    
+    # REMOVE PHP
+    php_purge_installation
+
+  fi
+
+
 
 fi
-#fi
 
-# TODO: if you install a new PHP version, maybe you want to reconfigure an specific nginx_server
-# nginx_reconfigure_sites()
-# fastcgi_pass unix:/var/run/php/php5.6-fpm.sock;
-# fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;

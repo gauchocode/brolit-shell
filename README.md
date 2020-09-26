@@ -15,7 +15,7 @@
 * LEMP automated installer (Nginx, MySQL/MariaDB, PHP).
 * Files and database backups (MySQL or MariaDB).
 * Upload backups to Dropbox (API v2).
-* Restore backups from URL or Dropbox.
+* Restore backups from Dropbox or URL.
 * WordPress automated installer.
 * WP-CLI actions helper.
 * Let's Encrypt actions helper.
@@ -28,7 +28,7 @@
 * Security Tools with malware scanners (beta).
 * IP/Domain blacklist checker.
 * Benchmark tool.
-* Simple step-by-step configuration wizard.
+* Step-by-step configuration wizard.
 * And more ...
 
 ## TODO List
@@ -45,11 +45,13 @@ https://github.com/anordal/shellharden/blob/master/how_to_do_things_safely_in_ba
 
 ## IMPORTANT: Read before install
 
+The script need to be runned by root.
+
 The script is based on this standard:
 
-If you want to create a new web project for domain.com it will create:
+If you want to create a new web project for mydomain.com it will create:
 * A database with name 'MYDOMAIN_STAGE' (the script will ask you the project stage). Ex: mydomain_prod
-* A database user with name 'DOMAIN_user'. Ex: mydomain_user
+* A database user with name 'MYDOMAIN_user'. Ex: mydomain_user
 * A directory for the project files named 'mydomain.com'.
 * A nginx configuration for 'mydomain.com'.
 
@@ -63,28 +65,16 @@ If git is not installed:
 sudo apt-get update && sudo apt-get install git -y
 ```
 
-Configure the username, replace First Last:
-
-```
-git config --global user.name "First Last"
-```
-
-Configure the email, replace example@example.com:
-
-```
-git config --global user.email "example@example.com"
-```
-
 Cloning repo:
 
 ```
-git clone https://gitlab.com/broobe/all-in-one-backup-script
+git clone https://gitlab.com/broobe/lemp-utils-script
 ```
 
-Change directories to the new ~/all-in-one-backup-script directory:
+Change directories to the new ~/lemp-utils-script directory:
 
 ```
-cd ~/all-in-one-backup-script
+cd ~/lemp-utils-script
 ```
 
 ## Getting started
@@ -101,14 +91,21 @@ Run it:
  ./runner.sh
 ```
 
-The first time you run `runner.sh`, you'll be guided through a wizard in order to configure it. This configuration will be stored in `~/.broobe-utils-script`.
+The first time you run `runner.sh`, you'll be guided through a wizard in order to configure it. This configuration will be stored in `~/.lemp-utils-script`.
+
+## Update sript
+
+Run updater.sh
+
+```
+./updater.sh
+```
 
 ## Running as cron job
 This script relies on a different configuration file for each system user. The default configuration file location is `root/.broobe-utils-script`.
 This means that if you setup the script with your user and then you try to run a cron job as root, it won't work.
-So, when running this script using cron, please keep in mind the following:
-* Remember to setup the script with the user used to run the cron job
-* Always specify the full script path when running it (e.g.  /path/to/dropbox_uploader.sh)
+
+* To setup the script to run as a cron job please use the option "CRON TASKS"
 
 ## Third Party Utils
 
