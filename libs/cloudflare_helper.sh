@@ -185,6 +185,12 @@ cloudflare_change_a_record () {
     local domain=$2
     local proxy_status=$3
 
+    local ttl
+    local record_type
+    local cur_ip
+    local zone_id
+    local record_id
+
     # Cloudflare API to change DNS records
     log_event "info" "Accessing Cloudflare API and change record ${domain}" "false"
     display --indent 2 --text "- Accessing Cloudflare API" --result "DONE" --color GREEN
@@ -206,6 +212,10 @@ cloudflare_change_a_record () {
 
     record_type="A"
     ttl=1 #1 for Auto
+
+    if [[ -z "${proxy_status}" || ${proxy_status} == "" ]]; then
+        proxy_status="false"
+    fi
 
     # FOR IPV6 EDIT THE LINK TO THIS -> (https://api6.ipify.org)
     #cur_ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
@@ -235,16 +245,16 @@ cloudflare_change_a_record () {
         log_event "info" "RECORD_ID found: ${record_id}" "false"
         display --indent 2 --text "- Changing ${record_name} IP ..."
 
-        delete=$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/$zone_id/dns_records/$record_id" \
+        delete="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
         -H "X-Auth-Email: ${auth_email}" \
         -H "X-Auth-Key: ${auth_key}" \
-        -H "Content-Type: application/json" >/dev/null)
+        -H "Content-Type: application/json" >/dev/null)"
         
-        update=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
+        update="$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
         -H "X-Auth-Email: ${auth_email}" \
         -H "X-Auth-Key: ${auth_key}" \
         -H "Content-Type: application/json" \
-        --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}" >/dev/null)
+        --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}" >/dev/null)"
 
     fi
 

@@ -157,21 +157,29 @@ test_display_functions() {
 
 }
 
+test_cloudflare_change_a_record() {
+
+    cloudflare_change_a_record "pacientesenred.com.ar" "test.pacientesenred.com.ar" "0"
+
+}
+
 ################################################################################
 # MAIN
 ################################################################################
 
 log_section "Running Tests"
 
-log_subsection "Testing display functions"
+#log_subsection "Testing display functions"
 
-test_display_functions
+#test_display_functions
 
-log_subsection "Testing mail functions"
+#log_subsection "Testing mail functions"
 
-test_mail_cert_section
+#test_mail_cert_section
 
-test_mail_package_section
+#test_mail_package_section
+
+test_cloudflare_change_a_record
 
 #test_mysql_user_exists
 #test_mysql_database_exists
