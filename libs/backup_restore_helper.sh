@@ -112,15 +112,12 @@ restore_database_backup() {
   project_backup="${project_backup%%.*}.sql"
   mysql_database_import "${project_name}_${project_state}" "${project_backup}"
 
-  log_event "info" "Cleanning temp files ..." "fañse"
+  log_event "info" "Cleanning temp files ..." "false"
   
-  rm "${project_backup%%.*}.sql"
   rm "${project_backup%%.*}.tar.bz2"
   rm "${project_backup}"
 
   display --indent 2 --text "- Cleanning temp files" --result "DONE" --color GREEN
-
-  log_event "success" "restore_database_backup done" "false"
 
 }
 
