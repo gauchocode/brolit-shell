@@ -738,7 +738,7 @@ function db_download
         fi
 
         local DEST_DIR=$(normalize_path "$DST/$basedir")
-        print " > Downloading folder \"$SRC\" to \"$DEST_DIR\"... \n"
+        #print " > Downloading folder \"$SRC\" to \"$DEST_DIR\"... \n"
 
         if [[ ! -d "$DEST_DIR" ]]; then
             print " > Creating local directory \"$DEST_DIR\"... "
@@ -746,9 +746,10 @@ function db_download
 
             #Check
             if [[ $? == 0 ]]; then
-                print "DONE\n"
+            #    print "DONE\n"
+                ERROR_STATUS=0
             else
-                print "FAILED\n"
+            #    print "FAILED\n"
                 ERROR_STATUS=1
                 return
             fi
@@ -854,15 +855,16 @@ function db_download_file
         return
     fi
 
-    print " > Downloading \"$FILE_SRC\" to \"$FILE_DST\"... $LINE_CR"
+    #print " > Downloading \"$FILE_SRC\" to \"$FILE_DST\"... $LINE_CR"
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES $CURL_PARAMETERS -X POST --globoff -D "$RESPONSE_FILE" -o "$FILE_DST" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Dropbox-API-Arg: {\"path\": \"$FILE_SRC\"}" "$API_DOWNLOAD_URL"
     check_http_response
 
     #Check
     if grep -q "^HTTP/[12].* 200" "$RESPONSE_FILE"; then
-        print "DONE\n"
+    #    print "DONE\n"
+        ERROR_STATUS=0
     else
-        print "FAILED\n"
+        #print "FAILED\n"
         rm -fr "$FILE_DST"
         ERROR_STATUS=1
         return
