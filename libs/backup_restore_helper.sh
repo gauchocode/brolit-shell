@@ -6,14 +6,13 @@
 
 restore_menu () {
 
-  local restore_options         # whiptail var
-  local chosen_restore_options  # whiptail var
+  local -n restore_options          # whiptail array options
+  local chosen_restore_options      # whiptail var
 
-  restore_options="01) RESTORE-FROM-DROPBOX 02) RESTORE-FROM-URL"
-  chosen_restore_options=$(whiptail --title "RESTORE TYPE" --menu " " 20 78 10 "$(for x in ${restore_options}; do echo "$x"; done)" 3>&1 1>&2 2>&3)
-
+  restore_options=("01)" "RESTORE FROM DROPBOX" "02)" "RESTORE FROM URL (BETA)")
+  chosen_restore_options=$(whiptail --title "RESTORE TYPE" --menu " " 20 78 10 "${restore_options[@]}" 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [ ${exitstatus} = 0 ]; then
 
     if [[ ${chosen_restore_options} == *"01"* ]]; then
       server_selection_restore_menu
@@ -139,9 +138,9 @@ download_and_restore_config_files_from_dropbox(){
   local dropbox_chosen_type_path=$1
   local dropbox_project_list=$2
 
-  local chosen_config_type 
-  local dropbox_bk_list 
-  local chosen_config_bk
+  local chosen_config_type            # whiptail var
+  local dropbox_bk_list               # dropbox backup list
+  local chosen_config_bk              # whiptail var
 
   # Select config backup type
   chosen_config_type=$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Choose a config backup type." 20 78 10 $(for x in ${dropbox_project_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
@@ -208,7 +207,11 @@ restore_nginx_site_files() {
   local domain=$1
   local date=$2
 
-  local bk_file bk_to_download filename to_restore dropbox_output
+  local bk_file 
+  local bk_to_download 
+  local filename 
+  local to_restore 
+  local dropbox_output          # var for dropbox output
 
   bk_file="nginx-configs-files-${date}.tar.bz2"
   bk_to_download="${chosen_server}/configs/nginx/${bk_file}"
@@ -590,7 +593,7 @@ project_restore() {
 
   log_section "Restore Project Backup"
 
-  dropbox_project_list=$(${DROPBOX_UPLOADER} -hq list "${chosen_server}/site")
+  dropbox_project_list="$(${DROPBOX_UPLOADER} -hq list "${chosen_server}/site")"
 
   # Select Project
   chosen_project=$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${dropbox_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
@@ -757,8 +760,8 @@ project_restore() {
     if [[ "${new_project_domain}" = "${chosen_domain}" ]]; then
 
       letsencrypt_opt_text="Do you want to restore let's encrypt certificates or generate a new ones?"
-      letsencrypt_opt="01) RESTORE-CERTIFICATES 02) GENERATE-NEW-CERTIFICATES"
-      letsencrypt_chosen_opt=$(whiptail --title "Let's Encrypt Certificates" --menu "${letsencrypt_opt_text}" 20 78 10 $(for x in ${letsencrypt_opt}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+      letsencrypt_opt=("01)" "RESTORE CERTIFICATES" "02)" "GENERATE NEW CERTIFICATES")
+      letsencrypt_chosen_opt=$(whiptail --title "Let's Encrypt Certificates" --menu "${letsencrypt_opt_text}" 20 78 10 "${letsencrypt_opt[@]}" 3>&1 1>&2 2>&3)
 
       exitstatus=$?
       if [ $exitstatus = 0 ]; then
