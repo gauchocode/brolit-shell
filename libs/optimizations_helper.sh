@@ -4,6 +4,51 @@
 # Version: 3.0.3
 ################################################################################
 
+#
+#################################################################################
+#
+# * Main functions
+#
+#################################################################################
+#
+
+optimize_images_complete() {
+
+    # TODO: extract this to an option
+    img_compress='80'
+    img_max_width='1920'
+    img_max_height='1080'
+    
+    # Ref: https://github.com/centminmod/optimise-images
+    # Ref: https://stackoverflow.com/questions/6384729/only-shrink-larger-images-using-imagemagick-to-a-ratio
+
+    # TODO: First need to run without the parameter -mtime -7
+
+    optimize_image_size "${SITES}" "jpg" "${img_max_width}" "${img_max_height}"
+
+    optimize_images "${SITES}" "jpg" "${img_compress}"
+
+    optimize_images "${SITES}" "png" ""
+
+    # Fix ownership
+    change_ownership "www-data" "www-data" "${SITES}"
+
+}
+
+optimize_ram_usage() {
+
+    # Restarting services
+    log_event "info" "Restarting services ..." "true"
+    service php"${PHP_V}"-fpm restart
+
+    # Cleanning Swap
+    clean_swap
+
+    # Cleanning RAM
+    clean_ram_cache
+
+}
+
 optimize_image_size() {
 
   # $1 = ${path}
@@ -120,5 +165,67 @@ optimize_pdfs() {
   #done < <(find . -name "${input}" -print0)
   #for %f in (*) do gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dQUIET -dBATCH -sOutputFile=%f %f
   #find -mtime -7 -type f -name "*.pdf" -exec gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dPDFSETTINGS=/screen -dNOPAUSE -dPrinted=false -dQUIET -sOutputFile=compressed.%f %f
+
+  # Fix ownership
+  change_ownership "www-data" "www-data" "${SITES}"
+
+}
+
+#
+#################################################################################
+#
+# * Utils
+#
+#################################################################################
+#
+
+#TODO: better date control
+
+check_last_optimization_date() {
+
+  server_opt_info=~/.server_opt-info
+  if [[ -e ${server_opt_info} ]]; then
+    # shellcheck source=${server_opt_info}
+    source "${server_opt_info}"
+    echo "${last_run}"
+
+  else
+    echo "last_run=never">>"${server_opt_info}"
+    echo "never"
+
+  fi
+
+}
+
+update_last_optimization_date() {
+
+  server_opt_info=~/.server_opt-info
+
+  echo "last_run=${NOW}">>"${server_opt_info}"
+
+}
+
+delete_old_logs() {
+
+  # Remove old log files from system
+  log_event "info" "Deleting old system logs ..." "true"
+  ${FIND} /var/log/ -mtime +7 -type f -delete
+
+}
+
+clean_swap() {
+
+  # Cleanning Swap
+  log_event "info" "Cleanning Swap ..." "true"
+  swapoff -a && swapon -a
+
+}
+
+clean_ram_cache() {
+
+  # Cleanning RAM
+  log_event "info" "Cleanning RAM ..." "true"
+  sync
+  echo 1 >/proc/sys/vm/drop_caches
 
 }
