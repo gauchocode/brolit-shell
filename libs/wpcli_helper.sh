@@ -574,7 +574,7 @@ wpcli_change_wp_seo_visibility() {
     log_event "info" "Running: sudo -u www-data wp --path=${wp_site} option set blog_public ${visibility}" "false"
     sudo -u www-data wp --path="${wp_site}" option set blog_public "${visibility}"
 
-    display --indent 2 --text "- Setting site public for robots" --result "DONE" --color GREEN
+    display --indent 2 --text "- Changing site visibility to ${visibility}" --result "DONE" --color GREEN
 
 }
 

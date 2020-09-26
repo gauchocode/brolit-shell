@@ -421,15 +421,16 @@ select_restore_type_from_dropbox() {
   local chosen_server=$1
   local dropbox_type_list=$2
 
-  local chosen_type                 # whiptail var
-  local dropbox_chosen_type_path    # whiptail var
-  local dropbox_project_list        # list of projects on dropbox directory
-  local dropbox_chosen_backup_path  # whiptail var
-  local domain                      # extracted domain
-  local db_project_name             # extracted db name
-  local bk_to_dowload               # backup to download
-  local folder_to_install           # directory to install project
-  local project_site                # project site
+  local chosen_type                     # whiptail var
+  local dropbox_chosen_type_path        # whiptail var
+  local dropbox_project_list            # list of projects on dropbox directory
+  local dropbox_chosen_backup_path      # whiptail var
+  local dropbox_backup_list             # dropbox listing directories
+  local domain                          # extracted domain
+  local db_project_name                 # extracted db name
+  local bk_to_dowload                   # backup to download
+  local folder_to_install               # directory to install project
+  local project_site                    # project site
 
   chosen_type=$(whiptail --title "RESTORE FROM BACKUP" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 $(for x in ${dropbox_type_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
@@ -458,11 +459,11 @@ select_restore_type_from_dropbox() {
         exitstatus=$?
         if [ $exitstatus = 0 ]; then
           dropbox_chosen_backup_path="${dropbox_chosen_type_path}/${chosen_project}"
-          DROPBOX_BACKUP_LIST=$(${DROPBOX_UPLOADER} -hq list "${dropbox_chosen_backup_path}")
+          dropbox_backup_list=$(${DROPBOX_UPLOADER} -hq list "${dropbox_chosen_backup_path}")
 
         fi
         # Select Backup File
-        CHOSEN_BACKUP_TO_RESTORE=$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${DROPBOX_BACKUP_LIST}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
+        CHOSEN_BACKUP_TO_RESTORE=$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${dropbox_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
         exitstatus=$?
         if [ $exitstatus = 0 ]; then
 
@@ -536,7 +537,7 @@ select_restore_type_from_dropbox() {
 
             startdir=${folder_to_install}
             menutitle="Site Selection Menu"
-            directory_browser "$menutitle" "$startdir"
+            directory_browser "${menutitle}" "${startdir}"
             project_site=$filepath"/"$filename
 
             install_path=$(search_wp_config "${folder_to_install}/${filename}")
@@ -798,7 +799,7 @@ project_restore() {
 
       # Need to create new configs
       
-      # TODO: need to remove hardcoded parameters "wordpress" and "single"
+      # TODO: remove hardcoded parameters "wordpress" and "single"
       nginx_server_create "${new_project_domain}" "wordpress" "single"
       
       # Cloudflare API
@@ -806,6 +807,17 @@ project_restore() {
       cloudflare_change_a_record "${root_domain}" "${new_project_domain}"
 
       certbot_certificate_install "${MAILA}" "${new_project_domain}"
+
+      # TODO: check if is a WP project
+
+      # Change urls on database
+      wpcli_search_and_replace "" "${chosen_domain}" "${new_project_domain}"
+
+      # Shuffle salts
+      wpcli_set_salts "${project_path}"
+
+      # Changing wordpress visibility
+      wpcli_change_wp_seo_visibility "${project_path}" "0"
 
     fi
         
