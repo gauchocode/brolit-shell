@@ -39,8 +39,8 @@ server_selection_restore_menu () {
   local chosen_server         # whiptail var
   
   # Select SERVER
-  dropbox_server_list="$(${DROPBOX_UPLOADER} -hq list "/")"
-  chosen_server=$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 $(for x in ${dropbox_server_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
+  dropbox_server_list=$("${DROPBOX_UPLOADER}" -hq list "/")
+  chosen_server=$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 $(for x in ${dropbox_server_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ ${exitstatus} = 0 ]; then
 
@@ -431,7 +431,7 @@ select_restore_type_from_dropbox() {
   local folder_to_install           # directory to install project
   local project_site                # project site
 
-  chosen_type=$(whiptail --title "RESTORE FROM BACKUP" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 "$(for x in ${dropbox_type_list}; do echo "${x} [D]"; done)" 3>&1 1>&2 2>&3)
+  chosen_type=$(whiptail --title "RESTORE FROM BACKUP" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 $(for x in ${dropbox_type_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ ${exitstatus} = 0 ]; then
 
