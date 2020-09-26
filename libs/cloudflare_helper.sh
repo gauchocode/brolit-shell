@@ -226,22 +226,27 @@ cloudflare_change_a_record () {
     zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
     record_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json"  | grep -Po '(?<="id":")[^"]*')
 
-    log_event "info" "ZONE_ID found: ${zone_id}" "false"
-    log_event "info" "RECORD_ID found: ${record_id}" "false"
-
     if [[ -z "${record_id}" || ${record_id} == "" ]]; then
 
+        log_event "info" "ZONE_ID found: ${zone_id}" "false"
         log_event "info" "RECORD_ID not found: Trying to add the subdomain ..." "false"
         display --indent 2 --text "- Adding the subdomain: ${record_name}"
 
-        update=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
+        log_event "info" "curl -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" \
+        -H \"X-Auth-Email: ${auth_email}\" \
+        -H \"X-Auth-Key: ${auth_key}\" \
+        -H \"Content-Type: application/json\" \
+        --data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":\"${proxy_status}\"}" "true"
+
+        update="$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
         -H "X-Auth-Email: ${auth_email}" \
         -H "X-Auth-Key: ${auth_key}" \
         -H "Content-Type: application/json" \
-        --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}" >/dev/null)
+        --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":\"${proxy_status}\"}" >/dev/null)"
 
     else
 
+        log_event "info" "ZONE_ID found: ${zone_id}" "false"
         log_event "info" "RECORD_ID found: ${record_id}" "false"
         display --indent 2 --text "- Changing ${record_name} IP ..."
 
@@ -254,7 +259,7 @@ cloudflare_change_a_record () {
         -H "X-Auth-Email: ${auth_email}" \
         -H "X-Auth-Key: ${auth_key}" \
         -H "Content-Type: application/json" \
-        --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}" >/dev/null)"
+        --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":\"${proxy_status}\"}" >/dev/null)"
 
     fi
 
