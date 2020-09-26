@@ -811,7 +811,7 @@ project_restore() {
       # TODO: check if is a WP project
 
       # Change urls on database
-      wpcli_search_and_replace "" "${chosen_domain}" "${new_project_domain}"
+      wpcli_search_and_replace "${project_path}" "${chosen_domain}" "${new_project_domain}"
 
       # Shuffle salts
       wpcli_set_salts "${project_path}"
