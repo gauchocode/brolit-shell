@@ -1,15 +1,16 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.2
+# Version: 3.0.3
 ################################################################################
 
 restore_menu () {
 
-  local restore_options chosen_restore_options
+  local restore_options         # whiptail var
+  local chosen_restore_options  # whiptail var
 
   restore_options="01) RESTORE-FROM-DROPBOX 02) RESTORE-FROM-URL"
-  chosen_restore_options=$(whiptail --title "RESTORE TYPE" --menu " " 20 78 10 $(for x in ${restore_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  chosen_restore_options=$(whiptail --title "RESTORE TYPE" --menu " " 20 78 10 "$(for x in ${restore_options}; do echo "$x"; done)" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
@@ -35,13 +36,14 @@ server_selection_restore_menu () {
   CONFIG_F="configs"
   DBS_F="database"
 
-  local dropbox_server_list chosen_server
+  local dropbox_server_list   # list servers directories on dropbox
+  local chosen_server         # whiptail var
   
   # Select SERVER
-  dropbox_server_list=$(${DROPBOX_UPLOADER} -hq list "/")
+  dropbox_server_list="$(${DROPBOX_UPLOADER} -hq list "/")"
   chosen_server=$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 $(for x in ${dropbox_server_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [ ${exitstatus} = 0 ]; then
 
     dropbox_type_list=$(${DROPBOX_UPLOADER} -hq list "${chosen_server}")
     dropbox_type_list='project '${dropbox_type_list}
@@ -58,7 +60,10 @@ restore_menu
 
 }
 
-#This is executed if we want to restore a file backup on directory with the same name
+#
+# This is executed if we want to restore a file backup on directory with the same name
+#
+
 make_temp_files_backup() {
 
   # $1 = Folder to backup
@@ -67,6 +72,7 @@ make_temp_files_backup() {
 
   display --indent 2 --text "- Creating backup on temp directory"
 
+  # Moving project files to temp directory
   mkdir "${SFOLDER}/tmp/old_backup"
   mv "${folder_to_backup}" "${SFOLDER}/tmp/old_backup"
 
@@ -86,23 +92,28 @@ restore_database_backup() {
   local project_state=$2
   local project_backup=$3
 
-  local db_name db_exists user_db_exists db_pass
+  local db_name 
+  local db_exists 
+  local user_db_exists 
+  local db_pass
 
-  log_event "info" "Running restore_database_backup for ${project_backup} DB ${ENDCOLOR}" "false"
+  log_event "info" "Restoring database for ${project_backup}" "false"
+
   log_subsection "Database Restore"
 
   db_name="${project_name}_${project_state}"
 
   # Check if database already exists
   mysql_database_exists "${db_name}"
-  
   db_exists=$?
   if [[ ${db_exists} -eq 1 ]]; then  
     
+    # Create database
     mysql_database_create "${db_name}"
 
   else
 
+    # Make backup of actual database
     log_event "info" "MySQL database ${db_name} already exists" "false"
     mysql_database_export "${db_name}" "${db_name}_bk_before_restore.sql"
 
@@ -111,12 +122,11 @@ restore_database_backup() {
   # Restore database
   project_backup="${project_backup%%.*}.sql"
   mysql_database_import "${project_name}_${project_state}" "${project_backup}"
-
-  log_event "info" "Cleanning temp files ..." "false"
   
+  # Deleting temp files
+  log_event "info" "Cleanning temp files ..." "false"
   rm "${project_backup%%.*}.tar.bz2"
   rm "${project_backup}"
-
   display --indent 2 --text "- Cleanning temp files" --result "DONE" --color GREEN
 
 }
@@ -129,17 +139,19 @@ download_and_restore_config_files_from_dropbox(){
   local dropbox_chosen_type_path=$1
   local dropbox_project_list=$2
 
-  local chosen_config_type dropbox_bk_list chosen_config_bk
+  local chosen_config_type 
+  local dropbox_bk_list 
+  local chosen_config_bk
 
   # Select config backup type
   chosen_config_type=$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Choose a config backup type." 20 78 10 $(for x in ${dropbox_project_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
     #Restore from Dropbox
-    dropbox_bk_list=$($DROPBOX_UPLOADER -hq list "${dropbox_chosen_type_path}/${chosen_config_type}")
+    dropbox_bk_list=$(${DROPBOX_UPLOADER} -hq list "${dropbox_chosen_type_path}/${chosen_config_type}")
   fi
 
-  chosen_config_bk=$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Choose a config backup file to restore." 20 78 10 $(for x in ${dropbox_bk_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
+  chosen_config_bk=$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Choose a config backup file to restore." 20 78 10 "$(for x in ${dropbox_bk_list}; do echo "$x [F]"; done)" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
 
@@ -162,7 +174,7 @@ download_and_restore_config_files_from_dropbox(){
 
     if [[ "${chosen_config_bk}" == *"nginx"* ]]; then
 
-      restore_nginx_site_files ""
+      restore_nginx_site_files
 
     fi
     if [[ "${CHOSEN_CONFIG}" == *"mysql"* ]]; then
@@ -281,7 +293,8 @@ restore_letsencrypt_site_files() {
   local domain=$1
   local date=$2
 
-  local bk_file bk_to_download
+  local bk_file 
+  local bk_to_download
 
   bk_file="letsencrypt-configs-files-${date}.tar.bz2"
   bk_to_download="${chosen_server}/configs/letsencrypt/${bk_file}"
@@ -324,7 +337,9 @@ restore_site_files() {
 
   local domain=$1
 
-  local actual_folder folder_to_install chosen_domain
+  local actual_folder 
+  local folder_to_install 
+  local chosen_domain
 
   chosen_domain=$(whiptail --title "Project Domain" --inputbox "Want to change the project's domain? Default:" 10 60 "${domain}" 3>&1 1>&2 2>&3)
   exitstatus=$?
@@ -350,6 +365,7 @@ restore_site_files() {
     # Check if destination folder exist
     if [ -d "${actual_folder}" ]; then
 
+      # Make backup
       make_temp_files_backup "${actual_folder}"
 
     fi
@@ -402,11 +418,19 @@ select_restore_type_from_dropbox() {
   local chosen_server=$1
   local dropbox_type_list=$2
 
-  local chosen_type dropbox_chosen_type_path dropbox_project_list domain db_project_name bk_to_dowload folder_to_install project_site
+  local chosen_type                 # whiptail var
+  local dropbox_chosen_type_path    # whiptail var
+  local dropbox_project_list        # list of projects on dropbox directory
+  local dropbox_chosen_backup_path  # whiptail var
+  local domain                      # extracted domain
+  local db_project_name             # extracted db name
+  local bk_to_dowload               # backup to download
+  local folder_to_install           # directory to install project
+  local project_site                # project site
 
-  chosen_type=$(whiptail --title "RESTORE FROM BACKUP" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 $(for x in ${dropbox_type_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
+  chosen_type=$(whiptail --title "RESTORE FROM BACKUP" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 "$(for x in ${dropbox_type_list}; do echo "${x} [D]"; done)" 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [ ${exitstatus} = 0 ]; then
 
     dropbox_chosen_type_path="${chosen_server}/${chosen_type}"
 
@@ -430,8 +454,8 @@ select_restore_type_from_dropbox() {
         chosen_project=$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${dropbox_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
         exitstatus=$?
         if [ $exitstatus = 0 ]; then
-          DROPBOX_CHOSEN_BACKUP_PATH="${dropbox_chosen_type_path}/${chosen_project}"
-          DROPBOX_BACKUP_LIST=$(${DROPBOX_UPLOADER} -hq list "${DROPBOX_CHOSEN_BACKUP_PATH}")
+          dropbox_chosen_backup_path="${dropbox_chosen_type_path}/${chosen_project}"
+          DROPBOX_BACKUP_LIST=$(${DROPBOX_UPLOADER} -hq list "${dropbox_chosen_backup_path}")
 
         fi
         # Select Backup File
@@ -450,11 +474,11 @@ select_restore_type_from_dropbox() {
           clear_last_line
           display --indent 2 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
 
+          # Uncompressing
           log_event "info" "Uncompressing ${CHOSEN_BACKUP_TO_RESTORE}" "false"
-
           pv "${CHOSEN_BACKUP_TO_RESTORE}" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
 
-          if [[ ${chosen_type} == *"$DBS_F"* ]]; then
+          if [[ ${chosen_type} == *"${DBS_F}"* ]]; then
 
             # Asking project state with suggested actual state
             suffix="$(cut -d'_' -f2 <<<"${chosen_project}")"
@@ -556,7 +580,13 @@ project_restore() {
 
   local chosen_server=$1
 
-  local dropbox_project_list chosen_project dropbox_chosen_backup_path dropbox_backup_list bk_to_dowload chosen_backup_to_restore db_to_download
+  local dropbox_project_list 
+  local chosen_project 
+  local dropbox_chosen_backup_path 
+  local dropbox_backup_list 
+  local bk_to_dowload 
+  local chosen_backup_to_restore 
+  local db_to_download
 
   log_section "Restore Project Backup"
 

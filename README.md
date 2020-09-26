@@ -41,6 +41,7 @@ Works on Ubuntu 18.04 LTS and Ubuntu 20.04 LTS.
 ## Code: Bash best practices
 
 https://bertvv.github.io/cheat-sheets/Bash.html
+https://github.com/anordal/shellharden/blob/master/how_to_do_things_safely_in_bash.md
 
 ## IMPORTANT: Read before install
 

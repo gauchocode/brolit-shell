@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.2
+# Version: 3.0.3
 ################################################################################
 #
 # https://www.cyberciti.biz/faq/ubuntu-20-04-lts-change-hostname-permanently/
