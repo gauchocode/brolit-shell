@@ -998,15 +998,15 @@ function db_delete
 {
     local FILE_DST=$(normalize_path "$1")
 
-    print " > Deleting \"$FILE_DST\"... "
+    #print " > Deleting \"$FILE_DST\"... "
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST -L -s --show-error --globoff -i -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Content-Type: application/json" --data "{\"path\": \"$FILE_DST\"}" "$API_DELETE_URL" 2> /dev/null
     check_http_response
 
     #Check
     if grep -q "^HTTP/[12].* 200" "$RESPONSE_FILE"; then
-        print "DONE\n"
+    #    print "DONE\n"
     else
-        print "FAILED\n"
+    #    print "FAILED\n"
         ERROR_STATUS=1
     fi
 }
@@ -1027,15 +1027,15 @@ function db_move
         FILE_DST=$(normalize_path "$FILE_DST/$filename")
     fi
 
-    print " > Moving \"$FILE_SRC\" to \"$FILE_DST\" ... "
+    #print " > Moving \"$FILE_SRC\" to \"$FILE_DST\" ... "
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST -L -s --show-error --globoff -i -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Content-Type: application/json" --data "{\"from_path\": \"$FILE_SRC\", \"to_path\": \"$FILE_DST\"}" "$API_MOVE_URL" 2> /dev/null
     check_http_response
 
     #Check
     if grep -q "^HTTP/[12].* 200" "$RESPONSE_FILE"; then
-        print "DONE\n"
+    #    print "DONE\n"
     else
-        print "FAILED\n"
+    #    print "FAILED\n"
         ERROR_STATUS=1
     fi
 }
@@ -1056,15 +1056,15 @@ function db_copy
         FILE_DST=$(normalize_path "$FILE_DST/$filename")
     fi
 
-    print " > Copying \"$FILE_SRC\" to \"$FILE_DST\" ... "
+    #print " > Copying \"$FILE_SRC\" to \"$FILE_DST\" ... "
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST -L -s --show-error --globoff -i -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Content-Type: application/json" --data "{\"from_path\": \"$FILE_SRC\", \"to_path\": \"$FILE_DST\"}" "$API_COPY_URL" 2> /dev/null
     check_http_response
 
     #Check
     if grep -q "^HTTP/[12].* 200" "$RESPONSE_FILE"; then
-        print "DONE\n"
+    #    print "DONE\n"
     else
-        print "FAILED\n"
+    #    print "FAILED\n"
         ERROR_STATUS=1
     fi
 }
