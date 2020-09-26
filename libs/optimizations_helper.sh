@@ -38,8 +38,9 @@ optimize_images_complete() {
 optimize_ram_usage() {
 
     # Restarting services
-    log_event "info" "Restarting services ..." "true"
+    log_event "info" "Restarting php-fpm service" "false"
     service php"${PHP_V}"-fpm restart
+    display --indent 2 --text "- Restarting php-fpm service" --result "DONE" --color GREEN
 
     # Cleanning Swap
     clean_swap
@@ -64,7 +65,7 @@ optimize_image_size() {
   local last_run
 
   # Run ImageMagick mogrify
-  log_event "info" "Running mogrify to optimize image sizes ..." "true"
+  log_event "info" "Running mogrify to optimize image sizes ..." "false"
 
   last_run=$(check_last_optimization_date)
   
@@ -208,7 +209,7 @@ update_last_optimization_date() {
 delete_old_logs() {
 
   # Remove old log files from system
-  log_event "info" "Deleting old system logs ..." "true"
+  log_event "info" "Deleting old system logs ..." "false"
   ${FIND} /var/log/ -mtime +7 -type f -delete
 
 }
@@ -216,16 +217,20 @@ delete_old_logs() {
 clean_swap() {
 
   # Cleanning Swap
-  log_event "info" "Cleanning Swap ..." "true"
+  log_event "info" "Cleanning Swap" "false"
   swapoff -a && swapon -a
+
+  display --indent 2 --text "- Cleanning Swap" --result "DONE" --color GREEN
 
 }
 
 clean_ram_cache() {
 
   # Cleanning RAM
-  log_event "info" "Cleanning RAM ..." "true"
+  log_event "info" "Cleanning RAM cache" "false"
   sync
   echo 1 >/proc/sys/vm/drop_caches
+
+  display --indent 2 --text "- Cleanning RAM cache" --result "DONE" --color GREEN
 
 }
