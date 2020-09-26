@@ -743,11 +743,20 @@ project_restore() {
           # If choose restore config, need to restore nginx config and run cerbot
           restore_nginx_site_files "${chosen_domain}" "${backup_date}"
 
+          # Cloudflare API
+          root_domain=$(cloudflare_ask_root_domain "${chosen_domain}")
+          cloudflare_change_a_record "${root_domain}" "${new_project_domain}"
+
         fi
         if [[ ${letsencrypt_chosen_opt} == *"02"* ]]; then
 
           # TODO: need to remove hardcoded parameters "wordpress" and "single"
           nginx_server_create "${new_project_domain}" "wordpress" "single"
+          
+          # Cloudflare API
+          root_domain=$(cloudflare_ask_root_domain "${chosen_domain}")
+          cloudflare_change_a_record "${root_domain}" "${new_project_domain}"
+          
           certbot_certificate_install "${MAILA}" "${chosen_domain}"
 
         fi
@@ -761,18 +770,15 @@ project_restore() {
       
       # TODO: need to remove hardcoded parameters "wordpress" and "single"
       nginx_server_create "${new_project_domain}" "wordpress" "single"
+      
+      # Cloudflare API
+      root_domain=$(cloudflare_ask_root_domain "${chosen_domain}")
+      cloudflare_change_a_record "${root_domain}" "${new_project_domain}"
+
       certbot_certificate_install "${MAILA}" "${new_project_domain}"
 
     fi
-    
-
-    #TODO: ask if want to change IP from Cloudflare then ask for Cloudflare Root Domain
-
-    # Only for Cloudflare API
-    root_domain=$(cloudflare_ask_root_domain "${new_project_domain}")
-
-    cloudflare_change_a_record "${root_domain}" "${new_project_domain}"
-    
+        
     telegram_send_message "✅ ${VPSNAME}: Project ${new_project_domain} restored"
 
   fi
