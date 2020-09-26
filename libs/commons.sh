@@ -33,14 +33,14 @@ source "${SFOLDER}/libs/backup_restore_helper.sh"
 source "${SFOLDER}/libs/certbot_helper.sh"
 # shellcheck source=${SFOLDER}/libs/cloudflare_helper.sh
 source "${SFOLDER}/libs/cloudflare_helper.sh"
-# shellcheck source=${SFOLDER}/libs/image_reduce_helper.sh
-source "${SFOLDER}/libs/image_reduce_helper.sh"
 # shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
 source "${SFOLDER}/libs/mail_notification_helper.sh"
 # shellcheck source=${SFOLDER}/libs/mysql_helper.sh
 source "${SFOLDER}/libs/mysql_helper.sh"
 # shellcheck source=${SFOLDER}/libs/nginx_helper.sh
 source "${SFOLDER}/libs/nginx_helper.sh"
+# shellcheck source=${SFOLDER}/libs/optimizations_helper.sh
+source "${SFOLDER}/libs/optimizations_helper.sh"
 # shellcheck source=${SFOLDER}/libs/packages_helper.sh
 source "${SFOLDER}/libs/packages_helper.sh"
 # shellcheck source=${SFOLDER}/libs/project_helper.sh
@@ -386,7 +386,7 @@ cron_script_tasks() {
   local scheduled_time
 
   runner_options=("01)" "BACKUPS TASKS" "02)" "OPTIMIZER TASKS" "03)" "WORDPRESS TASKS" "04)" "UPTIME TASKS" "05)" "SCRIPT UPDATER")
-  chosen_type=$(whiptail --title "CRONEABLE TASKS" --menu "\nPlease, choose a task to cron:" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)
+  chosen_type=$(whiptail --title "CRONEABLE TASKS" --menu "\n" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
