@@ -68,6 +68,25 @@ check_packages_required() {
   log_event "info" "Checking required packages ..." "false"
   log_section "Script Package Manager"
 
+  # Declare globals
+  declare -g SENDEMAIL
+  declare -g PV
+  declare -g BC
+  declare -g DIG
+  declare -g LBZIP2
+  declare -g ZIP
+  declare -g UNZIP
+  declare -g GIT
+  declare -g MOGRIFY
+  declare -g JPEGOPTIM
+  declare -g OPTIPNG
+  declare -g TAR
+  declare -g FIND
+  declare -g MYSQL
+  declare -g MYSQLDUMP
+  declare -g PHP
+  declare -g CERTBOT
+
   # Check if sendemail is installed
   SENDEMAIL="$(which sendemail)"
   if [ ! -x "${SENDEMAIL}" ]; then
@@ -139,6 +158,19 @@ check_packages_required() {
     clear_last_line
     display --indent 2 --text "- Installing git" --result "DONE" --color GREEN
   fi
+
+  # MOGRIFY
+  MOGRIFY="$(which mogrify)"
+  if [ ! -x "${MOGRIFY}" ]; then
+    # Install image optimize packages
+    install_image_optimize_packages
+  fi
+
+  # JPEGOPTIM
+  JPEGOPTIM="$(which jpegoptim)"
+
+  # OPTIPNG
+  OPTIPNG="$(which optipng)"
 
   # TAR
   TAR="$(which tar)"
@@ -225,7 +257,7 @@ basic_packages_installation() {
 selected_package_installation() {
 
   # Define array of Apps to install
-  local -n APPS_TO_INSTALL=(
+  local -n apps_to_install=(
     "certbot" " " off
     "monit" " " off
     "netdata" " " off
@@ -235,23 +267,21 @@ selected_package_installation() {
 
   local chosen_apps
 
-  chosen_apps=$(whiptail --title "Apps Selection" --checklist "Select the apps you want to install:" 20 78 15 "${APPS_TO_INSTALL[@]}" 3>&1 1>&2 2>&3)
-  
+  chosen_apps=$(whiptail --title "Apps Selection" --checklist "Select the apps you want to install:" 20 78 15 "${apps_to_install[@]}" 3>&1 1>&2 2>&3)
   exitstatus=$?
+  if [ $exitstatus = 0 ]; then
 
-    if [ $exitstatus = 0 ]; then
+    log_subsection "Package Installer"
 
-      log_subsection "Package Installer"
+    for app in ${chosen_apps}; do
+      
+      app=$(sed -e 's/^"//' -e 's/"$//' <<<${app}) #needed to ommit double quotes
 
-      for app in $chosen_apps; do
-        
-        app=$(sed -e 's/^"//' -e 's/"$//' <<<${app}) #needed to ommit double quotes
+      log_event "info" "Executing ${app} installer ..." "false"
+      
+      "${SFOLDER}/utils/installers/${app}_installer.sh"
 
-        log_event "info" "Executing ${app} installer ..." "false"
-        
-        "${SFOLDER}/utils/installers/${app}_installer.sh"
-
-      done
+    done
   
   fi
 
@@ -283,17 +313,27 @@ timezone_configuration() {
 remove_old_packages() {
 
   log_event "info" "Cleanning old system packages ..." "false"
+  display --indent 2 --text "- Cleaning system packages"
 
   apt-get --yes clean -qq > /dev/null
   apt-get --yes autoremove -qq > /dev/null
   apt-get --yes autoclean -qq > /dev/null
 
   log_event "info" "System packages cleaned" "false"
+  clear_last_line
+  display --indent 2 --text "- Cleaning system packages" --result "DONE" --color GREEN
 
 }
 
 install_image_optimize_packages() {
 
+  log_event "info" "Installing jpegoptim, optipng and imagemagick" "false"
+  display --indent 2 --text "- Installing jpegoptim, optipng and imagemagick"
+
   apt-get --yes install jpegoptim optipng pngquant gifsicle imagemagick-* -qq > /dev/null
+
+  log_event "info" "Installation finished" "false"
+  clear_last_line
+  display --indent 2 --text "- Installing jpegoptim, optipng and imagemagick" --result "DONE" --color GREEN
 
 }
