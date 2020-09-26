@@ -6,7 +6,7 @@
 
 is_laravel_project() {
 
-  # $1 = project directory
+  # $1 = ${project_dir} project directory
 
   local project_dir=$1
   is_laravel="false"
@@ -24,21 +24,23 @@ is_laravel_project() {
 
 check_laravel_version() {
 
-  # $1 = project directory
+  # $1 = ${project_dir} project directory
 
   local project_dir=$1
   laravel_v=$(php "${project_dir}/artisan" --version)
 
+  # Return
   echo "${laravel_v}"
 
 }
 
 backup_menu() {
 
-  local backup_options chosen_backup_type
+  local backup_options 
+  local chosen_backup_type
 
-  backup_options="01) BACKUP-DATABASES 02) BACKUP-FILES 03) BACKUP-ALL 04) BACKUP-PROJECT"
-  chosen_backup_type=$(whiptail --title "BACKUP TYPES" --menu " " 20 78 10 $(for x in ${backup_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  backup_options=("01)" "BACKUP DATABASES" "02)" "BACKUP FILES" "03)" "BACKUP ALL" "04)" "BACKUP PROJECT")
+  chosen_backup_type=$(whiptail --title "SELECT BACKUP TYPE" --menu " " 20 78 10 "${backup_options[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
@@ -50,8 +52,8 @@ backup_menu() {
       log_section "Databases Backup"
 
       # Preparing Mail Notifications Template
-      HTMLOPEN=$(mail_html_start)
-      BODY_SRV=$(mail_server_status_section "${SERVER_IP}")
+      HTMLOPEN="$(mail_html_start)"
+      BODY_SRV="$(mail_server_status_section "${SERVER_IP}")"
 
       # shellcheck source=${SFOLDER}/mysql_backup.sh
       source "${SFOLDER}/utils/mysql_backup.sh"

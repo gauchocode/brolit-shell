@@ -308,13 +308,16 @@ customize_ubuntu_login_message() {
 
 main_menu() {
 
-  local whip_title whip_description runner_options chosen_type
+  local whip_title              # whiptail var
+  local whip_description        # whiptail var
+  local runner_options          # whiptail array options
+  local chosen_type             # whiptail var
 
   whip_title="LEMP UTILS SCRIPT"
   whip_description=" "
 
-  runner_options=("01)" "BACKUP-OPTIONS" "02)" "RESTORE-OPTIONS" "03)" "PROJECT-UTILS" "04)" "WPCLI-MANAGER" "05)" "CERTBOT-MANAGER" "06)" "CLOUDFLARE-MANAGER" "07)" "INSTALLERS-AND-CONFIGS" "08)" "IT-UTILS" "09)" "SCRIPT-OPTIONS" "10)" "CRON-TASKS")
-  chosen_type=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 $(for x in "${runner_options[@]}"; do echo "${x}"; done) 3>&1 1>&2 2>&3)
+  runner_options=("01)" "BACKUP OPTIONS" "02)" "RESTORE OPTIONS" "03)" "PROJECT UTILS" "04)" "WPCLI MANAGER" "05)" "CERTBOT MANAGER" "06)" "CLOUDFLARE MANAGER" "07)" "INSTALLERS & CONFIGS" "08)" "IT UTILS" "09)" "SCRIPT OPTIONS" "10)" "CRON TASKS")
+  chosen_type=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
@@ -378,10 +381,12 @@ main_menu() {
 
 cron_script_tasks() {
 
-  local runner_options chosen_type scheduled_time
+  local runner_options 
+  local chosen_type 
+  local scheduled_time
 
-  runner_options="01) BACKUPS-TASKS 02) OPTIMIZER-TASKS 03) WORDPRESS-TASKS 04) UPTIME-TASKS 05) SCRIPT-UPDATER"
-  chosen_type=$(whiptail --title "CRONEABLE TASKS" --menu "\nPlease, choose a task to cron:" 20 78 10 $(for x in ${runner_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  runner_options=("01)" "BACKUPS TASKS" "02)" "OPTIMIZER TASKS" "03)" "WORDPRESS TASKS" "04)" "UPTIME TASKS" "05)" "SCRIPT UPDATER")
+  chosen_type=$(whiptail --title "CRONEABLE TASKS" --menu "\nPlease, choose a task to cron:" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
@@ -465,8 +470,8 @@ security_utils_menu () {
 
   local security_options chosen_security_options
 
-  security_options="01) CLAMAV-MALWARE-SCAN 02) CUSTOM-MALWARE-SCAN 03) LYNIS-SYSTEM-AUDIT"
-  chosen_security_options=$(whiptail --title "SECURITY TOOLS" --menu "Choose an option to run" 20 78 10 $(for x in ${security_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  security_options=("01)" "CLAMAV MALWARE SCAN" "02)" "CUSTOM MALWARE SCAN" "03)" "LYNIS SYSTEM AUDIT")
+  chosen_security_options=$(whiptail --title "SECURITY TOOLS" --menu "Choose an option to run" 20 78 10 "${security_options[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
@@ -532,11 +537,11 @@ project_utils_menu () {
   whip_title="PROJECT UTILS"
   whip_description=" "
 
-  project_utils_options="01) CREATE-WP-PROJECT 02) CREATE-PHP-PROJECT 03) DELETE-PROJECT 04) PUT-PROJECT-ONLINE 05) PUT-PROJECT-OFFLINE 06) REGENERATE-NGINX-SERVER 07) BENCH-PROJECT-GTMETRIX"
-  chosen_project_utils_options=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 $(for x in ${project_utils_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  project_utils_options=("01)" "CREATE WP PROJECT" "02)" "CREATE PHP PROJECT" "03)" "DELETE PROJECT" "04)" "PUT PROJECT ONLINE" "05)" "PUT PROJECT OFFLINE" "06)" "REGENERATE NGINX SERVER" "07)" "BENCH PROJECT GTMETRIX")
+  chosen_project_utils_options=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_utils_options[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [ ${exitstatus} = 0 ]; then
 
     if [[ ${chosen_project_utils_options} == *"01"* ]]; then
       
@@ -690,7 +695,7 @@ script_configuration_wizard() {
     if [ $exitstatus = 0 ]; then
       echo "SMTP_SERVER="${SMTP_SERVER} >>/root/.broobe-utils-options
     else
-      exit 1
+      return 1
     fi
   fi
   if [[ -z "${SMTP_PORT}" ]]; then
@@ -699,7 +704,7 @@ script_configuration_wizard() {
     if [ $exitstatus = 0 ]; then
       echo "SMTP_PORT=${SMTP_PORT}" >>/root/.broobe-utils-options
     else
-      exit 1
+      return 1
     fi
   fi
   if [[ -z "${SMTP_TLS}" ]]; then
@@ -708,7 +713,7 @@ script_configuration_wizard() {
     if [ $exitstatus = 0 ]; then
       echo "SMTP_TLS=${SMTP_TLS}" >>/root/.broobe-utils-options
     else
-      exit 1
+      return 1
     fi
   fi
   if [[ -z "${SMTP_U}" ]]; then
@@ -717,7 +722,7 @@ script_configuration_wizard() {
     if [ $exitstatus = 0 ]; then
       echo "SMTP_U=${SMTP_U}" >>/root/.broobe-utils-options
     else
-      exit 1
+      return 1
     fi
   fi
   if [[ -z "${SMTP_P}" ]]; then
@@ -726,7 +731,7 @@ script_configuration_wizard() {
     if [ $exitstatus = 0 ]; then
       echo "SMTP_P=${SMTP_P}" >>/root/.broobe-utils-options
     else
-      exit 1
+      return 1
     fi
   fi
   if [[ -z "${MAILA}" ]]; then
@@ -735,7 +740,7 @@ script_configuration_wizard() {
     if [ $exitstatus = 0 ]; then
       echo "MAILA=${MAILA}" >>/root/.broobe-utils-options
     else
-      exit 1
+      return 1
     fi
   fi
   if [[ -z "${SITES}" ]]; then
@@ -744,7 +749,7 @@ script_configuration_wizard() {
     if [ $exitstatus = 0 ]; then
       echo "SITES=${SITES}" >>/root/.broobe-utils-options
     else
-      exit 1
+      return 1
     fi
   fi
 
