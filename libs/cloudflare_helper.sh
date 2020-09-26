@@ -207,84 +207,64 @@ cloudflare_change_a_record () {
     record_type="A"
     ttl=1 #1 for Auto
 
-    #ip_file="ip.txt"
-    id_file="cloudflare.ids"
-
     # FOR IPV6 EDIT THE LINK TO THIS -> (https://api6.ipify.org)
     #cur_ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
     cur_ip=${SERVER_IP}
 
-    # RETRIEVE/ SAVE zone_id AND record_id
-    log_event "info" "CHECKING FOR ZONE & RECORD ID's ..." "false"
-    if [[ -f ${id_file} ]] && [[ $(wc -l ${id_file} | awk '{print $1}') == 2 ]]; then
+    log_event "info" "Getting Zone & Record ID's ..." "false"
 
-        zone_id=$(head -1 ${id_file})
-        record_id=$(tail -1 ${id_file})
+    zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
+    record_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json"  | grep -Po '(?<="id":")[^"]*')
 
-        log_event "info" "ZONE_ID found: ${zone_id}" "false"
-        log_event "info" "RECORD_ID found: ${record_id}" "false"
-        
+    log_event "info" "ZONE_ID found: ${zone_id}" "false"
+    log_event "info" "RECORD_ID found: ${record_id}" "false"
+
+    if [[ -z "${record_id}" || ${record_id} == "" ]]; then
+
+        log_event "info" "RECORD_ID not found: Trying to add the subdomain ..." "false"
+        display --indent 2 --text "- Adding the subdomain: ${record_name}"
+
+        update=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
+        -H "X-Auth-Email: ${auth_email}" \
+        -H "X-Auth-Key: ${auth_key}" \
+        -H "Content-Type: application/json" \
+        --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}" >/dev/null)
 
     else
 
-        log_event "info" "Getting Zone & Record ID's ..." "false"
-
-        zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=$zone_name" -H "X-Auth-Email: $auth_email" -H "X-Auth-Key: $auth_key" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
-        record_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$zone_id/dns_records?name=$record_name" -H "X-Auth-Email: $auth_email" -H "X-Auth-Key: $auth_key" -H "Content-Type: application/json"  | grep -Po '(?<="id":")[^"]*')
-
-        echo "${zone_id}" > ${id_file}
-        echo "${record_id}" >> ${id_file}
-
-        log_event "info" "ZONE_ID found: ${zone_id}" "false"
         log_event "info" "RECORD_ID found: ${record_id}" "false"
+        display --indent 2 --text "- Changing ${record_name} IP ..."
 
-        if [[ -z "${record_id}" || ${record_id} == "" ]]; then
-
-            log_event "info" "RECORD_ID not found: Trying to add the entry ..." "false"
-
-            update=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
-            -H "X-Auth-Email: ${auth_email}" \
-            -H "X-Auth-Key: ${auth_key}" \
-            -H "Content-Type: application/json" \
-            --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}" >/dev/null)
-
-        else
-
-            log_event "info" "RECORD_ID found: ${record_id}" "true"
-            log_event "info" "Trying to change the domain IP ..." "true"
-
-            delete=$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/$zone_id/dns_records/$record_id" \
-            -H "X-Auth-Email: ${auth_email}" \
-            -H "X-Auth-Key: ${auth_key}" \
-            -H "Content-Type: application/json" >/dev/null)
-            
-            update=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
-            -H "X-Auth-Email: ${auth_email}" \
-            -H "X-Auth-Key: ${auth_key}" \
-            -H "Content-Type: application/json" \
-            --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}" >/dev/null)
-
-        fi
+        delete=$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/$zone_id/dns_records/$record_id" \
+        -H "X-Auth-Email: ${auth_email}" \
+        -H "X-Auth-Key: ${auth_key}" \
+        -H "Content-Type: application/json" >/dev/null)
+        
+        update=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
+        -H "X-Auth-Email: ${auth_email}" \
+        -H "X-Auth-Key: ${auth_key}" \
+        -H "Content-Type: application/json" \
+        --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}" >/dev/null)
 
     fi
+
+    #fi
 
     if [[ ${update} == *"\"success\":false"* ]]; then
         message="API UPDATE FAILED. RESULTS:\n${update}"
         log_event "error" "${message}" "true"
+        
         return 1
 
     else
         message="IP changed to: ${SERVER_IP}"
         #echo "$SERVER_IP" > $ip_file
         log_event "success" "${message}" "false"
-        display --indent 2 --text "- Changing IP on Cloudflare" --result "DONE" --color GREEN
-        display --indent 4 --text "New IP: ${SERVER_IP}" --tcolor YELLOW
+        display --indent 2 --text "- Updating subdomain on Cloudflare" --result "DONE" --color GREEN
+        display --indent 4 --text "IP: ${SERVER_IP}" --tcolor YELLOW
 
     fi
 
-    rm ${id_file}
-
-    return 0
 
 }
 
