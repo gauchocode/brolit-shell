@@ -38,11 +38,6 @@
 
 Works on Ubuntu 18.04 LTS and Ubuntu 20.04 LTS.
 
-## Code: Bash best practices
-
-https://bertvv.github.io/cheat-sheets/Bash.html
-https://github.com/anordal/shellharden/blob/master/how_to_do_things_safely_in_bash.md
-
 ## IMPORTANT: Read before install
 
 The script need to be runned by root.
@@ -93,7 +88,7 @@ Run it:
 
 The first time you run `runner.sh`, you'll be guided through a wizard in order to configure it. This configuration will be stored in `~/.lemp-utils-script`.
 
-## Update sript
+## Update script
 
 Run updater.sh
 
@@ -129,6 +124,11 @@ VPS benchmark script — based on the popular bench.sh, plus CPU and ioping test
 
 ## Contributing
 Please read CONTRIBUTING.md for details on our code of conduct, and the process for submitting pull requests to us.
+
+## Code: Bash Best Practices
+
+* https://bertvv.github.io/cheat-sheets/Bash.html
+* https://github.com/anordal/shellharden/blob/master/how_to_do_things_safely_in_bash.md
 
 ## Authors
 * **Leandro Padula** - *Initial work* - [BROOBE](https://www.broobe.com)
