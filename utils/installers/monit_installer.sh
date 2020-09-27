@@ -122,4 +122,8 @@ else
 
   done
 
+  # Called twice to remove last messages
+  clear_last_line
+  clear_last_line
+
 fi

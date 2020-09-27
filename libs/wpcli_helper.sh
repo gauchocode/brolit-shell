@@ -557,7 +557,7 @@ wpcli_delete_theme() {
     local theme=$2
 
     log_event "info" "Running: sudo -u www-data wp --path=${wp_site} theme delete ${theme}" "false"
-    sudo -u www-data wp --path="${wp_site}" theme delete "${theme}"
+    sudo -u www-data wp --path="${wp_site}" theme delete "${theme}" --quiet
 
     display --indent 2 --text "- Deleting theme ${theme}" --result "DONE" --color GREEN
 
@@ -572,7 +572,7 @@ wpcli_change_wp_seo_visibility() {
     local visibility=$2
 
     log_event "info" "Running: sudo -u www-data wp --path=${wp_site} option set blog_public ${visibility}" "false"
-    sudo -u www-data wp --path="${wp_site}" option set blog_public "${visibility}"
+    sudo -u www-data wp --path="${wp_site}" option set blog_public "${visibility}" --quiet
 
     display --indent 2 --text "- Changing site visibility to ${visibility}" --result "DONE" --color GREEN
 
@@ -612,6 +612,8 @@ wpcli_change_tables_prefix() {
 
 wpcli_search_and_replace() {
 
+    # Ref: https://developer.wordpress.org/cli/commands/search-replace/
+
     # $1 = ${wp_site} (site path)
     # $2 = ${search}
     # $3 = ${replace}
@@ -620,32 +622,33 @@ wpcli_search_and_replace() {
     local search=$2
     local replace=$3
 
-    local wp_site_url
+    #local wp_site_url
 
     # Folder Name need to be the Site URL
     wp_site_url=$(basename "${wp_site}")
 
-    # TODO: for some reason when it's run with --url always fails
-    if $(wp --allow-root --url=http://${wp_site_url} core is-installed --network); then
+    wp --allow-root --path="${wp_site}" core is-installed --network
+    is_network=$?
+    if [ "${is_network}" -eq 0 ]; then
 
-        log_event "info" "Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace} --network" "false"
-        wp --allow-root --path="${wp_site}" search-replace "${search}" "${replace}" --network
+        log_event "info" "Running: wp --allow-root --path=${wp_site} search-replace --url=https://"${wp_site_url}" ${search} ${replace} --network" "false"
+        wp --allow-root --path="${wp_site}" search-replace --url=https://"${wp_site_url}" "${search}" "${replace}" --network --quiet
 
         display --indent 2 --text "- Running search and replace" --result "DONE" --color GREEN
-        display --indent 4 --text "${search} will be replaced for ${replace}"
+        display --indent 4 --text "${search} was replaced by ${replace}"
 
     else
 
         log_event "info" "Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace}" "false"
-        wp --allow-root --path="${wp_site}" search-replace "${search}" "${replace}"
+        wp --allow-root --path="${wp_site}" search-replace "${search}" "${replace}" --quiet
 
         display --indent 2 --text "- Running search and replace" --result "DONE" --color GREEN
-        display --indent 4 --text "${search} will be replaced for ${replace}"
+        display --indent 4 --text "${search} was replaced by ${replace}"
 
     fi
 
     log_event "info" "Running: wp --allow-root --path=${wp_site} cache flush" "false"
-    wp --allow-root --path="${wp_site}" cache flush
+    wp --allow-root --path="${wp_site}" cache flush --quiet
 
     display --indent 2 --text "- Flushing cache" --result "DONE" --color GREEN
 
@@ -660,7 +663,7 @@ wpcli_export_database(){
     local dump_file=$2
 
     log_event "info" "Running: wp --allow-root --path=${wp_site} db export ${dump_file}" "false"
-    wp --allow-root --path="${wp_site}" db export "${dump_file}"
+    wp --allow-root --path="${wp_site}" db export "${dump_file}" --quiet
 
     display --indent 2 --text "- Exporting database ${wp_site}" --result "DONE" --color GREEN
 
