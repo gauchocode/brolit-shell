@@ -44,7 +44,7 @@ else
   
   while true; do
   
-    echo -e "${YELLOW} > Do you want to remove the ppa:certbot/certbot?${ENDCOLOR}"
+    echo -e "${YELLOW}${ITALIC} > Do you want to remove the ppa:certbot/certbot?${ENDCOLOR}"
     read -p "Please type 'y' or 'n'" yn
     case $yn in
     [Yy]*)

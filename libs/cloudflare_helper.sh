@@ -232,11 +232,11 @@ cloudflare_change_a_record () {
         log_event "info" "RECORD_ID not found: Trying to add the subdomain ..." "false"
         display --indent 2 --text "- Adding the subdomain: ${record_name}"
 
-        log_event "info" "curl -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" \
-        -H \"X-Auth-Email: ${auth_email}\" \
-        -H \"X-Auth-Key: ${auth_key}\" \
-        -H \"Content-Type: application/json\" \
-        --data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":\"${proxy_status}\"}" "true"
+        #log_event "info" "curl -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" \
+        #-H \"X-Auth-Email: ${auth_email}\" \
+        #-H \"X-Auth-Key: ${auth_key}\" \
+        #-H \"Content-Type: application/json\" \
+        #--data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":\"${proxy_status}\"}" "false"
 
         update="$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
         -H "X-Auth-Email: ${auth_email}" \
@@ -324,8 +324,8 @@ cloudflare_delete_a_record () {
 
     # RETRIEVE/ SAVE zone_id AND record_id
     log_event "info" "Getting Zone & Record ID's ..." "false"
-    zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: $auth_key" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
-    record_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: $auth_email" -H "X-Auth-Key: $auth_key" -H "Content-Type: application/json"  | grep -Po '(?<="id":")[^"]*')
+    zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
+    record_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json"  | grep -Po '(?<="id":")[^"]*')
 
     log_event "info" "ZONE_ID: ${zone_id}" "false"
     log_event "info" "RECORD_ID: ${record_id}" "false"
@@ -345,10 +345,10 @@ cloudflare_delete_a_record () {
         log_event "info" "RECORD_ID found: ${record_id}" "false"
         log_event "info" "Trying to delete the record ..." "false"
 
-        delete=$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
+        delete="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
         -H "X-Auth-Email: ${auth_email}" \
         -H "X-Auth-Key: ${auth_key}" \
-        -H "Content-Type: application/json" >/dev/null)
+        -H "Content-Type: application/json" >/dev/null)"
         
     fi
 

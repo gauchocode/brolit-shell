@@ -198,7 +198,7 @@ if [ ! -x "${NETDATA}" ]; then
 
   while true; do
 
-    echo -e "${YELLOW} > Do you really want to install netdata?${ENDCOLOR}"
+    echo -e "${YELLOW}${ITALIC} > Do you really want to install netdata?${ENDCOLOR}"
     read -p "Please type 'y' or 'n'" yn
 
     log_section "Netdata Installer"
@@ -267,7 +267,7 @@ else
     if [[ ${NETDATA_CHOSEN_OPTION} == *"03"* ]]; then
 
       while true; do
-        echo -e "${YELLOW} > Do you really want to uninstall netdata?${ENDCOLOR}"
+        echo -e "${YELLOW}${ITALIC} > Do you really want to uninstall netdata?${ENDCOLOR}"
         read -p "Please type 'y' or 'n'" yn
         case $yn in
         [Yy]*)

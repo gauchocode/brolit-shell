@@ -1,10 +1,10 @@
 # TODO List
 
-## For release 3.0.3
+## For release 3.1
 
-### TODO
+### Know Bugs
 
-- [ ] IMPORTANT! When restore a backup and change project_name or/and project_domain the script fails:
+- [ ] When restore a backup and change project_name or/and project_domain the script fails:
         To create a propper nginx congiguration
         To replace wp-config.php parameters
         To change cloudflare config
@@ -14,25 +14,26 @@
 - [ ] Backups: make_project_backup is broken, need a refactor asap!
 - [ ] Nginx: put_project_offline need another aproach. Maybe put an index.html with message.
 
-### In Progress
-
-- [ ] Better code documentation.
-- [ ] Complete refactor on delete_project script.
-- [ ] Notifications: Subject status dont't change on error or warning.
-- [ ] Log/Display: better log handling and display improvements.
-
 ### Need more testing
 - [ ] WordPress: Install fails when set a project name like: xyz_sub_domain.
 - [ ] Backups: When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?).
 - [ ] Installers: On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages.
 - [ ] Nginx: New default nginx configuration for wordpress projects.
+- [ ] Complete refactor on delete_project script.
+
+### In Progress
+
+- [ ] Notifications: Subject status dont't change on error or warning.
+- [ ] Log/Display: Better log handling and display improvements.
+- [ ] Core: Refactor to let the script be runned with flags
 
 ### Done ✓
 
 - [x] WordPress: WP-CLI is required to the script works propperly, must install on script setup.
 - [x] Nginx: New option to put a website offline/online.
+- [x] Scheduled options: Add option to run on specific time.
 
-## For release 3.1
+## For release 3.2
 - [ ] IMPORTANT: make new standard directory structure for projects "${SITES}/${DOMAIN}/public"
       Logs could be stored on "${SITES}/${DOMAIN}/log"
 - [ ] IMPORTANT: Secure store for MySQL password: https://www.dokry.com/27126
@@ -45,18 +46,11 @@
 - [ ] Nginx: Better nginx config: https://www.digitalocean.com/community/tools/nginx
 - [ ] Nginx: Multidomain support for nginx.
 - [ ] LetsEncrypt: Need a better way to re-install a certificate after a website migration.
-- [ ] Scheduled options: backups, malware scans, image optimizations and wp actions (core and plugins updates, checksum and wp re-installation)
-- [ ] Backups: Support for dailys, weeklys y monthlys backups.
-- [ ] Notifications: malware scans and others scheduled options.
 - [ ] Backups: Refactor for backup/restore: 5 options (server_config, site_config, site, database and project).
-- [ ] Auto-update script option.
 - [ ] Solve small "TODOs" comments on the project.
 - [ ] PHP: php_reconfigure refactor (replace strings instead of replace entired config files)
-- [ ] Scheduled options: Add option to run on specific time.
-- [ ] SFTP: Support sftp_add_user
-- [ ] Add a method to auto-load scripts from /utils
 
-## For release 3.2
+## For release 3.3
 
 - [ ] Utils: Support for phpservermon: https://github.com/phpservermon/phpservermon
 - [ ] Nginx: Option to copy or generate a new nginx server configuration.
@@ -68,12 +62,17 @@
 - [ ] Backups: On backup failure, the email must show what files fails and what files are correct backuped.
 - [ ] Backups: Implement on restore_from_backup easy way to restore all sites.
 - [ ] Refactor of RESTORE_FROM_SOURCE and complete server config restore.
+- [ ] SFTP: Support sftp_add_user
+- [ ] Core: Add a method to auto-load scripts from /utils
 - [ ] Wordpress: Better wp-cli support 
  - [ ] Rollback plugins and core updates (wpcli_rollback_plugin_version on wpcli_helper.sh)
  - [ ] Buddypress support: https://github.com/buddypress/wp-cli-buddypress
 
-## For release 3.3
+## For release 3.4
 
+- [ ] Scheduled options: backups, malware scans, image optimizations and wp actions (core and plugins updates, checksum and wp re-installation)
+- [ ] Backups: Support for dailys, weeklys y monthlys backups.
+- [ ] Notifications: malware scans and others scheduled options.
 - [ ] Wordpress: When restore or create a project on PROD state, ask if want to run "wpcli_run_startup_script"
 - [ ] PHP: Option to enable or disable OpCache.
 - [ ] Installers: Refactor of WORDPRESS_INSTALLER - COPY_FROM_PROJECT
@@ -86,7 +85,7 @@
         So, if you need to install a new site, must ask what php_v to use.
 - [ ] Installers: Option to install Bashtop and other utils: http://packages.azlux.fr/
 
-## For release 3.4
+## For release 3.5
 
 - [ ] Backups: Directory Blacklist with whiptail (for backup configuration).
 - [ ] Server Optimization: Complete the pdf optimization process.
@@ -97,7 +96,7 @@
 - [ ] IT Utils: Control of mounted partitions or directories.
 - [ ] IT Utils: Better malware detection with https://github.com/rfxn/linux-malware-detect
 
-## For release 3.5
+## For release 3.6
 
 - [ ] Backups: Expand Duplicity support with a restore option.
 - [ ] Backups: Rsync support on mounted device or with SSH config.
@@ -112,8 +111,6 @@
 
 ## For release 4.0
 
-- [ ] Refactor to let the script be runned with flags
-        Ex: ./runner.sh --backup-project="/var/www/some.domain.com"
 - [ ] Support for Rclone? https://github.com/rclone/rclone
 - [ ] Better LEMP setup, tzdata y mysql_secure_installation without human intervention
 - [ ] User authentication support with roles (admin, backup-only, project-creation-only)

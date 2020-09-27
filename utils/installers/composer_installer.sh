@@ -3,26 +3,21 @@
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Version: 3.0.3
 ################################################################################
-
-### Checking some things
-if [[ -z "${SFOLDER}" ]]; then
-  echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
-  exit 0
-fi
-
+#
+# Ref: https://linuxize.com/post/how-to-install-and-use-composer-on-ubuntu-20-04/
+#
 ################################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
-#
-# Ref: https://linuxize.com/post/how-to-install-and-use-composer-on-ubuntu-20-04/
-#
 
 composer_install () {
 
-  local composer_result expected_signature actual_signature
+  local composer_result 
+  local expected_signature 
+  local actual_signature
 
   log_event "info" "Running composer installer" "true"
   
@@ -43,14 +38,15 @@ composer_install () {
   if [ "${composer_result}" -eq 0 ]; then
     rm composer-setup.php
 
-    log_event "success" "composer installer finished ok!" "true"
+    log_event "success" "Composer Installer finished" "false"
 
   else
-    log_event "error" "composer installer failed" "true"
+    log_event "error" "Composer Installer failed" "false"
 
   fi
   
-  return "${composer_result}"
+  # Return 
+  echo "${composer_result}"
 
 }
 

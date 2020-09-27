@@ -4,14 +4,6 @@
 # Version: 3.0.3
 ################################################################################
 
-### Checking some things
-if [[ -z "${SFOLDER}" ]]; then
-  echo -e "${B_RED} > Error: The script can only be runned by runner.sh! Exiting ...${ENDCOLOR}"
-  exit 1
-fi
-
-################################################################################
-
 # shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
 

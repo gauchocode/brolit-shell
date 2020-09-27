@@ -12,7 +12,11 @@ telegram_send_message() {
 	local notification_text=$1
 	local notification_type=$2
 
-	local timeout notif_sound notif_text notif_url notif_date
+	local timeout 
+	local notif_sound 
+	local notif_text 
+	local notif_url 
+	#local notif_date
 
 	display_mode="HTML"
 	
