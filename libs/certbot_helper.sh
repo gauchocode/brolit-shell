@@ -302,7 +302,7 @@ certbot_certificate_delete() {
   else
 
     while true; do
-      echo -e "${YELLOW}> Do you really want to delete de certificates for ${domains}?${ENDCOLOR}"
+      echo -e "${YELLOW}${ITALIC} > Do you really want to delete de certificates for ${domains}?${ENDCOLOR}"
       read -p -r "Please type 'y' or 'n'" yn
 
       case $yn in
