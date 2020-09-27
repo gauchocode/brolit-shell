@@ -105,8 +105,8 @@ backup_menu() {
       log_section "Backup All"
 
       # Preparing Mail Notifications Template
-      HTMLOPEN=$(mail_html_start)
-      BODY_SRV=$(mail_server_status_section "${SERVER_IP}")
+      HTMLOPEN="$(mail_html_start)"
+      BODY_SRV="$(mail_server_status_section "${SERVER_IP}")"
 
       # Running scripts
       
@@ -130,7 +130,7 @@ backup_menu() {
       MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
 
       # Checking result status for mail subject
-      EMAIL_STATUS=$(mail_subject_status "${STATUS_D}" "${STATUS_F}" "${STATUS_S}" "${OUTDATED}")
+      EMAIL_STATUS="$(mail_subject_status "${STATUS_D}" "${STATUS_F}" "${STATUS_S}" "${OUTDATED}")"
 
       log_event "info" "Sending Email to ${MAILA} ..." "false"
 

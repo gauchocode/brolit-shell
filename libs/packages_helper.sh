@@ -13,19 +13,20 @@ is_this_installed() {
 
   if [ "$(dpkg-query -W -f='${Status}' "${package}" 2>/dev/null | grep -c "ok installed")" == "1" ]; then
 
-    log_event "info" "${package} is installed" "true"
+    log_event "info" "${package} is installed" "false"
 
     # Return
     echo "true"
 
   else
 
-    log_event "info" "${package} is not installed" "true"
+    log_event "info" "${package} is not installed" "false"
 
     # Return
     echo "false"
 
   fi
+
 }
 
 install_package_if_not() {
@@ -39,7 +40,7 @@ install_package_if_not() {
     apt update -q4 &
     spinner_loading && apt install "${1}" -y
 
-    log_event "info" "${package} installed" "true"
+    log_event "info" "${package} installed" "false"
 
   fi
 
@@ -49,14 +50,17 @@ install_package_if_not() {
 # Ex: add_ppa ondrej/php ondrej/nginx
 add_ppa() {
 
+  local exit_status
+
   for i in "$@"; do
 
     grep -h "^deb.*$i" /etc/apt/sources.list.d/* >/dev/null 2>&1
-    if [ $? -ne 0 ]; then
+    exit_status=$?
+    if [ ${exit_status} -ne 0 ]; then
       echo "Adding ppa:$i"
-      add-apt-repository -y ppa:$i
+      add-apt-repository -y ppa:"${i}"
     else
-      echo "ppa:$i already exists"
+      echo "ppa:${i} already exists"
     fi
 
   done
@@ -296,20 +300,6 @@ timezone_configuration() {
 
 }
 
-#compare_package_versions() {
-#  OUTDATED=true
-#  #echo "" >${BAKWP}/pkg-${NOW}.mail
-#  for pk in ${PACKAGES[@]}; do
-#    PK_VI=$(apt-cache policy ${pk} | grep Installed | cut -d ':' -f 2)
-#    PK_VC=$(apt-cache policy ${pk} | grep Candidate | cut -d ':' -f 2)
-#    if [ ${PK_VI} != ${PK_VC} ]; then
-#      OUTDATED=false
-#      # TODO: meterlo en un array para luego loopear
-#      #echo " > ${pk} ${PK_VI} -> ${PK_VC} <br />" >>${BAKWP}/pkg-${NOW}.mail
-#    fi
-#  done
-#}
-
 remove_old_packages() {
 
   log_event "info" "Cleanning old system packages ..." "false"
@@ -333,6 +323,7 @@ install_image_optimize_packages() {
   apt-get --yes install jpegoptim optipng pngquant gifsicle imagemagick-* -qq > /dev/null
 
   log_event "info" "Installation finished" "false"
+  clear_last_line # need an extra call to clear installation output
   clear_last_line
   display --indent 2 --text "- Installing jpegoptim, optipng and imagemagick" --result "DONE" --color GREEN
 

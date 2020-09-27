@@ -4,6 +4,11 @@
 # Version: 3.0.3
 ################################################################################
 
+# shellcheck source=${SFOLDER}/libs/commons.sh
+source "${SFOLDER}/libs/commons.sh"
+
+################################################################################
+
 configure_monit(){
 
   if [ ! -x "${PHP_V}" ]; then
