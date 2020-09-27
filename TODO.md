@@ -5,11 +5,9 @@
 ### Know Bugs
 
 - [ ] When restore a backup and change project_name or/and project_domain the script fails:
-        To create a propper nginx congiguration
-        To replace wp-config.php parameters
-        To change cloudflare config
-        Need to re-run let's encrypt
-        Need to run "search and replace" script from wp-cli
+        - If the main domain detected is a root-domain like mydomain.com the "search and replace" 
+                will replace https://www.mydomain.com by https://www.test.mydomain.com
+        - If the main domain detected is not a root-domain, will failt to detect a proper project_name
 - [ ] Notifications: Email HTML breaks sometimes.
 - [ ] Backups: make_project_backup is broken, need a refactor asap!
 - [ ] Nginx: put_project_offline need another aproach. Maybe put an index.html with message.

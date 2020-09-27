@@ -47,32 +47,32 @@ wpcli_check_version() {
 
 wpcli_install() {
 
-    log_event "info" "Installing wp-cli ..." "false"
+    log_event "info" "Installing wp-cli ..."
 
     curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
 
     chmod +x wp-cli.phar
     sudo mv wp-cli.phar "/usr/local/bin/wp"
 
-    log_event "success" "wp-cli installed" "false"
+    log_event "success" "wp-cli installed"
     display --indent 2 --text "- Installing wp-cli" --result "DONE" --color GREEN
     
 }
 
 wpcli_update() {
 
-    log_event "info" "Running: wp-cli update" "false"
+    log_event "info" "Running: wp-cli update"
 
     wp cli update --quiet
 
-    log_event "success" "wp-cli installed" "false"
+    log_event "success" "wp-cli installed"
     display --indent 2 --text "- Updating wp-cli" --result "DONE" --color GREEN
 
 }
 
 wpcli_uninstall() {
 
-    log_event "warning" "Uninstalling wp-cli ..." "false"
+    log_event "warning" "Uninstalling wp-cli ..."
 
     rm "/usr/local/bin/wp"
 
@@ -97,28 +97,28 @@ wpcli_run_startup_script(){
     wp core install --url="${site_url}" --title="${site_name}" --admin_user="${wp_user_name}" --admin_password="${wp_user_passw}" --admin_email="${wp_user_mail}" --allow-root
 
     # Delete default post, page, and comment
-    wp site empty --yes --allow-root
+    wp site empty --yes --allow-root --quiet
 
     display --indent 2 --text "- Deleting default content" --result "DONE" --color GREEN
 
     # Delete default themes
-    wp theme delete twentyseventeen --allow-root
-    wp theme delete twentynineteen --allow-root
+    wp theme delete twentyseventeen --allow-root --quiet
+    wp theme delete twentynineteen --allow-root --quiet
 
     display --indent 2 --text "- Deleting default themes" --result "DONE" --color GREEN
 
     wp site empty --yes --allow-root
     
     # Delete default plugins
-    wp plugin delete akismet --allow-root
-    wp plugin delete hello --allow-root
+    wp plugin delete akismet --allow-root --quiet
+    wp plugin delete hello --allow-root --quiet
 
     display --indent 2 --text "- Deleting default plugins" --result "DONE" --color GREEN
     
-    wp rewrite structure '/%postname%/' --allow-root
+    wp rewrite structure '/%postname%/' --allow-root --quiet
     display --indent 2 --text "- Changing rewrite structure" --result "DONE" --color GREEN
 
-    wp option update default_comment_status closed --allow-root
+    wp option update default_comment_status closed --allow-root --quiet
     display --indent 2 --text "- Setting comments off" --result "DONE" --color GREEN
     #wp post create --post_type=page --post_status=publish --post_title='Home' --allow-root
 
@@ -142,9 +142,9 @@ wpcli_create_config(){
         wp_locale="es_ES"
     fi
 
-    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} config create --dbname=${database} --dbuser=${db_user_name} --dbpass=${db_user_passw} --locale=${wp_locale}" "false"
+    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} config create --dbname=${database} --dbuser=${db_user_name} --dbpass=${db_user_passw} --locale=${wp_locale}"
 
-    sudo -u www-data wp --path="${wp_site}" config create --dbname="${database}" --dbuser="${db_user_name}" --dbpass="${db_user_passw}" --locale="${wp_locale}"
+    sudo -u www-data wp --path="${wp_site}" config create --dbname="${database}" --dbuser="${db_user_name}" --dbpass="${db_user_passw}" --locale="${wp_locale}" --quiet
 
     display --indent 2 --text "- Creating wp-config" --result "DONE" --color GREEN
 
@@ -171,7 +171,7 @@ wpcli_set_salts() {
 
     log_event "info" "Running: sudo -u www-data wp --path=${wp_site} config shuffle-salts" "false"
 
-    sudo -u www-data wp --path="${wp_site}" config shuffle-salts
+    sudo -u www-data wp --path="${wp_site}" config shuffle-salts --quiet
 
     display --indent 2 --text "- Shuffle salts" --result "DONE" --color GREEN
 
@@ -231,14 +231,15 @@ wpcli_core_reinstall() {
 
     if [ "${wp_site}" != "" ]; then
 
-        log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core download --skip-content --force" "true"
+        log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core download --skip-content --force"
 
         wpcli_result=$(sudo -u www-data wp --path="${wp_site}" core download --skip-content --force 2>&1 | grep "Success" | cut -d ":" -f1)
 
         if [ "${wpcli_result}" = "Success" ]; then
 
             # Log Success
-            log_event "success" "Wordpress re-installed" "true"
+            log_event "success" "Wordpress re-installed"
+            display --indent 2 --text "- Wordpress re-install for ${wp_site}" --result "DONE" --color GREEN
 
             # Return
             echo "success"
@@ -246,18 +247,19 @@ wpcli_core_reinstall() {
         else
 
             # Log failure
-            log_event "fail" "Something went wrong installing WordPress" "true"
+            log_event "fail" "Something went wrong installing WordPress"
+            display --indent 2 --text "- Wordpress re-install for ${wp_site}" --result "FAIL" --color RED
 
             # Return
             echo "fail"
 
         fi
-
-        display --indent 2 --text "- Wordpress re-install for ${wp_site}" --result "DONE" --color GREEN
         
     else
         # Log failure
-        log_event "fail" "wp_site can't be empty!" "true"
+        log_event "fail" "wp_site can't be empty!"
+        display --indent 2 --text "- Wordpress re-install for ${wp_site}" --result "FAIL" --color RED
+        display --indent 4 --text "wp_site can't be empty"
 
         # Return
         echo "fail"
@@ -358,6 +360,8 @@ wpcli_delete_not_core_files() {
 
     local wp_site=$1
 
+    display --indent 2 --text "- Scanning for suspicious WordPress files" --result "DONE" --color GREEN
+
     mapfile -t wpcli_core_verify_results < <( wpcli_core_verify "${wp_site}" )
 
     for wpcli_core_verify_result in "${wpcli_core_verify_results[@]}"
@@ -370,14 +374,16 @@ wpcli_delete_not_core_files() {
         
         if test -f "${wp_site}/${wpcli_core_verify_result_file}"; then
 
-            log_event "info" "Deleting not core file: ${wp_site}/${wpcli_core_verify_result_file}" "true"
+            log_event "info" "Deleting not core file: ${wp_site}/${wpcli_core_verify_result_file}"
+            display --indent 4 --text "Suspicious file: ${wpcli_core_verify_result_file}"
             rm "${wp_site}/${wpcli_core_verify_result_file}"
 
         fi
 
     done
 
-    log_event "info" "All unknown files in WordPress core deleted!" "true"
+    log_event "info" "All unknown files in WordPress core deleted!"
+    display --indent 2 --text "- Deleting suspicious WordPress files" --result "DONE" --color GREEN
 
 }
 
@@ -385,6 +391,7 @@ wpcli_maintenance_mode_status() {
 
     WPCLI_V=$(sudo -u www-data wp --info | grep "WP-CLI version:" | cut -d ':' -f2)
 
+    # Return
     echo "${WPCLI_V}"
 
 }
@@ -480,7 +487,13 @@ wpcli_install_plugin() {
     local wp_site=$1
     local plugin=$2
 
-    sudo -u www-data wp --path="${wp_site}" plugin install "${plugin}" --activate
+    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} plugin install ${plugin} --activate"
+    display --indent 2 --text "- Installing and activating plugin ${plugin}"
+
+    sudo -u www-data wp --path="${wp_site}" plugin install "${plugin}" --activate --quiet
+
+    clear_last_line
+    display --indent 2 --text "- Installing plugin ${plugin}" --result "DONE" --color GREEN
 
 }
 
@@ -492,9 +505,12 @@ wpcli_delete_plugin() {
     local wp_site=$1
     local plugin=$2
 
-    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} plugin delete ${plugin}" "false"
-    sudo -u www-data wp --path="${wp_site}" plugin delete "${plugin}"
+    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} plugin delete ${plugin}"
+    display --indent 2 --text "- Deleting plugin ${plugin}" --result "DONE" --color GREEN
+    
+    sudo -u www-data wp --path="${wp_site}" plugin delete "${plugin}" --quiet
 
+    clear_last_line
     display --indent 2 --text "- Deleting plugin ${plugin}" --result "DONE" --color GREEN
 
 }
