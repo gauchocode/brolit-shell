@@ -34,6 +34,7 @@
 - [x] Scheduled options: Add option to run on specific time.
 
 ## For release 3.2
+
 - [ ] IMPORTANT: make new standard directory structure for projects "${SITES}/${DOMAIN}/public"
       Logs could be stored on "${SITES}/${DOMAIN}/log"
 - [ ] IMPORTANT: Secure store for MySQL password: https://www.dokry.com/27126
@@ -52,6 +53,7 @@
 
 ## For release 3.3
 
+- [ ] Core: Accept command via Telegram: https://github.com/topkecleon/telegram-bot-bash
 - [ ] Utils: Support for phpservermon: https://github.com/phpservermon/phpservermon
 - [ ] Nginx: Option to copy or generate a new nginx server configuration.
 - [ ] Nginx: Globals configs support.

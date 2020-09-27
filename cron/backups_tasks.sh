@@ -16,7 +16,7 @@ source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
 
-log_event "info" "Running backups_tasks.sh" "true"
+log_event "info" "Running backups_tasks.sh"
 
 if [ -t 1 ]; then
 
@@ -33,9 +33,9 @@ else
   source "${SFOLDER}/libs/mail_notification_helper.sh"
 
   # Running from cron
-  log_event "info" "Running backups_taks.sh from cron ..." "false"
+  log_event "info" "Running backups_taks.sh from cron ..."
 
-  log_event "info" "Running apt update ..." "false"
+  log_event "info" "Running apt update ..."
 
   # Update packages index
   apt update
@@ -77,7 +77,7 @@ else
   EMAIL_STATUS=$(mail_subject_status "${STATUS_D}" "${STATUS_F}" "${STATUS_S}" "${OUTDATED}")
 
   # Preparing email to send
-  log_event "info" "Sending Email to ${MAILA} ..." "false"
+  log_event "info" "Sending Email to ${MAILA} ..."
 
   EMAIL_SUBJECT="${EMAIL_STATUS} on ${VPSNAME} Running Complete Backup - [${NOWDISPLAY}]"
   EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${PKG_MAIL_VAR} ${CERT_MAIL_VAR} ${CONFIG_MAIL_VAR} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
