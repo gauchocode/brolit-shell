@@ -10,16 +10,16 @@ is_wp_project() {
 
   local project_dir=$1
 
-  log_event "info" "Checking if ${project_dir} is a WordPress project ..." "false"
+  log_event "info" "Checking if ${project_dir} is a WordPress project ..."
 
   # Check if it has wp-config.php
   if [[ -f "${project_dir}/wp-config.php" ]]; then
     is_wp="true"
-    log_event "info" "${project_dir} is a WordPress project" "false"
+    log_event "info" "${project_dir} is a WordPress project"
 
   else
     is_wp="false"
-    log_event "info" "${project_dir} is not a WordPress project" "false"
+    log_event "info" "${project_dir} is not a WordPress project"
 
   fi
 
@@ -131,7 +131,7 @@ wp_replace_string_on_database() {
     db_prefix=$(whiptail --title "WordPress DB Prefix" --inputbox "Please insert the WordPress Database Prefix. Example: wp_" 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      log_event "info" "Setting db_prefix=${db_prefix}" "false"
+      log_event "info" "Setting db_prefix=${db_prefix}"
     else
       return 1
     fi
@@ -146,7 +146,7 @@ wp_replace_string_on_database() {
     chosen_db=$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to work with" 20 78 10 `for x in ${DBS}; do echo "$x [DB]"; done` 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [ $exitstatus = 0 ]; then
-      log_event "info" "Setting chosen_db=${chosen_db}" "false"
+      log_event "info" "Setting chosen_db=${chosen_db}"
     else
       return 1
     fi
@@ -160,7 +160,7 @@ wp_replace_string_on_database() {
     existing_URL=$(whiptail --title "URL TO CHANGE" --inputbox "Insert the URL you want to change, including http:// or https://" 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
 
-    log_event "info" "Setting existing_URL=${existing_URL}" "false"
+    log_event "info" "Setting existing_URL=${existing_URL}"
 
     if [ ${exitstatus} = 0 ]; then
 
@@ -170,12 +170,12 @@ wp_replace_string_on_database() {
 
         if [ ${exitstatus} = 0 ]; then
 
-          log_event "info" "Setting new_URL=${new_URL}" "false"
-          log_event "info" "Executing mysqldump of ${chosen_db} before replace urls ..." "false"
+          log_event "info" "Setting new_URL=${new_URL}"
+          log_event "info" "Executing mysqldump of ${chosen_db} before replace urls ..."
 
           ${MYSQLDUMP} -u "${MUSER}" --password="${MPASS}" "${chosen_db}" > "${chosen_db}_bk_before_replace_urls.sql"
 
-          log_event "success" "Database backup created: ${chosen_db}_bk_before_replace_urls.sql" "true"
+          log_event "success" "Database backup created: ${chosen_db}_bk_before_replace_urls.sql"
 
           # Queries
           SQL0="USE ${chosen_db};"
@@ -187,11 +187,11 @@ wp_replace_string_on_database() {
           SQL6="UPDATE ${db_prefix}links SET link_url = replace(link_url, '${existing_URL}','${new_URL}');"
           SQL7="UPDATE ${db_prefix}comments SET comment_content = replace(comment_content , '${existing_URL}','${new_URL}');"
 
-          log_event "info" "Replacing URLs in database ${chosen_db} ..." "true"
+          log_event "info" "Replacing URLs in database ${chosen_db} ..."
 
           ${MYSQL} -u "${MUSER}" --password="${MPASS}" -e "${SQL0}${SQL1}${SQL2}${SQL3}${SQL4}${SQL5}${SQL6}${SQL7}"
 
-          log_event "success" "String replaced on database ${chosen_db} ..." "true"
+          log_event "success" "String replaced on database ${chosen_db} ..."
 
         fi
 
@@ -233,7 +233,7 @@ wp_ask_url_search_and_replace() {
 
           wpcli_export_database "${wp_path}" "${SFOLDER}/tmp-backup/${project_name}_bk_before_replace_urls.sql"
 
-          log_event "info" "Setting the new URL ${new_URL} on wordpress database" "true"
+          log_event "info" "Setting new URL ${new_URL} on wordpress database"
 
           wpcli_search_and_replace "${wp_path}" "${existing_URL}" "${new_URL}"
 
