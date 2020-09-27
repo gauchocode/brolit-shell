@@ -94,36 +94,36 @@ if [ -t 1 ]; then
 
       done
 
-    fi
+        case $TASK in
 
-    case $TASK in
+          project-backup)
+            echo "TODO: run project-backup for $SITE"
+            exit
+            ;;
 
-        project-backup)
-          echo "TODO: run project-backup for $SITE"
-          exit
+          project-restore)
+            echo "TODO: run project-restore for $SITE"
+            exit
           ;;
 
-        project-restore)
-          echo "TODO: run project-restore for $SITE"
-          exit
-        ;;
+          project-install)
+            echo "TODO: run project-install for $SITE"
+            exit
+          ;;
 
-        project-install)
-          echo "TODO: run project-install for $SITE"
-          exit
-        ;;
+          cloudflare-api)
+            echo "TODO: run cloudflare-api for $SITE"
+            exit
+          ;;
 
-        cloudflare-api)
-          echo "TODO: run cloudflare-api for $SITE"
-          exit
-        ;;
+          *)
+            echo "INVALID TASK: $TASK" >&2
+            #ExitFatal
+          ;;
+      
+      esac
 
-        *)
-          echo "INVALID TASK: $TASK" >&2
-          #ExitFatal
-        ;;
-    
-    esac
+    fi
 
   fi
 
