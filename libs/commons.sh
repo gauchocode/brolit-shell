@@ -465,6 +465,8 @@ cron_script_tasks() {
 
 security_utils_menu () {
 
+  # TODO: new options? https://upcloud.com/community/tutorials/scan-ubuntu-server-malware/
+
   local security_options chosen_security_options
 
   security_options=("01)" "CLAMAV MALWARE SCAN" "02)" "CUSTOM MALWARE SCAN" "03)" "LYNIS SYSTEM AUDIT")
