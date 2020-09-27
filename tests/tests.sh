@@ -30,6 +30,9 @@ source "${SFOLDER}/libs/wpcli_helper.sh"
 ####################### Test for Mails #######################
 
 test_mail_cert_section() {
+
+    local email_subject
+    local email_content
     
     display --indent 2 --text "- Running test_mail_cert_section"
 
@@ -41,11 +44,11 @@ test_mail_cert_section() {
     # Preparing email to send
     log_event "info" "Sending Email to ${MAILA} ..." "false"
 
-    EMAIL_SUBJECT="${STATUS_ICON_D} ${VPSNAME} - Cert Expiration Info - [${NOWDISPLAY}]"
-    EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${CERT_MAIL_VAR} ${MAIL_FOOTER}"
+    email_subject="${STATUS_ICON_D} ${VPSNAME} - Cert Expiration Info - [${NOWDISPLAY}]"
+    email_content="${HTMLOPEN} ${BODY_SRV} ${CERT_MAIL_VAR} ${MAIL_FOOTER}"
 
     # Sending email notification
-    send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
+    send_mail_notification "${email_subject}" "${email_content}"
 
     clear_last_line
     display --indent 2 --text "- Running test_mail_cert_section" --result "DONE" --color GREEN
@@ -64,11 +67,11 @@ test_mail_package_section() {
     # Preparing email to send
     log_event "info" "Sending Email to ${MAILA} ..." "false"
 
-    EMAIL_SUBJECT="${EMAIL_STATUS} on ${VPSNAME} Packages Status Info - [${NOWDISPLAY}]"
-    EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${PKG_MAIL_VAR} ${MAIL_FOOTER}"
+    email_subject="${EMAIL_STATUS} on ${VPSNAME} Packages Status Info - [${NOWDISPLAY}]"
+    email_content="${HTMLOPEN} ${BODY_SRV} ${PKG_MAIL_VAR} ${MAIL_FOOTER}"
 
     # Sending email notification
-    send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
+    send_mail_notification "${email_subject}" "${email_content}"
 
     clear_last_line
     display --indent 2 --text "- Running test_mail_package_section" --result "DONE" --color GREEN

@@ -4,13 +4,6 @@
 # Version: 3.0.3
 ################################################################################
 
-### Checking some things
-if [[ -z "${SFOLDER}" ]]; then
-  echo -e "${RED} > Error: The script can only be runned by runner.sh! Exiting ...${ENDCOLOR}"
-  exit 0
-fi
-################################################################################
-
 # shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
 # shellcheck source=${SFOLDER}/libs/packages_helper.sh
@@ -30,13 +23,20 @@ if ! grep -q "^deb .*$the_ppa" /etc/apt/sources.list /etc/apt/sources.list.d/*; 
   #echo " > Adding ppa:certbot/certbot ..." >>$LOG
   #add-apt-repository ppa:certbot/certbot
 
+  # Updating Repos
+  display --indent 2 --text "- Updating repositories"
   apt-get --yes update -qq > /dev/null
+  clear_last_line
+  display --indent 2 --text "- Updating repositories" --result "DONE" --color GREEN
 
-  log_event "info" "Installing python3-certbot-dns-cloudflare and python3-certbot-nginx" "false"
-
+  # Installing Certbot
+  display --indent 2 --text "- Installing certbot and dependencies"
+  log_event "info" "Installing python3-certbot-dns-cloudflare and python3-certbot-nginx"
   apt-get --yes install python3-certbot-dns-cloudflare python3-certbot-nginx -qq > /dev/null
+  clear_last_line
+  display --indent 2 --text "- Installing certbot and dependencies" --result "DONE" --color GREEN
 
-  log_event "info" "certbot installation done!" "true"
+  log_event "info" "certbot installation finished"
 
 else
 

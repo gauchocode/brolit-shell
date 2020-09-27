@@ -24,25 +24,27 @@ mail_subject_status() {
     # $1 = ${status_d} // Database backup status
     # $2 = ${status_f} // Files backup status
     # $3 = ${status_s} // Server status
-    # $4 = ${outdated} // System Packages status
+    # $4 = ${status_c} // Certificates status
+    # $5 = ${outdated} // System Packages status
 
     local status_d=$1
     local status_f=$2
     local status_s=$3
-    local outdated=$4
+    local status_c=$4
+    local outdated=$5
 
     local status
 
-    if [[ "${status_d}" == *"ERROR"* ]] || [[ "${status_f}" == *"ERROR"* ]] || [[ "${status_s}" == *"ERROR"* ]]; then
+    if [[ "${status_d}" == *"ERROR"* ]] || [[ "${status_f}" == *"ERROR"* ]] || [[ "${status_s}" == *"ERROR"* ]] || [[ "${status_c}" == *"ERROR"* ]]; then
         status="⛔ ERROR"
-        #STATUS_ICON="⛔"
+
     else
         if [[ "${outdated}" = true ]]; then
             status="⚠ WARNING"
-            #STATUS_ICON="⚠"
+
         else
             status="✅ OK"
-            #STATUS_ICON="✅"
+
         fi
     fi
 
@@ -73,7 +75,22 @@ mail_server_status_section() {
 
     local IP=$1
 
-    local disk_u disk_u_ns
+    declare -g STATUS_S     # Global to check section status
+
+    local disk_u 
+    local disk_u_ns
+    local status_s_icon
+    local status_s_color
+    local header_open1
+    local header_open2
+    local header_open3
+    local header_text
+    local header_close
+    local body_open
+    local content
+    local body_close
+    local srv_body
+    local body
 
     ### Disk Usage
     disk_u=$(calculate_disk_usage "${MAIN_VOL}")
@@ -89,41 +106,51 @@ mail_server_status_section() {
         STATUS_S="WARNING"
 
         # Changing locals
-        STATUS_S_ICON="⚠"
-        STATUS_S_COLOR="#fb2f2f"
+        status_s_icon="⚠"
+        status_s_color="#fb2f2f"
 
     else
         # Changing global
         STATUS_S="OK"
 
         # Changing locals
-        STATUS_S_ICON="✅"
-        STATUS_S_COLOR="#503fe0"
+        status_s_icon="✅"
+        status_s_color="#503fe0"
         
     fi
 
-    SRV_HEADEROPEN_1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
-    SRV_HEADEROPEN_2="${STATUS_S_COLOR}"
-    SRV_HEADEROPEN_3=";padding:5px 0 10px 10px;width:100%;height:30px\">"
-    SRV_HEADERTEXT="Server Status: ${STATUS_S} ${STATUS_S_ICON}"
-    SRV_HEADERCLOSE="</div>"
-    SRV_HEADER="${SRV_HEADEROPEN_1}${SRV_HEADEROPEN_2}${SRV_HEADEROPEN_3}${SRV_HEADERTEXT}${SRV_HEADERCLOSE}"
+    header_open1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
+    header_open2="${status_s_color}"
+    header_open3=";padding:5px 0 10px 10px;width:100%;height:30px\">"
+    header_text="Server Status: ${STATUS_S} ${status_s_icon}"
+    header_close="</div>"
+    header="${header_open1}${header_open2}${header_open3}${header_text}${header_close}"
 
-    SRV_BODYOPEN="<div style=\"color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;\">"
-    SRV_CONTENT="<b>Server IP: ${IP}</b><br /><b>Disk usage: ${disk_u}</b><br />"
-    SRV_BODYCLOSE="</div></div>"
-    SRV_BODY="${SRV_BODYOPEN}${SRV_CONTENT}${SRV_BODYCLOSE}"
+    body_open="<div style=\"color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;\">"
+    content="<b>Server IP: ${IP}</b><br /><b>Disk usage: ${disk_u}</b><br />"
+    body_close="</div></div>"
+    srv_body="${body_open}${content}${body_close}"
 
-    BODY_SRV="${SRV_HEADER}${SRV_BODY}"
+    body="${header}${srv_body}"
 
     # Return
-    echo "${BODY_SRV}"
+    echo "${body}"
 
 }
 
 mail_package_status_section() {
 
     local pkg_details
+    local pkg_color
+    local pkg_status
+    local pkg_status_icon
+    local pkg_header
+    local header_open
+    local header_open1
+    local header_open2
+    local body_open
+    local body_close
+    local pkg_body
 
     # Check for important packages updates
     pkg_details=$(mail_package_section "${PACKAGES[@]}") # ${PACKAGES[@]} is a Global array with packages names
@@ -133,33 +160,31 @@ mail_package_status_section() {
         
         OUTDATED=true
 
-        PKG_COLOR="#b51c1c"
-        PKG_STATUS="OUTDATED"
-        PKG_STATUS_ICON="⚠"
+        pkg_color="#b51c1c"
+        pkg_status="OUTDATED"
+        pkg_status_icon="⚠"
     else
-        PKG_COLOR='#503fe0'
-        PKG_STATUS="OK"
-        PKG_STATUS_ICON="✅"
+        pkg_color='#503fe0'
+        pkg_status="OK"
+        pkg_status_icon="✅"
+
     fi
 
-    PKG_HEADEROPEN1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
-    PKG_HEADEROPEN2=";padding:5px 0 10px 10px;width:100%;height:30px\">"
-    PKG_HEADEROPEN="${PKG_HEADEROPEN1}${PKG_COLOR}${PKG_HEADEROPEN2}"
-    PKG_HEADERTEXT="Packages Status: ${PKG_STATUS} ${PKG_STATUS_ICON}"
-    PKG_HEADERCLOSE="</div>"
+    header_open1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
+    header_open2=";padding:5px 0 10px 10px;width:100%;height:30px\">"
+    header_open="${header_open1}${pkg_color}${header_open2}"
+    header_text="Packages Status: ${pkg_status} ${pkg_status_icon}"
+    header_close="</div>"
 
-    PKG_BODYOPEN=$(mail_section_start)
-    
+    body_open="$(mail_section_start)"
     pkg_details="<div>${pkg_details}</div>"
+    body_close="$(mail_section_end)"
 
-    PKG_BODYCLOSE=$(mail_section_end)
-
-    PKG_HEADER="${PKG_HEADEROPEN}${PKG_HEADERTEXT}${PKG_HEADERCLOSE}"
-
-    BODY_PKG="${PKG_HEADER}${PKG_BODYOPEN}${pkg_details}${PKG_BODYCLOSE}"
+    pkg_header="${header_open}${header_text}${header_close}"
+    pkg_body="${pkg_header}${body_open}${pkg_details}${body_close}"
 
     # Write e-mail parts files
-    echo "${BODY_PKG}" >"${BAKWP}/pkg-${NOW}.mail"
+    echo "${pkg_body}" >"${BAKWP}/pkg-${NOW}.mail"
 
 }
 
@@ -169,14 +194,16 @@ mail_package_section() {
 
     local -n PACKAGES=$1
 
-    local package package_version_installed package_version_candidate
+    local package 
+    local package_version_installed 
+    local package_version_candidate
 
     for package in "${PACKAGES[@]}"; do
 
-        package_version_installed=$(apt-cache policy "${package}" | grep Installed | cut -d ':' -f 2)
+        package_version_installed="$(apt-cache policy "${package}" | grep Installed | cut -d ':' -f 2)"
         if [ "${package_version_installed}" = "(none)" ] && [ "${package}" = "mysql-server" ];then
             package="mariadb-server"
-            package_version_installed=$(apt-cache policy "${package}" | grep Installed | cut -d ':' -f 2)
+            package_version_installed="$(apt-cache policy "${package}" | grep Installed | cut -d ':' -f 2)"
         fi
 
         package_version_candidate=$(apt-cache policy "${package}" | grep Candidate | cut -d ':' -f 2)
@@ -184,7 +211,7 @@ mail_package_section() {
         if [ "${package_version_installed}" != "${package_version_candidate}" ]; then
 
             # Return
-            echo "${package} ${package_version_installed} -> ${package_version_candidate}"
+            echo "<div style=\"color:#000;font-size:12px;line-height:24px;padding-left:10px;\">${package} ${package_version_installed} -> ${package_version_candidate}</div>"
 
         fi
 
@@ -194,17 +221,25 @@ mail_package_section() {
 
 mail_cert_section() {
 
-    local domain all_sites cert_days email_cert_line email_cert_new_line
+    local domain
+    local all_sites
+    local cert_days
+    local email_cert_line
+    local email_cert_new_line
+    local email_cert_header_open
+    local email_cert_header_text
+    local email_cert_header_close
+    local header_open1
+    local header_open2
+    local cert_status_icon
 
-#    # Changing global
-#    STATUS_CERT="OK"
-#
-#    # Changing locals
-#    STATUS_ICON_CERT="✅"        
-    CONTENT=""
-    COLOR="#503fe0"
-    SIZE_LABEL=""
-    FILES_LABEL="<b>Sites certificate expiration days:</b><br /><div style=\"color:#000;font-size:12px;line-height:24px;padding-left:10px;\">"
+    # Changing global
+    declare -g CERT_STATUS="OK"
+
+    # Changing locals
+    cert_status_icon="✅"        
+    cert_status_color="#503fe0"
+    files_label="<b>Sites certificate expiration days:</b><br /><div style=\"color:#000;font-size:12px;line-height:24px;padding-left:10px;\">"
     email_cert_line=""
 
     # This fix avoid getting the first parent directory, maybe we could find a better solution
@@ -234,6 +269,9 @@ mail_cert_section() {
                     # GREY LABEL
                     email_cert_days_container=" <span style=\"color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;\">"
                     email_cert_days="${email_cert_days_container} no certificate"
+                    cert_status_icon="⚠️"
+                    cert_status_color="red"
+                    CERT_STATUS="Warning"
                 
                 else #certificate found
 
@@ -247,6 +285,9 @@ mail_cert_section() {
                         else
                             # RED LABEL
                             email_cert_days_container=" <span style=\"color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;\">"
+                            cert_status_icon="⚠️"
+                            cert_status_color="red"
+                            CERT_STATUS="Warning"
                         fi
 
                     fi
@@ -265,23 +306,24 @@ mail_cert_section() {
 
     done
 
-    FILES_LABEL_END="</div>"
+    files_label_end="</div>"
 
-    HEADEROPEN1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
-    HEADEROPEN2=";padding:5px 0 10px 10px;width:100%;height:30px\">"
-    email_cert_header_open="${HEADEROPEN1}${COLOR}${HEADEROPEN2}"
-    email_cert_header_text="Certificates on server: ${STATUS_F} ${STATUS_ICON_F}"
+    header_open1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
+    header_open2=";padding:5px 0 10px 10px;width:100%;height:30px\">"
+    email_cert_header_open="${header_open1}${cert_status_color}${header_open2}"
+    email_cert_header_text="Certificates on server: ${CERT_STATUS} ${cert_status_icon}"
     email_cert_header_close="</div>"
 
-    BODYOPEN="<div style=\"color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;\">"
-    BODYCLOSE="</div></div>"
+    body_open="<div style=\"color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;\">"
+    body_close="</div></div>"
 
-    HEADER="${email_cert_header_open}${email_cert_header_text}${email_cert_header_close}"
-    BODY="${BODYOPEN}${CONTENT}${FILES_LABEL}${email_cert_line}${FILES_LABEL_END}${BODYCLOSE}"
+    header="${email_cert_header_open}${email_cert_header_text}${email_cert_header_close}"
+    body="${body_open}${files_label}${email_cert_line}${files_label_end}${body_close}"
+    #body="${body_open}${CONTENT}${files_label}${email_cert_line}${files_label_end}${body_close}"
 
     # Write e-mail parts files
-    echo "${HEADER}" >"${BAKWP}/cert-${NOW}.mail"
-    echo "${BODY}" >>"${BAKWP}/cert-${NOW}.mail"
+    echo "${header}" >"${BAKWP}/cert-${NOW}.mail"
+    echo "${body}" >>"${BAKWP}/cert-${NOW}.mail"
 
 }
 
@@ -297,7 +339,21 @@ mail_filesbackup_section() {
     local ERROR=$3
     local ERROR_TYPE=$4
 
-    BK_TYPE='Files'
+    declare -g STATUS_F
+
+    local header
+    local body
+    local header_open1
+    local header_open2
+    local header_open
+    local header_text
+    local header_close
+    local body_open
+    local body_close
+
+    local backup_type
+
+    backup_type='Files'
 
     if [ "$ERROR" = true ]; then
 
@@ -305,8 +361,8 @@ mail_filesbackup_section() {
         STATUS_F="ERROR"
 
         # Changing locals
-        STATUS_ICON_F="💩"        
-        CONTENT="<b>${BK_TYPE} Backup Error: ${ERROR_TYPE}<br />Please check log file.</b> <br />"
+        status_icon_f="💩"        
+        content="<b>${backup_type} Backup Error: ${ERROR_TYPE}<br />Please check log file.</b> <br />"
         COLOR="red"
 
     else
@@ -315,18 +371,18 @@ mail_filesbackup_section() {
         STATUS_F="OK"
 
         # Changing locals
-        STATUS_ICON_F="✅"
-        CONTENT=""
+        status_icon_f="✅"
+        content=""
         COLOR="#503fe0"
         SIZE_LABEL=""
-        FILES_LABEL="<b>Backup files includes:</b><br /><div style=\"color:#000;font-size:12px;line-height:24px;padding-left:10px;\">"
+        files_label="<b>Backup files includes:</b><br /><div style=\"color:#000;font-size:12px;line-height:24px;padding-left:10px;\">"
         FILES_INC=""
 
-        COUNT=0
+        count=0
 
         for backup_file in "${BACKUPED_LIST[@]}"; do
                      
-            BK_FL_SIZE="${BK_FL_SIZES[$COUNT]}"
+            BK_FL_SIZE="${BK_FL_SIZES[$count]}"
 
             FILES_INC_LINE_P1="<div><span style=\"margin-right:5px;\">"
             FILES_INC_LINE_P2="${FILES_INC}${backup_file}"
@@ -336,11 +392,11 @@ mail_filesbackup_section() {
 
             FILES_INC="${FILES_INC_LINE_P1}${FILES_INC_LINE_P2}${FILES_INC_LINE_P3}${FILES_INC_LINE_P4}${FILES_INC_LINE_P5}"
 
-            COUNT=$((COUNT + 1))
+            count=$((count + 1))
 
         done
 
-        FILES_LABEL_END="</div>"
+        files_label_end="</div>"
 
         if [ "${DUP_BK}" = true ]; then
             DBK_SIZE=$(du -hs "${DUP_ROOT}" | cut -f1)
@@ -350,25 +406,27 @@ mail_filesbackup_section() {
 
     fi
 
-    HEADEROPEN1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
-    HEADEROPEN2=';padding:5px 0 10px 10px;width:100%;height:30px">'
-    HEADEROPEN="${HEADEROPEN1}${COLOR}${HEADEROPEN2}"
-    HEADERTEXT="Files Backup: ${STATUS_F} ${STATUS_ICON_F}"
-    HEADERCLOSE="</div>"
+    # Header
+    header_open1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
+    header_open2=';padding:5px 0 10px 10px;width:100%;height:30px">'
+    header_open="${header_open1}${COLOR}${header_open2}"
+    header_text="Files Backup: ${STATUS_F} ${status_icon_f}"
+    header_close="</div>"
 
-    BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
-    BODYCLOSE="</div></div>"
+    # Body
+    body_open='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
+    body_close="</div></div>"
 
     #MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
 
-    HEADER="${HEADEROPEN}${HEADERTEXT}${HEADERCLOSE}"
-    BODY="${BODYOPEN}${CONTENT}${SIZE_LABEL}${FILES_LABEL}${FILES_INC}${FILES_LABEL_END}${DBK_SIZE_LABEL}${BODYCLOSE}"
-    FOOTER="${FOOTEROPEN}${SCRIPTSTRING}${FOOTERCLOSE}"
+    header="${header_open}${header_text}${header_close}"
+    body="${body_open}${content}${SIZE_LABEL}${files_label}${FILES_INC}${files_label_end}${DBK_SIZE_LABEL}${body_close}"
+    #footer="${FOOTEROPEN}${SCRIPTSTRING}${FOOTERCLOSE}"
 
     # Write e-mail parts files
-    echo "${HEADER}" >"${BAKWP}/file-bk-${NOW}.mail"
-    echo "${BODY}" >>"${BAKWP}/file-bk-${NOW}.mail"
-    echo "${FOOTER}" >>"${BAKWP}/file-bk-${NOW}.mail"
+    echo "${header}" >"${BAKWP}/file-bk-${NOW}.mail"
+    echo "${body}" >>"${BAKWP}/file-bk-${NOW}.mail"
+    #echo "${footer}" >>"${BAKWP}/file-bk-${NOW}.mail"
 
 }
 
@@ -384,9 +442,26 @@ mail_configbackup_section() {
     local ERROR=$3
     local ERROR_TYPE=$4
 
-    local count files_inc files_inc_line_p1 files_inc_line_p2 files_inc_line_p3 files_inc_line_p4 files_inc_line_p5 bk_scf_size
+    local count
+    local status_icon_f
+    local content
+    local color
+    local header
+    local body
+    local count files_inc 
+    local files_inc_line_p1 
+    local files_inc_line_p2 
+    local files_inc_line_p3 
+    local files_inc_line_p4 
+    local files_inc_line_p5 
+    local bk_scf_size
+    local header_open1
+    local header_open2
+    local header_open
 
-    BK_TYPE="Config"
+    local backup_type
+
+    backup_type="Config"
 
     if [ "${ERROR}" = true ]; then
 
@@ -394,9 +469,9 @@ mail_configbackup_section() {
         STATUS_F='ERROR'
 
         # Changing locals
-        STATUS_ICON_F="💩"        
-        CONTENT="<b>${BK_TYPE} Backup Error: ${ERROR_TYPE}<br />Please check log file.</b> <br />"
-        COLOR="red"
+        status_icon_f="💩"        
+        content="<b>${backup_type} Backup Error: ${ERROR_TYPE}<br />Please check log file.</b> <br />"
+        color="red"
 
     else
 
@@ -404,11 +479,11 @@ mail_configbackup_section() {
         STATUS_F="OK"
 
         # Changing locals
-        STATUS_ICON_F="✅"
-        CONTENT=""
-        COLOR="#503fe0"
+        status_icon_f="✅"
+        content=""
+        color="#503fe0"
         SIZE_LABEL=""
-        FILES_LABEL="<b>Backup files includes:</b><br /><div style=\"color:#000;font-size:12px;line-height:24px;padding-left:10px;\">"
+        files_label="<b>Backup files includes:</b><br /><div style=\"color:#000;font-size:12px;line-height:24px;padding-left:10px;\">"
         files_inc=""
 
         count=0
@@ -429,29 +504,29 @@ mail_configbackup_section() {
 
         done
 
-        FILES_LABEL_END="</div>"
+        files_label_end="</div>"
 
     fi
 
-    HEADEROPEN1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
-    HEADEROPEN2=';padding:5px 0 10px 10px;width:100%;height:30px">'
-    HEADEROPEN="${HEADEROPEN1}${COLOR}${HEADEROPEN2}"
-    HEADERTEXT="Config Backup: ${STATUS_F} ${STATUS_ICON_F}"
-    HEADERCLOSE="</div>"
+    header_open1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
+    header_open2=';padding:5px 0 10px 10px;width:100%;height:30px">'
+    header_open="${header_open1}${color}${header_open2}"
+    header_text="Config Backup: ${STATUS_F} ${status_icon_f}"
+    header_close="</div>"
 
-    BODYOPEN='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
-    BODYCLOSE="</div></div>"
+    body_open='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
+    body_close="</div></div>"
 
     #MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
 
-    HEADER="${HEADEROPEN}${HEADERTEXT}${HEADERCLOSE}"
-    BODY="${BODYOPEN}${CONTENT}${SIZE_LABEL}${FILES_LABEL}${files_inc}${FILES_LABEL_END}${DBK_SIZE_LABEL}${BODYCLOSE}"
-    FOOTER="${FOOTEROPEN}${SCRIPTSTRING}${FOOTERCLOSE}"
+    header="${header_open}${header_text}${header_close}"
+    body="${body_open}${content}${SIZE_LABEL}${files_label}${files_inc}${files_label_end}${DBK_SIZE_LABEL}${body_close}"
+    #FOOTER="${FOOTEROPEN}${SCRIPTSTRING}${FOOTERCLOSE}"
 
     # Write e-mail parts files
-    echo "${HEADER}" >"${BAKWP}/config-bk-${NOW}.mail"
-    echo "${BODY}" >>"${BAKWP}/config-bk-${NOW}.mail"
-    echo "${FOOTER}" >>"${BAKWP}/config-bk-${NOW}.mail"
+    echo "${header}" >"${BAKWP}/config-bk-${NOW}.mail"
+    echo "${body}" >>"${BAKWP}/config-bk-${NOW}.mail"
+    #echo "${FOOTER}" >>"${BAKWP}/config-bk-${NOW}.mail"
 
 }
 
@@ -467,66 +542,81 @@ mail_mysqlbackup_section() {
     local ERROR=$3
     local ERROR_TYPE=$4
 
-    BK_TYPE="Database"
+    local count
+    local bk_db_size
+    local status_icon
+    local header_open1
+    local header_open2
+    local header_open
+    local header_text
+    local header_close
+    local body_open
+    local body_close
+
+    local backup_type
+
+    declare -g STATUS_D
+
+    backup_type="Database"
 
     if [ "${ERROR}" = true ]; then
         # Changing global
         STATUS_D="ERROR"
 
         # Changing locals
-        STATUS_ICON_D="💩"
-        CONTENT_D="<b>${BK_TYPE} Backup with errors:<br />${ERROR_TYPE}<br /><br />Please check log file.</b> <br />"
-        COLOR_D="#b51c1c"
+        status_icon="💩"
+        content="<b>${backup_type} Backup with errors:<br />${ERROR_TYPE}<br /><br />Please check log file.</b> <br />"
+        color="#b51c1c"
 
     else
         # Changing global
         STATUS_D="OK"
 
         # Changing locals
-        STATUS_ICON_D="✅"
-        CONTENT_D=""
-        COLOR_D="#503fe0"
+        status_icon="✅"
+        content=""
+        color="#503fe0"
         SIZE_D=""
-        FILES_LABEL_D='<b>Backup files includes:</b><br /><div style="color:#000;font-size:12px;line-height:24px;padding-left:10px;">'
-        FILES_INC_D=""
+        files_label_D="<b>Backup files includes:</b><br /><div style=\"color:#000;font-size:12px;line-height:24px;padding-left:10px;\">"
+        files_inc=""
 
-        COUNT=0
+        count=0
 
         for backup_file in "${BACKUPED_DB_LIST[@]}"; do
 
-            BK_DB_SIZE="${BK_DB_SIZES[$COUNT]}"
+            bk_db_size="${BK_DB_SIZES[$count]}"
 
-            FILES_INC_D_LINE_P1="<div><span style=\"margin-right:5px;\">"
-            FILES_INC_D_LINE_P2="${FILES_INC_D}${backup_file}"
-            FILES_INC_D_LINE_P3='</span> <span style="background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;">'
-            FILES_INC_D_LINE_P4="${BK_DB_SIZE}"
-            FILES_INC_D_LINE_P5="</span></div>"
+            files_inc_line_p1="<div><span style=\"margin-right:5px;\">"
+            files_inc_line_p2="${files_inc}${backup_file}"
+            files_inc_line_p3="</span> <span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\">"
+            files_inc_line_p4="${bk_db_size}"
+            files_inc_line_p5="</span></div>"
 
-            FILES_INC_D="${FILES_INC_D_LINE_P1}${FILES_INC_D_LINE_P2}${FILES_INC_D_LINE_P3}${FILES_INC_D_LINE_P4}${FILES_INC_D_LINE_P5}"
+            files_inc="${files_inc_line_p1}${files_inc_line_p2}${files_inc_line_p3}${files_inc_line_p4}${files_inc_line_p5}"
 
-            COUNT=$((COUNT + 1))
+            count=$((count + 1))
 
         done
 
-        FILES_LABEL_D_END="</div>"
+        files_label_D_END="</div>"
 
     fi
 
-    HEADEROPEN1_D="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
-    HEADEROPEN2_D=";padding:5px 0 10px 10px;width:100%;height:30px\">"
-    HEADEROPEN_D="${HEADEROPEN1_D}${COLOR_D}${HEADEROPEN2_D}"
-    HEADERTEXT_D="Database Backup: ${STATUS_D} ${STATUS_ICON_D}"
-    HEADERCLOSE_D="</div>"
+    header_open1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
+    header_open2=";padding:5px 0 10px 10px;width:100%;height:30px\">"
+    header_open="${header_open1}${color}${header_open2}"
+    header_text="Database Backup: ${STATUS_D} ${status_icon}"
+    header_close="</div>"
 
-    BODYOPEN_D='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px 0 0 10px;width:100%;">'
-    BODYCLOSE_D="</div>"
+    body_open="<div style=\"color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px 0 0 10px;width:100%;\">"
+    body_close="</div>"
 
-    HEADER_D="${HEADEROPEN_D}${HEADERTEXT_D}${HEADERCLOSE_D}"
-    BODY_D="${BODYOPEN_D}${CONTENT_D}${SIZE_D}${FILES_LABEL_D}${FILES_INC_D}${FILES_LABEL_D_END}${BODYCLOSE_D}"
+    header="${header_open}${header_text}${header_close}"
+    body="${body_open}${content}${SIZE_D}${files_label_D}${files_inc}${files_label_D_END}${body_close}"
 
     # Write e-mail parts files
-    echo "${HEADER_D}" >"${BAKWP}/db-bk-${NOW}.mail"
-    echo "${BODY_D}" >>"${BAKWP}/db-bk-${NOW}.mail"
+    echo "${header}" >"${BAKWP}/db-bk-${NOW}.mail"
+    echo "${body}" >>"${BAKWP}/db-bk-${NOW}.mail"
 
 }
 
@@ -558,7 +648,11 @@ mail_footer() {
 
     local script_v=$1
 
-    local footer_open script_string footer_close html_close mail_footer
+    local footer_open
+    local script_string
+    local footer_close
+    local html_close
+    local mail_footer
 
     footer_open="<div style=\"font-size:10px;float:left;font-family:Verdana,Helvetica,Arial;text-align:right;padding-right:5px;width:100%;height:20px\"><a href=\"https://www.broobe.com/web-mobile-development/?utm_source=linux-script&utm_medium=email&utm_campaign=landing_it\" style=\"color: #503fe0;font-weight: bold;font-style: italic;\">"
     script_string="LEMP UTILS SCRIPT Version: ${script_v} by BROOBE"
