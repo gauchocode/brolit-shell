@@ -87,16 +87,19 @@ DB_BL="information_schema,performance_schema,mysql,sys,phpmyadmin"
 MAILCOW_TMP_BK="${SFOLDER}/tmp/mailcow"
 
 PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
+php_exit=$?
+if [ "${php_exit}" -eq 1 ];then
+  # TODO: must be an option
+  # Packages to watch
+  PACKAGES=(linux-firmware dpkg nginx "php${PHP_V}-fpm" mysql-server openssl)
+fi
 
 # MySQL host and user
 MHOST="localhost"
 MUSER="root"
 
-# TODO: must be an option
-# Packages to watch
-PACKAGES=(linux-firmware dpkg nginx "php${PHP_V}-fpm" mysql-server openssl)
-
-MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+') # Main partition
+# Main partition
+MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+')
 
 # Dropbox Folder Backup
 DROPBOX_FOLDER="/"
@@ -191,8 +194,8 @@ script_init() {
   clear_screen
 
   # Log Start
-  log_event "" "WELCOME TO LEMP UTILS SCRIPT v${SCRIPT_V}" "true"
-  log_event "info" "Script Start -- $(date +%Y%m%d_%H%M)" "false"
+  log_event "" "WELCOME TO ${SCRIPT_N} v${SCRIPT_V}" "true"
+  log_event "info" "Script Start -- $(date +%Y%m%d_%H%M)"
 
   ### Welcome #######################################################################
 
@@ -214,6 +217,7 @@ script_init() {
   STATUS_D=""
   STATUS_F=""
   STATUS_S=""
+  STATUS_C=""
   OUTDATED=false
 
   # Dropbox Uploader config file
