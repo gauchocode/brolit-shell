@@ -140,7 +140,7 @@ php_fpm_optimizations() {
   log_break "true"
 
   while true; do
-    echo -e "${YELLOW} > Do you want to apply this optimizations?${ENDCOLOR}"
+    echo -e "${YELLOW}${ITALIC} > Do you want to apply this optimizations?${ENDCOLOR}"
     read -p "Please type 'y' or 'n'" yn
 
     case $yn in
