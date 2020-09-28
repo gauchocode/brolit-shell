@@ -74,7 +74,7 @@ if [ ${mysql_installed} == "false" ]; then
   MYSQL_INSTALLER_OPTIONS=("01)" "INSTALL MARIADB" "02)" "INSTALL MYSQL")
   CHOSEN_MYSQL_INSTALLER_OPTION=$(whiptail --title "MySQL INSTALLER" --menu "Choose a MySQL version to install" 20 78 10 "${MYSQL_INSTALLER_OPTIONS[@]}" 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${CHOSEN_MYSQL_INSTALLER_OPTION} == *"01"* ]]; then
       mariadb_default_installer

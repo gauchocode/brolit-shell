@@ -28,7 +28,7 @@ cloudflare_helper_menu() {
     chosen_cf_options=$(whiptail --title "CLOUDFLARE MANAGER" --menu " " 20 78 10 "${cf_options[@]}" 3>&1 1>&2 2>&3)
     exitstatus=$?
 
-    if [ $exitstatus = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
 
         log_section "Cloudflare Manager"
 

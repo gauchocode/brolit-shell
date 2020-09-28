@@ -273,7 +273,7 @@ selected_package_installation() {
 
   chosen_apps=$(whiptail --title "Apps Selection" --checklist "Select the apps you want to install:" 20 78 15 "${apps_to_install[@]}" 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     log_subsection "Package Installer"
 
