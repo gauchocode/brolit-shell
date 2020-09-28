@@ -4,13 +4,6 @@
 # Version: 3.0.3
 ################################################################################
 
-### Checking some things
-if [[ -z "${SFOLDER}" ]]; then
-  echo -e "${B_RED} > Error: The script can only be runned by runner.sh! Exiting ...${ENDCOLOR}"
-  exit 0
-fi
-################################################################################
-
 # shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
 # shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
@@ -30,7 +23,11 @@ wpcli_main_menu() {
 
   local wp_site=$1
 
-  local wpcli_options wp_result chosen_wpcli_options wp_plugins chosen_plugin_option
+  local wpcli_options 
+  local wp_result 
+  local chosen_wpcli_options 
+  local wp_plugins 
+  local chosen_plugin_option
 
   # Array of plugin slugs to install
   wp_plugins=(
@@ -50,8 +47,8 @@ wpcli_main_menu() {
     "quttera-web-malware-scanner" " " off
   )
 
-  wpcli_options="01) INSTALL-PLUGINS 02) DELETE-THEMES 03) DELETE-PLUGINS 04) REINSTALL-ALL-PLUGINS 05) VERIFY-WP 06) UPDATE-WP 07) REINSTALL-WP 08) CLEAN-WP-DB 09) PROFILE-WP 10) CHANGE-TABLES-PREFIX 11) REPLACE-URLs 12) SEOYOAST-REINDEX 13) DELETE-NOT-CORE-FILES"
-  chosen_wpcli_options=$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 $(for x in ${wpcli_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  wpcli_options=("01)" "INSTALL PLUGINS" "02)" "DELETE THEMES" "03)" "DELETE PLUGINS" "04)" "REINSTALL ALL PLUGINS" "05)" "VERIFY WP" "06)" "UPDATE WP" "07)" "REINSTALL WP" "08)" "CLEAN WP DB" "09)" "PROFILE WP" "10)" "CHANGE TABLES PREFIX" "11)" "REPLACE URLs" "12)" "SEOYOAST RE-INDEX" "13)" "DELETE NOT CORE FILES")
+  chosen_wpcli_options=$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 "${wpcli_options[@]}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -74,14 +71,14 @@ wpcli_main_menu() {
 
       # Listing installed themes
       WP_DEL_THEMES=$(wp --path="${wp_site}" theme list --quiet --field=name --status=inactive --allow-root)
-      array_to_checklist "$WP_DEL_THEMES"
-      CHOSEN_DEL_THEME_OPTION=$(whiptail --title "Theme Selection" --checklist "Select the themes you want to delete." 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)
+      array_to_checklist "${WP_DEL_THEMES}"
+      CHOSEN_DEL_THEME_OPTION="$(whiptail --title "Theme Selection" --checklist "Select the themes you want to delete." 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)"
       #echo "Setting CHOSEN_DEL_THEME_OPTION="$CHOSEN_DEL_THEME_OPTION
 
       for theme_del in $CHOSEN_DEL_THEME_OPTION; do
-        theme_del=$(sed -e 's/^"//' -e 's/"$//' <<<$theme_del) #needed to ommit double quotes
+        theme_del=$(sed -e 's/^"//' -e 's/"$//' <<<${theme_del}) #needed to ommit double quotes
         #echo "theme delete $theme_del"
-        wpcli_delete_theme "${wp_site}" "$theme_del"
+        wpcli_delete_theme "${wp_site}" "${theme_del}"
       done
 
     fi
@@ -160,8 +157,8 @@ wpcli_main_menu() {
       #https://guides.wp-bullet.com/using-wp-cli-wp-profile-to-diagnose-wordpress-performance-issues/
       wp package install wp-cli/profile-command --allow-root
 
-      PROFILER_OPTIONS="01) PROFILE-STAGE 02) PROFILE-STAGE-BOOTSTRAP 03) PROFILE-STAGE-ALL 04) PROFILE-STAGE-HOOK-WP 05) PROFILE-STAGE-HOOK-ALL"
-      CHOSEN_PROF_OPTION=$(whiptail --title "WP-CLI PROFILER HELPER" --menu "Choose an option to run" 20 78 10 $(for x in ${PROFILER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+      PROFILER_OPTIONS=("01)" "PROFILE STAGE" "02)" "PROFILE STAGE BOOTSTRAP" "03)" "PROFILE STAGE ALL" "04)" "PROFILE STAGE HOOK WP" "05)" "PROFILE STAGE HOOK ALL")
+      CHOSEN_PROF_OPTION=$(whiptail --title "WP-CLI PROFILER HELPER" --menu "Choose an option to run" 20 78 10 "${PROFILER_OPTIONS[@]}" 3>&1 1>&2 2>&3)
 
       if [[ ${exitstatus} -eq 0 ]]; then
 

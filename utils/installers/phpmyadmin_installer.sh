@@ -4,13 +4,6 @@
 # Version: 3.0.3
 #############################################################################
 
-### Checking some things
-if [[ -z "${SFOLDER}" ]]; then
-  echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
-  exit 0
-fi
-################################################################################
-
 # shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
 # shellcheck source=${SFOLDER}/libs/nginx_helper.sh
@@ -26,12 +19,12 @@ phpmyadmin_installer () {
 
   local project_domain possible_root_domain root_domain
 
-  log_event "info" "Running phpmyadmin installer" "true"
+  log_event "info" "Running phpmyadmin installer"
 
   project_domain=$(whiptail --title "Domain" --inputbox "Insert the domain for PhpMyAdmin. Example: sql.domain.com" 10 60 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
-    log_event "info" "Setting project_domain=${project_domain}" "true"
+    log_event "info" "Setting project_domain=${project_domain}"
 
     possible_root_domain=${project_domain#[[:alpha:]]*.}
     root_domain=$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")
@@ -42,16 +35,26 @@ phpmyadmin_installer () {
   fi
 
   # Download phpMyAdmin
-  cd "${SITES}"
-  wget "https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip"
-  unzip "phpMyAdmin-latest-all-languages.zip"
+  display --indent 2 --text " - Downloading phpMyAdmin"
+  wget –-quiet "https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip" -P "${SITES}"
+  clear_last_line
+  display --indent 2 --text " - Downloading phpMyAdmin" --result "DONE" --color GREEN
 
+  # Uncompress
+  display --indent 2 --text " - Uncompressing phpMyAdmin"
+  unzip -qq "phpMyAdmin-latest-all-languages.zip"
+  clear_last_line
+  display --indent 2 --text " - Uncompressing phpMyAdmin" --result "DONE" --color GREEN
+
+  # Delete downloaded file
   rm "phpMyAdmin-latest-all-languages.zip"
 
+  # Change directory name
   mv phpMyAdmin-* "${project_domain}"
+  display --indent 2 --text " - Changing directory name" --result "DONE" --color GREEN
 
   # New site Nginx configuration
-  nginx_server_create "${project_domain}" "phpmyadmin" "single"
+  nginx_server_create "${project_domain}" "phpmyadmin" "tool"
 
   # Cloudflare API to change DNS records
   cloudflare_change_a_record "${root_domain}" "${project_domain}"
@@ -59,7 +62,8 @@ phpmyadmin_installer () {
   # HTTPS with Certbot
   certbot_helper_installer_menu "${MAILA}" "${project_domain}"
 
-  log_event "info" "phpmyadmin installer finished!" "true"
+  log_event "info" "phpmyadmin installer finished!"
+  display --indent 2 --text " - Installing phpMyAdmin" --result "DONE" --color GREEN
 
 }
 

@@ -75,10 +75,15 @@ nginx_purge_installation() {
 
 nginx_check_if_installed() {
 
+    nginx_installed="true"
+
     NGINX="$(which nginx)"
     if [ ! -x "${NGINX}" ]; then
         nginx_installed="false"
     fi
+
+    # Return
+    echo "${nginx_installed}"
 
 }
 
@@ -91,46 +96,49 @@ nginx_check_installed_version() {
 ################################################################################
 
 #nginx_installed="true"
-#nginx_check_if_installed
+nginx_check_if_installed
 
-#if [ ${nginx_installed} == "false" ]; then
+if [ ${nginx_installed} == "false" ]; then
 
-    NGINX_INSTALLER_OPTIONS="01) NGINX-STANDARD 02) NGINX-LAST-STABLE 03) NGINX-RECONFIGURE"
-    CHOSEN_NGINX_INSTALLER_OPTION=$(whiptail --title "NGINX INSTALLER" --menu "Choose a Nginx version to install" 20 78 10 $(for x in ${NGINX_INSTALLER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
+    NGINX_INSTALLER_OPTIONS=("01)" "NGINX STANDARD" "02)" "NGINX LAST STABLE")
 
-        if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"01"* ]]; then
+else
 
-            log_section "Nginx Installer"
-            nginx_default_installer
+    NGINX_INSTALLER_OPTIONS=("01)" "NGINX STANDARD" "02)" "NGINX LAST STABLE" "03)" "NGINX RECONFIGURE")
+
+fi
+
+CHOSEN_NGINX_INSTALLER_OPTION=$(whiptail --title "NGINX INSTALLER" --menu "Choose a Nginx version to install" 20 78 10 "${NGINX_INSTALLER_OPTIONS[@]}" 3>&1 1>&2 2>&3)
+exitstatus=$?
+if [[ ${exitstatus} -eq 0 ]]; then
+
+    if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"01"* ]]; then
+
+        log_section "Nginx Installer"
+        nginx_default_installer
 
 
-        fi
-        if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"02"* ]]; then
+    fi
+    if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"02"* ]]; then
 
-            log_section "Nginx Installer"
-            nginx_custom_installer
+        log_section "Nginx Installer"
+        nginx_custom_installer
 
-        fi
-        if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"03"* ]]; then
+    fi
+    if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"03"* ]]; then
 
-            log_section "Nginx Installer"
+        log_section "Nginx Installer"
 
-            nginx_delete_default_directory
+        nginx_delete_default_directory
 
-            nginx_reconfigure
+        nginx_reconfigure
 
-            nginx_new_default_server
+        nginx_new_default_server
 
-            nginx_create_globals_config
-
-        fi
+        nginx_create_globals_config
 
     fi
 
-#else
-#
-#    log_event "info" "Nginx is already installed" "true"
-#
-#fi
+fi
+
+
