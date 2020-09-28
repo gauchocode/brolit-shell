@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.3
+# Version: 3.0.4
 ################################################################################
 
 #
@@ -13,7 +13,7 @@
 #
 
 SCRIPT_N="LEMP UTILS SCRIPT"
-SCRIPT_V="3.0.3"
+SCRIPT_V="3.0.4"
 
 # Hostname
 VPSNAME="$HOSTNAME"
@@ -375,6 +375,10 @@ main_menu() {
       cron_script_tasks
 
     fi
+
+  else
+
+    exit 0
 
   fi
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.3
+# Version: 3.0.4
 ################################################################################
 #
 # Ref: https://linuxize.com/post/how-to-install-and-use-composer-on-ubuntu-20-04/
