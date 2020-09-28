@@ -153,28 +153,28 @@ wpcli_main_menu() {
 
       # PROFILE_WP
 
-      #Install PROFILER_OPTIONS
+      #Install profiler_options
       #https://guides.wp-bullet.com/using-wp-cli-wp-profile-to-diagnose-wordpress-performance-issues/
       wp package install wp-cli/profile-command --allow-root
 
-      PROFILER_OPTIONS=("01)" "PROFILE STAGE" "02)" "PROFILE STAGE BOOTSTRAP" "03)" "PROFILE STAGE ALL" "04)" "PROFILE STAGE HOOK WP" "05)" "PROFILE STAGE HOOK ALL")
-      CHOSEN_PROF_OPTION=$(whiptail --title "WP-CLI PROFILER HELPER" --menu "Choose an option to run" 20 78 10 "${PROFILER_OPTIONS[@]}" 3>&1 1>&2 2>&3)
+      profiler_options=("01)" "PROFILE STAGE" "02)" "PROFILE STAGE BOOTSTRAP" "03)" "PROFILE STAGE ALL" "04)" "PROFILE STAGE HOOK WP" "05)" "PROFILE STAGE HOOK ALL")
+      chosen_profiler_option=$(whiptail --title "WP-CLI PROFILER HELPER" --menu "Choose an option to run" 20 78 10 "${profiler_options[@]}" 3>&1 1>&2 2>&3)
 
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        if [[ ${CHOSEN_PROF_OPTION} == *"01"* ]]; then
+        if [[ ${chosen_profiler_option} == *"01"* ]]; then
           #This command shows the stages of loading WordPress
           log_event "info" "Executing: wp --path=${wp_site} profile stage --allow-root" "false"
           wp --path="${wp_site}" profile stage --allow-root
 
         fi
-        if [[ ${CHOSEN_PROF_OPTION} == *"02"* ]]; then
+        if [[ ${chosen_profiler_option} == *"02"* ]]; then
           #Can drill down into each stage, here we drill down into the bootstrap stage
           log_event "info" "Executing: wp --path=${wp_site} profile stage bootstrap --allow-root" "false"
           wp --path="${wp_site}" profile stage bootstrap --allow-root
 
         fi
-        if [[ ${CHOSEN_PROF_OPTION} == *"03"* ]]; then
+        if [[ ${chosen_profiler_option} == *"03"* ]]; then
           #All stage
           #sudo -u www-data wp --path=${SITES}'/'${wp_site} profile stage --all --orderby=time --allow-root
           #You can also use the --spotlight flag to filter out zero-like values for easier reading
@@ -182,13 +182,13 @@ wpcli_main_menu() {
           wp --path="${wp_site}" profile stage --all --spotlight --orderby=time --allow-root
 
         fi
-        if [[ ${CHOSEN_PROF_OPTION} == *"04"* ]]; then
+        if [[ ${chosen_profiler_option} == *"04"* ]]; then
           #Here we dig into the wp hook
           log_event "info" "Executing: wp --path=${wp_site} profile hook wp --allow-root" "false"
           wp --path="${wp_site}" profile hook wp --allow-root
 
         fi
-        if [[ ${CHOSEN_PROF_OPTION} == *"05"* ]]; then
+        if [[ ${chosen_profiler_option} == *"05"* ]]; then
           #Here we dig into the wp hook
           log_event "info" "Executing: wp --path=${wp_site} profile hook --all --spotlight --allow-root" "false"
           wp --path="${wp_site}" profile hook --all --spotlight --allow-root

@@ -71,7 +71,7 @@ source "${SFOLDER}/libs/commons.sh"
         curl --silent -L "${project_name}" 2>&1  | grep -q "${keyword}"
         curl_output=$?
 
-        if [ ${curl_output} == 0 ]; then
+        if [[ ${curl_output} == 0 ]]; then
 
           log_event "info" "Website ${project_name} is online" "false"
           display --indent 2 --text "- Testing ${project_name}" --result "UP" --color GREEN
