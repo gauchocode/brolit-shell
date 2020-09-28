@@ -113,7 +113,7 @@ delete_project_files() {
             # Cloudflare Manager
             project_domain=$(whiptail --title "CLOUDFLARE MANAGER" --inputbox "Do you want to delete the Cloudflare entries for the followings subdomains?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
             exitstatus=$?
-            if [ $exitstatus = 0 ]; then
+            if [[ ${exitstatus} -eq 0 ]]; then
             
                 # Delete Cloudflare entries
                 cloudflare_delete_a_record "${project_domain}"
@@ -151,7 +151,7 @@ delete_project_database() {
     DBS=$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -Bse 'show databases')
     CHOSEN_DB=$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to delete" 20 78 10 $(for x in ${DBS}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)
     exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log
         log_subsection "Delete Database"

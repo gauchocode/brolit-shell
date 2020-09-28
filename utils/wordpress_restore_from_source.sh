@@ -29,7 +29,7 @@ ask_migration_source_type() {
   
   migration_source_type=$(whiptail --title "Migration Source" --menu "Choose the source of the project to restore/migrate:" 20 78 10 $(for x in ${migration_source_type}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     echo "${migration_source_type}"
 
@@ -51,7 +51,7 @@ ask_migration_source_file() {
 
   source_files_dir=$(whiptail --title "Source Directory" --inputbox "Please insert the directory where files backup are stored." 10 60 "/root/backups/backup.zip" 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
     echo "${source_files_dir}"
 
   else
@@ -63,7 +63,7 @@ else
 
   source_files_url=$(whiptail --title "Source File URL" --inputbox "Please insert the URL where backup files are stored." 10 60 "http://example.com/backup-files.zip" 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
     echo "${source_files_url}"
 
   else
@@ -86,7 +86,7 @@ ask_migration_source_db() {
 
   source_db_dir=$(whiptail --title "Source Directory" --inputbox "Please insert the directory where database backup is stored." 10 60 "/root/backups/db.sql.gz" 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
     echo "${source_db_dir}"
 
   else
@@ -98,7 +98,7 @@ else
 
   source_db_url=$(whiptail --title "Source DB URL" --inputbox "Please insert the URL where database backup is stored." 10 60 "http://example.com/backup-db.sql.gz" 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
     echo "${source_db_url}"
 
   else

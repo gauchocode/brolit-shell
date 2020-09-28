@@ -35,9 +35,9 @@ if [ -t 1 ]; then
 
     first_run_options=("01)" "LEMP SETUP" "02)" "CONFIGURE SCRIPT")
     chosen_first_run_options=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 "${first_run_options[@]}" 3>&1 1>&2 2>&3)
-
     exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
+
       if [[ ${chosen_first_run_options} == *"01"* ]]; then
         # shellcheck source=${SFOLDER}/utils/lemp_setup.sh
         source "${SFOLDER}/utils/lemp_setup.sh"

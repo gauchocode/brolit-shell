@@ -37,7 +37,7 @@ installation_types="CLEAN_INSTALL COPY_FROM_PROJECT"
 
 installation_type=$(whiptail --title "INSTALLATION TYPE" --menu "Choose an Installation Type" 20 78 10 $(for x in ${installation_types}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)
 exitstatus=$?
-if [ $exitstatus = 0 ]; then
+if [[ ${exitstatus} -eq 0 ]]; then
 
   log_section "WordPress Installer"
 
@@ -194,7 +194,7 @@ if [ $exitstatus = 0 ]; then
     # HTTPS with Certbot
     project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${root_domain}" 3>&1 1>&2 2>&3)
     exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
 
       certbot_certificate_install "${MAILA}" "${project_domain},${root_domain}"
 
@@ -216,7 +216,7 @@ if [ $exitstatus = 0 ]; then
     # HTTPS with Certbot
     cert_project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
     exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
       
       certbot_certificate_install "${MAILA}" "${cert_project_domain}"
 

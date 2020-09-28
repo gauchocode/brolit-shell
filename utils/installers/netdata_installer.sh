@@ -94,7 +94,7 @@ netdata_alarm_level() {
   NETDATA_ALARM_LEVELS="warning critical"
   NETDATA_ALARM_LEVEL=$(whiptail --title "NETDATA ALARM LEVEL" --menu "Choose the Alarm Level for Notifications" 20 78 10 $(for x in ${NETDATA_ALARM_LEVELS}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
     echo "NETDATA_ALARM_LEVEL=${NETDATA_ALARM_LEVEL}" >>/root/.broobe-utils-options
     log_event "info" "Alarm Level for Notifications: ${NETDATA_ALARM_LEVEL}" "false"
 
@@ -129,7 +129,7 @@ netdata_telegram_config() {
   TELEGRAM_BOT_TOKEN=$(whiptail --title "Netdata: Telegram Configuration" --inputbox "${NETDATA_CONFIG_1_STRING}" 15 60 3>&1 1>&2 2>&3)
 
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     SEND_TELEGRAM="YES"
     sed -i "s/^\(SEND_TELEGRAM\s*=\s*\).*\$/\1\"$SEND_TELEGRAM\"/" $HEALTH_ALARM_NOTIFY_CONF
@@ -142,7 +142,7 @@ netdata_telegram_config() {
 
     DEFAULT_RECIPIENT_TELEGRAM=$(whiptail --title "Netdata: Telegram Configuration" --inputbox "${NETDATA_CONFIG_2_STRING}" 15 60 3>&1 1>&2 2>&3)
     exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
 
       # choose the netdata alarm level
       netdata_alarm_level
@@ -181,7 +181,7 @@ if [ ! -x "${NETDATA}" ]; then
     netdata_subdomain=$(whiptail --title "Netdata Installer" --inputbox "Please insert the subdomain you want to install Netdata. Ex: monitor.broobe.com" 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
 
-    if [ $exitstatus = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
       echo "netdata_subdomain=${netdata_subdomain}" >>"/root/.broobe-utils-options"
 
     else
@@ -252,7 +252,7 @@ else
   NETDATA_CHOSEN_OPTION=$(whiptail --title "Netdata Installer" --menu "Netdata is already installed." 20 78 10 "${NETDATA_OPTIONS[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${NETDATA_CHOSEN_OPTION} == *"01"* ]]; then
       cd netdata && git pull && ./netdata-installer.sh --dont-wait

@@ -325,7 +325,7 @@ main_menu() {
   chosen_type=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_type} == *"01"* ]]; then
       backup_menu
@@ -390,7 +390,7 @@ cron_script_tasks() {
   chosen_type=$(whiptail --title "CRONEABLE TASKS" --menu "\n" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_type} == *"01"* ]]; then
 
@@ -477,7 +477,7 @@ security_utils_menu () {
   chosen_security_options=$(whiptail --title "SECURITY TOOLS" --menu "Choose an option to run" 20 78 10 "${security_options[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     security_install
 
@@ -695,7 +695,7 @@ script_configuration_wizard() {
   if [[ -z "${SMTP_SERVER}" ]]; then
     SMTP_SERVER=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server" 10 60 "${SMTP_SERVER_OLD}" 3>&1 1>&2 2>&3)
     exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
       echo "SMTP_SERVER="${SMTP_SERVER} >>/root/.broobe-utils-options
     else
       return 1
@@ -704,7 +704,7 @@ script_configuration_wizard() {
   if [[ -z "${SMTP_PORT}" ]]; then
     SMTP_PORT=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server Port" 10 60 "${SMTP_PORT_OLD}" 3>&1 1>&2 2>&3)
     exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
       echo "SMTP_PORT=${SMTP_PORT}" >>/root/.broobe-utils-options
     else
       return 1
@@ -713,7 +713,7 @@ script_configuration_wizard() {
   if [[ -z "${SMTP_TLS}" ]]; then
     SMTP_TLS=$(whiptail --title "SMTP TLS" --inputbox "SMTP yes or no:" 10 60 "${SMTP_TLS_OLD}" 3>&1 1>&2 2>&3)
     exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
       echo "SMTP_TLS=${SMTP_TLS}" >>/root/.broobe-utils-options
     else
       return 1
@@ -722,7 +722,7 @@ script_configuration_wizard() {
   if [[ -z "${SMTP_U}" ]]; then
     SMTP_U=$(whiptail --title "SMTP User" --inputbox "Please insert the SMTP user" 10 60 "${SMTP_U_OLD}" 3>&1 1>&2 2>&3)
     exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
       echo "SMTP_U=${SMTP_U}" >>/root/.broobe-utils-options
     else
       return 1
@@ -731,7 +731,7 @@ script_configuration_wizard() {
   if [[ -z "${SMTP_P}" ]]; then
     SMTP_P=$(whiptail --title "SMTP Password" --inputbox "Please insert the SMTP user password" 10 60 "${SMTP_P_OLD}" 3>&1 1>&2 2>&3)
     exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
       echo "SMTP_P=${SMTP_P}" >>/root/.broobe-utils-options
     else
       return 1
@@ -740,7 +740,7 @@ script_configuration_wizard() {
   if [[ -z "${MAILA}" ]]; then
     MAILA=$(whiptail --title "Notification Email" --inputbox "Insert the email where you want to receive notifications." 10 60 "${MAILA_OLD}" 3>&1 1>&2 2>&3)
     exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
       echo "MAILA=${MAILA}" >>/root/.broobe-utils-options
     else
       return 1
@@ -749,7 +749,7 @@ script_configuration_wizard() {
   if [[ -z "${SITES}" ]]; then
     SITES=$(whiptail --title "Websites Root Directory" --inputbox "Insert the path where websites are stored. Ex: /var/www or /usr/share/nginx" 10 60 "${SITES_OLD}" 3>&1 1>&2 2>&3)
     exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
       echo "SITES=${SITES}" >>/root/.broobe-utils-options
     else
       return 1
@@ -762,7 +762,7 @@ script_configuration_wizard() {
     DUP_BK_DEFAULT=false
     DUP_BK=$(whiptail --title "Duplicity Backup Support?" --inputbox "Please insert true or false" 10 60 "${DUP_BK_DEFAULT}" 3>&1 1>&2 2>&3)
     exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
       echo "DUP_BK=${DUP_BK}" >>/root/.broobe-utils-options
 
       if [[ "${DUP_BK}" = true ]]; then
@@ -773,7 +773,7 @@ script_configuration_wizard() {
           DUP_ROOT_DEFAULT="/media/backups/PROJECT_NAME"
           DUP_ROOT=$(whiptail --title "Duplicity Backup Directory" --inputbox "Insert the directory path to storage duplicity Backup" 10 60 "${DUP_ROOT_DEFAULT}" 3>&1 1>&2 2>&3)
           exitstatus=$?
-          if [ $exitstatus = 0 ]; then
+          if [[ ${exitstatus} -eq 0 ]]; then
             echo "DUP_ROOT=${DUP_ROOT}" >>/root/.broobe-utils-options
           else
             exit 1
@@ -786,7 +786,7 @@ script_configuration_wizard() {
           DUP_SRC_BK_DEFAULT="${SITES}"
           DUP_SRC_BK=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_SRC_BK_DEFAULT}" 3>&1 1>&2 2>&3)
           exitstatus=$?
-          if [ $exitstatus = 0 ]; then
+          if [[ ${exitstatus} -eq 0 ]]; then
             echo "DUP_SRC_BK=${DUP_SRC_BK}" >>/root/.broobe-utils-options
           else
             exit 1
@@ -799,7 +799,7 @@ script_configuration_wizard() {
           DUP_FOLDERS_DEFAULT="FOLDER1,FOLDER2"
           DUP_FOLDERS=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_FOLDERS_DEFAULT}" 3>&1 1>&2 2>&3)
           exitstatus=$?
-          if [ $exitstatus = 0 ]; then
+          if [[ ${exitstatus} -eq 0 ]]; then
             echo "DUP_FOLDERS=${DUP_FOLDERS}" >>/root/.broobe-utils-options
           else
             exit 1
@@ -812,7 +812,7 @@ script_configuration_wizard() {
           DUP_BK_FULL_FREQ_DEFAULT="7D"
           DUP_BK_FULL_FREQ=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_BK_FULL_FREQ_DEFAULT}" 3>&1 1>&2 2>&3)
           exitstatus=$?
-          if [ $exitstatus = 0 ]; then
+          if [[ ${exitstatus} -eq 0 ]]; then
             echo "DUP_BK_FULL_FREQ=${DUP_BK_FULL_FREQ}" >>/root/.broobe-utils-options
           else
             exit 1
@@ -825,7 +825,7 @@ script_configuration_wizard() {
           DUP_BK_FULL_LIFE_DEFAULT="14D"
           DUP_BK_FULL_LIFE=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_BK_FULL_LIFE_DEFAULT}" 3>&1 1>&2 2>&3)
           exitstatus=$?
-          if [ $exitstatus = 0 ]; then
+          if [[ ${exitstatus} -eq 0 ]]; then
             echo "DUP_BK_FULL_LIFE=${DUP_BK_FULL_LIFE}" >>/root/.broobe-utils-options
           else
             exit 1
@@ -853,7 +853,7 @@ script_configuration_wizard() {
     
     MAILCOW_BK=$(whiptail --title "Mailcow Backup Support?" --inputbox "Please insert true or false" 10 60 "${MAILCOW_BK_DEFAULT}" 3>&1 1>&2 2>&3)
     exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
       echo "MAILCOW_BK=${MAILCOW_BK}" >>/root/.broobe-utils-options
       
       if [[ -z "${MAILCOW}" && "${MAILCOW_BK}" = true ]]; then
@@ -862,7 +862,7 @@ script_configuration_wizard() {
         MAILCOW_DEFAULT="/opt/mailcow-dockerized"
         MAILCOW=$(whiptail --title "Mailcow Installation Path" --inputbox "Insert the path where Mailcow is installed" 10 60 "${MAILCOW_DEFAULT}" 3>&1 1>&2 2>&3)
         exitstatus=$?
-        if [ $exitstatus = 0 ]; then
+        if [[ ${exitstatus} -eq 0 ]]; then
           echo "MAILCOW=${MAILCOW}" >>/root/.broobe-utils-options
         else
           return 1
@@ -1146,7 +1146,7 @@ check_distro() {
     if [ ! "${DISTRO_V}" -ge "${MIN_V}" ]; then
       whiptail --title "UBUNTU VERSION WARNING" --msgbox "Ubuntu version must be 18.04 or 20.04! Use this script only for backup or restore purpose." 8 78
       exitstatus=$?
-      if [ $exitstatus = 0 ]; then
+      if [[ ${exitstatus} -eq 0 ]]; then
         distro_old="true"
         log_event "info" "Setting distro_old: ${distro_old}" "false"
         
@@ -1186,7 +1186,7 @@ whiptail_event() {
 
   whiptail --title "${whip_title}" --msgbox "${whip_message}" 15 60 3>&1 1>&2 2>&3
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
     return 0
 
   else
@@ -1306,7 +1306,7 @@ directory_browser() {
     if [[ -d "${selection}" ]]; then # Check if Directory Selected
       whiptail --title "Confirm Selection" --yesno "${selection}" --yes-button "Confirm" --no-button "Retry" 10 60 3>&1 1>&2 2>&3
       exitstatus=$?
-      if [ $exitstatus = 0 ]; then
+      if [[ ${exitstatus} -eq 0 ]]; then
           # Return 1
         filename="${selection}"
         # Return 2
@@ -1409,7 +1409,7 @@ generate_dropbox_config() {
 
   oauth_access_token=$(whiptail --title "Dropbox Uploader Configuration" --inputbox "${oauth_access_token_string}" 15 60 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     # Write config file
     echo "OAUTH_ACCESS_TOKEN=$oauth_access_token" >${DPU_CONFIG_FILE}
@@ -1432,7 +1432,7 @@ generate_cloudflare_config() {
 
   cfl_email=$(whiptail --title "Cloudflare Configuration" --inputbox "${cfl_email_string}" 15 60 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     echo "dns_cloudflare_email=${cfl_email}">"${CLF_CONFIG_FILE}"
 
@@ -1446,7 +1446,7 @@ generate_cloudflare_config() {
 
     cfl_api_token=$(whiptail --title "Cloudflare Configuration" --inputbox "${cfl_api_token_string}" 15 60 3>&1 1>&2 2>&3)
     exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
 
       # Write config file
       echo "dns_cloudflare_api_key=${cfl_api_token}">>"${CLF_CONFIG_FILE}"
@@ -1477,7 +1477,7 @@ generate_telegram_config() {
 
   botfather_key=$(whiptail --title "Telegram BotFather Configuration" --inputbox "${botfather_whip_line}" 15 60 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     # Write config file
     echo "botfather_key=${botfather_key}" >>"/root/.telegram.conf"
@@ -1489,7 +1489,7 @@ generate_telegram_config() {
 		
 		telegram_user_id=$(whiptail --title "Telegram: BotID Configuration" --inputbox "${telegram_id_whip_line}" 15 60 3>&1 1>&2 2>&3)
 		exitstatus=$?
-		if [ $exitstatus = 0 ]; then
+		if [[ ${exitstatus} -eq 0 ]]; then
 
       # Write config file
 			echo "telegram_user_id=${telegram_user_id}" >>"/root/.telegram.conf"
@@ -1719,7 +1719,7 @@ ask_project_state() {
   project_states="prod stage beta test dev"
   project_state=$(whiptail --title "Project State" --menu "Choose a Project State" 20 78 10 $(for x in ${project_states}; do echo "$x [X]"; done) --default-item "${state}" 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
     echo "${project_state}"
 
   else
@@ -1740,7 +1740,7 @@ ask_project_name() {
 
   project_name=$(whiptail --title "Project Name" --inputbox "Insert a project name (only separator allow is '_'). Ex: my_domain" 10 60 "${name}" 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
     echo "${project_name}"
 
   else
@@ -1758,7 +1758,7 @@ ask_project_domain() {
   
   project_domain=$(whiptail --title "Domain" --inputbox "Insert the project's domain. Example: landing.domain.com" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     # Return
     echo "${project_domain}"
@@ -1778,7 +1778,7 @@ ask_project_type() {
   
   project_type=$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 $(for x in ${project_types}; do echo "$x"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     # Lowercase
     project_type="$(echo "${project_type}" | tr '[A-Z]' '[a-z]')"
@@ -1807,7 +1807,7 @@ ask_rootdomain_for_cloudflare_config() {
     root_domain=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 "${root_domain}" 3>&1 1>&2 2>&3)
   fi
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
     # Return
     echo "${root_domain}"
 
@@ -1828,7 +1828,7 @@ ask_subdomains_to_cloudflare_config() {
 
   subdomains=$(whiptail --title "Cloudflare Subdomains" --inputbox "Insert the subdomains you want to update in Cloudflare (comma separated). Example: www.broobe.com,broobe.com" 10 60 "${DOMAIN}" 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
     log_event "info" "Setting subdomains=${subdomains}" "true"
     # Return
     echo "${subdomains}"
@@ -1850,7 +1850,7 @@ ask_folder_to_install_sites() {
     
     folder_to_install=$(whiptail --title "Folder to work with" --inputbox "Please select the project folder you want to work with:" 10 60 "${folder_to_install}" 3>&1 1>&2 2>&3)
     exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
 
       log_event "info" "Folder to work with: ${folder_to_install}" "false"
 
@@ -1880,7 +1880,7 @@ ask_mysql_root_psw() {
   if [[ -z "${MPASS}" ]]; then
     MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root Password" 10 60 "${MPASS}" 3>&1 1>&2 2>&3)
     exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
       #echo "> Running: mysql -u root -p${MPASS} -e"
       until mysql -u root -p"${MPASS}" -e ";"; do
         read -s -p " > Can't connect to MySQL, please re-enter $MUSER password: " MPASS

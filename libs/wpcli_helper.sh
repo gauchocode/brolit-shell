@@ -715,11 +715,11 @@ wpcli_force_reinstall_plugins() {
 
     if [ "${plugin}" = "" ]; then
 
-        log_event "info" "Running: sudo -u www-data wp --path=${wp_site} plugin install $(ls -1p ${wp_site}/wp-content/plugins | grep '/$' | sed 's/\/$//') --force" "false"
-        sudo -u www-data wp --path="${wp_site}" plugin install $(ls -1p ${wp_site}/wp-content/plugins | grep '/$' | sed 's/\/$//') --force
+        log_event "info" "Running: sudo -u www-data wp --path=${wp_site} plugin install $(ls -1p "${wp_site}"/wp-content/plugins | grep '/$' | sed 's/\/$//') --force"
+        sudo -u www-data wp --path="${wp_site}" plugin install "$(ls -1p "${wp_site}"/wp-content/plugins | grep '/$' | sed 's/\/$//')" --force
     
     else
-        log_event "info" "Running: sudo -u www-data wp --path=${wp_site} plugin install ${plugin} --force" "false"
+        log_event "info" "Running: sudo -u www-data wp --path=${wp_site} plugin install ${plugin} --force"
         sudo -u www-data wp --path="${wp_site}" plugin install "${plugin}" --force
 
         display --indent 2 --text "- Plugin force install ${plugin}" --result "DONE" --color GREEN

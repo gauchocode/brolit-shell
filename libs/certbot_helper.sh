@@ -138,13 +138,15 @@ certbot_helper_installer_menu() {
   local email=$1
   local domains=$2
 
-  local cb_installer_options chosen_cb_installer_option cb_warning_text certbot_result
+  local cb_installer_options 
+  local chosen_cb_installer_option 
+  local cb_warning_text 
+  local certbot_result
 
-  cb_installer_options="01 INSTALL_WITH_NGINX 02 INSTALL_WITH_CLOUDFLARE"
-  chosen_cb_installer_option=$(whiptail --title "CERTBOT INSTALLER OPTIONS" --menu "Please choose an installation method:" 20 78 10 $(for x in ${cb_installer_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
-
+  cb_installer_options=("01)" "INSTALL WITH NGINX" "02)" "INSTALL WITH CLOUDFLARE")
+  chosen_cb_installer_option=$(whiptail --title "CERTBOT INSTALLER OPTIONS" --menu "Please choose an installation method:" 20 78 10 "${cb_installer_options[@]}" 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_cb_installer_option} == *"01"* ]]; then
 
@@ -197,7 +199,7 @@ certbot_certonly_cloudflare() {
   local email=$1
   local domains=$2
 
-  log_event "info" "Running: certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m ${email} -d ${domains} --preferred-challenges dns-01" "true"
+  log_event "info" "Running: certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m ${email} -d ${domains} --preferred-challenges dns-01"
   
   certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m "${email}" -d "${domains}" --preferred-challenges dns-01
 
@@ -206,11 +208,11 @@ certbot_certonly_cloudflare() {
 
   certbot_result=$?
   if [ ${certbot_result} -eq 0 ];then
-    log_event "success" "Certificate installation for ${domains} ok" "false"
+    log_event "success" "Certificate installation for ${domains} ok"
     display --indent 2 --text "- Certificate installation" --result "DONE" --color GREEN
 
   else
-    log_event "warning" "Certificate installation failed, trying force-install ..." "false"
+    log_event "warning" "Certificate installation failed, trying force-install ..."
     display --indent 2 --text "- Installing certificate on domains" --result "FAIL" --color RED
 
     # Deleting old config
@@ -221,11 +223,11 @@ certbot_certonly_cloudflare() {
     
     certbot_result=$?
     if [ ${certbot_result} -eq 0 ];then
-      log_event "success" "Certificate installation for ${domains} ok" "false"
+      log_event "success" "Certificate installation for ${domains} ok"
       display --indent 2 --text "- Certificate installation" --result "DONE" --color GREEN
 
     else
-      log_event "error" "Certificate installation for ${domains} failed!" "false"
+      log_event "error" "Certificate installation for ${domains} failed!"
       display --indent 2 --text "- Installing certificate on domains" --result "FAIL" --color RED
 
     fi
@@ -236,7 +238,7 @@ certbot_certonly_cloudflare() {
 
 certbot_show_certificates_info() {
 
-  log_event "info" "Running: certbot certificates" "false"
+  log_event "info" "Running: certbot certificates"
 
   certbot certificates
 
@@ -248,7 +250,7 @@ certbot_show_domain_certificates_expiration_date() {
 
   local domains=$1
 
-  log_event "info" "Running: certbot certificates --cert-name ${domains}" "false"
+  log_event "info" "Running: certbot certificates --cert-name ${domains}"
 
   certbot certificates --cert-name "${domains}" | grep 'Expiry' | cut -d ':' -f2 | cut -d ' ' -f2
 
@@ -262,7 +264,7 @@ certbot_certificate_valid_days() {
 
   local cert_days
 
-  log_event "info" "Running: certbot certificates --cert-name ${domain}" "false"
+  log_event "info" "Running: certbot certificates --cert-name ${domain}"
 
   cert_days=$(certbot certificates --cert-name "${domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
 
@@ -281,7 +283,7 @@ certbot_certificate_valid_days() {
       fi
   fi
 
-  log_event "info" "Certificate valid for: ${cert_days} days" "false"
+  log_event "info" "Certificate valid for: ${cert_days} days"
 
   # Return
   echo "${cert_days}"
@@ -332,7 +334,7 @@ certbot_helper_ask_domains() {
 
   domains=$(whiptail --title "CERTBOT MANAGER" --inputbox "Insert the domain and/or subdomains that you want to work with. Ex: broobe.com,www.broobe.com" 10 60 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     # Return
     echo "${domains}"

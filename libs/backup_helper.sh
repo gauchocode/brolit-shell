@@ -43,7 +43,7 @@ backup_menu() {
   chosen_backup_type=$(whiptail --title "SELECT BACKUP TYPE" --menu " " 20 78 10 "${backup_options[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_backup_type} == *"01"* ]]; then
 

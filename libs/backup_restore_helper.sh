@@ -145,14 +145,14 @@ download_and_restore_config_files_from_dropbox(){
   # Select config backup type
   chosen_config_type=$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Choose a config backup type." 20 78 10 $(for x in ${dropbox_project_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
     #Restore from Dropbox
     dropbox_bk_list=$(${DROPBOX_UPLOADER} -hq list "${dropbox_chosen_type_path}/${chosen_config_type}")
   fi
 
   chosen_config_bk=$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Choose a config backup file to restore." 20 78 10 "$(for x in ${dropbox_bk_list}; do echo "$x [F]"; done)" 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     cd "${SFOLDER}/tmp"
 
@@ -169,7 +169,7 @@ download_and_restore_config_files_from_dropbox(){
 
     log_event "info" "Uncompressing ${chosen_config_bk} ..." "false"
     
-    pv "${chosen_config_bk}" | tar xp -C "${SFOLDER}/tmp/${chosen_config_type}" --use-compress-program=lbzip2
+    pv --width 70 "${chosen_config_bk}" | tar xp -C "${SFOLDER}/tmp/${chosen_config_type}" --use-compress-program=lbzip2
 
     if [[ "${chosen_config_bk}" == *"nginx"* ]]; then
 
@@ -346,7 +346,7 @@ restore_site_files() {
 
   chosen_domain=$(whiptail --title "Project Domain" --inputbox "Want to change the project's domain? Default:" 10 60 "${domain}" 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     # Log
     log_subsection "Site Files Restore"
@@ -422,6 +422,7 @@ select_restore_type_from_dropbox() {
   local dropbox_type_list=$2
 
   local chosen_type                     # whiptail var
+  local chosen_backup_to_restore        # whiptail var
   local dropbox_chosen_type_path        # whiptail var
   local dropbox_project_list            # list of projects on dropbox directory
   local dropbox_chosen_backup_path      # whiptail var
@@ -438,17 +439,17 @@ select_restore_type_from_dropbox() {
 
     dropbox_chosen_type_path="${chosen_server}/${chosen_type}"
 
-    if [[ ${chosen_type} == "project" ]]; then
+    if [[ "${chosen_type}" == "project" ]]; then
 
       project_restore "${chosen_server}"
 
-    elif [[ ${chosen_type} != "project" ]]; then
+    elif [[ "${chosen_type}" != "project" ]]; then
 
       log_section "Restore ${chosen_type} Backup"
 
-      dropbox_project_list=$(${DROPBOX_UPLOADER} -hq list "${dropbox_chosen_type_path}")
+      dropbox_project_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_type_path}")"
       
-      if [[ ${chosen_type} == *"$CONFIG_F"* ]]; then
+      if [[ "${chosen_type}" == *"${CONFIG_F}"* ]]; then
 
         download_and_restore_config_files_from_dropbox "${dropbox_chosen_type_path}" "${dropbox_project_list}"
 
@@ -457,30 +458,33 @@ select_restore_type_from_dropbox() {
         # Select Project
         chosen_project=$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${dropbox_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
         exitstatus=$?
-        if [ $exitstatus = 0 ]; then
+        if [[ ${exitstatus} -eq 0 ]]; then
           dropbox_chosen_backup_path="${dropbox_chosen_type_path}/${chosen_project}"
-          dropbox_backup_list=$(${DROPBOX_UPLOADER} -hq list "${dropbox_chosen_backup_path}")
+          dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}")"
 
         fi
         # Select Backup File
-        CHOSEN_BACKUP_TO_RESTORE=$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${dropbox_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
+        chosen_backup_to_restore=$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${dropbox_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
         exitstatus=$?
-        if [ $exitstatus = 0 ]; then
+        if [[ ${exitstatus} -eq 0 ]]; then
 
           cd "${SFOLDER}/tmp"
 
-          bk_to_dowload="${chosen_server}/${chosen_type}/${chosen_project}/${CHOSEN_BACKUP_TO_RESTORE}"
+          bk_to_dowload="${chosen_server}/${chosen_type}/${chosen_project}/${chosen_backup_to_restore}"
 
           # Downloading Backup
-          log_event "info" "Downloading backup from dropbox" "false"
+          log_event "info" "Downloading backup from dropbox"
           display --indent 2 --text "- Downloading backup from dropbox"
-          dropbox_output=$(${DROPBOX_UPLOADER} download "${bk_to_dowload}" 1>&2)
+          dropbox_output="$("${DROPBOX_UPLOADER}" download "${bk_to_dowload}" 1>&2)"
           clear_last_line
           display --indent 2 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
 
           # Uncompressing
-          log_event "info" "Uncompressing ${CHOSEN_BACKUP_TO_RESTORE}" "false"
-          pv "${CHOSEN_BACKUP_TO_RESTORE}" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
+          log_event "info" "Uncompressing ${chosen_backup_to_restore}"
+          display --indent 2 --text "- Uncompressing backup"
+          pv --width 70 "${chosen_backup_to_restore}" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
+          clear_last_line
+          display --indent 2 --text "- Uncompressing backup" --result "DONE" --color GREEN
 
           if [[ ${chosen_type} == *"${DBS_F}"* ]]; then
 
@@ -493,8 +497,8 @@ select_restore_type_from_dropbox() {
 
             project_name=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${project_name}" 3>&1 1>&2 2>&3)
             exitstatus=$?
-            if [ $exitstatus = 0 ]; then
-              log_event "info" "Setting project_name=${project_name}" "false"
+            if [[ ${exitstatus} -eq 0 ]]; then
+              log_event "info" "Setting project_name=${project_name}"
 
             else
               return 1
@@ -505,7 +509,7 @@ select_restore_type_from_dropbox() {
             db_project_name=$(mysql_name_sanitize "${project_name}")
             
             # Restore database
-            restore_database_backup "${db_project_name}" "${project_state}" "${CHOSEN_BACKUP_TO_RESTORE}"
+            restore_database_backup "${db_project_name}" "${project_state}" "${chosen_backup_to_restore}"
 
             db_user="${db_project_name}_user"
 
@@ -535,26 +539,27 @@ select_restore_type_from_dropbox() {
 
             folder_to_install=$(ask_folder_to_install_sites "${SITES}")
 
-            startdir=${folder_to_install}
+            startdir="${folder_to_install}"
             menutitle="Site Selection Menu"
             directory_browser "${menutitle}" "${startdir}"
             project_site=$filepath"/"$filename
 
-            install_path=$(search_wp_config "${folder_to_install}/${filename}")
+            install_path="$(search_wp_config "${folder_to_install}/${filename}")"
 
             # TODO: search_wp_config could be an array of dir paths, need to check that
-            if [ "${install_path}" != "" ]; then
+            if [[ "${install_path}" != "" ]]; then
 
-              log_event "info" "WordPress installation found: ${project_site}/${install_path}" "false"
+              log_event "info" "WordPress installation found: ${project_site}/${install_path}"
 
               # Change wp-config.php database parameters
-              wp_update_wpconfig "${install_path}" "${project_name}" "${project_state}" "${DB_PASS}"
+              wp_update_wpconfig "${install_path}" "${project_name}" "${project_state}" "${db_pass}"
 
-              # TODO: change the secret encryption keys
+              # Change Salts
+              wpcli_set_salts "${install_path}"
 
             else
 
-              log_event "error" "WordPress installation not found!" "false"
+              log_event "error" "WordPress installation not found"
 
             fi
 
@@ -563,7 +568,7 @@ select_restore_type_from_dropbox() {
 
             # Here, for convention, chosen_project should be CHOSEN_DOMAIN... 
             # Only for better code reading, i assign this new var:
-            chosen_domain=${chosen_project}
+            chosen_domain="${chosen_project}"
             restore_site_files "${chosen_domain}"
 
           fi
@@ -599,9 +604,9 @@ project_restore() {
   # Select Project
   chosen_project=$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${dropbox_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
     dropbox_chosen_backup_path="${chosen_server}/site/${chosen_project}"
-    dropbox_backup_list=$(${DROPBOX_UPLOADER} -hq list "${dropbox_chosen_backup_path}")
+    dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}")"
   
   else
 
@@ -621,22 +626,22 @@ project_restore() {
 
     # Download backup
     bk_to_dowload="${chosen_server}/site/${chosen_project}/${chosen_backup_to_restore}"
-    log_event "info" "Downloading backup from dropbox: ${bk_to_dowload}" "false"
+    log_event "info" "Downloading backup from dropbox: ${bk_to_dowload}"
     display --indent 2 --text "- Downloading backup from dropbox"
     dropbox_output=$(${DROPBOX_UPLOADER} download "${bk_to_dowload}" 1>&2)
     clear_last_line
     display --indent 2 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
 
     # Uncompress backup file
-    log_event "info" "Uncompressing ${chosen_backup_to_restore}" "false"
-    pv "${chosen_backup_to_restore}" | ${TAR} xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
+    log_event "info" "Uncompressing ${chosen_backup_to_restore}"
+    pv --width 70 "${chosen_backup_to_restore}" | ${TAR} xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
     clear_last_line
     display --indent 2 --text "- Uncompressing backup file" --result "DONE" --color GREEN
 
     # Project Type
     project_type=$(get_project_type "${SFOLDER}/tmp/${chosen_project}")
 
-    log_event "info" "Project Type: ${project_type}" "false"
+    log_event "info" "Project Type: ${project_type}"
     log_event "info" "Trying to get database parameters from ${SFOLDER}/tmp/${chosen_project}/wp-config.php" "false"
 
     case $project_type in
@@ -662,28 +667,28 @@ project_restore() {
 
     # Here, for convention, chosen_project should be CHOSEN_DOMAIN... 
     # Only for better code reading, i assign this new var:
-    chosen_domain=${chosen_project}
+    chosen_domain="${chosen_project}"
 
     # Restore site files
-    new_project_domain=$(restore_site_files "${chosen_domain}")
+    new_project_domain="$(restore_site_files "${chosen_domain}")"
     project_path="${SITES}/${new_project_domain}"
 
     # Database Backup
-    backup_date=$(echo "${chosen_backup_to_restore}" |grep -Eo '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')
+    backup_date="$(echo "${chosen_backup_to_restore}" |grep -Eo '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')"
     db_to_download="${chosen_server}/database/${db_name}/${db_name}_database_${backup_date}.tar.bz2"
 
     # Extracting project_state from
     project_state="$(cut -d'_' -f2 <<<"${db_name}")"
 
-    log_event "" "*************** reading wp-config.php ***************" "false"
-    log_event "" "project_path: ${project_path}" "false"
-    log_event "" "chosen_project: ${chosen_project}" "false"
-    log_event "" "project_state: ${project_state}" "false"
-    log_event "" "backup_date: ${backup_date}" "false"
-    log_event "" "Old db_name: ${db_name}" "false"
-    log_event "" "Old db_user: ${db_user}" "false"
-    log_event "" "Old db_pass: ${db_pass}" "false"
-    log_event "" "*****************************************************" "false"
+    log_event "" "*************** Reading wp-config.php ***************"
+    log_event "" "project_path: ${project_path}"
+    log_event "" "chosen_project: ${chosen_project}"
+    log_event "" "project_state: ${project_state}"
+    log_event "" "backup_date: ${backup_date}"
+    log_event "" "db_name: ${db_name}"
+    log_event "" "db_user: ${db_user}"
+    log_event "" "db_pass: ${db_pass}"
+    log_event "" "*****************************************************"
 
     # Downloading Database Backup
     display --indent 2 --text "- Downloading backup from dropbox"
@@ -692,8 +697,8 @@ project_restore() {
     display --indent 2 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
 
     # Uncompress backup file
-    log_event "info" "Uncompressing ${db_to_download}" "false"
-    pv "${db_name}_database_${backup_date}.tar.bz2" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
+    log_event "info" "Uncompressing ${db_to_download}"
+    pv --width 70 "${db_name}_database_${backup_date}.tar.bz2" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
     clear_last_line
     display --indent 2 --text "- Uncompressing backup file" --result "DONE" --color GREEN
 
@@ -713,7 +718,7 @@ project_restore() {
 
     project_name=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${project_name}" 3>&1 1>&2 2>&3)
     exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
       log_event "info" "Setting project_name=${project_name}" "false"
 
     else
@@ -738,13 +743,13 @@ project_restore() {
 
       db_pass=$(openssl rand -hex 12)
 
-      log_event "info" "Creating ${db_user} user in MySQL with pass: ${db_pass}" "false"
+      log_event "info" "Creating ${db_user} user in MySQL with pass: ${db_pass}"
 
       mysql_user_create "${db_user}" "${db_pass}"
 
     else
 
-      log_event "warning" "MySQL user ${db_user} already exists" "false"
+      log_event "warning" "MySQL user ${db_user} already exists"
       display --indent 2 --text "- Creating ${db_user} user in MySQL" --result "FAIL" --color RED
       display --indent 4 --text "MySQL user ${db_user} already exists."
 
@@ -765,7 +770,7 @@ project_restore() {
       letsencrypt_chosen_opt=$(whiptail --title "Let's Encrypt Certificates" --menu "${letsencrypt_opt_text}" 20 78 10 "${letsencrypt_opt[@]}" 3>&1 1>&2 2>&3)
 
       exitstatus=$?
-      if [ $exitstatus = 0 ]; then
+      if [[ ${exitstatus} -eq 0 ]]; then
         
         if [[ ${letsencrypt_chosen_opt} == *"01"* ]]; then
           

@@ -20,7 +20,7 @@ source "${SFOLDER}/libs/optimizations_helper.sh"
 server_optimizations_options=("01)" "IMAGE OPTIMIZATION" "02)" "PDF OPTIMIZATION" "03)" "DELETE OLD LOGS" "04)" "REMOVE OLD PACKAGES" "05)" "REDUCE RAM USAGE")
 chosen_server_optimizations_options=$(whiptail --title "SERVER OPTIMIZATIONS" --menu "\n" 20 78 10 "${server_optimizations_options[@]}" 3>&1 1>&2 2>&3)
 exitstatus=$?
-if [ $exitstatus = 0 ]; then
+if [[ ${exitstatus} -eq 0 ]]; then
 
   if [[ ${chosen_server_optimizations_options} == *"01"* ]]; then
 
