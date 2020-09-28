@@ -20,6 +20,7 @@ phpmyadmin_installer () {
   local project_domain possible_root_domain root_domain
 
   log_event "info" "Running phpmyadmin installer"
+  log_subsection "phpMyAdmin Installer"
 
   project_domain=$(whiptail --title "Domain" --inputbox "Insert the domain for PhpMyAdmin. Example: sql.domain.com" 10 60 3>&1 1>&2 2>&3)
   exitstatus=$?
@@ -36,13 +37,13 @@ phpmyadmin_installer () {
 
   # Download phpMyAdmin
   display --indent 2 --text " - Downloading phpMyAdmin"
-  wget –-quiet "https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip" -P "${SITES}"
+  curl --silent -L https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip > "${SITES}/phpMyAdmin-latest-all-languages.zip"
   clear_last_line
   display --indent 2 --text " - Downloading phpMyAdmin" --result "DONE" --color GREEN
 
   # Uncompress
   display --indent 2 --text " - Uncompressing phpMyAdmin"
-  unzip -qq "phpMyAdmin-latest-all-languages.zip"
+  unzip "phpMyAdmin-latest-all-languages.zip" -qq
   clear_last_line
   display --indent 2 --text " - Uncompressing phpMyAdmin" --result "DONE" --color GREEN
 
