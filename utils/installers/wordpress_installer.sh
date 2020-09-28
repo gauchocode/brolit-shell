@@ -1,14 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.3
-################################################################################
-
-### Checking some things
-if [[ -z "${SFOLDER}" ]]; then
-  echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
-  exit 0
-fi
+# Version: 3.0.4
 ################################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
@@ -32,10 +25,12 @@ source "${SFOLDER}/libs/cloudflare_helper.sh"
 
 ################################################################################
 
-# Installation types
-installation_types="CLEAN_INSTALL COPY_FROM_PROJECT"
+wordpress_installer () {
 
-installation_type=$(whiptail --title "INSTALLATION TYPE" --menu "Choose an Installation Type" 20 78 10 $(for x in ${installation_types}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)
+# Installation types
+installation_types=("01)" "CLEAN INSTALL" "02)" "COPY FROM PROJECT")
+
+installation_type=$(whiptail --title "INSTALLATION TYPE" --menu "Choose an Installation Type" 20 78 10 "${installation_types[@]}" 3>&1 1>&2 2>&3)
 exitstatus=$?
 if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -232,8 +227,12 @@ if [[ ${exitstatus} -eq 0 ]]; then
   log_event "success" "WordPress installation for domain ${project_domain} finished" "false"
   display --indent 2 --text "- WordPress installation for domain ${project_domain}" --result "DONE" --color GREEN
 
-  telegram_send_message "${VPSNAME}: WordPress installation for domain ${project_domain} finished."
+  telegram_send_message "${VPSNAME}: WordPress installation for domain ${project_domain} finished"
 
 fi
 
-#main_menu
+}
+
+################################################################################
+
+wordpress_installer

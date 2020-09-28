@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.3
+# Version: 3.0.4
 #############################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
@@ -21,7 +21,7 @@ phpmyadmin_installer () {
   local possible_root_domain 
   local root_domain
 
-  log_event "info" "Running phpmyadmin installer"
+  log_event "info" "Running phpMyAdmin installer"
   log_subsection "phpMyAdmin Installer"
 
   project_domain=$(whiptail --title "Domain" --inputbox "Insert the domain for PhpMyAdmin. Example: sql.domain.com" 10 60 3>&1 1>&2 2>&3)
@@ -38,23 +38,27 @@ phpmyadmin_installer () {
   fi
 
   # Download phpMyAdmin
-  display --indent 2 --text " - Downloading phpMyAdmin"
-  curl --silent -L https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip > "${SITES}/phpMyAdmin-latest-all-languages.zip"
-  #clear_last_line
-  display --indent 2 --text " - Downloading phpMyAdmin" --result "DONE" --color GREEN
+  display --indent 2 --text "- Downloading phpMyAdmin"
+  log_event "info" "Running: curl --silent -L https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip > ${SITES}/phpMyAdmin-latest-all-languages.zip"
+  curl --silent -L https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip > "${SITES}"/phpMyAdmin-latest-all-languages.zip
+  clear_last_line
+  display --indent 2 --text "- Downloading phpMyAdmin" --result "DONE" --color GREEN
 
   # Uncompress
-  display --indent 2 --text " - Uncompressing phpMyAdmin"
-  unzip "${SITES}/phpMyAdmin-latest-all-languages.zip" -qq
+  display --indent 2 --text "- Uncompressing phpMyAdmin"
+  log_event "info" "Running: unzip -qq ${SITES}/phpMyAdmin-latest-all-languages.zip -d ${SITES}/${project_domain}"
+  unzip -qq "${SITES}/phpMyAdmin-latest-all-languages.zip" -d "${SITES}"
   clear_last_line
-  display --indent 2 --text " - Uncompressing phpMyAdmin" --result "DONE" --color GREEN
+  display --indent 2 --text "- Uncompressing phpMyAdmin" --result "DONE" --color GREEN
 
   # Delete downloaded file
   rm "${SITES}/phpMyAdmin-latest-all-languages.zip"
+  display --indent 2 --text "- Deleting installer file" --result "DONE" --color GREEN
 
   # Change directory name
-  mv "${SITES}/phpMyAdmin-latest-all-languages" "${SITES}/${project_domain}"
-  display --indent 2 --text " - Changing directory name" --result "DONE" --color GREEN
+  log_event "info" "Running: mv ${SITES}/phpMyAdmin-* ${SITES}/${project_domain}"
+  mv "${SITES}"/phpMyAdmin-* "${SITES}/${project_domain}"
+  display --indent 2 --text "- Changing directory name" --result "DONE" --color GREEN
 
   # New site Nginx configuration
   nginx_server_create "${project_domain}" "phpmyadmin" "tool"
@@ -65,8 +69,9 @@ phpmyadmin_installer () {
   # HTTPS with Certbot
   certbot_helper_installer_menu "${MAILA}" "${project_domain}"
 
-  log_event "info" "phpmyadmin installer finished!"
-  display --indent 2 --text " - Installing phpMyAdmin" --result "DONE" --color GREEN
+  log_event "info" "phpMyAdmin installer finished"
+  log_break
+  display --indent 2 --text "- Installing phpMyAdmin" --result "DONE" --color GREEN
 
 }
 
