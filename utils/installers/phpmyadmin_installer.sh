@@ -17,7 +17,9 @@ source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 phpmyadmin_installer () {
 
-  local project_domain possible_root_domain root_domain
+  local project_domain
+  local possible_root_domain 
+  local root_domain
 
   log_event "info" "Running phpmyadmin installer"
   log_subsection "phpMyAdmin Installer"
@@ -38,20 +40,20 @@ phpmyadmin_installer () {
   # Download phpMyAdmin
   display --indent 2 --text " - Downloading phpMyAdmin"
   curl --silent -L https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip > "${SITES}/phpMyAdmin-latest-all-languages.zip"
-  clear_last_line
+  #clear_last_line
   display --indent 2 --text " - Downloading phpMyAdmin" --result "DONE" --color GREEN
 
   # Uncompress
   display --indent 2 --text " - Uncompressing phpMyAdmin"
-  unzip "phpMyAdmin-latest-all-languages.zip" -qq
+  unzip "${SITES}/phpMyAdmin-latest-all-languages.zip" -qq
   clear_last_line
   display --indent 2 --text " - Uncompressing phpMyAdmin" --result "DONE" --color GREEN
 
   # Delete downloaded file
-  rm "phpMyAdmin-latest-all-languages.zip"
+  rm "${SITES}/phpMyAdmin-latest-all-languages.zip"
 
   # Change directory name
-  mv phpMyAdmin-* "${project_domain}"
+  mv "${SITES}/phpMyAdmin-latest-all-languages" "${SITES}/${project_domain}"
   display --indent 2 --text " - Changing directory name" --result "DONE" --color GREEN
 
   # New site Nginx configuration
