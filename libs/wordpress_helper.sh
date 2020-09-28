@@ -130,7 +130,7 @@ wp_replace_string_on_database() {
    
     db_prefix=$(whiptail --title "WordPress DB Prefix" --inputbox "Please insert the WordPress Database Prefix. Example: wp_" 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
       log_event "info" "Setting db_prefix=${db_prefix}"
     else
       return 1
@@ -145,7 +145,7 @@ wp_replace_string_on_database() {
     
     chosen_db=$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to work with" 20 78 10 `for x in ${DBS}; do echo "$x [DB]"; done` 3>&1 1>&2 2>&3)
     exitstatus=$?
-    if [ $exitstatus = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
       log_event "info" "Setting chosen_db=${chosen_db}"
     else
       return 1
