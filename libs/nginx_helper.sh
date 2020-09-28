@@ -29,7 +29,7 @@ nginx_server_create() {
         rm "${WSERVER}/sites-enabled/${project_domain}"
     fi
 
-    case $server_type in
+    case ${server_type} in
 
         single)
             cp "${SFOLDER}/config/nginx/sites-available/${project_type}_${server_type}" "${WSERVER}/sites-available/${project_domain}"
