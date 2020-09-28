@@ -17,13 +17,14 @@
 - [ ] Backups: When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?).
 - [ ] Installers: On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages.
 - [ ] Nginx: New default nginx configuration for wordpress projects.
-- [ ] Complete refactor on delete_project script.
 
 ### In Progress
 
 - [ ] Notifications: Subject status dont't change on error or warning.
 - [ ] Log/Display: Better log handling and display improvements.
-- [ ] Core: Refactor to let the script be runned with flags
+- [ ] Core: Refactor to let the script be runned with flags.
+- [ ] Core: Better structure of deleted projects on dropbox.
+- [ ] WP-CLI: Better error handling.
 
 ### Done ✓
 
