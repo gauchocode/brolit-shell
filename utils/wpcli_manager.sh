@@ -53,7 +53,7 @@ wpcli_main_menu() {
   wpcli_options="01) INSTALL-PLUGINS 02) DELETE-THEMES 03) DELETE-PLUGINS 04) REINSTALL-ALL-PLUGINS 05) VERIFY-WP 06) UPDATE-WP 07) REINSTALL-WP 08) CLEAN-WP-DB 09) PROFILE-WP 10) CHANGE-TABLES-PREFIX 11) REPLACE-URLs 12) SEOYOAST-REINDEX 13) DELETE-NOT-CORE-FILES"
   chosen_wpcli_options=$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 $(for x in ${wpcli_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_wpcli_options} == *"01"* ]]; then
 
@@ -163,7 +163,7 @@ wpcli_main_menu() {
       PROFILER_OPTIONS="01) PROFILE-STAGE 02) PROFILE-STAGE-BOOTSTRAP 03) PROFILE-STAGE-ALL 04) PROFILE-STAGE-HOOK-WP 05) PROFILE-STAGE-HOOK-ALL"
       CHOSEN_PROF_OPTION=$(whiptail --title "WP-CLI PROFILER HELPER" --menu "Choose an option to run" 20 78 10 $(for x in ${PROFILER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
 
-      if [ $exitstatus = 0 ]; then
+      if [[ ${exitstatus} -eq 0 ]]; then
 
         if [[ ${CHOSEN_PROF_OPTION} == *"01"* ]]; then
           #This command shows the stages of loading WordPress
