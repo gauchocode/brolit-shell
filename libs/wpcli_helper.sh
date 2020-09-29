@@ -767,8 +767,8 @@ wpcli_user_create() {
 
     local wp_site=$1
     local user=$2
-    local mail=$2
-    local role=$2
+    local mail=$3
+    local role=$4
 
     log_event "info" "Running: sudo -u www-data wp --path=${wp_site} user create ${user} ${mail} --role=${role}"
 
