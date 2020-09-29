@@ -308,7 +308,7 @@ mail_cert_section() {
 
     files_label_end="</div>"
 
-    header_open1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
+    header_open1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:white;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
     header_open2=";padding:5px 0 10px 10px;width:100%;height:30px\">"
     email_cert_header_open="${header_open1}${cert_status_color}${header_open2}"
     email_cert_header_text="Certificates on server: ${CERT_STATUS} ${cert_status_icon}"
