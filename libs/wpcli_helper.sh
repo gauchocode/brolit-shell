@@ -757,3 +757,19 @@ wpcli_rollback_wpcore_version() {
     wpcli_get_wp_version
 
 }
+
+wpcli_user_create() {
+
+    # $1 = ${wp_site}
+    # $2 = ${user}
+    # $3 = ${mail}
+    # $3 = ${role}
+
+    local wp_site=$1
+    local user=$2
+    local mail=$2
+    local role=$2
+
+    sudo -u www-data wp --path="${wp_site}" user create "${user}" "${mail}" --role="${role}"
+
+}
