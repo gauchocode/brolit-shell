@@ -47,7 +47,7 @@ wpcli_main_menu() {
     "quttera-web-malware-scanner" " " off
   )
 
-  wpcli_options=("01)" "INSTALL PLUGINS" "02)" "DELETE THEMES" "03)" "DELETE PLUGINS" "04)" "REINSTALL ALL PLUGINS" "05)" "VERIFY WP" "06)" "UPDATE WP" "07)" "REINSTALL WP" "08)" "CLEAN WP DB" "09)" "PROFILE WP" "10)" "CHANGE TABLES PREFIX" "11)" "REPLACE URLs" "12)" "SEOYOAST RE-INDEX" "13)" "DELETE NOT CORE FILES")
+  wpcli_options=("01)" "INSTALL PLUGINS" "02)" "DELETE THEMES" "03)" "DELETE PLUGINS" "04)" "REINSTALL ALL PLUGINS" "05)" "VERIFY WP" "06)" "UPDATE WP" "07)" "REINSTALL WP" "08)" "CLEAN WP DB" "09)" "PROFILE WP" "10)" "CHANGE TABLES PREFIX" "11)" "REPLACE URLs" "12)" "SEOYOAST RE-INDEX" "13)" "DELETE NOT CORE FILES" "14)" "CREATE WP USER")
   chosen_wpcli_options=$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 "${wpcli_options[@]}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -229,10 +229,34 @@ wpcli_main_menu() {
       echo -e "${B_RED} > This script will delete all non-core wordpress files (except wp-content). Do you want to continue? [y/n]${ENDCOLOR}"
       read -r answer
       
-      if [[ $answer == "y" ]]; then
+      if [[ ${answer} == "y" ]]; then
           wpcli_delete_not_core_files "${wp_site}"
       
       fi   
+
+    fi
+
+    if [[ ${chosen_wpcli_options} == *"14"* ]]; then
+
+      choosen_user=$(whiptail --title "WORDPRESS USER" --inputbox "Insert the username you want:" 10 60 "" 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        choosen_email=$(whiptail --title "WORDPRESS USER MAIL" --inputbox "Insert the username email:" 10 60 "" 3>&1 1>&2 2>&3)
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+          choosen_role=$(whiptail --title "WORDPRESS USER ROLE" --inputbox "Insert the user role (‘administrator’, ‘editor’, ‘author’, ‘contributor’, ‘subscriber’)" 10 60 "" 3>&1 1>&2 2>&3)
+          exitstatus=$?
+          if [[ ${exitstatus} -eq 0 ]]; then
+
+            wpcli_user_create "${wp_site}" "${choosen_user}" "${choosen_email}" "${choosen_role}"
+
+          fi 
+
+        fi    
+
+      fi    
 
     fi
 
