@@ -38,8 +38,10 @@ optimize_images_complete() {
 optimize_ram_usage() {
 
     # Restarting services
-    log_event "info" "Restarting php-fpm service" "false"
+    log_event "info" "Restarting php-fpm service"
+    
     service php"${PHP_V}"-fpm restart
+
     display --indent 2 --text "- Restarting php-fpm service" --result "DONE" --color GREEN
 
     # Cleanning Swap
@@ -65,19 +67,28 @@ optimize_image_size() {
   local last_run
 
   # Run ImageMagick mogrify
-  log_event "info" "Running mogrify to optimize image sizes ..." "false"
+  log_event "info" "Running mogrify to optimize image sizes ..."
+  log_subsection "Image Resizer"
 
   last_run=$(check_last_optimization_date)
   
   if [[ "${last_run}" == "never" ]]; then
+
+    display --indent 2 --text "- Optimizing images sizes for first time"
   
-    log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;" "false"
+    log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;"
     ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \;
+
+    display --indent 2 --text "- Optimizing images sizes for first time" --result "DONE" --color GREEN
   
   else
+
+    display --indent 2 --text "- Optimizing images of last 7 days"
   
-    log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;" "false"
+    log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;"
     ${FIND} "${path}" -mtime -7 -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \;
+
+    display --indent 2 --text "- Optimizing images of last 7 days" --result "DONE" --color GREEN
   
   fi
 
@@ -98,45 +109,55 @@ optimize_images() {
 
   local last_run
 
-  last_run=$(check_last_optimization_date)
+  log_subsection "Image Optimizer"
 
-  if [ "${file_extension}" == "jpg" ]; then
+  last_run="$(check_last_optimization_date)"
+
+  if [[ ${file_extension} == "jpg" ]]; then
 
     # Run jpegoptim
-    log_event "info" "Running jpegoptim to optimize images ..." "false"
+    log_event "info" "Running jpegoptim to optimize images"
+    display --indent 2 --text "- Optimizing jpg images"
 
     if [[ "${last_run}" == "never" ]]; then
 
-      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;" "false"
+      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;"
       ${FIND} "${path}" -type f -regex ".*\.\(jpg\|jpeg\)" -exec "${JPEGOPTIM}" --max="${img_compress}" --strip-all --all-progressive {} \;
 
     else
 
-      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;" "false"
+      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;"
       ${FIND} "${path}" -mtime -7 -type f -regex ".*\.\(jpg\|jpeg\)" -exec "${JPEGOPTIM}" --max="${img_compress}" --strip-all --all-progressive {} \;
 
     fi
 
-  elif [ "${file_extension}" == "png" ]; then
+    display --indent 2 --text "- Optimizing jpg images" --result "DONE" --color GREEN
+
+  elif [[ ${file_extension} == "png" ]]; then
 
     # Run optipng
-    log_event "info" "Running optipng to optimize images ..." "false"
+    log_event "info" "Running optipng to optimize images ..."
+    display --indent 2 --text "- Optimizing png images"
 
     if [[ "${last_run}" == "never" ]]; then
     
-      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${OPTIPNG} -strip-all {} \;" "false"
+      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${OPTIPNG} -strip-all {} \;"
       ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${OPTIPNG}" -o7 -strip all {} \;
     
     else
 
-      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${OPTIPNG} -strip-all {} \;" "false"
+      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${OPTIPNG} -strip-all {} \;"
       ${FIND} "${path}" -mtime -7 -type f -name "*.${file_extension}" -exec "${OPTIPNG}" -o7 -strip all {} \;
     
     fi
 
+    display --indent 2 --text "- Optimizing png images" --result "DONE" --color GREEN
+
   else
 
-    log_event "warning" "Unsopported file extension ${file_extension}" "true"    
+    log_event "warning" "Unsopported file extension ${file_extension}"
+    display --indent 2 --text "- Optimizing images" --result "FAIL" --color RED
+    display --indent 4 --text "Unsopported file extension: ${file_extension}"
 
   fi
 
@@ -157,7 +178,7 @@ optimize_pdfs() {
   last_run=$(check_last_optimization_date)
 
   # Run pdf optimizer
-  log_event "error" "TODO: Running pdfwrite ..." "false"    
+  log_event "error" "TODO: Running pdfwrite ..."
 
   #Here is a solution for getting the output of find into a bash array:
   #array=()
@@ -209,15 +230,17 @@ update_last_optimization_date() {
 delete_old_logs() {
 
   # Remove old log files from system
-  log_event "info" "Deleting old system logs ..." "false"
+  log_event "info" "Deleting old system logs ..."
   ${FIND} /var/log/ -mtime +7 -type f -delete
+
+  display --indent 2 --text "- Deleting old system logs" --result "DONE" --color GREEN
 
 }
 
 clean_swap() {
 
   # Cleanning Swap
-  log_event "info" "Cleanning Swap" "false"
+  log_event "info" "Cleanning Swap"
   swapoff -a && swapon -a
 
   display --indent 2 --text "- Cleanning Swap" --result "DONE" --color GREEN
@@ -227,7 +250,7 @@ clean_swap() {
 clean_ram_cache() {
 
   # Cleanning RAM
-  log_event "info" "Cleanning RAM cache" "false"
+  log_event "info" "Cleanning RAM cache"
   sync
   echo 1 >/proc/sys/vm/drop_caches
 
