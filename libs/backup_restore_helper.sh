@@ -765,7 +765,7 @@ project_restore() {
 
     if [[ "${new_project_domain}" = "${chosen_domain}" ]]; then
 
-      letsencrypt_opt_text="Do you want to restore let's encrypt certificates or generate a new ones?"
+      letsencrypt_opt_text="\n Do you want to restore let's encrypt certificates or generate a new ones?"
       letsencrypt_opt=("01)" "RESTORE CERTIFICATES" "02)" "GENERATE NEW CERTIFICATES")
       letsencrypt_chosen_opt=$(whiptail --title "Let's Encrypt Certificates" --menu "${letsencrypt_opt_text}" 20 78 10 "${letsencrypt_opt[@]}" 3>&1 1>&2 2>&3)
 
