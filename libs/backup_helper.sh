@@ -130,7 +130,7 @@ backup_menu() {
       MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
 
       # Checking result status for mail subject
-      EMAIL_STATUS="$(mail_subject_status "${STATUS_D}" "${STATUS_F}" "${STATUS_S}" "${OUTDATED}")"
+      EMAIL_STATUS="$(mail_subject_status "${STATUS_BACKUP_DBS}" "${STATUS_BACKUP_FILES}" "${STATUS_SERVER}" "${OUTDATED_PACKAGES}")"
 
       log_event "info" "Sending Email to ${MAILA} ..." "false"
 
