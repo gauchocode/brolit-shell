@@ -134,19 +134,21 @@ test_mysql_database_exists() {
 
 test_display_functions() {
 
-    test_mail_package_section
-
     log_subsection "Testing display 1"
 
-    display --indent 2 --text "- Testing message on console" --result "DONE" --color GREEN
-    display --indent 2 --text "- Testing message on console" --result "WARNING" --color YELLOW
-    display --indent 2 --text "- Testing message on console" --tcolor RED --result "ERROR" --color RED
+    display --indent 2 --text "- Testing message DONE" --result "DONE" --color GREEN
+    display --indent 2 --text "- Testing message WARNING" --result "WARNING" --color YELLOW
+    display --indent 2 --text "- Testing message ERROR" --result "ERROR" --color RED
+    display --indent 4 --text "Testing output ERROR" --tcolor RED
 
     log_subsection "Testing display 2"
 
-    display --indent 2 --text "- Testing message on console" --result "DONE" --color GREEN
-    display --indent 2 --text "- Testing message on console" --result "DONE" --color GREEN
-    display --indent 2 --text "- Testing message on console" --result "WARNING" --color YELLOW
+    display --indent 2 --text "- Testing message with color" --result "DONE" --color GREEN
+    display --indent 4 --text "Testing output DONE" --tcolor GREEN --tstyle CURSIVE
+    display --indent 2 --text "- Testing message with color" --result "DONE" --color GREEN
+    display --indent 4 --text "Testing output GREEN in ITALIC" --tcolor GREEN --tstyle ITALIC
+    display --indent 2 --text "- Testing message with color" --result "WARNING" --color YELLOW
+    display --indent 4 --text "Testing output WARNING" --tcolor YELLOW
 
     #sleep 3
 
@@ -172,9 +174,7 @@ test_cloudflare_change_a_record() {
 
 log_section "Running Tests"
 
-#log_subsection "Testing display functions"
-
-#test_display_functions
+test_display_functions
 
 #log_subsection "Testing mail functions"
 
@@ -182,7 +182,7 @@ log_section "Running Tests"
 
 #test_mail_package_section
 
-test_cloudflare_change_a_record
+#test_cloudflare_change_a_record
 
 #test_mysql_user_exists
 #test_mysql_database_exists
