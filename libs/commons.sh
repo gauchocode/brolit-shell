@@ -218,7 +218,7 @@ script_init() {
   STATUS_BACKUP_FILES=""
   STATUS_SERVER=""
   STATUS_CERTS=""
-  OUTDATED_PACKAGES=false
+  OUTDATED_PACKAGES="false"
 
   # Dropbox Uploader config file
   DPU_CONFIG_FILE=~/.dropbox_uploader
