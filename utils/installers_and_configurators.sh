@@ -57,17 +57,18 @@ installers_and_configurators() {
       display --indent 2 --text "- Installing zsh and utils"
 
       apt-get install zsh -qq > /dev/null
+      apt install fontconfig -qq > /dev/null
 
-      # Oh My Zsh
+      # Download and install Oh My Zsh
       sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
 
-      # PowerLevel10k
+      # Donwload and configure PowerLevel10k for Oh My Zsh
       git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"/themes/powerlevel10k
 
       clear_last_line
       display --indent 2 --text "- Installing zsh and utils" --result "DONE" --color GREEN
 
-      # Copying configs
+      # Copying configs files
       cp "${SCRIPT}"/config/zsh/p10k.zsh ./.p10k.zsh
       cp "${SCRIPT}"/config/zsh/zshrc ./.zshrc
       display --indent 2 --text "- Configuring Oh My Zsh and P10K" --result "DONE" --color GREEN

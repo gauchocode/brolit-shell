@@ -31,7 +31,8 @@
   # The list of segments shown on the left. Fill it with the most important segments.
   typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(
     # =========================[ Line #1 ]=========================
-    os_icon                 # os identifier
+    context                 # user@hostname
+    #os_icon                 # os identifier
     dir                     # current directory
     vcs                     # git status
     # =========================[ Line #2 ]=========================
@@ -72,8 +73,8 @@
     jenv                    # java version from jenv (https://github.com/jenv/jenv)
     plenv                   # perl version from plenv (https://github.com/tokuhirom/plenv)
     phpenv                  # php version from phpenv (https://github.com/phpenv/phpenv)
-    scalaenv                # scala version from scalaenv (https://github.com/scalaenv/scalaenv)
-    haskell_stack           # haskell version from stack (https://haskellstack.org/)
+    # scalaenv              # scala version from scalaenv (https://github.com/scalaenv/scalaenv)
+    # haskell_stack         # haskell version from stack (https://haskellstack.org/)
     kubecontext             # current kubernetes context (https://kubernetes.io/)
     terraform               # terraform workspace (https://www.terraform.io)
     aws                     # aws profile (https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html)
@@ -81,7 +82,6 @@
     azure                   # azure account name (https://docs.microsoft.com/en-us/cli/azure)
     gcloud                  # google cloud cli account and project (https://cloud.google.com/)
     google_app_cred         # google application credentials (https://cloud.google.com/docs/authentication/production)
-    context                 # user@hostname
     nordvpn                 # nordvpn connection status, linux only (https://nordvpn.com/)
     ranger                  # ranger shell (https://github.com/ranger/ranger)
     nnn                     # nnn shell (https://github.com/jarun/nnn)
@@ -91,8 +91,8 @@
     # vi_mode               # vi mode (you don't need this if you've enabled prompt_char)
     # vpn_ip                # virtual private network indicator
     # load                  # CPU load
-    disk_usage            # disk usage
-    ram                   # free RAM
+    disk_usage              # disk usage
+    ram                     # free RAM
     # swap                  # used swap
     todo                    # todo items (https://github.com/todotxt/todo.txt-cli)
     timewarrior             # timewarrior tracking status (https://timewarrior.net/)
@@ -100,8 +100,8 @@
     time                    # current time
     # =========================[ Line #2 ]=========================
     newline
-    # ip                    # ip address and bandwidth usage for a specified network interface
-    # public_ip             # public IP address
+    #ip                     # ip address and bandwidth usage for a specified network interface
+    public_ip               # public IP address
     # proxy                 # system-wide http/https/ftp proxy
     # battery               # internal battery
     # wifi                  # wifi speed
@@ -178,8 +178,8 @@
 
   #################################[ os_icon: os identifier ]##################################
   # OS identifier color.
-  typeset -g POWERLEVEL9K_OS_ICON_FOREGROUND=232
-  typeset -g POWERLEVEL9K_OS_ICON_BACKGROUND=7
+  typeset -g POWERLEVEL9K_OS_ICON_FOREGROUND=255
+  typeset -g POWERLEVEL9K_OS_ICON_BACKGROUND=166
   # Custom icon.
   # typeset -g POWERLEVEL9K_OS_ICON_CONTENT_EXPANSION='⭐'
 
@@ -346,7 +346,7 @@
   # typeset -g POWERLEVEL9K_VCS_LOADING_BACKGROUND=8
 
   # Branch icon. Set this parameter to '\uF126 ' for the popular Powerline branch icon.
-  typeset -g POWERLEVEL9K_VCS_BRANCH_ICON=
+  typeset -g POWERLEVEL9K_VCS_BRANCH_ICON=''
 
   # Untracked files icon. It's really a question mark, your font isn't broken.
   # Change the value of this parameter to show a different icon.
@@ -750,15 +750,15 @@
 
   ##################################[ disk_usage: disk usage ]##################################
   # Colors for different levels of disk usage.
-  # typeset -g POWERLEVEL9K_DISK_USAGE_NORMAL_FOREGROUND=3
-  # typeset -g POWERLEVEL9K_DISK_USAGE_NORMAL_BACKGROUND=0
-  # typeset -g POWERLEVEL9K_DISK_USAGE_WARNING_FOREGROUND=0
-  # typeset -g POWERLEVEL9K_DISK_USAGE_WARNING_BACKGROUND=3
-  # typeset -g POWERLEVEL9K_DISK_USAGE_CRITICAL_FOREGROUND=7
-  # typeset -g POWERLEVEL9K_DISK_USAGE_CRITICAL_BACKGROUND=1
+  typeset -g POWERLEVEL9K_DISK_USAGE_NORMAL_FOREGROUND=185
+  typeset -g POWERLEVEL9K_DISK_USAGE_NORMAL_BACKGROUND=240
+  typeset -g POWERLEVEL9K_DISK_USAGE_WARNING_FOREGROUND=0
+  typeset -g POWERLEVEL9K_DISK_USAGE_WARNING_BACKGROUND=3
+  typeset -g POWERLEVEL9K_DISK_USAGE_CRITICAL_FOREGROUND=7
+  typeset -g POWERLEVEL9K_DISK_USAGE_CRITICAL_BACKGROUND=1
   # Thresholds for different levels of disk usage (percentage points).
-  typeset -g POWERLEVEL9K_DISK_USAGE_WARNING_LEVEL=90
-  typeset -g POWERLEVEL9K_DISK_USAGE_CRITICAL_LEVEL=95
+  typeset -g POWERLEVEL9K_DISK_USAGE_WARNING_LEVEL=60
+  typeset -g POWERLEVEL9K_DISK_USAGE_CRITICAL_LEVEL=85
   # If set to true, hide disk usage when below $POWERLEVEL9K_DISK_USAGE_WARNING_LEVEL percent.
   typeset -g POWERLEVEL9K_DISK_USAGE_ONLY_WARNING=false
   # Custom icon.
@@ -782,8 +782,8 @@
 
   ######################################[ ram: free RAM ]#######################################
   # RAM color.
-  # typeset -g POWERLEVEL9K_RAM_FOREGROUND=0
-  # typeset -g POWERLEVEL9K_RAM_BACKGROUND=3
+  typeset -g POWERLEVEL9K_RAM_FOREGROUND=185
+  typeset -g POWERLEVEL9K_RAM_BACKGROUND=240
   # Custom icon.
   # typeset -g POWERLEVEL9K_RAM_VISUAL_IDENTIFIER_EXPANSION='⭐'
 
@@ -871,8 +871,8 @@
 
   ##################################[ context: user@hostname ]##################################
   # Context color when running with privileges.
-  typeset -g POWERLEVEL9K_CONTEXT_ROOT_FOREGROUND=1
-  typeset -g POWERLEVEL9K_CONTEXT_ROOT_BACKGROUND=0
+  typeset -g POWERLEVEL9K_CONTEXT_ROOT_FOREGROUND=254
+  typeset -g POWERLEVEL9K_CONTEXT_ROOT_BACKGROUND=4
   # Context color in SSH without privileges.
   typeset -g POWERLEVEL9K_CONTEXT_{REMOTE,REMOTE_SUDO}_FOREGROUND=3
   typeset -g POWERLEVEL9K_CONTEXT_{REMOTE,REMOTE_SUDO}_BACKGROUND=0
@@ -972,7 +972,7 @@
   # typeset -g POWERLEVEL9K_PYENV_VISUAL_IDENTIFIER_EXPANSION='⭐'
 
   ################[ goenv: go environment (https://github.com/syndbg/goenv) ]################
-  # Goenv color.
+  # Goenv color
   # typeset -g POWERLEVEL9K_GOENV_FOREGROUND=0
   # typeset -g POWERLEVEL9K_GOENV_BACKGROUND=4
   # Hide go version if it doesn't come from one of these sources.
@@ -1489,8 +1489,8 @@
 
   ###############################[ public_ip: public IP address ]###############################
   # Public IP color.
-  # typeset -g POWERLEVEL9K_PUBLIC_IP_FOREGROUND=7
-  # typeset -g POWERLEVEL9K_PUBLIC_IP_BACKGROUND=0
+  typeset -g POWERLEVEL9K_PUBLIC_IP_FOREGROUND=4
+  typeset -g POWERLEVEL9K_PUBLIC_IP_BACKGROUND=0
   # Custom icon.
   # typeset -g POWERLEVEL9K_PUBLIC_IP_VISUAL_IDENTIFIER_EXPANSION='⭐'
 
@@ -1582,8 +1582,8 @@
 
   ####################################[ time: current time ]####################################
   # Current time color.
-  # typeset -g POWERLEVEL9K_TIME_FOREGROUND=0
-  # typeset -g POWERLEVEL9K_TIME_BACKGROUND=7
+  typeset -g POWERLEVEL9K_TIME_FOREGROUND=4
+  typeset -g POWERLEVEL9K_TIME_BACKGROUND=254
   # Format for the current time: 09:51:02. See `man 3 strftime`.
   typeset -g POWERLEVEL9K_TIME_FORMAT='%D{%H:%M:%S}'
   # If set to true, time will update when you hit enter. This way prompts for the past
