@@ -38,9 +38,9 @@ install_package_if_not() {
   if [[ "$(is_this_installed "${package}")" != "${package} is installed, it must be a clean server." ]]; then
 
     apt update -q4 &
-    spinner_loading && apt install "${1}" -y
+    spinner_loading && apt install "${package}" -y
 
-    log_event "info" "${package} installed" "false"
+    log_event "info" "${package} installed"
 
   fi
 
@@ -56,7 +56,7 @@ add_ppa() {
 
     grep -h "^deb.*$i" /etc/apt/sources.list.d/* >/dev/null 2>&1
     exit_status=$?
-    if [ ${exit_status} -ne 0 ]; then
+    if [[ ${exit_status} -ne 0 ]]; then
       echo "Adding ppa:$i"
       add-apt-repository -y ppa:"${i}"
     else

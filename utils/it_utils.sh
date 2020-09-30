@@ -19,7 +19,7 @@ it_utils_menu() {
   chosen_it_util_options=$(whiptail --title "IT UTILS" --menu "Choose a script to Run" 20 78 10 "${it_util_options[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
-  if [ ${exitstatus} = 0 ]; then
+  if [[ ${exitstatus} = 0 ]]; then
 
     log_section "IT Utils"
 
