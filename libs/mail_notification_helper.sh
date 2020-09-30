@@ -55,7 +55,7 @@ mail_subject_status() {
 
 remove_mail_notifications_files() {
 
-    log_event "info" "Removing notifications temp files ..." "false"
+    log_event "info" "Removing notifications temp files ..."
 
     # Remove one per line only for better readibility
     rm -f "${BAKWP}/cert-${NOW}.mail" 
@@ -64,7 +64,7 @@ remove_mail_notifications_files() {
     rm -f "${BAKWP}/config-bk-${NOW}.mail"
     rm -f "${BAKWP}/db-bk-${NOW}.mail"
 
-    log_event "info" "Temp files removed" "false"
+    log_event "info" "Temp files removed"
 
 }
 
@@ -341,6 +341,8 @@ mail_filesbackup_section() {
 
     declare -g STATUS_BACKUP_FILES
 
+    local color
+    local content
     local header
     local body
     local header_open1
@@ -350,20 +352,25 @@ mail_filesbackup_section() {
     local header_close
     local body_open
     local body_close
+    local files_inc_line_p1
+    local files_inc_line_p2
+    local files_inc_line_p3
+    local files_inc_line_p4
+    local files_inc_line_p5
 
     local backup_type
 
     backup_type='Files'
 
-    if [ "$ERROR" = true ]; then
+    if [[ ${ERROR} = true ]]; then
 
         # Changing global
         STATUS_BACKUP_FILES="ERROR"
 
         # Changing locals
-        status_icon_f="💩"        
+        status_icon_f="⛔"        
         content="<b>${backup_type} Backup Error: ${ERROR_TYPE}<br />Please check log file.</b> <br />"
-        COLOR="red"
+        color="red"
 
     else
 
@@ -373,10 +380,10 @@ mail_filesbackup_section() {
         # Changing locals
         status_icon_f="✅"
         content=""
-        COLOR="#503fe0"
-        SIZE_LABEL=""
+        color="#503fe0"
+        size_label=""
         files_label="<b>Backup files includes:</b><br /><div style=\"color:#000;font-size:12px;line-height:24px;padding-left:10px;\">"
-        FILES_INC=""
+        files_inc=""
 
         count=0
 
@@ -384,13 +391,13 @@ mail_filesbackup_section() {
                      
             BK_FL_SIZE="${BK_FL_SIZES[$count]}"
 
-            FILES_INC_LINE_P1="<div><span style=\"margin-right:5px;\">"
-            FILES_INC_LINE_P2="${FILES_INC}${backup_file}"
-            FILES_INC_LINE_P3="</span> <span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\">"
-            FILES_INC_LINE_P4="${BK_FL_SIZE}"
-            FILES_INC_LINE_P5="</span></div>"
+            files_inc_line_p1="<div><span style=\"margin-right:5px;\">"
+            files_inc_line_p2="${files_inc}${backup_file}"
+            files_inc_line_p3="</span> <span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\">"
+            files_inc_line_p4="${BK_FL_SIZE}"
+            files_inc_line_p5="</span></div>"
 
-            FILES_INC="${FILES_INC_LINE_P1}${FILES_INC_LINE_P2}${FILES_INC_LINE_P3}${FILES_INC_LINE_P4}${FILES_INC_LINE_P5}"
+            files_inc="${files_inc_line_p1}${files_inc_line_p2}${files_inc_line_p3}${files_inc_line_p4}${files_inc_line_p5}"
 
             count=$((count + 1))
 
@@ -400,16 +407,16 @@ mail_filesbackup_section() {
 
         if [ "${DUP_BK}" = true ]; then
             DBK_SIZE=$(du -hs "${DUP_ROOT}" | cut -f1)
-            DBK_SIZE_LABEL="Duplicity Backup size: <b>${DBK_SIZE}</b><br /><b>Duplicity Backup includes:</b><br />${DUP_FOLDERS}"
+            dbk_size_label="Duplicity Backup size: <b>${DBK_SIZE}</b><br /><b>Duplicity Backup includes:</b><br />${DUP_FOLDERS}"
 
         fi
 
     fi
 
     # Header
-    header_open1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
-    header_open2=';padding:5px 0 10px 10px;width:100%;height:30px">'
-    header_open="${header_open1}${COLOR}${header_open2}"
+    header_open1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
+    header_open2=";padding:5px 0 10px 10px;width:100%;height:30px\">"
+    header_open="${header_open1}${color}${header_open2}"
     header_text="Files Backup: ${STATUS_BACKUP_FILES} ${status_icon_f}"
     header_close="</div>"
 
@@ -420,7 +427,7 @@ mail_filesbackup_section() {
     #MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
 
     header="${header_open}${header_text}${header_close}"
-    body="${body_open}${content}${SIZE_LABEL}${files_label}${FILES_INC}${files_label_end}${DBK_SIZE_LABEL}${body_close}"
+    body="${body_open}${content}${size_label}${files_label}${files_inc}${files_label_end}${dbk_size_label}${body_close}"
     #footer="${FOOTEROPEN}${SCRIPTSTRING}${FOOTERCLOSE}"
 
     # Write e-mail parts files
@@ -469,7 +476,7 @@ mail_configbackup_section() {
         STATUS_BACKUP_FILES='ERROR'
 
         # Changing locals
-        status_icon_f="💩"        
+        status_icon_f="⛔"        
         content="<b>${backup_type} Backup Error: ${ERROR_TYPE}<br />Please check log file.</b> <br />"
         color="red"
 
@@ -482,7 +489,7 @@ mail_configbackup_section() {
         status_icon_f="✅"
         content=""
         color="#503fe0"
-        SIZE_LABEL=""
+        size_label=""
         files_label="<b>Backup files includes:</b><br /><div style=\"color:#000;font-size:12px;line-height:24px;padding-left:10px;\">"
         files_inc=""
 
@@ -508,19 +515,19 @@ mail_configbackup_section() {
 
     fi
 
-    header_open1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
-    header_open2=';padding:5px 0 10px 10px;width:100%;height:30px">'
+    header_open1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
+    header_open2=";padding:5px 0 10px 10px;width:100%;height:30px\">"
     header_open="${header_open1}${color}${header_open2}"
     header_text="Config Backup: ${STATUS_BACKUP_FILES} ${status_icon_f}"
     header_close="</div>"
 
-    body_open='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
+    body_open="<div style=\"color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;\">"
     body_close="</div></div>"
 
     #MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
 
     header="${header_open}${header_text}${header_close}"
-    body="${body_open}${content}${SIZE_LABEL}${files_label}${files_inc}${files_label_end}${DBK_SIZE_LABEL}${body_close}"
+    body="${body_open}${content}${size_label}${files_label}${files_inc}${files_label_end}${dbk_size_label}${body_close}"
     #FOOTER="${FOOTEROPEN}${SCRIPTSTRING}${FOOTERCLOSE}"
 
     # Write e-mail parts files
@@ -564,7 +571,7 @@ mail_mysqlbackup_section() {
         STATUS_BACKUP_DBS="ERROR"
 
         # Changing locals
-        status_icon="💩"
+        status_icon="⛔"
         content="<b>${backup_type} Backup with errors:<br />${ERROR_TYPE}<br /><br />Please check log file.</b> <br />"
         color="#b51c1c"
 

@@ -57,10 +57,10 @@ installers_and_configurators() {
       display --indent 2 --text "- Installing zsh and utils"
 
       apt-get install zsh -qq > /dev/null
-      apt install fontconfig -qq > /dev/null
+      apt-get install fontconfig -qq > /dev/null
 
       # Download and install Oh My Zsh
-      sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
+      sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
 
       # Donwload and configure PowerLevel10k for Oh My Zsh
       git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"/themes/powerlevel10k
@@ -68,15 +68,14 @@ installers_and_configurators() {
       clear_last_line
       display --indent 2 --text "- Installing zsh and utils" --result "DONE" --color GREEN
 
-      # Copying configs files
+            # Copying configs files
       cp "${SCRIPT}"/config/zsh/p10k.zsh ./.p10k.zsh        # Colour Reference: https://jonasjacek.github.io/colors/
       cp "${SCRIPT}"/config/zsh/zshrc ./.zshrc
       display --indent 2 --text "- Configuring Oh My Zsh and P10K" --result "DONE" --color GREEN
+      display --indent 4 --text "Please reboot the server to aplied changes" --tcolor YELLOW
 
       # Make zsh default shell
       chsh -s "$(which zsh)"
-
-      zsh
 
     fi
 
