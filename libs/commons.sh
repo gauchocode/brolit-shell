@@ -88,7 +88,7 @@ MAILCOW_TMP_BK="${SFOLDER}/tmp/mailcow"
 
 PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
 php_exit=$?
-if [ "${php_exit}" -eq 1 ];then
+if [[ ${php_exit} -eq 1 ]];then
   # TODO: must be an option
   # Packages to watch
   PACKAGES=(linux-firmware dpkg nginx "php${PHP_V}-fpm" mysql-server openssl)
@@ -213,12 +213,12 @@ script_init() {
   # Ref: http://patorjk.com/software/taag/
   ################################################################################
 
-  # Status (STATUS_D, STATUS_F, STATUS_S, OUTDATED)
-  STATUS_D=""
-  STATUS_F=""
-  STATUS_S=""
-  STATUS_C=""
-  OUTDATED=false
+  # Status (STATUS_BACKUP_DBS, STATUS_BACKUP_FILES, STATUS_SERVER, STATUS_CERTS, OUTDATED_PACKAGES)
+  STATUS_BACKUP_DBS=""
+  STATUS_BACKUP_FILES=""
+  STATUS_SERVER=""
+  STATUS_CERTS=""
+  OUTDATED_PACKAGES=false
 
   # Dropbox Uploader config file
   DPU_CONFIG_FILE=~/.dropbox_uploader
@@ -281,7 +281,7 @@ script_init() {
   fi
 
   # EXPORT VARS (GLOBALS)
-  export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL DISK_U ONE_FILE_BK SERVER_IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_D STATUS_F STATUS_S OUTDATED LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
+  export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL DISK_U ONE_FILE_BK SERVER_IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_BACKUP_DBS STATUS_BACKUP_FILES STATUS_SERVER STATUS_CERTS OUTDATED_PACKAGES LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
 
 }
 
@@ -1026,18 +1026,18 @@ clear_last_line() {
 
 display() {
 
-  INDENT=0; TEXT=""; RESULT=""; TCOLOR=""; COLOR=""; SPACES=0; SHOWDEBUG=0; CRONJOB=0;
+  INDENT=0; TEXT=""; RESULT=""; TCOLOR=""; TSTYLE=""; COLOR=""; SPACES=0; SHOWDEBUG=0; CRONJOB=0;
   
   while [ $# -ge 1 ]; do
       case $1 in
           --color)
               shift
                   case $1 in
-                    GREEN)    COLOR=$GREEN   ;;
-                    RED)      COLOR=$RED     ;;
-                    WHITE)    COLOR=$WHITE   ;;
-                    YELLOW)   COLOR=$YELLOW  ;;
-                    MAGENTA)  COLOR=$MAGENTA  ;
+                    GREEN)    COLOR=${GREEN}   ;;
+                    RED)      COLOR=${RED}     ;;
+                    WHITE)    COLOR=${WHITE}   ;;
+                    YELLOW)   COLOR=${YELLOW}  ;;
+                    MAGENTA)  COLOR=${MAGENTA}  ;
                   esac
           ;;
           --debug)
@@ -1054,11 +1054,21 @@ display() {
           --tcolor)
             shift
                 case $1 in
-                  GREEN)    COLOR=$GREEN   ;;
-                  RED)      COLOR=$RED     ;;
-                  WHITE)    COLOR=$WHITE   ;;
-                  YELLOW)   COLOR=$YELLOW  ;;
-                  MAGENTA)  COLOR=$MAGENTA  ;
+                  GREEN)    TCOLOR=${GREEN}   ;;
+                  RED)      TCOLOR=${RED}     ;;
+                  WHITE)    TCOLOR=${WHITE}   ;;
+                  YELLOW)   TCOLOR=${YELLOW}  ;;
+                  MAGENTA)  TCOLOR=${MAGENTA}  ;
+                esac
+          ;;
+          --tstyle)
+            shift
+                case $1 in
+                  NORMAL)       TSTYLE=${NORMAL}   ;;
+                  BOLD)         TSTYLE=${BOLD}     ;;
+                  ITALIC)       TSTYLE=${ITALIC}   ;;
+                  UNDERLINED)   TSTYLE=${UNDERLINED}  ;;
+                  INVERTED)     TSTYLE=${INVERTED}  ;
                 esac
           ;;
           --text)
@@ -1098,7 +1108,7 @@ display() {
           if [ "${CRONJOB}" -eq 0 ]; then
             # Check if we already have already discovered a proper echo command tool. It not, set it default to 'echo'.
             #if [ "${ECHOCMD}" = "" ]; then ECHOCMD="echo"; fi
-            echo -e "\033[${INDENT}C${TCOLOR}${TEXT}${NORMAL}\033[${SPACES}C${RESULTPART}${DEBUGTEXT}" >&2
+            echo -e "\033[${INDENT}C${TCOLOR}${TSTYLE}${TEXT}${NORMAL}\033[${SPACES}C${RESULTPART}${DEBUGTEXT}" >&2
 
           else
             echo "${TEXT}${RESULTPART}" >&2

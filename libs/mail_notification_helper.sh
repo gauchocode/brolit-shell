@@ -75,7 +75,7 @@ mail_server_status_section() {
 
     local IP=$1
 
-    declare -g STATUS_S     # Global to check section status
+    declare -g STATUS_SERVER     # Global to check section status
 
     local disk_u 
     local disk_u_ns
@@ -103,7 +103,7 @@ mail_server_status_section() {
 
     if [[ "${casted_disk_u_ns}" -gt 45 ]]; then
         # Changing global
-        STATUS_S="WARNING"
+        STATUS_SERVER="WARNING"
 
         # Changing locals
         status_s_icon="⚠"
@@ -111,7 +111,7 @@ mail_server_status_section() {
 
     else
         # Changing global
-        STATUS_S="OK"
+        STATUS_SERVER="OK"
 
         # Changing locals
         status_s_icon="✅"
@@ -122,7 +122,7 @@ mail_server_status_section() {
     header_open1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
     header_open2="${status_s_color}"
     header_open3=";padding:5px 0 10px 10px;width:100%;height:30px\">"
-    header_text="Server Status: ${STATUS_S} ${status_s_icon}"
+    header_text="Server Status: ${STATUS_SERVER} ${status_s_icon}"
     header_close="</div>"
     header="${header_open1}${header_open2}${header_open3}${header_text}${header_close}"
 
@@ -158,10 +158,10 @@ mail_package_status_section() {
     #if not empty, system is outdated
     if [ "${pkg_details}" != "" ]; then
         
-        OUTDATED=true
+        OUTDATED_PACKAGES=true
 
         pkg_color="#b51c1c"
-        pkg_status="OUTDATED"
+        pkg_status="OUTDATED_PACKAGES"
         pkg_status_icon="⚠"
     else
         pkg_color='#503fe0'
@@ -234,7 +234,7 @@ mail_cert_section() {
     local cert_status_icon
 
     # Changing global
-    declare -g CERT_STATUS="OK"
+    declare -g STATUS_CERTS="OK"
 
     # Changing locals
     cert_status_icon="✅"        
@@ -271,7 +271,7 @@ mail_cert_section() {
                     email_cert_days="${email_cert_days_container} no certificate"
                     cert_status_icon="⚠️"
                     cert_status_color="red"
-                    CERT_STATUS="Warning"
+                    STATUS_CERTS="Warning"
                 
                 else #certificate found
 
@@ -287,7 +287,7 @@ mail_cert_section() {
                             email_cert_days_container=" <span style=\"color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;\">"
                             cert_status_icon="⚠️"
                             cert_status_color="red"
-                            CERT_STATUS="Warning"
+                            STATUS_CERTS="Warning"
                         fi
 
                     fi
@@ -311,7 +311,7 @@ mail_cert_section() {
     header_open1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:white;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
     header_open2=";padding:5px 0 10px 10px;width:100%;height:30px\">"
     email_cert_header_open="${header_open1}${cert_status_color}${header_open2}"
-    email_cert_header_text="Certificates on server: ${CERT_STATUS} ${cert_status_icon}"
+    email_cert_header_text="Certificates on server: ${STATUS_CERTS} ${cert_status_icon}"
     email_cert_header_close="</div>"
 
     body_open="<div style=\"color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;\">"
@@ -339,7 +339,7 @@ mail_filesbackup_section() {
     local ERROR=$3
     local ERROR_TYPE=$4
 
-    declare -g STATUS_F
+    declare -g STATUS_BACKUP_FILES
 
     local header
     local body
@@ -358,7 +358,7 @@ mail_filesbackup_section() {
     if [ "$ERROR" = true ]; then
 
         # Changing global
-        STATUS_F="ERROR"
+        STATUS_BACKUP_FILES="ERROR"
 
         # Changing locals
         status_icon_f="💩"        
@@ -368,7 +368,7 @@ mail_filesbackup_section() {
     else
 
         # Changing global
-        STATUS_F="OK"
+        STATUS_BACKUP_FILES="OK"
 
         # Changing locals
         status_icon_f="✅"
@@ -410,7 +410,7 @@ mail_filesbackup_section() {
     header_open1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
     header_open2=';padding:5px 0 10px 10px;width:100%;height:30px">'
     header_open="${header_open1}${COLOR}${header_open2}"
-    header_text="Files Backup: ${STATUS_F} ${status_icon_f}"
+    header_text="Files Backup: ${STATUS_BACKUP_FILES} ${status_icon_f}"
     header_close="</div>"
 
     # Body
@@ -466,7 +466,7 @@ mail_configbackup_section() {
     if [ "${ERROR}" = true ]; then
 
         # Changing global
-        STATUS_F='ERROR'
+        STATUS_BACKUP_FILES='ERROR'
 
         # Changing locals
         status_icon_f="💩"        
@@ -476,7 +476,7 @@ mail_configbackup_section() {
     else
 
         # Changing global
-        STATUS_F="OK"
+        STATUS_BACKUP_FILES="OK"
 
         # Changing locals
         status_icon_f="✅"
@@ -511,7 +511,7 @@ mail_configbackup_section() {
     header_open1='<div style="float:left;width:100%"><div style="font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:'
     header_open2=';padding:5px 0 10px 10px;width:100%;height:30px">'
     header_open="${header_open1}${color}${header_open2}"
-    header_text="Config Backup: ${STATUS_F} ${status_icon_f}"
+    header_text="Config Backup: ${STATUS_BACKUP_FILES} ${status_icon_f}"
     header_close="</div>"
 
     body_open='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
@@ -555,13 +555,13 @@ mail_mysqlbackup_section() {
 
     local backup_type
 
-    declare -g STATUS_D
+    declare -g STATUS_BACKUP_DBS
 
     backup_type="Database"
 
     if [ "${ERROR}" = true ]; then
         # Changing global
-        STATUS_D="ERROR"
+        STATUS_BACKUP_DBS="ERROR"
 
         # Changing locals
         status_icon="💩"
@@ -570,7 +570,7 @@ mail_mysqlbackup_section() {
 
     else
         # Changing global
-        STATUS_D="OK"
+        STATUS_BACKUP_DBS="OK"
 
         # Changing locals
         status_icon="✅"
@@ -605,7 +605,7 @@ mail_mysqlbackup_section() {
     header_open1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
     header_open2=";padding:5px 0 10px 10px;width:100%;height:30px\">"
     header_open="${header_open1}${color}${header_open2}"
-    header_text="Database Backup: ${STATUS_D} ${status_icon}"
+    header_text="Database Backup: ${STATUS_BACKUP_DBS} ${status_icon}"
     header_close="</div>"
 
     body_open="<div style=\"color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px 0 0 10px;width:100%;\">"

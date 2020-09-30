@@ -186,14 +186,16 @@ check_packages_required() {
   MYSQL="$(which mysql)"
   MYSQLDUMP="$(which mysqldump)"
   if [ ! -x "${MYSQL}" ]; then
-    display --indent 2 --text "- Checking MySQL installation" --result "ERROR" --color RED
+    display --indent 2 --text "- Checking MySQL installation" --result "WARNING" --color YELLOW
+    display --indent 4 --text "MySQL not found" --tcolor YELLOW
     return 1
   fi
 
  # PHP
   PHP="$(which php)"
   if [ ! -x "${PHP}" ]; then
-    display --indent 2 --text "- Checking PHP installation" --result "ERROR" --color RED
+    display --indent 2 --text "- Checking PHP installation" --result "WARNING" --color YELLOW
+    display --indent 4 --text "PHP not found" --tcolor YELLOW
     return 1
   fi
 
@@ -201,6 +203,7 @@ check_packages_required() {
   CERTBOT="$(which certbot)"
   if [ ! -x "${CERTBOT}" ]; then
     display --indent 2 --text "- Checking CERTBOT installation" --result "WARNING" --color YELLOW
+    display --indent 4 --text "CERTBOT not found" --tcolor YELLOW
     return 1
   fi
 
@@ -210,7 +213,7 @@ check_packages_required() {
 
   WPCLI_INSTALLED=$(wpcli_check_if_installed)
 
-  if [ "${WPCLI_INSTALLED}" = "true" ]; then
+  if [[ ${WPCLI_INSTALLED} = "true" ]]; then
 
     wpcli_update
 
