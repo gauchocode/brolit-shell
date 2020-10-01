@@ -525,7 +525,7 @@ select_restore_type_from_dropbox() {
               mysql_user_create "${db_user}" "${db_pass}"
 
             else
-              log_event "warning" "MySQL user ${db_user} already exists" "false"
+              log_event "warning" "MySQL user ${db_user} already exists"
               whiptail_event "WARNING" "MySQL user ${db_user} already exists. Please after the script ends, check project configuration files."
 
             fi
