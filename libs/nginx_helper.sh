@@ -72,6 +72,8 @@ nginx_server_create() {
 
     # TODO: in the future, maybe we want this only on PHP projects
 
+    # TODO: it's fails with $server_type = "tool"
+
     if [ "${PHP_V}" != "" ]; then
         # Replace string to match PHP version
         sed -i "s#PHP_V#${PHP_V}#" "${WSERVER}/sites-available/${project_domain}"
@@ -84,7 +86,7 @@ nginx_server_create() {
     #Test the validity of the nginx configuration
     nginx_result=$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)
 
-    if [ "${nginx_result}" = "successful" ];then
+    if [[ "${nginx_result}" = "successful" ]];then
         
         # Reload webserver
         service nginx reload

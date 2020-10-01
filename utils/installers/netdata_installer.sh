@@ -38,14 +38,14 @@ netdata_required_packages() {
 
 netdata_installer() {
 
-  log_event "info" "Installing Netdata ..." "false"
+  log_event "info" "Installing Netdata ..."
   display --indent 2 --text "- Downloading and compiling netdata"
 
   bash <(curl -Ss https://my-netdata.io/kickstart.sh) all --dont-wait --disable-telemetry &>/dev/null
 
   killall netdata && cp system/netdata.service /etc/systemd/system/
 
-  log_event "info" "Netdata Installed" "false"
+  log_event "info" "Netdata Installed"
   clear_last_line
   display --indent 2 --text "- Downloading and compiling netdata" --result "DONE" --color GREEN
 
@@ -60,22 +60,22 @@ netdata_configuration() {
   mysql_user_grant_privileges "netdata" "*"
 
   cat "${SFOLDER}/config/netdata/python.d/mysql.conf" > "/etc/netdata/python.d/mysql.conf"
-  log_event "info" "MySQL config done!" "false"
+  log_event "info" "MySQL config done!"
   display --indent 2 --text "- MySQL configuration" --result "DONE" --color GREEN
 
   # monit
   cat "${SFOLDER}/config/netdata/python.d/monit.conf" >"/etc/netdata/python.d/monit.conf"
-  log_event "info" "Monit config done!" "false"
+  log_event "info" "Monit config done!"
   display --indent 2 --text "- Monit configuration" --result "DONE" --color GREEN
 
   # web_log
   cat "${SFOLDER}/config/netdata/python.d/web_log.conf" >"/etc/netdata/python.d/web_log.conf"
-  log_event "info" "Nginx Web Log config done!" "false"
+  log_event "info" "Nginx Web Log config done!"
   display --indent 2 --text "- Nginx Web Log configuration" --result "DONE" --color GREEN
 
   # health_alarm_notify
   cat "${SFOLDER}/config/netdata/health_alarm_notify.conf" >"/etc/netdata/health_alarm_notify.conf"
-  log_event "info" "Health alarm config done!" "false"
+  log_event "info" "Health alarm config done!"
   display --indent 2 --text "- Health alarm configuration" --result "DONE" --color GREEN
 
   # telegram
@@ -83,7 +83,7 @@ netdata_configuration() {
 
   systemctl daemon-reload && systemctl enable netdata && service netdata start
 
-  log_event "info" "Netdata Configuration done!" "false"
+  log_event "info" "Netdata Configuration finished"
 
   display --indent 2 --text "- Configuring netdata" --result "DONE" --color GREEN
 

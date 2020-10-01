@@ -179,7 +179,7 @@ wordpress_installer () {
 
     # If domain contains www, should work without www too
     common_subdomain='www'
-    if [[ "${project_domain}" == *"${common_subdomain}"* ]]; then
+    if [[ ${project_domain} == *"${common_subdomain}"* ]]; then
 
       # Cloudflare API to change DNS records
       cloudflare_change_a_record "${root_domain}" "${project_domain}" "false"

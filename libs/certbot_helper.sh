@@ -18,7 +18,7 @@ certbot_certificate_install() {
 
   local certbot_result
 
-  log_event "info" "Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains}" "false"
+  log_event "info" "Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains}"
   
   certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}"
 
@@ -90,7 +90,7 @@ certbot_certificate_expand() {
   local email=$1
   local domains=$2
 
-  log_event "info" "Running: certbot --nginx --non-interactive --agree-tos --expand --redirect -m ${email} -d ${domains}" "true"
+  log_event "info" "Running: certbot --nginx --non-interactive --agree-tos --expand --redirect -m ${email} -d ${domains}"
 
   certbot --nginx --non-interactive --agree-tos --expand --redirect -m "${email}" -d "${domains}"
 
@@ -102,7 +102,7 @@ certbot_certificate_renew() {
 
   local domains=$1
 
-  log_event "info" "Running: certbot renew -d ${domains}" "true"
+  log_event "info" "Running: certbot renew -d ${domains}"
 
   certbot renew -d "${domains}"
 
@@ -112,7 +112,7 @@ certbot_certificate_renew_test() {
 
   # Test renew for all installed certificates
 
-  log_event "info" "Running: certbot renew --dry-run -d "${domains}"" "true"
+  log_event "info" "Running: certbot renew --dry-run -d ${domains}"
   
   certbot renew --dry-run -d "${domains}"
 
@@ -124,7 +124,7 @@ certbot_certificate_force_renew() {
 
   local domains=$1
 
-  log_event "info" "Running: certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m ${email} -d ${domains}" "true"
+  log_event "info" "Running: certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m ${email} -d ${domains}"
   
   certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m "${email}" -d "${domains}"
 

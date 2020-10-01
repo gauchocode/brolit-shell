@@ -167,19 +167,20 @@ php_reconfigure() {
   log_event "info" "Uncommenting /status from fpm configuration ..." "false"
   sed -i '/status_path/s/^;//g' "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
 
+  service php"${PHP_V}"-fpm reload
+  display --indent 2 --text "- Reloading php${PHP_V}-fpm" --result "DONE" --color GREEN
+
 }
 
 ################################################################################
 
 php_is_installed=$(php_check_if_installed)
 
-if [ "${php_is_installed}" == "false" ]; then
-  log_subsection "PHP Installer"
+if [[ ${php_is_installed} == "false" ]]; then
   php_installer_title="PHP INSTALLER"
   php_installer_message="Choose a PHP version to install:"
   php_installer_options=("01)" "INSTALL PHP DEFAULT" "02)" "INSTALL PHP CUSTOM")
 else
-  log_subsection "PHP Configurator"
   php_installer_title="PHP CONFIGURATOR"
   php_installer_message="Choose an option to run:"
   php_installer_options=("01)" "INSTALL PHP DEFAULT" "02)" "INSTALL PHP CUSTOM" "03)" "RECONFIGURE PHP" "04)" "OPTIMIZE PHP" "05)" "REMOVE PHP")
@@ -187,7 +188,7 @@ fi
 
 chosen_php_installer_options=$(whiptail --title "${php_installer_title}" --menu "${php_installer_message}" 20 78 10 "${php_installer_options[@]}" 3>&1 1>&2 2>&3)
 exitstatus=$?
-if [ ${exitstatus} = 0 ]; then
+if [[ ${exitstatus} -eq 0 ]]; then
 
   if [[ ${chosen_php_installer_options} == *"01"* ]]; then
     
@@ -200,6 +201,8 @@ if [ ${exitstatus} = 0 ]; then
       log_event "critical" "Non standard distro!" "true"
       return 1
     fi
+
+    log_subsection "PHP Installer"
     
     # Installing packages
     php_installer "${PHP_V}"
@@ -208,6 +211,8 @@ if [ ${exitstatus} = 0 ]; then
 
   fi
   if [[ ${chosen_php_installer_options} == *"02"* ]]; then
+
+    log_subsection "PHP Installer"
 
     # INSTALL PHP CUSTOM
     php_custom_installer
