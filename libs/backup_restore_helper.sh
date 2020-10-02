@@ -435,7 +435,7 @@ select_restore_type_from_dropbox() {
 
   chosen_type=$(whiptail --title "RESTORE FROM BACKUP" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 $(for x in ${dropbox_type_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ ${exitstatus} = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     dropbox_chosen_type_path="${chosen_server}/${chosen_type}"
 
@@ -515,12 +515,11 @@ select_restore_type_from_dropbox() {
 
             # Check if user database already exists
             mysql_user_exists "${db_user}"
-            
             user_db_exists=$?
             if [[ ${user_db_exists} -eq 0 ]]; then
 
               # Passw generator
-              db_pass=$(openssl rand -hex 12)
+              db_pass="$(openssl rand -hex 12)"
 
               mysql_user_create "${db_user}" "${db_pass}"
 
@@ -537,7 +536,7 @@ select_restore_type_from_dropbox() {
 
             # TODO: check project type (WP, Laravel, etc)
 
-            folder_to_install=$(ask_folder_to_install_sites "${SITES}")
+            folder_to_install="$(ask_folder_to_install_sites "${SITES}")"
 
             startdir="${folder_to_install}"
             menutitle="Site Selection Menu"
@@ -617,7 +616,7 @@ project_restore() {
   # Select Backup File
   chosen_backup_to_restore=$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${dropbox_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ ${exitstatus} -eq 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     display --indent 2 --text "- Selecting project backup" --result "DONE" --color GREEN
     display --indent 4 --text "Backup selected: ${chosen_backup_to_restore}"
@@ -647,9 +646,9 @@ project_restore() {
     case $project_type in
 
       wordpress)
-        db_name=$(cat ${SFOLDER}/tmp/${chosen_project}/wp-config.php | grep DB_NAME | cut -d \' -f 4)
-        db_user=$(cat ${SFOLDER}/tmp/${chosen_project}/wp-config.php | grep DB_USER | cut -d \' -f 4)
-        db_pass=$(cat ${SFOLDER}/tmp/${chosen_project}/wp-config.php | grep DB_PASSWORD | cut -d \' -f 4)
+        db_name=$(cat "${SFOLDER}"/tmp/"${chosen_project}"/wp-config.php | grep DB_NAME | cut -d \' -f 4)
+        db_user=$(cat "${SFOLDER}"/tmp/"${chosen_project}"/wp-config.php | grep DB_USER | cut -d \' -f 4)
+        db_pass=$(cat "${SFOLDER}"/tmp/"${chosen_project}"/wp-config.php | grep DB_PASSWORD | cut -d \' -f 4)
         ;;
 
       laravel)
@@ -692,7 +691,7 @@ project_restore() {
 
     # Downloading Database Backup
     display --indent 2 --text "- Downloading backup from dropbox"
-    dropbox_output=$(${DROPBOX_UPLOADER} download "${db_to_download}" 1>&2)
+    dropbox_output="$(${DROPBOX_UPLOADER} download "${db_to_download}" 1>&2)"
     clear_last_line
     display --indent 2 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
 
