@@ -32,14 +32,15 @@ cloudflare_clear_cache() {
 
     local root_domain=$1
 
-    local zone_name purge_cache
+    local zone_name 
+    local purge_cache
 
-    zone_name=${root_domain}
+    zone_name="${root_domain}"
 
     #We need to do this, because certbot use this file with this vars
     #And this script need this others var names 
-    auth_email=${dns_cloudflare_email}
-    auth_key=${dns_cloudflare_api_key}
+    auth_email="${dns_cloudflare_email}"
+    auth_key="${dns_cloudflare_api_key}"
 
     # Checking cloudflare credentials file
     if [[ -z "${auth_email}" ]]; then
@@ -47,15 +48,15 @@ cloudflare_clear_cache() {
 
     fi
 
-    log_event "info" "Getting Zone ID for domain: ${root_domain}" "false"
+    log_event "info" "Getting Zone ID for domain: ${root_domain}"
     #display --indent 2 --text "- Getting Zone ID"
 
     zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
 
-    log_event "info" "Zone ID found: ${zone_id}" "false"
+    log_event "info" "Zone ID found: ${zone_id}"
     #clear_last_line
     display --indent 2 --text "- Getting Zone ID for ${root_domain}" --result "DONE" --color GREEN
-    display --indent 2 --text "Zone ID found: ${zone_id}" --result "DONE" --color GREEN
+    display --indent 4 --text "Zone ID found: ${zone_id}"
 
     purge_cache="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/purge_cache" \
     -H "X-Auth-Email: ${auth_email}" \
@@ -65,13 +66,13 @@ cloudflare_clear_cache() {
 
     if [[ ${purge_cache} == *"\"success\":false"* ]]; then
         message="Error trying to clear Cloudflare cache. Results:\n${update}"
-        log_event "error" "${message}" "false"
+        log_event "error" "${message}"
         display --indent 2 --text "- Clearing Cloudflare cache" --result "FAIL" --color RED
         return 1
 
     else
         message="Cache cleared for domain: ${root_domain}"
-        log_event "success" "${message}" "false"
+        log_event "success" "${message}"
         display --indent 2 --text "- Clearing Cloudflare cache" --result "DONE" --color GREEN
     fi
 
@@ -85,14 +86,15 @@ cloudflare_development_mode() {
     local root_domain=$1
     local dev_mode=$2
 
-    local zone_name purge_cache
+    local zone_name
+    local purge_cache
 
-    zone_name=${root_domain}
+    zone_name="${root_domain}"
 
     #We need to do this, because certbot use this file with this vars
     #And this script need this others var names 
-    auth_email=${dns_cloudflare_email}
-    auth_key=${dns_cloudflare_api_key}
+    auth_email="${dns_cloudflare_email}"
+    auth_key="${dns_cloudflare_api_key}"
 
     # Checking cloudflare credentials file
     if [[ -z "${auth_email}" ]]; then
@@ -114,13 +116,13 @@ cloudflare_development_mode() {
 
     if [[ ${dev_mode_result} == *"\"success\":false"* ]]; then
         message="Error trying to change development mode for ${root_domain}. Results:\n ${dev_mode_result}"
-        log_event "error" "${message}" "false"
+        log_event "error" "${message}"
         display --indent 2 --text "- Enabling development mode" --result "FAIL" --color RED
         return 1
 
     else
         message="Development mode for ${root_domain} is ${dev_mode}"
-        log_event "success" "${message}" "false"
+        log_event "success" "${message}"
         display --indent 2 --text "- Enabling development mode" --result "DONE" --color GREEN
 
     fi
@@ -135,14 +137,15 @@ cloudflare_ssl_mode() {
     local root_domain=$1
     local ssl_mode=$2
 
-    local zone_name ssl_mode_result
+    local zone_name
+    local ssl_mode_result
 
-    zone_name=${root_domain}
+    zone_name="${root_domain}"
 
     #We need to do this, because certbot use this file with this vars
     #And this script need this others var names 
-    auth_email=${dns_cloudflare_email}
-    auth_key=${dns_cloudflare_api_key}
+    auth_email="${dns_cloudflare_email}"
+    auth_key="${dns_cloudflare_api_key}"
 
     # Checking cloudflare credentials file
     if [[ -z "${auth_email}" ]]; then
@@ -150,11 +153,11 @@ cloudflare_ssl_mode() {
 
     fi
 
-    log_event "info" "Getting Zone & Record ID's for domain: ${root_domain}" "true"
+    log_event "info" "Getting Zone & Record ID's for domain: ${root_domain}"
 
     zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
 
-    log_event "info" "Zone ID found: ${zone_id}" "true"
+    log_event "info" "Zone ID found: ${zone_id}"
 
     ssl_mode_result=$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/ssl" \
      -H "X-Auth-Email: ${auth_email}" \
@@ -164,12 +167,12 @@ cloudflare_ssl_mode() {
 
     if [[ $ssl_mode_result == *"\"success\":false"* ]]; then
         message="Error trying to change ssl mode for ${root_domain}. Results:\n ${ssl_mode_result}"
-        log_event "error" "${message}" "true"
+        log_event "error" "${message}"
         return 1
 
     else
         message="SSL mode for ${root_domain} is ${ssl_mode}"
-        log_event "success" "${message}" "true"
+        log_event "success" "${message}"
 
     fi
 
@@ -217,9 +220,7 @@ cloudflare_change_a_record () {
         proxy_status="false"
     fi
 
-    # FOR IPV6 EDIT THE LINK TO THIS -> (https://api6.ipify.org)
-    #cur_ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
-    cur_ip=${SERVER_IP}
+    cur_ip="${SERVER_IP}"
 
     log_event "info" "Getting Zone & Record ID's ..." "false"
 
@@ -246,8 +247,8 @@ cloudflare_change_a_record () {
 
     else
 
-        log_event "info" "ZONE_ID found: ${zone_id}" "false"
-        log_event "info" "RECORD_ID found: ${record_id}" "false"
+        log_event "info" "ZONE_ID found: ${zone_id}"
+        log_event "info" "RECORD_ID found: ${record_id}"
         display --indent 2 --text "- Changing ${record_name} IP ..."
 
         delete="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
@@ -267,13 +268,12 @@ cloudflare_change_a_record () {
 
     if [[ ${update} == *"\"success\":false"* ]]; then
         message="API UPDATE FAILED. RESULTS:\n${update}"
-        log_event "error" "${message}" "true"
+        log_event "error" "${message}"
         
         return 1
 
     else
         message="IP changed to: ${SERVER_IP}"
-        #echo "$SERVER_IP" > $ip_file
         log_event "success" "${message}" "false"
         display --indent 2 --text "- Updating subdomain on Cloudflare" --result "DONE" --color GREEN
         display --indent 4 --text "IP: ${SERVER_IP}" --tcolor YELLOW
@@ -294,15 +294,15 @@ cloudflare_delete_a_record () {
     # Cloudflare API to change DNS records
     log_event "info" "Accessing to Cloudflare API to change record ${domain}" "false"
 
-    zone_name=${root_domain}
-    record_name=${domain}
+    zone_name="${root_domain}"
+    record_name="${domain}"
 
     #TODO: in the future we must rewrite the vars and remove this ugly replace
 
     #We need to do this, because certbot use this file with this vars
     #And this script need this others var names 
-    auth_email=${dns_cloudflare_email}
-    auth_key=${dns_cloudflare_api_key}
+    auth_email="${dns_cloudflare_email}"
+    auth_key="${dns_cloudflare_api_key}"
 
     # Checking cloudflare credentials file
     if [[ -z "${auth_email}" ]]; then
@@ -318,32 +318,32 @@ cloudflare_delete_a_record () {
     id_file="cloudflare.ids"
 
     # SCRIPT START
-    log_event "info" "Cloudflare Script Initiated" "false"
+    log_event "info" "Cloudflare Script Initiated"
 
     cur_ip=${SERVER_IP}
 
     # RETRIEVE/ SAVE zone_id AND record_id
-    log_event "info" "Getting Zone & Record ID's ..." "false"
+    log_event "info" "Getting Zone & Record ID's ..."
     zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
     record_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json"  | grep -Po '(?<="id":")[^"]*')
 
-    log_event "info" "ZONE_ID: ${zone_id}" "false"
-    log_event "info" "RECORD_ID: ${record_id}" "false"
+    log_event "info" "ZONE_ID: ${zone_id}"
+    log_event "info" "RECORD_ID: ${record_id}"
 
     echo "${zone_id}" > "${id_file}"
     echo "${record_id}" >> "${id_file}"
 
     if [[ -z "${record_id}" || ${record_id} == "" ]]; then
 
-        log_event "info" "Record not found on Cloudflare" "false"
+        log_event "info" "Record not found on Cloudflare"
         display --indent 2 --text "- Record not found on Cloudflare" --result "FAIL" --color RED
 
         return 1
 
     else
      
-        log_event "info" "RECORD_ID found: ${record_id}" "false"
-        log_event "info" "Trying to delete the record ..." "false"
+        log_event "info" "RECORD_ID found: ${record_id}"
+        log_event "info" "Trying to delete the record ..."
 
         delete="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
         -H "X-Auth-Email: ${auth_email}" \
@@ -355,21 +355,19 @@ cloudflare_delete_a_record () {
     if [[ ${delete} == *"\"success\":false"* ]]; then
 
         message="A record delete failed. Results:\n${delete}"
-        log_event "error" "${message}" "false"
+        log_event "error" "${message}"
         display --indent 2 --text "- Deleting A record from Cloudflare" --result "FAIL" --color RED
 
         return 1
 
     else
         message="A record deleted: ${record_name}"
-        #echo "$SERVER_IP" > $ip_file
-        log_event "success" "${message}" "false"
+        log_event "success" "${message}"
         display --indent 2 --text "- Deleting A record from Cloudflare" --result "DONE" --color GREEN
         display --indent 4 --text "Record deleted: ${record_name}" --tcolor YELLOW
 
     fi
 
-    rm ${id_file}
-    #rm $ip_file
+    rm "${id_file}"
 
 }
