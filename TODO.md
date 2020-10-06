@@ -9,6 +9,7 @@
                 will replace https://www.mydomain.com by https://www.test.mydomain.com
         - If the main domain detected is not a root-domain, will failt to detect a proper project_name
         - If decide to generate new certificate on root-domain, it fails to generate nginx config
+- [ ] Nginx: New default nginx configuration for wordpress projects fails with after running certbot.
 - [ ] Notifications: Email HTML breaks sometimes.
 - [ ] Backups: make_project_backup is broken, need a refactor asap!
 - [ ] Nginx: put_project_offline need another aproach. Maybe put an index.html with message.
@@ -19,12 +20,10 @@
 - [ ] WordPress: Install fails when set a project name like: xyz_sub_domain.
 - [ ] Backups: When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?).
 - [ ] Installers: On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages.
-- [ ] Nginx: New default nginx configuration for wordpress projects.
 
 ### In Progress
 
 - [ ] Notifications: Subject status dont't change on error or warning.
-- [ ] Log/Display: Better log handling and display improvements.
 - [ ] Core: Refactor to let the script be runned with flags.
 - [ ] Core: Better structure of deleted projects on dropbox.
 - [ ] WP-CLI: Better error handling.
@@ -34,13 +33,16 @@
 - [x] WordPress: WP-CLI is required to the script works propperly, must install on script setup.
 - [x] Nginx: New option to put a website offline/online.
 - [x] Scheduled options: Add option to run on specific time.
+- [x] Log/Display: Better log handling and display improvements.
 
 ## For release 3.2
 
 - [ ] IMPORTANT: make new standard directory structure for projects "${SITES}/${DOMAIN}/public"
       Logs could be stored on "${SITES}/${DOMAIN}/log"
 - [ ] IMPORTANT: Secure store for MySQL password: https://www.dokry.com/27126
-- [ ] Warning if script run on non default installation (no webserver or another than nginx).
+- [ ] Core: Implements something like this: 
+        https://github.com/natelandau/dotfiles/blob/master/scripting/scriptTemplate.sh
+- [ ] Core: Warning if script run on non default installation (no webserver or another than nginx).
 - [ ] Finish function: download_and_restore_config_files_from_dropbox
 - [ ] Complete refactor of "Options Wizard": (Backup Options, Notification Options, Cloudflare Config).
 - [ ] Nginx-PHP: Ask PHP version before create a server config.
