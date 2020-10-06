@@ -19,9 +19,9 @@ nginx_server_create() {
     local nginx_result debug
 
     # Create nginx config files for site
-    log_event "info" "Creating nginx configuration file for domain: ${project_domain}" "false"
-    log_event "info" "Project Type: ${project_type}" "false"
-    log_event "info" "Server Type: ${server_type}" "false"
+    log_event "info" "Creating nginx configuration file for domain: ${project_domain}"
+    log_event "info" "Project Type: ${project_type}"
+    log_event "info" "Server Type: ${server_type}"
     log_event "info" "List of domains or subdomains that will be redirect to project_domain: ${redirect_domains}" "false"
 
     if [ -f "${WSERVER}/sites-available/${project_domain}" ]; then
@@ -119,7 +119,7 @@ nginx_server_delete() {
         # Reload webserver
         service nginx reload
 
-        log_event "info" "Nginx config files for ${filename} deleted!" "false"
+        log_event "info" "Nginx config files for ${filename} deleted!"
         display --indent 2 --text "- Deleting nginx files" --result "DONE" --color GREEN
 
     fi
@@ -294,7 +294,7 @@ nginx_create_globals_config() {
 
     fi
 
-    cp "${SFOLDER}/config/nginx/globals/security.conf /etc/nginx/globals/security.conf"
+    cp "${SFOLDER}/config/nginx/globals/security.conf" "/etc/nginx/globals/security.conf"
     cp "${SFOLDER}/config/nginx/globals/wordpress_sec.conf" "/etc/nginx/globals/wordpress_sec.conf"
     cp "${SFOLDER}/config/nginx/globals/wordpress_seo.conf" "/etc/nginx/globals/wordpress_seo.conf"
 
@@ -314,13 +314,33 @@ nginx_create_globals_config() {
         # Reload webserver
         service nginx reload
 
-        log_event "success" "Nginx configuration changed!" "false"
+        log_event "success" "Nginx global configuration added"
+        display --indent 2 --text "- Creating nginx globals config" --result "DONE" --color GREEN
+
 
     else
         debug=$(nginx -t 2>&1)
         whiptail_event "WARNING" "Something went wrong changing Nginx configuration. Please check manually nginx config files."
-        log_event "error" "Problem changing Nginx configuration. Debug: ${debug}" "false"
+        log_event "error" "Problem changing Nginx configuration. Debug: ${debug}"
+        display --indent 2 --text "- Creating nginx globals config" --result "FAIL" --color RED
+        display --indent 4 --text "Debug: ${debug}" --tcolor RED
 
+
+    fi
+
+}
+
+nginx_create_empty_nginx_conf() {
+
+    #$1 = ${path}
+
+    local path=$1
+    
+    if [[ ! -f ${path}/nginx.conf ]];then
+        mkdir "${path}/nginx.conf"
+        return 0
+    else
+        return 1
     fi
 
 }
