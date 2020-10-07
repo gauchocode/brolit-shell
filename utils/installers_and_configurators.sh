@@ -69,8 +69,8 @@ installers_and_configurators() {
       display --indent 2 --text "- Installing zsh and utils" --result "DONE" --color GREEN
 
             # Copying configs files
-      cp "${SCRIPT}"/config/zsh/p10k.zsh ./.p10k.zsh        # Colour Reference: https://jonasjacek.github.io/colors/
-      cp "${SCRIPT}"/config/zsh/zshrc ./.zshrc
+      cp "${SFOLDER}"/config/zsh/p10k.zsh ./.p10k.zsh        # Colour Reference: https://jonasjacek.github.io/colors/
+      cp "${SFOLDER}"/config/zsh/zshrc ./.zshrc
       display --indent 2 --text "- Configuring Oh My Zsh and P10K" --result "DONE" --color GREEN
       display --indent 4 --text "Please reboot the server to aplied changes" --tcolor YELLOW
 
