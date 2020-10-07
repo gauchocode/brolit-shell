@@ -393,7 +393,7 @@ mysql_database_export() {
     log_event "info" "Creating a database backup of: ${database}" "false"
     display --indent 2 --text "- Creating a backup of: ${database}"
 
-    dump_output=$(${MYSQLDUMP} -u "${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}" 2>&1)
+    dump_output="$(${MYSQLDUMP} -u "${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}" 2>&1)"
    
     dump_status=$?
     if [ ${dump_status} -eq 0 ]; then
