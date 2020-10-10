@@ -69,11 +69,12 @@ installers_and_configurators() {
       display --indent 2 --text "- Installing zsh and utils" --result "DONE" --color GREEN
 
       # Copying configs files
-      cp "${SFOLDER}"/config/zsh/p10k.zsh ~/.p10k.zsh        # Colour Reference: https://jonasjacek.github.io/colors/
-      cp "${SFOLDER}"/config/zsh/zshrc ~/.zshrc
+      cp "${SFOLDER}"/config/zsh/p10k.zsh ./.p10k.zsh        # Colour Reference: https://jonasjacek.github.io/colors/
+      cp "${SFOLDER}"/config/zsh/zshrc ./.zshrc
+      display --indent 2 --text "- Copying config files" --result "DONE" --color GREEN
 
       # Set ZSH_THEME
-      sed -i "s|$ZSH_THEME|powerlevel10k/powerlevel10k|g" ~/.zshrc
+      #sed -i "s|$ZSH_THEME|powerlevel10k/powerlevel10k|g" "./.zshrc"
 
       display --indent 2 --text "- Configuring Oh My Zsh and P10K" --result "DONE" --color GREEN
       display --indent 4 --text "Please reboot the server to aplied changes" --tcolor YELLOW

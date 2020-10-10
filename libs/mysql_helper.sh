@@ -21,20 +21,6 @@ mysql_count_dabases() {
     echo "${total_databases}"
 }
 
-# TODO: replace with mysql_helper function
-#create_netdata_db_user() {
-#
-#  local SQL1 SQL2 SQL3
-#
-#  SQL1="CREATE USER 'netdata'@'localhost';"
-#  SQL2="GRANT USAGE on *.* to 'netdata'@'localhost';"
-#  SQL3="FLUSH PRIVILEGES;"
-#
-#  log_event "info" "Creating netdata user in MySQL" "false"
-#  mysql -u root -p"${MPASS}" -e "${SQL1}${SQL2}${SQL3}"
-#
-#}
-
 mysql_user_create() {
 
     # $1 = ${db_user}
@@ -56,20 +42,20 @@ mysql_user_create() {
 
     fi
 
-    mysql_output=$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}" 2>&1)
-    mysql_result=$?
-    
-    if [ "${mysql_result}" -eq 0 ]; then
-        log_event "success" " MySQL user ${db_user} created" "false"
+    mysql_output="$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}" 2>&1)"
+    mysql_result="$?"
+    if [[ ${mysql_result} -eq 0 ]]; then
+        log_event "success" " MySQL user ${db_user} created with pass: ${db_user_psw}"
         clear_last_line
         display --indent 2 --text "- Creating user in MySQL: ${db_user}" --result "DONE" --color GREEN
-        display --indent 4 --text "User created with pass: ${db_user_psw}"
+        display --indent 4 --text "User created with pass: ${db_user_psw}" --tcolor YELLOW
         return 0
 
     else
-        log_event "error" "Something went wrong creating user: ${db_user}. MySQL output: ${mysql_output}" "false"
+        log_event "error" "Something went wrong creating user: ${db_user}. MySQL output: ${mysql_output}"
         clear_last_line
         display --indent 2 --text "- Creating ${db_user} user in MySQL" --result "FAIL" --color RED
+        display --indent 4 --text "MySQL output: ${mysql_output}" --tcolor RED
         return 1
 
     fi
@@ -85,17 +71,18 @@ mysql_user_delete() {
     local sql1="DROP USER '${db_user}'@'localhost';"
     local sql2="FLUSH PRIVILEGES;"
 
-    log_event "info" "Deleting ${db_user} user in MySQL ..." "false"
+    log_event "info" "Deleting ${db_user} user in MySQL ..."
 
     mysql_output="$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" 2>&1)"
-    mysql_result=$?
-    
-    if [ "${mysql_result}" -eq 0 ]; then
-        log_event "success" " Database user ${db_user} deleted" "false"
+    mysql_result="$?"
+    if [[ ${mysql_result} -eq 0 ]]; then
+        log_event "success" " Database user ${db_user} deleted"
+        display --indent 2 --text "- Deleting user in MySQL: ${db_user}" --result "DONE" --color GREEN
         return 0
 
     else
-        log_event "error" "Something went wrong deleting user: ${db_user}. MySQL output: ${mysql_output}" "false"
+        log_event "error" "Something went wrong deleting user: ${db_user}. MySQL output: ${mysql_output}"
+        display --indent 2 --text "- Deleting ${db_user} user in MySQL" --result "FAIL" --color RED
         return 1
 
     fi
@@ -110,18 +97,19 @@ mysql_user_psw_change() {
     local db_user=$1
     local db_user_psw=$2
 
-    local sql1 sql2
+    local sql1 
+    local sql2
 
-    log_event "info" "Changing password for user ${db_user} in MySQL" "false"
+    log_event "info" "Changing password for user ${db_user} in MySQL"
 
     sql1="ALTER USER '${db_user}'@'localhost' IDENTIFIED BY '${db_user_psw}';"
     sql2="FLUSH PRIVILEGES;"
 
-    mysql_output=$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" 1>&2)
-    mysql_result=$?
+    mysql_output="$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" 1>&2)"
+    mysql_result="$?"
     
-    if [ "${mysql_result}" -eq 0 ]; then
-        log_event "success" "New password for user ${db_user}: ${db_user_psw}" "false" 
+    if [[ ${mysql_result} -eq 0 ]]; then
+        log_event "success" "New password for user ${db_user}: ${db_user_psw}"
         return 0
 
     else
@@ -324,7 +312,7 @@ mysql_database_drop() {
 
     sql1="DROP DATABASE ${database};"
     
-    mysql_output=$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}" 2>&1)
+    mysql_output="$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}" 2>&1)"
     mysql_result=$?
 
     if [ "${mysql_result}" -eq 0 ]; then
