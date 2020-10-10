@@ -1584,7 +1584,7 @@ change_ownership(){
   local group=$2
   local path=$3
 
-  log_event "info" "Running: chown -R ${user}:${group} ${path}" "false"
+  log_event "info" "Running: chown -R ${user}:${group} ${path}"
 
   chown -R "${user}":"${group}" "${path}"
 
@@ -1681,6 +1681,124 @@ extract () {
     fi
 }
 
+get_domain_extension() {
+
+  # $1 = ${domain}
+
+  local domain=$1
+
+  local first_lvl 
+  local next_lvl 
+  local domain_ext
+
+  log_event "info" "Working with domain: ${domain}"
+
+  # Remove first_lvl domain name
+  first_lvl="$(cut -d'.' -f1 <<<"${domain}")"
+
+  # Extract first_lvl
+  domain_ext=${domain#"$first_lvl."}
+
+  next_lvl=${first_lvl}
+
+  local -i count=0
+  while ! grep --word-regexp --quiet ".${domain_ext}" "${SFOLDER}/config/domain_extension-list" && [ ! "${domain_ext#"$next_lvl"}" = "" ]
+  do
+
+    # Remove next level domain-name
+    domain_ext=${domain_ext#"$next_lvl."}
+    next_lvl="$(cut -d'.' -f1 <<<"${domain_ext}")"
+
+    count=($count+1)
+
+  done
+
+  if  grep --word-regexp --quiet ".${domain_ext}" "${SFOLDER}/config/domain_extension-list" ; then
+
+    display --indent 2 --text "- Extracting domain extension" --result DONE --color GREEN
+    display --indent 4 --text "Working with domain: ${domain}"
+
+    domain_ext=.${domain_ext}
+    log_event "info" "domain_ext: ${domain_ext}"
+    display --indent 4 --text "Domain extension: ${domain_ext}"
+
+    # Return
+    echo "${domain_ext}"
+
+  else
+
+    display --indent 2 --text "- Extracting domain extension" --result FAIL --color RED
+
+    return 1
+
+  fi
+
+}
+
+extract_domain_extension() {
+
+  # $1 = ${domain}
+
+  local domain=$1
+
+  local domain_extension
+  local domain_no_ext
+
+  domain_extension="$(get_domain_extension "${domain}")"
+  domain_extension_output=$?
+  if [[ $domain_extension_output -eq 0 ]]; then
+
+    domain_no_ext=${domain%"$domain_extension"}
+    log_event "info" "domain_no_ext: ${domain_no_ext}"
+    display --indent 4 --text "Domain without extension: ${domain_no_ext}"
+
+    # Return
+    echo "${domain_no_ext}"
+
+  else
+
+    return 1
+
+  fi
+
+  log_break "true"
+
+}
+
+get_root_domain() {
+
+  # $1 = ${domain}
+
+  local domain=$1
+
+  local domain_extension
+  local domain_no_ext
+
+  domain_extension="$(get_domain_extension "${domain}")"
+  domain_extension_output=$?
+  if [[ $domain_extension_output -eq 0 ]]; then
+
+    # Remove domain extension
+    domain_no_ext=${domain%"$domain_extension"}
+
+    root_domain=${domain_no_ext##*.}${domain_extension}
+
+    log_event "info" "root_domain: ${root_domain}"
+    display --indent 4 --text "root_domain: ${root_domain}"
+
+    # Return
+    echo "${root_domain}"
+
+  else
+
+    return 1
+
+  fi
+
+  log_break "true"
+
+}
+
 install_crontab_script() {
 
   # $1 = ${script}
@@ -1694,23 +1812,23 @@ install_crontab_script() {
   cron_file="/var/spool/cron/crontabs/root"
 
   if [ ! -f ${cron_file} ]; then
-    log_event "info" "Cron file for root does not exist, creating ..." "false"
+    log_event "info" "Cron file for root does not exist, creating ..."
 
 	  touch "${cron_file}"
 	  /usr/bin/crontab "${cron_file}"
 
-    log_event "success" "Cron file created" "false"
+    log_event "success" "Cron file created"
 
 	fi
 
   grep -qi "${script}" "${cron_file}"
   grep_result=$?
 	if [ ${grep_result} != 0 ]; then
-    log_event "info" "Updating cron job for script: ${script}" "false"
+    log_event "info" "Updating cron job for script: ${script}"
     /bin/echo "${scheduled_time} ${script}" >> "${cron_file}"
     
   else
-    log_event "warning" "Script already installed" "false"
+    log_event "warning" "Script already installed"
 
 	fi
 
@@ -1734,11 +1852,15 @@ ask_project_state() {
   project_state=$(whiptail --title "Project State" --menu "Choose a Project State" 20 78 10 $(for x in ${project_states}; do echo "$x [X]"; done) --default-item "${state}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Return
     echo "${project_state}"
 
   else
     return 1
+
   fi
+
 }
 
 ask_project_name() {
@@ -1755,6 +1877,8 @@ ask_project_name() {
   project_name=$(whiptail --title "Project Name" --inputbox "Insert a project name (only separator allow is '_'). Ex: my_domain" 10 60 "${name}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Return
     echo "${project_name}"
 
   else

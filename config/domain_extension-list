@@ -1,0 +1,108 @@
+# Countries
+.ae       # United Arab Emirates
+.africa   # Africa
+.al       # Albania
+.ai       # Anguilla
+.ag       # Antigua
+.ar       # Argentina
+.com.ar   # Argentina
+.edu.ar   # Argentina
+.org.ar   # Argentina
+.asia     # Asia
+.com.au   # Australia
+.at       # Austria
+.bb       # Barbados
+.be       # Belgium
+.bo       # Bolivia
+.com.br   # Brazil
+.io       # British Indian Ocean Territory
+.bg       # Bulgaria
+.cm       # Cameroon
+.ca       # Canada
+.cl       # Chile
+.cn       # China
+.com.cn   # China
+.com.co   # Colombia
+.cg       # Congo Republic
+.co.cr    # Costa Rica
+.com.hr   # Croatia
+.hr       # Croatia
+.cz       # Czech Republic
+.dk       # Denmark
+.ec       # Ecuador
+.com.eg   # Egypt
+.eg       # Egypt
+.eu       # European Union
+.fi       # Finland
+.fr       # France
+.de       # Germany
+.gr       # Greece
+.ht       # Haiti
+.com.hk   # Hong Kong
+.hk       # Hong Kong
+.is       # Iceland
+.in       # India
+.co.id    # Indonesia
+.ie       # Ireland
+.it       # Italy
+.jp       # Japan
+.jo       # Jordan
+.la       # Laos
+.lv       # Latvia
+.ly       # Libya
+.my       # Malaysia
+.mr       # Mauritania
+.com.mx   # Mexico
+.mx       # Mexico
+.me       # Montenegro
+.nl       # Netherlands
+.no       # Norway
+.pk       # Pakistan
+.ps       # Palestine
+.com.pa   # Panama
+.com.py   # Paraguay
+.pe       # Peru
+.ph       # Philippines
+.pl       # Poland
+.pt       # Portugal
+.com.pr   # Puerto Rico
+.qa       # Qatar
+.ro       # Romania
+.ru       # Russian Federation
+.sl       # Sierra Leone
+.sg       # Singapore
+.sk       # Slovakia
+.si       # Slovenia
+.kr       # South Korea
+.es       # Spain
+.se       # Sweden
+.ch       # Switzerland
+.tw       # Taiwan
+.com.tr   # Turkey
+.tv       # Tuvalu
+.ua       # Ukraine
+.co.uk    # United Kingdom
+.uk       # United Kingdom
+.com.uy   # Uruguay
+.uy       # Uruguay
+.us       # USA
+.uz       # Uzbekistan
+.com.ve   # Venezuela
+.vn       # Vietnam
+
+# Generic
+.com
+.net
+.org
+.biz
+.info
+.int
+.mobi
+.pw
+.tel
+.travel
+.tv
+.xxx
+
+# TLDs
+https://data.iana.org/TLD/tlds-alpha-by-domain.txt

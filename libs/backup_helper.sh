@@ -201,7 +201,7 @@ make_server_files_backup() {
     bk_file="${bk_sup_type}-${bk_type}-files-${NOW}.tar.bz2"
 
     # Here we use tar.bz2 with bzip2 compression method
-    log_event "info" "Making backup of ${bk_path}" "false"
+    log_event "info" "Making backup of ${bk_path}"
     display --indent 2 --text "- Preparing ${bk_sup_type} backup" --result "DONE" --color GREEN
 
     ${TAR} cjf "${BAKWP}/${NOW}/${bk_file}" --directory="${bk_path}" "${directory_to_backup}"
@@ -209,12 +209,12 @@ make_server_files_backup() {
     display --indent 2 --text "- Compressing directory" --result "DONE" --color GREEN
 
     # Test backup file
-    log_event "info" "Testing backup file: ${bk_file} ..." "false"
+    log_event "info" "Testing backup file: ${bk_file} ..."
     bzip2 -t "${BAKWP}/${NOW}/${bk_file}"
     bzip2_result=$?
     if [[ ${bzip2_result} -eq 0 ]]; then
 
-      log_event "success" "Backup ${bk_file} created" "false"
+      log_event "success" "Backup ${bk_file} created"
       display --indent 2 --text "- Testing compressed backup file" --result "DONE" --color GREEN
 
       BACKUPED_SCF_LIST[${BK_SCF_INDEX}]="${bk_file}"
@@ -236,23 +236,19 @@ make_server_files_backup() {
       DROPBOX_PATH="/${VPSNAME}/${bk_type}/${bk_sup_type}"
 
       # Uploading backup files
-
-      log_event "info" "Uploading backup to Dropbox ..." "false"
+      log_event "info" "Uploading backup to Dropbox ..."
       display --indent 2 --text "- Uploading backup file to Dropbox"
 
-      output=$(${DROPBOX_UPLOADER} upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}" 2>&1)
+      output="$(${DROPBOX_UPLOADER} upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}" 2>&1)"
 
       clear_last_line
       display --indent 2 --text "- Uploading backup file to Dropbox" --result "DONE" --color GREEN
 
       # Deleting old backup files
-
       log_event "info" "Trying to delete old backup from Dropbox ..." "false"
 
       output="$(${DROPBOX_UPLOADER} remove "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file}" 2>&1)"
-
       dropbox_remove_result=$?
-
       if [[ ${dropbox_remove_result} -eq 0 ]]; then
 
         log_event "success" "Server files backup finished" "false"
@@ -283,7 +279,7 @@ make_server_files_backup() {
 
   else
 
-    log_event "error" "Directory ${bk_path} doesn't exists!" "false"
+    log_event "error" "Directory ${bk_path} doesn't exists!"
 
     display --indent 2 --text "- Creating backup file" --result "FAIL" --color RED
     display --indent 4 --text "Result: Directory '${bk_path}' doesn't exists" --tcolor RED
@@ -317,9 +313,8 @@ make_mailcow_backup() {
     display --indent 2 --text "- Preparing ${MAILCOW} for backup" --tcolor YELLOW --result "DONE" --color GREEN
 
     "${MAILCOW}/helper-scripts/backup_and_restore.sh" backup all
-
     mailcow_backup_result=$?
-    if [ "${mailcow_backup_result}" -eq 0 ]; then
+    if [[ "${mailcow_backup_result}" -eq 0 ]]; then
 
       # Con un pequeño truco vamos a obtener el nombre de la carpeta que crea mailcow
       cd "${MAILCOW_TMP_BK}"
@@ -415,9 +410,7 @@ make_files_backup() {
   # Test backup file
   log_event "info" "Testing backup file: ${bk_file} ..."
   display --indent 2 --text "- Testing backup file" --result "DONE" --color GREEN
-
   lbzip2 -t "${BAKWP}/${NOW}/${bk_file}"
-
   lbzip2_result=$?
   if [[ "${lbzip2_result}" -eq 0 ]]; then
 
@@ -469,12 +462,12 @@ make_files_backup() {
       display --indent 2 --text "- Uploading backup to dropbox" --result "DONE" --color GREEN
 
       # Delete old backup from Dropbox
-      output=$(${DROPBOX_UPLOADER} remove "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file}" 2>&1)
+      output="$(${DROPBOX_UPLOADER} remove "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file}" 2>&1)"
       log_event "info" "Old backup from Dropbox with date ${ONEWEEKAGO} deleted"
       display --indent 2 --text "- Deleting old dropbox backup" --result "DONE" --color GREEN
 
       # Delete temp backup
-      rm -r "${BAKWP}/${NOW}/${bk_file}"
+      rm "${BAKWP}/${NOW}/${bk_file}"
 
       log_event "info" "Temp backup deleted from server"
       display --indent 2 --text "- Deleting temp files" --result "DONE" --color GREEN
@@ -538,7 +531,7 @@ make_database_backup() {
   local old_bk_file="${database}_${bk_type}_${ONEWEEKAGO}.tar.bz2"
   local bk_file="${database}_${bk_type}_${NOW}.tar.bz2"
 
-  log_event "info" "Creating new database backup of ${database} ..." "false"
+  log_event "info" "Creating new database backup of ${database} ..."
 
   # Create dump file 
   mysql_database_export "${database}" "${directory_to_backup}${db_file}"
@@ -547,17 +540,17 @@ make_database_backup() {
 
     cd "${BAKWP}/${NOW}"
 
-    log_event "info" "Making a tar.bz2 file of ${db_file} ..." "false"
+    log_event "info" "Making a tar.bz2 file of ${db_file} ..."
 
     ${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s "$(du -sb "${BAKWP}/${NOW}/${db_file}" | awk '{print $1}')" | lbzip2 >"${BAKWP}/${NOW}/${bk_file}"
 
     # Test backup file
-    log_event "info" "Testing backup file: ${db_file} ..." "false"
+    log_event "info" "Testing backup file: ${db_file} ..."
     lbzip2 -t "${BAKWP}/${NOW}/${bk_file}"
     lbzip2_result=$?
     if [ ${lbzip2_result} -eq 0 ]; then
 
-      log_event "success" "Backup file ${bk_file} OK!" "false"
+      log_event "success" "Backup file ${bk_file} OK!"
 
       clear_last_line
       display --indent 2 --text "- Compressing database backup" --result "DONE" --color GREEN
@@ -636,14 +629,12 @@ make_project_backup() {
     (${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv -ns $(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}') | lbzip2 >"${BAKWP}/${NOW}/${bk_file}") 2>&1
 
     # Test backup file
-    log_event "info" "Testing backup file: ${bk_file}" "false"
+    log_event "info" "Testing backup file: ${bk_file}"
     lbzip2 -t "${BAKWP}/${NOW}/${bk_file}"
-
     lbzip2_result=$?
+    if [[ ${lbzip2_result} -eq 0 ]]; then
 
-    if [ ${lbzip2_result} -eq 0 ]; then
-
-        BACKUPED_LIST[$BK_FILE_INDEX]=${bk_file}
+        BACKUPED_LIST[$BK_FILE_INDEX]="${bk_file}"
         BACKUPED_FL=${BACKUPED_LIST[$BK_FILE_INDEX]}
 
         # Calculate backup size
