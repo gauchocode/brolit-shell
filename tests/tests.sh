@@ -176,6 +176,26 @@ log_section "Running Tests"
 
 test_display_functions
 
+result="$(extract_domain_extension "broobe.com")"
+
+result="$(extract_domain_extension "broobe.com.ar")"
+
+result="$(extract_domain_extension "broobe.ar")"
+
+result="$(extract_domain_extension "test.broobe.com.ar")"
+
+result="$(extract_domain_extension "old.test.broobe.com.ar")"
+
+result="$(extract_domain_extension "old.test.broobe.ar")"
+
+result="$(extract_domain_extension "old.dev.test.broobe.com")"
+
+result="$(extract_domain_extension "old.dev.test.broobe")"
+
+result="$(get_root_domain "old.dev.test.broobe.com")"
+
+result="$(get_root_domain "old.dev.test.broobe.com.ar")"
+
 #log_subsection "Testing mail functions"
 
 #test_mail_cert_section

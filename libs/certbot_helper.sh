@@ -23,7 +23,7 @@ certbot_certificate_install() {
   certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}"
 
   certbot_result=$?
-  if [ ${certbot_result} -eq 0 ];then
+  if [[ ${certbot_result} -eq 0 ]];then
     log_event "success" "Certificate installation for ${domains} ok" "false"
     display --indent 2 --text "- Certificate installation" --result "DONE" --color GREEN
 
@@ -38,7 +38,7 @@ certbot_certificate_install() {
     certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}"
     
     certbot_result=$?
-    if [ ${certbot_result} -eq 0 ];then
+    if [[ ${certbot_result} -eq 0 ]];then
       log_event "success" "Certificate installation for ${domains} ok" "false"
       display --indent 2 --text "- Certificate installation" --result "DONE" --color GREEN
 
