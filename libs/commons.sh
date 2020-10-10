@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.4
+# Version: 3.0.5
 ################################################################################
 
 #
@@ -13,7 +13,7 @@
 #
 
 SCRIPT_N="LEMP UTILS SCRIPT"
-SCRIPT_V="3.0.4"
+SCRIPT_V="3.0.5"
 
 # Hostname
 VPSNAME="$HOSTNAME"

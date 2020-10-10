@@ -26,6 +26,7 @@
 - [ ] Notifications: Subject status dont't change on error or warning.
 - [ ] Core: Refactor to let the script be runned with flags.
 - [ ] Core: Better structure of deleted projects on dropbox.
+- [ ] Nginx: Better nginx config: https://www.digitalocean.com/community/tools/nginx
 - [ ] WP-CLI: Better error handling.
 
 ### Done ✓
@@ -48,7 +49,6 @@
 - [ ] Nginx-PHP: Ask PHP version before create a server config.
 - [ ] Nginx: Add http2 support on nginx server config files.
 - [ ] Nginx: New option to put website on maintenance.
-- [ ] Nginx: Better nginx config: https://www.digitalocean.com/community/tools/nginx
 - [ ] Nginx: Multidomain support for nginx.
 - [ ] LetsEncrypt: Need a better way to re-install a certificate after a website migration.
 - [ ] Backups: Refactor for backup/restore: 5 options (server_config, site_config, site, database and project).
@@ -57,7 +57,6 @@
 
 ## For release 3.3
 
-- [ ] Core: Accept command via Telegram: https://github.com/topkecleon/telegram-bot-bash
 - [ ] Utils: Support for phpservermon: https://github.com/phpservermon/phpservermon
 - [ ] Nginx: Option to copy or generate a new nginx server configuration.
 - [ ] Nginx: Globals configs support.
@@ -93,6 +92,7 @@
 
 ## For release 3.5
 
+- [ ] Core: Accept command via Telegram: https://github.com/topkecleon/telegram-bot-bash
 - [ ] Backups: Directory Blacklist with whiptail (for backup configuration).
 - [ ] Server Optimization: Complete the pdf optimization process.
 - [ ] MySQL: Optimization script.
