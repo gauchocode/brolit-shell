@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.4
+# Version: 3.0.5
 ################################################################################
 #
 # Refs: https://www.tecmint.com/scan-linux-for-malware-and-rootkits/

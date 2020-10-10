@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.4
+# Version: 3.0.5
 ################################################################################
 
 restore_menu () {
@@ -12,7 +12,7 @@ restore_menu () {
   restore_options=("01)" "RESTORE FROM DROPBOX" "02)" "RESTORE FROM URL (BETA)")
   chosen_restore_options=$(whiptail --title "RESTORE TYPE" --menu " " 20 78 10 "${restore_options[@]}" 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ ${exitstatus} = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_restore_options} == *"01"* ]]; then
       server_selection_restore_menu
@@ -42,9 +42,9 @@ server_selection_restore_menu () {
   dropbox_server_list=$("${DROPBOX_UPLOADER}" -hq list "/")
   chosen_server=$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 $(for x in ${dropbox_server_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ ${exitstatus} = 0 ]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
-    dropbox_type_list=$(${DROPBOX_UPLOADER} -hq list "${chosen_server}")
+    dropbox_type_list="$(${DROPBOX_UPLOADER} -hq list "${chosen_server}")"
     dropbox_type_list='project '${dropbox_type_list}
 
     # Select backup type
@@ -147,7 +147,7 @@ download_and_restore_config_files_from_dropbox(){
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
     #Restore from Dropbox
-    dropbox_bk_list=$(${DROPBOX_UPLOADER} -hq list "${dropbox_chosen_type_path}/${chosen_config_type}")
+    dropbox_bk_list="$(${DROPBOX_UPLOADER} -hq list "${dropbox_chosen_type_path}/${chosen_config_type}")"
   fi
 
   chosen_config_bk=$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Choose a config backup file to restore." 20 78 10 "$(for x in ${dropbox_bk_list}; do echo "$x [F]"; done)" 3>&1 1>&2 2>&3)
@@ -158,7 +158,7 @@ download_and_restore_config_files_from_dropbox(){
 
     # Downloading Config Backup
     display --indent 2 --text "- Downloading config backup from dropbox"
-    dropbox_output=$(${DROPBOX_UPLOADER} download "${dropbox_chosen_type_path}/${chosen_config_type}/${chosen_config_bk}" 1>&2)
+    dropbox_output="$(${DROPBOX_UPLOADER} download "${dropbox_chosen_type_path}/${chosen_config_type}/${chosen_config_bk}" 1>&2)"
     clear_last_line
     display --indent 2 --text "- Downloading config backup from dropbox" --result "DONE" --color GREEN
     
@@ -167,7 +167,7 @@ download_and_restore_config_files_from_dropbox(){
     mv "${chosen_config_bk}" "${chosen_config_type}"
     cd "${chosen_config_type}"
 
-    log_event "info" "Uncompressing ${chosen_config_bk} ..." "false"
+    log_event "info" "Uncompressing ${chosen_config_bk} ..."
     
     pv --width 70 "${chosen_config_bk}" | tar xp -C "${SFOLDER}/tmp/${chosen_config_type}" --use-compress-program=lbzip2
 
@@ -177,16 +177,18 @@ download_and_restore_config_files_from_dropbox(){
 
     fi
     if [[ "${CHOSEN_CONFIG}" == *"mysql"* ]]; then
-      echo -e "${B_RED} > TODO: RESTORE MYSQL CONFIG ...${ENDCOLOR}">&2
+      log_event "info" "MySQL Config backup downloaded and uncompressed on  ${SFOLDER}/tmp/${chosen_config_type}"
+      whiptail_event "IMPORTANT!" "MySQL config files were downloaded on this temp directory: ${SFOLDER}/tmp/${chosen_config_type}."
 
     fi
     if [[ "${CHOSEN_CONFIG}" == *"php"* ]]; then
-      echo -e "${B_RED} > TODO: RESTORE PHP CONFIG ...${ENDCOLOR}">&2
+      log_event "info" "PHP config backup downloaded and uncompressed on  ${SFOLDER}/tmp/${chosen_config_type}"
+      whiptail_event "IMPORTANT!" "PHP config files were downloaded on this temp directory: ${SFOLDER}/tmp/${chosen_config_type}."
 
     fi
     if [[ "${CHOSEN_CONFIG}" == *"letsencrypt"* ]]; then
-      echo -e "${B_RED} > TODO: RESTORE LETSENCRYPT CONFIG ...${ENDCOLOR}">&2
-      #restore_letsencrypt_site_files "" ""
+      log_event "info" "Let's Encrypt config backup downloaded and uncompressed on  ${SFOLDER}/tmp/${chosen_config_type}"
+      whiptail_event "IMPORTANT!" "Let's Encrypt config files were downloaded on this temp directory: ${SFOLDER}/tmp/${chosen_config_type}."
 
     fi
 
@@ -222,7 +224,7 @@ restore_nginx_site_files() {
   # Downloading Config Backup
   log_event "info" "Downloading nginx backup from dropbox" "false"
   display --indent 2 --text "- Downloading nginx backup from dropbox"
-  dropbox_output=$(${DROPBOX_UPLOADER} download "${bk_to_download}" 1>&2)
+  dropbox_output="$(${DROPBOX_UPLOADER} download "${bk_to_download}" 1>&2)"
   clear_last_line
   display --indent 2 --text "- Downloading nginx backup from dropbox" --result "DONE" --color GREEN
 
