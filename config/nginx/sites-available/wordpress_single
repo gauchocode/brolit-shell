@@ -1,5 +1,4 @@
 server {
-        charset utf-8;
        	listen 80;
         #listen [::]:80 ipv6only=on; ## listen for ipv6
         root /var/www/domain.com;
@@ -34,12 +33,12 @@ server {
         gzip_static on;
 
         ### SEC
-        #include /etc/nginx/globals/security.conf;
+        include /etc/nginx/globals/security.conf;
 
         ### WP-SEC
-        #include /etc/nginx/globals/wordpress_sec.conf;
+        include /etc/nginx/globals/wordpress_sec.conf;
 
         ### WP-SEO
-        #include /etc/nginx/globals/wordpress_seo.conf;
+        include /etc/nginx/globals/wordpress_seo.conf;
 
 }

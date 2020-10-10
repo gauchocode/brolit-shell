@@ -159,7 +159,7 @@ delete_project_database() {
 
         BK_TYPE="database"
 
-        # Remove DB prefix to get project_name
+        # Remove DB suffix to get project_name
         suffix="$(cut -d'_' -f2 <<<"${CHOSEN_DB}")"
         project_name=${CHOSEN_DB%"_$suffix"}
         user_db="${project_name}_user"

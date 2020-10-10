@@ -741,9 +741,6 @@ project_restore() {
     if [[ ${user_db_exists} -eq 0 ]]; then
 
       db_pass=$(openssl rand -hex 12)
-
-      log_event "info" "Creating ${db_user} user in MySQL with pass: ${db_pass}"
-
       mysql_user_create "${db_user}" "${db_pass}"
 
     else
@@ -779,7 +776,8 @@ project_restore() {
           restore_nginx_site_files "${chosen_domain}" "${backup_date}"
 
           # Cloudflare API
-          root_domain=$(cloudflare_ask_root_domain "${chosen_domain}")
+          possible_root_domain="$(get_root_domain "${chosen_domain}")"
+          root_domain=$(cloudflare_ask_root_domain "${possible_root_domain}")
           cloudflare_change_a_record "${root_domain}" "${new_project_domain}"
 
         fi
@@ -789,7 +787,8 @@ project_restore() {
           nginx_server_create "${new_project_domain}" "wordpress" "single"
           
           # Cloudflare API
-          root_domain=$(cloudflare_ask_root_domain "${chosen_domain}")
+          possible_root_domain="$(get_root_domain "${new_project_domain}")"
+          root_domain=$(cloudflare_ask_root_domain "${possible_root_domain}")
           cloudflare_change_a_record "${root_domain}" "${new_project_domain}"
           
           certbot_certificate_install "${MAILA}" "${chosen_domain}"
@@ -807,7 +806,8 @@ project_restore() {
       nginx_server_create "${new_project_domain}" "wordpress" "single"
       
       # Cloudflare API
-      root_domain=$(cloudflare_ask_root_domain "${chosen_domain}")
+      possible_root_domain="$(get_root_domain "${chosen_domain}")"
+      root_domain=$(cloudflare_ask_root_domain "${possible_root_domain}")
       cloudflare_change_a_record "${root_domain}" "${new_project_domain}"
 
       certbot_certificate_install "${MAILA}" "${new_project_domain}"

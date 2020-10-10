@@ -51,11 +51,11 @@ wordpress_installer () {
       directory_browser "${menutitle}" "${startdir}"
       copy_project_path=$filepath"/"$filename
 
-      log_event "info" "Setting copy_project_path=${copy_project_path}" "true"
+      log_event "info" "Setting copy_project_path=${copy_project_path}"
 
-      copy_project=$(basename "${copy_project_path}")
+      copy_project="$(basename "${copy_project_path}")"
 
-      log_event "info" "Setting copy_project=${copy_project}" "true"
+      log_event "info" "Setting copy_project=${copy_project}"
 
       #ask_domain_to_install_site
       project_domain=$(ask_project_domain)
@@ -73,12 +73,12 @@ wordpress_installer () {
 
       if [ "${project_dir}" != 'ERROR' ]; then
         # Make a copy of the existing project
-        log_event "info" "Making a copy of ${copy_project} on ${project_dir} ..." "true"
+        log_event "info" "Making a copy of ${copy_project} on ${project_dir} ..."
 
         #cd "${folder_to_install}"
         copy_project_files "${folder_to_install}/${copy_project}" "${project_dir}"
 
-        log_event "success" "WordPress files copied" "true"
+        log_event "success" "WordPress files copied"
 
       else
         log_event "error" "Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..." "true"
@@ -88,16 +88,16 @@ wordpress_installer () {
 
     else # Clean Install
 
-      project_domain=$(ask_project_domain)
+      project_domain="$(ask_project_domain)"
+      possible_root_domain=$(get_root_domain "${project_domain}")
+      root_domain="$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")"
 
-      possible_root_domain=${project_domain#[[:alpha:]]*.}
-      root_domain=$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")
+      possible_project_name="$(extract_domain_extension "${project_domain}")"
+      project_name="$(ask_project_name "${possible_project_name}")"
 
-      project_name=$(ask_project_name "${project_domain}")
+      project_state="$(ask_project_state)"
 
-      project_state=$(ask_project_state "")
-
-      project_dir=$(check_if_folder_exists "${folder_to_install}" "${project_domain}")
+      project_dir="$(check_if_folder_exists "${folder_to_install}" "${project_domain}")"
 
       if [ "${project_dir}" != 'ERROR' ]; then
         # Download WP
@@ -121,9 +121,9 @@ wordpress_installer () {
     database_user="${db_project_name}_user"
     database_user_passw=$(openssl rand -hex 12)
 
-    log_break "true"
-    log_event "info" "Creating database ${database_name}, and user ${database_user} with pass ${database_user_passw}" "true"
-    log_break "true"
+    #log_break "true"
+    log_event "info" "Creating database ${database_name}, and user ${database_user} with pass ${database_user_passw}" "false"
+    #log_break "true"
 
     mysql_database_create "${database_name}"
     mysql_user_create "${database_user}" "${database_user_passw}"

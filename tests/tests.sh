@@ -176,6 +176,26 @@ log_section "Running Tests"
 
 test_display_functions
 
+result="$(extract_domain_extension "example.com")"
+
+result="$(extract_domain_extension "example.ar")"
+
+result="$(extract_domain_extension "broobe.ar")"
+
+result="$(extract_domain_extension "test.example.ar")"
+
+result="$(extract_domain_extension "old.test.example.ar")"
+
+result="$(extract_domain_extension "old.test.broobe.ar")"
+
+result="$(extract_domain_extension "old.dev.test.example.com")"
+
+result="$(extract_domain_extension "old.dev.test.broobe")"
+
+result="$(get_root_domain "old.dev.test.example.com")"
+
+result="$(get_root_domain "old.dev.test.example.ar")"
+
 #log_subsection "Testing mail functions"
 
 #test_mail_cert_section
