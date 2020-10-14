@@ -212,13 +212,13 @@ make_server_files_backup() {
     # Test backup file
     log_event "info" "Testing backup file: ${bk_file} ..."
     bzip2 -t "${BAKWP}/${NOW}/${bk_file}"
-    bzip2_result=$?
+    bzip2_result="$?"
     if [[ ${bzip2_result} -eq 0 ]]; then
 
       log_event "success" "Backup ${bk_file} created"
       display --indent 2 --text "- Testing compressed backup file" --result "DONE" --color GREEN
 
-      BACKUPED_SCF_LIST[${BK_SCF_INDEX}]=${bk_file}
+      BACKUPED_SCF_LIST[${BK_SCF_INDEX}]="$(string_remove_special_chars "${bk_file}")"
       BACKUPED_SCF_FL=${BACKUPED_SCF_LIST[${BK_SCF_INDEX}]}
       #BACKUPED_SCF_FL="${BACKUPED_SCF_LIST[${BK_SCF_INDEX}]}"
 
@@ -228,13 +228,13 @@ make_server_files_backup() {
       BK_SCF_SIZES[${BK_SCF_ARRAY_INDEX}]=${BK_SCF_SIZE}
 
       # New folder with $VPSNAME
-      output="$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}" 2>&1)"
+      output="$("${DROPBOX_UPLOADER}" -q mkdir "/${VPSNAME}" 2>&1)"
       
       # New folder with $bk_type
-      output="$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}/${bk_type}" 2>&1)"
+      output="$("${DROPBOX_UPLOADER}" -q mkdir "/${VPSNAME}/${bk_type}" 2>&1)"
 
       # New folder with $bk_sup_type (php, nginx, mysql)
-      output="$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}/${bk_type}/${bk_sup_type}" 2>&1)"
+      output="$("${DROPBOX_UPLOADER}" -q mkdir "/${VPSNAME}/${bk_type}/${bk_sup_type}" 2>&1)"
 
       DROPBOX_PATH="/${VPSNAME}/${bk_type}/${bk_sup_type}"
 
@@ -242,7 +242,7 @@ make_server_files_backup() {
       log_event "info" "Uploading backup to Dropbox ..."
       display --indent 2 --text "- Uploading backup file to Dropbox"
 
-      output="$(${DROPBOX_UPLOADER} upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}" 2>&1)"
+      output="$("${DROPBOX_UPLOADER}" upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}" 2>&1)"
 
       clear_last_line
       display --indent 2 --text "- Uploading backup file to Dropbox" --result "DONE" --color GREEN
@@ -250,7 +250,7 @@ make_server_files_backup() {
       # Deleting old backup files
       log_event "info" "Trying to delete old backup from Dropbox ..." "false"
 
-      output="$(${DROPBOX_UPLOADER} remove "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file}" 2>&1)"
+      output="$("${DROPBOX_UPLOADER}" remove "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file}" 2>&1)"
       dropbox_remove_result="$?"
       if [[ ${dropbox_remove_result} -eq 0 ]]; then
 
@@ -263,7 +263,7 @@ make_server_files_backup() {
         display --indent 4 --text "Maybe backup file doesn't exists" --tcolor YELLOW
 
         log_event "warning" "Can't remove ${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file} from dropbox. Maybe backup file doesn't exists." "false"
-        log_event "warning" "Last command executed: ${DROPBOX_UPLOADER} remove ${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file}" "false"
+        log_event "warning" "Last command executed: ${DROPBOX_UPLOADER} remove ${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file}"
 
       fi
 
@@ -271,7 +271,7 @@ make_server_files_backup() {
 
       bzip2_error="No such directory or file ${BAKWP}/${NOW}/${bk_file}"
 
-      log_event "critical" "Can't make the backup. No such directory or file ${BAKWP}/${NOW}/${bk_file}" "false"
+      log_event "critical" "Can't make the backup. No such directory or file ${BAKWP}/${NOW}/${bk_file}"
 
       display --indent 2 --text "- Testing backup file" --result "FAIL" --color RED
       display --indent 4 --text "Result: ${bzip2_error}"
@@ -313,7 +313,7 @@ make_mailcow_backup() {
     bk_file="${bk_type}_files-${NOW}.tar.bz2"
 
     log_event "info" "Trying to make a backup of ${MAILCOW} ..."
-    display --indent 2 --text "- Preparing ${MAILCOW} for backup" --tcolor YELLOW --result "DONE" --color GREEN
+    display --indent 2 --text "- Preparing ${MAILCOW} for backup" --result "DONE" --color GREEN
 
     "${MAILCOW}/helper-scripts/backup_and_restore.sh" backup all
     mailcow_backup_result=$?
@@ -403,7 +403,7 @@ make_files_backup() {
   #SHOW_BK_FILE_INDEX="$((BK_FILE_INDEX + 1))"
 
   log_event "info" "Making backup file from: ${directory_to_backup} ..."
-  display --indent 2 --text "- Preparing ${directory_to_backup} for backup" --tcolor YELLOW --result "DONE" --color GREEN
+  display --indent 2 --text "- Preparing ${directory_to_backup} for backup" --result "DONE" --color GREEN
 
   ${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv --width 70 --size "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${BAKWP}/${NOW}/${bk_file}"
   
@@ -426,65 +426,52 @@ make_files_backup() {
     #BK_FL_SIZE="$(ls -la --human-readable "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')"
     BK_FL_SIZE="$(find . -wholename "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{ print $5}')"
 
-    if [[ ${BK_FL_SIZE} == *"ERROR"* ]]; then
+    BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=${BK_FL_SIZE}
 
-      log_event "error" "${BK_FL_SIZE}"
+    log_event "success" "Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}"
+    display --indent 2 --text "- Backup creation" --result "DONE" --color GREEN
+    display --indent 4 --text "Final backup file size: ${BK_FL_SIZE}"
 
-      BK_FL_SIZE="ERROR"
-      ERROR=true
+    log_event "info" "Creating folders in Dropbox ..."
 
-      display --indent 2 --text "- Backup creation" --result "ERROR" --color RED
+    # New folder with $VPSNAME
+    output="$("${DROPBOX_UPLOADER}" -q mkdir "/${VPSNAME}" 2>&1)"
+    
+    # New folder with $bk_type
+    output="$("${DROPBOX_UPLOADER}" -q mkdir "/${VPSNAME}/${bk_type}" 2>&1)"
 
-      return 1
+    # New folder with $directory_to_backup (project folder)
+    output="$("${DROPBOX_UPLOADER}" -q mkdir "/${VPSNAME}/${bk_type}/${directory_to_backup}" 2>&1)"
 
-    else
+    DROPBOX_PATH="/${VPSNAME}/${bk_type}/${directory_to_backup}"
 
-      BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=${BK_FL_SIZE}
+    log_event "info" "Uploading ${directory_to_backup} to Dropbox"
+    display --indent 2 --text "- Uploading backup to dropbox"
+    output="$("${DROPBOX_UPLOADER}" upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}/" 2>&1)"
+    log_event "success" "${directory_to_backup} uploaded to Dropbox"
+    clear_last_line
+    display --indent 2 --text "- Uploading backup to dropbox" --result "DONE" --color GREEN
 
-      log_event "success" "Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}"
-      display --indent 2 --text "- Backup creation" --result "DONE" --color GREEN
-      display --indent 4 --text "Final backup file size: ${BK_FL_SIZE}"
+    # Delete old backup from Dropbox
+    output="$("${DROPBOX_UPLOADER}" remove "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file}" 2>&1)"
+    log_event "info" "Old backup from Dropbox with date ${ONEWEEKAGO} deleted"
+    display --indent 2 --text "- Deleting old dropbox backup" --result "DONE" --color GREEN
 
-      log_event "info" "Creating folders in Dropbox ..."
+    # Delete temp backup
+    rm "${BAKWP}/${NOW}/${bk_file}"
 
-      # New folder with $VPSNAME
-      output="$("${DROPBOX_UPLOADER}" -q mkdir "/${VPSNAME}" 2>&1)"
-      
-      # New folder with $bk_type
-      output="$("${DROPBOX_UPLOADER}" -q mkdir "/${VPSNAME}/${bk_type}" 2>&1)"
+    log_event "info" "Temp backup deleted from server"
+    display --indent 2 --text "- Deleting temp files" --result "DONE" --color GREEN
 
-      # New folder with $directory_to_backup (project folder)
-      output="$("${DROPBOX_UPLOADER}" -q mkdir "/${VPSNAME}/${bk_type}/${directory_to_backup}" 2>&1)"
-
-      DROPBOX_PATH="/${VPSNAME}/${bk_type}/${directory_to_backup}"
-
-      log_event "info" "Uploading ${directory_to_backup} to Dropbox"
-      display --indent 2 --text "- Uploading backup to dropbox"
-      output="$(${DROPBOX_UPLOADER} upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}/" 2>&1)"
-      log_event "success" "${directory_to_backup} uploaded to Dropbox"
-      clear_last_line
-      display --indent 2 --text "- Uploading backup to dropbox" --result "DONE" --color GREEN
-
-      # Delete old backup from Dropbox
-      output="$(${DROPBOX_UPLOADER} remove "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file}" 2>&1)"
-      log_event "info" "Old backup from Dropbox with date ${ONEWEEKAGO} deleted"
-      display --indent 2 --text "- Deleting old dropbox backup" --result "DONE" --color GREEN
-
-      # Delete temp backup
-      rm "${BAKWP}/${NOW}/${bk_file}"
-
-      log_event "info" "Temp backup deleted from server"
-      display --indent 2 --text "- Deleting temp files" --result "DONE" --color GREEN
-
-      log_event "success" "Backup uploaded"
-
-    fi
+    log_event "success" "Backup uploaded"
 
   else
     ERROR=true
     ERROR_TYPE="ERROR: Making backup ${BAKWP}/${NOW}/${bk_file}"
 
-    log_event "error" "Something went wrong making backup file: ${BAKWP}/${NOW}/${bk_file}" "true"
+    log_event "error" "Something went wrong making backup file: ${BAKWP}/${NOW}/${bk_file}"
+    display --indent 2 --text "- Backup creation" --result "FAIL" --color RED
+    display --indent 4 --text "Something went wrong making backup file: ${bk_file}" --tcolor RED
 
     return 1
 
