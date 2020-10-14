@@ -224,7 +224,7 @@ make_server_files_backup() {
 
       # Calculate backup size
       #BK_SCF_SIZE="$(ls -lah "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')"
-      BK_SCF_SIZE="$(find . -name "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{ print $5}')"
+      BK_SCF_SIZE="$(find . -wholename "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{ print $5}')"
       BK_SCF_SIZES[${BK_SCF_ARRAY_INDEX}]=${BK_SCF_SIZE}
 
       # New folder with $VPSNAME
@@ -424,7 +424,7 @@ make_files_backup() {
 
     # Calculate backup size
     #BK_FL_SIZE="$(ls -la --human-readable "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')"
-    BK_FL_SIZE="$(find . -name "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{ print $5}')"
+    BK_FL_SIZE="$(find . -wholename "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{ print $5}')"
 
     if [[ ${BK_FL_SIZE} == *"ERROR"* ]]; then
 
@@ -563,7 +563,7 @@ make_database_backup() {
 
       # Calculate backup size
       #BK_DB_SIZES[$BK_DB_INDEX]="$(ls -lah "${bk_file}" | awk '{ print $5}')"
-      BK_DB_SIZES="$(find . -name "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{ print $5}')"
+      BK_DB_SIZES="$(find . -wholename "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{ print $5}')"
       BK_DB_SIZE=${BK_DB_SIZES[$BK_DB_INDEX]}
 
       log_event "success" "Backup for ${database} created, final size: ${BK_DB_SIZE}"
@@ -644,7 +644,7 @@ make_project_backup() {
 
         # Calculate backup size
         #BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=$(ls -lah "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')
-        BK_FL_SIZES="$(find . -name "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{ print $5}')"
+        BK_FL_SIZES="$(find . -wholename "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{ print $5}')"
         BK_FL_SIZE=${BK_FL_SIZES[$BK_FL_ARRAY_INDEX]}
 
         log_event "success" "File backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}"
