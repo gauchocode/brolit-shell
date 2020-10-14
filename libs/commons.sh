@@ -1018,7 +1018,7 @@ clear_screen() {
 clear_last_line() {
 
   printf "\033[1A" >&2
-  echo "                                                                                             " >&2
+  echo -e "${WHITE}                                                                                               ${ENDCOLOR}" >&2
   printf "\033[1A" >&2
   printf "\033[1A" >&2
 

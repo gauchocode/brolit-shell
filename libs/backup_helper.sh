@@ -221,7 +221,8 @@ make_server_files_backup() {
       #BACKUPED_SCF_FL="${BACKUPED_SCF_LIST[${BK_SCF_INDEX}]}"
 
       # Calculate backup size
-      BK_SCF_SIZE="$(ls -lah "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')"
+      #BK_SCF_SIZE="$(ls -lah "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')"
+      BK_SCF_SIZE="$(find . -name "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{ print $5}')"
       BK_SCF_SIZES[${BK_SCF_ARRAY_INDEX}]=${BK_SCF_SIZE}
 
       # New folder with $VPSNAME
@@ -420,7 +421,8 @@ make_files_backup() {
     BACKUPED_FL=${BACKUPED_LIST[${BK_FILE_INDEX}]}
 
     # Calculate backup size
-    BK_FL_SIZE="$(ls -la --human-readable "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')"
+    #BK_FL_SIZE="$(ls -la --human-readable "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')"
+    BK_FL_SIZE="$(find . -name "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{ print $5}')"
 
     if [[ ${BK_FL_SIZE} == *"ERROR"* ]]; then
 
@@ -538,7 +540,7 @@ make_database_backup() {
   mysql_export_result=$?
   if [ "${mysql_export_result}" -eq 0 ]; then
 
-    cd "${BAKWP}/${NOW}"
+    #cd "${BAKWP}/${NOW}"
 
     log_event "info" "Making a tar.bz2 file of ${db_file} ..."
 
@@ -558,7 +560,8 @@ make_database_backup() {
       BACKUPED_DB_LIST[$BK_DB_INDEX]=${bk_file}
 
       # Calculate backup size
-      BK_DB_SIZES[$BK_DB_INDEX]="$(ls -lah "${bk_file}" | awk '{ print $5}')"
+      #BK_DB_SIZES[$BK_DB_INDEX]="$(ls -lah "${bk_file}" | awk '{ print $5}')"
+      BK_DB_SIZES="$(find . -name "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{ print $5}')"
       BK_DB_SIZE=${BK_DB_SIZES[$BK_DB_INDEX]}
 
       log_event "success" "Backup for ${database} created, final size: ${BK_DB_SIZE}"
@@ -624,9 +627,9 @@ make_project_backup() {
     local old_bk_file="${directory_to_backup}_${bk_type}-files_${ONEWEEKAGO}.tar.bz2"
     local bk_file="${directory_to_backup}_${bk_type}-files_${NOW}.tar.bz2"
 
-    log_event "info" "Making TAR.BZ2 from: ${directory_to_backup} ..." "true"
+    log_event "info" "Making TAR.BZ2 from: ${directory_to_backup} ..."
 
-    (${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv -ns $(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}') | lbzip2 >"${BAKWP}/${NOW}/${bk_file}") 2>&1
+    (${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv -ns "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${BAKWP}/${NOW}/${bk_file}") 2>&1
 
     # Test backup file
     log_event "info" "Testing backup file: ${bk_file}"
@@ -638,10 +641,11 @@ make_project_backup() {
         BACKUPED_FL=${BACKUPED_LIST[$BK_FILE_INDEX]}
 
         # Calculate backup size
-        BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=$(ls -lah "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')
+        #BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=$(ls -lah "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')
+        BK_FL_SIZES="$(find . -name "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{ print $5}')"
         BK_FL_SIZE=${BK_FL_SIZES[$BK_FL_ARRAY_INDEX]}
 
-        log_event "success" "File backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}" "true"
+        log_event "success" "File backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}"
 
         # Checking whether WordPress is installed or not
         if ! $(wp core is-installed); then
@@ -649,7 +653,7 @@ make_project_backup() {
             # TODO: Check Composer and Yii Projects
 
             # Yii Project
-            log_event "info" "Trying to get database name from project ..." "true"
+            log_event "info" "Trying to get database name from project ..."
 
             DB_NAME=$(grep 'dbname=' "${bk_path}/${directory_to_backup}/common/config/main-local.php" | tail -1 | sed 's/$dbname=//g;s/,//g' | cut -d "'" -f4 | cut -d "=" -f3)
 
