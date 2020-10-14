@@ -53,8 +53,8 @@ log_subsection "Backup Server Files"
 # SERVER CONFIG FILES GLOBALS
 declare -i BK_SCF_INDEX=0
 declare -i BK_SCF_ARRAY_INDEX=0
-declare -a BACKUPED_SCF_LIST
-declare -a BK_SCF_SIZES
+declare -n BACKUPED_SCF_LIST
+declare -n BK_SCF_SIZES
 
 # TAR Webserver Config Files
 if [[ ! -d ${WSERVER} ]]; then
@@ -118,8 +118,8 @@ display --indent 2 --text "- Directories found" --result "${COUNT_TOTAL_SITES}" 
 # FILES BACKUP GLOBALS
 declare -i BK_FILE_INDEX=0
 declare -i BK_FL_ARRAY_INDEX=0
-declare -a BACKUPED_LIST
-declare -a BK_FL_SIZES
+declare -n BACKUPED_LIST
+declare -n BK_FL_SIZES
 
 k=0
 

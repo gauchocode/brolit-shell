@@ -276,7 +276,7 @@ cloudflare_change_a_record () {
         message="IP changed to: ${SERVER_IP}"
         log_event "success" "${message}" "false"
         display --indent 2 --text "- Updating subdomain on Cloudflare" --result "DONE" --color GREEN
-        display --indent 4 --text "IP: ${SERVER_IP}" --tcolor YELLOW
+        display --indent 4 --text "IP: ${SERVER_IP}" --tcolor GREEN
 
     fi
 
