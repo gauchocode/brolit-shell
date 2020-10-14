@@ -38,32 +38,32 @@ SITES_F="sites"
 CONFIG_F="configs"
 
 # Starting Message
-log_event "info" "Starting project backup script" "true"
+log_event "info" "Starting project backup script"
 
 # Get all directories
-TOTAL_SITES=$(find ${SITES} -maxdepth 1 -type d)
+TOTAL_SITES="$(find "${SITES}" -maxdepth 1 -type d)"
 
 ## Get length of $TOTAL_SITES
-COUNT_TOTAL_SITES=$(find ${SITES} -maxdepth 1 -type d -printf '.' | wc -c)
-COUNT_TOTAL_SITES=$((${COUNT_TOTAL_SITES} - 1))
+COUNT_TOTAL_SITES="$(find "${SITES}" -maxdepth 1 -type d -printf '.' | wc -c)"
+COUNT_TOTAL_SITES=$((COUNT_TOTAL_SITES - 1))
 
-log_event "info" "${COUNT_TOTAL_SITES} directory found" "true"
+log_event "info" "${COUNT_TOTAL_SITES} directory found"
 
 # MORE GLOBALS
 BK_FILE_INDEX=0
 BK_FL_ARRAY_INDEX=0
-declare -a BACKUPED_LIST
-declare -a BK_FL_SIZES
+declare -n BACKUPED_LIST
+declare -n BK_FL_SIZES
 
 k=0
 
 for j in ${TOTAL_SITES}; do
 
-    log_event "info" "Processing [${j}] ..." "true"
+    log_event "info" "Processing [${j}] ..."
 
     if [[ "$k" -gt 0 ]]; then
 
-        FOLDER_NAME=$(basename $j)
+        FOLDER_NAME=$(basename "$j")
 
         if [[ $SITES_BL != *"${FOLDER_NAME}"* ]]; then
 
@@ -75,7 +75,7 @@ for j in ${TOTAL_SITES}; do
 
         fi
 
-        log_event "info" "Processed ${BK_FILE_INDEX} of ${COUNT_TOTAL_SITES} directories" "false"
+        log_event "info" "Processed ${BK_FILE_INDEX} of ${COUNT_TOTAL_SITES} directories"
         BK_FILE_INDEX=$((BK_FILE_INDEX + 1))
 
     fi

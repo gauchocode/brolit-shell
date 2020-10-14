@@ -271,12 +271,10 @@ script_init() {
   NETWORK_INTERFACE="$(ip link show | grep '2:' | cut -d ':' -f2)"
   NETWORK_INTERFACE="$(string_remove_spaces "${NETWORK_INTERFACE}")"
   SERVER_IP="$(ifconfig "${NETWORK_INTERFACE}" | grep 'inet ' | awk '{print $2}' | sed 's/addr://')"
-
+  # Fallback
   if [ "${SERVER_IP}" == "" ]; then
-
     # Alternative method to get public IP
     SERVER_IP=$(curl -s http://ipv4.icanhazip.com)
-
   fi
 
   # EXPORT VARS (GLOBALS)
@@ -685,7 +683,7 @@ clear_last_line() {
   printf "\033[1A" >&2
   echo -e "${WHITE}                                                                                               ${ENDCOLOR}" >&2
   printf "\033[1A" >&2
-  printf "\033[1A" >&2
+  #printf "\033[1A" >&2
 
 }
 
@@ -1105,7 +1103,10 @@ generate_cloudflare_config() {
 
   # ${CLF_CONFIG_FILE} is a Global var
 
-  local cfl_email cfl_api_token cfl_email_string cfl_api_token_string
+  local cfl_email 
+  local cfl_api_token
+  local cfl_email_string
+  local cfl_api_token_string
 
   cfl_email_string="\n\nPlease insert the Cloudflare email account here:\n\n"
 
@@ -1115,7 +1116,7 @@ generate_cloudflare_config() {
 
     echo "dns_cloudflare_email=${cfl_email}">"${CLF_CONFIG_FILE}"
 
-    cfl_api_token_string+= "\n Please insert the Cloudflare Global API Key.\n"
+    cfl_api_token_string+="\n Please insert the Cloudflare Global API Key.\n"
     cfl_api_token_string+=" 1) Log in on: cloudflare.com\n"
     cfl_api_token_string+=" 2) Login and go to \"My Profile\".\n"
     cfl_api_token_string+=" 3) Choose the type of access you need.\n"
@@ -1199,12 +1200,10 @@ calculate_disk_usage() {
 
   local disk_u
 
-  log_event "info" "Calculating disk usage of ${disk_volume}" "false"
-
   # Need to use grep with -w to exact match of the main volume
-  disk_u=$(df -h | grep -w "${disk_volume}" | awk {'print $5'})
+  disk_u="$(df -h | grep -w "${disk_volume}" | awk '{print $5}')"
 
-  log_event "info" "Disk usage of ${disk_volume}: ${disk_u}" "false"
+  log_event "info" "Disk usage of ${disk_volume}: ${disk_u}"
 
   # Return
   echo "${disk_u}"
@@ -1222,6 +1221,28 @@ string_remove_spaces() {
 
 }
 
+string_remove_special_chars() {
+
+  # From: https://stackoverflow.com/questions/23816264/remove-all-special-characters-and-case-from-string-in-bash
+  #
+  # The first tr deletes special characters. d means delete, c means complement (invert the character set). 
+  # So, -dc means delete all characters except those specified. 
+  # The \n and \r are included to preserve linux or windows style newlines, which I assume you want.
+  # The second one translates uppercase characters to lowercase.
+  # The third get rid of characters like \r \n or ^C.
+
+  # Return
+  #cat $1 | tr -dc '[:alnum:]\n\r' | tr '[:upper:]' '[:lower:]' | tr -d '[:cntrl:]' # for files
+
+  # $1 = ${string}
+
+  local string=$1
+
+  # Return
+  echo "${string}" | tr -dc ".[:alnum:]-\n\r"     # Let '.' and '-' chars
+
+}
+
 check_if_folder_exists() {
 
   # $1 = ${folder_to_install}
@@ -1234,17 +1255,17 @@ check_if_folder_exists() {
   
   if [ -d "${project_dir}" ]; then
 
+    log_event "info" "Project directory not found on: ${project_dir}"
+
     # Return
     echo "ERROR"
 
-    log_event "info" "Project directory not found on: ${project_dir}" "false"
-
   else
+
+    log_event "info" "Project directory found on: ${project_dir}"
 
     # Return
     echo "${project_dir}"
-
-    log_event "info" "Project directory found on: ${project_dir}" "false"
 
   fi
 
