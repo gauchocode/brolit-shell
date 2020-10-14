@@ -53,8 +53,8 @@ log_subsection "Backup Server Files"
 # SERVER CONFIG FILES GLOBALS
 declare -i BK_SCF_INDEX=0
 declare -i BK_SCF_ARRAY_INDEX=0
-declare -n BACKUPED_SCF_LIST
-declare -n BK_SCF_SIZES
+declare -a BACKUPED_SCF_LIST
+declare -a BK_SCF_SIZES
 
 # TAR Webserver Config Files
 if [[ ! -d ${WSERVER} ]]; then
