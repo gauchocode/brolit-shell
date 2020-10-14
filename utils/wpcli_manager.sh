@@ -265,7 +265,7 @@ wpcli_main_menu() {
 
   else
 
-    main_menu
+    menu_main_options
 
   fi
 
@@ -296,7 +296,7 @@ if [[ -z "${install_path}" || "${install_path}" = '' ]]; then
   
   whiptail --title "WARNING" --msgbox "WordPress installation not found! Press Enter to return to the Main Menu." 8 78
   
-  main_menu
+  menu_main_options
   
 else
 

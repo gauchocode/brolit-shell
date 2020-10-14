@@ -96,7 +96,7 @@ cloudflare_helper_menu() {
 
     fi
 
-    main_menu
+    menu_main_options
 
 }
 
