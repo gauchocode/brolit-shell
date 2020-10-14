@@ -217,12 +217,12 @@ make_server_files_backup() {
       log_event "success" "Backup ${bk_file} created"
       display --indent 2 --text "- Testing compressed backup file" --result "DONE" --color GREEN
 
-      BACKUPED_SCF_LIST[${BK_SCF_INDEX}]="${bk_file}"
-      BACKUPED_SCF_FL="${BACKUPED_SCF_LIST[${BK_SCF_INDEX}]}"
+      BACKUPED_SCF_LIST[${BK_SCF_INDEX}]=${bk_file}
+      #BACKUPED_SCF_FL="${BACKUPED_SCF_LIST[${BK_SCF_INDEX}]}"
 
       # Calculate backup size
       BK_SCF_SIZE="$(ls -lah "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')"
-      BK_SCF_SIZES[${BK_SCF_ARRAY_INDEX}]="${BK_SCF_SIZE}"
+      BK_SCF_SIZES[${BK_SCF_ARRAY_INDEX}]=${BK_SCF_SIZE}
 
       # New folder with $VPSNAME
       output="$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}" 2>&1)"
@@ -248,7 +248,7 @@ make_server_files_backup() {
       log_event "info" "Trying to delete old backup from Dropbox ..." "false"
 
       output="$(${DROPBOX_UPLOADER} remove "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file}" 2>&1)"
-      dropbox_remove_result=$?
+      dropbox_remove_result="$?"
       if [[ ${dropbox_remove_result} -eq 0 ]]; then
 
         log_event "success" "Server files backup finished" "false"
@@ -416,11 +416,11 @@ make_files_backup() {
 
     log_event "success" "${bk_file} backup created"
     
-    BACKUPED_LIST[$BK_FILE_INDEX]="${bk_file}"
+    BACKUPED_LIST[$BK_FILE_INDEX]=${bk_file}
     BACKUPED_FL=${BACKUPED_LIST[${BK_FILE_INDEX}]}
 
     # Calculate backup size
-    BK_FL_SIZE=$(ls -la --human-readable "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')
+    BK_FL_SIZE="$(ls -la --human-readable "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')"
 
     if [[ ${BK_FL_SIZE} == *"ERROR"* ]]; then
 
@@ -435,7 +435,7 @@ make_files_backup() {
 
     else
 
-      BK_FL_SIZES[$BK_FL_ARRAY_INDEX]="${BK_FL_SIZE}"
+      BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=${BK_FL_SIZE}
 
       log_event "success" "Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}"
       display --indent 2 --text "- Backup creation" --result "DONE" --color GREEN
@@ -555,7 +555,7 @@ make_database_backup() {
       clear_last_line
       display --indent 2 --text "- Compressing database backup" --result "DONE" --color GREEN
 
-      BACKUPED_DB_LIST[$BK_DB_INDEX]="${bk_file}"
+      BACKUPED_DB_LIST[$BK_DB_INDEX]=${bk_file}
 
       # Calculate backup size
       BK_DB_SIZES[$BK_DB_INDEX]="$(ls -lah "${bk_file}" | awk '{ print $5}')"
@@ -634,7 +634,7 @@ make_project_backup() {
     lbzip2_result=$?
     if [[ ${lbzip2_result} -eq 0 ]]; then
 
-        BACKUPED_LIST[$BK_FILE_INDEX]="${bk_file}"
+        BACKUPED_LIST[$BK_FILE_INDEX]=${bk_file}
         BACKUPED_FL=${BACKUPED_LIST[$BK_FILE_INDEX]}
 
         # Calculate backup size
