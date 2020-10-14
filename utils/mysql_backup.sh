@@ -32,7 +32,7 @@ export BK_TYPE DBS_F
 
 # Starting Messages
 log_break
-log_event "info" "Starting database backup script" "false"
+log_event "info" "Starting database backup script"
 log_subsection "Backup Databases"
 display --indent 2 --text "- Initializing database backup script" --result "DONE" --color GREEN
 
@@ -41,18 +41,18 @@ DBS=$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -Bse 'show databases')
 clear_last_line #to remove mysql warning message
 
 # Get all databases name
-TOTAL_DBS=$(mysql_count_dabases "${DBS}")
-log_event "info" "Databases found: ${TOTAL_DBS}" "false"
+TOTAL_DBS="$(mysql_count_dabases "${DBS}")"
+log_event "info" "Databases found: ${TOTAL_DBS}"
 display --indent 2 --text "- Databases found" --result "${TOTAL_DBS}" --color YELLOW
 
 # MORE GLOBALS
 BK_DB_INDEX=0
-declare -a BACKUPED_DB_LIST
-declare -a BK_DB_SIZES
+declare -n BACKUPED_DB_LIST
+declare -n BK_DB_SIZES
 
 for DATABASE in ${DBS}; do
 
-  log_event "info" "Processing [${DATABASE}] ..." "false"
+  log_event "info" "Processing [${DATABASE}] ..."
 
   if [[ ${DB_BL} != *"${DATABASE}"* ]]; then
 
@@ -60,12 +60,12 @@ for DATABASE in ${DBS}; do
 
     BK_DB_INDEX=$((BK_DB_INDEX + 1))
 
-    log_event "success" "Backup ${BK_DB_INDEX} of ${TOTAL_DBS} done" "false"
+    log_event "success" "Backup ${BK_DB_INDEX} of ${TOTAL_DBS} done"
 
     log_break "true"
 
   else
-    log_event "info" "Ommiting the blacklisted database: [${DATABASE}]" "false"
+    log_event "info" "Ommiting the blacklisted database: [${DATABASE}]"
     #display --indent 2 --text "- Database backup for ${DATABASE}" --result "OMMITED" --color YELLOW
     #display --indent 4 --text "Database found on blacklist"
 
@@ -74,5 +74,5 @@ for DATABASE in ${DBS}; do
 done
 
 # Configure Email
-log_event "info" "Preparing mail databases backup section ..." "false"
+log_event "info" "Preparing mail databases backup section ..."
 mail_mysqlbackup_section "${BACKUPED_DB_LIST[@]}" "${BK_DB_SIZES[@]}" "${ERROR}" "${ERROR_TYPE}"
