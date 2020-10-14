@@ -262,16 +262,15 @@ script_init() {
   # Checking required packages to run
   check_packages_required
   packages_output=$?
-  if [ ${packages_output} -eq 1 ];then
+  if [[ ${packages_output} -eq 1 ]];then
     log_event "warning" "Some script dependencies are not setisfied." "true"
     prompt_return_or_finish
   fi
 
-  # OLD METHOD (DEPRECATED)
-  #SERVER_IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
-
   # METHOD TO GET PUBLIC IP (if server has configured a floating ip, it will return this)
-  SERVER_IP=$(ifconfig eth0 | grep 'inet ' | awk '{print $2}' | sed 's/addr://')
+  NETWORK_INTERFACE="$(ip link show | grep '2:' | cut -d ':' -f2)"
+  NETWORK_INTERFACE="$(string_remove_spaces "${NETWORK_INTERFACE}")"
+  SERVER_IP="$(ifconfig "${NETWORK_INTERFACE}" | grep 'inet ' | awk '{print $2}' | sed 's/addr://')"
 
   if [ "${SERVER_IP}" == "" ]; then
 
@@ -308,340 +307,6 @@ customize_ubuntu_login_message() {
 
   # Force update
   run-parts "/etc/update-motd.d"
-
-}
-
-main_menu() {
-
-  local whip_title              # whiptail var
-  local whip_description        # whiptail var
-  local runner_options          # whiptail array options
-  local chosen_type             # whiptail var
-
-  whip_title="LEMP UTILS SCRIPT"
-  whip_description=" "
-
-  runner_options=("01)" "BACKUP OPTIONS" "02)" "RESTORE OPTIONS" "03)" "PROJECT UTILS" "04)" "WPCLI MANAGER" "05)" "CERTBOT MANAGER" "06)" "CLOUDFLARE MANAGER" "07)" "INSTALLERS & CONFIGS" "08)" "IT UTILS" "09)" "SCRIPT OPTIONS" "10)" "CRON TASKS")
-  chosen_type=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)
-
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    if [[ ${chosen_type} == *"01"* ]]; then
-      backup_menu
-
-    fi
-    if [[ ${chosen_type} == *"02"* ]]; then
-      restore_menu
-
-    fi
-
-    if [[ ${chosen_type} == *"03"* ]]; then
-      project_utils_menu
-
-    fi
-
-    if [[ ${chosen_type} == *"04"* ]]; then
-      # shellcheck source=${SFOLDER}/utils/wpcli_manager.sh
-      source "${SFOLDER}/utils/wpcli_manager.sh"
-
-    fi
-    if [[ ${chosen_type} == *"05"* ]]; then
-      # shellcheck source=${SFOLDER}/utils/certbot_manager.sh
-      source "${SFOLDER}/utils/certbot_manager.sh"
-
-    fi
-    if [[ ${chosen_type} == *"06"* ]]; then
-      # shellcheck source=${SFOLDER}/utils/cloudflare_manager.sh
-      source "${SFOLDER}/utils/cloudflare_manager.sh"
-
-    fi
-    if [[ ${chosen_type} == *"07"* ]]; then
-      # shellcheck source=${SFOLDER}/utils/installers_and_configurators.sh
-      source "${SFOLDER}/utils/installers_and_configurators.sh"
-
-    fi
-    if [[ ${chosen_type} == *"08"* ]]; then
-      # shellcheck source=${SFOLDER}/utils/it_utils.sh
-      source "${SFOLDER}/utils/it_utils.sh"
-
-    fi
-    if [[ ${chosen_type} == *"09"* ]]; then
-      script_configuration_wizard "reconfigure"
-
-    fi
-    if [[ ${chosen_type} == *"10"* ]]; then
-      # CRON_SCRIPT_TASKS
-      cron_script_tasks
-
-    fi
-
-  else
-
-    exit 0
-
-  fi
-
-}
-
-cron_script_tasks() {
-
-  local runner_options 
-  local chosen_type 
-  local scheduled_time
-
-  runner_options=("01)" "BACKUPS TASKS" "02)" "OPTIMIZER TASKS" "03)" "WORDPRESS TASKS" "04)" "UPTIME TASKS" "05)" "SCRIPT UPDATER")
-  chosen_type=$(whiptail --title "CRONEABLE TASKS" --menu "\n" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)
-
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    if [[ ${chosen_type} == *"01"* ]]; then
-
-      # BACKUPS-TASKS
-      suggested_cron="45 00 * * *" # Every day at 00:45 AM
-      scheduled_time=$(whiptail --title "CRON BACKUPS-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
-        
-        install_crontab_script "${SFOLDER}/cron/backups_tasks.sh" "${scheduled_time}"
-
-      fi
-
-    fi
-    if [[ ${chosen_type} == *"02"* ]]; then
-
-      # OPTIMIZER-TASKS
-      suggested_cron="45 04 * * *" # Every day at 04:45 AM
-      scheduled_time=$(whiptail --title "CRON OPTIMIZER-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
-        
-        install_crontab_script "${SFOLDER}/cron/optimizer_tasks.sh" "${scheduled_time}"
-
-      fi
-
-    fi
-    if [[ ${chosen_type} == *"03"* ]]; then
-
-      # WORDPRESS-TASKS
-      suggested_cron="45 23 * * *" # Every day at 23:45 AM
-      scheduled_time=$(whiptail --title "CRON WORDPRESS-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
-        
-        install_crontab_script "${SFOLDER}/cron/wordpress_tasks.sh" "${scheduled_time}"
-
-      fi
-
-    fi
-    if [[ ${chosen_type} == *"04"* ]]; then
-
-      # UPTIME-TASKS
-      suggested_cron="45 22 * * *" # Every day at 22:45 AM
-      scheduled_time=$(whiptail --title "CRON UPTIME-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
-        
-        install_crontab_script "${SFOLDER}/cron/uptime_tasks.sh" "${scheduled_time}"
-
-      fi
-
-    fi
-    if [[ ${chosen_type} == *"05"* ]]; then
-
-      # SCRIPT-UPDATER
-      suggested_cron="45 22 * * *" # Every day at 22:45 AM
-      scheduled_time=$(whiptail --title "CRON UPTIME-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
-        
-        install_crontab_script "${SFOLDER}/cron/updater.sh" "${scheduled_time}"
-
-      fi
-
-    fi
-
-    prompt_return_or_finish
-    cron_script_tasks
-
-  fi
-
-  main_menu
-
-}
-
-security_utils_menu () {
-
-  # TODO: new options? https://upcloud.com/community/tutorials/scan-ubuntu-server-malware/
-
-  local security_options chosen_security_options
-
-  security_options=("01)" "CLAMAV MALWARE SCAN" "02)" "CUSTOM MALWARE SCAN" "03)" "LYNIS SYSTEM AUDIT")
-  chosen_security_options=$(whiptail --title "SECURITY TOOLS" --menu "Choose an option to run" 20 78 10 "${security_options[@]}" 3>&1 1>&2 2>&3)
-
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    security_install
-
-    if [[ ${chosen_security_options} == *"01"* ]]; then
-      security_clamav_scan_menu
-
-    fi
-    if [[ ${chosen_security_options} == *"02"* ]]; then
-      security_custom_scan_menu
-
-    fi
-    if [[ ${chosen_security_options} == *"03"* ]]; then
-      security_system_audit
-
-    fi
-
-    prompt_return_or_finish
-    security_utils_menu
-
-  fi
-
-  main_menu
-
-}
-
-security_clamav_scan_menu () {
-
-  local to_scan
-
-  startdir="${SITES}"
-  directory_browser "${menutitle}" "${startdir}"
-
-  to_scan=$filepath"/"$filename
-
-  log_event "info" "Starting clamav scan on: ${to_scan}" "false"
-
-  security_clamav_scan "${to_scan}"
-
-}
-
-security_custom_scan_menu () {
-
-  local to_scan
-
-  startdir="${SITES}"
-  directory_browser "${menutitle}" "${startdir}"
-
-  to_scan=$filepath"/"$filename
-
-  log_event "info" "Starting custom scan on: ${to_scan}" "false"
-
-  security_custom_scan "${to_scan}"
-
-}
-
-project_utils_menu () {
-
-  local whip_title whip_description project_utils_options chosen_project_utils_options
-
-  whip_title="PROJECT UTILS"
-  whip_description=" "
-
-  project_utils_options=("01)" "CREATE WP PROJECT" "02)" "CREATE PHP PROJECT" "03)" "DELETE PROJECT" "04)" "PUT PROJECT ONLINE" "05)" "PUT PROJECT OFFLINE" "06)" "REGENERATE NGINX SERVER" "07)" "BENCH PROJECT GTMETRIX")
-  chosen_project_utils_options=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_utils_options[@]}" 3>&1 1>&2 2>&3)
-
-  exitstatus=$?
-  if [ ${exitstatus} = 0 ]; then
-
-    if [[ ${chosen_project_utils_options} == *"01"* ]]; then
-      
-      # CREATE-WP-PROJECT
-
-      # shellcheck source=${SFOLDER}/installers/wordpress_installer.sh
-      source "${SFOLDER}/utils/installers/wordpress_installer.sh"
-    fi
-
-    if [[ ${chosen_project_utils_options} == *"02"* ]]; then
-
-      # CREATE-PHP-PROJECT
-
-      # TODO: create empty dir on $SITES, create nginx server file, ask for database
-      log_event "error" "TODO: CREATE_PHP_PROJECT MUST BE IMPLEMENTED SOON" "true"
-
-    fi
-
-    if [[ ${chosen_project_utils_options} == *"03"* ]]; then
-
-      # DELETE-PROJECT
-
-      # shellcheck source=${SFOLDER}/utils/delete_project.sh
-      source "${SFOLDER}/utils/delete_project.sh"
-
-    fi
-
-    if [[ ${chosen_project_utils_options} == *"04"* ]]; then
-
-      # PUT-PROJECT-ONLINE
-      change_project_status "online"
-
-    fi
-
-    if [[ ${chosen_project_utils_options} == *"05"* ]]; then
-
-      # PUT-PROJECT-OFFLINE
-      change_project_status "offline"
-
-    fi
-
-    if [[ ${chosen_project_utils_options} == *"06"* ]]; then
-
-      # REGENERATE-NGINX-SERVER
-
-      log_section "Nginx Manager"
-
-      # Select project to work with
-      directory_browser "Select a Website to work with" "${SITES}" #return $filename
-
-      if [ "${filename}" != "" ]; then
-
-        filename="${filename::-1}" # remove '/'
-        
-        display --indent 2 --text "- Selecting website to work with" --result DONE --color GREEN
-        display --indent 4 --text "Selected website: ${filename}"
-
-        # Aks project domain
-        project_domain=$(ask_project_domain "${filename}")
-
-        # Aks project type
-        project_type=$(ask_project_type)
-        
-        # New site Nginx configuration
-        nginx_server_create "${project_domain}" "${project_type}" "single" ""
-
-      else
-
-        display --indent 2 "Selecting website to work with" --result SKIPPED --color YELLOW
-
-      fi
-
-    fi
-
-    if [[ ${chosen_project_utils_options} == *"07"* ]]; then
-
-      # BENCH-PROJECT-GTMETRIX
-
-      URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
-        # shellcheck source=${SFOLDER}/tools/third-party/google-insights-api-tools/gitools_v5.sh
-        source "${SFOLDER}/tools/third-party/google-insights-api-tools/gitools_v5.sh" gtmetrix "${URL_TO_TEST}"
-      fi
-
-    fi
-
-    prompt_return_or_finish
-    project_utils_menu
-
-  fi
-
-  main_menu
 
 }
 
@@ -1546,6 +1211,17 @@ calculate_disk_usage() {
 
 }
 
+string_remove_spaces() {
+
+  # $1 = ${string}
+
+  local string=$1
+
+  # Return
+  echo "${string//[[:blank:]]/}"
+
+}
+
 check_if_folder_exists() {
 
   # $1 = ${folder_to_install}
@@ -2031,6 +1707,349 @@ ask_mysql_root_psw() {
 
     fi
   fi
+
+}
+
+#
+#################################################################################
+#
+# * Menues
+#
+#################################################################################
+#
+
+
+menu_main_options() {
+
+  local whip_title              # whiptail var
+  local whip_description        # whiptail var
+  local runner_options          # whiptail array options
+  local chosen_type             # whiptail var
+
+  whip_title="LEMP UTILS SCRIPT"
+  whip_description=" "
+
+  runner_options=("01)" "BACKUP OPTIONS" "02)" "RESTORE OPTIONS" "03)" "PROJECT UTILS" "04)" "WPCLI MANAGER" "05)" "CERTBOT MANAGER" "06)" "CLOUDFLARE MANAGER" "07)" "INSTALLERS & CONFIGS" "08)" "IT UTILS" "09)" "SCRIPT OPTIONS" "10)" "CRON TASKS")
+  chosen_type=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    if [[ ${chosen_type} == *"01"* ]]; then
+      menu_backup_options
+
+    fi
+    if [[ ${chosen_type} == *"02"* ]]; then
+      menu_restore_options
+
+    fi
+
+    if [[ ${chosen_type} == *"03"* ]]; then
+      menu_project_utils
+
+    fi
+
+    if [[ ${chosen_type} == *"04"* ]]; then
+      # shellcheck source=${SFOLDER}/utils/wpcli_manager.sh
+      source "${SFOLDER}/utils/wpcli_manager.sh"
+
+    fi
+    if [[ ${chosen_type} == *"05"* ]]; then
+      # shellcheck source=${SFOLDER}/utils/certbot_manager.sh
+      source "${SFOLDER}/utils/certbot_manager.sh"
+
+    fi
+    if [[ ${chosen_type} == *"06"* ]]; then
+      # shellcheck source=${SFOLDER}/utils/cloudflare_manager.sh
+      source "${SFOLDER}/utils/cloudflare_manager.sh"
+
+    fi
+    if [[ ${chosen_type} == *"07"* ]]; then
+      # shellcheck source=${SFOLDER}/utils/installers_and_configurators.sh
+      source "${SFOLDER}/utils/installers_and_configurators.sh"
+
+    fi
+    if [[ ${chosen_type} == *"08"* ]]; then
+      # shellcheck source=${SFOLDER}/utils/it_utils.sh
+      source "${SFOLDER}/utils/it_utils.sh"
+
+    fi
+    if [[ ${chosen_type} == *"09"* ]]; then
+      script_configuration_wizard "reconfigure"
+
+    fi
+    if [[ ${chosen_type} == *"10"* ]]; then
+      # CRON SCRIPT TASKS
+      menu_cron_script_tasks
+
+    fi
+
+  else
+
+    exit 0
+
+  fi
+
+}
+
+menu_cron_script_tasks() {
+
+  local runner_options 
+  local chosen_type 
+  local scheduled_time
+
+  runner_options=("01)" "BACKUPS TASKS" "02)" "OPTIMIZER TASKS" "03)" "WORDPRESS TASKS" "04)" "UPTIME TASKS" "05)" "SCRIPT UPDATER")
+  chosen_type=$(whiptail --title "CRONEABLE TASKS" --menu "\n" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    if [[ ${chosen_type} == *"01"* ]]; then
+
+      # BACKUPS-TASKS
+      suggested_cron="45 00 * * *" # Every day at 00:45 AM
+      scheduled_time=$(whiptail --title "CRON BACKUPS-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+        
+        install_crontab_script "${SFOLDER}/cron/backups_tasks.sh" "${scheduled_time}"
+
+      fi
+
+    fi
+    if [[ ${chosen_type} == *"02"* ]]; then
+
+      # OPTIMIZER-TASKS
+      suggested_cron="45 04 * * *" # Every day at 04:45 AM
+      scheduled_time=$(whiptail --title "CRON OPTIMIZER-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ ${exitstatus} = 0 ]; then
+        
+        install_crontab_script "${SFOLDER}/cron/optimizer_tasks.sh" "${scheduled_time}"
+
+      fi
+
+    fi
+    if [[ ${chosen_type} == *"03"* ]]; then
+
+      # WORDPRESS-TASKS
+      suggested_cron="45 23 * * *" # Every day at 23:45 AM
+      scheduled_time=$(whiptail --title "CRON WORDPRESS-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+        
+        install_crontab_script "${SFOLDER}/cron/wordpress_tasks.sh" "${scheduled_time}"
+
+      fi
+
+    fi
+    if [[ ${chosen_type} == *"04"* ]]; then
+
+      # UPTIME-TASKS
+      suggested_cron="45 22 * * *" # Every day at 22:45 AM
+      scheduled_time=$(whiptail --title "CRON UPTIME-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+        
+        install_crontab_script "${SFOLDER}/cron/uptime_tasks.sh" "${scheduled_time}"
+
+      fi
+
+    fi
+    if [[ ${chosen_type} == *"05"* ]]; then
+
+      # SCRIPT-UPDATER
+      suggested_cron="45 22 * * *" # Every day at 22:45 AM
+      scheduled_time=$(whiptail --title "CRON UPTIME-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+        
+        install_crontab_script "${SFOLDER}/cron/updater.sh" "${scheduled_time}"
+
+      fi
+
+    fi
+
+    prompt_return_or_finish
+    menu_cron_script_tasks
+
+  fi
+
+  menu_main_options
+
+}
+
+menu_security_utils () {
+
+  # TODO: new options? https://upcloud.com/community/tutorials/scan-ubuntu-server-malware/
+
+  local security_options chosen_security_options
+
+  security_options=("01)" "CLAMAV MALWARE SCAN" "02)" "CUSTOM MALWARE SCAN" "03)" "LYNIS SYSTEM AUDIT")
+  chosen_security_options=$(whiptail --title "SECURITY TOOLS" --menu "Choose an option to run" 20 78 10 "${security_options[@]}" 3>&1 1>&2 2>&3)
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    security_install
+
+    if [[ ${chosen_security_options} == *"01"* ]]; then
+      menu_security_clamav_scan
+
+    fi
+    if [[ ${chosen_security_options} == *"02"* ]]; then
+      menu_security_custom_scan
+
+    fi
+    if [[ ${chosen_security_options} == *"03"* ]]; then
+      menu_security_system_audit
+
+    fi
+
+    prompt_return_or_finish
+    menu_security_utils
+
+  fi
+
+  menu_main_options
+
+}
+
+menu_security_clamav_scan () {
+
+  local to_scan
+
+  startdir="${SITES}"
+  directory_browser "${menutitle}" "${startdir}"
+
+  to_scan=$filepath"/"$filename
+
+  log_event "info" "Starting clamav scan on: ${to_scan}" "false"
+
+  security_clamav_scan "${to_scan}"
+
+}
+
+menu_security_custom_scan () {
+
+  local to_scan
+
+  startdir="${SITES}"
+  directory_browser "${menutitle}" "${startdir}"
+
+  to_scan=$filepath"/"$filename
+
+  log_event "info" "Starting custom scan on: ${to_scan}" "false"
+
+  security_custom_scan "${to_scan}"
+
+}
+
+menu_project_utils () {
+
+  local whip_title whip_description project_utils_options chosen_project_utils_options
+
+  whip_title="PROJECT UTILS"
+  whip_description=" "
+
+  project_utils_options=("01)" "CREATE WP PROJECT" "02)" "CREATE PHP PROJECT" "03)" "DELETE PROJECT" "04)" "PUT PROJECT ONLINE" "05)" "PUT PROJECT OFFLINE" "06)" "REGENERATE NGINX SERVER" "07)" "BENCH PROJECT GTMETRIX")
+  chosen_project_utils_options=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_utils_options[@]}" 3>&1 1>&2 2>&3)
+
+  exitstatus=$?
+  if [ ${exitstatus} = 0 ]; then
+
+    if [[ ${chosen_project_utils_options} == *"01"* ]]; then
+      
+      # CREATE-WP-PROJECT
+
+      # shellcheck source=${SFOLDER}/installers/wordpress_installer.sh
+      source "${SFOLDER}/utils/installers/wordpress_installer.sh"
+    fi
+
+    if [[ ${chosen_project_utils_options} == *"02"* ]]; then
+
+      # CREATE-PHP-PROJECT
+
+      # TODO: create empty dir on $SITES, create nginx server file, ask for database
+      log_event "error" "TODO: CREATE_PHP_PROJECT MUST BE IMPLEMENTED SOON" "true"
+
+    fi
+
+    if [[ ${chosen_project_utils_options} == *"03"* ]]; then
+
+      # DELETE-PROJECT
+
+      # shellcheck source=${SFOLDER}/utils/delete_project.sh
+      source "${SFOLDER}/utils/delete_project.sh"
+
+    fi
+
+    if [[ ${chosen_project_utils_options} == *"04"* ]]; then
+
+      # PUT-PROJECT-ONLINE
+      change_project_status "online"
+
+    fi
+
+    if [[ ${chosen_project_utils_options} == *"05"* ]]; then
+
+      # PUT-PROJECT-OFFLINE
+      change_project_status "offline"
+
+    fi
+
+    if [[ ${chosen_project_utils_options} == *"06"* ]]; then
+
+      # REGENERATE-NGINX-SERVER
+
+      log_section "Nginx Manager"
+
+      # Select project to work with
+      directory_browser "Select a Website to work with" "${SITES}" #return $filename
+
+      if [ "${filename}" != "" ]; then
+
+        filename="${filename::-1}" # remove '/'
+        
+        display --indent 2 --text "- Selecting website to work with" --result DONE --color GREEN
+        display --indent 4 --text "Selected website: ${filename}"
+
+        # Aks project domain
+        project_domain=$(ask_project_domain "${filename}")
+
+        # Aks project type
+        project_type=$(ask_project_type)
+        
+        # New site Nginx configuration
+        nginx_server_create "${project_domain}" "${project_type}" "single" ""
+
+      else
+
+        display --indent 2 "Selecting website to work with" --result SKIPPED --color YELLOW
+
+      fi
+
+    fi
+
+    if [[ ${chosen_project_utils_options} == *"07"* ]]; then
+
+      # BENCH-PROJECT-GTMETRIX
+
+      URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [ ${exitstatus} = 0 ]; then
+        # shellcheck source=${SFOLDER}/tools/third-party/google-insights-api-tools/gitools_v5.sh
+        source "${SFOLDER}/tools/third-party/google-insights-api-tools/gitools_v5.sh" gtmetrix "${URL_TO_TEST}"
+      fi
+
+    fi
+
+    prompt_return_or_finish
+    menu_project_utils
+
+  fi
+
+  menu_main_options
 
 }
 

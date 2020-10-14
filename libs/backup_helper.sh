@@ -34,7 +34,7 @@ check_laravel_version() {
 
 }
 
-backup_menu() {
+menu_backup_options() {
 
   local backup_options 
   local chosen_backup_type
@@ -155,7 +155,7 @@ backup_menu() {
 
   fi
 
-  main_menu
+  menu_main_options
 
 }
 

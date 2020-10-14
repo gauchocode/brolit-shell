@@ -32,4 +32,4 @@ if [[ ${exitstatus} -eq 0 ]]; then
 
 fi
 
-main_menu
+menu_main_options

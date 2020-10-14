@@ -25,7 +25,7 @@ it_utils_menu() {
 
     # SECURITY_TOOLS
     if [[ ${chosen_it_util_options} == *"01"* ]]; then
-      security_utils_menu
+      menu_security_utils
     fi
     # SERVER_OPTIMIZATIONS
     if [[ ${chosen_it_util_options} == *"02"* ]]; then
@@ -92,7 +92,7 @@ it_utils_menu() {
 
   fi
 
-  main_menu
+  menu_main_options
 
 }
 

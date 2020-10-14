@@ -4,7 +4,7 @@
 # Version: 3.0.5
 ################################################################################
 
-restore_menu () {
+menu_restore_options () {
 
   local -n restore_options          # whiptail array options
   local chosen_restore_options      # whiptail var
@@ -25,7 +25,7 @@ restore_menu () {
 
   fi
 
-  main_menu
+  menu_main_options
 
 }
 
@@ -51,11 +51,11 @@ server_selection_restore_menu () {
     select_restore_type_from_dropbox "${chosen_server}" "${dropbox_type_list}"
 
   else
-    restore_menu
+    menu_restore_options
     
   fi
 
-restore_menu
+menu_restore_options
 
 }
 
