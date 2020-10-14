@@ -13,4 +13,4 @@ log_event "info" "Running Benchmark ..." "true"
 
 log_event "info" "Benchmark finished" "true"
 
-main_menu
+menu_main_options

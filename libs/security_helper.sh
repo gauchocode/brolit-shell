@@ -40,7 +40,7 @@ security_clamav_scan() {
 
 }
 
-security_system_audit() {
+menu_security_system_audit() {
 
   lynis audit system
 

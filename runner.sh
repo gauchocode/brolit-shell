@@ -44,7 +44,7 @@ if [ -t 1 ]; then
 
       else
         script_configuration_wizard "initial"
-        main_menu
+        menu_main_options
 
       fi
 
@@ -54,7 +54,7 @@ if [ -t 1 ]; then
 
     # Check if there were no arguments provided 
     if [ $# -eq 0 ]; then
-        main_menu
+        menu_main_options
 
     else
 

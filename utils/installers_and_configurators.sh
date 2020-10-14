@@ -89,7 +89,7 @@ installers_and_configurators() {
 
   fi
 
-  main_menu
+  menu_main_options
 
 }
 
