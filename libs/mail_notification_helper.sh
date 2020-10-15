@@ -232,6 +232,8 @@ mail_cert_section() {
     local header_open1
     local header_open2
     local cert_status_icon
+    local cert_status_color
+    local files_label
 
     # Changing global
     declare -g STATUS_CERTS="OK"
@@ -243,7 +245,7 @@ mail_cert_section() {
     email_cert_line=""
 
     # This fix avoid getting the first parent directory, maybe we could find a better solution
-    k="skip"
+    local k="skip"
 
     all_sites=$(get_all_directories "${SITES}")
 
@@ -341,6 +343,7 @@ mail_filesbackup_section() {
 
     declare -g STATUS_BACKUP_FILES
 
+    local backup_type
     local color
     local content
     local header
@@ -357,8 +360,6 @@ mail_filesbackup_section() {
     local files_inc_line_p3
     local files_inc_line_p4
     local files_inc_line_p5
-
-    local backup_type
 
     backup_type='Files'
 
