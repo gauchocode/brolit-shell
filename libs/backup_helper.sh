@@ -223,7 +223,7 @@ make_server_files_backup() {
 
       # Calculate backup size
       #BK_SCF_SIZE="$(ls -lah "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')"
-      BK_SCF_SIZE="$(find . -wholename "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{ print $5}')"
+      BK_SCF_SIZE="$(find . -name "${bk_file}" -exec ls -lh {} \; | awk '{ print $5 }')"
       BK_SCF_SIZES[$BK_SCF_INDEX]=${BK_SCF_SIZE}
 
       display --indent 2 --text "- Testing compressed backup file" --result "DONE" --color GREEN
@@ -425,7 +425,7 @@ make_files_backup() {
 
     # Calculate backup size
     #BK_FL_SIZE="$(ls -la --human-readable "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')"
-    BK_FL_SIZE="$(find . -wholename "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{ print $5}')"
+    BK_FL_SIZE="$(find . -name "${bk_file}" -exec ls -lh {} \; |  awk '{ print $5 }')"
     BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=${BK_FL_SIZE}
 
     log_event "success" "Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}"
@@ -527,7 +527,7 @@ make_database_backup() {
   # Create dump file 
   mysql_database_export "${database}" "${directory_to_backup}${db_file}"
   mysql_export_result="$?"
-  if [ "${mysql_export_result}" -eq 0 ]; then
+  if [[ ${mysql_export_result} -eq 0 ]]; then
 
     #cd "${BAKWP}/${NOW}"
     log_event "info" "Making a tar.bz2 file of ${db_file} ..."
@@ -544,14 +544,15 @@ make_database_backup() {
       log_event "success" "Backup file ${bk_file}"
 
       clear_last_line
+      clear_last_line
       display --indent 2 --text "- Compressing database backup" --result "DONE" --color GREEN
 
       BACKUPED_DB_LIST[$BK_DB_INDEX]=${bk_file}
 
       # Calculate backup size
       #BK_DB_SIZES[$BK_DB_INDEX]="$(ls -lah "${bk_file}" | awk '{ print $5}')"
-      #log_event "info" "Running: find . -wholename ${BAKWP}/${NOW}/${bk_file} -exec ls -lh {} \; |  awk '{print $5}'"
-      BK_DB_SIZES="$(find . -name "${bk_file}" -exec ls -lh {} \; |  awk '{print $5}')"
+      log_event "info" "Running: find . -name ${bk_file} -exec ls -lh {} \; | awk '{ print $ 5 }'"
+      BK_DB_SIZES="$(find . -name "${bk_file}" -exec ls -lh {} \; | awk '{ print $5 }')"
       BK_DB_SIZE=${BK_DB_SIZES[$BK_DB_INDEX]}
 
       log_event "success" "Backup for ${database} created, final size: ${BK_DB_SIZE}"
@@ -635,7 +636,7 @@ make_project_backup() {
 
         # Calculate backup size
         #BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=$(ls -lah "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')
-        BK_FL_SIZES[$BK_FL_ARRAY_INDEX]="$(find . -wholename "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{ print $5}')"
+        BK_FL_SIZES[$BK_FL_ARRAY_INDEX]="$(find . -name "${bk_file}" -exec ls -lh {} \; |  awk '{ print $5 }')"
         BK_FL_SIZE=${BK_FL_SIZES[$BK_FL_ARRAY_INDEX]}
 
         log_event "success" "File backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}"
