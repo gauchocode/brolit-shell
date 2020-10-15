@@ -47,7 +47,23 @@ wpcli_main_menu() {
     "quttera-web-malware-scanner" " " off
   )
 
-  wpcli_options=("01)" "INSTALL PLUGINS" "02)" "DELETE THEMES" "03)" "DELETE PLUGINS" "04)" "REINSTALL ALL PLUGINS" "05)" "VERIFY WP" "06)" "UPDATE WP" "07)" "REINSTALL WP" "08)" "CLEAN WP DB" "09)" "PROFILE WP" "10)" "CHANGE TABLES PREFIX" "11)" "REPLACE URLs" "12)" "SEOYOAST RE-INDEX" "13)" "DELETE NOT CORE FILES" "14)" "CREATE WP USER")
+  wpcli_options=(
+    "01)" "INSTALL PLUGINS" 
+    "02)" "DELETE THEMES" 
+    "03)" "DELETE PLUGINS" 
+    "04)" "REINSTALL ALL PLUGINS" 
+    "05)" "VERIFY WP" 
+    "06)" "UPDATE WP" 
+    "07)" "REINSTALL WP" 
+    "08)" "CLEAN WP DB" 
+    "09)" "PROFILE WP" 
+    "10)" "CHANGE TABLES PREFIX" 
+    "11)" "REPLACE URLs" 
+    "12)" "SEOYOAST RE-INDEX" 
+    "13)" "DELETE NOT CORE FILES" 
+    "14)" "CREATE WP USER"
+    "15)" "RESET WP USER PASSW"
+    )
   chosen_wpcli_options=$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 "${wpcli_options[@]}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -157,7 +173,13 @@ wpcli_main_menu() {
       #https://guides.wp-bullet.com/using-wp-cli-wp-profile-to-diagnose-wordpress-performance-issues/
       wp package install wp-cli/profile-command --allow-root
 
-      profiler_options=("01)" "PROFILE STAGE" "02)" "PROFILE STAGE BOOTSTRAP" "03)" "PROFILE STAGE ALL" "04)" "PROFILE STAGE HOOK WP" "05)" "PROFILE STAGE HOOK ALL")
+      profiler_options=(
+        "01)" "PROFILE STAGE" 
+        "02)" "PROFILE STAGE BOOTSTRAP" 
+        "03)" "PROFILE STAGE ALL" 
+        "04)" "PROFILE STAGE HOOK WP" 
+        "05)" "PROFILE STAGE HOOK ALL"
+        )
       chosen_profiler_option=$(whiptail --title "WP-CLI PROFILER HELPER" --menu "Choose an option to run" 20 78 10 "${profiler_options[@]}" 3>&1 1>&2 2>&3)
 
       if [[ ${exitstatus} -eq 0 ]]; then
@@ -239,20 +261,38 @@ wpcli_main_menu() {
     if [[ ${chosen_wpcli_options} == *"14"* ]]; then
 
       choosen_user=$(whiptail --title "WORDPRESS USER" --inputbox "Insert the username you want:" 10 60 "" 3>&1 1>&2 2>&3)
-      exitstatus=$?
+      exitstatus="$?"
       if [[ ${exitstatus} -eq 0 ]]; then
 
         choosen_email=$(whiptail --title "WORDPRESS USER MAIL" --inputbox "Insert the username email:" 10 60 "" 3>&1 1>&2 2>&3)
-        exitstatus=$?
+        exitstatus="$?"
         if [[ ${exitstatus} -eq 0 ]]; then
 
           choosen_role=$(whiptail --title "WORDPRESS USER ROLE" --inputbox "Insert the user role (‘administrator’, ‘editor’, ‘author’, ‘contributor’, ‘subscriber’)" 10 60 "" 3>&1 1>&2 2>&3)
-          exitstatus=$?
+          exitstatus="$?"
           if [[ ${exitstatus} -eq 0 ]]; then
 
             wpcli_user_create "${wp_site}" "${choosen_user}" "${choosen_email}" "${choosen_role}"
 
           fi 
+
+        fi    
+
+      fi    
+
+    fi
+
+    if [[ ${chosen_wpcli_options} == *"15"* ]]; then
+
+      choosen_user=$(whiptail --title "WORDPRESS USER" --inputbox "Insert the username you want:" 10 60 "" 3>&1 1>&2 2>&3)
+      exitstatus="$?"
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        choosen_passw=$(whiptail --title "WORDPRESS USER PASSWORD" --inputbox "Insert the new password:" 10 60 "" 3>&1 1>&2 2>&3)
+        exitstatus="$?"
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+          wpcli_user_reset_passw "${wp_site}" "${choosen_user}" "${choosen_passw}"
 
         fi    
 

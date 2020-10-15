@@ -42,7 +42,7 @@ mysql_user_create() {
 
     fi
 
-    mysql_output="$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}" 2>&1)"
+    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${sql1}" 2>&1)"
     mysql_result="$?"
     if [[ ${mysql_result} -eq 0 ]]; then
         log_event "success" " MySQL user ${db_user} created with pass: ${db_user_psw}"
@@ -73,7 +73,7 @@ mysql_user_delete() {
 
     log_event "info" "Deleting ${db_user} user in MySQL ..."
 
-    mysql_output="$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" 2>&1)"
+    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" 2>&1)"
     mysql_result="$?"
     if [[ ${mysql_result} -eq 0 ]]; then
         log_event "success" " Database user ${db_user} deleted"
@@ -105,9 +105,8 @@ mysql_user_psw_change() {
     sql1="ALTER USER '${db_user}'@'localhost' IDENTIFIED BY '${db_user_psw}';"
     sql2="FLUSH PRIVILEGES;"
 
-    mysql_output="$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" 1>&2)"
+    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" 1>&2)"
     mysql_result="$?"
-    
     if [[ ${mysql_result} -eq 0 ]]; then
         log_event "success" "New password for user ${db_user}: ${db_user_psw}"
         return 0
@@ -126,7 +125,7 @@ mysql_root_psw_change() {
 
     local db_root_psw=$1
 
-    log_event "info" "Changing password for root in MySQL" "false"
+    log_event "info" "Changing password for root in MySQL"
 
     # Kill any mysql processes currently running
 	service mysql stop
@@ -155,9 +154,8 @@ mysql_root_psw_change() {
 	# Starting mysql again
 	service mysql restart
 	
-    mysql_result=$?
-    
-    if [ "${mysql_result}" -eq 0 ]; then
+    mysql_result="$?"
+    if [[ ${mysql_result} -eq 0 ]]; then
         log_event "success" "New password for root: ${db_root_psw}" "false" 
         display --indent 2 --text "- Setting new password for root" --result "DONE" --color GREEN
         display --indent 4 --text "New password: ${db_root_psw}"
@@ -189,10 +187,9 @@ mysql_user_grant_privileges() {
     sql1="GRANT ALL PRIVILEGES ON ${db_target}.* TO '${db_user}'@'localhost';"
     sql2="FLUSH PRIVILEGES;"
 
-    mysql_output="$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" 1>&2)"
-    mysql_result=$?
-    
-    if [ "${mysql_result}" -eq 0 ]; then
+    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${sql1}${sql2}" 1>&2)"
+    mysql_result="$?"
+    if [[ ${mysql_result} -eq 0 ]]; then
         log_event "success" "Privileges granted to user ${db_user}" "false"
         display --indent 2 --text "- Granting privileges to ${db_user}" --result "DONE" --color GREEN
         return 0
@@ -228,7 +225,7 @@ mysql_database_exists() {
 
     local database=$1
 
-    result=$(mysql -u "${MUSER}" --password="${MPASS}" -e "SHOW DATABASES LIKE '${database}';")
+    result=$("${MYSQL}" -u "${MUSER}" --password="${MPASS}" -e "SHOW DATABASES LIKE '${database}';")
 
     if [[ -z "${result}" || "${result}" = "" ]]; then
         #return 1 if database don't exists
@@ -276,16 +273,16 @@ mysql_database_create() {
 
     local database=$1
 
-    local sql1 mysql_result
+    local sql1
+    local mysql_result
 
     log_event "info" "Creating ${database} database in MySQL ..." "false"
 
     sql1="CREATE DATABASE IF NOT EXISTS ${database};"
 
-    mysql_output=$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}" 2>&1)
-    mysql_result=$?
-
-    if [ "${mysql_result}" -eq 0 ]; then
+    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${sql1}" 2>&1)"
+    mysql_result="$?"
+    if [[ ${mysql_result} -eq 0 ]]; then
         log_event "success" "Database ${database} created successfully" "false"
         display --indent 2 --text "- Creating database: ${database}" --result "DONE" --color GREEN
         return 0
@@ -306,17 +303,17 @@ mysql_database_drop() {
 
     local database=$1
 
-    local sql1 mysql_result
+    local sql1
+    local mysql_result
 
-    log_event "info" "Droping the database: ${database}" "false"
+    log_event "info" "Droping the database: ${database}"
 
     sql1="DROP DATABASE ${database};"
     
-    mysql_output="$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -e "${sql1}" 2>&1)"
-    mysql_result=$?
-
-    if [ "${mysql_result}" -eq 0 ]; then
-        log_event "success" "- Database ${database} deleted successfully" "false"
+    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${sql1}" 2>&1)"
+    mysql_result="$?"
+    if [[ ${mysql_result} -eq 0 ]]; then
+        log_event "success" "- Database ${database} deleted successfully"
         display --indent 2 --text "- Droping database: ${database}" --result "DONE" --color GREEN
         return 0
 
@@ -382,12 +379,11 @@ mysql_database_export() {
     display --indent 2 --text "- Creating a backup of: ${database}"
 
     dump_output="$(${MYSQLDUMP} -u "${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}" 2>&1)"
-   
-    dump_status=$?
-    if [ ${dump_status} -eq 0 ]; then
+    dump_status="$?"
+    if [[ ${dump_status} -eq 0 ]]; then
         log_event "success" "Database ${database} exported successfully" "false"
         
-        #clear_last_line
+        clear_last_line
         display --indent 2 --text "- Database backup for ${database}" --result "DONE" --color GREEN
 
         return 0
@@ -395,7 +391,7 @@ mysql_database_export() {
     else
         log_event "error" "Something went wrong exporting database: ${database}. MySQL dump output: ${dump_status}" "false"
 
-        #clear_last_line
+        clear_last_line
         display --indent 2 --text "- Database backup for ${database}" --result "ERROR" --color RED
         display --indent 4 --text "MySQL dump output: ${dump_output}" --tcolor RED
 
@@ -404,24 +400,3 @@ mysql_database_export() {
     fi
 
 }
-
-# TODO: NEED TEST
-#mysql_get_disk_usage() {
-#
-#    SQL1="SELECT SUM( data_length + index_length ) / 1024 / 1024 'Size'
-#        FROM information_schema.TABLES WHERE table_schema='$1'"
-#
-#    mysql -u ${MUSER} -p${MPASS} -e "${SQL1}" >>$LOG
-#
-#    if [ $? -eq 0 ]; then
-#
-#        return 0
-#
-#    else
-#        echo " > Something went wrong!" >>$LOG
-#        echo -e ${RED}" > Something went wrong!"${ENDCOLOR}
-#        exit 1
-#
-#    fi
-#
-#}
