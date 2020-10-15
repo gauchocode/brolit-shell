@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.5
+# Version: 3.0.6
 #############################################################################
 
 is_laravel_project() {
@@ -531,6 +531,7 @@ make_database_backup() {
 
     #cd "${BAKWP}/${NOW}"
     log_event "info" "Making a tar.bz2 file of ${db_file} ..."
+    display --indent 2 --text "- Compressing database backup"
 
     (${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s "$(du -sb "${BAKWP}/${NOW}/${db_file}" | awk '{print $1}')" | lbzip2 >"${BAKWP}/${NOW}/${bk_file}")
 
@@ -549,8 +550,8 @@ make_database_backup() {
 
       # Calculate backup size
       #BK_DB_SIZES[$BK_DB_INDEX]="$(ls -lah "${bk_file}" | awk '{ print $5}')"
-      log_event "info" "Running: find . -wholename ${BAKWP}/${NOW}/${bk_file} -exec ls -lh {} \; |  awk '{print $5}'"
-      BK_DB_SIZES="$(find . -wholename "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{print $5}')"
+      #log_event "info" "Running: find . -wholename ${BAKWP}/${NOW}/${bk_file} -exec ls -lh {} \; |  awk '{print $5}'"
+      BK_DB_SIZES="$(find . -name "${bk_file}" -exec ls -lh {} \; |  awk '{print $5}')"
       BK_DB_SIZE=${BK_DB_SIZES[$BK_DB_INDEX]}
 
       log_event "success" "Backup for ${database} created, final size: ${BK_DB_SIZE}"
@@ -566,6 +567,8 @@ make_database_backup() {
 
       # New folder with $database (project DB)
       output="$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}/${bk_type}/${database}" 2>&1)"
+
+      display --indent 2 --text "- Creating dropbox directories" --result "DONE" --color GREEN
 
       DROPBOX_PATH="/${VPSNAME}/${bk_type}/${database}"
 
