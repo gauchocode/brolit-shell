@@ -217,22 +217,9 @@ make_server_files_backup() {
 
       log_event "success" "Backup ${bk_file} created"
       
-
-      log_event "info" "PRE-ASIGN"
-      log_event "info" "BACKUPED_SCF_LIST: ${BACKUPED_SCF_LIST}"
-      log_event "info" "BK_SCF_INDEX: ${BK_SCF_INDEX}"
-      log_event "info" "BACKUPED_SCF_LIST[${BK_SCF_INDEX}]: ${BACKUPED_SCF_LIST[$BK_SCF_INDEX]}"
-      log_event "info" "bk_file: ${bk_file}"
-
       #BACKUPED_SCF_LIST[$BK_SCF_INDEX]="$(string_remove_special_chars "${bk_file}")"
       BACKUPED_SCF_LIST[$BK_SCF_INDEX]=${bk_file}
       #BACKUPED_SCF_FL=${BACKUPED_SCF_LIST[$BK_SCF_INDEX]}
-
-      log_event "info" "POST-ASIGN"
-      log_event "info" "BACKUPED_SCF_LIST: ${BACKUPED_SCF_LIST}"
-      log_event "info" "BK_SCF_INDEX: ${BK_SCF_INDEX}"
-      log_event "info" "BACKUPED_SCF_LIST[${BK_SCF_INDEX}]: ${BACKUPED_SCF_LIST[${BK_SCF_INDEX}]}"
-      log_event "info" "bk_file: ${bk_file}"
 
       # Calculate backup size
       #BK_SCF_SIZE="$(ls -lah "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')"
@@ -562,7 +549,8 @@ make_database_backup() {
 
       # Calculate backup size
       #BK_DB_SIZES[$BK_DB_INDEX]="$(ls -lah "${bk_file}" | awk '{ print $5}')"
-      BK_DB_SIZES="$(find . -wholename "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{ print $5}')"
+      log_event "info" "Running: find . -wholename ${BAKWP}/${NOW}/${bk_file} -exec ls -lh {} \; |  awk '{print $5}'"
+      BK_DB_SIZES="$(find . -wholename "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{print $5}')"
       BK_DB_SIZE=${BK_DB_SIZES[$BK_DB_INDEX]}
 
       log_event "success" "Backup for ${database} created, final size: ${BK_DB_SIZE}"
