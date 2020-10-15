@@ -52,8 +52,8 @@ log_event "info" "${COUNT_TOTAL_SITES} directory found"
 # MORE GLOBALS
 BK_FILE_INDEX=0
 BK_FL_ARRAY_INDEX=0
-declare -n BACKUPED_LIST
-declare -n BK_FL_SIZES
+declare -a BACKUPED_LIST
+declare -a BK_FL_SIZES
 
 k=0
 

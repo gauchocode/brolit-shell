@@ -216,7 +216,7 @@ make_server_files_backup() {
     if [[ ${bzip2_result} -eq 0 ]]; then
 
       log_event "success" "Backup ${bk_file} created"
-      display --indent 2 --text "- Testing compressed backup file" --result "DONE" --color GREEN
+      
 
       log_event "info" "PRE-ASIGN"
       log_event "info" "BACKUPED_SCF_LIST: ${BACKUPED_SCF_LIST}"
@@ -238,6 +238,8 @@ make_server_files_backup() {
       #BK_SCF_SIZE="$(ls -lah "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')"
       BK_SCF_SIZE="$(find . -wholename "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{ print $5}')"
       BK_SCF_SIZES[$BK_SCF_INDEX]=${BK_SCF_SIZE}
+
+      display --indent 2 --text "- Testing compressed backup file" --result "DONE" --color GREEN
 
       # New folder with $VPSNAME
       output="$("${DROPBOX_UPLOADER}" -q mkdir "/${VPSNAME}" 2>&1)"
