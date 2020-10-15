@@ -538,7 +538,7 @@ make_database_backup() {
     # Test backup file
     log_event "info" "Testing backup file: ${db_file} ..."
     lbzip2 -t "${BAKWP}/${NOW}/${bk_file}"
-    lbzip2_result=$?
+    lbzip2_result="$?"
     if [[ ${lbzip2_result} -eq 0 ]]; then
 
       log_event "success" "Backup file ${bk_file}"
@@ -552,22 +552,23 @@ make_database_backup() {
       # Calculate backup size
       #BK_DB_SIZES[$BK_DB_INDEX]="$(ls -lah "${bk_file}" | awk '{ print $5}')"
       log_event "info" "Running: find . -name ${bk_file} -exec ls -lh {} \; | awk '{ print $ 5 }'"
-      BK_DB_SIZES="$(find . -name "${bk_file}" -exec ls -lh {} \; | awk '{ print $5 }')"
-      BK_DB_SIZE=${BK_DB_SIZES[$BK_DB_INDEX]}
+      BK_DB_SIZE="$(find . -name "${bk_file}" -exec ls -lh {} \; | awk '{ print $5 }')"
+      #BK_DB_SIZES[$BK_DB_INDEX]=$BK_DB_SIZE
+      BK_DB_SIZES+=($BK_DB_SIZE)
 
       log_event "success" "Backup for ${database} created, final size: ${BK_DB_SIZE}"
-      display --indent 4 --text "Database backup created, final size: ${BK_DB_SIZE}"
+      display --indent 4 --text "Backup final size: ${BK_DB_SIZE}"
 
       log_event "info" "Creating folders in Dropbox ..."
 
       # New folder with $VPSNAME
-      output="$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}" 2>&1)"
+      output="$("${DROPBOX_UPLOADER}" -q mkdir "/${VPSNAME}" 2>&1)"
       
       # New folder with $bk_type
-      output="$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}/${bk_type}" 2>&1)"
+      output="$("${DROPBOX_UPLOADER}" -q mkdir "/${VPSNAME}/${bk_type}" 2>&1)"
 
       # New folder with $database (project DB)
-      output="$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}/${bk_type}/${database}" 2>&1)"
+      output="$("${DROPBOX_UPLOADER}" -q mkdir "/${VPSNAME}/${bk_type}/${database}" 2>&1)"
 
       display --indent 2 --text "- Creating dropbox directories" --result "DONE" --color GREEN
 
@@ -575,7 +576,7 @@ make_database_backup() {
 
       # Upload to Dropbox
       log_event "info" "Uploading new database backup ${bk_file}" "false"
-      output="$(${DROPBOX_UPLOADER} upload "${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}" 2>&1)"
+      output="$("${DROPBOX_UPLOADER}" upload "${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}" 2>&1)"
       display --indent 2 --text "- Uploading new database backup to dropbox" --result "DONE" --color GREEN
 
       # Delete old backups
@@ -666,21 +667,21 @@ make_project_backup() {
 
         fi
 
-        log_event "info" "Working with DB_NAME=${DB_NAME}" "false"
+        log_event "info" "Working with DB_NAME=${DB_NAME}"
 
         bk_type="database"
         local OLD_BK_DB_FILE="${DB_NAME}_${bk_type}_${ONEWEEKAGO}.tar.bz2"
         local BK_DB_FILE="${DB_NAME}_${bk_type}_${NOW}.tar.bz2"
 
-        log_event "info" "Making TAR.BZ2 for database: ${db_file} ..." "false"
+        log_event "info" "Compressing database backup: ${db_file}"
 
-        ${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s "$(du -sb "${BAKWP}/${NOW}/${db_file}" | awk '{print $1}')" | lbzip2 >"${BAKWP}/${NOW}/${BK_DB_FILE}"
+        (${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s "$(du -sb "${BAKWP}/${NOW}/${db_file}" | awk '{print $1}')" | lbzip2 >"${BAKWP}/${NOW}/${BK_DB_FILE}")
 
         # Test backup file
-        log_event "info" "Testing backup file: ${BK_DB_FILE} ..." "false"
+        log_event "info" "Testing backup file: ${BK_DB_FILE}"
         lbzip2 -t "${BAKWP}/${NOW}/${BK_DB_FILE}"
 
-        log_event "info" "Trying to create folders in Dropbox ..." "false"
+        log_event "info" "Trying to create folders in Dropbox"
 
         # New folder with $VPSNAME
         dropbox_output=$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}" 2>&1)
@@ -708,7 +709,7 @@ make_project_backup() {
     else
         ERROR=true
         ERROR_TYPE=" > ERROR: Making backup ${BAKWP}/${NOW}/${bk_file}"
-        echo "${ERROR_TYPE}" >>"${LOG}"
+        #echo "${ERROR_TYPE}" >>"${LOG}"
 
     fi
 

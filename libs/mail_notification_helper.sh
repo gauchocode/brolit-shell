@@ -592,7 +592,7 @@ mail_mysqlbackup_section() {
 
         for backup_file in "${BACKUPED_DB_LIST[@]}"; do
 
-            bk_db_size="${BK_DB_SIZES[$count]}"
+            bk_db_size=${BK_DB_SIZES[$count]}
 
             files_inc_line_p1="<div><span style=\"margin-right:5px;\">"
             files_inc_line_p2="${files_inc}${backup_file}"
@@ -606,7 +606,7 @@ mail_mysqlbackup_section() {
 
         done
 
-        files_label_D_END="</div>"
+        files_label_d_end="</div>"
 
     fi
 
@@ -620,7 +620,7 @@ mail_mysqlbackup_section() {
     body_close="</div>"
 
     header="${header_open}${header_text}${header_close}"
-    body="${body_open}${content}${SIZE_D}${files_label_D}${files_inc}${files_label_D_END}${body_close}"
+    body="${body_open}${content}${SIZE_D}${files_label_D}${files_inc}${files_label_d_end}${body_close}"
 
     # Write e-mail parts files
     echo "${header}" >"${BAKWP}/db-bk-${NOW}.mail"
