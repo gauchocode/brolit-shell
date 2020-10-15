@@ -65,7 +65,7 @@ for j in ${TOTAL_SITES}; do
 
         FOLDER_NAME=$(basename "$j")
 
-        if [[ $SITES_BL != *"${FOLDER_NAME}"* ]]; then
+        if [[ ${SITES_BL} != *"${FOLDER_NAME}"* ]]; then
 
             make_project_backup "site" "${FOLDER_NAME}" "${SITES}" "${FOLDER_NAME}"
             BK_FL_ARRAY_INDEX=$((BK_FL_ARRAY_INDEX + 1))
