@@ -28,7 +28,7 @@ export BK_TYPE
 export SITES_F
 
 # Starting Messages
-log_event "info" "Starting files backup script" "false"
+log_event "info" "Starting files backup script"
 display --indent 2 --text "- Initializing files backup script" --result "DONE" --color GREEN
 
 # MAILCOW Files
@@ -53,8 +53,8 @@ log_subsection "Backup Server Config"
 # SERVER CONFIG FILES GLOBALS
 declare -i BK_SCF_INDEX=0
 #declare -i BK_SCF_ARRAY_INDEX=0
-declare -n BACKUPED_SCF_LIST
-declare -n BK_SCF_SIZES
+declare -a BACKUPED_SCF_LIST
+declare -a BK_SCF_SIZES
 
 # TAR Webserver Config Files
 if [[ ! -d ${WSERVER} ]]; then
@@ -115,8 +115,8 @@ display --indent 2 --text "- Directories found" --result "${COUNT_TOTAL_SITES}" 
 # FILES BACKUP GLOBALS
 declare -i BK_FILE_INDEX=0
 declare -i BK_FL_ARRAY_INDEX=0
-declare -n BACKUPED_LIST
-declare -n BK_FL_SIZES
+declare -a BACKUPED_LIST
+declare -a BK_FL_SIZES
 
 declare directory_name=""
 
