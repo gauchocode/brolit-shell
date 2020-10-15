@@ -2,7 +2,7 @@
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Script Name: LEMP Utils Script
-# Version: 3.0.5
+# Version: 3.0.6
 ################################################################################
 
 ### Init #######################################################################

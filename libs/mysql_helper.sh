@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.5
+# Version: 3.0.6
 #############################################################################
 
 mysql_count_dabases() {
