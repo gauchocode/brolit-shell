@@ -29,7 +29,6 @@ export SITES_F
 
 # Starting Messages
 log_event "info" "Starting files backup script"
-display --indent 2 --text "- Initializing files backup script" --result "DONE" --color GREEN
 
 # MAILCOW Files
 if [[ ${MAILCOW_BK} = true ]]; then
