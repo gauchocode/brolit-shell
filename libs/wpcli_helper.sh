@@ -685,24 +685,6 @@ wpcli_export_database(){
 
 }
 
-wpcli_reset_user_passw(){
-
-    # $1 = ${wp_site} (site path)
-    # $2 = ${wp_user}
-    # $3 = ${wp_user_pass}
-
-    local wp_site=$1
-    local wp_user=$2
-    local wp_user_pass=$3
-
-    log_event "info" "User password reset for ${wp_user}. New password: ${wp_user_pass}" "false"
-    wp --allow-root --path="${wp_site}" user update "${wp_user}" --user_pass="${wp_user_pass}"
-
-    display --indent 2 --text "- Password reset for ${wp_user}" --result "DONE" --color GREEN
-    display --indent 4 --text "New password ${wp_user_pass}"
-    
-}
-
 wpcli_force_reinstall_plugins() {
 
    # $1 = ${wp_site}
@@ -776,4 +758,22 @@ wpcli_user_create() {
 
     display --indent 2 --text "- Adding WP user: ${user}" --result "DONE" --color GREEN
 
+}
+
+wpcli_user_reset_passw(){
+
+    # $1 = ${wp_site} (site path)
+    # $2 = ${wp_user}
+    # $3 = ${wp_user_pass}
+
+    local wp_site=$1
+    local wp_user=$2
+    local wp_user_pass=$3
+
+    log_event "info" "User password reset for ${wp_user}. New password: ${wp_user_pass}" "false"
+    wp --allow-root --path="${wp_site}" user update "${wp_user}" --user_pass="${wp_user_pass}"
+
+    display --indent 2 --text "- Password reset for ${wp_user}" --result "DONE" --color GREEN
+    display --indent 4 --text "New password ${wp_user_pass}"
+    
 }
