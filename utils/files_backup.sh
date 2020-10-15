@@ -48,11 +48,11 @@ fi
 
 ################################### SERVER CONFIG FILES ###################################
 
-log_subsection "Backup Server Files"
+log_subsection "Backup Server Config"
 
 # SERVER CONFIG FILES GLOBALS
 declare -i BK_SCF_INDEX=0
-declare -i BK_SCF_ARRAY_INDEX=0
+#declare -i BK_SCF_ARRAY_INDEX=0
 declare -n BACKUPED_SCF_LIST
 declare -n BK_SCF_SIZES
 
@@ -71,7 +71,6 @@ if [[ ! -d ${PHP_CF} ]]; then
 
  else
   BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
-  BK_SCF_ARRAY_INDEX=$((BK_SCF_ARRAY_INDEX + 1))
   make_server_files_backup "${CONFIG_F}" "php" "${PHP_CF}" "."
 
 fi
@@ -82,7 +81,6 @@ if [[ ! -d ${MySQL_CF} ]]; then
 
  else
   BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
-  BK_SCF_ARRAY_INDEX=$((BK_SCF_ARRAY_INDEX + 1))
   make_server_files_backup "${CONFIG_F}" "mysql" "${MySQL_CF}" "."
 
 fi
@@ -93,7 +91,6 @@ if [[ ! -d ${LENCRYPT_CF} ]]; then
 
  else
   BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
-  BK_SCF_ARRAY_INDEX=$((BK_SCF_ARRAY_INDEX + 1))
   make_server_files_backup "${CONFIG_F}" "letsencrypt" "${LENCRYPT_CF}" "."
 
 fi
@@ -121,6 +118,8 @@ declare -i BK_FL_ARRAY_INDEX=0
 declare -n BACKUPED_LIST
 declare -n BK_FL_SIZES
 
+declare directory_name=""
+
 k=0
 
 for j in ${TOTAL_SITES}; do
@@ -129,17 +128,17 @@ for j in ${TOTAL_SITES}; do
 
   if [[ "$k" -gt 0 ]]; then
 
-    FOLDER_NAME=$(basename "${j}")
+    directory_name=$(basename "${j}")
 
-    if [[ ${SITES_BL} != *"${FOLDER_NAME}"* ]]; then
+    if [[ ${SITES_BL} != *"${directory_name}"* ]]; then
 
-      make_files_backup "site" "${SITES}" "${FOLDER_NAME}"
+      make_files_backup "site" "${SITES}" "${directory_name}"
       BK_FL_ARRAY_INDEX="$((BK_FL_ARRAY_INDEX + 1))"
 
       log_break "true"
 
     else
-      log_event "info" "Omitting ${FOLDER_NAME} (blacklisted) ..."
+      log_event "info" "Omitting ${directory_name} (blacklisted) ..."
 
     fi
 

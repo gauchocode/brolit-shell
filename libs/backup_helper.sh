@@ -221,12 +221,12 @@ make_server_files_backup() {
       log_event "info" "PRE-ASIGN"
       log_event "info" "BACKUPED_SCF_LIST: ${BACKUPED_SCF_LIST}"
       log_event "info" "BK_SCF_INDEX: ${BK_SCF_INDEX}"
-      log_event "info" "BACKUPED_SCF_LIST[${BK_SCF_INDEX}]: ${BACKUPED_SCF_LIST[${BK_SCF_INDEX}]}"
+      log_event "info" "BACKUPED_SCF_LIST[${BK_SCF_INDEX}]: ${BACKUPED_SCF_LIST[$BK_SCF_INDEX]}"
       log_event "info" "bk_file: ${bk_file}"
 
-      BACKUPED_SCF_LIST[$BK_SCF_INDEX]="$(string_remove_special_chars "${bk_file}")"
-      BACKUPED_SCF_FL=${BACKUPED_SCF_LIST[$BK_SCF_INDEX]}
-      #BACKUPED_SCF_FL="${BACKUPED_SCF_LIST[${BK_SCF_INDEX}]}"
+      #BACKUPED_SCF_LIST[$BK_SCF_INDEX]="$(string_remove_special_chars "${bk_file}")"
+      BACKUPED_SCF_LIST[$BK_SCF_INDEX]=${bk_file}
+      #BACKUPED_SCF_FL=${BACKUPED_SCF_LIST[$BK_SCF_INDEX]}
 
       log_event "info" "POST-ASIGN"
       log_event "info" "BACKUPED_SCF_LIST: ${BACKUPED_SCF_LIST}"
@@ -237,7 +237,7 @@ make_server_files_backup() {
       # Calculate backup size
       #BK_SCF_SIZE="$(ls -lah "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')"
       BK_SCF_SIZE="$(find . -wholename "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{ print $5}')"
-      BK_SCF_SIZES[${BK_SCF_ARRAY_INDEX}]=${BK_SCF_SIZE}
+      BK_SCF_SIZES[$BK_SCF_INDEX]=${BK_SCF_SIZE}
 
       # New folder with $VPSNAME
       output="$("${DROPBOX_UPLOADER}" -q mkdir "/${VPSNAME}" 2>&1)"
@@ -426,7 +426,7 @@ make_files_backup() {
   log_event "info" "Testing backup file: ${bk_file} ..."
   display --indent 2 --text "- Testing backup file" --result "DONE" --color GREEN
   lbzip2 -t "${BAKWP}/${NOW}/${bk_file}"
-  lbzip2_result=$?
+  lbzip2_result="$?"
   if [[ "${lbzip2_result}" -eq 0 ]]; then
 
     log_event "success" "${bk_file} backup created"
@@ -437,7 +437,6 @@ make_files_backup() {
     # Calculate backup size
     #BK_FL_SIZE="$(ls -la --human-readable "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')"
     BK_FL_SIZE="$(find . -wholename "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{ print $5}')"
-
     BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=${BK_FL_SIZE}
 
     log_event "success" "Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}"

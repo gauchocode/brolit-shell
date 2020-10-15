@@ -16,7 +16,7 @@ source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
 
-log_event "info" "Running backups_tasks.sh" "true"
+log_event "info" "Running backups_tasks.sh"
 
 if [ -t 1 ]; then
 
@@ -45,25 +45,23 @@ else
   count_all_sites=$(find "${SITES}" -maxdepth 1 -type d -printf '.' | wc -c)
   count_all_sites=$((count_all_sites - 1))
 
-  log_event "info" "Found ${count_all_sites} directories" "false"
+  log_event "info" "Found ${count_all_sites} directories"
   display --indent 2 --text "- Directories found" --result "${count_all_sites}" --color YELLOW
 
   # GLOBALS
   whitelisted_wp_files="readme.html,license.txt,wp-config-sample.php"
   file_index=0
-  #BK_FL_ARRAY_INDEX=0
-  #declare -a BACKUPED_LIST
 
   k=0
 
   for site in ${all_sites}; do
 
-    log_event "info" "Processing [${site}] ..." "false"
+    log_event "info" "Processing [${site}] ..."
 
     if [[ "$k" -gt 0 ]]; then
 
       project_name=$(basename "${site}")
-      log_event "info" "Project name: ${project_name}" "false"
+      log_event "info" "Project name: ${project_name}"
 
       if [[ ${SITES_BL} != *"${project_name}"* ]]; then
 
@@ -91,7 +89,7 @@ else
               # Ommit empty elements
               if [ "${wpcli_core_verify_result_file}" != "" ] && [[ "${whitelisted_wp_files}" != *"${wpcli_core_verify_result_file}"* ]]; then
 
-                log_event "info" "${wpcli_core_verify_result_file}" "false"
+                log_event "info" "${wpcli_core_verify_result_file}"
                 
                 # Telegram text
                 telegram_text+="${wpcli_core_verify_result} "
@@ -106,20 +104,20 @@ else
             telegram_send_message "⛔ WordPress Checksum failed for site ${project_name} on ${VPSNAME}: ${telegram_text} "
 
           else
-            log_event "info" "WordPress Checksum OK!" "false"
+            log_event "info" "WordPress Checksum OK!"
 
           fi
 
         fi
 
       else
-        log_event "info" "Omitting ${project_name} project (blacklisted) ..." "false"
+        log_event "info" "Omitting ${project_name} project (blacklisted) ..."
 
       fi
 
       file_index=$((file_index + 1))
 
-      log_event "info" "Processed ${file_index} of ${count_all_sites} projects" "false"
+      log_event "info" "Processed ${file_index} of ${count_all_sites} projects"
 
     fi
 
