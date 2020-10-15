@@ -218,6 +218,11 @@ make_server_files_backup() {
       log_event "success" "Backup ${bk_file} created"
       display --indent 2 --text "- Testing compressed backup file" --result "DONE" --color GREEN
 
+      log_event "info" "BACKUPED_SCF_LIST: ${BACKUPED_SCF_LIST}"
+      log_event "info" "BK_SCF_INDEX: ${BK_SCF_INDEX}"
+      log_event "info" "BACKUPED_SCF_LIST[${BK_SCF_INDEX}]: BACKUPED_SCF_LIST[${BK_SCF_INDEX}]"
+      log_event "info" "bk_file: ${bk_file}"
+
       BACKUPED_SCF_LIST[${BK_SCF_INDEX}]="$(string_remove_special_chars "${bk_file}")"
       BACKUPED_SCF_FL=${BACKUPED_SCF_LIST[${BK_SCF_INDEX}]}
       #BACKUPED_SCF_FL="${BACKUPED_SCF_LIST[${BK_SCF_INDEX}]}"
