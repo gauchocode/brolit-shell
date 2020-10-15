@@ -218,14 +218,21 @@ make_server_files_backup() {
       log_event "success" "Backup ${bk_file} created"
       display --indent 2 --text "- Testing compressed backup file" --result "DONE" --color GREEN
 
+      log_event "info" "PRE-ASIGN"
       log_event "info" "BACKUPED_SCF_LIST: ${BACKUPED_SCF_LIST}"
       log_event "info" "BK_SCF_INDEX: ${BK_SCF_INDEX}"
-      log_event "info" "BACKUPED_SCF_LIST[${BK_SCF_INDEX}]: BACKUPED_SCF_LIST[${BK_SCF_INDEX}]"
+      log_event "info" "BACKUPED_SCF_LIST[${BK_SCF_INDEX}]: ${BACKUPED_SCF_LIST[${BK_SCF_INDEX}]}"
       log_event "info" "bk_file: ${bk_file}"
 
-      BACKUPED_SCF_LIST[${BK_SCF_INDEX}]="$(string_remove_special_chars "${bk_file}")"
-      BACKUPED_SCF_FL=${BACKUPED_SCF_LIST[${BK_SCF_INDEX}]}
+      BACKUPED_SCF_LIST[$BK_SCF_INDEX]="$(string_remove_special_chars "${bk_file}")"
+      BACKUPED_SCF_FL=${BACKUPED_SCF_LIST[$BK_SCF_INDEX]}
       #BACKUPED_SCF_FL="${BACKUPED_SCF_LIST[${BK_SCF_INDEX}]}"
+
+      log_event "info" "POST-ASIGN"
+      log_event "info" "BACKUPED_SCF_LIST: ${BACKUPED_SCF_LIST}"
+      log_event "info" "BK_SCF_INDEX: ${BK_SCF_INDEX}"
+      log_event "info" "BACKUPED_SCF_LIST[${BK_SCF_INDEX}]: ${BACKUPED_SCF_LIST[${BK_SCF_INDEX}]}"
+      log_event "info" "bk_file: ${bk_file}"
 
       # Calculate backup size
       #BK_SCF_SIZE="$(ls -lah "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')"
@@ -531,22 +538,21 @@ make_database_backup() {
 
   # Create dump file 
   mysql_database_export "${database}" "${directory_to_backup}${db_file}"
-  mysql_export_result=$?
+  mysql_export_result="$?"
   if [ "${mysql_export_result}" -eq 0 ]; then
 
     #cd "${BAKWP}/${NOW}"
-
     log_event "info" "Making a tar.bz2 file of ${db_file} ..."
 
-    ${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s "$(du -sb "${BAKWP}/${NOW}/${db_file}" | awk '{print $1}')" | lbzip2 >"${BAKWP}/${NOW}/${bk_file}"
+    (${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s "$(du -sb "${BAKWP}/${NOW}/${db_file}" | awk '{print $1}')" | lbzip2 >"${BAKWP}/${NOW}/${bk_file}")
 
     # Test backup file
     log_event "info" "Testing backup file: ${db_file} ..."
     lbzip2 -t "${BAKWP}/${NOW}/${bk_file}"
     lbzip2_result=$?
-    if [ ${lbzip2_result} -eq 0 ]; then
+    if [[ ${lbzip2_result} -eq 0 ]]; then
 
-      log_event "success" "Backup file ${bk_file} OK!"
+      log_event "success" "Backup file ${bk_file}"
 
       clear_last_line
       display --indent 2 --text "- Compressing database backup" --result "DONE" --color GREEN
@@ -615,6 +621,7 @@ make_project_backup() {
     local directory_to_backup=$4
 
     local dropbox_output
+    local db_file
 
     local directory_to_backup="${BAKWP}/${NOW}/"
 
@@ -628,7 +635,7 @@ make_project_backup() {
     # Test backup file
     log_event "info" "Testing backup file: ${bk_file}"
     lbzip2 -t "${BAKWP}/${NOW}/${bk_file}"
-    lbzip2_result=$?
+    lbzip2_result="$?"
     if [[ ${lbzip2_result} -eq 0 ]]; then
 
         BACKUPED_LIST[$BK_FILE_INDEX]=${bk_file}
@@ -636,7 +643,7 @@ make_project_backup() {
 
         # Calculate backup size
         #BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=$(ls -lah "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')
-        BK_FL_SIZES="$(find . -wholename "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{ print $5}')"
+        BK_FL_SIZES[$BK_FL_ARRAY_INDEX]="$(find . -wholename "${BAKWP}/${NOW}/${bk_file}" -exec ls -lh {} \; |  awk '{ print $5}')"
         BK_FL_SIZE=${BK_FL_SIZES[$BK_FL_ARRAY_INDEX]}
 
         log_event "success" "File backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}"
@@ -651,16 +658,16 @@ make_project_backup() {
 
             DB_NAME=$(grep 'dbname=' "${bk_path}/${directory_to_backup}/common/config/main-local.php" | tail -1 | sed 's/$dbname=//g;s/,//g' | cut -d "'" -f4 | cut -d "=" -f3)
 
-            local db_file="${DB_NAME}.sql"
+            db_file="${DB_NAME}.sql"
 
             # Create dump file
             mysql_database_export "${DB_NAME}" "${directory_to_backup}${db_file}"
 
         else
 
-            DB_NAME=$(wp --allow-root --path="${bk_path}/${directory_to_backup}" eval 'echo DB_NAME;')
+            DB_NAME="$(wp --allow-root --path="${bk_path}/${directory_to_backup}" eval 'echo DB_NAME;')"
 
-            local db_file="${DB_NAME}.sql"
+            db_file="${DB_NAME}.sql"
 
             wpcli_export_database "${bk_path}/${directory_to_backup}" "${directory_to_backup}${db_file}"
 
@@ -691,19 +698,19 @@ make_project_backup() {
         # New folder with $directory_to_backup
         dropbox_output=$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}/${bk_type}/${directory_to_backup}" 2>&1)
 
-        log_event "info" "Uploading file backup ${bk_file} to Dropbox ..." "true"
+        log_event "info" "Uploading file backup ${bk_file} to Dropbox ..."
         dropbox_output=$(${DROPBOX_UPLOADER} upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${NOW}" 2>&1)
 
-        log_event "info" "Uploading database backup ${BK_DB_FILE} to Dropbox ..." "true"
+        log_event "info" "Uploading database backup ${BK_DB_FILE} to Dropbox ..."
         dropbox_output=$(${DROPBOX_UPLOADER} upload "${BAKWP}/${NOW}/${BK_DB_FILE}" "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${NOW}" 2>&1)
 
-        log_event "info" "Trying to delete old backup from Dropbox with date ${ONEWEEKAGO} ..." "true"
+        log_event "info" "Trying to delete old backup from Dropbox with date ${ONEWEEKAGO} ..."
         dropbox_output=$(${DROPBOX_UPLOADER} delete "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${ONEWEEKAGO}" 2>&1)
 
-        log_event "info" "Deleting backup from server ..." "true"
+        log_event "info" "Deleting backup from server ..."
         rm -r "${BAKWP}/${NOW}/${bk_file}"
 
-        log_event "success" "Project backup ok!" "true"
+        log_event "success" "Project backup ok!"
 
     else
         ERROR=true
