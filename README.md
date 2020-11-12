@@ -4,6 +4,12 @@
 
 ![ScreenShot](./screenshot.jpg)
 
+## Why Bash?
+
+* Performance.
+* Pre-installed on linux systems.
+* Dont over-charge o.s with libraries or dependencies.
+
 ## Motivation
 
 * Standarize LEMP stack configuration.
@@ -25,7 +31,7 @@
 * Cloudflare support (via API).
 * PHP-FPM optimization tool (beta).
 * Image optimization tools.
-* Security Tools with malware scanners (beta).
+* Security Tools with malware scanners.
 * IP/Domain blacklist checker.
 * Benchmark tool.
 * Step-by-step configuration wizard.
@@ -33,6 +39,9 @@
 
 ## TODO List
 [TODO List](./TODO.md)
+
+## Changelog
+[Changelog](./docs/CHANGELOG.md)
 
 ## Supports
 
@@ -127,8 +136,7 @@ Please read CONTRIBUTING.md for details on our code of conduct, and the process 
 
 ## Code: Bash Best Practices
 
-* https://bertvv.github.io/cheat-sheets/Bash.html
-* https://github.com/anordal/shellharden/blob/master/how_to_do_things_safely_in_bash.md
+[Best Practices](./docs/CODE.md)
 
 ## Authors
 * **Leandro Padula** - *Initial work* - [BROOBE](https://www.broobe.com)

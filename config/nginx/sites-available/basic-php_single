@@ -8,7 +8,10 @@ server {
 
     index index.php;
 
-    # handle .php
+    # Log
+    error_log   /var/log/nginx/domain.com-error.log;
+
+    # Handle .php
     location / {
             try_files $uri $uri/ /index.php?q=$uri&$args;
     }
@@ -23,7 +26,7 @@ server {
 
 }
 
-# subdomains redirect
+# Subdomains redirect
 server {
     listen      80;
     #listen      [::]:80;
