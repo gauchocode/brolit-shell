@@ -580,7 +580,7 @@ make_database_backup() {
       dropbox_result="$?"
       log_event "info" "dropbox_result: $dropbox_result" "false"
 
-      if [[ ${lbzip2_result} -eq 0 ]]; then
+      if [[ ${dropbox_result} -eq 0 ]]; then
       
         display --indent 2 --text "- Uploading new database backup to dropbox" --result "DONE" --color GREEN
 
