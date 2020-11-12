@@ -9,7 +9,7 @@ is_laravel_project() {
   # $1 = ${project_dir} project directory
 
   local project_dir=$1
-  
+
   local is_laravel="false"
 
   # Check if user is root
@@ -577,7 +577,7 @@ make_database_backup() {
 
       # Upload to Dropbox
       log_event "info" "Uploading new database backup ${bk_file} to dropbox folder ${DROPBOX_FOLDER}${DROPBOX_PATH}" "false"
-      output="$(${DROPBOX_UPLOADER} upload "${bk_file}" "${DROPBOX_FOLDER}${DROPBOX_PATH}" 2>&1)"
+      output="$(${DROPBOX_UPLOADER} upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}${DROPBOX_PATH}" 2>&1)"
       dropbox_result="$?"
       log_event "info" "dropbox_result: $dropbox_result" "false"
 
@@ -599,7 +599,7 @@ make_database_backup() {
 
         display --indent 2 --text "- Uploading new database backup to dropbox" --result "FAIL" --color RED
 
-        log_event "ERROR" "Uploading new database backup to dropbox fail. Command executed: ${DROPBOX_UPLOADER} upload ${bk_file} ${DROPBOX_FOLDER}${DROPBOX_PATH}" "false"
+        log_event "ERROR" "Uploading new database backup to dropbox fail. Command executed: ${DROPBOX_UPLOADER} upload ${BAKWP}/${NOW}/${bk_file} ${DROPBOX_FOLDER}${DROPBOX_PATH}" "false"
 
         return 1
 
