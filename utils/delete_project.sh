@@ -4,13 +4,6 @@
 # Version: 3.0.6
 ################################################################################
 
-### Checking some things
-if [[ -z "${SFOLDER}" ]]; then
-    echo -e "${B_RED} > Error: The script can only be runned by runner.sh! Exiting ...${ENDCOLOR}"
-    exit 0
-fi
-################################################################################
-
 # shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
 # shellcheck source=${SFOLDER}/libs/mysql_helper.sh
@@ -38,7 +31,7 @@ delete_project_files() {
 
     local project_domain dropbox_output
 
-    log_event "info" "Performing Action: Delete Project" "false"
+    log_event "info" "Performing Action: Delete Project"
 
     log_section "Delete Project"
 
@@ -49,7 +42,7 @@ delete_project_files() {
     # Directory_broser returns: " $filepath"/"$filename
     if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
 
-        log_event "info" "Delete project cancelled" "false"
+        log_event "info" "Delete project cancelled"
 
         # Return
         return 1
@@ -81,8 +74,8 @@ delete_project_files() {
 
         # Making a backup of project files
         make_files_backup "${BK_TYPE}" "${SITES}" "${project_domain}"
-
-        if [ $? -eq 0 ]; then
+        output="$?"
+        if [[ ${output} -eq 0 ]]; then
 
             # Creating new folder structure for old projects
             dropbox_output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}/offline-site" 2>&1)
