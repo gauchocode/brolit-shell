@@ -786,6 +786,67 @@ display() {
 #
 #################################################################################
 #
+# * Validators
+#
+#################################################################################
+#
+
+validator_email_format() {
+    if [[ ! "$1" =~ ^[A-Za-z0-9._%+-]+@[[:alnum:].-]+\.[A-Za-z]{2,63}$ ]] ; then
+        log_event "ERROR" "Invalid email format :: $1"
+    fi
+}
+
+validator_cron_format() {
+    limit=59
+    check_format=''
+    if [ "$2" = 'hour' ]; then
+        limit=23
+    fi
+    
+    if [ "$2" = 'day' ]; then
+        limit=31
+    fi
+    if [ "$2" = 'month' ]; then
+        limit=12
+    fi
+    if [ "$2" = 'wday' ]; then
+        limit=7
+    fi
+    if [ "$1" = '*' ]; then
+        check_format='ok'
+    fi
+    if [[ "$1" =~ ^[\*]+[/]+[0-9] ]]; then
+        if [ "$(echo $1 |cut -f 2 -d /)" -lt $limit ]; then
+            check_format='ok'
+        fi
+    fi
+    if [[ "$1" =~ ^[0-9][-|,|0-9]{0,70}[\/][0-9]$ ]]; then
+        check_format='ok'
+        crn_values=${1//,/ }
+        crn_values=${crn_values//-/ }
+        crn_values=${crn_values//\// }
+        for crn_vl in $crn_values; do
+            if [ "$crn_vl" -gt $limit ]; then
+                check_format='invalid'
+            fi
+        done
+    fi
+    crn_values=$(echo $1 |tr "," " " | tr "-" " ")
+    for crn_vl in $crn_values
+        do
+            if [[ "$crn_vl" =~ ^[0-9]+$ ]] && [ "$crn_vl" -le $limit ]; then
+                 check_format='ok'
+              fi
+        done
+    if [ "$check_format" != 'ok' ]; then
+        check_result $E_INVALID "invalid $2 format :: $1"
+    fi
+}
+
+#
+#################################################################################
+#
 # * Checkers
 #
 #################################################################################
@@ -852,6 +913,24 @@ checking_scripts_permissions() {
 #
 #################################################################################
 #
+
+count_php_versions() {
+    echo $(ls -d /etc/php/*/fpm/pool.d 2>/dev/null |wc -l)
+}
+
+multiphp_versions() {
+  
+    local -a php_versions_list;
+    local php_ver;
+
+    if [[ "$(count_php_versions)" -gt 0 ]] ; then
+        for php_ver in $(ls -v /etc/php/); do
+            [ ! -d "/etc/php/${php_ver}/fpm/pool.d/" ] && continue
+            php_versions_list+=(${php_ver})
+        done
+        echo "${php_versions_list[@]}"
+    fi
+}
 
 whiptail_event() {
 
@@ -1822,7 +1901,7 @@ menu_cron_script_tasks() {
   runner_options=("01)" "BACKUPS TASKS" "02)" "OPTIMIZER TASKS" "03)" "WORDPRESS TASKS" "04)" "UPTIME TASKS" "05)" "SCRIPT UPDATER")
   chosen_type=$(whiptail --title "CRONEABLE TASKS" --menu "\n" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)
 
-  exitstatus=$?
+  exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_type} == *"01"* ]]; then
@@ -1830,7 +1909,7 @@ menu_cron_script_tasks() {
       # BACKUPS-TASKS
       suggested_cron="45 00 * * *" # Every day at 00:45 AM
       scheduled_time=$(whiptail --title "CRON BACKUPS-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
-      exitstatus=$?
+      exitstatus="$?"
       if [[ ${exitstatus} -eq 0 ]]; then
         
         install_crontab_script "${SFOLDER}/cron/backups_tasks.sh" "${scheduled_time}"
@@ -1843,7 +1922,7 @@ menu_cron_script_tasks() {
       # OPTIMIZER-TASKS
       suggested_cron="45 04 * * *" # Every day at 04:45 AM
       scheduled_time=$(whiptail --title "CRON OPTIMIZER-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
-      exitstatus=$?
+      exitstatus="$?"
       if [ ${exitstatus} = 0 ]; then
         
         install_crontab_script "${SFOLDER}/cron/optimizer_tasks.sh" "${scheduled_time}"
@@ -1856,7 +1935,7 @@ menu_cron_script_tasks() {
       # WORDPRESS-TASKS
       suggested_cron="45 23 * * *" # Every day at 23:45 AM
       scheduled_time=$(whiptail --title "CRON WORDPRESS-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
-      exitstatus=$?
+      exitstatus="$?"
       if [[ ${exitstatus} -eq 0 ]]; then
         
         install_crontab_script "${SFOLDER}/cron/wordpress_tasks.sh" "${scheduled_time}"
@@ -1869,7 +1948,7 @@ menu_cron_script_tasks() {
       # UPTIME-TASKS
       suggested_cron="45 22 * * *" # Every day at 22:45 AM
       scheduled_time=$(whiptail --title "CRON UPTIME-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
-      exitstatus=$?
+      exitstatus="$?"
       if [[ ${exitstatus} -eq 0 ]]; then
         
         install_crontab_script "${SFOLDER}/cron/uptime_tasks.sh" "${scheduled_time}"
@@ -1882,7 +1961,7 @@ menu_cron_script_tasks() {
       # SCRIPT-UPDATER
       suggested_cron="45 22 * * *" # Every day at 22:45 AM
       scheduled_time=$(whiptail --title "CRON UPTIME-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
-      exitstatus=$?
+      exitstatus="$?"
       if [[ ${exitstatus} -eq 0 ]]; then
         
         install_crontab_script "${SFOLDER}/cron/updater.sh" "${scheduled_time}"

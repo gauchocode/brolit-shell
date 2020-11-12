@@ -210,7 +210,7 @@ wordpress_installer () {
       cloudflare_change_a_record "${root_domain}" "${project_domain}" "false"
 
       # New site Nginx configuration
-      nginx_create_empty_nginx_conf "${project_domain}"
+      nginx_create_empty_nginx_conf "${SITES}/${project_domain}"
       nginx_server_create "${project_domain}" "wordpress" "single" ""
 
       # HTTPS with Certbot
