@@ -78,10 +78,10 @@ delete_project_files() {
         if [[ ${output} -eq 0 ]]; then
 
             # Creating new folder structure for old projects
-            dropbox_output=$("${DPU_F}"/dropbox_uploader.sh -q mkdir "/${VPSNAME}/offline-site" 2>&1)
+            dropbox_output=$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}/offline-site" 2>&1)
 
             # Moving deleted project backups to another dropbox directory
-            log_event "info" "dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${project_domain} /${VPSNAME}/offline-site" "false"
+            log_event "info" "${DROPBOX_UPLOADER} move ${VPSNAME}/${BK_TYPE}/${project_domain} /${VPSNAME}/offline-site" "false"
             dropbox_output=$(${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${project_domain}" "/${VPSNAME}/offline-site" 2>&1)
             # TODO: if destination folder already exists, it fails
             display --indent 2 --text "- Moving to offline projects on Dropbox" --result "DONE" --color GREEN

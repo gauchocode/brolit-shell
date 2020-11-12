@@ -104,9 +104,6 @@ MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+')
 # Dropbox Folder Backup
 DROPBOX_FOLDER="/"
 
-# Dropbox Uploader Directory
-DPU_F="${SFOLDER}/tools/third-party/dropbox-uploader"
-
 # Time Vars
 NOW=$(date +"%Y-%m-%d")
 NOWDISPLAY=$(date +"%d-%m-%Y")
@@ -219,6 +216,9 @@ script_init() {
   STATUS_SERVER=""
   STATUS_CERTS=""
   OUTDATED_PACKAGES="false"
+
+  # Dropbox Uploader Directory
+  DPU_F="${SFOLDER}/tools/third-party/dropbox-uploader"
 
   # Dropbox Uploader config file
   DPU_CONFIG_FILE=~/.dropbox_uploader

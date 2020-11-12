@@ -9,7 +9,8 @@ is_laravel_project() {
   # $1 = ${project_dir} project directory
 
   local project_dir=$1
-  is_laravel="false"
+  
+  local is_laravel="false"
 
   # Check if user is root
   if [[ -f "${project_dir}/artisan" ]]; then
