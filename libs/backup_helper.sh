@@ -576,22 +576,33 @@ make_database_backup() {
 
       # Upload to Dropbox
       log_event "info" "Uploading new database backup ${bk_file} to dropbox folder ${DROPBOX_FOLDER}${DROPBOX_PATH}" "false"
-      output="$("${DROPBOX_UPLOADER}" upload "${bk_file}" "${DROPBOX_FOLDER}${DROPBOX_PATH}" 2>&1)"
+      output="$(${DROPBOX_UPLOADER} upload "${bk_file}" "${DROPBOX_FOLDER}${DROPBOX_PATH}" 2>&1)"
       dropbox_result="$?"
-
       log_event "info" "dropbox_result: $dropbox_result" "false"
 
-      display --indent 2 --text "- Uploading new database backup to dropbox" --result "DONE" --color GREEN
+      if [[ ${lbzip2_result} -eq 0 ]]; then
+      
+        display --indent 2 --text "- Uploading new database backup to dropbox" --result "DONE" --color GREEN
 
-      # Delete old backups
-      log_event "info" "Deleting old database backup ${old_bk_file} from dropbox" "false"
-      output="$(${DROPBOX_UPLOADER} -q remove "${DROPBOX_FOLDER}${DROPBOX_PATH}/${old_bk_file}" 2>&1)"
-      display --indent 2 --text "- Delete old database backup" --result "DONE" --color GREEN
+        # Delete old backups
+        log_event "info" "Deleting old database backup ${old_bk_file} from dropbox" "false"
+        output="$(${DROPBOX_UPLOADER} -q remove "${DROPBOX_FOLDER}${DROPBOX_PATH}/${old_bk_file}" 2>&1)"
+        display --indent 2 --text "- Delete old database backup" --result "DONE" --color GREEN
 
-      log_event "info" "Deleting old database backup ${old_bk_file} from server" "false"
-      rm "${BAKWP}/${NOW}/${db_file}"
-      rm "${BAKWP}/${NOW}/${bk_file}"
-      display --indent 2 --text "- Delete old database backup from server" --result "DONE" --color GREEN
+        log_event "info" "Deleting old database backup ${old_bk_file} from server" "false"
+        rm "${BAKWP}/${NOW}/${db_file}"
+        rm "${BAKWP}/${NOW}/${bk_file}"
+        display --indent 2 --text "- Delete old database backup from server" --result "DONE" --color GREEN
+
+      else
+
+        display --indent 2 --text "- Uploading new database backup to dropbox" --result "FAIL" --color RED
+
+        log_event "ERROR" "Uploading new database backup to dropbox fail. Command executed: ${DROPBOX_UPLOADER} upload ${bk_file} ${DROPBOX_FOLDER}${DROPBOX_PATH}" "false"
+
+        return 1
+
+      fi
 
     fi
 
