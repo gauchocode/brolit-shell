@@ -127,6 +127,15 @@ check_packages_required() {
     display --indent 2 --text "- Installing dnsutils" --result "DONE" --color GREEN
   fi
 
+  # Check if net-tools is installed
+  IFCONFIG="$(which ifconfig)"
+  if [ ! -x "${IFCONFIG}" ]; then
+    display --indent 2 --text "- Installing net-tools"
+    apt-get --yes install net-tools -qq > /dev/null
+    clear_last_line
+    display --indent 2 --text "- Installing net-tools" --result "DONE" --color GREEN
+  fi
+
   # Check if lbzip2 is installed
   LBZIP2="$(which lbzip2)"
   if [ ! -x "${LBZIP2}" ]; then
