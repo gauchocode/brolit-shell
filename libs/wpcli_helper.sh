@@ -94,6 +94,52 @@ wpcli_run_startup_script(){
     local wp_user_passw=$4
     local wp_user_mail=$5
 
+    if [[ ! -z "${site_name}" ]]; then
+        site_name=$(whiptail --title "Site Name" --inputbox "Insert the site name. Example: My Website" 10 60 3>&1 1>&2 2>&3)
+    fi
+    exitstatus=$?
+    if [[ ! ${exitstatus} -eq 0 ]]; then
+        # Return
+        return 1
+
+    fi
+    if [[ ! -z "${site_url}" ]]; then
+        site_url=$(whiptail --title "Site URL" --inputbox "Insert the site URL. Example: mydomain.com" 10 60 3>&1 1>&2 2>&3)
+    fi
+    exitstatus=$?
+    if [[ ! ${exitstatus} -eq 0 ]]; then
+        # Return
+        return 1
+
+    fi
+    if [[ ! -z "${wp_user_name}" ]]; then
+        wp_user_name=$(whiptail --title "Wordpress User" --inputbox "Insert a username for admin." 10 60 3>&1 1>&2 2>&3)
+    fi
+    exitstatus=$?
+    if [[ ! ${exitstatus} -eq 0 ]]; then
+        # Return
+        return 1
+
+    fi
+    if [[ ! -z "${wp_user_passw}" ]]; then
+        wp_user_passw=$(whiptail --title "Site Name" --inputbox "Insert the user password." 10 60 3>&1 1>&2 2>&3)
+    fi
+    exitstatus=$?
+    if [[ ! ${exitstatus} -eq 0 ]]; then
+        # Return
+        return 1
+
+    fi
+    if [[ ! -z "${wp_user_mail}" ]]; then
+        wp_user_mail=$(whiptail --title "WordPress User Mail" --inputbox "Insert the user email." 10 60 3>&1 1>&2 2>&3)
+    fi
+    exitstatus=$?
+    if [[ ! ${exitstatus} -eq 0 ]]; then
+        # Return
+        return 1
+
+    fi
+
     wp core install --url="${site_url}" --title="${site_name}" --admin_user="${wp_user_name}" --admin_password="${wp_user_passw}" --admin_email="${wp_user_mail}" --allow-root
 
     # Delete default post, page, and comment
@@ -104,20 +150,22 @@ wpcli_run_startup_script(){
     # Delete default themes
     wp theme delete twentyseventeen --allow-root --quiet
     wp theme delete twentynineteen --allow-root --quiet
-
     display --indent 2 --text "- Deleting default themes" --result "DONE" --color GREEN
 
+    # Deleting default content
     wp site empty --yes --allow-root
+    display --indent 2 --text "- Deleting default content" --result "DONE" --color GREEN
     
     # Delete default plugins
     wp plugin delete akismet --allow-root --quiet
     wp plugin delete hello --allow-root --quiet
-
     display --indent 2 --text "- Deleting default plugins" --result "DONE" --color GREEN
     
+    # Changing permalinks structure
     wp rewrite structure '/%postname%/' --allow-root --quiet
     display --indent 2 --text "- Changing rewrite structure" --result "DONE" --color GREEN
 
+    # Changing comment status
     wp option update default_comment_status closed --allow-root --quiet
     display --indent 2 --text "- Setting comments off" --result "DONE" --color GREEN
     #wp post create --post_type=page --post_status=publish --post_title='Home' --allow-root
@@ -191,26 +239,45 @@ wpcli_core_install() {
 
         if [ "${wp_version}" != "" ];then
 
-            log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core download --skip-content --version=${wp_version}" "false"
+            log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core download --version=${wp_version}"
 
-            sudo -u www-data wp --path="${wp_site}" core download --skip-content --version="${wp_version}" --quiet
+            sudo -u www-data wp --path="${wp_site}" core download --version="${wp_version}" --quiet
+
+            wpcli_run_startup_script
+            exitstatus=$?
+            if [[ ${exitstatus} -eq 0 ]]; then
+                display --indent 2 --text "- Wordpress ${wp_version} installation for ${wp_site}" --result "DONE" --color GREEN
+            else
+                display --indent 2 --text "- Wordpress installation for ${wp_site}" --result "FAIL" --color RED
+                return 1
+            fi
 
         else
 
-            log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core download --skip-content" "false"
+            log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core download"
 
-            sudo -u www-data wp --path="${wp_site}" core download --skip-content --quiet
+            sudo -u www-data wp --path="${wp_site}" core download  --quiet
+
+            wpcli_run_startup_script
+            exitstatus=$?
+            if [[ ${exitstatus} -eq 0 ]]; then
+                display --indent 2 --text "- Wordpress installation for ${wp_site}" --result "DONE" --color GREEN
+            else
+                display --indent 2 --text "- Wordpress installation for ${wp_site}" --result "FAIL" --color RED
+                return 1
+            fi
 
         fi
 
-        display --indent 2 --text "- Wordpress installation for ${wp_site}" --result "DONE" --color GREEN
-
     else
         # Log failure
-        log_event "fail" "wp_site can't be empty!" "true"
+        error_msg="wp_site can't be empty!"
+        log_event "fail" "${error_msg}" "true"
+        display --indent 2 --text "- Wordpress installation for ${wp_site}" --result "FAIL" --color RED
+        display --indent 4 --text "${error_msg}"
 
         # Return
-        echo "fail"
+        return 1
 
     fi
 
