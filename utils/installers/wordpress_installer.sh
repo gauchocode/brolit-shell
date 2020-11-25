@@ -105,6 +105,8 @@ wordpress_installer () {
         change_ownership "www-data" "www-data" "${folder_to_install}/${project_domain}"
         wpcli_core_install "${folder_to_install}/${project_domain}"
 
+        
+
       else
         log_event "error" "Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..." "true"
         return 1
