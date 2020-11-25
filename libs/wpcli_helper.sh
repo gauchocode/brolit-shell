@@ -88,11 +88,12 @@ wpcli_run_startup_script(){
     # $4 = ${wp_user_passw}
     # $5 = ${wp_user_mail}
 
-    local site_name=$1
-    local site_url=$2
-    local wp_user_name=$3
-    local wp_user_passw=$4
-    local wp_user_mail=$5
+    local wp_site=$1
+    local site_name=$2
+    local site_url=$3
+    local wp_user_name=$4
+    local wp_user_passw=$5
+    local wp_user_mail=$6
 
     if [[ "${site_name}" == "" ]]; then
         site_name=$(whiptail --title "Site Name" --inputbox "Insert the site name. Example: My Website" 10 60 3>&1 1>&2 2>&3)
@@ -140,12 +141,14 @@ wpcli_run_startup_script(){
 
     fi
 
+    # Install WordPress Site
     sudo -u www-data wp --path="${wp_site}" core install --url="${site_url}" --title="${site_name}" --admin_user="${wp_user_name}" --admin_password="${wp_user_passw}" --admin_email="${wp_user_mail}"
     log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core install --url=${site_url} --title=${site_name} --admin_user=${wp_user_name} --admin_password=${wp_user_passw} --admin_email=${wp_user_mail}" "true"
 
+    display --indent 2 --text "- Deleting default content" --result "DONE" --color GREEN
+
     # Delete default post, page, and comment
     sudo -u www-data wp --path="${wp_site}" site empty --yes --quiet
-
     display --indent 2 --text "- Deleting default content" --result "DONE" --color GREEN
 
     # Delete default themes
@@ -246,7 +249,7 @@ wpcli_core_install() {
 
             sudo -u www-data wp --path="${wp_site}" core download --version="${wp_version}" --quiet
 
-            wpcli_run_startup_script
+            wpcli_run_startup_script "${wp_site}"
             exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
                 display --indent 2 --text "- Wordpress ${wp_version} installation for ${wp_site}" --result "DONE" --color GREEN
@@ -261,7 +264,7 @@ wpcli_core_install() {
 
             sudo -u www-data wp --path="${wp_site}" core download  --quiet
 
-            wpcli_run_startup_script
+            wpcli_run_startup_script "${wp_site}"
             exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
                 display --indent 2 --text "- Wordpress installation for ${wp_site}" --result "DONE" --color GREEN
