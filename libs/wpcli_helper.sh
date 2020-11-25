@@ -140,35 +140,37 @@ wpcli_run_startup_script(){
 
     fi
 
-    wp core install --url="${site_url}" --title="${site_name}" --admin_user="${wp_user_name}" --admin_password="${wp_user_passw}" --admin_email="${wp_user_mail}" --allow-root
+    sudo -u www-data wp --path="${wp_site}" core install --url="${site_url}" --title="${site_name}" --admin_user="${wp_user_name}" --admin_password="${wp_user_passw}" --admin_email="${wp_user_mail}" --allow-root
 
     # Delete default post, page, and comment
-    wp site empty --yes --allow-root --quiet
+    sudo -u www-data wp --path="${wp_site}" site empty --yes --allow-root --quiet
 
     display --indent 2 --text "- Deleting default content" --result "DONE" --color GREEN
 
     # Delete default themes
-    wp theme delete twentyseventeen --allow-root --quiet
-    wp theme delete twentynineteen --allow-root --quiet
+    sudo -u www-data wp --path="${wp_site}" theme delete twentyseventeen --allow-root --quiet
+    sudo -u www-data wp --path="${wp_site}" theme delete twentynineteen --allow-root --quiet
     display --indent 2 --text "- Deleting default themes" --result "DONE" --color GREEN
 
     # Deleting default content
-    wp site empty --yes --allow-root
+    sudo -u www-data wp --path="${wp_site}" site empty --yes --allow-root
     display --indent 2 --text "- Deleting default content" --result "DONE" --color GREEN
     
     # Delete default plugins
-    wp plugin delete akismet --allow-root --quiet
-    wp plugin delete hello --allow-root --quiet
+    sudo -u www-data wp --path="${wp_site}" plugin delete akismet --allow-root --quiet
+    sudo -u www-data wp --path="${wp_site}" plugin delete hello --allow-root --quiet
     display --indent 2 --text "- Deleting default plugins" --result "DONE" --color GREEN
     
     # Changing permalinks structure
-    wp rewrite structure '/%postname%/' --allow-root --quiet
+    sudo -u www-data wp --path="${wp_site}" rewrite structure '/%postname%/' --allow-root --quiet
     display --indent 2 --text "- Changing rewrite structure" --result "DONE" --color GREEN
 
     # Changing comment status
-    wp option update default_comment_status closed --allow-root --quiet
+    sudo -u www-data wp --path="${wp_site}" option update default_comment_status closed --allow-root --quiet
     display --indent 2 --text "- Setting comments off" --result "DONE" --color GREEN
     #wp post create --post_type=page --post_status=publish --post_title='Home' --allow-root
+
+    wp_change_permissions "${wp_site}"
 
 }
 
