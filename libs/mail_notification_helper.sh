@@ -6,8 +6,8 @@
 
 send_mail_notification() {
 
-    # $1 = ${email_subject}
-    # $2 = ${email_content}
+    # $1 = ${email_subject} // Email's subject
+    # $2 = ${email_content} // Email's content
 
     local email_subject=$1
     local email_content=$2
@@ -55,8 +55,6 @@ mail_subject_status() {
 
 remove_mail_notifications_files() {
 
-    log_event "info" "Removing notifications temp files ..."
-
     # Remove one per line only for better readibility
     rm -f "${BAKWP}/cert-${NOW}.mail" 
     rm -f "${BAKWP}/pkg-${NOW}.mail"
@@ -64,14 +62,14 @@ remove_mail_notifications_files() {
     rm -f "${BAKWP}/config-bk-${NOW}.mail"
     rm -f "${BAKWP}/db-bk-${NOW}.mail"
 
-    log_event "info" "Temp files removed"
+    log_event "info" "Email temporary files removed!"
 
 }
 
 mail_server_status_section() {
 
-    # $1 = ${IP}
-    # $2 = ${disk_u}
+    # $1 = ${IP}        // Server's IP
+    # $2 = ${disk_u}    // Server's disk utilization
 
     local IP=$1
 
@@ -81,14 +79,13 @@ mail_server_status_section() {
     local disk_u_ns
     local status_s_icon
     local status_s_color
-    local header_open1
-    local header_open2
-    local header_open3
+    local header_open
     local header_text
     local header_close
     local body_open
     local content
     local body_close
+    local srv_header
     local srv_body
     local body
 
@@ -119,19 +116,17 @@ mail_server_status_section() {
         
     fi
 
-    header_open1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
-    header_open2="${status_s_color}"
-    header_open3=";padding:5px 0 10px 10px;width:100%;height:30px\">"
+    header_open="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:${status_s_color};padding:5px 0 10px 10px;width:100%;height:30px\">"
     header_text="Server Status: ${STATUS_SERVER} ${status_s_icon}"
     header_close="</div>"
-    header="${header_open1}${header_open2}${header_open3}${header_text}${header_close}"
+    srv_header="${header_open}${header_text}${header_close}"
 
     body_open="<div style=\"color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;\">"
-    content="<b>Server IP: ${IP}</b><br /><b>Disk usage: ${disk_u}</b><br />"
+    body_content="<b>Server IP: ${IP}</b><br /><b>Disk usage: ${disk_u}</b><br />"
     body_close="</div></div>"
-    srv_body="${body_open}${content}${body_close}"
+    srv_body="${body_open}${body_content}${body_close}"
 
-    body="${header}${srv_body}"
+    body="${srv_header}${srv_body}"
 
     # Return
     echo "${body}"
@@ -157,7 +152,7 @@ mail_package_status_section() {
 
     #if not empty, system is outdated
     if [ "${pkg_details}" != "" ]; then
-        
+        # Changing global
         OUTDATED_PACKAGES=true
 
         pkg_color="#b51c1c"
@@ -170,9 +165,7 @@ mail_package_status_section() {
 
     fi
 
-    header_open1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
-    header_open2=";padding:5px 0 10px 10px;width:100%;height:30px\">"
-    header_open="${header_open1}${pkg_color}${header_open2}"
+    header_open="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:${pkg_color};padding:5px 0 10px 10px;width:100%;height:30px\">"
     header_text="Packages Status: ${pkg_status} ${pkg_status_icon}"
     header_close="</div>"
 
@@ -190,7 +183,7 @@ mail_package_status_section() {
 
 mail_package_section() {
 
-    # $1 = ${PACKAGES}
+    # $1 = ${PACKAGES} // Packages to be updated
 
     local -n PACKAGES=$1
 
@@ -336,8 +329,8 @@ mail_filesbackup_section() {
     # $3 = ${ERROR}
     # $4 = ${ERROR_TYPE}
 
-    local -a BACKUPED_LIST=$1
-    local -a BK_FL_SIZES=$2
+    local -n BACKUPED_LIST=$1
+    local -n BK_FL_SIZES=$2
     local ERROR=$3
     local ERROR_TYPE=$4
 
@@ -445,8 +438,8 @@ mail_configbackup_section() {
     # $3 = ${ERROR}
     # $4 = ${ERROR_TYPE}
 
-    local -a BACKUPED_SCF_LIST=$1
-    local -a BK_SCF_SIZES=$2
+    local -n BACKUPED_SCF_LIST=$1
+    local -n BK_SCF_SIZES=$2
     local ERROR=$3
     local ERROR_TYPE=$4
 
@@ -545,8 +538,8 @@ mail_mysqlbackup_section() {
     # $3 = ${ERROR}
     # $4 = ${ERROR_TYPE}
 
-    local -a BACKUPED_DB_LIST=$1
-    local -a BK_DB_SIZES=$2
+    local -n BACKUPED_DB_LIST=$1
+    local -n BK_DB_SIZES=$2
     local ERROR=$3
     local ERROR_TYPE=$4
 

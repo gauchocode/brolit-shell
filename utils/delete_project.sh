@@ -29,11 +29,12 @@ source "${SFOLDER}/libs/telegram_notification_helper.sh"
 
 delete_project_files() {
 
-    local project_domain dropbox_output
+    local project_domain
+    local dropbox_output
 
-    log_event "info" "Performing Action: Delete Project"
+    log_event "info" "Performing Action: Project Delete"
 
-    log_section "Delete Project"
+    log_section "Project Delete"
 
     # Folder where sites are hosted: $SITES
     menu_title="PROJECT TO DELETE"
@@ -42,7 +43,7 @@ delete_project_files() {
     # Directory_broser returns: " $filepath"/"$filename
     if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
 
-        log_event "info" "Delete project cancelled"
+        log_event "info" "Operation 'Project Delete' cancelled!"
 
         # Return
         return 1
@@ -151,6 +152,11 @@ delete_project_database() {
         display --indent 2 --text "- Initializing database deletion" --result "DONE" --color GREEN
 
         BK_TYPE="database"
+
+        # TO-FIX: 
+        #
+        # With deb04_broobe_prod this DB_NAME, fails to extract suffix:
+        # - Deleting deb04_broobe_prod_user user in MySQL             [ FAIL ]
 
         # Remove DB suffix to get project_name
         suffix="$(cut -d'_' -f2 <<<"${CHOSEN_DB}")"
