@@ -439,10 +439,10 @@ mail_configbackup_section() {
     # $3 = ${ERROR}
     # $4 = ${ERROR_TYPE}
 
-    local -n BACKUPED_SCF_LIST
-    local -n BK_SCF_SIZES
-    local ERROR
-    local ERROR_TYPE
+    local -n BACKUPED_SCF_LIST=$1
+    local -n BK_SCF_SIZES=$2
+    local ERROR=$3
+    local ERROR_TYPE=$4
 
     local count
     local status_icon_f
@@ -465,8 +465,6 @@ mail_configbackup_section() {
 
     BACKUPED_SCF_LIST=$1
     BK_SCF_SIZES=$2
-    ERROR=$3
-    ERROR_TYPE=$4
 
     backup_type="Config"
 
