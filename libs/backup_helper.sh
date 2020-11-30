@@ -203,12 +203,12 @@ make_server_files_backup() {
 
     # Here we use tar.bz2 with bzip2 compression method
     log_event "info" "Making backup of ${bk_path}"
-    display --indent 2 --text "- Preparing ${bk_sup_type} backup" --result "DONE" --color GREEN
+    display --indent 6 --text "- Preparing ${bk_sup_type} backup" --result "DONE" --color GREEN
 
     log_event "info" "Running: ${TAR} cjf ${BAKWP}/${NOW}/${bk_file} --directory=${bk_path} ${directory_to_backup}"
     (${TAR} cjf "${BAKWP}/${NOW}/${bk_file}" --directory="${bk_path}" "${directory_to_backup}")
 
-    display --indent 2 --text "- Compressing directory ${bk_path}" --result "DONE" --color GREEN
+    display --indent 6 --text "- Compressing directory ${bk_path}" --result "DONE" --color GREEN
 
     # Test backup file
     log_event "info" "Testing backup file: ${bk_file} ..."
@@ -228,7 +228,7 @@ make_server_files_backup() {
       BK_SCF_SIZES[$BK_SCF_INDEX]="${BK_SCF_SIZE}"
       #BK_SCF_SIZES+=("${BK_SCF_SIZE}")
 
-      display --indent 2 --text "- Testing compressed backup file" --result "DONE" --color GREEN
+      display --indent 6 --text "- Testing compressed backup file" --result "DONE" --color GREEN
 
       # New folder with $VPSNAME
       output="$("${DROPBOX_UPLOADER}" -q mkdir "/${VPSNAME}" 2>&1)"
@@ -243,12 +243,12 @@ make_server_files_backup() {
 
       # Uploading backup files
       log_event "info" "Uploading backup to Dropbox ..."
-      display --indent 2 --text "- Uploading backup file to Dropbox"
+      display --indent 6 --text "- Uploading backup file to Dropbox"
 
       output="$("${DROPBOX_UPLOADER}" upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}" 2>&1)"
 
       clear_last_line
-      display --indent 2 --text "- Uploading backup file to Dropbox" --result "DONE" --color GREEN
+      display --indent 6 --text "- Uploading backup file to Dropbox" --result "DONE" --color GREEN
 
       # Deleting old backup files
       log_event "info" "Trying to delete old backup from Dropbox ..." "false"
@@ -258,12 +258,12 @@ make_server_files_backup() {
       if [[ ${dropbox_remove_result} -eq 0 ]]; then
 
         log_event "success" "Server files backup finished" "false"
-        display --indent 2 --text "- Deleting old backup from Dropbox" --result "DONE" --color GREEN
+        display --indent 6 --text "- Deleting old backup from Dropbox" --result "DONE" --color GREEN
 
       else
 
-        display --indent 2 --text "- Deleting old backup from Dropbox" --result "WARNING" --color YELLOW
-        display --indent 4 --text "Maybe backup file doesn't exists" --tcolor YELLOW
+        display --indent 6 --text "- Deleting old backup from Dropbox" --result "WARNING" --color YELLOW
+        display --indent 8 --text "Maybe backup file doesn't exists" --tcolor YELLOW
 
         log_event "warning" "Can't remove ${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file} from dropbox. Maybe backup file doesn't exists." "false"
         log_event "warning" "Last command executed: ${DROPBOX_UPLOADER} remove ${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file}"
@@ -276,8 +276,8 @@ make_server_files_backup() {
 
       log_event "critical" "Can't make the backup. No such directory or file ${BAKWP}/${NOW}/${bk_file}"
 
-      display --indent 2 --text "- Testing backup file" --result "FAIL" --color RED
-      display --indent 4 --text "Result: ${bzip2_error}"
+      display --indent 6 --text "- Testing backup file" --result "FAIL" --color RED
+      display --indent 8 --text "Result: ${bzip2_error}"
 
       return 1
 
@@ -287,8 +287,8 @@ make_server_files_backup() {
 
     log_event "error" "Directory ${bk_path} doesn't exists!"
 
-    display --indent 2 --text "- Creating backup file" --result "FAIL" --color RED
-    display --indent 4 --text "Result: Directory '${bk_path}' doesn't exists" --tcolor RED
+    display --indent 6 --text "- Creating backup file" --result "FAIL" --color RED
+    display --indent 8 --text "Result: Directory '${bk_path}' doesn't exists" --tcolor RED
 
     return 1
 
@@ -316,7 +316,7 @@ make_mailcow_backup() {
     bk_file="${bk_type}_files-${NOW}.tar.bz2"
 
     log_event "info" "Trying to make a backup of ${MAILCOW} ..."
-    display --indent 2 --text "- Preparing ${MAILCOW} for backup" --result "DONE" --color GREEN
+    display --indent 6 --text "- Preparing ${MAILCOW} for backup" --result "DONE" --color GREEN
 
     "${MAILCOW}/helper-scripts/backup_and_restore.sh" backup all
     mailcow_backup_result=$?
@@ -352,11 +352,11 @@ make_mailcow_backup() {
         DROPBOX_PATH="/${VPSNAME}/${bk_type}"
 
         log_event "info" "Uploading Backup to Dropbox ..."
-        display --indent 2 --text "- Uploading backup file to Dropbox"
+        display --indent 6 --text "- Uploading backup file to Dropbox"
 
         output=$(${DROPBOX_UPLOADER} upload "${MAILCOW_TMP_BK}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}" 2>&1)
         clear_last_line
-        display --indent 2 --text "- Uploading backup file to Dropbox" --result "DONE" --color GREEN
+        display --indent 6 --text "- Uploading backup file to Dropbox" --result "DONE" --color GREEN
 
         log_event "info" "Deleting old backup from Dropbox ..."
         output=$(${DROPBOX_UPLOADER} remove "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${bk_file}" 2>&1)
@@ -406,7 +406,7 @@ make_files_backup() {
   #SHOW_BK_FILE_INDEX="$((BK_FILE_INDEX + 1))"
 
   log_event "info" "Making backup file from: ${directory_to_backup} ..."
-  display --indent 2 --text "- Preparing ${directory_to_backup} for backup" --result "DONE" --color GREEN
+  display --indent 6 --text "- Preparing ${directory_to_backup} for backup" --result "DONE" --color GREEN
 
   ${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv --width 70 --size "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${BAKWP}/${NOW}/${bk_file}"
   
@@ -415,7 +415,7 @@ make_files_backup() {
 
   # Test backup file
   log_event "info" "Testing backup file: ${bk_file} ..."
-  display --indent 2 --text "- Testing backup file" --result "DONE" --color GREEN
+  display --indent 6 --text "- Testing backup file" --result "DONE" --color GREEN
   lbzip2 -t "${BAKWP}/${NOW}/${bk_file}"
   lbzip2_result="$?"
   if [[ "${lbzip2_result}" -eq 0 ]]; then
@@ -431,8 +431,8 @@ make_files_backup() {
     BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=${BK_FL_SIZE}
 
     log_event "success" "Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}"
-    display --indent 2 --text "- Backup creation" --result "DONE" --color GREEN
-    display --indent 4 --text "Final backup file size: ${BK_FL_SIZE}"
+    display --indent 6 --text "- Backup creation" --result "DONE" --color GREEN
+    display --indent 8 --text "Final backup file size: ${BK_FL_SIZE}"
 
     log_event "info" "Creating folders in Dropbox ..."
 
@@ -448,22 +448,22 @@ make_files_backup() {
     DROPBOX_PATH="/${VPSNAME}/${bk_type}/${directory_to_backup}"
 
     log_event "info" "Uploading ${directory_to_backup} to Dropbox"
-    display --indent 2 --text "- Uploading backup to dropbox"
+    display --indent 6 --text "- Uploading backup to dropbox"
     output="$("${DROPBOX_UPLOADER}" upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}/" 2>&1)"
     log_event "success" "${directory_to_backup} uploaded to Dropbox"
     clear_last_line
-    display --indent 2 --text "- Uploading backup to dropbox" --result "DONE" --color GREEN
+    display --indent 6 --text "- Uploading backup to dropbox" --result "DONE" --color GREEN
 
     # Delete old backup from Dropbox
     output="$("${DROPBOX_UPLOADER}" remove "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file}" 2>&1)"
     log_event "info" "Old backup from Dropbox with date ${ONEWEEKAGO} deleted"
-    display --indent 2 --text "- Deleting old dropbox backup" --result "DONE" --color GREEN
+    display --indent 6 --text "- Deleting old dropbox backup" --result "DONE" --color GREEN
 
     # Delete temp backup
     rm "${BAKWP}/${NOW}/${bk_file}"
 
     log_event "info" "Temp backup deleted from server"
-    display --indent 2 --text "- Deleting temp files" --result "DONE" --color GREEN
+    display --indent 6 --text "- Deleting temp files" --result "DONE" --color GREEN
 
     log_event "success" "Backup uploaded"
 
@@ -472,8 +472,8 @@ make_files_backup() {
     ERROR_TYPE="ERROR: Making backup ${BAKWP}/${NOW}/${bk_file}"
 
     log_event "error" "Something went wrong making backup file: ${BAKWP}/${NOW}/${bk_file}"
-    display --indent 2 --text "- Backup creation" --result "FAIL" --color RED
-    display --indent 4 --text "Something went wrong making backup file: ${bk_file}" --tcolor RED
+    display --indent 6 --text "- Backup creation" --result "FAIL" --color RED
+    display --indent 8 --text "Something went wrong making backup file: ${bk_file}" --tcolor RED
 
     return 1
 
@@ -494,7 +494,7 @@ duplicity_backup() {
     # Loop in to Directories
     for i in $(echo "${DUP_FOLDERS}" | sed "s/,/ /g"); do
       duplicity --full-if-older-than "${DUP_BK_FULL_FREQ}" -v4 --no-encryption" ${DUP_SRC_BK}""${i}" file://"${DUP_ROOT}""${i}"
-      RETVAL=$?
+      RETVAL="$?"
 
       # TODO: solo deberia borrar lo viejo si $RETVAL -eq 0
       duplicity remove-older-than "${DUP_BK_FULL_LIFE}" --force "${DUP_ROOT}"/"${i}"
