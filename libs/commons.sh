@@ -620,7 +620,7 @@ log_event() {
       *)
         echo " > ${message}" >> "${LOG}"
         if [ "${console_display}" = "true" ]; then
-          echo -e "${CYAN} > ${message}${ENDCOLOR}" >&2
+          echo -e "${CYAN}${B_DEFAULT} > ${message}${ENDCOLOR}" >&2
         fi
         ;;
     esac
@@ -640,7 +640,7 @@ log_break() {
   
   echo "${log_break}" >> "${LOG}"
   if [ "${console_display}" = "true" ]; then
-    echo -e "${MAGENTA}${log_break}${ENDCOLOR}" >&2
+    echo -e "${MAGENTA}${B_DEFAULT}${log_break}${ENDCOLOR}" >&2
   fi
 
 }
@@ -654,7 +654,7 @@ log_section() {
 
     if [ "${QUIET}" -eq 0 ]; then
         echo "" >&2
-        echo -e "[+] Performing Action: ${YELLOW}${message}${NORMAL}" >&2
+        echo -e "[+] Performing Action: ${YELLOW}${B_DEFAULT}${message}${ENDCOLOR}" >&2
         echo "----------------------------------------------" >&2
     fi
 
@@ -669,7 +669,7 @@ log_subsection() {
 
     if [ "${QUIET}" -eq 0 ]; then
         echo "" >&2
-        echo -e "    [·] ${CYAN}${message}${NORMAL}" >&2
+        echo -e "    [·] ${CYAN}${B_DEFAULT}${message}${ENDCOLOR}" >&2
         echo "    ------------------------------------------" >&2
     fi
 
@@ -754,7 +754,7 @@ display() {
       RESULTPART=""
   else
       if [ ${CRONJOB} -eq 0 ]; then
-          RESULTPART=" [ ${COLOR}${RESULT}${NORMAL} ]"
+          RESULTPART=" [ ${COLOR}${B_DEFAULT}${RESULT}${NORMAL} ]"
       else
           RESULTPART=" [ ${RESULT} ]"
       fi
@@ -1614,8 +1614,6 @@ install_crontab_script() {
 
 	fi
 
-  read -n 1 -s -r -p "Press any key to return to the menu"
-
 }
 
 #
@@ -1694,7 +1692,8 @@ ask_project_domain() {
 
 ask_project_type() {
 
-  local project_types project_type
+  local project_types
+  local project_type
 
   project_types="WordPress X Laravel X Basic-PHP X HTML X"
   
@@ -1749,8 +1748,10 @@ ask_subdomains_to_cloudflare_config() {
   local subdomains=$1;
 
   subdomains=$(whiptail --title "Cloudflare Subdomains" --inputbox "Insert the subdomains you want to update in Cloudflare (comma separated). Example: www.broobe.com,broobe.com" 10 60 "${DOMAIN}" 3>&1 1>&2 2>&3)
-  exitstatus=$?
+  exitstatus="$?"
+
   if [[ ${exitstatus} -eq 0 ]]; then
+
     log_event "info" "Setting subdomains=${subdomains}" "true"
     # Return
     echo "${subdomains}"
@@ -1771,7 +1772,7 @@ ask_folder_to_install_sites() {
   if [[ -z "${folder_to_install}" ]]; then
     
     folder_to_install=$(whiptail --title "Folder to work with" --inputbox "Please select the project folder you want to work with:" 10 60 "${folder_to_install}" 3>&1 1>&2 2>&3)
-    exitstatus=$?
+    exitstatus="$?"
     if [[ ${exitstatus} -eq 0 ]]; then
 
       log_event "info" "Folder to work with: ${folder_to_install}" "false"
@@ -1786,7 +1787,7 @@ ask_folder_to_install_sites() {
 
   else
 
-    log_event "info" "Folder to install: ${folder_to_install}" "false"
+    log_event "info" "Folder to install: ${folder_to_install}"
     
     # Return
     echo "${folder_to_install}"
@@ -1894,6 +1895,7 @@ menu_main_options() {
 
   else
 
+    echo -e "${B_RED}Exiting script ...${ENDCOLOR}"
     exit 0
 
   fi
