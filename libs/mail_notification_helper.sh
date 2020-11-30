@@ -386,11 +386,11 @@ mail_filesbackup_section() {
                      
             BK_FL_SIZE="${BK_FL_SIZES[$count]}"
 
-            files_inc_line_p1="<div><span style=\"margin-right:5px;\">"
-            files_inc_line_p2="${files_inc}${backup_file}"
-            files_inc_line_p3="</span> <span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\">"
-            files_inc_line_p4="${BK_FL_SIZE}"
-            files_inc_line_p5="</span></div>"
+            files_inc_line_p1="<div>"
+            files_inc_line_p2="<span style=\"margin-right:5px;\">${backup_file}</span>"
+            files_inc_line_p3="<span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\"> ${BK_FL_SIZE}</span>"
+            files_inc_line_p4="</div>"
+            files_inc_line_p5="${files_inc}"
 
             files_inc="${files_inc_line_p1}${files_inc_line_p2}${files_inc_line_p3}${files_inc_line_p4}${files_inc_line_p5}"
 
@@ -494,11 +494,11 @@ mail_configbackup_section() {
                      
             bk_scf_size="${BK_SCF_SIZES[$count]}"
 
-            files_inc_line_p1="<div><span style=\"margin-right:5px;\">"
-            files_inc_line_p2="${files_inc}${backup_line}"
-            files_inc_line_p3="</span><span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\">"
-            files_inc_line_p4="${bk_scf_size}"
-            files_inc_line_p5="</span></div>"
+            files_inc_line_p1="<div>"
+            files_inc_line_p2="<span style=\"margin-right:5px;\">${backup_line}</span>"
+            files_inc_line_p3="<span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\"> ${bk_scf_size}</span>"
+            files_inc_line_p4="</div>"
+            files_inc_line_p5="${files_inc}"
 
             files_inc="${files_inc_line_p1}${files_inc_line_p2}${files_inc_line_p3}${files_inc_line_p4}${files_inc_line_p5}"
 
@@ -588,11 +588,11 @@ mail_mysqlbackup_section() {
 
             bk_db_size=${BK_DB_SIZES[$count]}
 
-            files_inc_line_p1="<div><span style=\"margin-right:5px;\">"
-            files_inc_line_p2="${files_inc}${backup_file}"
-            files_inc_line_p3="</span> <span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\">"
-            files_inc_line_p4="${bk_db_size}"
-            files_inc_line_p5="</span></div>"
+            files_inc_line_p1="<div>"
+            files_inc_line_p2="<span style=\"margin-right:5px;\">${backup_file}</span>"
+            files_inc_line_p3="<span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\"> ${bk_db_size}</span>"
+            files_inc_line_p4="</div>"
+            files_inc_line_p5="${files_inc}"
 
             files_inc="${files_inc_line_p1}${files_inc_line_p2}${files_inc_line_p3}${files_inc_line_p4}${files_inc_line_p5}"
 
