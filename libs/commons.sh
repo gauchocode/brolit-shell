@@ -1554,16 +1554,13 @@ get_root_domain() {
   local domain_no_ext
 
   domain_extension="$(get_domain_extension "${domain}")"
-  domain_extension_output=$?
+  domain_extension_output="$?"
   if [[ $domain_extension_output -eq 0 ]]; then
 
     # Remove domain extension
     domain_no_ext=${domain%"$domain_extension"}
 
     root_domain=${domain_no_ext##*.}${domain_extension}
-
-    log_event "info" "root_domain: ${root_domain}"
-    display --indent 4 --text "root_domain: ${root_domain}"
 
     # Return
     echo "${root_domain}"
@@ -1573,8 +1570,6 @@ get_root_domain() {
     return 1
 
   fi
-
-  log_break "true"
 
 }
 
@@ -1588,6 +1583,8 @@ install_crontab_script() {
 
   local cron_file
 
+  log_section "Cron Tasks"
+
   cron_file="/var/spool/cron/crontabs/root"
 
   if [ ! -f ${cron_file} ]; then
@@ -1597,19 +1594,27 @@ install_crontab_script() {
 	  /usr/bin/crontab "${cron_file}"
 
     log_event "success" "Cron file created"
+    display --indent 2 --text "- Creating log file" --result DONE --color GREEN
 
 	fi
 
   grep -qi "${script}" "${cron_file}"
   grep_result=$?
 	if [ ${grep_result} != 0 ]; then
+
     log_event "info" "Updating cron job for script: ${script}"
     /bin/echo "${scheduled_time} ${script}" >> "${cron_file}"
-    
+
+    display --indent 2 --text "- Updating cron job" --result DONE --color GREEN
+
   else
     log_event "warning" "Script already installed"
+    display --indent 2 --text "- Updating cron job" --result FAIL --color YELLOW
+    display --indent 4 --text "Script already installed"
 
 	fi
+
+  read -n 1 -s -r -p "Press any key to return to the menu"
 
 }
 

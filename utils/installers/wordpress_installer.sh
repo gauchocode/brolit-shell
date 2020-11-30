@@ -95,7 +95,7 @@ wordpress_installer () {
     else # Clean Install
 
       project_domain="$(ask_project_domain)"
-      possible_root_domain=$(get_root_domain "${project_domain}")
+      possible_root_domain="$(get_root_domain "${project_domain}")"
       root_domain="$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")"
 
       possible_project_name="$(extract_domain_extension "${project_domain}")"
@@ -199,10 +199,10 @@ wordpress_installer () {
     if [[ ${project_domain} == *"${common_subdomain}"* ]]; then
 
       # Cloudflare API to change DNS records
-      cloudflare_change_a_record "${root_domain}" "${project_domain}" "false"
+      cloudflare_change_a_record "${root_domain}" "${project_domain}"
 
       # Cloudflare API to change DNS records
-      cloudflare_change_a_record "${root_domain}" "${root_domain}" "false"
+      cloudflare_change_a_record "${root_domain}" "${root_domain}"
 
       # New site Nginx configuration
       nginx_server_create "${project_domain}" "wordpress" "root_domain" "${root_domain}"
@@ -216,7 +216,7 @@ wordpress_installer () {
 
       else
 
-        log_event "info" "HTTPS support for ${project_domain} skipped" "false"
+        log_event "info" "HTTPS support for ${project_domain} skipped"
         display --indent 2 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
       fi  
@@ -224,7 +224,7 @@ wordpress_installer () {
     else
 
       # Cloudflare API to change DNS records
-      cloudflare_change_a_record "${root_domain}" "${project_domain}" "false"
+      cloudflare_change_a_record "${root_domain}" "${project_domain}"
 
       # New site Nginx configuration
       nginx_create_empty_nginx_conf "${SITES}/${project_domain}"
