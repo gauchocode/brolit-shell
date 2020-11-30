@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.6
+# Version: 3.0.7
 ################################################################################
 
 is_wp_project() {
@@ -162,13 +162,13 @@ wp_replace_string_on_database() {
 
     log_event "info" "Setting existing_URL=${existing_URL}"
 
-    if [ ${exitstatus} = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
 
       if [[ -z "${new_URL}" ]]; then
         new_URL=$(whiptail --title "THE NEW URL" --inputbox "Insert the new URL , including http:// or https://" 10 60 3>&1 1>&2 2>&3)
         exitstatus=$?
 
-        if [ ${exitstatus} = 0 ]; then
+        if [[ ${exitstatus} -eq 0 ]]; then
 
           log_event "info" "Setting new_URL=${new_URL}"
           log_event "info" "Executing mysqldump of ${chosen_db} before replace urls ..."
@@ -212,16 +212,13 @@ wp_ask_url_search_and_replace() {
   if [[ -z "${existing_URL}" ]]; then
     existing_URL=$(whiptail --title "URL TO CHANGE" --inputbox "Insert the URL you want to change, including http:// or https://" 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
-
-    #echo "Setting existing_URL=${existing_URL}" >>$LOG
-
-    if [ ${exitstatus} = 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
 
       if [[ -z "${new_URL}" ]]; then
         new_URL=$(whiptail --title "THE NEW URL" --inputbox "Insert the new URL , including http:// or https://" 10 60 3>&1 1>&2 2>&3)
         exitstatus=$?
 
-        if [ ${exitstatus} = 0 ]; then
+        if [[ ${exitstatus} -eq 0 ]]; then
 
           ### Creating temporary folders
           if [ ! -d "${SFOLDER}/tmp-backup" ]; then
