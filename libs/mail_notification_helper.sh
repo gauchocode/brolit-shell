@@ -12,7 +12,7 @@ send_mail_notification() {
     local email_subject=$1
     local email_content=$2
 
-    log_event "debug" "Running: sendEmail -f ${SMTP_U} -t ${MAILA} -u ${email_subject} -o message-content-type=html -m ${EMAIL_CONTENT} -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}" "false"
+    log_event "debug" "Running: sendEmail -f ${SMTP_U} -t ${MAILA} -u ${email_subject} -o message-content-type=html -m ${EMAIL_CONTENT} -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}"
 
     # We could use -l "/var/log/sendemail.log" for custom log file
     sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${email_subject}" -o message-content-type=html -m "${email_content}" -s "${SMTP_SERVER}:${SMTP_PORT}" -o tls="${SMTP_TLS}" -xu "${SMTP_U}" -xp "${SMTP_P}" 1>&2
@@ -439,10 +439,10 @@ mail_configbackup_section() {
     # $3 = ${ERROR}
     # $4 = ${ERROR_TYPE}
 
-    local -n BACKUPED_SCF_LIST=$1
-    local -n BK_SCF_SIZES=$2
-    local ERROR=$3
-    local ERROR_TYPE=$4
+    local -n BACKUPED_SCF_LIST
+    local -n BK_SCF_SIZES
+    local ERROR
+    local ERROR_TYPE
 
     local count
     local status_icon_f
@@ -462,6 +462,11 @@ mail_configbackup_section() {
     local header_open
 
     local backup_type
+
+    BACKUPED_SCF_LIST=$1
+    BK_SCF_SIZES=$2
+    ERROR=$3
+    ERROR_TYPE=$4
 
     backup_type="Config"
 

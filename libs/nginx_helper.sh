@@ -18,28 +18,40 @@ nginx_server_create() {
 
     local nginx_result debug
 
-    # Create nginx config files for site
+    # Logging
     log_event "info" "Creating nginx configuration file for domain: ${project_domain}"
     log_event "info" "Project Type: ${project_type}"
     log_event "info" "Server Type: ${server_type}"
     log_event "info" "List of domains or subdomains that will be redirect to project_domain: ${redirect_domains}" "false"
 
+    # Create nginx config files for site
+
     if [ -f "${WSERVER}/sites-available/${project_domain}" ]; then
+
+        # Backup actual config
         mv "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-available/${project_domain}_backup"
+        # Remove symbolic link
         rm "${WSERVER}/sites-enabled/${project_domain}"
+        # Show message
+        display --indent 2 --text "- Backing up actual nginx server config" --result DONE --color GREEN
+
     fi
 
     case ${server_type} in
 
         single)
+            # Copy config from template file
             cp "${SFOLDER}/config/nginx/sites-available/${project_type}_${server_type}" "${WSERVER}/sites-available/${project_domain}"
             ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
 
             # Search and replace domain.com string with correct project_domain
             sed -i "s/domain.com/${project_domain}/g" "${WSERVER}/sites-available/${project_domain}"
+
+            display --indent 2 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
         ;;
 
         root_domain)
+            # Copy config from template file
             cp "${SFOLDER}/config/nginx/sites-available/${project_type}_${server_type}" "${WSERVER}/sites-available/${project_domain}"
             ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
 
@@ -49,20 +61,27 @@ nginx_server_create() {
             # Search and replace domain.com string with correct project_domain
             sed -i "s/domain.com/${project_domain}/g" "${WSERVER}/sites-available/${project_domain}"
 
+            display --indent 2 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
         ;;
 
         multi_domain)
-            log_event "info" "TODO" "false"
-
+            
+            display --indent 2 --text "- Creating nginx server config from '${server_type}' template" --result FAIL --color RED
+            display --indent 4 --text "TODO: implements multidomain support"
+            log_event "info" "TODO: implements multidomain support"
         ;;
 
         tool)
+            # Copy config from template file
             cp "${SFOLDER}/config/nginx/sites-available/${project_type}" "${WSERVER}/sites-available/${project_type}"
             ln -s "${WSERVER}/sites-available/${project_type}" "${WSERVER}/sites-enabled/${project_type}"
 
+            display --indent 2 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
         ;;
         *)
-            log_event "error" "Nginx server type unknow!" "false"
+            log_event "error" "Nginx server config creation fail! Nginx server type '${server_type}' unknow."
+            display --indent 2 --text "- Nginx server config creation" --result FAIL --color RED
+            display --indent 4 --text "Nginx server type '${server_type}' unknow!"
             return 1
         ;;
 
@@ -77,9 +96,12 @@ nginx_server_create() {
     if [ "${PHP_V}" != "" ]; then
         # Replace string to match PHP version
         sed -i "s#PHP_V#${PHP_V}#" "${WSERVER}/sites-available/${project_domain}"
+        display --indent 2 --text "- Configuring PHP for '${project_domain}'" --result DONE --color GREEN
     else
 
-        log_event "critical" "PHP_V not defined! Is PHP installed?" "false"
+        display --indent 2 --text "- Configuring PHP for '${project_domain}'" --result FAIL --color RED
+        display --indent 4 --text "PHP_V not defined! Is PHP installed?"
+        log_event "critical" "PHP_V not defined! Is PHP installed?"
         
     fi
     
@@ -91,13 +113,13 @@ nginx_server_create() {
         # Reload webserver
         service nginx reload
 
-        log_event "success" "nginx configuration created" "false"
+        log_event "success" "nginx configuration created"
         display --indent 2 --text "- Nginx server configuration" --result DONE --color GREEN
 
     else
 
         debug=$(nginx -t 2>&1)
-        log_event "error" "nginx configuration fail: $debug" "false"
+        log_event "error" "nginx configuration fail: $debug"
         display --indent 2 --text "- Nginx server configuration" --result FAIL --color RED
 
     fi
@@ -139,34 +161,47 @@ nginx_server_change_status() {
     local project_domain=$1
     local project_status=$2
 
-    local result debug
+    local result 
+    local debug
 
     case ${project_status} in
 
-    online)
-        log_event "info" "New project status: ${project_status}" "false"
-        if [ -f "${WSERVER}/sites-available/${project_domain}" ]; then
-            ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
-            log_event "info" "Project config added to ${WSERVER}/sites-enabled/${project_domain}" "false"
-        else
-            log_event "error" "${WSERVER}/sites-available/${project_domain} does not exist" "false"
-        fi
-        ;;
+        online)
+            log_event "info" "New project status: ${project_status}" "false"
+            if [ -f "${WSERVER}/sites-available/${project_domain}" ]; then
 
-      offline)
-        log_event "info" "New project status: ${project_status}" "false"
-        if [ -h "${WSERVER}/sites-enabled/${project_domain}" ]; then
-            rm "${WSERVER}/sites-enabled/${project_domain}"
-            log_event "info" "Project config deleted from ${WSERVER}/sites-enabled/${project_domain}" "false"
-        else
-            log_event "error" "${WSERVER}/sites-enabled/${project_domain} does not exist" "false"
-        fi
-        ;;
+                # Creating symbolic link
+                ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
+                # Logging
+                log_event "info" "Project config added to ${WSERVER}/sites-enabled/${project_domain}" "false"
 
-      *)
-        log_event "info" "New project status: Unknown" "false"
-        return 1
-        ;;
+            else
+                # Logging
+                log_event "error" "${WSERVER}/sites-available/${project_domain} does not exist" "false"
+
+            fi
+            ;;
+
+        offline)
+            log_event "info" "New project status: ${project_status}" "false"
+            if [ -h "${WSERVER}/sites-enabled/${project_domain}" ]; then
+
+                # Deleting config
+                rm "${WSERVER}/sites-enabled/${project_domain}"
+                # Logging
+                log_event "info" "Project config deleted from ${WSERVER}/sites-enabled/${project_domain}" "false"
+
+            else
+                # Logging
+                log_event "error" "${WSERVER}/sites-enabled/${project_domain} does not exist" "false"
+            fi
+            ;;
+
+        *)
+            log_event "info" "New project status: Unknown" "false"
+            return 1
+            ;;
+
     esac
 
     #Test the validity of the nginx configuration
@@ -285,11 +320,11 @@ nginx_create_globals_config() {
     nginx_globals="/etc/nginx/globals/"
 
     if [ -d "${nginx_globals}" ]; then
-        log_event "warning" "Directory ${nginx_globals} already exists ..." "false"
+        log_event "warning" "Directory ${nginx_globals} already exists ..."
         return 1
 
     else
-        log_event "info" "Creating directory ${nginx_globals} exists ..." "false"
+        log_event "info" "Creating directory ${nginx_globals} exists ..."
         mkdir "${nginx_globals}"
 
     fi
@@ -302,6 +337,7 @@ nginx_create_globals_config() {
 
     # Replace string to match PHP version
     sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/nginx/globals/wordpress_sec.conf"
+    display --indent 2 --text "- Configuring globals for phpfpm-${PHP_V}" --result "DONE" --color GREEN
 
     # Change ownership
     change_ownership "www-data" "www-data" "/etc/nginx/globals/"
