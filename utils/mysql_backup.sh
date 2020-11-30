@@ -43,7 +43,7 @@ clear_last_line #to remove mysql warning message
 # Get all databases name
 TOTAL_DBS="$(mysql_count_dabases "${DBS}")"
 log_event "info" "Databases found: ${TOTAL_DBS}"
-display --indent 6 --text "- Databases found" --result "${TOTAL_DBS}" --color GREEN
+display --indent 6 --text "- Databases found" --result "${TOTAL_DBS}" --color WHITE
 
 # MORE GLOBALS
 declare -g BK_DB_INDEX=0
