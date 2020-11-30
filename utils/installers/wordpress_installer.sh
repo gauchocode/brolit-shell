@@ -40,8 +40,6 @@ wordpress_installer () {
 
     log_section "WordPress Installer"
 
-    wpcli_install_if_not_installed
-
     folder_to_install=$(ask_folder_to_install_sites "${SITES}")
 
     if [[ ${installation_type} == *"COPY"* ]]; then
@@ -60,7 +58,8 @@ wordpress_installer () {
       #ask_domain_to_install_site
       project_domain=$(ask_project_domain)
 
-      possible_root_domain=${project_domain#[[:alpha:]]*.}
+      possible_root_domain="$(get_root_domain "${project_domain}")"
+      
       root_domain=$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")
 
       project_name=$(ask_project_name "${project_domain}")
@@ -213,6 +212,7 @@ wordpress_installer () {
 
       # New site Nginx configuration
       nginx_create_empty_nginx_conf "${SITES}/${project_domain}"
+      nginx_create_globals_config
       nginx_server_create "${project_domain}" "wordpress" "single" ""
 
       # HTTPS with Certbot

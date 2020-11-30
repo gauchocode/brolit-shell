@@ -23,10 +23,10 @@ source "${SFOLDER}/libs/mail_notification_helper.sh"
 #############################################################################
 
 # GLOBALS
-BK_TYPE="database"
-ERROR=false
-ERROR_TYPE=""
-DBS_F="databases"
+declare -g BK_TYPE="database"
+declare -g ERROR=false
+declare -g ERROR_TYPE=""
+declare -g DBS_F="databases"
 
 export BK_TYPE DBS_F
 
@@ -46,7 +46,7 @@ log_event "info" "Databases found: ${TOTAL_DBS}"
 display --indent 2 --text "- Databases found" --result "${TOTAL_DBS}" --color GREEN
 
 # MORE GLOBALS
-BK_DB_INDEX=0
+declare -g BK_DB_INDEX=0
 declare -a BACKUPED_DB_LIST
 declare -a BK_DB_SIZES
 
