@@ -330,8 +330,8 @@ mail_filesbackup_section() {
     # $3 = ${ERROR}
     # $4 = ${ERROR_TYPE}
 
-    local -n BACKUPED_LIST=$1
-    local -n BK_FL_SIZES=$2
+    local BACKUPED_LIST=$1
+    local BK_FL_SIZES=$2
     local ERROR=$3
     local ERROR_TYPE=$4
 
@@ -439,8 +439,8 @@ mail_configbackup_section() {
     # $3 = ${ERROR}
     # $4 = ${ERROR_TYPE}
 
-    local -n BACKUPED_SCF_LIST=$1
-    local -n BK_SCF_SIZES=$2
+    local BACKUPED_SCF_LIST=$1
+    local BK_SCF_SIZES=$2
     local ERROR=$3
     local ERROR_TYPE=$4
 
