@@ -34,7 +34,7 @@ export BK_TYPE DBS_F
 log_break
 log_event "info" "Starting database backup script"
 log_subsection "Backup Databases"
-display --indent 2 --text "- Initializing database backup script" --result "DONE" --color GREEN
+display --indent 6 --text "- Initializing database backup script" --result "DONE" --color GREEN
 
 # Get MySQL DBS
 DBS=$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -Bse 'show databases')
