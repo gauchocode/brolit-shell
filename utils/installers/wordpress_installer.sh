@@ -77,10 +77,17 @@ wordpress_installer () {
         #cd "${folder_to_install}"
         copy_project_files "${folder_to_install}/${copy_project}" "${project_dir}"
 
+        # Logging
+        display --indent 2 --text "- Making a copy of the WordPress project" --result "DONE" --color GREEN
         log_event "success" "WordPress files copied"
 
       else
-        log_event "error" "Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..." "true"
+        # Logging
+        display --indent 2 --text "- Making a copy of the WordPress project" --result "FAIL" --color RED
+        display --indent 4 --text "Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..."
+        log_event "error" "Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..."
+
+        # Return
         return 1
 
       fi
@@ -102,12 +109,18 @@ wordpress_installer () {
         # Download WP
         mkdir "${folder_to_install}/${project_domain}"
         change_ownership "www-data" "www-data" "${folder_to_install}/${project_domain}"
-        wpcli_core_install "${folder_to_install}/${project_domain}"
-
         
+        # Logging
+        #display --indent 2 --text "- Making a copy of the WordPress project" --result "DONE" --color GREEN
 
       else
-        log_event "error" "Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..." "true"
+
+        # Logging
+        display --indent 2 --text "- Creating WordPress project" --result "FAIL" --color RED
+        display --indent 4 --text "Destination folder '${folder_to_install}/${project_domain}' already exist"
+        log_event "error" "Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..."
+
+        # Return
         return 1
 
       fi
@@ -122,9 +135,7 @@ wordpress_installer () {
     database_user="${db_project_name}_user"
     database_user_passw=$(openssl rand -hex 12)
 
-    #log_break "true"
-    log_event "info" "Creating database ${database_name}, and user ${database_user} with pass ${database_user_passw}" "false"
-    #log_break "true"
+    log_event "info" "Creating database ${database_name}, and user ${database_user} with pass ${database_user_passw}"
 
     mysql_database_create "${database_name}"
     mysql_user_create "${database_user}" "${database_user_passw}"
@@ -137,7 +148,7 @@ wordpress_installer () {
 
     if [[ ${installation_type} == *"COPY"* ]]; then
 
-      log_event "info" "Copying database ${database_name} ..." "true"
+      log_event "info" "Copying database ${database_name} ..."
 
       # Create dump file
       bk_folder="${SFOLDER}/tmp/"
@@ -149,13 +160,11 @@ wordpress_installer () {
 
       # Make a database Backup
       mysql_database_export "${db_tocopy}" "${bk_folder}${bk_file}"
-      mysql_database_export_result=$?
-      if [ "${mysql_database_export_result}" -eq 0 ]; then
+      mysql_database_export_result="$?"
+      if [[ ${mysql_database_export_result} -eq 0 ]]; then
 
         # Target database
         target_db="${project_name}_${project_state}"
-
-        log_event "info" "Trying to import database: ${target_db}" "true"
 
         # Importing dump file
         mysql_database_import "${target_db}" "${bk_folder}${bk_file}"
@@ -169,10 +178,17 @@ wordpress_installer () {
         wp_ask_url_search_and_replace "${project_dir}"
 
       else
-        log_event "error" "mysqldump message: $?" "true"
+        # Logging
+        display --indent 2 --text "- Exporting actual database" --result "FAIL" --color RED
+        display --indent 4 --text "mysqldump message: $?"
+        log_event "error" "mysqldump message: $?"
         return 1
 
       fi
+
+    else # Clean Install
+
+      wpcli_core_install "${folder_to_install}/${project_domain}"
 
     fi
 

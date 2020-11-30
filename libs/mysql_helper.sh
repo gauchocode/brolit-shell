@@ -337,15 +337,15 @@ mysql_database_import() {
 
     local import_status
 
-    log_event "info" "Importing dump file ${dump_file} into database: ${database}" "false"
+    log_event "info" "Importing dump file ${dump_file} into database: ${database}"
     display --indent 2 --text "- Importing backup into database: ${database}" --tcolor YELLOW
-    log_event "info" "Running: pv ${dump_file} | ${MYSQL} -f -u${MUSER} -p${MPASS} -f -D ${database}" "false"
+    log_event "info" "Running: pv ${dump_file} | ${MYSQL} -f -u${MUSER} -p${MPASS} -f -D ${database}"
 
     pv "${dump_file}" | ${MYSQL} -f -u"${MUSER}" -p"${MPASS}" -f -D "${database}" 2>&1
     import_status=$?
 
     if [ ${import_status} -eq 0 ]; then
-        log_event "success" "Database ${database} imported successfully" "false"
+        log_event "success" "Database ${database} imported successfully"
 
         #clear_last_line
         display --indent 2 --text "Database backup import" --result "DONE" --color GREEN
@@ -353,7 +353,7 @@ mysql_database_import() {
         return 0
 
     else
-        log_event "error" "Something went wrong importing database: ${database}. Import output: ${import_status}" "false"
+        log_event "error" "Something went wrong importing database: ${database}. Import output: ${import_status}"
 
         #clear_last_line
         display --indent 2 --text "Database backup import" --result "ERROR" --color RED
