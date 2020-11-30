@@ -27,9 +27,10 @@ phpmyadmin_installer () {
   project_domain=$(whiptail --title "Domain" --inputbox "Insert the domain for PhpMyAdmin. Example: sql.domain.com" 10 60 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
+
     log_event "info" "Setting project_domain=${project_domain}"
 
-    possible_root_domain=${project_domain#[[:alpha:]]*.}
+    possible_root_domain="$(get_root_domain "${project_domain}")"
     root_domain=$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")
 
   else
@@ -70,8 +71,8 @@ phpmyadmin_installer () {
   certbot_helper_installer_menu "${MAILA}" "${project_domain}"
 
   log_event "info" "phpMyAdmin installer finished"
-  log_break
   display --indent 2 --text "- Installing phpMyAdmin" --result "DONE" --color GREEN
+  log_break
 
 }
 
