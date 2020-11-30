@@ -35,7 +35,7 @@ wordpress_installer () {
   installation_types=("01)" "CLEAN INSTALL" "02)" "COPY FROM PROJECT")
 
   installation_type=$(whiptail --title "INSTALLATION TYPE" --menu "Choose an Installation Type" 20 78 10 "${installation_types[@]}" 3>&1 1>&2 2>&3)
-  exitstatus=$?
+  exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
 
     log_section "WordPress Installer"
@@ -43,6 +43,8 @@ wordpress_installer () {
     folder_to_install=$(ask_folder_to_install_sites "${SITES}")
 
     if [[ ${installation_type} == *"COPY"* ]]; then
+
+      log_subsection "Copy From Project"
 
       startdir=${folder_to_install}
       menutitle="Site Selection Menu"
@@ -78,13 +80,13 @@ wordpress_installer () {
         copy_project_files "${folder_to_install}/${copy_project}" "${project_dir}"
 
         # Logging
-        display --indent 2 --text "- Making a copy of the WordPress project" --result "DONE" --color GREEN
+        display --indent 6 --text "- Making a copy of the WordPress project" --result "DONE" --color GREEN
         log_event "success" "WordPress files copied"
 
       else
         # Logging
-        display --indent 2 --text "- Making a copy of the WordPress project" --result "FAIL" --color RED
-        display --indent 4 --text "Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..."
+        display --indent 6 --text "- Making a copy of the WordPress project" --result "FAIL" --color RED
+        display --indent 8 --text "Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..."
         log_event "error" "Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..."
 
         # Return
@@ -93,6 +95,8 @@ wordpress_installer () {
       fi
 
     else # Clean Install
+
+      log_subsection "Clean Install"
 
       project_domain="$(ask_project_domain)"
       possible_root_domain="$(get_root_domain "${project_domain}")"
@@ -111,13 +115,13 @@ wordpress_installer () {
         change_ownership "www-data" "www-data" "${folder_to_install}/${project_domain}"
         
         # Logging
-        #display --indent 2 --text "- Making a copy of the WordPress project" --result "DONE" --color GREEN
+        #display --indent 6 --text "- Making a copy of the WordPress project" --result "DONE" --color GREEN
 
       else
 
         # Logging
-        display --indent 2 --text "- Creating WordPress project" --result "FAIL" --color RED
-        display --indent 4 --text "Destination folder '${folder_to_install}/${project_domain}' already exist"
+        display --indent 6 --text "- Creating WordPress project" --result "FAIL" --color RED
+        display --indent 8 --text "Destination folder '${folder_to_install}/${project_domain}' already exist"
         log_event "error" "Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..."
 
         # Return
@@ -179,8 +183,8 @@ wordpress_installer () {
 
       else
         # Logging
-        display --indent 2 --text "- Exporting actual database" --result "FAIL" --color RED
-        display --indent 4 --text "mysqldump message: $?"
+        display --indent 6 --text "- Exporting actual database" --result "FAIL" --color RED
+        display --indent 8 --text "mysqldump message: $?"
         log_event "error" "mysqldump message: $?"
         return 1
 
@@ -217,7 +221,7 @@ wordpress_installer () {
       else
 
         log_event "info" "HTTPS support for ${project_domain} skipped"
-        display --indent 2 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
+        display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
       fi  
 
@@ -241,14 +245,14 @@ wordpress_installer () {
       else
 
         log_event "info" "HTTPS support for ${project_domain} skipped" "false"
-        display --indent 2 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
+        display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
       fi
       
     fi
 
     log_event "success" "WordPress installation for domain ${project_domain} finished" "false"
-    display --indent 2 --text "- WordPress installation for domain ${project_domain}" --result "DONE" --color GREEN
+    display --indent 6 --text "- WordPress installation for domain ${project_domain}" --result "DONE" --color GREEN
 
     telegram_send_message "${VPSNAME}: WordPress installation for domain ${project_domain} finished"
 
