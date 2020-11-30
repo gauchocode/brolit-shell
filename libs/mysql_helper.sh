@@ -375,7 +375,7 @@ mysql_database_export() {
 
     local dump_status
 
-    log_event "info" "Creating a database backup of: ${database}" "false"
+    log_event "info" "Creating a database backup of: ${database}"
     display --indent 2 --text "- Creating a backup of: ${database}"
 
     dump_output="$(${MYSQLDUMP} -u "${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}" 2>&1)"
@@ -384,7 +384,7 @@ mysql_database_export() {
         log_event "success" "Database ${database} exported successfully" "false"
         
         clear_last_line
-        display --indent 6 --text "- Database backup for ${database}" --result "DONE" --color GREEN
+        display --indent 6 --text "- Database backup for ${CYAN}${database}${ENDCOLOR}" --result "DONE" --color GREEN
 
         return 0
     
@@ -392,7 +392,7 @@ mysql_database_export() {
         log_event "error" "Something went wrong exporting database: ${database}. MySQL dump output: ${dump_status}" "false"
 
         clear_last_line
-        display --indent 6 --text "- Database backup for ${database}" --result "ERROR" --color RED
+        display --indent 6 --text "- Database backup for ${CYAN}${database}${ENDCOLOR}" --result "ERROR" --color RED
         display --indent 8 --text "MySQL dump output: ${dump_output}" --tcolor RED
 
         return 1
