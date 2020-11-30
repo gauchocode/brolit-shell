@@ -223,8 +223,7 @@ make_server_files_backup() {
       #BACKUPED_SCF_FL=${BACKUPED_SCF_LIST[$BK_SCF_INDEX]}
 
       # Calculate backup size
-      #BK_SCF_SIZE="$(ls -lah "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')"
-      BK_SCF_SIZE="$(find . -name "${bk_file}" -exec ls -lh {} \; | awk '{ print $5 }')"
+      BK_SCF_SIZE="$(find . -name "${bk_file}" -exec ls -l --human-readable --block-size=K {} \; | awk '{ print $5 }')"
       BK_SCF_SIZES[$BK_SCF_INDEX]=${BK_SCF_SIZE}
 
       display --indent 2 --text "- Testing compressed backup file" --result "DONE" --color GREEN
@@ -426,7 +425,7 @@ make_files_backup() {
 
     # Calculate backup size
     #BK_FL_SIZE="$(ls -la --human-readable "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')"
-    BK_FL_SIZE="$(find . -name "${bk_file}" -exec ls -lh {} \; |  awk '{ print $5 }')"
+    BK_FL_SIZE="$(find . -name "${bk_file}" -exec ls -l --human-readable --block-size=M {} \; |  awk '{ print $5 }')"
     BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=${BK_FL_SIZE}
 
     log_event "success" "Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}"
@@ -549,10 +548,10 @@ make_database_backup() {
       display --indent 2 --text "- Compressing database backup" --result "DONE" --color GREEN
 
       # Changing global
-      BACKUPED_DB_LIST[$BK_DB_INDEX]=${bk_file}
+      BACKUPED_DB_LIST[$BK_DB_INDEX]="${bk_file}"
 
       # Calculate backup size
-      BK_DB_SIZE="$(find . -name "${bk_file}" -exec ls -lh {} \; | awk '{ print $5 }')"
+      BK_DB_SIZE="$(find . -name "${bk_file}" -exec ls -l --human-readable --block-size=M {} \; | awk '{ print $5 }')"
       BK_DB_SIZES+=("${BK_DB_SIZE}")
 
       log_event "success" "Backup for ${database} created, final size: ${BK_DB_SIZE}"
@@ -597,7 +596,7 @@ make_database_backup() {
 
         display --indent 2 --text "- Uploading new database backup to dropbox" --result "FAIL" --color RED
 
-        log_event "ERROR" "Uploading new database backup to dropbox fail. Command executed: ${DROPBOX_UPLOADER} upload ${BAKWP}/${NOW}/${bk_file} ${DROPBOX_FOLDER}${DROPBOX_PATH}" "false"
+        log_event "ERROR" "Uploading new database backup to dropbox fail. Command executed: ${DROPBOX_UPLOADER} upload ${BAKWP}/${NOW}/${bk_file} ${DROPBOX_FOLDER}${DROPBOX_PATH}"
 
         return 1
 
@@ -623,8 +622,8 @@ make_project_backup() {
     # $3 = Path folder to Backup
     # $4 = Folder to Backup
 
-    local bk_type=$1     #configs,sites,databases
-    local bk_sup_type=$2 #config_name,site_domain,database_name
+    local bk_type=$1        #configs,sites,databases
+    local bk_sup_type=$2    #config_name,site_domain,database_name
     local bk_path=$3
     local directory_to_backup=$4
 
@@ -650,8 +649,7 @@ make_project_backup() {
         BACKUPED_FL=${BACKUPED_LIST[$BK_FILE_INDEX]}
 
         # Calculate backup size
-        #BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=$(ls -lah "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')
-        BK_FL_SIZES[$BK_FL_ARRAY_INDEX]="$(find . -name "${bk_file}" -exec ls -lh {} \; |  awk '{ print $5 }')"
+        BK_FL_SIZES[$BK_FL_ARRAY_INDEX]="$(find . -name "${bk_file}" -exec ls -l --human-readable --block-size=M {} \; |  awk '{ print $5 }')"
         BK_FL_SIZE=${BK_FL_SIZES[$BK_FL_ARRAY_INDEX]}
 
         log_event "success" "File backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}"
