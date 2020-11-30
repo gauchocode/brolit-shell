@@ -386,9 +386,9 @@ mail_filesbackup_section() {
                      
             BK_FL_SIZE="${BK_FL_SIZES[$count]}"
 
-            files_inc_line_p1="<div>"
+            files_inc_line_p1="<div class=\"backup-details-line\">"
             files_inc_line_p2="<span style=\"margin-right:5px;\">${backup_file}</span>"
-            files_inc_line_p3="<span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\"> ${BK_FL_SIZE}</span>"
+            files_inc_line_p3="<span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\">${BK_FL_SIZE}</span>"
             files_inc_line_p4="</div>"
             files_inc_line_p5="${files_inc}"
 
@@ -494,9 +494,9 @@ mail_configbackup_section() {
                      
             bk_scf_size="${BK_SCF_SIZES[$count]}"
 
-            files_inc_line_p1="<div>"
+            files_inc_line_p1="<div class=\"backup-details-line\">"
             files_inc_line_p2="<span style=\"margin-right:5px;\">${backup_line}</span>"
-            files_inc_line_p3="<span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\"> ${bk_scf_size}</span>"
+            files_inc_line_p3="<span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\">${bk_scf_size}</span>"
             files_inc_line_p4="</div>"
             files_inc_line_p5="${files_inc}"
 
@@ -588,9 +588,9 @@ mail_mysqlbackup_section() {
 
             bk_db_size=${BK_DB_SIZES[$count]}
 
-            files_inc_line_p1="<div>"
+            files_inc_line_p1="<div class=\"backup-details-line\">"
             files_inc_line_p2="<span style=\"margin-right:5px;\">${backup_file}</span>"
-            files_inc_line_p3="<span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\"> ${bk_db_size}</span>"
+            files_inc_line_p3="<span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\">${bk_db_size}</span>"
             files_inc_line_p4="</div>"
             files_inc_line_p5="${files_inc}"
 
