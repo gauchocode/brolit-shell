@@ -108,7 +108,7 @@ COUNT_TOTAL_SITES="$(find "${SITES}" -maxdepth 1 -type d -printf '.' | wc -c)"
 COUNT_TOTAL_SITES="$((COUNT_TOTAL_SITES - 1))"
 
 log_event "info" "Found ${COUNT_TOTAL_SITES} directories"
-display --indent 2 --text "- Directories found" --result "${COUNT_TOTAL_SITES}" --color YELLOW
+display --indent 6 --text "- Directories found" --result "${COUNT_TOTAL_SITES}" --color WHITE
 
 # FILES BACKUP GLOBALS
 declare -i BK_FILE_INDEX=0
