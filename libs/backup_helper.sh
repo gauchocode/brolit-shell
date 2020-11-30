@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.6
+# Version: 3.0.7
 #############################################################################
 
 is_laravel_project() {
@@ -548,14 +548,12 @@ make_database_backup() {
       clear_last_line
       display --indent 2 --text "- Compressing database backup" --result "DONE" --color GREEN
 
+      # Changing global
       BACKUPED_DB_LIST[$BK_DB_INDEX]=${bk_file}
 
       # Calculate backup size
-      #BK_DB_SIZES[$BK_DB_INDEX]="$(ls -lah "${bk_file}" | awk '{ print $5}')"
-      #log_event "info" "Running: find . -name ${bk_file} -exec ls -lh {} \; | awk '{ print $ 5 }'"
       BK_DB_SIZE="$(find . -name "${bk_file}" -exec ls -lh {} \; | awk '{ print $5 }')"
-      #BK_DB_SIZES[$BK_DB_INDEX]=$BK_DB_SIZE
-      BK_DB_SIZES+=($BK_DB_SIZE)
+      BK_DB_SIZES+=("${BK_DB_SIZE}")
 
       log_event "success" "Backup for ${database} created, final size: ${BK_DB_SIZE}"
       display --indent 4 --text "Backup final size: ${BK_DB_SIZE}"

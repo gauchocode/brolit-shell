@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.6
+# Version: 3.0.7
 ################################################################################
 
 alias userlist="cut -d: -f1 /etc/passwd"

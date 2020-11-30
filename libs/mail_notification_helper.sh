@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.6
+# Version: 3.0.7
 ################################################################################
 
 send_mail_notification() {
@@ -253,6 +253,7 @@ mail_cert_section() {
 
                 log_event "info" "Getting certificate info for: ${domain}" "false"
 
+                # Change global
                 BK_FL_ARRAY_INDEX=$((BK_FL_ARRAY_INDEX + 1))
 
                 email_cert_new_line="<div style=\"float:left;width:100%\">"

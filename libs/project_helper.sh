@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.6
+# Version: 3.0.7
 ################################################################################
 #
 # TODO: check when add www.DOMAIN.com and then select other stage != prod
@@ -74,10 +74,6 @@ project_install() {
   database_name="${db_project_name}_${project_state}" 
   database_user="${db_project_name}_user"
   database_user_passw=$(openssl rand -hex 12)
-
-  #log_event "info" "******************************************************************************************" "true"
-  #log_event "info" "Creating database ${database_name}, and user ${database_user} with pass ${database_user_passw}" "true"
-  #log_event "info" "******************************************************************************************" "true"
 
   mysql_database_create "${database_name}"
   mysql_user_create "${database_user}" "${database_user_passw}"

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.6
+# Version: 3.0.7
 ################################################################################
 
 #
@@ -13,7 +13,7 @@
 #
 
 SCRIPT_N="LEMP UTILS SCRIPT"
-SCRIPT_V="3.0.6"
+SCRIPT_V="3.0.7"
 
 # Hostname
 VPSNAME="$HOSTNAME"
@@ -128,7 +128,7 @@ ITALIC='\x1b[3m'
 UNDERLINED='\x1b[4m'
 INVERTED='\x1b[7m'
 
-# Text Colours
+# Foreground/Text Colours
 BLACK='\E[30;40m'
 RED='\E[31;40m'
 GREEN='\E[32;40m'
@@ -139,8 +139,10 @@ MAGENTA='\E[35;40m'
 CYAN='\E[36;40m'
 WHITE='\E[37;40m'
 ENDCOLOR='\033[0m'
+F_DEFAULT='\E[39m'
 
 # Background Colours
+B_DEFAULT='\E[39m'
 B_BLACK='\E[40m'
 B_RED='\E[41m'
 B_GREEN='\E[42m'
@@ -151,6 +153,7 @@ B_MAGENTA='\E[45m'
 B_CYAN='\E[46m'
 B_WHITE='\E[47m'
 B_ENDCOLOR='\e[0m'
+B_DEFAULT='\E[49m'
 
 #
 #################################################################################
@@ -681,7 +684,7 @@ clear_screen() {
 clear_last_line() {
 
   printf "\033[1A" >&2
-  echo -e "${WHITE}                                                                                               ${ENDCOLOR}" >&2
+  echo -e "${F_DEFAULT}                                                                                               ${ENDCOLOR}" >&2
   printf "\033[1A" >&2
   #printf "\033[1A" >&2
 
