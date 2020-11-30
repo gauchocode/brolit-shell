@@ -21,14 +21,14 @@ project_install() {
   
   project_domain=$(ask_project_domain)
 
-  possible_root_domain=${project_domain#[[:alpha:]]*.}
+  possible_root_domain="$(get_root_domain "${project_domain}")"
   root_domain=$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")
 
   project_name=$(ask_project_name "${project_domain}")
 
   project_state=$(ask_project_state "")
 
-  case $project_type in
+  case ${project_type} in
 
     wordpress)
       log_event "error" "WordPress installer should be implemented soon, aborting ..." "true"

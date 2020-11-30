@@ -125,7 +125,7 @@ fi
 # Project details
 project_domain=$(ask_project_domain)
 
-possible_root_domain=${PROJECT_DOMAIN#[[:alpha:]]*.}
+possible_root_domain="$(get_root_domain "${project_domain}")"
 
 root_domain=$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")
 
