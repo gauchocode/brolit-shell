@@ -219,12 +219,14 @@ make_server_files_backup() {
       log_event "success" "Backup ${bk_file} created"
       
       #BACKUPED_SCF_LIST[$BK_SCF_INDEX]="$(string_remove_special_chars "${bk_file}")"
-      BACKUPED_SCF_LIST[$BK_SCF_INDEX]=${bk_file}
+      #BACKUPED_SCF_LIST[$BK_SCF_INDEX]="${bk_file}"
+      BACKUPED_SCF_LIST+=("${bk_file}")
       #BACKUPED_SCF_FL=${BACKUPED_SCF_LIST[$BK_SCF_INDEX]}
 
       # Calculate backup size
       BK_SCF_SIZE="$(find . -name "${bk_file}" -exec ls -l --human-readable --block-size=K {} \; | awk '{ print $5 }')"
       BK_SCF_SIZES[$BK_SCF_INDEX]=${BK_SCF_SIZE}
+      BK_SCF_SIZES+=("${BK_SCF_SIZE}")
 
       display --indent 2 --text "- Testing compressed backup file" --result "DONE" --color GREEN
 
