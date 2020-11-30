@@ -533,7 +533,7 @@ make_database_backup() {
 
     #cd "${BAKWP}/${NOW}"
     log_event "info" "Making a tar.bz2 file of ${db_file} ..."
-    display --indent 2 --text "- Compressing database backup"
+    display --indent 6 --text "- Compressing database backup"
 
     (${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s "$(du -sb "${BAKWP}/${NOW}/${db_file}" | awk '{print $1}')" | lbzip2 >"${BAKWP}/${NOW}/${bk_file}")
 
@@ -547,7 +547,7 @@ make_database_backup() {
 
       clear_last_line
       clear_last_line
-      display --indent 2 --text "- Compressing database backup" --result "DONE" --color GREEN
+      display --indent 6 --text "- Compressing database backup" --result "DONE" --color GREEN
 
       # Changing global
       BACKUPED_DB_LIST[$BK_DB_INDEX]="${bk_file}"
@@ -557,7 +557,7 @@ make_database_backup() {
       BK_DB_SIZES+=("${BK_DB_SIZE}")
 
       log_event "success" "Backup for ${database} created, final size: ${BK_DB_SIZE}"
-      display --indent 4 --text "Backup final size: ${BK_DB_SIZE}"
+      display --indent 8 --text "Backup final size: ${BK_DB_SIZE}"
 
       log_event "info" "Creating folders in Dropbox ..."
 
@@ -570,7 +570,7 @@ make_database_backup() {
       # New folder with $database (project DB)
       output="$("${DROPBOX_UPLOADER}" -q mkdir "/${VPSNAME}/${bk_type}/${database}" 2>&1)"
 
-      display --indent 2 --text "- Creating dropbox directories" --result "DONE" --color GREEN
+      display --indent 6 --text "- Creating dropbox directories" --result "DONE" --color GREEN
 
       DROPBOX_PATH="/${VPSNAME}/${bk_type}/${database}"
 
@@ -582,21 +582,21 @@ make_database_backup() {
 
       if [[ ${dropbox_result} -eq 0 ]]; then
       
-        display --indent 2 --text "- Uploading new database backup to dropbox" --result "DONE" --color GREEN
+        display --indent 6 --text "- Uploading new database backup to dropbox" --result "DONE" --color GREEN
 
         # Delete old backups
         log_event "info" "Deleting old database backup ${old_bk_file} from dropbox" "false"
         output="$(${DROPBOX_UPLOADER} -q remove "${DROPBOX_FOLDER}${DROPBOX_PATH}/${old_bk_file}" 2>&1)"
-        display --indent 2 --text "- Delete old database backup" --result "DONE" --color GREEN
+        display --indent 6 --text "- Delete old database backup" --result "DONE" --color GREEN
 
         log_event "info" "Deleting old database backup ${old_bk_file} from server" "false"
         rm "${BAKWP}/${NOW}/${db_file}"
         rm "${BAKWP}/${NOW}/${bk_file}"
-        display --indent 2 --text "- Delete old database backup from server" --result "DONE" --color GREEN
+        display --indent 6 --text "- Delete old database backup from server" --result "DONE" --color GREEN
 
       else
 
-        display --indent 2 --text "- Uploading new database backup to dropbox" --result "FAIL" --color RED
+        display --indent 6 --text "- Uploading new database backup to dropbox" --result "FAIL" --color RED
 
         log_event "ERROR" "Uploading new database backup to dropbox fail. Command executed: ${DROPBOX_UPLOADER} upload ${BAKWP}/${NOW}/${bk_file} ${DROPBOX_FOLDER}${DROPBOX_PATH}"
 
