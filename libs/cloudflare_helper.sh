@@ -56,7 +56,7 @@ cloudflare_domain_exists () {
         message="Error trying to get Cloudflare zone. Results:\n"
         log_event "error" "${message}"
         display --indent 2 --text "- Getting Zone ID for ${root_domain}" --result "FAIL" --color RED
-        display --indent 4 --text "Error: ${message}"
+        display --indent 4 --text "${message}"
         # Return
         return 1
 
