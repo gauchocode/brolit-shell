@@ -20,14 +20,12 @@ self_update() {
 
     [ -n "$(git diff --name-only "origin/${BRANCH}" "${SCRIPTFILE}")" ] && {
         echo "Found a new version of LEMP Script Utils, updating ..."
-        #git pull --force
+
         git checkout "${BRANCH}"
         git reset --hard origin/master
         git pull --ff-only --force
-
-        #exec "${SCRIPTNAME}" "${ARGS[@]}"
         
-        chmod +x runner.sh updater.sh "${SCRIPTPATH}"/tests/tests.sh
+        chmod +x runner.sh updater.sh
 
         exit 1
     }
