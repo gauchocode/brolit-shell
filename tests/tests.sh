@@ -193,7 +193,11 @@ test_cloudflare_funtions() {
     log_subsection "Testing Cloudflare Functions"
 
     cloudflare_domain_exists "pacientesenred.com.ar"
+    log_break "true"
+    cloudflare_domain_exists "www.pacientesenred.com.ar"
+    log_break "true"
     cloudflare_domain_exists "machupichu.com"
+    log_break "true"
 
 }
 
