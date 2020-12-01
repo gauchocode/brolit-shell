@@ -27,7 +27,7 @@ self_update() {
 
         #exec "${SCRIPTNAME}" "${ARGS[@]}"
         
-        chmod +x runner.sh updater.sh test/test.sh
+        chmod +x runner.sh updater.sh test/tests.sh
 
         exit 1
     }
