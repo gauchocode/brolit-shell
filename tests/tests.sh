@@ -51,7 +51,7 @@ test_mail_cert_section() {
     send_mail_notification "${email_subject}" "${email_content}"
 
     clear_last_line
-    display --indent 2 --text "- Running test_mail_cert_section" --result "DONE" --color GREEN
+    display --indent 2 --text "- Running test_mail_cert_section" --result "DONE" --color WHITE
 
 }
 
@@ -74,7 +74,7 @@ test_mail_package_section() {
     send_mail_notification "${email_subject}" "${email_content}"
 
     clear_last_line
-    display --indent 2 --text "- Running test_mail_package_section" --result "DONE" --color GREEN
+    display --indent 2 --text "- Running test_mail_package_section" --result "DONE" --color WHITE
 
 }
 
@@ -112,7 +112,7 @@ test_mysql_user_create() {
     mysql_user_create "${db_user}" "${db_pass}"
     user_create="$?"
     if [[ ${user_create} -eq 0 ]]; then
-        display --indent 6 --text "- mysql_user_create" --result "PASS" --color GREEN
+        display --indent 6 --text "- mysql_user_create" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- mysql_user_create" --result "FAIL" --color RED
     fi
@@ -133,7 +133,7 @@ test_mysql_user_exists() {
     mysql_user_exists "${db_user}"
     user_db_exists="$?"
     if [[ ${user_db_exists} -eq 0 ]]; then
-        display --indent 6 --text "- mysql_user_exists" --result "PASS" --color GREEN
+        display --indent 6 --text "- mysql_user_exists" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- mysql_user_exists" --result "FAIL" --color RED
     fi
@@ -154,7 +154,7 @@ test_mysql_user_delete() {
     mysql_user_delete "${db_user}"
     user_delete="$?"
     if [[ ${user_delete} -eq 0 ]]; then
-        display --indent 6 --text "- test_mysql_user_delete" --result "PASS" --color GREEN
+        display --indent 6 --text "- test_mysql_user_delete" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- test_mysql_user_delete" --result "FAIL" --color RED
     fi
@@ -174,7 +174,7 @@ test_mysql_database_create() {
     mysql_database_create "${mysql_db_test}"
     database_create="$?"
     if [[ ${database_create} -eq 0 ]]; then 
-        display --indent 6 --text "- test_mysql_database_create" --result "PASS" --color GREEN
+        display --indent 6 --text "- test_mysql_database_create" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- test_mysql_database_create" --result "FAIL" --color RED
     fi
@@ -194,7 +194,7 @@ test_mysql_database_exists() {
     mysql_database_exists "${mysql_db_test}"
     database_exists=$?
     if [[ ${database_exists} -eq 0 ]]; then 
-        display --indent 6 --text "- test_mysql_database_exists" --result "PASS" --color GREEN
+        display --indent 6 --text "- test_mysql_database_exists" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- test_mysql_database_exists" --result "FAIL" --color RED
     fi
@@ -214,7 +214,7 @@ test_mysql_database_drop() {
     mysql_database_drop "${mysql_db_test}"
     database_drop="$?"
     if [[ ${database_drop} -eq 0 ]]; then 
-        display --indent 6 --text "- test_mysql_database_drop" --result "PASS" --color GREEN
+        display --indent 6 --text "- test_mysql_database_drop" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- test_mysql_database_drop" --result "FAIL" --color RED
     fi
@@ -229,17 +229,17 @@ test_display_functions() {
 
     log_subsection "Testing display 1"
 
-    display --indent 2 --text "- Testing message DONE" --result "DONE" --color GREEN
+    display --indent 2 --text "- Testing message DONE" --result "DONE" --color WHITE
     display --indent 2 --text "- Testing message WARNING" --result "WARNING" --color YELLOW
     display --indent 2 --text "- Testing message ERROR" --result "ERROR" --color RED
     display --indent 4 --text "Testing output ERROR" --tcolor RED
 
     log_subsection "Testing display 2"
 
-    display --indent 2 --text "- Testing message with color" --result "DONE" --color GREEN
-    display --indent 4 --text "Testing output DONE" --tcolor GREEN --tstyle CURSIVE
-    display --indent 2 --text "- Testing message with color" --result "DONE" --color GREEN
-    display --indent 4 --text "Testing output GREEN in ITALIC" --tcolor GREEN --tstyle ITALIC
+    display --indent 2 --text "- Testing message with color" --result "DONE" --color WHITE
+    display --indent 4 --text "Testing output DONE" --tcolor WHITE --tstyle CURSIVE
+    display --indent 2 --text "- Testing message with color" --result "DONE" --color WHITE
+    display --indent 4 --text "Testing output WHITE in ITALIC" --tcolor WHITE --tstyle ITALIC
     display --indent 2 --text "- Testing message with color" --result "WARNING" --color YELLOW
     display --indent 4 --text "Testing output WARNING" --tcolor YELLOW
 
@@ -286,27 +286,27 @@ test_common_funtions() {
 test_cloudflare_funtions() {
 
     test_cloudflare_domain_exists
-    #test_cloudflare_change_a_record
+    test_cloudflare_change_a_record
 
 }
 
 test_cloudflare_domain_exists() {
 
-    log_subsection "Testing Cloudflare Functions"
+    log_subsection "Test: test_cloudflare_domain_exists"
 
     cloudflare_domain_exists "pacientesenred.com.ar"
     cf_result="$?"
     if [[ ${cf_result} -eq 0 ]]; then 
-        display --indent 6 --text "- cloudflare_domain_exists" --result "PASS" --color GREEN
+        display --indent 6 --text "- cloudflare_domain_exists" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- cloudflare_domain_exists" --result "FAIL" --color RED
     fi
     log_break "true"
-    
+
     cloudflare_domain_exists "www.pacientesenred.com.ar"
     cf_result="$?"
-    if [[ ${cf_result} -eq 0 ]]; then 
-        display --indent 6 --text "- cloudflare_domain_exists" --result "PASS" --color GREEN
+    if [[ ${cf_result} -eq 1 ]]; then 
+        display --indent 6 --text "- cloudflare_domain_exists" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- cloudflare_domain_exists" --result "FAIL" --color RED
     fi
@@ -314,8 +314,8 @@ test_cloudflare_domain_exists() {
 
     cloudflare_domain_exists "machupichu.com"
     cf_result="$?"
-    if [[ ${cf_result} -eq 0 ]]; then 
-        display --indent 6 --text "- cloudflare_domain_exists" --result "PASS" --color GREEN
+    if [[ ${cf_result} -eq 1 ]]; then 
+        display --indent 6 --text "- cloudflare_domain_exists" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- cloudflare_domain_exists" --result "FAIL" --color RED
     fi
@@ -325,7 +325,31 @@ test_cloudflare_domain_exists() {
 
 test_cloudflare_change_a_record() {
 
-    cloudflare_change_a_record "pacientesenred.com.ar" "test.pacientesenred.com.ar" "0"
+    log_subsection "Test: test_cloudflare_change_a_record"
+
+    cloudflare_change_a_record "broobe.hosting" "bash.broobe.hosting" "0"
+    cf_result="$?"
+    if [[ ${cf_result} -eq 0 ]]; then 
+        display --indent 6 --text "- test_cloudflare_change_a_record" --result "PASS" --color WHITE
+    else
+        display --indent 6 --text "- test_cloudflare_change_a_record" --result "FAIL" --color RED
+    fi
+    log_break "true"
+
+}
+
+test_cloudflare_delete_a_record() {
+
+    log_subsection "Test: test_cloudflare_delete_a_record"
+
+    cloudflare_delete_a_record "broobe.hosting" "bash.broobe.hosting" "0"
+    cf_result="$?"
+    if [[ ${cf_result} -eq 0 ]]; then 
+        display --indent 6 --text "- test_cloudflare_delete_a_record" --result "PASS" --color WHITE
+    else
+        display --indent 6 --text "- test_cloudflare_delete_a_record" --result "FAIL" --color RED
+    fi
+    log_break "true"
 
 }
 
@@ -333,7 +357,7 @@ test_cloudflare_change_a_record() {
 # MAIN
 ################################################################################
 
-log_section "Running Tests"
+log_section "Running Tests Suite"
 
 test_display_functions
 
