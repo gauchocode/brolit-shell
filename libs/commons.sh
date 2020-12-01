@@ -1512,22 +1512,23 @@ get_domain_extension() {
 
   done
 
-  display --indent 2 --text "- Extracting domain extension from ${domain}" --result DONE --color GREEN
+  display --indent 2 --text "- Extracting domain extension from ${domain}"
 
   if  grep --word-regexp --quiet ".${domain_ext}" "${SFOLDER}/config/domain_extension-list" ; then
 
-    display --indent 4 --text "Working with domain: ${domain}"
-
     domain_ext=.${domain_ext}
-    log_event "info" "domain_ext: ${domain_ext}"
+
+    # Logging
+    display --indent 2 --text "- Extracting domain extension from ${domain}" --result DONE --color GREEN
     display --indent 4 --text "Domain extension: ${domain_ext}"
+    log_event "info" "domain_ext: ${domain_ext}"
 
     # Return
     echo "${domain_ext}"
 
   else
 
-    display --indent 2 --text "- Extracting domain extension" --result FAIL --color RED
+    display --indent 2 --text "- Extracting domain extension from ${domain}" --result FAIL --color RED
 
     return 1
 
@@ -1549,7 +1550,7 @@ extract_domain_extension() {
   if [[ $domain_extension_output -eq 0 ]]; then
 
     domain_no_ext=${domain%"$domain_extension"}
-    
+
     log_event "info" "domain_no_ext: ${domain_no_ext}"
     display --indent 4 --text "Domain without extension: ${domain_no_ext}"
 
