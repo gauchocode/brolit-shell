@@ -86,7 +86,9 @@ test_mysql_helper() {
     test_mysql_user_create
     test_mysql_user_exists
     test_mysql_user_delete
-    #test_mysql_database_exists
+    test_mysql_database_create
+    test_mysql_database_exists
+    test_mysql_database_drop
 
 }
 
@@ -279,15 +281,44 @@ test_common_funtions() {
 
 }
 
+####################### TEST FOR cloudflare_helper #######################
+
 test_cloudflare_funtions() {
+
+    test_cloudflare_domain_exists
+    #test_cloudflare_change_a_record
+
+}
+
+test_cloudflare_domain_exists() {
 
     log_subsection "Testing Cloudflare Functions"
 
     cloudflare_domain_exists "pacientesenred.com.ar"
+    cf_result="$?"
+    if [[ ${cf_result} -eq 0 ]]; then 
+        display --indent 6 --text "- cloudflare_domain_exists" --result "PASS" --color GREEN
+    else
+        display --indent 6 --text "- cloudflare_domain_exists" --result "FAIL" --color RED
+    fi
     log_break "true"
+    
     cloudflare_domain_exists "www.pacientesenred.com.ar"
+    cf_result="$?"
+    if [[ ${cf_result} -eq 0 ]]; then 
+        display --indent 6 --text "- cloudflare_domain_exists" --result "PASS" --color GREEN
+    else
+        display --indent 6 --text "- cloudflare_domain_exists" --result "FAIL" --color RED
+    fi
     log_break "true"
+
     cloudflare_domain_exists "machupichu.com"
+    cf_result="$?"
+    if [[ ${cf_result} -eq 0 ]]; then 
+        display --indent 6 --text "- cloudflare_domain_exists" --result "PASS" --color GREEN
+    else
+        display --indent 6 --text "- cloudflare_domain_exists" --result "FAIL" --color RED
+    fi
     log_break "true"
 
 }
