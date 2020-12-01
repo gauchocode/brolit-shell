@@ -162,6 +162,39 @@ test_display_functions() {
 
 }
 
+test_common_funtions() {
+
+    log_subsection "Testing Domain Functions"
+
+    result="$(extract_domain_extension "broobe.com")"
+
+    result="$(extract_domain_extension "broobe.com.ar")"
+
+    result="$(extract_domain_extension "broobe.ar")"
+
+    result="$(extract_domain_extension "test.broobe.com.ar")"
+
+    result="$(extract_domain_extension "old.test.broobe.com.ar")"
+
+    result="$(extract_domain_extension "old.test.broobe.ar")"
+
+    result="$(extract_domain_extension "old.dev.test.broobe.com")"
+
+    result="$(extract_domain_extension "old.dev.test.broobe")"
+
+    result="$(get_root_domain "old.dev.test.broobe.com")"
+
+    result="$(get_root_domain "old.dev.test.broobe.com.ar")"
+
+}
+
+test_cloudflare_funtions() {
+
+    cloudflare_domain_exists "pacientesenred.com.ar"
+    cloudflare_domain_exists "machupichu.com"
+
+}
+
 test_cloudflare_change_a_record() {
 
     cloudflare_change_a_record "pacientesenred.com.ar" "test.pacientesenred.com.ar" "0"
@@ -176,25 +209,9 @@ log_section "Running Tests"
 
 test_display_functions
 
-result="$(extract_domain_extension "broobe.com")"
+test_common_funtions
 
-result="$(extract_domain_extension "broobe.com.ar")"
-
-result="$(extract_domain_extension "broobe.ar")"
-
-result="$(extract_domain_extension "test.broobe.com.ar")"
-
-result="$(extract_domain_extension "old.test.broobe.com.ar")"
-
-result="$(extract_domain_extension "old.test.broobe.ar")"
-
-result="$(extract_domain_extension "old.dev.test.broobe.com")"
-
-result="$(extract_domain_extension "old.dev.test.broobe")"
-
-result="$(get_root_domain "old.dev.test.broobe.com")"
-
-result="$(get_root_domain "old.dev.test.broobe.com.ar")"
+test_cloudflare_funtions
 
 #log_subsection "Testing mail functions"
 

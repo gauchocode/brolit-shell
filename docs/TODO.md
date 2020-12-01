@@ -22,6 +22,7 @@
 
 ### Need more testing
 
+- [ ] It Utils: Alias support for BASH and ZSH: https://opensource.com/article/19/7/bash-aliases
 - [ ] WordPress: Install fails when set a project name like: xyz_sub_domain.
 - [ ] Backups: When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?).
 - [ ] Installers: On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages.
@@ -69,7 +70,6 @@
 
 - [ ] Core: dependencies and configuration checker.
       If the script is runned on a system that was not configured by the script, it could fail.
-- [ ] Alias support for BASH and ZSH: https://opensource.com/article/19/7/bash-aliases
 - [ ] Utils: Support for phpservermon: https://github.com/phpservermon/phpservermon
 - [ ] Nginx: Option to copy or generate a new nginx server configuration.
 - [ ] Nginx: Globals configs support.
