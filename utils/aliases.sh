@@ -13,6 +13,7 @@ alias ports='netstat -tulanp'
 alias grep='grep --color=auto'
 
 alias lt='ls --human-readable --size -1 -S --classify'
+alias lss='du -h --max-depth=1'
 
 alias cpv='rsync -ah --info=progress2'
 
