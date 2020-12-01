@@ -190,6 +190,8 @@ test_common_funtions() {
 
 test_cloudflare_funtions() {
 
+    log_subsection "Testing Cloudflare Functions"
+
     cloudflare_domain_exists "pacientesenred.com.ar"
     cloudflare_domain_exists "machupichu.com"
 
