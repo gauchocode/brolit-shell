@@ -319,6 +319,7 @@ install_script_aliases () {
   if [[ ! -f ~/.bash_aliases ]]; then
     cp "${SFOLDER}/utils/aliases.sh" ~/.bash_aliases
     display --indent 2 --text "- Installing script aliases" --result "DONE" --color GREEN
+    display --indent 4 --text "Please now run: source ~/.bash_aliases" --tcolor CYAN
 
   else
 
