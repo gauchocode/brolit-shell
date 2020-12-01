@@ -152,7 +152,7 @@ certbot_helper_installer_menu() {
 
       # INSTALL_WITH_NGINX
       
-      log_section "Certificate Installation with Certbot Nginx"
+      log_subsection "Certificate Installation with Certbot Nginx"
 
       certbot_certificate_install "${email}" "${domains}"
 
@@ -161,7 +161,7 @@ certbot_helper_installer_menu() {
 
       # INSTALL_WITH_CLOUDFLARE
       
-      log_section "Certificate Installation with Certbot Cloudflare"
+      log_subsection "Certificate Installation with Certbot Cloudflare"
 
       certbot_certonly_cloudflare "${email}" "${domains}"
 
