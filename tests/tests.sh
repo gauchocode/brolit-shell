@@ -108,6 +108,14 @@ test_mysql_user_create() {
     db_pass="$(openssl rand -hex 12)"
 
     mysql_user_create "${db_user}" "${db_pass}"
+    user_create="$?"
+    if [[ ${user_create} -eq 0 ]]; then
+        display --indent 6 --text "- mysql_user_create" --result "PASS" --color GREEN
+    else
+        display --indent 6 --text "- mysql_user_create" --result "FAIL" --color RED
+    fi
+
+    log_break "true"
 
 }
 
@@ -123,11 +131,12 @@ test_mysql_user_exists() {
     mysql_user_exists "${db_user}"
     user_db_exists="$?"
     if [[ ${user_db_exists} -eq 0 ]]; then
-        display --indent 2 --text "- mysql_user_exists" --result "PASS" --color GREEN
+        display --indent 6 --text "- mysql_user_exists" --result "PASS" --color GREEN
     else
-        display --indent 2 --text "- mysql_user_exists" --result "FAIL" --color RED
-
+        display --indent 6 --text "- mysql_user_exists" --result "FAIL" --color RED
     fi
+
+    log_break "true"
 
 }
 
@@ -143,10 +152,32 @@ test_mysql_user_delete() {
     mysql_user_delete "${db_user}"
     user_delete="$?"
     if [[ ${user_delete} -eq 0 ]]; then
-        display --indent 2 --text "- test_mysql_user_delete" --result "PASS" --color GREEN
+        display --indent 6 --text "- test_mysql_user_delete" --result "PASS" --color GREEN
     else
-        display --indent 2 --text "- test_mysql_user_delete" --result "FAIL" --color RED
+        display --indent 6 --text "- test_mysql_user_delete" --result "FAIL" --color RED
     fi
+
+    log_break "true"
+
+}
+
+test_mysql_database_create() {
+
+    local mysql_db_test
+
+    log_subsection "Test: test_mysql_database_create"
+
+    mysql_db_test="test_db"
+    
+    mysql_database_create "${mysql_db_test}"
+    database_create="$?"
+    if [[ ${database_create} -eq 0 ]]; then 
+        display --indent 6 --text "- test_mysql_database_create" --result "PASS" --color GREEN
+    else
+        display --indent 6 --text "- test_mysql_database_create" --result "FAIL" --color RED
+    fi
+
+    log_break "true"
 
 }
 
@@ -156,18 +187,37 @@ test_mysql_database_exists() {
 
     log_subsection "Test: test_mysql_database_exists"
 
-    mysql_db_test="multiplacas_test2"
+    mysql_db_test="test_db"
     
     mysql_database_exists "${mysql_db_test}"
-
-    db_exists=$?
-    if [[ ${db_exists} -eq 1 ]]; then 
-        log_event "warning" "MySQL DB ${mysql_db_test} doesn't exists"
-
+    database_exists=$?
+    if [[ ${database_exists} -eq 0 ]]; then 
+        display --indent 6 --text "- test_mysql_database_exists" --result "PASS" --color GREEN
     else
-        log_event "warning" "MySQL DB ${mysql_db_test} already exists"
-
+        display --indent 6 --text "- test_mysql_database_exists" --result "FAIL" --color RED
     fi
+
+    log_break "true"
+
+}
+
+test_mysql_database_drop() {
+
+    local mysql_db_test
+
+    log_subsection "Test: test_mysql_database_drop"
+
+    mysql_db_test="test_db"
+    
+    mysql_database_drop "${mysql_db_test}"
+    database_drop="$?"
+    if [[ ${database_drop} -eq 0 ]]; then 
+        display --indent 6 --text "- test_mysql_database_drop" --result "PASS" --color GREEN
+    else
+        display --indent 6 --text "- test_mysql_database_drop" --result "FAIL" --color RED
+    fi
+
+    log_break "true"
 
 }
 
