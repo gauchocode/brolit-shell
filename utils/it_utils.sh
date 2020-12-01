@@ -15,7 +15,7 @@ it_utils_menu() {
   local chosen_it_util_options 
   local new_ssh_port
 
-  it_util_options=("01)" "SECURITY TOOLS" "02)" "SERVER OPTIMIZATIONS" "03)" "CHANGE SSH PORT" "04)" "CHANGE HOSTNAME" "05)" "ADD FLOATING IP" "06)" "RESET MYSQL ROOT PSW" "07)" "BLACKLIST CHECKER" "08)" "BENCHMARK SERVER")
+  it_util_options=("01)" "SECURITY TOOLS" "02)" "SERVER OPTIMIZATIONS" "03)" "CHANGE SSH PORT" "04)" "CHANGE HOSTNAME" "05)" "ADD FLOATING IP" "06)" "RESET MYSQL ROOT PSW" "07)" "BLACKLIST CHECKER" "08)" "BENCHMARK SERVER" "09)" "INSTALL ALIASES")
   chosen_it_util_options=$(whiptail --title "IT UTILS" --menu "Choose a script to Run" 20 78 10 "${it_util_options[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -23,16 +23,16 @@ it_utils_menu() {
 
     log_section "IT Utils"
 
-    # SECURITY_TOOLS
+    # SECURITY TOOLS
     if [[ ${chosen_it_util_options} == *"01"* ]]; then
       menu_security_utils
     fi
-    # SERVER_OPTIMIZATIONS
+    # SERVER OPTIMIZATIONS
     if [[ ${chosen_it_util_options} == *"02"* ]]; then
       # shellcheck source=${SFOLDER}/utils/server_and_image_optimizations.sh
       source "${SFOLDER}/utils/server_and_image_optimizations.sh"
     fi
-    # CHANGE_SSH_PORT
+    # CHANGE SSH PORT
     if [[ ${chosen_it_util_options} == *"03"* ]]; then
     
       new_ssh_port=$(whiptail --title "CHANGE SSH PORT" --inputbox "Insert the new SSH port:" 10 60 3>&1 1>&2 2>&3)
@@ -41,7 +41,7 @@ it_utils_menu() {
         change_current_ssh_port "${new_ssh_port}"
       fi
     fi
-    # CHANGE_HOSTNAME
+    # CHANGE HOSTNAME
     if [[ ${chosen_it_util_options} == *"04"* ]]; then
     
       new_server_hostname=$(whiptail --title "CHANGE SERVER HOSTNAME" --inputbox "Insert the new hostname:" 10 60 3>&1 1>&2 2>&3)
@@ -50,7 +50,7 @@ it_utils_menu() {
         change_server_hostname "${new_server_hostname}"
       fi
     fi
-    # ADD_FLOATING_IP
+    # ADD FLOATING IP
     if [[ ${chosen_it_util_options} == *"05"* ]]; then
     
       floating_IP=$(whiptail --title "ADD FLOATING IP" --inputbox "Insert the floating IP:" 10 60 3>&1 1>&2 2>&3)
@@ -59,7 +59,7 @@ it_utils_menu() {
         add_floating_IP "${floating_IP}"
       fi
     fi
-    # RESET_MYSQL_ROOT_PSW
+    # RESET MYSQL ROOT_PSW
     if [[ ${chosen_it_util_options} == *"06"* ]]; then
     
       db_root_psw=$(whiptail --title "MYSQL ROOT PASSWORD" --inputbox "Insert the new root password for MySQL:" 10 60 3>&1 1>&2 2>&3)
@@ -70,7 +70,7 @@ it_utils_menu() {
         mysql_root_psw_change "${db_root_psw}"
       fi
     fi
-    # BLACKLIST_CHECKER
+    # BLACKLIST CHECKER
     if [[ ${chosen_it_util_options} == *"07"* ]]; then
     
       IP_TO_TEST=$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)
@@ -80,10 +80,15 @@ it_utils_menu() {
         source "${SFOLDER}/tools/third-party/blacklist-checker/bl.sh" "${IP_TO_TEST}"
       fi
     fi
-    # BENCHMARK_SERVER
+    # BENCHMARK SERVER
     if [[ ${chosen_it_util_options} == *"08"* ]]; then
       # shellcheck source=${SFOLDER}/tools/bench_scripts.sh
       source "${SFOLDER}/tools/third-party/bench_scripts.sh"
+
+    fi
+    # INSTALL ALIASES
+    if [[ ${chosen_it_util_options} == *"09"* ]]; then
+      install_script_aliases
 
     fi
 
