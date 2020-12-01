@@ -78,44 +78,83 @@ test_mail_package_section() {
 
 }
 
-####################### TEST FOR ask_mysql_root_psw #######################
+####################### TEST FOR mysql_helper #######################
+
+test_mysql_helper() {
+
+    #test_ask_mysql_root_psw
+    test_mysql_user_create
+    test_mysql_user_exists
+    test_mysql_user_delete
+    #test_mysql_database_exists
+
+}
 
 test_ask_mysql_root_psw() {
     echo -e "${B_CYAN} > TESTING FUNCTION: ask_mysql_root_psw${B_ENDCOLOR}"
     ask_mysql_root_psw
 }
 
-####################### TEST FOR mysql_user_exists #######################
+test_mysql_user_create() {
+
+    local db_user
+
+    log_subsection "Test: test_mysql_user_create"
+    
+    # DB user
+    db_user="test_user"
+
+    # Passw generator
+    db_pass="$(openssl rand -hex 12)"
+
+    mysql_user_create "${db_user}" "${db_pass}"
+
+}
 
 test_mysql_user_exists() {
 
-    local mysql_user_test
+    local db_user
 
-    echo -e "${B_CYAN} > TESTING FUNCTION: mysql_user_exists${B_ENDCOLOR}"
+    log_subsection "Test: mysql_user_exists"
 
-    mysql_user_test="modernschool_user"
+    # DB User
+    db_user="test_user"
     
-    mysql_user_exists "${mysql_user_test}"
-    
-    user_db_exists=$?
-
+    mysql_user_exists "${db_user}"
+    user_db_exists="$?"
     if [[ ${user_db_exists} -eq 0 ]]; then
-        log_event "warning" "MySQL User ${mysql_user_test} doesn't exists" "false"
-
+        display --indent 2 --text "- mysql_user_exists" --result "PASS" --color GREEN
     else
-        log_event "warning" "MySQL User ${mysql_user_test} already exists" "false"
+        display --indent 2 --text "- mysql_user_exists" --result "FAIL" --color RED
 
     fi
 
 }
 
-####################### TEST FOR mysql_database_exists #######################
+test_mysql_user_delete() {
+
+    local db_user
+
+    log_subsection "Test: mysql_user_delete"
+
+    # DB User
+    db_user="test_user"
+    
+    mysql_user_delete "${db_user}"
+    user_delete="$?"
+    if [[ ${user_delete} -eq 0 ]]; then
+        display --indent 2 --text "- test_mysql_user_delete" --result "PASS" --color GREEN
+    else
+        display --indent 2 --text "- test_mysql_user_delete" --result "FAIL" --color RED
+    fi
+
+}
 
 test_mysql_database_exists() {
 
     local mysql_db_test
 
-    log_event "warning" "TESTING FUNCTION: mysql_database_exists" "false"
+    log_subsection "Test: test_mysql_database_exists"
 
     mysql_db_test="multiplacas_test2"
     
@@ -123,14 +162,16 @@ test_mysql_database_exists() {
 
     db_exists=$?
     if [[ ${db_exists} -eq 1 ]]; then 
-        log_event "warning" "MySQL DB ${mysql_db_test} doesn't exists" "false"
+        log_event "warning" "MySQL DB ${mysql_db_test} doesn't exists"
 
     else
-        log_event "warning" "MySQL DB ${mysql_db_test} already exists" "false"
+        log_event "warning" "MySQL DB ${mysql_db_test} already exists"
 
     fi
 
 }
+
+####################### TEST FOR display #######################
 
 test_display_functions() {
 
@@ -218,6 +259,8 @@ test_display_functions
 test_common_funtions
 
 test_cloudflare_funtions
+
+test_mysql_helper
 
 #log_subsection "Testing mail functions"
 
