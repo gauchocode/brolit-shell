@@ -53,18 +53,18 @@ cloudflare_domain_exists () {
     zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
 
     if [[ ${zone_id} == *"\"success\":false"* || ${zone_id} == "" ]]; then
-        message="Error trying to get Cloudflare zone. Maybe the zone is not configured on the Cloudflare account."
+        message="Error: the zone is not configured on the Cloudflare account."
         #log_event "error" "${message}"
-        display --indent 2 --text "- Getting Zone ID for ${root_domain}" --result "FAIL" --color RED
-        display --indent 4 --text "${message}"
+        display --indent 6 --text "- Getting Zone ID for ${root_domain}" --result "FAIL" --color RED
+        display --indent 8 --text "${message}"
         # Return
         return 1
 
     else
         log_event "info" "Zone ID found: ${zone_id}"
         #clear_last_line
-        display --indent 2 --text "- Getting Zone ID for ${root_domain}" --result "DONE" --color GREEN
-        display --indent 4 --text "Zone ID found: ${zone_id}"
+        display --indent 6 --text "- Getting Zone ID for ${root_domain}" --result "DONE" --color GREEN
+        display --indent 8 --text "Zone ID found: ${zone_id}"
         # Return
         return 0
     fi

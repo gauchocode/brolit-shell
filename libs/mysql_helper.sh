@@ -47,15 +47,15 @@ mysql_user_create() {
     if [[ ${mysql_result} -eq 0 ]]; then
         log_event "success" " MySQL user ${db_user} created with pass: ${db_user_psw}"
         clear_last_line
-        display --indent 2 --text "- Creating user in MySQL: ${db_user}" --result "DONE" --color GREEN
-        display --indent 4 --text "User created with pass: ${db_user_psw}" --tcolor YELLOW
+        display --indent 6 --text "- Creating user in MySQL: ${db_user}" --result "DONE" --color GREEN
+        display --indent 8 --text "User created with pass: ${db_user_psw}" --tcolor YELLOW
         return 0
 
     else
         log_event "error" "Something went wrong creating user: ${db_user}. MySQL output: ${mysql_output}"
         clear_last_line
-        display --indent 2 --text "- Creating ${db_user} user in MySQL" --result "FAIL" --color RED
-        display --indent 4 --text "MySQL output: ${mysql_output}" --tcolor RED
+        display --indent 6 --text "- Creating ${db_user} user in MySQL" --result "FAIL" --color RED
+        display --indent 8 --text "MySQL output: ${mysql_output}" --tcolor RED
         return 1
 
     fi
@@ -77,12 +77,12 @@ mysql_user_delete() {
     mysql_result="$?"
     if [[ ${mysql_result} -eq 0 ]]; then
         log_event "success" " Database user ${db_user} deleted"
-        display --indent 2 --text "- Deleting user in MySQL: ${db_user}" --result "DONE" --color GREEN
+        display --indent 6 --text "- Deleting user in MySQL: ${db_user}" --result "DONE" --color GREEN
         return 0
 
     else
         log_event "error" "Something went wrong deleting user: ${db_user}. MySQL output: ${mysql_output}"
-        display --indent 2 --text "- Deleting ${db_user} user in MySQL" --result "FAIL" --color RED
+        display --indent 6 --text "- Deleting ${db_user} user in MySQL" --result "FAIL" --color RED
         return 1
 
     fi
@@ -112,7 +112,7 @@ mysql_user_psw_change() {
         return 0
 
     else
-        log_event "error" "Something went wrong changing MySQL password to user ${db_user}. MySQL output: ${mysql_output}" "false"
+        log_event "error" "Something went wrong changing MySQL password to user ${db_user}. MySQL output: ${mysql_output}"
         return 1
 
     fi
@@ -157,14 +157,14 @@ mysql_root_psw_change() {
     mysql_result="$?"
     if [[ ${mysql_result} -eq 0 ]]; then
         log_event "success" "New password for root: ${db_root_psw}" "false" 
-        display --indent 2 --text "- Setting new password for root" --result "DONE" --color GREEN
-        display --indent 4 --text "New password: ${db_root_psw}"
+        display --indent 6 --text "- Setting new password for root" --result "DONE" --color GREEN
+        display --indent 8 --text "New password: ${db_root_psw}"
 
         return 0
 
     else
         log_event "error" "Something went wrong changing MySQL root password. MySQL output: ${mysql_result}" "false"
-        display --indent 2 --text "- Setting new password for root" --result "FAIL" --color RED
+        display --indent 6 --text "- Setting new password for root" --result "FAIL" --color RED
 
         return 1
 
@@ -191,12 +191,12 @@ mysql_user_grant_privileges() {
     mysql_result="$?"
     if [[ ${mysql_result} -eq 0 ]]; then
         log_event "success" "Privileges granted to user ${db_user}" "false"
-        display --indent 2 --text "- Granting privileges to ${db_user}" --result "DONE" --color GREEN
+        display --indent 6 --text "- Granting privileges to ${db_user}" --result "DONE" --color GREEN
         return 0
 
     else
         log_event "error" "Something went wrong granting privileges to user ${db_user}. MySQL output: ${mysql_output}" "false"
-        display --indent 2 --text "- Granting privileges to ${db_user}" --result "FAIL" --color RED
+        display --indent 6 --text "- Granting privileges to ${db_user}" --result "FAIL" --color RED
         return 1
 
     fi
@@ -284,13 +284,13 @@ mysql_database_create() {
     mysql_result="$?"
     if [[ ${mysql_result} -eq 0 ]]; then
         log_event "success" "Database ${database} created successfully" "false"
-        display --indent 2 --text "- Creating database: ${database}" --result "DONE" --color GREEN
+        display --indent 6 --text "- Creating database: ${database}" --result "DONE" --color GREEN
         return 0
 
     else
         log_event "error" "Something went wrong creating database: ${database}. MySQL output: ${mysql_output}" "false"
-        display --indent 2 --text "- Creating database: ${database}" --result "ERROR" --color RED
-        display --indent 4 --text "MySQL output: ${mysql_output}" --tcolor RED
+        display --indent 6 --text "- Creating database: ${database}" --result "ERROR" --color RED
+        display --indent 8 --text "MySQL output: ${mysql_output}" --tcolor RED
         return 1
 
     fi
@@ -314,13 +314,13 @@ mysql_database_drop() {
     mysql_result="$?"
     if [[ ${mysql_result} -eq 0 ]]; then
         log_event "success" "- Database ${database} deleted successfully"
-        display --indent 2 --text "- Droping database: ${database}" --result "DONE" --color GREEN
+        display --indent 6 --text "- Droping database: ${database}" --result "DONE" --color GREEN
         return 0
 
     else
         log_event "error" "Something went wrong deleting database: ${database}. MySQL output: ${mysql_output}" "false"
-        display --indent 2 --text "- Droping database: ${database}" --result "ERROR" --color RED
-        display --indent 4 --text "MySQL import output: ${mysql_output}" --tcolor RED
+        display --indent 6 --text "- Droping database: ${database}" --result "ERROR" --color RED
+        display --indent 8 --text "MySQL import output: ${mysql_output}" --tcolor RED
         return 1
         
     fi
