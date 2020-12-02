@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.7
+# Version: 3.0.8
 #############################################################################
 
 SCRIPT="$(readlink -f "$0")"
@@ -20,12 +20,10 @@ self_update() {
 
     [ -n "$(git diff --name-only "origin/${BRANCH}" "${SCRIPTFILE}")" ] && {
         echo "Found a new version of LEMP Script Utils, updating ..."
-        #git pull --force
+
         git checkout "${BRANCH}"
         git reset --hard origin/master
         git pull --ff-only --force
-
-        #exec "${SCRIPTNAME}" "${ARGS[@]}"
         
         chmod +x runner.sh updater.sh
 
