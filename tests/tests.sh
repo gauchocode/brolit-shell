@@ -287,6 +287,8 @@ test_cloudflare_funtions() {
 
     test_cloudflare_domain_exists
     test_cloudflare_change_a_record
+    #test_cloudflare_delete_a_record
+    test_cloudflare_clear_cache
 
 }
 
@@ -353,6 +355,21 @@ test_cloudflare_delete_a_record() {
 
 }
 
+test_cloudflare_clear_cache() {
+
+    log_subsection "Test: test_cloudflare_clear_cache"
+
+    cloudflare_clear_cache "broobe.hosting"
+    cf_result="$?"
+    if [[ ${cf_result} -eq 0 ]]; then 
+        display --indent 6 --text "- test_cloudflare_clear_cache" --result "PASS" --color WHITE
+    else
+        display --indent 6 --text "- test_cloudflare_clear_cache" --result "FAIL" --color RED
+    fi
+    log_break "true"
+
+}
+
 ################################################################################
 # MAIN
 ################################################################################
@@ -363,9 +380,9 @@ test_display_functions
 
 test_common_funtions
 
-test_cloudflare_funtions
-
 test_mysql_helper
+
+test_cloudflare_funtions
 
 #log_subsection "Testing mail functions"
 
