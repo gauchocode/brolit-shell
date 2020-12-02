@@ -107,7 +107,7 @@ cloudflare_clear_cache() {
     -H "X-Auth-Email: ${auth_email}" \
     -H "X-Auth-Key: ${auth_key}" \
     -H "Content-Type:application/json" \
-    --data '{"purge_everything":true}' >/dev/null)"
+    --data '{"purge_everything":true}')"
 
     #if [[ ${purge_cache} == *"\"success\":false"* ]]; then
     if [[ ${purge_cache} == *"\"success\":false"* || ${purge_cache} == "" ]]; then
@@ -265,20 +265,23 @@ cloudflare_change_a_record () {
     ttl=1 #1 for Auto
 
     if [[ -z "${proxy_status}" || ${proxy_status} == "" ]]; then
-        proxy_status="false"
+
+        # Default value
+        proxy_status=false #need to be a bool, not a string
+        
     fi
 
     cur_ip="${SERVER_IP}"
 
-    log_event "info" "Getting Zone & Record ID's ..." "false"
+    log_event "info" "Getting Zone & Record ID's ..."
 
     zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
     record_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json"  | grep -Po '(?<="id":")[^"]*')
 
     if [[ -z "${record_id}" || ${record_id} == "" ]]; then
 
-        log_event "info" "ZONE_ID found: ${zone_id}" "false"
-        log_event "info" "RECORD_ID not found: Trying to add the subdomain ..." "false"
+        log_event "info" "ZONE_ID found: ${zone_id}"
+        log_event "info" "RECORD_ID not found: Trying to add the subdomain ..."
         display --indent 6 --text "- Adding the subdomain: ${record_name}"
 
         #log_event "info" "curl -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" \

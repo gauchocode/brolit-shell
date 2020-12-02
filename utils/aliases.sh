@@ -4,7 +4,7 @@
 # Version: 3.0.7
 ################################################################################
 
-alias ..='cd ..'
+alias ..="cd .."
 
 alias userlist="cut -d: -f1 /etc/passwd"
 alias myip="curl http://ipecho.net/plain; echo"
