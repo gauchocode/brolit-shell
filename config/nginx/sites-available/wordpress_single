@@ -11,7 +11,7 @@ server {
 
 
         location / {
-            try_files $uri $uri/ /index.php?q=$uri&$args;			
+            try_files $uri $uri/ /index.php?q=$uri&$args;
         }
 
         # PHP-FPM
@@ -33,12 +33,12 @@ server {
         gzip_static on;
 
         ### SEC
-        include /etc/nginx/globals/security.conf;
+        #include /etc/nginx/globals/security.conf;
 
         ### WP-SEC
-        include /etc/nginx/globals/wordpress_sec.conf;
+        #include /etc/nginx/globals/wordpress_sec.conf;
 
         ### WP-SEO
-        include /etc/nginx/globals/wordpress_seo.conf;
+        #include /etc/nginx/globals/wordpress_seo.conf;
 
 }

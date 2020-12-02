@@ -22,7 +22,7 @@ server {
     }
 
     # Security
-    include /etc/nginx/globals/security.conf;
+    #include /etc/nginx/globals/security.conf;
 
 }
 

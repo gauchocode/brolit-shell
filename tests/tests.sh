@@ -240,29 +240,21 @@ test_display_functions() {
 
     log_subsection "Testing display 1"
 
-    display --indent 2 --text "- Testing message DONE" --result "DONE" --color WHITE
-    display --indent 2 --text "- Testing message WARNING" --result "WARNING" --color YELLOW
-    display --indent 2 --text "- Testing message ERROR" --result "ERROR" --color RED
-    display --indent 4 --text "Testing output ERROR" --tcolor RED
+    display --indent 6 --text "- Testing message DONE" --result "DONE" --color WHITE
+    display --indent 6 --text "- Testing message WARNING" --result "WARNING" --color YELLOW
+    display --indent 6 --text "- Testing message ERROR" --result "ERROR" --color RED
+    display --indent 8 --text "Testing output ERROR" --tcolor RED
 
     log_subsection "Testing display 2"
 
-    display --indent 2 --text "- Testing message with color" --result "DONE" --color WHITE
-    display --indent 4 --text "Testing output DONE" --tcolor WHITE --tstyle CURSIVE
-    display --indent 2 --text "- Testing message with color" --result "DONE" --color WHITE
-    display --indent 4 --text "Testing output WHITE in ITALIC" --tcolor WHITE --tstyle ITALIC
-    display --indent 2 --text "- Testing message with color" --result "WARNING" --color YELLOW
-    display --indent 4 --text "Testing output WARNING" --tcolor YELLOW
-
-    #sleep 3
-
-    #clear_last_line
+    display --indent 6 --text "- Testing message with color" --result "DONE" --color WHITE
+    display --indent 8 --text "Testing output DONE" --tcolor WHITE --tstyle CURSIVE
+    display --indent 6 --text "- Testing message with color" --result "DONE" --color WHITE
+    display --indent 8 --text "Testing output WHITE in ITALIC" --tcolor WHITE --tstyle ITALIC
+    display --indent 6 --text "- Testing message with color" --result "WARNING" --color YELLOW
+    display --indent 8 --text "Testing output WARNING" --tcolor YELLOW
 
     log_break "true"
-
-    #clear_screen
-
-    #log_break "true"
 
 }
 
@@ -412,6 +404,10 @@ test_common_funtions
 test_mysql_helper
 
 test_cloudflare_funtions
+
+################################################################################
+# Uncomment to run specific function
+################################################################################
 
 #test_mail_cert_section
 
