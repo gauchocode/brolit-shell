@@ -210,9 +210,8 @@ cloudflare_ssl_mode() {
      -H "X-Auth-Email: ${auth_email}" \
      -H "X-Auth-Key: ${auth_key}" \
      -H "Content-Type: application/json" \
-     --data "{\"value\":\"${ssl_mode}\"}" >/dev/null)
+     --data "{\"value\":\"${ssl_mode}\"}")
 
-    #if [[ ${ssl_mode_result} == *"\"success\":false"* ]]; then
     if [[ ${ssl_mode_result} == *"\"success\":false"* || ${ssl_mode_result} == "" ]]; then
         message="Error trying to change ssl mode for ${root_domain}. Results:\n ${ssl_mode_result}"
         log_event "error" "${message}"
@@ -243,8 +242,6 @@ cloudflare_change_a_record () {
     local record_id
 
     # Cloudflare API to change DNS records
-    log_event "info" "Accessing Cloudflare API and change record ${domain}" "false"
-    display --indent 2 --text "- Accessing Cloudflare API" --result "DONE" --color GREEN
 
     zone_name=${root_domain}
     record_name=${domain}
@@ -264,14 +261,21 @@ cloudflare_change_a_record () {
     record_type="A"
     ttl=1 #1 for Auto
 
-    if [[ -z "${proxy_status}" || ${proxy_status} == "" ]]; then
+    if [[ -z "${proxy_status}" || ${proxy_status} == "" || ${proxy_status} == "false" ]]; then
 
         # Default value
         proxy_status=false #need to be a bool, not a string
 
+    else
+
+        proxy_status=true #need to be a bool, not a string
+
     fi
 
     cur_ip="${SERVER_IP}"
+
+    log_event "info" "Accessing Cloudflare API and change record ${domain}" "false"
+    display --indent 6 --text "- Accessing Cloudflare API" --result "DONE" --color GREEN
 
     log_event "info" "Getting Zone & Record ID's ..."
 
@@ -305,7 +309,7 @@ cloudflare_change_a_record () {
         -H "X-Auth-Email: ${auth_email}" \
         -H "X-Auth-Key: ${auth_key}" \
         -H "Content-Type: application/json" \
-        --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":\"${proxy_status}\"}")"
+        --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"\
 
     fi
 
@@ -324,7 +328,7 @@ cloudflare_change_a_record () {
 
     else
         message="IP changed to: ${SERVER_IP}"
-        log_event "success" "${message}" "false"
+        log_event "success" "${message}"
         display --indent 6 --text "- Updating subdomain on Cloudflare" --result "DONE" --color GREEN
         display --indent 8 --text "IP: ${SERVER_IP}" --tcolor GREEN
 
@@ -342,7 +346,7 @@ cloudflare_delete_a_record () {
     local domain=$2
 
     # Cloudflare API to change DNS records
-    log_event "info" "Accessing to Cloudflare API to change record ${domain}" "false"
+    log_event "info" "Accessing to Cloudflare API to change record ${domain}"
 
     zone_name="${root_domain}"
     record_name="${domain}"
@@ -362,7 +366,6 @@ cloudflare_delete_a_record () {
 
     record_type="A"
     ttl=1 #1 for Auto
-    proxied_value="false"
 
     #ip_file="ip.txt"
     id_file="cloudflare.ids"
@@ -398,7 +401,7 @@ cloudflare_delete_a_record () {
         delete="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
         -H "X-Auth-Email: ${auth_email}" \
         -H "X-Auth-Key: ${auth_key}" \
-        -H "Content-Type: application/json" >/dev/null)"
+        -H "Content-Type: application/json")"
         
     fi
 
