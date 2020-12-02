@@ -203,7 +203,7 @@ make_server_files_backup() {
 
     # Here we use tar.bz2 with bzip2 compression method
     log_event "info" "Making backup of ${bk_path}"
-    display --indent 6 --text "- Making ${bk_sup_type} backup" --result "DONE" --color GREEN
+    display --indent 6 --text "- Preparing ${bk_sup_type} backup" --result "DONE" --color GREEN
 
     log_event "info" "Running: ${TAR} cjf ${BAKWP}/${NOW}/${bk_file} --directory=${bk_path} ${directory_to_backup}"
     (${TAR} cjf "${BAKWP}/${NOW}/${bk_file}" --directory="${bk_path}" "${directory_to_backup}")
@@ -221,10 +221,12 @@ make_server_files_backup() {
       #BACKUPED_SCF_LIST[$BK_SCF_INDEX]="$(string_remove_special_chars "${bk_file}")"
       BACKUPED_SCF_LIST[$BK_SCF_INDEX]="${bk_file}"
       #BACKUPED_SCF_LIST+=("${bk_file}")
+      #BACKUPED_SCF_FL=${BACKUPED_SCF_LIST[$BK_SCF_INDEX]}
 
       # Calculate backup size
       BK_SCF_SIZE="$(find . -name "${bk_file}" -exec ls -l --human-readable --block-size=K {} \; | awk '{ print $5 }')"
       BK_SCF_SIZES[$BK_SCF_INDEX]="${BK_SCF_SIZE}"
+      #BK_SCF_SIZES+=("${BK_SCF_SIZE}")
 
       display --indent 6 --text "- Testing compressed backup file" --result "DONE" --color GREEN
 
@@ -249,13 +251,13 @@ make_server_files_backup() {
       display --indent 6 --text "- Uploading backup file to Dropbox" --result "DONE" --color GREEN
 
       # Deleting old backup files
-      log_event "info" "Trying to delete old backup from Dropbox ..."
+      log_event "info" "Trying to delete old backup from Dropbox ..." "false"
 
       output="$("${DROPBOX_UPLOADER}" remove "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file}" 2>&1)"
       dropbox_remove_result="$?"
       if [[ ${dropbox_remove_result} -eq 0 ]]; then
 
-        log_event "success" "Server files backup finished"
+        log_event "success" "Server files backup finished" "false"
         display --indent 6 --text "- Deleting old backup from Dropbox" --result "DONE" --color GREEN
 
       else
@@ -308,16 +310,16 @@ make_mailcow_backup() {
 
   log_break
 
-  if [[ -n "${MAILCOW}" ]]; then
+  if [ -n "${MAILCOW}" ]; then
 
     old_bk_file="${bk_type}_files-${ONEWEEKAGO}.tar.bz2"
     bk_file="${bk_type}_files-${NOW}.tar.bz2"
 
     log_event "info" "Trying to make a backup of ${MAILCOW} ..."
-    display --indent 6 --text "- Making ${MAILCOW} backup" --result "DONE" --color GREEN
+    display --indent 6 --text "- Preparing ${MAILCOW} for backup" --result "DONE" --color GREEN
 
     "${MAILCOW}/helper-scripts/backup_and_restore.sh" backup all
-    mailcow_backup_result="$?"
+    mailcow_backup_result=$?
     if [[ "${mailcow_backup_result}" -eq 0 ]]; then
 
       # Con un pequeño truco vamos a obtener el nombre de la carpeta que crea mailcow
@@ -401,10 +403,12 @@ make_files_backup() {
   local old_bk_file="${directory_to_backup}_${bk_type}-files_${ONEWEEKAGO}.tar.bz2"
   local bk_file="${directory_to_backup}_${bk_type}-files_${NOW}.tar.bz2"
 
-  log_event "info" "Making backup file from: ${directory_to_backup} ..."
-  display --indent 6 --text "- Making ${directory_to_backup} backup" --result "DONE" --color GREEN
+  #SHOW_BK_FILE_INDEX="$((BK_FILE_INDEX + 1))"
 
-  (${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv --width 70 --size "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${BAKWP}/${NOW}/${bk_file}")2>&1
+  log_event "info" "Making backup file from: ${directory_to_backup} ..."
+  display --indent 6 --text "- Preparing ${directory_to_backup} for backup" --result "DONE" --color GREEN
+
+  ${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv --width 70 --size "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${BAKWP}/${NOW}/${bk_file}"
   
   # Clear pipe output
   clear_last_line

@@ -120,10 +120,8 @@ menutitle="Config Selection Menu"
 #################################################################################
 #
 
-# Refs:
-# https://misc.flogisoft.com/bash/tip_colors_and_formatting
-
 # Text Styles
+#NORMAL='\x1b[2m normal'
 NORMAL="\033[m"
 BOLD='\x1b[1m'
 ITALIC='\x1b[3m'
@@ -136,6 +134,7 @@ RED='\E[31;40m'
 GREEN='\E[32;40m'
 YELLOW='\E[33;40m'
 ORANGE='\033[0;33m'
+BLUE='\E[34;40m'
 MAGENTA='\E[35;40m'
 CYAN='\E[36;40m'
 WHITE='\E[37;40m'
@@ -143,17 +142,18 @@ ENDCOLOR='\033[0m'
 F_DEFAULT='\E[39m'
 
 # Background Colours
+B_DEFAULT='\E[39m'
 B_BLACK='\E[40m'
 B_RED='\E[41m'
 B_GREEN='\E[42m'
 B_YELLOW='\E[43m'
 B_ORANGE='\043[0m'
+B_BLUE='\E[44m'
 B_MAGENTA='\E[45m'
 B_CYAN='\E[46m'
 B_WHITE='\E[47m'
 B_ENDCOLOR='\e[0m'
 B_DEFAULT='\E[49m'
-#B_DEFAULT='\E[39m'
 
 #
 #################################################################################
@@ -280,11 +280,8 @@ script_init() {
     SERVER_IP=$(curl -s http://ipv4.icanhazip.com)
   fi
 
-  # EXPORT VARS
-  export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V 
-  export LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO 
-  export SENDEMAIL DISK_U ONE_FILE_BK SERVER_IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_BACKUP_DBS STATUS_BACKUP_FILES STATUS_SERVER STATUS_CERTS OUTDATED_PACKAGES 
-  export LOG BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
+  # EXPORT VARS (GLOBALS)
+  export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO SENDEMAIL DISK_U ONE_FILE_BK SERVER_IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_BACKUP_DBS STATUS_BACKUP_FILES STATUS_SERVER STATUS_CERTS OUTDATED_PACKAGES LOG BLACK RED GREEN YELLOW BLUE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
 
 }
 
@@ -311,22 +308,6 @@ customize_ubuntu_login_message() {
 
   # Force update
   run-parts "/etc/update-motd.d"
-
-}
-
-install_script_aliases () {
-
-  if [[ ! -f ~/.bash_aliases ]]; then
-    cp "${SFOLDER}/utils/aliases.sh" ~/.bash_aliases
-    display --indent 2 --text "- Installing script aliases" --result "DONE" --color GREEN
-    display --indent 4 --text "Please now run: source ~/.bash_aliases" --tcolor CYAN
-
-  else
-
-    display --indent 2 --text "- Installing script aliases" --result "FAIL" --color RED
-    display --indent 4 --text ".bash_aliases already exists"
-
-  fi
 
 }
 
@@ -383,7 +364,7 @@ script_configuration_wizard() {
 
   if [[ -z "${SMTP_SERVER}" ]]; then
     SMTP_SERVER=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server" 10 60 "${SMTP_SERVER_OLD}" 3>&1 1>&2 2>&3)
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
       echo "SMTP_SERVER="${SMTP_SERVER} >>/root/.broobe-utils-options
     else
@@ -392,7 +373,7 @@ script_configuration_wizard() {
   fi
   if [[ -z "${SMTP_PORT}" ]]; then
     SMTP_PORT=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server Port" 10 60 "${SMTP_PORT_OLD}" 3>&1 1>&2 2>&3)
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
       echo "SMTP_PORT=${SMTP_PORT}" >>/root/.broobe-utils-options
     else
@@ -401,7 +382,7 @@ script_configuration_wizard() {
   fi
   if [[ -z "${SMTP_TLS}" ]]; then
     SMTP_TLS=$(whiptail --title "SMTP TLS" --inputbox "SMTP yes or no:" 10 60 "${SMTP_TLS_OLD}" 3>&1 1>&2 2>&3)
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
       echo "SMTP_TLS=${SMTP_TLS}" >>/root/.broobe-utils-options
     else
@@ -410,7 +391,7 @@ script_configuration_wizard() {
   fi
   if [[ -z "${SMTP_U}" ]]; then
     SMTP_U=$(whiptail --title "SMTP User" --inputbox "Please insert the SMTP user" 10 60 "${SMTP_U_OLD}" 3>&1 1>&2 2>&3)
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
       echo "SMTP_U=${SMTP_U}" >>/root/.broobe-utils-options
     else
@@ -419,7 +400,7 @@ script_configuration_wizard() {
   fi
   if [[ -z "${SMTP_P}" ]]; then
     SMTP_P=$(whiptail --title "SMTP Password" --inputbox "Please insert the SMTP user password" 10 60 "${SMTP_P_OLD}" 3>&1 1>&2 2>&3)
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
       echo "SMTP_P=${SMTP_P}" >>/root/.broobe-utils-options
     else
@@ -428,7 +409,7 @@ script_configuration_wizard() {
   fi
   if [[ -z "${MAILA}" ]]; then
     MAILA=$(whiptail --title "Notification Email" --inputbox "Insert the email where you want to receive notifications." 10 60 "${MAILA_OLD}" 3>&1 1>&2 2>&3)
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
       echo "MAILA=${MAILA}" >>/root/.broobe-utils-options
     else
@@ -437,7 +418,7 @@ script_configuration_wizard() {
   fi
   if [[ -z "${SITES}" ]]; then
     SITES=$(whiptail --title "Websites Root Directory" --inputbox "Insert the path where websites are stored. Ex: /var/www or /usr/share/nginx" 10 60 "${SITES_OLD}" 3>&1 1>&2 2>&3)
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
       echo "SITES=${SITES}" >>/root/.broobe-utils-options
     else
@@ -450,7 +431,7 @@ script_configuration_wizard() {
 
     DUP_BK_DEFAULT=false
     DUP_BK=$(whiptail --title "Duplicity Backup Support?" --inputbox "Please insert true or false" 10 60 "${DUP_BK_DEFAULT}" 3>&1 1>&2 2>&3)
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
       echo "DUP_BK=${DUP_BK}" >>/root/.broobe-utils-options
 
@@ -461,7 +442,7 @@ script_configuration_wizard() {
           # Duplicity Backups Directory
           DUP_ROOT_DEFAULT="/media/backups/PROJECT_NAME"
           DUP_ROOT=$(whiptail --title "Duplicity Backup Directory" --inputbox "Insert the directory path to storage duplicity Backup" 10 60 "${DUP_ROOT_DEFAULT}" 3>&1 1>&2 2>&3)
-          exitstatus="$?"
+          exitstatus=$?
           if [[ ${exitstatus} -eq 0 ]]; then
             echo "DUP_ROOT=${DUP_ROOT}" >>/root/.broobe-utils-options
           else
@@ -474,7 +455,7 @@ script_configuration_wizard() {
           # Source of Directories to Backup
           DUP_SRC_BK_DEFAULT="${SITES}"
           DUP_SRC_BK=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_SRC_BK_DEFAULT}" 3>&1 1>&2 2>&3)
-          exitstatus="$?"
+          exitstatus=$?
           if [[ ${exitstatus} -eq 0 ]]; then
             echo "DUP_SRC_BK=${DUP_SRC_BK}" >>/root/.broobe-utils-options
           else
@@ -487,7 +468,7 @@ script_configuration_wizard() {
           # Folders to Backup
           DUP_FOLDERS_DEFAULT="FOLDER1,FOLDER2"
           DUP_FOLDERS=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_FOLDERS_DEFAULT}" 3>&1 1>&2 2>&3)
-          exitstatus="$?"
+          exitstatus=$?
           if [[ ${exitstatus} -eq 0 ]]; then
             echo "DUP_FOLDERS=${DUP_FOLDERS}" >>/root/.broobe-utils-options
           else
@@ -500,7 +481,7 @@ script_configuration_wizard() {
           # Create a new full backup every ...
           DUP_BK_FULL_FREQ_DEFAULT="7D"
           DUP_BK_FULL_FREQ=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_BK_FULL_FREQ_DEFAULT}" 3>&1 1>&2 2>&3)
-          exitstatus="$?"
+          exitstatus=$?
           if [[ ${exitstatus} -eq 0 ]]; then
             echo "DUP_BK_FULL_FREQ=${DUP_BK_FULL_FREQ}" >>/root/.broobe-utils-options
           else
@@ -513,7 +494,7 @@ script_configuration_wizard() {
           # Delete any backup older than this
           DUP_BK_FULL_LIFE_DEFAULT="14D"
           DUP_BK_FULL_LIFE=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_BK_FULL_LIFE_DEFAULT}" 3>&1 1>&2 2>&3)
-          exitstatus="$?"
+          exitstatus=$?
           if [[ ${exitstatus} -eq 0 ]]; then
             echo "DUP_BK_FULL_LIFE=${DUP_BK_FULL_LIFE}" >>/root/.broobe-utils-options
           else
@@ -541,7 +522,7 @@ script_configuration_wizard() {
     MAILCOW_BK_DEFAULT=false
     
     MAILCOW_BK=$(whiptail --title "Mailcow Backup Support?" --inputbox "Please insert true or false" 10 60 "${MAILCOW_BK_DEFAULT}" 3>&1 1>&2 2>&3)
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
       echo "MAILCOW_BK=${MAILCOW_BK}" >>/root/.broobe-utils-options
       
@@ -550,7 +531,7 @@ script_configuration_wizard() {
         # MailCow Dockerized default files location
         MAILCOW_DEFAULT="/opt/mailcow-dockerized"
         MAILCOW=$(whiptail --title "Mailcow Installation Path" --inputbox "Insert the path where Mailcow is installed" 10 60 "${MAILCOW_DEFAULT}" 3>&1 1>&2 2>&3)
-        exitstatus="$?"
+        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
           echo "MAILCOW=${MAILCOW}" >>/root/.broobe-utils-options
         else
@@ -901,14 +882,14 @@ check_distro() {
     MIN_V=$(echo "18.04" | awk -F "." '{print $1$2}')
     DISTRO_V=$(get_ubuntu_version)
     
-    log_event "info" "ACTUAL DISTRO: ${DISTRO} ${DISTRO_V}"
+    log_event "info" "ACTUAL DISTRO: ${DISTRO} ${DISTRO_V}" "false"
 
     if [ ! "${DISTRO_V}" -ge "${MIN_V}" ]; then
       whiptail --title "UBUNTU VERSION WARNING" --msgbox "Ubuntu version must be 18.04 or 20.04! Use this script only for backup or restore purpose." 8 78
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
         distro_old="true"
-        log_event "info" "Setting distro_old: ${distro_old}"
+        log_event "info" "Setting distro_old: ${distro_old}" "false"
         
       else
         return 1
@@ -1144,8 +1125,7 @@ get_project_type() {
 
   local dir_path=$1
 
-  local project_type
-  local is_wp
+  local project_type is_wp
 
   # shellcheck source=${SFOLDER}/libs/wordpress_helper.sh
   source "${SFOLDER}/libs/wordpress_helper.sh"
@@ -1512,23 +1492,21 @@ get_domain_extension() {
 
   done
 
-  display --indent 2 --text "- Extracting domain extension from ${domain}"
-
   if  grep --word-regexp --quiet ".${domain_ext}" "${SFOLDER}/config/domain_extension-list" ; then
 
-    domain_ext=.${domain_ext}
+    display --indent 2 --text "- Extracting domain extension" --result DONE --color GREEN
+    display --indent 4 --text "Working with domain: ${domain}"
 
-    # Logging
-    display --indent 2 --text "- Extracting domain extension from ${domain}" --result DONE --color GREEN
-    display --indent 4 --text "Domain extension: ${domain_ext}"
+    domain_ext=.${domain_ext}
     log_event "info" "domain_ext: ${domain_ext}"
+    display --indent 4 --text "Domain extension: ${domain_ext}"
 
     # Return
     echo "${domain_ext}"
 
   else
 
-    display --indent 2 --text "- Extracting domain extension from ${domain}" --result FAIL --color RED
+    display --indent 2 --text "- Extracting domain extension" --result FAIL --color RED
 
     return 1
 
@@ -1550,21 +1528,19 @@ extract_domain_extension() {
   if [[ $domain_extension_output -eq 0 ]]; then
 
     domain_no_ext=${domain%"$domain_extension"}
-
     log_event "info" "domain_no_ext: ${domain_no_ext}"
     display --indent 4 --text "Domain without extension: ${domain_no_ext}"
-
-    log_break "true"
 
     # Return
     echo "${domain_no_ext}"
 
   else
 
-    log_break "true"
     return 1
 
   fi
+
+  log_break "true"
 
 }
 
