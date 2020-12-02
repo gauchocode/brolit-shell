@@ -109,7 +109,8 @@ cloudflare_clear_cache() {
     -H "Content-Type:application/json" \
     --data '{"purge_everything":true}' >/dev/null)"
 
-    if [[ ${purge_cache} == *"\"success\":false"* ]]; then
+    #if [[ ${purge_cache} == *"\"success\":false"* ]]; then
+    if [[ ${purge_cache} == *"\"success\":false"* || ${purge_cache} == "" ]]; then
         message="Error trying to clear Cloudflare cache. Results:\n${update}"
         log_event "error" "${message}"
         display --indent 2 --text "- Clearing Cloudflare cache" --result "FAIL" --color RED
@@ -159,7 +160,8 @@ cloudflare_development_mode() {
      -H "Content-Type: application/json" \
      --data "{\"value\":\"${dev_mode}\"}" >/dev/null)
 
-    if [[ ${dev_mode_result} == *"\"success\":false"* ]]; then
+    #if [[ ${dev_mode_result} == *"\"success\":false"* ]]; then
+    if [[ ${dev_mode_result} == *"\"success\":false"* || ${dev_mode_result} == "" ]]; then
         message="Error trying to change development mode for ${root_domain}. Results:\n ${dev_mode_result}"
         log_event "error" "${message}"
         display --indent 2 --text "- Enabling development mode" --result "FAIL" --color RED
@@ -210,7 +212,8 @@ cloudflare_ssl_mode() {
      -H "Content-Type: application/json" \
      --data "{\"value\":\"${ssl_mode}\"}" >/dev/null)
 
-    if [[ $ssl_mode_result == *"\"success\":false"* ]]; then
+    #if [[ ${ssl_mode_result} == *"\"success\":false"* ]]; then
+    if [[ ${ssl_mode_result} == *"\"success\":false"* || ${ssl_mode_result} == "" ]]; then
         message="Error trying to change ssl mode for ${root_domain}. Results:\n ${ssl_mode_result}"
         log_event "error" "${message}"
         return 1
@@ -311,7 +314,8 @@ cloudflare_change_a_record () {
 
     #fi
 
-    if [[ ${update} == *"\"success\":false"* ]]; then
+    #if [[ ${update} == *"\"success\":false"* ]]; then
+    if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
         message="API UPDATE FAILED. RESULTS:\n${update}"
         log_event "error" "${message}"
         
@@ -397,7 +401,8 @@ cloudflare_delete_a_record () {
         
     fi
 
-    if [[ ${delete} == *"\"success\":false"* ]]; then
+    #if [[ ${delete} == *"\"success\":false"* ]]; then
+    if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
 
         message="A record delete failed. Results:\n${delete}"
         log_event "error" "${message}"
