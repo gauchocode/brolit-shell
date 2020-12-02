@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.7
+# Version: 3.0.8
 ################################################################################
 
 nginx_server_create() {
@@ -33,7 +33,7 @@ nginx_server_create() {
         # Remove symbolic link
         rm "${WSERVER}/sites-enabled/${project_domain}"
         # Show message
-        display --indent 2 --text "- Backing up actual nginx server config" --result DONE --color GREEN
+        display --indent 6 --text "- Backing up actual nginx server config" --result DONE --color GREEN
 
     fi
 
@@ -47,7 +47,7 @@ nginx_server_create() {
             # Search and replace domain.com string with correct project_domain
             sed -i "s/domain.com/${project_domain}/g" "${WSERVER}/sites-available/${project_domain}"
 
-            display --indent 2 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
+            display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
         ;;
 
         root_domain)
@@ -61,13 +61,13 @@ nginx_server_create() {
             # Search and replace domain.com string with correct project_domain
             sed -i "s/domain.com/${project_domain}/g" "${WSERVER}/sites-available/${project_domain}"
 
-            display --indent 2 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
+            display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
         ;;
 
         multi_domain)
             
-            display --indent 2 --text "- Creating nginx server config from '${server_type}' template" --result FAIL --color RED
-            display --indent 4 --text "TODO: implements multidomain support"
+            display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result FAIL --color RED
+            display --indent 8 --text "TODO: implements multidomain support"
             log_event "info" "TODO: implements multidomain support"
         ;;
 
@@ -76,12 +76,12 @@ nginx_server_create() {
             cp "${SFOLDER}/config/nginx/sites-available/${project_type}" "${WSERVER}/sites-available/${project_type}"
             ln -s "${WSERVER}/sites-available/${project_type}" "${WSERVER}/sites-enabled/${project_type}"
 
-            display --indent 2 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
+            display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
         ;;
         *)
             log_event "error" "Nginx server config creation fail! Nginx server type '${server_type}' unknow."
-            display --indent 2 --text "- Nginx server config creation" --result FAIL --color RED
-            display --indent 4 --text "Nginx server type '${server_type}' unknow!"
+            display --indent 6 --text "- Nginx server config creation" --result FAIL --color RED
+            display --indent 8 --text "Nginx server type '${server_type}' unknow!"
             return 1
         ;;
 
@@ -96,11 +96,11 @@ nginx_server_create() {
     if [ "${PHP_V}" != "" ]; then
         # Replace string to match PHP version
         sed -i "s#PHP_V#${PHP_V}#" "${WSERVER}/sites-available/${project_domain}"
-        display --indent 2 --text "- Configuring PHP for '${project_domain}'" --result DONE --color GREEN
+        display --indent 6 --text "- Configuring PHP for '${project_domain}'" --result DONE --color GREEN
     else
 
-        display --indent 2 --text "- Configuring PHP for '${project_domain}'" --result FAIL --color RED
-        display --indent 4 --text "PHP_V not defined! Is PHP installed?"
+        display --indent 6 --text "- Configuring PHP for '${project_domain}'" --result FAIL --color RED
+        display --indent 8 --text "PHP_V not defined! Is PHP installed?"
         log_event "critical" "PHP_V not defined! Is PHP installed?"
         
     fi
@@ -114,13 +114,13 @@ nginx_server_create() {
         service nginx reload
 
         log_event "success" "nginx configuration created"
-        display --indent 2 --text "- Nginx server configuration" --result DONE --color GREEN
+        display --indent 6 --text "- Nginx server configuration" --result DONE --color GREEN
 
     else
 
         debug=$(nginx -t 2>&1)
         log_event "error" "nginx configuration fail: $debug"
-        display --indent 2 --text "- Nginx server configuration" --result FAIL --color RED
+        display --indent 6 --text "- Nginx server configuration" --result FAIL --color RED
 
     fi
 
@@ -142,7 +142,7 @@ nginx_server_delete() {
         service nginx reload
 
         log_event "info" "Nginx config files for ${filename} deleted!"
-        display --indent 2 --text "- Deleting nginx files" --result "DONE" --color GREEN
+        display --indent 6 --text "- Deleting nginx files" --result "DONE" --color GREEN
 
     fi
 
@@ -214,15 +214,15 @@ nginx_server_change_status() {
 
         log_event "success" "Project configuration status changed to ${project_status} for ${project_domain}" "false"
         #clear_last_line
-        display --indent 2 --text "- Changing Project configuration status" --result "DONE" --color GREEN
-        display --indent 4 --text "Status changed to ${project_status} for ${project_domain}"
+        display --indent 6 --text "- Changing Project configuration status" --result "DONE" --color GREEN
+        display --indent 8 --text "Status changed to ${project_status} for ${project_domain}"
 
     else
         debug=$(nginx -t 2>&1)
         log_event "error" "Problem changing project status for ${project_domain}: ${debug}" "false"
         #clear_last_line
-        display --indent 2 --text "- Changing Project configuration status" --result "FAIL" --color RED
-        display --indent 4 --text "Nginx configuration fails. Result: ${result}"
+        display --indent 6 --text "- Changing Project configuration status" --result "FAIL" --color RED
+        display --indent 8 --text "Nginx configuration fails. Result: ${result}"
 
     fi
 
@@ -245,7 +245,7 @@ nginx_server_change_phpv() {
 
     # Updating nginx server file
     log_event "info" "Chaning PHP version on nginx server file" "false"
-    display --indent 2 --text "- Chaning PHP version on nginx server file"
+    display --indent 6 --text "- Chaning PHP version on nginx server file"
 
     # TODO: ask wich version of php want to work with
 
@@ -258,8 +258,8 @@ nginx_server_change_phpv() {
     log_event "info" "PHP version for ${project_domain} changed from ${current_php_v} to ${new_php_v}" "false"
 
     clear_last_line
-    display --indent 2 --text "- Changing PHP version on nginx server file" --result "DONE" --color GREEN
-    display --indent 4 --text "PHP version changed to ${new_php_v}"
+    display --indent 6 --text "- Changing PHP version on nginx server file" --result "DONE" --color GREEN
+    display --indent 8 --text "PHP version changed to ${new_php_v}"
 
     #Test the validity of the nginx configuration
     result=$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)
@@ -270,14 +270,14 @@ nginx_server_change_phpv() {
         service nginx reload
 
         log_event "success" "Nginx configuration changed!" "false"
-        display --indent 2 --text "- Testing nginx configuration" --result "DONE" --color GREEN
+        display --indent 6 --text "- Testing nginx configuration" --result "DONE" --color GREEN
 
     else
         debug=$(nginx -t 2>&1)
         whiptail_event "WARNING" "Something went wrong changing Nginx configuration. Please check manually nginx config files."
         log_event "error" "Problem changing Nginx configuration. Debug: ${debug}" "false"
 
-        display --indent 2 --text "- Testing nginx configuration" --result "FAIL" --color RED
+        display --indent 6 --text "- Testing nginx configuration" --result "FAIL" --color RED
 
     fi
 
@@ -298,7 +298,7 @@ nginx_new_default_server() {
     # New default nginx configuration
     log_event "info" "Moving nginx configuration files ..." "false"
     cat "${SFOLDER}/config/nginx/sites-available/default" >"/etc/nginx/sites-available/default"
-    display --indent 2 --text "- Creating default nginx server" --result "DONE" --color GREEN
+    display --indent 6 --text "- Creating default nginx server" --result "DONE" --color GREEN
 
 }
 
@@ -309,7 +309,7 @@ nginx_delete_default_directory() {
     if [ -d "${nginx_default_dir}" ]; then
         rm -r $nginx_default_dir
         log_event "info" "Directory ${nginx_default_dir} deleted" "false"
-        display --indent 2 --text "- Removing nginx default directory" --result "DONE" --color GREEN
+        display --indent 6 --text "- Removing nginx default directory" --result "DONE" --color GREEN
     fi
 
 }
@@ -351,15 +351,15 @@ nginx_create_globals_config() {
         service nginx reload
 
         log_event "success" "Nginx global configuration added"
-        display --indent 2 --text "- Creating nginx globals config" --result "DONE" --color GREEN
+        display --indent 6 --text "- Creating nginx globals config" --result "DONE" --color GREEN
 
 
     else
         debug=$(nginx -t 2>&1)
         whiptail_event "WARNING" "Something went wrong changing Nginx configuration. Please check manually nginx config files."
         log_event "error" "Problem changing Nginx configuration. Debug: ${debug}"
-        display --indent 2 --text "- Creating nginx globals config" --result "FAIL" --color RED
-        display --indent 4 --text "Debug: ${debug}" --tcolor RED
+        display --indent 6 --text "- Creating nginx globals config" --result "FAIL" --color RED
+        display --indent 8 --text "Debug: ${debug}" --tcolor RED
 
 
     fi

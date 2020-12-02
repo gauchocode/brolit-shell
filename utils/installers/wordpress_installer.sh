@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.7
+# Version: 3.0.8
 ################################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
@@ -237,7 +237,7 @@ wordpress_installer () {
 
       # HTTPS with Certbot
       cert_project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
-      exitstatus=$?
+      exitstatus="$?"
       if [[ ${exitstatus} -eq 0 ]]; then
         
         certbot_certificate_install "${MAILA}" "${cert_project_domain}"
