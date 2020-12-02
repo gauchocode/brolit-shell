@@ -24,13 +24,13 @@ server {
         gzip_static on;
 
         ### SEC
-        #include /etc/nginx/globals/security.conf;
+        include /etc/nginx/globals/security.conf;
 
         ### WP-SEC
-        #include /etc/nginx/globals/wordpress_sec.conf;
+        include /etc/nginx/globals/wordpress_sec.conf;
 
         ### WP-SEO
-        #include /etc/nginx/globals/wordpress_seo.conf;
+        include /etc/nginx/globals/wordpress_seo.conf;
 
 }
 server {

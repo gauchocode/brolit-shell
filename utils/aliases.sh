@@ -4,36 +4,25 @@
 # Version: 3.0.7
 ################################################################################
 
-alias ..="cd .."
-
 alias userlist="cut -d: -f1 /etc/passwd"
 alias myip="curl http://ipecho.net/plain; echo"
 
 alias ports='netstat -tulanp'
 
-alias path='echo -e ${PATH//:/\\n}'
-
-alias now="echo It\'s now `date +%T`"
-
 ## Colorize the grep command output for ease of use (good for log files)
 alias grep='grep --color=auto'
 
 alias lt='ls --human-readable --size -1 -S --classify'
-alias lss='du -h --max-depth=1'
 
 alias cpv='rsync -ah --info=progress2'
 
 ## get top process eating memory
 alias psmem='ps auxf | sort -nr -k 4'
 alias psmem10='ps auxf | sort -nr -k 4 | head -10'
-alias psmem20='ps auxf | sort -nr -k 4 | head -20'
  
 ## get top process eating cpu
 alias pscpu='ps auxf | sort -nr -k 3'
 alias pscpu10='ps auxf | sort -nr -k 3 | head -10'
-alias pscpu20='ps auxf | sort -nr -k 3 | head -20'
-
-alias atop='atop -a 1'
  
 ## Get server cpu info
 alias cpuinfo='lscpu'
