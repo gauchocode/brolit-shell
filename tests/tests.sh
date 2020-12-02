@@ -329,7 +329,7 @@ test_cloudflare_change_a_record() {
 
     log_subsection "Test: test_cloudflare_change_a_record"
 
-    cloudflare_change_a_record "broobe.hosting" "bash.broobe.hosting" "0"
+    cloudflare_change_a_record "broobe.hosting" "bash.broobe.hosting" "false"
     cf_result="$?"
     if [[ ${cf_result} -eq 0 ]]; then 
         display --indent 6 --text "- test_cloudflare_change_a_record" --result "PASS" --color WHITE
@@ -344,7 +344,7 @@ test_cloudflare_delete_a_record() {
 
     log_subsection "Test: test_cloudflare_delete_a_record"
 
-    cloudflare_delete_a_record "broobe.hosting" "bash.broobe.hosting" "0"
+    cloudflare_delete_a_record "broobe.hosting" "bash.broobe.hosting" "false"
     cf_result="$?"
     if [[ ${cf_result} -eq 0 ]]; then 
         display --indent 6 --text "- test_cloudflare_delete_a_record" --result "PASS" --color WHITE
