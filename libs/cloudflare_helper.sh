@@ -279,7 +279,7 @@ cloudflare_change_a_record () {
 
         log_event "info" "ZONE_ID found: ${zone_id}" "false"
         log_event "info" "RECORD_ID not found: Trying to add the subdomain ..." "false"
-        display --indent 2 --text "- Adding the subdomain: ${record_name}"
+        display --indent 6 --text "- Adding the subdomain: ${record_name}"
 
         #log_event "info" "curl -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" \
         #-H \"X-Auth-Email: ${auth_email}\" \
@@ -297,7 +297,7 @@ cloudflare_change_a_record () {
 
         log_event "info" "ZONE_ID found: ${zone_id}"
         log_event "info" "RECORD_ID found: ${record_id}"
-        display --indent 2 --text "- Changing ${record_name} IP ..."
+        display --indent 6 --text "- Changing ${record_name} IP ..."
 
         delete="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
         -H "X-Auth-Email: ${auth_email}" \
@@ -318,14 +318,16 @@ cloudflare_change_a_record () {
     if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
         message="API UPDATE FAILED. RESULTS:\n${update}"
         log_event "error" "${message}"
+        display --indent 6 --text "- Updating subdomain on Cloudflare" --result "FAIL" --color RED
+        display --indent 8 --text "${message}" --tcolor RED
         
         return 1
 
     else
         message="IP changed to: ${SERVER_IP}"
         log_event "success" "${message}" "false"
-        display --indent 2 --text "- Updating subdomain on Cloudflare" --result "DONE" --color GREEN
-        display --indent 4 --text "IP: ${SERVER_IP}" --tcolor GREEN
+        display --indent 6 --text "- Updating subdomain on Cloudflare" --result "DONE" --color GREEN
+        display --indent 8 --text "IP: ${SERVER_IP}" --tcolor GREEN
 
     fi
 
@@ -385,7 +387,7 @@ cloudflare_delete_a_record () {
     if [[ -z "${record_id}" || ${record_id} == "" ]]; then
 
         log_event "info" "Record not found on Cloudflare"
-        display --indent 2 --text "- Record not found on Cloudflare" --result "FAIL" --color RED
+        display --indent 6 --text "- Record not found on Cloudflare" --result "FAIL" --color RED
 
         return 1
 
@@ -406,15 +408,16 @@ cloudflare_delete_a_record () {
 
         message="A record delete failed. Results:\n${delete}"
         log_event "error" "${message}"
-        display --indent 2 --text "- Deleting A record from Cloudflare" --result "FAIL" --color RED
+        display --indent 6 --text "- Deleting A record from Cloudflare" --result "FAIL" --color RED
+        display --indent 8 --text "${message}" --tcolor RED
 
         return 1
 
     else
         message="A record deleted: ${record_name}"
         log_event "success" "${message}"
-        display --indent 2 --text "- Deleting A record from Cloudflare" --result "DONE" --color GREEN
-        display --indent 4 --text "Record deleted: ${record_name}" --tcolor YELLOW
+        display --indent 6 --text "- Deleting A record from Cloudflare" --result "DONE" --color GREEN
+        display --indent 8 --text "Record deleted: ${record_name}" --tcolor YELLOW
 
     fi
 
