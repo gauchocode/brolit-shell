@@ -94,14 +94,14 @@ cloudflare_clear_cache() {
     fi
 
     log_event "info" "Getting Zone ID for domain: ${root_domain}"
-    #display --indent 2 --text "- Getting Zone ID"
+    #display --indent 6 --text "- Getting Zone ID"
 
     zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
 
     log_event "info" "Zone ID found: ${zone_id}"
     #clear_last_line
-    display --indent 2 --text "- Getting Zone ID for ${root_domain}" --result "DONE" --color GREEN
-    display --indent 4 --text "Zone ID found: ${zone_id}"
+    display --indent 6 --text "- Getting Zone ID for ${root_domain}" --result "DONE" --color GREEN
+    display --indent 8 --text "Zone ID found: ${zone_id}"
 
     purge_cache="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/purge_cache" \
     -H "X-Auth-Email: ${auth_email}" \
@@ -113,13 +113,13 @@ cloudflare_clear_cache() {
     if [[ ${purge_cache} == *"\"success\":false"* || ${purge_cache} == "" ]]; then
         message="Error trying to clear Cloudflare cache. Results:\n${update}"
         log_event "error" "${message}"
-        display --indent 2 --text "- Clearing Cloudflare cache" --result "FAIL" --color RED
+        display --indent 6 --text "- Clearing Cloudflare cache" --result "FAIL" --color RED
         return 1
 
     else
         message="Cache cleared for domain: ${root_domain}"
         log_event "success" "${message}"
-        display --indent 2 --text "- Clearing Cloudflare cache" --result "DONE" --color GREEN
+        display --indent 6 --text "- Clearing Cloudflare cache" --result "DONE" --color GREEN
     fi
 
 }
@@ -158,7 +158,7 @@ cloudflare_development_mode() {
      -H "X-Auth-Email: ${auth_email}" \
      -H "X-Auth-Key: ${auth_key}" \
      -H "Content-Type: application/json" \
-     --data "{\"value\":\"${dev_mode}\"}" >/dev/null)
+     --data "{\"value\":\"${dev_mode}\"}" )
 
     #if [[ ${dev_mode_result} == *"\"success\":false"* ]]; then
     if [[ ${dev_mode_result} == *"\"success\":false"* || ${dev_mode_result} == "" ]]; then
@@ -268,7 +268,7 @@ cloudflare_change_a_record () {
 
         # Default value
         proxy_status=false #need to be a bool, not a string
-        
+
     fi
 
     cur_ip="${SERVER_IP}"
@@ -284,17 +284,11 @@ cloudflare_change_a_record () {
         log_event "info" "RECORD_ID not found: Trying to add the subdomain ..."
         display --indent 6 --text "- Adding the subdomain: ${record_name}"
 
-        #log_event "info" "curl -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" \
-        #-H \"X-Auth-Email: ${auth_email}\" \
-        #-H \"X-Auth-Key: ${auth_key}\" \
-        #-H \"Content-Type: application/json\" \
-        #--data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":\"${proxy_status}\"}" "false"
-
         update="$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
         -H "X-Auth-Email: ${auth_email}" \
         -H "X-Auth-Key: ${auth_key}" \
         -H "Content-Type: application/json" \
-        --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":\"${proxy_status}\"}" )"
+        --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}" )"
 
     else
 
@@ -315,9 +309,6 @@ cloudflare_change_a_record () {
 
     fi
 
-    #fi
-
-    #if [[ ${update} == *"\"success\":false"* ]]; then
     if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
         message="API UPDATE FAILED. RESULTS:\n${update}"
         log_event "error" "${message}"
