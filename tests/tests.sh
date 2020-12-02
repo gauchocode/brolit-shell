@@ -34,7 +34,7 @@ test_mail_cert_section() {
     local email_subject
     local email_content
     
-    display --indent 2 --text "- Running test_mail_cert_section"
+    log_subsection "Test: test_mail_cert_section"
 
     mail_cert_section
 
@@ -51,13 +51,13 @@ test_mail_cert_section() {
     send_mail_notification "${email_subject}" "${email_content}"
 
     clear_last_line
-    display --indent 2 --text "- Running test_mail_cert_section" --result "DONE" --color WHITE
+    display --indent 6 --text "- test_mail_cert_section" --result "DONE" --color WHITE
 
 }
 
 test_mail_package_section() {
 
-    display --indent 2 --text "- Running test_mail_package_section"
+    log_subsection "Test: test_mail_package_section"
 
     # Compare package versions
     mail_package_status_section "${PKG_DETAILS}"
@@ -74,7 +74,7 @@ test_mail_package_section() {
     send_mail_notification "${email_subject}" "${email_content}"
 
     clear_last_line
-    display --indent 2 --text "- Running test_mail_package_section" --result "DONE" --color WHITE
+    display --indent 6 --text "- test_mail_package_section" --result "DONE" --color WHITE
 
 }
 
@@ -93,8 +93,11 @@ test_mysql_helper() {
 }
 
 test_ask_mysql_root_psw() {
-    echo -e "${B_CYAN} > TESTING FUNCTION: ask_mysql_root_psw${B_ENDCOLOR}"
+
+    log_subsection "Test: test_ask_mysql_root_psw"
+
     ask_mysql_root_psw
+
 }
 
 test_mysql_user_create() {
@@ -223,7 +226,15 @@ test_mysql_database_drop() {
 
 }
 
-####################### TEST FOR display #######################
+####################### TEST FOR commons #######################
+
+test_common_funtions() {
+
+    test_display_functions
+    test_get_root_domain
+    test_extract_domain_extension
+
+}
 
 test_display_functions() {
 
@@ -255,7 +266,25 @@ test_display_functions() {
 
 }
 
-test_common_funtions() {
+test_get_root_domain() {
+
+    log_subsection "Test: get_root_domain"
+
+    result="$(get_root_domain "www.broobe.com")"
+
+    result="$(get_root_domain "dev.broobe.com")"
+
+    result="$(get_root_domain "dev.www.broobe.com")"
+
+    result="$(get_root_domain "broobe.hosting")"
+
+    result="$(get_root_domain "www.broobe.hosting")"
+
+    result="$(get_root_domain "www.dev.broobe.hosting")"
+
+}
+
+test_extract_domain_extension() {
 
     log_subsection "Testing Domain Functions"
 
@@ -287,7 +316,7 @@ test_cloudflare_funtions() {
 
     test_cloudflare_domain_exists
     test_cloudflare_change_a_record
-    #test_cloudflare_delete_a_record
+    test_cloudflare_delete_a_record
     test_cloudflare_clear_cache
 
 }
@@ -384,21 +413,12 @@ test_mysql_helper
 
 test_cloudflare_funtions
 
-#log_subsection "Testing mail functions"
-
 #test_mail_cert_section
 
 #test_mail_package_section
 
-#test_cloudflare_change_a_record
-
-#test_mysql_user_exists
-#test_mysql_database_exists
-
 #to_test="/var/www/goseries-master"
 #is_wp_project "$to_test"
-
-#cloudflare_change_a_record "domain.com" "test.domain.com"
 
 #nginx_server_change_phpv "domain.com" "7.4"
 
