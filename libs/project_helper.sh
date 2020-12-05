@@ -1,9 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?>
-<d:error xmlns:d="DAV:" xmlns:s="http://sabredav.org/ns">
-  <s:exception>OCA\DAV\Connector\Sabre\Exception\FileLocked</s:exception>
-  <s:message>"Personal/Workspace/lemp-utils-scripts/libs/project_helper.sh" is locked</s:message>
-</d:error>
-1 = ${dir_path}
+#!/bin/bash
+#
+# Autor: BROOBE. web + mobile development - https://broobe.com
+# Version: 3.0.7
+################################################################################
+#
+# TODO: check when add www.DOMAIN.com and then select other stage != prod
+#
+
+project_install() {
+
+  # $1 = ${dir_path}
   # $2 = ${project_type}
 
   local dir_path=$1

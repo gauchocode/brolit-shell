@@ -53,6 +53,8 @@ installers_and_configurators() {
 
     fi
     if [[ ${installer_type} == *"10"* ]]; then
+
+      # TODO: extract to function
       
       display --indent 2 --text "- Installing zsh and utils"
 

@@ -76,8 +76,15 @@ nginx_server_create() {
             cp "${SFOLDER}/config/nginx/sites-available/${project_type}" "${WSERVER}/sites-available/${project_type}"
             ln -s "${WSERVER}/sites-available/${project_type}" "${WSERVER}/sites-enabled/${project_type}"
 
+            # Search and replace domain.com string with correct project_domain
+            sed -i "s/domain.com/${project_domain}/g" "${WSERVER}/sites-available/${project_type}"
+
+            # Set/Change PHP version
+            nginx_server_change_phpv "${project_type}"
+
             display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
         ;;
+
         *)
             log_event "error" "Nginx server config creation fail! Nginx server type '${server_type}' unknow."
             display --indent 6 --text "- Nginx server config creation" --result FAIL --color RED
@@ -86,43 +93,9 @@ nginx_server_create() {
         ;;
 
     esac
-
-    # TODO: ask wich version of php want to work with
-
-    # TODO: in the future, maybe we want this only on PHP projects
-
-    # TODO: it's fails with $server_type = "tool"
-
-    if [ "${PHP_V}" != "" ]; then
-        # Replace string to match PHP version
-        sed -i "s#PHP_V#${PHP_V}#" "${WSERVER}/sites-available/${project_domain}"
-        display --indent 6 --text "- Configuring PHP for '${project_domain}'" --result DONE --color GREEN
-    else
-
-        display --indent 6 --text "- Configuring PHP for '${project_domain}'" --result FAIL --color RED
-        display --indent 8 --text "PHP_V not defined! Is PHP installed?"
-        log_event "critical" "PHP_V not defined! Is PHP installed?"
-        
-    fi
-    
+   
     #Test the validity of the nginx configuration
-    nginx_result=$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)
-
-    if [[ "${nginx_result}" = "successful" ]];then
-        
-        # Reload webserver
-        service nginx reload
-
-        log_event "success" "nginx configuration created"
-        display --indent 6 --text "- Nginx server configuration" --result DONE --color GREEN
-
-    else
-
-        debug=$(nginx -t 2>&1)
-        log_event "error" "nginx configuration fail: $debug"
-        display --indent 6 --text "- Nginx server configuration" --result FAIL --color RED
-
-    fi
+    nginx_configuration_test
 
 }
 
@@ -138,11 +111,11 @@ nginx_server_delete() {
         rm "/etc/nginx/sites-available/${filename}"
         rm "/etc/nginx/sites-enabled/${filename}"
 
-        # Reload webserver
-        service nginx reload
-
         log_event "info" "Nginx config files for ${filename} deleted!"
         display --indent 6 --text "- Deleting nginx files" --result "DONE" --color GREEN
+
+        #Test the validity of the nginx configuration
+        nginx_configuration_test
 
     fi
 
@@ -167,73 +140,74 @@ nginx_server_change_status() {
     case ${project_status} in
 
         online)
-            log_event "info" "New project status: ${project_status}" "false"
+            log_event "info" "New project status: ${project_status}"
             if [ -f "${WSERVER}/sites-available/${project_domain}" ]; then
 
                 # Creating symbolic link
                 ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
                 # Logging
-                log_event "info" "Project config added to ${WSERVER}/sites-enabled/${project_domain}" "false"
+                log_event "info" "Project config added to ${WSERVER}/sites-enabled/${project_domain}"
+                display --indent 6 --text "- Changing project status to ONLINE" --result "DONE" --color GREEN
 
             else
                 # Logging
-                log_event "error" "${WSERVER}/sites-available/${project_domain} does not exist" "false"
+                log_event "error" "${WSERVER}/sites-available/${project_domain} does not exist"
+                display --indent 6 --text "- Changing project status to ONLINE" --result "FAIL" --color RED
+                display --indent 8 --text "${WSERVER}/sites-available/${project_domain} does not exist" --tcolor RED
 
             fi
             ;;
 
         offline)
-            log_event "info" "New project status: ${project_status}" "false"
+            log_event "info" "New project status: ${project_status}"
             if [ -h "${WSERVER}/sites-enabled/${project_domain}" ]; then
 
                 # Deleting config
                 rm "${WSERVER}/sites-enabled/${project_domain}"
                 # Logging
-                log_event "info" "Project config deleted from ${WSERVER}/sites-enabled/${project_domain}" "false"
+                log_event "info" "Project config deleted from ${WSERVER}/sites-enabled/${project_domain}"
+                display --indent 6 --text "- Changing project status to OFFLINE" --result "DONE" --color GREEN
 
             else
                 # Logging
-                log_event "error" "${WSERVER}/sites-enabled/${project_domain} does not exist" "false"
+                log_event "error" "${WSERVER}/sites-enabled/${project_domain} does not exist"
+                display --indent 6 --text "- Changing project status to OFFLINE" --result "FAIL" --color RED
+                display --indent 8 --text "${WSERVER}/sites-available/${project_domain} does not exist" --tcolor RED
+
             fi
             ;;
 
         *)
-            log_event "info" "New project status: Unknown" "false"
+            log_event "info" "New project status: Unknown"
             return 1
             ;;
 
     esac
 
     #Test the validity of the nginx configuration
-    result=$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)
+    nginx_configuration_test
 
-    if [ "${result}" = "successful" ];then
-        
-        # Reload webserver
-        service nginx reload
+}
 
-        log_event "success" "Project configuration status changed to ${project_status} for ${project_domain}" "false"
-        #clear_last_line
-        display --indent 6 --text "- Changing Project configuration status" --result "DONE" --color GREEN
-        display --indent 8 --text "Status changed to ${project_status} for ${project_domain}"
+nginx_server_set_domain() {
 
-    else
-        debug=$(nginx -t 2>&1)
-        log_event "error" "Problem changing project status for ${project_domain}: ${debug}" "false"
-        #clear_last_line
-        display --indent 6 --text "- Changing Project configuration status" --result "FAIL" --color RED
-        display --indent 8 --text "Nginx configuration fails. Result: ${result}"
+    #$1 = ${nginx_server_file} / ${tool} or ${project_domain}
+    #$2 = ${domain_name}
 
-    fi
+    local nginx_server_file=$1
+    local domain_name=$2
+
+    # Search and replace domain.com string with correct project_domain
+    sed -i "s/domain.com/${domain_name}/g" "${WSERVER}/sites-available/${nginx_server_file}"
 
 }
 
 nginx_server_change_phpv() {
 
-    #$1 = ${project_domain}
+    #$1 = ${nginx_server_file} / ${tool} or ${project_domain}
     #$2 = ${new_php_v} optional
 
-    local project_domain=$1
+    local nginx_server_file=$1
     local new_php_v=$2
 
     # TODO: if $new_php_v is not set, must ask wich PHP_V
@@ -244,32 +218,49 @@ nginx_server_change_phpv() {
     fi
 
     # Updating nginx server file
-    log_event "info" "Chaning PHP version on nginx server file" "false"
+    log_event "info" "Chaning PHP version on nginx server file"
     display --indent 6 --text "- Chaning PHP version on nginx server file"
 
     # TODO: ask wich version of php want to work with
 
     # Replace string to match PHP version
-    current_php_v_string=$(cat ${WSERVER}/sites-available/${project_domain} | grep fastcgi_pass | cut -d '/' -f 4 | cut -d '-' -f 1)
+    current_php_v_string=$(cat ${WSERVER}/sites-available/${nginx_server_file} | grep fastcgi_pass | cut -d '/' -f 4 | cut -d '-' -f 1)
     current_php_v=${current_php_v_string#"php"}
     
-    sed -i "s#${current_php_v}#${new_php_v}#" "${WSERVER}/sites-available/${project_domain}"
+    sed -i "s#${current_php_v}#${new_php_v}#" "${WSERVER}/sites-available/${nginx_server_file}"
 
-    log_event "info" "PHP version for ${project_domain} changed from ${current_php_v} to ${new_php_v}" "false"
+    log_event "info" "PHP version for ${nginx_server_file} changed from ${current_php_v} to ${new_php_v}"
 
     clear_last_line
     display --indent 6 --text "- Changing PHP version on nginx server file" --result "DONE" --color GREEN
     display --indent 8 --text "PHP version changed to ${new_php_v}"
 
     #Test the validity of the nginx configuration
+    nginx_configuration_test
+
+}
+
+nginx_reconfigure() {
+
+    # nginx.conf broobe standard configuration
+    cat "${SFOLDER}/config/nginx/nginx.conf" >"/etc/nginx/nginx.conf"
+
+    #Test the validity of the nginx configuration
+    nginx_configuration_test
+
+}
+
+nginx_configuration_test(){
+
+    #Test the validity of the nginx configuration
     result=$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)
 
-    if [ "${result}" = "successful" ];then
+    if [[ "${result}" = "successful" ]];then
 
         # Reload webserver
         service nginx reload
 
-        log_event "success" "Nginx configuration changed!" "false"
+        log_event "success" "Nginx configuration changed!"
         display --indent 6 --text "- Testing nginx configuration" --result "DONE" --color GREEN
 
     else
@@ -280,16 +271,6 @@ nginx_server_change_phpv() {
         display --indent 6 --text "- Testing nginx configuration" --result "FAIL" --color RED
 
     fi
-
-}
-
-nginx_reconfigure() {
-
-    # nginx.conf broobe standard configuration
-    cat "${SFOLDER}/config/nginx/nginx.conf" >"/etc/nginx/nginx.conf"
-
-    # Reload webserver
-    service nginx reload
 
 }
 
@@ -343,26 +324,7 @@ nginx_create_globals_config() {
     change_ownership "www-data" "www-data" "/etc/nginx/globals/"
 
     #Test the validity of the nginx configuration
-    result=$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)
-
-    if [ "${result}" = "successful" ];then
-        
-        # Reload webserver
-        service nginx reload
-
-        log_event "success" "Nginx global configuration added"
-        display --indent 6 --text "- Creating nginx globals config" --result "DONE" --color GREEN
-
-
-    else
-        debug=$(nginx -t 2>&1)
-        whiptail_event "WARNING" "Something went wrong changing Nginx configuration. Please check manually nginx config files."
-        log_event "error" "Problem changing Nginx configuration. Debug: ${debug}"
-        display --indent 6 --text "- Creating nginx globals config" --result "FAIL" --color RED
-        display --indent 8 --text "Debug: ${debug}" --tcolor RED
-
-
-    fi
+    nginx_configuration_test
 
 }
 
