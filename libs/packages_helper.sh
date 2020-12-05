@@ -232,7 +232,7 @@ check_packages_required() {
 
   fi
 
-  log_event "success" "All required packages are installed" "false"
+  log_event "success" "All required packages are installed"
 
 }
 
@@ -247,26 +247,26 @@ basic_packages_installation() {
   log_section "Basic Packages Installation"
   
   # Updating packages lists
-  log_event "info" "Adding repos and updating package lists ..." "false"
+  log_event "info" "Adding repos and updating package lists ..."
 
   apt-get --yes install software-properties-common > /dev/null
   apt-get --yes update -qq > /dev/null
 
-  display --indent 2 --text "- Adding repos and updating package lists" --result "DONE" --color GREEN
+  display --indent 6 --text "- Adding repos and updating package lists" --result "DONE" --color GREEN
 
   # Upgrading packages
-  log_event "info" "Upgrading packages before installation ..." "false"
+  log_event "info" "Upgrading packages before installation ..."
 
   apt-get --yes dist-upgrade -qq > /dev/null
 
-  display --indent 2 --text "- Upgrading packages before installation" --result "DONE" --color GREEN
+  display --indent 6 --text "- Upgrading packages before installation" --result "DONE" --color GREEN
 
   # Installing packages
-  log_event "info" "Installing basic packages ..." "false"
+  log_event "info" "Installing basic packages ..."
   
   apt-get --yes install vim unzip zip clamav ncdu imagemagick-* jpegoptim optipng webp sendemail libio-socket-ssl-perl dnsutils ghostscript pv ppa-purge -qq > /dev/null
 
-  display --indent 2 --text "- Installing basic packages" --result "DONE" --color GREEN
+  display --indent 6 --text "- Installing basic packages" --result "DONE" --color GREEN
 
 }
 
