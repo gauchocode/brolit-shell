@@ -1519,16 +1519,19 @@ get_domain_extension() {
     domain_ext=.${domain_ext}
 
     # Logging
-    display --indent 6 --text "- Extracting domain extension from ${domain}" --result DONE --color GREEN
-    display --indent 8 --text "Domain extension: ${domain_ext}"
-    log_event "info" "domain_ext: ${domain_ext}"
+    #display --indent 6 --text "- Extracting domain extension from ${domain}" --result DONE --color GREEN
+    #display --indent 8 --text "Domain extension: ${domain_ext}"
+    log_event "info" "Extracting domain extension from ${domain}."
+    log_event "info" "Domain extension extracted: ${domain_ext}"
 
     # Return
     echo "${domain_ext}"
 
   else
 
-    display --indent 6 --text "- Extracting domain extension from ${domain}" --result FAIL --color RED
+    # Logging
+    #display --indent 6 --text "- Extracting domain extension from ${domain}" --result FAIL --color RED
+    log_event "error" "Extracting domain extension from ${domain}"
 
     return 1
 
@@ -1682,7 +1685,7 @@ ask_project_name() {
   # TODO: remove some suffix keywords '_com' '_ar' '_es' ... and prefix 'www_'
 
   project_name=$(whiptail --title "Project Name" --inputbox "Insert a project name (only separator allow is '_'). Ex: my_domain" 10 60 "${name}" 3>&1 1>&2 2>&3)
-  exitstatus=$?
+  exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Return
@@ -1702,7 +1705,7 @@ ask_project_domain() {
   local project_domain=$1
   
   project_domain=$(whiptail --title "Domain" --inputbox "Insert the project's domain. Example: landing.domain.com" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
-  exitstatus=$?
+  exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Return
@@ -1723,7 +1726,7 @@ ask_project_type() {
   project_types="WordPress X Laravel X Basic-PHP X HTML X"
   
   project_type=$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 $(for x in ${project_types}; do echo "$x"; done) 3>&1 1>&2 2>&3)
-  exitstatus=$?
+  exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Lowercase
@@ -1752,7 +1755,7 @@ ask_rootdomain_for_cloudflare_config() {
   else
     root_domain=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 "${root_domain}" 3>&1 1>&2 2>&3)
   fi
-  exitstatus=$?
+  exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
     # Return
     echo "${root_domain}"

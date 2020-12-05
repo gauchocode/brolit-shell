@@ -23,7 +23,7 @@ netdata_required_packages() {
 
   ubuntu_version="$(get_ubuntu_version)"
 
-  display --indent 2 --text "- Installing netdata required packages"
+  display --indent 6 --text "- Installing netdata required packages"
 
   if [ "${ubuntu_version}" = "1804" ]; then
     apt-get --yes install zlib1g-dev uuid-dev libuv1-dev liblz4-dev libjudy-dev libssl-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python python-mysqldb lm-sensors libmnl netcat nodejs python-ipaddress python-dnspython iproute2 python-beanstalkc libuv liblz4 Judy openssl -qq > /dev/null
@@ -34,14 +34,14 @@ netdata_required_packages() {
   fi
 
   clear_last_line
-  display --indent 2 --text "- Installing netdata required packages" --result "DONE" --color GREEN
+  display --indent 6 --text "- Installing netdata required packages" --result "DONE" --color GREEN
 
 }
 
 netdata_installer() {
 
   log_event "info" "Installing Netdata ..."
-  display --indent 2 --text "- Downloading and compiling netdata"
+  display --indent 6 --text "- Downloading and compiling netdata"
 
   bash <(curl -Ss https://my-netdata.io/kickstart.sh) all --dont-wait --disable-telemetry &>/dev/null
 
@@ -49,7 +49,7 @@ netdata_installer() {
 
   log_event "info" "Netdata Installed"
   clear_last_line
-  display --indent 2 --text "- Downloading and compiling netdata" --result "DONE" --color GREEN
+  display --indent 6 --text "- Downloading and compiling netdata" --result "DONE" --color GREEN
 
 }
 
@@ -63,22 +63,22 @@ netdata_configuration() {
 
   cat "${SFOLDER}/config/netdata/python.d/mysql.conf" > "/etc/netdata/python.d/mysql.conf"
   log_event "info" "MySQL config done!"
-  display --indent 2 --text "- MySQL configuration" --result "DONE" --color GREEN
+  display --indent 6 --text "- MySQL configuration" --result "DONE" --color GREEN
 
   # monit
   cat "${SFOLDER}/config/netdata/python.d/monit.conf" >"/etc/netdata/python.d/monit.conf"
   log_event "info" "Monit config done!"
-  display --indent 2 --text "- Monit configuration" --result "DONE" --color GREEN
+  display --indent 6 --text "- Monit configuration" --result "DONE" --color GREEN
 
   # web_log
   cat "${SFOLDER}/config/netdata/python.d/web_log.conf" >"/etc/netdata/python.d/web_log.conf"
   log_event "info" "Nginx Web Log config done!"
-  display --indent 2 --text "- Nginx Web Log configuration" --result "DONE" --color GREEN
+  display --indent 6 --text "- Nginx Web Log configuration" --result "DONE" --color GREEN
 
   # health_alarm_notify
   cat "${SFOLDER}/config/netdata/health_alarm_notify.conf" >"/etc/netdata/health_alarm_notify.conf"
   log_event "info" "Health alarm config done!"
-  display --indent 2 --text "- Health alarm configuration" --result "DONE" --color GREEN
+  display --indent 6 --text "- Health alarm configuration" --result "DONE" --color GREEN
 
   # telegram
   netdata_telegram_config
@@ -87,7 +87,7 @@ netdata_configuration() {
 
   log_event "info" "Netdata Configuration finished"
 
-  display --indent 2 --text "- Configuring netdata" --result "DONE" --color GREEN
+  display --indent 6 --text "- Configuring netdata" --result "DONE" --color GREEN
 
 }
 
@@ -157,7 +157,7 @@ netdata_telegram_config() {
         sed -i '/^#.*clear_alarm_always/ s/^#//' $HEALTH_ALARM_NOTIFY_CONF
       fi
 
-      display --indent 2 --text "- Telegram configuration" --result "DONE" --color GREEN
+      display --indent 6 --text "- Telegram configuration" --result "DONE" --color GREEN
 
     else
       return 1
@@ -202,16 +202,16 @@ if [ ! -x "${NETDATA}" ]; then
     echo -e "${YELLOW}${ITALIC} > Do you really want to install netdata?${ENDCOLOR}"
     read -p "Please type 'y' or 'n'" yn
 
-    log_section "Netdata Installer"
+    log_subsection "Netdata Installer"
 
     case $yn in
     [Yy]*)
 
-      log_event "info" "Updating packages before installation ..." "false"
+      log_event "info" "Updating packages before installation ..."
 
       apt-get --yes update -qq > /dev/null
 
-      display --indent 2 --text "- Updating packages before installation" --result "DONE" --color GREEN
+      display --indent 6 --text "- Updating packages before installation" --result "DONE" --color GREEN
 
       netdata_required_packages
 
@@ -235,7 +235,7 @@ if [ ! -x "${NETDATA}" ]; then
       # HTTPS with Certbot
       certbot_certificate_install "${MAILA}" "${DOMAIN}"
 
-      display --indent 2 --text "- Netdata installation" --result "DONE" --color GREEN
+      display --indent 6 --text "- Netdata installation" --result "DONE" --color GREEN
 
       break
       ;;
@@ -259,6 +259,8 @@ else
   NETDATA_CHOSEN_OPTION=$(whiptail --title "Netdata Installer" --menu "Netdata is already installed." 20 78 10 "${NETDATA_OPTIONS[@]}" 3>&1 1>&2 2>&3)
   exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
+
+    log_subsection "Netdata Installer"
 
     if [[ ${NETDATA_CHOSEN_OPTION} == *"01"* ]]; then
       cd netdata && git pull && ./netdata-installer.sh --dont-wait
@@ -296,7 +298,7 @@ else
           source "/usr/libexec/netdata-uninstaller.sh" --yes --dont-wait
 
           log_event "info" "Netdata removed ok!" "false"
-          display --indent 2 --text "- Uninstalling netdata" --result "DONE" --color GREEN
+          display --indent 6 --text "- Uninstalling netdata" --result "DONE" --color GREEN
 
           break
           ;;
