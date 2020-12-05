@@ -22,7 +22,7 @@ nginx_server_create() {
     log_event "info" "Creating nginx configuration file for domain: ${project_domain}"
     log_event "info" "Project Type: ${project_type}"
     log_event "info" "Server Type: ${server_type}"
-    log_event "info" "List of domains or subdomains that will be redirect to project_domain: ${redirect_domains}" "false"
+    log_event "info" "List of domains or subdomains that will be redirect to project_domain: ${redirect_domains}"
 
     # Create nginx config files for site
 
