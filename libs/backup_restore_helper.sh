@@ -69,7 +69,7 @@ make_temp_files_backup() {
 
   local folder_to_backup=$1
 
-  display --indent 2 --text "- Creating backup on temp directory"
+  display --indent 6 --text "- Creating backup on temp directory"
 
   # Moving project files to temp directory
   mkdir "${SFOLDER}/tmp/old_backup"
@@ -77,7 +77,7 @@ make_temp_files_backup() {
 
   log_event "info" "Temp backup completed and stored here: ${SFOLDER}/tmp/old_backup" "false"
   clear_last_line
-  display --indent 2 --text "- Creating backup on temp directory" --result "DONE" --color GREEN
+  display --indent 6 --text "- Creating backup on temp directory" --result "DONE" --color GREEN
 
 }
 
@@ -126,7 +126,7 @@ restore_database_backup() {
   log_event "info" "Cleanning temp files ..." "false"
   rm "${project_backup%%.*}.tar.bz2"
   rm "${project_backup}"
-  display --indent 2 --text "- Cleanning temp files" --result "DONE" --color GREEN
+  display --indent 6 --text "- Cleanning temp files" --result "DONE" --color GREEN
 
 }
 
@@ -157,10 +157,10 @@ download_and_restore_config_files_from_dropbox(){
     cd "${SFOLDER}/tmp"
 
     # Downloading Config Backup
-    display --indent 2 --text "- Downloading config backup from dropbox"
+    display --indent 6 --text "- Downloading config backup from dropbox"
     dropbox_output="$(${DROPBOX_UPLOADER} download "${dropbox_chosen_type_path}/${chosen_config_type}/${chosen_config_bk}" 1>&2)"
     clear_last_line
-    display --indent 2 --text "- Downloading config backup from dropbox" --result "DONE" --color GREEN
+    display --indent 6 --text "- Downloading config backup from dropbox" --result "DONE" --color GREEN
     
     # Restore files
     mkdir "${chosen_config_type}"
@@ -223,10 +223,10 @@ restore_nginx_site_files() {
 
   # Downloading Config Backup
   log_event "info" "Downloading nginx backup from dropbox" "false"
-  display --indent 2 --text "- Downloading nginx backup from dropbox"
+  display --indent 6 --text "- Downloading nginx backup from dropbox"
   dropbox_output="$(${DROPBOX_UPLOADER} download "${bk_to_download}" 1>&2)"
   clear_last_line
-  display --indent 2 --text "- Downloading nginx backup from dropbox" --result "DONE" --color GREEN
+  display --indent 6 --text "- Downloading nginx backup from dropbox" --result "DONE" --color GREEN
 
   # Extract tar.bz2 with lbzip2
   mkdir "${SFOLDER}/tmp/nginx"
@@ -237,7 +237,7 @@ restore_nginx_site_files() {
   # Checking if default nginx folder exists
   if [[ -n "${WSERVER}" ]]; then
 
-    log_event "info" "Folder ${WSERVER} exists ... OK" "false"
+    log_event "info" "Folder ${WSERVER} exists ... OK"
 
     if [[ -z "${domain}" ]]; then
 
@@ -245,45 +245,42 @@ restore_nginx_site_files() {
       file_browser "$menutitle" "$startdir"
 
       to_restore=${filepath}"/"${filename}
-      log_event "info" "File to restore: ${to_restore} ..." "false"
+      log_event "info" "File to restore: ${to_restore} ..."
 
     else
 
       to_restore="${SFOLDER}/tmp/nginx/sites-available/${domain}"
       filename=${domain}
 
-      log_event "info" "File to restore: ${to_restore} ..." "false"
+      log_event "info" "File to restore: ${to_restore} ..."
 
     fi    
 
     if [[ -f "${WSERVER}/sites-available/${filename}" ]]; then
 
-      log_event "info" "File ${WSERVER}/sites-available/${filename} already exists. Making a backup file ..." "false"
+      log_event "info" "File ${WSERVER}/sites-available/${filename} already exists. Making a backup file ..."
       mv "${WSERVER}/sites-available/${filename}" "${WSERVER}/sites-available/${filename}_bk"
 
-      display --indent 2 --text "- Making backup of existing config" --result "DONE" --color GREEN
+      display --indent 6 --text "- Making backup of existing config" --result "DONE" --color GREEN
 
     fi
 
 
-    log_event "info" "Restoring nginx configuration from backup: ${filename}" "false"
+    log_event "info" "Restoring nginx configuration from backup: ${filename}"
     
     cp "${to_restore}" "${WSERVER}/sites-available/${filename}"
 
     ln -s "${WSERVER}/sites-available/${filename}" "${WSERVER}/sites-enabled/${filename}"
 
-    display --indent 2 --text "- Restoring Nginx server config" --result "DONE" --color GREEN
+    display --indent 6 --text "- Restoring Nginx server config" --result "DONE" --color GREEN
 
-    nginx_server_change_phpv "${domain}" ""
+    nginx_server_change_phpv "${domain}"
 
-    log_event "info" "Reloading webserver ..." "false"
-    service nginx reload
-
-    display --indent 2 --text "- Reloading nginx" --result "DONE" --color GREEN
+    display --indent 6 --text "- Reloading nginx" --result "DONE" --color GREEN
 
   else
 
-    log_event "error" "/etc/nginx/sites-available NOT exist... Skipping!" "false"
+    log_event "error" "/etc/nginx/sites-available NOT exist... Skipping!"
     #echo "ERROR: nginx main dir is not present!"
 
   fi
@@ -334,6 +331,8 @@ restore_letsencrypt_site_files() {
   cp -r "${SFOLDER}/tmp/letsencrypt/archive/${domain}" "/etc/letsencrypt/archive/"
   cp -r "${SFOLDER}/tmp/letsencrypt/live/${domain}" "/etc/letsencrypt/live/"
 
+  display --indent 6 --text "- Restoring letsencrypt config files" --result "DONE" --color GREEN
+
 }
 
 restore_site_files() {
@@ -353,7 +352,7 @@ restore_site_files() {
     # Log
     log_subsection "Site Files Restore"
     log_event "info" "Setting chosen_domain=${chosen_domain}" "false"
-    display --indent 2 --text "- Selecting project domain" --result "DONE" --color GREEN
+    display --indent 6 --text "- Selecting project domain" --result "DONE" --color GREEN
 
     # New tmp folder
     project_tmp_folder="${SFOLDER}/tmp/${chosen_domain}"
@@ -377,19 +376,19 @@ restore_site_files() {
 
     # Restore files
     log_event "info" "Restoring backup files on ${folder_to_install} ..." "false"
-    display --indent 2 --text "- Restoring backup files"
+    display --indent 6 --text "- Restoring backup files"
     
     mv "${project_tmp_folder}" "${folder_to_install}"
 
     clear_last_line
-    display --indent 2 --text "- Restoring backup files" --result "DONE" --color GREEN
+    display --indent 6 --text "- Restoring backup files" --result "DONE" --color GREEN
     
     # TODO: we need another aproach for other kind of projects
     # Search wp-config.php (to find wp installation on sub-folders)
     install_path=$(search_wp_config "${actual_folder}")
 
     log_event "info" "install_path=${install_path}" "false"
-    display --indent 4 --text "Restored on: ${install_path}"
+    display --indent 8 --text "Restored on: ${install_path}"
 
     if [ -d "${install_path}" ]; then
 
@@ -476,17 +475,17 @@ select_restore_type_from_dropbox() {
 
           # Downloading Backup
           log_event "info" "Downloading backup from dropbox"
-          display --indent 2 --text "- Downloading backup from dropbox"
+          display --indent 6 --text "- Downloading backup from dropbox"
           dropbox_output="$("${DROPBOX_UPLOADER}" download "${bk_to_dowload}" 1>&2)"
           clear_last_line
-          display --indent 2 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
+          display --indent 6 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
 
           # Uncompressing
           log_event "info" "Uncompressing ${chosen_backup_to_restore}"
-          display --indent 2 --text "- Uncompressing backup"
+          display --indent 6 --text "- Uncompressing backup"
           pv --width 70 "${chosen_backup_to_restore}" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
           clear_last_line
-          display --indent 2 --text "- Uncompressing backup" --result "DONE" --color GREEN
+          display --indent 6 --text "- Uncompressing backup" --result "DONE" --color GREEN
 
           if [[ ${chosen_type} == *"${DBS_F}"* ]]; then
 
@@ -598,46 +597,46 @@ project_restore() {
   local chosen_backup_to_restore 
   local db_to_download
 
-  log_section "Restore Project Backup"
+  log_subsection "Restore Project Backup"
 
   dropbox_project_list="$(${DROPBOX_UPLOADER} -hq list "${chosen_server}/site")"
 
   # Select Project
   chosen_project=$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${dropbox_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
-  exitstatus=$?
+  exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
     dropbox_chosen_backup_path="${chosen_server}/site/${chosen_project}"
     dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}")"
   
   else
 
-    display --indent 2 --text "- Restore project backup" --result "SKIPPED" --color YELLOW
+    display --indent 6 --text "- Restore project backup" --result "SKIPPED" --color YELLOW
     return 1
 
   fi
   # Select Backup File
   chosen_backup_to_restore=$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${dropbox_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
-  exitstatus=$?
+  exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    display --indent 2 --text "- Selecting project backup" --result "DONE" --color GREEN
-    display --indent 4 --text "Backup selected: ${chosen_backup_to_restore}"
+    display --indent 6 --text "- Selecting project backup" --result "DONE" --color GREEN
+    display --indent 8 --text "Backup selected: ${chosen_backup_to_restore}"
 
     cd "${SFOLDER}/tmp"
 
     # Download backup
     bk_to_dowload="${chosen_server}/site/${chosen_project}/${chosen_backup_to_restore}"
     log_event "info" "Downloading backup from dropbox: ${bk_to_dowload}"
-    display --indent 2 --text "- Downloading backup from dropbox"
+    display --indent 6 --text "- Downloading backup from dropbox"
     dropbox_output=$(${DROPBOX_UPLOADER} download "${bk_to_dowload}" 1>&2)
     clear_last_line
-    display --indent 2 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
+    display --indent 6 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
 
     # Uncompress backup file
     log_event "info" "Uncompressing ${chosen_backup_to_restore}"
     pv --width 70 "${chosen_backup_to_restore}" | ${TAR} xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
     clear_last_line
-    display --indent 2 --text "- Uncompressing backup file" --result "DONE" --color GREEN
+    display --indent 6 --text "- Uncompressing backup file" --result "DONE" --color GREEN
 
     # Project Type
     project_type=$(get_project_type "${SFOLDER}/tmp/${chosen_project}")
@@ -692,16 +691,16 @@ project_restore() {
     log_event "" "*****************************************************"
 
     # Downloading Database Backup
-    display --indent 2 --text "- Downloading backup from dropbox"
+    display --indent 6 --text "- Downloading backup from dropbox"
     dropbox_output="$(${DROPBOX_UPLOADER} download "${db_to_download}" 1>&2)"
     clear_last_line
-    display --indent 2 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
+    display --indent 6 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
 
     # Uncompress backup file
     log_event "info" "Uncompressing ${db_to_download}"
     pv --width 70 "${db_name}_database_${backup_date}.tar.bz2" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
     clear_last_line
-    display --indent 2 --text "- Uncompressing backup file" --result "DONE" --color GREEN
+    display --indent 6 --text "- Uncompressing backup file" --result "DONE" --color GREEN
 
     # Trying to extract project name from domain
     chosen_project="$(cut -d'.' -f1 <<<"${chosen_project}")"
@@ -748,8 +747,8 @@ project_restore() {
     else
 
       log_event "warning" "MySQL user ${db_user} already exists"
-      display --indent 2 --text "- Creating ${db_user} user in MySQL" --result "FAIL" --color RED
-      display --indent 4 --text "MySQL user ${db_user} already exists."
+      display --indent 6 --text "- Creating ${db_user} user in MySQL" --result "FAIL" --color RED
+      display --indent 8 --text "MySQL user ${db_user} already exists."
 
       whiptail_event "WARNING" "MySQL user ${db_user} already exists. Please after the script ends, check project configuration files."
 
