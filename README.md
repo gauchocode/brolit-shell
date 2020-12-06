@@ -72,7 +72,7 @@ sudo apt-get update && sudo apt-get install git -y
 Cloning repo:
 
 ```
-git clone https://gitlab.com/broobe/lemp-utils-script
+git clone https://gitlab.com/broobe/lemp-utils-scripts.git
 ```
 
 Change directories to the new ~/lemp-utils-script directory:

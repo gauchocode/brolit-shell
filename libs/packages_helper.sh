@@ -69,7 +69,7 @@ add_ppa() {
 
 check_packages_required() {
 
-  log_event "info" "Checking required packages ..." "false"
+  log_event "info" "Checking required packages ..."
   log_section "Script Package Manager"
 
   # Declare globals
@@ -244,28 +244,34 @@ check_default_php_version() {
 
 basic_packages_installation() {
 
-  log_section "Basic Packages Installation"
+  log_subsection "Basic Packages Installation"
   
   # Updating packages lists
   log_event "info" "Adding repos and updating package lists ..."
+  display --indent 6 --text "- Adding repos and updating package lists"
 
   apt-get --yes install software-properties-common > /dev/null
   apt-get --yes update -qq > /dev/null
 
+  clear_last_line
   display --indent 6 --text "- Adding repos and updating package lists" --result "DONE" --color GREEN
 
   # Upgrading packages
   log_event "info" "Upgrading packages before installation ..."
+  display --indent 6 --text "- Upgrading packages before installation"
 
   apt-get --yes dist-upgrade -qq > /dev/null
 
+  clear_last_line
   display --indent 6 --text "- Upgrading packages before installation" --result "DONE" --color GREEN
 
   # Installing packages
   log_event "info" "Installing basic packages ..."
-  
+  display --indent 6 --text "- Installing basic packages"
+
   apt-get --yes install vim unzip zip clamav ncdu imagemagick-* jpegoptim optipng webp sendemail libio-socket-ssl-perl dnsutils ghostscript pv ppa-purge -qq > /dev/null
 
+  clear_last_line
   display --indent 6 --text "- Installing basic packages" --result "DONE" --color GREEN
 
 }
@@ -284,7 +290,7 @@ selected_package_installation() {
   local chosen_apps
 
   chosen_apps=$(whiptail --title "Apps Selection" --checklist "Select the apps you want to install:" 20 78 15 "${apps_to_install[@]}" 3>&1 1>&2 2>&3)
-  exitstatus=$?
+  exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
 
     log_subsection "Package Installer"
@@ -293,11 +299,15 @@ selected_package_installation() {
       
       app=$(sed -e 's/^"//' -e 's/"$//' <<<${app}) #needed to ommit double quotes
 
-      log_event "info" "Executing ${app} installer ..." "false"
+      log_event "info" "Executing ${app} installer ..."
       
       "${SFOLDER}/utils/installers/${app}_installer.sh"
 
     done
+
+  else
+
+    log_event "info" "Package installer ommited ..."
   
   fi
 
@@ -308,35 +318,35 @@ timezone_configuration() {
   #configure timezone
   dpkg-reconfigure tzdata
   
-  display --indent 2 --text "- Time Zone configuration" --result "DONE" --color GREEN
+  display --indent 6 --text "- Time Zone configuration" --result "DONE" --color GREEN
 
 }
 
 remove_old_packages() {
 
-  log_event "info" "Cleanning old system packages ..." "false"
-  display --indent 2 --text "- Cleaning system packages"
+  log_event "info" "Cleanning old system packages ..."
+  display --indent 6 --text "- Cleaning old system packages"
 
   apt-get --yes clean -qq > /dev/null
   apt-get --yes autoremove -qq > /dev/null
   apt-get --yes autoclean -qq > /dev/null
 
-  log_event "info" "System packages cleaned" "false"
+  log_event "info" "Old system packages cleaned"
   clear_last_line
-  display --indent 2 --text "- Cleaning system packages" --result "DONE" --color GREEN
+  display --indent 6 --text "- Cleaning old system packages" --result "DONE" --color GREEN
 
 }
 
 install_image_optimize_packages() {
 
-  log_event "info" "Installing jpegoptim, optipng and imagemagick" "false"
-  display --indent 2 --text "- Installing jpegoptim, optipng and imagemagick"
+  log_event "info" "Installing jpegoptim, optipng and imagemagick"
+  display --indent 6 --text "- Installing jpegoptim, optipng and imagemagick"
 
   apt-get --yes install jpegoptim optipng pngquant gifsicle imagemagick-* -qq > /dev/null
 
-  log_event "info" "Installation finished" "false"
+  log_event "info" "Installation finished"
   clear_last_line # need an extra call to clear installation output
   clear_last_line
-  display --indent 2 --text "- Installing jpegoptim, optipng and imagemagick" --result "DONE" --color GREEN
+  display --indent 6 --text "- Installing jpegoptim, optipng and imagemagick" --result "DONE" --color GREEN
 
 }
