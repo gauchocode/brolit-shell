@@ -32,7 +32,7 @@ nginx_default_installer() {
 
     apt-get --yes install nginx -qq > /dev/null
   
-    display --indent 2 --text "- Nginx default installation" --result "DONE" --color GREEN
+    display --indent 6 --text "- Nginx default installation" --result "DONE" --color GREEN
 
 }
 
@@ -47,29 +47,29 @@ nginx_custom_installer() {
 
     apt-get --yes install nginx -qq > /dev/null
 
-    display --indent 2 --text "- Nginx custom installation" --result "DONE" --color GREEN
+    display --indent 6 --text "- Nginx custom installation" --result "DONE" --color GREEN
 
 }
 
 nginx_webp_installer() {
 
-    display --indent 2 --text "- Installing imagemagick and webp package"
+    display --indent 6 --text "- Installing imagemagick and webp package"
 
     apt-get --yes install imagemagick webp -qq > /dev/null
 
     clear_last_line
-    display --indent 2 --text "- Installing imagemagick and webp package" --result "DONE" --color GREEN
+    display --indent 6 --text "- Installing imagemagick and webp package" --result "DONE" --color GREEN
 
 }
 
 nginx_purge_installation() {
 
-    display --indent 2 --text "- Purgin nginx from system"
+    display --indent 6 --text "- Purgin nginx from system"
 
     apt-get --yes purge nginx -qq > /dev/null
 
     clear_last_line
-    display --indent 2 --text "- Purgin nginx from system" --result "DONE" --color GREEN
+    display --indent 6 --text "- Purgin nginx from system" --result "DONE" --color GREEN
 
 }
 
@@ -114,20 +114,20 @@ if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"01"* ]]; then
 
-        log_section "Nginx Installer"
+        log_subsection "Nginx Installer"
         nginx_default_installer
 
 
     fi
     if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"02"* ]]; then
 
-        log_section "Nginx Installer"
+        log_subsection "Nginx Installer"
         nginx_custom_installer
 
     fi
     if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"03"* ]]; then
 
-        log_section "Nginx Installer"
+        log_subsection "Nginx Installer"
 
         nginx_delete_default_directory
 
