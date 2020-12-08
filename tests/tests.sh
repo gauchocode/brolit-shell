@@ -83,12 +83,21 @@ test_mail_package_section() {
 test_mysql_helper() {
 
     #test_ask_mysql_root_psw
+    test_mysql_test_user_credentials
     test_mysql_user_create
     test_mysql_user_exists
     test_mysql_user_delete
     test_mysql_database_create
     test_mysql_database_exists
     test_mysql_database_drop
+
+}
+
+test_mysql_test_user_credentials() {
+
+    log_subsection "Test: test_mysql_test_user_credentials"
+
+    mysql_test_user_credentials "${MUSER}" "${MPASS}"
 
 }
 
