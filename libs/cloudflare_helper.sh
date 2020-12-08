@@ -317,6 +317,7 @@ cloudflare_change_a_record () {
     clear_last_line
     clear_last_line
     clear_last_line
+    clear_last_line
 
     if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
         message="API UPDATE FAILED. RESULTS:\n${update}"

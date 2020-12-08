@@ -9,7 +9,7 @@ mysql_test_user_credentials() {
     # $1 = ${db_user}
     # $2 = ${db_user_psw}
 
-    mysql_output="$("${MYSQL}" -u "${db_user}" -p"${db_user_psw}" -e ";" 2>&1)"
+    mysql_output="$("${MYSQL}" -u"${db_user}" -p"${db_user_psw}" -e ";" 2>&1)"
     mysql_result="$?"
     if [[ ${mysql_result} -eq 0 ]]; then
         
