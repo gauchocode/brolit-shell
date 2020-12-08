@@ -9,7 +9,16 @@ mysql_test_user_credentials() {
     # $1 = ${db_user}
     # $2 = ${db_user_psw}
 
-    mysql_output="$("${MYSQL}" -u"${db_user}" -p"${db_user_psw}" -e ";" 2>&1)"
+    local db_user=$1
+    local db_user_psw=$2
+
+    local mysql_command
+    local mysql_output
+    local mysql_result
+
+    mysql_command="${MYSQL} -u ${db_user} -p${db_user_psw} -e ";""
+
+    mysql_output="$(${mysql_command})"
     mysql_result="$?"
     if [[ ${mysql_result} -eq 0 ]]; then
         
@@ -27,6 +36,7 @@ mysql_test_user_credentials() {
         clear_last_line
         display --indent 6 --text "- Testing MySQL user credentials" --result "FAIL" --color RED
         display --indent 8 --text "MySQL output: ${mysql_output}" --tcolor RED
+        display --indent 8 --text "Command executed: ${mysql_command}" --tcolor RED
         log_event "error" "Something went wrong testing MySQL user credentials. User '${db_user}' and pass '${db_user_psw}'"
         log_event "debug" "MySQL output: ${mysql_output}"
 
