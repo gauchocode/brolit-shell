@@ -276,6 +276,7 @@ test_get_root_domain() {
         display --indent 6 --text "- get_root_domain with www.example.com" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with www.example.com" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(get_root_domain "dev.example.com")"
@@ -283,6 +284,7 @@ test_get_root_domain() {
         display --indent 6 --text "- get_root_domain with www.example.com" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with www.example.com" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(get_root_domain "dev.www.example.com")"
@@ -290,6 +292,7 @@ test_get_root_domain() {
         display --indent 6 --text "- get_root_domain with dev.www.example.com" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with dev.www.example.com" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(get_root_domain "example.hosting")"
@@ -297,6 +300,7 @@ test_get_root_domain() {
         display --indent 6 --text "- get_root_domain with example.hosting" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with example.hosting" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(get_root_domain "www.example.hosting")"
@@ -304,6 +308,7 @@ test_get_root_domain() {
         display --indent 6 --text "- get_root_domain with www.example.hosting" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with www.example.hosting" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(get_root_domain "www.dev.example.hosting")"
@@ -311,6 +316,7 @@ test_get_root_domain() {
         display --indent 6 --text "- get_root_domain with www.dev.example.hosting" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with www.dev.example.hosting" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 }
 
@@ -323,6 +329,7 @@ test_extract_domain_extension() {
         display --indent 6 --text "- get_root_domain with example.com" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with example.com" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(extract_domain_extension "example.ar")"
@@ -330,6 +337,7 @@ test_extract_domain_extension() {
         display --indent 6 --text "- get_root_domain with example.ar" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with example.ar" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(extract_domain_extension "broobe.ar")"
@@ -337,6 +345,7 @@ test_extract_domain_extension() {
         display --indent 6 --text "- get_root_domain with broobe.ar" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with broobe.ar" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(extract_domain_extension "test.example.ar")"
@@ -344,6 +353,7 @@ test_extract_domain_extension() {
         display --indent 6 --text "- get_root_domain with test.example.ar" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with test.example.ar" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(extract_domain_extension "old.test.example.ar")"
@@ -351,6 +361,7 @@ test_extract_domain_extension() {
         display --indent 6 --text "- get_root_domain with old.test.example.ar" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with old.test.example.ar" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(extract_domain_extension "old.test.broobe.ar")"
@@ -358,6 +369,7 @@ test_extract_domain_extension() {
         display --indent 6 --text "- get_root_domain with old.test.broobe.ar" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with old.test.broobe.ar" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(extract_domain_extension "old.dev.test.example.com")"
@@ -365,6 +377,7 @@ test_extract_domain_extension() {
         display --indent 6 --text "- get_root_domain with old.dev.test.example.com" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with old.dev.test.example.com" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(extract_domain_extension "old.dev.test.broobe")"
@@ -372,6 +385,7 @@ test_extract_domain_extension() {
         display --indent 6 --text "- get_root_domain with old.dev.test.broobe" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with old.dev.test.broobe" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(get_root_domain "old.dev.test.example.hosting")"
@@ -379,6 +393,7 @@ test_extract_domain_extension() {
         display --indent 6 --text "- get_root_domain with old.dev.test.example.hosting" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with old.dev.test.example.hosting" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(get_root_domain "old.dev.test.example.ar")"
@@ -386,6 +401,7 @@ test_extract_domain_extension() {
         display --indent 6 --text "- get_root_domain with old.dev.test.example.ar" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with old.dev.test.example.ar" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
 }
