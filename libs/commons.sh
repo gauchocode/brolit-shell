@@ -705,7 +705,7 @@ clear_last_line() {
   printf "\033[1A" >&2
   echo -e "${F_DEFAULT}                                                                                               ${ENDCOLOR}" >&2
   printf "\033[1A" >&2
-  #printf "\033[1A" >&2
+  printf "\033[1A" >&2
 
 }
 
@@ -1498,7 +1498,7 @@ get_domain_extension() {
   # Extract first_lvl
   domain_ext=${domain#"$first_lvl."}
 
-  next_lvl=${first_lvl}
+  next_lvl="${first_lvl}"
 
   local -i count=0
   while ! grep --word-regexp --quiet ".${domain_ext}" "${SFOLDER}/config/domain_extension-list" && [ ! "${domain_ext#"$next_lvl"}" = "" ]
@@ -1508,7 +1508,7 @@ get_domain_extension() {
     domain_ext=${domain_ext#"$next_lvl."}
     next_lvl="$(cut -d'.' -f1 <<<"${domain_ext}")"
 
-    count=($count+1)
+    count=("$count"+1)
 
   done
 
@@ -1549,7 +1549,7 @@ extract_domain_extension() {
   local domain_no_ext
 
   domain_extension="$(get_domain_extension "${domain}")"
-  domain_extension_output=$?
+  domain_extension_output="$?"
   if [[ ${domain_extension_output} -eq 0 ]]; then
 
     domain_no_ext=${domain%"$domain_extension"}

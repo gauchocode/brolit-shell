@@ -11,41 +11,41 @@ source "${SFOLDER}/libs/commons.sh"
 
 mysql_default_installer() {
 
-  log_section "MySQL Installer"
+  log_subsection "MySQL Installer"
 
-  log_event "info" "Running MySQL default installer" "false"
+  log_event "info" "Running MySQL default installer"
 
   apt-get --yes install mysql-server -qq > /dev/null
   
-  display --indent 2 --text "- MySQL default installation" --result "DONE" --color GREEN
+  display --indent 6 --text "- MySQL default installation" --result "DONE" --color GREEN
 
 }
 
 mariadb_default_installer() {
   
-  log_section "MySQL Installer"
+  log_subsection "MySQL Installer"
 
-  log_event "info" "Running MariaDB default installer" "false"
+  log_event "info" "Running MariaDB default installer"
 
   apt-get --yes install mariadb-server mariadb-client -qq > /dev/null
 
-  display --indent 2 --text "- MariaDB default installation" --result "DONE" --color GREEN
+  display --indent 6 --text "- MariaDB default installation" --result "DONE" --color GREEN
 
 }
 
 mysql_purge_installation() {
 
-  log_event "warning" "Purging mysql-* packages ..." "false"
-  display --indent 2 --text "- Purging MySQL packages"
+  log_event "warning" "Purging mysql-* packages ..."
+  display --indent 6 --text "- Purging MySQL packages"
 
   apt-get --yes purge mysql-server mysql-client mysql-common mysql-server-core-* mysql-client-core-* -qq > /dev/null
   rm -rf /etc/mysql /var/lib/mysql
   apt-get autoremove -qq > /dev/null
   apt-get autoclean -qq > /dev/null
 
-  log_event "info" "mysql-* packages purged!" "false"
+  log_event "info" "mysql-* packages purged!"
   clear_last_line
-  display --indent 2 --text "- Purging MySQL packages" --result "DONE" --color GREEN
+  display --indent 6 --text "- Purging MySQL packages" --result "DONE" --color GREEN
 
 }
 

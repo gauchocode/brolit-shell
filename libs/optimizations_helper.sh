@@ -42,7 +42,7 @@ optimize_ram_usage() {
     
     service php"${PHP_V}"-fpm restart
 
-    display --indent 2 --text "- Restarting php-fpm service" --result "DONE" --color GREEN
+    display --indent 6 --text "- Restarting php-fpm service" --result "DONE" --color GREEN
 
     # Cleanning Swap
     clean_swap
@@ -74,21 +74,21 @@ optimize_image_size() {
   
   if [[ "${last_run}" == "never" ]]; then
 
-    display --indent 2 --text "- Optimizing images sizes for first time"
+    display --indent 6 --text "- Optimizing images sizes for first time"
   
     log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;"
     ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \;
 
-    display --indent 2 --text "- Optimizing images sizes for first time" --result "DONE" --color GREEN
+    display --indent 6 --text "- Optimizing images sizes for first time" --result "DONE" --color GREEN
   
   else
 
-    display --indent 2 --text "- Optimizing images of last 7 days"
+    display --indent 6 --text "- Optimizing images of last 7 days"
   
     log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;"
     ${FIND} "${path}" -mtime -7 -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \;
 
-    display --indent 2 --text "- Optimizing images of last 7 days" --result "DONE" --color GREEN
+    display --indent 6 --text "- Optimizing images of last 7 days" --result "DONE" --color GREEN
   
   fi
 
@@ -117,7 +117,7 @@ optimize_images() {
 
     # Run jpegoptim
     log_event "info" "Running jpegoptim to optimize images"
-    display --indent 2 --text "- Optimizing jpg images"
+    display --indent 6 --text "- Optimizing jpg images"
 
     if [[ "${last_run}" == "never" ]]; then
 
@@ -131,13 +131,13 @@ optimize_images() {
 
     fi
 
-    display --indent 2 --text "- Optimizing jpg images" --result "DONE" --color GREEN
+    display --indent 6 --text "- Optimizing jpg images" --result "DONE" --color GREEN
 
   elif [[ ${file_extension} == "png" ]]; then
 
     # Run optipng
     log_event "info" "Running optipng to optimize images ..."
-    display --indent 2 --text "- Optimizing png images"
+    display --indent 6 --text "- Optimizing png images"
 
     if [[ "${last_run}" == "never" ]]; then
     
@@ -151,13 +151,13 @@ optimize_images() {
     
     fi
 
-    display --indent 2 --text "- Optimizing png images" --result "DONE" --color GREEN
+    display --indent 6 --text "- Optimizing png images" --result "DONE" --color GREEN
 
   else
 
     log_event "warning" "Unsopported file extension ${file_extension}"
-    display --indent 2 --text "- Optimizing images" --result "FAIL" --color RED
-    display --indent 4 --text "Unsopported file extension: ${file_extension}"
+    display --indent 6 --text "- Optimizing images" --result "FAIL" --color RED
+    display --indent 8 --text "Unsopported file extension: ${file_extension}"
 
   fi
 
@@ -233,7 +233,7 @@ delete_old_logs() {
   log_event "info" "Deleting old system logs ..."
   ${FIND} /var/log/ -mtime +7 -type f -delete
 
-  display --indent 2 --text "- Deleting old system logs" --result "DONE" --color GREEN
+  display --indent 6 --text "- Deleting old system logs" --result "DONE" --color GREEN
 
 }
 
@@ -243,7 +243,7 @@ clean_swap() {
   log_event "info" "Cleanning Swap"
   swapoff -a && swapon -a
 
-  display --indent 2 --text "- Cleanning Swap" --result "DONE" --color GREEN
+  display --indent 6 --text "- Cleanning Swap" --result "DONE" --color GREEN
 
 }
 
@@ -254,6 +254,6 @@ clean_ram_cache() {
   sync
   echo 1 >/proc/sys/vm/drop_caches
 
-  display --indent 2 --text "- Cleanning RAM cache" --result "DONE" --color GREEN
+  display --indent 6 --text "- Cleanning RAM cache" --result "DONE" --color GREEN
 
 }
