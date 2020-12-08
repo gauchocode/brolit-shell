@@ -31,8 +31,6 @@
 
 ### In Progress
 
-- [ ] Notifications: Subject status dont't change on error or warning.
-- [ ] Core: Refactor to let the script be runned with flags.
 - [ ] Core: Better structure of deleted projects on dropbox.
 - [ ] Nginx: Better nginx config: https://www.digitalocean.com/community/tools/nginx
 - [ ] WP-CLI: Better error handling.
@@ -47,6 +45,8 @@
 
 ## For release 3.2
 
+- [ ] Core: Create a way to check if nginx, php, and other parameters are correct before run the script.
+- [ ] Core: Create a way to check if the project respect the script standard.
 - [ ] It Utils: Alias support for ZSH: https://opensource.com/article/19/7/bash-aliases
 - [ ] IMPORTANT: make new standard directory structure for projects "${SITES}/${DOMAIN}/public"
       Logs could be stored on "${SITES}/${DOMAIN}/log"
@@ -71,6 +71,7 @@
 
 ## For release 3.3
 
+- [ ] Core: Refactor to let the script be runned with flags.
 - [ ] Core: dependencies and configuration checker.
       If the script is runned on a system that was not configured by the script, it could fail.
 - [ ] Utils: Support for phpservermon: https://github.com/phpservermon/phpservermon
