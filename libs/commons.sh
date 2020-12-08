@@ -1829,7 +1829,7 @@ ask_mysql_root_psw() {
   # MPASS is defined globally
 
   if [[ -z "${MPASS}" ]]; then
-    MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root Password" 10 60 "${MPASS}" 3>&1 1>&2 2>&3)
+    MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root password" 10 60 "${MPASS}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
       #echo "> Running: mysql -u root -p${MPASS} -e"
