@@ -25,11 +25,11 @@ certbot_certificate_install() {
   certbot_result=$?
   if [[ ${certbot_result} -eq 0 ]];then
     log_event "success" "Certificate installation for ${domains} ok" "false"
-    display --indent 2 --text "- Certificate installation" --result "DONE" --color GREEN
+    display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
 
   else
     log_event "warning" "Certificate installation failed, trying force-install ..." "false"
-    display --indent 2 --text "- Installing certificate on domains" --result "FAIL" --color RED
+    display --indent 6 --text "- Installing certificate on domains" --result "FAIL" --color RED
 
     # Deleting old config
     certbot_certificate_delete_old_config "${domains}"
@@ -37,14 +37,14 @@ certbot_certificate_install() {
     # Running certbot again
     certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}"
     
-    certbot_result=$?
+    certbot_result="$?"
     if [[ ${certbot_result} -eq 0 ]];then
       log_event "success" "Certificate installation for ${domains} ok" "false"
-      display --indent 2 --text "- Certificate installation" --result "DONE" --color GREEN
+      display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
 
     else
       log_event "error" "Certificate installation for ${domains} failed!" "false"
-      display --indent 2 --text "- Installing certificate on domains" --result "FAIL" --color RED
+      display --indent 6 --text "- Installing certificate on domains" --result "FAIL" --color RED
 
     fi
 
@@ -64,18 +64,18 @@ certbot_certificate_delete_old_config() {
     if [ -d "/etc/letsencrypt/archive/${domain}" ]; then
       # Delete
       rm -R "/etc/letsencrypt/archive/${domain}"
-      display --indent 2 --text "- Deleting /etc/letsencrypt/archive/${domain}" --result "DONE" --color GREEN
+      display --indent 6 --text "- Deleting /etc/letsencrypt/archive/${domain}" --result "DONE" --color GREEN
 
     fi
     if [ -d "/etc/letsencrypt/live/${domain}" ]; then
       # Delete
       rm -R "/etc/letsencrypt/live/${domain}"
-      display --indent 2 --text "- Deleting /etc/letsencrypt/live/${domain}" --result "DONE" --color GREEN
+      display --indent 6 --text "- Deleting /etc/letsencrypt/live/${domain}" --result "DONE" --color GREEN
     fi
     if [ -f "/etc/letsencrypt/renewal/${domain}.conf" ]; then
       # Delete
       rm "/etc/letsencrypt/renewal/${domain}.conf"
-      display --indent 2 --text "- Deleting /etc/letsencrypt/renewal/${domain}.conf" --result "DONE" --color GREEN
+      display --indent 6 --text "- Deleting /etc/letsencrypt/renewal/${domain}.conf" --result "DONE" --color GREEN
     fi
 
   done
@@ -209,11 +209,11 @@ certbot_certonly_cloudflare() {
   certbot_result=$?
   if [ ${certbot_result} -eq 0 ];then
     log_event "success" "Certificate installation for ${domains} ok"
-    display --indent 2 --text "- Certificate installation" --result "DONE" --color GREEN
+    display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
 
   else
     log_event "warning" "Certificate installation failed, trying force-install ..."
-    display --indent 2 --text "- Installing certificate on domains" --result "FAIL" --color RED
+    display --indent 6 --text "- Installing certificate on domains" --result "FAIL" --color RED
 
     # Deleting old config
     certbot_certificate_delete_old_config "${domains}"
@@ -224,11 +224,11 @@ certbot_certonly_cloudflare() {
     certbot_result=$?
     if [ ${certbot_result} -eq 0 ];then
       log_event "success" "Certificate installation for ${domains} ok"
-      display --indent 2 --text "- Certificate installation" --result "DONE" --color GREEN
+      display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
 
     else
       log_event "error" "Certificate installation for ${domains} failed!"
-      display --indent 2 --text "- Installing certificate on domains" --result "FAIL" --color RED
+      display --indent 6 --text "- Installing certificate on domains" --result "FAIL" --color RED
 
     fi
 
