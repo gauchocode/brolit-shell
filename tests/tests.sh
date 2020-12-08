@@ -276,6 +276,7 @@ test_get_root_domain() {
         display --indent 6 --text "- get_root_domain with www.broobe.com" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with www.broobe.com" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(get_root_domain "dev.broobe.com")"
@@ -283,6 +284,7 @@ test_get_root_domain() {
         display --indent 6 --text "- get_root_domain with www.broobe.com" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with www.broobe.com" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(get_root_domain "dev.www.broobe.com")"
@@ -290,6 +292,7 @@ test_get_root_domain() {
         display --indent 6 --text "- get_root_domain with dev.www.broobe.com" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with dev.www.broobe.com" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(get_root_domain "broobe.hosting")"
@@ -297,6 +300,7 @@ test_get_root_domain() {
         display --indent 6 --text "- get_root_domain with broobe.hosting" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with broobe.hosting" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(get_root_domain "www.broobe.hosting")"
@@ -304,6 +308,7 @@ test_get_root_domain() {
         display --indent 6 --text "- get_root_domain with www.broobe.hosting" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with www.broobe.hosting" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(get_root_domain "www.dev.broobe.hosting")"
@@ -311,6 +316,7 @@ test_get_root_domain() {
         display --indent 6 --text "- get_root_domain with www.dev.broobe.hosting" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with www.dev.broobe.hosting" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 }
 
@@ -323,6 +329,7 @@ test_extract_domain_extension() {
         display --indent 6 --text "- get_root_domain with broobe.com" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with broobe.com" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(extract_domain_extension "broobe.com.ar")"
@@ -330,6 +337,7 @@ test_extract_domain_extension() {
         display --indent 6 --text "- get_root_domain with broobe.com.ar" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with broobe.com.ar" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(extract_domain_extension "broobe.ar")"
@@ -337,6 +345,7 @@ test_extract_domain_extension() {
         display --indent 6 --text "- get_root_domain with broobe.ar" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with broobe.ar" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(extract_domain_extension "test.broobe.com.ar")"
@@ -344,6 +353,7 @@ test_extract_domain_extension() {
         display --indent 6 --text "- get_root_domain with test.broobe.com.ar" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with test.broobe.com.ar" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(extract_domain_extension "old.test.broobe.com.ar")"
@@ -351,6 +361,7 @@ test_extract_domain_extension() {
         display --indent 6 --text "- get_root_domain with old.test.broobe.com.ar" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with old.test.broobe.com.ar" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(extract_domain_extension "old.test.broobe.ar")"
@@ -358,6 +369,7 @@ test_extract_domain_extension() {
         display --indent 6 --text "- get_root_domain with old.test.broobe.ar" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with old.test.broobe.ar" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(extract_domain_extension "old.dev.test.broobe.com")"
@@ -365,6 +377,7 @@ test_extract_domain_extension() {
         display --indent 6 --text "- get_root_domain with old.dev.test.broobe.com" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with old.dev.test.broobe.com" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(extract_domain_extension "old.dev.test.broobe")"
@@ -372,6 +385,7 @@ test_extract_domain_extension() {
         display --indent 6 --text "- get_root_domain with old.dev.test.broobe" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with old.dev.test.broobe" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(get_root_domain "old.dev.test.broobe.hosting")"
@@ -379,6 +393,7 @@ test_extract_domain_extension() {
         display --indent 6 --text "- get_root_domain with old.dev.test.broobe.hosting" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with old.dev.test.broobe.hosting" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(get_root_domain "old.dev.test.broobe.com.ar")"
@@ -386,6 +401,7 @@ test_extract_domain_extension() {
         display --indent 6 --text "- get_root_domain with old.dev.test.broobe.com.ar" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with old.dev.test.broobe.com.ar" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
 }
