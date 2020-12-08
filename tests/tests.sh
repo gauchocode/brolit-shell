@@ -98,6 +98,14 @@ test_mysql_test_user_credentials() {
     log_subsection "Test: test_mysql_test_user_credentials"
 
     mysql_test_user_credentials "${MUSER}" "${MPASS}"
+    user_credentials="$?"
+    if [[ ${user_credentials} -eq 0 ]]; then
+        display --indent 6 --text "- mysql_test_user_credentials" --result "PASS" --color WHITE
+    else
+        display --indent 6 --text "- mysql_test_user_credentials" --result "FAIL" --color RED
+    fi
+
+    log_break "true"
 
 }
 
@@ -388,7 +396,7 @@ test_extract_domain_extension() {
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
-    result="$(get_root_domain "old.dev.test.broobe.hosting")"
+    result="$(extract_domain_extension "old.dev.test.broobe.hosting")"
     if [[ ${result} = "old.dev.test.broobe" ]]; then 
         display --indent 6 --text "- extract_domain_extension result ${result}" --result "PASS" --color WHITE
     else
@@ -396,7 +404,7 @@ test_extract_domain_extension() {
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
-    result="$(get_root_domain "old.dev.test.broobe.com.ar")"
+    result="$(extract_domain_extension "old.dev.test.broobe.com.ar")"
     if [[ ${result} = "old.dev.test.broobe" ]]; then 
         display --indent 6 --text "- extract_domain_extension result ${result}" --result "PASS" --color WHITE
     else
