@@ -273,7 +273,7 @@ test_get_root_domain() {
 
     result="$(get_root_domain "www.example.com")"
     if [[ ${result} = "example.com" ]]; then 
-        display --indent 6 --text "- get_root_domain with www.example.com" --result "PASS" --color WHITE
+        display --indent 6 --text "- get_root_domain result ${result}" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with www.example.com" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
@@ -281,7 +281,7 @@ test_get_root_domain() {
 
     result="$(get_root_domain "dev.example.com")"
     if [[ ${result} = "example.com" ]]; then 
-        display --indent 6 --text "- get_root_domain with www.example.com" --result "PASS" --color WHITE
+        display --indent 6 --text "- get_root_domain result ${result}" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with www.example.com" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
@@ -289,7 +289,7 @@ test_get_root_domain() {
 
     result="$(get_root_domain "dev.www.example.com")"
     if [[ ${result} = "example.com" ]]; then 
-        display --indent 6 --text "- get_root_domain with dev.www.example.com" --result "PASS" --color WHITE
+        display --indent 6 --text "- get_root_domain result ${result}" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with dev.www.example.com" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
@@ -297,7 +297,7 @@ test_get_root_domain() {
 
     result="$(get_root_domain "example.hosting")"
     if [[ ${result} = "example.hosting" ]]; then 
-        display --indent 6 --text "- get_root_domain with example.hosting" --result "PASS" --color WHITE
+        display --indent 6 --text "- get_root_domain result ${result}" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with example.hosting" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
@@ -305,7 +305,7 @@ test_get_root_domain() {
 
     result="$(get_root_domain "www.example.hosting")"
     if [[ ${result} = "example.hosting" ]]; then 
-        display --indent 6 --text "- get_root_domain with www.example.hosting" --result "PASS" --color WHITE
+        display --indent 6 --text "- get_root_domain result ${result}" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with www.example.hosting" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
@@ -313,7 +313,7 @@ test_get_root_domain() {
 
     result="$(get_root_domain "www.dev.example.hosting")"
     if [[ ${result} = "example.hosting" ]]; then 
-        display --indent 6 --text "- get_root_domain with www.dev.example.hosting" --result "PASS" --color WHITE
+        display --indent 6 --text "- get_root_domain result ${result}" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with www.dev.example.hosting" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
@@ -325,82 +325,82 @@ test_extract_domain_extension() {
     log_subsection "Testing Domain Functions"
 
     result="$(extract_domain_extension "example.com")"
-    if [[ ${result} = ".com" ]]; then 
-        display --indent 6 --text "- get_root_domain with example.com" --result "PASS" --color WHITE
+    if [[ ${result} = "broobe" ]]; then 
+        display --indent 6 --text "- extract_domain_extension result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- get_root_domain with example.com" --result "FAIL" --color RED
+        display --indent 6 --text "- extract_domain_extension with example.com" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(extract_domain_extension "example.ar")"
-    if [[ ${result} = ".com.ar" ]]; then 
-        display --indent 6 --text "- get_root_domain with example.ar" --result "PASS" --color WHITE
+    if [[ ${result} = "broobe" ]]; then 
+        display --indent 6 --text "- extract_domain_extension result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- get_root_domain with example.ar" --result "FAIL" --color RED
+        display --indent 6 --text "- extract_domain_extension with example.ar" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(extract_domain_extension "broobe.ar")"
-    if [[ ${result} = ".ar" ]]; then 
-        display --indent 6 --text "- get_root_domain with broobe.ar" --result "PASS" --color WHITE
+    if [[ ${result} = "broobe" ]]; then 
+        display --indent 6 --text "- extract_domain_extension result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- get_root_domain with broobe.ar" --result "FAIL" --color RED
+        display --indent 6 --text "- extract_domain_extension with broobe.ar" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(extract_domain_extension "test.example.ar")"
-    if [[ ${result} = ".com.ar" ]]; then 
-        display --indent 6 --text "- get_root_domain with test.example.ar" --result "PASS" --color WHITE
+    if [[ ${result} = "test.broobe" ]]; then 
+        display --indent 6 --text "- extract_domain_extension result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- get_root_domain with test.example.ar" --result "FAIL" --color RED
+        display --indent 6 --text "- extract_domain_extension with test.example.ar" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(extract_domain_extension "old.test.example.ar")"
-    if [[ ${result} = ".com.ar" ]]; then 
-        display --indent 6 --text "- get_root_domain with old.test.example.ar" --result "PASS" --color WHITE
+    if [[ ${result} = "old.test.broobe" ]]; then 
+        display --indent 6 --text "- extract_domain_extension result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- get_root_domain with old.test.example.ar" --result "FAIL" --color RED
+        display --indent 6 --text "- extract_domain_extension with old.test.example.ar" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(extract_domain_extension "old.test.broobe.ar")"
-    if [[ ${result} = ".ar" ]]; then 
-        display --indent 6 --text "- get_root_domain with old.test.broobe.ar" --result "PASS" --color WHITE
+    if [[ ${result} = "old.test.broobe" ]]; then 
+        display --indent 6 --text "- extract_domain_extension result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- get_root_domain with old.test.broobe.ar" --result "FAIL" --color RED
+        display --indent 6 --text "- extract_domain_extension with old.test.broobe.ar" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(extract_domain_extension "old.dev.test.example.com")"
-    if [[ ${result} = ".com" ]]; then 
-        display --indent 6 --text "- get_root_domain with old.dev.test.example.com" --result "PASS" --color WHITE
+    if [[ ${result} = "old.dev.test.broobe" ]]; then 
+        display --indent 6 --text "- extract_domain_extension result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- get_root_domain with old.dev.test.example.com" --result "FAIL" --color RED
+        display --indent 6 --text "- extract_domain_extension with old.dev.test.example.com" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(extract_domain_extension "old.dev.test.broobe")"
     if [[ ${result} = 1 ]]; then 
-        display --indent 6 --text "- get_root_domain with old.dev.test.broobe" --result "PASS" --color WHITE
+        display --indent 6 --text "- extract_domain_extension result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- get_root_domain with old.dev.test.broobe" --result "FAIL" --color RED
+        display --indent 6 --text "- extract_domain_extension with old.dev.test.broobe" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(get_root_domain "old.dev.test.example.hosting")"
-    if [[ ${result} = ".hosting" ]]; then 
-        display --indent 6 --text "- get_root_domain with old.dev.test.example.hosting" --result "PASS" --color WHITE
+    if [[ ${result} = "old.dev.test.broobe" ]]; then 
+        display --indent 6 --text "- extract_domain_extension result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- get_root_domain with old.dev.test.example.hosting" --result "FAIL" --color RED
+        display --indent 6 --text "- extract_domain_extension with old.dev.test.example.hosting" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
     result="$(get_root_domain "old.dev.test.example.ar")"
-    if [[ ${result} = ".com.ar" ]]; then 
-        display --indent 6 --text "- get_root_domain with old.dev.test.example.ar" --result "PASS" --color WHITE
+    if [[ ${result} = "old.dev.test.broobe" ]]; then 
+        display --indent 6 --text "- extract_domain_extension result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- get_root_domain with old.dev.test.example.ar" --result "FAIL" --color RED
+        display --indent 6 --text "- extract_domain_extension with old.dev.test.example.ar" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
