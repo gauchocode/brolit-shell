@@ -108,7 +108,6 @@ wordpress_installer () {
       project_state="$(ask_project_state)"
 
       project_dir="$(check_if_folder_exists "${folder_to_install}" "${project_domain}")"
-
       if [ "${project_dir}" != 'ERROR' ]; then
         # Download WP
         mkdir "${folder_to_install}/${project_domain}"

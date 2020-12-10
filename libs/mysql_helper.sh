@@ -294,10 +294,10 @@ mysql_user_exists() {
     local db_user=$1
 
     if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${db_user}';" | mysql -u "${MUSER}" --password="${MPASS}" | grep 1 &>/dev/null; then
-        #return 0 if user don't exists
+        # Return 0 if user don't exists
         return 0
     else
-        #return 1 if user already exists
+        # Return 1 if user already exists
         return 1
     fi
 
@@ -314,11 +314,11 @@ mysql_database_exists() {
     result=$("${MYSQL}" -u "${MUSER}" --password="${MPASS}" -e "SHOW DATABASES LIKE '${database}';")
 
     if [[ -z "${result}" || "${result}" = "" ]]; then
-        #return 1 if database don't exists
+        # Return 1 if database don't exists
         return 1
         
     else
-        #return 0 if database exists
+        # Return 0 if database exists
         return 0
     fi
 

@@ -82,6 +82,10 @@ test_mail_package_section() {
 
 test_mysql_helper() {
 
+    # TODO tests for:
+    #   mysql_name_sanitize
+    #   mysql_user_psw_change
+
     #test_ask_mysql_root_psw
     test_mysql_test_user_credentials
     test_mysql_user_create
@@ -114,6 +118,8 @@ test_ask_mysql_root_psw() {
     log_subsection "Test: test_ask_mysql_root_psw"
 
     ask_mysql_root_psw
+
+    log_break "true"
 
 }
 
@@ -151,8 +157,8 @@ test_mysql_user_exists() {
     db_user="test_user"
     
     mysql_user_exists "${db_user}"
-    user_db_exists="$?"
-    if [[ ${user_db_exists} -eq 0 ]]; then
+    db_user_exists="$?"
+    if [[ ${db_user_exists} -eq 1 ]]; then
         display --indent 6 --text "- mysql_user_exists" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- mysql_user_exists" --result "FAIL" --color RED
@@ -326,6 +332,9 @@ test_get_root_domain() {
         display --indent 6 --text "- get_root_domain with www.dev.broobe.hosting" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
+
+    log_break "true"
+
 }
 
 test_extract_domain_extension() {
@@ -389,8 +398,8 @@ test_extract_domain_extension() {
     fi
 
     result="$(extract_domain_extension "old.dev.test.broobe")"
-    if [[ ${result} = 1 ]]; then 
-        display --indent 6 --text "- extract_domain_extension result ${result}" --result "PASS" --color WHITE
+    if [[ ${result} = "" ]]; then 
+        display --indent 6 --text "- extract_domain_extension result 'empty response'" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- extract_domain_extension with old.dev.test.broobe" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
@@ -411,6 +420,8 @@ test_extract_domain_extension() {
         display --indent 6 --text "- extract_domain_extension with old.dev.test.broobe.com.ar" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
+
+    log_break "true"
 
 }
 
