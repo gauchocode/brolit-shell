@@ -144,11 +144,6 @@ wordpress_installer () {
     mysql_user_create "${database_user}" "${database_user_passw}"
     mysql_user_grant_privileges "${database_user}" "${database_name}"
 
-    wpcli_create_config "${project_dir}" "${database_name}" "${database_user}" "${database_user_passw}" "es_ES"
-    
-    # Set WP salts
-    wpcli_set_salts "${project_dir}"
-
     if [[ ${installation_type} == *"COPY"* ]]; then
 
       log_event "info" "Copying database ${database_name} ..."
@@ -185,6 +180,7 @@ wordpress_installer () {
         display --indent 6 --text "- Exporting actual database" --result "FAIL" --color RED
         display --indent 8 --text "mysqldump message: $?"
         log_event "error" "mysqldump message: $?"
+
         return 1
 
       fi
@@ -194,6 +190,9 @@ wordpress_installer () {
       wpcli_core_install "${folder_to_install}/${project_domain}"
 
     fi
+
+    # Set WP salts
+    wpcli_set_salts "${project_dir}"
 
     # TODO: ask for Cloudflare support and check if root_domain is configured on the cf account
 
