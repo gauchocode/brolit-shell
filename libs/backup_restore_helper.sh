@@ -346,12 +346,12 @@ restore_site_files() {
   local chosen_domain
 
   chosen_domain=$(whiptail --title "Project Domain" --inputbox "Want to change the project's domain? Default:" 10 60 "${domain}" 3>&1 1>&2 2>&3)
-  exitstatus=$?
+  exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Log
     log_subsection "Site Files Restore"
-    log_event "info" "Setting chosen_domain=${chosen_domain}" "false"
+    log_event "info" "Setting chosen_domain=${chosen_domain}"
     display --indent 6 --text "- Selecting project domain" --result "DONE" --color GREEN
 
     # New tmp folder
@@ -375,7 +375,7 @@ restore_site_files() {
     fi
 
     # Restore files
-    log_event "info" "Restoring backup files on ${folder_to_install} ..." "false"
+    log_event "info" "Restoring backup files on ${folder_to_install} ..."
     display --indent 6 --text "- Restoring backup files"
     
     mv "${project_tmp_folder}" "${folder_to_install}"
@@ -387,13 +387,13 @@ restore_site_files() {
     # Search wp-config.php (to find wp installation on sub-folders)
     install_path=$(search_wp_config "${actual_folder}")
 
-    log_event "info" "install_path=${install_path}" "false"
+    log_event "info" "install_path=${install_path}"
     display --indent 8 --text "Restored on: ${install_path}"
 
     if [ -d "${install_path}" ]; then
 
-      log_event "info" "Wordpress intallation found on: ${install_path}" "false"
-      log_event "info" "Files backup restored on: ${install_path}" "false"
+      log_event "info" "Wordpress intallation found on: ${install_path}"
+      log_event "info" "Files backup restored on: ${install_path}"
 
       wp_change_permissions "${install_path}" 
 
@@ -458,7 +458,7 @@ select_restore_type_from_dropbox() {
 
         # Select Project
         chosen_project=$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${dropbox_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
-        exitstatus=$?
+        exitstatus="$?"
         if [[ ${exitstatus} -eq 0 ]]; then
           dropbox_chosen_backup_path="${dropbox_chosen_type_path}/${chosen_project}"
           dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}")"
@@ -466,7 +466,7 @@ select_restore_type_from_dropbox() {
         fi
         # Select Backup File
         chosen_backup_to_restore=$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${dropbox_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
-        exitstatus=$?
+        exitstatus="$?"
         if [[ ${exitstatus} -eq 0 ]]; then
 
           cd "${SFOLDER}/tmp"
@@ -516,7 +516,7 @@ select_restore_type_from_dropbox() {
 
             # Check if user database already exists
             mysql_user_exists "${db_user}"
-            user_db_exists=$?
+            user_db_exists="$?"
             if [[ ${user_db_exists} -eq 0 ]]; then
 
               # Passw generator
@@ -538,6 +538,12 @@ select_restore_type_from_dropbox() {
             # TODO: check project type (WP, Laravel, etc)
 
             folder_to_install="$(ask_folder_to_install_sites "${SITES}")"
+            return="$?"
+            if [[ ${return} -eq 1 ]]; then
+
+              return 0
+
+            fi
 
             startdir="${folder_to_install}"
             menutitle="Site Selection Menu"
@@ -611,9 +617,11 @@ project_restore() {
   else
 
     display --indent 6 --text "- Restore project backup" --result "SKIPPED" --color YELLOW
+
     return 1
 
   fi
+
   # Select Backup File
   chosen_backup_to_restore=$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${dropbox_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
   exitstatus="$?"
@@ -626,61 +634,70 @@ project_restore() {
 
     # Download backup
     bk_to_dowload="${chosen_server}/site/${chosen_project}/${chosen_backup_to_restore}"
+
     log_event "info" "Downloading backup from dropbox: ${bk_to_dowload}"
     display --indent 6 --text "- Downloading backup from dropbox"
-    dropbox_output=$(${DROPBOX_UPLOADER} download "${bk_to_dowload}" 1>&2)
+
+    dropbox_output=$("${DROPBOX_UPLOADER}" download "${bk_to_dowload}" 1>&2)
+
     clear_last_line
     display --indent 6 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
 
-    # Uncompress backup file
-    log_event "info" "Uncompressing ${chosen_backup_to_restore}"
+    # Uncompress backup file    
     pv --width 70 "${chosen_backup_to_restore}" | ${TAR} xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
+
     clear_last_line
     display --indent 6 --text "- Uncompressing backup file" --result "DONE" --color GREEN
+    log_event "info" "Backup file ${chosen_backup_to_restore} uncompressed"
 
     # Project Type
     project_type=$(get_project_type "${SFOLDER}/tmp/${chosen_project}")
 
     log_event "info" "Project Type: ${project_type}"
-    log_event "info" "Trying to get database parameters from ${SFOLDER}/tmp/${chosen_project}/wp-config.php" "false"
-
-    case $project_type in
-
-      wordpress)
-        db_name=$(cat "${SFOLDER}"/tmp/"${chosen_project}"/wp-config.php | grep DB_NAME | cut -d \' -f 4)
-        db_user=$(cat "${SFOLDER}"/tmp/"${chosen_project}"/wp-config.php | grep DB_USER | cut -d \' -f 4)
-        db_pass=$(cat "${SFOLDER}"/tmp/"${chosen_project}"/wp-config.php | grep DB_PASSWORD | cut -d \' -f 4)
-        ;;
-
-      laravel)
-        echo -n "TODO"
-        ;;
-
-      yii)
-        echo -n "TODO"
-        ;;
-
-      *)
-        echo -n "Project Type Unknown"
-        ;;
-    esac
 
     # Here, for convention, chosen_project should be CHOSEN_DOMAIN... 
     # Only for better code reading, i assign this new var:
     chosen_domain="${chosen_project}"
 
-    # Restore site files
-    new_project_domain="$(restore_site_files "${chosen_domain}")"
+    case $project_type in
+
+      wordpress)
+        display --indent 8 --text "Project Type WordPress" --tcolor GREEN
+
+        # Reading config file
+        db_name=$(project_get_configured_database "${SFOLDER}/tmp/${chosen_project}")
+        db_user=$(project_get_configured_database_user "${SFOLDER}/tmp/${chosen_project}")
+        db_pass=$(project_get_configured_database_userpassw "${SFOLDER}/tmp/${chosen_project}")
+
+        # Restore site files
+        new_project_domain="$(restore_site_files "${chosen_domain}")"
+
+        ;;
+
+      laravel)
+        display --indent 8 --text "Project Type Laravel" --tcolor RED
+        ;;
+
+      yii)
+        display --indent 8 --text "Project Type Yii" --tcolor RED
+        ;;
+
+      *)
+        display --indent 8 --text "Project Type Unknown" --tcolor RED
+        return 1
+        ;;
+    esac
+
     project_path="${SITES}/${new_project_domain}"
 
     # Database Backup
     backup_date="$(echo "${chosen_backup_to_restore}" |grep -Eo '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')"
     db_to_download="${chosen_server}/database/${db_name}/${db_name}_database_${backup_date}.tar.bz2"
 
-    # Extracting project_state from
-    project_state="$(cut -d'_' -f2 <<<"${db_name}")"
+    # Extracting project_state from   
+    project_state="$(cut -d'_' -f2 <<< ${db_name})"
 
-    log_event "" "*************** Reading wp-config.php ***************"
+    log_event "" "*************** Project Config ***************"
     log_event "" "project_path: ${project_path}"
     log_event "" "chosen_project: ${chosen_project}"
     log_event "" "project_state: ${project_state}"
@@ -692,7 +709,18 @@ project_restore() {
 
     # Downloading Database Backup
     display --indent 6 --text "- Downloading backup from dropbox"
-    dropbox_output="$(${DROPBOX_UPLOADER} download "${db_to_download}" 1>&2)"
+    dropbox_output="$("${DROPBOX_UPLOADER}" download "${db_to_download}" 1>&2)"
+
+    exitstatus="$?"
+    if [[ ${exitstatus} -eq 1 ]]; then
+
+      clear_last_line
+      display --indent 6 --text "- Downloading backup from dropbox" --result "FAIL" --color RED
+
+      return 1
+
+    fi
+
     clear_last_line
     display --indent 6 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
 
@@ -703,7 +731,7 @@ project_restore() {
     display --indent 6 --text "- Uncompressing backup file" --result "DONE" --color GREEN
 
     # Trying to extract project name from domain
-    chosen_project="$(cut -d'.' -f1 <<<"${chosen_project}")"
+    chosen_project="$(cut -d'.' -f1 <<< ${chosen_project})"
 
     # Asking project state with suggested actual state
     suffix="$(cut -d'_' -f2 <<<"${chosen_project}")"
@@ -737,8 +765,7 @@ project_restore() {
 
     # Check if user database already exists
     mysql_user_exists "${db_user}"
-    
-    user_db_exists=$?
+    user_db_exists="$?"
     if [[ ${user_db_exists} -eq 0 ]]; then
 
       db_pass=$(openssl rand -hex 12)

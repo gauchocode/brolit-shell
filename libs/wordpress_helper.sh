@@ -95,7 +95,7 @@ wp_change_permissions() {
 
   fi
 
-  log_event "info" "Permissions changes for: ${project_dir}" "false"
+  log_event "info" "Permissions changes for: ${project_dir}"
   display --indent 6 --text "- Setting default permissions on wordpress" --result "DONE" --color GREEN
 
   
