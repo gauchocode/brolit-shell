@@ -1878,7 +1878,7 @@ menu_main_options() {
 
     fi
     if [[ ${chosen_type} == *"02"* ]]; then
-      menu_restore_options
+      restore_backup_menu
 
     fi
 
