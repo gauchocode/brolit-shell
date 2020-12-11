@@ -83,7 +83,7 @@ mysql_user_create() {
 
     fi
 
-    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query}" 2>&1)"
+    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query}")"
     mysql_result="$?"
     if [[ ${mysql_result} -eq 0 ]]; then
         
@@ -124,7 +124,7 @@ mysql_user_delete() {
     display --indent 6 --text "- Deleting user ${db_user}"
     log_event "info" "Deleting ${db_user} user in MySQL ..."
 
-    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query_1}${query_2}" 2>&1)"
+    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query_1}${query_2}")"
     mysql_result="$?"
     if [[ ${mysql_result} -eq 0 ]]; then
 
@@ -164,7 +164,7 @@ mysql_user_psw_change() {
     query_1="ALTER USER '${db_user}'@'localhost' IDENTIFIED BY '${db_user_psw}';"
     query_2="FLUSH PRIVILEGES;"
 
-    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query_1}${query_2}" 1>&2)"
+    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query_1}${query_2}")"
     mysql_result="$?"
     if [[ ${mysql_result} -eq 0 ]]; then
 
@@ -263,7 +263,7 @@ mysql_user_grant_privileges() {
     query_1="GRANT ALL PRIVILEGES ON ${db_target}.* TO '${db_user}'@'localhost';"
     query_2="FLUSH PRIVILEGES;"
 
-    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query_1}${query_2}" 1>&2)"
+    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query_1}${query_2}")"
     mysql_result="$?"
     if [[ ${mysql_result} -eq 0 ]]; then
 
@@ -293,7 +293,7 @@ mysql_user_exists() {
 
     local db_user=$1
 
-    if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${db_user}';" | mysql -u "${MUSER}" --password="${MPASS}" | grep 1 &>/dev/null; then
+    if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${db_user}';" | mysql -u "${MUSER}" --password="${MPASS}" | grep 1; then
         # Return 0 if user don't exists
         return 0
     else
@@ -366,7 +366,7 @@ mysql_database_create() {
 
     query_1="CREATE DATABASE IF NOT EXISTS ${database};"
 
-    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query_1}" 2>&1)"
+    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query_1}")"
     mysql_result="$?"
     if [[ ${mysql_result} -eq 0 ]]; then
 
@@ -404,7 +404,7 @@ mysql_database_drop() {
 
     query_1="DROP DATABASE ${database};"
     
-    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query_1}" 2>&1)"
+    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query_1}")"
     mysql_result="$?"
     if [[ ${mysql_result} -eq 0 ]]; then
 
@@ -443,16 +443,15 @@ mysql_database_import() {
     # Logging
     display --indent 6 --text "- Importing backup into database: ${database}" --tcolor YELLOW
     log_event "info" "Importing dump file ${dump_file} into database: ${database}"
-    log_event "info" "Running: pv ${dump_file} | ${MYSQL} -f -u${MUSER} -p${MPASS} -f -D ${database}"
+    log_event "debug" "Running: pv ${dump_file} | ${MYSQL} -f -u${MUSER} -p${MPASS} -f -D ${database}"
 
-    pv "${dump_file}" | ${MYSQL} -f -u"${MUSER}" -p"${MPASS}" -f -D "${database}" 2>&1
-    import_status=$?
-
-    if [ ${import_status} -eq 0 ]; then
+    pv "${dump_file}" | ${MYSQL} -f -u"${MUSER}" -p"${MPASS}" -f -D "${database}"
+    import_status="$?"
+    if [[ ${import_status} -eq 0 ]]; then
 
         # Logging
         #clear_last_line
-        display --indent 6 --text "Database backup import" --result "DONE" --color GREEN
+        display --indent 6 --text " - Database backup import" --result "DONE" --color GREEN
         log_event "success" "Database ${database} imported successfully"
 
         return 0
@@ -461,7 +460,7 @@ mysql_database_import() {
         
         # Logging
         #clear_last_line
-        display --indent 6 --text "Database backup import" --result "ERROR" --color RED
+        display --indent 6 --text " - Database backup import" --result "ERROR" --color RED
         display --indent 8 --text "MySQL output: ${import_status}" --tcolor RED
         log_event "error" "Something went wrong importing database: ${database}"
         log_event "debug" "MySQL output: ${mysql_output}"
