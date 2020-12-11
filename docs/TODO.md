@@ -58,7 +58,7 @@
 - [ ] Core: Implements something like this: 
         https://github.com/natelandau/dotfiles/blob/master/scripting/scriptTemplate.sh
 - [ ] Core: Warning if script run on non default installation (no webserver or another than nginx).
-- [ ] Finish function: download_and_restore_config_files_from_dropbox
+- [ ] Finish function: restore_config_files_from_dropbox
 - [ ] Core: Complete refactor of "Options Wizard": (Backup Options, Notification Options, Cloudflare Config).
 - [ ] Nginx-PHP: Ask PHP version before create a server config.
 - [ ] Nginx: Add http2 support on nginx server config files.
