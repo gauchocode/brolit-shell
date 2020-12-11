@@ -138,18 +138,20 @@ delete_project_database() {
 
     local database=$1
 
+    local DBS
+    local CHOSEN_DB
+
     # TODO: if project_db_name, project_db_user and project_db_pass are defined 
     #       and can connect to db, only ask for delete confirmation
 
     # List databases
-    DBS=$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -Bse 'show databases')
+    DBS=$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -Bse 'show databases')
     CHOSEN_DB=$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to delete" 20 78 10 $(for x in ${DBS}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)
-    exitstatus=$?
+    exitstatus="$?"
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log
         log_subsection "Delete Database"
-        display --indent 2 --text "- Initializing database deletion" --result "DONE" --color GREEN
 
         BK_TYPE="database"
 
@@ -167,9 +169,10 @@ delete_project_database() {
         make_database_backup "${BK_TYPE}" "${CHOSEN_DB}"
 
         # Moving deleted project backups to another dropbox directory
-        log_event "info" "Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${CHOSEN_DB} /${VPSNAME}/offline-site" "false"
+        log_event "info" "Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${CHOSEN_DB} /${VPSNAME}/offline-site"
         dropbox_output=$(${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${CHOSEN_DB}" "/${VPSNAME}/offline-site" 1>&2)
-        display --indent 2 --text "- Moving dropbox backup to offline directory" --result "DONE" --color GREEN
+
+        display --indent 62 --text "- Moving dropbox backup to offline directory" --result "DONE" --color GREEN
 
         # Delete project database
         mysql_database_drop "${CHOSEN_DB}"
@@ -188,7 +191,7 @@ delete_project_database() {
                 
                 [Nn]* )
 
-                log_event "warning" "Aborting MySQL user deletion ..." "false"
+                log_event "warning" "Aborting MySQL user deletion ..."
                 break;;
 
                 * ) echo " > Please answer yes or no.";;
