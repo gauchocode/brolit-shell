@@ -4,18 +4,53 @@
 # Version: 3.0.8
 ################################################################################
 
-menu_restore_options () {
+#
+#################################################################################
+#
+# * Private Funtions
+#
+#################################################################################
+#
+
+# This is executed if we want to restore a file backup on directory with the same name
+_make_temp_files_backup() {
+
+  # $1 = Folder to backup
+
+  local folder_to_backup=$1
+
+  display --indent 6 --text "- Creating backup on temp directory"
+
+  # Moving project files to temp directory
+  mkdir "${SFOLDER}/tmp/old_backup"
+  mv "${folder_to_backup}" "${SFOLDER}/tmp/old_backup"
+
+  log_event "info" "Temp backup completed and stored here: ${SFOLDER}/tmp/old_backup"
+  clear_last_line
+  display --indent 6 --text "- Creating backup on temp directory" --result "DONE" --color GREEN
+
+}
+
+#
+#################################################################################
+#
+# * Public Funtions
+#
+#################################################################################
+#
+
+restore_backup_menu () {
 
   local -n restore_options          # whiptail array options
   local chosen_restore_options      # whiptail var
 
   restore_options=("01)" "RESTORE FROM DROPBOX" "02)" "RESTORE FROM URL (BETA)")
   chosen_restore_options=$(whiptail --title "RESTORE TYPE" --menu " " 20 78 10 "${restore_options[@]}" 3>&1 1>&2 2>&3)
-  exitstatus=$?
+  exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_restore_options} == *"01"* ]]; then
-      server_selection_restore_menu
+      restore_backup_server_selection
 
     elif [[ ${chosen_restore_options} == *"02"* ]]; then
       # shellcheck source=${SFOLDER}/utils/wordpress_restore_from_source.sh
@@ -29,7 +64,7 @@ menu_restore_options () {
 
 }
 
-server_selection_restore_menu () {
+restore_backup_server_selection () {
 
   SITES_F="site"
   CONFIG_F="configs"
@@ -41,43 +76,21 @@ server_selection_restore_menu () {
   # Select SERVER
   dropbox_server_list=$("${DROPBOX_UPLOADER}" -hq list "/")
   chosen_server=$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 $(for x in ${dropbox_server_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)
-  exitstatus=$?
+  exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
 
     dropbox_type_list="$(${DROPBOX_UPLOADER} -hq list "${chosen_server}")"
     dropbox_type_list='project '${dropbox_type_list}
 
     # Select backup type
-    select_restore_type_from_dropbox "${chosen_server}" "${dropbox_type_list}"
+    restore_type_selection_from_dropbox "${chosen_server}" "${dropbox_type_list}"
 
   else
-    menu_restore_options
+    restore_backup_menu
     
   fi
 
-menu_restore_options
-
-}
-
-#
-# This is executed if we want to restore a file backup on directory with the same name
-#
-
-make_temp_files_backup() {
-
-  # $1 = Folder to backup
-
-  local folder_to_backup=$1
-
-  display --indent 6 --text "- Creating backup on temp directory"
-
-  # Moving project files to temp directory
-  mkdir "${SFOLDER}/tmp/old_backup"
-  mv "${folder_to_backup}" "${SFOLDER}/tmp/old_backup"
-
-  log_event "info" "Temp backup completed and stored here: ${SFOLDER}/tmp/old_backup" "false"
-  clear_last_line
-  display --indent 6 --text "- Creating backup on temp directory" --result "DONE" --color GREEN
+  restore_backup_menu
 
 }
 
@@ -96,7 +109,7 @@ restore_database_backup() {
   local user_db_exists 
   local db_pass
 
-  log_subsection "Restore Database"
+  log_subsection "Restore Database Backup"
 
   db_name="${project_name}_${project_state}"
 
@@ -121,14 +134,14 @@ restore_database_backup() {
   mysql_database_import "${project_name}_${project_state}" "${project_backup}"
   
   # Deleting temp files
-  #log_event "info" "Cleanning temp files ..."
-  #rm "${project_backup%%.*}.tar.bz2"
-  #rm "${project_backup}"
-  #display --indent 6 --text "- Cleanning temp files" --result "DONE" --color GREEN
+  rm "${project_backup%%.*}.tar.bz2"
+  rm "${project_backup}"
+  display --indent 6 --text "- Cleanning temp files" --result "DONE" --color GREEN
+  log_event "info" "Temp files cleanned"
 
 }
 
-download_and_restore_config_files_from_dropbox(){
+restore_config_files_from_dropbox(){
 
   #$1 = ${dropbox_chosen_type_path}
   #$2 = ${dropbox_project_list}
@@ -140,7 +153,7 @@ download_and_restore_config_files_from_dropbox(){
   local dropbox_bk_list               # dropbox backup list
   local chosen_config_bk              # whiptail var
 
-  log_subsection "Restore Server Config Files"
+  log_subsection "Restore Server config Files"
 
   # Select config backup type
   chosen_config_type=$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Choose a config backup type." 20 78 10 $(for x in ${dropbox_project_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
@@ -345,6 +358,8 @@ restore_site_files() {
   local folder_to_install 
   local chosen_domain
 
+  log_subsection "Restore Files Backup"
+
   chosen_domain=$(whiptail --title "Project Domain" --inputbox "Want to change the project's domain? Default:" 10 60 "${domain}" 3>&1 1>&2 2>&3)
   exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -370,7 +385,7 @@ restore_site_files() {
     if [ -d "${actual_folder}" ]; then
 
       # Make backup
-      make_temp_files_backup "${actual_folder}"
+      _make_temp_files_backup "${actual_folder}"
 
     fi
 
@@ -410,7 +425,7 @@ restore_site_files() {
 
 }
 
-select_restore_type_from_dropbox() {
+restore_type_selection_from_dropbox() {
   
   # TODO: check project type (WP? Laravel? other?)
   # ask for directory_browser if apply
@@ -442,17 +457,17 @@ select_restore_type_from_dropbox() {
 
     if [[ "${chosen_type}" == "project" ]]; then
 
-      project_restore "${chosen_server}"
+      restore_project "${chosen_server}"
 
     elif [[ "${chosen_type}" != "project" ]]; then
 
-      log_section "Restore ${chosen_type} Backup"
+      #log_subsection "Restore ${chosen_type} Backup"
 
       dropbox_project_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_type_path}")"
       
       if [[ "${chosen_type}" == *"${CONFIG_F}"* ]]; then
 
-        download_and_restore_config_files_from_dropbox "${dropbox_chosen_type_path}" "${dropbox_project_list}"
+        restore_config_files_from_dropbox "${dropbox_chosen_type_path}" "${dropbox_project_list}"
 
       else # DB or SITE
 
@@ -599,7 +614,7 @@ select_restore_type_from_dropbox() {
 
 }
 
-project_restore() {
+restore_project() {
 
   # $1 = ${chosen_server}
 
