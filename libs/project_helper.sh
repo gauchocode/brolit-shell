@@ -41,6 +41,120 @@ project_create_config() {
 
 }
 
+project_get_configured_database() {
+
+  # $1 = ${project_path}
+  # $2 = ${project_type}
+
+  local project_path=$1
+  local project_type=$2
+
+  case $project_type in
+
+    wordpress)
+
+      db_name=$(cat "${project_path}"/wp-config.php | grep DB_NAME | cut -d \' -f 4)
+
+      # Return
+      echo "${db_name}"
+      
+      ;;
+
+    laravel)
+      display --indent 8 --text "Project Type Laravel" --tcolor RED
+      return 1
+      ;;
+
+    yii)
+      display --indent 8 --text "Project Type Yii" --tcolor RED
+      return 1
+      ;;
+
+    *)
+      display --indent 8 --text "Project Type Unknown" --tcolor RED
+      return 1
+      ;;
+
+  esac
+
+}
+
+project_get_configured_database_user() {
+
+  # $1 = ${project_path}
+  # $2 = ${project_type}
+
+  local project_path=$1
+  local project_type=$2
+
+  case $project_type in
+
+      wordpress)
+
+        db_user=$(cat "${project_path}"/wp-config.php | grep DB_USER | cut -d \' -f 4)
+
+        # Return
+        echo "${db_user}"
+        
+        ;;
+
+      laravel)
+        display --indent 8 --text "Project Type Laravel" --tcolor RED
+        return 1
+        ;;
+
+      yii)
+        display --indent 8 --text "Project Type Yii" --tcolor RED
+        return 1
+        ;;
+
+      *)
+        display --indent 8 --text "Project Type Unknown" --tcolor RED
+        return 1
+        ;;
+
+    esac
+
+}
+
+project_get_configured_database_userpassw() {
+
+  # $1 = ${project_path}
+  # $2 = ${project_type}
+
+  local project_path=$1
+  local project_type=$2
+
+  case $project_type in
+
+      wordpress)
+
+        db_pass=$(cat "${project_path}"/wp-config.php | grep DB_PASSWORD | cut -d \' -f 4)
+        
+        # Return
+        echo "${db_pass}"
+
+        ;;
+
+      laravel)
+        display --indent 8 --text "Project Type Laravel" --tcolor RED
+        return 1
+        ;;
+
+      yii)
+        display --indent 8 --text "Project Type Yii" --tcolor RED
+        return 1
+        ;;
+
+      *)
+        display --indent 8 --text "Project Type Unknown" --tcolor RED
+        return 1
+        ;;
+
+    esac
+
+}
+
 project_install() {
 
   # $1 = ${dir_path}

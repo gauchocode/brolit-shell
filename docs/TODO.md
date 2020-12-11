@@ -34,6 +34,8 @@
 - [ ] Core: Better structure of deleted projects on dropbox.
 - [ ] Nginx: Better nginx config: https://www.digitalocean.com/community/tools/nginx
 - [ ] WP-CLI: Better error handling.
+- [ ] MySQL: when create a new user, ask what kind of connection do you want: localhost or % (any host).
+        Example: CREATE USER 'bruser'@'%' IDENTIFIED BY 'sdasdasas'; GRANT ALL PRIVILEGES ON *.* TO 'bruser'@'%'; FLUSH PRIVILEGES;
 
 ### Done ✓
 
