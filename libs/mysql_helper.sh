@@ -451,7 +451,7 @@ mysql_database_import() {
 
         # Logging
         #clear_last_line
-        display --indent 6 --text " - Database backup import" --result "DONE" --color GREEN
+        display --indent 6 --text "- Database backup import" --result "DONE" --color GREEN
         log_event "success" "Database ${database} imported successfully"
 
         return 0
@@ -460,7 +460,7 @@ mysql_database_import() {
         
         # Logging
         #clear_last_line
-        display --indent 6 --text " - Database backup import" --result "ERROR" --color RED
+        display --indent 6 --text "- Database backup import" --result "ERROR" --color RED
         display --indent 8 --text "MySQL output: ${import_status}" --tcolor RED
         log_event "error" "Something went wrong importing database: ${database}"
         log_event "debug" "MySQL output: ${mysql_output}"
