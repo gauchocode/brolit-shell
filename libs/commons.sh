@@ -1804,7 +1804,7 @@ ask_folder_to_install_sites() {
     exitstatus="$?"
     if [[ ${exitstatus} -eq 0 ]]; then
 
-      log_event "info" "Folder to work with: ${folder_to_install}" "false"
+      log_event "info" "Folder to work with: ${folder_to_install}"
 
       # Return
       echo "${folder_to_install}"
