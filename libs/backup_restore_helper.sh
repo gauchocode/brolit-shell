@@ -121,10 +121,10 @@ restore_database_backup() {
   mysql_database_import "${project_name}_${project_state}" "${project_backup}"
   
   # Deleting temp files
-  log_event "info" "Cleanning temp files ..."
-  rm "${project_backup%%.*}.tar.bz2"
-  rm "${project_backup}"
-  display --indent 6 --text "- Cleanning temp files" --result "DONE" --color GREEN
+  #log_event "info" "Cleanning temp files ..."
+  #rm "${project_backup%%.*}.tar.bz2"
+  #rm "${project_backup}"
+  #display --indent 6 --text "- Cleanning temp files" --result "DONE" --color GREEN
 
 }
 
@@ -541,8 +541,8 @@ select_restore_type_from_dropbox() {
             # TODO: check project type (WP, Laravel, etc)
 
             folder_to_install="$(ask_folder_to_install_sites "${SITES}")"
-            return="$?"
-            if [[ ${return} -eq 1 ]]; then
+            folder_to_install_result="$?"
+            if [[ ${folder_to_install_result} -eq 1 ]]; then
 
               return 0
 
@@ -551,6 +551,13 @@ select_restore_type_from_dropbox() {
             startdir="${folder_to_install}"
             menutitle="Site Selection Menu"
             directory_browser "${menutitle}" "${startdir}"
+            directory_browser_result="$?"
+            if [[ ${directory_browser_result} -eq 1 ]]; then
+
+              return 0
+
+            fi
+
             project_site=$filepath"/"$filename
 
             install_path="$(search_wp_config "${folder_to_install}/${filename}")"

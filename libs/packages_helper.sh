@@ -325,7 +325,7 @@ timezone_configuration() {
 remove_old_packages() {
 
   log_event "info" "Cleanning old system packages ..."
-  display --indent 6 --text "- Cleaning old system packages"
+  display --indent 6 --text "- Cleanning old system packages"
 
   apt-get --yes clean -qq > /dev/null
   apt-get --yes autoremove -qq > /dev/null
@@ -333,7 +333,7 @@ remove_old_packages() {
 
   log_event "info" "Old system packages cleaned"
   clear_last_line
-  display --indent 6 --text "- Cleaning old system packages" --result "DONE" --color GREEN
+  display --indent 6 --text "- Cleanming old system packages" --result "DONE" --color GREEN
 
 }
 
