@@ -248,14 +248,18 @@ mysql_root_psw_change() {
 
 mysql_user_grant_privileges() {
 
-    # $1 = ${USER}
-    # $2 = ${DB}
+    # $1 = ${db_user}
+    # $2 = ${db_target}
+    # $3 = ${db_scope}
 
     local db_user=$1
     local db_target=$2
+    local db_scope=$3
 
     local query_1 
     local query_2 
+
+    local mysql_output
     local mysql_result
 
     log_event "info" "Granting privileges to ${db_user} on ${db_target} database in MySQL"
@@ -360,6 +364,8 @@ mysql_database_create() {
     local database=$1
 
     local query_1
+
+    local mysql_output
     local mysql_result
 
     log_event "info" "Creating ${database} database in MySQL ..."
@@ -479,12 +485,13 @@ mysql_database_export() {
     local database=$1
     local dump_file=$2
 
+    local dump_output
     local dump_status
 
     log_event "info" "Making a database backup of: ${database}"
     display --indent 6 --text "- Making a backup of: ${database}"
 
-    dump_output="$(${MYSQLDUMP} -u "${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}" 2>&1)"
+    dump_output="$("${MYSQLDUMP}" -u "${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}")"
     dump_status="$?"
     if [[ ${dump_status} -eq 0 ]]; then
 
