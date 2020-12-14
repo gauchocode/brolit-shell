@@ -117,12 +117,10 @@ restore_database_backup() {
   mysql_database_exists "${db_name}"
   db_exists="$?"
   if [[ ${db_exists} -eq 1 ]]; then  
-    
     # Create database
     mysql_database_create "${db_name}"
 
   else
-
     # Make backup of actual database
     log_event "info" "MySQL database ${db_name} already exists"
     mysql_database_export "${db_name}" "${db_name}_bk_before_restore.sql"

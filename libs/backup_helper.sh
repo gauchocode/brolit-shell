@@ -558,34 +558,37 @@ make_database_backup() {
       log_event "info" "Creating folders in Dropbox ..."
 
       # New folder with $VPSNAME
-      output="$("${DROPBOX_UPLOADER}" -q mkdir "/${VPSNAME}" 2>&1)"
-      
+      output="$("${DROPBOX_UPLOADER}" -q mkdir "${VPSNAME}" 2>&1)"
+      log_event "info" "Creating dropbox directory ${VPSNAME}"
+
       # New folder with $bk_type
       output="$("${DROPBOX_UPLOADER}" -q mkdir "/${VPSNAME}/${bk_type}" 2>&1)"
+      log_event "info" "Creating dropbox directory ${VPSNAME}/${bk_type}"
 
       # New folder with $database (project DB)
       output="$("${DROPBOX_UPLOADER}" -q mkdir "/${VPSNAME}/${bk_type}/${database}" 2>&1)"
+      log_event "info" "Creating dropbox directory ${VPSNAME}/${bk_type}/${database}"
 
       display --indent 6 --text "- Creating dropbox directories" --result "DONE" --color GREEN
 
       DROPBOX_PATH="/${VPSNAME}/${bk_type}/${database}"
 
       # Upload to Dropbox
-      log_event "info" "Uploading new database backup ${bk_file} to dropbox folder ${DROPBOX_FOLDER}${DROPBOX_PATH}" "false"
+      log_event "info" "Uploading new database backup ${bk_file} to dropbox folder ${DROPBOX_FOLDER}${DROPBOX_PATH}"
       output="$(${DROPBOX_UPLOADER} upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}${DROPBOX_PATH}" 2>&1)"
       dropbox_result="$?"
-      log_event "info" "dropbox_result: $dropbox_result" "false"
+      log_event "info" "dropbox_result: $dropbox_result"
 
       if [[ ${dropbox_result} -eq 0 ]]; then
       
         display --indent 6 --text "- Uploading new database backup to dropbox" --result "DONE" --color GREEN
 
         # Delete old backups
-        log_event "info" "Deleting old database backup ${old_bk_file} from dropbox" "false"
+        log_event "info" "Deleting old database backup ${old_bk_file} from dropbox"
         output="$(${DROPBOX_UPLOADER} -q remove "${DROPBOX_FOLDER}${DROPBOX_PATH}/${old_bk_file}" 2>&1)"
         display --indent 6 --text "- Delete old database backup" --result "DONE" --color GREEN
 
-        log_event "info" "Deleting old database backup ${old_bk_file} from server" "false"
+        log_event "info" "Deleting old database backup ${old_bk_file} from server"
         rm "${BAKWP}/${NOW}/${db_file}"
         rm "${BAKWP}/${NOW}/${bk_file}"
         display --indent 6 --text "- Delete old database backup from server" --result "DONE" --color GREEN

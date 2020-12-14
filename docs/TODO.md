@@ -122,6 +122,7 @@
 - [ ] Server Optimization: Complete the pdf optimization process.
 - [ ] MySQL: Optimization script.
 - [ ] MySQL: Rename database helper (with and without WP).
+- [ ] Project Utils: A new option "Create project database" to create a database, and a database user for an specific project.
 - [ ] WordPress: Fallback for replace strings on wp database (if wp-cli fails, use old script version).
 - [ ] WordPress: WP Network support (nginx config, and wp-cli commands).
 - [ ] IT Utils: Control of mounted partitions or directories.
