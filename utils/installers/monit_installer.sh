@@ -17,12 +17,12 @@ configure_monit(){
   fi
 
   # Configuring monit
-  log_event "info" "Configuring monit ..." "false"
+  log_event "info" "Configuring monit ..."
 
   # Using script template
   cat "${SFOLDER}/config/monit/lemp-services" > /etc/monit/conf.d/lemp-services
   cat "${SFOLDER}/config/monit/monitrc" > /etc/monit/monitrc
-  display --indent 2 --text "- Copying monit config" --result "DONE" --color GREEN
+  display --indent 6 --text "- Copying monit config" --result "DONE" --color GREEN
 
   sed -i "s#HOSTNAME#${VPSNAME}#" /etc/monit/conf.d/lemp-services
 
@@ -32,7 +32,7 @@ configure_monit(){
   sed -i "s#PHP_V#${PHP_V}#" /etc/monit/conf.d/lemp-services
   sed -i "s#PHP_V#${PHP_V}#" /etc/monit/conf.d/lemp-services
   sed -i "s#PHP_V#${PHP_V}#" /etc/monit/conf.d/lemp-services
-  display --indent 2 --text "- Setting PHP version" --result "DONE" --color GREEN
+  display --indent 6 --text "- Setting PHP version" --result "DONE" --color GREEN
 
   sed -i "s#SMTP_SERVER#${SMTP_SERVER}#" /etc/monit/conf.d/lemp-services
   sed -i "s#SMTP_PORT#${SMTP_PORT}#" /etc/monit/conf.d/lemp-services
@@ -43,16 +43,16 @@ configure_monit(){
 
   sed -i "s#SMTP_P#${SMTP_P}#" /etc/monit/conf.d/lemp-services
   sed -i "s#MAILA#${MAILA}#" /etc/monit/conf.d/lemp-services
-  display --indent 2 --text "- Configuring SMTP" --result "DONE" --color GREEN
+  display --indent 6 --text "- Configuring SMTP" --result "DONE" --color GREEN
 
-  log_event "info" "Restarting services ..." "false"
+  log_event "info" "Restarting services ..."
   systemctl restart "php${PHP_V}-fpm"
   systemctl restart nginx.service
   service monit restart
-  display --indent 2 --text "- Restarting services" --result "DONE" --color GREEN
+  display --indent 6 --text "- Restarting services" --result "DONE" --color GREEN
 
-  log_event "success" "Monit configured" "false"
-  display --indent 2 --text "- Monit configuration" --result "DONE" --color GREEN
+  log_event "success" "Monit configured"
+  display --indent 6 --text "- Monit configuration" --result "DONE" --color GREEN
 
 }
 
@@ -71,13 +71,13 @@ if [ ! -x "${MONIT}" ]; then
       case $yn in
           [Yy]* )
 
-            log_section "Monit Installer"
+            log_subsection "Monit Installer"
 
-            log_event "info" "Updating packages before installation ..." "false"
+            log_event "info" "Updating packages before installation ..."
             apt-get --yes update -qq > /dev/null
 
             # Installing packages
-            log_event "info" "Installing monit ..." "false"
+            log_event "info" "Installing monit ..."
             apt-get --yes install monit -qq > /dev/null
 
             configure_monit
@@ -86,7 +86,7 @@ if [ ! -x "${MONIT}" ]; then
 
           [Nn]* )
 
-            log_event "warning" "Aborting monit installation script ..." "false"
+            log_event "warning" "Aborting monit installation script ..."
 
             break;;
 
@@ -104,7 +104,7 @@ else
       case $yn in
           [Yy]* )
 
-            log_section "Monit Configurator"
+            log_subsection "Monit Configurator"
 
             configure_monit
 
@@ -112,7 +112,7 @@ else
 
           [Nn]* )
 
-            log_event "warning" "Aborting monit configuration script ..." "false"
+            log_event "warning" "Aborting monit configuration script ..."
 
             break;;
 
