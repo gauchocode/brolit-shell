@@ -245,12 +245,15 @@ nginx_reconfigure() {
     # nginx.conf broobe standard configuration
     cat "${SFOLDER}/config/nginx/nginx.conf" >"/etc/nginx/nginx.conf"
 
+    # mime.types
+    cat "${SFOLDER}/config/nginx/mime.types" >"/etc/nginx/mime.types;"
+
     #Test the validity of the nginx configuration
     nginx_configuration_test
 
 }
 
-nginx_configuration_test(){
+nginx_configuration_test() {
 
     #Test the validity of the nginx configuration
     result=$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)
@@ -266,7 +269,7 @@ nginx_configuration_test(){
     else
         debug=$(nginx -t 2>&1)
         whiptail_event "WARNING" "Something went wrong changing Nginx configuration. Please check manually nginx config files."
-        log_event "error" "Problem changing Nginx configuration. Debug: ${debug}" "false"
+        log_event "error" "Problem changing Nginx configuration. Debug: ${debug}"
 
         display --indent 6 --text "- Testing nginx configuration" --result "FAIL" --color RED
 
@@ -277,7 +280,7 @@ nginx_configuration_test(){
 nginx_new_default_server() {
     
     # New default nginx configuration
-    log_event "info" "Moving nginx configuration files ..." "false"
+    log_event "info" "Moving nginx configuration files ..."
     cat "${SFOLDER}/config/nginx/sites-available/default" >"/etc/nginx/sites-available/default"
     display --indent 6 --text "- Creating default nginx server" --result "DONE" --color GREEN
 
