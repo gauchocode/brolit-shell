@@ -65,21 +65,26 @@ mysql_user_create() {
 
     # $1 = ${db_user}
     # $2 = ${db_user_psw}
+    # $3 = ${db_user_scope}
 
     local db_user=$1
     local db_user_psw=$2
+    local db_user_scope=$3
 
     local query
+
+    # TODO: only if empty
+    db_user_scope='localhost'
 
     # Logging
     display --indent 2 --text "- Creating ${db_user} user in MySQL"
     log_event "info" "Creating ${db_user} user in MySQL with pass: ${db_user_psw}"
 
     if [[ -z ${db_user_psw} || ${db_user_psw} == "" ]]; then
-        query="CREATE USER '${db_user}'@'localhost';"
+        query="CREATE USER '${db_user}'@'${db_user_scope}';"
 
     else
-        query="CREATE USER '${db_user}'@'localhost' IDENTIFIED BY '${db_user_psw}';"
+        query="CREATE USER '${db_user}'@'${db_user_scope}' IDENTIFIED BY '${db_user_psw}';"
 
     fi
 
@@ -115,14 +120,22 @@ mysql_user_create() {
 mysql_user_delete() {
 
     # $1 = ${db_user}
+    # $2 = ${db_user_scope}
 
     local db_user=$1
+    local db_user_scope=$2
 
-    local query_1="DROP USER '${db_user}'@'localhost';"
-    local query_2="FLUSH PRIVILEGES;"
+    local query_1
+    local query_2
+
+    # TODO: only if empty
+    db_user_scope='localhost'
 
     display --indent 6 --text "- Deleting user ${db_user}"
     log_event "info" "Deleting ${db_user} user in MySQL ..."
+
+    query_1="DROP USER '${db_user}'@'${db_user_scope}';"
+    query_2="FLUSH PRIVILEGES;"
 
     mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query_1}${query_2}")"
     mysql_result="$?"
@@ -262,9 +275,12 @@ mysql_user_grant_privileges() {
     local mysql_output
     local mysql_result
 
+    # TODO: only if empty
+    db_scope='localhost'
+
     log_event "info" "Granting privileges to ${db_user} on ${db_target} database in MySQL"
 
-    query_1="GRANT ALL PRIVILEGES ON ${db_target}.* TO '${db_user}'@'localhost';"
+    query_1="GRANT ALL PRIVILEGES ON ${db_target}.* TO '${db_user}'@'${db_scope}';"
     query_2="FLUSH PRIVILEGES;"
 
     mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query_1}${query_2}")"
