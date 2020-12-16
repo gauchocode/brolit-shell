@@ -244,9 +244,11 @@ nginx_reconfigure() {
 
     # nginx.conf broobe standard configuration
     cat "${SFOLDER}/config/nginx/nginx.conf" >"/etc/nginx/nginx.conf"
+    display --indent 6 --text "- Updating nginx.conf" --result "DONE" --color GREEN
 
     # mime.types
     cat "${SFOLDER}/config/nginx/mime.types" >"/etc/nginx/mime.types;"
+    display --indent 6 --text "- Updating mime.types" --result "DONE" --color GREEN
 
     #Test the validity of the nginx configuration
     nginx_configuration_test
