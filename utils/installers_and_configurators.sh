@@ -11,7 +11,7 @@ installers_and_configurators() {
 
   installer_options=("01)" "PHP-FPM" "02)" "MYSQL/MARIADB" "03)" "NGINX" "04)" "PHPMYADMIN" "05)" "NETDATA" "06)" "MONIT" "07)" "COCKPIT" "08)" "CERTBOT" "09)" "WP-CLI" "10)" "ZSH")
   installer_type=$(whiptail --title "INSTALLERS AND CONFIGURATORS" --menu "\nPlease select the utility or programs you want to install or config: \n" 20 78 10 "${installer_options[@]}" 3>&1 1>&2 2>&3)
-  exitstatus=$?
+  exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
 
     log_section "Installers and Configurators"
