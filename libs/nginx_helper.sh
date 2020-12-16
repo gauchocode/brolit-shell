@@ -16,7 +16,7 @@ nginx_server_create() {
     local server_type=$3
     local redirect_domains=$4
 
-    local nginx_result debug
+    local debug
 
     # Logging
     log_event "info" "Creating nginx configuration file for domain: ${project_domain}"
@@ -340,10 +340,15 @@ nginx_create_empty_nginx_conf() {
     local path=$1
     
     if [[ ! -f ${path}/nginx.conf ]];then
-        mkdir "${path}/nginx.conf"
+
+        # Create empty file
+        touch "${path}/nginx.conf"
+        
         return 0
+
     else
         return 1
+
     fi
 
 }
