@@ -1148,9 +1148,6 @@ get_project_type() {
   local project_type
   local is_wp
 
-  # shellcheck source=${SFOLDER}/libs/wordpress_helper.sh
-  source "${SFOLDER}/libs/wordpress_helper.sh"
-
   if [ "${dir_path}" != "" ];then
 
     is_wp=$(search_wp_config "${dir_path}")

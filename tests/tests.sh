@@ -27,7 +27,7 @@ source "${SFOLDER}/libs/wordpress_helper.sh"
 # shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
 source "${SFOLDER}/libs/wpcli_helper.sh"
 
-####################### Test for Mails #######################
+####################### Tests for Mails #######################
 
 test_mail_cert_section() {
 
@@ -78,7 +78,7 @@ test_mail_package_section() {
 
 }
 
-####################### TEST FOR mysql_helper #######################
+####################### Tests for mysql_helper.sh #######################
 
 test_mysql_helper() {
 
@@ -249,7 +249,7 @@ test_mysql_database_drop() {
 
 }
 
-####################### TEST FOR commons #######################
+####################### Tests for commons.sh #######################
 
 test_common_funtions() {
 
@@ -425,7 +425,59 @@ test_extract_domain_extension() {
 
 }
 
-####################### TEST FOR cloudflare_helper #######################
+####################### Tests for wordpress_helper.sh #######################
+
+test_wordpress_helper_funtions() {
+
+    local project_domain
+
+    project_domain="test.domain.com"
+
+    # Create mock project
+    wpcli_core_install "${SITES}/${project_domain}"
+
+    # Tests
+    test_search_wp_config "${SITES}/${project_domain}"
+    test_is_wp_project "${SITES}/${project_domain}"
+
+    # Deleting temp files
+    #rm -R "${SITES}/${project_domain}"
+
+}
+
+test_search_wp_config(){
+
+    result="$(search_wp_config "${project_path}")"
+    if [[ ${result} != "" ]]; then 
+        display --indent 6 --text "- search_wp_config result ${result}" --result "PASS" --color WHITE
+    else
+        display --indent 6 --text "- search_wp_config" --result "FAIL" --color RED
+        #display --indent 6 --text "result: ${result}" --tcolor RED
+    fi
+
+    log_break "true"
+
+}
+
+test_is_wp_project(){
+    
+    result="$(is_wp_project "${project_path}")"
+    if [[ ${result} = "true" ]]; then 
+        display --indent 6 --text "- is_wp_project result ${result}" --result "PASS" --color WHITE
+    else
+        display --indent 6 --text "- is_wp_project" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
+    fi
+
+    log_break "true"
+
+}
+
+####################### Tests for project_helper.sh #######################
+
+
+
+####################### Tests for cloudflare_helper #######################
 
 test_cloudflare_funtions() {
 
