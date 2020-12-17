@@ -60,6 +60,7 @@
 - [ ] Core: Warning if script run on non default installation (no webserver or another than nginx).
 - [ ] Finish function: restore_config_files_from_dropbox
 - [ ] Core: Complete refactor of "Options Wizard": (Backup Options, Notification Options, Cloudflare Config).
+- [ ] Core: maybe with could ask for database user nomenclature. Today is "PROJECTNAME_user" and it could be "PROJECTNAME_PROJECTSTATE_user".
 - [ ] Nginx-PHP: Ask PHP version before create a server config.
 - [ ] Nginx: Add http2 support on nginx server config files.
 - [ ] Nginx: New option to put website on maintenance.
