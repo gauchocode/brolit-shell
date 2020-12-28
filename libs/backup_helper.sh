@@ -203,11 +203,11 @@ make_server_files_backup() {
 
     # Here we use tar.bz2 with bzip2 compression method
     log_event "info" "Making backup of ${bk_path}"
-    display --indent 6 --text "- Making ${bk_sup_type} backup" --result "DONE" --color GREEN
-
-    log_event "info" "Running: ${TAR} cjf ${BAKWP}/${NOW}/${bk_file} --directory=${bk_path} ${directory_to_backup}"
+    log_event "debug" "Running: ${TAR} cjf ${BAKWP}/${NOW}/${bk_file} --directory=${bk_path} ${directory_to_backup}"
+    
     (${TAR} cjf "${BAKWP}/${NOW}/${bk_file}" --directory="${bk_path}" "${directory_to_backup}")
 
+    display --indent 6 --text "- Making ${bk_sup_type} backup" --result "DONE" --color GREEN
     display --indent 6 --text "- Compressing directory ${bk_path}" --result "DONE" --color GREEN
 
     # Test backup file
@@ -336,8 +336,8 @@ make_mailcow_backup() {
       # Test backup file
       log_event "info" "Testing backup file: ${bk_file} ..."
       lbzip2 -t "${MAILCOW_TMP_BK}/${bk_file}"
-      lbzip2_result=$?
-      if [[ "${lbzip2_result}" -eq 0 ]]; then
+      lbzip2_result="$?"
+      if [[ ${lbzip2_result} -eq 0 ]]; then
 
         log_event "success" "${MAILCOW_TMP_BK}/${bk_file} backup created"
 
@@ -531,6 +531,7 @@ make_database_backup() {
     log_event "info" "Making a tar.bz2 file of ${db_file} ..."
     display --indent 6 --text "- Compressing database backup"
 
+    # TAR
     (${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s "$(du -sb "${BAKWP}/${NOW}/${db_file}" | awk '{print $1}')" | lbzip2 >"${BAKWP}/${NOW}/${bk_file}")
 
     # Test backup file
@@ -688,6 +689,7 @@ make_project_backup() {
 
         log_event "info" "Compressing database backup: ${db_file}"
 
+        # TAR
         (${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s "$(du -sb "${BAKWP}/${NOW}/${db_file}" | awk '{print $1}')" | lbzip2 >"${BAKWP}/${NOW}/${BK_DB_FILE}")
 
         # Test backup file
