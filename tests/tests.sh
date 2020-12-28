@@ -445,7 +445,9 @@ test_wordpress_helper_funtions() {
 
 }
 
-test_search_wp_config(){
+test_search_wp_config() {
+
+    log_subsection "Test: test_search_wp_config"
 
     result="$(search_wp_config "${project_path}")"
     if [[ ${result} != "" ]]; then 
@@ -459,7 +461,9 @@ test_search_wp_config(){
 
 }
 
-test_is_wp_project(){
+test_is_wp_project() {
+
+    log_subsection "Test: test_is_wp_project"
     
     result="$(is_wp_project "${project_path}")"
     if [[ ${result} = "true" ]]; then 

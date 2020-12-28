@@ -166,42 +166,47 @@ project_install() {
   folder_to_install=$(ask_folder_to_install_sites "${dir_path}")
 
   log_event "info" "Starting project installer ..."
-  log_subsection "Project Installer"
+  log_section "Project Installer"
   
   project_domain=$(ask_project_domain)
+
+  project_path="${folder_to_install}/${project_domain}"
 
   possible_root_domain="$(get_root_domain "${project_domain}")"
   root_domain=$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")
 
-  project_name=$(ask_project_name "${project_domain}")
+  possible_project_name="$(extract_domain_extension "${project_domain}")"
+  project_name="$(ask_project_name "${possible_project_name}")"
 
-  project_state=$(ask_project_state "")
+  project_state=$(ask_project_state)
 
   case ${project_type} in
 
     wordpress)
-      log_event "error" "WordPress installer should be implemented soon, aborting ..."
+
+      display --indent 6 --text "- WordPress Installer Selected" -tcolor GREEN
+      wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${project_root_domain}"
+
       ;;
 
     laravel)
+      display --indent 6 --text "Laravel installer should be implemented soon, aborting ..." --tcolor RED
       log_event "error" "Laravel installer should be implemented soon, aborting ..."
       ;;
 
     php)
 
-        project_dir=$(check_if_folder_exists "${folder_to_install}" "${project_domain}")
-
-        if [ "${project_dir}" != 'ERROR' ]; then
-          
+        if [ -d "${project_path}" ]; then
+              
           # Create project directory
-          mkdir "${folder_to_install}/${project_domain}"
+          mkdir "${project_path}"
 
           # Create index.php
-          echo "<?php phpinfo(); ?>" > "${folder_to_install}/${project_domain}/index.php"
+          echo "<?php phpinfo(); ?>" > "${project_path}/index.php"
 
         else
 
-          log_event "error" "Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..."
+          log_event "error" "Destination folder '${project_path}' already exist, aborting ..."
           return 1
 
         fi
@@ -211,6 +216,7 @@ project_install() {
     *)
       log_event "error" "Project Type ${project_type} unkwnown, aborting ..."
       ;;
+
   esac
 
   # Change ownership
