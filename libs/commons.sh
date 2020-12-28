@@ -264,7 +264,7 @@ script_init() {
 
   # Checking required packages to run
   check_packages_required
-  packages_output=$?
+  packages_output="$?"
   if [[ ${packages_output} -eq 1 ]];then
     log_event "warning" "Some script dependencies are not setisfied." "true"
     prompt_return_or_finish
@@ -1343,34 +1343,6 @@ string_remove_special_chars() {
 
 }
 
-check_if_folder_exists() {
-
-  # $1 = ${folder_to_install}
-  # $2 = ${domain}
-
-  local folder_to_install=$1
-  local domain=$2
-
-  local project_dir="${folder_to_install}/${domain}"
-  
-  if [ -d "${project_dir}" ]; then
-
-    log_event "info" "Project directory not found on: ${project_dir}"
-
-    # Return
-    echo "ERROR"
-
-  else
-
-    log_event "info" "Project directory found on: ${project_dir}"
-
-    # Return
-    echo "${project_dir}"
-
-  fi
-
-}
-
 change_ownership(){
 
   #$1 = ${user}
@@ -2091,15 +2063,14 @@ menu_project_utils () {
   project_utils_options=("01)" "CREATE WP PROJECT" "02)" "CREATE PHP PROJECT" "03)" "DELETE PROJECT" "04)" "PUT PROJECT ONLINE" "05)" "PUT PROJECT OFFLINE" "06)" "REGENERATE NGINX SERVER" "07)" "BENCH PROJECT GTMETRIX")
   chosen_project_utils_options=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_utils_options[@]}" 3>&1 1>&2 2>&3)
 
-  exitstatus=$?
-  if [ ${exitstatus} = 0 ]; then
+  exitstatus="$?"
+  if [[ ${exitstatus} = 0 ]]; then
 
     if [[ ${chosen_project_utils_options} == *"01"* ]]; then
       
       # CREATE-WP-PROJECT
+      project_install "${SITES}" "wordpress"
 
-      # shellcheck source=${SFOLDER}/installers/wordpress_installer.sh
-      source "${SFOLDER}/utils/installers/wordpress_installer.sh"
     fi
 
     if [[ ${chosen_project_utils_options} == *"02"* ]]; then
