@@ -671,11 +671,16 @@ log_section() {
 
   local message=$1
 
-    if [ "${QUIET}" -eq 0 ]; then
-        echo "" >&2
-        echo -e "[+] Performing Action: ${YELLOW}${B_DEFAULT}${message}${ENDCOLOR}" >&2
-        echo "----------------------------------------------" >&2
-    fi
+  if [ "${QUIET}" -eq 0 ]; then
+    # Console Display
+    echo "" >&2
+    echo -e "[+] Performing Action: ${YELLOW}${B_DEFAULT}${message}${ENDCOLOR}" >&2
+    echo "----------------------------------------------" >&2
+    # Log file
+    echo "----------------------------------------------" >> "${LOG}"
+    echo "[+] Performing Action: ${message}" >> "${LOG}"
+    echo "----------------------------------------------" >> "${LOG}"
+  fi
 
 }
 
@@ -687,9 +692,13 @@ log_subsection() {
   local message=$1
 
     if [ "${QUIET}" -eq 0 ]; then
-        echo "" >&2
-        echo -e "    [·] ${CYAN}${B_DEFAULT}${message}${ENDCOLOR}" >&2
-        echo "    ------------------------------------------" >&2
+      # Console Display
+      echo "" >&2
+      echo -e "    [·] ${CYAN}${B_DEFAULT}${message}${ENDCOLOR}" >&2
+      echo "    ------------------------------------------" >&2
+      # Log file
+      echo "[·] ${message}" >> "${LOG}"
+      echo "----------------------------------------------" >> "${LOG}"
     fi
 
 }

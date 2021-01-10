@@ -682,7 +682,7 @@ restore_project() {
     # Only for better code reading, i assign this new var:
     chosen_domain="${chosen_project}"
 
-    case $project_type in
+    case ${project_type} in
 
       wordpress)
         display --indent 8 --text "Project Type WordPress" --tcolor GREEN
@@ -709,6 +709,7 @@ restore_project() {
         display --indent 8 --text "Project Type Unknown" --tcolor RED
         return 1
         ;;
+
     esac
 
     project_path="${SITES}/${new_project_domain}"
@@ -732,18 +733,24 @@ restore_project() {
 
     # Downloading Database Backup
     display --indent 6 --text "- Downloading backup from dropbox"
+    display --indent 8 --text "${chosen_server}/database/${db_name}/${db_name}_database_${backup_date}.tar.bz2"
+    log_event "info" "Trying to download ${chosen_server}/database/${db_name}/${db_name}_database_${backup_date}.tar.bz2"
     dropbox_output="$("${DROPBOX_UPLOADER}" download "${db_to_download}" 1>&2)"
 
     exitstatus="$?"
     if [[ ${exitstatus} -eq 1 ]]; then
 
       clear_last_line
+      clear_last_line
       display --indent 6 --text "- Downloading backup from dropbox" --result "FAIL" --color RED
+
+      # TODO: maybe ask to download manually calling restore_database_backup
 
       return 1
 
     fi
 
+    clear_last_line
     clear_last_line
     display --indent 6 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
 
@@ -817,7 +824,7 @@ restore_project() {
       letsencrypt_opt=("01)" "RESTORE CERTIFICATES" "02)" "GENERATE NEW CERTIFICATES")
       letsencrypt_chosen_opt=$(whiptail --title "Let's Encrypt Certificates" --menu "${letsencrypt_opt_text}" 20 78 10 "${letsencrypt_opt[@]}" 3>&1 1>&2 2>&3)
 
-      exitstatus=$?
+      exitstatus="$?"
       if [[ ${exitstatus} -eq 0 ]]; then
         
         if [[ ${letsencrypt_chosen_opt} == *"01"* ]]; then
