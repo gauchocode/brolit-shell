@@ -78,7 +78,7 @@ git clone https://gitlab.com/broobe/lemp-utils-scripts.git
 Change directories to the new ~/lemp-utils-script directory:
 
 ```
-cd ~/lemp-utils-script
+cd ~/lemp-utils-scripts
 ```
 
 ## Getting started
@@ -86,7 +86,7 @@ cd ~/lemp-utils-script
 Give the execution permission to the script:
 
 ```bash
- $chmod +x runner.sh
+ chmod +x runner.sh
 ```
 
 Run it:
