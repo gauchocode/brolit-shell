@@ -165,8 +165,7 @@ project_install() {
 
   folder_to_install=$(ask_folder_to_install_sites "${dir_path}")
 
-  log_event "info" "Starting project installer ..."
-  log_section "Project Installer"
+  log_section "Project Installer (${project_type})"
   
   project_domain=$(ask_project_domain)
 
@@ -184,13 +183,13 @@ project_install() {
 
     wordpress)
 
-      display --indent 6 --text "- WordPress Installer Selected" -tcolor GREEN
-      wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${project_root_domain}"
+      #display --indent 6 --text "- WordPress Installer Selected" -tcolor GREEN
+      wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
 
       ;;
 
     laravel)
-      display --indent 6 --text "Laravel installer should be implemented soon, aborting ..." --tcolor RED
+      #display --indent 6 --text "Laravel installer should be implemented soon, aborting ..." --tcolor RED
       log_event "error" "Laravel installer should be implemented soon, aborting ..."
       ;;
 
@@ -220,7 +219,7 @@ project_install() {
   esac
 
   # Change ownership
-  change_ownership "www-data" "www-data" "${project_dir}"
+  change_ownership "www-data" "www-data" "${project_path}"
 
   # TODO: ask if we want create a database
 
@@ -243,6 +242,6 @@ project_install() {
   # HTTPS with Certbot
   certbot_certificate_install "${MAILA}" "${project_domain}"
 
-  log_event "success" "INSTALLATION FINISHED!"
+  log_event "success" "PROJECT INSTALLATION FINISHED!"
 
 }
