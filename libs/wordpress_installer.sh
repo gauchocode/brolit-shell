@@ -4,27 +4,6 @@
 # Version: 3.0.8
 ################################################################################
 
-# shellcheck source=${SFOLDER}/libs/commons.sh
-source "${SFOLDER}/libs/commons.sh"
-# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
-source "${SFOLDER}/libs/mail_notification_helper.sh"
-# shellcheck source=${SFOLDER}/libs/telegram_notification_helper.sh
-source "${SFOLDER}/libs/telegram_notification_helper.sh"
-# shellcheck source=${SFOLDER}/libs/mysql_helper.sh
-source "${SFOLDER}/libs/mysql_helper.sh"
-# shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
-source "${SFOLDER}/libs/wpcli_helper.sh"
-# shellcheck source=${SFOLDER}/libs/wordpress_helper.sh
-source "${SFOLDER}/libs/wordpress_helper.sh"
-# shellcheck source=${SFOLDER}/libs/nginx_helper.sh
-source "${SFOLDER}/libs/nginx_helper.sh"
-# shellcheck source=${SFOLDER}/libs/certbot_helper.sh
-source "${SFOLDER}/libs/certbot_helper.sh"
-# shellcheck source=${SFOLDER}/libs/cloudflare_helper.sh
-source "${SFOLDER}/libs/cloudflare_helper.sh"
-
-################################################################################
-
 wordpress_project_installer () {
 
   # $1 = ${project_path}
