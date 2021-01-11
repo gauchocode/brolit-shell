@@ -61,6 +61,7 @@ wordpress_project_installer () {
 
     fi
 
+  fi
    
 }
 
