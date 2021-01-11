@@ -3,6 +3,10 @@
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Version: 3.0.8
 ################################################################################
+
+# shellcheck source=${SFOLDER}/libs/wordpress_installer.sh
+source "${SFOLDER}/libs/wordpress_installer.sh"
+
 #
 # TODO: check when add www.DOMAIN.com and then select other stage != prod
 #
