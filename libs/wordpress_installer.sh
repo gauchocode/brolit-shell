@@ -67,7 +67,7 @@ wordpress_project_install () {
 
   fi
 
-  if [ -d "${project_path}" ]; then
+  if [ ! -d "${project_path}" ]; then
     # Download WP
     mkdir "${project_path}"
     change_ownership "www-data" "www-data" "${project_path}"
