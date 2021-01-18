@@ -4,6 +4,37 @@
 # Version: 3.0.8
 ################################################################################
 
+# Creates an archive (*.tar.gz) from given directory
+function maketar() { tar cvzf "${1%%/}.tar.gz"  "${1%%/}/"; }
+
+# Create a ZIP archive of a file or folder
+function makezip() { zip -r "${1%%/}.zip" "$1" ; }
+
+# Make dir and cd
+function mcd () {
+
+    local dir=$1
+
+    mkdir -p "$dir"
+    cd "$dir"
+}
+
+# Search with grep
+function search_function() {
+
+    local path=$1
+    local string=$2
+
+    # grep parameters:
+    # -r or -R is recursive,
+    # -n is line number, and
+    # -w stands for match the whole word.
+    # -l (lower-case L) can be added to just give the file name of matching files.
+    grep -rnw "$path" -e "$string"
+}
+
+################################################################################
+
 alias ..="cd .."
 
 alias userlist="cut -d: -f1 /etc/passwd"
@@ -37,12 +68,6 @@ alias atop='atop -a 1'
  
 ## Get server cpu info
 alias cpuinfo='lscpu'
-
-# Creates an archive (*.tar.gz) from given directory
-function maketar() { tar cvzf "${1%%/}.tar.gz"  "${1%%/}/"; }
-
-# Create a ZIP archive of a file or folder
-function makezip() { zip -r "${1%%/}.zip" "$1" ; }
 
 # TODO: Backup scripts
 #alias backup='/root/lemp-utils-scripts/runner.sh --option backup --target all'

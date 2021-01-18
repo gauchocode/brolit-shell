@@ -19,13 +19,13 @@ source "${SFOLDER}/libs/commons.sh"
 script_init
 
 # shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
-source "${SFOLDER}/libs/mail_notification_helper.sh"
+#source "${SFOLDER}/libs/mail_notification_helper.sh"
 # shellcheck source=${SFOLDER}/libs/telegram_notification_helper.sh
-source "${SFOLDER}/libs/telegram_notification_helper.sh"
+#source "${SFOLDER}/libs/telegram_notification_helper.sh"
 # shellcheck source=${SFOLDER}/libs/wordpress_helper.sh
-source "${SFOLDER}/libs/wordpress_helper.sh"
+#source "${SFOLDER}/libs/wordpress_helper.sh"
 # shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
-source "${SFOLDER}/libs/wpcli_helper.sh"
+#source "${SFOLDER}/libs/wpcli_helper.sh"
 
 ####################### Tests for Mails #######################
 
@@ -477,7 +477,7 @@ test_is_wp_project() {
 
 }
 
-####################### Tests for project_helper.sh #######################
+####################### Tests for wpcli_helper.sh #######################
 
 test_wpcli_helper_funtions() {
 
@@ -506,7 +506,31 @@ test_wpcli_helper_funtions() {
 
 ####################### Tests for project_helper.sh #######################
 
-# TODO
+test_project_helper_funtions() {
+
+    test_project_install "${SITES}" "wordpress"
+
+}
+
+test_project_install() {
+
+    local project_path
+    local project_type
+    local project_domain
+    local project_name
+    local project_state
+
+    project_path="${SITES}"
+    project_type="wordpress"
+    project_domain="test.domain.com"
+    project_name="domain"
+    project_state="test"
+
+    project_install "${project_path}" "${project_type}" "${project_domain}" "${project_name}" "${project_state}"
+
+    project_delete
+
+}
 
 ####################### Tests for cloudflare_helper #######################
 

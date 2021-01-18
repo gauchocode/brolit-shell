@@ -2064,7 +2064,10 @@ menu_security_custom_scan () {
 
 menu_project_utils () {
 
-  local whip_title whip_description project_utils_options chosen_project_utils_options
+  local whip_title 
+  local whip_description
+  local project_utils_options
+  local chosen_project_utils_options
 
   whip_title="PROJECT UTILS"
   whip_description=" "
@@ -2094,9 +2097,7 @@ menu_project_utils () {
     if [[ ${chosen_project_utils_options} == *"03"* ]]; then
 
       # DELETE-PROJECT
-
-      # shellcheck source=${SFOLDER}/utils/delete_project.sh
-      source "${SFOLDER}/utils/delete_project.sh"
+      project_delete ""
 
     fi
 
