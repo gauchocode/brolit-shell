@@ -44,7 +44,11 @@ restore_backup_menu () {
   local -n restore_options          # whiptail array options
   local chosen_restore_options      # whiptail var
 
-  restore_options=("01)" "RESTORE FROM DROPBOX" "02)" "RESTORE FROM URL (BETA)")
+  restore_options=(
+    "01)" "RESTORE FROM DROPBOX" 
+    "02)" "RESTORE FROM URL (BETA)"
+    "03)" "RESTORE FROM FILE"
+    )
   chosen_restore_options=$(whiptail --title "RESTORE TYPE" --menu " " 20 78 10 "${restore_options[@]}" 3>&1 1>&2 2>&3)
   exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -52,15 +56,98 @@ restore_backup_menu () {
     if [[ ${chosen_restore_options} == *"01"* ]]; then
       restore_backup_server_selection
 
-    elif [[ ${chosen_restore_options} == *"02"* ]]; then
+    fi
+    if [[ ${chosen_restore_options} == *"02"* ]]; then
       # shellcheck source=${SFOLDER}/utils/wordpress_restore_from_source.sh
       source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
+
+    fi
+    if [[ ${chosen_restore_options} == *"03"* ]]; then
+      restore_backup_from_file
 
     fi
 
   fi
 
   menu_main_options
+
+}
+
+restore_backup_from_file() {
+
+  local -n restore_type       # whiptail array options
+  local chosen_restore_type
+
+  restore_type=(
+    "01)" "RESTORE FILES" 
+    "02)" "RESTORE DATABASE"
+    )
+  chosen_restore_type=$(whiptail --title "RESTORE TYPE" --menu " " 20 78 10 "${restore_type[@]}" 3>&1 1>&2 2>&3)
+  exitstatus="$?"
+  if [[ ${exitstatus} -eq 0 ]]; then
+    
+    if [[ ${chosen_restore_type} == *"01"* ]]; then
+
+      # RESTORE FILES
+      log_subsection "Restore from file"
+      
+      # Folder where sites are hosted: $SITES
+      menu_title="SELECT BACKUP FILE TO RESTORE"
+      file_browser "${menu_title}" "${SITES}"
+
+      # Directory_broser returns: " $filepath"/"$filename
+      if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
+
+        log_event "info" "Operation cancelled!"
+
+        # Return
+        #return 1
+      
+      else
+
+        log_event "info" "File to restore: ${filename}"
+        #restore_site_files
+
+        # TODO: i need to do a refactor of restore_site_files to accept
+        # domain, path_to_restore, backup_file
+
+        # TODO: restore_type_selection_from_dropbox needs a refactor too
+
+        # TODO: make a function with: 
+        # pv --width 70 "${chosen_backup_to_restore}" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
+
+
+      fi
+
+    fi
+    if [[ ${chosen_restore_type} == *"02"* ]]; then
+
+     # Folder where sites are hosted: $SITES
+      menu_title="SELECT BACKUP FILE TO RESTORE"
+      file_browser "${menu_title}" "${SITES}"
+
+      # Directory_broser returns: " $filepath"/"$filename
+      if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
+
+        log_event "info" "Operation cancelled!"
+
+        # Return
+        #return 1
+      
+      else
+
+        log_event "info" "File to restore: ${filename}"
+
+        project_name="$(ask_project_name "")"
+        project_state="$(ask_project_state "")"
+      
+        restore_database_backup "${project_name}" "${project_state}" "${filename}"
+      
+      fi
+
+    fi
+
+  fi
 
 }
 
