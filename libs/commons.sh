@@ -1646,7 +1646,7 @@ ask_project_state() {
     echo "${project_state}"
 
   else
-  
+
     return 1
 
   fi
@@ -2130,17 +2130,20 @@ menu_project_utils () {
       
       else
 
-        project_name="$(extract_domain_extension "${filename}")"
-        project_name=$(mysql_name_sanitize "${project_name}")
-        project_name=$(ask_project_name "${project_name}")
+        project_name="$(extract_domain_extension "${filename%/}")"
+        project_name="$(mysql_name_sanitize "${project_name}")"
+        project_name="$(ask_project_name "${project_name}")"
 
         log_event "info" "project_name: ${project_name}!"
 
-        project_state=$(ask_project_state "${project_name}")
+        project_state=$(ask_project_state "")
 
         mysql_database_create "${project_name}_${project_state}"
         mysql_user_create "${project_name}_user"
         mysql_user_grant_privileges "${project_name}_user" "${project_name}_${project_state}"
+
+        # TODO: check if is a wp project
+        # TODO: change wp-config.php on wp projects
 
       fi
 
