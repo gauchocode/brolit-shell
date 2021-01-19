@@ -1639,13 +1639,14 @@ ask_project_state() {
 
   project_states="prod stage beta test dev"
   project_state=$(whiptail --title "Project State" --menu "Choose a Project State" 20 78 10 $(for x in ${project_states}; do echo "$x [X]"; done) --default-item "${state}" 3>&1 1>&2 2>&3)
-  exitstatus=$?
+  exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Return
     echo "${project_state}"
 
   else
+  
     return 1
 
   fi
@@ -2113,6 +2114,7 @@ menu_project_utils () {
     if [[ ${chosen_project_utils_options} == *"04"* ]]; then
 
       # CREATE PROJECT DATABASE & USER
+      log_subsection "Create Project DB & User"
       
       # Folder where sites are hosted: $SITES
       menu_title="PROJECT TO WORK WITH"
@@ -2128,9 +2130,9 @@ menu_project_utils () {
       
       else
 
-        project_name=$(ask_project_name "${filename}")
-        project_name="$(extract_domain_extension "${project_name}")"
+        project_name="$(extract_domain_extension "${filename}")"
         project_name=$(mysql_name_sanitize "${project_name}")
+        project_name=$(ask_project_name "${project_name}")
 
         log_event "info" "project_name: ${project_name}!"
 
