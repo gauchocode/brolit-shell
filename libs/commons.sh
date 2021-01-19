@@ -2072,7 +2072,16 @@ menu_project_utils () {
   whip_title="PROJECT UTILS"
   whip_description=" "
 
-  project_utils_options=("01)" "CREATE WP PROJECT" "02)" "CREATE PHP PROJECT" "03)" "DELETE PROJECT" "04)" "PUT PROJECT ONLINE" "05)" "PUT PROJECT OFFLINE" "06)" "REGENERATE NGINX SERVER" "07)" "BENCH PROJECT GTMETRIX")
+  project_utils_options=(
+    "01)" "CREATE WP PROJECT" 
+    "02)" "CREATE PHP PROJECT" 
+    "03)" "DELETE PROJECT"
+    "04)" "CREATE PROJECT DB  & USER" 
+    "05)" "PUT PROJECT ONLINE" 
+    "06)" "PUT PROJECT OFFLINE" 
+    "07)" "REGENERATE NGINX SERVER" 
+    "08)" "BENCH PROJECT GTMETRIX"
+    )
   chosen_project_utils_options=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_utils_options[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus="$?"
@@ -2103,21 +2112,55 @@ menu_project_utils () {
 
     if [[ ${chosen_project_utils_options} == *"04"* ]]; then
 
-      # PUT-PROJECT-ONLINE
-      change_project_status "online"
+      # CREATE PROJECT DATABASE & USER
+      
+      # Folder where sites are hosted: $SITES
+      menu_title="PROJECT TO WORK WITH"
+      directory_browser "${menu_title}" "${SITES}"
+
+      # Directory_broser returns: " $filepath"/"$filename
+      if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
+
+        log_event "info" "Operation cancelled!"
+
+        # Return
+        #return 1
+      
+      else
+
+        project_name=$(ask_project_name "${filename}")
+        project_name="$(extract_domain_extension "${project_name}")"
+        project_name=$(mysql_name_sanitize "${project_name}")
+
+        log_event "info" "project_name: ${project_name}!"
+
+        project_state=$(ask_project_state "${project_name}")
+
+        mysql_database_create "${project_name}_${project_state}"
+        mysql_user_create "${project_name}_user"
+        mysql_user_grant_privileges "${project_name}_user" "${project_name}_${project_state}"
+
+      fi
 
     fi
 
     if [[ ${chosen_project_utils_options} == *"05"* ]]; then
 
-      # PUT-PROJECT-OFFLINE
-      change_project_status "offline"
+      # PUT PROJECT ONLINE
+      change_project_status "online"
 
     fi
 
     if [[ ${chosen_project_utils_options} == *"06"* ]]; then
 
-      # REGENERATE-NGINX-SERVER
+      # PUT PROJECT OFFLINE
+      change_project_status "offline"
+
+    fi
+
+    if [[ ${chosen_project_utils_options} == *"07"* ]]; then
+
+      # REGENERATE NGINX SERVER
 
       log_section "Nginx Manager"
 
@@ -2148,9 +2191,9 @@ menu_project_utils () {
 
     fi
 
-    if [[ ${chosen_project_utils_options} == *"07"* ]]; then
+    if [[ ${chosen_project_utils_options} == *"08"* ]]; then
 
-      # BENCH-PROJECT-GTMETRIX
+      # BENCH PROJECT GTMETRIX
 
       URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?

@@ -20,7 +20,7 @@ function mcd () {
 }
 
 # Search with grep
-function search_function() {
+function search() {
 
     local path=$1
     local string=$2
