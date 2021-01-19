@@ -2137,13 +2137,16 @@ menu_project_utils () {
         log_event "info" "project_name: ${project_name}!"
 
         project_state=$(ask_project_state "")
+        database_user_passw=$(openssl rand -hex 12)
 
         mysql_database_create "${project_name}_${project_state}"
-        mysql_user_create "${project_name}_user"
+        mysql_user_create "${project_name}_user" "${database_user_passw}"
         mysql_user_grant_privileges "${project_name}_user" "${project_name}_${project_state}"
 
         # TODO: check if is a wp project
         # TODO: change wp-config.php on wp projects
+
+        # TODO: ask if want to import?
 
       fi
 
