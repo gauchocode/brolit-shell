@@ -28,14 +28,30 @@ if [ -t 1 ]; then
 
   check_root
 
-  if [[ -z "${MPASS}" || -z "${SITES}"|| 
-        -z "${SMTP_U}" || -z "${SMTP_P}" || -z "${SMTP_TLS}" || -z "${SMTP_PORT}" || -z "${SMTP_SERVER}" || -z "${SMTP_P}" || -z "${MAILA}" ||
-        -z "${DUP_BK}" || -z "${DUP_ROOT}" || -z "${DUP_SRC_BK}"|| -z "${DUP_FOLDERS}"|| -z "${DUP_BK_FULL_FREQ}"|| -z "${DUP_BK_FULL_LIFE}"|| 
-        -z "${MAILCOW_BK}" ]]; then
+  if [[ -z "${MPASS}"           ||
+        -z "${SITES}"           || 
+        -z "${SMTP_U}"          || 
+        -z "${SMTP_P}"          || 
+        -z "${SMTP_TLS}"        || 
+        -z "${SMTP_PORT}"       || 
+        -z "${SMTP_SERVER}"     || 
+        -z "${SMTP_P}"          || 
+        -z "${MAILA}"           ||
+        -z "${DUP_BK}"          || 
+        -z "${DUP_ROOT}"        || 
+        -z "${DUP_SRC_BK}"      || 
+        -z "${DUP_FOLDERS}"     || 
+        -z "${DUP_BK_FULL_FREQ}"|| 
+        -z "${DUP_BK_FULL_LIFE}"|| 
+        -z "${MAILCOW_BK}" 
+        ]]; then
 
-    first_run_options=("01)" "LEMP SETUP" "02)" "CONFIGURE SCRIPT")
+    first_run_options=(
+      "01)" "LEMP SETUP" 
+      "02)" "CONFIGURE SCRIPT"
+    )
     chosen_first_run_options=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 "${first_run_options[@]}" 3>&1 1>&2 2>&3)
-    exitstatus=$?
+    exitstatus="$?"
     if [[ ${exitstatus} -eq 0 ]]; then
 
       if [[ ${chosen_first_run_options} == *"01"* ]]; then
@@ -58,7 +74,7 @@ if [ -t 1 ]; then
 
     else
 
-      TASK=""; SITE=""; SHOWDEBUG=0;
+      TASK=""; SITE=""; DOMAIN=""; SHOWDEBUG=0;
     
       while [ $# -ge 1 ]; do
 
@@ -83,6 +99,11 @@ if [ -t 1 ]; then
                   SITE=$1
               ;;
 
+              -do|--domain)
+                  shift
+                  DOMAIN=$1
+              ;;
+
               *)
                   echo "INVALID OPTION (Display): $1" >&2
                   #ExitFatal
@@ -97,7 +118,10 @@ if [ -t 1 ]; then
         case $TASK in
 
           project-backup)
-            echo "TODO: run project-backup for $SITE"
+
+            # make_files_backup "site" "${SITES}" "${DOMAIN}"
+            # make_database_backup "database" "DATABASE_NAME"
+
             exit
             ;;
 
@@ -107,7 +131,8 @@ if [ -t 1 ]; then
           ;;
 
           project-install)
-            echo "TODO: run project-install for $SITE"
+            log_event "info" "Running: project_install ${SITES} wordpress ${DOMAIN} ${project_name} ${project_state}"
+            project_install "${SITES}" "wordpress" "${DOMAIN}"
             exit
           ;;
 
