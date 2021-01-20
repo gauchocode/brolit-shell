@@ -122,7 +122,9 @@ restore_backup_from_file() {
     fi
     if [[ ${chosen_restore_type} == *"02"* ]]; then
 
-     # Folder where sites are hosted: $SITES
+      #RESTORE DATABASE
+
+      # Folder where sites are hosted: $SITES
       menu_title="SELECT BACKUP FILE TO RESTORE"
       file_browser "${menu_title}" "${SITES}"
 
@@ -219,8 +221,8 @@ restore_database_backup() {
   mysql_database_import "${project_name}_${project_state}" "${project_backup}"
   
   # Deleting temp files
-  rm "${project_backup%%.*}.tar.bz2"
-  rm "${project_backup}"
+  rm -f "${project_backup%%.*}.tar.bz2"
+  rm -f "${project_backup}"
   display --indent 6 --text "- Cleanning temp files" --result "DONE" --color GREEN
   log_event "info" "Temp files cleanned"
 
@@ -781,7 +783,6 @@ restore_project() {
 
         # Restore site files
         new_project_domain="$(restore_site_files "${chosen_domain}")"
-
         ;;
 
       laravel)
