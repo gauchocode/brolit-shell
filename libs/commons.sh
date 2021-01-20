@@ -163,7 +163,7 @@ B_DEFAULT='\E[49m'
 #################################################################################
 #
 
-script_init() {
+function script_init() {
 
   # Temp folders
   BAKWP="${SFOLDER}/tmp"
@@ -288,7 +288,7 @@ script_init() {
 
 }
 
-customize_ubuntu_login_message() {
+function customize_ubuntu_login_message() {
 
   # TODO: screenfetch support?
 
@@ -314,7 +314,7 @@ customize_ubuntu_login_message() {
 
 }
 
-install_script_aliases () {
+function install_script_aliases () {
 
   if [[ ! -f ~/.bash_aliases ]]; then
     cp "${SFOLDER}/utils/aliases.sh" ~/.bash_aliases
@@ -330,7 +330,7 @@ install_script_aliases () {
 
 }
 
-change_project_status () {
+function change_project_status () {
 
   #$1 = ${project_status}
 
@@ -347,7 +347,7 @@ change_project_status () {
 
 }
 
-script_configuration_wizard() {
+function script_configuration_wizard() {
 
   #$1 = options: initial or reconfigure
 
@@ -577,7 +577,7 @@ script_configuration_wizard() {
 #################################################################################
 #
 
-log_event() {
+function log_event() {
 
   # Parameters
   # $1 = {log_type} (success, info, warning, error, critical)
@@ -646,7 +646,7 @@ log_event() {
 
 }
 
-log_break() {
+function log_break() {
 
   # Parameters
   # $1 = {console_display} optional (true or false, emtpy equals false)
@@ -664,7 +664,7 @@ log_break() {
 
 }
 
-log_section() {
+function log_section() {
 
   # Parameters
   # $1 = {message}
@@ -684,7 +684,7 @@ log_section() {
 
 }
 
-log_subsection() {
+function log_subsection() {
 
   # Parameters
   # $1 = {message}
@@ -703,13 +703,13 @@ log_subsection() {
 
 }
 
-clear_screen() {
+function clear_screen() {
 
   echo -en "\ec" >&2
 
 }
 
-clear_last_line() {
+function clear_last_line() {
 
   printf "\033[1A" >&2
   echo -e "${F_DEFAULT}                                                                                               ${ENDCOLOR}" >&2
@@ -719,7 +719,7 @@ clear_last_line() {
 
 }
 
-display() {
+function display() {
 
   INDENT=0; TEXT=""; RESULT=""; TCOLOR=""; TSTYLE=""; COLOR=""; SPACES=0; SHOWDEBUG=0; CRONJOB=0;
   
@@ -823,13 +823,13 @@ display() {
 #################################################################################
 #
 
-validator_email_format() {
+function validator_email_format() {
     if [[ ! "$1" =~ ^[A-Za-z0-9._%+-]+@[[:alnum:].-]+\.[A-Za-z]{2,63}$ ]] ; then
         log_event "ERROR" "Invalid email format :: $1"
     fi
 }
 
-validator_cron_format() {
+function validator_cron_format() {
     limit=59
     check_format=''
     if [ "$2" = 'hour' ]; then
@@ -884,7 +884,7 @@ validator_cron_format() {
 #################################################################################
 #
 
-check_root() {
+function check_root() {
 
   # Check if user is root
   if [ "${USER}" != root ]; then
@@ -894,7 +894,7 @@ check_root() {
 
 }
 
-check_distro() {
+function check_distro() {
 
   local distro_old
 
@@ -931,7 +931,7 @@ check_distro() {
 
 }
 
-checking_scripts_permissions() {
+function checking_scripts_permissions() {
 
   ### chmod
   find ./ -name "*.sh" -exec chmod +x {} \;
@@ -946,11 +946,11 @@ checking_scripts_permissions() {
 #################################################################################
 #
 
-count_php_versions() {
+function count_php_versions() {
     echo $(ls -d /etc/php/*/fpm/pool.d 2>/dev/null |wc -l)
 }
 
-multiphp_versions() {
+function multiphp_versions() {
   
     local -a php_versions_list;
     local php_ver;
@@ -964,7 +964,7 @@ multiphp_versions() {
     fi
 }
 
-whiptail_event() {
+function whiptail_event() {
 
   # $1 = {whip_title}
   # $2 = {whip_message}
@@ -984,7 +984,7 @@ whiptail_event() {
 
 }
 
-get_ubuntu_version() {
+function get_ubuntu_version() {
 
   lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $2}' | awk -F "." '{print $1$2}'
 
@@ -993,7 +993,7 @@ get_ubuntu_version() {
 # TODO: refactor this
 declare -a checklist_array
 
-array_to_checklist() {
+function array_to_checklist() {
 
   local i
 
@@ -1011,7 +1011,7 @@ array_to_checklist() {
 
 }
 
-file_browser() {
+function file_browser() {
 
   # $1= ${menutitle}
   # $2= ${startdir}
@@ -1059,7 +1059,7 @@ file_browser() {
 
 }
 
-directory_browser() {
+function directory_browser() {
 
   # $1= ${menutitle}
   # $2= ${startdir}
@@ -1113,7 +1113,7 @@ directory_browser() {
 
 }
 
-get_all_directories() {
+function get_all_directories() {
 
   # $1 = ${SITES}
 
@@ -1126,7 +1126,7 @@ get_all_directories() {
 
 }
 
-copy_project_files() {
+function copy_project_files() {
 
   # $1 = ${SOURCE_PATH}
   # $2 = ${DESTINATION_PATH}
@@ -1148,7 +1148,7 @@ copy_project_files() {
 
 }
 
-get_project_type() {
+function get_project_type() {
 
   # $1 = ${dir_path}
 
@@ -1180,9 +1180,10 @@ get_project_type() {
 }
 
 
-generate_dropbox_config() {
+function generate_dropbox_config() {
 
-  local oauth_access_token_string oauth_access_token
+  local oauth_access_token_string 
+  local oauth_access_token
 
   oauth_access_token_string+="\n Please, provide a Dropbox Access Token ID.\n"
   oauth_access_token_string+=" 1) Log in: dropbox.com/developers/apps/create\n"
@@ -1208,7 +1209,7 @@ generate_dropbox_config() {
 
 }
 
-generate_cloudflare_config() {
+function generate_cloudflare_config() {
 
   # ${CLF_CONFIG_FILE} is a Global var
 
@@ -1253,7 +1254,7 @@ generate_cloudflare_config() {
 
 }
 
-generate_telegram_config() {
+function generate_telegram_config() {
 
   # ${TEL_CONFIG_FILE} is a Global var
 
@@ -1301,7 +1302,7 @@ generate_telegram_config() {
 
 }
 
-calculate_disk_usage() {
+function calculate_disk_usage() {
 
   # $1 = ${disk_volume}
 
@@ -1319,7 +1320,7 @@ calculate_disk_usage() {
 
 }
 
-string_remove_spaces() {
+function string_remove_spaces() {
 
   # $1 = ${string}
 
@@ -1330,7 +1331,7 @@ string_remove_spaces() {
 
 }
 
-string_remove_special_chars() {
+function string_remove_special_chars() {
 
   # From: https://stackoverflow.com/questions/23816264/remove-all-special-characters-and-case-from-string-in-bash
   #
@@ -1352,7 +1353,7 @@ string_remove_special_chars() {
 
 }
 
-change_ownership(){
+function change_ownership(){
 
   #$1 = ${user}
   #$2 = ${group}
@@ -1370,7 +1371,7 @@ change_ownership(){
 
 }
 
-prompt_return_or_finish() {
+function prompt_return_or_finish() {
 
   log_break "true"
 
@@ -1394,7 +1395,7 @@ prompt_return_or_finish() {
 
 }
 
-extract () {
+function extract () {
   
   # $1 - File to uncompress or extract
   # $2 - Dir to uncompress file
@@ -1459,7 +1460,7 @@ extract () {
     fi
 }
 
-get_domain_extension() {
+function get_domain_extension() {
 
   # $1 = ${domain}
 
@@ -1518,7 +1519,7 @@ get_domain_extension() {
 
 }
 
-extract_domain_extension() {
+function extract_domain_extension() {
 
   # $1 = ${domain}
 
@@ -1551,7 +1552,7 @@ extract_domain_extension() {
 
 }
 
-get_root_domain() {
+function get_root_domain() {
 
   # $1 = ${domain}
 
@@ -1580,7 +1581,7 @@ get_root_domain() {
 
 }
 
-install_crontab_script() {
+function install_crontab_script() {
 
   # $1 = ${script}
   # $2 = ${scheduled_time}
@@ -1631,7 +1632,7 @@ install_crontab_script() {
 #################################################################################
 #
 
-ask_project_state() {
+function ask_project_state() {
 
   #$1 = ${state} optional to select default option
 
@@ -1653,7 +1654,7 @@ ask_project_state() {
 
 }
 
-ask_project_name() {
+function ask_project_name() {
 
   #$1 = ${project_name} optional to select default option
 
@@ -1678,7 +1679,7 @@ ask_project_name() {
 
 }
 
-ask_project_domain() {
+function ask_project_domain() {
 
   #$1 = ${project_domain} optional to select default option
 
@@ -1698,7 +1699,7 @@ ask_project_domain() {
 
 }
 
-ask_project_type() {
+function ask_project_type() {
 
   local project_types
   local project_type
@@ -1722,7 +1723,7 @@ ask_project_type() {
 
 }
 
-ask_rootdomain_for_cloudflare_config() {
+function ask_rootdomain_for_cloudflare_config() {
 
   # TODO: check with CF API if root domain exists
 
@@ -1747,7 +1748,7 @@ ask_rootdomain_for_cloudflare_config() {
 
 }
 
-ask_subdomains_to_cloudflare_config() {
+function ask_subdomains_to_cloudflare_config() {
 
   # TODO: MAKE IT WORKS
 
@@ -1771,7 +1772,7 @@ ask_subdomains_to_cloudflare_config() {
 
 }
 
-ask_folder_to_install_sites() {
+function ask_folder_to_install_sites() {
 
   # $1 = ${folder_to_install} optional to select default option (could be empty)
 
@@ -1804,7 +1805,7 @@ ask_folder_to_install_sites() {
 
 }
 
-ask_mysql_root_psw() {
+function ask_mysql_root_psw() {
 
   # MPASS is defined globally
 
@@ -1836,7 +1837,7 @@ ask_mysql_root_psw() {
 #
 
 
-menu_main_options() {
+function menu_main_options() {
 
   local whip_title              # whiptail var
   local whip_description        # whiptail var
@@ -1910,7 +1911,7 @@ menu_main_options() {
 
 }
 
-menu_cron_script_tasks() {
+function menu_cron_script_tasks() {
 
   local runner_options 
   local chosen_type 
@@ -1997,7 +1998,7 @@ menu_cron_script_tasks() {
 
 }
 
-menu_security_utils () {
+function menu_security_utils () {
 
   # TODO: new options? https://upcloud.com/community/tutorials/scan-ubuntu-server-malware/
 
@@ -2033,7 +2034,7 @@ menu_security_utils () {
 
 }
 
-menu_security_clamav_scan () {
+function menu_security_clamav_scan () {
 
   local to_scan
 
@@ -2048,7 +2049,7 @@ menu_security_clamav_scan () {
 
 }
 
-menu_security_custom_scan () {
+function menu_security_custom_scan () {
 
   local to_scan
 
@@ -2063,7 +2064,7 @@ menu_security_custom_scan () {
 
 }
 
-menu_project_utils () {
+function menu_project_utils () {
 
   local whip_title 
   local whip_description
@@ -2229,7 +2230,7 @@ menu_project_utils () {
 #################################################################################
 #
 
-show_help() {
+function show_help() {
 
   log_section "Help Menu"
   
