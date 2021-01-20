@@ -74,7 +74,7 @@ if [ -t 1 ]; then
 
     else
 
-      TASK=""; SITE=""; DOMAIN=""; SHOWDEBUG=0;
+      TASK=""; SITE=""; DOMAIN=""; PNAME=""; PTYPE=""; PSTATE=""; SHOWDEBUG=0;
     
       while [ $# -ge 1 ]; do
 
@@ -97,6 +97,21 @@ if [ -t 1 ]; then
               -s|--site)
                   shift
                   SITE=$1
+              ;;
+
+              -pn|--pname)
+                  shift
+                  PNAME=$1
+              ;;
+
+              -pn|--ptype)
+                  shift
+                  PTYPE=$1
+              ;;
+
+              -ps|--pstate)
+                  shift
+                  PSTATE=$1
               ;;
 
               -do|--domain)
@@ -131,8 +146,8 @@ if [ -t 1 ]; then
           ;;
 
           project-install)
-            log_event "info" "Running: project_install ${SITES} wordpress ${DOMAIN} ${project_name} ${project_state}"
-            project_install "${SITES}" "wordpress" "${DOMAIN}"
+            log_event "info" "Running: project_install ${SITES} wordpress ${DOMAIN} ${PNAME} ${PSTATE}"
+            project_install "${SITES}" "${PTYPE}" "${DOMAIN}" "${PNAME}" "${PSTATE}"
             exit
           ;;
 
