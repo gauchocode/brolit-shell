@@ -77,7 +77,7 @@ if [ -t 1 ]; then
     else
 
       # RUNNING FROM FLAGS
-      flags_handler
+      flags_handler "$#"
 
     fi
 
