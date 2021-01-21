@@ -70,98 +70,14 @@ if [ -t 1 ]; then
 
     # Check if there were no arguments provided 
     if [ $# -eq 0 ]; then
-        menu_main_options
+
+      # RUNNING GRAPHIC MENU
+      menu_main_options
 
     else
 
-      TASK=""; SITE=""; DOMAIN=""; PNAME=""; PTYPE=""; PSTATE=""; SHOWDEBUG=0;
-    
-      while [ $# -ge 1 ]; do
-
-          case $1 in
-
-              -h|-\?|--help)
-                show_help    # Display a usage synopsis
-                exit
-                ;;
-
-              -d|--debug)
-                  SHOWDEBUG=1
-              ;;
-
-              -t|--task)
-                  shift
-                  TASK=$1
-              ;;
-
-              -s|--site)
-                  shift
-                  SITE=$1
-              ;;
-
-              -pn|--pname)
-                  shift
-                  PNAME=$1
-              ;;
-
-              -pn|--ptype)
-                  shift
-                  PTYPE=$1
-              ;;
-
-              -ps|--pstate)
-                  shift
-                  PSTATE=$1
-              ;;
-
-              -do|--domain)
-                  shift
-                  DOMAIN=$1
-              ;;
-
-              *)
-                  echo "INVALID OPTION (Display): $1" >&2
-                  #ExitFatal
-              ;;
-          
-          esac
-
-          shift
-
-      done
-
-        case $TASK in
-
-          project-backup)
-
-            # make_files_backup "site" "${SITES}" "${DOMAIN}"
-            # make_database_backup "database" "DATABASE_NAME"
-
-            exit
-            ;;
-
-          project-restore)
-            echo "TODO: run project-restore for $SITE"
-            exit
-          ;;
-
-          project-install)
-            log_event "info" "Running: project_install ${SITES} wordpress ${DOMAIN} ${PNAME} ${PSTATE}"
-            project_install "${SITES}" "${PTYPE}" "${DOMAIN}" "${PNAME}" "${PSTATE}"
-            exit
-          ;;
-
-          cloudflare-api)
-            echo "TODO: run cloudflare-api for $SITE"
-            exit
-          ;;
-
-          *)
-            echo "INVALID TASK: $TASK" >&2
-            #ExitFatal
-          ;;
-      
-      esac
+      # RUNNING FROM FLAGS
+      flags_handler
 
     fi
 
