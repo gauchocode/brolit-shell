@@ -2256,6 +2256,86 @@ function show_help() {
         --version     Output version information and exit
 
   "
+
+}
+
+#
+#################################################################################
+#
+# * Tasks
+#
+#################################################################################
+#
+
+function tasks_handler() {
+
+  local task=$1
+
+  case $task in
+
+    project-backup)
+
+      # make_files_backup "site" "${SITES}" "${DOMAIN}"
+      # make_database_backup "database" "DATABASE_NAME"
+
+      exit
+    ;;
+
+    project-restore)
+      echo "TODO: run project-restore for $SITE"
+      exit
+    ;;
+
+    project-install)
+      log_event "info" "Running: project_install ${SITES} wordpress ${DOMAIN} ${PNAME} ${PSTATE}"
+      project_install "${SITES}" "${PTYPE}" "${DOMAIN}" "${PNAME}" "${PSTATE}"
+      exit
+    ;;
+
+    cloudflare-api)
+      subtasks_cloudflare_handler "${STASK}"
+      
+      exit
+    ;;
+
+    *)
+      echo "INVALID TASK: $TASK" >&2
+      #ExitFatal
+    ;;
+
+  esac
+
+}
+
+function subtasks_cloudflare_handler() {
+
+  local subtask=$1
+
+  case $subtask in
+
+    clear_cache)
+
+      log_event "info" "Running: cloudflare_clear_cache ${DOMAIN}"
+      cloudflare_clear_cache "${DOMAIN}"
+
+      exit
+    ;;
+
+    dev_mode)
+
+      log_event "info" "Running: cloudflare_development_mode ${DOMAIN}"
+      cloudflare_development_mode "${DOMAIN}"
+
+      exit
+    ;;
+
+    *)
+      echo "INVALID TASK: $TASK" >&2
+      #ExitFatal
+    ;;
+
+  esac
+
 }
 
 #
@@ -2268,9 +2348,11 @@ function show_help() {
 
 function flags_handler() {
 
+  local parameters=$#
+
   TASK=""; SITE=""; DOMAIN=""; PNAME=""; PTYPE=""; PSTATE=""; SHOWDEBUG=0;
     
-  while [ $# -ge 1 ]; do
+  while [ ${parameters} -ge 1 ]; do
 
     case $1 in
 
@@ -2329,38 +2411,6 @@ function flags_handler() {
 
   done
 
-  case $TASK in
-
-    project-backup)
-
-      # make_files_backup "site" "${SITES}" "${DOMAIN}"
-      # make_database_backup "database" "DATABASE_NAME"
-
-      exit
-    ;;
-
-    project-restore)
-      echo "TODO: run project-restore for $SITE"
-      exit
-    ;;
-
-    project-install)
-      log_event "info" "Running: project_install ${SITES} wordpress ${DOMAIN} ${PNAME} ${PSTATE}"
-      project_install "${SITES}" "${PTYPE}" "${DOMAIN}" "${PNAME}" "${PSTATE}"
-      exit
-    ;;
-
-    cloudflare-api)
-      log_event "info" "Running: cloudflare_clear_cache ${DOMAIN}"
-      cloudflare_clear_cache "${DOMAIN}"
-      exit
-    ;;
-
-    *)
-      echo "INVALID TASK: $TASK" >&2
-      #ExitFatal
-    ;;
-
-  esac
+  tasks_handler "${TASK}"
 
 }
