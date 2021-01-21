@@ -2234,7 +2234,7 @@ function show_help() {
 
   log_section "Help Menu"
   
-  echo -n "./runner.sh [TASK]... [SITE]...
+  echo -n "./runner.sh [TASK] [SUB-TASK]... [DOMAIN]...
 
   Options:
     -t, --task        Task to run:
@@ -2242,7 +2242,13 @@ function show_help() {
                         project-restore
                         project-install
                         cloudflare-api
-    -s  --site        Site/Domain for tasks execution
+    -st, --subtask    Sub-task to run:
+                        from cloudflare-api: clear_cache, dev_mode
+    -s  --site        Site path for tasks execution
+    -d  --domain      Domain for tasks execution
+    -pn --pname       Project Name
+    -pt --ptype       Project Type (wordpress,laravel)
+    -ps --pstate      Project State (prod,dev,test,stage)
     -q, --quiet       Quiet (no output)
     -v, --verbose     Output more information. (Items echoed to 'verbose')
     -d, --debug       Runs script in BASH debug mode (set -x)
@@ -2250,4 +2256,111 @@ function show_help() {
         --version     Output version information and exit
 
   "
+}
+
+#
+#################################################################################
+#
+# * Flags
+#
+#################################################################################
+#
+
+function flags_handler() {
+
+  TASK=""; SITE=""; DOMAIN=""; PNAME=""; PTYPE=""; PSTATE=""; SHOWDEBUG=0;
+    
+  while [ $# -ge 1 ]; do
+
+    case $1 in
+
+        -h|-\?|--help)
+          show_help    # Display a usage synopsis
+          exit
+          ;;
+
+        -d|--debug)
+            SHOWDEBUG=1
+        ;;
+
+        -t|--task)
+            shift
+            TASK=$1
+        ;;
+
+        -st|--subtask)
+            shift
+            STASK=$1
+        ;;
+
+        -s|--site)
+            shift
+            SITE=$1
+        ;;
+
+        -pn|--pname)
+            shift
+            PNAME=$1
+        ;;
+
+        -pt|--ptype)
+            shift
+            PTYPE=$1
+        ;;
+
+        -ps|--pstate)
+            shift
+            PSTATE=$1
+        ;;
+
+        -do|--domain)
+            shift
+            DOMAIN=$1
+        ;;
+
+        *)
+            echo "INVALID OPTION (Display): $1" >&2
+            #ExitFatal
+        ;;
+    
+    esac
+
+    shift
+
+  done
+
+  case $TASK in
+
+    project-backup)
+
+      # make_files_backup "site" "${SITES}" "${DOMAIN}"
+      # make_database_backup "database" "DATABASE_NAME"
+
+      exit
+    ;;
+
+    project-restore)
+      echo "TODO: run project-restore for $SITE"
+      exit
+    ;;
+
+    project-install)
+      log_event "info" "Running: project_install ${SITES} wordpress ${DOMAIN} ${PNAME} ${PSTATE}"
+      project_install "${SITES}" "${PTYPE}" "${DOMAIN}" "${PNAME}" "${PSTATE}"
+      exit
+    ;;
+
+    cloudflare-api)
+      log_event "info" "Running: cloudflare_clear_cache ${DOMAIN}"
+      cloudflare_clear_cache "${DOMAIN}"
+      exit
+    ;;
+
+    *)
+      echo "INVALID TASK: $TASK" >&2
+      #ExitFatal
+    ;;
+
+  esac
+
 }
