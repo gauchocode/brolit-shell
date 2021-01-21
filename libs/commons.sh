@@ -2348,11 +2348,11 @@ function subtasks_cloudflare_handler() {
 
 function flags_handler() {
 
-  local parameters=$#
+  local parameters=$1
 
   TASK=""; SITE=""; DOMAIN=""; PNAME=""; PTYPE=""; PSTATE=""; SHOWDEBUG=0;
     
-  while [ ${parameters} -ge 1 ]; do
+  while [[ ${parameters} -ge 1 ]]; do
 
     case $1 in
 
