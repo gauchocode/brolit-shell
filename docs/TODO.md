@@ -29,14 +29,14 @@
 - [ ] Installers: On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages.
 - [ ] Installers: ZSH installer and config.
 - [ ] Core: Refactor to let the script be runned with flags.
+- [ ] MySQL: when create a new user, ask what kind of connection do you want: localhost or % (any host).
+        Example: CREATE USER 'bruser'@'%' IDENTIFIED BY 'sdasdasas'; GRANT ALL PRIVILEGES ON *.* TO 'bruser'@'%'; FLUSH PRIVILEGES;
 
 ### In Progress
 
 - [ ] Core: Better structure of deleted projects on dropbox.
 - [ ] Nginx: Better nginx config: https://www.digitalocean.com/community/tools/nginx
 - [ ] WP-CLI: Better error handling.
-- [ ] MySQL: when create a new user, ask what kind of connection do you want: localhost or % (any host).
-        Example: CREATE USER 'bruser'@'%' IDENTIFIED BY 'sdasdasas'; GRANT ALL PRIVILEGES ON *.* TO 'bruser'@'%'; FLUSH PRIVILEGES;
 
 ### Done ✓
 

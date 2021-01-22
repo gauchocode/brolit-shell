@@ -2311,7 +2311,7 @@ function subtasks_cloudflare_handler() {
 
   local subtask=$1
 
-  case $subtask in
+  case ${subtask} in
 
     clear_cache)
 
@@ -2348,66 +2348,72 @@ function subtasks_cloudflare_handler() {
 
 function flags_handler() {
 
-  local parameters=$#
+  local arguments_count=$1
+  local arguments=$2
+
+  local parameters
+  local i=0
+
+  IFS=', ' read -a parameters <<< "$arguments";
 
   TASK=""; SITE=""; DOMAIN=""; PNAME=""; PTYPE=""; PSTATE=""; SHOWDEBUG=0;
     
-  while [[ ${parameters} -ge 1 ]]; do
+  while [[ $i < ${arguments_count} ]]; do
 
-    case $1 in
+    case ${parameters[$i]} in
 
-        -h|-\?|--help)
-          show_help    # Display a usage synopsis
-          exit
-          ;;
+      -h|-\?|--help)
+        show_help    # Display a usage synopsis
+        exit
+      ;;
 
-        -d|--debug)
-          SHOWDEBUG=1
-        ;;
+      -d|--debug)
+        SHOWDEBUG=1
+      ;;
 
-        -t|--task)
-          shift
-          TASK=$1
-        ;;
+      -t|--task)
+        i="$((i+1))"
+        TASK=${parameters[$i]}
+      ;;
 
-        -st|--subtask)
-          shift
-          STASK=$1
-        ;;
+      -st|--subtask)
+        i="$((i+1))"
+        STASK=${parameters[$i]}
+      ;;
 
-        -s|--site)
-          shift
-          SITE=$1
-        ;;
+      -s|--site)
+        i="$((i+1))"
+        SITE=${parameters[$i]}
+      ;;
 
-        -pn|--pname)
-          shift
-          PNAME=$1
-        ;;
+      -pn|--pname)
+        i="$((i+1))"
+        PNAME=${parameters[$i]}
+      ;;
 
-        -pt|--ptype)
-          shift
-          PTYPE=$1
-        ;;
+      -pt|--ptype)
+        i="$((i+1))"
+        PTYPE=${parameters[$i]}
+      ;;
 
-        -ps|--pstate)
-          shift
-          PSTATE=$1
-        ;;
+      -ps|--pstate)
+        i="$((i+1))"
+        PSTATE=${parameters[$i]}
+      ;;
 
-        -do|--domain)
-          shift
-          DOMAIN=$1
-        ;;
+      -do|--domain)
+        i="$((i+1))"
+        DOMAIN=${parameters[$i]}
+      ;;
 
-        *)
-          echo "INVALID OPTION (Display): $1" >&2
-          exit
-        ;;
+      *)
+        echo "INVALID OPTION (Display): $i" >&2
+        exit
+      ;;
     
     esac
 
-    shift
+    i="$((i+1))"
 
   done
 
