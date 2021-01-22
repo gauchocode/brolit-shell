@@ -29,7 +29,7 @@ script_init
 
 ####################### Tests for Mails #######################
 
-test_mail_cert_section() {
+function test_mail_cert_section() {
 
     local email_subject
     local email_content
@@ -55,7 +55,7 @@ test_mail_cert_section() {
 
 }
 
-test_mail_package_section() {
+function test_mail_package_section() {
 
     log_subsection "Test: test_mail_package_section"
 
@@ -80,7 +80,7 @@ test_mail_package_section() {
 
 ####################### Tests for mysql_helper.sh #######################
 
-test_mysql_helper() {
+function test_mysql_helper() {
 
     # TODO tests for:
     #   mysql_name_sanitize
@@ -97,7 +97,7 @@ test_mysql_helper() {
 
 }
 
-test_mysql_test_user_credentials() {
+function test_mysql_test_user_credentials() {
 
     log_subsection "Test: test_mysql_test_user_credentials"
 
@@ -113,7 +113,7 @@ test_mysql_test_user_credentials() {
 
 }
 
-test_ask_mysql_root_psw() {
+function test_ask_mysql_root_psw() {
 
     log_subsection "Test: test_ask_mysql_root_psw"
 
@@ -123,7 +123,7 @@ test_ask_mysql_root_psw() {
 
 }
 
-test_mysql_user_create() {
+function test_mysql_user_create() {
 
     local db_user
 
@@ -147,7 +147,7 @@ test_mysql_user_create() {
 
 }
 
-test_mysql_user_exists() {
+function test_mysql_user_exists() {
 
     local db_user
 
@@ -168,7 +168,7 @@ test_mysql_user_exists() {
 
 }
 
-test_mysql_user_delete() {
+function test_mysql_user_delete() {
 
     local db_user
 
@@ -189,7 +189,7 @@ test_mysql_user_delete() {
 
 }
 
-test_mysql_database_create() {
+function test_mysql_database_create() {
 
     local mysql_db_test
 
@@ -209,7 +209,7 @@ test_mysql_database_create() {
 
 }
 
-test_mysql_database_exists() {
+function test_mysql_database_exists() {
 
     local mysql_db_test
 
@@ -229,7 +229,7 @@ test_mysql_database_exists() {
 
 }
 
-test_mysql_database_drop() {
+function test_mysql_database_drop() {
 
     local mysql_db_test
 
@@ -251,7 +251,7 @@ test_mysql_database_drop() {
 
 ####################### Tests for commons.sh #######################
 
-test_common_funtions() {
+function test_common_funtions() {
 
     test_display_functions
     test_get_root_domain
@@ -259,7 +259,7 @@ test_common_funtions() {
 
 }
 
-test_display_functions() {
+function test_display_functions() {
 
     log_subsection "Testing display 1"
 
@@ -281,7 +281,7 @@ test_display_functions() {
 
 }
 
-test_get_root_domain() {
+function test_get_root_domain() {
 
     log_subsection "Test: get_root_domain"
 
@@ -337,7 +337,7 @@ test_get_root_domain() {
 
 }
 
-test_extract_domain_extension() {
+function test_extract_domain_extension() {
 
     log_subsection "Testing Domain Functions"
 
@@ -427,7 +427,7 @@ test_extract_domain_extension() {
 
 ####################### Tests for wordpress_helper.sh #######################
 
-test_wordpress_helper_funtions() {
+function test_wordpress_helper_funtions() {
 
     local project_domain
 
@@ -445,7 +445,7 @@ test_wordpress_helper_funtions() {
 
 }
 
-test_search_wp_config() {
+function test_search_wp_config() {
 
     log_subsection "Test: test_search_wp_config"
 
@@ -461,7 +461,7 @@ test_search_wp_config() {
 
 }
 
-test_is_wp_project() {
+function test_is_wp_project() {
 
     log_subsection "Test: test_is_wp_project"
     
@@ -479,7 +479,7 @@ test_is_wp_project() {
 
 ####################### Tests for wpcli_helper.sh #######################
 
-test_wpcli_helper_funtions() {
+function test_wpcli_helper_funtions() {
 
     local project_domain
 
@@ -506,13 +506,13 @@ test_wpcli_helper_funtions() {
 
 ####################### Tests for project_helper.sh #######################
 
-test_project_helper_funtions() {
+function test_project_helper_funtions() {
 
     test_project_install "${SITES}" "wordpress"
 
 }
 
-test_project_install() {
+function test_project_install() {
 
     local project_path
     local project_type
@@ -534,7 +534,7 @@ test_project_install() {
 
 ####################### Tests for cloudflare_helper #######################
 
-test_cloudflare_funtions() {
+function test_cloudflare_funtions() {
 
     test_cloudflare_domain_exists
     test_cloudflare_change_a_record
@@ -543,7 +543,7 @@ test_cloudflare_funtions() {
 
 }
 
-test_cloudflare_domain_exists() {
+function test_cloudflare_domain_exists() {
 
     log_subsection "Test: test_cloudflare_domain_exists"
 
@@ -576,7 +576,7 @@ test_cloudflare_domain_exists() {
 
 }
 
-test_cloudflare_change_a_record() {
+function test_cloudflare_change_a_record() {
 
     log_subsection "Test: test_cloudflare_change_a_record"
 
@@ -591,7 +591,7 @@ test_cloudflare_change_a_record() {
 
 }
 
-test_cloudflare_delete_a_record() {
+function test_cloudflare_delete_a_record() {
 
     log_subsection "Test: test_cloudflare_delete_a_record"
 
@@ -606,7 +606,7 @@ test_cloudflare_delete_a_record() {
 
 }
 
-test_cloudflare_clear_cache() {
+function test_cloudflare_clear_cache() {
 
     log_subsection "Test: test_cloudflare_clear_cache"
 
@@ -627,22 +627,15 @@ test_cloudflare_clear_cache() {
 
 log_section "Running Tests Suite"
 
-# TODO: use test_flag_handler function
-log_subsection "Test: test_flag_handler"
-
-flags_handler "$#" "$*"
-
-log_break "true"
-
 #test_display_functions
 
-#test_common_funtions
+test_common_funtions
 
-#test_mysql_helper
+test_mysql_helper
 
-#test_cloudflare_funtions
+test_cloudflare_funtions
 
-#test_wordpress_helper_funtions
+test_wordpress_helper_funtions
 
 ################################################################################
 # Uncomment to run specific function

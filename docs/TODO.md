@@ -48,12 +48,13 @@
 
 ## For release 3.2
 
+- [ ] Core: Refactor of script_configuration_wizard
 - [ ] Core: Create a way to check if nginx, php, and other parameters are correct before run the script.
 - [ ] Core: Create a way to check if the project respect the script standard.
 - [ ] It Utils: Alias support for ZSH: https://opensource.com/article/19/7/bash-aliases
-- [ ] IMPORTANT: make new standard directory structure for projects "${SITES}/${DOMAIN}/public"
+- [ ] Core: make new standard directory structure for projects "${SITES}/${DOMAIN}/public"
       Logs could be stored on "${SITES}/${DOMAIN}/log"
-- [ ] IMPORTANT: Secure store for MySQL password: https://www.dokry.com/27126
+- [ ] Core: Secure store for MySQL password: https://www.dokry.com/27126
 - [ ] Project: when remove a project, if the script can't find the user, maybe it will be better list all mysql users with database permision (do before database deletion).
 - [ ] Core: Solve small "TODOs" comments on the project.
 - [ ] Core: Implements something like this: 

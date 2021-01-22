@@ -4,7 +4,7 @@
 # Version: 3.0.9
 ################################################################################
 
-send_mail_notification() {
+function send_mail_notification() {
 
     # $1 = ${email_subject} // Email's subject
     # $2 = ${email_content} // Email's content
@@ -19,7 +19,7 @@ send_mail_notification() {
 
 }
 
-mail_subject_status() {
+function mail_subject_status() {
 
     # $1 = ${status_d} // Database backup status
     # $2 = ${status_f} // Files backup status
@@ -53,7 +53,7 @@ mail_subject_status() {
 
 }
 
-remove_mail_notifications_files() {
+function remove_mail_notifications_files() {
 
     # Remove one per line only for better readibility
     rm -f "${BAKWP}/cert-${NOW}.mail" 
@@ -66,7 +66,7 @@ remove_mail_notifications_files() {
 
 }
 
-mail_server_status_section() {
+function mail_server_status_section() {
 
     # $1 = ${IP}        // Server's IP
     # $2 = ${disk_u}    // Server's disk utilization
@@ -133,7 +133,7 @@ mail_server_status_section() {
 
 }
 
-mail_package_status_section() {
+function mail_package_status_section() {
 
     local pkg_details
     local pkg_color
@@ -181,7 +181,7 @@ mail_package_status_section() {
 
 }
 
-mail_package_section() {
+function mail_package_section() {
 
     # $1 = ${PACKAGES} // Packages to be updated
 
@@ -212,7 +212,7 @@ mail_package_section() {
 
 }
 
-mail_cert_section() {
+function mail_cert_section() {
 
     local domain
     local all_sites
@@ -323,7 +323,7 @@ mail_cert_section() {
 
 }
 
-mail_filesbackup_section() {
+function mail_filesbackup_section() {
 
     # $1 = ${BACKUPED_LIST[@]}
     # $2 = ${BK_FL_SIZES}
@@ -432,17 +432,21 @@ mail_filesbackup_section() {
 
 }
 
-mail_configbackup_section() {
+function mail_configbackup_section() {
 
     # $1 = ${BACKUPED_SCF_LIST[@]}
     # $2 = ${BK_FL_SIZES}
     # $3 = ${ERROR}
     # $4 = ${ERROR_TYPE}
 
-    local -a BACKUPED_SCF_LIST=$1
-    local -a BK_SCF_SIZES=$2
+    local BACKUPED_SCF_LIST_ST=$1
+    local BK_SCF_SIZES_ST=$2
     local ERROR=$3
     local ERROR_TYPE=$4
+
+    # transforming string into arrays
+    IFS=', ' read -r -a BACKUPED_SCF_LIST <<< "$BACKUPED_SCF_LIST_ST"
+    IFS=', ' read -r -a BK_SCF_SIZES <<< "$BK_SCF_SIZES_ST"
 
     local count
     local status_icon_f
@@ -532,7 +536,7 @@ mail_configbackup_section() {
 
 }
 
-mail_mysqlbackup_section() {
+function mail_mysqlbackup_section() {
 
     # $1 = ${BACKUPED_DB_LIST}
     # $2 = ${BK_DB_SIZES}
@@ -622,7 +626,7 @@ mail_mysqlbackup_section() {
 
 }
 
-mail_section_start() {
+function mail_section_start() {
 
     local body_open
 
@@ -633,7 +637,7 @@ mail_section_start() {
 
 }
 
-mail_section_end() {
+function mail_section_end() {
 
     local body_close
 
@@ -644,7 +648,7 @@ mail_section_end() {
 
 }
 
-mail_footer() {
+function mail_footer() {
 
     # $1 = ${SCRIPT_V}
 
@@ -669,7 +673,7 @@ mail_footer() {
 
 }
 
-mail_html_start() {
+function mail_html_start() {
 
     local html_open
 
@@ -680,7 +684,7 @@ mail_html_start() {
 
 }
 
-mail_html_end() {
+function mail_html_end() {
 
     local html_close
 

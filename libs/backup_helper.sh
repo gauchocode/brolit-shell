@@ -4,7 +4,7 @@
 # Version: 3.0.9
 #############################################################################
 
-is_laravel_project() {
+function is_laravel_project() {
 
   # $1 = ${project_dir} project directory
 
@@ -23,7 +23,7 @@ is_laravel_project() {
 
 }
 
-check_laravel_version() {
+function check_laravel_version() {
 
   # $1 = ${project_dir} project directory
 
@@ -35,7 +35,7 @@ check_laravel_version() {
 
 }
 
-menu_backup_options() {
+function menu_backup_options() {
 
   local backup_options 
   local chosen_backup_type
@@ -174,7 +174,7 @@ menu_backup_options() {
 #          -> SITES_NO_DB
 #
 
-make_server_files_backup() {
+function make_server_files_backup() {
 
   # TODO: need to implement error_type
 
@@ -296,7 +296,7 @@ make_server_files_backup() {
   
 }
 
-make_mailcow_backup() {
+function make_mailcow_backup() {
 
   # $1 = Path folder to Backup
 
@@ -307,6 +307,8 @@ make_mailcow_backup() {
   local mailcow_backup_result
 
   log_break
+
+  log_subsection "Mailcow Backup"
 
   if [[ -n "${MAILCOW}" ]]; then
 
@@ -388,7 +390,113 @@ make_mailcow_backup() {
 
 }
 
-make_files_backup() {
+function make_all_server_config_backup() {
+
+  log_subsection "Backup Server Config"
+
+  # SERVER CONFIG FILES GLOBALS
+  declare -i BK_SCF_INDEX=0
+  declare -a BACKUPED_SCF_LIST
+  declare -a BK_SCF_SIZES
+
+  # TAR Webserver Config Files
+  if [[ ! -d ${WSERVER} ]]; then
+    log_event "warning" "WSERVER var not defined! Skipping webserver config files backup ..."
+
+  else
+    make_server_files_backup "${CONFIG_F}" "nginx" "${WSERVER}" "."
+
+  fi
+
+  # TAR PHP Config Files
+  if [[ ! -d ${PHP_CF} ]]; then
+    log_event "warning" "PHP_CF var not defined! Skipping PHP config files backup ..."
+
+  else
+    BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
+    make_server_files_backup "${CONFIG_F}" "php" "${PHP_CF}" "."
+
+  fi
+
+  # TAR MySQL Config Files
+  if [[ ! -d ${MySQL_CF} ]]; then
+    log_event "warning" "MySQL_CF var not defined! Skipping MySQL config files backup ..."
+
+  else
+    BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
+    make_server_files_backup "${CONFIG_F}" "mysql" "${MySQL_CF}" "."
+
+  fi
+
+  # TAR Let's Encrypt Config Files
+  if [[ ! -d ${LENCRYPT_CF} ]]; then
+    log_event "warning" "LENCRYPT_CF var not defined! Skipping Letsencrypt config files backup ..."
+
+  else
+    BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
+    make_server_files_backup "${CONFIG_F}" "letsencrypt" "${LENCRYPT_CF}" "."
+
+  fi
+
+}
+
+function make_all_files_backup() {
+
+  log_subsection "Backup Sites Files"
+
+  # Get all directories
+  TOTAL_SITES=$(get_all_directories "${SITES}")
+
+  ## Get length of $TOTAL_SITES
+  COUNT_TOTAL_SITES="$(find "${SITES}" -maxdepth 1 -type d -printf '.' | wc -c)"
+  COUNT_TOTAL_SITES="$((COUNT_TOTAL_SITES - 1))"
+
+  log_event "info" "Found ${COUNT_TOTAL_SITES} directories"
+  display --indent 6 --text "- Directories found" --result "${COUNT_TOTAL_SITES}" --color WHITE
+
+  # FILES BACKUP GLOBALS
+  declare -i BK_FILE_INDEX=0
+  declare -i BK_FL_ARRAY_INDEX=0
+  declare -a BACKUPED_LIST
+  declare -a BK_FL_SIZES
+
+  declare directory_name=""
+
+  k=0
+
+  for j in ${TOTAL_SITES}; do
+
+    log_event "info" "Processing [${j}] ..."
+
+    if [[ "$k" -gt 0 ]]; then
+
+      directory_name=$(basename "${j}")
+
+      if [[ ${SITES_BL} != *"${directory_name}"* ]]; then
+
+        make_files_backup "site" "${SITES}" "${directory_name}"
+        BK_FL_ARRAY_INDEX="$((BK_FL_ARRAY_INDEX + 1))"
+
+        log_break "true"
+
+      else
+        log_event "info" "Omitting ${directory_name} (blacklisted) ..."
+
+      fi
+
+      BK_FILE_INDEX=$((BK_FILE_INDEX + 1))
+
+      log_event "info" "Processed ${BK_FILE_INDEX} of ${COUNT_TOTAL_SITES} directories"
+
+    fi
+
+    k=$k+1
+
+  done
+
+}
+
+function make_files_backup() {
 
   # $1 = Backup Type (site_configs or sites)
   # $2 = Path where directories to backup are stored
@@ -477,7 +585,7 @@ make_files_backup() {
 
 }
 
-duplicity_backup() {
+function duplicity_backup() {
 
   if [[ ${DUP_BK} = true ]]; then
 
@@ -504,7 +612,7 @@ duplicity_backup() {
 
 }
 
-make_database_backup() {
+function make_database_backup() {
 
   # $1 = ${bk_type}
   # $2 = ${database}
@@ -615,7 +723,7 @@ make_database_backup() {
 
 }
 
-make_project_backup() {
+function make_project_backup() {
 
     #TODO: DOES NOT WORK, NEED REFACTOR ASAP!!!
 
