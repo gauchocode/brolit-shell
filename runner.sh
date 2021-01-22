@@ -62,7 +62,7 @@ if [ -t 1 ]; then
         script_configuration_wizard "initial"
         menu_main_options
 
-      fis
+      fi
 
     fi
 
