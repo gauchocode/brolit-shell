@@ -106,10 +106,21 @@ Run updater.sh
 ```
 
 ## Running as cron job
+
 This script relies on a different configuration file for each system user. The default configuration file location is `root/.broobe-utils-script`.
 This means that if you setup the script with your user and then you try to run a cron job as root, it won't work.
 
 * To setup the script to run as a cron job please use the option "CRON TASKS"
+
+## Running tasks without menu
+
+You can run some tasks like this:
+
+```
+./runner.sh --task "cloudflare-api" --subtask "clear_cache" --domain "broobe.com"
+```
+
+More information here: [FLAGS](./docs/DOC-flags.md)
 
 ## Third Party Utils
 
