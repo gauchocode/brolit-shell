@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.8
+# Version: 3.0.9
 #############################################################################
 
 is_laravel_project() {

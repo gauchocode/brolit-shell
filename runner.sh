@@ -2,7 +2,7 @@
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Script Name: LEMP Utils Script
-# Version: 3.0.8
+# Version: 3.0.9
 ################################################################################
 
 ### Init #######################################################################
@@ -77,7 +77,7 @@ if [ -t 1 ]; then
     else
 
       # RUNNING FROM FLAGS
-      flags_handler "$#"
+      flags_handler $#
 
     fi
 
