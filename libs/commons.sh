@@ -2348,7 +2348,7 @@ function subtasks_cloudflare_handler() {
 
 function flags_handler() {
 
-  local parameters=$1
+  local parameters=$#
 
   TASK=""; SITE=""; DOMAIN=""; PNAME=""; PTYPE=""; PSTATE=""; SHOWDEBUG=0;
     
