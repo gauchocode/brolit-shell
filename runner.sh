@@ -21,10 +21,9 @@ source "${SFOLDER}/libs/commons.sh"
 
 if [ -t 1 ]; then
 
-  ### Running from terminal
-
-  # Script Initialization
-  script_init
+  # RUNNING FROM TERMINAL
+  
+  script_init # Script initialization
 
   check_root
 
