@@ -21,3 +21,14 @@ Options:
         --version     Output version information and exit
 ```
 
+## Some examples
+
+### Cloudflare API
+
+### Clear Cloudflare Cache
+
+./runner.sh --task "cloudflare-api" --subtask "clear_cache" --domain "broobe.com"
+
+### Enable Dev Mode
+
+./runner.sh --task "cloudflare-api" --subtask "dev_mode" --domain "broobe.com"

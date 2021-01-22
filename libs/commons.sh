@@ -2330,8 +2330,8 @@ function subtasks_cloudflare_handler() {
     ;;
 
     *)
-      echo "INVALID TASK: $TASK" >&2
-      #ExitFatal
+      echo "INVALID SUBTASK: $TASK" >&2
+      exit
     ;;
 
   esac
@@ -2354,7 +2354,7 @@ function flags_handler() {
   local parameters
   local i=0
 
-  IFS=', ' read -a parameters <<< "$arguments";
+  IFS=', ' read -a parameters <<< "$arguments"; # convert parameter to an array
 
   TASK=""; SITE=""; DOMAIN=""; PNAME=""; PTYPE=""; PSTATE=""; SHOWDEBUG=0;
     
@@ -2407,7 +2407,7 @@ function flags_handler() {
       ;;
 
       *)
-        echo "INVALID OPTION (Display): $i" >&2
+        echo "INVALID OPTION: $i" >&2
         exit
       ;;
     
