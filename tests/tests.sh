@@ -627,15 +627,22 @@ test_cloudflare_clear_cache() {
 
 log_section "Running Tests Suite"
 
+# TODO: use test_flag_handler function
+log_subsection "Test: test_flag_handler"
+
+flags_handler "$#" "$*"
+
+log_break "true"
+
 #test_display_functions
 
-test_common_funtions
+#test_common_funtions
 
-test_mysql_helper
+#test_mysql_helper
 
-test_cloudflare_funtions
+#test_cloudflare_funtions
 
-test_wordpress_helper_funtions
+#test_wordpress_helper_funtions
 
 ################################################################################
 # Uncomment to run specific function
