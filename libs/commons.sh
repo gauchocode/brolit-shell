@@ -2273,15 +2273,14 @@ function tasks_handler() {
 
   case $task in
 
-    project-backup)
+    backup)
 
-      # make_files_backup "site" "${SITES}" "${DOMAIN}"
-      # make_database_backup "database" "DATABASE_NAME"
+      subtasks_backup_handler "${STASK}"
 
       exit
     ;;
 
-    project-restore)
+    restore)
       echo "TODO: run project-restore for $SITE"
       exit
     ;;
@@ -2301,6 +2300,45 @@ function tasks_handler() {
     *)
       echo "INVALID TASK: $TASK" >&2
       #ExitFatal
+    ;;
+
+  esac
+
+}
+
+function subtasks_backup_handler() {
+
+  local subtask=$1
+
+  case ${subtask} in
+
+    all)
+
+      #log_event "info" "Running: cloudflare_clear_cache ${DOMAIN}"
+      #cloudflare_clear_cache "${DOMAIN}"
+
+      exit
+    ;;
+
+    files)
+
+      log_event "info" "Running: make_all_files_backup"
+      make_all_files_backup
+
+      exit
+    ;;
+
+    databases)
+
+      #log_event "info" "Running: make_all_files_backup"
+      #make_all_files_backup
+
+      exit
+    ;;
+
+    *)
+      echo "INVALID SUBTASK: $TASK" >&2
+      exit
     ;;
 
   esac
