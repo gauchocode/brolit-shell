@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.8
+# Version: 3.0.9
 ################################################################################
 
 #
@@ -13,7 +13,7 @@
 #
 
 SCRIPT_N="LEMP UTILS SCRIPT"
-SCRIPT_V="3.0.8"
+SCRIPT_V="3.0.9"
 
 # Hostname
 VPSNAME="$HOSTNAME"
@@ -2362,47 +2362,47 @@ function flags_handler() {
           ;;
 
         -d|--debug)
-            SHOWDEBUG=1
+          SHOWDEBUG=1
         ;;
 
         -t|--task)
-            shift
-            TASK=$1
+          shift
+          TASK=$1
         ;;
 
         -st|--subtask)
-            shift
-            STASK=$1
+          shift
+          STASK=$1
         ;;
 
         -s|--site)
-            shift
-            SITE=$1
+          shift
+          SITE=$1
         ;;
 
         -pn|--pname)
-            shift
-            PNAME=$1
+          shift
+          PNAME=$1
         ;;
 
         -pt|--ptype)
-            shift
-            PTYPE=$1
+          shift
+          PTYPE=$1
         ;;
 
         -ps|--pstate)
-            shift
-            PSTATE=$1
+          shift
+          PSTATE=$1
         ;;
 
         -do|--domain)
-            shift
-            DOMAIN=$1
+          shift
+          DOMAIN=$1
         ;;
 
         *)
-            echo "INVALID OPTION (Display): $1" >&2
-            #ExitFatal
+          echo "INVALID OPTION (Display): $1" >&2
+          exit
         ;;
     
     esac

@@ -28,6 +28,7 @@
 - [ ] Backups: When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?).
 - [ ] Installers: On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages.
 - [ ] Installers: ZSH installer and config.
+- [ ] Core: Refactor to let the script be runned with flags.
 
 ### In Progress
 
@@ -74,7 +75,6 @@
 
 ## For release 3.3
 
-- [ ] Core: Refactor to let the script be runned with flags.
 - [ ] Core: dependencies and configuration checker.
       If the script is runned on a system that was not configured by the script, it could fail.
 - [ ] Utils: Support for phpservermon: https://github.com/phpservermon/phpservermon
