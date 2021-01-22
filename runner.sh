@@ -62,14 +62,16 @@ if [ -t 1 ]; then
         script_configuration_wizard "initial"
         menu_main_options
 
-      fi
+      fis
 
     fi
 
   else
 
-    # Check if there were no arguments provided 
-    if [ $# -eq 0 ]; then
+    # With "$#" we can check the number of arguments received when the script is runned
+
+    # Check if there were no arguments provided
+    if [[ $# -eq 0 ]]; then
 
       # RUNNING GRAPHIC MENU
       menu_main_options
@@ -77,7 +79,7 @@ if [ -t 1 ]; then
     else
 
       # RUNNING FROM FLAGS
-      flags_handler $#
+      flags_handler "$#" "$*" #"$*" stores all arguments received when the script is runned
 
     fi
 
