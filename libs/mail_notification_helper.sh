@@ -444,9 +444,15 @@ function mail_configbackup_section() {
     local ERROR=$3
     local ERROR_TYPE=$4
 
+    echo "BACKUPED_SCF_LIST_ST:" "${BACKUPED_SCF_LIST_ST}"
+    echo "BK_SCF_SIZES_ST:" "${BK_SCF_SIZES_ST}"
+
     # transforming string into arrays
-    IFS=', ' read -r -a BACKUPED_SCF_LIST <<< "$BACKUPED_SCF_LIST_ST"
-    IFS=', ' read -r -a BK_SCF_SIZES <<< "$BK_SCF_SIZES_ST"
+    IFS=' ' read -r -a BACKUPED_SCF_LIST <<< "$BACKUPED_SCF_LIST_ST"
+    IFS=' ' read -r -a BK_SCF_SIZES <<< "$BK_SCF_SIZES_ST"
+
+    echo "BACKUPED_SCF_LIST:" "${BACKUPED_SCF_LIST[@]}"
+    echo "BK_SCF_SIZES:" "${BK_SCF_SIZES[@]}"
 
     local count
     local status_icon_f

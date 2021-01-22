@@ -396,8 +396,8 @@ function make_all_server_config_backup() {
 
   # SERVER CONFIG FILES GLOBALS
   declare -i BK_SCF_INDEX=0
-  declare -a BACKUPED_SCF_LIST
-  declare -a BK_SCF_SIZES
+  declare BACKUPED_SCF_LIST
+  declare BK_SCF_SIZES
 
   # TAR Webserver Config Files
   if [[ ! -d ${WSERVER} ]]; then
@@ -457,8 +457,8 @@ function make_all_files_backup() {
   # FILES BACKUP GLOBALS
   declare -i BK_FILE_INDEX=0
   declare -i BK_FL_ARRAY_INDEX=0
-  declare -a BACKUPED_LIST
-  declare -a BK_FL_SIZES
+  declare BACKUPED_LIST
+  declare BK_FL_SIZES
 
   declare directory_name=""
 
