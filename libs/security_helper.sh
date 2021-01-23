@@ -8,7 +8,7 @@
 #
 ################################################################################
 
-security_install() {
+function security_install() {
 
   log_event "info" "Installing clamav and lynis" "false"
   display --indent 2 --text "- Installing clamav and lynis"
@@ -20,7 +20,7 @@ security_install() {
 
 }
 
-security_clamav_scan() {
+function security_clamav_scan() {
 
   # $1 = ${directory}
 
@@ -40,13 +40,13 @@ security_clamav_scan() {
 
 }
 
-menu_security_system_audit() {
+function menu_security_system_audit() {
 
   lynis audit system
 
 }
 
-security_custom_scan() {
+function security_custom_scan() {
 
   # $1 = ${directory}
 

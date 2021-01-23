@@ -5,7 +5,7 @@
 #############################################################################
 
 #without-shell-access
-sftp_add_user() {
+function sftp_add_user() {
 
     # $1 = username
     # $2 = groupname
@@ -47,7 +47,7 @@ sftp_add_user() {
 
 }
 
-sftp_create_group() {
+function sftp_create_group() {
 
     # $1 = groupname #sftp_users
     local groupname=$1
@@ -56,7 +56,7 @@ sftp_create_group() {
 
 }
 
-sftp_test_conection() {
+function sftp_test_conection() {
 
     # $1 = username
 
@@ -65,7 +65,7 @@ sftp_test_conection() {
     sftp "${username}@localhost"
 }
 
-sftp_add_folder_permission() {
+function sftp_add_folder_permission() {
 
     # $1 = username
     # $2 = dir_path

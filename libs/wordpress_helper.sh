@@ -4,7 +4,7 @@
 # Version: 3.0.9
 ################################################################################
 
-is_wp_project() {
+function is_wp_project() {
 
   # $1 = project directory
 
@@ -28,7 +28,7 @@ is_wp_project() {
 
 }
 
-search_wp_config () {
+function search_wp_config () {
 
     # $1 = ${dir_to_search}
 
@@ -39,7 +39,7 @@ search_wp_config () {
 }
 
 #TODO: why not use https://developer.wordpress.org/cli/commands/config/create/ ?
-wp_update_wpconfig() {
+function wp_update_wpconfig() {
 
   # $1 = ${project_dir}
   # $2 = ${wp_project_name}
@@ -76,7 +76,7 @@ wp_update_wpconfig() {
 
 }
 
-wp_change_permissions() {
+function wp_change_permissions() {
 
   # $1 = ${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT} or ${FOLDER_TO_INSTALL}/${DOMAIN}
 
@@ -116,7 +116,7 @@ wp_change_permissions() {
 #UPDATE ${db_prefix}${blog_id}_options SET option_value='${new_URL}' WHERE option_id='1';
 #UPDATE ${db_prefix}${blog_id}_options SET option_value='${new_URL}' WHERE option_id='2';
 
-wp_replace_string_on_database() {
+function wp_replace_string_on_database() {
 
   # $1 = ${db_prefix}
   # $2 = ${target_db}
@@ -203,7 +203,7 @@ wp_replace_string_on_database() {
 
 }
 
-wp_ask_url_search_and_replace() {
+function wp_ask_url_search_and_replace() {
 
   # $1 = wp_path
 

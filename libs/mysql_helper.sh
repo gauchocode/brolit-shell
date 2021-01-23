@@ -4,7 +4,7 @@
 # Version: 3.0.9
 #############################################################################
 
-mysql_test_user_credentials() {
+function mysql_test_user_credentials() {
 
     # $1 = ${db_user}
     # $2 = ${db_user_psw}
@@ -42,7 +42,7 @@ mysql_test_user_credentials() {
 
 }
 
-mysql_count_dabases() {
+function mysql_count_dabases() {
 
     # $1 = ${databases}
 
@@ -61,7 +61,7 @@ mysql_count_dabases() {
     echo "${total_databases}"
 }
 
-mysql_user_create() {
+function mysql_user_create() {
 
     # $1 = ${db_user}
     # $2 = ${db_user_psw}
@@ -117,7 +117,7 @@ mysql_user_create() {
 
 }
 
-mysql_user_delete() {
+function mysql_user_delete() {
 
     # $1 = ${db_user}
     # $2 = ${db_user_scope}
@@ -161,7 +161,7 @@ mysql_user_delete() {
 
 }
 
-mysql_user_psw_change() {
+function mysql_user_psw_change() {
 
     # $1 = ${db_user}
     # $2 = ${db_user_psw}
@@ -202,7 +202,7 @@ mysql_user_psw_change() {
 
 }
 
-mysql_root_psw_change() {
+function mysql_root_psw_change() {
 
     # $1 = ${db_root_psw}
 
@@ -259,7 +259,7 @@ mysql_root_psw_change() {
 
 }
 
-mysql_user_grant_privileges() {
+function mysql_user_grant_privileges() {
 
     # $1 = ${db_user}
     # $2 = ${db_target}
@@ -307,7 +307,7 @@ mysql_user_grant_privileges() {
 
 }
 
-mysql_user_exists() {
+function mysql_user_exists() {
 
     # $1 = ${DB_USER}
 
@@ -323,7 +323,7 @@ mysql_user_exists() {
 
 }
 
-mysql_database_exists() {
+function mysql_database_exists() {
 
     # $1 = ${DB}
 
@@ -344,7 +344,7 @@ mysql_database_exists() {
 
 }
 
-mysql_name_sanitize(){
+function mysql_name_sanitize() {
 
     # $1 = ${name} database_name or user_name
 
@@ -373,7 +373,7 @@ mysql_name_sanitize(){
 
 }
 
-mysql_database_create() {
+function mysql_database_create() {
 
     # $1 = ${database}
 
@@ -413,7 +413,7 @@ mysql_database_create() {
 
 }
 
-mysql_database_drop() {
+function mysql_database_drop() {
 
     # $1 = ${DB}
 
@@ -452,7 +452,7 @@ mysql_database_drop() {
 
 }
 
-mysql_database_import() {
+function mysql_database_import() {
 
     # $1 = ${database} (.sql)
     # $2 = ${dump_file}
@@ -493,7 +493,7 @@ mysql_database_import() {
 
 }
 
-mysql_database_export() {
+function mysql_database_export() {
 
     # $1 = ${database}
     # $2 = ${dump_file}

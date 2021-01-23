@@ -4,7 +4,7 @@
 # Version: 3.0.9
 ################################################################################
 
-wpcli_install_if_not_installed() {
+function wpcli_install_if_not_installed() {
 
     local wpcli 
     
@@ -16,7 +16,7 @@ wpcli_install_if_not_installed() {
 
 }
 
-wpcli_check_if_installed() {
+function wpcli_check_if_installed() {
 
     local wpcli_installed wpcli_v
     
@@ -34,7 +34,7 @@ wpcli_check_if_installed() {
 
 }
 
-wpcli_check_version() {
+function wpcli_check_version() {
 
     local wpcli_v
 
@@ -45,7 +45,7 @@ wpcli_check_version() {
 
 }
 
-wpcli_install() {
+function wpcli_install() {
 
     log_event "info" "Installing wp-cli ..."
 
@@ -59,7 +59,7 @@ wpcli_install() {
     
 }
 
-wpcli_update() {
+function wpcli_update() {
 
     log_event "info" "Running: wp-cli update"
 
@@ -70,7 +70,7 @@ wpcli_update() {
 
 }
 
-wpcli_uninstall() {
+function wpcli_uninstall() {
 
     log_event "warning" "Uninstalling wp-cli ..."
 
@@ -80,7 +80,7 @@ wpcli_uninstall() {
 
 }
 
-wpcli_run_startup_script(){
+function wpcli_run_startup_script() {
 
     # $1 = ${site_name}
     # $2 = ${site_url}
@@ -181,7 +181,7 @@ wpcli_run_startup_script(){
 
 }
 
-wpcli_create_config(){
+function wpcli_create_config() {
 
     # $1 = ${wp_site}
     # $2 = ${database}
@@ -207,7 +207,7 @@ wpcli_create_config(){
 
 }
 
-wpcli_install_needed_extensions() {
+function wpcli_install_needed_extensions() {
 
     # Rename DB Prefix
     wp --allow-root package install "iandunn/wp-cli-rename-db-prefix"
@@ -220,7 +220,7 @@ wpcli_install_needed_extensions() {
 
 }
 
-wpcli_set_salts() {
+function wpcli_set_salts() {
 
     # $1 = ${wp_site}
 
@@ -234,7 +234,7 @@ wpcli_set_salts() {
 
 }
 
-wpcli_core_install() {
+function wpcli_core_install() {
 
     # $1 = ${wp_site}
     # $2 = ${wp_version} optional
@@ -302,7 +302,7 @@ wpcli_core_install() {
 
 }
 
-wpcli_core_reinstall() {
+function wpcli_core_reinstall() {
 
     # This will replace wordpress core files (didnt delete other files)
     # Ref: https://github.com/wp-cli/wp-cli/issues/221
@@ -354,7 +354,7 @@ wpcli_core_reinstall() {
 
 }
 
-wpcli_core_update() {
+function wpcli_core_update() {
 
     # $1 = ${wp_site}
 
@@ -399,7 +399,7 @@ wpcli_core_update() {
 
 }
 
-wpcli_core_verify() {
+function wpcli_core_verify() {
 
     # $1 = ${wp_site}
 
@@ -416,7 +416,7 @@ wpcli_core_verify() {
 
 }
 
-wpcli_plugin_verify() {
+function wpcli_plugin_verify() {
 
     # $1 = ${wp_site}
     # $2 = ${plugin} could be --all?
@@ -440,7 +440,7 @@ wpcli_plugin_verify() {
 
 }
 
-wpcli_delete_not_core_files() {
+function wpcli_delete_not_core_files() {
 
     # $1 = ${wp_site}
 
@@ -473,7 +473,7 @@ wpcli_delete_not_core_files() {
 
 }
 
-wpcli_maintenance_mode_status() {
+function wpcli_maintenance_mode_status() {
 
     WPCLI_V=$(sudo -u www-data wp --info | grep "WP-CLI version:" | cut -d ':' -f2)
 
@@ -482,7 +482,7 @@ wpcli_maintenance_mode_status() {
 
 }
 
-wpcli_maintenance_mode() {
+function wpcli_maintenance_mode() {
 
     # $1 = ${mode} (activate or deactivate)
 
@@ -497,7 +497,7 @@ wpcli_maintenance_mode() {
 
 }
 
-wpcli_seoyoast_reindex() {
+function wpcli_seoyoast_reindex() {
 
     # $1 = ${wp_site} (site path)
 
@@ -512,7 +512,7 @@ wpcli_seoyoast_reindex() {
 
 }
 
-wpcli_update_plugin(){
+function wpcli_update_plugin() {
 
     # $1 = ${wp_site}
     # $2 = ${plugin} could be --all?
@@ -533,7 +533,7 @@ wpcli_update_plugin(){
 
 }
 
-wpcli_get_plugin_version() {
+function wpcli_get_plugin_version() {
 
     # $1 = ${wp_site} (site path)
     # $2 = ${plugin}
@@ -550,7 +550,7 @@ wpcli_get_plugin_version() {
 
 }
 
-wpcli_get_wpcore_version(){
+function wpcli_get_wpcore_version() {
 
     # $1 = ${wp_site} (site path)
 
@@ -565,7 +565,7 @@ wpcli_get_wpcore_version(){
 
 }
 
-wpcli_install_plugin() {
+function wpcli_install_plugin() {
 
     # $1 = ${wp_site} (site path)
     # $2 = ${plugin} (plugin to delete)
@@ -583,7 +583,7 @@ wpcli_install_plugin() {
 
 }
 
-wpcli_delete_plugin() {
+function wpcli_delete_plugin() {
 
     # $1 = ${wp_site} (site path)
     # $2 = ${plugin} (plugin to delete)
@@ -601,7 +601,7 @@ wpcli_delete_plugin() {
 
 }
 
-wpcli_is_active_plugin() {
+function wpcli_is_active_plugin() {
 
     # Check whether plugin is active; exit status 0 if active, otherwise 1
 
@@ -618,7 +618,7 @@ wpcli_is_active_plugin() {
 
 }
 
-wpcli_is_installed_plugin() {
+function wpcli_is_installed_plugin() {
 
     # Check whether plugin is installed; exit status 0 if installed, otherwise 1
 
@@ -635,7 +635,7 @@ wpcli_is_installed_plugin() {
 
 }
 
-wpcli_install_theme() {
+function wpcli_install_theme() {
 
     # $1 = ${wp_site} (site path)
     # $2 = ${theme} (theme to delete)
@@ -650,7 +650,7 @@ wpcli_install_theme() {
 
 }
 
-wpcli_delete_theme() {
+function wpcli_delete_theme() {
 
     # $1 = ${wp_site} (site path)
     # $2 = ${theme} (theme to delete)
@@ -665,7 +665,7 @@ wpcli_delete_theme() {
 
 }
 
-wpcli_change_wp_seo_visibility() {
+function wpcli_change_wp_seo_visibility() {
 
     # $1 = ${wp_site} (site path)
     # $2 = ${visibility} (0=off or 1=on)
@@ -680,7 +680,7 @@ wpcli_change_wp_seo_visibility() {
 
 }
 
-wpcli_get_db_prefix() {
+function wpcli_get_db_prefix() {
 
     # $1 = ${wp_site} (site path)
 
@@ -693,7 +693,7 @@ wpcli_get_db_prefix() {
 
 }
 
-wpcli_change_tables_prefix() {
+function wpcli_change_tables_prefix() {
 
     # $1 = ${wp_site} (site path)
     # $2 = ${db_prefix}
@@ -712,7 +712,7 @@ wpcli_change_tables_prefix() {
 
 }
 
-wpcli_search_and_replace() {
+function wpcli_search_and_replace() {
 
     # Ref: https://developer.wordpress.org/cli/commands/search-replace/
 
@@ -756,7 +756,7 @@ wpcli_search_and_replace() {
 
 }
 
-wpcli_export_database(){
+function wpcli_export_database() {
 
     # $1 = ${wp_site} (site path)
     # $2 = ${dump_file}
@@ -771,7 +771,7 @@ wpcli_export_database(){
 
 }
 
-wpcli_force_reinstall_plugins() {
+function wpcli_force_reinstall_plugins() {
 
    # $1 = ${wp_site}
    # $2 = ${plugin}
@@ -804,7 +804,7 @@ wpcli_force_reinstall_plugins() {
 # then run a dry-run update, if success, update but show a message if you want to
 # persist the update or want to do a rollback
 
-wpcli_rollback_plugin_version() {
+function wpcli_rollback_plugin_version() {
 
     # TODO: implement this
     # $1= wp_site
@@ -818,7 +818,7 @@ wpcli_rollback_plugin_version() {
 
 }
 
-wpcli_rollback_wpcore_version() {
+function wpcli_rollback_wpcore_version() {
 
     # TODO: implement this
 
@@ -826,7 +826,7 @@ wpcli_rollback_wpcore_version() {
 
 }
 
-wpcli_user_create() {
+function wpcli_user_create() {
 
     # $1 = ${wp_site}
     # $2 = ${user}
@@ -846,7 +846,7 @@ wpcli_user_create() {
 
 }
 
-wpcli_user_reset_passw(){
+function wpcli_user_reset_passw() {
 
     # $1 = ${wp_site} (site path)
     # $2 = ${wp_user}
