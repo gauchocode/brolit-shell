@@ -5,7 +5,7 @@
 #############################################################################
 
 # Check if program is installed (is_this_installed "mysql-server")
-is_this_installed() {
+function is_this_installed() {
 
   # $1 = ${package}
 
@@ -29,7 +29,7 @@ is_this_installed() {
 
 }
 
-install_package_if_not() {
+function install_package_if_not() {
 
   # $1 = ${package}
 
@@ -48,7 +48,7 @@ install_package_if_not() {
 
 # Adding PPA (support multiple args)
 # Ex: add_ppa ondrej/php ondrej/nginx
-add_ppa() {
+function add_ppa() {
 
   local exit_status
 
@@ -67,7 +67,7 @@ add_ppa() {
   
 }
 
-check_packages_required() {
+function check_packages_required() {
 
   log_event "info" "Checking required packages ..."
   log_section "Script Package Manager"
@@ -236,13 +236,13 @@ check_packages_required() {
 
 }
 
-check_default_php_version() {
+function check_default_php_version() {
 
   php -v | head -n 1 | cut -d " " -f 2 | cut -f1-2 -d"."
 
 }
 
-basic_packages_installation() {
+function basic_packages_installation() {
 
   log_subsection "Basic Packages Installation"
   
@@ -276,7 +276,7 @@ basic_packages_installation() {
 
 }
 
-selected_package_installation() {
+function selected_package_installation() {
 
   # Define array of Apps to install
   local -n apps_to_install=(
@@ -313,7 +313,7 @@ selected_package_installation() {
 
 }
 
-timezone_configuration() {
+function timezone_configuration() {
 
   #configure timezone
   dpkg-reconfigure tzdata
@@ -322,7 +322,7 @@ timezone_configuration() {
 
 }
 
-remove_old_packages() {
+function remove_old_packages() {
 
   log_event "info" "Cleanning old system packages ..."
   display --indent 6 --text "- Cleanning old system packages"
@@ -337,7 +337,7 @@ remove_old_packages() {
 
 }
 
-install_image_optimize_packages() {
+function install_image_optimize_packages() {
 
   log_event "info" "Installing jpegoptim, optipng and imagemagick"
   display --indent 6 --text "- Installing jpegoptim, optipng and imagemagick"

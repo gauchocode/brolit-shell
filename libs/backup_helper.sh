@@ -404,7 +404,7 @@ function make_all_server_config_backup() {
     log_event "warning" "WSERVER var not defined! Skipping webserver config files backup ..."
 
   else
-    make_server_files_backup "${CONFIG_F}" "nginx" "${WSERVER}" "."
+    make_server_files_backup "configs" "nginx" "${WSERVER}" "."
 
   fi
 
@@ -414,7 +414,7 @@ function make_all_server_config_backup() {
 
   else
     BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
-    make_server_files_backup "${CONFIG_F}" "php" "${PHP_CF}" "."
+    make_server_files_backup "configs" "php" "${PHP_CF}" "."
 
   fi
 
@@ -424,7 +424,7 @@ function make_all_server_config_backup() {
 
   else
     BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
-    make_server_files_backup "${CONFIG_F}" "mysql" "${MySQL_CF}" "."
+    make_server_files_backup "configs" "mysql" "${MySQL_CF}" "."
 
   fi
 
@@ -434,9 +434,12 @@ function make_all_server_config_backup() {
 
   else
     BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
-    make_server_files_backup "${CONFIG_F}" "letsencrypt" "${LENCRYPT_CF}" "."
+    make_server_files_backup "configs" "letsencrypt" "${LENCRYPT_CF}" "."
 
   fi
+
+  # Configure Files Backup Section for Email Notification
+  mail_configbackup_section "${BACKUPED_SCF_LIST[@]}" "${BK_SCF_SIZES[@]}" "${ERROR}" "${ERROR_TYPE}"
 
 }
 
@@ -493,6 +496,15 @@ function make_all_files_backup() {
     k=$k+1
 
   done
+
+  # Deleting old backup files
+  rm -r "${BAKWP:?}/${NOW}"
+
+  # DUPLICITY
+  duplicity_backup
+
+  # Configure Files Backup Section for Email Notification
+  mail_filesbackup_section "${BACKUPED_LIST[@]}" "${BK_FL_SIZES[@]}" "${ERROR}" "${ERROR_TYPE}"
 
 }
 

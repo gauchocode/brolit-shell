@@ -4,7 +4,7 @@
 # Version: 3.0.9
 ################################################################################
 
-telegram_send_message() {
+function telegram_send_message() {
 
 	# $1 = {notification_text}
 	# $2 = {notification_type}

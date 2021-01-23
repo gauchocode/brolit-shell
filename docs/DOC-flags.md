@@ -3,12 +3,13 @@
 ```
 Options:
     -t, --task        Task to run:
-                        project-backup
-                        project-restore
+                        backup
+                        restore
                         project-install
                         cloudflare-api
     -st, --subtask    Sub-task to run:
-                        from cloudflare-api: clear_cache, dev_mode
+                        for backup: all, files, databases
+                        for cloudflare-api: clear_cache, dev_mode
     -s  --site        Site path for tasks execution
     -d  --domain      Domain for tasks execution
     -pn --pname       Project Name
@@ -23,12 +24,29 @@ Options:
 
 ## Some examples
 
+### Backup
+
+#### Backup Files
+
+```
+./runner.sh --task "backup" --subtask "files"
+```
+
+#### Backup Serer Config Files
+
+```
+./runner.sh --task "backup" --subtask "server-config"
+```
+
 ### Cloudflare API
 
-### Clear Cloudflare Cache
+#### Clear Cloudflare Cache
 
+```
 ./runner.sh --task "cloudflare-api" --subtask "clear_cache" --domain "broobe.com"
+```
+#### Enable Dev Mode
 
-### Enable Dev Mode
-
+```
 ./runner.sh --task "cloudflare-api" --subtask "dev_mode" --domain "broobe.com"
+```

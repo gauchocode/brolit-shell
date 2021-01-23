@@ -2314,8 +2314,9 @@ function subtasks_backup_handler() {
 
     all)
 
-      #log_event "info" "Running: cloudflare_clear_cache ${DOMAIN}"
-      #cloudflare_clear_cache "${DOMAIN}"
+      log_event "info" "Running: complete backup"
+      make_all_server_config_backup
+      make_all_files_backup
 
       exit
     ;;
@@ -2324,6 +2325,14 @@ function subtasks_backup_handler() {
 
       log_event "info" "Running: make_all_files_backup"
       make_all_files_backup
+
+      exit
+    ;;
+
+    server-config)
+
+      log_event "info" "Running: make_all_server_config_backup"
+      make_all_server_config_backup
 
       exit
     ;;
