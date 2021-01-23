@@ -39,7 +39,7 @@ _make_temp_files_backup() {
 #################################################################################
 #
 
-restore_backup_menu () {
+function restore_backup_menu () {
 
   local -n restore_options          # whiptail array options
   local chosen_restore_options      # whiptail var
@@ -73,7 +73,7 @@ restore_backup_menu () {
 
 }
 
-restore_backup_from_file() {
+function restore_backup_from_file() {
 
   local -n restore_type       # whiptail array options
   local chosen_restore_type
@@ -153,7 +153,7 @@ restore_backup_from_file() {
 
 }
 
-restore_backup_server_selection () {
+function restore_backup_server_selection () {
 
   SITES_F="site"
   CONFIG_F="configs"
@@ -183,7 +183,7 @@ restore_backup_server_selection () {
 
 }
 
-restore_database_backup() {
+function restore_database_backup() {
 
   #$1 = ${project_name}
   #$2 = ${project_state}
@@ -228,7 +228,7 @@ restore_database_backup() {
 
 }
 
-restore_config_files_from_dropbox(){
+function restore_config_files_from_dropbox(){
 
   #$1 = ${dropbox_chosen_type_path}
   #$2 = ${dropbox_project_list}
@@ -301,7 +301,7 @@ restore_config_files_from_dropbox(){
 
 }
 
-restore_nginx_site_files() {
+function restore_nginx_site_files() {
 
   # $1 = ${domain} optional
   # $2 = ${date} optional
@@ -387,7 +387,7 @@ restore_nginx_site_files() {
 
 }
 
-restore_letsencrypt_site_files() {
+function restore_letsencrypt_site_files() {
 
   # $1 = ${domain}
   # $2 = ${date}
@@ -435,7 +435,7 @@ restore_letsencrypt_site_files() {
 
 }
 
-restore_site_files() {
+function restore_site_files() {
 
   # $1 = ${chosen_domain} Here, should match with PROJECT_DOMAIN
 
@@ -512,7 +512,7 @@ restore_site_files() {
 
 }
 
-restore_type_selection_from_dropbox() {
+function restore_type_selection_from_dropbox() {
   
   # TODO: check project type (WP? Laravel? other?)
   # ask for directory_browser if apply
@@ -552,7 +552,7 @@ restore_type_selection_from_dropbox() {
 
       dropbox_project_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_type_path}")"
       
-      if [[ "${chosen_type}" == *"${CONFIG_F}"* ]]; then
+      if [[ "${chosen_type}" == *"configs"* ]]; then
 
         restore_config_files_from_dropbox "${dropbox_chosen_type_path}" "${dropbox_project_list}"
 
@@ -599,7 +599,7 @@ restore_type_selection_from_dropbox() {
             project_name=${chosen_project%"_$suffix"}
 
             project_name=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${project_name}" 3>&1 1>&2 2>&3)
-            exitstatus=$?
+            exitstatus="$?"
             if [[ ${exitstatus} -eq 0 ]]; then
               log_event "info" "Setting project_name=${project_name}"
 
@@ -701,7 +701,7 @@ restore_type_selection_from_dropbox() {
 
 }
 
-restore_project() {
+function restore_project() {
 
   # $1 = ${chosen_server}
 

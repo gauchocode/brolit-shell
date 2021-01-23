@@ -8,7 +8,7 @@
 #
 ################################################################################
 
-cloudflare_ask_root_domain () {
+function cloudflare_ask_root_domain () {
 
     # $1 = ${suggested_root_domain}
 
@@ -26,9 +26,9 @@ cloudflare_ask_root_domain () {
 
 }
 
-cloudflare_domain_exists () {
+function cloudflare_domain_exists () {
 
-# $1 = ${root_domain}
+    # $1 = ${root_domain}
 
     local root_domain=$1
 
@@ -71,7 +71,7 @@ cloudflare_domain_exists () {
 
 }
 
-cloudflare_clear_cache() {
+function cloudflare_clear_cache() {
 
     # $1 = ${root_domain}
 
@@ -124,7 +124,7 @@ cloudflare_clear_cache() {
 
 }
 
-cloudflare_development_mode() {
+function cloudflare_development_mode() {
 
     # $1 = ${root_domain}
     # $2 = ${dev_mode}
@@ -176,7 +176,7 @@ cloudflare_development_mode() {
 
 }
 
-cloudflare_ssl_mode() {
+function cloudflare_ssl_mode() {
 
     # $1 = ${root_domain}
     # $2 = ${ssl_mode} default value: off, valid values: off, flexible, full, strict
@@ -225,7 +225,7 @@ cloudflare_ssl_mode() {
 
 }
 
-cloudflare_change_a_record () {
+function cloudflare_change_a_record () {
 
     # $1 = ${root_domain}
     # $2 = ${domain}
@@ -338,7 +338,7 @@ cloudflare_change_a_record () {
 
 }
 
-cloudflare_delete_a_record () {
+function cloudflare_delete_a_record () {
 
     # $1 = ${root_domain}
     # $2 = ${domain}

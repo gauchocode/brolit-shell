@@ -8,7 +8,7 @@
 #
 ################################################################################
 
-certbot_certificate_install() {
+function certbot_certificate_install() {
 
   #$1 = ${email}
   #$2 = ${domains}
@@ -52,7 +52,7 @@ certbot_certificate_install() {
 
 }
 
-certbot_certificate_delete_old_config() {
+function certbot_certificate_delete_old_config() {
 
   # $1 = ${domains}
 
@@ -82,7 +82,7 @@ certbot_certificate_delete_old_config() {
 
 }
 
-certbot_certificate_expand() {
+function certbot_certificate_expand() {
   
   #$1 = ${email}
   #$2 = ${domains}
@@ -96,7 +96,7 @@ certbot_certificate_expand() {
 
 }
 
-certbot_certificate_renew() {
+function certbot_certificate_renew() {
 
   #$1 = ${domains}
 
@@ -108,7 +108,7 @@ certbot_certificate_renew() {
 
 }
 
-certbot_certificate_renew_test() {
+function certbot_certificate_renew_test() {
 
   # Test renew for all installed certificates
 
@@ -118,7 +118,7 @@ certbot_certificate_renew_test() {
 
 }
 
-certbot_certificate_force_renew() {
+function certbot_certificate_force_renew() {
 
   #$1 = ${domains}
 
@@ -130,7 +130,7 @@ certbot_certificate_force_renew() {
 
 }
 
-certbot_helper_installer_menu() {
+function certbot_helper_installer_menu() {
 
   #$1 = ${email}
   #$2 = ${domains}
@@ -186,7 +186,7 @@ certbot_helper_installer_menu() {
 
 }
 
-certbot_certonly_cloudflare() {
+function certbot_certonly_cloudflare() {
 
   # IMPORTANT: maybe we could create a certbot_cloudflare_certificate that runs first the nginx certbot
   # and then the certonly with cloudflare credentials
@@ -236,7 +236,7 @@ certbot_certonly_cloudflare() {
 
 }
 
-certbot_show_certificates_info() {
+function certbot_show_certificates_info() {
 
   log_event "info" "Running: certbot certificates"
 
@@ -244,7 +244,7 @@ certbot_show_certificates_info() {
 
 }
 
-certbot_show_domain_certificates_expiration_date() {
+function certbot_show_domain_certificates_expiration_date() {
 
   # $1 = domains (domain.com,www.domain.com)
 
@@ -256,7 +256,7 @@ certbot_show_domain_certificates_expiration_date() {
 
 }
 
-certbot_certificate_valid_days() {
+function certbot_certificate_valid_days() {
 
   # $1 = domains (domain.com,www.domain.com)
 
@@ -290,7 +290,7 @@ certbot_certificate_valid_days() {
 
 }
 
-certbot_certificate_delete() {
+function certbot_certificate_delete() {
 
   # $1 = DOMAINS (domain.com,www.domain.com)
 
@@ -308,27 +308,32 @@ certbot_certificate_delete() {
       read -p -r "Please type 'y' or 'n'" yn
 
       case $yn in
-      [Yy]*)
 
-        log_event "info" "Running: certbot delete --cert-name ${domains}" "true"
-        certbot delete --cert-name "${domains}"
-        break
-        ;;
-      [Nn]*)
+        [Yy]*)
 
-        log_event "info" "Aborting ..." "true"
-        break
+          log_event "info" "Running: certbot delete --cert-name ${domains}" "true"
+          certbot delete --cert-name "${domains}"
+          break
+
         ;;
-      *) echo " > Please answer yes or no." ;;
+
+        [Nn]*)
+
+          log_event "info" "Aborting ..." "true"
+          break
+        ;;
+
+        *) echo " > Please answer yes or no." ;;
+
       esac
 
     done
 
-fi
+  fi
 
 }
 
-certbot_helper_ask_domains() {
+function certbot_helper_ask_domains() {
 
   local domains
 
@@ -347,7 +352,7 @@ certbot_helper_ask_domains() {
 
 }
 
-certbot_helper_menu() {
+function certbot_helper_menu() {
 
   local domains certbot_options chosen_cb_options
 
