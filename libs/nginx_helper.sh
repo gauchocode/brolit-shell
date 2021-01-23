@@ -4,7 +4,7 @@
 # Version: 3.0.9
 ################################################################################
 
-nginx_server_create() {
+function nginx_server_create() {
 
     # $1 = ${project_domain}
     # $2 = ${project_type} (default, wordpress, symphony, phpmyadmin, zabbix, netdata)
@@ -99,7 +99,7 @@ nginx_server_create() {
 
 }
 
-nginx_server_delete() {
+function nginx_server_delete() {
 
     #$1 = ${filename}
 
@@ -121,7 +121,7 @@ nginx_server_delete() {
 
 }
 
-nginx_server_change_status() {
+function nginx_server_change_status() {
 
     # File test operators
     # -d FILE - True if the FILE exists and is a directory.
@@ -189,7 +189,7 @@ nginx_server_change_status() {
 
 }
 
-nginx_server_set_domain() {
+function nginx_server_set_domain() {
 
     #$1 = ${nginx_server_file} / ${tool} or ${project_domain}
     #$2 = ${domain_name}
@@ -202,7 +202,7 @@ nginx_server_set_domain() {
 
 }
 
-nginx_server_change_phpv() {
+function nginx_server_change_phpv() {
 
     #$1 = ${nginx_server_file} / ${tool} or ${project_domain}
     #$2 = ${new_php_v} optional
@@ -240,7 +240,7 @@ nginx_server_change_phpv() {
 
 }
 
-nginx_reconfigure() {
+function nginx_reconfigure() {
 
     # nginx.conf broobe standard configuration
     cat "${SFOLDER}/config/nginx/nginx.conf" >"/etc/nginx/nginx.conf"
@@ -255,7 +255,7 @@ nginx_reconfigure() {
 
 }
 
-nginx_configuration_test() {
+function nginx_configuration_test() {
 
     #Test the validity of the nginx configuration
     result=$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)
@@ -279,7 +279,7 @@ nginx_configuration_test() {
 
 }
 
-nginx_new_default_server() {
+function nginx_new_default_server() {
     
     # New default nginx configuration
     log_event "info" "Moving nginx configuration files ..."
@@ -288,7 +288,7 @@ nginx_new_default_server() {
 
 }
 
-nginx_delete_default_directory() {
+function nginx_delete_default_directory() {
 
     # Remove html default nginx folders
     nginx_default_dir="/var/www/html"
@@ -300,7 +300,7 @@ nginx_delete_default_directory() {
 
 }
 
-nginx_create_globals_config() {
+function nginx_create_globals_config() {
 
     # nginx.conf broobe standard configuration
     nginx_globals="/etc/nginx/globals/"
@@ -333,7 +333,7 @@ nginx_create_globals_config() {
 
 }
 
-nginx_create_empty_nginx_conf() {
+function nginx_create_empty_nginx_conf() {
 
     #$1 = ${path}
 

@@ -4,7 +4,7 @@
 # Version: 3.0.9
 ################################################################################
 
-wordpress_project_installer () {
+function wordpress_project_installer () {
 
   # $1 = ${project_path}
   # $2 = ${project_domain}
@@ -44,7 +44,7 @@ wordpress_project_installer () {
    
 }
 
-wordpress_project_install () {
+function wordpress_project_install () {
 
   # $1 = ${project_path}
   # $2 = ${project_domain}
@@ -168,7 +168,7 @@ wordpress_project_install () {
 
 }
 
-wordpress_project_copy () {
+function wordpress_project_copy () {
 
   # $1 = ${project_path}
   # $2 = ${project_domain}

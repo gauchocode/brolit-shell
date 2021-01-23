@@ -9,7 +9,7 @@ source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
 
-php_fpm_optimizations() {
+function php_fpm_optimizations() {
 
   # TODO: need to check php versions installed (could be more than one)
 
