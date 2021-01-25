@@ -62,22 +62,22 @@ project_get_configured_database() {
       # Return
       echo "${db_name}"
       
-      ;;
+    ;;
 
     laravel)
       display --indent 8 --text "Project Type Laravel" --tcolor RED
       return 1
-      ;;
+    ;;
 
     yii)
       display --indent 8 --text "Project Type Yii" --tcolor RED
       return 1
-      ;;
+    ;;
 
     *)
       display --indent 8 --text "Project Type Unknown" --tcolor RED
       return 1
-      ;;
+    ;;
 
   esac
 
@@ -100,22 +100,22 @@ project_get_configured_database_user() {
         # Return
         echo "${db_user}"
         
-        ;;
+      ;;
 
       laravel)
         display --indent 8 --text "Project Type Laravel" --tcolor RED
         return 1
-        ;;
+      ;;
 
       yii)
         display --indent 8 --text "Project Type Yii" --tcolor RED
         return 1
-        ;;
+      ;;
 
       *)
         display --indent 8 --text "Project Type Unknown" --tcolor RED
         return 1
-        ;;
+      ;;
 
     esac
 
@@ -132,28 +132,27 @@ project_get_configured_database_userpassw() {
   case $project_type in
 
       wordpress)
-
         db_pass=$(cat "${project_path}"/wp-config.php | grep DB_PASSWORD | cut -d \' -f 4)
         
         # Return
         echo "${db_pass}"
 
-        ;;
+      ;;
 
       laravel)
         display --indent 8 --text "Project Type Laravel" --tcolor RED
         return 1
-        ;;
+      ;;
 
       yii)
         display --indent 8 --text "Project Type Yii" --tcolor RED
         return 1
-        ;;
+      ;;
 
       *)
         display --indent 8 --text "Project Type Unknown" --tcolor RED
         return 1
-        ;;
+      ;;
 
     esac
 

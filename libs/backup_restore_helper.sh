@@ -777,26 +777,26 @@ function restore_project() {
         display --indent 8 --text "Project Type WordPress" --tcolor GREEN
 
         # Reading config file
-        db_name=$(project_get_configured_database "${SFOLDER}/tmp/${chosen_project}")
-        db_user=$(project_get_configured_database_user "${SFOLDER}/tmp/${chosen_project}")
-        db_pass=$(project_get_configured_database_userpassw "${SFOLDER}/tmp/${chosen_project}")
+        db_name=$(project_get_configured_database "${SFOLDER}/tmp/${chosen_project}" "wordpress")
+        db_user=$(project_get_configured_database_user "${SFOLDER}/tmp/${chosen_project}" "wordpress")
+        db_pass=$(project_get_configured_database_userpassw "${SFOLDER}/tmp/${chosen_project}" "wordpress")
 
         # Restore site files
         new_project_domain="$(restore_site_files "${chosen_domain}")"
-        ;;
+      ;;
 
       laravel)
         display --indent 8 --text "Project Type Laravel" --tcolor RED
-        ;;
+      ;;
 
       yii)
         display --indent 8 --text "Project Type Yii" --tcolor RED
-        ;;
+      ;;
 
       *)
         display --indent 8 --text "Project Type Unknown" --tcolor RED
         return 1
-        ;;
+      ;;
 
     esac
 
