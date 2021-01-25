@@ -14,7 +14,7 @@ source "${SFOLDER}/libs/commons.sh"
 ERROR=false
 ERROR_TYPE=""
 #SITES_F="sites"
-CONFIG_F="configs"
+#CONFIG_F="configs"
 
 #export BK_TYPE
 #export SITES_F
