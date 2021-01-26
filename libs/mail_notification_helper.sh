@@ -325,15 +325,14 @@ function mail_cert_section() {
 
 function mail_filesbackup_section() {
 
-    # $1 = ${BACKUPED_LIST[@]}
-    # $2 = ${BK_FL_SIZES}
-    # $3 = ${ERROR}
-    # $4 = ${ERROR_TYPE}
+    # $1 = ${ERROR}
+    # $2 = ${ERROR_TYPE}
 
-    local -a BACKUPED_LIST=$1
-    local -a BK_FL_SIZES=$2
-    local ERROR=$3
-    local ERROR_TYPE=$4
+    # Global array ${BACKUPED_LIST[@]}
+    # Global array ${BK_FL_SIZES[@]}
+
+    local ERROR=$1
+    local ERROR_TYPE=$2
 
     declare -g STATUS_BACKUP_FILES
 
@@ -354,6 +353,7 @@ function mail_filesbackup_section() {
     local files_inc_line_p3
     local files_inc_line_p4
     local files_inc_line_p5
+    local bk_fl_size
 
     backup_type='Files'
 
@@ -384,11 +384,11 @@ function mail_filesbackup_section() {
 
         for backup_file in "${BACKUPED_LIST[@]}"; do
                      
-            BK_FL_SIZE="${BK_FL_SIZES[$count]}"
+            bk_fl_size="${BK_FL_SIZES[$count]}"
 
             files_inc_line_p1="<div class=\"backup-details-line\">"
             files_inc_line_p2="<span style=\"margin-right:5px;\">${backup_file}</span>"
-            files_inc_line_p3="<span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\">${BK_FL_SIZE}</span>"
+            files_inc_line_p3="<span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\">${bk_fl_size}</span>"
             files_inc_line_p4="</div>"
             files_inc_line_p5="${files_inc}"
 
@@ -434,18 +434,14 @@ function mail_filesbackup_section() {
 
 function mail_configbackup_section() {
 
-    # $1 = ${BACKUPED_SCF_LIST[@]}
-    # $2 = ${BK_FL_SIZES}
-    # $3 = ${ERROR}
-    # $4 = ${ERROR_TYPE}
+    # $1 = ${ERROR}
+    # $2 = ${ERROR_TYPE}
 
-    local -n _backuped_scf_list=$1
-    local -n _bk_fl_sizes=$2
-    local ERROR=$3
-    local ERROR_TYPE=$4
+    # Global array ${BACKUPED_SCF_LIST[@]}
+    # Global array ${BK_FL_SIZES}
 
-    echo "_backuped_scf_list[@]:" "${_backuped_scf_list[@]}"
-    echo "_bk_fl_sizes[@]:" "${_bk_fl_sizes[@]}"
+    local ERROR=$1
+    local ERROR_TYPE=$2
 
     local count
     local status_icon_f
@@ -493,9 +489,9 @@ function mail_configbackup_section() {
 
         count=0
 
-        for backup_line in "${_backuped_scf_list[@]}"; do
+        for backup_line in "${BACKUPED_SCF_LIST[@]}"; do
                      
-            bk_scf_size="${_bk_fl_sizes[$count]}"
+            bk_scf_size="${BK_FL_SIZES[$count]}"
 
             files_inc_line_p1="<div class=\"backup-details-line\">"
             files_inc_line_p2="<span style=\"margin-right:5px;\">${backup_line}</span>"
@@ -537,15 +533,14 @@ function mail_configbackup_section() {
 
 function mail_mysqlbackup_section() {
 
-    # $1 = ${BACKUPED_DB_LIST}
-    # $2 = ${BK_DB_SIZES}
-    # $3 = ${ERROR}
-    # $4 = ${ERROR_TYPE}
+    # $1 = ${ERROR}
+    # $2 = ${ERROR_TYPE}
 
-    local -a BACKUPED_DB_LIST=$1
-    local -a BK_DB_SIZES=$2
-    local ERROR=$3
-    local ERROR_TYPE=$4
+    # Global array ${BACKUPED_DB_LIST}
+    # Global array ${BK_DB_SIZES}
+
+    local ERROR=$1
+    local ERROR_TYPE=$2
 
     local count
     local bk_db_size
