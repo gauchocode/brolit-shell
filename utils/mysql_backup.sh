@@ -75,4 +75,4 @@ done
 
 # Configure Email
 log_event "info" "Preparing mail databases backup section ..."
-mail_mysqlbackup_section "${BACKUPED_DB_LIST[@]}" "${BK_DB_SIZES[@]}" "${ERROR}" "${ERROR_TYPE}"
+mail_mysqlbackup_section "${ERROR}" "${ERROR_TYPE}"
