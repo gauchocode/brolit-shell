@@ -396,8 +396,8 @@ function make_all_server_config_backup() {
 
   # SERVER CONFIG FILES GLOBALS
   declare -i BK_SCF_INDEX=0
-  declare BACKUPED_SCF_LIST
-  declare BK_SCF_SIZES
+  declare -n BACKUPED_SCF_LIST
+  declare -n BK_SCF_SIZES
 
   # TAR Webserver Config Files
   if [[ ! -d ${WSERVER} ]]; then
@@ -439,6 +439,10 @@ function make_all_server_config_backup() {
   fi
 
   # Configure Files Backup Section for Email Notification
+
+  echo "BACKUPED_SCF_LIST[@]:" "${BACKUPED_SCF_LIST[@]}"
+  echo "BK_SCF_SIZES[@]:" "${BK_SCF_SIZES[@]}"
+
   mail_configbackup_section "${BACKUPED_SCF_LIST[@]}" "${BK_SCF_SIZES[@]}" "${ERROR}" "${ERROR_TYPE}"
 
 }

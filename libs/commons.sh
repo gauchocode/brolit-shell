@@ -1376,18 +1376,27 @@ function prompt_return_or_finish() {
   log_break "true"
 
   while true; do
+
     echo -e "${YELLOW}${ITALIC} > Do you want to return to menu?${ENDCOLOR}"
     read -p "Please type 'y' or 'n'" yn
+
     case $yn in
+
       [Yy]*)
         break
-        ;;
+      ;;
+
       [Nn]*)
         echo -e "${B_RED}Exiting script ...${ENDCOLOR}"
         exit 0
-        ;;
-      *) echo "Please answer yes or no." ;;
+      ;;
+
+      *) 
+        echo "Please answer yes or no." 
+      ;;
+
     esac
+
   done
 
   clear_last_line
@@ -1405,59 +1414,63 @@ function extract () {
   local directory=$2
   local compress_type=$3
 
-  log_event "info" "Trying to extract compressed file: ${file}" "false"
+  log_event "info" "Trying to extract compressed file: ${file}"
 
-    if [ -f "${file}" ]; then
-        case "${file}" in
-            *.tar.bz2)
-              if [ -z "${compress_type}" ]; then
-                tar xp "${file}" -C "${directory}" --use-compress-program="${compress_type}"
-              else
-                tar xjf "${file}" -C "${directory}"
-              fi;;
+  if [ -f "${file}" ]; then
 
-            *.tar.gz)
-                tar -xzvf "${file}" -C "${directory}";;
+      case "${file}" in
 
-            *.bz2)
-                bunzip2 "${file}";;
+          *.tar.bz2)
+            if [ -z "${compress_type}" ]; then
+              tar xp "${file}" -C "${directory}" --use-compress-program="${compress_type}"
+            else
+              tar xjf "${file}" -C "${directory}"
+            fi
+          ;;
 
-            *.rar)
-                unrar x "${file}";;
+          *.tar.gz)
+              tar -xzvf "${file}" -C "${directory}";;
 
-            *.gz)
-                gunzip "${file}";;
+          *.bz2)
+              bunzip2 "${file}";;
 
-            *.tar)
-                tar xf "${file}" -C "${directory}";;
+          *.rar)
+              unrar x "${file}";;
 
-            *.tbz2)
-                tar xjf "${file}" -C "${directory}";;
+          *.gz)
+              gunzip "${file}";;
 
-            *.tgz)
-                tar xzf "${file}" -C "${directory}";;
+          *.tar)
+              tar xf "${file}" -C "${directory}";;
 
-            *.zip)
-                unzip "${file}";;
+          *.tbz2)
+              tar xjf "${file}" -C "${directory}";;
 
-            *.Z)
-                uncompress "${file}";;
+          *.tgz)
+              tar xzf "${file}" -C "${directory}";;
 
-            *.7z)
-                7z x "${file}";;
+          *.zip)
+              unzip "${file}";;
 
-            *.tar.gz)
-                tar J "${file}" -C "${directory}";;
+          *.Z)
+              uncompress "${file}";;
 
-            *.xz)
-                tar xvf "${file}" -C "${directory}";;
+          *.7z)
+              7z x "${file}";;
 
-            *)
-                echo "${file} cannot be extracted via extract()";;
-        esac
-    else
-        log_event "error" "${file} is not a valid file" "false"
-    fi
+          *.xz)
+              tar xvf "${file}" -C "${directory}";;
+
+          *)
+              echo "${file} cannot be extracted via extract()";;
+
+      esac
+
+  else
+      log_event "error" "${file} is not a valid file"
+
+  fi
+
 }
 
 function get_domain_extension() {
