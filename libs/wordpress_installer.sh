@@ -20,7 +20,6 @@ function wordpress_project_installer () {
 
   local installation_types
   local installation_type
-  local folder_to_install
 
   # Installation types
   installation_types=("01)" "CLEAN INSTALL" "02)" "COPY FROM PROJECT")
@@ -101,7 +100,7 @@ function wordpress_project_install () {
   mysql_user_create "${database_user}" "${database_user_passw}"
   mysql_user_grant_privileges "${database_user}" "${database_name}"
 
-  wpcli_core_install "${folder_to_install}/${project_domain}"
+  wpcli_core_install "${project_path}"
 
   # Set WP salts
   wpcli_set_salts "${project_path}"
