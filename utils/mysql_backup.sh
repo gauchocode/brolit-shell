@@ -47,8 +47,6 @@ display --indent 6 --text "- Databases found" --result "${TOTAL_DBS}" --color WH
 
 # MORE GLOBALS
 declare -g BK_DB_INDEX=0
-declare -a BACKUPED_DB_LIST
-declare -a BK_DB_SIZES
 
 for DATABASE in ${DBS}; do
 
