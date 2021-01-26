@@ -194,6 +194,8 @@ function make_server_files_backup() {
   local bk_file 
   local old_bk_file
 
+  local bk_scf_size
+
   #log_break
 
   if [[ -n ${bk_path} ]]; then
@@ -219,12 +221,13 @@ function make_server_files_backup() {
       log_event "success" "Backup ${bk_file} created"
       
       #BACKUPED_SCF_LIST[$BK_SCF_INDEX]="$(string_remove_special_chars "${bk_file}")"
-      BACKUPED_SCF_LIST[$BK_SCF_INDEX]="${bk_file}"
-      #BACKUPED_SCF_LIST+=("${bk_file}")
+      #BACKUPED_SCF_LIST[$BK_SCF_INDEX]="${bk_file}"
+      BACKUPED_SCF_LIST+=("${bk_file}")
 
       # Calculate backup size
-      BK_SCF_SIZE="$(find . -name "${bk_file}" -exec ls -l --human-readable --block-size=K {} \; | awk '{ print $5 }')"
-      BK_SCF_SIZES[$BK_SCF_INDEX]="${BK_SCF_SIZE}"
+      bk_scf_size="$(find . -name "${bk_file}" -exec ls -l --human-readable --block-size=K {} \; | awk '{ print $5 }')"
+      #BK_SCF_SIZES[$BK_SCF_INDEX]="${bk_scf_size}"
+      BK_SCF_SIZES+=("${bk_scf_size}")
 
       display --indent 6 --text "- Testing compressed backup file" --result "DONE" --color GREEN
 
