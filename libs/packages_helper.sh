@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.9
+# Version: 3.0.10
 #############################################################################
 
 # Check if program is installed (is_this_installed "mysql-server")

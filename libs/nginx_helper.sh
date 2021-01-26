@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.9
+# Version: 3.0.10
 ################################################################################
 
 function nginx_server_create() {
@@ -79,7 +79,7 @@ function nginx_server_create() {
             display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result FAIL --color RED
             display --indent 8 --text "TODO: implements multidomain support"
             log_event "info" "TODO: implements multidomain support"
-            
+
         ;;
 
         tool)
