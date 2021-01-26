@@ -273,6 +273,9 @@ project_delete_files() {
 
   local dropbox_output
 
+  # Log
+  log_subsection "Delete Files"
+
   # Trying to know project type
   project_type=$(get_project_type "${SITES}/${project_domain}")
 
@@ -296,12 +299,12 @@ project_delete_files() {
     log_event "info" "${DROPBOX_UPLOADER} move ${VPSNAME}/${BK_TYPE}/${project_domain} /${VPSNAME}/offline-site" "false"
     dropbox_output=$(${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${project_domain}" "/${VPSNAME}/offline-site" 2>&1)
     # TODO: if destination folder already exists, it fails
-    display --indent 2 --text "- Moving to offline projects on Dropbox" --result "DONE" --color GREEN
+    display --indent 6 --text "- Moving to offline projects on Dropbox" --result "DONE" --color GREEN
 
     # Delete project files
     rm -R "${filepath}/${project_domain}"
     log_event "info" "Project files deleted for ${project_domain}" "false"
-    display --indent 2 --text "- Deleting project files on server" --result "DONE" --color GREEN
+    display --indent 6 --text "- Deleting project files on server" --result "DONE" --color GREEN
 
 
     # Make a copy of nginx configuration file
@@ -313,7 +316,6 @@ project_delete_files() {
 
     # Delete nginx configuration file
     nginx_server_delete "${project_domain}"
-    display --indent 2 --text "- Deleting nginx server configuration" --result "DONE" --color GREEN
 
     # Cloudflare Manager
     project_domain=$(whiptail --title "CLOUDFLARE MANAGER" --inputbox "Do you want to delete the Cloudflare entries for the followings subdomains?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
@@ -328,8 +330,6 @@ project_delete_files() {
         log_event "info" "Cloudflare entries not deleted. Skipped by user." "false"
 
     fi
-
-    telegram_send_message "⚠️ ${VPSNAME}: Project files deleted for: ${project_domain}"
 
     # TODO: Maybe return database name? extracted from wp-config or something?
 
@@ -381,7 +381,7 @@ project_delete_database() {
         log_event "info" "Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${CHOSEN_DB} /${VPSNAME}/offline-site"
         dropbox_output=$(${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${CHOSEN_DB}" "/${VPSNAME}/offline-site" 1>&2)
 
-        display --indent 62 --text "- Moving dropbox backup to offline directory" --result "DONE" --color GREEN
+        display --indent 6 --text "- Moving dropbox backup to offline directory" --result "DONE" --color GREEN
 
         # Delete project database
         mysql_database_drop "${CHOSEN_DB}"
@@ -393,17 +393,26 @@ project_delete_database() {
             read -p "Please type 'y' or 'n'" yn
 
             case $yn in
+
                 [Yy]* )
-                
-                mysql_user_delete "${user_db}"
-                break;;
+
+                  clear_last_line
+                  clear_last_line
+                  mysql_user_delete "${user_db}"
+                  break
+
+                ;;
                 
                 [Nn]* )
 
-                log_event "warning" "Aborting MySQL user deletion ..."
-                break;;
+                  log_event "warning" "Aborting MySQL user deletion ..."
+                  display --indent 6 --text "- Deleting MySQL user" --result "SKIPPED" --color YELLOW
+                  break
+
+                ;;
 
                 * ) echo " > Please answer yes or no.";;
+
             esac
 
         done
@@ -475,5 +484,7 @@ project_delete() {
   #TODO: ask for deleting tmp-backup folder
   # Delete tmp backups
   #rm -R ${SFOLDER}/tmp-backup
+
+  telegram_send_message "⚠️ ${VPSNAME}: Project files deleted for: ${project_domain}"
 
 }
