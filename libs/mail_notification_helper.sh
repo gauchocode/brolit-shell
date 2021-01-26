@@ -439,8 +439,8 @@ function mail_configbackup_section() {
     # $3 = ${ERROR}
     # $4 = ${ERROR_TYPE}
 
-    local BACKUPED_SCF_LIST_ST=$1
-    local BK_SCF_SIZES_ST=$2
+    local -n BACKUPED_SCF_LIST_ST=$1
+    local -n BK_SCF_SIZES_ST=$2
     local ERROR=$3
     local ERROR_TYPE=$4
 
@@ -448,11 +448,11 @@ function mail_configbackup_section() {
     echo "BK_SCF_SIZES_ST:" "${BK_SCF_SIZES_ST}"
 
     # transforming string into arrays
-    IFS=' ' read -r -a BACKUPED_SCF_LIST <<< "$BACKUPED_SCF_LIST_ST"
-    IFS=' ' read -r -a BK_SCF_SIZES <<< "$BK_SCF_SIZES_ST"
+    #IFS=' ' read -r -a BACKUPED_SCF_LIST <<< "$BACKUPED_SCF_LIST_ST"
+    #IFS=' ' read -r -a BK_SCF_SIZES <<< "$BK_SCF_SIZES_ST"
 
-    echo "BACKUPED_SCF_LIST:" "${BACKUPED_SCF_LIST[@]}"
-    echo "BK_SCF_SIZES:" "${BK_SCF_SIZES[@]}"
+    #echo "BACKUPED_SCF_LIST:" "${BACKUPED_SCF_LIST[@]}"
+    #echo "BK_SCF_SIZES:" "${BK_SCF_SIZES[@]}"
 
     local count
     local status_icon_f
