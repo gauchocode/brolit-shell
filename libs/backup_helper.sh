@@ -221,8 +221,9 @@ function make_server_files_backup() {
       log_event "success" "Backup ${bk_file} created"
       
       #BACKUPED_SCF_LIST[$BK_SCF_INDEX]="$(string_remove_special_chars "${bk_file}")"
-      BACKUPED_SCF_LIST[$BK_SCF_INDEX]="${bk_file}"
-      #BACKUPED_SCF_LIST+=("${bk_file}")
+      BACKUPED_SCF_LIST[$BK_SCF_INDEX]=${bk_file}
+      #BACKUPED_LIST[$BK_FILE_INDEX]=${bk_file}
+      #BACKUPED_FL=${BACKUPED_LIST[${BK_FILE_INDEX}]}  ??
 
       # Calculate backup size
       bk_scf_size="$(find . -name "${bk_file}" -exec ls -l --human-readable --block-size=K {} \; | awk '{ print $5 }')"
@@ -399,8 +400,8 @@ function make_all_server_config_backup() {
 
   # SERVER CONFIG FILES GLOBALS
   declare -i BK_SCF_INDEX=0
-  declare -n BACKUPED_SCF_LIST
-  declare -n BK_SCF_SIZES
+  declare -g BACKUPED_SCF_LIST
+  declare -g BK_SCF_SIZES
 
   # TAR Webserver Config Files
   if [[ ! -d ${WSERVER} ]]; then
@@ -463,8 +464,8 @@ function make_all_files_backup() {
   # FILES BACKUP GLOBALS
   declare -i BK_FILE_INDEX=0
   declare -i BK_FL_ARRAY_INDEX=0
-  declare BACKUPED_LIST
-  declare BK_FL_SIZES
+  declare -g BACKUPED_LIST
+  declare -g BK_FL_SIZES
 
   declare directory_name=""
 
@@ -642,6 +643,10 @@ function make_database_backup() {
 
   local old_bk_file="${database}_${bk_type}_${ONEWEEKAGO}.tar.bz2"
   local bk_file="${database}_${bk_type}_${NOW}.tar.bz2"
+
+  # DATABASE BACKUP GLOBALS
+  declare -g BACKUPED_DB_LIST
+  declare -g BK_DB_SIZES
 
   log_event "info" "Creating new database backup of ${database} ..."
 
