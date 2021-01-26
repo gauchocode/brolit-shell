@@ -439,20 +439,13 @@ function mail_configbackup_section() {
     # $3 = ${ERROR}
     # $4 = ${ERROR_TYPE}
 
-    local -n BACKUPED_SCF_LIST_ST=$1
-    local -n BK_SCF_SIZES_ST=$2
+    local -n _backuped_scf_list=$1
+    local -n _bk_fl_sizes=$2
     local ERROR=$3
     local ERROR_TYPE=$4
 
-    echo "BACKUPED_SCF_LIST_ST:" "${BACKUPED_SCF_LIST_ST}"
-    echo "BK_SCF_SIZES_ST:" "${BK_SCF_SIZES_ST}"
-
-    # transforming string into arrays
-    #IFS=' ' read -r -a BACKUPED_SCF_LIST <<< "$BACKUPED_SCF_LIST_ST"
-    #IFS=' ' read -r -a BK_SCF_SIZES <<< "$BK_SCF_SIZES_ST"
-
-    #echo "BACKUPED_SCF_LIST:" "${BACKUPED_SCF_LIST[@]}"
-    #echo "BK_SCF_SIZES:" "${BK_SCF_SIZES[@]}"
+    echo "_backuped_scf_list[@]:" "${_backuped_scf_list[@]}"
+    echo "_bk_fl_sizes[@]:" "${_bk_fl_sizes[@]}"
 
     local count
     local status_icon_f
@@ -500,9 +493,9 @@ function mail_configbackup_section() {
 
         count=0
 
-        for backup_line in "${BACKUPED_SCF_LIST[@]}"; do
+        for backup_line in "${_backuped_scf_list[@]}"; do
                      
-            bk_scf_size="${BK_SCF_SIZES[$count]}"
+            bk_scf_size="${_bk_fl_sizes[$count]}"
 
             files_inc_line_p1="<div class=\"backup-details-line\">"
             files_inc_line_p2="<span style=\"margin-right:5px;\">${backup_line}</span>"
