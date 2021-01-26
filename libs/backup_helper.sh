@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.9
+# Version: 3.0.10
 #############################################################################
 
 function is_laravel_project() {
@@ -551,7 +551,7 @@ function make_files_backup() {
 
     log_event "success" "Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}"
     display --indent 6 --text "- Backup creation" --result "DONE" --color GREEN
-    display --indent 8 --text "Final backup file size: ${BK_FL_SIZE}"
+    display --indent 8 --text "Final backup size: ${YELLOW}${BOLD}${BK_FL_SIZE}${ENDCOLOR}"
 
     log_event "info" "Creating folders in Dropbox ..."
 
@@ -677,7 +677,7 @@ function make_database_backup() {
       BK_DB_SIZES+=("${BK_DB_SIZE}")
 
       log_event "success" "Backup for ${database} created, final size: ${BK_DB_SIZE}"
-      display --indent 8 --text "Backup final size: ${BK_DB_SIZE}"
+      display --indent 8 --text "Backup final size: ${YELLOW}${BOLD}${BK_DB_SIZE}${ENDCOLOR}"
 
       log_event "info" "Creating folders in Dropbox ..."
 
