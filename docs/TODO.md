@@ -23,6 +23,8 @@
 
 ### Need more testing
 
+- [ ] Nginx: Option to copy or generate a new nginx server configuration.
+- [ ] Nginx: Globals configs support.
 - [ ] It Utils: Alias support for BASH.
 - [ ] WordPress: Install fails when set a project name like: xyz_sub_domain.
 - [ ] Backups: When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?).
@@ -37,6 +39,7 @@
 - [ ] Core: Better structure of deleted projects on dropbox.
 - [ ] Nginx: Better nginx config: https://www.digitalocean.com/community/tools/nginx
 - [ ] WP-CLI: Better error handling.
+- [ ] Project Utils: Add delete database and create database option.
 
 ### Done ✓
 
@@ -72,15 +75,12 @@
 - [ ] Backups: Refactor for backup/restore: 5 options (server_config, site_config, site, database and project).
 - [ ] PHP: php_reconfigure refactor (replace strings instead of replace entired config files)
 - [ ] Installers: Option to install Bashtop and other utils: http://packages.azlux.fr/
-- [ ] Project Utils: Add delete database and create database option.
 
 ## For release 3.3
 
 - [ ] Core: dependencies and configuration checker.
       If the script is runned on a system that was not configured by the script, it could fail.
 - [ ] Utils: Support for phpservermon: https://github.com/phpservermon/phpservermon
-- [ ] Nginx: Option to copy or generate a new nginx server configuration.
-- [ ] Nginx: Globals configs support.
 - [ ] Nginx: Cron option to put a website offline.
 - [ ] Installers: Mailcow installer and backup.
 - [ ] Installers: Option to select netdata metrics to be reported.
