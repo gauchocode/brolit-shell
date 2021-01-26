@@ -221,6 +221,21 @@ function nginx_server_set_domain() {
 
 }
 
+function nginx_server_change_domain() {
+
+    #$1 = ${nginx_server_file} / ${tool} or ${project_domain}
+    #$2 = ${domain_name_old}
+    #$3 = ${domain_name_new}
+
+    local nginx_server_file=$1
+    local domain_name_old=$2
+    local domain_name_new=$3
+
+    # Search and replace domain.com string with correct project_domain
+    sed -i "s/${domain_name_old}/${domain_name_new}/g" "${WSERVER}/sites-available/${nginx_server_file}"
+
+}
+
 function nginx_server_change_phpv() {
 
     #$1 = ${nginx_server_file} / ${tool} or ${project_domain}
@@ -243,8 +258,8 @@ function nginx_server_change_phpv() {
     # TODO: ask wich version of php want to work with
 
     # Replace string to match PHP version
-    current_php_v_string=$(cat ${WSERVER}/sites-available/${nginx_server_file} | grep fastcgi_pass | cut -d '/' -f 4 | cut -d '-' -f 1)
-    current_php_v=${current_php_v_string#"php"}
+    current_php_v_string=$(cat ${nginx_server_file} | grep fastcgi_pass | cut -d '/' -f 4 | cut -d '-' -f 1)
+    current_php_v=${current_php_v_string#"PHP_V"}
     
     sed -i "s#${current_php_v}#${new_php_v}#" "${WSERVER}/sites-available/${nginx_server_file}"
 
