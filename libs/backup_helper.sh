@@ -221,13 +221,13 @@ function make_server_files_backup() {
       log_event "success" "Backup ${bk_file} created"
       
       #BACKUPED_SCF_LIST[$BK_SCF_INDEX]="$(string_remove_special_chars "${bk_file}")"
-      #BACKUPED_SCF_LIST[$BK_SCF_INDEX]="${bk_file}"
-      BACKUPED_SCF_LIST+=("${bk_file}")
+      BACKUPED_SCF_LIST[$BK_SCF_INDEX]="${bk_file}"
+      #BACKUPED_SCF_LIST+=("${bk_file}")
 
       # Calculate backup size
       bk_scf_size="$(find . -name "${bk_file}" -exec ls -l --human-readable --block-size=K {} \; | awk '{ print $5 }')"
-      #BK_SCF_SIZES[$BK_SCF_INDEX]="${bk_scf_size}"
-      BK_SCF_SIZES+=("${bk_scf_size}")
+      BK_SCF_SIZES[$BK_SCF_INDEX]="${bk_scf_size}"
+      #BK_SCF_SIZES+=("${bk_scf_size}")
 
       display --indent 6 --text "- Testing compressed backup file" --result "DONE" --color GREEN
 
@@ -398,7 +398,7 @@ function make_all_server_config_backup() {
   log_subsection "Backup Server Config"
 
   # SERVER CONFIG FILES GLOBALS
-  #declare -i BK_SCF_INDEX=0
+  declare -i BK_SCF_INDEX=0
   declare -n BACKUPED_SCF_LIST
   declare -n BK_SCF_SIZES
 
@@ -416,7 +416,7 @@ function make_all_server_config_backup() {
     log_event "warning" "PHP_CF var not defined! Skipping PHP config files backup ..."
 
   else
-    #BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
+    BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
     make_server_files_backup "configs" "php" "${PHP_CF}" "."
 
   fi
@@ -426,7 +426,7 @@ function make_all_server_config_backup() {
     log_event "warning" "MySQL_CF var not defined! Skipping MySQL config files backup ..."
 
   else
-    #BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
+    BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
     make_server_files_backup "configs" "mysql" "${MySQL_CF}" "."
 
   fi
@@ -436,7 +436,7 @@ function make_all_server_config_backup() {
     log_event "warning" "LENCRYPT_CF var not defined! Skipping Letsencrypt config files backup ..."
 
   else
-    #BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
+    BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
     make_server_files_backup "configs" "letsencrypt" "${LENCRYPT_CF}" "."
 
   fi
