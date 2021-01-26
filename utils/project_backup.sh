@@ -90,4 +90,4 @@ done
 rm -r "${BAKWP}/${NOW}"
 
 # Configure Email        
-mail_filesbackup_section "${BACKUPED_LIST[@]}" "${BK_FL_SIZES[@]}" "${ERROR}" "${ERROR_TYPE}"
+mail_filesbackup_section "${ERROR}" "${ERROR_TYPE}"
