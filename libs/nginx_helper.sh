@@ -40,19 +40,28 @@ function nginx_server_create() {
     case ${server_type} in
 
         single)
+
+            # Config file path
+            nginx_server_file="${WSERVER}/sites-available/${project_domain}"
+
             # Copy config from template file
-            cp "${SFOLDER}/config/nginx/sites-available/${project_type}_${server_type}" "${WSERVER}/sites-available/${project_domain}"
+            cp "${SFOLDER}/config/nginx/sites-available/${project_type}_${server_type}" "${nginx_server_file}"
             ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
 
             # Search and replace domain.com string with correct project_domain
             sed -i "s/domain.com/${project_domain}/g" "${WSERVER}/sites-available/${project_domain}"
 
             display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
+
         ;;
 
         root_domain)
+
+            # Config file path
+            nginx_server_file="${WSERVER}/sites-available/${project_domain}"
+
             # Copy config from template file
-            cp "${SFOLDER}/config/nginx/sites-available/${project_type}_${server_type}" "${WSERVER}/sites-available/${project_domain}"
+            cp "${SFOLDER}/config/nginx/sites-available/${project_type}_${server_type}" "${nginx_server_file}"
             ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
 
             # Search and replace root_domain.com string with correct redirect_domains (must be root_domain here)
@@ -62,6 +71,7 @@ function nginx_server_create() {
             sed -i "s/domain.com/${project_domain}/g" "${WSERVER}/sites-available/${project_domain}"
 
             display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
+
         ;;
 
         multi_domain)
@@ -69,30 +79,39 @@ function nginx_server_create() {
             display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result FAIL --color RED
             display --indent 8 --text "TODO: implements multidomain support"
             log_event "info" "TODO: implements multidomain support"
+            
         ;;
 
         tool)
+
+            # Config file path
+            nginx_server_file="${WSERVER}/sites-available/${project_type}"
+
             # Copy config from template file
-            cp "${SFOLDER}/config/nginx/sites-available/${project_type}" "${WSERVER}/sites-available/${project_type}"
+            cp "${SFOLDER}/config/nginx/sites-available/${project_type}" "${nginx_server_file}"
             ln -s "${WSERVER}/sites-available/${project_type}" "${WSERVER}/sites-enabled/${project_type}"
 
             # Search and replace domain.com string with correct project_domain
             sed -i "s/domain.com/${project_domain}/g" "${WSERVER}/sites-available/${project_type}"
 
-            # Set/Change PHP version
-            nginx_server_change_phpv "${project_type}"
-
             display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
+
         ;;
 
         *)
+
             log_event "error" "Nginx server config creation fail! Nginx server type '${server_type}' unknow."
             display --indent 6 --text "- Nginx server config creation" --result FAIL --color RED
             display --indent 8 --text "Nginx server type '${server_type}' unknow!"
+
             return 1
+
         ;;
 
     esac
+
+    # Set/Change PHP version if needed
+    nginx_server_change_phpv "${nginx_server_file}" ""
    
     #Test the validity of the nginx configuration
     nginx_configuration_test
