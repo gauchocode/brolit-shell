@@ -368,15 +368,16 @@ function restore_nginx_site_files() {
 
     log_event "info" "Restoring nginx configuration from backup: ${filename}"
     
+    # Copy files
     cp "${to_restore}" "${WSERVER}/sites-available/${filename}"
 
+    # Creating symbolic link
     ln -s "${WSERVER}/sites-available/${filename}" "${WSERVER}/sites-enabled/${filename}"
 
-    display --indent 6 --text "- Restoring Nginx server config" --result "DONE" --color GREEN
-
-    nginx_server_change_phpv "${domain}"
-
-    display --indent 6 --text "- Reloading nginx" --result "DONE" --color GREEN
+    #display --indent 6 --text "- Restoring Nginx server config" --result "DONE" --color GREEN
+    #nginx_server_change_domain "${WSERVER}/sites-enabled/${filename}" "${domain}" "${domain}"
+    
+    nginx_configuration_test
 
   else
 
