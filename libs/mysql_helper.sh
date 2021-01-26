@@ -142,6 +142,7 @@ function mysql_user_delete() {
     if [[ ${mysql_result} -eq 0 ]]; then
 
         # Logging
+        clear_last_line
         display --indent 6 --text "- Deleting user ${db_user}" --result "DONE" --color GREEN
         log_event "success" " Database user ${db_user} deleted"
 
@@ -150,6 +151,7 @@ function mysql_user_delete() {
     else
 
         # Logging
+        clear_last_line
         display --indent 6 --text "- Deleting ${db_user} user in MySQL" --result "FAIL" --color RED
         log_event "error" "Something went wrong deleting user: ${db_user}."
         log_event "debug" "MySQL output: ${mysql_output}"
