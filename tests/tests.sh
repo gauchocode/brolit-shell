@@ -434,7 +434,7 @@ function test_wordpress_helper_funtions() {
     project_domain="test.domain.com"
 
     # Create mock project
-    wpcli_core_install "${SITES}/${project_domain}"
+    wpcli_core_download "${SITES}/${project_domain}"
 
     # Tests
     test_search_wp_config "${SITES}/${project_domain}"
@@ -488,7 +488,7 @@ function test_wpcli_helper_funtions() {
     # TODO: create db and user_db
 
     # Create mock project
-    wpcli_core_install "${SITES}/${project_domain}"
+    wpcli_core_download "${SITES}/${project_domain}"
 
     # Tests
     test_wpcli_get_wpcore_version "${SITES}/${project_domain}"
