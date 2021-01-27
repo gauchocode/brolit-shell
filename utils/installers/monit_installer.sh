@@ -24,14 +24,11 @@ configure_monit(){
   cat "${SFOLDER}/config/monit/monitrc" > /etc/monit/monitrc
   display --indent 6 --text "- Copying monit config" --result "DONE" --color GREEN
 
+  # Set Hostname
   sed -i "s#HOSTNAME#${VPSNAME}#" /etc/monit/conf.d/lemp-services
 
-  # Run five times to cober all var appearance
-  sed -i "s#PHP_V#${PHP_V}#" /etc/monit/conf.d/lemp-services
-  sed -i "s#PHP_V#${PHP_V}#" /etc/monit/conf.d/lemp-services
-  sed -i "s#PHP_V#${PHP_V}#" /etc/monit/conf.d/lemp-services
-  sed -i "s#PHP_V#${PHP_V}#" /etc/monit/conf.d/lemp-services
-  sed -i "s#PHP_V#${PHP_V}#" /etc/monit/conf.d/lemp-services
+  # Set PHPV
+  config_set_phpv "${PHP_V}" "/etc/monit/conf.d/lemp-services"
   display --indent 6 --text "- Setting PHP version" --result "DONE" --color GREEN
 
   sed -i "s#SMTP_SERVER#${SMTP_SERVER}#" /etc/monit/conf.d/lemp-services

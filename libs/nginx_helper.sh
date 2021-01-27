@@ -252,14 +252,14 @@ function nginx_server_change_phpv() {
     fi
 
     # Updating nginx server file
-    log_event "info" "Chaning PHP version on nginx server file"
-    display --indent 6 --text "- Chaning PHP version on nginx server file"
+    log_event "info" "Changing PHP version on nginx server file"
+    display --indent 6 --text "- Changing PHP version on nginx server file"
 
     # TODO: ask wich version of php want to work with
 
     # Replace string to match PHP version
     current_php_v_string=$(cat ${nginx_server_file} | grep fastcgi_pass | cut -d '/' -f 4 | cut -d '-' -f 1)
-    current_php_v=${current_php_v_string#"PHP_V"}
+    current_php_v=${current_php_v_string#"php"}
     
     sed -i "s#${current_php_v}#${new_php_v}#" "${WSERVER}/sites-available/${nginx_server_file}"
 
@@ -356,7 +356,7 @@ function nginx_create_globals_config() {
     display --indent 2 --text "- Creating nginx globals config" --result "DONE" --color GREEN
 
     # Replace string to match PHP version
-    sudo sed -i "s#PHP_V#${PHP_V}#" "/etc/nginx/globals/wordpress_sec.conf"
+    config_set_phpv "${PHP_V}" "/etc/nginx/globals/wordpress_sec.conf"
     display --indent 2 --text "- Configuring globals for phpfpm-${PHP_V}" --result "DONE" --color GREEN
 
     # Change ownership

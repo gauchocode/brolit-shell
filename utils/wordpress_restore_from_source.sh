@@ -188,12 +188,6 @@ else
   database_user="${db_project_name}_user"
   database_user_passw=$(openssl rand -hex 12)
 
-  echo -e ${CYAN}"******************************************************************************************"${ENDCOLOR} >&2
-  echo -e ${CYAN}" > Creating database ${database_name}, and user ${database_user} with pass ${database_user_passw}"${ENDCOLOR} >&2
-  echo -e ${CYAN}"******************************************************************************************"${ENDCOLOR} >&2
-
-  echo " > Creating database ${database_name}, and user ${database_user} with pass ${database_user_passw}" >>$LOG
-
   mysql_database_create "${database_name}"
   mysql_user_create "${database_user}" "${database_user_passw}"
   mysql_user_grant_privileges "${database_user}" "${database_name}"
