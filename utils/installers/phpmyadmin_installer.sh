@@ -40,14 +40,14 @@ phpmyadmin_installer () {
 
   # Download phpMyAdmin
   display --indent 2 --text "- Downloading phpMyAdmin"
-  log_event "info" "Running: curl --silent -L https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip > ${SITES}/phpMyAdmin-latest-all-languages.zip"
+  log_event "DEBUG" "Running: curl --silent -L https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip > ${SITES}/phpMyAdmin-latest-all-languages.zip"
   curl --silent -L https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip > "${SITES}"/phpMyAdmin-latest-all-languages.zip
   clear_last_line
   display --indent 2 --text "- Downloading phpMyAdmin" --result "DONE" --color GREEN
 
   # Uncompress
   display --indent 2 --text "- Uncompressing phpMyAdmin"
-  log_event "info" "Running: unzip -qq ${SITES}/phpMyAdmin-latest-all-languages.zip -d ${SITES}/${project_domain}"
+  log_event "DEBUG" "Running: unzip -qq ${SITES}/phpMyAdmin-latest-all-languages.zip -d ${SITES}/${project_domain}"
   unzip -qq "${SITES}/phpMyAdmin-latest-all-languages.zip" -d "${SITES}"
   clear_last_line
   display --indent 2 --text "- Uncompressing phpMyAdmin" --result "DONE" --color GREEN
@@ -57,7 +57,7 @@ phpmyadmin_installer () {
   display --indent 2 --text "- Deleting installer file" --result "DONE" --color GREEN
 
   # Change directory name
-  log_event "info" "Running: mv ${SITES}/phpMyAdmin-* ${SITES}/${project_domain}"
+  log_event "DEBUG" "Running: mv ${SITES}/phpMyAdmin-* ${SITES}/${project_domain}"
   mv "${SITES}"/phpMyAdmin-* "${SITES}/${project_domain}"
   display --indent 2 --text "- Changing directory name" --result "DONE" --color GREEN
 
