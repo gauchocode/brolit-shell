@@ -11,13 +11,13 @@ source "${SFOLDER}/libs/commons.sh"
 
 php_installer() {
 
-  local PHP_V=$1
+  local php_v=$1
 
-  log_event "info" "Installing PHP-${PHP_V} and other libraries ..." "false"
+  log_event "info" "Installing PHP-${php_v} and other libraries ..." "false"
 
-  apt-get --yes install "php${PHP_V}-fpm" "php${PHP_V}-mysql" "php-imagick" "php${PHP_V}-xml" "php${PHP_V}-cli" "php${PHP_V}-curl" "php${PHP_V}-mbstring" "php${PHP_V}-gd" "php${PHP_V}-intl" "php${PHP_V}-zip" "php${PHP_V}-bz2" "php${PHP_V}-bcmath" "php${PHP_V}-soap" "php${PHP_V}-dev" "php-pear" -qq > /dev/null
+  apt-get --yes install "php${php_v}-fpm" "php${php_v}-mysql" "php-imagick" "php${php_v}-xml" "php${php_v}-cli" "php${php_v}-curl" "php${php_v}-mbstring" "php${php_v}-gd" "php${php_v}-intl" "php${php_v}-zip" "php${php_v}-bz2" "php${php_v}-bcmath" "php${php_v}-soap" "php${php_v}-dev" "php-pear" -qq > /dev/null
 
-  log_event "info" "PHP-${PHP_V} installed!" "false"
+  log_event "info" "PHP-${php_v} installed!" "false"
 
 }
 
@@ -148,23 +148,21 @@ php_reconfigure() {
 
   log_subsection "PHP Reconfigure"
   
-  log_event "info" "Moving php.ini configuration file ..." "false"
+  log_event "info" "Moving php.ini configuration file ..."
   cat "${SFOLDER}/config/php/php.ini" >"/etc/php/${PHP_V}/fpm/php.ini"
   display --indent 2 --text "- Moving php.ini configuration file" --result "DONE" --color GREEN
 
-  log_event "info" "Moving php-fpm.conf configuration file ..." "false"
+  log_event "info" "Moving php-fpm.conf configuration file ..."
   cat "${SFOLDER}/config/php/php-fpm.conf" >"/etc/php/${PHP_V}/fpm/php-fpm.conf"
   display --indent 2 --text "- Moving php-fpm.conf configuration file" --result "DONE" --color GREEN
 
   # Replace string to match PHP version
-  log_event "info" "Replacing string to match PHP version" "false"
-  sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
-  sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
-  sed -i "s#PHP_V#${PHP_V}#" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
+  log_event "info" "Replacing string to match PHP version"
+  config_set_phpv "${PHP_V}" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
   display --indent 2 --text "- Replacing string to match PHP version" --result "DONE" --color GREEN
 
   # Unccoment /status from fpm configuration
-  log_event "info" "Uncommenting /status from fpm configuration ..." "false"
+  log_event "info" "Uncommenting /status from fpm configuration ..."
   sed -i '/status_path/s/^;//g' "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
 
   service php"${PHP_V}"-fpm reload
@@ -173,6 +171,8 @@ php_reconfigure() {
 }
 
 ################################################################################
+
+declare -g PHP_V
 
 php_is_installed=$(php_check_if_installed)
 
@@ -187,7 +187,7 @@ else
 fi
 
 chosen_php_installer_options=$(whiptail --title "${php_installer_title}" --menu "${php_installer_message}" 20 78 10 "${php_installer_options[@]}" 3>&1 1>&2 2>&3)
-exitstatus=$?
+exitstatus="$?"
 if [[ ${exitstatus} -eq 0 ]]; then
 
   if [[ ${chosen_php_installer_options} == *"01"* ]]; then
@@ -246,7 +246,4 @@ if [[ ${exitstatus} -eq 0 ]]; then
 
   fi
 
-
-
 fi
-
