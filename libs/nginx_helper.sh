@@ -353,11 +353,11 @@ function nginx_create_globals_config() {
     cp "${SFOLDER}/config/nginx/globals/wordpress_sec.conf" "/etc/nginx/globals/wordpress_sec.conf"
     cp "${SFOLDER}/config/nginx/globals/wordpress_seo.conf" "/etc/nginx/globals/wordpress_seo.conf"
 
-    display --indent 2 --text "- Creating nginx globals config" --result "DONE" --color GREEN
+    display --indent 6 --text "- Creating nginx globals config" --result "DONE" --color GREEN
 
     # Replace string to match PHP version
     config_set_phpv "${PHP_V}" "/etc/nginx/globals/wordpress_sec.conf"
-    display --indent 2 --text "- Configuring globals for phpfpm-${PHP_V}" --result "DONE" --color GREEN
+    display --indent 6 --text "- Configuring globals for phpfpm-${PHP_V}" --result "DONE" --color GREEN
 
     # Change ownership
     change_ownership "www-data" "www-data" "/etc/nginx/globals/"
