@@ -677,9 +677,9 @@ function log_section() {
     echo -e "[+] Performing Action: ${YELLOW}${B_DEFAULT}${message}${ENDCOLOR}" >&2
     echo "----------------------------------------------" >&2
     # Log file
-    echo "----------------------------------------------" >> "${LOG}"
-    echo "[+] Performing Action: ${message}" >> "${LOG}"
-    echo "----------------------------------------------" >> "${LOG}"
+    echo " > ----------------------------------------------" >> "${LOG}"
+    echo " > [+] Performing Action: ${message}" >> "${LOG}"
+    echo " > ----------------------------------------------" >> "${LOG}"
   fi
 
 }
@@ -697,8 +697,9 @@ function log_subsection() {
       echo -e "    [·] ${CYAN}${B_DEFAULT}${message}${ENDCOLOR}" >&2
       echo "    ------------------------------------------" >&2
       # Log file
-      echo "[·] ${message}" >> "${LOG}"
-      echo "----------------------------------------------" >> "${LOG}"
+      echo " > ----------------------------------------------" >> "${LOG}"
+      echo " > [·] ${message}" >> "${LOG}"
+      echo " > ----------------------------------------------" >> "${LOG}"
     fi
 
 }
