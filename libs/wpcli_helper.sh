@@ -82,15 +82,16 @@ function wpcli_uninstall() {
 
 function wpcli_run_startup_script() {
 
-    # $1 = ${site_name}
-    # $2 = ${site_url}
+    # $1 = ${wp_site}           - Site path
+    # $1 = ${site_url}          - Site URL
+    # $2 = ${site_name}         - Site Display Name
     # $3 = ${wp_user_name}
     # $4 = ${wp_user_passw}
     # $5 = ${wp_user_mail}
 
     local wp_site=$1
-    local site_name=$2
-    local site_url=$3
+    local site_url=$2
+    local site_name=$3
     local wp_user_name=$4
     local wp_user_passw=$5
     local wp_user_mail=$6
@@ -140,9 +141,6 @@ function wpcli_run_startup_script() {
         return 1
 
     fi
-
-    # Create wp-config
-    wpcli_create_config "${project_dir}" "${database_name}" "${database_user}" "${database_user_passw}" "es_ES"
 
     # Install WordPress Site
     sudo -u www-data wp --path="${wp_site}" core install --url="${site_url}" --title="${site_name}" --admin_user="${wp_user_name}" --admin_password="${wp_user_passw}" --admin_email="${wp_user_mail}"
@@ -234,7 +232,7 @@ function wpcli_set_salts() {
 
 }
 
-function wpcli_core_install() {
+function wpcli_core_download() {
 
     # $1 = ${wp_site}
     # $2 = ${wp_version} optional
@@ -248,19 +246,21 @@ function wpcli_core_install() {
 
         if [ "${wp_version}" != "" ];then
 
+            # wp-cli command
             sudo -u www-data wp --path="${wp_site}" core download --version="${wp_version}" --quiet
+
+            # Log
             log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core download --version=${wp_version}"
+            display --indent 6 --text "- Downloading WordPress ${wp_version}"
 
-            display --indent 6 --text "- Downloading wordpress"
-
-            sleep 10
+            sleep 15
 
             clear_last_line
 
-            wpcli_run_startup_script "${wp_site}"
             exitstatus="$?"
             if [[ ${exitstatus} -eq 0 ]]; then
                 display --indent 6 --text "- Wordpress ${wp_version} installation for ${wp_site}" --result "DONE" --color GREEN
+
             else
                 display --indent 6 --text "- Wordpress installation for ${wp_site}" --result "FAIL" --color RED
                 return 1
@@ -268,19 +268,21 @@ function wpcli_core_install() {
 
         else
 
+            # wp-cli command
             sudo -u www-data wp --path="${wp_site}" core download --quiet
 
+            # Log
             log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core download"
-            display --indent 6 --text "- Downloading wordpress"
+            display --indent 6 --text "- Downloading WordPress ${wp_version}"
 
-            sleep 10
+            sleep 15
 
             clear_last_line
 
-            wpcli_run_startup_script "${wp_site}"
             exitstatus="$?"
             if [[ ${exitstatus} -eq 0 ]]; then
                 display --indent 6 --text "- Wordpress installation for ${wp_site}" --result "DONE" --color GREEN
+
             else
                 display --indent 6 --text "- Wordpress installation for ${wp_site}" --result "FAIL" --color RED
                 return 1

@@ -98,7 +98,14 @@ function wordpress_project_install () {
   mysql_user_create "${database_user}" "${database_user_passw}"
   mysql_user_grant_privileges "${database_user}" "${database_name}"
 
-  wpcli_core_install "${project_path}"
+  # Download WordPress
+  wpcli_core_download "${project_path}"
+
+  # Create wp-config.php
+  wpcli_create_config "${project_path}" "${database_name}" "${database_user}" "${database_user_passw}" "es_ES"
+
+  # Startup Script for WordPress installation
+  wpcli_run_startup_script "${project_path}" "${project_domain}"
 
   # Set WP salts
   wpcli_set_salts "${project_path}"
