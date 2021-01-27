@@ -61,7 +61,7 @@ function wpcli_install() {
 
 function wpcli_update() {
 
-    log_event "info" "Running: wp-cli update"
+    log_event "DEBUG" "Running: wp-cli update"
 
     wp cli update --quiet
 
@@ -144,7 +144,7 @@ function wpcli_run_startup_script() {
 
     # Install WordPress Site
     sudo -u www-data wp --path="${wp_site}" core install --url="${site_url}" --title="${site_name}" --admin_user="${wp_user_name}" --admin_password="${wp_user_passw}" --admin_email="${wp_user_mail}"
-    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core install --url=${site_url} --title=${site_name} --admin_user=${wp_user_name} --admin_password=${wp_user_passw} --admin_email=${wp_user_mail}" "true"
+    log_event "DEBUG" "Running: sudo -u www-data wp --path=${wp_site} core install --url=${site_url} --title=${site_name} --admin_user=${wp_user_name} --admin_password=${wp_user_passw} --admin_email=${wp_user_mail}" "true"
 
     display --indent 6 --text "- Deleting default content" --result "DONE" --color GREEN
 
@@ -197,7 +197,7 @@ function wpcli_create_config() {
         wp_locale="es_ES"
     fi
 
-    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} config create --dbname=${database} --dbuser=${db_user_name} --dbpass=${db_user_passw} --locale=${wp_locale}"
+    log_event "DEBUG" "Running: sudo -u www-data wp --path=${wp_site} config create --dbname=${database} --dbuser=${db_user_name} --dbpass=${db_user_passw} --locale=${wp_locale}"
 
     sudo -u www-data wp --path="${wp_site}" config create --dbname="${database}" --dbuser="${db_user_name}" --dbpass="${db_user_passw}" --locale="${wp_locale}" --quiet
 
@@ -224,7 +224,7 @@ function wpcli_set_salts() {
 
     local wp_site=$1
 
-    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} config shuffle-salts" "false"
+    log_event "DEBUG" "Running: sudo -u www-data wp --path=${wp_site} config shuffle-salts" "false"
 
     sudo -u www-data wp --path="${wp_site}" config shuffle-salts --quiet
 
@@ -250,7 +250,7 @@ function wpcli_core_download() {
             sudo -u www-data wp --path="${wp_site}" core download --version="${wp_version}" --quiet
 
             # Log
-            log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core download --version=${wp_version}"
+            log_event "DEBUG" "Running: sudo -u www-data wp --path=${wp_site} core download --version=${wp_version}"
             display --indent 6 --text "- Downloading WordPress ${wp_version}"
 
             sleep 15
@@ -272,7 +272,7 @@ function wpcli_core_download() {
             sudo -u www-data wp --path="${wp_site}" core download --quiet
 
             # Log
-            log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core download"
+            log_event "DEBUG" "Running: sudo -u www-data wp --path=${wp_site} core download"
             display --indent 6 --text "- Downloading WordPress ${wp_version}"
 
             sleep 15
@@ -319,7 +319,7 @@ function wpcli_core_reinstall() {
 
     if [ "${wp_site}" != "" ]; then
 
-        log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core download --skip-content --force"
+        log_event "DEBUG" "Running: sudo -u www-data wp --path=${wp_site} core download --skip-content --force"
 
         wpcli_result=$(sudo -u www-data wp --path="${wp_site}" core download --skip-content --force 2>&1 | grep "Success" | cut -d ":" -f1)
 
@@ -408,7 +408,7 @@ function wpcli_core_verify() {
     local wp_site=$1
     local verify_core
 
-    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} core verify-checksums" "false"
+    log_event "DEBUG" "Running: sudo -u www-data wp --path=${wp_site} core verify-checksums" "false"
     mapfile verify_core < <(sudo -u www-data wp --path="${wp_site}" core verify-checksums 2>&1)
 
     display --indent 6 --text "- WordPress verify-checksums" --result "DONE" --color GREEN
@@ -432,7 +432,7 @@ function wpcli_plugin_verify() {
         plugin="--all"
     fi
 
-    log_event "info" "Running: sudo -u www-data wp --path="${wp_site}" plugin verify-checksums ${plugin}" "false"
+    log_event "DEBUG" "Running: sudo -u www-data wp --path="${wp_site}" plugin verify-checksums ${plugin}" "false"
     mapfile verify_plugin < <(sudo -u www-data wp --path="${wp_site}" plugin verify-checksums "${plugin}" 2>&1)
 
     display --indent 6 --text "- WordPress plugin verify-checksums" --result "DONE" --color GREEN
@@ -575,7 +575,7 @@ function wpcli_install_plugin() {
     local wp_site=$1
     local plugin=$2
 
-    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} plugin install ${plugin} --activate"
+    log_event "DEBUG" "Running: sudo -u www-data wp --path=${wp_site} plugin install ${plugin} --activate"
     display --indent 6 --text "- Installing and activating plugin ${plugin}"
 
     sudo -u www-data wp --path="${wp_site}" plugin install "${plugin}" --activate --quiet
@@ -593,7 +593,7 @@ function wpcli_delete_plugin() {
     local wp_site=$1
     local plugin=$2
 
-    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} plugin delete ${plugin}"
+    log_event "DEBUG" "Running: sudo -u www-data wp --path=${wp_site} plugin delete ${plugin}"
     display --indent 6 --text "- Deleting plugin ${plugin}" --result "DONE" --color GREEN
     
     sudo -u www-data wp --path="${wp_site}" plugin delete "${plugin}" --quiet
@@ -645,7 +645,7 @@ function wpcli_install_theme() {
     local wp_site=$1
     local theme=$2
 
-    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} theme install ${theme} --activate" "false"
+    log_event "DEBUG" "Running: sudo -u www-data wp --path=${wp_site} theme install ${theme} --activate" "false"
     sudo -u www-data wp --path="${wp_site}" theme install "${theme}" --activate
 
     display --indent 6 --text "- Installing and activating theme ${theme}" --result "DONE" --color GREEN
@@ -660,7 +660,7 @@ function wpcli_delete_theme() {
     local wp_site=$1
     local theme=$2
 
-    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} theme delete ${theme}" "false"
+    log_event "DEBUG" "Running: sudo -u www-data wp --path=${wp_site} theme delete ${theme}" "false"
     sudo -u www-data wp --path="${wp_site}" theme delete "${theme}" --quiet
 
     display --indent 6 --text "- Deleting theme ${theme}" --result "DONE" --color GREEN
@@ -675,7 +675,7 @@ function wpcli_change_wp_seo_visibility() {
     local wp_site=$1
     local visibility=$2
 
-    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} option set blog_public ${visibility}" "false"
+    log_event "DEBUG" "Running: sudo -u www-data wp --path=${wp_site} option set blog_public ${visibility}" "false"
     sudo -u www-data wp --path="${wp_site}" option set blog_public "${visibility}" --quiet
 
     display --indent 6 --text "- Changing site visibility to ${visibility}" --result "DONE" --color GREEN
@@ -703,7 +703,7 @@ function wpcli_change_tables_prefix() {
     local wp_site=$1
     local db_prefix=$2
 
-    log_event "info" "Running: wp --allow-root --path=${wp_site} rename-db-prefix ${db_prefix}" "false"
+    log_event "DEBUG" "Running: wp --allow-root --path=${wp_site} rename-db-prefix ${db_prefix}" "false"
     display --indent 6 --text "- Changing tables prefix"
 
     wp --allow-root --path="${wp_site}" rename-db-prefix "${db_prefix}" --no-confirm
@@ -735,7 +735,7 @@ function wpcli_search_and_replace() {
     is_network=$?
     if [ "${is_network}" -eq 0 ]; then
 
-        log_event "info" "Running: wp --allow-root --path=${wp_site} search-replace --url=https://"${wp_site_url}" ${search} ${replace} --network" "false"
+        log_event "DEBUG" "Running: wp --allow-root --path=${wp_site} search-replace --url=https://"${wp_site_url}" ${search} ${replace} --network" "false"
         wp --allow-root --path="${wp_site}" search-replace --url=https://"${wp_site_url}" "${search}" "${replace}" --network --quiet
 
         display --indent 6 --text "- Running search and replace" --result "DONE" --color GREEN
@@ -743,7 +743,7 @@ function wpcli_search_and_replace() {
 
     else
 
-        log_event "info" "Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace}" "false"
+        log_event "DEBUG" "Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace}" "false"
         wp --allow-root --path="${wp_site}" search-replace "${search}" "${replace}" --quiet
 
         display --indent 6 --text "- Running search and replace" --result "DONE" --color GREEN
@@ -751,7 +751,7 @@ function wpcli_search_and_replace() {
 
     fi
 
-    log_event "info" "Running: wp --allow-root --path=${wp_site} cache flush" "false"
+    log_event "DEBUG" "Running: wp --allow-root --path=${wp_site} cache flush" "false"
     wp --allow-root --path="${wp_site}" cache flush --quiet
 
     display --indent 6 --text "- Flushing cache" --result "DONE" --color GREEN
@@ -766,7 +766,7 @@ function wpcli_export_database() {
     local wp_site=$1
     local dump_file=$2
 
-    log_event "info" "Running: wp --allow-root --path=${wp_site} db export ${dump_file}" "false"
+    log_event "DEBUG" "Running: wp --allow-root --path=${wp_site} db export ${dump_file}" "false"
     wp --allow-root --path="${wp_site}" db export "${dump_file}" --quiet
 
     display --indent 6 --text "- Exporting database ${wp_site}" --result "DONE" --color GREEN
@@ -785,11 +785,11 @@ function wpcli_force_reinstall_plugins() {
 
     if [ "${plugin}" = "" ]; then
 
-        log_event "info" "Running: sudo -u www-data wp --path=${wp_site} plugin install $(ls -1p "${wp_site}"/wp-content/plugins | grep '/$' | sed 's/\/$//') --force"
+        log_event "DEBUG" "Running: sudo -u www-data wp --path=${wp_site} plugin install $(ls -1p "${wp_site}"/wp-content/plugins | grep '/$' | sed 's/\/$//') --force"
         sudo -u www-data wp --path="${wp_site}" plugin install "$(ls -1p "${wp_site}"/wp-content/plugins | grep '/$' | sed 's/\/$//')" --force
     
     else
-        log_event "info" "Running: sudo -u www-data wp --path=${wp_site} plugin install ${plugin} --force"
+        log_event "DEBUG" "Running: sudo -u www-data wp --path=${wp_site} plugin install ${plugin} --force"
         sudo -u www-data wp --path="${wp_site}" plugin install "${plugin}" --force
 
         display --indent 6 --text "- Plugin force install ${plugin}" --result "DONE" --color GREEN
@@ -840,7 +840,7 @@ function wpcli_user_create() {
     local mail=$3
     local role=$4
 
-    log_event "info" "Running: sudo -u www-data wp --path=${wp_site} user create ${user} ${mail} --role=${role}"
+    log_event "DEBUG" "Running: sudo -u www-data wp --path=${wp_site} user create ${user} ${mail} --role=${role}"
 
     sudo -u www-data wp --path="${wp_site}" user create "${user}" "${mail}" --role="${role}"
 

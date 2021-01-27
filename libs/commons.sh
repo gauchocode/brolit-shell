@@ -959,6 +959,8 @@ function config_set_phpv() {
     local nginx_server_file=$1
     local php_v=$2
 
+    log_event "DEBUG" "Running: s+PHP_V+${php_v}+g ${nginx_server_file}"
+
     sed -i "s+PHP_V+${php_v}+g" "${nginx_server_file}"
 
 }
@@ -986,7 +988,7 @@ function whiptail_event() {
   local whip_message=$2
 
   whiptail --title "${whip_title}" --msgbox "${whip_message}" 15 60 3>&1 1>&2 2>&3
-  exitstatus=$?
+  exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
     return 0
 
@@ -1376,7 +1378,7 @@ function change_ownership(){
   local group=$2
   local path=$3
 
-  log_event "info" "Running: chown -R ${user}:${group} ${path}"
+  log_event "DEBUG" "Running: chown -R ${user}:${group} ${path}"
 
   chown -R "${user}":"${group}" "${path}"
 
@@ -2312,7 +2314,7 @@ function tasks_handler() {
     ;;
 
     project-install)
-      log_event "info" "Running: project_install ${SITES} wordpress ${DOMAIN} ${PNAME} ${PSTATE}"
+      log_event "DEBUG" "Running: project_install ${SITES} wordpress ${DOMAIN} ${PNAME} ${PSTATE}"
       project_install "${SITES}" "${PTYPE}" "${DOMAIN}" "${PNAME}" "${PSTATE}"
       exit
     ;;
@@ -2340,7 +2342,7 @@ function subtasks_backup_handler() {
 
     all)
 
-      log_event "info" "Running: complete backup"
+      log_event "DEBUG" "Running: complete backup"
       make_all_server_config_backup
       make_all_files_backup
 
@@ -2349,7 +2351,7 @@ function subtasks_backup_handler() {
 
     files)
 
-      log_event "info" "Running: make_all_files_backup"
+      log_event "DEBUG" "Running: make_all_files_backup"
       make_all_files_backup
 
       exit
@@ -2357,7 +2359,7 @@ function subtasks_backup_handler() {
 
     server-config)
 
-      log_event "info" "Running: make_all_server_config_backup"
+      log_event "DEBUG" "Running: make_all_server_config_backup"
       make_all_server_config_backup
 
       exit
@@ -2365,7 +2367,7 @@ function subtasks_backup_handler() {
 
     databases)
 
-      #log_event "info" "Running: make_all_files_backup"
+      #log_event "DEBUG" "Running: make_all_files_backup"
       #make_all_files_backup
 
       exit
@@ -2388,7 +2390,7 @@ function subtasks_cloudflare_handler() {
 
     clear_cache)
 
-      log_event "info" "Running: cloudflare_clear_cache ${DOMAIN}"
+      log_event "DEBUG" "Running: cloudflare_clear_cache ${DOMAIN}"
       cloudflare_clear_cache "${DOMAIN}"
 
       exit
@@ -2396,7 +2398,7 @@ function subtasks_cloudflare_handler() {
 
     dev_mode)
 
-      log_event "info" "Running: cloudflare_development_mode ${DOMAIN}"
+      log_event "DEBUG" "Running: cloudflare_development_mode ${DOMAIN}"
       cloudflare_development_mode "${DOMAIN}"
 
       exit
