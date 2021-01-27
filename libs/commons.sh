@@ -950,6 +950,18 @@ function count_php_versions() {
     echo $(ls -d /etc/php/*/fpm/pool.d 2>/dev/null |wc -l)
 }
 
+function config_set_phpv() {
+
+    #$1 = ${nginx_server_file} / ${tool} or ${project_domain}
+    #$2 = ${new_php_v} optional
+
+    local nginx_server_file=$1
+    local php_v=$2
+
+    sed -i "s+PHP_V+${php_v}+g" "${nginx_server_file}"
+
+}
+
 function multiphp_versions() {
   
     local -a php_versions_list;
