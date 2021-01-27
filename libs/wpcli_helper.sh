@@ -99,7 +99,7 @@ function wpcli_run_startup_script() {
     if [[ "${site_name}" == "" ]]; then
         site_name=$(whiptail --title "Site Name" --inputbox "Insert the site name. Example: My Website" 10 60 3>&1 1>&2 2>&3)
     fi
-    exitstatus=$?
+    exitstatus="$?"
     if [[ ${exitstatus} == "" ]]; then
         # Return
         return 1
@@ -108,7 +108,7 @@ function wpcli_run_startup_script() {
     if [[ "${site_url}" == "" ]]; then
         site_url=$(whiptail --title "Site URL" --inputbox "Insert the site URL. Example: mydomain.com" 10 60 3>&1 1>&2 2>&3)
     fi
-    exitstatus=$?
+    exitstatus="$?"
     if [[ ! ${exitstatus} -eq 0 ]]; then
         # Return
         return 1
@@ -117,7 +117,7 @@ function wpcli_run_startup_script() {
     if [[ "${wp_user_name}" == "" ]]; then
         wp_user_name=$(whiptail --title "Wordpress User" --inputbox "Insert a username for admin." 10 60 3>&1 1>&2 2>&3)
     fi
-    exitstatus=$?
+    exitstatus="$?"
     if [[ ! ${exitstatus} -eq 0 ]]; then
         # Return
         return 1
@@ -126,7 +126,7 @@ function wpcli_run_startup_script() {
     if [[ "${wp_user_passw}" == "" ]]; then
         wp_user_passw=$(whiptail --title "Site Name" --inputbox "Insert the user password." 10 60 3>&1 1>&2 2>&3)
     fi
-    exitstatus=$?
+    exitstatus="$?"
     if [[ ! ${exitstatus} -eq 0 ]]; then
         # Return
         return 1
@@ -135,7 +135,7 @@ function wpcli_run_startup_script() {
     if [[ "${wp_user_mail}" == "" ]]; then
         wp_user_mail=$(whiptail --title "WordPress User Mail" --inputbox "Insert the user email." 10 60 3>&1 1>&2 2>&3)
     fi
-    exitstatus=$?
+    exitstatus="$?"
     if [[ ! ${exitstatus} -eq 0 ]]; then
         # Return
         return 1
@@ -144,9 +144,7 @@ function wpcli_run_startup_script() {
 
     # Install WordPress Site
     sudo -u www-data wp --path="${wp_site}" core install --url="${site_url}" --title="${site_name}" --admin_user="${wp_user_name}" --admin_password="${wp_user_passw}" --admin_email="${wp_user_mail}"
-    log_event "DEBUG" "Running: sudo -u www-data wp --path=${wp_site} core install --url=${site_url} --title=${site_name} --admin_user=${wp_user_name} --admin_password=${wp_user_passw} --admin_email=${wp_user_mail}" "true"
-
-    display --indent 6 --text "- Deleting default content" --result "DONE" --color GREEN
+    log_event "DEBUG" "Running: sudo -u www-data wp --path=${wp_site} core install --url=${site_url} --title=${site_name} --admin_user=${wp_user_name} --admin_password=${wp_user_passw} --admin_email=${wp_user_mail}"
 
     # Delete default post, page, and comment
     sudo -u www-data wp --path="${wp_site}" site empty --yes --quiet

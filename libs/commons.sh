@@ -953,11 +953,11 @@ function count_php_versions() {
 
 function config_set_phpv() {
 
-    #$1 = ${nginx_server_file} / ${tool} or ${project_domain}
-    #$2 = ${new_php_v} optional
+    #$1 = ${php_v}
+    #$2 = ${nginx_server_file}
 
-    local nginx_server_file=$1
-    local php_v=$2
+    local php_v=$1
+    local nginx_server_file=$2
 
     log_event "DEBUG" "Running: s+PHP_V+${php_v}+g ${nginx_server_file}"
 
