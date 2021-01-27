@@ -94,8 +94,6 @@ function wordpress_project_install () {
   database_user="${db_project_name}_user"
   database_user_passw=$(openssl rand -hex 12)
 
-  log_event "info" "Creating database ${database_name}, and user ${database_user} with pass ${database_user_passw}"
-
   mysql_database_create "${database_name}"
   mysql_user_create "${database_user}" "${database_user_passw}"
   mysql_user_grant_privileges "${database_user}" "${database_name}"
