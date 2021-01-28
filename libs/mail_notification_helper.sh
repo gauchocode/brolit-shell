@@ -39,7 +39,7 @@ function mail_subject_status() {
         status="⛔ ERROR"
 
     else
-        if [[ "${outdated}" = true ]]; then
+        if [[ "${outdated}" = true ]] || [[ "${status_c}" == *"WARNING"* ]]; then
             status="⚠ WARNING"
 
         else
@@ -267,7 +267,7 @@ function mail_cert_section() {
                     email_cert_days="${email_cert_days_container} no certificate"
                     cert_status_icon="⚠️"
                     cert_status_color="red"
-                    STATUS_CERTS="Warning"
+                    STATUS_CERTS="WARNING"
                 
                 else #certificate found
 
@@ -283,7 +283,7 @@ function mail_cert_section() {
                             email_cert_days_container=" <span style=\"color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;\">"
                             cert_status_icon="⚠️"
                             cert_status_color="red"
-                            STATUS_CERTS="Warning"
+                            STATUS_CERTS="WARNING"
                         fi
 
                     fi
