@@ -18,7 +18,7 @@ function certbot_certificate_install() {
 
   local certbot_result
 
-  log_event "DEBUG" "Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains}"
+  log_event "debug" "Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains}"
   
   certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}"
 
@@ -90,7 +90,7 @@ function certbot_certificate_expand() {
   local email=$1
   local domains=$2
 
-  log_event "DEBUG" "Running: certbot --nginx --non-interactive --agree-tos --expand --redirect -m ${email} -d ${domains}"
+  log_event "debug" "Running: certbot --nginx --non-interactive --agree-tos --expand --redirect -m ${email} -d ${domains}"
 
   certbot --nginx --non-interactive --agree-tos --expand --redirect -m "${email}" -d "${domains}"
 
@@ -102,7 +102,7 @@ function certbot_certificate_renew() {
 
   local domains=$1
 
-  log_event "DEBUG" "Running: certbot renew -d ${domains}"
+  log_event "debug" "Running: certbot renew -d ${domains}"
 
   certbot renew -d "${domains}"
 
@@ -112,7 +112,7 @@ function certbot_certificate_renew_test() {
 
   # Test renew for all installed certificates
 
-  log_event "DEBUG" "Running: certbot renew --dry-run -d ${domains}"
+  log_event "debug" "Running: certbot renew --dry-run -d ${domains}"
   
   certbot renew --dry-run -d "${domains}"
 
@@ -124,7 +124,7 @@ function certbot_certificate_force_renew() {
 
   local domains=$1
 
-  log_event "DEBUG" "Running: certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m ${email} -d ${domains}"
+  log_event "debug" "Running: certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m ${email} -d ${domains}"
   
   certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m "${email}" -d "${domains}"
 
@@ -199,7 +199,7 @@ function certbot_certonly_cloudflare() {
   local email=$1
   local domains=$2
 
-  log_event "DEBUG" "Running: certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m ${email} -d ${domains} --preferred-challenges dns-01"
+  log_event "debug" "Running: certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m ${email} -d ${domains} --preferred-challenges dns-01"
   
   certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m "${email}" -d "${domains}" --preferred-challenges dns-01
 
@@ -238,7 +238,7 @@ function certbot_certonly_cloudflare() {
 
 function certbot_show_certificates_info() {
 
-  log_event "DEBUG" "Running: certbot certificates"
+  log_event "debug" "Running: certbot certificates"
 
   certbot certificates
 
@@ -250,7 +250,7 @@ function certbot_show_domain_certificates_expiration_date() {
 
   local domains=$1
 
-  log_event "DEBUG" "Running: certbot certificates --cert-name ${domains}"
+  log_event "debug" "Running: certbot certificates --cert-name ${domains}"
 
   certbot certificates --cert-name "${domains}" | grep 'Expiry' | cut -d ':' -f2 | cut -d ' ' -f2
 
@@ -264,7 +264,7 @@ function certbot_certificate_valid_days() {
 
   local cert_days
 
-  log_event "DEBUG" "Running: certbot certificates --cert-name ${domain}"
+  log_event "debug" "Running: certbot certificates --cert-name ${domain}"
 
   cert_days=$(certbot certificates --cert-name "${domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
 
@@ -311,7 +311,7 @@ function certbot_certificate_delete() {
 
         [Yy]*)
 
-          log_event "DEBUG" "Running: certbot delete --cert-name ${domains}" "true"
+          log_event "debug" "Running: certbot delete --cert-name ${domains}" "true"
           certbot delete --cert-name "${domains}"
           break
 
