@@ -67,10 +67,10 @@ source "${SFOLDER}/libs/wpcli_helper.sh"
 #################################################################################
 #
 CRONJOB=0                           # Run as a cronjob
-DEBUG=0                             # Debugging mode (to screen)
+DEBUG=1                             # Debugging mode (to screen)
 QUICKMODE=1                         # Don't wait for user input
 QUIET=0                             # Show normal messages and warnings as well
-SKIPLOGTEST=0                       # Skip logging for one test
+SKIPTESTS=1                         # Skip tests
 
 WSERVER="/etc/nginx"                # NGINX config files location
 MySQL_CF="/etc/mysql"               # MySQL config files location
@@ -588,42 +588,42 @@ function log_event() {
   local message=$2
   local console_display=$3
 
-   case $log_type in
+   case ${log_type} in
 
       success)
         echo " > SUCCESS: ${message}" >> "${LOG}"
         if [ "${console_display}" = "true" ]; then
           echo -e "${B_GREEN} > ${message}${ENDCOLOR}" >&2
         fi
-        ;;
+      ;;
 
       info)
         echo " > INFO: ${message}" >> "${LOG}"
         if [ "${console_display}" = "true" ]; then
           echo -e "${B_CYAN} > ${message}${ENDCOLOR}" >&2
         fi
-        ;;
+      ;;
 
       warning)
         echo " > WARNING: ${message}" >> "${LOG}"
         if [ "${console_display}" = "true" ]; then
           echo -e "${YELLOW}${ITALIC} > ${message}${ENDCOLOR}" >&2
         fi
-        ;;
+      ;;
 
       error)
         echo " > ERROR: ${message}" >> "${LOG}"
         if [ "${console_display}" = "true" ]; then
           echo -e "${RED} > ${message}${ENDCOLOR}" >&2
         fi
-        ;;
+      ;;
 
       critical)
         echo " > CRITICAL: ${message}" >> "${LOG}"
         if [ "${console_display}" = "true" ]; then
           echo -e "${B_RED} > ${message}${ENDCOLOR}" >&2
         fi
-        ;;
+      ;;
 
       debug)
         if [ "${DEBUG}" -eq 1 ]; then
@@ -634,14 +634,15 @@ function log_event() {
           fi
 
         fi
-        ;;
+      ;;
 
       *)
         echo " > ${message}" >> "${LOG}"
         if [ "${console_display}" = "true" ]; then
           echo -e "${CYAN}${B_DEFAULT} > ${message}${ENDCOLOR}" >&2
         fi
-        ;;
+      ;;
+
     esac
 
 }
@@ -959,7 +960,7 @@ function config_set_phpv() {
     local php_v=$1
     local nginx_server_file=$2
 
-    log_event "DEBUG" "Running: s+PHP_V+${php_v}+g ${nginx_server_file}"
+    log_event "debug" "Running: s+PHP_V+${php_v}+g ${nginx_server_file}"
 
     sed -i "s+PHP_V+${php_v}+g" "${nginx_server_file}"
 
@@ -1378,7 +1379,7 @@ function change_ownership(){
   local group=$2
   local path=$3
 
-  log_event "DEBUG" "Running: chown -R ${user}:${group} ${path}"
+  log_event "debug" "Running: chown -R ${user}:${group} ${path}"
 
   chown -R "${user}":"${group}" "${path}"
 
@@ -2314,7 +2315,7 @@ function tasks_handler() {
     ;;
 
     project-install)
-      log_event "DEBUG" "Running: project_install ${SITES} wordpress ${DOMAIN} ${PNAME} ${PSTATE}"
+      log_event "debug" "Running: project_install ${SITES} wordpress ${DOMAIN} ${PNAME} ${PSTATE}"
       project_install "${SITES}" "${PTYPE}" "${DOMAIN}" "${PNAME}" "${PSTATE}"
       exit
     ;;
@@ -2342,7 +2343,7 @@ function subtasks_backup_handler() {
 
     all)
 
-      log_event "DEBUG" "Running: complete backup"
+      log_event "debug" "Running: complete backup"
       make_all_server_config_backup
       make_all_files_backup
 
@@ -2351,7 +2352,7 @@ function subtasks_backup_handler() {
 
     files)
 
-      log_event "DEBUG" "Running: make_all_files_backup"
+      log_event "debug" "Running: make_all_files_backup"
       make_all_files_backup
 
       exit
@@ -2359,7 +2360,7 @@ function subtasks_backup_handler() {
 
     server-config)
 
-      log_event "DEBUG" "Running: make_all_server_config_backup"
+      log_event "debug" "Running: make_all_server_config_backup"
       make_all_server_config_backup
 
       exit
@@ -2367,7 +2368,7 @@ function subtasks_backup_handler() {
 
     databases)
 
-      #log_event "DEBUG" "Running: make_all_files_backup"
+      #log_event "debug" "Running: make_all_files_backup"
       #make_all_files_backup
 
       exit
@@ -2390,7 +2391,7 @@ function subtasks_cloudflare_handler() {
 
     clear_cache)
 
-      log_event "DEBUG" "Running: cloudflare_clear_cache ${DOMAIN}"
+      log_event "debug" "Running: cloudflare_clear_cache ${DOMAIN}"
       cloudflare_clear_cache "${DOMAIN}"
 
       exit
@@ -2398,7 +2399,7 @@ function subtasks_cloudflare_handler() {
 
     dev_mode)
 
-      log_event "DEBUG" "Running: cloudflare_development_mode ${DOMAIN}"
+      log_event "debug" "Running: cloudflare_development_mode ${DOMAIN}"
       cloudflare_development_mode "${DOMAIN}"
 
       exit

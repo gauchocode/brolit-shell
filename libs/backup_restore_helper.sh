@@ -588,6 +588,7 @@ function restore_type_selection_from_dropbox() {
           display --indent 6 --text "- Uncompressing backup"
           pv --width 70 "${chosen_backup_to_restore}" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
           clear_last_line
+          clear_last_line
           display --indent 6 --text "- Uncompressing backup" --result "DONE" --color GREEN
 
           if [[ ${chosen_type} == *"${DBS_F}"* ]]; then
@@ -846,6 +847,7 @@ function restore_project() {
     # Uncompress backup file
     log_event "info" "Uncompressing ${db_to_download}"
     pv --width 70 "${db_name}_database_${backup_date}.tar.bz2" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
+    clear_last_line
     clear_last_line
     display --indent 6 --text "- Uncompressing backup file" --result "DONE" --color GREEN
 

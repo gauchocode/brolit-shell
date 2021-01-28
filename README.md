@@ -33,8 +33,9 @@
 * Image optimization tools.
 * Security Tools with malware scanners.
 * IP/Domain blacklist checker.
-* Benchmark tool.
 * Step-by-step configuration wizard.
+* Option to run some taks from a single line command.
+* Benchmark tool.
 * And more ...
 
 ## TODO List
