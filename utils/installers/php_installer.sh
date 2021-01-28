@@ -122,7 +122,8 @@ php_purge_installation() {
 
 php_check_if_installed() {
 
-  local php_installed php
+  local php_installed
+  local php
 
   php="$(which php)"
   if [ ! -x "${php}" ]; then
