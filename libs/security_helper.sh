@@ -35,7 +35,7 @@ function security_clamav_scan() {
   # Run on specific directory with parameters:
   # -r recursive (Scan subdirectories recursively)
   # --infected (Only print infected files)
-  log_event "DEBUG" "Running: clamscan -r --infected ${directory}" "false"
+  log_event "debug" "Running: clamscan -r --infected ${directory}" "false"
   clamscan -r --infected "${directory}"
 
 }

@@ -111,7 +111,7 @@ function nginx_server_create() {
     esac
 
     # Set/Change PHP version if needed
-    nginx_server_change_phpv "${nginx_server_file}" ""
+    config_set_phpv "${nginx_server_file}" ""
    
     #Test the validity of the nginx configuration
     nginx_configuration_test
