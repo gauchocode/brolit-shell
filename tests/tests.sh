@@ -44,7 +44,7 @@ function test_mail_cert_section() {
     # Preparing email to send
     log_event "info" "Sending Email to ${MAILA} ..." "false"
 
-    email_subject="${STATUS_ICON_D} ${VPSNAME} - Cert Expiration Info - [${NOWDISPLAY}]"
+    email_subject="${STATUS_ICON_D} [${NOWDISPLAY}] - Cert Expiration Info on ${VPSNAME}"
     email_content="${HTMLOPEN} ${BODY_SRV} ${CERT_MAIL_VAR} ${MAIL_FOOTER}"
 
     # Sending email notification
@@ -67,7 +67,7 @@ function test_mail_package_section() {
     # Preparing email to send
     log_event "info" "Sending Email to ${MAILA} ..." "false"
 
-    email_subject="${EMAIL_STATUS} on ${VPSNAME} Packages Status Info - [${NOWDISPLAY}]"
+    email_subject="${EMAIL_STATUS} [${NOWDISPLAY}] Packages Status Info on ${VPSNAME}"
     email_content="${HTMLOPEN} ${BODY_SRV} ${PKG_MAIL_VAR} ${MAIL_FOOTER}"
 
     # Sending email notification

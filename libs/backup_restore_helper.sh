@@ -767,7 +767,7 @@ function restore_project() {
     # Project Type
     project_type=$(get_project_type "${SFOLDER}/tmp/${chosen_project}")
 
-    log_event "info" "Project Type: ${project_type}"
+    log_event "debug" "Project Type: ${project_type}"
 
     # Here, for convention, chosen_project should be CHOSEN_DOMAIN... 
     # Only for better code reading, i assign this new var:

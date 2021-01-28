@@ -77,8 +77,8 @@ function mysql_user_create() {
     db_user_scope='localhost'
 
     # Logging
-    display --indent 2 --text "- Creating ${db_user} user in MySQL"
-    log_event "info" "Creating ${db_user} user in MySQL with pass: ${db_user_psw}"
+    display --indent 2 --text "- Creating MySQL user ${db_user}"
+    log_event "info" "Creating MySQL user ..."
 
     if [[ -z ${db_user_psw} || ${db_user_psw} == "" ]]; then
         query="CREATE USER '${db_user}'@'${db_user_scope}';"
@@ -94,7 +94,7 @@ function mysql_user_create() {
         
         # Logging
         clear_last_line
-        display --indent 6 --text "- Creating user in MySQL: ${db_user}" --result "DONE" --color GREEN
+        display --indent 6 --text "- Creating MySQL user ${db_user}" --result "DONE" --color GREEN
         display --indent 8 --text "User created with pass: ${db_user_psw}" --tcolor YELLOW
         log_event "success" " MySQL user ${db_user} created with pass: ${db_user_psw}"
 
@@ -104,7 +104,7 @@ function mysql_user_create() {
 
         # Logging
         clear_last_line
-        display --indent 6 --text "- Creating ${db_user} user in MySQL" --result "FAIL" --color RED
+        display --indent 6 --text "- Creating MySQL user ${db_user}" --result "FAIL" --color RED
         display --indent 8 --text "MySQL output: ${mysql_output}" --tcolor RED
         display --indent 8 --text "Query executed: ${query}" --tcolor RED
         log_event "error" "Something went wrong creating user: ${db_user}."
@@ -396,7 +396,7 @@ function mysql_database_create() {
 
         # Logging
         display --indent 6 --text "- Creating database: ${database}" --result "DONE" --color GREEN
-        log_event "success" "Database ${database} created successfully"
+        log_event "success" "Database ${database} created"
 
         return 0
 
