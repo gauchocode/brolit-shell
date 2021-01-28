@@ -378,7 +378,7 @@ project_delete_database() {
         make_database_backup "${BK_TYPE}" "${CHOSEN_DB}"
 
         # Moving deleted project backups to another dropbox directory
-        log_event "DEBUG" "Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${CHOSEN_DB} /${VPSNAME}/offline-site"
+        log_event "debug" "Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${CHOSEN_DB} /${VPSNAME}/offline-site"
         dropbox_output=$(${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${CHOSEN_DB}" "/${VPSNAME}/offline-site" 1>&2)
 
         display --indent 6 --text "- Moving dropbox backup to offline directory" --result "DONE" --color GREEN
