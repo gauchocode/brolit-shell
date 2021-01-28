@@ -64,7 +64,7 @@ function menu_backup_options() {
 
       log_event "info" "Sending Email to ${MAILA} ..." "false"
 
-      EMAIL_SUBJECT="${STATUS_ICON_D} ${VPSNAME} - Database Backup - [${NOWDISPLAY}]"
+      EMAIL_SUBJECT="${STATUS_ICON_D} [${NOWDISPLAY}] - Database Backup on ${VPSNAME}"
       EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${DB_MAIL_VAR} ${MAIL_FOOTER}"
 
       # Sending email notification
@@ -92,7 +92,7 @@ function menu_backup_options() {
 
       log_event "info" "Sending Email to ${MAILA} ..." "false"
 
-      EMAIL_SUBJECT="${STATUS_ICON_F} ${VPSNAME} - Files Backup - [${NOWDISPLAY}]"
+      EMAIL_SUBJECT="${STATUS_ICON_F} [${NOWDISPLAY}] - Files Backup on ${VPSNAME}"
       EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${CERT_MAIL_VAR} ${CONFIG_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
 
       # Sending email notification
@@ -135,7 +135,7 @@ function menu_backup_options() {
 
       log_event "info" "Sending Email to ${MAILA} ..." "false"
 
-      EMAIL_SUBJECT="${EMAIL_STATUS} on ${VPSNAME} Running Complete Backup - [${NOWDISPLAY}]"
+      EMAIL_SUBJECT="${EMAIL_STATUS} [${NOWDISPLAY}] - Complete Backup on ${VPSNAME}"
       EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${DB_MAIL_VAR} ${CONFIG_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
 
       # Sending email notification

@@ -948,38 +948,6 @@ function checking_scripts_permissions() {
 #################################################################################
 #
 
-function count_php_versions() {
-    echo $(ls -d /etc/php/*/fpm/pool.d 2>/dev/null |wc -l)
-}
-
-function config_set_phpv() {
-
-    #$1 = ${php_v}
-    #$2 = ${nginx_server_file}
-
-    local php_v=$1
-    local nginx_server_file=$2
-
-    log_event "debug" "Running: s+PHP_V+${php_v}+g ${nginx_server_file}"
-
-    sed -i "s+PHP_V+${php_v}+g" "${nginx_server_file}"
-
-}
-
-function multiphp_versions() {
-  
-    local -a php_versions_list;
-    local php_ver;
-
-    if [[ "$(count_php_versions)" -gt 0 ]] ; then
-        for php_ver in $(ls -v /etc/php/); do
-            [ ! -d "/etc/php/${php_ver}/fpm/pool.d/" ] && continue
-            php_versions_list+=(${php_ver})
-        done
-        echo "${php_versions_list[@]}"
-    fi
-}
-
 function whiptail_event() {
 
   # $1 = {whip_title}
@@ -1083,8 +1051,6 @@ function directory_browser() {
   local menutitle=$1
   local startdir=$2
 
-  #log_event "info" "Starting directory_browser ..." "true"
-
   if [ -z "${startdir}" ]; then
     dir_list=$(ls -lhp | awk -F ' ' ' { print $9 " " $5 } ')
   else
@@ -1125,8 +1091,6 @@ function directory_browser() {
 
   fi
 
-  #log_event "info" "Exiting directory_browser ..." "true"
-
 }
 
 function get_all_directories() {
@@ -1151,8 +1115,6 @@ function copy_project_files() {
   local source_path=$1
   local destination_path=$2
   local excluded_path=$3
-
-  #cp -r "${source_path}" "${destination_path}"
 
   if [ "${excluded_path}" != "" ];then
     rsync -ax --exclude "${excluded_path}" "${source_path}" "${destination_path}"
@@ -1521,8 +1483,6 @@ function get_domain_extension() {
 
   done
 
-  display --indent 6 --text "- Extracting domain extension from ${domain}"
-
   if  grep --word-regexp --quiet ".${domain_ext}" "${SFOLDER}/config/domain_extension-list" ; then
 
     domain_ext=.${domain_ext}
@@ -1530,8 +1490,8 @@ function get_domain_extension() {
     # Logging
     #display --indent 6 --text "- Extracting domain extension from ${domain}" --result DONE --color GREEN
     #display --indent 8 --text "Domain extension: ${domain_ext}"
-    log_event "info" "Extracting domain extension from ${domain}."
-    log_event "info" "Domain extension extracted: ${domain_ext}"
+    log_event "debug" "Extracting domain extension from ${domain}."
+    log_event "debug" "Domain extension extracted: ${domain_ext}"
 
     # Return
     echo "${domain_ext}"
@@ -1564,7 +1524,7 @@ function extract_domain_extension() {
     domain_no_ext=${domain%"$domain_extension"}
 
     # Logging
-    log_event "info" "domain_no_ext: ${domain_no_ext}"
+    log_event "debug" "domain_no_ext: ${domain_no_ext}"
     #display --indent 4 --text "Domain extension: ${domain_extension}"
     #display --indent 4 --text "Domain without extension: ${domain_no_ext}"
     #log_break "true"

@@ -232,7 +232,7 @@ function check_packages_required() {
 
   fi
 
-  log_event "success" "All required packages are installed"
+  log_event "info" "All required packages are installed"
 
 }
 
