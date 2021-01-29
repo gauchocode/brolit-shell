@@ -253,9 +253,31 @@ function test_mysql_database_drop() {
 
 function test_common_funtions() {
 
-    test_display_functions
+    test_config_set_phpv
     test_get_root_domain
     test_extract_domain_extension
+
+}
+
+function test_config_set_phpv() {
+
+    local current_phpv
+
+    # test file
+    cp "${SFOLDER}/config/nginx/sites-available/wordpress_single" "/etc/nginx/sites-available/domain.com.conf"
+
+    config_set_phpv "7.4" "/etc/nginx/sites-available/domain.com.conf"
+
+    current_phpv=$(nginx_server_get_current_phpv "/etc/nginx/sites-available/domain.com.conf")
+    if [[ ${current_phpv} = "7.4" ]]; then 
+        display --indent 6 --text "- config_set_phpv result ${current_phpv}" --result "PASS" --color WHITE
+    else
+        display --indent 6 --text "- config_set_phpv" --result "FAIL" --color RED
+        display --indent 6 --text "current_phpv: ${current_phpv}" --tcolor RED
+    fi
+
+    # Clean
+    rm "/etc/nginx/sites-available/domain.com.conf"
 
 }
 
