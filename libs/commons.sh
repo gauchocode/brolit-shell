@@ -40,6 +40,8 @@ source "${SFOLDER}/libs/mail_notification_helper.sh"
 source "${SFOLDER}/libs/mysql_helper.sh"
 # shellcheck source=${SFOLDER}/libs/nginx_helper.sh
 source "${SFOLDER}/libs/nginx_helper.sh"
+# shellcheck source=${SFOLDER}/libs/php_helper.sh
+source "${SFOLDER}/libs/php_helper.sh"
 # shellcheck source=${SFOLDER}/libs/optimizations_helper.sh
 source "${SFOLDER}/libs/optimizations_helper.sh"
 # shellcheck source=${SFOLDER}/libs/packages_helper.sh
