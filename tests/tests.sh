@@ -109,8 +109,6 @@ function test_mysql_test_user_credentials() {
         display --indent 6 --text "- mysql_test_user_credentials" --result "FAIL" --color RED
     fi
 
-    log_break "true"
-
 }
 
 function test_ask_mysql_root_psw() {
@@ -118,8 +116,6 @@ function test_ask_mysql_root_psw() {
     log_subsection "Test: test_ask_mysql_root_psw"
 
     ask_mysql_root_psw
-
-    log_break "true"
 
 }
 
@@ -143,8 +139,6 @@ function test_mysql_user_create() {
         display --indent 6 --text "- mysql_user_create" --result "FAIL" --color RED
     fi
 
-    log_break "true"
-
 }
 
 function test_mysql_user_exists() {
@@ -163,8 +157,6 @@ function test_mysql_user_exists() {
     else
         display --indent 6 --text "- mysql_user_exists" --result "FAIL" --color RED
     fi
-
-    log_break "true"
 
 }
 
@@ -185,8 +177,6 @@ function test_mysql_user_delete() {
         display --indent 6 --text "- test_mysql_user_delete" --result "FAIL" --color RED
     fi
 
-    log_break "true"
-
 }
 
 function test_mysql_database_create() {
@@ -204,8 +194,6 @@ function test_mysql_database_create() {
     else
         display --indent 6 --text "- test_mysql_database_create" --result "FAIL" --color RED
     fi
-
-    log_break "true"
 
 }
 
@@ -225,8 +213,6 @@ function test_mysql_database_exists() {
         display --indent 6 --text "- test_mysql_database_exists" --result "FAIL" --color RED
     fi
 
-    log_break "true"
-
 }
 
 function test_mysql_database_drop() {
@@ -245,8 +231,6 @@ function test_mysql_database_drop() {
         display --indent 6 --text "- test_mysql_database_drop" --result "FAIL" --color RED
     fi
 
-    log_break "true"
-
 }
 
 ####################### Tests for commons.sh #######################
@@ -262,6 +246,8 @@ function test_common_funtions() {
 function test_config_set_phpv() {
 
     local current_phpv
+
+    log_subsection "Test: config_set_phpv"
 
     # test file
     cp "${SFOLDER}/config/nginx/sites-available/wordpress_single" "/etc/nginx/sites-available/domain.com.conf"
@@ -298,8 +284,6 @@ function test_display_functions() {
     display --indent 8 --text "Testing output WHITE in ITALIC" --tcolor WHITE --tstyle ITALIC
     display --indent 6 --text "- Testing message with color" --result "WARNING" --color YELLOW
     display --indent 8 --text "Testing output WARNING" --tcolor YELLOW
-
-    log_break "true"
 
 }
 
@@ -354,8 +338,6 @@ function test_get_root_domain() {
         display --indent 6 --text "- get_root_domain with www.dev.broobe.hosting" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
-
-    log_break "true"
 
 }
 
@@ -443,8 +425,6 @@ function test_extract_domain_extension() {
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
-    log_break "true"
-
 }
 
 ####################### Tests for wordpress_helper.sh #######################
@@ -456,11 +436,11 @@ function test_wordpress_helper_funtions() {
     project_domain="test.domain.com"
 
     # Create mock project
-    wpcli_core_download "${SITES}/${project_domain}"
+    wpcli_core_download "${SFOLDER}/tmp/${project_domain}"
 
     # Tests
-    test_search_wp_config "${SITES}/${project_domain}"
-    test_is_wp_project "${SITES}/${project_domain}"
+    test_search_wp_config "${SFOLDER}/tmp/${project_domain}"
+    test_is_wp_project "${SFOLDER}/tmp/${project_domain}"
 
     # Deleting temp files
     #rm -R "${SITES}/${project_domain}"
@@ -479,8 +459,6 @@ function test_search_wp_config() {
         #display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
-    log_break "true"
-
 }
 
 function test_is_wp_project() {
@@ -494,8 +472,6 @@ function test_is_wp_project() {
         display --indent 6 --text "- is_wp_project" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
-
-    log_break "true"
 
 }
 
@@ -594,7 +570,6 @@ function test_cloudflare_domain_exists() {
     else
         display --indent 6 --text "- cloudflare_domain_exists" --result "FAIL" --color RED
     fi
-    log_break "true"
 
 }
 
@@ -609,7 +584,6 @@ function test_cloudflare_change_a_record() {
     else
         display --indent 6 --text "- test_cloudflare_change_a_record" --result "FAIL" --color RED
     fi
-    log_break "true"
 
 }
 
@@ -624,7 +598,6 @@ function test_cloudflare_delete_a_record() {
     else
         display --indent 6 --text "- test_cloudflare_delete_a_record" --result "FAIL" --color RED
     fi
-    log_break "true"
 
 }
 
@@ -639,7 +612,6 @@ function test_cloudflare_clear_cache() {
     else
         display --indent 6 --text "- test_cloudflare_clear_cache" --result "FAIL" --color RED
     fi
-    log_break "true"
 
 }
 
