@@ -111,7 +111,7 @@ function nginx_server_create() {
     esac
 
     # Set/Change PHP version if needed
-    config_set_phpv "${nginx_server_file}" ""
+    config_set_phpv "" "${nginx_server_file}"
    
     #Test the validity of the nginx configuration
     nginx_configuration_test
@@ -236,6 +236,25 @@ function nginx_server_change_domain() {
 
 }
 
+function nginx_server_get_current_phpv() {
+
+    #$1 = ${nginx_server_file} / ${tool} or ${project_domain}
+
+    local nginx_server_file=$1
+
+    # Replace string to match PHP version
+    current_php_v_string=$(cat ${nginx_server_file} | grep fastcgi_pass | cut -d '/' -f 4 | cut -d '-' -f 1)
+    current_php_v=${current_php_v_string#"php"}
+
+    # Log
+    log_event "debug" "Get php version from nginx server: ${nginx_server_file}"
+    log_event "debug" "Current php version: ${current_php_v}"
+
+    # Return
+    echo "${current_php_v}"
+
+}
+
 function nginx_server_change_phpv() {
 
     #$1 = ${nginx_server_file} / ${tool} or ${project_domain}
@@ -257,10 +276,10 @@ function nginx_server_change_phpv() {
 
     # TODO: ask wich version of php want to work with
 
-    # Replace string to match PHP version
-    current_php_v_string=$(cat ${nginx_server_file} | grep fastcgi_pass | cut -d '/' -f 4 | cut -d '-' -f 1)
-    current_php_v=${current_php_v_string#"php"}
-    
+    # Get current php version
+    current_php_v=$(nginx_server_get_current_phpv "${nginx_server_file}")
+
+    # Replace string to match PHP version    
     sed -i "s#${current_php_v}#${new_php_v}#" "${WSERVER}/sites-available/${nginx_server_file}"
 
     log_event "info" "PHP version for ${nginx_server_file} changed from ${current_php_v} to ${new_php_v}"
