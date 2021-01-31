@@ -13,7 +13,7 @@
 #
 
 # This is executed if we want to restore a file backup on directory with the same name
-_make_temp_files_backup() {
+function _make_temp_files_backup() {
 
   # $1 = Folder to backup
 
@@ -25,6 +25,7 @@ _make_temp_files_backup() {
   mkdir "${SFOLDER}/tmp/old_backup"
   mv "${folder_to_backup}" "${SFOLDER}/tmp/old_backup"
 
+  # Log
   log_event "info" "Temp backup completed and stored here: ${SFOLDER}/tmp/old_backup"
   clear_last_line
   display --indent 6 --text "- Creating backup on temp directory" --result "DONE" --color GREEN

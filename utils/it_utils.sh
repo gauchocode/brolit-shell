@@ -9,16 +9,26 @@ source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
 
-it_utils_menu() {
+function it_utils_menu() {
 
   local it_util_options 
   local chosen_it_util_options 
   local new_ssh_port
 
-  it_util_options=("01)" "SECURITY TOOLS" "02)" "SERVER OPTIMIZATIONS" "03)" "CHANGE SSH PORT" "04)" "CHANGE HOSTNAME" "05)" "ADD FLOATING IP" "06)" "RESET MYSQL ROOT PSW" "07)" "BLACKLIST CHECKER" "08)" "BENCHMARK SERVER" "09)" "INSTALL ALIASES")
+  it_util_options=(
+    "01)" "SECURITY TOOLS" 
+    "02)" "SERVER OPTIMIZATIONS" 
+    "03)" "CHANGE SSH PORT" 
+    "04)" "CHANGE HOSTNAME" 
+    "05)" "ADD FLOATING IP" 
+    "06)" "RESET MYSQL ROOT PSW" 
+    "07)" "BLACKLIST CHECKER" 
+    "08)" "BENCHMARK SERVER" 
+    "09)" "INSTALL ALIASES"
+  )
   chosen_it_util_options=$(whiptail --title "IT UTILS" --menu "Choose a script to Run" 20 78 10 "${it_util_options[@]}" 3>&1 1>&2 2>&3)
 
-  exitstatus=$?
+  exitstatus="$?"
   if [[ ${exitstatus} = 0 ]]; then
 
     log_section "IT Utils"
@@ -36,7 +46,7 @@ it_utils_menu() {
     if [[ ${chosen_it_util_options} == *"03"* ]]; then
     
       new_ssh_port=$(whiptail --title "CHANGE SSH PORT" --inputbox "Insert the new SSH port:" 10 60 3>&1 1>&2 2>&3)
-      exitstatus=$?
+      exitstatus="$?"
       if [ ${exitstatus} = 0 ]; then
         change_current_ssh_port "${new_ssh_port}"
       fi
@@ -45,7 +55,7 @@ it_utils_menu() {
     if [[ ${chosen_it_util_options} == *"04"* ]]; then
     
       new_server_hostname=$(whiptail --title "CHANGE SERVER HOSTNAME" --inputbox "Insert the new hostname:" 10 60 3>&1 1>&2 2>&3)
-      exitstatus=$?
+      exitstatus="$?"
       if [ ${exitstatus} = 0 ]; then
         change_server_hostname "${new_server_hostname}"
       fi
@@ -54,7 +64,7 @@ it_utils_menu() {
     if [[ ${chosen_it_util_options} == *"05"* ]]; then
     
       floating_IP=$(whiptail --title "ADD FLOATING IP" --inputbox "Insert the floating IP:" 10 60 3>&1 1>&2 2>&3)
-      exitstatus=$?
+      exitstatus="$?"
       if [ ${exitstatus} = 0 ]; then
         add_floating_IP "${floating_IP}"
       fi
@@ -63,7 +73,7 @@ it_utils_menu() {
     if [[ ${chosen_it_util_options} == *"06"* ]]; then
     
       db_root_psw=$(whiptail --title "MYSQL ROOT PASSWORD" --inputbox "Insert the new root password for MySQL:" 10 60 3>&1 1>&2 2>&3)
-      exitstatus=$?
+      exitstatus="$?"
       if [ ${exitstatus} = 0 ]; then
         # shellcheck source=${SFOLDER}/libs/mysql_helper.sh
         source "${SFOLDER}/libs/mysql_helper.sh" "${IP_TO_TEST}"
@@ -74,7 +84,7 @@ it_utils_menu() {
     if [[ ${chosen_it_util_options} == *"07"* ]]; then
     
       IP_TO_TEST=$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)
-      exitstatus=$?
+      exitstatus="$?"
       if [ ${exitstatus} = 0 ]; then
         # shellcheck source=${SFOLDER}/tools/third-party/blacklist-checker/bl.sh
         source "${SFOLDER}/tools/third-party/blacklist-checker/bl.sh" "${IP_TO_TEST}"
@@ -101,7 +111,7 @@ it_utils_menu() {
 
 }
 
-change_current_ssh_port() {
+function change_current_ssh_port() {
 
   #$1 = ${new_ssh_port}
 
@@ -136,7 +146,7 @@ change_current_ssh_port() {
 
 }
 
-change_server_hostname() {
+function change_server_hostname() {
 
   #$1 = ${new_hostname}
 
@@ -167,7 +177,7 @@ change_server_hostname() {
 
 }
 
-add_floating_IP() {
+function add_floating_IP() {
 
   #$1 = ${floating_IP}
 

@@ -12,7 +12,7 @@
 #################################################################################
 #
 
-optimize_images_complete() {
+function optimize_images_complete() {
 
     # TODO: extract this to an option
     img_compress='80'
@@ -35,7 +35,7 @@ optimize_images_complete() {
 
 }
 
-optimize_ram_usage() {
+function optimize_ram_usage() {
 
     # Restarting services
     log_event "info" "Restarting php-fpm service"
@@ -52,7 +52,7 @@ optimize_ram_usage() {
 
 }
 
-optimize_image_size() {
+function optimize_image_size() {
 
   # $1 = ${path}
   # $2 = ${file_extension}
@@ -97,7 +97,7 @@ optimize_image_size() {
 
 }
 
-optimize_images() {
+function optimize_images() {
 
   # $1 = ${path}
   # $2 = ${file_extension}
@@ -166,7 +166,7 @@ optimize_images() {
 
 }
 
-optimize_pdfs() {
+function optimize_pdfs() {
 
   # $1 = ${path}
   # $2 = ${file_extension}
@@ -203,7 +203,7 @@ optimize_pdfs() {
 
 #TODO: better date control
 
-check_last_optimization_date() {
+function check_last_optimization_date() {
 
   server_opt_info=~/.server_opt-info
   if [[ -e ${server_opt_info} ]]; then
@@ -219,7 +219,7 @@ check_last_optimization_date() {
 
 }
 
-update_last_optimization_date() {
+function update_last_optimization_date() {
 
   server_opt_info=~/.server_opt-info
 
@@ -227,7 +227,7 @@ update_last_optimization_date() {
 
 }
 
-delete_old_logs() {
+function delete_old_logs() {
 
   # Remove old log files from system
   log_event "info" "Deleting old system logs ..."
@@ -237,7 +237,7 @@ delete_old_logs() {
 
 }
 
-clean_swap() {
+function clean_swap() {
 
   # Cleanning Swap
   log_event "info" "Cleanning Swap"
@@ -247,7 +247,7 @@ clean_swap() {
 
 }
 
-clean_ram_cache() {
+function clean_ram_cache() {
 
   # Cleanning RAM
   log_event "info" "Cleanning RAM cache"

@@ -143,31 +143,6 @@ function php_purge_installation() {
 
 }
 
-function php_check_if_installed() {
-
-  local php_installed
-  local php
-
-  php="$(which php)"
-  if [ ! -x "${php}" ]; then
-    php_installed="false"
-
-  else
-    php_installed="true"
-
-  fi
-
-  # Return
-  echo "${php_installed}"
-
-}
-
-function php_check_installed_version() {
-  
-  php --version | awk '{ print $5 }' | awk -F\, '{ print $1 }'
-
-}
-
 ################################################################################
 
 declare -g PHP_V
@@ -185,15 +160,27 @@ if [[ ${php_is_installed} == "false" ]]; then
 
 else
 
-  php_installer_title="PHP CONFIGURATOR"
+  php_installer_title="PHP HELPER"
   php_installer_message="Choose an option to run:"
   php_installer_options=(
     "01)" "INSTALL PHP DEFAULT" 
     "02)" "INSTALL PHP CUSTOM" 
     "03)" "RECONFIGURE PHP" 
-    "04)" "OPTIMIZE PHP" 
-    "05)" "REMOVE PHP"
-    )
+    "04)" "ENABLE OPCACHE" 
+    "05)" "DISABLE OPCACHE" 
+    "06)" "OPTIMIZE PHP" 
+    "07)" "REMOVE PHP"
+  )
+
+fi
+
+# Setting PHP_V
+PHP_V=$(php_check_installed_version)
+
+# If array has more than 1 element (PHP versions installed)
+if [[ ${#PHP_V[@]} -gt 1 ]]; then
+
+  PHP_V=$(php_select_version_to_work_with "${PHP_V[@]}")
 
 fi
 
@@ -203,16 +190,6 @@ if [[ ${exitstatus} -eq 0 ]]; then
 
   if [[ ${chosen_php_installer_options} == *"01"* ]]; then
     
-    DISTRO_V=$(get_ubuntu_version)
-    if [ "${DISTRO_V}" -eq "1804" ]; then
-      PHP_V="7.2"  #Ubuntu 18.04 LTS Default
-    elif [ "${DISTRO_V}" -eq "2004" ]; then
-      PHP_V="7.4"  #Ubuntu 20.04 LTS Default
-    else
-      log_event "critical" "Non standard distro!" "true"
-      return 1
-    fi
-
     log_subsection "PHP Installer"
     
     # Installing packages
@@ -246,11 +223,23 @@ if [[ ${exitstatus} -eq 0 ]]; then
   fi
   if [[ ${chosen_php_installer_options} == *"04"* ]]; then
     
+    # ENABLE OPCACHE
+    php_opcode_config "enable"
+
+  fi
+  if [[ ${chosen_php_installer_options} == *"05"* ]]; then
+    
+    # DISABLE OPCACHE
+    php_opcode_config "disable"
+
+  fi
+  if [[ ${chosen_php_installer_options} == *"06"* ]]; then
+    
     # OPTIMIZE PHP
     "${SFOLDER}/utils/php_optimizations.sh"
 
   fi
-  if [[ ${chosen_php_installer_options} == *"05"* ]]; then
+  if [[ ${chosen_php_installer_options} == *"07"* ]]; then
     
     # REMOVE PHP
     php_purge_installation
