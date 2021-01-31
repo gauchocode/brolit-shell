@@ -25,11 +25,11 @@ function php_check_if_installed() {
 
 function php_check_installed_version() {
   
-  local -n php_fpm_installed_pkg
-  local -n php_installed_versions
+  local php_fpm_installed_pkg
+  local php_installed_versions
 
   # Installed versions
-  php_fpm_installed_pkg=($(sudo dpkg --list | grep -oh 'php[0-9]\.[0-9]\-fpm'))
+  php_fpm_installed_pkg="$(sudo dpkg --list | grep -oh 'php[0-9]\.[0-9]\-fpm')"
 
   # Grep -oh parameters explanation:
   #
@@ -43,13 +43,13 @@ function php_check_installed_version() {
   # In this case, output example: php7.2-fpm php7.3-fpm php7.4-fpm
 
   # Extract only version numbers
-  php_installed_versions=$(echo "${php_fpm_installed_pkg[@]}" | grep -Eo '[+-]?[0-9]+([.][0-9]+)?')
+  php_installed_versions=$(echo "${php_fpm_installed_pkg}" | grep -Eo '[+-]?[0-9]+([.][0-9]+)?')
   # Return example: 7.4 7.2 7.0
 
   #log_event "debug" "Setting php_installed_versions=${php_installed_versions}"
 
   # Return
-  echo "${php_installed_versions[@]}"
+  echo "${php_installed_versions}"
 
 }
 
