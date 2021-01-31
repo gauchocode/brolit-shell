@@ -180,11 +180,11 @@ php_installed_versions=$(php_check_installed_version)
 IFS=', ' read -a php_installed_versions <<< "$php_installed_versions"; # string to array
 
 # If array has more than 1 element (PHP versions installed)
-if [[ ${#php_installed_versions[@]} -gt 1 ]]; then
+#if [[ ${#php_installed_versions[@]} -gt 1 ]]; then
 
   PHP_V=$(php_select_version_to_work_with "${php_installed_versions[@]}")
 
-fi
+#fi
 
 if [[ ${PHP_V} != "" ]]; then
 
