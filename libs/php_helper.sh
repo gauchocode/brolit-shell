@@ -43,7 +43,8 @@ function php_check_installed_version() {
   # In this case, output example: php7.2-fpm php7.3-fpm php7.4-fpm
 
   # Extract only version numbers
-  php_installed_versions=$(echo "${php_fpm_installed_pkg}" | grep -Eo '[+-]?[0-9]+([.][0-9]+)?')
+  php_installed_versions=$(echo -n "${php_fpm_installed_pkg}" | grep -Eo '[+-]?[0-9]+([.][0-9]+)?' | tr '\n' ' ')
+  # The "tr '\n' ' '" part, will replace /n with space
   # Return example: 7.4 7.2 7.0
 
   log_event "debug" "Setting php_installed_versions=${php_installed_versions}"
