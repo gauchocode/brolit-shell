@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.10
+# Version: 3.0.11
 #############################################################################
 
 ### Main dir check
@@ -233,37 +233,54 @@ function test_mysql_database_drop() {
 
 }
 
-####################### Tests for commons.sh #######################
+###################### Tests for php_helper.sh #####################
 
-function test_common_funtions() {
+function test_php_helper_funtions() {
 
-    test_config_set_phpv
-    test_get_root_domain
-    test_extract_domain_extension
+    test_php_set_version_on_config
+    test_php_opcode_config
 
 }
 
-function test_config_set_phpv() {
+function test_php_set_version_on_config() {
 
     local current_phpv
 
-    log_subsection "Test: config_set_phpv"
+    log_subsection "Test: php_set_version_on_config"
 
     # test file
     cp "${SFOLDER}/config/nginx/sites-available/wordpress_single" "/etc/nginx/sites-available/domain.com.conf"
 
-    config_set_phpv "7.4" "/etc/nginx/sites-available/domain.com.conf"
+    php_set_version_on_config "7.4" "/etc/nginx/sites-available/domain.com.conf"
 
     current_phpv=$(nginx_server_get_current_phpv "/etc/nginx/sites-available/domain.com.conf")
     if [[ ${current_phpv} = "7.4" ]]; then 
-        display --indent 6 --text "- config_set_phpv result ${current_phpv}" --result "PASS" --color WHITE
+        display --indent 6 --text "- php_set_version_on_config result ${current_phpv}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- config_set_phpv" --result "FAIL" --color RED
+        display --indent 6 --text "- php_set_version_on_config" --result "FAIL" --color RED
         display --indent 6 --text "current_phpv: ${current_phpv}" --tcolor RED
     fi
 
     # Clean
     rm "/etc/nginx/sites-available/domain.com.conf"
+
+}
+
+function test_php_opcode_config() {
+
+    log_subsection "Test: php_opcode_config"
+
+    cp "/etc/php/7.4/fpm/php.ini" "${SFOLDER}/tmp/php.ini"
+    php_opcode_config "enable" "${SFOLDER}/tmp/php.ini"
+
+}
+
+####################### Tests for commons.sh #######################
+
+function test_common_funtions() {
+
+    test_get_root_domain
+    test_extract_domain_extension
 
 }
 
@@ -432,6 +449,8 @@ function test_extract_domain_extension() {
 function test_wordpress_helper_funtions() {
 
     local project_domain
+
+    log_subsection "Test: test_wordpress_helper_funtions"
 
     project_domain="test.domain.com"
 
@@ -623,13 +642,15 @@ log_section "Running Tests Suite"
 
 #test_display_functions
 
-test_common_funtions
+#test_common_funtions
 
-test_mysql_helper
+#test_mysql_helper
 
-test_cloudflare_funtions
+test_php_helper_funtions
 
-test_wordpress_helper_funtions
+#test_cloudflare_funtions
+
+#test_wordpress_helper_funtions
 
 ################################################################################
 # Uncomment to run specific function
