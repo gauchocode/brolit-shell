@@ -46,7 +46,7 @@ function php_check_installed_version() {
   php_installed_versions=$(echo "${php_fpm_installed_pkg[@]}" | grep -Eo '[+-]?[0-9]+([.][0-9]+)?')
   # Return example: 7.4 7.2 7.0
 
-  log_event "debug" "Setting php_installed_versions=${php_installed_versions}"
+  #log_event "debug" "Setting php_installed_versions=${php_installed_versions}"
 
   # Return
   echo "${php_installed_versions[@]}"
