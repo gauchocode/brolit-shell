@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.11
+# Version: 3.0.12
 ################################################################################
 
 # shellcheck source=${SFOLDER}/libs/wordpress_installer.sh

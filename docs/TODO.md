@@ -23,6 +23,7 @@
 
 - [ ] Nginx: Option to copy or generate a new nginx server configuration.
 - [ ] Nginx: Globals configs support.
+- [ ] PHP: Option to enable or disable OpCache.
 - [ ] WordPress: Install fails when set a project name like: xyz_sub_domain.
 - [ ] Backups: When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?).
 - [ ] Installers: On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages.
@@ -35,7 +36,6 @@
 ### In Progress
 
 - [ ] Core: Refactor of script_configuration_wizard.
-- [ ] PHP: Option to enable or disable OpCache.
 - [ ] Nginx: Better nginx config: https://www.digitalocean.com/community/tools/nginx
 - [ ] Nginx: At startup, check if nginx has globals installed.
 - [ ] Project Utils: Add delete database and create database option.
@@ -48,6 +48,7 @@
 - [x] Scheduled options: Add option to run on specific time.
 - [x] Log/Display: Better log handling and display improvements.
 - [x] It Utils: Alias support for BASH.
+- [x] Installers: Support for multiple PHP version installation.
 
 ## For release 3.2
 
@@ -109,8 +110,6 @@
         Important: if create a project with stage different than prod, block search engine indexation
 - [ ] Installers: COPY_FROM_PROJECT option to exclude uploads directory
         rsync -ax --exclude [relative path to directory to exclude] /path/from /path/to
-- [ ] Installers: On php_installer if multiple php versions are installed de PHP_V need to be an array.
-        So, if you need to install a new site, must ask what php_v to use.
 - [ ] Core: Add a method to auto-load scripts from /utils.
 
 ## For release 3.5
