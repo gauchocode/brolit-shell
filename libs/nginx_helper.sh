@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.10
+# Version: 3.0.11
 ################################################################################
 
 function nginx_server_create() {
@@ -111,7 +111,7 @@ function nginx_server_create() {
     esac
 
     # Set/Change PHP version if needed
-    config_set_phpv "" "${nginx_server_file}"
+    php_set_version_on_config "" "${nginx_server_file}"
    
     #Test the validity of the nginx configuration
     nginx_configuration_test
@@ -375,7 +375,7 @@ function nginx_create_globals_config() {
     display --indent 6 --text "- Creating nginx globals config" --result "DONE" --color GREEN
 
     # Replace string to match PHP version
-    config_set_phpv "${PHP_V}" "/etc/nginx/globals/wordpress_sec.conf"
+    php_set_version_on_config "${PHP_V}" "/etc/nginx/globals/wordpress_sec.conf"
     display --indent 6 --text "- Configuring globals for phpfpm-${PHP_V}" --result "DONE" --color GREEN
 
     # Change ownership

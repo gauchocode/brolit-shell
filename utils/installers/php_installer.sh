@@ -1,27 +1,35 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.10
+# Version: 3.0.11
 ################################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
+# shellcheck source=${SFOLDER}/libs/php_helper.sh
+source "${SFOLDER}/libs/php_helper.sh"
 
 ################################################################################
 
-php_installer() {
+function php_installer() {
 
   local php_v=$1
 
-  log_event "info" "Installing PHP-${php_v} and other libraries ..." "false"
+  # Log
+  display --indent 6 --text "- Installing PHP-${php_v} and libraries"
+  log_event "info" "Installing PHP-${php_v} and libraries ..."
 
+  # apt command
   apt-get --yes install "php${php_v}-fpm" "php${php_v}-mysql" "php-imagick" "php${php_v}-xml" "php${php_v}-cli" "php${php_v}-curl" "php${php_v}-mbstring" "php${php_v}-gd" "php${php_v}-intl" "php${php_v}-zip" "php${php_v}-bz2" "php${php_v}-bcmath" "php${php_v}-soap" "php${php_v}-dev" "php-pear" -qq > /dev/null
 
-  log_event "info" "PHP-${php_v} installed!" "false"
+  # Log
+  clear_last_line
+  display --indent 6 --text "- Installing PHP-${php_v} and libraries" --result "DONE" --color GREEN
+  log_event "info" "PHP-${php_v} installed"
 
 }
 
-php_custom_installer() {
+function php_custom_installer() {
   
   add_ppa "ondrej/php"
   
@@ -31,7 +39,7 @@ php_custom_installer() {
 
 }
 
-php_select_version_to_install() {
+function php_select_version_to_install() {
 
   local phpv_to_install 
   local chosen_phpv
@@ -59,26 +67,34 @@ php_select_version_to_install() {
 
 }
 
-php_redis_installer() {
+function php_redis_installer() {
 
-  display --indent 2 --text "- Installing redis server"
+  # Log
+  display --indent 6 --text "- Installing redis server"
+  log_event "info" "Installing redis server ..."
 
+  # apt command
   apt-get --yes install redis-server php-redis -qq > /dev/null
   systemctl enable redis-server.service
 
+  # Creating config file
   cp "${SFOLDER}/config/redis/redis.conf" "/etc/redis/redis.conf"
 
+  # Service restart
   service redis-server restart
 
+  # Log
   clear_last_line
-  display --indent 2 --text "- Installing redis server" --result "DONE" --color GREEN
+  display --indent 6 --text "- Installing redis server" --result "DONE" --color GREEN
+  log_event "info" "redis server installed"
 
 }
 
-mail_utils_installer() {
+function mail_utils_installer() {
 
-  log_event "info" "Installing mail mail_mime and net_smtp ..." "false"
+  # Log
   display --indent 2 --text "- Installing mail smtp"
+  log_event "info" "Installing mail mail_mime and net_smtp ..."
 
   # Creating tmp directory
   # Ref: https://stackoverflow.com/questions/59720692/php-7-4-1-pecl-is-not-working-trying-to-access-array-offset-on-value-of-type
@@ -88,39 +104,46 @@ mail_utils_installer() {
 
   pear -q install mail mail_mime net_smtp
 
-  log_event "info" "mail mail_mime and net_smtp installed" "false"
+  # Log
   clear_last_line
   display --indent 2 --text "- Installing mail smtp" --result "DONE" --color GREEN
+  log_event "info" "mail mail_mime and net_smtp installed"
 
 }
 
-php_purge_all_installations() {
+function php_purge_all_installations() {
 
-  log_event "info" "Removing all PHP versions and libraries ..." "false"
+  # Log
   display --indent 2 --text "- Purging PHP and libraries"
+  log_event "info" "Removing all PHP versions and libraries ..."
 
+  # apt command
   apt-get --yes purge php* -qq > /dev/null
 
-  log_event "info" "PHP purged!" "false"
+  # Log
   clear_last_line
   display --indent 2 --text "- Purging PHP and libraries" --result "DONE" --color GREEN
+  log_event "info" "PHP purged!"
 
 }
 
-php_purge_installation() {
+function php_purge_installation() {
 
-  log_event "info" "Removing PHP-${PHP_V} and libraries ..." "false"
+  # Log
   display --indent 2 --text "- Removing PHP-${PHP_V} and libraries"
+  log_event "info" "Removing PHP-${PHP_V} and libraries ..."
 
+  # apt command
   apt-get --yes purge "php${PHP_V}-fpm" "php${PHP_V}-mysql" php-xml "php${PHP_V}-xml" "php${PHP_V}-cli" "php${PHP_V}-curl" "php${PHP_V}-mbstring" "php${PHP_V}-gd" php-imagick "php${PHP_V}-intl" "php${PHP_V}-zip" "php${PHP_V}-bz2" php-bcmath "php${PHP_V}-soap" "php${PHP_V}-dev" php-pear -qq > /dev/null
 
-  log_event "info" "PHP-${PHP_V} deleted!" "false"
+  # Log
   clear_last_line
   display --indent 2 --text "- Removing PHP-${PHP_V} and libraries" --result "DONE" --color GREEN
+  log_event "info" "PHP-${PHP_V} deleted!"
 
 }
 
-php_check_if_installed() {
+function php_check_if_installed() {
 
   local php_installed
   local php
@@ -139,35 +162,9 @@ php_check_if_installed() {
 
 }
 
-php_check_installed_version() {
+function php_check_installed_version() {
   
   php --version | awk '{ print $5 }' | awk -F\, '{ print $1 }'
-
-}
-
-php_reconfigure() {
-
-  log_subsection "PHP Reconfigure"
-  
-  log_event "info" "Moving php.ini configuration file ..."
-  cat "${SFOLDER}/config/php/php.ini" >"/etc/php/${PHP_V}/fpm/php.ini"
-  display --indent 2 --text "- Moving php.ini configuration file" --result "DONE" --color GREEN
-
-  log_event "info" "Moving php-fpm.conf configuration file ..."
-  cat "${SFOLDER}/config/php/php-fpm.conf" >"/etc/php/${PHP_V}/fpm/php-fpm.conf"
-  display --indent 2 --text "- Moving php-fpm.conf configuration file" --result "DONE" --color GREEN
-
-  # Replace string to match PHP version
-  log_event "info" "Replacing string to match PHP version"
-  config_set_phpv "${PHP_V}" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
-  display --indent 2 --text "- Replacing string to match PHP version" --result "DONE" --color GREEN
-
-  # Unccoment /status from fpm configuration
-  log_event "info" "Uncommenting /status from fpm configuration ..."
-  sed -i '/status_path/s/^;//g' "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
-
-  service php"${PHP_V}"-fpm reload
-  display --indent 2 --text "- Reloading php${PHP_V}-fpm" --result "DONE" --color GREEN
 
 }
 
@@ -178,13 +175,26 @@ declare -g PHP_V
 php_is_installed=$(php_check_if_installed)
 
 if [[ ${php_is_installed} == "false" ]]; then
+
   php_installer_title="PHP INSTALLER"
   php_installer_message="Choose a PHP version to install:"
-  php_installer_options=("01)" "INSTALL PHP DEFAULT" "02)" "INSTALL PHP CUSTOM")
+  php_installer_options=(
+    "01)" "INSTALL PHP DEFAULT" 
+    "02)" "INSTALL PHP CUSTOM"
+  )
+
 else
+
   php_installer_title="PHP CONFIGURATOR"
   php_installer_message="Choose an option to run:"
-  php_installer_options=("01)" "INSTALL PHP DEFAULT" "02)" "INSTALL PHP CUSTOM" "03)" "RECONFIGURE PHP" "04)" "OPTIMIZE PHP" "05)" "REMOVE PHP")
+  php_installer_options=(
+    "01)" "INSTALL PHP DEFAULT" 
+    "02)" "INSTALL PHP CUSTOM" 
+    "03)" "RECONFIGURE PHP" 
+    "04)" "OPTIMIZE PHP" 
+    "05)" "REMOVE PHP"
+    )
+
 fi
 
 chosen_php_installer_options=$(whiptail --title "${php_installer_title}" --menu "${php_installer_message}" 20 78 10 "${php_installer_options[@]}" 3>&1 1>&2 2>&3)
