@@ -8,8 +8,6 @@
 source "${SFOLDER}/libs/commons.sh"
 # shellcheck source=${SFOLDER}/libs/packages_helper.sh
 source "${SFOLDER}/libs/packages_helper.sh"
-# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
-source "${SFOLDER}/libs/mail_notification_helper.sh"
 # shellcheck source=${SFOLDER}/libs/optimizations_helper.sh
 source "${SFOLDER}/libs/optimizations_helper.sh"
 
@@ -17,9 +15,15 @@ source "${SFOLDER}/libs/optimizations_helper.sh"
 
 # TODO: add an option to run image_optimization with cron
 
-server_optimizations_options=("01)" "IMAGE OPTIMIZATION" "02)" "PDF OPTIMIZATION" "03)" "DELETE OLD LOGS" "04)" "REMOVE OLD PACKAGES" "05)" "REDUCE RAM USAGE")
+server_optimizations_options=(
+  "01)" "IMAGE OPTIMIZATION" 
+  "02)" "PDF OPTIMIZATION" 
+  "03)" "DELETE OLD LOGS" 
+  "04)" "REMOVE OLD PACKAGES" 
+  "05)" "REDUCE RAM USAGE"
+)
 chosen_server_optimizations_options=$(whiptail --title "SERVER OPTIMIZATIONS" --menu "\n" 20 78 10 "${server_optimizations_options[@]}" 3>&1 1>&2 2>&3)
-exitstatus=$?
+exitstatus="$?"
 if [[ ${exitstatus} -eq 0 ]]; then
 
   if [[ ${chosen_server_optimizations_options} == *"01"* ]]; then
