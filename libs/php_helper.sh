@@ -29,7 +29,7 @@ function php_check_installed_version() {
   local -n php_installed_versions
 
   # Installed versions
-  php_fpm_installed_pkg=$(sudo dpkg --list | grep -oh 'php[0-9]\.[0-9]\-fpm')
+  php_fpm_installed_pkg=($(sudo dpkg --list | grep -oh 'php[0-9]\.[0-9]\-fpm'))
 
   # Grep -oh parameters explanation:
   #
@@ -43,13 +43,13 @@ function php_check_installed_version() {
   # In this case, output example: php7.2-fpm php7.3-fpm php7.4-fpm
 
   # Extract only version numbers
-  php_installed_versions=$(echo "${php_fpm_installed_pkg}" | grep -Eo '[+-]?[0-9]+([.][0-9]+)?')
+  php_installed_versions=$(echo "${php_fpm_installed_pkg[@]}" | grep -Eo '[+-]?[0-9]+([.][0-9]+)?')
   # Return example: 7.4 7.2 7.0
 
   log_event "debug" "Setting php_installed_versions=${php_installed_versions}"
 
   # Return
-  echo "${php_installed_versions}"
+  echo "${php_installed_versions[@]}"
 
 }
 
@@ -252,7 +252,6 @@ function php_fpm_optimizations() {
   display --indent 4 --text "REDIS_AVG_RAM: ${REDIS_AVG_RAM}"
   display --indent 4 --text "NETDATA_AVG_RAM: ${NETDATA_AVG_RAM}"
 
-  log_event "" "##### SERVER INFO"
   log_event "info" "PHP_V: ${PHP_V}"
   log_event "info" "RAM_BUFFER: ${RAM_BUFFER}"
   log_event "info" "CPUS: ${CPUS}"
@@ -293,7 +292,6 @@ function php_fpm_optimizations() {
   display --indent 4 --text "PM_MAX_REQUESTS_ORIGIN: ${PM_MAX_REQUESTS_ORIGIN}"
   display --indent 4 --text "PM_PROCESS_IDDLE_TIMEOUT_ORIGIN: ${PM_PROCESS_IDDLE_TIMEOUT_ORIGIN}"
 
-  log_event "" "##### PHP-FPM ACTUAL CONFIG"
   log_event "info" "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN_ORIGIN}"
   log_event "info" "PM_START_SERVERS: ${PM_START_SERVERS_ORIGIN}"
   log_event "info" "PM_MIN_SPARE_SERVERS: ${PM_MIN_SPARE_SERVERS_ORIGIN}"
@@ -327,7 +325,6 @@ function php_fpm_optimizations() {
   display --indent 4 --text "PM_MAX_REQUESTS: ${PM_MAX_REQUESTS}"
   display --indent 4 --text "PM_PROCESS_IDDLE_TIMEOUT: ${PM_PROCESS_IDDLE_TIMEOUT}"
 
-  log_event "" "##### PHP-FPM OPTIMAL CONFIG"
   log_event "info" "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN}"
   log_event "info" "PM_START_SERVERS: ${PM_START_SERVERS}"
   log_event "info" "PM_MIN_SPARE_SERVERS: ${PM_MIN_SPARE_SERVERS}"
