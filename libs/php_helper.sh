@@ -26,7 +26,7 @@ function php_reconfigure() {
   sed -i '/status_path/s/^;//g' "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
 
   service php"${PHP_V}"-fpm reload
-  display --indent 6 --text "- Reloading php${PHP_V}-fpm" --result "DONE" --color GREEN
+  display --indent 6 --text "- Reloading php${PHP_V}-fpm service" --result "DONE" --color GREEN
 
 }
 
@@ -112,12 +112,12 @@ function php_opcode_config() {
     opcode_maf="200"
     sed -i "s/^\(opcache\.max_accelerated_files\s*=\s*\).*\$/\1$opcode_maf/" "${config_file}"
 
-    # Uncomment "opcache.opcache_revalidate_freq" from fpm configuration
-    log_event "debug" "Uncommenting opcache.opcache_revalidate_freq from fpm configuration ..."
-    sed -i '/opcache.opcache_revalidate_freq/s/^;//g' "${config_file}"
-    # Setting opcache.opcache_revalidate_freq=240
+    # Uncomment "opcache.revalidate_freq" from fpm configuration
+    log_event "debug" "Uncommenting opcache.revalidate_freq from fpm configuration ..."
+    sed -i '/opcache.revalidate_freq/s/^;//g' "${config_file}"
+    # Setting opcache.revalidate_freq=240
     opcode_rf="240"
-    sed -i "s/^\(opcache\.opcache_revalidate_freq\s*=\s*\).*\$/\1$opcode_rf/" "${config_file}"
+    sed -i "s/^\(opcache\.revalidate_freq\s*=\s*\).*\$/\1$opcode_rf/" "${config_file}"
 
     # Uncomment "opcache.error_log" from fpm configuration
     log_event "debug" "Uncommenting opcache.error_log from fpm configuration ..."
@@ -141,7 +141,7 @@ function php_opcode_config() {
   fi
 
   service php"${PHP_V}"-fpm reload
-  display --indent 6 --text "- Reloading php${PHP_V}-fpm" --result "DONE" --color GREEN
+  display --indent 6 --text "- Reloading php${PHP_V}-fpm service" --result "DONE" --color GREEN
 
 }
 
