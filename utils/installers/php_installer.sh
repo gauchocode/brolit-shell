@@ -175,74 +175,80 @@ else
 fi
 
 # Setting PHP_V
-PHP_V=$(php_check_installed_version)
+php_installed_versions=$(php_check_installed_version)
+
+IFS=', ' read -a php_installed_versions <<< "$php_installed_versions"; # string to array
 
 # If array has more than 1 element (PHP versions installed)
-if [[ ${#PHP_V[@]} -gt 1 ]]; then
+if [[ ${#php_installed_versions[@]} -gt 1 ]]; then
 
-  PHP_V=$(php_select_version_to_work_with "${PHP_V[@]}")
+  PHP_V=$(php_select_version_to_work_with "${php_installed_versions[@]}")
 
 fi
 
-chosen_php_installer_options=$(whiptail --title "${php_installer_title}" --menu "${php_installer_message}" 20 78 10 "${php_installer_options[@]}" 3>&1 1>&2 2>&3)
-exitstatus="$?"
-if [[ ${exitstatus} -eq 0 ]]; then
+if [[ ${PHP_V} != "" ]]; then
 
-  if [[ ${chosen_php_installer_options} == *"01"* ]]; then
-    
-    log_subsection "PHP Installer"
-    
-    # Installing packages
-    php_installer "${PHP_V}"
-    mail_utils_installer
-    php_redis_installer
+  chosen_php_installer_options=$(whiptail --title "${php_installer_title}" --menu "${php_installer_message}" 20 78 10 "${php_installer_options[@]}" 3>&1 1>&2 2>&3)
+  exitstatus="$?"
+  if [[ ${exitstatus} -eq 0 ]]; then
 
-  fi
-  if [[ ${chosen_php_installer_options} == *"02"* ]]; then
+    if [[ ${chosen_php_installer_options} == *"01"* ]]; then
+      
+      log_subsection "PHP Installer"
+      
+      # Installing packages
+      php_installer "${PHP_V}"
+      mail_utils_installer
+      php_redis_installer
 
-    log_subsection "PHP Installer"
+    fi
+    if [[ ${chosen_php_installer_options} == *"02"* ]]; then
 
-    # INSTALL PHP CUSTOM
-    php_custom_installer
-    mail_utils_installer
-    #php_redis_installer
+      log_subsection "PHP Installer"
 
-    # TODO: if you install a new PHP version, maybe you want to reconfigure an specific nginx_server
-    # nginx_reconfigure_sites()
-    # fastcgi_pass unix:/var/run/php/php5.6-fpm.sock;
-    # fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
+      # INSTALL PHP CUSTOM
+      php_custom_installer
+      mail_utils_installer
+      #php_redis_installer
 
-  fi
+      # TODO: if you install a new PHP version, maybe you want to reconfigure an specific nginx_server
+      # nginx_reconfigure_sites()
+      # fastcgi_pass unix:/var/run/php/php5.6-fpm.sock;
+      # fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
 
-  # Will only show if php is installed
-  if [[ ${chosen_php_installer_options} == *"03"* ]]; then
-    
-    # RECONFIGURE PHP
-    php_reconfigure
+    fi
 
-  fi
-  if [[ ${chosen_php_installer_options} == *"04"* ]]; then
-    
-    # ENABLE OPCACHE
-    php_opcode_config "enable"
+    # Will only show if php is installed
+    if [[ ${chosen_php_installer_options} == *"03"* ]]; then
+      
+      # RECONFIGURE PHP
+      php_reconfigure
 
-  fi
-  if [[ ${chosen_php_installer_options} == *"05"* ]]; then
-    
-    # DISABLE OPCACHE
-    php_opcode_config "disable"
+    fi
+    if [[ ${chosen_php_installer_options} == *"04"* ]]; then
+      
+      # ENABLE OPCACHE
+      php_opcode_config "enable"
 
-  fi
-  if [[ ${chosen_php_installer_options} == *"06"* ]]; then
-    
-    # OPTIMIZE PHP
-    "${SFOLDER}/utils/php_optimizations.sh"
+    fi
+    if [[ ${chosen_php_installer_options} == *"05"* ]]; then
+      
+      # DISABLE OPCACHE
+      php_opcode_config "disable"
 
-  fi
-  if [[ ${chosen_php_installer_options} == *"07"* ]]; then
-    
-    # REMOVE PHP
-    php_purge_installation
+    fi
+    if [[ ${chosen_php_installer_options} == *"06"* ]]; then
+      
+      # OPTIMIZE PHP
+      "${SFOLDER}/utils/php_optimizations.sh"
+
+    fi
+    if [[ ${chosen_php_installer_options} == *"07"* ]]; then
+      
+      # REMOVE PHP
+      php_purge_installation
+
+    fi
 
   fi
 
