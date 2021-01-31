@@ -270,8 +270,11 @@ function test_php_opcode_config() {
 
     log_subsection "Test: php_opcode_config"
 
-    cp "/etc/php/7.4/fpm/php.ini" "${SFOLDER}/tmp/php.ini"
-    php_opcode_config "enable" "${SFOLDER}/tmp/php.ini"
+    cp "/etc/php/7.4/fpm/php.ini" "${SFOLDER}/tmp/php_op1.ini"
+    php_opcode_config "enable" "${SFOLDER}/tmp/php_op1.ini"
+
+    p "/etc/php/7.4/fpm/php.ini" "${SFOLDER}/tmp/php_op2.ini"
+    php_opcode_config "disable" "${SFOLDER}/tmp/php_op2.ini"
 
 }
 
