@@ -71,6 +71,8 @@ function php_opcode_config() {
   local status=$1
   local config_file=$2
 
+  local val
+
   if [[ -z ${config_file} || ${config_file} == "" ]] ; then
   
     config_file="/etc/php/${PHP_V}/fpm/php.ini"
@@ -78,6 +80,8 @@ function php_opcode_config() {
   fi
 
   if [[ $status == "enable" ]] ; then
+
+    val=1
 
     # Settings needed:
     #   opcache.enable=1
@@ -92,21 +96,34 @@ function php_opcode_config() {
     sed -i '/opcache.enable/s/^;//g' "${config_file}"
 
     log_event "info" "Setting opcache.enable=1 from fpm configuration ..."
-    sed -i "s#opcache.enable#1#" "${config_file}"
+    #sed -i "s#opcache.enable#1#" "${config_file}"
+    sed -i "s/^\(opcache\.enable\s*=\s*\).*\$/\1$val/" "${config_file}"
 
     # Append config
-    echo "opcache.memory_consumption=128"                       >> "${config_file}"
-    echo "opcache.max_accelerated_files=200"                    >> "${config_file}"
-    echo "opcache_revalidate_freq=240"                          >> "${config_file}"
-    echo "opcache.error_log=/var/log/nginx/opcache_error.log"   >> "${config_file}"
+    awk '
+    { print }
+    /opcache.enable=1/ {
+        print "opcache.memory_consumption=128"
+        print "opcache.max_accelerated_files=200"
+        print "opcache_revalidate_freq=240"
+        print "opcache.error_log=/var/log/nginx/opcache_error.log"
+    }
+    ' "${config_file}"
+    #echo "opcache.memory_consumption=128"                       >> "${config_file}"
+    #echo "opcache.max_accelerated_files=200"                    >> "${config_file}"
+    #echo "opcache_revalidate_freq=240"                          >> "${config_file}"
+    #echo "opcache.error_log=/var/log/nginx/opcache_error.log"   >> "${config_file}"
     #echo "opcache.file_cache=/var/www/html/.opcache"           >> "${config_file}"
 
     display --indent 6 --text "- Enabling Opcode" --result "DONE" --color GREEN
 
   else
 
+    val=0
+
     log_event "info" "Setting opcache.enable=0 from fpm configuration ..."
-    sed -i "s#opcache.enable#0#" "${config_file}"
+    #sed -i "s#opcache.enable#0#" "${config_file}"
+    sed -i "s/^\(opcache\.enable\s*=\s*\).*\$/\1$val/" "${config_file}"
 
     display --indent 6 --text "- Disabling Opcode" --result "DONE" --color GREEN
 
