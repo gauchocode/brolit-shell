@@ -94,26 +94,37 @@ function php_opcode_config() {
     # Uncomment "opcache.enable" from fpm configuration
     log_event "debug" "Uncommenting opcache.enable from fpm configuration ..."
     sed -i '/opcache.enable/s/^;//g' "${config_file}"
-
+    # Setting opcache.enable=1
     log_event "info" "Setting opcache.enable=1 from fpm configuration ..."
-    #sed -i "s#opcache.enable#1#" "${config_file}"
     sed -i "s/^\(opcache\.enable\s*=\s*\).*\$/\1$val/" "${config_file}"
 
-    # Append config
-    awk '
-    { print }
-    /opcache.enable=1/ {
-        print "opcache.memory_consumption=128"
-        print "opcache.max_accelerated_files=200"
-        print "opcache_revalidate_freq=240"
-        print "opcache.error_log=/var/log/nginx/opcache_error.log"
-    }
-    ' "${config_file}"
-    #echo "opcache.memory_consumption=128"                       >> "${config_file}"
-    #echo "opcache.max_accelerated_files=200"                    >> "${config_file}"
-    #echo "opcache_revalidate_freq=240"                          >> "${config_file}"
-    #echo "opcache.error_log=/var/log/nginx/opcache_error.log"   >> "${config_file}"
-    #echo "opcache.file_cache=/var/www/html/.opcache"           >> "${config_file}"
+    # Uncomment "opcache.memory_consumption" from fpm configuration
+    log_event "debug" "Uncommenting opcache.memory_consumption from fpm configuration ..."
+    sed -i '/opcache.memory_consumption/s/^;//g' "${config_file}"
+    # Setting memory_consumption.enable=128
+    opcode_mem="128"
+    sed -i "s/^\(opcache\.memory_consumption\s*=\s*\).*\$/\1$opcode_mem/" "${config_file}"
+
+    # Uncomment "opcache.max_accelerated_files" from fpm configuration
+    log_event "debug" "Uncommenting opcache.max_accelerated_files from fpm configuration ..."
+    sed -i '/opcache.max_accelerated_files/s/^;//g' "${config_file}"
+    # Setting opcache.max_accelerated_files=200
+    opcode_maf="200"
+    sed -i "s/^\(opcache\.max_accelerated_files\s*=\s*\).*\$/\1$opcode_maf/" "${config_file}"
+
+    # Uncomment "opcache.opcache_revalidate_freq" from fpm configuration
+    log_event "debug" "Uncommenting opcache.opcache_revalidate_freq from fpm configuration ..."
+    sed -i '/opcache.opcache_revalidate_freq/s/^;//g' "${config_file}"
+    # Setting opcache.opcache_revalidate_freq=240
+    opcode_rf="240"
+    sed -i "s/^\(opcache\.opcache_revalidate_freq\s*=\s*\).*\$/\1$opcode_rf/" "${config_file}"
+
+    # Uncomment "opcache.error_log" from fpm configuration
+    log_event "debug" "Uncommenting opcache.error_log from fpm configuration ..."
+    sed -i '/opcache.error_log/s/^;//g' "${config_file}"
+    # Setting opcache.error_log
+    opcode_log="/var/log/nginx/opcache_error.log"
+    sed -i "s/^\(opcache\.error_log\s*=\s*\).*\$/\1$opcode_log/" "${config_file}"
 
     display --indent 6 --text "- Enabling Opcode" --result "DONE" --color GREEN
 
@@ -122,7 +133,7 @@ function php_opcode_config() {
     val=0
 
     log_event "info" "Setting opcache.enable=0 from fpm configuration ..."
-    #sed -i "s#opcache.enable#0#" "${config_file}"
+
     sed -i "s/^\(opcache\.enable\s*=\s*\).*\$/\1$val/" "${config_file}"
 
     display --indent 6 --text "- Disabling Opcode" --result "DONE" --color GREEN
