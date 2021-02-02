@@ -43,7 +43,7 @@ function mail_subject_status() {
             status="⚠ WARNING"
 
         else
-            status="✅ OK"
+            status="🟢"
 
         fi
     fi
@@ -432,13 +432,13 @@ function mail_filesbackup_section() {
 
 }
 
-function mail_configbackup_section() {
+function mail_config_backup_section() {
 
     # $1 = ${ERROR}
     # $2 = ${ERROR_TYPE}
 
     # Global array ${BACKUPED_SCF_LIST[@]}
-    # Global array ${BK_FL_SIZES}
+    # Global array ${BK_SCF_SIZES}
 
     local ERROR=$1
     local ERROR_TYPE=$2
@@ -491,7 +491,7 @@ function mail_configbackup_section() {
 
         for backup_line in "${BACKUPED_SCF_LIST[@]}"; do
                      
-            bk_scf_size="${BK_FL_SIZES[$count]}"
+            bk_scf_size="${BK_SCF_SIZES[$count]}"
 
             files_inc_line_p1="<div class=\"backup-details-line\">"
             files_inc_line_p2="<span style=\"margin-right:5px;\">${backup_line}</span>"
