@@ -40,7 +40,12 @@ function menu_backup_options() {
   local backup_options 
   local chosen_backup_type
 
-  backup_options=("01)" "BACKUP DATABASES" "02)" "BACKUP FILES" "03)" "BACKUP ALL" "04)" "BACKUP PROJECT")
+  backup_options=(
+    "01)" "BACKUP DATABASES" 
+    "02)" "BACKUP FILES" 
+    "03)" "BACKUP ALL" 
+    "04)" "BACKUP PROJECT"
+  )
   chosen_backup_type=$(whiptail --title "SELECT BACKUP TYPE" --menu " " 20 78 10 "${backup_options[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -443,11 +448,11 @@ function make_all_server_config_backup() {
   fi
 
   # Configure Files Backup Section for Email Notification
-  mail_configbackup_section "${ERROR}" "${ERROR_TYPE}"
+  mail_config_backup_section "${ERROR}" "${ERROR_TYPE}"
 
 }
 
-function make_all_files_backup() {
+function make_sites_files_backup() {
 
   log_subsection "Backup Sites Files"
 

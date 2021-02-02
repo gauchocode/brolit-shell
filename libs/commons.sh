@@ -436,7 +436,7 @@ function log_break() {
 
   local log_break
   
-  log_break="    -------------------------------------------------------------------"
+  log_break=" > -------------------------------------------------"
   
   echo "${log_break}" >> "${LOG}"
   if [ "${console_display}" = "true" ]; then
@@ -1982,16 +1982,17 @@ function subtasks_backup_handler() {
     all)
 
       log_event "debug" "Running: complete backup"
+      #make_databases_backup
       make_all_server_config_backup
-      make_all_files_backup
+      make_sites_files_backup
 
       exit
     ;;
 
     files)
 
-      log_event "debug" "Running: make_all_files_backup"
-      make_all_files_backup
+      log_event "debug" "Running: make_sites_files_backup"
+      make_sites_files_backup
 
       exit
     ;;
@@ -2006,8 +2007,8 @@ function subtasks_backup_handler() {
 
     databases)
 
-      #log_event "debug" "Running: make_all_files_backup"
-      #make_all_files_backup
+      #log_event "debug" "Running: make_sites_files_backup"
+      #make_sites_files_backup
 
       exit
     ;;
