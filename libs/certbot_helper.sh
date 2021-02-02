@@ -170,7 +170,7 @@ function certbot_helper_installer_menu() {
       cb_warning_text+="2- Go to de 'DNS' option panel and Turn ON the proxy Cloudflare setting over the domain/s \n"
       cb_warning_text+="3- Go to 'SSL/TLS' option panel and change the SSL setting from 'Flexible' to 'Full'. \n"
 
-      whiptail_event "CERTBOT MANAGER" "${cb_warning_text}"
+      whiptail_message "CERTBOT MANAGER" "${cb_warning_text}"
       #root_domain=$(ask_rootdomain_for_cloudflare_config "${domains}")
       # TODO: list entries to add proxy on cloudflare records
       #cloudflare_change_a_record "${root_domain}" "" "true"
