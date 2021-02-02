@@ -230,7 +230,7 @@ function script_init() {
   # Dropbox Uploader Directory
   DPU_F="${SFOLDER}/tools/third-party/dropbox-uploader"
 
-  # Dropbox Uploader config file
+  # Dropbox-uploader config file
   DPU_CONFIG_FILE=~/.dropbox_uploader
   if [[ -e ${DPU_CONFIG_FILE} ]]; then
     # shellcheck source=${DPU_CONFIG_FILE}
@@ -241,21 +241,25 @@ function script_init() {
   DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
 
   # Cloudflare config file
-  CLF_CONFIG_FILE=~/.cloudflare.conf
-  if [[ -e ${CLF_CONFIG_FILE} ]]; then
-    # shellcheck source=${CLF_CONFIG_FILE}
-    source "${CLF_CONFIG_FILE}"
-  else
-    generate_cloudflare_config
+  if [[ "${CLOUDFLARE_ENABLE}" == "true" ]]; then
+    CLF_CONFIG_FILE=~/.cloudflare.conf
+    if [[ -e ${CLF_CONFIG_FILE} ]]; then
+      # shellcheck source=${CLF_CONFIG_FILE}
+      source "${CLF_CONFIG_FILE}"
+    else
+      generate_cloudflare_config
+    fi
   fi
 
   # Telegram config file
-  TEL_CONFIG_FILE=~/.telegram.conf
-  if [[ -e ${TEL_CONFIG_FILE} ]]; then
-    # shellcheck source=${CLF_CONFIG_FILE}
-    source "${TEL_CONFIG_FILE}"
-  else
-    generate_telegram_config
+  if [[ "${TELEGRAM_NOTIF}" == "true" ]]; then
+    TEL_CONFIG_FILE=~/.telegram.conf
+    if [[ -e ${TEL_CONFIG_FILE} ]]; then
+      # shellcheck source=${CLF_CONFIG_FILE}
+      source "${TEL_CONFIG_FILE}"
+    else
+      generate_telegram_config
+    fi
   fi
 
   # Checking distro

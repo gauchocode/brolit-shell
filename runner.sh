@@ -27,21 +27,13 @@ if [ -t 1 ]; then
 
   check_root
 
-  if [[ -z "${MPASS}"           ||
-        -z "${SITES}"           || 
-        -z "${SMTP_U}"          || 
-        -z "${SMTP_P}"          || 
-        -z "${SMTP_TLS}"        || 
-        -z "${SMTP_PORT}"       || 
-        -z "${SMTP_SERVER}"     || 
-        -z "${SMTP_P}"          || 
-        -z "${MAILA}"           ||
-        -z "${DUP_BK}"          || 
-        -z "${DUP_ROOT}"        || 
-        -z "${DUP_SRC_BK}"      || 
-        -z "${DUP_FOLDERS}"     || 
-        -z "${DUP_BK_FULL_FREQ}"|| 
-        -z "${DUP_BK_FULL_LIFE}"|| 
+  if [[ -z "${MPASS}"              ||
+        -z "${SITES}"              || 
+        -z "${MAIL_NOTIF}"         ||
+        -z "${TELEGRAM_NOTIF}"     ||
+        -z "${CLOUDFLARE_ENABLE}"  ||
+        -z "${DROPBOX_ENABLE}"     ||
+        -z "${DUP_BK}"             ||
         -z "${MAILCOW_BK}" 
         ]]; then
 

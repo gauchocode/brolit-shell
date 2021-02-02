@@ -30,8 +30,8 @@ basic_packages_installation
 # PHP Installer
 "${SFOLDER}/utils/installers/php_installer.sh"
 
-log_event "success" "************* LEMP SETUP COMPLETED *************" "true"
-
 script_configuration_wizard "initial"
 
 selected_package_installation
+
+log_event "success" "************* LEMP SETUP COMPLETED *************" "true"
