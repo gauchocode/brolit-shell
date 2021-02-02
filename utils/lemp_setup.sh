@@ -13,7 +13,7 @@ source "${SFOLDER}/libs/packages_helper.sh"
 
 log_section "LEMP SETUP"
 
-checking_scripts_permissions
+check_scripts_permissions
 
 # Configuring packages
 timezone_configuration

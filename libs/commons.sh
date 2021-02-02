@@ -216,57 +216,52 @@ function script_init() {
   ################################################################################
 
   # Status (STATUS_BACKUP_DBS, STATUS_BACKUP_FILES, STATUS_SERVER, STATUS_CERTS, OUTDATED_PACKAGES)
-  STATUS_BACKUP_DBS=""
-  STATUS_BACKUP_FILES=""
-  STATUS_SERVER=""
-  STATUS_CERTS=""
-  OUTDATED_PACKAGES="false"
+  declare -g STATUS_BACKUP_DBS=""
+  declare -g STATUS_BACKUP_FILES=""
+  declare -g STATUS_SERVER=""
+  declare -g STATUS_CERTS=""
+  declare -g OUTDATED_PACKAGES="false"
+
+  declare -g DPU_F
+  declare -g DROPBOX_UPLOADER
 
   # BROOBE Utils config file
   if test -f /root/.broobe-utils-options; then
     source "/root/.broobe-utils-options"
+  else
+    script_configuration_wizard "initial"
   fi
 
-  # Dropbox Uploader Directory
-  DPU_F="${SFOLDER}/tools/third-party/dropbox-uploader"
-
-  # Dropbox-uploader config file
-  DPU_CONFIG_FILE=~/.dropbox_uploader
-  if [[ -e ${DPU_CONFIG_FILE} ]]; then
+  if [[ "${DROPBOX_ENABLE}" == "true" ]]; then
+    # Dropbox-uploader config file
+    DPU_CONFIG_FILE=~/.dropbox_uploader
     # shellcheck source=${DPU_CONFIG_FILE}
     source "${DPU_CONFIG_FILE}"
-  else
-    generate_dropbox_config
+    # Dropbox-uploader directory
+    DPU_F="${SFOLDER}/tools/third-party/dropbox-uploader"
+    # Dropbox-uploader runner
+    DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
   fi
-  DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
 
   # Cloudflare config file
   if [[ "${CLOUDFLARE_ENABLE}" == "true" ]]; then
     CLF_CONFIG_FILE=~/.cloudflare.conf
-    if [[ -e ${CLF_CONFIG_FILE} ]]; then
-      # shellcheck source=${CLF_CONFIG_FILE}
-      source "${CLF_CONFIG_FILE}"
-    else
-      generate_cloudflare_config
-    fi
+    # shellcheck source=${CLF_CONFIG_FILE}
+    source "${CLF_CONFIG_FILE}"
   fi
 
   # Telegram config file
   if [[ "${TELEGRAM_NOTIF}" == "true" ]]; then
     TEL_CONFIG_FILE=~/.telegram.conf
-    if [[ -e ${TEL_CONFIG_FILE} ]]; then
-      # shellcheck source=${CLF_CONFIG_FILE}
-      source "${TEL_CONFIG_FILE}"
-    else
-      generate_telegram_config
-    fi
+    # shellcheck source=${CLF_CONFIG_FILE}
+    source "${TEL_CONFIG_FILE}"
   fi
 
   # Checking distro
   check_distro
 
   # Checking script permissions
-  checking_scripts_permissions
+  check_scripts_permissions
 
   # Checking required packages to run
   check_packages_required
@@ -717,7 +712,7 @@ function check_distro() {
 
 }
 
-function checking_scripts_permissions() {
+function check_scripts_permissions() {
 
   ### chmod
   find ./ -name "*.sh" -exec chmod +x {} \;
@@ -732,7 +727,7 @@ function checking_scripts_permissions() {
 #############################################################################
 #
 
-function whiptail_event() {
+function whiptail_message() {
 
   # $1 = {whip_title}
   # $2 = {whip_message}
@@ -741,6 +736,26 @@ function whiptail_event() {
   local whip_message=$2
 
   whiptail --title "${whip_title}" --msgbox "${whip_message}" 15 60 3>&1 1>&2 2>&3
+  exitstatus="$?"
+  if [[ ${exitstatus} -eq 0 ]]; then
+    return 0
+
+  else
+    return 1
+
+  fi
+
+}
+
+function whiptail_message_with_skip_option() {
+
+  # $1 = {whip_title}
+  # $2 = {whip_message}
+
+  local whip_title=$1
+  local whip_message=$2
+
+  whiptail --title "${whip_title}" --msgbox "${whip_message}" --yesno 15 60 3>&1 1>&2 2>&3
   exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
     return 0
