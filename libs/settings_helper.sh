@@ -181,16 +181,16 @@ function _settings_config_mailcow(){
             MAILCOW=$(whiptail --title "Mailcow Installation Path" --inputbox "Insert the path where Mailcow is installed" 10 60 "${MAILCOW_DEFAULT}" 3>&1 1>&2 2>&3)
             exitstatus="$?"
             if [[ ${exitstatus} -eq 0 ]]; then
-            echo "MAILCOW=${MAILCOW}" >>/root/.broobe-utils-options
+                echo "MAILCOW=${MAILCOW}" >>/root/.broobe-utils-options
             else
-            return 1
+                return 1
 
             fi
 
         fi
 
         else
-        return 1
+            return 1
         
         fi
 
@@ -199,20 +199,50 @@ function _settings_config_mailcow(){
 
 function _settings_config_cloudflare(){
 
-    #TODO: cloudflare enable (true or false)
-
     if [[ -z "${CLOUDFLARE_ENABLE}" ]]; then
-        generate_cloudflare_config
+        
+        whiptail_event "Cloudflare Support" "This script supports Cloudflare integration via API. If you have a Cloudflare account you can configure it to manage your domains from here. Do you want to enable Cloudflare support?"
+        exitstatus="$?"
+        if [[ ${exitstatus} -eq 0 ]]; then
+            
+            # Setting option on script config file
+            CLOUDFLARE_ENABLE="true"
+            echo "CLOUDFLARE_ENABLE=${CLOUDFLARE_ENABLE}" >>/root/.broobe-utils-options
+            
+            # Generating Cloudflare api config file
+            generate_cloudflare_config
+
+        else
+            CLOUDFLARE_ENABLE="false"
+            echo "CLOUDFLARE_ENABLE=${CLOUDFLARE_ENABLE}" >>/root/.broobe-utils-options
+
+        fi
+
     fi
 
 }
 
 function _settings_config_telegram(){
 
-    #TODO: telegram notifications enable (true or false)
+    if [[ -z "${TELEGRAM_NOTIF}" ]]; then
+        
+        whiptail_event "Telegram Notification" "Do you want to enable Telegram notification support?"
+        exitstatus="$?"
+        if [[ ${exitstatus} -eq 0 ]]; then
+            
+            # Setting option on script config file
+            TELEGRAM_NOTIF="true"
+            echo "TELEGRAM_NOTIF=${TELEGRAM_NOTIF}" >>/root/.broobe-utils-options
+            
+            # Generating Telegram api config file
+            generate_telegram_config
 
-    if [[ -z "${TELEGRAM_ENABLE}" ]]; then
-        generate_telegram_config
+        else
+            TELEGRAM_NOTIF="false"
+            echo "TELEGRAM_NOTIF=${TELEGRAM_NOTIF}" >>/root/.broobe-utils-options
+
+        fi
+
     fi
 
 }
@@ -220,15 +250,37 @@ function _settings_config_telegram(){
 function _settings_config_notifications(){
 
     #TODO: option to select notification types (mail, telegram)
+    if [[ -z "${MAIL_NOTIF}" ]]; then
 
-    if [[ -z "${MAILA}" ]]; then
-        MAILA=$(whiptail --title "Notification Email" --inputbox "Insert the email where you want to receive notifications." 10 60 "${MAILA_OLD}" 3>&1 1>&2 2>&3)
+        whiptail_event "E-Mail Notification" "Do you want to enable E-Mail notification support?"
         exitstatus="$?"
         if [[ ${exitstatus} -eq 0 ]]; then
-            echo "MAILA=${MAILA}" >>/root/.broobe-utils-options
+            
+            # Setting option on script config file
+            MAIL_NOTIF="true"
+            echo "MAIL_NOTIF=${MAIL_NOTIF}" >>/root/.broobe-utils-options
+            
+            # Generating Telegram api config file
+            generate_telegram_config
+
         else
-            return 1
+            MAIL_NOTIF="false"
+            echo "MAIL_NOTIF=${MAIL_NOTIF}" >>/root/.broobe-utils-options
+
         fi
+
+        if [[ -z "${MAILA}" ]]; then
+           
+            MAILA=$(whiptail --title "Notification Email" --inputbox "Insert the email where you want to receive notifications." 10 60 "${MAILA_OLD}" 3>&1 1>&2 2>&3)
+            exitstatus="$?"
+            if [[ ${exitstatus} -eq 0 ]]; then
+                echo "MAILA=${MAILA}" >>/root/.broobe-utils-options
+            else
+                return 1
+            fi
+
+        fi
+
     fi
 
 }
@@ -249,7 +301,7 @@ function script_configuration_wizard() {
 
     if [[ ${config_mode} == "reconfigure" ]]; then
 
-        #Old vars
+        # Backup vars
         SMTP_SERVER_OLD=${SMTP_SERVER}
         SMTP_PORT_OLD=${SMTP_PORT}
         SMTP_TLS_OLD=${SMTP_TLS}
@@ -257,6 +309,13 @@ function script_configuration_wizard() {
         SMTP_P_OLD=${SMTP_P}
         MAILA_OLD=${MAILA}
         SITES_OLD=${SITES}
+
+        MAIL_NOTIF_OLD=${MAIL_NOTIF}
+        TELEGRAM_NOTIF_OLD=${TELEGRAM_NOTIF}
+        CLOUDFLARE_ENABLE_OLD=${CLOUDFLARE_ENABLE}
+        DROPBOX_ENABLE_OLD=${DROPBOX_ENABLE}
+        DUP_BK_OLD=${DUP_BK}
+        MAILCOW_BK_OLD=${MAILCOW_BK}
 
         #Reset config vars
         SMTP_SERVER=""
@@ -266,6 +325,13 @@ function script_configuration_wizard() {
         SMTP_P=""
         MAILA=""
         SITES=""
+
+        MAIL_NOTIF="true"
+        TELEGRAM_NOTIF="false"
+        CLOUDFLARE_ENABLE="true"
+        DROPBOX_ENABLE="true"
+        DUP_BK="false"
+        MAILCOW_BK="false"
 
         #Rename old config file
         mv /root/.broobe-utils-options /root/.broobe-utils-options_bk
