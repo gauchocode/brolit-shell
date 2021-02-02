@@ -197,11 +197,37 @@ function _settings_config_mailcow(){
     fi
 }
 
+function _settings_config_dropbox(){
+
+    if [[ -z "${DROPBOX_ENABLE}" ]]; then
+
+        
+        whiptail_message_with_skip_option "Dropbox Support" "This script supports Dropbox integration via API. If you have a Dropbox account you can configure it to backup and restore projects from here. Do you want to enable Dropbox support?"
+        exitstatus="$?"
+        if [[ ${exitstatus} -eq 0 ]]; then
+            
+            # Setting option on script config file
+            DROPBOX_ENABLE="true"
+            echo "DROPBOX_ENABLE=${DROPBOX_ENABLE}" >>/root/.broobe-utils-options
+            
+            # Generating Dropbox api config file
+            generate_dropbox_config
+
+        else
+            DROPBOX_ENABLE="false"
+            echo "DROPBOX_ENABLE=${DROPBOX_ENABLE}" >>/root/.broobe-utils-options
+
+        fi
+
+    fi
+
+}
+
 function _settings_config_cloudflare(){
 
     if [[ -z "${CLOUDFLARE_ENABLE}" ]]; then
         
-        whiptail_event "Cloudflare Support" "This script supports Cloudflare integration via API. If you have a Cloudflare account you can configure it to manage your domains from here. Do you want to enable Cloudflare support?"
+        whiptail_message_with_skip_option "Cloudflare Support" "This script supports Cloudflare integration via API. If you have a Cloudflare account you can configure it to manage your domains from here. Do you want to enable Cloudflare support?"
         exitstatus="$?"
         if [[ ${exitstatus} -eq 0 ]]; then
             
@@ -226,7 +252,7 @@ function _settings_config_telegram(){
 
     if [[ -z "${TELEGRAM_NOTIF}" ]]; then
         
-        whiptail_event "Telegram Notification" "Do you want to enable Telegram notification support?"
+        whiptail_message_with_skip_option "Telegram Notification" "Do you want to enable Telegram notification support?"
         exitstatus="$?"
         if [[ ${exitstatus} -eq 0 ]]; then
             
@@ -252,7 +278,7 @@ function _settings_config_notifications(){
     #TODO: option to select notification types (mail, telegram)
     if [[ -z "${MAIL_NOTIF}" ]]; then
 
-        whiptail_event "E-Mail Notification" "Do you want to enable E-Mail notification support?"
+        whiptail_message_with_skip_option "E-Mail Notification" "Do you want to enable E-Mail notification support?"
         exitstatus="$?"
         if [[ ${exitstatus} -eq 0 ]]; then
             
@@ -260,24 +286,23 @@ function _settings_config_notifications(){
             MAIL_NOTIF="true"
             echo "MAIL_NOTIF=${MAIL_NOTIF}" >>/root/.broobe-utils-options
             
-            # Generating Telegram api config file
-            generate_telegram_config
+            if [[ -z "${MAILA}" ]]; then
+           
+                MAILA=$(whiptail --title "Notification Email" --inputbox "Insert the email where you want to receive notifications." 10 60 "${MAILA_OLD}" 3>&1 1>&2 2>&3)
+                exitstatus="$?"
+                if [[ ${exitstatus} -eq 0 ]]; then
+                    echo "MAILA=${MAILA}" >>/root/.broobe-utils-options
+                else
+                    return 1
+                fi
+
+            fi
+
+            _settings_config_smtp
 
         else
             MAIL_NOTIF="false"
             echo "MAIL_NOTIF=${MAIL_NOTIF}" >>/root/.broobe-utils-options
-
-        fi
-
-        if [[ -z "${MAILA}" ]]; then
-           
-            MAILA=$(whiptail --title "Notification Email" --inputbox "Insert the email where you want to receive notifications." 10 60 "${MAILA_OLD}" 3>&1 1>&2 2>&3)
-            exitstatus="$?"
-            if [[ ${exitstatus} -eq 0 ]]; then
-                echo "MAILA=${MAILA}" >>/root/.broobe-utils-options
-            else
-                return 1
-            fi
 
         fi
 
@@ -352,11 +377,11 @@ function script_configuration_wizard() {
         fi
     fi
 
+    _settings_config_dropbox
+
     _settings_config_cloudflare
 
     _settings_config_notifications
-
-    _settings_config_smtp
 
     _settings_config_duplicity
 

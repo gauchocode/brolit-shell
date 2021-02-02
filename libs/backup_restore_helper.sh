@@ -279,17 +279,17 @@ function restore_config_files_from_dropbox(){
     fi
     if [[ "${CHOSEN_CONFIG}" == *"mysql"* ]]; then
       log_event "info" "MySQL Config backup downloaded and uncompressed on  ${SFOLDER}/tmp/${chosen_config_type}"
-      whiptail_event "IMPORTANT!" "MySQL config files were downloaded on this temp directory: ${SFOLDER}/tmp/${chosen_config_type}."
+      whiptail_message "IMPORTANT!" "MySQL config files were downloaded on this temp directory: ${SFOLDER}/tmp/${chosen_config_type}."
 
     fi
     if [[ "${CHOSEN_CONFIG}" == *"php"* ]]; then
       log_event "info" "PHP config backup downloaded and uncompressed on  ${SFOLDER}/tmp/${chosen_config_type}"
-      whiptail_event "IMPORTANT!" "PHP config files were downloaded on this temp directory: ${SFOLDER}/tmp/${chosen_config_type}."
+      whiptail_message "IMPORTANT!" "PHP config files were downloaded on this temp directory: ${SFOLDER}/tmp/${chosen_config_type}."
 
     fi
     if [[ "${CHOSEN_CONFIG}" == *"letsencrypt"* ]]; then
       log_event "info" "Let's Encrypt config backup downloaded and uncompressed on  ${SFOLDER}/tmp/${chosen_config_type}"
-      whiptail_event "IMPORTANT!" "Let's Encrypt config files were downloaded on this temp directory: ${SFOLDER}/tmp/${chosen_config_type}."
+      whiptail_message "IMPORTANT!" "Let's Encrypt config files were downloaded on this temp directory: ${SFOLDER}/tmp/${chosen_config_type}."
 
     fi
 
@@ -634,7 +634,7 @@ function restore_type_selection_from_dropbox() {
 
               # User already exists
               log_event "warning" "MySQL user ${db_user} already exists"
-              whiptail_event "WARNING" "MySQL user ${db_user} already exists. Please after the script ends, check project configuration files."
+              whiptail_message "WARNING" "MySQL user ${db_user} already exists. Please after the script ends, check project configuration files."
 
             fi
 
@@ -900,7 +900,7 @@ function restore_project() {
       display --indent 6 --text "- Creating ${db_user} user in MySQL" --result "FAIL" --color RED
       display --indent 8 --text "MySQL user ${db_user} already exists."
 
-      whiptail_event "WARNING" "MySQL user ${db_user} already exists. Please after the script ends, check project configuration files."
+      whiptail_message "WARNING" "MySQL user ${db_user} already exists. Please after the script ends, check project configuration files."
 
     fi
 
