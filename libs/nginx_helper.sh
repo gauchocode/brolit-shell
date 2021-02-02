@@ -323,7 +323,7 @@ function nginx_configuration_test() {
 
     else
         debug=$(nginx -t 2>&1)
-        whiptail_event "WARNING" "Something went wrong changing Nginx configuration. Please check manually nginx config files."
+        whiptail_message "WARNING" "Something went wrong changing Nginx configuration. Please check manually nginx config files."
         log_event "error" "Problem changing Nginx configuration. Debug: ${debug}"
 
         display --indent 6 --text "- Testing nginx configuration" --result "FAIL" --color RED
