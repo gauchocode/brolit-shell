@@ -237,30 +237,6 @@ project_install() {
 
   esac
 
-  # Change ownership
-  #change_ownership "www-data" "www-data" "${project_path}"
-
-  # TODO: ask if we want create a database
-
-  # Create database and user
-  #db_project_name=$(mysql_name_sanitize "${project_name}")
-  #database_name="${db_project_name}_${project_state}" 
-  #database_user="${db_project_name}_user"
-  #database_user_passw=$(openssl rand -hex 12)
-
-  #mysql_database_create "${database_name}"
-  #mysql_user_create "${database_user}" "${database_user_passw}"
-  #mysql_user_grant_privileges "${database_user}" "${database_name}"
-
-  # Cloudflare API to change DNS records
-  #cloudflare_change_a_record "${root_domain}" "${project_domain}"
-
-  # New site Nginx configuration
-  #nginx_server_create "${project_domain}" "wordpress" "single" ""
-
-  # HTTPS with Certbot
-  #certbot_certificate_install "${MAILA}" "${project_domain}"
-
   log_event "success" "PROJECT INSTALLATION FINISHED!"
 
 }
@@ -327,7 +303,7 @@ project_delete_files() {
 
     else
 
-        log_event "info" "Cloudflare entries not deleted. Skipped by user." "false"
+        log_event "info" "Cloudflare entries not deleted. Skipped by user."
 
     fi
 
@@ -347,15 +323,15 @@ project_delete_database() {
 
     local database=$1
 
-    local DBS
-    local CHOSEN_DB
+    local databases
+    local chosen_database
 
     # TODO: if project_db_name, project_db_user and project_db_pass are defined 
     #       and can connect to db, only ask for delete confirmation
 
     # List databases
-    DBS=$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -Bse 'show databases')
-    CHOSEN_DB=$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to delete" 20 78 10 $(for x in ${DBS}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)
+    databases=$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -Bse 'show databases')
+    chosen_database=$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)
     exitstatus="$?"
     if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -365,31 +341,30 @@ project_delete_database() {
         BK_TYPE="database"
 
         # TO-FIX: 
-        #
-        # With deb04_broobe_prod this DB_NAME, fails to extract suffix:
-        # - Deleting deb04_broobe_prod_user user in MySQL             [ FAIL ]
+        #   With deb04_broobe_prod this DB_NAME, fails to extract suffix:
+        #   - Deleting deb04_broobe_prod_user user in MySQL             [ FAIL ]
 
         # Remove DB suffix to get project_name
-        suffix="$(cut -d'_' -f2 <<<"${CHOSEN_DB}")"
-        project_name=${CHOSEN_DB%"_$suffix"}
+        suffix="$(cut -d'_' -f2 <<<"${chosen_database}")"
+        project_name=${chosen_database%"_$suffix"}
         user_db="${project_name}_user"
 
         # Make a database Backup
-        make_database_backup "${BK_TYPE}" "${CHOSEN_DB}"
+        make_database_backup "${BK_TYPE}" "${chosen_database}"
 
         # Moving deleted project backups to another dropbox directory
-        log_event "debug" "Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${CHOSEN_DB} /${VPSNAME}/offline-site"
-        dropbox_output=$(${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${CHOSEN_DB}" "/${VPSNAME}/offline-site" 1>&2)
+        log_event "debug" "Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${chosen_database} /${VPSNAME}/offline-site"
+        dropbox_output=$(${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${chosen_database}" "/${VPSNAME}/offline-site" 1>&2)
 
         display --indent 6 --text "- Moving dropbox backup to offline directory" --result "DONE" --color GREEN
 
         # Delete project database
-        mysql_database_drop "${CHOSEN_DB}"
+        mysql_database_drop "${chosen_database}"
 
         # Delete mysql user
         while true; do
 
-            echo -e "${YELLOW}${ITALIC} > Do you want to remove database user? Maybe is used by another project.${ENDCOLOR}"
+            echo -e "${B_RED}${ITALIC} > Do you want to remove database user? Maybe is used by another project.${ENDCOLOR}"
             read -p "Please type 'y' or 'n'" yn
 
             case $yn in

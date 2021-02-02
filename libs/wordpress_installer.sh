@@ -22,8 +22,10 @@ function wordpress_project_installer () {
   local installation_type
 
   # Installation types
-  installation_types=("01)" "CLEAN INSTALL" "02)" "COPY FROM PROJECT")
-
+  installation_types=(
+    "01)" "CLEAN INSTALL" 
+    "02)" "COPY FROM PROJECT"
+    )
   installation_type=$(whiptail --title "INSTALLATION TYPE" --menu "Choose an Installation Type" 20 78 10 "${installation_types[@]}" 3>&1 1>&2 2>&3)
   exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
