@@ -266,7 +266,7 @@ function nginx_server_change_phpv() {
     # TODO: if $new_php_v is not set, must ask wich PHP_V
 
     if [[ ${new_php_v} = "" ]]; then
-        new_php_v=$(check_default_php_version)
+        new_php_v=$(php_check_activated_version)
 
     fi
 
