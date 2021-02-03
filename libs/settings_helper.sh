@@ -318,9 +318,21 @@ function _settings_config_notifications(){
 #################################################################################
 #
 
-function script_configuration_wizard() {
+function check_script_configuration() {
 
-    #$1 = ${config_mode} // options: initial or reconfigure
+    script_configuration_wizard "initial"
+
+}
+
+function script_configuration_wizard() {
+                                                    
+    # Description
+    # This function could run for 3 reasons: 
+    # Initial setup, check if all needed vars are configured or reconfigure all settings.              
+    # Important: Need to be runned only after load config files.
+
+    # Parameters
+    # $1 = ${config_mode} // options: initial or reconfigure
 
     local config_mode=$1
 
@@ -373,7 +385,7 @@ function script_configuration_wizard() {
         if [[ ${exitstatus} -eq 0 ]]; then
             echo "SITES=${SITES}" >>/root/.broobe-utils-options
         else
-            return 1
+            exit 1
         fi
     fi
 
@@ -391,75 +403,85 @@ function script_configuration_wizard() {
 
 function generate_dropbox_config() {
 
-  local oauth_access_token_string 
-  local oauth_access_token
+    local oauth_access_token_string 
+    local oauth_access_token
 
-  oauth_access_token_string+="\n Please, provide a Dropbox Access Token ID.\n"
-  oauth_access_token_string+=" 1) Log in: dropbox.com/developers/apps/create\n"
-  oauth_access_token_string+=" 2) Click on \"Create App\" and select \"Dropbox API\".\n"
-  oauth_access_token_string+=" 3) Choose the type of access you need.\n"
-  oauth_access_token_string+=" 4) Enter the \"App Name\".\n"
-  oauth_access_token_string+=" 5) Click on the \"Create App\" button.\n"
-  oauth_access_token_string+=" 6) Click on the Generate button.\n"
-  oauth_access_token_string+=" 7) Copy and paste the new access token here:\n\n"
+    # Checking var of ${DPU_CONFIG_FILE}
+    if [[ -z ${OAUTH_ACCESS_TOKEN} ]]; then
 
-  oauth_access_token=$(whiptail --title "Dropbox Uploader Configuration" --inputbox "${oauth_access_token_string}" 15 60 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
+        oauth_access_token_string+="\n Please, provide a Dropbox Access Token ID.\n"
+        oauth_access_token_string+=" 1) Log in: dropbox.com/developers/apps/create\n"
+        oauth_access_token_string+=" 2) Click on \"Create App\" and select \"Dropbox API\".\n"
+        oauth_access_token_string+=" 3) Choose the type of access you need.\n"
+        oauth_access_token_string+=" 4) Enter the \"App Name\".\n"
+        oauth_access_token_string+=" 5) Click on the \"Create App\" button.\n"
+        oauth_access_token_string+=" 6) Click on the Generate button.\n"
+        oauth_access_token_string+=" 7) Copy and paste the new access token here:\n\n"
 
-    # Write config file
-    echo "OAUTH_ACCESS_TOKEN=$oauth_access_token" >${DPU_CONFIG_FILE}
-    log_event "info" "Dropbox configuration has been saved!" "false"
+        oauth_access_token=$(whiptail --title "Dropbox Uploader Configuration" --inputbox "${oauth_access_token_string}" 15 60 3>&1 1>&2 2>&3)
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
 
-  else
-    return 1
+            # Write config file
+            echo "OAUTH_ACCESS_TOKEN=$oauth_access_token" >"${DPU_CONFIG_FILE}"
+            log_event "info" "Dropbox configuration has been saved!"
 
-  fi
+        else
+            return 1
+
+        fi
+
+    fi
 
 }
 
 function generate_cloudflare_config() {
 
-  # ${CLF_CONFIG_FILE} is a Global var
+    # ${CLF_CONFIG_FILE} is a Global var
 
-  local cfl_email 
-  local cfl_api_token
-  local cfl_email_string
-  local cfl_api_token_string
+    local cfl_email 
+    local cfl_api_token
+    local cfl_email_string
+    local cfl_api_token_string
 
-  cfl_email_string="\n\nPlease insert the Cloudflare email account here:\n\n"
+    # Checking vars of ${CLF_CONFIG_FILE}
+    if [[ -z ${dns_cloudflare_email} || -z ${dns_cloudflare_api_key} ]]; then
 
-  cfl_email=$(whiptail --title "Cloudflare Configuration" --inputbox "${cfl_email_string}" 15 60 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
+        cfl_email_string="\n\nPlease insert the Cloudflare email account here:\n\n"
 
-    echo "dns_cloudflare_email=${cfl_email}">"${CLF_CONFIG_FILE}"
+        cfl_email=$(whiptail --title "Cloudflare Configuration" --inputbox "${cfl_email_string}" 15 60 3>&1 1>&2 2>&3)
+        exitstatus="$?"
+        if [[ ${exitstatus} -eq 0 ]]; then
 
-    cfl_api_token_string+="\n Please insert the Cloudflare Global API Key.\n"
-    cfl_api_token_string+=" 1) Log in on: cloudflare.com\n"
-    cfl_api_token_string+=" 2) Login and go to \"My Profile\".\n"
-    cfl_api_token_string+=" 3) Choose the type of access you need.\n"
-    cfl_api_token_string+=" 4) Click on \"API TOKENS\" \n"
-    cfl_api_token_string+=" 5) In \"Global API Key\" click on \"View\" button.\n"
-    cfl_api_token_string+=" 6) Copy the code and paste it here:\n\n"
+            echo "dns_cloudflare_email=${cfl_email}">"${CLF_CONFIG_FILE}"
 
-    cfl_api_token=$(whiptail --title "Cloudflare Configuration" --inputbox "${cfl_api_token_string}" 15 60 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
+            cfl_api_token_string+="\n Please insert the Cloudflare Global API Key.\n"
+            cfl_api_token_string+=" 1) Log in on: cloudflare.com\n"
+            cfl_api_token_string+=" 2) Login and go to \"My Profile\".\n"
+            cfl_api_token_string+=" 3) Choose the type of access you need.\n"
+            cfl_api_token_string+=" 4) Click on \"API TOKENS\" \n"
+            cfl_api_token_string+=" 5) In \"Global API Key\" click on \"View\" button.\n"
+            cfl_api_token_string+=" 6) Copy the code and paste it here:\n\n"
 
-      # Write config file
-      echo "dns_cloudflare_api_key=${cfl_api_token}">>"${CLF_CONFIG_FILE}"
-      log_event "success" "The Cloudflare configuration has been saved!"
+            cfl_api_token=$(whiptail --title "Cloudflare Configuration" --inputbox "${cfl_api_token_string}" 15 60 3>&1 1>&2 2>&3)
+            exitstatus="$?"
+            if [[ ${exitstatus} -eq 0 ]]; then
 
-    else
-      return 1
+            # Write config file
+            echo "dns_cloudflare_api_key=${cfl_api_token}">>"${CLF_CONFIG_FILE}"
+            log_event "success" "The Cloudflare configuration has been saved!"
+
+            else
+                return 1
+
+            fi
+
+        else
+            return 1
+
+        fi
 
     fi
-
-  else
-    return 1
-
-  fi
 
 }
 
