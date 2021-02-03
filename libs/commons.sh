@@ -209,13 +209,31 @@ function script_init() {
   log_event "" "██████╔╝██║  ██║╚██████╔╝╚██████╔╝██████╔╝███████" "true"
   log_event "" "╚═════╝ ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═════╝ ╚══════" "true"
   log_event "" "                                                 " "true"
-
   log_event "" "-------------------------------------------------" "true"
 
   # Ref: http://patorjk.com/software/taag/
+
   ################################################################################
 
-  # Status (STATUS_BACKUP_DBS, STATUS_BACKUP_FILES, STATUS_SERVER, STATUS_CERTS, OUTDATED_PACKAGES)
+  # Checking distro
+  check_distro
+
+  # Checking if user is root
+  check_root
+
+  # Checking script permissions
+  check_scripts_permissions
+
+  # TODO: need to improve this!
+  # Checking required packages to run
+  check_packages_required
+  packages_output="$?"
+  if [[ ${packages_output} -eq 1 ]];then
+    log_event "warning" "Some script dependencies are not setisfied." "true"
+    prompt_return_or_finish
+  fi
+
+  # Status vars
   declare -g STATUS_BACKUP_DBS=""
   declare -g STATUS_BACKUP_FILES=""
   declare -g STATUS_SERVER=""
@@ -225,11 +243,16 @@ function script_init() {
   declare -g DPU_F
   declare -g DROPBOX_UPLOADER
 
+  declare -g NETWORK_INTERFACE
+
   # BROOBE Utils config file
   if test -f /root/.broobe-utils-options; then
     source "/root/.broobe-utils-options"
+
   else
-    script_configuration_wizard "initial"
+
+    menu_first_run
+    
   fi
 
   if [[ "${DROPBOX_ENABLE}" == "true" ]]; then
@@ -257,19 +280,8 @@ function script_init() {
     source "${TEL_CONFIG_FILE}"
   fi
 
-  # Checking distro
-  check_distro
-
-  # Checking script permissions
-  check_scripts_permissions
-
-  # Checking required packages to run
-  check_packages_required
-  packages_output="$?"
-  if [[ ${packages_output} -eq 1 ]];then
-    log_event "warning" "Some script dependencies are not setisfied." "true"
-    prompt_return_or_finish
-  fi
+  # Check configuration
+  check_script_configuration
 
   # METHOD TO GET PUBLIC IP (if server has configured a floating ip, it will return this)
   NETWORK_INTERFACE="$(ip link show | grep '2:' | cut -d ':' -f2)"
@@ -1582,6 +1594,43 @@ function menu_main_options() {
 
     echo -e "${B_RED}Exiting script ...${ENDCOLOR}"
     exit 0
+
+  fi
+
+}
+
+menu_first_run() {
+
+  local first_run_options
+  local first_run_string
+  local chosen_first_run_options
+
+  first_run_options=(
+    "01)" "RUN LEMP SETUP" 
+    "02)" "CONFIGURE THIS SCRIPT"
+  )
+
+  first_run_string+="\n It seens to be the first time you run this script.\n"
+  first_run_string+=" Now you have to options:\n"
+  first_run_string+="\n"
+       
+  chosen_first_run_options=$(whiptail --title "LEMP UTILS SCRIPT" --menu "${first_run_string}" 20 78 10 "${first_run_options[@]}" 3>&1 1>&2 2>&3)
+  exitstatus="$?"
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    if [[ ${chosen_first_run_options} == *"01"* ]]; then
+      # shellcheck source=${SFOLDER}/utils/lemp_setup.sh
+      source "${SFOLDER}/utils/lemp_setup.sh"
+      exit 1
+
+    else
+      script_configuration_wizard "initial"
+
+    fi
+
+  else
+
+    exit 1
 
   fi
 

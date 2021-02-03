@@ -25,54 +25,17 @@ if [ -t 1 ]; then
   
   script_init # Script initialization
 
-  check_root
+  # With "$#" we can check the number of arguments received when the script is runned
+  # Check if there were no arguments provided
+  if [[ $# -eq 0 ]]; then
 
-  if [[ -z "${MPASS}"              ||
-        -z "${SITES}"              || 
-        -z "${MAIL_NOTIF}"         ||
-        -z "${TELEGRAM_NOTIF}"     ||
-        -z "${CLOUDFLARE_ENABLE}"  ||
-        -z "${DROPBOX_ENABLE}"     ||
-        -z "${DUP_BK}"             ||
-        -z "${MAILCOW_BK}" 
-        ]]; then
-
-    first_run_options=(
-      "01)" "LEMP SETUP" 
-      "02)" "CONFIGURE SCRIPT"
-    )
-    chosen_first_run_options=$(whiptail --title "BROOBE UTILS SCRIPT" --menu "Choose a script to Run" 20 78 10 "${first_run_options[@]}" 3>&1 1>&2 2>&3)
-    exitstatus="$?"
-    if [[ ${exitstatus} -eq 0 ]]; then
-
-      if [[ ${chosen_first_run_options} == *"01"* ]]; then
-        # shellcheck source=${SFOLDER}/utils/lemp_setup.sh
-        source "${SFOLDER}/utils/lemp_setup.sh"
-
-      else
-        script_configuration_wizard "initial"
-        menu_main_options
-
-      fi
-
-    fi
+    # RUNNING GRAPHIC MENU
+    menu_main_options
 
   else
 
-    # With "$#" we can check the number of arguments received when the script is runned
-
-    # Check if there were no arguments provided
-    if [[ $# -eq 0 ]]; then
-
-      # RUNNING GRAPHIC MENU
-      menu_main_options
-
-    else
-
-      # RUNNING FROM FLAGS
-      flags_handler "$#" "$*" #"$*" stores all arguments received when the script is runned
-
-    fi
+    # RUNNING FROM FLAGS
+    flags_handler "$#" "$*" #"$*" stores all arguments received when the script is runned
 
   fi
 

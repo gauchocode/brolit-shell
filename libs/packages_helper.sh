@@ -236,12 +236,6 @@ function check_packages_required() {
 
 }
 
-function check_default_php_version() {
-
-  php -v | head -n 1 | cut -d " " -f 2 | cut -f1-2 -d"."
-
-}
-
 function basic_packages_installation() {
 
   log_subsection "Basic Packages Installation"
