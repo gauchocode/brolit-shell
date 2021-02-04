@@ -419,7 +419,7 @@ function generate_dropbox_config() {
         oauth_access_token_string+=" 7) Copy and paste the new access token here:\n\n"
 
         oauth_access_token=$(whiptail --title "Dropbox Uploader Configuration" --inputbox "${oauth_access_token_string}" 15 60 3>&1 1>&2 2>&3)
-        exitstatus=$?
+        exitstatus="$?"
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # Write config file
