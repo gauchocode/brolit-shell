@@ -69,18 +69,24 @@ function _settings_config_smtp() {
 
 } 
 
+### BETA
+##
 function _settings_config_duplicity(){
 
     # DUPLICITY CONFIG
     if [[ -z "${DUP_BK}" ]]; then
 
         DUP_BK_DEFAULT=false
+        
+        #whiptail_message_with_skip_option "Duplicity Support" "This script supports Duplicity. Do you want to enable backups with it?"
+
         DUP_BK=$(whiptail --title "Duplicity Backup Support?" --inputbox "Please insert true or false" 10 60 "${DUP_BK_DEFAULT}" 3>&1 1>&2 2>&3)
         exitstatus="$?"
         if [[ ${exitstatus} -eq 0 ]]; then
+
             echo "DUP_BK=${DUP_BK}" >>/root/.broobe-utils-options
 
-            if [[ "${DUP_BK}" = true ]]; then
+            if [[ ${DUP_BK} == true ]]; then
 
                 if [[ -z "${DUP_ROOT}" ]]; then
 
@@ -176,15 +182,12 @@ function _settings_config_mailcow(){
     # MailCow Dockerized default files location
     mailcow_default_path="/opt/mailcow-dockerized"
 
-    # Checking /root/.broobe-utils-options global var ${MAILCOW_BK}
+    # Checking /root/.broobe-utils-options global var
     if [[ -z "${MAILCOW_BK}" ]]; then
         
         whiptail_message_with_skip_option "Mailcow Support" "This script supports Mailcow. Do you want to enable backups for it?"
         exitstatus="$?"
         if [[ ${exitstatus} -eq 0 ]]; then
-
-            mailcow_support=true
-            echo "MAILCOW_BK=${mailcow_support}" >>/root/.broobe-utils-options
             
             # Checking /root/.broobe-utils-options global vars
             if [[ -z "${MAILCOW}" && "${MAILCOW_BK}" == true ]]; then
@@ -192,6 +195,8 @@ function _settings_config_mailcow(){
                 mailcow_path=$(whiptail --title "Mailcow Support" --inputbox "Insert the path where Mailcow is installed" 10 60 "${mailcow_default_path}" 3>&1 1>&2 2>&3)
                 exitstatus="$?"
                 if [[ ${exitstatus} -eq 0 ]]; then
+                    mailcow_support=true
+                    echo "MAILCOW_BK=${mailcow_support}" >>/root/.broobe-utils-options
                     echo "MAILCOW=${mailcow_path}" >>/root/.broobe-utils-options
                 else
                     return 1
@@ -201,7 +206,9 @@ function _settings_config_mailcow(){
             fi
 
         else
-            return 1
+
+            mailcow_support=false
+            echo "MAILCOW_BK=${mailcow_support}" >>/root/.broobe-utils-options
         
         fi
 
@@ -410,9 +417,9 @@ function script_configuration_wizard() {
 
     _settings_config_notifications
 
-    _settings_config_duplicity
-
     _settings_config_mailcow
+
+    #_settings_config_duplicity
 
 }
 
