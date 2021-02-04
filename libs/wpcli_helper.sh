@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.12
+# Version: 3.0.13
 ################################################################################
 
 function wpcli_install_if_not_installed() {
