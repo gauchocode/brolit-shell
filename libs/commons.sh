@@ -767,7 +767,7 @@ function whiptail_message_with_skip_option() {
   local whip_title=$1
   local whip_message=$2
 
-  whiptail --title "${whip_title}" --msgbox "${whip_message}" --yesno 15 60 3>&1 1>&2 2>&3
+  whiptail --title "${whip_title}" --yesno "${whip_message}" 15 60 3>&1 1>&2 2>&3
   exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
     return 0
