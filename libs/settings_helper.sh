@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.12
+# Version: 3.0.13
 #############################################################################
 
 #
@@ -169,35 +169,36 @@ function _settings_config_duplicity(){
 
 function _settings_config_mailcow(){
 
-    local -a mailcow_bk_options
-    local mailcow_default
+    local mailcow_default_path
     local mailcow_path
+    local mailcow_support
 
+    # MailCow Dockerized default files location
+    mailcow_default_path="/opt/mailcow-dockerized"
+
+    # Checking /root/.broobe-utils-options global var ${MAILCOW_BK}
     if [[ -z "${MAILCOW_BK}" ]]; then
-
-        mailcow_bk_options="true" "Mailcow backups" ON \
-                            "false" "No Mailcow backups" OFF \"
         
-        MAILCOW_BK=$(whiptail --title "Mailcow Backups" --radiolist "Please select an option:" 20 78 15 "${mailcow_bk_options[@]}" 3>&1 1>&2 2>&3)
-        #MAILCOW_BK=$(whiptail --title "Mailcow Backup Support?" --inputbox "Please insert true or false" 10 60 "${mailcow_bk_default}" 3>&1 1>&2 2>&3)
+        whiptail_message_with_skip_option "Mailcow Support" "This script supports Mailcow. Do you want to enable backups for it?"
         exitstatus="$?"
         if [[ ${exitstatus} -eq 0 ]]; then
-        echo "MAILCOW_BK=${MAILCOW_BK}" >>/root/.broobe-utils-options
-        
-        if [[ -z "${MAILCOW}" && "${MAILCOW_BK}" == true ]]; then
 
-            # MailCow Dockerized default files location
-            mailcow_default="/opt/mailcow-dockerized"
-            mailcow_path=$(whiptail --title "Mailcow Installation Path" --inputbox "Insert the path where Mailcow is installed" 10 60 "${mailcow_default}" 3>&1 1>&2 2>&3)
-            exitstatus="$?"
-            if [[ ${exitstatus} -eq 0 ]]; then
-                echo "MAILCOW=${mailcow_path}" >>/root/.broobe-utils-options
-            else
-                return 1
+            mailcow_support=true
+            echo "MAILCOW_BK=${mailcow_support}" >>/root/.broobe-utils-options
+            
+            # Checking /root/.broobe-utils-options global vars
+            if [[ -z "${MAILCOW}" && "${MAILCOW_BK}" == true ]]; then
+
+                mailcow_path=$(whiptail --title "Mailcow Support" --inputbox "Insert the path where Mailcow is installed" 10 60 "${mailcow_default_path}" 3>&1 1>&2 2>&3)
+                exitstatus="$?"
+                if [[ ${exitstatus} -eq 0 ]]; then
+                    echo "MAILCOW=${mailcow_path}" >>/root/.broobe-utils-options
+                else
+                    return 1
+
+                fi
 
             fi
-
-        fi
 
         else
             return 1
@@ -209,6 +210,7 @@ function _settings_config_mailcow(){
 
 function _settings_config_dropbox(){
 
+    # Checking /root/.broobe-utils-options global var
     if [[ -z "${DROPBOX_ENABLE}" ]]; then
         
         whiptail_message_with_skip_option "Dropbox Support" "This script supports Dropbox integration via API. If you have a Dropbox account you can configure it to backup and restore projects from here. Do you want to enable Dropbox support?"
@@ -234,6 +236,7 @@ function _settings_config_dropbox(){
 
 function _settings_config_cloudflare(){
 
+    # Checking /root/.broobe-utils-options global var
     if [[ -z "${CLOUDFLARE_ENABLE}" ]]; then
         
         whiptail_message_with_skip_option "Cloudflare Support" "This script supports Cloudflare integration via API. If you have a Cloudflare account you can configure it to manage your domains from here. Do you want to enable Cloudflare support?"
@@ -259,6 +262,7 @@ function _settings_config_cloudflare(){
 
 function _settings_config_telegram(){
 
+    # Checking /root/.broobe-utils-options global var
     if [[ -z "${TELEGRAM_NOTIF}" ]]; then
         
         whiptail_message_with_skip_option "Telegram Notification" "Do you want to enable Telegram notification support?"
@@ -285,6 +289,8 @@ function _settings_config_telegram(){
 function _settings_config_notifications(){
 
     #TODO: option to select notification types (mail, telegram)
+
+    # Checking /root/.broobe-utils-options global vars
     if [[ -z "${MAIL_NOTIF}" ]]; then
 
         whiptail_message_with_skip_option "E-Mail Notification" "Do you want to enable E-Mail notification support?"
@@ -386,8 +392,6 @@ function script_configuration_wizard() {
 
     fi
 
-    _settings_config_mysql
-
     if [[ -z "${SITES}" ]]; then
         SITES=$(whiptail --title "Websites Root Directory" --inputbox "Insert the path where websites are stored. Ex: /var/www or /usr/share/nginx" 10 60 "${SITES_OLD}" 3>&1 1>&2 2>&3)
         exitstatus="$?"
@@ -397,6 +401,8 @@ function script_configuration_wizard() {
             exit 1
         fi
     fi
+
+    _settings_config_mysql
 
     _settings_config_dropbox
 
