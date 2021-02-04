@@ -78,84 +78,89 @@ function _settings_config_duplicity(){
         DUP_BK=$(whiptail --title "Duplicity Backup Support?" --inputbox "Please insert true or false" 10 60 "${DUP_BK_DEFAULT}" 3>&1 1>&2 2>&3)
         exitstatus="$?"
         if [[ ${exitstatus} -eq 0 ]]; then
-        echo "DUP_BK=${DUP_BK}" >>/root/.broobe-utils-options
+            echo "DUP_BK=${DUP_BK}" >>/root/.broobe-utils-options
 
-        if [[ "${DUP_BK}" = true ]]; then
+            if [[ "${DUP_BK}" = true ]]; then
 
-            if [[ -z "${DUP_ROOT}" ]]; then
+                if [[ -z "${DUP_ROOT}" ]]; then
 
-            # Duplicity Backups Directory
-            DUP_ROOT_DEFAULT="/media/backups/PROJECT_NAME"
-            DUP_ROOT=$(whiptail --title "Duplicity Backup Directory" --inputbox "Insert the directory path to storage duplicity Backup" 10 60 "${DUP_ROOT_DEFAULT}" 3>&1 1>&2 2>&3)
-            exitstatus="$?"
-            if [[ ${exitstatus} -eq 0 ]]; then
-                echo "DUP_ROOT=${DUP_ROOT}" >>/root/.broobe-utils-options
+                    # Duplicity Backups Directory
+                    DUP_ROOT_DEFAULT="/media/backups/PROJECT_NAME"
+                    DUP_ROOT=$(whiptail --title "Duplicity Backup Directory" --inputbox "Insert the directory path to storage duplicity Backup" 10 60 "${DUP_ROOT_DEFAULT}" 3>&1 1>&2 2>&3)
+                    exitstatus="$?"
+                    if [[ ${exitstatus} -eq 0 ]]; then
+                        echo "DUP_ROOT=${DUP_ROOT}" >>/root/.broobe-utils-options
+                    else
+                        exit 1
+                    fi
+                    
+                fi
+
+                if [[ -z "${DUP_SRC_BK}" ]]; then
+
+                    # Source of Directories to Backup
+                    DUP_SRC_BK_DEFAULT="${SITES}"
+                    DUP_SRC_BK=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_SRC_BK_DEFAULT}" 3>&1 1>&2 2>&3)
+                    exitstatus="$?"
+                    if [[ ${exitstatus} -eq 0 ]]; then
+                        echo "DUP_SRC_BK=${DUP_SRC_BK}" >>/root/.broobe-utils-options
+                    else
+                        exit 1
+                    fi
+
+                fi
+
+                if [[ -z "${DUP_FOLDERS}" ]]; then
+
+                    # Folders to Backup
+                    DUP_FOLDERS_DEFAULT="FOLDER1,FOLDER2"
+                    DUP_FOLDERS=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_FOLDERS_DEFAULT}" 3>&1 1>&2 2>&3)
+                    exitstatus="$?"
+                    if [[ ${exitstatus} -eq 0 ]]; then
+                        echo "DUP_FOLDERS=${DUP_FOLDERS}" >>/root/.broobe-utils-options
+                    else
+                        exit 1
+                    fi
+
+                fi
+
+                if [[ -z "${DUP_BK_FULL_FREQ}" ]]; then
+
+                    # Create a new full backup every ...
+                    DUP_BK_FULL_FREQ_DEFAULT="7D"
+                    DUP_BK_FULL_FREQ=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_BK_FULL_FREQ_DEFAULT}" 3>&1 1>&2 2>&3)
+                    exitstatus="$?"
+                    if [[ ${exitstatus} -eq 0 ]]; then
+                        echo "DUP_BK_FULL_FREQ=${DUP_BK_FULL_FREQ}" >>/root/.broobe-utils-options
+                    else
+                        exit 1
+                    fi
+
+                fi
+
+                if [[ -z "${DUP_BK_FULL_LIFE}" ]]; then
+
+                    # Delete any backup older than this
+                    DUP_BK_FULL_LIFE_DEFAULT="14D"
+                    DUP_BK_FULL_LIFE=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_BK_FULL_LIFE_DEFAULT}" 3>&1 1>&2 2>&3)
+                    exitstatus="$?"
+                    if [[ ${exitstatus} -eq 0 ]]; then
+                        echo "DUP_BK_FULL_LIFE=${DUP_BK_FULL_LIFE}" >>/root/.broobe-utils-options
+                    else
+                        exit 1
+                    fi
+
+                fi
+
             else
-                exit 1
-            fi
-            fi
 
-            if [[ -z "${DUP_SRC_BK}" ]]; then
-
-            # Source of Directories to Backup
-            DUP_SRC_BK_DEFAULT="${SITES}"
-            DUP_SRC_BK=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_SRC_BK_DEFAULT}" 3>&1 1>&2 2>&3)
-            exitstatus="$?"
-            if [[ ${exitstatus} -eq 0 ]]; then
-                echo "DUP_SRC_BK=${DUP_SRC_BK}" >>/root/.broobe-utils-options
-            else
-                exit 1
+                echo "DUP_ROOT=none" >>/root/.broobe-utils-options
+                echo "DUP_SRC_BK=none" >>/root/.broobe-utils-options
+                echo "DUP_FOLDERS=none" >>/root/.broobe-utils-options
+                echo "DUP_BK_FULL_FREQ=none" >>/root/.broobe-utils-options
+                echo "DUP_BK_FULL_LIFE=none" >>/root/.broobe-utils-options
+                
             fi
-            fi
-
-            if [[ -z "${DUP_FOLDERS}" ]]; then
-
-            # Folders to Backup
-            DUP_FOLDERS_DEFAULT="FOLDER1,FOLDER2"
-            DUP_FOLDERS=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_FOLDERS_DEFAULT}" 3>&1 1>&2 2>&3)
-            exitstatus="$?"
-            if [[ ${exitstatus} -eq 0 ]]; then
-                echo "DUP_FOLDERS=${DUP_FOLDERS}" >>/root/.broobe-utils-options
-            else
-                exit 1
-            fi
-            fi
-
-            if [[ -z "${DUP_BK_FULL_FREQ}" ]]; then
-
-            # Create a new full backup every ...
-            DUP_BK_FULL_FREQ_DEFAULT="7D"
-            DUP_BK_FULL_FREQ=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_BK_FULL_FREQ_DEFAULT}" 3>&1 1>&2 2>&3)
-            exitstatus="$?"
-            if [[ ${exitstatus} -eq 0 ]]; then
-                echo "DUP_BK_FULL_FREQ=${DUP_BK_FULL_FREQ}" >>/root/.broobe-utils-options
-            else
-                exit 1
-            fi
-            fi
-
-            if [[ -z "${DUP_BK_FULL_LIFE}" ]]; then
-
-            # Delete any backup older than this
-            DUP_BK_FULL_LIFE_DEFAULT="14D"
-            DUP_BK_FULL_LIFE=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_BK_FULL_LIFE_DEFAULT}" 3>&1 1>&2 2>&3)
-            exitstatus="$?"
-            if [[ ${exitstatus} -eq 0 ]]; then
-                echo "DUP_BK_FULL_LIFE=${DUP_BK_FULL_LIFE}" >>/root/.broobe-utils-options
-            else
-                exit 1
-            fi
-            fi
-
-        else
-
-            echo "DUP_ROOT=none" >>/root/.broobe-utils-options
-            echo "DUP_SRC_BK=none" >>/root/.broobe-utils-options
-            echo "DUP_FOLDERS=none" >>/root/.broobe-utils-options
-            echo "DUP_BK_FULL_FREQ=none" >>/root/.broobe-utils-options
-            echo "DUP_BK_FULL_LIFE=none" >>/root/.broobe-utils-options
-            
-        fi
 
         fi
     
@@ -164,24 +169,29 @@ function _settings_config_duplicity(){
 
 function _settings_config_mailcow(){
 
-    # TODO: MAKE TRUE OR FALSE
+    local -a mailcow_bk_options
+    local mailcow_default
+    local mailcow_path
+
     if [[ -z "${MAILCOW_BK}" ]]; then
 
-        MAILCOW_BK_DEFAULT=false
+        mailcow_bk_options="true" "Mailcow backups" ON \
+                            "false" "No Mailcow backups" OFF \"
         
-        MAILCOW_BK=$(whiptail --title "Mailcow Backup Support?" --inputbox "Please insert true or false" 10 60 "${MAILCOW_BK_DEFAULT}" 3>&1 1>&2 2>&3)
+        MAILCOW_BK=$(whiptail --title "Mailcow Backups" --radiolist "Please select an option:" 20 78 15 "${mailcow_bk_options[@]}" 3>&1 1>&2 2>&3)
+        #MAILCOW_BK=$(whiptail --title "Mailcow Backup Support?" --inputbox "Please insert true or false" 10 60 "${mailcow_bk_default}" 3>&1 1>&2 2>&3)
         exitstatus="$?"
         if [[ ${exitstatus} -eq 0 ]]; then
         echo "MAILCOW_BK=${MAILCOW_BK}" >>/root/.broobe-utils-options
         
-        if [[ -z "${MAILCOW}" && "${MAILCOW_BK}" = true ]]; then
+        if [[ -z "${MAILCOW}" && "${MAILCOW_BK}" == true ]]; then
 
             # MailCow Dockerized default files location
-            MAILCOW_DEFAULT="/opt/mailcow-dockerized"
-            MAILCOW=$(whiptail --title "Mailcow Installation Path" --inputbox "Insert the path where Mailcow is installed" 10 60 "${MAILCOW_DEFAULT}" 3>&1 1>&2 2>&3)
+            mailcow_default="/opt/mailcow-dockerized"
+            mailcow_path=$(whiptail --title "Mailcow Installation Path" --inputbox "Insert the path where Mailcow is installed" 10 60 "${mailcow_default}" 3>&1 1>&2 2>&3)
             exitstatus="$?"
             if [[ ${exitstatus} -eq 0 ]]; then
-                echo "MAILCOW=${MAILCOW}" >>/root/.broobe-utils-options
+                echo "MAILCOW=${mailcow_path}" >>/root/.broobe-utils-options
             else
                 return 1
 
@@ -200,7 +210,6 @@ function _settings_config_mailcow(){
 function _settings_config_dropbox(){
 
     if [[ -z "${DROPBOX_ENABLE}" ]]; then
-
         
         whiptail_message_with_skip_option "Dropbox Support" "This script supports Dropbox integration via API. If you have a Dropbox account you can configure it to backup and restore projects from here. Do you want to enable Dropbox support?"
         exitstatus="$?"
