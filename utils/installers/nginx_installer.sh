@@ -14,8 +14,6 @@
 # Brotli compression only supports the HTTPS site
 #
 
-# shellcheck source=${SFOLDER}/libs/commons.sh
-source "${SFOLDER}/libs/commons.sh"
 # shellcheck source=${SFOLDER}/libs/nginx_helper.sh
 source "${SFOLDER}/libs/nginx_helper.sh"
 
