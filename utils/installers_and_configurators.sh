@@ -10,6 +10,8 @@ source "${SFOLDER}/utils/installers/php_installer.sh"
 source "${SFOLDER}/utils/installers/mysql_installer.sh"
 # shellcheck source=${SFOLDER}/utils/installers/nginx_installer.sh
 source "${SFOLDER}/utils/installers/nginx_installer.sh"
+# shellcheck source=${SFOLDER}/utils/installers/certbot_installer.sh
+source "${SFOLDER}/utils/installers/certbot_installer.sh"
 
 ################################################################################
 
@@ -65,7 +67,7 @@ function installers_and_configurators() {
 
     fi
     if [[ ${installer_type} == *"08"* ]]; then
-      "${SFOLDER}/utils/installers/certbot_installer.sh"
+      certbot_installer
 
     fi
     if [[ ${installer_type} == *"09"* ]]; then
