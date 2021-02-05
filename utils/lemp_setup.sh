@@ -8,10 +8,14 @@
 source "${SFOLDER}/libs/commons.sh"
 # shellcheck source=${SFOLDER}/libs/packages_helper.sh
 source "${SFOLDER}/libs/packages_helper.sh"
+# shellcheck source=${SFOLDER}/utils/installers/php_installer.sh
+source "${SFOLDER}/utils/installers/php_installer.sh"
+# shellcheck source=${SFOLDER}/utils/installers/mysql_installer.sh
+source "${SFOLDER}/utils/installers/mysql_installer.sh"
 
 ################################################################################
 
-log_section "LEMP SETUP"
+log_section "LEMP setup"
 
 check_scripts_permissions
 
@@ -22,13 +26,13 @@ timezone_configuration
 basic_packages_installation
 
 # MySQL Installer
-"${SFOLDER}/utils/installers/mysql_installer.sh"
+mysql_installer_menu
 
 # Nginx Installer
-"${SFOLDER}/utils/installers/nginx_installer.sh"
+nginx_installer_menu
 
 # PHP Installer
-"${SFOLDER}/utils/installers/php_installer.sh"
+php_installer_menu
 
 script_configuration_wizard "initial"
 
