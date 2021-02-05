@@ -4,7 +4,7 @@
 # Version: 3.0.13
 #############################################################################
 
-cockpit_installer() {
+function cockpit_installer() {
 
     log_event "info" "Installing cockpit" "false"
     display --indent 2 --text "- Installing cockpit"
@@ -20,7 +20,3 @@ cockpit_installer() {
     display --indent 4 --text "Running on port 9090"
 
 }
-
-#############################################################################
-
-cockpit_installer

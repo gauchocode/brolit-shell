@@ -17,7 +17,7 @@ source "${SFOLDER}/libs/certbot_helper.sh"
 
 # Ref: https://github.com/nextcloud/vm/blob/master/apps/netdata.sh
 
-netdata_required_packages() {
+function netdata_required_packages() {
 
   local ubuntu_version
 
@@ -38,7 +38,7 @@ netdata_required_packages() {
 
 }
 
-netdata_installer() {
+function netdata_installer() {
 
   log_event "info" "Installing Netdata ..."
   display --indent 6 --text "- Downloading and compiling netdata"
@@ -53,7 +53,7 @@ netdata_installer() {
 
 }
 
-netdata_configuration() {
+function netdata_configuration() {
 
   # Ref: netdata config dir https://github.com/netdata/netdata/issues/4182
 
@@ -91,7 +91,7 @@ netdata_configuration() {
 
 }
 
-netdata_alarm_level() {
+function netdata_alarm_level() {
 
   NETDATA_ALARM_LEVELS="warning critical"
   NETDATA_ALARM_LEVEL=$(whiptail --title "NETDATA ALARM LEVEL" --menu "Choose the Alarm Level for Notifications" 20 78 10 $(for x in ${NETDATA_ALARM_LEVELS}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)
@@ -108,7 +108,7 @@ netdata_alarm_level() {
 }
 
 #TODO: maybe extract info of telegram.com?
-netdata_telegram_config() {
+function netdata_telegram_config() {
 
   HEALTH_ALARM_NOTIFY_CONF="/etc/netdata/health_alarm_notify.conf"
 
@@ -171,152 +171,154 @@ netdata_telegram_config() {
 
 }
 
-################################################################################
+function netdata_installer_menu() {
 
-### Checking if Netdata is installed
-NETDATA="$(which netdata)"
+  ### Checking if Netdata is installed
+  NETDATA="$(which netdata)"
 
-if [ ! -x "${NETDATA}" ]; then
+  if [ ! -x "${NETDATA}" ]; then
 
-  if [[ -z "${netdata_subdomain}" ]]; then
+    if [[ -z "${netdata_subdomain}" ]]; then
 
-    netdata_subdomain=$(whiptail --title "Netdata Installer" --inputbox "Please insert the subdomain you want to install Netdata. Ex: monitor.broobe.com" 10 60 3>&1 1>&2 2>&3)
+      netdata_subdomain=$(whiptail --title "Netdata Installer" --inputbox "Please insert the subdomain you want to install Netdata. Ex: monitor.broobe.com" 10 60 3>&1 1>&2 2>&3)
+      exitstatus="$?"
+      if [[ ${exitstatus} -eq 0 ]]; then
+        echo "netdata_subdomain=${netdata_subdomain}" >>"/root/.broobe-utils-options"
+
+      else
+        return 1
+
+      fi
+
+    fi
+
+    # Only for Cloudflare API
+    suggested_root_domain=${netdata_subdomain#[[:alpha:]]*.}
+
+    ask_mysql_root_psw
+
+    while true; do
+
+      echo -e "${YELLOW}${ITALIC} > Do you really want to install netdata?${ENDCOLOR}"
+      read -p "Please type 'y' or 'n'" yn
+
+      log_subsection "Netdata Installer"
+
+      case $yn in
+      [Yy]*)
+
+        log_event "info" "Updating packages before installation ..."
+
+        apt-get --yes update -qq > /dev/null
+
+        display --indent 6 --text "- Updating packages before installation" --result "DONE" --color GREEN
+
+        netdata_required_packages
+
+        netdata_installer
+
+        # Netdata nginx proxy configuration
+        nginx_server_create "${netdata_subdomain}" "netdata" "tool"
+
+        netdata_configuration
+
+        # Confirm ROOT_DOMAIN
+        root_domain=$(cloudflare_ask_root_domain "${suggested_root_domain}")
+
+        # Cloudflare API
+        cloudflare_change_a_record "${root_domain}" "${netdata_subdomain}"
+
+        DOMAIN=${netdata_subdomain}
+        #CHOSEN_CB_OPTION="1"
+        #export CHOSEN_CB_OPTION DOMAIN
+
+        # HTTPS with Certbot
+        certbot_certificate_install "${MAILA}" "${DOMAIN}"
+
+        display --indent 6 --text "- Netdata installation" --result "DONE" --color GREEN
+
+        break
+        ;;
+      [Nn]*)
+        log_event "warning" "Aborting netdata installer script ..." "true"
+        break
+        ;;
+      *) echo " > Please answer yes or no." ;;
+      esac
+    done
+
+  else
+
+    NETDATA_OPTIONS=(
+      "01)" "UPDATE NETDATA" 
+      "02)" "CONFIGURE NETDATA" 
+      "03)" "UNINSTALL NETDATA" 
+      "04)" "SEND ALARM TEST"
+      )
+
+    NETDATA_CHOSEN_OPTION=$(whiptail --title "Netdata Installer" --menu "Netdata is already installed." 20 78 10 "${NETDATA_OPTIONS[@]}" 3>&1 1>&2 2>&3)
     exitstatus="$?"
     if [[ ${exitstatus} -eq 0 ]]; then
-      echo "netdata_subdomain=${netdata_subdomain}" >>"/root/.broobe-utils-options"
 
-    else
-      return 1
+      log_subsection "Netdata Installer"
 
-    fi
+      if [[ ${NETDATA_CHOSEN_OPTION} == *"01"* ]]; then
+        cd netdata && git pull && ./netdata-installer.sh --dont-wait
+        netdata_configuration
 
-  fi
+      fi
+      if [[ ${NETDATA_CHOSEN_OPTION} == *"02"* ]]; then
+        netdata_required_packages
+        netdata_configuration
 
-  # Only for Cloudflare API
-  suggested_root_domain=${netdata_subdomain#[[:alpha:]]*.}
+      fi
+      if [[ ${NETDATA_CHOSEN_OPTION} == *"03"* ]]; then
 
-  ask_mysql_root_psw
+        while true; do
+          echo -e "${YELLOW}${ITALIC} > Do you really want to uninstall netdata?${ENDCOLOR}"
+          read -p "Please type 'y' or 'n'" yn
+          case $yn in
+          [Yy]*)
 
-  while true; do
+            log_event "warning" "Uninstalling Netdata ..." "false"
 
-    echo -e "${YELLOW}${ITALIC} > Do you really want to install netdata?${ENDCOLOR}"
-    read -p "Please type 'y' or 'n'" yn
+            # Deleting mysql user
+            mysql_user_delete "netdata"
+            
+            # Deleting nginx server files
+            rm "/etc/nginx/sites-enabled/monitor"
+            rm "/etc/nginx/sites-available/monitor"
 
-    log_subsection "Netdata Installer"
+            # Deleting installation files
+            rm -R "/etc/netdata"
+            rm "/etc/systemd/system/netdata.service"
+            rm "/usr/sbin/netdata"
 
-    case $yn in
-    [Yy]*)
+            # Running uninstaller
+            source "/usr/libexec/netdata-uninstaller.sh" --yes --dont-wait
 
-      log_event "info" "Updating packages before installation ..."
+            log_event "info" "Netdata removed ok!" "false"
+            display --indent 6 --text "- Uninstalling netdata" --result "DONE" --color GREEN
 
-      apt-get --yes update -qq > /dev/null
+            break
+            ;;
+          [Nn]*)
+            log_event "warning" "Aborting netdata installer script ..." "false"
 
-      display --indent 6 --text "- Updating packages before installation" --result "DONE" --color GREEN
+            break
+            ;;
+          *) echo " > Please answer yes or no." ;;
+          esac
+        done
 
-      netdata_required_packages
+      fi
+      if [[ ${NETDATA_CHOSEN_OPTION} == *"04"* ]]; then
+        /usr/libexec/netdata/plugins.d/alarm-notify.sh test
 
-      netdata_installer
-
-      # Netdata nginx proxy configuration
-      nginx_server_create "${netdata_subdomain}" "netdata" "tool"
-
-      netdata_configuration
-
-      # Confirm ROOT_DOMAIN
-      root_domain=$(cloudflare_ask_root_domain "${suggested_root_domain}")
-
-      # Cloudflare API
-      cloudflare_change_a_record "${root_domain}" "${netdata_subdomain}"
-
-      DOMAIN=${netdata_subdomain}
-      #CHOSEN_CB_OPTION="1"
-      #export CHOSEN_CB_OPTION DOMAIN
-
-      # HTTPS with Certbot
-      certbot_certificate_install "${MAILA}" "${DOMAIN}"
-
-      display --indent 6 --text "- Netdata installation" --result "DONE" --color GREEN
-
-      break
-      ;;
-    [Nn]*)
-      log_event "warning" "Aborting netdata installer script ..." "true"
-      break
-      ;;
-    *) echo " > Please answer yes or no." ;;
-    esac
-  done
-
-else
-
-  NETDATA_OPTIONS=(
-    "01)" "UPDATE NETDATA" 
-    "02)" "CONFIGURE NETDATA" 
-    "03)" "UNINSTALL NETDATA" 
-    "04)" "SEND ALARM TEST"
-    )
-
-  NETDATA_CHOSEN_OPTION=$(whiptail --title "Netdata Installer" --menu "Netdata is already installed." 20 78 10 "${NETDATA_OPTIONS[@]}" 3>&1 1>&2 2>&3)
-  exitstatus="$?"
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    log_subsection "Netdata Installer"
-
-    if [[ ${NETDATA_CHOSEN_OPTION} == *"01"* ]]; then
-      cd netdata && git pull && ./netdata-installer.sh --dont-wait
-      netdata_configuration
-
-    fi
-    if [[ ${NETDATA_CHOSEN_OPTION} == *"02"* ]]; then
-      netdata_required_packages
-      netdata_configuration
-
-    fi
-    if [[ ${NETDATA_CHOSEN_OPTION} == *"03"* ]]; then
-
-      while true; do
-        echo -e "${YELLOW}${ITALIC} > Do you really want to uninstall netdata?${ENDCOLOR}"
-        read -p "Please type 'y' or 'n'" yn
-        case $yn in
-        [Yy]*)
-
-          log_event "warning" "Uninstalling Netdata ..." "false"
-
-          # Deleting mysql user
-          mysql_user_delete "netdata"
-          
-          # Deleting nginx server files
-          rm "/etc/nginx/sites-enabled/monitor"
-          rm "/etc/nginx/sites-available/monitor"
-
-          # Deleting installation files
-          rm -R "/etc/netdata"
-          rm "/etc/systemd/system/netdata.service"
-          rm "/usr/sbin/netdata"
-
-          # Running uninstaller
-          source "/usr/libexec/netdata-uninstaller.sh" --yes --dont-wait
-
-          log_event "info" "Netdata removed ok!" "false"
-          display --indent 6 --text "- Uninstalling netdata" --result "DONE" --color GREEN
-
-          break
-          ;;
-        [Nn]*)
-          log_event "warning" "Aborting netdata installer script ..." "false"
-
-          break
-          ;;
-        *) echo " > Please answer yes or no." ;;
-        esac
-      done
-
-    fi
-    if [[ ${NETDATA_CHOSEN_OPTION} == *"04"* ]]; then
-      /usr/libexec/netdata/plugins.d/alarm-notify.sh test
+      fi
 
     fi
 
   fi
-
-fi
+  
+}

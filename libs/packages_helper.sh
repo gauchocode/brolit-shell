@@ -295,7 +295,33 @@ function selected_package_installation() {
 
       log_event "info" "Executing ${app} installer ..."
       
-      "${SFOLDER}/utils/installers/${app}_installer.sh"
+      case ${app} in
+
+        certbot)
+          certbot_installer
+        ;;
+
+        monit)
+          monit_installer_menu
+        ;;
+
+        netdata)
+          netdata_installer
+        ;;
+
+        cockpit)
+          cockpit_installer
+        ;;
+
+        zabbix)
+          zabbix_server_installer
+        ;;
+
+        *)
+          log_event "error" "Package installer for ${app} not found!"
+        ;;
+
+    esac
 
     done
 
