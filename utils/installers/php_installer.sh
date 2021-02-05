@@ -15,20 +15,20 @@ function php_installer() {
 
   local php_v=$1
 
-  if [[ -z ${php_v} ]]; then
+  if [[ -z ${php_v} || ${php_v} == "" ]]; then
     
     DISTRO_V=$(get_ubuntu_version)
     
-    if [[ "${DISTRO_V}" -eq "1804" ]]; then
-      PHP_V="7.2"  #Ubuntu 18.04 LTS Default
+    if [[ ${DISTRO_V} -eq "1804" ]]; then
+      php_v="7.2"  #Ubuntu 18.04 LTS Default
 
-    elif [[ "${DISTRO_V}" -eq "2004" ]]; then
-      PHP_V="7.4"  #Ubuntu 20.04 LTS Default
+    elif [[ ${DISTRO_V} -eq "2004" ]]; then
+      php_v="7.4"  #Ubuntu 20.04 LTS Default
 
     else
       log_event "critical" "Non standard distro!" "true"
       return 1
-      
+
     fi
 
   fi
