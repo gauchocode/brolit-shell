@@ -143,107 +143,113 @@ function php_purge_installation() {
 
 }
 
-################################################################################
+function php_installer_menu() {
 
-declare -g PHP_V
+  php_is_installed=$(php_check_if_installed)
 
-php_is_installed=$(php_check_if_installed)
+  if [[ ${php_is_installed} == "false" ]]; then
 
-if [[ ${php_is_installed} == "false" ]]; then
+    php_installer_title="PHP INSTALLER"
+    php_installer_message="Choose a PHP version to install:"
+    php_installer_options=(
+      "01)" "INSTALL PHP DEFAULT" 
+      "02)" "INSTALL PHP CUSTOM"
+    )
 
-  php_installer_title="PHP INSTALLER"
-  php_installer_message="Choose a PHP version to install:"
-  php_installer_options=(
-    "01)" "INSTALL PHP DEFAULT" 
-    "02)" "INSTALL PHP CUSTOM"
-  )
+  else
 
-else
+    php_installer_title="PHP HELPER"
+    php_installer_message="Choose an option to run:"
+    php_installer_options=(
+      "01)" "INSTALL PHP DEFAULT" 
+      "02)" "INSTALL PHP CUSTOM" 
+      "03)" "RECONFIGURE PHP" 
+      "04)" "ENABLE OPCACHE" 
+      "05)" "DISABLE OPCACHE" 
+      "06)" "OPTIMIZE PHP" 
+      "07)" "REMOVE PHP"
+    )
 
-  php_installer_title="PHP HELPER"
-  php_installer_message="Choose an option to run:"
-  php_installer_options=(
-    "01)" "INSTALL PHP DEFAULT" 
-    "02)" "INSTALL PHP CUSTOM" 
-    "03)" "RECONFIGURE PHP" 
-    "04)" "ENABLE OPCACHE" 
-    "05)" "DISABLE OPCACHE" 
-    "06)" "OPTIMIZE PHP" 
-    "07)" "REMOVE PHP"
-  )
+  fi
 
-fi
+  # Check installed versions
+  php_installed_versions=$(php_check_installed_version)
 
-# Check installed versions
-php_installed_versions=$(php_check_installed_version)
+  # Setting PHP_V
+  PHP_V=$(php_select_version_to_work_with "${php_installed_versions}")
 
-# Setting PHP_V
-PHP_V=$(php_select_version_to_work_with "${php_installed_versions}")
+  if [[ ${PHP_V} != "" ]]; then
 
-if [[ ${PHP_V} != "" ]]; then
+    chosen_php_installer_options=$(whiptail --title "${php_installer_title}" --menu "${php_installer_message}" 20 78 10 "${php_installer_options[@]}" 3>&1 1>&2 2>&3)
+    exitstatus="$?"
+    if [[ ${exitstatus} -eq 0 ]]; then
 
-  chosen_php_installer_options=$(whiptail --title "${php_installer_title}" --menu "${php_installer_message}" 20 78 10 "${php_installer_options[@]}" 3>&1 1>&2 2>&3)
-  exitstatus="$?"
-  if [[ ${exitstatus} -eq 0 ]]; then
+      if [[ ${chosen_php_installer_options} == *"01"* ]]; then
+        
+        log_subsection "PHP Installer"
+        
+        # Installing packages
+        php_installer "${PHP_V}"
+        mail_utils_installer
+        php_redis_installer
 
-    if [[ ${chosen_php_installer_options} == *"01"* ]]; then
-      
-      log_subsection "PHP Installer"
-      
-      # Installing packages
-      php_installer "${PHP_V}"
-      mail_utils_installer
-      php_redis_installer
+      fi
+      if [[ ${chosen_php_installer_options} == *"02"* ]]; then
 
-    fi
-    if [[ ${chosen_php_installer_options} == *"02"* ]]; then
+        log_subsection "PHP Installer"
 
-      log_subsection "PHP Installer"
+        # INSTALL PHP CUSTOM
+        php_custom_installer
+        mail_utils_installer
+        #php_redis_installer
 
-      # INSTALL PHP CUSTOM
-      php_custom_installer
-      mail_utils_installer
-      #php_redis_installer
+        # TODO: if you install a new PHP version, maybe you want to reconfigure an specific nginx_server
+        # nginx_reconfigure_sites()
+        # fastcgi_pass unix:/var/run/php/php5.6-fpm.sock;
+        # fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
 
-      # TODO: if you install a new PHP version, maybe you want to reconfigure an specific nginx_server
-      # nginx_reconfigure_sites()
-      # fastcgi_pass unix:/var/run/php/php5.6-fpm.sock;
-      # fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
+      fi
 
-    fi
+      # Will only show if php is installed
+      if [[ ${chosen_php_installer_options} == *"03"* ]]; then
+        
+        # RECONFIGURE PHP
+        php_reconfigure
 
-    # Will only show if php is installed
-    if [[ ${chosen_php_installer_options} == *"03"* ]]; then
-      
-      # RECONFIGURE PHP
-      php_reconfigure
+      fi
+      if [[ ${chosen_php_installer_options} == *"04"* ]]; then
+        
+        # ENABLE OPCACHE
+        php_opcode_config "enable"
 
-    fi
-    if [[ ${chosen_php_installer_options} == *"04"* ]]; then
-      
-      # ENABLE OPCACHE
-      php_opcode_config "enable"
+      fi
+      if [[ ${chosen_php_installer_options} == *"05"* ]]; then
+        
+        # DISABLE OPCACHE
+        php_opcode_config "disable"
 
-    fi
-    if [[ ${chosen_php_installer_options} == *"05"* ]]; then
-      
-      # DISABLE OPCACHE
-      php_opcode_config "disable"
+      fi
+      if [[ ${chosen_php_installer_options} == *"06"* ]]; then
+        
+        # OPTIMIZE PHP
+        "${SFOLDER}/utils/php_optimizations.sh"
 
-    fi
-    if [[ ${chosen_php_installer_options} == *"06"* ]]; then
-      
-      # OPTIMIZE PHP
-      "${SFOLDER}/utils/php_optimizations.sh"
+      fi
+      if [[ ${chosen_php_installer_options} == *"07"* ]]; then
+        
+        # REMOVE PHP
+        php_purge_installation
 
-    fi
-    if [[ ${chosen_php_installer_options} == *"07"* ]]; then
-      
-      # REMOVE PHP
-      php_purge_installation
+      fi
 
     fi
 
   fi
+  
+}
 
-fi
+################################################################################
+
+declare -g PHP_V
+
+php_installer_menu
