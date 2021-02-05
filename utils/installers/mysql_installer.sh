@@ -5,7 +5,7 @@
 #############################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
-# source "${SFOLDER}/libs/commons.sh"
+source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
 

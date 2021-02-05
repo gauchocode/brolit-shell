@@ -14,13 +14,6 @@
 #
 ################################################################################
 
-### Checking some things
-if [[ -z "${SFOLDER}" ]]; then
-    echo -e "${B_RED} > Error: The script can only be runned by runner.sh! Exiting ...${ENDCOLOR}"
-    exit 0
-fi
-################################################################################
-
 # shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
 # shellcheck source=${SFOLDER}/libs/mysql_helper.sh
@@ -30,7 +23,7 @@ source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 ################################################################################
 
-zabbix_prepare_database() {
+function zabbix_prepare_database() {
 
     SQL1="CREATE DATABASE zabbix CHARACTER SET UTF8 COLLATE UTF8_BIN;"
     SQL2="CREATE USER 'zabbix'@'%' IDENTIFIED BY 'zabbix2020*';"
@@ -44,7 +37,7 @@ zabbix_prepare_database() {
 
 }
 
-zabbix_prepare_database() {
+function zabbix_prepare_database() {
 
     tar -zxvf "zabbix-4.0.3.tar.gz"
     cd "zabbix-4.0.3/database/mysql/"
@@ -55,14 +48,17 @@ zabbix_prepare_database() {
 }
 
 # Zabbix 4.2
-zabbix_download_installer() {
+function zabbix_download_installer() {
 
     cd "${SFOLDER}/tmp/"
     wget "http://repo.zabbix.com/zabbix/4.2/ubuntu/pool/main/z/zabbix-release/zabbix-release_4.2-1%2Bbionic_all.deb"
 
 }
 
-zabbix_server_installer() {
+function zabbix_server_installer() {
+
+    zabbix_download_installer
+
     # groupadd zabbix
     # useradd -g zabbix -s /bin/bash zabbix
 
@@ -115,7 +111,7 @@ zabbix_server_installer() {
 
 }
 
-zabbix_agent_installer() {
+function zabbix_agent_installer() {
 
     cd "${SFOLDER}/tmp/"
     dpkg -i zabbix-release_4.2-1+bionic_all.deb
@@ -125,9 +121,3 @@ zabbix_agent_installer() {
     apt-get --yes install zabbix-agent
 
 }
-
-################################################################################
-
-zabbix_download_installer
-
-zabbix_server_installer

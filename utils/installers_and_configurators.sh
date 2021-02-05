@@ -12,6 +12,16 @@ source "${SFOLDER}/utils/installers/mysql_installer.sh"
 source "${SFOLDER}/utils/installers/nginx_installer.sh"
 # shellcheck source=${SFOLDER}/utils/installers/certbot_installer.sh
 source "${SFOLDER}/utils/installers/certbot_installer.sh"
+# shellcheck source=${SFOLDER}/utils/installers/monit_installer.sh
+source "${SFOLDER}/utils/installers/monit_installer.sh"
+# shellcheck source=${SFOLDER}/utils/installers/phpmyadmin_installer.sh
+source "${SFOLDER}/utils/installers/phpmyadmin_installer.sh"
+# shellcheck source=${SFOLDER}/utils/installers/netdata_installer.sh
+source "${SFOLDER}/utils/installers/netdata_installer.sh"
+# shellcheck source=${SFOLDER}/utils/installers/cockpit_installer.sh
+source "${SFOLDER}/utils/installers/cockpit_installer.sh"
+# shellcheck source=${SFOLDER}/utils/installers/wpcli_installer.sh
+source "${SFOLDER}/utils/installers/wpcli_installer.sh"
 
 ################################################################################
 
@@ -51,19 +61,19 @@ function installers_and_configurators() {
 
     fi
     if [[ ${installer_type} == *"04"* ]]; then
-      "${SFOLDER}/utils/installers/phpmyadmin_installer.sh"
+      phpmyadmin_installer
 
     fi
     if [[ ${installer_type} == *"05"* ]]; then
-      "${SFOLDER}/utils/installers/netdata_installer.sh"
+      netdata_installer_menu
 
     fi
     if [[ ${installer_type} == *"06"* ]]; then
-      "${SFOLDER}/utils/installers/monit_installer.sh"
+      monit_installer_menu
 
     fi
     if [[ ${installer_type} == *"07"* ]]; then
-      "${SFOLDER}/utils/installers/cockpit_installer.sh"
+      cockpit_installer
 
     fi
     if [[ ${installer_type} == *"08"* ]]; then
@@ -71,7 +81,7 @@ function installers_and_configurators() {
 
     fi
     if [[ ${installer_type} == *"09"* ]]; then
-      "${SFOLDER}/utils/installers/wpcli_installer.sh"
+      wpcli_installer_menu
 
     fi
     if [[ ${installer_type} == *"10"* ]]; then
