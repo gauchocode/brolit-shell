@@ -4,8 +4,12 @@
 # Version: 3.0.13
 ################################################################################
 
-# shellcheck source=${SFOLDER}/libs/packages_helper.sh
+# shellcheck source=${SFOLDER}/utils/installers/php_installer.sh
 source "${SFOLDER}/utils/installers/php_installer.sh"
+# shellcheck source=${SFOLDER}/utils/installers/mysql_installer.sh
+source "${SFOLDER}/utils/installers/mysql_installer.sh"
+# shellcheck source=${SFOLDER}/utils/installers/nginx_installer.sh
+source "${SFOLDER}/utils/installers/nginx_installer.sh"
 
 ################################################################################
 
@@ -37,11 +41,11 @@ function installers_and_configurators() {
 
     fi
     if [[ ${installer_type} == *"02"* ]]; then
-      "${SFOLDER}/utils/installers/mysql_installer.sh"
+      mysql_installer_menu
 
     fi
     if [[ ${installer_type} == *"03"* ]]; then
-      "${SFOLDER}/utils/installers/nginx_installer.sh"
+      nginx_installer_menu
 
     fi
     if [[ ${installer_type} == *"04"* ]]; then

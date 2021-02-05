@@ -257,7 +257,7 @@ function script_init() {
     
   fi
 
-  if [[ "${DROPBOX_ENABLE}" == "true" ]]; then
+  if [[ ${DROPBOX_ENABLE} == "true" ]]; then
     # Dropbox-uploader config file
     DPU_CONFIG_FILE=~/.dropbox_uploader
     # shellcheck source=${DPU_CONFIG_FILE}
@@ -269,14 +269,14 @@ function script_init() {
   fi
 
   # Cloudflare config file
-  if [[ "${CLOUDFLARE_ENABLE}" == "true" ]]; then
+  if [[ ${CLOUDFLARE_ENABLE} == "true" ]]; then
     CLF_CONFIG_FILE=~/.cloudflare.conf
     # shellcheck source=${CLF_CONFIG_FILE}
     source "${CLF_CONFIG_FILE}"
   fi
 
   # Telegram config file
-  if [[ "${TELEGRAM_NOTIF}" == "true" ]]; then
+  if [[ ${TELEGRAM_NOTIF} == "true" ]]; then
     TEL_CONFIG_FILE=~/.telegram.conf
     # shellcheck source=${CLF_CONFIG_FILE}
     source "${TEL_CONFIG_FILE}"
@@ -1442,10 +1442,10 @@ function ask_subdomains_to_cloudflare_config() {
 
   subdomains=$(whiptail --title "Cloudflare Subdomains" --inputbox "Insert the subdomains you want to update in Cloudflare (comma separated). Example: www.broobe.com,broobe.com" 10 60 "${DOMAIN}" 3>&1 1>&2 2>&3)
   exitstatus="$?"
-
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    log_event "info" "Setting subdomains=${subdomains}" "true"
+    log_event "info" "Setting subdomains=${subdomains}"
+
     # Return
     echo "${subdomains}"
 
@@ -1492,7 +1492,6 @@ function ask_folder_to_install_sites() {
 function ask_mysql_root_psw() {
 
   # MPASS is defined globally
-
   if [[ -z "${MPASS}" ]]; then
     MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root password" 10 60 "${MPASS}" 3>&1 1>&2 2>&3)
     exitstatus=$?
@@ -1519,7 +1518,6 @@ function ask_mysql_root_psw() {
 #
 #################################################################################
 #
-
 
 function menu_main_options() {
 
