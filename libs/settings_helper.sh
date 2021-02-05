@@ -491,7 +491,7 @@ function generate_cloudflare_config() {
 
             # Write config file
             echo "dns_cloudflare_api_key=${cfl_api_token}">>"${CLF_CONFIG_FILE}"
-            log_event "success" "The Cloudflare configuration has been saved!"
+            log_event "info" "The Cloudflare configuration has been saved!"
 
             else
                 return 1

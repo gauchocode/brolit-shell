@@ -28,7 +28,7 @@ installers_and_configurators() {
     log_section "Installers and Configurators"
 
     if [[ ${installer_type} == *"01"* ]]; then
-      "${SFOLDER}/utils/installers/php_installer.sh"
+      php_installer_menu
 
     fi
     if [[ ${installer_type} == *"02"* ]]; then
