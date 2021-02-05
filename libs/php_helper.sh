@@ -226,6 +226,10 @@ function php_fpm_optimizations() {
   #  PHP_V="7.4"  #Ubuntu 20.04 LTS Default
   #fi
 
+  log_event "info" "RUNNING PHP-FPM OPTIMIZATION TOOL"
+
+  log_subsection "PHP-FPM Optimization Tool"
+
   RAM_BUFFER="512"
 
   # Getting server info
