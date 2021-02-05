@@ -11,8 +11,6 @@ source "${SFOLDER}/libs/php_helper.sh"
 
 ################################################################################
 
-declare -g PHP_V
-
 function php_installer() {
 
   local php_v=$1
@@ -147,6 +145,8 @@ function php_purge_installation() {
 
 function php_installer_menu() {
 
+  declare -g PHP_V
+
   php_is_installed=$(php_check_if_installed)
 
   if [[ ${php_is_installed} == "false" ]]; then
@@ -169,7 +169,7 @@ function php_installer_menu() {
       "04)" "ENABLE OPCACHE" 
       "05)" "DISABLE OPCACHE" 
       "06)" "OPTIMIZE PHP" 
-      "07)" "REMOVE PHP"
+      "07)" "UNINSTALL PHP"
     )
 
   fi
@@ -234,7 +234,7 @@ function php_installer_menu() {
       if [[ ${chosen_php_installer_options} == *"06"* ]]; then
         
         # OPTIMIZE PHP
-        "${SFOLDER}/utils/php_optimizations.sh"
+        php_fpm_optimizations
 
       fi
       if [[ ${chosen_php_installer_options} == *"07"* ]]; then
