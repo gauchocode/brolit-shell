@@ -5,11 +5,11 @@
 #############################################################################
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
-source "${SFOLDER}/libs/commons.sh"
+# source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
 
-mysql_default_installer() {
+function mysql_default_installer() {
 
   log_subsection "MySQL Installer"
 
@@ -21,7 +21,7 @@ mysql_default_installer() {
 
 }
 
-mariadb_default_installer() {
+function mariadb_default_installer() {
   
   log_subsection "MySQL Installer"
 
@@ -33,7 +33,7 @@ mariadb_default_installer() {
 
 }
 
-mysql_purge_installation() {
+function mysql_purge_installation() {
 
   log_event "warning" "Purging mysql-* packages ..."
   display --indent 6 --text "- Purging MySQL packages"
@@ -49,7 +49,7 @@ mysql_purge_installation() {
 
 }
 
-mysql_check_if_installed() {
+function mysql_check_if_installed() {
 
   MYSQL="$(which mysql)"
   if [ ! -x "${MYSQL}" ]; then
@@ -58,68 +58,70 @@ mysql_check_if_installed() {
 
 }
 
-mysql_check_installed_version() {
+function mysql_check_installed_version() {
   
   mysql --version | awk '{ print $5 }' | awk -F\, '{ print $1 }'
 
 }
 
-################################################################################
+function mysql_installer_menu() {
 
-mysql_installed="true"
-mysql_check_if_installed
+  mysql_installed="true"
+  mysql_check_if_installed
 
-if [[ ${mysql_installed} == "false" ]]; then
+  if [[ ${mysql_installed} == "false" ]]; then
 
-  MYSQL_INSTALLER_OPTIONS=(
-    "01)" "INSTALL MARIADB" 
-    "02)" "INSTALL MYSQL"
-  )
-  CHOSEN_MYSQL_INSTALLER_OPTION=$(whiptail --title "MySQL INSTALLER" --menu "Choose a MySQL version to install" 20 78 10 "${MYSQL_INSTALLER_OPTIONS[@]}" 3>&1 1>&2 2>&3)
-  exitstatus="$?"
-  if [[ ${exitstatus} -eq 0 ]]; then
+    MYSQL_INSTALLER_OPTIONS=(
+      "01)" "INSTALL MARIADB" 
+      "02)" "INSTALL MYSQL"
+    )
+    CHOSEN_MYSQL_INSTALLER_OPTION=$(whiptail --title "MySQL INSTALLER" --menu "Choose a MySQL version to install" 20 78 10 "${MYSQL_INSTALLER_OPTIONS[@]}" 3>&1 1>&2 2>&3)
+    exitstatus="$?"
+    if [[ ${exitstatus} -eq 0 ]]; then
 
-    if [[ ${CHOSEN_MYSQL_INSTALLER_OPTION} == *"01"* ]]; then
-      mariadb_default_installer
+      if [[ ${CHOSEN_MYSQL_INSTALLER_OPTION} == *"01"* ]]; then
+        mariadb_default_installer
+
+      fi
+      if [[ ${CHOSEN_MYSQL_INSTALLER_OPTION} == *"02"* ]]; then
+        mysql_default_installer
+
+      fi
+
+      # Secure mysql installation
+      mysql_secure_installation
+
+    else
+      log_event "warning" "Operation cancelled" "false"
+      return 1
 
     fi
-    if [[ ${CHOSEN_MYSQL_INSTALLER_OPTION} == *"02"* ]]; then
-      mysql_default_installer
-
-    fi
-
-    # Secure mysql installation
-    mysql_secure_installation
 
   else
-    log_event "warning" "Operation cancelled" "false"
-    return 1
+
+    while true; do
+
+        echo -e "${YELLOW}${ITALIC} > MySQL already installed, do you want to remove it?${ENDCOLOR}"
+        read -p "Please type 'y' or 'n'" yn
+
+        case $yn in
+            [Yy]* )
+              clear_last_line
+              clear_last_line
+              mysql_purge_installation
+            break;;
+                  
+            [Nn]* )
+              clear_last_line
+              clear_last_line
+              log_event "warning" "Operation cancelled" "false"
+            break;;
+            
+            * ) echo " > Please answer yes or no.";;
+        esac
+
+    done
 
   fi
 
-else
-
-  while true; do
-
-      echo -e "${YELLOW}${ITALIC} > MySQL already installed, do you want to remove it?${ENDCOLOR}"
-      read -p "Please type 'y' or 'n'" yn
-
-      case $yn in
-          [Yy]* )
-            clear_last_line
-            clear_last_line
-            mysql_purge_installation
-          break;;
-                 
-          [Nn]* )
-            clear_last_line
-            clear_last_line
-            log_event "warning" "Operation cancelled" "false"
-          break;;
-          
-          * ) echo " > Please answer yes or no.";;
-      esac
-
-  done
-
-fi
+}

@@ -14,13 +14,6 @@
 # Brotli compression only supports the HTTPS site
 #
 
-### Checking some things
-if [[ -z "${SFOLDER}" ]]; then
-    echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
-    exit 0
-fi
-################################################################################
-
 # shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
 # shellcheck source=${SFOLDER}/libs/nginx_helper.sh
@@ -28,7 +21,7 @@ source "${SFOLDER}/libs/nginx_helper.sh"
 
 ################################################################################
 
-nginx_default_installer() { 
+function nginx_default_installer() { 
 
     apt-get --yes install nginx -qq > /dev/null
   
@@ -36,7 +29,7 @@ nginx_default_installer() {
 
 }
 
-nginx_custom_installer() {
+function nginx_custom_installer() {
 
     #curl -L https://nginx.org/keys/nginx_signing.key | sudo apt-key add -
     #cp ${SFOLDER}/assets/nginx.list /etc/apt/sources.list.d/nginx.list
@@ -51,7 +44,7 @@ nginx_custom_installer() {
 
 }
 
-nginx_webp_installer() {
+function nginx_webp_installer() {
 
     display --indent 6 --text "- Installing imagemagick and webp package"
 
@@ -62,7 +55,7 @@ nginx_webp_installer() {
 
 }
 
-nginx_purge_installation() {
+function nginx_purge_installation() {
 
     display --indent 6 --text "- Purgin nginx from system"
 
@@ -73,7 +66,7 @@ nginx_purge_installation() {
 
 }
 
-nginx_check_if_installed() {
+function nginx_check_if_installed() {
 
     nginx_installed="true"
 
@@ -87,58 +80,64 @@ nginx_check_if_installed() {
 
 }
 
-nginx_check_installed_version() {
+function nginx_check_installed_version() {
 
     nginx --version | awk '{ print $5 }' | awk -F\, '{ print $1 }'
 
 }
 
-################################################################################
+function nginx_installer_menu() {
 
-#nginx_installed="true"
-nginx_check_if_installed
+    #nginx_installed="true"
+    nginx_check_if_installed
 
-if [ ${nginx_installed} == "false" ]; then
+    if [[ ${nginx_installed} == "false" ]]; then
 
-    NGINX_INSTALLER_OPTIONS=("01)" "NGINX STANDARD" "02)" "NGINX LAST STABLE")
+        NGINX_INSTALLER_OPTIONS=(
+            "01)" "NGINX STANDARD" 
+            "02)" "NGINX LAST STABLE"
+        )
 
-else
+    else
 
-    NGINX_INSTALLER_OPTIONS=("01)" "NGINX STANDARD" "02)" "NGINX LAST STABLE" "03)" "NGINX RECONFIGURE")
-
-fi
-
-CHOSEN_NGINX_INSTALLER_OPTION=$(whiptail --title "NGINX INSTALLER" --menu "Choose a Nginx version to install" 20 78 10 "${NGINX_INSTALLER_OPTIONS[@]}" 3>&1 1>&2 2>&3)
-exitstatus=$?
-if [[ ${exitstatus} -eq 0 ]]; then
-
-    if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"01"* ]]; then
-
-        log_subsection "Nginx Installer"
-        nginx_default_installer
-
-
-    fi
-    if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"02"* ]]; then
-
-        log_subsection "Nginx Installer"
-        nginx_custom_installer
-
-    fi
-    if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"03"* ]]; then
-
-        log_subsection "Nginx Installer"
-
-        nginx_delete_default_directory
-
-        nginx_reconfigure
-
-        nginx_new_default_server
-
-        nginx_create_globals_config
+        NGINX_INSTALLER_OPTIONS=(
+            "01)" "NGINX STANDARD" 
+            "02)" "NGINX LAST STABLE" 
+            "03)" "NGINX RECONFIGURE"
+        )
 
     fi
 
-fi
+    CHOSEN_NGINX_INSTALLER_OPTION=$(whiptail --title "NGINX INSTALLER" --menu "Choose a Nginx version to install" 20 78 10 "${NGINX_INSTALLER_OPTIONS[@]}" 3>&1 1>&2 2>&3)
+    exitstatus="$?"
+    if [[ ${exitstatus} -eq 0 ]]; then
 
+        if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"01"* ]]; then
 
+            log_subsection "Nginx Installer"
+            nginx_default_installer
+
+        fi
+        if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"02"* ]]; then
+
+            log_subsection "Nginx Installer"
+            nginx_custom_installer
+
+        fi
+        if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"03"* ]]; then
+
+            log_subsection "Nginx Installer"
+
+            nginx_delete_default_directory
+
+            nginx_reconfigure
+
+            nginx_new_default_server
+
+            nginx_create_globals_config
+
+        fi
+
+    fi
+
+}
