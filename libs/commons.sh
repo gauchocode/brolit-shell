@@ -60,6 +60,8 @@ source "${SFOLDER}/libs/telegram_notification_helper.sh"
 source "${SFOLDER}/libs/wordpress_helper.sh"
 # shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
 source "${SFOLDER}/libs/wpcli_helper.sh"
+# shellcheck source=${SFOLDER}/utils/installers_and_configurators.sh
+source "${SFOLDER}/utils/installers_and_configurators.sh"
 
 #
 #############################################################################
@@ -1576,8 +1578,7 @@ function menu_main_options() {
 
     fi
     if [[ ${chosen_type} == *"07"* ]]; then
-      # shellcheck source=${SFOLDER}/utils/installers_and_configurators.sh
-      source "${SFOLDER}/utils/installers_and_configurators.sh"
+      installers_and_configurators
 
     fi
     if [[ ${chosen_type} == *"08"* ]]; then
