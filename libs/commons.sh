@@ -7,20 +7,6 @@
 #
 #############################################################################
 #
-# * Globals
-#
-#############################################################################
-#
-
-SCRIPT_N="LEMP UTILS SCRIPT"
-SCRIPT_V="3.0.13"
-
-# Hostname
-VPSNAME="$HOSTNAME"
-
-#
-#############################################################################
-#
 # * Sources
 #
 #############################################################################
@@ -66,10 +52,16 @@ source "${SFOLDER}/utils/installers_and_configurators.sh"
 #
 #############################################################################
 #
-# * Options
+# * Globals & Options
 #
 #############################################################################
 #
+
+SCRIPT_N="LEMP UTILS SCRIPT"
+SCRIPT_V="3.0.13"
+
+# Hostname
+VPSNAME="$HOSTNAME"
 CRONJOB=0                           # Run as a cronjob
 DEBUG=1                             # Debugging mode (to screen)
 QUICKMODE=1                         # Don't wait for user input
@@ -1543,7 +1535,7 @@ function menu_main_options() {
     )
   chosen_type=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)
 
-  exitstatus=$?
+  exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_type} == *"01"* ]]; then
@@ -1603,7 +1595,7 @@ function menu_main_options() {
 
 }
 
-menu_first_run() {
+function menu_first_run() {
 
   local first_run_options
   local first_run_string
@@ -2010,7 +2002,7 @@ function tasks_handler() {
 
   local task=$1
 
-  case $task in
+  case ${task} in
 
     backup)
 
