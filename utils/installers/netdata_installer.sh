@@ -4,8 +4,6 @@
 # Version: 3.0.13
 ################################################################################
 
-# shellcheck source=${SFOLDER}/libs/commons.sh
-source "${SFOLDER}/libs/commons.sh"
 # shellcheck source=${SFOLDER}/libs/nginx_helper.sh
 source "${SFOLDER}/libs/nginx_helper.sh"
 # shellcheck source=${SFOLDER}/libs/cloudflare_helper.sh

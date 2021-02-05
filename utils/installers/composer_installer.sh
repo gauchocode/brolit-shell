@@ -8,12 +8,7 @@
 #
 ################################################################################
 
-# shellcheck source=${SFOLDER}/libs/commons.sh
-source "${SFOLDER}/libs/commons.sh"
-
-################################################################################
-
-composer_install () {
+function composer_install () {
 
   local composer_result 
   local expected_signature 
@@ -50,13 +45,13 @@ composer_install () {
 
 }
 
-composer_update_version () {
+function composer_update_version () {
 
   composer self-update
 
 }
 
-composer_update () {
+function composer_update () {
 
   composer update
 
@@ -66,6 +61,4 @@ composer_update () {
 
 #DOMAIN=""                                    # Domain for WP installation. Example: landing.broobe.com
 #ROOT_DOMAIN=""                               # Only for Cloudflare API. Example: broobe.com
-#PROJECT_NAME=""                              # Project Name. Example: landing_broobe
-
-composer_install 
+#PROJECT_NAME=""                              # Project Name. Example: landing_broobe 

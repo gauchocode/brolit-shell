@@ -4,11 +4,6 @@
 # Version: 3.0.13
 ################################################################################
 
-# shellcheck source=${SFOLDER}/libs/commons.sh
-source "${SFOLDER}/libs/commons.sh"
-
-################################################################################
-
 function it_utils_menu() {
 
   local it_util_options 
