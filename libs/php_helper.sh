@@ -10,13 +10,15 @@ function php_check_if_installed() {
   local php
 
   php="$(which php)"
-  if [ ! -x "${php}" ]; then
+  if [[ ! -x "${php}" ]]; then
     php_installed="false"
 
   else
     php_installed="true"
 
   fi
+
+  log_event "debug" "php_installed=${php_installed}"
 
   # Return
   echo "${php_installed}"
