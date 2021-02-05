@@ -69,11 +69,14 @@ mysql_check_installed_version() {
 mysql_installed="true"
 mysql_check_if_installed
 
-if [ ${mysql_installed} == "false" ]; then
+if [[ ${mysql_installed} == "false" ]]; then
 
-  MYSQL_INSTALLER_OPTIONS=("01)" "INSTALL MARIADB" "02)" "INSTALL MYSQL")
+  MYSQL_INSTALLER_OPTIONS=(
+    "01)" "INSTALL MARIADB" 
+    "02)" "INSTALL MYSQL"
+  )
   CHOSEN_MYSQL_INSTALLER_OPTION=$(whiptail --title "MySQL INSTALLER" --menu "Choose a MySQL version to install" 20 78 10 "${MYSQL_INSTALLER_OPTIONS[@]}" 3>&1 1>&2 2>&3)
-  exitstatus=$?
+  exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${CHOSEN_MYSQL_INSTALLER_OPTION} == *"01"* ]]; then

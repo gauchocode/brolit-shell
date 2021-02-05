@@ -447,11 +447,16 @@ function log_break() {
 
   local log_break
   
-  log_break=" > -------------------------------------------------"
-  
-  echo "${log_break}" >> "${LOG}"
-  if [ "${console_display}" = "true" ]; then
+  if [[ "${console_display}" == "true" ]]; then
+
+    log_break="        -------------------------------------------------"
     echo -e "${MAGENTA}${B_DEFAULT}${log_break}${ENDCOLOR}" >&2
+
+  else
+
+    log_break=" > -------------------------------------------------"
+    echo "${log_break}" >> "${LOG}"
+
   fi
 
 }
