@@ -231,7 +231,3 @@ function add_floating_IP() {
   #log_event "info" "Is recommended reboot, do you want to do it now?" "true"
 
 }
-
-################################################################################
-
-it_utils_menu
