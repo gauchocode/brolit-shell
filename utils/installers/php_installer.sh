@@ -11,6 +11,8 @@ source "${SFOLDER}/libs/php_helper.sh"
 
 ################################################################################
 
+declare -g PHP_V
+
 function php_installer() {
 
   local php_v=$1
@@ -247,9 +249,3 @@ function php_installer_menu() {
   fi
   
 }
-
-################################################################################
-
-declare -g PHP_V
-
-php_installer_menu
