@@ -11,7 +11,7 @@ source "${SFOLDER}/libs/packages_helper.sh"
 
 ################################################################################
 
-function cerbot_installer() {
+function certbot_installer() {
 
   the_ppa=certbot
 
@@ -76,10 +76,3 @@ function cerbot_installer() {
   fi
 
 }
-
-################################################################################
-
-# Check basic installation packages
-#basic_packages_installation
-
-cerbot_installer
