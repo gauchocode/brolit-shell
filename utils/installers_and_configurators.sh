@@ -4,7 +4,12 @@
 # Version: 3.0.13
 ################################################################################
 
-installers_and_configurators() {
+# shellcheck source=${SFOLDER}/libs/packages_helper.sh
+source "${SFOLDER}/utils/installers/php_installer.sh"
+
+################################################################################
+
+function installers_and_configurators() {
 
   local installer_options
   local installer_type
@@ -105,7 +110,3 @@ installers_and_configurators() {
   menu_main_options
 
 }
-
-################################################################################
-
-installers_and_configurators
