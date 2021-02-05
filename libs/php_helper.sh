@@ -106,7 +106,7 @@ function php_set_version_on_config() {
     
     if [ "${php_v}" == "" ];then
 
-      php_v=$(php_check_installed_version)
+      php_v="$(php_check_installed_version)"
       log_event "debug" "PHP installed version: ${php_v}"
 
     fi

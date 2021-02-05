@@ -23,7 +23,7 @@ source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 ################################################################################
 
-ask_migration_source_type() {
+function ask_migration_source_type() {
 
   local migration_source_type="URL DIRECTORY"
   
@@ -40,7 +40,7 @@ ask_migration_source_type() {
   fi
 }
 
-ask_migration_source_file() {
+function ask_migration_source_file() {
 
   # $1 = ${source_type}
 
@@ -81,7 +81,7 @@ fi
 
 }
 
-ask_migration_source_db() {
+function ask_migration_source_db() {
 
   # $1 = ${source_type}
 
