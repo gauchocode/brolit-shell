@@ -145,7 +145,9 @@ function php_installer_menu() {
 
   declare -g PHP_V
 
-  php_is_installed=$(php_check_if_installed)
+  local php_installed_versions
+
+  php_is_installed="$(php_check_if_installed)"
 
   if [[ ${php_is_installed} == "false" ]]; then
 
