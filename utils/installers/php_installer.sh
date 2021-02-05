@@ -175,12 +175,12 @@ function php_installer_menu() {
   fi
 
   # Check installed versions
-  php_installed_versions=$(php_check_installed_version)
+  php_installed_versions="$(php_check_installed_version)"
 
   # Setting PHP_V
   PHP_V=$(php_select_version_to_work_with "${php_installed_versions}")
 
-  if [[ ${PHP_V} != "" ]]; then
+  #if [[ ${PHP_V} != "" ]]; then
 
     chosen_php_installer_options=$(whiptail --title "${php_installer_title}" --menu "${php_installer_message}" 20 78 10 "${php_installer_options[@]}" 3>&1 1>&2 2>&3)
     exitstatus="$?"
@@ -246,6 +246,6 @@ function php_installer_menu() {
 
     fi
 
-  fi
+  #fi
   
 }
