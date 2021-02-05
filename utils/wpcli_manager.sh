@@ -17,7 +17,7 @@ source "${SFOLDER}/libs/telegram_notification_helper.sh"
 
 ################################################################################
 
-wpcli_main_menu() {
+function wpcli_main_menu() {
 
   # $1 = ${wp_site}
 

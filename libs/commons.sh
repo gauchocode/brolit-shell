@@ -48,6 +48,8 @@ source "${SFOLDER}/libs/wordpress_helper.sh"
 source "${SFOLDER}/libs/wpcli_helper.sh"
 # shellcheck source=${SFOLDER}/utils/installers_and_configurators.sh
 source "${SFOLDER}/utils/installers_and_configurators.sh"
+# shellcheck source=${SFOLDER}/utils/it_utils.sh
+source "${SFOLDER}/utils/it_utils.sh"
 
 #
 #############################################################################
@@ -1572,8 +1574,7 @@ function menu_main_options() {
 
     fi
     if [[ ${chosen_type} == *"08"* ]]; then
-      # shellcheck source=${SFOLDER}/utils/it_utils.sh
-      source "${SFOLDER}/utils/it_utils.sh"
+      it_utils_menu
 
     fi
     if [[ ${chosen_type} == *"09"* ]]; then

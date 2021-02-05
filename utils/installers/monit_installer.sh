@@ -9,7 +9,7 @@ source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
 
-monit_configure(){
+function monit_configure() {
 
   if [ ! -x "${PHP_V}" ]; then
     PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
@@ -58,78 +58,80 @@ monit_configure(){
 
 }
 
-################################################################################
+function monit_installer_menu() {
 
-### Checking if Monit is installed
-MONIT="$(which monit)"
+  ### Checking if Monit is installed
+  MONIT="$(which monit)"
 
-if [ ! -x "${MONIT}" ]; then
+  if [ ! -x "${MONIT}" ]; then
 
-  while true; do
+    while true; do
 
-      echo -e "${YELLOW}${ITALIC} > Do you really want to install monit?${ENDCOLOR}"
-      read -p "Please type 'y' or 'n'" yn
+        echo -e "${YELLOW}${ITALIC} > Do you really want to install monit?${ENDCOLOR}"
+        read -p "Please type 'y' or 'n'" yn
 
-      case $yn in
+        case $yn in
 
-          [Yy]* )
+            [Yy]* )
 
-            log_subsection "Monit Installer"
+              log_subsection "Monit Installer"
 
-            log_event "info" "Updating packages before installation ..."
-            apt-get --yes update -qq > /dev/null
+              log_event "info" "Updating packages before installation ..."
+              apt-get --yes update -qq > /dev/null
 
-            # Installing packages
-            log_event "info" "Installing monit ..."
-            apt-get --yes install monit -qq > /dev/null
+              # Installing packages
+              log_event "info" "Installing monit ..."
+              apt-get --yes install monit -qq > /dev/null
 
-            monit_configure
+              monit_configure
 
-            break;;
+              break;;
 
-          [Nn]* )
+            [Nn]* )
 
-            log_event "warning" "Aborting monit installation script ..."
+              log_event "warning" "Aborting monit installation script ..."
 
-            break;;
+              break;;
 
-          * ) echo " > Please answer yes or no.";;
+            * ) echo " > Please answer yes or no.";;
 
-      esac
+        esac
 
-  done
+    done
 
-else
+  else
 
-  while true; do
+    while true; do
 
-      echo -e "${YELLOW}${ITALIC} > Monit is already installed. Do you want to reconfigure monit?${ENDCOLOR}"
-      read -p "Please type 'y' or 'n'" yn
+        echo -e "${YELLOW}${ITALIC} > Monit is already installed. Do you want to reconfigure monit?${ENDCOLOR}"
+        read -p "Please type 'y' or 'n'" yn
 
-      case $yn in
+        case $yn in
 
-          [Yy]* )
+            [Yy]* )
 
-            log_subsection "Monit Configurator"
+              log_subsection "Monit Configurator"
 
-            monit_configure
+              monit_configure
 
-            break;;
+              break;;
 
-          [Nn]* )
+            [Nn]* )
 
-            log_event "warning" "Aborting monit configuration script ..."
+              log_event "warning" "Aborting monit configuration script ..."
 
-            break;;
+              break;;
 
-          * ) echo " > Please answer yes or no.";;
+            * ) echo " > Please answer yes or no.";;
 
-      esac
+        esac
 
-  done
+    done
 
-  # Called twice to remove last messages
-  clear_last_line
-  clear_last_line
+    # Called twice to remove last messages
+    clear_last_line
+    clear_last_line
 
-fi
+  fi
+  
+}

@@ -15,7 +15,7 @@ source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 ################################################################################
 
-phpmyadmin_installer () {
+function phpmyadmin_installer () {
 
   local project_domain
   local possible_root_domain 
@@ -75,7 +75,3 @@ phpmyadmin_installer () {
   log_break
 
 }
-
-################################################################################
-
-phpmyadmin_installer
