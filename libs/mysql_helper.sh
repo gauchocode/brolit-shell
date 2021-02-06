@@ -231,7 +231,7 @@ function mysql_root_psw_change() {
     fi
 	
 	# Update root user with new password
-	mysql mysql -e "USE mysql;UPDATE user SET Password=PASSWORD('$db_root_psw') WHERE User='$db_root_user';FLUSH PRIVILEGES;"
+	mysql mysql -e "USE mysql;UPDATE user SET Password=PASSWORD('${db_root_psw}') WHERE User='${db_root_user}';FLUSH PRIVILEGES;"
 	
 	# Kill the insecure mysql process
 	killall -v mysqld

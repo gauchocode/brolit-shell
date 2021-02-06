@@ -10,7 +10,7 @@
 
 function security_install() {
 
-  log_event "info" "Installing clamav and lynis" "false"
+  log_event "info" "Installing clamav and lynis"
   display --indent 2 --text "- Installing clamav and lynis"
 
   apt-get --yes install clamav lynis -qq > /dev/null
@@ -52,7 +52,7 @@ function security_custom_scan() {
 
   local directory=$1
 
-  log_event "info" "Running custom malware scanner" "false"
+  log_event "info" "Running custom malware scanner"
   display --indent 2 --text "- Running custom malware scanner"
 
   display --indent 2 --text "Result for base64_decode:"

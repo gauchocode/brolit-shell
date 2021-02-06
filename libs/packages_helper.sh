@@ -13,14 +13,14 @@ function is_this_installed() {
 
   if [ "$(dpkg-query -W -f='${Status}' "${package}" 2>/dev/null | grep -c "ok installed")" == "1" ]; then
 
-    log_event "info" "${package} is installed" "false"
+    log_event "info" "${package} is installed"
 
     # Return
     echo "true"
 
   else
 
-    log_event "info" "${package} is not installed" "false"
+    log_event "info" "${package} is not installed"
 
     # Return
     echo "false"

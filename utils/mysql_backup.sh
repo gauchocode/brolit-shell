@@ -4,13 +4,6 @@
 # Version: 3.0.13
 #############################################################################
 
-### Checking some things
-if [[ -z "${SFOLDER}" ]]; then
-  echo -e "${RED} > Error: The script can only be runned by runner.sh! Exiting ...${ENDCOLOR}"
-  exit 0
-fi
-################################################################################
-
 # shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
 # shellcheck source=${SFOLDER}/libs/mysql_helper.sh
@@ -31,13 +24,11 @@ declare -g DBS_F="databases"
 export BK_TYPE DBS_F
 
 # Starting Messages
-log_break
-log_event "info" "Starting database backup script"
 log_subsection "Backup Databases"
 display --indent 6 --text "- Initializing database backup script" --result "DONE" --color GREEN
 
 # Get MySQL DBS
-DBS=$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -Bse 'show databases')
+DBS=$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -Bse 'show databases')
 clear_last_line #to remove mysql warning message
 
 # Get all databases name
@@ -50,9 +41,9 @@ declare -g BK_DB_INDEX=0
 
 for DATABASE in ${DBS}; do
 
-  log_event "info" "Processing [${DATABASE}] ..."
-
   if [[ ${DB_BL} != *"${DATABASE}"* ]]; then
+
+    log_event "info" "Processing [${DATABASE}] ..."
 
     make_database_backup "database" "${DATABASE}"
 
@@ -63,14 +54,12 @@ for DATABASE in ${DBS}; do
     log_break "true"
 
   else
-    log_event "info" "Ommiting the blacklisted database: [${DATABASE}]"
-    #display --indent 2 --text "- Database backup for ${DATABASE}" --result "OMMITED" --color YELLOW
-    #display --indent 4 --text "Database found on blacklist"
+    log_event "debug" "Ommiting blacklisted database: [${DATABASE}]"
 
   fi
 
 done
 
 # Configure Email
-log_event "info" "Preparing mail databases backup section ..."
+log_event "debug" "Preparing mail databases backup section ..."
 mail_mysqlbackup_section "${ERROR}" "${ERROR_TYPE}"
