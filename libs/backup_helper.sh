@@ -693,15 +693,15 @@ function make_database_backup() {
 
       # New folder with $VPSNAME
       output="$("${DROPBOX_UPLOADER}" -q mkdir "${VPSNAME}" 2>&1)"
-      log_event "info" "Creating dropbox directory ${VPSNAME}"
+      log_event "debug" "Running ${DROPBOX_UPLOADER} -q mkdir /${VPSNAME}"
 
       # New folder with $bk_type
       output="$("${DROPBOX_UPLOADER}" -q mkdir "/${VPSNAME}/${bk_type}" 2>&1)"
-      log_event "info" "Creating dropbox directory ${VPSNAME}/${bk_type}"
+      log_event "debug" "Running ${DROPBOX_UPLOADER} -q mkdir /${VPSNAME}/${bk_type}"
 
       # New folder with $database (project DB)
       output="$("${DROPBOX_UPLOADER}" -q mkdir "/${VPSNAME}/${bk_type}/${database}" 2>&1)"
-      log_event "info" "Creating dropbox directory ${VPSNAME}/${bk_type}/${database}"
+      log_event "debug" "Running ${DROPBOX_UPLOADER} -q mkdir /${VPSNAME}/${bk_type}/${database}"
 
       display --indent 6 --text "- Creating dropbox directories" --result "DONE" --color GREEN
 
@@ -711,7 +711,7 @@ function make_database_backup() {
       log_event "info" "Uploading new database backup ${bk_file} to dropbox folder ${DROPBOX_FOLDER}${DROPBOX_PATH}"
       output="$(${DROPBOX_UPLOADER} upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}${DROPBOX_PATH}" 2>&1)"
       dropbox_result="$?"
-      log_event "info" "dropbox_result: $dropbox_result"
+      log_event "debug" "dropbox_result: $dropbox_result"
 
       if [[ ${dropbox_result} -eq 0 ]]; then
       

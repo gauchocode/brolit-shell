@@ -68,6 +68,3 @@ alias atop='atop -a 1'
  
 ## Get server cpu info
 alias cpuinfo='lscpu'
-
-# TODO: Backup scripts
-#alias backup='/root/lemp-utils-scripts/runner.sh --option backup --target all'
