@@ -425,6 +425,40 @@ function script_configuration_wizard() {
 
 function generate_dropbox_config() {
 
+    local oauth_access_token_string 
+    local oauth_access_token
+
+    # Checking var of ${DPU_CONFIG_FILE}
+    if [[ -z ${OAUTH_ACCESS_TOKEN} ]]; then
+
+        oauth_access_token_string+="\n Please, provide a Dropbox Access Token ID.\n"
+        oauth_access_token_string+=" 1) Log in: dropbox.com/developers/apps/create\n"
+        oauth_access_token_string+=" 2) Click on \"Create App\" and select \"Dropbox API\".\n"
+        oauth_access_token_string+=" 3) Choose the type of access you need.\n"
+        oauth_access_token_string+=" 4) Enter the \"App Name\".\n"
+        oauth_access_token_string+=" 5) Click on the \"Create App\" button.\n"
+        oauth_access_token_string+=" 6) Click on the Generate button.\n"
+        oauth_access_token_string+=" 7) Copy and paste the new access token here:\n\n"
+
+        oauth_access_token=$(whiptail --title "Dropbox Uploader Configuration" --inputbox "${oauth_access_token_string}" 15 60 3>&1 1>&2 2>&3)
+        exitstatus="$?"
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+            # Write config file
+            echo "OAUTH_ACCESS_TOKEN=$oauth_access_token" >"${DPU_CONFIG_FILE}"
+            log_event "info" "Dropbox configuration has been saved!"
+
+        else
+            return 1
+
+        fi
+
+    fi
+
+}
+
+function generate_dropbox_config_new() {
+
     local dropbox_config_first_msg 
     local dropbox_config_second_msg
     local dropbox_config_third_msg
