@@ -8,8 +8,6 @@
 source "${SFOLDER}/libs/mysql_helper.sh"
 # shellcheck source=${SFOLDER}/libs/backup_helper.sh
 source "${SFOLDER}/libs/backup_helper.sh"
-# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
-source "${SFOLDER}/libs/mail_notification_helper.sh"
 
 #############################################################################
 
