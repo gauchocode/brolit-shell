@@ -443,19 +443,20 @@ function generate_dropbox_config() {
 
         dropbox_config_first_msg+="\n Please, follow the next steps:\n"
         dropbox_config_first_msg+=" 1) Log in: dropbox.com/developers/apps/create\n"
-        dropbox_config_first_msg+=" 2) Click on 'Create App', then select 'Choose an API: Scoped Access'\n"
-        dropbox_config_first_msg+=" 3) Choose the type of access: 'App folder'.\n"
-        dropbox_config_first_msg+=" 4) Enter the \"App Name\".\n"
-        dropbox_config_first_msg+=" 5) Click on the \"Create App\" button.\n"
-        dropbox_config_first_msg+=" 6) On tab 'permissions' check 'files.metadata.read/write' and 'files.content.read/write'"
-        dropbox_config_first_msg+=" 7) Click on 'Submit' button.\n"
+        dropbox_config_first_msg+=" 2) Click on 'Create App',"
+        dropbox_config_first_msg+=" 3) Select 'Choose an API: Scoped Access'\n"
+        dropbox_config_first_msg+=" 4) Choose the type of access: 'App folder'.\n"
+        dropbox_config_first_msg+=" 5) Enter the \"App Name\".\n"
+        dropbox_config_first_msg+=" 6) Click on the \"Create App\" button.\n"
+        dropbox_config_first_msg+=" 7) On tab 'permissions' check 'files.metadata.read/write' and 'files.content.read/write'"
+        dropbox_config_first_msg+=" 8) Click on 'Submit' button.\n"
 
         whiptail_message "${whip_title}" "${dropbox_config_first_msg}"
         exitstatus="$?"
         if [[ ${exitstatus} -eq 0 ]]; then
 
-            dropbox_config_second_msg+=" 8) Click on 'settings' and provide the following information:\n"
-            dropbox_config_second_msg+=" 9) App key:\n"
+            dropbox_config_second_msg+=" 9) Click on 'settings' and provide the following information.\n\n"
+            dropbox_config_second_msg+=" 10) App key:\n\n"
 
             # OAUTH_APP_KEY
             app_key=$(whiptail --title "${whip_title}" --inputbox "${dropbox_config_second_msg}" 15 60 3>&1 1>&2 2>&3)
@@ -463,7 +464,7 @@ function generate_dropbox_config() {
             if [[ ${exitstatus} -eq 0 ]]; then
 
                 # Write config file
-                echo "OAUTH_APP_KEY=${app_key}" >"${DPU_CONFIG_FILE}"
+                echo "OAUTH_APP_KEY=${app_key}" >>"${DPU_CONFIG_FILE}"
 
             else
                 return 1
@@ -471,13 +472,13 @@ function generate_dropbox_config() {
             fi
 
             # OAUTH_APP_SECRET
-            dropbox_config_third_msg+=" 10) App secret:\n"
+            dropbox_config_third_msg+="\n 11) App secret:\n\n"
             app_secret=$(whiptail --title "${whip_title}" --inputbox "${dropbox_config_third_msg}" 15 60 3>&1 1>&2 2>&3)
             exitstatus="$?"
             if [[ ${exitstatus} -eq 0 ]]; then
 
                 # Write config file
-                echo "OAUTH_APP_SECRET=${app_secret}" >"${DPU_CONFIG_FILE}"
+                echo "OAUTH_APP_SECRET=${app_secret}" >>"${DPU_CONFIG_FILE}"
 
             else
                 return 1
@@ -485,16 +486,16 @@ function generate_dropbox_config() {
             fi
 
             # ACCESS_CODE
-            dropbox_config_fourth_msg+=" 11) Now open the following link, \n"
-            dropbox_config_fourth_msg+=" https://www.dropbox.com/oauth2/authorize?client_id=${app_key}&token_access_type=offline&response_type=code"
-            dropbox_config_fourth_msg+=" Allow suggested permissions and copy paste here the Access Code:\n"
+            dropbox_config_fourth_msg+="\n 12) Now open the following link, \n\n"
+            dropbox_config_fourth_msg+=" https://www.dropbox.com/oauth2/authorize?client_id=${app_key}&token_access_type=offline&response_type=code \n"
+            dropbox_config_fourth_msg+=" Allow suggested permissions and copy paste here the Access Code:\n\n"
             
             oauth_access_token=$(whiptail --title "${whip_title}" --inputbox "${dropbox_config_fourth_msg}" 15 60 3>&1 1>&2 2>&3)
             exitstatus="$?"
             if [[ ${exitstatus} -eq 0 ]]; then
 
                 # Write config file
-                echo "OAUTH_REFRESH_TOKEN=${oauth_access_token}" >"${DPU_CONFIG_FILE}"
+                echo "OAUTH_REFRESH_TOKEN=${oauth_access_token}" >>"${DPU_CONFIG_FILE}"
                 log_event "info" "Dropbox configuration has been saved!"
 
             else
