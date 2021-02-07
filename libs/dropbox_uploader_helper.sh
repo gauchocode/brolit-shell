@@ -63,8 +63,8 @@ function dropbox_upload() {
 
     else
 
-        display --indent 6 --text "- Creating dropbox directory" --result "WARNING" --color YELLOW
-        display --indent 8 --text "Maybe directory already exists" --tcolor YELLOW
+        display --indent 6 --text "- Uploading file to Dropbox" --result "ERROR" --color RED
+        display --indent 8 --text "Please red log file" --tcolor RED
 
         log_event "error" "Can't upload file ${file_to_upload} to dropbox."
         log_event "error" "Last command executed: ${DROPBOX_UPLOADER} upload ${file_to_upload} ${dropbox_directory}"
