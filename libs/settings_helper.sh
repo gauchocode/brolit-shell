@@ -441,9 +441,8 @@ function generate_dropbox_config() {
     # Checking var of ${DPU_CONFIG_FILE}
     if [[ -z ${OAUTH_ACCESS_TOKEN} || -z ${OAUTH_APP_SECRET} ]]; then
 
-        dropbox_config_first_msg+="\n Please, follow the next steps:\n\n"
-        dropbox_config_first_msg+=" 1) Log in: dropbox.com/developers/apps/create\n"
-        dropbox_config_first_msg+=" 2) Click on 'Create App',"
+        dropbox_config_first_msg+="\n 1) Log in: dropbox.com/developers/apps/create\n"
+        dropbox_config_first_msg+=" 2) Click on 'Create App'\n"
         dropbox_config_first_msg+=" 3) Select 'Choose an API: Scoped Access'\n"
         dropbox_config_first_msg+=" 4) Choose the type of access: 'App folder'.\n"
         dropbox_config_first_msg+=" 5) Enter the \"App Name\".\n"
