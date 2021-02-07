@@ -40,8 +40,9 @@ function installers_and_configurators() {
     "07)" "COCKPIT" 
     "08)" "CERTBOT" 
     "09)" "WP-CLI" 
-    "10)" "ZSH"
+    "10)" "ZSH (BETA)"
     )
+  
   installer_type=$(whiptail --title "INSTALLERS AND CONFIGURATORS" --menu "\nPlease select the utility or programs you want to install or config: \n" 20 78 10 "${installer_options[@]}" 3>&1 1>&2 2>&3)
   exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
