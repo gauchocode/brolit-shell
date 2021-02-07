@@ -441,12 +441,12 @@ function generate_dropbox_config() {
     # Checking var of ${DPU_CONFIG_FILE}
     if [[ -z ${OAUTH_ACCESS_TOKEN} || -z ${OAUTH_APP_SECRET} ]]; then
 
-        dropbox_config_first_msg+="\n 1) Log in: dropbox.com/developers/apps/create\n"
+        dropbox_config_first_msg+=" 1) Log in: dropbox.com/developers/apps/create\n"
         dropbox_config_first_msg+=" 2) Click on 'Create App'\n"
         dropbox_config_first_msg+=" 3) Select 'Choose an API: Scoped Access'\n"
         dropbox_config_first_msg+=" 4) Choose the type of access: 'App folder'.\n"
         dropbox_config_first_msg+=" 5) Enter a \"App Name\" and create the app.\n"
-        dropbox_config_first_msg+=" 6) On tab 'permissions' check \"files.metadata.read/write\" and \"files.content.read/write\""
+        dropbox_config_first_msg+=" 6) On tab 'permissions' check \"files.metadata.read/write\" and \"files.content.read/write\"\n"
         dropbox_config_first_msg+=" 7) Click on 'Submit' button.\n"
 
         whiptail_message "${whip_title}" "${dropbox_config_first_msg}"
@@ -462,6 +462,7 @@ function generate_dropbox_config() {
             if [[ ${exitstatus} -eq 0 ]]; then
 
                 # Write config file
+                echo "CONFIGFILE_VERSION=2.0" >"${DPU_CONFIG_FILE}"
                 echo "OAUTH_APP_KEY=${app_key}" >>"${DPU_CONFIG_FILE}"
 
             else
@@ -470,7 +471,7 @@ function generate_dropbox_config() {
             fi
 
             # OAUTH_APP_SECRET
-            dropbox_config_third_msg+="\n 10) App secret:\n\n"
+            dropbox_config_third_msg+=" 10) App secret:\n\n"
             app_secret=$(whiptail --title "${whip_title}" --inputbox "${dropbox_config_third_msg}" 15 60 3>&1 1>&2 2>&3)
             exitstatus="$?"
             if [[ ${exitstatus} -eq 0 ]]; then
@@ -484,8 +485,8 @@ function generate_dropbox_config() {
             fi
 
             # ACCESS_CODE
-            dropbox_config_fourth_msg+="\n 11) Now open the following link, \n\n"
-            dropbox_config_fourth_msg+=" https://www.dropbox.com/oauth2/authorize?client_id=${app_key}&token_access_type=offline&response_type=code \n"
+            dropbox_config_fourth_msg+=" 11) Now open the following link, \n\n"
+            dropbox_config_fourth_msg+=" https://www.dropbox.com/oauth2/authorize?client_id=${app_key}&token_access_type=offline&response_type=code \n\n"
             dropbox_config_fourth_msg+=" Allow suggested permissions and copy paste here the Access Code:\n\n"
             
             oauth_access_token=$(whiptail --title "${whip_title}" --inputbox "${dropbox_config_fourth_msg}" 15 60 3>&1 1>&2 2>&3)
