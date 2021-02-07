@@ -448,12 +448,10 @@ function log_break() {
     log_break="        -------------------------------------------------"
     echo -e "${MAGENTA}${B_DEFAULT}${log_break}${ENDCOLOR}" >&2
 
-  else
-
-    log_break=" > -------------------------------------------------"
-    echo "${log_break}" >> "${LOG}"
-
   fi
+
+  log_break=" > -------------------------------------------------"
+  echo "${log_break}" >> "${LOG}"
 
 }
 
