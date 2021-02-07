@@ -58,7 +58,7 @@ function dropbox_upload() {
     if [[ ${dropbox_file_to_upload_result} -eq 0 ]]; then
 
         clear_last_line
-        display --indent 6 --text "- Uploading file to dropbox" --result "DONE" --color GREEN
+        display --indent 6 --text "- Uploading file to Dropbox" --result "DONE" --color GREEN
         log_event "success" "Dropbox file ${file_to_upload} uploaded"
 
     else
