@@ -403,12 +403,12 @@ function restore_letsencrypt_site_files() {
   bk_file="letsencrypt-configs-files-${date}.tar.bz2"
   bk_to_download="${chosen_server}/configs/letsencrypt/${bk_file}"
 
-  log_event "info" "Running dropbox_uploader.sh download ${bk_to_download}" "false"
+  log_event "debug" "Running: ${DROPBOX_UPLOADER} download ${bk_to_download}"
   
   dropbox_output=$(${DROPBOX_UPLOADER} download "${bk_to_download}" 1>&2)
 
   # Extract tar.bz2 with lbzip2
-  log_event "info" "Extracting ${bk_file} on ${SFOLDER}/tmp/" "false"
+  log_event "info" "Extracting ${bk_file} on ${SFOLDER}/tmp/"
 
   mkdir "${SFOLDER}/tmp/letsencrypt"
   extract "${bk_file}" "${SFOLDER}/tmp/letsencrypt" "lbzip2"
