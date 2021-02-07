@@ -5,8 +5,6 @@
 # Version: 3.0.13
 ################################################################################
 
-### Init #######################################################################
-
 ### Main dir check
 SFOLDER=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 if [ -z "${SFOLDER}" ]; then
@@ -18,6 +16,8 @@ chmod +x "${SFOLDER}/libs/commons.sh"
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
+
+### Init #######################################################################
 
 if [ -t 1 ]; then
 

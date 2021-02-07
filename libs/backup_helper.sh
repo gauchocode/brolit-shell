@@ -4,13 +4,6 @@
 # Version: 3.0.13
 #############################################################################
 
-# shellcheck source=${SFOLDER}/utils/mysql_backup.sh
-source "${SFOLDER}/utils/mysql_backup.sh"
-# shellcheck source=${SFOLDER}/utils/files_backup.sh
-source "${SFOLDER}/utils/files_backup.sh"
-
-#############################################################################
-
 function is_laravel_project() {
 
   # $1 = ${project_dir} project directory
