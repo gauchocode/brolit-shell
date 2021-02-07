@@ -52,12 +52,7 @@ function dropbox_upload() {
 
     log_event "debug" "Running: ${DROPBOX_UPLOADER} upload ${file_to_upload} ${dropbox_directory}"
 
-    #output="$("${DROPBOX_UPLOADER}" upload "${file_to_upload}" "${dropbox_directory}" 2>&1)"
-
-    until $("${DROPBOX_UPLOADER}" upload "${file_to_upload}" "${dropbox_directory}" 2>&1); do
-        printf '.'
-        sleep 5
-    done
+    output="$("${DROPBOX_UPLOADER}" upload "${file_to_upload}" "${dropbox_directory}" 2>&1)"
 
     dropbox_file_to_upload_result="$?"
     if [[ ${dropbox_file_to_upload_result} -eq 0 ]]; then

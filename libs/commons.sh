@@ -259,7 +259,8 @@ function script_init() {
     # Dropbox-uploader directory
     DPU_F="${SFOLDER}/tools/third-party/dropbox-uploader"
     # Dropbox-uploader runner
-    DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
+    #DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
+    DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader_original.sh"
   fi
 
   # Cloudflare config file
