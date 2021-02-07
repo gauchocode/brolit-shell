@@ -41,6 +41,8 @@ ERROR_STATUS=0
 EXCLUDE=()
 
 #Don't edit these...
+API_OAUTH_TOKEN="https://api.dropbox.com/oauth2/token"
+API_OAUTH_AUTHORIZE="https://www.dropbox.com/oauth2/authorize"
 API_LONGPOLL_FOLDER="https://notify.dropboxapi.com/2/files/list_folder/longpoll"
 API_CHUNKED_UPLOAD_START_URL="https://content.dropboxapi.com/2/files/upload_session/start"
 API_CHUNKED_UPLOAD_FINISH_URL="https://content.dropboxapi.com/2/files/upload_session/finish"
@@ -65,6 +67,7 @@ APP_CREATE_URL="https://www.dropbox.com/developers/apps"
 RESPONSE_FILE="$TMP_DIR/du_resp_$RANDOM"
 CHUNK_FILE="$TMP_DIR/du_chunk_$RANDOM"
 TEMP_FILE="$TMP_DIR/du_tmp_$RANDOM"
+AUTH_ACCESS_TOKEN_EXPIRE="0"
 BIN_DEPS="sed basename date grep stat dd mkdir"
 VERSION="1.0"
 
@@ -355,11 +358,30 @@ function check_http_response
 
 }
 
+# Checks if the access token has expired. If so a new one is created.
+function ensure_accesstoken
+{
+    local now=`date +%s`
+
+    if [[ $OAUTH_ACCESS_TOKEN_EXPIRE > $now ]]; then
+	 return
+    fi
+
+    $CURL_BIN $CURL_ACCEPT_CERTIFICATES $API_OAUTH_TOKEN -d grant_type=refresh_token -d refresh_token=$OAUTH_REFRESH_TOKEN -u $OAUTH_APP_KEY:$OAUTH_APP_SECRET -o "$RESPONSE_FILE" 2>/dev/null
+    check_http_response
+    OAUTH_ACCESS_TOKEN=$(sed -n 's/.*"access_token": "\([^"]*\).*/\1/p' "$RESPONSE_FILE")
+
+    local expires_in=$(sed -n 's/.*"expires_in": \([0-9]*\).*/\1/p' "$RESPONSE_FILE")
+
+    # one minute safety buffer
+    OAUTH_ACCESS_TOKEN_EXPIRE=$(($now + $expires_in - 60))
+}
+
 #Urlencode
 function urlencode
 {
     #The printf is necessary to correctly decode unicode sequences
-    local string=$($PRINTF "${1}")
+    local string=$($PRINTF "%s" "${1}")
     local strlen=${#string}
     local encoded=""
 
@@ -378,7 +400,7 @@ function urlencode
 function normalize_path
 {
     #The printf is necessary to correctly decode unicode sequences
-    path=$($PRINTF "${1//\/\///}")
+    path=$($PRINTF "%s" "${1//\/\///}")
     if [[ $HAVE_READLINK == 1 ]]; then
         new_path=$(readlink -m "$path")
 
@@ -405,6 +427,7 @@ function db_stat
     fi
 
     #Checking if it's a file or a directory
+    ensure_accesstoken
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST -L -s --show-error --globoff -i -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Content-Type: application/json" --data "{\"path\": \"$FILE\"}" "$API_METADATA_URL" 2> /dev/null
     check_http_response
 
@@ -568,6 +591,7 @@ function db_simple_upload_file
     fi
 
     print " > Uploading \"$FILE_SRC\" to \"$FILE_DST\"... $LINE_CR"
+    ensure_accesstoken
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES $CURL_PARAMETERS -X POST -i --globoff -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Dropbox-API-Arg: {\"path\": \"$FILE_DST\",\"mode\": \"overwrite\",\"autorename\": true,\"mute\": false}" --header "Content-Type: application/octet-stream" --data-binary @"$FILE_SRC" "$API_UPLOAD_URL"
     check_http_response
 
@@ -616,6 +640,7 @@ function db_chunked_upload_file
     fi
 
     #Starting a new upload session
+    ensure_accesstoken
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST -L -s --show-error --globoff -i -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Dropbox-API-Arg: {\"close\": false}" --header "Content-Type: application/octet-stream" --data-binary @/dev/null "$API_CHUNKED_UPLOAD_START_URL" 2> /dev/null
     check_http_response
 
@@ -637,6 +662,7 @@ function db_chunked_upload_file
 
         #Uploading the chunk...
         echo > "$RESPONSE_FILE"
+        ensure_accesstoken
         $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST $CURL_PARAMETERS --show-error --globoff -i -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Dropbox-API-Arg: {\"cursor\": {\"session_id\": \"$SESSION_ID\",\"offset\": $OFFSET},\"close\": false}" --header "Content-Type: application/octet-stream" --data-binary @"$CHUNK_FILE" "$API_CHUNKED_UPLOAD_APPEND_URL"
         #check_http_response not needed, because we have to retry the request in case of error
 
@@ -671,6 +697,7 @@ function db_chunked_upload_file
     while (true); do
 
         echo > "$RESPONSE_FILE"
+        ensure_accesstoken
         $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST -L -s --show-error --globoff -i -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Dropbox-API-Arg: {\"cursor\": {\"session_id\": \"$SESSION_ID\",\"offset\": $OFFSET},\"commit\": {\"path\": \"$FILE_DST\",\"mode\": \"overwrite\",\"autorename\": true,\"mute\": false}}" --header "Content-Type: application/octet-stream" --data-binary @/dev/null "$API_CHUNKED_UPLOAD_FINISH_URL" 2> /dev/null
         #check_http_response not needed, because we have to retry the request in case of error
 
@@ -855,6 +882,7 @@ function db_download_file
     fi
 
     print " > Downloading \"$FILE_SRC\" to \"$FILE_DST\"... $LINE_CR"
+    ensure_accesstoken
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES $CURL_PARAMETERS -X POST --globoff -D "$RESPONSE_FILE" -o "$FILE_DST" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Dropbox-API-Arg: {\"path\": \"$FILE_SRC\"}" "$API_DOWNLOAD_URL"
     check_http_response
 
@@ -879,6 +907,7 @@ function db_saveurl
     local FILE_NAME=$(basename "$URL")
 
     print " > Downloading \"$URL\" to \"$FILE_DST\"..."
+    ensure_accesstoken
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST -L -s --show-error --globoff -i -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Content-Type: application/json" --data "{\"path\": \"$FILE_DST/$FILE_NAME\", \"url\": \"$URL\"}" "$API_SAVEURL_URL" 2> /dev/null
     check_http_response
 
@@ -891,6 +920,7 @@ function db_saveurl
     #Checking the status
     while (true); do
 
+        ensure_accesstoken
         $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST -L -s --show-error --globoff -i -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Content-Type: application/json" --data "{\"async_job_id\": \"$JOB_ID\"}" "$API_SAVEURL_JOBSTATUS_URL" 2> /dev/null
         check_http_response
 
@@ -925,6 +955,7 @@ function db_account_info
 {
     print "Dropbox Uploader v$VERSION\n\n"
     print " > Getting info... "
+    ensure_accesstoken
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST -L -s --show-error --globoff -i -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" "$API_ACCOUNT_INFO_URL" 2> /dev/null
     check_http_response
 
@@ -956,6 +987,7 @@ function db_account_space
 {
     print "Dropbox Uploader v$VERSION\n\n"
     print " > Getting space usage info... "
+    ensure_accesstoken
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST -L -s --show-error --globoff -i -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" "$API_ACCOUNT_SPACE_URL" 2> /dev/null
     check_http_response
 
@@ -999,6 +1031,7 @@ function db_delete
     local FILE_DST=$(normalize_path "$1")
 
     print " > Deleting \"$FILE_DST\"... "
+    ensure_accesstoken
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST -L -s --show-error --globoff -i -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Content-Type: application/json" --data "{\"path\": \"$FILE_DST\"}" "$API_DELETE_URL" 2> /dev/null
     check_http_response
 
@@ -1028,6 +1061,7 @@ function db_move
     fi
 
     print " > Moving \"$FILE_SRC\" to \"$FILE_DST\" ... "
+    ensure_accesstoken
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST -L -s --show-error --globoff -i -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Content-Type: application/json" --data "{\"from_path\": \"$FILE_SRC\", \"to_path\": \"$FILE_DST\"}" "$API_MOVE_URL" 2> /dev/null
     check_http_response
 
@@ -1057,6 +1091,7 @@ function db_copy
     fi
 
     print " > Copying \"$FILE_SRC\" to \"$FILE_DST\" ... "
+    ensure_accesstoken
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST -L -s --show-error --globoff -i -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Content-Type: application/json" --data "{\"from_path\": \"$FILE_SRC\", \"to_path\": \"$FILE_DST\"}" "$API_COPY_URL" 2> /dev/null
     check_http_response
 
@@ -1076,6 +1111,7 @@ function db_mkdir
     local DIR_DST=$(normalize_path "$1")
 
     print " > Creating Directory \"$DIR_DST\"... "
+    ensure_accesstoken
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST -L -s --show-error --globoff -i -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Content-Type: application/json" --data "{\"path\": \"$DIR_DST\"}" "$API_MKDIR_URL" 2> /dev/null
     check_http_response
 
@@ -1110,8 +1146,10 @@ function db_list_outfile
     while (true); do
 
         if [[ $HAS_MORE == "true" ]]; then
+            ensure_accesstoken
             $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST -L -s --show-error --globoff -i -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Content-Type: application/json" --data "{\"cursor\": \"$CURSOR\"}" "$API_LIST_FOLDER_CONTINUE_URL" 2> /dev/null
         else
+            ensure_accesstoken
             $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST -L -s --show-error --globoff -i -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Content-Type: application/json" --data "{\"path\": \"$DIR_DST\",\"include_media_info\": false,\"include_deleted\": false,\"include_has_explicit_shared_members\": false}" "$API_LIST_FOLDER_URL" 2> /dev/null
         fi
 
@@ -1241,6 +1279,7 @@ function db_monitor_nonblock
         DIR_DST=""
     fi
 
+    ensure_accesstoken
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST -L -s --show-error --globoff -i -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Content-Type: application/json" --data "{\"path\": \"$DIR_DST\",\"include_media_info\": false,\"include_deleted\": false,\"include_has_explicit_shared_members\": false}" "$API_LIST_FOLDER_URL" 2> /dev/null
     check_http_response
 
@@ -1248,6 +1287,7 @@ function db_monitor_nonblock
 
         local CURSOR=$(sed -n 's/.*"cursor": *"\([^"]*\)".*/\1/p' "$RESPONSE_FILE")
 
+        ensure_accesstoken
         $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST -L -s --show-error --globoff -i -o "$RESPONSE_FILE" --header "Content-Type: application/json" --data "{\"cursor\": \"$CURSOR\",\"timeout\": ${TIMEOUT}}" "$API_LONGPOLL_FOLDER" 2> /dev/null
         check_http_response
 
@@ -1329,6 +1369,7 @@ function db_share
 {
     local FILE_DST=$(normalize_path "$1")
 
+    ensure_accesstoken
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST -L -s --show-error --globoff -i -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Content-Type: application/json" --data "{\"path\": \"$FILE_DST\",\"settings\": {\"requested_visibility\": \"public\"}}" "$API_SHARE_URL" 2> /dev/null
     check_http_response
 
@@ -1347,6 +1388,7 @@ function db_share
 function get_Share
 {
     local FILE_DST=$(normalize_path "$1")
+    ensure_accesstoken
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST -L -s --show-error --globoff -i -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Content-Type: application/json" --data "{\"path\": \"$FILE_DST\",\"direct_only\": true}" "$API_SHARE_LIST"
     check_http_response
 
@@ -1371,6 +1413,7 @@ function db_search
 
     print " > Searching for \"$QUERY\"... "
 
+    ensure_accesstoken
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST -L -s --show-error --globoff -i -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Content-Type: application/json" --data "{\"path\": \"\",\"query\": \"$QUERY\",\"start\": 0,\"max_results\": 1000,\"mode\": \"filename\"}" "$API_SEARCH_URL" 2> /dev/null
     check_http_response
 
@@ -1461,6 +1504,7 @@ function db_sha
     fi
 
     #Checking if it's a file or a directory and get the sha-sum
+    ensure_accesstoken
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES -X POST -L -s --show-error --globoff -i -o "$RESPONSE_FILE" --header "Authorization: Bearer $OAUTH_ACCESS_TOKEN" --header "Content-Type: application/json" --data "{\"path\": \"$FILE\"}" "$API_METADATA_URL" 2> /dev/null
     check_http_response
 
@@ -1500,7 +1544,15 @@ function db_sha_local
         let SKIP=$SKIP+1
     done
 
-    shaHex=$(echo $SHA_CONCAT | sed 's/\([0-9A-F]\{2\}\)/\\x\1/gI')
+    if [[ "`uname -s`" = "Darwin" ]]
+    then
+    		# sed for macOS will give an error "bad flag in substitute command: 'I'"
+    		# when using the original syntax. This option works instead.
+		shaHex=$(echo $SHA_CONCAT | sed 's/\([0-9A-Fa-f]\{2\}\)/\\x\1/g')
+    else
+	    shaHex=$(echo $SHA_CONCAT | sed 's/\([0-9A-F]\{2\}\)/\\x\1/gI')
+	fi
+
     echo -ne $shaHex | shasum -a 256 | awk '{print $1}'
 }
 
@@ -1511,21 +1563,19 @@ function db_sha_local
 #CHECKING FOR AUTH FILE
 if [[ -e $CONFIG_FILE ]]; then
 
-    #Loading data... and change old format config if necesary.
-    source "$CONFIG_FILE" 2>/dev/null || {
-        sed -i'' 's/:/=/' "$CONFIG_FILE" && source "$CONFIG_FILE" 2>/dev/null
-    }
+    #Loading data...
+    source "$CONFIG_FILE" 2>/dev/null
 
     #Checking if it's still a v1 API configuration file
-    if [[ $APPKEY != "" || $APPSECRET != "" ]]; then
-        echo -ne "The config file contains the old deprecated v1 oauth tokens.\n"
+    if [[ $CONFIGFILE_VERSION != "2.0" ]]; then
+        echo -ne "The config file contains the old deprecated v1 or v2 oauth tokens.\n"
         echo -ne "Please run again the script and follow the configuration wizard. The old configuration file has been backed up to $CONFIG_FILE.old\n"
         mv "$CONFIG_FILE" "$CONFIG_FILE".old
         exit 1
     fi
 
     #Checking loaded data
-    if [[ $OAUTH_ACCESS_TOKEN = "" ]]; then
+    if [[ $OAUTH_APP_KEY = "" || $OAUTH_APP_SECRET = "" || $OAUTH_REFRESH_TOKEN = "" ]]; then
         echo -ne "Error loading data from $CONFIG_FILE...\n"
         echo -ne "It is recommended to run $0 unlink\n"
         remove_temp_files
@@ -1534,34 +1584,55 @@ if [[ -e $CONFIG_FILE ]]; then
 
 #NEW SETUP...
 else
-
     echo -ne "\n This is the first time you run this script, please follow the instructions:\n\n"
+    echo -ne "(note: Dropropbox will change there API from 30.9.2021.\n"
+    echo -ne "When using dropbox_uploader.sh configured in the past with the old API, have a look at README.md, before continue.)\n\n"
     echo -ne " 1) Open the following URL in your Browser, and log in using your account: $APP_CREATE_URL\n"
-    echo -ne " 2) Click on \"Create App\", then select \"Dropbox API app\"\n"
-    echo -ne " 3) Now go on with the configuration, choosing the app permissions and access restrictions to your DropBox folder\n"
-    echo -ne " 4) Enter the \"App Name\" that you prefer (e.g. MyUploader$RANDOM$RANDOM$RANDOM)\n\n"
-
+    echo -ne " 2) Click on \"Create App\", then select \"Choose an API: Scoped Access\"\n"
+    echo -ne " 3) \"Choose the type of access you need: App folder\"\n"
+    echo -ne " 4) Enter the \"App Name\" that you prefer (e.g. MyUploader$RANDOM$RANDOM$RANDOM), must be uniqe\n\n"
     echo -ne " Now, click on the \"Create App\" button.\n\n"
+    echo -ne " 5) Now the new configuration is opened, switch to tab \"permissions\" and check \"files.metadata.read/write\" and \"files.content.read/write\"\n"
+    echo -ne " Now, click on the \"Submit\" button.\n\n"
+    echo -ne " 6) Now to tab \"settings\" and provide the following information:\n"
 
-    echo -ne " When your new App is successfully created, please click on the Generate button\n"
-    echo -ne " under the 'Generated access token' section, then copy and paste the new access token here:\n\n"
+    echo -ne " App key: "
+    read -r OAUTH_APP_KEY
 
-    echo -ne " # Access token: "
-    read -r OAUTH_ACCESS_TOKEN
+    echo -ne " App secret: "
+    read -r OAUTH_APP_SECRET
 
-    echo -ne "\n > The access token is $OAUTH_ACCESS_TOKEN. Looks ok? [y/N]: "
+    url="${API_OAUTH_AUTHORIZE}?client_id=${OAUTH_APP_KEY}&token_access_type=offline&response_type=code"
+    echo -ne "  Open the following URL in your Browser and allow suggested permissions: ${url}\n"
+    echo -ne " Please provide the access code: "
+    read -r access_code
+
+    echo -ne "\n > App key: ${OAUTH_APP_KEY}\n"
+    echo -ne " > App secret: '${OAUTH_APP_SECRET}\n"
+    echo -ne " > Access code: '${access_code}'. Looks ok? [y/N]: "
     read -r answer
     if [[ $answer != "y" ]]; then
         remove_temp_files
         exit 1
     fi
 
-    echo "OAUTH_ACCESS_TOKEN=$OAUTH_ACCESS_TOKEN" > "$CONFIG_FILE"
+    $CURL_BIN $CURL_ACCEPT_CERTIFICATES $API_OAUTH_TOKEN -d code=$access_code -d grant_type=authorization_code -u $OAUTH_APP_KEY:$OAUTH_APP_SECRET -o "$RESPONSE_FILE" 2>/dev/null
+    check_http_response
+    OAUTH_REFRESH_TOKEN=$(sed -n 's/.*"refresh_token": "\([^"]*\).*/\1/p' "$RESPONSE_FILE")
+
+    echo "CONFIGFILE_VERSION=2.0" > "$CONFIG_FILE"
+    echo "OAUTH_APP_KEY=$OAUTH_APP_KEY" >> "$CONFIG_FILE"
+    echo "OAUTH_APP_SECRET=$OAUTH_APP_SECRET" >> "$CONFIG_FILE"
+    echo "OAUTH_REFRESH_TOKEN=$OAUTH_REFRESH_TOKEN" >> "$CONFIG_FILE"
     echo "   The configuration has been saved."
 
     remove_temp_files
     exit 0
 fi
+
+# GET ACCESS TOKEN
+ensure_accesstoken
+
 
 ################
 #### START  ####
@@ -1757,7 +1828,7 @@ esac
 remove_temp_files
 
 if [[ $ERROR_STATUS -ne 0 ]]; then
-    echo "Some error occured. Please check the log."
+    echo "Some error occured. rerun the script with \"-d\" option and check the output and logfile: $RESPONSE_FILE."
 fi
 
 exit $ERROR_STATUS
