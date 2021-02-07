@@ -837,25 +837,23 @@ function make_project_backup() {
         log_event "info" "Testing backup file: ${BK_DB_FILE}"
         lbzip2 -t "${BAKWP}/${NOW}/${BK_DB_FILE}"
 
-        log_event "info" "Trying to create folders in Dropbox"
-
         # New folder with $VPSNAME
-        dropbox_output=$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}" 2>&1)
+        dropbox_create_dir "/${VPSNAME}"
         
         # New folder with $bk_type
-        dropbox_output=$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}/${bk_type}" 2>&1)
+        dropbox_create_dir "/${VPSNAME}/${bk_type}"
 
         # New folder with $directory_to_backup
-        dropbox_output=$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}/${bk_type}/${directory_to_backup}" 2>&1)
+        dropbox_create_dir "/${VPSNAME}/${bk_type}/${directory_to_backup}"
 
-        log_event "info" "Uploading file backup ${bk_file} to Dropbox ..."
-        dropbox_output=$(${DROPBOX_UPLOADER} upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${NOW}" 2>&1)
+        # Upload Files
+        dropbox_upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${NOW}"
 
-        log_event "info" "Uploading database backup ${BK_DB_FILE} to Dropbox ..."
-        dropbox_output=$(${DROPBOX_UPLOADER} upload "${BAKWP}/${NOW}/${BK_DB_FILE}" "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${NOW}" 2>&1)
+        # Upload Database
+        dropbox_upload "${BAKWP}/${NOW}/${BK_DB_FILE}" "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${NOW}"
 
-        log_event "info" "Trying to delete old backup from Dropbox with date ${ONEWEEKAGO} ..."
-        dropbox_output=$(${DROPBOX_UPLOADER} delete "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${ONEWEEKAGO}" 2>&1)
+        # Delete old backups
+        dropbox_delete "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${ONEWEEKAGO}"
 
         log_event "info" "Deleting backup from server ..."
         rm -r "${BAKWP}/${NOW}/${bk_file}"
