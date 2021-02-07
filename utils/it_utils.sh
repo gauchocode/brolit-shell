@@ -36,6 +36,7 @@ function it_utils_menu() {
     if [[ ${chosen_it_util_options} == *"02"* ]]; then
       # shellcheck source=${SFOLDER}/utils/server_and_image_optimizations.sh
       source "${SFOLDER}/utils/server_and_image_optimizations.sh"
+      server_optimizations_menu
     fi
     # CHANGE SSH PORT
     if [[ ${chosen_it_util_options} == *"03"* ]]; then
@@ -120,7 +121,7 @@ function change_current_ssh_port() {
   # Get current ssh port
   current_ssh_port=$(grep "Port" /etc/ssh/sshd_config | awk -F " " '{print $2}')
   log_event "info" "Current SSH port: ${current_ssh_port}" "false"
-  display --indent 4 --text "- Current SSH port: ${current_ssh_port}"
+  display --indent 6 --text "- Current SSH port: ${current_ssh_port}"
 
   # Download secure sshd_config
   cp -f "${SFOLDER}/config/sshd_config" "/etc/ssh/sshd_config"
@@ -128,16 +129,16 @@ function change_current_ssh_port() {
   # Change ssh default port
   sed -i "s/Port 22/Port ${new_ssh_port}/" "/etc/ssh/sshd_config"
   log_event "info" "Changes made on /etc/ssh/sshd_config" "false"
-  display --indent 2 --text "- Making changes on sshd_config" --result "DONE" --color GREEN
+  display --indent 6 --text "- Making changes on sshd_config" --result "DONE" --color GREEN
 
   # Restart ssh service
   service ssh restart
 
   log_event "info" "SSH service restarted" "false"
-  display --indent 2 --text "- Restarting ssh service" --result "DONE" --color GREEN
+  display --indent 6 --text "- Restarting ssh service" --result "DONE" --color GREEN
 
   log_event "info" "New SSH port: ${new_ssh_port}" "false"
-  display --indent 4 --text "- New SSH port: ${new_ssh_port}"
+  display --indent 8 --text "- New SSH port: ${new_ssh_port}"
 
 }
 
@@ -155,7 +156,7 @@ function change_server_hostname() {
 
   # Display the current hostname
   log_event "info" "Current hostname: ${cur_hostname}" "false"
-  display --indent 4 --text "- Current hostname: ${cur_hostname}"
+  display --indent 6 --text "- Current hostname: ${cur_hostname}"
 
   # Change the hostname
   hostnamectl set-hostname "${new_hostname}"
@@ -167,8 +168,8 @@ function change_server_hostname() {
 
   # Display new hostname
   log_event "info" "New hostname: ${new_hostname}" "false"
-  display --indent 2 --text "- Changing hostname" --result "DONE" --color GREEN
-  display --indent 4 --text "New hostname: ${new_hostname}"
+  display --indent 6 --text "- Changing hostname" --result "DONE" --color GREEN
+  display --indent 8 --text "New hostname: ${new_hostname}"
 
 }
 
@@ -189,13 +190,13 @@ function add_floating_IP() {
    
    cp "${SFOLDER}/config/networking/60-my-floating-ip.cfg" /etc/network/interfaces.d/60-my-floating-ip.cfg
    sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/network/interfaces.d/60-my-floating-ip.cfg
-   display --indent 2 --text "- Making network config changes" --result "DONE" --color GREEN
+   display --indent 6 --text "- Making network config changes" --result "DONE" --color GREEN
    
    service networking restart
 
    log_event "success" "New IP ${floating_IP} added" "false"
-   display --indent 2 --text "- Restarting networking service" --result "DONE" --color GREEN
-   display --indent 4 --text "New IP ${floating_IP} added"
+   display --indent 6 --text "- Restarting networking service" --result "DONE" --color GREEN
+   display --indent 8 --text "New IP ${floating_IP} added"
    
   else
 
@@ -203,19 +204,19 @@ function add_floating_IP() {
       
       cp "${SFOLDER}/config/networking/60-floating-ip.yaml" /etc/netplan/60-floating-ip.yaml
       sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/netplan/60-floating-ip.yaml
-      display --indent 2 --text "- Making network config changes" --result "DONE" --color GREEN
+      display --indent 6 --text "- Making network config changes" --result "DONE" --color GREEN
       
       netplan apply
 
       log_event "success" "New IP ${floating_IP} added" "false"
-      display --indent 2 --text "- Restarting networking service" --result "DONE" --color GREEN
-      display --indent 4 --text "New IP ${floating_IP} added"
+      display --indent 6 --text "- Restarting networking service" --result "DONE" --color GREEN
+      display --indent 8 --text "New IP ${floating_IP} added"
 
     else
 
       log_event "error" "This script only works on Ubuntu 20.04 or 18.04 ... Exiting" "false"
-      display --indent 2 --text "- Making network config changes" --result "FAIL" --color RED
-      display --indent 4 --text "This script works on Ubuntu 20.04 or 18.04"
+      display --indent 6 --text "- Making network config changes" --result "FAIL" --color RED
+      display --indent 8 --text "This script works on Ubuntu 20.04 or 18.04"
       return 1
 
     fi
