@@ -4,16 +4,11 @@
 # Version: 3.0.13
 #############################################################################
 
-# shellcheck source=${SFOLDER}/libs/commons.sh
-source "${SFOLDER}/libs/commons.sh"
-
-#############################################################################
-
 # GLOBALS
 declare -g ERROR=false
 declare -g ERROR_TYPE=""
 
-function make_all_files_backup(){
+function make_all_files_backup() {
 
   ## MAILCOW FILES
   if [[ ${MAILCOW_BK} == true ]]; then
@@ -41,7 +36,3 @@ function make_all_files_backup(){
   make_sites_files_backup
 
 }
-
-#############################################################################
-
-make_all_files_backup

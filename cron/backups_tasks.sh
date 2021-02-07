@@ -13,6 +13,13 @@ fi
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
+# shellcheck source=${SFOLDER}/utils/files_backup.sh
+source "${SFOLDER}/utils/files_backup.sh"
+# shellcheck source=${SFOLDER}/utils/mysql_backup.sh
+source "${SFOLDER}/utils/mysql_backup.sh"
+# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
+source "${SFOLDER}/libs/mail_notification_helper.sh"
+
 
 ################################################################################
 
@@ -28,9 +35,6 @@ else
 
   # Script Initialization
   script_init
-
-  # shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
-  source "${SFOLDER}/libs/mail_notification_helper.sh"
 
   # Running from cron
   log_event "info" "Running backups_taks.sh from cron ..."
@@ -54,9 +58,12 @@ else
   CERT_MAIL="${BAKWP}/cert-${NOW}.mail"
   CERT_MAIL_VAR=$(<"${CERT_MAIL}")
 
-  # Running scripts
-  "${SFOLDER}/utils/mysql_backup.sh"
-  "${SFOLDER}/utils/files_backup.sh"
+  # Databases Backup
+  make_all_databases_backup
+
+  # Files Backup
+  make_all_files_backup
+
   #"${SFOLDER}/utils/server_and_image_optimizations.sh"
   
   # Mail section for Database Backup

@@ -4,6 +4,13 @@
 # Version: 3.0.13
 #############################################################################
 
+# shellcheck source=${SFOLDER}/utils/mysql_backup.sh
+source "${SFOLDER}/utils/mysql_backup.sh"
+# shellcheck source=${SFOLDER}/utils/files_backup.sh
+source "${SFOLDER}/utils/files_backup.sh"
+
+#############################################################################
+
 function is_laravel_project() {
 
   # $1 = ${project_dir} project directory
@@ -61,8 +68,8 @@ function menu_backup_options() {
       HTMLOPEN="$(mail_html_start)"
       BODY_SRV="$(mail_server_status_section "${SERVER_IP}")"
 
-      # shellcheck source=${SFOLDER}/mysql_backup.sh
-      source "${SFOLDER}/utils/mysql_backup.sh"
+      # Databases Backup
+      make_all_databases_backup
 
       DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
       DB_MAIL_VAR=$(<"${DB_MAIL}")
@@ -86,8 +93,8 @@ function menu_backup_options() {
       HTMLOPEN=$(mail_html_start)
       BODY_SRV=$(mail_server_status_section "${SERVER_IP}")
 
-      # shellcheck source=${SFOLDER}/files_backup.sh
-      source "${SFOLDER}/utils/files_backup.sh"
+      # Files Backup
+      make_all_files_backup
 
       CONFIG_MAIL="${BAKWP}/config-bk-${NOW}.mail"
       CONFIG_MAIL_VAR=$(<"${CONFIG_MAIL}")
@@ -107,19 +114,17 @@ function menu_backup_options() {
     if [[ ${chosen_backup_type} == *"03"* ]]; then
 
       # BACKUP_ALL
-
       log_section "Backup All"
 
       # Preparing Mail Notifications Template
       HTMLOPEN="$(mail_html_start)"
       BODY_SRV="$(mail_server_status_section "${SERVER_IP}")"
 
-      # Running scripts
-      
-      # shellcheck source=${SFOLDER}/utils/mysql_backup.sh
-      "${SFOLDER}/utils/mysql_backup.sh"
-      # shellcheck source=${SFOLDER}/utils/files_backup.sh
-      "${SFOLDER}/utils/files_backup.sh"
+      # Databases Backup
+      make_all_databases_backup
+
+      # Files Backup
+      make_all_files_backup
 
       # Mail section for Database Backup
       DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
