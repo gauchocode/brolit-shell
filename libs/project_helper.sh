@@ -11,7 +11,7 @@ source "${SFOLDER}/libs/wordpress_installer.sh"
 # TODO: check when add www.DOMAIN.com and then select other stage != prod
 #
 
-project_create_config() {
+function project_create_config() {
 
   # $1 = ${project_path}
   # $2 = ${project_name}
@@ -45,7 +45,7 @@ project_create_config() {
 
 }
 
-project_get_configured_database() {
+function project_get_configured_database() {
 
   # $1 = ${project_path}
   # $2 = ${project_type}
@@ -83,7 +83,7 @@ project_get_configured_database() {
 
 }
 
-project_get_configured_database_user() {
+function project_get_configured_database_user() {
 
   # $1 = ${project_path}
   # $2 = ${project_type}
@@ -121,7 +121,7 @@ project_get_configured_database_user() {
 
 }
 
-project_get_configured_database_userpassw() {
+function project_get_configured_database_userpassw() {
 
   # $1 = ${project_path}
   # $2 = ${project_type}
@@ -158,7 +158,7 @@ project_get_configured_database_userpassw() {
 
 }
 
-project_install() {
+function project_install() {
 
   # $1 = ${dir_path}
   # $2 = ${project_type}
@@ -241,7 +241,7 @@ project_install() {
 
 }
 
-project_delete_files() {
+function project_delete_files() {
 
   # $1 = ${project_domain}
 
@@ -317,7 +317,7 @@ project_delete_files() {
 
 }
 
-project_delete_database() {
+function project_delete_database() {
 
     # $1 = {database}
 
@@ -408,7 +408,7 @@ project_delete_database() {
 # Symphony, config BD on /var/www/PROJECT/app/config/parameters.yml
 #
 
-project_delete() {
+function project_delete() {
 
   # $1 = ${project_domain}
 
@@ -461,5 +461,36 @@ project_delete() {
   #rm -R ${SFOLDER}/tmp-backup
 
   telegram_send_message "⚠️ ${VPSNAME}: Project files deleted for: ${project_domain}"
+
+}
+
+function is_laravel_project() {
+
+  # $1 = ${project_dir} project directory
+
+  local project_dir=$1
+
+  local is_laravel="false"
+
+  # Check if user is root
+  if [[ -f "${project_dir}/artisan" ]]; then
+    is_laravel="true"
+
+  fi
+
+  # Return
+  echo "${is_laravel}"
+
+}
+
+function check_laravel_version() {
+
+  # $1 = ${project_dir} project directory
+
+  local project_dir=$1
+  laravel_v=$(php "${project_dir}/artisan" --version)
+
+  # Return
+  echo "${laravel_v}"
 
 }

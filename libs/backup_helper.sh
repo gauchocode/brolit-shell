@@ -4,37 +4,6 @@
 # Version: 3.0.13
 #############################################################################
 
-function is_laravel_project() {
-
-  # $1 = ${project_dir} project directory
-
-  local project_dir=$1
-
-  local is_laravel="false"
-
-  # Check if user is root
-  if [[ -f "${project_dir}/artisan" ]]; then
-    is_laravel="true"
-
-  fi
-
-  # Return
-  echo "${is_laravel}"
-
-}
-
-function check_laravel_version() {
-
-  # $1 = ${project_dir} project directory
-
-  local project_dir=$1
-  laravel_v=$(php "${project_dir}/artisan" --version)
-
-  # Return
-  echo "${laravel_v}"
-
-}
-
 function menu_backup_options() {
 
   local backup_options 
@@ -46,9 +15,9 @@ function menu_backup_options() {
     "03)" "BACKUP ALL" 
     "04)" "BACKUP PROJECT"
   )
+  
   chosen_backup_type=$(whiptail --title "SELECT BACKUP TYPE" --menu " " 20 78 10 "${backup_options[@]}" 3>&1 1>&2 2>&3)
-
-  exitstatus=$?
+  exitstatus="$?"
   if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_backup_type} == *"01"* ]]; then
@@ -515,6 +484,35 @@ function make_sites_files_backup() {
 
 }
 
+function make_all_files_backup() {
+
+  ## MAILCOW FILES
+  if [[ ${MAILCOW_BK} == true ]]; then
+
+    if [[ ! -d ${MAILCOW_TMP_BK} ]]; then
+
+      log_event "info" "Folder ${MAILCOW_TMP_BK} doesn't exist. Creating now ..."
+
+      mkdir "${MAILCOW_TMP_BK}"
+
+      log_event "success" "Folder ${MAILCOW_TMP_BK} created"
+
+    fi
+
+    make_mailcow_backup "${MAILCOW}"
+
+  fi
+
+  # TODO: error_type needs refactoring
+
+  ## SERVER CONFIG FILES
+  make_all_server_config_backup
+
+  ## SITES FILES
+  make_sites_files_backup
+
+}
+
 function make_files_backup() {
 
   # $1 = Backup Type (site_configs or sites)
@@ -628,6 +626,61 @@ function duplicity_backup() {
     [ $RETVAL -ne 0 ] && echo "*** DUPLICITY ERROR ***" >>"${LOG}"
 
   fi
+
+}
+
+function make_all_databases_backup() {
+
+  # GLOBALS
+  declare -g BK_TYPE="database"
+  declare -g ERROR=false
+  declare -g ERROR_TYPE=""
+  declare -g DBS_F="databases"
+
+  export BK_TYPE DBS_F
+
+  # Starting Messages
+  log_subsection "Backup Databases"
+  display --indent 6 --text "- Initializing database backup script" --result "DONE" --color GREEN
+
+  # Get MySQL DBS
+  DBS=$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -Bse 'show databases')
+  clear_last_line #to remove mysql warning message
+
+  # Get all databases name
+  TOTAL_DBS="$(mysql_count_dabases "${DBS}")"
+  log_event "info" "Databases found: ${TOTAL_DBS}"
+  display --indent 6 --text "- Databases found" --result "${TOTAL_DBS}" --color WHITE
+
+  log_break "true"
+
+  # MORE GLOBALS
+  declare -g BK_DB_INDEX=0
+
+  for DATABASE in ${DBS}; do
+
+    if [[ ${DB_BL} != *"${DATABASE}"* ]]; then
+
+      log_event "info" "Processing [${DATABASE}] ..."
+
+      make_database_backup "database" "${DATABASE}"
+
+      BK_DB_INDEX=$((BK_DB_INDEX + 1))
+
+      log_event "success" "Backup ${BK_DB_INDEX} of ${TOTAL_DBS} done"
+
+      log_break "true"
+
+    else
+      log_event "debug" "Ommiting blacklisted database: [${DATABASE}]"
+
+    fi
+
+  done
+
+  # Configure Email
+  log_event "debug" "Preparing mail databases backup section ..."
+  mail_mysqlbackup_section "${ERROR}" "${ERROR_TYPE}"
 
 }
 
