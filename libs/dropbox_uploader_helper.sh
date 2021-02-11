@@ -49,18 +49,21 @@ function dropbox_upload() {
 
     log_event "info" "Uploading file to Dropbox ..."
     display --indent 6 --text "- Uploading file to Dropbox"
-    start_spinner
+    start_spinner " "
 
     log_event "debug" "Running: ${DROPBOX_UPLOADER} upload ${file_to_upload} ${dropbox_directory}"
 
-    output="$("${DROPBOX_UPLOADER}" upload "${file_to_upload}" "${dropbox_directory}" 2>&1)"
+    output="$("${DROPBOX_UPLOADER}" upload -q "${file_to_upload}" "${dropbox_directory}")"
 
-    stop_spinner $?
-    
+    stop_spinner "$?"
+
+    # Clear output
+    clear_last_line
+    clear_last_line
+
     dropbox_file_to_upload_result="$?"
     if [[ ${dropbox_file_to_upload_result} -eq 0 ]]; then
 
-        clear_last_line
         display --indent 6 --text "- Uploading file to Dropbox" --result "DONE" --color GREEN
         log_event "success" "Dropbox file ${file_to_upload} uploaded"
 
