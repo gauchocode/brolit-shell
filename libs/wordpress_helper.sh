@@ -68,10 +68,10 @@ function wp_update_wpconfig() {
 
   sed_result=$?
   if [ ${sed_result} -eq 0 ]; then
-    display --indent 2 --text " - Changing database parameters on ${wp_project_dir}/wp-config.php" --result "DONE" --color GREEN
+    display --indent 6 --text "- Changing database parameters on ${wp_project_dir}/wp-config.php" --result "DONE" --color GREEN
   else
-    display --indent 2 --text " - Changing database parameters on ${wp_project_dir}/wp-config.php" --result "FAIL" --color RED
-    display --indent 4 --text "sed output: ${sed_output}"
+    display --indent 6 --text "- Changing database parameters on ${wp_project_dir}/wp-config.php" --result "FAIL" --color RED
+    display --indent 8 --text "sed output: ${sed_output}"
   fi
 
 }
