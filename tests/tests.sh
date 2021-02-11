@@ -305,6 +305,16 @@ function test_display_functions() {
     display --indent 6 --text "- Testing message with color" --result "WARNING" --color YELLOW
     display --indent 8 --text "Testing output WARNING" --tcolor YELLOW
 
+    log_subsection "Testing display with spinner"
+
+    display --indent 6 --text "- Testing spinner"
+
+    start_spinner "sleeping for 10 seconds"
+    sleep 10
+    stop_spinner "$?"
+
+    display --indent 6 --text "- Testing spinner" --result "DONE" --color WHITE
+
 }
 
 function test_get_root_domain() {
@@ -643,13 +653,13 @@ function test_cloudflare_clear_cache() {
 
 log_section "Running Tests Suite"
 
-#test_display_functions
+test_display_functions
 
 #test_common_funtions
 
 #test_mysql_helper
 
-test_php_helper_funtions
+#test_php_helper_funtions
 
 #test_cloudflare_funtions
 

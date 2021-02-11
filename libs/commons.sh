@@ -1323,18 +1323,15 @@ function _spinner() {
 
     local on_success="DONE"
     local on_fail="FAIL"
-    local white="\e[1;37m"
-    local green="\e[1;32m"
-    local red="\e[1;31m"
-    local nc="\e[0m"
 
     case $1 in
+
         start)
             # calculate the column where spinner and status msg will be displayed
-            let column=$(tput cols)-${#2}-8
+            #let column=$(tput cols)-${#2}-8
             # display message and position the cursor in $column column
-            echo -ne ${2}
-            printf "%${column}s"
+            #echo -ne ${2}
+            #printf "%${column}s"
 
             # start spinner
             i=1
@@ -1344,12 +1341,13 @@ function _spinner() {
             while :
             do
                 printf "\b${sp:i++%${#sp}:1}"
-                sleep $delay
+                sleep "$delay"
             done
-            ;;
+        ;;
+
         stop)
             if [[ -z ${3} ]]; then
-                echo "spinner is not running.."
+                # spinner is not running
                 exit 1
             fi
 
@@ -1358,17 +1356,20 @@ function _spinner() {
             # inform the user uppon success or failure
             echo -en "\b["
             if [[ $2 -eq 0 ]]; then
-                echo -en "${green}${on_success}${nc}"
+                echo -en "${GREEN}${on_success}${NORMAL}"
             else
-                echo -en "${red}${on_fail}${nc}"
+                echo -en "${RED}${on_fail}${NORMAL}"
             fi
             echo -e "]"
-            ;;
+        ;;
+
         *)
             echo "invalid argument, try {start/stop}"
             exit 1
-            ;;
+        ;;
+
     esac
+
 }
 
 function spinner_start {
