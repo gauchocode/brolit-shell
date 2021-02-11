@@ -513,10 +513,11 @@ function mysql_database_export() {
 
     # Run mysqldump
     dump_output="$("${MYSQLDUMP}" -u "${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}")"
-
-    spinner_stop "$?"
-
     dump_status="$?"
+
+    spinner_stop "$dump_status"
+
+    # Check dump result
     if [[ ${dump_status} -eq 0 ]]; then
 
         # Logging

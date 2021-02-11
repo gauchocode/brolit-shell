@@ -512,8 +512,8 @@ function clear_screen() {
 function clear_last_line() {
 
   printf "\033[1A" >&2
-  echo -e "${F_DEFAULT}                                                                                               ${ENDCOLOR}" >&2
-  echo -e "${F_DEFAULT}                                                                                               ${ENDCOLOR}" >&2
+  echo -e "${F_DEFAULT}                                                                                                         ${ENDCOLOR}" >&2                    
+  echo -e "${F_DEFAULT}                                                                                                         ${ENDCOLOR}" >&2
   printf "\033[1A" >&2
   printf "\033[1A" >&2
 
