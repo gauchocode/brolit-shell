@@ -4,11 +4,6 @@
 # Version: 3.0.13
 #############################################################################
 
-# shellcheck source=${SFOLDER}/libs/dropbox_uploader_helper.sh
-source "${SFOLDER}/libs/dropbox_uploader_helper.sh"
-
-#############################################################################
-
 function menu_backup_options() {
 
   local backup_options 
@@ -28,7 +23,6 @@ function menu_backup_options() {
     if [[ ${chosen_backup_type} == *"01"* ]]; then
 
       # DATABASE_BACKUP
-
       log_section "Databases Backup"
 
       # Preparing Mail Notifications Template
@@ -110,7 +104,7 @@ function menu_backup_options() {
       # Checking result status for mail subject
       EMAIL_STATUS="$(mail_subject_status "${STATUS_BACKUP_DBS}" "${STATUS_BACKUP_FILES}" "${STATUS_SERVER}" "${OUTDATED_PACKAGES}")"
 
-      log_event "info" "Sending Email to ${MAILA} ..." "false"
+      log_event "info" "Sending Email to ${MAILA} ..."
 
       EMAIL_SUBJECT="${EMAIL_STATUS} [${NOWDISPLAY}] - Complete Backup on ${VPSNAME}"
       EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${DB_MAIL_VAR} ${CONFIG_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
@@ -544,10 +538,10 @@ function make_files_backup() {
     # New folder with $directory_to_backup (project folder)
     dropbox_create_dir "/${VPSNAME}/${bk_type}/${directory_to_backup}"
 
-    DROPBOX_PATH="/${VPSNAME}/${bk_type}/${directory_to_backup}"
+    DROPBOX_PATH="${VPSNAME}/${bk_type}/${directory_to_backup}"
 
     # Upload backup
-    dropbox_upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}/"
+    dropbox_upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}"
 
     # Delete old backup from Dropbox
     dropbox_delete "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file}"
