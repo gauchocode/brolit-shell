@@ -87,4 +87,7 @@ else
 
   remove_mail_notifications_files
 
+  # Log End
+  log_event "info" "LEMP UTILS SCRIPT End -- $(date +%Y%m%d_%H%M)"
+
 fi
