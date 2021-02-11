@@ -309,9 +309,9 @@ function test_display_functions() {
 
     display --indent 6 --text "- Testing spinner"
 
-    start_spinner "sleeping for 10 seconds"
+    spinner_start "sleeping for 10 seconds"
     sleep 10
-    stop_spinner "$?"
+    spinner_stop "$?"
 
     display --indent 6 --text "- Testing spinner" --result "DONE" --color WHITE
 
