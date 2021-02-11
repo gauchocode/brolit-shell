@@ -46,6 +46,8 @@ source "${SFOLDER}/libs/telegram_notification_helper.sh"
 source "${SFOLDER}/libs/wordpress_helper.sh"
 # shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
 source "${SFOLDER}/libs/wpcli_helper.sh"
+# shellcheck source=${SFOLDER}/libs/dropbox_uploader_helper.sh
+source "${SFOLDER}/libs/dropbox_uploader_helper.sh"
 # shellcheck source=${SFOLDER}/utils/installers_and_configurators.sh
 source "${SFOLDER}/utils/installers_and_configurators.sh"
 # shellcheck source=${SFOLDER}/utils/it_utils.sh
