@@ -682,12 +682,15 @@ function make_database_backup() {
   mysql_export_result="$?"
   if [[ ${mysql_export_result} -eq 0 ]]; then
 
-    #cd "${BAKWP}/${NOW}"
     log_event "info" "Making a tar.bz2 file of ${db_file} ..."
     display --indent 6 --text "- Compressing database backup"
 
     # TAR
     (${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s "$(du -sb "${BAKWP}/${NOW}/${db_file}" | awk '{print $1}')" | lbzip2 >"${BAKWP}/${NOW}/${bk_file}")
+
+    # Clear pipe output
+    clear_last_line
+    clear_last_line
 
     # Test backup file
     log_event "info" "Testing backup file: ${db_file} ..."
