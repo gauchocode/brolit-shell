@@ -13,13 +13,6 @@ fi
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
 source "${SFOLDER}/libs/commons.sh"
-# shellcheck source=${SFOLDER}/utils/files_backup.sh
-source "${SFOLDER}/utils/files_backup.sh"
-# shellcheck source=${SFOLDER}/utils/mysql_backup.sh
-source "${SFOLDER}/utils/mysql_backup.sh"
-# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
-source "${SFOLDER}/libs/mail_notification_helper.sh"
-
 
 ################################################################################
 
