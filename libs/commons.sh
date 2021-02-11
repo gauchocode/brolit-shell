@@ -1319,7 +1319,7 @@ function _spinner() {
     #
     # on start: $2 display message
     # on stop : $2 process exit status
-    #           $3 spinner function pid (supplied from stop_spinner)
+    #           $3 spinner function pid (supplied from spinner_stop)
 
     local on_success="DONE"
     local on_fail="FAIL"
@@ -1371,7 +1371,7 @@ function _spinner() {
     esac
 }
 
-function start_spinner {
+function spinner_start {
     # $1 : msg to display
     _spinner "start" "${1}" &
     # set global spinner pid
@@ -1379,7 +1379,7 @@ function start_spinner {
     disown
 }
 
-function stop_spinner {
+function spinner_stop {
     # $1 : command exit status
     _spinner "stop" $1 $_sp_pid
     unset _sp_pid
