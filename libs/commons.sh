@@ -686,9 +686,14 @@ function validator_cron_format() {
 function check_root() {
 
   # Check if user is root
-  if [ "${USER}" != root ]; then
-    echo -e "${B_RED} > Error: Script runned by ${USER}, but must be root! Exiting ...${ENDCOLOR}"
+  if [[ ${USER} != root ]]; then
+    log_event "critical" "Script runned by ${USER}, but must be root! Exiting ..." "true"
     exit 1
+
+  else
+    log_event "debug" "Script runned by ${USER}"
+    return 0
+
   fi
 
 }
@@ -714,7 +719,7 @@ function check_distro() {
 
     if [ ! "${DISTRO_V}" -ge "${MIN_V}" ]; then
       whiptail --title "UBUNTU VERSION WARNING" --msgbox "Ubuntu version must be 18.04 or 20.04! Use this script only for backup or restore purpose." 8 78
-      exitstatus=$?
+      exitstatus="$?"
       if [[ ${exitstatus} -eq 0 ]]; then
         distro_old="true"
         log_event "info" "Setting distro_old: ${distro_old}"
@@ -734,6 +739,7 @@ function check_scripts_permissions() {
 
   ### chmod
   find ./ -name "*.sh" -exec chmod +x {} \;
+  log_event "debug" "Executing chmod +x on *.sh"
 
 }
 
