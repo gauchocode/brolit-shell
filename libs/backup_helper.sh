@@ -201,16 +201,16 @@ function make_server_files_backup() {
       display --indent 6 --text "- Testing compressed backup file" --result "DONE" --color GREEN
 
       # New folder with $VPSNAME
-      dropbox_create_dir "/${VPSNAME}"
+      dropbox_create_dir "${VPSNAME}"
       
       # New folder with $bk_type
-      dropbox_create_dir "/${VPSNAME}/${bk_type}"
+      dropbox_create_dir "${VPSNAME}/${bk_type}"
 
       # New folder with $bk_sup_type (php, nginx, mysql)
-      dropbox_create_dir "/${VPSNAME}/${bk_type}/${bk_sup_type}"
+      dropbox_create_dir "${VPSNAME}/${bk_type}/${bk_sup_type}"
 
       # Dropbox Path
-      DROPBOX_PATH="/${VPSNAME}/${bk_type}/${bk_sup_type}"
+      DROPBOX_PATH="${VPSNAME}/${bk_type}/${bk_sup_type}"
 
       # Uploading backup files
       dropbox_upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}"
@@ -511,17 +511,20 @@ function make_files_backup() {
   # Test backup file
   log_event "info" "Testing backup file: ${bk_file} ..."
   display --indent 6 --text "- Testing backup file" --result "DONE" --color GREEN
-  lbzip2 -t "${BAKWP}/${NOW}/${bk_file}"
+  
+  lbzip2 --test --verbose "${BAKWP}/${NOW}/${bk_file}"
+
+  # Clear pipe output
+  clear_last_line
+  clear_last_line
+
   lbzip2_result="$?"
   if [[ "${lbzip2_result}" -eq 0 ]]; then
-
-    log_event "success" "${bk_file} backup created"
     
     BACKUPED_LIST[$BK_FILE_INDEX]=${bk_file}
     BACKUPED_FL=${BACKUPED_LIST[${BK_FILE_INDEX}]}
 
     # Calculate backup size
-    #BK_FL_SIZE="$(ls -la --human-readable "${BAKWP}/${NOW}/${bk_file}" | awk '{ print $5}')"
     BK_FL_SIZE="$(find . -name "${bk_file}" -exec ls -l --human-readable --block-size=M {} \; |  awk '{ print $5 }')"
     BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=${BK_FL_SIZE}
 
@@ -529,14 +532,16 @@ function make_files_backup() {
     display --indent 6 --text "- Backup creation" --result "DONE" --color GREEN
     display --indent 8 --text "Final backup size: ${YELLOW}${BOLD}${BK_FL_SIZE}${ENDCOLOR}"
 
+    log_event "info" "Creating folders in Dropbox ..."
+
     # New folder with $VPSNAME
-    dropbox_create_dir "/${VPSNAME}"
+    dropbox_create_dir "${VPSNAME}"
     
     # New folder with $bk_type
-    dropbox_create_dir "/${VPSNAME}/${bk_type}"
+    dropbox_create_dir "${VPSNAME}/${bk_type}"
 
     # New folder with $directory_to_backup (project folder)
-    dropbox_create_dir "/${VPSNAME}/${bk_type}/${directory_to_backup}"
+    dropbox_create_dir "${VPSNAME}/${bk_type}/${directory_to_backup}"
 
     DROPBOX_PATH="${VPSNAME}/${bk_type}/${directory_to_backup}"
 
@@ -832,13 +837,13 @@ function make_project_backup() {
         lbzip2 -t "${BAKWP}/${NOW}/${BK_DB_FILE}"
 
         # New folder with $VPSNAME
-        dropbox_create_dir "/${VPSNAME}"
+        dropbox_create_dir "${VPSNAME}"
         
         # New folder with $bk_type
-        dropbox_create_dir "/${VPSNAME}/${bk_type}"
+        dropbox_create_dir "${VPSNAME}/${bk_type}"
 
         # New folder with $directory_to_backup
-        dropbox_create_dir "/${VPSNAME}/${bk_type}/${directory_to_backup}"
+        dropbox_create_dir "${VPSNAME}/${bk_type}/${directory_to_backup}"
 
         # Upload Files
         dropbox_upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${NOW}"

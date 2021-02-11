@@ -244,8 +244,9 @@ function script_init() {
   declare -g NETWORK_INTERFACE
 
   # BROOBE Utils config file
-  if test -f /root/.broobe-utils-options; then
-    source "/root/.broobe-utils-options"
+  LEMP_UTILS_CONFIG_FILE=~/.broobe-utils-options
+  if test -f ${LEMP_UTILS_CONFIG_FILE}; then
+    source "${LEMP_UTILS_CONFIG_FILE}"
 
   else
 
