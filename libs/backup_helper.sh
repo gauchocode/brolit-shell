@@ -510,9 +510,9 @@ function make_files_backup() {
 
   # Test backup file
   log_event "info" "Testing backup file: ${bk_file} ..."
-  display --indent 6 --text "- Testing backup file" --result "DONE" --color GREEN
+  display --indent 6 --text "- Testing backup file"
   
-  lbzip2 --test --verbose "${BAKWP}/${NOW}/${bk_file}"
+  pv --width 70 "${BAKWP}/${NOW}/${bk_file}" | lbzip2 --test
 
   # Clear pipe output
   clear_last_line
@@ -691,14 +691,19 @@ function make_database_backup() {
 
     # Test backup file
     log_event "info" "Testing backup file: ${db_file} ..."
-    lbzip2 -t "${BAKWP}/${NOW}/${bk_file}"
+    display --indent 6 --text "- Testing backup file"
+
+    pv --width 70 "${BAKWP}/${NOW}/${bk_file}" | lbzip2 --test
+
+    # Clear pipe output
+    clear_last_line
+    clear_last_line
+
     lbzip2_result="$?"
     if [[ ${lbzip2_result} -eq 0 ]]; then
 
-      log_event "success" "Backup file ${bk_file}"
+      log_event "success" "Backup file ${bk_file} created"
 
-      clear_last_line
-      clear_last_line
       display --indent 6 --text "- Compressing database backup" --result "DONE" --color GREEN
 
       # Changing global
