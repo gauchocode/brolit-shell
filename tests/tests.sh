@@ -313,6 +313,7 @@ function test_display_functions() {
     sleep 10
     spinner_stop "$?"
 
+    clear_last_line
     display --indent 6 --text "- Testing spinner" --result "DONE" --color WHITE
 
 }

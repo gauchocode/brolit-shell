@@ -1328,10 +1328,11 @@ function _spinner() {
 
         start)
             # calculate the column where spinner and status msg will be displayed
-            #let column=$(tput cols)-${#2}-8
+            let column=$(tput cols)-${#2}-8
             # display message and position the cursor in $column column
             #echo -ne ${2}
-            #printf "%${column}s"
+            display --indent 6 --text "- $2"
+            printf "%${column}s"
 
             # start spinner
             i=1
@@ -1354,13 +1355,13 @@ function _spinner() {
             kill $3 > /dev/null 2>&1
 
             # inform the user uppon success or failure
-            echo -en "\b["
-            if [[ $2 -eq 0 ]]; then
-                echo -en "${GREEN}${on_success}${NORMAL}"
-            else
-                echo -en "${RED}${on_fail}${NORMAL}"
-            fi
-            echo -e "]"
+            #echo -en "\b["
+            #if [[ $2 -eq 0 ]]; then
+            #    echo -en "${GREEN}${on_success}${NORMAL}"
+            #else
+            #    echo -en "${RED}${on_fail}${NORMAL}"
+            #fi
+            #echo -e "]"
         ;;
 
         *)
