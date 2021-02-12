@@ -21,13 +21,10 @@ TESTS_PATH="${SFOLDER}/tests/"
 tests_files="$(find "${TESTS_PATH}" -maxdepth 1 -name 'test_*.sh' -type f -print)"
 for f in ${tests_files}; do source "${f}"; done
 
-################################################################################
-
+### Init
 script_init
 
-################################################################################
-# MAIN
-################################################################################
+### Tests start
 
 log_section "Running Tests Suite"
 
