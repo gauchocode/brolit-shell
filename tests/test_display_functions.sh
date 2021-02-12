@@ -24,12 +24,9 @@ function test_display_functions() {
 
     log_subsection "Testing display with spinner"
 
-    #display --indent 6 --text "- Testing spinner"
-
-    spinner_start "Testing spinner"
-    sleep 5
+    spinner_start "Testing spinner for 3 seconds"
+    sleep 3
     spinner_stop "$?"
-
     display --indent 6 --text "- Testing spinner" --result "DONE" --color WHITE
 
 }
