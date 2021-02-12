@@ -686,13 +686,18 @@ function validator_cron_format() {
 
 function check_root() {
 
+  local is_root
+  
+  is_root=$(id -u) # if return 0, the script is runned by the root user
+
   # Check if user is root
-  if [[ ${USER} != root ]]; then
+  if [[ ${is_root} != 0 ]]; then
+    # $USER is a env var
     log_event "critical" "Script runned by ${USER}, but must be root! Exiting ..." "true"
     exit 1
 
   else
-    log_event "debug" "Script runned by ${USER}"
+    log_event "debug" "Script runned by root"
     return 0
 
   fi
