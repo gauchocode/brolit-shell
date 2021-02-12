@@ -144,6 +144,8 @@
 
 ## For release 4.0
 
+- [ ] HTTP Monitor Dashboard?
+        https://raymii.org/s/software/Bash_HTTP_Monitoring_Dashboard.html
 - [ ] Docker support?
         https://www.reddit.com/r/Wordpress/comments/jfn7z9/guide_wordpress_on_docker_with_nginx_traefik/
 - [ ] Support for Rclone? https://github.com/rclone/rclone

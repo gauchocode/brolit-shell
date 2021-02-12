@@ -86,7 +86,7 @@ DB_BL="information_schema,performance_schema,mysql,sys,phpmyadmin"
 #MAILCOW BACKUP
 MAILCOW_TMP_BK="${SFOLDER}/tmp/mailcow"
 
-PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
+PHP_V="$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")"
 php_exit="$?"
 if [[ ${php_exit} -eq 1 ]];then
   # TODO: must be an option

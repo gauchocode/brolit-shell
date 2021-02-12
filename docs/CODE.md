@@ -4,6 +4,7 @@ An attempt to bring order in good advice on writing Bash scripts I collected fro
 ## Some sources
 * https://bertvv.github.io/cheat-sheets/Bash.html
 * https://github.com/anordal/shellharden/blob/master/how_to_do_things_safely_in_bash.md
+* https://www.reddit.com/r/commandline/comments/lha15t/bash_execution_tips_the_difference_between_and/
 
 ## Suggested tools
 * VSCode with shellcheck and Bash IDE extensions
@@ -41,13 +42,13 @@ Always use long parameter notation when available. This makes the script more re
 ## Code: Variables
 
 * Prefer local variables within functions over global variables.
-* If you need global variables, make them readonly.
+* If you need global variables, make them read-only.
 * Variables should always be referred to in the ${var} form (as opposed to $var).
-* Variables should always be quoted, especially if their value may contain a whitespace or separator character: "${var}"
+* Variables should always be quoted, especially if their value may contain a whitespace or separator character: "${var}".
 * Capitalization
     Environment (exported) variables: ${ALL_CAPS}
     Local variables: ${lower_case}
-* Positional parameters of the script should be checked, those of functions should not
+* Positional parameters of the script should be checked, those of functions should not.
 * Some loops happen in subprocesses, so don’t be surprised when setting variabless does nothing after them. Use stdout and greping to communicate status.
 
 ### Variable expansion
@@ -60,7 +61,7 @@ Bad: $my_var
 Good: "$(cmd)"
 Bad: $(cmd)
 
-There are exceptions where quoting is not necessary, but because it never hurts to quote, and the general rule is to be scared when you see an unquoted variable, pursuing the non-obvious exceptions is, for the sake of your readers, questionable. It looks wrong, and the wrong practice is common enough to raise suspicion: Enough scripts are being written with broken handling of filenames that whitespace in filenames is often avoided…
+There are exceptions where quoting is not necessary, but because it never hurts to quote.
 
 The exceptions only matter in discussions of style – feel welcome to ignore them. For the sake of style neutrality, Shellharden does honor a few exceptions:
 
