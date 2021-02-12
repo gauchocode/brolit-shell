@@ -519,6 +519,14 @@ function clear_last_line() {
 
 }
 
+function clear_line() {
+
+  printf "\033[1A" >&2
+  echo -e "${F_DEFAULT}                                                                                                         ${ENDCOLOR}" >&2                    
+  printf "\033[1A" >&2
+
+}
+
 function display() {
 
   INDENT=0; TEXT=""; RESULT=""; TCOLOR=""; TSTYLE=""; COLOR=""; SPACES=0; SHOWDEBUG=0; CRONJOB=0;
@@ -1364,19 +1372,13 @@ function _spinner() {
 
         start)
 
+          # calculate the column where spinner and status msg will be displayed
           LINESIZE=$(export LC_ALL= ; echo "$2" | wc -m | tr -d ' ')
           SPACES=$((62 - 6 - LINESIZE))
           if [ "${SPACES}" -lt 0 ]; then SPACES=0; fi
 
-          # calculate the column where spinner and status msg will be displayed
-          #let column=$(tput cols)-${#2}-25
-          # display message and position the cursor in $column column
-          #echo -ne ${2}
           display --indent 6 --text "- $2"
-          #printf "%${column}s"
 
-          # return carry
-          #printf "\033[1A" >&2
           printf "\033[1A" >&2
           echo -e -n "\033[${SPACES}C" >&2
           printf "%${SPACES}s"
@@ -1401,9 +1403,7 @@ function _spinner() {
               exit 1
           fi
 
-          # clear previous line
-          # printf "\033[1A" >&2
-          clear_last_line
+          clear_line
 
           kill $3 > /dev/null 2>&1
 
