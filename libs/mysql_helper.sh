@@ -520,7 +520,6 @@ function mysql_database_export() {
     if [[ ${dump_status} -eq 0 ]]; then
 
         # Logging
-        clear_last_line
         display --indent 6 --text "- Database backup for ${database}" --result "DONE" --color GREEN
         log_event "success" "Database ${database} exported successfully"
 
@@ -529,7 +528,6 @@ function mysql_database_export() {
     else
 
         # Logging
-        clear_last_line
         display --indent 6 --text "- Database backup for ${database}" --result "ERROR" --color RED
         display --indent 8 --text "MySQL dump output: ${dump_output}" --tcolor RED
         log_event "error" "Something went wrong exporting database: ${database}. MySQL dump output: ${dump_status}"
