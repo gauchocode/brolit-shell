@@ -521,9 +521,9 @@ function clear_last_line() {
 
 function clear_line() {
 
-  printf "\033[1A" >&2
-  echo -e "${F_DEFAULT}                                                                                                         ${ENDCOLOR}" >&2                    
-  printf "\033[1A" >&2
+  printf "\033[G" >&2
+  printf "                                                                                                         " >&2                    
+  printf "\033[G" >&2
 
 }
 

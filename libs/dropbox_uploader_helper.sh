@@ -48,9 +48,8 @@ function dropbox_upload() {
     local dropbox_file_to_upload_result
 
     log_event "info" "Uploading file to Dropbox ..."
-    #display --indent 6 --text "- Uploading file to Dropbox"
-    
-    spinner_start "- Uploading file to Dropbox"
+
+    spinner_start "Uploading file to Dropbox"
 
     log_event "debug" "Running: ${DROPBOX_UPLOADER} upload ${file_to_upload} ${dropbox_directory}"
 
@@ -60,7 +59,6 @@ function dropbox_upload() {
     spinner_stop "$dropbox_file_to_upload_result"
 
     # Clear output
-    #clear_last_line
     clear_last_line
     
     # Check dropbox_file_to_upload_result
