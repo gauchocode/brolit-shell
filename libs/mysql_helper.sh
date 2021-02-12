@@ -507,9 +507,8 @@ function mysql_database_export() {
     local dump_status
 
     log_event "info" "Making a database backup of: ${database}"
-    #display --indent 6 --text "- Making a backup of: ${database}"
 
-    spinner_start "- Making a backup of: ${database}"
+    spinner_start "Making a backup of: ${database}"
 
     # Run mysqldump
     dump_output="$("${MYSQLDUMP}" -u "${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}")"
