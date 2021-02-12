@@ -37,6 +37,9 @@ else
   # Update packages index
   apt update
 
+  # BACKUP_ALL
+  log_section "Backup All"
+
   # Preparing Mail Notifications Template
   HTMLOPEN=$(mail_html_start)
   BODY_SRV=$(mail_server_status_section "${SERVER_IP}")
@@ -45,6 +48,9 @@ else
   mail_package_status_section "${PKG_DETAILS}"
   PKG_MAIL="${BAKWP}/pkg-${NOW}.mail"
   PKG_MAIL_VAR=$(<"${PKG_MAIL}")
+
+  # Certificates
+  log_subsection "Certbot Certificates"
 
   # Check certificates installed
   mail_cert_section
