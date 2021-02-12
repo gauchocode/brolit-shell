@@ -522,8 +522,8 @@ function clear_last_line() {
 function clear_line() {
 
   printf "\033[G" >&2
-  #printf "                                                                                                         " >&2                    
-  #printf "\033[G" >&2
+  printf "                                                                                                         " >&2                    
+  printf "\033[G" >&2
 
 }
 
