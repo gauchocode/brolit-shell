@@ -24,13 +24,12 @@ function test_display_functions() {
 
     log_subsection "Testing display with spinner"
 
-    display --indent 6 --text "- Testing spinner"
+    #display --indent 6 --text "- Testing spinner"
 
-    spinner_start "sleeping for 10 seconds"
-    sleep 10
+    spinner_start "Testing spinner"
+    sleep 5
     spinner_stop "$?"
 
-    clear_last_line
     display --indent 6 --text "- Testing spinner" --result "DONE" --color WHITE
 
 }
