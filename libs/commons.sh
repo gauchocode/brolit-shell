@@ -624,56 +624,78 @@ function display() {
 #
 
 function validator_email_format() {
-    if [[ ! "$1" =~ ^[A-Za-z0-9._%+-]+@[[:alnum:].-]+\.[A-Za-z]{2,63}$ ]] ; then
-        log_event "ERROR" "Invalid email format :: $1"
-    fi
+
+  local email=$1
+
+  if [[ ! "${email}" =~ ^[A-Za-z0-9._%+-]+@[[:alnum:].-]+\.[A-Za-z]{2,63}$ ]] ; then
+
+    log_event "ERROR" "Invalid email format :: ${email}"
+    return 1
+
+  fi
+
 }
 
 function validator_cron_format() {
-    limit=59
-    check_format=''
-    if [ "$2" = 'hour' ]; then
-        limit=23
-    fi
-    
-    if [ "$2" = 'day' ]; then
-        limit=31
-    fi
-    if [ "$2" = 'month' ]; then
-        limit=12
-    fi
-    if [ "$2" = 'wday' ]; then
-        limit=7
-    fi
-    if [ "$1" = '*' ]; then
-        check_format='ok'
-    fi
-    if [[ "$1" =~ ^[\*]+[/]+[0-9] ]]; then
-        if [ "$(echo $1 |cut -f 2 -d /)" -lt $limit ]; then
-            check_format='ok'
-        fi
-    fi
-    if [[ "$1" =~ ^[0-9][-|,|0-9]{0,70}[\/][0-9]$ ]]; then
-        check_format='ok'
-        crn_values=${1//,/ }
-        crn_values=${crn_values//-/ }
-        crn_values=${crn_values//\// }
-        for crn_vl in $crn_values; do
-            if [ "$crn_vl" -gt $limit ]; then
-                check_format='invalid'
+
+  local limit
+  local check_format
+  local crn_values
+
+  limit=59
+  check_format=''
+
+  if [ "$2" = 'hour' ]; then
+      limit=23
+  fi
+  
+  if [ "$2" = 'day' ]; then
+      limit=31
+  fi
+
+  if [ "$2" = 'month' ]; then
+      limit=12
+  fi
+
+  if [ "$2" = 'wday' ]; then
+      limit=7
+  fi
+
+  if [ "$1" = '*' ]; then
+      check_format='ok'
+  fi
+  
+  if [[ "$1" =~ ^[\*]+[/]+[0-9] ]]; then
+      if [ "$(echo $1 |cut -f 2 -d /)" -lt $limit ]; then
+          check_format='ok'
+      fi
+  fi
+  
+  if [[ "$1" =~ ^[0-9][-|,|0-9]{0,70}[\/][0-9]$ ]]; then
+      check_format='ok'
+      crn_values=${1//,/ }
+      crn_values=${crn_values//-/ }
+      crn_values=${crn_values//\// }
+      for crn_vl in $crn_values; do
+          if [ "$crn_vl" -gt $limit ]; then
+              check_format='invalid'
+          fi
+      done
+  fi
+  
+  crn_values=$(echo $1 |tr "," " " | tr "-" " ")
+  
+  for crn_vl in $crn_values
+      do
+          if [[ "$crn_vl" =~ ^[0-9]+$ ]] && [ "$crn_vl" -le $limit ]; then
+                check_format='ok'
             fi
-        done
-    fi
-    crn_values=$(echo $1 |tr "," " " | tr "-" " ")
-    for crn_vl in $crn_values
-        do
-            if [[ "$crn_vl" =~ ^[0-9]+$ ]] && [ "$crn_vl" -le $limit ]; then
-                 check_format='ok'
-              fi
-        done
-    if [ "$check_format" != 'ok' ]; then
-        check_result $E_INVALID "invalid $2 format :: $1"
-    fi
+      done
+  
+  if [ "$check_format" != 'ok' ]; then
+      check_result $E_INVALID "invalid $2 format :: $1"
+  fi
+
 }
 
 #
@@ -808,19 +830,24 @@ declare -a checklist_array
 
 function array_to_checklist() {
 
+  local array=$1
+
   local i
 
   i=0
-  for option in $1; do
+  for option in ${array}; do
+
     checklist_array[$i]=$option
     i=$((i + 1))
     checklist_array[$i]=" "
     i=$((i + 1))
     checklist_array[$i]=off
     i=$((i + 1))
+
   done
 
   # checklist_array returned
+  # export ${checklist_array}
 
 }
 
@@ -831,6 +858,8 @@ function file_browser() {
 
   local menutitle=$1
   local startdir=$2
+
+  local dir_list
 
   if [ -z "${startdir}" ]; then
     dir_list=$(ls -lhp | awk -F ' ' ' { print $9 " " $5 } ')
@@ -879,6 +908,8 @@ function directory_browser() {
 
   local menutitle=$1
   local startdir=$2
+
+  local dir_list
 
   if [ -z "${startdir}" ]; then
     dir_list=$(ls -lhp | awk -F ' ' ' { print $9 " " $5 } ')
