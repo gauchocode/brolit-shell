@@ -1373,16 +1373,13 @@ function _spinner() {
         start)
 
           # calculate the column where spinner and status msg will be displayed
+          TEXT=$2
           INDENT=6
-          LINESIZE=$(export LC_ALL= ; echo "- $2" | wc -m | tr -d ' ')
-          SPACES=$((62 - INDENT - LINESIZE))
+          LINESIZE=$(export LC_ALL= ; echo "${TEXT}" | wc -m | tr -d ' ')
+          if [ "${INDENT}" -gt 0 ]; then SPACES=$((62 - INDENT - LINESIZE)); fi
           if [ "${SPACES}" -lt 0 ]; then SPACES=0; fi
 
-          display --indent 6 --text "- $2"
-
-          printf "\033[1A" >&2
-          echo -e -n "\033[${SPACES}C" >&2
-          printf "%${SPACES}s"
+          echo -e -n "\033[${INDENT}C${TEXT}${NORMAL}\033[${SPACES}C" >&2
 
           # start spinner
           i=1
