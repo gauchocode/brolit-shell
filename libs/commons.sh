@@ -1363,46 +1363,64 @@ function _spinner() {
     case $1 in
 
         start)
-            # calculate the column where spinner and status msg will be displayed
-            let column=$(tput cols)-${#2}-8
-            # display message and position the cursor in $column column
-            #echo -ne ${2}
-            display --indent 6 --text "- $2"
-            printf "%${column}s"
 
-            # start spinner
-            i=1
-            sp='\|/-'
-            delay=${SPINNER_DELAY:-0.15}
+          LINESIZE=$(export LC_ALL= ; echo "$2" | wc -m | tr -d ' ')
+          SPACES=$((62 - 6 - LINESIZE))
+          if [ "${SPACES}" -lt 0 ]; then SPACES=0; fi
 
-            while :
-            do
-                printf "\b${sp:i++%${#sp}:1}"
-                sleep "$delay"
-            done
+          # calculate the column where spinner and status msg will be displayed
+          #let column=$(tput cols)-${#2}-25
+          # display message and position the cursor in $column column
+          #echo -ne ${2}
+          display --indent 6 --text "- $2"
+          #printf "%${column}s"
+
+          # return carry
+          #printf "\033[1A" >&2
+          printf "\033[1A" >&2
+          echo -e -n "\033[${SPACES}C" >&2
+          printf "%${SPACES}s"
+
+          # start spinner
+          i=1
+          sp='\|/-'
+          delay=${SPINNER_DELAY:-0.15}
+
+          while :
+          do
+              printf "\b${sp:i++%${#sp}:1}"
+              sleep "$delay"
+          done
+
         ;;
 
         stop)
-            if [[ -z ${3} ]]; then
-                # spinner is not running
-                exit 1
-            fi
 
-            kill $3 > /dev/null 2>&1
+          if [[ -z ${3} ]]; then
+              # spinner is not running
+              exit 1
+          fi
 
-            # inform the user uppon success or failure
-            #echo -en "\b["
-            #if [[ $2 -eq 0 ]]; then
-            #    echo -en "${GREEN}${on_success}${NORMAL}"
-            #else
-            #    echo -en "${RED}${on_fail}${NORMAL}"
-            #fi
-            #echo -e "]"
+          # clear previous line
+          # printf "\033[1A" >&2
+          clear_last_line
+
+          kill $3 > /dev/null 2>&1
+
+          # inform the user uppon success or failure
+          #echo -en "\b["
+          #if [[ $2 -eq 0 ]]; then
+          #    echo -en "${GREEN}${on_success}${NORMAL}"
+          #else
+          #    echo -en "${RED}${on_fail}${NORMAL}"
+          #fi
+          #echo -e "]"
+
         ;;
 
         *)
-            echo "invalid argument, try {start/stop}"
-            exit 1
+          #invalid argument
+          exit 1
         ;;
 
     esac

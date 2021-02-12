@@ -79,3 +79,5 @@ test_display_functions
 
 #telegram_send_message "LEMPT UTILS SCRIPT NOTIFICATION TEST"
 
+# Log End
+log_event "info" "LEMP UTILS Tests End -- $(date +%Y%m%d_%H%M)" "true"
