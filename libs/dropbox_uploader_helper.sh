@@ -57,9 +57,6 @@ function dropbox_upload() {
     dropbox_file_to_upload_result="$?"
 
     spinner_stop "$dropbox_file_to_upload_result"
-
-    # Clear output
-    clear_last_line
     
     # Check dropbox_file_to_upload_result
     if [[ ${dropbox_file_to_upload_result} -eq 0 ]]; then
