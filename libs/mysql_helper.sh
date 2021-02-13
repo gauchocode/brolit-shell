@@ -508,11 +508,14 @@ function mysql_database_export() {
 
     log_event "info" "Making a database backup of: ${database}"
 
-    spinner_start "Making a backup of: ${database}"
+    spinner_start "- Making a backup of: ${database}"
 
     # Run mysqldump
     dump_output="$("${MYSQLDUMP}" -u "${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}")"
+
     dump_status="$?"
+
+    clear_last_line     # clear mysql root prompt message
 
     spinner_stop "$dump_status"
 
