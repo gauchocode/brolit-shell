@@ -49,7 +49,7 @@ function dropbox_upload() {
 
     log_event "info" "Uploading file to Dropbox ..."
 
-    spinner_start "Uploading file to Dropbox"
+    spinner_start "- Uploading file to Dropbox"
 
     log_event "debug" "Running: ${DROPBOX_UPLOADER} upload ${file_to_upload} ${dropbox_directory}"
 
