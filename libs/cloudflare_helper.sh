@@ -148,11 +148,11 @@ function cloudflare_development_mode() {
 
     fi
 
-    log_event "info" "Getting Zone & Record ID's for domain: ${root_domain}" "false"
+    log_event "debug" "Getting Zone & Record ID's for domain: ${root_domain}"
 
     zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
 
-    log_event "info" "Zone ID found: ${zone_id}" "false"
+    log_event "debug" "Zone ID found: ${zone_id}"
 
     dev_mode_result=$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/development_mode" \
      -H "X-Auth-Email: ${auth_email}" \
@@ -200,11 +200,11 @@ function cloudflare_ssl_mode() {
 
     fi
 
-    log_event "info" "Getting Zone & Record ID's for domain: ${root_domain}"
+    log_event "debug" "Getting Zone & Record ID's for domain: ${root_domain}"
 
     zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
 
-    log_event "info" "Zone ID found: ${zone_id}"
+    log_event "debug" "Zone ID found: ${zone_id}"
 
     ssl_mode_result=$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/ssl" \
      -H "X-Auth-Email: ${auth_email}" \
@@ -274,18 +274,18 @@ function cloudflare_change_a_record () {
 
     cur_ip="${SERVER_IP}"
 
-    log_event "info" "Accessing Cloudflare API and change record ${domain}" "false"
+    log_event "info" "Accessing Cloudflare API and change record ${domain}"
     display --indent 6 --text "- Accessing Cloudflare API" --result "DONE" --color GREEN
 
-    log_event "info" "Getting Zone & Record ID's ..."
+    log_event "debug" "Getting Zone & Record ID's ..."
 
     zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
     record_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json"  | grep -Po '(?<="id":")[^"]*')
 
     if [[ -z "${record_id}" || ${record_id} == "" ]]; then
 
-        log_event "info" "ZONE_ID found: ${zone_id}"
-        log_event "info" "RECORD_ID not found: Trying to add the subdomain ..."
+        log_event "debug" "ZONE_ID found: ${zone_id}"
+        log_event "debug" "RECORD_ID not found: Trying to add the subdomain ..."
         display --indent 6 --text "- Adding the subdomain: ${record_name}"
 
         update="$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
@@ -296,8 +296,8 @@ function cloudflare_change_a_record () {
 
     else
 
-        log_event "info" "ZONE_ID found: ${zone_id}"
-        log_event "info" "RECORD_ID found: ${record_id}"
+        log_event "debug" "ZONE_ID found: ${zone_id}"
+        log_event "debug" "RECORD_ID found: ${record_id}"
         display --indent 6 --text "- Changing ${record_name} IP ..."
 
         delete="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
@@ -377,7 +377,7 @@ function cloudflare_delete_a_record () {
     cur_ip=${SERVER_IP}
 
     # RETRIEVE/ SAVE zone_id AND record_id
-    log_event "info" "Getting Zone & Record ID's ..."
+    log_event "debug" "Getting Zone & Record ID's ..."
     zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
     record_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json"  | grep -Po '(?<="id":")[^"]*')
 

@@ -466,15 +466,19 @@ function restore_site_files() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Log
-    log_event "info" "Setting chosen_domain=${chosen_domain}"
+    log_event "info" "Working with domain: ${chosen_domain}"
     display --indent 6 --text "- Selecting project domain" --result "DONE" --color GREEN
+    display --indent 8 --text "${chosen_domain}" --tcolor YELLOW
 
-    # New tmp folder
-    project_tmp_folder="${SFOLDER}/tmp/${chosen_domain}"
+    # If user change project domains, we need to do this
+    project_tmp_old_folder="${SFOLDER}/tmp/${domain}"
+    project_tmp_new_folder="${SFOLDER}/tmp/${chosen_domain}"
 
     # Renaming
-    mv "${SFOLDER}/tmp/${domain}" "${project_tmp_folder}"
-      
+    if [[ ${project_tmp_old_folder} != "${project_tmp_new_folder}" ]]; then
+      mv "${project_tmp_old_folder}" "${project_tmp_new_folder}"
+    fi
+
     # Ask folder to install
     folder_to_install=$(ask_folder_to_install_sites "${SITES}")
 
@@ -482,9 +486,9 @@ function restore_site_files() {
     actual_folder="${folder_to_install}/${chosen_domain}"
 
     # Check if destination folder exist
-    if [ -d "${actual_folder}" ]; then
+    if [[ -d ${actual_folder} ]]; then
 
-      # Make backup
+      # If exists, make a backup
       _make_temp_files_backup "${actual_folder}"
 
     fi
@@ -493,7 +497,7 @@ function restore_site_files() {
     log_event "info" "Restoring backup files on ${folder_to_install} ..."
     display --indent 6 --text "- Restoring backup files"
     
-    mv "${project_tmp_folder}" "${folder_to_install}"
+    mv "${project_tmp_new_folder}" "${folder_to_install}"
 
     clear_last_line
     display --indent 6 --text "- Restoring backup files" --result "DONE" --color GREEN
