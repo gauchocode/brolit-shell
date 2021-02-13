@@ -17,6 +17,7 @@ function test_mysql_helper() {
     test_mysql_user_delete
     test_mysql_database_create
     test_mysql_database_exists
+    test_mysql_database_export
     test_mysql_database_drop
 
 }
@@ -135,6 +136,27 @@ function test_mysql_database_exists() {
         display --indent 6 --text "- test_mysql_database_exists" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- test_mysql_database_exists" --result "FAIL" --color RED
+    fi
+
+}
+
+
+function test_mysql_database_export() {
+
+    local mysql_db_test
+    local dump_file
+
+    log_subsection "Test: mysql_database_export"
+
+    mysql_db_test="test_db"
+    dump_file="database_export_test.sql"
+
+    mysql_database_export "${mysql_db_test}" "${dump_file}"
+    database_export=$?
+    if [[ ${database_export} -eq 0 ]]; then 
+        display --indent 6 --text "- test_mysql_database_export" --result "PASS" --color WHITE
+    else
+        display --indent 6 --text "- test_mysql_database_export" --result "FAIL" --color RED
     fi
 
 }
