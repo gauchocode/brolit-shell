@@ -159,6 +159,8 @@ function test_mysql_database_export() {
         display --indent 6 --text "- test_mysql_database_export" --result "FAIL" --color RED
     fi
 
+    #rm -f "${dump_file}"
+
 }
 
 function test_mysql_database_drop() {

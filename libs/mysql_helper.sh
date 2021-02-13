@@ -8,11 +8,9 @@ function _mysql_root_credentials_parameter() {
 
     # If /root/.my.cnf exists then it won't ask for root password
     if [ -f /root/.my.cnf ]; then
-
         return 0
 
     else
-
         # Return credentials parameter
         echo "-u${MUSER} -p${MPASS}"
 
@@ -529,8 +527,7 @@ function mysql_database_export() {
     spinner_start "- Making a backup of: ${database}"
 
     # Run mysqldump
-    dump_output="$("${MYSQLDUMP}" -u "${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}" 2>&1)"
-
+    dump_output="$("${MYSQLDUMP}" -u"${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}" 2>&1 >/dev/null)"
     dump_status="$?"
 
     spinner_stop "$dump_status"
@@ -549,7 +546,7 @@ function mysql_database_export() {
         # Logging
         display --indent 6 --text "- Database backup for ${database}" --result "ERROR" --color RED
         display --indent 8 --text "MySQL dump output: ${dump_output}" --tcolor RED
-        log_event "error" "Something went wrong exporting database: ${database}. MySQL dump output: ${dump_status}"
+        log_event "error" "Something went wrong exporting database: ${database}. MySQL dump output: ${dump_output}"
 
         return 1
 
