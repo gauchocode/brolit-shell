@@ -257,7 +257,7 @@ function nginx_server_get_current_phpv() {
 
 function nginx_server_change_phpv() {
 
-    #$1 = ${nginx_server_file} / ${tool} or ${project_domain}
+    #$1 = ${nginx_server_file} - Entire path
     #$2 = ${new_php_v} optional
 
     local nginx_server_file=$1
@@ -280,7 +280,7 @@ function nginx_server_change_phpv() {
     current_php_v=$(nginx_server_get_current_phpv "${nginx_server_file}")
 
     # Replace string to match PHP version    
-    sed -i "s#${current_php_v}#${new_php_v}#" "${WSERVER}/sites-available/${nginx_server_file}"
+    sed -i "s#${current_php_v}#${new_php_v}#" "${nginx_server_file}"
 
     log_event "info" "PHP version for ${nginx_server_file} changed from ${current_php_v} to ${new_php_v}"
 
