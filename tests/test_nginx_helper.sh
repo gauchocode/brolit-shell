@@ -28,9 +28,7 @@ function test_nginx_server_change_phpv() {
 
     # Get php version
     current_php_v=$(nginx_server_get_current_phpv "${SFOLDER}/tmp/${nginx_server_file}")
-
-    current_php_v="7.4"
-    if [[ ${current_php_v } -eq 0 ]]; then
+    if [[ ${current_php_v} == "7.4" ]]; then
         display --indent 6 --text "- test_nginx_server_change_phpv" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- test_nginx_server_change_phpv" --result "FAIL" --color RED
