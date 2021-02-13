@@ -4,6 +4,61 @@
 # Version: 3.0.13
 #############################################################################
 
+function tests_suite_menu() {
+
+  local -n tests_options          # whiptail array options
+  local chosen_tests_options      # whiptail var
+
+  tests_options=(
+    "01)" "RUN ALL TESTS" 
+    "02)" "RUN DISPLAY TESTS"
+    "03)" "RUN MYSQL TESTS"
+    "04)" "RUN PHP TESTS"
+    "05)" "RUN WORDPRESS TESTS"
+    "06)" "RUN CLOUDFLARE TESTS"
+    "06)" "RUN OTHER TESTS"
+    )
+  chosen_tests_options=$(whiptail --title "TESTS SUITE" --menu " " 20 78 10 "${tests_options[@]}" 3>&1 1>&2 2>&3)
+  exitstatus="$?"
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    if [[ ${chosen_tests_options} == *"01"* ]]; then
+      test_display_functions
+      test_mysql_helper
+
+    fi
+    if [[ ${chosen_tests_options} == *"02"* ]]; then
+      test_display_functions
+
+    fi
+    if [[ ${chosen_tests_options} == *"03"* ]]; then
+      test_mysql_helper
+
+    fi
+    if [[ ${chosen_tests_options} == *"04"* ]]; then
+      test_php_helper_funtions
+
+    fi
+    if [[ ${chosen_tests_options} == *"05"* ]]; then
+      test_wordpress_helper_funtions
+
+    fi
+    if [[ ${chosen_tests_options} == *"06"* ]]; then
+      test_cloudflare_funtions
+
+    fi
+    if [[ ${chosen_tests_options} == *"07"* ]]; then
+      test_common_funtions
+
+    fi
+
+  fi
+
+  menu_main_options
+}
+
+#############################################################################
+
 ### Main dir check
 SFOLDER=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 SFOLDER=$( cd "$( dirname "${SFOLDER}" )" && pwd )
@@ -24,21 +79,11 @@ for f in ${tests_files}; do source "${f}"; done
 ### Init
 script_init
 
-### Tests start
+### Menu
 
 log_section "Running Tests Suite"
 
-#test_display_functions
-
-#test_common_funtions
-
-test_mysql_helper
-
-#test_php_helper_funtions
-
-#test_cloudflare_funtions
-
-#test_wordpress_helper_funtions
+tests_suite_menu
 
 #test_mail_cert_section
 
