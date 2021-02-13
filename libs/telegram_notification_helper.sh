@@ -34,27 +34,26 @@ function telegram_send_message() {
 	
 	# Notification date
 	#notif_date="$(date "+%d %b %H:%M:%S")"	
-
-	#Texto a enviar. Fecha de ejecución y primer parámetro del script.
 	#notif_text="<b>${notif_date}:</b>\n<pre>${notification_text}</pre>"
+
+	# Notification text
 	notif_text="<pre>${notification_text}</pre>"
 	
-	log_event "info" "Sending Telegram notification ..." "false"
+	log_event "info" "Sending Telegram notification ..."
 
 	telegram_notif_response=$(curl --silent --insecure --max-time "${timeout}" --data chat_id="${telegram_user_id}" --data "disable_notification=${notif_sound}" --data "parse_mode=${display_mode}" --data "text=${notif_text}" "${notif_url}")
 	telegram_notif_result=$(echo "${telegram_notif_response}" | grep "ok" | cut -d ":" -f2 | cut -d "," -f1)
 
-	#log_event "debug" "Telegram notification response: ${telegram_notif_response}" "true"
-	#log_event "debug" "Telegram notification result: ${telegram_notif_result}" "true"
-
 	if [ "${telegram_notif_result}" = "true" ]; then
 		# Log success
-		log_event "success" "Telegram notification sent!" "false"
+		log_event "success" "Telegram notification sent!"
 		display --indent 2 --text "- Sending Telegram notification" --result "DONE" --color GREEN
 	
 	else
 		# Log failure
-		log_event "error" "Telegram notification error!" "false"
+		log_event "error" "Telegram notification error!"
+		log_event "debug" "Telegram notification result: ${telegram_notif_result}"
+		log_event "debug" "Telegram notification response: ${telegram_notif_response}"
 		display --indent 2 --text "- Sending Telegram notification" --result "FAIL" --color RED
 
 	fi
