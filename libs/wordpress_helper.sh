@@ -54,7 +54,7 @@ function wp_update_wpconfig() {
   local sed_output
 
   # Change wp-config.php database parameters
-  log_event "info" "Changing database parameters on ${wp_project_dir}/wp-config.php" "false"
+  log_event "info" "Changing database parameters on ${wp_project_dir}/wp-config.php"
   
   sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" "${wp_project_dir}/wp-config.php"
   
@@ -68,10 +68,10 @@ function wp_update_wpconfig() {
 
   sed_result=$?
   if [ ${sed_result} -eq 0 ]; then
-    display --indent 6 --text "- Changing database parameters on ${wp_project_dir}/wp-config.php" --result "DONE" --color GREEN
+    display --indent 6 --text "- Changing database parameters on wp-config.php" --result "DONE" --color GREEN
   else
-    display --indent 6 --text "- Changing database parameters on ${wp_project_dir}/wp-config.php" --result "FAIL" --color RED
-    display --indent 8 --text "sed output: ${sed_output}"
+    display --indent 6 --text "- Changing database parameters on wp-config.php" --result "FAIL" --color RED
+    display --indent 8 --text "Output: ${sed_output}" --tcolor RED
   fi
 
 }
