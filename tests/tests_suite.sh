@@ -64,6 +64,7 @@ function tests_suite_menu() {
 
   fi
 
+  prompt_return_or_finish
   tests_suite_menu
 
 }
