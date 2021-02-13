@@ -4,6 +4,24 @@
 # Version: 3.0.13
 #############################################################################
 
+function _mysql_root_credentials_parameter() {
+
+    # If /root/.my.cnf exists then it won't ask for root password
+    if [ -f /root/.my.cnf ]; then
+
+        return 0
+
+    else
+
+        # Return credentials parameter
+        echo "-u${MUSER} -p${MPASS}"
+
+    fi
+
+}
+
+#############################################################################
+
 function mysql_test_user_credentials() {
 
     # $1 = ${db_user}
