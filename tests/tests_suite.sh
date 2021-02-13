@@ -28,11 +28,11 @@ script_init
 
 log_section "Running Tests Suite"
 
-test_display_functions
+#test_display_functions
 
 #test_common_funtions
 
-#test_mysql_helper
+test_mysql_helper
 
 #test_php_helper_funtions
 
