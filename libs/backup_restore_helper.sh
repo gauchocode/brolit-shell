@@ -414,10 +414,22 @@ function restore_letsencrypt_site_files() {
   extract "${bk_file}" "${SFOLDER}/tmp/letsencrypt" "lbzip2"
 
   # Creating directories
-  mkdir "/etc/letsencrypt/archive/"
-  mkdir "/etc/letsencrypt/live/"
-  mkdir "/etc/letsencrypt/archive/${domain}"
-  mkdir "/etc/letsencrypt/live/${domain}"
+  if [ ! -d "/etc/letsencrypt/archive/" ]; then
+    mkdir "/etc/letsencrypt/archive/"
+
+  fi
+  if [ ! -d "/etc/letsencrypt/live/" ]; then
+    mkdir "/etc/letsencrypt/live/"
+
+  fi
+  if [ ! -d "/etc/letsencrypt/archive/${domain}" ]; then
+    mkdir "/etc/letsencrypt/archive/${domain}"
+
+  fi
+  if [ ! -d "/etc/letsencrypt/live/${domain}" ]; then
+    mkdir "/etc/letsencrypt/live/${domain}"
+
+  fi
 
   # Check if file exist
   if [ ! -f "/etc/letsencrypt/options-ssl-nginx.conf" ]; then
@@ -454,7 +466,6 @@ function restore_site_files() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Log
-    log_subsection "Site Files Restore"
     log_event "info" "Setting chosen_domain=${chosen_domain}"
     display --indent 6 --text "- Selecting project domain" --result "DONE" --color GREEN
 
@@ -743,7 +754,7 @@ function restore_project() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     display --indent 6 --text "- Selecting project backup" --result "DONE" --color GREEN
-    display --indent 8 --text "Backup selected: ${chosen_backup_to_restore}"
+    display --indent 8 --text "${chosen_backup_to_restore}" --tcolor YELLOW
 
     cd "${SFOLDER}/tmp"
 
@@ -812,15 +823,12 @@ function restore_project() {
     # Extracting project_state from   
     project_state="$(cut -d'_' -f2 <<< ${db_name})"
 
-    log_event "" "*************** Project Config ***************"
-    log_event "" "project_path: ${project_path}"
-    log_event "" "chosen_project: ${chosen_project}"
-    log_event "" "project_state: ${project_state}"
-    log_event "" "backup_date: ${backup_date}"
-    log_event "" "db_name: ${db_name}"
-    log_event "" "db_user: ${db_user}"
-    log_event "" "db_pass: ${db_pass}"
-    log_event "" "*****************************************************"
+    log_event "debug" "Selected project: ${chosen_project}"
+    log_event "debug" "Selected project state: ${project_state}"
+    log_event "debug" "Backup date: ${backup_date}"
+    log_event "debug" "Extracted db_name from wp-config: ${db_name}"
+    log_event "debug" "Extracted db_user from wp-config: ${db_user}"
+    log_event "debug" "Extracted db_pass from wp-config: ${db_pass}"
 
     # Downloading Database Backup
     display --indent 6 --text "- Downloading backup from dropbox"
