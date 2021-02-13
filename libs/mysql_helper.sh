@@ -474,7 +474,7 @@ function mysql_database_import() {
     if [[ ${import_status} -eq 0 ]]; then
 
         # Logging
-        #clear_last_line
+        clear_last_line
         display --indent 6 --text "- Database backup import" --result "DONE" --color GREEN
         log_event "success" "Database ${database} imported successfully"
 
@@ -483,7 +483,7 @@ function mysql_database_import() {
     else
         
         # Logging
-        #clear_last_line
+        clear_last_line
         display --indent 6 --text "- Database backup import" --result "ERROR" --color RED
         display --indent 8 --text "MySQL output: ${import_status}" --tcolor RED
         log_event "error" "Something went wrong importing database: ${database}"
