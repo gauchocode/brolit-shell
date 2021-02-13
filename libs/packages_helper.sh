@@ -216,7 +216,7 @@ function check_packages_required() {
     return 1
   fi
 
-  display --indent 2 --text "- Checking script dependencies" --result "DONE" --color GREEN
+  display --indent 6 --text "- Checking script dependencies" --result "DONE" --color GREEN
 
   # TODO: check if php is installed before ask for wp-cli
 
@@ -353,7 +353,7 @@ function remove_old_packages() {
 
   log_event "info" "Old system packages cleaned"
   clear_last_line
-  display --indent 6 --text "- Cleanming old system packages" --result "DONE" --color GREEN
+  display --indent 6 --text "- Cleanning old system packages" --result "DONE" --color GREEN
 
 }
 
