@@ -14,9 +14,10 @@ function tests_suite_menu() {
     "02)" "RUN DISPLAY TESTS"
     "03)" "RUN MYSQL TESTS"
     "04)" "RUN PHP TESTS"
-    "05)" "RUN WORDPRESS TESTS"
-    "06)" "RUN CLOUDFLARE TESTS"
-    "06)" "RUN OTHER TESTS"
+    "05)" "RUN NGINX TESTS"
+    "06)" "RUN WORDPRESS TESTS"
+    "07)" "RUN CLOUDFLARE TESTS"
+    "08)" "RUN OTHER TESTS"
     )
   chosen_tests_options=$(whiptail --title "TESTS SUITE" --menu " " 20 78 10 "${tests_options[@]}" 3>&1 1>&2 2>&3)
   exitstatus="$?"
@@ -26,7 +27,7 @@ function tests_suite_menu() {
       test_display_functions
       test_mysql_helper
       test_php_helper_funtions
-      test_php_helper_funtions
+      test_nginx_helper_functions
       test_wordpress_helper_funtions
       test_cloudflare_funtions
       test_common_funtions
@@ -45,21 +46,26 @@ function tests_suite_menu() {
 
     fi
     if [[ ${chosen_tests_options} == *"05"* ]]; then
-      test_wordpress_helper_funtions
+      test_nginx_helper_functions
 
     fi
     if [[ ${chosen_tests_options} == *"06"* ]]; then
-      test_cloudflare_funtions
+      test_wordpress_helper_funtions
 
     fi
     if [[ ${chosen_tests_options} == *"07"* ]]; then
+      test_cloudflare_funtions
+
+    fi
+    if [[ ${chosen_tests_options} == *"08"* ]]; then
       test_common_funtions
 
     fi
 
   fi
 
-  menu_main_options
+  tests_suite_menu
+
 }
 
 #############################################################################
@@ -94,11 +100,6 @@ tests_suite_menu
 
 #test_mail_package_section
 
-#to_test="/var/www/goseries-master"
-#is_wp_project "$to_test"
-
-#nginx_server_change_phpv "domain.com" "7.4"
-
 #startdir=${SITES}
 #menutitle="Site Selection Menu"
 
@@ -121,8 +122,6 @@ tests_suite_menu
 #done
 
 #wpcli_force_reinstall_plugins "${install_path}"
-
-#install_crontab_script "${SFOLDER}/test.sh" "01" "00"
 
 #telegram_send_message "LEMPT UTILS SCRIPT NOTIFICATION TEST"
 
