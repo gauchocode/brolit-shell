@@ -1,12 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
-################################################################################
-
-# shellcheck source=${SFOLDER}/libs/optimizations_helper.sh
-source "${SFOLDER}/libs/optimizations_helper.sh"
-
+# Version: 3.0.15
 ################################################################################
 
 function server_optimizations_menu() {
@@ -22,7 +17,7 @@ function server_optimizations_menu() {
     "05)" "REDUCE RAM USAGE"
   )
   chosen_server_optimizations_options=$(whiptail --title "SERVER OPTIMIZATIONS" --menu "\n" 20 78 10 "${server_optimizations_options[@]}" 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_server_optimizations_options} == *"01"* ]]; then

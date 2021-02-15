@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 ################################################################################
 
 function dropbox_account_space() {
@@ -20,7 +20,7 @@ function dropbox_create_dir() {
     local dropbox_create_dir_result
 
     output="$("${DROPBOX_UPLOADER}" -q mkdir "${dir_to_create}" 2>&1)"
-    dropbox_create_dir_result="$?"
+    dropbox_create_dir_result=$?
     if [[ ${dropbox_create_dir_result} -eq 0 ]]; then
 
         display --indent 6 --text "- Creating dropbox directory" --result "DONE" --color GREEN
@@ -54,7 +54,7 @@ function dropbox_upload() {
     log_event "debug" "Running: ${DROPBOX_UPLOADER} upload ${file_to_upload} ${dropbox_directory}"
 
     output="$("${DROPBOX_UPLOADER}" -q upload "${file_to_upload}" "${dropbox_directory}")"
-    dropbox_file_to_upload_result="$?"
+    dropbox_file_to_upload_result=$?
 
     spinner_stop "$dropbox_file_to_upload_result"
     
@@ -85,7 +85,7 @@ function dropbox_delete() {
     local dropbox_remove_result
 
     output="$("${DROPBOX_UPLOADER}" remove "${to_delete}" 2>&1)"
-    dropbox_remove_result="$?"
+    dropbox_remove_result=$?
     if [[ ${dropbox_remove_result} -eq 0 ]]; then
 
         display --indent 6 --text "- Deleting files from Dropbox" --result "DONE" --color GREEN

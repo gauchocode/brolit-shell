@@ -1,13 +1,15 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Script Name: LEMP Utils Script
-# Version: 3.0.13
+# Version: 3.0.15
 ################################################################################
 
+set -Eeuo pipefail
+
 ### Main dir check
-SFOLDER=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-if [ -z "${SFOLDER}" ]; then
+SFOLDER=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
+if [[ -z "${SFOLDER}" ]]; then
   exit 1  # error; the path is not accessible
 fi
 
@@ -19,7 +21,7 @@ source "${SFOLDER}/libs/commons.sh"
 
 ### Init #######################################################################
 
-if [ -t 1 ]; then
+if [[ -t 1 ]]; then
 
   # RUNNING FROM TERMINAL
   
@@ -38,6 +40,9 @@ if [ -t 1 ]; then
     flags_handler "$#" "$*" #"$*" stores all arguments received when the script is runned
 
   fi
+
+  # Script cleanup
+  cleanup
 
   # Log End
   log_event "info" "LEMP UTILS SCRIPT End -- $(date +%Y%m%d_%H%M)"

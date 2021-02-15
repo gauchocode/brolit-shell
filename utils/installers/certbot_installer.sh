@@ -1,12 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
-################################################################################
-
-# shellcheck source=${SFOLDER}/libs/packages_helper.sh
-source "${SFOLDER}/libs/packages_helper.sh"
-
+# Version: 3.0.15
 ################################################################################
 
 function certbot_installer() {

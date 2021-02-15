@@ -327,7 +327,7 @@ You can create a cronjob script to schedule `gitools.sh` runs for mobile domain 
 i.e. create a file called `cron.sh` at `/root/tools/google-insights-api-tools/cron.sh` containing the following - replacing the domains with your domains you want to check. Add as many domains you want - one per new line. Also added [GTMetrix Report](#gtmetrix-report) & [WebpageTest.org API Tests](#webpagetestorg-api-tests).
 
 ```
-#!/bin/bash
+#!/usr/bin/env bash
 cd /root/tools/google-insights-api-tools
 ./gitools.sh all https://www.google.com origin
 ./gitools.sh all https://centminmod.com origin

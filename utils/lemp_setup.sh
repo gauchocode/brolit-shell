@@ -1,41 +1,33 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 ################################################################################
 
-# shellcheck source=${SFOLDER}/libs/commons.sh
-source "${SFOLDER}/libs/commons.sh"
-# shellcheck source=${SFOLDER}/libs/packages_helper.sh
-source "${SFOLDER}/libs/packages_helper.sh"
-# shellcheck source=${SFOLDER}/utils/installers/php_installer.sh
-source "${SFOLDER}/utils/installers/php_installer.sh"
-# shellcheck source=${SFOLDER}/utils/installers/mysql_installer.sh
-source "${SFOLDER}/utils/installers/mysql_installer.sh"
+function lemp_setup() {
 
-################################################################################
+    log_section "LEMP setup"
 
-log_section "LEMP setup"
+    # Configuring packages
+    timezone_configuration
 
-check_scripts_permissions
+    # Installing basic packages
+    basic_packages_installation
 
-# Configuring packages
-timezone_configuration
+    # MySQL Installer
+    mysql_installer_menu
 
-# Installing basic packages
-basic_packages_installation
+    # Nginx Installer
+    nginx_installer_menu
 
-# MySQL Installer
-mysql_installer_menu
+    # PHP Installer
+    php_installer_menu
 
-# Nginx Installer
-nginx_installer_menu
+    # Script config
+    script_configuration_wizard "initial"
 
-# PHP Installer
-php_installer_menu
+    selected_package_installation
 
-script_configuration_wizard "initial"
+    log_event "success" "************* LEMP SETUP COMPLETED *************" "true"
 
-selected_package_installation
-
-log_event "success" "************* LEMP SETUP COMPLETED *************" "true"
+}

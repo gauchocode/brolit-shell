@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 #############################################################################
 
 function test_display_functions() {
@@ -26,7 +26,7 @@ function test_display_functions() {
 
     spinner_start "Testing spinner for 3 seconds"
     sleep 3
-    spinner_stop "$?"
+    spinner_stop $?
     display --indent 6 --text "- Testing spinner" --result "DONE" --color WHITE
 
 }

@@ -1,17 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 #############################################################################
-
-# shellcheck source=${SFOLDER}/libs/nginx_helper.sh
-source "${SFOLDER}/libs/nginx_helper.sh"
-# shellcheck source=${SFOLDER}/libs/cloudflare_helper.sh
-source "${SFOLDER}/libs/cloudflare_helper.sh"
-# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
-source "${SFOLDER}/libs/mail_notification_helper.sh"
-
-################################################################################
 
 function phpmyadmin_installer () {
 

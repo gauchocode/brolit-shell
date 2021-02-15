@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 #############################################################################
 
 # Check if program is installed (is_this_installed "mysql-server")
@@ -284,7 +284,7 @@ function selected_package_installation() {
   local chosen_apps
 
   chosen_apps=$(whiptail --title "Apps Selection" --checklist "Select the apps you want to install:" 20 78 15 "${apps_to_install[@]}" 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     log_subsection "Package Installer"

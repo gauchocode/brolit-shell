@@ -1,53 +1,23 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 #############################################################################
 
-#
-#############################################################################
-#
-# * Sources
-#
-#############################################################################
-#
+# Libs apps directory path
+libs_apps_path="${SFOLDER}/libs/apps"
 
-# shellcheck source=${SFOLDER}/libs/settings_helper.sh
-source "${SFOLDER}/libs/settings_helper.sh"
-# shellcheck source=${SFOLDER}/libs/backup_helper.sh
-source "${SFOLDER}/libs/backup_helper.sh"
-# shellcheck source=${SFOLDER}/libs/backup_restore_helper.sh
-source "${SFOLDER}/libs/backup_restore_helper.sh"
-# shellcheck source=${SFOLDER}/libs/certbot_helper.sh
-source "${SFOLDER}/libs/certbot_helper.sh"
-# shellcheck source=${SFOLDER}/libs/cloudflare_helper.sh
-source "${SFOLDER}/libs/cloudflare_helper.sh"
-# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
-source "${SFOLDER}/libs/mail_notification_helper.sh"
-# shellcheck source=${SFOLDER}/libs/mysql_helper.sh
-source "${SFOLDER}/libs/mysql_helper.sh"
-# shellcheck source=${SFOLDER}/libs/nginx_helper.sh
-source "${SFOLDER}/libs/nginx_helper.sh"
-# shellcheck source=${SFOLDER}/libs/php_helper.sh
-source "${SFOLDER}/libs/php_helper.sh"
-# shellcheck source=${SFOLDER}/libs/optimizations_helper.sh
-source "${SFOLDER}/libs/optimizations_helper.sh"
-# shellcheck source=${SFOLDER}/libs/packages_helper.sh
-source "${SFOLDER}/libs/packages_helper.sh"
-# shellcheck source=${SFOLDER}/libs/project_helper.sh
-source "${SFOLDER}/libs/project_helper.sh"
-# shellcheck source=${SFOLDER}/libs/security_helper.sh
-source "${SFOLDER}/libs/security_helper.sh"
-# shellcheck source=${SFOLDER}/libs/sftp_helper.sh
-source "${SFOLDER}/libs/sftp_helper.sh"
-# shellcheck source=${SFOLDER}/libs/telegram_notification_helper.sh
-source "${SFOLDER}/libs/telegram_notification_helper.sh"
-# shellcheck source=${SFOLDER}/libs/wordpress_helper.sh
-source "${SFOLDER}/libs/wordpress_helper.sh"
-# shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
-source "${SFOLDER}/libs/wpcli_helper.sh"
-# shellcheck source=${SFOLDER}/libs/dropbox_uploader_helper.sh
-source "${SFOLDER}/libs/dropbox_uploader_helper.sh"
+# Source all apps libs
+libs_apps="$(find "${libs_apps_path}" -maxdepth 1 -name '*.sh' -type f -print)"
+for f in ${libs_apps}; do source "${f}"; done
+
+# Libs local directory path
+libs_local_path="${SFOLDER}/libs/local"
+
+# Source all local libs
+libs_local="$(find "${libs_local_path}" -maxdepth 1 -name '*.sh' -type f -print)"
+for f in ${libs_local}; do source "${f}"; done
+
 # shellcheck source=${SFOLDER}/utils/installers_and_configurators.sh
 source "${SFOLDER}/utils/installers_and_configurators.sh"
 # shellcheck source=${SFOLDER}/utils/it_utils.sh
@@ -56,104 +26,192 @@ source "${SFOLDER}/utils/it_utils.sh"
 #
 #############################################################################
 #
-# * Globals & Options
+# * Private functions
 #
 #############################################################################
 #
 
-SCRIPT_N="LEMP UTILS SCRIPT"
-SCRIPT_V="3.0.13"
+function _setup_globals_and_options() {
 
-# Hostname
-VPSNAME="$HOSTNAME"
-CRONJOB=0                           # Run as a cronjob
-DEBUG=1                             # Debugging mode (to screen)
-QUICKMODE=1                         # Don't wait for user input
-QUIET=0                             # Show normal messages and warnings as well
-SKIPTESTS=1                         # Skip tests
+  declare -g SCRIPT_N="LEMP UTILS SCRIPT"
+  declare -g SCRIPT_V="3.0.15"
 
-WSERVER="/etc/nginx"                # NGINX config files location
-MySQL_CF="/etc/mysql"               # MySQL config files location
-PHP_CF="/etc/php"                   # PHP config files location
-LENCRYPT_CF="/etc/letsencrypt"      # Let's Encrypt config files location
+  # Hostname
+  declare -g VPSNAME="$HOSTNAME"
 
-# Folder blacklist
-SITES_BL=".wp-cli,html"
+  # Script modes
+  declare -g DEBUG=1                             # Debugging mode (to screen)
+  declare -g QUIET=0                             # Show normal messages and warnings as well
+  declare -g SKIPTESTS=1                         # Skip tests
 
-# Database blacklist
-DB_BL="information_schema,performance_schema,mysql,sys,phpmyadmin"
+  # Default directories
+  declare -g WSERVER="/etc/nginx"                # NGINX config files location
+  declare -g MySQL_CF="/etc/mysql"               # MySQL config files location
+  declare -g PHP_CF="/etc/php"                   # PHP config files location
+  declare -g LENCRYPT_CF="/etc/letsencrypt"      # Let's Encrypt config files location
 
-#MAILCOW BACKUP
-MAILCOW_TMP_BK="${SFOLDER}/tmp/mailcow"
+  # Folder blacklist
+  declare -g SITES_BL=".wp-cli,html,phpmyadmin"
 
-PHP_V="$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")"
-php_exit="$?"
-if [[ ${php_exit} -eq 1 ]];then
-  # TODO: must be an option
-  # Packages to watch
-  PACKAGES=(linux-firmware dpkg nginx "php${PHP_V}-fpm" mysql-server openssl)
-fi
+  # Database blacklist
+  declare -g DB_BL="information_schema,performance_schema,mysql,sys,phpmyadmin"
 
-# MySQL host and user
-MHOST="localhost"
-MUSER="root"
+  #MAILCOW BACKUP
+  declare -g MAILCOW_TMP_BK="${SFOLDER}/tmp/mailcow"
 
-# Main partition
-MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+')
+  declare -g PHP_V
+  PHP_V="$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")"
+  php_exit=$?
+  if [[ ${php_exit} -eq 1 ]];then
+    # TODO: must be an option
+    # Packages to watch
+    PACKAGES=(linux-firmware dpkg nginx "php${PHP_V}-fpm" mysql-server openssl)
+  fi
 
-# Dropbox Folder Backup
-DROPBOX_FOLDER="/"
+  # MySQL host and user
+  declare -g MHOST="localhost"
+  declare -g MUSER="root"
 
-# Time Vars
-NOW=$(date +"%Y-%m-%d")
-NOWDISPLAY=$(date +"%d-%m-%Y")
-ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
+  # Main partition
+  declare -g MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+')
 
-startdir=""
-menutitle="Config Selection Menu"
+  # Dropbox Folder Backup
+  declare -g DROPBOX_FOLDER="/"
 
-#
-#############################################################################
-#
-# * Colours
-#
-#############################################################################
-#
+  # Time Vars
+  declare -g NOW=$(date +"%Y-%m-%d")
+  declare -g NOWDISPLAY=$(date +"%d-%m-%Y")
+  declare -g ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
+
+  declare -g startdir=""
+  declare -g menutitle="Config Selection Menu"
+
+}
 
 # Refs:
 # https://misc.flogisoft.com/bash/tip_colors_and_formatting
 
-# Text Styles
-NORMAL="\033[m"
-BOLD='\x1b[1m'
-ITALIC='\x1b[3m'
-UNDERLINED='\x1b[4m'
-INVERTED='\x1b[7m'
 
-# Foreground/Text Colours
-BLACK='\E[30;40m'
-RED='\E[31;40m'
-GREEN='\E[32;40m'
-YELLOW='\E[33;40m'
-ORANGE='\033[0;33m'
-MAGENTA='\E[35;40m'
-CYAN='\E[36;40m'
-WHITE='\E[37;40m'
-ENDCOLOR='\033[0m'
-F_DEFAULT='\E[39m'
+function _setup_colors_and_styles() {
 
-# Background Colours
-B_BLACK='\E[40m'
-B_RED='\E[41m'
-B_GREEN='\E[42m'
-B_YELLOW='\E[43m'
-B_ORANGE='\043[0m'
-B_MAGENTA='\E[45m'
-B_CYAN='\E[46m'
-B_WHITE='\E[47m'
-B_ENDCOLOR='\e[0m'
-B_DEFAULT='\E[49m'
-#B_DEFAULT='\E[39m'
+  # Declare read-only global vars
+  declare -g NORMAL BOLD ITALIC UNDERLINED INVERTED
+  declare -g BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR F_DEFAULT
+  declare -g B_BLACK B_RED B_GREEN B_YELLOW B_ORANGE B_MAGENTA B_CYAN B_WHITE B_ENDCOLOR B_DEFAULT
+
+  # RUNNING FROM TERMINAL
+  if [[ -t 1 ]]; then
+
+    # Text Styles
+    NORMAL="\033[m"
+    BOLD='\x1b[1m'
+    ITALIC='\x1b[3m'
+    UNDERLINED='\x1b[4m'
+    INVERTED='\x1b[7m'
+
+    # Foreground/Text Colours
+    BLACK='\E[30;40m'
+    RED='\E[31;40m'
+    GREEN='\E[32;40m'
+    YELLOW='\E[33;40m'
+    ORANGE='\033[0;33m'
+    MAGENTA='\E[35;40m'
+    CYAN='\E[36;40m'
+    WHITE='\E[37;40m'
+    ENDCOLOR='\033[0m'
+    F_DEFAULT='\E[39m'
+
+    # Background Colours
+    B_BLACK='\E[40m'
+    B_RED='\E[41m'
+    B_GREEN='\E[42m'
+    B_YELLOW='\E[43m'
+    B_ORANGE='\043[0m'
+    B_MAGENTA='\E[45m'
+    B_CYAN='\E[46m'
+    B_WHITE='\E[47m'
+    B_ENDCOLOR='\e[0m'
+    B_DEFAULT='\E[49m'
+
+  else
+
+    # Text Styles
+    NORMAL='' BOLD='' ITALIC='' UNDERLINED='' INVERTED=''
+
+    # Foreground/Text Colours
+    BLACK='' RED='' GREEN='' YELLOW='' ORANGE='' MAGENTA='' CYAN='' WHITE='' ENDCOLOR='' F_DEFAULT=''
+
+    # Background Colours
+    B_BLACK='' B_RED='' B_GREEN='' B_YELLOW='' B_ORANGE='' B_MAGENTA='' B_CYAN='' B_WHITE='' B_ENDCOLOR='' B_DEFAULT=''
+
+  fi
+
+}
+
+function _check_root() {
+
+  local is_root
+  
+  is_root=$(id -u) # if return 0, the script is runned by the root user
+
+  # Check if user is root
+  if [[ ${is_root} != 0 ]]; then
+    # $USER is a env var
+    log_event "critical" "Script runned by ${USER}, but must be root! Exiting ..." "true"
+    exit 1
+
+  else
+    log_event "debug" "Script runned by root"
+    return 0
+
+  fi
+
+}
+
+function _check_scripts_permissions() {
+
+  ### chmod
+  find ./ -name "*.sh" -exec chmod +x {} \;
+  log_event "debug" "Executing chmod +x on *.sh"
+
+}
+
+function _check_distro() {
+
+  local distro_old
+
+  #for ext check
+  distro_old="false"
+
+  # Running Ubuntu?
+  DISTRO=$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $1}')
+  if [ ! "$DISTRO" = "Ubuntu" ]; then
+    log_event "critical" "This script only run on Ubuntu ... Exiting" "true"
+    return 1
+
+  else
+    MIN_V=$(echo "18.04" | awk -F "." '{print $1$2}')
+    DISTRO_V=$(get_ubuntu_version)
+    
+    log_event "info" "ACTUAL DISTRO: ${DISTRO} ${DISTRO_V}"
+
+    if [ ! "${DISTRO_V}" -ge "${MIN_V}" ]; then
+      whiptail --title "UBUNTU VERSION WARNING" --msgbox "Ubuntu version must be 18.04 or 20.04! Use this script only for backup or restore purpose." 8 78
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+        distro_old="true"
+        log_event "info" "Setting distro_old: ${distro_old}"
+        
+      else
+        return 1
+
+      fi
+      
+    fi
+
+  fi
+
+}
 
 #
 #############################################################################
@@ -165,10 +223,13 @@ B_DEFAULT='\E[49m'
 
 function script_init() {
 
+  # Script setup
+  _setup_globals_and_options
+
   # Temp folders
   BAKWP="${SFOLDER}/tmp"
 
-  ### Creating temporary folders
+  # Creating temporary folders
   if [ ! -d "${BAKWP}" ]; then
     echo " > Folder ${BAKWP} doesn't exist. Creating ..."
     mkdir "${BAKWP}"
@@ -178,7 +239,7 @@ function script_init() {
     mkdir "${BAKWP}/${NOW}"
   fi
 
-  ### Log
+  # Log
   TIMESTAMP=$(date +%Y%m%d_%H%M%S)
   PATH_LOG="${SFOLDER}/log"
   if [ ! -d "${SFOLDER}/log" ]; then
@@ -189,6 +250,9 @@ function script_init() {
   LOG="${PATH_LOG}/${LOG_NAME}"
 
   find "${PATH_LOG}" -name "*.log" -type f -mtime +7 -print -delete >>"${LOG}"
+
+  # Load colors and styles
+  _setup_colors_and_styles
 
   # Clear Screen
   clear_screen
@@ -214,18 +278,18 @@ function script_init() {
   ################################################################################
 
   # Checking distro
-  check_distro
+  _check_distro
 
   # Checking if user is root
-  check_root
+  _check_root
 
   # Checking script permissions
-  check_scripts_permissions
+  _check_scripts_permissions
 
   # TODO: need to improve this!
   # Checking required packages to run
   check_packages_required
-  packages_output="$?"
+  packages_output=$?
   if [[ ${packages_output} -eq 1 ]];then
     log_event "warning" "Some script dependencies are not setisfied." "true"
     prompt_return_or_finish
@@ -367,265 +431,6 @@ function change_project_status () {
 #
 #############################################################################
 #
-# * Loggers
-#
-#############################################################################
-#
-
-function log_event() {
-
-  # Parameters
-  # $1 = {log_type} (success, info, warning, error, critical)
-  # $2 = {message}
-  # $3 = {console_display} optional (true or false, default is false)
-
-  local log_type=$1
-  local message=$2
-  local console_display=$3
-
-   case ${log_type} in
-
-      success)
-        echo " > SUCCESS: ${message}" >> "${LOG}"
-        if [ "${console_display}" = "true" ]; then
-          echo -e "${B_GREEN} > ${message}${ENDCOLOR}" >&2
-        fi
-      ;;
-
-      info)
-        echo " > INFO: ${message}" >> "${LOG}"
-        if [ "${console_display}" = "true" ]; then
-          echo -e "${B_CYAN} > ${message}${ENDCOLOR}" >&2
-        fi
-      ;;
-
-      warning)
-        echo " > WARNING: ${message}" >> "${LOG}"
-        if [ "${console_display}" = "true" ]; then
-          echo -e "${YELLOW}${ITALIC} > ${message}${ENDCOLOR}" >&2
-        fi
-      ;;
-
-      error)
-        echo " > ERROR: ${message}" >> "${LOG}"
-        if [ "${console_display}" = "true" ]; then
-          echo -e "${RED} > ${message}${ENDCOLOR}" >&2
-        fi
-      ;;
-
-      critical)
-        echo " > CRITICAL: ${message}" >> "${LOG}"
-        if [ "${console_display}" = "true" ]; then
-          echo -e "${B_RED} > ${message}${ENDCOLOR}" >&2
-        fi
-      ;;
-
-      debug)
-        if [ "${DEBUG}" -eq 1 ]; then
-
-          echo " > DEBUG: ${message}" >> "${LOG}"
-          if [ "${console_display}" = "true" ]; then
-            echo -e "${B_MAGENTA} > ${message}${ENDCOLOR}" >&2
-          fi
-
-        fi
-      ;;
-
-      *)
-        echo " > ${message}" >> "${LOG}"
-        if [ "${console_display}" = "true" ]; then
-          echo -e "${CYAN}${B_DEFAULT} > ${message}${ENDCOLOR}" >&2
-        fi
-      ;;
-
-    esac
-
-}
-
-function log_break() {
-
-  # Parameters
-  # $1 = {console_display} optional (true or false, emtpy equals false)
-
-  local console_display=$1
-
-  local log_break
-  
-  if [[ "${console_display}" == "true" ]]; then
-
-    log_break="        -------------------------------------------------"
-    echo -e "${MAGENTA}${B_DEFAULT}${log_break}${ENDCOLOR}" >&2
-
-  fi
-
-  log_break=" > -------------------------------------------------"
-  echo "${log_break}" >> "${LOG}"
-
-}
-
-function log_section() {
-
-  # Parameters
-  # $1 = {message}
-
-  local message=$1
-
-  if [ "${QUIET}" -eq 0 ]; then
-    # Console Display
-    echo "" >&2
-    echo -e "[+] Performing Action: ${YELLOW}${B_DEFAULT}${message}${ENDCOLOR}" >&2
-    echo "----------------------------------------------" >&2
-    # Log file
-    echo " > -------------------------------------------------" >> "${LOG}"
-    echo " > [+] Performing Action: ${message}" >> "${LOG}"
-    echo " > -------------------------------------------------" >> "${LOG}"
-  fi
-
-}
-
-function log_subsection() {
-
-  # Parameters
-  # $1 = {message}
-
-  local message=$1
-
-    if [ "${QUIET}" -eq 0 ]; then
-      # Console Display
-      echo "" >&2
-      echo -e "    [·] ${CYAN}${B_DEFAULT}${message}${ENDCOLOR}" >&2
-      echo "    ------------------------------------------" >&2
-      # Log file
-      echo " > -------------------------------------------------" >> "${LOG}"
-      echo " > [·] ${message}" >> "${LOG}"
-      echo " > -------------------------------------------------" >> "${LOG}"
-    fi
-
-}
-
-function clear_screen() {
-
-  echo -en "\ec" >&2
-
-}
-
-function clear_last_line() {
-
-  printf "\033[1A" >&2
-  echo -e "${F_DEFAULT}                                                                                                         ${ENDCOLOR}" >&2                    
-  echo -e "${F_DEFAULT}                                                                                                         ${ENDCOLOR}" >&2
-  printf "\033[1A" >&2
-  printf "\033[1A" >&2
-
-}
-
-function clear_line() {
-
-  printf "\033[G" >&2
-  printf "                                                                                                         " >&2                    
-  printf "\033[G" >&2
-
-}
-
-function display() {
-
-  INDENT=0; TEXT=""; RESULT=""; TCOLOR=""; TSTYLE=""; COLOR=""; SPACES=0; SHOWDEBUG=0; CRONJOB=0;
-  
-  while [ $# -ge 1 ]; do
-      case $1 in
-          --color)
-              shift
-                  case $1 in
-                    GREEN)    COLOR=${GREEN}   ;;
-                    RED)      COLOR=${RED}     ;;
-                    WHITE)    COLOR=${WHITE}   ;;
-                    YELLOW)   COLOR=${YELLOW}  ;;
-                    MAGENTA)  COLOR=${MAGENTA}  ;
-                  esac
-          ;;
-          --debug)
-              SHOWDEBUG=1
-          ;;
-          --indent)
-              shift
-              INDENT=$1
-          ;;
-          --result)
-              shift
-              RESULT=$1
-          ;;
-          --tcolor)
-            shift
-                case $1 in
-                  GREEN)    TCOLOR=${GREEN}   ;;
-                  RED)      TCOLOR=${RED}     ;;
-                  WHITE)    TCOLOR=${WHITE}   ;;
-                  YELLOW)   TCOLOR=${YELLOW}  ;;
-                  MAGENTA)  TCOLOR=${MAGENTA}  ;
-                esac
-          ;;
-          --tstyle)
-            shift
-                case $1 in
-                  NORMAL)       TSTYLE=${NORMAL}   ;;
-                  BOLD)         TSTYLE=${BOLD}     ;;
-                  ITALIC)       TSTYLE=${ITALIC}   ;;
-                  UNDERLINED)   TSTYLE=${UNDERLINED}  ;;
-                  INVERTED)     TSTYLE=${INVERTED}  ;
-                esac
-          ;;
-          --text)
-              shift
-              TEXT=$1
-          ;;
-          *)
-              echo "INVALID OPTION (Display): $1" >&2
-              #ExitFatal
-          ;;
-      esac
-      # Go to next parameter
-      shift
-  done
-
-  if [ -z "${RESULT}" ]; then
-      RESULTPART=""
-  else
-      if [ ${CRONJOB} -eq 0 ]; then
-          RESULTPART=" [ ${COLOR}${B_DEFAULT}${RESULT}${NORMAL} ]"
-      else
-          RESULTPART=" [ ${RESULT} ]"
-      fi
-  fi
-
-  if [ -n "${TEXT}" ]; then
-      SHOW=0
-
-      if [ ${SHOW} -eq 0 ]; then
-          # Display:
-          # - for full shells, count with -m instead of -c, to support language locale (older busybox does not have -m)
-          # - wc needs LANG to deal with multi-bytes characters but LANG has been unset in include/consts
-          LINESIZE=$(export LC_ALL= ; echo "${TEXT}" | wc -m | tr -d ' ')
-          if [ "${SHOWDEBUG}" -eq 1 ]; then DEBUGTEXT=" [${PURPLE}DEBUG${NORMAL}]"; else DEBUGTEXT=""; fi
-          if [ "${INDENT}" -gt 0 ]; then SPACES=$((62 - INDENT - LINESIZE)); fi
-          if [ "${SPACES}" -lt 0 ]; then SPACES=0; fi
-          if [ "${CRONJOB}" -eq 0 ]; then
-            # Check if we already have already discovered a proper echo command tool. It not, set it default to 'echo'.
-            #if [ "${ECHOCMD}" = "" ]; then ECHOCMD="echo"; fi
-            echo -e "\033[${INDENT}C${TCOLOR}${TSTYLE}${TEXT}${NORMAL}\033[${SPACES}C${RESULTPART}${DEBUGTEXT}" >&2
-
-          else
-            echo "${TEXT}${RESULTPART}" >&2
-
-          fi
-      fi
-
-  fi
-
-}
-
-#
-#############################################################################
-#
 # * Validators
 #
 #############################################################################
@@ -706,76 +511,21 @@ function validator_cron_format() {
 
 }
 
-#
-#############################################################################
-#
-# * Checkers
-#
-#############################################################################
-#
+function cleanup() {
 
-function check_root() {
-
-  local is_root
-  
-  is_root=$(id -u) # if return 0, the script is runned by the root user
-
-  # Check if user is root
-  if [[ ${is_root} != 0 ]]; then
-    # $USER is a env var
-    log_event "critical" "Script runned by ${USER}, but must be root! Exiting ..." "true"
-    exit 1
-
-  else
-    log_event "debug" "Script runned by root"
-    return 0
-
-  fi
+  trap - SIGINT SIGTERM ERR EXIT
+  # script cleanup here
 
 }
 
-function check_distro() {
+function die() {
 
-  local distro_old
+  local msg=$1
+  local code=${2-1} # default exit status 1
 
-  #for ext check
-  distro_old="false"
+  log_event "info" "${msg}"
 
-  # Running Ubuntu?
-  DISTRO=$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $1}')
-  if [ ! "$DISTRO" = "Ubuntu" ]; then
-    log_event "critical" "This script only run on Ubuntu ... Exiting" "true"
-    return 1
-
-  else
-    MIN_V=$(echo "18.04" | awk -F "." '{print $1$2}')
-    DISTRO_V=$(get_ubuntu_version)
-    
-    log_event "info" "ACTUAL DISTRO: ${DISTRO} ${DISTRO_V}"
-
-    if [ ! "${DISTRO_V}" -ge "${MIN_V}" ]; then
-      whiptail --title "UBUNTU VERSION WARNING" --msgbox "Ubuntu version must be 18.04 or 20.04! Use this script only for backup or restore purpose." 8 78
-      exitstatus="$?"
-      if [[ ${exitstatus} -eq 0 ]]; then
-        distro_old="true"
-        log_event "info" "Setting distro_old: ${distro_old}"
-        
-      else
-        return 1
-
-      fi
-      
-    fi
-
-  fi
-
-}
-
-function check_scripts_permissions() {
-
-  ### chmod
-  find ./ -name "*.sh" -exec chmod +x {} \;
-  log_event "debug" "Executing chmod +x on *.sh"
+  exit "${code}"
 
 }
 
@@ -796,7 +546,7 @@ function whiptail_message() {
   local whip_message=$2
 
   whiptail --title "${whip_title}" --msgbox "${whip_message}" 15 60 3>&1 1>&2 2>&3
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
     return 0
 
@@ -816,7 +566,7 @@ function whiptail_message_with_skip_option() {
   local whip_message=$2
 
   whiptail --title "${whip_title}" --yesno "${whip_message}" 15 60 3>&1 1>&2 2>&3
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
     return 0
 
@@ -1263,7 +1013,7 @@ function extract_domain_extension() {
   local domain_no_ext
 
   domain_extension="$(get_domain_extension "${domain}")"
-  domain_extension_output="$?"
+  domain_extension_output=$?
   if [[ ${domain_extension_output} -eq 0 ]]; then
 
     domain_no_ext=${domain%"$domain_extension"}
@@ -1296,7 +1046,7 @@ function get_root_domain() {
   local domain_no_ext
 
   domain_extension="$(get_domain_extension "${domain}")"
-  domain_extension_output="$?"
+  domain_extension_output=$?
   if [[ $domain_extension_output -eq 0 ]]; then
 
     # Remove domain extension
@@ -1358,87 +1108,6 @@ function install_crontab_script() {
 
 }
 
-function _spinner() {
-    # $1 start/stop
-    #
-    # on start: $2 display message
-    # on stop : $2 process exit status
-    #           $3 spinner function pid (supplied from spinner_stop)
-
-    local on_success="DONE"
-    local on_fail="FAIL"
-
-    case $1 in
-
-        start)
-
-          # calculate the column where spinner and status msg will be displayed
-          TEXT=$2
-          INDENT=6
-          LINESIZE=$(export LC_ALL= ; echo "${TEXT}" | wc -m | tr -d ' ')
-          if [ "${INDENT}" -gt 0 ]; then SPACES=$((62 - INDENT - LINESIZE)); fi
-          if [ "${SPACES}" -lt 0 ]; then SPACES=0; fi
-
-          echo -e -n "\033[${INDENT}C${TEXT}${NORMAL}\033[${SPACES}C" >&2
-
-          # start spinner
-          i=1
-          sp='\|/-'
-          delay=${SPINNER_DELAY:-0.15}
-
-          while :
-          do
-              printf "\b${sp:i++%${#sp}:1}"
-              sleep "$delay"
-          done
-
-        ;;
-
-        stop)
-
-          if [[ -z ${3} ]]; then
-              # spinner is not running
-              exit 1
-          fi
-
-          clear_line
-
-          kill $3 > /dev/null 2>&1
-
-          # inform the user uppon success or failure
-          #echo -en "\b["
-          #if [[ $2 -eq 0 ]]; then
-          #    echo -en "${GREEN}${on_success}${NORMAL}"
-          #else
-          #    echo -en "${RED}${on_fail}${NORMAL}"
-          #fi
-          #echo -e "]"
-
-        ;;
-
-        *)
-          #invalid argument
-          exit 1
-        ;;
-
-    esac
-
-}
-
-function spinner_start {
-    # $1 : msg to display
-    _spinner "start" "${1}" &
-    # set global spinner pid
-    _sp_pid=$!
-    disown
-}
-
-function spinner_stop {
-    # $1 : command exit status
-    _spinner "stop" $1 $_sp_pid
-    unset _sp_pid
-}
-
 #
 #################################################################################
 #
@@ -1455,7 +1124,7 @@ function ask_project_state() {
 
   project_states="prod stage beta test dev"
   project_state=$(whiptail --title "Project State" --menu "Choose a Project State" 20 78 10 $(for x in ${project_states}; do echo "$x [X]"; done) --default-item "${state}" 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Return
@@ -1481,7 +1150,7 @@ function ask_project_name() {
   # TODO: remove some suffix keywords '_com' '_ar' '_es' ... and prefix 'www_'
 
   project_name=$(whiptail --title "Project Name" --inputbox "Insert a project name (only separator allow is '_'). Ex: my_domain" 10 60 "${name}" 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Return
@@ -1501,7 +1170,7 @@ function ask_project_domain() {
   local project_domain=$1
   
   project_domain=$(whiptail --title "Domain" --inputbox "Insert the project's domain. Example: landing.domain.com" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Return
@@ -1522,7 +1191,7 @@ function ask_project_type() {
   project_types="WordPress X Laravel X Basic-PHP X HTML X"
   
   project_type=$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 $(for x in ${project_types}; do echo "$x"; done) 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Lowercase
@@ -1551,7 +1220,7 @@ function ask_rootdomain_for_cloudflare_config() {
   else
     root_domain=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 "${root_domain}" 3>&1 1>&2 2>&3)
   fi
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
     # Return
     echo "${root_domain}"
@@ -1572,7 +1241,7 @@ function ask_subdomains_to_cloudflare_config() {
   local subdomains=$1;
 
   subdomains=$(whiptail --title "Cloudflare Subdomains" --inputbox "Insert the subdomains you want to update in Cloudflare (comma separated). Example: www.broobe.com,broobe.com" 10 60 "${DOMAIN}" 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     log_event "info" "Setting subdomains=${subdomains}"
@@ -1596,7 +1265,7 @@ function ask_folder_to_install_sites() {
   if [[ -z "${folder_to_install}" ]]; then
     
     folder_to_install=$(whiptail --title "Folder to work with" --inputbox "Please select the project folder you want to work with:" 10 60 "${folder_to_install}" 3>&1 1>&2 2>&3)
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
       log_event "info" "Folder to work with: ${folder_to_install}"
@@ -1674,7 +1343,7 @@ function menu_main_options() {
     )
   chosen_type=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)
 
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_type} == *"01"* ]]; then
@@ -1695,15 +1364,21 @@ function menu_main_options() {
       # shellcheck source=${SFOLDER}/utils/wpcli_manager.sh
       source "${SFOLDER}/utils/wpcli_manager.sh"
 
+      wpcli_manager
+
     fi
     if [[ ${chosen_type} == *"05"* ]]; then
       # shellcheck source=${SFOLDER}/utils/certbot_manager.sh
       source "${SFOLDER}/utils/certbot_manager.sh"
 
+      certbot_helper_menu
+
     fi
     if [[ ${chosen_type} == *"06"* ]]; then
       # shellcheck source=${SFOLDER}/utils/cloudflare_manager.sh
       source "${SFOLDER}/utils/cloudflare_manager.sh"
+
+      cloudflare_helper_menu
 
     fi
     if [[ ${chosen_type} == *"07"* ]]; then
@@ -1749,12 +1424,16 @@ function menu_first_run() {
   first_run_string+="\n"
        
   chosen_first_run_options=$(whiptail --title "LEMP UTILS SCRIPT" --menu "${first_run_string}" 20 78 10 "${first_run_options[@]}" 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_first_run_options} == *"01"* ]]; then
+      
       # shellcheck source=${SFOLDER}/utils/lemp_setup.sh
       source "${SFOLDER}/utils/lemp_setup.sh"
+
+      lemp_setup
+
       exit 1
 
     else
@@ -1785,7 +1464,7 @@ function menu_cron_script_tasks() {
     )
   chosen_type=$(whiptail --title "CRONEABLE TASKS" --menu "\n" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)
 
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_type} == *"01"* ]]; then
@@ -1793,7 +1472,7 @@ function menu_cron_script_tasks() {
       # BACKUPS-TASKS
       suggested_cron="45 00 * * *" # Every day at 00:45 AM
       scheduled_time=$(whiptail --title "CRON BACKUPS-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
-      exitstatus="$?"
+      exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
         
         install_crontab_script "${SFOLDER}/cron/backups_tasks.sh" "${scheduled_time}"
@@ -1806,7 +1485,7 @@ function menu_cron_script_tasks() {
       # OPTIMIZER-TASKS
       suggested_cron="45 04 * * *" # Every day at 04:45 AM
       scheduled_time=$(whiptail --title "CRON OPTIMIZER-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
-      exitstatus="$?"
+      exitstatus=$?
       if [ ${exitstatus} = 0 ]; then
         
         install_crontab_script "${SFOLDER}/cron/optimizer_tasks.sh" "${scheduled_time}"
@@ -1819,7 +1498,7 @@ function menu_cron_script_tasks() {
       # WORDPRESS-TASKS
       suggested_cron="45 23 * * *" # Every day at 23:45 AM
       scheduled_time=$(whiptail --title "CRON WORDPRESS-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
-      exitstatus="$?"
+      exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
         
         install_crontab_script "${SFOLDER}/cron/wordpress_tasks.sh" "${scheduled_time}"
@@ -1832,7 +1511,7 @@ function menu_cron_script_tasks() {
       # UPTIME-TASKS
       suggested_cron="45 22 * * *" # Every day at 22:45 AM
       scheduled_time=$(whiptail --title "CRON UPTIME-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
-      exitstatus="$?"
+      exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
         
         install_crontab_script "${SFOLDER}/cron/uptime_tasks.sh" "${scheduled_time}"
@@ -1845,7 +1524,7 @@ function menu_cron_script_tasks() {
       # SCRIPT-UPDATER
       suggested_cron="45 22 * * *" # Every day at 22:45 AM
       scheduled_time=$(whiptail --title "CRON UPTIME-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
-      exitstatus="$?"
+      exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
         
         install_crontab_script "${SFOLDER}/cron/updater.sh" "${scheduled_time}"
@@ -1955,7 +1634,7 @@ function menu_project_utils () {
     )
   chosen_project_utils_options=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_utils_options[@]}" 3>&1 1>&2 2>&3)
 
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} = 0 ]]; then
 
     if [[ ${chosen_project_utils_options} == *"01"* ]]; then

@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 #############################################################################
 
 #
@@ -22,7 +22,7 @@ function _settings_config_smtp() {
 
     if [[ -z "${SMTP_SERVER}" ]]; then
         SMTP_SERVER=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server" 10 60 "${SMTP_SERVER_OLD}" 3>&1 1>&2 2>&3)
-        exitstatus="$?"
+        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
             echo "SMTP_SERVER="${SMTP_SERVER} >>/root/.broobe-utils-options
         else
@@ -31,7 +31,7 @@ function _settings_config_smtp() {
     fi
     if [[ -z "${SMTP_PORT}" ]]; then
         SMTP_PORT=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server Port" 10 60 "${SMTP_PORT_OLD}" 3>&1 1>&2 2>&3)
-        exitstatus="$?"
+        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
             echo "SMTP_PORT=${SMTP_PORT}" >>/root/.broobe-utils-options
         else
@@ -41,7 +41,7 @@ function _settings_config_smtp() {
     # TODO: change to SMTP_TYPE (none, ssl, tls)
     if [[ -z "${SMTP_TLS}" ]]; then
         SMTP_TLS=$(whiptail --title "SMTP TLS" --inputbox "SMTP yes or no:" 10 60 "${SMTP_TLS_OLD}" 3>&1 1>&2 2>&3)
-        exitstatus="$?"
+        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
             echo "SMTP_TLS=${SMTP_TLS}" >>/root/.broobe-utils-options
         else
@@ -50,7 +50,7 @@ function _settings_config_smtp() {
     fi
     if [[ -z "${SMTP_U}" ]]; then
         SMTP_U=$(whiptail --title "SMTP User" --inputbox "Please insert the SMTP user" 10 60 "${SMTP_U_OLD}" 3>&1 1>&2 2>&3)
-        exitstatus="$?"
+        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
             echo "SMTP_U=${SMTP_U}" >>/root/.broobe-utils-options
         else
@@ -59,7 +59,7 @@ function _settings_config_smtp() {
     fi
     if [[ -z "${SMTP_P}" ]]; then
         SMTP_P=$(whiptail --title "SMTP Password" --inputbox "Please insert the SMTP user password" 10 60 "${SMTP_P_OLD}" 3>&1 1>&2 2>&3)
-        exitstatus="$?"
+        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
             echo "SMTP_P=${SMTP_P}" >>/root/.broobe-utils-options
         else
@@ -81,7 +81,7 @@ function _settings_config_duplicity(){
         #whiptail_message_with_skip_option "Duplicity Support" "This script supports Duplicity. Do you want to enable backups with it?"
 
         DUP_BK=$(whiptail --title "Duplicity Backup Support?" --inputbox "Please insert true or false" 10 60 "${DUP_BK_DEFAULT}" 3>&1 1>&2 2>&3)
-        exitstatus="$?"
+        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
             echo "DUP_BK=${DUP_BK}" >>/root/.broobe-utils-options
@@ -93,7 +93,7 @@ function _settings_config_duplicity(){
                     # Duplicity Backups Directory
                     DUP_ROOT_DEFAULT="/media/backups/PROJECT_NAME"
                     DUP_ROOT=$(whiptail --title "Duplicity Backup Directory" --inputbox "Insert the directory path to storage duplicity Backup" 10 60 "${DUP_ROOT_DEFAULT}" 3>&1 1>&2 2>&3)
-                    exitstatus="$?"
+                    exitstatus=$?
                     if [[ ${exitstatus} -eq 0 ]]; then
                         echo "DUP_ROOT=${DUP_ROOT}" >>/root/.broobe-utils-options
                     else
@@ -107,7 +107,7 @@ function _settings_config_duplicity(){
                     # Source of Directories to Backup
                     DUP_SRC_BK_DEFAULT="${SITES}"
                     DUP_SRC_BK=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_SRC_BK_DEFAULT}" 3>&1 1>&2 2>&3)
-                    exitstatus="$?"
+                    exitstatus=$?
                     if [[ ${exitstatus} -eq 0 ]]; then
                         echo "DUP_SRC_BK=${DUP_SRC_BK}" >>/root/.broobe-utils-options
                     else
@@ -121,7 +121,7 @@ function _settings_config_duplicity(){
                     # Folders to Backup
                     DUP_FOLDERS_DEFAULT="FOLDER1,FOLDER2"
                     DUP_FOLDERS=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_FOLDERS_DEFAULT}" 3>&1 1>&2 2>&3)
-                    exitstatus="$?"
+                    exitstatus=$?
                     if [[ ${exitstatus} -eq 0 ]]; then
                         echo "DUP_FOLDERS=${DUP_FOLDERS}" >>/root/.broobe-utils-options
                     else
@@ -135,7 +135,7 @@ function _settings_config_duplicity(){
                     # Create a new full backup every ...
                     DUP_BK_FULL_FREQ_DEFAULT="7D"
                     DUP_BK_FULL_FREQ=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_BK_FULL_FREQ_DEFAULT}" 3>&1 1>&2 2>&3)
-                    exitstatus="$?"
+                    exitstatus=$?
                     if [[ ${exitstatus} -eq 0 ]]; then
                         echo "DUP_BK_FULL_FREQ=${DUP_BK_FULL_FREQ}" >>/root/.broobe-utils-options
                     else
@@ -149,7 +149,7 @@ function _settings_config_duplicity(){
                     # Delete any backup older than this
                     DUP_BK_FULL_LIFE_DEFAULT="14D"
                     DUP_BK_FULL_LIFE=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_BK_FULL_LIFE_DEFAULT}" 3>&1 1>&2 2>&3)
-                    exitstatus="$?"
+                    exitstatus=$?
                     if [[ ${exitstatus} -eq 0 ]]; then
                         echo "DUP_BK_FULL_LIFE=${DUP_BK_FULL_LIFE}" >>/root/.broobe-utils-options
                     else
@@ -186,14 +186,14 @@ function _settings_config_mailcow(){
     if [[ -z "${MAILCOW_BK}" ]]; then
         
         whiptail_message_with_skip_option "Mailcow Support" "This script supports Mailcow. Do you want to enable backups for it?"
-        exitstatus="$?"
+        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
             
             # Checking /root/.broobe-utils-options global vars
             if [[ -z "${MAILCOW}" && "${MAILCOW_BK}" == true ]]; then
 
                 mailcow_path=$(whiptail --title "Mailcow Support" --inputbox "Insert the path where Mailcow is installed" 10 60 "${mailcow_default_path}" 3>&1 1>&2 2>&3)
-                exitstatus="$?"
+                exitstatus=$?
                 if [[ ${exitstatus} -eq 0 ]]; then
                     mailcow_support=true
                     echo "MAILCOW_BK=${mailcow_support}" >>/root/.broobe-utils-options
@@ -221,7 +221,7 @@ function _settings_config_dropbox(){
     if [[ -z "${DROPBOX_ENABLE}" ]]; then
         
         whiptail_message_with_skip_option "Dropbox Support" "This script supports Dropbox integration via API. If you have a Dropbox account you can configure it to backup and restore projects from here. Do you want to enable Dropbox support?"
-        exitstatus="$?"
+        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
             
             # Setting option on script config file
@@ -247,7 +247,7 @@ function _settings_config_cloudflare(){
     if [[ -z "${CLOUDFLARE_ENABLE}" ]]; then
         
         whiptail_message_with_skip_option "Cloudflare Support" "This script supports Cloudflare integration via API. If you have a Cloudflare account you can configure it to manage your domains from here. Do you want to enable Cloudflare support?"
-        exitstatus="$?"
+        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
             
             # Setting option on script config file
@@ -273,7 +273,7 @@ function _settings_config_telegram(){
     if [[ -z "${TELEGRAM_NOTIF}" ]]; then
         
         whiptail_message_with_skip_option "Telegram Notification" "Do you want to enable Telegram notification support?"
-        exitstatus="$?"
+        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
             
             # Setting option on script config file
@@ -301,7 +301,7 @@ function _settings_config_notifications(){
     if [[ -z "${MAIL_NOTIF}" ]]; then
 
         whiptail_message_with_skip_option "E-Mail Notification" "Do you want to enable E-Mail notification support?"
-        exitstatus="$?"
+        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
             
             # Setting option on script config file
@@ -311,7 +311,7 @@ function _settings_config_notifications(){
             if [[ -z "${MAILA}" ]]; then
            
                 MAILA=$(whiptail --title "Notification Email" --inputbox "Insert the email where you want to receive notifications." 10 60 "${MAILA_OLD}" 3>&1 1>&2 2>&3)
-                exitstatus="$?"
+                exitstatus=$?
                 if [[ ${exitstatus} -eq 0 ]]; then
                     echo "MAILA=${MAILA}" >>/root/.broobe-utils-options
                 else
@@ -401,7 +401,7 @@ function script_configuration_wizard() {
 
     if [[ -z "${SITES}" ]]; then
         SITES=$(whiptail --title "Websites Root Directory" --inputbox "Insert the path where websites are stored. Ex: /var/www or /usr/share/nginx" 10 60 "${SITES_OLD}" 3>&1 1>&2 2>&3)
-        exitstatus="$?"
+        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
             echo "SITES=${SITES}" >>/root/.broobe-utils-options
         else
@@ -441,7 +441,7 @@ function generate_dropbox_config() {
         oauth_access_token_string+=" 7) Copy and paste the new access token here:\n\n"
 
         oauth_access_token=$(whiptail --title "Dropbox Uploader Configuration" --inputbox "${oauth_access_token_string}" 15 60 3>&1 1>&2 2>&3)
-        exitstatus="$?"
+        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # Write config file
@@ -484,7 +484,7 @@ function generate_dropbox_config_new() {
         dropbox_config_first_msg+=" 7) Click on 'Submit' button.\n"
 
         whiptail_message "${whip_title}" "${dropbox_config_first_msg}"
-        exitstatus="$?"
+        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
             dropbox_config_second_msg+="\n 8) Click on 'settings' and provide the following information.\n\n"
@@ -492,7 +492,7 @@ function generate_dropbox_config_new() {
 
             # OAUTH_APP_KEY
             app_key=$(whiptail --title "${whip_title}" --inputbox "${dropbox_config_second_msg}" 15 60 3>&1 1>&2 2>&3)
-            exitstatus="$?"
+            exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
 
                 # Write config file
@@ -507,7 +507,7 @@ function generate_dropbox_config_new() {
             # OAUTH_APP_SECRET
             dropbox_config_third_msg+=" 10) App secret:\n\n"
             app_secret=$(whiptail --title "${whip_title}" --inputbox "${dropbox_config_third_msg}" 15 60 3>&1 1>&2 2>&3)
-            exitstatus="$?"
+            exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
 
                 # Write config file
@@ -524,7 +524,7 @@ function generate_dropbox_config_new() {
             dropbox_config_fourth_msg+=" Allow suggested permissions and copy paste here the Access Code:\n\n"
             
             oauth_access_token=$(whiptail --title "${whip_title}" --inputbox "${dropbox_config_fourth_msg}" 15 60 3>&1 1>&2 2>&3)
-            exitstatus="$?"
+            exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
 
                 # Write config file
@@ -564,7 +564,7 @@ function generate_cloudflare_config() {
         cfl_email_string="\n\nPlease insert the Cloudflare email account here:\n\n"
 
         cfl_email=$(whiptail --title "Cloudflare Configuration" --inputbox "${cfl_email_string}" 15 60 3>&1 1>&2 2>&3)
-        exitstatus="$?"
+        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
             echo "dns_cloudflare_email=${cfl_email}">"${CLF_CONFIG_FILE}"
@@ -578,7 +578,7 @@ function generate_cloudflare_config() {
             cfl_api_token_string+=" 6) Copy the code and paste it here:\n\n"
 
             cfl_api_token=$(whiptail --title "Cloudflare Configuration" --inputbox "${cfl_api_token_string}" 15 60 3>&1 1>&2 2>&3)
-            exitstatus="$?"
+            exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
 
             # Write config file
@@ -612,7 +612,7 @@ function generate_telegram_config() {
     botfather_whip_line+=" 2) Follow the instructions and paste the token to access the HTTP API:\n\n"
 
     botfather_key=$(whiptail --title "Telegram BotFather Configuration" --inputbox "${botfather_whip_line}" 15 60 3>&1 1>&2 2>&3)
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Write config file
@@ -624,7 +624,7 @@ function generate_telegram_config() {
 		telegram_id_whip_line+=" 4) Paste the ID here:\n\n"
 		
 		telegram_user_id=$(whiptail --title "Telegram: BotID Configuration" --inputbox "${telegram_id_whip_line}" 15 60 3>&1 1>&2 2>&3)
-		exitstatus="$?"
+		exitstatus=$?
 		if [[ ${exitstatus} -eq 0 ]]; then
 
             # Write config file

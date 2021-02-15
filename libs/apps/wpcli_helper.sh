@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 ################################################################################
 
 function wpcli_install_if_not_installed() {
@@ -99,7 +99,7 @@ function wpcli_run_startup_script() {
     if [[ "${site_name}" == "" ]]; then
         site_name=$(whiptail --title "Site Name" --inputbox "Insert the site name. Example: My Website" 10 60 3>&1 1>&2 2>&3)
     fi
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} == "" ]]; then
         # Return
         return 1
@@ -108,7 +108,7 @@ function wpcli_run_startup_script() {
     if [[ "${site_url}" == "" ]]; then
         site_url=$(whiptail --title "Site URL" --inputbox "Insert the site URL. Example: mydomain.com" 10 60 3>&1 1>&2 2>&3)
     fi
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ! ${exitstatus} -eq 0 ]]; then
         # Return
         return 1
@@ -117,7 +117,7 @@ function wpcli_run_startup_script() {
     if [[ "${wp_user_name}" == "" ]]; then
         wp_user_name=$(whiptail --title "Wordpress User" --inputbox "Insert a username for admin." 10 60 3>&1 1>&2 2>&3)
     fi
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ! ${exitstatus} -eq 0 ]]; then
         # Return
         return 1
@@ -126,7 +126,7 @@ function wpcli_run_startup_script() {
     if [[ "${wp_user_passw}" == "" ]]; then
         wp_user_passw=$(whiptail --title "Site Name" --inputbox "Insert the user password." 10 60 3>&1 1>&2 2>&3)
     fi
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ! ${exitstatus} -eq 0 ]]; then
         # Return
         return 1
@@ -135,7 +135,7 @@ function wpcli_run_startup_script() {
     if [[ "${wp_user_mail}" == "" ]]; then
         wp_user_mail=$(whiptail --title "WordPress User Mail" --inputbox "Insert the user email." 10 60 3>&1 1>&2 2>&3)
     fi
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ! ${exitstatus} -eq 0 ]]; then
         # Return
         return 1
@@ -255,7 +255,7 @@ function wpcli_core_download() {
 
             clear_last_line
 
-            exitstatus="$?"
+            exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
                 display --indent 6 --text "- Wordpress ${wp_version} installation for ${wp_site}" --result "DONE" --color GREEN
 
@@ -277,7 +277,7 @@ function wpcli_core_download() {
 
             clear_last_line
 
-            exitstatus="$?"
+            exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
                 display --indent 6 --text "- Wordpress installation for ${wp_site}" --result "DONE" --color GREEN
 

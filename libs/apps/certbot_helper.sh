@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 ################################################################################
 #
 # Ref: https://certbot.eff.org/docs/using.html#certbot-commands
@@ -37,7 +37,7 @@ function certbot_certificate_install() {
     # Running certbot again
     certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}"
     
-    certbot_result="$?"
+    certbot_result=$?
     if [[ ${certbot_result} -eq 0 ]];then
       log_event "success" "Certificate installation for ${domains} ok" "false"
       display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN

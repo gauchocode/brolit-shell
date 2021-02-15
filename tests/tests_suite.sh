@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 #############################################################################
 
 function tests_suite_menu() {
@@ -20,7 +20,7 @@ function tests_suite_menu() {
     "08)" "RUN OTHER TESTS"
     )
   chosen_tests_options=$(whiptail --title "TESTS SUITE" --menu " " 20 78 10 "${tests_options[@]}" 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_tests_options} == *"01"* ]]; then
@@ -61,6 +61,10 @@ function tests_suite_menu() {
       test_common_funtions
 
     fi
+
+  else
+
+    exit 0
 
   fi
 

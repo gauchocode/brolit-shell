@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 #############################################################################
 
 function test_mysql_helper() {
@@ -27,7 +27,7 @@ function test_mysql_test_user_credentials() {
     log_subsection "Test: test_mysql_test_user_credentials"
 
     mysql_test_user_credentials "${MUSER}" "${MPASS}"
-    user_credentials="$?"
+    user_credentials=$?
     if [[ ${user_credentials} -eq 0 ]]; then
         display --indent 6 --text "- mysql_test_user_credentials" --result "PASS" --color WHITE
     else
@@ -57,7 +57,7 @@ function test_mysql_user_create() {
     db_pass="$(openssl rand -hex 12)"
 
     mysql_user_create "${db_user}" "${db_pass}"
-    user_create="$?"
+    user_create=$?
     if [[ ${user_create} -eq 0 ]]; then
         display --indent 6 --text "- mysql_user_create" --result "PASS" --color WHITE
     else
@@ -76,7 +76,7 @@ function test_mysql_user_exists() {
     db_user="test_user"
     
     mysql_user_exists "${db_user}"
-    db_user_exists="$?"
+    db_user_exists=$?
     if [[ ${db_user_exists} -eq 1 ]]; then
         display --indent 6 --text "- mysql_user_exists" --result "PASS" --color WHITE
     else
@@ -95,7 +95,7 @@ function test_mysql_user_delete() {
     db_user="test_user"
     
     mysql_user_delete "${db_user}"
-    user_delete="$?"
+    user_delete=$?
     if [[ ${user_delete} -eq 0 ]]; then
         display --indent 6 --text "- test_mysql_user_delete" --result "PASS" --color WHITE
     else
@@ -113,7 +113,7 @@ function test_mysql_database_create() {
     mysql_db_test="test_db"
     
     mysql_database_create "${mysql_db_test}"
-    database_create="$?"
+    database_create=$?
     if [[ ${database_create} -eq 0 ]]; then 
         display --indent 6 --text "- test_mysql_database_create" --result "PASS" --color WHITE
     else
@@ -172,7 +172,7 @@ function test_mysql_database_drop() {
     mysql_db_test="test_db"
     
     mysql_database_drop "${mysql_db_test}"
-    database_drop="$?"
+    database_drop=$?
     if [[ ${database_drop} -eq 0 ]]; then 
         display --indent 6 --text "- test_mysql_database_drop" --result "PASS" --color WHITE
     else

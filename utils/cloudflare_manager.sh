@@ -1,24 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 #############################################################################
 
-### Checking some things
-if [[ -z "${SFOLDER}" ]]; then
-  echo -e ${B_RED}" > Error: The script can only be runned by runner.sh! Exiting ..."${ENDCOLOR}
-  exit 0
-fi
-################################################################################
-
-# shellcheck source=${SFOLDER}/libs/commons.sh
-source "${SFOLDER}/libs/commons.sh"
-# shellcheck source=${SFOLDER}/libs/cloudflare_helper.sh
-source "${SFOLDER}/libs/cloudflare_helper.sh"
-
-################################################################################
-
-cloudflare_helper_menu() {
+function cloudflare_helper_menu() {
 
     local cf_options 
     local chosen_cf_options 
@@ -99,7 +85,3 @@ cloudflare_helper_menu() {
     menu_main_options
 
 }
-
-################################################################################
-
-cloudflare_helper_menu

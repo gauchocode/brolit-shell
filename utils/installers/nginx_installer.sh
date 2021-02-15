@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 ################################################################################
 #
 # TODO: Nginx best practices
@@ -13,10 +13,6 @@
 #
 # Brotli compression only supports the HTTPS site
 #
-
-# shellcheck source=${SFOLDER}/libs/nginx_helper.sh
-source "${SFOLDER}/libs/nginx_helper.sh"
-
 ################################################################################
 
 function nginx_default_installer() { 
@@ -107,7 +103,7 @@ function nginx_installer_menu() {
     fi
 
     CHOSEN_NGINX_INSTALLER_OPTION=$(whiptail --title "NGINX INSTALLER" --menu "Choose a Nginx version to install" 20 78 10 "${NGINX_INSTALLER_OPTIONS[@]}" 3>&1 1>&2 2>&3)
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
         if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"01"* ]]; then

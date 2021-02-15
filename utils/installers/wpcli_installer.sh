@@ -1,12 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
-################################################################################
-
-# shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
-source "${SFOLDER}/libs/wpcli_helper.sh"
-
+# Version: 3.0.15
 ################################################################################
 
 function wpcli_installer_menu() {
