@@ -5,7 +5,7 @@
 # Version: 3.0.15
 ################################################################################
 
-set -Eeuo pipefail
+#set -Eeuo pipefail
 
 ### Main dir check
 SFOLDER=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
