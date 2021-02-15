@@ -1,12 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
-################################################################################
-
-# shellcheck source=${SFOLDER}/libs/php_helper.sh
-source "${SFOLDER}/libs/php_helper.sh"
-
+# Version: 3.0.15
 ################################################################################
 
 function php_installer() {
@@ -202,7 +197,7 @@ function php_installer_menu() {
   PHP_V=$(php_select_version_to_work_with "${php_installed_versions}")
 
   chosen_php_installer_options=$(whiptail --title "${php_installer_title}" --menu "${php_installer_message}" 20 78 10 "${php_installer_options[@]}" 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_php_installer_options} == *"01"* ]]; then

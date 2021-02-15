@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 #############################################################################
 
 function menu_backup_options() {
@@ -17,7 +17,7 @@ function menu_backup_options() {
   )
   
   chosen_backup_type=$(whiptail --title "SELECT BACKUP TYPE" --menu " " 20 78 10 "${backup_options[@]}" 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_backup_type} == *"01"* ]]; then
@@ -186,7 +186,7 @@ function make_server_files_backup() {
     bzip2 -t "${BAKWP}/${NOW}/${bk_file}"
 
     # Check test result
-    bzip2_result="$?"
+    bzip2_result=$?
     if [[ ${bzip2_result} -eq 0 ]]; then
 
       log_event "success" "Backup ${bk_file} created"
@@ -269,7 +269,7 @@ function make_mailcow_backup() {
     display --indent 6 --text "- Making ${MAILCOW} backup" --result "DONE" --color GREEN
 
     "${MAILCOW}/helper-scripts/backup_and_restore.sh" backup all
-    mailcow_backup_result="$?"
+    mailcow_backup_result=$?
     if [[ "${mailcow_backup_result}" -eq 0 ]]; then
 
       # Con un pequeño truco vamos a obtener el nombre de la carpeta que crea mailcow
@@ -288,7 +288,7 @@ function make_mailcow_backup() {
       # Test backup file
       log_event "info" "Testing backup file: ${bk_file} ..."
       lbzip2 -t "${MAILCOW_TMP_BK}/${bk_file}"
-      lbzip2_result="$?"
+      lbzip2_result=$?
       if [[ ${lbzip2_result} -eq 0 ]]; then
 
         log_event "success" "${MAILCOW_TMP_BK}/${bk_file} backup created"
@@ -518,7 +518,7 @@ function make_files_backup() {
   clear_last_line
   clear_last_line
 
-  lbzip2_result="$?"
+  lbzip2_result=$?
   if [[ "${lbzip2_result}" -eq 0 ]]; then
     
     BACKUPED_LIST[$BK_FILE_INDEX]=${bk_file}
@@ -586,7 +586,7 @@ function duplicity_backup() {
     # Loop in to Directories
     for i in $(echo "${DUP_FOLDERS}" | sed "s/,/ /g"); do
       duplicity --full-if-older-than "${DUP_BK_FULL_FREQ}" -v4 --no-encryption" ${DUP_SRC_BK}""${i}" file://"${DUP_ROOT}""${i}"
-      RETVAL="$?"
+      RETVAL=$?
 
       # TODO: solo deberia borrar lo viejo si $RETVAL -eq 0
       duplicity remove-older-than "${DUP_BK_FULL_LIFE}" --force "${DUP_ROOT}"/"${i}"
@@ -679,7 +679,7 @@ function make_database_backup() {
 
   # Create dump file 
   mysql_database_export "${database}" "${directory_to_backup}${db_file}"
-  mysql_export_result="$?"
+  mysql_export_result=$?
   if [[ ${mysql_export_result} -eq 0 ]]; then
 
     log_event "info" "Making a tar.bz2 file of ${db_file} ..."
@@ -702,7 +702,7 @@ function make_database_backup() {
     clear_last_line
     clear_last_line
 
-    lbzip2_result="$?"
+    lbzip2_result=$?
     if [[ ${lbzip2_result} -eq 0 ]]; then
 
       log_event "success" "Backup file ${bk_file} created"
@@ -735,7 +735,7 @@ function make_database_backup() {
 
       # Upload to Dropbox
       dropbox_upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}${DROPBOX_PATH}"
-      dropbox_result="$?"
+      dropbox_result=$?
       if [[ ${dropbox_result} -eq 0 ]]; then
       
         # Delete old backups
@@ -792,7 +792,7 @@ function make_project_backup() {
     # Test backup file
     log_event "info" "Testing backup file: ${bk_file}"
     lbzip2 -t "${BAKWP}/${NOW}/${bk_file}"
-    lbzip2_result="$?"
+    lbzip2_result=$?
     if [[ ${lbzip2_result} -eq 0 ]]; then
 
         BACKUPED_LIST[$BK_FILE_INDEX]=${bk_file}

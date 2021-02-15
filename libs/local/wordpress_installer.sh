@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 ################################################################################
 
 function wordpress_project_installer () {
@@ -27,7 +27,7 @@ function wordpress_project_installer () {
     "02)" "COPY FROM PROJECT"
     )
   installation_type=$(whiptail --title "INSTALLATION TYPE" --menu "Choose an Installation Type" 20 78 10 "${installation_types[@]}" 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
 
@@ -129,7 +129,7 @@ function wordpress_project_install () {
 
     # HTTPS with Certbot
     project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${project_root_domain}" 3>&1 1>&2 2>&3)
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
       certbot_certificate_install "${MAILA}" "${project_domain},${project_root_domain}"
@@ -153,7 +153,7 @@ function wordpress_project_install () {
 
     # HTTPS with Certbot
     cert_project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
       
       certbot_certificate_install "${MAILA}" "${cert_project_domain}"
@@ -254,7 +254,7 @@ function wordpress_project_copy () {
 
   # Make a database Backup
   mysql_database_export "${db_tocopy}" "${bk_folder}${bk_file}"
-  mysql_database_export_result="$?"
+  mysql_database_export_result=$?
   if [[ ${mysql_database_export_result} -eq 0 ]]; then
 
     # Target database
@@ -325,7 +325,7 @@ function wordpress_project_copy () {
 
     # HTTPS with Certbot
     cert_project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
       
       certbot_certificate_install "${MAILA}" "${cert_project_domain}"

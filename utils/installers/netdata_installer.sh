@@ -1,16 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
-################################################################################
-
-# shellcheck source=${SFOLDER}/libs/nginx_helper.sh
-source "${SFOLDER}/libs/nginx_helper.sh"
-# shellcheck source=${SFOLDER}/libs/cloudflare_helper.sh
-source "${SFOLDER}/libs/cloudflare_helper.sh"
-# shellcheck source=${SFOLDER}/libs/certbot_helper.sh
-source "${SFOLDER}/libs/certbot_helper.sh"
-
+# Version: 3.0.15
 ################################################################################
 
 # Ref: https://github.com/nextcloud/vm/blob/master/apps/netdata.sh
@@ -93,7 +84,7 @@ function netdata_alarm_level() {
 
   NETDATA_ALARM_LEVELS="warning critical"
   NETDATA_ALARM_LEVEL=$(whiptail --title "NETDATA ALARM LEVEL" --menu "Choose the Alarm Level for Notifications" 20 78 10 $(for x in ${NETDATA_ALARM_LEVELS}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
     echo "NETDATA_ALARM_LEVEL=${NETDATA_ALARM_LEVEL}" >>/root/.broobe-utils-options
     log_event "info" "Alarm Level for Notifications: ${NETDATA_ALARM_LEVEL}" "false"
@@ -128,7 +119,7 @@ function netdata_telegram_config() {
 
   TELEGRAM_BOT_TOKEN=$(whiptail --title "Netdata: Telegram Configuration" --inputbox "${NETDATA_CONFIG_1_STRING}" 15 60 3>&1 1>&2 2>&3)
 
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     SEND_TELEGRAM="YES"
@@ -141,7 +132,7 @@ function netdata_telegram_config() {
     NETDATA_CONFIG_2_STRING+=" 3) Paste the ID here:\n"
 
     DEFAULT_RECIPIENT_TELEGRAM=$(whiptail --title "Netdata: Telegram Configuration" --inputbox "${NETDATA_CONFIG_2_STRING}" 15 60 3>&1 1>&2 2>&3)
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
       # choose the netdata alarm level
@@ -179,7 +170,7 @@ function netdata_installer_menu() {
     if [[ -z "${netdata_subdomain}" ]]; then
 
       netdata_subdomain=$(whiptail --title "Netdata Installer" --inputbox "Please insert the subdomain you want to install Netdata. Ex: monitor.broobe.com" 10 60 3>&1 1>&2 2>&3)
-      exitstatus="$?"
+      exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
         echo "netdata_subdomain=${netdata_subdomain}" >>"/root/.broobe-utils-options"
 
@@ -255,7 +246,7 @@ function netdata_installer_menu() {
       )
 
     NETDATA_CHOSEN_OPTION=$(whiptail --title "Netdata Installer" --menu "Netdata is already installed." 20 78 10 "${NETDATA_OPTIONS[@]}" 3>&1 1>&2 2>&3)
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
       log_subsection "Netdata Installer"

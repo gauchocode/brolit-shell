@@ -1,27 +1,15 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 ################################################################################
 
-# shellcheck source=${SFOLDER}/utils/installers/php_installer.sh
-source "${SFOLDER}/utils/installers/php_installer.sh"
-# shellcheck source=${SFOLDER}/utils/installers/mysql_installer.sh
-source "${SFOLDER}/utils/installers/mysql_installer.sh"
-# shellcheck source=${SFOLDER}/utils/installers/nginx_installer.sh
-source "${SFOLDER}/utils/installers/nginx_installer.sh"
-# shellcheck source=${SFOLDER}/utils/installers/certbot_installer.sh
-source "${SFOLDER}/utils/installers/certbot_installer.sh"
-# shellcheck source=${SFOLDER}/utils/installers/monit_installer.sh
-source "${SFOLDER}/utils/installers/monit_installer.sh"
-# shellcheck source=${SFOLDER}/utils/installers/phpmyadmin_installer.sh
-source "${SFOLDER}/utils/installers/phpmyadmin_installer.sh"
-# shellcheck source=${SFOLDER}/utils/installers/netdata_installer.sh
-source "${SFOLDER}/utils/installers/netdata_installer.sh"
-# shellcheck source=${SFOLDER}/utils/installers/cockpit_installer.sh
-source "${SFOLDER}/utils/installers/cockpit_installer.sh"
-# shellcheck source=${SFOLDER}/utils/installers/wpcli_installer.sh
-source "${SFOLDER}/utils/installers/wpcli_installer.sh"
+# Installers directory path
+installers_path="${SFOLDER}/utils/installers"
+
+# Source all installers
+installers="$(find "${installers_path}" -maxdepth 1 -name '*.sh' -type f -print)"
+for f in ${installers}; do source "${f}"; done
 
 ################################################################################
 
@@ -44,7 +32,7 @@ function installers_and_configurators() {
     )
   
   installer_type=$(whiptail --title "INSTALLERS AND CONFIGURATORS" --menu "\nPlease select the utility or programs you want to install or config: \n" 20 78 10 "${installer_options[@]}" 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     log_section "Installers and Configurators"

@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 ################################################################################
 
 #
@@ -51,7 +51,7 @@ function restore_backup_menu () {
     "03)" "RESTORE FROM FILE"
     )
   chosen_restore_options=$(whiptail --title "RESTORE TYPE" --menu " " 20 78 10 "${restore_options[@]}" 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_restore_options} == *"01"* ]]; then
@@ -59,8 +59,11 @@ function restore_backup_menu () {
 
     fi
     if [[ ${chosen_restore_options} == *"02"* ]]; then
+
       # shellcheck source=${SFOLDER}/utils/wordpress_restore_from_source.sh
       source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
+
+      wordpress_restore_from_source
 
     fi
     if [[ ${chosen_restore_options} == *"03"* ]]; then
@@ -84,7 +87,7 @@ function restore_backup_from_file() {
     "02)" "RESTORE DATABASE"
     )
   chosen_restore_type=$(whiptail --title "RESTORE TYPE" --menu " " 20 78 10 "${restore_type[@]}" 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
     
     if [[ ${chosen_restore_type} == *"01"* ]]; then
@@ -166,7 +169,7 @@ function restore_backup_server_selection () {
   # Select SERVER
   dropbox_server_list=$("${DROPBOX_UPLOADER}" -hq list "/")
   chosen_server=$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 $(for x in ${dropbox_server_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     dropbox_type_list="$(${DROPBOX_UPLOADER} -hq list "${chosen_server}")"
@@ -205,7 +208,7 @@ function restore_database_backup() {
 
   # Check if database already exists
   mysql_database_exists "${db_name}"
-  db_exists="$?"
+  db_exists=$?
   if [[ ${db_exists} -eq 1 ]]; then  
     # Create database
     mysql_database_create "${db_name}"
@@ -245,14 +248,14 @@ function restore_config_files_from_dropbox(){
 
   # Select config backup type
   chosen_config_type=$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Choose a config backup type." 20 78 10 $(for x in ${dropbox_project_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
     #Restore from Dropbox
     dropbox_bk_list="$(${DROPBOX_UPLOADER} -hq list "${dropbox_chosen_type_path}/${chosen_config_type}")"
   fi
 
   chosen_config_bk=$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Choose a config backup file to restore." 20 78 10 "$(for x in ${dropbox_bk_list}; do echo "$x [F]"; done)" 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     cd "${SFOLDER}/tmp"
@@ -462,7 +465,7 @@ function restore_site_files() {
   log_subsection "Restore Files Backup"
 
   chosen_domain=$(whiptail --title "Project Domain" --inputbox "Want to change the project's domain? Default:" 10 60 "${domain}" 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Log
@@ -554,7 +557,7 @@ function restore_type_selection_from_dropbox() {
   local project_site                    # project site
 
   chosen_type=$(whiptail --title "RESTORE FROM BACKUP" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 $(for x in ${dropbox_type_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     dropbox_chosen_type_path="${chosen_server}/${chosen_type}"
@@ -577,7 +580,7 @@ function restore_type_selection_from_dropbox() {
 
         # Select Project
         chosen_project=$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${dropbox_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
-        exitstatus="$?"
+        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
           dropbox_chosen_backup_path="${dropbox_chosen_type_path}/${chosen_project}"
           dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}")"
@@ -585,7 +588,7 @@ function restore_type_selection_from_dropbox() {
         fi
         # Select Backup File
         chosen_backup_to_restore=$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${dropbox_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
-        exitstatus="$?"
+        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
           cd "${SFOLDER}/tmp"
@@ -617,7 +620,7 @@ function restore_type_selection_from_dropbox() {
             project_name=${chosen_project%"_$suffix"}
 
             project_name=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${project_name}" 3>&1 1>&2 2>&3)
-            exitstatus="$?"
+            exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
               log_event "info" "Setting project_name=${project_name}"
 
@@ -636,7 +639,7 @@ function restore_type_selection_from_dropbox() {
 
             # Check if user database already exists
             mysql_user_exists "${db_user}"
-            user_db_exists="$?"
+            user_db_exists=$?
             if [[ ${user_db_exists} -eq 0 ]]; then
 
               # Passw generator
@@ -661,7 +664,7 @@ function restore_type_selection_from_dropbox() {
             # TODO: check project type (WP, Laravel, etc)
 
             folder_to_install="$(ask_folder_to_install_sites "${SITES}")"
-            folder_to_install_result="$?"
+            folder_to_install_result=$?
             if [[ ${folder_to_install_result} -eq 1 ]]; then
 
               return 0
@@ -671,7 +674,7 @@ function restore_type_selection_from_dropbox() {
             startdir="${folder_to_install}"
             menutitle="Site Selection Menu"
             directory_browser "${menutitle}" "${startdir}"
-            directory_browser_result="$?"
+            directory_browser_result=$?
             if [[ ${directory_browser_result} -eq 1 ]]; then
 
               return 0
@@ -739,7 +742,7 @@ function restore_project() {
 
   # Select Project
   chosen_project=$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${dropbox_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
     dropbox_chosen_backup_path="${chosen_server}/site/${chosen_project}"
     dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}")"
@@ -754,7 +757,7 @@ function restore_project() {
 
   # Select Backup File
   chosen_backup_to_restore=$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${dropbox_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     display --indent 6 --text "- Selecting project backup" --result "DONE" --color GREEN
@@ -840,7 +843,7 @@ function restore_project() {
     log_event "info" "Trying to download ${chosen_server}/database/${db_name}/${db_name}_database_${backup_date}.tar.bz2"
     dropbox_output="$("${DROPBOX_UPLOADER}" download "${db_to_download}" 1>&2)"
 
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} -eq 1 ]]; then
 
       clear_last_line
@@ -880,7 +883,7 @@ function restore_project() {
     #project_name=$(echo "${project_name}" | sed s/"_org"// | sed s/"_ar"// | sed s/"_com"// | sed s/"_net"// | sed s/"_edu"//)
 
     project_name=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${project_name}" 3>&1 1>&2 2>&3)
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
       log_event "info" "Setting project_name=${project_name}"
 
@@ -900,7 +903,7 @@ function restore_project() {
 
     # Check if user database already exists
     mysql_user_exists "${db_user}"
-    user_db_exists="$?"
+    user_db_exists=$?
     if [[ ${user_db_exists} -eq 0 ]]; then
 
       db_pass=$(openssl rand -hex 12)
@@ -928,7 +931,7 @@ function restore_project() {
       letsencrypt_opt=("01)" "RESTORE CERTIFICATES" "02)" "GENERATE NEW CERTIFICATES")
       letsencrypt_chosen_opt=$(whiptail --title "Let's Encrypt Certificates" --menu "${letsencrypt_opt_text}" 20 78 10 "${letsencrypt_opt[@]}" 3>&1 1>&2 2>&3)
 
-      exitstatus="$?"
+      exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
         
         if [[ ${letsencrypt_chosen_opt} == *"01"* ]]; then

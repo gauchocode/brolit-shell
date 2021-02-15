@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 #############################################################################
 
 function _mysql_root_credentials_parameter() {
@@ -32,7 +32,7 @@ function mysql_test_user_credentials() {
     local mysql_result
 
     mysql_output="$("${MYSQL}" -u "${db_user}" -p"${db_user_psw}" -e ";")"
-    mysql_result="$?"
+    mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
         
         # Logging
@@ -105,7 +105,7 @@ function mysql_user_create() {
     fi
 
     mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query}")"
-    mysql_result="$?"
+    mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
         
         # Logging
@@ -154,7 +154,7 @@ function mysql_user_delete() {
     query_2="FLUSH PRIVILEGES;"
 
     mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query_1}${query_2}")"
-    mysql_result="$?"
+    mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
         # Logging
@@ -196,7 +196,7 @@ function mysql_user_psw_change() {
     query_2="FLUSH PRIVILEGES;"
 
     mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query_1}${query_2}")"
-    mysql_result="$?"
+    mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
         # Logging
@@ -255,7 +255,7 @@ function mysql_root_psw_change() {
 	# Starting mysql again
 	service mysql restart
 	
-    mysql_result="$?"
+    mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
         # Logging
@@ -302,7 +302,7 @@ function mysql_user_grant_privileges() {
     query_2="FLUSH PRIVILEGES;"
 
     mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query_1}${query_2}")"
-    mysql_result="$?"
+    mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
         # Logging
@@ -407,7 +407,7 @@ function mysql_database_create() {
     query_1="CREATE DATABASE IF NOT EXISTS ${database};"
 
     mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query_1}")"
-    mysql_result="$?"
+    mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
         # Logging
@@ -445,7 +445,7 @@ function mysql_database_drop() {
     query_1="DROP DATABASE ${database};"
     
     mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query_1}")"
-    mysql_result="$?"
+    mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
         # Logging
@@ -486,7 +486,7 @@ function mysql_database_import() {
     log_event "debug" "Running: pv ${dump_file} | ${MYSQL} -f -u${MUSER} -p${MPASS} -f -D ${database}"
 
     pv "${dump_file}" | ${MYSQL} -f -u"${MUSER}" -p"${MPASS}" -f -D "${database}"
-    import_status="$?"
+    import_status=$?
     if [[ ${import_status} -eq 0 ]]; then
 
         # Logging
@@ -528,7 +528,7 @@ function mysql_database_export() {
 
     # Run mysqldump
     dump_output="$("${MYSQLDUMP}" -u"${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}" 2>&1 >/dev/null)"
-    dump_status="$?"
+    dump_status=$?
 
     spinner_stop "$dump_status"
 

@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 #############################################################################
 
 function mysql_default_installer() {
@@ -71,7 +71,7 @@ function mysql_installer_menu() {
       "02)" "INSTALL MYSQL"
     )
     CHOSEN_MYSQL_INSTALLER_OPTION=$(whiptail --title "MySQL INSTALLER" --menu "Choose a MySQL version to install" 20 78 10 "${MYSQL_INSTALLER_OPTIONS[@]}" 3>&1 1>&2 2>&3)
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
       if [[ ${CHOSEN_MYSQL_INSTALLER_OPTION} == *"01"* ]]; then

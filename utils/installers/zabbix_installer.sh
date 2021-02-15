@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 ################################################################################
 #
 # Seguir:
@@ -12,13 +12,6 @@
 # Web Monitoring:
 #       https://www.zabbix.com/documentation/4.2/manual/web_monitoring
 #
-################################################################################
-
-# shellcheck source=${SFOLDER}/libs/mysql_helper.sh
-source "${SFOLDER}/libs/mysql_helper.sh"
-# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
-source "${SFOLDER}/libs/mail_notification_helper.sh"
-
 ################################################################################
 
 function zabbix_prepare_database() {
@@ -105,7 +98,7 @@ function zabbix_server_installer() {
     # service nginx stop
     # service nginx start
 
-    # http://DOMINIO.COM/zabbix
+    # http://DOMAIN.COM/zabbix
 
 }
 

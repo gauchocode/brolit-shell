@@ -1,21 +1,50 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 ################################################################################
 
-# shellcheck source=${SFOLDER}/libs/commons.sh
-source "${SFOLDER}/libs/commons.sh"
-# shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
-source "${SFOLDER}/libs/wpcli_helper.sh"
-# shellcheck source=${SFOLDER}/libs/wordpress_helper.sh
-source "${SFOLDER}/libs/wordpress_helper.sh"
-# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
-source "${SFOLDER}/libs/mail_notification_helper.sh"
-# shellcheck source=${SFOLDER}/libs/telegram_notification_helper.sh
-source "${SFOLDER}/libs/telegram_notification_helper.sh"
+function wpcli_manager() {
 
-################################################################################
+  wpcli_install_if_not_installed
+
+  # Directory Browser
+  startdir=${SITES}
+  menutitle="Site Selection Menu"
+  directory_browser "${menutitle}" "${startdir}"
+
+  wp_site="${filepath}/${filename}"
+
+  log_section "WP-CLI Manager"
+
+  log_event "info" "Searching WordPress Installation on directory: ${wp_site}" "false"
+
+  # Search a wordpress installation on selected directory
+  install_path=$(search_wp_config "${wp_site}")
+
+  if [[ -z "${install_path}" || "${install_path}" = '' ]]; then
+
+    log_event "info" "WordPress installation not found! Returning to Main Menu" "false"
+    display --indent 2 --text "- Searching WordPress installation" --result "FAIL" --color RED
+    
+    whiptail --title "WARNING" --msgbox "WordPress installation not found! Press Enter to return to the Main Menu." 8 78
+    
+    menu_main_options
+    
+  else
+
+    # WordPress installation path
+    wp_site=${install_path}
+
+    log_event "info" "Working with wp_site=${wp_site}" "false"
+    display --indent 2 --text "- Searching WordPress Installation" --result "DONE" --color GREEN
+    display --indent 4 --text "Working on ${wp_site}"
+
+    wpcli_main_menu "${wp_site}"
+
+  fi
+
+}
 
 function wpcli_main_menu() {
 
@@ -261,15 +290,15 @@ function wpcli_main_menu() {
     if [[ ${chosen_wpcli_options} == *"14"* ]]; then
 
       choosen_user=$(whiptail --title "WORDPRESS USER" --inputbox "Insert the username you want:" 10 60 "" 3>&1 1>&2 2>&3)
-      exitstatus="$?"
+      exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
         choosen_email=$(whiptail --title "WORDPRESS USER MAIL" --inputbox "Insert the username email:" 10 60 "" 3>&1 1>&2 2>&3)
-        exitstatus="$?"
+        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
           choosen_role=$(whiptail --title "WORDPRESS USER ROLE" --inputbox "Insert the user role (‘administrator’, ‘editor’, ‘author’, ‘contributor’, ‘subscriber’)" 10 60 "" 3>&1 1>&2 2>&3)
-          exitstatus="$?"
+          exitstatus=$?
           if [[ ${exitstatus} -eq 0 ]]; then
 
             wpcli_user_create "${wp_site}" "${choosen_user}" "${choosen_email}" "${choosen_role}"
@@ -285,11 +314,11 @@ function wpcli_main_menu() {
     if [[ ${chosen_wpcli_options} == *"15"* ]]; then
 
       choosen_user=$(whiptail --title "WORDPRESS USER" --inputbox "Insert the username you want:" 10 60 "" 3>&1 1>&2 2>&3)
-      exitstatus="$?"
+      exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
         choosen_passw=$(whiptail --title "WORDPRESS USER PASSWORD" --inputbox "Insert the new password:" 10 60 "" 3>&1 1>&2 2>&3)
-        exitstatus="$?"
+        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
           wpcli_user_reset_passw "${wp_site}" "${choosen_user}" "${choosen_passw}"
@@ -310,43 +339,3 @@ function wpcli_main_menu() {
   fi
 
 }
-
-################################################################################
-
-wpcli_install_if_not_installed
-
-# Directory Browser
-startdir=${SITES}
-menutitle="Site Selection Menu"
-directory_browser "${menutitle}" "${startdir}"
-
-wp_site="${filepath}/${filename}"
-
-log_section "WP-CLI Manager"
-
-log_event "info" "Searching WordPress Installation on directory: ${wp_site}" "false"
-
-# Search a wordpress installation on selected directory
-install_path=$(search_wp_config "${wp_site}")
-
-if [[ -z "${install_path}" || "${install_path}" = '' ]]; then
-
-  log_event "info" "WordPress installation not found! Returning to Main Menu" "false"
-  display --indent 2 --text "- Searching WordPress installation" --result "FAIL" --color RED
-  
-  whiptail --title "WARNING" --msgbox "WordPress installation not found! Press Enter to return to the Main Menu." 8 78
-  
-  menu_main_options
-  
-else
-
-  # WordPress installation path
-  wp_site=${install_path}
-
-  log_event "info" "Working with wp_site=${wp_site}" "false"
-  display --indent 2 --text "- Searching WordPress Installation" --result "DONE" --color GREEN
-  display --indent 4 --text "Working on ${wp_site}"
-
-  wpcli_main_menu "${wp_site}"
-
-fi

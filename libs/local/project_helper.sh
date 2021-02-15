@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 ################################################################################
 
 # shellcheck source=${SFOLDER}/libs/wordpress_installer.sh
-source "${SFOLDER}/libs/wordpress_installer.sh"
+# source "${SFOLDER}/libs/wordpress_installer.sh"
 
 #
 # TODO: check when add www.DOMAIN.com and then select other stage != prod
@@ -265,7 +265,7 @@ function project_delete_files() {
 
   # Making a backup of project files
   make_files_backup "${BK_TYPE}" "${SITES}" "${project_domain}"
-  output="$?"
+  output=$?
   if [[ ${output} -eq 0 ]]; then
 
     # Creating new folder structure for old projects
@@ -295,7 +295,7 @@ function project_delete_files() {
 
     # Cloudflare Manager
     project_domain=$(whiptail --title "CLOUDFLARE MANAGER" --inputbox "Do you want to delete the Cloudflare entries for the followings subdomains?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
     
         # Delete Cloudflare entries
@@ -332,7 +332,7 @@ function project_delete_database() {
     # List databases
     databases=$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -Bse 'show databases')
     chosen_database=$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)
-    exitstatus="$?"
+    exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log

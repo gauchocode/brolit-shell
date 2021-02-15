@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 ################################################################################
 
 function php_check_if_installed() {
@@ -398,7 +398,7 @@ function php_select_version_to_work_with() {
   local chosen_php_v
 
   chosen_php_v=$(whiptail --title "PHP Version Selection" --menu "Select the version of PHP you want to work with:" 20 78 10 $(for x in ${php_v}; do echo "${x} [X]"; done) 3>&1 1>&2 2>&3)
-  exitstatus="$?"
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     log_event "debug" "Setting chosen_php_v=${chosen_php_v}"

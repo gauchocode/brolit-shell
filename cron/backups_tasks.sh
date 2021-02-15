@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 ################################################################################
 
 ### Main dir check
@@ -92,6 +92,9 @@ else
   send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
 
   remove_mail_notifications_files
+
+  # Script cleanup
+  cleanup
 
   # Log End
   log_event "info" "LEMP UTILS SCRIPT End -- $(date +%Y%m%d_%H%M)"

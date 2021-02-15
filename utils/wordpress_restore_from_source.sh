@@ -1,27 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.13
+# Version: 3.0.15
 #############################################################################
-
-# shellcheck source=${SFOLDER}/libs/commons.sh
-source "${SFOLDER}/libs/commons.sh"
-# shellcheck source=${SFOLDER}/libs/mysql_helper.sh
-source "${SFOLDER}/libs/mysql_helper.sh"
-# shellcheck source=${SFOLDER}/libs/packages_helper.sh
-source "${SFOLDER}/libs/packages_helper.sh"
-# shellcheck source=${SFOLDER}/libs/wordpress_helper.sh
-source "${SFOLDER}/libs/wordpress_helper.sh"
-# shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
-source "${SFOLDER}/libs/wpcli_helper.sh"
-# shellcheck source=${SFOLDER}/libs/nginx_helper.sh
-source "${SFOLDER}/libs/nginx_helper.sh"
-# shellcheck source=${SFOLDER}/libs/cloudflare_helper.sh
-source "${SFOLDER}/libs/cloudflare_helper.sh"
-# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
-source "${SFOLDER}/libs/mail_notification_helper.sh"
-
-################################################################################
 
 function ask_migration_source_type() {
 
@@ -120,140 +101,143 @@ fi
 
 }
 
-#############################################################################
+function wordpress_restore_from_source() {
 
-# Project details
-project_domain=$(ask_project_domain)
+  # Project details
+  project_domain=$(ask_project_domain)
 
-possible_root_domain="$(get_root_domain "${project_domain}")"
+  possible_root_domain="$(get_root_domain "${project_domain}")"
 
-root_domain=$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")
+  root_domain=$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")
 
-project_name=$(ask_project_name "${project_domain}")
+  project_name=$(ask_project_name "${project_domain}")
 
-project_state=$(ask_project_state "")
+  project_state=$(ask_project_state "")
 
-source_type=$(ask_migration_source_type)
+  source_type=$(ask_migration_source_type)
 
-source_files=$(ask_migration_source_file "$source_type")
+  source_files=$(ask_migration_source_file "$source_type")
 
-source_database=$(ask_migration_source_db "$source_type")
+  source_database=$(ask_migration_source_db "$source_type")
 
-folder_to_install=$(ask_folder_to_install_sites "${SITES}")
+  folder_to_install=$(ask_folder_to_install_sites "${SITES}")
 
-echo " > CREATING TMP DIRECTORY ..."
-mkdir "${SFOLDER}/tmp"
-mkdir "${SFOLDER}/tmp/${project_domain}"
-cd "${SFOLDER}/tmp/${project_domain}"
+  echo " > CREATING TMP DIRECTORY ..."
+  mkdir "${SFOLDER}/tmp"
+  mkdir "${SFOLDER}/tmp/${project_domain}"
+  cd "${SFOLDER}/tmp/${project_domain}"
 
-if [ "${source_type}" = "DIRECTORY" ]; then
+  if [ "${source_type}" = "DIRECTORY" ]; then
 
-  # TODO: use extract function
-  unzip \*.zip \* -d "${SFOLDER}/tmp/${project_domain}"
+    # TODO: use extract function
+    unzip \*.zip \* -d "${SFOLDER}/tmp/${project_domain}"
 
-  # DB
-  mysql_database_import "${project_name}_${project_state}" "${WP_MIGRATION_SOURCE}/${BK_DB_FILE}"
+    # DB
+    mysql_database_import "${project_name}_${project_state}" "${WP_MIGRATION_SOURCE}/${BK_DB_FILE}"
 
-  cd "${folder_to_install}"
+    cd "${folder_to_install}"
 
-  #mkdir ${project_domain}
+    #mkdir ${project_domain}
 
-  cp -r "${SFOLDER}/tmp/${project_domain}" "${folder_to_install}/${project_domain}"
+    cp -r "${SFOLDER}/tmp/${project_domain}" "${folder_to_install}/${project_domain}"
 
-else
+  else
 
-  # Database Backup details
-  bk_db_file=${source_database##*/}
-  #echo -e ${MAGENTA}" > bk_db_file= ${bk_db_file} ..."${ENDCOLOR}
+    # Database Backup details
+    bk_db_file=${source_database##*/}
+    #echo -e ${MAGENTA}" > bk_db_file= ${bk_db_file} ..."${ENDCOLOR}
 
-  # File Backup details
-  bk_f_file=${source_files##*/}
-  #echo -e ${MAGENTA}" > bk_f_file= ${bk_f_file} ..."${ENDCOLOR}
+    # File Backup details
+    bk_f_file=${source_files##*/}
+    #echo -e ${MAGENTA}" > bk_f_file= ${bk_f_file} ..."${ENDCOLOR}
 
-  # Download File Backup
-  log_event "info" "Downloading file backup ${source_files}" "true"
-  wget "${source_files}" >>$LOG
+    # Download File Backup
+    log_event "info" "Downloading file backup ${source_files}" "true"
+    wget "${source_files}" >>$LOG
 
-  # Uncompressing
-  log_event "info" "Uncompressing file backup: ${bk_f_file}" "true"
-  extract "${bk_f_file}"
+    # Uncompressing
+    log_event "info" "Uncompressing file backup: ${bk_f_file}" "true"
+    extract "${bk_f_file}"
 
-  # Download Database Backup
-  log_event "info" "Downloading database backup ${source_database}" "true"
-  wget "${source_database}" >>$LOG
+    # Download Database Backup
+    log_event "info" "Downloading database backup ${source_database}" "true"
+    wget "${source_database}" >>$LOG
 
-  # Create database and user
-  db_project_name=$(mysql_name_sanitize "${project_name}")
-  database_name="${db_project_name}_${project_state}" 
-  database_user="${db_project_name}_user"
-  database_user_passw=$(openssl rand -hex 12)
+    # Create database and user
+    db_project_name=$(mysql_name_sanitize "${project_name}")
+    database_name="${db_project_name}_${project_state}" 
+    database_user="${db_project_name}_user"
+    database_user_passw=$(openssl rand -hex 12)
 
-  mysql_database_create "${database_name}"
-  mysql_user_create "${database_user}" "${database_user_passw}"
-  mysql_user_grant_privileges "${database_user}" "${database_name}"
+    mysql_database_create "${database_name}"
+    mysql_user_create "${database_user}" "${database_user_passw}"
+    mysql_user_grant_privileges "${database_user}" "${database_name}"
 
-  # Extract
-  gunzip -c "${bk_db_file}" > "${project_name}.sql"
-  #extract "${bk_db_file}"
+    # Extract
+    gunzip -c "${bk_db_file}" > "${project_name}.sql"
+    #extract "${bk_db_file}"
 
-  # Import dump file
-  mysql_database_import "${database_name}" "${project_name}.sql"
+    # Import dump file
+    mysql_database_import "${database_name}" "${project_name}.sql"
 
-  # Remove downloaded files
-  echo -e ${CYAN}" > Removing downloaded files ..."${ENDCOLOR}
-  rm "${SFOLDER}/tmp/${project_domain}/${bk_f_file}"
-  rm "${SFOLDER}/tmp/${project_domain}/${bk_db_file}"
+    # Remove downloaded files
+    echo -e ${CYAN}" > Removing downloaded files ..."${ENDCOLOR}
+    rm "${SFOLDER}/tmp/${project_domain}/${bk_f_file}"
+    rm "${SFOLDER}/tmp/${project_domain}/${bk_db_file}"
 
-  # Move to ${folder_to_install}
-  echo -e ${CYAN}" > Moving ${project_domain} to ${folder_to_install} ..."${ENDCOLOR}
-  mv "${SFOLDER}/tmp/${project_domain}" "${folder_to_install}/${project_domain}"
-
-fi
-
-change_ownership "www-data" "www-data" "${folder_to_install}/${project_domain}"
-
-actual_folder="${folder_to_install}/${project_domain}"
-
-install_path=$(search_wp_config "${actual_folder}")
-if [ -z "${install_path}" ]; then
-
-    echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND"${ENDCOLOR}
-
-    # Change file and dir permissions
-    wp_change_permissions "${actual_folder}/${install_path}"
-
-    # Change wp-config.php database parameters
-    if [[ -z "${DB_PASS}" ]]; then
-      wp_update_wpconfig "${actual_folder}/${install_path}" "${project_name}" "${project_state}" ""
-      
-    else
-      wp_update_wpconfig "${actual_folder}/${install_path}" "${project_name}" "${project_state}" "${DB_PASS}"
-      
-    fi
+    # Move to ${folder_to_install}
+    echo -e ${CYAN}" > Moving ${project_domain} to ${folder_to_install} ..."${ENDCOLOR}
+    mv "${SFOLDER}/tmp/${project_domain}" "${folder_to_install}/${project_domain}"
 
   fi
 
-# Create nginx config files for site
-nginx_server_create "${project_domain}" "wordpress" "single"
+  change_ownership "www-data" "www-data" "${folder_to_install}/${project_domain}"
 
-# Get server IP
-#IP=$(dig +short myip.opendns.com @resolver1.opendns.com) 2>/dev/null
+  actual_folder="${folder_to_install}/${project_domain}"
 
-# TODO: Ask for subdomains to change in Cloudflare (root domain asked before)
-# SUGGEST "${project_domain}" and "www${project_domain}"
+  install_path=$(search_wp_config "${actual_folder}")
+  if [ -z "${install_path}" ]; then
 
-# Cloudflare API to change DNS records
-cloudflare_change_a_record "${root_domain}" "${project_domain}"
+      echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND"${ENDCOLOR}
 
-# HTTPS with Certbot
-certbot_helper_installer_menu "${MAILA}" "${project_domain}"
+      # Change file and dir permissions
+      wp_change_permissions "${actual_folder}/${install_path}"
 
-# WP Search and Replace URL
-wp_ask_url_search_and_replace
+      # Change wp-config.php database parameters
+      if [[ -z "${DB_PASS}" ]]; then
+        wp_update_wpconfig "${actual_folder}/${install_path}" "${project_name}" "${project_state}" ""
+        
+      else
+        wp_update_wpconfig "${actual_folder}/${install_path}" "${project_name}" "${project_state}" "${DB_PASS}"
+        
+      fi
 
-HTMLOPEN='<html><body>'
-BODY_SRV_MIG='Migración finalizada en '${ELAPSED_TIME}'<br/>'
-BODY_DB='Database: '${project_name}'_'${project_state}'<br/>Database User: '${project_name}'_user <br/>Database User Pass: '${DB_PASS}'<br/>'
-HTMLCLOSE='</body></html>'
+    fi
 
-sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${VPSNAME} - Migration Complete: ${project_name}" -o message-content-type=html -m "$HTMLOPEN $BODY_SRV_MIG $BODY_DB $BODY_CLF $HTMLCLOSE" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}
+  # Create nginx config files for site
+  nginx_server_create "${project_domain}" "wordpress" "single"
+
+  # Get server IP
+  #IP=$(dig +short myip.opendns.com @resolver1.opendns.com) 2>/dev/null
+
+  # TODO: Ask for subdomains to change in Cloudflare (root domain asked before)
+  # SUGGEST "${project_domain}" and "www${project_domain}"
+
+  # Cloudflare API to change DNS records
+  cloudflare_change_a_record "${root_domain}" "${project_domain}"
+
+  # HTTPS with Certbot
+  certbot_helper_installer_menu "${MAILA}" "${project_domain}"
+
+  # WP Search and Replace URL
+  wp_ask_url_search_and_replace
+
+  HTMLOPEN='<html><body>'
+  BODY_SRV_MIG='Migración finalizada en '${ELAPSED_TIME}'<br/>'
+  BODY_DB='Database: '${project_name}'_'${project_state}'<br/>Database User: '${project_name}'_user <br/>Database User Pass: '${DB_PASS}'<br/>'
+  HTMLCLOSE='</body></html>'
+
+  sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${VPSNAME} - Migration Complete: ${project_name}" -o message-content-type=html -m "$HTMLOPEN $BODY_SRV_MIG $BODY_DB $BODY_CLF $HTMLCLOSE" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}
+
+
+}

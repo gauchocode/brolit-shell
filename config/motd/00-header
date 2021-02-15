@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 #    00-header - create the header of the MOTD
 #    Copyright (C) 2009-2010 Canonical Ltd.
