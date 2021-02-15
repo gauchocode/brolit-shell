@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #########################################################
 # quick Google PageSpeed Insights API tool
 # & gtmetrix api tool & webpagetest.org api usage
