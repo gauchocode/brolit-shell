@@ -20,9 +20,9 @@ function nginx_server_create() {
 
     # Logging
     log_event "info" "Creating nginx configuration file for domain: ${project_domain}"
+    log_event "info" "List of domains or subdomains that will be redirect to project_domain: ${redirect_domains}"
     log_event "debug" "Project Type: ${project_type}"
     log_event "debug" "Server Type: ${server_type}"
-    log_event "info" "List of domains or subdomains that will be redirect to project_domain: ${redirect_domains}"
 
     # Create nginx config files for site
 
@@ -32,6 +32,7 @@ function nginx_server_create() {
         mv "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-available/${project_domain}_backup"
         # Remove symbolic link
         rm "${WSERVER}/sites-enabled/${project_domain}"
+
         # Show message
         display --indent 6 --text "- Backing up actual nginx server config" --result DONE --color GREEN
 
@@ -159,6 +160,7 @@ function nginx_server_change_status() {
     case ${project_status} in
 
         online)
+
             log_event "info" "New project status: ${project_status}"
             if [[ -f "${WSERVER}/sites-available/${project_domain}" ]]; then
 
@@ -178,6 +180,7 @@ function nginx_server_change_status() {
             ;;
 
         offline)
+
             log_event "info" "New project status: ${project_status}"
             if [[ -h "${WSERVER}/sites-enabled/${project_domain}" ]]; then
 
@@ -310,10 +313,12 @@ function nginx_reconfigure() {
 
 function nginx_configuration_test() {
 
+    local result
+
     #Test the validity of the nginx configuration
     result=$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)
 
-    if [[ "${result}" = "successful" ]];then
+    if [[ ${result} = "successful" ]];then
 
         # Reload webserver
         service nginx reload
@@ -343,6 +348,8 @@ function nginx_new_default_server() {
 
 function nginx_delete_default_directory() {
 
+    local nginx_default_dir
+
     # Remove html default nginx folders
     nginx_default_dir="/var/www/html"
     if [[ -d "${nginx_default_dir}" ]]; then
@@ -354,6 +361,8 @@ function nginx_delete_default_directory() {
 }
 
 function nginx_create_globals_config() {
+
+    local nginx_globals
 
     # nginx.conf broobe standard configuration
     nginx_globals="/etc/nginx/globals/"
@@ -392,7 +401,7 @@ function nginx_create_empty_nginx_conf() {
 
     local path=$1
     
-    if [[ ! -f ${path}/nginx.conf ]];then
+    if [[ ! -f "${path}/nginx.conf" ]];then
 
         # Create empty file
         touch "${path}/nginx.conf"
