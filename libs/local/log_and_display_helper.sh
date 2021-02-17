@@ -22,8 +22,8 @@ function _spinner() {
           TEXT=$2
           INDENT=6
           LINESIZE=$(export LC_ALL= ; echo "${TEXT}" | wc -m | tr -d ' ')
-          if [ "${INDENT}" -gt 0 ]; then SPACES=$((62 - INDENT - LINESIZE)); fi
-          if [ "${SPACES}" -lt 0 ]; then SPACES=0; fi
+          if [[ ${INDENT} -gt 0 ]]; then SPACES=$((62 - INDENT - LINESIZE)); fi
+          if [[ ${SPACES} -lt 0 ]]; then SPACES=0; fi
 
           echo -e -n "\033[${INDENT}C${TEXT}${NORMAL}\033[${SPACES}C" >&2
 
@@ -100,44 +100,44 @@ function log_event() {
 
     success)
       echo " > SUCCESS: ${message}" >> "${LOG}"
-      if [ "${console_display}" = "true" ]; then
+      if [[ "${console_display}" = "true" ]]; then
         echo -e "${B_GREEN} > ${message}${ENDCOLOR}" >&2
       fi
     ;;
 
     info)
       echo " > INFO: ${message}" >> "${LOG}"
-      if [ "${console_display}" = "true" ]; then
+      if [[ "${console_display}" = "true" ]]; then
         echo -e "${B_CYAN} > ${message}${ENDCOLOR}" >&2
       fi
     ;;
 
     warning)
       echo " > WARNING: ${message}" >> "${LOG}"
-      if [ "${console_display}" = "true" ]; then
+      if [[ "${console_display}" = "true" ]]; then
         echo -e "${YELLOW}${ITALIC} > ${message}${ENDCOLOR}" >&2
       fi
     ;;
 
     error)
       echo " > ERROR: ${message}" >> "${LOG}"
-      if [ "${console_display}" = "true" ]; then
+      if [[ "${console_display}" = "true" ]]; then
         echo -e "${RED} > ${message}${ENDCOLOR}" >&2
       fi
     ;;
 
     critical)
       echo " > CRITICAL: ${message}" >> "${LOG}"
-      if [ "${console_display}" = "true" ]; then
+      if [[ "${console_display}" = "true" ]]; then
         echo -e "${B_RED} > ${message}${ENDCOLOR}" >&2
       fi
     ;;
 
     debug)
-      if [ "${DEBUG}" -eq 1 ]; then
+      if [[ "${DEBUG}" -eq 1 ]]; then
 
         echo " > DEBUG: ${message}" >> "${LOG}"
-        if [ "${console_display}" = "true" ]; then
+        if [[ "${console_display}" = "true" ]]; then
           echo -e "${B_MAGENTA} > ${message}${ENDCOLOR}" >&2
         fi
 
@@ -146,7 +146,7 @@ function log_event() {
 
     *)
       echo " > ${message}" >> "${LOG}"
-      if [ "${console_display}" = "true" ]; then
+      if [[ "${console_display}" = "true" ]]; then
         echo -e "${CYAN}${B_DEFAULT} > ${message}${ENDCOLOR}" >&2
       fi
     ;;
@@ -183,7 +183,7 @@ function log_section() {
 
   local message=$1
 
-  if [ "${QUIET}" -eq 0 ]; then
+  if [[ ${QUIET} -eq 0 ]]; then
     # Console Display
     echo "" >&2
     echo -e "[+] Performing Action: ${YELLOW}${B_DEFAULT}${message}${ENDCOLOR}" >&2
@@ -203,7 +203,7 @@ function log_subsection() {
 
   local message=$1
 
-    if [ "${QUIET}" -eq 0 ]; then
+    if [[ "${QUIET}" -eq 0 ]]; then
       # Console Display
       echo "" >&2
       echo -e "    [·] ${CYAN}${B_DEFAULT}${message}${ENDCOLOR}" >&2
@@ -300,28 +300,28 @@ function display() {
       shift
   done
 
-  if [ -z "${RESULT}" ]; then
+  if [[ -z "${RESULT}" ]]; then
       RESULTPART=""
   else
-      if [ ${CRONJOB} -eq 0 ]; then
+      if [[ ${CRONJOB} -eq 0 ]]; then
           RESULTPART=" [ ${COLOR}${B_DEFAULT}${RESULT}${NORMAL} ]"
       else
           RESULTPART=" [ ${RESULT} ]"
       fi
   fi
 
-  if [ -n "${TEXT}" ]; then
+  if [[ -n "${TEXT}" ]]; then
       SHOW=0
 
-      if [ ${SHOW} -eq 0 ]; then
+      if [[ ${SHOW} -eq 0 ]]; then
           # Display:
           # - for full shells, count with -m instead of -c, to support language locale (older busybox does not have -m)
           # - wc needs LANG to deal with multi-bytes characters but LANG has been unset in include/consts
           LINESIZE=$(export LC_ALL= ; echo "${TEXT}" | wc -m | tr -d ' ')
-          if [ "${SHOWDEBUG}" -eq 1 ]; then DEBUGTEXT=" [${PURPLE}DEBUG${NORMAL}]"; else DEBUGTEXT=""; fi
-          if [ "${INDENT}" -gt 0 ]; then SPACES=$((62 - INDENT - LINESIZE)); fi
-          if [ "${SPACES}" -lt 0 ]; then SPACES=0; fi
-          if [ "${CRONJOB}" -eq 0 ]; then
+          if [[ "${SHOWDEBUG}" -eq 1 ]]; then DEBUGTEXT=" [${PURPLE}DEBUG${NORMAL}]"; else DEBUGTEXT=""; fi
+          if [[ "${INDENT}" -gt 0 ]]; then SPACES=$((62 - INDENT - LINESIZE)); fi
+          if [[ "${SPACES}" -lt 0 ]]; then SPACES=0; fi
+          if [[ "${CRONJOB}" -eq 0 ]]; then
             # Check if we already have already discovered a proper echo command tool. It not, set it default to 'echo'.
             #if [ "${ECHOCMD}" = "" ]; then ECHOCMD="echo"; fi
             echo -e "\033[${INDENT}C${TCOLOR}${TSTYLE}${TEXT}${NORMAL}\033[${SPACES}C${RESULTPART}${DEBUGTEXT}" >&2

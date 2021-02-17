@@ -3,6 +3,12 @@
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Version: 3.0.15
 ################################################################################
+#
+# It uses globals defined on telegram.conf
+#
+# 	${botfather_key}
+#	${telegram_user_id}
+#
 
 function telegram_send_message() {
 
@@ -41,10 +47,12 @@ function telegram_send_message() {
 	
 	log_event "info" "Sending Telegram notification ..."
 
+	log_event "debug" "Running: curl --silent --insecure --max-time ${timeout} --data chat_id=${telegram_user_id} --data disable_notification=${notif_sound} --data parse_mode=${display_mode} --data text=${notif_text} ${notif_url}"
+
 	telegram_notif_response=$(curl --silent --insecure --max-time "${timeout}" --data chat_id="${telegram_user_id}" --data "disable_notification=${notif_sound}" --data "parse_mode=${display_mode}" --data "text=${notif_text}" "${notif_url}")
 	telegram_notif_result=$(echo "${telegram_notif_response}" | grep "ok" | cut -d ":" -f2 | cut -d "," -f1)
 
-	if [ "${telegram_notif_result}" = "true" ]; then
+	if [[ "${telegram_notif_result}" = "true" ]]; then
 		# Log success
 		log_event "success" "Telegram notification sent!"
 		display --indent 2 --text "- Sending Telegram notification" --result "DONE" --color GREEN

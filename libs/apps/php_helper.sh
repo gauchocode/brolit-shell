@@ -102,9 +102,9 @@ function php_set_version_on_config() {
   local php_v=$1
   local config_file=$2
 
-  if [ "${config_file}" != "" ];then
+  if [[ "${config_file}" != "" ]];then
     
-    if [ "${php_v}" == "" ];then
+    if [[ "${php_v}" == "" ]];then
 
       php_v="$(php_check_installed_version)"
       log_event "debug" "PHP installed version: ${php_v}"
@@ -362,7 +362,7 @@ function php_fpm_optimizations() {
         #Test the validity of your php-fpm configuration
         result=$(php-fpm"${PHP_V}" -t 2>&1 | grep -w "test" | cut -d"." -f3 | cut -d" " -f4)
 
-        if [ "${result}" = "successful" ];then
+        if [[ "${result}" = "successful" ]];then
           log_event "success" "PHP optimizations applied!"
           display --indent 6 --text "- Applying optimizations" --result "DONE" --color GREEN
 

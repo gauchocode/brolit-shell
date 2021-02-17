@@ -151,7 +151,7 @@ function mail_package_status_section() {
     pkg_details=$(mail_package_section "${PACKAGES[@]}") # ${PACKAGES[@]} is a Global array with packages names
 
     #if not empty, system is outdated
-    if [ "${pkg_details}" != "" ]; then
+    if [[ ${pkg_details} != "" ]]; then
         # Changing global
         OUTDATED_PACKAGES=true
 
@@ -194,14 +194,14 @@ function mail_package_section() {
     for package in "${PACKAGES[@]}"; do
 
         package_version_installed="$(apt-cache policy "${package}" | grep Installed | cut -d ':' -f 2)"
-        if [ "${package_version_installed}" = "(none)" ] && [ "${package}" = "mysql-server" ];then
+        if [[ ${package_version_installed} = "(none)" ]] && [[ ${package} = "mysql-server" ]];then
             package="mariadb-server"
             package_version_installed="$(apt-cache policy "${package}" | grep Installed | cut -d ':' -f 2)"
         fi
 
         package_version_candidate=$(apt-cache policy "${package}" | grep Candidate | cut -d ':' -f 2)
 
-        if [ "${package_version_installed}" != "${package_version_candidate}" ]; then
+        if [[ "${package_version_installed}" != "${package_version_candidate}" ]]; then
 
             # Return
             echo "<div style=\"color:#000;font-size:12px;line-height:24px;padding-left:10px;\">${package} ${package_version_installed} -> ${package_version_candidate}</div>"
@@ -261,7 +261,7 @@ function mail_cert_section() {
                 
                 cert_days=$(certbot_certificate_valid_days "${domain}")
                 
-                if [ "${cert_days}" == "" ]; then
+                if [[ ${cert_days} == "" ]]; then
                     # GREY LABEL
                     email_cert_days_container=" <span style=\"color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;\">"
                     email_cert_days="${email_cert_days_container} no certificate"
@@ -400,7 +400,7 @@ function mail_filesbackup_section() {
 
         files_label_end="</div>"
 
-        if [ "${DUP_BK}" = true ]; then
+        if [[ "${DUP_BK}" = true ]]; then
             DBK_SIZE=$(du -hs "${DUP_ROOT}" | cut -f1)
             dbk_size_label="Duplicity Backup size: <b>${DBK_SIZE}</b><br /><b>Duplicity Backup includes:</b><br />${DUP_FOLDERS}"
 
@@ -559,7 +559,7 @@ function mail_mysqlbackup_section() {
 
     backup_type="Database"
 
-    if [ "${ERROR}" = true ]; then
+    if [[ ${ERROR} = true ]]; then
         # Changing global
         STATUS_BACKUP_DBS="ERROR"
 

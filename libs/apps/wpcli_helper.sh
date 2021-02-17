@@ -10,7 +10,7 @@ function wpcli_install_if_not_installed() {
     
     wpcli="$(which wp)"
 
-    if [ ! -x "${wpcli}" ]; then
+    if [[ ! -x "${wpcli}" ]]; then
         wpcli_install
     fi
 
@@ -315,13 +315,13 @@ function wpcli_core_reinstall() {
 
     local wpcli_result
 
-    if [ "${wp_site}" != "" ]; then
+    if [[ "${wp_site}" != "" ]]; then
 
         log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} core download --skip-content --force"
 
         wpcli_result=$(sudo -u www-data wp --path="${wp_site}" core download --skip-content --force 2>&1 | grep "Success" | cut -d ":" -f1)
 
-        if [ "${wpcli_result}" = "Success" ]; then
+        if [[ "${wpcli_result}" = "Success" ]]; then
 
             # Log Success
             log_event "success" "Wordpress re-installed"

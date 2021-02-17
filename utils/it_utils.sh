@@ -43,7 +43,7 @@ function it_utils_menu() {
     
       new_ssh_port=$(whiptail --title "CHANGE SSH PORT" --inputbox "Insert the new SSH port:" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
+      if [[ ${exitstatus} = 0 ]]; then
         change_current_ssh_port "${new_ssh_port}"
       fi
     fi
@@ -52,7 +52,7 @@ function it_utils_menu() {
     
       new_server_hostname=$(whiptail --title "CHANGE SERVER HOSTNAME" --inputbox "Insert the new hostname:" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
+      if [[ ${exitstatus} = 0 ]]; then
         change_server_hostname "${new_server_hostname}"
       fi
     fi
@@ -61,7 +61,7 @@ function it_utils_menu() {
     
       floating_IP=$(whiptail --title "ADD FLOATING IP" --inputbox "Insert the floating IP:" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
+      if [[ ${exitstatus} = 0 ]]; then
         add_floating_IP "${floating_IP}"
       fi
     fi
@@ -70,7 +70,7 @@ function it_utils_menu() {
     
       db_root_psw=$(whiptail --title "MYSQL ROOT PASSWORD" --inputbox "Insert the new root password for MySQL:" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
+      if [[ ${exitstatus} = 0 ]]; then
         # shellcheck source=${SFOLDER}/libs/mysql_helper.sh
         source "${SFOLDER}/libs/mysql_helper.sh" "${IP_TO_TEST}"
         mysql_root_psw_change "${db_root_psw}"
@@ -81,7 +81,7 @@ function it_utils_menu() {
     
       IP_TO_TEST=$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
+      if [[ ${exitstatus} = 0 ]]; then
         # shellcheck source=${SFOLDER}/tools/third-party/blacklist-checker/bl.sh
         source "${SFOLDER}/tools/third-party/blacklist-checker/bl.sh" "${IP_TO_TEST}"
       fi
@@ -186,7 +186,7 @@ function add_floating_IP() {
   log_subsection "Adding Floating IP"
   log_event "info" "Trying to add ${floating_IP} as floating ip on Ubuntu ${ubuntu_v}" "false"
 
-  if [ "${ubuntu_v}" == "1804" ]; then
+  if [[ "${ubuntu_v}" == "1804" ]]; then
    
    cp "${SFOLDER}/config/networking/60-my-floating-ip.cfg" /etc/network/interfaces.d/60-my-floating-ip.cfg
    sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/network/interfaces.d/60-my-floating-ip.cfg
@@ -200,7 +200,7 @@ function add_floating_IP() {
    
   else
 
-    if [ "${ubuntu_v}" == "2004" ]; then
+    if [[ "${ubuntu_v}" == "2004" ]]; then
       
       cp "${SFOLDER}/config/networking/60-floating-ip.yaml" /etc/netplan/60-floating-ip.yaml
       sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/netplan/60-floating-ip.yaml

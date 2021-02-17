@@ -93,7 +93,7 @@ function check_packages_required() {
 
   # Check if sendemail is installed
   SENDEMAIL="$(which sendemail)"
-  if [ ! -x "${SENDEMAIL}" ]; then
+  if [[ ! -x "${SENDEMAIL}" ]]; then
     display --indent 2 --text "- Installing sendemail"
     apt-get --yes install sendemail libio-socket-ssl-perl -qq > /dev/null
     clear_last_line
@@ -102,7 +102,7 @@ function check_packages_required() {
 
   # Check if pv is installed
   PV="$(which pv)"
-  if [ ! -x "${PV}" ]; then
+  if [[ ! -x "${PV}" ]]; then
     display --indent 2 --text "- Installing pv"
     apt-get --yes install pv -qq > /dev/null
     clear_last_line
@@ -111,7 +111,7 @@ function check_packages_required() {
 
   # Check if bc is installed
   BC="$(which bc)"
-  if [ ! -x "${BC}" ]; then
+  if [[ ! -x "${BC}" ]]; then
     display --indent 2 --text "- Installing bc"
     apt-get --yes install bc -qq > /dev/null
     clear_last_line
@@ -120,7 +120,7 @@ function check_packages_required() {
 
   # Check if dig is installed
   DIG="$(which dig)"
-  if [ ! -x "${DIG}" ]; then
+  if [[ ! -x "${DIG}" ]]; then
     display --indent 2 --text "- Installing dnsutils"
     apt-get --yes install dnsutils -qq > /dev/null
     clear_last_line
@@ -129,7 +129,7 @@ function check_packages_required() {
 
   # Check if net-tools is installed
   IFCONFIG="$(which ifconfig)"
-  if [ ! -x "${IFCONFIG}" ]; then
+  if [[ ! -x "${IFCONFIG}" ]]; then
     display --indent 2 --text "- Installing net-tools"
     apt-get --yes install net-tools -qq > /dev/null
     clear_last_line
@@ -138,7 +138,7 @@ function check_packages_required() {
 
   # Check if lbzip2 is installed
   LBZIP2="$(which lbzip2)"
-  if [ ! -x "${LBZIP2}" ]; then
+  if [[ ! -x "${LBZIP2}" ]]; then
     display --indent 2 --text "- Installing lbzip2"
     apt-get --yes install lbzip2 -qq > /dev/null
     clear_last_line
@@ -147,7 +147,7 @@ function check_packages_required() {
 
   # Check if zip is installed
   ZIP="$(which zip)"
-  if [ ! -x "${ZIP}" ]; then
+  if [[ ! -x "${ZIP}" ]]; then
     display --indent 2 --text "- Installing zip"
     apt-get --yes install zip -qq > /dev/null
     clear_last_line
@@ -156,7 +156,7 @@ function check_packages_required() {
 
   # Check if unzip is installed
   UNZIP="$(which unzip)"
-  if [ ! -x "${UNZIP}" ]; then
+  if [[ ! -x "${UNZIP}" ]]; then
     display --indent 2 --text "- Installing unzip"
     apt-get --yes install unzip -qq > /dev/null
     clear_last_line
@@ -165,7 +165,7 @@ function check_packages_required() {
 
   # Check if unzip is installed
   GIT="$(which git)"
-  if [ ! -x "${GIT}" ]; then
+  if [[ ! -x "${GIT}" ]]; then
     display --indent 2 --text "- Installing git"
     apt-get --yes install git -qq > /dev/null
     clear_last_line
@@ -174,7 +174,7 @@ function check_packages_required() {
 
   # MOGRIFY
   MOGRIFY="$(which mogrify)"
-  if [ ! -x "${MOGRIFY}" ]; then
+  if [[ ! -x "${MOGRIFY}" ]]; then
     # Install image optimize packages
     install_image_optimize_packages
   fi
@@ -194,7 +194,7 @@ function check_packages_required() {
   # MySQL
   MYSQL="$(which mysql)"
   MYSQLDUMP="$(which mysqldump)"
-  if [ ! -x "${MYSQL}" ]; then
+  if [[ ! -x "${MYSQL}" ]]; then
     display --indent 2 --text "- Checking MySQL installation" --result "WARNING" --color YELLOW
     display --indent 4 --text "MySQL not found" --tcolor YELLOW
     return 1
@@ -202,7 +202,7 @@ function check_packages_required() {
 
  # PHP
   PHP="$(which php)"
-  if [ ! -x "${PHP}" ]; then
+  if [[ ! -x "${PHP}" ]]; then
     display --indent 2 --text "- Checking PHP installation" --result "WARNING" --color YELLOW
     display --indent 4 --text "PHP not found" --tcolor YELLOW
     return 1
@@ -210,7 +210,7 @@ function check_packages_required() {
 
   # CERTBOT
   CERTBOT="$(which certbot)"
-  if [ ! -x "${CERTBOT}" ]; then
+  if [[ ! -x "${CERTBOT}" ]]; then
     display --indent 2 --text "- Checking CERTBOT installation" --result "WARNING" --color YELLOW
     display --indent 4 --text "CERTBOT not found" --tcolor YELLOW
     return 1

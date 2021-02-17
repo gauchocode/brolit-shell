@@ -180,12 +180,12 @@ function _check_distro() {
 
   local distro_old
 
-  #for ext check
+  # For ext check
   distro_old="false"
 
   # Running Ubuntu?
   DISTRO=$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $1}')
-  if [ ! "$DISTRO" = "Ubuntu" ]; then
+  if [[ ! ${DISTRO} = "Ubuntu" ]]; then
     log_event "critical" "This script only run on Ubuntu ... Exiting" "true"
     return 1
 
@@ -195,7 +195,7 @@ function _check_distro() {
     
     log_event "info" "ACTUAL DISTRO: ${DISTRO} ${DISTRO_V}"
 
-    if [ ! "${DISTRO_V}" -ge "${MIN_V}" ]; then
+    if [[ ! ${DISTRO_V} -ge ${MIN_V} ]]; then
       whiptail --title "UBUNTU VERSION WARNING" --msgbox "Ubuntu version must be 18.04 or 20.04! Use this script only for backup or restore purpose." 8 78
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
@@ -230,11 +230,11 @@ function script_init() {
   BAKWP="${SFOLDER}/tmp"
 
   # Creating temporary folders
-  if [ ! -d "${BAKWP}" ]; then
+  if [[ ! -d ${BAKWP} ]]; then
     echo " > Folder ${BAKWP} doesn't exist. Creating ..."
     mkdir "${BAKWP}"
   fi
-  if [ ! -d "${BAKWP}/${NOW}" ]; then
+  if [[ ! -d "${BAKWP}/${NOW}" ]]; then
     echo " > Folder ${BAKWP}/${NOW} doesn't exist. Creating ..."
     mkdir "${BAKWP}/${NOW}"
   fi
@@ -242,7 +242,7 @@ function script_init() {
   # Log
   TIMESTAMP=$(date +%Y%m%d_%H%M%S)
   PATH_LOG="${SFOLDER}/log"
-  if [ ! -d "${SFOLDER}/log" ]; then
+  if [[ ! -d "${SFOLDER}/log" ]]; then
     mkdir "${SFOLDER}/log"
   fi
 
@@ -356,7 +356,7 @@ function script_init() {
   NETWORK_INTERFACE="$(string_remove_spaces "${NETWORK_INTERFACE}")"
   SERVER_IP="$(ifconfig "${NETWORK_INTERFACE}" | grep 'inet ' | awk '{print $2}' | sed 's/addr://')"
   # Fallback
-  if [ "${SERVER_IP}" == "" ]; then
+  if [[ ${SERVER_IP} == "" ]]; then
     # Alternative method to get public IP
     SERVER_IP=$(curl -s http://ipv4.icanhazip.com)
   fi
@@ -374,15 +374,15 @@ function customize_ubuntu_login_message() {
   # TODO: screenfetch support?
 
   # Remove unnecesary messages
-  if [ -d "/etc/update-motd.d/10-help-text " ]; then
+  if [[ -d "/etc/update-motd.d/10-help-text " ]]; then
     rm "/etc/update-motd.d/10-help-text "
 
   fi
-  if [ -d "/etc/update-motd.d/50-motd-news" ]; then
+  if [[ -d "/etc/update-motd.d/50-motd-news" ]]; then
     rm "/etc/update-motd.d/50-motd-news"
 
   fi
-  if [ -d "/etc/update-motd.d/00-header" ]; then
+  if [[ -d "/etc/update-motd.d/00-header" ]]; then
     rm "/etc/update-motd.d/00-header"
 
   fi
@@ -458,28 +458,28 @@ function validator_cron_format() {
   limit=59
   check_format=''
 
-  if [ "$2" = 'hour' ]; then
+  if [[ "$2" = 'hour' ]]; then
       limit=23
   fi
   
-  if [ "$2" = 'day' ]; then
+  if [[ "$2" = 'day' ]]; then
       limit=31
   fi
 
-  if [ "$2" = 'month' ]; then
+  if [[ "$2" = 'month' ]]; then
       limit=12
   fi
 
-  if [ "$2" = 'wday' ]; then
+  if [[ "$2" = 'wday' ]]; then
       limit=7
   fi
 
-  if [ "$1" = '*' ]; then
+  if [[ "$1" = '*' ]]; then
       check_format='ok'
   fi
   
   if [[ "$1" =~ ^[\*]+[/]+[0-9] ]]; then
-      if [ "$(echo $1 |cut -f 2 -d /)" -lt $limit ]; then
+      if [[ "$(echo $1 |cut -f 2 -d /)" -lt $limit ]]; then
           check_format='ok'
       fi
   fi
@@ -490,7 +490,7 @@ function validator_cron_format() {
       crn_values=${crn_values//-/ }
       crn_values=${crn_values//\// }
       for crn_vl in $crn_values; do
-          if [ "$crn_vl" -gt $limit ]; then
+          if [[ "$crn_vl" -gt $limit ]]; then
               check_format='invalid'
           fi
       done
@@ -505,7 +505,7 @@ function validator_cron_format() {
             fi
       done
   
-  if [ "$check_format" != 'ok' ]; then
+  if [[ ${check_format} != 'ok' ]]; then
       check_result $E_INVALID "invalid $2 format :: $1"
   fi
 
@@ -753,11 +753,11 @@ function get_project_type() {
   local project_type
   local is_wp
 
-  if [ "${dir_path}" != "" ];then
+  if [[ ${dir_path} != "" ]];then
 
     is_wp=$(search_wp_config "${dir_path}")
 
-    if [ "${is_wp}" != "" ];then
+    if [[ ${is_wp} != "" ]];then
 
       project_type="wordpress"
 
@@ -889,7 +889,7 @@ function extract () {
 
   log_event "info" "Trying to extract compressed file: ${file}"
 
-  if [ -f "${file}" ]; then
+  if [[ -f "${file}" ]]; then
 
       case "${file}" in
 
@@ -1079,7 +1079,7 @@ function install_crontab_script() {
 
   cron_file="/var/spool/cron/crontabs/root"
 
-  if [ ! -f ${cron_file} ]; then
+  if [[ ! -f ${cron_file} ]]; then
     log_event "info" "Cron file for root does not exist, creating ..."
 
 	  touch "${cron_file}"
@@ -1092,7 +1092,7 @@ function install_crontab_script() {
 
   grep -qi "${script}" "${cron_file}"
   grep_result=$?
-	if [ ${grep_result} != 0 ]; then
+	if [[ ${grep_result} != 0 ]]; then
 
     log_event "info" "Updating cron job for script: ${script}"
     /bin/echo "${scheduled_time} ${script}" >> "${cron_file}"
@@ -1486,7 +1486,7 @@ function menu_cron_script_tasks() {
       suggested_cron="45 04 * * *" # Every day at 04:45 AM
       scheduled_time=$(whiptail --title "CRON OPTIMIZER-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
       exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
+      if [[ ${exitstatus} = 0 ]]; then
         
         install_crontab_script "${SFOLDER}/cron/optimizer_tasks.sh" "${scheduled_time}"
 
@@ -1754,7 +1754,7 @@ function menu_project_utils () {
 
       URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
+      if [[ ${exitstatus} = 0 ]]; then
         # shellcheck source=${SFOLDER}/tools/third-party/google-insights-api-tools/gitools_v5.sh
         source "${SFOLDER}/tools/third-party/google-insights-api-tools/gitools_v5.sh" gtmetrix "${URL_TO_TEST}"
       fi

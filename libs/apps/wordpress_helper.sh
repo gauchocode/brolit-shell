@@ -67,7 +67,7 @@ function wp_update_wpconfig() {
   fi
 
   sed_result=$?
-  if [ ${sed_result} -eq 0 ]; then
+  if [[ ${sed_result} -eq 0 ]]; then
     display --indent 6 --text "- Changing database parameters on wp-config.php" --result "DONE" --color GREEN
   else
     display --indent 6 --text "- Changing database parameters on wp-config.php" --result "FAIL" --color RED
@@ -87,7 +87,7 @@ function wp_change_permissions() {
   
   find "${project_dir}" -type d -exec chmod g+s {} \;
 
-  if [ -d "${project_dir}/wp-content" ]; then
+  if [[ -d "${project_dir}/wp-content" ]]; then
 
     chmod g+w "${project_dir}/wp-content"
     chmod -R g+w "${project_dir}/wp-content/themes"
@@ -221,7 +221,7 @@ function wp_ask_url_search_and_replace() {
         if [[ ${exitstatus} -eq 0 ]]; then
 
           ### Creating temporary folders
-          if [ ! -d "${SFOLDER}/tmp-backup" ]; then
+          if [[ ! -d "${SFOLDER}/tmp-backup" ]]; then
               mkdir "${SFOLDER}/tmp-backup"
               log_event "info" "Temp files directory created: ${SFOLDER}/tmp-backup" "false"
           fi
