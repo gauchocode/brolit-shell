@@ -20,7 +20,7 @@ function composer_install () {
   php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
   actual_signature="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
 
-  if [ "$expected_signature" != "$actual_signature" ]; then
+  if [[ "$expected_signature" != "$actual_signature" ]]; then
       >&2 echo 'ERROR: Invalid installer signature' >>$LOG
       rm composer-setup.php
       return 1
@@ -30,7 +30,7 @@ function composer_install () {
   php composer-setup.php --quiet --install-dir=/usr/local/bin --filename=composer
   composer_result=$?
 
-  if [ "${composer_result}" -eq 0 ]; then
+  if [[ "${composer_result}" -eq 0 ]]; then
     rm composer-setup.php
 
     log_event "success" "Composer Installer finished" "false"

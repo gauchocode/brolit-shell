@@ -65,7 +65,7 @@ function nginx_check_if_installed() {
     nginx_installed="true"
 
     NGINX="$(which nginx)"
-    if [ ! -x "${NGINX}" ]; then
+    if [[ ! -x "${NGINX}" ]]; then
         nginx_installed="false"
     fi
 

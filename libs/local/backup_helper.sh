@@ -178,7 +178,7 @@ function make_server_files_backup() {
     
     (${TAR} cjf "${BAKWP}/${NOW}/${bk_file}" --directory="${bk_path}" "${directory_to_backup}")
 
-    display --indent 6 --text "- Making ${bk_sup_type} backup" --result "DONE" --color GREEN
+    display --indent 6 --text "- Making ${YELLOW}${bk_sup_type}${ENDCOLOR} backup" --result "DONE" --color GREEN
     display --indent 6 --text "- Compressing directory ${bk_path}" --result "DONE" --color GREEN
 
     # Test backup file
@@ -266,7 +266,7 @@ function make_mailcow_backup() {
     bk_file="${bk_type}_files-${NOW}.tar.bz2"
 
     log_event "info" "Trying to make a backup of ${MAILCOW} ..."
-    display --indent 6 --text "- Making ${MAILCOW} backup" --result "DONE" --color GREEN
+    display --indent 6 --text "- Making ${YELLOW}${MAILCOW}${ENDCOLOR} backup" --result "DONE" --color GREEN
 
     "${MAILCOW}/helper-scripts/backup_and_restore.sh" backup all
     mailcow_backup_result=$?
@@ -400,12 +400,14 @@ function make_sites_files_backup() {
   # Get all directories
   TOTAL_SITES=$(get_all_directories "${SITES}")
 
-  ## Get length of $TOTAL_SITES
+  # Get length of $TOTAL_SITES
   COUNT_TOTAL_SITES="$(find "${SITES}" -maxdepth 1 -type d -printf '.' | wc -c)"
   COUNT_TOTAL_SITES="$((COUNT_TOTAL_SITES - 1))"
 
+  # Log
   log_event "info" "Found ${COUNT_TOTAL_SITES} directories"
   display --indent 6 --text "- Directories found" --result "${COUNT_TOTAL_SITES}" --color WHITE
+  log_break "true"
 
   # FILES BACKUP GLOBALS
   declare -i BK_FILE_INDEX=0
@@ -501,11 +503,12 @@ function make_files_backup() {
   local bk_file="${directory_to_backup}_${bk_type}-files_${NOW}.tar.bz2"
 
   log_event "info" "Making backup file from: ${directory_to_backup} ..."
-  display --indent 6 --text "- Making ${directory_to_backup} backup" --result "DONE" --color GREEN
+  display --indent 6 --text "- Making ${YELLOW}${directory_to_backup}${ENDCOLOR} backup" --result "DONE" --color GREEN
 
   (${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv --width 70 --size "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${BAKWP}/${NOW}/${bk_file}")2>&1
   
   # Clear pipe output
+  clear_last_line
   clear_last_line
 
   # Test backup file

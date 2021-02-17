@@ -6,7 +6,7 @@
 
 function monit_configure() {
 
-  if [ ! -x "${PHP_V}" ]; then
+  if [[ ! -x "${PHP_V}" ]]; then
     PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
   
   fi
@@ -58,7 +58,7 @@ function monit_installer_menu() {
   ### Checking if Monit is installed
   MONIT="$(which monit)"
 
-  if [ ! -x "${MONIT}" ]; then
+  if [[ ! -x "${MONIT}" ]]; then
 
     while true; do
 

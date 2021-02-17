@@ -7,7 +7,7 @@
 ### Main dir check
 SFOLDER=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 SFOLDER=$( cd "$( dirname "${SFOLDER}" )" && pwd )
-if [ -z "${SFOLDER}" ]; then
+if [[ -z "${SFOLDER}" ]]; then
   exit 1  # error; the path is not accessible
 fi
 
@@ -16,7 +16,7 @@ source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
 
-if [ -t 1 ]; then
+if [[ -t 1 ]]; then
 
   # Running from terminal
   echo " > Error: The script can only be runned by runner. Exiting ..."
