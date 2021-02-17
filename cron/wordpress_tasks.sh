@@ -7,7 +7,7 @@
 ### Main dir check
 SFOLDER=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 SFOLDER=$( cd "$( dirname "${SFOLDER}" )" && pwd )
-if [ -z "${SFOLDER}" ]; then
+if [[ -z "${SFOLDER}" ]]; then
   exit 1  # error; the path is not accessible
 fi
 
@@ -18,7 +18,7 @@ source "${SFOLDER}/libs/commons.sh"
 
 log_event "info" "Running backups_tasks.sh"
 
-if [ -t 1 ]; then
+if [[ -t 1 ]]; then
 
   # Running from terminal
   echo " > Error: The script can only be runned by cron. Exiting ..."
@@ -68,7 +68,7 @@ else
         # If is wp
         is_wp=$(is_wp_project "${site}")
         
-        if [ "${is_wp}" = "true" ]; then
+        if [[ ${is_wp} = "true" ]]; then
 
           telegram_text=""
 
@@ -78,7 +78,7 @@ else
           do
 
             # Ommit empty elements created by spaces on mapfile
-            if [ "${wpcli_core_verify_result}" != "" ]; then
+            if [[ "${wpcli_core_verify_result}" != "" ]]; then
 
               # Check results
               wpcli_core_verify_result_file=$(echo "${wpcli_core_verify_result}" |  grep "File doesn't" | cut -d ":" -f3)
@@ -87,7 +87,7 @@ else
               wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
 
               # Ommit empty elements
-              if [ "${wpcli_core_verify_result_file}" != "" ] && [[ "${whitelisted_wp_files}" != *"${wpcli_core_verify_result_file}"* ]]; then
+              if [[ ${wpcli_core_verify_result_file} != "" ]] && [[ ${whitelisted_wp_files} != *"${wpcli_core_verify_result_file}"* ]]; then
 
                 log_event "info" "${wpcli_core_verify_result_file}"
                 
@@ -100,8 +100,8 @@ else
 
           done
 
-          if [ "${telegram_text}" != "" ]; then
-            telegram_send_message "⛔ WordPress Checksum failed for site ${project_name} on ${VPSNAME}: ${telegram_text} "
+          if [[ ${telegram_text} != "" ]]; then
+            telegram_send_message "⛔ WordPress Checksum failed for site ${project_name} on ${VPSNAME}: ${telegram_text}"
 
           else
             log_event "info" "WordPress Checksum OK!"

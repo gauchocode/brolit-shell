@@ -47,7 +47,7 @@ function mysql_purge_installation() {
 function mysql_check_if_installed() {
 
   MYSQL="$(which mysql)"
-  if [ ! -x "${MYSQL}" ]; then
+  if [[ ! -x "${MYSQL}" ]]; then
     mysql_installed="false"
   fi
 

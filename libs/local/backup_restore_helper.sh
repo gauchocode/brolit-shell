@@ -417,36 +417,43 @@ function restore_letsencrypt_site_files() {
   extract "${bk_file}" "${SFOLDER}/tmp/letsencrypt" "lbzip2"
 
   # Creating directories
-  if [ ! -d "/etc/letsencrypt/archive/" ]; then
+  if [[ ! -d "/etc/letsencrypt/archive/" ]]; then
     mkdir "/etc/letsencrypt/archive/"
 
   fi
-  if [ ! -d "/etc/letsencrypt/live/" ]; then
+  if [[ ! -d "/etc/letsencrypt/live/" ]]; then
     mkdir "/etc/letsencrypt/live/"
 
   fi
-  if [ ! -d "/etc/letsencrypt/archive/${domain}" ]; then
+  if [[ ! -d "/etc/letsencrypt/archive/${domain}" ]]; then
     mkdir "/etc/letsencrypt/archive/${domain}"
 
   fi
-  if [ ! -d "/etc/letsencrypt/live/${domain}" ]; then
+  if [[ ! -d "/etc/letsencrypt/live/${domain}" ]]; then
     mkdir "/etc/letsencrypt/live/${domain}"
 
   fi
 
   # Check if file exist
-  if [ ! -f "/etc/letsencrypt/options-ssl-nginx.conf" ]; then
+  if [[ ! -f "/etc/letsencrypt/options-ssl-nginx.conf" ]]; then
     cp -r "${SFOLDER}/tmp/letsencrypt/options-ssl-nginx.conf" "/etc/letsencrypt/"
 
   fi
-  if [ ! -f "/etc/letsencrypt/ssl-dhparams.pem" ]; then
+  if [[ ! -f "/etc/letsencrypt/ssl-dhparams.pem" ]]; then
     cp -r "${SFOLDER}/tmp/letsencrypt/ssl-dhparams.pem" "/etc/letsencrypt/"
     
   fi
 
-  # TODO: check www.${domain} too
-  cp -r "${SFOLDER}/tmp/letsencrypt/archive/${domain}" "/etc/letsencrypt/archive/"
-  cp -r "${SFOLDER}/tmp/letsencrypt/live/${domain}" "/etc/letsencrypt/live/"
+  # TODO:
+  # Restore main files (checking non-www and www domains)
+  if [[ ! -f "${SFOLDER}/tmp/letsencrypt/archive/${domain}" ]]; then
+    cp -r "${SFOLDER}/tmp/letsencrypt/archive/${domain}" "/etc/letsencrypt/archive/"
+    
+  fi
+  if [[ ! -f "${SFOLDER}/tmp/letsencrypt/live/${domain}" ]]; then
+    cp -r "${SFOLDER}/tmp/letsencrypt/live/${domain}" "/etc/letsencrypt/live/"
+    
+  fi
 
   display --indent 6 --text "- Restoring letsencrypt config files" --result "DONE" --color GREEN
 
@@ -512,7 +519,7 @@ function restore_site_files() {
     log_event "info" "install_path=${install_path}"
     display --indent 8 --text "Restored on: ${install_path}"
 
-    if [ -d "${install_path}" ]; then
+    if [[ -d "${install_path}" ]]; then
 
       log_event "info" "Wordpress intallation found on: ${install_path}"
       log_event "info" "Files backup restored on: ${install_path}"

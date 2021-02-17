@@ -26,7 +26,7 @@ function nginx_server_create() {
 
     # Create nginx config files for site
 
-    if [ -f "${WSERVER}/sites-available/${project_domain}" ]; then
+    if [[ -f "${WSERVER}/sites-available/${project_domain}" ]]; then
 
         # Backup actual config
         mv "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-available/${project_domain}_backup"
@@ -124,7 +124,7 @@ function nginx_server_delete() {
 
     local filename=$1
 
-    if [ "${filename}" != "" ]; then
+    if [[ ${filename} != "" ]]; then
 
         # TODO: check if file exists
         rm "/etc/nginx/sites-available/${filename}"
@@ -160,7 +160,7 @@ function nginx_server_change_status() {
 
         online)
             log_event "info" "New project status: ${project_status}"
-            if [ -f "${WSERVER}/sites-available/${project_domain}" ]; then
+            if [[ -f "${WSERVER}/sites-available/${project_domain}" ]]; then
 
                 # Creating symbolic link
                 ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
@@ -179,7 +179,7 @@ function nginx_server_change_status() {
 
         offline)
             log_event "info" "New project status: ${project_status}"
-            if [ -h "${WSERVER}/sites-enabled/${project_domain}" ]; then
+            if [[ -h "${WSERVER}/sites-enabled/${project_domain}" ]]; then
 
                 # Deleting config
                 rm "${WSERVER}/sites-enabled/${project_domain}"
@@ -345,7 +345,7 @@ function nginx_delete_default_directory() {
 
     # Remove html default nginx folders
     nginx_default_dir="/var/www/html"
-    if [ -d "${nginx_default_dir}" ]; then
+    if [[ -d "${nginx_default_dir}" ]]; then
         rm -r $nginx_default_dir
         log_event "info" "Directory ${nginx_default_dir} deleted" "false"
         display --indent 6 --text "- Removing nginx default directory" --result "DONE" --color GREEN
@@ -358,7 +358,7 @@ function nginx_create_globals_config() {
     # nginx.conf broobe standard configuration
     nginx_globals="/etc/nginx/globals/"
 
-    if [ -d "${nginx_globals}" ]; then
+    if [[ -d "${nginx_globals}" ]]; then
         log_event "warning" "Directory ${nginx_globals} already exists ..."
         return 1
 

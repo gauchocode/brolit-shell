@@ -14,10 +14,10 @@ function netdata_required_packages() {
 
   display --indent 6 --text "- Installing netdata required packages"
 
-  if [ "${ubuntu_version}" = "1804" ]; then
+  if [[ "${ubuntu_version}" = "1804" ]]; then
     apt-get --yes install zlib1g-dev uuid-dev libuv1-dev liblz4-dev libjudy-dev libssl-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python python-mysqldb lm-sensors libmnl netcat nodejs python-ipaddress python-dnspython iproute2 python-beanstalkc libuv liblz4 Judy openssl -qq > /dev/null
   
-  elif [ "${ubuntu_version}" = "2004" ]; then
+  elif [[ "${ubuntu_version}" = "2004" ]]; then
     apt-get --yes install curl python3-mysqldb lm-sensors libmnl netcat openssl -qq > /dev/null
 
   fi
@@ -165,7 +165,7 @@ function netdata_installer_menu() {
   ### Checking if Netdata is installed
   NETDATA="$(which netdata)"
 
-  if [ ! -x "${NETDATA}" ]; then
+  if [[ ! -x "${NETDATA}" ]]; then
 
     if [[ -z "${netdata_subdomain}" ]]; then
 

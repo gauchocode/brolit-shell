@@ -172,7 +172,7 @@ function wpcli_main_menu() {
 
       # REINSTALL_WP
       wp_result=$(wpcli_core_reinstall "${wp_site}")
-      if [ "${wp_result}" = "success" ]; then
+      if [[ "${wp_result}" = "success" ]]; then
         telegram_send_message "⚠️ ${VPSNAME}: WordPress reinstalled on site: ${wp_site}"
 
       fi
