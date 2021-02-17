@@ -61,18 +61,18 @@ function certbot_certificate_delete_old_config() {
   for domain in ${domains}; do
 
     # Check if directories exist
-    if [ -d "/etc/letsencrypt/archive/${domain}" ]; then
+    if [[ -d "/etc/letsencrypt/archive/${domain}" ]]; then
       # Delete
       rm -R "/etc/letsencrypt/archive/${domain}"
       display --indent 6 --text "- Deleting /etc/letsencrypt/archive/${domain}" --result "DONE" --color GREEN
 
     fi
-    if [ -d "/etc/letsencrypt/live/${domain}" ]; then
+    if [[ -d "/etc/letsencrypt/live/${domain}" ]]; then
       # Delete
       rm -R "/etc/letsencrypt/live/${domain}"
       display --indent 6 --text "- Deleting /etc/letsencrypt/live/${domain}" --result "DONE" --color GREEN
     fi
-    if [ -f "/etc/letsencrypt/renewal/${domain}.conf" ]; then
+    if [[ -f "/etc/letsencrypt/renewal/${domain}.conf" ]]; then
       # Delete
       rm "/etc/letsencrypt/renewal/${domain}.conf"
       display --indent 6 --text "- Deleting /etc/letsencrypt/renewal/${domain}.conf" --result "DONE" --color GREEN
@@ -207,7 +207,7 @@ function certbot_certonly_cloudflare() {
   # certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf --non-interactive --agree-tos --redirect -m ${EMAIL} -d ${DOMAINS} --preferred-challenges dns-01
 
   certbot_result=$?
-  if [ ${certbot_result} -eq 0 ];then
+  if [[ ${certbot_result} -eq 0 ]];then
     log_event "success" "Certificate installation for ${domains} ok"
     display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
 
@@ -222,7 +222,7 @@ function certbot_certonly_cloudflare() {
     certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m "${email}" -d "${domains}" --preferred-challenges dns-01
     
     certbot_result=$?
-    if [ ${certbot_result} -eq 0 ];then
+    if [[ ${certbot_result} -eq 0 ]];then
       log_event "success" "Certificate installation for ${domains} ok"
       display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
 
@@ -270,17 +270,22 @@ function certbot_certificate_valid_days() {
 
   # TODO: need refactor, must check if ${domain} contains www
 
-  if [ "${cert_days}" == "" ]; then
+  if [[ ${cert_days} == "" ]]; then
       #new try with www on it
       cert_days=$(certbot certificates --cert-name "www.${domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
-      if [ "${cert_days}" == "" ]; then
+
+      if [[ "${cert_days}" == "" ]]; then
           #new try with -0001
           cert_days=$(certbot certificates --cert-name "${domain}-0001" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
-          if [ "${cert_days}" == "" ]; then
+
+          if [[ "${cert_days}" == "" ]]; then
             #new try with www and -0001
             cert_days=$(certbot certificates --cert-name "www.${domain}-0001" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
+
           fi
+
       fi
+
   fi
 
   log_event "info" "Certificate valid for: ${cert_days} days"
@@ -354,13 +359,22 @@ function certbot_helper_ask_domains() {
 
 function certbot_helper_menu() {
 
-  local domains certbot_options chosen_cb_options
+  local domains
+  local certbot_options 
+  local chosen_cb_options
 
-  certbot_options=("01)" "INSTALL CERTIFICATE" "02)" "EXPAND CERTIFICATE" "03)" "TEST RENEW ALL CERTIFICATES" "04)" "FORCE RENEW CERTIFICATE" "05)" "DELETE CERTIFICATE" "06)" "SHOW INSTALLED CERTIFICATES")
+  certbot_options=(
+    "01)" "INSTALL CERTIFICATE" 
+    "02)" "EXPAND CERTIFICATE" 
+    "03)" "TEST RENEW ALL CERTIFICATES" 
+    "04)" "FORCE RENEW CERTIFICATE" 
+    "05)" "DELETE CERTIFICATE" 
+    "06)" "SHOW INSTALLED CERTIFICATES"
+  )
   chosen_cb_options=$(whiptail --title "CERTBOT MANAGER" --menu " " 20 78 10 "${certbot_options[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
-  if [ ${exitstatus} = 0 ]; then
+  if [[ ${exitstatus} = 0 ]]; then
 
     log_section "Certbot Manager"
 
@@ -369,7 +383,7 @@ function certbot_helper_menu() {
       # INSTALL-CERTIFICATE
       domains=$(certbot_helper_ask_domains)
       exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
+      if [[ ${exitstatus} = 0 ]]; then
         certbot_helper_installer_menu "${MAILA}" "${domains}"
       fi
 
@@ -379,7 +393,7 @@ function certbot_helper_menu() {
       # EXPAND-CERTIFICATE
       domains=$(certbot_helper_ask_domains)
       exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
+      if [[ ${exitstatus} = 0 ]]; then
         certbot_certificate_expand "${MAILA}" "${domains}"
       fi
 
@@ -395,7 +409,7 @@ function certbot_helper_menu() {
       # FORCE-RENEW-CERTIFICATE
       domains=$(certbot_helper_ask_domains)
       exitstatus=$?
-      if [ ${exitstatus} = 0 ]; then
+      if [[ ${exitstatus} = 0 ]]; then
         certbot_certificate_force_renew "${domains}"
       fi
       

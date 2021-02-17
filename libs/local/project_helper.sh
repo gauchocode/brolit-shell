@@ -214,7 +214,7 @@ function project_install() {
 
     php)
 
-        if [ -d "${project_path}" ]; then
+        if [[ -d "${project_path}" ]]; then
               
           # Create project directory
           mkdir "${project_path}"
@@ -442,7 +442,7 @@ function project_delete() {
   fi
 
   ### Creating temporary folders
-  if [ ! -d "${SFOLDER}/tmp-backup" ]; then
+  if [[ ! -d "${SFOLDER}/tmp-backup" ]]; then
       mkdir "${SFOLDER}/tmp-backup"
       log_event "info" "Temp files directory created: ${SFOLDER}/tmp-backup"
   fi

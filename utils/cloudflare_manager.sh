@@ -10,7 +10,11 @@ function cloudflare_helper_menu() {
     local chosen_cf_options 
     local root_domain
 
-    cf_options=("01)" "SET DEVELOPMENT MODE" "02)" "DELETE CACHE" "03)" "SET SSL MODE")
+    cf_options=(
+        "01)" "SET DEVELOPMENT MODE" 
+        "02)" "DELETE CACHE" 
+        "03)" "SET SSL MODE"
+    )
     chosen_cf_options=$(whiptail --title "CLOUDFLARE MANAGER" --menu " " 20 78 10 "${cf_options[@]}" 3>&1 1>&2 2>&3)
     exitstatus=$?
 
@@ -25,7 +29,7 @@ function cloudflare_helper_menu() {
             root_domain=$(whiptail --title "Root Domain" --inputbox "Insert the root domain, example: mydomain.com" 10 60 3>&1 1>&2 2>&3)
             exitstatus=$?
 
-            if [ ${exitstatus} = 0 ]; then
+            if [[ ${exitstatus} = 0 ]]; then
            
                 cloudflare_development_mode "${root_domain}" "on"
 
@@ -40,7 +44,7 @@ function cloudflare_helper_menu() {
             root_domain=$(whiptail --title "Root Domain" --inputbox "Insert the root domain, example: mydomain.com" 10 60 3>&1 1>&2 2>&3)
             exitstatus=$?
 
-            if [ ${exitstatus} = 0 ]; then
+            if [[ ${exitstatus} = 0 ]]; then
            
                 cloudflare_clear_cache "${root_domain}"
 
@@ -55,7 +59,7 @@ function cloudflare_helper_menu() {
             root_domain=$(whiptail --title "Root Domain" --inputbox "Insert the root domain, example: mydomain.com" 10 60 3>&1 1>&2 2>&3)
             exitstatus=$?
 
-            if [ ${exitstatus} = 0 ]; then
+            if [[ ${exitstatus} = 0 ]]; then
 
                 # Define array of SSL modes
                 local -n ssl_modes=(

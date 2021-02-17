@@ -69,7 +69,7 @@ function ask_migration_source_db() {
   local source_type=$1
   local source_db_dir source_db_url
 
-  if [ "${source_type}" = "DIRECTORY" ]; then
+  if [[ "${source_type}" = "DIRECTORY" ]]; then
 
   source_db_dir=$(whiptail --title "Source Directory" --inputbox "Please insert the directory where database backup is stored." 10 60 "/root/backups/db.sql.gz" 3>&1 1>&2 2>&3)
   exitstatus=$?
@@ -127,7 +127,7 @@ function wordpress_restore_from_source() {
   mkdir "${SFOLDER}/tmp/${project_domain}"
   cd "${SFOLDER}/tmp/${project_domain}"
 
-  if [ "${source_type}" = "DIRECTORY" ]; then
+  if [[ "${source_type}" = "DIRECTORY" ]]; then
 
     # TODO: use extract function
     unzip \*.zip \* -d "${SFOLDER}/tmp/${project_domain}"
@@ -196,7 +196,7 @@ function wordpress_restore_from_source() {
   actual_folder="${folder_to_install}/${project_domain}"
 
   install_path=$(search_wp_config "${actual_folder}")
-  if [ -z "${install_path}" ]; then
+  if [[ -z "${install_path}" ]]; then
 
       echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND"${ENDCOLOR}
 
