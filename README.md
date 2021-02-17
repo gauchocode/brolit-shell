@@ -39,7 +39,7 @@
 * And more ...
 
 ## TODO List
-[TODO List](./TODO.md)
+[TODO List](./docs/TODO.md)
 
 ## Changelog
 [Changelog](./docs/CHANGELOG.md)
