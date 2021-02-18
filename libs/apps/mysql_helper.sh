@@ -527,8 +527,10 @@ function mysql_database_export() {
 
     spinner_start "- Making a backup of: ${database}"
 
+    log_event "debug" "Running: ${MYSQLDUMP} -u${MUSER} -p${MPASS} ${database} > ${dump_file}"
+
     # Run mysqldump
-    dump_output="$("${MYSQLDUMP}" -u"${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}" 2>&1 >/dev/null)"
+    dump_output="$("${MYSQLDUMP}" -u"${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}")"
     dump_status=$?
 
     spinner_stop "$dump_status"
