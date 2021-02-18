@@ -13,7 +13,7 @@ function test_mail_cert_section() {
 
     mail_cert_section
 
-    CERT_MAIL="${BAKWP}/cert-${NOW}.mail"
+    CERT_MAIL="${TMP_DIR}/cert-${NOW}.mail"
     CERT_MAIL_VAR=$(<"${CERT_MAIL}")
 
     # Preparing email to send
@@ -36,7 +36,7 @@ function test_mail_package_section() {
 
     # Compare package versions
     mail_package_status_section "${PKG_DETAILS}"
-    PKG_MAIL="${BAKWP}/pkg-${NOW}.mail"
+    PKG_MAIL="${TMP_DIR}/pkg-${NOW}.mail"
     PKG_MAIL_VAR=$(<"${PKG_MAIL}")
 
     # Preparing email to send

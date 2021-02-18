@@ -99,13 +99,13 @@ source "${SFOLDER}/libs/commons.sh"
   # Running scripts
   #"${SFOLDER}/utils/server_and_image_optimizations.sh"
   
-  #DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
+  #DB_MAIL="${TMP_DIR}/db-bk-${NOW}.mail"
   #DB_MAIL_VAR=$(<"${DB_MAIL}")
 
-  #ONFIG_MAIL="${BAKWP}/config-bk-${NOW}.mail"
+  #ONFIG_MAIL="${TMP_DIR}/config-bk-${NOW}.mail"
   #CONFIG_MAIL_VAR=$(<"${CONFIG_MAIL}")
 
-  #FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
+  #FILE_MAIL="${TMP_DIR}/file-bk-${NOW}.mail"
   #FILE_MAIL_VAR=$(<"${FILE_MAIL}")
 
   #MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
