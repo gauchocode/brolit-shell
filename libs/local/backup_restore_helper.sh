@@ -201,9 +201,11 @@ function restore_database_backup() {
   local db_exists 
   local user_db_exists 
   local db_pass
+  local tmp_dir
 
   log_subsection "Restore Database Backup"
 
+  tmp_dir="${SFOLDER}/tmp"
   db_name="${project_name}_${project_state}"
 
   # Check if database already exists
@@ -222,7 +224,7 @@ function restore_database_backup() {
 
   # Restore database
   project_backup="${project_backup%%.*}.sql"
-  mysql_database_import "${project_name}_${project_state}" "${project_backup}"
+  mysql_database_import "${project_name}_${project_state}" "${tmp_dir}/${project_backup}"
   
   # Deleting temp files
   rm -f "${project_backup%%.*}.tar.bz2"

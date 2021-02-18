@@ -101,6 +101,7 @@ fi
 
 }
 
+# TODO: need refactor
 function wordpress_restore_from_source() {
 
   # Project details
