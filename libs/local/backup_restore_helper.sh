@@ -562,6 +562,7 @@ function restore_type_selection_from_dropbox() {
   local bk_to_dowload                   # backup to download
   local folder_to_install               # directory to install project
   local project_site                    # project site
+  local tmp_dir
 
   chosen_type=$(whiptail --title "RESTORE FROM BACKUP" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 $(for x in ${dropbox_type_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
@@ -598,17 +599,19 @@ function restore_type_selection_from_dropbox() {
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
-          cd "${SFOLDER}/tmp"
+          tmp_dir="${SFOLDER}/tmp/"
 
           bk_to_dowload="${chosen_server}/${chosen_type}/${chosen_project}/${chosen_backup_to_restore}"
 
           # Downloading Backup
-          dropbox_download "${bk_to_dowload}"
+          dropbox_download "${bk_to_dowload}" "${tmp_dir}"
 
           # Uncompressing
           log_event "info" "Uncompressing ${chosen_backup_to_restore}"
           display --indent 6 --text "- Uncompressing backup"
-          pv --width 70 "${chosen_backup_to_restore}" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
+          pv --width 70 "${chosen_backup_to_restore}" | tar xp -C "${tmp_dir}" --use-compress-program=lbzip2
+
+          log_event "debug" "Running: pv --width 70 ${chosen_backup_to_restore} | tar xp -C ${tmp_dir} --use-compress-program=lbzip2"
           clear_last_line
           clear_last_line
           display --indent 6 --text "- Uncompressing backup" --result "DONE" --color GREEN
@@ -738,6 +741,7 @@ function restore_project() {
   local bk_to_dowload 
   local chosen_backup_to_restore 
   local db_to_download
+  local tmp_dir
 
   log_subsection "Restore Project Backup"
 
@@ -766,21 +770,22 @@ function restore_project() {
     display --indent 6 --text "- Selecting project backup" --result "DONE" --color GREEN
     display --indent 8 --text "${chosen_backup_to_restore}" --tcolor YELLOW
 
-    #cd "${SFOLDER}/tmp"
+    tmp_dir="${SFOLDER}/tmp/"
 
     # Download backup
     bk_to_dowload="${chosen_server}/site/${chosen_project}/${chosen_backup_to_restore}"
-    dropbox_download "${bk_to_dowload}"
+    dropbox_download "${bk_to_dowload}" "${tmp_dir}"
 
     # Uncompress backup file    
-    pv --width 70 "${chosen_backup_to_restore}" | ${TAR} xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
+    pv --width 70 "${chosen_backup_to_restore}" | ${TAR} xp -C "${tmp_dir}" --use-compress-program=lbzip2
+    log_event "debug" "Running: pv --width 70 ${chosen_backup_to_restore} | ${TAR} xp -C ${tmp_dir} --use-compress-program=lbzip2"
 
     clear_last_line
     display --indent 6 --text "- Uncompressing backup file" --result "DONE" --color GREEN
     log_event "info" "Backup file ${chosen_backup_to_restore} uncompressed"
 
     # Project Type
-    project_type=$(get_project_type "${SFOLDER}/tmp/${chosen_project}")
+    project_type=$(get_project_type "${tmp_dir}${chosen_project}")
 
     log_event "debug" "Project Type: ${project_type}"
 
@@ -794,9 +799,9 @@ function restore_project() {
         display --indent 8 --text "Project Type WordPress" --tcolor GREEN
 
         # Reading config file
-        db_name=$(project_get_configured_database "${SFOLDER}/tmp/${chosen_project}" "wordpress")
-        db_user=$(project_get_configured_database_user "${SFOLDER}/tmp/${chosen_project}" "wordpress")
-        db_pass=$(project_get_configured_database_userpassw "${SFOLDER}/tmp/${chosen_project}" "wordpress")
+        db_name=$(project_get_configured_database "${tmp_dir}${chosen_project}" "wordpress")
+        db_user=$(project_get_configured_database_user "${tmp_dir}${chosen_project}" "wordpress")
+        db_pass=$(project_get_configured_database_userpassw "${tmp_dir}${chosen_project}" "wordpress")
 
         # Restore site files
         new_project_domain="$(restore_site_files "${chosen_domain}")"
