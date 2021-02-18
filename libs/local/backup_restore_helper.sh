@@ -639,7 +639,7 @@ function restore_type_selection_from_dropbox() {
             db_project_name=$(mysql_name_sanitize "${project_name}")
             
             # Restore database
-            restore_database_backup "${db_project_name}" "${project_state}" "${chosen_backup_to_restore}"
+            restore_database_backup "${db_project_name}" "${project_state}" "${tmp_dir}${chosen_backup_to_restore}"
 
             db_user="${db_project_name}_user"
 

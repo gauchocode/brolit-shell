@@ -1003,6 +1003,21 @@ function get_domain_extension() {
 
 }
 
+function extract_filename_from_path() {
+
+  # $1 = ${file_with_path}
+
+  local file_with_path=$1
+
+  local file_name
+
+  file_name="$(basename -- "${file_with_path}")"
+
+  # Return
+  echo "${file_name}"
+
+}
+
 function extract_domain_extension() {
 
   # $1 = ${domain}
