@@ -609,7 +609,7 @@ function restore_type_selection_from_dropbox() {
           # Uncompressing
           log_event "info" "Uncompressing ${chosen_backup_to_restore}"
           display --indent 6 --text "- Uncompressing backup"
-          pv --width 70 "${chosen_backup_to_restore}" | tar xp -C "${TMP_DIR}" --use-compress-program=lbzip2
+          pv --width 70 "${TMP_DIR}/${chosen_backup_to_restore}" | tar xp -C "${TMP_DIR}" --use-compress-program=lbzip2
 
           log_event "debug" "Running: pv --width 70 ${chosen_backup_to_restore} | tar xp -C ${TMP_DIR} --use-compress-program=lbzip2"
           clear_last_line
@@ -860,7 +860,7 @@ function restore_project() {
 
     # Uncompress backup file
     log_event "info" "Uncompressing ${db_to_download}"
-    pv --width 70 "${db_name}_database_${backup_date}.tar.bz2" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
+    pv --width 70 "${TMP_DIR}/${db_name}_database_${backup_date}.tar.bz2" | tar xp -C "${TMP_DIR}/" --use-compress-program=lbzip2
     clear_last_line
     clear_last_line
     display --indent 6 --text "- Uncompressing backup file" --result "DONE" --color GREEN
