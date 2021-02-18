@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.15
+# Version: 3.0.16
 ################################################################################
 
 # Ref: https://github.com/nextcloud/vm/blob/master/apps/netdata.sh

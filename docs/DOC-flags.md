@@ -26,16 +26,62 @@ Options:
 
 ### Backup
 
+#### Backup All (files, config and databases)
+
+```
+./runner.sh --task "backup" --subtask "all"
+```
+
 #### Backup Files
 
 ```
 ./runner.sh --task "backup" --subtask "files"
 ```
 
-#### Backup Serer Config Files
+#### Backup Server Config Files
 
 ```
 ./runner.sh --task "backup" --subtask "server-config"
+```
+
+#### Backup Databases (NOT IMPLEMENTED YET)
+
+```
+./runner.sh --task "backup" --subtask "databases"
+```
+
+### Project Utils
+
+#### Create WordPress Project (NOT IMPLEMENTED YET)
+
+```
+./runner.sh --task "project" --subtask "install" --ptype "wordpress" --domain "example.domain.com" --pname "project_name" --pstate "prod"
+```
+
+#### Delete Project (NOT IMPLEMENTED YET)
+
+```
+./runner.sh --task "project" --subtask "delete" --domain "example.domain.com" --pname "project_name"
+```
+
+#### Restore a Files Backup (NOT IMPLEMENTED YET)
+
+```
+./runner.sh --task "restore" --subtask "files" --link "linkt_to_compressed_backup.tar.gz" --domain "example.domain.com" --pname "project_name"
+```
+
+#### Restore a Database Backup (NOT IMPLEMENTED YET)
+
+```
+./runner.sh --task "restore" --subtask "database" --link "linkt_to_compressed_backup.tar.gz" --domain "example.domain.com" --pname "project_name"
+```
+
+### WP-CLI
+
+#### Search and Replace URLs (NOT IMPLEMENTED YET)
+
+```
+./runner.sh --task "wp-cli" --subtask "replace-urls" --path "/path/to/wordpress" --old "https://old.domain.com" --new "https://new.domain.com"
 ```
 
 ### Cloudflare API
