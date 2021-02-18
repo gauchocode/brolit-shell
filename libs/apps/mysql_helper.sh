@@ -504,6 +504,7 @@ function mysql_database_import() {
         display --indent 8 --text "MySQL output: ${import_status}" --tcolor RED
         log_event "error" "Something went wrong importing database: ${database}"
         log_event "debug" "MySQL output: ${mysql_output}"
+        log_event "debug" "Last command executed: pv ${dump_file} | ${MYSQL} -f -u${MUSER} -p${MPASS} -f -D ${database}"
 
         return 1
 
