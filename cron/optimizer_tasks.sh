@@ -29,24 +29,24 @@ else
   # Compare package versions
   #PKG_DETAILS=$(mail_package_section "${PACKAGES[@]}")
   #mail_package_status_section "${PKG_DETAILS}"
-  #PKG_MAIL="${BAKWP}/pkg-${NOW}.mail"
+  #PKG_MAIL="${TMP_DIR}/pkg-${NOW}.mail"
   #PKG_MAIL_VAR=$(<"${PKG_MAIL}")
 
   # Check certificates installed
   #mail_cert_section
-  #CERT_MAIL="${BAKWP}/cert-${NOW}.mail"
+  #CERT_MAIL="${TMP_DIR}/cert-${NOW}.mail"
   #CERT_MAIL_VAR=$(<"${CERT_MAIL}")
 
   # Running scripts
   "${SFOLDER}/utils/server_and_image_optimizations.sh"
   
-  #DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
+  #DB_MAIL="${TMP_DIR}/db-bk-${NOW}.mail"
   #DB_MAIL_VAR=$(<"${DB_MAIL}")
 
-  #ONFIG_MAIL="${BAKWP}/config-bk-${NOW}.mail"
+  #ONFIG_MAIL="${TMP_DIR}/config-bk-${NOW}.mail"
   #CONFIG_MAIL_VAR=$(<"${CONFIG_MAIL}")
 
-  #FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
+  #FILE_MAIL="${TMP_DIR}/file-bk-${NOW}.mail"
   #FILE_MAIL_VAR=$(<"${FILE_MAIL}")
 
   #MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
