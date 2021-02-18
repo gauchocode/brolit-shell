@@ -87,7 +87,7 @@ for j in ${TOTAL_SITES}; do
 done
 
 # Deleting old backup files
-rm -r "${BAKWP}/${NOW}"
+rm -r "${TMP_DIR}/${NOW}"
 
 # Configure Email        
 mail_filesbackup_section "${ERROR}" "${ERROR_TYPE}"

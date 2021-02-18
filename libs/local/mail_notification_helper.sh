@@ -56,11 +56,11 @@ function mail_subject_status() {
 function remove_mail_notifications_files() {
 
     # Remove one per line only for better readibility
-    rm -f "${BAKWP}/cert-${NOW}.mail" 
-    rm -f "${BAKWP}/pkg-${NOW}.mail"
-    rm -f "${BAKWP}/file-bk-${NOW}.mail"
-    rm -f "${BAKWP}/config-bk-${NOW}.mail"
-    rm -f "${BAKWP}/db-bk-${NOW}.mail"
+    rm -f "${TMP_DIR}/cert-${NOW}.mail" 
+    rm -f "${TMP_DIR}/pkg-${NOW}.mail"
+    rm -f "${TMP_DIR}/file-bk-${NOW}.mail"
+    rm -f "${TMP_DIR}/config-bk-${NOW}.mail"
+    rm -f "${TMP_DIR}/db-bk-${NOW}.mail"
 
     log_event "info" "Email temporary files removed!"
 
@@ -177,7 +177,7 @@ function mail_package_status_section() {
     pkg_body="${pkg_header}${body_open}${pkg_details}${body_close}"
 
     # Write e-mail parts files
-    echo "${pkg_body}" >"${BAKWP}/pkg-${NOW}.mail"
+    echo "${pkg_body}" >"${TMP_DIR}/pkg-${NOW}.mail"
 
 }
 
@@ -318,8 +318,8 @@ function mail_cert_section() {
     #body="${body_open}${CONTENT}${files_label}${email_cert_line}${files_label_end}${body_close}"
 
     # Write e-mail parts files
-    echo "${header}" >"${BAKWP}/cert-${NOW}.mail"
-    echo "${body}" >>"${BAKWP}/cert-${NOW}.mail"
+    echo "${header}" >"${TMP_DIR}/cert-${NOW}.mail"
+    echo "${body}" >>"${TMP_DIR}/cert-${NOW}.mail"
 
 }
 
@@ -426,9 +426,9 @@ function mail_filesbackup_section() {
     #footer="${FOOTEROPEN}${SCRIPTSTRING}${FOOTERCLOSE}"
 
     # Write e-mail parts files
-    echo "${header}" >"${BAKWP}/file-bk-${NOW}.mail"
-    echo "${body}" >>"${BAKWP}/file-bk-${NOW}.mail"
-    #echo "${footer}" >>"${BAKWP}/file-bk-${NOW}.mail"
+    echo "${header}" >"${TMP_DIR}/file-bk-${NOW}.mail"
+    echo "${body}" >>"${TMP_DIR}/file-bk-${NOW}.mail"
+    #echo "${footer}" >>"${TMP_DIR}/file-bk-${NOW}.mail"
 
 }
 
@@ -525,9 +525,9 @@ function mail_config_backup_section() {
     #FOOTER="${FOOTEROPEN}${SCRIPTSTRING}${FOOTERCLOSE}"
 
     # Write e-mail parts files
-    echo "${header}" >"${BAKWP}/config-bk-${NOW}.mail"
-    echo "${body}" >>"${BAKWP}/config-bk-${NOW}.mail"
-    #echo "${FOOTER}" >>"${BAKWP}/config-bk-${NOW}.mail"
+    echo "${header}" >"${TMP_DIR}/config-bk-${NOW}.mail"
+    echo "${body}" >>"${TMP_DIR}/config-bk-${NOW}.mail"
+    #echo "${FOOTER}" >>"${TMP_DIR}/config-bk-${NOW}.mail"
 
 }
 
@@ -615,8 +615,8 @@ function mail_mysqlbackup_section() {
     body="${body_open}${content}${SIZE_D}${files_label_D}${files_inc}${files_label_d_end}${body_close}"
 
     # Write e-mail parts files
-    echo "${header}" >"${BAKWP}/db-bk-${NOW}.mail"
-    echo "${body}" >>"${BAKWP}/db-bk-${NOW}.mail"
+    echo "${header}" >"${TMP_DIR}/db-bk-${NOW}.mail"
+    echo "${body}" >>"${TMP_DIR}/db-bk-${NOW}.mail"
 
 }
 

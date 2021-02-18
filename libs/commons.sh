@@ -227,16 +227,16 @@ function script_init() {
   _setup_globals_and_options
 
   # Temp folders
-  BAKWP="${SFOLDER}/tmp"
+  TMP_DIR="${SFOLDER}/tmp"
 
   # Creating temporary folders
-  if [[ ! -d ${BAKWP} ]]; then
-    echo " > Folder ${BAKWP} doesn't exist. Creating ..."
-    mkdir "${BAKWP}"
+  if [[ ! -d ${TMP_DIR} ]]; then
+    echo " > Folder ${TMP_DIR} doesn't exist. Creating ..."
+    mkdir "${TMP_DIR}"
   fi
-  if [[ ! -d "${BAKWP}/${NOW}" ]]; then
-    echo " > Folder ${BAKWP}/${NOW} doesn't exist. Creating ..."
-    mkdir "${BAKWP}/${NOW}"
+  if [[ ! -d "${TMP_DIR}/${NOW}" ]]; then
+    echo " > Folder ${TMP_DIR}/${NOW} doesn't exist. Creating ..."
+    mkdir "${TMP_DIR}/${NOW}"
   fi
 
   # Log
@@ -362,7 +362,7 @@ function script_init() {
   fi
 
   # EXPORT VARS
-  export SCRIPT_V VPSNAME BAKWP SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V 
+  export SCRIPT_V VPSNAME TMP_DIR SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V 
   export LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO 
   export SENDEMAIL DISK_U ONE_FILE_BK SERVER_IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_BACKUP_DBS STATUS_BACKUP_FILES STATUS_SERVER STATUS_CERTS OUTDATED_PACKAGES 
   export LOG BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key

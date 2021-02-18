@@ -32,7 +32,7 @@ function menu_backup_options() {
       # Databases Backup
       make_all_databases_backup
 
-      DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
+      DB_MAIL="${TMP_DIR}/db-bk-${NOW}.mail"
       DB_MAIL_VAR=$(<"${DB_MAIL}")
 
       log_event "info" "Sending Email to ${MAILA} ..." "false"
@@ -57,10 +57,10 @@ function menu_backup_options() {
       # Files Backup
       make_all_files_backup
 
-      CONFIG_MAIL="${BAKWP}/config-bk-${NOW}.mail"
+      CONFIG_MAIL="${TMP_DIR}/config-bk-${NOW}.mail"
       CONFIG_MAIL_VAR=$(<"${CONFIG_MAIL}")
 
-      FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
+      FILE_MAIL="${TMP_DIR}/file-bk-${NOW}.mail"
       FILE_MAIL_VAR=$(<"${FILE_MAIL}")
 
       log_event "info" "Sending Email to ${MAILA} ..." "false"
@@ -88,15 +88,15 @@ function menu_backup_options() {
       make_all_files_backup
 
       # Mail section for Database Backup
-      DB_MAIL="${BAKWP}/db-bk-${NOW}.mail"
+      DB_MAIL="${TMP_DIR}/db-bk-${NOW}.mail"
       DB_MAIL_VAR=$(<"${DB_MAIL}")
 
       # Mail section for Server Config Backup
-      CONFIG_MAIL="${BAKWP}/config-bk-${NOW}.mail"
+      CONFIG_MAIL="${TMP_DIR}/config-bk-${NOW}.mail"
       CONFIG_MAIL_VAR=$(<"${CONFIG_MAIL}")
 
       # Mail section for Files Backup
-      FILE_MAIL="${BAKWP}/file-bk-${NOW}.mail"
+      FILE_MAIL="${TMP_DIR}/file-bk-${NOW}.mail"
       FILE_MAIL_VAR=$(<"${FILE_MAIL}")
 
       MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
@@ -174,16 +174,16 @@ function make_server_files_backup() {
 
     # Here we use tar.bz2 with bzip2 compression method
     log_event "info" "Making backup of ${bk_path}"
-    log_event "debug" "Running: ${TAR} cjf ${BAKWP}/${NOW}/${bk_file} --directory=${bk_path} ${directory_to_backup}"
+    log_event "debug" "Running: ${TAR} cjf ${TMP_DIR}/${NOW}/${bk_file} --directory=${bk_path} ${directory_to_backup}"
     
-    (${TAR} cjf "${BAKWP}/${NOW}/${bk_file}" --directory="${bk_path}" "${directory_to_backup}")
+    (${TAR} cjf "${TMP_DIR}/${NOW}/${bk_file}" --directory="${bk_path}" "${directory_to_backup}")
 
     display --indent 6 --text "- Making ${YELLOW}${bk_sup_type}${ENDCOLOR} backup" --result "DONE" --color GREEN
     display --indent 6 --text "- Compressing directory ${bk_path}" --result "DONE" --color GREEN
 
     # Test backup file
     log_event "info" "Testing backup file: ${bk_file} ..."
-    bzip2 -t "${BAKWP}/${NOW}/${bk_file}"
+    bzip2 -t "${TMP_DIR}/${NOW}/${bk_file}"
 
     # Check test result
     bzip2_result=$?
@@ -213,16 +213,16 @@ function make_server_files_backup() {
       DROPBOX_PATH="${VPSNAME}/${bk_type}/${bk_sup_type}"
 
       # Uploading backup files
-      dropbox_upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}"
+      dropbox_upload "${TMP_DIR}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}"
 
       # Deleting old backup files
       dropbox_delete "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file}"
 
     else
 
-      bzip2_error="No such directory or file ${BAKWP}/${NOW}/${bk_file}"
+      bzip2_error="No such directory or file ${TMP_DIR}/${NOW}/${bk_file}"
 
-      log_event "critical" "Can't make the backup. No such directory or file ${BAKWP}/${NOW}/${bk_file}"
+      log_event "critical" "Can't make the backup. No such directory or file ${TMP_DIR}/${NOW}/${bk_file}"
 
       display --indent 6 --text "- Testing backup file" --result "FAIL" --color RED
       display --indent 8 --text "Result: ${bzip2_error}"
@@ -450,7 +450,7 @@ function make_sites_files_backup() {
   done
 
   # Deleting old backup files
-  rm -r "${BAKWP:?}/${NOW}"
+  rm -r "${TMP_DIR:?}/${NOW}"
 
   # DUPLICITY
   duplicity_backup
@@ -505,7 +505,7 @@ function make_files_backup() {
   log_event "info" "Making backup file from: ${directory_to_backup} ..."
   display --indent 6 --text "- Making ${YELLOW}${directory_to_backup}${ENDCOLOR} backup" --result "DONE" --color GREEN
 
-  (${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv --width 70 --size "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${BAKWP}/${NOW}/${bk_file}")2>&1
+  (${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv --width 70 --size "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${bk_file}")2>&1
   
   # Clear pipe output
   clear_last_line
@@ -515,7 +515,7 @@ function make_files_backup() {
   log_event "info" "Testing backup file: ${bk_file} ..."
   display --indent 6 --text "- Testing backup file"
   
-  pv --width 70 "${BAKWP}/${NOW}/${bk_file}" | lbzip2 --test
+  pv --width 70 "${TMP_DIR}/${NOW}/${bk_file}" | lbzip2 --test
 
   # Clear pipe output
   clear_last_line
@@ -549,13 +549,13 @@ function make_files_backup() {
     DROPBOX_PATH="${VPSNAME}/${bk_type}/${directory_to_backup}"
 
     # Upload backup
-    dropbox_upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}"
+    dropbox_upload "${TMP_DIR}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}"
 
     # Delete old backup from Dropbox
     dropbox_delete "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file}"
 
     # Delete temp backup
-    rm "${BAKWP}/${NOW}/${bk_file}"
+    rm "${TMP_DIR}/${NOW}/${bk_file}"
 
     log_event "info" "Temp backup deleted from server"
     display --indent 6 --text "- Deleting temp files" --result "DONE" --color GREEN
@@ -564,9 +564,9 @@ function make_files_backup() {
 
   else
     ERROR=true
-    ERROR_TYPE="ERROR: Making backup ${BAKWP}/${NOW}/${bk_file}"
+    ERROR_TYPE="ERROR: Making backup ${TMP_DIR}/${NOW}/${bk_file}"
 
-    log_event "error" "Something went wrong making backup file: ${BAKWP}/${NOW}/${bk_file}"
+    log_event "error" "Something went wrong making backup file: ${TMP_DIR}/${NOW}/${bk_file}"
     display --indent 6 --text "- Backup creation" --result "FAIL" --color RED
     display --indent 8 --text "Something went wrong making backup file: ${bk_file}" --tcolor RED
 
@@ -668,7 +668,7 @@ function make_database_backup() {
 
   local mysql_export_result
 
-  local directory_to_backup="${BAKWP}/${NOW}/"
+  local directory_to_backup="${TMP_DIR}/${NOW}/"
   local db_file="${database}_${bk_type}_${NOW}.sql"
 
   local old_bk_file="${database}_${bk_type}_${ONEWEEKAGO}.tar.bz2"
@@ -689,7 +689,7 @@ function make_database_backup() {
     display --indent 6 --text "- Compressing database backup"
 
     # TAR
-    (${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s "$(du -sb "${BAKWP}/${NOW}/${db_file}" | awk '{print $1}')" | lbzip2 >"${BAKWP}/${NOW}/${bk_file}")
+    (${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s "$(du -sb "${TMP_DIR}/${NOW}/${db_file}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${bk_file}")
 
     # Clear pipe output
     clear_last_line
@@ -699,7 +699,7 @@ function make_database_backup() {
     log_event "info" "Testing backup file: ${db_file} ..."
     display --indent 6 --text "- Testing backup file"
 
-    pv --width 70 "${BAKWP}/${NOW}/${bk_file}" | lbzip2 --test
+    pv --width 70 "${TMP_DIR}/${NOW}/${bk_file}" | lbzip2 --test
 
     # Clear pipe output
     clear_last_line
@@ -737,7 +737,7 @@ function make_database_backup() {
       DROPBOX_PATH="/${VPSNAME}/${bk_type}/${database}"
 
       # Upload to Dropbox
-      dropbox_upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}${DROPBOX_PATH}"
+      dropbox_upload "${TMP_DIR}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}${DROPBOX_PATH}"
       dropbox_result=$?
       if [[ ${dropbox_result} -eq 0 ]]; then
       
@@ -745,8 +745,8 @@ function make_database_backup() {
         dropbox_delete "${DROPBOX_FOLDER}${DROPBOX_PATH}/${old_bk_file}"
 
         log_event "info" "Deleting old database backup ${old_bk_file} from server"
-        rm "${BAKWP}/${NOW}/${db_file}"
-        rm "${BAKWP}/${NOW}/${bk_file}"
+        rm "${TMP_DIR}/${NOW}/${db_file}"
+        rm "${TMP_DIR}/${NOW}/${bk_file}"
         display --indent 6 --text "- Delete old database backup from server" --result "DONE" --color GREEN
 
       else
@@ -783,18 +783,18 @@ function make_project_backup() {
     local dropbox_output
     local db_file
 
-    local directory_to_backup="${BAKWP}/${NOW}/"
+    local directory_to_backup="${TMP_DIR}/${NOW}/"
 
     local old_bk_file="${directory_to_backup}_${bk_type}-files_${ONEWEEKAGO}.tar.bz2"
     local bk_file="${directory_to_backup}_${bk_type}-files_${NOW}.tar.bz2"
 
     log_event "info" "Making TAR.BZ2 from: ${directory_to_backup} ..."
 
-    (${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv -ns "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${BAKWP}/${NOW}/${bk_file}") 2>&1
+    (${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv -ns "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${bk_file}") 2>&1
 
     # Test backup file
     log_event "info" "Testing backup file: ${bk_file}"
-    lbzip2 -t "${BAKWP}/${NOW}/${bk_file}"
+    lbzip2 -t "${TMP_DIR}/${NOW}/${bk_file}"
     lbzip2_result=$?
     if [[ ${lbzip2_result} -eq 0 ]]; then
 
@@ -841,11 +841,11 @@ function make_project_backup() {
         log_event "info" "Compressing database backup: ${db_file}"
 
         # TAR
-        (${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s "$(du -sb "${BAKWP}/${NOW}/${db_file}" | awk '{print $1}')" | lbzip2 >"${BAKWP}/${NOW}/${BK_DB_FILE}")
+        (${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s "$(du -sb "${TMP_DIR}/${NOW}/${db_file}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${BK_DB_FILE}")
 
         # Test backup file
         log_event "info" "Testing backup file: ${BK_DB_FILE}"
-        lbzip2 -t "${BAKWP}/${NOW}/${BK_DB_FILE}"
+        lbzip2 -t "${TMP_DIR}/${NOW}/${BK_DB_FILE}"
 
         # New folder with $VPSNAME
         dropbox_create_dir "${VPSNAME}"
@@ -857,22 +857,22 @@ function make_project_backup() {
         dropbox_create_dir "${VPSNAME}/${bk_type}/${directory_to_backup}"
 
         # Upload Files
-        dropbox_upload "${BAKWP}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${NOW}"
+        dropbox_upload "${TMP_DIR}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${NOW}"
 
         # Upload Database
-        dropbox_upload "${BAKWP}/${NOW}/${BK_DB_FILE}" "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${NOW}"
+        dropbox_upload "${TMP_DIR}/${NOW}/${BK_DB_FILE}" "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${NOW}"
 
         # Delete old backups
         dropbox_delete "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${ONEWEEKAGO}"
 
         log_event "info" "Deleting backup from server ..."
-        rm -r "${BAKWP}/${NOW}/${bk_file}"
+        rm -r "${TMP_DIR}/${NOW}/${bk_file}"
 
         log_event "success" "Project backup ok!"
 
     else
         ERROR=true
-        ERROR_TYPE=" > ERROR: Making backup ${BAKWP}/${NOW}/${bk_file}"
+        ERROR_TYPE=" > ERROR: Making backup ${TMP_DIR}/${NOW}/${bk_file}"
         #echo "${ERROR_TYPE}" >>"${LOG}"
 
     fi
