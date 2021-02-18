@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.15
+# Version: 3.0.16
 #############################################################################
 
 # Libs apps directory path
@@ -34,7 +34,7 @@ source "${SFOLDER}/utils/it_utils.sh"
 function _setup_globals_and_options() {
 
   declare -g SCRIPT_N="LEMP UTILS SCRIPT"
-  declare -g SCRIPT_V="3.0.15"
+  declare -g SCRIPT_V="3.0.16"
 
   # Hostname
   declare -g VPSNAME="$HOSTNAME"
@@ -1829,7 +1829,7 @@ function tasks_handler() {
     ;;
 
     restore)
-      echo "TODO: run project-restore for $SITE"
+      log_event "warning" "TODO: run project-restore for $SITE" "true"
       exit
     ;;
 
@@ -1846,7 +1846,7 @@ function tasks_handler() {
     ;;
 
     *)
-      echo "INVALID TASK: $TASK" >&2
+      log_event "error" "INVALID TASK: ${TASK}" "true"
       #ExitFatal
     ;;
 
@@ -1888,6 +1888,7 @@ function subtasks_backup_handler() {
 
     databases)
 
+      log_event "warning" "TODO: database backup from parameter" "true"
       #log_event "debug" "Running: make_sites_files_backup"
       #make_sites_files_backup
 
@@ -1895,7 +1896,8 @@ function subtasks_backup_handler() {
     ;;
 
     *)
-      echo "INVALID SUBTASK: $TASK" >&2
+      log_event "error" "INVALID SUBTASK: ${subtask}" "true"
+
       exit
     ;;
 
@@ -1926,7 +1928,9 @@ function subtasks_cloudflare_handler() {
     ;;
 
     *)
-      echo "INVALID SUBTASK: $TASK" >&2
+
+      log_event "error" "INVALID SUBTASK: ${subtask}" "true"
+    
       exit
     ;;
 
@@ -1941,6 +1945,80 @@ function subtasks_cloudflare_handler() {
 #
 #############################################################################
 #
+
+function parse_params() {
+
+  # default values of variables set from params
+  param=''
+
+  while :; do
+
+    case "${1-}" in
+
+      -h|-\?|--help)
+        show_help    # Display a usage synopsis
+        exit
+      ;;
+
+      -d|--debug)
+        SHOWDEBUG=1
+      ;;
+
+      -t|--task)
+        i="$((i+1))"
+        TASK=${parameters[$i]}
+      ;;
+
+      -st|--subtask)
+        i="$((i+1))"
+        STASK=${parameters[$i]}
+      ;;
+
+      -s|--site)
+        i="$((i+1))"
+        SITE=${parameters[$i]}
+      ;;
+
+      -pn|--pname)
+        i="$((i+1))"
+        PNAME=${parameters[$i]}
+      ;;
+
+      -pt|--ptype)
+        i="$((i+1))"
+        PTYPE=${parameters[$i]}
+      ;;
+
+      -ps|--pstate)
+        i="$((i+1))"
+        PSTATE=${parameters[$i]}
+      ;;
+
+      -do|--domain)
+        i="$((i+1))"
+        DOMAIN=${parameters[$i]}
+      ;;
+
+      *)
+        echo "INVALID OPTION: $i" >&2
+        exit
+      ;;
+
+    esac
+
+    shift
+
+  done
+
+  #args=("$@")
+
+  # check required params and arguments
+  #[[ -z "${param-}" ]] && die "Missing required parameter: param"
+  #[[ ${#args[@]} -eq 0 ]] && die "Missing script arguments"
+
+  return 0
+
+}
 
 function flags_handler() {
 

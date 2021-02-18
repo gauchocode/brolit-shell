@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.15
+# Version: 3.0.16
 ################################################################################
 #
 # TODO: check when add www.DOMAIN.com and then select other stage != prod

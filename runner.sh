@@ -2,7 +2,7 @@
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Script Name: LEMP Utils Script
-# Version: 3.0.15
+# Version: 3.0.16
 ################################################################################
 
 #set -Eeuo pipefail
@@ -37,7 +37,8 @@ if [[ -t 1 ]]; then
   else
 
     # RUNNING FROM FLAGS
-    flags_handler "$#" "$*" #"$*" stores all arguments received when the script is runned
+    #flags_handler "$#" "$*" #"$*" stores all arguments received when the script is runned
+    parse_params "$@"
 
   fi
 
