@@ -92,12 +92,12 @@ function dropbox_download() {
 
     spinner_start "- Downloading file to Dropbox"
 
-    log_event "debug" "Running: ${DROPBOX_UPLOADER} -q download ${file_to_download} ${local_directory}${tmp_file_name}"
+    #log_event "debug" "Running: ${DROPBOX_UPLOADER} -q download ${file_to_download} ${local_directory}/${tmp_file_name}"
 
-    output="$("${DROPBOX_UPLOADER}" -q download "${file_to_download}" "${local_directory}${tmp_file_name}")"
+    output="$("${DROPBOX_UPLOADER}" -q download "${file_to_download}" "${local_directory}/${tmp_file_name}")"
     dropbox_file_to_download_result=$?
 
-    spinner_stop "$dropbox_file_to_download_result"
+    spinner_stop "${dropbox_file_to_download_result}"
     
     # Check dropbox_file_to_download_result
     if [[ ${dropbox_file_to_download_result} -eq 0 ]]; then
@@ -111,7 +111,7 @@ function dropbox_download() {
         display --indent 8 --text "Please read log file" --tcolor RED
 
         log_event "error" "Can't download file ${file_to_download} from dropbox."
-        log_event "error" "Last command executed: ${DROPBOX_UPLOADER} -q download ${file_to_download} ${local_directory}${tmp_file_name}"
+        log_event "error" "Last command executed: ${DROPBOX_UPLOADER} -q download ${file_to_download} ${local_directory}/${tmp_file_name}"
         log_event "debug" "Last command output: ${output}"
 
     fi
