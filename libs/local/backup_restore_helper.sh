@@ -224,11 +224,14 @@ function restore_database_backup() {
   project_backup="${project_backup%%.*}.sql"
   mysql_database_import "${project_name}_${project_state}" "${TMP_DIR}/${project_backup}"
   
-  # Deleting temp files
-  rm -f "${project_backup%%.*}.tar.bz2"
-  rm -f "${project_backup}"
-  display --indent 6 --text "- Cleanning temp files" --result "DONE" --color GREEN
-  log_event "info" "Temp files cleanned"
+  if [[ ${exitstatus} -eq 0 ]]; then
+    # Deleting temp files
+    rm -f "${project_backup%%.*}.tar.bz2"
+    rm -f "${project_backup}"
+    display --indent 6 --text "- Cleanning temp files" --result "DONE" --color GREEN
+    log_event "info" "Temp files cleanned"
+
+  fi
 
 }
 
@@ -636,7 +639,7 @@ function restore_type_selection_from_dropbox() {
             db_project_name=$(mysql_name_sanitize "${project_name}")
             
             # Restore database
-            restore_database_backup "${db_project_name}" "${project_state}" "${TMP_DIR}/${chosen_backup_to_restore}"
+            restore_database_backup "${db_project_name}" "${project_state}" "${chosen_backup_to_restore}"
 
             db_user="${db_project_name}_user"
 
