@@ -527,13 +527,12 @@ function mysql_database_export() {
 
     spinner_start "- Making a backup of: ${database}"
 
-    log_event "debug" "Running: ${MYSQLDUMP} -u${MUSER} -p${MPASS} ${database} > ${dump_file}"
-
     # Run mysqldump
     dump_output="$("${MYSQLDUMP}" -u"${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}")"
-    dump_status=$?
+    clear_last_line
 
-    spinner_stop "$dump_status"
+    dump_status=$?
+    spinner_stop "${dump_status}"
 
     # Check dump result
     if [[ ${dump_status} -eq 0 ]]; then
@@ -550,6 +549,7 @@ function mysql_database_export() {
         display --indent 6 --text "- Database backup for ${database}" --result "ERROR" --color RED
         display --indent 8 --text "MySQL dump output: ${dump_output}" --tcolor RED
         log_event "error" "Something went wrong exporting database: ${database}. MySQL dump output: ${dump_output}"
+        log_event "error" "Last command executed: ${MYSQLDUMP} -u${MUSER} -p${MPASS} ${database} > ${dump_file}"
 
         return 1
 
