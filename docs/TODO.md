@@ -56,7 +56,7 @@
 - [ ] Core: make new standard directory structure for projects "${SITES}/${DOMAIN}/public"
       Logs could be stored on "${SITES}/${DOMAIN}/log"
 - [ ] Core: Secure store for MySQL password: https://www.dokry.com/27126
-- [ ] Project: when remove a project, if the script can't find the user, maybe it will be better list all mysql users with database permision (do before database deletion).
+- [ ] Project: on project delete, if the script can't find the user, maybe it will be better list all mysql users with database permision (before database deletion).
 - [ ] Core: Solve small "TODOs" comments on the project.
 - [ ] Core: Implements something like this: 
         https://github.com/natelandau/dotfiles/blob/master/scripting/scriptTemplate.sh
@@ -84,7 +84,6 @@
       If the script is runned on a system that was not configured by the script, it could fail.
 - [ ] Utils: Support for phpservermon: https://github.com/phpservermon/phpservermon
 - [ ] Nginx: Cron option to put a website offline.
-- [ ] Installers: Mailcow installer and backup.
 - [ ] Installers: Option to select netdata metrics to be reported.
 - [ ] Notifications: After install a new project (with credentials info).
 - [ ] Backups: On backup failure, the email must show what files fails and what files are correct backuped.
@@ -141,6 +140,7 @@
         https://help.ubuntu.com/lts/serverguide/automatic-updates.html
 - [ ] Nginx: bad bot blocker.
         https://github.com/mitchellkrogza/nginx-ultimate-bad-bot-blocker
+- [ ] Installers: Mailcow installer and backup.
 
 ## For release 4.0
 
