@@ -77,6 +77,43 @@ function dropbox_upload() {
 
 }
 
+function dropbox_download() {
+
+    local file_to_download=$1
+
+    local output
+    local dropbox_file_to_download_result
+
+    log_event "info" "Downloading file to Dropbox ..."
+
+    spinner_start "- Downloading file to Dropbox"
+
+    log_event "debug" "Running: ${DROPBOX_UPLOADER} -q download ${file_to_download}"
+
+    output="$("${DROPBOX_UPLOADER}" -q download "${file_to_download}")"
+    dropbox_file_to_download_result=$?
+
+    spinner_stop "$dropbox_file_to_download_result"
+    
+    # Check dropbox_file_to_download_result
+    if [[ ${dropbox_file_to_download_result} -eq 0 ]]; then
+
+        display --indent 6 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
+        log_event "success" "${file_to_download} downloaded"
+
+    else
+
+        display --indent 6 --text "- Downloading backup from dropbox" --result "ERROR" --color RED
+        display --indent 8 --text "Please red log file" --tcolor RED
+
+        log_event "error" "Can't download file ${file_to_download} in dropbox."
+        log_event "error" "Last command executed: ${DROPBOX_UPLOADER} -q download ${file_to_download}"
+        log_event "debug" "Last command output: ${output}"
+
+    fi
+
+}
+
 function dropbox_delete() {
 
     local to_delete=$1

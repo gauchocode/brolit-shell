@@ -603,11 +603,7 @@ function restore_type_selection_from_dropbox() {
           bk_to_dowload="${chosen_server}/${chosen_type}/${chosen_project}/${chosen_backup_to_restore}"
 
           # Downloading Backup
-          log_event "info" "Downloading backup from dropbox"
-          display --indent 6 --text "- Downloading backup from dropbox"
-          dropbox_output="$("${DROPBOX_UPLOADER}" download "${bk_to_dowload}" 1>&2)"
-          clear_last_line
-          display --indent 6 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
+          dropbox_download "${bk_to_dowload}"
 
           # Uncompressing
           log_event "info" "Uncompressing ${chosen_backup_to_restore}"
@@ -629,7 +625,7 @@ function restore_type_selection_from_dropbox() {
             project_name=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${project_name}" 3>&1 1>&2 2>&3)
             exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
-              log_event "info" "Setting project_name=${project_name}"
+              log_event "debug" "Setting project_name=${project_name}"
 
             else
               return 1
@@ -770,18 +766,11 @@ function restore_project() {
     display --indent 6 --text "- Selecting project backup" --result "DONE" --color GREEN
     display --indent 8 --text "${chosen_backup_to_restore}" --tcolor YELLOW
 
-    cd "${SFOLDER}/tmp"
+    #cd "${SFOLDER}/tmp"
 
     # Download backup
     bk_to_dowload="${chosen_server}/site/${chosen_project}/${chosen_backup_to_restore}"
-
-    log_event "info" "Downloading backup from dropbox: ${bk_to_dowload}"
-    display --indent 6 --text "- Downloading backup from dropbox"
-
-    dropbox_output=$("${DROPBOX_UPLOADER}" download "${bk_to_dowload}" 1>&2)
-
-    clear_last_line
-    display --indent 6 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
+    dropbox_download "${bk_to_dowload}"
 
     # Uncompress backup file    
     pv --width 70 "${chosen_backup_to_restore}" | ${TAR} xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
