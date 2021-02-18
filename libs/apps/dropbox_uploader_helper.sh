@@ -80,6 +80,7 @@ function dropbox_upload() {
 function dropbox_download() {
 
     local file_to_download=$1
+    local local_directory=$2
 
     local output
     local dropbox_file_to_download_result
@@ -88,9 +89,9 @@ function dropbox_download() {
 
     spinner_start "- Downloading file to Dropbox"
 
-    log_event "debug" "Running: ${DROPBOX_UPLOADER} -q download ${file_to_download}"
+    log_event "debug" "Running: ${DROPBOX_UPLOADER} -q download ${file_to_download} ${local_directory}"
 
-    output="$("${DROPBOX_UPLOADER}" -q download "${file_to_download}")"
+    output="$("${DROPBOX_UPLOADER}" -q download "${file_to_download}" "${local_directory}")"
     dropbox_file_to_download_result=$?
 
     spinner_stop "$dropbox_file_to_download_result"
@@ -107,7 +108,7 @@ function dropbox_download() {
         display --indent 8 --text "Please red log file" --tcolor RED
 
         log_event "error" "Can't download file ${file_to_download} in dropbox."
-        log_event "error" "Last command executed: ${DROPBOX_UPLOADER} -q download ${file_to_download}"
+        log_event "error" "Last command executed: ${DROPBOX_UPLOADER} -q download ${file_to_download} ${local_directory}"
         log_event "debug" "Last command output: ${output}"
 
     fi
