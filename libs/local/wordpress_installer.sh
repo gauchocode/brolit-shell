@@ -245,7 +245,7 @@ function wordpress_project_copy () {
   log_event "info" "Copying database ${database_name} ..."
 
   # Create dump file
-  bk_folder="${SFOLDER}/tmp/"
+  tmp_dir="${SFOLDER}/tmp"
 
   # We get the database name from the copied wp-config.php
   source_wpconfig="${folder_to_install}/${copy_project}"
@@ -253,7 +253,7 @@ function wordpress_project_copy () {
   bk_file="db-${db_tocopy}.sql"
 
   # Make a database Backup
-  mysql_database_export "${db_tocopy}" "${bk_folder}${bk_file}"
+  mysql_database_export "${db_tocopy}" "${tmp_dir}/${bk_file}"
   mysql_database_export_result=$?
   if [[ ${mysql_database_export_result} -eq 0 ]]; then
 
@@ -261,7 +261,7 @@ function wordpress_project_copy () {
     target_db="${project_name}_${project_state}"
 
     # Importing dump file
-    mysql_database_import "${target_db}" "${bk_folder}${bk_file}"
+    mysql_database_import "${target_db}" "${tmp_dir}/${bk_file}"
 
     # Generate WP tables PREFIX
     tables_prefix=$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)
