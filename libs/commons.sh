@@ -826,6 +826,26 @@ function string_remove_special_chars() {
 
 }
 
+function string_remove_color_chars() {
+
+  # $1 = ${string}
+
+  local string=$1
+
+  # Text Styles
+  # NORMAL, BOLD, ITALIC, UNDERLINED, INVERTED
+
+  # Foreground/Text Colours
+  # BLACK, RED, GREEN, YELLOW, ORANGE, MAGENTA, CYAN, WHITE, ENDCOLOR, F_DEFAULT
+
+  # Background Colours
+  # B_BLACK, B_RED, B_GREEN, B_YELLOW, B_ORANGE, B_MAGENTA, B_CYAN, B_WHITE, B_ENDCOLOR, B_DEFAULT
+
+  # Return
+  echo "${string}" | tr -d "${BLACK}" | tr -d "${RED}" | tr -d "${GREEN}" | tr -d "${YELLOW}" | tr -d "${MAGENTA}" | tr -d "${CYAN}" | tr -d "${WHITE}" | tr -d "${ENDCOLOR}"
+
+}
+
 function change_ownership(){
 
   #$1 = ${user}
