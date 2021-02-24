@@ -832,17 +832,39 @@ function string_remove_color_chars() {
 
   local string=$1
 
+  local text_styles
+  local text_colors
+  local text_background
+
   # Text Styles
-  # NORMAL, BOLD, ITALIC, UNDERLINED, INVERTED
+  text_styles=('NORMAL' 'BOLD' 'ITALIC' 'UNDERLINED' 'INVERTED')
 
   # Foreground/Text Colours
-  # BLACK, RED, GREEN, YELLOW, ORANGE, MAGENTA, CYAN, WHITE, ENDCOLOR, F_DEFAULT
+  text_colors=('BLACK' 'RED' 'GREEN' 'YELLOW' 'ORANGE' 'MAGENTA' 'CYAN' 'WHITE' 'ENDCOLOR' 'F_DEFAULT')
 
   # Background Colours
-  # B_BLACK, B_RED, B_GREEN, B_YELLOW, B_ORANGE, B_MAGENTA, B_CYAN, B_WHITE, B_ENDCOLOR, B_DEFAULT
+  text_background=('B_BLACK' 'B_RED' 'B_GREEN' 'B_YELLOW' 'B_ORANGE' 'B_MAGENTA' 'B_CYAN' 'B_WHITE' 'B_ENDCOLOR' 'B_DEFAULT')
+
+  for i in "${text_styles[@]}"
+  do
+    string=$(echo "${string}" | tr -d "${i}")
+
+  done
+
+  for j in "${text_colors[@]}"
+  do
+    string=$(echo "${string}" | tr -d "${j}")
+
+  done
+
+  for k in "${text_background[@]}"
+  do
+    string=$(echo "${string}" | tr -d "${k}")
+
+  done
 
   # Return
-  echo "${string}" | tr -d "${BLACK}" | tr -d "${RED}" | tr -d "${GREEN}" | tr -d "${YELLOW}" | tr -d "${MAGENTA}" | tr -d "${CYAN}" | tr -d "${WHITE}" | tr -d "${ENDCOLOR}"
+  echo "${string}"
 
 }
 
