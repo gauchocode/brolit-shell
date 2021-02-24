@@ -49,6 +49,16 @@ function php_check_installed_version() {
   # The "tr '\n' ' '" part, will replace /n with space
   # Return example: 7.4 7.2 7.0
 
+  # Check elements number on string
+  count_elements=$(echo "${php_installed_versions}" | wc -w)
+
+  if [[ $count_elements == "1" ]]; then
+
+    # Remove last space
+    php_installed_versions=$(string_remove_spaces "${php_installed_versions}")
+
+  fi
+
   log_event "debug" "Setting php_installed_versions=${php_installed_versions}"
 
   # Return
