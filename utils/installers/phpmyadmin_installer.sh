@@ -10,8 +10,8 @@ function phpmyadmin_installer () {
   local possible_root_domain 
   local root_domain
 
-  log_event "info" "Running phpMyAdmin installer"
   log_subsection "phpMyAdmin Installer"
+  log_event "info" "Running phpMyAdmin installer"
 
   project_domain=$(whiptail --title "Domain" --inputbox "Insert the domain for PhpMyAdmin. Example: sql.domain.com" 10 60 3>&1 1>&2 2>&3)
   exitstatus=$?
@@ -28,27 +28,27 @@ function phpmyadmin_installer () {
   fi
 
   # Download phpMyAdmin
-  display --indent 2 --text "- Downloading phpMyAdmin"
+  display --indent 6 --text "- Downloading phpMyAdmin"
   log_event "debug" "Running: curl --silent -L https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip > ${SITES}/phpMyAdmin-latest-all-languages.zip"
   curl --silent -L https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip > "${SITES}"/phpMyAdmin-latest-all-languages.zip
   clear_last_line
-  display --indent 2 --text "- Downloading phpMyAdmin" --result "DONE" --color GREEN
+  display --indent 6 --text "- Downloading phpMyAdmin" --result "DONE" --color GREEN
 
   # Uncompress
-  display --indent 2 --text "- Uncompressing phpMyAdmin"
+  display --indent 6 --text "- Uncompressing phpMyAdmin"
   log_event "debug" "Running: unzip -qq ${SITES}/phpMyAdmin-latest-all-languages.zip -d ${SITES}/${project_domain}"
   unzip -qq "${SITES}/phpMyAdmin-latest-all-languages.zip" -d "${SITES}"
   clear_last_line
-  display --indent 2 --text "- Uncompressing phpMyAdmin" --result "DONE" --color GREEN
+  display --indent 6 --text "- Uncompressing phpMyAdmin" --result "DONE" --color GREEN
 
   # Delete downloaded file
   rm "${SITES}/phpMyAdmin-latest-all-languages.zip"
-  display --indent 2 --text "- Deleting installer file" --result "DONE" --color GREEN
+  display --indent 6 --text "- Deleting installer file" --result "DONE" --color GREEN
 
   # Change directory name
   log_event "debug" "Running: mv ${SITES}/phpMyAdmin-* ${SITES}/${project_domain}"
   mv "${SITES}"/phpMyAdmin-* "${SITES}/${project_domain}"
-  display --indent 2 --text "- Changing directory name" --result "DONE" --color GREEN
+  display --indent 6 --text "- Changing directory name" --result "DONE" --color GREEN
 
   # New site Nginx configuration
   nginx_server_create "${project_domain}" "phpmyadmin" "tool"
@@ -60,7 +60,7 @@ function phpmyadmin_installer () {
   certbot_helper_installer_menu "${MAILA}" "${project_domain}"
 
   log_event "info" "phpMyAdmin installer finished"
-  display --indent 2 --text "- Installing phpMyAdmin" --result "DONE" --color GREEN
+  display --indent 6 --text "- Installing phpMyAdmin" --result "DONE" --color GREEN
   log_break
 
 }
