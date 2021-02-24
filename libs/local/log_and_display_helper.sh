@@ -314,13 +314,17 @@ function display() {
       SHOW=0
 
       if [[ ${SHOW} -eq 0 ]]; then
+
           # Display:
           # - for full shells, count with -m instead of -c, to support language locale (older busybox does not have -m)
           # - wc needs LANG to deal with multi-bytes characters but LANG has been unset in include/consts
+          TEXT=$(string_remove_color_chars "${TEXT}")
           LINESIZE=$(export LC_ALL= ; echo "${TEXT}" | wc -m | tr -d ' ')
+          
           if [[ "${SHOWDEBUG}" -eq 1 ]]; then DEBUGTEXT=" [${PURPLE}DEBUG${NORMAL}]"; else DEBUGTEXT=""; fi
           if [[ "${INDENT}" -gt 0 ]]; then SPACES=$((62 - INDENT - LINESIZE)); fi
           if [[ "${SPACES}" -lt 0 ]]; then SPACES=0; fi
+
           if [[ "${CRONJOB}" -eq 0 ]]; then
             # Check if we already have already discovered a proper echo command tool. It not, set it default to 'echo'.
             #if [ "${ECHOCMD}" = "" ]; then ECHOCMD="echo"; fi
@@ -330,6 +334,7 @@ function display() {
             echo "${TEXT}${RESULTPART}" >&2
 
           fi
+
       fi
 
   fi
