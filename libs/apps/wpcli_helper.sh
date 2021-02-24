@@ -146,6 +146,9 @@ function wpcli_run_startup_script() {
     sudo -u www-data wp --path="${wp_site}" core install --url="${site_url}" --title="${site_name}" --admin_user="${wp_user_name}" --admin_password="${wp_user_passw}" --admin_email="${wp_user_mail}"
     log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} core install --url=${site_url} --title=${site_name} --admin_user=${wp_user_name} --admin_password=${wp_user_passw} --admin_email=${wp_user_mail}"
 
+    clear_last_line
+    display --indent 6 --text "- WordPress site creation" --result "DONE" --color GREEN
+
     # Delete default post, page, and comment
     sudo -u www-data wp --path="${wp_site}" site empty --yes --quiet
     display --indent 6 --text "- Deleting default content" --result "DONE" --color GREEN
@@ -154,10 +157,6 @@ function wpcli_run_startup_script() {
     sudo -u www-data wp --path="${wp_site}" theme delete twentyseventeen --quiet
     sudo -u www-data wp --path="${wp_site}" theme delete twentynineteen --quiet
     display --indent 6 --text "- Deleting default themes" --result "DONE" --color GREEN
-
-    # Deleting default content
-    sudo -u www-data wp --path="${wp_site}" site empty --yes
-    display --indent 6 --text "- Deleting default content" --result "DONE" --color GREEN
     
     # Delete default plugins
     sudo -u www-data wp --path="${wp_site}" plugin delete akismet --quiet
