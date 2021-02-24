@@ -415,6 +415,8 @@ function script_configuration_wizard() {
 
     _settings_config_cloudflare
 
+    _settings_config_telegram
+
     _settings_config_notifications
 
     _settings_config_mailcow
