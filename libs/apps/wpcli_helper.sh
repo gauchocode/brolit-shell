@@ -256,10 +256,12 @@ function wpcli_core_download() {
 
             exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
-                display --indent 6 --text "- Wordpress ${wp_version} installation for ${wp_site}" --result "DONE" --color GREEN
+                display --indent 6 --text "- Downloading WordPress ${wp_version}" --result "DONE" --color GREEN
+                display --indent 8 --text "${wp_site}" --tcolor GREEN
 
             else
-                display --indent 6 --text "- Wordpress installation for ${wp_site}" --result "FAIL" --color RED
+                display --indent 6 --text "- Downloading WordPress ${wp_version}" --result "FAIL" --color RED
+                display --indent 8 --text "${wp_site}" --result "FAIL" --color RED
                 return 1
             fi
 
