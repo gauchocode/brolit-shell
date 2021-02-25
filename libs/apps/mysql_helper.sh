@@ -1,23 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.16
-#############################################################################
-
-function _mysql_root_credentials_parameter() {
-
-    # If /root/.my.cnf exists then it won't ask for root password
-    if [[ -f /root/.my.cnf ]]; then
-        return 0
-
-    else
-        # Return credentials parameter
-        echo "-u${MUSER} -p${MPASS}"
-
-    fi
-
-}
-
+# Version: 3.0.17
 #############################################################################
 
 function mysql_test_user_credentials() {
@@ -104,7 +88,7 @@ function mysql_user_create() {
 
     fi
 
-    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query}")"
+    mysql_output="$("${MYSQL_ROOT}" -e "${query}")"
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
         
@@ -153,7 +137,7 @@ function mysql_user_delete() {
     query_1="DROP USER '${db_user}'@'${db_user_scope}';"
     query_2="FLUSH PRIVILEGES;"
 
-    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query_1}${query_2}")"
+    mysql_output="$("${MYSQL_ROOT}" -e "${query_1}${query_2}")"
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
@@ -195,7 +179,7 @@ function mysql_user_psw_change() {
     query_1="ALTER USER '${db_user}'@'localhost' IDENTIFIED BY '${db_user_psw}';"
     query_2="FLUSH PRIVILEGES;"
 
-    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query_1}${query_2}")"
+    mysql_output="$("${MYSQL_ROOT}" -e "${query_1}${query_2}")"
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
@@ -301,7 +285,7 @@ function mysql_user_grant_privileges() {
     query_1="GRANT ALL PRIVILEGES ON ${db_target}.* TO '${db_user}'@'${db_scope}';"
     query_2="FLUSH PRIVILEGES;"
 
-    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query_1}${query_2}")"
+    mysql_output="$("${MYSQL_ROOT}" -e "${query_1}${query_2}")"
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
@@ -331,7 +315,7 @@ function mysql_user_exists() {
 
     local db_user=$1
 
-    if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${db_user}';" | mysql -u "${MUSER}" --password="${MPASS}" | grep 1; then
+    if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${db_user}';" | "${MYSQL}" -u "${MUSER}" --password="${MPASS}" | grep 1; then
         # Return 0 if user don't exists
         return 0
     else
@@ -349,7 +333,7 @@ function mysql_database_exists() {
 
     local result
 
-    result=$("${MYSQL}" -u "${MUSER}" --password="${MPASS}" -e "SHOW DATABASES LIKE '${database}';")
+    result=$("${MYSQL_ROOT}" -e "SHOW DATABASES LIKE '${database}';")
 
     if [[ -z "${result}" || "${result}" = "" ]]; then
         # Return 1 if database don't exists
@@ -406,7 +390,7 @@ function mysql_database_create() {
 
     query_1="CREATE DATABASE IF NOT EXISTS ${database};"
 
-    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query_1}")"
+    mysql_output="$("${MYSQL_ROOT}" -e "${query_1}")"
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
@@ -444,7 +428,7 @@ function mysql_database_drop() {
 
     query_1="DROP DATABASE ${database};"
     
-    mysql_output="$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -e "${query_1}")"
+    mysql_output="$("${MYSQL_ROOT}" -e "${query_1}")"
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
@@ -483,9 +467,9 @@ function mysql_database_import() {
     # Logging
     display --indent 6 --text "- Importing backup into database: ${database}" --tcolor YELLOW
     log_event "info" "Importing dump file ${dump_file} into database: ${database}"
-    log_event "debug" "Running: pv ${dump_file} | ${MYSQL} -f -u${MUSER} -p${MPASS} -f -D ${database}"
+    log_event "debug" "Running: pv ${dump_file} | ${MYSQL_ROOT} -f -D ${database}"
 
-    pv "${dump_file}" | ${MYSQL} -f -u"${MUSER}" -p"${MPASS}" -f -D "${database}"
+    pv "${dump_file}" | ${MYSQL_ROOT} -f -D "${database}"
     import_status=$?
     if [[ ${import_status} -eq 0 ]]; then
 
@@ -528,7 +512,7 @@ function mysql_database_export() {
     spinner_start "- Making a backup of: ${database}"
 
     # Run mysqldump
-    dump_output="$("${MYSQLDUMP}" -u"${MUSER}" -p"${MPASS}" "${database}" > "${dump_file}")"
+    dump_output="$("${MYSQLDUMP_ROOT}" "${database}" > "${dump_file}")"
     clear_last_line
 
     dump_status=$?
@@ -549,7 +533,7 @@ function mysql_database_export() {
         display --indent 6 --text "- Database backup for ${database}" --result "ERROR" --color RED
         display --indent 8 --text "MySQL dump output: ${dump_output}" --tcolor RED
         log_event "error" "Something went wrong exporting database: ${database}. MySQL dump output: ${dump_output}"
-        log_event "error" "Last command executed: ${MYSQLDUMP} -u${MUSER} -p${MPASS} ${database} > ${dump_file}"
+        log_event "error" "Last command executed: ${MYSQLDUMP_ROOT} ${database} > ${dump_file}"
 
         return 1
 

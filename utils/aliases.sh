@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.16
+# Version: 3.0.17
 ################################################################################
 
 # Creates an archive (*.tar.gz) from given directory
