@@ -63,7 +63,6 @@ function _setup_globals_and_options() {
   PHP_V="$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")"
   php_exit=$?
   if [[ ${php_exit} -eq 1 ]];then
-    # TODO: must be an option
     # Packages to watch
     PACKAGES=(linux-firmware dpkg nginx "php${PHP_V}-fpm" mysql-server openssl)
   fi
@@ -71,7 +70,7 @@ function _setup_globals_and_options() {
   # MySQL host and user
   declare -g MHOST="localhost"
   declare -g MUSER="root"
-  declare -g MYSQL_CONF="/root/.mysql.conf"
+  declare -g MYSQL_CONF="/root/.mysql.conf"       #MySQL credentials file
 
   # Main partition
   declare -g MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+')
@@ -287,7 +286,6 @@ function script_init() {
   # Checking script permissions
   _check_scripts_permissions
 
-  # TODO: need to improve this!
   # Checking required packages to run
   check_packages_required
   packages_output=$?
@@ -364,7 +362,7 @@ function script_init() {
 
   # EXPORT VARS
   export SCRIPT_V VPSNAME TMP_DIR SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V 
-  export LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO 
+  export LENCRYPT_CF MySQL_CF MYSQL_CONF MYSQL MYSQLDUMP TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO 
   export SENDEMAIL DISK_U ONE_FILE_BK SERVER_IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_BACKUP_DBS STATUS_BACKUP_FILES STATUS_SERVER STATUS_CERTS OUTDATED_PACKAGES 
   export LOG BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
 
@@ -406,7 +404,7 @@ function install_script_aliases () {
   else
 
     display --indent 2 --text "- Installing script aliases" --result "FAIL" --color RED
-    display --indent 4 --text ".bash_aliases already exists"
+    display --indent 4 --text "File .bash_aliases already exists"
 
   fi
 
