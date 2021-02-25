@@ -202,7 +202,9 @@ function check_packages_required() {
 
   else
     
-    # MySQL installed, check credentials
+    #MySQL credentials file
+    declare -g MYSQL_CONF="/root/.mysql.conf"       
+
     # If /root/.mysql.conf exists then it won't ask for root password
     if [[ -f ${MYSQL_CONF} ]]; then
         # Append login parameters to command
