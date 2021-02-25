@@ -1358,9 +1358,14 @@ function ask_mysql_root_psw() {
       # echo "MPASS=${MPASS}" >>/root/.broobe-utils-options
 
       # New way
-      echo "[client]" >/root/.mysql.cnf
-      echo "user=root">>/root/.mysql.cnf
-      echo "password=${MPASS}">>/root/.mysql.cnf
+      if [[ ! -f ${MYSQL_CONF} ]]; then
+
+        # Create new MySQL credentials file
+        echo "[client]" >/root/.mysql.cnf
+        echo "user=root">>/root/.mysql.cnf
+        echo "password=${MPASS}">>/root/.mysql.cnf
+
+      fi
 
     else
       return 1
