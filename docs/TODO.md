@@ -36,6 +36,7 @@
 ### In Progress
 
 - [ ] Core: Refactor of script_configuration_wizard.
+- [ ] Core: Secure store for MySQL password: https://www.dokry.com/27126
 - [ ] Nginx: Better nginx config: https://www.digitalocean.com/community/tools/nginx
 - [ ] Nginx: At startup, check if nginx has globals installed.
 - [ ] Project Utils: Add delete database and create database option.
@@ -55,7 +56,6 @@
 - [ ] Core: Better structure of deleted projects on dropbox.
 - [ ] Core: make new standard directory structure for projects "${SITES}/${DOMAIN}/public"
       Logs could be stored on "${SITES}/${DOMAIN}/log"
-- [ ] Core: Secure store for MySQL password: https://www.dokry.com/27126
 - [ ] Project: on project delete, if the script can't find the user, maybe it will be better list all mysql users with database permision (before database deletion).
 - [ ] Core: Solve small "TODOs" comments on the project.
 - [ ] Core: Implements something like this: 
