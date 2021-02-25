@@ -2,7 +2,7 @@
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Script Name: LEMP Utils Script
-# Version: 3.0.16
+# Version: 3.0.17
 ################################################################################
 
 #set -Eeuo pipefail

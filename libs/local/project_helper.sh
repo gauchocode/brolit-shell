@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.16
+# Version: 3.0.17
 ################################################################################
 
 # shellcheck source=${SFOLDER}/libs/wordpress_installer.sh

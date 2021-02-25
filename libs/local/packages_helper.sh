@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.16
+# Version: 3.0.17
 #############################################################################
 
 # Check if program is installed (is_this_installed "mysql-server")
@@ -92,7 +92,7 @@ function check_packages_required() {
   declare -g CERTBOT
 
   # Check if sendemail is installed
-  SENDEMAIL="$(which sendemail)"
+  SENDEMAIL="$(command -v sendemail)"
   if [[ ! -x "${SENDEMAIL}" ]]; then
     display --indent 2 --text "- Installing sendemail"
     apt-get --yes install sendemail libio-socket-ssl-perl -qq > /dev/null
@@ -101,7 +101,7 @@ function check_packages_required() {
   fi
 
   # Check if pv is installed
-  PV="$(which pv)"
+  PV="$(command -v pv)"
   if [[ ! -x "${PV}" ]]; then
     display --indent 2 --text "- Installing pv"
     apt-get --yes install pv -qq > /dev/null
@@ -110,7 +110,7 @@ function check_packages_required() {
   fi
 
   # Check if bc is installed
-  BC="$(which bc)"
+  BC="$(command -v bc)"
   if [[ ! -x "${BC}" ]]; then
     display --indent 2 --text "- Installing bc"
     apt-get --yes install bc -qq > /dev/null
@@ -119,7 +119,7 @@ function check_packages_required() {
   fi
 
   # Check if dig is installed
-  DIG="$(which dig)"
+  DIG="$(command -v dig)"
   if [[ ! -x "${DIG}" ]]; then
     display --indent 2 --text "- Installing dnsutils"
     apt-get --yes install dnsutils -qq > /dev/null
@@ -128,7 +128,7 @@ function check_packages_required() {
   fi
 
   # Check if net-tools is installed
-  IFCONFIG="$(which ifconfig)"
+  IFCONFIG="$(command -v ifconfig)"
   if [[ ! -x "${IFCONFIG}" ]]; then
     display --indent 2 --text "- Installing net-tools"
     apt-get --yes install net-tools -qq > /dev/null
@@ -137,7 +137,7 @@ function check_packages_required() {
   fi
 
   # Check if lbzip2 is installed
-  LBZIP2="$(which lbzip2)"
+  LBZIP2="$(command -v lbzip2)"
   if [[ ! -x "${LBZIP2}" ]]; then
     display --indent 2 --text "- Installing lbzip2"
     apt-get --yes install lbzip2 -qq > /dev/null
@@ -146,7 +146,7 @@ function check_packages_required() {
   fi
 
   # Check if zip is installed
-  ZIP="$(which zip)"
+  ZIP="$(command -v zip)"
   if [[ ! -x "${ZIP}" ]]; then
     display --indent 2 --text "- Installing zip"
     apt-get --yes install zip -qq > /dev/null
@@ -155,7 +155,7 @@ function check_packages_required() {
   fi
 
   # Check if unzip is installed
-  UNZIP="$(which unzip)"
+  UNZIP="$(command -v unzip)"
   if [[ ! -x "${UNZIP}" ]]; then
     display --indent 2 --text "- Installing unzip"
     apt-get --yes install unzip -qq > /dev/null
@@ -164,7 +164,7 @@ function check_packages_required() {
   fi
 
   # Check if unzip is installed
-  GIT="$(which git)"
+  GIT="$(command -v git)"
   if [[ ! -x "${GIT}" ]]; then
     display --indent 2 --text "- Installing git"
     apt-get --yes install git -qq > /dev/null
@@ -173,65 +173,81 @@ function check_packages_required() {
   fi
 
   # MOGRIFY
-  MOGRIFY="$(which mogrify)"
+  MOGRIFY="$(command -v mogrify)"
   if [[ ! -x "${MOGRIFY}" ]]; then
     # Install image optimize packages
     install_image_optimize_packages
   fi
 
   # JPEGOPTIM
-  JPEGOPTIM="$(which jpegoptim)"
+  JPEGOPTIM="$(command -v jpegoptim)"
 
   # OPTIPNG
-  OPTIPNG="$(which optipng)"
+  OPTIPNG="$(command -v optipng)"
 
   # TAR
-  TAR="$(which tar)"
+  TAR="$(command -v tar)"
 
   # FIND
-  FIND="$(which find)"
+  FIND="$(command -v find)"
 
   # MySQL
-  MYSQL="$(which mysql)"
-  MYSQLDUMP="$(which mysqldump)"
+  MYSQL="$(command -v mysql)"
+  MYSQLDUMP="$(command -v mysqldump)"
   if [[ ! -x "${MYSQL}" ]]; then
+
     display --indent 2 --text "- Checking MySQL installation" --result "WARNING" --color YELLOW
     display --indent 4 --text "MySQL not found" --tcolor YELLOW
     return 1
+
+  else
+    
+    # MySQL installed, check credentials
+    # If /root/.mysql.conf exists then it won't ask for root password
+    if [[ -f ${MYSQL_CONF} ]]; then
+        # Append login parameters to command
+        MYSQL_ROOT="${MYSQL} --defaults-file==${MYSQL_CONF} "
+        MYSQLDUMP_ROOT="${MYSQLDUMP} --defaults-file==${MYSQL_CONF} "
+
+    else
+        # Append login parameters to command
+        MYSQL_ROOT="${MYSQL} -u${MUSER} -p${MPASS} "
+        MYSQLDUMP_ROOT="${MYSQLDUMP} -u${MUSER} -p${MPASS} "
+
+    fi
+
   fi
 
- # PHP
-  PHP="$(which php)"
+  # PHP
+  PHP="$(command -v php)"
   if [[ ! -x "${PHP}" ]]; then
+
     display --indent 2 --text "- Checking PHP installation" --result "WARNING" --color YELLOW
     display --indent 4 --text "PHP not found" --tcolor YELLOW
     return 1
+
+  else
+
+    # PHP is installed, now checking WP-CLI
+    WPCLI_INSTALLED=$(wpcli_check_if_installed)
+    if [[ ${WPCLI_INSTALLED} = "true" ]]; then
+      wpcli_update
+    else
+      wpcli_install
+    fi
+
   fi
 
   # CERTBOT
-  CERTBOT="$(which certbot)"
+  CERTBOT="$(command -v certbot)"
   if [[ ! -x "${CERTBOT}" ]]; then
     display --indent 2 --text "- Checking CERTBOT installation" --result "WARNING" --color YELLOW
     display --indent 4 --text "CERTBOT not found" --tcolor YELLOW
     return 1
+
   fi
 
   display --indent 6 --text "- Checking script dependencies" --result "DONE" --color GREEN
-
-  # TODO: check if php is installed before ask for wp-cli
-
-  WPCLI_INSTALLED=$(wpcli_check_if_installed)
-
-  if [[ ${WPCLI_INSTALLED} = "true" ]]; then
-
-    wpcli_update
-
-  else
-
-    wpcli_install
-
-  fi
-
   log_event "info" "All required packages are installed"
 
 }
@@ -321,7 +337,7 @@ function selected_package_installation() {
           log_event "error" "Package installer for ${app} not found!"
         ;;
 
-    esac
+      esac
 
     done
 

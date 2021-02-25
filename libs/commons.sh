@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.16
+# Version: 3.0.17
 #############################################################################
 
 # Libs apps directory path
@@ -34,7 +34,7 @@ source "${SFOLDER}/utils/it_utils.sh"
 function _setup_globals_and_options() {
 
   declare -g SCRIPT_N="LEMP UTILS SCRIPT"
-  declare -g SCRIPT_V="3.0.16"
+  declare -g SCRIPT_V="3.0.17"
 
   # Hostname
   declare -g VPSNAME="$HOSTNAME"
@@ -71,6 +71,7 @@ function _setup_globals_and_options() {
   # MySQL host and user
   declare -g MHOST="localhost"
   declare -g MUSER="root"
+  declare -g MYSQL_CONF="/root/.mysql.conf"
 
   # Main partition
   declare -g MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+')
@@ -832,18 +833,14 @@ function string_remove_color_chars() {
 
   local string=$1
 
-  local text_styles
-  local text_colors
-  local text_background
-
   # Text Styles
-  text_styles=('NORMAL' 'BOLD' 'ITALIC' 'UNDERLINED' 'INVERTED')
+  declare -a text_styles=("${NORMAL}" "${BOLD}" "${ITALIC}" "${UNDERLINED}" "${INVERTED}")
 
   # Foreground/Text Colours
-  text_colors=('BLACK' 'RED' 'GREEN' 'YELLOW' 'ORANGE' 'MAGENTA' 'CYAN' 'WHITE' 'ENDCOLOR' 'F_DEFAULT')
+  declare -a text_colors=("${BLACK}" "${RED}" "${GREEN}" "${YELLOW}" "${ORANGE}" "${MAGENTA}" "${CYAN}" "${WHITE}" "${ENDCOLOR}" "${F_DEFAULT}")
 
   # Background Colours
-  text_background=('B_BLACK' 'B_RED' 'B_GREEN' 'B_YELLOW' 'B_ORANGE' 'B_MAGENTA' 'B_CYAN' 'B_WHITE' 'B_ENDCOLOR' 'B_DEFAULT')
+  declare -a text_background=("${B_BLACK}" "${B_RED}" "${B_GREEN}" "${B_YELLOW}" "${B_ORANGE}" "${B_MAGENTA}" "${B_CYAN}" "${B_WHITE}" "${B_ENDCOLOR}" "${B_DEFAULT}")
 
   for i in "${text_styles[@]}"
   do
@@ -1349,21 +1346,30 @@ function ask_folder_to_install_sites() {
 function ask_mysql_root_psw() {
 
   # MPASS is defined globally
-  if [[ -z "${MPASS}" ]]; then
+  if [[ -z "${MPASS}" && ! -f "/root/.mysql.cnf" ]]; then
+
     MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root password" 10 60 "${MPASS}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
-      #echo "> Running: mysql -u root -p${MPASS} -e"
+      
       until mysql -u root -p"${MPASS}" -e ";"; do
-        read -s -p " > Can't connect to MySQL, please re-enter $MUSER password: " MPASS
+        read -s -p " > Can't connect to MySQL, please re-enter ${MUSER} password: " MPASS
       
       done
-      echo "MPASS=${MPASS}" >>/root/.broobe-utils-options
+
+      # Old way
+      # echo "MPASS=${MPASS}" >>/root/.broobe-utils-options
+
+      # New way
+      echo "[client]" >/root/.mysql.cnf
+      echo "user=root">>/root/.mysql.cnf
+      echo "password=${MPASS}">>/root/.mysql.cnf
 
     else
       return 1
 
     fi
+
   fi
 
 }
