@@ -15,7 +15,10 @@ function mysql_test_user_credentials() {
     local mysql_output
     local mysql_result
 
+    # Execute command
     mysql_output="$("${MYSQL}" -u "${db_user}" -p"${db_user_psw}" -e ";")"
+
+    # Check result
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
         
@@ -31,9 +34,7 @@ function mysql_test_user_credentials() {
         # Logging
         clear_last_line
         display --indent 6 --text "- Testing MySQL user credentials" --result "FAIL" --color RED
-        display --indent 8 --text "MySQL output: ${mysql_output}" --tcolor RED
         log_event "error" "Something went wrong testing MySQL user credentials. User '${db_user}' and pass '${db_user_psw}'"
-        log_event "debug" "MySQL output: ${mysql_output}"
         log_event "debug" "Last command executed: ${MYSQL} -u${db_user} -p${db_user_psw} -e ;"
 
         return 1
@@ -80,6 +81,7 @@ function mysql_user_create() {
     display --indent 2 --text "- Creating MySQL user ${db_user}"
     log_event "info" "Creating MySQL user ..."
 
+    # Query
     if [[ -z ${db_user_psw} || ${db_user_psw} == "" ]]; then
         query="CREATE USER '${db_user}'@'${db_user_scope}';"
 
@@ -88,7 +90,10 @@ function mysql_user_create() {
 
     fi
 
-    mysql_output="$("${MYSQL_ROOT}" -e "${query}")"
+    # Execute command
+    ${MYSQL_ROOT} -e "${query}"
+
+    # Check result
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
         
@@ -134,10 +139,14 @@ function mysql_user_delete() {
     display --indent 6 --text "- Deleting user ${db_user}"
     log_event "info" "Deleting ${db_user} user in MySQL ..."
 
+    # Query
     query_1="DROP USER '${db_user}'@'${db_user_scope}';"
     query_2="FLUSH PRIVILEGES;"
 
-    mysql_output="$("${MYSQL_ROOT}" -e "${query_1}${query_2}")"
+    # Execute command
+    ${MYSQL_ROOT} -e "${query_1}${query_2}"
+
+    # Check result
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
@@ -154,7 +163,6 @@ function mysql_user_delete() {
         clear_last_line
         display --indent 6 --text "- Deleting ${db_user} user in MySQL" --result "FAIL" --color RED
         log_event "error" "Something went wrong deleting user: ${db_user}."
-        log_event "debug" "MySQL output: ${mysql_output}"
         log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\""
 
         return 1
@@ -176,10 +184,14 @@ function mysql_user_psw_change() {
 
     log_event "info" "Changing password for user ${db_user} in MySQL"
 
+    # Query
     query_1="ALTER USER '${db_user}'@'localhost' IDENTIFIED BY '${db_user_psw}';"
     query_2="FLUSH PRIVILEGES;"
 
-    mysql_output="$("${MYSQL_ROOT}" -e "${query_1}${query_2}")"
+    # Execute command
+    ${MYSQL_ROOT} -e "${query_1}${query_2}"
+
+    # Check result
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
@@ -195,8 +207,7 @@ function mysql_user_psw_change() {
         # Logging
         display --indent 6 --text "- Changing password to user ${db_user}" --result "FAIL" --color RED   
         log_event "error" "Something went wrong changing password to user ${db_user}."
-        log_event "debug" "MySQL output: ${mysql_output}"
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e ${query_1}${query_2}"
+        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\""
 
         return 1
 
@@ -239,6 +250,7 @@ function mysql_root_psw_change() {
 	# Starting mysql again
 	service mysql restart
 	
+    # Check result
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
@@ -253,7 +265,8 @@ function mysql_root_psw_change() {
 
         # Logging
         display --indent 6 --text "- Setting new password for root" --result "FAIL" --color RED
-        log_event "error" "Something went wrong changing MySQL root password. MySQL output: ${mysql_result}"
+        log_event "error" "Something went wrong changing MySQL root password."
+        log_event "debug" "Last command executed: mysql mysql -e \"USE mysql;UPDATE user SET Password=PASSWORD('${db_root_psw}') WHERE User='${db_root_user}';FLUSH PRIVILEGES;\""
 
         return 1
 
@@ -282,10 +295,14 @@ function mysql_user_grant_privileges() {
 
     log_event "info" "Granting privileges to ${db_user} on ${db_target} database in MySQL"
 
+    # Query
     query_1="GRANT ALL PRIVILEGES ON ${db_target}.* TO '${db_user}'@'${db_scope}';"
     query_2="FLUSH PRIVILEGES;"
 
-    mysql_output="$("${MYSQL_ROOT}" -e "${query_1}${query_2}")"
+    # Execute command
+    ${MYSQL_ROOT} -e "${query_1}${query_2}"
+
+    # Check result
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
@@ -300,8 +317,7 @@ function mysql_user_grant_privileges() {
         # Logging
         display --indent 6 --text "- Granting privileges to ${db_user}" --result "FAIL" --color RED
         log_event "error" "Something went wrong granting privileges to user ${db_user}."
-        log_event "debug" "MySQL output: ${mysql_output}"
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e ${query_1}${query_2}"
+        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\""
 
         return 1
 
@@ -388,9 +404,13 @@ function mysql_database_create() {
 
     log_event "info" "Creating ${database} database in MySQL ..."
 
+    # Query
     query_1="CREATE DATABASE IF NOT EXISTS ${database};"
 
-    mysql_output="$("${MYSQL_ROOT}" -e "${query_1}")"
+    # Execute command
+    ${MYSQL_ROOT} -e "${query_1}"
+
+    # Check result
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
@@ -404,10 +424,8 @@ function mysql_database_create() {
 
         # Logging
         display --indent 6 --text "- Creating database: ${database}" --result "ERROR" --color RED
-        display --indent 8 --text "MySQL output: ${mysql_output}" --tcolor RED
         log_event "error" "Something went wrong creating database: ${database}."
-        log_event "debug" "MySQL output: ${mysql_output}"
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e ${query_1}"
+        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}\""
 
         return 1
 
@@ -426,9 +444,13 @@ function mysql_database_drop() {
 
     log_event "info" "Droping the database: ${database}"
 
+    # Query
     query_1="DROP DATABASE ${database};"
     
-    mysql_output="$("${MYSQL_ROOT}" -e "${query_1}")"
+    # Execute command
+    ${MYSQL_ROOT} -e "${query_1}"
+
+    # Check result
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
@@ -445,8 +467,7 @@ function mysql_database_drop() {
         display --indent 8 --text "MySQL import output: ${mysql_output}" --tcolor RED
         display --indent 8 --text "Query executed: ${query_1}" --tcolor RED
         log_event "error" "Something went wrong deleting database: ${database}."
-        log_event "debug" "MySQL output: ${mysql_output}"
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e ${query_1}"
+        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}\""
 
         return 1
         
@@ -469,7 +490,10 @@ function mysql_database_import() {
     log_event "info" "Importing dump file ${dump_file} into database: ${database}"
     log_event "debug" "Running: pv ${dump_file} | ${MYSQL_ROOT} -f -D ${database}"
 
+    # Execute command
     pv "${dump_file}" | ${MYSQL_ROOT} -f -D "${database}"
+
+    # Check result
     import_status=$?
     if [[ ${import_status} -eq 0 ]]; then
 
@@ -485,9 +509,7 @@ function mysql_database_import() {
         # Logging
         clear_last_line
         display --indent 6 --text "- Database backup import" --result "ERROR" --color RED
-        display --indent 8 --text "MySQL output: ${import_status}" --tcolor RED
         log_event "error" "Something went wrong importing database: ${database}"
-        log_event "debug" "MySQL output: ${mysql_output}"
         log_event "debug" "Last command executed: pv ${dump_file} | ${MYSQL_ROOT} -f -D ${database}"
 
         return 1
@@ -512,8 +534,7 @@ function mysql_database_export() {
     spinner_start "- Making a backup of: ${database}"
 
     # Run mysqldump
-    dump_output="$("${MYSQLDUMP_ROOT}" "${database}" > "${dump_file}")"
-    clear_last_line
+    ${MYSQLDUMP_ROOT} "${database}" > "${dump_file}"
 
     dump_status=$?
     spinner_stop "${dump_status}"
@@ -531,8 +552,7 @@ function mysql_database_export() {
 
         # Logging
         display --indent 6 --text "- Database backup for ${database}" --result "ERROR" --color RED
-        display --indent 8 --text "MySQL dump output: ${dump_output}" --tcolor RED
-        log_event "error" "Something went wrong exporting database: ${database}. MySQL dump output: ${dump_output}"
+        log_event "error" "Something went wrong exporting database: ${database}."
         log_event "error" "Last command executed: ${MYSQLDUMP_ROOT} ${database} > ${dump_file}"
 
         return 1
