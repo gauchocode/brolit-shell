@@ -618,7 +618,7 @@ function make_all_databases_backup() {
   display --indent 6 --text "- Initializing database backup script" --result "DONE" --color GREEN
 
   # Get MySQL DBS
-  DBS=$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -Bse 'show databases')
+  DBS=$("${MYSQL_ROOT}" -Bse 'show databases')
   clear_last_line #to remove mysql warning message
 
   # Get all databases name
