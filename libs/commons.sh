@@ -285,14 +285,6 @@ function script_init() {
   # Checking script permissions
   _check_scripts_permissions
 
-  # Checking required packages to run
-  check_packages_required
-  packages_output=$?
-  if [[ ${packages_output} -eq 1 ]];then
-    log_event "warning" "Some script dependencies are not setisfied." "true"
-    prompt_return_or_finish
-  fi
-
   # Status vars
   declare -g STATUS_BACKUP_DBS=""
   declare -g STATUS_BACKUP_FILES=""
@@ -314,6 +306,14 @@ function script_init() {
 
     menu_first_run
     
+  fi
+
+  # Checking required packages to run
+  check_packages_required
+  packages_output=$?
+  if [[ ${packages_output} -eq 1 ]];then
+    log_event "warning" "Some script dependencies are not setisfied." "true"
+    prompt_return_or_finish
   fi
 
   # Dropbox-uploader config file
