@@ -994,7 +994,7 @@ function get_domain_extension() {
 
   log_event "info" "Working with domain: ${domain}"
 
-  # Remove first_lvl domain name
+  # Get first_lvl domain name
   first_lvl="$(cut -d'.' -f1 <<<"${domain}")"
 
   # Extract first_lvl
@@ -1019,8 +1019,6 @@ function get_domain_extension() {
     domain_ext=.${domain_ext}
 
     # Logging
-    #display --indent 6 --text "- Extracting domain extension from ${domain}" --result DONE --color GREEN
-    #display --indent 8 --text "Domain extension: ${domain_ext}"
     log_event "debug" "Extracting domain extension from ${domain}."
     log_event "debug" "Domain extension extracted: ${domain_ext}"
 
@@ -1030,7 +1028,6 @@ function get_domain_extension() {
   else
 
     # Logging
-    #display --indent 6 --text "- Extracting domain extension from ${domain}" --result FAIL --color RED
     log_event "error" "Extracting domain extension from ${domain}"
 
     return 1
@@ -1071,9 +1068,6 @@ function extract_domain_extension() {
 
     # Logging
     log_event "debug" "domain_no_ext: ${domain_no_ext}"
-    #display --indent 4 --text "Domain extension: ${domain_extension}"
-    #display --indent 4 --text "Domain without extension: ${domain_no_ext}"
-    #log_break "true"
 
     # Return
     echo "${domain_no_ext}"
@@ -1096,9 +1090,12 @@ function get_root_domain() {
   local domain_extension
   local domain_no_ext
 
+  # Get Domain Ext
   domain_extension="$(get_domain_extension "${domain}")"
+
+  # Check result
   domain_extension_output=$?
-  if [[ $domain_extension_output -eq 0 ]]; then
+  if [[ ${domain_extension_output} -eq 0 ]]; then
 
     # Remove domain extension
     domain_no_ext=${domain%"$domain_extension"}
@@ -1107,6 +1104,41 @@ function get_root_domain() {
 
     # Return
     echo "${root_domain}"
+
+  else
+
+    return 1
+
+  fi
+
+}
+
+function get_subdomain_part() {
+
+  # $1 = ${domain}
+
+  local domain=$1
+
+  local domain_extension
+  local domain_no_ext
+  local subdomain_part
+
+  # Get Domain Ext
+  domain_extension="$(get_domain_extension "${domain}")"
+
+  # Check result
+  domain_extension_output=$?
+  if [[ ${domain_extension_output} -eq 0 ]]; then
+
+    # Remove domain extension
+    domain_no_ext=${domain%"$domain_extension"}
+
+    root_domain=${domain_no_ext##*.}${domain_extension}
+
+    subdomain_part=${domain//$root_domain/}
+
+    # Return
+    echo "${subdomain_part}"
 
   else
 

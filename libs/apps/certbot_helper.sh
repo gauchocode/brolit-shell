@@ -263,16 +263,16 @@ function certbot_certificate_valid_days() {
   local domain=$1
 
   local cert_days
+  local root_domain
 
-  log_event "debug" "Running: certbot certificates --cert-name ${domain}"
+  root_domain="$(get_root_domain "${domain}")"
 
   cert_days=$(certbot certificates --cert-name "${domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
 
-  # TODO: need refactor, must check if ${domain} contains www
-
   if [[ ${cert_days} == "" ]]; then
+  
       #new try with www on it
-      cert_days=$(certbot certificates --cert-name "www.${domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
+      cert_days=$(certbot certificates --cert-name "www.${root_domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
 
       if [[ "${cert_days}" == "" ]]; then
           #new try with -0001
