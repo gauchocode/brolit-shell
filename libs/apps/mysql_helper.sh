@@ -22,7 +22,6 @@ function mysql_test_user_credentials() {
         # Logging
         clear_last_line
         display --indent 6 --text "- Testing MySQL user credentials" --result "DONE" --color GREEN
-        #display --indent 8 --text "User created with pass: ${db_user_psw}" --tcolor YELLOW
         log_event "success" " Testing MySQL user credentials. User '${db_user}' and pass '${db_user_psw}'"
 
         return 0
@@ -35,6 +34,7 @@ function mysql_test_user_credentials() {
         display --indent 8 --text "MySQL output: ${mysql_output}" --tcolor RED
         log_event "error" "Something went wrong testing MySQL user credentials. User '${db_user}' and pass '${db_user_psw}'"
         log_event "debug" "MySQL output: ${mysql_output}"
+        log_event "debug" "Last command executed: ${MYSQL} -u${db_user} -p${db_user_psw} -e ;"
 
         return 1
 
@@ -109,7 +109,7 @@ function mysql_user_create() {
         display --indent 8 --text "Query executed: ${query}" --tcolor RED
         log_event "error" "Something went wrong creating user: ${db_user}."
         log_event "debug" "MySQL output: ${mysql_output}"
-        log_event "debug" "Query executed: ${query}"
+        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e ${query}"
 
         return 1
 
@@ -155,7 +155,7 @@ function mysql_user_delete() {
         display --indent 6 --text "- Deleting ${db_user} user in MySQL" --result "FAIL" --color RED
         log_event "error" "Something went wrong deleting user: ${db_user}."
         log_event "debug" "MySQL output: ${mysql_output}"
-        log_event "debug" "Query executed: ${query}"
+        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e ${query}"
 
         return 1
 
@@ -196,7 +196,7 @@ function mysql_user_psw_change() {
         display --indent 6 --text "- Changing password to user ${db_user}" --result "FAIL" --color RED   
         log_event "error" "Something went wrong changing password to user ${db_user}."
         log_event "debug" "MySQL output: ${mysql_output}"
-        log_event "debug" "Query executed: ${query_1}${query_2}"
+        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e ${query_1}${query_2}"
 
         return 1
 
@@ -301,7 +301,7 @@ function mysql_user_grant_privileges() {
         display --indent 6 --text "- Granting privileges to ${db_user}" --result "FAIL" --color RED
         log_event "error" "Something went wrong granting privileges to user ${db_user}."
         log_event "debug" "MySQL output: ${mysql_output}"
-        log_event "debug" "Query executed: ${query_1}${query_2}"
+        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e ${query_1}${query_2}"
 
         return 1
 
@@ -407,7 +407,7 @@ function mysql_database_create() {
         display --indent 8 --text "MySQL output: ${mysql_output}" --tcolor RED
         log_event "error" "Something went wrong creating database: ${database}."
         log_event "debug" "MySQL output: ${mysql_output}"
-        log_event "debug" "Query executed: ${query_1}"
+        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e ${query_1}"
 
         return 1
 
@@ -446,7 +446,7 @@ function mysql_database_drop() {
         display --indent 8 --text "Query executed: ${query_1}" --tcolor RED
         log_event "error" "Something went wrong deleting database: ${database}."
         log_event "debug" "MySQL output: ${mysql_output}"
-        log_event "debug" "Query executed: ${query_1}"
+        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e ${query_1}"
 
         return 1
         
@@ -488,7 +488,7 @@ function mysql_database_import() {
         display --indent 8 --text "MySQL output: ${import_status}" --tcolor RED
         log_event "error" "Something went wrong importing database: ${database}"
         log_event "debug" "MySQL output: ${mysql_output}"
-        log_event "debug" "Last command executed: pv ${dump_file} | ${MYSQL} -f -u${MUSER} -p${MPASS} -f -D ${database}"
+        log_event "debug" "Last command executed: pv ${dump_file} | ${MYSQL_ROOT} -f -D ${database}"
 
         return 1
 
