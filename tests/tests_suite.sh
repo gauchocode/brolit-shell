@@ -6,7 +6,7 @@
 
 function tests_suite_menu() {
 
-  local -n tests_options          # whiptail array options
+  local tests_options             # whiptail array options
   local chosen_tests_options      # whiptail var
 
   tests_options=(
