@@ -349,7 +349,7 @@ function mysql_database_exists() {
 
     local result
 
-    result=$("${MYSQL_ROOT}" -e "SHOW DATABASES LIKE '${database}';")
+    result=$(${MYSQL_ROOT} -e "SHOW DATABASES LIKE '${database}';")
 
     if [[ -z "${result}" || "${result}" = "" ]]; then
         # Return 1 if database don't exists
