@@ -155,7 +155,7 @@ function mysql_user_delete() {
         display --indent 6 --text "- Deleting ${db_user} user in MySQL" --result "FAIL" --color RED
         log_event "error" "Something went wrong deleting user: ${db_user}."
         log_event "debug" "MySQL output: ${mysql_output}"
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e ${query}"
+        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\""
 
         return 1
 
