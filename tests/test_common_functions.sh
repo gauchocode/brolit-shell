@@ -7,6 +7,7 @@
 function test_common_funtions() {
 
     test_get_root_domain
+    test_get_subdomain_part
     test_extract_domain_extension
 
 }
@@ -60,6 +61,44 @@ function test_get_root_domain() {
         display --indent 6 --text "- get_root_domain result ${result}" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_root_domain with www.dev.broobe.hosting" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
+    fi
+
+}
+
+function test_get_root_domain() {
+
+    log_subsection "Test: get_root_domain"
+
+    result="$(get_subdomain_part "www.broobe.com")"
+    if [[ ${result} = "www" ]]; then 
+        display --indent 6 --text "- get_subdomain_part result ${result}" --result "PASS" --color WHITE
+    else
+        display --indent 6 --text "- get_subdomain_part with www.broobe.com" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
+    fi
+
+    result="$(get_subdomain_part "test.broobe.com")"
+    if [[ ${result} = "test" ]]; then 
+        display --indent 6 --text "- get_subdomain_part result ${result}" --result "PASS" --color WHITE
+    else
+        display --indent 6 --text "- get_subdomain_part with test.broobe.com" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
+    fi
+
+    result="$(get_subdomain_part "test.01.broobe.com")"
+    if [[ ${result} = "test.01" ]]; then 
+        display --indent 6 --text "- get_subdomain_part result ${result}" --result "PASS" --color WHITE
+    else
+        display --indent 6 --text "- get_subdomain_part with test.01.broobe.com" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
+    fi
+
+    result="$(get_subdomain_part "dev.prueba.broobe.hosting")"
+    if [[ ${result} = "dev.prueba" ]]; then 
+        display --indent 6 --text "- get_subdomain_part result ${result}" --result "PASS" --color WHITE
+    else
+        display --indent 6 --text "- get_subdomain_part with dev.prueba.broobe.hosting" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
