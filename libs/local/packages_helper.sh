@@ -201,16 +201,12 @@ function check_packages_required() {
     return 1
 
   else
-    
-    #MySQL credentials file
-    declare -g MYSQL_CONF="/root/.mysql.cnf"       
 
-    # If /root/.mysql.conf exists then it won't ask for root password
     if [[ -f ${MYSQL_CONF} ]]; then
-        # Append login parameters to command
-        MYSQL_ROOT="${MYSQL} --defaults-file=\"${MYSQL_CONF}\""
-        MYSQLDUMP_ROOT="${MYSQLDUMP} --defaults-file=\"${MYSQL_CONF}\""
-        
+      # Append login parameters to command
+      MYSQL_ROOT="${MYSQL} --defaults-file=\"${MYSQL_CONF}\""
+      MYSQLDUMP_ROOT="${MYSQLDUMP} --defaults-file=\"${MYSQL_CONF}\""
+      
     fi
 
   fi
