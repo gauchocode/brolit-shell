@@ -367,7 +367,16 @@ function mysql_user_exists() {
 
     local db_user=$1
 
-    if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${db_user}';" | "${MYSQL_ROOT}" | grep 1; then
+    local query
+    local user_exists
+
+    query="SELECT COUNT(*) FROM mysql.user WHERE user = '${db_user}';"
+
+    user_exists="$(${MYSQL_ROOT} -e "${query}" | grep 1)"
+    
+    log_event "debug" "Last command executed: ${MYSQL_ROOT} -e ${query} | grep 1"
+
+    if [[ ${user_exists} == "" ]]; then
         # Return 0 if user don't exists
         return 0
     else
@@ -385,6 +394,7 @@ function mysql_database_exists() {
 
     local result
 
+    # Run command
     result=$(${MYSQL_ROOT} -e "SHOW DATABASES LIKE '${database}';")
 
     if [[ -z "${result}" || "${result}" = "" ]]; then
