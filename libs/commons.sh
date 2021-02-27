@@ -60,6 +60,7 @@ function _setup_globals_and_options() {
   #MAILCOW BACKUP
   declare -g MAILCOW_TMP_BK="${SFOLDER}/tmp/mailcow"
 
+  # PHP
   declare -g PHP_V
   PHP_V="$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")"
   php_exit=$?
@@ -73,7 +74,9 @@ function _setup_globals_and_options() {
   declare -g MUSER="root"
 
   #MySQL credentials file
-  declare -g MYSQL_CONF="/root/.my.cnf"       
+  declare -g MYSQL_CONF="/root/.my.cnf"
+  declare -g MYSQL
+  declare -g MYSQLDUMP
 
   # Main partition
   declare -g MAIN_VOL
