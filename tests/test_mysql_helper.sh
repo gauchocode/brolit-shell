@@ -11,7 +11,7 @@ function test_mysql_helper() {
     #   mysql_user_psw_change
 
     #test_ask_mysql_root_psw
-    test_mysql_test_user_credentials
+    #test_mysql_test_user_credentials
     test_mysql_user_create
     test_mysql_user_exists
     test_mysql_user_delete
