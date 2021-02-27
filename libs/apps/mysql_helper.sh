@@ -62,6 +62,13 @@ function mysql_count_dabases() {
     echo "${total_databases}"
 }
 
+function mysql_list_databases() {
+
+    # Return
+    echo "${MYSQL_ROOT} -Bse 'show databases'"
+
+}
+
 function mysql_user_create() {
 
     # $1 = ${db_user}
