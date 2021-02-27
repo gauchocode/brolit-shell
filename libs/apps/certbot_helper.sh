@@ -256,6 +256,7 @@ function certbot_show_domain_certificates_expiration_date() {
 
 }
 
+# TODO: Awful code, need a refactor
 function certbot_certificate_valid_days() {
 
   # $1 = domains (domain.com,www.domain.com)
@@ -264,27 +265,33 @@ function certbot_certificate_valid_days() {
 
   local cert_days
   local root_domain
+  local subdomain_part
 
   root_domain="$(get_root_domain "${domain}")"
+  subdomain_part="$(get_subdomain_part "${domain}")"
 
   cert_days=$(certbot certificates --cert-name "${domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
 
   if [[ ${cert_days} == "" ]]; then
   
-      #new try with www on it
-      cert_days=$(certbot certificates --cert-name "www.${root_domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
+    if [[ ${subdomain_part} == "www" ]]; then
+
+      cert_days=$(certbot certificates --cert-name "${root_domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
 
       if [[ "${cert_days}" == "" ]]; then
-          #new try with -0001
-          cert_days=$(certbot certificates --cert-name "${domain}-0001" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
-
-          if [[ "${cert_days}" == "" ]]; then
-            #new try with www and -0001
-            cert_days=$(certbot certificates --cert-name "www.${domain}-0001" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
-
-          fi
+        # New try with -0001
+        cert_days=$(certbot certificates --cert-name "${root_domain}-0001" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
 
       fi
+    
+    else
+
+      if [[ "${cert_days}" == "" ]]; then
+        cert_days=$(certbot certificates --cert-name "${domain}-0001" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
+
+      fi
+
+    fi
 
   fi
 
