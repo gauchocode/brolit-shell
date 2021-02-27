@@ -66,10 +66,30 @@ function mysql_list_databases() {
 
     local databases
 
+    # Run command
     databases="$(${MYSQL_ROOT} -Bse 'show databases')"
 
-    # Return
-    echo "${databases}"
+    # Check result
+    mysql_result=$?
+    if [[ ${mysql_result} -eq 0 ]]; then
+        
+        # Logging
+        display --indent 6 --text "- Listing MySQL databases" --result "DONE" --color GREEN
+        log_event "success" " Listing MySQL databases '${databases}'"
+
+        # Return
+        echo "${databases}"
+
+    else
+
+        # Logging
+        display --indent 6 --text "- Listing MySQL databases" --result "FAIL" --color RED
+        log_event "error" "Something went wrong listing MySQL databases"
+        log_event "debug" "Last command executed: ${MYSQL_ROOT} -Bse 'show databases'"
+
+        return 1
+
+    fi
 
 }
 

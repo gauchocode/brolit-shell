@@ -193,8 +193,7 @@ function check_packages_required() {
 
   # MySQL
   MYSQL="$(command -v mysql)"
-  MYSQLDUMP="$(command -v mysqldump)"
-  if [[ ! -x "${MYSQL}" ]]; then
+  if [[ ! -x ${MYSQL} ]]; then
 
     display --indent 2 --text "- Checking MySQL installation" --result "WARNING" --color YELLOW
     display --indent 4 --text "MySQL not found" --tcolor YELLOW
@@ -202,10 +201,12 @@ function check_packages_required() {
 
   else
 
+    MYSQLDUMP="$(command -v mysqldump)"
+
     if [[ -f ${MYSQL_CONF} ]]; then
       # Append login parameters to command
-      MYSQL_ROOT="${MYSQL} --defaults-file=\"${MYSQL_CONF}\""
-      MYSQLDUMP_ROOT="${MYSQLDUMP} --defaults-file=\"${MYSQL_CONF}\""
+      MYSQL_ROOT="${MYSQL} --defaults-file=${MYSQL_CONF}"
+      MYSQLDUMP_ROOT="${MYSQLDUMP} --defaults-file=${MYSQL_CONF}"
       
     fi
 
