@@ -33,6 +33,7 @@ source "${SFOLDER}/utils/it_utils.sh"
 
 function _setup_globals_and_options() {
 
+  # Script
   declare -g SCRIPT_N="LEMP UTILS SCRIPT"
   declare -g SCRIPT_V="3.0.17"
 
@@ -71,27 +72,36 @@ function _setup_globals_and_options() {
   declare -g MHOST="localhost"
   declare -g MUSER="root"
 
+  #MySQL credentials file
+  declare -g MYSQL_CONF="/root/.mysql.cnf"       
+
   # Main partition
-  declare -g MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+')
+  declare -g MAIN_VOL
+  MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+')
 
   # Dropbox Folder Backup
   declare -g DROPBOX_FOLDER="/"
 
   # Time Vars
-  declare -g NOW=$(date +"%Y-%m-%d")
-  declare -g NOWDISPLAY=$(date +"%d-%m-%Y")
-  declare -g ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
+  declare -g NOW
+  NOW=$(date +"%Y-%m-%d")
 
+  declare -g NOWDISPLAY
+  NOWDISPLAY=$(date +"%d-%m-%Y")
+
+  declare -g ONEWEEKAGO
+  ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
+
+  # Others
   declare -g startdir=""
   declare -g menutitle="Config Selection Menu"
 
 }
 
-# Refs:
-# https://misc.flogisoft.com/bash/tip_colors_and_formatting
-
-
 function _setup_colors_and_styles() {
+
+  # Refs:
+  # https://misc.flogisoft.com/bash/tip_colors_and_formatting
 
   # Declare read-only global vars
   declare -g NORMAL BOLD ITALIC UNDERLINED INVERTED
