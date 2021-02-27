@@ -11,7 +11,12 @@ SCRIPTNAME="$0"
 ARGS=( "$@" )
 BRANCH="master"
 
-self_update() {
+# Foreground/Text Colours
+GREEN='\E[32;40m'
+YELLOW='\E[33;40m'
+ENDCOLOR='\033[0m'
+
+function _self_update() {
 
     # Store credentials on first git pull
     git config --global credential.helper store
@@ -19,21 +24,23 @@ self_update() {
     git fetch
 
     [ -n "$(git diff --name-only "origin/${BRANCH}" "${SCRIPTFILE}")" ] && {
-        echo "Found a new version of LEMP Script Utils, updating ..."
+
+        echo -e "${GREEN}Found a new version of LEMP Script Utils, updating ...${ENDCOLOR}"
 
         git checkout "${BRANCH}"
         git reset --hard origin/master
         git pull --ff-only --force
         
-        chmod +x runner.sh updater.sh
+        find ./ -name "*.sh" -exec chmod +x {} \;
 
         exit 1
+
     }
     
-    echo "Already the latest version."
+    echo -e "${YELLOW}Already the latest version.${ENDCOLOR}"
 
 }
 
 #############################################################################
 
-self_update
+_self_update

@@ -72,7 +72,7 @@ function test_get_subdomain_part() {
 
     local result
 
-    log_subsection "Test: get_root_domain"
+    log_subsection "Test: get_subdomain_part"
 
     result="$(get_subdomain_part "www.broobe.com")"
     if [[ ${result} = "www" ]]; then 
