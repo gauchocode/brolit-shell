@@ -73,7 +73,7 @@ function _setup_globals_and_options() {
   declare -g MUSER="root"
 
   #MySQL credentials file
-  declare -g MYSQL_CONF="/root/.mysql.cnf"       
+  declare -g MYSQL_CONF="/root/.my.cnf"       
 
   # Main partition
   declare -g MAIN_VOL
@@ -1395,7 +1395,7 @@ function ask_mysql_root_psw() {
 
   local mysql_root_pass
 
-  # Check MySQL credentials on .mysql.cnf
+  # Check MySQL credentials on .my.cnf
   if [[ ! -f ${MYSQL_CONF} ]]; then
 
     mysql_root_pass=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root password" 10 60 "${mysql_root_pass}" 3>&1 1>&2 2>&3)
@@ -1408,9 +1408,9 @@ function ask_mysql_root_psw() {
       done
 
       # Create new MySQL credentials file
-      echo "[client]" >/root/.mysql.cnf
-      echo "user=root">>/root/.mysql.cnf
-      echo "password=${mysql_root_pass}">>/root/.mysql.cnf
+      echo "[client]" >/root/.my.cnf
+      echo "user=root">>/root/.my.cnf
+      echo "password=${mysql_root_pass}">>/root/.my.cnf
 
     else
 
