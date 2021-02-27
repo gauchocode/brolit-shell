@@ -64,8 +64,12 @@ function mysql_count_dabases() {
 
 function mysql_list_databases() {
 
+    local databases
+
+    databases="$(${MYSQL_ROOT} -Bse 'show databases')"
+
     # Return
-    echo "${MYSQL_ROOT} -Bse 'show databases'"
+    echo "${databases}"
 
 }
 
@@ -73,7 +77,7 @@ function mysql_user_create() {
 
     # $1 = ${db_user}
     # $2 = ${db_user_psw}
-    # $3 = ${db_user_scope}
+    # $3 = ${db_user_scope} // optional
 
     local db_user=$1
     local db_user_psw=$2
@@ -81,12 +85,14 @@ function mysql_user_create() {
 
     local query
 
-    # TODO: only if empty
-    db_user_scope='localhost'
-
     # Logging
     display --indent 2 --text "- Creating MySQL user ${db_user}"
     log_event "info" "Creating MySQL user ..."
+
+    # Define user scope
+    if [[ -z ${db_user_scope} || ${db_user_scope} == "" ]]; then
+        db_user_scope='localhost'
+    fi
 
     # Query
     if [[ -z ${db_user_psw} || ${db_user_psw} == "" ]]; then
@@ -140,11 +146,14 @@ function mysql_user_delete() {
     local query_1
     local query_2
 
-    # TODO: only if empty
-    db_user_scope='localhost'
-
+    # Logging
     display --indent 6 --text "- Deleting user ${db_user}"
     log_event "info" "Deleting ${db_user} user in MySQL ..."
+
+    # Define user scope
+    if [[ -z ${db_user_scope} || ${db_user_scope} == "" ]]; then
+        db_user_scope='localhost'
+    fi
 
     # Query
     query_1="DROP USER '${db_user}'@'${db_user_scope}';"
