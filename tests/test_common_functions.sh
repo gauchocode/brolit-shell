@@ -14,6 +14,8 @@ function test_common_funtions() {
 
 function test_get_root_domain() {
 
+    local result
+
     log_subsection "Test: get_root_domain"
 
     result="$(get_root_domain "www.broobe.com")"
@@ -66,7 +68,9 @@ function test_get_root_domain() {
 
 }
 
-function test_get_root_domain() {
+function test_get_subdomain_part() {
+
+    local result
 
     log_subsection "Test: get_root_domain"
 
@@ -75,6 +79,14 @@ function test_get_root_domain() {
         display --indent 6 --text "- get_subdomain_part result ${result}" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- get_subdomain_part with www.broobe.com" --result "FAIL" --color RED
+        display --indent 6 --text "result: ${result}" --tcolor RED
+    fi
+
+    result="$(get_subdomain_part "broobe.com")"
+    if [[ ${result} = "" ]]; then 
+        display --indent 6 --text "- get_subdomain_part result 'empty_response'" --result "PASS" --color WHITE
+    else
+        display --indent 6 --text "- get_subdomain_part with broobe.com" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
@@ -105,6 +117,8 @@ function test_get_root_domain() {
 }
 
 function test_extract_domain_extension() {
+
+    local result
 
     log_subsection "Testing Domain Functions"
 

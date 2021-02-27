@@ -1135,7 +1135,7 @@ function get_subdomain_part() {
 
     root_domain=${domain_no_ext##*.}${domain_extension}
 
-    subdomain_part=${domain//$root_domain/}
+    subdomain_part=${domain//.$root_domain/}
 
     # Return
     echo "${subdomain_part}"
