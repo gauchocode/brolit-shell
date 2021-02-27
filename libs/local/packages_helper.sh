@@ -210,12 +210,7 @@ function check_packages_required() {
         # Append login parameters to command
         MYSQL_ROOT="${MYSQL} --defaults-file=\"${MYSQL_CONF}\""
         MYSQLDUMP_ROOT="${MYSQLDUMP} --defaults-file=\"${MYSQL_CONF}\""
-
-    else
-        # Append login parameters to command
-        MYSQL_ROOT="${MYSQL} -u${MUSER} -p${MPASS}"
-        MYSQLDUMP_ROOT="${MYSQLDUMP} -u${MUSER} -p${MPASS}"
-
+        
     fi
 
   fi

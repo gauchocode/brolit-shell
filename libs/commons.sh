@@ -361,7 +361,7 @@ function script_init() {
 
   # EXPORT VARS
   export SCRIPT_V VPSNAME TMP_DIR SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V 
-  export LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP MYSQL_ROOT MYSQLDUMP_ROOT TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MPASS MAILA NOW NOWDISPLAY ONEWEEKAGO 
+  export LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP MYSQL_ROOT MYSQLDUMP_ROOT TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MAILA NOW NOWDISPLAY ONEWEEKAGO 
   export SENDEMAIL DISK_U ONE_FILE_BK SERVER_IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_BACKUP_DBS STATUS_BACKUP_FILES STATUS_SERVER STATUS_CERTS OUTDATED_PACKAGES 
   export LOG BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
 
@@ -1383,32 +1383,27 @@ function ask_folder_to_install_sites() {
 
 function ask_mysql_root_psw() {
 
-  # MPASS is defined globally
-  if [[ -z "${MPASS}" && ! -f "/root/.mysql.cnf" ]]; then
+  local mysql_root_pass
 
-    MPASS=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root password" 10 60 "${MPASS}" 3>&1 1>&2 2>&3)
+  # Check MySQL credentials on .mysql.cnf
+  if [[ ! -f ${MYSQL_CONF} ]]; then
+
+    mysql_root_pass=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root password" 10 60 "${mysql_root_pass}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
       
-      until mysql -u root -p"${MPASS}" -e ";"; do
-        read -s -p " > Can't connect to MySQL, please re-enter ${MUSER} password: " MPASS
+      until mysql -u root -p"${mysql_root_pass}" -e ";"; do
+        read -s -p " > Can't connect to MySQL, please re-enter ${MUSER} password: " mysql_root_pass
       
       done
 
-      # Old way
-      # echo "MPASS=${MPASS}" >>/root/.broobe-utils-options
-
-      # New way
-      if [[ ! -f ${MYSQL_CONF} ]]; then
-
-        # Create new MySQL credentials file
-        echo "[client]" >/root/.mysql.cnf
-        echo "user=root">>/root/.mysql.cnf
-        echo "password=${MPASS}">>/root/.mysql.cnf
-
-      fi
+      # Create new MySQL credentials file
+      echo "[client]" >/root/.mysql.cnf
+      echo "user=root">>/root/.mysql.cnf
+      echo "password=${mysql_root_pass}">>/root/.mysql.cnf
 
     else
+
       return 1
 
     fi

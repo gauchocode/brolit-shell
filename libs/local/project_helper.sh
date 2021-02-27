@@ -330,7 +330,7 @@ function project_delete_database() {
     #       and can connect to db, only ask for delete confirmation
 
     # List databases
-    databases=$("${MYSQL}" -u "${MUSER}" -p"${MPASS}" -Bse 'show databases')
+    databases=$(${MYSQL_ROOT} -Bse 'show databases')
     chosen_database=$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
