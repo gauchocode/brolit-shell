@@ -1135,10 +1135,19 @@ function get_subdomain_part() {
 
     root_domain=${domain_no_ext##*.}${domain_extension}
 
-    subdomain_part=${domain//.$root_domain/}
+    if [[ ${root_domain} != ${domain}  ]]; then
 
-    # Return
-    echo "${subdomain_part}"
+      subdomain_part=${domain//.$root_domain/}
+
+      # Return
+      echo "${subdomain_part}"
+
+    else
+
+      # Return
+      echo ""
+
+    fi
 
   else
 
