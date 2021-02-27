@@ -125,13 +125,14 @@ function wp_replace_string_on_database() {
   local target_db=$2
 
   local chosen_db
+  local databases
 
   if [[ -z "${db_prefix}" ]]; then
    
     db_prefix=$(whiptail --title "WordPress DB Prefix" --inputbox "Please insert the WordPress Database Prefix. Example: wp_" 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
-      log_event "info" "Setting db_prefix=${db_prefix}"
+      log_event "info" "Setting db prefix: '${db_prefix}'"
     else
       return 1
     fi
@@ -141,12 +142,12 @@ function wp_replace_string_on_database() {
 
   if [[ -z "${target_db}" ]]; then
     
-    DBS="$(mysql_list_databases)"
+    databases="$(mysql_list_databases)"
     
-    chosen_db=$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to work with" 20 78 10 `for x in ${DBS}; do echo "$x [DB]"; done` 3>&1 1>&2 2>&3)
+    chosen_db=$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to work with" 20 78 10 `for x in ${databases}; do echo "$x [DB]"; done` 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
-      log_event "info" "Setting chosen_db=${chosen_db}"
+      log_event "debug" "Setting chosen_db=${chosen_db}"
     else
       return 1
     fi
@@ -160,7 +161,7 @@ function wp_replace_string_on_database() {
     existing_URL=$(whiptail --title "URL TO CHANGE" --inputbox "Insert the URL you want to change, including http:// or https://" 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
 
-    log_event "info" "Setting existing_URL=${existing_URL}"
+    log_event "info" "URL to change: '${existing_URL}'"
 
     if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -170,12 +171,7 @@ function wp_replace_string_on_database() {
 
         if [[ ${exitstatus} -eq 0 ]]; then
 
-          log_event "info" "Setting new_URL=${new_URL}"
-          log_event "info" "Executing mysqldump of ${chosen_db} before replace urls ..."
-
-          ${MYSQLDUMP_ROOT} "${chosen_db}" > "${chosen_db}_bk_before_replace_urls.sql"
-
-          log_event "success" "Database backup created: ${chosen_db}_bk_before_replace_urls.sql"
+          mysql_database_export "${chosen_db}" "${chosen_db}_bk_before_replace_urls.sql"
 
           # Queries
           SQL0="USE ${chosen_db};"
@@ -208,6 +204,9 @@ function wp_ask_url_search_and_replace() {
   # $1 = wp_path
 
   local wp_path=$1
+
+  local existing_URL
+  local new_URL
 
   if [[ -z "${existing_URL}" ]]; then
     existing_URL=$(whiptail --title "URL TO CHANGE" --inputbox "Insert the URL you want to change, including http:// or https://" 10 60 3>&1 1>&2 2>&3)
