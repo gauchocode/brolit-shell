@@ -20,11 +20,11 @@ function zabbix_prepare_database() {
     SQL2="CREATE USER 'zabbix'@'%' IDENTIFIED BY 'zabbix2020*';"
     SQL3="GRANT ALL PRIVILEGES ON zabbix.* TO 'zabbix'@'%';"
 
-    mysql -u ${MUSER} -p${MPASS} -e "${SQL1}${SQL2}${SQL3}"
+    ${MYSQL_ROOT} -e "${SQL1}${SQL2}${SQL3}"
 
     cd "/usr/share/doc/zabbix-server-mysql/"
 
-    zcat "create.sql.gz" | mysql -u${MUSER} zabbix -p${MPASS}
+    zcat "create.sql.gz" | ${MYSQL_ROOT} zabbix
 
 }
 

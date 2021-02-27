@@ -141,7 +141,7 @@ function wp_replace_string_on_database() {
 
   if [[ -z "${target_db}" ]]; then
     
-    DBS="$(${MYSQL} -u "${MUSER}" -p"${MPASS}" -Bse 'show databases')"
+    DBS="$(${MYSQL_ROOT} -Bse 'show databases')"
     
     chosen_db=$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to work with" 20 78 10 `for x in ${DBS}; do echo "$x [DB]"; done` 3>&1 1>&2 2>&3)
     exitstatus=$?
@@ -173,7 +173,7 @@ function wp_replace_string_on_database() {
           log_event "info" "Setting new_URL=${new_URL}"
           log_event "info" "Executing mysqldump of ${chosen_db} before replace urls ..."
 
-          ${MYSQLDUMP} -u "${MUSER}" --password="${MPASS}" "${chosen_db}" > "${chosen_db}_bk_before_replace_urls.sql"
+          ${MYSQLDUMP_ROOT} "${chosen_db}" > "${chosen_db}_bk_before_replace_urls.sql"
 
           log_event "success" "Database backup created: ${chosen_db}_bk_before_replace_urls.sql"
 

@@ -331,7 +331,7 @@ function mysql_user_exists() {
 
     local db_user=$1
 
-    if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${db_user}';" | "${MYSQL}" -u "${MUSER}" --password="${MPASS}" | grep 1; then
+    if ! echo "SELECT COUNT(*) FROM mysql.user WHERE user = '${db_user}';" | "${MYSQL_ROOT}" | grep 1; then
         # Return 0 if user don't exists
         return 0
     else
