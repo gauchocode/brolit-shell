@@ -9,7 +9,7 @@ function php_check_if_installed() {
   local php_installed
   local php
 
-  php="$(which php)"
+  php="$(command -v php)"
   if [[ ! -x "${php}" ]]; then
     php_installed="false"
 
@@ -116,8 +116,11 @@ function php_set_version_on_config() {
     
     if [[ "${php_v}" == "" ]];then
 
+      # Get array with installed versions
       php_v="$(php_check_installed_version)"
-      log_event "debug" "PHP installed version: ${php_v}"
+      
+      # Select version to work
+      php_v=$(php_select_version_to_work_with "${php_installed_versions}")
 
     fi
 
@@ -129,7 +132,7 @@ function php_set_version_on_config() {
 
     # Logging
     log_event "error" "Setting PHP version on config file, fails."
-    log_event "debug" "Destination file does not exists"
+    log_event "debug" "Destination file '${config_file}' does not exists"
 
     return 1
 
@@ -411,7 +414,7 @@ function php_select_version_to_work_with() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    log_event "debug" "Setting chosen_php_v=${chosen_php_v}"
+    log_event "debug" "Working with php${php_v}-fpm"
 
     # Return
     echo "${chosen_php_v}"
