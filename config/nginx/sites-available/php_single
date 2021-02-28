@@ -1,6 +1,6 @@
 server {
+
     listen      80;
-    #listen      [::]:80;
 
     server_name domain.com;
 
@@ -21,15 +21,13 @@ server {
             fastcgi_pass unix:/run/php/phpPHP_V-fpm.sock;
     }
 
-    # Security
+    ## INC
+    #include /var/www/domain.com/nginx.conf;
+    
+    ### PERF
+    #gzip_static on;
+
+    ### SEC
     #include /etc/nginx/globals/security.conf;
 
-}
-
-# Subdomains redirect
-server {
-    listen      80;
-    #listen      [::]:80;
-    server_name *.domain.com;
-    return      301 http://domain.com$request_uri;
 }

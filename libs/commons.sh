@@ -1761,9 +1761,7 @@ function menu_project_utils () {
     if [[ ${chosen_project_utils_options} == *"02"* ]]; then
 
       # CREATE-PHP-PROJECT
-
-      # TODO: create empty dir on $SITES, create nginx server file, ask for database
-      log_event "error" "TODO: CREATE_PHP_PROJECT MUST BE IMPLEMENTED SOON" "true"
+      project_install "${SITES}" "php"
 
     fi
 

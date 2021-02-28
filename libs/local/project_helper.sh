@@ -202,32 +202,20 @@ function project_install() {
 
     wordpress)
 
-      #display --indent 6 --text "- WordPress Installer Selected" -tcolor GREEN
+      # Execute function
       wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
 
       ;;
 
     laravel)
-      #display --indent 6 --text "Laravel installer should be implemented soon, aborting ..." --tcolor RED
+      # Execute function
+      # laravel_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
       log_event "error" "Laravel installer should be implemented soon, aborting ..."
       ;;
 
     php)
 
-        if [[ -d "${project_path}" ]]; then
-              
-          # Create project directory
-          mkdir "${project_path}"
-
-          # Create index.php
-          echo "<?php phpinfo(); ?>" > "${project_path}/index.php"
-
-        else
-
-          log_event "error" "Destination folder '${project_path}' already exist, aborting ..."
-          return 1
-
-        fi
+      php_project_install "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
 
       ;;
 
@@ -492,5 +480,130 @@ function check_laravel_version() {
 
   # Return
   echo "${laravel_v}"
+
+}
+
+function php_project_install () {
+
+  # $1 = ${project_path}
+  # $2 = ${project_domain}
+  # $3 = ${project_name}
+  # $4 = ${project_state}
+  # $5 = ${project_root_domain}   # Optional
+
+  local project_path=$1
+  local project_domain=$2
+  local project_name=$3
+  local project_state=$4
+  local project_root_domain=$5
+
+  log_subsection "PHP Project Install"
+
+  if [[ "${project_root_domain}" == '' ]]; then
+    
+    possible_root_domain="$(get_root_domain "${project_domain}")"
+    project_root_domain="$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")"
+
+  fi
+
+  if [ ! -d "${project_path}" ]; then
+    # Download WP
+    mkdir "${project_path}"
+    change_ownership "www-data" "www-data" "${project_path}"
+    
+    # Logging
+    #display --indent 6 --text "- Making a copy of the WordPress project" --result "DONE" --color GREEN
+
+  else
+
+    # Logging
+    display --indent 6 --text "- Creating WordPress project" --result "FAIL" --color RED
+    display --indent 8 --text "Destination folder '${project_path}' already exist"
+    log_event "error" "Destination folder '${project_path}' already exist, aborting ..."
+
+    # Return
+    return 1
+
+  fi
+
+  # Create database and user
+  db_project_name=$(mysql_name_sanitize "${project_name}")
+  database_name="${db_project_name}_${project_state}" 
+  database_user="${db_project_name}_user"
+  database_user_passw=$(openssl rand -hex 12)
+
+  mysql_database_create "${database_name}"
+  mysql_user_create "${database_user}" "${database_user_passw}"
+  mysql_user_grant_privileges "${database_user}" "${database_name}"
+
+    
+  # Create project directory
+  mkdir "${project_path}"
+
+  # Create index.php
+  echo "<?php phpinfo(); ?>" > "${project_path}/index.php"
+
+  # Change ownership
+  change_ownership "www-data" "www-data" "${project_path}"
+
+  # TODO: ask for Cloudflare support and check if root_domain is configured on the cf account
+
+  # If domain contains www, should work without www too
+  common_subdomain='www'
+  if [[ ${project_domain} == *"${common_subdomain}"* ]]; then
+
+    # Cloudflare API to change DNS records
+    cloudflare_change_a_record "${project_root_domain}" "${project_domain}"
+
+    # Cloudflare API to change DNS records
+    cloudflare_change_a_record "${project_root_domain}" "${project_root_domain}"
+
+    # New site Nginx configuration
+    nginx_server_create "${project_domain}" "php" "root_domain" "${project_root_domain}"
+
+    # HTTPS with Certbot
+    project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${project_root_domain}" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+      certbot_certificate_install "${MAILA}" "${project_domain},${project_root_domain}"
+
+    else
+
+      log_event "info" "HTTPS support for ${project_domain} skipped"
+      display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
+
+    fi  
+
+  else
+
+    # Cloudflare API to change DNS records
+    cloudflare_change_a_record "${project_root_domain}" "${project_domain}"
+
+    # New site Nginx configuration
+    nginx_create_empty_nginx_conf "${project_path}"
+    nginx_create_globals_config
+    nginx_server_create "${project_domain}" "php" "single"
+
+    # HTTPS with Certbot
+    cert_project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+      
+      certbot_certificate_install "${MAILA}" "${cert_project_domain}"
+
+    else
+
+      log_event "info" "HTTPS support for ${project_domain} skipped" "false"
+      display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
+
+    fi
+    
+  fi
+
+  log_event "success" "PHP project installation for domain ${project_domain} finished" "false"
+  display --indent 6 --text "- PHP project installation for domain ${project_domain}" --result "DONE" --color GREEN
+
+  telegram_send_message "${VPSNAME}: PHP project installation for domain ${project_domain} finished"
 
 }
