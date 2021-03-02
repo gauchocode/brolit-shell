@@ -56,43 +56,21 @@ function monit_configure() {
 function monit_installer_menu() {
 
   ### Checking if Monit is installed
-  MONIT="$(which monit)"
+  MONIT="$(command -v monit)"
 
   if [[ ! -x "${MONIT}" ]]; then
 
-    while true; do
+    log_subsection "Monit Installer"
 
-        echo -e "${YELLOW}${ITALIC} > Do you really want to install monit?${ENDCOLOR}"
-        read -p "Please type 'y' or 'n'" yn
+    log_event "info" "Updating packages before installation ..."
+    apt-get --yes update -qq > /dev/null
 
-        case $yn in
+    # Installing packages
+    log_event "info" "Installing monit ..."
+    apt-get --yes install monit -qq > /dev/null
 
-            [Yy]* )
+    monit_configure
 
-              log_subsection "Monit Installer"
-
-              log_event "info" "Updating packages before installation ..."
-              apt-get --yes update -qq > /dev/null
-
-              # Installing packages
-              log_event "info" "Installing monit ..."
-              apt-get --yes install monit -qq > /dev/null
-
-              monit_configure
-
-              break;;
-
-            [Nn]* )
-
-              log_event "warning" "Aborting monit installation script ..."
-
-              break;;
-
-            * ) echo " > Please answer yes or no.";;
-
-        esac
-
-    done
 
   else
 

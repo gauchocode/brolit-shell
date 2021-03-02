@@ -16,13 +16,13 @@ function certbot_installer() {
     #add-apt-repository ppa:certbot/certbot
 
     # Updating Repos
-    display --indent 2 --text "- Updating repositories"
+    display --indent 6 --text "- Updating repositories"
     apt-get --yes update -qq > /dev/null
     clear_last_line
-    display --indent 2 --text "- Updating repositories" --result "DONE" --color GREEN
+    display --indent 6 --text "- Updating repositories" --result "DONE" --color GREEN
 
     # Installing Certbot
-    display --indent 2 --text "- Installing certbot and dependencies"
+    display --indent 6 --text "- Installing certbot and dependencies"
     log_event "info" "Installing python3-certbot-dns-cloudflare and python3-certbot-nginx"
     
     # apt command
@@ -30,7 +30,7 @@ function certbot_installer() {
   
     # Log
     clear_last_line
-    display --indent 2 --text "- Installing certbot and dependencies" --result "DONE" --color GREEN
+    display --indent 6 --text "- Installing certbot and dependencies" --result "DONE" --color GREEN
     log_event "info" "certbot installation finished"
 
   else

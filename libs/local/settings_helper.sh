@@ -400,7 +400,15 @@ function script_configuration_wizard() {
     fi
 
     if [[ -z "${SITES}" ]]; then
-        SITES=$(whiptail --title "Websites Root Directory" --inputbox "Insert the path where websites are stored. Ex: /var/www or /usr/share/nginx" 10 60 "${SITES_OLD}" 3>&1 1>&2 2>&3)
+        
+        if [[ -n "${SITES_OLD}" ]]; then
+            # SITES_OLD defined
+            SITES_DEFAULT="${SITES_OLD}"
+        else
+            SITES_DEFAULT="/var/www"
+        fi
+
+        SITES=$(whiptail --title "Websites Root Directory" --inputbox "The path where websites are stored. Ex: /var/www or /usr/share/nginx" 10 60 "${SITES_DEFAULT}" 3>&1 1>&2 2>&3)
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
             echo "SITES=${SITES}" >>/root/.broobe-utils-options

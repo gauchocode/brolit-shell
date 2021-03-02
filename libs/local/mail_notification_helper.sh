@@ -254,7 +254,7 @@ function mail_cert_section() {
                 log_event "info" "Getting certificate info for: ${domain}" "false"
 
                 # Change global
-                BK_FL_ARRAY_INDEX=$((BK_FL_ARRAY_INDEX + 1))
+                BK_FL_ARRAY_INDEX="$((BK_FL_ARRAY_INDEX + 1))"
 
                 email_cert_new_line="<div style=\"float:left;width:100%\">"
                 email_cert_domain="<div>${domain}"
@@ -304,7 +304,7 @@ function mail_cert_section() {
 
     files_label_end="</div>"
 
-    header_open1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:white;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
+    header_open1="<div style=\"float:left;width:100%\"><div style=\"color:white;font-size:14px;font-weight:bold;font-family:Verdana,Helvetica,Arial;line-height:36px;float:left;background:"
     header_open2=";padding:5px 0 10px 10px;width:100%;height:30px\">"
     email_cert_header_open="${header_open1}${cert_status_color}${header_open2}"
     email_cert_header_text="Certificates on server: ${STATUS_CERTS} ${cert_status_icon}"
