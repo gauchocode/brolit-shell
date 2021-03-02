@@ -611,7 +611,7 @@ function restore_type_selection_from_dropbox() {
           display --indent 6 --text "- Uncompressing backup"
           pv --width 70 "${TMP_DIR}/${chosen_backup_to_restore}" | tar xp -C "${TMP_DIR}" --use-compress-program=lbzip2
 
-          log_event "debug" "Running: pv --width 70 ${chosen_backup_to_restore} | tar xp -C ${TMP_DIR} --use-compress-program=lbzip2"
+          log_event "debug" "Running: pv --width 70 ${TMP_DIR}/${chosen_backup_to_restore} | tar xp -C ${TMP_DIR} --use-compress-program=lbzip2"
           clear_last_line
           clear_last_line
           display --indent 6 --text "- Uncompressing backup" --result "DONE" --color GREEN
@@ -774,8 +774,8 @@ function restore_project() {
     dropbox_download "${bk_to_dowload}" "${TMP_DIR}"
 
     # Uncompress backup file    
-    pv --width 70 "${chosen_backup_to_restore}" | ${TAR} xp -C "${TMP_DIR}" --use-compress-program=lbzip2
-    log_event "debug" "Running: pv --width 70 ${chosen_backup_to_restore} | ${TAR} xp -C ${TMP_DIR} --use-compress-program=lbzip2"
+    pv --width 70 "${TMP_DIR}/${chosen_backup_to_restore}" | ${TAR} xp -C "${TMP_DIR}" --use-compress-program=lbzip2
+    log_event "debug" "Running: pv --width 70 ${TMP_DIR}/${chosen_backup_to_restore} | ${TAR} xp -C ${TMP_DIR} --use-compress-program=lbzip2"
 
     clear_last_line
     display --indent 6 --text "- Uncompressing backup file" --result "DONE" --color GREEN
