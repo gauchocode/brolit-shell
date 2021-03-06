@@ -20,7 +20,7 @@ function wpcli_manager() {
   log_event "info" "Searching WordPress Installation on directory: ${wp_site}" "false"
 
   # Search a wordpress installation on selected directory
-  install_path=$(search_wp_config "${wp_site}")
+  install_path=$(wp_config_path "${wp_site}")
 
   if [[ -z "${install_path}" || "${install_path}" = '' ]]; then
 

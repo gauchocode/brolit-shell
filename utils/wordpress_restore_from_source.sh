@@ -196,7 +196,7 @@ function wordpress_restore_from_source() {
 
   actual_folder="${folder_to_install}/${project_domain}"
 
-  install_path=$(search_wp_config "${actual_folder}")
+  install_path=$(wp_config_path "${actual_folder}")
   if [[ -z "${install_path}" ]]; then
 
       echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND"${ENDCOLOR}
