@@ -517,7 +517,7 @@ function restore_site_files() {
     
     # TODO: we need another aproach for other kind of projects
     # Search wp-config.php (to find wp installation on sub-folders)
-    install_path=$(search_wp_config "${actual_folder}")
+    install_path=$(wp_config_path "${actual_folder}")
 
     log_event "info" "install_path=${install_path}"
     display --indent 8 --text "Restored on: ${install_path}"
@@ -689,9 +689,9 @@ function restore_type_selection_from_dropbox() {
 
             project_site=$filepath"/"$filename
 
-            install_path="$(search_wp_config "${folder_to_install}/${filename}")"
+            install_path="$(wp_config_path "${folder_to_install}/${filename}")"
 
-            # TODO: search_wp_config could be an array of dir paths, need to check that
+            # TODO: wp_config_path could be an array of dir paths, need to check that
             if [[ "${install_path}" != "" ]]; then
 
               log_event "info" "WordPress installation found: ${project_site}/${install_path}"
@@ -828,39 +828,48 @@ function restore_project() {
     # Extracting project_state from   
     project_state="$(cut -d'_' -f2 <<< ${db_name})"
 
+    # Log
     log_event "debug" "Selected project: ${chosen_project}"
     log_event "debug" "Selected project state: ${project_state}"
     log_event "debug" "Backup date: ${backup_date}"
-    log_event "debug" "Extracted db_name from wp-config: ${db_name}"
-    log_event "debug" "Extracted db_user from wp-config: ${db_user}"
-    log_event "debug" "Extracted db_pass from wp-config: ${db_pass}"
 
-    # Downloading Database Backup
-    display --indent 6 --text "- Downloading backup from dropbox"
-    display --indent 8 --text "${chosen_server}/database/${db_name}/${db_name}_database_${backup_date}.tar.bz2"
-    log_event "info" "Trying to download ${chosen_server}/database/${db_name}/${db_name}_database_${backup_date}.tar.bz2"
-    dropbox_output="$("${DROPBOX_UPLOADER}" download "${db_to_download}" 1>&2)"
+    if [[ ${db_name} != "" ]]; then
 
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 1 ]]; then
+      # Log
+      log_event "debug" "Extracted db_name from wp-config: ${db_name}"
+      log_event "debug" "Extracted db_user from wp-config: ${db_user}"
+      log_event "debug" "Extracted db_pass from wp-config: ${db_pass}"
 
-      clear_last_line
-      clear_last_line
-      display --indent 6 --text "- Downloading backup from dropbox" --result "FAIL" --color RED
+      # Downloading Database Backup
+      display --indent 6 --text "- Downloading backup from dropbox"
+      display --indent 8 --text "${chosen_server}/database/${db_name}/${db_name}_database_${backup_date}.tar.bz2"
+      log_event "info" "Trying to download ${chosen_server}/database/${db_name}/${db_name}_database_${backup_date}.tar.bz2"
 
-      # TODO: maybe ask to download manually calling restore_database_backup
+      #dropbox_output="$("${DROPBOX_UPLOADER}" download "${db_to_download}" 1>&2)"
+
+      dropbox_download "${db_to_download}" "${TMP_DIR}"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 1 ]]; then
+
+        # TODO: ask to download manually calling restore_database_backup
+
+        return 1
+
+      fi
+
+    else
+
+      # TODO: ask to download manually calling restore_database_backup
 
       return 1
 
     fi
 
-    clear_last_line
-    clear_last_line
-    display --indent 6 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
-
     # Uncompress backup file
     log_event "info" "Uncompressing ${db_to_download}"
     pv --width 70 "${TMP_DIR}/${db_name}_database_${backup_date}.tar.bz2" | tar xp -C "${TMP_DIR}/" --use-compress-program=lbzip2
+
     clear_last_line
     clear_last_line
     display --indent 6 --text "- Uncompressing backup file" --result "DONE" --color GREEN
@@ -883,7 +892,7 @@ function restore_project() {
     project_name=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${project_name}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
-      log_event "info" "Setting project_name=${project_name}"
+      log_event "info" "Setting project_name: ${project_name}"
 
     else
       return 1
@@ -926,7 +935,12 @@ function restore_project() {
     if [[ "${new_project_domain}" = "${chosen_domain}" ]]; then
 
       letsencrypt_opt_text="\n Do you want to restore let's encrypt certificates or generate a new ones?"
-      letsencrypt_opt=("01)" "RESTORE CERTIFICATES" "02)" "GENERATE NEW CERTIFICATES")
+      
+      letsencrypt_opt=(
+        "01)" "RESTORE CERTIFICATES" 
+        "02)" "GENERATE NEW CERTIFICATES"
+      )
+
       letsencrypt_chosen_opt=$(whiptail --title "Let's Encrypt Certificates" --menu "${letsencrypt_opt_text}" 20 78 10 "${letsencrypt_opt[@]}" 3>&1 1>&2 2>&3)
 
       exitstatus=$?
