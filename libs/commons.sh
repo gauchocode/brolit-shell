@@ -766,7 +766,7 @@ function get_project_type() {
 
   if [[ ${dir_path} != "" ]];then
 
-    is_wp=$(search_wp_config "${dir_path}")
+    is_wp=$(wp_config_path "${dir_path}")
 
     if [[ ${is_wp} != "" ]];then
 

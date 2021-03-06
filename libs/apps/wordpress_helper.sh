@@ -28,13 +28,25 @@ function is_wp_project() {
 
 }
 
-function search_wp_config () {
+function wp_config_path () {
 
     # $1 = ${dir_to_search}
 
     local dir_to_search=$1
 
-    find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||'
+    # Find where wp-config.php is
+    find_output=$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')
+
+    if [[ ${find_output} != "" ]]; then
+
+      # Return
+      echo "${find_output}"
+
+    else
+
+      return 1
+
+    fi
 
 }
 

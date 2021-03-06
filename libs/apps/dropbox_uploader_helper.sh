@@ -114,6 +114,8 @@ function dropbox_download() {
         log_event "error" "Last command executed: ${DROPBOX_UPLOADER} -q download ${file_to_download} ${local_directory}/${tmp_file_name}"
         log_event "debug" "Last command output: ${output}"
 
+        return 1
+
     fi
 
 }

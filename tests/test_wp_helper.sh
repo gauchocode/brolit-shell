@@ -41,7 +41,7 @@ function test_wordpress_helper_funtions() {
     wpcli_core_download "${SFOLDER}/tmp/${project_domain}"
 
     # Tests
-    test_search_wp_config "${SFOLDER}/tmp/${project_domain}"
+    test_wp_config_path "${SFOLDER}/tmp/${project_domain}"
     test_is_wp_project "${SFOLDER}/tmp/${project_domain}"
 
     # Deleting temp files
@@ -49,15 +49,15 @@ function test_wordpress_helper_funtions() {
 
 }
 
-function test_search_wp_config() {
+function test_wp_config_path() {
 
-    log_subsection "Test: test_search_wp_config"
+    log_subsection "Test: test_wp_config_path"
 
-    result="$(search_wp_config "${project_path}")"
+    result="$(wp_config_path "${project_path}")"
     if [[ ${result} != "" ]]; then 
-        display --indent 6 --text "- search_wp_config result ${result}" --result "PASS" --color WHITE
+        display --indent 6 --text "- wp_config_path result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- search_wp_config" --result "FAIL" --color RED
+        display --indent 6 --text "- wp_config_path" --result "FAIL" --color RED
         #display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
