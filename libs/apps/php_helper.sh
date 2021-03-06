@@ -112,25 +112,29 @@ function php_set_version_on_config() {
   local php_v=$1
   local config_file=$2
 
+  local php_installed_versions
+
   if [[ "${config_file}" != "" ]];then
     
     if [[ "${php_v}" == "" ]];then
 
       # Get array with installed versions
-      php_v="$(php_check_installed_version)"
+      php_installed_versions="$(php_check_installed_version)"
       
       # Select version to work
       php_v=$(php_select_version_to_work_with "${php_installed_versions}")
 
     fi
 
-    log_event "debug" "Running: s+PHP_V+${php_v}+g ${config_file}"
-
+    # Replacing PHP_V with PHP version number
     sed -i "s+PHP_V+${php_v}+g" "${config_file}"
+    
+    # Log
+    log_event "debug" "Running: s+PHP_V+${php_v}+g ${config_file}"
 
   else
 
-    # Logging
+    # Log
     log_event "error" "Setting PHP version on config file, fails."
     log_event "debug" "Destination file '${config_file}' does not exists"
 

@@ -750,6 +750,8 @@ function restore_project() {
   chosen_project=$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${dropbox_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Get dropbox backup list
     dropbox_chosen_backup_path="${chosen_server}/site/${chosen_project}"
     dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}")"
   
@@ -935,7 +937,7 @@ function restore_project() {
     if [[ "${new_project_domain}" = "${chosen_domain}" ]]; then
 
       letsencrypt_opt_text="\n Do you want to restore let's encrypt certificates or generate a new ones?"
-      
+
       letsencrypt_opt=(
         "01)" "RESTORE CERTIFICATES" 
         "02)" "GENERATE NEW CERTIFICATES"
