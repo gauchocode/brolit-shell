@@ -128,7 +128,7 @@ function php_set_version_on_config() {
 
     # Replacing PHP_V with PHP version number
     sed -i "s+PHP_V+${php_v}+g" "${config_file}"
-    
+
     # Log
     log_event "debug" "Running: s+PHP_V+${php_v}+g ${config_file}"
 
@@ -153,6 +153,8 @@ function php_opcode_config() {
   local config_file=$2
 
   local val
+
+  log_subsection "PHP Opcode Config"
 
   if [[ -z ${config_file} || ${config_file} == "" ]] ; then
   

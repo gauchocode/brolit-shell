@@ -10,6 +10,8 @@ function php_installer() {
 
   local php_v=$1
 
+  log_subsection "PHP Installer"
+
   if [[ -z ${php_v} || ${php_v} == "" ]]; then
     
     DISTRO_V=$(get_ubuntu_version)
@@ -144,6 +146,8 @@ function php_purge_all_installations() {
 
 function php_purge_installation() {
 
+  log_subsection "PHP Installer"
+
   # Log
   display --indent 6 --text "- Removing PHP-${PHP_V} and libraries"
   log_event "info" "Removing PHP-${PHP_V} and libraries ..."
@@ -203,17 +207,14 @@ function php_installer_menu() {
 
     if [[ ${chosen_php_installer_options} == *"01"* ]]; then
       
-      log_subsection "PHP Installer"
-      
       # Installing packages
       php_installer
       mail_utils_installer
       php_redis_installer
+      php_reconfigure
 
     fi
     if [[ ${chosen_php_installer_options} == *"02"* ]]; then
-
-      log_subsection "PHP Installer"
 
       # INSTALL PHP CUSTOM
       php_custom_installer
