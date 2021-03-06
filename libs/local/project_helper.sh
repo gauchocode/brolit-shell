@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.17
+# Version: 3.0.18
 ################################################################################
 
 # shellcheck source=${SFOLDER}/libs/wordpress_installer.sh
@@ -266,10 +266,10 @@ function project_delete_files() {
     display --indent 6 --text "- Moving to offline projects on Dropbox" --result "DONE" --color GREEN
 
     # Delete project files
-    rm -R "${filepath}/${project_domain}"
+    rm --force --recursive "${filepath}/${project_domain}"
+
     log_event "info" "Project files deleted for ${project_domain}" "false"
     display --indent 6 --text "- Deleting project files on server" --result "DONE" --color GREEN
-
 
     # Make a copy of nginx configuration file
     cp -r "/etc/nginx/sites-available/${project_domain}" "${SFOLDER}/tmp-backup"

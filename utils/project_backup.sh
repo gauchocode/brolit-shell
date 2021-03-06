@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.17
+# Version: 3.0.18
 #############################################################################
 #
 # TODO: This script need a refactor
@@ -87,7 +87,7 @@ for j in ${TOTAL_SITES}; do
 done
 
 # Deleting old backup files
-rm -r "${TMP_DIR}/${NOW}"
+rm --force --recursive "${TMP_DIR}/${NOW}"
 
 # Configure Email        
 mail_filesbackup_section "${ERROR}" "${ERROR_TYPE}"

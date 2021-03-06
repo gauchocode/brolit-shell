@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.17
+# Version: 3.0.18
 ################################################################################
 
 function php_installer() {
@@ -36,6 +36,7 @@ function php_installer() {
   apt-get --yes install "php${php_v}-fpm" "php${php_v}-mysql" "php-imagick" "php${php_v}-xml" "php${php_v}-cli" "php${php_v}-curl" "php${php_v}-mbstring" "php${php_v}-gd" "php${php_v}-intl" "php${php_v}-zip" "php${php_v}-bz2" "php${php_v}-bcmath" "php${php_v}-soap" "php${php_v}-dev" "php-pear" -qq > /dev/null
 
   # Log
+  clear_last_line
   clear_last_line
   display --indent 6 --text "- Installing PHP-${php_v} and libraries" --result "DONE" --color GREEN
   log_event "info" "PHP-${php_v} installed"
@@ -107,7 +108,7 @@ function php_redis_installer() {
 function mail_utils_installer() {
 
   # Log
-  display --indent 2 --text "- Installing mail smtp"
+  display --indent 6 --text "- Installing mail smtp"
   log_event "info" "Installing mail mail_mime and net_smtp ..."
 
   # Creating tmp directory
@@ -120,7 +121,7 @@ function mail_utils_installer() {
 
   # Log
   clear_last_line
-  display --indent 2 --text "- Installing mail smtp" --result "DONE" --color GREEN
+  display --indent 6 --text "- Installing mail smtp" --result "DONE" --color GREEN
   log_event "info" "mail mail_mime and net_smtp installed"
 
 }
@@ -128,7 +129,7 @@ function mail_utils_installer() {
 function php_purge_all_installations() {
 
   # Log
-  display --indent 2 --text "- Purging PHP and libraries"
+  display --indent 6 --text "- Purging PHP and libraries"
   log_event "info" "Removing all PHP versions and libraries ..."
 
   # apt command
@@ -136,7 +137,7 @@ function php_purge_all_installations() {
 
   # Log
   clear_last_line
-  display --indent 2 --text "- Purging PHP and libraries" --result "DONE" --color GREEN
+  display --indent 6 --text "- Purging PHP and libraries" --result "DONE" --color GREEN
   log_event "info" "PHP purged!"
 
 }
@@ -144,7 +145,7 @@ function php_purge_all_installations() {
 function php_purge_installation() {
 
   # Log
-  display --indent 2 --text "- Removing PHP-${PHP_V} and libraries"
+  display --indent 6 --text "- Removing PHP-${PHP_V} and libraries"
   log_event "info" "Removing PHP-${PHP_V} and libraries ..."
 
   # apt command
@@ -152,7 +153,7 @@ function php_purge_installation() {
 
   # Log
   clear_last_line
-  display --indent 2 --text "- Removing PHP-${PHP_V} and libraries" --result "DONE" --color GREEN
+  display --indent 6 --text "- Removing PHP-${PHP_V} and libraries" --result "DONE" --color GREEN
   log_event "info" "PHP-${PHP_V} deleted!"
 
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.17
+# Version: 3.0.18
 ################################################################################
 #
 # It uses globals defined on telegram.conf
@@ -45,26 +45,27 @@ function telegram_send_message() {
 	# Notification text
 	notif_text="<pre>${notification_text}</pre>"
 	
+	# Log
 	log_event "info" "Sending Telegram notification ..."
-
 	log_event "debug" "Running: curl --silent --insecure --max-time ${timeout} --data chat_id=${telegram_user_id} --data disable_notification=${notif_sound} --data parse_mode=${display_mode} --data text=${notif_text} ${notif_url}"
 
+	# Telegram command
 	telegram_notif_response=$(curl --silent --insecure --max-time "${timeout}" --data chat_id="${telegram_user_id}" --data "disable_notification=${notif_sound}" --data "parse_mode=${display_mode}" --data "text=${notif_text}" "${notif_url}")
+	
+	# Check Result
 	telegram_notif_result=$(echo "${telegram_notif_response}" | grep "ok" | cut -d ":" -f2 | cut -d "," -f1)
-
 	if [[ "${telegram_notif_result}" = "true" ]]; then
 		# Log success
 		log_event "success" "Telegram notification sent!"
-		display --indent 2 --text "- Sending Telegram notification" --result "DONE" --color GREEN
+		display --indent 6 --text "- Sending Telegram notification" --result "DONE" --color GREEN
 	
 	else
 		# Log failure
 		log_event "error" "Telegram notification error!"
 		log_event "debug" "Telegram notification result: ${telegram_notif_result}"
 		log_event "debug" "Telegram notification response: ${telegram_notif_response}"
-		display --indent 2 --text "- Sending Telegram notification" --result "FAIL" --color RED
+		display --indent 6 --text "- Sending Telegram notification" --result "FAIL" --color RED
 
 	fi
-	
 
 }

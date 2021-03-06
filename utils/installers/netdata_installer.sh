@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.17
+# Version: 3.0.18
 ################################################################################
 
 # Ref: https://github.com/nextcloud/vm/blob/master/apps/netdata.sh
@@ -194,46 +194,52 @@ function netdata_installer_menu() {
       log_subsection "Netdata Installer"
 
       case $yn in
-      [Yy]*)
+      
+        [Yy]*)
 
-        log_event "info" "Updating packages before installation ..."
+          log_event "info" "Updating packages before installation ..."
 
-        apt-get --yes update -qq > /dev/null
+          apt-get --yes update -qq > /dev/null
 
-        display --indent 6 --text "- Updating packages before installation" --result "DONE" --color GREEN
+          display --indent 6 --text "- Updating packages before installation" --result "DONE" --color GREEN
 
-        netdata_required_packages
+          netdata_required_packages
 
-        netdata_installer
+          netdata_installer
 
-        # Netdata nginx proxy configuration
-        nginx_server_create "${netdata_subdomain}" "netdata" "tool"
+          # Netdata nginx proxy configuration
+          nginx_server_create "${netdata_subdomain}" "netdata" "tool"
 
-        netdata_configuration
+          netdata_configuration
 
-        # Confirm ROOT_DOMAIN
-        root_domain=$(cloudflare_ask_root_domain "${suggested_root_domain}")
+          # Confirm ROOT_DOMAIN
+          root_domain=$(cloudflare_ask_root_domain "${suggested_root_domain}")
 
-        # Cloudflare API
-        cloudflare_change_a_record "${root_domain}" "${netdata_subdomain}"
+          # Cloudflare API
+          cloudflare_change_a_record "${root_domain}" "${netdata_subdomain}"
 
-        DOMAIN=${netdata_subdomain}
-        #CHOSEN_CB_OPTION="1"
-        #export CHOSEN_CB_OPTION DOMAIN
+          DOMAIN=${netdata_subdomain}
+          #CHOSEN_CB_OPTION="1"
+          #export CHOSEN_CB_OPTION DOMAIN
 
-        # HTTPS with Certbot
-        certbot_certificate_install "${MAILA}" "${DOMAIN}"
+          # HTTPS with Certbot
+          certbot_certificate_install "${MAILA}" "${DOMAIN}"
 
-        display --indent 6 --text "- Netdata installation" --result "DONE" --color GREEN
+          display --indent 6 --text "- Netdata installation" --result "DONE" --color GREEN
 
-        break
-        ;;
-      [Nn]*)
-        log_event "warning" "Aborting netdata installer script ..." "true"
-        break
-        ;;
-      *) echo " > Please answer yes or no." ;;
+          break
+          ;;
+
+        [Nn]*)
+
+          log_event "warning" "Aborting netdata installer script ..." "true"
+          break
+          ;;
+
+        *) echo " > Please answer yes or no." ;;
+
       esac
+
     done
 
   else
@@ -264,40 +270,48 @@ function netdata_installer_menu() {
       if [[ ${NETDATA_CHOSEN_OPTION} == *"03"* ]]; then
 
         while true; do
+          
           echo -e "${YELLOW}${ITALIC} > Do you really want to uninstall netdata?${ENDCOLOR}"
           read -p "Please type 'y' or 'n'" yn
+
           case $yn in
-          [Yy]*)
 
-            log_event "warning" "Uninstalling Netdata ..." "false"
+            [Yy]*)
 
-            # Deleting mysql user
-            mysql_user_delete "netdata"
-            
-            # Deleting nginx server files
-            rm "/etc/nginx/sites-enabled/monitor"
-            rm "/etc/nginx/sites-available/monitor"
+              log_event "warning" "Uninstalling Netdata ..." "false"
 
-            # Deleting installation files
-            rm -R "/etc/netdata"
-            rm "/etc/systemd/system/netdata.service"
-            rm "/usr/sbin/netdata"
+              # Deleting mysql user
+              mysql_user_delete "netdata"
+              
+              # Deleting nginx server files
+              rm --force "/etc/nginx/sites-enabled/monitor"
+              rm --force "/etc/nginx/sites-available/monitor"
 
-            # Running uninstaller
-            source "/usr/libexec/netdata-uninstaller.sh" --yes --dont-wait
+              # Deleting installation files
+              rm --force --recursive "/etc/netdata"
+              rm --force "/etc/systemd/system/netdata.service"
+              rm --force "/usr/sbin/netdata"
 
-            log_event "info" "Netdata removed ok!" "false"
-            display --indent 6 --text "- Uninstalling netdata" --result "DONE" --color GREEN
+              # Running uninstaller
+              source "/usr/libexec/netdata-uninstaller.sh" --yes --dont-wait
 
-            break
-            ;;
-          [Nn]*)
-            log_event "warning" "Aborting netdata installer script ..." "false"
+              log_event "info" "Netdata removed ok!" "false"
+              display --indent 6 --text "- Uninstalling netdata" --result "DONE" --color GREEN
 
-            break
-            ;;
-          *) echo " > Please answer yes or no." ;;
+              break
+              ;;
+
+            [Nn]*)
+
+              log_event "warning" "Aborting netdata installer script ..." "false"
+
+              break
+              ;;
+
+            *) echo " > Please answer yes or no." ;;
+
           esac
+
         done
 
       fi

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.17
+# Version: 3.0.18
 #############################################################################
 
 # Check if program is installed (is_this_installed "mysql-server")
@@ -241,7 +241,7 @@ function check_packages_required() {
 
   fi
 
-  display --indent 6 --text "- Checking script dependencies" --result "DONE" --color GREEN
+  display --indent 2 --text "- Checking script dependencies" --result "DONE" --color GREEN
   log_event "info" "All required packages are installed"
 
 }

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.17
+# Version: 3.0.18
 ################################################################################
 
 function wpcli_install_if_not_installed() {
 
     local wpcli 
     
-    wpcli="$(which wp)"
+    wpcli="$(command -v wp)"
 
     if [[ ! -x "${wpcli}" ]]; then
         wpcli_install
@@ -66,7 +66,7 @@ function wpcli_update() {
     wp cli update --quiet
 
     log_event "success" "wp-cli installed"
-    display --indent 6 --text "- Updating wp-cli" --result "DONE" --color GREEN
+    display --indent 2 --text "- Updating wp-cli" --result "DONE" --color GREEN
 
 }
 

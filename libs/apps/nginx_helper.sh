@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.17
+# Version: 3.0.18
 ################################################################################
 
 function nginx_server_create() {
@@ -127,14 +127,15 @@ function nginx_server_delete() {
 
     if [[ ${filename} != "" ]]; then
 
-        # TODO: check if file exists
-        rm "/etc/nginx/sites-available/${filename}"
-        rm "/etc/nginx/sites-enabled/${filename}"
+        # Remove files
+        rm --force "/etc/nginx/sites-available/${filename}"
+        rm --force "/etc/nginx/sites-enabled/${filename}"
 
+        # Logs
         log_event "info" "Nginx config files for ${filename} deleted!"
         display --indent 6 --text "- Deleting nginx files" --result "DONE" --color GREEN
 
-        #Test the validity of the nginx configuration
+        # Test the validity of the nginx configuration
         nginx_configuration_test
 
     fi
@@ -353,9 +354,14 @@ function nginx_delete_default_directory() {
     # Remove html default nginx folders
     nginx_default_dir="/var/www/html"
     if [[ -d "${nginx_default_dir}" ]]; then
-        rm -r $nginx_default_dir
+
+        # Delete
+        rm --recursive --force "${nginx_default_dir}"
+
+        # Log
         log_event "info" "Directory ${nginx_default_dir} deleted" "false"
         display --indent 6 --text "- Removing nginx default directory" --result "DONE" --color GREEN
+
     fi
 
 }
@@ -377,6 +383,7 @@ function nginx_create_globals_config() {
 
     fi
 
+    # Copy files
     cp "${SFOLDER}/config/nginx/globals/security.conf" "/etc/nginx/globals/security.conf"
     cp "${SFOLDER}/config/nginx/globals/wordpress_sec.conf" "/etc/nginx/globals/wordpress_sec.conf"
     cp "${SFOLDER}/config/nginx/globals/wordpress_seo.conf" "/etc/nginx/globals/wordpress_seo.conf"
