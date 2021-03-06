@@ -112,7 +112,7 @@ tests_suite_menu
 #WP_SITE=$filepath"/"$filename
 
 #echo -e ${B_GREEN}" > WP_SITE=${WP_SITE}"${ENDCOLOR}
-#install_path=$(search_wp_config "${WP_SITE}")
+#install_path=$(wp_config_path "${WP_SITE}")
 #echo -e ${B_GREEN}" > install_path=${install_path}"${ENDCOLOR}
 
 #wpcli_core_reinstall "${install_path}"

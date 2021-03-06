@@ -53,11 +53,15 @@ function project_get_configured_database() {
   local project_path=$1
   local project_type=$2
 
-  case $project_type in
+  local wpconfig_path
+
+  case ${project_type} in
 
     wordpress)
 
-      db_name=$(cat "${project_path}"/wp-config.php | grep DB_NAME | cut -d \' -f 4)
+      wpconfig_path=$(wp_config_path "${project_path}")
+
+      db_name=$(cat "${wpconfig_path}/wp-config.php" | grep DB_NAME | cut -d \' -f 4)
 
       # Return
       echo "${db_name}"
