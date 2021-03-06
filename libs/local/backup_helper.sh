@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.17
+# Version: 3.0.18
 #############################################################################
 
 function menu_backup_options() {
@@ -311,7 +311,7 @@ function make_mailcow_backup() {
         log_event "info" "Deleting old backup from Dropbox ..."
         output=$(${DROPBOX_UPLOADER} remove "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${bk_file}" 2>&1)
 
-        rm -R "${MAILCOW_TMP_BK}"
+        rm --recursive --force "${MAILCOW_TMP_BK}"
 
         log_event "info" "Mailcow backup finished"
 
@@ -450,7 +450,7 @@ function make_sites_files_backup() {
   done
 
   # Deleting old backup files
-  rm -r "${TMP_DIR:?}/${NOW}"
+  rm --recursive --force "${TMP_DIR:?}/${NOW}"
 
   # DUPLICITY
   duplicity_backup
@@ -865,7 +865,8 @@ function make_project_backup() {
         dropbox_delete "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${ONEWEEKAGO}"
 
         log_event "info" "Deleting backup from server ..."
-        rm -r "${TMP_DIR}/${NOW}/${bk_file}"
+        
+        rm --recursive --force "${TMP_DIR}/${NOW}/${bk_file}"
 
         log_event "success" "Project backup ok!"
 

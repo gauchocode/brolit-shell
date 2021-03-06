@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.17
+# Version: 3.0.18
 ################################################################################
 #
 # Ref: https://certbot.eff.org/docs/using.html#certbot-commands
@@ -63,18 +63,18 @@ function certbot_certificate_delete_old_config() {
     # Check if directories exist
     if [[ -d "/etc/letsencrypt/archive/${domain}" ]]; then
       # Delete
-      rm -R "/etc/letsencrypt/archive/${domain}"
+      rm --recursive --force "/etc/letsencrypt/archive/${domain}"
       display --indent 6 --text "- Deleting /etc/letsencrypt/archive/${domain}" --result "DONE" --color GREEN
 
     fi
     if [[ -d "/etc/letsencrypt/live/${domain}" ]]; then
       # Delete
-      rm -R "/etc/letsencrypt/live/${domain}"
+      rm --recursive --force "/etc/letsencrypt/live/${domain}"
       display --indent 6 --text "- Deleting /etc/letsencrypt/live/${domain}" --result "DONE" --color GREEN
     fi
     if [[ -f "/etc/letsencrypt/renewal/${domain}.conf" ]]; then
       # Delete
-      rm "/etc/letsencrypt/renewal/${domain}.conf"
+      rm --force"/etc/letsencrypt/renewal/${domain}.conf"
       display --indent 6 --text "- Deleting /etc/letsencrypt/renewal/${domain}.conf" --result "DONE" --color GREEN
     fi
 
@@ -143,7 +143,11 @@ function certbot_helper_installer_menu() {
   local cb_warning_text 
   local certbot_result
 
-  cb_installer_options=("01)" "INSTALL WITH NGINX" "02)" "INSTALL WITH CLOUDFLARE")
+  cb_installer_options=(
+    "01)" "INSTALL WITH NGINX" 
+    "02)" "INSTALL WITH CLOUDFLARE"
+  )
+  
   chosen_cb_installer_option=$(whiptail --title "CERTBOT INSTALLER OPTIONS" --menu "Please choose an installation method:" 20 78 10 "${cb_installer_options[@]}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -172,6 +176,7 @@ function certbot_helper_installer_menu() {
 
       whiptail_message "CERTBOT MANAGER" "${cb_warning_text}"
       #root_domain=$(ask_rootdomain_for_cloudflare_config "${domains}")
+      
       # TODO: list entries to add proxy on cloudflare records
       #cloudflare_change_a_record "${root_domain}" "" "true"
 
@@ -285,6 +290,8 @@ function certbot_certificate_valid_days() {
       fi
     
     else
+
+      cert_days=$(certbot certificates --cert-name "www.${root_domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
 
       if [[ "${cert_days}" == "" ]]; then
         cert_days=$(certbot certificates --cert-name "${domain}-0001" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)

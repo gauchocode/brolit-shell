@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.17
+# Version: 3.0.18
 ################################################################################
 
 function send_mail_notification() {
@@ -56,11 +56,11 @@ function mail_subject_status() {
 function remove_mail_notifications_files() {
 
     # Remove one per line only for better readibility
-    rm -f "${TMP_DIR}/cert-${NOW}.mail" 
-    rm -f "${TMP_DIR}/pkg-${NOW}.mail"
-    rm -f "${TMP_DIR}/file-bk-${NOW}.mail"
-    rm -f "${TMP_DIR}/config-bk-${NOW}.mail"
-    rm -f "${TMP_DIR}/db-bk-${NOW}.mail"
+    rm --force "${TMP_DIR}/cert-${NOW}.mail" 
+    rm --force "${TMP_DIR}/pkg-${NOW}.mail"
+    rm --force "${TMP_DIR}/file-bk-${NOW}.mail"
+    rm --force "${TMP_DIR}/config-bk-${NOW}.mail"
+    rm --force "${TMP_DIR}/db-bk-${NOW}.mail"
 
     log_event "info" "Email temporary files removed!"
 
