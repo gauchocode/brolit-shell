@@ -89,7 +89,7 @@
 - [ ] Backups: On backup failure, the email must show what files fails and what files are correct backuped.
 - [ ] Backups: Implement on restore_from_backup easy way to restore all sites.
 - [ ] Refactor of RESTORE_FROM_SOURCE and complete server config restore.
-- [ ] SFTP: Support sftp_add_user.
+- [ ] SFTP: Support sftp_create_user.
 - [ ] Network: implements hetzner network configuration.
       https://docs.hetzner.com/cloud/networks/server-configuration/
 - [ ] Wordpress: Import W3 Total Cache config via wp-cli

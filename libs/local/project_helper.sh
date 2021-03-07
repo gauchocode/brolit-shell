@@ -264,19 +264,22 @@ function project_delete_files() {
     dropbox_output=$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}/offline-site" 2>&1)
 
     # Moving deleted project backups to another dropbox directory
-    log_event "info" "${DROPBOX_UPLOADER} move ${VPSNAME}/${BK_TYPE}/${project_domain} /${VPSNAME}/offline-site" "false"
+    log_event "info" "${DROPBOX_UPLOADER} move ${VPSNAME}/${BK_TYPE}/${project_domain} /${VPSNAME}/offline-site"
+    
     dropbox_output=$(${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${project_domain}" "/${VPSNAME}/offline-site" 2>&1)
+    
     # TODO: if destination folder already exists, it fails
     display --indent 6 --text "- Moving to offline projects on Dropbox" --result "DONE" --color GREEN
 
     # Delete project files
     rm --force --recursive "${filepath}/${project_domain}"
 
-    log_event "info" "Project files deleted for ${project_domain}" "false"
+    # Log
+    log_event "info" "Project files deleted for ${project_domain}"
     display --indent 6 --text "- Deleting project files on server" --result "DONE" --color GREEN
 
     # Make a copy of nginx configuration file
-    cp -r "/etc/nginx/sites-available/${project_domain}" "${SFOLDER}/tmp-backup"
+    cp --recursive "/etc/nginx/sites-available/${project_domain}" "${SFOLDER}/tmp-backup"
 
     # TODO: make a copy of letsencrypt files?
 
