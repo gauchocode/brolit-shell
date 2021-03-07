@@ -11,16 +11,17 @@ function it_utils_menu() {
   local new_ssh_port
 
   it_util_options=(
-    "01)" "SECURITY TOOLS" 
-    "02)" "SERVER OPTIMIZATIONS" 
-    "03)" "CHANGE SSH PORT" 
-    "04)" "CHANGE HOSTNAME" 
+    "01)" "SECURITY TOOLS"
+    "02)" "SERVER OPTIMIZATIONS"
+    "03)" "CHANGE SSH PORT"
+    "04)" "CHANGE HOSTNAME"
     "05)" "ADD FLOATING IP"
-    "06)" "CREATE SFTP USER" 
-    "07)" "RESET MYSQL ROOT PSW" 
-    "08)" "BLACKLIST CHECKER" 
-    "09)" "BENCHMARK SERVER" 
-    "10)" "INSTALL ALIASES"
+    "06)" "CREATE SFTP USER"
+    "07)" "DELETE SFTP USER"
+    "08)" "RESET MYSQL ROOT PSW"
+    "09)" "BLACKLIST CHECKER"
+    "10)" "BENCHMARK SERVER"
+    "11)" "INSTALL ALIASES"
   )
   chosen_it_util_options=$(whiptail --title "IT UTILS" --menu "Choose a script to Run" 20 78 10 "${it_util_options[@]}" 3>&1 1>&2 2>&3)
 
@@ -68,6 +69,8 @@ function it_utils_menu() {
     fi
     # CREATE SFTP USER
     if [[ ${chosen_it_util_options} == *"06"* ]]; then
+
+      log_subsection "SFTP Manager"
     
       sftp_user=$(whiptail --title "CREATE SFTP USER" --inputbox "Insert the username:" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
@@ -75,8 +78,19 @@ function it_utils_menu() {
         sftp_create_user "${sftp_user}" "www-data" "no"
       fi
     fi
-    # RESET MYSQL ROOT_PSW
+    # DELETE SFTP USER
     if [[ ${chosen_it_util_options} == *"07"* ]]; then
+
+      log_subsection "SFTP Manager"
+    
+      sftp_user=$(whiptail --title "DELETE SFTP USER" --inputbox "Insert the username:" 10 60 3>&1 1>&2 2>&3)
+      exitstatus=$?
+      if [[ ${exitstatus} = 0 ]]; then
+        sftp_delete_user "${sftp_user}"
+      fi
+    fi
+    # RESET MYSQL ROOT_PSW
+    if [[ ${chosen_it_util_options} == *"08"* ]]; then
     
       db_root_psw=$(whiptail --title "MYSQL ROOT PASSWORD" --inputbox "Insert the new root password for MySQL:" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
@@ -87,7 +101,7 @@ function it_utils_menu() {
       fi
     fi
     # BLACKLIST CHECKER
-    if [[ ${chosen_it_util_options} == *"08"* ]]; then
+    if [[ ${chosen_it_util_options} == *"09"* ]]; then
     
       IP_TO_TEST=$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
@@ -97,13 +111,13 @@ function it_utils_menu() {
       fi
     fi
     # BENCHMARK SERVER
-    if [[ ${chosen_it_util_options} == *"09"* ]]; then
+    if [[ ${chosen_it_util_options} == *"10"* ]]; then
       # shellcheck source=${SFOLDER}/tools/bench_scripts.sh
       source "${SFOLDER}/tools/third-party/bench_scripts.sh"
 
     fi
     # INSTALL ALIASES
-    if [[ ${chosen_it_util_options} == *"10"* ]]; then
+    if [[ ${chosen_it_util_options} == *"11"* ]]; then
       install_script_aliases
 
     fi
