@@ -4,8 +4,62 @@
 # Version: 3.0.18
 #############################################################################
 
+function _sftp_add_folder_permission() {
+
+    # $1 = username
+    # $2 = dir_path
+    # $3 = folder
+
+    local username=$1
+    local dir_path=$2
+    local folder=$3
+
+    # Create user subfolder
+    mkdir "/home/${username}/${folder}"
+
+    # Log
+    display --indent 6 --text "- Creating user subfolder" --result "DONE" --color GREEN
+    log_event "info" "Creating user subfolder: /home/${username}/${folder}"
+
+    # Mounting
+    mount --bind "${dir_path}/${folder}" "/home/${username}/${folder}"
+
+    # Log
+    display --indent 6 --text "- Mounting subfolder" --result "DONE" --color GREEN
+    log_event "info" "Mounting subfolder ${dir_path}/${folder} on /home/${username}/${folder}"
+
+    # Mount permanent
+    cat "${dir_path}/${folder} /home/${username}/${folder} none bind   0      0"  >>"/etc/fstab"
+
+    # Log
+    display --indent 6 --text "- Writing fstab to make it permanent" --result "DONE" --color GREEN
+    log_event "debug" "Running: cat ${dir_path}/${folder} /home/${username}/${folder} none bind   0      0  >>/etc/fstab"
+
+    # The command below will set the document root and all subfolders to 775
+    find "${dir_path}/${folder}" -type d -exec chmod g+s {} \;
+    
+    # We want any new files created in the document root from now on to inherit the group name
+    chmod g+s "${dir_path}/${folder}"
+
+    # Log
+    display --indent 6 --text "- Changing folder permission" --result "DONE" --color GREEN
+
+}
+
+function _sftp_test_conection() {
+
+    # $1 = username
+
+    local username=$1
+
+    sftp "${username}@localhost"
+
+}
+
+#############################################################################
+
 #without-shell-access
-function sftp_add_user() {
+function sftp_create_user() {
 
     # $1 = username
     # $2 = groupname
@@ -15,13 +69,24 @@ function sftp_add_user() {
     local groupname=$2
     local shell_access=$3 #no or yes
 
-    # TODO: non-interactive
+    # TODO: non-interactive adduser
     # ref: https://askubuntu.com/questions/94060/run-adduser-non-interactively
     adduser "${username}"
 
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+        # Log
+        display --indent 6 --text "- Creating system user" --result "DONE" --color GREEN
+        log_event "info" "New user created: ${username}"
+    else
+        return 1
+    fi
+
     # Add user to the groups
     usermod -aG "${groupname}" "${username}"
-    #usermod -aG www-data "${username}"
+    # Log
+    display --indent 6 --text "- Adding user to group ${groupname}" --result "DONE" --color GREEN
+    log_event "info" "User added to group ${groupname}"
 
     # Backup actual config
     mv "/etc/ssh/sshd_config" "/etc/ssh/sshd_config.bk"
@@ -32,7 +97,11 @@ function sftp_add_user() {
     # Replace SFTP_U to new sftp user
     if [[ ${username} != "" ]]; then
         sed -i "/SFTP_U/s/'[^']*'/'${username}'/2" "/etc/ssh/sshd_config"
+    else
+        return 1
     fi
+
+    # Shell Access
     if [[ ${shell_access} = "" || ${shell_access} = "no" ]]; then
 
         sed -i "/SHELL_ACCESS/s/'[^']*'/'${shell_access}'/2" "/etc/ssh/sshd_config"
@@ -43,6 +112,21 @@ function sftp_add_user() {
 
     fi
 
+    # Log
+    display --indent 6 --text "- Configuring SSH access" --result "DONE" --color GREEN
+    log_event "info" "SSH access configured"
+
+    # Select project to work with
+    directory_browser "Select a project to work with" "${SITES}" #return $filename
+    # Directory_broser returns: " $filepath"/"$filename
+    if [[ -z ${filepath} || ${filepath} == "" ]]; then
+
+        # Create and add folder permission
+        _sftp_add_folder_permission "${username}" "${filepath}/${filename}" "public"
+
+    fi
+
+    # Service restart
     service sshd restart
 
 }
@@ -54,38 +138,13 @@ function sftp_create_group() {
 
     groupadd "${groupname}"
 
-}
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+        # Log
+        display --indent 6 --text "- Creating system group" --result "DONE" --color GREEN
+        log_event "info" "New group created: ${groupname}"
+    else
+        return 1
+    fi
 
-function sftp_test_conection() {
-
-    # $1 = username
-
-    local username=$1
-
-    sftp "${username}@localhost"
-}
-
-function sftp_add_folder_permission() {
-
-    # $1 = username
-    # $2 = dir_path
-    # $3 = folder
-
-    local username=$1
-    local dir_path=$2
-    local folder=$3
-
-    #mkdir
-    mkdir "/home/${username}/${folder}"
-
-    # mount
-    mount --bind "${dir_path}/${folder}" "/home/${username}/${folder}"
-
-    # mount permanent
-    #cat "${dir_path}/${folder} /home/${username}/${folder} none bind   0      0"  >>"/etc/fstab"
-
-    # The command below will set the document root and all subfolders to 775
-    #find "${dir_path}/${folder}" -type d -exec chmod g+s {} \;
-    # We want any new files created in the document root from now on to inherit the group name
-    #chmod g+s "${dir_path}/${folder}"
 }

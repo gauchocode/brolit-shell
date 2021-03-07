@@ -1834,14 +1834,14 @@ function menu_project_utils () {
       log_section "Nginx Manager"
 
       # Select project to work with
-      directory_browser "Select a Website to work with" "${SITES}" #return $filename
+      directory_browser "Select a project to work with" "${SITES}" #return $filename
 
-      if [ "${filename}" != "" ]; then
+      if [[ ${filename} != "" ]]; then
 
         filename="${filename::-1}" # remove '/'
         
-        display --indent 2 --text "- Selecting website to work with" --result DONE --color GREEN
-        display --indent 4 --text "Selected website: ${filename}"
+        display --indent 2 --text "- Selecting project" --result DONE --color GREEN
+        display --indent 4 --text "Selected project: ${filename}"
 
         # Aks project domain
         project_domain=$(ask_project_domain "${filename}")

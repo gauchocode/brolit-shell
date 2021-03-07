@@ -509,7 +509,6 @@ function make_files_backup() {
   
   # Clear pipe output
   clear_last_line
-  clear_last_line
 
   # Test backup file
   log_event "info" "Testing backup file: ${bk_file} ..."
@@ -519,7 +518,6 @@ function make_files_backup() {
 
   # Clear pipe output
   clear_last_line
-  clear_last_line
 
   lbzip2_result=$?
   if [[ "${lbzip2_result}" -eq 0 ]]; then
@@ -528,9 +526,10 @@ function make_files_backup() {
     BACKUPED_FL=${BACKUPED_LIST[${BK_FILE_INDEX}]}
 
     # Calculate backup size
-    BK_FL_SIZE="$(find . -name "${bk_file}" -exec ls -l --human-readable --block-size=M {} \; |  awk '{ print $5 }')"
+    BK_FL_SIZE="$(find . -name "${TMP_DIR}/${NOW}/${bk_file}" -exec ls -l --human-readable --block-size=M {} \; |  awk '{ print $5 }')"
     BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=${BK_FL_SIZE}
 
+    # Log
     log_event "success" "Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}"
     display --indent 6 --text "- Backup creation" --result "DONE" --color GREEN
     display --indent 8 --text "Final backup size: ${YELLOW}${BOLD}${BK_FL_SIZE}${ENDCOLOR}"
@@ -555,8 +554,9 @@ function make_files_backup() {
     dropbox_delete "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file}"
 
     # Delete temp backup
-    rm "${TMP_DIR}/${NOW}/${bk_file}"
+    rm --force "${TMP_DIR}/${NOW}/${bk_file}"
 
+    # Log
     log_event "info" "Temp backup deleted from server"
     display --indent 6 --text "- Deleting temp files" --result "DONE" --color GREEN
 
