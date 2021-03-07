@@ -119,7 +119,7 @@ function sftp_create_user() {
     # Select project to work with
     directory_browser "Select a project to work with" "${SITES}" #return $filename
     # Directory_broser returns: " $filepath"/"$filename
-    if [[ -z ${filepath} || ${filepath} == "" ]]; then
+    if [[ ${filename} != "" && ${filepath} != "" ]]; then
 
         # Create and add folder permission
         _sftp_add_folder_permission "${username}" "${filepath}/${filename}" "public"
@@ -145,6 +145,36 @@ function sftp_create_group() {
         log_event "info" "New group created: ${groupname}"
     else
         return 1
+    fi
+
+}
+
+function sftp_delete_user() {
+
+    # $1 = username
+    local username=$1
+
+    whiptail_message_with_skip_option "SFTP USER DELETE" "Are you sure you want to delete the user '${username}'? It will remove all user files."
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Remove user, home directory and mail spool
+        userdel --remove "${username}"
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+            # Log
+            display --indent 6 --text "- Deleting system user" --result "DONE" --color GREEN
+            log_event "info" "System user deleted: ${username}"
+        else
+            return 1
+        fi
+
+    else
+
+        # Log
+        display --indent 6 --text "- Deleting system user" --result "SKIPPED" --color GREEN
+
     fi
 
 }
