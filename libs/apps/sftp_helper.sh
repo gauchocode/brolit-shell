@@ -21,8 +21,11 @@ function _sftp_add_folder_permission() {
     display --indent 6 --text "- Creating user subfolder" --result "DONE" --color GREEN
     log_event "info" "Creating user subfolder: /home/${username}/${folder}"
 
+    # Create project subfolder
+    mkdir "${dir_path}${folder}"
+
     # Mounting
-    mount --bind "${dir_path}/${folder}" "/home/${username}/${folder}"
+    mount --bind "${dir_path}${folder}" "/home/${username}/${folder}"
 
     # Log
     display --indent 6 --text "- Mounting subfolder" --result "DONE" --color GREEN
