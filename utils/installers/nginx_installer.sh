@@ -4,7 +4,7 @@
 # Version: 3.0.18
 ################################################################################
 #
-# TODO: Nginx best practices
+# Nginx best practices
 # https://github.com/audioscavenger/nginx-server-config
 # https://github.com/A5hleyRich/wordpress-nginx
 # https://github.com/pothi/wordpress-nginx

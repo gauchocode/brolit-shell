@@ -447,8 +447,7 @@ function restore_letsencrypt_site_files() {
     
   fi
 
-  # TODO:
-  # Restore main files (checking non-www and www domains)
+  # TODO: Restore main files (checking non-www and www domains)
   if [[ ! -f "${SFOLDER}/tmp/letsencrypt/archive/${domain}" ]]; then
     cp -r "${SFOLDER}/tmp/letsencrypt/archive/${domain}" "/etc/letsencrypt/archive/"
     
