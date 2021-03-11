@@ -16,18 +16,6 @@
 #    3- Then we could write a custom config file to match directory, with db.
 #    3- Backup nginx and let's encrypts config.
 #
-
-# shellcheck source=${SFOLDER}/libs/commons.sh
-source "${SFOLDER}/libs/commons.sh"
-# shellcheck source=${SFOLDER}/libs/mysql_helper.sh
-source "${SFOLDER}/libs/mysql_helper.sh"
-# shellcheck source=${SFOLDER}/libs/backup_helper.sh
-source "${SFOLDER}/libs/backup_helper.sh"
-# shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
-source "${SFOLDER}/libs/wpcli_helper.sh"
-# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
-source "${SFOLDER}/libs/mail_notification_helper.sh"
-
 ################################################################################
 
 # GLOBALS

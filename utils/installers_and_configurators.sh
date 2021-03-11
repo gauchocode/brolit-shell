@@ -28,7 +28,6 @@ function installers_and_configurators() {
     "07)" "COCKPIT" 
     "08)" "CERTBOT" 
     "09)" "WP-CLI" 
-    "10)" "ZSH (BETA)"
     )
   
   installer_type=$(whiptail --title "INSTALLERS AND CONFIGURATORS" --menu "\nPlease select the utility or programs you want to install or config: \n" 20 78 10 "${installer_options[@]}" 3>&1 1>&2 2>&3)
@@ -71,39 +70,6 @@ function installers_and_configurators() {
     fi
     if [[ ${installer_type} == *"09"* ]]; then
       wpcli_installer_menu
-
-    fi
-    if [[ ${installer_type} == *"10"* ]]; then
-
-      # TODO: extract to zsh_installer.sh
-      
-      display --indent 2 --text "- Installing zsh and utils"
-
-      apt-get install zsh -qq > /dev/null
-      apt-get install fontconfig -qq > /dev/null
-
-      # Download and install Oh My Zsh
-      sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-
-      # Donwload and configure PowerLevel10k for Oh My Zsh
-      git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"/themes/powerlevel10k
-
-      clear_last_line
-      display --indent 2 --text "- Installing zsh and utils" --result "DONE" --color GREEN
-
-      # Copying configs files
-      cp "${SFOLDER}"/config/zsh/p10k.zsh ./.p10k.zsh        # Colour Reference: https://jonasjacek.github.io/colors/
-      cp "${SFOLDER}"/config/zsh/zshrc ./.zshrc
-      display --indent 2 --text "- Copying config files" --result "DONE" --color GREEN
-
-      # Set ZSH_THEME
-      #sed -i "s|$ZSH_THEME|powerlevel10k/powerlevel10k|g" "./.zshrc"
-
-      display --indent 2 --text "- Configuring Oh My Zsh and P10K" --result "DONE" --color GREEN
-      display --indent 4 --text "Please reboot the server to aplied changes" --tcolor YELLOW
-
-      # Make zsh default shell
-      chsh -s "$(which zsh)"
 
     fi
 

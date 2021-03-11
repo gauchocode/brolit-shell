@@ -163,13 +163,22 @@ function check_packages_required() {
     display --indent 2 --text "- Installing unzip" --result "DONE" --color GREEN
   fi
 
-  # Check if unzip is installed
+  # Check if git is installed
   GIT="$(command -v git)"
   if [[ ! -x "${GIT}" ]]; then
     display --indent 2 --text "- Installing git"
     apt-get --yes install git -qq > /dev/null
     clear_last_line
     display --indent 2 --text "- Installing git" --result "DONE" --color GREEN
+  fi
+
+  # Check if vim is installed
+  VIM="$(command -v vim)"
+  if [[ ! -x "${VIM}" ]]; then
+    display --indent 2 --text "- Installing vim"
+    apt-get --yes install vim -qq > /dev/null
+    clear_last_line
+    display --indent 2 --text "- Installing vim" --result "DONE" --color GREEN
   fi
 
   # MOGRIFY
@@ -181,9 +190,21 @@ function check_packages_required() {
 
   # JPEGOPTIM
   JPEGOPTIM="$(command -v jpegoptim)"
+  if [[ ! -x "${JPEGOPTIM}" ]]; then
+    display --indent 2 --text "- Installing jpegoptim"
+    apt-get --yes install jpegoptim -qq > /dev/null
+    clear_last_line
+    display --indent 2 --text "- Installing jpegoptim" --result "DONE" --color GREEN
+  fi
 
   # OPTIPNG
   OPTIPNG="$(command -v optipng)"
+  if [[ ! -x "${OPTIPNG}" ]]; then
+    display --indent 2 --text "- Installing optipng"
+    apt-get --yes install optipng -qq > /dev/null
+    clear_last_line
+    display --indent 2 --text "- Installing optipng" --result "DONE" --color GREEN
+  fi
 
   # TAR
   TAR="$(command -v tar)"
@@ -212,12 +233,23 @@ function check_packages_required() {
 
   fi
 
+  # CERTBOT
+  CERTBOT="$(command -v certbot)"
+  if [[ ! -x "${CERTBOT}" ]]; then
+    display --indent 2 --text "- Checking CERTBOT installation" --result "WARNING" --color YELLOW
+    display --indent 4 --text "CERTBOT not found" --tcolor YELLOW
+    return 1
+
+  fi
+
   # PHP
   PHP="$(command -v php)"
   if [[ ! -x "${PHP}" ]]; then
 
+    # Log
     display --indent 2 --text "- Checking PHP installation" --result "WARNING" --color YELLOW
     display --indent 4 --text "PHP not found" --tcolor YELLOW
+
     return 1
 
   else
@@ -232,15 +264,7 @@ function check_packages_required() {
 
   fi
 
-  # CERTBOT
-  CERTBOT="$(command -v certbot)"
-  if [[ ! -x "${CERTBOT}" ]]; then
-    display --indent 2 --text "- Checking CERTBOT installation" --result "WARNING" --color YELLOW
-    display --indent 4 --text "CERTBOT not found" --tcolor YELLOW
-    return 1
-
-  fi
-
+  # Log
   display --indent 2 --text "- Checking script dependencies" --result "DONE" --color GREEN
   log_event "info" "All required packages are installed"
 
@@ -248,24 +272,29 @@ function check_packages_required() {
 
 function basic_packages_installation() {
 
+  # Log
   log_subsection "Basic Packages Installation"
   
-  # Updating packages lists
   log_event "info" "Adding repos and updating package lists ..."
   display --indent 6 --text "- Adding repos and updating package lists"
 
+  # Updating packages lists
   apt-get --yes install software-properties-common > /dev/null
   apt-get --yes update -qq > /dev/null
 
+  # Log
+  clear_last_line
   clear_last_line
   display --indent 6 --text "- Adding repos and updating package lists" --result "DONE" --color GREEN
 
-  # Upgrading packages
   log_event "info" "Upgrading packages before installation ..."
   display --indent 6 --text "- Upgrading packages before installation"
 
+  # Upgrading packages
   apt-get --yes dist-upgrade -qq > /dev/null
 
+  # Log
+  clear_last_line
   clear_last_line
   display --indent 6 --text "- Upgrading packages before installation" --result "DONE" --color GREEN
 
@@ -273,8 +302,10 @@ function basic_packages_installation() {
   log_event "info" "Installing basic packages ..."
   display --indent 6 --text "- Installing basic packages"
 
-  apt-get --yes install vim unzip zip clamav ncdu imagemagick-* jpegoptim optipng webp sendemail libio-socket-ssl-perl dnsutils ghostscript pv ppa-purge -qq > /dev/null
+  # Installing packages
+  apt-get --yes install ncdu imagemagick-* webp ghostscript pv ppa-purge -qq > /dev/null
 
+  # Log
   clear_last_line
   display --indent 6 --text "- Installing basic packages" --result "DONE" --color GREEN
 
@@ -287,8 +318,8 @@ function selected_package_installation() {
     "certbot" " " off
     "monit" " " off
     "netdata" " " off
-    "cockpit" " " off
-    "zabbix" " " off
+    #"cockpit" " " off
+    #"zabbix" " " off
   )
 
   local chosen_apps
@@ -345,9 +376,13 @@ function selected_package_installation() {
 
 function timezone_configuration() {
 
-  #configure timezone
+  # Configure timezone
   dpkg-reconfigure tzdata
   
+  # Log
+  clear_last_line
+  clear_last_line
+  clear_last_line
   display --indent 6 --text "- Time Zone configuration" --result "DONE" --color GREEN
 
 }

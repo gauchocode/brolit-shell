@@ -73,8 +73,7 @@ function zabbix_server_installer() {
 
     ln -s "/etc/nginx/sites-available/${SUBDOMAIN}" "/etc/nginx/sites-enabled/${SUBDOMAIN}"
 
-    cd "/var/www"
-    chown -R www-data:www-data *
+    chown -R www-data:www-data "/var/www"
 
     # ./configure --enable-server --enable-agent --with-mysql --with-openssl --with-net-snmp --with-openipmi --with-libcurl --with-libxml2 --with-ssh2 --with-ldap
     # make
