@@ -96,7 +96,6 @@ function netdata_alarm_level() {
 
 }
 
-#TODO: maybe extract info of telegram.com?
 function netdata_telegram_config() {
 
   HEALTH_ALARM_NOTIFY_CONF="/etc/netdata/health_alarm_notify.conf"

@@ -35,7 +35,6 @@
 - [ ] WordPress: Install fails when set a project name like: xyz_sub_domain.
 - [ ] Backups: When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?).
 - [ ] Installers: On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages.
-- [ ] Installers: ZSH installer and config.
 - [ ] MySQL: when create a new user, ask what kind of connection do you want: localhost or % (any host).
         Example: CREATE USER 'bruser'@'%' IDENTIFIED BY 'sdasdasas'; GRANT ALL PRIVILEGES ON *.* TO 'bruser'@'%'; FLUSH PRIVILEGES;
 
@@ -58,6 +57,7 @@
 - [x] Installers: Support for multiple PHP version installation.
 - [x] Core: Refactor to let the script be runned with flags.
 - [x] When a certificate expired, the email subject didn't show the Warning message.
+- [x] Project Utils: A new option "Create project database" to create a database, and a database user for an specific project.
 
 ## For release 3.2
 
@@ -72,12 +72,10 @@
 - [ ] Nginx: Add http2 support on nginx server config files.
 - [ ] Nginx: New option to put website on maintenance.
 - [ ] Nginx: Multidomain support for nginx.
-- [ ] Nginx: put_project_offline need another aproach. Maybe put an index.html with message.
 - [ ] Backups: Refactor for backup/restore: 5 options (server_config, site_config, site, database and project).
 - [ ] Restore: Finish function restore_config_files_from_dropbox.
 - [ ] PHP: php_reconfigure refactor (replace strings instead of replace entired config files).
 - [ ] WP-CLI: Better error handling.
-- [ ] It Utils: Alias support for ZSH: https://opensource.com/article/19/7/bash-aliases
 - [ ] Installers: Option to install Bashtop and other utils: http://packages.azlux.fr/
 
 ## For release 3.3
@@ -86,8 +84,6 @@
 - [ ] Core: dependencies and configuration checker.
       If the script is runned on a system that was not configured by the script, it could fail.
 - [ ] Utils: Support for phpservermon: https://github.com/phpservermon/phpservermon
-- [ ] Nginx: Cron option to put a website offline.
-- [ ] Installers: Option to select netdata metrics to be reported.
 - [ ] Notifications: After install a new project (with credentials info).
 - [ ] Backups: On backup failure, the email must show what files fails and what files are correct backuped.
 - [ ] Backups: Implement on restore_from_backup easy way to restore all sites.
@@ -111,7 +107,7 @@
         Important: if create a project with stage different than prod, block search engine indexation
 - [ ] Installers: COPY_FROM_PROJECT option to exclude uploads directory
         rsync -ax --exclude [relative path to directory to exclude] /path/from /path/to
-- [ ] Core: Add a method to auto-load scripts from /utils.
+- [ ] Installers: Option to select netdata metrics to be reported.
 
 ## For release 3.5
 
@@ -124,7 +120,6 @@
 - [ ] Server Optimization: Complete the pdf optimization process.
 - [ ] MySQL: Optimization script.
 - [ ] MySQL: Rename database helper (with and without WP).
-- [ ] Project Utils: A new option "Create project database" to create a database, and a database user for an specific project.
 - [ ] WordPress: Fallback for replace strings on wp database (if wp-cli fails, use old script version).
 - [ ] WordPress: WP Network support (nginx config, and wp-cli commands).
 - [ ] IT Utils: Control of mounted partitions or directories.
@@ -150,11 +145,10 @@
         https://raymii.org/s/software/Bash_HTTP_Monitoring_Dashboard.html
 - [ ] Docker support?
         https://www.reddit.com/r/Wordpress/comments/jfn7z9/guide_wordpress_on_docker_with_nginx_traefik/
-- [ ] Support for Rclone? https://github.com/rclone/rclone
+- [ ] Support for rclone: https://github.com/rclone/rclone
+      Add support to change dropbox to another storage service (Google Drive, SFTP, etc)
 - [ ] Better LEMP setup, tzdata y mysql_secure_installation without human intervention
 - [ ] User authentication support with roles (admin, backup-only, project-creation-only)
-- [ ] Add support to change dropbox to another storage service (Google Drive, SFTP, etc)
-        Ref. Google Drive script: https://github.com/labbots/google-drive-upload
 - [ ] Hetzner cloud cli support. Refs:
         https://github.com/hetznercloud/cli
         https://github.com/thabbs/hetzner-cloud-cli-sh
