@@ -6,6 +6,13 @@
 
 function test_display_functions() {
 
+    test_display
+    test_string_remove_color_chars
+
+}
+
+function test_display() {
+
     log_subsection "Testing display 1"
 
     display --indent 6 --text "- Testing message DONE" --result "DONE" --color WHITE
@@ -28,5 +35,21 @@ function test_display_functions() {
     sleep 3
     spinner_stop $?
     display --indent 6 --text "- Testing spinner" --result "DONE" --color WHITE
+
+}
+
+function test_string_remove_color_chars() {
+
+    # Test 1
+    message1="${YELLOW}- Testing colored message${ENDCOLOR}"
+    echo "${message1}"
+    colored_test_1=$(string_remove_color_chars "${message1}")
+    echo "${colored_test_1}"
+
+    # Test 2
+    message2="- Testing message with colored ${YELLOW}word${ENDCOLOR}"
+    echo "${message2}"
+    colored_test_2=$(string_remove_color_chars "${message2}")
+    echo "${colored_test_2}"
 
 }
