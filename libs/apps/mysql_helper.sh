@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.18
+# Version: 3.0.20
 #############################################################################
 
 function mysql_test_user_credentials() {
@@ -22,7 +22,7 @@ function mysql_test_user_credentials() {
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
         
-        # Logging
+        # Log
         clear_last_line
         display --indent 6 --text "- Testing MySQL user credentials" --result "DONE" --color GREEN
         log_event "success" " Testing MySQL user credentials. User '${db_user}' and pass '${db_user_psw}'"
@@ -31,7 +31,7 @@ function mysql_test_user_credentials() {
 
     else
 
-        # Logging
+        # Log
         clear_last_line
         display --indent 6 --text "- Testing MySQL user credentials" --result "FAIL" --color RED
         log_event "error" "Something went wrong testing MySQL user credentials. User '${db_user}' and pass '${db_user_psw}'"
@@ -73,7 +73,7 @@ function mysql_list_databases() {
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
         
-        # Logging
+        # Log
         display --indent 6 --text "- Listing MySQL databases" --result "DONE" --color GREEN
         log_event "success" " Listing MySQL databases '${databases}'"
 
@@ -82,7 +82,7 @@ function mysql_list_databases() {
 
     else
 
-        # Logging
+        # Log
         display --indent 6 --text "- Listing MySQL databases" --result "FAIL" --color RED
         log_event "error" "Something went wrong listing MySQL databases"
         log_event "debug" "Last command executed: ${MYSQL_ROOT} -Bse 'show databases'"
@@ -105,7 +105,7 @@ function mysql_user_create() {
 
     local query
 
-    # Logging
+    # Log
     display --indent 2 --text "- Creating MySQL user ${db_user}"
     log_event "info" "Creating MySQL user ..."
 
@@ -130,7 +130,7 @@ function mysql_user_create() {
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
         
-        # Logging
+        # Log
         clear_last_line
         display --indent 6 --text "- Creating MySQL user ${db_user}" --result "DONE" --color GREEN
         display --indent 8 --text "User created with pass: ${db_user_psw}" --tcolor YELLOW
@@ -140,7 +140,7 @@ function mysql_user_create() {
 
     else
 
-        # Logging
+        # Log
         clear_last_line
         display --indent 6 --text "- Creating MySQL user ${db_user}" --result "FAIL" --color RED
         display --indent 8 --text "MySQL output: ${mysql_output}" --tcolor RED
@@ -166,7 +166,7 @@ function mysql_user_delete() {
     local query_1
     local query_2
 
-    # Logging
+    # Log
     display --indent 6 --text "- Deleting user ${db_user}"
     log_event "info" "Deleting ${db_user} user in MySQL ..."
 
@@ -186,7 +186,7 @@ function mysql_user_delete() {
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
-        # Logging
+        # Log
         clear_last_line
         display --indent 6 --text "- Deleting user ${db_user}" --result "DONE" --color GREEN
         log_event "success" " Database user ${db_user} deleted"
@@ -195,7 +195,7 @@ function mysql_user_delete() {
 
     else
 
-        # Logging
+        # Log
         clear_last_line
         display --indent 6 --text "- Deleting ${db_user} user in MySQL" --result "FAIL" --color RED
         log_event "error" "Something went wrong deleting user: ${db_user}."
@@ -231,7 +231,7 @@ function mysql_user_psw_change() {
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
-        # Logging
+        # Log
         display --indent 6 --text "- Changing password to user ${db_user}" --result "DONE" --color GREEN
         display --indent 8 --text "New password: ${db_user_psw}" --result "DONE" --color GREEN  
         log_event "success" "New password for user ${db_user}: ${db_user_psw}"
@@ -240,7 +240,7 @@ function mysql_user_psw_change() {
 
     else
 
-        # Logging
+        # Log
         display --indent 6 --text "- Changing password to user ${db_user}" --result "FAIL" --color RED   
         log_event "error" "Something went wrong changing password to user ${db_user}."
         log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\""
@@ -290,7 +290,7 @@ function mysql_root_psw_change() {
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
-        # Logging
+        # Log
         display --indent 6 --text "- Setting new password for root" --result "DONE" --color GREEN
         display --indent 8 --text "New password: ${db_root_psw}"
         log_event "success" "New password for root: ${db_root_psw}"
@@ -299,7 +299,7 @@ function mysql_root_psw_change() {
 
     else
 
-        # Logging
+        # Log
         display --indent 6 --text "- Setting new password for root" --result "FAIL" --color RED
         log_event "error" "Something went wrong changing MySQL root password."
         log_event "debug" "Last command executed: mysql mysql -e \"USE mysql;UPDATE user SET Password=PASSWORD('${db_root_psw}') WHERE User='${db_root_user}';FLUSH PRIVILEGES;\""
@@ -342,7 +342,7 @@ function mysql_user_grant_privileges() {
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
-        # Logging
+        # Log
         log_event "success" "Privileges granted to user ${db_user}"
         display --indent 6 --text "- Granting privileges to ${db_user}" --result "DONE" --color GREEN
 
@@ -350,7 +350,7 @@ function mysql_user_grant_privileges() {
 
     else
 
-        # Logging
+        # Log
         display --indent 6 --text "- Granting privileges to ${db_user}" --result "FAIL" --color RED
         log_event "error" "Something went wrong granting privileges to user ${db_user}."
         log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\""
@@ -460,7 +460,7 @@ function mysql_database_create() {
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
-        # Logging
+        # Log
         display --indent 6 --text "- Creating database: ${database}" --result "DONE" --color GREEN
         log_event "success" "Database ${database} created"
 
@@ -468,7 +468,7 @@ function mysql_database_create() {
 
     else
 
-        # Logging
+        # Log
         display --indent 6 --text "- Creating database: ${database}" --result "ERROR" --color RED
         log_event "error" "Something went wrong creating database: ${database}."
         log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}\""
@@ -500,7 +500,7 @@ function mysql_database_drop() {
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
-        # Logging
+        # Log
         log_event "success" "- Database ${database} deleted successfully"
         display --indent 6 --text "- Droping database: ${database}" --result "DONE" --color GREEN
 
@@ -508,7 +508,7 @@ function mysql_database_drop() {
 
     else
 
-        # Logging
+        # Log
         display --indent 6 --text "- Droping database: ${database}" --result "ERROR" --color RED
         display --indent 8 --text "MySQL import output: ${mysql_output}" --tcolor RED
         display --indent 8 --text "Query executed: ${query_1}" --tcolor RED
@@ -531,7 +531,7 @@ function mysql_database_import() {
 
     local import_status
 
-    # Logging
+    # Log
     display --indent 6 --text "- Importing backup into database: ${database}" --tcolor YELLOW
     log_event "info" "Importing dump file ${dump_file} into database: ${database}"
     log_event "debug" "Running: pv ${dump_file} | ${MYSQL_ROOT} -f -D ${database}"
@@ -543,7 +543,7 @@ function mysql_database_import() {
     import_status=$?
     if [[ ${import_status} -eq 0 ]]; then
 
-        # Logging
+        # Log
         clear_last_line
         display --indent 6 --text "- Database backup import" --result "DONE" --color GREEN
         log_event "success" "Database ${database} imported successfully"
@@ -552,7 +552,7 @@ function mysql_database_import() {
 
     else
         
-        # Logging
+        # Log
         clear_last_line
         display --indent 6 --text "- Database backup import" --result "ERROR" --color RED
         log_event "error" "Something went wrong importing database: ${database}"
@@ -588,16 +588,16 @@ function mysql_database_export() {
     # Check dump result
     if [[ ${dump_status} -eq 0 ]]; then
 
-        # Logging
-        display --indent 6 --text "- Database backup for ${database}" --result "DONE" --color GREEN
+        # Log
+        display --indent 6 --text "- Database backup for ${YELLOW}${database}${ENDCOLOR}" --result "DONE" --color GREEN
         log_event "success" "Database ${database} exported successfully"
 
         return 0
     
     else
 
-        # Logging
-        display --indent 6 --text "- Database backup for ${database}" --result "ERROR" --color RED
+        # Log
+        display --indent 6 --text "- Database backup for ${YELLOW}${database}${ENDCOLOR}" --result "ERROR" --color RED
         log_event "error" "Something went wrong exporting database: ${database}."
         log_event "error" "Last command executed: ${MYSQLDUMP_ROOT} ${database} > ${dump_file}"
 

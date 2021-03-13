@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.18
+# Version: 3.0.20
 #############################################################################
 
 function menu_backup_options() {
@@ -183,7 +183,7 @@ function make_server_files_backup() {
 
     # Test backup file
     log_event "info" "Testing backup file: ${bk_file} ..."
-    bzip2 -t "${TMP_DIR}/${NOW}/${bk_file}"
+    lbzip2 --test "${TMP_DIR}/${NOW}/${bk_file}"
 
     # Check test result
     bzip2_result=$?
@@ -278,7 +278,7 @@ function make_mailcow_backup() {
       MAILCOW_TMP_FOLDER="$(basename $PWD)"
       cd ..
 
-      log_event "info" "Making TAR.BZ2 from: ${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER} ..."
+      log_event "info" "Making tar.bz2 from: ${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER} ..."
 
       ${TAR} -cf - --directory="${MAILCOW_TMP_BK}" "${MAILCOW_TMP_FOLDER}" | pv --width 70 -ns "$(du -sb "${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER}" | awk '{print $1}')" | lbzip2 >"${MAILCOW_TMP_BK}/${bk_file}"
 
@@ -287,7 +287,8 @@ function make_mailcow_backup() {
 
       # Test backup file
       log_event "info" "Testing backup file: ${bk_file} ..."
-      lbzip2 -t "${MAILCOW_TMP_BK}/${bk_file}"
+      lbzip2 --test "${MAILCOW_TMP_BK}/${bk_file}"
+
       lbzip2_result=$?
       if [[ ${lbzip2_result} -eq 0 ]]; then
 
@@ -526,14 +527,14 @@ function make_files_backup() {
     BACKUPED_FL=${BACKUPED_LIST[${BK_FILE_INDEX}]}
 
     # Calculate backup size
-    BK_FL_SIZE="$(find . -name "${TMP_DIR}/${NOW}/${bk_file}" -exec ls -l --human-readable --block-size=M {} \; |  awk '{ print $5 }')"
+    BK_FL_SIZE="$(find "${TMP_DIR}/${NOW}/" -name "${bk_file}" -exec ls -l --human-readable --block-size=M {} \; |  awk '{ print $5 }')"
     BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=${BK_FL_SIZE}
 
     # Log
-    log_event "success" "Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}"
     display --indent 6 --text "- Backup creation" --result "DONE" --color GREEN
     display --indent 8 --text "Final backup size: ${YELLOW}${BOLD}${BK_FL_SIZE}${ENDCOLOR}"
-
+    
+    log_event "info" "Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}"
     log_event "info" "Creating folders in Dropbox ..."
 
     # New folder with $VPSNAME
@@ -793,7 +794,8 @@ function make_project_backup() {
 
     # Test backup file
     log_event "info" "Testing backup file: ${bk_file}"
-    lbzip2 -t "${TMP_DIR}/${NOW}/${bk_file}"
+    lbzip2 --test "${TMP_DIR}/${NOW}/${bk_file}"
+
     lbzip2_result=$?
     if [[ ${lbzip2_result} -eq 0 ]]; then
 
@@ -844,7 +846,7 @@ function make_project_backup() {
 
         # Test backup file
         log_event "info" "Testing backup file: ${BK_DB_FILE}"
-        lbzip2 -t "${TMP_DIR}/${NOW}/${BK_DB_FILE}"
+        lbzip2 --test "${TMP_DIR}/${NOW}/${BK_DB_FILE}"
 
         # New folder with $VPSNAME
         dropbox_create_dir "${VPSNAME}"
