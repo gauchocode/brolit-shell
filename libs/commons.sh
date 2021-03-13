@@ -854,43 +854,75 @@ function string_remove_color_chars() {
 
   for i in "${text_styles[@]}"
   do
+
+    log_event "debug" "Running: echo ${i} | sed -E 's/\\//g'"
+    log_event "debug" "Running: echo ${string} | sed -E 's/\\//g'" 
+
     # First we need to remove special char '\'
-    i=$(echo "${i}" | sed -E 's/\\//g') # echo "\E[42m" | sed -E 's/\\//g'
-    string=$(echo "${string}" | sed -E 's/\\//g')
+    i="$(echo "${i}" | sed -E 's/\\//g')" # echo "\E[42m" | sed -E 's/\\//g'
+    string="$(echo "${string}" | sed -E 's/\\//g')" # echo "\E[42m- Testing colored message" | sed -E 's/\\//g'
+
+    log_event "debug" "Running: echo ${i} | sed -E 's/\[//g'"
+    log_event "debug" "Running: echo ${string} | sed -E 's/\[//g'"
    
     # Second we need to remove special char '['
-    i=$(echo "${i}" | sed -E 's/\[//g') # echo "E[42m" | sed -E 's/\[//g'
-    string=$(echo "${string}" | sed -E 's/\[//g')
+    i="$(echo "${i}" | sed -E 's/\[//g')" # echo "E[42m" | sed -E 's/\[//g'
+    string="$(echo "${string}" | sed -E 's/\[//g')"
 
-    string=$(echo "${string}" | sed -E "s/$i//") # echo "E42m- Testing colored message" | sed -E "s/E42m//"
+
+    log_event "debug" "Running: echo ${string} | sed -E 's/$i//'"
+    string="$(echo "${string}" | sed -E "s/$i//")" # echo "E42m- Testing colored message" | sed -E "s/E42m//"
+
+    log_event "debug" "string=${string}"
 
   done
 
   for j in "${text_colors[@]}"
   do
+    log_event "debug" "Running: echo ${j} | sed -E 's/\\//g'"
+    log_event "debug" "Running: echo ${string} | sed -E 's/\\//g'" 
+
     # First we need to remove special char '\'
-    i=$(echo "${j}" | sed -E 's/\\//g') # echo "\E[42m" | sed -E 's/\\//g'
-    string=$(echo "${string}" | sed -E 's/\\//g')
+    j="$(echo "${j}" | sed -E 's/\\//g')" # echo "\E[42m" | sed -E 's/\\//g'
+    string="$(echo "${string}" | sed -E 's/\\//g')" # echo "\E[42m- Testing colored message" | sed -E 's/\\//g'
+
+    log_event "debug" "Running: echo ${j} | sed -E 's/\[//g'"
+    log_event "debug" "Running: echo ${string} | sed -E 's/\[//g'"
    
     # Second we need to remove special char '['
-    i=$(echo "${j}" | sed -E 's/\[//g') # echo "E[42m" | sed -E 's/\[//g'
-    string=$(echo "${string}" | sed -E 's/\[//g')
+    j="$(echo "${j}" | sed -E 's/\[//g')" # echo "E[42m" | sed -E 's/\[//g'
+    string="$(echo "${string}" | sed -E 's/\[//g')"
 
-    string=$(echo "${string}" | sed -E "s/$j//")
+
+    log_event "debug" "Running: echo ${string} | sed -E 's/$j//'"
+    string="$(echo "${string}" | sed -E "s/$j//")" # echo "E42m- Testing colored message" | sed -E "s/E42m//"
+
+    log_event "debug" "string=${string}"
+
 
   done
 
   for k in "${text_background[@]}"
   do
+    log_event "debug" "Running: echo ${j} | sed -E 's/\\//g'"
+    log_event "debug" "Running: echo ${string} | sed -E 's/\\//g'" 
+
     # First we need to remove special char '\'
-    i=$(echo "${k}" | sed -E 's/\\//g') # echo "\E[42m" | sed -E 's/\\//g'
-    string=$(echo "${string}" | sed -E 's/\\//g')
+    k="$(echo "${k}" | sed -E 's/\\//g')" # echo "\E[42m" | sed -E 's/\\//g'
+    string="$(echo "${string}" | sed -E 's/\\//g')" # echo "\E[42m- Testing colored message" | sed -E 's/\\//g'
+
+    log_event "debug" "Running: echo ${k} | sed -E 's/\[//g'"
+    log_event "debug" "Running: echo ${string} | sed -E 's/\[//g'"
    
     # Second we need to remove special char '['
-    i=$(echo "${k}" | sed -E 's/\[//g') # echo "E[42m" | sed -E 's/\[//g'
-    string=$(echo "${string}" | sed -E 's/\[//g')
+    k="$(echo "${k}" | sed -E 's/\[//g')" # echo "E[42m" | sed -E 's/\[//g'
+    string="$(echo "${string}" | sed -E 's/\[//g')"
 
-    string=$(echo "${string}" | sed -E "s/$k//")
+
+    log_event "debug" "Running: echo ${string} | sed -E 's/$k//'"
+    string="$(echo "${string}" | sed -E "s/$k//")" # echo "E42m- Testing colored message" | sed -E "s/E42m//"
+
+    log_event "debug" "string=${string}"
 
   done
 
