@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.18
+# Version: 3.0.20
 ################################################################################
 
 #
@@ -820,7 +820,20 @@ function restore_project() {
 
     esac
 
+    # TODO: Need refactor, only works with WordPress
     project_path="${SITES}/${new_project_domain}"
+    install_path="$(wp_config_path "${project_path}")"
+    # TODO: wp_config_path could be an array of dir paths, need to check that
+    if [[ "${install_path}" != "" ]]; then
+
+      log_event "info" "WordPress installation found: ${project_site}/${install_path}"
+
+    else
+
+      log_event "error" "WordPress installation not found"
+      return 1
+
+    fi
 
     # Database Backup
     backup_date="$(echo "${chosen_backup_to_restore}" |grep -Eo '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')"
@@ -931,9 +944,9 @@ function restore_project() {
     mysql_user_grant_privileges "${db_user}" "${db_name}"
 
     # Change wp-config.php database parameters
-    wp_update_wpconfig "${project_path}" "${db_project_name}" "${project_state}" "${db_pass}"
+    wp_update_wpconfig "${install_path}" "${db_project_name}" "${project_state}" "${db_pass}"
 
-    if [[ "${new_project_domain}" = "${chosen_domain}" ]]; then
+    if [[ ${new_project_domain} == ${chosen_domain} ]]; then
 
       letsencrypt_opt_text="\n Do you want to restore let's encrypt certificates or generate a new ones?"
 
@@ -973,7 +986,6 @@ function restore_project() {
           certbot_certificate_install "${MAILA}" "${chosen_domain}"
 
         fi
-      #else
 
       fi
 
@@ -994,13 +1006,13 @@ function restore_project() {
       # TODO: check if is a WP project
 
       # Change urls on database
-      wpcli_search_and_replace "${project_path}" "${chosen_domain}" "${new_project_domain}"
+      wpcli_search_and_replace "${install_path}" "${chosen_domain}" "${new_project_domain}"
 
       # Shuffle salts
-      wpcli_set_salts "${project_path}"
+      wpcli_set_salts "${install_path}"
 
       # Changing wordpress visibility
-      wpcli_change_wp_seo_visibility "${project_path}" "0"
+      wpcli_change_wp_seo_visibility "${install_path}" "0"
 
     fi
         

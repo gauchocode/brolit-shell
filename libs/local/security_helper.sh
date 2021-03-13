@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.18
+# Version: 3.0.20
 ################################################################################
 #
 # Refs: https://www.tecmint.com/scan-linux-for-malware-and-rootkits/

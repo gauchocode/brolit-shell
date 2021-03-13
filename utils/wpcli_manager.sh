@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.18
+# Version: 3.0.20
 ################################################################################
 
 function wpcli_manager() {
@@ -102,6 +102,8 @@ function wpcli_main_menu() {
       # INSTALL_PLUGINS
       chosen_plugin_option=$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to install." 20 78 15 "${wp_plugins[@]}" 3>&1 1>&2 2>&3)
 
+      log_subsection "WP Install Plugin"
+      
       for plugin in $chosen_plugin_option; do
 
         wpcli_install_plugin "${wp_site}" "$plugin"
@@ -118,7 +120,8 @@ function wpcli_main_menu() {
       WP_DEL_THEMES=$(wp --path="${wp_site}" theme list --quiet --field=name --status=inactive --allow-root)
       array_to_checklist "${WP_DEL_THEMES}"
       CHOSEN_DEL_THEME_OPTION="$(whiptail --title "Theme Selection" --checklist "Select the themes you want to delete." 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)"
-      #echo "Setting CHOSEN_DEL_THEME_OPTION="$CHOSEN_DEL_THEME_OPTION
+      
+      log_subsection "WP Delete Themes"
 
       for theme_del in $CHOSEN_DEL_THEME_OPTION; do
         theme_del=$(sed -e 's/^"//' -e 's/"$//' <<<${theme_del}) #needed to ommit double quotes
@@ -136,6 +139,8 @@ function wpcli_main_menu() {
       array_to_checklist "${wp_del_plugins}"
       chosen_del_plugin_option=$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to delete:" 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)
 
+      log_subsection "WP Delete Plugins"
+
       for plugin_del in ${chosen_del_plugin_option}; do
         
         plugin_del=$(sed -e 's/^"//' -e 's/"$//' <<<"${plugin_del}") #needed to ommit double quotes
@@ -149,6 +154,9 @@ function wpcli_main_menu() {
     if [[ ${chosen_wpcli_options} == *"04"* ]]; then
 
       #REINSTALL_PLUGINS
+
+      log_subsection "WP Re-install Plugins"
+
       wpcli_force_reinstall_plugins "${wp_site}"
 
     fi
@@ -156,6 +164,8 @@ function wpcli_main_menu() {
     if [[ ${chosen_wpcli_options} == *"05"* ]]; then
 
       # VERIFY_WP
+      log_subsection "WP Verify"
+
       wpcli_core_verify "${wp_site}"
       wpcli_plugin_verify "${wp_site}"
 
@@ -164,6 +174,8 @@ function wpcli_main_menu() {
     if [[ ${chosen_wpcli_options} == *"06"* ]]; then
 
       # UPDATE_WP
+      log_subsection "WP Core Update"
+
       wpcli_core_update "${wp_site}"
 
     fi
@@ -171,6 +183,8 @@ function wpcli_main_menu() {
     if [[ ${chosen_wpcli_options} == *"07"* ]]; then
 
       # REINSTALL_WP
+      log_subsection "WP Core Re-install"
+
       wp_result=$(wpcli_core_reinstall "${wp_site}")
       if [[ "${wp_result}" = "success" ]]; then
         telegram_send_message "⚠️ ${VPSNAME}: WordPress reinstalled on site: ${wp_site}"
@@ -182,6 +196,8 @@ function wpcli_main_menu() {
     if [[ ${chosen_wpcli_options} == *"08"* ]]; then
 
       # CLEAN_DB
+      log_subsection "WP Clean Database"
+
       log_event "info" "Executing: wp --path=${wp_site} transient delete --expired --allow-root" "false"
       wp --path="${wp_site}" transient delete --expired --allow-root --quiet
 
@@ -197,6 +213,7 @@ function wpcli_main_menu() {
     if [[ ${chosen_wpcli_options} == *"09"* ]]; then
 
       # PROFILE_WP
+      log_subsection "WP Profile"
 
       #Install profiler_options
       #https://guides.wp-bullet.com/using-wp-cli-wp-profile-to-diagnose-wordpress-performance-issues/
@@ -252,6 +269,7 @@ function wpcli_main_menu() {
     if [[ ${chosen_wpcli_options} == *"10"* ]]; then
 
       # CHANGE_TABLES_PREFIX
+      log_subsection "WP Change Tables Prefix"
 
       # Generate WP tables PREFIX
       TABLES_PREFIX=$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)
@@ -263,6 +281,8 @@ function wpcli_main_menu() {
     if [[ ${chosen_wpcli_options} == *"11"* ]]; then
 
       # REPLACE_URLs
+      log_subsection "WP Replace URLs"
+
       wp_ask_url_search_and_replace "${wp_site}"
 
     fi
@@ -270,6 +290,8 @@ function wpcli_main_menu() {
     if [[ ${chosen_wpcli_options} == *"12"* ]]; then
 
       # SEOYOAST_REINDEX
+      log_subsection "WP SEO Yoast Re-index"
+
       wpcli_seoyoast_reindex "${wp_site}"
 
     fi
@@ -277,6 +299,8 @@ function wpcli_main_menu() {
     if [[ ${chosen_wpcli_options} == *"13"* ]]; then
 
       # DELETE_NOT_CORE_FILES
+      log_subsection "WP Delete not-core files"
+
       echo -e "${B_RED} > This script will delete all non-core wordpress files (except wp-content). Do you want to continue? [y/n]${ENDCOLOR}"
       read -r answer
       
@@ -288,6 +312,8 @@ function wpcli_main_menu() {
     fi
 
     if [[ ${chosen_wpcli_options} == *"14"* ]]; then
+
+      log_subsection "WP Create User"
 
       choosen_user=$(whiptail --title "WORDPRESS USER" --inputbox "Insert the username you want:" 10 60 "" 3>&1 1>&2 2>&3)
       exitstatus=$?
@@ -312,6 +338,9 @@ function wpcli_main_menu() {
     fi
 
     if [[ ${chosen_wpcli_options} == *"15"* ]]; then
+
+      # RESET WP USER PASSW
+      log_subsection "WP Reset User Pass"
 
       choosen_user=$(whiptail --title "WORDPRESS USER" --inputbox "Insert the username you want:" 10 60 "" 3>&1 1>&2 2>&3)
       exitstatus=$?
