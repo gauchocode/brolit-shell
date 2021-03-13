@@ -862,21 +862,21 @@ function string_remove_color_chars() {
     i=$(echo "${i}" | sed -E 's/\[//g') # echo "E[42m" | sed -E 's/\[//g'
     string=$(echo "${string}" | sed -E 's/\[//g')
 
-    string=$(sed -i "s/$i//" "${string}")
+    string=$(echo "${string}" | sed -E "s/$i//") # echo "E42m- Testing colored message" | sed -E "s/E42m//"
 
   done
 
   for j in "${text_colors[@]}"
   do
     # First we need to remove special char '\'
-    i=$(echo "${ji}" | sed -E 's/\\//g') # echo "\E[42m" | sed -E 's/\\//g'
+    i=$(echo "${j}" | sed -E 's/\\//g') # echo "\E[42m" | sed -E 's/\\//g'
     string=$(echo "${string}" | sed -E 's/\\//g')
    
     # Second we need to remove special char '['
     i=$(echo "${j}" | sed -E 's/\[//g') # echo "E[42m" | sed -E 's/\[//g'
     string=$(echo "${string}" | sed -E 's/\[//g')
 
-    string=$(sed -i "s/$j//" "${string}")
+    string=$(echo "${string}" | sed -E "s/$j//")
 
   done
 
@@ -890,7 +890,7 @@ function string_remove_color_chars() {
     i=$(echo "${k}" | sed -E 's/\[//g') # echo "E[42m" | sed -E 's/\[//g'
     string=$(echo "${string}" | sed -E 's/\[//g')
 
-    string=$(sed -i "s/$k//" "${string}")
+    string=$(echo "${string}" | sed -E "s/$k//")
 
   done
 
