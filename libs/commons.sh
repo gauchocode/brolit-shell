@@ -854,19 +854,43 @@ function string_remove_color_chars() {
 
   for i in "${text_styles[@]}"
   do
-    string=$(echo "${string}" | tr -d "${i}")
+    # First we need to remove special char '\'
+    i=$(echo "${i}" | sed -E 's/\\//g') # echo "\E[42m" | sed -E 's/\\//g'
+    string=$(echo "${string}" | sed -E 's/\\//g')
+   
+    # Second we need to remove special char '['
+    i=$(echo "${i}" | sed -E 's/\[//g') # echo "E[42m" | sed -E 's/\[//g'
+    string=$(echo "${string}" | sed -E 's/\[//g')
+
+    string=$(sed -i "s/$i//" "${string}")
 
   done
 
   for j in "${text_colors[@]}"
   do
-    string=$(echo "${string}" | tr -d "${j}")
+    # First we need to remove special char '\'
+    i=$(echo "${ji}" | sed -E 's/\\//g') # echo "\E[42m" | sed -E 's/\\//g'
+    string=$(echo "${string}" | sed -E 's/\\//g')
+   
+    # Second we need to remove special char '['
+    i=$(echo "${j}" | sed -E 's/\[//g') # echo "E[42m" | sed -E 's/\[//g'
+    string=$(echo "${string}" | sed -E 's/\[//g')
+
+    string=$(sed -i "s/$j//" "${string}")
 
   done
 
   for k in "${text_background[@]}"
   do
-    string=$(echo "${string}" | tr -d "${k}")
+    # First we need to remove special char '\'
+    i=$(echo "${k}" | sed -E 's/\\//g') # echo "\E[42m" | sed -E 's/\\//g'
+    string=$(echo "${string}" | sed -E 's/\\//g')
+   
+    # Second we need to remove special char '['
+    i=$(echo "${k}" | sed -E 's/\[//g') # echo "E[42m" | sed -E 's/\[//g'
+    string=$(echo "${string}" | sed -E 's/\[//g')
+
+    string=$(sed -i "s/$k//" "${string}")
 
   done
 

@@ -318,7 +318,8 @@ function display() {
           # Display:
           # - for full shells, count with -m instead of -c, to support language locale (older busybox does not have -m)
           # - wc needs LANG to deal with multi-bytes characters but LANG has been unset in include/consts
-          TEXT_C=$(string_remove_color_chars "${TEXT}")
+          #TEXT_C=$(string_remove_color_chars "${TEXT}")
+          TEXT_C="${TEXT}"
           LINESIZE=$(export LC_ALL= ; echo "${TEXT_C}" | wc -m | tr -d ' ')
 
           if [[ "${SHOWDEBUG}" -eq 1 ]]; then DEBUGTEXT=" [${PURPLE}DEBUG${NORMAL}]"; else DEBUGTEXT=""; fi
