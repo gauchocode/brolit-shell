@@ -325,7 +325,7 @@ function script_init() {
   check_packages_required
   packages_output=$?
   if [[ ${packages_output} -eq 1 ]];then
-    log_event "warning" "Some script dependencies are not setisfied." "true"
+    log_event "warning" "Some script dependencies are not setisfied" "true"
     prompt_return_or_finish
   fi
 
@@ -373,7 +373,7 @@ function script_init() {
   fi
 
   # EXPORT VARS
-  export SCRIPT_V VPSNAME TMP_DIR SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V 
+  export SCRIPT_V VPSNAME TMP_DIR SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V SERVER_CONFIG
   export LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP MYSQL_ROOT MYSQLDUMP_ROOT TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MAILA NOW NOWDISPLAY ONEWEEKAGO 
   export SENDEMAIL DISK_U ONE_FILE_BK SERVER_IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_BACKUP_DBS STATUS_BACKUP_FILES STATUS_SERVER STATUS_CERTS OUTDATED_PACKAGES 
   export LOG BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
@@ -1376,7 +1376,7 @@ function ask_subdomains_to_cloudflare_config() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    log_event "info" "Setting subdomains=${subdomains}"
+    log_event "info" "Setting subdomains: ${subdomains}"
 
     # Return
     echo "${subdomains}"

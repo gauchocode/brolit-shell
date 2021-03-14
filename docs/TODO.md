@@ -17,7 +17,6 @@
 
 ### Need improvements
 
-- [ ] SFTP: Support sftp_create_user.
 - [ ] Core: Create a way to check if nginx, php, and other parameters are correct before run the script.
 - [ ] Nginx: New default nginx configuration for wordpress projects fails after running certbot.
 - [ ] LetsEncrypt: Need a better way to re-install a certificate after a website migration.
@@ -110,6 +109,8 @@
 - [ ] Installers: COPY_FROM_PROJECT option to exclude uploads directory
         rsync -ax --exclude [relative path to directory to exclude] /path/from /path/to
 - [ ] Installers: Option to select netdata metrics to be reported.
+- [ ] SFTP: Option to create a user jail on sftp_create_user.
+      Important:https://www.electricmonk.nl/log/2015/07/13/ssh-chrootdirectory-sftponly-not-working-fixed/
 
 ## For release 3.5
 
