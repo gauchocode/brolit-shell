@@ -5,7 +5,11 @@
 # Version: 3.0.20
 ################################################################################
 
-#set -Eeuo pipefail
+### Exit immediately if a command exits with a non-zero status
+#set -e
+
+### Environment checks
+[ "${BASH_VERSINFO:-0}" -lt 4 ] && { echo "At least Bash version 4 is required. Aborting..." >&2 ; exit 2; }
 
 ### Main dir check
 SFOLDER=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)

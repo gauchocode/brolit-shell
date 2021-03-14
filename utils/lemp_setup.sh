@@ -28,6 +28,6 @@ function lemp_setup() {
 
     selected_package_installation
 
-    log_event "success" "************* LEMP SETUP COMPLETED *************" "true"
+    log_event "info" "************* LEMP SETUP COMPLETED *************" "true"
 
 }

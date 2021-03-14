@@ -25,7 +25,7 @@ function mysql_test_user_credentials() {
         # Log
         clear_last_line
         display --indent 6 --text "- Testing MySQL user credentials" --result "DONE" --color GREEN
-        log_event "success" " Testing MySQL user credentials. User '${db_user}' and pass '${db_user_psw}'"
+        log_event "info" " Testing MySQL user credentials. User '${db_user}' and pass '${db_user_psw}'"
 
         return 0
 
@@ -75,7 +75,7 @@ function mysql_list_databases() {
         
         # Log
         display --indent 6 --text "- Listing MySQL databases" --result "DONE" --color GREEN
-        log_event "success" " Listing MySQL databases '${databases}'"
+        log_event "info" " Listing MySQL databases '${databases}'"
 
         # Return
         echo "${databases}"
@@ -134,7 +134,7 @@ function mysql_user_create() {
         clear_last_line
         display --indent 6 --text "- Creating MySQL user ${db_user}" --result "DONE" --color GREEN
         display --indent 8 --text "User created with pass: ${db_user_psw}" --tcolor YELLOW
-        log_event "success" " MySQL user ${db_user} created with pass: ${db_user_psw}"
+        log_event "info" " MySQL user ${db_user} created with pass: ${db_user_psw}"
 
         return 0
 
@@ -189,7 +189,7 @@ function mysql_user_delete() {
         # Log
         clear_last_line
         display --indent 6 --text "- Deleting user ${db_user}" --result "DONE" --color GREEN
-        log_event "success" " Database user ${db_user} deleted"
+        log_event "info" " Database user ${db_user} deleted"
 
         return 0
 
@@ -234,7 +234,7 @@ function mysql_user_psw_change() {
         # Log
         display --indent 6 --text "- Changing password to user ${db_user}" --result "DONE" --color GREEN
         display --indent 8 --text "New password: ${db_user_psw}" --result "DONE" --color GREEN  
-        log_event "success" "New password for user ${db_user}: ${db_user_psw}"
+        log_event "info" "New password for user ${db_user}: ${db_user_psw}"
 
         return 0
 
@@ -293,7 +293,7 @@ function mysql_root_psw_change() {
         # Log
         display --indent 6 --text "- Setting new password for root" --result "DONE" --color GREEN
         display --indent 8 --text "New password: ${db_root_psw}"
-        log_event "success" "New password for root: ${db_root_psw}"
+        log_event "info" "New password for root: ${db_root_psw}"
 
         return 0
 
@@ -343,7 +343,7 @@ function mysql_user_grant_privileges() {
     if [[ ${mysql_result} -eq 0 ]]; then
 
         # Log
-        log_event "success" "Privileges granted to user ${db_user}"
+        log_event "info" "Privileges granted to user ${db_user}"
         display --indent 6 --text "- Granting privileges to ${db_user}" --result "DONE" --color GREEN
 
         return 0
@@ -462,7 +462,7 @@ function mysql_database_create() {
 
         # Log
         display --indent 6 --text "- Creating database: ${database}" --result "DONE" --color GREEN
-        log_event "success" "Database ${database} created"
+        log_event "info" "Database ${database} created"
 
         return 0
 
@@ -501,7 +501,7 @@ function mysql_database_drop() {
     if [[ ${mysql_result} -eq 0 ]]; then
 
         # Log
-        log_event "success" "- Database ${database} deleted successfully"
+        log_event "info" "- Database ${database} deleted successfully"
         display --indent 6 --text "- Droping database: ${database}" --result "DONE" --color GREEN
 
         return 0
@@ -546,7 +546,7 @@ function mysql_database_import() {
         # Log
         clear_last_line
         display --indent 6 --text "- Database backup import" --result "DONE" --color GREEN
-        log_event "success" "Database ${database} imported successfully"
+        log_event "info" "Database ${database} imported successfully"
 
         return 0
 
@@ -590,7 +590,7 @@ function mysql_database_export() {
 
         # Log
         display --indent 6 --text "- Database backup for ${YELLOW}${database}${ENDCOLOR}" --result "DONE" --color GREEN
-        log_event "success" "Database ${database} exported successfully"
+        log_event "info" "Database ${database} exported successfully"
 
         return 0
     

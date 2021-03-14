@@ -189,7 +189,7 @@ function make_server_files_backup() {
     bzip2_result=$?
     if [[ ${bzip2_result} -eq 0 ]]; then
 
-      log_event "success" "Backup ${bk_file} created"
+      log_event "info" "Backup ${bk_file} created"
       
       #BACKUPED_SCF_LIST[$BK_SCF_INDEX]="$(string_remove_special_chars "${bk_file}")"
       BACKUPED_SCF_LIST[$BK_SCF_INDEX]=${bk_file}
@@ -292,7 +292,7 @@ function make_mailcow_backup() {
       lbzip2_result=$?
       if [[ ${lbzip2_result} -eq 0 ]]; then
 
-        log_event "success" "${MAILCOW_TMP_BK}/${bk_file} backup created"
+        log_event "info" "${MAILCOW_TMP_BK}/${bk_file} backup created"
 
         # New folder with $VPSNAME
         output="$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}" 2>&1)"
@@ -472,7 +472,7 @@ function make_all_files_backup() {
 
       mkdir "${MAILCOW_TMP_BK}"
 
-      log_event "success" "Folder ${MAILCOW_TMP_BK} created"
+      log_event "info" "Folder ${MAILCOW_TMP_BK} created"
 
     fi
 
@@ -561,7 +561,7 @@ function make_files_backup() {
     log_event "info" "Temp backup deleted from server"
     display --indent 6 --text "- Deleting temp files" --result "DONE" --color GREEN
 
-    log_event "success" "Backup uploaded"
+    log_event "info" "Backup uploaded"
 
   else
     ERROR=true
@@ -641,7 +641,7 @@ function make_all_databases_backup() {
 
       BK_DB_INDEX=$((BK_DB_INDEX + 1))
 
-      log_event "success" "Backup ${BK_DB_INDEX} of ${TOTAL_DBS} done"
+      log_event "info" "Backup ${BK_DB_INDEX} of ${TOTAL_DBS} done"
 
       log_break "true"
 
@@ -708,7 +708,7 @@ function make_database_backup() {
     lbzip2_result=$?
     if [[ ${lbzip2_result} -eq 0 ]]; then
 
-      log_event "success" "Backup file ${bk_file} created"
+      log_event "info" "Backup file ${bk_file} created"
 
       display --indent 6 --text "- Compressing database backup" --result "DONE" --color GREEN
 
@@ -719,7 +719,7 @@ function make_database_backup() {
       BK_DB_SIZE="$(find . -name "${bk_file}" -exec ls -l --human-readable --block-size=M {} \; | awk '{ print $5 }')"
       BK_DB_SIZES+=("${BK_DB_SIZE}")
 
-      log_event "success" "Backup for ${database} created, final size: ${BK_DB_SIZE}"
+      log_event "info" "Backup for ${database} created, final size: ${BK_DB_SIZE}"
       display --indent 8 --text "Backup final size: ${YELLOW}${BOLD}${BK_DB_SIZE}${ENDCOLOR}"
 
       log_event "info" "Creating folders in Dropbox ..."
@@ -806,7 +806,7 @@ function make_project_backup() {
         BK_FL_SIZES[$BK_FL_ARRAY_INDEX]="$(find . -name "${bk_file}" -exec ls -l --human-readable --block-size=M {} \; |  awk '{ print $5 }')"
         BK_FL_SIZE=${BK_FL_SIZES[$BK_FL_ARRAY_INDEX]}
 
-        log_event "success" "File backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}"
+        log_event "info" "File backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}"
 
         # Checking whether WordPress is installed or not
         if ! $(wp core is-installed); then
@@ -870,7 +870,7 @@ function make_project_backup() {
         
         rm --recursive --force "${TMP_DIR}/${NOW}/${bk_file}"
 
-        log_event "success" "Project backup ok!"
+        log_event "info" "Project backup ok!"
 
     else
         ERROR=true

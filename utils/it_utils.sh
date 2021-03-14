@@ -218,7 +218,7 @@ function add_floating_IP() {
    
    service networking restart
 
-   log_event "success" "New IP ${floating_IP} added" "false"
+   log_event "info" "New IP ${floating_IP} added" "false"
    display --indent 6 --text "- Restarting networking service" --result "DONE" --color GREEN
    display --indent 8 --text "New IP ${floating_IP} added"
    
@@ -232,7 +232,7 @@ function add_floating_IP() {
       
       netplan apply
 
-      log_event "success" "New IP ${floating_IP} added" "false"
+      log_event "info" "New IP ${floating_IP} added" "false"
       display --indent 6 --text "- Restarting networking service" --result "DONE" --color GREEN
       display --indent 8 --text "New IP ${floating_IP} added"
 

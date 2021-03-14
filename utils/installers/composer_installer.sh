@@ -33,7 +33,7 @@ function composer_install () {
   if [[ "${composer_result}" -eq 0 ]]; then
     rm composer-setup.php
 
-    log_event "success" "Composer Installer finished" "false"
+    log_event "info" "Composer Installer finished" "false"
 
   else
     log_event "error" "Composer Installer failed" "false"
