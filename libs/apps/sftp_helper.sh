@@ -23,6 +23,7 @@ function _sftp_add_folder_permission() {
 
     # Create project subfolder
     mkdir "${dir_path}${folder}"
+    log_event "info" "Creating subfolder ${dir_path}/${folder}"
 
     # Mounting
     mount --bind "${dir_path}${folder}" "/home/${username}/${folder}"
@@ -30,6 +31,7 @@ function _sftp_add_folder_permission() {
     # Log
     display --indent 6 --text "- Mounting subfolder" --result "DONE" --color GREEN
     log_event "info" "Mounting subfolder ${dir_path}/${folder} on /home/${username}/${folder}"
+    log_event "debug" "Running: mount --bind ${dir_path}${folder} /home/${username}/${folder}"
 
     # Mount permanent
     cat "${dir_path}/${folder} /home/${username}/${folder} none bind   0      0"  >>"/etc/fstab"
@@ -40,6 +42,7 @@ function _sftp_add_folder_permission() {
 
     # The command below will set the document root and all subfolders to 775
     find "${dir_path}/${folder}" -type d -exec chmod g+s {} \;
+    log_event "debug" "Running: find ${dir_path}/${folder} -type d -exec chmod g+s {} \;"
     
     # We want any new files created in the document root from now on to inherit the group name
     chmod g+s "${dir_path}/${folder}"
@@ -93,9 +96,11 @@ function sftp_create_user() {
 
     # Backup actual config
     mv "/etc/ssh/sshd_config" "/etc/ssh/sshd_config.bk"
+    log_event "debug" "Running: mv /etc/ssh/sshd_config /etc/ssh/sshd_config.bk"
 
     # Copy new config
     cp "${SFOLDER}/config/sftp/sshd_config" "/etc/ssh/sshd_config"
+    log_event "debug" "Running: cp ${SFOLDER}/config/sftp/sshd_config /etc/ssh/sshd_config"
 
     # Replace SFTP_U to new sftp user
     if [[ ${username} != "" ]]; then
