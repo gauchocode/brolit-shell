@@ -284,7 +284,6 @@ function basic_packages_installation() {
 
   # Log
   clear_last_line
-  clear_last_line
   display --indent 6 --text "- Adding repos and updating package lists" --result "DONE" --color GREEN
 
   log_event "info" "Upgrading packages before installation ..."
@@ -294,7 +293,6 @@ function basic_packages_installation() {
   apt-get --yes dist-upgrade -qq > /dev/null
 
   # Log
-  clear_last_line
   clear_last_line
   display --indent 6 --text "- Upgrading packages before installation" --result "DONE" --color GREEN
 
@@ -306,6 +304,7 @@ function basic_packages_installation() {
   apt-get --yes install ncdu imagemagick-* webp ghostscript pv ppa-purge -qq > /dev/null
 
   # Log
+  clear_last_line
   clear_last_line
   display --indent 6 --text "- Installing basic packages" --result "DONE" --color GREEN
 
@@ -376,6 +375,8 @@ function selected_package_installation() {
 
 function timezone_configuration() {
 
+  log_subsection "Timezone Configuration"
+
   # Configure timezone
   dpkg-reconfigure tzdata
   
@@ -384,6 +385,8 @@ function timezone_configuration() {
   clear_last_line
   clear_last_line
   display --indent 6 --text "- Time Zone configuration" --result "DONE" --color GREEN
+
+  log_break "true"
 
 }
 
@@ -396,8 +399,8 @@ function remove_old_packages() {
   apt-get --yes autoremove -qq > /dev/null
   apt-get --yes autoclean -qq > /dev/null
 
-  log_event "info" "Old system packages cleaned"
   clear_last_line
+  log_event "info" "Old system packages cleaned"
   display --indent 6 --text "- Cleanning old system packages" --result "DONE" --color GREEN
 
 }
