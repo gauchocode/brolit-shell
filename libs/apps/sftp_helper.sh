@@ -22,23 +22,23 @@ function _sftp_add_folder_permission() {
     log_event "info" "Creating user subfolder: /home/${username}/${folder}"
 
     # Create project subfolder
-    mkdir "${dir_path}${folder}"
+    mkdir "${dir_path}/${folder}"
     log_event "info" "Creating subfolder ${dir_path}/${folder}"
 
     # Mounting
-    mount --bind "${dir_path}${folder}" "/home/${username}/${folder}"
+    mount --bind "${dir_path}/${folder}" "/home/${username}/${folder}"
 
     # Log
     display --indent 6 --text "- Mounting subfolder" --result "DONE" --color GREEN
     log_event "info" "Mounting subfolder ${dir_path}/${folder} on /home/${username}/${folder}"
-    log_event "debug" "Running: mount --bind ${dir_path}${folder} /home/${username}/${folder}"
+    log_event "debug" "Running: mount --bind ${dir_path}/${folder} /home/${username}/${folder}"
 
     # Mount permanent
-    cat "${dir_path}/${folder} /home/${username}/${folder} none bind   0      0"  >>"/etc/fstab"
+    echo "${dir_path}/${folder} /home/${username}/${folder} none bind   0      0"  >>"/etc/fstab"
 
     # Log
     display --indent 6 --text "- Writing fstab to make it permanent" --result "DONE" --color GREEN
-    log_event "debug" "Running: cat ${dir_path}/${folder} /home/${username}/${folder} none bind   0      0  >>/etc/fstab"
+    log_event "debug" "Running: echo ${dir_path}/${folder} /home/${username}/${folder} none bind   0      0  >>/etc/fstab"
 
     # The command below will set the document root and all subfolders to 775
     find "${dir_path}/${folder}" -type d -exec chmod g+s {} \;
@@ -104,21 +104,23 @@ function sftp_create_user() {
 
     # Replace SFTP_U to new sftp user
     if [[ ${username} != "" ]]; then
-        sed -i "/SFTP_U/s/'[^']*'/'${username}'/2" "/etc/ssh/sshd_config"
+        # Replacing SFTP_U with $username
+        sed -i "s+SFTP_U+${username}+g" "/etc/ssh/sshd_config"
+        log_event "debug" "Running: s+SFTP_U+${username}+g /etc/ssh/sshd_config"
+        #sed -i "/SFTP_U/s/'[^']*'/'${username}'/2" "/etc/ssh/sshd_config"
+        #log_event "debug" "Running: sed -i /SFTP_U/s/'[^']*'/'${username}'/2 /etc/ssh/sshd_config"
     else
         return 1
     fi
 
     # Shell Access
-    if [[ ${shell_access} = "" || ${shell_access} = "no" ]]; then
-
-        sed -i "/SHELL_ACCESS/s/'[^']*'/'${shell_access}'/2" "/etc/ssh/sshd_config"
-
-    else
-    
-        sed -i "/SHELL_ACCESS/s/'[^']*'/'${shell_access}'/2" "/etc/ssh/sshd_config"
-
+    if [[ ${shell_access} == "" ]]; then
+        shell_access="no"
     fi
+
+    # Replacing SHELL_ACCESS with $shell_access
+    sed -i "s+SHELL_ACCESS+${shell_access}+g" "/etc/ssh/sshd_config"
+    log_event "debug" "Running: s+SHELL_ACCESS+${shell_access}+g /etc/ssh/sshd_config"
 
     # Log
     display --indent 6 --text "- Configuring SSH access" --result "DONE" --color GREEN
@@ -126,11 +128,10 @@ function sftp_create_user() {
 
     # Select project to work with
     directory_browser "Select a project to work with" "${SITES}" #return $filename
-    # Directory_broser returns: " $filepath"/"$filename
+    # Directory_broser returns: $filepath and $filename
     if [[ ${filename} != "" && ${filepath} != "" ]]; then
-
         # Create and add folder permission
-        _sftp_add_folder_permission "${username}" "${filepath}/${filename}" "public"
+        _sftp_add_folder_permission "${username}" "${filepath}${filename}" "public"
 
     fi
 
