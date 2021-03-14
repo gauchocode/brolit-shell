@@ -54,7 +54,7 @@ function wpcli_install() {
     chmod +x wp-cli.phar
     sudo mv wp-cli.phar "/usr/local/bin/wp"
 
-    log_event "success" "wp-cli installed"
+    log_event "info" "wp-cli installed"
     display --indent 6 --text "- Installing wp-cli" --result "DONE" --color GREEN
     
 }
@@ -65,7 +65,7 @@ function wpcli_update() {
 
     wp cli update --quiet
 
-    log_event "success" "wp-cli installed"
+    log_event "info" "wp-cli installed"
     display --indent 2 --text "- Updating wp-cli" --result "DONE" --color GREEN
 
 }
@@ -325,7 +325,7 @@ function wpcli_core_reinstall() {
         if [[ "${wpcli_result}" = "Success" ]]; then
 
             # Log Success
-            log_event "success" "Wordpress re-installed"
+            log_event "info" "Wordpress re-installed"
             display --indent 6 --text "- Wordpress re-install for ${wp_site}" --result "DONE" --color GREEN
 
             # Return
@@ -386,7 +386,7 @@ function wpcli_core_update() {
         sudo -u www-data wp --path="${wp_site}" rewrite flush
         display --indent 6 --text "- Flush rewrite" --result "DONE" --color GREEN
 
-        log_event "success" "Wordpress core updated" "false"
+        log_event "info" "Wordpress core updated" "false"
         display --indent 6 --text "- Finishing update" --result "DONE" --color GREEN
 
     else

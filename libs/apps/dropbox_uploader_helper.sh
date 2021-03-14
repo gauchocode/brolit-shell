@@ -24,7 +24,7 @@ function dropbox_create_dir() {
     if [[ ${dropbox_create_dir_result} -eq 0 ]]; then
 
         display --indent 6 --text "- Creating dropbox directory" --result "DONE" --color GREEN
-        log_event "success" "Dropbox directory ${dir_to_create} created"
+        log_event "info" "Dropbox directory ${dir_to_create} created"
 
     else
 
@@ -62,7 +62,7 @@ function dropbox_upload() {
     if [[ ${dropbox_file_to_upload_result} -eq 0 ]]; then
 
         display --indent 6 --text "- Uploading file to Dropbox" --result "DONE" --color GREEN
-        log_event "success" "Dropbox file ${file_to_upload} uploaded"
+        log_event "info" "Dropbox file ${file_to_upload} uploaded"
 
     else
 
@@ -103,7 +103,7 @@ function dropbox_download() {
     if [[ ${dropbox_file_to_download_result} -eq 0 ]]; then
 
         display --indent 6 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
-        log_event "success" "${file_to_download} downloaded"
+        log_event "info" "${file_to_download} downloaded"
 
     else
 
@@ -132,7 +132,7 @@ function dropbox_delete() {
     if [[ ${dropbox_remove_result} -eq 0 ]]; then
 
         display --indent 6 --text "- Deleting files from Dropbox" --result "DONE" --color GREEN
-        log_event "success" "Files deleted from Dropbox"
+        log_event "info" "Files deleted from Dropbox"
 
     else
 

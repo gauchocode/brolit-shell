@@ -1217,7 +1217,7 @@ function install_crontab_script() {
 	  touch "${cron_file}"
 	  /usr/bin/crontab "${cron_file}"
 
-    log_event "success" "Cron file created"
+    log_event "info" "Cron file created"
     display --indent 2 --text "- Creating log file" --result DONE --color GREEN
 
 	fi

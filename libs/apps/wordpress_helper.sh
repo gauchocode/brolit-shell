@@ -199,7 +199,7 @@ function wp_replace_string_on_database() {
 
           "${MYSQL_ROOT}" -e "${SQL0}${SQL1}${SQL2}${SQL3}${SQL4}${SQL5}${SQL6}${SQL7}"
 
-          log_event "success" "String replaced on database ${chosen_db} ..."
+          log_event "info" "String replaced on database ${chosen_db} ..."
 
         fi
 

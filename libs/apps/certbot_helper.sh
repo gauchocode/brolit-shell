@@ -24,7 +24,7 @@ function certbot_certificate_install() {
 
   certbot_result=$?
   if [[ ${certbot_result} -eq 0 ]];then
-    log_event "success" "Certificate installation for ${domains} ok" "false"
+    log_event "info" "Certificate installation for ${domains} ok" "false"
     display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
 
   else
@@ -39,7 +39,7 @@ function certbot_certificate_install() {
     
     certbot_result=$?
     if [[ ${certbot_result} -eq 0 ]];then
-      log_event "success" "Certificate installation for ${domains} ok" "false"
+      log_event "info" "Certificate installation for ${domains} ok" "false"
       display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
 
     else
@@ -213,7 +213,7 @@ function certbot_certonly_cloudflare() {
 
   certbot_result=$?
   if [[ ${certbot_result} -eq 0 ]];then
-    log_event "success" "Certificate installation for ${domains} ok"
+    log_event "info" "Certificate installation for ${domains} ok"
     display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
 
   else
@@ -228,7 +228,7 @@ function certbot_certonly_cloudflare() {
     
     certbot_result=$?
     if [[ ${certbot_result} -eq 0 ]];then
-      log_event "success" "Certificate installation for ${domains} ok"
+      log_event "info" "Certificate installation for ${domains} ok"
       display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
 
     else

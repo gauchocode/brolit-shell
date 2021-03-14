@@ -382,7 +382,7 @@ function php_fpm_optimizations() {
         result=$(php-fpm"${PHP_V}" -t 2>&1 | grep -w "test" | cut -d"." -f3 | cut -d" " -f4)
 
         if [[ "${result}" = "successful" ]];then
-          log_event "success" "PHP optimizations applied!"
+          log_event "info" "PHP optimizations applied!"
           display --indent 6 --text "- Applying optimizations" --result "DONE" --color GREEN
 
         else

@@ -324,7 +324,7 @@ function nginx_configuration_test() {
         # Reload webserver
         service nginx reload
 
-        log_event "success" "Nginx configuration changed!"
+        log_event "info" "Nginx configuration changed!"
         display --indent 6 --text "- Testing nginx configuration" --result "DONE" --color GREEN
 
     else
