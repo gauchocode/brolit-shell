@@ -56,7 +56,7 @@ function telegram_send_message() {
 	telegram_notif_result=$(echo "${telegram_notif_response}" | grep "ok" | cut -d ":" -f2 | cut -d "," -f1)
 	if [[ "${telegram_notif_result}" = "true" ]]; then
 		# Log success
-		log_event "success" "Telegram notification sent!"
+		log_event "info" "Telegram notification sent!"
 		display --indent 6 --text "- Sending Telegram notification" --result "DONE" --color GREEN
 	
 	else

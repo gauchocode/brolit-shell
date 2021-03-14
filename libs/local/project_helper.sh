@@ -229,7 +229,7 @@ function project_install() {
 
   esac
 
-  log_event "success" "PROJECT INSTALLATION FINISHED!"
+  log_event "info" "PROJECT INSTALLATION FINISHED!"
 
 }
 
@@ -608,7 +608,7 @@ function php_project_install () {
     
   fi
 
-  log_event "success" "PHP project installation for domain ${project_domain} finished" "false"
+  log_event "info" "PHP project installation for domain ${project_domain} finished" "false"
   display --indent 6 --text "- PHP project installation for domain ${project_domain}" --result "DONE" --color GREEN
 
   telegram_send_message "${VPSNAME}: PHP project installation for domain ${project_domain} finished"

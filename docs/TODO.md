@@ -18,7 +18,6 @@
 ### Need improvements
 
 - [ ] SFTP: Support sftp_create_user.
-- [ ] Core: Warning if script run on non default installation (no webserver or another than nginx).
 - [ ] Core: Create a way to check if nginx, php, and other parameters are correct before run the script.
 - [ ] Nginx: New default nginx configuration for wordpress projects fails after running certbot.
 - [ ] LetsEncrypt: Need a better way to re-install a certificate after a website migration.
@@ -40,10 +39,12 @@
 
 ### In Progress
 
+- [ ] Core: Add an option to support non LEMP anviroment (DB-only, Websever+PHP only, other).
+- [ ] Core: Warning if script run on non default installation (no webserver or another than nginx).
 - [ ] Core: Refactor of script_configuration_wizard.
-- [ ] Core: Secure store for MySQL password: https://www.dokry.com/27126
 - [ ] Nginx: Better nginx config: https://www.digitalocean.com/community/tools/nginx
 - [ ] Nginx: At startup, check if nginx has globals installed.
+- [ ] Nginx-PHP: Ask PHP version before create a server config.
 - [ ] Project Utils: Add delete database and create database option.
 - [ ] Notifications: Email HTML breaks sometimes.
 
@@ -56,11 +57,13 @@
 - [x] It Utils: Alias support for BASH.
 - [x] Installers: Support for multiple PHP version installation.
 - [x] Core: Refactor to let the script be runned with flags.
+- [x] Core: Secure store for MySQL password.
 - [x] When a certificate expired, the email subject didn't show the Warning message.
 - [x] Project Utils: A new option "Create project database" to create a database, and a database user for an specific project.
 
 ## For release 3.2
 
+- [ ] Core: Add an option to change 'tmp' directory.
 - [ ] Core: Better structure of deleted projects on dropbox.
 - [ ] Core: Add an option to backup all and prepare VPS to be offline/deleted (add a VPS offline structure on dropbox).
 - [ ] Core: make new standard directory structure for projects "${SITES}/${DOMAIN}/public".
@@ -68,15 +71,12 @@
 - [ ] Core: Solve small "TODOs" comments on the project.
 - [ ] Core: Complete refactor of "Options Wizard": (Backup Options, Notification Options, Cloudflare Config).
 - [ ] Core: maybe with could ask for database user nomenclature. Today is "PROJECTNAME_user" and it could be "PROJECTNAME_PROJECTSTATE_user".
-- [ ] Nginx-PHP: Ask PHP version before create a server config.
 - [ ] Nginx: Add http2 support on nginx server config files.
 - [ ] Nginx: New option to put website on maintenance.
 - [ ] Nginx: Multidomain support for nginx.
 - [ ] Backups: Refactor for backup/restore: 5 options (server_config, site_config, site, database and project).
 - [ ] Restore: Finish function restore_config_files_from_dropbox.
 - [ ] PHP: php_reconfigure refactor (replace strings instead of replace entired config files).
-- [ ] WP-CLI: Better error handling.
-- [ ] Installers: Option to install Bashtop and other utils: http://packages.azlux.fr/
 
 ## For release 3.3
 
@@ -95,6 +95,8 @@
 - [ ] Wordpress: More wp-cli functions on the wp-cli manager.
 - [ ] Wordpress: Rollback plugins and core updates (wpcli_rollback_plugin_version on wpcli_helper.sh)
 - [ ] Buddypress support: https://github.com/buddypress/wp-cli-buddypress
+- [ ] WP-CLI: Better error handling.
+- [ ] Installers: Option to install Bashtop and other utils: http://packages.azlux.fr/
 
 ## For release 3.4
 
@@ -111,7 +113,6 @@
 
 ## For release 3.5
 
-- [ ] Core: Accept command via Telegram: https://github.com/topkecleon/telegram-bot-bash
 - [ ] Core: Add support to create projects with differents architectures. Exanple: server 1 with nginx+php, server 2: with MySQL.
       https://www.digitalocean.com/community/tutorials/automating-the-deployment-of-a-scalable-wordpress-site
       https://spinupwp.com/scaling-wordpress-dedicated-database-server/
@@ -141,6 +142,7 @@
 
 ## For release 4.0
 
+- [ ] Core: Accept command via Telegram: https://github.com/topkecleon/telegram-bot-bash
 - [ ] HTTP Monitor Dashboard?
         https://raymii.org/s/software/Bash_HTTP_Monitoring_Dashboard.html
 - [ ] Docker support?

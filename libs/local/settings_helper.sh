@@ -639,7 +639,7 @@ function generate_telegram_config() {
 
             # Write config file
             echo "telegram_user_id=${telegram_user_id}" >>"/root/.telegram.conf"
-            log_event "success" "The Telegram configuration has been saved!"
+            log_event "info" "The Telegram configuration has been saved!"
 
             # shellcheck source=${SFOLDER}/libs/telegram_notification_helper.sh
             source "${SFOLDER}/libs/telegram_notification_helper.sh"
