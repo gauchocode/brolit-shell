@@ -4,17 +4,40 @@
 # Version: 3.0.20
 #############################################################################
 
-#
-#############################################################################
-#
-# * Private functions
-#
-#############################################################################
-#
+function _settings_config_server_configuration() {
+
+    # Server config (new concept)
+    local server_configs                    # Options: mysql+nginx+php, nginx+php, mysql, other
+    local default_config="mysql+nginx+php"
+
+    if [[ -z ${SERVER_CONFIG} ]]; then
+
+        declare -g SERVER_CONFIG
+
+        server_configs="mysql+nginx+php nginx+php mysql other"
+        SERVER_CONFIG=$(whiptail --title "Server Configuration" --menu "Choose the server configuration:" 20 78 10 $(for x in ${server_configs}; do echo "$x [X]"; done) --default-item "${default_config}" 3>&1 1>&2 2>&3)
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+            echo "SERVER_CONFIG=${SERVER_CONFIG}" >>/root/.broobe-utils-options
+
+        else
+
+            return 1
+
+        fi
+
+    fi
+
+}
 
 function _settings_config_mysql() {
 
-    ask_mysql_root_psw
+    if [[ ${SERVER_CONFIG} == *"mysql"* ]]; then
+
+        ask_mysql_root_psw
+        
+    fi
 
 }
 
@@ -416,6 +439,8 @@ function script_configuration_wizard() {
             exit 1
         fi
     fi
+
+    _settings_config_server_configuration
 
     _settings_config_mysql
 

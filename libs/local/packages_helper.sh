@@ -192,7 +192,9 @@ function check_packages_required() {
   JPEGOPTIM="$(command -v jpegoptim)"
   if [[ ! -x "${JPEGOPTIM}" ]]; then
     display --indent 2 --text "- Installing jpegoptim"
+    # apt command
     apt-get --yes install jpegoptim -qq > /dev/null
+    # Log
     clear_last_line
     display --indent 2 --text "- Installing jpegoptim" --result "DONE" --color GREEN
   fi
@@ -201,7 +203,9 @@ function check_packages_required() {
   OPTIPNG="$(command -v optipng)"
   if [[ ! -x "${OPTIPNG}" ]]; then
     display --indent 2 --text "- Installing optipng"
+    # apt command
     apt-get --yes install optipng -qq > /dev/null
+    # Log
     clear_last_line
     display --indent 2 --text "- Installing optipng" --result "DONE" --color GREEN
   fi
@@ -211,6 +215,15 @@ function check_packages_required() {
 
   # FIND
   FIND="$(command -v find)"
+
+  # CERTBOT
+  CERTBOT="$(command -v certbot)"
+  if [[ ! -x "${CERTBOT}" ]]; then
+    display --indent 2 --text "- Checking CERTBOT installation" --result "WARNING" --color YELLOW
+    display --indent 4 --text "CERTBOT not found" --tcolor YELLOW
+    return 1
+
+  fi
 
   # MySQL
   MYSQL="$(command -v mysql)"
@@ -230,15 +243,6 @@ function check_packages_required() {
       MYSQLDUMP_ROOT="${MYSQLDUMP} --defaults-file=${MYSQL_CONF}"
       
     fi
-
-  fi
-
-  # CERTBOT
-  CERTBOT="$(command -v certbot)"
-  if [[ ! -x "${CERTBOT}" ]]; then
-    display --indent 2 --text "- Checking CERTBOT installation" --result "WARNING" --color YELLOW
-    display --indent 4 --text "CERTBOT not found" --tcolor YELLOW
-    return 1
 
   fi
 
@@ -375,6 +379,7 @@ function selected_package_installation() {
 
 function timezone_configuration() {
 
+  # Log
   log_subsection "Timezone Configuration"
 
   # Configure timezone
@@ -392,13 +397,16 @@ function timezone_configuration() {
 
 function remove_old_packages() {
 
+  # Log
   log_event "info" "Cleanning old system packages ..."
   display --indent 6 --text "- Cleanning old system packages"
 
+  # apt commands
   apt-get --yes clean -qq > /dev/null
   apt-get --yes autoremove -qq > /dev/null
   apt-get --yes autoclean -qq > /dev/null
 
+  # Log
   clear_last_line
   log_event "info" "Old system packages cleaned"
   display --indent 6 --text "- Cleanning old system packages" --result "DONE" --color GREEN
@@ -407,11 +415,14 @@ function remove_old_packages() {
 
 function install_image_optimize_packages() {
 
+  # Log
   log_event "info" "Installing jpegoptim, optipng and imagemagick"
   display --indent 6 --text "- Installing jpegoptim, optipng and imagemagick"
 
+  # apt command
   apt-get --yes install jpegoptim optipng pngquant gifsicle imagemagick-* -qq > /dev/null
 
+  # Log
   log_event "info" "Installation finished"
   clear_last_line # need an extra call to clear installation output
   clear_last_line
