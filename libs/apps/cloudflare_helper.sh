@@ -118,7 +118,7 @@ function cloudflare_clear_cache() {
 
     else
         message="Cache cleared for domain: ${root_domain}"
-        log_event "success" "${message}"
+        log_event "info" "${message}"
         display --indent 6 --text "- Clearing Cloudflare cache" --result "DONE" --color GREEN
     fi
 
@@ -169,7 +169,7 @@ function cloudflare_development_mode() {
 
     else
         message="Development mode for ${root_domain} is ${dev_mode}"
-        log_event "success" "${message}"
+        log_event "info" "${message}"
         display --indent 2 --text "- Enabling development mode" --result "DONE" --color GREEN
 
     fi
@@ -219,7 +219,7 @@ function cloudflare_ssl_mode() {
 
     else
         message="SSL mode for ${root_domain} is ${ssl_mode}"
-        log_event "success" "${message}"
+        log_event "info" "${message}"
 
     fi
 
@@ -329,7 +329,7 @@ function cloudflare_change_a_record () {
 
     else
         message="IP changed to: ${SERVER_IP}"
-        log_event "success" "${message}"
+        log_event "info" "${message}"
         display --indent 6 --text "- Updating subdomain on Cloudflare" --result "DONE" --color GREEN
         display --indent 8 --text "IP: ${SERVER_IP}" --tcolor GREEN
 
@@ -418,7 +418,7 @@ function cloudflare_delete_a_record () {
 
     else
         message="A record deleted: ${record_name}"
-        log_event "success" "${message}"
+        log_event "info" "${message}"
         display --indent 6 --text "- Deleting A record from Cloudflare" --result "DONE" --color GREEN
         display --indent 8 --text "Record deleted: ${record_name}" --tcolor YELLOW
 

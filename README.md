@@ -1,6 +1,6 @@
 # LEMP Ubuntu Utils Scripts
 
-"LEMP Ubuntu Utils Scripts" is a **BASH** script which can be used to quickly install a LEMP Stack on Ubuntu 18.04 and 20.04 servers, automate backups (files and databases), restore backups, install WordPress projects, and other useful tasks.
+"LEMP Ubuntu Utils Scripts" is a **BASH** script which can be used to quickly install a LEMP Stack on Ubuntu 18.04 and 20.04 servers, automate backups (files and databases), restore backups, install PHP projects, and other useful tasks.
 
 ![ScreenShot](./screenshot.jpg)
 
@@ -8,7 +8,6 @@
 
 * Performance.
 * Pre-installed on linux systems.
-* Dont over-charge o.s with libraries or dependencies.
 
 ## Motivation
 
@@ -50,7 +49,7 @@ Works on Ubuntu 18.04 LTS and Ubuntu 20.04 LTS.
 
 ## IMPORTANT: Read before install
 
-The script need to be runned by root.
+The script needs to be runned by root.
 
 The script is based on this standard:
 
@@ -66,19 +65,25 @@ So, the restore script only works if this nomenclature is respected.
 
 If git is not installed:
 
-```
+```bash
 sudo apt-get update && sudo apt-get install git -y
 ```
 
-Cloning repo:
+Cloning repo (gitLab):
 
-```
+```bash
 git clone https://gitlab.com/broobe/lemp-utils-scripts.git
+```
+
+Cloning repo (gitHub):
+
+```bash
+git clone https://github.com/lpadula/lemp-utils-scripts
 ```
 
 Change directories to the new ~/lemp-utils-script directory:
 
-```
+```bash
 cd ~/lemp-utils-scripts
 ```
 
@@ -87,13 +92,13 @@ cd ~/lemp-utils-scripts
 Give the execution permission to the script:
 
 ```bash
- chmod +x runner.sh
+chmod +x runner.sh
 ```
 
 Run it:
 
 ```bash
- ./runner.sh
+./runner.sh
 ```
 
 The first time you run `runner.sh`, you'll be guided through a wizard in order to configure it. This configuration will be stored in `~/.lemp-utils-script`.
@@ -102,7 +107,7 @@ The first time you run `runner.sh`, you'll be guided through a wizard in order t
 
 Run updater.sh
 
-```
+```bash
 ./updater.sh
 ```
 

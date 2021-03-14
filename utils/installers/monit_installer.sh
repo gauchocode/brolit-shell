@@ -48,7 +48,7 @@ function monit_configure() {
   # Log
   display --indent 6 --text "- Restarting services" --result "DONE" --color GREEN
 
-  log_event "success" "Monit configured"
+  log_event "info" "Monit configured"
   display --indent 6 --text "- Monit configuration" --result "DONE" --color GREEN
 
 }
