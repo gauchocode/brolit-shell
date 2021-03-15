@@ -363,7 +363,7 @@ function script_init() {
   check_script_configuration
 
   # METHOD TO GET PUBLIC IP (if server has configured a floating ip, it will return this)
-  NETWORK_INTERFACE="$(ip link show | grep '2:' | cut -d ':' -f2)"
+  NETWORK_INTERFACE="$(ip link show | grep '2: ' | cut -d ':' -f2)"
   NETWORK_INTERFACE="$(string_remove_spaces "${NETWORK_INTERFACE}")"
   SERVER_IP="$(ifconfig "${NETWORK_INTERFACE}" | grep 'inet ' | awk '{print $2}' | sed 's/addr://')"
   # Fallback
@@ -371,6 +371,8 @@ function script_init() {
     # Alternative method to get public IP
     SERVER_IP=$(curl -s http://ipv4.icanhazip.com)
   fi
+
+  log_event "info" "SERVER IP: ${SERVER_IP}"
 
   # EXPORT VARS
   export SCRIPT_V VPSNAME TMP_DIR SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V SERVER_CONFIG
