@@ -80,6 +80,28 @@ function wpcli_uninstall() {
 
 }
 
+function wpcli_check_if_package_is_installed() {
+
+    local wpcli_package=$1
+
+    local is_installed
+    local wpcli_packages_installed
+
+    is_installed="false"
+
+    wpcli_packages_installed=$(wp package list --allow-root | grep 'wp-cli' | cut -d '/' -f2)
+
+    if [[ ${wpcli_packages_installed} == *"${wpcli_package}"* ]]; then
+
+        is_installed="true"
+
+    fi
+
+    # Return
+    echo "${is_installed}"
+
+}
+
 function wpcli_run_startup_script() {
 
     # $1 = ${wp_site}           - Site path
