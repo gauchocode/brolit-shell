@@ -164,7 +164,7 @@ function make_server_files_backup() {
 
   local bk_file 
   local old_bk_file
-
+  local dropbox_path
   local bk_scf_size
 
   if [[ -n ${bk_path} ]]; then
@@ -210,13 +210,13 @@ function make_server_files_backup() {
       dropbox_create_dir "${VPSNAME}/${bk_type}/${bk_sup_type}"
 
       # Dropbox Path
-      DROPBOX_PATH="${VPSNAME}/${bk_type}/${bk_sup_type}"
+      dropbox_path="${VPSNAME}/${bk_type}/${bk_sup_type}"
 
       # Uploading backup files
-      dropbox_upload "${TMP_DIR}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}"
+      dropbox_upload "${TMP_DIR}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${dropbox_path}"
 
       # Deleting old backup files
-      dropbox_delete "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file}"
+      dropbox_delete "${DROPBOX_FOLDER}/${dropbox_path}/${old_bk_file}"
 
     else
 
@@ -256,7 +256,7 @@ function make_mailcow_backup() {
   local bk_type="mailcow"
   local mailcow_backup_result
 
-  log_break
+  local dropbox_path
 
   log_subsection "Mailcow Backup"
 
@@ -300,17 +300,17 @@ function make_mailcow_backup() {
         # New folder with $bk_type
         output="$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}/${bk_type}" 2>&1)"
 
-        DROPBOX_PATH="/${VPSNAME}/${bk_type}"
+        dropbox_path="/${VPSNAME}/${bk_type}"
 
         log_event "info" "Uploading Backup to Dropbox ..."
         display --indent 6 --text "- Uploading backup file to Dropbox"
 
-        output=$(${DROPBOX_UPLOADER} upload "${MAILCOW_TMP_BK}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}" 2>&1)
+        output=$(${DROPBOX_UPLOADER} upload "${MAILCOW_TMP_BK}/${bk_file}" "${DROPBOX_FOLDER}/${dropbox_path}" 2>&1)
         clear_last_line
         display --indent 6 --text "- Uploading backup file to Dropbox" --result "DONE" --color GREEN
 
         log_event "info" "Deleting old backup from Dropbox ..."
-        output=$(${DROPBOX_UPLOADER} remove "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${bk_file}" 2>&1)
+        output=$(${DROPBOX_UPLOADER} remove "${DROPBOX_FOLDER}/${dropbox_path}/${bk_file}" 2>&1)
 
         rm --recursive --force "${MAILCOW_TMP_BK}"
 
@@ -503,6 +503,8 @@ function make_files_backup() {
   local old_bk_file="${directory_to_backup}_${bk_type}-files_${ONEWEEKAGO}.tar.bz2"
   local bk_file="${directory_to_backup}_${bk_type}-files_${NOW}.tar.bz2"
 
+  local dropbox_path
+
   log_event "info" "Making backup file from: ${directory_to_backup} ..."
   display --indent 6 --text "- Making ${YELLOW}${directory_to_backup}${ENDCOLOR} backup" --result "DONE" --color GREEN
 
@@ -531,7 +533,7 @@ function make_files_backup() {
     BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=${BK_FL_SIZE}
 
     # Log
-    display --indent 6 --text "- Backup creation" --result "DONE" --color GREEN
+    display --indent 6 --text "- Compressing backup" --result "DONE" --color GREEN
     display --indent 8 --text "Final backup size: ${YELLOW}${BOLD}${BK_FL_SIZE}${ENDCOLOR}"
     
     log_event "info" "Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}"
@@ -546,29 +548,27 @@ function make_files_backup() {
     # New folder with $directory_to_backup (project folder)
     dropbox_create_dir "${VPSNAME}/${bk_type}/${directory_to_backup}"
 
-    DROPBOX_PATH="${VPSNAME}/${bk_type}/${directory_to_backup}"
+    dropbox_path="${VPSNAME}/${bk_type}/${directory_to_backup}"
 
     # Upload backup
-    dropbox_upload "${TMP_DIR}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${DROPBOX_PATH}"
+    dropbox_upload "${TMP_DIR}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${dropbox_path}"
 
     # Delete old backup from Dropbox
-    dropbox_delete "${DROPBOX_FOLDER}/${DROPBOX_PATH}/${old_bk_file}"
+    dropbox_delete "${DROPBOX_FOLDER}/${dropbox_path}/${old_bk_file}"
 
     # Delete temp backup
     rm --force "${TMP_DIR}/${NOW}/${bk_file}"
 
     # Log
     log_event "info" "Temp backup deleted from server"
-    display --indent 6 --text "- Deleting temp files" --result "DONE" --color GREEN
-
-    log_event "info" "Backup uploaded"
+    #display --indent 6 --text "- Deleting temp files" --result "DONE" --color GREEN
 
   else
     ERROR=true
     ERROR_TYPE="ERROR: Making backup ${TMP_DIR}/${NOW}/${bk_file}"
 
     log_event "error" "Something went wrong making backup file: ${TMP_DIR}/${NOW}/${bk_file}"
-    display --indent 6 --text "- Backup creation" --result "FAIL" --color RED
+    display --indent 6 --text "- Compressing backup" --result "FAIL" --color RED
     display --indent 8 --text "Something went wrong making backup file: ${bk_file}" --tcolor RED
 
     return 1
@@ -674,6 +674,8 @@ function make_database_backup() {
   local old_bk_file="${database}_${bk_type}_${ONEWEEKAGO}.tar.bz2"
   local bk_file="${database}_${bk_type}_${NOW}.tar.bz2"
 
+  local dropbox_path
+
   # DATABASE BACKUP GLOBALS
   declare -g BACKUPED_DB_LIST
   declare -g BK_DB_SIZES
@@ -708,8 +710,8 @@ function make_database_backup() {
     lbzip2_result=$?
     if [[ ${lbzip2_result} -eq 0 ]]; then
 
+      # Log
       log_event "info" "Backup file ${bk_file} created"
-
       display --indent 6 --text "- Compressing database backup" --result "DONE" --color GREEN
 
       # Changing global
@@ -719,6 +721,7 @@ function make_database_backup() {
       BK_DB_SIZE="$(find . -name "${bk_file}" -exec ls -l --human-readable --block-size=M {} \; | awk '{ print $5 }')"
       BK_DB_SIZES+=("${BK_DB_SIZE}")
 
+      # Log
       log_event "info" "Backup for ${database} created, final size: ${BK_DB_SIZE}"
       display --indent 8 --text "Backup final size: ${YELLOW}${BOLD}${BK_DB_SIZE}${ENDCOLOR}"
 
@@ -734,20 +737,19 @@ function make_database_backup() {
       dropbox_create_dir "${VPSNAME}/${bk_type}/${database}"
 
       # Dropbox Path
-      DROPBOX_PATH="/${VPSNAME}/${bk_type}/${database}"
+      dropbox_path="/${VPSNAME}/${bk_type}/${database}"
 
       # Upload to Dropbox
-      dropbox_upload "${TMP_DIR}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}${DROPBOX_PATH}"
+      dropbox_upload "${TMP_DIR}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}${dropbox_path}"
       dropbox_result=$?
       if [[ ${dropbox_result} -eq 0 ]]; then
       
         # Delete old backups
-        dropbox_delete "${DROPBOX_FOLDER}${DROPBOX_PATH}/${old_bk_file}"
+        dropbox_delete "${DROPBOX_FOLDER}${dropbox_path}/${old_bk_file}"
 
-        log_event "info" "Deleting old database backup ${old_bk_file} from server"
+        log_event "info" "Deleting temp database backup ${old_bk_file} from server"
         rm "${TMP_DIR}/${NOW}/${db_file}"
         rm "${TMP_DIR}/${NOW}/${bk_file}"
-        display --indent 6 --text "- Delete old database backup from server" --result "DONE" --color GREEN
 
       else
 
@@ -780,7 +782,6 @@ function make_project_backup() {
     local bk_path=$3
     local directory_to_backup=$4
 
-    local dropbox_output
     local db_file
 
     local directory_to_backup="${TMP_DIR}/${NOW}/"
@@ -788,7 +789,7 @@ function make_project_backup() {
     local old_bk_file="${directory_to_backup}_${bk_type}-files_${ONEWEEKAGO}.tar.bz2"
     local bk_file="${directory_to_backup}_${bk_type}-files_${NOW}.tar.bz2"
 
-    log_event "info" "Making TAR.BZ2 from: ${directory_to_backup} ..."
+    log_event "info" "Making tar.bz2 from: ${directory_to_backup}"
 
     (${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv -ns "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${bk_file}") 2>&1
 
@@ -870,7 +871,7 @@ function make_project_backup() {
         
         rm --recursive --force "${TMP_DIR}/${NOW}/${bk_file}"
 
-        log_event "info" "Project backup ok!"
+        log_event "info" "Project backup done"
 
     else
         ERROR=true
