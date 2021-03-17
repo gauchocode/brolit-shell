@@ -91,7 +91,7 @@ function wpcli_check_if_package_is_installed() {
 
     wpcli_packages_installed=$(wp package list --allow-root | grep 'wp-cli' | cut -d '/' -f2)
 
-    if [[ ${wpcli_packages_installed} == *"${wpcli_package}"* ]]; then
+    if [[ ${wpcli_package} == *"${wpcli_packages_installed}"* ]]; then
 
         is_installed="true"
 
