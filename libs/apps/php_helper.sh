@@ -311,12 +311,12 @@ function php_fpm_optimizations() {
   # Show/Log PHP-FPM actual config
   #display --indent 6 --text "Getting PHP actual configuration ..."
   log_subsection "PHP actual configuration"
-  display --indent 4 --text "PM_MAX_CHILDREN_ORIGIN: ${PM_MAX_CHILDREN_ORIGIN}"
-  display --indent 4 --text "PM_START_SERVERS_ORIGIN: ${PM_START_SERVERS_ORIGIN}"
-  display --indent 4 --text "PM_MIN_SPARE_SERVERS_ORIGIN: ${PM_MIN_SPARE_SERVERS_ORIGIN}"
-  display --indent 4 --text "PM_MAX_SPARE_SERVERS_ORIGIN: ${PM_MAX_SPARE_SERVERS_ORIGIN}"
-  display --indent 4 --text "PM_MAX_REQUESTS_ORIGIN: ${PM_MAX_REQUESTS_ORIGIN}"
-  display --indent 4 --text "PM_PROCESS_IDDLE_TIMEOUT_ORIGIN: ${PM_PROCESS_IDDLE_TIMEOUT_ORIGIN}"
+  display --indent 6 --text "PM_MAX_CHILDREN_ORIGIN: ${PM_MAX_CHILDREN_ORIGIN}"
+  display --indent 6 --text "PM_START_SERVERS_ORIGIN: ${PM_START_SERVERS_ORIGIN}"
+  display --indent 6 --text "PM_MIN_SPARE_SERVERS_ORIGIN: ${PM_MIN_SPARE_SERVERS_ORIGIN}"
+  display --indent 6 --text "PM_MAX_SPARE_SERVERS_ORIGIN: ${PM_MAX_SPARE_SERVERS_ORIGIN}"
+  display --indent 6 --text "PM_MAX_REQUESTS_ORIGIN: ${PM_MAX_REQUESTS_ORIGIN}"
+  display --indent 6 --text "PM_PROCESS_IDDLE_TIMEOUT_ORIGIN: ${PM_PROCESS_IDDLE_TIMEOUT_ORIGIN}"
 
   log_event "info" "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN_ORIGIN}"
   log_event "info" "PM_START_SERVERS: ${PM_START_SERVERS_ORIGIN}"
@@ -334,22 +334,28 @@ function php_fpm_optimizations() {
   PM_MAX_CHILDREN=$(( ("${RAM}"*1024-("${MYSQL_AVG_RAM}"-"${NGINX_AVG_RAM}"-"${REDIS_AVG_RAM}"-"${NETDATA_AVG_RAM}"-"${RAM_BUFFER}"))/"${PHP_AVG_RAM}" ))
   PM_START_SERVERS=$(("${CPUS}"*4))
   PM_MIN_SPARE_SERVERS=$(("${CPUS}*2"))
+
+  # This fix:
+  # ALERT: [pool www] pm.min_spare_servers(8) and pm.max_spare_servers(32) cannot be greater than pm.max_children(30)
   PM_MAX_SPARE_SERVERS=$(("${PM_START_SERVERS}"*2))
+  if [[ ${PM_MAX_CHILDREN} < ${PM_MAX_SPARE_SERVERS} ]]; then
+
+    PM_MAX_SPARE_SERVERS=${PM_MAX_CHILDREN}
+
+  fi
+  
   PM_MAX_REQUESTS=500
   PM_PROCESS_IDDLE_TIMEOUT="10s"
-
-  # TO-FIX
-  # ALERT: [pool www] pm.min_spare_servers(8) and pm.max_spare_servers(32) cannot be greater than pm.max_children(30)
 
   # Show/Log PHP-FPM optimal config
   #display --indent 6 --text "Calculating PHP optimal configuration ..."
   log_subsection "PHP optimal configuration"
-  display --indent 4 --text "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN}"
-  display --indent 4 --text "PM_START_SERVERS: ${PM_START_SERVERS}"
-  display --indent 4 --text "PM_MIN_SPARE_SERVERS: ${PM_MIN_SPARE_SERVERS}"
-  display --indent 4 --text "PM_MAX_SPARE_SERVERS: ${PM_MAX_SPARE_SERVERS}"
-  display --indent 4 --text "PM_MAX_REQUESTS: ${PM_MAX_REQUESTS}"
-  display --indent 4 --text "PM_PROCESS_IDDLE_TIMEOUT: ${PM_PROCESS_IDDLE_TIMEOUT}"
+  display --indent 6 --text "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN}"
+  display --indent 6 --text "PM_START_SERVERS: ${PM_START_SERVERS}"
+  display --indent 6 --text "PM_MIN_SPARE_SERVERS: ${PM_MIN_SPARE_SERVERS}"
+  display --indent 6 --text "PM_MAX_SPARE_SERVERS: ${PM_MAX_SPARE_SERVERS}"
+  display --indent 6 --text "PM_MAX_REQUESTS: ${PM_MAX_REQUESTS}"
+  display --indent 6 --text "PM_PROCESS_IDDLE_TIMEOUT: ${PM_PROCESS_IDDLE_TIMEOUT}"
 
   log_event "info" "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN}"
   log_event "info" "PM_START_SERVERS: ${PM_START_SERVERS}"
