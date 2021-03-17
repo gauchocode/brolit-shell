@@ -215,9 +215,13 @@ function wpcli_main_menu() {
       # PROFILE_WP
       log_subsection "WP Profile"
 
-      #Install profiler_options
-      #https://guides.wp-bullet.com/using-wp-cli-wp-profile-to-diagnose-wordpress-performance-issues/
-      wp package install wp-cli/profile-command --allow-root
+      local is_installed
+
+      is_installed=$(wpcli_check_if_package_is_installed "profile-command")
+      if [[ ${is_installed} == "true" ]]; then
+        #https://guides.wp-bullet.com/using-wp-cli-wp-profile-to-diagnose-wordpress-performance-issues/
+        wp package install wp-cli/profile-command --allow-root
+      fi
 
       profiler_options=(
         "01)" "PROFILE STAGE" 
