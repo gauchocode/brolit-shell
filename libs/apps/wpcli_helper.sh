@@ -212,15 +212,26 @@ function wpcli_create_config() {
     local db_user_passw=$4
     local wp_locale=$5
 
-    if [ "${wp_locale}" = "" ]; then
+    if [[ ${wp_locale} == "" ]]; then
         wp_locale="es_ES"
     fi
 
+    # Log
     log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} config create --dbname=${database} --dbuser=${db_user_name} --dbpass=${db_user_passw} --locale=${wp_locale}"
-
+    
+    # wp-cli command
     sudo -u www-data wp --path="${wp_site}" config create --dbname="${database}" --dbuser="${db_user_name}" --dbpass="${db_user_passw}" --locale="${wp_locale}" --quiet
 
-    display --indent 6 --text "- Creating wp-config" --result "DONE" --color GREEN
+    exitstatus=$?
+    if [[ ! ${exitstatus} -eq 0 ]]; then
+
+        display --indent 6 --text "- Creating wp-config" --result "DONE" --color GREEN
+    else
+
+        display --indent 6 --text "- Creating wp-config" --result "FAIL" --color RED
+        return 1
+
+    fi
 
 }
 
@@ -885,4 +896,24 @@ function wpcli_user_reset_passw() {
     display --indent 6 --text "- Password reset for ${wp_user}" --result "DONE" --color GREEN
     display --indent 8 --text "New password ${wp_user_pass}"
     
+}
+
+################################################################################
+
+function wpcli_option_get_home() {
+
+    # $1 = ${wp_site}
+
+    local wp_site=$1
+    local wp_option_home
+
+    # wp-cli command
+    wp_option_home="$(sudo -u www-data wp --path="${wp_site}" option get home)"
+
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} option get home"
+    log_event "info" "wp_option_home:${wp_option_home}"
+
+    # Return
+    echo "${wp_option_home}"
+
 }
