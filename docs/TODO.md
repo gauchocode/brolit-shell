@@ -9,7 +9,6 @@
 - [ ] When restore a backup and change project_name or/and project_domain the script fails:
         - If the main domain detected is a root-domain like mydomain.com the "search and replace" 
           will replace https://www.mydomain.com by https://www.test.mydomain.com
-        - If the main domain detected is not a root-domain, will failt to detect a proper project_name
         - If decide to generate new certificate on root-domain, it fails to generate nginx config
 - [ ] Project creation fails when use project name like 'myproject_name' (has an underscore).
 - [ ] Backups: make_project_backup is broken, it needs a refactor!
@@ -38,7 +37,11 @@
 
 ### In Progress
 
-- [ ] Core: Add an option to support non LEMP anviroment (DB-only, Websever+PHP only, other).
+- [ ] WP-CLI: On wordpress_installer, wpcli_search_and_replace receives domains instead urls (ex: domain.com instead http://domain.com).
+- [ ] Restore-project: cant restore non-wp projects.
+- [ ] Restore-database: granting privileges to user fails, database_name is empty.
+- [ ] Core: Add an option to support non LEMP anviroment (DB-only, Websever+PHP only, other). 
+      Need to change if later the script detects a php, nginx o mysql installation.
 - [ ] Core: Warning if script run on non default installation (no webserver or another than nginx).
 - [ ] Core: Refactor of script_configuration_wizard.
 - [ ] Nginx: Better nginx config: https://www.digitalocean.com/community/tools/nginx
