@@ -1,10 +1,10 @@
 server {
 
-    listen      80;
+    listen 80;
 
     server_name domain.com;
 
-    root        /var/www/domain.com;
+    root /var/www/domain.com;
 
     index index.php;
 
@@ -21,7 +21,7 @@ server {
             fastcgi_pass unix:/run/php/phpPHP_V-fpm.sock;
     }
 
-    ## INC
+    ### INC
     #include /var/www/domain.com/nginx.conf;
     
     ### PERF

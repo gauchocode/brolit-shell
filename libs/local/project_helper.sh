@@ -4,9 +4,6 @@
 # Version: 3.0.20
 ################################################################################
 
-# shellcheck source=${SFOLDER}/libs/wordpress_installer.sh
-# source "${SFOLDER}/libs/wordpress_installer.sh"
-
 #
 # TODO: check when add www.DOMAIN.com and then select other stage != prod
 #
@@ -342,6 +339,8 @@ function project_delete_database() {
         # Remove DB suffix to get project_name
         suffix="$(cut -d'_' -f2 <<<"${chosen_database}")"
         project_name=${chosen_database%"_$suffix"}
+
+        
         user_db="${project_name}_user"
 
         # Make a database Backup
@@ -349,6 +348,7 @@ function project_delete_database() {
 
         # Moving deleted project backups to another dropbox directory
         log_event "debug" "Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${chosen_database} /${VPSNAME}/offline-site"
+        
         dropbox_output=$(${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${chosen_database}" "/${VPSNAME}/offline-site" 1>&2)
 
         display --indent 6 --text "- Moving dropbox backup to offline directory" --result "DONE" --color GREEN
@@ -366,17 +366,23 @@ function project_delete_database() {
 
                 [Yy]* )
 
+                  # Log
                   clear_last_line
                   clear_last_line
+
+                  # User delete
                   mysql_user_delete "${user_db}"
+                  
                   break
 
                 ;;
                 
                 [Nn]* )
 
+                  # Log
                   log_event "warning" "Aborting MySQL user deletion ..."
                   display --indent 6 --text "- Deleting MySQL user" --result "SKIPPED" --color YELLOW
+
                   break
 
                 ;;
@@ -537,7 +543,7 @@ function php_project_install () {
   db_project_name=$(mysql_name_sanitize "${project_name}")
   database_name="${db_project_name}_${project_state}" 
   database_user="${db_project_name}_user"
-  database_user_passw=$(openssl rand -hex 12)
+  database_user_passw="$(openssl rand -hex 12)"
 
   mysql_database_create "${database_name}"
   mysql_user_create "${database_user}" "${database_user_passw}"

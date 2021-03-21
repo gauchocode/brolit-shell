@@ -17,7 +17,7 @@ server {
             fastcgi_buffering off;
         }
 
-        ## INC
+        ### INC
         include /var/www/root_domain.com/nginx.conf;
         
         ### PERF
