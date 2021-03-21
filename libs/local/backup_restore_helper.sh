@@ -228,6 +228,8 @@ function restore_database_backup() {
     # Deleting temp files
     rm -f "${project_backup%%.*}.tar.bz2"
     rm -f "${project_backup}"
+
+    # Log
     display --indent 6 --text "- Cleanning temp files" --result "DONE" --color GREEN
     log_event "info" "Temp files cleanned"
 

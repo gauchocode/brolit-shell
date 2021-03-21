@@ -68,7 +68,7 @@ function wordpress_project_install () {
 
   fi
 
-  if [ ! -d "${project_path}" ]; then
+  if [[ ! -d "${project_path}" ]]; then
     # Download WP
     mkdir "${project_path}"
     change_ownership "www-data" "www-data" "${project_path}"
@@ -167,9 +167,11 @@ function wordpress_project_install () {
     
   fi
 
+  # Log
   log_event "info" "WordPress installation for domain ${project_domain} finished" "false"
   display --indent 6 --text "- WordPress installation for domain ${project_domain}" --result "DONE" --color GREEN
 
+  # Telegram message
   telegram_send_message "${VPSNAME}: WordPress installation for domain ${project_domain} finished"
 
 }
@@ -190,7 +192,7 @@ function wordpress_project_copy () {
 
   log_subsection "Copy From Project"
 
-  startdir=${folder_to_install}
+  startdir="${folder_to_install}"
   menutitle="Site Selection Menu"
   directory_browser "${menutitle}" "${startdir}"
   copy_project_path=$filepath"/"$filename
@@ -233,7 +235,7 @@ function wordpress_project_copy () {
   db_project_name=$(mysql_name_sanitize "${project_name}")
   database_name="${db_project_name}_${project_state}" 
   database_user="${db_project_name}_user"
-  database_user_passw=$(openssl rand -hex 12)
+  database_user_passw="$(openssl rand -hex 12)"
 
   log_event "info" "Creating database ${database_name}, and user ${database_user} with pass ${database_user_passw}"
 
@@ -248,7 +250,7 @@ function wordpress_project_copy () {
 
   # We get the database name from the copied wp-config.php
   source_wpconfig="${folder_to_install}/${copy_project}"
-  db_tocopy=$(cat ${source_wpconfig}/wp-config.php | grep DB_NAME | cut -d \' -f 4)
+  db_tocopy="$(cat ${source_wpconfig}/wp-config.php | grep DB_NAME | cut -d \' -f 4)"
   bk_file="db-${db_tocopy}.sql"
 
   # Make a database Backup
@@ -263,7 +265,7 @@ function wordpress_project_copy () {
     mysql_database_import "${target_db}" "${TMP_DIR}/${bk_file}"
 
     # Generate WP tables PREFIX
-    tables_prefix=$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)
+    tables_prefix="$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)"
     # Change WP tables PREFIX
     wpcli_change_tables_prefix "${project_dir}" "${tables_prefix}"
 
@@ -271,10 +273,6 @@ function wordpress_project_copy () {
     wp_ask_url_search_and_replace "${project_dir}"
 
   else
-    # Logging
-    display --indent 6 --text "- Exporting actual database" --result "FAIL" --color RED
-    display --indent 8 --text "mysqldump message: $?"
-    log_event "error" "mysqldump message: $?"
 
     return 1
 
@@ -338,9 +336,11 @@ function wordpress_project_copy () {
     
   fi
 
+  # Log
   log_event "info" "WordPress installation for domain ${project_domain} finished" "false"
   display --indent 6 --text "- WordPress installation for domain ${project_domain}" --result "DONE" --color GREEN
 
+  # Telegram message
   telegram_send_message "${VPSNAME}: WordPress installation for domain ${project_domain} finished"
 
 }

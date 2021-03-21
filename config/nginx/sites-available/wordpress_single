@@ -1,6 +1,5 @@
 server {
        	listen 80;
-        #listen [::]:80 ipv6only=on; ## listen for ipv6
         root /var/www/domain.com;
         
         index index.php;
@@ -26,7 +25,7 @@ server {
             add_header Access-Control-Allow-Origin *;
         }
 
-        # INC
+        ### INC
         #include /var/www/domain.com/nginx.conf;
         
         ### PERF

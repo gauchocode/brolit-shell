@@ -1,6 +1,5 @@
 server {
         listen 80;
-        listen [::]:80;
         server_name domain.com;
         access_log off;
         #error_log /var/log/nginx/domain.com.error.log debug;
@@ -15,7 +14,6 @@ server {
 }
 server {
         listen 80;
-        listen [::]:80;
         server_name localhost 127.0.0.1;
         access_log off;
         #error_log /var/log/nginx/php.error.log debug;
