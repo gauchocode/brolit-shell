@@ -4,6 +4,28 @@
 # Version: 3.0.20
 #############################################################################
 
+function mysql_ask_user_db_scope() {
+
+    # $1 = ${db_scope} - optional
+
+    local db_scope=$1
+
+    db_scope=$(whiptail --title "MySQL User Scope" --inputbox "Set the scope for the database user." 10 60 "${db_scope}" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Return
+        echo "${db_scope}"
+
+    else
+        return 1
+
+    fi
+
+}
+
+#############################################################################
+
 function mysql_test_user_credentials() {
 
     # $1 = ${db_user}
@@ -326,10 +348,11 @@ function mysql_user_grant_privileges() {
     local mysql_output
     local mysql_result
 
-    # TODO: only if empty
-    db_scope='localhost'
-
     log_event "info" "Granting privileges to ${db_user} on ${db_target} database in MySQL"
+
+    if [[ ${db_scope} == "" ]]; then
+        db_scope="$(mysql_ask_user_db_scope "localhost")"
+    fi
 
     # Query
     query_1="GRANT ALL PRIVILEGES ON ${db_target}.* TO '${db_user}'@'${db_scope}';"
@@ -572,7 +595,6 @@ function mysql_database_export() {
     local database=$1
     local dump_file=$2
 
-    local dump_output
     local dump_status
 
     log_event "info" "Making a database backup of: ${database}"
