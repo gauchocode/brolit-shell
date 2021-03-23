@@ -107,6 +107,8 @@ function wordpress_project_install () {
   wpcli_create_config "${project_path}" "${database_name}" "${database_user}" "${database_user_passw}" "es_ES"
 
   # Startup Script for WordPress installation
+
+  # TODO: should pass https://$project_domain instead?
   wpcli_run_startup_script "${project_path}" "${project_domain}"
 
   # Set WP salts
