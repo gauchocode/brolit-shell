@@ -211,6 +211,7 @@ function wp_replace_string_on_database() {
 
 }
 
+# TODO: need rethink this function
 function wp_ask_url_search_and_replace() {
 
   # $1 = wp_path

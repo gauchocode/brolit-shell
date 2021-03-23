@@ -127,6 +127,7 @@ function wpcli_run_startup_script() {
         return 1
 
     fi
+    # TODO: check if receive a domain or a url like: http://siteurl.com
     if [[ "${site_url}" == "" ]]; then
         site_url=$(whiptail --title "Site URL" --inputbox "Insert the site URL. Example: mydomain.com" 10 60 3>&1 1>&2 2>&3)
     fi
@@ -768,6 +769,7 @@ function wpcli_search_and_replace() {
     if [ "${is_network}" -eq 0 ]; then
 
         log_event "debug" "Running: wp --allow-root --path=${wp_site} search-replace --url=https://"${wp_site_url}" ${search} ${replace} --network" "false"
+
         wp --allow-root --path="${wp_site}" search-replace --url=https://"${wp_site_url}" "${search}" "${replace}" --network --quiet
 
         display --indent 6 --text "- Running search and replace" --result "DONE" --color GREEN
@@ -776,6 +778,7 @@ function wpcli_search_and_replace() {
     else
 
         log_event "debug" "Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace}" "false"
+
         wp --allow-root --path="${wp_site}" search-replace "${search}" "${replace}" --quiet
 
         display --indent 6 --text "- Running search and replace" --result "DONE" --color GREEN
@@ -784,6 +787,7 @@ function wpcli_search_and_replace() {
     fi
 
     log_event "debug" "Running: wp --allow-root --path=${wp_site} cache flush" "false"
+    
     wp --allow-root --path="${wp_site}" cache flush --quiet
 
     display --indent 6 --text "- Flushing cache" --result "DONE" --color GREEN
@@ -900,6 +904,9 @@ function wpcli_user_reset_passw() {
 
 ################################################################################
 
+# TODO: maybe a single function to get all options?
+# Ref: https://codex.wordpress.org/Option_Reference
+
 function wpcli_option_get_home() {
 
     # $1 = ${wp_site}
@@ -915,5 +922,23 @@ function wpcli_option_get_home() {
 
     # Return
     echo "${wp_option_home}"
+
+}
+
+function wpcli_option_get_siteurl() {
+
+    # $1 = ${wp_site}
+
+    local wp_site=$1
+    local wp_option_siteurl
+
+    # wp-cli command
+    wp_option_siteurl="$(sudo -u www-data wp --path="${wp_site}" option get siteurl)"
+
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} option get siteurl"
+    log_event "info" "wp_option_siteurl:${wp_option_siteurl}"
+
+    # Return
+    echo "${wp_option_siteurl}"
 
 }
