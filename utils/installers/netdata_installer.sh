@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.20
+# Version: 3.0.21
 ################################################################################
 
 # Ref: https://github.com/nextcloud/vm/blob/master/apps/netdata.sh
@@ -22,6 +22,7 @@ function netdata_required_packages() {
 
   fi
 
+  clear_last_line
   clear_last_line
   display --indent 6 --text "- Installing netdata required packages" --result "DONE" --color GREEN
 
@@ -190,11 +191,14 @@ function netdata_installer_menu() {
       echo -e "${YELLOW}${ITALIC} > Do you really want to install netdata?${ENDCOLOR}"
       read -p "Please type 'y' or 'n'" yn
 
-      log_subsection "Netdata Installer"
-
       case $yn in
       
         [Yy]*)
+
+          clear_last_line
+          clear_last_line
+
+          log_subsection "Netdata Installer"
 
           log_event "info" "Updating packages before installation ..."
 

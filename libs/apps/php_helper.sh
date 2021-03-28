@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.20
+# Version: 3.0.21
 ################################################################################
 
 function php_check_if_installed() {
@@ -80,27 +80,34 @@ function php_check_activated_version() {
 
 function php_reconfigure() {
 
+  #$1 = ${php_v} - Optional
+
+  local php_v=$1
+
   log_subsection "PHP Reconfigure"
+
+  # If $php_v not set, it will use $PHP_V global
+  if [[ ${php_v} == "" ]];then php_v="${PHP_V}"; fi
   
   log_event "info" "Moving php.ini configuration file"
-  cat "${SFOLDER}/config/php/php.ini" >"/etc/php/${PHP_V}/fpm/php.ini"
+  cat "${SFOLDER}/config/php/php.ini" >"/etc/php/${php_v}/fpm/php.ini"
   display --indent 6 --text "- Moving php.ini configuration file" --result "DONE" --color GREEN
 
   log_event "info" "Moving php-fpm.conf configuration file"
-  cat "${SFOLDER}/config/php/php-fpm.conf" >"/etc/php/${PHP_V}/fpm/php-fpm.conf"
+  cat "${SFOLDER}/config/php/php-fpm.conf" >"/etc/php/${php_v}/fpm/php-fpm.conf"
   display --indent 6 --text "- Moving php-fpm.conf configuration file" --result "DONE" --color GREEN
 
   # Replace string to match PHP version
   log_event "info" "Replacing string to match PHP version"
-  php_set_version_on_config "${PHP_V}" "/etc/php/${PHP_V}/fpm/php-fpm.conf"
+  php_set_version_on_config "${php_v}" "/etc/php/${php_v}/fpm/php-fpm.conf"
   display --indent 6 --text "- Replacing string to match PHP version" --result "DONE" --color GREEN
 
   # Uncomment /status from fpm configuration
   log_event "debug" "Uncommenting /status from fpm configuration"
-  sed -i '/status_path/s/^;//g' "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
+  sed -i '/status_path/s/^;//g' "/etc/php/${php_v}/fpm/pool.d/www.conf"
 
-  service php"${PHP_V}"-fpm reload
-  display --indent 6 --text "- Reloading php${PHP_V}-fpm service" --result "DONE" --color GREEN
+  service php"${php_v}"-fpm reload
+  display --indent 6 --text "- Reloading php${php_v}-fpm service" --result "DONE" --color GREEN
 
 }
 
@@ -114,9 +121,9 @@ function php_set_version_on_config() {
 
   local php_installed_versions
 
-  if [[ "${config_file}" != "" ]];then
+  if [[ ${config_file} != "" ]];then
     
-    if [[ "${php_v}" == "" ]];then
+    if [[ ${php_v} == "" ]];then
 
       # Get array with installed versions
       php_installed_versions="$(php_check_installed_version)"
@@ -239,13 +246,6 @@ function php_count_installed_versions() {
 function php_fpm_optimizations() {
 
   # TODO: need to check php versions installed (could be more than one)
-
-  #DISTRO_V=$(get_ubuntu_version)
-  #if [ "$DISTRO_V" = "1804" ]; then
-  #  PHP_V="7.2"  #Ubuntu 18.04 LTS Default
-  #else
-  #  PHP_V="7.4"  #Ubuntu 20.04 LTS Default
-  #fi
 
   log_event "info" "RUNNING PHP-FPM OPTIMIZATION TOOL"
 

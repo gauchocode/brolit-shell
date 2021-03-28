@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.20
+# Version: 3.0.21
 ################################################################################
 
 #
@@ -524,12 +524,12 @@ function php_project_install () {
     mkdir "${project_path}"
     change_ownership "www-data" "www-data" "${project_path}"
     
-    # Logging
+    # Log
     #display --indent 6 --text "- Making a copy of the WordPress project" --result "DONE" --color GREEN
 
   else
 
-    # Logging
+    # Log
     display --indent 6 --text "- Creating WordPress project" --result "FAIL" --color RED
     display --indent 8 --text "Destination folder '${project_path}' already exist"
     log_event "error" "Destination folder '${project_path}' already exist, aborting ..."
@@ -539,17 +539,16 @@ function php_project_install () {
 
   fi
 
-  # Create database and user
   db_project_name=$(mysql_name_sanitize "${project_name}")
   database_name="${db_project_name}_${project_state}" 
   database_user="${db_project_name}_user"
   database_user_passw="$(openssl rand -hex 12)"
 
+  # Create database and user
   mysql_database_create "${database_name}"
   mysql_user_create "${database_user}" "${database_user_passw}"
   mysql_user_grant_privileges "${database_user}" "${database_name}"
 
-    
   # Create project directory
   mkdir "${project_path}"
 
@@ -583,6 +582,7 @@ function php_project_install () {
 
     else
 
+      # Log
       log_event "info" "HTTPS support for ${project_domain} skipped"
       display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
@@ -614,9 +614,11 @@ function php_project_install () {
     
   fi
 
+  # Log
   log_event "info" "PHP project installation for domain ${project_domain} finished" "false"
   display --indent 6 --text "- PHP project installation for domain ${project_domain}" --result "DONE" --color GREEN
 
+  # Telegram message
   telegram_send_message "${VPSNAME}: PHP project installation for domain ${project_domain} finished"
 
 }

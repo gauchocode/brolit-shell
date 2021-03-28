@@ -1,16 +1,14 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.20
+# Version: 3.0.21
 ################################################################################
 
-function php_installer() {
+function php_get_standard_distro_version() {
 
   # $1 = ${php_v}  / optional
 
   local php_v=$1
-
-  log_subsection "PHP Installer"
 
   if [[ -z ${php_v} || ${php_v} == "" ]]; then
     
@@ -28,7 +26,22 @@ function php_installer() {
 
     fi
 
+    # Return
+    echo "${php_v}"
+
   fi
+
+}
+
+function php_installer() {
+
+  # $1 = ${php_v}  / optional
+
+  local php_v=$1
+
+  log_subsection "PHP Installer"
+
+  php_v="$(php_get_standard_distro_version "${php_v}")"
 
   # Log
   display --indent 6 --text "- Installing PHP-${php_v} and libraries"
@@ -199,7 +212,15 @@ function php_installer_menu() {
   php_installed_versions="$(php_check_installed_version)"
 
   # Setting PHP_V
-  PHP_V=$(php_select_version_to_work_with "${php_installed_versions}")
+  if [[ ${php_installed_versions} != "" ]]; then
+
+    PHP_V=$(php_select_version_to_work_with "${php_installed_versions}")
+
+  else
+
+    PHP_V="$(php_get_standard_distro_version "${php_v}")"
+
+  fi
 
   chosen_php_installer_options=$(whiptail --title "${php_installer_title}" --menu "${php_installer_message}" 20 78 10 "${php_installer_options[@]}" 3>&1 1>&2 2>&3)
   exitstatus=$?
@@ -211,7 +232,7 @@ function php_installer_menu() {
       php_installer
       mail_utils_installer
       php_redis_installer
-      php_reconfigure
+      php_reconfigure "${PHP_V}"
 
     fi
     if [[ ${chosen_php_installer_options} == *"02"* ]]; then

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.20
+# Version: 3.0.21
 #############################################################################
 
 function mysql_ask_user_db_scope() {
@@ -10,7 +10,7 @@ function mysql_ask_user_db_scope() {
 
     local db_scope=$1
 
-    db_scope=$(whiptail --title "MySQL User Scope" --inputbox "Set the scope for the database user." 10 60 "${db_scope}" 3>&1 1>&2 2>&3)
+    db_scope=$(whiptail --title "MySQL User Scope" --inputbox "Set the scope for the database user. You can use '%' to accept all connections." 10 60 "${db_scope}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -155,7 +155,9 @@ function mysql_user_create() {
         # Log
         clear_last_line
         display --indent 6 --text "- Creating MySQL user ${db_user}" --result "DONE" --color GREEN
-        display --indent 8 --text "User created with pass: ${db_user_psw}" --tcolor YELLOW
+        if [[ ${db_user_psw} != "" ]]; then
+            display --indent 8 --text "User created with pass: ${db_user_psw}" --tcolor YELLOW
+        fi
         log_event "info" " MySQL user ${db_user} created with pass: ${db_user_psw}"
 
         return 0
