@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.20
+# Version: 3.0.21
 ################################################################################
 
 function wpcli_install_if_not_installed() {
@@ -48,14 +48,21 @@ function wpcli_check_version() {
 function wpcli_install() {
 
     log_event "info" "Installing wp-cli ..."
+    display --indent 6 --text "- Installing wp-cli"
 
+    # Download wp-cli
     curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
 
     chmod +x wp-cli.phar
     sudo mv wp-cli.phar "/usr/local/bin/wp"
 
-    log_event "info" "wp-cli installed"
+    # Log
+    clear_last_line
+    clear_last_line
+    clear_last_line
+    clear_last_line
     display --indent 6 --text "- Installing wp-cli" --result "DONE" --color GREEN
+    log_event "info" "wp-cli installed"
     
 }
 

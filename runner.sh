@@ -2,7 +2,7 @@
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Script Name: LEMP Utils Script
-# Version: 3.0.20
+# Version: 3.0.21
 ################################################################################
 
 ### Exit immediately if a command exits with a non-zero status
