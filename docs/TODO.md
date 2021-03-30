@@ -67,8 +67,8 @@
 
 - [ ] Core: Better structure of deleted projects on dropbox.
 - [ ] Core: Add an option to backup all and prepare VPS to be offline/deleted (add a VPS offline structure on dropbox).
-- [ ] Core: make new standard directory structure for projects "${SITES}/${DOMAIN}/public".
-      Logs could be stored on "${SITES}/${DOMAIN}/log"
+- [ ] Core: make new standard directory structure for projects "${SITES}/${ROOT_DOMAIN}/${SUBDOMAIN}/public".
+      Logs could be stored on "${SITES}/${ROOT_DOMAIN}/${SUBDOMAIN}/log"
 - [ ] Core: Solve small "TODOs" comments on the project.
 - [ ] Core: Complete refactor of "Options Wizard": (Backup Options, Notification Options, Cloudflare Config).
 - [ ] Core: maybe with could ask for database user nomenclature. Today is "PROJECTNAME_user" and it could be "PROJECTNAME_PROJECTSTATE_user".
