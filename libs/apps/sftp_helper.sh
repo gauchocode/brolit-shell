@@ -26,26 +26,26 @@ function _sftp_add_folder_permission() {
     log_event "info" "Creating subfolder ${dir_path}/${folder}"
 
     # Mounting
-    mount --bind "${dir_path}/${folder}" "/home/${username}/${folder}"
+    mount --bind "${dir_path}${folder}" "/home/${username}/${folder}"
 
     # Log
     display --indent 6 --text "- Mounting subfolder" --result "DONE" --color GREEN
-    log_event "info" "Mounting subfolder ${dir_path}/${folder} on /home/${username}/${folder}"
-    log_event "debug" "Running: mount --bind ${dir_path}/${folder} /home/${username}/${folder}"
+    log_event "info" "Mounting subfolder ${dir_path}${folder} on /home/${username}/${folder}"
+    log_event "debug" "Running: mount --bind ${dir_path}${folder} /home/${username}/${folder}"
 
     # Mount permanent
     echo "${dir_path}/${folder} /home/${username}/${folder} none bind   0      0"  >>"/etc/fstab"
 
     # Log
     display --indent 6 --text "- Writing fstab to make it permanent" --result "DONE" --color GREEN
-    log_event "debug" "Running: echo ${dir_path}/${folder} /home/${username}/${folder} none bind   0      0  >>/etc/fstab"
+    log_event "debug" "Running: echo ${dir_path}${folder} /home/${username}/${folder} none bind   0      0  >>/etc/fstab"
 
     # The command below will set the document root and all subfolders to 775
     find "${dir_path}/${folder}" -type d -exec chmod g+s {} \;
-    log_event "debug" "Running: find ${dir_path}/${folder} -type d -exec chmod g+s {} \;"
+    log_event "debug" "Running: find ${dir_path}${folder} -type d -exec chmod g+s {} \;"
     
     # We want any new files created in the document root from now on to inherit the group name
-    chmod g+s "${dir_path}/${folder}"
+    chmod g+s "${dir_path}${folder}"
 
     # Log
     display --indent 6 --text "- Changing folder permission" --result "DONE" --color GREEN
@@ -131,7 +131,7 @@ function sftp_create_user() {
     # Directory_broser returns: $filepath and $filename
     if [[ ${filename} != "" && ${filepath} != "" ]]; then
         # Create and add folder permission
-        _sftp_add_folder_permission "${username}" "${filepath}${filename}" "public"
+        _sftp_add_folder_permission "${username}" "${filepath}/${filename}" "public"
 
     fi
 
