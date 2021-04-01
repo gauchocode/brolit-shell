@@ -127,7 +127,7 @@ function cloudflare_domain_exists () {
         message="Error: the zone is not configured on the Cloudflare account."
         display --indent 6 --text "- Getting Zone ID for ${root_domain}" --result "FAIL" --color RED
         display --indent 8 --text "${message}"
-        
+
         # Return
         return 1
 
@@ -151,45 +151,35 @@ function cloudflare_clear_cache() {
     local zone_name 
     local purge_cache
 
-    zone_name="${root_domain}"
+    zone_id=$(_cloudflare_get_zone_id "${root_domain}")
 
-    #We need to do this, because certbot use this file with this vars
-    #And this script need this others var names 
-    auth_email="${dns_cloudflare_email}"
-    auth_key="${dns_cloudflare_api_key}"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
 
-    # Checking cloudflare credentials file
-    if [[ -z "${auth_email}" ]]; then
-        generate_cloudflare_config
+        log_event "info" "Clearing Cloudflare cache for domain: ${root_domain}"
 
-    fi
+        purge_cache="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/purge_cache" \
+        -H "X-Auth-Email: ${auth_email}" \
+        -H "X-Auth-Key: ${auth_key}" \
+        -H "Content-Type:application/json" \
+        --data '{"purge_everything":true}')"
 
-    log_event "info" "Getting Zone ID for domain: ${root_domain}"
-    #display --indent 6 --text "- Getting Zone ID"
+        if [[ ${purge_cache} == *"\"success\":false"* || ${purge_cache} == "" ]]; then
+            message="Error trying to clear Cloudflare cache. Results:\n${update}"
+            log_event "error" "${message}"
+            display --indent 6 --text "- Clearing Cloudflare cache" --result "FAIL" --color RED
+            return 1
 
-    zone_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
-
-    log_event "info" "Zone ID found: ${zone_id}"
-    #clear_last_line
-    display --indent 6 --text "- Getting Zone ID for ${root_domain}" --result "DONE" --color GREEN
-    display --indent 8 --text "Zone ID found: ${zone_id}"
-
-    purge_cache="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/purge_cache" \
-    -H "X-Auth-Email: ${auth_email}" \
-    -H "X-Auth-Key: ${auth_key}" \
-    -H "Content-Type:application/json" \
-    --data '{"purge_everything":true}')"
-
-    if [[ ${purge_cache} == *"\"success\":false"* || ${purge_cache} == "" ]]; then
-        message="Error trying to clear Cloudflare cache. Results:\n${update}"
-        log_event "error" "${message}"
-        display --indent 6 --text "- Clearing Cloudflare cache" --result "FAIL" --color RED
-        return 1
+        else
+            message="Cache cleared for domain: ${root_domain}"
+            log_event "info" "${message}"
+            display --indent 6 --text "- Clearing Cloudflare cache" --result "DONE" --color GREEN
+        fi
 
     else
-        message="Cache cleared for domain: ${root_domain}"
-        log_event "info" "${message}"
-        display --indent 6 --text "- Clearing Cloudflare cache" --result "DONE" --color GREEN
+
+        return 1
+
     fi
 
 }
@@ -235,6 +225,7 @@ function cloudflare_set_development_mode() {
         return 1
 
     fi
+
 }
 
 function cloudflare_get_ssl_mode() {
