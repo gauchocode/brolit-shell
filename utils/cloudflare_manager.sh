@@ -31,7 +31,7 @@ function cloudflare_helper_menu() {
 
             if [[ ${exitstatus} = 0 ]]; then
            
-                cloudflare_development_mode "${root_domain}" "on"
+                cloudflare_set_development_mode "${root_domain}" "on"
 
             fi
 
@@ -75,7 +75,7 @@ function cloudflare_helper_menu() {
 
                 log_event "info" "SSL Mode selected: ${ssl_mode}" "true"
 
-                cloudflare_ssl_mode "${root_domain}" "${ssl_mode}"
+                cloudflare_set_ssl_mode "${root_domain}" "${ssl_mode}"
 
             fi
 

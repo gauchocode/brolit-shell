@@ -181,7 +181,7 @@ function certbot_helper_installer_menu() {
       #cloudflare_change_a_record "${root_domain}" "" "true"
 
       # Changing SSL Mode flor Cloudflare record
-      #cloudflare_ssl_mode "${root_domain}" "full"
+      #cloudflare_set_ssl_mode "${root_domain}" "full"
 
     fi
 
