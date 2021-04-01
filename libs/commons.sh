@@ -2062,8 +2062,8 @@ function subtasks_cloudflare_handler() {
 
     dev_mode)
 
-      log_event "debug" "Running: cloudflare_development_mode ${DOMAIN}"
-      cloudflare_development_mode "${DOMAIN}"
+      log_event "debug" "Running: cloudflare_set_development_mode ${DOMAIN}"
+      cloudflare_set_development_mode "${DOMAIN}"
 
       exit
     ;;
