@@ -2050,6 +2050,8 @@ function subtasks_cloudflare_handler() {
 
   local subtask=$1
 
+  log_subsection "Cloudflare Manager"
+
   case ${subtask} in
 
     clear_cache)
