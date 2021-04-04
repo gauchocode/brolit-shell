@@ -186,6 +186,5 @@ case "${1:-''}" in
 	;;
 esac
 
-# Some success paths end up returning non-zero so exit 0 explicitly. See
-# bug #739846.
+# Some success paths end up returning non-zero so exit 0 explicitly. See bug #739846.
 exit 0

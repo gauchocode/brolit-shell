@@ -203,16 +203,17 @@ function cloudflare_set_development_mode() {
 
         log_event "info" "Enabling Development Mode for domain: ${root_domain}"
 
-        dev_mode_result=$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/development_mode" \
+        dev_mode_result="$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/development_mode" \
         -H "X-Auth-Email: ${auth_email}" \
         -H "X-Auth-Key: ${auth_key}" \
         -H "Content-Type: application/json" \
-        --data "{\"value\":\"${dev_mode}\"}" )
+        --data "{\"value\":\"${dev_mode}\"}")"
 
         if [[ ${dev_mode_result} == *"\"success\":false"* || ${dev_mode_result} == "" ]]; then
             message="Error trying to change development mode for ${root_domain}. Results:\n ${dev_mode_result}"
             log_event "error" "${message}"
             display --indent 2 --text "- Enabling development mode" --result "FAIL" --color RED
+
             return 1
 
         else
@@ -279,11 +280,11 @@ function cloudflare_set_ssl_mode() {
         log_event "info" "Setting SSL Mode for: ${zone_name}"
         display --indent 6 --text "- Setting SSL Mode for: ${zone_name}"
 
-        ssl_mode_result=$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/ssl" \
+        ssl_mode_result="$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/ssl" \
                             -H "X-Auth-Email: ${auth_email}" \
                             -H "X-Auth-Key: ${auth_key}" \
                             -H "Content-Type: application/json" \
-                            --data "{\"value\":\"${ssl_mode}\"}")
+                            --data "{\"value\":\"${ssl_mode}\"}")"
 
         if [[ ${ssl_mode_result} == *"\"success\":false"* || ${ssl_mode_result} == "" ]]; then
             message="Error trying to change ssl mode for ${root_domain}. Results:\n ${ssl_mode_result}"
@@ -472,5 +473,85 @@ function cloudflare_delete_a_record () {
     fi
 
     #rm "${id_file}"
+
+}
+
+function cloudflare_set_cache_ttl_value () {
+
+    # $1 = ${root_domain}
+    # $2 = ${cache_ttl_value} - default value: 14400, valid values: 0, 30, 60, 300, 1200, 1800, 3600, 7200, 10800, 14400, 18000, 28800, 43200, 57600, 72000, 86400, 172800, 259200, 345600, 432000, 691200, 1382400, 2073600, 2678400, 5356800, 16070400, 31536000
+    #                 notes: Setting a TTL of 0 is equivalent to selecting 'Respect Existing Headers'
+
+    local root_domain=$1
+    local cache_ttl_value=$2
+
+    zone_id=$(_cloudflare_get_zone_id "${root_domain}")
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        cache_ttl_result="$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/browser_cache_ttl" \
+                            -H "X-Auth-Email: ${auth_email}" \
+                            -H "X-Auth-Key: ${auth_key}" \
+                            -H "Content-Type: application/json" \
+                            --data "{\"value\":\"${cache_ttl_value}\"}")"
+
+        if [[ ${cache_ttl_result} == *"\"success\":false"* || ${cache_ttl_result} == "" ]]; then
+            message="Error trying to set cache ttl for ${root_domain}. Results:\n ${cache_ttl_result}"
+            log_event "error" "${message}"
+            return 1
+
+        else
+            message="Cache TTL value for ${root_domain} is ${cache_ttl_result}"
+            log_event "info" "${message}"
+
+        fi
+
+    else
+
+        return 1
+
+    fi
+}
+
+################################################################################
+
+# PRO
+
+function cloudflare_set_http3_setting () {
+
+    # $1 = ${root_domain}
+    # $2 = ${http3_setting} - default value: off, valid values: on, off
+
+    local root_domain=$1
+    local http3_setting=$2
+
+    zone_id=$(_cloudflare_get_zone_id "${root_domain}")
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        cache_ttl_result="$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/http3" \
+                            -H "X-Auth-Email: ${auth_email}" \
+                            -H "X-Auth-Key: ${auth_key}" \
+                            -H "Content-Type: application/json" \
+                            --data "{\"value\":\"${http3_setting}\"}")"
+
+        if [[ ${cache_ttl_result} == *"\"success\":false"* || ${cache_ttl_result} == "" ]]; then
+            message="Error trying to set http3 for ${root_domain}. Results:\n ${cache_ttl_result}"
+            log_event "error" "${message}"
+            return 1
+
+        else
+            message="HTTP3 setting for ${root_domain} is ${cache_ttl_result}"
+            log_event "info" "${message}"
+
+        fi
+
+    else
+
+        return 1
+
+    fi
 
 }
