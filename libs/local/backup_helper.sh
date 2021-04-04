@@ -472,8 +472,6 @@ function make_all_files_backup() {
 
       mkdir "${MAILCOW_TMP_BK}"
 
-      log_event "info" "Folder ${MAILCOW_TMP_BK} created"
-
     fi
 
     make_mailcow_backup "${MAILCOW}"

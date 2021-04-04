@@ -41,8 +41,8 @@ if [[ -t 1 ]]; then
   else
 
     # RUNNING FROM FLAGS
-    #flags_handler "$#" "$*" #"$*" stores all arguments received when the script is runned
-    parse_params "$@"
+    flags_handler "$#" "$*" #"$*" stores all arguments received when the script is runned
+    #parse_params "$@"
 
   fi
 

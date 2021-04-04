@@ -22,7 +22,7 @@ function optimize_images_complete() {
 
     optimize_images "${SITES}" "png" ""
 
-    # Fix ownership
+    # Change ownership
     change_ownership "www-data" "www-data" "${SITES}"
 
 }
@@ -180,7 +180,7 @@ function optimize_pdfs() {
   #for %f in (*) do gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dQUIET -dBATCH -sOutputFile=%f %f
   #find -mtime -7 -type f -name "*.pdf" -exec gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dPDFSETTINGS=/screen -dNOPAUSE -dPrinted=false -dQUIET -sOutputFile=compressed.%f %f
 
-  # Fix ownership
+  # Change ownership
   change_ownership "www-data" "www-data" "${SITES}"
 
 }

@@ -270,7 +270,7 @@ function php_installer_menu() {
     fi
     if [[ ${chosen_php_installer_options} == *"06"* ]]; then
       
-      # OPTIMIZE PHP
+      # PHP OPTIZATIONS
       php_fpm_optimizations
 
     fi
