@@ -275,7 +275,7 @@ function make_mailcow_backup() {
       # Con un pequeño truco vamos a obtener el nombre de la carpeta que crea mailcow
       cd "${MAILCOW_TMP_BK}"
       cd mailcow-*
-      MAILCOW_TMP_FOLDER="$(basename $PWD)"
+      MAILCOW_TMP_FOLDER="$(basename "${PWD}")"
       cd ..
 
       log_event "info" "Making tar.bz2 from: ${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER} ..."
