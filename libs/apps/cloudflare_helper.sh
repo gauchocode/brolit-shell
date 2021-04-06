@@ -15,11 +15,11 @@ function _cloudflare_get_zone_id() {
     local zone_name=$1
 
     local zone_id
-    
+
     #zone_name="${root_domain}"
 
     # We need to do this, because certbot use this file with this vars
-    # And this script need this others var names 
+    # And this script need this others var names
     auth_email="${dns_cloudflare_email}"
     auth_key="${dns_cloudflare_api_key}"
 
@@ -37,18 +37,18 @@ function _cloudflare_get_zone_id() {
 
     # Get Zone ID
     zone_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" \
-                -H "X-Auth-Email: ${auth_email}" \
-                -H "X-Auth-Key: ${auth_key}" \
-                -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )"
+        -H "X-Auth-Email: ${auth_email}" \
+        -H "X-Auth-Key: ${auth_key}" \
+        -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1)"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
-        
+
         log_event "info" "Zone ID found: ${zone_id}"
 
         # Return
         echo "${zone_id}"
-    
+
     else
 
         return 1
@@ -92,18 +92,18 @@ function cloudflare_get_zone_info() {
     log_event "info" "Getting zone information for: ${zone_name}"
 
     zone_info="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}&status=active" \
-                    -H "X-Auth-Email: ${auth_email}" \
-                    -H "X-Auth-Key: ${auth_key}" \
-                    -H "Content-Type: application/json" )"
+        -H "X-Auth-Email: ${auth_email}" \
+        -H "X-Auth-Key: ${auth_key}" \
+        -H "Content-Type: application/json")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
-        
+
         log_event "debug" "Zone information: ${zone_info}"
 
         # Return
         echo "${zone_id}"
-    
+
     else
 
         return 1
@@ -112,13 +112,13 @@ function cloudflare_get_zone_info() {
 
 }
 
-function cloudflare_domain_exists () {
+function cloudflare_domain_exists() {
 
     # $1 = ${root_domain}
 
     local root_domain=$1
 
-    local zone_name 
+    local zone_name
     local zone_id
 
     zone_id=$(_cloudflare_get_zone_id "${root_domain}")
@@ -148,7 +148,7 @@ function cloudflare_clear_cache() {
 
     local root_domain=$1
 
-    local zone_name 
+    local zone_name
     local purge_cache
 
     zone_id=$(_cloudflare_get_zone_id "${root_domain}")
@@ -161,10 +161,10 @@ function cloudflare_clear_cache() {
         log_event "debug" "Running: curl -s -X DELETE \"https://api.cloudflare.com/client/v4/zones/${zone_id}/purge_cache\" -H \"X-Auth-Email: ${auth_email}\" -H \"X-Auth-Key: ${auth_key}\" -H \"Content-Type:application/json\" --data '{\"purge_everything\":true}')"
 
         purge_cache="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/purge_cache" \
-        -H "X-Auth-Email: ${auth_email}" \
-        -H "X-Auth-Key: ${auth_key}" \
-        -H "Content-Type:application/json" \
-        --data '{"purge_everything":true}')"
+            -H "X-Auth-Email: ${auth_email}" \
+            -H "X-Auth-Key: ${auth_key}" \
+            -H "Content-Type:application/json" \
+            --data '{"purge_everything":true}')"
 
         if [[ ${purge_cache} == *"\"success\":false"* || ${purge_cache} == "" ]]; then
             message="Error trying to clear Cloudflare cache. Results:\n${update}"
@@ -204,10 +204,10 @@ function cloudflare_set_development_mode() {
         log_event "info" "Enabling Development Mode for domain: ${root_domain}"
 
         dev_mode_result="$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/development_mode" \
-        -H "X-Auth-Email: ${auth_email}" \
-        -H "X-Auth-Key: ${auth_key}" \
-        -H "Content-Type: application/json" \
-        --data "{\"value\":\"${dev_mode}\"}")"
+            -H "X-Auth-Email: ${auth_email}" \
+            -H "X-Auth-Key: ${auth_key}" \
+            -H "Content-Type: application/json" \
+            --data "{\"value\":\"${dev_mode}\"}")"
 
         if [[ ${dev_mode_result} == *"\"success\":false"* || ${dev_mode_result} == "" ]]; then
             message="Error trying to change development mode for ${root_domain}. Results:\n ${dev_mode_result}"
@@ -244,16 +244,16 @@ function cloudflare_get_ssl_mode() {
 
         log_event "info" "Gettinh SSL Mode for: ${zone_name}"
         display --indent 6 --text "- Gettinh SSL Mode for: ${zone_name}"
-        
+
         ssl_mode_result=$(curl -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/ssl" \
-                        -H "X-Auth-Email: ${auth_email}" \
-                        -H "X-Auth-Key: ${auth_key}" \
-                        -H "Content-Type: application/json")
+            -H "X-Auth-Email: ${auth_email}" \
+            -H "X-Auth-Key: ${auth_key}" \
+            -H "Content-Type: application/json")
 
         # Return
         # Possible return values: off, flexible, full, strict
         echo "${ssl_mode_result}"
-    
+
     else
 
         return 1
@@ -281,10 +281,10 @@ function cloudflare_set_ssl_mode() {
         display --indent 6 --text "- Setting SSL Mode for: ${zone_name}"
 
         ssl_mode_result="$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/ssl" \
-                            -H "X-Auth-Email: ${auth_email}" \
-                            -H "X-Auth-Key: ${auth_key}" \
-                            -H "Content-Type: application/json" \
-                            --data "{\"value\":\"${ssl_mode}\"}")"
+            -H "X-Auth-Email: ${auth_email}" \
+            -H "X-Auth-Key: ${auth_key}" \
+            -H "Content-Type: application/json" \
+            --data "{\"value\":\"${ssl_mode}\"}")"
 
         if [[ ${ssl_mode_result} == *"\"success\":false"* || ${ssl_mode_result} == "" ]]; then
             message="Error trying to change ssl mode for ${root_domain}. Results:\n ${ssl_mode_result}"
@@ -305,7 +305,7 @@ function cloudflare_set_ssl_mode() {
 
 }
 
-function cloudflare_change_a_record () {
+function cloudflare_change_a_record() {
 
     # $1 = ${root_domain}
     # $2 = ${domain}
@@ -341,8 +341,8 @@ function cloudflare_change_a_record () {
     cur_ip="${SERVER_IP}"
 
     zone_id=$(_cloudflare_get_zone_id "${root_domain}")
-    
-    record_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json"  | grep -Po '(?<="id":")[^"]*')
+
+    record_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*')
 
     if [[ -z "${record_id}" || ${record_id} == "" ]]; then
 
@@ -350,10 +350,10 @@ function cloudflare_change_a_record () {
         log_event "debug" "RECORD_ID not found: Trying to add the subdomain ..."
 
         update="$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
-        -H "X-Auth-Email: ${auth_email}" \
-        -H "X-Auth-Key: ${auth_key}" \
-        -H "Content-Type: application/json" \
-        --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"\
+            -H "X-Auth-Email: ${auth_email}" \
+            -H "X-Auth-Key: ${auth_key}" \
+            -H "Content-Type: application/json" \
+            --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"
 
     else
 
@@ -364,18 +364,18 @@ function cloudflare_change_a_record () {
 
         # First delete
         delete="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
-        -H "X-Auth-Email: ${auth_email}" \
-        -H "X-Auth-Key: ${auth_key}" \
-        -H "Content-Type: application/json" )"
-        
+            -H "X-Auth-Email: ${auth_email}" \
+            -H "X-Auth-Key: ${auth_key}" \
+            -H "Content-Type: application/json")"
+
         log_event "debug" "Running: curl -s -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" -H \"X-Auth-Email: ${auth_email}\" -H \"X-Auth-Key: ${auth_key}\" -H \"Content-Type: application/json\"--data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}\")"\"
 
         # Then create (work-around because sometimes update an entry does not work)
         update="$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
-        -H "X-Auth-Email: ${auth_email}" \
-        -H "X-Auth-Key: ${auth_key}" \
-        -H "Content-Type: application/json" \
-        --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"\
+            -H "X-Auth-Email: ${auth_email}" \
+            -H "X-Auth-Key: ${auth_key}" \
+            -H "Content-Type: application/json" \
+            --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"
 
     fi
 
@@ -387,7 +387,7 @@ function cloudflare_change_a_record () {
         log_event "error" "${message}"
         display --indent 6 --text "- Updating subdomain on Cloudflare" --result "FAIL" --color RED
         display --indent 8 --text "${message}" --tcolor RED
-        
+
         return 1
 
     else
@@ -398,10 +398,9 @@ function cloudflare_change_a_record () {
 
     fi
 
-
 }
 
-function cloudflare_delete_a_record () {
+function cloudflare_delete_a_record() {
 
     # $1 = ${root_domain}
     # $2 = ${domain}
@@ -429,7 +428,7 @@ function cloudflare_delete_a_record () {
     # RETRIEVE/ SAVE zone_id AND record_id
     zone_id=$(_cloudflare_get_zone_id "${root_domain}")
 
-    record_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json"  | grep -Po '(?<="id":")[^"]*')
+    record_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*')
 
     log_event "info" "RECORD_ID: ${record_id}"
 
@@ -444,15 +443,15 @@ function cloudflare_delete_a_record () {
         return 1
 
     else
-     
+
         log_event "info" "RECORD_ID found: ${record_id}"
         log_event "info" "Trying to delete the record ..."
 
         delete="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
-        -H "X-Auth-Email: ${auth_email}" \
-        -H "X-Auth-Key: ${auth_key}" \
-        -H "Content-Type: application/json")"
-        
+            -H "X-Auth-Email: ${auth_email}" \
+            -H "X-Auth-Key: ${auth_key}" \
+            -H "Content-Type: application/json")"
+
     fi
 
     if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
@@ -476,7 +475,7 @@ function cloudflare_delete_a_record () {
 
 }
 
-function cloudflare_set_cache_ttl_value () {
+function cloudflare_set_cache_ttl_value() {
 
     # $1 = ${root_domain}
     # $2 = ${cache_ttl_value} - default value: 14400, valid values: 0, 30, 60, 300, 1200, 1800, 3600, 7200, 10800, 14400, 18000, 28800, 43200, 57600, 72000, 86400, 172800, 259200, 345600, 432000, 691200, 1382400, 2073600, 2678400, 5356800, 16070400, 31536000
@@ -491,10 +490,10 @@ function cloudflare_set_cache_ttl_value () {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         cache_ttl_result="$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/browser_cache_ttl" \
-                            -H "X-Auth-Email: ${auth_email}" \
-                            -H "X-Auth-Key: ${auth_key}" \
-                            -H "Content-Type: application/json" \
-                            --data "{\"value\":\"${cache_ttl_value}\"}")"
+            -H "X-Auth-Email: ${auth_email}" \
+            -H "X-Auth-Key: ${auth_key}" \
+            -H "Content-Type: application/json" \
+            --data "{\"value\":\"${cache_ttl_value}\"}")"
 
         if [[ ${cache_ttl_result} == *"\"success\":false"* || ${cache_ttl_result} == "" ]]; then
             message="Error trying to set cache ttl for ${root_domain}. Results:\n ${cache_ttl_result}"
@@ -518,7 +517,7 @@ function cloudflare_set_cache_ttl_value () {
 
 # PRO
 
-function cloudflare_set_http3_setting () {
+function cloudflare_set_http3_setting() {
 
     # $1 = ${root_domain}
     # $2 = ${http3_setting} - default value: off, valid values: on, off
@@ -532,10 +531,10 @@ function cloudflare_set_http3_setting () {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         cache_ttl_result="$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/http3" \
-                            -H "X-Auth-Email: ${auth_email}" \
-                            -H "X-Auth-Key: ${auth_key}" \
-                            -H "Content-Type: application/json" \
-                            --data "{\"value\":\"${http3_setting}\"}")"
+            -H "X-Auth-Email: ${auth_email}" \
+            -H "X-Auth-Key: ${auth_key}" \
+            -H "Content-Type: application/json" \
+            --data "{\"value\":\"${http3_setting}\"}")"
 
         if [[ ${cache_ttl_result} == *"\"success\":false"* || ${cache_ttl_result} == "" ]]; then
             message="Error trying to set http3 for ${root_domain}. Results:\n ${cache_ttl_result}"

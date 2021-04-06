@@ -32,9 +32,9 @@ function zabbix_prepare_database() {
 
     tar -zxvf "zabbix-4.0.3.tar.gz"
     cd "zabbix-4.0.3/database/mysql/"
-    mysql -u zabbix -p zabbix < schema.sql
-    mysql -u zabbix -p zabbix < images.sql
-    mysql -u zabbix -p zabbix < data.sql
+    mysql -u zabbix -p zabbix <schema.sql
+    mysql -u zabbix -p zabbix <images.sql
+    mysql -u zabbix -p zabbix <data.sql
 
 }
 
@@ -62,7 +62,7 @@ function zabbix_server_installer() {
 
     apt update
 
-    apt-get --yes install zabbix-server-mysql zabbix-frontend-php -qq > /dev/null
+    apt-get --yes install zabbix-server-mysql zabbix-frontend-php -qq >/dev/null
 
     # TODO: ASK FOR SUBDOMAIN
     ln -s "/usr/share/zabbix/" "/var/www/${SUBDOMAIN}"
