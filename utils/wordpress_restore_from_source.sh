@@ -225,7 +225,7 @@ function wordpress_restore_from_source() {
   # SUGGEST "${project_domain}" and "www${project_domain}"
 
   # Cloudflare API to change DNS records
-  cloudflare_change_a_record "${root_domain}" "${project_domain}"
+  cloudflare_set_a_record "${root_domain}" "${project_domain}"
 
   # HTTPS with Certbot
   certbot_helper_installer_menu "${MAILA}" "${project_domain}"
