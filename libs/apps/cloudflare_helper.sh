@@ -209,6 +209,9 @@ function cloudflare_set_development_mode() {
             -H "Content-Type: application/json" \
             --data "{\"value\":\"${dev_mode}\"}")"
 
+        # Remove Cloudflare API garbage output
+        _cloudflare_clear_garbage_output
+
         if [[ ${dev_mode_result} == *"\"success\":false"* || ${dev_mode_result} == "" ]]; then
             message="Error trying to change development mode for ${root_domain}. Results:\n ${dev_mode_result}"
             log_event "error" "${message}"
@@ -286,6 +289,9 @@ function cloudflare_set_ssl_mode() {
             -H "Content-Type: application/json" \
             --data "{\"value\":\"${ssl_mode}\"}")"
 
+        # Remove Cloudflare API garbage output
+        _cloudflare_clear_garbage_output
+
         if [[ ${ssl_mode_result} == *"\"success\":false"* || ${ssl_mode_result} == "" ]]; then
             message="Error trying to change ssl mode for ${root_domain}. Results:\n ${ssl_mode_result}"
             log_event "error" "${message}"
@@ -305,7 +311,46 @@ function cloudflare_set_ssl_mode() {
 
 }
 
-function cloudflare_change_a_record() {
+function cloudflare_record_exists() {
+
+    # $1 = ${root_domain}
+    # $2 = ${domain}
+
+    local root_domain=$1
+    local domain=$2
+
+    # Cloudflare API to change DNS records
+    log_event "info" "Checking if record ${domain} exists"
+
+    # Only for better readibility
+    record_name="${domain}"
+
+    # RETRIEVE/ SAVE zone_id AND record_id
+    zone_id=$(_cloudflare_get_zone_id "${root_domain}")
+
+    record_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*')
+
+    log_event "debug" "RECORD_ID: ${record_id}"
+
+    if [[ -z "${record_id}" || ${record_id} == "" ]]; then
+
+        log_event "info" "Record ${record_name} not found on Cloudflare"
+        display --indent 6 --text "- Record ${record_name} not found on Cloudflare" --result "FAIL" --color RED
+
+        return 1
+
+    else
+
+        log_event "info" "Record found: ${record_id}"
+
+        # Return
+        echo "${record_id}"
+
+    fi
+
+}
+
+function cloudflare_set_a_record() {
 
     # $1 = ${root_domain}
     # $2 = ${domain}
@@ -342,24 +387,13 @@ function cloudflare_change_a_record() {
 
     zone_id=$(_cloudflare_get_zone_id "${root_domain}")
 
-    record_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*')
+    record_id=$(cloudflare_record_exists "${record_name}")
 
-    if [[ -z "${record_id}" || ${record_id} == "" ]]; then
-
-        display --indent 6 --text "- Adding the subdomain: ${record_name}"
-        log_event "debug" "RECORD_ID not found: Trying to add the subdomain ..."
-
-        update="$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
-            -H "X-Auth-Email: ${auth_email}" \
-            -H "X-Auth-Key: ${auth_key}" \
-            -H "Content-Type: application/json" \
-            --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"
-
-    else
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
 
         # Log
         display --indent 6 --text "- Changing ${record_name} IP ..."
-        log_event "debug" "RECORD_ID found: ${record_id}"
         log_event "debug" "Running: curl -s -X DELETE \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}\" -H \"X-Auth-Email: ${auth_email}\" -H \"X-Auth-Key: ${auth_key}\" -H \"Content-Type: application/json\""
 
         # First delete
@@ -377,24 +411,38 @@ function cloudflare_change_a_record() {
             -H "Content-Type: application/json" \
             --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"
 
-    fi
+        # Remove Cloudflare API garbage output
+        _cloudflare_clear_garbage_output
 
-    # Remove Cloudflare API garbage output
-    _cloudflare_clear_garbage_output
+        if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
+            message="API UPDATE FAILED. RESULTS:\n${update}"
+            log_event "error" "${message}"
+            display --indent 6 --text "- Updating subdomain on Cloudflare" --result "FAIL" --color RED
+            display --indent 8 --text "${message}" --tcolor RED
 
-    if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
-        message="API UPDATE FAILED. RESULTS:\n${update}"
-        log_event "error" "${message}"
-        display --indent 6 --text "- Updating subdomain on Cloudflare" --result "FAIL" --color RED
-        display --indent 8 --text "${message}" --tcolor RED
+            return 1
 
-        return 1
+        else
+            message="IP changed to: ${SERVER_IP}"
+            log_event "info" "${message}"
+            display --indent 6 --text "- Updating subdomain on Cloudflare" --result "DONE" --color GREEN
+            display --indent 8 --text "IP: ${SERVER_IP}" --tcolor GREEN
+
+        fi
 
     else
-        message="IP changed to: ${SERVER_IP}"
-        log_event "info" "${message}"
-        display --indent 6 --text "- Updating subdomain on Cloudflare" --result "DONE" --color GREEN
-        display --indent 8 --text "IP: ${SERVER_IP}" --tcolor GREEN
+
+        display --indent 6 --text "- Adding the subdomain: ${record_name}"
+        log_event "debug" "RECORD_ID not found: Trying to add the subdomain ..."
+
+        update="$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
+            -H "X-Auth-Email: ${auth_email}" \
+            -H "X-Auth-Key: ${auth_key}" \
+            -H "Content-Type: application/json" \
+            --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"
+
+        # Remove Cloudflare API garbage output
+        _cloudflare_clear_garbage_output
 
     fi
 
@@ -417,9 +465,6 @@ function cloudflare_delete_a_record() {
     record_type="A"
     ttl=1 #1 for Auto
 
-    #ip_file="ip.txt"
-    #id_file="cloudflare.ids"
-
     # SCRIPT START
     log_event "info" "Cloudflare Script Initiated"
 
@@ -428,23 +473,11 @@ function cloudflare_delete_a_record() {
     # RETRIEVE/ SAVE zone_id AND record_id
     zone_id=$(_cloudflare_get_zone_id "${root_domain}")
 
-    record_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*')
+    record_id=$(cloudflare_record_exists "${record_name}")
 
-    log_event "info" "RECORD_ID: ${record_id}"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
 
-    #echo "${zone_id}" > "${id_file}"
-    #echo "${record_id}" >> "${id_file}"
-
-    if [[ -z "${record_id}" || ${record_id} == "" ]]; then
-
-        log_event "info" "Record not found on Cloudflare"
-        display --indent 6 --text "- Record not found on Cloudflare" --result "FAIL" --color RED
-
-        return 1
-
-    else
-
-        log_event "info" "RECORD_ID found: ${record_id}"
         log_event "info" "Trying to delete the record ..."
 
         delete="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
@@ -452,22 +485,33 @@ function cloudflare_delete_a_record() {
             -H "X-Auth-Key: ${auth_key}" \
             -H "Content-Type: application/json")"
 
-    fi
+        # Remove Cloudflare API garbage output
+        _cloudflare_clear_garbage_output
 
-    if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
+        if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
 
-        message="A record delete failed. Results:\n${delete}"
-        log_event "error" "${message}"
-        display --indent 6 --text "- Deleting A record from Cloudflare" --result "FAIL" --color RED
-        display --indent 8 --text "${message}" --tcolor RED
+            message="A record delete failed. Results:\n${delete}"
+            log_event "error" "${message}"
+            log_event "debug" "Last command executed: curl -s -X DELETE \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}\" -H \"X-Auth-Email: ${auth_email}\" -H \"X-Auth-Key: ${auth_key}\" -H \"Content-Type: application/json\""
+            display --indent 6 --text "- Deleting A record from Cloudflare" --result "FAIL" --color RED
+            display --indent 8 --text "${message}" --tcolor RED
 
-        return 1
+            return 1
+
+        else
+            message="A record deleted: ${record_name}"
+            log_event "info" "${message}"
+            display --indent 6 --text "- Deleting A record from Cloudflare" --result "DONE" --color GREEN
+            display --indent 8 --text "Record deleted: ${record_name}" --tcolor YELLOW
+
+        fi
 
     else
-        message="A record deleted: ${record_name}"
-        log_event "info" "${message}"
-        display --indent 6 --text "- Deleting A record from Cloudflare" --result "DONE" --color GREEN
-        display --indent 8 --text "Record deleted: ${record_name}" --tcolor YELLOW
+
+        log_event "info" "Record not found on Cloudflare"
+        display --indent 6 --text "- Record not found on Cloudflare" --result "FAIL" --color RED
+
+        return 1
 
     fi
 
