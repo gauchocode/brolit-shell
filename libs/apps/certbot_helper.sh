@@ -178,7 +178,7 @@ function certbot_helper_installer_menu() {
       #root_domain=$(ask_rootdomain_for_cloudflare_config "${domains}")
       
       # TODO: list entries to add proxy on cloudflare records
-      #cloudflare_change_a_record "${root_domain}" "" "true"
+      #cloudflare_set_a_record "${root_domain}" "" "true"
 
       # Changing SSL Mode flor Cloudflare record
       #cloudflare_set_ssl_mode "${root_domain}" "full"
