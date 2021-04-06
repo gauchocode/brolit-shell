@@ -4,7 +4,7 @@
 # Version: 3.0.21
 ################################################################################
 
-function wordpress_project_installer () {
+function wordpress_project_installer() {
 
   # $1 = ${project_path}
   # $2 = ${project_domain}
@@ -23,13 +23,12 @@ function wordpress_project_installer () {
 
   # Installation types
   installation_types=(
-    "01)" "CLEAN INSTALL" 
+    "01)" "CLEAN INSTALL"
     "02)" "COPY FROM PROJECT"
-    )
+  )
   installation_type=$(whiptail --title "INSTALLATION TYPE" --menu "Choose an Installation Type" 20 78 10 "${installation_types[@]}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
-
 
     if [[ ${installation_type} == *"COPY"* ]]; then
 
@@ -42,10 +41,10 @@ function wordpress_project_installer () {
     fi
 
   fi
-   
+
 }
 
-function wordpress_project_install () {
+function wordpress_project_install() {
 
   # $1 = ${project_path}
   # $2 = ${project_domain}
@@ -62,7 +61,7 @@ function wordpress_project_install () {
   log_subsection "WordPress Clean Install"
 
   if [[ "${project_root_domain}" = '' ]]; then
-    
+
     possible_root_domain="$(get_root_domain "${project_domain}")"
     project_root_domain="$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")"
 
@@ -72,7 +71,7 @@ function wordpress_project_install () {
     # Download WP
     mkdir "${project_path}"
     change_ownership "www-data" "www-data" "${project_path}"
-    
+
     # Logging
     #display --indent 6 --text "- Making a copy of the WordPress project" --result "DONE" --color GREEN
 
@@ -92,7 +91,7 @@ function wordpress_project_install () {
 
   # Create database and user
   db_project_name=$(mysql_name_sanitize "${project_name}")
-  database_name="${db_project_name}_${project_state}" 
+  database_name="${db_project_name}_${project_state}"
   database_user="${db_project_name}_user"
   database_user_passw=$(openssl rand -hex 12)
 
@@ -141,7 +140,7 @@ function wordpress_project_install () {
       log_event "info" "HTTPS support for ${project_domain} skipped"
       display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
-    fi  
+    fi
 
   else
 
@@ -157,7 +156,7 @@ function wordpress_project_install () {
     cert_project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
-      
+
       certbot_certificate_install "${MAILA}" "${cert_project_domain}"
 
     else
@@ -166,7 +165,7 @@ function wordpress_project_install () {
       display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
     fi
-    
+
   fi
 
   # Log
@@ -178,7 +177,7 @@ function wordpress_project_install () {
 
 }
 
-function wordpress_project_copy () {
+function wordpress_project_copy() {
 
   # $1 = ${project_path}
   # $2 = ${project_domain}
@@ -235,7 +234,7 @@ function wordpress_project_copy () {
 
   # Create database and user
   db_project_name=$(mysql_name_sanitize "${project_name}")
-  database_name="${db_project_name}_${project_state}" 
+  database_name="${db_project_name}_${project_state}"
   database_user="${db_project_name}_user"
   database_user_passw="$(openssl rand -hex 12)"
 
@@ -244,7 +243,6 @@ function wordpress_project_copy () {
   mysql_database_create "${database_name}"
   mysql_user_create "${database_user}" "${database_user_passw}"
   mysql_user_grant_privileges "${database_user}" "${database_name}"
-
 
   log_event "info" "Copying database ${database_name} ..."
 
@@ -310,7 +308,7 @@ function wordpress_project_copy () {
       log_event "info" "HTTPS support for ${project_domain} skipped"
       display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
-    fi  
+    fi
 
   else
 
@@ -326,7 +324,7 @@ function wordpress_project_copy () {
     cert_project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
-      
+
       certbot_certificate_install "${MAILA}" "${cert_project_domain}"
 
     else
@@ -335,7 +333,7 @@ function wordpress_project_copy () {
       display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
     fi
-    
+
   fi
 
   # Log

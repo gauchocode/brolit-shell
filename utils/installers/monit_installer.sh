@@ -4,6 +4,19 @@
 # Version: 3.0.21
 ################################################################################
 
+function monit_installer() { 
+
+  log_subsection "Monit Installer"
+
+  log_event "info" "Updating packages before installation ..."
+  apt-get --yes update -qq > /dev/null
+
+  # Installing packages
+  log_event "info" "Installing monit ..."
+  apt-get --yes install monit -qq > /dev/null
+
+}
+
 function monit_configure() {
 
   if [[ ! -x "${PHP_V}" ]]; then
@@ -60,17 +73,8 @@ function monit_installer_menu() {
 
   if [[ ! -x "${MONIT}" ]]; then
 
-    log_subsection "Monit Installer"
-
-    log_event "info" "Updating packages before installation ..."
-    apt-get --yes update -qq > /dev/null
-
-    # Installing packages
-    log_event "info" "Installing monit ..."
-    apt-get --yes install monit -qq > /dev/null
-
+    monit_installer
     monit_configure
-
 
   else
 

@@ -16,21 +16,24 @@ for f in ${installers}; do source "${f}"; done
 function installers_and_configurators() {
 
   local installer_options
+  local installer_options_title
   local installer_type
 
+  installer_options_title="INSTALLERS AND CONFIGURATORS"
+
   installer_options=(
-    "01)" "PHP-FPM" 
-    "02)" "MYSQL/MARIADB" 
-    "03)" "NGINX" 
-    "04)" "PHPMYADMIN" 
-    "05)" "NETDATA" 
-    "06)" "MONIT" 
-    "07)" "COCKPIT" 
-    "08)" "CERTBOT" 
-    "09)" "WP-CLI" 
-    )
-  
-  installer_type=$(whiptail --title "INSTALLERS AND CONFIGURATORS" --menu "\nPlease select the utility or programs you want to install or config: \n" 20 78 10 "${installer_options[@]}" 3>&1 1>&2 2>&3)
+    "01)" "PHP-FPM"
+    "02)" "MYSQL/MARIADB"
+    "03)" "NGINX"
+    "04)" "PHPMYADMIN"
+    "05)" "NETDATA"
+    "06)" "MONIT"
+    "07)" "COCKPIT"
+    "08)" "CERTBOT"
+    "09)" "WP-CLI"
+  )
+
+  installer_type=$(whiptail --title "${installer_options_title}" --menu "\nPlease select the utility or programs you want to install or config: \n" 20 78 10 "${installer_options[@]}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -65,7 +68,7 @@ function installers_and_configurators() {
 
     fi
     if [[ ${installer_type} == *"08"* ]]; then
-      certbot_installer
+      certbot_installer_menu
 
     fi
     if [[ ${installer_type} == *"09"* ]]; then

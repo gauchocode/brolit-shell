@@ -40,16 +40,16 @@ function _make_temp_files_backup() {
 #################################################################################
 #
 
-function restore_backup_menu () {
+function restore_backup_menu() {
 
-  local -n restore_options          # whiptail array options
-  local chosen_restore_options      # whiptail var
+  local -n restore_options     # whiptail array options
+  local chosen_restore_options # whiptail var
 
   restore_options=(
-    "01)" "RESTORE FROM DROPBOX" 
+    "01)" "RESTORE FROM DROPBOX"
     "02)" "RESTORE FROM URL (BETA)"
     "03)" "RESTORE FROM FILE"
-    )
+  )
   chosen_restore_options=$(whiptail --title "RESTORE TYPE" --menu " " 20 78 10 "${restore_options[@]}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -79,22 +79,22 @@ function restore_backup_menu () {
 
 function restore_backup_from_file() {
 
-  local -n restore_type       # whiptail array options
+  local -n restore_type # whiptail array options
   local chosen_restore_type
 
   restore_type=(
-    "01)" "RESTORE FILES" 
+    "01)" "RESTORE FILES"
     "02)" "RESTORE DATABASE"
-    )
+  )
   chosen_restore_type=$(whiptail --title "RESTORE TYPE" --menu " " 20 78 10 "${restore_type[@]}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
-    
+
     if [[ ${chosen_restore_type} == *"01"* ]]; then
 
       # RESTORE FILES
       log_subsection "Restore from file"
-      
+
       # Folder where sites are hosted: $SITES
       menu_title="SELECT BACKUP FILE TO RESTORE"
       file_browser "${menu_title}" "${SITES}"
@@ -106,7 +106,7 @@ function restore_backup_from_file() {
 
         # Return
         #return 1
-      
+
       else
 
         log_event "info" "File to restore: ${filename}"
@@ -117,13 +117,13 @@ function restore_backup_from_file() {
 
         # TODO: restore_type_selection_from_dropbox needs a refactor too
 
-        # TODO: make a function with: 
+        # TODO: make a function with:
         # pv --width 70 "${chosen_backup_to_restore}" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
-
 
       fi
 
     fi
+
     if [[ ${chosen_restore_type} == *"02"* ]]; then
 
       #RESTORE DATABASE
@@ -139,16 +139,16 @@ function restore_backup_from_file() {
 
         # Return
         #return 1
-      
+
       else
 
         log_event "info" "File to restore: ${filename}"
 
         project_name="$(ask_project_name "")"
         project_state="$(ask_project_state "")"
-      
+
         restore_database_backup "${project_name}" "${project_state}" "${filename}"
-      
+
       fi
 
     fi
@@ -157,15 +157,15 @@ function restore_backup_from_file() {
 
 }
 
-function restore_backup_server_selection () {
+function restore_backup_server_selection() {
 
   SITES_F="site"
   CONFIG_F="configs"
   DBS_F="database"
 
-  local dropbox_server_list   # list servers directories on dropbox
-  local chosen_server         # whiptail var
-  
+  local dropbox_server_list # list servers directories on dropbox
+  local chosen_server       # whiptail var
+
   # Select SERVER
   dropbox_server_list=$("${DROPBOX_UPLOADER}" -hq list "/")
   chosen_server=$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 $(for x in ${dropbox_server_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)
@@ -180,7 +180,7 @@ function restore_backup_server_selection () {
 
   else
     restore_backup_menu
-    
+
   fi
 
   restore_backup_menu
@@ -197,9 +197,9 @@ function restore_database_backup() {
   local project_state=$2
   local project_backup=$3
 
-  local db_name 
-  local db_exists 
-  local user_db_exists 
+  local db_name
+  local db_exists
+  local user_db_exists
   local db_pass
 
   log_subsection "Restore Database Backup"
@@ -209,7 +209,7 @@ function restore_database_backup() {
   # Check if database already exists
   mysql_database_exists "${db_name}"
   db_exists=$?
-  if [[ ${db_exists} -eq 1 ]]; then  
+  if [[ ${db_exists} -eq 1 ]]; then
     # Create database
     mysql_database_create "${db_name}"
 
@@ -223,7 +223,7 @@ function restore_database_backup() {
   # Restore database
   project_backup="${project_backup%%.*}.sql"
   mysql_database_import "${project_name}_${project_state}" "${TMP_DIR}/${project_backup}"
-  
+
   if [[ ${exitstatus} -eq 0 ]]; then
     # Deleting temp files
     rm -f "${project_backup%%.*}.tar.bz2"
@@ -237,7 +237,7 @@ function restore_database_backup() {
 
 }
 
-function restore_config_files_from_dropbox(){
+function restore_config_files_from_dropbox() {
 
   #$1 = ${dropbox_chosen_type_path}
   #$2 = ${dropbox_project_list}
@@ -245,9 +245,9 @@ function restore_config_files_from_dropbox(){
   local dropbox_chosen_type_path=$1
   local dropbox_project_list=$2
 
-  local chosen_config_type            # whiptail var
-  local dropbox_bk_list               # dropbox backup list
-  local chosen_config_bk              # whiptail var
+  local chosen_config_type # whiptail var
+  local dropbox_bk_list    # dropbox backup list
+  local chosen_config_bk   # whiptail var
 
   log_subsection "Restore Server config Files"
 
@@ -270,14 +270,14 @@ function restore_config_files_from_dropbox(){
     dropbox_output="$(${DROPBOX_UPLOADER} download "${dropbox_chosen_type_path}/${chosen_config_type}/${chosen_config_bk}" 1>&2)"
     clear_last_line
     display --indent 6 --text "- Downloading config backup from dropbox" --result "DONE" --color GREEN
-    
+
     # Restore files
     mkdir "${chosen_config_type}"
     mv "${chosen_config_bk}" "${chosen_config_type}"
     cd "${chosen_config_type}"
 
     log_event "info" "Uncompressing ${chosen_config_bk} ..."
-    
+
     pv --width 70 "${chosen_config_bk}" | tar xp -C "${SFOLDER}/tmp/${chosen_config_type}" --use-compress-program=lbzip2
 
     if [[ "${chosen_config_bk}" == *"nginx"* ]]; then
@@ -318,11 +318,11 @@ function restore_nginx_site_files() {
   local domain=$1
   local date=$2
 
-  local bk_file 
-  local bk_to_download 
-  local filename 
-  local to_restore 
-  local dropbox_output          # var for dropbox output
+  local bk_file
+  local bk_to_download
+  local filename
+  local to_restore
+  local dropbox_output # var for dropbox output
 
   bk_file="nginx-configs-files-${date}.tar.bz2"
   bk_to_download="${chosen_server}/configs/nginx/${bk_file}"
@@ -363,7 +363,7 @@ function restore_nginx_site_files() {
 
       log_event "info" "File to restore: ${to_restore} ..."
 
-    fi    
+    fi
 
     if [[ -f "${WSERVER}/sites-available/${filename}" ]]; then
 
@@ -374,9 +374,8 @@ function restore_nginx_site_files() {
 
     fi
 
-
     log_event "info" "Restoring nginx configuration from backup: ${filename}"
-    
+
     # Copy files
     cp "${to_restore}" "${WSERVER}/sites-available/${filename}"
 
@@ -385,7 +384,7 @@ function restore_nginx_site_files() {
 
     #display --indent 6 --text "- Restoring Nginx server config" --result "DONE" --color GREEN
     #nginx_server_change_domain "${WSERVER}/sites-enabled/${filename}" "${domain}" "${domain}"
-    
+
     nginx_configuration_test
 
   else
@@ -405,14 +404,14 @@ function restore_letsencrypt_site_files() {
   local domain=$1
   local date=$2
 
-  local bk_file 
+  local bk_file
   local bk_to_download
 
   bk_file="letsencrypt-configs-files-${date}.tar.bz2"
   bk_to_download="${chosen_server}/configs/letsencrypt/${bk_file}"
 
   log_event "debug" "Running: ${DROPBOX_UPLOADER} download ${bk_to_download}"
-  
+
   dropbox_output=$(${DROPBOX_UPLOADER} download "${bk_to_download}" 1>&2)
 
   # Extract tar.bz2 with lbzip2
@@ -446,17 +445,17 @@ function restore_letsencrypt_site_files() {
   fi
   if [[ ! -f "/etc/letsencrypt/ssl-dhparams.pem" ]]; then
     cp -r "${SFOLDER}/tmp/letsencrypt/ssl-dhparams.pem" "/etc/letsencrypt/"
-    
+
   fi
 
   # TODO: Restore main files (checking non-www and www domains)
   if [[ ! -f "${SFOLDER}/tmp/letsencrypt/archive/${domain}" ]]; then
     cp -r "${SFOLDER}/tmp/letsencrypt/archive/${domain}" "/etc/letsencrypt/archive/"
-    
+
   fi
   if [[ ! -f "${SFOLDER}/tmp/letsencrypt/live/${domain}" ]]; then
     cp -r "${SFOLDER}/tmp/letsencrypt/live/${domain}" "/etc/letsencrypt/live/"
-    
+
   fi
 
   display --indent 6 --text "- Restoring letsencrypt config files" --result "DONE" --color GREEN
@@ -469,8 +468,8 @@ function restore_site_files() {
 
   local domain=$1
 
-  local actual_folder 
-  local folder_to_install 
+  local actual_folder
+  local folder_to_install
   local chosen_domain
 
   log_subsection "Restore Files Backup"
@@ -510,12 +509,12 @@ function restore_site_files() {
     # Restore files
     log_event "info" "Restoring backup files on ${folder_to_install} ..."
     display --indent 6 --text "- Restoring backup files"
-    
+
     mv "${project_tmp_new_folder}" "${folder_to_install}"
 
     clear_last_line
     display --indent 6 --text "- Restoring backup files" --result "DONE" --color GREEN
-    
+
     # TODO: we need another aproach for other kind of projects
     # Search wp-config.php (to find wp installation on sub-folders)
     install_path=$(wp_config_path "${actual_folder}")
@@ -528,11 +527,11 @@ function restore_site_files() {
       log_event "info" "Wordpress intallation found on: ${install_path}"
       log_event "info" "Files backup restored on: ${install_path}"
 
-      wp_change_permissions "${install_path}" 
+      wp_change_permissions "${install_path}"
 
       # Return
       echo "${chosen_domain}"
-    
+
     fi
 
   else
@@ -544,7 +543,7 @@ function restore_site_files() {
 }
 
 function restore_type_selection_from_dropbox() {
-  
+
   # TODO: check project type (WP? Laravel? other?)
   # ask for directory_browser if apply
   # add credentials on external txt and send email
@@ -555,17 +554,17 @@ function restore_type_selection_from_dropbox() {
   local chosen_server=$1
   local dropbox_type_list=$2
 
-  local chosen_type                     # whiptail var
-  local chosen_backup_to_restore        # whiptail var
-  local dropbox_chosen_type_path        # whiptail var
-  local dropbox_project_list            # list of projects on dropbox directory
-  local dropbox_chosen_backup_path      # whiptail var
-  local dropbox_backup_list             # dropbox listing directories
-  local domain                          # extracted domain
-  local db_project_name                 # extracted db name
-  local bk_to_dowload                   # backup to download
-  local folder_to_install               # directory to install project
-  local project_site                    # project site
+  local chosen_type                # whiptail var
+  local chosen_backup_to_restore   # whiptail var
+  local dropbox_chosen_type_path   # whiptail var
+  local dropbox_project_list       # list of projects on dropbox directory
+  local dropbox_chosen_backup_path # whiptail var
+  local dropbox_backup_list        # dropbox listing directories
+  local domain                     # extracted domain
+  local db_project_name            # extracted db name
+  local bk_to_dowload              # backup to download
+  local folder_to_install          # directory to install project
+  local project_site               # project site
 
   chosen_type=$(whiptail --title "RESTORE FROM BACKUP" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 $(for x in ${dropbox_type_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
@@ -582,7 +581,7 @@ function restore_type_selection_from_dropbox() {
       #log_subsection "Restore ${chosen_type} Backup"
 
       dropbox_project_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_type_path}")"
-      
+
       if [[ "${chosen_type}" == *"configs"* ]]; then
 
         restore_config_files_from_dropbox "${dropbox_chosen_type_path}" "${dropbox_project_list}"
@@ -638,7 +637,7 @@ function restore_type_selection_from_dropbox() {
 
             # Running mysql_name_sanitize $for project_name
             db_project_name=$(mysql_name_sanitize "${project_name}")
-            
+
             # Restore database
             restore_database_backup "${db_project_name}" "${project_state}" "${chosen_backup_to_restore}"
 
@@ -709,16 +708,16 @@ function restore_type_selection_from_dropbox() {
 
             fi
 
+          else
+            # site
 
-          else # site
-
-            # Here, for convention, chosen_project should be CHOSEN_DOMAIN... 
+            # Here, for convention, chosen_project should be CHOSEN_DOMAIN...
             # Only for better code reading, i assign this new var:
             chosen_domain="${chosen_project}"
             restore_site_files "${chosen_domain}"
 
           fi
-        
+
         fi
 
       fi
@@ -735,12 +734,12 @@ function restore_project() {
 
   local chosen_server=$1
 
-  local dropbox_project_list 
-  local chosen_project 
-  local dropbox_chosen_backup_path 
-  local dropbox_backup_list 
-  local bk_to_dowload 
-  local chosen_backup_to_restore 
+  local dropbox_project_list
+  local chosen_project
+  local dropbox_chosen_backup_path
+  local dropbox_backup_list
+  local bk_to_dowload
+  local chosen_backup_to_restore
   local db_to_download
 
   log_subsection "Restore Project Backup"
@@ -756,7 +755,7 @@ function restore_project() {
     # Get dropbox backup list
     dropbox_chosen_backup_path="${chosen_server}/site/${chosen_project}"
     dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}")"
-  
+
   else
 
     display --indent 6 --text "- Restore project backup" --result "SKIPPED" --color YELLOW
@@ -777,7 +776,7 @@ function restore_project() {
     bk_to_dowload="${chosen_server}/site/${chosen_project}/${chosen_backup_to_restore}"
     dropbox_download "${bk_to_dowload}" "${TMP_DIR}"
 
-    # Uncompress backup file    
+    # Uncompress backup file
     pv --width 70 "${TMP_DIR}/${chosen_backup_to_restore}" | ${TAR} xp -C "${TMP_DIR}" --use-compress-program=lbzip2
     log_event "debug" "Running: pv --width 70 ${TMP_DIR}/${chosen_backup_to_restore} | ${TAR} xp -C ${TMP_DIR} --use-compress-program=lbzip2"
 
@@ -790,35 +789,35 @@ function restore_project() {
 
     log_event "debug" "Project Type: ${project_type}"
 
-    # Here, for convention, chosen_project should be CHOSEN_DOMAIN... 
+    # Here, for convention, chosen_project should be CHOSEN_DOMAIN...
     # Only for better code reading, i assign this new var:
     chosen_domain="${chosen_project}"
 
     case ${project_type} in
 
-      wordpress)
-        display --indent 8 --text "Project Type WordPress" --tcolor GREEN
+    wordpress)
+      display --indent 8 --text "Project Type WordPress" --tcolor GREEN
 
-        # Reading config file
-        db_name=$(project_get_configured_database "${TMP_DIR}/${chosen_project}" "wordpress")
-        db_user=$(project_get_configured_database_user "${TMP_DIR}/${chosen_project}" "wordpress")
-        db_pass=$(project_get_configured_database_userpassw "${TMP_DIR}/${chosen_project}" "wordpress")
+      # Reading config file
+      db_name=$(project_get_configured_database "${TMP_DIR}/${chosen_project}" "wordpress")
+      db_user=$(project_get_configured_database_user "${TMP_DIR}/${chosen_project}" "wordpress")
+      db_pass=$(project_get_configured_database_userpassw "${TMP_DIR}/${chosen_project}" "wordpress")
 
-        # Restore site files
-        new_project_domain="$(restore_site_files "${chosen_domain}")"
+      # Restore site files
+      new_project_domain="$(restore_site_files "${chosen_domain}")"
       ;;
 
-      laravel)
-        display --indent 8 --text "Project Type Laravel" --tcolor RED
+    laravel)
+      display --indent 8 --text "Project Type Laravel" --tcolor RED
       ;;
 
-      yii)
-        display --indent 8 --text "Project Type Yii" --tcolor RED
+    yii)
+      display --indent 8 --text "Project Type Yii" --tcolor RED
       ;;
 
-      *)
-        display --indent 8 --text "Project Type Unknown" --tcolor RED
-        return 1
+    *)
+      display --indent 8 --text "Project Type Unknown" --tcolor RED
+      return 1
       ;;
 
     esac
@@ -839,11 +838,11 @@ function restore_project() {
     fi
 
     # Database Backup
-    backup_date="$(echo "${chosen_backup_to_restore}" |grep -Eo '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')"
+    backup_date="$(echo "${chosen_backup_to_restore}" | grep -Eo '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')"
     db_to_download="${chosen_server}/database/${db_name}/${db_name}_database_${backup_date}.tar.bz2"
 
-    # Extracting project_state from   
-    project_state="$(cut -d'_' -f2 <<< ${db_name})"
+    # Extracting project_state from
+    project_state="$(cut -d'_' -f2 <<<${db_name})"
 
     # Log
     log_event "debug" "Selected project: ${chosen_project}"
@@ -885,7 +884,7 @@ function restore_project() {
 
     # Uncompress backup file
     log_event "info" "Uncompressing ${db_to_download}"
-    
+
     pv --width 70 "${TMP_DIR}/${db_name}_database_${backup_date}.tar.bz2" | tar xp -C "${TMP_DIR}/" --use-compress-program=lbzip2
 
     clear_last_line
@@ -895,9 +894,9 @@ function restore_project() {
     # Trying to extract project name from domain
     chosen_root_domain="$(get_root_domain "${chosen_domain}")"
     possible_project_name="$(extract_domain_extension "${chosen_root_domain}")"
-    
+
     # Asking project state with suggested actual state
-    suffix="$(cut -d'_' -f2 <<< ${chosen_project})"
+    suffix="$(cut -d'_' -f2 <<<${chosen_project})"
     project_state=$(ask_project_state "${suffix}")
 
     # Asking project name
@@ -941,7 +940,7 @@ function restore_project() {
       letsencrypt_opt_text="\n Do you want to restore let's encrypt certificates or generate a new ones?"
 
       letsencrypt_opt=(
-        "01)" "RESTORE CERTIFICATES" 
+        "01)" "RESTORE CERTIFICATES"
         "02)" "GENERATE NEW CERTIFICATES"
       )
 
@@ -949,9 +948,9 @@ function restore_project() {
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
-        
+
         if [[ ${letsencrypt_chosen_opt} == *"01"* ]]; then
-          
+
           restore_letsencrypt_site_files "${chosen_domain}" "${backup_date}"
 
           # If choose restore config, need to restore nginx config and run cerbot
@@ -967,12 +966,12 @@ function restore_project() {
 
           # TODO: need to remove hardcoded parameters "wordpress" and "single"
           nginx_server_create "${new_project_domain}" "wordpress" "single"
-          
+
           # Cloudflare API
           possible_root_domain="$(get_root_domain "${new_project_domain}")"
           root_domain=$(cloudflare_ask_root_domain "${possible_root_domain}")
           cloudflare_change_a_record "${root_domain}" "${new_project_domain}"
-          
+
           certbot_certificate_install "${MAILA}" "${chosen_domain}"
 
         fi
@@ -982,10 +981,10 @@ function restore_project() {
     else
 
       # Need to create new configs
-      
+
       # TODO: remove hardcoded parameters "wordpress" and "single"
       nginx_server_create "${new_project_domain}" "wordpress" "single"
-      
+
       # Cloudflare API
       possible_root_domain="$(get_root_domain "${chosen_domain}")"
       root_domain=$(cloudflare_ask_root_domain "${possible_root_domain}")
@@ -1006,7 +1005,7 @@ function restore_project() {
       wpcli_change_wp_seo_visibility "${install_path}" "0"
 
     fi
-        
+
     telegram_send_message "✅ ${VPSNAME}: Project ${new_project_domain} restored"
 
   fi

@@ -15,10 +15,10 @@
 #
 ################################################################################
 
-function nginx_default_installer() { 
+function nginx_default_installer() {
 
-    apt-get --yes install nginx -qq > /dev/null
-  
+    apt-get --yes install nginx -qq >/dev/null
+
     display --indent 6 --text "- Nginx default installation" --result "DONE" --color GREEN
 
 }
@@ -30,9 +30,9 @@ function nginx_custom_installer() {
 
     add_ppa "nginx/stable"
 
-    apt-get update -qq > /dev/null
+    apt-get update -qq >/dev/null
 
-    apt-get --yes install nginx -qq > /dev/null
+    apt-get --yes install nginx -qq >/dev/null
 
     display --indent 6 --text "- Nginx custom installation" --result "DONE" --color GREEN
 
@@ -42,7 +42,7 @@ function nginx_webp_installer() {
 
     display --indent 6 --text "- Installing imagemagick and webp package"
 
-    apt-get --yes install imagemagick webp -qq > /dev/null
+    apt-get --yes install imagemagick webp -qq >/dev/null
 
     clear_last_line
     display --indent 6 --text "- Installing imagemagick and webp package" --result "DONE" --color GREEN
@@ -53,7 +53,7 @@ function nginx_purge_installation() {
 
     display --indent 6 --text "- Purgin nginx from system"
 
-    apt-get --yes purge nginx -qq > /dev/null
+    apt-get --yes purge nginx -qq >/dev/null
 
     clear_last_line
     display --indent 6 --text "- Purgin nginx from system" --result "DONE" --color GREEN
@@ -88,15 +88,15 @@ function nginx_installer_menu() {
     if [[ ${nginx_installed} == "false" ]]; then
 
         NGINX_INSTALLER_OPTIONS=(
-            "01)" "NGINX STANDARD" 
+            "01)" "NGINX STANDARD"
             "02)" "NGINX LAST STABLE"
         )
 
     else
 
         NGINX_INSTALLER_OPTIONS=(
-            "01)" "NGINX STANDARD" 
-            "02)" "NGINX LAST STABLE" 
+            "01)" "NGINX STANDARD"
+            "02)" "NGINX LAST STABLE"
             "03)" "NGINX RECONFIGURE"
         )
 

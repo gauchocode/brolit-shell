@@ -15,10 +15,10 @@ function netdata_required_packages() {
   display --indent 6 --text "- Installing netdata required packages"
 
   if [[ "${ubuntu_version}" = "1804" ]]; then
-    apt-get --yes install zlib1g-dev uuid-dev libuv1-dev liblz4-dev libjudy-dev libssl-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python python-mysqldb lm-sensors libmnl netcat nodejs python-ipaddress python-dnspython iproute2 python-beanstalkc libuv liblz4 Judy openssl -qq > /dev/null
-  
+    apt-get --yes install zlib1g-dev uuid-dev libuv1-dev liblz4-dev libjudy-dev libssl-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python python-mysqldb lm-sensors libmnl netcat nodejs python-ipaddress python-dnspython iproute2 python-beanstalkc libuv liblz4 Judy openssl -qq >/dev/null
+
   elif [[ "${ubuntu_version}" = "2004" ]]; then
-    apt-get --yes install curl python3-mysqldb lm-sensors libmnl netcat openssl -qq > /dev/null
+    apt-get --yes install curl python3-mysqldb lm-sensors libmnl netcat openssl -qq >/dev/null
 
   fi
 
@@ -51,7 +51,7 @@ function netdata_configuration() {
   mysql_user_create "netdata"
   mysql_user_grant_privileges "netdata" "*"
 
-  cat "${SFOLDER}/config/netdata/python.d/mysql.conf" > "/etc/netdata/python.d/mysql.conf"
+  cat "${SFOLDER}/config/netdata/python.d/mysql.conf" >"/etc/netdata/python.d/mysql.conf"
   log_event "info" "MySQL config done!"
   display --indent 6 --text "- MySQL configuration" --result "DONE" --color GREEN
 
@@ -140,9 +140,9 @@ function netdata_telegram_config() {
 
       # making changes on health_alarm_notify.conf
       sed -i "s/^\(DEFAULT_RECIPIENT_TELEGRAM\s*=\s*\).*\$/\1\"$DEFAULT_RECIPIENT_TELEGRAM|$NETDATA_ALARM_LEVEL\"/" $HEALTH_ALARM_NOTIFY_CONF
-      
+
       # Uncomment the clear_alarm_always='YES' parameter on health_alarm_notify.conf
-      if grep -q '^#.*clear_alarm_always' $HEALTH_ALARM_NOTIFY_CONF; then 
+      if grep -q '^#.*clear_alarm_always' $HEALTH_ALARM_NOTIFY_CONF; then
         sed -i '/^#.*clear_alarm_always/ s/^#//' $HEALTH_ALARM_NOTIFY_CONF
       fi
 
@@ -192,54 +192,54 @@ function netdata_installer_menu() {
       read -p "Please type 'y' or 'n'" yn
 
       case $yn in
-      
-        [Yy]*)
 
-          clear_last_line
-          clear_last_line
+      [Yy]*)
 
-          log_subsection "Netdata Installer"
+        clear_last_line
+        clear_last_line
 
-          log_event "info" "Updating packages before installation ..."
+        log_subsection "Netdata Installer"
 
-          apt-get --yes update -qq > /dev/null
+        log_event "info" "Updating packages before installation ..."
 
-          display --indent 6 --text "- Updating packages before installation" --result "DONE" --color GREEN
+        apt-get --yes update -qq >/dev/null
 
-          netdata_required_packages
+        display --indent 6 --text "- Updating packages before installation" --result "DONE" --color GREEN
 
-          netdata_installer
+        netdata_required_packages
 
-          # Netdata nginx proxy configuration
-          nginx_server_create "${netdata_subdomain}" "netdata" "tool"
+        netdata_installer
 
-          netdata_configuration
+        # Netdata nginx proxy configuration
+        nginx_server_create "${netdata_subdomain}" "netdata" "tool"
 
-          # Confirm ROOT_DOMAIN
-          root_domain=$(cloudflare_ask_root_domain "${suggested_root_domain}")
+        netdata_configuration
 
-          # Cloudflare API
-          cloudflare_change_a_record "${root_domain}" "${netdata_subdomain}"
+        # Confirm ROOT_DOMAIN
+        root_domain=$(cloudflare_ask_root_domain "${suggested_root_domain}")
 
-          DOMAIN=${netdata_subdomain}
-          #CHOSEN_CB_OPTION="1"
-          #export CHOSEN_CB_OPTION DOMAIN
+        # Cloudflare API
+        cloudflare_change_a_record "${root_domain}" "${netdata_subdomain}"
 
-          # HTTPS with Certbot
-          certbot_certificate_install "${MAILA}" "${DOMAIN}"
+        DOMAIN=${netdata_subdomain}
+        #CHOSEN_CB_OPTION="1"
+        #export CHOSEN_CB_OPTION DOMAIN
 
-          display --indent 6 --text "- Netdata installation" --result "DONE" --color GREEN
+        # HTTPS with Certbot
+        certbot_certificate_install "${MAILA}" "${DOMAIN}"
 
-          break
-          ;;
+        display --indent 6 --text "- Netdata installation" --result "DONE" --color GREEN
 
-        [Nn]*)
+        break
+        ;;
 
-          log_event "warning" "Aborting netdata installer script ..." "true"
-          break
-          ;;
+      [Nn]*)
 
-        *) echo " > Please answer yes or no." ;;
+        log_event "warning" "Aborting netdata installer script ..." "true"
+        break
+        ;;
+
+      *) echo " > Please answer yes or no." ;;
 
       esac
 
@@ -248,11 +248,11 @@ function netdata_installer_menu() {
   else
 
     NETDATA_OPTIONS=(
-      "01)" "UPDATE NETDATA" 
-      "02)" "CONFIGURE NETDATA" 
-      "03)" "UNINSTALL NETDATA" 
+      "01)" "UPDATE NETDATA"
+      "02)" "CONFIGURE NETDATA"
+      "03)" "UNINSTALL NETDATA"
       "04)" "SEND ALARM TEST"
-      )
+    )
 
     NETDATA_CHOSEN_OPTION=$(whiptail --title "Netdata Installer" --menu "Netdata is already installed." 20 78 10 "${NETDATA_OPTIONS[@]}" 3>&1 1>&2 2>&3)
     exitstatus=$?
@@ -273,45 +273,45 @@ function netdata_installer_menu() {
       if [[ ${NETDATA_CHOSEN_OPTION} == *"03"* ]]; then
 
         while true; do
-          
+
           echo -e "${YELLOW}${ITALIC} > Do you really want to uninstall netdata?${ENDCOLOR}"
           read -p "Please type 'y' or 'n'" yn
 
           case $yn in
 
-            [Yy]*)
+          [Yy]*)
 
-              log_event "warning" "Uninstalling Netdata ..." "false"
+            log_event "warning" "Uninstalling Netdata ..." "false"
 
-              # Deleting mysql user
-              mysql_user_delete "netdata"
-              
-              # Deleting nginx server files
-              rm --force "/etc/nginx/sites-enabled/monitor"
-              rm --force "/etc/nginx/sites-available/monitor"
+            # Deleting mysql user
+            mysql_user_delete "netdata"
 
-              # Deleting installation files
-              rm --force --recursive "/etc/netdata"
-              rm --force "/etc/systemd/system/netdata.service"
-              rm --force "/usr/sbin/netdata"
+            # Deleting nginx server files
+            rm --force "/etc/nginx/sites-enabled/monitor"
+            rm --force "/etc/nginx/sites-available/monitor"
 
-              # Running uninstaller
-              source "/usr/libexec/netdata-uninstaller.sh" --yes --dont-wait
+            # Deleting installation files
+            rm --force --recursive "/etc/netdata"
+            rm --force "/etc/systemd/system/netdata.service"
+            rm --force "/usr/sbin/netdata"
 
-              log_event "info" "Netdata removed ok!" "false"
-              display --indent 6 --text "- Uninstalling netdata" --result "DONE" --color GREEN
+            # Running uninstaller
+            source "/usr/libexec/netdata-uninstaller.sh" --yes --dont-wait
 
-              break
-              ;;
+            log_event "info" "Netdata removed ok!" "false"
+            display --indent 6 --text "- Uninstalling netdata" --result "DONE" --color GREEN
 
-            [Nn]*)
+            break
+            ;;
 
-              log_event "warning" "Aborting netdata installer script ..." "false"
+          [Nn]*)
 
-              break
-              ;;
+            log_event "warning" "Aborting netdata installer script ..." "false"
 
-            *) echo " > Please answer yes or no." ;;
+            break
+            ;;
+
+          *) echo " > Please answer yes or no." ;;
 
           esac
 
@@ -326,5 +326,5 @@ function netdata_installer_menu() {
     fi
 
   fi
-  
+
 }

@@ -9,12 +9,15 @@
 #set -e
 
 ### Environment checks
-[ "${BASH_VERSINFO:-0}" -lt 4 ] && { echo "At least Bash version 4 is required. Aborting..." >&2 ; exit 2; }
+[ "${BASH_VERSINFO:-0}" -lt 4 ] && {
+  echo "At least Bash version 4 is required. Aborting..." >&2
+  exit 2
+}
 
 ### Main dir check
 SFOLDER=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 if [[ -z "${SFOLDER}" ]]; then
-  exit 1  # error; the path is not accessible
+  exit 1 # error; the path is not accessible
 fi
 
 # Main library
@@ -28,7 +31,7 @@ source "${SFOLDER}/libs/commons.sh"
 if [[ -t 1 ]]; then
 
   # RUNNING FROM TERMINAL
-  
+
   script_init # Script initialization
 
   # With "$#" we can check the number of arguments received when the script is runned

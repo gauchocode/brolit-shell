@@ -4,67 +4,107 @@
 # Version: 3.0.21
 ################################################################################
 
+function certbot_check_if_installed() {
+
+  local certbot_installed
+  local certbot
+
+  certbot="$(command -v certbot)"
+  if [[ ! -x "${certbot}" ]]; then
+    certbot_installed="false"
+
+  else
+    certbot_installed="true"
+
+  fi
+
+  log_event "debug" "certbot_installed=${certbot_installed}"
+
+  # Return
+  echo "${certbot_installed}"
+
+}
+
 function certbot_installer() {
 
-  the_ppa=certbot
+  log_subsection "Certbot Installer"
 
-  if ! grep -q "^deb .*$the_ppa" /etc/apt/sources.list /etc/apt/sources.list.d/*; then
-    
-    # Deprecated
-    #echo -e ${GREEN}" > Adding ppa:certbot/certbot ..."${ENDCOLOR}
-    #echo " > Adding ppa:certbot/certbot ..." >>$LOG
-    #add-apt-repository ppa:certbot/certbot
+  # Updating Repos
+  display --indent 6 --text "- Updating repositories"
+  apt-get --yes update -qq >/dev/null
+  clear_last_line
+  display --indent 6 --text "- Updating repositories" --result "DONE" --color GREEN
 
-    # Updating Repos
-    display --indent 6 --text "- Updating repositories"
-    apt-get --yes update -qq > /dev/null
-    clear_last_line
-    display --indent 6 --text "- Updating repositories" --result "DONE" --color GREEN
+  # Installing Certbot
+  display --indent 6 --text "- Installing certbot and dependencies"
+  log_event "info" "Installing python3-certbot-dns-cloudflare and python3-certbot-nginx"
 
-    # Installing Certbot
-    display --indent 6 --text "- Installing certbot and dependencies"
-    log_event "info" "Installing python3-certbot-dns-cloudflare and python3-certbot-nginx"
-    
-    # apt command
-    apt-get --yes install python3-certbot-dns-cloudflare python3-certbot-nginx -qq > /dev/null
-  
-    # Log
-    clear_last_line
-    display --indent 6 --text "- Installing certbot and dependencies" --result "DONE" --color GREEN
-    log_event "info" "certbot installation finished"
+  # apt command
+  apt-get --yes install python3-certbot-dns-cloudflare python3-certbot-nginx -qq >/dev/null
+
+  # Log
+  clear_last_line
+  display --indent 6 --text "- Installing certbot and dependencies" --result "DONE" --color GREEN
+  log_event "info" "certbot installation finished"
+
+}
+
+function certbot_purge() {
+
+  log_subsection "Certbot Installer"
+
+  # Log
+  display --indent 6 --text "- Removing certbot and libraries"
+  log_event "info" "Removing certbot and libraries ..."
+
+  # apt command
+  apt-get --yes purge python3-certbot-dns-cloudflare python3-certbot-nginx -qq >/dev/null
+
+  # Log
+  clear_last_line
+  display --indent 6 --text "- Removing certbot and libraries" --result "DONE" --color GREEN
+  log_event "info" "certbot removed"
+
+}
+
+function certbot_installer_menu() {
+
+  local certbot_is_installed
+
+  certbot_is_installed="$(certbot_check_if_installed)"
+
+  if [[ ${certbot_is_installed} == "false" ]]; then
+
+    certbot_installer_title="CERTBOT INSTALLER"
+    certbot_installer_message="Choose an option to run:"
+    certbot_installer_options=(
+      "01)" "INSTALL CERTBOT"
+    )
 
   else
 
-    log_event "warning" "ppa:certbot/certbot already added!"
-    
-    while true; do
-    
-      echo -e "${YELLOW}${ITALIC} > Do you want to remove the ppa:certbot/certbot?${ENDCOLOR}"
-      read -p "Please type 'y' or 'n'" yn
+    certbot_installer_title="CERTBOT INSTALLER"
+    certbot_installer_message="Choose an option to run:"
+    certbot_installer_options=(
+      "01)" "PURGE CERTBOT"
+    )
 
-      case $yn in
+  fi
 
-        [Yy]*)
+  chosen_certbot_installer_options=$(whiptail --title "${certbot_installer_title}" --menu "${certbot_installer_message}" 20 78 10 "${certbot_installer_options[@]}" 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
 
-          log_event "warning" "\nRemoving ppa:certbot/certbot and packages provided ...\n" "false"
-          # This will uninstall packages provided by the PPA, but not those provided by the official repositories
-          ppa-purge ppa:certbot/certbot
+    if [[ ${chosen_certbot_installer_options} == *"INSTALL"* ]]; then
 
-          break
-        ;;
+      certbot_installer
 
-        [Nn]*)
+    fi
+    if [[ ${chosen_certbot_installer_options} == *"PURGE"* ]]; then
 
-          log_event "warning" "Aborting script ..." "true"
-          break
+      certbot_purge
 
-        ;;
-
-        *) echo " > Please answer yes or no." ;;
-
-      esac
-
-    done
+    fi
 
   fi
 
