@@ -745,6 +745,7 @@ function restore_project() {
 
   log_subsection "Restore Project Backup"
 
+  # Get dropbox folders list
   dropbox_project_list="$(${DROPBOX_UPLOADER} -hq list "${chosen_server}/site")"
 
   # Select Project
@@ -884,6 +885,7 @@ function restore_project() {
 
     # Uncompress backup file
     log_event "info" "Uncompressing ${db_to_download}"
+    
     pv --width 70 "${TMP_DIR}/${db_name}_database_${backup_date}.tar.bz2" | tar xp -C "${TMP_DIR}/" --use-compress-program=lbzip2
 
     clear_last_line
@@ -891,29 +893,15 @@ function restore_project() {
     display --indent 6 --text "- Uncompressing backup file" --result "DONE" --color GREEN
 
     # Trying to extract project name from domain
-    #chosen_project="$(cut -d'.' -f1 <<< ${chosen_project})"
-    chosen_project="$(extract_domain_extension "${chosen_project}")"
-
+    chosen_root_domain="$(get_root_domain "${chosen_domain}")"
+    possible_project_name="$(extract_domain_extension "${chosen_root_domain}")"
+    
     # Asking project state with suggested actual state
     suffix="$(cut -d'_' -f2 <<< ${chosen_project})"
     project_state=$(ask_project_state "${suffix}")
 
-    # Extract project_name (its removes last part of db name with "_" char)
-    project_name=${chosen_project%"_$suffix"}
-
-    # TODO: extract to function
-    # Extract reserved substrings
-    #project_name=$(echo "${project_name}" | sed s/"_org"// | sed s/"_ar"// | sed s/"_com"// | sed s/"_net"// | sed s/"_edu"//)
-
-    project_name=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${project_name}" 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-      log_event "info" "Setting project_name: ${project_name}"
-
-    else
-      return 1
-
-    fi
+    # Asking project name
+    project_name="$(ask_project_name "${possible_project_name}")"
 
     # Sanitize ${project_name}
     db_project_name=$(mysql_name_sanitize "${project_name}")
@@ -948,7 +936,7 @@ function restore_project() {
     # Change wp-config.php database parameters
     wp_update_wpconfig "${install_path}" "${db_project_name}" "${project_state}" "${db_pass}"
 
-    if [[ ${new_project_domain} == ${chosen_domain} ]]; then
+    if [[ ${new_project_domain} == "${chosen_domain}" ]]; then
 
       letsencrypt_opt_text="\n Do you want to restore let's encrypt certificates or generate a new ones?"
 
