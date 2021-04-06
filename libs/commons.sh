@@ -1276,16 +1276,16 @@ function ask_project_name() {
 
   #$1 = ${project_name} optional to select default option
 
-  local name=$1
+  local project_name=$1
 
   # Replace '-' and '.' chars
-  name=$(echo "${name}" | sed -r 's/[.-]+/_/g')
+  possible_name=$(echo "${project_name}" | sed -r 's/[.-]+/_/g')
 
-  # TODO: remove some suffix keywords '_com' '_ar' '_es' ... and prefix 'www_'
-
-  project_name=$(whiptail --title "Project Name" --inputbox "Insert a project name (only separator allow is '_'). Ex: my_domain" 10 60 "${name}" 3>&1 1>&2 2>&3)
+  project_name=$(whiptail --title "Project Name" --inputbox "Insert a project name (only separator allow is '_'). Ex: my_domain" 10 60 "${possible_name}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
+
+    log_event "debug" "Setting project_name: ${project_name}"
 
     # Return
     echo "${project_name}"

@@ -949,3 +949,61 @@ function wpcli_option_get_siteurl() {
     echo "${wp_option_siteurl}"
 
 }
+
+function wpcli_config_get() {
+
+    # $1 = ${wp_site}
+    # $2 = ${wp_config_option}
+
+    local wp_site=$1
+    local wp_config_option=$2
+
+    # wp-cli command
+    wp_config="$(sudo -u www-data wp --path="${wp_site}" config get "${wp_config_option}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        log_event "debug" "Command executed: sudo -u www-data wp --path=${wp_site} config get ${wp_config_option}"
+        log_event "debug" "wp config get return:${wp_config}"
+        return 0
+
+    else
+
+        log_event "debug" "Command executed: sudo -u www-data wp --path=${wp_site} config get ${wp_config_option}"
+        log_event "error" "wp config get return:${wp_config}"
+        return 1
+
+    fi
+
+}
+
+function wpcli_config_set() {
+
+    # $1 = ${wp_site}
+    # $2 = ${wp_config_option}
+    # $3 = ${wp_config_option_value}
+
+    local wp_site=$1
+    local wp_config_option=$2
+    local wp_config_option_value=$3
+
+    # wp-cli command
+    wp_config="$(sudo -u www-data wp --path="${wp_site}" config set "${wp_config_option}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        log_event "debug" "Command executed: sudo -u www-data wp --path=${wp_site} config set ${wp_config_option} ${wp_config_option_value}"
+        log_event "debug" "wp config get return:${wp_config}"
+        return 0
+
+    else
+
+        log_event "debug" "Command executed: sudo -u www-data wp --path=${wp_site} config set ${wp_config_option} ${wp_config_option_value}"
+        log_event "error" "wp config get return:${wp_config}"
+        return 1
+
+    fi
+
+}
