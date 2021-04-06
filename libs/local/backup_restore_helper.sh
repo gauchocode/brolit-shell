@@ -959,7 +959,7 @@ function restore_project() {
           # Cloudflare API
           possible_root_domain="$(get_root_domain "${chosen_domain}")"
           root_domain=$(cloudflare_ask_root_domain "${possible_root_domain}")
-          cloudflare_change_a_record "${root_domain}" "${new_project_domain}"
+          cloudflare_set_a_record "${root_domain}" "${new_project_domain}"
 
         fi
         if [[ ${letsencrypt_chosen_opt} == *"02"* ]]; then
@@ -970,7 +970,7 @@ function restore_project() {
           # Cloudflare API
           possible_root_domain="$(get_root_domain "${new_project_domain}")"
           root_domain=$(cloudflare_ask_root_domain "${possible_root_domain}")
-          cloudflare_change_a_record "${root_domain}" "${new_project_domain}"
+          cloudflare_set_a_record "${root_domain}" "${new_project_domain}"
 
           certbot_certificate_install "${MAILA}" "${chosen_domain}"
 
@@ -988,7 +988,7 @@ function restore_project() {
       # Cloudflare API
       possible_root_domain="$(get_root_domain "${chosen_domain}")"
       root_domain=$(cloudflare_ask_root_domain "${possible_root_domain}")
-      cloudflare_change_a_record "${root_domain}" "${new_project_domain}"
+      cloudflare_set_a_record "${root_domain}" "${new_project_domain}"
 
       certbot_certificate_install "${MAILA}" "${new_project_domain}"
 
