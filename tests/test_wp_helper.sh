@@ -18,7 +18,7 @@ function test_wpcli_helper_funtions() {
 
     # Create mock project
     db_project_name=$(mysql_name_sanitize "${project_name}")
-    database_name="${db_project_name}_${project_state}" 
+    database_name="${db_project_name}_${project_state}"
     database_user="${db_project_name}_user"
     database_user_passw="$(openssl rand -hex 12)"
 
@@ -39,7 +39,7 @@ function test_wpcli_helper_funtions() {
     #test_wpcli_get_wpcore_version "${SITES}/${project_domain}"
 
     #test_wpcli_get_db_prefix "${SITES}/${project_domain}"
-    
+
     #test_wpcli_change_tables_prefix "${SITES}/${project_domain}"
 
     #test_wpcli_get_db_prefix "${SITES}/${project_domain}"
@@ -55,9 +55,9 @@ function test_wpcli_option_get_home() {
     local project_path=$1
 
     log_subsection "Test: test_wpcli_option_get_home"
-    
+
     result="$(wpcli_option_get_home "${project_path}")"
-    if [[ ${result} = "http://test.domain.com" ]]; then 
+    if [[ ${result} = "http://test.domain.com" ]]; then
         display --indent 6 --text "- wpcli_option_get_home" --result "PASS" --color WHITE
         display --indent 6 --text "result: ${result}" --tcolor GREEN
     else
@@ -92,7 +92,7 @@ function test_wp_config_path() {
     log_subsection "Test: test_wp_config_path"
 
     result="$(wp_config_path "${project_path}")"
-    if [[ ${result} != "" ]]; then 
+    if [[ ${result} != "" ]]; then
         display --indent 6 --text "- wp_config_path result ${result}" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- wp_config_path" --result "FAIL" --color RED
@@ -104,9 +104,9 @@ function test_wp_config_path() {
 function test_is_wp_project() {
 
     log_subsection "Test: test_is_wp_project"
-    
+
     result="$(is_wp_project "${project_path}")"
-    if [[ ${result} = "true" ]]; then 
+    if [[ ${result} = "true" ]]; then
         display --indent 6 --text "- is_wp_project result ${result}" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- is_wp_project" --result "FAIL" --color RED
