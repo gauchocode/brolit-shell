@@ -6,8 +6,8 @@
 
 function wpcli_install_if_not_installed() {
 
-    local wpcli 
-    
+    local wpcli
+
     wpcli="$(command -v wp)"
 
     if [[ ! -x "${wpcli}" ]]; then
@@ -19,7 +19,7 @@ function wpcli_install_if_not_installed() {
 function wpcli_check_if_installed() {
 
     local wpcli_installed wpcli_v
-    
+
     wpcli_installed="true"
 
     wpcli_v=$(wpcli_check_version)
@@ -63,7 +63,7 @@ function wpcli_install() {
     clear_last_line
     display --indent 6 --text "- Installing wp-cli" --result "DONE" --color GREEN
     log_event "info" "wp-cli installed"
-    
+
 }
 
 function wpcli_update() {
@@ -187,12 +187,12 @@ function wpcli_run_startup_script() {
     sudo -u www-data wp --path="${wp_site}" theme delete twentyseventeen --quiet
     sudo -u www-data wp --path="${wp_site}" theme delete twentynineteen --quiet
     display --indent 6 --text "- Deleting default themes" --result "DONE" --color GREEN
-    
+
     # Delete default plugins
     sudo -u www-data wp --path="${wp_site}" plugin delete akismet --quiet
     sudo -u www-data wp --path="${wp_site}" plugin delete hello --quiet
     display --indent 6 --text "- Deleting default plugins" --result "DONE" --color GREEN
-    
+
     # Changing permalinks structure
     sudo -u www-data wp --path="${wp_site}" rewrite structure '/%postname%/' --quiet
     display --indent 6 --text "- Changing rewrite structure" --result "DONE" --color GREEN
@@ -226,7 +226,7 @@ function wpcli_create_config() {
 
     # Log
     log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} config create --dbname=${database} --dbuser=${db_user_name} --dbpass=${db_user_passw} --locale=${wp_locale}"
-    
+
     # wp-cli command
     sudo -u www-data wp --path="${wp_site}" config create --dbname="${database}" --dbuser="${db_user_name}" --dbpass="${db_user_passw}" --locale="${wp_locale}" --quiet
 
@@ -247,10 +247,10 @@ function wpcli_install_needed_extensions() {
 
     # Rename DB Prefix
     wp --allow-root package install "iandunn/wp-cli-rename-db-prefix"
-    
+
     # Salts
     wp --allow-root package install "sebastiaandegeus/wp-cli-salts-comman"
-    
+
     # Vulnerability Scanner
     wp --allow-root package install "git@github.com:10up/wp-vulnerability-scanner.git"
 
@@ -282,7 +282,7 @@ function wpcli_core_download() {
 
     if [ "${wp_site}" != "" ]; then
 
-        if [ "${wp_version}" != "" ];then
+        if [ "${wp_version}" != "" ]; then
 
             # wp-cli command
             sudo -u www-data wp --path="${wp_site}" core download --version="${wp_version}" --quiet
@@ -382,7 +382,7 @@ function wpcli_core_reinstall() {
             echo "fail"
 
         fi
-        
+
     else
         # Log failure
         log_event "fail" "wp_site can't be empty!"
@@ -406,8 +406,8 @@ function wpcli_core_update() {
     log_section "WordPress Updater"
 
     verify_core_update=$(sudo -u www-data wp --path="${wp_site}" update | grep ":" | cut -d ':' -f1)
-    
-    if [ "${verify_core_update}" = "Success" ];then
+
+    if [ "${verify_core_update}" = "Success" ]; then
 
         display --indent 6 --text "- Download new WordPress version" --result "DONE" --color GREEN
 
@@ -434,7 +434,7 @@ function wpcli_core_update() {
 
         log_event "error" "Wordpress update failed" "false"
         display --indent 6 --text "- Download new WordPress version" --result "FAIL" --color RED
-    
+
     fi
 
     echo "${verify_core_update}" #if ok, return "Success"
@@ -466,7 +466,7 @@ function wpcli_plugin_verify() {
     local wp_site=$1
     local plugin=$2
 
-    local verify_plugin   
+    local verify_plugin
 
     if [ "${plugin}" = "" ]; then
         plugin="--all"
@@ -490,16 +490,15 @@ function wpcli_delete_not_core_files() {
 
     display --indent 6 --text "- Scanning for suspicious WordPress files" --result "DONE" --color GREEN
 
-    mapfile -t wpcli_core_verify_results < <( wpcli_core_verify "${wp_site}" )
+    mapfile -t wpcli_core_verify_results < <(wpcli_core_verify "${wp_site}")
 
-    for wpcli_core_verify_result in "${wpcli_core_verify_results[@]}"
-    do
+    for wpcli_core_verify_result in "${wpcli_core_verify_results[@]}"; do
         # Check results
-        wpcli_core_verify_result_file=$(echo "${wpcli_core_verify_result}" |  grep "should not exist" | cut -d ":" -f3)
-        
+        wpcli_core_verify_result_file=$(echo "${wpcli_core_verify_result}" | grep "should not exist" | cut -d ":" -f3)
+
         # Remove white space
         wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
-        
+
         if test -f "${wp_site}/${wpcli_core_verify_result_file}"; then
 
             log_event "info" "Deleting not core file: ${wp_site}/${wpcli_core_verify_result_file}"
@@ -562,7 +561,7 @@ function wpcli_update_plugin() {
     local wp_site=$1
     local plugin=$2
 
-    local plugin_update   
+    local plugin_update
 
     if [ "${plugin}" = "" ]; then
         plugin="--all"
@@ -635,7 +634,7 @@ function wpcli_delete_plugin() {
 
     log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin delete ${plugin}"
     display --indent 6 --text "- Deleting plugin ${plugin}" --result "DONE" --color GREEN
-    
+
     sudo -u www-data wp --path="${wp_site}" plugin delete "${plugin}" --quiet
 
     clear_last_line
@@ -794,7 +793,7 @@ function wpcli_search_and_replace() {
     fi
 
     log_event "debug" "Running: wp --allow-root --path=${wp_site} cache flush" "false"
-    
+
     wp --allow-root --path="${wp_site}" cache flush --quiet
 
     display --indent 6 --text "- Flushing cache" --result "DONE" --color GREEN
@@ -818,25 +817,25 @@ function wpcli_export_database() {
 
 function wpcli_force_reinstall_plugins() {
 
-   # $1 = ${wp_site}
-   # $2 = ${plugin}
+    # $1 = ${wp_site}
+    # $2 = ${plugin}
 
     local wp_site=$1
     local plugin=$2
 
-    local verify_plugin   
+    local verify_plugin
 
     if [ "${plugin}" = "" ]; then
 
         log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin install $(ls -1p "${wp_site}"/wp-content/plugins | grep '/$' | sed 's/\/$//') --force"
         sudo -u www-data wp --path="${wp_site}" plugin install "$(ls -1p "${wp_site}"/wp-content/plugins | grep '/$' | sed 's/\/$//')" --force
-    
+
     else
         log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin install ${plugin} --force"
         sudo -u www-data wp --path="${wp_site}" plugin install "${plugin}" --force
 
         display --indent 6 --text "- Plugin force install ${plugin}" --result "DONE" --color GREEN
-    
+
     fi
 
     # TODO: save ouput on array with mapfile
@@ -906,7 +905,7 @@ function wpcli_user_reset_passw() {
 
     display --indent 6 --text "- Password reset for ${wp_user}" --result "DONE" --color GREEN
     display --indent 8 --text "New password ${wp_user_pass}"
-    
+
 }
 
 ################################################################################

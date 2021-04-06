@@ -6,13 +6,13 @@
 
 function cloudflare_helper_menu() {
 
-    local cf_options 
-    local chosen_cf_options 
+    local cf_options
+    local chosen_cf_options
     local root_domain
 
     cf_options=(
-        "01)" "SET DEVELOPMENT MODE" 
-        "02)" "DELETE CACHE" 
+        "01)" "SET DEVELOPMENT MODE"
+        "02)" "DELETE CACHE"
         "03)" "SET SSL MODE"
     )
     chosen_cf_options=$(whiptail --title "CLOUDFLARE MANAGER" --menu " " 20 78 10 "${cf_options[@]}" 3>&1 1>&2 2>&3)
@@ -30,7 +30,7 @@ function cloudflare_helper_menu() {
             exitstatus=$?
 
             if [[ ${exitstatus} = 0 ]]; then
-           
+
                 cloudflare_set_development_mode "${root_domain}" "on"
 
             fi
@@ -45,7 +45,7 @@ function cloudflare_helper_menu() {
             exitstatus=$?
 
             if [[ ${exitstatus} = 0 ]]; then
-           
+
                 cloudflare_clear_cache "${root_domain}"
 
             fi
