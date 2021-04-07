@@ -41,15 +41,15 @@ function _setup_globals_and_options() {
   declare -g VPSNAME="$HOSTNAME"
 
   # Script modes
-  declare -g DEBUG=1                             # Debugging mode (to screen)
-  declare -g QUIET=0                             # Show normal messages and warnings as well
-  declare -g SKIPTESTS=1                         # Skip tests
+  declare -g DEBUG=1     # Debugging mode (to screen)
+  declare -g QUIET=0     # Show normal messages and warnings as well
+  declare -g SKIPTESTS=1 # Skip tests
 
   # Default directories
-  declare -g WSERVER="/etc/nginx"                # NGINX config files location
-  declare -g MySQL_CF="/etc/mysql"               # MySQL config files location
-  declare -g PHP_CF="/etc/php"                   # PHP config files location
-  declare -g LENCRYPT_CF="/etc/letsencrypt"      # Let's Encrypt config files location
+  declare -g WSERVER="/etc/nginx"           # NGINX config files location
+  declare -g MySQL_CF="/etc/mysql"          # MySQL config files location
+  declare -g PHP_CF="/etc/php"              # PHP config files location
+  declare -g LENCRYPT_CF="/etc/letsencrypt" # Let's Encrypt config files location
 
   # Folder blacklist
   declare -g SITES_BL=".wp-cli,html,phpmyadmin"
@@ -64,7 +64,7 @@ function _setup_globals_and_options() {
   declare -g PHP_V
   PHP_V="$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")"
   php_exit=$?
-  if [[ ${php_exit} -eq 1 ]];then
+  if [[ ${php_exit} -eq 1 ]]; then
     # Packages to watch
     PACKAGES=(linux-firmware dpkg nginx "php${PHP_V}-fpm" mysql-server openssl)
   fi
@@ -163,7 +163,7 @@ function _setup_colors_and_styles() {
 function _check_root() {
 
   local is_root
-  
+
   is_root=$(id -u) # if return 0, the script is runned by the root user
 
   # Check if user is root
@@ -204,7 +204,7 @@ function _check_distro() {
   else
     MIN_V=$(echo "18.04" | awk -F "." '{print $1$2}')
     DISTRO_V=$(get_ubuntu_version)
-    
+
     log_event "info" "ACTUAL DISTRO: ${DISTRO} ${DISTRO_V}"
 
     if [[ ! ${DISTRO_V} -ge ${MIN_V} ]]; then
@@ -213,12 +213,12 @@ function _check_distro() {
       if [[ ${exitstatus} -eq 0 ]]; then
         distro_old="true"
         log_event "info" "Setting distro_old: ${distro_old}"
-        
+
       else
         return 1
 
       fi
-      
+
     fi
 
   fi
@@ -318,13 +318,13 @@ function script_init() {
   else
 
     menu_first_run
-    
+
   fi
 
   # Checking required packages to run
   check_packages_required
   packages_output=$?
-  if [[ ${packages_output} -eq 1 ]];then
+  if [[ ${packages_output} -eq 1 ]]; then
     log_event "warning" "Some script dependencies are not setisfied" "true"
     prompt_return_or_finish
   fi
@@ -376,8 +376,8 @@ function script_init() {
 
   # EXPORT VARS
   export SCRIPT_V VPSNAME TMP_DIR SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V SERVER_CONFIG
-  export LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP MYSQL_ROOT MYSQLDUMP_ROOT TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MAILA NOW NOWDISPLAY ONEWEEKAGO 
-  export SENDEMAIL DISK_U ONE_FILE_BK SERVER_IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_BACKUP_DBS STATUS_BACKUP_FILES STATUS_SERVER STATUS_CERTS OUTDATED_PACKAGES 
+  export LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP MYSQL_ROOT MYSQLDUMP_ROOT TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MAILA NOW NOWDISPLAY ONEWEEKAGO
+  export SENDEMAIL DISK_U ONE_FILE_BK SERVER_IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_BACKUP_DBS STATUS_BACKUP_FILES STATUS_SERVER STATUS_CERTS OUTDATED_PACKAGES
   export LOG BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
 
 }
@@ -408,7 +408,7 @@ function customize_ubuntu_login_message() {
 
 }
 
-function install_script_aliases () {
+function install_script_aliases() {
 
   if [[ ! -f ~/.bash_aliases ]]; then
     cp "${SFOLDER}/utils/aliases.sh" ~/.bash_aliases
@@ -424,7 +424,7 @@ function install_script_aliases () {
 
 }
 
-function change_project_status () {
+function change_project_status() {
 
   #$1 = ${project_status}
 
@@ -453,7 +453,7 @@ function validator_email_format() {
 
   local email=$1
 
-  if [[ ! "${email}" =~ ^[A-Za-z0-9._%+-]+@[[:alnum:].-]+\.[A-Za-z]{2,63}$ ]] ; then
+  if [[ ! "${email}" =~ ^[A-Za-z0-9._%+-]+@[[:alnum:].-]+\.[A-Za-z]{2,63}$ ]]; then
 
     log_event "ERROR" "Invalid email format :: ${email}"
     return 1
@@ -472,54 +472,53 @@ function validator_cron_format() {
   check_format=''
 
   if [[ "$2" = 'hour' ]]; then
-      limit=23
+    limit=23
   fi
-  
+
   if [[ "$2" = 'day' ]]; then
-      limit=31
+    limit=31
   fi
 
   if [[ "$2" = 'month' ]]; then
-      limit=12
+    limit=12
   fi
 
   if [[ "$2" = 'wday' ]]; then
-      limit=7
+    limit=7
   fi
 
   if [[ "$1" = '*' ]]; then
-      check_format='ok'
+    check_format='ok'
   fi
-  
+
   if [[ "$1" =~ ^[\*]+[/]+[0-9] ]]; then
-      if [[ "$(echo $1 |cut -f 2 -d /)" -lt $limit ]]; then
-          check_format='ok'
-      fi
-  fi
-  
-  if [[ "$1" =~ ^[0-9][-|,|0-9]{0,70}[\/][0-9]$ ]]; then
+    if [[ "$(echo $1 | cut -f 2 -d /)" -lt $limit ]]; then
       check_format='ok'
-      crn_values=${1//,/ }
-      crn_values=${crn_values//-/ }
-      crn_values=${crn_values//\// }
-      for crn_vl in $crn_values; do
-          if [[ "$crn_vl" -gt $limit ]]; then
-              check_format='invalid'
-          fi
-      done
+    fi
   fi
-  
-  crn_values=$(echo $1 |tr "," " " | tr "-" " ")
-  
-  for crn_vl in $crn_values
-      do
-          if [[ "$crn_vl" =~ ^[0-9]+$ ]] && [ "$crn_vl" -le $limit ]; then
-                check_format='ok'
-            fi
-      done
-  
+
+  if [[ "$1" =~ ^[0-9][-|,|0-9]{0,70}[\/][0-9]$ ]]; then
+    check_format='ok'
+    crn_values=${1//,/ }
+    crn_values=${crn_values//-/ }
+    crn_values=${crn_values//\// }
+    for crn_vl in $crn_values; do
+      if [[ "$crn_vl" -gt $limit ]]; then
+        check_format='invalid'
+      fi
+    done
+  fi
+
+  crn_values=$(echo $1 | tr "," " " | tr "-" " ")
+
+  for crn_vl in $crn_values; do
+    if [[ "$crn_vl" =~ ^[0-9]+$ ]] && [ "$crn_vl" -le $limit ]; then
+      check_format='ok'
+    fi
+  done
+
   if [[ ${check_format} != 'ok' ]]; then
-      check_result $E_INVALID "invalid $2 format :: $1"
+    check_result $E_INVALID "invalid $2 format :: $1"
   fi
 
 }
@@ -663,11 +662,11 @@ function file_browser() {
         filename="$selection"
         # Return 2
         filepath="$curdir" # Return full filepath and filename as selection variables
-      
+
       fi
-    
+
     fi
-  
+
   fi
 
 }
@@ -708,7 +707,7 @@ function directory_browser() {
       whiptail --title "Confirm Selection" --yesno "${selection}" --yes-button "Confirm" --no-button "Retry" 10 60 3>&1 1>&2 2>&3
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
-          # Return 1
+        # Return 1
         filename="${selection}"
         # Return 2
         filepath="${curdir}" # Return full filepath and filename as selection variables
@@ -747,7 +746,7 @@ function copy_project_files() {
   local destination_path=$2
   local excluded_path=$3
 
-  if [ "${excluded_path}" != "" ];then
+  if [ "${excluded_path}" != "" ]; then
     rsync -ax --exclude "${excluded_path}" "${source_path}" "${destination_path}"
 
   else
@@ -766,15 +765,15 @@ function get_project_type() {
   local project_type
   local is_wp
 
-  if [[ ${dir_path} != "" ]];then
+  if [[ ${dir_path} != "" ]]; then
 
     is_wp=$(wp_config_path "${dir_path}")
 
-    if [[ ${is_wp} != "" ]];then
+    if [[ ${is_wp} != "" ]]; then
 
       project_type="wordpress"
 
-      else
+    else
 
       # TODO: implements laravel, yii, and others php framework support
       project_type="project_type_unknown"
@@ -821,8 +820,8 @@ function string_remove_special_chars() {
 
   # From: https://stackoverflow.com/questions/23816264/remove-all-special-characters-and-case-from-string-in-bash
   #
-  # The first tr deletes special characters. d means delete, c means complement (invert the character set). 
-  # So, -dc means delete all characters except those specified. 
+  # The first tr deletes special characters. d means delete, c means complement (invert the character set).
+  # So, -dc means delete all characters except those specified.
   # The \n and \r are included to preserve linux or windows style newlines, which I assume you want.
   # The second one translates uppercase characters to lowercase.
   # The third get rid of characters like \r \n or ^C.
@@ -835,7 +834,7 @@ function string_remove_special_chars() {
   local string=$1
 
   # Return
-  echo "${string}" | tr -dc ".[:alnum:]-\n\r"     # Let '.' and '-' chars
+  echo "${string}" | tr -dc ".[:alnum:]-\n\r" # Let '.' and '-' chars
 
 }
 
@@ -854,8 +853,7 @@ function string_remove_color_chars() {
   # Background Colours
   declare -a text_background=("${B_BLACK}" "${B_RED}" "${B_GREEN}" "${B_YELLOW}" "${B_ORANGE}" "${B_MAGENTA}" "${B_CYAN}" "${B_WHITE}" "${B_ENDCOLOR}" "${B_DEFAULT}")
 
-  for i in "${text_styles[@]}"
-  do
+  for i in "${text_styles[@]}"; do
 
     # First we need to remove special char '\'
     i="$(echo "${i}" | sed -E 's/\\//g')"
@@ -869,13 +867,12 @@ function string_remove_color_chars() {
 
   done
 
-  for j in "${text_colors[@]}"
-  do
+  for j in "${text_colors[@]}"; do
 
     # First we need to remove special char '\'
     j="$(echo "${j}" | sed -E 's/\\//g')"
     string="$(echo "${string}" | sed -E 's/\\//g')"
-   
+
     # Second we need to remove special char '['
     j="$(echo "${j}" | sed -E 's/\[//g')"
     string="$(echo "${string}" | sed -E 's/\[//g')"
@@ -884,13 +881,12 @@ function string_remove_color_chars() {
 
   done
 
-  for k in "${text_background[@]}"
-  do
+  for k in "${text_background[@]}"; do
 
     # First we need to remove special char '\'
     k="$(echo "${k}" | sed -E 's/\\//g')"
     string="$(echo "${string}" | sed -E 's/\\//g')"
-   
+
     # Second we need to remove special char '['
     k="$(echo "${k}" | sed -E 's/\[//g')"
     string="$(echo "${string}" | sed -E 's/\[//g')"
@@ -904,7 +900,7 @@ function string_remove_color_chars() {
 
 }
 
-function change_ownership(){
+function change_ownership() {
 
   #$1 = ${user}
   #$2 = ${group}
@@ -933,17 +929,17 @@ function prompt_return_or_finish() {
 
     case $yn in
 
-      [Yy]*)
-        break
+    [Yy]*)
+      break
       ;;
 
-      [Nn]*)
-        echo -e "${B_RED}Exiting script ...${ENDCOLOR}"
-        exit 0
+    [Nn]*)
+      echo -e "${B_RED}Exiting script ...${ENDCOLOR}"
+      exit 0
       ;;
 
-      *) 
-        echo "Please answer yes or no." 
+    *)
+      echo "Please answer yes or no."
       ;;
 
     esac
@@ -955,8 +951,8 @@ function prompt_return_or_finish() {
 
 }
 
-function extract () {
-  
+function extract() {
+
   # $1 - File to uncompress or extract
   # $2 - Dir to uncompress file
   # $3 - Optional compress-program (ex: lbzip2)
@@ -969,56 +965,68 @@ function extract () {
 
   if [[ -f "${file}" ]]; then
 
-      case "${file}" in
+    case "${file}" in
 
-          *.tar.bz2)
-            if [ -z "${compress_type}" ]; then
-              tar xp "${file}" -C "${directory}" --use-compress-program="${compress_type}"
-            else
-              tar xjf "${file}" -C "${directory}"
-            fi
-          ;;
+    *.tar.bz2)
+      if [ -z "${compress_type}" ]; then
+        tar xp "${file}" -C "${directory}" --use-compress-program="${compress_type}"
+      else
+        tar xjf "${file}" -C "${directory}"
+      fi
+      ;;
 
-          *.tar.gz)
-              tar -xzvf "${file}" -C "${directory}";;
+    *.tar.gz)
+      tar -xzvf "${file}" -C "${directory}"
+      ;;
 
-          *.bz2)
-              bunzip2 "${file}";;
+    *.bz2)
+      bunzip2 "${file}"
+      ;;
 
-          *.rar)
-              unrar x "${file}";;
+    *.rar)
+      unrar x "${file}"
+      ;;
 
-          *.gz)
-              gunzip "${file}";;
+    *.gz)
+      gunzip "${file}"
+      ;;
 
-          *.tar)
-              tar xf "${file}" -C "${directory}";;
+    *.tar)
+      tar xf "${file}" -C "${directory}"
+      ;;
 
-          *.tbz2)
-              tar xjf "${file}" -C "${directory}";;
+    *.tbz2)
+      tar xjf "${file}" -C "${directory}"
+      ;;
 
-          *.tgz)
-              tar xzf "${file}" -C "${directory}";;
+    *.tgz)
+      tar xzf "${file}" -C "${directory}"
+      ;;
 
-          *.zip)
-              unzip "${file}";;
+    *.zip)
+      unzip "${file}"
+      ;;
 
-          *.Z)
-              uncompress "${file}";;
+    *.Z)
+      uncompress "${file}"
+      ;;
 
-          *.7z)
-              7z x "${file}";;
+    *.7z)
+      7z x "${file}"
+      ;;
 
-          *.xz)
-              tar xvf "${file}" -C "${directory}";;
+    *.xz)
+      tar xvf "${file}" -C "${directory}"
+      ;;
 
-          *)
-              echo "${file} cannot be extracted via extract()";;
+    *)
+      echo "${file} cannot be extracted via extract()"
+      ;;
 
-      esac
+    esac
 
   else
-      log_event "error" "${file} is not a valid file"
+    log_event "error" "${file} is not a valid file"
 
   fi
 
@@ -1030,8 +1038,8 @@ function get_domain_extension() {
 
   local domain=$1
 
-  local first_lvl 
-  local next_lvl 
+  local first_lvl
+  local next_lvl
   local domain_ext
 
   log_event "info" "Working with domain: ${domain}"
@@ -1045,8 +1053,7 @@ function get_domain_extension() {
   next_lvl="${first_lvl}"
 
   local -i count=0
-  while ! grep --word-regexp --quiet ".${domain_ext}" "${SFOLDER}/config/domain_extension-list" && [ ! "${domain_ext#"$next_lvl"}" = "" ]
-  do
+  while ! grep --word-regexp --quiet ".${domain_ext}" "${SFOLDER}/config/domain_extension-list" && [ ! "${domain_ext#"$next_lvl"}" = "" ]; do
 
     # Remove next level domain-name
     domain_ext=${domain_ext#"$next_lvl."}
@@ -1056,7 +1063,7 @@ function get_domain_extension() {
 
   done
 
-  if  grep --word-regexp --quiet ".${domain_ext}" "${SFOLDER}/config/domain_extension-list" ; then
+  if grep --word-regexp --quiet ".${domain_ext}" "${SFOLDER}/config/domain_extension-list"; then
 
     domain_ext=.${domain_ext}
 
@@ -1177,7 +1184,7 @@ function get_subdomain_part() {
 
     root_domain=${domain_no_ext##*.}${domain_extension}
 
-    if [[ ${root_domain} != ${domain}  ]]; then
+    if [[ ${root_domain} != ${domain} ]]; then
 
       subdomain_part=${domain//.$root_domain/}
 
@@ -1216,20 +1223,20 @@ function install_crontab_script() {
   if [[ ! -f ${cron_file} ]]; then
     log_event "info" "Cron file for root does not exist, creating ..."
 
-	  touch "${cron_file}"
-	  /usr/bin/crontab "${cron_file}"
+    touch "${cron_file}"
+    /usr/bin/crontab "${cron_file}"
 
     log_event "info" "Cron file created"
     display --indent 2 --text "- Creating log file" --result DONE --color GREEN
 
-	fi
+  fi
 
   grep -qi "${script}" "${cron_file}"
   grep_result=$?
-	if [[ ${grep_result} != 0 ]]; then
+  if [[ ${grep_result} != 0 ]]; then
 
     log_event "info" "Updating cron job for script: ${script}"
-    /bin/echo "${scheduled_time} ${script}" >> "${cron_file}"
+    /bin/echo "${scheduled_time} ${script}" >>"${cron_file}"
 
     display --indent 2 --text "- Updating cron job" --result DONE --color GREEN
 
@@ -1238,7 +1245,7 @@ function install_crontab_script() {
     display --indent 2 --text "- Updating cron job" --result FAIL --color YELLOW
     display --indent 4 --text "Script already installed"
 
-	fi
+  fi
 
 }
 
@@ -1302,7 +1309,7 @@ function ask_project_domain() {
   #$1 = ${project_domain} optional to select default option
 
   local project_domain=$1
-  
+
   project_domain=$(whiptail --title "Domain" --inputbox "Insert the project's domain. Example: landing.domain.com" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -1323,7 +1330,7 @@ function ask_project_type() {
   local project_type
 
   project_types="WordPress X Laravel X Basic-PHP X HTML X"
-  
+
   project_type=$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 $(for x in ${project_types}; do echo "$x"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -1372,7 +1379,7 @@ function ask_subdomains_to_cloudflare_config() {
 
   # $1 = ${subdomains} optional to select default option (could be empty)
 
-  local subdomains=$1;
+  local subdomains=$1
 
   subdomains=$(whiptail --title "Cloudflare Subdomains" --inputbox "Insert the subdomains you want to update in Cloudflare (comma separated). Example: www.broobe.com,broobe.com" 10 60 "${DOMAIN}" 3>&1 1>&2 2>&3)
   exitstatus=$?
@@ -1397,7 +1404,7 @@ function ask_folder_to_install_sites() {
   local folder_to_install=$1
 
   if [[ -z "${folder_to_install}" ]]; then
-    
+
     folder_to_install=$(whiptail --title "Folder to work with" --inputbox "Please select the project folder you want to work with:" 10 60 "${folder_to_install}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -1415,10 +1422,10 @@ function ask_folder_to_install_sites() {
   else
 
     log_event "info" "Folder to install: ${folder_to_install}"
-    
+
     # Return
     echo "${folder_to_install}"
-    
+
   fi
 
 }
@@ -1433,16 +1440,16 @@ function ask_mysql_root_psw() {
     mysql_root_pass=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root password" 10 60 "${mysql_root_pass}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
-      
+
       until mysql -u root -p"${mysql_root_pass}" -e ";"; do
         read -s -p " > Can't connect to MySQL, please re-enter ${MUSER} password: " mysql_root_pass
-      
+
       done
 
       # Create new MySQL credentials file
       echo "[client]" >/root/.my.cnf
-      echo "user=root">>/root/.my.cnf
-      echo "password=${mysql_root_pass}">>/root/.my.cnf
+      echo "user=root" >>/root/.my.cnf
+      echo "password=${mysql_root_pass}" >>/root/.my.cnf
 
     else
 
@@ -1464,26 +1471,26 @@ function ask_mysql_root_psw() {
 
 function menu_main_options() {
 
-  local whip_title              # whiptail var
-  local whip_description        # whiptail var
-  local runner_options          # whiptail array options
-  local chosen_type             # whiptail var
+  local whip_title       # whiptail var
+  local whip_description # whiptail var
+  local runner_options   # whiptail array options
+  local chosen_type      # whiptail var
 
   whip_title="LEMP UTILS SCRIPT"
   whip_description=" "
 
   runner_options=(
-    "01)" "BACKUP OPTIONS" 
-    "02)" "RESTORE OPTIONS" 
-    "03)" "PROJECT UTILS" 
-    "04)" "WPCLI MANAGER" 
-    "05)" "CERTBOT MANAGER" 
-    "06)" "CLOUDFLARE MANAGER" 
-    "07)" "INSTALLERS & CONFIGS" 
-    "08)" "IT UTILS" 
-    "09)" "SCRIPT OPTIONS" 
+    "01)" "BACKUP OPTIONS"
+    "02)" "RESTORE OPTIONS"
+    "03)" "PROJECT UTILS"
+    "04)" "WPCLI MANAGER"
+    "05)" "CERTBOT MANAGER"
+    "06)" "CLOUDFLARE MANAGER"
+    "07)" "INSTALLERS & CONFIGS"
+    "08)" "IT UTILS"
+    "09)" "SCRIPT OPTIONS"
     "10)" "CRON TASKS"
-    )
+  )
   chosen_type=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -1558,20 +1565,20 @@ function menu_first_run() {
   local chosen_first_run_options
 
   first_run_options=(
-    "01)" "RUN LEMP SETUP" 
+    "01)" "RUN LEMP SETUP"
     "02)" "CONFIGURE THIS SCRIPT"
   )
 
   first_run_string+="\n It seens to be the first time you run this script.\n"
   first_run_string+=" Now you have to options:\n"
   first_run_string+="\n"
-       
+
   chosen_first_run_options=$(whiptail --title "LEMP UTILS SCRIPT" --menu "${first_run_string}" 20 78 10 "${first_run_options[@]}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_first_run_options} == *"01"* ]]; then
-      
+
       # shellcheck source=${SFOLDER}/utils/lemp_setup.sh
       source "${SFOLDER}/utils/lemp_setup.sh"
 
@@ -1594,17 +1601,17 @@ function menu_first_run() {
 
 function menu_cron_script_tasks() {
 
-  local runner_options 
-  local chosen_type 
+  local runner_options
+  local chosen_type
   local scheduled_time
 
   runner_options=(
-    "01)" "BACKUPS TASKS" 
-    "02)" "OPTIMIZER TASKS" 
-    "03)" "WORDPRESS TASKS" 
-    "04)" "UPTIME TASKS" 
+    "01)" "BACKUPS TASKS"
+    "02)" "OPTIMIZER TASKS"
+    "03)" "WORDPRESS TASKS"
+    "04)" "UPTIME TASKS"
     "05)" "SCRIPT UPDATER"
-    )
+  )
   chosen_type=$(whiptail --title "CRONEABLE TASKS" --menu "\n" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -1617,7 +1624,7 @@ function menu_cron_script_tasks() {
       scheduled_time=$(whiptail --title "CRON BACKUPS-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
-        
+
         install_crontab_script "${SFOLDER}/cron/backups_tasks.sh" "${scheduled_time}"
 
       fi
@@ -1630,7 +1637,7 @@ function menu_cron_script_tasks() {
       scheduled_time=$(whiptail --title "CRON OPTIMIZER-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
-        
+
         install_crontab_script "${SFOLDER}/cron/optimizer_tasks.sh" "${scheduled_time}"
 
       fi
@@ -1643,7 +1650,7 @@ function menu_cron_script_tasks() {
       scheduled_time=$(whiptail --title "CRON WORDPRESS-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
-        
+
         install_crontab_script "${SFOLDER}/cron/wordpress_tasks.sh" "${scheduled_time}"
 
       fi
@@ -1656,7 +1663,7 @@ function menu_cron_script_tasks() {
       scheduled_time=$(whiptail --title "CRON UPTIME-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
-        
+
         install_crontab_script "${SFOLDER}/cron/uptime_tasks.sh" "${scheduled_time}"
 
       fi
@@ -1669,7 +1676,7 @@ function menu_cron_script_tasks() {
       scheduled_time=$(whiptail --title "CRON UPTIME-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
-        
+
         install_crontab_script "${SFOLDER}/cron/updater.sh" "${scheduled_time}"
 
       fi
@@ -1685,17 +1692,17 @@ function menu_cron_script_tasks() {
 
 }
 
-function menu_security_utils () {
+function menu_security_utils() {
 
   # TODO: new options? https://upcloud.com/community/tutorials/scan-ubuntu-server-malware/
 
   local security_options chosen_security_options
 
   security_options=(
-    "01)" "CLAMAV MALWARE SCAN" 
-    "02)" "CUSTOM MALWARE SCAN" 
+    "01)" "CLAMAV MALWARE SCAN"
+    "02)" "CUSTOM MALWARE SCAN"
     "03)" "LYNIS SYSTEM AUDIT"
-    )
+  )
   chosen_security_options=$(whiptail --title "SECURITY TOOLS" --menu "Choose an option to run" 20 78 10 "${security_options[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
@@ -1725,7 +1732,7 @@ function menu_security_utils () {
 
 }
 
-function menu_security_clamav_scan () {
+function menu_security_clamav_scan() {
 
   local to_scan
 
@@ -1740,7 +1747,7 @@ function menu_security_clamav_scan () {
 
 }
 
-function menu_security_custom_scan () {
+function menu_security_custom_scan() {
 
   local to_scan
 
@@ -1755,9 +1762,9 @@ function menu_security_custom_scan () {
 
 }
 
-function menu_project_utils () {
+function menu_project_utils() {
 
-  local whip_title 
+  local whip_title
   local whip_description
   local project_utils_options
   local chosen_project_utils_options
@@ -1766,22 +1773,22 @@ function menu_project_utils () {
   whip_description=" "
 
   project_utils_options=(
-    "01)" "CREATE WP PROJECT" 
-    "02)" "CREATE PHP PROJECT" 
+    "01)" "CREATE WP PROJECT"
+    "02)" "CREATE PHP PROJECT"
     "03)" "DELETE PROJECT"
-    "04)" "CREATE PROJECT DB  & USER" 
-    "05)" "PUT PROJECT ONLINE" 
-    "06)" "PUT PROJECT OFFLINE" 
-    "07)" "REGENERATE NGINX SERVER" 
+    "04)" "CREATE PROJECT DB  & USER"
+    "05)" "PUT PROJECT ONLINE"
+    "06)" "PUT PROJECT OFFLINE"
+    "07)" "REGENERATE NGINX SERVER"
     "08)" "BENCH PROJECT GTMETRIX"
-    )
+  )
   chosen_project_utils_options=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_utils_options[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [[ ${exitstatus} = 0 ]]; then
 
     if [[ ${chosen_project_utils_options} == *"01"* ]]; then
-      
+
       # CREATE-WP-PROJECT
       project_install "${SITES}" "wordpress"
 
@@ -1805,7 +1812,7 @@ function menu_project_utils () {
 
       # CREATE PROJECT DATABASE & USER
       log_subsection "Create Project DB & User"
-      
+
       # Folder where sites are hosted: $SITES
       menu_title="PROJECT TO WORK WITH"
       directory_browser "${menu_title}" "${SITES}"
@@ -1817,7 +1824,7 @@ function menu_project_utils () {
 
         # Return
         #return 1
-      
+
       else
 
         project_name="$(extract_domain_extension "${filename%/}")"
@@ -1868,7 +1875,7 @@ function menu_project_utils () {
       if [[ ${filename} != "" ]]; then
 
         filename="${filename::-1}" # remove '/'
-        
+
         display --indent 2 --text "- Selecting project" --result DONE --color GREEN
         display --indent 4 --text "Selected project: ${filename}"
 
@@ -1877,7 +1884,7 @@ function menu_project_utils () {
 
         # Aks project type
         project_type=$(ask_project_type)
-        
+
         # New site Nginx configuration
         nginx_server_create "${project_domain}" "${project_type}" "single" ""
 
@@ -1896,8 +1903,12 @@ function menu_project_utils () {
       URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
+
         # shellcheck source=${SFOLDER}/tools/third-party/google-insights-api-tools/gitools_v5.sh
-        source "${SFOLDER}/tools/third-party/google-insights-api-tools/gitools_v5.sh" gtmetrix "${URL_TO_TEST}"
+        gtmetrix_result="$("${SFOLDER}/tools/third-party/google-insights-api-tools/gitools_v5.sh" gtmetrix "${URL_TO_TEST}")"
+
+        log_event "info" "gtmetrix_result: ${gtmetrix_result}"
+
       fi
 
     fi
@@ -1922,7 +1933,7 @@ function menu_project_utils () {
 function show_help() {
 
   log_section "Help Menu"
-  
+
   echo -n "./runner.sh [TASK] [SUB-TASK]... [DOMAIN]...
 
   Options:
@@ -1962,33 +1973,33 @@ function tasks_handler() {
 
   case ${task} in
 
-    backup)
+  backup)
 
-      subtasks_backup_handler "${STASK}"
+    subtasks_backup_handler "${STASK}"
 
-      exit
+    exit
     ;;
 
-    restore)
-      log_event "warning" "TODO: run project-restore for $SITE" "true"
-      exit
+  restore)
+    log_event "warning" "TODO: run project-restore for $SITE" "true"
+    exit
     ;;
 
-    project-install)
-      log_event "debug" "Running: project_install ${SITES} wordpress ${DOMAIN} ${PNAME} ${PSTATE}"
-      project_install "${SITES}" "${PTYPE}" "${DOMAIN}" "${PNAME}" "${PSTATE}"
-      exit
+  project-install)
+    log_event "debug" "Running: project_install ${SITES} wordpress ${DOMAIN} ${PNAME} ${PSTATE}"
+    project_install "${SITES}" "${PTYPE}" "${DOMAIN}" "${PNAME}" "${PSTATE}"
+    exit
     ;;
 
-    cloudflare-api)
-      subtasks_cloudflare_handler "${STASK}"
-      
-      exit
+  cloudflare-api)
+    subtasks_cloudflare_handler "${STASK}"
+
+    exit
     ;;
 
-    *)
-      log_event "error" "INVALID TASK: ${TASK}" "true"
-      #ExitFatal
+  *)
+    log_event "error" "INVALID TASK: ${TASK}" "true"
+    #ExitFatal
     ;;
 
   esac
@@ -2001,45 +2012,45 @@ function subtasks_backup_handler() {
 
   case ${subtask} in
 
-    all)
+  all)
 
-      log_event "debug" "Running: complete backup"
-      #make_databases_backup
-      make_all_server_config_backup
-      make_sites_files_backup
+    log_event "debug" "Running: complete backup"
+    #make_databases_backup
+    make_all_server_config_backup
+    make_sites_files_backup
 
-      exit
+    exit
     ;;
 
-    files)
+  files)
 
-      log_event "debug" "Running: make_sites_files_backup"
-      make_sites_files_backup
+    log_event "debug" "Running: make_sites_files_backup"
+    make_sites_files_backup
 
-      exit
+    exit
     ;;
 
-    server-config)
+  server-config)
 
-      log_event "debug" "Running: make_all_server_config_backup"
-      make_all_server_config_backup
+    log_event "debug" "Running: make_all_server_config_backup"
+    make_all_server_config_backup
 
-      exit
+    exit
     ;;
 
-    databases)
+  databases)
 
-      log_event "warning" "TODO: database backup from parameter" "true"
-      #log_event "debug" "Running: make_sites_files_backup"
-      #make_sites_files_backup
+    log_event "warning" "TODO: database backup from parameter" "true"
+    #log_event "debug" "Running: make_sites_files_backup"
+    #make_sites_files_backup
 
-      exit
+    exit
     ;;
 
-    *)
-      log_event "error" "INVALID SUBTASK: ${subtask}" "true"
+  *)
+    log_event "error" "INVALID SUBTASK: ${subtask}" "true"
 
-      exit
+    exit
     ;;
 
   esac
@@ -2054,27 +2065,27 @@ function subtasks_cloudflare_handler() {
 
   case ${subtask} in
 
-    clear_cache)
+  clear_cache)
 
-      log_event "debug" "Running: cloudflare_clear_cache ${DOMAIN}"
-      cloudflare_clear_cache "${DOMAIN}"
+    log_event "debug" "Running: cloudflare_clear_cache ${DOMAIN}"
+    cloudflare_clear_cache "${DOMAIN}"
 
-      exit
+    exit
     ;;
 
-    dev_mode)
+  dev_mode)
 
-      log_event "debug" "Running: cloudflare_set_development_mode ${DOMAIN}"
-      cloudflare_set_development_mode "${DOMAIN}"
+    log_event "debug" "Running: cloudflare_set_development_mode ${DOMAIN}"
+    cloudflare_set_development_mode "${DOMAIN}"
 
-      exit
+    exit
     ;;
 
-    *)
+  *)
 
-      log_event "error" "INVALID SUBTASK: ${subtask}" "true"
-    
-      exit
+    log_event "error" "INVALID SUBTASK: ${subtask}" "true"
+
+    exit
     ;;
 
   esac
@@ -2098,53 +2109,53 @@ function parse_params() {
 
     case "${1-}" in
 
-      -h|-\?|--help)
-        show_help    # Display a usage synopsis
-        exit
+    -h | -\? | --help)
+      show_help # Display a usage synopsis
+      exit
       ;;
 
-      -d|--debug)
-        SHOWDEBUG=1
+    -d | --debug)
+      SHOWDEBUG=1
       ;;
 
-      -t|--task)
-        i="$((i+1))"
-        TASK=${parameters[$i]}
+    -t | --task)
+      i="$((i + 1))"
+      TASK=${parameters[$i]}
       ;;
 
-      -st|--subtask)
-        i="$((i+1))"
-        STASK=${parameters[$i]}
+    -st | --subtask)
+      i="$((i + 1))"
+      STASK=${parameters[$i]}
       ;;
 
-      -s|--site)
-        i="$((i+1))"
-        SITE=${parameters[$i]}
+    -s | --site)
+      i="$((i + 1))"
+      SITE=${parameters[$i]}
       ;;
 
-      -pn|--pname)
-        i="$((i+1))"
-        PNAME=${parameters[$i]}
+    -pn | --pname)
+      i="$((i + 1))"
+      PNAME=${parameters[$i]}
       ;;
 
-      -pt|--ptype)
-        i="$((i+1))"
-        PTYPE=${parameters[$i]}
+    -pt | --ptype)
+      i="$((i + 1))"
+      PTYPE=${parameters[$i]}
       ;;
 
-      -ps|--pstate)
-        i="$((i+1))"
-        PSTATE=${parameters[$i]}
+    -ps | --pstate)
+      i="$((i + 1))"
+      PSTATE=${parameters[$i]}
       ;;
 
-      -do|--domain)
-        i="$((i+1))"
-        DOMAIN=${parameters[$i]}
+    -do | --domain)
+      i="$((i + 1))"
+      DOMAIN=${parameters[$i]}
       ;;
 
-      *)
-        echo "INVALID OPTION: $i" >&2
-        exit
+    *)
+      echo "INVALID OPTION: $i" >&2
+      exit
       ;;
 
     esac
@@ -2171,66 +2182,72 @@ function flags_handler() {
   local parameters
   local i=0
 
-  IFS=', ' read -a parameters <<< "$arguments"; # convert parameter to an array
+  IFS=', ' read -a parameters <<<"$arguments" # convert parameter to an array
 
-  TASK=""; SITE=""; DOMAIN=""; PNAME=""; PTYPE=""; PSTATE=""; SHOWDEBUG=0;
-    
+  TASK=""
+  SITE=""
+  DOMAIN=""
+  PNAME=""
+  PTYPE=""
+  PSTATE=""
+  SHOWDEBUG=0
+
   while [[ $i < ${arguments_count} ]]; do
 
     case ${parameters[$i]} in
 
-      -h|-\?|--help)
-        show_help    # Display a usage synopsis
-        exit
+    -h | -\? | --help)
+      show_help # Display a usage synopsis
+      exit
       ;;
 
-      -d|--debug)
-        SHOWDEBUG=1
+    -d | --debug)
+      SHOWDEBUG=1
       ;;
 
-      -t|--task)
-        i="$((i+1))"
-        TASK=${parameters[$i]}
+    -t | --task)
+      i="$((i + 1))"
+      TASK=${parameters[$i]}
       ;;
 
-      -st|--subtask)
-        i="$((i+1))"
-        STASK=${parameters[$i]}
+    -st | --subtask)
+      i="$((i + 1))"
+      STASK=${parameters[$i]}
       ;;
 
-      -s|--site)
-        i="$((i+1))"
-        SITE=${parameters[$i]}
+    -s | --site)
+      i="$((i + 1))"
+      SITE=${parameters[$i]}
       ;;
 
-      -pn|--pname)
-        i="$((i+1))"
-        PNAME=${parameters[$i]}
+    -pn | --pname)
+      i="$((i + 1))"
+      PNAME=${parameters[$i]}
       ;;
 
-      -pt|--ptype)
-        i="$((i+1))"
-        PTYPE=${parameters[$i]}
+    -pt | --ptype)
+      i="$((i + 1))"
+      PTYPE=${parameters[$i]}
       ;;
 
-      -ps|--pstate)
-        i="$((i+1))"
-        PSTATE=${parameters[$i]}
+    -ps | --pstate)
+      i="$((i + 1))"
+      PSTATE=${parameters[$i]}
       ;;
 
-      -do|--domain)
-        i="$((i+1))"
-        DOMAIN=${parameters[$i]}
+    -do | --domain)
+      i="$((i + 1))"
+      DOMAIN=${parameters[$i]}
       ;;
 
-      *)
-        echo "INVALID OPTION: $i" >&2
-        exit
+    *)
+      echo "INVALID OPTION: $i" >&2
+      exit
       ;;
-    
+
     esac
 
-    i="$((i+1))"
+    i="$((i + 1))"
 
   done
 
