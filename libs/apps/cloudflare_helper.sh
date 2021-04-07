@@ -127,16 +127,16 @@ function cloudflare_domain_exists() {
     local zone_id
 
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
-
-    if [[ ${zone_id} == *"\"success\":false"* || ${zone_id} == "" ]]; then
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0  || ${zone_id} != "" ]]; then
 
         # Return
-        return 1
+        return 0
 
     else
 
         # Return
-        return 0
+        return 1
     fi
 
 }
@@ -387,7 +387,7 @@ function cloudflare_set_a_record() {
 
     zone_id=$(_cloudflare_get_zone_id "${root_domain}")
 
-    record_id=$(cloudflare_record_exists "${record_name}")
+    record_id=$(cloudflare_record_exists "${root_domain}" "${record_name}")
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
@@ -469,7 +469,7 @@ function cloudflare_delete_a_record() {
 
     zone_id=$(_cloudflare_get_zone_id "${root_domain}")
 
-    record_id=$(cloudflare_record_exists "${record_name}")
+    record_id=$(cloudflare_record_exists "${root_domain}" "${record_name}")
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then # Record found on Cloudflare
