@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.21
+# Version: 3.0.22
 ################################################################################
 #
 #   Ref: https://api.cloudflare.com/
@@ -21,8 +21,8 @@ function _cloudflare_get_zone_id() {
 
     # We need to do this, because certbot use this file with this vars
     # And this script need this others var names
-    declare -g auth_email="${dns_cloudflare_email}"
-    declare -g auth_key="${dns_cloudflare_api_key}"
+    declare -g -r auth_email="${dns_cloudflare_email}"
+    declare -g -r auth_key="${dns_cloudflare_api_key}"
 
     # Log
     display --indent 6 --text "- Accessing Cloudflare API" --result "DONE" --color GREEN
@@ -48,7 +48,7 @@ function _cloudflare_get_zone_id() {
 
     else
 
-        log_event "info" "Zone ID not found: ${zone_id} for domain ${zone_name}. Maybe domain is not configured yet."
+        log_event "info" "Zone ID not found for domain ${zone_name}. Maybe domain is not configured yet."
         display --indent 8 --text "Domain ${zone_name} not found" --tcolor YELLOW
 
         return 1

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.21
+# Version: 3.0.22
 #############################################################################
 
 # Check if program is installed (is_this_installed "mysql-server")
@@ -64,7 +64,7 @@ function add_ppa() {
     fi
 
   done
-  
+
 }
 
 function check_packages_required() {
@@ -95,7 +95,7 @@ function check_packages_required() {
   SENDEMAIL="$(command -v sendemail)"
   if [[ ! -x "${SENDEMAIL}" ]]; then
     display --indent 2 --text "- Installing sendemail"
-    apt-get --yes install sendemail libio-socket-ssl-perl -qq > /dev/null
+    apt-get --yes install sendemail libio-socket-ssl-perl -qq >/dev/null
     clear_last_line
     display --indent 2 --text "- Installing sendemail" --result "DONE" --color GREEN
   fi
@@ -104,7 +104,7 @@ function check_packages_required() {
   PV="$(command -v pv)"
   if [[ ! -x "${PV}" ]]; then
     display --indent 2 --text "- Installing pv"
-    apt-get --yes install pv -qq > /dev/null
+    apt-get --yes install pv -qq >/dev/null
     clear_last_line
     display --indent 2 --text "- Installing pv" --result "DONE" --color GREEN
   fi
@@ -113,7 +113,7 @@ function check_packages_required() {
   BC="$(command -v bc)"
   if [[ ! -x "${BC}" ]]; then
     display --indent 2 --text "- Installing bc"
-    apt-get --yes install bc -qq > /dev/null
+    apt-get --yes install bc -qq >/dev/null
     clear_last_line
     display --indent 2 --text "- Installing bc" --result "DONE" --color GREEN
   fi
@@ -122,7 +122,7 @@ function check_packages_required() {
   DIG="$(command -v dig)"
   if [[ ! -x "${DIG}" ]]; then
     display --indent 2 --text "- Installing dnsutils"
-    apt-get --yes install dnsutils -qq > /dev/null
+    apt-get --yes install dnsutils -qq >/dev/null
     clear_last_line
     display --indent 2 --text "- Installing dnsutils" --result "DONE" --color GREEN
   fi
@@ -131,7 +131,7 @@ function check_packages_required() {
   IFCONFIG="$(command -v ifconfig)"
   if [[ ! -x "${IFCONFIG}" ]]; then
     display --indent 2 --text "- Installing net-tools"
-    apt-get --yes install net-tools -qq > /dev/null
+    apt-get --yes install net-tools -qq >/dev/null
     clear_last_line
     display --indent 2 --text "- Installing net-tools" --result "DONE" --color GREEN
   fi
@@ -140,7 +140,7 @@ function check_packages_required() {
   LBZIP2="$(command -v lbzip2)"
   if [[ ! -x "${LBZIP2}" ]]; then
     display --indent 2 --text "- Installing lbzip2"
-    apt-get --yes install lbzip2 -qq > /dev/null
+    apt-get --yes install lbzip2 -qq >/dev/null
     clear_last_line
     display --indent 2 --text "- Installing lbzip2" --result "DONE" --color GREEN
   fi
@@ -149,7 +149,7 @@ function check_packages_required() {
   ZIP="$(command -v zip)"
   if [[ ! -x "${ZIP}" ]]; then
     display --indent 2 --text "- Installing zip"
-    apt-get --yes install zip -qq > /dev/null
+    apt-get --yes install zip -qq >/dev/null
     clear_last_line
     display --indent 2 --text "- Installing zip" --result "DONE" --color GREEN
   fi
@@ -158,7 +158,7 @@ function check_packages_required() {
   UNZIP="$(command -v unzip)"
   if [[ ! -x "${UNZIP}" ]]; then
     display --indent 2 --text "- Installing unzip"
-    apt-get --yes install unzip -qq > /dev/null
+    apt-get --yes install unzip -qq >/dev/null
     clear_last_line
     display --indent 2 --text "- Installing unzip" --result "DONE" --color GREEN
   fi
@@ -167,7 +167,7 @@ function check_packages_required() {
   GIT="$(command -v git)"
   if [[ ! -x "${GIT}" ]]; then
     display --indent 2 --text "- Installing git"
-    apt-get --yes install git -qq > /dev/null
+    apt-get --yes install git -qq >/dev/null
     clear_last_line
     display --indent 2 --text "- Installing git" --result "DONE" --color GREEN
   fi
@@ -176,7 +176,7 @@ function check_packages_required() {
   VIM="$(command -v vim)"
   if [[ ! -x "${VIM}" ]]; then
     display --indent 2 --text "- Installing vim"
-    apt-get --yes install vim -qq > /dev/null
+    apt-get --yes install vim -qq >/dev/null
     clear_last_line
     display --indent 2 --text "- Installing vim" --result "DONE" --color GREEN
   fi
@@ -193,7 +193,7 @@ function check_packages_required() {
   if [[ ! -x "${JPEGOPTIM}" ]]; then
     display --indent 2 --text "- Installing jpegoptim"
     # apt command
-    apt-get --yes install jpegoptim -qq > /dev/null
+    apt-get --yes install jpegoptim -qq >/dev/null
     # Log
     clear_last_line
     display --indent 2 --text "- Installing jpegoptim" --result "DONE" --color GREEN
@@ -204,7 +204,7 @@ function check_packages_required() {
   if [[ ! -x "${OPTIPNG}" ]]; then
     display --indent 2 --text "- Installing optipng"
     # apt command
-    apt-get --yes install optipng -qq > /dev/null
+    apt-get --yes install optipng -qq >/dev/null
     # Log
     clear_last_line
     display --indent 2 --text "- Installing optipng" --result "DONE" --color GREEN
@@ -248,7 +248,7 @@ function check_packages_required() {
       # Append login parameters to command
       MYSQL_ROOT="${MYSQL} --defaults-file=${MYSQL_CONF}"
       MYSQLDUMP_ROOT="${MYSQLDUMP} --defaults-file=${MYSQL_CONF}"
-      
+
     fi
 
   fi
@@ -289,13 +289,13 @@ function basic_packages_installation() {
 
   # Log
   log_subsection "Basic Packages Installation"
-  
+
   log_event "info" "Adding repos and updating package lists ..."
   display --indent 6 --text "- Adding repos and updating package lists"
 
   # Updating packages lists
-  apt-get --yes install software-properties-common > /dev/null
-  apt-get --yes update -qq > /dev/null
+  apt-get --yes install software-properties-common >/dev/null
+  apt-get --yes update -qq >/dev/null
 
   # Log
   clear_last_line
@@ -305,7 +305,7 @@ function basic_packages_installation() {
   display --indent 6 --text "- Upgrading packages before installation"
 
   # Upgrading packages
-  apt-get --yes dist-upgrade -qq > /dev/null
+  apt-get --yes dist-upgrade -qq >/dev/null
 
   # Log
   clear_last_line
@@ -316,7 +316,7 @@ function basic_packages_installation() {
   display --indent 6 --text "- Installing basic packages"
 
   # Installing packages
-  apt-get --yes install ncdu imagemagick-* webp ghostscript pv ppa-purge -qq > /dev/null
+  apt-get --yes install ncdu imagemagick-* webp ghostscript pv ppa-purge -qq >/dev/null
 
   # Log
   clear_last_line
@@ -345,35 +345,35 @@ function selected_package_installation() {
     log_subsection "Package Installer"
 
     for app in ${chosen_apps}; do
-      
+
       app=$(sed -e 's/^"//' -e 's/"$//' <<<${app}) #needed to ommit double quotes
 
       log_event "info" "Executing ${app} installer ..."
-      
+
       case ${app} in
 
-        certbot)
-          certbot_installer
+      certbot)
+        certbot_installer
         ;;
 
-        monit)
-          monit_installer_menu
+      monit)
+        monit_installer_menu
         ;;
 
-        netdata)
-          netdata_installer
+      netdata)
+        netdata_installer
         ;;
 
-        cockpit)
-          cockpit_installer
+      cockpit)
+        cockpit_installer
         ;;
 
-        zabbix)
-          zabbix_server_installer
+      zabbix)
+        zabbix_server_installer
         ;;
 
-        *)
-          log_event "error" "Package installer for ${app} not found!"
+      *)
+        log_event "error" "Package installer for ${app} not found!"
         ;;
 
       esac
@@ -383,7 +383,7 @@ function selected_package_installation() {
   else
 
     log_event "info" "Package installer ommited ..."
-  
+
   fi
 
 }
@@ -395,7 +395,7 @@ function timezone_configuration() {
 
   # Configure timezone
   dpkg-reconfigure tzdata
-  
+
   # Log
   clear_last_line
   clear_last_line
@@ -413,9 +413,9 @@ function remove_old_packages() {
   display --indent 6 --text "- Cleanning old system packages"
 
   # apt commands
-  apt-get --yes clean -qq > /dev/null
-  apt-get --yes autoremove -qq > /dev/null
-  apt-get --yes autoclean -qq > /dev/null
+  apt-get --yes clean -qq >/dev/null
+  apt-get --yes autoremove -qq >/dev/null
+  apt-get --yes autoclean -qq >/dev/null
 
   # Log
   clear_last_line
@@ -431,7 +431,7 @@ function install_image_optimize_packages() {
   display --indent 6 --text "- Installing jpegoptim, optipng and imagemagick"
 
   # apt command
-  apt-get --yes install jpegoptim optipng pngquant gifsicle imagemagick-* -qq > /dev/null
+  apt-get --yes install jpegoptim optipng pngquant gifsicle imagemagick-* -qq >/dev/null
 
   # Log
   log_event "info" "Installation finished"

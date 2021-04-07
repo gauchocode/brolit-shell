@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.21
+# Version: 3.0.22
 ################################################################################
 
 function send_mail_notification() {
@@ -56,7 +56,7 @@ function mail_subject_status() {
 function remove_mail_notifications_files() {
 
     # Remove one per line only for better readibility
-    rm --force "${TMP_DIR}/cert-${NOW}.mail" 
+    rm --force "${TMP_DIR}/cert-${NOW}.mail"
     rm --force "${TMP_DIR}/pkg-${NOW}.mail"
     rm --force "${TMP_DIR}/file-bk-${NOW}.mail"
     rm --force "${TMP_DIR}/config-bk-${NOW}.mail"
@@ -73,9 +73,9 @@ function mail_server_status_section() {
 
     local IP=$1
 
-    declare -g STATUS_SERVER     # Global to check section status
+    declare -g STATUS_SERVER # Global to check section status
 
-    local disk_u 
+    local disk_u
     local disk_u_ns
     local status_s_icon
     local status_s_color
@@ -96,7 +96,7 @@ function mail_server_status_section() {
     disk_u_ns=$(echo "${disk_u}" | cut -f1 -d'%')
 
     # Cast to int
-    casted_disk_u_ns=$(int(){ printf '%d' "${disk_u_ns:-}" 2>/dev/null || :; })
+    casted_disk_u_ns=$(int() { printf '%d' "${disk_u_ns:-}" 2>/dev/null || :; })
 
     if [[ "${casted_disk_u_ns}" -gt 45 ]]; then
         # Changing global
@@ -113,7 +113,7 @@ function mail_server_status_section() {
         # Changing locals
         status_s_icon="✅"
         status_s_color="#503fe0"
-        
+
     fi
 
     header_open="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:${status_s_color};padding:5px 0 10px 10px;width:100%;height:30px\">"
@@ -187,14 +187,14 @@ function mail_package_section() {
 
     local -n PACKAGES=$1
 
-    local package 
-    local package_version_installed 
+    local package
+    local package_version_installed
     local package_version_candidate
 
     for package in "${PACKAGES[@]}"; do
 
         package_version_installed="$(apt-cache policy "${package}" | grep Installed | cut -d ':' -f 2)"
-        if [[ ${package_version_installed} = "(none)" ]] && [[ ${package} = "mysql-server" ]];then
+        if [[ ${package_version_installed} = "(none)" ]] && [[ ${package} = "mysql-server" ]]; then
             package="mariadb-server"
             package_version_installed="$(apt-cache policy "${package}" | grep Installed | cut -d ':' -f 2)"
         fi
@@ -232,7 +232,7 @@ function mail_cert_section() {
     declare -g STATUS_CERTS="OK"
 
     # Changing locals
-    cert_status_icon="✅"        
+    cert_status_icon="✅"
     cert_status_color="#503fe0"
     files_label="<b>Sites certificate expiration days:</b><br /><div style=\"color:#000;font-size:12px;line-height:24px;padding-left:10px;\">"
     email_cert_line=""
@@ -258,9 +258,9 @@ function mail_cert_section() {
 
                 email_cert_new_line="<div style=\"float:left;width:100%\">"
                 email_cert_domain="<div>${domain}"
-                
+
                 cert_days=$(certbot_certificate_valid_days "${domain}")
-                
+
                 if [[ ${cert_days} == "" ]]; then
                     # GREY LABEL
                     email_cert_days_container=" <span style=\"color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;\">"
@@ -268,14 +268,14 @@ function mail_cert_section() {
                     cert_status_icon="⚠️"
                     cert_status_color="red"
                     STATUS_CERTS="WARNING"
-                
+
                 else #certificate found
 
-                    if (( "${cert_days}" >= 14 )); then
+                    if (("${cert_days}" >= 14)); then
                         # GREEN LABEL
                         email_cert_days_container=" <span style=\"color:white;background-color:#27b50d;border-radius:12px;padding:0 5px 0 5px;\">"
                     else
-                        if (( "${cert_days}" >= 7 )); then
+                        if (("${cert_days}" >= 7)); then
                             # ORANGE LABEL
                             email_cert_days_container=" <span style=\"color:white;background-color:#df761d;border-radius:12px;padding:0 5px 0 5px;\">"
                         else
@@ -293,7 +293,7 @@ function mail_cert_section() {
 
                 email_cert_end_line="</span></div></div>"
                 email_cert_line="${email_cert_line}${email_cert_new_line}${email_cert_domain}${email_cert_days}${email_cert_end_line}"
-            
+
             fi
         else
             k=""
@@ -363,7 +363,7 @@ function mail_filesbackup_section() {
         STATUS_BACKUP_FILES="ERROR"
 
         # Changing locals
-        status_icon_f="⛔"        
+        status_icon_f="⛔"
         content="<b>${backup_type} Backup Error: ${ERROR_TYPE}<br />Please check log file.</b> <br />"
         color="red"
 
@@ -383,7 +383,7 @@ function mail_filesbackup_section() {
         count=0
 
         for backup_file in "${BACKUPED_LIST[@]}"; do
-                     
+
             bk_fl_size="${BK_FL_SIZES[$count]}"
 
             files_inc_line_p1="<div class=\"backup-details-line\">"
@@ -449,12 +449,12 @@ function mail_config_backup_section() {
     local color
     local header
     local body
-    local count files_inc 
-    local files_inc_line_p1 
-    local files_inc_line_p2 
-    local files_inc_line_p3 
-    local files_inc_line_p4 
-    local files_inc_line_p5 
+    local count files_inc
+    local files_inc_line_p1
+    local files_inc_line_p2
+    local files_inc_line_p3
+    local files_inc_line_p4
+    local files_inc_line_p5
     local bk_scf_size
     local header_open1
     local header_open2
@@ -470,7 +470,7 @@ function mail_config_backup_section() {
         STATUS_BACKUP_FILES='ERROR'
 
         # Changing locals
-        status_icon_f="⛔"        
+        status_icon_f="⛔"
         content="<b>${backup_type} Backup Error: ${ERROR_TYPE}<br />Please check log file.</b> <br />"
         color="red"
 
@@ -490,7 +490,7 @@ function mail_config_backup_section() {
         count=0
 
         for backup_line in "${BACKUPED_SCF_LIST[@]}"; do
-                     
+
             bk_scf_size="${BK_SCF_SIZES[$count]}"
 
             files_inc_line_p1="<div class=\"backup-details-line\">"

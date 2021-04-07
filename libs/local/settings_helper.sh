@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.21
+# Version: 3.0.22
 #############################################################################
 
 function _settings_config_server_configuration() {
 
     # Server config (new concept)
-    local server_configs                    # Options: mysql+nginx+php, nginx+php, mysql, other
+    local server_configs # Options: mysql+nginx+php, nginx+php, mysql, other
     local default_config="mysql+nginx+php"
 
     if [[ -z ${SERVER_CONFIG} ]]; then
@@ -36,7 +36,7 @@ function _settings_config_mysql() {
     if [[ ${SERVER_CONFIG} == *"mysql"* ]]; then
 
         ask_mysql_root_psw
-        
+
     fi
 
 }
@@ -90,17 +90,17 @@ function _settings_config_smtp() {
         fi
     fi
 
-} 
+}
 
 ### BETA
 ##
-function _settings_config_duplicity(){
+function _settings_config_duplicity() {
 
     # DUPLICITY CONFIG
     if [[ -z "${DUP_BK}" ]]; then
 
         DUP_BK_DEFAULT=false
-        
+
         #whiptail_message_with_skip_option "Duplicity Support" "This script supports Duplicity. Do you want to enable backups with it?"
 
         DUP_BK=$(whiptail --title "Duplicity Backup Support?" --inputbox "Please insert true or false" 10 60 "${DUP_BK_DEFAULT}" 3>&1 1>&2 2>&3)
@@ -122,7 +122,7 @@ function _settings_config_duplicity(){
                     else
                         exit 1
                     fi
-                    
+
                 fi
 
                 if [[ -z "${DUP_SRC_BK}" ]]; then
@@ -188,15 +188,15 @@ function _settings_config_duplicity(){
                 echo "DUP_FOLDERS=none" >>/root/.broobe-utils-options
                 echo "DUP_BK_FULL_FREQ=none" >>/root/.broobe-utils-options
                 echo "DUP_BK_FULL_LIFE=none" >>/root/.broobe-utils-options
-                
+
             fi
 
         fi
-    
+
     fi
 }
 
-function _settings_config_mailcow(){
+function _settings_config_mailcow() {
 
     local mailcow_default_path
     local mailcow_path
@@ -207,11 +207,11 @@ function _settings_config_mailcow(){
 
     # Checking /root/.broobe-utils-options global var
     if [[ -z "${MAILCOW_BK}" ]]; then
-        
+
         whiptail_message_with_skip_option "Mailcow Support" "This script supports Mailcow. Do you want to enable backups for it?"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
-            
+
             # Checking /root/.broobe-utils-options global vars
             if [[ -z "${MAILCOW}" && "${MAILCOW_BK}" == true ]]; then
 
@@ -232,25 +232,25 @@ function _settings_config_mailcow(){
 
             mailcow_support=false
             echo "MAILCOW_BK=${mailcow_support}" >>/root/.broobe-utils-options
-        
+
         fi
 
     fi
 }
 
-function _settings_config_dropbox(){
+function _settings_config_dropbox() {
 
     # Checking /root/.broobe-utils-options global var
     if [[ -z "${DROPBOX_ENABLE}" ]]; then
-        
+
         whiptail_message_with_skip_option "Dropbox Support" "This script supports Dropbox integration via API. If you have a Dropbox account you can configure it to backup and restore projects from here. Do you want to enable Dropbox support?"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
-            
+
             # Setting option on script config file
             DROPBOX_ENABLE="true"
             echo "DROPBOX_ENABLE=${DROPBOX_ENABLE}" >>/root/.broobe-utils-options
-            
+
             # Generating Dropbox api config file
             generate_dropbox_config
 
@@ -264,19 +264,19 @@ function _settings_config_dropbox(){
 
 }
 
-function _settings_config_cloudflare(){
+function _settings_config_cloudflare() {
 
     # Checking /root/.broobe-utils-options global var
     if [[ -z "${CLOUDFLARE_ENABLE}" ]]; then
-        
+
         whiptail_message_with_skip_option "Cloudflare Support" "This script supports Cloudflare integration via API. If you have a Cloudflare account you can configure it to manage your domains from here. Do you want to enable Cloudflare support?"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
-            
+
             # Setting option on script config file
             CLOUDFLARE_ENABLE="true"
             echo "CLOUDFLARE_ENABLE=${CLOUDFLARE_ENABLE}" >>/root/.broobe-utils-options
-            
+
             # Generating Cloudflare api config file
             generate_cloudflare_config
 
@@ -290,19 +290,19 @@ function _settings_config_cloudflare(){
 
 }
 
-function _settings_config_telegram(){
+function _settings_config_telegram() {
 
     # Checking /root/.broobe-utils-options global var
     if [[ -z "${TELEGRAM_NOTIF}" ]]; then
-        
+
         whiptail_message_with_skip_option "Telegram Notification" "Do you want to enable Telegram notification support?"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
-            
+
             # Setting option on script config file
             TELEGRAM_NOTIF="true"
             echo "TELEGRAM_NOTIF=${TELEGRAM_NOTIF}" >>/root/.broobe-utils-options
-            
+
             # Generating Telegram api config file
             generate_telegram_config
 
@@ -316,7 +316,7 @@ function _settings_config_telegram(){
 
 }
 
-function _settings_config_notifications(){
+function _settings_config_notifications() {
 
     #TODO: option to select notification types (mail, telegram)
 
@@ -326,13 +326,13 @@ function _settings_config_notifications(){
         whiptail_message_with_skip_option "E-Mail Notification" "Do you want to enable E-Mail notification support?"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
-            
+
             # Setting option on script config file
             MAIL_NOTIF="true"
             echo "MAIL_NOTIF=${MAIL_NOTIF}" >>/root/.broobe-utils-options
-            
+
             if [[ -z "${MAILA}" ]]; then
-           
+
                 MAILA=$(whiptail --title "Notification Email" --inputbox "Insert the email where you want to receive notifications." 10 60 "${MAILA_OLD}" 3>&1 1>&2 2>&3)
                 exitstatus=$?
                 if [[ ${exitstatus} -eq 0 ]]; then
@@ -370,10 +370,10 @@ function check_script_configuration() {
 }
 
 function script_configuration_wizard() {
-                                                    
+
     # Description
-    # This function could run for 3 reasons: 
-    # Initial setup, check if all needed vars are configured or reconfigure all settings.              
+    # This function could run for 3 reasons:
+    # Initial setup, check if all needed vars are configured or reconfigure all settings.
     # Important: Need to be runned only after load config files.
 
     # Parameters
@@ -423,7 +423,7 @@ function script_configuration_wizard() {
     fi
 
     if [[ -z "${SITES}" ]]; then
-        
+
         if [[ -n "${SITES_OLD}" ]]; then
             # SITES_OLD defined
             SITES_DEFAULT="${SITES_OLD}"
@@ -460,7 +460,7 @@ function script_configuration_wizard() {
 
 function generate_dropbox_config() {
 
-    local oauth_access_token_string 
+    local oauth_access_token_string
     local oauth_access_token
 
     # Checking var of ${DPU_CONFIG_FILE}
@@ -494,7 +494,7 @@ function generate_dropbox_config() {
 
 function generate_dropbox_config_new() {
 
-    local dropbox_config_first_msg 
+    local dropbox_config_first_msg
     local dropbox_config_second_msg
     local dropbox_config_third_msg
     local dropbox_config_fourth_msg
@@ -557,7 +557,7 @@ function generate_dropbox_config_new() {
             dropbox_config_fourth_msg+=" 11) Now open the following link, \n\n"
             dropbox_config_fourth_msg+=" https://www.dropbox.com/oauth2/authorize?client_id=${app_key}&token_access_type=offline&response_type=code \n\n"
             dropbox_config_fourth_msg+=" Allow suggested permissions and copy paste here the Access Code:\n\n"
-            
+
             oauth_access_token=$(whiptail --title "${whip_title}" --inputbox "${dropbox_config_fourth_msg}" 15 60 3>&1 1>&2 2>&3)
             exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
@@ -588,7 +588,7 @@ function generate_cloudflare_config() {
 
     # ${CLF_CONFIG_FILE} is a Global var
 
-    local cfl_email 
+    local cfl_email
     local cfl_api_token
     local cfl_email_string
     local cfl_api_token_string
@@ -602,7 +602,7 @@ function generate_cloudflare_config() {
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
-            echo "dns_cloudflare_email=${cfl_email}">"${CLF_CONFIG_FILE}"
+            echo "dns_cloudflare_email=${cfl_email}" >"${CLF_CONFIG_FILE}"
 
             cfl_api_token_string+="\n Please insert the Cloudflare Global API Key.\n"
             cfl_api_token_string+=" 1) Log in on: cloudflare.com\n"
@@ -616,9 +616,9 @@ function generate_cloudflare_config() {
             exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
 
-            # Write config file
-            echo "dns_cloudflare_api_key=${cfl_api_token}">>"${CLF_CONFIG_FILE}"
-            log_event "info" "The Cloudflare configuration has been saved!"
+                # Write config file
+                echo "dns_cloudflare_api_key=${cfl_api_token}" >>"${CLF_CONFIG_FILE}"
+                log_event "info" "The Cloudflare configuration has been saved!"
 
             else
                 return 1
@@ -654,13 +654,13 @@ function generate_telegram_config() {
         echo "botfather_key=${botfather_key}" >>"/root/.telegram.conf"
 
         telegram_id_whip_line+=" \n\n "
-		telegram_id_whip_line+=" 3) Contact the @myidbot (https://t.me/myidbot) bot and send the command /getid to get \n"
-		telegram_id_whip_line+=" your personal chat id or invite him into a group and issue the same command to get the group chat id.\n"
-		telegram_id_whip_line+=" 4) Paste the ID here:\n\n"
-		
-		telegram_user_id=$(whiptail --title "Telegram: BotID Configuration" --inputbox "${telegram_id_whip_line}" 15 60 3>&1 1>&2 2>&3)
-		exitstatus=$?
-		if [[ ${exitstatus} -eq 0 ]]; then
+        telegram_id_whip_line+=" 3) Contact the @myidbot (https://t.me/myidbot) bot and send the command /getid to get \n"
+        telegram_id_whip_line+=" your personal chat id or invite him into a group and issue the same command to get the group chat id.\n"
+        telegram_id_whip_line+=" 4) Paste the ID here:\n\n"
+
+        telegram_user_id=$(whiptail --title "Telegram: BotID Configuration" --inputbox "${telegram_id_whip_line}" 15 60 3>&1 1>&2 2>&3)
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
 
             # Write config file
             echo "telegram_user_id=${telegram_user_id}" >>"/root/.telegram.conf"
@@ -671,11 +671,11 @@ function generate_telegram_config() {
 
             telegram_send_message "✅ ${VPSNAME}: Telegram notifications configured!"
 
-		else
+        else
 
-			return 1
+            return 1
 
-		fi
+        fi
 
     else
 
