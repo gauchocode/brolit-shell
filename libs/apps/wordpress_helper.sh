@@ -28,25 +28,25 @@ function is_wp_project() {
 
 }
 
-function wp_config_path () {
+function wp_config_path() {
 
-    # $1 = ${dir_to_search}
+  # $1 = ${dir_to_search}
 
-    local dir_to_search=$1
+  local dir_to_search=$1
 
-    # Find where wp-config.php is
-    find_output=$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')
+  # Find where wp-config.php is
+  find_output=$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')
 
-    if [[ ${find_output} != "" ]]; then
+  if [[ ${find_output} != "" ]]; then
 
-      # Return
-      echo "${find_output}"
+    # Return
+    echo "${find_output}"
 
-    else
+  else
 
-      return 1
+    return 1
 
-    fi
+  fi
 
 }
 
@@ -67,9 +67,9 @@ function wp_update_wpconfig() {
 
   # Change wp-config.php database parameters
   log_event "info" "Changing database parameters on ${wp_project_dir}/wp-config.php"
-  
+
   sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" "${wp_project_dir}/wp-config.php"
-  
+
   if [[ ${wp_project_name} != "" ]]; then
     sed_output=$(sed -i "/DB_NAME/s/'[^']*'/'${wp_project_name}_${wp_project_state}'/2" "${wp_project_dir}/wp-config.php")
   fi
@@ -96,7 +96,7 @@ function wp_change_permissions() {
 
   # Change ownership
   change_ownership "www-data" "www-data" "${project_dir}"
-  
+
   find "${project_dir}" -type d -exec chmod g+s {} \;
 
   if [[ -d "${project_dir}/wp-content" ]]; then
@@ -110,7 +110,6 @@ function wp_change_permissions() {
   log_event "info" "Permissions changes for: ${project_dir}"
   display --indent 6 --text "- Setting default permissions on wordpress" --result "DONE" --color GREEN
 
-  
 }
 
 # Ref manual multisite: https://multilingualpress.org/docs/wordpress-multisite-database-tables/
@@ -140,7 +139,7 @@ function wp_replace_string_on_database() {
   local databases
 
   if [[ -z "${db_prefix}" ]]; then
-   
+
     db_prefix=$(whiptail --title "WordPress DB Prefix" --inputbox "Please insert the WordPress Database Prefix. Example: wp_" 10 60 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -151,12 +150,11 @@ function wp_replace_string_on_database() {
 
   fi
 
-
   if [[ -z "${target_db}" ]]; then
-    
+
     databases="$(mysql_list_databases)"
-    
-    chosen_db=$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to work with" 20 78 10 `for x in ${databases}; do echo "$x [DB]"; done` 3>&1 1>&2 2>&3)
+
+    chosen_db=$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to work with" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
       log_event "debug" "Setting chosen_db=${chosen_db}"
@@ -165,7 +163,7 @@ function wp_replace_string_on_database() {
     fi
 
   else
-    chosen_db=${target_db};
+    chosen_db=${target_db}
 
   fi
 
@@ -234,8 +232,8 @@ function wp_ask_url_search_and_replace() {
 
           ### Creating temporary folders
           if [[ ! -d "${SFOLDER}/tmp-backup" ]]; then
-              mkdir "${SFOLDER}/tmp-backup"
-              log_event "info" "Temp files directory created: ${SFOLDER}/tmp-backup" "false"
+            mkdir "${SFOLDER}/tmp-backup"
+            log_event "info" "Temp files directory created: ${SFOLDER}/tmp-backup" "false"
           fi
 
           project_name=$(basename "${wp_path}")
