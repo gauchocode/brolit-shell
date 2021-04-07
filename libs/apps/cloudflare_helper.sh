@@ -31,8 +31,9 @@ function _cloudflare_get_zone_id() {
 
     # Log
     display --indent 6 --text "- Accessing Cloudflare API" --result "DONE" --color GREEN
+    display --indent 6 --text "- Checking if domain exists" --result "DONE" --color GREEN
     log_event "info" "Accessing Cloudflare API ..."
-    log_event "info" "Getting Zone & Record ID's for zone: ${zone_name}"
+    log_event "info" "Getting Zone ID for domain: ${zone_name}"
     log_event "debug" "Running: curl -s -X GET \"https://api.cloudflare.com/client/v4/zones?name=${zone_name}\" -H \"X-Auth-Email: ${auth_email}\" -H \"X-Auth-Key: ${auth_key}\" -H \"Content-Type: application/json\" | grep -Po '(?<=\"id\":\")[^\"]*' | head -1"
 
     # Get Zone ID
@@ -44,12 +45,16 @@ function _cloudflare_get_zone_id() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        log_event "info" "Zone ID found: ${zone_id}"
+        log_event "info" "Zone ID found: ${zone_id} for domain ${zone_name}"
+        display --indent 8 --text "- Domain ${zone_name} found" --tcolor GREEN
 
         # Return
         echo "${zone_id}"
 
     else
+
+        log_event "info" "Zone ID not found: ${zone_id} for domain ${zone_name}. Maybe domain is not configured yet."
+        display --indent 8 --text "- Domain ${zone_name} not found" --tcolor YELLOW
 
         return 1
 
@@ -456,8 +461,8 @@ function cloudflare_delete_a_record() {
     local root_domain=$1
     local domain=$2
 
-    # Cloudflare API to change DNS records
-    log_event "info" "Accessing to Cloudflare API to change record ${domain}"
+    # Cloudflare API to delete record
+    log_event "info" "Accessing to Cloudflare API to delete record ${domain}"
 
     record_name="${domain}"
 
@@ -465,18 +470,14 @@ function cloudflare_delete_a_record() {
     record_type="A"
     ttl=1 #1 for Auto
 
-    # SCRIPT START
-    log_event "info" "Cloudflare Script Initiated"
-
     cur_ip=${SERVER_IP}
 
-    # RETRIEVE/ SAVE zone_id AND record_id
     zone_id=$(_cloudflare_get_zone_id "${root_domain}")
 
     record_id=$(cloudflare_record_exists "${record_name}")
 
     exitstatus=$?
-    if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
+    if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then # Record found on Cloudflare
 
         log_event "info" "Trying to delete the record ..."
 
@@ -506,16 +507,14 @@ function cloudflare_delete_a_record() {
 
         fi
 
+        return 0
+
     else
 
-        log_event "info" "Record not found on Cloudflare"
-        display --indent 6 --text "- Record not found on Cloudflare" --result "FAIL" --color RED
-
+        # Record not found
         return 1
 
     fi
-
-    #rm "${id_file}"
 
 }
 
@@ -531,7 +530,7 @@ function cloudflare_set_cache_ttl_value() {
     zone_id=$(_cloudflare_get_zone_id "${root_domain}")
 
     exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
+    if [[ ${exitstatus} -eq 0 ]]; then # Zone found
 
         cache_ttl_result="$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/browser_cache_ttl" \
             -H "X-Auth-Email: ${auth_email}" \
@@ -552,6 +551,7 @@ function cloudflare_set_cache_ttl_value() {
 
     else
 
+        # Zone not found
         return 1
 
     fi
@@ -572,7 +572,7 @@ function cloudflare_set_http3_setting() {
     zone_id=$(_cloudflare_get_zone_id "${root_domain}")
 
     exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
+    if [[ ${exitstatus} -eq 0 ]]; then # Zone found
 
         cache_ttl_result="$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/http3" \
             -H "X-Auth-Email: ${auth_email}" \
@@ -593,6 +593,7 @@ function cloudflare_set_http3_setting() {
 
     else
 
+        # Zone not found
         return 1
 
     fi
