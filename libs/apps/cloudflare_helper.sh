@@ -29,7 +29,6 @@ function _cloudflare_get_zone_id() {
     display --indent 6 --text "- Checking if domain exists" --result "DONE" --color GREEN
     log_event "info" "Accessing Cloudflare API ..."
     log_event "info" "Getting Zone ID for domain: ${zone_name}"
-    log_event "debug" "Running: curl -s -X GET \"https://api.cloudflare.com/client/v4/zones?name=${zone_name}\" -H \"X-Auth-Email: ${auth_email}\" -H \"X-Auth-Key: ${auth_key}\" -H \"Content-Type: application/json\" | grep -Po '(?<=\"id\":\")[^\"]*' | head -1"
 
     # Get Zone ID
     zone_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" \
@@ -40,6 +39,7 @@ function _cloudflare_get_zone_id() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 && ${zone_id} != "" ]]; then
 
+        # Log
         log_event "info" "Zone ID found: ${zone_id} for domain ${zone_name}"
         display --indent 8 --text "Domain ${zone_name} found" --tcolor GREEN
 
@@ -48,7 +48,9 @@ function _cloudflare_get_zone_id() {
 
     else
 
+        # Log
         log_event "info" "Zone ID not found for domain ${zone_name}. Maybe domain is not configured yet."
+        log_event "debug" "Last command executed: curl -s -X GET \"https://api.cloudflare.com/client/v4/zones?name=${zone_name}\" -H \"X-Auth-Email: ${auth_email}\" -H \"X-Auth-Key: ${auth_key}\" -H \"Content-Type: application/json\" | grep -Po '(?<=\"id\":\")[^\"]*' | head -1"
         display --indent 8 --text "Domain ${zone_name} not found" --tcolor YELLOW
 
         return 1
@@ -209,14 +211,15 @@ function cloudflare_set_development_mode() {
         if [[ ${dev_mode_result} == *"\"success\":false"* || ${dev_mode_result} == "" ]]; then
             message="Error trying to change development mode for ${root_domain}. Results:\n ${dev_mode_result}"
             log_event "error" "${message}"
-            display --indent 2 --text "- Enabling development mode" --result "FAIL" --color RED
+            log_event "debug" "Last command executed: curl -X PATCH \"https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/development_mode\" -H \"X-Auth-Email: ${auth_email}\" -H \"X-Auth-Key: ${auth_key}\" -H \"Content-Type: application/json\" --data \"{\"value\":\"${dev_mode}\"}\""
+            display --indent 6 --text "- Enabling development mode" --result "FAIL" --color RED
 
             return 1
 
         else
             message="Development mode for ${root_domain} is ${dev_mode}"
             log_event "info" "${message}"
-            display --indent 2 --text "- Enabling development mode" --result "DONE" --color GREEN
+            display --indent 6 --text "- Enabling development mode" --result "DONE" --color GREEN
 
         fi
 
@@ -411,7 +414,7 @@ function cloudflare_set_a_record() {
         _cloudflare_clear_garbage_output
 
         if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
-            message="API UPDATE FAILED. RESULTS:\n${update}"
+            message="Update failed. Results:\n${update}"
             log_event "error" "${message}"
             display --indent 6 --text "- Updating subdomain on Cloudflare" --result "FAIL" --color RED
             display --indent 8 --text "${message}" --tcolor RED
@@ -549,11 +552,13 @@ function cloudflare_set_cache_ttl_value() {
         if [[ ${cache_ttl_result} == *"\"success\":false"* || ${cache_ttl_result} == "" ]]; then
             message="Error trying to set cache ttl for ${root_domain}. Results:\n ${cache_ttl_result}"
             log_event "error" "${message}"
+            display --indent 6 --text "- Setting TTL Cache value '${cache_ttl_value}' for ${record_name}" --result "FAIL" --color RED
             return 1
 
         else
             message="Cache TTL value for ${root_domain} is ${cache_ttl_result}"
             log_event "info" "${message}"
+            display --indent 6 --text "- Setting TTL Cache value '${cache_ttl_value}' for ${record_name}" --result "DONE" --color GREEN
 
         fi
 
