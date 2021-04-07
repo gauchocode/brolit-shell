@@ -434,7 +434,7 @@ function cloudflare_set_a_record() {
     else
 
         display --indent 6 --text "- Adding the subdomain: ${record_name}"
-        log_event "debug" "RECORD_ID not found: Trying to add the subdomain ..."
+        log_event "debug" "RECORD_ID not found. Trying to add the subdomain: ${record_name}"
 
         update="$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
             -H "X-Auth-Email: ${auth_email}" \
@@ -442,8 +442,25 @@ function cloudflare_set_a_record() {
             -H "Content-Type: application/json" \
             --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"
 
-        # Remove Cloudflare API garbage output
-        _cloudflare_clear_garbage_output
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+            # Remove Cloudflare API garbage output
+            _cloudflare_clear_garbage_output
+
+            display --indent 6 --text "- Creating subdomain ${record_name}" --result "DONE" --color GREEN
+            log_event "info" "Subdomain ${record_name} added successfully"
+
+        else
+
+            # Remove Cloudflare API garbage output
+            _cloudflare_clear_garbage_output
+
+            display --indent 6 --text "- Creating subdomain ${record_name}" --result "FAIL" --color RED
+            log_event "error" "Error creating subdomain ${record_name}"
+            log_event "debug" "Last command executed: curl -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" -H \"X-Auth-Email: ${auth_email}\" -H \"X-Auth-Key: ${auth_key}\" -H \"Content-Type: application/json\" --data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}\""
+
+        fi
 
     fi
 
