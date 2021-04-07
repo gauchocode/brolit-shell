@@ -1904,9 +1904,19 @@ function menu_project_utils() {
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
 
+        log_section "GTMETRIX"
+
+        display --indent 2 --text "- Testing project ${URL_TO_TEST}" --result DONE --color GREEN
+
         # shellcheck source=${SFOLDER}/tools/third-party/google-insights-api-tools/gitools_v5.sh
         gtmetrix_result="$("${SFOLDER}/tools/third-party/google-insights-api-tools/gitools_v5.sh" gtmetrix "${URL_TO_TEST}")"
 
+        gtmetrix_results_url="$(echo "${gtmetrix_result}" | grep -Po '(?<=Report:)[^"]*' | head -1 | cut -d " " -f 2)"
+
+        clear_last_line
+        display --indent 2 --text "- Testing project ${URL_TO_TEST}" --result DONE --color GREEN
+        display --indent 4 --text "Please check results on ${MAGENTA}${gtmetrix_results_url}${ENDCOLOR}"
+        #display --indent 4 --text "Please check results on log file" --tcolor MAGENTA
         log_event "info" "gtmetrix_result: ${gtmetrix_result}"
 
       fi
