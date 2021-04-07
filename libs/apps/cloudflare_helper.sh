@@ -19,10 +19,7 @@ function _cloudflare_get_zone_id() {
     # Checking cloudflare credentials file
     generate_cloudflare_config
 
-    # We need to do this, because certbot use this file with this vars
-    # And this script need this others var names
-    #declare -g -r dns_cloudflare_email="${dns_cloudflare_email}"
-    #declare -g -r dns_cloudflare_api_key="${dns_cloudflare_api_key}"
+    # Using globals: ${dns_cloudflare_email} and ${dns_cloudflare_api_key}
 
     # Log
     display --indent 6 --text "- Accessing Cloudflare API" --result "DONE" --color GREEN

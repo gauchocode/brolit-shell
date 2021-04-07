@@ -23,7 +23,7 @@ function test_php_set_version_on_config() {
     php_set_version_on_config "7.4" "/etc/nginx/sites-available/domain.com.conf"
 
     current_phpv=$(nginx_server_get_current_phpv "/etc/nginx/sites-available/domain.com.conf")
-    if [[ ${current_phpv} = "7.4" ]]; then 
+    if [[ ${current_phpv} = "7.4" ]]; then
         display --indent 6 --text "- php_set_version_on_config result ${current_phpv}" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- php_set_version_on_config" --result "FAIL" --color RED
