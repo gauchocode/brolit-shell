@@ -40,72 +40,72 @@ function nginx_server_create() {
 
     case ${server_type} in
 
-        single)
+    single)
 
-            # Config file path
-            nginx_server_file="${WSERVER}/sites-available/${project_domain}"
+        # Config file path
+        nginx_server_file="${WSERVER}/sites-available/${project_domain}"
 
-            # Copy config from template file
-            cp "${SFOLDER}/config/nginx/sites-available/${project_type}_${server_type}" "${nginx_server_file}"
-            ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
+        # Copy config from template file
+        cp "${SFOLDER}/config/nginx/sites-available/${project_type}_${server_type}" "${nginx_server_file}"
+        ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
 
-            # Search and replace domain.com string with correct project_domain
-            sed -i "s/domain.com/${project_domain}/g" "${WSERVER}/sites-available/${project_domain}"
+        # Search and replace domain.com string with correct project_domain
+        sed -i "s/domain.com/${project_domain}/g" "${WSERVER}/sites-available/${project_domain}"
 
-            display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
-
-        ;;
-
-        root_domain)
-
-            # Config file path
-            nginx_server_file="${WSERVER}/sites-available/${project_domain}"
-
-            # Copy config from template file
-            cp "${SFOLDER}/config/nginx/sites-available/${project_type}_${server_type}" "${nginx_server_file}"
-            ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
-
-            # Search and replace root_domain.com string with correct redirect_domains (must be root_domain here)
-            sed -i "s/root_domain.com/${redirect_domains}/g" "${WSERVER}/sites-available/${project_domain}"
-
-            # Search and replace domain.com string with correct project_domain
-            sed -i "s/domain.com/${project_domain}/g" "${WSERVER}/sites-available/${project_domain}"
-
-            display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
+        display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
 
         ;;
 
-        multi_domain)
-            
-            display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result FAIL --color RED
-            display --indent 8 --text "TODO: implements multidomain support"
-            log_event "info" "TODO: implements multidomain support"
+    root_domain)
+
+        # Config file path
+        nginx_server_file="${WSERVER}/sites-available/${project_domain}"
+
+        # Copy config from template file
+        cp "${SFOLDER}/config/nginx/sites-available/${project_type}_${server_type}" "${nginx_server_file}"
+        ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
+
+        # Search and replace root_domain.com string with correct redirect_domains (must be root_domain here)
+        sed -i "s/root_domain.com/${redirect_domains}/g" "${WSERVER}/sites-available/${project_domain}"
+
+        # Search and replace domain.com string with correct project_domain
+        sed -i "s/domain.com/${project_domain}/g" "${WSERVER}/sites-available/${project_domain}"
+
+        display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
 
         ;;
 
-        tool)
+    multi_domain)
 
-            # Config file path
-            nginx_server_file="${WSERVER}/sites-available/${project_type}"
-
-            # Copy config from template file
-            cp "${SFOLDER}/config/nginx/sites-available/${project_type}" "${nginx_server_file}"
-            ln -s "${WSERVER}/sites-available/${project_type}" "${WSERVER}/sites-enabled/${project_type}"
-
-            # Search and replace domain.com string with correct project_domain
-            sed -i "s/domain.com/${project_domain}/g" "${WSERVER}/sites-available/${project_type}"
-
-            display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
+        display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result FAIL --color RED
+        display --indent 8 --text "TODO: implements multidomain support"
+        log_event "info" "TODO: implements multidomain support"
 
         ;;
 
-        *)
+    tool)
 
-            log_event "error" "Nginx server config creation fail! Nginx server type '${server_type}' unknow."
-            display --indent 6 --text "- Nginx server config creation" --result FAIL --color RED
-            display --indent 8 --text "Nginx server type '${server_type}' unknow!"
+        # Config file path
+        nginx_server_file="${WSERVER}/sites-available/${project_type}"
 
-            return 1
+        # Copy config from template file
+        cp "${SFOLDER}/config/nginx/sites-available/${project_type}" "${nginx_server_file}"
+        ln -s "${WSERVER}/sites-available/${project_type}" "${WSERVER}/sites-enabled/${project_type}"
+
+        # Search and replace domain.com string with correct project_domain
+        sed -i "s/domain.com/${project_domain}/g" "${WSERVER}/sites-available/${project_type}"
+
+        display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
+
+        ;;
+
+    *)
+
+        log_event "error" "Nginx server config creation fail! Nginx server type '${server_type}' unknow."
+        display --indent 6 --text "- Nginx server config creation" --result FAIL --color RED
+        display --indent 8 --text "Nginx server type '${server_type}' unknow!"
+
+        return 1
 
         ;;
 
@@ -113,7 +113,7 @@ function nginx_server_create() {
 
     # Set/Change PHP version if needed
     php_set_version_on_config "" "${nginx_server_file}"
-   
+
     #Test the validity of the nginx configuration
     nginx_configuration_test
 
@@ -155,55 +155,55 @@ function nginx_server_change_status() {
     local project_domain=$1
     local project_status=$2
 
-    local result 
+    local result
     local debug
 
     case ${project_status} in
 
-        online)
+    online)
 
-            log_event "info" "New project status: ${project_status}"
-            if [[ -f "${WSERVER}/sites-available/${project_domain}" ]]; then
+        log_event "info" "New project status: ${project_status}"
+        if [[ -f "${WSERVER}/sites-available/${project_domain}" ]]; then
 
-                # Creating symbolic link
-                ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
-                # Logging
-                log_event "info" "Project config added to ${WSERVER}/sites-enabled/${project_domain}"
-                display --indent 6 --text "- Changing project status to ONLINE" --result "DONE" --color GREEN
+            # Creating symbolic link
+            ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
+            # Logging
+            log_event "info" "Project config added to ${WSERVER}/sites-enabled/${project_domain}"
+            display --indent 6 --text "- Changing project status to ONLINE" --result "DONE" --color GREEN
 
-            else
-                # Logging
-                log_event "error" "${WSERVER}/sites-available/${project_domain} does not exist"
-                display --indent 6 --text "- Changing project status to ONLINE" --result "FAIL" --color RED
-                display --indent 8 --text "${WSERVER}/sites-available/${project_domain} does not exist" --tcolor RED
+        else
+            # Logging
+            log_event "error" "${WSERVER}/sites-available/${project_domain} does not exist"
+            display --indent 6 --text "- Changing project status to ONLINE" --result "FAIL" --color RED
+            display --indent 8 --text "${WSERVER}/sites-available/${project_domain} does not exist" --tcolor RED
 
-            fi
-            ;;
+        fi
+        ;;
 
-        offline)
+    offline)
 
-            log_event "info" "New project status: ${project_status}"
-            if [[ -h "${WSERVER}/sites-enabled/${project_domain}" ]]; then
+        log_event "info" "New project status: ${project_status}"
+        if [[ -L "${WSERVER}/sites-enabled/${project_domain}" ]]; then
 
-                # Deleting config
-                rm "${WSERVER}/sites-enabled/${project_domain}"
-                # Logging
-                log_event "info" "Project config deleted from ${WSERVER}/sites-enabled/${project_domain}"
-                display --indent 6 --text "- Changing project status to OFFLINE" --result "DONE" --color GREEN
+            # Deleting config
+            rm "${WSERVER}/sites-enabled/${project_domain}"
+            # Logging
+            log_event "info" "Project config deleted from ${WSERVER}/sites-enabled/${project_domain}"
+            display --indent 6 --text "- Changing project status to OFFLINE" --result "DONE" --color GREEN
 
-            else
-                # Logging
-                log_event "error" "${WSERVER}/sites-enabled/${project_domain} does not exist"
-                display --indent 6 --text "- Changing project status to OFFLINE" --result "FAIL" --color RED
-                display --indent 8 --text "${WSERVER}/sites-available/${project_domain} does not exist" --tcolor RED
+        else
+            # Logging
+            log_event "error" "${WSERVER}/sites-enabled/${project_domain} does not exist"
+            display --indent 6 --text "- Changing project status to OFFLINE" --result "FAIL" --color RED
+            display --indent 8 --text "${WSERVER}/sites-available/${project_domain} does not exist" --tcolor RED
 
-            fi
-            ;;
+        fi
+        ;;
 
-        *)
-            log_event "info" "New project status: Unknown"
-            return 1
-            ;;
+    *)
+        log_event "info" "New project status: Unknown"
+        return 1
+        ;;
 
     esac
 
@@ -283,7 +283,7 @@ function nginx_server_change_phpv() {
     # Get current php version
     current_php_v=$(nginx_server_get_current_phpv "${nginx_server_file}")
 
-    # Replace string to match PHP version    
+    # Replace string to match PHP version
     sed -i "s#${current_php_v}#${new_php_v}#" "${nginx_server_file}"
 
     log_event "info" "PHP version for ${nginx_server_file} changed from ${current_php_v} to ${new_php_v}"
@@ -319,7 +319,7 @@ function nginx_configuration_test() {
     #Test the validity of the nginx configuration
     result=$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)
 
-    if [[ ${result} = "successful" ]];then
+    if [[ ${result} = "successful" ]]; then
 
         # Reload webserver
         service nginx reload
@@ -339,7 +339,7 @@ function nginx_configuration_test() {
 }
 
 function nginx_new_default_server() {
-    
+
     # New default nginx configuration
     log_event "info" "Moving nginx configuration files ..."
     cat "${SFOLDER}/config/nginx/sites-available/default" >"/etc/nginx/sites-available/default"
@@ -407,12 +407,12 @@ function nginx_create_empty_nginx_conf() {
     #$1 = ${path}
 
     local path=$1
-    
-    if [[ ! -f "${path}/nginx.conf" ]];then
+
+    if [[ ! -f "${path}/nginx.conf" ]]; then
 
         # Create empty file
         touch "${path}/nginx.conf"
-        
+
         return 0
 
     else
