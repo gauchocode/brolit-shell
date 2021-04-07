@@ -6,8 +6,8 @@
 
 function it_utils_menu() {
 
-  local it_util_options 
-  local chosen_it_util_options 
+  local it_util_options
+  local chosen_it_util_options
   local new_ssh_port
 
   it_util_options=(
@@ -42,7 +42,7 @@ function it_utils_menu() {
     fi
     # CHANGE SSH PORT
     if [[ ${chosen_it_util_options} == *"03"* ]]; then
-    
+
       new_ssh_port=$(whiptail --title "CHANGE SSH PORT" --inputbox "Insert the new SSH port:" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
@@ -51,7 +51,7 @@ function it_utils_menu() {
     fi
     # CHANGE HOSTNAME
     if [[ ${chosen_it_util_options} == *"04"* ]]; then
-    
+
       new_server_hostname=$(whiptail --title "CHANGE SERVER HOSTNAME" --inputbox "Insert the new hostname:" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
@@ -60,7 +60,7 @@ function it_utils_menu() {
     fi
     # ADD FLOATING IP
     if [[ ${chosen_it_util_options} == *"05"* ]]; then
-    
+
       floating_IP=$(whiptail --title "ADD FLOATING IP" --inputbox "Insert the floating IP:" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
@@ -71,7 +71,7 @@ function it_utils_menu() {
     if [[ ${chosen_it_util_options} == *"06"* ]]; then
 
       log_subsection "SFTP Manager"
-    
+
       sftp_user=$(whiptail --title "CREATE SFTP USER" --inputbox "Insert the username:" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
@@ -82,7 +82,7 @@ function it_utils_menu() {
     if [[ ${chosen_it_util_options} == *"07"* ]]; then
 
       log_subsection "SFTP Manager"
-    
+
       sftp_user=$(whiptail --title "DELETE SFTP USER" --inputbox "Insert the username:" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
@@ -91,7 +91,7 @@ function it_utils_menu() {
     fi
     # RESET MYSQL ROOT_PSW
     if [[ ${chosen_it_util_options} == *"08"* ]]; then
-    
+
       db_root_psw=$(whiptail --title "MYSQL ROOT PASSWORD" --inputbox "Insert the new root password for MySQL:" 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
@@ -102,7 +102,7 @@ function it_utils_menu() {
     fi
     # BLACKLIST CHECKER
     if [[ ${chosen_it_util_options} == *"09"* ]]; then
-    
+
       IP_TO_TEST=$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
@@ -175,7 +175,7 @@ function change_server_hostname() {
   local cur_hostname
 
   log_subsection "Change Hostname"
-  
+
   cur_hostname=$(cat /etc/hostname)
 
   # Display the current hostname
@@ -211,25 +211,25 @@ function add_floating_IP() {
   log_event "info" "Trying to add ${floating_IP} as floating ip on Ubuntu ${ubuntu_v}" "false"
 
   if [[ "${ubuntu_v}" == "1804" ]]; then
-   
-   cp "${SFOLDER}/config/networking/60-my-floating-ip.cfg" /etc/network/interfaces.d/60-my-floating-ip.cfg
-   sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/network/interfaces.d/60-my-floating-ip.cfg
-   display --indent 6 --text "- Making network config changes" --result "DONE" --color GREEN
-   
-   service networking restart
 
-   log_event "info" "New IP ${floating_IP} added" "false"
-   display --indent 6 --text "- Restarting networking service" --result "DONE" --color GREEN
-   display --indent 8 --text "New IP ${floating_IP} added"
-   
+    cp "${SFOLDER}/config/networking/60-my-floating-ip.cfg" /etc/network/interfaces.d/60-my-floating-ip.cfg
+    sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/network/interfaces.d/60-my-floating-ip.cfg
+    display --indent 6 --text "- Making network config changes" --result "DONE" --color GREEN
+
+    service networking restart
+
+    log_event "info" "New IP ${floating_IP} added" "false"
+    display --indent 6 --text "- Restarting networking service" --result "DONE" --color GREEN
+    display --indent 8 --text "New IP ${floating_IP} added"
+
   else
 
     if [[ "${ubuntu_v}" == "2004" ]]; then
-      
+
       cp "${SFOLDER}/config/networking/60-floating-ip.yaml" /etc/netplan/60-floating-ip.yaml
       sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/netplan/60-floating-ip.yaml
       display --indent 6 --text "- Making network config changes" --result "DONE" --color GREEN
-      
+
       netplan apply
 
       log_event "info" "New IP ${floating_IP} added" "false"
