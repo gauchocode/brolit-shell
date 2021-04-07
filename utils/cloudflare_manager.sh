@@ -14,6 +14,7 @@ function cloudflare_helper_menu() {
         "01)" "SET DEVELOPMENT MODE"
         "02)" "DELETE CACHE"
         "03)" "SET SSL MODE"
+        "04)" "SET CACHE TTL VALUE"
     )
     chosen_cf_options=$(whiptail --title "CLOUDFLARE MANAGER" --menu " " 20 78 10 "${cf_options[@]}" 3>&1 1>&2 2>&3)
     exitstatus=$?
@@ -62,20 +63,39 @@ function cloudflare_helper_menu() {
             if [[ ${exitstatus} = 0 ]]; then
 
                 # Define array of SSL modes
-                local -n ssl_modes=(
-                    "off" " " off
-                    "flexible" " " off
-                    "full" " " off
-                    "strict" " " off
+                local ssl_modes=(
+                    "01)" "off"
+                    "02)" "flexible"
+                    "03)" "full"
+                    "04)" "strict"
                 )
 
-                local ssl_mode
+                local chosen_ssl_mode
 
-                ssl_mode=$(whiptail --title "CLOUDFLARE SSL MODE" --radiolist "Select the new SSL mode:" 20 78 15 "${ssl_modes[@]}" 3>&1 1>&2 2>&3)
+                chosen_ssl_mode=$(whiptail --title "CLOUDFLARE SSL MODE" --menu "Select the new SSL mode:" 20 78 10 "${ssl_modes[@]}" 3>&1 1>&2 2>&3)
+                exitstatus=$?
+                if [[ ${exitstatus} = 0 ]]; then
 
-                log_event "info" "SSL Mode selected: ${ssl_mode}" "true"
+                    log_event "info" "SSL Mode selected: ${chosen_ssl_mode}" "true"
 
-                cloudflare_set_ssl_mode "${root_domain}" "${ssl_mode}"
+                    cloudflare_set_ssl_mode "${root_domain}" "${chosen_ssl_mode}"
+
+                fi
+
+            fi
+
+        fi
+
+        if [[ ${chosen_cf_options} == *"04"* ]]; then
+
+            # SET CACHE TTL VALUE
+
+            root_domain=$(whiptail --title "Root Domain" --inputbox "Insert the root domain, example: mydomain.com" 10 60 3>&1 1>&2 2>&3)
+            exitstatus=$?
+
+            if [[ ${exitstatus} = 0 ]]; then
+
+                cloudflare_set_cache_ttl_value "${root_domain}" "0"
 
             fi
 
