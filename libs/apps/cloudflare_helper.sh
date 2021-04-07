@@ -46,7 +46,7 @@ function _cloudflare_get_zone_id() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         log_event "info" "Zone ID found: ${zone_id} for domain ${zone_name}"
-        display --indent 8 --text "- Domain ${zone_name} found" --tcolor GREEN
+        display --indent 8 --text "Domain ${zone_name} found" --tcolor GREEN
 
         # Return
         echo "${zone_id}"
@@ -54,7 +54,7 @@ function _cloudflare_get_zone_id() {
     else
 
         log_event "info" "Zone ID not found: ${zone_id} for domain ${zone_name}. Maybe domain is not configured yet."
-        display --indent 8 --text "- Domain ${zone_name} not found" --tcolor YELLOW
+        display --indent 8 --text "Domain ${zone_name} not found" --tcolor YELLOW
 
         return 1
 
@@ -126,20 +126,14 @@ function cloudflare_domain_exists() {
     local zone_name
     local zone_id
 
-    zone_id=$(_cloudflare_get_zone_id "${root_domain}")
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
 
     if [[ ${zone_id} == *"\"success\":false"* || ${zone_id} == "" ]]; then
-        message="Error: the zone is not configured on the Cloudflare account."
-        display --indent 6 --text "- Getting Zone ID for ${root_domain}" --result "FAIL" --color RED
-        display --indent 8 --text "${message}"
 
         # Return
         return 1
 
     else
-        log_event "info" "Zone ID found: ${zone_id}"
-        display --indent 6 --text "- Getting Zone ID for ${root_domain}" --result "DONE" --color GREEN
-        display --indent 8 --text "Zone ID found: ${zone_id}"
 
         # Return
         return 0
@@ -333,11 +327,12 @@ function cloudflare_record_exists() {
     # RETRIEVE/ SAVE zone_id AND record_id
     zone_id=$(_cloudflare_get_zone_id "${root_domain}")
 
-    record_id=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*')
+    record_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*')"
 
-    log_event "debug" "RECORD_ID: ${record_id}"
+    log_event "debug" "Last command executed: curl -s -X GET \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}\" -H \"X-Auth-Email: ${auth_email}\" -H \"X-Auth-Key: ${auth_key}\" -H \"Content-Type: application/json\" | grep -Po '(?<=\"id\":\")[^\"]*'"
 
-    if [[ -z "${record_id}" || ${record_id} == "" ]]; then
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0  && ${record_id} == "" ]]; then
 
         log_event "info" "Record ${record_name} not found on Cloudflare"
         display --indent 6 --text "- Record ${record_name} not found on Cloudflare" --result "FAIL" --color RED
@@ -346,7 +341,7 @@ function cloudflare_record_exists() {
 
     else
 
-        log_event "info" "Record found: ${record_id}"
+        log_event "info" "Record ${record_name} found with id: ${record_id}"
 
         # Return
         echo "${record_id}"
