@@ -13,7 +13,7 @@ function security_install() {
   log_event "info" "Installing clamav and lynis"
   display --indent 2 --text "- Installing clamav and lynis"
 
-  apt-get --yes install clamav lynis -qq > /dev/null
+  apt-get --yes install clamav lynis -qq >/dev/null
 
   #clear_last_line
   display --indent 2 --text "- Installing clamav and lynis" --result "DONE" --color GREEN
