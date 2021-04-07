@@ -43,7 +43,7 @@ function mysql_test_user_credentials() {
     # Check result
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
-        
+
         # Log
         clear_last_line
         display --indent 6 --text "- Testing MySQL user credentials" --result "DONE" --color GREEN
@@ -75,7 +75,7 @@ function mysql_count_dabases() {
     local db
 
     for db in ${databases}; do
-        if [[ $DB_BL != *"${db}"* ]]; then              # $DB_BL contains blacklisted databases
+        if [[ $DB_BL != *"${db}"* ]]; then # $DB_BL contains blacklisted databases
             total_databases=$((total_databases + 1))
         fi
     done
@@ -94,7 +94,7 @@ function mysql_list_databases() {
     # Check result
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
-        
+
         # Log
         display --indent 6 --text "- Listing MySQL databases" --result "DONE" --color GREEN
         log_event "info" " Listing MySQL databases '${databases}'"
@@ -151,7 +151,7 @@ function mysql_user_create() {
     # Check result
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
-        
+
         # Log
         clear_last_line
         display --indent 6 --text "- Creating MySQL user ${db_user}" --result "DONE" --color GREEN
@@ -239,7 +239,7 @@ function mysql_user_psw_change() {
     local db_user=$1
     local db_user_psw=$2
 
-    local query_1 
+    local query_1
     local query_2
 
     log_event "info" "Changing password for user ${db_user} in MySQL"
@@ -257,7 +257,7 @@ function mysql_user_psw_change() {
 
         # Log
         display --indent 6 --text "- Changing password to user ${db_user}" --result "DONE" --color GREEN
-        display --indent 8 --text "New password: ${db_user_psw}" --result "DONE" --color GREEN  
+        display --indent 8 --text "New password: ${db_user_psw}" --result "DONE" --color GREEN
         log_event "info" "New password for user ${db_user}: ${db_user_psw}"
 
         return 0
@@ -265,7 +265,7 @@ function mysql_user_psw_change() {
     else
 
         # Log
-        display --indent 6 --text "- Changing password to user ${db_user}" --result "FAIL" --color RED   
+        display --indent 6 --text "- Changing password to user ${db_user}" --result "FAIL" --color RED
         log_event "error" "Something went wrong changing password to user ${db_user}."
         log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\""
 
@@ -284,32 +284,32 @@ function mysql_root_psw_change() {
     log_event "info" "Changing password for root in MySQL"
 
     # Kill any mysql processes currently running
-	service mysql stop
-	killall -vw mysqld
+    service mysql stop
+    killall -vw mysqld
     display --indent 2 --text "- Shutting down any mysql processes" --result "DONE" --color GREEN
-	
-	# Start mysql without grant tables
-	mysqld_safe --skip-grant-tables >res 2>&1 &
-	
-	# Sleep for 5 while the new mysql process loads (if get a connection error you might need to increase this.)
-	sleep 5
-	
-	# Creating new password if db_root_psw is empty
-    if [ "${db_root_psw}" = "" ];then
+
+    # Start mysql without grant tables
+    mysqld_safe --skip-grant-tables >res 2>&1 &
+
+    # Sleep for 5 while the new mysql process loads (if get a connection error you might need to increase this.)
+    sleep 5
+
+    # Creating new password if db_root_psw is empty
+    if [ "${db_root_psw}" = "" ]; then
         db_root_psw_len=$(shuf -i 20-30 -n 1)
         db_root_psw=$(pwgen -scn "${db_root_psw_len}" 1)
         db_root_user='root'
     fi
-	
-	# Update root user with new password
-	mysql mysql -e "USE mysql;UPDATE user SET Password=PASSWORD('${db_root_psw}') WHERE User='${db_root_user}';FLUSH PRIVILEGES;"
-	
-	# Kill the insecure mysql process
-	killall -v mysqld
-	
-	# Starting mysql again
-	service mysql restart
-	
+
+    # Update root user with new password
+    mysql mysql -e "USE mysql;UPDATE user SET Password=PASSWORD('${db_root_psw}') WHERE User='${db_root_user}';FLUSH PRIVILEGES;"
+
+    # Kill the insecure mysql process
+    killall -v mysqld
+
+    # Starting mysql again
+    service mysql restart
+
     # Check result
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
@@ -344,8 +344,8 @@ function mysql_user_grant_privileges() {
     local db_target=$2
     local db_scope=$3
 
-    local query_1 
-    local query_2 
+    local query_1
+    local query_2
 
     local mysql_output
     local mysql_result
@@ -398,7 +398,7 @@ function mysql_user_exists() {
     query="SELECT COUNT(*) FROM mysql.user WHERE user = '${db_user}';"
 
     user_exists="$(${MYSQL_ROOT} -e "${query}" | grep 1)"
-    
+
     log_event "debug" "Last command executed: ${MYSQL_ROOT} -e ${query} | grep 1"
 
     if [[ ${user_exists} == "" ]]; then
@@ -425,7 +425,7 @@ function mysql_database_exists() {
     if [[ -z "${result}" || "${result}" = "" ]]; then
         # Return 1 if database don't exists
         return 1
-        
+
     else
         # Return 0 if database exists
         return 0
@@ -517,7 +517,7 @@ function mysql_database_drop() {
 
     # Query
     query_1="DROP DATABASE ${database};"
-    
+
     # Execute command
     ${MYSQL_ROOT} -e "${query_1}"
 
@@ -541,7 +541,7 @@ function mysql_database_drop() {
         log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}\""
 
         return 1
-        
+
     fi
 
 }
@@ -576,7 +576,7 @@ function mysql_database_import() {
         return 0
 
     else
-        
+
         # Log
         clear_last_line
         display --indent 6 --text "- Database backup import" --result "ERROR" --color RED
@@ -604,7 +604,7 @@ function mysql_database_export() {
     spinner_start "- Making a backup of: ${database}"
 
     # Run mysqldump
-    ${MYSQLDUMP_ROOT} "${database}" > "${dump_file}"
+    ${MYSQLDUMP_ROOT} "${database}" >"${dump_file}"
 
     dump_status=$?
     spinner_stop "${dump_status}"
@@ -617,7 +617,7 @@ function mysql_database_export() {
         log_event "info" "Database ${database} exported successfully"
 
         return 0
-    
+
     else
 
         # Log

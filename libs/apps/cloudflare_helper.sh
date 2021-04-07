@@ -336,7 +336,7 @@ function cloudflare_record_exists() {
     if [[ ${record_id} == "" ]]; then
 
         log_event "info" "Record ${record_name} not found on Cloudflare"
-        display --indent 6 --text "- Record ${record_name} not found on Cloudflare" --result "FAIL" --color RED
+        display --indent 6 --text "- Record ${record_name} not found"
 
         return 1
 
@@ -433,7 +433,7 @@ function cloudflare_set_a_record() {
 
     else
 
-        display --indent 6 --text "- Adding the subdomain: ${record_name}"
+        display --indent 6 --text "- Creating subdomain ${MAGENTA}${record_name}${ENDCOLOR}"
         log_event "debug" "RECORD_ID not found. Trying to add the subdomain: ${record_name}"
 
         update="$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
@@ -448,7 +448,7 @@ function cloudflare_set_a_record() {
             # Remove Cloudflare API garbage output
             _cloudflare_clear_garbage_output
 
-            display --indent 6 --text "- Creating subdomain ${record_name}" --result "DONE" --color GREEN
+            display --indent 6 --text "- Creating subdomain ${MAGENTA}${record_name}${ENDCOLOR}" --result "DONE" --color GREEN
             log_event "info" "Subdomain ${record_name} added successfully"
 
         else
