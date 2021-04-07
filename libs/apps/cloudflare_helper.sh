@@ -16,18 +16,13 @@ function _cloudflare_get_zone_id() {
 
     local zone_id
 
-    #zone_name="${root_domain}"
+    # Checking cloudflare credentials file
+    generate_cloudflare_config
 
     # We need to do this, because certbot use this file with this vars
     # And this script need this others var names
-    auth_email="${dns_cloudflare_email}"
-    auth_key="${dns_cloudflare_api_key}"
-
-    # Checking cloudflare credentials file
-    if [[ -z "${auth_email}" ]]; then
-        generate_cloudflare_config
-
-    fi
+    declare -g auth_email="${dns_cloudflare_email}"
+    declare -g auth_key="${dns_cloudflare_api_key}"
 
     # Log
     display --indent 6 --text "- Accessing Cloudflare API" --result "DONE" --color GREEN
@@ -43,7 +38,7 @@ function _cloudflare_get_zone_id() {
         -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1)"
 
     exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
+    if [[ ${exitstatus} -eq 0 && ${zone_id} != "" ]]; then
 
         log_event "info" "Zone ID found: ${zone_id} for domain ${zone_name}"
         display --indent 8 --text "Domain ${zone_name} found" --tcolor GREEN
@@ -128,7 +123,7 @@ function cloudflare_domain_exists() {
 
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
     exitstatus=$?
-    if [[ ${exitstatus} -eq 0 || ${zone_id} != "" ]]; then
+    if [[ ${exitstatus} -eq 0 && ${zone_id} != "" ]]; then
 
         # Return
         return 0
