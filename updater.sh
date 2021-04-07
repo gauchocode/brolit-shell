@@ -8,7 +8,7 @@ SCRIPT="$(readlink -f "$0")"
 SCRIPTFILE="$(basename "${SCRIPT}")"
 SCRIPTPATH="$(dirname "${SCRIPT}")"
 SCRIPTNAME="$0"
-ARGS=( "$@" )
+ARGS=("$@")
 BRANCH="master"
 
 # Foreground/Text Colours
@@ -30,13 +30,13 @@ function _self_update() {
         git checkout "${BRANCH}"
         git reset --hard origin/master
         git pull --ff-only --force
-        
+
         find ./ -name "*.sh" -exec chmod +x {} \;
 
         exit 1
 
     }
-    
+
     echo -e "${YELLOW}Already the latest version.${ENDCOLOR}"
 
 }
