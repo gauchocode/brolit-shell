@@ -128,7 +128,7 @@ function cloudflare_domain_exists() {
 
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
     exitstatus=$?
-    if [[ ${exitstatus} -eq 0  || ${zone_id} != "" ]]; then
+    if [[ ${exitstatus} -eq 0 || ${zone_id} != "" ]]; then
 
         # Return
         return 0
@@ -324,15 +324,16 @@ function cloudflare_record_exists() {
     # Only for better readibility
     record_name="${domain}"
 
-    # RETRIEVE/ SAVE zone_id AND record_id
+    # Retrieve zone_id
     zone_id=$(_cloudflare_get_zone_id "${root_domain}")
 
+    # Retrieve record_id
     record_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${auth_email}" -H "X-Auth-Key: ${auth_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*')"
 
     log_event "debug" "Last command executed: curl -s -X GET \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}\" -H \"X-Auth-Email: ${auth_email}\" -H \"X-Auth-Key: ${auth_key}\" -H \"Content-Type: application/json\" | grep -Po '(?<=\"id\":\")[^\"]*'"
 
     exitstatus=$?
-    if [[ ${exitstatus} -eq 0  && ${record_id} == "" ]]; then
+    if [[ ${record_id} == "" ]]; then
 
         log_event "info" "Record ${record_name} not found on Cloudflare"
         display --indent 6 --text "- Record ${record_name} not found on Cloudflare" --result "FAIL" --color RED
