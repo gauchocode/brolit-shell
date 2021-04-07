@@ -57,7 +57,7 @@ function dropbox_upload() {
     dropbox_file_to_upload_result=$?
 
     spinner_stop "$dropbox_file_to_upload_result"
-    
+
     # Check dropbox_file_to_upload_result
     if [[ ${dropbox_file_to_upload_result} -eq 0 ]]; then
 
@@ -98,7 +98,7 @@ function dropbox_download() {
     dropbox_file_to_download_result=$?
 
     spinner_stop "${dropbox_file_to_download_result}"
-    
+
     # Check dropbox_file_to_download_result
     if [[ ${dropbox_file_to_download_result} -eq 0 ]]; then
 
