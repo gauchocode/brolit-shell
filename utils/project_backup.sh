@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.21
+# Version: 3.0.22
 #############################################################################
 #
 # TODO: This script need a refactor
