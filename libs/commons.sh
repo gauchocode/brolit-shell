@@ -1906,7 +1906,7 @@ function menu_project_utils() {
 
         log_section "GTMETRIX"
 
-        display --indent 2 --text "- Testing project ${URL_TO_TEST}" --result DONE --color GREEN
+        display --indent 2 --text "- Testing project ${URL_TO_TEST}"
 
         # shellcheck source=${SFOLDER}/tools/third-party/google-insights-api-tools/gitools_v5.sh
         gtmetrix_result="$("${SFOLDER}/tools/third-party/google-insights-api-tools/gitools_v5.sh" gtmetrix "${URL_TO_TEST}")"
@@ -2086,7 +2086,7 @@ function subtasks_cloudflare_handler() {
   dev_mode)
 
     log_event "debug" "Running: cloudflare_set_development_mode ${DOMAIN}"
-    cloudflare_set_development_mode "${DOMAIN}"
+    cloudflare_set_development_mode "${DOMAIN}" "on"
 
     exit
     ;;
