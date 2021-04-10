@@ -86,3 +86,16 @@ function test_cloudflare_clear_cache() {
     fi
 
 }
+
+function test_cloudflare_get_record_details() {
+
+    log_subsection "Test: test_cloudflare_get_record_details"
+
+    cloudflare_get_record_details "broobe.hosting" "bash.broobe.hosting" "id"
+    cloudflare_get_record_details "broobe.hosting" "bash.broobe.hosting" "type"
+    cloudflare_get_record_details "broobe.hosting" "bash.broobe.hosting" "content"
+    cloudflare_get_record_details "broobe.hosting" "bash.broobe.hosting" "proxied"
+    cloudflare_get_record_details "broobe.hosting" "bash.broobe.hosting" "created_on"
+    cloudflare_get_record_details "broobe.hosting" "bash.broobe.hosting" "modified_on"
+
+}
