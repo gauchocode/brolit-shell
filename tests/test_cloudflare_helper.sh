@@ -86,3 +86,16 @@ function test_cloudflare_clear_cache() {
     fi
 
 }
+
+function test_cloudflare_get_record_details() {
+
+    log_subsection "Test: test_cloudflare_get_record_details"
+
+    cloudflare_get_record_details "example.hosting" "bash.example.hosting" "id"
+    cloudflare_get_record_details "example.hosting" "bash.example.hosting" "type"
+    cloudflare_get_record_details "example.hosting" "bash.example.hosting" "content"
+    cloudflare_get_record_details "example.hosting" "bash.example.hosting" "proxied"
+    cloudflare_get_record_details "example.hosting" "bash.example.hosting" "created_on"
+    cloudflare_get_record_details "example.hosting" "bash.example.hosting" "modified_on"
+
+}
