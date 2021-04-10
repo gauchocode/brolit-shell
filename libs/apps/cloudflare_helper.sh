@@ -346,6 +346,64 @@ function cloudflare_record_exists() {
 
 }
 
+function cloudflare_get_record_details() {
+
+    # $1 = ${root_domain}
+    # $2 = ${domain}
+    # $3 = ${field} - Values: all, id, type, name, content, proxiable, proxied, ttl, locked, zone_id, zone_name, created_on, modified_on
+
+    local root_domain=$1
+    local domain=$2
+    local field=$3
+
+    local record_name
+    local cur_ip
+    local zone_id
+    local record_id
+
+    record_name="${domain}"
+
+    cur_ip="${SERVER_IP}"
+
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+
+    record_id="$(cloudflare_record_exists "${root_domain}" "${record_name}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
+
+        # DNS Record Details
+        record="$(curl -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
+            -H "X-Auth-Email: ${dns_cloudflare_email}" \
+            -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
+            -H "Content-Type: application/json")"
+
+        # Remove Cloudflare API garbage output
+        _cloudflare_clear_garbage_output
+
+        if [[ ${record} == *"\"success\":false"* || ${record} == "" ]]; then
+            message="Get record details failed. Results:\n${record}"
+            log_event "error" "${message}"
+            display --indent 6 --text "- Getting record details" --result "FAIL" --color RED
+            display --indent 8 --text "${message}" --tcolor RED
+
+            return 1
+
+        else
+            message="Getting record details. Results:\n${record}"
+            log_event "info" "${message}"
+            display --indent 6 --text "- Getting record details" --result "DONE" --color GREEN
+
+            record_detail="$(echo "${record}" | grep -Po '(?<="'"${field}"'":")[^"]*' | head -1)"
+
+            display --indent 8 --text "${field}: ${record_detail}" --tcolor GREEN
+
+        fi
+
+    fi
+
+}
+
 function cloudflare_set_a_record() {
 
     # $1 = ${root_domain}
@@ -362,7 +420,7 @@ function cloudflare_set_a_record() {
     local zone_id
     local record_id
 
-    record_name=${domain}
+    record_name="${domain}"
 
     #TODO: in the future we must rewrite the vars and remove this ugly replace
     record_type="A"
