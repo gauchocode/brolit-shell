@@ -8,9 +8,9 @@ function test_cloudflare_funtions() {
 
     test_cloudflare_domain_exists
     test_cloudflare_set_a_record
+    test_cloudflare_get_record_details
     test_cloudflare_delete_a_record
     test_cloudflare_clear_cache
-    test_cloudflare_get_record_details
 
 }
 
