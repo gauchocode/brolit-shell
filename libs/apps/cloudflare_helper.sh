@@ -307,20 +307,17 @@ function cloudflare_set_ssl_mode() {
 
 function cloudflare_record_exists() {
 
-    # $1 = ${root_domain}
-    # $2 = ${domain}
+    # $1 = ${domain}
+    # $2 = ${zone_id}
 
-    local root_domain=$1
-    local domain=$2
+    local domain=$1
+    local zone_id=$2
 
     # Cloudflare API to change DNS records
     log_event "info" "Checking if record ${domain} exists"
 
     # Only for better readibility
     record_name="${domain}"
-
-    # Retrieve zone_id
-    zone_id=$(_cloudflare_get_zone_id "${root_domain}")
 
     # Retrieve record_id
     record_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${dns_cloudflare_email}" -H "X-Auth-Key: ${dns_cloudflare_api_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*')"
@@ -367,7 +364,7 @@ function cloudflare_get_record_details() {
 
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
 
-    record_id="$(cloudflare_record_exists "${root_domain}" "${record_name}")"
+    record_id="$(cloudflare_record_exists "${record_name}" "${zone_id}")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
@@ -404,15 +401,17 @@ function cloudflare_get_record_details() {
 
 }
 
-function cloudflare_set_a_record() {
+function cloudflare_set_record() {
 
     # $1 = ${root_domain}
     # $2 = ${domain}
-    # $3 = ${proxy_status} true/false
+    # $3 = ${record_type} - valid values: A, AAAA, CNAME, HTTPS, TXT, SRV, LOC, MX, NS, SPF, CERT, DNSKEY, DS, NAPTR, SMIMEA, SSHFP, SVCB, TLSA, URI
+    # $4 = ${proxy_status} - true/false
 
     local root_domain=$1
     local domain=$2
-    local proxy_status=$3
+    local record_type=$3
+    local proxy_status=$4
 
     local ttl
     local record_type
@@ -423,7 +422,6 @@ function cloudflare_set_a_record() {
     record_name="${domain}"
 
     #TODO: in the future we must rewrite the vars and remove this ugly replace
-    record_type="A"
     ttl=1 #1 for Auto
 
     if [[ -z "${proxy_status}" || ${proxy_status} == "" || ${proxy_status} == "false" ]]; then
@@ -441,7 +439,7 @@ function cloudflare_set_a_record() {
 
     zone_id=$(_cloudflare_get_zone_id "${root_domain}")
 
-    record_id=$(cloudflare_record_exists "${root_domain}" "${record_name}")
+    record_id=$(cloudflare_record_exists "${record_name}" "${zone_id}")
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
@@ -536,11 +534,11 @@ function cloudflare_delete_a_record() {
     record_type="A"
     ttl=1 #1 for Auto
 
-    cur_ip=${SERVER_IP}
+    cur_ip="${SERVER_IP}"
 
     zone_id=$(_cloudflare_get_zone_id "${root_domain}")
 
-    record_id=$(cloudflare_record_exists "${root_domain}" "${record_name}")
+    record_id=$(cloudflare_record_exists "${record_name}" "${zone_id}")
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then # Record found on Cloudflare
@@ -640,7 +638,7 @@ function cloudflare_set_http3_setting() {
     local root_domain=$1
     local http3_setting=$2
 
-    zone_id=$(_cloudflare_get_zone_id "${root_domain}")
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then # Zone found

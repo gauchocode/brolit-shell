@@ -219,7 +219,7 @@ function netdata_installer_menu() {
         root_domain=$(cloudflare_ask_root_domain "${suggested_root_domain}")
 
         # Cloudflare API
-        cloudflare_set_a_record "${root_domain}" "${netdata_subdomain}"
+        cloudflare_set_record "${root_domain}" "${netdata_subdomain}" "A"
 
         DOMAIN=${netdata_subdomain}
         #CHOSEN_CB_OPTION="1"

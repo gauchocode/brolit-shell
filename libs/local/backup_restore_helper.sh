@@ -168,7 +168,7 @@ function restore_backup_server_selection() {
 
   # Select SERVER
   dropbox_server_list=$("${DROPBOX_UPLOADER}" -hq list "/")
-  chosen_server=$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 $(for x in ${dropbox_server_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)
+  chosen_server="$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 "$(for x in ${dropbox_server_list}; do echo "${x} [D]"; done)" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -566,17 +566,17 @@ function restore_type_selection_from_dropbox() {
   local folder_to_install          # directory to install project
   local project_site               # project site
 
-  chosen_type=$(whiptail --title "RESTORE FROM BACKUP" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 $(for x in ${dropbox_type_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)
+  chosen_type="$(whiptail --title "RESTORE FROM BACKUP" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 "$(for x in ${dropbox_type_list}; do echo "${x} [D]"; done)" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     dropbox_chosen_type_path="${chosen_server}/${chosen_type}"
 
-    if [[ "${chosen_type}" == "project" ]]; then
+    if [[ ${chosen_type} == "project" ]]; then
 
       restore_project "${chosen_server}"
 
-    elif [[ "${chosen_type}" != "project" ]]; then
+    elif [[ ${chosen_type} != "project" ]]; then
 
       #log_subsection "Restore ${chosen_type} Backup"
 
@@ -742,13 +742,13 @@ function restore_project() {
   local chosen_backup_to_restore
   local db_to_download
 
-  log_subsection "Restore Project Backup"
+  log_section "Restore Project Backup"
 
   # Get dropbox folders list
   dropbox_project_list="$(${DROPBOX_UPLOADER} -hq list "${chosen_server}/site")"
 
   # Select Project
-  chosen_project=$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${dropbox_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
+  chosen_project="$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup Project" 20 78 10 "$(for x in ${dropbox_project_list}; do echo "$x [D]"; done)" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -758,19 +758,19 @@ function restore_project() {
 
   else
 
-    display --indent 6 --text "- Restore project backup" --result "SKIPPED" --color YELLOW
+    display --indent 2 --text "- Restore project backup" --result "SKIPPED" --color YELLOW
 
     return 1
 
   fi
 
   # Select Backup File
-  chosen_backup_to_restore=$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${dropbox_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
+  chosen_backup_to_restore="$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup to Download" 20 78 10 "$(for x in ${dropbox_backup_list}; do echo "$x [F]"; done)" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    display --indent 6 --text "- Selecting project backup" --result "DONE" --color GREEN
-    display --indent 8 --text "${chosen_backup_to_restore}" --tcolor YELLOW
+    display --indent 2 --text "- Selecting project backup" --result "DONE" --color GREEN
+    display --indent 4 --text "${chosen_backup_to_restore}" --tcolor YELLOW
 
     # Download backup
     bk_to_dowload="${chosen_server}/site/${chosen_project}/${chosen_backup_to_restore}"
@@ -781,7 +781,7 @@ function restore_project() {
     log_event "debug" "Running: pv --width 70 ${TMP_DIR}/${chosen_backup_to_restore} | ${TAR} xp -C ${TMP_DIR} --use-compress-program=lbzip2"
 
     clear_last_line
-    display --indent 6 --text "- Uncompressing backup file" --result "DONE" --color GREEN
+    display --indent 2 --text "- Uncompressing backup file" --result "DONE" --color GREEN
     log_event "info" "Backup file ${chosen_backup_to_restore} uncompressed"
 
     # Project Type
@@ -796,7 +796,7 @@ function restore_project() {
     case ${project_type} in
 
     wordpress)
-      display --indent 8 --text "Project Type WordPress" --tcolor GREEN
+      display --indent 4 --text "Project Type WordPress" --tcolor GREEN
 
       # Reading config file
       db_name=$(project_get_configured_database "${TMP_DIR}/${chosen_project}" "wordpress")
@@ -808,15 +808,15 @@ function restore_project() {
       ;;
 
     laravel)
-      display --indent 8 --text "Project Type Laravel" --tcolor RED
+      display --indent 4 --text "Project Type Laravel" --tcolor RED
       ;;
 
     yii)
-      display --indent 8 --text "Project Type Yii" --tcolor RED
+      display --indent 4 --text "Project Type Yii" --tcolor RED
       ;;
 
     *)
-      display --indent 8 --text "Project Type Unknown" --tcolor RED
+      display --indent 4 --text "Project Type Unknown" --tcolor RED
       return 1
       ;;
 
@@ -897,13 +897,13 @@ function restore_project() {
 
     # Asking project state with suggested actual state
     suffix="$(cut -d'_' -f2 <<<${chosen_project})"
-    project_state=$(ask_project_state "${suffix}")
+    project_state="$(ask_project_state "${suffix}")"
 
     # Asking project name
     project_name="$(ask_project_name "${possible_project_name}")"
 
     # Sanitize ${project_name}
-    db_project_name=$(mysql_name_sanitize "${project_name}")
+    db_project_name="$(mysql_name_sanitize "${project_name}")"
 
     # Restore database function
     restore_database_backup "${db_project_name}" "${project_state}" "${db_name}_database_${backup_date}.tar.bz2"
@@ -958,8 +958,8 @@ function restore_project() {
 
           # Cloudflare API
           possible_root_domain="$(get_root_domain "${chosen_domain}")"
-          root_domain=$(cloudflare_ask_root_domain "${possible_root_domain}")
-          cloudflare_set_a_record "${root_domain}" "${new_project_domain}"
+          root_domain="$(cloudflare_ask_root_domain "${possible_root_domain}")"
+          cloudflare_set_record "${root_domain}" "${new_project_domain}" "A"
 
         fi
         if [[ ${letsencrypt_chosen_opt} == *"02"* ]]; then
@@ -970,7 +970,7 @@ function restore_project() {
           # Cloudflare API
           possible_root_domain="$(get_root_domain "${new_project_domain}")"
           root_domain=$(cloudflare_ask_root_domain "${possible_root_domain}")
-          cloudflare_set_a_record "${root_domain}" "${new_project_domain}"
+          cloudflare_set_record "${root_domain}" "${new_project_domain}" "A"
 
           certbot_certificate_install "${MAILA}" "${chosen_domain}"
 
@@ -980,15 +980,17 @@ function restore_project() {
 
     else
 
-      # Need to create new configs
+      # Create new configs
 
       # TODO: remove hardcoded parameters "wordpress" and "single"
+      # Here we need to check if is root_domain to ask for work with www too or if has www, ask to work with root_domain too
+
       nginx_server_create "${new_project_domain}" "wordpress" "single"
 
       # Cloudflare API
       possible_root_domain="$(get_root_domain "${chosen_domain}")"
-      root_domain=$(cloudflare_ask_root_domain "${possible_root_domain}")
-      cloudflare_set_a_record "${root_domain}" "${new_project_domain}"
+      root_domain="$(cloudflare_ask_root_domain "${possible_root_domain}")"
+      cloudflare_set_record "${root_domain}" "${new_project_domain}" "A"
 
       certbot_certificate_install "${MAILA}" "${new_project_domain}"
 
@@ -1002,7 +1004,7 @@ function restore_project() {
       wpcli_set_salts "${install_path}"
 
       # Changing wordpress visibility
-      wpcli_change_wp_seo_visibility "${install_path}" "0"
+      wpcli_change_wp_seo_visibility "${install_path}" "0" #TODO: change it if not prod
 
     fi
 
