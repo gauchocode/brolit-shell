@@ -120,10 +120,10 @@ function wordpress_project_install() {
   if [[ ${project_domain} == *"${common_subdomain}"* ]]; then
 
     # Cloudflare API to change DNS records
-    cloudflare_set_a_record "${project_root_domain}" "${project_domain}"
+    cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A"
 
     # Cloudflare API to change DNS records
-    cloudflare_set_a_record "${project_root_domain}" "${project_root_domain}"
+    cloudflare_set_record "${project_root_domain}" "${project_domain}" "CNAME"
 
     # New site Nginx configuration
     nginx_server_create "${project_domain}" "wordpress" "root_domain" "${project_root_domain}"
@@ -145,7 +145,7 @@ function wordpress_project_install() {
   else
 
     # Cloudflare API to change DNS records
-    cloudflare_set_a_record "${project_root_domain}" "${project_domain}"
+    cloudflare_set_record "${project_root_domain}" "${project_domain}" "A"
 
     # New site Nginx configuration
     nginx_create_empty_nginx_conf "${project_path}"
@@ -288,10 +288,10 @@ function wordpress_project_copy() {
   if [[ ${project_domain} == *"${common_subdomain}"* ]]; then
 
     # Cloudflare API to change DNS records
-    cloudflare_set_a_record "${root_domain}" "${project_domain}"
+    cloudflare_set_record "${root_domain}" "${root_domain}" "A"
 
     # Cloudflare API to change DNS records
-    cloudflare_set_a_record "${root_domain}" "${root_domain}"
+    cloudflare_set_record "${root_domain}" "${project_domain}" "CNAME"
 
     # New site Nginx configuration
     nginx_server_create "${project_domain}" "wordpress" "root_domain" "${root_domain}"
@@ -313,7 +313,7 @@ function wordpress_project_copy() {
   else
 
     # Cloudflare API to change DNS records
-    cloudflare_set_a_record "${root_domain}" "${project_domain}"
+    cloudflare_set_record "${root_domain}" "${project_domain}" "A"
 
     # New site Nginx configuration
     nginx_create_empty_nginx_conf "${SITES}/${project_domain}"

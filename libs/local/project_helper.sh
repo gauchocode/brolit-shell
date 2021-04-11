@@ -565,10 +565,10 @@ function php_project_install () {
   if [[ ${project_domain} == *"${common_subdomain}"* ]]; then
 
     # Cloudflare API to change DNS records
-    cloudflare_set_a_record "${project_root_domain}" "${project_domain}"
+    cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A"
 
     # Cloudflare API to change DNS records
-    cloudflare_set_a_record "${project_root_domain}" "${project_root_domain}"
+    cloudflare_set_record "${project_root_domain}" "${project_domain}" "CNAME"
 
     # New site Nginx configuration
     nginx_server_create "${project_domain}" "php" "root_domain" "${project_root_domain}"
@@ -591,7 +591,7 @@ function php_project_install () {
   else
 
     # Cloudflare API to change DNS records
-    cloudflare_set_a_record "${project_root_domain}" "${project_domain}"
+    cloudflare_set_record "${project_root_domain}" "${project_domain}" "A"
 
     # New site Nginx configuration
     nginx_create_empty_nginx_conf "${project_path}"
