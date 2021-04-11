@@ -7,8 +7,8 @@
 function ask_migration_source_type() {
 
   local migration_source_type="URL DIRECTORY"
-  
-  migration_source_type=$(whiptail --title "Migration Source" --menu "Choose the source of the project to restore/migrate:" 20 78 10 $(for x in ${migration_source_type}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)
+
+  migration_source_type=$(whiptail --title "Migration Source" --menu "Choose the source of the project to restore/migrate:" 20 78 10 "$(for x in ${migration_source_type}; do echo "$x [X]"; done)" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -27,38 +27,38 @@ function ask_migration_source_file() {
 
   local source_type=$1
 
-  local source_files_dir 
+  local source_files_dir
   local source_files_url
 
   if [[ ${source_type} = "DIRECTORY" ]]; then
 
-  source_files_dir=$(whiptail --title "Source Directory" --inputbox "Please insert the directory where files backup are stored." 10 60 "/root/backups/backup.zip" 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
+    source_files_dir=$(whiptail --title "Source Directory" --inputbox "Please insert the directory where files backup are stored." 10 60 "/root/backups/backup.zip" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
 
-    # Return
-    echo "${source_files_dir}"
+      # Return
+      echo "${source_files_dir}"
 
-  else
-    return 1
+    else
+      return 1
 
-  fi
-
-else
-
-  source_files_url=$(whiptail --title "Source File URL" --inputbox "Please insert the URL where backup files are stored." 10 60 "http://example.com/backup-files.zip" 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    # Return
-    echo "${source_files_url}"
+    fi
 
   else
-    return 1
+
+    source_files_url=$(whiptail --title "Source File URL" --inputbox "Please insert the URL where backup files are stored." 10 60 "http://example.com/backup-files.zip" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+      # Return
+      echo "${source_files_url}"
+
+    else
+      return 1
+
+    fi
 
   fi
-
-fi
 
 }
 
@@ -71,33 +71,33 @@ function ask_migration_source_db() {
 
   if [[ "${source_type}" = "DIRECTORY" ]]; then
 
-  source_db_dir=$(whiptail --title "Source Directory" --inputbox "Please insert the directory where database backup is stored." 10 60 "/root/backups/db.sql.gz" 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
+    source_db_dir=$(whiptail --title "Source Directory" --inputbox "Please insert the directory where database backup is stored." 10 60 "/root/backups/db.sql.gz" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
 
-    # Return
-    echo "${source_db_dir}"
+      # Return
+      echo "${source_db_dir}"
 
-  else
-    return 1
+    else
+      return 1
 
-  fi
-
-else
-
-  source_db_url=$(whiptail --title "Source DB URL" --inputbox "Please insert the URL where database backup is stored." 10 60 "http://example.com/backup-db.sql.gz" 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    # Return
-    echo "${source_db_url}"
+    fi
 
   else
-    return 1
+
+    source_db_url=$(whiptail --title "Source DB URL" --inputbox "Please insert the URL where database backup is stored." 10 60 "http://example.com/backup-db.sql.gz" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+      # Return
+      echo "${source_db_url}"
+
+    else
+      return 1
+
+    fi
 
   fi
-
-fi
 
 }
 
@@ -166,7 +166,7 @@ function wordpress_restore_from_source() {
 
     # Create database and user
     db_project_name=$(mysql_name_sanitize "${project_name}")
-    database_name="${db_project_name}_${project_state}" 
+    database_name="${db_project_name}_${project_state}"
     database_user="${db_project_name}_user"
     database_user_passw=$(openssl rand -hex 12)
 
@@ -175,7 +175,7 @@ function wordpress_restore_from_source() {
     mysql_user_grant_privileges "${database_user}" "${database_name}"
 
     # Extract
-    gunzip -c "${bk_db_file}" > "${project_name}.sql"
+    gunzip -c "${bk_db_file}" >"${project_name}.sql"
     #extract "${bk_db_file}"
 
     # Import dump file
@@ -199,21 +199,21 @@ function wordpress_restore_from_source() {
   install_path=$(wp_config_path "${actual_folder}")
   if [[ -z "${install_path}" ]]; then
 
-      echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND"${ENDCOLOR}
+    echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND"${ENDCOLOR}
 
-      # Change file and dir permissions
-      wp_change_permissions "${actual_folder}/${install_path}"
+    # Change file and dir permissions
+    wp_change_permissions "${actual_folder}/${install_path}"
 
-      # Change wp-config.php database parameters
-      if [[ -z "${DB_PASS}" ]]; then
-        wp_update_wpconfig "${actual_folder}/${install_path}" "${project_name}" "${project_state}" ""
-        
-      else
-        wp_update_wpconfig "${actual_folder}/${install_path}" "${project_name}" "${project_state}" "${DB_PASS}"
-        
-      fi
+    # Change wp-config.php database parameters
+    if [[ -z "${DB_PASS}" ]]; then
+      wp_update_wpconfig "${actual_folder}/${install_path}" "${project_name}" "${project_state}" ""
+
+    else
+      wp_update_wpconfig "${actual_folder}/${install_path}" "${project_name}" "${project_state}" "${DB_PASS}"
 
     fi
+
+  fi
 
   # Create nginx config files for site
   nginx_server_create "${project_domain}" "wordpress" "single"
@@ -239,6 +239,5 @@ function wordpress_restore_from_source() {
   HTMLCLOSE='</body></html>'
 
   sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${VPSNAME} - Migration Complete: ${project_name}" -o message-content-type=html -m "$HTMLOPEN $BODY_SRV_MIG $BODY_DB $BODY_CLF $HTMLCLOSE" -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}
-
 
 }
