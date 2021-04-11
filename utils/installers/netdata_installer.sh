@@ -14,10 +14,10 @@ function netdata_required_packages() {
 
   display --indent 6 --text "- Installing netdata required packages"
 
-  if [[ "${ubuntu_version}" = "1804" ]]; then
+  if [[ ${ubuntu_version} == "1804" ]]; then
     apt-get --yes install zlib1g-dev uuid-dev libuv1-dev liblz4-dev libjudy-dev libssl-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python python-mysqldb lm-sensors libmnl netcat nodejs python-ipaddress python-dnspython iproute2 python-beanstalkc libuv liblz4 Judy openssl -qq >/dev/null
 
-  elif [[ "${ubuntu_version}" = "2004" ]]; then
+  elif [[ ${ubuntu_version} == "2004" ]]; then
     apt-get --yes install curl python3-mysqldb lm-sensors libmnl netcat openssl -qq >/dev/null
 
   fi
@@ -84,7 +84,7 @@ function netdata_configuration() {
 function netdata_alarm_level() {
 
   NETDATA_ALARM_LEVELS="warning critical"
-  NETDATA_ALARM_LEVEL=$(whiptail --title "NETDATA ALARM LEVEL" --menu "Choose the Alarm Level for Notifications" 20 78 10 $(for x in ${NETDATA_ALARM_LEVELS}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)
+  NETDATA_ALARM_LEVEL=$(whiptail --title "NETDATA ALARM LEVEL" --menu "Choose the Alarm Level for Notifications" 20 78 10 "$(for x in ${NETDATA_ALARM_LEVELS}; do echo "$x [X]"; done)" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
     echo "NETDATA_ALARM_LEVEL=${NETDATA_ALARM_LEVEL}" >>/root/.broobe-utils-options
@@ -221,12 +221,8 @@ function netdata_installer_menu() {
         # Cloudflare API
         cloudflare_set_record "${root_domain}" "${netdata_subdomain}" "A"
 
-        DOMAIN=${netdata_subdomain}
-        #CHOSEN_CB_OPTION="1"
-        #export CHOSEN_CB_OPTION DOMAIN
-
         # HTTPS with Certbot
-        certbot_certificate_install "${MAILA}" "${DOMAIN}"
+        certbot_certificate_install "${MAILA}" "${netdata_subdomain}"
 
         display --indent 6 --text "- Netdata installation" --result "DONE" --color GREEN
 
