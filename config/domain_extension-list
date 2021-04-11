@@ -8,6 +8,9 @@
 .com.ar   # Argentina
 .edu.ar   # Argentina
 .org.ar   # Argentina
+.net.ar   # Argentina
+.tur.ar   # Argentina
+.gob.ar   # Argentina
 .asia     # Asia
 .com.au   # Australia
 .at       # Austria
@@ -94,6 +97,9 @@
 .com
 .net
 .org
+.dev
+.app
+.co
 .biz
 .info
 .int
@@ -105,6 +111,12 @@
 .xxx
 .hosting
 .live
+.studio
+.top
+.icu
+.us
+.website
+.xyz
 
 # TLDs
 https://data.iana.org/TLD/tlds-alpha-by-domain.txt
