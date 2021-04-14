@@ -42,17 +42,21 @@ function _make_temp_files_backup() {
 
 function restore_backup_menu() {
 
-  local -n restore_options     # whiptail array options
-  local chosen_restore_options # whiptail var
+  local restore_options         # whiptail array options
+  local chosen_restore_options  # whiptail var
+
+  log_event "info" "Selecting backup restore type"
 
   restore_options=(
     "01)" "RESTORE FROM DROPBOX"
     "02)" "RESTORE FROM URL (BETA)"
-    "03)" "RESTORE FROM FILE"
+    "03)" "RESTORE FROM FILE (BETA)"
   )
   chosen_restore_options=$(whiptail --title "RESTORE TYPE" --menu " " 20 78 10 "${restore_options[@]}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
+
+    log_event "info" "Restore type selected: ${chosen_restore_options}"
 
     if [[ ${chosen_restore_options} == *"01"* ]]; then
       restore_backup_server_selection
@@ -70,6 +74,10 @@ function restore_backup_menu() {
       restore_backup_from_file
 
     fi
+  
+  else
+
+    log_event "info" "Restore type selection skipped"
 
   fi
 
@@ -167,7 +175,7 @@ function restore_backup_server_selection() {
   local chosen_server       # whiptail var
 
   # Select SERVER
-  dropbox_server_list=$("${DROPBOX_UPLOADER}" -hq list "/")
+  dropbox_server_list="$("${DROPBOX_UPLOADER}" -hq list "/")"
   chosen_server="$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 "$(for x in ${dropbox_server_list}; do echo "${x} [D]"; done)" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
