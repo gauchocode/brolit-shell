@@ -105,7 +105,7 @@ function ask_migration_source_db() {
 function wordpress_restore_from_source() {
 
   # Project details
-  project_domain=$(ask_project_domain)
+  project_domain="$(ask_project_domain)"
 
   possible_root_domain="$(get_root_domain "${project_domain}")"
 

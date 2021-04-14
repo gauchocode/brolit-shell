@@ -63,7 +63,7 @@ function restore_backup_menu() {
     if [[ ${chosen_restore_options} == *"02"* ]]; then
 
       # shellcheck source=${SFOLDER}/utils/wordpress_restore_from_source.sh
-      # source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
+      source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
 
       wordpress_restore_from_source
 
