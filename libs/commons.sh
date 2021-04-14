@@ -1259,12 +1259,20 @@ function install_crontab_script() {
 
 function ask_project_state() {
 
-  #$1 = ${state} optional to select default option
+  #$1 = ${suggested_state} optional to select default option
 
-  local state=$1
+  local suggested_state=$1
 
-  project_states="prod stage beta test dev"
-  project_state=$(whiptail --title "Project State" --menu "Choose a Project State" 20 78 10 $(for x in ${project_states}; do echo "$x [X]"; done) --default-item "${state}" 3>&1 1>&2 2>&3)
+  local project_states
+  local project_state
+
+  project_states="prod stage test beta dev"
+
+  if [[ ${suggested_state} != *"${project_states}"* ]]; then
+    suggested_state="prod"
+  fi
+
+  project_state=$(whiptail --title "Project State" --menu "Choose a Project State" 20 78 10 "$(for x in ${project_states}; do echo "$x [X]"; done)" --default-item "${suggested_state}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -1304,6 +1312,7 @@ function ask_project_name() {
 
 }
 
+# TODO: project_domain should be an array?
 function ask_project_domain() {
 
   #$1 = ${project_domain} optional to select default option
@@ -1331,7 +1340,7 @@ function ask_project_type() {
 
   project_types="WordPress X Laravel X Basic-PHP X HTML X"
 
-  project_type=$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 $(for x in ${project_types}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  project_type=$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 "$(for x in ${project_types}; do echo "$x"; done)" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 

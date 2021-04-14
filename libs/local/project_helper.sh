@@ -174,29 +174,34 @@ function project_install() {
   local project_name=$4
   local project_state=$5
 
-  log_section "Project Installer (${project_type})"
-
-  if [[ "${project_domain}" = '' ]]; then
-    project_domain=$(ask_project_domain)
+  if [[ ${project_type} == '' ]]; then
+    project_type="$(ask_project_type)"
   fi
+
+  log_section "Project Installer (${project_type})"
   
-  if [[ "${project_domain}" = '' ]]; then
-    project_domain=$(ask_project_domain)
+  if [[ ${project_domain} == '' ]]; then
+    project_domain="$(ask_project_domain)"
   fi
 
   folder_to_install=$(ask_folder_to_install_sites "${dir_path}")
   project_path="${folder_to_install}/${project_domain}"
 
   possible_root_domain="$(get_root_domain "${project_domain}")"
-  root_domain=$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")
+  root_domain="$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")"
 
-  if [[ "${project_name}" = '' ]]; then
+  if [[ ${project_name} == '' ]]; then
     possible_project_name="$(extract_domain_extension "${project_domain}")"
     project_name="$(ask_project_name "${possible_project_name}")"
   fi
 
-  if [[ "${project_state}" = '' ]]; then
-    project_state=$(ask_project_state)
+  # TODO: check when add www.DOMAIN.com and then select other stage != prod
+  if [[ ${project_state} == '' ]]; then
+
+    suggested_state="$(get_subdomain_part "${project_domain}")"
+
+    project_state="$(ask_project_state "${suggested_state}")"
+
   fi
 
   case ${project_type} in
@@ -258,12 +263,12 @@ function project_delete_files() {
   if [[ ${output} -eq 0 ]]; then
 
     # Creating new folder structure for old projects
-    dropbox_output=$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}/offline-site" 2>&1)
+    dropbox_output="$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}/offline-site" 2>&1)"
 
     # Moving deleted project backups to another dropbox directory
     log_event "info" "${DROPBOX_UPLOADER} move ${VPSNAME}/${BK_TYPE}/${project_domain} /${VPSNAME}/offline-site"
     
-    dropbox_output=$(${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${project_domain}" "/${VPSNAME}/offline-site" 2>&1)
+    dropbox_output="$(${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${project_domain}" "/${VPSNAME}/offline-site" 2>&1)"
     
     # TODO: if destination folder already exists, it fails
     display --indent 6 --text "- Moving to offline projects on Dropbox" --result "DONE" --color GREEN
@@ -323,7 +328,7 @@ function project_delete_database() {
 
     # List databases
     databases="$(mysql_list_databases)"
-    chosen_database=$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)
+    chosen_database=$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to delete" 20 78 10 "$(for x in ${databases}; do echo "$x [DB]"; done)" --default-item "${database}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
