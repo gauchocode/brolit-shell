@@ -45,18 +45,18 @@ function restore_backup_menu() {
   local restore_options         # whiptail array options
   local chosen_restore_options  # whiptail var
 
-  log_event "info" "Selecting backup restore type"
+  log_event "info" "Selecting backup restore type ..."
 
   restore_options=(
     "01)" "RESTORE FROM DROPBOX"
     "02)" "RESTORE FROM URL (BETA)"
     "03)" "RESTORE FROM FILE (BETA)"
   )
-  chosen_restore_options=$(whiptail --title "RESTORE TYPE" --menu " " 20 78 10 "${restore_options[@]}" 3>&1 1>&2 2>&3)
+  chosen_restore_options="$(whiptail --title "RESTORE TYPE" --menu " " 20 78 10 "${restore_options[@]}" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    log_event "info" "Restore type selected: ${chosen_restore_options}"
+    log_event "debug" "Restore type option selected: ${chosen_restore_options}"
 
     if [[ ${chosen_restore_options} == *"01"* ]]; then
       restore_backup_server_selection
@@ -77,7 +77,7 @@ function restore_backup_menu() {
   
   else
 
-    log_event "info" "Restore type selection skipped"
+    log_event "debug" "Restore type selection skipped"
 
   fi
 
@@ -176,18 +176,29 @@ function restore_backup_server_selection() {
 
   # Select SERVER
   dropbox_server_list="$("${DROPBOX_UPLOADER}" -hq list "/")"
-  chosen_server="$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 "$(for x in ${dropbox_server_list}; do echo "${x} [D]"; done)" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    dropbox_type_list="$(${DROPBOX_UPLOADER} -hq list "${chosen_server}")"
-    dropbox_type_list='project '${dropbox_type_list}
+    # Show dropbox output
+    chosen_server="$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 "$(for x in ${dropbox_server_list}; do echo "${x} [D]"; done)" 3>&1 1>&2 2>&3)"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
 
-    # Select backup type
-    restore_type_selection_from_dropbox "${chosen_server}" "${dropbox_type_list}"
+      # List dropbox directories
+      dropbox_type_list="$(${DROPBOX_UPLOADER} -hq list "${chosen_server}")"
+      dropbox_type_list='project '${dropbox_type_list}
+
+      # Select backup type
+      restore_type_selection_from_dropbox "${chosen_server}" "${dropbox_type_list}"
+
+    else
+      restore_backup_menu
+
+    fi
 
   else
-    restore_backup_menu
+
+    log_event "error" "Dropbox uploader failed. Output: ${dropbox_server_list}. Exit status: ${exitstatus}"
 
   fi
 
