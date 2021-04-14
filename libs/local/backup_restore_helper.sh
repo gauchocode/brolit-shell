@@ -174,17 +174,13 @@ function restore_backup_server_selection() {
   local dropbox_server_list # list servers directories on dropbox
   local chosen_server       # whiptail var
 
-  log_event "debug" "Listing dropbox directories to chose backup to restore"
-
   # Select SERVER
   dropbox_server_list="$("${DROPBOX_UPLOADER}" -hq list "/")"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    log_event "debug" "Choosing a server directory to work with"
-
     # Show dropbox output
-    chosen_server="$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 "$(for x in ${dropbox_server_list}; do echo "${x} [D]"; done)" 3>&1 1>&2 2>&3)"
+    chosen_server="$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 $(for x in ${dropbox_server_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)"
     
     log_event "debug" "chosen_server: ${chosen_server}"
 
@@ -285,7 +281,7 @@ function restore_config_files_from_dropbox() {
     dropbox_bk_list="$(${DROPBOX_UPLOADER} -hq list "${dropbox_chosen_type_path}/${chosen_config_type}")"
   fi
 
-  chosen_config_bk=$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Choose a config backup file to restore." 20 78 10 "$(for x in ${dropbox_bk_list}; do echo "$x [F]"; done)" 3>&1 1>&2 2>&3)
+  chosen_config_bk=$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Choose a config backup file to restore." 20 78 10 $(for x in ${dropbox_bk_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -592,7 +588,7 @@ function restore_type_selection_from_dropbox() {
   local folder_to_install          # directory to install project
   local project_site               # project site
 
-  chosen_type="$(whiptail --title "RESTORE FROM BACKUP" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 "$(for x in ${dropbox_type_list}; do echo "${x} [D]"; done)" 3>&1 1>&2 2>&3)"
+  chosen_type="$(whiptail --title "RESTORE FROM BACKUP" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 $(for x in ${dropbox_type_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -774,7 +770,7 @@ function restore_project() {
   dropbox_project_list="$(${DROPBOX_UPLOADER} -hq list "${chosen_server}/site")"
 
   # Select Project
-  chosen_project="$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup Project" 20 78 10 "$(for x in ${dropbox_project_list}; do echo "$x [D]"; done)" 3>&1 1>&2 2>&3)"
+  chosen_project="$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${dropbox_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -791,7 +787,7 @@ function restore_project() {
   fi
 
   # Select Backup File
-  chosen_backup_to_restore="$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup to Download" 20 78 10 "$(for x in ${dropbox_backup_list}; do echo "$x [F]"; done)" 3>&1 1>&2 2>&3)"
+  chosen_backup_to_restore="$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${dropbox_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
