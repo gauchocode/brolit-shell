@@ -174,13 +174,20 @@ function restore_backup_server_selection() {
   local dropbox_server_list # list servers directories on dropbox
   local chosen_server       # whiptail var
 
+  log_event "debug" "Listing dropbox directories to chose backup to restore"
+
   # Select SERVER
   dropbox_server_list="$("${DROPBOX_UPLOADER}" -hq list "/")"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
+    log_event "debug" "Choosing a server directory to work with"
+
     # Show dropbox output
     chosen_server="$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 "$(for x in ${dropbox_server_list}; do echo "${x} [D]"; done)" 3>&1 1>&2 2>&3)"
+    
+    log_event "debug" "chosen_server: ${chosen_server}"
+
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
