@@ -1272,7 +1272,7 @@ function ask_project_state() {
     suggested_state="prod"
   fi
 
-  project_state=$(whiptail --title "Project State" --menu "Choose a Project State" 20 78 10 "$(for x in ${project_states}; do echo "$x [X]"; done)" --default-item "${suggested_state}" 3>&1 1>&2 2>&3)
+  project_state=$(whiptail --title "Project State" --menu "Choose a Project State" 20 78 10 $(for x in ${project_states}; do echo "$x [X]"; done) --default-item "${suggested_state}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -1294,9 +1294,9 @@ function ask_project_name() {
   local project_name=$1
 
   # Replace '-' and '.' chars
-  possible_name=$(echo "${project_name}" | sed -r 's/[.-]+/_/g')
+  possible_name="$(echo "${project_name}" | sed -r 's/[.-]+/_/g')"
 
-  project_name=$(whiptail --title "Project Name" --inputbox "Insert a project name (only separator allow is '_'). Ex: my_domain" 10 60 "${possible_name}" 3>&1 1>&2 2>&3)
+  project_name="$(whiptail --title "Project Name" --inputbox "Insert a project name (only separator allow is '_'). Ex: my_domain" 10 60 "${possible_name}" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -1319,7 +1319,7 @@ function ask_project_domain() {
 
   local project_domain=$1
 
-  project_domain=$(whiptail --title "Domain" --inputbox "Insert the project's domain. Example: landing.domain.com" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
+  project_domain="$(whiptail --title "Domain" --inputbox "Insert the project's domain. Example: landing.domain.com" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -1340,7 +1340,7 @@ function ask_project_type() {
 
   project_types="WordPress X Laravel X Basic-PHP X HTML X"
 
-  project_type=$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 "$(for x in ${project_types}; do echo "$x"; done)" 3>&1 1>&2 2>&3)
+  project_type=$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 $(for x in ${project_types}; do echo "$x"; done) 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 

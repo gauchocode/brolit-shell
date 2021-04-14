@@ -56,8 +56,6 @@ function restore_backup_menu() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    log_event "debug" "Restore type option selected: ${chosen_restore_options}"
-
     if [[ ${chosen_restore_options} == *"01"* ]]; then
       restore_backup_server_selection
 
@@ -65,7 +63,7 @@ function restore_backup_menu() {
     if [[ ${chosen_restore_options} == *"02"* ]]; then
 
       # shellcheck source=${SFOLDER}/utils/wordpress_restore_from_source.sh
-      source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
+      # source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
 
       wordpress_restore_from_source
 
@@ -882,8 +880,6 @@ function restore_project() {
       display --indent 6 --text "- Downloading backup from dropbox"
       display --indent 8 --text "${chosen_server}/database/${db_name}/${db_name}_database_${backup_date}.tar.bz2"
       log_event "info" "Trying to download ${chosen_server}/database/${db_name}/${db_name}_database_${backup_date}.tar.bz2"
-
-      #dropbox_output="$("${DROPBOX_UPLOADER}" download "${db_to_download}" 1>&2)"
 
       dropbox_download "${db_to_download}" "${TMP_DIR}"
 
