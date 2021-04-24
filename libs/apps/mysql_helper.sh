@@ -93,7 +93,7 @@ function mysql_list_databases() {
 
     # Check result
     mysql_result=$?
-    if [[ ${mysql_result} -eq 0 ]]; then
+    if [[ ${mysql_result} -eq 0 && ${databases} != "error" ]]; then
 
         # Log
         display --indent 6 --text "- Listing MySQL databases" --result "DONE" --color GREEN
@@ -129,7 +129,6 @@ function mysql_user_create() {
 
     # Log
     display --indent 2 --text "- Creating MySQL user ${db_user}"
-    log_event "info" "Creating MySQL user ..."
 
     # Define user scope
     if [[ -z ${db_user_scope} || ${db_user_scope} == "" ]]; then
@@ -158,7 +157,7 @@ function mysql_user_create() {
         if [[ ${db_user_psw} != "" ]]; then
             display --indent 8 --text "User created with pass: ${db_user_psw}" --tcolor YELLOW
         fi
-        log_event "info" " MySQL user ${db_user} created with pass: ${db_user_psw}"
+        log_event "info" "MySQL user ${db_user} created with pass: ${db_user_psw}"
 
         return 0
 
@@ -350,7 +349,8 @@ function mysql_user_grant_privileges() {
     local mysql_output
     local mysql_result
 
-    log_event "info" "Granting privileges to ${db_user} on ${db_target} database in MySQL"
+    # Log
+    display --indent 6 --text "- Granting privileges to ${db_user}"
 
     if [[ ${db_scope} == "" ]]; then
         db_scope="$(mysql_ask_user_db_scope "localhost")"
@@ -526,18 +526,18 @@ function mysql_database_drop() {
     if [[ ${mysql_result} -eq 0 ]]; then
 
         # Log
-        log_event "info" "- Database ${database} deleted successfully"
-        display --indent 6 --text "- Droping database: ${database}" --result "DONE" --color GREEN
+        log_event "info" "- Database ${database} dropped successfully"
+        display --indent 6 --text "- Dropping database: ${database}" --result "DONE" --color GREEN
 
         return 0
 
     else
 
         # Log
-        display --indent 6 --text "- Droping database: ${database}" --result "ERROR" --color RED
+        display --indent 6 --text "- Dropping database: ${database}" --result "ERROR" --color RED
         display --indent 8 --text "MySQL import output: ${mysql_output}" --tcolor RED
         display --indent 8 --text "Query executed: ${query_1}" --tcolor RED
-        log_event "error" "Something went wrong deleting database: ${database}."
+        log_event "error" "Something went wrong dropping the database: ${database}"
         log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}\""
 
         return 1
