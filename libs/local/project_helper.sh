@@ -328,7 +328,7 @@ function project_delete_database() {
 
     # List databases
     databases="$(mysql_list_databases)"
-    chosen_database=$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to delete" 20 78 10 "$(for x in ${databases}; do echo "$x [DB]"; done)" --default-item "${database}" 3>&1 1>&2 2>&3)
+    chosen_database="$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)"
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -345,7 +345,6 @@ function project_delete_database() {
         suffix="$(cut -d'_' -f2 <<<"${chosen_database}")"
         project_name=${chosen_database%"_$suffix"}
 
-        
         user_db="${project_name}_user"
 
         # Make a database Backup
@@ -420,23 +419,29 @@ function project_delete() {
 
   local project_domain=$1
 
-  log_event "info" "Performing Action: Project Delete"
+  local files_skipped="false"
 
   log_section "Project Delete"
 
-  if [[ "${project_domain}" = '' ]]; then
+  if [[ ${project_domain} == '' ]]; then
 
     # Folder where sites are hosted: $SITES
-    menu_title="PROJECT TO DELETE"
+    menu_title="PROJECT DIRECTORY TO DELETE"
     directory_browser "${menu_title}" "${SITES}"
+
+    ### Creating temporary folders
+    if [[ ! -d "${SFOLDER}/tmp-backup" ]]; then
+        mkdir "${SFOLDER}/tmp-backup"
+        log_event "info" "Temp files directory created: ${SFOLDER}/tmp-backup"
+    fi
 
     # Directory_broser returns: " $filepath"/"$filename
     if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
 
-      log_event "info" "Operation 'Project Delete' cancelled!"
-
-      # Return
-      return 1
+      # Log
+      display --indent 2 --text "- Selecting directory for deletion" --result "SKIPPED" --color YELLOW
+      log_event "info" "Files deletion skipped ..."
+      files_skipped="true"
     
     else
 
@@ -447,26 +452,26 @@ function project_delete() {
 
   fi
 
-  ### Creating temporary folders
-  if [[ ! -d "${SFOLDER}/tmp-backup" ]]; then
-      mkdir "${SFOLDER}/tmp-backup"
-      log_event "info" "Temp files directory created: ${SFOLDER}/tmp-backup"
+
+  if [[ ${files_skipped} == "false" ]]; then
+
+    log_event "info" "Project to delete: ${project_domain}"
+    display --indent 2 --text "- Selecting ${project_domain} for deletion" --result "DONE" --color GREEN
+    
+    # Delete Files
+    project_delete_files "${project_domain}"
+
   fi
-
-  log_event "info" "Project to delete: ${project_domain}"
-  display --indent 2 --text "- Selecting ${project_domain} for deletion" --result "DONE" --color GREEN
-
-  # Delete Files
-  project_delete_files "${project_domain}"
 
   # Delete Database
   project_delete_database "${delete_files_result}"
 
-  #TODO: ask for deleting tmp-backup folder
+  #TODO: ask for deleting tmp-backup folder?
   # Delete tmp backups
   #rm -R ${SFOLDER}/tmp-backup
+  #display --indent 2 --text "Please, remove ${SFOLDER}/tmp-backup after check backup was uploaded ok" --tcolor YELLOW
 
-  telegram_send_message "⚠️ ${VPSNAME}: Project files deleted for: ${project_domain}"
+  telegram_send_message "⚠️ ${VPSNAME}: Project '${project_domain}' deleted!"
 
 }
 
@@ -517,14 +522,14 @@ function php_project_install () {
 
   log_subsection "PHP Project Install"
 
-  if [[ "${project_root_domain}" == '' ]]; then
+  if [[ ${project_root_domain} == '' ]]; then
     
     possible_root_domain="$(get_root_domain "${project_domain}")"
     project_root_domain="$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")"
 
   fi
 
-  if [ ! -d "${project_path}" ]; then
+  if [[ ! -d "${project_path}" ]]; then
     # Download WP
     mkdir "${project_path}"
     change_ownership "www-data" "www-data" "${project_path}"
