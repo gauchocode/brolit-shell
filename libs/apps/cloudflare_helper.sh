@@ -517,6 +517,49 @@ function cloudflare_set_record() {
 
 }
 
+function cloudflare_update_record(){
+
+    # $1 = ${root_domain}
+    # $2 = ${domain}
+    # $3 = ${record_type} - valid values: A, AAAA, CNAME, HTTPS, TXT, SRV, LOC, MX, NS, SPF, CERT, DNSKEY, DS, NAPTR, SMIMEA, SSHFP, SVCB, TLSA, URI
+    # $4 = ${proxy_status} - true/false
+
+    local root_domain=$1
+    local domain=$2
+    local record_type=$3
+    local proxy_status=$4
+
+    local ttl
+    local record_type
+    local cur_ip
+    local zone_id
+    local record_id
+
+    record_name="${domain}"
+
+    # TODO: This should be a parameter ($record_content)
+    cur_ip="${SERVER_IP}"
+
+    zone_id=$(_cloudflare_get_zone_id "${root_domain}")
+
+    record_id=$(cloudflare_record_exists "${record_name}" "${zone_id}")
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
+
+        update="$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
+        -H "X-Auth-Email: ${dns_cloudflare_email}" \
+        -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
+        -H "Content-Type: application/json" \
+        --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"
+
+        # Remove Cloudflare API garbage output
+        _cloudflare_clear_garbage_output
+
+    fi
+
+}
+
 function cloudflare_delete_a_record() {
 
     # $1 = ${root_domain}
