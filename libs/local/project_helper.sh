@@ -304,6 +304,8 @@ function project_delete_files() {
 
     fi
 
+    telegram_send_message "⚠️ ${VPSNAME}: Project files for'${project_domain}' deleted!"
+
     # TODO: Maybe return database name? extracted from wp-config or something?
 
   else
@@ -342,7 +344,7 @@ function project_delete_database() {
         #   - Deleting deb04_broobe_prod_user user in MySQL             [ FAIL ]
 
         # Remove DB suffix to get project_name
-        suffix="$(cut -d'_' -f2 <<<"${chosen_database}")"
+        suffix="$(cut -d'_' -f2 <<<${chosen_database})"
         project_name=${chosen_database%"_$suffix"}
 
         user_db="${project_name}_user"
@@ -359,6 +361,8 @@ function project_delete_database() {
 
         # Delete project database
         mysql_database_drop "${chosen_database}"
+
+        telegram_send_message "⚠️ ${VPSNAME}: Project database'${chosen_database}' deleted!"
 
         # Delete mysql user
         while true; do
@@ -470,8 +474,6 @@ function project_delete() {
   # Delete tmp backups
   #rm -R ${SFOLDER}/tmp-backup
   #display --indent 2 --text "Please, remove ${SFOLDER}/tmp-backup after check backup was uploaded ok" --tcolor YELLOW
-
-  telegram_send_message "⚠️ ${VPSNAME}: Project '${project_domain}' deleted!"
 
 }
 
