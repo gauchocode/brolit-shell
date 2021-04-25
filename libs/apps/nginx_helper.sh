@@ -57,15 +57,20 @@ function nginx_server_create() {
 
     root_domain)
 
+        # Here $redirect_domains == $root_domain
+
         # Config file path
-        nginx_server_file="${WSERVER}/sites-available/${project_domain}"
+        nginx_server_file="${WSERVER}/sites-available/${redirect_domains}"
+        nginx_server_file_link="${WSERVER}/sites-enabled/${redirect_domains}"
 
         # Copy config from template file
         cp "${SFOLDER}/config/nginx/sites-available/${project_type}_${server_type}" "${nginx_server_file}"
-        ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
+
+        # Creating symbolic link
+        ln -s "${nginx_server_file}" "${nginx_server_file_link}"
 
         # Search and replace root_domain.com string with correct redirect_domains (must be root_domain here)
-        sed -i "s/root_domain.com/${redirect_domains}/g" "${WSERVER}/sites-available/${project_domain}"
+        sed -i "s/root_domain.com/${redirect_domains}/g" "${nginx_server_file}"
 
         # Search and replace domain.com string with correct project_domain
         sed -i "s/domain.com/${project_domain}/g" "${WSERVER}/sites-available/${project_domain}"
