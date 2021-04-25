@@ -1910,13 +1910,28 @@ function menu_project_utils() {
         display --indent 4 --text "Selected project: ${filename}"
 
         # Aks project domain
-        project_domain=$(ask_project_domain "${filename}")
+        project_domain="$(ask_project_domain "${filename}")"
 
         # Aks project type
-        project_type=$(ask_project_type)
+        project_type="$(ask_project_type)"
 
-        # New site Nginx configuration
-        nginx_server_create "${project_domain}" "${project_type}" "single" ""
+        if [[ ${project_domain} == "${root_domain}" || ${project_domain} == "www.${root_domain}" ]]; then
+            
+          # Nginx config
+          nginx_server_create "www.${root_domain}" "${project_type}" "root_domain" "${root_domain}"
+
+          # Let's Encrypt
+          certbot_certificate_install "${MAILA}" "${root_domain},www.${root_domain}"
+
+        else
+
+          # Nginx config
+          nginx_server_create "${project_domain}" "${project_type}" "single"
+
+          # Let's Encrypt
+          certbot_certificate_install "${MAILA}" "${project_domain}"
+
+        fi
 
       else
 
