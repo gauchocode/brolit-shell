@@ -494,7 +494,7 @@ function restore_site_files() {
 
   log_subsection "Restore Files Backup"
 
-  chosen_domain=$(whiptail --title "Project Domain" --inputbox "Want to change the project's domain? Default:" 10 60 "${domain}" 3>&1 1>&2 2>&3)
+  chosen_domain="$(whiptail --title "Project Domain" --inputbox "Want to change the project's domain? Default:" 10 60 "${domain}" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -513,7 +513,7 @@ function restore_site_files() {
     fi
 
     # Ask folder to install
-    folder_to_install=$(ask_folder_to_install_sites "${SITES}")
+    folder_to_install="$(ask_folder_to_install_sites "${SITES}")"
 
     # New destination directory
     actual_folder="${folder_to_install}/${chosen_domain}"
@@ -537,7 +537,7 @@ function restore_site_files() {
 
     # TODO: we need another aproach for other kind of projects
     # Search wp-config.php (to find wp installation on sub-folders)
-    install_path=$(wp_config_path "${actual_folder}")
+    install_path="$(wp_config_path "${actual_folder}")"
 
     log_event "info" "install_path=${install_path}"
     display --indent 8 --text "Restored on: ${install_path}"
@@ -609,7 +609,7 @@ function restore_type_selection_from_dropbox() {
       else # DB or SITE
 
         # Select Project
-        chosen_project=$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${dropbox_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)
+        chosen_project="$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${dropbox_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
           dropbox_chosen_backup_path="${dropbox_chosen_type_path}/${chosen_project}"
@@ -617,7 +617,7 @@ function restore_type_selection_from_dropbox() {
 
         fi
         # Select Backup File
-        chosen_backup_to_restore=$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${dropbox_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)
+        chosen_backup_to_restore="$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${dropbox_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -645,7 +645,7 @@ function restore_type_selection_from_dropbox() {
             # Extract project_name (its removes last part of db name with "_" char)
             project_name=${chosen_project%"_$suffix"}
 
-            project_name=$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${project_name}" 3>&1 1>&2 2>&3)
+            project_name="$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${project_name}" 3>&1 1>&2 2>&3)"
             exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
               log_event "debug" "Setting project_name=${project_name}"
@@ -819,9 +819,9 @@ function restore_project() {
       display --indent 4 --text "Project Type WordPress" --tcolor GREEN
 
       # Reading config file
-      db_name=$(project_get_configured_database "${TMP_DIR}/${chosen_project}" "wordpress")
-      db_user=$(project_get_configured_database_user "${TMP_DIR}/${chosen_project}" "wordpress")
-      db_pass=$(project_get_configured_database_userpassw "${TMP_DIR}/${chosen_project}" "wordpress")
+      db_name="$(project_get_configured_database "${TMP_DIR}/${chosen_project}" "wordpress")"
+      db_user="$(project_get_configured_database_user "${TMP_DIR}/${chosen_project}" "wordpress")"
+      db_pass="$(project_get_configured_database_userpassw "${TMP_DIR}/${chosen_project}" "wordpress")"
 
       # Restore site files
       new_project_domain="$(restore_site_files "${chosen_domain}")"
@@ -846,7 +846,7 @@ function restore_project() {
     project_path="${SITES}/${new_project_domain}"
     install_path="$(wp_config_path "${project_path}")"
     # TODO: wp_config_path could be an array of dir paths, need to check that
-    if [[ "${install_path}" != "" ]]; then
+    if [[ ${install_path} != "" ]]; then
 
       log_event "info" "WordPress installation found: ${project_site}/${install_path}"
 
@@ -934,7 +934,7 @@ function restore_project() {
     user_db_exists=$?
     if [[ ${user_db_exists} -eq 0 ]]; then
 
-      db_pass=$(openssl rand -hex 12)
+      db_pass="$(openssl rand -hex 12)"
       mysql_user_create "${db_user}" "${db_pass}"
 
     else
@@ -976,7 +976,7 @@ function restore_project() {
 
           # Cloudflare API
           possible_root_domain="$(get_root_domain "${chosen_domain}")"
-          root_domain="$(cloudflare_ask_root_domain "${possible_root_domain}")"
+          root_domain="$(ask_root_domain "${possible_root_domain}")"
           cloudflare_set_record "${root_domain}" "${new_project_domain}" "A"
 
         fi
@@ -987,7 +987,7 @@ function restore_project() {
 
           # Cloudflare API
           possible_root_domain="$(get_root_domain "${new_project_domain}")"
-          root_domain=$(cloudflare_ask_root_domain "${possible_root_domain}")
+          root_domain="$(ask_root_domain "${possible_root_domain}")"
           cloudflare_set_record "${root_domain}" "${new_project_domain}" "A"
 
           certbot_certificate_install "${MAILA}" "${chosen_domain}"
@@ -1002,15 +1002,34 @@ function restore_project() {
 
       # TODO: remove hardcoded parameters "wordpress" and "single"
       # Here we need to check if is root_domain to ask for work with www too or if has www, ask to work with root_domain too
+      
+      possible_root_domain="$(get_root_domain "${new_project_domain}")"
+      root_domain="$(ask_root_domain "${possible_root_domain}")"
 
-      nginx_server_create "${new_project_domain}" "wordpress" "single"
+      if [[ ${new_project_domain} == "${root_domain}" || ${new_project_domain} == "www.${root_domain}" ]]; then
 
-      # Cloudflare API
-      possible_root_domain="$(get_root_domain "${chosen_domain}")"
-      root_domain="$(cloudflare_ask_root_domain "${possible_root_domain}")"
-      cloudflare_set_record "${root_domain}" "${new_project_domain}" "A"
+        # Nginx config
+        nginx_server_create "${new_project_domain}" "wordpress" "root_domain"
 
-      certbot_certificate_install "${MAILA}" "${new_project_domain}"
+        # Cloudflare API
+        # TODO: must check for CNAME with www
+        cloudflare_set_record "${root_domain}" "${root_domain}" "A"
+
+        # Let's Encrypt
+        certbot_certificate_install "${MAILA}" "${root_domain},www.${root_domain}"
+
+      else
+
+        # Nginx config
+        nginx_server_create "${new_project_domain}" "wordpress" "single"
+
+        # Cloudflare API
+        cloudflare_set_record "${root_domain}" "${new_project_domain}" "A"
+
+        # Let's Encrypt
+        certbot_certificate_install "${MAILA}" "${new_project_domain}"
+
+      fi
 
       # TODO: check if is a WP project
 

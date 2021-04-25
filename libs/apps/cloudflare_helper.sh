@@ -68,24 +68,6 @@ function _cloudflare_clear_garbage_output() {
 
 ################################################################################
 
-function cloudflare_ask_root_domain() {
-
-    # $1 = ${suggested_root_domain}
-
-    local suggested_root_domain=$1
-    local root_domain
-
-    root_domain=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 "${suggested_root_domain}" 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-
-        # Return
-        echo "${root_domain}"
-
-    fi
-
-}
-
 function cloudflare_get_zone_info() {
 
     log_event "info" "Getting zone information for: ${zone_name}"

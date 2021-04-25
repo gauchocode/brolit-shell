@@ -738,15 +738,15 @@ function get_all_directories() {
 
 function copy_project_files() {
 
-  # $1 = ${SOURCE_PATH}
-  # $2 = ${DESTINATION_PATH}
-  # $3 = ${EXCLUDED_PATH} - Neet to be a relative path
+  # $1 = ${source_path}
+  # $2 = ${destination_path}
+  # $3 = ${excluded_path}     - Neet to be a relative path
 
   local source_path=$1
   local destination_path=$2
   local excluded_path=$3
 
-  if [ "${excluded_path}" != "" ]; then
+  if [[ ${excluded_path} != "" ]]; then
     rsync -ax --exclude "${excluded_path}" "${source_path}" "${destination_path}"
 
   else
@@ -767,7 +767,7 @@ function get_project_type() {
 
   if [[ ${dir_path} != "" ]]; then
 
-    is_wp=$(wp_config_path "${dir_path}")
+    is_wp="$(wp_config_path "${dir_path}")"
 
     if [[ ${is_wp} != "" ]]; then
 
@@ -910,10 +910,11 @@ function change_ownership() {
   local group=$2
   local path=$3
 
-  log_event "debug" "Running: chown -R ${user}:${group} ${path}"
-
   chown -R "${user}":"${group}" "${path}"
 
+  # Log
+  log_event "info" "Changing ownership of ${path} to ${user}:${group}"
+  log_event "debug" "Command executed: chown -R ${user}:${group} ${path}"
   #display --indent 2 --text "- Changing ownership of ${path} to ${user}:${group}" --result "DONE" --color GREEN
 
 }
@@ -951,6 +952,7 @@ function prompt_return_or_finish() {
 
 }
 
+# TODO: improve and use this instead of untar or unzip
 function extract() {
 
   # $1 - File to uncompress or extract
@@ -1130,6 +1132,24 @@ function extract_domain_extension() {
 
 }
 
+function ask_root_domain() {
+
+    # $1 = ${suggested_root_domain}
+
+    local suggested_root_domain=$1
+    local root_domain
+
+    root_domain=$(whiptail --title "Root Domain" --inputbox "Confirm the root domain of the project." 10 60 "${suggested_root_domain}" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Return
+        echo "${root_domain}"
+
+    fi
+
+}
+
 function get_root_domain() {
 
   # $1 = ${domain}
@@ -1272,7 +1292,7 @@ function ask_project_state() {
     suggested_state="prod"
   fi
 
-  project_state=$(whiptail --title "Project State" --menu "Choose a Project State" 20 78 10 $(for x in ${project_states}; do echo "$x [X]"; done) --default-item "${suggested_state}" 3>&1 1>&2 2>&3)
+  project_state="$(whiptail --title "Project State" --menu "Choose a Project State" 20 78 10 $(for x in ${project_states}; do echo "$x [X]"; done) --default-item "${suggested_state}" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -1327,6 +1347,7 @@ function ask_project_domain() {
     echo "${project_domain}"
 
   else
+
     return 1
 
   fi
@@ -1390,7 +1411,7 @@ function ask_subdomains_to_cloudflare_config() {
 
   local subdomains=$1
 
-  subdomains=$(whiptail --title "Cloudflare Subdomains" --inputbox "Insert the subdomains you want to update in Cloudflare (comma separated). Example: www.broobe.com,broobe.com" 10 60 "${DOMAIN}" 3>&1 1>&2 2>&3)
+  subdomains="$(whiptail --title "Cloudflare Subdomains" --inputbox "Insert the subdomains you want to update in Cloudflare (comma separated). Example: www.broobe.com,broobe.com" 10 60 "${DOMAIN}" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
