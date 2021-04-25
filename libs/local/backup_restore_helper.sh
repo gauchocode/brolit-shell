@@ -42,8 +42,8 @@ function _make_temp_files_backup() {
 
 function restore_backup_menu() {
 
-  local restore_options         # whiptail array options
-  local chosen_restore_options  # whiptail var
+  local restore_options        # whiptail array options
+  local chosen_restore_options # whiptail var
 
   log_event "info" "Selecting backup restore type ..."
 
@@ -72,7 +72,7 @@ function restore_backup_menu() {
       restore_backup_from_file
 
     fi
-  
+
   else
 
     log_event "debug" "Restore type selection skipped"
@@ -179,7 +179,7 @@ function restore_backup_server_selection() {
 
     # Show dropbox output
     chosen_server="$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 $(for x in ${dropbox_server_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)"
-    
+
     log_event "debug" "chosen_server: ${chosen_server}"
 
     exitstatus=$?
@@ -953,97 +953,54 @@ function restore_project() {
     # Change wp-config.php database parameters
     wp_update_wpconfig "${install_path}" "${db_project_name}" "${project_state}" "${db_pass}"
 
-    if [[ ${new_project_domain} == "${chosen_domain}" ]]; then
+    # Create new configs
 
-      letsencrypt_opt_text="\n Do you want to restore let's encrypt certificates or generate a new ones?"
+    # TODO: remove hardcoded parameters "wordpress" and "single"
+    # Here we need to check if is root_domain to ask for work with www too or if has www, ask to work with root_domain too
 
-      letsencrypt_opt=(
-        "01)" "RESTORE CERTIFICATES"
-        "02)" "GENERATE NEW CERTIFICATES"
-      )
+    possible_root_domain="$(get_root_domain "${new_project_domain}")"
+    root_domain="$(ask_root_domain "${possible_root_domain}")"
 
-      letsencrypt_chosen_opt=$(whiptail --title "Let's Encrypt Certificates" --menu "${letsencrypt_opt_text}" 20 78 10 "${letsencrypt_opt[@]}" 3>&1 1>&2 2>&3)
+    # TODO: if $new_project_domain == $chosen_domain, maybe ask if want to restore nginx and let's encrypt config files
+    # restore_letsencrypt_site_files "${chosen_domain}" "${backup_date}"
+    # restore_nginx_site_files "${chosen_domain}" "${backup_date}"
 
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
+    if [[ ${new_project_domain} == "${root_domain}" || ${new_project_domain} == "www.${root_domain}" ]]; then
 
-        if [[ ${letsencrypt_chosen_opt} == *"01"* ]]; then
+      # Nginx config
+      nginx_server_create "www.${root_domain}" "wordpress" "root_domain" "${root_domain}"
 
-          restore_letsencrypt_site_files "${chosen_domain}" "${backup_date}"
+      # Cloudflare API
+      # TODO: must check for CNAME with www
+      cloudflare_set_record "${root_domain}" "${root_domain}" "A"
 
-          # If choose restore config, need to restore nginx config and run cerbot
-          restore_nginx_site_files "${chosen_domain}" "${backup_date}"
-
-          # Cloudflare API
-          possible_root_domain="$(get_root_domain "${chosen_domain}")"
-          root_domain="$(ask_root_domain "${possible_root_domain}")"
-          cloudflare_set_record "${root_domain}" "${new_project_domain}" "A"
-
-        fi
-        if [[ ${letsencrypt_chosen_opt} == *"02"* ]]; then
-
-          # TODO: need to remove hardcoded parameters "wordpress" and "single"
-          nginx_server_create "${new_project_domain}" "wordpress" "single"
-
-          # Cloudflare API
-          possible_root_domain="$(get_root_domain "${new_project_domain}")"
-          root_domain="$(ask_root_domain "${possible_root_domain}")"
-          cloudflare_set_record "${root_domain}" "${new_project_domain}" "A"
-
-          certbot_certificate_install "${MAILA}" "${chosen_domain}"
-
-        fi
-
-      fi
+      # Let's Encrypt
+      certbot_certificate_install "${MAILA}" "${root_domain},www.${root_domain}"
 
     else
 
-      # Create new configs
+      # Nginx config
+      nginx_server_create "${new_project_domain}" "wordpress" "single"
 
-      # TODO: remove hardcoded parameters "wordpress" and "single"
-      # Here we need to check if is root_domain to ask for work with www too or if has www, ask to work with root_domain too
-      
-      possible_root_domain="$(get_root_domain "${new_project_domain}")"
-      root_domain="$(ask_root_domain "${possible_root_domain}")"
+      # Cloudflare API
+      cloudflare_set_record "${root_domain}" "${new_project_domain}" "A"
 
-      if [[ ${new_project_domain} == "${root_domain}" || ${new_project_domain} == "www.${root_domain}" ]]; then
-
-        # Nginx config
-        nginx_server_create "${new_project_domain}" "wordpress" "root_domain"
-
-        # Cloudflare API
-        # TODO: must check for CNAME with www
-        cloudflare_set_record "${root_domain}" "${root_domain}" "A"
-
-        # Let's Encrypt
-        certbot_certificate_install "${MAILA}" "${root_domain},www.${root_domain}"
-
-      else
-
-        # Nginx config
-        nginx_server_create "${new_project_domain}" "wordpress" "single"
-
-        # Cloudflare API
-        cloudflare_set_record "${root_domain}" "${new_project_domain}" "A"
-
-        # Let's Encrypt
-        certbot_certificate_install "${MAILA}" "${new_project_domain}"
-
-      fi
-
-      # TODO: check if is a WP project
-
-      # Change urls on database
-      # wp_ask_url_search_and_replace "${install_path}"
-      wpcli_search_and_replace "${install_path}" "${chosen_domain}" "${new_project_domain}"
-
-      # Shuffle salts
-      wpcli_set_salts "${install_path}"
-
-      # Changing wordpress visibility
-      wpcli_change_wp_seo_visibility "${install_path}" "0" #TODO: change it if not prod
+      # Let's Encrypt
+      certbot_certificate_install "${MAILA}" "${new_project_domain}"
 
     fi
+
+    # TODO: check if is a WP project
+
+    # Change urls on database
+    # wp_ask_url_search_and_replace "${install_path}"
+    wpcli_search_and_replace "${install_path}" "${chosen_domain}" "${new_project_domain}"
+
+    # Shuffle salts
+    wpcli_set_salts "${install_path}"
+
+    # Changing wordpress visibility
+    wpcli_change_wp_seo_visibility "${install_path}" "0" #TODO: change it if not prod
 
     telegram_send_message "✅ ${VPSNAME}: Project ${new_project_domain} restored"
 

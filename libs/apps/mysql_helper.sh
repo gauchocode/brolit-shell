@@ -562,7 +562,7 @@ function mysql_database_import() {
     log_event "debug" "Running: pv ${dump_file} | ${MYSQL_ROOT} -f -D ${database}"
 
     # Execute command
-    pv "${dump_file}" | ${MYSQL_ROOT} -f -D "${database}"
+    pv --width 70 "${dump_file}" | ${MYSQL_ROOT} -f -D "${database}"
 
     # Check result
     import_status=$?
