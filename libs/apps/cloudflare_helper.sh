@@ -316,6 +316,9 @@ function cloudflare_record_exists() {
 
     else
 
+        # Clean output
+        record_id="$(echo "${record_id}" |tr -d '\n')"
+
         log_event "info" "Record ${record_name} found with id: ${record_id}"
 
         # Return
