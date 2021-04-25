@@ -18,14 +18,13 @@ function nginx_server_create() {
 
     local debug
 
-    # Logging
+    # Log
+    log_event "debug" "Project type: ${project_type}"
+    log_event "debug" "Server type: ${server_type}"
     log_event "info" "Creating nginx configuration file for domain: ${project_domain}"
     log_event "info" "List of domains or subdomains that will be redirect to project_domain: ${redirect_domains}"
-    log_event "debug" "Project Type: ${project_type}"
-    log_event "debug" "Server Type: ${server_type}"
 
     # Create nginx config files for site
-
     if [[ -f "${WSERVER}/sites-available/${project_domain}" ]]; then
 
         # Backup actual config
