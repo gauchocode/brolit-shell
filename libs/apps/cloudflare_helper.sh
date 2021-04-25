@@ -431,15 +431,16 @@ function cloudflare_set_record() {
 
         # Log
         display --indent 6 --text "- Changing ${record_name} IP ..."
-        log_event "debug" "Running: curl -s -X DELETE \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}\" -H \"X-Auth-Email: ${dns_cloudflare_email}\" -H \"X-Auth-Key: ${dns_cloudflare_api_key}\" -H \"Content-Type: application/json\""
-
+        
         # First delete
+        log_event "debug" "Running: curl -s -X DELETE \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}\" -H \"X-Auth-Email: ${dns_cloudflare_email}\" -H \"X-Auth-Key: ${dns_cloudflare_api_key}\" -H \"Content-Type: application/json\""
+ 
         delete="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
             -H "X-Auth-Email: ${dns_cloudflare_email}" \
             -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
             -H "Content-Type: application/json")"
 
-        log_event "debug" "Running: curl -s -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" -H \"X-Auth-Email: ${dns_cloudflare_email}\" -H \"X-Auth-Key: ${dns_cloudflare_api_key}\" -H \"Content-Type: application/json\"--data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}\")"\"
+        log_event "debug" "Running: curl -s -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" -H \"X-Auth-Email: ${dns_cloudflare_email}\" -H \"X-Auth-Key: ${dns_cloudflare_api_key}\" -H \"Content-Type: application/json\" --data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}\""
 
         # Then create (work-around because sometimes update an entry does not work)
         update="$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
