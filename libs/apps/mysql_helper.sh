@@ -368,6 +368,7 @@ function mysql_user_grant_privileges() {
     if [[ ${mysql_result} -eq 0 ]]; then
 
         # Log
+        clear_last_line
         log_event "info" "Privileges granted to user ${db_user}"
         display --indent 6 --text "- Granting privileges to ${db_user}" --result "DONE" --color GREEN
 
@@ -376,6 +377,7 @@ function mysql_user_grant_privileges() {
     else
 
         # Log
+        clear_last_line
         display --indent 6 --text "- Granting privileges to ${db_user}" --result "FAIL" --color RED
         log_event "error" "Something went wrong granting privileges to user ${db_user}."
         log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\""
