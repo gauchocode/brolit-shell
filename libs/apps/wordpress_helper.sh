@@ -220,12 +220,13 @@ function wp_ask_url_search_and_replace() {
   local new_URL
 
   if [[ -z "${existing_URL}" ]]; then
-    existing_URL=$(whiptail --title "URL TO CHANGE" --inputbox "Insert the URL you want to change, including http:// or https://" 10 60 3>&1 1>&2 2>&3)
+  
+    existing_URL="$(whiptail --title "URL TO CHANGE" --inputbox "Insert the URL you want to change, including http:// or https://" 10 60 3>&1 1>&2 2>&3)"
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
       if [[ -z "${new_URL}" ]]; then
-        new_URL=$(whiptail --title "THE NEW URL" --inputbox "Insert the new URL , including http:// or https://" 10 60 3>&1 1>&2 2>&3)
+        new_URL="$(whiptail --title "THE NEW URL" --inputbox "Insert the new URL , including http:// or https://" 10 60 3>&1 1>&2 2>&3)"
         exitstatus=$?
 
         if [[ ${exitstatus} -eq 0 ]]; then
@@ -236,17 +237,23 @@ function wp_ask_url_search_and_replace() {
             log_event "info" "Temp files directory created: ${SFOLDER}/tmp-backup" "false"
           fi
 
-          project_name=$(basename "${wp_path}")
+          project_name="$(basename "${wp_path}")"
 
           wpcli_export_database "${wp_path}" "${SFOLDER}/tmp-backup/${project_name}_bk_before_replace_urls.sql"
 
-          log_event "info" "Setting new URL ${new_URL} on wordpress database"
-
           wpcli_search_and_replace "${wp_path}" "${existing_URL}" "${new_URL}"
+
+        else
+
+          display --indent 6 --text "- Configuring search and replace" --result "SKIPPED" --color YELLOW
 
         fi
 
       fi
+
+    else
+
+      display --indent 6 --text "- Configuring search and replace" --result "SKIPPED" --color YELLOW
 
     fi
 
