@@ -598,11 +598,11 @@ function restore_type_selection_from_dropbox() {
 
     elif [[ ${chosen_type} != "project" ]]; then
 
-      #log_subsection "Restore ${chosen_type} Backup"
+      log_subsection "Restore ${chosen_type} Backup"
 
       dropbox_project_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_type_path}")"
 
-      if [[ "${chosen_type}" == *"configs"* ]]; then
+      if [[ ${chosen_type} == *"configs"* ]]; then
 
         restore_config_files_from_dropbox "${dropbox_chosen_type_path}" "${dropbox_project_list}"
 
@@ -628,19 +628,19 @@ function restore_type_selection_from_dropbox() {
 
           # Uncompressing
           log_event "info" "Uncompressing ${chosen_backup_to_restore}"
-          display --indent 6 --text "- Uncompressing backup"
+          display --indent 2 --text "- Uncompressing backup"
           pv --width 70 "${TMP_DIR}/${chosen_backup_to_restore}" | tar xp -C "${TMP_DIR}" --use-compress-program=lbzip2
 
-          log_event "debug" "Running: pv --width 70 ${TMP_DIR}/${chosen_backup_to_restore} | tar xp -C ${TMP_DIR} --use-compress-program=lbzip2"
+          # Log
           clear_last_line
           clear_last_line
-          display --indent 6 --text "- Uncompressing backup" --result "DONE" --color GREEN
+          display --indent 2 --text "- Uncompressing backup" --result "DONE" --color GREEN
 
           if [[ ${chosen_type} == *"${DBS_F}"* ]]; then
 
             # Asking project state with suggested actual state
             suffix="$(cut -d'_' -f2 <<<"${chosen_project}")"
-            project_state=$(ask_project_state "${suffix}")
+            project_state="$(ask_project_state "${suffix}")"
 
             # Extract project_name (its removes last part of db name with "_" char)
             project_name=${chosen_project%"_$suffix"}
@@ -656,7 +656,7 @@ function restore_type_selection_from_dropbox() {
             fi
 
             # Running mysql_name_sanitize $for project_name
-            db_project_name=$(mysql_name_sanitize "${project_name}")
+            db_project_name="$(mysql_name_sanitize "${project_name}")"
 
             # Restore database
             restore_database_backup "${db_project_name}" "${project_state}" "${chosen_backup_to_restore}"
@@ -708,7 +708,6 @@ function restore_type_selection_from_dropbox() {
             fi
 
             project_site=$filepath"/"$filename
-
             install_path="$(wp_config_path "${folder_to_install}/${filename}")"
 
             # TODO: wp_config_path could be an array of dir paths, need to check that
@@ -721,6 +720,17 @@ function restore_type_selection_from_dropbox() {
 
               # Change Salts
               wpcli_set_salts "${install_path}"
+
+              # Change URLs
+              wp_ask_url_search_and_replace "${install_path}"
+              #wpcli_search_and_replace "${install_path}" "${chosen_domain}" "${new_project_domain}"
+
+              # Changing wordpress visibility
+              if [[ ${project_state} == "prod" ]]; then
+                wpcli_change_wp_seo_visibility "${install_path}" "1"
+              else
+                wpcli_change_wp_seo_visibility "${install_path}" "0"
+              fi
 
             else
 
@@ -1000,7 +1010,11 @@ function restore_project() {
     wpcli_set_salts "${install_path}"
 
     # Changing wordpress visibility
-    wpcli_change_wp_seo_visibility "${install_path}" "0" #TODO: change it if not prod
+    if [[ ${project_state} == "prod" ]]; then
+      wpcli_change_wp_seo_visibility "${install_path}" "1"
+    else
+      wpcli_change_wp_seo_visibility "${install_path}" "0"
+    fi
 
     telegram_send_message "✅ ${VPSNAME}: Project ${new_project_domain} restored"
 
