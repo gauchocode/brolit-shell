@@ -20,6 +20,16 @@ if [[ -z "${SFOLDER}" ]]; then
   exit 1 # error; the path is not accessible
 fi
 
+declare -g LOG_NAME
+
+if [[ ${1} == "sl" ]];then
+
+  LOG_NAME="log_lemp_utils_${1}.log"
+else
+  LOG_NAME="log_lemp_utils_${TIMESTAMP}.log"
+  
+fi
+
 # Main library
 chmod +x "${SFOLDER}/libs/commons.sh"
 
@@ -34,8 +44,8 @@ source "${SFOLDER}/libs/commons.sh"
 
   script_init # Script initialization
 
-  log_event "debug" "terminal=$-"
-  log_event "debug" "all parameters=$*"
+  #log_event "debug" "terminal=$-"
+  #log_event "debug" "all parameters=$*"
 
   # With "$#" we can check the number of arguments received when the script is runned
   # Check if there were no arguments provided
