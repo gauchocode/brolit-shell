@@ -28,7 +28,10 @@ source "${SFOLDER}/libs/commons.sh"
 
 ### Init #######################################################################
 
-if [[ -t 1 ]]; then
+log_event "debug" "terminal=$-"
+log_event "debug" "all parameters=$*"
+
+#if [[ -t 1 ]]; then
 
   # RUNNING FROM TERMINAL
 
@@ -55,10 +58,10 @@ if [[ -t 1 ]]; then
   # Log End
   log_event "info" "LEMP UTILS SCRIPT End -- $(date +%Y%m%d_%H%M)"
 
-else
+#else
 
   ### Running from cron
-  log_event "error" "Nothing to do ..."
-  return 1
+#  log_event "error" "Nothing to do ..."
+#  return 1
 
-fi
+#fi
