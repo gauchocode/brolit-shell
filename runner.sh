@@ -28,14 +28,14 @@ source "${SFOLDER}/libs/commons.sh"
 
 ### Init #######################################################################
 
-log_event "debug" "terminal=$-"
-log_event "debug" "all parameters=$*"
-
 #if [[ -t 1 ]]; then
 
   # RUNNING FROM TERMINAL
 
   script_init # Script initialization
+
+  log_event "debug" "terminal=$-"
+  log_event "debug" "all parameters=$*"
 
   # With "$#" we can check the number of arguments received when the script is runned
   # Check if there were no arguments provided
