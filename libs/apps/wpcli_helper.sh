@@ -38,7 +38,7 @@ function wpcli_check_version() {
 
     local wpcli_v
 
-    wpcli_v=$(sudo -u www-data wp --info | grep "WP-CLI version:" | cut -d ':' -f2)
+    wpcli_v="$(sudo -u www-data wp --info | grep "WP-CLI version:" | cut -d ':' -f2)"
 
     # Return
     echo "${wpcli_v}"
@@ -54,7 +54,7 @@ function wpcli_install() {
     curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
 
     chmod +x wp-cli.phar
-    sudo mv wp-cli.phar "/usr/local/bin/wp"
+    mv wp-cli.phar "/usr/local/bin/wp"
 
     # Log
     clear_last_line
