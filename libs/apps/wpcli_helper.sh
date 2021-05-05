@@ -22,7 +22,7 @@ function wpcli_check_if_installed() {
 
     wpcli_installed="true"
 
-    wpcli_v=$(wpcli_check_version)
+    wpcli_v="$(wpcli_check_version)"
 
     if [[ -z "${wpcli_v}" ]]; then
         wpcli_installed="false"
@@ -96,7 +96,7 @@ function wpcli_check_if_package_is_installed() {
 
     is_installed="false"
 
-    wpcli_packages_installed=$(wp package list --allow-root | grep 'wp-cli' | cut -d '/' -f2)
+    wpcli_packages_installed="$(wp package list --allow-root | grep 'wp-cli' | cut -d '/' -f2)"
 
     if [[ ${wpcli_package} == *"${wpcli_packages_installed}"* ]]; then
 
@@ -125,8 +125,8 @@ function wpcli_run_startup_script() {
     local wp_user_passw=$5
     local wp_user_mail=$6
 
-    if [[ "${site_name}" == "" ]]; then
-        site_name=$(whiptail --title "Site Name" --inputbox "Insert the site name. Example: My Website" 10 60 3>&1 1>&2 2>&3)
+    if [[ ${site_name} == "" ]]; then
+        site_name="$(whiptail --title "Site Name" --inputbox "Insert the site name. Example: My Website" 10 60 3>&1 1>&2 2>&3)"
     fi
     exitstatus=$?
     if [[ ${exitstatus} == "" ]]; then
@@ -135,8 +135,8 @@ function wpcli_run_startup_script() {
 
     fi
     # TODO: check if receive a domain or a url like: http://siteurl.com
-    if [[ "${site_url}" == "" ]]; then
-        site_url=$(whiptail --title "Site URL" --inputbox "Insert the site URL. Example: mydomain.com" 10 60 3>&1 1>&2 2>&3)
+    if [[ ${site_url} == "" ]]; then
+        site_url="$(whiptail --title "Site URL" --inputbox "Insert the site URL. Example: mydomain.com" 10 60 3>&1 1>&2 2>&3)"
     fi
     exitstatus=$?
     if [[ ! ${exitstatus} -eq 0 ]]; then
@@ -144,8 +144,8 @@ function wpcli_run_startup_script() {
         return 1
 
     fi
-    if [[ "${wp_user_name}" == "" ]]; then
-        wp_user_name=$(whiptail --title "Wordpress User" --inputbox "Insert a username for admin." 10 60 3>&1 1>&2 2>&3)
+    if [[ ${wp_user_name} == "" ]]; then
+        wp_user_name="$(whiptail --title "Wordpress User" --inputbox "Insert a username for admin." 10 60 3>&1 1>&2 2>&3)"
     fi
     exitstatus=$?
     if [[ ! ${exitstatus} -eq 0 ]]; then
@@ -153,8 +153,8 @@ function wpcli_run_startup_script() {
         return 1
 
     fi
-    if [[ "${wp_user_passw}" == "" ]]; then
-        wp_user_passw=$(whiptail --title "Site Name" --inputbox "Insert the user password." 10 60 3>&1 1>&2 2>&3)
+    if [[ ${wp_user_passw} == "" ]]; then
+        wp_user_passw="$(whiptail --title "Site Name" --inputbox "Insert the user password." 10 60 3>&1 1>&2 2>&3)"
     fi
     exitstatus=$?
     if [[ ! ${exitstatus} -eq 0 ]]; then
@@ -162,8 +162,8 @@ function wpcli_run_startup_script() {
         return 1
 
     fi
-    if [[ "${wp_user_mail}" == "" ]]; then
-        wp_user_mail=$(whiptail --title "WordPress User Mail" --inputbox "Insert the user email." 10 60 3>&1 1>&2 2>&3)
+    if [[ ${wp_user_mail} == "" ]]; then
+        wp_user_mail="$(whiptail --title "WordPress User Mail" --inputbox "Insert the user email." 10 60 3>&1 1>&2 2>&3)"
     fi
     exitstatus=$?
     if [[ ! ${exitstatus} -eq 0 ]]; then
@@ -280,9 +280,9 @@ function wpcli_core_download() {
 
     local wpcli_result
 
-    if [ "${wp_site}" != "" ]; then
+    if [[ ${wp_site} != "" ]]; then
 
-        if [ "${wp_version}" != "" ]; then
+        if [[ ${wp_version} != "" ]]; then
 
             # wp-cli command
             sudo -u www-data wp --path="${wp_site}" core download --version="${wp_version}" --quiet
@@ -357,7 +357,7 @@ function wpcli_core_reinstall() {
 
     local wpcli_result
 
-    if [[ "${wp_site}" != "" ]]; then
+    if [[ ${wp_site} != "" ]]; then
 
         log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} core download --skip-content --force"
 
@@ -405,9 +405,9 @@ function wpcli_core_update() {
 
     log_section "WordPress Updater"
 
-    verify_core_update=$(sudo -u www-data wp --path="${wp_site}" update | grep ":" | cut -d ':' -f1)
+    verify_core_update="$(sudo -u www-data wp --path="${wp_site}" update | grep ":" | cut -d ':' -f1)"
 
-    if [ "${verify_core_update}" = "Success" ]; then
+    if [[ ${verify_core_update} == "Success" ]]; then
 
         display --indent 6 --text "- Download new WordPress version" --result "DONE" --color GREEN
 
@@ -449,6 +449,7 @@ function wpcli_core_verify() {
     local verify_core
 
     log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} core verify-checksums" "false"
+
     mapfile verify_core < <(sudo -u www-data wp --path="${wp_site}" core verify-checksums 2>&1)
 
     display --indent 6 --text "- WordPress verify-checksums" --result "DONE" --color GREEN
@@ -472,7 +473,8 @@ function wpcli_plugin_verify() {
         plugin="--all"
     fi
 
-    log_event "debug" "Running: sudo -u www-data wp --path="${wp_site}" plugin verify-checksums ${plugin}" "false"
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin verify-checksums ${plugin}"
+
     mapfile verify_plugin < <(sudo -u www-data wp --path="${wp_site}" plugin verify-checksums "${plugin}" 2>&1)
 
     display --indent 6 --text "- WordPress plugin verify-checksums" --result "DONE" --color GREEN
@@ -516,7 +518,7 @@ function wpcli_delete_not_core_files() {
 
 function wpcli_maintenance_mode_status() {
 
-    WPCLI_V=$(sudo -u www-data wp --info | grep "WP-CLI version:" | cut -d ':' -f2)
+    WPCLI_V="$(sudo -u www-data wp --info | grep "WP-CLI version:" | cut -d ':' -f2)"
 
     # Return
     echo "${WPCLI_V}"
@@ -531,7 +533,7 @@ function wpcli_maintenance_mode() {
 
     local maintenance_mode
 
-    maintenance_mode=$(sudo -u www-data wp maintenance-mode "${mode}")
+    maintenance_mode="$(sudo -u www-data wp maintenance-mode "${mode}")"
 
     # Return
     echo "${maintenance_mode}"
@@ -563,7 +565,7 @@ function wpcli_update_plugin() {
 
     local plugin_update
 
-    if [ "${plugin}" = "" ]; then
+    if [[ ${plugin} == "" ]]; then
         plugin="--all"
     fi
 
@@ -584,7 +586,7 @@ function wpcli_get_plugin_version() {
 
     local plugin_version
 
-    plugin_version=$(sudo -u www-data wp --path="${wp_site}" plugin get "${plugin}" --format=json | cut -d "," -f 4 | cut -d ":" -f 2)
+    plugin_version="$(sudo -u www-data wp --path="${wp_site}" plugin get "${plugin}" --format=json | cut -d "," -f 4 | cut -d ":" -f 2)"
 
     # Return
     echo "${plugin_version}"
@@ -599,7 +601,7 @@ function wpcli_get_wpcore_version() {
 
     local core_version
 
-    core_version=$(sudo -u www-data wp --path="${wp_site}" core version)
+    core_version="$(sudo -u www-data wp --path="${wp_site}" core version)"
 
     # Return
     echo "${core_version}"
@@ -684,7 +686,8 @@ function wpcli_install_theme() {
     local wp_site=$1
     local theme=$2
 
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} theme install ${theme} --activate" "false"
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} theme install ${theme} --activate"
+
     sudo -u www-data wp --path="${wp_site}" theme install "${theme}" --activate
 
     display --indent 6 --text "- Installing and activating theme ${theme}" --result "DONE" --color GREEN
@@ -699,7 +702,8 @@ function wpcli_delete_theme() {
     local wp_site=$1
     local theme=$2
 
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} theme delete ${theme}" "false"
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} theme delete ${theme}"
+
     sudo -u www-data wp --path="${wp_site}" theme delete "${theme}" --quiet
 
     display --indent 6 --text "- Deleting theme ${theme}" --result "DONE" --color GREEN
@@ -774,7 +778,7 @@ function wpcli_search_and_replace() {
     is_network=$?
     if [ "${is_network}" -eq 0 ]; then
 
-        log_event "debug" "Running: wp --allow-root --path=${wp_site} search-replace --url=https://"${wp_site_url}" ${search} ${replace} --network" "false"
+        log_event "debug" "Running: wp --allow-root --path=${wp_site} search-replace --url=https://${wp_site_url} ${search} ${replace} --network" "false"
 
         wp --allow-root --path="${wp_site}" search-replace --url=https://"${wp_site_url}" "${search}" "${replace}" --network --quiet
 
