@@ -102,35 +102,35 @@ function log_event() {
 
   success)
     echo " > SUCCESS: ${message}" >>"${LOG}"
-    if [[ "${console_display}" = "true" ]]; then
+    if [[ ${console_display} == "true" ]]; then
       echo -e "${B_GREEN} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   info)
     echo " > INFO: ${message}" >>"${LOG}"
-    if [[ "${console_display}" = "true" ]]; then
+    if [[ ${console_display} == "true" ]]; then
       echo -e "${B_CYAN} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   warning)
     echo " > WARNING: ${message}" >>"${LOG}"
-    if [[ "${console_display}" = "true" ]]; then
+    if [[ ${console_display} == "true" ]]; then
       echo -e "${YELLOW}${ITALIC} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   error)
     echo " > ERROR: ${message}" >>"${LOG}"
-    if [[ "${console_display}" = "true" ]]; then
+    if [[ ${console_display} == "true" ]]; then
       echo -e "${RED} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   critical)
     echo " > CRITICAL: ${message}" >>"${LOG}"
-    if [[ "${console_display}" = "true" ]]; then
+    if [[ ${console_display} == "true" ]]; then
       echo -e "${B_RED} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
@@ -139,7 +139,7 @@ function log_event() {
     if [[ "${DEBUG}" -eq 1 ]]; then
 
       echo " > DEBUG: ${message}" >>"${LOG}"
-      if [[ "${console_display}" = "true" ]]; then
+      if [[ ${console_display} == "true" ]]; then
         echo -e "${B_MAGENTA} > ${message}${ENDCOLOR}" >&2
       fi
 
@@ -148,7 +148,7 @@ function log_event() {
 
   *)
     echo " > ${message}" >>"${LOG}"
-    if [[ "${console_display}" = "true" ]]; then
+    if [[ ${console_display} == "true" ]]; then
       echo -e "${CYAN}${B_DEFAULT} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
