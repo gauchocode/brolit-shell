@@ -91,9 +91,11 @@ function certbot_installer_menu() {
 
   fi
 
-  chosen_certbot_installer_options=$(whiptail --title "${certbot_installer_title}" --menu "${certbot_installer_message}" 20 78 10 "${certbot_installer_options[@]}" 3>&1 1>&2 2>&3)
+  chosen_certbot_installer_options="$(whiptail --title "${certbot_installer_title}" --menu "${certbot_installer_message}" 20 78 10 "${certbot_installer_options[@]}" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
+
+    log_event "debug" "chosen_certbot_installer_options=${chosen_certbot_installer_options}"
 
     if [[ ${chosen_certbot_installer_options} == *"INSTALL"* ]]; then
 
