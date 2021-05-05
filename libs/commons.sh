@@ -252,13 +252,12 @@ function script_init() {
   fi
 
   # Log
-  TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+  TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
   PATH_LOG="${SFOLDER}/log"
   if [[ ! -d "${SFOLDER}/log" ]]; then
     mkdir "${SFOLDER}/log"
   fi
 
-  LOG_NAME="log_lemp_utils_${TIMESTAMP}.log"
   LOG="${PATH_LOG}/${LOG_NAME}"
 
   find "${PATH_LOG}" -name "*.log" -type f -mtime +7 -print -delete >>"${LOG}"
@@ -2240,6 +2239,7 @@ function flags_handler() {
   IFS=', ' read -a parameters <<<"$arguments" # convert parameter to an array
 
   ENV=""
+  SLOG=""
   TASK=""
   SITE=""
   DOMAIN=""
@@ -2264,7 +2264,12 @@ function flags_handler() {
     -e | --env)
       i="$((i + 1))"
       ENV=${parameters[$i]}
-      ;;  
+      ;;
+
+    -sl | --slog)
+      i="$((i + 1))"
+      SLOG=${parameters[$i]}
+      ;;
 
     -t | --task)
       i="$((i + 1))"
@@ -2312,6 +2317,7 @@ function flags_handler() {
 
   done
 
+  #env_handler "${ENV}"
   tasks_handler "${TASK}"
 
 }
