@@ -2239,6 +2239,7 @@ function flags_handler() {
 
   IFS=', ' read -a parameters <<<"$arguments" # convert parameter to an array
 
+  ENV=""
   TASK=""
   SITE=""
   DOMAIN=""
@@ -2259,6 +2260,11 @@ function flags_handler() {
     -d | --debug)
       SHOWDEBUG=1
       ;;
+
+    -e | --env)
+      i="$((i + 1))"
+      ENV=${parameters[$i]}
+      ;;  
 
     -t | --task)
       i="$((i + 1))"
