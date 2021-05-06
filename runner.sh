@@ -20,7 +20,15 @@ if [[ -z "${SFOLDER}" ]]; then
   exit 1 # error; the path is not accessible
 fi
 
-### Define log name
+### Log
+TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
+PATH_LOG="${SFOLDER}/log"
+if [[ ! -d "${SFOLDER}/log" ]]; then
+  mkdir "${SFOLDER}/log"
+fi
+
+# Define log name
+declare -g LOG
 declare -g LOG_NAME
 
 # Check if the script receives first parameter "--sl"
@@ -32,7 +40,9 @@ else
   LOG_NAME="log_lemp_utils_${TIMESTAMP}.log"
 fi
 
-export LOG_NAME
+LOG="${PATH_LOG}/${LOG_NAME}"
+
+export LOG
 
 ### Load Main library
 chmod +x "${SFOLDER}/libs/commons.sh"
@@ -40,37 +50,25 @@ source "${SFOLDER}/libs/commons.sh"
 
 ### Init #######################################################################
 
-#if [[ -t 1 ]]; then
+script_init # Script initialization
 
-  # RUNNING FROM TERMINAL
+# With "$#" we can check the number of arguments received when the script is runned
+# Check if there were no arguments provided
+if [[ $# -eq 0 ]]; then
 
-  script_init # Script initialization
+  # RUNNING GRAPHIC MENU
+  menu_main_options
 
-  # With "$#" we can check the number of arguments received when the script is runned
-  # Check if there were no arguments provided
-  if [[ $# -eq 0 ]]; then
+else
 
-    # RUNNING GRAPHIC MENU
-    menu_main_options
+  # RUNNING FROM FLAGS
+  flags_handler "$#" "$*" #"$*" stores all arguments received when the script is runned
+  #parse_params "$@"
 
-  else
+fi
 
-    # RUNNING FROM FLAGS
-    flags_handler "$#" "$*" #"$*" stores all arguments received when the script is runned
-    #parse_params "$@"
+# Script cleanup
+cleanup
 
-  fi
-
-  # Script cleanup
-  cleanup
-
-  # Log End
-  log_event "info" "LEMP UTILS SCRIPT End -- $(date +%Y%m%d_%H%M)"
-
-#else
-
-  ### Running from cron
-#  log_event "error" "Nothing to do ..."
-#  return 1
-
-#fi
+# Log End
+log_event "info" "LEMP UTILS SCRIPT End -- $(date +%Y%m%d_%H%M)"
