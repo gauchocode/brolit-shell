@@ -251,15 +251,7 @@ function script_init() {
     mkdir "${TMP_DIR}/${NOW}"
   fi
 
-  # Log
-  TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
-  PATH_LOG="${SFOLDER}/log"
-  if [[ ! -d "${SFOLDER}/log" ]]; then
-    mkdir "${SFOLDER}/log"
-  fi
-
-  LOG="${PATH_LOG}/${LOG_NAME}"
-
+  # Clean old log files
   find "${PATH_LOG}" -name "*.log" -type f -mtime +7 -print -delete >>"${LOG}"
 
   # Load colors and styles
@@ -315,7 +307,6 @@ function script_init() {
     source "${LEMP_UTILS_CONFIG_FILE}"
 
   else
-
     menu_first_run
 
   fi
@@ -368,7 +359,7 @@ function script_init() {
   # Fallback
   if [[ ${SERVER_IP} == "" ]]; then
     # Alternative method to get public IP
-    SERVER_IP=$(curl -s http://ipv4.icanhazip.com)
+    SERVER_IP="$(curl -s http://ipv4.icanhazip.com)"
   fi
 
   log_event "info" "SERVER IP: ${SERVER_IP}"
