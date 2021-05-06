@@ -20,20 +20,22 @@ if [[ -z "${SFOLDER}" ]]; then
   exit 1 # error; the path is not accessible
 fi
 
+### Define log name
 declare -g LOG_NAME
 
-if [[ ${1} == "sl" ]];then
-
-  LOG_NAME="log_lemp_utils_${1}.log"
+# Check if the script receives first parameter "--sl"
+if [[ ${1} == *"sl" ]];then         
+  # And add second parameter to the log name
+  LOG_NAME="log_lemp_utils_${2}.log"
 else
+  # Default log name
   LOG_NAME="log_lemp_utils_${TIMESTAMP}.log"
-  
 fi
 
-# Main library
-chmod +x "${SFOLDER}/libs/commons.sh"
+export LOG_NAME
 
-# shellcheck source=${SFOLDER}/libs/commons.sh
+### Load Main library
+chmod +x "${SFOLDER}/libs/commons.sh"
 source "${SFOLDER}/libs/commons.sh"
 
 ### Init #######################################################################
@@ -43,9 +45,6 @@ source "${SFOLDER}/libs/commons.sh"
   # RUNNING FROM TERMINAL
 
   script_init # Script initialization
-
-  #log_event "debug" "terminal=$-"
-  #log_event "debug" "all parameters=$*"
 
   # With "$#" we can check the number of arguments received when the script is runned
   # Check if there were no arguments provided
