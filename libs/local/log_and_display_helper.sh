@@ -250,6 +250,7 @@ function display() {
   TCOLOR=""
   TSTYLE=""
   COLOR=""
+  LOG=""
   SPACES=0
   SHOWDEBUG=0
   CRONJOB=0
@@ -300,6 +301,10 @@ function display() {
     --text)
       shift
       TEXT=$1
+      ;;
+    --log)
+      shift
+      LOG=$1
       ;;
     *)
       echo "INVALID OPTION (Display): $1" >&2

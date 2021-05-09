@@ -1016,7 +1016,8 @@ function restore_project() {
       wpcli_change_wp_seo_visibility "${install_path}" "0"
     fi
 
-    telegram_send_message "✅ ${VPSNAME}: Project ${new_project_domain} restored"
+    # Send notification
+    send_notification "✅ ${VPSNAME}" "Project ${new_project_domain} restored!"
 
   fi
 

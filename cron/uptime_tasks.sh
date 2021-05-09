@@ -62,7 +62,7 @@ source "${SFOLDER}/libs/commons.sh"
 
     if [[ "$k" -gt 0 ]]; then
 
-      project_name=$(basename "${site}")
+      project_name="$(basename "${site}")"
 
       if [[ ${blacklist} != *"${project_name}"* ]]; then
 
@@ -80,7 +80,9 @@ source "${SFOLDER}/libs/commons.sh"
 
           log_event "error" "Website ${project_name} is offline" "false"
           display --indent 2 --text "- Testing ${project_name}" --result "DOWN" --color RED
-          telegram_send_message "⛔ ${VPSNAME}: Website ${project_name} is offline"
+          
+          # Send notification
+          send_notification "⛔ ${VPSNAME}" "Website ${project_name} is offline"
 
         fi
 
@@ -120,6 +122,6 @@ source "${SFOLDER}/libs/commons.sh"
   #EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${PKG_MAIL_VAR} ${CERT_MAIL_VAR} ${CONFIG_MAIL_VAR} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
 
   # Sending email notification
-  #send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
+  #mail_send_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
 
 #fi

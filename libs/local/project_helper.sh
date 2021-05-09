@@ -304,7 +304,8 @@ function project_delete_files() {
 
     fi
 
-    telegram_send_message "⚠️ ${VPSNAME}: Project files for'${project_domain}' deleted!"
+    # Send notification
+    send_notification "⚠️ ${VPSNAME}" "Project files for'${project_domain}' deleted!"
 
     # TODO: Maybe return database name? extracted from wp-config or something?
 
@@ -352,17 +353,18 @@ function project_delete_database() {
         # Make a database Backup
         make_database_backup "${BK_TYPE}" "${chosen_database}"
 
-        # Moving deleted project backups to another dropbox directory
-        log_event "debug" "Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${chosen_database} /${VPSNAME}/offline-site"
-        
-        dropbox_output=$(${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${chosen_database}" "/${VPSNAME}/offline-site" 1>&2)
+        # Moving deleted project backups to another dropbox directory       
+        ${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${chosen_database}" "/${VPSNAME}/offline-site" 1>&2
 
+        # Log
+        log_event "debug" "Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${chosen_database} /${VPSNAME}/offline-site"
         display --indent 6 --text "- Moving dropbox backup to offline directory" --result "DONE" --color GREEN
 
         # Delete project database
         mysql_database_drop "${chosen_database}"
 
-        telegram_send_message "⚠️ ${VPSNAME}: Project database'${chosen_database}' deleted!"
+        # Send notification
+        send_notification "⚠️ ${VPSNAME}" "Project database'${chosen_database}' deleted!"
 
         # Delete mysql user
         while true; do
@@ -630,7 +632,7 @@ function php_project_install () {
   log_event "info" "PHP project installation for domain ${project_domain} finished" "false"
   display --indent 6 --text "- PHP project installation for domain ${project_domain}" --result "DONE" --color GREEN
 
-  # Telegram message
-  telegram_send_message "${VPSNAME}: PHP project installation for domain ${project_domain} finished"
+  # Send notification
+  send_notification "${VPSNAME}" "PHP project installation for domain ${project_domain} finished!"
 
 }

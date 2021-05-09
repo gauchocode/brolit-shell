@@ -52,8 +52,6 @@ source "${SFOLDER}/libs/commons.sh"
 
 script_init # Script initialization
 
-# With "$#" we can check the number of arguments received when the script is runned
-# Check if there were no arguments provided
 if [[ $# -eq 0 ]]; then
 
   # RUNNING GRAPHIC MENU
@@ -62,8 +60,9 @@ if [[ $# -eq 0 ]]; then
 else
 
   # RUNNING FROM FLAGS
+  # With "$#" we can check the number of arguments received when the script is runned
+  # Check if there were no arguments provided
   flags_handler "$#" "$*" #"$*" stores all arguments received when the script is runned
-  #parse_params "$@"
 
 fi
 
