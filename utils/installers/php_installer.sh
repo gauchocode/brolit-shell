@@ -35,7 +35,7 @@ function php_get_standard_distro_version() {
 
 function php_installer() {
 
-  # $1 = ${php_v}  / optional
+  # $1 = ${php_v} - optional
 
   local php_v=$1
 
@@ -45,7 +45,7 @@ function php_installer() {
 
   # Log
   display --indent 6 --text "- Installing PHP-${php_v} and libraries"
-  log_event "info" "Installing PHP-${php_v} and libraries ..."
+  log_event "info" "Installing PHP-${php_v} and libraries ..." "false"
 
   # apt command
   apt-get --yes install "php${php_v}-fpm" "php${php_v}-mysql" "php-imagick" "php${php_v}-xml" "php${php_v}-cli" "php${php_v}-curl" "php${php_v}-mbstring" "php${php_v}-gd" "php${php_v}-intl" "php${php_v}-zip" "php${php_v}-bz2" "php${php_v}-bcmath" "php${php_v}-soap" "php${php_v}-dev" "php-pear" -qq > /dev/null
@@ -54,7 +54,7 @@ function php_installer() {
   clear_last_line
   clear_last_line
   display --indent 6 --text "- Installing PHP-${php_v} and libraries" --result "DONE" --color GREEN
-  log_event "info" "PHP-${php_v} installed"
+  log_event "info" "PHP-${php_v} installed" "false"
 
 }
 
@@ -101,7 +101,7 @@ function php_redis_installer() {
 
   # Log
   display --indent 6 --text "- Installing redis server"
-  log_event "info" "Installing redis server ..."
+  log_event "info" "Installing redis server ..." "false"
 
   # apt command
   apt-get --yes install redis-server php-redis -qq > /dev/null
@@ -116,7 +116,7 @@ function php_redis_installer() {
   # Log
   clear_last_line
   display --indent 6 --text "- Installing redis server" --result "DONE" --color GREEN
-  log_event "info" "redis server installed"
+  log_event "info" "redis server installed" "false"
 
 }
 
@@ -124,7 +124,7 @@ function mail_utils_installer() {
 
   # Log
   display --indent 6 --text "- Installing mail smtp"
-  log_event "info" "Installing mail mail_mime and net_smtp ..."
+  log_event "info" "Installing mail mail_mime and net_smtp ..." "false"
 
   # Creating tmp directory
   # Ref: https://stackoverflow.com/questions/59720692/php-7-4-1-pecl-is-not-working-trying-to-access-array-offset-on-value-of-type
@@ -137,7 +137,7 @@ function mail_utils_installer() {
   # Log
   clear_last_line
   display --indent 6 --text "- Installing mail smtp" --result "DONE" --color GREEN
-  log_event "info" "mail mail_mime and net_smtp installed"
+  log_event "info" "mail mail_mime and net_smtp installed" "false"
 
 }
 
@@ -145,7 +145,7 @@ function php_purge_all_installations() {
 
   # Log
   display --indent 6 --text "- Purging PHP and libraries"
-  log_event "info" "Removing all PHP versions and libraries ..."
+  log_event "info" "Removing all PHP versions and libraries ..." "false"
 
   # apt command
   apt-get --yes purge php* -qq > /dev/null
@@ -153,7 +153,7 @@ function php_purge_all_installations() {
   # Log
   clear_last_line
   display --indent 6 --text "- Purging PHP and libraries" --result "DONE" --color GREEN
-  log_event "info" "PHP purged!"
+  log_event "info" "PHP purged!" "false"
 
 }
 
@@ -163,7 +163,7 @@ function php_purge_installation() {
 
   # Log
   display --indent 6 --text "- Removing PHP-${PHP_V} and libraries"
-  log_event "info" "Removing PHP-${PHP_V} and libraries ..."
+  log_event "info" "Removing PHP-${PHP_V} and libraries ..." "false"
 
   # apt command
   apt-get --yes purge "php${PHP_V}-fpm" "php${PHP_V}-mysql" php-xml "php${PHP_V}-xml" "php${PHP_V}-cli" "php${PHP_V}-curl" "php${PHP_V}-mbstring" "php${PHP_V}-gd" php-imagick "php${PHP_V}-intl" "php${PHP_V}-zip" "php${PHP_V}-bz2" php-bcmath "php${PHP_V}-soap" "php${PHP_V}-dev" php-pear -qq > /dev/null
@@ -171,7 +171,7 @@ function php_purge_installation() {
   # Log
   clear_last_line
   display --indent 6 --text "- Removing PHP-${PHP_V} and libraries" --result "DONE" --color GREEN
-  log_event "info" "PHP-${PHP_V} deleted!"
+  log_event "info" "PHP-${PHP_V} deleted!" "false"
 
 }
 

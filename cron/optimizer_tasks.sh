@@ -61,6 +61,6 @@ else
   #EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${PKG_MAIL_VAR} ${CERT_MAIL_VAR} ${CONFIG_MAIL_VAR} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
 
   # Sending email notification
-  #send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
+  #mail_send_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
 
 fi

@@ -185,9 +185,10 @@ function wpcli_main_menu() {
       # REINSTALL_WP
       log_subsection "WP Core Re-install"
 
-      wp_result=$(wpcli_core_reinstall "${wp_site}")
+      wp_result="$(wpcli_core_reinstall "${wp_site}")"
       if [[ "${wp_result}" = "success" ]]; then
-        telegram_send_message "⚠️ ${VPSNAME}: WordPress reinstalled on site: ${wp_site}"
+
+        send_notification "⚠️ ${VPSNAME}" "WordPress reinstalled on site: ${wp_site}"
 
       fi
 
