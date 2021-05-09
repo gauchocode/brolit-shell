@@ -5,6 +5,8 @@
 ################################################################################
 
 function _spinner() {
+
+  # Parameters
   # $1 start/stop
   #
   # on start: $2 display message
@@ -74,17 +76,26 @@ function _spinner() {
 }
 
 function spinner_start() {
-  # $1 : msg to display
+
+  # Parameters
+  # $1 = msg to display
+
   _spinner "start" "${1}" &
+
   # set global spinner pid
   _sp_pid=$!
   disown
+
 }
 
 function spinner_stop() {
-  # $1 : command exit status
+
+  # Parameters
+  # $1 = command exit status
+
   _spinner "stop" $1 $_sp_pid
   unset _sp_pid
+
 }
 
 function log_event() {
@@ -186,14 +197,17 @@ function log_section() {
   local message=$1
 
   if [[ ${QUIET} -eq 0 ]]; then
+
     # Console Display
     echo "" >&2
     echo -e "[+] Performing Action: ${YELLOW}${B_DEFAULT}${message}${ENDCOLOR}" >&2
     echo "----------------------------------------------" >&2
+
     # Log file
     echo " > -------------------------------------------------" >>"${LOG}"
     echo " > [+] Performing Action: ${message}" >>"${LOG}"
     echo " > -------------------------------------------------" >>"${LOG}"
+
   fi
 
 }
@@ -330,12 +344,13 @@ function display() {
       # Display:
       # - for full shells, count with -m instead of -c, to support language locale (older busybox does not have -m)
       # - wc needs LANG to deal with multi-bytes characters but LANG has been unset in include/consts
-      TEXT_C=$(string_remove_color_chars "${TEXT}")
+      TEXT_C="$(string_remove_color_chars "${TEXT}")"
       #TEXT_C="${TEXT}"
-      LINESIZE=$(
+
+      LINESIZE="$(
         export LC_ALL=
         echo "${TEXT_C}" | wc -m | tr -d ' '
-      )
+      )"
 
       if [[ "${SHOWDEBUG}" -eq 1 ]]; then DEBUGTEXT=" [${PURPLE}DEBUG${NORMAL}]"; else DEBUGTEXT=""; fi
       if [[ "${INDENT}" -gt 0 ]]; then SPACES=$((62 - INDENT - LINESIZE)); fi
@@ -349,7 +364,8 @@ function display() {
 
       else
         # EXEC_TYPE == external
-        echo -e "\033[${INDENT}C${TEXT}\033[${SPACES}C${RESULTPART}${DEBUGTEXT}" >>"${LOG}"
+        # echo -e "\033[${INDENT}C${TEXT}\033[${SPACES}C${RESULTPART}${DEBUGTEXT}" >>"${LOG}"
+        return 0
 
       fi
 
