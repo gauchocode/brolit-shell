@@ -4,7 +4,7 @@
 # Version: 3.0.22
 ################################################################################
 
-function send_mail_notification() {
+function mail_send_notification() {
 
     # $1 = ${email_subject} // Email's subject
     # $2 = ${email_content} // Email's content

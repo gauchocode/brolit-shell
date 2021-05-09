@@ -18,9 +18,9 @@ libs_local_path="${SFOLDER}/libs/local"
 libs_local="$(find "${libs_local_path}" -maxdepth 1 -name '*.sh' -type f -print)"
 for f in ${libs_local}; do source "${f}"; done
 
-# shellcheck source=${SFOLDER}/utils/installers_and_configurators.sh
+# Load other sources
+source "${SFOLDER}/libs/notification_controller.sh"
 source "${SFOLDER}/utils/installers_and_configurators.sh"
-# shellcheck source=${SFOLDER}/utils/it_utils.sh
 source "${SFOLDER}/utils/it_utils.sh"
 
 #
@@ -164,7 +164,7 @@ function _check_root() {
 
   local is_root
 
-  is_root=$(id -u) # if return 0, the script is runned by the root user
+  is_root="$(id -u)" # if return 0, the script is runned by the root user
 
   # Check if user is root
   if [[ ${is_root} != 0 ]]; then
@@ -1194,7 +1194,7 @@ function get_subdomain_part() {
 
     root_domain=${domain_no_ext##*.}${domain_extension}
 
-    if [[ ${root_domain} != ${domain} ]]; then
+    if [[ ${root_domain} != "${domain}" ]]; then
 
       subdomain_part=${domain//.$root_domain/}
 
@@ -2144,80 +2144,6 @@ function subtasks_cloudflare_handler() {
 #
 #############################################################################
 #
-
-function parse_params() {
-
-  # default values of variables set from params
-  param=''
-
-  while :; do
-
-    case "${1-}" in
-
-    -h | -\? | --help)
-      show_help # Display a usage synopsis
-      exit
-      ;;
-
-    -d | --debug)
-      SHOWDEBUG=1
-      ;;
-
-    -t | --task)
-      i="$((i + 1))"
-      TASK=${parameters[$i]}
-      ;;
-
-    -st | --subtask)
-      i="$((i + 1))"
-      STASK=${parameters[$i]}
-      ;;
-
-    -s | --site)
-      i="$((i + 1))"
-      SITE=${parameters[$i]}
-      ;;
-
-    -pn | --pname)
-      i="$((i + 1))"
-      PNAME=${parameters[$i]}
-      ;;
-
-    -pt | --ptype)
-      i="$((i + 1))"
-      PTYPE=${parameters[$i]}
-      ;;
-
-    -ps | --pstate)
-      i="$((i + 1))"
-      PSTATE=${parameters[$i]}
-      ;;
-
-    -do | --domain)
-      i="$((i + 1))"
-      DOMAIN=${parameters[$i]}
-      ;;
-
-    *)
-      echo "INVALID OPTION: $i" >&2
-      exit
-      ;;
-
-    esac
-
-    shift
-
-  done
-
-  #args=("$@")
-
-  # check required params and arguments
-  #[[ -z "${param-}" ]] && die "Missing required parameter: param"
-  #[[ ${#args[@]} -eq 0 ]] && die "Missing script arguments"
-
-  return 0
-
-}
 
 function flags_handler() {
 
