@@ -70,7 +70,7 @@ else
         
         if [[ ${is_wp} = "true" ]]; then
 
-          telegram_text=""
+          notification_text=""
 
           # VERIFY_WP
           mapfile -t wpcli_core_verify_results < <( wpcli_core_verify "${site}" )
@@ -81,7 +81,7 @@ else
             if [[ "${wpcli_core_verify_result}" != "" ]]; then
 
               # Check results
-              wpcli_core_verify_result_file=$(echo "${wpcli_core_verify_result}" |  grep "File doesn't" | cut -d ":" -f3)
+              wpcli_core_verify_result_file="$(echo "${wpcli_core_verify_result}" |  grep "File doesn't" | cut -d ":" -f3)"
               
               # Remove white space
               wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
@@ -92,7 +92,7 @@ else
                 log_event "info" "${wpcli_core_verify_result_file}"
                 
                 # Telegram text
-                telegram_text+="${wpcli_core_verify_result} "
+                notification_text+="${wpcli_core_verify_result} "
 
               fi
 
@@ -100,9 +100,11 @@ else
 
           done
 
-          if [[ ${telegram_text} != "" ]]; then
-            telegram_send_message "⛔ WordPress Checksum failed for site ${project_name} on ${VPSNAME}: ${telegram_text}"
+          if [[ ${notification_text} != "" ]]; then
 
+            # Send notification
+            send_notification "⛔ ${VPSNAME}" "WordPress checksum failed for site ${project_name}: ${notification_text}"
+            
           else
             log_event "info" "WordPress Checksum OK!"
 

@@ -8,7 +8,7 @@ function mysql_default_installer() {
 
   log_subsection "MySQL Installer"
 
-  log_event "info" "Running MySQL default installer"
+  log_event "info" "Running MySQL default installer" "false"
 
   apt-get --yes install mysql-server -qq > /dev/null
   
@@ -20,7 +20,7 @@ function mariadb_default_installer() {
   
   log_subsection "MySQL Installer"
 
-  log_event "info" "Running MariaDB default installer"
+  log_event "info" "Running MariaDB default installer" "false"
 
   apt-get --yes install mariadb-server mariadb-client -qq > /dev/null
 
@@ -30,7 +30,7 @@ function mariadb_default_installer() {
 
 function mysql_purge_installation() {
 
-  log_event "warning" "Purging mysql-* packages ..."
+  log_event "warning" "Purging mysql-* packages ..." "false"
   display --indent 6 --text "- Purging MySQL packages"
 
   apt-get --yes purge mysql-server mysql-client mysql-common mysql-server-core-* mysql-client-core-* -qq > /dev/null
@@ -38,7 +38,7 @@ function mysql_purge_installation() {
   apt-get autoremove -qq > /dev/null
   apt-get autoclean -qq > /dev/null
 
-  log_event "info" "mysql-* packages purged!"
+  log_event "info" "mysql-* packages purged!" "false"
   clear_last_line
   display --indent 6 --text "- Purging MySQL packages" --result "DONE" --color GREEN
 

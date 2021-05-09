@@ -41,7 +41,7 @@ function menu_backup_options() {
       EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${DB_MAIL_VAR} ${MAIL_FOOTER}"
 
       # Sending email notification
-      send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
+      mail_send_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
 
     fi
     if [[ ${chosen_backup_type} == *"02"* ]]; then
@@ -69,7 +69,7 @@ function menu_backup_options() {
       EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${CERT_MAIL_VAR} ${CONFIG_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
 
       # Sending email notification
-      send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
+      mail_send_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
 
     fi
     if [[ ${chosen_backup_type} == *"03"* ]]; then
@@ -110,7 +110,7 @@ function menu_backup_options() {
       EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${DB_MAIL_VAR} ${CONFIG_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
 
       # Sending email notification
-      send_mail_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
+      mail_send_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
 
       remove_mail_notifications_files
 

@@ -172,9 +172,9 @@ function wordpress_project_install() {
   log_event "info" "WordPress installation for domain ${project_domain} finished" "false"
   display --indent 6 --text "- WordPress installation for domain ${project_domain}" --result "DONE" --color GREEN
 
-  # Telegram message
-  telegram_send_message "${VPSNAME}: WordPress installation for domain ${project_domain} finished"
-
+  # Send notification
+  send_notification "${VPSNAME}" "WordPress installation for domain ${project_domain} finished"
+  
 }
 
 function wordpress_project_copy() {
@@ -340,7 +340,7 @@ function wordpress_project_copy() {
   log_event "info" "WordPress installation for domain ${project_domain} finished" "false"
   display --indent 6 --text "- WordPress installation for domain ${project_domain}" --result "DONE" --color GREEN
 
-  # Telegram message
-  telegram_send_message "${VPSNAME}: WordPress installation for domain ${project_domain} finished"
+  # Send notification
+  send_notification "${VPSNAME}" "WordPress installation for domain ${project_domain} finished"
 
 }

@@ -23,7 +23,7 @@ function test_mail_cert_section() {
     email_content="${HTMLOPEN} ${BODY_SRV} ${CERT_MAIL_VAR} ${MAIL_FOOTER}"
 
     # Sending email notification
-    send_mail_notification "${email_subject}" "${email_content}"
+    mail_send_notification "${email_subject}" "${email_content}"
 
     clear_last_line
     display --indent 6 --text "- test_mail_cert_section" --result "DONE" --color WHITE
@@ -46,7 +46,7 @@ function test_mail_package_section() {
     email_content="${HTMLOPEN} ${BODY_SRV} ${PKG_MAIL_VAR} ${MAIL_FOOTER}"
 
     # Sending email notification
-    send_mail_notification "${email_subject}" "${email_content}"
+    mail_send_notification "${email_subject}" "${email_content}"
 
     clear_last_line
     display --indent 6 --text "- test_mail_package_section" --result "DONE" --color WHITE

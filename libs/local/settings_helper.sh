@@ -399,7 +399,7 @@ function script_configuration_wizard() {
         DUP_BK_OLD=${DUP_BK}
         MAILCOW_BK_OLD=${MAILCOW_BK}
 
-        #Reset config vars
+        # Reset config vars
         SMTP_SERVER=""
         SMTP_PORT=""
         SMTP_TLS=""
@@ -408,17 +408,20 @@ function script_configuration_wizard() {
         MAILA=""
         SITES=""
 
+        # Notif var
         MAIL_NOTIF="true"
         TELEGRAM_NOTIF="false"
+
+        # Cloudflare
         CLOUDFLARE_ENABLE="true"
+
+        # Backup
         DROPBOX_ENABLE="true"
         DUP_BK="false"
         MAILCOW_BK="false"
 
         #Rename old config file
-        mv /root/.broobe-utils-options /root/.broobe-utils-options_bk
-
-        log_event "debug" "Script config file renamed: /root/.broobe-utils-options_bk"
+        mv "/root/.broobe-utils-options" "/root/.broobe-utils-options_bk"
 
     fi
 
@@ -646,7 +649,7 @@ function generate_telegram_config() {
     botfather_whip_line+=" 1) Get a bot token. Contact @BotFather (https://t.me/BotFather) and send the command /newbot.\n"
     botfather_whip_line+=" 2) Follow the instructions and paste the token to access the HTTP API:\n\n"
 
-    botfather_key=$(whiptail --title "Telegram BotFather Configuration" --inputbox "${botfather_whip_line}" 15 60 3>&1 1>&2 2>&3)
+    botfather_key="$(whiptail --title "Telegram BotFather Configuration" --inputbox "${botfather_whip_line}" 15 60 3>&1 1>&2 2>&3)"
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -658,7 +661,7 @@ function generate_telegram_config() {
         telegram_id_whip_line+=" your personal chat id or invite him into a group and issue the same command to get the group chat id.\n"
         telegram_id_whip_line+=" 4) Paste the ID here:\n\n"
 
-        telegram_user_id=$(whiptail --title "Telegram: BotID Configuration" --inputbox "${telegram_id_whip_line}" 15 60 3>&1 1>&2 2>&3)
+        telegram_user_id="$(whiptail --title "Telegram: BotID Configuration" --inputbox "${telegram_id_whip_line}" 15 60 3>&1 1>&2 2>&3)"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -669,7 +672,7 @@ function generate_telegram_config() {
             # shellcheck source=${SFOLDER}/libs/telegram_notification_helper.sh
             source "${SFOLDER}/libs/telegram_notification_helper.sh"
 
-            telegram_send_message "✅ ${VPSNAME}: Telegram notifications configured!"
+            telegram_send_notification "✅ ${VPSNAME}: Telegram notifications configured!"
 
         else
 

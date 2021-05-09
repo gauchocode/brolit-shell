@@ -6,7 +6,7 @@
 
 function wpcli_installer_menu() {
 
-    WPCLI_INSTALLED=$(wpcli_check_if_installed)
+    WPCLI_INSTALLED="$(wpcli_check_if_installed)"
 
     if [[ ${WPCLI_INSTALLED} == "true" ]]; then
 
