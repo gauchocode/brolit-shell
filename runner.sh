@@ -30,19 +30,22 @@ fi
 # Define log name
 declare -g LOG
 declare -g LOG_NAME
+declare -g EXEC_TYPE
 
 # Check if the script receives first parameter "--sl"
 if [[ ${1} == *"sl" ]];then         
   # And add second parameter to the log name
   LOG_NAME="log_lemp_utils_${2}.log"
+  EXEC_TYPE="external"
 else
   # Default log name
   LOG_NAME="log_lemp_utils_${TIMESTAMP}.log"
+  EXEC_TYPE="default"
 fi
 
 LOG="${PATH_LOG}/${LOG_NAME}"
 
-export LOG
+export LOG EXEC_TYPE
 
 ### Load Main library
 chmod +x "${SFOLDER}/libs/commons.sh"

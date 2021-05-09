@@ -250,10 +250,8 @@ function display() {
   TCOLOR=""
   TSTYLE=""
   COLOR=""
-  LOG=""
   SPACES=0
   SHOWDEBUG=0
-  CRONJOB=0
 
   while [ $# -ge 1 ]; do
     case $1 in
@@ -302,10 +300,6 @@ function display() {
       shift
       TEXT=$1
       ;;
-    --log)
-      shift
-      LOG=$1
-      ;;
     *)
       echo "INVALID OPTION (Display): $1" >&2
       #ExitFatal
@@ -318,11 +312,14 @@ function display() {
   if [[ -z "${RESULT}" ]]; then
     RESULTPART=""
   else
-    if [[ ${CRONJOB} -eq 0 ]]; then
+
+    # EXEC_TYPE defined globally
+    if [[ ${EXEC_TYPE} == "default" ]]; then
       RESULTPART=" [ ${COLOR}${B_DEFAULT}${RESULT}${NORMAL} ]"
     else
       RESULTPART=" [ ${RESULT} ]"
     fi
+
   fi
 
   if [[ -n "${TEXT}" ]]; then
@@ -344,13 +341,15 @@ function display() {
       if [[ "${INDENT}" -gt 0 ]]; then SPACES=$((62 - INDENT - LINESIZE)); fi
       if [[ "${SPACES}" -lt 0 ]]; then SPACES=0; fi
 
-      if [[ "${CRONJOB}" -eq 0 ]]; then
+      if [[ ${EXEC_TYPE} == "default" ]]; then
+
         # Check if we already have already discovered a proper echo command tool. It not, set it default to 'echo'.
         #if [ "${ECHOCMD}" = "" ]; then ECHOCMD="echo"; fi
         echo -e "\033[${INDENT}C${TCOLOR}${TSTYLE}${TEXT}${NORMAL}\033[${SPACES}C${RESULTPART}${DEBUGTEXT}" >&2
 
       else
-        echo "${TEXT}${RESULTPART}" >&2
+        # EXEC_TYPE == external
+        echo -e "\033[${INDENT}C${TEXT}\033[${SPACES}C${RESULTPART}${DEBUGTEXT}" >>"${LOG}"
 
       fi
 
