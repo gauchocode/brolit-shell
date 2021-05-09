@@ -522,6 +522,10 @@ function cleanup() {
 
 function die() {
 
+  # Parameters
+  # $1 = {msg}
+  # $2 = {code}
+
   local msg=$1
   local code=${2-1} # default exit status 1
 
@@ -541,6 +545,7 @@ function die() {
 
 function whiptail_message() {
 
+  # Parameters
   # $1 = {whip_title}
   # $2 = {whip_message}
 
@@ -561,6 +566,7 @@ function whiptail_message() {
 
 function whiptail_message_with_skip_option() {
 
+  # Parameters
   # $1 = {whip_title}
   # $2 = {whip_message}
 
@@ -590,6 +596,9 @@ declare -a checklist_array
 
 function array_to_checklist() {
 
+  # Parameters
+  # $1 = {array}
+
   local array=$1
 
   local i
@@ -613,6 +622,7 @@ function array_to_checklist() {
 
 function file_browser() {
 
+  # Parameters
   # $1= ${menutitle}
   # $2= ${startdir}
 
@@ -663,6 +673,7 @@ function file_browser() {
 
 function directory_browser() {
 
+  # Parameters
   # $1= ${menutitle}
   # $2= ${startdir}
 
@@ -715,11 +726,12 @@ function directory_browser() {
 
 function get_all_directories() {
 
+  # Parameters
   # $1 = ${SITES}
 
   local main_dir=$1
 
-  first_level_dir=$(find ${main_dir} -maxdepth 1 -type d)
+  first_level_dir="$(find "${main_dir}" -maxdepth 1 -type d)"
 
   # Return
   echo "${first_level_dir}"
@@ -728,6 +740,7 @@ function get_all_directories() {
 
 function copy_project_files() {
 
+  # Parameters
   # $1 = ${source_path}
   # $2 = ${destination_path}
   # $3 = ${excluded_path}     - Neet to be a relative path
@@ -748,6 +761,7 @@ function copy_project_files() {
 
 function get_project_type() {
 
+  # Parameters
   # $1 = ${dir_path}
 
   local dir_path=$1
@@ -779,6 +793,7 @@ function get_project_type() {
 
 function calculate_disk_usage() {
 
+  # Parameters
   # $1 = ${disk_volume}
 
   local disk_volume=$1
@@ -797,6 +812,7 @@ function calculate_disk_usage() {
 
 function string_remove_spaces() {
 
+  # Parameters
   # $1 = ${string}
 
   local string=$1
@@ -819,6 +835,7 @@ function string_remove_special_chars() {
   # Return
   # cat $1 | tr -dc '[:alnum:]\n\r' | tr '[:upper:]' '[:lower:]' | tr -d '[:cntrl:]' # for files
 
+  # Parameters
   # $1 = ${string}
 
   local string=$1
@@ -830,6 +847,7 @@ function string_remove_special_chars() {
 
 function string_remove_color_chars() {
 
+  # Parameters
   # $1 = ${string}
 
   local string=$1
@@ -892,6 +910,7 @@ function string_remove_color_chars() {
 
 function change_ownership() {
 
+  # Parameters
   #$1 = ${user}
   #$2 = ${group}
   #$3 = ${path}
@@ -945,6 +964,7 @@ function prompt_return_or_finish() {
 # TODO: improve and use this instead of untar or unzip
 function extract() {
 
+  # Parameters
   # $1 - File to uncompress or extract
   # $2 - Dir to uncompress file
   # $3 - Optional compress-program (ex: lbzip2)
@@ -1026,6 +1046,7 @@ function extract() {
 
 function get_domain_extension() {
 
+  # Parameters
   # $1 = ${domain}
 
   local domain=$1
@@ -1034,7 +1055,7 @@ function get_domain_extension() {
   local next_lvl
   local domain_ext
 
-  log_event "info" "Working with domain: ${domain}"
+  log_event "info" "Working with domain: ${domain}" "false"
 
   # Get first_lvl domain name
   first_lvl="$(cut -d'.' -f1 <<<"${domain}")"
@@ -1079,6 +1100,7 @@ function get_domain_extension() {
 
 function extract_filename_from_path() {
 
+  # Parameters
   # $1 = ${file_with_path}
 
   local file_with_path=$1
@@ -1094,6 +1116,7 @@ function extract_filename_from_path() {
 
 function extract_domain_extension() {
 
+  # Parameters
   # $1 = ${domain}
 
   local domain=$1
@@ -1124,24 +1147,26 @@ function extract_domain_extension() {
 
 function ask_root_domain() {
 
-    # $1 = ${suggested_root_domain}
+  # Parameters
+  # $1 = ${suggested_root_domain}
 
-    local suggested_root_domain=$1
-    local root_domain
+  local suggested_root_domain=$1
+  local root_domain
 
-    root_domain=$(whiptail --title "Root Domain" --inputbox "Confirm the root domain of the project." 10 60 "${suggested_root_domain}" 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
+  root_domain=$(whiptail --title "Root Domain" --inputbox "Confirm the root domain of the project." 10 60 "${suggested_root_domain}" 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
 
-        # Return
-        echo "${root_domain}"
+    # Return
+    echo "${root_domain}"
 
-    fi
+  fi
 
 }
 
 function get_root_domain() {
 
+  # Parameters
   # $1 = ${domain}
 
   local domain=$1
@@ -1174,6 +1199,7 @@ function get_root_domain() {
 
 function get_subdomain_part() {
 
+  # Parameters
   # $1 = ${domain}
 
   local domain=$1
@@ -1218,6 +1244,7 @@ function get_subdomain_part() {
 
 function install_crontab_script() {
 
+  # Parameters
   # $1 = ${script}
   # $2 = ${scheduled_time}
 
@@ -1269,6 +1296,7 @@ function install_crontab_script() {
 
 function ask_project_state() {
 
+  # Parameters
   #$1 = ${suggested_state} optional to select default option
 
   local suggested_state=$1
@@ -1299,6 +1327,7 @@ function ask_project_state() {
 
 function ask_project_name() {
 
+  # Parameters
   #$1 = ${project_name} optional to select default option
 
   local project_name=$1
@@ -1325,7 +1354,8 @@ function ask_project_name() {
 # TODO: project_domain should be an array?
 function ask_project_domain() {
 
-  #$1 = ${project_domain} optional to select default option
+  # Parameters
+  # $1 = ${project_domain} optional to select default option
 
   local project_domain=$1
 
@@ -1346,12 +1376,14 @@ function ask_project_domain() {
 
 function ask_project_type() {
 
+  # No parameters
+
   local project_types
   local project_type
 
   project_types="WordPress X Laravel X Basic-PHP X HTML X"
 
-  project_type=$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 $(for x in ${project_types}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+  project_type="$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 $(for x in ${project_types}; do echo "$x"; done) 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -1372,6 +1404,7 @@ function ask_rootdomain_for_cloudflare_config() {
 
   # TODO: check with CF API if root domain exists
 
+  # Parameters
   # $1 = ${root_domain} (could be empty)
 
   local root_domain=$1
@@ -1397,6 +1430,7 @@ function ask_subdomains_to_cloudflare_config() {
 
   # TODO: MAKE IT WORKS
 
+  # Parameters
   # $1 = ${subdomains} optional to select default option (could be empty)
 
   local subdomains=$1
@@ -1419,6 +1453,7 @@ function ask_subdomains_to_cloudflare_config() {
 
 function ask_folder_to_install_sites() {
 
+  # Parameters
   # $1 = ${folder_to_install} optional to select default option (could be empty)
 
   local folder_to_install=$1
@@ -1906,7 +1941,7 @@ function menu_project_utils() {
         project_type="$(ask_project_type)"
 
         if [[ ${project_domain} == "${root_domain}" || ${project_domain} == "www.${root_domain}" ]]; then
-            
+
           # Nginx config
           nginx_server_create "www.${root_domain}" "${project_type}" "root_domain" "${root_domain}"
 
