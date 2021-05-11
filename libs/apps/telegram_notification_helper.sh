@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.22
+# Version: 3.0.25
 ################################################################################
 #
 # It uses globals defined on telegram.conf
@@ -41,8 +41,7 @@ function telegram_send_notification() {
 	fi
 	
 	# Notification text
-	notif_text="<b>${notification_title}:</b>\n<pre>${notification_content}</pre>"
-	#notif_text="<pre>${notification_content}</pre>"
+	notif_text="<b>${notification_title}:</b><pre>${notification_content}</pre>"
 	
 	# Log
 	log_event "info" "Sending Telegram notification ..."

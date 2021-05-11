@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.22
+# Version: 3.0.25
 ################################################################################
 
 function server_optimizations_menu() {

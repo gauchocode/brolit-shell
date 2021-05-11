@@ -2,7 +2,7 @@
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Script Name: LEMP Utils Script
-# Version: 3.0.22
+# Version: 3.0.25
 ################################################################################
 
 ### Exit immediately if a command exits with a non-zero status
@@ -20,44 +20,18 @@ if [[ -z "${SFOLDER}" ]]; then
   exit 1 # error; the path is not accessible
 fi
 
-### Log
-TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
-PATH_LOG="${SFOLDER}/log"
-if [[ ! -d "${SFOLDER}/log" ]]; then
-  mkdir "${SFOLDER}/log"
-fi
-
-# Define log name
-declare -g LOG
-declare -g LOG_NAME
-declare -g EXEC_TYPE
-
-# Check if the script receives first parameter "--sl"
-if [[ ${1} == *"sl" ]];then         
-  # And add second parameter to the log name
-  LOG_NAME="log_lemp_utils_${2}.log"
-  EXEC_TYPE="external"
-else
-  # Default log name
-  LOG_NAME="log_lemp_utils_${TIMESTAMP}.log"
-  EXEC_TYPE="default"
-fi
-
-LOG="${PATH_LOG}/${LOG_NAME}"
-
-export LOG EXEC_TYPE
-
 ### Load Main library
 chmod +x "${SFOLDER}/libs/commons.sh"
 source "${SFOLDER}/libs/commons.sh"
 
 ### Init #######################################################################
 
-script_init # Script initialization
+# Script initialization
+script_init "${1}" "${2}"
 
 if [[ $# -eq 0 ]]; then
 
-  # RUNNING GRAPHIC MENU
+  # RUNNING MAIN MENU
   menu_main_options
 
 else
