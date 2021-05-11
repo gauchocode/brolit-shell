@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.22
+# Version: 3.0.25
 #############################################################################
 
 # Libs apps directory path
@@ -35,15 +35,10 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="LEMP UTILS SCRIPT"
-  declare -g SCRIPT_V="3.0.22"
+  declare -g SCRIPT_V="3.0.25"
 
   # Hostname
   declare -g VPSNAME="$HOSTNAME"
-
-  # Script modes
-  declare -g DEBUG=1     # Debugging mode (to screen)
-  declare -g QUIET=0     # Show normal messages and warnings as well
-  declare -g SKIPTESTS=1 # Skip tests
 
   # Default directories
   declare -g WSERVER="/etc/nginx"           # NGINX config files location
@@ -80,24 +75,36 @@ function _setup_globals_and_options() {
 
   # Main partition
   declare -g MAIN_VOL
-  MAIN_VOL=$(df /boot | grep -Eo '/dev/[^ ]+')
+  MAIN_VOL="$(df /boot | grep -Eo '/dev/[^ ]+')"
 
   # Dropbox Folder Backup
   declare -g DROPBOX_FOLDER="/"
 
   # Time Vars
   declare -g NOW
-  NOW=$(date +"%Y-%m-%d")
+  NOW="$(date +"%Y-%m-%d")"
 
   declare -g NOWDISPLAY
-  NOWDISPLAY=$(date +"%d-%m-%Y")
+  NOWDISPLAY="$(date +"%d-%m-%Y")"
 
   declare -g ONEWEEKAGO
-  ONEWEEKAGO=$(date --date='7 days ago' +"%Y-%m-%d")
+  ONEWEEKAGO="$(date --date='7 days ago' +"%Y-%m-%d")"
 
   # Others
   declare -g startdir=""
   declare -g menutitle="Config Selection Menu"
+
+  # Temp folders
+  declare -g TMP_DIR
+
+  TMP_DIR="${SFOLDER}/tmp"
+  # Creating temporary folders
+  if [[ ! -d ${TMP_DIR} ]]; then
+    mkdir "${TMP_DIR}"
+  fi
+  if [[ ! -d "${TMP_DIR}/${NOW}" ]]; then
+    mkdir "${TMP_DIR}/${NOW}"
+  fi
 
 }
 
@@ -196,14 +203,14 @@ function _check_distro() {
   distro_old="false"
 
   # Running Ubuntu?
-  DISTRO=$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $1}')
+  DISTRO="$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $1}')"
   if [[ ! ${DISTRO} = "Ubuntu" ]]; then
     log_event "critical" "This script only run on Ubuntu ... Exiting" "true"
     return 1
 
   else
-    MIN_V=$(echo "18.04" | awk -F "." '{print $1$2}')
-    DISTRO_V=$(get_ubuntu_version)
+    MIN_V="$(echo "18.04" | awk -F "." '{print $1$2}')"
+    DISTRO_V="$(get_ubuntu_version)"
 
     log_event "info" "ACTUAL DISTRO: ${DISTRO} ${DISTRO_V}"
 
@@ -235,24 +242,49 @@ function _check_distro() {
 
 function script_init() {
 
+  # Parameters (only to detect if script is runned by devops app)
+  # ${1} = ${1} runner first parameter
+  # ${2} = ${2} runner second parameter
+
+  # Define log name
+  declare -g LOG
+  declare -g EXEC_TYPE
+
+  # Script modes
+  declare -g DEBUG=1
+  declare -g QUIET=0     # Show normal messages and warnings as well
+  declare -g SKIPTESTS=1 # Skip tests
+
+  local timestamp
+  local path_log
+  local log_name
+
+  # Log
+  timestamp="$(date +%Y%m%d_%H%M%S)"
+  path_log="${SFOLDER}/log"
+  if [[ ! -d "${SFOLDER}/log" ]]; then
+    mkdir "${SFOLDER}/log"
+  fi
+
+  # Check if the script receives first parameter "--sl"
+  if [[ ${1} == *"sl" ]];then         
+    # And add second parameter to the log name
+    log_name="log_lemp_utils_${2}.log"
+    EXEC_TYPE="external"
+    DEBUG=0
+  else
+    # Default log name
+    log_name="log_lemp_utils_${timestamp}.log"
+    EXEC_TYPE="default"
+  fi
+
+  LOG="${path_log}/${log_name}"
+
   # Script setup
   _setup_globals_and_options
 
-  # Temp folders
-  TMP_DIR="${SFOLDER}/tmp"
-
-  # Creating temporary folders
-  if [[ ! -d ${TMP_DIR} ]]; then
-    echo " > Folder ${TMP_DIR} doesn't exist. Creating ..."
-    mkdir "${TMP_DIR}"
-  fi
-  if [[ ! -d "${TMP_DIR}/${NOW}" ]]; then
-    echo " > Folder ${TMP_DIR}/${NOW} doesn't exist. Creating ..."
-    mkdir "${TMP_DIR}/${NOW}"
-  fi
-
   # Clean old log files
-  find "${PATH_LOG}" -name "*.log" -type f -mtime +7 -print -delete >>"${LOG}"
+  find "${path_log}" -name "*.log" -type f -mtime +7 -print -delete >>"${LOG}"
 
   # Load colors and styles
   _setup_colors_and_styles
@@ -368,7 +400,9 @@ function script_init() {
   export SCRIPT_V VPSNAME TMP_DIR SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V SERVER_CONFIG
   export LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP MYSQL_ROOT MYSQLDUMP_ROOT TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MAILA NOW NOWDISPLAY ONEWEEKAGO
   export SENDEMAIL DISK_U ONE_FILE_BK SERVER_IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_BACKUP_DBS STATUS_BACKUP_FILES STATUS_SERVER STATUS_CERTS OUTDATED_PACKAGES
-  export LOG BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR dns_cloudflare_email dns_cloudflare_api_key
+  export BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR 
+  export dns_cloudflare_email dns_cloudflare_api_key
+  export LOG DEBUG EXEC_TYPE QUIET SKIPTESTS
 
 }
 
