@@ -26,6 +26,42 @@ function _clear_last_line() {
 
 }
 
+function _cloudflare_get_zone_id() {
+
+    # $1 = ${zone_name}
+
+    local zone_name=$1
+
+    local zone_id
+
+    # Checking cloudflare credentials file
+    # generate_cloudflare_config
+
+    # Using globals: ${dns_cloudflare_email} and ${dns_cloudflare_api_key}
+
+    # Get Zone ID
+    zone_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" \
+        -H "X-Auth-Email: ${dns_cloudflare_email}" \
+        -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
+        -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1)"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 && ${zone_id} != "" ]]; then
+
+        # Return
+        echo "${zone_id}"
+
+    else
+
+        # Return
+        echo "Domain ${zone_name} not found"
+
+        return 1
+
+    fi
+
+}
+
 ################################################################################
 
 # Creates an archive (*.tar.gz) from given directory
@@ -60,6 +96,7 @@ function search() {
 # All server info
 function serverinfo () {
 
+    local distro
     local cpu_cores
     local ram_amount
     local disk_volume
@@ -69,6 +106,8 @@ function serverinfo () {
 
     public_ip="$(curl --silent http://ipecho.net/plain)"
     inet_ip="$(/sbin/ifconfig eth0 | grep -w "inet" | awk '{print $2}')"
+
+    distro="$(lsb_release -d | awk -F"\t" '{print $2}')"
 
     cpu_cores="$(cpucores)"
     ram_amount="$(ramamount)"
@@ -80,10 +119,10 @@ function serverinfo () {
 
     if [[ ${public_ip} == "${inet_ip}" ]]; then
 
-        echo "ip: ${public_ip} | cpu-cores: ${cpu_cores} | ram-avail: ${ram_amount} | disk-size: ${disk_size} | disk-usage: ${disk_usage}"
+        echo "ip: ${public_ip} | distro: ${distro} | cpu-cores: ${cpu_cores} | ram-avail: ${ram_amount} | disk-size: ${disk_size} | disk-usage: ${disk_usage}"
     else
 
-        echo "ip: ${public_ip} | floating-ip: ${inet_ip} | cpu-cores: ${cpu_cores} | ram-avail: ${ram_amount} | disk-size: ${disk_size} | disk-usage: ${disk_usage}"
+        echo "ip: ${public_ip} | floating-ip: ${inet_ip} | distro: ${distro} | cpu-cores: ${cpu_cores} | ram-avail: ${ram_amount} | disk-size: ${disk_size} | disk-usage: ${disk_usage}"
 
     fi
 
@@ -122,6 +161,30 @@ function sites_directories() {
     directories="$(ls /var/www)"
 
     echo "${directories}"
+
+}
+
+function cloudflare_domain_exists() {
+
+    # $1 = ${root_domain}
+
+    local root_domain=$1
+
+    local zone_name
+    local zone_id
+
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 && ${zone_id} != "" ]]; then
+
+        # Return
+        echo "true"
+
+    else
+
+        # Return
+        echo "false"
+    fi
 
 }
 
