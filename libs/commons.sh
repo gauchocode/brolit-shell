@@ -267,7 +267,7 @@ function script_init() {
   fi
 
   # Check if the script receives first parameter "--sl"
-  if [[ ${1} == *"sl" ]];then         
+  if [[ ${1} == *"sl" ]]; then
     # And add second parameter to the log name
     log_name="log_lemp_utils_${2}.log"
     EXEC_TYPE="external"
@@ -400,7 +400,7 @@ function script_init() {
   export SCRIPT_V VPSNAME TMP_DIR SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V SERVER_CONFIG
   export LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP MYSQL_ROOT MYSQLDUMP_ROOT TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MAILA NOW NOWDISPLAY ONEWEEKAGO
   export SENDEMAIL DISK_U ONE_FILE_BK SERVER_IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_BACKUP_DBS STATUS_BACKUP_FILES STATUS_SERVER STATUS_CERTS OUTDATED_PACKAGES
-  export BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR 
+  export BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR
   export dns_cloudflare_email dns_cloudflare_api_key
   export LOG DEBUG EXEC_TYPE QUIET SKIPTESTS
 
@@ -441,8 +441,17 @@ function install_script_aliases() {
 
   else
 
-    display --indent 2 --text "- Installing script aliases" --result "FAIL" --color RED
-    display --indent 4 --text "File .bash_aliases already exists"
+    display --indent 2 --text "- File .bash_aliases already exists" --color YELLOW
+    
+    timestamp="$(date +%Y%m%d_%H%M%S)"
+    mv ~/.bash_aliases ~/.bash_aliases_bk-"${timestamp}"
+
+    display --indent 2 --text "- Backup old aliases" --result "DONE" --color GREEN
+
+    cp "${SFOLDER}/utils/aliases.sh" ~/.bash_aliases
+
+    display --indent 2 --text "- Installing script aliases" --result "DONE" --color GREEN
+    display --indent 4 --text "Please now run: source ~/.bash_aliases" --tcolor CYAN
 
   fi
 
