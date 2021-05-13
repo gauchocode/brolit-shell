@@ -16,6 +16,16 @@ function _string_remove_spaces() {
 
 }
 
+function _clear_last_line() {
+
+  printf "\033[1A" >&2
+  echo -e "${F_DEFAULT}                                                                                                         ${ENDCOLOR}" >&2
+  echo -e "${F_DEFAULT}                                                                                                         ${ENDCOLOR}" >&2
+  printf "\033[1A" >&2
+  printf "\033[1A" >&2
+
+}
+
 ################################################################################
 
 # Creates an archive (*.tar.gz) from given directory
@@ -57,7 +67,7 @@ function serverinfo () {
     local public_ip
     local inet_ip       # configured on network file
 
-    public_ip="$(myip)"
+    public_ip="$(curl --silent http://ipecho.net/plain)"
     inet_ip="$(/sbin/ifconfig eth0 | grep -w "inet" | awk '{print $2}')"
 
     cpu_cores="$(cpucores)"
