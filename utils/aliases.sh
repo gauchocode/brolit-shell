@@ -4,6 +4,20 @@
 # Version: 3.0.25
 ################################################################################
 
+function _string_remove_spaces() {
+
+  # Parameters
+  # $1 = ${string}
+
+  local string=$1
+
+  # Return
+  echo "${string//[[:blank:]]/}"
+
+}
+
+################################################################################
+
 # Creates an archive (*.tar.gz) from given directory
 function maketar() { tar cvzf "${1%%/}.tar.gz"  "${1%%/}/"; }
 
@@ -41,8 +55,9 @@ function serverinfo () {
 
     cpu_cores="$(cpucores)"
     ram_amount="$(ramamount)"
+    ram_amount="$(_string_remove_spaces "${ram_amount}")"
 
-    echo "echo ${cpu_cores} | echo ${ram_amount}"
+    echo "${cpu_cores} | ${ram_amount}"
 
 }
 
