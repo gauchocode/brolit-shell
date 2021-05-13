@@ -89,6 +89,42 @@ function serverinfo () {
 
 }
 
+function mysql_databases() {
+
+    local databases
+
+    # Run command
+    databases="$(mysql -Bse 'show databases')"
+
+    # Check result
+    mysql_result=$?
+    if [[ ${mysql_result} -eq 0 && ${databases} != "error" ]]; then
+
+        # Return
+        echo "${databases}"
+
+    else
+
+        # Log
+        echo "Something went wrong listing MySQL databases!"
+
+        return 1
+
+    fi
+
+}
+
+function sites_directories() {
+
+    local directories
+
+    # Run command
+    directories="$(ls /var/www)"
+
+    echo "${directories}"
+
+}
+
 ################################################################################
 
 alias ..="cd .."
