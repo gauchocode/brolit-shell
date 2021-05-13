@@ -254,15 +254,15 @@ function php_fpm_optimizations() {
   RAM_BUFFER="512"
 
   # Getting server info
-  CPUS=$(grep -c "processor" /proc/cpuinfo)
-  RAM=$(grep MemTotal /proc/meminfo | awk '{print $2}' | xargs -I {} echo "scale=0; {}/1024^2" | bc)
+  CPUS="$(grep -c "processor" /proc/cpuinfo)"
+  RAM="$(grep MemTotal /proc/meminfo | awk '{print $2}' | xargs -I {} echo "scale=0; {}/1024^2" | bc)"
 
   # Calculating avg ram used by this process
-  PHP_AVG_RAM=$(ps --no-headers -o "rss,cmd" -C php-fpm"${PHP_V}" | awk '{ sum+=$1 } END { printf ("%d%s\n", sum/NR/1024,"") }')
-  MYSQL_AVG_RAM=$(ps --no-headers -o "rss,cmd" -C mysqld | awk '{ sum+=$1 } END { printf ("%d%s\n", sum/NR/1024,"") }')
-  NGINX_AVG_RAM=$(ps --no-headers -o "rss,cmd" -C nginx | awk '{ sum+=$1 } END { printf ("%d%s\n", sum/NR/1024,"") }')
-  REDIS_AVG_RAM=$(ps --no-headers -o "rss,cmd" -C redis-server | awk '{ sum+=$1 } END { printf ("%d%s\n", sum/NR/1024,"") }')
-  NETDATA_AVG_RAM=$(ps --no-headers -o "rss,cmd" -C netdata | awk '{ sum+=$1 } END { printf ("%d%s\n", sum/NR/1024,"") }')
+  PHP_AVG_RAM="$(ps --no-headers -o "rss,cmd" -C php-fpm"${PHP_V}" | awk '{ sum+=$1 } END { printf ("%d%s\n", sum/NR/1024,"") }')"
+  MYSQL_AVG_RAM="$(ps --no-headers -o "rss,cmd" -C mysqld | awk '{ sum+=$1 } END { printf ("%d%s\n", sum/NR/1024,"") }')"
+  NGINX_AVG_RAM="$(ps --no-headers -o "rss,cmd" -C nginx | awk '{ sum+=$1 } END { printf ("%d%s\n", sum/NR/1024,"") }')"
+  REDIS_AVG_RAM="$(ps --no-headers -o "rss,cmd" -C redis-server | awk '{ sum+=$1 } END { printf ("%d%s\n", sum/NR/1024,"") }')"
+  NETDATA_AVG_RAM="$(ps --no-headers -o "rss,cmd" -C netdata | awk '{ sum+=$1 } END { printf ("%d%s\n", sum/NR/1024,"") }')"
 
   # Show/Log Server Info
   #display --indent 6 --text "- Creating user in MySQL: ${db_user}" --result "DONE" --color GREEN
