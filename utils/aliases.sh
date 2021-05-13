@@ -54,6 +54,11 @@ function serverinfo () {
     local ram_amount
     local disk_volume
     local disk_usage
+    local public_ip
+    local inet_ip       # configured on network file
+
+    public_ip="$(myip)"
+    inet_ip="$(/sbin/ifconfig eth0 | grep -w "inet" | awk '{print $2}')"
 
     cpu_cores="$(cpucores)"
     ram_amount="$(ramamount)"
@@ -63,7 +68,14 @@ function serverinfo () {
     disk_size="$(df -h | grep -w "${disk_volume}" | awk '{print $2}')"
     disk_usage="$(df -h | grep -w "${disk_volume}" | awk '{print $5}')"
 
-    echo "cpu-cores: ${cpu_cores} | ram-avail:${ram_amount} | disk-size:${disk_size} | disk-usage:${disk_usage}"
+    if [[ ${public_ip} == "${inet_ip}" ]]; then
+
+        echo "ip: ${public_ip} | cpu-cores: ${cpu_cores} | ram-avail: ${ram_amount} | disk-size: ${disk_size} | disk-usage: ${disk_usage}"
+    else
+
+        echo "ip: ${public_ip} | floating-ip: ${inet_ip} | cpu-cores: ${cpu_cores} | ram-avail: ${ram_amount} | disk-size: ${disk_size} | disk-usage: ${disk_usage}"
+
+    fi
 
 }
 
