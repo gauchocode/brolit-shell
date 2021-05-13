@@ -33,6 +33,19 @@ function search() {
     grep -rnw "$path" -e "$string"
 }
 
+# All server info
+function serverinfo () {
+
+    local cpu_cores
+    local ram_amount
+
+    cpu_cores="$(cpucores)"
+    ram_amount="$(ramamount)"
+
+    echo "echo ${cpu_cores} | echo ${ram_amount}"
+
+}
+
 ################################################################################
 
 alias ..="cd .."
@@ -68,3 +81,5 @@ alias atop='atop -a 1'
  
 ## Get server cpu info
 alias cpuinfo='lscpu'
+alias cpucores='grep -c "processor" /proc/cpuinfo'
+alias ramamount='grep MemTotal /proc/meminfo | cut -d ":" -f 2'
