@@ -52,12 +52,18 @@ function serverinfo () {
 
     local cpu_cores
     local ram_amount
+    local disk_volume
+    local disk_usage
 
     cpu_cores="$(cpucores)"
     ram_amount="$(ramamount)"
     ram_amount="$(_string_remove_spaces "${ram_amount}")"
 
-    echo "${cpu_cores} | ${ram_amount}"
+    disk_volume="$(df /boot | grep -Eo '/dev/[^ ]+')"
+    disk_size="$(df -h | grep -w "${disk_volume}" | awk '{print $2}')"
+    disk_usage="$(df -h | grep -w "${disk_volume}" | awk '{print $5}')"
+
+    echo "cpu-cores: ${cpu_cores} | ram-avail:${ram_amount} | disk-size:${disk_size} | disk-usage:${disk_usage}"
 
 }
 
