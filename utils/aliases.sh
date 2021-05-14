@@ -132,11 +132,11 @@ function serverinfo() {
     if [[ ${public_ip} == "${inet_ip}" ]]; then
 
         # Return
-        echo "server-name: ${VPSNAME} | ip: ${public_ip} | distro: ${distro} | cpu-cores: ${cpu_cores} | ram-avail: ${ram_amount} | disk-size: ${disk_size} | disk-usage: ${disk_usage}"
+        echo "server_name: ${VPSNAME} | ip: ${public_ip} | distro: ${distro} | cpu_cores: ${cpu_cores} | ram_avail: ${ram_amount} | disk_size: ${disk_size} | disk_usage: ${disk_usage}"
     else
 
         # Return
-        echo "server-name: ${VPSNAME} | ip: ${public_ip} | floating-ip: ${inet_ip} | distro: ${distro} | cpu-cores: ${cpu_cores} | ram-avail: ${ram_amount} | disk-size: ${disk_size} | disk-usage: ${disk_usage}"
+        echo "server_name: ${VPSNAME} | ip: ${public_ip} | floating_ip: ${inet_ip} | distro: ${distro} | cpu_cores: ${cpu_cores} | ram_avail: ${ram_amount} | disk_size: ${disk_size} | disk_usage: ${disk_usage}"
 
     fi
 
