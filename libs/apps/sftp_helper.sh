@@ -34,7 +34,7 @@ function _sftp_add_folder_permission() {
     log_event "debug" "Running: mount --bind ${dir_path}${folder} /home/${username}/${folder}"
 
     # Mount permanent
-    echo "${dir_path}/${folder} /home/${username}/${folder} none bind   0      0"  >>"/etc/fstab"
+    echo "${dir_path}/${folder} /home/${username}/${folder} none bind   0      0" >>"/etc/fstab"
 
     # Log
     display --indent 6 --text "- Writing fstab to make it permanent" --result "DONE" --color GREEN
@@ -43,7 +43,7 @@ function _sftp_add_folder_permission() {
     # The command below will set the document root and all subfolders to 775
     find "${dir_path}/${folder}" -type d -exec chmod g+s {} \;
     log_event "debug" "Running: find ${dir_path}${folder} -type d -exec chmod g+s {} \;"
-    
+
     # We want any new files created in the document root from now on to inherit the group name
     chmod g+s "${dir_path}${folder}"
 
