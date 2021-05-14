@@ -64,6 +64,7 @@ function wpcli_main_menu() {
   # Array of plugin slugs to install
   wp_plugins=(
     "wordpress-seo" " " off
+    "seo-by-rank-math" " " off
     "duracelltomi-google-tag-manager" " " off
     "ewww-image-optimizer" " " off
     "post-smtp" " " off
@@ -71,9 +72,7 @@ function wpcli_main_menu() {
     "advanced-custom-fields" " " off
     "acf-vc-integrator" " " off
     "w3-total-cache" " " off
-    "fast-velocity-minify" " " off
     "iwp-client" " " off
-    "fresh-plugins" " " off
     "wordfence" " " off
     "better-wp-security" " " off
     "quttera-web-malware-scanner" " " off
