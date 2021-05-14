@@ -51,8 +51,8 @@ function menu_backup_options() {
       log_section "Files Backup"
 
       # Preparing Mail Notifications Template
-      HTMLOPEN=$(mail_html_start)
-      BODY_SRV=$(mail_server_status_section "${SERVER_IP}")
+      HTMLOPEN="$(mail_html_start)"
+      BODY_SRV="$(mail_server_status_section "${SERVER_IP}")"
 
       # Files Backup
       make_all_files_backup
@@ -621,9 +621,10 @@ function make_all_databases_backup() {
 
   # Get all databases name
   TOTAL_DBS="$(mysql_count_dabases "${DBS}")"
-  log_event "info" "Databases found: ${TOTAL_DBS}"
+  
+  # Log
   display --indent 6 --text "- Databases found" --result "${TOTAL_DBS}" --color WHITE
-
+  log_event "info" "Databases found: ${TOTAL_DBS}"
   log_break "true"
 
   # MORE GLOBALS
