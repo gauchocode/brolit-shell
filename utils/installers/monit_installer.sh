@@ -4,16 +4,16 @@
 # Version: 3.0.25
 ################################################################################
 
-function monit_installer() { 
+function monit_installer() {
 
   log_subsection "Monit Installer"
 
   log_event "info" "Updating packages before installation ..."
-  apt-get --yes update -qq > /dev/null
+  apt-get --yes update -qq >/dev/null
 
   # Installing packages
   log_event "info" "Installing monit ..."
-  apt-get --yes install monit -qq > /dev/null
+  apt-get --yes install monit -qq >/dev/null
 
 }
 
@@ -21,15 +21,15 @@ function monit_configure() {
 
   if [[ ! -x "${PHP_V}" ]]; then
     PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
-  
+
   fi
 
   # Configuring monit
   log_event "info" "Configuring monit ..."
 
   # Using script template
-  cat "${SFOLDER}/config/monit/lemp-services" > /etc/monit/conf.d/lemp-services
-  cat "${SFOLDER}/config/monit/monitrc" > /etc/monit/monitrc
+  cat "${SFOLDER}/config/monit/lemp-services" >/etc/monit/conf.d/lemp-services
+  cat "${SFOLDER}/config/monit/monitrc" >/etc/monit/monitrc
   display --indent 6 --text "- Copying monit config" --result "DONE" --color GREEN
 
   # Set Hostname
@@ -42,7 +42,7 @@ function monit_configure() {
   # Set SMTP vars
   sed -i "s#SMTP_SERVER#${SMTP_SERVER}#" /etc/monit/conf.d/lemp-services
   sed -i "s#SMTP_PORT#${SMTP_PORT}#" /etc/monit/conf.d/lemp-services
-    
+
   # Run two times to cober all var appearance
   sed -i "s#SMTP_U#${SMTP_U}#" /etc/monit/conf.d/lemp-services
   sed -i "s#SMTP_U#${SMTP_U}#" /etc/monit/conf.d/lemp-services
@@ -80,28 +80,30 @@ function monit_installer_menu() {
 
     while true; do
 
-        echo -e "${YELLOW}${ITALIC} > Monit is already installed. Do you want to reconfigure monit?${ENDCOLOR}"
-        read -p "Please type 'y' or 'n'" yn
+      echo -e "${YELLOW}${ITALIC} > Monit is already installed. Do you want to reconfigure monit?${ENDCOLOR}"
+      read -p "Please type 'y' or 'n'" yn
 
-        case $yn in
+      case $yn in
 
-            [Yy]* )
+      [Yy]*)
 
-              log_subsection "Monit Configurator"
+        log_subsection "Monit Configurator"
 
-              monit_configure
+        monit_configure
 
-              break;;
+        break
+        ;;
 
-            [Nn]* )
+      [Nn]*)
 
-              log_event "warning" "Aborting monit configuration script ..."
+        log_event "warning" "Aborting monit configuration script ..."
 
-              break;;
+        break
+        ;;
 
-            * ) echo " > Please answer yes or no.";;
+      *) echo " > Please answer yes or no." ;;
 
-        esac
+      esac
 
     done
 
@@ -110,5 +112,5 @@ function monit_installer_menu() {
     clear_last_line
 
   fi
-  
+
 }
