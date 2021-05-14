@@ -333,7 +333,6 @@ function selected_package_installation() {
     "monit" " " off
     "netdata" " " off
     #"cockpit" " " off
-    #"zabbix" " " off
   )
 
   local chosen_apps
