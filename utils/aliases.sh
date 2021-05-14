@@ -4,6 +4,8 @@
 # Version: 3.0.25
 ################################################################################
 
+source ~/.broobe-utils-options
+
 source ~/.cloudflare.conf
 
 source ~/.dropbox_uploader
@@ -139,6 +141,13 @@ function serverinfo() {
         echo "server_name: ${VPSNAME} | ip: ${public_ip} | floating_ip: ${inet_ip} | distro: ${distro} | cpu_cores: ${cpu_cores} | ram_avail: ${ram_amount} | disk_size: ${disk_size} | disk_usage: ${disk_usage}"
 
     fi
+
+}
+
+# All lemp-utils config
+function lemp_utils_config() {
+
+    echo "server_type: ${SERVER_CONFIG} | netdata_url: ${netdata_subdomain} | mail_notif: ${MAIL_NOTIF} | telegram_notif: ${TELEGRAM_NOTIF} | dropbox_enable: ${DROPBOX_ENABLE} | cloudflare_enable: ${CLOUDFLARE_ENABLE} | smtp_server: ${SMTP_SERVER}"
 
 }
 
