@@ -302,7 +302,7 @@ function restore_config_files_from_dropbox() {
 
     if [[ "${chosen_config_bk}" == *"nginx"* ]]; then
 
-      restore_nginx_site_files
+      restore_nginx_site_files "" ""
 
     fi
     if [[ "${CHOSEN_CONFIG}" == *"mysql"* ]]; then
