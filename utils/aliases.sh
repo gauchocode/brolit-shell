@@ -107,6 +107,14 @@ function search() {
     grep -rnw "$path" -e "$string"
 }
 
+# All lemp-utils config
+function lemp_utils_config() {
+
+    # Return
+    echo "server_type: ${SERVER_CONFIG} | netdata_url: ${netdata_subdomain} | mail_notif: ${MAIL_NOTIF} | telegram_notif: ${TELEGRAM_NOTIF} | dropbox_enable: ${DROPBOX_ENABLE} | cloudflare_enable: ${CLOUDFLARE_ENABLE} | smtp_server: ${SMTP_SERVER}"
+
+}
+
 # All server info
 function serverinfo() {
 
@@ -143,14 +151,19 @@ function serverinfo() {
     fi
 
 }
+function serverinfo_devops() {
 
-# All lemp-utils config
-function lemp_utils_config() {
+    local serverinfo
+    local configlemp
 
-    echo "server_type: ${SERVER_CONFIG} | netdata_url: ${netdata_subdomain} | mail_notif: ${MAIL_NOTIF} | telegram_notif: ${TELEGRAM_NOTIF} | dropbox_enable: ${DROPBOX_ENABLE} | cloudflare_enable: ${CLOUDFLARE_ENABLE} | smtp_server: ${SMTP_SERVER}"
+    serverinfo="$(serverinfo)"
+    configlemp="$(lemp_utils_config)"
+
+    # Run command
+    echo "${serverinfo} | ${configlemp}"
 
 }
-
+  
 function mysql_databases() {
 
     local database
