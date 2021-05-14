@@ -18,6 +18,44 @@ VPSNAME="$HOSTNAME"
 
 ################################################################################
 
+alias ..="cd .."
+
+alias userlist="cut -d: -f1 /etc/passwd"
+alias myip="curl http://ipecho.net/plain; echo"
+
+alias ports='netstat -tulanp'
+
+alias path='echo -e ${PATH//:/\\n}'
+
+alias now="echo It\'s now $(date +%T)"
+
+## Colorize the grep command output for ease of use (good for log files)
+alias grep='grep --color=auto'
+
+alias lt='ls --human-readable --size -1 -S --classify'
+alias lss='du -h --max-depth=1'
+
+alias cpv='rsync -ah --info=progress2'
+
+## Get top process eating memory
+alias psmem='ps auxf | sort -nr -k 4'
+alias psmem10='ps auxf | sort -nr -k 4 | head -10'
+alias psmem20='ps auxf | sort -nr -k 4 | head -20'
+
+## Get top process eating cpu
+alias pscpu='ps auxf | sort -nr -k 3'
+alias pscpu10='ps auxf | sort -nr -k 3 | head -10'
+alias pscpu20='ps auxf | sort -nr -k 3 | head -20'
+
+alias atop='atop -a 1'
+
+## Get cpu info
+alias cpuinfo='lscpu'
+alias cpucores='grep -c "processor" /proc/cpuinfo'
+alias ramamount='grep MemTotal /proc/meminfo | cut -d ":" -f 2'
+
+################################################################################
+
 function _string_remove_spaces() {
 
     # Parameters
@@ -151,6 +189,7 @@ function serverinfo() {
     fi
 
 }
+
 function serverinfo_devops() {
 
     local serverinfo
@@ -259,41 +298,3 @@ function dropbox_get_backup() {
     echo "${dropbox_backup_list}"
 
 }
-
-################################################################################
-
-alias ..="cd .."
-
-alias userlist="cut -d: -f1 /etc/passwd"
-alias myip="curl http://ipecho.net/plain; echo"
-
-alias ports='netstat -tulanp'
-
-alias path='echo -e ${PATH//:/\\n}'
-
-alias now="echo It\'s now $(date +%T)"
-
-## Colorize the grep command output for ease of use (good for log files)
-alias grep='grep --color=auto'
-
-alias lt='ls --human-readable --size -1 -S --classify'
-alias lss='du -h --max-depth=1'
-
-alias cpv='rsync -ah --info=progress2'
-
-## Get top process eating memory
-alias psmem='ps auxf | sort -nr -k 4'
-alias psmem10='ps auxf | sort -nr -k 4 | head -10'
-alias psmem20='ps auxf | sort -nr -k 4 | head -20'
-
-## Get top process eating cpu
-alias pscpu='ps auxf | sort -nr -k 3'
-alias pscpu10='ps auxf | sort -nr -k 3 | head -10'
-alias pscpu20='ps auxf | sort -nr -k 3 | head -20'
-
-alias atop='atop -a 1'
-
-## Get cpu info
-alias cpuinfo='lscpu'
-alias cpucores='grep -c "processor" /proc/cpuinfo'
-alias ramamount='grep MemTotal /proc/meminfo | cut -d ":" -f 2'
