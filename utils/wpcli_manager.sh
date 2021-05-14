@@ -6,6 +6,8 @@
 
 function wpcli_manager() {
 
+  local wp_site
+
   wpcli_install_if_not_installed
 
   # Directory Browser
@@ -15,26 +17,26 @@ function wpcli_manager() {
 
   wp_site="${filepath}/${filename}"
 
+  # Log
   log_section "WP-CLI Manager"
-
   log_event "info" "Searching WordPress Installation on directory: ${wp_site}" "false"
 
   # Search a wordpress installation on selected directory
-  install_path=$(wp_config_path "${wp_site}")
+  install_path="$(wp_config_path "${wp_site}")"
 
-  if [[ -z "${install_path}" || "${install_path}" = '' ]]; then
+  if [[ -z "${install_path}" || "${install_path}" == '' ]]; then
 
     log_event "info" "WordPress installation not found! Returning to Main Menu" "false"
     display --indent 2 --text "- Searching WordPress installation" --result "FAIL" --color RED
-    
+
     whiptail --title "WARNING" --msgbox "WordPress installation not found! Press Enter to return to the Main Menu." 8 78
-    
+
     menu_main_options
-    
+
   else
 
     # WordPress installation path
-    wp_site=${install_path}
+    wp_site="${install_path}"
 
     log_event "info" "Working with wp_site=${wp_site}" "false"
     display --indent 2 --text "- Searching WordPress Installation" --result "DONE" --color GREEN
@@ -52,10 +54,10 @@ function wpcli_main_menu() {
 
   local wp_site=$1
 
-  local wpcli_options 
-  local wp_result 
-  local chosen_wpcli_options 
-  local wp_plugins 
+  local wpcli_options
+  local wp_result
+  local chosen_wpcli_options
+  local wp_plugins
   local chosen_plugin_option
 
   # Array of plugin slugs to install
@@ -77,23 +79,23 @@ function wpcli_main_menu() {
   )
 
   wpcli_options=(
-    "01)" "INSTALL PLUGINS" 
-    "02)" "DELETE THEMES" 
-    "03)" "DELETE PLUGINS" 
-    "04)" "REINSTALL ALL PLUGINS" 
-    "05)" "VERIFY WP" 
-    "06)" "UPDATE WP" 
-    "07)" "REINSTALL WP" 
-    "08)" "CLEAN WP DB" 
-    "09)" "PROFILE WP" 
-    "10)" "CHANGE TABLES PREFIX" 
-    "11)" "REPLACE URLs" 
-    "12)" "SEOYOAST RE-INDEX" 
-    "13)" "DELETE NOT CORE FILES" 
+    "01)" "INSTALL PLUGINS"
+    "02)" "DELETE THEMES"
+    "03)" "DELETE PLUGINS"
+    "04)" "REINSTALL ALL PLUGINS"
+    "05)" "VERIFY WP"
+    "06)" "UPDATE WP"
+    "07)" "REINSTALL WP"
+    "08)" "CLEAN WP DB"
+    "09)" "PROFILE WP"
+    "10)" "CHANGE TABLES PREFIX"
+    "11)" "REPLACE URLs"
+    "12)" "SEOYOAST RE-INDEX"
+    "13)" "DELETE NOT CORE FILES"
     "14)" "CREATE WP USER"
     "15)" "RESET WP USER PASSW"
-    )
-  chosen_wpcli_options=$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 "${wpcli_options[@]}" 3>&1 1>&2 2>&3)
+  )
+  chosen_wpcli_options="$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 "${wpcli_options[@]}" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -103,7 +105,7 @@ function wpcli_main_menu() {
       chosen_plugin_option=$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to install." 20 78 15 "${wp_plugins[@]}" 3>&1 1>&2 2>&3)
 
       log_subsection "WP Install Plugin"
-      
+
       for plugin in $chosen_plugin_option; do
 
         wpcli_install_plugin "${wp_site}" "$plugin"
@@ -117,10 +119,10 @@ function wpcli_main_menu() {
       # DELETE_THEMES
 
       # Listing installed themes
-      WP_DEL_THEMES=$(wp --path="${wp_site}" theme list --quiet --field=name --status=inactive --allow-root)
+      WP_DEL_THEMES="$(wp --path="${wp_site}" theme list --quiet --field=name --status=inactive --allow-root)"
       array_to_checklist "${WP_DEL_THEMES}"
       CHOSEN_DEL_THEME_OPTION="$(whiptail --title "Theme Selection" --checklist "Select the themes you want to delete." 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)"
-      
+
       log_subsection "WP Delete Themes"
 
       for theme_del in $CHOSEN_DEL_THEME_OPTION; do
@@ -135,16 +137,16 @@ function wpcli_main_menu() {
       # DELETE_PLUGINS
 
       # Listing installed plugins
-      wp_del_plugins=$(wp --path="${wp_site}" plugin list --quiet --field=name --status=inactive --allow-root)
+      wp_del_plugins="$(wp --path="${wp_site}" plugin list --quiet --field=name --status=inactive --allow-root)"
       array_to_checklist "${wp_del_plugins}"
       chosen_del_plugin_option=$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to delete:" 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)
 
       log_subsection "WP Delete Plugins"
 
       for plugin_del in ${chosen_del_plugin_option}; do
-        
+
         plugin_del=$(sed -e 's/^"//' -e 's/"$//' <<<"${plugin_del}") #needed to ommit double quotes
-        
+
         wpcli_delete_plugin "${wp_site}" "${plugin_del}"
 
       done
@@ -218,19 +220,19 @@ function wpcli_main_menu() {
 
       local is_installed
 
-      is_installed=$(wpcli_check_if_package_is_installed "profile-command")
+      is_installed="$(wpcli_check_if_package_is_installed "profile-command")"
       if [[ ${is_installed} == "true" ]]; then
         #https://guides.wp-bullet.com/using-wp-cli-wp-profile-to-diagnose-wordpress-performance-issues/
-        wp package install wp-cli/profile-command --allow-root
+        wp package install wp-cli/profile-command:@stable --allow-root
       fi
 
       profiler_options=(
-        "01)" "PROFILE STAGE" 
-        "02)" "PROFILE STAGE BOOTSTRAP" 
-        "03)" "PROFILE STAGE ALL" 
-        "04)" "PROFILE STAGE HOOK WP" 
+        "01)" "PROFILE STAGE"
+        "02)" "PROFILE STAGE BOOTSTRAP"
+        "03)" "PROFILE STAGE ALL"
+        "04)" "PROFILE STAGE HOOK WP"
         "05)" "PROFILE STAGE HOOK ALL"
-        )
+      )
       chosen_profiler_option=$(whiptail --title "WP-CLI PROFILER HELPER" --menu "Choose an option to run" 20 78 10 "${profiler_options[@]}" 3>&1 1>&2 2>&3)
 
       if [[ ${exitstatus} -eq 0 ]]; then
@@ -249,7 +251,6 @@ function wpcli_main_menu() {
         fi
         if [[ ${chosen_profiler_option} == *"03"* ]]; then
           #All stage
-          #sudo -u www-data wp --path=${SITES}'/'${wp_site} profile stage --all --orderby=time --allow-root
           #You can also use the --spotlight flag to filter out zero-like values for easier reading
           log_event "info" "Executing: wp --path=${wp_site} profile stage --all --spotlight --orderby=time --allow-root" "false"
           wp --path="${wp_site}" profile stage --all --spotlight --orderby=time --allow-root
@@ -308,11 +309,11 @@ function wpcli_main_menu() {
 
       echo -e "${B_RED} > This script will delete all non-core wordpress files (except wp-content). Do you want to continue? [y/n]${ENDCOLOR}"
       read -r answer
-      
+
       if [[ ${answer} == "y" ]]; then
-          wpcli_delete_not_core_files "${wp_site}"
-      
-      fi   
+        wpcli_delete_not_core_files "${wp_site}"
+
+      fi
 
     fi
 
@@ -334,11 +335,11 @@ function wpcli_main_menu() {
 
             wpcli_user_create "${wp_site}" "${choosen_user}" "${choosen_email}" "${choosen_role}"
 
-          fi 
+          fi
 
-        fi    
+        fi
 
-      fi    
+      fi
 
     fi
 
@@ -357,9 +358,9 @@ function wpcli_main_menu() {
 
           wpcli_user_reset_passw "${wp_site}" "${choosen_user}" "${choosen_passw}"
 
-        fi    
+        fi
 
-      fi    
+      fi
 
     fi
 
