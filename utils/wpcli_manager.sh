@@ -59,6 +59,7 @@ function wpcli_main_menu() {
   local chosen_wpcli_options
   local wp_plugins
   local chosen_plugin_option
+  local plugin_zip
 
   # Array of plugin slugs to install
   wp_plugins=(
@@ -76,6 +77,7 @@ function wpcli_main_menu() {
     "wordfence" " " off
     "better-wp-security" " " off
     "quttera-web-malware-scanner" " " off
+    "zip-file" " " off
   )
 
   wpcli_options=(
@@ -102,13 +104,25 @@ function wpcli_main_menu() {
     if [[ ${chosen_wpcli_options} == *"01"* ]]; then
 
       # INSTALL_PLUGINS
-      chosen_plugin_option=$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to install." 20 78 15 "${wp_plugins[@]}" 3>&1 1>&2 2>&3)
+      chosen_plugin_option="$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to install." 20 78 15 "${wp_plugins[@]}" 3>&1 1>&2 2>&3)"
 
       log_subsection "WP Install Plugin"
 
       for plugin in $chosen_plugin_option; do
 
-        wpcli_install_plugin "${wp_site}" "$plugin"
+        if [[ ${plugin} == "zip-file" ]]; then
+
+            plugin_zip=$(whiptail --title "WordPress Plugin" --inputbox "Please insert a public url with a plugin zip file." 10 60 "https://domain.com/plugin.zip" 3>&1 1>&2 2>&3)
+            exitstatus=$?
+            if [[ ${exitstatus} -eq 0 ]]; then
+
+              plugin="${plugin_zip}"
+
+            fi
+          
+        fi
+
+        wpcli_install_plugin "${wp_site}" "${plugin}"
 
       done
 
@@ -145,7 +159,7 @@ function wpcli_main_menu() {
 
       for plugin_del in ${chosen_del_plugin_option}; do
 
-        plugin_del=$(sed -e 's/^"//' -e 's/"$//' <<<"${plugin_del}") #needed to ommit double quotes
+        plugin_del=$(sed -e 's/^"//' -e 's/"$//' <<<${plugin_del}) #needed to ommit double quotes
 
         wpcli_delete_plugin "${wp_site}" "${plugin_del}"
 

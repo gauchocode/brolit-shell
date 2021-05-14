@@ -254,6 +254,9 @@ function wpcli_install_needed_extensions() {
     # Vulnerability Scanner
     wp --allow-root package install "git@github.com:10up/wp-vulnerability-scanner.git"
 
+    # WP-Rocket
+    wp --allow-root package install "wp-media/wp-rocket-cli"
+
 }
 
 function wpcli_set_salts() {
@@ -611,7 +614,7 @@ function wpcli_get_wpcore_version() {
 function wpcli_install_plugin() {
 
     # $1 = ${wp_site} (site path)
-    # $2 = ${plugin} (plugin to delete)
+    # $2 = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
 
     local wp_site=$1
     local plugin=$2
@@ -909,6 +912,18 @@ function wpcli_user_reset_passw() {
 
     display --indent 6 --text "- Password reset for ${wp_user}" --result "DONE" --color GREEN
     display --indent 8 --text "New password ${wp_user_pass}"
+
+}
+
+################################################################################
+
+function wpcli_rocket_clean() {
+
+    # $1 = ${wp_site} (site path)
+
+    wp --allow-root --path="${wp_site}" rocket clean --confirm
+
+    display --indent 6 --text "- Cache purge for ${wp_site}" --result "DONE" --color GREEN
 
 }
 

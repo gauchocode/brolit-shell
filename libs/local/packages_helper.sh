@@ -367,10 +367,6 @@ function selected_package_installation() {
         cockpit_installer
         ;;
 
-      zabbix)
-        zabbix_server_installer
-        ;;
-
       *)
         log_event "error" "Package installer for ${app} not found!"
         ;;
