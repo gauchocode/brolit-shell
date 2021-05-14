@@ -6,27 +6,35 @@
 
 source ~/.cloudflare.conf
 
+source ~/.dropbox_uploader
+
+# Dropbox-uploader runner
+DROPBOX_UPLOADER="/root/lemp-utils-scripts/tools/third-party/dropbox-uploader/dropbox_uploader.sh"
+
+# Server Name
+VPSNAME="$HOSTNAME"
+
 ################################################################################
 
 function _string_remove_spaces() {
 
-  # Parameters
-  # $1 = ${string}
+    # Parameters
+    # $1 = ${string}
 
-  local string=$1
+    local string=$1
 
-  # Return
-  echo "${string//[[:blank:]]/}"
+    # Return
+    echo "${string//[[:blank:]]/}"
 
 }
 
 function _clear_last_line() {
 
-  printf "\033[1A" >&2
-  echo -e "${F_DEFAULT}                                                                                                         ${ENDCOLOR}" >&2
-  echo -e "${F_DEFAULT}                                                                                                         ${ENDCOLOR}" >&2
-  printf "\033[1A" >&2
-  printf "\033[1A" >&2
+    printf "\033[1A" >&2
+    echo -e "${F_DEFAULT}                                                                                                         ${ENDCOLOR}" >&2
+    echo -e "${F_DEFAULT}                                                                                                         ${ENDCOLOR}" >&2
+    printf "\033[1A" >&2
+    printf "\033[1A" >&2
 
 }
 
@@ -69,13 +77,13 @@ function _cloudflare_get_zone_id() {
 ################################################################################
 
 # Creates an archive (*.tar.gz) from given directory
-function maketar() { tar cvzf "${1%%/}.tar.gz"  "${1%%/}/"; }
+function maketar() { tar cvzf "${1%%/}.tar.gz" "${1%%/}/"; }
 
 # Create a ZIP archive of a file or folder
-function makezip() { zip -r "${1%%/}.zip" "$1" ; }
+function makezip() { zip -r "${1%%/}.zip" "$1"; }
 
 # Make dir and cd
-function mcd () {
+function mcd() {
 
     local dir=$1
 
@@ -98,7 +106,7 @@ function search() {
 }
 
 # All server info
-function serverinfo () {
+function serverinfo() {
 
     local distro
     local cpu_cores
@@ -106,7 +114,7 @@ function serverinfo () {
     local disk_volume
     local disk_usage
     local public_ip
-    local inet_ip       # configured on network file
+    local inet_ip # configured on network file
 
     public_ip="$(curl --silent http://ipecho.net/plain)"
     inet_ip="$(/sbin/ifconfig eth0 | grep -w "inet" | awk '{print $2}')"
@@ -123,10 +131,10 @@ function serverinfo () {
 
     if [[ ${public_ip} == "${inet_ip}" ]]; then
 
-        echo "ip: ${public_ip} | distro: ${distro} | cpu-cores: ${cpu_cores} | ram-avail: ${ram_amount} | disk-size: ${disk_size} | disk-usage: ${disk_usage}"
+        echo "server-name: ${VPSNAME} | ip: ${public_ip} | distro: ${distro} | cpu-cores: ${cpu_cores} | ram-avail: ${ram_amount} | disk-size: ${disk_size} | disk-usage: ${disk_usage}"
     else
 
-        echo "ip: ${public_ip} | floating-ip: ${inet_ip} | distro: ${distro} | cpu-cores: ${cpu_cores} | ram-avail: ${ram_amount} | disk-size: ${disk_size} | disk-usage: ${disk_usage}"
+        echo "server-name: ${VPSNAME} | ip: ${public_ip} | floating-ip: ${inet_ip} | distro: ${distro} | cpu-cores: ${cpu_cores} | ram-avail: ${ram_amount} | disk-size: ${disk_size} | disk-usage: ${disk_usage}"
 
     fi
 
@@ -134,7 +142,11 @@ function serverinfo () {
 
 function mysql_databases() {
 
+    local database
     local databases
+
+    # Database blacklist
+    local database_bl="information_schema,performance_schema,mysql,sys,phpmyadmin"
 
     # Run command
     databases="$(mysql -Bse 'show databases')"
@@ -142,6 +154,19 @@ function mysql_databases() {
     # Check result
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 && ${databases} != "error" ]]; then
+
+        for database in ${databases}; do
+
+            if [[ ${database_bl} != *"${database}"* ]]; then
+
+                databases="${database} | "
+
+            fi
+
+        done
+
+        # Remove 3 last chars
+        databases="${databases::-3}"
 
         # Return
         echo "${databases}"
@@ -192,6 +217,24 @@ function cloudflare_domain_exists() {
 
 }
 
+function dropbox_get_backup() {
+
+    # ${1} = ${chosen_project}
+
+    local chosen_project=$1
+
+    local dropbox_chosen_backup_path
+    local dropbox_backup_list
+
+    # Get dropbox backup list
+    dropbox_chosen_backup_path="${VPSNAME}/site/${chosen_project}"
+    dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}")"
+
+    # Return
+    echo "${dropbox_backup_list}"
+
+}
+
 ################################################################################
 
 alias ..="cd .."
@@ -203,7 +246,7 @@ alias ports='netstat -tulanp'
 
 alias path='echo -e ${PATH//:/\\n}'
 
-alias now="echo It\'s now `date +%T`"
+alias now="echo It\'s now $(date +%T)"
 
 ## Colorize the grep command output for ease of use (good for log files)
 alias grep='grep --color=auto'
@@ -217,14 +260,14 @@ alias cpv='rsync -ah --info=progress2'
 alias psmem='ps auxf | sort -nr -k 4'
 alias psmem10='ps auxf | sort -nr -k 4 | head -10'
 alias psmem20='ps auxf | sort -nr -k 4 | head -20'
- 
+
 ## get top process eating cpu
 alias pscpu='ps auxf | sort -nr -k 3'
 alias pscpu10='ps auxf | sort -nr -k 3 | head -10'
 alias pscpu20='ps auxf | sort -nr -k 3 | head -20'
 
 alias atop='atop -a 1'
- 
+
 ## Get server cpu info
 alias cpuinfo='lscpu'
 alias cpucores='grep -c "processor" /proc/cpuinfo'

@@ -140,7 +140,7 @@ function wp_replace_string_on_database() {
 
   if [[ -z "${db_prefix}" ]]; then
 
-    db_prefix=$(whiptail --title "WordPress DB Prefix" --inputbox "Please insert the WordPress Database Prefix. Example: wp_" 10 60 3>&1 1>&2 2>&3)
+    db_prefix="$(whiptail --title "WordPress DB Prefix" --inputbox "Please insert the WordPress Database Prefix. Example: wp_" 10 60 3>&1 1>&2 2>&3)"
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
       log_event "info" "Setting db prefix: '${db_prefix}'"
@@ -154,7 +154,7 @@ function wp_replace_string_on_database() {
 
     databases="$(mysql_list_databases)"
 
-    chosen_db=$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to work with" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) 3>&1 1>&2 2>&3)
+    chosen_db="$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to work with" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) 3>&1 1>&2 2>&3)"
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
       log_event "debug" "Setting chosen_db=${chosen_db}"
@@ -168,7 +168,7 @@ function wp_replace_string_on_database() {
   fi
 
   if [[ -z "${existing_URL}" ]]; then
-    existing_URL=$(whiptail --title "URL TO CHANGE" --inputbox "Insert the URL you want to change, including http:// or https://" 10 60 3>&1 1>&2 2>&3)
+    existing_URL="$(whiptail --title "URL TO CHANGE" --inputbox "Insert the URL you want to change, including http:// or https://" 10 60 3>&1 1>&2 2>&3)"
     exitstatus=$?
 
     log_event "info" "URL to change: '${existing_URL}'"
@@ -176,7 +176,7 @@ function wp_replace_string_on_database() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
       if [[ -z "${new_URL}" ]]; then
-        new_URL=$(whiptail --title "THE NEW URL" --inputbox "Insert the new URL , including http:// or https://" 10 60 3>&1 1>&2 2>&3)
+        new_URL="$(whiptail --title "THE NEW URL" --inputbox "Insert the new URL , including http:// or https://" 10 60 3>&1 1>&2 2>&3)"
         exitstatus=$?
 
         if [[ ${exitstatus} -eq 0 ]]; then
