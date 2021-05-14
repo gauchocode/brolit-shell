@@ -131,9 +131,11 @@ function serverinfo() {
 
     if [[ ${public_ip} == "${inet_ip}" ]]; then
 
+        # Return
         echo "server-name: ${VPSNAME} | ip: ${public_ip} | distro: ${distro} | cpu-cores: ${cpu_cores} | ram-avail: ${ram_amount} | disk-size: ${disk_size} | disk-usage: ${disk_usage}"
     else
 
+        # Return
         echo "server-name: ${VPSNAME} | ip: ${public_ip} | floating-ip: ${inet_ip} | distro: ${distro} | cpu-cores: ${cpu_cores} | ram-avail: ${ram_amount} | disk-size: ${disk_size} | disk-usage: ${disk_usage}"
 
     fi
@@ -189,6 +191,7 @@ function sites_directories() {
     # Run command
     directories="$(ls /var/www)"
 
+    # Return
     echo "${directories}"
 
 }
@@ -256,19 +259,19 @@ alias lss='du -h --max-depth=1'
 
 alias cpv='rsync -ah --info=progress2'
 
-## get top process eating memory
+## Get top process eating memory
 alias psmem='ps auxf | sort -nr -k 4'
 alias psmem10='ps auxf | sort -nr -k 4 | head -10'
 alias psmem20='ps auxf | sort -nr -k 4 | head -20'
 
-## get top process eating cpu
+## Get top process eating cpu
 alias pscpu='ps auxf | sort -nr -k 3'
 alias pscpu10='ps auxf | sort -nr -k 3 | head -10'
 alias pscpu20='ps auxf | sort -nr -k 3 | head -20'
 
 alias atop='atop -a 1'
 
-## Get server cpu info
+## Get cpu info
 alias cpuinfo='lscpu'
 alias cpucores='grep -c "processor" /proc/cpuinfo'
 alias ramamount='grep MemTotal /proc/meminfo | cut -d ":" -f 2'
