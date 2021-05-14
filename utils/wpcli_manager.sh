@@ -110,9 +110,9 @@ function wpcli_main_menu() {
 
       for plugin in $chosen_plugin_option; do
 
-        if [[ ${plugin} == "zip-file" ]]; then
+        if [[ ${plugin} == *"zip-file"* ]]; then
 
-            plugin_zip=$(whiptail --title "WordPress Plugin" --inputbox "Please insert a public url with a plugin zip file." 10 60 "https://domain.com/plugin.zip" 3>&1 1>&2 2>&3)
+            plugin_zip="$(whiptail --title "WordPress Plugin" --inputbox "Please insert a public url with a plugin zip file." 10 60 "https://domain.com/plugin.zip" 3>&1 1>&2 2>&3)"
             exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
 

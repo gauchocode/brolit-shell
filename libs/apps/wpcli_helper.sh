@@ -624,8 +624,18 @@ function wpcli_install_plugin() {
 
     sudo -u www-data wp --path="${wp_site}" plugin install "${plugin}" --activate --quiet
 
-    clear_last_line
-    display --indent 6 --text "- Installing plugin ${plugin}" --result "DONE" --color GREEN
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        clear_last_line
+        display --indent 6 --text "- Installing plugin ${plugin}" --result "DONE" --color GREEN
+
+    else
+
+        clear_last_line
+        display --indent 6 --text "- Installing plugin ${plugin}" --result "FAIL" --color RED
+
+    fi
 
 }
 
