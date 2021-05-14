@@ -6,7 +6,7 @@
 
 # Ref: https://github.com/nextcloud/vm/blob/master/apps/netdata.sh
 
-function netdata_required_packages() {
+function _netdata_required_packages() {
 
   local ubuntu_version
 
@@ -22,69 +22,15 @@ function netdata_required_packages() {
 
   fi
 
+  # Log
   clear_last_line
   clear_last_line
   display --indent 6 --text "- Installing netdata required packages" --result "DONE" --color GREEN
 
 }
 
-function netdata_installer() {
 
-  log_event "info" "Installing Netdata ..." "false"
-  display --indent 6 --text "- Downloading and compiling netdata"
-
-  bash <(curl -Ss https://my-netdata.io/kickstart.sh) all --dont-wait --disable-telemetry &>/dev/null
-
-  killall netdata && cp system/netdata.service /etc/systemd/system/
-
-  log_event "info" "Netdata Installed" "false"
-  clear_last_line
-  display --indent 6 --text "- Downloading and compiling netdata" --result "DONE" --color GREEN
-
-}
-
-function netdata_configuration() {
-
-  # Ref: netdata config dir https://github.com/netdata/netdata/issues/4182
-
-  # MySQL
-  mysql_user_create "netdata"
-  mysql_user_grant_privileges "netdata" "*"
-
-  cat "${SFOLDER}/config/netdata/python.d/mysql.conf" >"/etc/netdata/python.d/mysql.conf"
-
-  log_event "info" "MySQL config done!" "false"
-  display --indent 6 --text "- MySQL configuration" --result "DONE" --color GREEN
-
-  # monit
-  cat "${SFOLDER}/config/netdata/python.d/monit.conf" >"/etc/netdata/python.d/monit.conf"
-
-  log_event "info" "Monit config done!" "false"
-  display --indent 6 --text "- Monit configuration" --result "DONE" --color GREEN
-
-  # web_log
-  cat "${SFOLDER}/config/netdata/python.d/web_log.conf" >"/etc/netdata/python.d/web_log.conf"
-
-  log_event "info" "Nginx Web Log config done!" "false"
-  display --indent 6 --text "- Nginx Web Log configuration" --result "DONE" --color GREEN
-
-  # health_alarm_notify
-  cat "${SFOLDER}/config/netdata/health_alarm_notify.conf" >"/etc/netdata/health_alarm_notify.conf"
-  log_event "info" "Health alarm config done!" "false"
-  display --indent 6 --text "- Health alarm configuration" --result "DONE" --color GREEN
-
-  # telegram
-  netdata_telegram_config
-
-  systemctl daemon-reload && systemctl enable netdata && service netdata start
-
-  log_event "info" "Netdata Configuration finished" "false"
-
-  display --indent 6 --text "- Configuring netdata" --result "DONE" --color GREEN
-
-}
-
-function netdata_alarm_level() {
+function _netdata_alarm_level() {
 
   NETDATA_ALARM_LEVELS="warning critical"
   NETDATA_ALARM_LEVEL=$(whiptail --title "NETDATA ALARM LEVEL" --menu "Choose the Alarm Level for Notifications" 20 78 10 "$(for x in ${NETDATA_ALARM_LEVELS}; do echo "$x [X]"; done)" 3>&1 1>&2 2>&3)
@@ -100,7 +46,7 @@ function netdata_alarm_level() {
 
 }
 
-function netdata_telegram_config() {
+function _netdata_telegram_config() {
 
   HEALTH_ALARM_NOTIFY_CONF="/etc/netdata/health_alarm_notify.conf"
 
@@ -139,7 +85,7 @@ function netdata_telegram_config() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
       # choose the netdata alarm level
-      netdata_alarm_level
+      _netdata_alarm_level
 
       # making changes on health_alarm_notify.conf
       sed -i "s/^\(DEFAULT_RECIPIENT_TELEGRAM\s*=\s*\).*\$/\1\"$DEFAULT_RECIPIENT_TELEGRAM|$NETDATA_ALARM_LEVEL\"/" $HEALTH_ALARM_NOTIFY_CONF
@@ -160,6 +106,113 @@ function netdata_telegram_config() {
     return 1
 
   fi
+
+}
+
+################################################################################
+
+function netdata_installer() {
+
+  log_event "info" "Installing Netdata ..." "false"
+  display --indent 6 --text "- Downloading and compiling netdata"
+
+  bash <(curl -Ss https://my-netdata.io/kickstart.sh) all --dont-wait --disable-telemetry &>/dev/null
+
+  killall netdata && cp system/netdata.service /etc/systemd/system/
+
+  log_event "info" "Netdata Installed" "false"
+  clear_last_line
+  display --indent 6 --text "- Downloading and compiling netdata" --result "DONE" --color GREEN
+
+}
+
+function netdata_uninstaller() {
+
+  while true; do
+
+    echo -e "${YELLOW}${ITALIC} > Do you really want to uninstall netdata?${ENDCOLOR}"
+    read -p "Please type 'y' or 'n'" yn
+
+    case $yn in
+
+    [Yy]*)
+
+      log_event "warning" "Uninstalling Netdata ..." "false"
+
+      # Deleting mysql user
+      mysql_user_delete "netdata"
+
+      # Deleting nginx server files
+      rm --force "/etc/nginx/sites-enabled/monitor"
+      rm --force "/etc/nginx/sites-available/monitor"
+
+      # Deleting installation files
+      rm --force --recursive "/etc/netdata"
+      rm --force "/etc/systemd/system/netdata.service"
+      rm --force "/usr/sbin/netdata"
+
+      # Running uninstaller
+      source "/usr/libexec/netdata-uninstaller.sh" --yes --dont-wait
+
+      log_event "info" "Netdata removed ok!" "false"
+      display --indent 6 --text "- Uninstalling netdata" --result "DONE" --color GREEN
+
+      break
+      ;;
+
+    [Nn]*)
+
+      log_event "warning" "Aborting netdata installer script ..." "false"
+
+      break
+      ;;
+
+    *) echo " > Please answer yes or no." ;;
+
+    esac
+
+  done
+
+}
+
+function netdata_configuration() {
+
+  # Ref: netdata config dir https://github.com/netdata/netdata/issues/4182
+
+  # MySQL
+  mysql_user_create "netdata"
+  mysql_user_grant_privileges "netdata" "*"
+
+  cat "${SFOLDER}/config/netdata/python.d/mysql.conf" >"/etc/netdata/python.d/mysql.conf"
+
+  log_event "info" "MySQL config done!" "false"
+  display --indent 6 --text "- MySQL configuration" --result "DONE" --color GREEN
+
+  # monit
+  cat "${SFOLDER}/config/netdata/python.d/monit.conf" >"/etc/netdata/python.d/monit.conf"
+
+  log_event "info" "Monit config done!" "false"
+  display --indent 6 --text "- Monit configuration" --result "DONE" --color GREEN
+
+  # web_log
+  cat "${SFOLDER}/config/netdata/python.d/web_log.conf" >"/etc/netdata/python.d/web_log.conf"
+
+  log_event "info" "Nginx Web Log config done!" "false"
+  display --indent 6 --text "- Nginx Web Log configuration" --result "DONE" --color GREEN
+
+  # health_alarm_notify
+  cat "${SFOLDER}/config/netdata/health_alarm_notify.conf" >"/etc/netdata/health_alarm_notify.conf"
+  log_event "info" "Health alarm config done!" "false"
+  display --indent 6 --text "- Health alarm configuration" --result "DONE" --color GREEN
+
+  # telegram
+  _netdata_telegram_config
+
+  systemctl daemon-reload && systemctl enable netdata && service netdata start
+
+  log_event "info" "Netdata Configuration finished" "false"
+
+  display --indent 6 --text "- Configuring netdata" --result "DONE" --color GREEN
 
 }
 
@@ -209,7 +262,7 @@ function netdata_installer_menu() {
 
         display --indent 6 --text "- Updating packages before installation" --result "DONE" --color GREEN
 
-        netdata_required_packages
+        _netdata_required_packages
 
         netdata_installer
 
@@ -253,7 +306,7 @@ function netdata_installer_menu() {
       "04)" "SEND ALARM TEST"
     )
 
-    NETDATA_CHOSEN_OPTION=$(whiptail --title "Netdata Installer" --menu "Netdata is already installed." 20 78 10 "${NETDATA_OPTIONS[@]}" 3>&1 1>&2 2>&3)
+    NETDATA_CHOSEN_OPTION="$(whiptail --title "Netdata Installer" --menu "Netdata is already installed." 20 78 10 "${NETDATA_OPTIONS[@]}" 3>&1 1>&2 2>&3)"
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -265,56 +318,13 @@ function netdata_installer_menu() {
 
       fi
       if [[ ${NETDATA_CHOSEN_OPTION} == *"02"* ]]; then
-        netdata_required_packages
+        _netdata_required_packages
         netdata_configuration
 
       fi
       if [[ ${NETDATA_CHOSEN_OPTION} == *"03"* ]]; then
 
-        while true; do
-
-          echo -e "${YELLOW}${ITALIC} > Do you really want to uninstall netdata?${ENDCOLOR}"
-          read -p "Please type 'y' or 'n'" yn
-
-          case $yn in
-
-          [Yy]*)
-
-            log_event "warning" "Uninstalling Netdata ..." "false"
-
-            # Deleting mysql user
-            mysql_user_delete "netdata"
-
-            # Deleting nginx server files
-            rm --force "/etc/nginx/sites-enabled/monitor"
-            rm --force "/etc/nginx/sites-available/monitor"
-
-            # Deleting installation files
-            rm --force --recursive "/etc/netdata"
-            rm --force "/etc/systemd/system/netdata.service"
-            rm --force "/usr/sbin/netdata"
-
-            # Running uninstaller
-            source "/usr/libexec/netdata-uninstaller.sh" --yes --dont-wait
-
-            log_event "info" "Netdata removed ok!" "false"
-            display --indent 6 --text "- Uninstalling netdata" --result "DONE" --color GREEN
-
-            break
-            ;;
-
-          [Nn]*)
-
-            log_event "warning" "Aborting netdata installer script ..." "false"
-
-            break
-            ;;
-
-          *) echo " > Please answer yes or no." ;;
-
-          esac
-
-        done
+        netdata_uninstaller
 
       fi
       if [[ ${NETDATA_CHOSEN_OPTION} == *"04"* ]]; then
