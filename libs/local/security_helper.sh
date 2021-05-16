@@ -32,11 +32,17 @@ function security_clamav_scan() {
   # Update clamav database
   freshclam
 
+  log_event "info" "Running clamscan on ${directory}" "false"
+  
   # Run on specific directory with parameters:
   # -r recursive (Scan subdirectories recursively)
   # --infected (Only print infected files)
-  log_event "debug" "Running: clamscan -r --infected ${directory}" "false"
-  clamscan -r --infected "${directory}"
+  clamscan_result="$(clamscan -r --infected "${directory}")"
+
+  log_event "info" "clamscan result: ${clamscan_result}" "false"
+
+  # Return
+  echo "${clamscan_result}"
 
 }
 
