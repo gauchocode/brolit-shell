@@ -199,7 +199,7 @@ function serverinfo_devops() {
     configlemp="$(lemp_utils_config)"
 
     # Run command
-    echo "DEVOPS_RESULT  => { ${serverinfo} | ${configlemp} }"
+    echo "DEVOPS_RESULT => { ${serverinfo} | ${configlemp} }"
 
 }
   
