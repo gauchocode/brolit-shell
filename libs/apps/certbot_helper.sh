@@ -385,12 +385,10 @@ function certbot_helper_menu() {
     "05)" "DELETE CERTIFICATE" 
     "06)" "SHOW INSTALLED CERTIFICATES"
   )
-  chosen_cb_options=$(whiptail --title "CERTBOT MANAGER" --menu " " 20 78 10 "${certbot_options[@]}" 3>&1 1>&2 2>&3)
+  chosen_cb_options="$(whiptail --title "CERTBOT MANAGER" --menu " " 20 78 10 "${certbot_options[@]}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
   if [[ ${exitstatus} = 0 ]]; then
-
-    log_section "Certbot Manager"
 
     if [[ ${chosen_cb_options} == *"01"* ]]; then
 

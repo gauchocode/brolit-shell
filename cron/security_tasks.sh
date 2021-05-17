@@ -33,13 +33,21 @@ else
     log_section "Security Tasks"
 
     # Clamav Scan
-    log_event "info" "Starting clamav scan on: ${SITES}" "false"
     clamscan_result="$(security_clamav_scan "${SITES}")"
 
-    send_notification "Clamav scan result" "${clamscan_result}" ""
+    clamscan_infected="$(echo "${clamscan_result}" | grep -w "Infected files")"
+
+    if [[ ${clamscan_result} == *""* ]]; then
+
+        send_notification "✅ ${VPSNAME} - Clamav scan result" "${clamscan_result}" ""
+
+    else
+
+        send_notification "✅ ${VPSNAME} - Clamav scan result" "${clamscan_result}" ""
+
+    fi
 
     # Custom Scan
-    log_event "info" "Starting custom scan on: ${SITES}" "false"
     custom_scan_result="$(security_custom_scan "${SITES}")"
 
     send_notification "Custom scan result" "${custom_scan_result}" ""
@@ -51,3 +59,6 @@ else
     log_event "info" "LEMP UTILS SCRIPT End -- $(date +%Y%m%d_%H%M)"
 
 fi
+
+
+#clamscan_infected="$(echo "----------- SCAN SUMMARY -----------Known viruses: 8530089 Engine version: 0.103.2 Scanned directories: 24391 Scanned files: 189125 Infected files: 0 Data scanned: 5420.92 MB Data read: 5399.94 MB (ratio 1.00:1) Time: 1400.847 sec (23 m 20 s) Start Date: 2021:05:17 04:45:04 End Date:   2021:05:17 05:08:25" | grep -w "Infected files" )";echo $clamscan_infected

@@ -1612,6 +1612,7 @@ function menu_main_options() {
       # shellcheck source=${SFOLDER}/utils/wpcli_manager.sh
       source "${SFOLDER}/utils/wpcli_manager.sh"
 
+      log_section "WP-CLI Manager"
       wpcli_manager
 
     fi
@@ -1619,6 +1620,7 @@ function menu_main_options() {
       # shellcheck source=${SFOLDER}/utils/certbot_manager.sh
       source "${SFOLDER}/utils/certbot_manager.sh"
 
+      log_section "Certbot Manager"
       certbot_helper_menu
 
     fi
@@ -1626,14 +1628,19 @@ function menu_main_options() {
       # shellcheck source=${SFOLDER}/utils/cloudflare_manager.sh
       source "${SFOLDER}/utils/cloudflare_manager.sh"
 
+      log_section "Cloudflare Manager"
       cloudflare_helper_menu
 
     fi
     if [[ ${chosen_type} == *"07"* ]]; then
+
+      log_section "Installers and Configurators"
       installers_and_configurators
 
     fi
     if [[ ${chosen_type} == *"08"* ]]; then
+
+      log_section "IT Utils"
       it_utils_menu
 
     fi
@@ -1707,10 +1714,11 @@ function menu_cron_script_tasks() {
     "01)" "BACKUPS TASKS"
     "02)" "OPTIMIZER TASKS"
     "03)" "WORDPRESS TASKS"
-    "04)" "UPTIME TASKS"
-    "05)" "SCRIPT UPDATER"
+    "04)" "SECURITY TASKS"
+    "05)" "UPTIME TASKS"
+    "06)" "SCRIPT UPDATER"
   )
-  chosen_type=$(whiptail --title "CRONEABLE TASKS" --menu "\n" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)
+  chosen_type="$(whiptail --title "CRONEABLE TASKS" --menu "\n" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -1719,7 +1727,7 @@ function menu_cron_script_tasks() {
 
       # BACKUPS-TASKS
       suggested_cron="45 00 * * *" # Every day at 00:45 AM
-      scheduled_time=$(whiptail --title "CRON BACKUPS-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
+      scheduled_time="$(whiptail --title "CRON BACKUPS-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -1732,7 +1740,7 @@ function menu_cron_script_tasks() {
 
       # OPTIMIZER-TASKS
       suggested_cron="45 04 * * *" # Every day at 04:45 AM
-      scheduled_time=$(whiptail --title "CRON OPTIMIZER-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
+      scheduled_time="$(whiptail --title "CRON OPTIMIZER-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
 
@@ -1745,7 +1753,7 @@ function menu_cron_script_tasks() {
 
       # WORDPRESS-TASKS
       suggested_cron="45 23 * * *" # Every day at 23:45 AM
-      scheduled_time=$(whiptail --title "CRON WORDPRESS-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
+      scheduled_time="$(whiptail --title "CRON WORDPRESS-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -1757,8 +1765,21 @@ function menu_cron_script_tasks() {
     if [[ ${chosen_type} == *"04"* ]]; then
 
       # UPTIME-TASKS
+      suggested_cron="55 03 * * *" # Every day at 22:45 AM
+      scheduled_time="$(whiptail --title "CRON SECURITY-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        install_crontab_script "${SFOLDER}/cron/security_tasks.sh" "${scheduled_time}"
+
+      fi
+
+    fi
+    if [[ ${chosen_type} == *"05"* ]]; then
+
+      # UPTIME-TASKS
       suggested_cron="45 22 * * *" # Every day at 22:45 AM
-      scheduled_time=$(whiptail --title "CRON UPTIME-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
+      scheduled_time="$(whiptail --title "CRON UPTIME-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -1767,11 +1788,11 @@ function menu_cron_script_tasks() {
       fi
 
     fi
-    if [[ ${chosen_type} == *"05"* ]]; then
+    if [[ ${chosen_type} == *"06"* ]]; then
 
       # SCRIPT-UPDATER
       suggested_cron="45 22 * * *" # Every day at 22:45 AM
-      scheduled_time=$(whiptail --title "CRON UPTIME-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)
+      scheduled_time="$(whiptail --title "CRON UPTIME-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 

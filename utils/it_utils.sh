@@ -28,8 +28,6 @@ function it_utils_menu() {
   exitstatus=$?
   if [[ ${exitstatus} = 0 ]]; then
 
-    log_section "IT Utils"
-
     # SECURITY TOOLS
     if [[ ${chosen_it_util_options} == *"01"* ]]; then
       menu_security_utils
