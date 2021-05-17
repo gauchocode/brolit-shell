@@ -223,17 +223,17 @@ function mysql_databases() {
 
             if [[ ${database_bl} != *"${database}"* ]]; then
 
-                databases="${database} | "
+                databases="${databases} | ${database}"
 
             fi
 
         done
 
         # Remove 3 last chars
-        databases="${databases::-3}"
+        databases="${databases:3}"
 
         # Return
-        echo "${databases}"
+        echo "MYSQLDBS_RESULT => { ${databases} }"
 
     else
 
