@@ -207,18 +207,19 @@ function mysql_databases() {
 
     local database
     local databases
+    local all_databases
 
     # Database blacklist
     local database_bl="information_schema,performance_schema,mysql,sys,phpmyadmin"
 
     # Run command
-    databases="$(mysql -Bse 'show databases')"
+    all_databases="$(mysql -Bse 'show databases')"
 
     # Check result
     mysql_result=$?
-    if [[ ${mysql_result} -eq 0 && ${databases} != "error" ]]; then
+    if [[ ${mysql_result} -eq 0 && ${all_databases} != "error" ]]; then
 
-        for database in ${databases}; do
+        for database in ${all_databases}; do
 
             if [[ ${database_bl} != *"${database}"* ]]; then
 
