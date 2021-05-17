@@ -434,6 +434,8 @@ function customize_ubuntu_login_message() {
 
 function install_script_aliases() {
 
+  log_subsection "Bash Aliases"
+
   if [[ ! -f ~/.bash_aliases ]]; then
     cp "${SFOLDER}/utils/aliases.sh" ~/.bash_aliases
     display --indent 2 --text "- Installing script aliases" --result "DONE" --color GREEN
