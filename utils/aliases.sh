@@ -149,7 +149,7 @@ function search() {
 function lemp_utils_config() {
 
     # Return
-    echo "server_type: ${SERVER_CONFIG} | netdata_url: ${netdata_subdomain} | mail_notif: ${MAIL_NOTIF} | telegram_notif: ${TELEGRAM_NOTIF} | dropbox_enable: ${DROPBOX_ENABLE} | cloudflare_enable: ${CLOUDFLARE_ENABLE} | smtp_server: ${SMTP_SERVER}"
+    echo "server_type: ${SERVER_CONFIG} | netdata_url: ${NETDATA_SUBDOMAIN} | mail_notif: ${MAIL_NOTIF} | telegram_notif: ${TELEGRAM_NOTIF} | dropbox_enable: ${DROPBOX_ENABLE} | cloudflare_enable: ${CLOUDFLARE_ENABLE} | smtp_server: ${SMTP_SERVER}"
 
 }
 
