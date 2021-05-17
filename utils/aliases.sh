@@ -190,27 +190,14 @@ function serverinfo() {
 
 }
 
-function serverinfo_devops() {
-
-    local serverinfo
-    local configlemp
-
-    serverinfo="$(serverinfo)"
-    configlemp="$(lemp_utils_config)"
-
-    # Run command
-    echo "DEVOPS_RESULT => { ${serverinfo} | ${configlemp} }"
-
-}
-  
 function mysql_databases() {
 
-    #local database
-    #local databases
+    local database
+    local databases
     local all_databases
 
     # Database blacklist
-    #local database_bl="information_schema,performance_schema,mysql,sys,phpmyadmin"
+    local database_bl="information_schema,performance_schema,mysql,sys,phpmyadmin"
 
     # Run command
     all_databases="$(mysql -Bse 'show databases')"
@@ -219,18 +206,17 @@ function mysql_databases() {
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 && ${all_databases} != "error" ]]; then
 
-        #for database in ${all_databases}; do
-        #    if [[ ${database_bl} != *"${database}"* ]]; then
-        #        databases="${databases} | ${database}"
-        #    fi
-        #done
+        for database in ${all_databases}; do
+            if [[ ${database_bl} != *"${database}"* ]]; then
+                databases="${databases} | ${database}"
+            fi
+        done
 
         # Remove 3 last chars
-        #databases="${databases:3}"
+        databases="${databases:3}"
 
         # Return
-        echo "${all_databases}"
-        #echo "MYSQLDBS_RESULT => { ${databases} }"
+        echo "${databases}"
 
     else
 
@@ -246,9 +232,19 @@ function mysql_databases() {
 function sites_directories() {
 
     local directories
+    local all_directories
 
     # Run command
-    directories="$(ls /var/www)"
+    all_directories="$(ls /var/www)"
+
+    for site in ${all_directories}; do
+
+        directories="${directories} | ${site}"
+
+    done
+
+    # Remove 3 last chars
+    directories="${directories:3}"
 
     # Return
     echo "${directories}"
@@ -294,5 +290,24 @@ function dropbox_get_backup() {
 
     # Return
     echo "${dropbox_backup_list}"
+
+}
+
+function show_server_data() {
+
+    local server_info
+    local server_config
+    local server_databases
+
+    server_info="$(serverinfo)"
+    server_config="$(lemp_utils_config)"
+    server_databases="$(mysql_databases)"
+    server_sites="$(sites_directories)"
+
+    # Run commands
+    echo "SERVERINFO_RESULT => { ${server_info} }"
+    echo "CONFIG_RESULT => { ${server_config} }"
+    echo "MYSQLDBS_RESULT => { ${server_databases} }"
+    echo "SITES_RESULT => { ${server_sites} }"
 
 }
