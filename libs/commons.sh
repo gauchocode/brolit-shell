@@ -442,7 +442,7 @@ function install_script_aliases() {
   else
 
     display --indent 2 --text "- File .bash_aliases already exists" --color YELLOW
-    
+
     timestamp="$(date +%Y%m%d_%H%M%S)"
     mv ~/.bash_aliases ~/.bash_aliases_bk-"${timestamp}"
 
@@ -2138,6 +2138,11 @@ function tasks_handler() {
   cloudflare-api)
     subtasks_cloudflare_handler "${STASK}"
 
+    exit
+    ;;
+
+  aliases-install)
+    install_script_aliases
     exit
     ;;
 
