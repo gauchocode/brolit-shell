@@ -180,11 +180,11 @@ function serverinfo() {
     if [[ ${public_ip} == "${inet_ip}" ]]; then
 
         # Return
-        echo "server_name: ${VPSNAME} , ip: ${public_ip} , distro: ${distro} , cpu_cores: ${cpu_cores} , ram_avail: ${ram_amount} , disk_size: ${disk_size} , disk_usage: ${disk_usage}"
+        echo "\"server_name\": ${VPSNAME} , \"ip\": ${public_ip} , \"distro\": ${distro} , \"cpu_cores\": ${cpu_cores} , \"ram_avail\": ${ram_amount} , \"disk_size\": ${disk_size} , \"disk_usage\": ${disk_usage}"
     else
 
         # Return
-        echo "server_name: ${VPSNAME} , ip: ${public_ip} , floating_ip: ${inet_ip} , distro: ${distro} , cpu_cores: ${cpu_cores} , ram_avail: ${ram_amount} , disk_size: ${disk_size} , disk_usage: ${disk_usage}"
+        echo "\"server_name\": ${VPSNAME} , \"ip\": ${public_ip} , \"floating_ip\": ${inet_ip} , \"distro\": ${distro} , \"cpu_cores\": ${cpu_cores} , \"ram_avail\": ${ram_amount} , \"disk_size\": ${disk_size} , \"disk_usage\": ${disk_usage}"
 
     fi
 
@@ -208,7 +208,7 @@ function mysql_databases() {
 
         for database in ${all_databases}; do
             if [[ ${database_bl} != *"${database}"* ]]; then
-                databases="${databases} , ${database}"
+                databases="${databases} , \"${database}\""
             fi
         done
 
@@ -239,7 +239,7 @@ function sites_directories() {
 
     for site in ${all_directories}; do
 
-        directories="${directories} | ${site}"
+        directories="${directories} , \"${site}\""
 
     done
 
@@ -306,10 +306,10 @@ function show_server_data() {
 
     # Run commands
     echo "{"
-    echo "SERVERINFO_RESULT: { ${server_info} },"
-    echo "CONFIG_RESULT: { ${server_config} },"
-    echo "MYSQLDBS_RESULT: { ${server_databases} },"
-    echo "SITES_RESULT: { ${server_sites} },"
+    echo "\"SERVERINFO_RESULT\": { ${server_info} },"
+    echo "\"CONFIG_RESULT\": { ${server_config} },"
+    echo "\"MYSQLDBS_RESULT\": { ${server_databases} },"
+    echo "\"SITES_RESULT\": { ${server_sites} },"
     echo "}"
 
 }
