@@ -284,12 +284,25 @@ function dropbox_get_backup() {
     local dropbox_chosen_backup_path
     local dropbox_backup_list
 
+    local backup_files
+
     # Get dropbox backup list
     dropbox_chosen_backup_path="${VPSNAME}/site/${chosen_project}"
     dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}")"
 
-    # Return
-    echo "${dropbox_backup_list}"
+    for backup_file in ${dropbox_backup_list}; do
+
+        backup_files="${backup_files} , \"${backup_file}\""
+
+    done
+
+    # Remove 3 last chars
+    backup_files="${backup_files:3}"
+
+    # Return JSON
+    echo "{"
+    echo "\"BACKUPS_RESULT\": { ${backup_files} },"
+    echo "}"
 
 }
 
@@ -298,18 +311,19 @@ function show_server_data() {
     local server_info
     local server_config
     local server_databases
+    local server_sites
 
     server_info="$(serverinfo)"
     server_config="$(lemp_utils_config)"
     server_databases="$(mysql_databases)"
     server_sites="$(sites_directories)"
 
-    # Run commands
+    # Return JSON
     echo "{"
     echo "\"SERVERINFO_RESULT\": { ${server_info} },"
     echo "\"CONFIG_RESULT\": { ${server_config} },"
     echo "\"MYSQLDBS_RESULT\": { ${server_databases} },"
-    echo "\"SITES_RESULT\": { ${server_sites} },"
+    echo "\"SITES_RESULT\": { ${server_sites} }"
     echo "}"
 
 }
