@@ -29,7 +29,6 @@ function _netdata_required_packages() {
 
 }
 
-
 function _netdata_alarm_level() {
 
   NETDATA_ALARM_LEVELS="warning critical"
@@ -218,6 +217,10 @@ function netdata_configuration() {
 
 function netdata_installer_menu() {
 
+  local netdata_subdomain
+  local netdata_options
+  local netdata_chosen_option
+
   ### Checking if Netdata is installed
   NETDATA="$(which netdata)"
 
@@ -225,10 +228,10 @@ function netdata_installer_menu() {
 
     if [[ -z "${netdata_subdomain}" ]]; then
 
-      netdata_subdomain=$(whiptail --title "Netdata Installer" --inputbox "Please insert the subdomain you want to install Netdata. Ex: monitor.broobe.com" 10 60 3>&1 1>&2 2>&3)
+      netdata_subdomain="$(whiptail --title "Netdata Installer" --inputbox "Please insert the subdomain you want to install Netdata. Ex: monitor.broobe.com" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
-        echo "netdata_subdomain=${netdata_subdomain}" >>"/root/.broobe-utils-options"
+        echo "NETDATA_SUBDOMAIN=${netdata_subdomain}" >>"/root/.broobe-utils-options"
 
       else
         return 1
@@ -272,7 +275,7 @@ function netdata_installer_menu() {
         netdata_configuration
 
         # Confirm ROOT_DOMAIN
-        root_domain=$(ask_root_domain "${suggested_root_domain}")
+        root_domain="$(ask_root_domain "${suggested_root_domain}")"
 
         # Cloudflare API
         cloudflare_set_record "${root_domain}" "${netdata_subdomain}" "A"
@@ -299,35 +302,35 @@ function netdata_installer_menu() {
 
   else
 
-    NETDATA_OPTIONS=(
+    netdata_options=(
       "01)" "UPDATE NETDATA"
       "02)" "CONFIGURE NETDATA"
       "03)" "UNINSTALL NETDATA"
       "04)" "SEND ALARM TEST"
     )
 
-    NETDATA_CHOSEN_OPTION="$(whiptail --title "Netdata Installer" --menu "Netdata is already installed." 20 78 10 "${NETDATA_OPTIONS[@]}" 3>&1 1>&2 2>&3)"
+    netdata_chosen_option="$(whiptail --title "Netdata Installer" --menu "Netdata is already installed." 20 78 10 "${netdata_options[@]}" 3>&1 1>&2 2>&3)"
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
       log_subsection "Netdata Installer"
 
-      if [[ ${NETDATA_CHOSEN_OPTION} == *"01"* ]]; then
+      if [[ ${netdata_chosen_option} == *"01"* ]]; then
         cd netdata && git pull && ./netdata-installer.sh --dont-wait
         netdata_configuration
 
       fi
-      if [[ ${NETDATA_CHOSEN_OPTION} == *"02"* ]]; then
+      if [[ ${netdata_chosen_option} == *"02"* ]]; then
         _netdata_required_packages
         netdata_configuration
 
       fi
-      if [[ ${NETDATA_CHOSEN_OPTION} == *"03"* ]]; then
+      if [[ ${netdata_chosen_option} == *"03"* ]]; then
 
         netdata_uninstaller
 
       fi
-      if [[ ${NETDATA_CHOSEN_OPTION} == *"04"* ]]; then
+      if [[ ${netdata_chosen_option} == *"04"* ]]; then
         /usr/libexec/netdata/plugins.d/alarm-notify.sh test
 
       fi
