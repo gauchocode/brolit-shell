@@ -149,7 +149,7 @@ function search() {
 function lemp_utils_config() {
 
     # Return
-    echo "\"server_type\": ${SERVER_CONFIG} , \"netdata_url\": ${NETDATA_SUBDOMAIN} , \"mail_notif\": ${MAIL_NOTIF} , \"telegram_notif\": ${TELEGRAM_NOTIF} , \"dropbox_enable\": ${DROPBOX_ENABLE} , \"cloudflare_enable\": ${CLOUDFLARE_ENABLE} , \"smtp_server\": ${SMTP_SERVER}"
+    echo "\"server_type\": \"${SERVER_CONFIG}\" , \"netdata_url\": \"${NETDATA_SUBDOMAIN}\" , \"mail_notif\": \"${MAIL_NOTIF}\" , \"telegram_notif\": \"${TELEGRAM_NOTIF}\" , \"dropbox_enable\": \"${DROPBOX_ENABLE}\" , \"cloudflare_enable\": \"${CLOUDFLARE_ENABLE}\" , \"smtp_server\": \"${SMTP_SERVER}\""
 
 }
 
@@ -180,11 +180,11 @@ function serverinfo() {
     if [[ ${public_ip} == "${inet_ip}" ]]; then
 
         # Return
-        echo "\"server_name\": ${VPSNAME} , \"ip\": ${public_ip} , \"distro\": ${distro} , \"cpu_cores\": ${cpu_cores} , \"ram_avail\": ${ram_amount} , \"disk_size\": ${disk_size} , \"disk_usage\": ${disk_usage}"
+        echo "\"server_name\": \"${VPSNAME}\" , \"ip\": \"${public_ip}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , \"disk_size\": \"${disk_size}\" , \"disk_usage\": \"${disk_usage}\""
     else
 
         # Return
-        echo "\"server_name\": ${VPSNAME} , \"ip\": ${public_ip} , \"floating_ip\": ${inet_ip} , \"distro\": ${distro} , \"cpu_cores\": ${cpu_cores} , \"ram_avail\": ${ram_amount} , \"disk_size\": ${disk_size} , \"disk_usage\": ${disk_usage}"
+        echo "\"server_name\": \"${VPSNAME}\" , \"ip\": \"${public_ip}\" , \"floating_ip\": \"${inet_ip}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , \"disk_size\": \"${disk_size}\" , \"disk_usage\": \"${disk_usage}\""
 
     fi
 
