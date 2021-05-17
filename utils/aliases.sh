@@ -301,7 +301,7 @@ function dropbox_get_backup() {
 
     # Return JSON
     echo "{"
-    echo "\"BACKUPS_RESULT\": { ${backup_files} },"
+    echo "\"BACKUPS_RESULT\": [ ${backup_files} ],"
     echo "}"
 
 }
@@ -322,8 +322,8 @@ function show_server_data() {
     echo "{"
     echo "\"SERVERINFO_RESULT\": { ${server_info} },"
     echo "\"CONFIG_RESULT\": { ${server_config} },"
-    echo "\"MYSQLDBS_RESULT\": { ${server_databases} },"
-    echo "\"SITES_RESULT\": { ${server_sites} }"
+    echo "\"MYSQLDBS_RESULT\": [ ${server_databases} ],"
+    echo "\"SITES_RESULT\": [ ${server_sites} ]"
     echo "}"
 
 }
