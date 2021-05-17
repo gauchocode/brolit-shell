@@ -153,7 +153,8 @@ function lemp_utils_config() {
 
 }
 
-# All server info
+########################## UTILS FOR DEVOPS ###################################
+
 function serverinfo() {
 
     local distro
@@ -319,7 +320,7 @@ function show_server_data() {
     server_sites="$(sites_directories)"
 
     # Return JSON
-    echo "{"
+    echo "RESULT => {"
     echo "\"SERVERINFO_RESULT\": { ${server_info} },"
     echo "\"CONFIG_RESULT\": { ${server_config} },"
     echo "\"MYSQLDBS_RESULT\": [ ${server_databases} ],"
