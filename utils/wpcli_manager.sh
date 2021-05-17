@@ -18,7 +18,6 @@ function wpcli_manager() {
   wp_site="${filepath}/${filename}"
 
   # Log
-  log_section "WP-CLI Manager"
   log_event "info" "Searching WordPress Installation on directory: ${wp_site}" "false"
 
   # Search a wordpress installation on selected directory
