@@ -41,7 +41,7 @@ function it_utils_menu() {
     # CHANGE SSH PORT
     if [[ ${chosen_it_util_options} == *"03"* ]]; then
 
-      new_ssh_port=$(whiptail --title "CHANGE SSH PORT" --inputbox "Insert the new SSH port:" 10 60 3>&1 1>&2 2>&3)
+      new_ssh_port="$(whiptail --title "CHANGE SSH PORT" --inputbox "Insert the new SSH port:" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
         change_current_ssh_port "${new_ssh_port}"
@@ -50,7 +50,7 @@ function it_utils_menu() {
     # CHANGE HOSTNAME
     if [[ ${chosen_it_util_options} == *"04"* ]]; then
 
-      new_server_hostname=$(whiptail --title "CHANGE SERVER HOSTNAME" --inputbox "Insert the new hostname:" 10 60 3>&1 1>&2 2>&3)
+      new_server_hostname="$(whiptail --title "CHANGE SERVER HOSTNAME" --inputbox "Insert the new hostname:" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
         change_server_hostname "${new_server_hostname}"
@@ -59,7 +59,7 @@ function it_utils_menu() {
     # ADD FLOATING IP
     if [[ ${chosen_it_util_options} == *"05"* ]]; then
 
-      floating_IP=$(whiptail --title "ADD FLOATING IP" --inputbox "Insert the floating IP:" 10 60 3>&1 1>&2 2>&3)
+      floating_IP="$(whiptail --title "ADD FLOATING IP" --inputbox "Insert the floating IP:" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
         add_floating_IP "${floating_IP}"
@@ -70,7 +70,7 @@ function it_utils_menu() {
 
       log_subsection "SFTP Manager"
 
-      sftp_user=$(whiptail --title "CREATE SFTP USER" --inputbox "Insert the username:" 10 60 3>&1 1>&2 2>&3)
+      sftp_user="$(whiptail --title "CREATE SFTP USER" --inputbox "Insert the username:" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
         sftp_create_user "${sftp_user}" "www-data" "no"
@@ -81,7 +81,7 @@ function it_utils_menu() {
 
       log_subsection "SFTP Manager"
 
-      sftp_user=$(whiptail --title "DELETE SFTP USER" --inputbox "Insert the username:" 10 60 3>&1 1>&2 2>&3)
+      sftp_user="$(whiptail --title "DELETE SFTP USER" --inputbox "Insert the username:" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
         sftp_delete_user "${sftp_user}"
@@ -90,7 +90,7 @@ function it_utils_menu() {
     # RESET MYSQL ROOT_PSW
     if [[ ${chosen_it_util_options} == *"08"* ]]; then
 
-      db_root_psw=$(whiptail --title "MYSQL ROOT PASSWORD" --inputbox "Insert the new root password for MySQL:" 10 60 3>&1 1>&2 2>&3)
+      db_root_psw="$(whiptail --title "MYSQL ROOT PASSWORD" --inputbox "Insert the new root password for MySQL:" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
         # shellcheck source=${SFOLDER}/libs/mysql_helper.sh
@@ -101,7 +101,7 @@ function it_utils_menu() {
     # BLACKLIST CHECKER
     if [[ ${chosen_it_util_options} == *"09"* ]]; then
 
-      IP_TO_TEST=$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)
+      IP_TO_TEST="$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
         # shellcheck source=${SFOLDER}/tools/third-party/blacklist-checker/bl.sh
