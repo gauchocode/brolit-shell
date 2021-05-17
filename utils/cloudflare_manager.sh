@@ -16,18 +16,16 @@ function cloudflare_helper_menu() {
         "03)" "SET SSL MODE"
         "04)" "SET CACHE TTL VALUE"
     )
-    chosen_cf_options=$(whiptail --title "CLOUDFLARE MANAGER" --menu " " 20 78 10 "${cf_options[@]}" 3>&1 1>&2 2>&3)
+    chosen_cf_options="$(whiptail --title "CLOUDFLARE MANAGER" --menu " " 20 78 10 "${cf_options[@]}" 3>&1 1>&2 2>&3)"
     exitstatus=$?
 
     if [[ ${exitstatus} -eq 0 ]]; then
-
-        log_section "Cloudflare Manager"
 
         if [[ ${chosen_cf_options} == *"01"* ]]; then
 
             # SET DEVELOPMENT MODE
 
-            root_domain=$(whiptail --title "Root Domain" --inputbox "Insert the root domain, example: mydomain.com" 10 60 3>&1 1>&2 2>&3)
+            root_domain="$(whiptail --title "Root Domain" --inputbox "Insert the root domain, example: mydomain.com" 10 60 3>&1 1>&2 2>&3)"
             exitstatus=$?
 
             if [[ ${exitstatus} = 0 ]]; then
@@ -42,7 +40,7 @@ function cloudflare_helper_menu() {
 
             # DELETE CACHE
 
-            root_domain=$(whiptail --title "Root Domain" --inputbox "Insert the root domain, example: mydomain.com" 10 60 3>&1 1>&2 2>&3)
+            root_domain="$(whiptail --title "Root Domain" --inputbox "Insert the root domain, example: mydomain.com" 10 60 3>&1 1>&2 2>&3)"
             exitstatus=$?
 
             if [[ ${exitstatus} = 0 ]]; then
@@ -57,7 +55,7 @@ function cloudflare_helper_menu() {
 
             # SET SSL MODE
 
-            root_domain=$(whiptail --title "Root Domain" --inputbox "Insert the root domain, example: mydomain.com" 10 60 3>&1 1>&2 2>&3)
+            root_domain="$(whiptail --title "Root Domain" --inputbox "Insert the root domain, example: mydomain.com" 10 60 3>&1 1>&2 2>&3)"
             exitstatus=$?
 
             if [[ ${exitstatus} = 0 ]]; then
@@ -72,7 +70,7 @@ function cloudflare_helper_menu() {
 
                 local chosen_ssl_mode
 
-                chosen_ssl_mode=$(whiptail --title "CLOUDFLARE SSL MODE" --menu "Select the new SSL mode:" 20 78 10 "${ssl_modes[@]}" 3>&1 1>&2 2>&3)
+                chosen_ssl_mode="$(whiptail --title "CLOUDFLARE SSL MODE" --menu "Select the new SSL mode:" 20 78 10 "${ssl_modes[@]}" 3>&1 1>&2 2>&3)"
                 exitstatus=$?
                 if [[ ${exitstatus} = 0 ]]; then
 
@@ -90,7 +88,7 @@ function cloudflare_helper_menu() {
 
             # SET CACHE TTL VALUE
 
-            root_domain=$(whiptail --title "Root Domain" --inputbox "Insert the root domain, example: mydomain.com" 10 60 3>&1 1>&2 2>&3)
+            root_domain="$(whiptail --title "Root Domain" --inputbox "Insert the root domain, example: mydomain.com" 10 60 3>&1 1>&2 2>&3)"
             exitstatus=$?
 
             if [[ ${exitstatus} = 0 ]]; then

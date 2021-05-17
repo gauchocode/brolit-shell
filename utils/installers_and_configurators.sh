@@ -33,11 +33,9 @@ function installers_and_configurators() {
     "09)" "WP-CLI"
   )
 
-  installer_type=$(whiptail --title "${installer_options_title}" --menu "\nPlease select the utility or programs you want to install or config: \n" 20 78 10 "${installer_options[@]}" 3>&1 1>&2 2>&3)
+  installer_type="$(whiptail --title "${installer_options_title}" --menu "\nPlease select the utility or programs you want to install or config: \n" 20 78 10 "${installer_options[@]}" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
-
-    log_section "Installers and Configurators"
 
     if [[ ${installer_type} == *"01"* ]]; then
       php_installer_menu
