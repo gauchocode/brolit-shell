@@ -169,8 +169,8 @@ function serverinfo() {
 
     distro="$(lsb_release -d | awk -F"\t" '{print $2}')"
 
-    cpu_cores="$(cpucores)"
-    ram_amount="$(ramamount)"
+    cpu_cores="$(grep -c "processor" /proc/cpuinfo)"
+    ram_amount="$(grep MemTotal /proc/meminfo | cut -d ":" -f 2)"
     ram_amount="$(_string_remove_spaces "${ram_amount}")"
 
     disk_volume="$(df /boot | grep -Eo '/dev/[^ ]+')"
@@ -205,12 +205,12 @@ function serverinfo_devops() {
   
 function mysql_databases() {
 
-    local database
-    local databases
+    #local database
+    #local databases
     local all_databases
 
     # Database blacklist
-    local database_bl="information_schema,performance_schema,mysql,sys,phpmyadmin"
+    #local database_bl="information_schema,performance_schema,mysql,sys,phpmyadmin"
 
     # Run command
     all_databases="$(mysql -Bse 'show databases')"
@@ -219,21 +219,18 @@ function mysql_databases() {
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 && ${all_databases} != "error" ]]; then
 
-        for database in ${all_databases}; do
-
-            if [[ ${database_bl} != *"${database}"* ]]; then
-
-                databases="${databases} | ${database}"
-
-            fi
-
-        done
+        #for database in ${all_databases}; do
+        #    if [[ ${database_bl} != *"${database}"* ]]; then
+        #        databases="${databases} | ${database}"
+        #    fi
+        #done
 
         # Remove 3 last chars
-        databases="${databases:3}"
+        #databases="${databases:3}"
 
         # Return
-        echo "MYSQLDBS_RESULT => { ${databases} }"
+        echo "${all_databases}"
+        #echo "MYSQLDBS_RESULT => { ${databases} }"
 
     else
 
