@@ -89,47 +89,60 @@ function nginx_installer_menu() {
     if [[ ${nginx_installed} == "false" ]]; then
 
         NGINX_INSTALLER_OPTIONS=(
-            "01)" "NGINX STANDARD"
-            "02)" "NGINX LAST STABLE"
+            "01)" "INSTALL NGINX STANDARD"
+            "02)" "INSTALL NGINX LAST STABLE"
         )
+
+        chosen_nginx_installer_option="$(whiptail --title "NGINX INSTALLER" --menu "Choose a Nginx version to install" 20 78 10 "${NGINX_INSTALLER_OPTIONS[@]}" 3>&1 1>&2 2>&3)"
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+            if [[ ${chosen_nginx_installer_option} == *"01"* ]]; then
+
+                log_subsection "Nginx Installer"
+                nginx_default_installer
+
+            fi
+            if [[ ${chosen_nginx_installer_option} == *"02"* ]]; then
+
+                log_subsection "Nginx Installer"
+                nginx_custom_installer
+
+            fi
+
+        fi
 
     else
 
         NGINX_INSTALLER_OPTIONS=(
-            "01)" "NGINX STANDARD"
-            "02)" "NGINX LAST STABLE"
-            "03)" "NGINX RECONFIGURE"
+            "01)" "UNINSTALL NGINX"
+            "02)" "RECONFIGURE NGINX"
         )
 
-    fi
+        chosen_nginx_installer_option="$(whiptail --title "NGINX INSTALLER" --menu "Choose a Nginx version to install" 20 78 10 "${NGINX_INSTALLER_OPTIONS[@]}" 3>&1 1>&2 2>&3)"
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
 
-    chosen_nginx_installer_option="$(whiptail --title "NGINX INSTALLER" --menu "Choose a Nginx version to install" 20 78 10 "${NGINX_INSTALLER_OPTIONS[@]}" 3>&1 1>&2 2>&3)"
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
+            if [[ ${chosen_nginx_installer_option} == *"01"* ]]; then
 
-        if [[ ${chosen_nginx_installer_option} == *"01"* ]]; then
+                log_subsection "Nginx Installer"
+                
+                nginx_purge_installation
 
-            log_subsection "Nginx Installer"
-            nginx_default_installer
+            fi
+            if [[ ${chosen_nginx_installer_option} == *"02"* ]]; then
 
-        fi
-        if [[ ${chosen_nginx_installer_option} == *"02"* ]]; then
+                log_subsection "Nginx Installer"
 
-            log_subsection "Nginx Installer"
-            nginx_custom_installer
+                nginx_delete_default_directory
 
-        fi
-        if [[ ${chosen_nginx_installer_option} == *"03"* ]]; then
+                nginx_reconfigure
 
-            log_subsection "Nginx Installer"
+                nginx_new_default_server
 
-            nginx_delete_default_directory
+                nginx_create_globals_config
 
-            nginx_reconfigure
-
-            nginx_new_default_server
-
-            nginx_create_globals_config
+            fi
 
         fi
 
