@@ -6,12 +6,27 @@
 
 source ~/.broobe-utils-options
 
-source ~/.cloudflare.conf
+CLF_CONFIG_FILE=~/.cloudflare.conf
+if [[ ${CLOUDFLARE_ENABLE} == "true" && -f ${CLF_CONFIG_FILE} ]]; then
+    # shellcheck source=${CLF_CONFIG_FILE}
+    source "${CLF_CONFIG_FILE}"
+fi
 
-source ~/.dropbox_uploader
+DPU_CONFIG_FILE=~/.dropbox_uploader
+if [[ ${DROPBOX_ENABLE} == "true" && -f ${DPU_CONFIG_FILE} ]]; then
+    # shellcheck source=${DPU_CONFIG_FILE}
+    source "${DPU_CONFIG_FILE}"
+    # Dropbox-uploader directory
+    DPU_F="/root/lemp-utils-scripts/tools/third-party/dropbox-uploader"
+    # Dropbox-uploader runner
+    DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
+    #DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader_original.sh"
 
-# Dropbox-uploader runner
-DROPBOX_UPLOADER="/root/lemp-utils-scripts/tools/third-party/dropbox-uploader/dropbox_uploader.sh"
+fi
+
+# Version
+SCRIPT_VERSION="3.0.25"
+ALIASES_VERSION="3.0.25-003"
 
 # Server Name
 VPSNAME="$HOSTNAME"
@@ -53,6 +68,9 @@ alias atop='atop -a 1'
 alias cpuinfo='lscpu'
 alias cpucores='grep -c "processor" /proc/cpuinfo'
 alias ramamount='grep MemTotal /proc/meminfo | cut -d ":" -f 2'
+
+alias get_script_version='echo $SCRIPT_VERSION'
+alias get_aliases_version='echo $ALIASES_VERSION'
 
 ################################################################################
 

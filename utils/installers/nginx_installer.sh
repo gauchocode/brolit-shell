@@ -11,8 +11,6 @@
 # https://www.digitalocean.com/community/questions/how-can-i-improve-the-ttfb
 # https://haydenjames.io/nginx-tuning-tips-tls-ssl-https-ttfb-latency/
 #
-# Brotli compression only supports the HTTPS site
-#
 ################################################################################
 
 function nginx_default_installer() {
