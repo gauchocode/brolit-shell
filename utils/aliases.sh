@@ -26,7 +26,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.25"
-ALIASES_VERSION="3.0.25-003"
+ALIASES_VERSION="3.0.25-004"
 
 # Server Name
 VPSNAME="$HOSTNAME"
@@ -162,11 +162,9 @@ function _php_check_installed_version() {
     if [[ $count_elements == "1" ]]; then
 
         # Remove last space
-        php_installed_versions="$(string_remove_spaces "${php_installed_versions}")"
+        php_installed_versions="$(_string_remove_spaces "${php_installed_versions}")"
 
     fi
-
-    log_event "debug" "Setting php_installed_versions=${php_installed_versions}"
 
     # Return
     echo "${php_installed_versions}"
@@ -236,6 +234,8 @@ function search() {
     grep -rnw "$path" -e "$string"
 }
 
+########################## UTILS FOR DEVOPS ###################################
+
 # All lemp-utils config
 function lemp_utils_config() {
 
@@ -243,8 +243,6 @@ function lemp_utils_config() {
     echo "\"server_type\": \"${SERVER_CONFIG}\" , \"netdata_url\": \"${NETDATA_SUBDOMAIN}\" , \"mail_notif\": \"${MAIL_NOTIF}\" , \"telegram_notif\": \"${TELEGRAM_NOTIF}\" , \"dropbox_enable\": \"${DROPBOX_ENABLE}\" , \"cloudflare_enable\": \"${CLOUDFLARE_ENABLE}\" , \"smtp_server\": \"${SMTP_SERVER}\""
 
 }
-
-########################## UTILS FOR DEVOPS ###################################
 
 function serverinfo() {
 
@@ -427,13 +425,15 @@ function show_server_data() {
     local server_config
     local server_databases
     local server_sites
+    local server_pkgs
 
     server_info="$(serverinfo)"
     server_config="$(lemp_utils_config)"
     server_databases="$(mysql_databases)"
     server_sites="$(sites_directories)"
+    server_pkgs="$(packages_get_data)"
 
     # Return JSON
-    echo "RESULT => { \"SERVERINFO_RESULT\": { ${server_info} }, \"CONFIG_RESULT\": { ${server_config} }, \"MYSQLDBS_RESULT\": [ ${server_databases} ], \"SITES_RESULT\": [ ${server_sites} ] }"
+    echo "RESULT => { \"SERVERINFO_RESULT\": { ${server_info} }, \"PKGS_RESULT\": { ${server_pkgs} } , \"CONFIG_RESULT\": { ${server_config} }, \"MYSQLDBS_RESULT\": [ ${server_databases} ], \"SITES_RESULT\": [ ${server_sites} ] }"
 
 }
