@@ -46,21 +46,25 @@ function install_package_if_not() {
 
 }
 
-# Adding PPA (support multiple args)
-# Ex: add_ppa ondrej/php ondrej/nginx
 function add_ppa() {
 
-  local exit_status
+  # $@ - list of ppas
 
   for i in "$@"; do
 
     grep -h "^deb.*$i" /etc/apt/sources.list.d/* >/dev/null 2>&1
+
     exit_status=$?
     if [[ ${exit_status} -ne 0 ]]; then
-      echo "Adding ppa:$i"
+
+      log_event "info" "Adding ppa:$i" "false"
+
       add-apt-repository -y ppa:"${i}"
+
     else
-      echo "ppa:${i} already exists"
+
+      log_event "info" "ppa:${i} already installed" "false"
+
     fi
 
   done
