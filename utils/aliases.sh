@@ -415,7 +415,7 @@ function packages_get_data() {
     all_phpv="${all_phpv:3}"
 
     # Return JSON
-    echo "{ \"WEBSERVER_RESULT\": { \"nginx\" : \"1.14\" }, \"DBE_RESULT\": { \"maria-db\" : \"${mysql_v_installed}\" }, \"PHP_RESULT\": [ ${all_phpv} ] }"
+    echo "\"WEBSERVER_RESULT\": { \"nginx\" : \"1.14\" }, \"DBE_RESULT\": { \"maria-db\" : \"${mysql_v_installed}\" }, \"PHP_RESULT\": [ ${all_phpv} ]"
 
 }
 
