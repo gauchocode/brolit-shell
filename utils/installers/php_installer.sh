@@ -11,14 +11,14 @@ function php_get_standard_distro_version() {
   local php_v=$1
 
   if [[ -z ${php_v} || ${php_v} == "" ]]; then
-    
+
     DISTRO_V=$(get_ubuntu_version)
-    
+
     if [[ ${DISTRO_V} -eq "1804" ]]; then
-      php_v="7.2"  #Ubuntu 18.04 LTS Default
+      php_v="7.2" #Ubuntu 18.04 LTS Default
 
     elif [[ ${DISTRO_V} -eq "2004" ]]; then
-      php_v="7.4"  #Ubuntu 20.04 LTS Default
+      php_v="7.4" #Ubuntu 20.04 LTS Default
 
     else
       log_event "critical" "Non standard distro!" "true"
@@ -48,7 +48,7 @@ function php_installer() {
   log_event "info" "Installing PHP-${php_v} and libraries ..." "false"
 
   # apt command
-  apt-get --yes install "php${php_v}-fpm" "php${php_v}-mysql" "php-imagick" "php${php_v}-xml" "php${php_v}-cli" "php${php_v}-curl" "php${php_v}-mbstring" "php${php_v}-gd" "php${php_v}-intl" "php${php_v}-zip" "php${php_v}-bz2" "php${php_v}-bcmath" "php${php_v}-soap" "php${php_v}-dev" "php-pear" -qq > /dev/null
+  apt-get --yes install "php${php_v}-fpm" "php${php_v}-mysql" "php-imagick" "php${php_v}-xml" "php${php_v}-cli" "php${php_v}-curl" "php${php_v}-mbstring" "php${php_v}-gd" "php${php_v}-intl" "php${php_v}-zip" "php${php_v}-bz2" "php${php_v}-bcmath" "php${php_v}-soap" "php${php_v}-dev" "php-pear" -qq >/dev/null
 
   # Log
   clear_last_line
@@ -59,10 +59,10 @@ function php_installer() {
 }
 
 function php_custom_installer() {
-  
+
   add_ppa "ondrej/php"
-  
-  apt-get update -qq > /dev/null
+
+  apt-get update -qq >/dev/null
 
   php_select_version_to_install
 
@@ -70,7 +70,7 @@ function php_custom_installer() {
 
 function php_select_version_to_install() {
 
-  local phpv_to_install 
+  local phpv_to_install
   local chosen_phpv
   local phpv
 
@@ -86,7 +86,7 @@ function php_select_version_to_install() {
 
   chosen_phpv=$(whiptail --title "PHP Version Selection" --checklist "Select the versions of PHP you want to install:" 20 78 15 "${phpv_to_install[@]}" 3>&1 1>&2 2>&3)
   echo "Setting CHOSEN_PHPV=${chosen_phpv}"
-  
+
   for phpv in $chosen_phpv; do
 
     phpv=$(sed -e 's/^"//' -e 's/"$//' <<<${phpv}) #needed to ommit double quotes
@@ -104,7 +104,7 @@ function php_redis_installer() {
   log_event "info" "Installing redis server ..." "false"
 
   # apt command
-  apt-get --yes install redis-server php-redis -qq > /dev/null
+  apt-get --yes install redis-server php-redis -qq >/dev/null
   systemctl enable redis-server.service
 
   # Creating config file
@@ -148,7 +148,7 @@ function php_purge_all_installations() {
   log_event "info" "Removing all PHP versions and libraries ..." "false"
 
   # apt command
-  apt-get --yes purge php* -qq > /dev/null
+  apt-get --yes purge php* -qq >/dev/null
 
   # Log
   clear_last_line
@@ -166,7 +166,7 @@ function php_purge_installation() {
   log_event "info" "Removing PHP-${PHP_V} and libraries ..." "false"
 
   # apt command
-  apt-get --yes purge "php${PHP_V}-fpm" "php${PHP_V}-mysql" php-xml "php${PHP_V}-xml" "php${PHP_V}-cli" "php${PHP_V}-curl" "php${PHP_V}-mbstring" "php${PHP_V}-gd" php-imagick "php${PHP_V}-intl" "php${PHP_V}-zip" "php${PHP_V}-bz2" php-bcmath "php${PHP_V}-soap" "php${PHP_V}-dev" php-pear -qq > /dev/null
+  apt-get --yes purge "php${PHP_V}-fpm" "php${PHP_V}-mysql" php-xml "php${PHP_V}-xml" "php${PHP_V}-cli" "php${PHP_V}-curl" "php${PHP_V}-mbstring" "php${PHP_V}-gd" php-imagick "php${PHP_V}-intl" "php${PHP_V}-zip" "php${PHP_V}-bz2" php-bcmath "php${PHP_V}-soap" "php${PHP_V}-dev" php-pear -qq >/dev/null
 
   # Log
   clear_last_line
@@ -188,7 +188,7 @@ function php_installer_menu() {
     php_installer_title="PHP INSTALLER"
     php_installer_message="Choose a PHP version to install:"
     php_installer_options=(
-      "01)" "INSTALL PHP DEFAULT" 
+      "01)" "INSTALL PHP DEFAULT"
       "02)" "INSTALL PHP CUSTOM"
     )
 
@@ -197,12 +197,12 @@ function php_installer_menu() {
     php_installer_title="PHP HELPER"
     php_installer_message="Choose an option to run:"
     php_installer_options=(
-      "01)" "INSTALL PHP DEFAULT" 
-      "02)" "INSTALL PHP CUSTOM" 
-      "03)" "RECONFIGURE PHP" 
-      "04)" "ENABLE OPCACHE" 
-      "05)" "DISABLE OPCACHE" 
-      "06)" "OPTIMIZE PHP" 
+      "01)" "INSTALL PHP DEFAULT"
+      "02)" "INSTALL PHP CUSTOM"
+      "03)" "RECONFIGURE PHP"
+      "04)" "ENABLE OPCACHE"
+      "05)" "DISABLE OPCACHE"
+      "06)" "OPTIMIZE PHP"
       "07)" "UNINSTALL PHP"
     )
 
@@ -214,7 +214,7 @@ function php_installer_menu() {
   # Setting PHP_V
   if [[ ${php_installed_versions} != "" ]]; then
 
-    PHP_V=$(php_select_version_to_work_with "${php_installed_versions}")
+    PHP_V="$(php_select_version_to_work_with "${php_installed_versions}")"
 
   else
 
@@ -222,12 +222,12 @@ function php_installer_menu() {
 
   fi
 
-  chosen_php_installer_options=$(whiptail --title "${php_installer_title}" --menu "${php_installer_message}" 20 78 10 "${php_installer_options[@]}" 3>&1 1>&2 2>&3)
+  chosen_php_installer_options="$(whiptail --title "${php_installer_title}" --menu "${php_installer_message}" 20 78 10 "${php_installer_options[@]}" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_php_installer_options} == *"01"* ]]; then
-      
+
       # Installing packages
       php_installer
       mail_utils_installer
@@ -251,36 +251,36 @@ function php_installer_menu() {
 
     # Will only show if php is installed
     if [[ ${chosen_php_installer_options} == *"03"* ]]; then
-      
+
       # RECONFIGURE PHP
       php_reconfigure
 
     fi
     if [[ ${chosen_php_installer_options} == *"04"* ]]; then
-      
+
       # ENABLE OPCACHE
       php_opcode_config "enable"
 
     fi
     if [[ ${chosen_php_installer_options} == *"05"* ]]; then
-      
+
       # DISABLE OPCACHE
       php_opcode_config "disable"
 
     fi
     if [[ ${chosen_php_installer_options} == *"06"* ]]; then
-      
+
       # PHP OPTIZATIONS
       php_fpm_optimizations
 
     fi
     if [[ ${chosen_php_installer_options} == *"07"* ]]; then
-      
+
       # REMOVE PHP
       php_purge_installation
 
     fi
 
   fi
-  
+
 }

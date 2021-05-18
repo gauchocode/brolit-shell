@@ -81,30 +81,35 @@ function certbot_installer_menu() {
       "01)" "INSTALL CERTBOT"
     )
 
+    chosen_certbot_installer_options="$(whiptail --title "${certbot_installer_title}" --menu "${certbot_installer_message}" 20 78 10 "${certbot_installer_options[@]}" 3>&1 1>&2 2>&3)"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+      if [[ ${chosen_certbot_installer_options} == *"01"* ]]; then
+
+        certbot_installer
+
+      fi
+
+    fi
+
   else
 
     certbot_installer_title="CERTBOT INSTALLER"
     certbot_installer_message="Choose an option to run:"
     certbot_installer_options=(
-      "01)" "PURGE CERTBOT"
+      "01)" "UNINSTALL CERTBOT"
     )
 
-  fi
+    chosen_certbot_installer_options="$(whiptail --title "${certbot_installer_title}" --menu "${certbot_installer_message}" 20 78 10 "${certbot_installer_options[@]}" 3>&1 1>&2 2>&3)"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
 
-  chosen_certbot_installer_options="$(whiptail --title "${certbot_installer_title}" --menu "${certbot_installer_message}" 20 78 10 "${certbot_installer_options[@]}" 3>&1 1>&2 2>&3)"
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
+      if [[ ${chosen_certbot_installer_options} == *"01"* ]]; then
 
-    log_event "debug" "chosen_certbot_installer_options=${chosen_certbot_installer_options}"
+        certbot_purge
 
-    if [[ ${chosen_certbot_installer_options} == *"INSTALL"* ]]; then
-
-      certbot_installer
-
-    fi
-    if [[ ${chosen_certbot_installer_options} == *"PURGE"* ]]; then
-
-      certbot_purge
+      fi
 
     fi
 
