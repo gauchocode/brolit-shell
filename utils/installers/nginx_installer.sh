@@ -82,7 +82,8 @@ function nginx_check_installed_version() {
 
 function nginx_installer_menu() {
 
-    #nginx_installed="true"
+    local chosen_nginx_installer_option
+
     nginx_check_if_installed
 
     if [[ ${nginx_installed} == "false" ]]; then
@@ -102,23 +103,23 @@ function nginx_installer_menu() {
 
     fi
 
-    CHOSEN_NGINX_INSTALLER_OPTION=$(whiptail --title "NGINX INSTALLER" --menu "Choose a Nginx version to install" 20 78 10 "${NGINX_INSTALLER_OPTIONS[@]}" 3>&1 1>&2 2>&3)
+    chosen_nginx_installer_option="$(whiptail --title "NGINX INSTALLER" --menu "Choose a Nginx version to install" 20 78 10 "${NGINX_INSTALLER_OPTIONS[@]}" 3>&1 1>&2 2>&3)"
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"01"* ]]; then
+        if [[ ${chosen_nginx_installer_option} == *"01"* ]]; then
 
             log_subsection "Nginx Installer"
             nginx_default_installer
 
         fi
-        if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"02"* ]]; then
+        if [[ ${chosen_nginx_installer_option} == *"02"* ]]; then
 
             log_subsection "Nginx Installer"
             nginx_custom_installer
 
         fi
-        if [[ ${CHOSEN_NGINX_INSTALLER_OPTION} == *"03"* ]]; then
+        if [[ ${chosen_nginx_installer_option} == *"03"* ]]; then
 
             log_subsection "Nginx Installer"
 
