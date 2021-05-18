@@ -6,30 +6,24 @@
 
 function php_get_standard_distro_version() {
 
-  # $1 = ${php_v}  / optional
+  local php_v
 
-  local php_v=$1
+  DISTRO_V="$(get_ubuntu_version)"
 
-  if [[ -z ${php_v} || ${php_v} == "" ]]; then
+  if [[ ${DISTRO_V} -eq "1804" ]]; then
+    php_v="7.2" #Ubuntu 18.04 LTS Default
 
-    DISTRO_V=$(get_ubuntu_version)
+  elif [[ ${DISTRO_V} -eq "2004" ]]; then
+    php_v="7.4" #Ubuntu 20.04 LTS Default
 
-    if [[ ${DISTRO_V} -eq "1804" ]]; then
-      php_v="7.2" #Ubuntu 18.04 LTS Default
-
-    elif [[ ${DISTRO_V} -eq "2004" ]]; then
-      php_v="7.4" #Ubuntu 20.04 LTS Default
-
-    else
-      log_event "critical" "Non standard distro!" "true"
-      return 1
-
-    fi
-
-    # Return
-    echo "${php_v}"
+  else
+    log_event "critical" "Non standard distro!" "true"
+    return 1
 
   fi
+
+  # Return
+  echo "${php_v}"
 
 }
 
@@ -41,7 +35,9 @@ function php_installer() {
 
   log_subsection "PHP Installer"
 
-  php_v="$(php_get_standard_distro_version "${php_v}")"
+  if [[ -z ${php_v} || ${php_v} == "" ]]; then
+    php_v="$(php_get_standard_distro_version)"
+  fi
 
   # Log
   display --indent 6 --text "- Installing PHP-${php_v} and libraries"
@@ -86,8 +82,6 @@ function php_select_version_to_install() {
 
   chosen_phpv="$(whiptail --title "PHP Version Selection" --checklist "Select the versions of PHP you want to install:" 20 78 15 "${phpv_to_install[@]}" 3>&1 1>&2 2>&3)"
 
-  log_event "debug" "php_vs=${chosen_phpv}"
-  
   for phpv in ${chosen_phpv}; do
 
     phpv="$(sed -e 's/^"//' -e 's/"$//' <<<${phpv})" #needed to ommit double quotes
@@ -219,7 +213,7 @@ function php_installer_menu() {
 
   else
 
-    PHP_V="$(php_get_standard_distro_version "${php_v}")"
+    PHP_V="$(php_get_standard_distro_version)"
 
   fi
 
