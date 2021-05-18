@@ -84,8 +84,7 @@ function php_select_version_to_install() {
     "5.6" " " off
   )
 
-  chosen_phpv=$(whiptail --title "PHP Version Selection" --checklist "Select the versions of PHP you want to install:" 20 78 15 "${phpv_to_install[@]}" 3>&1 1>&2 2>&3)
-  echo "Setting CHOSEN_PHPV=${chosen_phpv}"
+  chosen_phpv="$(whiptail --title "PHP Version Selection" --checklist "Select the versions of PHP you want to install:" 20 78 15 "${phpv_to_install[@]}" 3>&1 1>&2 2>&3)"
 
   for phpv in $chosen_phpv; do
 
