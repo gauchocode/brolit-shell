@@ -320,11 +320,6 @@ function show_server_data() {
     server_sites="$(sites_directories)"
 
     # Return JSON
-    echo "RESULT => {"
-    echo "\"SERVERINFO_RESULT\": { ${server_info} },"
-    echo "\"CONFIG_RESULT\": { ${server_config} },"
-    echo "\"MYSQLDBS_RESULT\": [ ${server_databases} ],"
-    echo "\"SITES_RESULT\": [ ${server_sites} ]"
-    echo "}"
+    echo "RESULT => { \"SERVERINFO_RESULT\": { ${server_info} }, \"CONFIG_RESULT\": { ${server_config} }, \"MYSQLDBS_RESULT\": [ ${server_databases} ], \"SITES_RESULT\": [ ${server_sites} ] }"
 
 }
