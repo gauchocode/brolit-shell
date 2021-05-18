@@ -274,7 +274,7 @@ function check_packages_required() {
   else
 
     # PHP is installed, now checking WP-CLI
-    WPCLI_INSTALLED=$(wpcli_check_if_installed)
+    WPCLI_INSTALLED="$(wpcli_check_if_installed)"
     if [[ ${WPCLI_INSTALLED} = "true" ]]; then
       wpcli_update
     else
@@ -341,7 +341,7 @@ function selected_package_installation() {
 
   local chosen_apps
 
-  chosen_apps=$(whiptail --title "Apps Selection" --checklist "Select the apps you want to install:" 20 78 15 "${apps_to_install[@]}" 3>&1 1>&2 2>&3)
+  chosen_apps="$(whiptail --title "Apps Selection" --checklist "Select the apps you want to install:" 20 78 15 "${apps_to_install[@]}" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 

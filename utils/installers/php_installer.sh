@@ -86,9 +86,11 @@ function php_select_version_to_install() {
 
   chosen_phpv="$(whiptail --title "PHP Version Selection" --checklist "Select the versions of PHP you want to install:" 20 78 15 "${phpv_to_install[@]}" 3>&1 1>&2 2>&3)"
 
-  for phpv in $chosen_phpv; do
+  log_event "debug" "php_vs=${chosen_phpv}"
+  
+  for phpv in ${chosen_phpv}; do
 
-    phpv=$(sed -e 's/^"//' -e 's/"$//' <<<${phpv}) #needed to ommit double quotes
+    phpv="$(sed -e 's/^"//' -e 's/"$//' <<<${phpv})" #needed to ommit double quotes
 
     php_installer "${phpv}"
 
