@@ -132,6 +132,79 @@ function _cloudflare_get_zone_id() {
 
 }
 
+function _php_check_installed_version() {
+
+    local php_fpm_installed_pkg
+    local php_installed_versions
+
+    # Installed versions
+    php_fpm_installed_pkg="$(sudo dpkg --list | grep -oh 'php[0-9]\.[0-9]\-fpm')"
+
+    # Grep -oh parameters explanation:
+    #
+    # -h, --no-filename
+    #   Suppress the prefixing of file names on output. This is the default
+    #   when there is only  one  file  (or only standard input) to search.
+    # -o, --only-matching
+    #   Print  only  the matched (non-empty) parts of a matching line,
+    #   with each such part on a separate output line.
+    #
+    # In this case, output example: php7.2-fpm php7.3-fpm php7.4-fpm
+
+    # Extract only version numbers
+    php_installed_versions="$(echo -n "${php_fpm_installed_pkg}" | grep -Eo '[+-]?[0-9]+([.][0-9]+)?' | tr '\n' ' ')"
+    # The "tr '\n' ' '" part, will replace /n with space
+    # Return example: 7.4 7.2 7.0
+
+    # Check elements number on string
+    count_elements="$(echo "${php_installed_versions}" | wc -w)"
+
+    if [[ $count_elements == "1" ]]; then
+
+        # Remove last space
+        php_installed_versions="$(string_remove_spaces "${php_installed_versions}")"
+
+    fi
+
+    log_event "debug" "Setting php_installed_versions=${php_installed_versions}"
+
+    # Return
+    echo "${php_installed_versions}"
+
+}
+
+function _mysql_check_installed_version() {
+
+    local mysql_fpm_installed_pkg
+    local mysql_installed_version
+
+    # Installed versions
+    mysql_fpm_installed_pkg="$(sudo dpkg --list | grep -oh 'mysql-server-core-[0-9]\.[0-9]')"
+
+    # Grep -oh parameters explanation:
+    #
+    # -h, --no-filename
+    #   Suppress the prefixing of file names on output. This is the default
+    #   when there is only  one  file  (or only standard input) to search.
+    # -o, --only-matching
+    #   Print  only  the matched (non-empty) parts of a matching line,
+    #   with each such part on a separate output line.
+    #
+    # In this case, output example: mysql-server-core-5.7
+
+    # Extract only version numbers
+    mysql_installed_version="$(echo -n "${mysql_fpm_installed_pkg}" | grep -Eo '[+-]?[0-9]+([.][0-9]+)?' | tr '\n' ' ')"
+    # The "tr '\n' ' '" part, will replace /n with space
+    # Return example: 5.7
+
+    # Remove last space
+    mysql_installed_version="$(_string_remove_spaces "${mysql_installed_version}")"
+
+    # Return
+    echo "${mysql_installed_version}"
+
+}
+
 ################################################################################
 
 # Creates an archive (*.tar.gz) from given directory
@@ -322,6 +395,29 @@ function dropbox_get_backup() {
     echo "{"
     echo "\"BACKUPS_RESULT\": [ ${backup_files} ],"
     echo "}"
+
+}
+
+function packages_get_data() {
+
+    local php_v_installed
+    local all_phpv
+
+    php_v_installed="$(_php_check_installed_version)"
+
+    for php_v in ${php_v_installed}; do
+
+        all_phpv="${all_phpv} , \"${php_v}\""
+
+    done
+
+    mysql_v_installed="$(_mysql_check_installed_version)"
+
+    # Remove 3 last chars
+    all_phpv="${all_phpv:3}"
+
+    # Return JSON
+    echo "{ \"WEBSERVER_RESULT\": { \"nginx\" : \"1.14\" }, \"DBE_RESULT\": { \"maria-db\" : \"${mysql_v_installed}\" }, \"PHP_RESULT\": [ ${all_phpv} ] }"
 
 }
 
