@@ -274,7 +274,7 @@ function nginx_server_change_phpv() {
     # TODO: if $new_php_v is not set, must ask wich PHP_V
 
     if [[ ${new_php_v} = "" ]]; then
-        new_php_v=$(php_check_activated_version)
+        new_php_v="$(php_check_activated_version)"
 
     fi
 
@@ -285,7 +285,7 @@ function nginx_server_change_phpv() {
     # TODO: ask wich version of php want to work with
 
     # Get current php version
-    current_php_v=$(nginx_server_get_current_phpv "${nginx_server_file}")
+    current_php_v="$(nginx_server_get_current_phpv "${nginx_server_file}")"
 
     # Replace string to match PHP version
     sed -i "s#${current_php_v}#${new_php_v}#" "${nginx_server_file}"
