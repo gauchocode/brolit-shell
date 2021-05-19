@@ -204,27 +204,30 @@ function _check_distro() {
 
   # Running Ubuntu?
   DISTRO="$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $1}')"
-  if [[ ! ${DISTRO} = "Ubuntu" ]]; then
+
+  if [[ ! ${DISTRO} == "Ubuntu" ]]; then
+
     log_event "critical" "This script only run on Ubuntu ... Exiting" "true"
     return 1
 
   else
+
     MIN_V="$(echo "18.04" | awk -F "." '{print $1$2}')"
     DISTRO_V="$(get_ubuntu_version)"
 
-    log_event "info" "ACTUAL DISTRO: ${DISTRO} ${DISTRO_V}"
+    log_event "info" "Actual linux distribution: ${DISTRO} ${DISTRO_V}"
 
     if [[ ! ${DISTRO_V} -ge ${MIN_V} ]]; then
-      whiptail --title "UBUNTU VERSION WARNING" --msgbox "Ubuntu version must be 18.04 or 20.04! Use this script only for backup or restore purpose." 8 78
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-        distro_old="true"
-        log_event "info" "Setting distro_old: ${distro_old}"
 
-      else
-        return 1
+      event_log "WARNING" "Ubuntu version must be 18.04 or 20.04! Use this script only for backup or restore purpose." "true"
 
-      fi
+      spinner_start "Script starts in 5 seconds ..."
+      sleep 3
+      spinner_stop $?
+
+      distro_old="true"
+
+      log_event "debug" "Setting distro_old: ${distro_old}"
 
     fi
 
