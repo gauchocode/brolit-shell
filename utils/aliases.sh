@@ -177,7 +177,7 @@ function _mysql_check_installed_version() {
     local mysql_installed_version
 
     # Installed versions
-    mysql_fpm_installed_pkg="$(sudo dpkg --list | grep -oh 'mysql-server-core-[0-9]\.[0-9]')"
+    mysql_fpm_installed_pkg="$(sudo dpkg --list | grep -Eo '[0-9]+([.][0-9]+)?')"
 
     # Grep -oh parameters explanation:
     #
@@ -200,6 +200,21 @@ function _mysql_check_installed_version() {
 
     # Return
     echo "${mysql_installed_version}"
+
+}
+
+function _nginx_check_installed_version() {
+
+    local nginx_installed_version
+
+    # Installed versions
+    nginx_installed_version="$(nginx -v | awk -F' ' '{print $3}' | grep -o '[0-9.]*$')"
+
+    # Remove last space
+    #nginx_installed_version="$(_string_remove_spaces "${nginx_installed_version}")"
+
+    # Return
+    echo "${nginx_installed_version}"
 
 }
 
