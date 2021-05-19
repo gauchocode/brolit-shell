@@ -219,7 +219,7 @@ function _check_distro() {
 
     if [[ ! ${DISTRO_V} -ge ${MIN_V} ]]; then
 
-      event_log "WARNING" "Ubuntu version must be 18.04 or 20.04! Use this script only for backup or restore purpose." "true"
+      log_event "WARNING" "Ubuntu version must be 18.04 or 20.04! Use this script only for backup or restore purpose." "true"
 
       spinner_start "Script starts in 5 seconds ..."
       sleep 3
