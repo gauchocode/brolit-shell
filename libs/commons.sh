@@ -1201,7 +1201,7 @@ function ask_root_domain() {
   local suggested_root_domain=$1
   local root_domain
 
-  root_domain=$(whiptail --title "Root Domain" --inputbox "Confirm the root domain of the project." 10 60 "${suggested_root_domain}" 3>&1 1>&2 2>&3)
+  root_domain="$(whiptail --title "Root Domain" --inputbox "Confirm the root domain of the project." 10 60 "${suggested_root_domain}" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -1458,9 +1458,9 @@ function ask_rootdomain_for_cloudflare_config() {
   local root_domain=$1
 
   if [[ -z "${root_domain}" ]]; then
-    root_domain=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)
+    root_domain="$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)"
   else
-    root_domain=$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the Project (Only for Cloudflare API). Example: broobe.com" 10 60 "${root_domain}" 3>&1 1>&2 2>&3)
+    root_domain="$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the project (Only for Cloudflare API). Example: broobe.com" 10 60 "${root_domain}" 3>&1 1>&2 2>&3)"
   fi
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -1508,7 +1508,7 @@ function ask_folder_to_install_sites() {
 
   if [[ -z "${folder_to_install}" ]]; then
 
-    folder_to_install=$(whiptail --title "Folder to work with" --inputbox "Please select the project folder you want to work with:" 10 60 "${folder_to_install}" 3>&1 1>&2 2>&3)
+    folder_to_install="$(whiptail --title "Folder to work with" --inputbox "Please select the project folder you want to work with:" 10 60 "${folder_to_install}" 3>&1 1>&2 2>&3)"
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -1540,7 +1540,7 @@ function ask_mysql_root_psw() {
   # Check MySQL credentials on .my.cnf
   if [[ ! -f ${MYSQL_CONF} ]]; then
 
-    mysql_root_pass=$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root password" 10 60 "${mysql_root_pass}" 3>&1 1>&2 2>&3)
+    mysql_root_pass="$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root password" 10 60 "${mysql_root_pass}" 3>&1 1>&2 2>&3)"
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -1961,8 +1961,9 @@ function menu_project_utils() {
         database_user_passw="$(openssl rand -hex 12)"
 
         mysql_database_create "${project_name}_${project_state}"
-        mysql_user_create "${project_name}_user" "${database_user_passw}" ""
-        mysql_user_grant_privileges "${project_name}_user" "${project_name}_${project_state}"
+        mysql_user_db_scope="$(mysql_ask_user_db_scope)"
+        mysql_user_create "${project_name}_user" "${database_user_passw}" "${mysql_user_db_scope}"
+        mysql_user_grant_privileges "${project_name}_user" "${project_name}_${project_state}" "${mysql_user_db_scope}"
 
         # TODO: check if is a wp project
         # TODO: change wp-config.php on wp projects

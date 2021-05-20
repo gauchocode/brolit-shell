@@ -4,7 +4,7 @@
 # Version: 3.0.25
 #############################################################################
 
-function _mysql_ask_user_db_scope() {
+function mysql_ask_user_db_scope() {
 
     # $1 = ${db_scope} - optional
 
@@ -132,7 +132,7 @@ function mysql_user_create() {
 
     # DB user host
     if [[ -z ${db_user_scope} || ${db_user_scope} == "" ]]; then
-        db_user_scope="$(_mysql_ask_user_db_scope "localhost")"
+        db_user_scope="$(mysql_ask_user_db_scope "localhost")"
     fi
 
     # Query
@@ -195,7 +195,7 @@ function mysql_user_delete() {
 
     # DB user host
     if [[ -z ${db_user_scope} || ${db_user_scope} == "" ]]; then
-        db_user_scope="$(_mysql_ask_user_db_scope "localhost")"
+        db_user_scope="$(mysql_ask_user_db_scope "localhost")"
     fi
 
     # Query
@@ -354,7 +354,7 @@ function mysql_user_grant_privileges() {
 
     # DB user host
     if [[ ${db_scope} == "" ]]; then
-        db_scope="$(_mysql_ask_user_db_scope "localhost")"
+        db_scope="$(mysql_ask_user_db_scope "localhost")"
     fi
 
     # Query
