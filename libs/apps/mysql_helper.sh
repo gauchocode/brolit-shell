@@ -4,13 +4,13 @@
 # Version: 3.0.25
 #############################################################################
 
-function mysql_ask_user_db_scope() {
+function _mysql_ask_user_db_scope() {
 
     # $1 = ${db_scope} - optional
 
     local db_scope=$1
 
-    db_scope=$(whiptail --title "MySQL User Scope" --inputbox "Set the scope for the database user. You can use '%' to accept all connections." 10 60 "${db_scope}" 3>&1 1>&2 2>&3)
+    db_scope="$(whiptail --title "MySQL User Scope" --inputbox "Set the scope for the database user. You can use '%' to accept all connections." 10 60 "${db_scope}" 3>&1 1>&2 2>&3)"
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -130,9 +130,9 @@ function mysql_user_create() {
     # Log
     display --indent 2 --text "- Creating MySQL user ${db_user}"
 
-    # Define user scope
+    # DB user host
     if [[ -z ${db_user_scope} || ${db_user_scope} == "" ]]; then
-        db_user_scope='localhost'
+        db_user_scope="$(_mysql_ask_user_db_scope "localhost")"
     fi
 
     # Query
@@ -193,9 +193,9 @@ function mysql_user_delete() {
     display --indent 6 --text "- Deleting user ${db_user}"
     log_event "info" "Deleting ${db_user} user in MySQL ..."
 
-    # Define user scope
+    # DB user host
     if [[ -z ${db_user_scope} || ${db_user_scope} == "" ]]; then
-        db_user_scope='localhost'
+        db_user_scope="$(_mysql_ask_user_db_scope "localhost")"
     fi
 
     # Query
@@ -352,8 +352,9 @@ function mysql_user_grant_privileges() {
     # Log
     display --indent 6 --text "- Granting privileges to ${db_user}"
 
+    # DB user host
     if [[ ${db_scope} == "" ]]; then
-        db_scope="$(mysql_ask_user_db_scope "localhost")"
+        db_scope="$(_mysql_ask_user_db_scope "localhost")"
     fi
 
     # Query
