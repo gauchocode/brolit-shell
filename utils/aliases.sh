@@ -208,7 +208,7 @@ function _nginx_check_installed_version() {
     local nginx_installed_version
 
     # Installed versions
-    nginx_installed_version="$(nginx -v | awk -F' ' '{print $3}' | grep -o '[0-9.]*$')"
+    nginx_installed_version="$(nginx -v | awk -F' ' '{print $3}' | grep -o '[0-9.]*$' | tr '\n' ' ')"
 
     # Remove last space
     #nginx_installed_version="$(_string_remove_spaces "${nginx_installed_version}")"
@@ -380,20 +380,26 @@ function cloudflare_domain_exists() {
 
 }
 
+# TODO: {"2020-05-19":{"files":"ZZZZZ1","database":"YYYY1"},"2020-05-20":{"files":"ZZZZZ2","database":"YYYY2"}}
 function dropbox_get_backup() {
 
     # ${1} = ${chosen_project}
 
     local chosen_project=$1
 
-    local dropbox_chosen_backup_path
-    local dropbox_backup_list
+    local dropbox_site_backup_path
+    local dropbox_db_backup_path
+    local dropbox_site_backup_list
+    local dropbox_db_backup_list
 
     local backup_files
 
     # Get dropbox backup list
-    dropbox_chosen_backup_path="${VPSNAME}/site/${chosen_project}"
-    dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}")"
+    dropbox_site_backup_path="${VPSNAME}/site/${chosen_project}"
+    dropbox_site_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_site_backup_path}")"
+
+    dropbox_db_backup_path="${VPSNAME}/database/${chosen_project}"
+    dropbox_db_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_db_backup_path}")"
 
     for backup_file in ${dropbox_backup_list}; do
 
