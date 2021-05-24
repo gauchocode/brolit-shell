@@ -173,33 +173,27 @@ function _php_check_installed_version() {
 
 function _mysql_check_installed_version() {
 
-    local mysql_fpm_installed_pkg
+    local mysql_installed_pkg
     local mysql_installed_version
 
-    # Installed versions
-    mysql_fpm_installed_pkg="$(sudo dpkg --list | grep -Eo '[0-9]+([.][0-9]+)?')"
+    # MySQL or MariaDB?
+    mysql_installed_pkg="$(sudo dpkg --list | grep -Eo 'mysql-client-[0-9]+([.][0-9]+)?')"
+    if [[ ${mysql_installed_pkg} == "" ]]; then
 
-    # Grep -oh parameters explanation:
-    #
-    # -h, --no-filename
-    #   Suppress the prefixing of file names on output. This is the default
-    #   when there is only  one  file  (or only standard input) to search.
-    # -o, --only-matching
-    #   Print  only  the matched (non-empty) parts of a matching line,
-    #   with each such part on a separate output line.
-    #
-    # In this case, output example: mysql-server-core-5.7
+        mysql_installed_pkg="$(sudo dpkg --list | grep -Eo 'mariadb-client-[0-9]+([.][0-9]+)?')"
+
+    fi
+
+    # Installed versions
 
     # Extract only version numbers
-    mysql_installed_version="$(echo -n "${mysql_fpm_installed_pkg}" | grep -Eo '[+-]?[0-9]+([.][0-9]+)?' | tr '\n' ' ')"
-    # The "tr '\n' ' '" part, will replace /n with space
-    # Return example: 5.7
+    mysql_installed_version="$(mysql -V | awk -F' ' '{print $3}' | grep -o '[0-9.]*$' | tr '\n' ' ')"
 
     # Remove last space
     mysql_installed_version="$(_string_remove_spaces "${mysql_installed_version}")"
 
     # Return
-    echo "${mysql_installed_version}"
+    echo "{\"name\":\"${mysql_installed_pkg}\",\"version\":\"${mysql_installed_version}\",\"default\":\"true\"},"
 
 }
 
@@ -210,11 +204,24 @@ function _nginx_check_installed_version() {
     # Installed versions
     nginx_installed_version="$(nginx -v | awk -F' ' '{print $3}' | grep -o '[0-9.]*$' | tr '\n' ' ')"
 
-    # Remove last space
-    #nginx_installed_version="$(_string_remove_spaces "${nginx_installed_version}")"
+    if [[ ${nginx_installed_version} != "" ]]; then
+        # Return
+        echo "{\"name\":\"nginx\",\"version\":\"${nginx_installed_version}\",\"default\":\"true\"},"
+    fi
 
-    # Return
-    echo "${nginx_installed_version}"
+}
+
+function _apache_check_installed_version() {
+
+    local apache_installed_version
+
+    # Installed versions
+    apache_installed_version="$(apache2 -v | awk -F' ' '{print $3}' | grep -o '[0-9.]*$' | tr '\n' ' ' | cut -d " " -f 1)"
+
+    if [[ ${apache_installed_version} != "" ]]; then
+        # Return
+        echo "{\"name\":\"apache2\",\"version\":\"${apache_installed_version}\",\"default\":\"true\"},"
+    fi
 
 }
 
@@ -417,11 +424,31 @@ function dropbox_get_backup() {
 
 }
 
+# {
+#  "webservers":[
+#    {"name":"nginx","version":"1.0","default":"true"},
+#    {"name":"nginx","version":"2.0","default":"false"},
+#    {"name":"apache","version":"2.0","default":"false"}
+#   ],
+# "databases":[
+#    {"name":"mysql","version":"1.0","default":"true"},
+#    {"name":"mariadb","version":"2.0","default":"false"}
+#   ],
+#"languages":[{"name":"php","version":"7.4","default":"true"},{"name":"php","version":"7.3","default":"false"}]}
+
 function packages_get_data() {
 
     local php_v_installed
     local all_phpv
 
+    # webserver
+    apache_v_installed="$(_apache_check_installed_version)"
+    nginx_v_installed="$(_nginx_check_installed_version)"
+
+    # databases
+    mysql_v_installed="$(_mysql_check_installed_version)"
+
+    # languages
     php_v_installed="$(_php_check_installed_version)"
 
     for php_v in ${php_v_installed}; do
@@ -430,13 +457,11 @@ function packages_get_data() {
 
     done
 
-    mysql_v_installed="$(_mysql_check_installed_version)"
-
     # Remove 3 last chars
     all_phpv="${all_phpv:3}"
 
     # Return JSON
-    echo "\"WEBSERVER_RESULT\": { \"nginx\" : \"1.14\" }, \"DBE_RESULT\": { \"maria-db\" : \"${mysql_v_installed}\" }, \"PHP_RESULT\": [ ${all_phpv} ]"
+    echo "\"webservers\": { \"nginx\" : \"1.14\" }, \"databases\": { \"maria-db\" : \"${mysql_v_installed}\" }, \"languages\": [ ${all_phpv} ]"
 
 }
 
