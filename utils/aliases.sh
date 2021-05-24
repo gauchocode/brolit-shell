@@ -448,7 +448,9 @@ function dropbox_get_backup() {
 
     # ${1} = ${chosen_project}
 
-    local chosen_project=$1
+    local project_domain=$1
+
+    local project_name
 
     local dropbox_site_backup_path
     #local dropbox_db_backup_path
@@ -459,42 +461,43 @@ function dropbox_get_backup() {
     local backup_db
     local backup_date
 
-    if [[ ${chosen_project} == "" ]];then
+    if [[ ${project_domain} == "" ]];then
         exit 1
     fi
 
+    project_name="$(basename "${project_domain}")"
+
     # Get dropbox backup list
-    dropbox_site_backup_path="${VPSNAME}/site/${chosen_project}"
+    dropbox_site_backup_path="${VPSNAME}/site/${project_domain}"
     dropbox_site_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_site_backup_path}")"
 
-    #dropbox_db_backup_path="${VPSNAME}/database/${chosen_project}"
+    #dropbox_db_backup_path="${VPSNAME}/database/${project_name}"
     #dropbox_db_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_db_backup_path}")"
 
     for backup_file in ${dropbox_site_backup_list}; do
 
         backup_date="$(_get_backup_date "${backup_file}")"
 
-        backup_db="${chosen_project}_database_${backup_date}.tar.bz2"
+        backup_to_search="${project_name}*_database_${backup_date}.tar.bz2"
 
-        search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_db}")"
+        search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${backup_date}")"
 
-        log_event "debug" "$("${DROPBOX_UPLOADER}" -hq search "${backup_db}")" "false"
+        echo "command executed: ${DROPBOX_UPLOADER} -hq search ${backup_to_search} | grep -E ${backup_date}"
 
-        if [[ $search_backup_db == "true" ]];then
-            backups_string="{\"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"${backup_db}\"},"
+        backup_db="$(basename "${search_backup_db}")"
+
+        if [[ ${search_backup_db} != "" ]];then
+            backups_string="${backups_string} {\"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"${backup_db}\"},"
         else
-            backups_string="{\"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"false\"},"
+            backups_string="${backups_string} {\"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"false\"},"
         fi
 
 
     done
 
-    # Remove 3 last chars
-    backups_string="${backups_string:3}"
-
     # Return JSON part
     echo "{"
-    echo "\"backups\": ${backups_string},"
+    echo "\"backups\": ${backups_string}"
     echo "}"
 
 }
@@ -548,9 +551,6 @@ function packages_get_data() {
         all_php_data="${all_php_data} , \"${phpv_data}\""
 
     done
-
-    # Remove 3 last chars
-    #all_php_data="${all_php_data:3}"
 
     # Return JSON part
     echo "\"webservers\":[ \"${nginx_v_installed}\", \"${apache_v_installed}\" ], \"databases\": [ \"${mysql_v_installed}\" ], \"languages\": [ ${all_php_data} ]"

@@ -213,7 +213,7 @@ function wordpress_project_copy() {
     log_event "info" "Making a copy of ${copy_project} on ${project_dir} ..."
 
     #cd "${folder_to_install}"
-    copy_project_files "${folder_to_install}/${copy_project}" "${project_dir}"
+    copy_files "${folder_to_install}/${copy_project}" "${project_dir}"
 
     # Logging
     display --indent 6 --text "- Making a copy of the WordPress project" --result "DONE" --color GREEN
