@@ -387,7 +387,7 @@ function _extract_domain_extension() {
   local domain_extension
   local domain_no_ext
 
-  domain_extension="$(get_domain_extension "${domain}")"
+  domain_extension="$(_get_domain_extension "${domain}")"
   domain_extension_output=$?
   if [[ ${domain_extension_output} -eq 0 ]]; then
 
@@ -674,7 +674,7 @@ function dropbox_get_backup() {
 
         search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${backup_date}")"
 
-        echo "command executed: ${DROPBOX_UPLOADER} -hq search ${backup_to_search} | grep -E ${backup_date}"
+        #echo "command executed: ${DROPBOX_UPLOADER} -hq search ${backup_to_search} | grep -E ${backup_date}"
 
         backup_db="$(basename "${search_backup_db}")"
 
