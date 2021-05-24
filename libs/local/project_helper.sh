@@ -8,6 +8,48 @@
 # TODO: check when add www.DOMAIN.com and then select other stage != prod
 #
 
+function get_project_name_from_domain() {
+
+  # Parameters
+  # $1 = ${project_domain}
+
+  local project_domain=$1
+
+  # Trying to extract project name from domain
+  root_domain="$(get_root_domain "${project_domain}")"
+  possible_project_name="$(extract_domain_extension "${root_domain}")"
+
+  # Replace '-' and '.' chars
+  possible_name="$(echo "${project_name}" | sed -r 's/[.-]+/_/g')"
+
+  # Return
+  echo "${possible_name}"
+
+}
+
+function get_project_state_from_domain() {
+
+  # Parameters
+  # $1 = ${project_domain}
+
+  local project_domain=$1
+
+  project_states="dev,test,stage"
+
+  # Trying to extract project state from domain
+  possible_project_state="$(get_subdomain_part "${project_domain}" | cut -d "." -f 1)"
+
+  if [[ ${possible_project_state} != *"${project_states}"* ]];then
+
+    possible_project_state="prod"
+
+  fi
+
+  # Return
+  echo "${possible_project_state}"
+
+}
+
 function project_create_config() {
 
   # $1 = ${project_path}
@@ -54,30 +96,30 @@ function project_get_configured_database() {
 
   case ${project_type} in
 
-    wordpress)
+  wordpress)
 
-      wpconfig_path=$(wp_config_path "${project_path}")
+    wpconfig_path=$(wp_config_path "${project_path}")
 
-      db_name=$(cat "${wpconfig_path}/wp-config.php" | grep DB_NAME | cut -d \' -f 4)
+    db_name=$(cat "${wpconfig_path}/wp-config.php" | grep DB_NAME | cut -d \' -f 4)
 
-      # Return
-      echo "${db_name}"
-      
+    # Return
+    echo "${db_name}"
+
     ;;
 
-    laravel)
-      display --indent 8 --text "Project Type Laravel" --tcolor RED
-      return 1
+  laravel)
+    display --indent 8 --text "Project Type Laravel" --tcolor RED
+    return 1
     ;;
 
-    yii)
-      display --indent 8 --text "Project Type Yii" --tcolor RED
-      return 1
+  yii)
+    display --indent 8 --text "Project Type Yii" --tcolor RED
+    return 1
     ;;
 
-    *)
-      display --indent 8 --text "Project Type Unknown" --tcolor RED
-      return 1
+  *)
+    display --indent 8 --text "Project Type Unknown" --tcolor RED
+    return 1
     ;;
 
   esac
@@ -94,31 +136,31 @@ function project_get_configured_database_user() {
 
   case $project_type in
 
-      wordpress)
+  wordpress)
 
-        db_user=$(cat "${project_path}"/wp-config.php | grep DB_USER | cut -d \' -f 4)
+    db_user=$(cat "${project_path}"/wp-config.php | grep DB_USER | cut -d \' -f 4)
 
-        # Return
-        echo "${db_user}"
-        
-      ;;
+    # Return
+    echo "${db_user}"
 
-      laravel)
-        display --indent 8 --text "Project Type Laravel" --tcolor RED
-        return 1
-      ;;
+    ;;
 
-      yii)
-        display --indent 8 --text "Project Type Yii" --tcolor RED
-        return 1
-      ;;
+  laravel)
+    display --indent 8 --text "Project Type Laravel" --tcolor RED
+    return 1
+    ;;
 
-      *)
-        display --indent 8 --text "Project Type Unknown" --tcolor RED
-        return 1
-      ;;
+  yii)
+    display --indent 8 --text "Project Type Yii" --tcolor RED
+    return 1
+    ;;
 
-    esac
+  *)
+    display --indent 8 --text "Project Type Unknown" --tcolor RED
+    return 1
+    ;;
+
+  esac
 
 }
 
@@ -132,30 +174,30 @@ function project_get_configured_database_userpassw() {
 
   case $project_type in
 
-      wordpress)
-        db_pass=$(cat "${project_path}"/wp-config.php | grep DB_PASSWORD | cut -d \' -f 4)
-        
-        # Return
-        echo "${db_pass}"
+  wordpress)
+    db_pass=$(cat "${project_path}"/wp-config.php | grep DB_PASSWORD | cut -d \' -f 4)
 
-      ;;
+    # Return
+    echo "${db_pass}"
 
-      laravel)
-        display --indent 8 --text "Project Type Laravel" --tcolor RED
-        return 1
-      ;;
+    ;;
 
-      yii)
-        display --indent 8 --text "Project Type Yii" --tcolor RED
-        return 1
-      ;;
+  laravel)
+    display --indent 8 --text "Project Type Laravel" --tcolor RED
+    return 1
+    ;;
 
-      *)
-        display --indent 8 --text "Project Type Unknown" --tcolor RED
-        return 1
-      ;;
+  yii)
+    display --indent 8 --text "Project Type Yii" --tcolor RED
+    return 1
+    ;;
 
-    esac
+  *)
+    display --indent 8 --text "Project Type Unknown" --tcolor RED
+    return 1
+    ;;
+
+  esac
 
 }
 
@@ -179,7 +221,7 @@ function project_install() {
   fi
 
   log_section "Project Installer (${project_type})"
-  
+
   if [[ ${project_domain} == '' ]]; then
     project_domain="$(ask_project_domain)"
   fi
@@ -206,28 +248,28 @@ function project_install() {
 
   case ${project_type} in
 
-    wordpress)
+  wordpress)
 
-      # Execute function
-      wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
+    # Execute function
+    wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
 
-      ;;
+    ;;
 
-    laravel)
-      # Execute function
-      # laravel_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
-      log_event "error" "Laravel installer should be implemented soon, aborting ..."
-      ;;
+  laravel)
+    # Execute function
+    # laravel_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
+    log_event "error" "Laravel installer should be implemented soon, aborting ..."
+    ;;
 
-    php)
+  php)
 
-      php_project_install "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
+    php_project_install "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
 
-      ;;
+    ;;
 
-    *)
-      log_event "error" "Project Type ${project_type} unkwnown, aborting ..."
-      ;;
+  *)
+    log_event "error" "Project Type ${project_type} unkwnown, aborting ..."
+    ;;
 
   esac
 
@@ -247,7 +289,7 @@ function project_delete_files() {
   log_subsection "Delete Files"
 
   # Trying to know project type
-  project_type=$(get_project_type "${SITES}/${project_domain}")
+  project_type=$(project_get_type "${SITES}/${project_domain}")
 
   # TODO: if project_type = wordpress, get database credentials from wp-config.php
   #project_db_name=$(get_project_db_name "${project_type}")
@@ -267,9 +309,9 @@ function project_delete_files() {
 
     # Moving deleted project backups to another dropbox directory
     log_event "info" "${DROPBOX_UPLOADER} move ${VPSNAME}/${BK_TYPE}/${project_domain} /${VPSNAME}/offline-site"
-    
+
     dropbox_output="$(${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${project_domain}" "/${VPSNAME}/offline-site" 2>&1)"
-    
+
     # TODO: if destination folder already exists, it fails
     display --indent 6 --text "- Moving to offline projects on Dropbox" --result "DONE" --color GREEN
 
@@ -294,13 +336,13 @@ function project_delete_files() {
     project_domain=$(whiptail --title "CLOUDFLARE MANAGER" --inputbox "Do you want to delete the Cloudflare entries for the followings subdomains?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
-    
-        # Delete Cloudflare entries
-        cloudflare_delete_a_record "${project_domain}"
+
+      # Delete Cloudflare entries
+      cloudflare_delete_a_record "${project_domain}"
 
     else
 
-        log_event "info" "Cloudflare entries not deleted. Skipped by user."
+      log_event "info" "Cloudflare entries not deleted. Skipped by user."
 
     fi
 
@@ -319,95 +361,95 @@ function project_delete_files() {
 
 function project_delete_database() {
 
-    # $1 = {database}
+  # $1 = {database}
 
-    local database=$1
+  local database=$1
 
-    local databases
-    local chosen_database
+  local databases
+  local chosen_database
 
-    # TODO: if project_db_name, project_db_user and project_db_pass are defined 
-    #       and can connect to db, only ask for delete confirmation
+  # TODO: if project_db_name, project_db_user and project_db_pass are defined
+  #       and can connect to db, only ask for delete confirmation
 
-    # List databases
-    databases="$(mysql_list_databases)"
-    chosen_database="$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)"
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
+  # List databases
+  databases="$(mysql_list_databases)"
+  chosen_database="$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)"
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Log
+    log_subsection "Delete Database"
+
+    BK_TYPE="database"
+
+    # TO-FIX:
+    #   With deb04_broobe_prod this DB_NAME, fails to extract suffix:
+    #   - Deleting deb04_broobe_prod_user user in MySQL             [ FAIL ]
+
+    # Remove DB suffix to get project_name
+    suffix="$(cut -d'_' -f2 <<<${chosen_database})"
+    project_name=${chosen_database%"_$suffix"}
+
+    user_db="${project_name}_user"
+
+    # Make a database Backup
+    make_database_backup "${BK_TYPE}" "${chosen_database}"
+
+    # Moving deleted project backups to another dropbox directory
+    ${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${chosen_database}" "/${VPSNAME}/offline-site" 1>&2
+
+    # Log
+    log_event "debug" "Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${chosen_database} /${VPSNAME}/offline-site"
+    display --indent 6 --text "- Moving dropbox backup to offline directory" --result "DONE" --color GREEN
+
+    # Delete project database
+    mysql_database_drop "${chosen_database}"
+
+    # Send notification
+    send_notification "⚠️ ${VPSNAME}" "Project database'${chosen_database}' deleted!"
+
+    # Delete mysql user
+    while true; do
+
+      echo -e "${B_RED}${ITALIC} > Do you want to remove database user? Maybe is used by another project.${ENDCOLOR}"
+      read -p "Please type 'y' or 'n'" yn
+
+      case $yn in
+
+      [Yy]*)
 
         # Log
-        log_subsection "Delete Database"
+        clear_last_line
+        clear_last_line
 
-        BK_TYPE="database"
+        # User delete
+        mysql_user_delete "${user_db}"
 
-        # TO-FIX: 
-        #   With deb04_broobe_prod this DB_NAME, fails to extract suffix:
-        #   - Deleting deb04_broobe_prod_user user in MySQL             [ FAIL ]
+        break
 
-        # Remove DB suffix to get project_name
-        suffix="$(cut -d'_' -f2 <<<${chosen_database})"
-        project_name=${chosen_database%"_$suffix"}
+        ;;
 
-        user_db="${project_name}_user"
-
-        # Make a database Backup
-        make_database_backup "${BK_TYPE}" "${chosen_database}"
-
-        # Moving deleted project backups to another dropbox directory       
-        ${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${chosen_database}" "/${VPSNAME}/offline-site" 1>&2
+      [Nn]*)
 
         # Log
-        log_event "debug" "Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${chosen_database} /${VPSNAME}/offline-site"
-        display --indent 6 --text "- Moving dropbox backup to offline directory" --result "DONE" --color GREEN
+        log_event "warning" "Aborting MySQL user deletion ..."
+        display --indent 6 --text "- Deleting MySQL user" --result "SKIPPED" --color YELLOW
 
-        # Delete project database
-        mysql_database_drop "${chosen_database}"
+        break
 
-        # Send notification
-        send_notification "⚠️ ${VPSNAME}" "Project database'${chosen_database}' deleted!"
+        ;;
 
-        # Delete mysql user
-        while true; do
+      *) echo " > Please answer yes or no." ;;
 
-            echo -e "${B_RED}${ITALIC} > Do you want to remove database user? Maybe is used by another project.${ENDCOLOR}"
-            read -p "Please type 'y' or 'n'" yn
+      esac
 
-            case $yn in
+    done
 
-                [Yy]* )
+  else
+    # Return
+    echo "error"
 
-                  # Log
-                  clear_last_line
-                  clear_last_line
-
-                  # User delete
-                  mysql_user_delete "${user_db}"
-                  
-                  break
-
-                ;;
-                
-                [Nn]* )
-
-                  # Log
-                  log_event "warning" "Aborting MySQL user deletion ..."
-                  display --indent 6 --text "- Deleting MySQL user" --result "SKIPPED" --color YELLOW
-
-                  break
-
-                ;;
-
-                * ) echo " > Please answer yes or no.";;
-
-            esac
-
-        done
-
-    else
-        # Return
-        echo "error"
-
-    fi
+  fi
 
 }
 
@@ -437,8 +479,8 @@ function project_delete() {
 
     ### Creating temporary folders
     if [[ ! -d "${SFOLDER}/tmp-backup" ]]; then
-        mkdir "${SFOLDER}/tmp-backup"
-        log_event "info" "Temp files directory created: ${SFOLDER}/tmp-backup"
+      mkdir "${SFOLDER}/tmp-backup"
+      log_event "info" "Temp files directory created: ${SFOLDER}/tmp-backup"
     fi
 
     # Directory_broser returns: " $filepath"/"$filename
@@ -448,7 +490,7 @@ function project_delete() {
       display --indent 2 --text "- Selecting directory for deletion" --result "SKIPPED" --color YELLOW
       log_event "info" "Files deletion skipped ..."
       files_skipped="true"
-    
+
     else
 
       # Removing last slash from string
@@ -458,12 +500,11 @@ function project_delete() {
 
   fi
 
-
   if [[ ${files_skipped} == "false" ]]; then
 
     log_event "info" "Project to delete: ${project_domain}"
     display --indent 2 --text "- Selecting ${project_domain} for deletion" --result "DONE" --color GREEN
-    
+
     # Delete Files
     project_delete_files "${project_domain}"
 
@@ -476,6 +517,55 @@ function project_delete() {
   # Delete tmp backups
   #rm -R ${SFOLDER}/tmp-backup
   #display --indent 2 --text "Please, remove ${SFOLDER}/tmp-backup after check backup was uploaded ok" --tcolor YELLOW
+
+}
+
+function project_change_status() {
+
+  #$1 = ${project_status}
+
+  local project_status=$1
+
+  local to_change
+
+  startdir="${SITES}"
+  directory_browser "${menutitle}" "${startdir}"
+
+  to_change=${filename%/}
+
+  nginx_server_change_status "${to_change}" "${project_status}"
+
+}
+
+function project_get_type() {
+
+  # Parameters
+  # $1 = ${dir_path}
+
+  local dir_path=$1
+
+  local project_type
+  local is_wp
+
+  if [[ ${dir_path} != "" ]]; then
+
+    is_wp="$(wp_config_path "${dir_path}")"
+
+    if [[ ${is_wp} != "" ]]; then
+
+      project_type="wordpress"
+
+    else
+
+      # TODO: implements laravel, yii, and others php framework support
+      project_type="project_type_unknown"
+
+    fi
+
+  fi
+
+  # Return
+  echo "${project_type}"
 
 }
 
@@ -510,7 +600,7 @@ function check_laravel_version() {
 
 }
 
-function php_project_install () {
+function php_project_install() {
 
   # $1 = ${project_path}
   # $2 = ${project_domain}
@@ -527,7 +617,7 @@ function php_project_install () {
   log_subsection "PHP Project Install"
 
   if [[ ${project_root_domain} == '' ]]; then
-    
+
     possible_root_domain="$(get_root_domain "${project_domain}")"
     project_root_domain="$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")"
 
@@ -537,7 +627,7 @@ function php_project_install () {
     # Download WP
     mkdir "${project_path}"
     change_ownership "www-data" "www-data" "${project_path}"
-    
+
     # Log
     #display --indent 6 --text "- Making a copy of the WordPress project" --result "DONE" --color GREEN
 
@@ -554,7 +644,7 @@ function php_project_install () {
   fi
 
   db_project_name=$(mysql_name_sanitize "${project_name}")
-  database_name="${db_project_name}_${project_state}" 
+  database_name="${db_project_name}_${project_state}"
   database_user="${db_project_name}_user"
   database_user_passw="$(openssl rand -hex 12)"
 
@@ -567,7 +657,7 @@ function php_project_install () {
   mkdir "${project_path}"
 
   # Create index.php
-  echo "<?php phpinfo(); ?>" > "${project_path}/index.php"
+  echo "<?php phpinfo(); ?>" >"${project_path}/index.php"
 
   # Change ownership
   change_ownership "www-data" "www-data" "${project_path}"
@@ -600,7 +690,7 @@ function php_project_install () {
       log_event "info" "HTTPS support for ${project_domain} skipped"
       display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
-    fi  
+    fi
 
   else
 
@@ -616,7 +706,7 @@ function php_project_install () {
     cert_project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
-      
+
       certbot_certificate_install "${MAILA}" "${cert_project_domain}"
 
     else
@@ -625,7 +715,7 @@ function php_project_install () {
       display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
     fi
-    
+
   fi
 
   # Log

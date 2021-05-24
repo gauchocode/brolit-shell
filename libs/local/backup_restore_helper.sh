@@ -639,7 +639,7 @@ function restore_type_selection_from_dropbox() {
           if [[ ${chosen_type} == *"${DBS_F}"* ]]; then
 
             # Asking project state with suggested actual state
-            suffix="$(cut -d'_' -f2 <<<"${chosen_project}")"
+            suffix="$(cut -d'_' -f2 <<<${chosen_project})"
             project_state="$(ask_project_state "${suffix}")"
 
             # Extract project_name (its removes last part of db name with "_" char)
@@ -815,7 +815,7 @@ function restore_project() {
     log_event "info" "Backup file ${chosen_backup_to_restore} uncompressed"
 
     # Project Type
-    project_type=$(get_project_type "${TMP_DIR}/${chosen_project}")
+    project_type=$(project_get_type "${TMP_DIR}/${chosen_project}")
 
     log_event "debug" "Project Type: ${project_type}"
 
