@@ -239,6 +239,19 @@ function _apache_check_installed_version() {
 
 }
 
+function _get_backup_date() {
+
+  local backup_file=$1
+
+  local backup_date
+
+  backup_date="$(echo "${backup_file}" | grep -Eo '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')"
+
+  # Return
+  echo "${backup_date}"
+
+}
+
 ################################################################################
 
 # Creates an archive (*.tar.gz) from given directory
@@ -409,35 +422,50 @@ function dropbox_get_backup() {
     local chosen_project=$1
 
     local dropbox_site_backup_path
-    local dropbox_db_backup_path
+    #local dropbox_db_backup_path
     local dropbox_site_backup_list
-    local dropbox_db_backup_list
+    #local dropbox_db_backup_list
 
     local backup_files
+    local backup_db
+    local backup_date
 
     # Get dropbox backup list
     dropbox_site_backup_path="${VPSNAME}/site/${chosen_project}"
     dropbox_site_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_site_backup_path}")"
 
-    dropbox_db_backup_path="${VPSNAME}/database/${chosen_project}"
-    dropbox_db_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_db_backup_path}")"
+    #dropbox_db_backup_path="${VPSNAME}/database/${chosen_project}"
+    #dropbox_db_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_db_backup_path}")"
 
-    for backup_file in ${dropbox_backup_list}; do
+    for backup_file in ${dropbox_site_backup_list}; do
 
-        backup_files="${backup_files} , \"${backup_file}\""
+        backup_date="$(_get_backup_date "${backup_file}")"
+
+        backup_db="${chosen_project}_database_${backup_date}.tar.bz2"
+
+        search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_db}")"
+        log_event "debug" "$("${DROPBOX_UPLOADER}" -hq search "${backup_db}")" "false"
+        if [[ $search_backup_db == "true" ]];then
+            backups_string="{\"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"${backup_db}\"},"
+        else
+            backups_string="{\"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"false\"},"
+        fi
+
 
     done
 
     # Remove 3 last chars
-    backup_files="${backup_files:3}"
+    backups_string="${backups_string:3}"
 
     # Return JSON part
     echo "{"
-    echo "\"backups\": [ ${backup_files} ],"
+    echo "\"backups\": ${backups_string},"
     echo "}"
 
 }
 
+# JSON FORMAT:
+#
 # {
 #  "webservers":[
 #    {"name":"nginx","version":"1.0","default":"true"},
@@ -487,7 +515,7 @@ function packages_get_data() {
     done
 
     # Remove 3 last chars
-    #all_phpv="${all_phpv:3}"
+    #all_php_data="${all_php_data:3}"
 
     # Return JSON part
     echo "\"webservers\":[ \"${nginx_v_installed}\", \"${apache_v_installed}\" ], \"databases\": [ \"${mysql_v_installed}\" ], \"languages\": [ ${all_php_data} ]"

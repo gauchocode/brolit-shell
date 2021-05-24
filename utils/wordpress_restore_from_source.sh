@@ -109,19 +109,19 @@ function wordpress_restore_from_source() {
 
   possible_root_domain="$(get_root_domain "${project_domain}")"
 
-  root_domain=$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")
+  root_domain="$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")"
 
-  project_name=$(ask_project_name "${project_domain}")
+  project_name="$(ask_project_name "${project_domain}")"
 
-  project_state=$(ask_project_state "")
+  project_state="$(ask_project_state "")"
 
-  source_type=$(ask_migration_source_type)
+  source_type="$(ask_migration_source_type)"
 
-  source_files=$(ask_migration_source_file "$source_type")
+  source_files="$(ask_migration_source_file "$source_type")"
 
-  source_database=$(ask_migration_source_db "$source_type")
+  source_database="$(ask_migration_source_db "$source_type")"
 
-  folder_to_install=$(ask_folder_to_install_sites "${SITES}")
+  folder_to_install="$(ask_folder_to_install_sites "${SITES}")"
 
   echo " > CREATING TMP DIRECTORY ..."
   mkdir "${SFOLDER}/tmp"
@@ -154,7 +154,7 @@ function wordpress_restore_from_source() {
 
     # Download File Backup
     log_event "info" "Downloading file backup ${source_files}" "true"
-    wget "${source_files}" >>$LOG
+    wget "${source_files}" >>${LOG}
 
     # Uncompressing
     log_event "info" "Uncompressing file backup: ${bk_f_file}" "true"
@@ -162,7 +162,7 @@ function wordpress_restore_from_source() {
 
     # Download Database Backup
     log_event "info" "Downloading database backup ${source_database}" "true"
-    wget "${source_database}" >>$LOG
+    wget "${source_database}" >>${LOG}
 
     # Create database and user
     db_project_name=$(mysql_name_sanitize "${project_name}")
@@ -182,12 +182,12 @@ function wordpress_restore_from_source() {
     mysql_database_import "${database_name}" "${project_name}.sql"
 
     # Remove downloaded files
-    echo -e ${CYAN}" > Removing downloaded files ..."${ENDCOLOR}
+    log_event "info" "Removing downloaded files ..." "true"
     rm "${SFOLDER}/tmp/${project_domain}/${bk_f_file}"
     rm "${SFOLDER}/tmp/${project_domain}/${bk_db_file}"
 
     # Move to ${folder_to_install}
-    echo -e ${CYAN}" > Moving ${project_domain} to ${folder_to_install} ..."${ENDCOLOR}
+    log_event "info" "Moving ${project_domain} to ${folder_to_install} ..." "true"
     mv "${SFOLDER}/tmp/${project_domain}" "${folder_to_install}/${project_domain}"
 
   fi
@@ -196,7 +196,7 @@ function wordpress_restore_from_source() {
 
   actual_folder="${folder_to_install}/${project_domain}"
 
-  install_path=$(wp_config_path "${actual_folder}")
+  install_path="$(wp_config_path "${actual_folder}")"
   if [[ -z "${install_path}" ]]; then
 
     echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND"${ENDCOLOR}
