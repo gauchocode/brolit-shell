@@ -462,23 +462,6 @@ function install_script_aliases() {
 
 }
 
-function change_project_status() {
-
-  #$1 = ${project_status}
-
-  local project_status=$1
-
-  local to_change
-
-  startdir="${SITES}"
-  directory_browser "${menutitle}" "${startdir}"
-
-  to_change=${filename%/}
-
-  nginx_server_change_status "${to_change}" "${project_status}"
-
-}
-
 #
 #############################################################################
 #
@@ -786,7 +769,7 @@ function get_all_directories() {
 
 }
 
-function copy_project_files() {
+function copy_files() {
 
   # Parameters
   # $1 = ${source_path}
@@ -804,38 +787,6 @@ function copy_project_files() {
     rsync -ax "${source_path}" "${destination_path}"
 
   fi
-
-}
-
-function get_project_type() {
-
-  # Parameters
-  # $1 = ${dir_path}
-
-  local dir_path=$1
-
-  local project_type
-  local is_wp
-
-  if [[ ${dir_path} != "" ]]; then
-
-    is_wp="$(wp_config_path "${dir_path}")"
-
-    if [[ ${is_wp} != "" ]]; then
-
-      project_type="wordpress"
-
-    else
-
-      # TODO: implements laravel, yii, and others php framework support
-      project_type="project_type_unknown"
-
-    fi
-
-  fi
-
-  # Return
-  echo "${project_type}"
 
 }
 
@@ -1376,7 +1327,7 @@ function ask_project_state() {
 function ask_project_name() {
 
   # Parameters
-  #$1 = ${project_name} optional to select default option
+  # $1 = ${project_name} optional to select default option
 
   local project_name=$1
 
@@ -1977,14 +1928,14 @@ function menu_project_utils() {
     if [[ ${chosen_project_utils_options} == *"05"* ]]; then
 
       # PUT PROJECT ONLINE
-      change_project_status "online"
+      project_change_status "online"
 
     fi
 
     if [[ ${chosen_project_utils_options} == *"06"* ]]; then
 
       # PUT PROJECT OFFLINE
-      change_project_status "offline"
+      project_change_status "offline"
 
     fi
 
