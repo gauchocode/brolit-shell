@@ -131,6 +131,18 @@ function menu_backup_options() {
 
 }
 
+function get_backup_date() {
+
+  local backup_file=$1
+
+  local backup_date
+
+  backup_date="$(echo "${backup_file}" | grep -Eo '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')"
+
+  # Return
+  echo "${backup_date}"
+
+}
 ################################################################################
 #
 # IMPORTANT: Maybe a new backup directory structure:
