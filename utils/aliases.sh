@@ -243,206 +243,206 @@ function _apache_check_installed_version() {
 
 function _get_backup_date() {
 
-  local backup_file=$1
+    local backup_file=$1
 
-  local backup_date
+    local backup_date
 
-  backup_date="$(echo "${backup_file}" | grep -Eo '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')"
+    backup_date="$(echo "${backup_file}" | grep -Eo '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')"
 
-  # Return
-  echo "${backup_date}"
+    # Return
+    echo "${backup_date}"
 
 }
 
 function _get_domain_extension() {
 
-  # Parameters
-  # $1 = ${domain}
+    # Parameters
+    # $1 = ${domain}
 
-  local domain=$1
+    local domain=$1
 
-  local first_lvl
-  local next_lvl
-  local domain_ext
+    local first_lvl
+    local next_lvl
+    local domain_ext
 
-  # Get first_lvl domain name
-  first_lvl="$(cut -d'.' -f1 <<<"${domain}")"
+    # Get first_lvl domain name
+    first_lvl="$(cut -d'.' -f1 <<<"${domain}")"
 
-  # Extract first_lvl
-  domain_ext=${domain#"$first_lvl."}
+    # Extract first_lvl
+    domain_ext=${domain#"$first_lvl."}
 
-  next_lvl="${first_lvl}"
+    next_lvl="${first_lvl}"
 
-  local -i count=0
-  while ! grep --word-regexp --quiet ".${domain_ext}" "${SFOLDER}/config/domain_extension-list" && [ ! "${domain_ext#"$next_lvl"}" = "" ]; do
+    local -i count=0
+    while ! grep --word-regexp --quiet ".${domain_ext}" "${SFOLDER}/config/domain_extension-list" && [ ! "${domain_ext#"$next_lvl"}" = "" ]; do
 
-    # Remove next level domain-name
-    domain_ext=${domain_ext#"$next_lvl."}
-    next_lvl="$(cut -d'.' -f1 <<<"${domain_ext}")"
+        # Remove next level domain-name
+        domain_ext=${domain_ext#"$next_lvl."}
+        next_lvl="$(cut -d'.' -f1 <<<"${domain_ext}")"
 
-    count=("$count"+1)
+        count=("$count"+1)
 
-  done
+    done
 
-  if grep --word-regexp --quiet ".${domain_ext}" "${SFOLDER}/config/domain_extension-list"; then
+    if grep --word-regexp --quiet ".${domain_ext}" "${SFOLDER}/config/domain_extension-list"; then
 
-    domain_ext=.${domain_ext}
+        domain_ext=.${domain_ext}
 
-    # Return
-    echo "${domain_ext}"
+        # Return
+        echo "${domain_ext}"
 
-  else
+    else
 
-    return 1
+        return 1
 
-  fi
+    fi
 
 }
 
 function _get_subdomain_part() {
 
-  # Parameters
-  # $1 = ${domain}
+    # Parameters
+    # $1 = ${domain}
 
-  local domain=$1
+    local domain=$1
 
-  local domain_extension
-  local domain_no_ext
-  local subdomain_part
+    local domain_extension
+    local domain_no_ext
+    local subdomain_part
 
-  # Get Domain Ext
-  domain_extension="$(_get_domain_extension "${domain}")"
+    # Get Domain Ext
+    domain_extension="$(_get_domain_extension "${domain}")"
 
-  # Check result
-  domain_extension_output=$?
-  if [[ ${domain_extension_output} -eq 0 ]]; then
+    # Check result
+    domain_extension_output=$?
+    if [[ ${domain_extension_output} -eq 0 ]]; then
 
-    # Remove domain extension
-    domain_no_ext=${domain%"$domain_extension"}
+        # Remove domain extension
+        domain_no_ext=${domain%"$domain_extension"}
 
-    root_domain=${domain_no_ext##*.}${domain_extension}
+        root_domain=${domain_no_ext##*.}${domain_extension}
 
-    if [[ ${root_domain} != "${domain}" ]]; then
+        if [[ ${root_domain} != "${domain}" ]]; then
 
-      subdomain_part=${domain//.$root_domain/}
+            subdomain_part=${domain//.$root_domain/}
 
-      # Return
-      echo "${subdomain_part}"
+            # Return
+            echo "${subdomain_part}"
+
+        else
+
+            # Return
+            echo ""
+
+        fi
 
     else
 
-      # Return
-      echo ""
+        return 1
 
     fi
-
-  else
-
-    return 1
-
-  fi
 
 }
 
 function _get_root_domain() {
 
-  # Parameters
-  # $1 = ${domain}
+    # Parameters
+    # $1 = ${domain}
 
-  local domain=$1
+    local domain=$1
 
-  local domain_extension
-  local domain_no_ext
+    local domain_extension
+    local domain_no_ext
 
-  # Get Domain Ext
-  domain_extension="$(_get_domain_extension "${domain}")"
+    # Get Domain Ext
+    domain_extension="$(_get_domain_extension "${domain}")"
 
-  # Check result
-  domain_extension_output=$?
-  if [[ ${domain_extension_output} -eq 0 ]]; then
+    # Check result
+    domain_extension_output=$?
+    if [[ ${domain_extension_output} -eq 0 ]]; then
 
-    # Remove domain extension
-    domain_no_ext=${domain%"$domain_extension"}
+        # Remove domain extension
+        domain_no_ext=${domain%"$domain_extension"}
 
-    root_domain=${domain_no_ext##*.}${domain_extension}
+        root_domain=${domain_no_ext##*.}${domain_extension}
 
-    # Return
-    echo "${root_domain}"
+        # Return
+        echo "${root_domain}"
 
-  else
+    else
 
-    return 1
+        return 1
 
-  fi
+    fi
 
 }
 
 function _extract_domain_extension() {
 
-  # Parameters
-  # $1 = ${domain}
+    # Parameters
+    # $1 = ${domain}
 
-  local domain=$1
+    local domain=$1
 
-  local domain_extension
-  local domain_no_ext
+    local domain_extension
+    local domain_no_ext
 
-  domain_extension="$(_get_domain_extension "${domain}")"
-  domain_extension_output=$?
-  if [[ ${domain_extension_output} -eq 0 ]]; then
+    domain_extension="$(_get_domain_extension "${domain}")"
+    domain_extension_output=$?
+    if [[ ${domain_extension_output} -eq 0 ]]; then
 
-    domain_no_ext=${domain%"$domain_extension"}
+        domain_no_ext=${domain%"$domain_extension"}
 
-    # Return
-    echo "${domain_no_ext}"
+        # Return
+        echo "${domain_no_ext}"
 
-  else
+    else
 
-    return 1
+        return 1
 
-  fi
+    fi
 
 }
 
 function _get_project_name_from_domain() {
 
-  # Parameters
-  # $1 = ${project_domain}
+    # Parameters
+    # $1 = ${project_domain}
 
-  local project_domain=$1
+    local project_domain=$1
 
-  # Trying to extract project name from domain
-  root_domain="$(_get_root_domain "${project_domain}")"
-  possible_project_name="$(_extract_domain_extension "${root_domain}")"
+    # Trying to extract project name from domain
+    root_domain="$(_get_root_domain "${project_domain}")"
+    possible_project_name="$(_extract_domain_extension "${root_domain}")"
 
-  # Replace '-' and '.' chars
-  possible_name="$(echo "${possible_project_name}" | sed -r 's/[.-]+/_/g')"
+    # Replace '-' and '.' chars
+    possible_name="$(echo "${possible_project_name}" | sed -r 's/[.-]+/_/g')"
 
-  # Return
-  echo "${possible_name}"
+    # Return
+    echo "${possible_name}"
 
 }
 
 function _get_project_state_from_domain() {
 
-  # Parameters
-  # $1 = ${project_domain}
+    # Parameters
+    # $1 = ${project_domain}
 
-  local project_domain=$1
+    local project_domain=$1
 
-  project_states="dev,test,stage"
+    project_states="dev,test,stage"
 
-  # Trying to extract project state from domain
-  possible_project_state="$(_get_subdomain_part "${project_domain}" | cut -d "." -f 1)"
+    # Trying to extract project state from domain
+    possible_project_state="$(_get_subdomain_part "${project_domain}" | cut -d "." -f 1)"
 
-  if [[ ${possible_project_state} != *"${project_states}"* ]];then
+    if [[ ${possible_project_state} != *"${project_states}"* ]]; then
 
-    possible_project_state="prod"
+        possible_project_state="prod"
 
-  fi
+    fi
 
-  # Return
-  echo "${possible_project_state}"
+    # Return
+    echo "${possible_project_state}"
 
 }
 
@@ -541,12 +541,12 @@ function mysql_databases() {
 
         for database in ${all_databases}; do
             if [[ ${database_bl} != *"${database}"* ]]; then
-                databases="${databases} , \"${database}\""
+                databases="\"${database}\" , ${databases}"
             fi
         done
 
         # Remove 3 last chars
-        databases="${databases:3}"
+        databases="${databases::3}"
 
         # Return
         echo "${databases}"
@@ -655,7 +655,7 @@ function dropbox_get_backup() {
     local backup_db
     local backup_date
 
-    if [[ ${project_domain} == "" ]];then
+    if [[ ${project_domain} == "" ]]; then
         exit 1
     fi
 
@@ -678,12 +678,11 @@ function dropbox_get_backup() {
 
         backup_db="$(basename "${search_backup_db}")"
 
-        if [[ ${search_backup_db} != "" ]];then
+        if [[ ${search_backup_db} != "" ]]; then
             backups_string="${backups_string} {\"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"${backup_db}\"},"
         else
             backups_string="${backups_string} {\"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"false\"},"
         fi
-
 
     done
 
@@ -740,9 +739,12 @@ function packages_get_data() {
         fi
 
         phpv_data="{\"name\":\"php\",\"version\":\"${php_v}\",\"default\":\"${php_default}\"},"
-        all_php_data="${all_php_data} , \"${phpv_data}\""
+        all_php_data="\"${phpv_data}\" , ${all_php_data}"
 
     done
+
+    # Remove 3 last chars
+    all_php_data="${all_php_data::3}"
 
     # Return JSON part
     echo "\"webservers\":[ \"${nginx_v_installed}\", \"${apache_v_installed}\" ], \"databases\": [ \"${mysql_v_installed}\" ], \"languages\": [ ${all_php_data} ]"
