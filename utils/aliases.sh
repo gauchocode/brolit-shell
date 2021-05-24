@@ -460,8 +460,6 @@ function packages_get_data() {
     local all_php_data
     local php_default
 
-    php_default=false
-
     # webserver
     apache_v_installed="$(_apache_check_installed_version)"
     nginx_v_installed="$(_nginx_check_installed_version)"
@@ -479,6 +477,8 @@ function packages_get_data() {
 
         if [[ ${php_default_version} == "${php_v}" ]]; then
             php_default=true
+        else
+            php_default=false
         fi
 
         phpv_data="{\"name\":\"php\",\"version\":\"${php_v}\",\"default\":\"${php_default}\"},"
