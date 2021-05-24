@@ -193,7 +193,7 @@ function _mysql_check_installed_version() {
     mysql_installed_version="$(_string_remove_spaces "${mysql_installed_version}")"
 
     # Return
-    echo "{\"name\":\"${mysql_installed_pkg}\",\"version\":\"${mysql_installed_version}\",\"default\":\"true\"},"
+    echo "{\"name\":\"${mysql_installed_pkg}\",\"version\":\"${mysql_installed_version}\",\"default\":\"true\"}"
 
 }
 
@@ -201,12 +201,20 @@ function _nginx_check_installed_version() {
 
     local nginx_installed_version
 
-    # Installed versions
-    nginx_installed_version="$(nginx -v | awk -F' ' '{print $3}' | grep -o '[0-9.]*$' | tr '\n' ' ')"
+    # Check if package is installed
+    nginx_installed_pkg="$(sudo dpkg --list | grep -Eo 'nginx-core')"
+    if [[ ${nginx_installed_pkg} != "" ]]; then
 
-    if [[ ${nginx_installed_version} != "" ]]; then
-        # Return
-        echo "{\"name\":\"nginx\",\"version\":\"${nginx_installed_version}\",\"default\":\"true\"},"
+        # Installed versions
+        nginxv="$(nginx -v 2>&1)"
+        nginxv="$(_string_remove_spaces "${nginxv}")"
+        nginx_installed_version="$(echo "${nginxv}" | cut -d "(" -f 1 | grep -o '[0-9.]*$')"
+
+        if [[ ${nginx_installed_version} != "" ]]; then
+            # Return
+            echo "{\"name\":\"nginx\",\"version\":\"${nginx_installed_version}\",\"default\":\"true\"}"
+        fi
+
     fi
 
 }
@@ -215,12 +223,18 @@ function _apache_check_installed_version() {
 
     local apache_installed_version
 
-    # Installed versions
-    apache_installed_version="$(apache2 -v | awk -F' ' '{print $3}' | grep -o '[0-9.]*$' | tr '\n' ' ' | cut -d " " -f 1)"
+    # Check if package is installed
+    apache2_installed_pkg="$(sudo dpkg --list | grep -Eo 'apache2-bin')"
+    if [[ ${apache2_installed_pkg} != "" ]]; then
 
-    if [[ ${apache_installed_version} != "" ]]; then
-        # Return
-        echo "{\"name\":\"apache2\",\"version\":\"${apache_installed_version}\",\"default\":\"true\"},"
+        # Installed versions
+        apache_installed_version="$(apache2 -v | awk -F' ' '{print $3}' | grep -o '[0-9.]*$' | tr '\n' ' ' | cut -d " " -f 1)"
+
+        if [[ ${apache_installed_version} != "" ]]; then
+            # Return
+            echo "{\"name\":\"apache2\",\"version\":\"${apache_installed_version}\",\"default\":\"true\"}"
+        fi
+
     fi
 
 }
@@ -461,7 +475,7 @@ function packages_get_data() {
     all_phpv="${all_phpv:3}"
 
     # Return JSON
-    echo "\"webservers\": { \"nginx\" : \"1.14\" }, \"databases\": { \"maria-db\" : \"${mysql_v_installed}\" }, \"languages\": [ ${all_phpv} ]"
+    echo "\"webservers\":[ \"${nginx_v_installed}\", \"${apache_v_installed}\" ], \"databases\": [ \"${mysql_v_installed}\" ], \"languages\": [ ${all_phpv} ]"
 
 }
 
