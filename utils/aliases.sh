@@ -31,6 +31,8 @@ ALIASES_VERSION="3.0.25-004"
 # Server Name
 VPSNAME="$HOSTNAME"
 
+SFOLDER="/root/lemp-utils-scripts"
+
 ################################################################################
 
 alias ..="cd .."
@@ -252,6 +254,198 @@ function _get_backup_date() {
 
 }
 
+function _get_domain_extension() {
+
+  # Parameters
+  # $1 = ${domain}
+
+  local domain=$1
+
+  local first_lvl
+  local next_lvl
+  local domain_ext
+
+  # Get first_lvl domain name
+  first_lvl="$(cut -d'.' -f1 <<<"${domain}")"
+
+  # Extract first_lvl
+  domain_ext=${domain#"$first_lvl."}
+
+  next_lvl="${first_lvl}"
+
+  local -i count=0
+  while ! grep --word-regexp --quiet ".${domain_ext}" "${SFOLDER}/config/domain_extension-list" && [ ! "${domain_ext#"$next_lvl"}" = "" ]; do
+
+    # Remove next level domain-name
+    domain_ext=${domain_ext#"$next_lvl."}
+    next_lvl="$(cut -d'.' -f1 <<<"${domain_ext}")"
+
+    count=("$count"+1)
+
+  done
+
+  if grep --word-regexp --quiet ".${domain_ext}" "${SFOLDER}/config/domain_extension-list"; then
+
+    domain_ext=.${domain_ext}
+
+    # Return
+    echo "${domain_ext}"
+
+  else
+
+    return 1
+
+  fi
+
+}
+
+function _get_subdomain_part() {
+
+  # Parameters
+  # $1 = ${domain}
+
+  local domain=$1
+
+  local domain_extension
+  local domain_no_ext
+  local subdomain_part
+
+  # Get Domain Ext
+  domain_extension="$(_get_domain_extension "${domain}")"
+
+  # Check result
+  domain_extension_output=$?
+  if [[ ${domain_extension_output} -eq 0 ]]; then
+
+    # Remove domain extension
+    domain_no_ext=${domain%"$domain_extension"}
+
+    root_domain=${domain_no_ext##*.}${domain_extension}
+
+    if [[ ${root_domain} != "${domain}" ]]; then
+
+      subdomain_part=${domain//.$root_domain/}
+
+      # Return
+      echo "${subdomain_part}"
+
+    else
+
+      # Return
+      echo ""
+
+    fi
+
+  else
+
+    return 1
+
+  fi
+
+}
+
+function _get_root_domain() {
+
+  # Parameters
+  # $1 = ${domain}
+
+  local domain=$1
+
+  local domain_extension
+  local domain_no_ext
+
+  # Get Domain Ext
+  domain_extension="$(_get_domain_extension "${domain}")"
+
+  # Check result
+  domain_extension_output=$?
+  if [[ ${domain_extension_output} -eq 0 ]]; then
+
+    # Remove domain extension
+    domain_no_ext=${domain%"$domain_extension"}
+
+    root_domain=${domain_no_ext##*.}${domain_extension}
+
+    # Return
+    echo "${root_domain}"
+
+  else
+
+    return 1
+
+  fi
+
+}
+
+function _extract_domain_extension() {
+
+  # Parameters
+  # $1 = ${domain}
+
+  local domain=$1
+
+  local domain_extension
+  local domain_no_ext
+
+  domain_extension="$(get_domain_extension "${domain}")"
+  domain_extension_output=$?
+  if [[ ${domain_extension_output} -eq 0 ]]; then
+
+    domain_no_ext=${domain%"$domain_extension"}
+
+    # Return
+    echo "${domain_no_ext}"
+
+  else
+
+    return 1
+
+  fi
+
+}
+
+function _get_project_name_from_domain() {
+
+  # Parameters
+  # $1 = ${project_domain}
+
+  local project_domain=$1
+
+  # Trying to extract project name from domain
+  root_domain="$(_get_root_domain "${project_domain}")"
+  possible_project_name="$(_extract_domain_extension "${root_domain}")"
+
+  # Replace '-' and '.' chars
+  possible_name="$(echo "${possible_project_name}" | sed -r 's/[.-]+/_/g')"
+
+  # Return
+  echo "${possible_name}"
+
+}
+
+function _get_project_state_from_domain() {
+
+  # Parameters
+  # $1 = ${project_domain}
+
+  local project_domain=$1
+
+  project_states="dev,test,stage"
+
+  # Trying to extract project state from domain
+  possible_project_state="$(_get_subdomain_part "${project_domain}" | cut -d "." -f 1)"
+
+  if [[ ${possible_project_state} != *"${project_states}"* ]];then
+
+    possible_project_state="prod"
+
+  fi
+
+  # Return
+  echo "${possible_project_state}"
+
+}
+
 ################################################################################
 
 # Creates an archive (*.tar.gz) from given directory
@@ -465,20 +659,18 @@ function dropbox_get_backup() {
         exit 1
     fi
 
-    project_name="$(basename "${project_domain}")"
+    project_name="$(_get_project_name_from_domain "${project_domain}")"
+    project_state="$(_get_project_state_from_domain "${project_domain}")"
 
     # Get dropbox backup list
     dropbox_site_backup_path="${VPSNAME}/site/${project_domain}"
     dropbox_site_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_site_backup_path}")"
 
-    #dropbox_db_backup_path="${VPSNAME}/database/${project_name}"
-    #dropbox_db_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_db_backup_path}")"
-
     for backup_file in ${dropbox_site_backup_list}; do
 
         backup_date="$(_get_backup_date "${backup_file}")"
 
-        backup_to_search="${project_name}*_database_${backup_date}.tar.bz2"
+        backup_to_search="${project_name}_${project_state}_database_${backup_date}.tar.bz2"
 
         search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${backup_date}")"
 
