@@ -414,6 +414,35 @@ function cloudflare_domain_exists() {
 
 }
 
+function dropbox_get_sites_backups() {
+
+    # ${1} = ${chosen_project}
+
+    local chosen_project=$1
+
+    local dropbox_chosen_backup_path
+    local dropbox_backup_list
+
+    local backup_files
+
+    # Get dropbox backup list
+    dropbox_chosen_backup_path="${VPSNAME}/site/${chosen_project}"
+    dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}")"
+
+    for backup_file in ${dropbox_backup_list}; do
+
+        backup_files="${backup_files} , \"${backup_file}\""
+
+    done
+
+    # Remove 3 last chars
+    backup_files="${backup_files:3}"
+
+    # Return
+    echo "${backup_files}"
+
+}
+
 # TODO: {"2020-05-19":{"files":"ZZZZZ1","database":"YYYY1"},"2020-05-20":{"files":"ZZZZZ2","database":"YYYY2"}}
 function dropbox_get_backup() {
 
@@ -426,9 +455,13 @@ function dropbox_get_backup() {
     local dropbox_site_backup_list
     #local dropbox_db_backup_list
 
-    local backup_files
+    #local backup_files
     local backup_db
     local backup_date
+
+    if [[ ${chosen_project} == "" ]];then
+        exit 1
+    fi
 
     # Get dropbox backup list
     dropbox_site_backup_path="${VPSNAME}/site/${chosen_project}"
@@ -444,7 +477,9 @@ function dropbox_get_backup() {
         backup_db="${chosen_project}_database_${backup_date}.tar.bz2"
 
         search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_db}")"
+
         log_event "debug" "$("${DROPBOX_UPLOADER}" -hq search "${backup_db}")" "false"
+
         if [[ $search_backup_db == "true" ]];then
             backups_string="{\"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"${backup_db}\"},"
         else
