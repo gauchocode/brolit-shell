@@ -275,7 +275,7 @@ function search() {
 # All lemp-utils config
 function lemp_utils_config() {
 
-    # Return
+    # Return JSON part
     echo "\"server_type\": \"${SERVER_CONFIG}\" , \"netdata_url\": \"${NETDATA_SUBDOMAIN}\" , \"mail_notif\": \"${MAIL_NOTIF}\" , \"telegram_notif\": \"${TELEGRAM_NOTIF}\" , \"dropbox_enable\": \"${DROPBOX_ENABLE}\" , \"cloudflare_enable\": \"${CLOUDFLARE_ENABLE}\" , \"smtp_server\": \"${SMTP_SERVER}\""
 
 }
@@ -305,11 +305,11 @@ function serverinfo() {
 
     if [[ ${public_ip} == "${inet_ip}" ]]; then
 
-        # Return
+        # Return JSON part
         echo "\"server_name\": \"${VPSNAME}\" , \"ip\": \"${public_ip}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , \"disk_size\": \"${disk_size}\" , \"disk_usage\": \"${disk_usage}\""
     else
 
-        # Return
+        # Return JSON part
         echo "\"server_name\": \"${VPSNAME}\" , \"ip\": \"${public_ip}\" , \"floating_ip\": \"${inet_ip}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , \"disk_size\": \"${disk_size}\" , \"disk_usage\": \"${disk_usage}\""
 
     fi
@@ -431,9 +431,9 @@ function dropbox_get_backup() {
     # Remove 3 last chars
     backup_files="${backup_files:3}"
 
-    # Return JSON
+    # Return JSON part
     echo "{"
-    echo "\"BACKUPS_RESULT\": [ ${backup_files} ],"
+    echo "\"backups\": [ ${backup_files} ],"
     echo "}"
 
 }
@@ -474,7 +474,7 @@ function packages_get_data() {
     # Remove 3 last chars
     all_phpv="${all_phpv:3}"
 
-    # Return JSON
+    # Return JSON part
     echo "\"webservers\":[ \"${nginx_v_installed}\", \"${apache_v_installed}\" ], \"databases\": [ \"${mysql_v_installed}\" ], \"languages\": [ ${all_phpv} ]"
 
 }
