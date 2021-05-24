@@ -448,12 +448,19 @@ function dropbox_get_backup() {
 #    {"name":"mysql","version":"1.0","default":"true"},
 #    {"name":"mariadb","version":"2.0","default":"false"}
 #   ],
-#"languages":[{"name":"php","version":"7.4","default":"true"},{"name":"php","version":"7.3","default":"false"}]}
+# "languages":[
+#    {"name":"php","version":"7.4","default":"true"},
+#    {"name":"php","version":"7.3","default":"false"}
+#    ]
+# }
 
 function packages_get_data() {
 
     local php_v_installed
-    local all_phpv
+    local all_php_data
+    local php_default
+
+    php_default=false
 
     # webserver
     apache_v_installed="$(_apache_check_installed_version)"
@@ -467,15 +474,23 @@ function packages_get_data() {
 
     for php_v in ${php_v_installed}; do
 
-        all_phpv="${all_phpv} , \"${php_v}\""
+        # Default versions
+        php_default_version="$(php -v | grep -Eo 'PHP [0-9.].[0-9.]' | cut -d " " -f 2)"
+
+        if [[ ${php_default_version} == "${php_v}" ]]; then
+            php_default=true
+        fi
+
+        phpv_data="{\"name\":\"php\",\"version\":\"${php_v}\",\"default\":\"${php_default}\"},"
+        all_php_data="${all_php_data} , \"${phpv_data}\""
 
     done
 
     # Remove 3 last chars
-    all_phpv="${all_phpv:3}"
+    #all_phpv="${all_phpv:3}"
 
     # Return JSON part
-    echo "\"webservers\":[ \"${nginx_v_installed}\", \"${apache_v_installed}\" ], \"databases\": [ \"${mysql_v_installed}\" ], \"languages\": [ ${all_phpv} ]"
+    echo "\"webservers\":[ \"${nginx_v_installed}\", \"${apache_v_installed}\" ], \"databases\": [ \"${mysql_v_installed}\" ], \"languages\": [ ${all_php_data} ]"
 
 }
 
