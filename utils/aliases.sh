@@ -494,6 +494,6 @@ function show_server_data() {
     server_pkgs="$(packages_get_data)"
 
     # Return JSON
-    echo "RESULT => { \"SERVERINFO_RESULT\": { ${server_info} }, \"PKGS_RESULT\": { ${server_pkgs} } , \"CONFIG_RESULT\": { ${server_config} }, \"MYSQLDBS_RESULT\": [ ${server_databases} ], \"SITES_RESULT\": [ ${server_sites} ] }"
+    echo "SERVER_DATA_RESULT => { \"server_info \": { ${server_info} }, \"server_pkgs\": { ${server_pkgs} } , \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] }"
 
 }
