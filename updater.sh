@@ -64,9 +64,11 @@ function _self_update() {
 
         exit 1
 
-    fi
+    else
 
-    echo -e "${YELLOW}Already the latest version.${ENDCOLOR}"
+        echo -e "${YELLOW}Already the latest version.${ENDCOLOR}"
+
+    fi
 
 }
 
