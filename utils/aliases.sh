@@ -576,7 +576,7 @@ function sites_directories() {
 
     done
 
-    # Remove 3 last chars
+    # Remove 3 first chars
     directories="${directories:3}"
 
     # Return
@@ -625,12 +625,12 @@ function dropbox_get_sites_backups() {
 
     for backup_file in ${dropbox_backup_list}; do
 
-        backup_files="${backup_files} , \"${backup_file}\""
+        backup_files="\"${backup_file}\" , ${backup_files}"
 
     done
 
     # Remove 3 last chars
-    backup_files="${backup_files:3}"
+    backup_files="${backup_files::3}"
 
     # Return
     echo "${backup_files}"
@@ -738,8 +738,8 @@ function packages_get_data() {
             php_default=false
         fi
 
-        phpv_data="{\"name\":\"php\",\"version\":\"${php_v}\",\"default\":\"${php_default}\"},"
-        all_php_data="\"${phpv_data}\" , ${all_php_data}"
+        phpv_data="{\"name\":\"php\",\"version\":\"${php_v}\",\"default\":\"${php_default}\"}"
+        all_php_data="${phpv_data} , ${all_php_data}"
 
     done
 
