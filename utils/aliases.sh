@@ -751,7 +751,7 @@ function packages_get_data() {
     php_v_installed="$(_php_check_installed_version)"
 
     # Return JSON part
-    echo "\"webservers\":[ \"${nginx_v_installed}\", \"${apache_v_installed}\" ], \"databases\": [ \"${mysql_v_installed}\" ], \"languages\": [ ${php_v_installed} ]"
+    echo "\"webservers\":[ ${nginx_v_installed}, ${apache_v_installed} ], \"databases\": [ ${mysql_v_installed} ], \"languages\": [ ${php_v_installed} ]"
 
 }
 
