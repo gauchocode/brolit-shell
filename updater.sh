@@ -7,8 +7,8 @@
 SCRIPT="$(readlink -f "$0")"
 SCRIPTFILE="$(basename "${SCRIPT}")"
 SCRIPTPATH="$(dirname "${SCRIPT}")"
-SCRIPTNAME="$0"
-ARGS=("$@")
+#SCRIPTNAME="$0"
+#ARGS=("$@")
 BRANCH="master"
 
 # Foreground/Text Colours
@@ -21,7 +21,8 @@ function _install_script_aliases() {
     local timestamp
 
     if [[ ! -f ~/.bash_aliases ]]; then
-        cp "${SFOLDER}/utils/aliases.sh" ~/.bash_aliases
+
+        cp "${SCRIPTPATH}/utils/aliases.sh" ~/.bash_aliases
 
     else
 
@@ -29,7 +30,7 @@ function _install_script_aliases() {
 
         mv ~/.bash_aliases ~/.bash_aliases_bk-"${timestamp}"
 
-        cp "${SFOLDER}/utils/aliases.sh" ~/.bash_aliases
+        cp "${SCRIPTPATH}/utils/aliases.sh" ~/.bash_aliases
 
         source ~/.bash_aliases
 
