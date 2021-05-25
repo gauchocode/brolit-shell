@@ -46,7 +46,7 @@ function _self_update() {
 
     git fetch
 
-    [ -n "$(git diff --name-only "origin/${BRANCH}" "${SCRIPTFILE}")" ] && {
+    if git diff --name-only "origin/${BRANCH}" | grep -q "${SCRIPTFILE}" ;then
 
         echo -e "${GREEN}Found a new version of LEMP Script Utils, updating ...${ENDCOLOR}"
 
@@ -64,7 +64,7 @@ function _self_update() {
 
         exit 1
 
-    }
+    fi
 
     echo -e "${YELLOW}Already the latest version.${ENDCOLOR}"
 
