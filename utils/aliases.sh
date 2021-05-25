@@ -154,22 +154,41 @@ function _php_check_installed_version() {
     # In this case, output example: php7.2-fpm php7.3-fpm php7.4-fpm
 
     # Extract only version numbers
-    php_installed_versions="$(echo -n "${php_fpm_installed_pkg}" | grep -Eo '[+-]?[0-9]+([.][0-9]+)?' | tr '\n' ' ')"
+    php_installed_versions="$(echo -n "${php_fpm_installed_pkg}" | grep -Eo '[+-]?[0-9]+([.][0-9]+)?')"
     # The "tr '\n' ' '" part, will replace /n with space
     # Return example: 7.4 7.2 7.0
 
     # Check elements number on string
-    count_elements="$(echo "${php_installed_versions}" | wc -w)"
+    #count_elements="$(echo "${php_installed_versions}" | wc -w)"
 
-    if [[ $count_elements == "1" ]]; then
+    #if [[ $count_elements != "0" ]]; then
+    #
+    #    # Remove last space
+    #    php_installed_versions="$(_string_remove_spaces "${php_installed_versions}")"
+    #
+    #fi
 
-        # Remove last space
-        php_installed_versions="$(_string_remove_spaces "${php_installed_versions}")"
+    for php_v in ${php_installed_versions}; do
 
-    fi
+        # Default versions
+        php_default_version="$(php -v | grep -Eo 'PHP [0-9.].[0-9.]' | cut -d " " -f 2)"
+
+        if [[ ${php_default_version} == "${php_v}" ]]; then
+            php_default=true
+        else
+            php_default=false
+        fi
+
+        phpv_data="{\"name\":\"php\",\"version\":\"${php_v}\",\"default\":\"${php_default}\"}"
+        all_php_data="${all_php_data} , ${phpv_data}"
+
+    done
+
+    # Remove 3 fist chars
+    all_php_data="${all_php_data:3}"
 
     # Return
-    echo "${php_installed_versions}"
+    echo "${all_php_data}"
 
 }
 
@@ -545,12 +564,12 @@ function mysql_databases() {
 
         for database in ${all_databases}; do
             if [[ ${database_bl} != *"${database}"* ]]; then
-                databases="\"${database}\" , ${databases}"
+                databases="${databases} , \"${database}\""
             fi
         done
 
-        # Remove 3 last chars
-        databases="${databases::3}"
+        # Remove 3 fist chars
+        databases="${databases:3}"
 
         # Return
         echo "${databases}"
@@ -581,7 +600,7 @@ function sites_directories() {
     done
 
     # Remove 3 first chars
-    # directories="${directories:3}"
+    directories="${directories:3}"
 
     # Return
     echo "${directories}"
@@ -731,27 +750,8 @@ function packages_get_data() {
     # languages
     php_v_installed="$(_php_check_installed_version)"
 
-    for php_v in ${php_v_installed}; do
-
-        # Default versions
-        php_default_version="$(php -v | grep -Eo 'PHP [0-9.].[0-9.]' | cut -d " " -f 2)"
-
-        if [[ ${php_default_version} == "${php_v}" ]]; then
-            php_default=true
-        else
-            php_default=false
-        fi
-
-        phpv_data="{\"name\":\"php\",\"version\":\"${php_v}\",\"default\":\"${php_default}\"}"
-        all_php_data="${phpv_data} , ${all_php_data}"
-
-    done
-
-    # Remove 3 last chars
-    all_php_data="${all_php_data::3}"
-
     # Return JSON part
-    echo "\"webservers\":[ \"${nginx_v_installed}\", \"${apache_v_installed}\" ], \"databases\": [ \"${mysql_v_installed}\" ], \"languages\": [ ${all_php_data} ]"
+    echo "\"webservers\":[ \"${nginx_v_installed}\", \"${apache_v_installed}\" ], \"databases\": [ \"${mysql_v_installed}\" ], \"languages\": [ ${php_v_installed} ]"
 
 }
 
