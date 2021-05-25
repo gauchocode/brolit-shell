@@ -180,19 +180,23 @@ function _mysql_check_installed_version() {
 
     # MySQL or MariaDB?
     mysql_installed_pkg="$(sudo dpkg --list | grep -Eo 'mysql-client-[0-9]+([.][0-9]+)?')"
-    if [[ ${mysql_installed_pkg} == "" ]]; then
+
+    if [[ ${mysql_installed_pkg} != "" ]]; then
+
+        # Extract only version numbers
+        mysql_installed_version="$(mysql -V | awk -F' ' '{print $3}' | grep -o '[0-9.]*$' | tr '\n' ' ')"
+
+    else
 
         mysql_installed_pkg="$(sudo dpkg --list | grep -Eo 'mariadb-client-[0-9]+([.][0-9]+)?')"
 
+        # Extract only version numbers
+        mysql_installed_version="$(mysql -V | grep -Eo '[+-]?[0-9]+([.][0-9]+)+([.][0-9]+)?-MariaDB' | cut -d "-" -f 1)"
+
     fi
 
-    # Installed versions
-
-    # Extract only version numbers
-    mysql_installed_version="$(mysql -V | awk -F' ' '{print $3}' | grep -o '[0-9.]*$' | tr '\n' ' ')"
-
     # Remove last space
-    mysql_installed_version="$(_string_remove_spaces "${mysql_installed_version}")"
+    # mysql_installed_version="$(_string_remove_spaces "${mysql_installed_version}")"
 
     # Return
     echo "{\"name\":\"${mysql_installed_pkg}\",\"version\":\"${mysql_installed_version}\",\"default\":\"true\"}"
@@ -577,7 +581,7 @@ function sites_directories() {
     done
 
     # Remove 3 first chars
-    directories="${directories:3}"
+    # directories="${directories:3}"
 
     # Return
     echo "${directories}"
