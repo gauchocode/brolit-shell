@@ -50,8 +50,8 @@ function _self_update() {
 
         echo -e "${GREEN}Found a new version of LEMP Script Utils, updating ...${ENDCOLOR}"
 
-        git checkout "${BRANCH}"
-        git reset --hard origin/master
+        git checkout --quiet "${BRANCH}"
+        git reset --hard --quiet origin/master
         git pull --ff-only --force --quiet
 
         echo -e "${GREEN}Running chmod ...${ENDCOLOR}"
