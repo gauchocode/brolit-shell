@@ -16,6 +16,27 @@ GREEN='\E[32;40m'
 YELLOW='\E[33;40m'
 ENDCOLOR='\033[0m'
 
+function _install_script_aliases() {
+
+    local timestamp
+
+    if [[ ! -f ~/.bash_aliases ]]; then
+        cp "${SFOLDER}/utils/aliases.sh" ~/.bash_aliases
+
+    else
+
+        timestamp="$(date +%Y%m%d_%H%M%S)"
+
+        mv ~/.bash_aliases ~/.bash_aliases_bk-"${timestamp}"
+
+        cp "${SFOLDER}/utils/aliases.sh" ~/.bash_aliases
+
+        source ~/.bash_aliases
+
+    fi
+
+}
+
 function _self_update() {
 
     # Store credentials on first git pull
@@ -31,7 +52,11 @@ function _self_update() {
         git reset --hard origin/master
         git pull --ff-only --force
 
+        echo -e "${GREEN}Running chmod ...${ENDCOLOR}"
         find ./ -name "*.sh" -exec chmod +x {} \;
+
+        echo -e "${GREEN}Updating aliases ...${ENDCOLOR}"
+        _install_script_aliases
 
         exit 1
 
