@@ -8,6 +8,7 @@ function wpcli_manager() {
 
   local wp_site
 
+  # Install wpcli if not installed
   wpcli_install_if_not_installed
 
   # Directory Browser
@@ -20,28 +21,58 @@ function wpcli_manager() {
   # Log
   log_event "info" "Searching WordPress Installation on directory: ${wp_site}" "false"
 
-  # Search a wordpress installation on selected directory
+  # Search a WordPress installation on selected directory
   install_path="$(wp_config_path "${wp_site}")"
 
-  if [[ -z "${install_path}" || "${install_path}" == '' ]]; then
+  # Install_path could return more than one wp installation
+  second_path="$(echo "${install_path}" | cut -d " " -f 2)"
 
-    log_event "info" "WordPress installation not found! Returning to Main Menu" "false"
-    display --indent 2 --text "- Searching WordPress installation" --result "FAIL" --color RED
+  if [[ ${second_path} != '' ]]; then
 
-    whiptail --title "WARNING" --msgbox "WordPress installation not found! Press Enter to return to the Main Menu." 8 78
+    for wp_path in ${install_path}; do
 
-    menu_main_options
+      chosen_wp_path="$(whiptail --title "PHP Version Selection" --menu "Select the version of PHP you want to work with:" 20 78 10 $(for x in ${wp_path}; do echo "${x} [X]"; done) 3>&1 1>&2 2>&3)"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        log_event "debug" "Working with ${chosen_wp_path}"
+
+        # Return
+        wpcli_main_menu "${chosen_wp_path}"
+
+      else
+
+        return 1
+
+      fi
+
+    done
 
   else
 
-    # WordPress installation path
-    wp_site="${install_path}"
+    if [[ -z "${install_path}" || "${install_path}" == '' ]]; then
 
-    log_event "info" "Working with wp_site=${wp_site}" "false"
-    display --indent 2 --text "- Searching WordPress Installation" --result "DONE" --color GREEN
-    display --indent 4 --text "Working on ${wp_site}"
+      log_event "info" "WordPress installation not found! Returning to Main Menu" "false"
+      display --indent 2 --text "- Searching WordPress installation" --result "FAIL" --color RED
 
-    wpcli_main_menu "${wp_site}"
+      whiptail --title "WARNING" --msgbox "WordPress installation not found! Press Enter to return to the Main Menu." 8 78
+
+      # Return
+      menu_main_options
+
+    else
+
+      # WordPress installation path
+      wp_site="${install_path}"
+
+      log_event "info" "Working with wp_site=${wp_site}" "false"
+      display --indent 2 --text "- Searching WordPress Installation" --result "DONE" --color GREEN
+      display --indent 4 --text "Working on ${wp_site}"
+
+      # Return
+      wpcli_main_menu "${wp_site}"
+
+    fi
 
   fi
 
@@ -110,14 +141,14 @@ function wpcli_main_menu() {
 
         if [[ ${plugin} == *"zip-file"* ]]; then
 
-            plugin_zip="$(whiptail --title "WordPress Plugin" --inputbox "Please insert a public url with a plugin zip file." 10 60 "https://domain.com/plugin.zip" 3>&1 1>&2 2>&3)"
-            exitstatus=$?
-            if [[ ${exitstatus} -eq 0 ]]; then
+          plugin_zip="$(whiptail --title "WordPress Plugin" --inputbox "Please insert a public url with a plugin zip file." 10 60 "https://domain.com/plugin.zip" 3>&1 1>&2 2>&3)"
+          exitstatus=$?
+          if [[ ${exitstatus} -eq 0 ]]; then
 
-              plugin="${plugin_zip}"
+            plugin="${plugin_zip}"
 
-            fi
-          
+          fi
+
         fi
 
         wpcli_install_plugin "${wp_site}" "${plugin}"
