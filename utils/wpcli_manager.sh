@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.25
+# Version: 3.0.26
 ################################################################################
 
 function wpcli_manager() {
 
   local wp_site
+  local second_path
+  local chosen_wp_path
 
   # Install wpcli if not installed
   wpcli_install_if_not_installed
@@ -16,10 +18,8 @@ function wpcli_manager() {
   menutitle="Site Selection Menu"
   directory_browser "${menutitle}" "${startdir}"
 
+  # WP Path
   wp_site="${filepath}/${filename}"
-
-  # Log
-  log_event "info" "Searching WordPress Installation on directory: ${wp_site}" "false"
 
   # Search a WordPress installation on selected directory
   install_path="$(wp_config_path "${wp_site}")"
@@ -30,6 +30,7 @@ function wpcli_manager() {
   if [[ ${second_path} != '' ]]; then
 
     chosen_wp_path="$(whiptail --title "PHP Version Selection" --menu "Select the version of PHP you want to work with:" 20 78 10 $(for x in ${install_path}; do echo "${x} [X]"; done) 3>&1 1>&2 2>&3)"
+    
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
