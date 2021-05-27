@@ -129,7 +129,7 @@ function php_set_version_on_config() {
       php_installed_versions="$(php_check_installed_version)"
       
       # Select version to work
-      php_v=$(php_select_version_to_work_with "${php_installed_versions}")
+      php_v="$(php_select_version_to_work_with "${php_installed_versions}")"
 
     fi
 
