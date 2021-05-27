@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.25
+# Version: 3.0.26
 ################################################################################
 
 function is_wp_project() {
@@ -33,6 +33,9 @@ function wp_config_path() {
   # $1 = ${dir_to_search}
 
   local dir_to_search=$1
+
+  # Log
+  log_event "info" "Searching WordPress Installation on directory: ${dir_to_search}" "false"
 
   # Find where wp-config.php is
   find_output=$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')
@@ -220,7 +223,7 @@ function wp_ask_url_search_and_replace() {
   local new_URL
 
   if [[ -z "${existing_URL}" ]]; then
-  
+
     existing_URL="$(whiptail --title "URL TO CHANGE" --inputbox "Insert the URL you want to change, including http:// or https://" 10 60 3>&1 1>&2 2>&3)"
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then

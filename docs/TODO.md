@@ -52,6 +52,7 @@
 ### Done ✓
 
 - [x] WordPress: WP-CLI is required to the script works propperly, must install on script setup.
+- [x] WordPress: support for multiple WP installations inside the main project directory.
 - [x] Nginx: New option to put a website offline/online.
 - [x] Scheduled options: Add option to run on specific time.
 - [x] Log/Display: Better log handling and display improvements.
