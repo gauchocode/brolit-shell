@@ -272,6 +272,9 @@ function netdata_installer_menu() {
         # Netdata nginx proxy configuration
         nginx_server_create "${netdata_subdomain}" "netdata" "tool"
 
+        # Nginx Auth
+        nginx_generate_auth "netdata"
+
         netdata_configuration
 
         # Confirm ROOT_DOMAIN

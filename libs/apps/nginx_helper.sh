@@ -425,3 +425,13 @@ function nginx_create_empty_nginx_conf() {
     fi
 
 }
+
+function nginx_generate_auth() {
+
+    #$1 = ${user}
+
+    local user=$1
+
+    printf "${user}:$(openssl passwd -apr1)" > "/etc/nginx/passwords"
+
+}
