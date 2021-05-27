@@ -136,10 +136,13 @@ function netdata_uninstaller() {
 
     [Yy]*)
 
+      # Log
+      clear_line
+      clear_line
       log_event "warning" "Uninstalling Netdata ..." "false"
 
       # Deleting mysql user
-      mysql_user_delete "netdata"
+      mysql_user_delete "netdata" "localhost"
 
       # Deleting nginx server files
       rm --force "/etc/nginx/sites-enabled/monitor"
@@ -151,7 +154,9 @@ function netdata_uninstaller() {
       rm --force "/usr/sbin/netdata"
 
       # Running uninstaller
-      source "/usr/libexec/netdata-uninstaller.sh" --yes --dont-wait
+      if [[ -f "/usr/libexec/netdata-uninstaller.sh" ]]; then
+        source "/usr/libexec/netdata-uninstaller.sh" --yes --dont-wait
+      fi
 
       log_event "info" "Netdata removed ok!" "false"
       display --indent 6 --text "- Uninstalling netdata" --result "DONE" --color GREEN
