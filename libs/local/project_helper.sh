@@ -347,7 +347,7 @@ function project_delete_files() {
     fi
 
     # Send notification
-    send_notification "⚠️ ${VPSNAME}" "Project files for'${project_domain}' deleted!"
+    send_notification "⚠️ ${VPSNAME}" "Project files for '${project_domain}' deleted!"
 
     # TODO: Maybe return database name? extracted from wp-config or something?
 

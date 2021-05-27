@@ -246,7 +246,7 @@ function netdata_installer_menu() {
     fi
 
     # Only for Cloudflare API
-    suggested_root_domain=${netdata_subdomain#[[:alpha:]]*.}
+    possible_root_domain="$(get_root_domain "${netdata_subdomain}")"
 
     ask_mysql_root_psw
 
@@ -283,7 +283,7 @@ function netdata_installer_menu() {
         netdata_configuration
 
         # Confirm ROOT_DOMAIN
-        root_domain="$(ask_root_domain "${suggested_root_domain}")"
+        root_domain="$(ask_root_domain "${possible_root_domain}")"
 
         # Cloudflare API
         cloudflare_set_record "${root_domain}" "${netdata_subdomain}" "A"
