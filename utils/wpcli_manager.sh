@@ -29,24 +29,20 @@ function wpcli_manager() {
 
   if [[ ${second_path} != '' ]]; then
 
-    for wp_path in ${install_path}; do
+    chosen_wp_path="$(whiptail --title "PHP Version Selection" --menu "Select the version of PHP you want to work with:" 20 78 10 $(for x in ${install_path}; do echo "${x} [X]"; done) 3>&1 1>&2 2>&3)"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
 
-      chosen_wp_path="$(whiptail --title "PHP Version Selection" --menu "Select the version of PHP you want to work with:" 20 78 10 $(for x in ${wp_path}; do echo "${x} [X]"; done) 3>&1 1>&2 2>&3)"
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
+      log_event "debug" "Working with ${chosen_wp_path}"
 
-        log_event "debug" "Working with ${chosen_wp_path}"
+      # Return
+      wpcli_main_menu "${chosen_wp_path}"
 
-        # Return
-        wpcli_main_menu "${chosen_wp_path}"
+    else
 
-      else
+      return 1
 
-        return 1
-
-      fi
-
-    done
+    fi
 
   else
 
