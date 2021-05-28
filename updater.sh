@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.26
+# Version: 3.0.27
 #############################################################################
 
 SCRIPT="$(readlink -f "$0")"
@@ -28,7 +28,7 @@ function _check_and_update_script_version() {
 
         declare -g CURRENT_SCRIPT_VERSION
 
-        CURRENT_SCRIPT_VERSION="3.0.26"
+        CURRENT_SCRIPT_VERSION="3.0.27"
 
         if [[ -z ${SCRIPT_VERSION} ]]; then
 
@@ -37,13 +37,13 @@ function _check_and_update_script_version() {
 
         else
 
+            echo "Previous script version: ${SCRIPT_VERSION}"
+            echo "Working with script version: ${CURRENT_SCRIPT_VERSION}"
+
             if [[ ${SCRIPT_VERSION} != "${CURRENT_SCRIPT_VERSION}" ]]; then
 
                 # Search and replace ${SCRIPT_VERSION} string with ${CURRENT_SCRIPT_VERSION}
                 sed -i "s/${SCRIPT_VERSION}/${CURRENT_SCRIPT_VERSION}/g" "${LEMP_UTILS_CONFIG_FILE}"
-
-                echo "Previous script version: ${SCRIPT_VERSION}"
-                echo "Working with script version: ${CURRENT_SCRIPT_VERSION}"
 
             fi
 
