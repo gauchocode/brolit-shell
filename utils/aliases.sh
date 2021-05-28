@@ -743,7 +743,7 @@ function packages_get_data() {
     nginx_v_installed="$(_nginx_check_installed_version)"
     webservers_v_installed="${nginx_v_installed}${apache_v_installed}"
     # Remove 3 last chars
-    webservers_v_installed="${webservers_v_installed::3}"
+    webservers_v_installed="${webservers_v_installed::-3}"
 
     ## databases
     mysql_v_installed="$(_mysql_check_installed_version)"
