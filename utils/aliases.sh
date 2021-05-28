@@ -771,6 +771,6 @@ function show_server_data() {
     server_pkgs="$(packages_get_data)"
 
     # Return JSON
-    echo "SERVER_DATA_RESULT => { \"server_info \": { ${server_info} }, \"server_pkgs\": { ${server_pkgs} } , \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] }"
+    echo "SERVER_DATA_RESULT => { \"server_info\": { ${server_info} }, \"server_pkgs\": { ${server_pkgs} } , \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] }"
 
 }
