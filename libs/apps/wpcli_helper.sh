@@ -927,13 +927,65 @@ function wpcli_user_reset_passw() {
 
 ################################################################################
 
-function wpcli_rocket_clean() {
+function wpcli_rocket_cache_clean() {
 
     # $1 = ${wp_site} (site path)
+
+    local wp_site=$1
 
     wp --allow-root --path="${wp_site}" rocket clean --confirm
 
     display --indent 6 --text "- Cache purge for ${wp_site}" --result "DONE" --color GREEN
+
+}
+
+function wpcli_rocket_cache_activate() {
+
+    # $1 = ${wp_site} (site path)
+
+    local wp_site=$1
+
+    wp --allow-root --path="${wp_site}" rocket activate-cache
+
+    display --indent 6 --text "- Cache activated for ${wp_site}" --result "DONE" --color GREEN
+
+}
+
+function wpcli_rocket_cache_deactivate() {
+
+    # $1 = ${wp_site} (site path)
+
+    local wp_site=$1
+
+    wp --allow-root --path="${wp_site}" rocket deactivate-cache
+
+    display --indent 6 --text "- Cache deactivated for ${wp_site}" --result "DONE" --color GREEN
+
+}
+
+function wpcli_rocket_settings_export() {
+
+    # $1 = ${wp_site} (site path)
+
+    local wp_site=$1
+
+    wp --allow-root --path="${wp_site}" rocket export
+
+    display --indent 6 --text "- Settings exported for ${wp_site}" --result "DONE" --color GREEN
+
+}
+
+function wpcli_rocket_settings_import() {
+
+    # $1 = ${wp_site} (site path)
+    # $2 = ${settings_json}
+
+    local wp_site=$1
+    local settings_json=$2
+
+    wp --allow-root --path="${wp_site}" rocket import --file="${settings_json}"
+
+    display --indent 6 --text "- Settings imported for ${wp_site}" --result "DONE" --color GREEN
 
 }
 
