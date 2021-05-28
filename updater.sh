@@ -40,12 +40,8 @@ function _check_and_update_script_version() {
             echo "Previous script version: ${SCRIPT_VERSION}"
             echo "Working with script version: ${CURRENT_SCRIPT_VERSION}"
 
-            if [[ ${SCRIPT_VERSION} != "${CURRENT_SCRIPT_VERSION}" ]]; then
-
-                # Search and replace ${SCRIPT_VERSION} string with ${CURRENT_SCRIPT_VERSION}
-                sed -i "s/${SCRIPT_VERSION}/${CURRENT_SCRIPT_VERSION}/g" "${LEMP_UTILS_CONFIG_FILE}"
-
-            fi
+            # Search and replace ${SCRIPT_VERSION} string with ${CURRENT_SCRIPT_VERSION}
+            sed -i "s/${SCRIPT_VERSION}/${CURRENT_SCRIPT_VERSION}/g" "${LEMP_UTILS_CONFIG_FILE}"
 
         fi
 
