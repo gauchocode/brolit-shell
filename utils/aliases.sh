@@ -237,7 +237,7 @@ function _nginx_check_installed_version() {
 
         if [[ ${nginx_installed_version} != "" ]]; then
             # Return
-            echo "{\"name\":\"nginx\",\"version\":\"${nginx_installed_version}\",\"default\":\"true\"}"
+            echo "{\"name\":\"nginx\",\"version\":\"${nginx_installed_version}\",\"default\":\"true\"} , "
         fi
 
     fi
@@ -257,7 +257,7 @@ function _apache_check_installed_version() {
 
         if [[ ${apache_installed_version} != "" ]]; then
             # Return
-            echo "{\"name\":\"apache2\",\"version\":\"${apache_installed_version}\",\"default\":\"true\"}"
+            echo "{\"name\":\"apache2\",\"version\":\"${apache_installed_version}\",\"default\":\"true\"} , "
         fi
 
     fi
@@ -697,8 +697,6 @@ function dropbox_get_backup() {
 
         search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${backup_date}")"
 
-        #echo "command executed: ${DROPBOX_UPLOADER} -hq search ${backup_to_search} | grep -E ${backup_date}"
-
         backup_db="$(basename "${search_backup_db}")"
 
         if [[ ${search_backup_db} != "" ]]; then
@@ -740,18 +738,21 @@ function packages_get_data() {
     local all_php_data
     local php_default
 
-    # webserver
+    ## webserver
     apache_v_installed="$(_apache_check_installed_version)"
     nginx_v_installed="$(_nginx_check_installed_version)"
+    webservers_v_installed="${nginx_v_installed}${apache_v_installed}"
+    # Remove 3 last chars
+    webservers_v_installed="${webservers_v_installed::3}"
 
-    # databases
+    ## databases
     mysql_v_installed="$(_mysql_check_installed_version)"
 
-    # languages
+    ## languages
     php_v_installed="$(_php_check_installed_version)"
 
     # Return JSON part
-    echo "\"webservers\":[ ${nginx_v_installed}, ${apache_v_installed} ], \"databases\": [ ${mysql_v_installed} ], \"languages\": [ ${php_v_installed} ]"
+    echo "\"webservers\":[ ${webservers_v_installed} ], \"databases\": [ ${mysql_v_installed} ], \"languages\": [ ${php_v_installed} ]"
 
 }
 

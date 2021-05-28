@@ -17,6 +17,42 @@ YELLOW='\E[33;40m'
 CYAN='\E[36;40m'
 ENDCOLOR='\033[0m'
 
+# BROOBE Utils config file
+LEMP_UTILS_CONFIG_FILE=~/.broobe-utils-options
+
+function _check_and_update_script_version() {
+
+    if test -f ${LEMP_UTILS_CONFIG_FILE}; then
+
+        source "${LEMP_UTILS_CONFIG_FILE}"
+
+        declare -g CURRENT_SCRIPT_VERSION
+
+        CURRENT_SCRIPT_VERSION="3.0.26"
+
+        if [[ -z ${SCRIPT_VERSION} ]]; then
+
+            echo "SCRIPT_VERSION=${CURRENT_SCRIPT_VERSION}" >>${LEMP_UTILS_CONFIG_FILE}
+
+        else
+
+            if [[ ${SCRIPT_VERSION} != "${CURRENT_SCRIPT_VERSION}" ]]; then
+
+                # Search and replace ${SCRIPT_VERSION} string with ${CURRENT_SCRIPT_VERSION}
+                sed -i "s/${SCRIPT_VERSION}/${CURRENT_SCRIPT_VERSION}/g" "${LEMP_UTILS_CONFIG_FILE}"
+
+            fi
+
+        fi
+
+    else
+
+        return 1
+
+    fi
+
+}
+
 function _install_script_aliases() {
 
     local timestamp
@@ -46,7 +82,7 @@ function _self_update() {
 
     git fetch
 
-    if git diff --name-only "origin/${BRANCH}" | grep -q "${SCRIPTFILE}" ;then
+    if git diff --name-only "origin/${BRANCH}" | grep -q "${SCRIPTFILE}"; then
 
         echo -e "${GREEN}Found a new version of LEMP Script Utils, updating ...${ENDCOLOR}"
 
@@ -59,6 +95,9 @@ function _self_update() {
 
         echo -e "${GREEN}Updating aliases ...${ENDCOLOR}"
         _install_script_aliases
+
+        echo -e "${GREEN}Updating script version on ${LEMP_UTILS_CONFIG_FILE}...${ENDCOLOR}"
+        _check_and_update_script_version
 
         echo -e "${CYAN}Now you can run the runner.sh, enjoy!${ENDCOLOR}"
 

@@ -233,7 +233,7 @@ function netdata_installer_menu() {
 
     if [[ -z "${netdata_subdomain}" ]]; then
 
-      netdata_subdomain="$(whiptail --title "Netdata Installer" --inputbox "Please insert the subdomain you want to install Netdata. Ex: monitor.broobe.com" 10 60 3>&1 1>&2 2>&3)"
+      netdata_subdomain="$(whiptail --title "Netdata Installer" --inputbox "Please insert the subdomain you want to install Netdata. Ex: monitor.domain.com" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
         echo "NETDATA_SUBDOMAIN=${netdata_subdomain}" >>"/root/.broobe-utils-options"
