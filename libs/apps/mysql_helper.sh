@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.26
+# Version: 3.0.27
 #############################################################################
 
 function mysql_ask_user_db_scope() {
