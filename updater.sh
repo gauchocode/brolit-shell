@@ -17,43 +17,6 @@ YELLOW='\E[33;40m'
 CYAN='\E[36;40m'
 ENDCOLOR='\033[0m'
 
-# BROOBE Utils config file
-declare -g LEMP_UTILS_CONFIG_FILE=~/.broobe-utils-options
-
-function _check_and_update_script_version() {
-
-    if test -f ${LEMP_UTILS_CONFIG_FILE}; then
-
-        source "${LEMP_UTILS_CONFIG_FILE}"
-
-        declare -g CURRENT_SCRIPT_VERSION
-
-        CURRENT_SCRIPT_VERSION="3.0.27"
-
-        if [[ -z ${SCRIPT_VERSION} ]]; then
-
-            echo "Working with script version: ${CURRENT_SCRIPT_VERSION}"
-            echo "SCRIPT_VERSION=${CURRENT_SCRIPT_VERSION}" >>${LEMP_UTILS_CONFIG_FILE}
-
-        else
-
-            echo "Previous script version: ${SCRIPT_VERSION}"
-            echo "Working with script version: ${CURRENT_SCRIPT_VERSION}"
-
-            # Search and replace ${SCRIPT_VERSION} string with ${CURRENT_SCRIPT_VERSION}
-            sed -i "s/${SCRIPT_VERSION}/${CURRENT_SCRIPT_VERSION}/g" "${LEMP_UTILS_CONFIG_FILE}"
-
-        fi
-
-    else
-
-        echo "Config file ${LEMP_UTILS_CONFIG_FILE} is not present!"
-        return 1
-
-    fi
-
-}
-
 function _install_script_aliases() {
 
     local timestamp
@@ -96,9 +59,6 @@ function _self_update() {
 
         echo -e "${GREEN}Updating aliases ...${ENDCOLOR}"
         _install_script_aliases
-
-        echo -e "${GREEN}Updating script version on ${LEMP_UTILS_CONFIG_FILE}...${ENDCOLOR}"
-        _check_and_update_script_version
 
         echo -e "${CYAN}Now you can run the runner.sh, enjoy!${ENDCOLOR}"
 
