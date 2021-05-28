@@ -18,7 +18,7 @@ CYAN='\E[36;40m'
 ENDCOLOR='\033[0m'
 
 # BROOBE Utils config file
-LEMP_UTILS_CONFIG_FILE=~/.broobe-utils-options
+declare -g LEMP_UTILS_CONFIG_FILE=~/.broobe-utils-options
 
 function _check_and_update_script_version() {
 
@@ -32,6 +32,7 @@ function _check_and_update_script_version() {
 
         if [[ -z ${SCRIPT_VERSION} ]]; then
 
+            echo "Working with script version: ${CURRENT_SCRIPT_VERSION}"
             echo "SCRIPT_VERSION=${CURRENT_SCRIPT_VERSION}" >>${LEMP_UTILS_CONFIG_FILE}
 
         else
@@ -41,12 +42,16 @@ function _check_and_update_script_version() {
                 # Search and replace ${SCRIPT_VERSION} string with ${CURRENT_SCRIPT_VERSION}
                 sed -i "s/${SCRIPT_VERSION}/${CURRENT_SCRIPT_VERSION}/g" "${LEMP_UTILS_CONFIG_FILE}"
 
+                echo "Previous script version: ${SCRIPT_VERSION}"
+                echo "Working with script version: ${CURRENT_SCRIPT_VERSION}"
+
             fi
 
         fi
 
     else
 
+        echo "Config file ${LEMP_UTILS_CONFIG_FILE} is not present!"
         return 1
 
     fi
