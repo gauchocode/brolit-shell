@@ -719,7 +719,6 @@ function dropbox_get_backup() {
 # {
 #  "webservers":[
 #    {"name":"nginx","version":"1.0","default":"true"},
-#    {"name":"nginx","version":"2.0","default":"false"},
 #    {"name":"apache","version":"2.0","default":"false"}
 #   ],
 # "databases":[
