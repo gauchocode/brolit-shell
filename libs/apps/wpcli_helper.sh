@@ -549,12 +549,30 @@ function wpcli_seoyoast_reindex() {
 
     local wp_site=$1
 
-    display --indent 6 --text "- Running yoast index"
+    # Log
+    display --indent 6 --text "- Running yoast re-index"
+    log_event "info" "Running yoast re-index"
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} yoast index --reindex"
 
+    # Command
     sudo -u www-data wp --path="${wp_site}" yoast index --reindex
 
-    clear_last_line
-    display --indent 6 --text "- Running yoast index" --result "DONE" --color GREEN
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        clear_last_line
+        display --indent 6 --text "- Running yoast re-index" --result "DONE" --color GREEN
+        log_event "info" "Yoast re-index done!"
+
+    else
+
+        # Log
+        clear_last_line
+        display --indent 6 --text "- Running yoast re-index" --result "FAIL" --color RED
+        log_event "ERROR" "Yoast re-index failed!"
+
+    fi
 
 }
 
@@ -619,9 +637,11 @@ function wpcli_install_plugin() {
     local wp_site=$1
     local plugin=$2
 
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin install ${plugin} --activate"
+    # Log
     display --indent 6 --text "- Installing and activating plugin ${plugin}"
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin install ${plugin} --activate"
 
+    # Command
     sudo -u www-data wp --path="${wp_site}" plugin install "${plugin}" --activate --quiet
 
     exitstatus=$?
