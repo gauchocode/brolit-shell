@@ -30,7 +30,7 @@ function wpcli_manager() {
   if [[ ${second_path} != '' ]]; then
 
     chosen_wp_path="$(whiptail --title "PHP Version Selection" --menu "Select the version of PHP you want to work with:" 20 78 10 $(for x in ${install_path}; do echo "${x} [X]"; done) 3>&1 1>&2 2>&3)"
-    
+
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -179,7 +179,7 @@ function wpcli_main_menu() {
       # Listing installed plugins
       wp_del_plugins="$(wp --path="${wp_site}" plugin list --quiet --field=name --status=inactive --allow-root)"
       array_to_checklist "${wp_del_plugins}"
-      chosen_del_plugin_option=$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to delete:" 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)
+      chosen_del_plugin_option="$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to delete:" 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)"
 
       log_subsection "WP Delete Plugins"
 
@@ -230,7 +230,7 @@ function wpcli_main_menu() {
       wp_result="$(wpcli_core_reinstall "${wp_site}")"
       if [[ "${wp_result}" = "success" ]]; then
 
-        send_notification "⚠️ ${VPSNAME}" "WordPress reinstalled on site: ${wp_site}"
+        send_notification "⚠️ ${VPSNAME}" "WordPress re-installed on: ${wp_site}"
 
       fi
 
@@ -241,15 +241,7 @@ function wpcli_main_menu() {
       # CLEAN_DB
       log_subsection "WP Clean Database"
 
-      log_event "info" "Executing: wp --path=${wp_site} transient delete --expired --allow-root" "false"
-      wp --path="${wp_site}" transient delete --expired --allow-root --quiet
-
-      display --indent 2 --text "- Deleting transient" --result "DONE" --color GREEN
-
-      log_event "info" "Executing: wp --path=${wp_site} cache flush --allow-root" "false"
-      wp --path="${wp_site}" cache flush --allow-root --quiet
-
-      display --indent 2 --text "- Flushing cache" --result "DONE" --color GREEN
+      wpcli_clean_database "${wp_site}"
 
     fi
 
@@ -258,58 +250,7 @@ function wpcli_main_menu() {
       # PROFILE_WP
       log_subsection "WP Profile"
 
-      local is_installed
-
-      is_installed="$(wpcli_check_if_package_is_installed "profile-command")"
-      if [[ ${is_installed} == "true" ]]; then
-        #https://guides.wp-bullet.com/using-wp-cli-wp-profile-to-diagnose-wordpress-performance-issues/
-        wp package install wp-cli/profile-command:@stable --allow-root
-      fi
-
-      profiler_options=(
-        "01)" "PROFILE STAGE"
-        "02)" "PROFILE STAGE BOOTSTRAP"
-        "03)" "PROFILE STAGE ALL"
-        "04)" "PROFILE STAGE HOOK WP"
-        "05)" "PROFILE STAGE HOOK ALL"
-      )
-      chosen_profiler_option=$(whiptail --title "WP-CLI PROFILER HELPER" --menu "Choose an option to run" 20 78 10 "${profiler_options[@]}" 3>&1 1>&2 2>&3)
-
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        if [[ ${chosen_profiler_option} == *"01"* ]]; then
-          #This command shows the stages of loading WordPress
-          log_event "info" "Executing: wp --path=${wp_site} profile stage --allow-root" "false"
-          wp --path="${wp_site}" profile stage --allow-root
-
-        fi
-        if [[ ${chosen_profiler_option} == *"02"* ]]; then
-          #Can drill down into each stage, here we drill down into the bootstrap stage
-          log_event "info" "Executing: wp --path=${wp_site} profile stage bootstrap --allow-root" "false"
-          wp --path="${wp_site}" profile stage bootstrap --allow-root
-
-        fi
-        if [[ ${chosen_profiler_option} == *"03"* ]]; then
-          #All stage
-          #You can also use the --spotlight flag to filter out zero-like values for easier reading
-          log_event "info" "Executing: wp --path=${wp_site} profile stage --all --spotlight --orderby=time --allow-root" "false"
-          wp --path="${wp_site}" profile stage --all --spotlight --orderby=time --allow-root
-
-        fi
-        if [[ ${chosen_profiler_option} == *"04"* ]]; then
-          #Here we dig into the wp hook
-          log_event "info" "Executing: wp --path=${wp_site} profile hook wp --allow-root" "false"
-          wp --path="${wp_site}" profile hook wp --allow-root
-
-        fi
-        if [[ ${chosen_profiler_option} == *"05"* ]]; then
-          #Here we dig into the wp hook
-          log_event "info" "Executing: wp --path=${wp_site} profile hook --all --spotlight --allow-root" "false"
-          wp --path="${wp_site}" profile hook --all --spotlight --allow-root
-
-        fi
-
-      fi
+      wpcli_profiler_menu "${wp_site}"
 
     fi
     if [[ ${chosen_wpcli_options} == *"10"* ]]; then
@@ -318,7 +259,7 @@ function wpcli_main_menu() {
       log_subsection "WP Change Tables Prefix"
 
       # Generate WP tables PREFIX
-      TABLES_PREFIX=$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)
+      TABLES_PREFIX="$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)"
 
       # Change WP tables PREFIX
       wpcli_change_tables_prefix "${wp_site}" "${TABLES_PREFIX}"
@@ -361,15 +302,15 @@ function wpcli_main_menu() {
 
       log_subsection "WP Create User"
 
-      choosen_user=$(whiptail --title "WORDPRESS USER" --inputbox "Insert the username you want:" 10 60 "" 3>&1 1>&2 2>&3)
+      choosen_user="$(whiptail --title "WORDPRESS USER" --inputbox "Insert the username you want:" 10 60 "" 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        choosen_email=$(whiptail --title "WORDPRESS USER MAIL" --inputbox "Insert the username email:" 10 60 "" 3>&1 1>&2 2>&3)
+        choosen_email="$(whiptail --title "WORDPRESS USER MAIL" --inputbox "Insert the username email:" 10 60 "" 3>&1 1>&2 2>&3)"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
-          choosen_role=$(whiptail --title "WORDPRESS USER ROLE" --inputbox "Insert the user role (‘administrator’, ‘editor’, ‘author’, ‘contributor’, ‘subscriber’)" 10 60 "" 3>&1 1>&2 2>&3)
+          choosen_role="$(whiptail --title "WORDPRESS USER ROLE" --inputbox "Insert the user role (‘administrator’, ‘editor’, ‘author’, ‘contributor’, ‘subscriber’)" 10 60 "" 3>&1 1>&2 2>&3)"
           exitstatus=$?
           if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -388,11 +329,11 @@ function wpcli_main_menu() {
       # RESET WP USER PASSW
       log_subsection "WP Reset User Pass"
 
-      choosen_user=$(whiptail --title "WORDPRESS USER" --inputbox "Insert the username you want:" 10 60 "" 3>&1 1>&2 2>&3)
+      choosen_user="$(whiptail --title "WORDPRESS USER" --inputbox "Insert the username you want:" 10 60 "" 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        choosen_passw=$(whiptail --title "WORDPRESS USER PASSWORD" --inputbox "Insert the new password:" 10 60 "" 3>&1 1>&2 2>&3)
+        choosen_passw="$(whiptail --title "WORDPRESS USER PASSWORD" --inputbox "Insert the new password:" 10 60 "" 3>&1 1>&2 2>&3)"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -410,6 +351,70 @@ function wpcli_main_menu() {
   else
 
     menu_main_options
+
+  fi
+
+}
+
+function wpcli_profiler_menu() {
+
+  # $1 = ${wp_site}
+
+  local wp_site=$1
+
+  local is_installed
+  local profiler_options
+  local chosen_profiler_option
+
+  is_installed="$(wpcli_check_if_package_is_installed "profile-command")"
+  if [[ ${is_installed} == "true" ]]; then
+    #https://guides.wp-bullet.com/using-wp-cli-wp-profile-to-diagnose-wordpress-performance-issues/
+    wp package install wp-cli/profile-command:@stable --allow-root
+  fi
+
+  profiler_options=(
+    "01)" "PROFILE STAGE"
+    "02)" "PROFILE STAGE BOOTSTRAP"
+    "03)" "PROFILE STAGE ALL"
+    "04)" "PROFILE STAGE HOOK WP"
+    "05)" "PROFILE STAGE HOOK ALL"
+  )
+
+  chosen_profiler_option="$(whiptail --title "WP-CLI PROFILER HELPER" --menu "Choose an option to run" 20 78 10 "${profiler_options[@]}" 3>&1 1>&2 2>&3)"
+
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    if [[ ${chosen_profiler_option} == *"01"* ]]; then
+      #This command shows the stages of loading WordPress
+      log_event "info" "Executing: wp --path=${wp_site} profile stage --allow-root" "false"
+      wp --path="${wp_site}" profile stage --allow-root
+
+    fi
+    if [[ ${chosen_profiler_option} == *"02"* ]]; then
+      #Can drill down into each stage, here we drill down into the bootstrap stage
+      log_event "info" "Executing: wp --path=${wp_site} profile stage bootstrap --allow-root" "false"
+      wp --path="${wp_site}" profile stage bootstrap --allow-root
+
+    fi
+    if [[ ${chosen_profiler_option} == *"03"* ]]; then
+      #All stage
+      #You can also use the --spotlight flag to filter out zero-like values for easier reading
+      log_event "info" "Executing: wp --path=${wp_site} profile stage --all --spotlight --orderby=time --allow-root" "false"
+      wp --path="${wp_site}" profile stage --all --spotlight --orderby=time --allow-root
+
+    fi
+    if [[ ${chosen_profiler_option} == *"04"* ]]; then
+      #Here we dig into the wp hook
+      log_event "info" "Executing: wp --path=${wp_site} profile hook wp --allow-root" "false"
+      wp --path="${wp_site}" profile hook wp --allow-root
+
+    fi
+    if [[ ${chosen_profiler_option} == *"05"* ]]; then
+      #Here we dig into the wp hook
+      log_event "info" "Executing: wp --path=${wp_site} profile hook --all --spotlight --allow-root" "false"
+      wp --path="${wp_site}" profile hook --all --spotlight --allow-root
+
+    fi
 
   fi
 
