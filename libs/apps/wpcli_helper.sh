@@ -837,6 +837,24 @@ function wpcli_search_and_replace() {
 
 }
 
+function wpcli_clean_database() {
+
+    # $1 = ${wp_site} (site path)
+
+    local wp_site=$1
+
+    log_event "info" "Executing: wp --path=${wp_site} transient delete --expired --allow-root" "false"
+    wp --path="${wp_site}" transient delete --expired --allow-root --quiet
+
+    display --indent 2 --text "- Deleting transient" --result "DONE" --color GREEN
+
+    log_event "info" "Executing: wp --path=${wp_site} cache flush --allow-root" "false"
+    wp --path="${wp_site}" cache flush --allow-root --quiet
+
+    display --indent 2 --text "- Flushing cache" --result "DONE" --color GREEN
+
+}
+
 function wpcli_export_database() {
 
     # $1 = ${wp_site} (site path)
