@@ -59,6 +59,9 @@ types {
     application/x-tcl                     tcl tk;
     application/x-x509-ca-cert            der pem crt;
     application/x-xpinstall               xpi;
+    application/x-font-ttf                ttc;
+    application/x-font-otf                otf;
+    application/font-woff2                woff2;
     application/xhtml+xml                 xhtml;
     application/xspf+xml                  xspf;
     application/zip                       zip;
