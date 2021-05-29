@@ -255,7 +255,7 @@ function wpcli_install_needed_extensions() {
     wp --allow-root package install "git@github.com:10up/wp-vulnerability-scanner.git"
 
     # WP-Rocket
-    wp --allow-root package install "wp-media/wp-rocket-cli"
+    wp --allow-root package install "wp-media/wp-rocket-cli:1.3"
 
 }
 
