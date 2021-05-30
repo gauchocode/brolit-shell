@@ -661,6 +661,13 @@ function dropbox_get_sites_backups() {
 }
 
 # TODO: {"2020-05-19":{"files":"ZZZZZ1","database":"YYYY1"},"2020-05-20":{"files":"ZZZZZ2","database":"YYYY2"}}
+# SERVER_DATA_RESULT => {
+#    "2021-05-23":{"files":"autonube.com_site-files_2021-05-23.tar.bz2","database":"autonube_prod_database_2021-05-23.tar.bz2"} ,
+#    "2021-05-24":{"files":"autonube.com_site-files_2021-05-24.tar.bz2","database":"autonube_prod_database_2021-05-24.tar.bz2"} ,
+#
+# SERVER_DATA_RESULT => {
+# "backups":  {"2021-05-24":{"files":"autonube.com_site-files_2021-05-24.tar.bz2","database":"autonube_prod_database_2021-05-24.tar.bz2"} } ,
+#             {"2021-05-25":{"files":"autonube.com_site-files_2021-05-25.tar.bz2","database":"autonube_prod_database_2021-05-25.tar.bz2"} } ,
 function dropbox_get_backup() {
 
     # ${1} = ${chosen_project}
@@ -700,9 +707,9 @@ function dropbox_get_backup() {
         backup_db="$(basename "${search_backup_db}")"
 
         if [[ ${search_backup_db} != "" ]]; then
-            backups_string="${backups_string} {\"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"${backup_db}\"} } , "
+            backups_string="${backups_string} \"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"${backup_db}\"} , "
         else
-            backups_string="${backups_string} {\"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"false\"} } , "
+            backups_string="${backups_string} \"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"false\"} , "
         fi
 
     done
@@ -711,8 +718,13 @@ function dropbox_get_backup() {
     backups_string="${backups_string::-3}"
 
     # Return JSON part
+    #echo "SERVER_DATA_RESULT => {"
+    #echo "\"backups\": ${backups_string}"
+    #echo "}"
+
+    # Return JSON part
     echo "SERVER_DATA_RESULT => {"
-    echo "\"backups\": ${backups_string}"
+    echo "${backups_string}"
     echo "}"
 
 }
