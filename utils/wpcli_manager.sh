@@ -84,27 +84,6 @@ function wpcli_main_menu() {
   local wpcli_options
   local wp_result
   local chosen_wpcli_options
-  local wp_plugins
-  local chosen_plugin_option
-  local plugin_zip
-
-  # Array of plugin slugs to install
-  wp_plugins=(
-    "wordpress-seo" " " off
-    "seo-by-rank-math" " " off
-    "duracelltomi-google-tag-manager" " " off
-    "ewww-image-optimizer" " " off
-    "post-smtp" " " off
-    "contact-form-7" " " off
-    "advanced-custom-fields" " " off
-    "acf-vc-integrator" " " off
-    "w3-total-cache" " " off
-    "iwp-client" " " off
-    "wordfence" " " off
-    "better-wp-security" " " off
-    "quttera-web-malware-scanner" " " off
-    "zip-file" " " off
-  )
 
   wpcli_options=(
     "01)" "INSTALL PLUGINS"
@@ -129,28 +108,7 @@ function wpcli_main_menu() {
 
     if [[ ${chosen_wpcli_options} == *"01"* ]]; then
 
-      # INSTALL_PLUGINS
-      chosen_plugin_option="$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to install." 20 78 15 "${wp_plugins[@]}" 3>&1 1>&2 2>&3)"
-
-      log_subsection "WP Install Plugin"
-
-      for plugin in $chosen_plugin_option; do
-
-        if [[ ${plugin} == *"zip-file"* ]]; then
-
-          plugin_zip="$(whiptail --title "WordPress Plugin" --inputbox "Please insert a public url with a plugin zip file." 10 60 "https://domain.com/plugin.zip" 3>&1 1>&2 2>&3)"
-          exitstatus=$?
-          if [[ ${exitstatus} -eq 0 ]]; then
-
-            plugin="${plugin_zip}"
-
-          fi
-
-        fi
-
-        wpcli_install_plugin "${wp_site}" "${plugin}"
-
-      done
+      wpcli_plugin_installer
 
     fi
 
@@ -417,5 +375,61 @@ function wpcli_profiler_menu() {
     fi
 
   fi
+
+}
+
+function wpcli_plugin_installer() {
+
+  local wp_plugins
+  local chosen_plugin_option
+  local plugin_zip
+
+  # TODO: install from default options, install from zip or install from external config file.
+  # TODO: config file should contain something like this:
+  # Structure: "PLUGIN_NAME" , "PLUGIN_SOURCE", "PLUGIN_SLUG or PUBLIC_URL", "ACTIVATE_AFTER_INSTALL" (true or false)
+  # Example 1: "WP Rocket", "private", "https://example.com/plugin.zip", "false"
+  # Example 2: "SEO Yoast", "public-repo", "wordpress-seo", "true"
+
+  # Array of plugin slugs to install
+  wp_plugins=(
+    "wordpress-seo" " " off
+    "seo-by-rank-math" " " off
+    "duracelltomi-google-tag-manager" " " off
+    "ewww-image-optimizer" " " off
+    "post-smtp" " " off
+    "contact-form-7" " " off
+    "advanced-custom-fields" " " off
+    "acf-vc-integrator" " " off
+    "wp-asset-clean-up" " " off
+    "w3-total-cache" " " off
+    "iwp-client" " " off
+    "wordfence" " " off
+    "better-wp-security" " " off
+    "quttera-web-malware-scanner" " " off
+    "zip-file" " " off
+  )
+
+  # INSTALL_PLUGINS
+  chosen_plugin_option="$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to install." 20 78 15 "${wp_plugins[@]}" 3>&1 1>&2 2>&3)"
+
+  log_subsection "WP Plugin Installer"
+
+  for plugin in ${chosen_plugin_option}; do
+
+    if [[ ${plugin} == *"zip-file"* ]]; then
+
+      plugin_zip="$(whiptail --title "WordPress Plugin" --inputbox "Please insert a public url with a plugin zip file." 10 60 "https://domain.com/plugin.zip" 3>&1 1>&2 2>&3)"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        plugin="${plugin_zip}"
+
+      fi
+
+    fi
+
+    wpcli_install_plugin "${wp_site}" "${plugin}"
+
+  done
 
 }
