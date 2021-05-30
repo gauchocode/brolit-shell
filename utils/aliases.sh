@@ -668,15 +668,15 @@ function dropbox_get_backup() {
     local project_domain=$1
 
     local project_name
-
     local dropbox_site_backup_path
-    #local dropbox_db_backup_path
     local dropbox_site_backup_list
-    #local dropbox_db_backup_list
-
-    #local backup_files
+    local backup_to_search
     local backup_db
     local backup_date
+    local backups_string
+
+    # Reset
+    backups_string=''
 
     if [[ ${project_domain} == "" ]]; then
         exit 1
@@ -708,7 +708,7 @@ function dropbox_get_backup() {
     done
 
     # Return JSON part
-    echo "{"
+    echo "SERVER_DATA_RESULT => {"
     echo "\"backups\": ${backups_string}"
     echo "}"
 
