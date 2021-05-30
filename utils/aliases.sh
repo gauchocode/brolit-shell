@@ -700,12 +700,15 @@ function dropbox_get_backup() {
         backup_db="$(basename "${search_backup_db}")"
 
         if [[ ${search_backup_db} != "" ]]; then
-            backups_string="${backups_string} {\"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"${backup_db}\"} },"
+            backups_string="${backups_string} {\"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"${backup_db}\"} } , "
         else
-            backups_string="${backups_string} {\"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"false\"} },"
+            backups_string="${backups_string} {\"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"false\"} } , "
         fi
 
     done
+
+    # Remove 3 last chars
+    backups_string="${backups_string::-3}"
 
     # Return JSON part
     echo "SERVER_DATA_RESULT => {"
