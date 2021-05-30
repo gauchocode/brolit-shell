@@ -26,7 +26,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.27"
-ALIASES_VERSION="3.0.27-026"
+ALIASES_VERSION="3.0.27-027"
 
 # Server Name
 VPSNAME="$HOSTNAME"
@@ -723,9 +723,7 @@ function dropbox_get_backup() {
     #echo "}"
 
     # Return JSON part
-    echo "SERVER_DATA_RESULT => {"
-    echo "${backups_string}"
-    echo "}"
+    echo "SERVER_DATA_RESULT => { ${backups_string} }"
 
 }
 
