@@ -708,8 +708,8 @@ function dropbox_get_backup() {
 
         backup_to_search="${project_name}_${project_state}_database_${backup_date}.tar.bz2"
 
-        echo "Running: ${DROPBOX_UPLOADER} -hq search \"${backup_to_search}\" | grep -E \"${backup_date}\"" >>"${LOG}"
-        search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${backup_date}")"
+        echo "Running: ${DROPBOX_UPLOADER} -hq search \"${backup_to_search}\" | grep -E \"${backup_date}\" || ret=$?" >>"${LOG}"
+        search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${backup_date}" || ret=$?)"
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
