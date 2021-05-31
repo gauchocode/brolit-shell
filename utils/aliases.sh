@@ -704,12 +704,21 @@ function dropbox_get_backup() {
 
         search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${backup_date}")"
 
-        backup_db="$(basename "${search_backup_db}")"
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
 
-        if [[ ${search_backup_db} != "" ]]; then
-            backups_string="${backups_string}\"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"${backup_db}\"} , "
+            backup_db="$(basename "${search_backup_db}")"
+
+            if [[ ${search_backup_db} != "" ]]; then
+                backups_string="${backups_string}\"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"${backup_db}\"} , "
+            else
+                backups_string="${backups_string}\"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"false\"} , "
+            fi
+
         else
-            backups_string="${backups_string}\"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"false\"} , "
+
+            backups_string="${backups_string}\"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"error check log file\"} , "
+
         fi
 
     done
