@@ -697,6 +697,9 @@ function dropbox_get_backup() {
     dropbox_site_backup_path="${VPSNAME}/site/${project_domain}"
     dropbox_site_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_site_backup_path}")"
 
+    echo "Running: ${DROPBOX_UPLOADER} -hq list "${dropbox_site_backup_path}"" >>"${LOG}"
+    echo "Result: ${dropbox_site_backup_list}" >>"${LOG}"
+    
     for backup_file in ${dropbox_site_backup_list}; do
 
         backup_date="$(_get_backup_date "${backup_file}")"
