@@ -26,7 +26,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.27"
-ALIASES_VERSION="3.0.27-028"
+ALIASES_VERSION="3.0.27-029"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
