@@ -26,7 +26,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.27"
-ALIASES_VERSION="3.0.27-030"
+ALIASES_VERSION="3.0.27-031"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -96,16 +96,6 @@ function _string_remove_spaces() {
 
     # Return
     echo "${string//[[:blank:]]/}"
-
-}
-
-function _clear_last_line() {
-
-    printf "\033[1A" >&2
-    echo -e "${F_DEFAULT}                                                                                                         ${ENDCOLOR}" >&2
-    echo -e "${F_DEFAULT}                                                                                                         ${ENDCOLOR}" >&2
-    printf "\033[1A" >&2
-    printf "\033[1A" >&2
 
 }
 
@@ -711,9 +701,11 @@ function dropbox_get_backup() {
 
         backup_date="$(_get_backup_date "${backup_file}")"
 
+        echo "extracted backup_date from ${backup_file}: ${backup_date}" >>"${LOG}"
+
         backup_to_search="${project_name}_${project_state}_database_${backup_date}.tar.bz2"
 
-        echo "Running: ${DROPBOX_UPLOADER} -hq search \"${backup_to_search}\" | grep -E \"${backup_date}\"" >> "${LOG}"
+        echo "Running: ${DROPBOX_UPLOADER} -hq search \"${backup_to_search}\" | grep -E \"${backup_date}\"" >>"${LOG}"
         search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${backup_date}")"
 
         exitstatus=$?
