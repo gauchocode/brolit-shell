@@ -38,8 +38,12 @@
 
 ### In Progress
 
+- [ ] Core: On project creation/restore need to ask first the project state, then project domain.
+        If project state != prod and subdomains is not containing the stage, need to suggest one.
+        Example: test.multiplacas.broobe.hosting OK
+        Example 2: multiplacas.broobe.hosting X (OK only if prod).
 - [ ] Notifications: malware scans and others scheduled options.
-- [ ] WP-CLI: On wordpress_installer, wpcli_search_and_replace receives domains instead urls (ex: domain.com instead http://domain.com).
+- [ ] WP-CLI: wpcli_search_and_replace receives domains instead urls (ex: domain.com instead http://domain.com).
 - [ ] Restore-project: cant restore non-wp projects.
 - [ ] Restore-database: granting privileges to user fails, database_name is empty.
 - [ ] Core: Add an option to support non LEMP anviroment (DB-only, Websever+PHP only, other). 
