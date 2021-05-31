@@ -28,6 +28,17 @@ fi
 SCRIPT_VERSION="3.0.27"
 ALIASES_VERSION="3.0.27-028"
 
+# Log
+timestamp="$(date +%Y%m%d_%H%M%S)"
+log_name="bash_aliases_${timestamp}.log"
+path_log="/var/log/aliases"
+
+if [[ ! -d "${path_log}" ]]; then
+    mkdir "${path_log}"
+fi
+
+LOG="/${path_log}/${log_name}"
+
 # Server Name
 VPSNAME="$HOSTNAME"
 
@@ -702,6 +713,7 @@ function dropbox_get_backup() {
 
         backup_to_search="${project_name}_${project_state}_database_${backup_date}.tar.bz2"
 
+        echo "Running: ${DROPBOX_UPLOADER} -hq search \"${backup_to_search}\" | grep -E \"${backup_date}\"" >> "${LOG}"
         search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${backup_date}")"
 
         exitstatus=$?
