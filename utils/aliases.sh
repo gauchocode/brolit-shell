@@ -26,7 +26,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.27"
-ALIASES_VERSION="3.0.27-029"
+ALIASES_VERSION="3.0.27-030"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -37,7 +37,7 @@ if [[ ! -d "${path_log}" ]]; then
     mkdir "${path_log}"
 fi
 
-LOG="/${path_log}/${log_name}"
+LOG="${path_log}/${log_name}"
 
 # Server Name
 VPSNAME="$HOSTNAME"
