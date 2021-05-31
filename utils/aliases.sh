@@ -697,6 +697,9 @@ function dropbox_get_backup() {
     dropbox_site_backup_path="${VPSNAME}/site/${project_domain}"
     dropbox_site_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_site_backup_path}")"
 
+    echo "Running: ${DROPBOX_UPLOADER} -hq list "${dropbox_site_backup_path}"" >>"${LOG}"
+    echo "Result: ${dropbox_site_backup_list}" >>"${LOG}"
+    
     for backup_file in ${dropbox_site_backup_list}; do
 
         backup_date="$(_get_backup_date "${backup_file}")"
@@ -705,8 +708,8 @@ function dropbox_get_backup() {
 
         backup_to_search="${project_name}_${project_state}_database_${backup_date}.tar.bz2"
 
-        echo "Running: ${DROPBOX_UPLOADER} -hq search \"${backup_to_search}\" | grep -E \"${backup_date}\"" >>"${LOG}"
-        search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${backup_date}")"
+        echo "Running: ${DROPBOX_UPLOADER} -hq search \"${backup_to_search}\" | grep -E \"${backup_date}\" || ret=$?" >>"${LOG}"
+        search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${backup_date}" || ret=$?)"
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
