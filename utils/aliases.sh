@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.27
+# Version: 3.0.28
 ################################################################################
 
 source ~/.broobe-utils-options
@@ -25,8 +25,8 @@ if [[ ${DROPBOX_ENABLE} == "true" && -f ${DPU_CONFIG_FILE} ]]; then
 fi
 
 # Version
-SCRIPT_VERSION="3.0.27"
-ALIASES_VERSION="3.0.27-035"
+SCRIPT_VERSION="3.0.28"
+ALIASES_VERSION="3.0.28-037"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
