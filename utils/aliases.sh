@@ -478,6 +478,87 @@ function maketar() { tar cvzf "${1%%/}.tar.gz" "${1%%/}/"; }
 # Create a ZIP archive of a file or folder
 function makezip() { zip -r "${1%%/}.zip" "$1"; }
 
+function extract() {
+
+  # Parameters
+  # $1 - File to uncompress or extract
+  # $2 - Dir to uncompress file
+  # $3 - Optional compress-program (ex: lbzip2)
+
+  local file=$1
+  local directory=$2
+  local compress_type=$3
+
+  if [[ -f "${file}" ]]; then
+
+    case "${file}" in
+
+    *.tar.bz2)
+      if [ -z "${compress_type}" ]; then
+        tar xp "${file}" -C "${directory}" --use-compress-program="${compress_type}"
+      else
+        tar xjf "${file}" -C "${directory}"
+      fi
+      ;;
+
+    *.tar.gz)
+      tar -xzvf "${file}" -C "${directory}"
+      ;;
+
+    *.bz2)
+      bunzip2 "${file}"
+      ;;
+
+    *.rar)
+      unrar x "${file}"
+      ;;
+
+    *.gz)
+      gunzip "${file}"
+      ;;
+
+    *.tar)
+      tar xf "${file}" -C "${directory}"
+      ;;
+
+    *.tbz2)
+      tar xjf "${file}" -C "${directory}"
+      ;;
+
+    *.tgz)
+      tar xzf "${file}" -C "${directory}"
+      ;;
+
+    *.zip)
+      unzip "${file}"
+      ;;
+
+    *.Z)
+      uncompress "${file}"
+      ;;
+
+    *.7z)
+      7z x "${file}"
+      ;;
+
+    *.xz)
+      tar xvf "${file}" -C "${directory}"
+      ;;
+
+    *)
+      echo "${file} cannot be extracted via extract()"
+      ;;
+
+    esac
+
+  else
+
+    echo "${file} is not a valid file"
+
+  fi
+
+}
+
 # Make dir and cd
 function mcd() {
 
