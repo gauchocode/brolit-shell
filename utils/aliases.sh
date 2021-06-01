@@ -135,6 +135,26 @@ function _cloudflare_get_zone_id() {
 
 }
 
+function _is_pkg_installed() {
+
+    # $1 = ${package}
+
+    local package=$1
+
+    if [ "$(dpkg-query -W -f='${Status}' "${package}" 2>/dev/null | grep -c "ok installed")" == "1" ]; then
+
+        # Return
+        echo "true"
+
+    else
+
+        # Return
+        echo "false"
+
+    fi
+
+}
+
 function _php_check_installed_version() {
 
     local php_fpm_installed_pkg
@@ -861,7 +881,13 @@ function show_server_data() {
 
     server_info="$(serverinfo)"
     server_config="$(lemp_utils_config)"
-    server_databases="$(mysql_databases)"
+
+    if [[ "$(_is_pkg_installed "mysql-server")" == "true" || "$(_is_pkg_installed "mariadb-server")" == "true" ]]; then
+        server_databases="$(mysql_databases)"
+    else
+        server_databases="\"no-databases\""
+    fi
+
     server_sites="$(sites_directories)"
     server_pkgs="$(packages_get_data)"
 
