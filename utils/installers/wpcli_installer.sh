@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.27
+# Version: 3.0.28
 ################################################################################
 
 function wpcli_installer_menu() {
