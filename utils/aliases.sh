@@ -897,7 +897,8 @@ function read_site_config() {
 
     local project_config
 
-    DEVOPS_CONFIG_FILE="${CLOUDFLARE_ENABLE}/${project_domain}/devops.conf"
+    DEVOPS_CONFIG_FILE="${SITES}/${project_domain}/devops.conf"
+
     if [[ -f ${DEVOPS_CONFIG_FILE} ]]; then
 
         project_config="$(<"${DEVOPS_CONFIG_FILE}")"
