@@ -26,7 +26,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.28"
-ALIASES_VERSION="3.0.28-038"
+ALIASES_VERSION="3.0.28-039"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -866,8 +866,17 @@ function packages_get_data() {
     apache_v_installed="$(_apache_check_installed_version)"
     nginx_v_installed="$(_nginx_check_installed_version)"
     webservers_v_installed="${nginx_v_installed}${apache_v_installed}"
-    # Remove 3 last chars
-    webservers_v_installed="${webservers_v_installed::-3}"
+
+    if [[ ${webservers_v_installed} == "" ]]; then
+
+        webservers_v_installed="\"no-webserver\""
+
+    else
+
+        # Remove 3 last chars
+        webservers_v_installed="${webservers_v_installed::-3}"
+
+    fi
 
     ## databases
     mysql_v_installed="$(_mysql_check_installed_version)"
@@ -877,6 +886,31 @@ function packages_get_data() {
 
     # Return JSON part
     echo "\"webservers\":[ ${webservers_v_installed} ], \"databases\": [ ${mysql_v_installed} ], \"languages\": [ ${php_v_installed} ]"
+
+}
+
+function read_site_config() {
+
+    # ${1} = ${project_domain}
+
+    local project_domain=$1
+
+    local project_config
+
+    DEVOPS_CONFIG_FILE="${CLOUDFLARE_ENABLE}/${project_domain}/devops.conf"
+    if [[ -f ${DEVOPS_CONFIG_FILE} ]]; then
+
+        project_config="$(<"${DEVOPS_CONFIG_FILE}")"
+
+        # Return
+        echo "SERVER_DATA_RESULT => ${project_config}"
+
+    else
+
+        # Return
+        echo "no-site-config"
+
+    fi
 
 }
 
