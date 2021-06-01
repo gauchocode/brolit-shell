@@ -199,7 +199,7 @@ function _mysql_check_installed_version() {
     local mysql_installed_version
 
     # MySQL or MariaDB?
-    mysql_installed_pkg="$(sudo dpkg --list | grep -Eo 'mysql-client-[0-9]+([.][0-9]+)?')"
+    mysql_installed_pkg="$(sudo dpkg --list | grep -Eo 'mysql-server-[0-9]+([.][0-9]+)?')"
 
     if [[ ${mysql_installed_pkg} != "" ]]; then
 
@@ -208,15 +208,16 @@ function _mysql_check_installed_version() {
 
     else
 
-        mysql_installed_pkg="$(sudo dpkg --list | grep -Eo 'mariadb-client-[0-9]+([.][0-9]+)?')"
+        mysql_installed_pkg="$(sudo dpkg --list | grep -Eo 'mariadb-server-[0-9]+([.][0-9]+)?')"
 
-        # Extract only version numbers
-        mysql_installed_version="$(mysql -V | grep -Eo '[+-]?[0-9]+([.][0-9]+)+([.][0-9]+)?-MariaDB' | cut -d "-" -f 1)"
+        if [[ ${mysql_installed_pkg} != "" ]]; then
+
+            # Extract only version numbers
+            mysql_installed_version="$(mysql -V | grep -Eo '[+-]?[0-9]+([.][0-9]+)+([.][0-9]+)?-MariaDB' | cut -d "-" -f 1)"
+
+        fi
 
     fi
-
-    # Remove last space
-    # mysql_installed_version="$(_string_remove_spaces "${mysql_installed_version}")"
 
     # Return
     echo "{\"name\":\"${mysql_installed_pkg}\",\"version\":\"${mysql_installed_version}\",\"default\":\"true\"}"
@@ -480,82 +481,82 @@ function makezip() { zip -r "${1%%/}.zip" "$1"; }
 
 function extract() {
 
-  # Parameters
-  # $1 - File to uncompress or extract
-  # $2 - Dir to uncompress file
-  # $3 - Optional compress-program (ex: lbzip2)
+    # Parameters
+    # $1 - File to uncompress or extract
+    # $2 - Dir to uncompress file
+    # $3 - Optional compress-program (ex: lbzip2)
 
-  local file=$1
-  local directory=$2
-  local compress_type=$3
+    local file=$1
+    local directory=$2
+    local compress_type=$3
 
-  if [[ -f "${file}" ]]; then
+    if [[ -f "${file}" ]]; then
 
-    case "${file}" in
+        case "${file}" in
 
-    *.tar.bz2)
-      if [ -z "${compress_type}" ]; then
-        tar xp "${file}" -C "${directory}" --use-compress-program="${compress_type}"
-      else
-        tar xjf "${file}" -C "${directory}"
-      fi
-      ;;
+        *.tar.bz2)
+            if [ -z "${compress_type}" ]; then
+                tar xp "${file}" -C "${directory}" --use-compress-program="${compress_type}"
+            else
+                tar xjf "${file}" -C "${directory}"
+            fi
+            ;;
 
-    *.tar.gz)
-      tar -xzvf "${file}" -C "${directory}"
-      ;;
+        *.tar.gz)
+            tar -xzvf "${file}" -C "${directory}"
+            ;;
 
-    *.bz2)
-      bunzip2 "${file}"
-      ;;
+        *.bz2)
+            bunzip2 "${file}"
+            ;;
 
-    *.rar)
-      unrar x "${file}"
-      ;;
+        *.rar)
+            unrar x "${file}"
+            ;;
 
-    *.gz)
-      gunzip "${file}"
-      ;;
+        *.gz)
+            gunzip "${file}"
+            ;;
 
-    *.tar)
-      tar xf "${file}" -C "${directory}"
-      ;;
+        *.tar)
+            tar xf "${file}" -C "${directory}"
+            ;;
 
-    *.tbz2)
-      tar xjf "${file}" -C "${directory}"
-      ;;
+        *.tbz2)
+            tar xjf "${file}" -C "${directory}"
+            ;;
 
-    *.tgz)
-      tar xzf "${file}" -C "${directory}"
-      ;;
+        *.tgz)
+            tar xzf "${file}" -C "${directory}"
+            ;;
 
-    *.zip)
-      unzip "${file}"
-      ;;
+        *.zip)
+            unzip "${file}"
+            ;;
 
-    *.Z)
-      uncompress "${file}"
-      ;;
+        *.Z)
+            uncompress "${file}"
+            ;;
 
-    *.7z)
-      7z x "${file}"
-      ;;
+        *.7z)
+            7z x "${file}"
+            ;;
 
-    *.xz)
-      tar xvf "${file}" -C "${directory}"
-      ;;
+        *.xz)
+            tar xvf "${file}" -C "${directory}"
+            ;;
 
-    *)
-      echo "${file} cannot be extracted via extract()"
-      ;;
+        *)
+            echo "${file} cannot be extracted via extract()"
+            ;;
 
-    esac
+        esac
 
-  else
+    else
 
-    echo "${file} is not a valid file"
+        echo "${file} is not a valid file"
 
-  fi
+    fi
 
 }
 
