@@ -26,7 +26,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.28"
-ALIASES_VERSION="3.0.28-037"
+ALIASES_VERSION="3.0.28-038"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -702,11 +702,20 @@ function sites_directories() {
 
     done
 
-    # Remove 3 first chars
-    directories="${directories:3}"
+    if [[ ${directories} != "" ]]; then
 
-    # Return
-    echo "${directories}"
+        # Remove 3 first chars
+        directories="${directories:3}"
+
+        # Return
+        echo "${directories}"
+
+    else
+
+        # Return
+        echo "\"no-sites\""
+
+    fi
 
 }
 
