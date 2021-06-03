@@ -2082,24 +2082,27 @@ function tasks_handler() {
     ;;
 
   restore)
-    log_event "warning" "TODO: run project-restore for $SITE" "true"
+    log_event "warning" "TODO: run project-restore for ${SITE}" "true"
+
     exit
     ;;
 
   project-install)
     log_event "debug" "Running: project_install ${SITES} wordpress ${DOMAIN} ${PNAME} ${PSTATE}"
     project_install "${SITES}" "${PTYPE}" "${DOMAIN}" "${PNAME}" "${PSTATE}"
+
     exit
     ;;
 
   cloudflare-api)
-    subtasks_cloudflare_handler "${STASK}"
+    subtasks_cloudflare_handler "${STASK}" "${TVALUE}"
 
     exit
     ;;
 
   aliases-install)
     install_script_aliases
+
     exit
     ;;
 
@@ -2173,7 +2176,6 @@ function subtasks_cloudflare_handler() {
 
   clear_cache)
 
-    log_event "debug" "Running: cloudflare_clear_cache ${DOMAIN}"
     cloudflare_clear_cache "${DOMAIN}"
 
     exit
@@ -2181,8 +2183,14 @@ function subtasks_cloudflare_handler() {
 
   dev_mode)
 
-    log_event "debug" "Running: cloudflare_set_development_mode ${DOMAIN}"
-    cloudflare_set_development_mode "${DOMAIN}" "on"
+    cloudflare_set_development_mode "${DOMAIN}" "${TVALUE}"
+
+    exit
+    ;;
+
+  ssl_mode)
+
+    cloudflare_set_ssl_mode "${DOMAIN}" "${TVALUE}"
 
     exit
     ;;
@@ -2224,6 +2232,7 @@ function flags_handler() {
   PNAME=""
   PTYPE=""
   PSTATE=""
+  TVALUE=""
   SHOWDEBUG=0
 
   while [[ $i < ${arguments_count} ]]; do
@@ -2257,6 +2266,11 @@ function flags_handler() {
     -st | --subtask)
       i="$((i + 1))"
       STASK=${parameters[$i]}
+      ;;
+
+    -tv | --task-value)
+      i="$((i + 1))"
+      TVALUE=${parameters[$i]}
       ;;
 
     -s | --site)
