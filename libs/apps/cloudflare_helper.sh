@@ -251,7 +251,7 @@ function cloudflare_set_ssl_mode() {
 
     local ssl_mode_result
 
-    zone_id=$(_cloudflare_get_zone_id "${root_domain}")
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -422,9 +422,9 @@ function cloudflare_set_record() {
 
     cur_ip="${SERVER_IP}"
 
-    zone_id=$(_cloudflare_get_zone_id "${root_domain}")
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
 
-    record_id=$(cloudflare_record_exists "${record_name}" "${zone_id}")
+    record_id="$(cloudflare_record_exists "${record_name}" "${zone_id}")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
