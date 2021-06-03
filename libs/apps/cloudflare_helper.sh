@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.28
+# Version: 3.0.29
 ################################################################################
 #
 #   Ref: https://api.cloudflare.com/
@@ -126,7 +126,7 @@ function cloudflare_clear_cache() {
     local zone_name
     local purge_cache
 
-    zone_id=$(_cloudflare_get_zone_id "${root_domain}")
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -317,7 +317,7 @@ function cloudflare_record_exists() {
     else
 
         # Clean output
-        record_id="$(echo "${record_id}" |tr -d '\n')"
+        record_id="$(echo "${record_id}" | tr -d '\n')"
 
         log_event "info" "Record ${record_name} found with id: ${record_id}"
 
@@ -431,10 +431,10 @@ function cloudflare_set_record() {
 
         # Log
         display --indent 6 --text "- Changing ${record_name} IP ..."
-        
+
         # First delete
         log_event "debug" "Running: curl -s -X DELETE \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}\" -H \"X-Auth-Email: ${dns_cloudflare_email}\" -H \"X-Auth-Key: ${dns_cloudflare_api_key}\" -H \"Content-Type: application/json\""
- 
+
         delete="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
             -H "X-Auth-Email: ${dns_cloudflare_email}" \
             -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
@@ -503,7 +503,7 @@ function cloudflare_set_record() {
 
 }
 
-function cloudflare_update_record(){
+function cloudflare_update_record() {
 
     # $1 = ${root_domain}
     # $2 = ${domain}
@@ -526,18 +526,18 @@ function cloudflare_update_record(){
     # TODO: This should be a parameter ($record_content)
     cur_ip="${SERVER_IP}"
 
-    zone_id=$(_cloudflare_get_zone_id "${root_domain}")
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
 
-    record_id=$(cloudflare_record_exists "${record_name}" "${zone_id}")
+    record_id="$(cloudflare_record_exists "${record_name}" "${zone_id}")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
 
         update="$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
-        -H "X-Auth-Email: ${dns_cloudflare_email}" \
-        -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
-        -H "Content-Type: application/json" \
-        --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"
+            -H "X-Auth-Email: ${dns_cloudflare_email}" \
+            -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
+            -H "Content-Type: application/json" \
+            --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"
 
         # Remove Cloudflare API garbage output
         _cloudflare_clear_garbage_output
@@ -565,9 +565,9 @@ function cloudflare_delete_a_record() {
 
     cur_ip="${SERVER_IP}"
 
-    zone_id=$(_cloudflare_get_zone_id "${root_domain}")
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
 
-    record_id=$(cloudflare_record_exists "${record_name}" "${zone_id}")
+    record_id="$(cloudflare_record_exists "${record_name}" "${zone_id}")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then # Record found on Cloudflare
