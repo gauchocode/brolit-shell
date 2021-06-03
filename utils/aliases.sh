@@ -26,7 +26,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.28"
-ALIASES_VERSION="3.0.28-039"
+ALIASES_VERSION="3.0.28-041"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -296,6 +296,30 @@ function _get_backup_date() {
 
     # Return
     echo "${backup_date}"
+
+}
+
+function _cerbot_certificate_get_valid_days() {
+  # $1 = domains (domain.com,www.domain.com)
+
+  local domain=$1
+
+  local cert_days
+
+  cert_days_output="$(certbot certificates --domain "${domain}")"
+  cert_days="$(echo "${cert_days_output}" | grep -Eo 'VALID: [0-9]+[0-9]' | cut -d ' ' -f 2)"
+
+  if [[ ${cert_days} == "" ]]; then
+
+    # Return
+    echo "no-cert"
+
+  else
+
+    # Return
+    echo "${cert_days}"
+
+  fi
 
 }
 
@@ -698,7 +722,11 @@ function sites_directories() {
 
     for site in ${all_directories}; do
 
-        directories="${directories} , \"${site}\""
+        site_cert="$(_cerbot_certificate_get_valid_days "${site}")"
+
+        site_data="{\"name\":\"${site}\", \"certificate_expiration_date\":\"${site_cert}\"}"
+
+        directories="${directories} , ${site_data}"
 
     done
 

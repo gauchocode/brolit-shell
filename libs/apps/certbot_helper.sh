@@ -19,11 +19,11 @@ function certbot_certificate_install() {
   local certbot_result
 
   log_event "debug" "Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains}"
-  
+
   certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}"
 
   certbot_result=$?
-  if [[ ${certbot_result} -eq 0 ]];then
+  if [[ ${certbot_result} -eq 0 ]]; then
     log_event "info" "Certificate installation for ${domains} ok" "false"
     display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
 
@@ -33,12 +33,12 @@ function certbot_certificate_install() {
 
     # Deleting old config
     certbot_certificate_delete_old_config "${domains}"
-    
+
     # Running certbot again
     certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}"
-    
+
     certbot_result=$?
-    if [[ ${certbot_result} -eq 0 ]];then
+    if [[ ${certbot_result} -eq 0 ]]; then
       log_event "info" "Certificate installation for ${domains} ok" "false"
       display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
 
@@ -83,7 +83,7 @@ function certbot_certificate_delete_old_config() {
 }
 
 function certbot_certificate_expand() {
-  
+
   #$1 = ${email}
   #$2 = ${domains}
 
@@ -113,7 +113,7 @@ function certbot_certificate_renew_test() {
   # Test renew for all installed certificates
 
   log_event "debug" "Running: certbot renew --dry-run -d ${domains}"
-  
+
   certbot renew --dry-run -d "${domains}"
 
 }
@@ -125,7 +125,7 @@ function certbot_certificate_force_renew() {
   local domains=$1
 
   log_event "debug" "Running: certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m ${email} -d ${domains}"
-  
+
   certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m "${email}" -d "${domains}"
 
 }
@@ -138,16 +138,16 @@ function certbot_helper_installer_menu() {
   local email=$1
   local domains=$2
 
-  local cb_installer_options 
-  local chosen_cb_installer_option 
-  local cb_warning_text 
+  local cb_installer_options
+  local chosen_cb_installer_option
+  local cb_warning_text
   local certbot_result
 
   cb_installer_options=(
-    "01)" "INSTALL WITH NGINX" 
+    "01)" "INSTALL WITH NGINX"
     "02)" "INSTALL WITH CLOUDFLARE"
   )
-  
+
   chosen_cb_installer_option=$(whiptail --title "CERTBOT INSTALLER OPTIONS" --menu "Please choose an installation method:" 20 78 10 "${cb_installer_options[@]}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -155,7 +155,7 @@ function certbot_helper_installer_menu() {
     if [[ ${chosen_cb_installer_option} == *"01"* ]]; then
 
       # INSTALL_WITH_NGINX
-      
+
       log_subsection "Certificate Installation with Certbot Nginx"
 
       certbot_certificate_install "${email}" "${domains}"
@@ -164,7 +164,7 @@ function certbot_helper_installer_menu() {
     if [[ ${chosen_cb_installer_option} == *"02"* ]]; then
 
       # INSTALL_WITH_CLOUDFLARE
-      
+
       log_subsection "Certificate Installation with Certbot Cloudflare"
 
       certbot_certonly_cloudflare "${email}" "${domains}"
@@ -176,7 +176,7 @@ function certbot_helper_installer_menu() {
 
       whiptail_message "CERTBOT MANAGER" "${cb_warning_text}"
       #root_domain=$(ask_rootdomain_for_cloudflare_config "${domains}")
-      
+
       # TODO: list entries to add proxy on cloudflare records
       #cloudflare_set_record "${root_domain}" "" "true"
 
@@ -205,14 +205,14 @@ function certbot_certonly_cloudflare() {
   local domains=$2
 
   log_event "debug" "Running: certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m ${email} -d ${domains} --preferred-challenges dns-01"
-  
+
   certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m "${email}" -d "${domains}" --preferred-challenges dns-01
 
   # Maybe add a non interactive mode?
   # certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf --non-interactive --agree-tos --redirect -m ${EMAIL} -d ${DOMAINS} --preferred-challenges dns-01
 
   certbot_result=$?
-  if [[ ${certbot_result} -eq 0 ]];then
+  if [[ ${certbot_result} -eq 0 ]]; then
     log_event "info" "Certificate installation for ${domains} ok"
     display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
 
@@ -222,12 +222,12 @@ function certbot_certonly_cloudflare() {
 
     # Deleting old config
     certbot_certificate_delete_old_config "${domains}"
-    
+
     # Running certbot again
     certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m "${email}" -d "${domains}" --preferred-challenges dns-01
-    
+
     certbot_result=$?
-    if [[ ${certbot_result} -eq 0 ]];then
+    if [[ ${certbot_result} -eq 0 ]]; then
       log_event "info" "Certificate installation for ${domains} ok"
       display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
 
@@ -278,7 +278,7 @@ function certbot_certificate_valid_days() {
   cert_days=$(certbot certificates --cert-name "${domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
 
   if [[ ${cert_days} == "" ]]; then
-  
+
     if [[ ${subdomain_part} == "www" ]]; then
 
       cert_days=$(certbot certificates --cert-name "${root_domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
@@ -288,7 +288,7 @@ function certbot_certificate_valid_days() {
         cert_days=$(certbot certificates --cert-name "${root_domain}-0001" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
 
       fi
-    
+
     else
 
       cert_days=$(certbot certificates --cert-name "www.${root_domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
@@ -306,6 +306,30 @@ function certbot_certificate_valid_days() {
 
   # Return
   echo "${cert_days}"
+
+}
+
+function cerbot_certificate_get_valid_days() {
+  # $1 = domains (domain.com,www.domain.com)
+
+  local domain=$1
+
+  local cert_days
+
+  cert_days_output="$(certbot certificates --domain "${domain}")"
+  cert_days="$(echo "${cert_days_output}" | grep -Eo 'VALID: [0-9]+[0-9]' | cut -d ' ' -f 2)"
+
+  if [[ ${cert_days} == "" ]]; then
+
+    # Return
+    echo "no-cert"
+
+  else
+
+    # Return
+    echo "${cert_days}"
+
+  fi
 
 }
 
@@ -328,21 +352,21 @@ function certbot_certificate_delete() {
 
       case $yn in
 
-        [Yy]*)
+      [Yy]*)
 
-          log_event "debug" "Running: certbot delete --cert-name ${domains}" "true"
-          certbot delete --cert-name "${domains}"
-          break
+        log_event "debug" "Running: certbot delete --cert-name ${domains}" "true"
+        certbot delete --cert-name "${domains}"
+        break
 
         ;;
 
-        [Nn]*)
+      [Nn]*)
 
-          log_event "info" "Aborting ..." "true"
-          break
+        log_event "info" "Aborting ..." "true"
+        break
         ;;
 
-        *) echo " > Please answer yes or no." ;;
+      *) echo " > Please answer yes or no." ;;
 
       esac
 
@@ -365,7 +389,7 @@ function certbot_helper_ask_domains() {
 
   else
 
-    return 1;
+    return 1
 
   fi
 
@@ -374,15 +398,15 @@ function certbot_helper_ask_domains() {
 function certbot_helper_menu() {
 
   local domains
-  local certbot_options 
+  local certbot_options
   local chosen_cb_options
 
   certbot_options=(
-    "01)" "INSTALL CERTIFICATE" 
-    "02)" "EXPAND CERTIFICATE" 
-    "03)" "TEST RENEW ALL CERTIFICATES" 
-    "04)" "FORCE RENEW CERTIFICATE" 
-    "05)" "DELETE CERTIFICATE" 
+    "01)" "INSTALL CERTIFICATE"
+    "02)" "EXPAND CERTIFICATE"
+    "03)" "TEST RENEW ALL CERTIFICATES"
+    "04)" "FORCE RENEW CERTIFICATE"
+    "05)" "DELETE CERTIFICATE"
     "06)" "SHOW INSTALLED CERTIFICATES"
   )
   chosen_cb_options="$(whiptail --title "CERTBOT MANAGER" --menu " " 20 78 10 "${certbot_options[@]}" 3>&1 1>&2 2>&3)"
@@ -424,7 +448,6 @@ function certbot_helper_menu() {
       if [[ ${exitstatus} = 0 ]]; then
         certbot_certificate_force_renew "${domains}"
       fi
-      
 
     fi
 
