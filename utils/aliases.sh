@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.28
+# Version: 3.0.29
 ################################################################################
 
 source ~/.broobe-utils-options
@@ -25,8 +25,8 @@ if [[ ${DROPBOX_ENABLE} == "true" && -f ${DPU_CONFIG_FILE} ]]; then
 fi
 
 # Version
-SCRIPT_VERSION="3.0.28"
-ALIASES_VERSION="3.0.28-041"
+SCRIPT_VERSION="3.0.29"
+ALIASES_VERSION="3.0.29-042"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -300,26 +300,141 @@ function _get_backup_date() {
 }
 
 function _cerbot_certificate_get_valid_days() {
-  # $1 = domains (domain.com,www.domain.com)
+    # $1 = domains (domain.com,www.domain.com)
 
-  local domain=$1
+    local domain=$1
 
-  local cert_days
+    local cert_days
 
-  cert_days_output="$(certbot certificates --domain "${domain}")"
-  cert_days="$(echo "${cert_days_output}" | grep -Eo 'VALID: [0-9]+[0-9]' | cut -d ' ' -f 2)"
+    cert_days_output="$(certbot certificates --domain "${domain}")"
+    cert_days="$(echo "${cert_days_output}" | grep -Eo 'VALID: [0-9]+[0-9]' | cut -d ' ' -f 2)"
 
-  if [[ ${cert_days} == "" ]]; then
+    if [[ ${cert_days} == "" ]]; then
 
-    # Return
-    echo "no-cert"
+        # Return
+        echo "no-cert"
 
-  else
+    else
 
-    # Return
-    echo "${cert_days}"
+        # Return
+        echo "${cert_days}"
 
-  fi
+    fi
+
+}
+
+function _cloudflare_domain_exists() {
+
+    # $1 = ${root_domain}
+
+    local root_domain=$1
+
+    local zone_name
+    local zone_id
+
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 && ${zone_id} != "" ]]; then
+
+        # Return
+        echo "true"
+
+    else
+
+        # Return
+        echo "false"
+    fi
+
+}
+
+function _cloudflare_record_exists() {
+
+    # $1 = ${domain}
+    # $2 = ${zone_id}
+
+    local domain=$1
+    local zone_id=$2
+
+    # Only for better readibility
+    record_name="${domain}"
+
+    # Retrieve record_id
+    record_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${dns_cloudflare_email}" -H "X-Auth-Key: ${dns_cloudflare_api_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*')"
+
+    exitstatus=$?
+    if [[ ${record_id} == "" ]]; then
+
+        return 1
+
+    else
+
+        # Clean output
+        record_id="$(echo "${record_id}" | tr -d '\n')"
+
+        # Return
+        echo "${record_id}"
+
+    fi
+
+}
+
+function _cloudflare_get_record_details() {
+
+    # $1 = ${root_domain}
+    # $2 = ${domain}
+    # $3 = ${field} - Values: all, id, type, name, content, proxiable, proxied, ttl, locked, zone_id, zone_name, created_on, modified_on
+
+    local root_domain=$1
+    local domain=$2
+    local field=$3
+
+    local record_name
+    local zone_id
+    local record_id
+
+    record_name="${domain}"
+
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+
+    record_id="$(_cloudflare_record_exists "${record_name}" "${zone_id}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
+
+        # DNS Record Details
+        record="$(curl -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
+            -H "X-Auth-Email: ${dns_cloudflare_email}" \
+            -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
+            -H "Content-Type: application/json")"
+
+        #echo "curl -s -X GET \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}}\" -H \"X-Auth-Email: ${dns_cloudflare_email}\" -H \"X-Auth-Key: ${dns_cloudflare_api_key}\" -H \"Content-Type: application/json\"')"
+
+        if [[ ${record} == *"\"success\":false"* || ${record} == "" ]]; then
+
+            # Return
+            echo "Get record details failed"
+
+            return 1
+
+        else
+
+            #record_detail="$(echo "${record}" | grep -Po '(?<="'"${field}"'":")[^"]*' | head -1)"
+
+            # Remove 1 first chars -- "{"
+            record="${record:1}"
+
+            # Remove 1 last chars -- "}"
+            record="${record::-1}"
+
+            # Replace "result" with "cloudflare_data"
+            record=$(echo "${record}" | sed "s/result/cloudflare_data/")
+
+            # Return
+            echo "${record}"
+
+        fi
+
+    fi
 
 }
 
@@ -716,6 +831,8 @@ function sites_directories() {
 
     local directories
     local all_directories
+    local site_cert
+    local site_cf
 
     # Run command
     all_directories="$(ls /var/www)"
@@ -724,7 +841,13 @@ function sites_directories() {
 
         site_cert="$(_cerbot_certificate_get_valid_days "${site}")"
 
-        site_data="{\"name\":\"${site}\", \"certificate_expiration_date\":\"${site_cert}\"}"
+        root_domain="$(_get_root_domain "${site}")"
+
+        site_cf="$(_cloudflare_domain_exists "${root_domain}")"
+
+        cf_data="$(_cloudflare_get_record_details "${root_domain}" "${site}" "all")"
+
+        site_data="{\"name\":\"${site}\" , \"certificate_days_to_expire\":\"${site_cert}\" , \"domain_on_cloudflare\":\"${site_cf}\" , ${cf_data}}"
 
         directories="${directories} , ${site_data}"
 
@@ -743,30 +866,6 @@ function sites_directories() {
         # Return
         echo "\"no-sites\""
 
-    fi
-
-}
-
-function cloudflare_domain_exists() {
-
-    # $1 = ${root_domain}
-
-    local root_domain=$1
-
-    local zone_name
-    local zone_id
-
-    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 && ${zone_id} != "" ]]; then
-
-        # Return
-        echo "true"
-
-    else
-
-        # Return
-        echo "false"
     fi
 
 }

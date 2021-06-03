@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.28
+# Version: 3.0.29
 ################################################################################
 #
 # It uses globals defined on telegram.conf
