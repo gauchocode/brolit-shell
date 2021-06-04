@@ -90,13 +90,16 @@ Options:
 ```
 ./runner.sh --task "cloudflare-api" --subtask "clear_cache" --domain "example.com"
 ```
+
 #### Enable Dev Mode
 
 ```
 ./runner.sh --task "cloudflare-api" --subtask "dev_mode" --task-value "on" --domain "example.com" 
 ```
+
 #### Change SSL Mode
 ##### Values: off, valid values: off, flexible, full, strict
+
 ```
 ./runner.sh --task "cloudflare-api" --subtask "ssl_mode" --task-value "full" --domain "example.com" 
 ```
@@ -111,32 +114,50 @@ Options:
 ./runner.sh --task "wpcli" --subtask "plugin-install" --task-value "post-smtp" --domain "example.com"
 ```
 
+#### Activate WP Plugin
+
+```
+./runner.sh --task "wpcli" --subtask "plugin-activate" --task-value "post-smtp" --domain "example.com"
+```
+
+#### Deactivate WP Plugin
+
+```
+./runner.sh --task "wpcli" --subtask "plugin-deactivate" --task-value "post-smtp" --domain "example.com"
+```
+
 #### Clear WP Rocket Cache
 
 ```
 ./runner.sh --task "wpcli" --subtask "clear-cache" --domain "example.com"
 ```
+
 #### Activate WP Rocket Cache
 
 ```
 ./runner.sh --task "wpcli" --subtask "cache-activate" --domain "example.com" 
 ```
+
 #### Deactivate WP Rocket Cache
+
 ```
 ./runner.sh --task "wpcli" --subtask "cache-deactivate" --domain "example.com" 
 ```
 
 #### Verify WP Installation
+
 ```
 ./runner.sh --task "wpcli" --subtask "verify-installation" --domain "example.com" 
 ```
 
 #### Update WP Installation
+
 ```
 ./runner.sh --task "wpcli" --subtask "core-update" --domain "example.com" 
 ```
 
 #### Search and Replace URLs (NOT IMPLEMENTED YET)
+
 ```
 ./runner.sh --task "wpcli" --subtask "search-replace" --path "/path/to/wordpress" --old "https://old.domain.com" --new "https://new.domain.com"
 ```
