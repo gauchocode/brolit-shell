@@ -65,7 +65,7 @@ Options:
 ./runner.sh --task "project-delete" --domain "example.domain.com"
 ```
 
-#### Restore a Files Backup
+#### Restore a Files Backup (NOT IMPLEMENTED YET)
 
 ```
 ./runner.sh --task "restore" --subtask "files" --link "linkt_to_compressed_backup.tar.gz" --domain "example.domain.com" --pname "project_name" --pstate "prod"
@@ -103,19 +103,27 @@ Options:
 
 ### WP-CLI API
 
+#### Install WP Plugin
+##### Values: plugins-slugs or link with zip file
+##### Examples: "wordpress-seo", "post-smtp", "https://link.to.zip"
+
+```
+./runner.sh --task "wpcli" --subtask "plugin-install" --task-value "post-smtp" --domain "broobe.com"
+```
+
 #### Clear WP Rocket Cache
 
 ```
-./runner.sh --task "wpcli" --subtask "clear_cache" --domain "broobe.com"
+./runner.sh --task "wpcli" --subtask "clear-cache" --domain "broobe.com"
 ```
 #### Activate WP Rocket Cache
 
 ```
-./runner.sh --task "wpcli" --subtask "cache_activate" --domain "broobe.com" 
+./runner.sh --task "wpcli" --subtask "cache-activate" --domain "broobe.com" 
 ```
 #### Deactivate WP Rocket Cache
 ```
-./runner.sh --task "wpcli" --subtask "cache_deactivate" --domain "broobe.com" 
+./runner.sh --task "wpcli" --subtask "cache-deactivate" --domain "broobe.com" 
 ```
 
 #### Search and Replace URLs (NOT IMPLEMENTED YET)
