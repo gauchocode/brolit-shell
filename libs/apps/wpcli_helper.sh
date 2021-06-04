@@ -638,11 +638,11 @@ function wpcli_install_plugin() {
     local plugin=$2
 
     # Log
-    display --indent 6 --text "- Installing and activating plugin ${plugin}"
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin install ${plugin} --activate"
+    display --indent 6 --text "- Installing plugin ${plugin}"
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin install ${plugin}"
 
     # Command
-    sudo -u www-data wp --path="${wp_site}" plugin install "${plugin}" --activate --quiet
+    sudo -u www-data wp --path="${wp_site}" plugin install "${plugin}" --quiet
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -654,6 +654,66 @@ function wpcli_install_plugin() {
 
         clear_last_line
         display --indent 6 --text "- Installing plugin ${plugin}" --result "FAIL" --color RED
+
+    fi
+
+}
+
+function wpcli_activate_plugin() {
+
+    # $1 = ${wp_site} (site path)
+    # $2 = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
+
+    local wp_site=$1
+    local plugin=$2
+
+    # Log
+    display --indent 6 --text "- Activating plugin ${plugin}"
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin activate ${plugin}"
+
+    # Command
+    sudo -u www-data wp --path="${wp_site}" plugin activate "${plugin}" --quiet
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        clear_last_line
+        display --indent 6 --text "- Activating plugin ${plugin}" --result "DONE" --color GREEN
+
+    else
+
+        clear_last_line
+        display --indent 6 --text "- Activating plugin ${plugin}" --result "FAIL" --color RED
+
+    fi
+
+}
+
+function wpcli_deactivate_plugin() {
+
+    # $1 = ${wp_site} (site path)
+    # $2 = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
+
+    local wp_site=$1
+    local plugin=$2
+
+    # Log
+    display --indent 6 --text "- Deactivating plugin ${plugin}"
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin deactivate ${plugin}"
+
+    # Command
+    sudo -u www-data wp --path="${wp_site}" plugin deactivate "${plugin}" --quiet
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        clear_last_line
+        display --indent 6 --text "- Deactivating plugin ${plugin}" --result "DONE" --color GREEN
+
+    else
+
+        clear_last_line
+        display --indent 6 --text "- Deactivating plugin ${plugin}" --result "FAIL" --color RED
 
     fi
 
