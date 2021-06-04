@@ -2,24 +2,25 @@
 
 ```
 Options:
-    -t, --task        Task to run:
-                        backup
-                        restore
-                        project-install
-                        cloudflare-api
-    -st, --subtask    Sub-task to run:
-                        for backup: all, files, databases
-                        for cloudflare-api: clear_cache, dev_mode
-    -s  --site        Site path for tasks execution
-    -d  --domain      Domain for tasks execution
-    -pn --pname       Project Name
-    -pt --ptype       Project Type (wordpress,laravel)
-    -ps --pstate      Project State (prod,dev,test,stage)
-    -q, --quiet       Quiet (no output)
-    -v, --verbose     Output more information. (Items echoed to 'verbose')
-    -d, --debug       Runs script in BASH debug mode (set -x)
-    -h, --help        Display this help and exit
-        --version     Output version information and exit
+    -t, --task         Task to run:
+                         backup
+                         restore
+                         project-install
+                         cloudflare-api
+    -st, --subtask     Sub-task to run:
+                         for backup: all, files, databases
+                         for cloudflare-api: clear_cache, dev_mode
+    -tv, --tvalue      Task aditional value
+    -s,  --site        Site path for tasks execution
+    -d,  --domain      Domain for tasks execution
+    -pn, --pname       Project Name
+    -pt, --ptype       Project Type (wordpress,laravel)
+    -ps, --pstate      Project State (prod,dev,test,stage)
+    -q,  --quiet       Quiet (no output)
+    -v,  --verbose     Output more information. (Items echoed to 'verbose')
+    -d,  --debug       Runs script in BASH debug mode (set -x)
+    -h,  --help        Display this help and exit
+         --version     Output version information and exit
 ```
 
 ## Some examples
@@ -52,10 +53,10 @@ Options:
 
 ### Project Utils
 
-#### Create WordPress Project (NOT IMPLEMENTED YET)
+#### Create WordPress Project
 
 ```
-./runner.sh --task "project" --subtask "install" --ptype "wordpress" --domain "example.domain.com" --pname "project_name" --pstate "prod"
+./runner.sh --task "project-install" --ptype "wordpress" --domain "example.domain.com" --pname "project_name" --pstate "prod"
 ```
 
 #### Delete Project
@@ -64,24 +65,22 @@ Options:
 ./runner.sh --task "project-delete" --domain "example.domain.com"
 ```
 
-#### Restore a Files Backup (NOT IMPLEMENTED YET)
+#### Restore a Files Backup
 
 ```
-./runner.sh --task "restore" --subtask "files" --link "linkt_to_compressed_backup.tar.gz" --domain "example.domain.com" --pname "project_name"
+./runner.sh --task "restore" --subtask "files" --link "linkt_to_compressed_backup.tar.gz" --domain "example.domain.com" --pname "project_name" --pstate "prod"
 ```
 
 #### Restore a Database Backup (NOT IMPLEMENTED YET)
 
 ```
-./runner.sh --task "restore" --subtask "database" --link "linkt_to_compressed_backup.tar.gz" --domain "example.domain.com" --pname "project_name"
+./runner.sh --task "restore" --subtask "database" --link "linkt_to_compressed_backup.tar.gz" --domain "example.domain.com" --pname "project_name" --pstate "prod"
 ```
 
-### WP-CLI
-
-#### Search and Replace URLs (NOT IMPLEMENTED YET)
+#### Restore a Project Backup (NOT IMPLEMENTED YET)
 
 ```
-./runner.sh --task "wp-cli" --subtask "replace-urls" --path "/path/to/wordpress" --old "https://old.domain.com" --new "https://new.domain.com"
+./runner.sh --task "restore" --subtask "project" --domain "example.domain.com" --pname "project_name" --pstate "prod"
 ```
 
 ### Cloudflare API
@@ -117,3 +116,9 @@ Options:
 #### Deactivate WP Rocket Cache
 ```
 ./runner.sh --task "wpcli" --subtask "cache_deactivate" --domain "broobe.com" 
+```
+
+#### Search and Replace URLs (NOT IMPLEMENTED YET)
+```
+./runner.sh --task "wpcli" --subtask "search-replace" --path "/path/to/wordpress" --old "https://old.domain.com" --new "https://new.domain.com"
+```
