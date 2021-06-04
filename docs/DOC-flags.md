@@ -58,10 +58,10 @@ Options:
 ./runner.sh --task "project" --subtask "install" --ptype "wordpress" --domain "example.domain.com" --pname "project_name" --pstate "prod"
 ```
 
-#### Delete Project (NOT IMPLEMENTED YET)
+#### Delete Project
 
 ```
-./runner.sh --task "project" --subtask "delete" --domain "example.domain.com" --pname "project_name"
+./runner.sh --task "project-delete" --domain "example.domain.com"
 ```
 
 #### Restore a Files Backup (NOT IMPLEMENTED YET)
@@ -96,8 +96,24 @@ Options:
 ```
 ./runner.sh --task "cloudflare-api" --subtask "dev_mode" --task-value "on" --domain "broobe.com" 
 ```
-#### Enable Dev Mode
-##### value: off, valid values: off, flexible, full, strict
+#### Change SSL Mode
+##### Values: off, valid values: off, flexible, full, strict
 ```
 ./runner.sh --task "cloudflare-api" --subtask "ssl_mode" --task-value "full" --domain "broobe.com" 
 ```
+
+### WP-CLI API
+
+#### Clear WP Rocket Cache
+
+```
+./runner.sh --task "wpcli" --subtask "clear_cache" --domain "broobe.com"
+```
+#### Activate WP Rocket Cache
+
+```
+./runner.sh --task "wpcli" --subtask "cache_activate" --domain "broobe.com" 
+```
+#### Deactivate WP Rocket Cache
+```
+./runner.sh --task "wpcli" --subtask "cache_deactivate" --domain "broobe.com" 
