@@ -364,16 +364,16 @@ function cloudflare_get_record_details() {
         _cloudflare_clear_garbage_output
 
         if [[ ${record} == *"\"success\":false"* || ${record} == "" ]]; then
-            message="Get record details failed. Results:\n${record}"
-            log_event "error" "${message}"
+
+            log_event "error" "Get record details failed. Results:\n${record}"
             display --indent 6 --text "- Getting record details" --result "FAIL" --color RED
             display --indent 8 --text "${message}" --tcolor RED
 
             return 1
 
         else
-            message="Getting record details. Results:\n${record}"
-            log_event "info" "${message}"
+
+            log_event "info" "Getting record details. Results:\n${record}"
             display --indent 6 --text "- Getting record details" --result "DONE" --color GREEN
 
             record_detail="$(echo "${record}" | grep -Po '(?<="'"${field}"'":")[^"]*' | head -1)"

@@ -1537,7 +1537,7 @@ function menu_main_options() {
     "01)" "BACKUP OPTIONS"
     "02)" "RESTORE OPTIONS"
     "03)" "PROJECT UTILS"
-    "04)" "WPCLI MANAGER"
+    "04)" "WP-CLI MANAGER"
     "05)" "CERTBOT MANAGER"
     "06)" "CLOUDFLARE MANAGER"
     "07)" "INSTALLERS & CONFIGS"
@@ -2192,7 +2192,7 @@ function subtasks_restore_handler() {
 
   project)
 
-    log_event "debug" "TODO: restore project backup"
+    log_event "debug" "TODO: restore project backup" "true"
     #make_databases_backup
     #make_all_server_config_backup
     #make_sites_files_backup
@@ -2202,7 +2202,7 @@ function subtasks_restore_handler() {
 
   files)
 
-    log_event "debug" "TODO: restore files backup"
+    log_event "debug" "TODO: restore files backup" "true"
     #make_sites_files_backup
 
     exit
@@ -2210,7 +2210,7 @@ function subtasks_restore_handler() {
 
   server-config)
 
-    log_event "debug" "TODO: restore config backup"
+    log_event "debug" "TODO: restore config backup" "true"
     #make_all_server_config_backup
 
     exit
@@ -2279,25 +2279,32 @@ function subtasks_wpcli_handler() {
 
   local subtask=$1
 
-  log_subsection "WPCLI Manager"
+  log_subsection "WP-CLI Manager"
 
   case ${subtask} in
 
-  clear_cache)
+  plugin-install)
+
+    wpcli_install_plugin "${SITE}" "${TVALUE}"
+
+    exit
+    ;;
+
+  clear-cache)
 
     wpcli_rocket_cache_clean "${SITE}"
 
     exit
     ;;
 
-  cache_activate)
+  cache-activate)
 
     wpcli_rocket_cache_activate "${SITE}"
 
     exit
     ;;
 
-  cache_deactivate)
+  cache-deactivate)
 
     wpcli_rocket_cache_deactivate "${SITE}"
 
