@@ -2297,6 +2297,20 @@ function subtasks_wpcli_handler() {
     exit
     ;;
 
+  plugin-activate)
+
+    wpcli_activate_plugin "${SITES}/${DOMAIN}" "${TVALUE}"
+
+    exit
+    ;;
+
+  plugin-deactivate)
+
+    wpcli_deactivate_plugin "${SITES}/${DOMAIN}" "${TVALUE}"
+
+    exit
+    ;;
+
   clear-cache)
 
     wpcli_rocket_cache_clean "${SITES}/${DOMAIN}"
