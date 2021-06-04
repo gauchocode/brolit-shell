@@ -84,6 +84,8 @@ function wpcli_main_menu() {
   local wpcli_options
   local wp_result
   local chosen_wpcli_options
+  local chosen_del_theme_option
+  local wp_del_themes
 
   wpcli_options=(
     "01)" "INSTALL PLUGINS"
@@ -117,13 +119,13 @@ function wpcli_main_menu() {
       # DELETE_THEMES
 
       # Listing installed themes
-      WP_DEL_THEMES="$(wp --path="${wp_site}" theme list --quiet --field=name --status=inactive --allow-root)"
-      array_to_checklist "${WP_DEL_THEMES}"
-      CHOSEN_DEL_THEME_OPTION="$(whiptail --title "Theme Selection" --checklist "Select the themes you want to delete." 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)"
+      wp_del_themes="$(wp --path="${wp_site}" theme list --quiet --field=name --status=inactive --allow-root)"
+      array_to_checklist "${wp_del_themes}"
+      chosen_del_theme_option="$(whiptail --title "Theme Selection" --checklist "Select the themes you want to delete." 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)"
 
       log_subsection "WP Delete Themes"
 
-      for theme_del in $CHOSEN_DEL_THEME_OPTION; do
+      for theme_del in $chosen_del_theme_option; do
         theme_del=$(sed -e 's/^"//' -e 's/"$//' <<<${theme_del}) #needed to ommit double quotes
         #echo "theme delete $theme_del"
         wpcli_delete_theme "${wp_site}" "${theme_del}"
