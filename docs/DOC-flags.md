@@ -94,5 +94,10 @@ Options:
 #### Enable Dev Mode
 
 ```
-./runner.sh --task "cloudflare-api" --subtask "dev_mode" --domain "broobe.com"
+./runner.sh --task "cloudflare-api" --subtask "dev_mode" --task-value "on" --domain "broobe.com" 
+```
+#### Enable Dev Mode
+##### value: off, valid values: off, flexible, full, strict
+```
+./runner.sh --task "cloudflare-api" --subtask "ssl_mode" --task-value "full" --domain "broobe.com" 
 ```

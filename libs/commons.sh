@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.29
+# Version: 3.0.30
 #############################################################################
 
 # Libs apps directory path
@@ -35,7 +35,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="LEMP UTILS SCRIPT"
-  declare -g SCRIPT_V="3.0.29"
+  declare -g SCRIPT_V="3.0.30"
 
   # Hostname
   declare -g VPSNAME="$HOSTNAME"
@@ -2082,25 +2082,35 @@ function tasks_handler() {
     ;;
 
   restore)
+
     log_event "warning" "TODO: run project-restore for ${SITE}" "true"
 
     exit
     ;;
 
   project-install)
-    log_event "debug" "Running: project_install ${SITES} wordpress ${DOMAIN} ${PNAME} ${PSTATE}"
+
     project_install "${SITES}" "${PTYPE}" "${DOMAIN}" "${PNAME}" "${PSTATE}"
 
     exit
     ;;
 
+  delete)
+
+    project_delete "${DOMAIN}"
+
+    exit
+    ;;
+
   cloudflare-api)
+
     subtasks_cloudflare_handler "${STASK}" "${TVALUE}"
 
     exit
     ;;
 
   aliases-install)
+
     install_script_aliases
 
     exit
