@@ -126,6 +126,16 @@ Options:
 ./runner.sh --task "wpcli" --subtask "cache-deactivate" --domain "broobe.com" 
 ```
 
+#### Verify WP Installation
+```
+./runner.sh --task "wpcli" --subtask "verify-installation" --domain "broobe.com" 
+```
+
+#### Update WP Installation
+```
+./runner.sh --task "wpcli" --subtask "core-update" --domain "broobe.com" 
+```
+
 #### Search and Replace URLs (NOT IMPLEMENTED YET)
 ```
 ./runner.sh --task "wpcli" --subtask "search-replace" --path "/path/to/wordpress" --old "https://old.domain.com" --new "https://new.domain.com"
