@@ -2083,7 +2083,7 @@ function tasks_handler() {
 
   restore)
 
-    log_event "warning" "TODO: run project-restore for ${SITE}" "true"
+    subtasks_restore_handler "${STASK}"
 
     exit
     ;;
@@ -2097,7 +2097,8 @@ function tasks_handler() {
 
   project-delete)
 
-    project_delete "${DOMAIN}"
+    # Second parameter with "true" will delete cloudflare entry
+    project_delete "${DOMAIN}" "true"
 
     exit
     ;;
@@ -2167,6 +2168,57 @@ function subtasks_backup_handler() {
   databases)
 
     log_event "warning" "TODO: database backup from parameter" "true"
+    #log_event "debug" "Running: make_sites_files_backup"
+    #make_sites_files_backup
+
+    exit
+    ;;
+
+  *)
+    log_event "error" "INVALID SUBTASK: ${subtask}" "true"
+
+    exit
+    ;;
+
+  esac
+
+}
+
+function subtasks_restore_handler() {
+
+  local subtask=$1
+
+  case ${subtask} in
+
+  project)
+
+    log_event "debug" "TODO: restore project backup"
+    #make_databases_backup
+    #make_all_server_config_backup
+    #make_sites_files_backup
+
+    exit
+    ;;
+
+  files)
+
+    log_event "debug" "TODO: restore files backup"
+    #make_sites_files_backup
+
+    exit
+    ;;
+
+  server-config)
+
+    log_event "debug" "TODO: restore config backup"
+    #make_all_server_config_backup
+
+    exit
+    ;;
+
+  databases)
+
+    log_event "warning" "TODO: restore database backup" "true"
     #log_event "debug" "Running: make_sites_files_backup"
     #make_sites_files_backup
 
