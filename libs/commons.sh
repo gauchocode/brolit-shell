@@ -2095,7 +2095,7 @@ function tasks_handler() {
     exit
     ;;
 
-  delete)
+  project-delete)
 
     project_delete "${DOMAIN}"
 
@@ -2105,6 +2105,13 @@ function tasks_handler() {
   cloudflare-api)
 
     subtasks_cloudflare_handler "${STASK}" "${TVALUE}"
+
+    exit
+    ;;
+
+  wpcli)
+
+    subtasks_wpcli_handler "${STASK}" "${TVALUE}"
 
     exit
     ;;
@@ -2201,6 +2208,46 @@ function subtasks_cloudflare_handler() {
   ssl_mode)
 
     cloudflare_set_ssl_mode "${DOMAIN}" "${TVALUE}"
+
+    exit
+    ;;
+
+  *)
+
+    log_event "error" "INVALID SUBTASK: ${subtask}" "true"
+
+    exit
+    ;;
+
+  esac
+
+}
+
+function subtasks_wpcli_handler() {
+
+  local subtask=$1
+
+  log_subsection "WPCLI Manager"
+
+  case ${subtask} in
+
+  clear_cache)
+
+    wpcli_rocket_cache_clean "${SITE}"
+
+    exit
+    ;;
+
+  cache_activate)
+
+    wpcli_rocket_cache_activate "${SITE}"
+
+    exit
+    ;;
+
+  cache_deactivate)
+
+    wpcli_rocket_cache_deactivate "${SITE}"
 
     exit
     ;;
