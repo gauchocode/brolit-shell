@@ -39,7 +39,7 @@ function get_project_state_from_domain() {
   # Trying to extract project state from domain
   possible_project_state="$(get_subdomain_part "${project_domain}" | cut -d "." -f 1)"
 
-  if [[ ${possible_project_state} != *"${project_states}"* ]];then
+  if [[ ${possible_project_state} != *"${project_states}"* ]]; then
 
     possible_project_state="prod"
 
@@ -301,8 +301,8 @@ function project_delete_files() {
 
   # Making a backup of project files
   make_files_backup "${BK_TYPE}" "${SITES}" "${project_domain}"
-  output=$?
-  if [[ ${output} -eq 0 ]]; then
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     # Creating new folder structure for old projects
     dropbox_output="$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}/offline-site" 2>&1)"
@@ -312,11 +312,11 @@ function project_delete_files() {
 
     dropbox_output="$(${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${project_domain}" "/${VPSNAME}/offline-site" 2>&1)"
 
-    # TODO: if destination folder already exists, it fails
+    # TODO: if destination folder already exists, it will fail
     display --indent 6 --text "- Moving to offline projects on Dropbox" --result "DONE" --color GREEN
 
     # Delete project files
-    rm --force --recursive "${filepath}/${project_domain}"
+    rm --force --recursive "${SITES}/${project_domain}"
 
     # Log
     log_event "info" "Project files deleted for ${project_domain}"
@@ -326,25 +326,10 @@ function project_delete_files() {
     cp --recursive "/etc/nginx/sites-available/${project_domain}" "${SFOLDER}/tmp-backup"
 
     # TODO: make a copy of letsencrypt files?
-
     # TODO: upload to dropbox config_file ??
 
     # Delete nginx configuration file
     nginx_server_delete "${project_domain}"
-
-    # Cloudflare Manager
-    project_domain=$(whiptail --title "CLOUDFLARE MANAGER" --inputbox "Do you want to delete the Cloudflare entries for the followings subdomains?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-
-      # Delete Cloudflare entries
-      cloudflare_delete_a_record "${project_domain}"
-
-    else
-
-      log_event "info" "Cloudflare entries not deleted. Skipped by user."
-
-    fi
 
     # Send notification
     send_notification "⚠️ ${VPSNAME}" "Project files for '${project_domain}' deleted!"
@@ -464,14 +449,16 @@ function project_delete_database() {
 function project_delete() {
 
   # $1 = ${project_domain}
+  # $1 = ${delete_cf_entry} - optional (true or false)
 
   local project_domain=$1
+  local delete_cf_entry=$2
 
   local files_skipped="false"
 
   log_section "Project Delete"
 
-  if [[ ${project_domain} == '' ]]; then
+  if [[ ${project_domain} == "" ]]; then
 
     # Folder where sites are hosted: $SITES
     menu_title="PROJECT DIRECTORY TO DELETE"
@@ -507,6 +494,29 @@ function project_delete() {
 
     # Delete Files
     project_delete_files "${project_domain}"
+
+    if [[ ${delete_cf_entry} != "true" ]]; then
+
+      # Cloudflare Manager
+      project_domain="$(whiptail --title "CLOUDFLARE MANAGER" --inputbox "Do you want to delete the Cloudflare entries for the followings subdomains?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Delete Cloudflare entries
+        cloudflare_delete_a_record "${project_domain}"
+
+      else
+
+        log_event "info" "Cloudflare entries not deleted. Skipped by user."
+
+      fi
+
+    else
+
+      # Delete Cloudflare entries
+      cloudflare_delete_a_record "${project_domain}"
+
+    fi
 
   fi
 
