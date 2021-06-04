@@ -2283,33 +2283,62 @@ function subtasks_wpcli_handler() {
 
   case ${subtask} in
 
+  #create-user)
+  #
+  #  wpcli_user_create "${SITES}/${SITE}" "${choosen_user}" "${choosen_email}" "${choosen_role}"
+  #
+  #  exit
+  #  ;;
+
   plugin-install)
 
-    wpcli_install_plugin "${SITE}" "${TVALUE}"
+    wpcli_install_plugin "${SITES}/${SITE}" "${TVALUE}"
 
     exit
     ;;
 
   clear-cache)
 
-    wpcli_rocket_cache_clean "${SITE}"
+    wpcli_rocket_cache_clean "${SITES}/${SITE}"
 
     exit
     ;;
 
   cache-activate)
 
-    wpcli_rocket_cache_activate "${SITE}"
+    wpcli_rocket_cache_activate "${SITES}/${SITE}"
 
     exit
     ;;
 
   cache-deactivate)
 
-    wpcli_rocket_cache_deactivate "${SITE}"
+    wpcli_rocket_cache_deactivate "${SITES}/${SITE}"
 
     exit
     ;;
+
+  verify-installation)
+
+    wpcli_core_verify "${SITES}/${SITE}"
+    wpcli_plugin_verify "${SITES}/${SITE}"
+
+    exit
+    ;;
+
+  core-update)
+
+    wpcli_core_update "${SITES}/${SITE}"
+
+    exit
+    ;;
+
+    #search-replace)
+    #
+    #  wpcli_rocket_cache_deactivate "${SITE}" "${existing_URL}" "${new_URL}"
+    #
+    # exit
+    # ;;
 
   *)
 
