@@ -2285,50 +2285,50 @@ function subtasks_wpcli_handler() {
 
   #create-user)
   #
-  #  wpcli_user_create "${SITES}/${SITE}" "${choosen_user}" "${choosen_email}" "${choosen_role}"
+  #  wpcli_user_create "${SITES}/${DOMAIN}" "${choosen_user}" "${choosen_email}" "${choosen_role}"
   #
   #  exit
   #  ;;
 
   plugin-install)
 
-    wpcli_install_plugin "${SITES}/${SITE}" "${TVALUE}"
+    wpcli_install_plugin "${SITES}/${DOMAIN}" "${TVALUE}"
 
     exit
     ;;
 
   clear-cache)
 
-    wpcli_rocket_cache_clean "${SITES}/${SITE}"
+    wpcli_rocket_cache_clean "${SITES}/${DOMAIN}"
 
     exit
     ;;
 
   cache-activate)
 
-    wpcli_rocket_cache_activate "${SITES}/${SITE}"
+    wpcli_rocket_cache_activate "${SITES}/${DOMAIN}"
 
     exit
     ;;
 
   cache-deactivate)
 
-    wpcli_rocket_cache_deactivate "${SITES}/${SITE}"
+    wpcli_rocket_cache_deactivate "${SITES}/${DOMAIN}"
 
     exit
     ;;
 
   verify-installation)
 
-    wpcli_core_verify "${SITES}/${SITE}"
-    wpcli_plugin_verify "${SITES}/${SITE}"
+    wpcli_core_verify "${SITES}/${DOMAIN}"
+    wpcli_plugin_verify "${SITES}/${DOMAIN}"
 
     exit
     ;;
 
   core-update)
 
-    wpcli_core_update "${SITES}/${SITE}"
+    wpcli_core_update "${SITES}/${DOMAIN}"
 
     exit
     ;;
