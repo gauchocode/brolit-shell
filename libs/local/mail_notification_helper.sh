@@ -4,6 +4,37 @@
 # Version: 3.0.31
 ################################################################################
 
+# sendmail --help
+#
+# Required:
+#    -f ADDRESS                from (sender) email address
+#    * At least one recipient required via -t, -cc, or -bcc
+#    * Message body required via -m, STDIN, or -o message-file=FILE
+#
+#  Others:
+#    -t ADDRESS [ADDR ...]     to email address(es)
+#    -u SUBJECT                message subject
+#    -m MESSAGE                message body
+#    -s SERVER[:PORT]          smtp mail relay, default is localhost:25
+#    -S [SENDMAIL_PATH]        use local sendmail utility (default: /usr/bin/sendmail) instead of network MTA
+#    -a   FILE [FILE ...]      file attachment(s)
+#    -cc  ADDRESS [ADDR ...]   cc  email address(es)
+#    -bcc ADDRESS [ADDR ...]   bcc email address(es)
+#    -xu  USERNAME             username for SMTP authentication
+#    -xp  PASSWORD             password for SMTP authentication
+#    -b BINDADDR[:PORT]        local host bind address
+#    -l LOGFILE                log to the specified file
+#    -v                        verbosity, use multiple times for greater effect
+#    -q                        be quiet (i.e. no STDOUT output)
+#    -o NAME=VALUE             advanced options, for details try: --help misc
+#        -o message-content-type=<auto|text|html>
+#        -o message-file=FILE         -o message-format=raw
+#        -o message-header=HEADER     -o message-charset=CHARSET
+#        -o reply-to=ADDRESS          -o timeout=SECONDS
+#        -o username=USERNAME         -o password=PASSWORD
+#        -o tls=<auto|yes|no>         -o fqdn=FQDN
+#
+
 function mail_send_notification() {
 
     # $1 = ${email_subject} // Email's subject
@@ -12,10 +43,10 @@ function mail_send_notification() {
     local email_subject=$1
     local email_content=$2
 
-    log_event "debug" "Running: sendEmail -f ${SMTP_U} -t ${MAILA} -u ${email_subject} -o message-content-type=html -m ${EMAIL_CONTENT} -s ${SMTP_SERVER}:${SMTP_PORT} -o tls=${SMTP_TLS} -xu ${SMTP_U} -xp ${SMTP_P}"
+    log_event "debug" "Running: sendEmail -f \"${SMTP_U}\" -t \"${MAILA}\" -u \"${email_subject}\" -o message-content-type=html -m \"${email_content}\" -s \"${SMTP_SERVER}:${SMTP_PORT}\" -o tls=\"${SMTP_TLS}\" -xu \"${SMTP_U}\" -xp \"${SMTP_P}\""
 
-    # We could use -l "/var/log/sendemail.log" for custom log file
-    sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${email_subject}" -o message-content-type=html -m "${email_content}" -s "${SMTP_SERVER}:${SMTP_PORT}" -o tls="${SMTP_TLS}" -xu "${SMTP_U}" -xp "${SMTP_P}" 1>&2
+    # Use -l "/${SCRIPT}/sendemail.log" for custom log file
+    sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${email_subject}" -o message-content-type=html -m "${email_content}" -s "${SMTP_SERVER}:${SMTP_PORT}" -o tls="${SMTP_TLS}" -xu "${SMTP_U}" -xp "${SMTP_P}" -l "${SCRIPT}/sendemail.log" 1>&2
 
 }
 
