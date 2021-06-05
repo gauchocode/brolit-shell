@@ -43,10 +43,12 @@ function mail_send_notification() {
     local email_subject=$1
     local email_content=$2
 
-    log_event "debug" "Running: sendEmail -f \"${SMTP_U}\" -t \"${MAILA}\" -u \"${email_subject}\" -o message-content-type=html -m \"${email_content}\" -s \"${SMTP_SERVER}:${SMTP_PORT}\" -o tls=\"${SMTP_TLS}\" -xu \"${SMTP_U}\" -xp \"${SMTP_P}\""
-
     # Use -l "/${SCRIPT}/sendemail.log" for custom log file
-    sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${email_subject}" -o message-content-type=html -m "${email_content}" -s "${SMTP_SERVER}:${SMTP_PORT}" -o tls="${SMTP_TLS}" -xu "${SMTP_U}" -xp "${SMTP_P}" -l "${SCRIPT}/sendemail.log" 1>&2
+    sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${email_subject}" -o message-content-type=html -m "${email_content}" -s "${SMTP_SERVER}:${SMTP_PORT}" -o tls="${SMTP_TLS}" -xu "${SMTP_U}" -xp "${SMTP_P}" 1>&2
+
+    # Log
+    log_event "info" "Email sent!"
+    log_event "debug" "Running: sendEmail -f \"${SMTP_U}\" -t \"${MAILA}\" -u \"${email_subject}\" -o message-content-type=html -m \"${email_content}\" -s \"${SMTP_SERVER}:${SMTP_PORT}\" -o tls=\"${SMTP_TLS}\" -xu \"${SMTP_U}\" -xp \"${SMTP_P}\""
 
 }
 
