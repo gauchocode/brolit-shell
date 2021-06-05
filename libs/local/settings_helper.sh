@@ -252,7 +252,7 @@ function _settings_config_dropbox() {
             echo "DROPBOX_ENABLE=${DROPBOX_ENABLE}" >>/root/.broobe-utils-options
 
             # Generating Dropbox api config file
-            generate_dropbox_config
+            generate_dropbox_config_new
 
         else
             DROPBOX_ENABLE="false"
@@ -529,7 +529,7 @@ function generate_dropbox_config_new() {
             dropbox_config_second_msg+=" 9) App key:\n\n"
 
             # OAUTH_APP_KEY
-            app_key=$(whiptail --title "${whip_title}" --inputbox "${dropbox_config_second_msg}" 15 60 3>&1 1>&2 2>&3)
+            app_key="$(whiptail --title "${whip_title}" --inputbox "${dropbox_config_second_msg}" 15 60 3>&1 1>&2 2>&3)"
             exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -544,7 +544,7 @@ function generate_dropbox_config_new() {
 
             # OAUTH_APP_SECRET
             dropbox_config_third_msg+=" 10) App secret:\n\n"
-            app_secret=$(whiptail --title "${whip_title}" --inputbox "${dropbox_config_third_msg}" 15 60 3>&1 1>&2 2>&3)
+            app_secret="$(whiptail --title "${whip_title}" --inputbox "${dropbox_config_third_msg}" 15 60 3>&1 1>&2 2>&3)"
             exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -561,7 +561,7 @@ function generate_dropbox_config_new() {
             dropbox_config_fourth_msg+=" https://www.dropbox.com/oauth2/authorize?client_id=${app_key}&token_access_type=offline&response_type=code \n\n"
             dropbox_config_fourth_msg+=" Allow suggested permissions and copy paste here the Access Code:\n\n"
 
-            oauth_access_token=$(whiptail --title "${whip_title}" --inputbox "${dropbox_config_fourth_msg}" 15 60 3>&1 1>&2 2>&3)
+            oauth_access_token="$(whiptail --title "${whip_title}" --inputbox "${dropbox_config_fourth_msg}" 15 60 3>&1 1>&2 2>&3)"
             exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
 

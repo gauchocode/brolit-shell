@@ -357,7 +357,7 @@ function script_init() {
   # Dropbox-uploader config file
   DPU_CONFIG_FILE=~/.dropbox_uploader
   if [[ ${DROPBOX_ENABLE} == "true" && ! -f ${DPU_CONFIG_FILE} ]]; then
-    generate_dropbox_config
+    generate_dropbox_config_new
   fi
   if [[ ${DROPBOX_ENABLE} == "true" ]]; then
     # shellcheck source=${DPU_CONFIG_FILE}
