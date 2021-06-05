@@ -26,7 +26,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.31"
-ALIASES_VERSION="3.0.31-043"
+ALIASES_VERSION="3.0.31-045"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -898,7 +898,7 @@ function dropbox_get_backup() {
     #echo "\"backups\": ${backups_string}"
     #echo "}"
 
-    # Return JSON part
+    # Return JSON
     echo "SERVER_DATA_RESULT => { ${backups_string} }"
 
 }
@@ -989,8 +989,8 @@ function cloudflare_get_record_details() {
 
         else
 
-            # Return
-            echo "\"cloudflare_data\": ${record}"
+            # Return JSON
+            echo "SERVER_DATA_RESULT => { \"cloudflare_data\": ${record} }"
 
         fi
 
