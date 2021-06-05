@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.31
+# Version: 3.0.32
 ################################################################################
 
 source ~/.broobe-utils-options
@@ -25,8 +25,8 @@ if [[ ${DROPBOX_ENABLE} == "true" && -f ${DPU_CONFIG_FILE} ]]; then
 fi
 
 # Version
-SCRIPT_VERSION="3.0.31"
-ALIASES_VERSION="3.0.31-051"
+SCRIPT_VERSION="3.0.32"
+ALIASES_VERSION="3.0.32-051"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -793,7 +793,7 @@ function sites_directories() {
             site_data="{\"name\":\"${site}\" , \"certificate_days_to_expire\":\"${site_cert}\" , \"domain_on_cloudflare\":\"${site_cf}\"}"
 
             directories="${directories} , ${site_data}"
-            
+
         fi
 
     done

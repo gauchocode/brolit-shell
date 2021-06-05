@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.31
+# Version: 3.0.32
 #############################################################################
 
 function _settings_config_server_configuration() {
@@ -252,7 +252,7 @@ function _settings_config_dropbox() {
             echo "DROPBOX_ENABLE=${DROPBOX_ENABLE}" >>/root/.broobe-utils-options
 
             # Generating Dropbox api config file
-            generate_dropbox_config_new
+            generate_dropbox_config
 
         else
             DROPBOX_ENABLE="false"
@@ -461,7 +461,7 @@ function script_configuration_wizard() {
 
 }
 
-function generate_dropbox_config_new() {
+function generate_dropbox_config() {
 
     local dropbox_config_first_msg
     local dropbox_config_second_msg
@@ -551,10 +551,6 @@ function generate_dropbox_config_new() {
                 return 1
 
             fi
-
-            # Write config file
-            #echo "OAUTH_ACCESS_TOKEN=${oauth_access_token}" >"${DPU_CONFIG_FILE}"
-            #log_event "info" "Dropbox configuration has been saved!"
 
         else
             return 1
