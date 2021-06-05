@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.31
+# Version: 3.0.32
 #############################################################################
 
 # Libs apps directory path
@@ -35,7 +35,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="LEMP UTILS SCRIPT"
-  declare -g SCRIPT_V="3.0.31"
+  declare -g SCRIPT_V="3.0.32"
 
   # Hostname
   declare -g VPSNAME="$HOSTNAME"
@@ -357,7 +357,7 @@ function script_init() {
   # Dropbox-uploader config file
   DPU_CONFIG_FILE=~/.dropbox_uploader
   if [[ ${DROPBOX_ENABLE} == "true" && ! -f ${DPU_CONFIG_FILE} ]]; then
-    generate_dropbox_config_new
+    generate_dropbox_config
   fi
   if [[ ${DROPBOX_ENABLE} == "true" ]]; then
     # shellcheck source=${DPU_CONFIG_FILE}

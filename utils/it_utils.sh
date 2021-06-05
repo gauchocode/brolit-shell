@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.31
+# Version: 3.0.32
 ################################################################################
 
 function it_utils_menu() {
