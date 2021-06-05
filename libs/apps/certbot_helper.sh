@@ -354,8 +354,8 @@ function certbot_certificate_delete() {
 
       [Yy]*)
 
-        log_event "debug" "Running: certbot delete --cert-name ${domains}" "true"
-        certbot delete --cert-name "${domains}"
+        log_event "debug" "Running: certbot delete --cert-name ${domains}" "false"
+        certbot --nginx delete --cert-name "${domains}"
         break
 
         ;;
