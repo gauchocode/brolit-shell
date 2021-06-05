@@ -461,40 +461,6 @@ function script_configuration_wizard() {
 
 }
 
-function generate_dropbox_config() {
-
-    local oauth_access_token_string
-    local oauth_access_token
-
-    # Checking var of ${DPU_CONFIG_FILE}
-    if [[ -z ${OAUTH_ACCESS_TOKEN} ]]; then
-
-        oauth_access_token_string+="\n Please, provide a Dropbox Access Token ID.\n"
-        oauth_access_token_string+=" 1) Log in: dropbox.com/developers/apps/create\n"
-        oauth_access_token_string+=" 2) Click on \"Create App\" and select \"Dropbox API\".\n"
-        oauth_access_token_string+=" 3) Choose the type of access you need.\n"
-        oauth_access_token_string+=" 4) Enter the \"App Name\".\n"
-        oauth_access_token_string+=" 5) Click on the \"Create App\" button.\n"
-        oauth_access_token_string+=" 6) Click on the Generate button.\n"
-        oauth_access_token_string+=" 7) Copy and paste the new access token here:\n\n"
-
-        oauth_access_token=$(whiptail --title "Dropbox Uploader Configuration" --inputbox "${oauth_access_token_string}" 15 60 3>&1 1>&2 2>&3)
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
-
-            # Write config file
-            echo "OAUTH_ACCESS_TOKEN=$oauth_access_token" >"${DPU_CONFIG_FILE}"
-            log_event "info" "Dropbox configuration has been saved!"
-
-        else
-            return 1
-
-        fi
-
-    fi
-
-}
-
 function generate_dropbox_config_new() {
 
     local dropbox_config_first_msg
@@ -509,6 +475,10 @@ function generate_dropbox_config_new() {
     local oauth_access_token
 
     local whip_title="Dropbox Configuration"
+
+    RESPONSE_FILE="${TMP_DIR}/du_resp_debug"
+    API_OAUTH_TOKEN="https://api.dropbox.com/oauth2/token"
+    API_OAUTH_AUTHORIZE="https://www.dropbox.com/oauth2/authorize"
 
     # Checking var of ${DPU_CONFIG_FILE}
     if [[ -z ${OAUTH_ACCESS_TOKEN} || -z ${OAUTH_APP_SECRET} ]]; then
@@ -556,18 +526,26 @@ function generate_dropbox_config_new() {
 
             fi
 
+            auth_url="${API_OAUTH_AUTHORIZE}?client_id=${app_key}&token_access_type=offline&response_type=code"
+
             # ACCESS_CODE
             dropbox_config_fourth_msg+=" 11) Now open the following link, \n\n"
-            dropbox_config_fourth_msg+=" https://www.dropbox.com/oauth2/authorize?client_id=${app_key}&token_access_type=offline&response_type=code \n\n"
+            dropbox_config_fourth_msg+=" ${auth_url} \n\n"
             dropbox_config_fourth_msg+=" Allow suggested permissions and copy paste here the Access Code:\n\n"
 
             oauth_access_token="$(whiptail --title "${whip_title}" --inputbox "${dropbox_config_fourth_msg}" 15 60 3>&1 1>&2 2>&3)"
             exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
 
+                # Get $OAUTH_REFRESH_TOKEN
+                curl -k $API_OAUTH_TOKEN -d code="${oauth_access_token}" -d grant_type=authorization_code -u "$app_key":"$app_secret" -o "${RESPONSE_FILE}" 2>/dev/null
+                ## Extract from log
+                OAUTH_REFRESH_TOKEN=$(sed -n 's/.*"refresh_token": "\([^"]*\).*/\1/p' "$RESPONSE_FILE")
+
                 # Write config file
-                echo "OAUTH_REFRESH_TOKEN=${oauth_access_token}" >>"${DPU_CONFIG_FILE}"
-                log_event "info" "Dropbox configuration has been saved!"
+                echo "OAUTH_REFRESH_TOKEN=${OAUTH_REFRESH_TOKEN}" >>"${DPU_CONFIG_FILE}"
+
+                log_event "info" "Dropbox configuration has been saved!" "false"
 
             else
                 return 1

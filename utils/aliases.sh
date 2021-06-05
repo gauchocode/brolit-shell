@@ -772,21 +772,29 @@ function sites_directories() {
     local directories
     local all_directories
     local site_cert
+    local directory_bl
+
+    # Directory blacklist
+    local directory_bl="html,phpmyadmin,sql"
 
     # Run command
     all_directories="$(ls /var/www)"
 
     for site in ${all_directories}; do
 
-        site_cert="$(_cerbot_certificate_get_valid_days "${site}")"
+        if [[ ${directory_bl} != *"${site}"* ]]; then
 
-        root_domain="$(_get_root_domain "${site}")"
+            site_cert="$(_cerbot_certificate_get_valid_days "${site}")"
 
-        site_cf="$(_cloudflare_domain_exists "${root_domain}")"
+            root_domain="$(_get_root_domain "${site}")"
 
-        site_data="{\"name\":\"${site}\" , \"certificate_days_to_expire\":\"${site_cert}\" , \"domain_on_cloudflare\":\"${site_cf}\"}"
+            site_cf="$(_cloudflare_domain_exists "${root_domain}")"
 
-        directories="${directories} , ${site_data}"
+            site_data="{\"name\":\"${site}\" , \"certificate_days_to_expire\":\"${site_cert}\" , \"domain_on_cloudflare\":\"${site_cf}\"}"
+
+            directories="${directories} , ${site_data}"
+            
+        fi
 
     done
 
