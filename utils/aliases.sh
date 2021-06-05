@@ -378,51 +378,6 @@ function _cloudflare_record_exists() {
 
 }
 
-function _cloudflare_get_record_details() {
-
-    # $1 = ${root_domain}
-    # $2 = ${domain}
-
-    local root_domain=$1
-    local domain=$2
-
-    local record_name
-    local zone_id
-    local record_id
-
-    record_name="${domain}"
-
-    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
-
-    record_id="$(_cloudflare_record_exists "${record_name}" "${zone_id}")"
-
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
-
-        # DNS Record Details
-        record="$(curl -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
-            -H "X-Auth-Email: ${dns_cloudflare_email}" \
-            -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
-            -H "Content-Type: application/json")"
-
-        if [[ ${record} == *"\"success\":false"* || ${record} == "" ]]; then
-
-            # Return
-            echo "Get record details failed"
-
-            return 1
-
-        else
-
-            # Return
-            echo "${record}"
-
-        fi
-
-    fi
-
-}
-
 function _get_domain_extension() {
 
     # Parameters
@@ -817,7 +772,6 @@ function sites_directories() {
     local directories
     local all_directories
     local site_cert
-    local site_cf
 
     # Run command
     all_directories="$(ls /var/www)"
@@ -830,9 +784,7 @@ function sites_directories() {
 
         site_cf="$(_cloudflare_domain_exists "${root_domain}")"
 
-        cf_data="$(_cloudflare_get_record_details "${root_domain}" "${site}" "all")"
-
-        site_data="{\"name\":\"${site}\" , \"certificate_days_to_expire\":\"${site_cert}\" , \"domain_on_cloudflare\":\"${site_cf}\" , \"cloudflare_data\": ${cf_data}}"
+        site_data="{\"name\":\"${site}\" , \"certificate_days_to_expire\":\"${site_cert}\" , \"domain_on_cloudflare\":\"${site_cf}\"}"
 
         directories="${directories} , ${site_data}"
 
@@ -998,6 +950,51 @@ function packages_get_data() {
 
     # Return JSON part
     echo "\"webservers\":[ ${webservers_v_installed} ], \"databases\": [ ${mysql_v_installed} ], \"languages\": [ ${php_v_installed} ]"
+
+}
+
+function cloudflare_get_record_details() {
+
+    # $1 = ${root_domain}
+    # $2 = ${domain}
+
+    local root_domain=$1
+    local domain=$2
+
+    local record_name
+    local zone_id
+    local record_id
+
+    record_name="${domain}"
+
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+
+    record_id="$(_cloudflare_record_exists "${record_name}" "${zone_id}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
+
+        # DNS Record Details
+        record="$(curl -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
+            -H "X-Auth-Email: ${dns_cloudflare_email}" \
+            -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
+            -H "Content-Type: application/json")"
+
+        if [[ ${record} == *"\"success\":false"* || ${record} == "" ]]; then
+
+            # Return
+            echo "Get record details failed"
+
+            return 1
+
+        else
+
+            # Return
+            echo "\"cloudflare_data\": ${record}"
+
+        fi
+
+    fi
 
 }
 
