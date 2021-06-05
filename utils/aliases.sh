@@ -26,7 +26,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.31"
-ALIASES_VERSION="3.0.31-045"
+ALIASES_VERSION="3.0.31-051"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -955,17 +955,17 @@ function packages_get_data() {
 
 function cloudflare_get_record_details() {
 
-    # $1 = ${root_domain}
-    # $2 = ${domain}
+    # $1 = ${domain}
 
-    local root_domain=$1
-    local domain=$2
+    local domain=$1
 
     local record_name
     local zone_id
     local record_id
 
     record_name="${domain}"
+
+    root_domain="$(_get_root_domain "${domain}")"
 
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
 
