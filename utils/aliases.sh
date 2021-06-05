@@ -382,11 +382,9 @@ function _cloudflare_get_record_details() {
 
     # $1 = ${root_domain}
     # $2 = ${domain}
-    # $3 = ${field} - Values: all, id, type, name, content, proxiable, proxied, ttl, locked, zone_id, zone_name, created_on, modified_on
 
     local root_domain=$1
     local domain=$2
-    local field=$3
 
     local record_name
     local zone_id
@@ -407,8 +405,6 @@ function _cloudflare_get_record_details() {
             -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
             -H "Content-Type: application/json")"
 
-        #echo "curl -s -X GET \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}}\" -H \"X-Auth-Email: ${dns_cloudflare_email}\" -H \"X-Auth-Key: ${dns_cloudflare_api_key}\" -H \"Content-Type: application/json\"')"
-
         if [[ ${record} == *"\"success\":false"* || ${record} == "" ]]; then
 
             # Return
@@ -417,17 +413,6 @@ function _cloudflare_get_record_details() {
             return 1
 
         else
-
-            #record_detail="$(echo "${record}" | grep -Po '(?<="'"${field}"'":")[^"]*' | head -1)"
-
-            # Remove 1 first chars -- "{"
-            record="${record:1}"
-
-            # Remove 1 last chars -- "}"
-            record="${record::-1}"
-
-            # Replace "result" with "cloudflare_data"
-            record=$(echo "${record}" | sed "s/result/cloudflare_data/")
 
             # Return
             echo "${record}"
@@ -724,8 +709,8 @@ function mcd() {
 
     local dir=$1
 
-    mkdir -p "$dir"
-    cd "$dir"
+    mkdir -p "${dir}"
+    cd "${dir}"
 }
 
 # Search with grep
@@ -847,7 +832,7 @@ function sites_directories() {
 
         cf_data="$(_cloudflare_get_record_details "${root_domain}" "${site}" "all")"
 
-        site_data="{\"name\":\"${site}\" , \"certificate_days_to_expire\":\"${site_cert}\" , \"domain_on_cloudflare\":\"${site_cf}\" , ${cf_data}}"
+        site_data="{\"name\":\"${site}\" , \"certificate_days_to_expire\":\"${site_cert}\" , \"domain_on_cloudflare\":\"${site_cf}\" , \"cloudflare_data\": ${cf_data}}"
 
         directories="${directories} , ${site_data}"
 
