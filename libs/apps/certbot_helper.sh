@@ -148,7 +148,7 @@ function certbot_helper_installer_menu() {
     "02)" "INSTALL WITH CLOUDFLARE"
   )
 
-  chosen_cb_installer_option=$(whiptail --title "CERTBOT INSTALLER OPTIONS" --menu "Please choose an installation method:" 20 78 10 "${cb_installer_options[@]}" 3>&1 1>&2 2>&3)
+  chosen_cb_installer_option="$(whiptail --title "CERTBOT INSTALLER OPTIONS" --menu "Please choose an installation method:" 20 78 10 "${cb_installer_options[@]}" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -380,7 +380,7 @@ function certbot_helper_ask_domains() {
 
   local domains
 
-  domains=$(whiptail --title "CERTBOT MANAGER" --inputbox "Insert the domain and/or subdomains that you want to work with. Ex: broobe.com,www.broobe.com" 10 60 3>&1 1>&2 2>&3)
+  domains="$(whiptail --title "CERTBOT MANAGER" --inputbox "Insert the domain and/or subdomains that you want to work with. Ex: broobe.com,www.broobe.com" 10 60 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -417,7 +417,7 @@ function certbot_helper_menu() {
     if [[ ${chosen_cb_options} == *"01"* ]]; then
 
       # INSTALL-CERTIFICATE
-      domains=$(certbot_helper_ask_domains)
+      domains="$(certbot_helper_ask_domains)"
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
         certbot_helper_installer_menu "${MAILA}" "${domains}"
@@ -427,7 +427,7 @@ function certbot_helper_menu() {
 
     if [[ ${chosen_cb_options} == *"02"* ]]; then
       # EXPAND-CERTIFICATE
-      domains=$(certbot_helper_ask_domains)
+      domains="$(certbot_helper_ask_domains)"
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
         certbot_certificate_expand "${MAILA}" "${domains}"
@@ -443,7 +443,7 @@ function certbot_helper_menu() {
 
     if [[ ${chosen_cb_options} == *"04"* ]]; then
       # FORCE-RENEW-CERTIFICATE
-      domains=$(certbot_helper_ask_domains)
+      domains="$(certbot_helper_ask_domains)"
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
         certbot_certificate_force_renew "${domains}"
