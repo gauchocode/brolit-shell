@@ -2299,14 +2299,28 @@ function subtasks_wpcli_handler() {
 
   plugin-activate)
 
-    wpcli_activate_plugin "${SITES}/${DOMAIN}" "${TVALUE}"
+    wpcli_plugin_activate "${SITES}/${DOMAIN}" "${TVALUE}"
 
     exit
     ;;
 
   plugin-deactivate)
 
-    wpcli_deactivate_plugin "${SITES}/${DOMAIN}" "${TVALUE}"
+    wpcli_plugin_deactivate "${SITES}/${DOMAIN}" "${TVALUE}"
+
+    exit
+    ;;
+
+  plugin-version)
+
+    wpcli_plugin_get_version "${SITES}/${DOMAIN}" "${TVALUE}"
+
+    exit
+    ;;
+
+  plugin-update)
+
+    wpcli_plugin_update "${SITES}/${DOMAIN}" "${TVALUE}"
 
     exit
     ;;

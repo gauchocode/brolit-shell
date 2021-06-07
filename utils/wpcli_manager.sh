@@ -128,7 +128,7 @@ function wpcli_main_menu() {
       for theme_del in $chosen_del_theme_option; do
         theme_del=$(sed -e 's/^"//' -e 's/"$//' <<<${theme_del}) #needed to ommit double quotes
         #echo "theme delete $theme_del"
-        wpcli_delete_theme "${wp_site}" "${theme_del}"
+        wpcli_theme_delete "${wp_site}" "${theme_del}"
       done
 
     fi
@@ -147,7 +147,7 @@ function wpcli_main_menu() {
 
         plugin_del=$(sed -e 's/^"//' -e 's/"$//' <<<${plugin_del}) #needed to ommit double quotes
 
-        wpcli_delete_plugin "${wp_site}" "${plugin_del}"
+        wpcli_plugin_delete "${wp_site}" "${plugin_del}"
 
       done
 

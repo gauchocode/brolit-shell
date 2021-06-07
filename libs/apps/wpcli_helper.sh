@@ -4,6 +4,8 @@
 # Version: 3.0.32
 ################################################################################
 
+### wpcli installation
+
 function wpcli_install_if_not_installed() {
 
     local wpcli
@@ -109,140 +111,6 @@ function wpcli_check_if_package_is_installed() {
 
 }
 
-function wpcli_run_startup_script() {
-
-    # $1 = ${wp_site}           - Site path
-    # $1 = ${site_url}          - Site URL
-    # $2 = ${site_name}         - Site Display Name
-    # $3 = ${wp_user_name}
-    # $4 = ${wp_user_passw}
-    # $5 = ${wp_user_mail}
-
-    local wp_site=$1
-    local site_url=$2
-    local site_name=$3
-    local wp_user_name=$4
-    local wp_user_passw=$5
-    local wp_user_mail=$6
-
-    if [[ ${site_name} == "" ]]; then
-        site_name="$(whiptail --title "Site Name" --inputbox "Insert the site name. Example: My Website" 10 60 3>&1 1>&2 2>&3)"
-    fi
-    exitstatus=$?
-    if [[ ${exitstatus} == "" ]]; then
-        # Return
-        return 1
-
-    fi
-    # TODO: check if receive a domain or a url like: http://siteurl.com
-    if [[ ${site_url} == "" ]]; then
-        site_url="$(whiptail --title "Site URL" --inputbox "Insert the site URL. Example: mydomain.com" 10 60 3>&1 1>&2 2>&3)"
-    fi
-    exitstatus=$?
-    if [[ ! ${exitstatus} -eq 0 ]]; then
-        # Return
-        return 1
-
-    fi
-    if [[ ${wp_user_name} == "" ]]; then
-        wp_user_name="$(whiptail --title "Wordpress User" --inputbox "Insert a username for admin." 10 60 3>&1 1>&2 2>&3)"
-    fi
-    exitstatus=$?
-    if [[ ! ${exitstatus} -eq 0 ]]; then
-        # Return
-        return 1
-
-    fi
-    if [[ ${wp_user_passw} == "" ]]; then
-        wp_user_passw="$(whiptail --title "Site Name" --inputbox "Insert the user password." 10 60 3>&1 1>&2 2>&3)"
-    fi
-    exitstatus=$?
-    if [[ ! ${exitstatus} -eq 0 ]]; then
-        # Return
-        return 1
-
-    fi
-    if [[ ${wp_user_mail} == "" ]]; then
-        wp_user_mail="$(whiptail --title "WordPress User Mail" --inputbox "Insert the user email." 10 60 3>&1 1>&2 2>&3)"
-    fi
-    exitstatus=$?
-    if [[ ! ${exitstatus} -eq 0 ]]; then
-        # Return
-        return 1
-
-    fi
-
-    # Install WordPress Site
-    sudo -u www-data wp --path="${wp_site}" core install --url="${site_url}" --title="${site_name}" --admin_user="${wp_user_name}" --admin_password="${wp_user_passw}" --admin_email="${wp_user_mail}"
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} core install --url=${site_url} --title=${site_name} --admin_user=${wp_user_name} --admin_password=${wp_user_passw} --admin_email=${wp_user_mail}"
-
-    clear_last_line
-    display --indent 6 --text "- WordPress site creation" --result "DONE" --color GREEN
-
-    # Delete default post, page, and comment
-    sudo -u www-data wp --path="${wp_site}" site empty --yes --quiet
-    display --indent 6 --text "- Deleting default content" --result "DONE" --color GREEN
-
-    # Delete default themes
-    sudo -u www-data wp --path="${wp_site}" theme delete twentyseventeen --quiet
-    sudo -u www-data wp --path="${wp_site}" theme delete twentynineteen --quiet
-    display --indent 6 --text "- Deleting default themes" --result "DONE" --color GREEN
-
-    # Delete default plugins
-    sudo -u www-data wp --path="${wp_site}" plugin delete akismet --quiet
-    sudo -u www-data wp --path="${wp_site}" plugin delete hello --quiet
-    display --indent 6 --text "- Deleting default plugins" --result "DONE" --color GREEN
-
-    # Changing permalinks structure
-    sudo -u www-data wp --path="${wp_site}" rewrite structure '/%postname%/' --quiet
-    display --indent 6 --text "- Changing rewrite structure" --result "DONE" --color GREEN
-
-    # Changing comment status
-    sudo -u www-data wp --path="${wp_site}" option update default_comment_status closed --quiet
-    display --indent 6 --text "- Setting comments off" --result "DONE" --color GREEN
-    #wp post create --post_type=page --post_status=publish --post_title='Home' --allow-root
-
-    wp_change_permissions "${wp_site}"
-
-}
-
-function wpcli_create_config() {
-
-    # $1 = ${wp_site}
-    # $2 = ${database}
-    # $3 = ${db_user_name}
-    # $4 = ${db_user_passw}
-    # $4 = ${wp_locale}
-
-    local wp_site=$1
-    local database=$2
-    local db_user_name=$3
-    local db_user_passw=$4
-    local wp_locale=$5
-
-    if [[ ${wp_locale} == "" ]]; then
-        wp_locale="es_ES"
-    fi
-
-    # Log
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} config create --dbname=${database} --dbuser=${db_user_name} --dbpass=${db_user_passw} --locale=${wp_locale}"
-
-    # wp-cli command
-    sudo -u www-data wp --path="${wp_site}" config create --dbname="${database}" --dbuser="${db_user_name}" --dbpass="${db_user_passw}" --locale="${wp_locale}" --quiet
-
-    exitstatus=$?
-    if [[ ! ${exitstatus} -eq 0 ]]; then
-
-        display --indent 6 --text "- Creating wp-config" --result "DONE" --color GREEN
-    else
-
-        display --indent 6 --text "- Creating wp-config" --result "FAIL" --color RED
-        return 1
-
-    fi
-
-}
-
 function wpcli_install_needed_extensions() {
 
     # Rename DB Prefix
@@ -259,19 +127,7 @@ function wpcli_install_needed_extensions() {
 
 }
 
-function wpcli_set_salts() {
-
-    # $1 = ${wp_site}
-
-    local wp_site=$1
-
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} config shuffle-salts" "false"
-
-    sudo -u www-data wp --path="${wp_site}" config shuffle-salts --quiet
-
-    display --indent 6 --text "- Shuffle salts" --result "DONE" --color GREEN
-
-}
+### wpcli core
 
 function wpcli_core_download() {
 
@@ -462,6 +318,8 @@ function wpcli_core_verify() {
 
 }
 
+### wpcli plugins
+
 function wpcli_plugin_verify() {
 
     # $1 = ${wp_site}
@@ -484,6 +342,417 @@ function wpcli_plugin_verify() {
 
     # Return an array with wp-cli output
     echo "${verify_plugin[@]}"
+
+}
+
+function wpcli_install_plugin() {
+
+    # $1 = ${wp_site} (site path)
+    # $2 = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
+
+    local wp_site=$1
+    local plugin=$2
+
+    # Log
+    display --indent 6 --text "- Installing plugin ${plugin}"
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin install ${plugin}"
+
+    # Command
+    sudo -u www-data wp --path="${wp_site}" plugin install "${plugin}" --quiet
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        clear_last_line
+        display --indent 6 --text "- Installing plugin ${plugin}" --result "DONE" --color GREEN
+
+    else
+
+        clear_last_line
+        display --indent 6 --text "- Installing plugin ${plugin}" --result "FAIL" --color RED
+
+    fi
+
+}
+
+function wpcli_plugin_update() {
+
+    # $1 = ${wp_site}
+    # $2 = ${plugin} could be --all?
+
+    local wp_site=$1
+    local plugin=$2
+
+    local plugin_update
+
+    if [[ ${plugin} == "" ]]; then
+        plugin="--all"
+    fi
+
+    mapfile plugin_update < <(sudo -u www-data wp --path="${wp_site}" plugin update "${plugin}" --format=json --quiet 2>&1)
+
+    # Return an array with wp-cli output
+    echo "${plugin_update[@]}"
+
+}
+
+function wpcli_plugin_get_version() {
+
+    # $1 = ${wp_site} (site path)
+    # $2 = ${plugin}
+
+    local wp_site=$1
+    local plugin=$2
+
+    local plugin_version
+
+    plugin_version="$(sudo -u www-data wp --path="${wp_site}" plugin get "${plugin}" --format=json | cut -d "," -f 4 | cut -d ":" -f 2)"
+
+    # Return
+    echo "${plugin_version}"
+
+}
+
+function wpcli_plugin_activate() {
+
+    # $1 = ${wp_site} (site path)
+    # $2 = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
+
+    local wp_site=$1
+    local plugin=$2
+
+    # Log
+    display --indent 6 --text "- Activating plugin ${plugin}"
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin activate ${plugin}"
+
+    # Command
+    sudo -u www-data wp --path="${wp_site}" plugin activate "${plugin}" --quiet
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        clear_last_line
+        display --indent 6 --text "- Activating plugin ${plugin}" --result "DONE" --color GREEN
+
+    else
+
+        clear_last_line
+        display --indent 6 --text "- Activating plugin ${plugin}" --result "FAIL" --color RED
+
+    fi
+
+}
+
+function wpcli_plugin_deactivate() {
+
+    # $1 = ${wp_site} (site path)
+    # $2 = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
+
+    local wp_site=$1
+    local plugin=$2
+
+    # Log
+    display --indent 6 --text "- Deactivating plugin ${plugin}"
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin deactivate ${plugin}"
+
+    # Command
+    sudo -u www-data wp --path="${wp_site}" plugin deactivate "${plugin}" --quiet
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        clear_last_line
+        display --indent 6 --text "- Deactivating plugin ${plugin}" --result "DONE" --color GREEN
+
+    else
+
+        clear_last_line
+        display --indent 6 --text "- Deactivating plugin ${plugin}" --result "FAIL" --color RED
+
+    fi
+
+}
+
+function wpcli_plugin_delete() {
+
+    # $1 = ${wp_site} (site path)
+    # $2 = ${plugin} (plugin to delete)
+
+    local wp_site=$1
+    local plugin=$2
+
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin delete ${plugin}"
+    display --indent 6 --text "- Deleting plugin ${plugin}" --result "DONE" --color GREEN
+
+    sudo -u www-data wp --path="${wp_site}" plugin delete "${plugin}" --quiet
+
+    clear_last_line
+    display --indent 6 --text "- Deleting plugin ${plugin}" --result "DONE" --color GREEN
+
+}
+
+function wpcli_plugin_is_active() {
+
+    # Check whether plugin is active; exit status 0 if active, otherwise 1
+
+    # $1 = ${wp_site} (site path)
+    # $2 = ${plugin} (plugin to delete)
+
+    local wp_site=$1
+    local plugin=$2
+
+    sudo -u www-data wp --path="${wp_site}" plugin is-installed "${plugin}"
+
+    # Return
+    echo $?
+
+}
+
+function wpcli_plugin_is_installed() {
+
+    # Check whether plugin is installed; exit status 0 if installed, otherwise 1
+
+    # $1 = ${wp_site} (site path)
+    # $2 = ${plugin} (plugin to delete)
+
+    local wp_site=$1
+    local plugin=$2
+
+    sudo -u www-data wp --path="${wp_site}" plugin is-installed "${plugin}"
+
+    # Return
+    echo $?
+
+}
+
+function wpcli_force_reinstall_plugins() {
+
+    # $1 = ${wp_site}
+    # $2 = ${plugin}
+
+    local wp_site=$1
+    local plugin=$2
+
+    local verify_plugin
+
+    if [ "${plugin}" = "" ]; then
+
+        log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin install $(ls -1p "${wp_site}"/wp-content/plugins | grep '/$' | sed 's/\/$//') --force"
+        sudo -u www-data wp --path="${wp_site}" plugin install "$(ls -1p "${wp_site}"/wp-content/plugins | grep '/$' | sed 's/\/$//')" --force
+
+    else
+        log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin install ${plugin} --force"
+        sudo -u www-data wp --path="${wp_site}" plugin install "${plugin}" --force
+
+        display --indent 6 --text "- Plugin force install ${plugin}" --result "DONE" --color GREEN
+
+    fi
+
+    # TODO: save ouput on array with mapfile
+    #mapfile verify_plugin < <(sudo -u www-data wp --path="${wp_site}" plugin verify-checksums "${plugin}" 2>&1)
+    #echo "${verify_plugin[@]}"
+
+}
+
+# The idea is that when you update wordpress or a plugin, get the actual version,
+# then run a dry-run update, if success, update but show a message if you want to
+# persist the update or want to do a rollback
+
+function wpcli_rollback_plugin_version() {
+
+    # TODO: implement this
+    # $1= wp_site
+    # $2= wp_plugin
+    # $3= wp_plugin_v (version to install)
+
+    #sudo -u www-data wp --path="${wp_site}" plugin update "${wp_plugin}" --version="${wp_plugin_v}" --dry-run
+    #sudo -u www-data wp --path="${wp_site}" plugin update "${wp_plugin}" --version="${wp_plugin_v}"
+
+    wpcli_plugin_get_version "" ""
+
+}
+
+### wpcli themes
+
+function wpcli_theme_install() {
+
+    # $1 = ${wp_site} (site path)
+    # $2 = ${theme} (theme to delete)
+
+    local wp_site=$1
+    local theme=$2
+
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} theme install ${theme} --activate"
+
+    sudo -u www-data wp --path="${wp_site}" theme install "${theme}" --activate
+
+    display --indent 6 --text "- Installing and activating theme ${theme}" --result "DONE" --color GREEN
+
+}
+
+function wpcli_theme_delete() {
+
+    # $1 = ${wp_site} (site path)
+    # $2 = ${theme} (theme to delete)
+
+    local wp_site=$1
+    local theme=$2
+
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} theme delete ${theme}"
+
+    sudo -u www-data wp --path="${wp_site}" theme delete "${theme}" --quiet
+
+    display --indent 6 --text "- Deleting theme ${theme}" --result "DONE" --color GREEN
+
+}
+
+### wpcli scripts
+
+function wpcli_run_startup_script() {
+
+    # $1 = ${wp_site}           - Site path
+    # $1 = ${site_url}          - Site URL
+    # $2 = ${site_name}         - Site Display Name
+    # $3 = ${wp_user_name}
+    # $4 = ${wp_user_passw}
+    # $5 = ${wp_user_mail}
+
+    local wp_site=$1
+    local site_url=$2
+    local site_name=$3
+    local wp_user_name=$4
+    local wp_user_passw=$5
+    local wp_user_mail=$6
+
+    if [[ ${site_name} == "" ]]; then
+        site_name="$(whiptail --title "Site Name" --inputbox "Insert the site name. Example: My Website" 10 60 3>&1 1>&2 2>&3)"
+    fi
+    exitstatus=$?
+    if [[ ${exitstatus} == "" ]]; then
+        # Return
+        return 1
+
+    fi
+    # TODO: check if receive a domain or a url like: http://siteurl.com
+    if [[ ${site_url} == "" ]]; then
+        site_url="$(whiptail --title "Site URL" --inputbox "Insert the site URL. Example: mydomain.com" 10 60 3>&1 1>&2 2>&3)"
+    fi
+    exitstatus=$?
+    if [[ ! ${exitstatus} -eq 0 ]]; then
+        # Return
+        return 1
+
+    fi
+    if [[ ${wp_user_name} == "" ]]; then
+        wp_user_name="$(whiptail --title "Wordpress User" --inputbox "Insert a username for admin." 10 60 3>&1 1>&2 2>&3)"
+    fi
+    exitstatus=$?
+    if [[ ! ${exitstatus} -eq 0 ]]; then
+        # Return
+        return 1
+
+    fi
+    if [[ ${wp_user_passw} == "" ]]; then
+        wp_user_passw="$(whiptail --title "Site Name" --inputbox "Insert the user password." 10 60 3>&1 1>&2 2>&3)"
+    fi
+    exitstatus=$?
+    if [[ ! ${exitstatus} -eq 0 ]]; then
+        # Return
+        return 1
+
+    fi
+    if [[ ${wp_user_mail} == "" ]]; then
+        wp_user_mail="$(whiptail --title "WordPress User Mail" --inputbox "Insert the user email." 10 60 3>&1 1>&2 2>&3)"
+    fi
+    exitstatus=$?
+    if [[ ! ${exitstatus} -eq 0 ]]; then
+        # Return
+        return 1
+
+    fi
+
+    # Install WordPress Site
+    sudo -u www-data wp --path="${wp_site}" core install --url="${site_url}" --title="${site_name}" --admin_user="${wp_user_name}" --admin_password="${wp_user_passw}" --admin_email="${wp_user_mail}"
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} core install --url=${site_url} --title=${site_name} --admin_user=${wp_user_name} --admin_password=${wp_user_passw} --admin_email=${wp_user_mail}"
+
+    clear_last_line
+    display --indent 6 --text "- WordPress site creation" --result "DONE" --color GREEN
+
+    # Delete default post, page, and comment
+    sudo -u www-data wp --path="${wp_site}" site empty --yes --quiet
+    display --indent 6 --text "- Deleting default content" --result "DONE" --color GREEN
+
+    # Delete default themes
+    sudo -u www-data wp --path="${wp_site}" theme delete twentyseventeen --quiet
+    sudo -u www-data wp --path="${wp_site}" theme delete twentynineteen --quiet
+    display --indent 6 --text "- Deleting default themes" --result "DONE" --color GREEN
+
+    # Delete default plugins
+    sudo -u www-data wp --path="${wp_site}" plugin delete akismet --quiet
+    sudo -u www-data wp --path="${wp_site}" plugin delete hello --quiet
+    display --indent 6 --text "- Deleting default plugins" --result "DONE" --color GREEN
+
+    # Changing permalinks structure
+    sudo -u www-data wp --path="${wp_site}" rewrite structure '/%postname%/' --quiet
+    display --indent 6 --text "- Changing rewrite structure" --result "DONE" --color GREEN
+
+    # Changing comment status
+    sudo -u www-data wp --path="${wp_site}" option update default_comment_status closed --quiet
+    display --indent 6 --text "- Setting comments off" --result "DONE" --color GREEN
+    #wp post create --post_type=page --post_status=publish --post_title='Home' --allow-root
+
+    wp_change_permissions "${wp_site}"
+
+}
+
+function wpcli_create_config() {
+
+    # $1 = ${wp_site}
+    # $2 = ${database}
+    # $3 = ${db_user_name}
+    # $4 = ${db_user_passw}
+    # $4 = ${wp_locale}
+
+    local wp_site=$1
+    local database=$2
+    local db_user_name=$3
+    local db_user_passw=$4
+    local wp_locale=$5
+
+    if [[ ${wp_locale} == "" ]]; then
+        wp_locale="es_ES"
+    fi
+
+    # Log
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} config create --dbname=${database} --dbuser=${db_user_name} --dbpass=${db_user_passw} --locale=${wp_locale}"
+
+    # wp-cli command
+    sudo -u www-data wp --path="${wp_site}" config create --dbname="${database}" --dbuser="${db_user_name}" --dbpass="${db_user_passw}" --locale="${wp_locale}" --quiet
+
+    exitstatus=$?
+    if [[ ! ${exitstatus} -eq 0 ]]; then
+
+        display --indent 6 --text "- Creating wp-config" --result "DONE" --color GREEN
+    else
+
+        display --indent 6 --text "- Creating wp-config" --result "FAIL" --color RED
+        return 1
+
+    fi
+
+}
+
+function wpcli_set_salts() {
+
+    # $1 = ${wp_site}
+
+    local wp_site=$1
+
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} config shuffle-salts" "false"
+
+    sudo -u www-data wp --path="${wp_site}" config shuffle-salts --quiet
+
+    display --indent 6 --text "- Shuffle salts" --result "DONE" --color GREEN
 
 }
 
@@ -576,44 +845,6 @@ function wpcli_seoyoast_reindex() {
 
 }
 
-function wpcli_update_plugin() {
-
-    # $1 = ${wp_site}
-    # $2 = ${plugin} could be --all?
-
-    local wp_site=$1
-    local plugin=$2
-
-    local plugin_update
-
-    if [[ ${plugin} == "" ]]; then
-        plugin="--all"
-    fi
-
-    mapfile plugin_update < <(sudo -u www-data wp --path="${wp_site}" plugin update "${plugin}" --format=json --quiet 2>&1)
-
-    # Return an array with wp-cli output
-    echo "${plugin_update[@]}"
-
-}
-
-function wpcli_get_plugin_version() {
-
-    # $1 = ${wp_site} (site path)
-    # $2 = ${plugin}
-
-    local wp_site=$1
-    local plugin=$2
-
-    local plugin_version
-
-    plugin_version="$(sudo -u www-data wp --path="${wp_site}" plugin get "${plugin}" --format=json | cut -d "," -f 4 | cut -d ":" -f 2)"
-
-    # Return
-    echo "${plugin_version}"
-
-}
-
 function wpcli_get_wpcore_version() {
 
     # $1 = ${wp_site} (site path)
@@ -626,195 +857,6 @@ function wpcli_get_wpcore_version() {
 
     # Return
     echo "${core_version}"
-
-}
-
-function wpcli_install_plugin() {
-
-    # $1 = ${wp_site} (site path)
-    # $2 = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
-
-    local wp_site=$1
-    local plugin=$2
-
-    # Log
-    display --indent 6 --text "- Installing plugin ${plugin}"
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin install ${plugin}"
-
-    # Command
-    sudo -u www-data wp --path="${wp_site}" plugin install "${plugin}" --quiet
-
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-
-        clear_last_line
-        display --indent 6 --text "- Installing plugin ${plugin}" --result "DONE" --color GREEN
-
-    else
-
-        clear_last_line
-        display --indent 6 --text "- Installing plugin ${plugin}" --result "FAIL" --color RED
-
-    fi
-
-}
-
-function wpcli_activate_plugin() {
-
-    # $1 = ${wp_site} (site path)
-    # $2 = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
-
-    local wp_site=$1
-    local plugin=$2
-
-    # Log
-    display --indent 6 --text "- Activating plugin ${plugin}"
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin activate ${plugin}"
-
-    # Command
-    sudo -u www-data wp --path="${wp_site}" plugin activate "${plugin}" --quiet
-
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-
-        clear_last_line
-        display --indent 6 --text "- Activating plugin ${plugin}" --result "DONE" --color GREEN
-
-    else
-
-        clear_last_line
-        display --indent 6 --text "- Activating plugin ${plugin}" --result "FAIL" --color RED
-
-    fi
-
-}
-
-function wpcli_deactivate_plugin() {
-
-    # $1 = ${wp_site} (site path)
-    # $2 = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
-
-    local wp_site=$1
-    local plugin=$2
-
-    # Log
-    display --indent 6 --text "- Deactivating plugin ${plugin}"
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin deactivate ${plugin}"
-
-    # Command
-    sudo -u www-data wp --path="${wp_site}" plugin deactivate "${plugin}" --quiet
-
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-
-        clear_last_line
-        display --indent 6 --text "- Deactivating plugin ${plugin}" --result "DONE" --color GREEN
-
-    else
-
-        clear_last_line
-        display --indent 6 --text "- Deactivating plugin ${plugin}" --result "FAIL" --color RED
-
-    fi
-
-}
-
-function wpcli_delete_plugin() {
-
-    # $1 = ${wp_site} (site path)
-    # $2 = ${plugin} (plugin to delete)
-
-    local wp_site=$1
-    local plugin=$2
-
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin delete ${plugin}"
-    display --indent 6 --text "- Deleting plugin ${plugin}" --result "DONE" --color GREEN
-
-    sudo -u www-data wp --path="${wp_site}" plugin delete "${plugin}" --quiet
-
-    clear_last_line
-    display --indent 6 --text "- Deleting plugin ${plugin}" --result "DONE" --color GREEN
-
-}
-
-function wpcli_is_active_plugin() {
-
-    # Check whether plugin is active; exit status 0 if active, otherwise 1
-
-    # $1 = ${wp_site} (site path)
-    # $2 = ${plugin} (plugin to delete)
-
-    local wp_site=$1
-    local plugin=$2
-
-    sudo -u www-data wp --path="${wp_site}" plugin is-installed "${plugin}"
-
-    # Return
-    echo $?
-
-}
-
-function wpcli_is_installed_plugin() {
-
-    # Check whether plugin is installed; exit status 0 if installed, otherwise 1
-
-    # $1 = ${wp_site} (site path)
-    # $2 = ${plugin} (plugin to delete)
-
-    local wp_site=$1
-    local plugin=$2
-
-    sudo -u www-data wp --path="${wp_site}" plugin is-installed "${plugin}"
-
-    # Return
-    echo $?
-
-}
-
-function wpcli_install_theme() {
-
-    # $1 = ${wp_site} (site path)
-    # $2 = ${theme} (theme to delete)
-
-    local wp_site=$1
-    local theme=$2
-
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} theme install ${theme} --activate"
-
-    sudo -u www-data wp --path="${wp_site}" theme install "${theme}" --activate
-
-    display --indent 6 --text "- Installing and activating theme ${theme}" --result "DONE" --color GREEN
-
-}
-
-function wpcli_delete_theme() {
-
-    # $1 = ${wp_site} (site path)
-    # $2 = ${theme} (theme to delete)
-
-    local wp_site=$1
-    local theme=$2
-
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} theme delete ${theme}"
-
-    sudo -u www-data wp --path="${wp_site}" theme delete "${theme}" --quiet
-
-    display --indent 6 --text "- Deleting theme ${theme}" --result "DONE" --color GREEN
-
-}
-
-function wpcli_change_wp_seo_visibility() {
-
-    # $1 = ${wp_site} (site path)
-    # $2 = ${visibility} (0=off or 1=on)
-
-    local wp_site=$1
-    local visibility=$2
-
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} option set blog_public ${visibility}"
-    sudo -u www-data wp --path="${wp_site}" option set blog_public "${visibility}" --quiet
-
-    display --indent 6 --text "- Changing site visibility to ${visibility}" --result "DONE" --color GREEN
 
 }
 
@@ -930,53 +972,6 @@ function wpcli_export_database() {
 
 }
 
-function wpcli_force_reinstall_plugins() {
-
-    # $1 = ${wp_site}
-    # $2 = ${plugin}
-
-    local wp_site=$1
-    local plugin=$2
-
-    local verify_plugin
-
-    if [ "${plugin}" = "" ]; then
-
-        log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin install $(ls -1p "${wp_site}"/wp-content/plugins | grep '/$' | sed 's/\/$//') --force"
-        sudo -u www-data wp --path="${wp_site}" plugin install "$(ls -1p "${wp_site}"/wp-content/plugins | grep '/$' | sed 's/\/$//')" --force
-
-    else
-        log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin install ${plugin} --force"
-        sudo -u www-data wp --path="${wp_site}" plugin install "${plugin}" --force
-
-        display --indent 6 --text "- Plugin force install ${plugin}" --result "DONE" --color GREEN
-
-    fi
-
-    # TODO: save ouput on array with mapfile
-    #mapfile verify_plugin < <(sudo -u www-data wp --path="${wp_site}" plugin verify-checksums "${plugin}" 2>&1)
-    #echo "${verify_plugin[@]}"
-
-}
-
-# The idea is that when you update wordpress or a plugin, get the actual version,
-# then run a dry-run update, if success, update but show a message if you want to
-# persist the update or want to do a rollback
-
-function wpcli_rollback_plugin_version() {
-
-    # TODO: implement this
-    # $1= wp_site
-    # $2= wp_plugin
-    # $3= wp_plugin_v (version to install)
-
-    #sudo -u www-data wp --path="${wp_site}" plugin update "${wp_plugin}" --version="${wp_plugin_v}" --dry-run
-    #sudo -u www-data wp --path="${wp_site}" plugin update "${wp_plugin}" --version="${wp_plugin_v}"
-
-    wpcli_get_plugin_version "" ""
-
-}
-
 function wpcli_rollback_wpcore_version() {
 
     # TODO: implement this
@@ -1023,8 +1018,22 @@ function wpcli_user_reset_passw() {
 
 }
 
-################################################################################
+### wpcli plugins specific functions
 
+function wpcli_change_wp_seo_visibility() {
+
+    # $1 = ${wp_site} (site path)
+    # $2 = ${visibility} (0=off or 1=on)
+
+    local wp_site=$1
+    local visibility=$2
+
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} option set blog_public ${visibility}"
+    sudo -u www-data wp --path="${wp_site}" option set blog_public "${visibility}" --quiet
+
+    display --indent 6 --text "- Changing site visibility to ${visibility}" --result "DONE" --color GREEN
+
+}
 function wpcli_rocket_cache_clean() {
 
     # $1 = ${wp_site} (site path)

@@ -126,6 +126,18 @@ Options:
 ./runner.sh --task "wpcli" --subtask "plugin-deactivate" --task-value "post-smtp" --domain "broobe.com"
 ```
 
+#### Update WP Plugin
+
+```
+./runner.sh --task "wpcli" --subtask "plugin-update" --task-value "post-smtp" --domain "broobe.com"
+```
+
+#### Get WP Plugin version
+
+```
+./runner.sh --task "wpcli" --subtask "plugin-version" --task-value "post-smtp" --domain "broobe.com"
+```
+
 #### Clear WP Rocket Cache
 
 ```
