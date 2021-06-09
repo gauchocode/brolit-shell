@@ -62,7 +62,7 @@ function installers_and_configurators() {
 
     fi
     if [[ ${installer_type} == *"07"* ]]; then
-      cockpit_installer
+      cockpit_installer_menu
 
     fi
     if [[ ${installer_type} == *"08"* ]]; then
