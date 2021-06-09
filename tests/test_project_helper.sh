@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.33
+# Version: 3.0.34
 #############################################################################
 
 function test_project_helper_funtions() {

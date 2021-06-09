@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.33
+# Version: 3.0.34
 #############################################################################
 
 # Libs apps directory path
@@ -35,7 +35,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="LEMP UTILS SCRIPT"
-  declare -g SCRIPT_V="3.0.33"
+  declare -g SCRIPT_V="3.0.34"
 
   # Hostname
   declare -g VPSNAME="$HOSTNAME"
@@ -1837,6 +1837,60 @@ function menu_security_custom_scan() {
 
 }
 
+function menu_new_project() {
+
+  local project_type_options
+  local chosen_project_type_options
+  local whip_title
+  local whip_description
+
+  whip_title="PROJECT UTILS"
+  whip_description=" "
+
+  project_type_options=(
+    "01)" "CREATE WP PROJECT"
+    "02)" "CREATE LARAVEL PROJECT"
+    "03)" "CREATE OTHER PHP PROJECT"
+    "04)" "CREATE NODE JS PROJECT"
+  )
+
+  chosen_project_type_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_type_options[@]}" 3>&1 1>&2 2>&3)"
+
+  exitstatus=$?
+  if [[ ${exitstatus} = 0 ]]; then
+
+    if [[ ${chosen_project_type_options} == *"01"* ]]; then
+
+      # WP PROJECT
+      project_install "${SITES}" "wordpress"
+
+    fi
+
+    if [[ ${chosen_project_type_options} == *"02"* ]]; then
+
+      # LARAVEL PROJECT
+      project_install "${SITES}" "laravel"
+
+    fi
+
+    if [[ ${chosen_project_type_options} == *"03"* ]]; then
+
+      # OTHER PHP PROJECT
+      project_install "${SITES}" "php"
+
+    fi
+    
+    if [[ ${chosen_project_type_options} == *"04"* ]]; then
+
+      # NODE JS PROJECT
+      project_install "${SITES}" "node-js"
+
+    fi
+
+  fi
+
+}
+
 function menu_project_utils() {
 
   local whip_title
@@ -1848,38 +1902,39 @@ function menu_project_utils() {
   whip_description=" "
 
   project_utils_options=(
-    "01)" "CREATE WP PROJECT"
-    "02)" "CREATE PHP PROJECT"
-    "03)" "DELETE PROJECT"
+    "01)" "CREATE NEW PROJECT"
+    "02)" "DELETE PROJECT"
+    "03)" "GENERATE PROJECT CONFIG"
     "04)" "CREATE PROJECT DB  & USER"
     "05)" "PUT PROJECT ONLINE"
     "06)" "PUT PROJECT OFFLINE"
     "07)" "REGENERATE NGINX SERVER"
     "08)" "BENCH PROJECT GTMETRIX"
   )
-  chosen_project_utils_options=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_utils_options[@]}" 3>&1 1>&2 2>&3)
+
+  chosen_project_utils_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_utils_options[@]}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
   if [[ ${exitstatus} = 0 ]]; then
 
     if [[ ${chosen_project_utils_options} == *"01"* ]]; then
 
-      # CREATE-WP-PROJECT
-      project_install "${SITES}" "wordpress"
+      # CREATE NEW PROJECT
+      menu_new_project
 
     fi
 
     if [[ ${chosen_project_utils_options} == *"02"* ]]; then
 
-      # CREATE-PHP-PROJECT
-      project_install "${SITES}" "php"
+      # DELETE PROJECT
+      project_delete ""
 
     fi
 
     if [[ ${chosen_project_utils_options} == *"03"* ]]; then
 
-      # DELETE-PROJECT
-      project_delete ""
+      # GENERATE PROJECT CONFIG
+      project_generate_config ""
 
     fi
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.33
+# Version: 3.0.34
 #############################################################################
 
-# Check if program is installed (is_this_installed "mysql-server")
-function is_this_installed() {
+# Check if program is installed (package_is_installed "mysql-server")
+function package_is_installed() {
 
   # $1 = ${package}
 
@@ -35,7 +35,7 @@ function install_package_if_not() {
 
   local package=$1
 
-  if [[ "$(is_this_installed "${package}")" != "${package} is installed, it must be a clean server." ]]; then
+  if [[ "$(package_is_installed "${package}")" != "${package} is installed, it must be a clean server." ]]; then
 
     apt update -q4 &
     spinner_loading && apt install "${package}" -y

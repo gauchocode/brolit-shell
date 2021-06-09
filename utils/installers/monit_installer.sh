@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.33
+# Version: 3.0.34
 ################################################################################
 
 function monit_installer() {
@@ -14,6 +14,16 @@ function monit_installer() {
   # Installing packages
   log_event "info" "Installing monit ..."
   apt-get --yes install monit -qq >/dev/null
+
+}
+
+function monit_purge() {
+
+  log_subsection "Monit Installer"
+
+  # Uninstalling packages
+  log_event "info" "Uninstalling monit ..."
+  apt-get --yes purge monit -qq >/dev/null
 
 }
 
