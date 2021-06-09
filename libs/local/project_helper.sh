@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.33
+# Version: 3.0.34
 ################################################################################
 
 #
 # TODO: check when add www.DOMAIN.com and then select other stage != prod
 #
 
-function get_project_name_from_domain() {
+function project_get_name_from_domain() {
 
   # Parameters
   # $1 = ${project_domain}
@@ -27,7 +27,7 @@ function get_project_name_from_domain() {
 
 }
 
-function get_project_state_from_domain() {
+function project_get_state_from_domain() {
 
   # Parameters
   # $1 = ${project_domain}
@@ -112,8 +112,8 @@ function project_get_configured_database() {
     return 1
     ;;
 
-  yii)
-    display --indent 8 --text "Project Type Yii" --tcolor RED
+  node-js)
+    display --indent 8 --text "Project Type NodeJS" --tcolor RED
     return 1
     ;;
 
@@ -150,8 +150,8 @@ function project_get_configured_database_user() {
     return 1
     ;;
 
-  yii)
-    display --indent 8 --text "Project Type Yii" --tcolor RED
+  node-js)
+    display --indent 8 --text "Project Type NodeJS" --tcolor RED
     return 1
     ;;
 
@@ -187,8 +187,13 @@ function project_get_configured_database_userpassw() {
     return 1
     ;;
 
-  yii)
-    display --indent 8 --text "Project Type Yii" --tcolor RED
+  php)
+    display --indent 8 --text "Project Type Laravel" --tcolor RED
+    return 1
+    ;;
+
+  node-js)
+    display --indent 8 --text "Project Type NodeJS" --tcolor RED
     return 1
     ;;
 
@@ -226,7 +231,7 @@ function project_install() {
     project_domain="$(ask_project_domain)"
   fi
 
-  folder_to_install=$(ask_folder_to_install_sites "${dir_path}")
+  folder_to_install="$(ask_folder_to_install_sites "${dir_path}")"
   project_path="${folder_to_install}/${project_domain}"
 
   possible_root_domain="$(get_root_domain "${project_domain}")"
@@ -258,13 +263,23 @@ function project_install() {
   laravel)
     # Execute function
     # laravel_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
-    log_event "error" "Laravel installer should be implemented soon, aborting ..."
+    log_event "warning" "Laravel installer should be implemented soon, trying to install like pure php project ..."
+    php_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
+
     ;;
 
   php)
 
-    php_project_install "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
+    php_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
 
+    ;;
+
+  node-js)
+
+    display --indent 8 --text "Project Type NodeJS" --tcolor RED
+    nodejs_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
+
+    return 1
     ;;
 
   *)
@@ -567,8 +582,17 @@ function project_get_type() {
 
     else
 
-      # TODO: implements laravel, yii, and others php framework support
-      project_type="project_type_unknown"
+      laravel_v="$(php "${project_dir}/artisan" --version)"
+
+      if [[ ${laravel_v} != "" ]]; then
+
+        project_type="laravel"
+
+      else
+        # TODO: implements nodejs,pure php, and others
+        project_type="project_type_unknown"
+
+      fi
 
     fi
 
@@ -579,38 +603,18 @@ function project_get_type() {
 
 }
 
-function is_laravel_project() {
-
-  # $1 = ${project_dir} project directory
-
-  local project_dir=$1
-
-  local is_laravel="false"
-
-  # Check if user is root
-  if [[ -f "${project_dir}/artisan" ]]; then
-    is_laravel="true"
-
-  fi
-
-  # Return
-  echo "${is_laravel}"
-
-}
-
 function check_laravel_version() {
 
   # $1 = ${project_dir} project directory
 
   local project_dir=$1
-  laravel_v=$(php "${project_dir}/artisan" --version)
 
   # Return
   echo "${laravel_v}"
 
 }
 
-function php_project_install() {
+function php_project_installer() {
 
   # $1 = ${project_path}
   # $2 = ${project_domain}
@@ -688,7 +692,7 @@ function php_project_install() {
     nginx_server_create "${project_domain}" "php" "root_domain" "${project_root_domain}"
 
     # HTTPS with Certbot
-    project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${project_root_domain}" 3>&1 1>&2 2>&3)
+    project_domain="$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${project_root_domain}" 3>&1 1>&2 2>&3)"
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -713,7 +717,7 @@ function php_project_install() {
     nginx_server_create "${project_domain}" "php" "single"
 
     # HTTPS with Certbot
-    cert_project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
+    cert_project_domain="$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -734,5 +738,138 @@ function php_project_install() {
 
   # Send notification
   send_notification "${VPSNAME}" "PHP project installation for domain ${project_domain} finished!"
+
+}
+
+function nodejs_project_installer() {
+
+  # $1 = ${project_path}
+  # $2 = ${project_domain}
+  # $3 = ${project_name}
+  # $4 = ${project_state}
+  # $5 = ${project_root_domain}   # Optional
+
+  local project_path=$1
+  local project_domain=$2
+  local project_name=$3
+  local project_state=$4
+  local project_root_domain=$5
+
+  log_subsection "NodeJS Project Install"
+
+  nodejs_installed="$(package_is_installed "nodejs")"
+
+  if [[ ${nodejs_installed} == "false" ]]; then
+
+    nodejs_installer
+
+  fi
+
+  if [[ ${project_root_domain} == '' ]]; then
+
+    possible_root_domain="$(get_root_domain "${project_domain}")"
+    project_root_domain="$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")"
+
+  fi
+
+  if [[ ! -d "${project_path}" ]]; then
+    # Download WP
+    mkdir "${project_path}"
+    change_ownership "www-data" "www-data" "${project_path}"
+
+  else
+
+    # Log
+    display --indent 6 --text "- Creating NodeJS project" --result "FAIL" --color RED
+    display --indent 8 --text "Destination folder '${project_path}' already exist"
+    log_event "error" "Destination folder '${project_path}' already exist, aborting ..."
+
+    # Return
+    return 1
+
+  fi
+
+  # DB
+  db_project_name="$(mysql_name_sanitize "${project_name}")"
+  database_name="${db_project_name}_${project_state}"
+  database_user="${db_project_name}_user"
+  database_user_passw="$(openssl rand -hex 12)"
+
+  ## Create database and user
+  mysql_database_create "${database_name}"
+  mysql_user_create "${database_user}" "${database_user_passw}" ""
+  mysql_user_grant_privileges "${database_user}" "${database_name}"
+
+  # Create project directory
+  mkdir "${project_path}"
+
+  # Create index.html
+  echo "Please configure the project and remove this file." >"${project_path}/index.html"
+
+  # Change ownership
+  change_ownership "www-data" "www-data" "${project_path}"
+
+  # TODO: ask for Cloudflare support and check if root_domain is configured on the cf account
+
+  # If domain contains www, should work without www too
+  common_subdomain='www'
+  if [[ ${project_domain} == *"${common_subdomain}"* ]]; then
+
+    # Cloudflare API to change DNS records
+    cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A"
+
+    # Cloudflare API to change DNS records
+    cloudflare_set_record "${project_root_domain}" "${project_domain}" "CNAME"
+
+    # New site Nginx configuration
+    nginx_server_create "${project_domain}" "php" "root_domain" "${project_root_domain}"
+
+    # HTTPS with Certbot
+    project_domain="$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${project_root_domain}" 3>&1 1>&2 2>&3)"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+      certbot_certificate_install "${MAILA}" "${project_domain},${project_root_domain}"
+
+    else
+
+      # Log
+      log_event "info" "HTTPS support for ${project_domain} skipped"
+      display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
+
+    fi
+
+  else
+
+    # Cloudflare API to change DNS records
+    cloudflare_set_record "${project_root_domain}" "${project_domain}" "A"
+
+    # New site Nginx configuration
+    nginx_create_empty_nginx_conf "${project_path}"
+    nginx_create_globals_config
+    nginx_server_create "${project_domain}" "nodejs" "single"
+
+    # HTTPS with Certbot
+    cert_project_domain="$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+      certbot_certificate_install "${MAILA}" "${cert_project_domain}"
+
+    else
+
+      log_event "info" "HTTPS support for ${project_domain} skipped" "false"
+      display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
+
+    fi
+
+  fi
+
+  # Log
+  log_event "info" "NodeJS project installation for domain ${project_domain} finished" "false"
+  display --indent 6 --text "- NodeJS project installation for domain ${project_domain}" --result "DONE" --color GREEN
+
+  # Send notification
+  send_notification "${VPSNAME}" "NodeJS project installation for domain ${project_domain} finished!"
 
 }

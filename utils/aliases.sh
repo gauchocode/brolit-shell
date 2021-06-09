@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.33
+# Version: 3.0.34
 ################################################################################
 
 source ~/.broobe-utils-options
@@ -25,8 +25,8 @@ if [[ ${DROPBOX_ENABLE} == "true" && -f ${DPU_CONFIG_FILE} ]]; then
 fi
 
 # Version
-SCRIPT_VERSION="3.0.33"
-ALIASES_VERSION="3.0.33-051"
+SCRIPT_VERSION="3.0.34"
+ALIASES_VERSION="3.0.34-051"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -528,7 +528,7 @@ function _extract_domain_extension() {
 
 }
 
-function _get_project_name_from_domain() {
+function _project_get_name_from_domain() {
 
     # Parameters
     # $1 = ${project_domain}
@@ -547,7 +547,7 @@ function _get_project_name_from_domain() {
 
 }
 
-function _get_project_state_from_domain() {
+function _project_get_state_from_domain() {
 
     # Parameters
     # $1 = ${project_domain}
@@ -873,8 +873,8 @@ function dropbox_get_backup() {
         exit 1
     fi
 
-    project_name="$(_get_project_name_from_domain "${project_domain}")"
-    project_state="$(_get_project_state_from_domain "${project_domain}")"
+    project_name="$(_project_get_name_from_domain "${project_domain}")"
+    project_state="$(_project_get_state_from_domain "${project_domain}")"
 
     # Get dropbox backup list
     dropbox_site_backup_path="${VPSNAME}/site/${project_domain}"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.33
+# Version: 3.0.34
 #############################################################################
 
 function menu_backup_options() {
@@ -823,7 +823,7 @@ function make_project_backup() {
         # Checking whether WordPress is installed or not
         if ! $(wp core is-installed); then
 
-            # TODO: Check Composer and Yii Projects
+            # TODO: Check others project types
 
             # Yii Project
             log_event "info" "Trying to get database name from project ..."

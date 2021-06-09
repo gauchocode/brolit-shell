@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.33
+# Version: 3.0.34
 ################################################################################
 
 #
@@ -839,10 +839,6 @@ function restore_project() {
 
     laravel)
       display --indent 4 --text "Project Type Laravel" --tcolor RED
-      ;;
-
-    yii)
-      display --indent 4 --text "Project Type Yii" --tcolor RED
       ;;
 
     *)
