@@ -77,7 +77,17 @@ function project_create_config() {
 
   else
 
+    # If only receive project_path
+    #project_domain="$(basename "${project_path}")"
+    #project_name="$(project_get_name_from_domain "${project_domain}")"
+    #project_stage="$(project_get_state_from_domain "${project_domain}")"
+    #project_type="$(project_get_type "${project_path}")"
+
+    # Copy empty config file
+    cp "${SFOLDER}/config/devops.conf" "${project_config_file}"
+
     # Write config file
+    ## Doc: https://stackoverflow.com/a/61049639/2267761
 
     ## project_name
     contents="$(jq ".project_name = \"${project_name}\"" "${project_config_file}")" && echo "${contents}" >"${project_config_file}"
@@ -91,8 +101,8 @@ function project_create_config() {
     ## project_type
     contents="$(jq ".project_type = \"${project_type}\"" "${project_config_file}")" && echo "${contents}" >"${project_config_file}"
 
-    ## project_dir
-    contents="$(jq ".project_dir = \"${project_dir}\"" "${project_config_file}")" && echo "${contents}" >"${project_config_file}"
+    ## project_path
+    contents="$(jq ".project_path = \"${project_path}\"" "${project_config_file}")" && echo "${contents}" >"${project_config_file}"
 
     # Log
     display --indent 6 --text "- Creating project config file" --result DONE --color GREEN
