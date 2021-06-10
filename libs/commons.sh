@@ -1934,7 +1934,22 @@ function menu_project_utils() {
     if [[ ${chosen_project_utils_options} == *"03"* ]]; then
 
       # GENERATE PROJECT CONFIG
-      project_generate_config ""
+      log_subsection "Project Config"
+
+      # Folder where sites are hosted: $SITES
+      menu_title="PROJECT TO WORK WITH"
+      directory_browser "${menu_title}" "${SITES}"
+
+      # Directory_broser returns: " $filepath"/"$filename
+      if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
+
+        log_event "info" "Operation cancelled!"
+
+      else
+
+        project_generate_config "${filepath}/${filename}"
+
+      fi
 
     fi
 
