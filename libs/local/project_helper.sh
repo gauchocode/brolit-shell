@@ -54,9 +54,11 @@ function project_create_config() {
 
   # $1 = ${project_path}
   # $2 = ${project_name}
-  # $3 = ${project_type}
-  # $4 = ${project_db}
-  # $5 = ${project_domain}
+  # $3 = ${project_stage}
+  # $4 = ${project_type}
+  # $5 = ${project_db}
+  # $6 = ${project_domain}
+  # $7 = ${project_domain}
 
   local project_path=$1
   local project_name=$2
@@ -64,6 +66,7 @@ function project_create_config() {
   local project_type=$4
   local project_db=$5
   local project_domain=$6
+  local project_nginx_conf=$7
 
   local project_config_file
 
@@ -107,10 +110,53 @@ function project_create_config() {
     ## project_subdomain
     content_psubd="$(jq ".project_subdomain = \"${project_domain}\"" "${project_config_file}")" && echo "${content_psubd}" >"${project_config_file}"
 
+    ## project_nginx_conf
+    content_pnginx="$(jq ".project_nginx_conf = \"${project_nginx_conf}\"" "${project_config_file}")" && echo "${content_pnginx}" >"${project_config_file}"
+
     # Log
     display --indent 6 --text "- Creating project config file" --result DONE --color GREEN
 
   fi
+
+}
+
+function project_generate_config() {
+
+  # $1 = ${project_path}
+
+  local project_path=$1
+
+  local project_config_file
+
+  log_event "info" "Trying to generate a new config for '${project_path}'..."
+
+  # Project config file
+  project_config_file="${project_path}/devops.conf"
+
+  if [[ -e ${project_config_file} ]]; then
+
+    # Log
+    display --indent 6 --text "- Project config file already exists" --result WARNING --color YELLOW
+
+  fi
+
+  # Trying to extract project data
+  project_domain="$(basename "${project_path}")"
+  project_name="$(project_get_name_from_domain "${project_domain}")"
+  project_stage="$(project_get_state_from_domain "${project_domain}")"
+  project_type="$(project_get_type "${project_path}")"
+
+  # TODO: should check this data
+  ## Check if database exists
+  project_db="${project_name}_${project_stage}"
+  ## Check if file exists
+  project_nginx_conf="/etc/nginx/sites-available/${project_domain}"
+
+  # Copy empty config file
+  cp "${SFOLDER}/config/devops.conf" "${project_config_file}"
+
+  # Write config file
+  project_create_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db}" "${project_db}" "${project_domain}" "${project_nginx_conf}"
 
 }
 

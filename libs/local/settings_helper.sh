@@ -646,7 +646,7 @@ function generate_telegram_config() {
             # shellcheck source=${SFOLDER}/libs/telegram_notification_helper.sh
             source "${SFOLDER}/libs/telegram_notification_helper.sh"
 
-            telegram_send_notification "✅ ${VPSNAME}: Telegram notifications configured!"
+            telegram_send_notification "✅ ${VPSNAME}" "Telegram notifications configured!" ""
 
         else
 
