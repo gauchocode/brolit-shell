@@ -26,7 +26,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.35"
-ALIASES_VERSION="3.0.35-051"
+ALIASES_VERSION="3.0.35-052"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -570,6 +570,34 @@ function _project_get_state_from_domain() {
 
 }
 
+function _project_get_config() {
+
+  # $1 = ${project_path}
+  # $2 = ${config_field}
+
+  local project_path=$1
+  local config_field=$2
+
+  local config_value
+
+  local project_config_file="${project_path}/devops.conf"
+
+  if [[ -e ${project_config_file} ]]; then
+
+    config_value="$(cat ${project_config_file} | jq -r ".${config_field}")"
+
+    # Return
+    echo "${config_value}"
+
+  else
+
+    # Return
+    echo "false"
+
+  fi
+
+}
+
 ################################################################################
 
 # Creates an archive (*.tar.gz) from given directory
@@ -859,6 +887,7 @@ function dropbox_get_backup() {
     local project_domain=$1
 
     local project_name
+    local project_db
     local dropbox_site_backup_path
     local dropbox_site_backup_list
     local backup_to_search
@@ -873,8 +902,15 @@ function dropbox_get_backup() {
         exit 1
     fi
 
-    project_name="$(_project_get_name_from_domain "${project_domain}")"
-    project_state="$(_project_get_state_from_domain "${project_domain}")"
+    project_db="$(_project_get_config "${project_domain}" "project_db")"
+
+    if [[ ${project_config} == "false" ]]; then
+
+        project_name="$(_project_get_name_from_domain "${project_domain}")"
+        project_state="$(_project_get_state_from_domain "${project_domain}")"
+        project_db="${project_name}_${project_state}"
+
+    fi
 
     # Get dropbox backup list
     dropbox_site_backup_path="${VPSNAME}/site/${project_domain}"
@@ -884,7 +920,7 @@ function dropbox_get_backup() {
 
         backup_date="$(_get_backup_date "${backup_file}")"
 
-        backup_to_search="${project_name}_${project_state}_database_${backup_date}.tar.bz2"
+        backup_to_search="${project_db}_database_${backup_date}.tar.bz2"
 
         search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${backup_date}" || ret=$?)" # using ret to bypass unexped errors
 

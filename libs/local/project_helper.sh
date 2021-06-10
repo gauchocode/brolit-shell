@@ -159,12 +159,21 @@ function project_get_config() {
 
   local config_value
 
-  local devops_file="${project_path}/devops.conf"
+  local project_config_file="${project_path}/devops.conf"
 
-  config_value="$(cat ${devops_file} | jq -r ".${config_field}")"
+  if [[ -e ${project_config_file} ]]; then
 
-  # Return
-  echo "${config_value}"
+    config_value="$(cat ${project_config_file} | jq -r ".${config_field}")"
+
+    # Return
+    echo "${config_value}"
+
+  else
+
+    # Return
+    echo "false"
+
+  fi
 
 }
 
