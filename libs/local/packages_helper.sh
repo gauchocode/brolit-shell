@@ -80,6 +80,7 @@ function check_packages_required() {
   declare -g SENDEMAIL
   declare -g PV
   declare -g BC
+  declare -g JQ
   declare -g DIG
   declare -g LBZIP2
   declare -g ZIP
@@ -120,6 +121,15 @@ function check_packages_required() {
     apt-get --yes install bc -qq >/dev/null
     clear_last_line
     display --indent 2 --text "- Installing bc" --result "DONE" --color GREEN
+  fi
+
+  # Check if jq is installed
+  JQ="$(command -v jq)"
+  if [[ ! -x "${JQ}" ]]; then
+    display --indent 2 --text "- Installing jq"
+    apt-get --yes install jq -qq >/dev/null
+    clear_last_line
+    display --indent 2 --text "- Installing jq" --result "DONE" --color GREEN
   fi
 
   # Check if dig is installed
