@@ -58,7 +58,7 @@ function project_create_config() {
   # $4 = ${project_type}
   # $5 = ${project_db}
   # $6 = ${project_domain}
-  # $7 = ${project_domain}
+  # $7 = ${project_nginx_conf}
 
   local project_path=$1
   local project_name=$2
@@ -93,6 +93,9 @@ function project_create_config() {
   # Write config file
   ## Doc: https://stackoverflow.com/a/61049639/2267761
 
+  ## project_path
+  content_ppath="$(jq ".project_path = \"${project_path}\"" "${project_config_file}")" && echo "${content_ppath}" >"${project_config_file}"
+
   ## project_name
   content_pname="$(jq ".project_name = \"${project_name}\"" "${project_config_file}")" && echo "${content_pname}" >"${project_config_file}"
 
@@ -104,9 +107,6 @@ function project_create_config() {
 
   ## project_type
   content_ptype="$(jq ".project_type = \"${project_type}\"" "${project_config_file}")" && echo "${content_ptype}" >"${project_config_file}"
-
-  ## project_path
-  content_ppath="$(jq ".project_path = \"${project_path}\"" "${project_config_file}")" && echo "${content_ppath}" >"${project_config_file}"
 
   ## project_subdomain
   content_psubd="$(jq ".project_subdomain = \"${project_domain}\"" "${project_config_file}")" && echo "${content_psubd}" >"${project_config_file}"
@@ -155,7 +155,7 @@ function project_generate_config() {
   cp "${SFOLDER}/config/devops.conf" "${project_config_file}"
 
   # Write config file
-  project_create_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db}" "${project_db}" "${project_domain}" "${project_nginx_conf}"
+  project_create_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db}" "${project_domain}" "${project_nginx_conf}"
 
 }
 
