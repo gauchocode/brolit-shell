@@ -68,12 +68,12 @@ function wordpress_project_install() {
   fi
 
   if [[ ! -d "${project_path}" ]]; then
-    # Download WP
-    mkdir "${project_path}"
-    change_ownership "www-data" "www-data" "${project_path}"
 
-    # Logging
-    #display --indent 6 --text "- Making a copy of the WordPress project" --result "DONE" --color GREEN
+    # Create project directory
+    mkdir "${project_path}"
+
+    # Change directory owner
+    change_ownership "www-data" "www-data" "${project_path}"
 
   else
 
@@ -112,6 +112,9 @@ function wordpress_project_install() {
 
   # Set WP salts
   wpcli_set_salts "${project_path}"
+
+  # Create project config file
+  project_create_config "${project_path}" "${project_name}" "wordpress" "${database_name}" "${project_domain}"
 
   # TODO: ask for Cloudflare support and check if root_domain is configured on the cf account
 
@@ -174,7 +177,7 @@ function wordpress_project_install() {
 
   # Send notification
   send_notification "${VPSNAME}" "WordPress installation for domain ${project_domain} finished"
-  
+
 }
 
 function wordpress_project_copy() {
