@@ -26,7 +26,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.35"
-ALIASES_VERSION="3.0.35-052"
+ALIASES_VERSION="3.0.35-054"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -902,9 +902,9 @@ function dropbox_get_backup() {
         exit 1
     fi
 
-    project_db="$(_project_get_config "${project_domain}" "project_db")"
+    project_db="$(_project_get_config "${SITES}/${project_domain}" "project_db")"
 
-    if [[ ${project_config} == "false" ]]; then
+    if [[ ${project_db} == "false" ]]; then
 
         project_name="$(_project_get_name_from_domain "${project_domain}")"
         project_state="$(_project_get_state_from_domain "${project_domain}")"
@@ -914,7 +914,10 @@ function dropbox_get_backup() {
 
     # Get dropbox backup list
     dropbox_site_backup_path="${VPSNAME}/site/${project_domain}"
-    dropbox_site_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_site_backup_path}")"
+
+    #echo "Running: ${DROPBOX_UPLOADER} -hq list \"${dropbox_site_backup_path}\""
+
+    dropbox_site_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_site_backup_path}" | grep -Eo "${project_domain}_site-files_[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}.tar.bz2")"
 
     for backup_file in ${dropbox_site_backup_list}; do
 
@@ -922,6 +925,7 @@ function dropbox_get_backup() {
 
         backup_to_search="${project_db}_database_${backup_date}.tar.bz2"
 
+        #echo "Running: ${DROPBOX_UPLOADER} -hq search \"${backup_to_search}\" | grep -E \"${backup_date}\""
         search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${backup_date}" || ret=$?)" # using ret to bypass unexped errors
 
         backup_db="$(basename "${search_backup_db}")"
@@ -936,11 +940,6 @@ function dropbox_get_backup() {
 
     # Remove 3 last chars
     backups_string="${backups_string::-3}"
-
-    # Return JSON part
-    #echo "SERVER_DATA_RESULT => {"
-    #echo "\"backups\": ${backups_string}"
-    #echo "}"
 
     # Return JSON
     echo "SERVER_DATA_RESULT => { ${backups_string} }"
