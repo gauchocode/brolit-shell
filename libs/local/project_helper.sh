@@ -54,31 +54,48 @@ function project_create_config() {
 
   # $1 = ${project_path}
   # $2 = ${project_name}
-  # $3 = ${project_type}          / Wordpress, Laravel, PHP
-  # $4 = ${project_subtype}       / ? check if it's necessary
+  # $3 = ${project_type}
+  # $4 = ${project_db}
   # $5 = ${project_domain}
 
   local project_path=$1
   local project_name=$2
-  local project_type=$3
-  local project_subtype=$4
-  local project_domain=$5
+  local project_stage=$3
+  local project_type=$4
+  local project_db=$5
+  local project_domain=$6
 
   local project_config_file
 
   # Project config file
-  project_config_file="${project_path}/.project.conf"
+  project_config_file="${project_path}/devops.conf"
+
   if [[ -e ${project_config_file} ]]; then
-    # Logging
+
+    # Log
     display --indent 6 --text "- Project config file already exists" --result WARNING --color YELLOW
 
   else
 
     # Write config file
-    echo "project_name=${project_name}" >>"${project_config_file}"
-    echo "project_type=${project_type}" >>"${project_config_file}"
-    echo "project_type=${project_subtype}" >>"${project_config_file}"
-    echo "project_type=${project_domain}" >>"${project_config_file}"
+
+    ## project_name
+    contents="$(jq ".project_name = \"${project_name}\"" "${project_config_file}")" && echo "${contents}" >"${project_config_file}"
+
+    ## project_stage
+    contents="$(jq ".project_stage = \"${project_stage}\"" "${project_config_file}")" && echo "${contents}" >"${project_config_file}"
+
+    ## project_db
+    contents="$(jq ".project_db = \"${project_db}\"" "${project_config_file}")" && echo "${contents}" >"${project_config_file}"
+
+    ## project_type
+    contents="$(jq ".project_type = \"${project_type}\"" "${project_config_file}")" && echo "${contents}" >"${project_config_file}"
+
+    ## project_dir
+    contents="$(jq ".project_dir = \"${project_dir}\"" "${project_config_file}")" && echo "${contents}" >"${project_config_file}"
+
+    # Log
+    display --indent 6 --text "- Creating project config file" --result DONE --color GREEN
 
   fi
 
