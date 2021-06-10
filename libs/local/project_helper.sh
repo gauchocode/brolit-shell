@@ -77,46 +77,45 @@ function project_create_config() {
 
     # Log
     display --indent 6 --text "- Project config file already exists" --result WARNING --color YELLOW
-
-  else
-
-    # If only receive project_path
-    #project_domain="$(basename "${project_path}")"
-    #project_name="$(project_get_name_from_domain "${project_domain}")"
-    #project_stage="$(project_get_state_from_domain "${project_domain}")"
-    #project_type="$(project_get_type "${project_path}")"
-
-    # Copy empty config file
-    cp "${SFOLDER}/config/devops.conf" "${project_config_file}"
-
-    # Write config file
-    ## Doc: https://stackoverflow.com/a/61049639/2267761
-
-    ## project_name
-    content_pname="$(jq ".project_name = \"${project_name}\"" "${project_config_file}")" && echo "${content_pname}" >"${project_config_file}"
-
-    ## project_stage
-    content_pstage="$(jq ".project_stage = \"${project_stage}\"" "${project_config_file}")" && echo "${content_pstage}" >"${project_config_file}"
-
-    ## project_db
-    content_pdb="$(jq ".project_db = \"${project_db}\"" "${project_config_file}")" && echo "${content_pdb}" >"${project_config_file}"
-
-    ## project_type
-    content_ptype="$(jq ".project_type = \"${project_type}\"" "${project_config_file}")" && echo "${content_ptype}" >"${project_config_file}"
-
-    ## project_path
-    content_ppath="$(jq ".project_path = \"${project_path}\"" "${project_config_file}")" && echo "${content_ppath}" >"${project_config_file}"
-
-    ## project_subdomain
-    content_psubd="$(jq ".project_subdomain = \"${project_domain}\"" "${project_config_file}")" && echo "${content_psubd}" >"${project_config_file}"
-
-    ## project_nginx_conf
-    content_pnginx="$(jq ".project_nginx_conf = \"${project_nginx_conf}\"" "${project_config_file}")" && echo "${content_pnginx}" >"${project_config_file}"
-
-    # Log
-    display --indent 6 --text "- Creating project config file" --result DONE --color GREEN
+    display --indent 8 --text "Updating config file ..." --result WARNING --color YELLOW --tstyle ITALIC
 
   fi
+
+  # If only receive project_path
+  #project_domain="$(basename "${project_path}")"
+  #project_name="$(project_get_name_from_domain "${project_domain}")"
+  #project_stage="$(project_get_state_from_domain "${project_domain}")"
+  #project_type="$(project_get_type "${project_path}")"
+
+  # Copy empty config file
+  cp "${SFOLDER}/config/devops.conf" "${project_config_file}"
+
+  # Write config file
+  ## Doc: https://stackoverflow.com/a/61049639/2267761
+
+  ## project_name
+  content_pname="$(jq ".project_name = \"${project_name}\"" "${project_config_file}")" && echo "${content_pname}" >"${project_config_file}"
+
+  ## project_stage
+  content_pstage="$(jq ".project_stage = \"${project_stage}\"" "${project_config_file}")" && echo "${content_pstage}" >"${project_config_file}"
+
+  ## project_db
+  content_pdb="$(jq ".project_db = \"${project_db}\"" "${project_config_file}")" && echo "${content_pdb}" >"${project_config_file}"
+
+  ## project_type
+  content_ptype="$(jq ".project_type = \"${project_type}\"" "${project_config_file}")" && echo "${content_ptype}" >"${project_config_file}"
+
+  ## project_path
+  content_ppath="$(jq ".project_path = \"${project_path}\"" "${project_config_file}")" && echo "${content_ppath}" >"${project_config_file}"
+
+  ## project_subdomain
+  content_psubd="$(jq ".project_subdomain = \"${project_domain}\"" "${project_config_file}")" && echo "${content_psubd}" >"${project_config_file}"
+
+  ## project_nginx_conf
+  content_pnginx="$(jq ".project_nginx_conf = \"${project_nginx_conf}\"" "${project_config_file}")" && echo "${content_pnginx}" >"${project_config_file}"
+
+  # Log
+  display --indent 6 --text "- Creating project config file" --result DONE --color GREEN
 
 }
 
