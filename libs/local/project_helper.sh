@@ -90,22 +90,60 @@ function project_create_config() {
     ## Doc: https://stackoverflow.com/a/61049639/2267761
 
     ## project_name
-    contents="$(jq ".project_name = \"${project_name}\"" "${project_config_file}")" && echo "${contents}" >"${project_config_file}"
+    content_pname="$(jq ".project_name = \"${project_name}\"" "${project_config_file}")" && echo "${content_pname}" >"${project_config_file}"
 
     ## project_stage
-    contents="$(jq ".project_stage = \"${project_stage}\"" "${project_config_file}")" && echo "${contents}" >"${project_config_file}"
+    content_pstage="$(jq ".project_stage = \"${project_stage}\"" "${project_config_file}")" && echo "${content_pstage}" >"${project_config_file}"
 
     ## project_db
-    contents="$(jq ".project_db = \"${project_db}\"" "${project_config_file}")" && echo "${contents}" >"${project_config_file}"
+    content_pdb="$(jq ".project_db = \"${project_db}\"" "${project_config_file}")" && echo "${content_pdb}" >"${project_config_file}"
 
     ## project_type
-    contents="$(jq ".project_type = \"${project_type}\"" "${project_config_file}")" && echo "${contents}" >"${project_config_file}"
+    content_ptype="$(jq ".project_type = \"${project_type}\"" "${project_config_file}")" && echo "${content_ptype}" >"${project_config_file}"
 
     ## project_path
-    contents="$(jq ".project_path = \"${project_path}\"" "${project_config_file}")" && echo "${contents}" >"${project_config_file}"
+    content_ppath="$(jq ".project_path = \"${project_path}\"" "${project_config_file}")" && echo "${content_ppath}" >"${project_config_file}"
+
+    ## project_subdomain
+    content_psubd="$(jq ".project_subdomain = \"${project_domain}\"" "${project_config_file}")" && echo "${content_psubd}" >"${project_config_file}"
 
     # Log
     display --indent 6 --text "- Creating project config file" --result DONE --color GREEN
+
+  fi
+
+}
+
+function project_update_config() {
+
+  # $1 = ${project_path}
+  # $2 = ${config_field}
+  # $3 = ${config_value}
+
+  local project_path=$1
+  local config_field=$2
+  local config_value=$3
+
+  local project_config_file
+
+  # Project config file
+  project_config_file="${project_path}/devops.conf"
+
+  if [[ -e ${project_config_file} ]]; then
+
+    # Write config file
+    ## Doc: https://stackoverflow.com/a/61049639/2267761
+
+    ## project_name
+    content="$(jq ".${config_field} = \"${config_value}\"" "${project_config_file}")" && echo "${content}" >"${project_config_file}"
+
+    # Log
+    display --indent 6 --text "- Updating project config file" --result DONE --color GREEN
+
+  else
+
+    # Log
+    display --indent 6 --text "- Project config file dont exists" --result WARNING --color YELLOW
 
   fi
 
