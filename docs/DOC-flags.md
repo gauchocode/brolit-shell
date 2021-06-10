@@ -51,7 +51,7 @@ Options:
 ./runner.sh --task "backup" --subtask "databases"
 ```
 
-#### Backup Project (NOT IMPLEMENTED YET)
+#### Backup Project
 
 ```
 ./runner.sh --task "backup" --subtask "project" --domain "example.domain.com"
