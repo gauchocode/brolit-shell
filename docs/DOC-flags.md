@@ -51,6 +51,12 @@ Options:
 ./runner.sh --task "backup" --subtask "databases"
 ```
 
+#### Backup Project (NOT IMPLEMENTED YET)
+
+```
+./runner.sh --task "backup" --subtask "project" --domain "example.domain.com"
+```
+
 ### Project Utils
 
 #### Create WordPress Project

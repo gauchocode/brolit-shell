@@ -84,6 +84,25 @@ function project_create_config() {
 
 }
 
+function project_get_config() {
+
+  # $1 = ${project_path}
+  # $2 = ${config_field}
+
+  local project_path=$1
+  local config_field=$2
+
+  local config_value
+
+  local devops_file="${project_path}/devops.conf"
+
+  config_value="$(cat ${devops_file} | jq -r ".${config_field}")"
+
+  # Return
+  echo "${config_value}"
+
+}
+
 function project_get_configured_database() {
 
   # $1 = ${project_path}
