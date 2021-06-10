@@ -6,16 +6,16 @@
 
 function menu_backup_options() {
 
-  local backup_options 
+  local backup_options
   local chosen_backup_type
 
   backup_options=(
-    "01)" "BACKUP DATABASES" 
-    "02)" "BACKUP FILES" 
-    "03)" "BACKUP ALL" 
+    "01)" "BACKUP DATABASES"
+    "02)" "BACKUP FILES"
+    "03)" "BACKUP ALL"
     "04)" "BACKUP PROJECT"
   )
-  
+
   chosen_backup_type="$(whiptail --title "SELECT BACKUP TYPE" --menu " " 20 78 10 "${backup_options[@]}" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -120,8 +120,19 @@ function menu_backup_options() {
 
       # PROJECT_BACKUP
 
-      # Running project_backup script
-      "${SFOLDER}/utils/project_backup.sh"
+      # Select project to work with
+      directory_browser "Select a project to work with" "${SITES}" #return $filename
+
+      # Directory_broser returns: $filepath and $filename
+      if [[ ${filename} != "" && ${filepath} != "" ]]; then
+
+        FOLDER_NAME=$(basename "$j")
+
+        make_project_backup "site" "${FOLDER_NAME}" "${SITES}" "${FOLDER_NAME}"
+
+        make_project_backup "${filepath}/${filename}"
+
+      fi
 
     fi
 
@@ -174,7 +185,7 @@ function make_server_files_backup() {
   local bk_path=$3
   local directory_to_backup=$4
 
-  local bk_file 
+  local bk_file
   local old_bk_file
   local dropbox_path
   local bk_scf_size
@@ -187,7 +198,7 @@ function make_server_files_backup() {
     # Here we use tar.bz2 with bzip2 compression method
     log_event "info" "Making backup of ${bk_path}"
     log_event "debug" "Running: ${TAR} cjf ${TMP_DIR}/${NOW}/${bk_file} --directory=${bk_path} ${directory_to_backup}"
-    
+
     (${TAR} cjf "${TMP_DIR}/${NOW}/${bk_file}" --directory="${bk_path}" "${directory_to_backup}")
 
     display --indent 6 --text "- Making ${YELLOW}${bk_sup_type}${ENDCOLOR} backup" --result "DONE" --color GREEN
@@ -202,7 +213,7 @@ function make_server_files_backup() {
     if [[ ${bzip2_result} -eq 0 ]]; then
 
       log_event "info" "Backup ${bk_file} created"
-      
+
       #BACKUPED_SCF_LIST[$BK_SCF_INDEX]="$(string_remove_special_chars "${bk_file}")"
       BACKUPED_SCF_LIST[$BK_SCF_INDEX]=${bk_file}
 
@@ -214,7 +225,7 @@ function make_server_files_backup() {
 
       # New folder with $VPSNAME
       dropbox_create_dir "${VPSNAME}"
-      
+
       # New folder with $bk_type
       dropbox_create_dir "${VPSNAME}/${bk_type}"
 
@@ -255,7 +266,7 @@ function make_server_files_backup() {
   fi
 
   log_break "true"
-  
+
 }
 
 function make_mailcow_backup() {
@@ -308,7 +319,7 @@ function make_mailcow_backup() {
 
         # New folder with $VPSNAME
         output="$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}" 2>&1)"
-      
+
         # New folder with $bk_type
         output="$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}/${bk_type}" 2>&1)"
 
@@ -329,7 +340,7 @@ function make_mailcow_backup() {
         log_event "info" "Mailcow backup finished"
 
       fi
-  
+
     else
 
       ERROR=true
@@ -518,15 +529,15 @@ function make_files_backup() {
   log_event "info" "Making backup file from: ${directory_to_backup} ..."
   display --indent 6 --text "- Making ${YELLOW}${directory_to_backup}${ENDCOLOR} backup" --result "DONE" --color GREEN
 
-  (${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv --width 70 --size "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${bk_file}")2>&1
-  
+  (${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv --width 70 --size "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${bk_file}") 2>&1
+
   # Clear pipe output
   clear_last_line
 
   # Test backup file
   log_event "info" "Testing backup file: ${bk_file} ..."
   display --indent 6 --text "- Testing backup file"
-  
+
   pv --width 70 "${TMP_DIR}/${NOW}/${bk_file}" | lbzip2 --test
 
   # Clear pipe output
@@ -534,24 +545,24 @@ function make_files_backup() {
 
   lbzip2_result=$?
   if [[ "${lbzip2_result}" -eq 0 ]]; then
-    
+
     BACKUPED_LIST[$BK_FILE_INDEX]=${bk_file}
     BACKUPED_FL=${BACKUPED_LIST[${BK_FILE_INDEX}]}
 
     # Calculate backup size
-    BK_FL_SIZE="$(find "${TMP_DIR}/${NOW}/" -name "${bk_file}" -exec ls -l --human-readable --block-size=M {} \; |  awk '{ print $5 }')"
+    BK_FL_SIZE="$(find "${TMP_DIR}/${NOW}/" -name "${bk_file}" -exec ls -l --human-readable --block-size=M {} \; | awk '{ print $5 }')"
     BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=${BK_FL_SIZE}
 
     # Log
     display --indent 6 --text "- Compressing backup" --result "DONE" --color GREEN
     display --indent 8 --text "Final backup size: ${YELLOW}${BOLD}${BK_FL_SIZE}${ENDCOLOR}"
-    
+
     log_event "info" "Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}"
     log_event "info" "Creating folders in Dropbox ..."
 
     # New folder with $VPSNAME
     dropbox_create_dir "${VPSNAME}"
-    
+
     # New folder with $bk_type
     dropbox_create_dir "${VPSNAME}/${bk_type}"
 
@@ -633,7 +644,7 @@ function make_all_databases_backup() {
 
   # Get all databases name
   TOTAL_DBS="$(mysql_count_dabases "${DBS}")"
-  
+
   # Log
   display --indent 6 --text "- Databases found" --result "${TOTAL_DBS}" --color WHITE
   log_event "info" "Databases found: ${TOTAL_DBS}"
@@ -693,7 +704,7 @@ function make_database_backup() {
 
   log_event "info" "Creating new database backup of ${database} ..."
 
-  # Create dump file 
+  # Create dump file
   mysql_database_export "${database}" "${directory_to_backup}${db_file}"
   mysql_export_result=$?
   if [[ ${mysql_export_result} -eq 0 ]]; then
@@ -754,7 +765,7 @@ function make_database_backup() {
       dropbox_upload "${TMP_DIR}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}${dropbox_path}"
       dropbox_result=$?
       if [[ ${dropbox_result} -eq 0 ]]; then
-      
+
         # Delete old backups
         dropbox_delete "${DROPBOX_FOLDER}${dropbox_path}/${old_bk_file}"
 
@@ -781,114 +792,42 @@ function make_database_backup() {
 
 function make_project_backup() {
 
-    #TODO: DOES NOT WORK, NEED REFACTOR ASAP!!!
+  #TODO: DOES NOT WORK, NEED REFACTOR ASAP!!!
 
-    # $1 = Backup Type
-    # $2 = Backup SubType
-    # $3 = Path folder to Backup
-    # $4 = Folder to Backup
+  # $1 = Project Domain
+  # $2 = Backup Type (all,configs,sites,databases) - Default: all
 
-    local bk_type=$1        #configs,sites,databases
-    local bk_sup_type=$2    #config_name,site_domain,database_name
-    local bk_path=$3
-    local directory_to_backup=$4
+  local project_domain=$1
+  local bk_type=$2
 
-    local db_file
+  make_files_backup "site" "${SITES}" "${project_domain}"
 
-    local directory_to_backup="${TMP_DIR}/${NOW}/"
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
 
-    local old_bk_file="${directory_to_backup}_${bk_type}-files_${ONEWEEKAGO}.tar.bz2"
-    local bk_file="${directory_to_backup}_${bk_type}-files_${NOW}.tar.bz2"
+    # TODO: Check others project types
 
-    log_event "info" "Making tar.bz2 from: ${directory_to_backup}"
+    log_event "info" "Trying to get database name from project ..." "false"
 
-    (${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv -ns "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${bk_file}") 2>&1
+    if [[ -f "${SITES}/${project_domain}/devops.conf" ]]; then
 
-    # Test backup file
-    log_event "info" "Testing backup file: ${bk_file}"
-    lbzip2 --test "${TMP_DIR}/${NOW}/${bk_file}"
-
-    lbzip2_result=$?
-    if [[ ${lbzip2_result} -eq 0 ]]; then
-
-        BACKUPED_LIST[$BK_FILE_INDEX]=${bk_file}
-        BACKUPED_FL=${BACKUPED_LIST[$BK_FILE_INDEX]}
-
-        # Calculate backup size
-        BK_FL_SIZES[$BK_FL_ARRAY_INDEX]="$(find . -name "${bk_file}" -exec ls -l --human-readable --block-size=M {} \; |  awk '{ print $5 }')"
-        BK_FL_SIZE=${BK_FL_SIZES[$BK_FL_ARRAY_INDEX]}
-
-        log_event "info" "File backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}"
-
-        # Checking whether WordPress is installed or not
-        if ! $(wp core is-installed); then
-
-            # TODO: Check others project types
-
-            # Yii Project
-            log_event "info" "Trying to get database name from project ..."
-
-            DB_NAME=$(grep 'dbname=' "${bk_path}/${directory_to_backup}/common/config/main-local.php" | tail -1 | sed 's/$dbname=//g;s/,//g' | cut -d "'" -f4 | cut -d "=" -f3)
-
-            db_file="${DB_NAME}.sql"
-
-            # Create dump file
-            mysql_database_export "${DB_NAME}" "${directory_to_backup}${db_file}"
-
-        else
-
-            DB_NAME="$(wp --allow-root --path="${bk_path}/${directory_to_backup}" eval 'echo DB_NAME;')"
-
-            db_file="${DB_NAME}.sql"
-
-            wpcli_export_database "${bk_path}/${directory_to_backup}" "${directory_to_backup}${db_file}"
-
-        fi
-
-        log_event "info" "Working with DB_NAME=${DB_NAME}"
-
-        bk_type="database"
-        local OLD_BK_DB_FILE="${DB_NAME}_${bk_type}_${ONEWEEKAGO}.tar.bz2"
-        local BK_DB_FILE="${DB_NAME}_${bk_type}_${NOW}.tar.bz2"
-
-        log_event "info" "Compressing database backup: ${db_file}"
-
-        # TAR
-        (${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s "$(du -sb "${TMP_DIR}/${NOW}/${db_file}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${BK_DB_FILE}")
-
-        # Test backup file
-        log_event "info" "Testing backup file: ${BK_DB_FILE}"
-        lbzip2 --test "${TMP_DIR}/${NOW}/${BK_DB_FILE}"
-
-        # New folder with $VPSNAME
-        dropbox_create_dir "${VPSNAME}"
-        
-        # New folder with $bk_type
-        dropbox_create_dir "${VPSNAME}/${bk_type}"
-
-        # New folder with $directory_to_backup
-        dropbox_create_dir "${VPSNAME}/${bk_type}/${directory_to_backup}"
-
-        # Upload Files
-        dropbox_upload "${TMP_DIR}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${NOW}"
-
-        # Upload Database
-        dropbox_upload "${TMP_DIR}/${NOW}/${BK_DB_FILE}" "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${NOW}"
-
-        # Delete old backups
-        dropbox_delete "${DROPBOX_FOLDER}/${VPSNAME}/${bk_type}/${directory_to_backup}/${ONEWEEKAGO}"
-
-        log_event "info" "Deleting backup from server ..."
-        
-        rm --recursive --force "${TMP_DIR}/${NOW}/${bk_file}"
-
-        log_event "info" "Project backup done"
-
-    else
-        ERROR=true
-        ERROR_TYPE=" > ERROR: Making backup ${TMP_DIR}/${NOW}/${bk_file}"
-        #echo "${ERROR_TYPE}" >>"${LOG}"
+      db_name="$(project_get_config "${SITES}/${project_domain}" "project_db")"
 
     fi
+
+    make_database_backup "database" "${db_name}"
+
+    log_event "info" "Deleting backup from server ..."
+
+    rm --recursive --force "${TMP_DIR}/${NOW}/${bk_file}"
+
+    log_event "info" "Project backup done" "false"
+
+  else
+
+    ERROR=true
+    log_event "error" "Something went wrong making a project backup" "false"
+
+  fi
 
 }

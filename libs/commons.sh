@@ -1879,7 +1879,7 @@ function menu_new_project() {
       project_install "${SITES}" "php"
 
     fi
-    
+
     if [[ ${chosen_project_type_options} == *"04"* ]]; then
 
       # NODE JS PROJECT
@@ -2223,8 +2223,16 @@ function subtasks_backup_handler() {
   databases)
 
     log_event "warning" "TODO: database backup from parameter" "true"
-    #log_event "debug" "Running: make_sites_files_backup"
-    #make_sites_files_backup
+    #make_database_backup "" ""
+
+    exit
+    ;;
+
+  project)
+
+    project_type="$(project_get_config "${SITES}/${DOMAIN}" "project_type")"
+
+    make_project_backup "${DOMAIN}" "${project_type}"
 
     exit
     ;;
