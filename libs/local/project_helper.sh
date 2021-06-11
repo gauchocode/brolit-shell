@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.35
+# Version: 3.0.36
 ################################################################################
 
 #
@@ -10,7 +10,6 @@
 
 function project_get_name_from_domain() {
 
-  # Parameters
   # $1 = ${project_domain}
 
   local project_domain=$1
@@ -82,6 +81,11 @@ function project_create_config() {
     display --indent 6 --text "- Project config file already exists" --result WARNING --color YELLOW
     display --indent 8 --text "Updating config file ..." --result WARNING --color YELLOW --tstyle ITALIC
 
+  else
+
+    # Copy empty config file
+    cp "${SFOLDER}/config/devops.conf" "${project_config_file}"
+
   fi
 
   # If only receive project_path
@@ -89,9 +93,6 @@ function project_create_config() {
   #project_name="$(project_get_name_from_domain "${project_domain}")"
   #project_stage="$(project_get_state_from_domain "${project_domain}")"
   #project_type="$(project_get_type "${project_path}")"
-
-  # Copy empty config file
-  cp "${SFOLDER}/config/devops.conf" "${project_config_file}"
 
   # Write config file
   ## Doc: https://stackoverflow.com/a/61049639/2267761
@@ -132,16 +133,6 @@ function project_generate_config() {
 
   log_event "info" "Trying to generate a new config for '${project_path}'..."
 
-  # Project config file
-  project_config_file="${project_path}/devops.conf"
-
-  if [[ -e ${project_config_file} ]]; then
-
-    # Log
-    display --indent 6 --text "- Project config file already exists" --result WARNING --color YELLOW
-
-  fi
-
   # Trying to extract project data
   project_domain="$(basename "${project_path}")"
   project_name="$(project_get_name_from_domain "${project_domain}")"
@@ -153,9 +144,6 @@ function project_generate_config() {
   project_db="${project_name}_${project_stage}"
   ## Check if file exists
   project_nginx_conf="/etc/nginx/sites-available/${project_domain}"
-
-  # Copy empty config file
-  cp "${SFOLDER}/config/devops.conf" "${project_config_file}"
 
   # Write config file
   project_create_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db}" "${project_domain}" "${project_nginx_conf}"
