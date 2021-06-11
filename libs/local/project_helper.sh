@@ -29,26 +29,28 @@ function project_get_name_from_domain() {
 
 }
 
-function project_get_state_from_domain() {
+function project_get_stage_from_domain() {
 
-  # Parameters
   # $1 = ${project_domain}
 
   local project_domain=$1
 
-  project_states="dev,test,stage"
+  local project_stages
+  local possible_project_stage
+
+  project_stages="dev,test,stage,demo"
 
   # Trying to extract project state from domain
-  possible_project_state="$(get_subdomain_part "${project_domain}" | cut -d "." -f 1)"
+  possible_project_stage="$(get_subdomain_part "${project_domain}" | cut -d "." -f 1)"
 
-  if [[ ${possible_project_state} != *"${project_states}"* ]]; then
+  if [[ ${project_stages} != *"${possible_project_stage}"* ]]; then
 
-    possible_project_state="prod"
+    possible_project_stage="prod"
 
   fi
 
   # Return
-  echo "${possible_project_state}"
+  echo "${possible_project_stage}"
 
 }
 
@@ -91,7 +93,7 @@ function project_create_config() {
   # If only receive project_path
   #project_domain="$(basename "${project_path}")"
   #project_name="$(project_get_name_from_domain "${project_domain}")"
-  #project_stage="$(project_get_state_from_domain "${project_domain}")"
+  #project_stage="$(project_get_stage_from_domain "${project_domain}")"
   #project_type="$(project_get_type "${project_path}")"
 
   # Write config file
@@ -136,7 +138,7 @@ function project_generate_config() {
   # Trying to extract project data
   project_domain="$(basename "${project_path}")"
   project_name="$(project_get_name_from_domain "${project_domain}")"
-  project_stage="$(project_get_state_from_domain "${project_domain}")"
+  project_stage="$(project_get_stage_from_domain "${project_domain}")"
   project_type="$(project_get_type "${project_path}")"
 
   # TODO: should check this data

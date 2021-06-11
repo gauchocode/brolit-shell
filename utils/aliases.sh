@@ -547,7 +547,7 @@ function _project_get_name_from_domain() {
 
 }
 
-function _project_get_state_from_domain() {
+function _project_get_stage_from_domain() {
 
     # Parameters
     # $1 = ${project_domain}
@@ -907,7 +907,7 @@ function dropbox_get_backup() {
     if [[ ${project_db} == "false" ]]; then
 
         project_name="$(_project_get_name_from_domain "${project_domain}")"
-        project_state="$(_project_get_state_from_domain "${project_domain}")"
+        project_state="$(_project_get_stage_from_domain "${project_domain}")"
         project_db="${project_name}_${project_state}"
 
     fi
