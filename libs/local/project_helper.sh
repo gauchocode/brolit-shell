@@ -15,15 +15,18 @@ function project_get_name_from_domain() {
 
   local project_domain=$1
 
+  local root_domain
+  local possible_project_name
+
   # Trying to extract project name from domain
   root_domain="$(get_root_domain "${project_domain}")"
   possible_project_name="$(extract_domain_extension "${root_domain}")"
 
   # Replace '-' and '.' chars
-  possible_name="$(echo "${project_name}" | sed -r 's/[.-]+/_/g')"
+  possible_project_name="$(echo "${possible_project_name}" | sed -r 's/[.-]+/_/g')"
 
   # Return
-  echo "${possible_name}"
+  echo "${possible_project_name}"
 
 }
 
