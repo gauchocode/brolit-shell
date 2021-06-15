@@ -792,14 +792,16 @@ function make_database_backup() {
 
 function make_project_backup() {
 
-  #TODO: DOES NOT WORK, NEED REFACTOR ASAP!!!
-
-  # $1 = Project Domain
-  # $2 = Backup Type (all,configs,sites,databases) - Default: all
+  # $1 = ${project_domain}
+  # $2 = ${backup_type} - (all,configs,sites,databases) - Default: all
 
   local project_domain=$1
-  local bk_type=$2
+  local backup_type=$2
 
+  local project_name
+  local project_config_file
+
+  # Backup files
   make_files_backup "site" "${SITES}" "${project_domain}"
 
   exitstatus=$?
@@ -809,17 +811,22 @@ function make_project_backup() {
 
     log_event "info" "Trying to get database name from project ..." "false"
 
-    if [[ -f "${SITES}/${project_domain}/devops.conf" ]]; then
+    project_name="$(project_get_name_from_domain "${project_domain}")"
+
+    project_config_file="${DEVOPS_CONFIG_PATH}/${project_name}-devops.conf"
+
+    if [[ -f "${project_config_file}" ]]; then
 
       db_name="$(project_get_config "${SITES}/${project_domain}" "project_db")"
 
     fi
 
+    # Backup database
     make_database_backup "database" "${db_name}"
 
-    log_event "info" "Deleting backup from server ..."
+    log_event "info" "Deleting backup from server ..." "false"
 
-    rm --recursive --force "${TMP_DIR}/${NOW}/${bk_file}"
+    rm --recursive --force "${TMP_DIR}/${NOW}/${backup_type}"
 
     log_event "info" "Project backup done" "false"
 
