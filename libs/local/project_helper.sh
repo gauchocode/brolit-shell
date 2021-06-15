@@ -60,22 +60,24 @@ function project_create_config() {
   # $2 = ${project_name}
   # $3 = ${project_stage}
   # $4 = ${project_type}
-  # $5 = ${project_db}
-  # $6 = ${project_domain}
-  # $7 = ${project_nginx_conf}
+  # $5 = ${project_db_name}
+  # $6 = ${project_db_host}
+  # $7 = ${project_domain}
+  # $8 = ${project_nginx_conf}
 
   local project_path=$1
   local project_name=$2
   local project_stage=$3
   local project_type=$4
-  local project_db=$5
-  local project_domain=$6
-  local project_nginx_conf=$7
+  local project_db_name=$5
+  local project_db_host=$6
+  local project_domain=$7
+  local project_nginx_conf=$8
 
   local project_config_file
 
   # Project config file
-  project_config_file="${project_path}/devops.conf"
+  project_config_file="${DEVOPS_CONFIG_PATH}/${project_name}-devops.conf"
 
   if [[ -e ${project_config_file} ]]; then
 
@@ -108,8 +110,11 @@ function project_create_config() {
   ## project_stage
   content_pstage="$(jq ".project_stage = \"${project_stage}\"" "${project_config_file}")" && echo "${content_pstage}" >"${project_config_file}"
 
-  ## project_db
-  content_pdb="$(jq ".project_db = \"${project_db}\"" "${project_config_file}")" && echo "${content_pdb}" >"${project_config_file}"
+  ## project_db_name
+  content_pdbn="$(jq ".project_db_name = \"${project_db_name}\"" "${project_config_file}")" && echo "${content_pdbn}" >"${project_config_file}"
+
+  ## project_db_host
+  content_pdbh="$(jq ".project_db_host = \"${project_db_host}\"" "${project_config_file}")" && echo "${content_pdbh}" >"${project_config_file}"
 
   ## project_type
   content_ptype="$(jq ".project_type = \"${project_type}\"" "${project_config_file}")" && echo "${content_ptype}" >"${project_config_file}"
@@ -162,10 +167,16 @@ function project_update_config() {
   local config_field=$2
   local config_value=$3
 
+  local project_domain
+  local project_name
   local project_config_file
 
+  project_domain="$(basename "${project_path}")"
+
+  project_name="$(project_get_name_from_domain "${project_domain}")"
+
   # Project config file
-  project_config_file="${project_path}/devops.conf"
+  project_config_file="${DEVOPS_CONFIG_PATH}/${project_name}-devops.conf"
 
   if [[ -e ${project_config_file} ]]; then
 
@@ -196,8 +207,15 @@ function project_get_config() {
   local config_field=$2
 
   local config_value
+  local project_domain
+  local project_name
+  local project_config_file
 
-  local project_config_file="${project_path}/devops.conf"
+  project_domain="$(basename "${project_path}")"
+
+  project_name="$(project_get_name_from_domain "${project_domain}")"
+
+  project_config_file="${DEVOPS_CONFIG_PATH}/${project_name}-devops.conf"
 
   if [[ -e ${project_config_file} ]]; then
 

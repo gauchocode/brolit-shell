@@ -41,10 +41,11 @@ function _setup_globals_and_options() {
   declare -g VPSNAME="$HOSTNAME"
 
   # Default directories
-  declare -g WSERVER="/etc/nginx"           # NGINX config files location
-  declare -g MySQL_CF="/etc/mysql"          # MySQL config files location
-  declare -g PHP_CF="/etc/php"              # PHP config files location
-  declare -g LENCRYPT_CF="/etc/letsencrypt" # Let's Encrypt config files location
+  declare -g DEVOPS_CONFIG_PATH="/etc/devops/"
+  declare -g WSERVER="/etc/nginx"                 # Webserver config files location
+  declare -g MySQL_CF="/etc/mysql"                # MySQL config files location
+  declare -g PHP_CF="/etc/php"                    # PHP config files location
+  declare -g LENCRYPT_CF="/etc/letsencrypt"       # Let's Encrypt config files location
 
   # Folder blacklist
   declare -g SITES_BL=".wp-cli,html,phpmyadmin"
@@ -400,7 +401,7 @@ function script_init() {
   log_event "info" "SERVER IP: ${SERVER_IP}"
 
   # EXPORT VARS
-  export SCRIPT_V VPSNAME TMP_DIR SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V SERVER_CONFIG
+  export SCRIPT_V VPSNAME DEVOPS_CONFIG_PATH TMP_DIR SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V SERVER_CONFIG
   export LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP MYSQL_ROOT MYSQLDUMP_ROOT TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MAILA NOW NOWDISPLAY ONEWEEKAGO
   export SENDEMAIL DISK_U ONE_FILE_BK SERVER_IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_BACKUP_DBS STATUS_BACKUP_FILES STATUS_SERVER STATUS_CERTS OUTDATED_PACKAGES
   export BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR
@@ -1640,10 +1641,10 @@ function menu_first_run() {
 
     if [[ ${chosen_first_run_options} == *"01"* ]]; then
 
-      # shellcheck source=${SFOLDER}/utils/lemp_setup.sh
-      source "${SFOLDER}/utils/lemp_setup.sh"
+      # shellcheck source=${SFOLDER}/utils/server_setup.sh
+      source "${SFOLDER}/utils/server_setup.sh"
 
-      lemp_setup
+      server_setup
 
       exit 1
 
