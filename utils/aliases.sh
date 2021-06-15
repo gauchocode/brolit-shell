@@ -26,7 +26,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.38"
-ALIASES_VERSION="3.0.38-054"
+ALIASES_VERSION="3.0.38-055"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -556,7 +556,8 @@ function _project_get_stage_from_domain() {
 
     local project_domain=$1
 
-    project_states="dev,test,stage"
+    local project_states="dev,test,stage"
+    local possible_project_state
 
     # Trying to extract project state from domain
     possible_project_state="$(_get_subdomain_part "${project_domain}" | cut -d "." -f 1)"
@@ -574,29 +575,33 @@ function _project_get_stage_from_domain() {
 
 function _project_get_config() {
 
-  # $1 = ${project_path}
-  # $2 = ${config_field}
+    # $1 = ${project_path}
+    # $2 = ${config_field}
 
-  local project_path=$1
-  local config_field=$2
+    local project_path=$1
+    local config_field=$2
 
-  local config_value
+    local config_value
+    local project_name
+    local project_config_file
 
-  local project_config_file="${DEVOPS_CONFIG_PATH}/${project_name}-devops.conf"
 
-  if [[ -e ${project_config_file} ]]; then
+    project_name="$(basename "${project_path}")"
+    project_config_file="${DEVOPS_CONFIG_PATH}/${project_name}-devops.conf"
 
-    config_value="$(cat ${project_config_file} | jq -r ".${config_field}")"
+    if [[ -e ${project_config_file} ]]; then
 
-    # Return
-    echo "${config_value}"
+        config_value="$(cat ${project_config_file} | jq -r ".${config_field}")"
 
-  else
+        # Return
+        echo "${config_value}"
 
-    # Return
-    echo "false"
+    else
 
-  fi
+        # Return
+        echo "false"
+
+    fi
 
 }
 
@@ -804,6 +809,8 @@ function sites_directories() {
     local all_directories
     local site_cert
     local directory_bl
+    local site_size_du
+    local site_size
 
     # Directory blacklist
     local directory_bl="html,phpmyadmin,sql"
@@ -815,13 +822,19 @@ function sites_directories() {
 
         if [[ ${directory_bl} != *"${site}"* ]]; then
 
+            # Size
+            site_size_du="$(du --human-readable --max-depth=0 "${site}")"
+            site_size="$(echo "${site_size_du}" | awk '{print $1;}')"
+
+            # Cert
             site_cert="$(_cerbot_certificate_get_valid_days "${site}")"
 
+            # Cloudflare
             root_domain="$(_get_root_domain "${site}")"
-
             site_cf="$(_cloudflare_domain_exists "${root_domain}")"
 
-            site_data="{\"name\":\"${site}\" , \"certificate_days_to_expire\":\"${site_cert}\" , \"domain_on_cloudflare\":\"${site_cf}\"}"
+            # Json
+            site_data="{\"name\":\"${site}\" , \"size\":\"${site_size}\" , \"certificate_days_to_expire\":\"${site_cert}\" , \"domain_on_cloudflare\":\"${site_cf}\"}"
 
             directories="${directories} , ${site_data}"
 
@@ -1051,12 +1064,14 @@ function read_site_config() {
     local project_domain=$1
 
     local project_config
+    local project_config_file
 
-    DEVOPS_CONFIG_FILE="${SITES}/${project_domain}/devops.conf"
+    #DEVOPS_CONFIG_FILE="${SITES}/${project_domain}/devops.conf"
+    project_config_file="${DEVOPS_CONFIG_PATH}/${project_name}-devops.conf"
 
-    if [[ -f ${DEVOPS_CONFIG_FILE} ]]; then
+    if [[ -f ${project_config_file} ]]; then
 
-        project_config="$(<"${DEVOPS_CONFIG_FILE}")"
+        project_config="$(<"${project_config_file}")"
 
         # Return
         echo "SERVER_DATA_RESULT => ${project_config}"
