@@ -375,7 +375,7 @@ function make_all_server_config_backup() {
 
   # TAR Webserver Config Files
   if [[ ! -d ${WSERVER} ]]; then
-    log_event "warning" "WSERVER var not defined! Skipping webserver config files backup ..."
+    log_event "warning" "WSERVER is not defined! Skipping webserver config files backup ..."
 
   else
     make_server_files_backup "configs" "nginx" "${WSERVER}" "."
@@ -384,7 +384,7 @@ function make_all_server_config_backup() {
 
   # TAR PHP Config Files
   if [[ ! -d ${PHP_CF} ]]; then
-    log_event "warning" "PHP_CF var not defined! Skipping PHP config files backup ..."
+    log_event "warning" "PHP_CF is not defined! Skipping PHP config files backup ..."
 
   else
     BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
@@ -394,7 +394,7 @@ function make_all_server_config_backup() {
 
   # TAR MySQL Config Files
   if [[ ! -d ${MySQL_CF} ]]; then
-    log_event "warning" "MySQL_CF var not defined! Skipping MySQL config files backup ..."
+    log_event "warning" "MySQL_CF is not defined! Skipping MySQL config files backup ..."
 
   else
     BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
@@ -404,11 +404,21 @@ function make_all_server_config_backup() {
 
   # TAR Let's Encrypt Config Files
   if [[ ! -d ${LENCRYPT_CF} ]]; then
-    log_event "warning" "LENCRYPT_CF var not defined! Skipping Letsencrypt config files backup ..."
+    log_event "warning" "LENCRYPT_CF is not defined! Skipping Letsencrypt config files backup ..."
 
   else
     BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
     make_server_files_backup "configs" "letsencrypt" "${LENCRYPT_CF}" "."
+
+  fi
+
+    # TAR Devops Config Files
+  if [[ ! -d ${DEVOPS_CONFIG_PATH} ]]; then
+    log_event "warning" "DEVOPS_CF is not defined! Skipping DevOps config files backup ..."
+
+  else
+    BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
+    make_server_files_backup "configs" "devops" "${DEVOPS_CONFIG_PATH}" "."
 
   fi
 
