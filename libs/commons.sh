@@ -41,11 +41,16 @@ function _setup_globals_and_options() {
   declare -g VPSNAME="$HOSTNAME"
 
   # Default directories
-  declare -g DEVOPS_CONFIG_PATH="/etc/devops/"
+  declare -g DEVOPS_CONFIG_PATH="/etc/devops"
   declare -g WSERVER="/etc/nginx"                 # Webserver config files location
   declare -g MySQL_CF="/etc/mysql"                # MySQL config files location
   declare -g PHP_CF="/etc/php"                    # PHP config files location
   declare -g LENCRYPT_CF="/etc/letsencrypt"       # Let's Encrypt config files location
+
+  # Creating devops folder
+  if [[ ! -d ${DEVOPS_CONFIG_PATH} ]]; then
+    mkdir "${DEVOPS_CONFIG_PATH}"
+  fi
 
   # Folder blacklist
   declare -g SITES_BL=".wp-cli,html,phpmyadmin"
