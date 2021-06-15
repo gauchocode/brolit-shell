@@ -75,6 +75,9 @@
 - [ ] Nginx: Multidomain support for nginx.
 - [ ] Nginx: Add http2 support on nginx server config files.
 - [ ] Nginx: New option to put website on maintenance (maybe rename index.html/php and create a new HTML).
+- [ ] Core: Add support to create projects with differents roles. Exanple: webserver, database, replica, etc.
+      https://www.digitalocean.com/community/tutorials/automating-the-deployment-of-a-scalable-wordpress-site
+      https://spinupwp.com/scaling-wordpress-dedicated-database-server/
 - [ ] Core: Better structure of deleted projects on dropbox.
 - [ ] Core: Add an option to backup all and prepare VPS to be offline/deleted (add a VPS offline structure on dropbox).
 - [ ] Core: make new standard directory structure for projects "${SITES}/${ROOT_DOMAIN}/${SUBDOMAIN}/public".
@@ -122,9 +125,6 @@
 
 ## For release 3.5
 
-- [ ] Core: Add support to create projects with differents architectures. Exanple: server 1 with nginx+php, server 2: with MySQL.
-      https://www.digitalocean.com/community/tutorials/automating-the-deployment-of-a-scalable-wordpress-site
-      https://spinupwp.com/scaling-wordpress-dedicated-database-server/
 - [ ] Backups: Support for dailys, weeklys y monthlys backups.
 - [ ] Backups: Directory Blacklist with whiptail (for backup configuration).
 - [ ] Server Optimization: Complete the pdf optimization process.

@@ -3,6 +3,11 @@
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Version: 3.0.36
 ################################################################################
+#
+#   Ref: https://github.com/nodesource/distributions#debinstall
+#        https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-ubuntu-20-04
+#
+################################################################################
 
 function nodejs_check_if_installed() {
 

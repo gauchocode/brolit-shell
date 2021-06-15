@@ -44,6 +44,8 @@ VPSNAME="$HOSTNAME"
 
 SFOLDER="/root/lemp-utils-scripts"
 
+DEVOPS_CONFIG_PATH="/etc/devops/"
+
 ################################################################################
 
 alias ..="cd .."
@@ -580,7 +582,7 @@ function _project_get_config() {
 
   local config_value
 
-  local project_config_file="${project_path}/devops.conf"
+  local project_config_file="${DEVOPS_CONFIG_PATH}/${project_name}-devops.conf"
 
   if [[ -e ${project_config_file} ]]; then
 
@@ -746,11 +748,11 @@ function serverinfo() {
     if [[ ${public_ip} == "${inet_ip}" ]]; then
 
         # Return JSON part
-        echo "\"server_name\": \"${VPSNAME}\" , \"ip\": \"${public_ip}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , \"disk_size\": \"${disk_size}\" , \"disk_usage\": \"${disk_usage}\""
+        echo "\"server_name\": \"${VPSNAME}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , \"disk_size\": \"${disk_size}\" , \"disk_usage\": \"${disk_usage}\""
     else
 
         # Return JSON part
-        echo "\"server_name\": \"${VPSNAME}\" , \"ip\": \"${public_ip}\" , \"floating_ip\": \"${inet_ip}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , \"disk_size\": \"${disk_size}\" , \"disk_usage\": \"${disk_usage}\""
+        echo "\"server_name\": \"${VPSNAME}\" , \"floating_ip\": \"${inet_ip}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , \"disk_size\": \"${disk_size}\" , \"disk_usage\": \"${disk_usage}\""
 
     fi
 
@@ -795,6 +797,7 @@ function mysql_databases() {
 
 }
 
+# TODO: add read_site_config on json results
 function sites_directories() {
 
     local directories

@@ -4,33 +4,6 @@
 # Version: 3.0.36
 #############################################################################
 
-function _settings_config_server_configuration() {
-
-    # Server config (new concept)
-    local server_configs # Options: mysql+nginx+php, nginx+php, mysql, other
-    local default_config="mysql+nginx+php"
-
-    if [[ -z ${SERVER_CONFIG} ]]; then
-
-        declare -g SERVER_CONFIG
-
-        server_configs="mysql+nginx+php nginx+php mysql other"
-        SERVER_CONFIG=$(whiptail --title "Server Configuration" --menu "Choose the server configuration:" 20 78 10 $(for x in ${server_configs}; do echo "$x [X]"; done) --default-item "${default_config}" 3>&1 1>&2 2>&3)
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
-
-            echo "SERVER_CONFIG=${SERVER_CONFIG}" >>/root/.broobe-utils-options
-
-        else
-
-            return 1
-
-        fi
-
-    fi
-
-}
-
 function _settings_config_mysql() {
 
     if [[ ${SERVER_CONFIG} == *"mysql"* ]]; then
@@ -443,7 +416,7 @@ function script_configuration_wizard() {
         fi
     fi
 
-    _settings_config_server_configuration
+    settings_set_server_role
 
     _settings_config_mysql
 
@@ -458,6 +431,70 @@ function script_configuration_wizard() {
     _settings_config_mailcow
 
     #_settings_config_duplicity
+
+}
+
+function settings_set_server_role() {
+
+    # Server roles (new concept)
+    # Options: webserver, database, webapp, cache, replica, other
+
+    # Define array of server roles
+    local -n server_roles=(
+        "webserver" " " off
+        "database" " " off
+        "webapp" " " off
+        "cache" " " off
+        "replica" " " off
+        "other" " " off
+    )
+
+    #local default_role="webserver, database"
+
+    if [[ -z ${SERVER_CONFIG} ]]; then
+
+        declare -g SERVER_CONFIG
+
+        chosen_server_role="$(whiptail --title "Server Role Selection" --checklist "Select the server role:" 20 78 15 "${server_roles[@]}" 3>&1 1>&2 2>&3)"
+
+        #server_roles="webserver, database, webapp, cache, replica"
+        #chosen_server_role=$(whiptail --title "Server Configuration" --menu "Choose the server configuration:" 20 78 10 $(for x in ${server_roles}; do echo "$x [X]"; done) --default-item "${default_role}" 3>&1 1>&2 2>&3)
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+            # TODO: dependiendo de que elija, hay que hacer distintos checkeos.
+            # webserver: chequear si hay un webserver instalado.
+            # database: chequear si hay un motor de bd instalado.
+            # webapp: preguntar donde está instalada la app.
+            # cache y replica: implementar más adelante.
+            #
+            # IMPORTANTE: el package manager deberia chequear el role, antes de intentar
+            # instalar cualquier paquete.
+
+            SERVER_CONFIG="${chosen_server_role}"
+            echo "SERVER_CONFIG=${chosen_server_role}" >>/root/.broobe-utils-options
+
+        else
+
+            return 1
+
+        fi
+
+    fi
+
+    #for app in ${chosen_apps}; do
+    #    app=$(sed -e 's/^"//' -e 's/"$//' <<<${app}) #needed to ommit double quotes
+    #    log_event "info" "Executing ${app} installer ..."
+    #    case ${app} in
+    #    certbot)
+    #        certbot_installer
+    #        ;;
+    #    *)
+    #        log_event "error" "Package installer for ${app} not found!"
+    #        ;;
+    #    esac
+    #done
 
 }
 
