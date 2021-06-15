@@ -19,7 +19,7 @@ function dropbox_create_dir() {
     local output
     local dropbox_create_dir_result
 
-    output="$("${DROPBOX_UPLOADER}" -q mkdir "${dir_to_create}" 2>&1)"
+    output="$("${DROPBOX_UPLOADER}" -q mkdir "${dir_to_create}")"
     dropbox_create_dir_result=$?
     if [[ ${dropbox_create_dir_result} -eq 0 ]]; then
 
@@ -127,7 +127,7 @@ function dropbox_delete() {
     local output
     local dropbox_remove_result
 
-    output="$("${DROPBOX_UPLOADER}" remove "${to_delete}" 2>&1)"
+    output="$("${DROPBOX_UPLOADER}" remove "${to_delete}")"
     dropbox_remove_result=$?
     if [[ ${dropbox_remove_result} -eq 0 ]]; then
 

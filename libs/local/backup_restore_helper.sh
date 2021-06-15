@@ -823,6 +823,7 @@ function restore_project() {
     # Only for better code reading, i assign this new var:
     chosen_domain="${chosen_project}"
 
+    # TODO: Read from devops.conf if not present call a function to do this:
     case ${project_type} in
 
     wordpress)
