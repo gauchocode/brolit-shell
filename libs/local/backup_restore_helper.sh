@@ -173,7 +173,7 @@ function restore_backup_server_selection() {
   local chosen_server       # whiptail var
 
   # Select SERVER
-  dropbox_server_list="$("${DROPBOX_UPLOADER}" -hq list "/")"
+  dropbox_server_list="$("${DROPBOX_UPLOADER}" -hq list "/" | awk '{print $2;}')"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -186,7 +186,7 @@ function restore_backup_server_selection() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
       # List dropbox directories
-      dropbox_type_list="$(${DROPBOX_UPLOADER} -hq list "${chosen_server}")"
+      dropbox_type_list="$(${DROPBOX_UPLOADER} -hq list "${chosen_server}" | awk '{print $2;}')"
       dropbox_type_list='project '${dropbox_type_list}
 
       # Select backup type
@@ -276,7 +276,7 @@ function restore_config_files_from_dropbox() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
     #Restore from Dropbox
-    dropbox_bk_list="$(${DROPBOX_UPLOADER} -hq list "${dropbox_chosen_type_path}/${chosen_config_type}")"
+    dropbox_bk_list="$(${DROPBOX_UPLOADER} -hq list "${dropbox_chosen_type_path}/${chosen_config_type}" | awk '{print $2;}')"
   fi
 
   chosen_config_bk="$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Choose a config backup file to restore." 20 78 10 $(for x in ${dropbox_bk_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
@@ -600,7 +600,7 @@ function restore_type_selection_from_dropbox() {
 
       log_subsection "Restore ${chosen_type} Backup"
 
-      dropbox_project_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_type_path}")"
+      dropbox_project_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_type_path}" | awk '{print $2;}')"
 
       if [[ ${chosen_type} == *"configs"* ]]; then
 
@@ -613,7 +613,7 @@ function restore_type_selection_from_dropbox() {
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
           dropbox_chosen_backup_path="${dropbox_chosen_type_path}/${chosen_project}"
-          dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}")"
+          dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}" | awk '{print $2;}')"
 
         fi
         # Select Backup File
@@ -775,7 +775,7 @@ function restore_project() {
   log_section "Restore Project Backup"
 
   # Get dropbox folders list
-  dropbox_project_list="$(${DROPBOX_UPLOADER} -hq list "${chosen_server}/site")"
+  dropbox_project_list="$(${DROPBOX_UPLOADER} -hq list "${chosen_server}/site" | awk '{print $2;}')"
 
   # Select Project
   chosen_project="$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${dropbox_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)"
@@ -784,7 +784,7 @@ function restore_project() {
 
     # Get dropbox backup list
     dropbox_chosen_backup_path="${chosen_server}/site/${chosen_project}"
-    dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}")"
+    dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}" | awk '{print $2;}')"
 
   else
 

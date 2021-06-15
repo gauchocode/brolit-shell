@@ -931,8 +931,6 @@ function dropbox_get_backup() {
     # Get dropbox backup list
     dropbox_site_backup_path="${VPSNAME}/site/${project_domain}"
 
-    #echo "Running: ${DROPBOX_UPLOADER} -hq list \"${dropbox_site_backup_path}\""
-
     dropbox_site_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_site_backup_path}" | grep -Eo "${project_domain}_site-files_[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}.tar.bz2")"
 
     for backup_file in ${dropbox_site_backup_list}; do
