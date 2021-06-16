@@ -588,10 +588,19 @@ function generate_dropbox_config() {
                 ## Extract from log
                 OAUTH_REFRESH_TOKEN="$(sed -n 's/.*"refresh_token": "\([^"]*\).*/\1/p' "${RESPONSE_FILE}")"
 
-                # Write config file
-                echo "OAUTH_REFRESH_TOKEN=${OAUTH_REFRESH_TOKEN}" >>"${DPU_CONFIG_FILE}"
+                if [[ ${OAUTH_REFRESH_TOKEN} != "" ]]; then
 
-                log_event "info" "Dropbox configuration has been saved!" "false"
+                    # Write config file
+                    echo "OAUTH_REFRESH_TOKEN=${OAUTH_REFRESH_TOKEN}" >>"${DPU_CONFIG_FILE}"
+
+                    log_event "info" "Dropbox configuration has been saved!" "false"
+
+                else
+
+                    log_event "error" "Something went wrong getting OAUTH REFRESH TOKEN, please check the information provided and try again!" "true"
+                    return 1
+
+                fi
 
             else
                 return 1
