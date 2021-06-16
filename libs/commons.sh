@@ -42,10 +42,10 @@ function _setup_globals_and_options() {
 
   # Default directories
   declare -g DEVOPS_CONFIG_PATH="/etc/devops"
-  declare -g WSERVER="/etc/nginx"                 # Webserver config files location
-  declare -g MySQL_CF="/etc/mysql"                # MySQL config files location
-  declare -g PHP_CF="/etc/php"                    # PHP config files location
-  declare -g LENCRYPT_CF="/etc/letsencrypt"       # Let's Encrypt config files location
+  declare -g WSERVER="/etc/nginx"           # Webserver config files location
+  declare -g MySQL_CF="/etc/mysql"          # MySQL config files location
+  declare -g PHP_CF="/etc/php"              # PHP config files location
+  declare -g LENCRYPT_CF="/etc/letsencrypt" # Let's Encrypt config files location
 
   # Creating devops folder
   if [[ ! -d ${DEVOPS_CONFIG_PATH} ]]; then
@@ -1912,10 +1912,11 @@ function menu_project_utils() {
     "02)" "DELETE PROJECT"
     "03)" "GENERATE PROJECT CONFIG"
     "04)" "CREATE PROJECT DB  & USER"
-    "05)" "PUT PROJECT ONLINE"
-    "06)" "PUT PROJECT OFFLINE"
-    "07)" "REGENERATE NGINX SERVER"
-    "08)" "BENCH PROJECT GTMETRIX"
+    "05)" "RENAME DATABASE"
+    "06)" "PUT PROJECT ONLINE"
+    "07)" "PUT PROJECT OFFLINE"
+    "08)" "REGENERATE NGINX SERVER"
+    "09)" "BENCH PROJECT GTMETRIX"
   )
 
   chosen_project_utils_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_utils_options[@]}" 3>&1 1>&2 2>&3)"
@@ -2003,19 +2004,45 @@ function menu_project_utils() {
 
     if [[ ${chosen_project_utils_options} == *"05"* ]]; then
 
+      local chosen_db
+      local new_database_name
+
+      chosen_db="$(mysql_ask_database_selection)"
+
+      new_database_name="$(whiptail --title "Database Name" --inputbox "Insert a new database name (only separator allow is '_'). Old name was: ${chosen_db}" 10 60 "" 3>&1 1>&2 2>&3)"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        log_event "debug" "Setting new_database_name: ${new_database_name}"
+
+        # Return
+        echo "${new_database_name}"
+
+      else
+        return 1
+
+      fi
+
+      # RENAME DATABASE
+      mysql_database_rename "${chosen_db}" "${new_database_name}"
+
+    fi
+
+    if [[ ${chosen_project_utils_options} == *"06"* ]]; then
+
       # PUT PROJECT ONLINE
       project_change_status "online"
 
     fi
 
-    if [[ ${chosen_project_utils_options} == *"06"* ]]; then
+    if [[ ${chosen_project_utils_options} == *"07"* ]]; then
 
       # PUT PROJECT OFFLINE
       project_change_status "offline"
 
     fi
 
-    if [[ ${chosen_project_utils_options} == *"07"* ]]; then
+    if [[ ${chosen_project_utils_options} == *"08"* ]]; then
 
       # REGENERATE NGINX SERVER
 
@@ -2063,7 +2090,7 @@ function menu_project_utils() {
 
     fi
 
-    if [[ ${chosen_project_utils_options} == *"08"* ]]; then
+    if [[ ${chosen_project_utils_options} == *"09"* ]]; then
 
       # BENCH PROJECT GTMETRIX
 
