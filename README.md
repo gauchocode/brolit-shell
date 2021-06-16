@@ -69,12 +69,6 @@ If git is not installed:
 sudo apt-get update && sudo apt-get install git -y
 ```
 
-Cloning repo (gitLab):
-
-```bash
-git clone https://gitlab.com/broobe/lemp-utils-scripts.git
-```
-
 Cloning repo (gitHub):
 
 ```bash
