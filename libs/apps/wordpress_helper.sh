@@ -155,15 +155,7 @@ function wp_replace_string_on_database() {
 
   if [[ -z "${target_db}" ]]; then
 
-    databases="$(mysql_list_databases)"
-
-    chosen_db="$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to work with" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) 3>&1 1>&2 2>&3)"
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-      log_event "debug" "Setting chosen_db=${chosen_db}"
-    else
-      return 1
-    fi
+    chosen_db="$(mysql_ask_database_selection)"
 
   else
     chosen_db=${target_db}

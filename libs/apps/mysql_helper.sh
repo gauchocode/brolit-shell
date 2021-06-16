@@ -24,6 +24,29 @@ function mysql_ask_user_db_scope() {
 
 }
 
+function mysql_ask_database_selection() {
+
+    local databases
+    local chosen_db
+
+    databases="$(mysql_list_databases)"
+
+    chosen_db="$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to work with" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) 3>&1 1>&2 2>&3)"
+    
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        log_event "debug" "Setting chosen_db=${chosen_db}"
+
+        # Return
+        echo "${chosen_db}"
+
+    else
+        return 1
+    fi
+
+}
+
 #############################################################################
 
 function mysql_test_user_credentials() {
@@ -631,5 +654,25 @@ function mysql_database_export() {
         return 1
 
     fi
+
+}
+
+function mysql_database_rename() {
+
+    # $1 = ${database_old_name}
+    # $2 = ${database_new_name}
+
+    local database_old_name=$1
+    local database_new_name=$2
+
+    local dump_file="${TMP_DIR}/${database_old_name}_bk_before_rename_db.sql"
+
+    mysql_database_export "${database_old_name}" "${dump_file}"
+
+    mysql_database_create "${database_new_name}"
+
+    mysql_database_import "${database_new_name}" "${dump_file}"
+
+    mysql_database_drop "${database_old_name}"
 
 }
