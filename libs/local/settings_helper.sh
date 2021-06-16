@@ -583,10 +583,10 @@ function generate_dropbox_config() {
             exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
 
-                # Get $OAUTH_REFRESH_TOKEN
-                curl -k $API_OAUTH_TOKEN -d code="${oauth_access_token}" -d grant_type=authorization_code -u "$app_key":"$app_secret" -o "${RESPONSE_FILE}" 2>/dev/null
+                # Get ${OAUTH_REFRESH_TOKEN}
+                curl -k "${API_OAUTH_TOKEN}" -d code="${oauth_access_token}" -d grant_type=authorization_code -u "${app_key}":"${app_secret}" -o "${RESPONSE_FILE}" 2>/dev/null
                 ## Extract from log
-                OAUTH_REFRESH_TOKEN=$(sed -n 's/.*"refresh_token": "\([^"]*\).*/\1/p' "$RESPONSE_FILE")
+                OAUTH_REFRESH_TOKEN="$(sed -n 's/.*"refresh_token": "\([^"]*\).*/\1/p' "${RESPONSE_FILE}")"
 
                 # Write config file
                 echo "OAUTH_REFRESH_TOKEN=${OAUTH_REFRESH_TOKEN}" >>"${DPU_CONFIG_FILE}"
