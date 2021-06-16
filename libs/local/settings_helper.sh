@@ -8,7 +8,7 @@ function _settings_config_mysql() {
 
     if [[ ${SERVER_CONFIG} == *"mysql"* ]]; then
 
-        ask_mysql_root_psw
+        mysql_ask_root_psw
 
     fi
 
@@ -407,7 +407,7 @@ function script_configuration_wizard() {
             SITES_DEFAULT="/var/www"
         fi
 
-        SITES=$(whiptail --title "Websites Root Directory" --inputbox "The path where websites are stored. Ex: /var/www or /usr/share/nginx" 10 60 "${SITES_DEFAULT}" 3>&1 1>&2 2>&3)
+        SITES="$(whiptail --title "Websites Root Directory" --inputbox "The path where websites are stored. Ex: /var/www or /usr/share/nginx" 10 60 "${SITES_DEFAULT}" 3>&1 1>&2 2>&3)"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
             echo "SITES=${SITES}" >>/root/.broobe-utils-options
@@ -440,7 +440,7 @@ function settings_set_server_role() {
     # Options: webserver, database, webapp, cache, replica, other
 
     # Define array of server roles
-    local -n server_roles=(
+    local server_roles_options=(
         "webserver" " " off
         "database" " " off
         "webapp" " " off
@@ -449,16 +449,18 @@ function settings_set_server_role() {
         "other" " " off
     )
 
-    #local default_role="webserver, database"
+    local chosen_server_roles
+    local server_role
+    local server_roles
+
+    # TODO: default roles
+    # local default_role="webserver, database"
 
     if [[ -z ${SERVER_CONFIG} ]]; then
 
         declare -g SERVER_CONFIG
 
-        chosen_server_role="$(whiptail --title "Server Role Selection" --checklist "Select the server role:" 20 78 15 "${server_roles[@]}" 3>&1 1>&2 2>&3)"
-
-        #server_roles="webserver, database, webapp, cache, replica"
-        #chosen_server_role=$(whiptail --title "Server Configuration" --menu "Choose the server configuration:" 20 78 10 $(for x in ${server_roles}; do echo "$x [X]"; done) --default-item "${default_role}" 3>&1 1>&2 2>&3)
+        chosen_server_roles="$(whiptail --title "Server Role Selection" --checklist "Select the server role:" 20 78 15 "${server_roles_options[@]}" 3>&1 1>&2 2>&3)"
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
@@ -472,8 +474,20 @@ function settings_set_server_role() {
             # IMPORTANTE: el package manager deberia chequear el role, antes de intentar
             # instalar cualquier paquete.
 
-            SERVER_CONFIG="${chosen_server_role}"
-            echo "SERVER_CONFIG=${chosen_server_role}" >>/root/.broobe-utils-options
+            for server_role in ${chosen_server_roles}; do
+
+                server_roles="${server_role},${server_roles}"
+
+            done
+
+            # Remove last chars
+            server_roles="${server_roles::-1}"
+
+            # Write config
+            echo "SERVER_CONFIG=${server_roles}" >>/root/.broobe-utils-options
+
+            # Return
+            echo "${server_roles}"
 
         else
 
@@ -482,19 +496,6 @@ function settings_set_server_role() {
         fi
 
     fi
-
-    #for app in ${chosen_apps}; do
-    #    app=$(sed -e 's/^"//' -e 's/"$//' <<<${app}) #needed to ommit double quotes
-    #    log_event "info" "Executing ${app} installer ..."
-    #    case ${app} in
-    #    certbot)
-    #        certbot_installer
-    #        ;;
-    #    *)
-    #        log_event "error" "Package installer for ${app} not found!"
-    #        ;;
-    #    esac
-    #done
 
 }
 
@@ -519,6 +520,8 @@ function generate_dropbox_config() {
 
     # Checking var of ${DPU_CONFIG_FILE}
     if [[ -z ${OAUTH_ACCESS_TOKEN} || -z ${OAUTH_APP_SECRET} ]]; then
+
+        declare -g DPU_CONFIG_FILE=~/.dropbox_uploader
 
         dropbox_config_first_msg+=" 1) Log in: dropbox.com/developers/apps/create\n"
         dropbox_config_first_msg+=" 2) Click on 'Create App'\n"
@@ -612,9 +615,12 @@ function generate_cloudflare_config() {
 
         cfl_email_string="\n\nPlease insert the Cloudflare email account here:\n\n"
 
-        cfl_email=$(whiptail --title "Cloudflare Configuration" --inputbox "${cfl_email_string}" 15 60 3>&1 1>&2 2>&3)
+        cfl_email="$(whiptail --title "Cloudflare Configuration" --inputbox "${cfl_email_string}" 15 60 3>&1 1>&2 2>&3)"
+
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
+
+            declare -g CLF_CONFIG_FILE=~/.cloudflare.conf
 
             echo "dns_cloudflare_email=${cfl_email}" >"${CLF_CONFIG_FILE}"
 
@@ -664,8 +670,10 @@ function generate_telegram_config() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
+        declare -g TEL_CONFIG_FILE=~/.telegram.conf
+
         # Write config file
-        echo "botfather_key=${botfather_key}" >>"/root/.telegram.conf"
+        echo "botfather_key=${botfather_key}" >>"${TEL_CONFIG_FILE}"
 
         telegram_id_whip_line+=" \n\n "
         telegram_id_whip_line+=" 3) Contact the @myidbot (https://t.me/myidbot) bot and send the command /getid to get \n"
@@ -677,10 +685,10 @@ function generate_telegram_config() {
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # Write config file
-            echo "telegram_user_id=${telegram_user_id}" >>"/root/.telegram.conf"
+            echo "telegram_user_id=${telegram_user_id}" >>"${TEL_CONFIG_FILE}"
             log_event "info" "The Telegram configuration has been saved!"
 
-            # shellcheck source=${SFOLDER}/libs/telegram_notification_helper.sh
+            # shellcheck source=../apps/telegram_notification_helper.sh
             source "${SFOLDER}/libs/telegram_notification_helper.sh"
 
             telegram_send_notification "✅ ${VPSNAME}" "Telegram notifications configured!" ""
