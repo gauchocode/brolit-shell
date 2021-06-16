@@ -126,11 +126,9 @@ function menu_backup_options() {
       # Directory_broser returns: $filepath and $filename
       if [[ ${filename} != "" && ${filepath} != "" ]]; then
 
-        FOLDER_NAME=$(basename "$j")
+        DOMAIN="$(basename "${filepath}/${filename}")"
 
-        make_project_backup "site" "${FOLDER_NAME}" "${SITES}" "${FOLDER_NAME}"
-
-        make_project_backup "${filepath}/${filename}"
+        make_project_backup "${DOMAIN}" "all"
 
       fi
 
