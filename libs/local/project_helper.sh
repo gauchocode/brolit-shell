@@ -149,11 +149,12 @@ function project_generate_config() {
   # TODO: should check this data
   ## Check if database exists
   project_db="${project_name}_${project_stage}"
+  project_db_host="localhost" #TODO: remove hardcoded var
   ## Check if file exists
   project_nginx_conf="/etc/nginx/sites-available/${project_domain}"
 
   # Write config file
-  project_create_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db}" "${project_domain}" "${project_nginx_conf}"
+  project_create_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db}" "${project_db_host}" "${project_domain}" "${project_nginx_conf}"
 
 }
 
