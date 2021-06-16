@@ -477,7 +477,7 @@ function settings_set_server_role() {
             for server_role in ${chosen_server_roles}; do
 
                 # This removes all double quotes
-                server_roles="$(echo "${server_role}" | tr -d '"')"
+                server_role="$(echo "${server_role}" | tr -d '"')"
 
                 server_roles="${server_role},${server_roles}"
 
