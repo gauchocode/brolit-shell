@@ -18,9 +18,12 @@ function server_setup() {
     # Options: webserver, database, webapp, cache, replica, other
     server_roles="$(settings_set_server_role)"
 
-    for server_role in ${server_roles}; do
+    # Transforming to array
+    IFS=, read -ra server_roles_array <<< "$server_roles"
 
-        echo "debug" "Setting server_role=${server_role}" "false"
+    for server_role in "${server_roles_array[@]}"; do
+
+        log_event "debug" "Setting server_role=${server_role}" "false"
 
         case ${server_role} in
 
