@@ -10,7 +10,7 @@ function test_mysql_helper() {
     #   mysql_name_sanitize
     #   mysql_user_psw_change
 
-    #test_ask_mysql_root_psw
+    #test_mysql_ask_root_psw
     #test_mysql_test_user_credentials
     test_mysql_user_create
     test_mysql_user_exists
@@ -36,11 +36,11 @@ function test_mysql_test_user_credentials() {
 
 }
 
-function test_ask_mysql_root_psw() {
+function test_mysql_ask_root_psw() {
 
-    log_subsection "Test: test_ask_mysql_root_psw"
+    log_subsection "Test: test_mysql_ask_root_psw"
 
-    ask_mysql_root_psw
+    mysql_ask_root_psw
 
 }
 

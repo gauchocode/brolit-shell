@@ -366,27 +366,25 @@ function script_init() {
     generate_dropbox_config
   fi
   if [[ ${DROPBOX_ENABLE} == "true" ]]; then
-    # shellcheck source=${DPU_CONFIG_FILE}
+    # shellcheck source=~/.dropbox_uploader
     source "${DPU_CONFIG_FILE}"
     # Dropbox-uploader directory
     DPU_F="${SFOLDER}/tools/third-party/dropbox-uploader"
     # Dropbox-uploader runner
     DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
-    #DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader_original.sh"
-
   fi
 
   # Cloudflare config file
   CLF_CONFIG_FILE=~/.cloudflare.conf
   if [[ ${CLOUDFLARE_ENABLE} == "true" && -f ${CLF_CONFIG_FILE} ]]; then
-    # shellcheck source=${CLF_CONFIG_FILE}
+    # shellcheck source=~/.cloudflare.conf
     source "${CLF_CONFIG_FILE}"
   fi
 
   # Telegram config file
   TEL_CONFIG_FILE=~/.telegram.conf
   if [[ ${TELEGRAM_NOTIF} == "true" && -f ${TEL_CONFIG_FILE} ]]; then
-    # shellcheck source=${TEL_CONFIG_FILE}
+    # shellcheck source=~/.telegram.conf
     source "${TEL_CONFIG_FILE}"
   fi
 
@@ -1490,37 +1488,6 @@ function ask_folder_to_install_sites() {
 
 }
 
-function ask_mysql_root_psw() {
-
-  local mysql_root_pass
-
-  # Check MySQL credentials on .my.cnf
-  if [[ ! -f ${MYSQL_CONF} ]]; then
-
-    mysql_root_pass="$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root password" 10 60 "${mysql_root_pass}" 3>&1 1>&2 2>&3)"
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-
-      until mysql -u root -p"${mysql_root_pass}" -e ";"; do
-        read -s -p " > Can't connect to MySQL, please re-enter ${MUSER} password: " mysql_root_pass
-
-      done
-
-      # Create new MySQL credentials file
-      echo "[client]" >/root/.my.cnf
-      echo "user=root" >>/root/.my.cnf
-      echo "password=${mysql_root_pass}" >>/root/.my.cnf
-
-    else
-
-      return 1
-
-    fi
-
-  fi
-
-}
-
 #
 #################################################################################
 #
@@ -1646,7 +1613,7 @@ function menu_first_run() {
 
     if [[ ${chosen_first_run_options} == *"01"* ]]; then
 
-      # shellcheck source=${SFOLDER}/utils/server_setup.sh
+      # shellcheck source=../utils/server_setup.sh
       source "${SFOLDER}/utils/server_setup.sh"
 
       server_setup

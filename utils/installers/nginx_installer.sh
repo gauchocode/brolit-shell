@@ -15,16 +15,18 @@
 
 function nginx_default_installer() {
 
+    display --indent 6 --text "- Nginx default installation"
+
     apt-get --yes install nginx -qq >/dev/null
 
+    clear_last_line
     display --indent 6 --text "- Nginx default installation" --result "DONE" --color GREEN
 
 }
 
 function nginx_custom_installer() {
 
-    #curl -L https://nginx.org/keys/nginx_signing.key | sudo apt-key add -
-    #cp ${SFOLDER}/assets/nginx.list /etc/apt/sources.list.d/nginx.list
+    display --indent 6 --text "- Nginx default installation"
 
     add_ppa "nginx/stable"
 
@@ -32,6 +34,7 @@ function nginx_custom_installer() {
 
     apt-get --yes install nginx -qq >/dev/null
 
+    clear_last_line
     display --indent 6 --text "- Nginx custom installation" --result "DONE" --color GREEN
 
 }
@@ -80,18 +83,19 @@ function nginx_check_installed_version() {
 
 function nginx_installer_menu() {
 
+    local nginx_installer_options
     local chosen_nginx_installer_option
 
     nginx_check_if_installed
 
     if [[ ${nginx_installed} == "false" ]]; then
 
-        NGINX_INSTALLER_OPTIONS=(
+        nginx_installer_options=(
             "01)" "INSTALL NGINX STANDARD"
             "02)" "INSTALL NGINX LAST STABLE"
         )
 
-        chosen_nginx_installer_option="$(whiptail --title "NGINX INSTALLER" --menu "Choose a Nginx version to install" 20 78 10 "${NGINX_INSTALLER_OPTIONS[@]}" 3>&1 1>&2 2>&3)"
+        chosen_nginx_installer_option="$(whiptail --title "NGINX INSTALLER" --menu "Choose a Nginx version to install" 20 78 10 "${nginx_installer_options[@]}" 3>&1 1>&2 2>&3)"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -112,12 +116,12 @@ function nginx_installer_menu() {
 
     else
 
-        NGINX_INSTALLER_OPTIONS=(
+        nginx_installer_options=(
             "01)" "UNINSTALL NGINX"
             "02)" "RECONFIGURE NGINX"
         )
 
-        chosen_nginx_installer_option="$(whiptail --title "NGINX INSTALLER" --menu "Choose a Nginx version to install" 20 78 10 "${NGINX_INSTALLER_OPTIONS[@]}" 3>&1 1>&2 2>&3)"
+        chosen_nginx_installer_option="$(whiptail --title "NGINX INSTALLER" --menu "Choose a Nginx version to install" 20 78 10 "${nginx_installer_options[@]}" 3>&1 1>&2 2>&3)"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
