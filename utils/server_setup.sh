@@ -18,40 +18,51 @@ function server_setup() {
     # Options: webserver, database, webapp, cache, replica, other
     server_roles="$(settings_set_server_role)"
 
-    # TODO: loop server_roles
-    case ${server_roles} in
+    for server_role in ${server_roles}; do
 
-    webserver)
-        # Nginx Installer
-        nginx_installer_menu
-        # PHP Installer
-        php_installer_menu
-        ;;
+        case ${server_role} in
 
-    database)
-        # MySQL Installer
-        mysql_installer_menu
-        ;;
+        webserver)
 
-    webapp)
-        echo "ERR"
-        ;;
+            # Nginx Installer
+            nginx_installer_menu
 
-    cache)
-        echo "ERR"
-        ;;
+            # PHP Installer
+            php_installer_menu
 
-    replica)
-        echo "ERR"
-        ;;
+            ;;
 
-    esac
+        database)
+
+            # MySQL Installer
+            mysql_installer_menu
+
+            ;;
+
+        webapp)
+            echo "TODO"
+            ;;
+
+        cache)
+            echo "TODO"
+            ;;
+
+        replica)
+            echo "TODO"
+            ;;
+
+        esac
+
+    done
 
     # Script config
     script_configuration_wizard "initial"
 
+    # Select aditional packages to install
     selected_package_installation
 
-    log_event "info" "************* SERVER SETUP COMPLETED *************" "true"
+    # Log
+    display --indent 6 --text "- Server setup" --result "DONE" --color GREEN
+    log_event "info" "************* SERVER SETUP COMPLETED *************" "false"
 
 }

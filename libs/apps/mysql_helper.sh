@@ -4,6 +4,40 @@
 # Version: 3.0.38
 #############################################################################
 
+function mysql_ask_root_psw() {
+
+  local mysql_root_pass
+
+  # Check MySQL credentials on .my.cnf
+  if [[ ! -f ${MYSQL_CONF} ]]; then
+
+    mysql_root_pass="$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root password" 10 60 "${mysql_root_pass}" 3>&1 1>&2 2>&3)"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+      until mysql -u root -p"${mysql_root_pass}" -e ";"; do
+        read -s -p " > Can't connect to MySQL, please re-enter ${MUSER} password: " mysql_root_pass
+
+      done
+
+      # Create new MySQL credentials file
+      echo "[client]" >/root/.my.cnf
+      echo "user=root" >>/root/.my.cnf
+      echo "password=${mysql_root_pass}" >>/root/.my.cnf
+
+      # Return
+      echo "${mysql_root_pass}"
+
+    else
+
+      return 1
+
+    fi
+
+  fi
+
+}
+
 function mysql_ask_user_db_scope() {
 
     # $1 = ${db_scope} - optional
@@ -317,7 +351,7 @@ function mysql_root_psw_change() {
     sleep 5
 
     # Creating new password if db_root_psw is empty
-    if [ "${db_root_psw}" = "" ]; then
+    if [[ "${db_root_psw}" == "" ]]; then
         db_root_psw_len=$(shuf -i 20-30 -n 1)
         db_root_psw=$(pwgen -scn "${db_root_psw_len}" 1)
         db_root_user='root'

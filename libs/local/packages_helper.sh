@@ -361,7 +361,7 @@ function selected_package_installation() {
 
       app=$(sed -e 's/^"//' -e 's/"$//' <<<${app}) #needed to ommit double quotes
 
-      log_event "info" "Executing ${app} installer ..."
+      log_event "info" "Executing ${app} installer ..." "false"
 
       case ${app} in
 
