@@ -119,6 +119,7 @@ function menu_backup_options() {
     if [[ ${chosen_backup_type} == *"04"* ]]; then
 
       # PROJECT_BACKUP
+      log_section "Project Backup"
 
       # Select project to work with
       directory_browser "Select a project to work with" "${SITES}" #return $filename
@@ -129,6 +130,12 @@ function menu_backup_options() {
         DOMAIN="$(basename "${filepath}/${filename}")"
 
         make_project_backup "${DOMAIN}" "all"
+
+        display --indent 6 --text "- Project backup" --result "DONE" --color GREEN
+
+      else
+
+        display --indent 6 --text "- Project backup" --result "SKIPPED" --color YELLOW
 
       fi
 
@@ -826,6 +833,13 @@ function make_project_backup() {
     if [[ -f "${project_config_file}" ]]; then
 
       db_name="$(project_get_config "${SITES}/${project_domain}" "project_db")"
+
+    else
+
+      db_stage="$(project_get_stage_from_domain "${project_domain}")"
+      db_name="$(project_get_name_from_domain "${project_domain}")"
+
+      db_name="${db_name}_${db_stage}"
 
     fi
 
