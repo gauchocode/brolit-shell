@@ -248,7 +248,7 @@ function netdata_installer_menu() {
     # Only for Cloudflare API
     possible_root_domain="$(get_root_domain "${netdata_subdomain}")"
 
-    ask_mysql_root_psw
+    mysql_ask_root_psw
 
     while true; do
 
