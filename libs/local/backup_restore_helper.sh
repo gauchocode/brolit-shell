@@ -613,7 +613,7 @@ function restore_type_selection_from_dropbox() {
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
           dropbox_chosen_backup_path="${dropbox_chosen_type_path}/${chosen_project}"
-          dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}" | awk '{print $2;}')"
+          dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}" | awk '{print $3;}')"
 
         fi
         # Select Backup File
@@ -784,7 +784,7 @@ function restore_project() {
 
     # Get dropbox backup list
     dropbox_chosen_backup_path="${chosen_server}/site/${chosen_project}"
-    dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}" | awk '{print $2;}')"
+    dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}" | awk '{print $3;}')"
 
   else
 
