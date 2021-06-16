@@ -20,6 +20,8 @@ function server_setup() {
 
     for server_role in ${server_roles}; do
 
+        echo "debug" "Setting server_role=${server_role}" "false"
+
         case ${server_role} in
 
         webserver)
