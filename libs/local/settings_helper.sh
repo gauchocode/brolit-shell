@@ -487,6 +487,7 @@ function settings_set_server_role() {
             server_roles="${server_roles::-1}"
 
             # Write config
+            SERVER_CONFIG=${server_roles}
             echo "SERVER_CONFIG=${server_roles}" >>/root/.broobe-utils-options
 
             # Return
