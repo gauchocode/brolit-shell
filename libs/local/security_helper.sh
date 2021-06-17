@@ -23,8 +23,10 @@ function security_install() {
 function security_clamav_scan() {
 
   # $1 = ${directory}
+  # $1 = ${summary} (true or false) - Default: true - Optional
 
   local directory=$1
+  local summary=$2
 
   # Stop service
   systemctl stop clamav-freshclam.service
@@ -33,11 +35,20 @@ function security_clamav_scan() {
   freshclam
 
   log_event "info" "Running clamscan on ${directory}" "false"
-  
+
   # Run on specific directory with parameters:
   # -r recursive (Scan subdirectories recursively)
   # --infected (Only print infected files)
-  clamscan_result="$(clamscan -r --infected "${directory}")"
+  # --no-summary (Disable summary at end of scanning)
+  if [[ -z ${summary} || ${summary} == "true" ]]; then
+
+    clamscan_result="$(clamscan --recursive --infected "${directory}")"
+
+  else
+
+    clamscan_result="$(clamscan --recursive --infected --no-summary "${directory}")"
+
+  fi
 
   log_event "info" "clamscan result: ${clamscan_result}" "false"
 

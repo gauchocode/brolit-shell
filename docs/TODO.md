@@ -36,6 +36,8 @@
 
 ### In Progress
 
+- [ ] Server Setup: option to run without menu.
+        Example: ./runner.sh --task "server-setup" --mariadb "default" --mariadb-pass "root_pass" --nginx "default" --php "default" --certbot
 - [ ] MySQL: Rename database helper (with and without WP).
 - [ ] Core: On project creation/restore need to ask first the project state, then project domain.
         If project state != prod and subdomains is not containing the stage, need to suggest one.
