@@ -5,10 +5,10 @@
 ################################################################################
 
 ### Main dir check
-SFOLDER=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-SFOLDER=$( cd "$( dirname "${SFOLDER}" )" && pwd )
+SFOLDER=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+SFOLDER=$(cd "$(dirname "${SFOLDER}")" && pwd)
 if [ -z "${SFOLDER}" ]; then
-  exit 1  # error; the path is not accessible
+  exit 1 # error; the path is not accessible
 fi
 
 # shellcheck source=${SFOLDER}/libs/commons.sh
@@ -16,112 +16,103 @@ source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
 
-#if [ -t 1 ]; then
+# Running from cron
+log_event "info" "Running uptime_tasks.sh from cron ..." "false"
 
-  # Running from terminal
-#  echo " > Error: The script can only be runned by runner. Exiting ..."
+# Script Initialization
+script_init
 
-#else
+# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
+source "${SFOLDER}/libs/mail_notification_helper.sh"
+# shellcheck source=${SFOLDER}/libs/telegram_notification_helper.sh
+source "${SFOLDER}/libs/telegram_notification_helper.sh"
 
-  # Running from cron
-  log_event "info" "Running uptime_tasks.sh from cron ..." "false"
+#Log
+log_section "Uptime Robot"
 
-  # Script Initialization
-  script_init
+# Get all directories
+all_sites=$(get_all_directories "${SITES}")
 
-  # shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
-  source "${SFOLDER}/libs/mail_notification_helper.sh"
-  # shellcheck source=${SFOLDER}/libs/telegram_notification_helper.sh
-  source "${SFOLDER}/libs/telegram_notification_helper.sh"
+## Get length of $all_sites
+count_all_sites=$(find "${SITES}" -maxdepth 1 -type d -printf '.' | wc -c)
+count_all_sites=$((count_all_sites - 1))
 
-  #Log
-  log_section "Uptime Robot"
+log_event "info" "Found ${count_all_sites} directories" "false"
+display --indent 2 --text "- Directories found" --result "${count_all_sites}" --color YELLOW
 
-  # Get all directories
-  all_sites=$(get_all_directories "${SITES}")
-  
-  ## Get length of $all_sites
-  count_all_sites=$(find "${SITES}" -maxdepth 1 -type d -printf '.' | wc -c)
-  count_all_sites=$((count_all_sites - 1))
+# GLOBALS
+keyword="wp-content"
+file_index=0
+#BK_FL_ARRAY_INDEX=0
+#declare -a BACKUPED_LIST
 
-  log_event "info" "Found ${count_all_sites} directories" "false"
-  display --indent 2 --text "- Directories found" --result "${count_all_sites}" --color YELLOW
+# Folder blacklist
+blacklist=".wp-cli,phpmyadmin,html"
 
-  # GLOBALS
-  keyword="wp-content"
-  file_index=0
-  #BK_FL_ARRAY_INDEX=0
-  #declare -a BACKUPED_LIST
+k=0
 
-  # Folder blacklist
-  blacklist=".wp-cli,phpmyadmin,html"
+for site in ${all_sites}; do
 
-  k=0
+  if [[ "$k" -gt 0 ]]; then
 
-  for site in ${all_sites}; do
+    project_name="$(basename "${site}")"
 
-    if [[ "$k" -gt 0 ]]; then
+    if [[ ${blacklist} != *"${project_name}"* ]]; then
 
-      project_name="$(basename "${site}")"
+      log_event "info" "Project name: ${project_name}" "false"
 
-      if [[ ${blacklist} != *"${project_name}"* ]]; then
+      curl --silent -L "${project_name}" 2>&1 | grep -q "${keyword}"
+      curl_output=$?
 
-        log_event "info" "Project name: ${project_name}" "false"
+      if [[ ${curl_output} == 0 ]]; then
 
-        curl --silent -L "${project_name}" 2>&1  | grep -q "${keyword}"
-        curl_output=$?
-
-        if [[ ${curl_output} == 0 ]]; then
-
-          log_event "info" "Website ${project_name} is online" "false"
-          display --indent 2 --text "- Testing ${project_name}" --result "UP" --color GREEN
-
-        else
-
-          log_event "error" "Website ${project_name} is offline" "false"
-          display --indent 2 --text "- Testing ${project_name}" --result "DOWN" --color RED
-          
-          # Send notification
-          send_notification "⛔ ${VPSNAME}" "Website ${project_name} is offline"
-
-        fi
+        log_event "info" "Website ${project_name} is online" "false"
+        display --indent 2 --text "- Testing ${project_name}" --result "UP" --color GREEN
 
       else
 
-        log_event "error" "Found ${project_name} on blacklist, skipping ..." "false"
+        log_event "error" "Website ${project_name} is offline" "false"
+        display --indent 2 --text "- Testing ${project_name}" --result "DOWN" --color RED
+
+        # Send notification
+        send_notification "⛔ ${VPSNAME}" "Website ${project_name} is offline"
 
       fi
 
+    else
+
+      log_event "error" "Found ${project_name} on blacklist, skipping ..." "false"
+
     fi
 
-    k=$k+1
-  
-  done
+  fi
 
-  # Running scripts
-  #"${SFOLDER}/utils/server_and_image_optimizations.sh"
-  
-  #DB_MAIL="${TMP_DIR}/db-bk-${NOW}.mail"
-  #DB_MAIL_VAR=$(<"${DB_MAIL}")
+  k=$k+1
 
-  #ONFIG_MAIL="${TMP_DIR}/config-bk-${NOW}.mail"
-  #CONFIG_MAIL_VAR=$(<"${CONFIG_MAIL}")
+done
 
-  #FILE_MAIL="${TMP_DIR}/file-bk-${NOW}.mail"
-  #FILE_MAIL_VAR=$(<"${FILE_MAIL}")
+# Running scripts
+#"${SFOLDER}/utils/server_and_image_optimizations.sh"
 
-  #MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
+#DB_MAIL="${TMP_DIR}/db-bk-${NOW}.mail"
+#DB_MAIL_VAR=$(<"${DB_MAIL}")
 
-  # Checking result status for mail subject
-  #EMAIL_STATUS=$(mail_subject_status "${STATUS_BACKUP_DBS}" "${STATUS_BACKUP_FILES}" "${STATUS_SERVER}" "${OUTDATED_PACKAGES}")
+#ONFIG_MAIL="${TMP_DIR}/config-bk-${NOW}.mail"
+#CONFIG_MAIL_VAR=$(<"${CONFIG_MAIL}")
 
-  # Preparing email to send
-  #log_event "info" "Sending Email to ${MAILA} ..." "true"
+#FILE_MAIL="${TMP_DIR}/file-bk-${NOW}.mail"
+#FILE_MAIL_VAR=$(<"${FILE_MAIL}")
 
-  #EMAIL_SUBJECT="${EMAIL_STATUS} on ${VPSNAME} Complete Backup - [${NOWDISPLAY}]"
-  #EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${PKG_MAIL_VAR} ${CERT_MAIL_VAR} ${CONFIG_MAIL_VAR} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
+#MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
 
-  # Sending email notification
-  #mail_send_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
+# Checking result status for mail subject
+#EMAIL_STATUS=$(mail_subject_status "${STATUS_BACKUP_DBS}" "${STATUS_BACKUP_FILES}" "${STATUS_SERVER}" "${OUTDATED_PACKAGES}")
 
-#fi
+# Preparing email to send
+#log_event "info" "Sending Email to ${MAILA} ..." "true"
+
+#EMAIL_SUBJECT="${EMAIL_STATUS} on ${VPSNAME} Complete Backup - [${NOWDISPLAY}]"
+#EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${PKG_MAIL_VAR} ${CERT_MAIL_VAR} ${CONFIG_MAIL_VAR} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
+
+# Sending email notification
+#mail_send_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
