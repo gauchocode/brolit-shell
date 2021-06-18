@@ -248,7 +248,10 @@ function netdata_installer_menu() {
     # Only for Cloudflare API
     possible_root_domain="$(get_root_domain "${netdata_subdomain}")"
 
-    mysql_ask_root_psw
+    mysql_command="$(command -v mysql)"
+    if [[ ! -x ${mysql_command} ]]; then
+      mysql_ask_root_psw
+    fi
 
     while true; do
 
@@ -274,11 +277,16 @@ function netdata_installer_menu() {
 
         netdata_installer
 
-        # Netdata nginx proxy configuration
-        nginx_server_create "${netdata_subdomain}" "netdata" "tool"
+        nginx_command="$(command -v nginx)"
+        if [[ ! -x ${nginx_command} ]]; then
 
-        # Nginx Auth
-        nginx_generate_auth "netdata"
+          # Netdata nginx proxy configuration
+          nginx_server_create "${netdata_subdomain}" "netdata" "tool"
+
+          # Nginx Auth
+          nginx_generate_auth "netdata"
+
+        fi
 
         netdata_configuration
 
