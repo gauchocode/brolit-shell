@@ -16,44 +16,34 @@ source "${SFOLDER}/libs/commons.sh"
 
 ################################################################################
 
-if [[ -t 1 ]]; then
+# Script Initialization
+script_init
 
-    # Running from terminal
-    echo " > Error: The script can only be runned by cron. Exiting ..."
-    exit 1
+# Running from cron
+log_event "info" "Running security_tasks.sh ..." "false"
 
-else
+log_section "Security Tasks"
 
-    # Script Initialization
-    script_init
+# Clamav Scan
+clamscan_result="$(security_clamav_scan "${SITES}" "false")"
 
-    # Running from cron
-    log_event "info" "Running security_tasks.sh from cron ..." "false"
+if [[ ${clamscan_result} != "" ]]; then
 
-    log_section "Security Tasks"
-
-    # Clamav Scan
-    clamscan_result="$(security_clamav_scan "${SITES}" "false")"
-
-    if [[ ${clamscan_result} != "" ]]; then
-
-        send_notification "✅ ${VPSNAME}" "Clamav scan result:\n${clamscan_result}" ""
-
-    fi
-
-    # Custom Scan
-    custom_scan_result="$(security_custom_scan "${SITES}")"
-
-    if [[ ${custom_scan_result} != "" ]]; then
-
-        send_notification "✅ ${VPSNAME}" "Custom scan result:\n${custom_scan_result}" ""
-
-    fi
-
-    # Script cleanup
-    cleanup
-
-    # Log End
-    log_event "info" "SECURITY TASKS SCRIPT End -- $(date +%Y%m%d_%H%M)" "false"
+    send_notification "✅ ${VPSNAME}" "Clamav scan result:\n${clamscan_result}" ""
 
 fi
+
+# Custom Scan
+custom_scan_result="$(security_custom_scan "${SITES}")"
+
+if [[ ${custom_scan_result} != "" ]]; then
+
+    send_notification "✅ ${VPSNAME}" "Custom scan result:\n${custom_scan_result}" ""
+
+fi
+
+# Script cleanup
+cleanup
+
+# Log End
+log_event "info" "SECURITY TASKS SCRIPT End -- $(date +%Y%m%d_%H%M)" "false"

@@ -11,16 +11,16 @@ function package_is_installed() {
 
   local package=$1
 
-  if [ "$(dpkg-query -W -f='${Status}' "${package}" 2>/dev/null | grep -c "ok installed")" == "1" ]; then
+  if [[ "$(dpkg-query -W -f='${Status}' "${package}" 2>/dev/null | grep -c "ok installed")" == "1" ]]; then
 
-    log_event "info" "${package} is installed"
+    log_event "info" "${package} is installed" "false"
 
     # Return
     echo "true"
 
   else
 
-    log_event "info" "${package} is not installed"
+    log_event "info" "${package} is not installed" "false"
 
     # Return
     echo "false"
@@ -29,7 +29,7 @@ function package_is_installed() {
 
 }
 
-function install_package_if_not() {
+function package_install_if_not() {
 
   # $1 = ${package}
 
