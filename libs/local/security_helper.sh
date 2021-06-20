@@ -23,12 +23,11 @@ function security_install() {
 function security_clamav_scan() {
 
   # $1 = ${directory}
-  # $1 = ${summary} (true or false) - Default: true - Optional
 
   local directory=$1
-  local summary=$2
 
   local timestamp
+  local report_file
 
   timestamp="$(date +%Y%m%d_%H%M%S)"
 
@@ -46,25 +45,31 @@ function security_clamav_scan() {
 
   fi
 
+  report_file="${SFOLDER}/reports/clamav-results-${timestamp}.log"
+
   # Run on specific directory with parameters:
   # -r recursive (Scan subdirectories recursively)
   # --infected (Only print infected files)
   # --no-summary (Disable summary at end of scanning)
-  if [[ -z ${summary} || ${summary} == "true" ]]; then
 
-    log_event "debug" "Running: clamscan --recursive --infected ${directory} | grep FOUND >>${SFOLDER}/reports/clamav-results-${timestamp}.log" "false"
+  log_event "debug" "Running: clamscan --recursive --infected --no-summary ${directory} | grep FOUND >>${report_file}" "false"
 
-    clamscan_result="$(clamscan --recursive --infected "${directory}" | grep FOUND >>"${SFOLDER}/reports/clamav-results-${timestamp}.log")"
+  clamscan_result="$(clamscan --recursive --infected --no-summary "${directory}" | grep FOUND >>"${report_file}")"
+
+  # Check if file is empty
+  if [[ -s ${report_file} ]]; then
+
+    rm -f "${report_file}"
+
+    clamscan_result="false"
+    log_event "info" "No malware found on ${directory}" "false"
 
   else
 
-    log_event "debug" "Running: clamscan --recursive --infected --no-summary ${directory} | grep FOUND >>${SFOLDER}/reports/clamav-results-${timestamp}.log" "false"
-
-    clamscan_result="$(clamscan --recursive --infected --no-summary "${directory}" | grep FOUND >>"${SFOLDER}/reports/clamav-results-${timestamp}.log")"
+    clamscan_result="true"
+    log_event "WARNING" "Malware found on ${directory}. Please check result file: ${report_file}" "false"
 
   fi
-
-  log_event "info" "clamscan result: ${clamscan_result}" "false"
 
   # Return
   echo "${clamscan_result}"
