@@ -25,7 +25,7 @@ log_event "info" "Running security_tasks.sh ..." "false"
 log_section "Security Tasks"
 
 # Clamav Scan
-clamscan_result="$(security_clamav_scan "${SITES}" "false")"
+clamscan_result="$(security_clamav_scan "${SITES}" "true")"
 
 if [[ ${clamscan_result} != "" ]]; then
 
