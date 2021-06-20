@@ -1791,7 +1791,7 @@ function menu_security_clamav_scan() {
 
   log_event "info" "Starting clamav scan on: ${to_scan}" "false"
 
-  security_clamav_scan "${to_scan}"
+  security_clamav_scan "${to_scan}" "true"
 
 }
 
