@@ -28,6 +28,10 @@ function security_clamav_scan() {
   local directory=$1
   local summary=$2
 
+  local timestamp
+
+  timestamp="$(date +%Y%m%d_%H%M%S)"
+
   # Stop service
   systemctl stop clamav-freshclam.service
 
@@ -36,9 +40,9 @@ function security_clamav_scan() {
 
   log_event "info" "Running clamscan on ${directory}" "false"
 
-  if [[ ! -d "${SCRIPT}/reports" ]]; then
+  if [[ ! -d "${SFOLDER}/reports" ]]; then
 
-    mkdir "${SCRIPT}/reports"
+    mkdir "${SFOLDER}/reports"
 
   fi
 
@@ -48,15 +52,15 @@ function security_clamav_scan() {
   # --no-summary (Disable summary at end of scanning)
   if [[ -z ${summary} || ${summary} == "true" ]]; then
 
-    log_event "debug" "Running: clamscan --recursive --infected ${directory} | grep FOUND >>${SCRIPT}/reports/clamav-results-${TIMESTAMP}.log" "false"
+    log_event "debug" "Running: clamscan --recursive --infected ${directory} | grep FOUND >>${SFOLDER}/reports/clamav-results-${timestamp}.log" "false"
 
-    clamscan_result="$(clamscan --recursive --infected "${directory}" | grep FOUND >>"${SCRIPT}/reports/clamav-results-${TIMESTAMP}.log")"
+    clamscan_result="$(clamscan --recursive --infected "${directory}" | grep FOUND >>"${SFOLDER}/reports/clamav-results-${timestamp}.log")"
 
   else
 
-    log_event "debug" "Running: clamscan --recursive --infected --no-summary ${directory} | grep FOUND >>${SCRIPT}/reports/clamav-results-${TIMESTAMP}.log" "false"
+    log_event "debug" "Running: clamscan --recursive --infected --no-summary ${directory} | grep FOUND >>${SFOLDER}/reports/clamav-results-${timestamp}.log" "false"
 
-    clamscan_result="$(clamscan --recursive --infected --no-summary "${directory}" | grep FOUND >>"${SCRIPT}/reports/clamav-results-${TIMESTAMP}.log")"
+    clamscan_result="$(clamscan --recursive --infected --no-summary "${directory}" | grep FOUND >>"${SFOLDER}/reports/clamav-results-${timestamp}.log")"
 
   fi
 
