@@ -36,17 +36,27 @@ function security_clamav_scan() {
 
   log_event "info" "Running clamscan on ${directory}" "false"
 
+  if [[ ! -d "${SCRIPT}/reports" ]]; then
+
+    mkdir "${SCRIPT}/reports"
+
+  fi
+
   # Run on specific directory with parameters:
   # -r recursive (Scan subdirectories recursively)
   # --infected (Only print infected files)
   # --no-summary (Disable summary at end of scanning)
   if [[ -z ${summary} || ${summary} == "true" ]]; then
 
-    clamscan_result="$(clamscan --recursive --infected "${directory}")"
+    log_event "debug" "Running: clamscan --recursive --infected ${directory} | grep FOUND >>${SCRIPT}/reports/clamav-results-${TIMESTAMP}.log" "false"
+
+    clamscan_result="$(clamscan --recursive --infected "${directory}" | grep FOUND >>"${SCRIPT}/reports/clamav-results-${TIMESTAMP}.log")"
 
   else
 
-    clamscan_result="$(clamscan --recursive --infected --no-summary "${directory}")"
+    log_event "debug" "Running: clamscan --recursive --infected --no-summary ${directory} | grep FOUND >>${SCRIPT}/reports/clamav-results-${TIMESTAMP}.log" "false"
+
+    clamscan_result="$(clamscan --recursive --infected --no-summary "${directory}" | grep FOUND >>"${SCRIPT}/reports/clamav-results-${TIMESTAMP}.log")"
 
   fi
 
