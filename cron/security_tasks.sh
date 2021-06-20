@@ -25,11 +25,11 @@ log_event "info" "Running security_tasks.sh ..." "false"
 log_section "Security Tasks"
 
 # Clamav Scan
-clamscan_result="$(security_clamav_scan "${SITES}" "true")"
+clamscan_result="$(security_clamav_scan "${SITES}")"
 
-if [[ ${clamscan_result} != "" ]]; then
+if [[ ${clamscan_result} == "true" ]]; then
 
-    send_notification "✅ ${VPSNAME}" "<b>Clamav scan result:</b>${clamscan_result}" ""
+    send_notification "⚠️ ${VPSNAME}" "Clamav found malware files! Please check result file on server." ""
 
 fi
 
@@ -38,7 +38,7 @@ custom_scan_result="$(security_custom_scan "${SITES}")"
 
 if [[ ${custom_scan_result} != "" ]]; then
 
-    send_notification "✅ ${VPSNAME}" "Custom scan result:\n${custom_scan_result}" ""
+    send_notification "⚠️ ${VPSNAME}" "Custom scan result: ${custom_scan_result}" ""
 
 fi
 
