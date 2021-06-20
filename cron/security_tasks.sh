@@ -29,7 +29,7 @@ clamscan_result="$(security_clamav_scan "${SITES}" "false")"
 
 if [[ ${clamscan_result} != "" ]]; then
 
-    send_notification "✅ ${VPSNAME}" "Clamav scan result:\n${clamscan_result}" ""
+    send_notification "✅ ${VPSNAME}" "<b>Clamav scan result:</b>${clamscan_result}" ""
 
 fi
 
