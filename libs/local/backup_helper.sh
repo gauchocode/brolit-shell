@@ -418,12 +418,12 @@ function make_all_server_config_backup() {
   fi
 
     # TAR Devops Config Files
-  if [[ ! -d ${DEVOPS_CONFIG_PATH} ]]; then
+  if [[ ! -d ${BROLIT_CONFIG_PATH} ]]; then
     log_event "warning" "DEVOPS_CF is not defined! Skipping DevOps config files backup ..."
 
   else
     BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
-    make_server_files_backup "configs" "devops" "${DEVOPS_CONFIG_PATH}" "."
+    make_server_files_backup "configs" "brolit" "${BROLIT_CONFIG_PATH}" "."
 
   fi
 
@@ -828,7 +828,7 @@ function make_project_backup() {
 
     project_name="$(project_get_name_from_domain "${project_domain}")"
 
-    project_config_file="${DEVOPS_CONFIG_PATH}/${project_name}-devops.conf"
+    project_config_file="${BROLIT_CONFIG_PATH}/${project_name}-brolit.conf"
 
     if [[ -f "${project_config_file}" ]]; then
 
