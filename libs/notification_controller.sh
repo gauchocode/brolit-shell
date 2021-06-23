@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.38
+# Version: 3.0.39
 ################################################################################
 #
-# Security Helper: Perform security actions.
-#
-# Refs: https://www.tecmint.com/scan-linux-for-malware-and-rootkits/
+# Notification Controller: Send notification to configured apps.
 #
 ################################################################################
 

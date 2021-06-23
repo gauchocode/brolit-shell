@@ -2,7 +2,7 @@
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Script Name: LEMP Utils Script
-# Version: 3.0.38
+# Version: 3.0.39
 ################################################################################
 
 ### Exit immediately if a command exits with a non-zero status
@@ -47,4 +47,4 @@ fi
 cleanup
 
 # Log End
-log_event "info" "LEMP UTILS SCRIPT End -- $(date +%Y%m%d_%H%M)"
+log_event "info" "BROLIT SCRIPT End -- $(date +%Y%m%d_%H%M)"

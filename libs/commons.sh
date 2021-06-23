@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.38
+# Version: 3.0.39
 #############################################################################
 
 # Libs apps directory path
@@ -34,8 +34,8 @@ source "${SFOLDER}/utils/it_utils.sh"
 function _setup_globals_and_options() {
 
   # Script
-  declare -g SCRIPT_N="LEMP UTILS SCRIPT"
-  declare -g SCRIPT_V="3.0.38"
+  declare -g SCRIPT_N="BROLIT SCRIPT"
+  declare -g SCRIPT_V="3.0.39"
 
   # Hostname
   declare -g VPSNAME="$HOSTNAME"
@@ -1506,7 +1506,7 @@ function menu_main_options() {
   local runner_options   # whiptail array options
   local chosen_type      # whiptail var
 
-  whip_title="LEMP UTILS SCRIPT"
+  whip_title="BROLIT SCRIPT"
   whip_description=" "
 
   runner_options=(
@@ -1611,7 +1611,7 @@ function menu_first_run() {
   first_run_string+=" Now you have to options:\n"
   first_run_string+="\n"
 
-  chosen_first_run_options=$(whiptail --title "LEMP UTILS SCRIPT" --menu "${first_run_string}" 20 78 10 "${first_run_options[@]}" 3>&1 1>&2 2>&3)
+  chosen_first_run_options=$(whiptail --title "BROLIT SCRIPT" --menu "${first_run_string}" 20 78 10 "${first_run_options[@]}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
