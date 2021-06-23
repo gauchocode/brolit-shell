@@ -11,18 +11,18 @@ BROLIT Shell (aka "LEMP Ubuntu Utils Scripts") is a **BASH** based cloud server 
 
 ## Motivation
 
-* Standarize LEMP stack configuration.
+* Standarize servers configuration.
+* Automatization of IT/DevOps tasks.
 * Reduce time and errors on IT tasks.
-* Backup automatization with email report.
 
-## Why BROLIT?
+## Why BROLIT Shell?
 
-* Create, deploy and host anything with a single command
-* Frontend & backend templates
-* WordPress support
-* Open-source
+* Create, deploy and host anything with a single command.
+* Frontend & backend templates.
+* WordPress support.
+* Open-source.
 
-## Main Features
+## Features
 
 * Simple step-by-step configuration wizard.
 * LEMP automated installer (Nginx, MySQL/MariaDB, PHP).
@@ -106,7 +106,7 @@ Run it:
 
 The first time you run `runner.sh`, you'll be guided through a wizard in order to configure it. This configuration will be stored in `~/.lemp-utils-script`.
 
-## Update script
+## Update
 
 Run updater.sh
 
