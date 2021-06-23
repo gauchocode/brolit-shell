@@ -1,6 +1,6 @@
-# LEMP Ubuntu Utils Scripts
+# BROLY Shell
 
-"LEMP Ubuntu Utils Scripts" is a **BASH** script which can be used to quickly install a LEMP Stack on Ubuntu 18.04 and 20.04 servers, automate backups (files and databases), restore backups, install PHP projects, and other useful tasks.
+BROLY Shell (aka "LEMP Ubuntu Utils Scripts") is a **BASH** based cloud server control software which can be used to quickly install a LEMP Stack on Ubuntu 18.04 and 20.04 servers, automate and restore backups, install PHP projects, and other useful tasks.
 
 ![ScreenShot](./screenshot.jpg)
 
@@ -15,8 +15,16 @@
 * Reduce time and errors on IT tasks.
 * Backup automatization with email report.
 
+## Why BROLY?
+
+* Create, deploy and host anything with a single command
+* Frontend & backend templates
+* WordPress support
+* Open-source
+
 ## Main Features
 
+* Simple step-by-step configuration wizard.
 * LEMP automated installer (Nginx, MySQL/MariaDB, PHP).
 * Files and database backups (MySQL or MariaDB).
 * Upload backups to Dropbox (API v2).
