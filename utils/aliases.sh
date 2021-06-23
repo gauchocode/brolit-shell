@@ -44,7 +44,7 @@ VPSNAME="$HOSTNAME"
 
 SFOLDER="/root/lemp-utils-scripts"
 
-DEVOPS_CONFIG_PATH="/etc/devops/"
+BROLIT_CONFIG_PATH="/etc/brolit"
 
 ################################################################################
 
@@ -587,7 +587,7 @@ function _project_get_config() {
 
 
     project_name="$(basename "${project_path}")"
-    project_config_file="${DEVOPS_CONFIG_PATH}/${project_name}-devops.conf"
+    project_config_file="${BROLIT_CONFIG_PATH}/${project_name}-brolit.conf"
 
     if [[ -e ${project_config_file} ]]; then
 
@@ -1064,8 +1064,8 @@ function read_site_config() {
     local project_config
     local project_config_file
 
-    #DEVOPS_CONFIG_FILE="${SITES}/${project_domain}/devops.conf"
-    project_config_file="${DEVOPS_CONFIG_PATH}/${project_name}-devops.conf"
+    #DEVOPS_CONFIG_FILE="${SITES}/${project_domain}/brolit.conf"
+    project_config_file="${BROLIT_CONFIG_PATH}/${project_name}-brolit.conf"
 
     if [[ -f ${project_config_file} ]]; then
 

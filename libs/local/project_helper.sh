@@ -77,7 +77,7 @@ function project_create_config() {
   local project_config_file
 
   # Project config file
-  project_config_file="${DEVOPS_CONFIG_PATH}/${project_name}-devops.conf"
+  project_config_file="${BROLIT_CONFIG_PATH}/${project_name}-brolit.conf"
 
   if [[ -e ${project_config_file} ]]; then
 
@@ -88,7 +88,7 @@ function project_create_config() {
   else
 
     # Copy empty config file
-    cp "${SFOLDER}/config/devops.conf" "${project_config_file}"
+    cp "${SFOLDER}/config/brolit.conf" "${project_config_file}"
 
   fi
 
@@ -177,7 +177,7 @@ function project_update_config() {
   project_name="$(project_get_name_from_domain "${project_domain}")"
 
   # Project config file
-  project_config_file="${DEVOPS_CONFIG_PATH}/${project_name}-devops.conf"
+  project_config_file="${BROLIT_CONFIG_PATH}/${project_name}-brolit.conf"
 
   if [[ -e ${project_config_file} ]]; then
 
@@ -216,7 +216,7 @@ function project_get_config() {
 
   project_name="$(project_get_name_from_domain "${project_domain}")"
 
-  project_config_file="${DEVOPS_CONFIG_PATH}/${project_name}-devops.conf"
+  project_config_file="${BROLIT_CONFIG_PATH}/${project_name}-brolit.conf"
 
   if [[ -e ${project_config_file} ]]; then
 

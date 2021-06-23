@@ -41,15 +41,15 @@ function _setup_globals_and_options() {
   declare -g VPSNAME="$HOSTNAME"
 
   # Default directories
-  declare -g DEVOPS_CONFIG_PATH="/etc/devops"
+  declare -g BROLIT_CONFIG_PATH="/etc/brolit"
   declare -g WSERVER="/etc/nginx"           # Webserver config files location
   declare -g MySQL_CF="/etc/mysql"          # MySQL config files location
   declare -g PHP_CF="/etc/php"              # PHP config files location
   declare -g LENCRYPT_CF="/etc/letsencrypt" # Let's Encrypt config files location
 
-  # Creating devops folder
-  if [[ ! -d ${DEVOPS_CONFIG_PATH} ]]; then
-    mkdir "${DEVOPS_CONFIG_PATH}"
+  # Creating brolit folder
+  if [[ ! -d ${BROLIT_CONFIG_PATH} ]]; then
+    mkdir "${BROLIT_CONFIG_PATH}"
   fi
 
   # Folder blacklist
@@ -251,7 +251,7 @@ function _check_distro() {
 
 function script_init() {
 
-  # Parameters (only to detect if script is runned by devops app)
+  # Parameters (only to detect if script is runned by brolit app)
   # ${1} = ${1} runner first parameter
   # ${2} = ${2} runner second parameter
 
@@ -403,7 +403,7 @@ function script_init() {
   log_event "info" "SERVER IP: ${SERVER_IP}"
 
   # EXPORT VARS
-  export SCRIPT_V VPSNAME DEVOPS_CONFIG_PATH TMP_DIR SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V SERVER_CONFIG
+  export SCRIPT_V VPSNAME BROLIT_CONFIG_PATH TMP_DIR SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V SERVER_CONFIG
   export LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP MYSQL_ROOT MYSQLDUMP_ROOT TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MAILA NOW NOWDISPLAY ONEWEEKAGO
   export SENDEMAIL DISK_U ONE_FILE_BK SERVER_IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_BACKUP_DBS STATUS_BACKUP_FILES STATUS_SERVER STATUS_CERTS OUTDATED_PACKAGES
   export BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR
