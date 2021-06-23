@@ -388,8 +388,11 @@ function project_install() {
   root_domain="$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")"
 
   if [[ ${project_name} == '' ]]; then
+
     possible_project_name="$(extract_domain_extension "${project_domain}")"
+
     project_name="$(ask_project_name "${possible_project_name}")"
+
   fi
 
   # TODO: check when add www.DOMAIN.com and then select other stage != prod
@@ -524,6 +527,7 @@ function project_delete_database() {
   # List databases
   databases="$(mysql_list_databases)"
   chosen_database="$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)"
+  
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -532,13 +536,8 @@ function project_delete_database() {
 
     BK_TYPE="database"
 
-    # TO-FIX:
-    #   With deb04_broobe_prod this DB_NAME, fails to extract suffix:
-    #   - Deleting deb04_broobe_prod_user user in MySQL             [ FAIL ]
-
-    # Remove DB suffix to get project_name
-    suffix="$(cut -d'_' -f2 <<<${chosen_database})"
-    project_name=${chosen_database%"_$suffix"}
+    # Remove stage from database name
+    project_name="${chosen_database%_*}"
 
     user_db="${project_name}_user"
 
