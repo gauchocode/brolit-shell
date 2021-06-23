@@ -24,7 +24,7 @@ printf "%40s\n" "██████╔╝██║  ██║╚█████�
 printf "%40s\n" "╚═════╝ ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═════╝ ╚══════"
 printf "%40s\n" "------------------- SERVER ----------------------"
 
-printf "%40s\n" "Running ${SCRIPT_N} v${SCRIPT_V}"
+printf '\n%s\n' "                                                          "
 
 #printf "%40s\n" "You can generate this tags here: http://patorjk.com/software/taag/"
 
@@ -34,4 +34,3 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 printf "%40s\n" "You are loggedin as root, please don't do anything stupid..."
-printf '\n%s\n' "                                                          "
