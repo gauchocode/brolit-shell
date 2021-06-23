@@ -20,7 +20,6 @@ if [[ ${DROPBOX_ENABLE} == "true" && -f ${DPU_CONFIG_FILE} ]]; then
     DPU_F="/root/lemp-utils-scripts/tools/third-party/dropbox-uploader"
     # Dropbox-uploader runner
     DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
-    #DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader_original.sh"
 
 fi
 
