@@ -1,34 +1,37 @@
 #!/bin/sh
 
 # Foreground Colours
-RED='\E[31;40m'
-CYAN='\E[36;40m'
-ENDCOLOR='\033[0m'
+#RED='31'
+#CYAN='36'
 
 [ -r /etc/lsb-release ] && . /etc/lsb-release
 
-if [ -z "$DISTRIB_DESCRIPTION" ] && [ -x /usr/bin/lsb_release ]; then
+if [ -z "${DISTRIB_DESCRIPTION}" ] && [ -x /usr/bin/lsb_release ]; then
 	# Fall back to using the very slow lsb_release utility
 	DISTRIB_DESCRIPTION="$(lsb_release -s -d)"
 fi
 
-echo -e "${CYAN}                                                 ${ENDCOLOR}" >&2
+printf "\n"
 
-printf "Welcome to %s (%s %s %s)\n" "$DISTRIB_DESCRIPTION" "$(uname -o)" "$(uname -r)" "$(uname -m)"
+printf "Welcome to %s (%s %s %s)\n" "${DISTRIB_DESCRIPTION}" "$(uname -o)" "$(uname -r)" "$(uname -m)"
 
-echo -e "${CYAN}                                                 ${ENDCOLOR}" >&2
-echo -e "${CYAN}██████╗ ██████╗  ██████╗  ██████╗ ██████╗ ███████${ENDCOLOR}" >&2
-echo -e "${CYAN}██╔══██╗██╔══██╗██╔═══██╗██╔═══██╗██╔══██╗██╔══  ${ENDCOLOR}" >&2
-echo -e "${CYAN}██████╔╝██████╔╝██║   ██║██║   ██║██████╔╝█████  ${ENDCOLOR}" >&2
-echo -e "${CYAN}██╔══██╗██╔══██╗██║   ██║██║   ██║██╔══██╗██╔    ${ENDCOLOR}" >&2
-echo -e "${CYAN}██████╔╝██║  ██║╚██████╔╝╚██████╔╝██████╔╝███████${ENDCOLOR}" >&2
-echo -e "${CYAN}╚═════╝ ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═════╝ ╚══════${ENDCOLOR}" >&2
-echo -e "${CYAN}                                                 ${ENDCOLOR}" >&2
+printf '\n%s\n' "                                                          "
+printf "%40s\n" "██████╗ ██████╗  ██████╗  ██████╗ ██████╗ ███████"
+printf "%40s\n" "██╔══██╗██╔══██╗██╔═══██╗██╔═══██╗██╔══██╗██╔══  "
+printf "%40s\n" "██████╔╝██████╔╝██║   ██║██║   ██║██████╔╝█████  "
+printf "%40s\n" "██╔══██╗██╔══██╗██║   ██║██║   ██║██╔══██╗██╔    "
+printf "%40s\n" "██████╔╝██║  ██║╚██████╔╝╚██████╔╝██████╔╝███████"
+printf "%40s\n" "╚═════╝ ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═════╝ ╚══════"
+printf "%40s\n" "------------------- SERVER ----------------------"
+
+printf "%40s\n" "Running ${SCRIPT_N} v${SCRIPT_V}"
+
+#printf "%40s\n" "You can generate this tags here: http://patorjk.com/software/taag/"
 
 # if it is non-root user, skip
 if [ "$(id -u)" -ne 0 ]; then
     exit 0
 fi
 
-echo -e "${RED}You are loggedin as root, please don't do anything stupid...${ENDCOLOR}" >&2
-echo -e "${CYAN}                                                 ${ENDCOLOR}" >&2
+printf "%40s\n" "You are loggedin as root, please don't do anything stupid..."
+printf '\n%s\n' "                                                          "
