@@ -176,7 +176,7 @@ function wordpress_project_install() {
   display --indent 6 --text "- WordPress installation for domain ${project_domain}" --result "DONE" --color GREEN
 
   # Send notification
-  send_notification "${VPSNAME}" "WordPress installation for domain ${project_domain} finished"
+  send_notification "✅ ${VPSNAME}" "WordPress installation for domain ${project_domain} finished" ""
 
 }
 
@@ -344,6 +344,6 @@ function wordpress_project_copy() {
   display --indent 6 --text "- WordPress installation for domain ${project_domain}" --result "DONE" --color GREEN
 
   # Send notification
-  send_notification "${VPSNAME}" "WordPress installation for domain ${project_domain} finished"
+  send_notification "✅ ${VPSNAME}" "WordPress installation for domain ${project_domain} finished"
 
 }
