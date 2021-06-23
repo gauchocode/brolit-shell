@@ -22,6 +22,8 @@ printf "%40s\n" "██╔══██╗██╔══██╗██║   █
 printf "%40s\n" "██████╔╝██║  ██║╚██████╔╝╚██████╔╝██████╔╝███████"
 printf "%40s\n" "╚═════╝ ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═════╝ ╚══════"
 
+printf '\n%s' ""
+
 #printf '\n%s\n' "$(echo ${HOSTNAME})"
 
 #printf "%40s\n" "You can generate this tags here: http://patorjk.com/software/taag/"
