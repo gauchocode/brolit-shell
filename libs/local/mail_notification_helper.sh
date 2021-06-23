@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.38
+# Version: 3.0.39
 ################################################################################
 
 # sendmail --help
@@ -688,7 +688,7 @@ function mail_footer() {
     local mail_footer
 
     footer_open="<div style=\"font-size:10px;float:left;font-family:Verdana,Helvetica,Arial;text-align:right;padding-right:5px;width:100%;height:20px\"><a href=\"https://www.broobe.com/web-mobile-development/?utm_source=linux-script&utm_medium=email&utm_campaign=landing_it\" style=\"color: #503fe0;font-weight: bold;font-style: italic;\">"
-    script_string="LEMP UTILS SCRIPT Version: ${script_v} by BROOBE"
+    script_string="BROLIT SCRIPT Version: ${script_v} by BROOBE"
     footer_close="</a></div></div>"
 
     html_close="$(mail_html_end)"

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.38
+# Version: 3.0.39
 ################################################################################
 #
 # WP-CLI Helper: Perform wpcli actions.
 #
-# Refs: https://www.tecmint.com/scan-linux-for-malware-and-rootkits/
+# Refs: https://developer.wordpress.org/cli/commands/
 #
 ################################################################################
 
