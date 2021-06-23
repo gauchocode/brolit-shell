@@ -428,9 +428,13 @@ function customize_ubuntu_login_message() {
 
   fi
 
+  # Disable default messages
+  chmod -x /etc/update-motd.d/*
+
   # Copy new login message
   cp "${SFOLDER}/config/motd/00-header" "/etc/update-motd.d"
 
+  # Enable new message
   chmod +x "/etc/update-motd.d/00-header"
 
   # Force update
