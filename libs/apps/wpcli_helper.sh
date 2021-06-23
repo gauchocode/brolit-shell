@@ -3,8 +3,22 @@
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Version: 3.0.38
 ################################################################################
+#
+# WP-CLI Helper: Perform wpcli actions.
+#
+# Refs: https://www.tecmint.com/scan-linux-for-malware-and-rootkits/
+#
+################################################################################
 
-### wpcli installation
+################################################################################
+# Installs wpcli if not installed.
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   0 if wpcli was installed, 1 on error.
+################################################################################
 
 function wpcli_install_if_not_installed() {
 
@@ -14,9 +28,30 @@ function wpcli_install_if_not_installed() {
 
     if [[ ! -x "${wpcli}" ]]; then
         wpcli_install
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+            return 0
+
+        else
+
+            return 1
+
+        fi
     fi
 
 }
+
+################################################################################
+# Check if wpcli is installed.
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   "true" if wpcli is installed, "false" if not.
+################################################################################
 
 function wpcli_check_if_installed() {
 
@@ -27,6 +62,7 @@ function wpcli_check_if_installed() {
     wpcli_v="$(wpcli_check_version)"
 
     if [[ -z "${wpcli_v}" ]]; then
+
         wpcli_installed="false"
 
     fi
@@ -35,6 +71,16 @@ function wpcli_check_if_installed() {
     echo "${wpcli_installed}"
 
 }
+
+################################################################################
+# Check wpcli version.
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   wpcli version.
+################################################################################
 
 function wpcli_check_version() {
 
@@ -47,6 +93,16 @@ function wpcli_check_version() {
 
 }
 
+################################################################################
+# Install wpcli.
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   0 if wpcli was installed, 1 on error.
+################################################################################
+
 function wpcli_install() {
 
     log_event "info" "Installing wp-cli ..."
@@ -55,39 +111,117 @@ function wpcli_install() {
     # Download wp-cli
     curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
 
-    chmod +x wp-cli.phar
-    mv wp-cli.phar "/usr/local/bin/wp"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
 
-    # Log
-    clear_last_line
-    clear_last_line
-    clear_last_line
-    clear_last_line
-    display --indent 6 --text "- Installing wp-cli" --result "DONE" --color GREEN
-    log_event "info" "wp-cli installed"
+        chmod +x wp-cli.phar
+        mv wp-cli.phar "/usr/local/bin/wp"
+
+        # Log
+        clear_last_line
+        clear_last_line
+        clear_last_line
+        clear_last_line
+        display --indent 6 --text "- Installing wp-cli" --result "DONE" --color GREEN
+        log_event "info" "wp-cli installed" "false"
+
+        return 0
+
+    else
+
+        # Log
+        clear_last_line
+        clear_last_line
+        clear_last_line
+        clear_last_line
+        display --indent 6 --text "- Installing wp-cli" --result "FAIL" --color RED
+        log_event "error" "wp-cli was not installed!" "false"
+
+        return 1
+
+    fi
 
 }
+
+################################################################################
+# Update wpcli.
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   0 if wpcli was updated, 1 on error.
+################################################################################
 
 function wpcli_update() {
 
-    log_event "debug" "Running: wp-cli update"
+    log_event "debug" "Running: wp-cli update" "false"
 
     wp cli update --quiet
 
-    log_event "info" "wp-cli installed"
-    display --indent 2 --text "- Updating wp-cli" --result "DONE" --color GREEN
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        log_event "info" "wp-cli updated" "false"
+        display --indent 2 --text "- Updating wp-cli" --result "DONE" --color GREEN
+
+        return 0
+
+    else
+
+        log_event "error" "wp-cli was not updated!" "false"
+        display --indent 2 --text "- Updating wp-cli" --result "FAIL" --color RED
+
+        return 1
+
+    fi
 
 }
+
+################################################################################
+# Uninstall wpcli.
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   0 if wpcli was uninstalled, 1 on error.
+################################################################################
 
 function wpcli_uninstall() {
 
     log_event "warning" "Uninstalling wp-cli ..."
 
-    rm "/usr/local/bin/wp"
+    rm --recursive --force "/usr/local/bin/wp"
 
-    display --indent 6 --text "- Uninstalling wp-cli" --result "DONE" --color GREEN
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        log_event "info" "wp-cli uninstalled" "false"
+        display --indent 6 --text "- Uninstalling wp-cli" --result "DONE" --color GREEN
+
+        return 0
+
+    else
+
+        log_event "error" "wp-cli was not uninstalled!" "false"
+        display --indent 6 --text "- Uninstalling wp-cli" --result "FAIL" --color RED
+
+        return 1
+
+    fi
 
 }
+
+################################################################################
+# Check if a wpcli package is installed.
+#
+# Arguments:
+#   $1 = ${wpcli_package}
+#
+# Outputs:
+#   "true" if wpcli package is installed, "false" if not.
+################################################################################
 
 function wpcli_check_if_package_is_installed() {
 
@@ -750,9 +884,19 @@ function wpcli_set_salts() {
 
     log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} config shuffle-salts" "false"
 
+    # Command
     sudo -u www-data wp --path="${wp_site}" config shuffle-salts --quiet
 
-    display --indent 6 --text "- Shuffle salts" --result "DONE" --color GREEN
+    exitstatus=$?
+    if [[ ! ${exitstatus} -eq 0 ]]; then
+
+        display --indent 6 --text "- Shuffle salts" --result "DONE" --color GREEN
+    else
+
+        display --indent 6 --text "- Shuffle salts" --result "FAIL" --color RED
+        return 1
+
+    fi
 
 }
 
@@ -773,11 +917,12 @@ function wpcli_delete_not_core_files() {
         # Remove white space
         wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
 
-        if test -f "${wp_site}/${wpcli_core_verify_result_file}"; then
+        if [[ -f "${wp_site}/${wpcli_core_verify_result_file}" ]]; then
+
+            rm "${wp_site}/${wpcli_core_verify_result_file}"
 
             log_event "info" "Deleting not core file: ${wp_site}/${wpcli_core_verify_result_file}"
             display --indent 8 --text "Suspicious file: ${wpcli_core_verify_result_file}"
-            rm "${wp_site}/${wpcli_core_verify_result_file}"
 
         fi
 
@@ -839,7 +984,7 @@ function wpcli_seoyoast_reindex() {
         # Log
         clear_last_line
         display --indent 6 --text "- Running yoast re-index" --result "FAIL" --color RED
-        log_event "ERROR" "Yoast re-index failed!"
+        log_event "error" "Yoast re-index failed!"
 
     fi
 
@@ -1129,13 +1274,25 @@ function wpcli_option_get_siteurl() {
     # wp-cli command
     wp_option_siteurl="$(sudo -u www-data wp --path="${wp_site}" option get siteurl)"
 
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} option get siteurl"
-    log_event "info" "wp_option_siteurl:${wp_option_siteurl}"
+    # Log
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} option get siteurl" "false"
+    log_event "info" "wp_option_siteurl:${wp_option_siteurl}" "false"
 
     # Return
     echo "${wp_option_siteurl}"
 
 }
+
+################################################################################
+# Get a configuration option on a WordPress installation.
+#
+# Arguments:
+#   $1 = ${wp_site}
+#   $2 = ${wp_config_option}
+#
+# Outputs:
+#   0 if option was configured, 1 on error.
+################################################################################
 
 function wpcli_config_get() {
 
@@ -1151,19 +1308,31 @@ function wpcli_config_get() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        log_event "debug" "Command executed: sudo -u www-data wp --path=${wp_site} config get ${wp_config_option}"
-        log_event "debug" "wp config get return:${wp_config}"
+        log_event "debug" "Command executed: sudo -u www-data wp --path=${wp_site} config get ${wp_config_option}" "false"
+        log_event "debug" "wp config get return:${wp_config}" "false"
         return 0
 
     else
 
-        log_event "debug" "Command executed: sudo -u www-data wp --path=${wp_site} config get ${wp_config_option}"
-        log_event "error" "wp config get return:${wp_config}"
+        log_event "debug" "Command executed: sudo -u www-data wp --path=${wp_site} config get ${wp_config_option}" "false"
+        log_event "error" "wp config get return:${wp_config}" "false"
         return 1
 
     fi
 
 }
+
+################################################################################
+# Set a configuration option on a WordPress installation.
+#
+# Arguments:
+#   $1 = ${wp_site}
+#   $2 = ${wp_config_option}
+#   $3 = ${wp_config_option_value}
+#
+# Outputs:
+#   0 if option was configured, 1 on error.
+################################################################################
 
 function wpcli_config_set() {
 
@@ -1181,14 +1350,14 @@ function wpcli_config_set() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        log_event "debug" "Command executed: sudo -u www-data wp --path=${wp_site} config set ${wp_config_option} ${wp_config_option_value}"
-        log_event "debug" "wp config get return:${wp_config}"
+        log_event "debug" "Command executed: sudo -u www-data wp --path=${wp_site} config set ${wp_config_option} ${wp_config_option_value}" "false"
+        log_event "debug" "wp config get return:${wp_config}" "false"
         return 0
 
     else
 
-        log_event "debug" "Command executed: sudo -u www-data wp --path=${wp_site} config set ${wp_config_option} ${wp_config_option_value}"
-        log_event "error" "wp config get return:${wp_config}"
+        log_event "debug" "Command executed: sudo -u www-data wp --path=${wp_site} config set ${wp_config_option} ${wp_config_option_value}" "false"
+        log_event "error" "wp config get return:${wp_config}" "false"
         return 1
 
     fi
