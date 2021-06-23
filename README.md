@@ -1,4 +1,4 @@
-# BROLY Shell
+# BROLIT Shell
 
 BROLY Shell (aka "LEMP Ubuntu Utils Scripts") is a **BASH** based cloud server control software which can be used to quickly install a LEMP Stack on Ubuntu 18.04 and 20.04 servers, automate and restore backups, install PHP projects, and other useful tasks.
 
@@ -15,7 +15,7 @@ BROLY Shell (aka "LEMP Ubuntu Utils Scripts") is a **BASH** based cloud server c
 * Reduce time and errors on IT tasks.
 * Backup automatization with email report.
 
-## Why BROLY?
+## Why BROLIT?
 
 * Create, deploy and host anything with a single command
 * Frontend & backend templates
@@ -38,6 +38,7 @@ BROLY Shell (aka "LEMP Ubuntu Utils Scripts") is a **BASH** based cloud server c
 * Cloudflare support (via API).
 * PHP-FPM optimization tool (beta).
 * Image optimization tools.
+* Fail2ban support.
 * Security Tools with malware scanners.
 * IP/Domain blacklist checker.
 * Step-by-step configuration wizard.
