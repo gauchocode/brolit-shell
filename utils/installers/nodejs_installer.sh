@@ -98,7 +98,7 @@ function nodejs_installer() {
     log_event "info" "Installing nodejs and dependencies"
 
     # apt command
-    apt-get --yes install nodejs -qq >/dev/null
+    apt-get --yes install nodejs npm -qq >/dev/null
 
     # Log
     clear_last_line
@@ -116,7 +116,7 @@ function nodejs_purge() {
     log_event "info" "Removing nodejs and libraries ..."
 
     # apt command
-    apt-get --yes purge nodejs -qq >/dev/null
+    apt-get --yes purge nodejs npm -qq >/dev/null
 
     # Log
     clear_last_line

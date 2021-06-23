@@ -186,7 +186,7 @@ function _check_root() {
     exit 1
 
   else
-    log_event "debug" "Script runned by root"
+    log_event "debug" "Script runned by root" "false"
     return 0
 
   fi
@@ -197,7 +197,7 @@ function _check_scripts_permissions() {
 
   ### chmod
   find ./ -name "*.sh" -exec chmod +x {} \;
-  log_event "debug" "Executing chmod +x on *.sh"
+  log_event "debug" "Executing chmod +x on *.sh" "false"
 
 }
 
@@ -221,19 +221,19 @@ function _check_distro() {
     MIN_V="$(echo "18.04" | awk -F "." '{print $1$2}')"
     DISTRO_V="$(get_ubuntu_version)"
 
-    log_event "info" "Actual linux distribution: ${DISTRO} ${DISTRO_V}"
+    log_event "info" "Actual linux distribution: ${DISTRO} ${DISTRO_V}" "false"
 
     if [[ ! ${DISTRO_V} -ge ${MIN_V} ]]; then
 
       log_event "WARNING" "Ubuntu version must be 18.04 or 20.04! Use this script only for backup or restore purpose." "true"
 
-      spinner_start "Script starts in 5 seconds ..."
+      spinner_start "Script starts in 3 seconds ..."
       sleep 3
       spinner_stop $?
 
       distro_old="true"
 
-      log_event "debug" "Setting distro_old: ${distro_old}"
+      log_event "debug" "Setting distro_old: ${distro_old}" "false"
 
     fi
 
@@ -302,10 +302,13 @@ function script_init() {
   clear_screen
 
   # Log Start
+  log_event "info" "Script Start -- $(date +%Y%m%d_%H%M)" "false"
+
+  # Welcome Message
   log_event "" "WELCOME TO ${SCRIPT_N} v${SCRIPT_V}" "true"
-  log_event "info" "Script Start -- $(date +%Y%m%d_%H%M)"
 
   ### Welcome #####################################################################
+  # Ref: http://patorjk.com/software/taag/
 
   log_event "" "                                                 " "true"
   log_event "" "██████╗ ██████╗  ██████╗  ██████╗ ██████╗ ███████" "true"
@@ -316,10 +319,6 @@ function script_init() {
   log_event "" "╚═════╝ ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═════╝ ╚══════" "true"
   log_event "" "                                                 " "true"
   log_event "" "-------------------------------------------------" "true"
-
-  # Ref: http://patorjk.com/software/taag/
-
-  ################################################################################
 
   # Checking distro
   _check_distro
@@ -415,8 +414,6 @@ function script_init() {
 
 function customize_ubuntu_login_message() {
 
-  # TODO: screenfetch support?
-
   # Remove unnecesary messages
   if [[ -d "/etc/update-motd.d/10-help-text " ]]; then
     rm "/etc/update-motd.d/10-help-text "
@@ -433,6 +430,8 @@ function customize_ubuntu_login_message() {
 
   # Copy new login message
   cp "${SFOLDER}/config/motd/00-header" "/etc/update-motd.d"
+
+  chmod +x "/etc/update-motd.d/00-header"
 
   # Force update
   run-parts "/etc/update-motd.d"
@@ -1518,7 +1517,8 @@ function menu_main_options() {
     "09)" "SCRIPT OPTIONS"
     "10)" "CRON TASKS"
   )
-  chosen_type=$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)
+
+  chosen_type="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
