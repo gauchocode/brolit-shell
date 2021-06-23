@@ -225,7 +225,7 @@ function _check_distro() {
 
     if [[ ! ${DISTRO_V} -ge ${MIN_V} ]]; then
 
-      log_event "WARNING" "Ubuntu version must be 18.04 or 20.04! Use this script only for backup or restore purpose." "true"
+      log_event "warning" "Ubuntu version must be 18.04 or 20.04! Use this script only for backup or restore purpose." "true"
 
       spinner_start "Script starts in 3 seconds ..."
       sleep 3
@@ -483,7 +483,7 @@ function validator_email_format() {
 
   if [[ ! "${email}" =~ ^[A-Za-z0-9._%+-]+@[[:alnum:].-]+\.[A-Za-z]{2,63}$ ]]; then
 
-    log_event "ERROR" "Invalid email format :: ${email}"
+    log_event "error" "Invalid email format :: ${email}" "false"
     return 1
 
   fi

@@ -2,17 +2,31 @@
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Version: 3.0.38
-#############################################################################
+################################################################################
+#
+# Security Helper: Perform security actions.
+#
+# Refs: https://www.tecmint.com/scan-linux-for-malware-and-rootkits/
+#
+################################################################################
+
+################################################################################
+# Send Notification: send notification to configured apps.
+#
+# Arguments:
+#   $1 = {notification_title}
+#   $2 = {notification_content}
+#   $3 = {notification_type}
+#
+# Outputs:
+#   0 if it utils were installed, 1 on error.
+################################################################################
 
 function send_notification() {
 
-    # $1 = {notification_title}
-    # $2 = {notification_content}
-    # $3 = {notification_type}
-
     local notification_title=$1
     local notification_content=$2
-	local notification_type=$3
+    local notification_type=$3
 
     if [[ ${TELEGRAM_NOTIF} == "true" ]]; then
 

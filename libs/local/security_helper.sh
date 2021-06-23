@@ -4,25 +4,60 @@
 # Version: 3.0.38
 ################################################################################
 #
+# Security Helper: Perform security actions.
+#
 # Refs: https://www.tecmint.com/scan-linux-for-malware-and-rootkits/
 #
 ################################################################################
 
+################################################################################
+# Installs security utils: clamav and lynis
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   0 if it utils were installed, 1 on error.
+################################################################################
+
 function security_install() {
 
-  log_event "info" "Installing clamav and lynis"
+  log_event "info" "Installing clamav and lynis" "false"
+
   display --indent 2 --text "- Installing clamav and lynis"
 
   apt-get --yes install clamav lynis -qq >/dev/null
 
-  #clear_last_line
-  display --indent 2 --text "- Installing clamav and lynis" --result "DONE" --color GREEN
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    #clear_last_line
+    display --indent 2 --text "- Installing clamav and lynis" --result "DONE" --color GREEN
+
+    return 0
+
+  else
+
+    #clear_last_line
+    display --indent 2 --text "- Installing clamav and lynis" --result "FAIL" --color RED
+
+    return 1
+
+  fi
 
 }
 
-function security_clamav_scan() {
+################################################################################
+# Clamav Scan: Update clamav database and performs a scan.
+#
+# Arguments:
+#   $1 = {directory} - directory to scan
+#
+# Outputs:
+#   Clamav result.
+################################################################################
 
-  # $1 = ${directory}
+function security_clamav_scan() {
 
   local directory=$1
 
@@ -67,7 +102,7 @@ function security_clamav_scan() {
   else
 
     clamscan_result="true"
-    log_event "WARNING" "Malware found on ${directory}. Please check result file: ${report_file}" "false"
+    log_event "warning" "Malware found on ${directory}. Please check result file: ${report_file}" "false"
 
   fi
 
@@ -76,15 +111,17 @@ function security_clamav_scan() {
 
 }
 
-function menu_security_system_audit() {
-
-  lynis audit system
-
-}
+################################################################################
+# Custom Scan: Performs a custom scan.
+#
+# Arguments:
+#   $1 = {directory} - directory to scan
+#
+# Outputs:
+#   Scan result.
+################################################################################
 
 function security_custom_scan() {
-
-  # $1 = ${directory}
 
   local directory=$1
 
@@ -103,5 +140,11 @@ function security_custom_scan() {
   grep -lr --include=*.php "shell_exec (" "${directory}"
 
   display --indent 2 --text "- Custom malware scanner" --result "DONE" --color GREEN
+
+}
+
+function menu_security_system_audit() {
+
+  lynis audit system
 
 }
