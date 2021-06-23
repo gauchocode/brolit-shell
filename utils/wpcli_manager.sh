@@ -27,14 +27,17 @@ function wpcli_manager() {
   # Install_path could return more than one wp installation
   second_path="$(echo "${install_path}" | cut -d " " -f 2)"
 
+  log_event "debug" "install_path=${install_path}" "false"
+  log_event "debug" "second_path=${second_path}" "false"
+
   if [[ ${second_path} != '' ]]; then
 
-    chosen_wp_path="$(whiptail --title "PHP Version Selection" --menu "Select the version of PHP you want to work with:" 20 78 10 $(for x in ${install_path}; do echo "${x} [X]"; done) 3>&1 1>&2 2>&3)"
+    chosen_wp_path="$(whiptail --title "Website Selection" --menu "Do you want to work with this installation?" 20 78 10 $(for x in ${install_path}; do echo "${x} [X]"; done) 3>&1 1>&2 2>&3)"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-      log_event "debug" "Working with ${chosen_wp_path}"
+      log_event "debug" "Working with ${chosen_wp_path}" "false"
 
       # Return
       wpcli_main_menu "${chosen_wp_path}"
@@ -104,7 +107,9 @@ function wpcli_main_menu() {
     "14)" "CREATE WP USER"
     "15)" "RESET WP USER PASSW"
   )
+  
   chosen_wpcli_options="$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 "${wpcli_options[@]}" 3>&1 1>&2 2>&3)"
+
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
