@@ -24,6 +24,9 @@ function wpcli_manager() {
   # Search a WordPress installation on selected directory
   install_path="$(wp_config_path "${wp_site}")"
 
+  # TODO: if install_path returns more than one WordPress installation, need to select one
+  # if returns one, go directly to to wpcli_main_menu
+
   # Install_path could return more than one wp installation
   second_path="$(echo "${install_path}" | cut -d " " -f 2)"
 
