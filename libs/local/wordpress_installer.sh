@@ -318,22 +318,45 @@ function wordpress_project_copy() {
     # Cloudflare API to change DNS records
     cloudflare_set_record "${root_domain}" "${project_domain}" "A"
 
-    # New site Nginx configuration
-    nginx_create_empty_nginx_conf "${SITES}/${project_domain}"
-    nginx_create_globals_config
-    nginx_server_create "${project_domain}" "wordpress" "single" ""
-
-    # HTTPS with Certbot
-    cert_project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-      certbot_certificate_install "${MAILA}" "${cert_project_domain}"
+      # New site Nginx configuration
+      nginx_create_empty_nginx_conf "${SITES}/${project_domain}"
+      nginx_create_globals_config
+      nginx_server_create "${project_domain}" "wordpress" "single" ""
+
+      # TODO: control nginx_server_create exit code
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        # HTTPS with Certbot
+        cert_project_domain="$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+          certbot_certificate_install "${MAILA}" "${cert_project_domain}"
+
+        else
+
+          log_event "info" "HTTPS support for ${project_domain} skipped" "false"
+          display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
+
+        fi
+
+      else
+
+        display --indent 6 --text "- Configuring nginx for ${project_domain}" --result "ERROR" --color RED
+        display --indent 8 --text "Please, fix nginx configuration, and run certbot manually to install a certificate"
+        log_event "error" "Configuring nginx for ${project_domain}!" "false"
+
+      fi
 
     else
 
-      log_event "info" "HTTPS support for ${project_domain} skipped" "false"
-      display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
+      display --indent 6 --text "- HTTPS support for ${project_domain}" --result "WARNING" --color YELLOW
+      display --indent 8 --text "Can't update DNS record, please change it manually and run certbot to install certificate!"
+      log_event "warning" "Can't update DNS record, please change it manually and run certbot to install certificate!" "false"
 
     fi
 

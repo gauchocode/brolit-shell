@@ -454,7 +454,7 @@ function cloudflare_set_record() {
 
         if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
             message="Update failed. Results:\n${update}"
-            log_event "error" "${message}"
+            log_event "error" "${message}" "false"
             display --indent 6 --text "- Updating subdomain on Cloudflare" --result "FAIL" --color RED
             display --indent 8 --text "${message}" --tcolor RED
 
@@ -462,9 +462,11 @@ function cloudflare_set_record() {
 
         else
             message="IP changed to: ${SERVER_IP}"
-            log_event "info" "${message}"
+            log_event "info" "${message}" "false"
             display --indent 6 --text "- Updating subdomain on Cloudflare" --result "DONE" --color GREEN
             display --indent 8 --text "IP: ${SERVER_IP}" --tcolor GREEN
+
+            return 0
 
         fi
 
@@ -486,7 +488,9 @@ function cloudflare_set_record() {
             _cloudflare_clear_garbage_output
 
             display --indent 6 --text "- Creating subdomain ${MAGENTA}${record_name}${ENDCOLOR}" --result "DONE" --color GREEN
-            log_event "info" "Subdomain ${record_name} added successfully"
+            log_event "info" "Subdomain ${record_name} added successfully" "false"
+
+            return 0
 
         else
 
@@ -494,8 +498,10 @@ function cloudflare_set_record() {
             _cloudflare_clear_garbage_output
 
             display --indent 6 --text "- Creating subdomain ${record_name}" --result "FAIL" --color RED
-            log_event "error" "Error creating subdomain ${record_name}"
+            log_event "error" "Error creating subdomain ${record_name}" "false"
             log_event "debug" "Last command executed: curl -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" -H \"X-Auth-Email: ${dns_cloudflare_email}\" -H \"X-Auth-Key: ${dns_cloudflare_api_key}\" -H \"Content-Type: application/json\" --data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}\""
+
+            return 1
 
         fi
 
