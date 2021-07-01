@@ -308,7 +308,7 @@ function script_init() {
   log_event "" "WELCOME TO" "true"
 
   ### Welcome #####################################################################
-  # Ref: http://patorjk.com/software/taag/
+  # Ref: http://patorjk.com/software/taag/ (ANSI SHADOW Font)
 
   log_event "" "                                             " "true"
   log_event "" "██████╗ ██████╗  ██████╗ ██╗     ██╗████████╗" "true"
@@ -317,7 +317,8 @@ function script_init() {
   log_event "" "██╔══██╗██╔══██╗██║   ██║██║     ██║   ██║   " "true"
   log_event "" "██████╔╝██║  ██║╚██████╔╝███████╗██║   ██║   " "true"
   log_event "" "╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝   ╚═╝   " "true"
-  log_event "" "           ${SCRIPT_N} v${SCRIPT_V} by BROOBE" "true"
+  log_event "" "              ${SCRIPT_N} v${SCRIPT_V} by BROOBE" "true"
+  log_event "" "                                             " "true"
   log_event "" "---------------------------------------------" "true"
 
   # Checking distro

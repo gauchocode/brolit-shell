@@ -85,7 +85,7 @@ function nginx_server_create() {
         sed -i "s/root_domain.com/${redirect_domains}/g" "${nginx_server_file}"
 
         # Search and replace domain.com string with correct project_domain
-        sed -i "s/domain.com/${project_domain}/g" "${WSERVER}/sites-available/${project_domain}"
+        sed -i "s/domain.com/${project_domain}/g" "${nginx_server_file}"
 
         display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
 
