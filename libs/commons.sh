@@ -1391,14 +1391,14 @@ function menu_first_run() {
   local first_run_string
   local chosen_first_run_options
 
-  first_run_options=(
-    "01)" "RUN LEMP SETUP"
-    "02)" "CONFIGURE THIS SCRIPT"
-  )
-
-  first_run_string+="\n It seens to be the first time you run this script.\n"
-  first_run_string+=" Now you have to options:\n"
+  first_run_string+="\n It seems to be the first time you run Brolit Shell.\n"
+  first_run_string+=" What do you want to do?:\n"
   first_run_string+="\n"
+
+  first_run_options=(
+    "01)" "RUN SERVER SETUP"
+    "02)" "CONFIGURE BROLIT"
+  )
 
   chosen_first_run_options="$(whiptail --title "BROLIT SCRIPT" --menu "${first_run_string}" 20 78 10 "${first_run_options[@]}" 3>&1 1>&2 2>&3)"
   exitstatus=$?
