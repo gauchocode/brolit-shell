@@ -281,7 +281,7 @@ function project_generate_config() {
 
   local project_config_file
 
-  log_event "info" "Trying to generate a new config for '${project_path}'..."
+  log_event "info" "Trying to generate a new config for '${project_path}'..." "false"
 
   # Trying to extract project data
   project_domain="$(basename "${project_path}")"
