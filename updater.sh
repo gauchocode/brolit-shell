@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.40
+# Version: 3.0.41
 #############################################################################
 
 SCRIPT="$(readlink -f "$0")"
@@ -48,7 +48,7 @@ function _self_update() {
 
     if git diff --name-only "origin/${BRANCH}" | grep -q "${SCRIPTFILE}"; then
 
-        echo -e "${GREEN}Found a new version of LEMP Script Utils, updating ...${ENDCOLOR}"
+        echo -e "${GREEN}Found a new version of BROLIT Shell, updating ...${ENDCOLOR}"
 
         git checkout --quiet "${BRANCH}"
         git reset --hard --quiet origin/master
