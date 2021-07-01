@@ -2,7 +2,7 @@
 #
 # Autor: BROOBE. web + mobile development - https://example.com
 # Script Name: BROLIT Shell
-# Version: 3.0.40
+# Version: 3.0.41
 ################################################################################
 
 ### Environment checks
