@@ -21,15 +21,6 @@ script_init
 
 log_event "info" "Running backups_tasks.sh" "false"
 
-# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
-source "${SFOLDER}/libs/mail_notification_helper.sh"
-# shellcheck source=${SFOLDER}/libs/telegram_notification_helper.sh
-source "${SFOLDER}/libs/telegram_notification_helper.sh"
-# shellcheck source=${SFOLDER}/libs/wordpress_helper.sh
-source "${SFOLDER}/libs/wordpress_helper.sh"
-# shellcheck source=${SFOLDER}/libs/wpcli_helper.sh
-source "${SFOLDER}/libs/wpcli_helper.sh"
-
 # Get all directories
 all_sites="$(get_all_directories "${SITES}")"
 
