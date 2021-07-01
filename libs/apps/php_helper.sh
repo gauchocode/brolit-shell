@@ -1,9 +1,24 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.39
+# Version: 3.0.40
+################################################################################
+#
+# PHP Helper: Perform php configuration tasks.
+#
 ################################################################################
 
+################################################################################
+# Check if php is installed
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   0 if php is installed, 1 on error.
+################################################################################
+
+# TODO: refactor to return 0 or 1
 function php_check_if_installed() {
 
   local php_installed
@@ -18,12 +33,22 @@ function php_check_if_installed() {
 
   fi
 
-  log_event "debug" "php_installed=${php_installed}"
+  log_event "debug" "php_installed=${php_installed}" "false"
 
   # Return
   echo "${php_installed}"
 
 }
+
+################################################################################
+# Check php installed versions
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   Array of installed versions.
+################################################################################
 
 function php_check_installed_version() {
   
@@ -59,12 +84,22 @@ function php_check_installed_version() {
 
   fi
 
-  log_event "debug" "Setting php_installed_versions=${php_installed_versions}"
+  log_event "debug" "Setting php_installed_versions=${php_installed_versions}" "false"
 
   # Return
   echo "${php_installed_versions}"
 
 }
+
+################################################################################
+# Check php activated version
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   String with default version.
+################################################################################
 
 function php_check_activated_version() {
   
@@ -89,21 +124,21 @@ function php_reconfigure() {
   # If $php_v not set, it will use $PHP_V global
   if [[ ${php_v} == "" ]];then php_v="${PHP_V}"; fi
   
-  log_event "info" "Moving php.ini configuration file"
+  log_event "info" "Moving php.ini configuration file" "false"
   cat "${SFOLDER}/config/php/php.ini" >"/etc/php/${php_v}/fpm/php.ini"
   display --indent 6 --text "- Moving php.ini configuration file" --result "DONE" --color GREEN
 
-  log_event "info" "Moving php-fpm.conf configuration file"
+  log_event "info" "Moving php-fpm.conf configuration file" "false"
   cat "${SFOLDER}/config/php/php-fpm.conf" >"/etc/php/${php_v}/fpm/php-fpm.conf"
   display --indent 6 --text "- Moving php-fpm.conf configuration file" --result "DONE" --color GREEN
 
   # Replace string to match PHP version
-  log_event "info" "Replacing string to match PHP version"
+  log_event "info" "Replacing string to match PHP version" "false"
   php_set_version_on_config "${php_v}" "/etc/php/${php_v}/fpm/php-fpm.conf"
   display --indent 6 --text "- Replacing string to match PHP version" --result "DONE" --color GREEN
 
   # Uncomment /status from fpm configuration
-  log_event "debug" "Uncommenting /status from fpm configuration"
+  log_event "debug" "Uncommenting /status from fpm configuration" "false"
   sed -i '/status_path/s/^;//g' "/etc/php/${php_v}/fpm/pool.d/www.conf"
 
   service php"${php_v}"-fpm reload
@@ -239,15 +274,13 @@ function php_opcode_config() {
 
 function php_count_installed_versions() {
 
-  echo $(ls -d /etc/php/*/fpm/pool.d 2>/dev/null |wc -l)
+  echo "$(ls -d /etc/php/*/fpm/pool.d 2>/dev/null |wc -l)"
 
 }
 
 function php_fpm_optimizations() {
 
   # TODO: need to check php versions installed (could be more than one)
-
-  log_event "info" "RUNNING PHP-FPM OPTIMIZATION TOOL"
 
   log_subsection "PHP-FPM Optimization Tool"
 
@@ -278,15 +311,15 @@ function php_fpm_optimizations() {
   display --indent 6 --text "REDIS_AVG_RAM: ${REDIS_AVG_RAM}"
   display --indent 6 --text "NETDATA_AVG_RAM: ${NETDATA_AVG_RAM}"
 
-  log_event "info" "PHP_V: ${PHP_V}"
-  log_event "info" "RAM_BUFFER: ${RAM_BUFFER}"
-  log_event "info" "CPUS: ${CPUS}"
-  log_event "info" "RAM: ${RAM}"
-  log_event "info" "PHP_AVG_RAM: ${PHP_AVG_RAM}"
-  log_event "info" "MYSQL_AVG_RAM: ${MYSQL_AVG_RAM}"
-  log_event "info" "NGINX_AVG_RAM: ${NGINX_AVG_RAM}"
-  log_event "info" "REDIS_AVG_RAM: ${REDIS_AVG_RAM}"
-  log_event "info" "NETDATA_AVG_RAM: ${NETDATA_AVG_RAM}"
+  log_event "info" "PHP_V: ${PHP_V}" "false"
+  log_event "info" "RAM_BUFFER: ${RAM_BUFFER}" "false"
+  log_event "info" "CPUS: ${CPUS}" "false"
+  log_event "info" "RAM: ${RAM}" "false"
+  log_event "info" "PHP_AVG_RAM: ${PHP_AVG_RAM}" "false"
+  log_event "info" "MYSQL_AVG_RAM: ${MYSQL_AVG_RAM}" "false"
+  log_event "info" "NGINX_AVG_RAM: ${NGINX_AVG_RAM}" "false"
+  log_event "info" "REDIS_AVG_RAM: ${REDIS_AVG_RAM}" "false"
+  log_event "info" "NETDATA_AVG_RAM: ${NETDATA_AVG_RAM}" "false"
 
   DELIMITER="="
 
@@ -318,12 +351,12 @@ function php_fpm_optimizations() {
   display --indent 6 --text "PM_MAX_REQUESTS_ORIGIN: ${PM_MAX_REQUESTS_ORIGIN}"
   display --indent 6 --text "PM_PROCESS_IDDLE_TIMEOUT_ORIGIN: ${PM_PROCESS_IDDLE_TIMEOUT_ORIGIN}"
 
-  log_event "info" "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN_ORIGIN}"
-  log_event "info" "PM_START_SERVERS: ${PM_START_SERVERS_ORIGIN}"
-  log_event "info" "PM_MIN_SPARE_SERVERS: ${PM_MIN_SPARE_SERVERS_ORIGIN}"
-  log_event "info" "PM_MAX_SPARE_SERVERS: ${PM_MAX_SPARE_SERVERS_ORIGIN}"
-  log_event "info" "PM_MAX_REQUESTS: ${PM_MAX_REQUESTS_ORIGIN}"
-  log_event "info" "PM_PROCESS_IDDLE_TIMEOUT: ${PM_PROCESS_IDDLE_TIMEOUT_ORIGIN}"
+  log_event "info" "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN_ORIGIN}" "false"
+  log_event "info" "PM_START_SERVERS: ${PM_START_SERVERS_ORIGIN}" "false"
+  log_event "info" "PM_MIN_SPARE_SERVERS: ${PM_MIN_SPARE_SERVERS_ORIGIN}" "false"
+  log_event "info" "PM_MAX_SPARE_SERVERS: ${PM_MAX_SPARE_SERVERS_ORIGIN}" "false"
+  log_event "info" "PM_MAX_REQUESTS: ${PM_MAX_REQUESTS_ORIGIN}" "false"
+  log_event "info" "PM_PROCESS_IDDLE_TIMEOUT: ${PM_PROCESS_IDDLE_TIMEOUT_ORIGIN}" "false"
 
   #Settings	Value Explanation
   #max_children	(Total RAM - Memory used for Linux, DB, etc.) / process size
@@ -357,12 +390,12 @@ function php_fpm_optimizations() {
   display --indent 6 --text "PM_MAX_REQUESTS: ${PM_MAX_REQUESTS}"
   display --indent 6 --text "PM_PROCESS_IDDLE_TIMEOUT: ${PM_PROCESS_IDDLE_TIMEOUT}"
 
-  log_event "info" "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN}"
-  log_event "info" "PM_START_SERVERS: ${PM_START_SERVERS}"
-  log_event "info" "PM_MIN_SPARE_SERVERS: ${PM_MIN_SPARE_SERVERS}"
-  log_event "info" "PM_MAX_SPARE_SERVERS: ${PM_MAX_SPARE_SERVERS}"
-  log_event "info" "PM_MAX_REQUESTS: ${PM_MAX_REQUESTS}"
-  log_event "info" "PM_PROCESS_IDDLE_TIMEOUT: ${PM_PROCESS_IDDLE_TIMEOUT}"
+  log_event "info" "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN}" "false"
+  log_event "info" "PM_START_SERVERS: ${PM_START_SERVERS}" "false"
+  log_event "info" "PM_MIN_SPARE_SERVERS: ${PM_MIN_SPARE_SERVERS}" "false"
+  log_event "info" "PM_MAX_SPARE_SERVERS: ${PM_MAX_SPARE_SERVERS}" "false"
+  log_event "info" "PM_MAX_REQUESTS: ${PM_MAX_REQUESTS}" "false"
+  log_event "info" "PM_PROCESS_IDDLE_TIMEOUT: ${PM_PROCESS_IDDLE_TIMEOUT}" "false"
 
   log_break "true"
 
@@ -385,15 +418,15 @@ function php_fpm_optimizations() {
         sed -ie "s|^pm\.max_requests =.*$|pm\.max_requests = ${PM_MAX_REQUESTS}|g" "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
         
         #Test the validity of your php-fpm configuration
-        result=$(php-fpm"${PHP_V}" -t 2>&1 | grep -w "test" | cut -d"." -f3 | cut -d" " -f4)
+        result="$(php-fpm"${PHP_V}" -t 2>&1 | grep -w "test" | cut -d"." -f3 | cut -d" " -f4)"
 
-        if [[ "${result}" = "successful" ]];then
-          log_event "info" "PHP optimizations applied!"
+        if [[ ${result} == "successful" ]];then
+          log_event "info" "PHP optimizations applied!" "false"
           display --indent 6 --text "- Applying optimizations" --result "DONE" --color GREEN
 
         else
-          debug=$(php-fpm"${PHP_V}" -t 2>&1)
-          log_event "error" "PHP optimizations fail: ${debug}"
+          debug="$(php-fpm"${PHP_V}" -t 2>&1)"
+          log_event "error" "PHP optimizations fail: ${debug}" "false"
           display --indent 6 --text "- Applying optimizations" --result "FAIL" --color RED
 
         fi
@@ -403,7 +436,7 @@ function php_fpm_optimizations() {
 
       [Nn]*)
 
-        log_event "info" "Skipping optimization ..."
+        log_event "info" "Skipping php-fpm optimization..." "false"
         display --indent 6 --text "- Applying optimizations" --result "SKIPPED" --color YELLOW
         break
       ;;
@@ -422,11 +455,12 @@ function php_select_version_to_work_with() {
   
   local chosen_php_v
 
-  chosen_php_v=$(whiptail --title "PHP Version Selection" --menu "Select the version of PHP you want to work with:" 20 78 10 $(for x in ${php_v}; do echo "${x} [X]"; done) 3>&1 1>&2 2>&3)
+  chosen_php_v="$(whiptail --title "PHP Version Selection" --menu "Select the version of PHP you want to work with:" 20 78 10 $(for x in ${php_v}; do echo "${x} [X]"; done) 3>&1 1>&2 2>&3)"
+  
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    log_event "debug" "Working with php${php_v}-fpm"
+    log_event "debug" "Working with php${php_v}-fpm" "false"
 
     # Return
     echo "${chosen_php_v}"

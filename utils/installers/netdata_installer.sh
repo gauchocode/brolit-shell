@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.39
+# Version: 3.0.40
 ################################################################################
 
 # Ref: https://github.com/nextcloud/vm/blob/master/apps/netdata.sh
@@ -35,7 +35,7 @@ function _netdata_alarm_level() {
   NETDATA_ALARM_LEVEL=$(whiptail --title "NETDATA ALARM LEVEL" --menu "Choose the Alarm Level for Notifications" 20 78 10 "$(for x in ${NETDATA_ALARM_LEVELS}; do echo "$x [X]"; done)" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
-    echo "NETDATA_ALARM_LEVEL=${NETDATA_ALARM_LEVEL}" >>/root/.broobe-utils-options
+    echo "NETDATA_ALARM_LEVEL=${NETDATA_ALARM_LEVEL}" >>/root/.brolit-shell.conf
     log_event "info" "Alarm Level for Notifications: ${NETDATA_ALARM_LEVEL}" "false"
 
   else
@@ -236,7 +236,7 @@ function netdata_installer_menu() {
       netdata_subdomain="$(whiptail --title "Netdata Installer" --inputbox "Please insert the subdomain you want to install Netdata. Ex: monitor.domain.com" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
-        echo "NETDATA_SUBDOMAIN=${netdata_subdomain}" >>"/root/.broobe-utils-options"
+        echo "NETDATA_SUBDOMAIN=${netdata_subdomain}" >>"/root/.brolit-shell.conf"
 
       else
         return 1

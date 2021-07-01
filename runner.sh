@@ -1,12 +1,9 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Script Name: LEMP Utils Script
-# Version: 3.0.39
+# Script Name: BROLIT Shell
+# Version: 3.0.40
 ################################################################################
-
-### Exit immediately if a command exits with a non-zero status
-#set -e
 
 ### Environment checks
 [ "${BASH_VERSINFO:-0}" -lt 4 ] && {

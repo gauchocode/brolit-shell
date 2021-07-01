@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.39
+# Version: 3.0.40
 #############################################################################
 
 # Libs apps directory path
@@ -21,7 +21,7 @@ for f in ${libs_local}; do source "${f}"; done
 # Load other sources
 source "${SFOLDER}/libs/notification_controller.sh"
 source "${SFOLDER}/utils/installers_and_configurators.sh"
-source "${SFOLDER}/utils/it_utils.sh"
+source "${SFOLDER}/utils/it_utils_manager.sh"
 
 #
 #############################################################################
@@ -35,7 +35,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SCRIPT"
-  declare -g SCRIPT_V="3.0.39"
+  declare -g SCRIPT_V="3.0.40"
 
   # Hostname
   declare -g VPSNAME="$HOSTNAME"
@@ -283,7 +283,7 @@ function script_init() {
     DEBUG=0
   else
     # Default log name
-    log_name="log_lemp_utils_${timestamp}.log"
+    log_name="brolit_shell_${timestamp}.log"
     EXEC_TYPE="default"
   fi
 
@@ -342,9 +342,9 @@ function script_init() {
   declare -g NETWORK_INTERFACE
 
   # BROOBE Utils config file
-  LEMP_UTILS_CONFIG_FILE=~/.broobe-utils-options
-  if test -f ${LEMP_UTILS_CONFIG_FILE}; then
-    source "${LEMP_UTILS_CONFIG_FILE}"
+  BROLIT_SHELL_CONFIG_FILE=~/.brolit-shell.conf
+  if test -f ${BROLIT_SHELL_CONFIG_FILE}; then
+    source "${BROLIT_SHELL_CONFIG_FILE}"
 
   else
     menu_first_run
@@ -390,27 +390,42 @@ function script_init() {
   # Check configuration
   check_script_configuration
 
-  # METHOD TO GET PUBLIC IP (if server has configured a floating ip, it will return this)
+  # LOCAL IP (if server has configured a floating ip, it will return this)
   NETWORK_INTERFACE="$(ip link show | grep '2: ' | cut -d ':' -f2)"
   NETWORK_INTERFACE="$(string_remove_spaces "${NETWORK_INTERFACE}")"
-  SERVER_IP="$(ifconfig "${NETWORK_INTERFACE}" | grep 'inet ' | awk '{print $2}' | sed 's/addr://')"
-  # Fallback
+  LOCAL_IP="$(ifconfig "${NETWORK_INTERFACE}" | grep 'inet ' | awk '{print $2}' | sed 's/addr://')" # Could be a floating ip
+
+  # PUBLIC IP (with https://www.ipify.org)
+  SERVER_IP="$(curl --silent 'https://api.ipify.org')"
   if [[ ${SERVER_IP} == "" ]]; then
-    # Alternative method to get public IP
-    SERVER_IP="$(curl -s http://ipv4.icanhazip.com)"
+    # Alternative method
+    SERVER_IP="$(curl --silent http://ipv4.icanhazip.com)"
+  else
+    # If api.apify.org works, get IPv6 too
+    SERVER_IPv6="$(curl --silent 'https://api64.ipify.org')"
   fi
 
-  log_event "info" "SERVER IP: ${SERVER_IP}"
+  log_event "info" "SERVER IP: ${SERVER_IP}" "false"
 
   # EXPORT VARS
   export SCRIPT_V VPSNAME BROLIT_CONFIG_PATH TMP_DIR SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V SERVER_CONFIG
   export LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP MYSQL_ROOT MYSQLDUMP_ROOT TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MAILA NOW NOWDISPLAY ONEWEEKAGO
-  export SENDEMAIL DISK_U ONE_FILE_BK SERVER_IP SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_BACKUP_DBS STATUS_BACKUP_FILES STATUS_SERVER STATUS_CERTS OUTDATED_PACKAGES
+  export SENDEMAIL DISK_U ONE_FILE_BK LOCAL_IP SERVER_IP SERVER_IPv6 SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_BACKUP_DBS STATUS_BACKUP_FILES STATUS_SERVER STATUS_CERTS OUTDATED_PACKAGES
   export BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR
   export dns_cloudflare_email dns_cloudflare_api_key
   export LOG DEBUG EXEC_TYPE QUIET SKIPTESTS
 
 }
+
+################################################################################
+# Customize Ubuntu Welcome/Login Message
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function customize_ubuntu_login_message() {
 
@@ -440,7 +455,32 @@ function customize_ubuntu_login_message() {
   # Force update
   run-parts "/etc/update-motd.d"
 
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    log_event "info" "Ubuntu Welcome message changed!" "false"
+
+    return 0
+
+  else
+
+    log_event "error" "Something went wrong trying to change Ubuntu Welcome message" "false"
+
+    return 1
+
+  fi
+
 }
+
+################################################################################
+# Install BROLIT aliases
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function install_script_aliases() {
 
@@ -462,8 +502,23 @@ function install_script_aliases() {
 
     cp "${SFOLDER}/utils/aliases.sh" ~/.bash_aliases
 
-    display --indent 2 --text "- Installing script aliases" --result "DONE" --color GREEN
-    display --indent 4 --text "Please now run: source ~/.bash_aliases" --tcolor CYAN
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+      display --indent 2 --text "- Installing BROLIT aliases" --result "DONE" --color GREEN
+      display --indent 4 --text "Please now run: source ~/.bash_aliases" --tcolor CYAN
+      log_event "info" "BROLIT aliases installed" "false"
+
+      return 0
+
+    else
+
+      display --indent 2 --text "- Installing BROLIT aliases" --result "FAIL" --color RED
+      log_event "error" "Something installing BROLIT aliases" "false"
+
+      return 1
+
+    fi
 
   fi
 
@@ -484,7 +539,12 @@ function validator_email_format() {
   if [[ ! "${email}" =~ ^[A-Za-z0-9._%+-]+@[[:alnum:].-]+\.[A-Za-z]{2,63}$ ]]; then
 
     log_event "error" "Invalid email format :: ${email}" "false"
+
     return 1
+
+  else
+
+    return 0
 
   fi
 
@@ -551,6 +611,14 @@ function validator_cron_format() {
 
 }
 
+#
+#############################################################################
+#
+# * Helpers
+#
+#############################################################################
+#
+
 function cleanup() {
 
   trap - SIGINT SIGTERM ERR EXIT
@@ -567,19 +635,11 @@ function die() {
   local msg=$1
   local code=${2-1} # default exit status 1
 
-  log_event "info" "${msg}"
+  log_event "info" "${msg}" "false"
 
   exit "${code}"
 
 }
-
-#
-#############################################################################
-#
-# * Helpers
-#
-#############################################################################
-#
 
 function whiptail_message() {
 
@@ -623,6 +683,16 @@ function whiptail_message_with_skip_option() {
 
 }
 
+################################################################################
+# Get Ubuntu version
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   String with Ubuntu version number
+################################################################################
+
 function get_ubuntu_version() {
 
   lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $2}' | awk -F "." '{print $1$2}'
@@ -653,16 +723,20 @@ function array_to_checklist() {
 
   done
 
-  # checklist_array returned
-  # export ${checklist_array}
-
 }
 
-function file_browser() {
+################################################################################
+# File browser
+#
+# Arguments:
+#   $1= ${menutitle}
+#   $2= ${startdir}
+#
+# Outputs:
+#   $filename and $filepath
+################################################################################
 
-  # Parameters
-  # $1= ${menutitle}
-  # $2= ${startdir}
+function file_browser() {
 
   local menutitle=$1
   local startdir=$2
@@ -708,6 +782,17 @@ function file_browser() {
   fi
 
 }
+
+################################################################################
+# Directory browser
+#
+# Arguments:
+#   $1= ${menutitle}
+#   $2= ${startdir}
+#
+# Outputs:
+#   $filename and $filepath
+################################################################################
 
 function directory_browser() {
 
@@ -762,6 +847,16 @@ function directory_browser() {
 
 }
 
+################################################################################
+# Get all directories from specific location
+#
+# Arguments:
+#   $1= ${main_dir}
+#
+# Outputs:
+#   String with directories
+################################################################################
+
 function get_all_directories() {
 
   # Parameters
@@ -776,21 +871,30 @@ function get_all_directories() {
 
 }
 
-function copy_files() {
+################################################################################
+# Copy files (with rsync)
+#
+# Arguments:
+#   $1= ${source_path}
+#   $2= ${destination_path}
+#   $3= ${excluded_path} - Optional: Need to be a relative path
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  # Parameters
-  # $1 = ${source_path}
-  # $2 = ${destination_path}
-  # $3 = ${excluded_path}     - Neet to be a relative path
+function copy_files() {
 
   local source_path=$1
   local destination_path=$2
   local excluded_path=$3
 
   if [[ ${excluded_path} != "" ]]; then
+
     rsync -ax --exclude "${excluded_path}" "${source_path}" "${destination_path}"
 
   else
+
     rsync -ax "${source_path}" "${destination_path}"
 
   fi
@@ -967,19 +1071,42 @@ function prompt_return_or_finish() {
 
 }
 
-# TODO: improve and use this instead of untar or unzip
-function extract() {
+function extract_filename_from_path() {
 
   # Parameters
-  # $1 - File to uncompress or extract
-  # $2 - Dir to uncompress file
-  # $3 - Optional compress-program (ex: lbzip2)
+  # $1 = ${file_with_path}
+
+  local file_with_path=$1
+
+  local file_name
+
+  file_name="$(basename -- "${file_with_path}")"
+
+  # Return
+  echo "${file_name}"
+
+}
+
+################################################################################
+# Extract compressed files
+#
+# Arguments:
+#   $1 = ${file} - File to uncompress or extract
+#   $2 = ${directory} - Dir to uncompress file
+#   $3 = ${compress_type} - Optional: compress-program (ex: lbzip2)
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+# TODO: improve and use this instead of untar or unzip
+function extract() {
 
   local file=$1
   local directory=$2
   local compress_type=$3
 
-  log_event "info" "Trying to extract compressed file: ${file}"
+  log_event "info" "Trying to extract compressed file: ${file}" "false"
 
   if [[ -f "${file}" ]]; then
 
@@ -1050,209 +1177,18 @@ function extract() {
 
 }
 
-function get_domain_extension() {
-
-  # Parameters
-  # $1 = ${domain}
-
-  local domain=$1
-
-  local first_lvl
-  local next_lvl
-  local domain_ext
-
-  log_event "info" "Working with domain: ${domain}" "false"
-
-  # Get first_lvl domain name
-  first_lvl="$(cut -d'.' -f1 <<<"${domain}")"
-
-  # Extract first_lvl
-  domain_ext=${domain#"$first_lvl."}
-
-  next_lvl="${first_lvl}"
-
-  local -i count=0
-  while ! grep --word-regexp --quiet ".${domain_ext}" "${SFOLDER}/config/domain_extension-list" && [ ! "${domain_ext#"$next_lvl"}" = "" ]; do
-
-    # Remove next level domain-name
-    domain_ext=${domain_ext#"$next_lvl."}
-    next_lvl="$(cut -d'.' -f1 <<<"${domain_ext}")"
-
-    count=("$count"+1)
-
-  done
-
-  if grep --word-regexp --quiet ".${domain_ext}" "${SFOLDER}/config/domain_extension-list"; then
-
-    domain_ext=.${domain_ext}
-
-    # Logging
-    log_event "debug" "Extracting domain extension from ${domain}."
-    log_event "debug" "Domain extension extracted: ${domain_ext}"
-
-    # Return
-    echo "${domain_ext}"
-
-  else
-
-    # Logging
-    log_event "error" "Extracting domain extension from ${domain}"
-
-    return 1
-
-  fi
-
-}
-
-function extract_filename_from_path() {
-
-  # Parameters
-  # $1 = ${file_with_path}
-
-  local file_with_path=$1
-
-  local file_name
-
-  file_name="$(basename -- "${file_with_path}")"
-
-  # Return
-  echo "${file_name}"
-
-}
-
-function extract_domain_extension() {
-
-  # Parameters
-  # $1 = ${domain}
-
-  local domain=$1
-
-  local domain_extension
-  local domain_no_ext
-
-  domain_extension="$(get_domain_extension "${domain}")"
-  domain_extension_output=$?
-  if [[ ${domain_extension_output} -eq 0 ]]; then
-
-    domain_no_ext=${domain%"$domain_extension"}
-
-    # Logging
-    log_event "debug" "domain_no_ext: ${domain_no_ext}"
-
-    # Return
-    echo "${domain_no_ext}"
-
-  else
-
-    log_break "true"
-    return 1
-
-  fi
-
-}
-
-function ask_root_domain() {
-
-  # Parameters
-  # $1 = ${suggested_root_domain}
-
-  local suggested_root_domain=$1
-  local root_domain
-
-  root_domain="$(whiptail --title "Root Domain" --inputbox "Confirm the root domain of the project." 10 60 "${suggested_root_domain}" 3>&1 1>&2 2>&3)"
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    # Return
-    echo "${root_domain}"
-
-  fi
-
-}
-
-function get_root_domain() {
-
-  # Parameters
-  # $1 = ${domain}
-
-  local domain=$1
-
-  local domain_extension
-  local domain_no_ext
-
-  # Get Domain Ext
-  domain_extension="$(get_domain_extension "${domain}")"
-
-  # Check result
-  domain_extension_output=$?
-  if [[ ${domain_extension_output} -eq 0 ]]; then
-
-    # Remove domain extension
-    domain_no_ext=${domain%"$domain_extension"}
-
-    root_domain=${domain_no_ext##*.}${domain_extension}
-
-    # Return
-    echo "${root_domain}"
-
-  else
-
-    return 1
-
-  fi
-
-}
-
-function get_subdomain_part() {
-
-  # Parameters
-  # $1 = ${domain}
-
-  local domain=$1
-
-  local domain_extension
-  local domain_no_ext
-  local subdomain_part
-
-  # Get Domain Ext
-  domain_extension="$(get_domain_extension "${domain}")"
-
-  # Check result
-  domain_extension_output=$?
-  if [[ ${domain_extension_output} -eq 0 ]]; then
-
-    # Remove domain extension
-    domain_no_ext=${domain%"$domain_extension"}
-
-    root_domain=${domain_no_ext##*.}${domain_extension}
-
-    if [[ ${root_domain} != "${domain}" ]]; then
-
-      subdomain_part=${domain//.$root_domain/}
-
-      # Return
-      echo "${subdomain_part}"
-
-    else
-
-      # Return
-      echo ""
-
-    fi
-
-  else
-
-    return 1
-
-  fi
-
-}
+################################################################################
+# Install script on crontab
+#
+# Arguments:
+#   $1 = ${script}
+#   $2 = ${scheduled_time}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function install_crontab_script() {
-
-  # Parameters
-  # $1 = ${script}
-  # $2 = ${scheduled_time}
 
   local script=$1
   local scheduled_time=$2
@@ -1283,128 +1219,20 @@ function install_crontab_script() {
 
     display --indent 2 --text "- Updating cron job" --result DONE --color GREEN
 
+    return 0
+
   else
     log_event "warning" "Script already installed"
     display --indent 2 --text "- Updating cron job" --result FAIL --color YELLOW
     display --indent 4 --text "Script already installed"
 
-  fi
-
-}
-
-#
-#################################################################################
-#
-# * Ask-for
-#
-#################################################################################
-#
-
-function ask_project_state() {
-
-  # Parameters
-  #$1 = ${suggested_state} optional to select default option
-
-  local suggested_state=$1
-
-  local project_states
-  local project_state
-
-  project_states="prod stage test beta dev"
-
-  if [[ ${suggested_state} != *"${project_states}"* ]]; then
-    suggested_state="prod"
-  fi
-
-  project_state="$(whiptail --title "Project State" --menu "Choose a Project State" 20 78 10 $(for x in ${project_states}; do echo "$x [X]"; done) --default-item "${suggested_state}" 3>&1 1>&2 2>&3)"
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    # Return
-    echo "${project_state}"
-
-  else
-
     return 1
 
   fi
 
 }
 
-function ask_project_name() {
-
-  # Parameters
-  # $1 = ${project_name} optional to select default option
-
-  local project_name=$1
-
-  # Replace '-' and '.' chars
-  possible_name="$(echo "${project_name}" | sed -r 's/[.-]+/_/g')"
-
-  project_name="$(whiptail --title "Project Name" --inputbox "Insert a project name (only separator allow is '_'). Ex: my_domain" 10 60 "${possible_name}" 3>&1 1>&2 2>&3)"
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    log_event "debug" "Setting project_name: ${project_name}"
-
-    # Return
-    echo "${project_name}"
-
-  else
-    return 1
-
-  fi
-
-}
-
-# TODO: project_domain should be an array?
-function ask_project_domain() {
-
-  # Parameters
-  # $1 = ${project_domain} optional to select default option
-
-  local project_domain=$1
-
-  project_domain="$(whiptail --title "Domain" --inputbox "Insert the project's domain. Example: landing.domain.com" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    # Return
-    echo "${project_domain}"
-
-  else
-
-    return 1
-
-  fi
-
-}
-
-function ask_project_type() {
-
-  # No parameters
-
-  local project_types
-  local project_type
-
-  project_types="WordPress X Laravel X Basic-PHP X HTML X"
-
-  project_type="$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 $(for x in ${project_types}; do echo "$x"; done) 3>&1 1>&2 2>&3)"
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    # Lowercase
-    project_type="$(echo "${project_type}" | tr '[A-Z]' '[a-z]')"
-
-    # Return
-    echo "${project_type}"
-
-  else
-    return 1
-
-  fi
-
-}
+# TODO: move to cloudflare helper?
 
 function ask_rootdomain_for_cloudflare_config() {
 
@@ -1456,48 +1284,6 @@ function ask_subdomains_to_cloudflare_config() {
   fi
 
 }
-
-function ask_folder_to_install_sites() {
-
-  # Parameters
-  # $1 = ${folder_to_install} optional to select default option (could be empty)
-
-  local folder_to_install=$1
-
-  if [[ -z "${folder_to_install}" ]]; then
-
-    folder_to_install="$(whiptail --title "Folder to work with" --inputbox "Please select the project folder you want to work with:" 10 60 "${folder_to_install}" 3>&1 1>&2 2>&3)"
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-
-      log_event "info" "Folder to work with: ${folder_to_install}"
-
-      # Return
-      echo "${folder_to_install}"
-
-    else
-      return 1
-
-    fi
-
-  else
-
-    log_event "info" "Folder to install: ${folder_to_install}"
-
-    # Return
-    echo "${folder_to_install}"
-
-  fi
-
-}
-
-#
-#################################################################################
-#
-# * Menues
-#
-#################################################################################
-#
 
 function menu_main_options() {
 
@@ -1589,7 +1375,10 @@ function menu_main_options() {
 
   else
 
+    log_event "info" "Exiting script ..." "false"
+
     echo -e "${B_RED}Exiting script ...${ENDCOLOR}"
+
     exit 0
 
   fi
@@ -1611,7 +1400,7 @@ function menu_first_run() {
   first_run_string+=" Now you have to options:\n"
   first_run_string+="\n"
 
-  chosen_first_run_options=$(whiptail --title "BROLIT SCRIPT" --menu "${first_run_string}" 20 78 10 "${first_run_options[@]}" 3>&1 1>&2 2>&3)
+  chosen_first_run_options="$(whiptail --title "BROLIT SCRIPT" --menu "${first_run_string}" 20 78 10 "${first_run_options[@]}" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -1737,359 +1526,6 @@ function menu_cron_script_tasks() {
 
     prompt_return_or_finish
     menu_cron_script_tasks
-
-  fi
-
-  menu_main_options
-
-}
-
-function menu_security_utils() {
-
-  # TODO: new options? https://upcloud.com/community/tutorials/scan-ubuntu-server-malware/
-
-  local security_options chosen_security_options
-
-  security_options=(
-    "01)" "CLAMAV MALWARE SCAN"
-    "02)" "CUSTOM MALWARE SCAN"
-    "03)" "LYNIS SYSTEM AUDIT"
-  )
-  chosen_security_options=$(whiptail --title "SECURITY TOOLS" --menu "Choose an option to run" 20 78 10 "${security_options[@]}" 3>&1 1>&2 2>&3)
-
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    security_install
-
-    if [[ ${chosen_security_options} == *"01"* ]]; then
-      menu_security_clamav_scan
-
-    fi
-    if [[ ${chosen_security_options} == *"02"* ]]; then
-      menu_security_custom_scan
-
-    fi
-    if [[ ${chosen_security_options} == *"03"* ]]; then
-      menu_security_system_audit
-
-    fi
-
-    prompt_return_or_finish
-    menu_security_utils
-
-  fi
-
-  menu_main_options
-
-}
-
-function menu_security_clamav_scan() {
-
-  local to_scan
-
-  startdir="${SITES}"
-  directory_browser "${menutitle}" "${startdir}"
-
-  to_scan=$filepath"/"$filename
-
-  log_event "info" "Starting clamav scan on: ${to_scan}" "false"
-
-  security_clamav_scan "${to_scan}"
-
-}
-
-function menu_security_custom_scan() {
-
-  local to_scan
-
-  startdir="${SITES}"
-  directory_browser "${menutitle}" "${startdir}"
-
-  to_scan=$filepath"/"$filename
-
-  log_event "info" "Starting custom scan on: ${to_scan}" "false"
-
-  security_custom_scan "${to_scan}"
-
-}
-
-function menu_new_project() {
-
-  local project_type_options
-  local chosen_project_type_options
-  local whip_title
-  local whip_description
-
-  whip_title="PROJECT UTILS"
-  whip_description=" "
-
-  project_type_options=(
-    "01)" "CREATE WP PROJECT"
-    "02)" "CREATE LARAVEL PROJECT"
-    "03)" "CREATE OTHER PHP PROJECT"
-    "04)" "CREATE NODE JS PROJECT"
-  )
-
-  chosen_project_type_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_type_options[@]}" 3>&1 1>&2 2>&3)"
-
-  exitstatus=$?
-  if [[ ${exitstatus} = 0 ]]; then
-
-    if [[ ${chosen_project_type_options} == *"01"* ]]; then
-
-      # WP PROJECT
-      project_install "${SITES}" "wordpress"
-
-    fi
-
-    if [[ ${chosen_project_type_options} == *"02"* ]]; then
-
-      # LARAVEL PROJECT
-      project_install "${SITES}" "laravel"
-
-    fi
-
-    if [[ ${chosen_project_type_options} == *"03"* ]]; then
-
-      # OTHER PHP PROJECT
-      project_install "${SITES}" "php"
-
-    fi
-
-    if [[ ${chosen_project_type_options} == *"04"* ]]; then
-
-      # NODE JS PROJECT
-      project_install "${SITES}" "node-js"
-
-    fi
-
-  fi
-
-}
-
-function menu_project_utils() {
-
-  local whip_title
-  local whip_description
-  local project_utils_options
-  local chosen_project_utils_options
-
-  whip_title="PROJECT UTILS"
-  whip_description=" "
-
-  project_utils_options=(
-    "01)" "CREATE NEW PROJECT"
-    "02)" "DELETE PROJECT"
-    "03)" "GENERATE PROJECT CONFIG"
-    "04)" "CREATE PROJECT DB  & USER"
-    "05)" "RENAME DATABASE"
-    "06)" "PUT PROJECT ONLINE"
-    "07)" "PUT PROJECT OFFLINE"
-    "08)" "REGENERATE NGINX SERVER"
-    "09)" "BENCH PROJECT GTMETRIX"
-  )
-
-  chosen_project_utils_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_utils_options[@]}" 3>&1 1>&2 2>&3)"
-
-  exitstatus=$?
-  if [[ ${exitstatus} = 0 ]]; then
-
-    if [[ ${chosen_project_utils_options} == *"01"* ]]; then
-
-      # CREATE NEW PROJECT
-      menu_new_project
-
-    fi
-
-    if [[ ${chosen_project_utils_options} == *"02"* ]]; then
-
-      # DELETE PROJECT
-      project_delete ""
-
-    fi
-
-    if [[ ${chosen_project_utils_options} == *"03"* ]]; then
-
-      # GENERATE PROJECT CONFIG
-      log_subsection "Project Config"
-
-      # Folder where sites are hosted: $SITES
-      menu_title="PROJECT TO WORK WITH"
-      directory_browser "${menu_title}" "${SITES}"
-
-      # Directory_broser returns: " $filepath"/"$filename
-      if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
-
-        log_event "info" "Operation cancelled!"
-
-      else
-
-        project_generate_config "${filepath}/${filename}"
-
-      fi
-
-    fi
-
-    if [[ ${chosen_project_utils_options} == *"04"* ]]; then
-
-      # CREATE PROJECT DATABASE & USER
-      log_subsection "Create Project DB & User"
-
-      # Folder where sites are hosted: $SITES
-      menu_title="PROJECT TO WORK WITH"
-      directory_browser "${menu_title}" "${SITES}"
-
-      # Directory_broser returns: " $filepath"/"$filename
-      if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
-
-        log_event "info" "Operation cancelled!"
-
-        # Return
-        #return 1
-
-      else
-
-        project_name="$(extract_domain_extension "${filename%/}")"
-        project_name="$(mysql_name_sanitize "${project_name}")"
-        project_name="$(ask_project_name "${project_name}")"
-
-        log_event "info" "project_name: ${project_name}!"
-
-        project_state="$(ask_project_state "")"
-        database_user_passw="$(openssl rand -hex 12)"
-
-        mysql_database_create "${project_name}_${project_state}"
-        mysql_user_db_scope="$(mysql_ask_user_db_scope)"
-        mysql_user_create "${project_name}_user" "${database_user_passw}" "${mysql_user_db_scope}"
-        mysql_user_grant_privileges "${project_name}_user" "${project_name}_${project_state}" "${mysql_user_db_scope}"
-
-        # TODO: check if is a wp project
-        # TODO: change wp-config.php on wp projects
-
-        # TODO: ask if want to import?
-
-      fi
-
-    fi
-
-    if [[ ${chosen_project_utils_options} == *"05"* ]]; then
-
-      local chosen_db
-      local new_database_name
-
-      chosen_db="$(mysql_ask_database_selection)"
-
-      new_database_name="$(whiptail --title "Database Name" --inputbox "Insert a new database name (only separator allow is '_'). Old name was: ${chosen_db}" 10 60 "" 3>&1 1>&2 2>&3)"
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        log_event "debug" "Setting new_database_name: ${new_database_name}"
-
-        # Return
-        echo "${new_database_name}"
-
-      else
-        return 1
-
-      fi
-
-      # RENAME DATABASE
-      mysql_database_rename "${chosen_db}" "${new_database_name}"
-
-    fi
-
-    if [[ ${chosen_project_utils_options} == *"06"* ]]; then
-
-      # PUT PROJECT ONLINE
-      project_change_status "online"
-
-    fi
-
-    if [[ ${chosen_project_utils_options} == *"07"* ]]; then
-
-      # PUT PROJECT OFFLINE
-      project_change_status "offline"
-
-    fi
-
-    if [[ ${chosen_project_utils_options} == *"08"* ]]; then
-
-      # REGENERATE NGINX SERVER
-
-      log_section "Nginx Manager"
-
-      # Select project to work with
-      directory_browser "Select a project to work with" "${SITES}" #return $filename
-
-      if [[ ${filename} != "" ]]; then
-
-        filename="${filename::-1}" # remove '/'
-
-        display --indent 2 --text "- Selecting project" --result DONE --color GREEN
-        display --indent 4 --text "Selected project: ${filename}"
-
-        # Aks project domain
-        project_domain="$(ask_project_domain "${filename}")"
-
-        # Aks project type
-        project_type="$(ask_project_type)"
-
-        if [[ ${project_domain} == "${root_domain}" || ${project_domain} == "www.${root_domain}" ]]; then
-
-          # Nginx config
-          nginx_server_create "www.${root_domain}" "${project_type}" "root_domain" "${root_domain}"
-
-          # Let's Encrypt
-          certbot_certificate_install "${MAILA}" "${root_domain},www.${root_domain}"
-
-        else
-
-          # Nginx config
-          nginx_server_create "${project_domain}" "${project_type}" "single"
-
-          # Let's Encrypt
-          certbot_certificate_install "${MAILA}" "${project_domain}"
-
-        fi
-
-      else
-
-        display --indent 2 "Selecting website to work with" --result SKIPPED --color YELLOW
-
-      fi
-
-    fi
-
-    if [[ ${chosen_project_utils_options} == *"09"* ]]; then
-
-      # BENCH PROJECT GTMETRIX
-
-      URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [[ ${exitstatus} = 0 ]]; then
-
-        log_section "GTMETRIX"
-
-        display --indent 2 --text "- Testing project ${URL_TO_TEST}"
-
-        # shellcheck source=${SFOLDER}/tools/third-party/google-insights-api-tools/gitools_v5.sh
-        gtmetrix_result="$("${SFOLDER}/tools/third-party/google-insights-api-tools/gitools_v5.sh" gtmetrix "${URL_TO_TEST}")"
-
-        gtmetrix_results_url="$(echo "${gtmetrix_result}" | grep -Po '(?<=Report:)[^"]*' | head -1 | cut -d " " -f 2)"
-
-        clear_last_line
-        display --indent 2 --text "- Testing project ${URL_TO_TEST}" --result DONE --color GREEN
-        display --indent 4 --text "Please check results on ${MAGENTA}${gtmetrix_results_url}${ENDCOLOR}"
-        #display --indent 4 --text "Please check results on log file" --tcolor MAGENTA
-        log_event "info" "gtmetrix_result: ${gtmetrix_result}"
-
-      fi
-
-    fi
-
-    prompt_return_or_finish
-    menu_project_utils
 
   fi
 

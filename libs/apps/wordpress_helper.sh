@@ -1,7 +1,21 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.39
+# Version: 3.0.40
+################################################################################
+#
+# WordPress Helper: Perform wordpress actions.
+#
+################################################################################
+
+################################################################################
+# Check if is a WordPress project
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   0 if ok, 1 on error.
 ################################################################################
 
 function is_wp_project() {
@@ -10,27 +24,40 @@ function is_wp_project() {
 
   local project_dir=$1
 
-  log_event "info" "Checking if ${project_dir} is a WordPress project ..."
+  local is_wp="false"
+
+  log_event "info" "Checking if ${project_dir} is a WordPress project ..." "false"
 
   # Check if it has wp-config.php
   if [[ -f "${project_dir}/wp-config.php" ]]; then
+
     is_wp="true"
-    log_event "info" "${project_dir} is a WordPress project"
+    log_event "info" "${project_dir} is a WordPress project" "false"
+
+    # Return
+    echo "${is_wp}"
 
   else
-    is_wp="false"
-    log_event "info" "${project_dir} is not a WordPress project"
+
+    log_event "info" "${project_dir} is not a WordPress project" "false"
+
+    return 1
 
   fi
 
-  # Return
-  echo "${is_wp}"
-
 }
 
-function wp_config_path() {
+################################################################################
+# WordPress config path
+#
+# Arguments:
+#   $1 = ${dir_to_search}
+#
+# Outputs:
+#   String with wp-config path
+################################################################################
 
-  # $1 = ${dir_to_search}
+function wp_config_path() {
 
   local dir_to_search=$1
 
@@ -38,12 +65,14 @@ function wp_config_path() {
   log_event "info" "Searching WordPress Installation on directory: ${dir_to_search}" "false"
 
   # Find where wp-config.php is
-  find_output=$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')
+  find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')"
 
   if [[ ${find_output} != "" ]]; then
 
     # Return
     echo "${find_output}"
+
+    return 0
 
   else
 
@@ -53,13 +82,21 @@ function wp_config_path() {
 
 }
 
+################################################################################
+# Update WordPress config
+#
+# Arguments:
+#   $1 = ${project_dir}
+#   $2 = ${wp_project_name}
+#   $3 = ${wp_project_state}
+#   $4 = ${db_user_pass}
+#
+# Outputs:
+#   String with wp-config path
+################################################################################
+
 #TODO: why not use https://developer.wordpress.org/cli/commands/config/create/ ?
 function wp_update_wpconfig() {
-
-  # $1 = ${project_dir}
-  # $2 = ${wp_project_name}
-  # $3 = ${wp_project_state}
-  # $4 = ${db_user_pass}
 
   local wp_project_dir=$1
   local wp_project_name=$2
@@ -69,27 +106,49 @@ function wp_update_wpconfig() {
   local sed_output
 
   # Change wp-config.php database parameters
-  log_event "info" "Changing database parameters on ${wp_project_dir}/wp-config.php"
+  log_event "info" "Changing database parameters on ${wp_project_dir}/wp-config.php" "false"
 
   sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" "${wp_project_dir}/wp-config.php"
 
   if [[ ${wp_project_name} != "" ]]; then
+
     sed_output=$(sed -i "/DB_NAME/s/'[^']*'/'${wp_project_name}_${wp_project_state}'/2" "${wp_project_dir}/wp-config.php")
+
   fi
   if [[ ${db_user_pass} != "" ]]; then
+
     sed_output=$(sed -i "/DB_USER/s/'[^']*'/'${wp_project_name}_user'/2" "${wp_project_dir}/wp-config.php")
     sed_output=$(sed -i "/DB_PASSWORD/s/'[^']*'/'${db_user_pass}'/2" "${wp_project_dir}/wp-config.php")
+
   fi
 
   sed_result=$?
   if [[ ${sed_result} -eq 0 ]]; then
+
     display --indent 6 --text "- Changing database parameters on wp-config.php" --result "DONE" --color GREEN
+
+    return 0
+
   else
+
     display --indent 6 --text "- Changing database parameters on wp-config.php" --result "FAIL" --color RED
     display --indent 8 --text "Output: ${sed_output}" --tcolor RED
+
+    return 1
+
   fi
 
 }
+
+################################################################################
+# Change WordPress permissions
+#
+# Arguments:
+#   $1 = ${project_dir}
+#
+# Outputs:
+#   None
+################################################################################
 
 function wp_change_permissions() {
 
@@ -114,6 +173,17 @@ function wp_change_permissions() {
   display --indent 6 --text "- Setting default permissions on wordpress" --result "DONE" --color GREEN
 
 }
+
+################################################################################
+# Replace string on WordPress database
+#
+# Arguments:
+#   $1 = ${db_prefix}
+#   $2 = ${target_db}
+#
+# Outputs:
+#   None
+################################################################################
 
 # Ref manual multisite: https://multilingualpress.org/docs/wordpress-multisite-database-tables/
 #
@@ -204,10 +274,18 @@ function wp_replace_string_on_database() {
 
 }
 
+################################################################################
+# Ask string to replace on WordPress database
+#
+# Arguments:
+#   $1 = ${wp_path}
+#
+# Outputs:
+#   None
+################################################################################
+
 # TODO: need rethink this function
 function wp_ask_url_search_and_replace() {
-
-  # $1 = wp_path
 
   local wp_path=$1
 
@@ -218,23 +296,25 @@ function wp_ask_url_search_and_replace() {
 
     existing_URL="$(whiptail --title "URL TO CHANGE" --inputbox "Insert the URL you want to change, including http:// or https://" 10 60 3>&1 1>&2 2>&3)"
     exitstatus=$?
+
     if [[ ${exitstatus} -eq 0 ]]; then
 
       if [[ -z "${new_URL}" ]]; then
+
         new_URL="$(whiptail --title "THE NEW URL" --inputbox "Insert the new URL , including http:// or https://" 10 60 3>&1 1>&2 2>&3)"
         exitstatus=$?
 
         if [[ ${exitstatus} -eq 0 ]]; then
 
-          ### Creating temporary folders
-          if [[ ! -d "${SFOLDER}/tmp-backup" ]]; then
-            mkdir "${SFOLDER}/tmp-backup"
-            log_event "info" "Temp files directory created: ${SFOLDER}/tmp-backup" "false"
+          # Create temporary folder for backups
+          if [[ ! -d "${TMP_DIR}/backups" ]]; then
+            mkdir "${TMP_DIR}/backups"
+            log_event "info" "Temp files directory created: ${TMP_DIR}/backups" "false"
           fi
 
           project_name="$(basename "${wp_path}")"
 
-          wpcli_export_database "${wp_path}" "${SFOLDER}/tmp-backup/${project_name}_bk_before_replace_urls.sql"
+          wpcli_export_database "${wp_path}" "${TMP_DIR}/backups/${project_name}_bk_before_search_and_replace.sql"
 
           wpcli_search_and_replace "${wp_path}" "${existing_URL}" "${new_URL}"
 
