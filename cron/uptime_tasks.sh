@@ -22,11 +22,6 @@ log_event "info" "Running uptime_tasks.sh from cron ..." "false"
 # Script Initialization
 script_init
 
-# shellcheck source=${SFOLDER}/libs/mail_notification_helper.sh
-source "${SFOLDER}/libs/mail_notification_helper.sh"
-# shellcheck source=${SFOLDER}/libs/telegram_notification_helper.sh
-source "${SFOLDER}/libs/telegram_notification_helper.sh"
-
 #Log
 log_section "Uptime Robot"
 
