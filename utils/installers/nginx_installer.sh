@@ -104,11 +104,15 @@ function nginx_installer_menu() {
                 log_subsection "Nginx Installer"
                 nginx_default_installer
 
+                nginx_reconfigure
+
             fi
             if [[ ${chosen_nginx_installer_option} == *"02"* ]]; then
 
                 log_subsection "Nginx Installer"
                 nginx_custom_installer
+
+                nginx_reconfigure
 
             fi
 
