@@ -34,7 +34,7 @@ source "${SFOLDER}/utils/it_utils_manager.sh"
 function _setup_globals_and_options() {
 
   # Script
-  declare -g SCRIPT_N="BROLIT SCRIPT"
+  declare -g SCRIPT_N="BROLIT SHELL"
   declare -g SCRIPT_V="3.0.40"
 
   # Hostname
@@ -305,20 +305,20 @@ function script_init() {
   log_event "info" "Script Start -- $(date +%Y%m%d_%H%M)" "false"
 
   # Welcome Message
-  log_event "" "WELCOME TO ${SCRIPT_N} v${SCRIPT_V}" "true"
+  log_event "" "WELCOME TO" "true"
 
   ### Welcome #####################################################################
   # Ref: http://patorjk.com/software/taag/
 
-  log_event "" "                                                 " "true"
-  log_event "" "██████╗ ██████╗  ██████╗  ██████╗ ██████╗ ███████" "true"
-  log_event "" "██╔══██╗██╔══██╗██╔═══██╗██╔═══██╗██╔══██╗██╔══  " "true"
-  log_event "" "██████╔╝██████╔╝██║   ██║██║   ██║██████╔╝█████  " "true"
-  log_event "" "██╔══██╗██╔══██╗██║   ██║██║   ██║██╔══██╗██╔    " "true"
-  log_event "" "██████╔╝██║  ██║╚██████╔╝╚██████╔╝██████╔╝███████" "true"
-  log_event "" "╚═════╝ ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═════╝ ╚══════" "true"
-  log_event "" "                                                 " "true"
-  log_event "" "-------------------------------------------------" "true"
+  log_event "" "                                             " "true"
+  log_event "" "██████╗ ██████╗  ██████╗ ██╗     ██╗████████╗" "true"
+  log_event "" "██╔══██╗██╔══██╗██╔═══██╗██║     ██║╚══██╔══╝" "true"
+  log_event "" "██████╔╝██████╔╝██║   ██║██║     ██║   ██║   " "true"
+  log_event "" "██╔══██╗██╔══██╗██║   ██║██║     ██║   ██║   " "true"
+  log_event "" "██████╔╝██║  ██║╚██████╔╝███████╗██║   ██║   " "true"
+  log_event "" "╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝   ╚═╝   " "true"
+  log_event "" "           ${SCRIPT_N} v${SCRIPT_V} by BROOBE" "true"
+  log_event "" "---------------------------------------------" "true"
 
   # Checking distro
   _check_distro
