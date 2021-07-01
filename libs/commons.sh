@@ -21,6 +21,7 @@ for f in ${libs_local}; do source "${f}"; done
 # Load other sources
 source "${SFOLDER}/libs/notification_controller.sh"
 source "${SFOLDER}/utils/installers_and_configurators.sh"
+source "${SFOLDER}/utils/project_manager.sh"
 source "${SFOLDER}/utils/it_utils_manager.sh"
 
 #
