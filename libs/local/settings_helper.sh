@@ -701,10 +701,7 @@ function generate_telegram_config() {
 
             # Write config file
             echo "telegram_user_id=${telegram_user_id}" >>"${TEL_CONFIG_FILE}"
-            log_event "info" "The Telegram configuration has been saved!"
-
-            # shellcheck source=../apps/telegram_notification_helper.sh
-            source "${SFOLDER}/libs/telegram_notification_helper.sh"
+            log_event "info" "The Telegram configuration has been saved!" "false"
 
             telegram_send_notification "✅ ${VPSNAME}" "Telegram notifications configured!" ""
 
