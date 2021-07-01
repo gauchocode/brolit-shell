@@ -1,15 +1,27 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.39
+# Version: 3.0.40
+################################################################################
+#
+# Nginx Helper: Perform nginx actions.
+#
+################################################################################
+
+################################################################################
+# Create nginx server config
+#
+# Arguments:
+#   $1 = ${project_domain}
+#   $2 = ${project_type} (default, wordpress, symphony, phpmyadmin, netdata)
+#   $3 = ${server_type} (single, root_domain, multi_domain, tool) optional
+#   $4 = ${redirect_domains} (list of domains or subdomains that will be redirect to project_domain) optional
+#
+# Outputs:
+#   0 if ok, 1 on error.
 ################################################################################
 
 function nginx_server_create() {
-
-    # $1 = ${project_domain}
-    # $2 = ${project_type} (default, wordpress, symphony, phpmyadmin, netdata)
-    # $3 = ${server_type} (single, root_domain, multi_domain, tool) optional
-    # $4 = ${redirect_domains} (list of domains or subdomains that will be redirect to project_domain) optional
 
     local project_domain=$1
     local project_type=$2
@@ -19,10 +31,10 @@ function nginx_server_create() {
     local debug
 
     # Log
-    log_event "debug" "Project type: ${project_type}"
-    log_event "debug" "Server type: ${server_type}"
-    log_event "info" "Creating nginx configuration file for domain: ${project_domain}"
-    log_event "info" "List of domains or subdomains that will be redirect to project_domain: ${redirect_domains}"
+    log_event "debug" "Project type: ${project_type}" "false"
+    log_event "debug" "Server type: ${server_type}" "false"
+    log_event "info" "Creating nginx configuration file for domain: ${project_domain}" "false"
+    log_event "info" "List of domains or subdomains that will be redirect to project_domain: ${redirect_domains}" "false"
 
     # Create nginx config files for site
     if [[ -f "${WSERVER}/sites-available/${project_domain}" ]]; then
@@ -123,9 +135,17 @@ function nginx_server_create() {
 
 }
 
-function nginx_server_delete() {
+################################################################################
+# Delete nginx server config
+#
+# Arguments:
+#   $1 = ${filename}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    #$1 = ${filename}
+function nginx_server_delete() {
 
     local filename=$1
 
@@ -146,15 +166,23 @@ function nginx_server_delete() {
 
 }
 
+################################################################################
+# Change nginx server status (online or offline)
+#
+# Arguments:
+#   $1 = ${project_domain}
+#   $2 = ${project_status} (online,offline)
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function nginx_server_change_status() {
 
     # File test operators
     # -d FILE - True if the FILE exists and is a directory.
     # -f FILE - True if the FILE exists and is a regular file (not a directory or device).
     # -h FILE - True if the FILE exists and is a symbolic link.
-
-    #$1 = ${project_domain}
-    #$2 = ${project_status} (online,offline)
 
     local project_domain=$1
     local project_status=$2
@@ -166,18 +194,19 @@ function nginx_server_change_status() {
 
     online)
 
-        log_event "info" "New project status: ${project_status}"
+        log_event "info" "New project status: ${project_status}" "false"
+
         if [[ -f "${WSERVER}/sites-available/${project_domain}" ]]; then
 
             # Creating symbolic link
             ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
             # Logging
-            log_event "info" "Project config added to ${WSERVER}/sites-enabled/${project_domain}"
+            log_event "info" "Project config added to ${WSERVER}/sites-enabled/${project_domain}" "false"
             display --indent 6 --text "- Changing project status to ONLINE" --result "DONE" --color GREEN
 
         else
             # Logging
-            log_event "error" "${WSERVER}/sites-available/${project_domain} does not exist"
+            log_event "error" "${WSERVER}/sites-available/${project_domain} does not exist" "false"
             display --indent 6 --text "- Changing project status to ONLINE" --result "FAIL" --color RED
             display --indent 8 --text "${WSERVER}/sites-available/${project_domain} does not exist" --tcolor RED
 
@@ -186,18 +215,20 @@ function nginx_server_change_status() {
 
     offline)
 
-        log_event "info" "New project status: ${project_status}"
+        log_event "info" "New project status: ${project_status}" "false"
+
         if [[ -L "${WSERVER}/sites-enabled/${project_domain}" ]]; then
 
             # Deleting config
             rm "${WSERVER}/sites-enabled/${project_domain}"
+
             # Logging
-            log_event "info" "Project config deleted from ${WSERVER}/sites-enabled/${project_domain}"
+            log_event "info" "Project config deleted from ${WSERVER}/sites-enabled/${project_domain}" "false"
             display --indent 6 --text "- Changing project status to OFFLINE" --result "DONE" --color GREEN
 
         else
             # Logging
-            log_event "error" "${WSERVER}/sites-enabled/${project_domain} does not exist"
+            log_event "error" "${WSERVER}/sites-enabled/${project_domain} does not exist" "false"
             display --indent 6 --text "- Changing project status to OFFLINE" --result "FAIL" --color RED
             display --indent 8 --text "${WSERVER}/sites-available/${project_domain} does not exist" --tcolor RED
 
@@ -205,7 +236,7 @@ function nginx_server_change_status() {
         ;;
 
     *)
-        log_event "info" "New project status: Unknown"
+        log_event "info" "New project status: Unknown" "false"
         return 1
         ;;
 
@@ -216,10 +247,18 @@ function nginx_server_change_status() {
 
 }
 
-function nginx_server_set_domain() {
+################################################################################
+# Set nginx server domain
+#
+# Arguments:
+#   $1 = ${nginx_server_file} / ${tool} or ${project_domain}
+#   $2 = ${domain_name}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    #$1 = ${nginx_server_file} / ${tool} or ${project_domain}
-    #$2 = ${domain_name}
+function nginx_server_set_domain() {
 
     local nginx_server_file=$1
     local domain_name=$2
@@ -432,6 +471,6 @@ function nginx_generate_auth() {
 
     local user=$1
 
-    printf "${user}:$(openssl passwd -apr1)" > "/etc/nginx/passwords"
+    printf "${user}:$(openssl passwd -apr1)" >"/etc/nginx/passwords"
 
 }

@@ -1,46 +1,70 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.39
+# Version: 3.0.40
 #############################################################################
+#
+# MySQL Helper: Perform mysql actions.
+#
+################################################################################
+
+################################################################################
+# Ask root password and configure it on .my.cnf
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function mysql_ask_root_psw() {
 
-  local mysql_root_pass
+    local mysql_root_pass
 
-  # Check MySQL credentials on .my.cnf
-  if [[ ! -f ${MYSQL_CONF} ]]; then
+    # Check MySQL credentials on .my.cnf
+    if [[ ! -f ${MYSQL_CONF} ]]; then
 
-    mysql_root_pass="$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root password" 10 60 "${mysql_root_pass}" 3>&1 1>&2 2>&3)"
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
+        mysql_root_pass="$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root password" 10 60 "${mysql_root_pass}" 3>&1 1>&2 2>&3)"
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
 
-      until mysql -u root -p"${mysql_root_pass}" -e ";"; do
-        read -s -p " > Can't connect to MySQL, please re-enter ${MUSER} password: " mysql_root_pass
+            until mysql -u root -p"${mysql_root_pass}" -e ";"; do
+                read -s -p " > Can't connect to MySQL, please re-enter ${MUSER} password: " mysql_root_pass
 
-      done
+            done
 
-      # Create new MySQL credentials file
-      echo "[client]" >/root/.my.cnf
-      echo "user=root" >>/root/.my.cnf
-      echo "password=${mysql_root_pass}" >>/root/.my.cnf
+            # Create new MySQL credentials file
+            echo "[client]" >/root/.my.cnf
+            echo "user=root" >>/root/.my.cnf
+            echo "password=${mysql_root_pass}" >>/root/.my.cnf
 
-      # Return
-      echo "${mysql_root_pass}"
+            # Return
+            echo "${mysql_root_pass}"
 
-    else
+            return 0
 
-      return 1
+        else
+
+            return 1
+
+        fi
 
     fi
 
-  fi
-
 }
 
-function mysql_ask_user_db_scope() {
+################################################################################
+# Ask database user scope
+#
+# Arguments:
+#   $1 = ${db_scope} - Optional
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    # $1 = ${db_scope} - optional
+function mysql_ask_user_db_scope() {
 
     local db_scope=$1
 
@@ -51,12 +75,24 @@ function mysql_ask_user_db_scope() {
         # Return
         echo "${db_scope}"
 
+        return 0
+
     else
         return 1
 
     fi
 
 }
+
+################################################################################
+# Ask database selection
+#
+# Arguments:
+#   $1 = ${db_scope} - Optional
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function mysql_ask_database_selection() {
 
@@ -66,7 +102,7 @@ function mysql_ask_database_selection() {
     databases="$(mysql_list_databases)"
 
     chosen_db="$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to work with" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) 3>&1 1>&2 2>&3)"
-    
+
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -75,18 +111,26 @@ function mysql_ask_database_selection() {
         # Return
         echo "${chosen_db}"
 
+        return 0
+
     else
         return 1
     fi
 
 }
 
-#############################################################################
+################################################################################
+# Test user credentials
+#
+# Arguments:
+#   $1 = ${db_user}
+#   $2 = ${db_user_psw}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function mysql_test_user_credentials() {
-
-    # $1 = ${db_user}
-    # $2 = ${db_user_psw}
 
     local db_user=$1
     local db_user_psw=$2
@@ -122,11 +166,20 @@ function mysql_test_user_credentials() {
 
 }
 
+################################################################################
+# Count databases on MySQL
+#
+# Arguments:
+#   $1 = ${databases}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function mysql_count_dabases() {
 
-    # $1 = ${databases}
-
     local databases=$1
+
     local total_databases=0
 
     local db
@@ -140,6 +193,16 @@ function mysql_count_dabases() {
     # Return
     echo "${total_databases}"
 }
+
+################################################################################
+# List databases on MySQL
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   $databases, 1 on error.
+################################################################################
 
 function mysql_list_databases() {
 
@@ -159,6 +222,8 @@ function mysql_list_databases() {
         # Return
         echo "${databases}"
 
+        return 0
+
     else
 
         # Log
@@ -172,11 +237,19 @@ function mysql_list_databases() {
 
 }
 
-function mysql_user_create() {
+################################################################################
+# Create database user
+#
+# Arguments:
+#   $1 = ${db_user}
+#   $2 = ${db_user_psw}
+#   $3 = ${db_user_scope} - optional
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    # $1 = ${db_user}
-    # $2 = ${db_user_psw}
-    # $3 = ${db_user_scope} // optional
+function mysql_user_create() {
 
     local db_user=$1
     local db_user_psw=$2
@@ -235,10 +308,18 @@ function mysql_user_create() {
 
 }
 
-function mysql_user_delete() {
+################################################################################
+# Delete database user
+#
+# Arguments:
+#   $1 = ${db_user}
+#   $2 = ${db_user_scope} - optional
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    # $1 = ${db_user}
-    # $2 = ${db_user_scope}
+function mysql_user_delete() {
 
     local db_user=$1
     local db_user_scope=$2
@@ -287,6 +368,17 @@ function mysql_user_delete() {
 
 }
 
+################################################################################
+# Change user password
+#
+# Arguments:
+#   $1 = ${db_user}
+#   $2 = ${db_user_psw}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function mysql_user_psw_change() {
 
     # $1 = ${db_user}
@@ -330,6 +422,16 @@ function mysql_user_psw_change() {
     fi
 
 }
+
+################################################################################
+# Change root password
+#
+# Arguments:
+#   $1 = ${db_user_psw}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function mysql_root_psw_change() {
 
@@ -390,11 +492,19 @@ function mysql_root_psw_change() {
 
 }
 
-function mysql_user_grant_privileges() {
+################################################################################
+# Grant privileges to user
+#
+# Arguments:
+#   $1 = ${db_user}
+#   $2 = ${db_target}
+#   $3 = ${db_scope}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    # $1 = ${db_user}
-    # $2 = ${db_target}
-    # $3 = ${db_scope}
+function mysql_user_grant_privileges() {
 
     local db_user=$1
     local db_target=$2
@@ -446,9 +556,17 @@ function mysql_user_grant_privileges() {
 
 }
 
-function mysql_user_exists() {
+################################################################################
+# Check if user exists
+#
+# Arguments:
+#   $1 = ${db_user}
+#
+# Outputs:
+#   0 if user exists, 1 if not.
+################################################################################
 
-    # $1 = ${DB_USER}
+function mysql_user_exists() {
 
     local db_user=$1
 
@@ -471,9 +589,17 @@ function mysql_user_exists() {
 
 }
 
-function mysql_database_exists() {
+################################################################################
+# Check if database exists
+#
+# Arguments:
+#   $1 = ${db_user}
+#
+# Outputs:
+#   0 if database exists, 1 if not.
+################################################################################
 
-    # $1 = ${DB}
+function mysql_database_exists() {
 
     local database=$1
 
@@ -493,9 +619,17 @@ function mysql_database_exists() {
 
 }
 
-function mysql_name_sanitize() {
+################################################################################
+# Sanitize database name or username
+#
+# Arguments:
+#   $1 = ${string}
+#
+# Outputs:
+#   Sanetized ${string}.
+################################################################################
 
-    # $1 = ${name} database_name or user_name
+function mysql_name_sanitize() {
 
     local string=$1
 
@@ -522,9 +656,17 @@ function mysql_name_sanitize() {
 
 }
 
-function mysql_database_create() {
+################################################################################
+# Create database
+#
+# Arguments:
+#   $1 = ${database}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    # $1 = ${database}
+function mysql_database_create() {
 
     local database=$1
 
@@ -564,9 +706,17 @@ function mysql_database_create() {
 
 }
 
-function mysql_database_drop() {
+################################################################################
+# Delete database
+#
+# Arguments:
+#   $1 = ${database}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    # $1 = ${DB}
+function mysql_database_drop() {
 
     local database=$1
 
@@ -606,10 +756,18 @@ function mysql_database_drop() {
 
 }
 
-function mysql_database_import() {
+################################################################################
+# Database import
+#
+# Arguments:
+#   $1 = ${database} (.sql)
+#   $2 = ${dump_file}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    # $1 = ${database} (.sql)
-    # $2 = ${dump_file}
+function mysql_database_import() {
 
     local database=$1
     local dump_file=$2
@@ -648,6 +806,17 @@ function mysql_database_import() {
     fi
 
 }
+
+################################################################################
+# Database export
+#
+# Arguments:
+#   $1 = ${database}
+#   $2 = ${dump_file}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function mysql_database_export() {
 
@@ -690,6 +859,17 @@ function mysql_database_export() {
     fi
 
 }
+
+################################################################################
+# Database rename
+#
+# Arguments:
+#   $1 = ${database}
+#   $2 = ${dump_file}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function mysql_database_rename() {
 

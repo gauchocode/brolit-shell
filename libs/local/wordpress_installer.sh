@@ -1,16 +1,28 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.39
+# Version: 3.0.40
+################################################################################
+#
+# WordPress Installer: WordPress installer functions.
+#
+################################################################################
+
+################################################################################
+# Installer menu for a new WordPress Project
+#
+# Arguments:
+#   $1 = ${project_path}
+#   $2 = ${project_domain}
+#   $3 = ${project_name}
+#   $4 = ${project_state}
+#   $5 = ${project_root_domain}   # Optional
+#
+# Outputs:
+#   0 if ok, 1 on error.
 ################################################################################
 
 function wordpress_project_installer() {
-
-  # $1 = ${project_path}
-  # $2 = ${project_domain}
-  # $3 = ${project_name}
-  # $4 = ${project_state}
-  # $5 = ${project_root_domain}   # Optional
 
   local project_path=$1
   local project_domain=$2
@@ -44,13 +56,21 @@ function wordpress_project_installer() {
 
 }
 
-function wordpress_project_install() {
+################################################################################
+# New WordPress Project
+#
+# Arguments:
+#   $1 = ${project_path}
+#   $2 = ${project_domain}
+#   $3 = ${project_name}
+#   $4 = ${project_state}
+#   $5 = ${project_root_domain}   # Optional
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  # $1 = ${project_path}
-  # $2 = ${project_domain}
-  # $3 = ${project_name}
-  # $4 = ${project_state}
-  # $5 = ${project_root_domain}   # Optional
+function wordpress_project_install() {
 
   local project_path=$1
   local project_domain=$2
@@ -167,6 +187,8 @@ function wordpress_project_install() {
       log_event "info" "HTTPS support for ${project_domain} skipped" "false"
       display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
+      return 1
+
     fi
 
   fi
@@ -178,15 +200,25 @@ function wordpress_project_install() {
   # Send notification
   send_notification "✅ ${VPSNAME}" "WordPress installation for domain ${project_domain} finished" ""
 
+  return 0
+
 }
 
-function wordpress_project_copy() {
+################################################################################
+# Copy a WordPress Project
+#
+# Arguments:
+#   $1 = ${project_path}
+#   $2 = ${project_domain}
+#   $3 = ${project_name}
+#   $4 = ${project_state}
+#   $5 = ${project_root_domain}   # Optional
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  # $1 = ${project_path}
-  # $2 = ${project_domain}
-  # $3 = ${project_name}
-  # $4 = ${project_state}
-  # $5 = ${project_root_domain}   # Optional
+function wordpress_project_copy() {
 
   local project_path=$1
   local project_domain=$2
@@ -203,30 +235,30 @@ function wordpress_project_copy() {
 
   display --indent 6 --text "- Preparing to copy project" --result "DONE" --color GREEN
   display --indent 8 --text "Path: ${copy_project_path}"
-  log_event "info" "Setting copy_project_path=${copy_project_path}"
+  log_event "info" "Setting copy_project_path=${copy_project_path}" "false"
 
   copy_project="$(basename "${copy_project_path}")"
 
-  log_event "info" "Setting copy_project=${copy_project}"
+  log_event "info" "Setting copy_project=${copy_project}" "false"
 
   # TODO: ask if want to exclude directory
 
-  if [ -d "${folder_to_install}/${project_domain}" ]; then
+  if [[ -d "${folder_to_install}/${project_domain}" ]]; then
     # Make a copy of the existing project
-    log_event "info" "Making a copy of ${copy_project} on ${project_dir} ..."
+    log_event "info" "Making a copy of ${copy_project} on ${project_dir} ..." "false"
 
     #cd "${folder_to_install}"
     copy_files "${folder_to_install}/${copy_project}" "${project_dir}"
 
     # Logging
     display --indent 6 --text "- Making a copy of the WordPress project" --result "DONE" --color GREEN
-    log_event "info" "WordPress files copied"
+    log_event "info" "WordPress files copied" "false"
 
   else
     # Logging
     display --indent 6 --text "- Making a copy of the WordPress project" --result "FAIL" --color RED
     display --indent 8 --text "Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..."
-    log_event "error" "Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..."
+    log_event "error" "Destination folder '${folder_to_install}/${project_domain}' already exist, aborting ..." "false"
 
     # Return
     return 1
@@ -236,7 +268,7 @@ function wordpress_project_copy() {
   wp_change_permissions "${project_dir}"
 
   # Create database and user
-  db_project_name=$(mysql_name_sanitize "${project_name}")
+  db_project_name="$(mysql_name_sanitize "${project_name}")"
   database_name="${db_project_name}_${project_state}"
   database_user="${db_project_name}_user"
   database_user_passw="$(openssl rand -hex 12)"
@@ -326,7 +358,6 @@ function wordpress_project_copy() {
       nginx_create_globals_config
       nginx_server_create "${project_domain}" "wordpress" "single" ""
 
-      # TODO: control nginx_server_create exit code
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -368,5 +399,7 @@ function wordpress_project_copy() {
 
   # Send notification
   send_notification "✅ ${VPSNAME}" "WordPress installation for domain ${project_domain} finished"
+  
+  return 0
 
 }

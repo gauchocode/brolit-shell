@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.39
+# Version: 3.0.40
 ################################################################################
 
 function it_utils_menu() {
@@ -132,6 +132,76 @@ function it_utils_menu() {
   fi
 
   menu_main_options
+
+}
+
+function menu_security_utils() {
+
+  # TODO: new options? https://upcloud.com/community/tutorials/scan-ubuntu-server-malware/
+
+  local security_options chosen_security_options
+
+  security_options=(
+    "01)" "CLAMAV MALWARE SCAN"
+    "02)" "CUSTOM MALWARE SCAN"
+    "03)" "LYNIS SYSTEM AUDIT"
+  )
+  chosen_security_options=$(whiptail --title "SECURITY TOOLS" --menu "Choose an option to run" 20 78 10 "${security_options[@]}" 3>&1 1>&2 2>&3)
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    security_install
+
+    if [[ ${chosen_security_options} == *"01"* ]]; then
+      menu_security_clamav_scan
+
+    fi
+    if [[ ${chosen_security_options} == *"02"* ]]; then
+      menu_security_custom_scan
+
+    fi
+    if [[ ${chosen_security_options} == *"03"* ]]; then
+      menu_security_system_audit
+
+    fi
+
+    prompt_return_or_finish
+    menu_security_utils
+
+  fi
+
+  menu_main_options
+
+}
+
+function menu_security_clamav_scan() {
+
+  local to_scan
+
+  startdir="${SITES}"
+  directory_browser "${menutitle}" "${startdir}"
+
+  to_scan=$filepath"/"$filename
+
+  log_event "info" "Starting clamav scan on: ${to_scan}" "false"
+
+  security_clamav_scan "${to_scan}"
+
+}
+
+function menu_security_custom_scan() {
+
+  local to_scan
+
+  startdir="${SITES}"
+  directory_browser "${menutitle}" "${startdir}"
+
+  to_scan=$filepath"/"$filename
+
+  log_event "info" "Starting custom scan on: ${to_scan}" "false"
+
+  security_custom_scan "${to_scan}"
 
 }
 

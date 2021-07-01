@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.39
+# Version: 3.0.40
 #############################################################################
 
 function _settings_config_mysql() {
@@ -20,7 +20,7 @@ function _settings_config_smtp() {
         SMTP_SERVER=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server" 10 60 "${SMTP_SERVER_OLD}" 3>&1 1>&2 2>&3)
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
-            echo "SMTP_SERVER="${SMTP_SERVER} >>/root/.broobe-utils-options
+            echo "SMTP_SERVER="${SMTP_SERVER} >>/root/.brolit-shell.conf
         else
             return 1
         fi
@@ -29,7 +29,7 @@ function _settings_config_smtp() {
         SMTP_PORT=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server Port" 10 60 "${SMTP_PORT_OLD}" 3>&1 1>&2 2>&3)
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
-            echo "SMTP_PORT=${SMTP_PORT}" >>/root/.broobe-utils-options
+            echo "SMTP_PORT=${SMTP_PORT}" >>/root/.brolit-shell.conf
         else
             return 1
         fi
@@ -39,7 +39,7 @@ function _settings_config_smtp() {
         SMTP_TLS=$(whiptail --title "SMTP TLS" --inputbox "SMTP yes or no:" 10 60 "${SMTP_TLS_OLD}" 3>&1 1>&2 2>&3)
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
-            echo "SMTP_TLS=${SMTP_TLS}" >>/root/.broobe-utils-options
+            echo "SMTP_TLS=${SMTP_TLS}" >>/root/.brolit-shell.conf
         else
             return 1
         fi
@@ -48,7 +48,7 @@ function _settings_config_smtp() {
         SMTP_U=$(whiptail --title "SMTP User" --inputbox "Please insert the SMTP user" 10 60 "${SMTP_U_OLD}" 3>&1 1>&2 2>&3)
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
-            echo "SMTP_U=${SMTP_U}" >>/root/.broobe-utils-options
+            echo "SMTP_U=${SMTP_U}" >>/root/.brolit-shell.conf
         else
             return 1
         fi
@@ -57,7 +57,7 @@ function _settings_config_smtp() {
         SMTP_P=$(whiptail --title "SMTP Password" --inputbox "Please insert the SMTP user password" 10 60 "${SMTP_P_OLD}" 3>&1 1>&2 2>&3)
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
-            echo "SMTP_P=${SMTP_P}" >>/root/.broobe-utils-options
+            echo "SMTP_P=${SMTP_P}" >>/root/.brolit-shell.conf
         else
             return 1
         fi
@@ -80,7 +80,7 @@ function _settings_config_duplicity() {
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
-            echo "DUP_BK=${DUP_BK}" >>/root/.broobe-utils-options
+            echo "DUP_BK=${DUP_BK}" >>/root/.brolit-shell.conf
 
             if [[ ${DUP_BK} == true ]]; then
 
@@ -91,7 +91,7 @@ function _settings_config_duplicity() {
                     DUP_ROOT=$(whiptail --title "Duplicity Backup Directory" --inputbox "Insert the directory path to storage duplicity Backup" 10 60 "${DUP_ROOT_DEFAULT}" 3>&1 1>&2 2>&3)
                     exitstatus=$?
                     if [[ ${exitstatus} -eq 0 ]]; then
-                        echo "DUP_ROOT=${DUP_ROOT}" >>/root/.broobe-utils-options
+                        echo "DUP_ROOT=${DUP_ROOT}" >>/root/.brolit-shell.conf
                     else
                         exit 1
                     fi
@@ -105,7 +105,7 @@ function _settings_config_duplicity() {
                     DUP_SRC_BK=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_SRC_BK_DEFAULT}" 3>&1 1>&2 2>&3)
                     exitstatus=$?
                     if [[ ${exitstatus} -eq 0 ]]; then
-                        echo "DUP_SRC_BK=${DUP_SRC_BK}" >>/root/.broobe-utils-options
+                        echo "DUP_SRC_BK=${DUP_SRC_BK}" >>/root/.brolit-shell.conf
                     else
                         exit 1
                     fi
@@ -119,7 +119,7 @@ function _settings_config_duplicity() {
                     DUP_FOLDERS=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_FOLDERS_DEFAULT}" 3>&1 1>&2 2>&3)
                     exitstatus=$?
                     if [[ ${exitstatus} -eq 0 ]]; then
-                        echo "DUP_FOLDERS=${DUP_FOLDERS}" >>/root/.broobe-utils-options
+                        echo "DUP_FOLDERS=${DUP_FOLDERS}" >>/root/.brolit-shell.conf
                     else
                         exit 1
                     fi
@@ -133,7 +133,7 @@ function _settings_config_duplicity() {
                     DUP_BK_FULL_FREQ=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_BK_FULL_FREQ_DEFAULT}" 3>&1 1>&2 2>&3)
                     exitstatus=$?
                     if [[ ${exitstatus} -eq 0 ]]; then
-                        echo "DUP_BK_FULL_FREQ=${DUP_BK_FULL_FREQ}" >>/root/.broobe-utils-options
+                        echo "DUP_BK_FULL_FREQ=${DUP_BK_FULL_FREQ}" >>/root/.brolit-shell.conf
                     else
                         exit 1
                     fi
@@ -147,7 +147,7 @@ function _settings_config_duplicity() {
                     DUP_BK_FULL_LIFE=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_BK_FULL_LIFE_DEFAULT}" 3>&1 1>&2 2>&3)
                     exitstatus=$?
                     if [[ ${exitstatus} -eq 0 ]]; then
-                        echo "DUP_BK_FULL_LIFE=${DUP_BK_FULL_LIFE}" >>/root/.broobe-utils-options
+                        echo "DUP_BK_FULL_LIFE=${DUP_BK_FULL_LIFE}" >>/root/.brolit-shell.conf
                     else
                         exit 1
                     fi
@@ -156,11 +156,11 @@ function _settings_config_duplicity() {
 
             else
 
-                echo "DUP_ROOT=none" >>/root/.broobe-utils-options
-                echo "DUP_SRC_BK=none" >>/root/.broobe-utils-options
-                echo "DUP_FOLDERS=none" >>/root/.broobe-utils-options
-                echo "DUP_BK_FULL_FREQ=none" >>/root/.broobe-utils-options
-                echo "DUP_BK_FULL_LIFE=none" >>/root/.broobe-utils-options
+                echo "DUP_ROOT=none" >>/root/.brolit-shell.conf
+                echo "DUP_SRC_BK=none" >>/root/.brolit-shell.conf
+                echo "DUP_FOLDERS=none" >>/root/.brolit-shell.conf
+                echo "DUP_BK_FULL_FREQ=none" >>/root/.brolit-shell.conf
+                echo "DUP_BK_FULL_LIFE=none" >>/root/.brolit-shell.conf
 
             fi
 
@@ -178,22 +178,22 @@ function _settings_config_mailcow() {
     # MailCow Dockerized default files location
     mailcow_default_path="/opt/mailcow-dockerized"
 
-    # Checking /root/.broobe-utils-options global var
+    # Checking /root/.brolit-shell.conf global var
     if [[ -z "${MAILCOW_BK}" ]]; then
 
         whiptail_message_with_skip_option "Mailcow Support" "This script supports Mailcow. Do you want to enable backups for it?"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
-            # Checking /root/.broobe-utils-options global vars
+            # Checking /root/.brolit-shell.conf global vars
             if [[ -z "${MAILCOW}" && "${MAILCOW_BK}" == true ]]; then
 
                 mailcow_path=$(whiptail --title "Mailcow Support" --inputbox "Insert the path where Mailcow is installed" 10 60 "${mailcow_default_path}" 3>&1 1>&2 2>&3)
                 exitstatus=$?
                 if [[ ${exitstatus} -eq 0 ]]; then
                     mailcow_support=true
-                    echo "MAILCOW_BK=${mailcow_support}" >>/root/.broobe-utils-options
-                    echo "MAILCOW=${mailcow_path}" >>/root/.broobe-utils-options
+                    echo "MAILCOW_BK=${mailcow_support}" >>/root/.brolit-shell.conf
+                    echo "MAILCOW=${mailcow_path}" >>/root/.brolit-shell.conf
                 else
                     return 1
 
@@ -204,7 +204,7 @@ function _settings_config_mailcow() {
         else
 
             mailcow_support=false
-            echo "MAILCOW_BK=${mailcow_support}" >>/root/.broobe-utils-options
+            echo "MAILCOW_BK=${mailcow_support}" >>/root/.brolit-shell.conf
 
         fi
 
@@ -213,7 +213,7 @@ function _settings_config_mailcow() {
 
 function _settings_config_dropbox() {
 
-    # Checking /root/.broobe-utils-options global var
+    # Checking /root/.brolit-shell.conf global var
     if [[ -z "${DROPBOX_ENABLE}" ]]; then
 
         whiptail_message_with_skip_option "Dropbox Support" "This script supports Dropbox integration via API. If you have a Dropbox account you can configure it to backup and restore projects from here. Do you want to enable Dropbox support?"
@@ -222,14 +222,14 @@ function _settings_config_dropbox() {
 
             # Setting option on script config file
             DROPBOX_ENABLE="true"
-            echo "DROPBOX_ENABLE=${DROPBOX_ENABLE}" >>/root/.broobe-utils-options
+            echo "DROPBOX_ENABLE=${DROPBOX_ENABLE}" >>/root/.brolit-shell.conf
 
             # Generating Dropbox api config file
             generate_dropbox_config
 
         else
             DROPBOX_ENABLE="false"
-            echo "DROPBOX_ENABLE=${DROPBOX_ENABLE}" >>/root/.broobe-utils-options
+            echo "DROPBOX_ENABLE=${DROPBOX_ENABLE}" >>/root/.brolit-shell.conf
 
         fi
 
@@ -239,7 +239,7 @@ function _settings_config_dropbox() {
 
 function _settings_config_cloudflare() {
 
-    # Checking /root/.broobe-utils-options global var
+    # Checking /root/.brolit-shell.conf global var
     if [[ -z "${CLOUDFLARE_ENABLE}" ]]; then
 
         whiptail_message_with_skip_option "Cloudflare Support" "This script supports Cloudflare integration via API. If you have a Cloudflare account you can configure it to manage your domains from here. Do you want to enable Cloudflare support?"
@@ -248,14 +248,14 @@ function _settings_config_cloudflare() {
 
             # Setting option on script config file
             CLOUDFLARE_ENABLE="true"
-            echo "CLOUDFLARE_ENABLE=${CLOUDFLARE_ENABLE}" >>/root/.broobe-utils-options
+            echo "CLOUDFLARE_ENABLE=${CLOUDFLARE_ENABLE}" >>/root/.brolit-shell.conf
 
             # Generating Cloudflare api config file
             generate_cloudflare_config
 
         else
             CLOUDFLARE_ENABLE="false"
-            echo "CLOUDFLARE_ENABLE=${CLOUDFLARE_ENABLE}" >>/root/.broobe-utils-options
+            echo "CLOUDFLARE_ENABLE=${CLOUDFLARE_ENABLE}" >>/root/.brolit-shell.conf
 
         fi
 
@@ -265,7 +265,7 @@ function _settings_config_cloudflare() {
 
 function _settings_config_telegram() {
 
-    # Checking /root/.broobe-utils-options global var
+    # Checking /root/.brolit-shell.conf global var
     if [[ -z "${TELEGRAM_NOTIF}" ]]; then
 
         whiptail_message_with_skip_option "Telegram Notification" "Do you want to enable Telegram notification support?"
@@ -274,14 +274,14 @@ function _settings_config_telegram() {
 
             # Setting option on script config file
             TELEGRAM_NOTIF="true"
-            echo "TELEGRAM_NOTIF=${TELEGRAM_NOTIF}" >>/root/.broobe-utils-options
+            echo "TELEGRAM_NOTIF=${TELEGRAM_NOTIF}" >>/root/.brolit-shell.conf
 
             # Generating Telegram api config file
             generate_telegram_config
 
         else
             TELEGRAM_NOTIF="false"
-            echo "TELEGRAM_NOTIF=${TELEGRAM_NOTIF}" >>/root/.broobe-utils-options
+            echo "TELEGRAM_NOTIF=${TELEGRAM_NOTIF}" >>/root/.brolit-shell.conf
 
         fi
 
@@ -293,7 +293,7 @@ function _settings_config_notifications() {
 
     #TODO: option to select notification types (mail, telegram)
 
-    # Checking /root/.broobe-utils-options global vars
+    # Checking /root/.brolit-shell.conf global vars
     if [[ -z "${MAIL_NOTIF}" ]]; then
 
         whiptail_message_with_skip_option "E-Mail Notification" "Do you want to enable E-Mail notification support?"
@@ -302,14 +302,14 @@ function _settings_config_notifications() {
 
             # Setting option on script config file
             MAIL_NOTIF="true"
-            echo "MAIL_NOTIF=${MAIL_NOTIF}" >>/root/.broobe-utils-options
+            echo "MAIL_NOTIF=${MAIL_NOTIF}" >>/root/.brolit-shell.conf
 
             if [[ -z "${MAILA}" ]]; then
 
                 MAILA=$(whiptail --title "Notification Email" --inputbox "Insert the email where you want to receive notifications." 10 60 "${MAILA_OLD}" 3>&1 1>&2 2>&3)
                 exitstatus=$?
                 if [[ ${exitstatus} -eq 0 ]]; then
-                    echo "MAILA=${MAILA}" >>/root/.broobe-utils-options
+                    echo "MAILA=${MAILA}" >>/root/.brolit-shell.conf
                 else
                     return 1
                 fi
@@ -320,7 +320,7 @@ function _settings_config_notifications() {
 
         else
             MAIL_NOTIF="false"
-            echo "MAIL_NOTIF=${MAIL_NOTIF}" >>/root/.broobe-utils-options
+            echo "MAIL_NOTIF=${MAIL_NOTIF}" >>/root/.brolit-shell.conf
 
         fi
 
@@ -394,7 +394,7 @@ function script_configuration_wizard() {
         MAILCOW_BK="false"
 
         #Rename old config file
-        mv "/root/.broobe-utils-options" "/root/.broobe-utils-options_bk"
+        mv "/root/.brolit-shell.conf" "/root/.brolit-shell.conf_bk"
 
     fi
 
@@ -410,7 +410,7 @@ function script_configuration_wizard() {
         SITES="$(whiptail --title "Websites Root Directory" --inputbox "The path where websites are stored. Ex: /var/www or /usr/share/nginx" 10 60 "${SITES_DEFAULT}" 3>&1 1>&2 2>&3)"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
-            echo "SITES=${SITES}" >>/root/.broobe-utils-options
+            echo "SITES=${SITES}" >>/root/.brolit-shell.conf
         else
             exit 1
         fi
@@ -488,7 +488,7 @@ function settings_set_server_role() {
 
             # Write config
             SERVER_CONFIG="${server_roles}"
-            echo "SERVER_CONFIG=\"${server_roles}\"" >>/root/.broobe-utils-options
+            echo "SERVER_CONFIG=\"${server_roles}\"" >>/root/.brolit-shell.conf
 
             export SERVER_CONFIG
 

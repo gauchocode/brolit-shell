@@ -1,8 +1,151 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.39
+# Version: 3.0.40
 ################################################################################
+
+
+function ask_project_state() {
+
+  # Parameters
+  #$1 = ${suggested_state} optional to select default option
+
+  local suggested_state=$1
+
+  local project_states
+  local project_state
+
+  project_states="prod stage test beta dev"
+
+  if [[ ${suggested_state} != *"${project_states}"* ]]; then
+    suggested_state="prod"
+  fi
+
+  project_state="$(whiptail --title "Project State" --menu "Choose a Project State" 20 78 10 $(for x in ${project_states}; do echo "$x [X]"; done) --default-item "${suggested_state}" 3>&1 1>&2 2>&3)"
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Return
+    echo "${project_state}"
+
+  else
+
+    return 1
+
+  fi
+
+}
+
+function ask_project_name() {
+
+  # Parameters
+  # $1 = ${project_name} optional to select default option
+
+  local project_name=$1
+
+  # Replace '-' and '.' chars
+  possible_name="$(echo "${project_name}" | sed -r 's/[.-]+/_/g')"
+
+  project_name="$(whiptail --title "Project Name" --inputbox "Insert a project name (only separator allow is '_'). Ex: my_domain" 10 60 "${possible_name}" 3>&1 1>&2 2>&3)"
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    log_event "debug" "Setting project_name: ${project_name}"
+
+    # Return
+    echo "${project_name}"
+
+  else
+    return 1
+
+  fi
+
+}
+
+# TODO: project_domain should be an array?
+function ask_project_domain() {
+
+  # Parameters
+  # $1 = ${project_domain} optional to select default option
+
+  local project_domain=$1
+
+  project_domain="$(whiptail --title "Domain" --inputbox "Insert the project's domain. Example: landing.domain.com" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Return
+    echo "${project_domain}"
+
+    return 0
+
+  else
+
+    return 1
+
+  fi
+
+}
+
+function ask_project_type() {
+
+  # No parameters
+
+  local project_types
+  local project_type
+
+  project_types="WordPress X Laravel X Basic-PHP X HTML X"
+
+  project_type="$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 $(for x in ${project_types}; do echo "$x"; done) 3>&1 1>&2 2>&3)"
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Lowercase
+    project_type="$(echo "${project_type}" | tr '[A-Z]' '[a-z]')"
+
+    # Return
+    echo "${project_type}"
+
+  else
+    return 1
+
+  fi
+
+}
+
+function ask_folder_to_install_sites() {
+
+  # Parameters
+  # $1 = ${folder_to_install} optional to select default option (could be empty)
+
+  local folder_to_install=$1
+
+  if [[ -z "${folder_to_install}" ]]; then
+
+    folder_to_install="$(whiptail --title "Folder to work with" --inputbox "Please select the project folder you want to work with:" 10 60 "${folder_to_install}" 3>&1 1>&2 2>&3)"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+      log_event "info" "Folder to work with: ${folder_to_install}"
+
+      # Return
+      echo "${folder_to_install}"
+
+    else
+      return 1
+
+    fi
+
+  else
+
+    log_event "info" "Folder to install: ${folder_to_install}"
+
+    # Return
+    echo "${folder_to_install}"
+
+  fi
+
+}
 
 #
 # TODO: check when add www.DOMAIN.com and then select other stage != prod
@@ -378,7 +521,7 @@ function project_install() {
   log_section "Project Installer (${project_type})"
 
   if [[ ${project_domain} == '' ]]; then
-    project_domain="$(ask_project_domain)"
+    project_domain="$(ask_project_domain "")"
   fi
 
   folder_to_install="$(ask_folder_to_install_sites "${dir_path}")"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.39
+# Version: 3.0.40
 #############################################################################
 
 function ask_migration_source_type() {
@@ -105,7 +105,7 @@ function ask_migration_source_db() {
 function wordpress_restore_from_source() {
 
   # Project details
-  project_domain="$(ask_project_domain)"
+  project_domain="$(ask_project_domain "")"
 
   possible_root_domain="$(get_root_domain "${project_domain}")"
 

@@ -1,13 +1,25 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.39
+# Version: 3.0.40
 #############################################################################
+#
+# Packages Helper: Perform apt actions.
+#
+################################################################################
 
-# Check if program is installed (package_is_installed "mysql-server")
+################################################################################
+# Check if package is installed. Ex: package_is_installed "mysql-server"
+#
+# Arguments:
+#   $1 = ${package}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+# TODO: Refactor to return 0 or 1
 function package_is_installed() {
-
-  # $1 = ${package}
 
   local package=$1
 
@@ -29,6 +41,16 @@ function package_is_installed() {
 
 }
 
+################################################################################
+# Install package
+#
+# Arguments:
+#   $1 = ${package}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function package_install_if_not() {
 
   # $1 = ${package}
@@ -40,15 +62,23 @@ function package_install_if_not() {
     apt update -q4 &
     spinner_loading && apt install "${package}" -y
 
-    log_event "info" "${package} installed"
+    log_event "info" "${package} installed" "false"
 
   fi
 
 }
 
-function add_ppa() {
+################################################################################
+# Add PPA
+#
+# Arguments:
+#   $@ - list of ppas
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  # $@ - list of ppas
+function add_ppa() {
 
   for i in "$@"; do
 
@@ -71,6 +101,17 @@ function add_ppa() {
 
 }
 
+################################################################################
+# Check package required (and install it)
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+# TODO: need a refactor
 function check_packages_required() {
 
   log_event "info" "Checking required packages ..."
@@ -397,6 +438,7 @@ function selected_package_installation() {
 
 }
 
+# TODO: need to move to system_helper.sh ?
 function timezone_configuration() {
 
   # Log
@@ -409,16 +451,27 @@ function timezone_configuration() {
   clear_last_line
   clear_last_line
   clear_last_line
+  clear_last_line
   display --indent 6 --text "- Time Zone configuration" --result "DONE" --color GREEN
 
-  log_break "true"
+  log_break "false"
 
 }
+
+################################################################################
+# Remove old packages
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function remove_old_packages() {
 
   # Log
-  log_event "info" "Cleanning old system packages ..."
+  log_event "info" "Cleanning old system packages ..." "false"
   display --indent 6 --text "- Cleanning old system packages"
 
   # apt commands
@@ -428,10 +481,20 @@ function remove_old_packages() {
 
   # Log
   clear_last_line
-  log_event "info" "Old system packages cleaned"
+  log_event "info" "Old system packages cleaned" "false"
   display --indent 6 --text "- Cleanning old system packages" --result "DONE" --color GREEN
 
 }
+
+################################################################################
+# Install packages for image optimization
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function install_image_optimize_packages() {
 
@@ -447,5 +510,7 @@ function install_image_optimize_packages() {
   clear_last_line # need an extra call to clear installation output
   clear_last_line
   display --indent 6 --text "- Installing jpegoptim, optipng and imagemagick" --result "DONE" --color GREEN
+
+  #return 0
 
 }

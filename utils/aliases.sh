@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.39
+# Version: 3.0.40
 ################################################################################
 
-source ~/.broobe-utils-options
+source ~/.brolit-shell.conf
+
+# Server Name
+VPSNAME="$HOSTNAME"
+
+SFOLDER="/root/brolit-shell"
+
+BROLIT_CONFIG_PATH="/etc/brolit"
 
 CLF_CONFIG_FILE=~/.cloudflare.conf
 if [[ ${CLOUDFLARE_ENABLE} == "true" && -f ${CLF_CONFIG_FILE} ]]; then
@@ -17,15 +24,15 @@ if [[ ${DROPBOX_ENABLE} == "true" && -f ${DPU_CONFIG_FILE} ]]; then
     # shellcheck source=${DPU_CONFIG_FILE}
     source "${DPU_CONFIG_FILE}"
     # Dropbox-uploader directory
-    DPU_F="/root/lemp-utils-scripts/tools/third-party/dropbox-uploader"
+    DPU_F="${SFOLDER}/tools/third-party/dropbox-uploader"
     # Dropbox-uploader runner
     DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
 
 fi
 
 # Version
-SCRIPT_VERSION="3.0.39"
-ALIASES_VERSION="3.0.39-055"
+SCRIPT_VERSION="3.0.40"
+ALIASES_VERSION="3.0.40-055"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -37,13 +44,6 @@ if [[ ! -d "${path_log}" ]]; then
 fi
 
 LOG="${path_log}/${log_name}"
-
-# Server Name
-VPSNAME="$HOSTNAME"
-
-SFOLDER="/root/lemp-utils-scripts"
-
-BROLIT_CONFIG_PATH="/etc/brolit"
 
 ################################################################################
 
@@ -718,8 +718,7 @@ function search() {
 
 ########################## UTILS FOR DEVOPS ###################################
 
-# All lemp-utils config
-function lemp_utils_config() {
+function brolit_shell_config() {
 
     # Return JSON part
     echo "\"script_version\": \"${SCRIPT_VERSION}\" , \"server_type\": \"${SERVER_CONFIG}\" , \"netdata_url\": \"${NETDATA_SUBDOMAIN}\" , \"mail_notif\": \"${MAIL_NOTIF}\" , \"telegram_notif\": \"${TELEGRAM_NOTIF}\" , \"dropbox_enable\": \"${DROPBOX_ENABLE}\" , \"cloudflare_enable\": \"${CLOUDFLARE_ENABLE}\" , \"smtp_server\": \"${SMTP_SERVER}\""
@@ -736,7 +735,7 @@ function serverinfo() {
     local public_ip
     local inet_ip # configured on network file
 
-    public_ip="$(curl --silent http://ipecho.net/plain)"
+    public_ip="$(curl --silent https://api.ipify.org)"
     inet_ip="$(/sbin/ifconfig eth0 | grep -w "inet" | awk '{print $2}')"
 
     distro="$(lsb_release -d | awk -F"\t" '{print $2}')"
@@ -1091,7 +1090,7 @@ function show_server_data() {
     local server_pkgs
 
     server_info="$(serverinfo)"
-    server_config="$(lemp_utils_config)"
+    server_config="$(brolit_shell_config)"
 
     if [[ "$(_is_pkg_installed "mysql-server")" == "true" || "$(_is_pkg_installed "mariadb-server")" == "true" ]]; then
         server_databases="$(mysql_databases)"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.39
+# Version: 3.0.40
 ################################################################################
 
 #
@@ -235,8 +235,8 @@ function restore_database_backup() {
 
   else
     # Make backup of actual database
-    log_event "info" "MySQL database ${db_name} already exists"
-    mysql_database_export "${db_name}" "${db_name}_bk_before_restore.sql"
+    log_event "info" "MySQL database ${db_name} already exists" "false"
+    mysql_database_export "${db_name}" "${TMP_DIR}/backups/${db_name}_bk_before_restore.sql"
 
   fi
 
@@ -251,7 +251,13 @@ function restore_database_backup() {
 
     # Log
     display --indent 6 --text "- Cleanning temp files" --result "DONE" --color GREEN
-    log_event "info" "Temp files cleanned"
+    log_event "info" "Temp files cleanned" "false"
+
+    return 0
+
+  else
+
+    return 1
 
   fi
 

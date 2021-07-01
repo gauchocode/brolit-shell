@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.39
+# Version: 3.0.40
 ################################################################################
 #
-# WP-CLI Helper: Perform wpcli actions.
+# WP-CLI Helper: Perform wpcli tasks.
 #
 # Refs: https://developer.wordpress.org/cli/commands/
 #
@@ -27,6 +27,8 @@ function wpcli_install_if_not_installed() {
     wpcli="$(command -v wp)"
 
     if [[ ! -x "${wpcli}" ]]; then
+
+        # Install wp-cli
         wpcli_install
 
         exitstatus=$?
@@ -105,11 +107,11 @@ function wpcli_check_version() {
 
 function wpcli_install() {
 
-    log_event "info" "Installing wp-cli ..."
+    log_event "info" "Installing wp-cli ..." "false"
     display --indent 6 --text "- Installing wp-cli"
 
     # Download wp-cli
-    curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+    curl --silent -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -118,9 +120,9 @@ function wpcli_install() {
         mv wp-cli.phar "/usr/local/bin/wp"
 
         # Log
-        clear_last_line
-        clear_last_line
-        clear_last_line
+        #clear_last_line
+        #clear_last_line
+        #clear_last_line
         clear_last_line
         display --indent 6 --text "- Installing wp-cli" --result "DONE" --color GREEN
         log_event "info" "wp-cli installed" "false"
@@ -130,9 +132,9 @@ function wpcli_install() {
     else
 
         # Log
-        clear_last_line
-        clear_last_line
-        clear_last_line
+        #clear_last_line
+        #clear_last_line
+        #clear_last_line
         clear_last_line
         display --indent 6 --text "- Installing wp-cli" --result "FAIL" --color RED
         log_event "error" "wp-cli was not installed!" "false"
@@ -261,12 +263,18 @@ function wpcli_install_needed_extensions() {
 
 }
 
-### wpcli core
+################################################################################
+# Download WordPress core.
+#
+# Arguments:
+#   $1 = ${wp_site}
+#   $2 = ${wp_version} - optional
+#
+# Outputs:
+#   0 if WordPress is downloaded, 1 on error.
+################################################################################
 
 function wpcli_core_download() {
-
-    # $1 = ${wp_site}
-    # $2 = ${wp_version} optional
 
     local wp_site=$1
     local wp_version=$2
@@ -292,6 +300,7 @@ function wpcli_core_download() {
             if [[ ${exitstatus} -eq 0 ]]; then
                 display --indent 6 --text "- Downloading WordPress ${wp_version}" --result "DONE" --color GREEN
                 display --indent 8 --text "${wp_site}" --tcolor GREEN
+                return 0
 
             else
                 display --indent 6 --text "- Downloading WordPress ${wp_version}" --result "FAIL" --color RED
@@ -315,6 +324,7 @@ function wpcli_core_download() {
             exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
                 display --indent 6 --text "- Wordpress installation for ${wp_site}" --result "DONE" --color GREEN
+                return 0
 
             else
                 display --indent 6 --text "- Wordpress installation for ${wp_site}" --result "FAIL" --color RED
@@ -337,13 +347,18 @@ function wpcli_core_download() {
 
 }
 
+################################################################################
+# Re-install WordPress core (it will not delete others files).
+#
+# Arguments:
+#   $1 = ${wp_site}
+#   $2 = ${wp_version} - optional
+#
+# Outputs:
+#   0 if WordPress is downloaded, 1 on error.
+################################################################################
+
 function wpcli_core_reinstall() {
-
-    # This will replace wordpress core files (didnt delete other files)
-    # Ref: https://github.com/wp-cli/wp-cli/issues/221
-
-    # $1 = ${wp_site}
-    # $2 = ${wp_version} optional
 
     local wp_site=$1
     local wp_version=$2
@@ -352,14 +367,14 @@ function wpcli_core_reinstall() {
 
     if [[ ${wp_site} != "" ]]; then
 
-        log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} core download --skip-content --force"
+        log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} core download --skip-content --force" "false"
 
         wpcli_result=$(sudo -u www-data wp --path="${wp_site}" core download --skip-content --force 2>&1 | grep "Success" | cut -d ":" -f1)
 
         if [[ "${wpcli_result}" = "Success" ]]; then
 
             # Log Success
-            log_event "info" "Wordpress re-installed"
+            log_event "info" "Wordpress re-installed" "false"
             display --indent 6 --text "- Wordpress re-install for ${wp_site}" --result "DONE" --color GREEN
 
             # Return
@@ -368,7 +383,7 @@ function wpcli_core_reinstall() {
         else
 
             # Log failure
-            log_event "fail" "Something went wrong installing WordPress"
+            log_event "fail" "Something went wrong installing WordPress" "false"
             display --indent 6 --text "- Wordpress re-install for ${wp_site}" --result "FAIL" --color RED
 
             # Return
@@ -378,7 +393,7 @@ function wpcli_core_reinstall() {
 
     else
         # Log failure
-        log_event "fail" "wp_site can't be empty!"
+        log_event "fail" "wp_site can't be empty!" "false"
         display --indent 6 --text "- Wordpress re-install for ${wp_site}" --result "FAIL" --color RED
         display --indent 8 --text "wp_site can't be empty"
 
@@ -428,6 +443,8 @@ function wpcli_core_update() {
         log_event "error" "Wordpress update failed" "false"
         display --indent 6 --text "- Download new WordPress version" --result "FAIL" --color RED
 
+        return 1
+
     fi
 
     echo "${verify_core_update}" #if ok, return "Success"
@@ -464,11 +481,11 @@ function wpcli_plugin_verify() {
 
     local verify_plugin
 
-    if [ "${plugin}" = "" ]; then
+    if [[ ${plugin} = "" ]]; then
         plugin="--all"
     fi
 
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin verify-checksums ${plugin}"
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin verify-checksums ${plugin}" "false"
 
     mapfile verify_plugin < <(sudo -u www-data wp --path="${wp_site}" plugin verify-checksums "${plugin}" 2>&1)
 
@@ -489,7 +506,7 @@ function wpcli_install_plugin() {
 
     # Log
     display --indent 6 --text "- Installing plugin ${plugin}"
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin install ${plugin}"
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin install ${plugin}" "false"
 
     # Command
     sudo -u www-data wp --path="${wp_site}" plugin install "${plugin}" --quiet
@@ -500,10 +517,14 @@ function wpcli_install_plugin() {
         clear_last_line
         display --indent 6 --text "- Installing plugin ${plugin}" --result "DONE" --color GREEN
 
+        return 0
+
     else
 
         clear_last_line
         display --indent 6 --text "- Installing plugin ${plugin}" --result "FAIL" --color RED
+
+        return 1
 
     fi
 
@@ -732,11 +753,22 @@ function wpcli_theme_delete() {
     local wp_site=$1
     local theme=$2
 
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} theme delete ${theme}"
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} theme delete ${theme}" "false"
 
     sudo -u www-data wp --path="${wp_site}" theme delete "${theme}" --quiet
 
-    display --indent 6 --text "- Deleting theme ${theme}" --result "DONE" --color GREEN
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        display --indent 6 --text "- Deleting theme ${theme}" --result "DONE" --color GREEN
+
+    else
+
+        display --indent 6 --text "- Deleting theme ${theme}" --result "FAIL" --color RED
+
+        return 1
+
+    fi
 
 }
 
@@ -952,8 +984,17 @@ function wpcli_maintenance_mode() {
 
     maintenance_mode="$(sudo -u www-data wp maintenance-mode "${mode}")"
 
-    # Return
-    echo "${maintenance_mode}"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Return
+        echo "${maintenance_mode}"
+
+    else
+
+        return 1
+
+    fi
 
 }
 
@@ -979,12 +1020,16 @@ function wpcli_seoyoast_reindex() {
         display --indent 6 --text "- Running yoast re-index" --result "DONE" --color GREEN
         log_event "info" "Yoast re-index done!"
 
+        return 0
+
     else
 
         # Log
         clear_last_line
         display --indent 6 --text "- Running yoast re-index" --result "FAIL" --color RED
         log_event "error" "Yoast re-index failed!"
+
+        return 1
 
     fi
 
@@ -1000,8 +1045,18 @@ function wpcli_get_wpcore_version() {
 
     core_version="$(sudo -u www-data wp --path="${wp_site}" core version)"
 
-    # Return
-    echo "${core_version}"
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Return
+        echo "${core_version}"
+
+    else
+
+        return 1
+
+    fi
 
 }
 
@@ -1011,10 +1066,22 @@ function wpcli_get_db_prefix() {
 
     local wp_site=$1
 
-    DB_PREFIX=$(sudo -u www-data wp --path="${wp_site}" db prefix)
+    local db_prefix
 
-    # Return
-    echo "${DB_PREFIX}"
+    db_prefix="$(sudo -u www-data wp --path="${wp_site}" db prefix)"
+
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Return
+        echo "${db_prefix}"
+
+    else
+
+        return 1
+
+    fi
 
 }
 
@@ -1026,14 +1093,31 @@ function wpcli_change_tables_prefix() {
     local wp_site=$1
     local db_prefix=$2
 
-    log_event "debug" "Running: wp --allow-root --path=${wp_site} rename-db-prefix ${db_prefix}" "false"
     display --indent 6 --text "- Changing tables prefix"
+    log_event "debug" "Running: wp --allow-root --path=${wp_site} rename-db-prefix ${db_prefix}" "false"
 
+    # Command
     wp --allow-root --path="${wp_site}" rename-db-prefix "${db_prefix}" --no-confirm
 
-    #clear_last_line
-    display --indent 6 --text "- Changing tables prefix" --result "DONE" --color GREEN
-    display --indent 8 --text "New tables prefix ${TABLES_PREFIX}"
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        #clear_last_line
+        display --indent 6 --text "- Changing tables prefix" --result "DONE" --color GREEN
+        display --indent 8 --text "New tables prefix ${TABLES_PREFIX}"
+
+        return 0
+
+    else
+
+        #clear_last_line
+        display --indent 6 --text "- Changing tables prefix" --result "FAIL" --color RED
+        log_event "error" "Changing tables prefix for site ${wp_site}" "false"
+
+        return 1
+
+    fi
 
 }
 
@@ -1052,11 +1136,12 @@ function wpcli_search_and_replace() {
     #local wp_site_url
 
     # Folder Name need to be the Site URL
-    wp_site_url=$(basename "${wp_site}")
+    wp_site_url="$(basename "${wp_site}")"
 
     wp --allow-root --path="${wp_site}" core is-installed --network
+
     is_network=$?
-    if [ "${is_network}" -eq 0 ]; then
+    if [[ "${is_network}" -eq 0 ]]; then
 
         log_event "debug" "Running: wp --allow-root --path=${wp_site} search-replace --url=https://${wp_site_url} ${search} ${replace} --network" "false"
 
@@ -1064,6 +1149,8 @@ function wpcli_search_and_replace() {
 
         display --indent 6 --text "- Running search and replace" --result "DONE" --color GREEN
         display --indent 8 --text "${search} was replaced by ${replace}"
+
+        #return 0
 
     else
 
@@ -1076,11 +1163,13 @@ function wpcli_search_and_replace() {
 
     fi
 
-    log_event "debug" "Running: wp --allow-root --path=${wp_site} cache flush" "false"
+    # Cache Flush
+    sudo -u www-data wp --path="${wp_site}" cache flush --quiet
+    display --indent 6 --text "- Flush cache" --result "DONE" --color GREEN
 
-    wp --allow-root --path="${wp_site}" cache flush --quiet
-
-    display --indent 6 --text "- Flushing cache" --result "DONE" --color GREEN
+    # Rewrite Flush
+    sudo -u www-data wp --path="${wp_site}" rewrite flush --quiet
+    display --indent 6 --text "- Flush rewrite" --result "DONE" --color GREEN
 
 }
 
@@ -1111,6 +1200,7 @@ function wpcli_export_database() {
     local dump_file=$2
 
     log_event "debug" "Running: wp --allow-root --path=${wp_site} db export ${dump_file}" "false"
+
     wp --allow-root --path="${wp_site}" db export "${dump_file}" --quiet
 
     display --indent 6 --text "- Exporting database ${wp_site}" --result "DONE" --color GREEN
@@ -1156,6 +1246,8 @@ function wpcli_user_reset_passw() {
     local wp_user_pass=$3
 
     log_event "info" "User password reset for ${wp_user}. New password: ${wp_user_pass}" "false"
+
+    # Command
     wp --allow-root --path="${wp_site}" user update "${wp_user}" --user_pass="${wp_user_pass}"
 
     display --indent 6 --text "- Password reset for ${wp_user}" --result "DONE" --color GREEN
@@ -1173,18 +1265,24 @@ function wpcli_change_wp_seo_visibility() {
     local wp_site=$1
     local visibility=$2
 
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} option set blog_public ${visibility}"
+    log_event "debug" "Running: sudo -u www-data wp --path=\"${wp_site}\" option set blog_public ${visibility}" "false"
+
+    # Command
     sudo -u www-data wp --path="${wp_site}" option set blog_public "${visibility}" --quiet
 
     display --indent 6 --text "- Changing site visibility to ${visibility}" --result "DONE" --color GREEN
 
 }
+
 function wpcli_rocket_cache_clean() {
 
     # $1 = ${wp_site} (site path)
 
     local wp_site=$1
 
+    log_event "debug" "Running: wp --allow-root --path=\"${wp_site}\" rocket clean --confirm" "false"
+
+    # Command
     wp --allow-root --path="${wp_site}" rocket clean --confirm
 
     display --indent 6 --text "- Cache purge for ${wp_site}" --result "DONE" --color GREEN
@@ -1197,6 +1295,9 @@ function wpcli_rocket_cache_activate() {
 
     local wp_site=$1
 
+    log_event "debug" "Running: wp --allow-root --path=\"${wp_site}\" rocket activate-cache" "false"
+
+    # Command
     wp --allow-root --path="${wp_site}" rocket activate-cache
 
     display --indent 6 --text "- Cache activated for ${wp_site}" --result "DONE" --color GREEN
@@ -1209,6 +1310,9 @@ function wpcli_rocket_cache_deactivate() {
 
     local wp_site=$1
 
+    log_event "debug" "Running: wp --allow-root --path=\"${wp_site}\" rocket deactivate-cache" "false"
+
+    # Command
     wp --allow-root --path="${wp_site}" rocket deactivate-cache
 
     display --indent 6 --text "- Cache deactivated for ${wp_site}" --result "DONE" --color GREEN
@@ -1221,6 +1325,9 @@ function wpcli_rocket_settings_export() {
 
     local wp_site=$1
 
+    log_event "debug" "Running: wp --allow-root --path=\"${wp_site}\" rocket export" "false"
+
+    # Command
     wp --allow-root --path="${wp_site}" rocket export
 
     display --indent 6 --text "- Settings exported for ${wp_site}" --result "DONE" --color GREEN
@@ -1235,6 +1342,9 @@ function wpcli_rocket_settings_import() {
     local wp_site=$1
     local settings_json=$2
 
+    log_event "debug" "Running: wp --allow-root --path=\"${wp_site}\" rocket import --file=\"${settings_json}\"" "false"
+
+    # Command
     wp --allow-root --path="${wp_site}" rocket import --file="${settings_json}"
 
     display --indent 6 --text "- Settings imported for ${wp_site}" --result "DONE" --color GREEN
@@ -1256,7 +1366,7 @@ function wpcli_option_get_home() {
     # wp-cli command
     wp_option_home="$(sudo -u www-data wp --path="${wp_site}" option get home)"
 
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} option get home"
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} option get home" "false"
     log_event "info" "wp_option_home:${wp_option_home}"
 
     # Return
