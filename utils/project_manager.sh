@@ -57,7 +57,7 @@ function menu_project_utils() {
       # Directory_broser returns: " $filepath"/"$filename
       if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
 
-        log_event "info" "Operation cancelled!"
+        log_event "info" "Operation cancelled!" "false"
 
       else
 
@@ -79,7 +79,7 @@ function menu_project_utils() {
       # Directory_broser returns: " $filepath"/"$filename
       if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
 
-        log_event "info" "Operation cancelled!"
+        log_event "info" "Operation cancelled!" "false"
 
         # Return
         #return 1
