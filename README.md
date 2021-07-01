@@ -81,13 +81,13 @@ sudo apt-get update && sudo apt-get install git -y
 Cloning repo (gitHub):
 
 ```bash
-git clone https://github.com/lpadula/lemp-utils-scripts
+git clone https://github.com/lpadula/brolit-shell
 ```
 
-Change directories to the new ~/lemp-utils-script directory:
+Change directories to the new ~/brolit-shell directory:
 
 ```bash
-cd ~/lemp-utils-scripts
+cd ~/brolit-shell
 ```
 
 ## Getting started
@@ -104,7 +104,7 @@ Run it:
 ./runner.sh
 ```
 
-The first time you run `runner.sh`, you'll be guided through a wizard in order to configure it. This configuration will be stored in `~/.lemp-utils-script`.
+The first time you run `runner.sh`, you'll be guided through a wizard in order to configure it. This configuration will be stored in `~/.brolit-shell.conf`.
 
 ## Update
 
@@ -116,7 +116,7 @@ Run updater.sh
 
 ## Running as cron job
 
-This script relies on a different configuration file for each system user. The default configuration file location is `root/.broobe-utils-script`.
+This script relies on a different configuration file for each system user. The default configuration file location is `root/.brolit-shell.conf`.
 This means that if you setup the script with your user and then you try to run a cron job as root, it won't work.
 
 * To setup the script to run as a cron job please use the option "CRON TASKS"
@@ -133,7 +133,7 @@ More information here: [FLAGS](./docs/DOC-flags.md)
 
 ## Third Party Utils
 
-LEMP Utils Script uses some third-party tools:
+BROLIT Shell uses some third-party tools:
 
 ### Dropbox Uploader
 
