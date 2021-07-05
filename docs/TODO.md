@@ -19,26 +19,26 @@
 
 - [ ] Core: need to check if select domain is a root domain or www domain, and ask if the user want to create a redirection.
 - [ ] Core: create a way to check if nginx, php, and other parameters are correct before run the script.
-- [ ] Nginx: new default nginx configuration for wordpress projects fails after running certbot.
+- [ ] Nginx-LetsEncrypt: regenerate nginx server configuration projects fails after running certbot.
+- [ ] Nginx-LetsEncrypt: When copy or generate a new nginx server configuration need to check certificates.
 - [ ] LetsEncrypt: need a better way to re-install a certificate after a website migration.
 - [ ] LetsEncrypt: when delete a certificate, nginx config fails.
 - [ ] Project: on project delete, if the script can't find the user, maybe it will be better list all mysql users with database permision (before database deletion).
+- [ ] WordPress: WP-CLI should not be required if server type != webserver.
 
 ### Need more testing
 
-- [ ] Nginx: Option to copy or generate a new nginx server configuration.
 - [ ] Nginx: Globals configs support.
 - [ ] PHP: Option to enable or disable OpCache.
-- [ ] Project Utils: project creation fails when use project name like 'myproject_name' (has an underscore).
 - [ ] WordPress: Install fails when set a project name like: xyz_sub_domain.
 - [ ] Backups: When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?).
 - [ ] Installers: On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages.
 
 ### In Progress
 
+- [ ] Core: Generate project config file (pname-brolit.conf).
 - [ ] Server Setup: option to run without menu.
         Example: ./runner.sh --task "server-setup" --mariadb "default" --mariadb-pass "root_pass" --nginx "default" --php "default" --certbot
-- [ ] MySQL: Rename database helper (with and without WP).
 - [ ] Core: On project creation/restore need to ask first the project state, then project domain.
         If project state != prod and subdomains is not containing the stage, need to suggest one.
         Example: test.multiplacas.broobe.hosting OK
@@ -51,24 +51,21 @@
         Need to change if later the script detects a php, nginx o mysql installation.
         https://www.digitalocean.com/community/tutorials/automating-the-deployment-of-a-scalable-wordpress-site
         https://spinupwp.com/scaling-wordpress-dedicated-database-server/
-- [ ] Core: Refactor of script_configuration_wizard.
 - [ ] Nginx: Better nginx config. 
         Ref https://www.digitalocean.com/community/tools/nginx
 - [ ] Nginx: At startup, check if nginx has globals installed.
 - [ ] Project Utils: Add delete database and create database option.
 - [ ] Cloudflare: the script should ask you if you want to work with Cloudflare support (also when you create a new project).
+- [ ] WP-CLI: Better error handling.
 
 ### Done ✓
 
-- [x] WordPress: WP-CLI is required to the script works propperly, must install on script setup.
 - [x] WordPress: support for multiple WP installations inside the main project directory.
 - [x] Nginx: New option to put a website offline/online.
 - [x] Scheduled options: Add option to run on specific time.
 - [x] Log/Display: Better log handling and display improvements.
 - [x] It Utils: Alias support for BASH.
 - [x] Installers: Support for multiple PHP version installation.
-- [x] Core: Refactor to let the script be runned with flags.
-- [x] Core: Secure store for MySQL password.
 - [x] When a certificate expired, the email subject didn't show the Warning message.
 - [x] Project Utils: A new option "Create project database" to create a database, and a database user for an specific project.
 - [x] MySQL: when create a new user, ask what kind of connection do you want: localhost or % (any host).
@@ -77,39 +74,38 @@
 ## For release 3.2
 
 - [ ] Core: Solve small "TODOs" comments on the project.
+- [ ] Core: Refactor settings config (change to a json config file?).
+- [ ] Core: Complete refactor of script_configuration_wizard.
 - [ ] Core: Better structure of deleted projects on dropbox.
 - [ ] Core: Add an option to backup all and prepare VPS to be offline/deleted (add a VPS offline structure on dropbox).
-- [ ] Core: make new standard directory structure for projects "${SITES}/${ROOT_DOMAIN}/${SUBDOMAIN}/public".
+- [ ] Core: make new standard directory structure for projects "${SITES}/${ROOT_DOMAIN}/${SUBDOMAIN}/public". ?
       Logs could be stored on "${SITES}/${ROOT_DOMAIN}/${SUBDOMAIN}/log"
-- [ ] Core: Complete refactor of "Options Wizard": (Backup Options, Notification Options, Cloudflare Config).
 - [ ] Core: maybe with could ask for database user nomenclature. Today is "PROJECTNAME_user" and it could be "PROJECTNAME_PROJECTSTATE_user".
-- [ ] Core: Add react-project support:
-        https://www.digitalocean.com/community/tutorials/how-to-deploy-a-react-application-with-nginx-on-ubuntu-20-04
 - [ ] Backups: Refactor for backup/restore: 5 options (server_config, site_config, site, database and project).
 - [ ] Restore: Finish function restore_config_files_from_dropbox.
 - [ ] PHP: php_reconfigure refactor (replace strings instead of replace entired config files).
-- [ ] Hetzner cloud cli support: https://github.com/hetznercloud/cli
 - [ ] Nginx: Multidomain support for nginx.
 - [ ] Nginx: Add http2 support on nginx server config files.
 - [ ] Nginx: New option to put website on maintenance (maybe rename index.html/php and create a new HTML).
+- [ ] MySQL: Rename database helper (with and without WP).
+- [ ] Woocommerce support: https://github.com/woocommerce/woocommerce/wiki/WC-CLI-Commands
 
 ## For release 3.3
 
-- [ ] Core: Add an option to change 'tmp' directory.
-- [ ] Core: Create a way to check if the project respect the script standard.
 - [ ] Core: dependencies and configuration checker.
       If the script is runned on a system that was not configured by the script, it could fail.
-- [ ] Utils: Support for phpservermon: https://github.com/phpservermon/phpservermon
 - [ ] Notifications: After install a new project (with credentials info).
 - [ ] Backups: On backup failure, the email must show what files fails and what files are correct backuped.
 - [ ] Backups: Implement on restore_from_backup easy way to restore all sites.
 - [ ] Refactor of RESTORE_FROM_SOURCE and complete server config restore.
+- [ ] Hetzner cloud cli support: https://github.com/hetznercloud/cli
 - [ ] Network: implements hetzner network configuration.
       https://docs.hetzner.com/cloud/networks/server-configuration/
-- [ ] Wordpress: More wp-cli functions on the wp-cli manager.
-- [ ] Wordpress: Rollback plugins and core updates (wpcli_rollback_plugin_version on wpcli_helper.sh)
-- [ ] Buddypress support: https://github.com/buddypress/wp-cli-buddypress
-- [ ] WP-CLI: Better error handling.
+- [ ] Wordpress: Rollback plugins and core updates (wpcli_rollback_plugin_version)
+- [ ] SFTP: Option to create a user jail on sftp_create_user.
+        Important:https://www.electricmonk.nl/log/2015/07/13/ssh-chrootdirectory-sftponly-not-working-fixed/
+- [ ] Core: Add react-project support:
+        https://www.digitalocean.com/community/tutorials/how-to-deploy-a-react-application-with-nginx-on-ubuntu-20-04
 
 ## For release 3.4
 
@@ -122,8 +118,7 @@
 - [ ] Installers: COPY_FROM_PROJECT option to exclude uploads directory
         rsync -ax --exclude [relative path to directory to exclude] /path/from /path/to
 - [ ] Installers: Option to select netdata metrics to be reported.
-- [ ] SFTP: Option to create a user jail on sftp_create_user.
-      Important:https://www.electricmonk.nl/log/2015/07/13/ssh-chrootdirectory-sftponly-not-working-fixed/
+- [ ] Buddypress support: https://github.com/buddypress/wp-cli-buddypress
 
 ## For release 3.5
 

@@ -124,7 +124,7 @@ function sftp_create_user() {
 
     # Log
     display --indent 6 --text "- Configuring SSH access" --result "DONE" --color GREEN
-    log_event "info" "SSH access configured"
+    log_event "info" "SSH access configured" "false"
 
     # Select project to work with
     directory_browser "Select a project to work with" "${SITES}" #return $filename
