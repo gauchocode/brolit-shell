@@ -230,7 +230,11 @@ function test_jsonify_function_return() {
 
     config_value="$(cat ${config_file} | jq -r ".${config_field}")"
 
-    # Return
-    echo "${config_value}"
+    if [[ ${config_value} = "webserver" ]]; then
+        display --indent 6 --text "- result: ${config_value}" --result "PASS" --color WHITE
+    else
+        display --indent 6 --text "- result: ${config_value}" --result "FAIL" --color RED
+        #display --indent 6 --text "result: ${result}" --tcolor RED
+    fi
 
 }
