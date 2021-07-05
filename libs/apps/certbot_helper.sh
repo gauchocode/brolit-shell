@@ -309,7 +309,7 @@ function certbot_certificate_valid_days() {
 
 }
 
-function cerbot_certificate_get_valid_days() {
+function certbot_certificate_get_valid_days() {
   # $1 = domains (domain.com,www.domain.com)
 
   local domain=$1

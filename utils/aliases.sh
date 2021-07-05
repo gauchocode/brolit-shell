@@ -300,7 +300,7 @@ function _get_backup_date() {
 
 }
 
-function _cerbot_certificate_get_valid_days() {
+function _certbot_certificate_get_valid_days() {
     # $1 = domains (domain.com,www.domain.com)
 
     local domain=$1
@@ -825,7 +825,7 @@ function sites_directories() {
             site_size="$(echo "${site_size_du}" | awk '{print $1;}')"
 
             # Cert
-            site_cert="$(_cerbot_certificate_get_valid_days "${site}")"
+            site_cert="$(_certbot_certificate_get_valid_days "${site}")"
 
             # Cloudflare
             root_domain="$(_get_root_domain "${site}")"
