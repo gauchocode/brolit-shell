@@ -454,7 +454,7 @@ function settings_set_server_role() {
     local server_roles
 
     # TODO: default roles
-    # local default_role="webserver, database"
+    # local default_role="webserver,database"
 
     if [[ -z ${SERVER_CONFIG} ]]; then
 
