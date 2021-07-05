@@ -6,6 +6,8 @@
 
 function server_setup() {
 
+    local server_roles
+
     log_section "Server Setup"
 
     # Configuring packages
