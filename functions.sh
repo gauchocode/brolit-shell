@@ -3,8 +3,24 @@
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Version: 3.0.41
 ################################################################################
+#
+# Script Name: Functions
+# Description: List all functions from helpers.
+#
+################################################################################
 
-function get_function_list () {
+################################################################################
+# Description:
+#   Get list of functions from specific script file
+#
+# Arguments:
+#   $1 = ${script_file}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function get_functions_from_script() {
     env -i bash --noprofile --norc -c '
     source "'"$1"'"
     typeset -f |
@@ -17,6 +33,39 @@ function get_function_list () {
 '
 }
 
-for function_name in $(get_function_list libs/apps/certbot_helper.sh); do
-    echo "${function_name}"
-done
+################################################################################
+# Description:
+#   Get all functions from all script files.
+#
+# Arguments:
+#   $1 = ${helper_name} - Optional
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+
+function get_all_function_list() {
+
+    # If parameter is empty get functions from all script files
+    if [[ -z $1 ]]; then
+
+        script_files="$(find -name "*_helper*" ! -path "*/tests/*")"
+
+    else
+
+        script_files="$(find -name "*$1_helper*" ! -path "*/tests/*")"
+
+    fi
+
+    for script_file in ${script_files}; do
+
+        for function_name in $(get_functions_from_script "${script_file}"); do
+            echo "${function_name}"
+        done
+
+    done
+
+}
+
+get_all_function_list "${1}"
