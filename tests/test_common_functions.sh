@@ -221,7 +221,7 @@ function test_jsonify_function_return() {
 
     if [[ -e ${config_file} ]]; then
 
-        server_roles="$(jq ".SERVER_ROLES = \"${server_roles}\"" "${config_file}")" && echo "${server_roles}" >"${config_file}"
+        server_roles="$(jq ".${config_field} = \"${server_roles}\"" "${config_file}")" && echo "${server_roles}" >"${config_file}"
 
     else
 
@@ -234,6 +234,32 @@ function test_jsonify_function_return() {
     config_value="$(cat ${config_file} | jq -r ".${config_field}")"
 
     if [[ ${config_value} = "webserver" ]]; then
+        display --indent 6 --text "- result: ${config_value}" --result "PASS" --color WHITE
+    else
+        display --indent 6 --text "- result: ${config_value}" --result "FAIL" --color RED
+    fi
+
+    ###############################################
+
+    config_field="NOTIFICATIONS.email.status"
+
+    status="enable"
+
+    if [[ -e ${config_file} ]]; then
+
+        status="$(jq ".${config_field} = \"${status}\"" "${config_file}")" && echo "${status}" >"${config_file}"
+
+    else
+
+        # Return
+        #echo "false"
+        exit 1
+
+    fi
+
+    config_value="$(cat ${config_file} | jq -r ".${config_field}")"
+
+    if [[ ${config_value} = "enable" ]]; then
         display --indent 6 --text "- result: ${config_value}" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- result: ${config_value}" --result "FAIL" --color RED
