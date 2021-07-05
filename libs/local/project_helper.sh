@@ -3,12 +3,22 @@
 # Autor: BROOBE. web + mobile development - https://broobe.com
 # Version: 3.0.41
 ################################################################################
+#
+# Project Helper: Perform project actions.
+#
+################################################################################
 
+################################################################################
+# Ask project state
+#
+# Arguments:
+#   $1 = ${suggested_state} - optional to select default option#
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function ask_project_state() {
-
-  # Parameters
-  #$1 = ${suggested_state} optional to select default option
 
   local suggested_state=$1
 
@@ -22,11 +32,14 @@ function ask_project_state() {
   fi
 
   project_state="$(whiptail --title "Project State" --menu "Choose a Project State" 20 78 10 $(for x in ${project_states}; do echo "$x [X]"; done) --default-item "${suggested_state}" 3>&1 1>&2 2>&3)"
+  
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Return
     echo "${project_state}"
+
+    return 0
 
   else
 
@@ -36,17 +49,27 @@ function ask_project_state() {
 
 }
 
+################################################################################
+# Ask project name
+#
+# Arguments:
+#   $1 = ${project_name} - optional to select default option
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function ask_project_name() {
 
-  # Parameters
-  # $1 = ${project_name} optional to select default option
-
   local project_name=$1
+
+  local possible_name
 
   # Replace '-' and '.' chars
   possible_name="$(echo "${project_name}" | sed -r 's/[.-]+/_/g')"
 
   project_name="$(whiptail --title "Project Name" --inputbox "Insert a project name (only separator allow is '_'). Ex: my_domain" 10 60 "${possible_name}" 3>&1 1>&2 2>&3)"
+  
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -71,6 +94,7 @@ function ask_project_domain() {
   local project_domain=$1
 
   project_domain="$(whiptail --title "Domain" --inputbox "Insert the project's domain. Example: landing.domain.com" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
+  
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -670,7 +694,7 @@ function project_delete_database() {
   # List databases
   databases="$(mysql_list_databases)"
   chosen_database="$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)"
-  
+
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 

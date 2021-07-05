@@ -45,7 +45,7 @@ function nginx_server_create() {
         rm "${WSERVER}/sites-enabled/${project_domain}"
 
         # Show message
-        display --indent 6 --text "- Backing up actual nginx server config" --result DONE --color GREEN
+        display --indent 6 --text "- Backup nginx server config" --result DONE --color GREEN
 
     fi
 
