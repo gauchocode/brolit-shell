@@ -209,6 +209,7 @@ function test_jsonify_function_return() {
 
     local config_file
     local config_field
+    local server_roles
 
     log_subsection "jsonify_function_return"
 
@@ -236,7 +237,6 @@ function test_jsonify_function_return() {
         display --indent 6 --text "- result: ${config_value}" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- result: ${config_value}" --result "FAIL" --color RED
-        #display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
 }
