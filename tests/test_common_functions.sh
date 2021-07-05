@@ -210,7 +210,9 @@ function test_jsonify_function_return() {
     local config_file
     local config_field
 
-    config_file=".assets/brolit_shell.conf"
+    log_subsection "jsonify_function_return"
+
+    config_file="assets/brolit_shell.conf"
 
     config_field="SERVER_ROLES"
 
