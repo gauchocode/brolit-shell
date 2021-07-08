@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.41
+# Version: 3.0.42
 #############################################################################
 
 # Libs apps directory path
@@ -36,7 +36,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.0.41"
+  declare -g SCRIPT_V="3.0.42"
 
   # Hostname
   declare -g VPSNAME="$HOSTNAME"
@@ -1373,6 +1373,8 @@ function menu_main_options() {
       if [[ ${answer} == "y" ]]; then
         script_configuration_wizard "reconfigure"
       fi
+
+      menu_main_options
 
     fi
     if [[ ${chosen_type} == *"10"* ]]; then
