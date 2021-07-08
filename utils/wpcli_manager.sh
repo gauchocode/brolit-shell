@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.41
+# Version: 3.0.42
 ################################################################################
 
 function wpcli_manager() {
@@ -25,6 +25,13 @@ function wpcli_manager() {
   startdir="${SITES}"
   menutitle="Site Selection Menu"
   directory_browser "${menutitle}" "${startdir}"
+
+  # If directory browser was cancelled
+  if [[ -z ${filename} ]]; then
+
+    return 1
+
+  fi
 
   # WP Path
   wp_site="${filepath}/${filename}"
