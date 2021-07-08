@@ -10,16 +10,31 @@ function wpcli_installer_menu() {
 
     if [[ ${WPCLI_INSTALLED} == "true" ]]; then
 
-        WPCLI_INSTALLER_OPTIONS="01 UPDATE_WPCLI 02 UNINSTALL_WPCLI"
-        CHOSEN_WPCLI_INSTALLER_OPTION=$(whiptail --title "WPCLI INSTALLER" --menu "Choose an option:" 20 78 10 $(for x in ${WPCLI_INSTALLER_OPTIONS}; do echo "$x"; done) 3>&1 1>&2 2>&3)
+        wpcli_options_title="INSTALLERS AND CONFIGURATORS"
+
+        wp_cli_installer_options=(
+            "01)" "UPDATE WP-CLI"
+            "02)" "UNINSTALL WP-CLI"
+            "03)" "NGINX"
+            "04)" "PHPMYADMIN"
+            "05)" "NETDATA"
+            "06)" "MONIT"
+            "07)" "COCKPIT"
+            "08)" "CERTBOT"
+            "09)" "WP-CLI"
+            "10)" "NODE-JS"
+        )
+
+        chosen_wp_cli_installer_option="$(whiptail --title ${wpcli_options_title}" --menu "Choose an option:" 20 78 10 $(for x in ${wp_cli_installer_options}; do echo "$x"; done) 3>&1 1>&2 2>&3)"
+
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
-            if [[ ${CHOSEN_WPCLI_INSTALLER_OPTION} == *"01"* ]]; then
+            if [[ ${chosen_wp_cli_installer_option} == *"01"* ]]; then
                 wpcli_update
 
             fi
-            if [[ ${CHOSEN_WPCLI_INSTALLER_OPTION} == *"02"* ]]; then
+            if [[ ${chosen_wp_cli_installer_option} == *"02"* ]]; then
                 wpcli_uninstall
 
             fi

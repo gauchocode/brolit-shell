@@ -1366,7 +1366,13 @@ function menu_main_options() {
 
     fi
     if [[ ${chosen_type} == *"09"* ]]; then
-      script_configuration_wizard "reconfigure"
+
+      echo -ne "Are you sure you want to reconfigure the script? [y/n]"
+      read -r answer
+
+      if [[ ${answer} == "y" ]]; then
+        script_configuration_wizard "reconfigure"
+      fi
 
     fi
     if [[ ${chosen_type} == *"10"* ]]; then

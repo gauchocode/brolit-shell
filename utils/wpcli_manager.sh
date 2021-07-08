@@ -6,15 +6,23 @@
 
 function wpcli_manager() {
 
+  local wpcli_installed
   local wp_site
   local second_path
   local chosen_wp_path
 
+  #wpcli_install_if_not_installed
+
   # Install wpcli if not installed
-  wpcli_install_if_not_installed
+  wpcli_installed="$(wpcli_check_if_installed)"
+  if [[ ${wpcli_installed} == "true" ]]; then
+    wpcli_update
+  else
+    wpcli_install
+  fi
 
   # Directory Browser
-  startdir=${SITES}
+  startdir="${SITES}"
   menutitle="Site Selection Menu"
   directory_browser "${menutitle}" "${startdir}"
 
@@ -110,7 +118,7 @@ function wpcli_main_menu() {
     "14)" "CREATE WP USER"
     "15)" "RESET WP USER PASSW"
   )
-  
+
   chosen_wpcli_options="$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 "${wpcli_options[@]}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?

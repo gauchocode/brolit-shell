@@ -322,21 +322,11 @@ function check_packages_required() {
 
     fi
 
-  else
-
-    # PHP is installed, now checking WP-CLI
-    WPCLI_INSTALLED="$(wpcli_check_if_installed)"
-    if [[ ${WPCLI_INSTALLED} = "true" ]]; then
-      wpcli_update
-    else
-      wpcli_install
-    fi
-
   fi
 
   # Log
   display --indent 2 --text "- Checking script dependencies" --result "DONE" --color GREEN
-  log_event "info" "All required packages are installed"
+  log_event "info" "All required packages are installed" "false"
 
 }
 
