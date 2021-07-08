@@ -29,7 +29,8 @@ function wpcli_manager() {
   # If directory browser was cancelled
   if [[ -z ${filename} ]]; then
 
-    return 1
+    # Return
+    menu_main_options
 
   fi
 
