@@ -25,8 +25,6 @@ function server_setup() {
 
     for server_role in "${server_roles_array[@]}"; do
 
-        log_event "debug" "Setting server_role=${server_role}" "false"
-
         case ${server_role} in
 
         webserver)
@@ -47,15 +45,15 @@ function server_setup() {
             ;;
 
         webapp)
-            echo "TODO"
+            log_event "info" "NEED IMPLEMENTATION" "true"
             ;;
 
         cache)
-            echo "TODO"
+            log_event "info" "NEED IMPLEMENTATION" "true"
             ;;
 
         replica)
-            echo "TODO"
+            log_event "info" "NEED IMPLEMENTATION" "true"
             ;;
 
         esac

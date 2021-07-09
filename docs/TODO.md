@@ -106,6 +106,8 @@
         Important:https://www.electricmonk.nl/log/2015/07/13/ssh-chrootdirectory-sftponly-not-working-fixed/
 - [ ] Core: Add react-project support:
         https://www.digitalocean.com/community/tutorials/how-to-deploy-a-react-application-with-nginx-on-ubuntu-20-04
+- [ ] Moodle Support: https://websiteforstudents.com/how-to-install-moodle-on-ubuntu-20-04-18-04-with-nginx-and-lets-encrypt/
+      Moodle data must be on independent directory (need to implements backup/restore support too)
 
 ## For release 3.4
 
