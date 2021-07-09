@@ -706,6 +706,7 @@ function restore_type_selection_from_dropbox() {
             startdir="${folder_to_install}"
             menutitle="Site Selection Menu"
             directory_browser "${menutitle}" "${startdir}"
+            
             directory_browser_result=$?
             if [[ ${directory_browser_result} -eq 1 ]]; then
 

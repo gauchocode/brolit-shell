@@ -182,11 +182,21 @@ function menu_security_clamav_scan() {
   startdir="${SITES}"
   directory_browser "${menutitle}" "${startdir}"
 
-  to_scan=$filepath"/"$filename
+  # If directory browser was cancelled
+  if [[ -z ${filename} ]]; then
 
-  log_event "info" "Starting clamav scan on: ${to_scan}" "false"
+    # Return
+    menu_security_utils
 
-  security_clamav_scan "${to_scan}"
+  else
+
+    to_scan=$filepath"/"$filename
+
+    log_event "info" "Starting clamav scan on: ${to_scan}" "false"
+
+    security_clamav_scan "${to_scan}"
+
+  fi
 
 }
 
@@ -197,11 +207,21 @@ function menu_security_custom_scan() {
   startdir="${SITES}"
   directory_browser "${menutitle}" "${startdir}"
 
-  to_scan=$filepath"/"$filename
+  # If directory browser was cancelled
+  if [[ -z ${filename} ]]; then
 
-  log_event "info" "Starting custom scan on: ${to_scan}" "false"
+    # Return
+    menu_security_utils
 
-  security_custom_scan "${to_scan}"
+  else
+
+    to_scan=$filepath"/"$filename
+
+    log_event "info" "Starting custom scan on: ${to_scan}" "false"
+
+    security_custom_scan "${to_scan}"
+
+  fi
 
 }
 
