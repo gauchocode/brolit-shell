@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.42
+# Version: 3.0.43
 #############################################################################
 
 # Source all apps libs
@@ -19,7 +19,7 @@ source "${SFOLDER}/libs/notification_controller.sh"
 #source "${SFOLDER}/libs/storage_controller.sh"
 
 # Source utils
-utils_path="${SFOLDER}/libs/local"
+utils_path="${SFOLDER}/utils"
 utils_scripts="$(find "${utils_path}" -maxdepth 1 -name '*.sh' -type f -print)"
 for f in ${utils_scripts}; do source "${f}"; done
 
@@ -35,7 +35,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.0.42"
+  declare -g SCRIPT_V="3.0.43"
 
   # Hostname
   declare -g VPSNAME="$HOSTNAME"
