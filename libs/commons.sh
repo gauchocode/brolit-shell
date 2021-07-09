@@ -4,26 +4,24 @@
 # Version: 3.0.42
 #############################################################################
 
-# Libs apps directory path
-libs_apps_path="${SFOLDER}/libs/apps"
-
 # Source all apps libs
-libs_apps="$(find "${libs_apps_path}" -maxdepth 1 -name '*.sh' -type f -print)"
-for f in ${libs_apps}; do source "${f}"; done
-
-# Libs local directory path
-libs_local_path="${SFOLDER}/libs/local"
+libs_apps_path="${SFOLDER}/libs/apps"
+libs_apps_scripts="$(find "${libs_apps_path}" -maxdepth 1 -name '*.sh' -type f -print)"
+for f in ${libs_apps_scripts}; do source "${f}"; done
 
 # Source all local libs
-libs_local="$(find "${libs_local_path}" -maxdepth 1 -name '*.sh' -type f -print)"
-for f in ${libs_local}; do source "${f}"; done
+libs_local_path="${SFOLDER}/libs/local"
+libs_local_scripts="$(find "${libs_local_path}" -maxdepth 1 -name '*.sh' -type f -print)"
+for f in ${libs_local_scripts}; do source "${f}"; done
 
 # Load other sources
 source "${SFOLDER}/libs/notification_controller.sh"
 #source "${SFOLDER}/libs/storage_controller.sh"
-source "${SFOLDER}/utils/installers_and_configurators.sh"
-source "${SFOLDER}/utils/project_manager.sh"
-source "${SFOLDER}/utils/it_utils_manager.sh"
+
+# Source utils
+utils_path="${SFOLDER}/libs/local"
+utils_scripts="$(find "${utils_path}" -maxdepth 1 -name '*.sh' -type f -print)"
+for f in ${utils_scripts}; do source "${f}"; done
 
 #
 #############################################################################
