@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Autor: BROOBE. web + mobile development - https://broobe.com
-# Version: 3.0.42
+# Version: 3.0.43
 #############################################################################
 
 function phpmyadmin_installer () {
