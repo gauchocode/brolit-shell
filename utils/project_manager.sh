@@ -120,7 +120,7 @@ function menu_project_utils() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        log_event "debug" "Setting new_database_name: ${new_database_name}"
+        log_event "debug" "Setting new_database_name: ${new_database_name}" "false"
 
         # Return
         echo "${new_database_name}"

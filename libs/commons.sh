@@ -1343,7 +1343,7 @@ function menu_main_options() {
       source "${SFOLDER}/utils/certbot_manager.sh"
 
       log_section "Certbot Manager"
-      certbot_helper_menu
+      certbot_manager_menu
 
     fi
     if [[ ${chosen_type} == *"06"* ]]; then
@@ -1351,7 +1351,7 @@ function menu_main_options() {
       source "${SFOLDER}/utils/cloudflare_manager.sh"
 
       log_section "Cloudflare Manager"
-      cloudflare_helper_menu
+      cloudflare_manager_menu
 
     fi
     if [[ ${chosen_type} == *"07"* ]]; then
@@ -1626,14 +1626,14 @@ function tasks_handler() {
 
   cloudflare-api)
 
-    subtasks_cloudflare_handler "${STASK}" "${TVALUE}"
+    cloudflare_tasks_handler "${STASK}" "${TVALUE}"
 
     exit
     ;;
 
   wpcli)
 
-    subtasks_wpcli_handler "${STASK}" "${TVALUE}"
+    wpcli_tasks_handler "${STASK}" "${TVALUE}"
 
     exit
     ;;
@@ -1755,150 +1755,6 @@ function subtasks_restore_handler() {
     ;;
 
   *)
-    log_event "error" "INVALID SUBTASK: ${subtask}" "true"
-
-    exit
-    ;;
-
-  esac
-
-}
-
-function subtasks_cloudflare_handler() {
-
-  local subtask=$1
-
-  log_subsection "Cloudflare Manager"
-
-  case ${subtask} in
-
-  clear_cache)
-
-    cloudflare_clear_cache "${DOMAIN}"
-
-    exit
-    ;;
-
-  dev_mode)
-
-    cloudflare_set_development_mode "${DOMAIN}" "${TVALUE}"
-
-    exit
-    ;;
-
-  ssl_mode)
-
-    cloudflare_set_ssl_mode "${DOMAIN}" "${TVALUE}"
-
-    exit
-    ;;
-
-  *)
-
-    log_event "error" "INVALID SUBTASK: ${subtask}" "true"
-
-    exit
-    ;;
-
-  esac
-
-}
-
-function subtasks_wpcli_handler() {
-
-  local subtask=$1
-
-  log_subsection "WP-CLI Manager"
-
-  case ${subtask} in
-
-  #create-user)
-  #
-  #  wpcli_user_create "${SITES}/${DOMAIN}" "${choosen_user}" "${choosen_email}" "${choosen_role}"
-  #
-  #  exit
-  #  ;;
-
-  plugin-install)
-
-    wpcli_install_plugin "${SITES}/${DOMAIN}" "${TVALUE}"
-
-    exit
-    ;;
-
-  plugin-activate)
-
-    wpcli_plugin_activate "${SITES}/${DOMAIN}" "${TVALUE}"
-
-    exit
-    ;;
-
-  plugin-deactivate)
-
-    wpcli_plugin_deactivate "${SITES}/${DOMAIN}" "${TVALUE}"
-
-    exit
-    ;;
-
-  plugin-version)
-
-    wpcli_plugin_get_version "${SITES}/${DOMAIN}" "${TVALUE}"
-
-    exit
-    ;;
-
-  plugin-update)
-
-    wpcli_plugin_update "${SITES}/${DOMAIN}" "${TVALUE}"
-
-    exit
-    ;;
-
-  clear-cache)
-
-    wpcli_rocket_cache_clean "${SITES}/${DOMAIN}"
-
-    exit
-    ;;
-
-  cache-activate)
-
-    wpcli_rocket_cache_activate "${SITES}/${DOMAIN}"
-
-    exit
-    ;;
-
-  cache-deactivate)
-
-    wpcli_rocket_cache_deactivate "${SITES}/${DOMAIN}"
-
-    exit
-    ;;
-
-  verify-installation)
-
-    wpcli_core_verify "${SITES}/${DOMAIN}"
-    wpcli_plugin_verify "${SITES}/${DOMAIN}"
-
-    exit
-    ;;
-
-  core-update)
-
-    wpcli_core_update "${SITES}/${DOMAIN}"
-
-    exit
-    ;;
-
-    #search-replace)
-    #
-    #  wpcli_rocket_cache_deactivate "${SITE}" "${existing_URL}" "${new_URL}"
-    #
-    # exit
-    # ;;
-
-  *)
-
     log_event "error" "INVALID SUBTASK: ${subtask}" "true"
 
     exit

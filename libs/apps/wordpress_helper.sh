@@ -150,6 +150,7 @@ function wp_update_wpconfig() {
 #   None
 ################################################################################
 
+# TODO: check this ref: https://stackoverflow.com/questions/18352682/correct-file-permissions-for-wordpress
 function wp_change_permissions() {
 
   # $1 = ${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT} or ${FOLDER_TO_INSTALL}/${DOMAIN}
@@ -169,7 +170,7 @@ function wp_change_permissions() {
 
   fi
 
-  log_event "info" "Permissions changes for: ${project_dir}"
+  log_event "info" "Permissions changes for: ${project_dir}" "false"
   display --indent 6 --text "- Setting default permissions on wordpress" --result "DONE" --color GREEN
 
 }
@@ -216,7 +217,7 @@ function wp_replace_string_on_database() {
     db_prefix="$(whiptail --title "WordPress DB Prefix" --inputbox "Please insert the WordPress Database Prefix. Example: wp_" 10 60 3>&1 1>&2 2>&3)"
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
-      log_event "info" "Setting db prefix: '${db_prefix}'"
+      log_event "info" "Setting db prefix: '${db_prefix}'" "false"
     else
       return 1
     fi
@@ -228,7 +229,7 @@ function wp_replace_string_on_database() {
     chosen_db="$(mysql_ask_database_selection)"
 
   else
-    chosen_db=${target_db}
+    chosen_db="${target_db}"
 
   fi
 
@@ -236,7 +237,7 @@ function wp_replace_string_on_database() {
     existing_URL="$(whiptail --title "URL TO CHANGE" --inputbox "Insert the URL you want to change, including http:// or https://" 10 60 3>&1 1>&2 2>&3)"
     exitstatus=$?
 
-    log_event "info" "URL to change: '${existing_URL}'"
+    log_event "info" "URL to change: '${existing_URL}'" "false"
 
     if [[ ${exitstatus} -eq 0 ]]; then
 
