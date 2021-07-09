@@ -134,7 +134,7 @@ function wpcli_main_menu() {
 
     if [[ ${chosen_wpcli_options} == *"01"* ]]; then
 
-      wpcli_plugin_installer
+      wpcli_default_plugins_installer
 
     fi
 
@@ -404,58 +404,106 @@ function wpcli_profiler_menu() {
 
 }
 
-function wpcli_plugin_installer() {
+function wpcli_tasks_handler() {
 
-  local wp_plugins
-  local chosen_plugin_option
-  local plugin_zip
+  local subtask=$1
 
-  # TODO: install from default options, install from zip or install from external config file.
-  # TODO: config file should contain something like this:
-  # Structure: "PLUGIN_NAME" , "PLUGIN_SOURCE", "PLUGIN_SLUG or PUBLIC_URL", "ACTIVATE_AFTER_INSTALL" (true or false)
-  # Example 1: "WP Rocket", "private", "https://example.com/plugin.zip", "false"
-  # Example 2: "SEO Yoast", "public-repo", "wordpress-seo", "true"
+  log_subsection "WP-CLI Manager"
 
-  # Array of plugin slugs to install
-  wp_plugins=(
-    "wordpress-seo" " " off
-    "seo-by-rank-math" " " off
-    "duracelltomi-google-tag-manager" " " off
-    "ewww-image-optimizer" " " off
-    "post-smtp" " " off
-    "contact-form-7" " " off
-    "advanced-custom-fields" " " off
-    "acf-vc-integrator" " " off
-    "wp-asset-clean-up" " " off
-    "w3-total-cache" " " off
-    "iwp-client" " " off
-    "wordfence" " " off
-    "better-wp-security" " " off
-    "quttera-web-malware-scanner" " " off
-    "zip-file" " " off
-  )
+  case ${subtask} in
 
-  # INSTALL_PLUGINS
-  chosen_plugin_option="$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to install." 20 78 15 "${wp_plugins[@]}" 3>&1 1>&2 2>&3)"
+  #create-user)
+  #
+  #  wpcli_user_create "${SITES}/${DOMAIN}" "${choosen_user}" "${choosen_email}" "${choosen_role}"
+  #
+  #  exit
+  #  ;;
 
-  log_subsection "WP Plugin Installer"
+  plugin-install)
 
-  for plugin in ${chosen_plugin_option}; do
+    wpcli_install_plugin "${SITES}/${DOMAIN}" "${TVALUE}"
 
-    if [[ ${plugin} == *"zip-file"* ]]; then
+    exit
+    ;;
 
-      plugin_zip="$(whiptail --title "WordPress Plugin" --inputbox "Please insert a public url with a plugin zip file." 10 60 "https://domain.com/plugin.zip" 3>&1 1>&2 2>&3)"
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
+  plugin-activate)
 
-        plugin="${plugin_zip}"
+    wpcli_plugin_activate "${SITES}/${DOMAIN}" "${TVALUE}"
 
-      fi
+    exit
+    ;;
 
-    fi
+  plugin-deactivate)
 
-    wpcli_install_plugin "${wp_site}" "${plugin}"
+    wpcli_plugin_deactivate "${SITES}/${DOMAIN}" "${TVALUE}"
 
-  done
+    exit
+    ;;
+
+  plugin-version)
+
+    wpcli_plugin_get_version "${SITES}/${DOMAIN}" "${TVALUE}"
+
+    exit
+    ;;
+
+  plugin-update)
+
+    wpcli_plugin_update "${SITES}/${DOMAIN}" "${TVALUE}"
+
+    exit
+    ;;
+
+  clear-cache)
+
+    wpcli_rocket_cache_clean "${SITES}/${DOMAIN}"
+
+    exit
+    ;;
+
+  cache-activate)
+
+    wpcli_rocket_cache_activate "${SITES}/${DOMAIN}"
+
+    exit
+    ;;
+
+  cache-deactivate)
+
+    wpcli_rocket_cache_deactivate "${SITES}/${DOMAIN}"
+
+    exit
+    ;;
+
+  verify-installation)
+
+    wpcli_core_verify "${SITES}/${DOMAIN}"
+    wpcli_plugin_verify "${SITES}/${DOMAIN}"
+
+    exit
+    ;;
+
+  core-update)
+
+    wpcli_core_update "${SITES}/${DOMAIN}"
+
+    exit
+    ;;
+
+    #search-replace)
+    #
+    #  wpcli_rocket_cache_deactivate "${SITE}" "${existing_URL}" "${new_URL}"
+    #
+    # exit
+    # ;;
+
+  *)
+
+    log_event "error" "INVALID SUBTASK: ${subtask}" "true"
+
+    exit
+    ;;
+
+  esac
 
 }

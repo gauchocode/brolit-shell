@@ -4,7 +4,7 @@
 # Version: 3.0.42
 #############################################################################
 
-function cloudflare_helper_menu() {
+function cloudflare_manager_menu() {
 
     local cf_options
     local chosen_cf_options
@@ -100,10 +100,50 @@ function cloudflare_helper_menu() {
         fi
 
         prompt_return_or_finish
-        cloudflare_helper_menu
+        cloudflare_manager_menu
 
     fi
 
     menu_main_options
+
+}
+
+function cloudflare_tasks_handler() {
+
+  local subtask=$1
+
+  log_subsection "Cloudflare Manager"
+
+  case ${subtask} in
+
+  clear_cache)
+
+    cloudflare_clear_cache "${DOMAIN}"
+
+    exit
+    ;;
+
+  dev_mode)
+
+    cloudflare_set_development_mode "${DOMAIN}" "${TVALUE}"
+
+    exit
+    ;;
+
+  ssl_mode)
+
+    cloudflare_set_ssl_mode "${DOMAIN}" "${TVALUE}"
+
+    exit
+    ;;
+
+  *)
+
+    log_event "error" "INVALID SUBTASK: ${subtask}" "true"
+
+    exit
+    ;;
+
+  esac
 
 }
