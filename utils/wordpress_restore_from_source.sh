@@ -182,12 +182,12 @@ function wordpress_restore_from_source() {
     mysql_database_import "${database_name}" "${project_name}.sql"
 
     # Remove downloaded files
-    log_event "info" "Removing downloaded files ..." "true"
+    log_event "info" "Removing downloaded files ..." "false"
     rm "${SFOLDER}/tmp/${project_domain}/${bk_f_file}"
     rm "${SFOLDER}/tmp/${project_domain}/${bk_db_file}"
 
     # Move to ${folder_to_install}
-    log_event "info" "Moving ${project_domain} to ${folder_to_install} ..." "true"
+    log_event "info" "Moving ${project_domain} to ${folder_to_install} ..." "false"
     mv "${SFOLDER}/tmp/${project_domain}" "${folder_to_install}/${project_domain}"
 
   fi
@@ -199,7 +199,7 @@ function wordpress_restore_from_source() {
   install_path="$(wp_config_path "${actual_folder}")"
   if [[ -z "${install_path}" ]]; then
 
-    echo -e ${B_GREEN}" > WORDPRESS INSTALLATION FOUND"${ENDCOLOR}
+    log_event "info" "WORDPRESS INSTALLATION FOUND!" "false"
 
     # Change file and dir permissions
     wp_change_permissions "${actual_folder}/${install_path}"
