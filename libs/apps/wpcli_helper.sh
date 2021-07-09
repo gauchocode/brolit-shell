@@ -896,7 +896,7 @@ function wpcli_create_config() {
     sudo -u www-data wp --path="${wp_site}" config create --dbname="${database}" --dbuser="${db_user_name}" --dbpass="${db_user_passw}" --locale="${wp_locale}" --quiet
 
     exitstatus=$?
-    if [[ ! ${exitstatus} -eq 0 ]]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
 
         display --indent 6 --text "- Creating wp-config" --result "DONE" --color GREEN
     else
