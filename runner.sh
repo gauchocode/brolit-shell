@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Autor: BROOBE. web + mobile development - https://example.com
+# Author: BROOBE - A Software Development Agency - https://example.com
 # Script Name: BROLIT Shell
 # Version: 3.0.43
 ################################################################################
