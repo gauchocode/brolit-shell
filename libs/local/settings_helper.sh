@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Autor: BROOBE. web + mobile development - https://broobe.com
+# Author: BROOBE - A Software Development Agency - https://broobe.com
 # Version: 3.0.43
 #############################################################################
 
@@ -465,14 +465,13 @@ function settings_set_server_role() {
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
-            # TODO: dependiendo de que elija, hay que hacer distintos checkeos.
-            # webserver: chequear si hay un webserver instalado.
-            # database: chequear si hay un motor de bd instalado.
-            # webapp: preguntar donde está instalada la app.
-            # cache y replica: implementar más adelante.
+            # TODO: regarding what was de chosen config, we need to check:
+            # webserver: check installed webserver.
+            # database: check installed database engine.
+            # webapp: check kind of app installed (docker app?)
+            # cache: nothing.
             #
-            # IMPORTANTE: el package manager deberia chequear el role, antes de intentar
-            # instalar cualquier paquete.
+            # IMPORTANT: maybe package manager needs to check server_config, before install a package
 
             for server_role in ${chosen_server_roles}; do
 
