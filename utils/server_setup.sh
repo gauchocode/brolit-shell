@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Autor: BROOBE. web + mobile development - https://broobe.com
+# Author: BROOBE - A Software Development Agency - https://broobe.com
 # Version: 3.0.43
 ################################################################################
 
@@ -69,5 +69,41 @@ function server_setup() {
     # Log
     display --indent 6 --text "- Server setup" --result "DONE" --color GREEN
     log_event "info" "************* SERVER SETUP COMPLETED *************" "false"
+
+}
+
+
+### WORK IN PROGRESS
+
+function server_setup_tasks_handler() {
+
+  local subtask=$1
+
+  log_subsection "WP-CLI Manager"
+
+  case ${subtask} in
+
+  lemp-install)
+
+    server_setup "${DATABASE_ENGINE}" "${DATABASE_ROOT_PSW}" "${TIMEZONE}"
+
+    exit
+    ;;
+
+    #lamp-install)
+    #
+    #  server_setup "${DATABASE_ENGINE}" "${DATABASE_ROOT_PSW}" "${TIMEZONE}"
+    #
+    # exit
+    # ;;
+
+  *)
+
+    log_event "error" "INVALID SUBTASK: ${subtask}" "true"
+
+    exit
+    ;;
+
+  esac
 
 }

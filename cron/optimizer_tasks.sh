@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Autor: BROOBE. web + mobile development - https://broobe.com
+# Author: BROOBE - A Software Development Agency - https://broobe.com
 # Version: 3.0.43
 ################################################################################
 
