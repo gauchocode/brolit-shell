@@ -722,25 +722,25 @@ function restore_type_selection_from_dropbox() {
             if [[ "${install_path}" != "" ]]; then
 
               # Select wordpress installation to work with
-              wordpress_select_project_to_work_with "${install_path}"
+              project_path="$(wordpress_select_project_to_work_with "${install_path}")"
 
-              log_event "info" "WordPress installation found: ${project_site}/${install_path}" "false"
+              log_event "info" "WordPress installation found: ${project_path}" "false"
 
               # Change wp-config.php database parameters
-              wp_update_wpconfig "${install_path}" "${project_name}" "${project_state}" "${db_pass}"
+              wp_update_wpconfig "${project_path}" "${project_name}" "${project_state}" "${db_pass}"
 
               # Change Salts
-              wpcli_set_salts "${install_path}"
+              wpcli_set_salts "${project_path}"
 
               # Change URLs
-              wp_ask_url_search_and_replace "${install_path}"
-              #wpcli_search_and_replace "${install_path}" "${chosen_domain}" "${new_project_domain}"
+              wp_ask_url_search_and_replace "${project_path}"
+              #wpcli_search_and_replace "${project_path}" "${chosen_domain}" "${new_project_domain}"
 
               # Changing wordpress visibility
               if [[ ${project_state} == "prod" ]]; then
-                wpcli_change_wp_seo_visibility "${install_path}" "1"
+                wpcli_change_wp_seo_visibility "${project_path}" "1"
               else
-                wpcli_change_wp_seo_visibility "${install_path}" "0"
+                wpcli_change_wp_seo_visibility "${project_path}" "0"
               fi
 
             else
