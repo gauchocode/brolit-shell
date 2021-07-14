@@ -8,7 +8,6 @@ function wpcli_manager() {
 
   local wpcli_installed
   local wp_site
-  local second_path
   local chosen_wp_path
 
   # Directory Browser
@@ -38,58 +37,25 @@ function wpcli_manager() {
     # Search a WordPress installation on selected directory
     install_path="$(wp_config_path "${wp_site}")"
 
-    # TODO: if install_path returns more than one WordPress installation, need to select one
-    # if returns one, go directly to to wpcli_main_menu
-
     # Install_path could return more than one wp installation
-    second_path="$(echo "${install_path}" | cut -d " " -f 2)"
+    project_path="$(wordpress_select_project_to_work_with "${install_path}")"
 
-    log_event "debug" "install_path=${install_path}" "false"
-    log_event "debug" "second_path=${second_path}" "false"
+    if [[ ${project_path} != '' ]]; then
 
-    if [[ ${second_path} != '' ]]; then
+      log_event "debug" "Working with ${chosen_wp_path}" "false"
 
-      chosen_wp_path="$(whiptail --title "Website Selection" --menu "Do you want to work with this installation?" 20 78 10 $(for x in ${install_path}; do echo "${x} [X]"; done) 3>&1 1>&2 2>&3)"
-
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        log_event "debug" "Working with ${chosen_wp_path}" "false"
-
-        # Return
-        wpcli_main_menu "${chosen_wp_path}"
-
-      else
-
-        return 1
-
-      fi
+      # Return
+      wpcli_main_menu "${chosen_wp_path}"
 
     else
 
-      if [[ -z "${install_path}" || "${install_path}" == '' ]]; then
+      log_event "info" "WordPress installation not found! Returning to Main Menu" "false"
+      display --indent 2 --text "- Searching WordPress installation" --result "FAIL" --color RED
 
-        log_event "info" "WordPress installation not found! Returning to Main Menu" "false"
-        display --indent 2 --text "- Searching WordPress installation" --result "FAIL" --color RED
+      whiptail --title "WARNING" --msgbox "WordPress installation not found! Press Enter to return to the Main Menu." 8 78
 
-        whiptail --title "WARNING" --msgbox "WordPress installation not found! Press Enter to return to the Main Menu." 8 78
-
-        # Return
-        menu_main_options
-
-      else
-
-        # WordPress installation path
-        wp_site="${install_path}"
-
-        log_event "info" "Working with wp_site=${wp_site}" "false"
-        display --indent 2 --text "- Searching WordPress Installation" --result "DONE" --color GREEN
-        display --indent 4 --text "Working on ${wp_site}"
-
-        # Return
-        wpcli_main_menu "${wp_site}"
-
-      fi
+      # Return
+      menu_main_options
 
     fi
 
