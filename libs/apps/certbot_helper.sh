@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.43
+# Version: 3.0.44
 ################################################################################
 #
 # Ref: https://certbot.eff.org/docs/using.html#certbot-commands
@@ -175,7 +175,7 @@ function certbot_helper_installer_menu() {
       cb_warning_text+="3- Go to 'SSL/TLS' option panel and change the SSL setting from 'Flexible' to 'Full'. \n"
 
       whiptail_message "CERTBOT MANAGER" "${cb_warning_text}"
-      #root_domain=$(ask_rootdomain_for_cloudflare_config "${domains}")
+      #root_domain=$(cloudflare_ask_rootdomain "${domains}")
 
       # TODO: list entries to add proxy on cloudflare records
       #cloudflare_set_record "${root_domain}" "" "true"

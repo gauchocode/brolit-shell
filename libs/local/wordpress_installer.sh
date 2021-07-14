@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.43
+# Version: 3.0.44
 ################################################################################
 #
 # WordPress Installer: WordPress installer functions.
@@ -83,7 +83,7 @@ function wordpress_project_install() {
   if [[ "${project_root_domain}" = '' ]]; then
 
     possible_root_domain="$(get_root_domain "${project_domain}")"
-    project_root_domain="$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")"
+    project_root_domain="$(cloudflare_ask_rootdomain "${possible_root_domain}")"
 
   fi
 

@@ -74,6 +74,7 @@
 ## For release 3.2
 
 - [ ] Core: Solve small "TODOs" comments on the project.
+- [ ] Core: Prevent execute the script more than once at a time (maybe a .lock file?).
 - [ ] Core: Refactor settings config (change to a json config file?).
 - [ ] Core: Complete refactor of script_configuration_wizard.
 - [ ] Core: Better structure of deleted projects on dropbox.
@@ -89,6 +90,8 @@
 - [ ] Nginx: New option to put website on maintenance (maybe rename index.html/php and create a new HTML).
 - [ ] MySQL: Rename database helper (with and without WP).
 - [ ] Woocommerce support: https://github.com/woocommerce/woocommerce/wiki/WC-CLI-Commands
+- [ ] Support for rclone: https://github.com/rclone/rclone
+      Add support to others storage service (Google Drive, SFTP, etc)
 
 ## For release 3.3
 
@@ -153,14 +156,7 @@
         https://docs.docker.com/desktop/backup-and-restore/
         https://www.reddit.com/r/Wordpress/comments/jfn7z9/guide_wordpress_on_docker_with_nginx_traefik/
 - [ ] Better LEMP setup, tzdata y mysql_secure_installation without human intervention
-- [ ] Web GUI, some examples and options:
-        https://www.hestiacp.com/ - https://github.com/hestiacp/hestiacp
-        https://github.com/bugy/script-server
-        https://github.com/joewalnes/websocketd
-        https://github.com/ncarlier/webhookd
-        https://www.php.net/manual/en/function.shell-exec.php
-- [ ] Support for rclone: https://github.com/rclone/rclone
-        Add support to change dropbox to another storage service (Google Drive, SFTP, etc)
+- [ ] Support for borgmatic?: https://github.com/witten/borgmatic
 - [ ] Core: Accept command via Telegram: https://github.com/topkecleon/telegram-bot-bash
 - [ ] Nginx: bad bot blocker.
-        https://github.com/mitchellkrogza/nginx-ultimate-bad-bot-blocker
+      https://github.com/mitchellkrogza/nginx-ultimate-bad-bot-blocker

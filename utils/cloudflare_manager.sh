@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.43
+# Version: 3.0.44
 #############################################################################
 
 function cloudflare_manager_menu() {
@@ -145,5 +145,65 @@ function cloudflare_tasks_handler() {
     ;;
 
   esac
+
+}
+
+function cloudflare_ask_rootdomain() {
+
+  # TODO: check with CF API if root domain exists
+
+  # Parameters
+  # $1 = ${root_domain} (could be empty)
+
+  local root_domain=$1
+
+  if [[ -z "${root_domain}" ]]; then
+
+    root_domain="$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)"
+  
+  else
+
+    root_domain="$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the project (Only for Cloudflare API). Example: broobe.com" 10 60 "${root_domain}" 3>&1 1>&2 2>&3)"
+  
+  fi
+  
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Return
+    echo "${root_domain}"
+
+    return 0
+
+  else
+
+    return 1
+
+  fi
+
+}
+
+function cloudflare_ask_subdomains() {
+
+  # TODO: MAKE IT WORKS
+
+  # Parameters
+  # $1 = ${subdomains} optional to select default option (could be empty)
+
+  local subdomains=$1
+
+  subdomains="$(whiptail --title "Cloudflare Subdomains" --inputbox "Insert the subdomains you want to update in Cloudflare (comma separated). Example: www.broobe.com,broobe.com" 10 60 "${DOMAIN}" 3>&1 1>&2 2>&3)"
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    log_event "info" "Setting subdomains: ${subdomains}" "false"
+
+    # Return
+    echo "${subdomains}"
+
+  else
+    return 1
+
+  fi
 
 }

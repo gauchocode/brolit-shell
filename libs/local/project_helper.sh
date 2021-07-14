@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.43
+# Version: 3.0.44
 ################################################################################
 #
 # Project Helper: Perform project actions.
@@ -552,7 +552,7 @@ function project_install() {
   project_path="${folder_to_install}/${project_domain}"
 
   possible_root_domain="$(get_root_domain "${project_domain}")"
-  root_domain="$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")"
+  root_domain="$(cloudflare_ask_rootdomain "${possible_root_domain}")"
 
   if [[ ${project_name} == '' ]]; then
 
@@ -949,7 +949,7 @@ function php_project_installer() {
   if [[ ${project_root_domain} == '' ]]; then
 
     possible_root_domain="$(get_root_domain "${project_domain}")"
-    project_root_domain="$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")"
+    project_root_domain="$(cloudflare_ask_rootdomain "${possible_root_domain}")"
 
   fi
 
@@ -1084,7 +1084,7 @@ function nodejs_project_installer() {
   if [[ ${project_root_domain} == '' ]]; then
 
     possible_root_domain="$(get_root_domain "${project_domain}")"
-    project_root_domain="$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")"
+    project_root_domain="$(cloudflare_ask_rootdomain "${possible_root_domain}")"
 
   fi
 

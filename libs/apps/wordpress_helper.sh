@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.43
+# Version: 3.0.44
 ################################################################################
 #
 # WordPress Helper: Perform wordpress actions.
@@ -332,6 +332,44 @@ function wp_ask_url_search_and_replace() {
       display --indent 6 --text "- Configuring search and replace" --result "SKIPPED" --color YELLOW
 
     fi
+
+  fi
+
+}
+
+function wordpress_select_project_to_work_with() {
+
+  local wordpress_projects=$1
+
+  # Get length of $wordpress_projects array
+  len=${#wordpress_projects[@]}
+
+  if [[ $len != 0 ]]; then
+
+    local chosen_wordpress_project
+
+    chosen_wordpress_project="$(whiptail --title "Project Selection" --menu "Select the version of PHP you want to work with:" 20 78 10 $(for x in ${wordpress_projects}; do echo "${x} [X]"; done) 3>&1 1>&2 2>&3)"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+      log_event "debug" "Working with ${chosen_wordpress_project}" "false"
+
+      # Return
+      echo "${chosen_wordpress_project}"
+
+    else
+
+      log_event "debug" "Project selection skipped" "false"
+
+      return 1
+
+    fi
+
+  else
+
+    # Return
+    echo "${wordpress_projects}"
 
   fi
 

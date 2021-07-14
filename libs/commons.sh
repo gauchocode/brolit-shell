@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.43
+# Version: 3.0.44
 #############################################################################
 
 # Source all apps libs
@@ -35,7 +35,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.0.43"
+  declare -g SCRIPT_V="3.0.44"
 
   # Hostname
   declare -g VPSNAME="$HOSTNAME"
@@ -902,10 +902,17 @@ function copy_files() {
 
 }
 
-function calculate_disk_usage() {
+################################################################################
+# Calculates disk usage
+#
+# Arguments:
+#   $1 = ${disk_volume}
+#
+# Outputs:
+#   An string with disk usage
+################################################################################
 
-  # Parameters
-  # $1 = ${disk_volume}
+function calculate_disk_usage() {
 
   local disk_volume=$1
 
@@ -914,17 +921,24 @@ function calculate_disk_usage() {
   # Need to use grep with -w to exact match of the main volume
   disk_u="$(df -h | grep -w "${disk_volume}" | awk '{print $5}')"
 
-  log_event "info" "Disk usage of ${disk_volume}: ${disk_u}"
+  log_event "info" "Disk usage of ${disk_volume}: ${disk_u}" "false"
 
   # Return
   echo "${disk_u}"
 
 }
 
-function string_remove_spaces() {
+################################################################################
+# Remove spaces chars from string
+#
+# Arguments:
+#   $1 = ${string}
+#
+# Outputs:
+#   string
+################################################################################
 
-  # Parameters
-  # $1 = ${string}
+function string_remove_spaces() {
 
   local string=$1
 
@@ -932,6 +946,16 @@ function string_remove_spaces() {
   echo "${string//[[:blank:]]/}"
 
 }
+
+################################################################################
+# Remove special chars from string
+#
+# Arguments:
+#   $1 = ${string}
+#
+# Outputs:
+#   string
+################################################################################
 
 function string_remove_special_chars() {
 
@@ -943,18 +967,22 @@ function string_remove_special_chars() {
   # The second one translates uppercase characters to lowercase.
   # The third get rid of characters like \r \n or ^C.
 
-  # Return
-  # cat $1 | tr -dc '[:alnum:]\n\r' | tr '[:upper:]' '[:lower:]' | tr -d '[:cntrl:]' # for files
-
-  # Parameters
-  # $1 = ${string}
-
   local string=$1
 
   # Return
   echo "${string}" | tr -dc ".[:alnum:]-\n\r" # Let '.' and '-' chars
 
 }
+
+################################################################################
+# Removes color related chars from a string
+#
+# Arguments:
+#   $1 = ${string}
+#
+# Outputs:
+#   string
+################################################################################
 
 function string_remove_color_chars() {
 
@@ -1019,12 +1047,19 @@ function string_remove_color_chars() {
 
 }
 
-function change_ownership() {
+################################################################################
+# Change directory ownership
+#
+# Arguments:
+#   $1 = ${user}
+#   $2 = ${group}
+#   $3 = ${path}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  # Parameters
-  #$1 = ${user}
-  #$2 = ${group}
-  #$3 = ${path}
+function change_ownership() {
 
   local user=$1
   local group=$2
@@ -1032,11 +1067,28 @@ function change_ownership() {
 
   chown -R "${user}":"${group}" "${path}"
 
-  # Log
-  log_event "info" "Changing ownership of ${path} to ${user}:${group}"
-  log_event "debug" "Command executed: chown -R ${user}:${group} ${path}"
-  #display --indent 2 --text "- Changing ownership of ${path} to ${user}:${group}" --result "DONE" --color GREEN
+  chown_result=$?
+  if [[ ${chown_result} -eq 0 ]]; then
 
+    # Log
+    log_event "info" "Changing ownership of ${path} to ${user}:${group}" "false"
+    log_event "debug" "Command executed: chown -R ${user}:${group} ${path}" "false"
+
+    display --indent 2 --text "- Changing directory ownership" --result DONE --color GREEN
+
+    return 0
+
+  else
+
+    # Log
+    log_event "error" "Changing ownership of ${path} to ${user}:${group}" "false"
+    log_event "debug" "Command executed: chown -R ${user}:${group} ${path}" "false"
+
+    display --indent 2 --text "- Changing directory ownership" --result FAIL --color RED
+
+    return 1
+
+  fi
 }
 
 function prompt_return_or_finish() {
@@ -1166,13 +1218,13 @@ function extract() {
       ;;
 
     *)
-      echo "${file} cannot be extracted via extract()"
+      log_event "error" "${file} cannot be extracted via extract()" "false"
       ;;
 
     esac
 
   else
-    log_event "error" "${file} is not a valid file"
+    log_event "error" "${file} is not a valid file" "false"
 
   fi
 
@@ -1201,7 +1253,8 @@ function install_crontab_script() {
   cron_file="/var/spool/cron/crontabs/root"
 
   if [[ ! -f ${cron_file} ]]; then
-    log_event "info" "Cron file for root does not exist, creating ..."
+
+    log_event "info" "Cron file for root does not exist, creating ..." "false"
 
     touch "${cron_file}"
     /usr/bin/crontab "${cron_file}"
@@ -1211,7 +1264,9 @@ function install_crontab_script() {
 
   fi
 
+  # Command
   grep -qi "${script}" "${cron_file}"
+
   grep_result=$?
   if [[ ${grep_result} != 0 ]]; then
 
@@ -1233,58 +1288,15 @@ function install_crontab_script() {
 
 }
 
-# TODO: move to cloudflare helper?
-
-function ask_rootdomain_for_cloudflare_config() {
-
-  # TODO: check with CF API if root domain exists
-
-  # Parameters
-  # $1 = ${root_domain} (could be empty)
-
-  local root_domain=$1
-
-  if [[ -z "${root_domain}" ]]; then
-    root_domain="$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)"
-  else
-    root_domain="$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the project (Only for Cloudflare API). Example: broobe.com" 10 60 "${root_domain}" 3>&1 1>&2 2>&3)"
-  fi
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-    # Return
-    echo "${root_domain}"
-
-  else
-    return 1
-
-  fi
-
-}
-
-function ask_subdomains_to_cloudflare_config() {
-
-  # TODO: MAKE IT WORKS
-
-  # Parameters
-  # $1 = ${subdomains} optional to select default option (could be empty)
-
-  local subdomains=$1
-
-  subdomains="$(whiptail --title "Cloudflare Subdomains" --inputbox "Insert the subdomains you want to update in Cloudflare (comma separated). Example: www.broobe.com,broobe.com" 10 60 "${DOMAIN}" 3>&1 1>&2 2>&3)"
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    log_event "info" "Setting subdomains: ${subdomains}"
-
-    # Return
-    echo "${subdomains}"
-
-  else
-    return 1
-
-  fi
-
-}
+################################################################################
+# Main menu
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
 
 function menu_main_options() {
 
@@ -1394,6 +1406,16 @@ function menu_main_options() {
 
 }
 
+################################################################################
+# First run menu
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
+
 function menu_first_run() {
 
   local first_run_options
@@ -1434,6 +1456,16 @@ function menu_first_run() {
   fi
 
 }
+
+################################################################################
+# Menu for croned scripts
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
 
 function menu_cron_script_tasks() {
 
@@ -1542,13 +1574,15 @@ function menu_cron_script_tasks() {
 
 }
 
+################################################################################
+# Show BROLIT help
 #
-#############################################################################
+# Arguments:
+#   none
 #
-# * Help
-#
-#############################################################################
-#
+# Outputs:
+#   String with help text
+################################################################################
 
 function show_help() {
 
@@ -1579,13 +1613,15 @@ function show_help() {
 
 }
 
+################################################################################
+# Tasks handler
 #
-#############################################################################
+# Arguments:
+#   $1 = ${task}
 #
-# * Tasks
-#
-#############################################################################
-#
+# Outputs:
+#   nothing
+################################################################################
 
 function tasks_handler() {
 
@@ -1652,6 +1688,16 @@ function tasks_handler() {
 
 }
 
+################################################################################
+# Backup Sub-Tasks handler
+#
+# Arguments:
+#   $1 = ${subtask}
+#
+# Outputs:
+#   nothing
+################################################################################
+
 function subtasks_backup_handler() {
 
   local subtask=$1
@@ -1711,6 +1757,16 @@ function subtasks_backup_handler() {
 
 }
 
+################################################################################
+# Restore Sub-Tasks handler
+#
+# Arguments:
+#   $1 = ${subtask}
+#
+# Outputs:
+#   nothing
+################################################################################
+
 function subtasks_restore_handler() {
 
   local subtask=$1
@@ -1762,13 +1818,15 @@ function subtasks_restore_handler() {
 
 }
 
+################################################################################
+# Runner flags handler
 #
-#############################################################################
+# Arguments:
+#   $1 = ${subtask}
 #
-# * Flags
-#
-#############################################################################
-#
+# Outputs:
+#   nothing
+################################################################################
 
 function flags_handler() {
 
