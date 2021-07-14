@@ -42,10 +42,10 @@ function wpcli_manager() {
 
     if [[ ${project_path} != '' ]]; then
 
-      log_event "debug" "Working with ${chosen_wp_path}" "false"
+      log_event "debug" "Working with ${project_path}" "false"
 
       # Return
-      wpcli_main_menu "${chosen_wp_path}"
+      wpcli_main_menu "${project_path}"
 
     else
 
