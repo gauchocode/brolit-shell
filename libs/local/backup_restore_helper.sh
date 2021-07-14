@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.43
+# Version: 3.0.44
 ################################################################################
 
 #
@@ -45,13 +45,14 @@ function restore_backup_menu() {
   local restore_options        # whiptail array options
   local chosen_restore_options # whiptail var
 
-  log_event "info" "Selecting backup restore type ..."
+  log_event "info" "Selecting backup restore type ..." "false"
 
   restore_options=(
     "01)" "RESTORE FROM DROPBOX"
     "02)" "RESTORE FROM URL (BETA)"
     "03)" "RESTORE FROM FILE (BETA)"
   )
+
   chosen_restore_options="$(whiptail --title "RESTORE TYPE" --menu " " 20 78 10 "${restore_options[@]}" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -545,13 +546,14 @@ function restore_site_files() {
     # Search wp-config.php (to find wp installation on sub-folders)
     install_path="$(wp_config_path "${actual_folder}")"
 
-    log_event "info" "install_path=${install_path}"
+    log_event "info" "install_path=${install_path}" "false"
+
     display --indent 8 --text "Restored on: ${install_path}"
 
     if [[ -d "${install_path}" ]]; then
 
-      log_event "info" "Wordpress intallation found on: ${install_path}"
-      log_event "info" "Files backup restored on: ${install_path}"
+      log_event "info" "Wordpress intallation found on: ${install_path}" "false"
+      log_event "info" "Files backup restored on: ${install_path}" "false"
 
       wp_change_permissions "${install_path}"
 
@@ -633,7 +635,7 @@ function restore_type_selection_from_dropbox() {
           dropbox_download "${bk_to_dowload}" "${TMP_DIR}"
 
           # Uncompressing
-          log_event "info" "Uncompressing ${chosen_backup_to_restore}"
+          log_event "info" "Uncompressing ${chosen_backup_to_restore}" "false"
           display --indent 2 --text "- Uncompressing backup"
           pv --width 70 "${TMP_DIR}/${chosen_backup_to_restore}" | tar xp -C "${TMP_DIR}" --use-compress-program=lbzip2
 
@@ -683,7 +685,7 @@ function restore_type_selection_from_dropbox() {
             else
 
               # User already exists
-              log_event "warning" "MySQL user ${db_user} already exists"
+              log_event "warning" "MySQL user ${db_user} already exists" "false"
               whiptail_message "WARNING" "MySQL user ${db_user} already exists. Please after the script ends, check project configuration files."
 
             fi
@@ -706,7 +708,7 @@ function restore_type_selection_from_dropbox() {
             startdir="${folder_to_install}"
             menutitle="Site Selection Menu"
             directory_browser "${menutitle}" "${startdir}"
-            
+
             directory_browser_result=$?
             if [[ ${directory_browser_result} -eq 1 ]]; then
 
@@ -717,10 +719,12 @@ function restore_type_selection_from_dropbox() {
             project_site=$filepath"/"$filename
             install_path="$(wp_config_path "${folder_to_install}/${filename}")"
 
-            # TODO: wp_config_path could be an array of dir paths, need to check that
             if [[ "${install_path}" != "" ]]; then
 
-              log_event "info" "WordPress installation found: ${project_site}/${install_path}"
+              # Select wordpress installation to work with
+              wordpress_select_project_to_work_with "${install_path}"
+
+              log_event "info" "WordPress installation found: ${project_site}/${install_path}" "false"
 
               # Change wp-config.php database parameters
               wp_update_wpconfig "${install_path}" "${project_name}" "${project_state}" "${db_pass}"
@@ -741,7 +745,7 @@ function restore_type_selection_from_dropbox() {
 
             else
 
-              log_event "error" "WordPress installation not found"
+              log_event "error" "WordPress installation not found" "false"
 
             fi
 
@@ -815,16 +819,17 @@ function restore_project() {
 
     # Uncompress backup file
     pv --width 70 "${TMP_DIR}/${chosen_backup_to_restore}" | ${TAR} xp -C "${TMP_DIR}" --use-compress-program=lbzip2
-    log_event "debug" "Running: pv --width 70 ${TMP_DIR}/${chosen_backup_to_restore} | ${TAR} xp -C ${TMP_DIR} --use-compress-program=lbzip2"
 
+    # Log
     clear_last_line
     display --indent 2 --text "- Uncompressing backup file" --result "DONE" --color GREEN
-    log_event "info" "Backup file ${chosen_backup_to_restore} uncompressed"
+    #log_event "debug" "Running: pv --width 70 ${TMP_DIR}/${chosen_backup_to_restore} | ${TAR} xp -C ${TMP_DIR} --use-compress-program=lbzip2"
+    log_event "info" "Backup file ${chosen_backup_to_restore} uncompressed" "false"
 
     # Project Type
     project_type=$(project_get_type "${TMP_DIR}/${chosen_project}")
 
-    log_event "debug" "Project Type: ${project_type}"
+    log_event "debug" "Project Type: ${project_type}" "false"
 
     # Here, for convention, chosen_project should be CHOSEN_DOMAIN...
     # Only for better code reading, i assign this new var:
@@ -862,11 +867,12 @@ function restore_project() {
     # TODO: wp_config_path could be an array of dir paths, need to check that
     if [[ ${install_path} != "" ]]; then
 
-      log_event "info" "WordPress installation found: ${project_site}/${install_path}"
+      log_event "info" "WordPress installation found: ${project_site}/${install_path}" "false"
 
     else
 
-      log_event "error" "WordPress installation not found"
+      log_event "error" "WordPress installation not found" "false"
+
       return 1
 
     fi
@@ -879,22 +885,22 @@ function restore_project() {
     project_state="$(cut -d'_' -f2 <<<${db_name})"
 
     # Log
-    log_event "debug" "Selected project: ${chosen_project}"
-    log_event "debug" "Selected project state: ${project_state}"
-    log_event "debug" "Backup date: ${backup_date}"
+    log_event "debug" "Selected project: ${chosen_project}" "false"
+    log_event "debug" "Selected project state: ${project_state}" "false"
+    log_event "debug" "Backup date: ${backup_date}" "false"
 
     if [[ ${db_name} != "" ]]; then
 
       # Log
-      log_event "debug" "Extracted db_name from wp-config: ${db_name}"
-      log_event "debug" "Extracted db_user from wp-config: ${db_user}"
-      log_event "debug" "Extracted db_pass from wp-config: ${db_pass}"
+      log_event "debug" "Extracted db_name from wp-config: ${db_name}" "false"
+      log_event "debug" "Extracted db_user from wp-config: ${db_user}" "false"
+      log_event "debug" "Extracted db_pass from wp-config: ${db_pass}" "false"
 
-      # Downloading Database Backup
       display --indent 6 --text "- Downloading backup from dropbox"
       display --indent 8 --text "${chosen_server}/database/${db_name}/${db_name}_database_${backup_date}.tar.bz2"
-      log_event "info" "Trying to download ${chosen_server}/database/${db_name}/${db_name}_database_${backup_date}.tar.bz2"
+      log_event "info" "Trying to download ${chosen_server}/database/${db_name}/${db_name}_database_${backup_date}.tar.bz2" "false"
 
+      # Downloading Database Backup
       dropbox_download "${db_to_download}" "${TMP_DIR}"
 
       exitstatus=$?
@@ -915,10 +921,11 @@ function restore_project() {
     fi
 
     # Uncompress backup file
-    log_event "info" "Uncompressing ${db_to_download}"
+    log_event "info" "Uncompressing ${db_to_download}" "false"
 
     pv --width 70 "${TMP_DIR}/${db_name}_database_${backup_date}.tar.bz2" | tar xp -C "${TMP_DIR}/" --use-compress-program=lbzip2
 
+    # Log
     clear_last_line
     clear_last_line
     display --indent 6 --text "- Uncompressing backup file" --result "DONE" --color GREEN
@@ -953,7 +960,7 @@ function restore_project() {
 
     else
 
-      log_event "warning" "MySQL user ${db_user} already exists"
+      log_event "warning" "MySQL user ${db_user} already exists" "false"
       display --indent 6 --text "- Creating ${db_user} user in MySQL" --result "FAIL" --color RED
       display --indent 8 --text "MySQL user ${db_user} already exists."
 
@@ -1016,8 +1023,10 @@ function restore_project() {
     # Changing wordpress visibility
     if [[ ${project_state} == "prod" ]]; then
       wpcli_change_wp_seo_visibility "${install_path}" "1"
+
     else
       wpcli_change_wp_seo_visibility "${install_path}" "0"
+
     fi
 
     # Send notification

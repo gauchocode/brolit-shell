@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.43
+# Version: 3.0.44
 #############################################################################
 #
 # Ref: https://certbot.eff.org/docs/using.html
@@ -11,6 +11,7 @@
 # Manager should only contains:
 #   1- Menus functions
 #   2- Sub-task handler function
+#   3- User imput functions
 #
 # All other things should be on *_helper.sh
 

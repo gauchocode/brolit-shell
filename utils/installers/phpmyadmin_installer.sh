@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.43
+# Version: 3.0.44
 #############################################################################
 
 function phpmyadmin_installer () {
@@ -20,7 +20,7 @@ function phpmyadmin_installer () {
     log_event "info" "Setting project_domain=${project_domain}" "false"
 
     possible_root_domain="$(get_root_domain "${project_domain}")"
-    root_domain=$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")
+    root_domain=$(cloudflare_ask_rootdomain "${possible_root_domain}")
 
   else
     return 1

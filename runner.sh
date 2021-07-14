@@ -2,7 +2,7 @@
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
 # Script Name: BROLIT Shell
-# Version: 3.0.43
+# Version: 3.0.44
 ################################################################################
 
 ### Environment checks
@@ -33,7 +33,7 @@ if [[ $# -eq 0 ]]; then
 
 else
 
-  # RUNNING FROM FLAGS
+  # RUNNING WITH FLAGS
   # With "$#" we can check the number of arguments received when the script is runned
   # Check if there were no arguments provided
   flags_handler "$#" "$*" #"$*" stores all arguments received when the script is runned

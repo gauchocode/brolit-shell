@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.43
+# Version: 3.0.44
 #############################################################################
 
 function ask_migration_source_type() {
@@ -109,7 +109,7 @@ function wordpress_restore_from_source() {
 
   possible_root_domain="$(get_root_domain "${project_domain}")"
 
-  root_domain="$(ask_rootdomain_for_cloudflare_config "${possible_root_domain}")"
+  root_domain="$(cloudflare_ask_rootdomain "${possible_root_domain}")"
 
   project_name="$(ask_project_name "${project_domain}")"
 

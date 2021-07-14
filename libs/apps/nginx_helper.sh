@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.43
+# Version: 3.0.44
 ################################################################################
 #
 # Nginx Helper: Perform nginx actions.
@@ -318,7 +318,7 @@ function nginx_server_change_phpv() {
     fi
 
     # Updating nginx server file
-    log_event "info" "Changing PHP version on nginx server file"
+    log_event "info" "Changing PHP version on nginx server file" "false"
     display --indent 6 --text "- Changing PHP version on nginx server file"
 
     # TODO: ask wich version of php want to work with
@@ -329,11 +329,11 @@ function nginx_server_change_phpv() {
     # Replace string to match PHP version
     sed -i "s#${current_php_v}#${new_php_v}#" "${nginx_server_file}"
 
-    log_event "info" "PHP version for ${nginx_server_file} changed from ${current_php_v} to ${new_php_v}"
-
+    # Log
     clear_last_line
     display --indent 6 --text "- Changing PHP version on nginx server file" --result "DONE" --color GREEN
     display --indent 8 --text "PHP version changed to ${new_php_v}"
+    log_event "info" "PHP version for ${nginx_server_file} changed from ${current_php_v} to ${new_php_v}" "false"
 
     #Test the validity of the nginx configuration
     nginx_configuration_test
