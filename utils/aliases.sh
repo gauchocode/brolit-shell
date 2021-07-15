@@ -744,7 +744,7 @@ function serverinfo() {
     ram_amount="$(grep MemTotal /proc/meminfo | cut -d ":" -f 2)"
     ram_amount="$(_string_remove_spaces "${ram_amount}")"
 
-    disk_volume="$(df /boot | grep -Eo '/dev/[^ ]+')"
+    disk_volume="$(df / | grep -Eo '/dev/[^ ]+')"
     disk_size="$(df -h | grep -w "${disk_volume}" | awk '{print $2}')"
     disk_usage="$(df -h | grep -w "${disk_volume}" | awk '{print $5}')"
 

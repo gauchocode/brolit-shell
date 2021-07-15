@@ -81,7 +81,7 @@ function _setup_globals_and_options() {
 
   # Main partition
   declare -g MAIN_VOL
-  MAIN_VOL="$(df /boot | grep -Eo '/dev/[^ ]+')"
+  MAIN_VOL="$(df / | grep -Eo '/dev/[^ ]+')"
 
   # Dropbox Folder Backup
   declare -g DROPBOX_FOLDER="/"
