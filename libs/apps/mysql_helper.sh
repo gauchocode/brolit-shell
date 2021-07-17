@@ -226,8 +226,10 @@ function mysql_list_databases() {
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 && ${databases} != "error" ]]; then
 
-        # Remove new lines from ouput
-        databases="${databases//[$'\t\r\n']/}"
+        # Replace all newlines with a space
+        databases="${databases//$'\n'/ }"
+        # Replace all strings \n with a space
+        databases="${databases//\\n/ }"
 
         # Log
         display --indent 6 --text "- Listing MySQL databases" --result "DONE" --color GREEN
@@ -235,8 +237,6 @@ function mysql_list_databases() {
 
         # Return
         echo "${databases}"
-
-        return 0
 
     else
 
