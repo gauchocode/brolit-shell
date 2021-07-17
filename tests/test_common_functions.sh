@@ -9,7 +9,7 @@ function test_common_funtions() {
     #test_get_root_domain
     #test_get_subdomain_part
     #test_extract_domain_extension
-    test_jsonify_function_return
+    #test_jsonify_function_return
     test_json_write_function
 
 }
@@ -232,15 +232,16 @@ function test_json_write_function() {
 
     log_subsection "jsonify_function_return"
 
-    config_file="${SCRIPT}/tests/assets/brolit_shell.conf"
+    config_file="assets/brolit_shell.conf"
 
-    config_field="SERVER_ROLES"
+    config_field="SERVER_ROLES.config[].webserver"
 
-    server_roles="webserver"
+    server_roles="true"
 
     # Write json
-    #server_roles="$(jq ".${config_field} = \"${server_roles}\"" "${config_file}")" && echo "${server_roles}" >"${config_file}"
-    json_write_field "${config_file}" "${config_field}" "${server_roles}"
+    #server_roles="$( jsonify_output "value-list" "${server_roles}")"
+    #log_event "debug" "server_roles=$server_roles" "true"
+      "${config_file}" "${config_field}" "${server_roles}"
 
     # Read json
     #config_value="$(cat ${config_file} | jq -r ".${config_field}")"
