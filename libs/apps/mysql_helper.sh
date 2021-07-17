@@ -99,7 +99,7 @@ function mysql_ask_database_selection() {
     local databases
     local chosen_db
 
-    databases="$(mysql_list_databases)"
+    databases="$(mysql_list_databases "all")"
 
     chosen_db="$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to work with" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) 3>&1 1>&2 2>&3)"
 
@@ -198,18 +198,29 @@ function mysql_count_dabases() {
 # List databases on MySQL
 #
 # Arguments:
-#   None
+#   ${stage} - Options: all, prod, dev, test, stage
 #
 # Outputs:
-#   $databases, 1 on error.
+#   ${databases}, 1 on error.
 ################################################################################
 
 function mysql_list_databases() {
 
+    local stage=$1
+
     local databases
 
-    # Run command
-    databases="$(${MYSQL_ROOT} -Bse 'show databases')"
+    if [[ ${stage} == "all" ]]; then
+
+        # Run command
+        databases="$(${MYSQL_ROOT} -Bse 'show databases')"
+
+    else
+
+        # Run command
+        databases="$(${MYSQL_ROOT} -Bse 'show databases' | grep "${stage}")"
+
+    fi
 
     # Check result
     mysql_result=$?
@@ -217,7 +228,7 @@ function mysql_list_databases() {
 
         # Log
         display --indent 6 --text "- Listing MySQL databases" --result "DONE" --color GREEN
-        log_event "info" " Listing MySQL databases '${databases}'"
+        log_event "info" " Listing MySQL databases '${databases}'" "false"
 
         # Return
         echo "${databases}"
@@ -228,8 +239,8 @@ function mysql_list_databases() {
 
         # Log
         display --indent 6 --text "- Listing MySQL databases" --result "FAIL" --color RED
-        log_event "error" "Something went wrong listing MySQL databases"
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -Bse 'show databases'"
+        log_event "error" "Something went wrong listing MySQL databases" "false"
+        log_event "debug" "Last command executed: ${MYSQL_ROOT} -Bse 'show databases'" "false"
 
         return 1
 

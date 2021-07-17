@@ -655,7 +655,7 @@ function make_all_databases_backup() {
   display --indent 6 --text "- Initializing database backup script" --result "DONE" --color GREEN
 
   # Get MySQL DBS
-  DBS="$(mysql_list_databases)"
+  DBS="$(mysql_list_databases "all")"
 
   # Get all databases name
   TOTAL_DBS="$(mysql_count_dabases "${DBS}")"
