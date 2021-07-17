@@ -124,15 +124,6 @@ function database_manager_menu() {
 
 function database_tasks_handler() {
 
-  "01)" "LIST DATABASES"
-  "02)" "CREATE DATABASE"
-  "03)" "DELETE DATABASE"
-  "04)" "RENAME DATABASE"
-  "05)" "LIST USERS"
-  "06)" "CREATE USER"
-  "07)" "DELETE USER"
-  "08)" "CHANGE USER PASSWORD"
-
   local subtask=$1
 
   log_subsection "Database Manager"
