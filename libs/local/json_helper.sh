@@ -108,8 +108,8 @@ function jsonify_output() {
 
         arr=()
 
-        while read x y; do
-            arr=("${arr[@]}" $x $y)
+        while read x; do
+            arr=("${arr[@]}" $x)
         done
 
         vars=(${arr[@]})

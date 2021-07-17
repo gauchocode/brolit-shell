@@ -226,6 +226,9 @@ function mysql_list_databases() {
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 && ${databases} != "error" ]]; then
 
+        # Remove new lines from ouput
+        databases="${databases//[$'\t\r\n']/}"
+
         # Log
         display --indent 6 --text "- Listing MySQL databases" --result "DONE" --color GREEN
         log_event "info" " Listing MySQL databases '${databases}'" "false"
