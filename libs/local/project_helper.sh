@@ -85,11 +85,18 @@ function ask_project_name() {
 
 }
 
+################################################################################
+# Ask project domain
+#
+# Arguments:
+#   $1 = ${project_domain} - optional to select default option
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 # TODO: project_domain should be an array?
 function ask_project_domain() {
-
-  # Parameters
-  # $1 = ${project_domain} optional to select default option
 
   local project_domain=$1
 
@@ -101,8 +108,6 @@ function ask_project_domain() {
     # Return
     echo "${project_domain}"
 
-    return 0
-
   else
 
     return 1
@@ -111,9 +116,17 @@ function ask_project_domain() {
 
 }
 
-function ask_project_type() {
+################################################################################
+# Ask project type
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  # No parameters
+function ask_project_type() {
 
   local project_types
   local project_type
@@ -137,10 +150,17 @@ function ask_project_type() {
 
 }
 
-function ask_folder_to_install_sites() {
+################################################################################
+# Ask projects main directory
+#
+# Arguments:
+#   $1 = ${folder_to_install}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  # Parameters
-  # $1 = ${folder_to_install} optional to select default option (could be empty)
+function ask_folder_to_install_sites() {
 
   local folder_to_install=$1
 

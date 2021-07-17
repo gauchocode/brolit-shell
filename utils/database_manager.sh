@@ -132,7 +132,7 @@ function database_tasks_handler() {
 
   list_db)
 
-    mysql_list_databases "${DBNAME}"
+    mysql_list_databases "${DBSTAGE}"
 
     exit
     ;;
@@ -146,7 +146,7 @@ function database_tasks_handler() {
 
   delete_db)
 
-    mysql_delete_db "${DBNAME}"
+    mysql_database_drop "${DBNAME}"
 
     exit
     ;;
@@ -160,7 +160,7 @@ function database_tasks_handler() {
 
   list_db_user)
 
-    #mysql_list_
+    #mysql_list_users
 
     exit
     ;;
