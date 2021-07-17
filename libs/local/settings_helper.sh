@@ -84,50 +84,110 @@ function _settings_config_mysql() {
 
 function _settings_config_smtp() {
 
+    local config_file="/root/.brolit_conf.json"
+
     if [[ -z "${SMTP_SERVER}" ]]; then
+
         SMTP_SERVER=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server" 10 60 "${SMTP_SERVER_OLD}" 3>&1 1>&2 2>&3)
+
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
+
+            # old config
             echo "SMTP_SERVER="${SMTP_SERVER} >>/root/.brolit-shell.conf
+
+            # new config
+            config_field="NOTIFICATIONS.email[].config[].smtp_server"
+            config_value="${SMTP_SERVER}"
+            json_write_field "${config_file}" "${config_field}" "${config_value}"
+
         else
+
             return 1
+
         fi
     fi
     if [[ -z "${SMTP_PORT}" ]]; then
         SMTP_PORT=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server Port" 10 60 "${SMTP_PORT_OLD}" 3>&1 1>&2 2>&3)
+
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
+
+            # old config
             echo "SMTP_PORT=${SMTP_PORT}" >>/root/.brolit-shell.conf
+
+            # new config
+            config_field="NOTIFICATIONS.email[].config[].smtp_port"
+            config_value="${SMTP_PORT}"
+            json_write_field "${config_file}" "${config_field}" "${config_value}"
+
         else
+
             return 1
+
         fi
     fi
     # TODO: change to SMTP_TYPE (none, ssl, tls)
     if [[ -z "${SMTP_TLS}" ]]; then
+
         SMTP_TLS=$(whiptail --title "SMTP TLS" --inputbox "SMTP yes or no:" 10 60 "${SMTP_TLS_OLD}" 3>&1 1>&2 2>&3)
+
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
+
+            # old config
             echo "SMTP_TLS=${SMTP_TLS}" >>/root/.brolit-shell.conf
+
+            # new config
+            config_field="NOTIFICATIONS.email[].config[].smtp_tls"
+            config_value="${SMTP_TLS}"
+            json_write_field "${config_file}" "${config_field}" "${config_value}"
+
         else
+
             return 1
+
         fi
     fi
     if [[ -z "${SMTP_U}" ]]; then
+
         SMTP_U=$(whiptail --title "SMTP User" --inputbox "Please insert the SMTP user" 10 60 "${SMTP_U_OLD}" 3>&1 1>&2 2>&3)
+
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
+
+            # old config
             echo "SMTP_U=${SMTP_U}" >>/root/.brolit-shell.conf
+
+            # new config
+            config_field="NOTIFICATIONS.email[].config[].smtp_u"
+            config_value="${SMTP_U}"
+            json_write_field "${config_file}" "${config_field}" "${config_value}"
+
         else
+
             return 1
+
         fi
     fi
     if [[ -z "${SMTP_P}" ]]; then
+
         SMTP_P=$(whiptail --title "SMTP Password" --inputbox "Please insert the SMTP user password" 10 60 "${SMTP_P_OLD}" 3>&1 1>&2 2>&3)
+
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
+
+            # old config
             echo "SMTP_P=${SMTP_P}" >>/root/.brolit-shell.conf
+
+            # new config
+            config_field="NOTIFICATIONS.email[].config[].smtp_p"
+            config_value="${SMTP_P}"
+            json_write_field "${config_file}" "${config_field}" "${config_value}"
         else
+
             return 1
+
         fi
     fi
 
@@ -292,6 +352,11 @@ function _settings_config_dropbox() {
             DROPBOX_ENABLE="true"
             echo "DROPBOX_ENABLE=${DROPBOX_ENABLE}" >>/root/.brolit-shell.conf
 
+            # new config
+            config_field="BACKUPS.methods[].dropbox"
+            config_value="enable"
+            json_write_field "${config_file}" "${config_field}" "${config_value}"
+
             # Generating Dropbox api config file
             generate_dropbox_config
 
@@ -318,6 +383,11 @@ function _settings_config_cloudflare() {
             CLOUDFLARE_ENABLE="true"
             echo "CLOUDFLARE_ENABLE=${CLOUDFLARE_ENABLE}" >>/root/.brolit-shell.conf
 
+            # new config
+            config_field="SUPPORT.cloudflare[].status"
+            config_value="enable"
+            json_write_field "${config_file}" "${config_field}" "${config_value}"
+
             # Generating Cloudflare api config file
             generate_cloudflare_config
 
@@ -343,6 +413,11 @@ function _settings_config_telegram() {
             # Setting option on script config file
             TELEGRAM_NOTIF="true"
             echo "TELEGRAM_NOTIF=${TELEGRAM_NOTIF}" >>/root/.brolit-shell.conf
+
+            # new config
+            config_field="NOTIFICATIONS.telegram[].status"
+            config_value="enable"
+            json_write_field "${config_file}" "${config_field}" "${config_value}"
 
             # Generating Telegram api config file
             generate_telegram_config
@@ -382,6 +457,15 @@ function _settings_config_notifications() {
 
                     echo "MAILA=${MAILA}" >>/root/.brolit-shell.conf
 
+                    # new config
+                    config_field="NOTIFICATIONS.email[].status"
+                    config_value="enable"
+                    json_write_field "${config_file}" "${config_field}" "${config_value}"
+
+                    config_field="NOTIFICATIONS.email[].config[].maila"
+                    config_value="${MAILA}"
+                    json_write_field "${config_file}" "${config_field}" "${config_value}"
+
                 fi
 
             fi
@@ -418,7 +502,7 @@ function check_script_configuration() {
 # BROLIT configuration wizard
 #
 # Arguments:
-#   none
+#   $1 = ${config_mode} - Options: initial or reconfigure
 #
 # Outputs:
 #   nothing
@@ -431,10 +515,9 @@ function script_configuration_wizard() {
     # Initial setup, check if all needed vars are configured or reconfigure all settings.
     # Important: Need to be runned only after load config files.
 
-    # Parameters
-    # $1 = ${config_mode} // options: initial or reconfigure
-
     local config_mode=$1
+
+    #local config_file="/root/.brolit_conf.json"
 
     if [[ ${config_mode} == "reconfigure" ]]; then
 
