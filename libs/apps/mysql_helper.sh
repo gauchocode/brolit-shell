@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.45
+# Version: 3.0.46
 ################################################################################
 #
 # MySQL Helper: Perform mysql actions.

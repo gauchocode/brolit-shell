@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.45
+# Version: 3.0.46
 ################################################################################
 #
 # Json Helper: Functions to read and write json files.
@@ -89,8 +89,9 @@ function jsonify_output() {
 
         arr=()
 
-        while read x y; do
-            arr=("${arr[@]}" $x $y)
+        while [ $# -ge 1 ]; do
+            arr=("${arr[@]}" $1)
+            shift
         done
 
         vars=(${arr[@]})
