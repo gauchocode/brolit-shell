@@ -1,0 +1,96 @@
+{
+    "SERVER_ROLES": {
+        "config": [
+            {
+                "webserver": "false",
+                "database": "false",
+                "docker": "false",
+                "cache": "false",
+                "other": "false"
+            }
+        ]
+    },
+    "BACKUPS": {
+        "methods": [
+            {
+                "dropbox": "false",
+                "sftp": [
+                    {
+                        "status": "disable",
+                        "config": [
+                            {
+                                "server_ip": "",
+                                "server_port": "",
+                                "server_user": "",
+                                "server_user_psw": "",
+                                "backup_path": ""
+                            }
+                        ]
+                    }
+                ],
+                "local": [
+                    {
+                        "status": "disable",
+                        "config": [
+                            {
+                                "backup_path": ""
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    "PROJECTS_PATH": "",
+    "NOTIFICATIONS": {
+        "email": [
+            {
+                "status": "disable",
+                "config": [
+                    {
+                        "maila": "",
+                        "smtp_server": "",
+                        "smtp_port": "",
+                        "smtp_tls": "",
+                        "smtp_u": "",
+                        "smtp_p": ""
+                    }
+                ]
+            }
+        ],
+        "telegram": [
+            {
+                "status": "disable",
+                "config": [
+                    {
+                        "botfather_key": "",
+                        "telegram_user_id": ""
+                    }
+                ]
+            }
+        ]
+    },
+    "SUPPORT": {
+        "cloudflare": [
+            {
+                "status": "disable",
+                "config": [
+                    {
+                        "dns_cloudflare_email": "",
+                        "dns_cloudflare_api_key": ""
+                    }
+                ]
+            }
+        ],
+        "mailcow": [
+            {
+                "status": "disable",
+                "config": [
+                    {
+                        "mailcow_path": ""
+                    }
+                ]
+            }
+        ]
+    }
+}
