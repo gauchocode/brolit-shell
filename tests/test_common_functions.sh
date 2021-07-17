@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.45
+# Version: 3.0.46
 #############################################################################
 
 function test_common_funtions() {
@@ -218,9 +218,9 @@ function test_jsonify_function_return() {
 
     jsonify_output "value-list" "${databases}"
 
-    databases="function_example_name function_example_return"
+    string_to_test="function_example_name function_example_return"
 
-    jsonify_output "key-value" "${databases}"
+    jsonify_output "key-value" "${string_to_test}"
 
 }
 
