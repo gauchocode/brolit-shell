@@ -230,7 +230,7 @@ function test_json_write_function() {
     local config_field
     local server_roles
 
-    log_subsection "jsonify_function_return"
+    log_subsection "json_write_function"
 
     config_file="assets/brolit_shell.conf"
 
@@ -241,13 +241,13 @@ function test_json_write_function() {
     # Write json
     #server_roles="$( jsonify_output "value-list" "${server_roles}")"
     #log_event "debug" "server_roles=$server_roles" "true"
-      "${config_file}" "${config_field}" "${server_roles}"
+    json_write_field "${config_file}" "${config_field}" "${server_roles}"
 
     # Read json
     #config_value="$(cat ${config_file} | jq -r ".${config_field}")"
     config_value="$(json_read_field "${config_file}" "${config_field}")"
 
-    if [[ ${config_value} = "webserver" ]]; then
+    if [[ ${config_value} == "true" ]]; then
         display --indent 6 --text "- result: ${config_value}" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- result: ${config_value}" --result "FAIL" --color RED
