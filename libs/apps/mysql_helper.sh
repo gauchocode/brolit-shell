@@ -233,7 +233,7 @@ function mysql_list_databases() {
 
         # Log
         display --indent 6 --text "- Listing MySQL databases" --result "DONE" --color GREEN
-        log_event "info" " Listing MySQL databases '${databases}'" "false"
+        log_event "info" " Listing MySQL databases: '${databases}'" "false"
 
         # Return
         echo "${databases}"
