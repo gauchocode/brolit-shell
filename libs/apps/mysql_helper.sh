@@ -2,7 +2,7 @@
 #
 # Author: BROOBE - A Software Development Agency - https://example.com
 # Version: 3.0.45
-#############################################################################
+################################################################################
 #
 # MySQL Helper: Perform mysql actions.
 #

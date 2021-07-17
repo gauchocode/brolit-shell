@@ -23,13 +23,15 @@ for f in ${utils_scripts}; do source "${f}"; done
 source "${SFOLDER}/libs/notification_controller.sh"
 #source "${SFOLDER}/libs/storage_controller.sh"
 
+################################################################################
+# Private: setup global vars and script options
 #
-#############################################################################
+# Arguments:
+#   none
 #
-# * Private functions
-#
-#############################################################################
-#
+# Outputs:
+#   global vars
+################################################################################
 
 function _setup_globals_and_options() {
 
@@ -114,6 +116,16 @@ function _setup_globals_and_options() {
 
 }
 
+################################################################################
+# Private: setup color vars
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   global vars
+################################################################################
+
 function _setup_colors_and_styles() {
 
   # Refs:
@@ -173,6 +185,16 @@ function _setup_colors_and_styles() {
 
 }
 
+################################################################################
+# Private: check if user is root
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   none
+################################################################################
+
 function _check_root() {
 
   local is_root
@@ -193,6 +215,16 @@ function _check_root() {
 
 }
 
+################################################################################
+# Private: check script permissions
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   none
+################################################################################
+
 function _check_scripts_permissions() {
 
   ### chmod
@@ -201,22 +233,22 @@ function _check_scripts_permissions() {
 
 }
 
+################################################################################
+# Private: check linux distro
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   none
+################################################################################
+
 function _check_distro() {
-
-  local distro_old
-
-  # For ext check
-  distro_old="false"
 
   # Running Ubuntu?
   DISTRO="$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $1}')"
 
-  if [[ ! ${DISTRO} == "Ubuntu" ]]; then
-
-    log_event "critical" "This script only run on Ubuntu ... Exiting" "true"
-    return 1
-
-  else
+  if [[ ${DISTRO} == "Ubuntu" ]]; then
 
     MIN_V="$(echo "18.04" | awk -F "." '{print $1$2}')"
     DISTRO_V="$(get_ubuntu_version)"
@@ -231,9 +263,14 @@ function _check_distro() {
       sleep 3
       spinner_stop $?
 
-      distro_old="true"
 
-      log_event "debug" "Setting distro_old: ${distro_old}" "false"
+    else
+
+      if [[ ${DISTRO} == "Pop!_OS" ]]; then
+
+        log_event "warning" "BROLIT Shell has partial support for Pop!_OS, some features maybe not work as espected!" "true"
+
+      fi
 
     fi
 
@@ -241,13 +278,15 @@ function _check_distro() {
 
 }
 
+################################################################################
+# Script init
 #
-#############################################################################
+# Arguments:
+#   none
 #
-# * Functions
-#
-#############################################################################
-#
+# Outputs:
+#   global vars
+################################################################################
 
 function script_init() {
 
@@ -539,7 +578,7 @@ function validator_email_format() {
 
   if [[ ! "${email}" =~ ^[A-Za-z0-9._%+-]+@[[:alnum:].-]+\.[A-Za-z]{2,63}$ ]]; then
 
-    log_event "error" "Invalid email format :: ${email}" "false"
+    log_event "error" "Invalid email format for: ${email}" "false"
 
     return 1
 
@@ -1863,6 +1902,7 @@ function flags_handler() {
   # DATABASE
   DBNAME=""
   DBNAME_N=""
+  DBSTAGE=""
   DBUSER=""
   DBUSERPSW=""
 
@@ -1941,6 +1981,11 @@ function flags_handler() {
     -dbn | --dbname-new)
       i="$((i + 1))"
       DBNAME_N=${parameters[$i]}
+      ;;
+
+    -dbs | --dbstage)
+      i="$((i + 1))"
+      DBSTAGE=${parameters[$i]}
       ;;
 
     -dbu | --dbuser)
