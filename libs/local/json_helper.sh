@@ -68,6 +68,16 @@ function json_write_field() {
 
 }
 
+################################################################################
+# Transfor string to json
+#
+# Arguments:
+#   $1= ${json_file} - Options: key-value, value-list
+#
+# Outputs:
+#   ${json_field_value}
+################################################################################
+
 function jsonify_output() {
 
     local mode=$1
@@ -75,11 +85,11 @@ function jsonify_output() {
     display --indent 6 --text "- Running jsonify_output with mode: $mode"
 
     # Mode "key-value" example:
-    # > echo "key1 value1 key2 value2" | ./key_value_pipe_to_json.sh
+    # > echo "key1 value1 key2 value2"
     # {'key1': value1, 'key2': value2}
 
     # Mode "value-list" example:
-    # > echo "value1 value2 value3 value4" | ./value_pipe_to_json.sh
+    # > echo "value1 value2 value3 value4"
     # [ "value1" "value2" "value3" "value4" ]
 
     # Remove fir parameter

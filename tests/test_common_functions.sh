@@ -232,53 +232,21 @@ function test_json_write_function() {
 
     log_subsection "jsonify_function_return"
 
-    config_file="assets/brolit_shell.conf"
+    config_file="${SCRIPT}/tests/assets/brolit_shell.conf"
 
     config_field="SERVER_ROLES"
 
     server_roles="webserver"
 
-    if [[ -e ${config_file} ]]; then
+    # Write json
+    #server_roles="$(jq ".${config_field} = \"${server_roles}\"" "${config_file}")" && echo "${server_roles}" >"${config_file}"
+    json_write_field "${config_file}" "${config_field}" "${server_roles}"
 
-        server_roles="$(jq ".${config_field} = \"${server_roles}\"" "${config_file}")" && echo "${server_roles}" >"${config_file}"
-
-    else
-
-        # Return
-        #echo "false"
-        exit 1
-
-    fi
-
-    config_value="$(cat ${config_file} | jq -r ".${config_field}")"
+    # Read json
+    #config_value="$(cat ${config_file} | jq -r ".${config_field}")"
+    config_value="$(json_read_field "${config_file}" "${config_field}")"
 
     if [[ ${config_value} = "webserver" ]]; then
-        display --indent 6 --text "- result: ${config_value}" --result "PASS" --color WHITE
-    else
-        display --indent 6 --text "- result: ${config_value}" --result "FAIL" --color RED
-    fi
-
-    ###############################################
-
-    config_field="NOTIFICATIONS.email.status"
-
-    status="enable"
-
-    if [[ -e ${config_file} ]]; then
-
-        status="$(jq ".${config_field} = \"${status}\"" "${config_file}")" && echo "${status}" >"${config_file}"
-
-    else
-
-        # Return
-        #echo "false"
-        exit 1
-
-    fi
-
-    config_value="$(cat ${config_file} | jq -r ".${config_field}")"
-
-    if [[ ${config_value} = "enable" ]]; then
         display --indent 6 --text "- result: ${config_value}" --result "PASS" --color WHITE
     else
         display --indent 6 --text "- result: ${config_value}" --result "FAIL" --color RED
