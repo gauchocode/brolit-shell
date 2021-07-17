@@ -1620,7 +1620,7 @@ function show_help() {
 #   $1 = ${task}
 #
 # Outputs:
-#   nothing
+#   global vars
 ################################################################################
 
 function tasks_handler() {
@@ -1654,6 +1654,13 @@ function tasks_handler() {
 
     # Second parameter with "true" will delete cloudflare entry
     project_delete "${DOMAIN}" "true"
+
+    exit
+    ;;
+
+  database)
+
+    database_tasks_handler "${STASK}"
 
     exit
     ;;
