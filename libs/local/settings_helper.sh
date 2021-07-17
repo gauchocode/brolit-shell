@@ -2,7 +2,65 @@
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
 # Version: 3.0.45
-#############################################################################
+################################################################################
+#
+# Settings Helper: Functions to set BROLIT settings.
+#
+################################################################################
+
+################################################################################
+# Private: ask valid email (check email format)
+#
+# Arguments:
+#   $1= ${whip_title}
+#   $2= ${whip_text}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function _settings_ask_valid_email() {
+
+    local whip_title=$1
+    local whip_text=$2
+
+    MAILA="$(whiptail --title "${whip_title}" --inputbox "${whip_text}" 10 60 "${MAILA_OLD}" 3>&1 1>&2 2>&3)"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Check if user enter a valid email
+        validator_email_format "${MAILA}"
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+            # Return
+            echo "${MAILA}"
+
+        else
+
+            _settings_ask_valid_email "${whip_title}" "${whip_text}"
+
+        fi
+
+    else
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Private: mysql configuration
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
 
 function _settings_config_mysql() {
 
@@ -13,6 +71,16 @@ function _settings_config_mysql() {
     fi
 
 }
+
+################################################################################
+# Private: smtp configuration
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
 
 function _settings_config_smtp() {
 
@@ -297,21 +365,23 @@ function _settings_config_notifications() {
     if [[ -z "${MAIL_NOTIF}" ]]; then
 
         whiptail_message_with_skip_option "E-Mail Notification" "Do you want to enable E-Mail notification support?"
+
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
-            # Setting option on script config file
-            MAIL_NOTIF="true"
-            echo "MAIL_NOTIF=${MAIL_NOTIF}" >>/root/.brolit-shell.conf
-
             if [[ -z "${MAILA}" ]]; then
 
-                MAILA=$(whiptail --title "Notification Email" --inputbox "Insert the email where you want to receive notifications." 10 60 "${MAILA_OLD}" 3>&1 1>&2 2>&3)
-                exitstatus=$?
-                if [[ ${exitstatus} -eq 0 ]]; then
+                MAILA="$(_settings_ask_valid_email "E-Mail Notification" "Insert the email where you want to receive notifications:")"
+
+                if [[ -z ${MAILA} ]]; then
+
+                    # Setting option on script config file
+                    MAIL_NOTIF="true"
+
+                    echo "MAIL_NOTIF=${MAIL_NOTIF}" >>/root/.brolit-shell.conf
+
                     echo "MAILA=${MAILA}" >>/root/.brolit-shell.conf
-                else
-                    return 1
+
                 fi
 
             fi
@@ -328,19 +398,31 @@ function _settings_config_notifications() {
 
 }
 
+################################################################################
+# Check BROLIT configuration
 #
-#################################################################################
+# Arguments:
+#   none
 #
-# * Public
-#
-#################################################################################
-#
+# Outputs:
+#   nothing
+################################################################################
 
 function check_script_configuration() {
 
     script_configuration_wizard "initial"
 
 }
+
+################################################################################
+# BROLIT configuration wizard
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
 
 function script_configuration_wizard() {
 
@@ -434,6 +516,16 @@ function script_configuration_wizard() {
 
 }
 
+################################################################################
+# Set server role
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   ${server_roles}
+################################################################################
+
 function settings_set_server_role() {
 
     # Server roles (new concept)
@@ -503,6 +595,16 @@ function settings_set_server_role() {
     fi
 
 }
+
+################################################################################
+# Generate dropbox config
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   none
+################################################################################
 
 function generate_dropbox_config() {
 
@@ -615,6 +717,16 @@ function generate_dropbox_config() {
 
 }
 
+################################################################################
+# Generate cloudflare config
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   none
+################################################################################
+
 function generate_cloudflare_config() {
 
     # ${CLF_CONFIG_FILE} is a Global var
@@ -667,6 +779,16 @@ function generate_cloudflare_config() {
     fi
 
 }
+
+################################################################################
+# Generate telegram config
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   none
+################################################################################
 
 function generate_telegram_config() {
 

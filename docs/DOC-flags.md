@@ -89,6 +89,14 @@ Options:
 ./runner.sh --task "restore" --subtask "project" --domain "example.domain.com" --pname "project_name" --pstate "prod"
 ```
 
+### Database Manager
+
+#### List all databases
+
+```
+./runner.sh -t "database" -st "list_db"
+```
+
 ### Cloudflare API
 
 #### Clear Cloudflare Cache
