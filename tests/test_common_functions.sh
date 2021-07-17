@@ -10,6 +10,7 @@ function test_common_funtions() {
     #test_get_subdomain_part
     #test_extract_domain_extension
     test_jsonify_function_return
+    test_json_write_function
 
 }
 
@@ -206,6 +207,22 @@ function test_extract_domain_extension() {
 }
 
 function test_jsonify_function_return() {
+
+    local config_file
+    local config_field
+    local server_roles
+
+    log_subsection "jsonify_function_return"
+
+    config_file="assets/brolit_shell.conf"
+
+    databases="$(mysql_list_databases "all")"
+
+    jsonify_output "value-list" "${databases}"
+
+}
+
+function test_json_write_function() {
 
     local config_file
     local config_field

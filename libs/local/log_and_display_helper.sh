@@ -3,15 +3,26 @@
 # Author: BROOBE - A Software Development Agency - https://broobe.com
 # Version: 3.0.45
 ################################################################################
+#
+# Log and Display Helper: Log and display internal functions.
+#
+################################################################################
+
+################################################################################
+# Private function to make spinner works
+#
+# Arguments:
+#   $1 start/stop
+#
+#   on start: $2 display message
+#   on stop : $2 process exit status
+#           $3 spinner function pid (supplied from spinner_stop)
+#
+# Outputs:
+#   nothing
+################################################################################
 
 function _spinner() {
-
-  # Parameters
-  # $1 start/stop
-  #
-  # on start: $2 display message
-  # on stop : $2 process exit status
-  #           $3 spinner function pid (supplied from spinner_stop)
 
   #local on_success="DONE"
   #local on_fail="FAIL"
@@ -75,10 +86,17 @@ function _spinner() {
 
 }
 
-function spinner_start() {
+################################################################################
+# Start spinner
+#
+# Arguments:
+#   $1 = msg to display
+#
+# Outputs:
+#   nothing
+################################################################################
 
-  # Parameters
-  # $1 = msg to display
+function spinner_start() {
 
   _spinner "start" "${1}" &
 
@@ -88,26 +106,42 @@ function spinner_start() {
 
 }
 
-function spinner_stop() {
+################################################################################
+# Stop spinner
+#
+# Arguments:
+#   $1 = command exit status
+#
+# Outputs:
+#   nothing
+################################################################################
 
-  # Parameters
-  # $1 = command exit status
+function spinner_stop() {
 
   _spinner "stop" $1 $_sp_pid
   unset _sp_pid
 
 }
 
-function log_event() {
+################################################################################
+# Write on log
+#
+# Arguments:
+#   $1 = {log_type} (success, info, warning, error, critical)
+#   $2 = {message}
+#   $3 = {console_display} optional (true or false, default is false)
+#
+# Outputs:
+#   nothing
+################################################################################
 
-  # Parameters
-  # $1 = {log_type} (success, info, warning, error, critical)
-  # $2 = {message}
-  # $3 = {console_display} optional (true or false, default is false)
+function log_event() {
 
   local log_type=$1
   local message=$2
   local console_display=$3
+
+  # TODO: CHECK IF BROLIT IS EXECUTED BY WEBAPP
 
   case ${log_type} in
 
