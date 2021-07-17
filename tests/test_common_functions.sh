@@ -214,11 +214,13 @@ function test_jsonify_function_return() {
 
     log_subsection "jsonify_function_return"
 
-    config_file="assets/brolit_shell.conf"
-
     databases="$(mysql_list_databases "all")"
 
     jsonify_output "value-list" "${databases}"
+
+    databases="function_example_name function_example_return"
+
+    jsonify_output "key-value" "${databases}"
 
 }
 

@@ -72,6 +72,8 @@ function jsonify_output() {
 
     local mode=$1
 
+    display --indent 6 --text "- Running jsonify_output with mode: $mode"
+
     # Mode "key-value" example:
     # > echo "key1 value1 key2 value2" | ./key_value_pipe_to_json.sh
     # {'key1': value1, 'key2': value2}
@@ -108,8 +110,9 @@ function jsonify_output() {
 
         arr=()
 
-        while read x; do
-            arr=("${arr[@]}" $x)
+        while [ $# -ge 1 ]; do
+            arr=("${arr[@]}" $1)
+            shift
         done
 
         vars=(${arr[@]})
