@@ -51,7 +51,7 @@ function json_write_field() {
     local json_field=$2
     local json_field_value=$3
 
-    json_field_value="$(jq ".${json_field} = \"${json_field}\"" "${json_file}")" && echo "${json_field_value}" >"${json_file}"
+    json_field_value="$(jq ".${json_field} = \"${json_field_value}\"" "${json_file}")" && echo "${json_field_value}" >"${json_file}"
 
     exitstatus=$?
     if [[ "${exitstatus}" -eq 0 ]]; then
