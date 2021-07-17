@@ -410,7 +410,7 @@ function script_init() {
 
   # EXPORT VARS
   export SCRIPT_V VPSNAME BROLIT_CONFIG_PATH TMP_DIR SFOLDER DPU_F DROPBOX_UPLOADER SITES SITES_BL DB_BL WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V SERVER_CONFIG
-  export LENCRYPT_CF MySQL_CF MYSQL MYSQLDUMP MYSQL_ROOT MYSQLDUMP_ROOT TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MAILA NOW NOWDISPLAY ONEWEEKAGO
+  export LENCRYPT_CF MySQL_CF MYSQL MYSQL_CONF MYSQLDUMP MYSQL_ROOT MYSQLDUMP_ROOT TAR FIND DROPBOX_FOLDER MAILCOW_TMP_BK MHOST MUSER MAILA NOW NOWDISPLAY ONEWEEKAGO
   export SENDEMAIL DISK_U ONE_FILE_BK LOCAL_IP SERVER_IP SERVER_IPv6 SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P STATUS_BACKUP_DBS STATUS_BACKUP_FILES STATUS_SERVER STATUS_CERTS OUTDATED_PACKAGES
   export BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR
   export dns_cloudflare_email dns_cloudflare_api_key
@@ -1822,10 +1822,11 @@ function subtasks_restore_handler() {
 # Runner flags handler
 #
 # Arguments:
-#   $1 = ${subtask}
+#   $1 = ${arguments_count}
+#   $2 = ${arguments}
 #
 # Outputs:
-#   nothing
+#   global vars
 ################################################################################
 
 function flags_handler() {
@@ -1838,21 +1839,31 @@ function flags_handler() {
 
   IFS=', ' read -a parameters <<<"$arguments" # convert parameter to an array
 
+  # OPTIONS
   ENV=""
   SLOG=""
   TASK=""
+  TVALUE=""
+  SHOWDEBUG=0
+
+  # PROJECT
   SITE=""
   DOMAIN=""
   PNAME=""
   PTYPE=""
   PSTATE=""
-  TVALUE=""
-  SHOWDEBUG=0
+
+  # DATABASE
+  DBNAME=""
+  DBNAME_N=""
+  DBUSER=""
+  DBUSERPSW=""
 
   while [[ $i < ${arguments_count} ]]; do
 
     case ${parameters[$i]} in
 
+    # OPTIONS
     -h | -\? | --help)
       show_help # Display a usage synopsis
       exit
@@ -1887,6 +1898,7 @@ function flags_handler() {
       TVALUE=${parameters[$i]}
       ;;
 
+    # PROJECT
     -s | --site)
       i="$((i + 1))"
       SITE=${parameters[$i]}
@@ -1912,6 +1924,28 @@ function flags_handler() {
       DOMAIN=${parameters[$i]}
       ;;
 
+    # DATABASE
+
+    -db | --dbname)
+      i="$((i + 1))"
+      DBNAME=${parameters[$i]}
+      ;;
+
+    -dbn | --dbname-new)
+      i="$((i + 1))"
+      DBNAME_N=${parameters[$i]}
+      ;;
+
+    -dbu | --dbuser)
+      i="$((i + 1))"
+      DBUSER=${parameters[$i]}
+      ;;
+
+    -dbup | --dbuser-psw)
+      i="$((i + 1))"
+      DBUSERPSW=${parameters[$i]}
+      ;;
+
     *)
       echo "INVALID OPTION: $i" >&2
       exit
@@ -1923,7 +1957,6 @@ function flags_handler() {
 
   done
 
-  #env_handler "${ENV}"
   tasks_handler "${TASK}"
 
 }
