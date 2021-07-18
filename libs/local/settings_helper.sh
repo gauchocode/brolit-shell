@@ -517,8 +517,6 @@ function script_configuration_wizard() {
 
     local config_mode=$1
 
-    #local config_file="/root/.brolit_conf.json"
-
     if [[ ${config_mode} == "reconfigure" ]]; then
 
         # Backup vars
@@ -579,6 +577,15 @@ function script_configuration_wizard() {
         else
             exit 1
         fi
+    fi
+
+    local config_file="/root/.brolit_conf.json"
+
+    # Creating new config file
+    if [[ ! -f "${config_file}" ]]; then
+
+        cp "${SCRIPTPATH}/config/brolit/brolit_conf.json" "${config_file}"
+
     fi
 
     settings_set_server_role
