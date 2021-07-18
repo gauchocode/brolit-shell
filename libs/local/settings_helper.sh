@@ -584,7 +584,7 @@ function script_configuration_wizard() {
     # Creating new config file
     if [[ ! -f "${config_file}" ]]; then
 
-        cp "${SCRIPTPATH}/config/brolit/brolit_conf.json" "${config_file}"
+        cp "${SFOLDER}/config/brolit/brolit_conf.json" "${config_file}"
 
     fi
 
