@@ -1104,6 +1104,7 @@ function change_ownership() {
   local group=$2
   local path=$3
 
+  # Command
   chown -R "${user}":"${group}" "${path}"
 
   chown_result=$?
@@ -1113,9 +1114,7 @@ function change_ownership() {
     log_event "info" "Changing ownership of ${path} to ${user}:${group}" "false"
     log_event "debug" "Command executed: chown -R ${user}:${group} ${path}" "false"
 
-    display --indent 2 --text "- Changing directory ownership" --result DONE --color GREEN
-
-    return 0
+    display --indent 6 --text "- Changing directory ownership" --result DONE --color GREEN
 
   else
 
@@ -1123,7 +1122,7 @@ function change_ownership() {
     log_event "error" "Changing ownership of ${path} to ${user}:${group}" "false"
     log_event "debug" "Command executed: chown -R ${user}:${group} ${path}" "false"
 
-    display --indent 2 --text "- Changing directory ownership" --result FAIL --color RED
+    display --indent 6 --text "- Changing directory ownership" --result FAIL --color RED
 
     return 1
 
