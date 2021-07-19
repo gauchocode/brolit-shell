@@ -558,6 +558,8 @@ function project_install() {
   local project_name=$4
   local project_state=$5
 
+  # TODO: need to check if user cancels some of this options
+
   if [[ ${project_type} == '' ]]; then
     project_type="$(ask_project_type)"
   fi
@@ -735,6 +737,7 @@ function project_delete_database() {
     ${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${chosen_database}" "/${VPSNAME}/offline-site" 1>&2
 
     # Log
+    clear_last_line
     log_event "debug" "Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${chosen_database} /${VPSNAME}/offline-site"
     display --indent 6 --text "- Moving dropbox backup to offline directory" --result "DONE" --color GREEN
 
