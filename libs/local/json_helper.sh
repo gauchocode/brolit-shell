@@ -72,10 +72,11 @@ function json_write_field() {
 # Transfor string to json
 #
 # Arguments:
-#   $1= ${json_file} - Options: key-value, value-list
+#   $1= ${mode} - Options: key-value, value-list
+#   $@
 #
 # Outputs:
-#   ${json_field_value}
+#   ${json_string}
 ################################################################################
 
 function jsonify_output() {
@@ -141,4 +142,40 @@ function jsonify_output() {
 
     fi
 
+}
+
+################################################################################
+# Load global vars from json config file
+#
+# Arguments:
+#   $1= ${json_file} - Options: key-value, value-list
+#
+# Outputs:
+#   ${json_field_value}
+################################################################################
+
+function json_to_vars() {
+
+    local json_file=$1
+
+    # TODO: read json file and ouput global vars.
+    #
+    # Example:
+    #
+    #    "SERVER_ROLES": {
+    #    "config": [
+    #        {
+    #            "webserver": "true",
+    #            "database": "true",
+    #            "docker": "false",
+    #            "cache": "false",
+    #            "other": "false"
+    #        }
+    #       ]
+    #   }
+    #
+    # Could transfor in:
+    #
+    # SERVER_ROLE=("webserver", "database")
+    #
 }
