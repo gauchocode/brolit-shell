@@ -1,30 +1,31 @@
 # BROLIT Shell
 
-BROLIT Shell (aka "LEMP Ubuntu Utils Scripts") is a **BASH** based cloud server control software which can be used to quickly install a LEMP Stack on Ubuntu 18.04 and 20.04 servers, automate and restore backups, install PHP projects, and other useful tasks.
+BROLIT Shell is a **BASH** based cloud server control software which can be used to quickly install a LEMP Stack on Ubuntu 18.04 and 20.04 servers, automate and restore backups, install PHP projects, and other IT tasks.
 
 ![ScreenShot](./screenshot.jpg)
+
+## Motivation
+
+* Standarize servers configuration.
+* Automatization of IT/DevOps tasks.
+* Reduce time and errors on IT/DevOps tasks.
 
 ## Why Bash?
 
 * Performance.
 * Pre-installed on linux systems.
 
-## Motivation
-
-* Standarize servers configuration.
-* Automatization of IT/DevOps tasks.
-* Reduce time and errors on IT tasks.
-
 ## Why BROLIT Shell?
 
-* Create, deploy and host anything with a single command.
-* Frontend & backend templates.
+* Backup and restore projects easily.
+* Create, deploy and host php projects.
+* Option to run some taks from a single line command.
+* Third party integrations: Dropbox, Cloudflare, Telegram, Netdata and more.
 * WordPress support.
 * Open-source.
 
 ## Features
 
-* Simple step-by-step configuration wizard.
 * LEMP automated installer (Nginx, MySQL/MariaDB, PHP).
 * Files and database backups (MySQL or MariaDB).
 * Upload backups to Dropbox (API v2).
@@ -42,7 +43,6 @@ BROLIT Shell (aka "LEMP Ubuntu Utils Scripts") is a **BASH** based cloud server 
 * Security Tools with malware scanners.
 * IP/Domain blacklist checker.
 * Step-by-step configuration wizard.
-* Option to run some taks from a single line command.
 * Benchmark tool.
 * And more ...
 
@@ -78,7 +78,7 @@ If git is not installed:
 sudo apt-get update && sudo apt-get install git -y
 ```
 
-Cloning repo (gitHub):
+Cloning repo:
 
 ```bash
 git clone https://github.com/lpadula/brolit-shell
@@ -152,6 +152,7 @@ Blacklist check UNIX/Linux utility.
 VPS benchmark script — based on the popular bench.sh, plus CPU and ioping tests, and dual-stack IPv4 and v6 speedtests by default
 
 ## Contributing
+
 Please read CONTRIBUTING.md for details on our code of conduct, and the process for submitting pull requests to us.
 
 ## Code: Bash Best Practices
@@ -159,7 +160,9 @@ Please read CONTRIBUTING.md for details on our code of conduct, and the process 
 [Best Practices](./docs/CODE.md)
 
 ## Authors
+
 * **Leandro Padula** - *Initial work* - [BROOBE](https://www.broobe.com)
 
 ## License
+
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details
