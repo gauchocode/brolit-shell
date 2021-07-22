@@ -178,4 +178,18 @@ function json_to_vars() {
     #
     # SERVER_ROLE=("webserver", "database")
     #
+
+    # Ref: https://unix.stackexchange.com/questions/413878/json-array-to-bash-variables-using-jq
+
+    jq -r '.SERVER_ROLES.config[] | to_entries | .[] | .key + "=\"" + .value + "\""'
+
+    # Should ouput:
+    # webserver="true"
+    # database="true"
+    # docker="false"
+    # cache="false"
+    # other="false"
+
+    # Maybe we should send this to a file and then source it
+
 }
