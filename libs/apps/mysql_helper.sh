@@ -252,6 +252,52 @@ function mysql_list_databases() {
 }
 
 ################################################################################
+# List users on MySQL
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   ${users}, 1 on error.
+################################################################################
+
+function mysql_list_users() {
+
+    local users
+
+    # Run command
+    users="$(${MYSQL_ROOT} -e 'SELECT user FROM mysql.user;')"
+
+    # Check result
+    mysql_result=$?
+    if [[ ${mysql_result} -eq 0 && ${users} != "error" ]]; then
+
+        # Replace all newlines with a space
+        users="${users//$'\n'/ }"
+        # Replace all strings \n with a space
+        users="${users//\\n/ }"
+
+        # Log
+        display --indent 6 --text "- Listing MySQL users" --result "DONE" --color GREEN
+        log_event "info" " Listing MySQL users: '${users}'" "false"
+
+        # Return
+        echo "${users}"
+
+    else
+
+        # Log
+        display --indent 6 --text "- Listing MySQL users" --result "FAIL" --color RED
+        log_event "error" "Something went wrong listing MySQL users" "false"
+        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e SELECT user FROM mysql.user;'" "false"
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
 # Create database user
 #
 # Arguments:
@@ -363,8 +409,9 @@ function mysql_user_delete() {
 
         # Log
         clear_last_line
+        log_event "info" " Database user ${db_user} deleted" "false"
+        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
         display --indent 6 --text "- Deleting user ${db_user}" --result "DONE" --color GREEN
-        log_event "info" " Database user ${db_user} deleted"
 
         return 0
 
@@ -372,9 +419,9 @@ function mysql_user_delete() {
 
         # Log
         clear_last_line
+        log_event "error" "Something went wrong deleting user: ${db_user}." "false"
+        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
         display --indent 6 --text "- Deleting ${db_user} user in MySQL" --result "FAIL" --color RED
-        log_event "error" "Something went wrong deleting user: ${db_user}."
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\""
 
         return 1
 
@@ -551,7 +598,8 @@ function mysql_user_grant_privileges() {
 
         # Log
         clear_last_line
-        log_event "info" "Privileges granted to user ${db_user}"
+        log_event "info" "Privileges granted to user ${db_user}" "false"
+        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
         display --indent 6 --text "- Granting privileges to ${db_user}" --result "DONE" --color GREEN
 
         return 0
@@ -560,9 +608,9 @@ function mysql_user_grant_privileges() {
 
         # Log
         clear_last_line
+        log_event "error" "Something went wrong granting privileges to user ${db_user}." "false"
+        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
         display --indent 6 --text "- Granting privileges to ${db_user}" --result "FAIL" --color RED
-        log_event "error" "Something went wrong granting privileges to user ${db_user}."
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\""
 
         return 1
 
