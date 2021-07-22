@@ -1698,7 +1698,7 @@ function tasks_handler() {
 
   database)
 
-    database_tasks_handler "${STASK}"
+    database_tasks_handler "${STASK}" "${DBNAME}" "${DBSTAGE}" "${DBUSER}"
 
     exit
     ;;
@@ -1751,8 +1751,6 @@ function subtasks_backup_handler() {
 
   all)
 
-    log_event "debug" "Running: complete backup"
-    #make_databases_backup
     make_all_server_config_backup
     make_sites_files_backup
 
@@ -1761,7 +1759,6 @@ function subtasks_backup_handler() {
 
   files)
 
-    log_event "debug" "Running: make_sites_files_backup"
     make_sites_files_backup
 
     exit
@@ -1769,7 +1766,6 @@ function subtasks_backup_handler() {
 
   server-config)
 
-    log_event "debug" "Running: make_all_server_config_backup"
     make_all_server_config_backup
 
     exit
@@ -1777,8 +1773,7 @@ function subtasks_backup_handler() {
 
   databases)
 
-    log_event "warning" "TODO: database backup from parameter" "true"
-    #make_database_backup "" ""
+    make_database_backup "databases" "${DBNAME}"
 
     exit
     ;;
