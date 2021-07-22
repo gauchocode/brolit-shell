@@ -94,7 +94,13 @@ Options:
 #### List all databases
 
 ```
-./runner.sh -t "database" -st "list_db"
+./runner.sh --task "database" --subtask "list_db" --dbstage "all"
+```
+
+#### Create databases
+
+```
+./runner.sh --task "database" --subtask "create_db" --dbname "broobe_prod"
 ```
 
 ### Cloudflare API

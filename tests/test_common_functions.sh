@@ -239,12 +239,9 @@ function test_json_write_function() {
     server_roles="true"
 
     # Write json
-    #server_roles="$( jsonify_output "value-list" "${server_roles}")"
-    #log_event "debug" "server_roles=$server_roles" "true"
     json_write_field "${config_file}" "${config_field}" "${server_roles}"
 
     # Read json
-    #config_value="$(cat ${config_file} | jq -r ".${config_field}")"
     config_value="$(json_read_field "${config_file}" "${config_field}")"
 
     if [[ ${config_value} == "true" ]]; then
