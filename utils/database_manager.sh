@@ -160,7 +160,7 @@ function database_tasks_handler() {
 
   list_db_user)
 
-    #mysql_list_users
+    mysql_list_users
 
     exit
     ;;
