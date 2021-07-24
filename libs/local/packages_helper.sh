@@ -177,8 +177,11 @@ function packages_check_required() {
   # CERTBOT
   CERTBOT="$(command -v certbot)"
   if [[ ! -x "${CERTBOT}" ]]; then
+  
     display --indent 2 --text "- Checking CERTBOT installation" --result "WARNING" --color YELLOW
     display --indent 4 --text "CERTBOT not found" --tcolor YELLOW
+
+    # TODO: ask for installation
     return 1
 
   fi
@@ -191,8 +194,6 @@ function packages_check_required() {
 
       display --indent 2 --text "- Checking MySQL installation" --result "ERROR" --color RED
       display --indent 4 --text "MySQL not found" --tcolor RED
-
-      # TODO: ask for installation?
 
       return 1
 
