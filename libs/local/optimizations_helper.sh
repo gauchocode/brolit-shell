@@ -1,10 +1,71 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.46
+# Version: 3.0.47
+################################################################################
+#
+# Optimizations Helper: Optimizations tasks.
+#
+################################################################################
+
+################################################################################
+# Private: check last optimization date
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function _check_last_optimization_date() {
+
+  server_opt_info=~/.server_opt-info
+  if [[ -e ${server_opt_info} ]]; then
+    # shellcheck source=${server_opt_info}
+    source "${server_opt_info}"
+    echo "${last_run}"
+
+  else
+    echo "last_run=never" >>"${server_opt_info}"
+    echo "never"
+
+  fi
+
+}
+
+################################################################################
+# Private: update last optimization date
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function _update_last_optimization_date() {
+
+  server_opt_info=~/.server_opt-info
+
+  echo "last_run=${NOW}" >>"${server_opt_info}"
+
+}
+
+################################################################################
+# Execute some image optimization tasks
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
 ################################################################################
 
 function optimize_images_complete() {
+
+  # Check package required
+  packages_install_optimization_utils
 
   # TODO: extract this to an option
   img_compress='80'
@@ -27,10 +88,20 @@ function optimize_images_complete() {
 
 }
 
+################################################################################
+# Optimize ram usage
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
+
 function optimize_ram_usage() {
 
   # Restarting services
-  log_event "info" "Restarting php-fpm service"
+  log_event "info" "Restarting php-fpm service" "false"
 
   service php"${PHP_V}"-fpm restart
 
@@ -44,12 +115,20 @@ function optimize_ram_usage() {
 
 }
 
-function optimize_image_size() {
+################################################################################
+# Optimize images sizes
+#
+# Arguments:
+#  $1 = ${path}
+#  $2 = ${file_extension}
+#  $3 = ${img_max_width}
+#  $4 = ${img_max_height}
+#
+# Outputs:
+#   nothing
+################################################################################
 
-  # $1 = ${path}
-  # $2 = ${file_extension}
-  # $3 = ${img_max_width}
-  # $4 = ${img_max_height}
+function optimize_image_size() {
 
   local path=$1
   local file_extension=$2
@@ -62,7 +141,7 @@ function optimize_image_size() {
   log_event "info" "Running mogrify to optimize image sizes ..."
   log_subsection "Image Resizer"
 
-  last_run=$(check_last_optimization_date)
+  last_run=$(_check_last_optimization_date)
 
   if [[ "${last_run}" == "never" ]]; then
 
@@ -85,15 +164,23 @@ function optimize_image_size() {
   fi
 
   # Next time will run the find command with -mtime -7 parameter
-  update_last_optimization_date
+  _update_last_optimization_date
 
 }
 
-function optimize_images() {
+################################################################################
+# Optimize images compression
+#
+# Arguments:
+#  $1 = ${path}
+#  $2 = ${file_extension}
+#  $3 = ${img_compress}
+#
+# Outputs:
+#   nothing
+################################################################################
 
-  # $1 = ${path}
-  # $2 = ${file_extension}
-  # $3 = ${img_compress}
+function optimize_images() {
 
   local path=$1
   local file_extension=$2
@@ -103,7 +190,7 @@ function optimize_images() {
 
   log_subsection "Image Optimizer"
 
-  last_run="$(check_last_optimization_date)"
+  last_run="$(_check_last_optimization_date)"
 
   if [[ ${file_extension} == "jpg" ]]; then
 
@@ -154,20 +241,25 @@ function optimize_images() {
   fi
 
   # Next time will run the find command with -mtime -7 parameter
-  update_last_optimization_date
+  _update_last_optimization_date
 
 }
 
-function optimize_pdfs() {
+################################################################################
+# Optimize pdfs
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#   nothing
+################################################################################
 
-  # $1 = ${path}
-  # $2 = ${file_extension}
-  # $3 = ${img_max_width}
-  # $4 = ${img_max_height}
+function optimize_pdfs() {
 
   local last_run
 
-  last_run=$(check_last_optimization_date)
+  last_run=$(_check_last_optimization_date)
 
   # Run pdf optimizer
   log_event "error" "TODO: Running pdfwrite ..."
@@ -185,67 +277,72 @@ function optimize_pdfs() {
 
 }
 
+################################################################################
+# Delete old logs
 #
-#################################################################################
+# Arguments:
+#  none
 #
-# * Utils
-#
-#################################################################################
-#
-
-#TODO: better date control
-
-function check_last_optimization_date() {
-
-  server_opt_info=~/.server_opt-info
-  if [[ -e ${server_opt_info} ]]; then
-    # shellcheck source=${server_opt_info}
-    source "${server_opt_info}"
-    echo "${last_run}"
-
-  else
-    echo "last_run=never" >>"${server_opt_info}"
-    echo "never"
-
-  fi
-
-}
-
-function update_last_optimization_date() {
-
-  server_opt_info=~/.server_opt-info
-
-  echo "last_run=${NOW}" >>"${server_opt_info}"
-
-}
+# Outputs:
+#   nothing
+################################################################################
 
 function delete_old_logs() {
 
-  # Remove old log files from system
-  log_event "info" "Deleting old system logs ..."
+  # Log
+  log_event "info" "Deleting old system logs ..." "false"
+
+  # Command
   ${FIND} /var/log/ -mtime +7 -type f -delete
 
+  # Log
   display --indent 6 --text "- Deleting old system logs" --result "DONE" --color GREEN
 
 }
 
+################################################################################
+# Clean swap
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#   nothing
+################################################################################
+
 function clean_swap() {
 
-  # Cleanning Swap
-  log_event "info" "Cleanning Swap"
+  # Log
+  log_event "info" "Cleanning Swap" "false"
+
+  # Command
   swapoff -a && swapon -a
 
+  # Log
   display --indent 6 --text "- Cleanning Swap" --result "DONE" --color GREEN
 
 }
 
+################################################################################
+# Clean ram cache
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#   nothing
+################################################################################
+
 function clean_ram_cache() {
 
+  # Log
+  log_event "info" "Cleanning RAM cache" "false"
+
   # Cleanning RAM
-  log_event "info" "Cleanning RAM cache"
   sync
   echo 1 >/proc/sys/vm/drop_caches
 
+  # Log
   display --indent 6 --text "- Cleanning RAM cache" --result "DONE" --color GREEN
 
 }
