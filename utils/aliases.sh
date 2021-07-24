@@ -32,7 +32,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.47"
-ALIASES_VERSION="3.0.47-055"
+ALIASES_VERSION="3.0.47-057"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -87,6 +87,82 @@ alias get_script_version='echo $SCRIPT_VERSION'
 alias get_aliases_version='echo $ALIASES_VERSION'
 
 ################################################################################
+
+################################################################################
+# Transfor string to json
+#
+# Arguments:
+#   $1= ${mode} - Options: key-value, value-list
+#   $@
+#
+# Outputs:
+#   ${json_string}
+################################################################################
+
+function _jsonify_output() {
+
+    local mode=$1
+
+    display --indent 6 --text "- Running jsonify_output with mode: $mode"
+
+    # Mode "key-value" example:
+    # > echo "key1 value1 key2 value2"
+    # {'key1': value1, 'key2': value2}
+
+    # Mode "value-list" example:
+    # > echo "value1 value2 value3 value4"
+    # [ "value1" "value2" "value3" "value4" ]
+
+    # Remove fir parameter
+    shift
+
+    if [[ ${mode} == "key-value" ]]; then
+
+        arr=()
+
+        while [ $# -ge 1 ]; do
+            arr=("${arr[@]}" $1)
+            shift
+        done
+
+        vars=(${arr[@]})
+        len=${#arr[@]}
+
+        printf "{"
+        for ((i = 0; i < len; i += 2)); do
+            printf "\"${vars[i]}\": ${vars[i + 1]}"
+            if [ $i -lt $((len - 2)) ]; then
+                printf ", "
+            fi
+        done
+        printf "}"
+        echo
+
+    else
+
+        arr=()
+
+        while [ $# -ge 1 ]; do
+            arr=("${arr[@]}" $1)
+            shift
+        done
+
+        vars=(${arr[@]})
+        len=${#arr[@]}
+
+        printf "["
+        for ((i = 0; i < len; i += 1)); do
+            printf "\"${vars[i]}\""
+            if [ $i -lt $((len - 1)) ]; then
+                printf ", "
+            fi
+        done
+        printf "]"
+        echo
+
+    fi
+
+}
 
 function _string_remove_spaces() {
 
@@ -584,7 +660,6 @@ function _project_get_config() {
     local project_name
     local project_config_file
 
-
     project_name="$(basename "${project_path}")"
     project_config_file="${BROLIT_CONFIG_PATH}/${project_name}-brolit.conf"
 
@@ -1078,6 +1153,21 @@ function read_site_config() {
         echo "no-site-config"
 
     fi
+
+}
+
+function is_pkg_installed() {
+
+    local package=$1
+
+    local package_installed
+
+    package_installed="$(_is_pkg_installed "${package}")"
+
+    json_string="$(_jsonify_output "key-value" "${package}" "${package_installed}")"
+
+    # Return JSON
+    echo "PACKAGE_RESULT => ${json_string}"
 
 }
 
