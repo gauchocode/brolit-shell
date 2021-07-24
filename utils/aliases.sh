@@ -32,7 +32,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.47"
-ALIASES_VERSION="3.0.47-057"
+ALIASES_VERSION="3.0.47-058"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -1151,6 +1151,17 @@ function read_site_config() {
         echo "no-site-config"
 
     fi
+
+}
+
+function firewall_app_list() {
+
+    app_list="$(ufw app list | cut -d ":" -f 2)"
+
+    json_string="$(_jsonify_output "value-list" "ufw app list" "${app_list}")"
+
+    # Return JSON
+    echo "FIREWALL_RESULT => ${json_string}"
 
 }
 
