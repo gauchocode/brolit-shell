@@ -9,6 +9,39 @@
 ################################################################################
 
 ################################################################################
+# Add PPA
+#
+# Arguments:
+#   $@ - list of ppas
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function add_ppa() {
+
+  for i in "$@"; do
+
+    grep -h "^deb.*$i" /etc/apt/sources.list.d/* >/dev/null 2>&1
+
+    exit_status=$?
+    if [[ ${exit_status} -ne 0 ]]; then
+
+      log_event "info" "Adding ppa:$i" "false"
+
+      add-apt-repository -y ppa:"${i}"
+
+    else
+
+      log_event "info" "ppa:${i} already installed" "false"
+
+    fi
+
+  done
+
+}
+
+################################################################################
 # Check if package is installed. Ex: package_is_installed "mysql-server"
 #
 # Arguments:
@@ -53,51 +86,46 @@ function package_is_installed() {
 
 function package_install_if_not() {
 
-  # $1 = ${package}
-
   local package=$1
 
-  if [[ "$(package_is_installed "${package}")" != "${package} is installed, it must be a clean server." ]]; then
+  local p_result
 
-    apt update -q4 &
-    spinner_loading && apt install "${package}" -y
+  # Check if package is installed
+  #p_result="$(command -v "${package}")"
+  p_result="$(package_is_installed "${package}")"
 
-    log_event "info" "${package} installed" "false"
+  #if [[ ! -x "${p_result}" ]]; then
+  if [[ "${p_result}" == "false" ]]; then
 
-  fi
+    # Log
+    log_event "info" "Installing ${package} ..." "false"
+    display --indent 2 --text "- Installing ${package}"
 
-}
+    # apt command
+    apt-get --yes install "${package}" -qq >/dev/null
 
-################################################################################
-# Add PPA
-#
-# Arguments:
-#   $@ - list of ppas
-#
-# Outputs:
-#   0 if ok, 1 on error.
-################################################################################
+    exitstatus=$?
+    if [[ $exitstatus -eq 0 ]]; then
 
-function add_ppa() {
+      # Log
+      clear_last_line
+      log_event "info" "Package ${package} installed" "false"
+      display --indent 2 --text "- Installing ${package}" --result "DONE" --color GREEN
 
-  for i in "$@"; do
-
-    grep -h "^deb.*$i" /etc/apt/sources.list.d/* >/dev/null 2>&1
-
-    exit_status=$?
-    if [[ ${exit_status} -ne 0 ]]; then
-
-      log_event "info" "Adding ppa:$i" "false"
-
-      add-apt-repository -y ppa:"${i}"
+      return 0
 
     else
 
-      log_event "info" "ppa:${i} already installed" "false"
+      # Log
+      clear_last_line
+      log_event "error" "Installing package ${package}." "false"
+      display --indent 2 --text "- Installing ${package}" --result "FAIL" --color RED
+
+      return 1
 
     fi
 
-  done
+  fi
 
 }
 
@@ -114,19 +142,11 @@ function add_ppa() {
 # TODO: need a refactor
 function packages_check_required() {
 
-  log_event "info" "Checking required packages ..."
   log_section "Script Package Manager"
 
+  log_event "info" "Checking required packages ..." "false"
+
   # Declare globals
-  declare -g SENDEMAIL
-  declare -g PV
-  declare -g BC
-  declare -g JQ
-  declare -g DIG
-  declare -g LBZIP2
-  declare -g ZIP
-  declare -g UNZIP
-  declare -g GIT
   declare -g TAR
   declare -g FIND
   declare -g MYSQL
@@ -134,104 +154,19 @@ function packages_check_required() {
   declare -g PHP
   declare -g CERTBOT
 
-  # Check if sendemail is installed
-  SENDEMAIL="$(command -v sendemail)"
-  if [[ ! -x "${SENDEMAIL}" ]]; then
-    display --indent 2 --text "- Installing sendemail"
-    apt-get --yes install sendemail libio-socket-ssl-perl -qq >/dev/null
-    clear_last_line
-    display --indent 2 --text "- Installing sendemail" --result "DONE" --color GREEN
-  fi
-
-  # Check if pv is installed
-  PV="$(command -v pv)"
-  if [[ ! -x "${PV}" ]]; then
-    display --indent 2 --text "- Installing pv"
-    apt-get --yes install pv -qq >/dev/null
-    clear_last_line
-    display --indent 2 --text "- Installing pv" --result "DONE" --color GREEN
-  fi
-
-  # Check if bc is installed
-  BC="$(command -v bc)"
-  if [[ ! -x "${BC}" ]]; then
-    display --indent 2 --text "- Installing bc"
-    apt-get --yes install bc -qq >/dev/null
-    clear_last_line
-    display --indent 2 --text "- Installing bc" --result "DONE" --color GREEN
-  fi
-
-  # Check if jq is installed
-  JQ="$(command -v jq)"
-  if [[ ! -x "${JQ}" ]]; then
-    display --indent 2 --text "- Installing jq"
-    apt-get --yes install jq -qq >/dev/null
-    clear_last_line
-    display --indent 2 --text "- Installing jq" --result "DONE" --color GREEN
-  fi
-
-  # Check if dig is installed
-  DIG="$(command -v dig)"
-  if [[ ! -x "${DIG}" ]]; then
-    display --indent 2 --text "- Installing dnsutils"
-    apt-get --yes install dnsutils -qq >/dev/null
-    clear_last_line
-    display --indent 2 --text "- Installing dnsutils" --result "DONE" --color GREEN
-  fi
-
-  # Check if net-tools is installed
-  IFCONFIG="$(command -v ifconfig)"
-  if [[ ! -x "${IFCONFIG}" ]]; then
-    display --indent 2 --text "- Installing net-tools"
-    apt-get --yes install net-tools -qq >/dev/null
-    clear_last_line
-    display --indent 2 --text "- Installing net-tools" --result "DONE" --color GREEN
-  fi
-
-  # Check if lbzip2 is installed
-  LBZIP2="$(command -v lbzip2)"
-  if [[ ! -x "${LBZIP2}" ]]; then
-    display --indent 2 --text "- Installing lbzip2"
-    apt-get --yes install lbzip2 -qq >/dev/null
-    clear_last_line
-    display --indent 2 --text "- Installing lbzip2" --result "DONE" --color GREEN
-  fi
-
-  # Check if zip is installed
-  ZIP="$(command -v zip)"
-  if [[ ! -x "${ZIP}" ]]; then
-    display --indent 2 --text "- Installing zip"
-    apt-get --yes install zip -qq >/dev/null
-    clear_last_line
-    display --indent 2 --text "- Installing zip" --result "DONE" --color GREEN
-  fi
-
-  # Check if unzip is installed
-  UNZIP="$(command -v unzip)"
-  if [[ ! -x "${UNZIP}" ]]; then
-    display --indent 2 --text "- Installing unzip"
-    apt-get --yes install unzip -qq >/dev/null
-    clear_last_line
-    display --indent 2 --text "- Installing unzip" --result "DONE" --color GREEN
-  fi
-
-  # Check if git is installed
-  GIT="$(command -v git)"
-  if [[ ! -x "${GIT}" ]]; then
-    display --indent 2 --text "- Installing git"
-    apt-get --yes install git -qq >/dev/null
-    clear_last_line
-    display --indent 2 --text "- Installing git" --result "DONE" --color GREEN
-  fi
-
-  # Check if vim is installed
-  VIM="$(command -v vim)"
-  if [[ ! -x "${VIM}" ]]; then
-    display --indent 2 --text "- Installing vim"
-    apt-get --yes install vim -qq >/dev/null
-    clear_last_line
-    display --indent 2 --text "- Installing vim" --result "DONE" --color GREEN
-  fi
+  # Install packages if not
+  package_install_if_not "pv"
+  package_install_if_not "bc"
+  package_install_if_not "jq"
+  package_install_if_not "lbzip2"
+  package_install_if_not "zip"
+  package_install_if_not "unzip"
+  package_install_if_not "git"
+  package_install_if_not "vim"
+  package_install_if_not "dnsutils"
+  package_install_if_not "net-tools"
+  package_install_if_not "sendemail"
+  package_install_if_not "libio-socket-ssl-perl"
 
   # TAR
   TAR="$(command -v tar)"
