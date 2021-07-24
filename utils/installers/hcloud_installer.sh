@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.46
+# Version: 3.0.47
 ################################################################################
 
 function hcloud_check_if_installed() {

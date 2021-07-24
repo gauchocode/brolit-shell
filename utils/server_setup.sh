@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.46
+# Version: 3.0.47
 ################################################################################
 
 function server_setup() {
@@ -14,7 +14,7 @@ function server_setup() {
     timezone_configuration
 
     # Installing basic packages
-    basic_packages_installation
+    packages_install_utils
 
     # Ask for server role
     # Options: webserver, database, webapp, cache, replica, other
@@ -64,7 +64,7 @@ function server_setup() {
     script_configuration_wizard "initial"
 
     # Select aditional packages to install
-    selected_package_installation
+    packages_install_selection
 
     # Log
     display --indent 6 --text "- Server setup" --result "DONE" --color GREEN

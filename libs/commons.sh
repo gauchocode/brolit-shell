@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.46
+# Version: 3.0.47
 #############################################################################
 
 # Source all apps libs
@@ -37,7 +37,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.0.46"
+  declare -g SCRIPT_V="3.0.47"
 
   # Hostname
   declare -g VPSNAME="$HOSTNAME"
@@ -392,7 +392,7 @@ function script_init() {
   fi
 
   # Checking required packages to run
-  check_packages_required
+  packages_check_required
   packages_output=$?
   if [[ ${packages_output} -eq 1 ]]; then
     log_event "warning" "Some script dependencies are not setisfied" "true"

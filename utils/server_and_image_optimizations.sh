@@ -1,7 +1,21 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.46
+# Version: 3.0.47
+################################################################################
+#
+# Server and image optimizations Manager.
+#
+################################################################################
+
+################################################################################
+# Menu for server optimizations
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
 ################################################################################
 
 function server_optimizations_menu() {

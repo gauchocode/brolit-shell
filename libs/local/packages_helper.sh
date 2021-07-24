@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.46
+# Version: 3.0.47
 #############################################################################
 #
 # Packages Helper: Perform apt actions.
@@ -112,7 +112,7 @@ function add_ppa() {
 ################################################################################
 
 # TODO: need a refactor
-function check_packages_required() {
+function packages_check_required() {
 
   log_event "info" "Checking required packages ..."
   log_section "Script Package Manager"
@@ -127,9 +127,6 @@ function check_packages_required() {
   declare -g ZIP
   declare -g UNZIP
   declare -g GIT
-  declare -g MOGRIFY
-  declare -g JPEGOPTIM
-  declare -g OPTIPNG
   declare -g TAR
   declare -g FIND
   declare -g MYSQL
@@ -236,35 +233,6 @@ function check_packages_required() {
     display --indent 2 --text "- Installing vim" --result "DONE" --color GREEN
   fi
 
-  # MOGRIFY
-  MOGRIFY="$(command -v mogrify)"
-  if [[ ! -x "${MOGRIFY}" ]]; then
-    # Install image optimize packages
-    install_image_optimize_packages
-  fi
-
-  # JPEGOPTIM
-  JPEGOPTIM="$(command -v jpegoptim)"
-  if [[ ! -x "${JPEGOPTIM}" ]]; then
-    display --indent 2 --text "- Installing jpegoptim"
-    # apt command
-    apt-get --yes install jpegoptim -qq >/dev/null
-    # Log
-    clear_last_line
-    display --indent 2 --text "- Installing jpegoptim" --result "DONE" --color GREEN
-  fi
-
-  # OPTIPNG
-  OPTIPNG="$(command -v optipng)"
-  if [[ ! -x "${OPTIPNG}" ]]; then
-    display --indent 2 --text "- Installing optipng"
-    # apt command
-    apt-get --yes install optipng -qq >/dev/null
-    # Log
-    clear_last_line
-    display --indent 2 --text "- Installing optipng" --result "DONE" --color GREEN
-  fi
-
   # TAR
   TAR="$(command -v tar)"
 
@@ -330,12 +298,22 @@ function check_packages_required() {
 
 }
 
-function basic_packages_installation() {
+################################################################################
+# Install some it utils packages
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function packages_install_utils() {
 
   # Log
   log_subsection "Basic Packages Installation"
 
-  log_event "info" "Adding repos and updating package lists ..."
+  log_event "info" "Adding repos and updating package lists ..." "false"
   display --indent 6 --text "- Adding repos and updating package lists"
 
   # Updating packages lists
@@ -346,7 +324,7 @@ function basic_packages_installation() {
   clear_last_line
   display --indent 6 --text "- Adding repos and updating package lists" --result "DONE" --color GREEN
 
-  log_event "info" "Upgrading packages before installation ..."
+  log_event "info" "Upgrading packages before installation ..." "false"
   display --indent 6 --text "- Upgrading packages before installation"
 
   # Upgrading packages
@@ -357,20 +335,46 @@ function basic_packages_installation() {
   display --indent 6 --text "- Upgrading packages before installation" --result "DONE" --color GREEN
 
   # Installing packages
-  log_event "info" "Installing basic packages ..."
-  display --indent 6 --text "- Installing basic packages"
+  log_event "info" "Installing bat ncdu ppa-purge packages ..." "false"
+  display --indent 6 --text "- Installing it utils packages"
 
   # Installing packages
-  apt-get --yes install ncdu imagemagick-* webp ghostscript pv ppa-purge -qq >/dev/null
+  apt-get --yes install bat ncdu ppa-purge -qq >/dev/null
 
-  # Log
-  clear_last_line
-  clear_last_line
-  display --indent 6 --text "- Installing basic packages" --result "DONE" --color GREEN
+  exitstatus=$?
+  if [[ $exitstatus -eq 0 ]]; then
+
+    # Log
+    clear_last_line
+    clear_last_line
+    display --indent 6 --text "- Installing it utils packages" --result "DONE" --color GREEN
+
+    return 0
+
+  else
+
+    # Log
+    clear_last_line
+    clear_last_line
+    display --indent 6 --text "- Installing it utils packages" --result "FAIL" --color RED
+
+    return 1
+
+  fi
 
 }
 
-function selected_package_installation() {
+################################################################################
+# Install some optional packages
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function packages_install_selection() {
 
   # Define array of Apps to install
   local -n apps_to_install=(
@@ -383,6 +387,7 @@ function selected_package_installation() {
   local chosen_apps
 
   chosen_apps="$(whiptail --title "Apps Selection" --checklist "Select the apps you want to install:" 20 78 15 "${apps_to_install[@]}" 3>&1 1>&2 2>&3)"
+
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -413,7 +418,7 @@ function selected_package_installation() {
         ;;
 
       *)
-        log_event "error" "Package installer for ${app} not found!"
+        log_event "error" "Package installer for ${app} not found!" "false"
         ;;
 
       esac
@@ -422,11 +427,21 @@ function selected_package_installation() {
 
   else
 
-    log_event "info" "Package installer ommited ..."
+    log_event "info" "Package installer ommited ..." "false"
 
   fi
 
 }
+
+################################################################################
+# Timezone configuration
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 # TODO: need to move to system_helper.sh ?
 function timezone_configuration() {
@@ -477,7 +492,7 @@ function remove_old_packages() {
 }
 
 ################################################################################
-# Install packages for image optimization
+# Install packages for image and pdf optimization
 #
 # Arguments:
 #   None
@@ -486,21 +501,36 @@ function remove_old_packages() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function install_image_optimize_packages() {
+function packages_install_optimization_utils() {
 
   # Log
-  log_event "info" "Installing jpegoptim, optipng and imagemagick"
+  log_event "info" "Installing jpegoptim optipng pngquant webp gifsicle ghostscript mogrify imagemagick-*" "false"
   display --indent 6 --text "- Installing jpegoptim, optipng and imagemagick"
 
   # apt command
-  apt-get --yes install jpegoptim optipng pngquant gifsicle imagemagick-* -qq >/dev/null
+  apt-get --yes install jpegoptim optipng pngquant webp gifsicle ghostscript mogrify imagemagick-* -qq >/dev/null
 
-  # Log
-  log_event "info" "Installation finished"
-  clear_last_line # need an extra call to clear installation output
-  clear_last_line
-  display --indent 6 --text "- Installing jpegoptim, optipng and imagemagick" --result "DONE" --color GREEN
+  exitstatus=$?
+  if [[ $exitstatus -eq 0 ]]; then
 
-  #return 0
+    # Log
+    clear_last_line # need an extra call to clear installation output
+    clear_last_line
+    log_event "info" "Installation finished" "false"
+    display --indent 6 --text "- Installing jpegoptim, optipng and imagemagick" --result "DONE" --color GREEN
+
+    return 0
+
+  else
+
+    # Log
+    clear_last_line # need an extra call to clear installation output
+    clear_last_line
+    log_event "error" "Installation finished" "false"
+    display --indent 6 --text "- Installing jpegoptim, optipng and imagemagick" --result "FAIL" --color RED
+
+    return 1
+
+  fi
 
 }
