@@ -264,7 +264,7 @@ function project_create_config() {
   local project_config_file
 
   # Project config file
-  project_config_file="${BROLIT_CONFIG_PATH}/${project_name}-brolit.conf"
+  project_config_file="${BROLIT_CONFIG_PATH}/${project_domain}-brolit.conf"
 
   if [[ -e ${project_config_file} ]]; then
 
@@ -278,12 +278,6 @@ function project_create_config() {
     cp "${SFOLDER}/config/brolit.conf" "${project_config_file}"
 
   fi
-
-  # If only receive project_path
-  #project_domain="$(basename "${project_path}")"
-  #project_name="$(project_get_name_from_domain "${project_domain}")"
-  #project_stage="$(project_get_stage_from_domain "${project_domain}")"
-  #project_type="$(project_get_type "${project_path}")"
 
   # Write config file
   ## Doc: https://stackoverflow.com/a/61049639/2267761
@@ -314,6 +308,7 @@ function project_create_config() {
 
   # Log
   display --indent 6 --text "- Creating project config file" --result DONE --color GREEN
+  display --indent 8 --text "${project_config_file}" --color YELLOW --tstyle ITALIC
 
 }
 
