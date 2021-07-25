@@ -1157,13 +1157,22 @@ function read_site_config() {
 function firewall_status() {
 
     # ufw app list, replace space with "-" and "/n" with space
-    ufw_status="$(ufw status | cut -d ":" -f 2)"
+    ufw_status="$(ufw status | sed -n '1 p' | cut -d " " -f 2 | tr " " "-" | sed -z 's/\n/ /g' | sed -z 's/--//g')"
+
+    counter=5
+    ufw_status_line="$(ufw status | sed -n "${counter} p" | cut -d "-" -f 2 | tr " " "-" | sed -z 's/--//g')"
+    while [ ! -z ${ufw_status_line} ]; do
+        ufw_status_line="$(ufw status | sed -n "${counter} p" | cut -d "-" -f 2 | tr " " "-" | sed -z 's/--//g')"
+        ufw_status_details="${ufw_status_details} ${ufw_status_line}"
+        counter=$(($counter+1))
+    done;
 
     # String to JSON
     json_string="$(_jsonify_output "key-value" "ufw-status" "${ufw_status}")"
+    json_string_d="$(_jsonify_output "value-list" "${ufw_status_details}")"
 
     # Return JSON
-    echo "FIREWALL_RESULT => ${json_string}"
+    echo "FIREWALL_RESULT => ${json_string}, { ${json_string_d} }"
 
 }
 
