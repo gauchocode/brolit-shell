@@ -32,7 +32,7 @@ function ask_project_state() {
   fi
 
   project_state="$(whiptail --title "Project State" --menu "Choose a Project State" 20 78 10 $(for x in ${project_states}; do echo "$x [X]"; done) --default-item "${suggested_state}" 3>&1 1>&2 2>&3)"
-  
+
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -69,7 +69,7 @@ function ask_project_name() {
   possible_name="$(echo "${project_name}" | sed -r 's/[.-]+/_/g')"
 
   project_name="$(whiptail --title "Project Name" --inputbox "Insert a project name (only separator allow is '_'). Ex: my_domain" 10 60 "${possible_name}" 3>&1 1>&2 2>&3)"
-  
+
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -101,7 +101,7 @@ function ask_project_domain() {
   local project_domain=$1
 
   project_domain="$(whiptail --title "Domain" --inputbox "Insert the project's domain. Example: landing.domain.com" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
-  
+
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -325,18 +325,40 @@ function project_generate_config() {
 
   local project_config_file
 
+  # TODO: Support to non-interactive
+
   log_event "info" "Trying to generate a new config for '${project_path}'..." "false"
 
   # Trying to extract project data
+
+  ## Project Domain
   project_domain="$(basename "${project_path}")"
+  project_domain="$(ask_project_domain "${project_domain}")"
+
+  ## Project Name
   project_name="$(project_get_name_from_domain "${project_domain}")"
+  project_name="$(ask_project_name "${project_name}")"
+
+  ## Project Stage
   project_stage="$(project_get_stage_from_domain "${project_domain}")"
+  project_stage="$(ask_project_state "${project_stage}")"
+
+  ## Project Type
   project_type="$(project_get_type "${project_path}")"
 
-  # TODO: should check this data
-  ## Check if database exists
+  ## Project DB
   project_db="${project_name}_${project_stage}"
-  project_db_host="localhost" #TODO: remove hardcoded var
+  db_exists="$(mysql_database_exists "${project_db}")"
+
+  if [[ ${db_exists} -eq 1 ]]; then
+
+    project_db="$(mysql_ask_database_selection)"
+
+  fi
+
+  ## Project DB Host
+  project_db_host="$(mysql_ask_user_db_scope "localhost")"
+
   ## Check if file exists
   project_nginx_conf="/etc/nginx/sites-available/${project_domain}"
 
