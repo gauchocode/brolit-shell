@@ -201,17 +201,19 @@ function project_get_name_from_domain() {
   local project_stages
   local possible_project_name
 
-  project_stages="dev test stage demo"
+  project_stages="(dev test stage demo)"
 
-  # Trying to extract project name from domain
-  #root_domain="$(get_root_domain "${project_domain}")"
+  # Extract project name from domain
   possible_project_name="$(extract_domain_extension "${root_domain}")"
 
-  for p in ${project_stages}; do
-    possible_project_name="$(echo "${possible_project_name}" | sed -r "s/${p}./_/g")"
+  # Remove stage from domain
+  for p in "${project_stages[@]}"; do
+
+    possible_project_name="$(echo "${possible_project_name}" | sed -r "s/${p}.//g")"
+
   done
 
-  # Replace '-' and '.' chars
+  # Replace '-' and '.' chars with '_'
   possible_project_name="$(echo "${possible_project_name}" | sed -r 's/[.-]+/_/g')"
 
   # Return
