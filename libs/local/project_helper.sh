@@ -25,7 +25,7 @@ function ask_project_state() {
   local project_states
   local project_state
 
-  project_states="prod stage test beta dev"
+  project_states="prod demo stage test beta dev"
 
   project_state="$(whiptail --title "Project Stage" --menu "Choose Project Stage" 20 78 10 $(for x in ${project_states}; do echo "$x [X]"; done) --default-item "${suggested_state}" 3>&1 1>&2 2>&3)"
 
@@ -187,27 +187,30 @@ function ask_folder_to_install_sites() {
 
 }
 
+################################################################################
+# Get project name from domain
 #
-# TODO: check when add www.DOMAIN.com and then select other stage != prod
+# Arguments:
+#   $1 = ${project_domain}
 #
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function project_get_name_from_domain() {
 
-  # $1 = ${project_domain}
-
   local project_domain=$1
 
-  local root_domain
   local project_stages
   local possible_project_name
 
-  project_stages="(dev test stage demo)"
+  declare -a possible_project_stages_on_subdomain=("www" "demo" "stage" "test" "beta" "dev")
 
   # Extract project name from domain
-  possible_project_name="$(extract_domain_extension "${root_domain}")"
+  possible_project_name="$(extract_domain_extension "${project_domain}")"
 
   # Remove stage from domain
-  for p in "${project_stages[@]}"; do
+  for p in "${possible_project_stages_on_subdomain[@]}"; do
 
     possible_project_name="$(echo "${possible_project_name}" | sed -r "s/${p}.//g")"
 
@@ -221,6 +224,10 @@ function project_get_name_from_domain() {
 
 }
 
+#
+# TODO: check when add www.DOMAIN.com and then select other stage != prod
+#
+
 function project_get_stage_from_domain() {
 
   # $1 = ${project_domain}
@@ -230,7 +237,7 @@ function project_get_stage_from_domain() {
   local project_stages
   local possible_project_stage
 
-  project_stages="dev,test,stage,demo"
+  project_stages="demo stage test beta dev"
 
   # Trying to extract project state from domain
   possible_project_stage="$(get_subdomain_part "${project_domain}" | cut -d "." -f 1)"
@@ -348,9 +355,10 @@ function project_generate_config() {
 
   ## Project DB
   project_db="${project_name}_${project_stage}"
-  db_exists="$(mysql_database_exists "${project_db}")"
-
-  if [[ ${db_exists} -eq 1 ]]; then
+  
+  mysql_database_exists "${project_db}"
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 1 ]]; then
 
     project_db="$(mysql_ask_database_selection)"
 
