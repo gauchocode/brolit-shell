@@ -1154,10 +1154,23 @@ function read_site_config() {
 
 }
 
+function firewall_status() {
+
+    # ufw app list, replace space with "-" and "/n" with space
+    ufw_status="$(ufw status | cut -d ":" -f 2)"
+
+    # String to JSON
+    json_string="$(_jsonify_output "key-value" "ufw-status" "${ufw_status}")"
+
+    # Return JSON
+    echo "FIREWALL_RESULT => ${json_string}"
+
+}
+
 function firewall_app_list() {
 
     # ufw app list, replace space with "-" and "/n" with space
-    app_list="$(ufw app list | cut -d ":" -f 2 | tr " " "-" | sed -z 's/\n/,/g')"
+    app_list="$(ufw app list | cut -d ":" -f 2 | tr " " "-" | sed -z 's/\n/ /g' | sed -z 's/--//g')"
 
     # String to JSON
     json_string="$(_jsonify_output "value-list" "${app_list}")"
