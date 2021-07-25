@@ -32,7 +32,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.47"
-ALIASES_VERSION="3.0.47-058"
+ALIASES_VERSION="3.0.47-057"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -1156,9 +1156,11 @@ function read_site_config() {
 
 function firewall_app_list() {
 
-    app_list="$(ufw app list | cut -d ":" -f 2)"
+    # ufw app list, replace space with "-" and "/n" with space
+    app_list="$(ufw app list | cut -d ":" -f 2 | tr " " "-" | sed -z 's/\n/,/g')"
 
-    json_string="$(_jsonify_output "value-list" "ufw app list" "${app_list}")"
+    # String to JSON
+    json_string="$(_jsonify_output "value-list" "${app_list}")"
 
     # Return JSON
     echo "FIREWALL_RESULT => ${json_string}"
