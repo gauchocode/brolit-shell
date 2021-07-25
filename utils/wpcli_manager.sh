@@ -115,7 +115,7 @@ function wpcli_main_menu() {
 
       log_subsection "WP Delete Themes"
 
-      for theme_del in $chosen_del_theme_option; do
+      for theme_del in ${chosen_del_theme_option}; do
         theme_del=$(sed -e 's/^"//' -e 's/"$//' <<<${theme_del}) #needed to ommit double quotes
         #echo "theme delete $theme_del"
         wpcli_theme_delete "${wp_site}" "${theme_del}"

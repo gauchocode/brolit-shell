@@ -20,8 +20,8 @@ function extract_domain_extension() {
 
     domain_no_ext=${domain%"$domain_extension"}
 
-    # Logging
-    log_event "debug" "domain_no_ext: ${domain_no_ext}"
+    # Log
+    log_event "debug" "domain_no_ext: ${domain_no_ext}" "false"
 
     # Return
     echo "${domain_no_ext}"
@@ -41,6 +41,7 @@ function ask_root_domain() {
   # $1 = ${suggested_root_domain}
 
   local suggested_root_domain=$1
+  
   local root_domain
 
   root_domain="$(whiptail --title "Root Domain" --inputbox "Confirm the root domain of the project." 10 60 "${suggested_root_domain}" 3>&1 1>&2 2>&3)"
