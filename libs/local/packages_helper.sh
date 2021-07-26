@@ -488,6 +488,8 @@ function packages_need_upgrade() {
   display --indent 6 --text "- Checking upgradable packages"
 
   # apt commands
-  pkgs="$(apt list --upgradable | awk "{print \$1}" | grep -A 100 'Listing...')"
+  pkgs="$(apt list --upgradable | awk -F/ "{print \$1}" | sed -e '1,/.../ d')"
+
+  echo "${pkgs}"
 
 }
