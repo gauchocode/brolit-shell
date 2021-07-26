@@ -3,6 +3,10 @@
 # Author: BROOBE - A Software Development Agency - https://example.com
 # Version: 3.0.47
 ################################################################################
+#
+# WP-CLI Manager: WP-CLI functions manager.
+#
+################################################################################
 
 function wpcli_manager() {
 
