@@ -1374,7 +1374,7 @@ function menu_main_options() {
     fi
 
     if [[ ${chosen_type} == *"03"* ]]; then
-      menu_project_utils
+      project_manager_menu_new_project_type_utils
 
     fi
 
@@ -1681,17 +1681,9 @@ function tasks_handler() {
     exit
     ;;
 
-  project-install)
+  project)
 
-    project_install "${SITES}" "${PTYPE}" "${DOMAIN}" "${PNAME}" "${PSTATE}"
-
-    exit
-    ;;
-
-  project-delete)
-
-    # Second parameter with "true" will delete cloudflare entry
-    project_delete "${DOMAIN}" "true"
+    project_tasks_handler "${STASK}" "${SITES}" "${PTYPE}" "${DOMAIN}" "${PNAME}" "${PSTATE}"
 
     exit
     ;;
