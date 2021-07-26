@@ -1044,8 +1044,7 @@ function project_delete() {
   project_delete_database "${project_db_name}" "${project_db_user}"
 
   # Delete tmp backups
-  #rm -R ${SFOLDER}/tmp-backup
-  display --indent 2 --text "Please, remove ${SFOLDER}/tmp-backup after check backup was uploaded ok" --tcolor YELLOW
+  display --indent 2 --text "Please, remove ${TMP_DIR} after check backup was uploaded ok" --tcolor YELLOW
 
 }
 

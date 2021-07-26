@@ -3,11 +3,22 @@
 # Author: BROOBE - A Software Development Agency - https://broobe.com
 # Version: 3.0.47
 ################################################################################
+#
+# Domains Helper: useful utils to work with domains.
+#
+################################################################################
+
+################################################################################
+# Extract domain extension (from domain)
+#
+# Arguments:
+#   $1 = ${domain}
+#
+# Outputs:
+#   ${domain_no_ext}
+################################################################################
 
 function extract_domain_extension() {
-
-  # Parameters
-  # $1 = ${domain}
 
   local domain=$1
 
@@ -35,13 +46,20 @@ function extract_domain_extension() {
 
 }
 
+################################################################################
+# Ask root domain
+#
+# Arguments:
+#   $1 = ${suggested_root_domain}
+#
+# Outputs:
+#   ${root_domain}
+################################################################################
+
 function ask_root_domain() {
 
-  # Parameters
-  # $1 = ${suggested_root_domain}
-
   local suggested_root_domain=$1
-  
+
   local root_domain
 
   root_domain="$(whiptail --title "Root Domain" --inputbox "Confirm the root domain of the project." 10 60 "${suggested_root_domain}" 3>&1 1>&2 2>&3)"
@@ -55,10 +73,17 @@ function ask_root_domain() {
 
 }
 
-function get_root_domain() {
+################################################################################
+# Get root domain
+#
+# Arguments:
+#   $1 = ${domain}
+#
+# Outputs:
+#   ${root_domain}
+################################################################################
 
-  # Parameters
-  # $1 = ${domain}
+function get_root_domain() {
 
   local domain=$1
 
@@ -88,10 +113,17 @@ function get_root_domain() {
 
 }
 
-function get_subdomain_part() {
+################################################################################
+# Get subdomain part of domain
+#
+# Arguments:
+#   $1 = ${domain}
+#
+# Outputs:
+#   ${subdomain_part}
+################################################################################
 
-  # Parameters
-  # $1 = ${domain}
+function get_subdomain_part() {
 
   local domain=$1
 
@@ -133,10 +165,17 @@ function get_subdomain_part() {
 
 }
 
-function get_domain_extension() {
+################################################################################
+# Get domain extension
+#
+# Arguments:
+#   $1 = ${domain}
+#
+# Outputs:
+#   ${domain_ext}
+################################################################################
 
-  # Parameters
-  # $1 = ${domain}
+function get_domain_extension() {
 
   local domain=$1
 
@@ -170,8 +209,8 @@ function get_domain_extension() {
     domain_ext=.${domain_ext}
 
     # Logging
-    log_event "debug" "Extracting domain extension from ${domain}."
-    log_event "debug" "Domain extension extracted: ${domain_ext}"
+    log_event "debug" "Extracting domain extension from ${domain}" "false"
+    log_event "debug" "Domain extension extracted: ${domain_ext}" "false"
 
     # Return
     echo "${domain_ext}"
@@ -179,7 +218,7 @@ function get_domain_extension() {
   else
 
     # Logging
-    log_event "error" "Extracting domain extension from ${domain}"
+    log_event "error" "Extracting domain extension from ${domain}" "false"
 
     return 1
 
