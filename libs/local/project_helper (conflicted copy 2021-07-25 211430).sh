@@ -754,12 +754,12 @@ function project_install() {
     ;;
 
   *)
-    log_event "error" "Project Type ${project_type} unkwnown, aborting ..." "false"
+    log_event "error" "Project Type ${project_type} unkwnown, aborting ..."
     ;;
 
   esac
 
-  log_event "info" "Project installation finished" "false"
+  log_event "info" "PROJECT INSTALLATION FINISHED!" "false"
 
 }
 

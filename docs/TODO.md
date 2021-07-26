@@ -30,20 +30,18 @@
 
 - [ ] Nginx: Globals configs support.
 - [ ] PHP: Option to enable or disable OpCache.
-- [ ] WordPress: Install fails when set a project name like: xyz_sub_domain.
 - [ ] Backups: When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?).
 - [ ] Installers: On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages.
 
 ### In Progress
 
-- [ ] Core: Generate project config file (pname-brolit.conf).
+- [ ] Core: Generate project config file (domain-brolit.conf).
 - [ ] Server Setup: option to run without menu.
         Example: ./runner.sh --task "server-setup" --mariadb "default" --mariadb-pass "root_pass" --nginx "default" --php "default" --certbot
 - [ ] Core: On project creation/restore need to ask first the project state, then project domain.
         If project state != prod and subdomains is not containing the stage, need to suggest one.
         Example: test.multiplacas.broobe.hosting OK
         Example 2: multiplacas.broobe.hosting X (OK only if prod).
-- [ ] Notifications: malware scans and others scheduled options.
 - [ ] WP-CLI: wpcli_search_and_replace receives domains instead urls (ex: domain.com instead http://domain.com).
 - [ ] Restore-project: cant restore non-wp projects.
 - [ ] Restore-database: granting privileges to user fails, database_name is empty.
@@ -62,20 +60,17 @@
 
 - [x] WordPress: support for multiple WP installations inside the main project directory.
 - [x] Nginx: New option to put a website offline/online.
-- [x] Scheduled options: Add option to run on specific time.
 - [x] Log/Display: Better log handling and display improvements.
-- [x] It Utils: Alias support for BASH.
-- [x] Installers: Support for multiple PHP version installation.
 - [x] When a certificate expired, the email subject didn't show the Warning message.
 - [x] Project Utils: A new option "Create project database" to create a database, and a database user for an specific project.
 - [x] MySQL: when create a new user, ask what kind of connection do you want: localhost or % (any host).
-- [x] Nginx-PHP: Ask PHP version before create a server config.
+- [x] Notifications: malware scans and others scheduled options.
 
 ## For release 3.2
 
-- [ ] Core: Solve small "TODOs" comments on the project.
-- [ ] Core: Prevent execute the script more than once at a time (maybe a .lock file?).
 - [ ] Core: Refactor settings config (change to a json config file?).
+- [ ] Core: Resolve small "TODOs" comments on the project.
+- [ ] Core: Prevent execute the script more than once at a time (maybe a .lock file?).
 - [ ] Core: Complete refactor of script_configuration_wizard.
 - [ ] Core: Better structure of deleted projects on dropbox.
 - [ ] Core: Add an option to backup all and prepare VPS to be offline/deleted (add a VPS offline structure on dropbox).
@@ -84,26 +79,22 @@
 - [ ] Core: maybe with could ask for database user nomenclature. Today is "PROJECTNAME_user" and it could be "PROJECTNAME_PROJECTSTATE_user".
 - [ ] Backups: Refactor for backup/restore: 5 options (server_config, site_config, site, database and project).
 - [ ] Restore: Finish function restore_config_files_from_dropbox.
-- [ ] PHP: php_reconfigure refactor (replace strings instead of replace entired config files).
-- [ ] Nginx: Multidomain support for nginx.
-- [ ] Nginx: Add http2 support on nginx server config files.
-- [ ] Nginx: New option to put website on maintenance (maybe rename index.html/php and create a new HTML).
 - [ ] MySQL: Rename database helper (with and without WP).
-- [ ] Woocommerce support: https://github.com/woocommerce/woocommerce/wiki/WC-CLI-Commands
 - [ ] Support for rclone: https://github.com/rclone/rclone
       Add support to others storage service (Google Drive, SFTP, etc)
 
 ## For release 3.3
 
-- [ ] Core: dependencies and configuration checker.
-      If the script is runned on a system that was not configured by the script, it could fail.
+- [ ] Firewall: ufw support.
+- [ ] Core: Complete refactor of script_configuration_wizard.
 - [ ] Notifications: After install a new project (with credentials info).
 - [ ] Backups: On backup failure, the email must show what files fails and what files are correct backuped.
 - [ ] Backups: Implement on restore_from_backup easy way to restore all sites.
+- [ ] Scheduled options: backups, malware scans, image optimizations and wp actions (core and plugins updates, checksum and wp re-installation).
 - [ ] Refactor of RESTORE_FROM_SOURCE and complete server config restore.
-- [ ] Hetzner cloud cli support: https://github.com/hetznercloud/cli
-- [ ] Network: implements hetzner network configuration.
-      https://docs.hetzner.com/cloud/networks/server-configuration/
+- [ ] Nginx: Multidomain support for nginx.
+- [ ] Nginx: Add http2 support on nginx server config files.
+- [ ] Nginx: New option to put website on maintenance (maybe rename index.html/php and create a new HTML).
 - [ ] Wordpress: Rollback plugins and core updates (wpcli_rollback_plugin_version)
 - [ ] SFTP: Option to create a user jail on sftp_create_user.
         Important:https://www.electricmonk.nl/log/2015/07/13/ssh-chrootdirectory-sftponly-not-working-fixed/
@@ -114,7 +105,9 @@
 
 ## For release 3.4
 
-- [ ] Scheduled options: backups, malware scans, image optimizations and wp actions (core and plugins updates, checksum and wp re-installation).
+- [ ] PHP: php_reconfigure refactor (replace strings instead of replace entired config files).
+- [ ] WordPress: Fallback for replace strings on wp database (if wp-cli fails, use old script version).
+- [ ] WordPress: WP Network support (nginx config, and wp-cli commands).
 - [ ] Wordpress: When restore or create a project on PROD state, ask if want to run "wpcli_run_startup_script"
 - [ ] Installers: Refactor of WORDPRESS_INSTALLER - COPY_FROM_PROJECT
         The idea is that you could create/copy/delete/update different kind of projects (WP, Laravel, React, Composer, Empty)
@@ -123,7 +116,9 @@
 - [ ] Installers: COPY_FROM_PROJECT option to exclude uploads directory
         rsync -ax --exclude [relative path to directory to exclude] /path/from /path/to
 - [ ] Installers: Option to select netdata metrics to be reported.
-- [ ] Buddypress support: https://github.com/buddypress/wp-cli-buddypress
+- [ ] Hetzner cloud cli support: https://github.com/hetznercloud/cli
+- [ ] Network: implements hetzner network configuration.
+      https://docs.hetzner.com/cloud/networks/server-configuration/
 
 ## For release 3.5
 
@@ -131,8 +126,8 @@
 - [ ] Backups: Directory Blacklist with whiptail (for backup configuration).
 - [ ] Server Optimization: Complete the pdf optimization process.
 - [ ] MySQL: Optimization script.
-- [ ] WordPress: Fallback for replace strings on wp database (if wp-cli fails, use old script version).
-- [ ] WordPress: WP Network support (nginx config, and wp-cli commands).
+- [ ] Woocommerce support: https://github.com/woocommerce/woocommerce/wiki/WC-CLI-Commands
+- [ ] Buddypress support: https://github.com/buddypress/wp-cli-buddypress
 - [ ] IT Utils: Control of mounted partitions or directories.
 - [ ] IT Utils: Better malware detection with https://github.com/rfxn/linux-malware-detect
 
