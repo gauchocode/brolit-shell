@@ -224,13 +224,17 @@ function project_get_name_from_domain() {
 
 }
 
+################################################################################
+# Get project stage from domain
 #
-# TODO: check when add www.DOMAIN.com and then select other stage != prod
+# Arguments:
+#   $1 = ${project_domain}
 #
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function project_get_stage_from_domain() {
-
-  # $1 = ${project_domain}
 
   local project_domain=$1
 
@@ -253,16 +257,24 @@ function project_get_stage_from_domain() {
 
 }
 
-function project_create_config() {
+################################################################################
+# Create project config file
+#
+# Arguments:
+#  $1 = ${project_path}
+#  $2 = ${project_name}
+#  $3 = ${project_stage}
+#  $4 = ${project_type}
+#  $5 = ${project_db_name}
+#  $6 = ${project_db_host}
+#  $7 = ${project_domain}
+#  $8 = ${project_nginx_conf}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  # $1 = ${project_path}
-  # $2 = ${project_name}
-  # $3 = ${project_stage}
-  # $4 = ${project_type}
-  # $5 = ${project_db_name}
-  # $6 = ${project_db_host}
-  # $7 = ${project_domain}
-  # $8 = ${project_nginx_conf}
+function project_create_config() {
 
   local project_path=$1
   local project_name=$2
@@ -324,6 +336,16 @@ function project_create_config() {
 
 }
 
+################################################################################
+# Generate project config
+#
+# Arguments:
+#  $1 = ${project_path}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function project_generate_config() {
 
   # $1 = ${project_path}
@@ -355,7 +377,7 @@ function project_generate_config() {
 
   ## Project DB
   project_db="${project_name}_${project_stage}"
-  
+
   mysql_database_exists "${project_db}"
   exitstatus=$?
   if [[ ${exitstatus} -eq 1 ]]; then
@@ -363,6 +385,9 @@ function project_generate_config() {
     project_db="$(mysql_ask_database_selection)"
 
   fi
+
+  ## Project DB User
+  #project_db_user="${project_name}_user"
 
   ## Project DB Host
   project_db_host="$(mysql_ask_user_db_scope "localhost")"
@@ -375,11 +400,19 @@ function project_generate_config() {
 
 }
 
-function project_update_config() {
+################################################################################
+# Update project config
+#
+# Arguments:
+#  $1 = ${project_path}
+#  $2 = ${config_field}
+#  $3 = ${config_value}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  # $1 = ${project_path}
-  # $2 = ${config_field}
-  # $3 = ${config_value}
+function project_update_config() {
 
   local project_path=$1
   local config_field=$2
@@ -416,10 +449,18 @@ function project_update_config() {
 
 }
 
-function project_get_config() {
+################################################################################
+# Get project config
+#
+# Arguments:
+#  $1 = ${project_path}
+#  $2 = ${config_field}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  # $1 = ${project_path}
-  # $2 = ${config_field}
+function project_get_config() {
 
   local project_path=$1
   local config_field=$2
@@ -451,10 +492,18 @@ function project_get_config() {
 
 }
 
-function project_get_configured_database() {
+################################################################################
+# Get configured database
+#
+# Arguments:
+#  $1 = ${project_path}
+#  $2 = ${project_type}
+#
+# Outputs:
+#   ${db_name} if ok, 1 on error.
+################################################################################
 
-  # $1 = ${project_path}
-  # $2 = ${project_type}
+function project_get_configured_database() {
 
   local project_path=$1
   local project_type=$2
@@ -475,13 +524,23 @@ function project_get_configured_database() {
     ;;
 
   laravel)
-    display --indent 8 --text "Project Type Laravel" --tcolor RED
-    return 1
+
+    # Read "${project_path}"/.env to extract DB_USER
+    db_name="$(grep -oP '^DB_DATABASE=\K.*' "${project_path}"/.env)"
+
+    # Return
+    echo "${db_name}"
+
     ;;
 
   node-js)
-    display --indent 8 --text "Project Type NodeJS" --tcolor RED
-    return 1
+
+    # Read "${project_path}"/.env to extract DB_USER
+    db_name="$(grep -oP '^DB_NAME=\K.*' "${project_path}"/.env)"
+
+    # Return
+    echo "${db_name}"
+
     ;;
 
   *)
@@ -493,10 +552,18 @@ function project_get_configured_database() {
 
 }
 
-function project_get_configured_database_user() {
+################################################################################
+# Get configured database user
+#
+# Arguments:
+#  $1 = ${project_path}
+#  $2 = ${project_type}
+#
+# Outputs:
+#   ${db_user} if ok, 1 on error.
+################################################################################
 
-  # $1 = ${project_path}
-  # $2 = ${project_type}
+function project_get_configured_database_user() {
 
   local project_path=$1
   local project_type=$2
@@ -513,13 +580,23 @@ function project_get_configured_database_user() {
     ;;
 
   laravel)
-    display --indent 8 --text "Project Type Laravel" --tcolor RED
-    return 1
+
+    # Read "${project_path}"/.env to extract DB_USER
+    db_user="$(grep -oP '^DB_USERNAME=\K.*' "${project_path}"/.env)"
+
+    # Return
+    echo "${db_user}"
+
     ;;
 
   node-js)
-    display --indent 8 --text "Project Type NodeJS" --tcolor RED
-    return 1
+
+    # Read "${project_path}"/.env to extract DB_USER
+    db_user="$(grep -oP '^DB_USER=\K.*' "${project_path}"/.env)"
+
+    # Return
+    echo "${db_user}"
+
     ;;
 
   *)
@@ -531,10 +608,18 @@ function project_get_configured_database_user() {
 
 }
 
-function project_get_configured_database_userpassw() {
+################################################################################
+# Get configured database user password
+#
+# Arguments:
+#  $1 = ${project_path}
+#  $2 = ${project_type}
+#
+# Outputs:
+#   ${db_pass} if ok, 1 on error.
+################################################################################
 
-  # $1 = ${project_path}
-  # $2 = ${project_type}
+function project_get_configured_database_userpassw() {
 
   local project_path=$1
   local project_type=$2
@@ -550,18 +635,24 @@ function project_get_configured_database_userpassw() {
     ;;
 
   laravel)
-    display --indent 8 --text "Project Type Laravel" --tcolor RED
-    return 1
+
+    # Read "${project_path}"/.env to extract DB_USER
+    db_user="$(grep -oP '^DB_PASSWORD=\K.*' "${project_path}"/.env)"
+
+    # Return
+    echo "${db_user}"
+
     ;;
 
-  php)
-    display --indent 8 --text "Project Type Laravel" --tcolor RED
-    return 1
-    ;;
+  \
+    node-js)
 
-  node-js)
-    display --indent 8 --text "Project Type NodeJS" --tcolor RED
-    return 1
+    # Read "${project_path}"/.env to extract DB_USER
+    db_user="$(grep -oP '^DB_PASSWORD=\K.*' "${project_path}"/.env)"
+
+    # Return
+    echo "${db_user}"
+
     ;;
 
   *)
@@ -573,14 +664,22 @@ function project_get_configured_database_userpassw() {
 
 }
 
-function project_install() {
+################################################################################
+# Project install
+#
+# Arguments:
+#  $1 = ${dir_path}
+#  $2 = ${project_type}
+#  $3 = ${project_domain}
+#  $4 = ${project_name}
+#  $5 = ${project_state}
+#  $6 = ${project_root_domain}   # Optional
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  # $1 = ${dir_path}
-  # $2 = ${project_type}
-  # $3 = ${project_domain}
-  # $4 = ${project_name}
-  # $5 = ${project_state}
-  # $6 = ${project_root_domain}   # Optional
+function project_install() {
 
   local dir_path=$1
   local project_type=$2
@@ -635,7 +734,7 @@ function project_install() {
   laravel)
     # Execute function
     # laravel_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
-    log_event "warning" "Laravel installer should be implemented soon, trying to install like pure php project ..."
+    # log_event "warning" "Laravel installer should be implemented soon, trying to install like pure php project ..."
     php_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
 
     ;;
@@ -648,25 +747,33 @@ function project_install() {
 
   node-js)
 
-    display --indent 8 --text "Project Type NodeJS" --tcolor RED
+    #display --indent 8 --text "Project Type NodeJS" --tcolor RED
     nodejs_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
 
     return 1
     ;;
 
   *)
-    log_event "error" "Project Type ${project_type} unkwnown, aborting ..."
+    log_event "error" "Project Type ${project_type} unkwnown, aborting ..." "false"
     ;;
 
   esac
 
-  log_event "info" "PROJECT INSTALLATION FINISHED!"
+  log_event "info" "Project installation finished" "false"
 
 }
 
-function project_delete_files() {
+################################################################################
+# Project delete files
+#
+# Arguments:
+#  $1 = ${project_domain}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  # $1 = ${project_domain}
+function project_delete_files() {
 
   local project_domain=$1
 
@@ -678,16 +785,13 @@ function project_delete_files() {
   # Trying to know project type
   project_type=$(project_get_type "${SITES}/${project_domain}")
 
-  # TODO: if project_type = wordpress, get database credentials from wp-config.php
-  #project_db_name=$(get_project_db_name "${project_type}")
-  #project_db_user=$(get_project_db_user "${project_type}")
-
   log_event "info" "Project Type: ${project_type}"
 
   BK_TYPE="site"
 
   # Making a backup of project files
   make_files_backup "${BK_TYPE}" "${SITES}" "${project_domain}"
+
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -695,33 +799,24 @@ function project_delete_files() {
     dropbox_output="$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}/offline-site" 2>&1)"
 
     # Moving deleted project backups to another dropbox directory
-    log_event "info" "${DROPBOX_UPLOADER} move ${VPSNAME}/${BK_TYPE}/${project_domain} /${VPSNAME}/offline-site"
-
     dropbox_output="$(${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${project_domain}" "/${VPSNAME}/offline-site" 2>&1)"
 
     # TODO: if destination folder already exists, it will fail
+    log_event "debug" "${DROPBOX_UPLOADER} move ${VPSNAME}/${BK_TYPE}/${project_domain} /${VPSNAME}/offline-site" "false"
     display --indent 6 --text "- Moving to offline projects on Dropbox" --result "DONE" --color GREEN
 
     # Delete project files
     rm --force --recursive "${SITES}/${project_domain}"
 
     # Log
-    log_event "info" "Project files deleted for ${project_domain}"
+    log_event "info" "Project files deleted for ${project_domain}" "false"
     display --indent 6 --text "- Deleting project files on server" --result "DONE" --color GREEN
 
     # Make a copy of nginx configuration file
-    cp --recursive "/etc/nginx/sites-available/${project_domain}" "${SFOLDER}/tmp-backup"
-
-    # TODO: make a copy of letsencrypt files?
-    # TODO: upload to dropbox config_file ??
-
-    # Delete nginx configuration file
-    nginx_server_delete "${project_domain}"
+    cp --recursive "/etc/nginx/sites-available/${project_domain}" "${TMP_DIR}"
 
     # Send notification
     send_notification "⚠️ ${VPSNAME}" "Project files for '${project_domain}' deleted!"
-
-    # TODO: Maybe return database name? extracted from wp-config or something?
 
   else
 
@@ -731,21 +826,28 @@ function project_delete_files() {
 
 }
 
+################################################################################
+# Project delete database
+#
+# Arguments:
+#  $1 = ${database_name}
+#  $2 = ${database_user} - Optional
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function project_delete_database() {
 
-  # $1 = {database}
-
-  local database=$1
+  local database_name=$1
+  local database_user=$2
 
   local databases
   local chosen_database
 
-  # TODO: if project_db_name, project_db_user and project_db_pass are defined
-  #       and can connect to db, only ask for delete confirmation
-
   # List databases
   databases="$(mysql_list_databases "all")"
-  chosen_database="$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)"
+  chosen_database="$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database_name}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -758,7 +860,11 @@ function project_delete_database() {
     # Remove stage from database name
     project_name="${chosen_database%_*}"
 
-    user_db="${project_name}_user"
+    if [[ -z ${database_user} ]]; then
+
+      database_user="${project_name}_user"
+
+    fi
 
     # Make a database Backup
     make_database_backup "${BK_TYPE}" "${chosen_database}"
@@ -768,7 +874,7 @@ function project_delete_database() {
 
     # Log
     clear_last_line
-    log_event "debug" "Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${chosen_database} /${VPSNAME}/offline-site"
+    log_event "debug" "Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${chosen_database} /${VPSNAME}/offline-site" "false"
     display --indent 6 --text "- Moving dropbox backup to offline directory" --result "DONE" --color GREEN
 
     # Delete project database
@@ -792,7 +898,7 @@ function project_delete_database() {
         clear_last_line
 
         # User delete
-        mysql_user_delete "${user_db}"
+        mysql_user_delete "${database_user}"
 
         break
 
@@ -801,7 +907,7 @@ function project_delete_database() {
       [Nn]*)
 
         # Log
-        log_event "warning" "Aborting MySQL user deletion ..."
+        log_event "warning" "Aborting MySQL user deletion ..." "false"
         display --indent 6 --text "- Deleting MySQL user" --result "SKIPPED" --color YELLOW
 
         break
@@ -815,25 +921,32 @@ function project_delete_database() {
     done
 
   else
+
     # Return
     echo "error"
+    return 1
 
   fi
 
 }
 
+################################################################################
+# Project delete (files, database, config, certs)
+#
+# Arguments:
+#  $1 = ${project_domain}
+#  $2 = ${delete_cf_entry} - optional (true or false)
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 # TODO: NEED REFACTOR
 # 1- Files backup with file_backups functions, checking if site is WP or what.
 # 2- Ask for confirm delete temp files.
 # 3- Ask what to do with letsencrypt and nginx server config files
-#
-# Symphony, config BD on /var/www/PROJECT/app/config/parameters.yml
-#
 
 function project_delete() {
-
-  # $1 = ${project_domain}
-  # $1 = ${delete_cf_entry} - optional (true or false)
 
   local project_domain=$1
   local delete_cf_entry=$2
@@ -844,22 +957,17 @@ function project_delete() {
 
   if [[ ${project_domain} == "" ]]; then
 
-    # Folder where sites are hosted: $SITES
+    # Folder where sites are hosted: ${SITES}
     menu_title="PROJECT DIRECTORY TO DELETE"
     directory_browser "${menu_title}" "${SITES}"
-
-    ### Creating temporary folders
-    if [[ ! -d "${SFOLDER}/tmp-backup" ]]; then
-      mkdir "${SFOLDER}/tmp-backup"
-      log_event "info" "Temp files directory created: ${SFOLDER}/tmp-backup"
-    fi
 
     # Directory_broser returns: " $filepath"/"$filename
     if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
 
       # Log
+      log_event "info" "Files deletion skipped ..." "false"
       display --indent 2 --text "- Selecting directory for deletion" --result "SKIPPED" --color YELLOW
-      log_event "info" "Files deletion skipped ..."
+
       files_skipped="true"
 
     else
@@ -873,16 +981,30 @@ function project_delete() {
 
   if [[ ${files_skipped} == "false" ]]; then
 
-    log_event "info" "Project to delete: ${project_domain}"
+    log_event "info" "Project to delete: ${project_domain}" "false"
     display --indent 2 --text "- Selecting ${project_domain} for deletion" --result "DONE" --color GREEN
+
+    # Get project type and db credentials before delete files_skipped
+    project_type="$(project_get_type "${project_domain}")"
+    project_db_name=$(project_get_configured_database "${project_domain}" "${project_type}")
+    project_db_user=$(project_get_configured_database_user "${project_domain}" "${project_type}")
 
     # Delete Files
     project_delete_files "${project_domain}"
+
+    # TODO: upload to dropbox config_file ??
+
+    # Delete nginx configuration file
+    nginx_server_delete "${project_domain}"
+
+    # Delete certificates
+    certbot_certificate_delete "${project_domain}"
 
     if [[ ${delete_cf_entry} != "true" ]]; then
 
       # Cloudflare Manager
       project_domain="$(whiptail --title "CLOUDFLARE MANAGER" --inputbox "Do you want to delete the Cloudflare entries for the followings subdomains?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
+
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -891,7 +1013,7 @@ function project_delete() {
 
       else
 
-        log_event "info" "Cloudflare entries not deleted. Skipped by user."
+        log_event "info" "Cloudflare entries not deleted. Skipped by user." "false"
 
       fi
 
@@ -905,18 +1027,25 @@ function project_delete() {
   fi
 
   # Delete Database
-  project_delete_database "${delete_files_result}"
+  project_delete_database "${project_db_name}" "${project_db_user}"
 
-  #TODO: ask for deleting tmp-backup folder?
   # Delete tmp backups
   #rm -R ${SFOLDER}/tmp-backup
-  #display --indent 2 --text "Please, remove ${SFOLDER}/tmp-backup after check backup was uploaded ok" --tcolor YELLOW
+  display --indent 2 --text "Please, remove ${SFOLDER}/tmp-backup after check backup was uploaded ok" --tcolor YELLOW
 
 }
 
-function project_change_status() {
+################################################################################
+# Change project status (online or offline)
+#
+# Arguments:
+#   $1 = ${project_status} (online,offline)
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  #$1 = ${project_status}
+function project_change_status() {
 
   local project_status=$1
 
@@ -931,10 +1060,17 @@ function project_change_status() {
 
 }
 
-function project_get_type() {
+################################################################################
+# Get project type
+#
+# Arguments:
+#   $1 = ${dir_path}
+#
+# Outputs:
+#   ${project_type}
+################################################################################
 
-  # Parameters
-  # $1 = ${dir_path}
+function project_get_type() {
 
   local dir_path=$1
 
@@ -974,7 +1110,7 @@ function project_get_type() {
 
 function check_laravel_version() {
 
-  # $1 = ${project_dir} project directory
+  # TODO
 
   local project_dir=$1
 
@@ -983,13 +1119,21 @@ function check_laravel_version() {
 
 }
 
-function php_project_installer() {
+################################################################################
+# Install PHP project
+#
+# Arguments:
+#  $1 = ${project_path}
+#  $2 = ${project_domain}
+#  $3 = ${project_name}
+#  $4 = ${project_state}
+#  $5 = ${project_root_domain}   # Optional
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  # $1 = ${project_path}
-  # $2 = ${project_domain}
-  # $3 = ${project_name}
-  # $4 = ${project_state}
-  # $5 = ${project_root_domain}   # Optional
+function php_project_installer() {
 
   local project_path=$1
   local project_domain=$2
@@ -1110,13 +1254,21 @@ function php_project_installer() {
 
 }
 
-function nodejs_project_installer() {
+################################################################################
+# Install nodejs project
+#
+# Arguments:
+#  $1 = ${project_path}
+#  $2 = ${project_domain}
+#  $3 = ${project_name}
+#  $4 = ${project_state}
+#  $5 = ${project_root_domain}   # Optional
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  # $1 = ${project_path}
-  # $2 = ${project_domain}
-  # $3 = ${project_name}
-  # $4 = ${project_state}
-  # $5 = ${project_root_domain}   # Optional
+function nodejs_project_installer() {
 
   local project_path=$1
   local project_domain=$2
