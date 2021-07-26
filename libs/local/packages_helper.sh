@@ -379,7 +379,7 @@ function packages_install_selection() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-# TODO: need to move to system_helper.sh ?
+# TODO: move to system_helper.sh ?
 function timezone_configuration() {
 
   # Log

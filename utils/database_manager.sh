@@ -2,7 +2,23 @@
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
 # Version: 3.0.47
-#############################################################################
+################################################################################
+#
+# Database Manager: Perform database actions.
+#
+################################################################################
+
+# TODO: use database controller
+
+################################################################################
+# Database Manager Menu
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
 
 function database_manager_menu() {
 
@@ -21,6 +37,7 @@ function database_manager_menu() {
     "07)" "DELETE USER"
     "08)" "CHANGE USER PASSWORD"
   )
+  
   chosen_database_manager_option="$(whiptail --title "DATABASE MANAGER" --menu " " 20 78 10 "${database_manager_options[@]}" 3>&1 1>&2 2>&3)"
   exitstatus=$?
 
@@ -37,6 +54,7 @@ function database_manager_menu() {
         "04)" "test"
         "05)" "dev"
       )
+      
       chosen_database_list_option="$(whiptail --title "DATABASE MANAGER" --menu " " 20 78 10 "${database_list_options[@]}" 3>&1 1>&2 2>&3)"
       exitstatus=$?
 
