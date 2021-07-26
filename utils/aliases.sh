@@ -1164,8 +1164,8 @@ function firewall_status() {
     while [ -n "${ufw_status_line}" ]; do
         ufw_status_line="$(ufw status | sed -n "${counter} p" | cut -d "-" -f 2 | tr " " "-" | sed -z 's/--//g')"
         ufw_status_details="${ufw_status_details} ${ufw_status_line}"
-        counter=$(($counter+1))
-    done;
+        counter=$(($counter + 1))
+    done
 
     # String to JSON
     json_string="$(_jsonify_output "key-value" "ufw-status" "${ufw_status}")"
@@ -1201,6 +1201,18 @@ function is_pkg_installed() {
 
     # Return JSON
     echo "PACKAGE_RESULT => ${json_string}"
+
+}
+
+function list_packages_to_upgrade() {
+
+    # apt commands
+    pkgs="$(apt list --upgradable | awk "{print \$1}" | grep -A 100 'Listing...')"
+
+    json_string="$(_jsonify_output "value-list" "${pkgs}")"
+
+    # Return JSON
+    echo "PACKAGE_UPGRADE_RESULT => ${json_string}"
 
 }
 
