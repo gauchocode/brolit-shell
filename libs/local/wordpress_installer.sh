@@ -133,9 +133,6 @@ function wordpress_project_install() {
   # Set WP salts
   wpcli_set_salts "${project_path}"
 
-  # Create project config file
-  project_create_config "${project_path}" "${project_name}" "wordpress" "${database_name}" "${project_domain}"
-
   # TODO: ask for Cloudflare support and check if root_domain is configured on the cf account
 
   # If domain contains www, should work without www too
@@ -187,9 +184,20 @@ function wordpress_project_install() {
       log_event "info" "HTTPS support for ${project_domain} skipped" "false"
       display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
-      return 1
-
     fi
+
+  fi
+
+  # Create project config file
+  cert_primary_domain="$(echo "${cert_project_domain}" | cut -d "," -f 1)"
+  cert_path="/etc/letsencrypt/live/${cert_primary_domain}"
+  if [[ -d ${cert_path} ]]; then
+
+    project_create_config "${project_path}" "${project_name}" "wordpress" "${database_name}" "${project_domain}" "${cert_path}"
+
+  else
+
+    project_create_config "${project_path}" "${project_name}" "wordpress" "${database_name}" "${project_domain}" ""
 
   fi
 
@@ -399,7 +407,7 @@ function wordpress_project_copy() {
 
   # Send notification
   send_notification "✅ ${VPSNAME}" "WordPress installation for domain ${project_domain} finished"
-  
+
   return 0
 
 }
