@@ -1207,7 +1207,7 @@ function is_pkg_installed() {
 function list_packages_to_upgrade() {
 
     # apt commands
-    pkgs="$(apt list --upgradable | awk "{print \$1}" | grep -A 100 'Listing...')"
+    pkgs="$(apt list --upgradable | awk -F/ "{print \$1}" | sed -e '1,/.../ d')"
 
     json_string="$(_jsonify_output "value-list" "${pkgs}")"
 
