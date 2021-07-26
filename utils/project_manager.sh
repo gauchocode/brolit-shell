@@ -3,8 +3,22 @@
 # Author: BROOBE - A Software Development Agency - https://broobe.com
 # Version: 3.0.47
 ################################################################################
+#
+# Database Manager: Perform database actions.
+#
+################################################################################
 
-function menu_project_utils() {
+################################################################################
+# Project Utils Menu
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function project_manager_menu_new_project_type_utils() {
 
   local whip_title
   local whip_description
@@ -34,7 +48,7 @@ function menu_project_utils() {
     if [[ ${chosen_project_utils_options} == *"01"* ]]; then
 
       # CREATE NEW PROJECT
-      menu_new_project
+      project_manager_menu_new_project_type_new_project
 
     fi
 
@@ -225,7 +239,7 @@ function menu_project_utils() {
     fi
 
     prompt_return_or_finish
-    menu_project_utils
+    project_manager_menu_new_project_type_utils
 
   fi
 
@@ -233,7 +247,17 @@ function menu_project_utils() {
 
 }
 
-function menu_new_project() {
+################################################################################
+# New Project Menu
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function project_manager_menu_new_project_type_new_project() {
 
   local project_type_options
   local chosen_project_type_options
@@ -287,7 +311,17 @@ function menu_new_project() {
 
 }
 
-function project_manager_menu() {
+################################################################################
+# Project Manager Menu
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function project_manager_menu_new_project_type() {
 
   local installation_types
   local project_type
@@ -304,5 +338,49 @@ function project_manager_menu() {
   fi
 
   menu_main_options
+
+}
+
+################################################################################
+# Task handler for project functions
+#
+# Arguments:
+#   $1 = ${subtask}
+#
+# Outputs:
+#   global vars
+################################################################################
+
+function project_tasks_handler() {
+
+  local subtask=$1
+
+  log_subsection "Project Manager"
+
+  case ${subtask} in
+
+  install)
+
+    project_install "${SITES}" "${PTYPE}" "${DOMAIN}" "${PNAME}" "${PSTATE}"
+
+    exit
+    ;;
+
+  delete)
+
+    # Second parameter with "true" will delete cloudflare entry
+    project_delete "${DOMAIN}" "true"
+
+    exit
+    ;;
+
+  *)
+
+    log_event "error" "INVALID PROJECT TASK: ${subtask}" "true"
+
+    exit
+    ;;
+
+  esac
 
 }
