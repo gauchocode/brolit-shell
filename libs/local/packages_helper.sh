@@ -177,7 +177,7 @@ function packages_check_required() {
   # CERTBOT
   CERTBOT="$(command -v certbot)"
   if [[ ! -x "${CERTBOT}" ]]; then
-  
+
     display --indent 2 --text "- Checking CERTBOT installation" --result "WARNING" --color YELLOW
     display --indent 4 --text "CERTBOT not found" --tcolor YELLOW
 
@@ -468,5 +468,26 @@ function packages_install_optimization_utils() {
     return 1
 
   fi
+
+}
+
+################################################################################
+# List packages that need to be upgraded
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   list of packages.
+################################################################################
+
+function packages_need_upgrade() {
+
+  # Log
+  log_event "debug" "Running: apt list --upgradable" "false"
+  display --indent 6 --text "- Checking upgradable packages"
+
+  # apt commands
+  pkgs="$(apt list --upgradable | awk "{print \$1}" | grep -A 100 'Listing...')"
 
 }
