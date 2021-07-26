@@ -32,7 +32,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.47"
-ALIASES_VERSION="3.0.47-057"
+ALIASES_VERSION="3.0.47-058"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -1161,7 +1161,7 @@ function firewall_status() {
 
     counter=5
     ufw_status_line="$(ufw status | sed -n "${counter} p" | cut -d "-" -f 2 | tr " " "-" | sed -z 's/--//g')"
-    while [ ! -z ${ufw_status_line} ]; do
+    while [ -n "${ufw_status_line}" ]; do
         ufw_status_line="$(ufw status | sed -n "${counter} p" | cut -d "-" -f 2 | tr " " "-" | sed -z 's/--//g')"
         ufw_status_details="${ufw_status_details} ${ufw_status_line}"
         counter=$(($counter+1))
