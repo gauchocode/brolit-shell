@@ -269,6 +269,7 @@ function project_get_stage_from_domain() {
 #  $6 = ${project_db_host}
 #  $7 = ${project_domain}
 #  $8 = ${project_nginx_conf}
+#  $9 = ${project_cert_conf}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -284,6 +285,7 @@ function project_create_config() {
   local project_db_host=$6
   local project_domain=$7
   local project_nginx_conf=$8
+  local project_cert_conf=$9
 
   local project_config_file
 
@@ -329,6 +331,9 @@ function project_create_config() {
 
   ## project_nginx_conf
   content_pnginx="$(jq ".project_nginx_conf = \"${project_nginx_conf}\"" "${project_config_file}")" && echo "${content_pnginx}" >"${project_config_file}"
+
+  ## project_cert_conf
+  content_pcert="$(jq ".project_cert_conf = \"${project_cert_conf}\"" "${project_config_file}")" && echo "${content_pcert}" >"${project_config_file}"
 
   # Log
   display --indent 6 --text "- Creating project config file" --result DONE --color GREEN
@@ -395,8 +400,17 @@ function project_generate_config() {
   ## Check if file exists
   project_nginx_conf="/etc/nginx/sites-available/${project_domain}"
 
-  # Write config file
-  project_create_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db}" "${project_db_host}" "${project_domain}" "${project_nginx_conf}"
+  # Create project config file
+  cert_path="/etc/letsencrypt/live/${project_domain}"
+  if [[ -d ${cert_path} ]]; then
+
+    project_create_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db}" "${project_db_host}" "${project_domain}" "${project_nginx_conf}" "${cert_path}"
+
+  else
+
+    project_create_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db}" "${project_db_host}" "${project_domain}" "${project_nginx_conf}" ""
+
+  fi
 
 }
 
@@ -1391,6 +1405,6 @@ function nodejs_project_installer() {
   display --indent 6 --text "- NodeJS project installation for domain ${project_domain}" --result "DONE" --color GREEN
 
   # Send notification
-  send_notification "${VPSNAME}" "NodeJS project installation for domain ${project_domain} finished!"
+  send_notification "✅ ${VPSNAME}" "NodeJS project installation for domain ${project_domain} finished!"
 
 }
