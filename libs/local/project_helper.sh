@@ -725,6 +725,16 @@ function project_install() {
 
     project_name="$(ask_project_name "${possible_project_name}")"
 
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 1 ]]; then
+
+      log_event "info" "Operation cancelled!" "false"
+      display --indent 2 --text "- Asking project name" --result SKIPPED --color YELLOW
+
+      return 1
+
+    fi
+
   fi
 
   # TODO: check when add www.DOMAIN.com and then select other stage != prod
@@ -733,6 +743,16 @@ function project_install() {
     suggested_state="$(get_subdomain_part "${project_domain}")"
 
     project_state="$(ask_project_state "${suggested_state}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 1 ]]; then
+
+      log_event "info" "Operation cancelled!" "false"
+      display --indent 2 --text "- Asking project stage" --result SKIPPED --color YELLOW
+
+      return 1
+
+    fi
 
   fi
 
