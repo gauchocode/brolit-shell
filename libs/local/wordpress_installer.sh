@@ -193,11 +193,11 @@ function wordpress_project_install() {
   cert_path="/etc/letsencrypt/live/${cert_primary_domain}"
   if [[ -d ${cert_path} ]]; then
 
-    project_create_config "${project_path}" "${project_name}" "wordpress" "${database_name}" "${project_domain}" "${cert_path}"
+    project_create_config "${project_path}" "${project_name}" "${project_state}" "wordpress" "${database_name}" "localhost" "${project_domain}" "/etc/nginx/sites-available/${project_domain}" "${cert_path}"
 
   else
 
-    project_create_config "${project_path}" "${project_name}" "wordpress" "${database_name}" "${project_domain}" ""
+    project_create_config "${project_path}" "${project_name}" "${project_state}" "wordpress" "${database_name}" "localhost" "${project_domain}" "/etc/nginx/sites-available/${project_domain}" ""
 
   fi
 

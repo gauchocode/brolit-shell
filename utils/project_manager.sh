@@ -372,8 +372,6 @@ function project_tasks_handler() {
   local pname=$5
   local pstate=$6
 
-  log_subsection "Project Manager"
-
   case ${subtask} in
 
   install)
