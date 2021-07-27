@@ -1750,6 +1750,7 @@ function flags_handler() {
   ENV=""
   SLOG=""
   TASK=""
+  STASK=""
   TVALUE=""
   SHOWDEBUG=0
 
