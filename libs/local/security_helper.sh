@@ -11,43 +11,6 @@
 ################################################################################
 
 ################################################################################
-# Installs security utils: clamav and lynis
-#
-# Arguments:
-#   None
-#
-# Outputs:
-#   0 if it utils were installed, 1 on error.
-################################################################################
-
-function security_install() {
-
-  log_event "info" "Installing clamav and lynis" "false"
-
-  display --indent 2 --text "- Installing clamav and lynis"
-
-  apt-get --yes install clamav lynis -qq >/dev/null
-
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    #clear_last_line
-    display --indent 2 --text "- Installing clamav and lynis" --result "DONE" --color GREEN
-
-    return 0
-
-  else
-
-    #clear_last_line
-    display --indent 2 --text "- Installing clamav and lynis" --result "FAIL" --color RED
-
-    return 1
-
-  fi
-
-}
-
-################################################################################
 # Clamav Scan: Update clamav database and performs a scan.
 #
 # Arguments:
