@@ -133,8 +133,7 @@ function database_manager_menu() {
 # Task handler for database functions
 #
 # Arguments:
-#   $1 = ${arguments_count}
-#   $2 = ${arguments}
+#   $1 = ${subtask}
 #
 # Outputs:
 #   global vars
@@ -157,7 +156,7 @@ function database_tasks_handler() {
 
   create_db)
 
-    mysql_create_db "${DBNAME}"
+    mysql_database_create "${DBNAME}"
 
     exit
     ;;
