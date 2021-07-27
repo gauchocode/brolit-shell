@@ -93,7 +93,7 @@ function jsonify_output() {
     # > echo "value1 value2 value3 value4"
     # [ "value1" "value2" "value3" "value4" ]
 
-    # Remove fir parameter
+    # Remove first parameter
     shift
 
     if [[ ${mode} == "key-value" ]]; then

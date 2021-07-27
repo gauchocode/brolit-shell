@@ -1726,22 +1726,13 @@ function tasks_handler() {
 # Runner flags handler
 #
 # Arguments:
-#   $1 = ${arguments_count}
-#   $2 = ${arguments}
+#   $*
 #
 # Outputs:
 #   global vars
 ################################################################################
 
 function flags_handler() {
-
-  #local arguments_count=$1
-  #local arguments=$2
-
-  #local parameters
-  #local i=0
-
-  #IFS=', ' read -a parameters <<<"$arguments" # convert parameter to an array
 
   # GLOBALS
   ## OPTIONS
@@ -1766,10 +1757,8 @@ function flags_handler() {
   declare -g DBUSER=""
   declare -g DBUSERPSW=""
 
-  #while [[ $i < ${arguments_count} ]]; do
   while [ $# -ge 1 ]; do
 
-    #case ${parameters[$i]} in
     case ${1} in
 
     # OPTIONS
@@ -1784,62 +1773,62 @@ function flags_handler() {
       ;;
 
     -e | --env)
-      i="$((i + 1))"
+      shift
       ENV=${1}
       export ENV
       ;;
 
     -sl | --slog)
-      i="$((i + 1))"
+      shift
       SLOG=${1}
       export SLOG
       ;;
 
     -t | --task)
-      i="$((i + 1))"
+      shift
       TASK=${1}
       export TASK
       ;;
 
     -st | --subtask)
-      i="$((i + 1))"
+      shift
       STASK=${1}
       export STASK
       ;;
 
     -tv | --task-value)
-      i="$((i + 1))"
+      shift
       TVALUE=${1}
       export TVALUE
       ;;
 
     # PROJECT
     -s | --site)
-      i="$((i + 1))"
+      shift
       SITE=${1}
       export SITE
       ;;
 
     -pn | --pname)
-      i="$((i + 1))"
+      shift
       PNAME=${1}
       export PNAME
       ;;
 
     -pt | --ptype)
-      i="$((i + 1))"
+      shift
       PTYPE=${1}
       export PTYPE
       ;;
 
     -ps | --pstate)
-      i="$((i + 1))"
+      shift
       PSTATE=${1}
       export PSTATE
       ;;
 
     -do | --domain)
-      i="$((i + 1))"
+      shift
       DOMAIN=${1}
       export DOMAIN
       ;;
@@ -1847,43 +1836,42 @@ function flags_handler() {
     # DATABASE
 
     -db | --dbname)
-      i="$((i + 1))"
+      shift
       DBNAME=${1}
       export DBNAME
       ;;
 
     -dbn | --dbname-new)
-      i="$((i + 1))"
+      shift
       DBNAME_N=${1}
       export DBNAME_N
       ;;
 
     -dbs | --dbstage)
-      i="$((i + 1))"
+      shift
       DBSTAGE=${1}
       export DBSTAGE
       ;;
 
     -dbu | --dbuser)
-      i="$((i + 1))"
+      shift
       DBUSER=${1}
       export DBUSER
       ;;
 
     -dbup | --dbuser-psw)
-      i="$((i + 1))"
+      shift
       DBUSERPSW=${1}
       export DBUSERPSW
       ;;
 
     *)
-      echo "INVALID OPTION: $i" >&2
+      echo "INVALID OPTION: $1" >&2
       exit
       ;;
 
     esac
 
-    #i="$((i + 1))"
     shift
 
   done
