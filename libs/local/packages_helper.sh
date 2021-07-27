@@ -439,35 +439,32 @@ function remove_old_packages() {
 
 function packages_install_optimization_utils() {
 
-  # Log
-  log_event "info" "Installing jpegoptim optipng pngquant webp gifsicle ghostscript mogrify imagemagick-*" "false"
-  display --indent 6 --text "- Installing jpegoptim, optipng and imagemagick"
+  package_install_if_not "jpegoptim"
+  package_install_if_not "optipng"
+  package_install_if_not "pngquant"
+  package_install_if_not "webp"
+  package_install_if_not "gifsicle"
+  package_install_if_not "ghostscript"
+  package_install_if_not "mogrify"
+  package_install_if_not "imagemagick-*"
 
-  # apt command
-  apt-get --yes install jpegoptim optipng pngquant webp gifsicle ghostscript mogrify imagemagick-* -qq >/dev/null
+}
 
-  exitstatus=$?
-  if [[ $exitstatus -eq 0 ]]; then
+################################################################################
+# Installs security utils: clamav and lynis
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   0 if it utils were installed, 1 on error.
+################################################################################
 
-    # Log
-    clear_last_line # need an extra call to clear installation output
-    clear_last_line
-    log_event "info" "Installation finished" "false"
-    display --indent 6 --text "- Installing jpegoptim, optipng and imagemagick" --result "DONE" --color GREEN
+function packages_install_security_utils() {
 
-    return 0
-
-  else
-
-    # Log
-    clear_last_line # need an extra call to clear installation output
-    clear_last_line
-    log_event "error" "Installation finished" "false"
-    display --indent 6 --text "- Installing jpegoptim, optipng and imagemagick" --result "FAIL" --color RED
-
-    return 1
-
-  fi
+  package_install_if_not "clamav"
+  package_install_if_not "clamav-freshclam"
+  package_install_if_not "lynis"
 
 }
 
