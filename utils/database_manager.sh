@@ -133,7 +133,12 @@ function database_manager_menu() {
 # Task handler for database functions
 #
 # Arguments:
-#   $1 = ${subtask}
+#  $1 = ${subtask}
+#  $2 = ${dbname}
+#  $3 = ${dbstage}
+#  $4 = ${dbname_n}
+#  $5 = ${dbuser}
+#  $6 = ${dbuser_psw}
 #
 # Outputs:
 #   global vars
@@ -142,6 +147,11 @@ function database_manager_menu() {
 function database_tasks_handler() {
 
   local subtask=$1
+  local dbname=$2
+  local dbstage=$3
+  local dbname_n=$4
+  local dbuser=$5
+  local dbuser_psw=$6
 
   log_subsection "Database Manager"
 
@@ -149,28 +159,28 @@ function database_tasks_handler() {
 
   list_db)
 
-    mysql_list_databases "${DBSTAGE}"
+    mysql_list_databases "${dbstage}"
 
     exit
     ;;
 
   create_db)
 
-    mysql_database_create "${DBNAME}"
+    mysql_database_create "${dbname}"
 
     exit
     ;;
 
   delete_db)
 
-    mysql_database_drop "${DBNAME}"
+    mysql_database_drop "${dbname}"
 
     exit
     ;;
 
   rename_db)
 
-    mysql_database_rename "${DBNAME}" "${DBNAME_N}"
+    mysql_database_rename "${dbname}" "${dbname_n}"
 
     exit
     ;;
@@ -184,21 +194,21 @@ function database_tasks_handler() {
 
   create_db_user)
 
-    mysql_user_create "${DBUSER}"
+    mysql_user_create "${dbuser}"
 
     exit
     ;;
 
   delete_db_user)
 
-    mysql_user_delete "${DBUSER}"
+    mysql_user_delete "${dbuser}"
 
     exit
     ;;
 
   change_db_user_psw)
 
-    mysql_user_psw_change "${DBUSER}" "${DBUSERPSW}"
+    mysql_user_psw_change "${dbuser}" "${dbuser_psw}"
 
     exit
     ;;
