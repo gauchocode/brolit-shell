@@ -34,7 +34,7 @@ if [[ $# -eq 0 ]]; then
 else
 
   # RUNNING WITH FLAGS
-  flags_handler "$*" #"$*" stores all arguments received when the script is runned
+  flags_handler $* #$* stores all arguments received when the script is runned
 
 fi
 
