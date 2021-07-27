@@ -97,10 +97,16 @@ Options:
 ./runner.sh --task "database" --subtask "list_db" --dbstage "all"
 ```
 
-#### Create databases
+#### Create database
 
 ```
-./runner.sh --task "database" --subtask "create_db" --dbname "broobe_prod"
+./runner.sh --task "database" --subtask "create_db" --dbname "broobe_test"
+```
+
+#### Delete database
+
+```
+./runner.sh --task "database" --subtask "delete_db" --dbname "broobe_test"
 ```
 
 ### Cloudflare API
