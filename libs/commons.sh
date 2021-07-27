@@ -1746,27 +1746,28 @@ function flags_handler() {
 
   IFS=', ' read -a parameters <<<"$arguments" # convert parameter to an array
 
-  # OPTIONS
-  ENV=""
-  SLOG=""
-  TASK=""
-  STASK=""
-  TVALUE=""
-  SHOWDEBUG=0
+  # GLOBALS
+  ## OPTIONS
+  declare -g ENV=""
+  declare -g SLOG=""
+  declare -g TASK=""
+  declare -g STASK=""
+  declare -g TVALUE=""
+  declare -g SHOWDEBUG=0
 
-  # PROJECT
-  SITE=""
-  DOMAIN=""
-  PNAME=""
-  PTYPE=""
-  PSTATE=""
+  ## PROJECT
+  declare -g SITE=""
+  declare -g DOMAIN=""
+  declare -g PNAME=""
+  declare -g PTYPE=""
+  declare -g PSTATE=""
 
-  # DATABASE
-  DBNAME=""
-  DBNAME_N=""
-  DBSTAGE=""
-  DBUSER=""
-  DBUSERPSW=""
+  ## DATABASE
+  declare -g DBNAME=""
+  declare -g DBNAME_N=""
+  declare -g DBSTAGE=""
+  declare -g DBUSER=""
+  declare -g DBUSERPSW=""
 
   while [[ $i < ${arguments_count} ]]; do
 
@@ -1780,57 +1781,68 @@ function flags_handler() {
 
     -d | --debug)
       SHOWDEBUG=1
+      export SHOWDEBUG
       ;;
 
     -e | --env)
       i="$((i + 1))"
       ENV=${parameters[$i]}
+      export ENV
       ;;
 
     -sl | --slog)
       i="$((i + 1))"
       SLOG=${parameters[$i]}
+      export SLOG
       ;;
 
     -t | --task)
       i="$((i + 1))"
       TASK=${parameters[$i]}
+      export TASK
       ;;
 
     -st | --subtask)
       i="$((i + 1))"
       STASK=${parameters[$i]}
+      export STASK
       ;;
 
     -tv | --task-value)
       i="$((i + 1))"
       TVALUE=${parameters[$i]}
+      export TVALUE
       ;;
 
     # PROJECT
     -s | --site)
       i="$((i + 1))"
       SITE=${parameters[$i]}
+      export SITE
       ;;
 
     -pn | --pname)
       i="$((i + 1))"
       PNAME=${parameters[$i]}
+      export PNAME
       ;;
 
     -pt | --ptype)
       i="$((i + 1))"
       PTYPE=${parameters[$i]}
+      export PTYPE
       ;;
 
     -ps | --pstate)
       i="$((i + 1))"
       PSTATE=${parameters[$i]}
+      export PSTATE
       ;;
 
     -do | --domain)
       i="$((i + 1))"
       DOMAIN=${parameters[$i]}
+      export DOMAIN
       ;;
 
     # DATABASE
@@ -1838,26 +1850,31 @@ function flags_handler() {
     -db | --dbname)
       i="$((i + 1))"
       DBNAME=${parameters[$i]}
+      export DBNAME
       ;;
 
     -dbn | --dbname-new)
       i="$((i + 1))"
       DBNAME_N=${parameters[$i]}
+      export DBNAME_N
       ;;
 
     -dbs | --dbstage)
       i="$((i + 1))"
       DBSTAGE=${parameters[$i]}
+      export DBSTAGE
       ;;
 
     -dbu | --dbuser)
       i="$((i + 1))"
       DBUSER=${parameters[$i]}
+      export DBUSER
       ;;
 
     -dbup | --dbuser-psw)
       i="$((i + 1))"
       DBUSERPSW=${parameters[$i]}
+      export DBUSERPSW
       ;;
 
     *)
