@@ -62,13 +62,13 @@ Options:
 #### Create WordPress Project
 
 ```
-./runner.sh --task "project-install" --ptype "wordpress" --domain "example.domain.com" --pname "project_name" --pstate "prod"
+./runner.sh --task "project" --subtask "install" --ptype "wordpress" --domain "example.domain.com" --pname "project_name" --pstate "prod"
 ```
 
 #### Delete Project
 
 ```
-./runner.sh --task "project-delete" --domain "example.domain.com"
+./runner.sh --task "project" --subtask "delete" --domain "example.domain.com"
 ```
 
 #### Restore a Files Backup (NOT IMPLEMENTED YET)
