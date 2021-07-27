@@ -352,7 +352,12 @@ function project_manager_menu_new_project_type() {
 # Task handler for project functions
 #
 # Arguments:
-#   $1 = ${subtask}
+#  $1 = ${subtask}
+#  $2 = ${sites}
+#  $3 = ${ptype}
+#  $4 = ${domain}
+#  $5 = ${pname}
+#  $6 = ${pstate}
 #
 # Outputs:
 #   global vars
@@ -361,6 +366,11 @@ function project_manager_menu_new_project_type() {
 function project_tasks_handler() {
 
   local subtask=$1
+  local sites=$2
+  local ptype=$3
+  local domain=$4
+  local pname=$5
+  local pstate=$6
 
   log_subsection "Project Manager"
 
@@ -368,7 +378,7 @@ function project_tasks_handler() {
 
   install)
 
-    project_install "${SITES}" "${PTYPE}" "${DOMAIN}" "${PNAME}" "${PSTATE}"
+    project_install "${sites}" "${ptype}" "${domain}" "${pname}" "${pstate}"
 
     exit
     ;;
@@ -376,7 +386,7 @@ function project_tasks_handler() {
   delete)
 
     # Second parameter with "true" will delete cloudflare entry
-    project_delete "${DOMAIN}" "true"
+    project_delete "${domain}" "true"
 
     exit
     ;;

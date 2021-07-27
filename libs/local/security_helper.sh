@@ -9,6 +9,10 @@
 # Refs: https://www.tecmint.com/scan-linux-for-malware-and-rootkits/
 #
 ################################################################################
+#
+# Security Helper: Perform security actions.
+#
+################################################################################
 
 ################################################################################
 # Clamav Scan: Update clamav database and performs a scan.
