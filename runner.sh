@@ -34,9 +34,7 @@ if [[ $# -eq 0 ]]; then
 else
 
   # RUNNING WITH FLAGS
-  # With "$#" we can check the number of arguments received when the script is runned
-  # Check if there were no arguments provided
-  flags_handler "$#" "$*" #"$*" stores all arguments received when the script is runned
+  flags_handler "$*" #"$*" stores all arguments received when the script is runned
 
 fi
 
