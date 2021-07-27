@@ -19,6 +19,9 @@ source "${SFOLDER}/libs/commons.sh"
 # Script Initialization
 script_init
 
+# Check needed packages
+packages_install_security_utils
+
 # Running from cron
 log_event "info" "Running security_tasks.sh ..." "false"
 
