@@ -95,16 +95,23 @@ function project_manager_menu_new_project_type_utils() {
 
         log_event "info" "Operation cancelled!" "false"
 
-        # Return
-        #return 1
-
       else
 
         project_name="$(extract_domain_extension "${filename%/}")"
         project_name="$(mysql_name_sanitize "${project_name}")"
         project_name="$(ask_project_name "${project_name}")"
 
-        log_event "info" "project_name: ${project_name}!"
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 1 ]]; then
+
+          log_event "info" "Operation cancelled!" "false"
+          display --indent 2 --text "- Creating project DB" --result SKIPPED --color YELLOW
+
+          return 1
+
+        fi
+
+        log_event "info" "project_name: ${project_name}" "false"
 
         project_state="$(ask_project_state "")"
         database_user_passw="$(openssl rand -hex 12)"
