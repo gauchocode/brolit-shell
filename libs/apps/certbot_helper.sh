@@ -461,31 +461,11 @@ function certbot_certificate_delete() {
 
   else
 
-    while true; do
-      echo -e "${YELLOW}${ITALIC} > Do you really want to delete de certificates for ${domains}?${ENDCOLOR}"
-      read -p -r "Please type 'y' or 'n'" yn
+    certbot --nginx delete --cert-name "${domains}"
 
-      case $yn in
-
-      [Yy]*)
-
-        log_event "debug" "Running: certbot delete --cert-name ${domains}" "false"
-        certbot --nginx delete --cert-name "${domains}"
-        break
-
-        ;;
-
-      [Nn]*)
-
-        log_event "info" "Aborting ..." "true"
-        break
-        ;;
-
-      *) echo " > Please answer yes or no." ;;
-
-      esac
-
-    done
+    # Log
+    log_event "debug" "Running: certbot delete --cert-name ${domains}" "false"
+    display --indent 6 --text "- Deleting certificate for ${domains}" --result "DONE" --color GREEN
 
   fi
 
