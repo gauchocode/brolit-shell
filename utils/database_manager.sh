@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.47
+# Version: 3.0.50
 ################################################################################
 #
 # Database Manager: Perform database actions.
@@ -54,7 +54,7 @@ function database_manager_menu() {
         "04)" "test"
         "05)" "dev"
       )
-      
+
       chosen_database_list_option="$(whiptail --title "DATABASE MANAGER" --menu " " 20 78 10 "${database_list_options[@]}" 3>&1 1>&2 2>&3)"
       exitstatus=$?
 
