@@ -263,7 +263,6 @@ function _check_distro() {
       sleep 3
       spinner_stop $?
 
-
     else
 
       if [[ ${DISTRO} == "Pop!_OS" ]]; then
@@ -282,17 +281,15 @@ function _check_distro() {
 # Script init
 #
 # Arguments:
-#   none
+#  Only to detect if script is runned by brolit app)
+#  ${1} = ${1} runner first parameter
+#  ${2} = ${2} runner second parameter
 #
 # Outputs:
 #   global vars
 ################################################################################
 
 function script_init() {
-
-  # Parameters (only to detect if script is runned by brolit app)
-  # ${1} = ${1} runner first parameter
-  # ${2} = ${2} runner second parameter
 
   # Define log name
   declare -g LOG
@@ -379,7 +376,7 @@ function script_init() {
   declare -g DPU_F
   declare -g DROPBOX_UPLOADER
 
-  declare -g NETWORK_INTERFACE
+  #declare -g NETWORK_INTERFACE
 
   # BROOBE Utils config file
   BROLIT_SHELL_CONFIG_FILE=~/.brolit-shell.conf
@@ -637,7 +634,7 @@ function validator_cron_format() {
     done
   fi
 
-  crn_values=$(echo $1 | tr "," " " | tr "-" " ")
+  crn_values=$(echo "$1" | tr "," " " | tr "-" " ")
 
   for crn_vl in $crn_values; do
     if [[ "$crn_vl" =~ ^[0-9]+$ ]] && [ "$crn_vl" -le $limit ]; then
@@ -646,7 +643,7 @@ function validator_cron_format() {
   done
 
   if [[ ${check_format} != 'ok' ]]; then
-    check_result $E_INVALID "invalid $2 format :: $1"
+    check_result "${E_INVALID}" "invalid $2 format :: $1"
   fi
 
 }
@@ -1690,7 +1687,7 @@ function tasks_handler() {
 
   database)
 
-    database_tasks_handler "${STASK}" "${DBNAME}" "${DBSTAGE}" "${DBUSER}"
+    database_tasks_handler "${STASK}" "${DBNAME}" "${DBSTAGE}" "${DBNAME_N}" "${DBUSER}" "${DBUSERPSW}"
 
     exit
     ;;
