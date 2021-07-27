@@ -3,14 +3,10 @@
 # Author: BROOBE - A Software Development Agency - https://broobe.com
 # Version: 3.0.47
 ################################################################################
-
 #
-#################################################################################
+# Backup/Restore Helper: Backup and restore funtions.
 #
-# * Private Funtions
-#
-#################################################################################
-#
+################################################################################
 
 # This is executed if we want to restore a file backup on directory with the same name
 function _make_temp_files_backup() {
@@ -26,7 +22,7 @@ function _make_temp_files_backup() {
   mv "${folder_to_backup}" "${SFOLDER}/tmp/old_backup"
 
   # Log
-  log_event "info" "Temp backup completed and stored here: ${SFOLDER}/tmp/old_backup"
+  log_event "info" "Temp backup completed and stored here: ${SFOLDER}/tmp/old_backup" "false"
   clear_last_line
   display --indent 6 --text "- Creating backup on temp directory" --result "DONE" --color GREEN
 
@@ -39,50 +35,6 @@ function _make_temp_files_backup() {
 #
 #################################################################################
 #
-
-function restore_backup_menu() {
-
-  local restore_options        # whiptail array options
-  local chosen_restore_options # whiptail var
-
-  log_event "info" "Selecting backup restore type ..." "false"
-
-  restore_options=(
-    "01)" "RESTORE FROM DROPBOX"
-    "02)" "RESTORE FROM URL (BETA)"
-    "03)" "RESTORE FROM FILE (BETA)"
-  )
-
-  chosen_restore_options="$(whiptail --title "RESTORE TYPE" --menu " " 20 78 10 "${restore_options[@]}" 3>&1 1>&2 2>&3)"
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    if [[ ${chosen_restore_options} == *"01"* ]]; then
-      restore_backup_server_selection
-
-    fi
-    if [[ ${chosen_restore_options} == *"02"* ]]; then
-
-      # shellcheck source=${SFOLDER}/utils/wordpress_restore_from_source.sh
-      source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
-
-      wordpress_restore_from_source
-
-    fi
-    if [[ ${chosen_restore_options} == *"03"* ]]; then
-      restore_backup_from_file
-
-    fi
-
-  else
-
-    log_event "debug" "Restore type selection skipped"
-
-  fi
-
-  menu_main_options
-
-}
 
 function restore_backup_from_file() {
 
@@ -194,7 +146,7 @@ function restore_backup_server_selection() {
       restore_type_selection_from_dropbox "${chosen_server}" "${dropbox_type_list}"
 
     else
-      restore_backup_menu
+      restore_manager_menu
 
     fi
 
@@ -204,7 +156,7 @@ function restore_backup_server_selection() {
 
   fi
 
-  restore_backup_menu
+  restore_manager_menu
 
 }
 
@@ -807,6 +759,7 @@ function restore_project() {
 
   # Select Backup File
   chosen_backup_to_restore="$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${dropbox_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
+  
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 

@@ -1365,11 +1365,11 @@ function menu_main_options() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_type} == *"01"* ]]; then
-      menu_backup_options
+      backup_manager_menu
 
     fi
     if [[ ${chosen_type} == *"02"* ]]; then
-      restore_backup_menu
+      restore_manager_menu
 
     fi
 
@@ -1719,131 +1719,6 @@ function tasks_handler() {
   *)
     log_event "error" "INVALID TASK: ${TASK}" "true"
     #ExitFatal
-    ;;
-
-  esac
-
-}
-
-################################################################################
-# Backup Sub-Tasks handler
-#
-# Arguments:
-#   $1 = ${subtask}
-#
-# Outputs:
-#   nothing
-################################################################################
-
-function subtasks_backup_handler() {
-
-  local subtask=$1
-
-  case ${subtask} in
-
-  all)
-
-    make_all_server_config_backup
-    make_sites_files_backup
-
-    exit
-    ;;
-
-  files)
-
-    make_sites_files_backup
-
-    exit
-    ;;
-
-  server-config)
-
-    make_all_server_config_backup
-
-    exit
-    ;;
-
-  databases)
-
-    make_database_backup "databases" "${DBNAME}"
-
-    exit
-    ;;
-
-  project)
-
-    project_type="$(project_get_config "${SITES}/${DOMAIN}" "project_type")"
-
-    make_project_backup "${DOMAIN}" "${project_type}"
-
-    exit
-    ;;
-
-  *)
-    log_event "error" "INVALID SUBTASK: ${subtask}" "true"
-
-    exit
-    ;;
-
-  esac
-
-}
-
-################################################################################
-# Restore Sub-Tasks handler
-#
-# Arguments:
-#   $1 = ${subtask}
-#
-# Outputs:
-#   nothing
-################################################################################
-
-function subtasks_restore_handler() {
-
-  local subtask=$1
-
-  case ${subtask} in
-
-  project)
-
-    log_event "debug" "TODO: restore project backup" "true"
-    #make_databases_backup
-    #make_all_server_config_backup
-    #make_sites_files_backup
-
-    exit
-    ;;
-
-  files)
-
-    log_event "debug" "TODO: restore files backup" "true"
-    #make_sites_files_backup
-
-    exit
-    ;;
-
-  server-config)
-
-    log_event "debug" "TODO: restore config backup" "true"
-    #make_all_server_config_backup
-
-    exit
-    ;;
-
-  databases)
-
-    log_event "warning" "TODO: restore database backup" "true"
-    #log_event "debug" "Running: make_sites_files_backup"
-    #make_sites_files_backup
-
-    exit
-    ;;
-
-  *)
-    log_event "error" "INVALID SUBTASK: ${subtask}" "true"
-
-    exit
     ;;
 
   esac
