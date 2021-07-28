@@ -68,6 +68,7 @@
 
 ## For release 3.2
 
+- [ ] Core: Docker support (backup, restore, list containers, status).
 - [ ] Core: Refactor settings config (change to a json config file?).
 - [ ] Core: Resolve small "TODOs" comments on the project.
 - [ ] Core: Prevent execute the script more than once at a time (maybe a .lock file?).
@@ -79,7 +80,7 @@
 - [ ] Core: maybe with could ask for database user nomenclature. Today is "PROJECTNAME_user" and it could be "PROJECTNAME_PROJECTSTATE_user".
 - [ ] Backups: Refactor for backup/restore: 5 options (server_config, site_config, site, database and project).
 - [ ] Restore: Finish function restore_config_files_from_dropbox.
-- [ ] MySQL: Rename database helper (with and without WP).
+- [ ] MySQL: Rename database (with and without WP).
 - [ ] Support for rclone: https://github.com/rclone/rclone
       Add support to others storage service (Google Drive, SFTP, etc)
 
