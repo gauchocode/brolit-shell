@@ -147,10 +147,12 @@ function netdata_uninstaller() {
       # Deleting mysql user
       mysql_user_delete "netdata" "localhost"
 
+      # Search for netdata nginx server file
+      netdata_server_file="$(grep "proxy_pass http://127.0.0.1:19999/" /etc/nginx/sites-available/* | cut -d ":" -f1)"
+      netdata_server_file="$(basename "${netdata_server_file}")"
+
       # Deleting nginx server files
-      ## TODO: need to use grep or something to detect nginx server file
-      rm --force "/etc/nginx/sites-enabled/monitor"
-      rm --force "/etc/nginx/sites-available/monitor"
+      nginx_server_delete "${netdata_server_file}"
 
       # Deleting installation files
       rm --force --recursive "/etc/netdata"
