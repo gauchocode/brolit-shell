@@ -141,8 +141,11 @@ function nginx_server_delete() {
         rm --force "/etc/nginx/sites-available/${filename}"
         rm --force "/etc/nginx/sites-enabled/${filename}"
 
+        ## Delete broken symbolic links on sites-enabled
+        find -L "/etc/nginx/sites-enabled/" -type l -exec rm {} +
+
         # Logs
-        log_event "info" "Nginx config files for ${filename} deleted!"
+        log_event "info" "Nginx config files for ${filename} deleted!" "false"
         display --indent 6 --text "- Deleting nginx files" --result "DONE" --color GREEN
 
         # Test the validity of the nginx configuration
