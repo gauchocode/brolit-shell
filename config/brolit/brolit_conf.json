@@ -89,7 +89,8 @@
                     {
                         "netdata_subdomain": "",
                         "netdata_user": "",
-                        "netdata_pass": ""
+                        "netdata_pass": "",
+                        "netdata_alarm_level": ""
                     }
                 ]
             }
