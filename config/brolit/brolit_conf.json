@@ -82,6 +82,18 @@
                 ]
             }
         ],
+        "netdata": [
+            {
+                "status": "disable",
+                "config": [
+                    {
+                        "netdata_subdomain": "",
+                        "netdata_user": "",
+                        "netdata_pass": ""
+                    }
+                ]
+            }
+        ],
         "mailcow": [
             {
                 "status": "disable",
