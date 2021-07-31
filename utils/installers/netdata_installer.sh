@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.50
+# Version: 3.0.52
 ################################################################################
 
 # Ref: https://github.com/nextcloud/vm/blob/master/apps/netdata.sh
@@ -33,8 +33,10 @@ function _netdata_alarm_level() {
 
   NETDATA_ALARM_LEVELS="warning critical"
   NETDATA_ALARM_LEVEL=$(whiptail --title "NETDATA ALARM LEVEL" --menu "Choose the Alarm Level for Notifications" 20 78 10 "$(for x in ${NETDATA_ALARM_LEVELS}; do echo "$x [X]"; done)" 3>&1 1>&2 2>&3)
+
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
+
     echo "NETDATA_ALARM_LEVEL=${NETDATA_ALARM_LEVEL}" >>/root/.brolit-shell.conf
     log_event "info" "Alarm Level for Notifications: ${NETDATA_ALARM_LEVEL}" "false"
 
@@ -80,6 +82,7 @@ function _netdata_telegram_config() {
     NETDATA_CONFIG_2_STRING+=" 3) Paste the ID here:\n"
 
     DEFAULT_RECIPIENT_TELEGRAM=$(whiptail --title "Netdata: Telegram Configuration" --inputbox "${NETDATA_CONFIG_2_STRING}" 15 60 3>&1 1>&2 2>&3)
+
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -145,6 +148,7 @@ function netdata_uninstaller() {
       mysql_user_delete "netdata" "localhost"
 
       # Deleting nginx server files
+      ## TODO: need to use grep or something to detect nginx server file
       rm --force "/etc/nginx/sites-enabled/monitor"
       rm --force "/etc/nginx/sites-available/monitor"
 
@@ -157,6 +161,12 @@ function netdata_uninstaller() {
       if [[ -f "/usr/libexec/netdata-uninstaller.sh" ]]; then
         source "/usr/libexec/netdata-uninstaller.sh" --yes --dont-wait
       fi
+
+      # new config
+      config_file="/root/.brolit_conf.json"
+      config_field="SUPPORT.netdata[].status"
+      config_value="disable"
+      json_write_field "${config_file}" "${config_field}" "${config_value}"
 
       log_event "info" "Netdata removed ok!" "false"
       display --indent 6 --text "- Uninstalling netdata" --result "DONE" --color GREEN
@@ -184,8 +194,8 @@ function netdata_configuration() {
   # Ref: netdata config dir https://github.com/netdata/netdata/issues/4182
 
   # MySQL
-  mysql_user_create "netdata"
-  mysql_user_grant_privileges "netdata" "*"
+  mysql_user_create "netdata" "" "localhost"
+  mysql_user_grant_privileges "netdata" "*" "localhost"
 
   cat "${SFOLDER}/config/netdata/python.d/mysql.conf" >"/etc/netdata/python.d/mysql.conf"
 
@@ -226,7 +236,7 @@ function netdata_installer_menu() {
   local netdata_options
   local netdata_chosen_option
 
-  ### Checking if Netdata is installed
+  # Checking if Netdata is installed
   NETDATA="$(which netdata)"
 
   if [[ ! -x "${NETDATA}" ]]; then
@@ -236,7 +246,19 @@ function netdata_installer_menu() {
       netdata_subdomain="$(whiptail --title "Netdata Installer" --inputbox "Please insert the subdomain you want to install Netdata. Ex: monitor.domain.com" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
+
         echo "NETDATA_SUBDOMAIN=${netdata_subdomain}" >>"/root/.brolit-shell.conf"
+
+        # new config
+        config_file="/root/.brolit_conf.json"
+
+        config_field="SUPPORT.netdata[].status"
+        config_value="enable"
+        json_write_field "${config_file}" "${config_field}" "${config_value}"
+
+        config_field="SUPPORT.netdata[].config[].netdata_subdomain"
+        config_value="${netdata_subdomain}"
+        json_write_field "${config_file}" "${config_field}" "${config_value}"
 
       else
         return 1
@@ -267,7 +289,7 @@ function netdata_installer_menu() {
 
         log_subsection "Netdata Installer"
 
-        log_event "info" "Updating packages before installation ..."
+        log_event "info" "Updating packages before installation ..." "false"
 
         apt-get --yes update -qq >/dev/null
 
@@ -281,10 +303,20 @@ function netdata_installer_menu() {
         if [[ ! -x ${nginx_command} ]]; then
 
           # Netdata nginx proxy configuration
-          nginx_server_create "${netdata_subdomain}" "netdata" "tool"
+          nginx_server_create "${netdata_subdomain}" "netdata" "single" ""
 
           # Nginx Auth
-          nginx_generate_auth "netdata"
+          nginx_netdata_user="netdata"
+          nginx_netdata_pass="netdata"
+          nginx_generate_auth "${nginx_netdata_user}" "${nginx_netdata_pass}"
+
+          config_field="SUPPORT.netdata[].config[].netdata_user"
+          config_value="${nginx_netdata_user}"
+          json_write_field "${config_file}" "${config_field}" "${config_value}"
+
+          config_field="SUPPORT.netdata[].config[].netdata_pass"
+          config_value="${nginx_netdata_pass}"
+          json_write_field "${config_file}" "${config_field}" "${config_value}"
 
         fi
 

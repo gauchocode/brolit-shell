@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.50
+# Version: 3.0.52
 #############################################################################
 
 function phpmyadmin_installer () {
@@ -11,7 +11,6 @@ function phpmyadmin_installer () {
   local root_domain
 
   log_subsection "phpMyAdmin Installer"
-  log_event "info" "Running phpMyAdmin installer" "false"
 
   project_domain="$(whiptail --title "Domain" --inputbox "Insert the domain for PhpMyAdmin. Example: sql.domain.com" 10 60 3>&1 1>&2 2>&3)"
   exitstatus=$?
@@ -58,7 +57,7 @@ function phpmyadmin_installer () {
   display --indent 6 --text "- Changing directory name" --result "DONE" --color GREEN
 
   # New site Nginx configuration
-  nginx_server_create "${project_domain}" "phpmyadmin" "tool"
+  nginx_server_create "${project_domain}" "phpmyadmin" "single" ""
 
   # Cloudflare API to change DNS records
   cloudflare_set_record "${root_domain}" "${project_domain}" "A"
@@ -66,8 +65,9 @@ function phpmyadmin_installer () {
   # HTTPS with Certbot
   certbot_helper_installer_menu "${MAILA}" "${project_domain}"
 
+  # Log
   log_event "info" "phpMyAdmin installer finished" "false"
   display --indent 6 --text "- Installing phpMyAdmin" --result "DONE" --color GREEN
-  log_break
+  #log_break
 
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.50
+# Version: 3.0.52
 ################################################################################
 #
 # Nginx Helper: Perform nginx actions.
@@ -14,8 +14,8 @@
 # Arguments:
 #   $1 = ${project_domain}
 #   $2 = ${project_type} (default, wordpress, symphony, phpmyadmin, netdata)
-#   $3 = ${server_type} (single, root_domain, multi_domain, tool) optional
-#   $4 = ${redirect_domains} (list of domains or subdomains that will be redirect to project_domain) optional
+#   $3 = ${server_type} (single, root_domain, multi_domain)
+#   $4 = ${redirect_domains} (list of domains or subdomains that will be redirect to project_domain) - Optional
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -58,10 +58,12 @@ function nginx_server_create() {
 
         # Copy config from template file
         cp "${SFOLDER}/config/nginx/sites-available/${project_type}_${server_type}" "${nginx_server_file}"
-        ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
+
+        # Symbolic link
+        ln -s "${nginx_server_file}" "${WSERVER}/sites-enabled/${project_domain}"
 
         # Search and replace domain.com string with correct project_domain
-        sed -i "s/domain.com/${project_domain}/g" "${WSERVER}/sites-available/${project_domain}"
+        sed -i "s/domain.com/${project_domain}/g" "${nginx_server_file}"
 
         display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
 
@@ -93,31 +95,15 @@ function nginx_server_create() {
 
     multi_domain)
 
+        log_event "info" "TODO: implements multidomain support" "false"
         display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result FAIL --color RED
         display --indent 8 --text "TODO: implements multidomain support"
-        log_event "info" "TODO: implements multidomain support"
-
-        ;;
-
-    tool)
-
-        # Config file path
-        nginx_server_file="${WSERVER}/sites-available/${project_type}"
-
-        # Copy config from template file
-        cp "${SFOLDER}/config/nginx/sites-available/${project_type}" "${nginx_server_file}"
-        ln -s "${WSERVER}/sites-available/${project_type}" "${WSERVER}/sites-enabled/${project_type}"
-
-        # Search and replace domain.com string with correct project_domain
-        sed -i "s/domain.com/${project_domain}/g" "${WSERVER}/sites-available/${project_type}"
-
-        display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
 
         ;;
 
     *)
 
-        log_event "error" "Nginx server config creation fail! Nginx server type '${server_type}' unknow."
+        log_event "error" "Nginx server config creation fail! Nginx server type '${server_type}' unknow." "false"
         display --indent 6 --text "- Nginx server config creation" --result FAIL --color RED
         display --indent 8 --text "Nginx server type '${server_type}' unknow!"
 
@@ -268,11 +254,19 @@ function nginx_server_set_domain() {
 
 }
 
-function nginx_server_change_domain() {
+################################################################################
+# Change domain on nginx server configuration
+#
+# Arguments:
+#  $1 = ${nginx_server_file} / ${tool} or ${project_domain}
+#  $2 = ${domain_name_old}
+#  $3 = ${domain_name_new}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    #$1 = ${nginx_server_file} / ${tool} or ${project_domain}
-    #$2 = ${domain_name_old}
-    #$3 = ${domain_name_new}
+function nginx_server_change_domain() {
 
     local nginx_server_file=$1
     local domain_name_old=$2
@@ -282,6 +276,16 @@ function nginx_server_change_domain() {
     sed -i "s/${domain_name_old}/${domain_name_new}/g" "${WSERVER}/sites-available/${nginx_server_file}"
 
 }
+
+################################################################################
+# Get configured PHP version on nginx server
+#
+# Arguments:
+#  $1 = ${nginx_server_file} - Entire path
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function nginx_server_get_current_phpv() {
 
@@ -302,10 +306,18 @@ function nginx_server_get_current_phpv() {
 
 }
 
-function nginx_server_change_phpv() {
+################################################################################
+# Change PHP version on nginx server configuration
+#
+# Arguments:
+#  $1 = ${nginx_server_file} - Entire path
+#  $2 = ${new_php_v} optional
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    #$1 = ${nginx_server_file} - Entire path
-    #$2 = ${new_php_v} optional
+function nginx_server_change_phpv() {
 
     local nginx_server_file=$1
     local new_php_v=$2
@@ -340,6 +352,16 @@ function nginx_server_change_phpv() {
 
 }
 
+################################################################################
+# Reconfigure nginx
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function nginx_reconfigure() {
 
     # nginx.conf broobe standard configuration
@@ -355,40 +377,75 @@ function nginx_reconfigure() {
 
 }
 
+################################################################################
+# Test nginx configuration
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function nginx_configuration_test() {
 
     local result
 
     #Test the validity of the nginx configuration
-    result=$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)
+    result="$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)"
 
-    if [[ ${result} = "successful" ]]; then
+    if [[ ${result} == "successful" ]]; then
 
         # Reload webserver
         service nginx reload
 
-        log_event "info" "Nginx configuration changed!"
+        # Log
+        log_event "info" "Nginx configuration changed!" "false"
         display --indent 6 --text "- Testing nginx configuration" --result "DONE" --color GREEN
 
     else
-        debug=$(nginx -t 2>&1)
-        whiptail_message "WARNING" "Something went wrong changing Nginx configuration. Please check manually nginx config files."
-        log_event "error" "Problem changing Nginx configuration. Debug: ${debug}"
 
+        debug="$(nginx -t 2>&1)"
+        whiptail_message "WARNING" "Something went wrong changing Nginx configuration. Please check manually nginx config files."
+
+        # Log
+        log_event "error" "Problem changing Nginx configuration. Debug: ${debug}"
         display --indent 6 --text "- Testing nginx configuration" --result "FAIL" --color RED
 
     fi
 
 }
 
+################################################################################
+# Create nginx default server
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function nginx_new_default_server() {
 
     # New default nginx configuration
-    log_event "info" "Moving nginx configuration files ..."
     cat "${SFOLDER}/config/nginx/sites-available/default" >"/etc/nginx/sites-available/default"
+
+    # Log
+    log_event "info" "Creating default nginx server..." "false"
     display --indent 6 --text "- Creating default nginx server" --result "DONE" --color GREEN
 
 }
+
+################################################################################
+# Delete nginx default directory for sites
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function nginx_delete_default_directory() {
 
@@ -408,6 +465,16 @@ function nginx_delete_default_directory() {
     fi
 
 }
+
+################################################################################
+# Create globals config files for nginx server configuration
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function nginx_create_globals_config() {
 
@@ -429,7 +496,6 @@ function nginx_create_globals_config() {
     # Copy files
     cp "${SFOLDER}/config/nginx/globals/security.conf" "/etc/nginx/globals/security.conf"
     cp "${SFOLDER}/config/nginx/globals/wordpress_sec.conf" "/etc/nginx/globals/wordpress_sec.conf"
-    cp "${SFOLDER}/config/nginx/globals/wordpress_seo.conf" "/etc/nginx/globals/wordpress_seo.conf"
 
     display --indent 6 --text "- Creating nginx globals config" --result "DONE" --color GREEN
 
@@ -444,6 +510,16 @@ function nginx_create_globals_config() {
     nginx_configuration_test
 
 }
+
+################################################################################
+# Create empty nginx.conf file
+#
+# Arguments:
+#   $1 = ${path}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function nginx_create_empty_nginx_conf() {
 
@@ -465,12 +541,29 @@ function nginx_create_empty_nginx_conf() {
 
 }
 
+################################################################################
+# Generate nginx auth config
+#
+# Arguments:
+#   $1 = ${user}
+#   $2 = ${psw}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function nginx_generate_auth() {
 
     #$1 = ${user}
+    #$1 = ${psw}
 
     local user=$1
+    local psw=$2
 
-    printf "${user}:$(openssl passwd -apr1)" >"/etc/nginx/passwords"
+    if [[ -z ${psw} ]]; then
+        psw="$(openssl passwd -apr1)"
+    fi
+
+    printf "${user}:${psw}" >"/etc/nginx/passwords"
 
 }
