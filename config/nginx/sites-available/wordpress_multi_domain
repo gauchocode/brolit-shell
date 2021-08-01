@@ -1,45 +1,45 @@
 server {
-        charset utf-8;
-       	listen 80;
 
-        root /var/www/domain.com;
-        index index.php;
+    charset utf-8;
+    listen 80;
 
-        server_name www.domain.com;
+    server_name www.domain.com;
 
-        ### LOG
-       	error_log   /var/log/nginx/domain.com-error.log;
+    root /var/www/domain.com;
+    index index.php;
 
-        location / {
-            try_files $uri $uri/ /index.php?q=$uri&$args;			
-        }
-        location ~ \.php$ {
-            include snippets/fastcgi-php.conf;
-        	fastcgi_pass unix:/run/php/phpPHP_V-fpm.sock;
-            fastcgi_buffering off;
-        }
+    ### LOG
+    error_log   /var/log/nginx/domain.com-error.log;
 
-        ## INC
-        #include /var/www/domain.com/nginx.conf;
-        
-        ### PERF
-        gzip_static on;
+    location / {
+        try_files $uri $uri/ /index.php?q=$uri&$args;			
+    }
+    
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/phpPHP_V-fpm.sock;
+        fastcgi_buffering off;
+    }
 
-        ### SEC
-        #include /etc/nginx/globals/security.conf;
+    ## INC
+    #include /var/www/domain.com/nginx.conf;
+    
+    ### PERF
+    gzip_static on;
 
-        ### WP-SEC
-        #include /etc/nginx/globals/wordpress_sec.conf;
+    ### SEC
+    #include /etc/nginx/globals/security.conf;
 
-        ### WP-SEO
-        #include /etc/nginx/globals/wordpress_seo.conf;
+    ### WP-SEC
+    #include /etc/nginx/globals/wordpress_sec.conf;
 
 }
 server {
-        listen 80;
-        
-        server_name domain.com;
 
-       	return 301 http://www.domain.com$request_uri;
+    listen 80;
+    
+    server_name domain.com;
+
+    return 301 http://www.domain.com$request_uri;
 
 }

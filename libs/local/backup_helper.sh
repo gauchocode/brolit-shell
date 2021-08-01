@@ -8,6 +8,16 @@
 #
 ################################################################################
 
+################################################################################
+# Get Backup Date
+#
+# Arguments:
+#   $1 = ${backup_file}
+#
+# Outputs:
+#   ${backup_date}
+################################################################################
+
 function get_backup_date() {
 
   local backup_file=$1
@@ -20,6 +30,20 @@ function get_backup_date() {
   echo "${backup_date}"
 
 }
+
+################################################################################
+# Make server files Backup
+#
+# Arguments:
+#  $1 = ${bk_type} - Backup Type: configs, logs, data
+#  $2 = ${bk_sup_type} - Backup SubType: php, nginx, mysql
+#  $3 = ${bk_path} - Path folder to Backup
+#  $4 = ${directory_to_backup} - Folder to Backup
+#
+# Outputs:
+#   0 if ok, 1 if error
+################################################################################
+
 ################################################################################
 #
 # IMPORTANT: Maybe a new backup directory structure:
@@ -38,14 +62,6 @@ function make_server_files_backup() {
 
   # TODO: need to implement error_type
 
-  # TODO: bk_type should be "archive, project, server_conf" ?
-  #       bk_sup_type ?
-
-  # $1 = Backup Type: configs, logs, data
-  # $2 = Backup SubType: php, nginx, mysql
-  # $3 = Path folder to Backup
-  # $4 = Folder to Backup
-
   local bk_type=$1
   local bk_sup_type=$2
   local bk_path=$3
@@ -62,8 +78,8 @@ function make_server_files_backup() {
     bk_file="${bk_sup_type}-${bk_type}-files-${NOW}.tar.bz2"
 
     # Here we use tar.bz2 with bzip2 compression method
-    log_event "info" "Making backup of ${bk_path}"
-    log_event "debug" "Running: ${TAR} cjf ${TMP_DIR}/${NOW}/${bk_file} --directory=${bk_path} ${directory_to_backup}"
+    log_event "info" "Making backup of ${bk_path}" "false"
+    log_event "debug" "Running: ${TAR} cjf ${TMP_DIR}/${NOW}/${bk_file} --directory=${bk_path} ${directory_to_backup}" "false"
 
     (${TAR} cjf "${TMP_DIR}/${NOW}/${bk_file}" --directory="${bk_path}" "${directory_to_backup}")
 
@@ -71,14 +87,14 @@ function make_server_files_backup() {
     display --indent 6 --text "- Compressing directory ${bk_path}" --result "DONE" --color GREEN
 
     # Test backup file
-    log_event "info" "Testing backup file: ${bk_file} ..."
+    log_event "info" "Testing backup file: ${bk_file} ..." "false"
     lbzip2 --test "${TMP_DIR}/${NOW}/${bk_file}"
 
     # Check test result
     bzip2_result=$?
     if [[ ${bzip2_result} -eq 0 ]]; then
 
-      log_event "info" "Backup ${bk_file} created"
+      log_event "info" "Backup ${bk_file} created" "false"
 
       #BACKUPED_SCF_LIST[$BK_SCF_INDEX]="$(string_remove_special_chars "${bk_file}")"
       BACKUPED_SCF_LIST[$BK_SCF_INDEX]=${bk_file}
@@ -111,7 +127,7 @@ function make_server_files_backup() {
 
       bzip2_error="No such directory or file ${TMP_DIR}/${NOW}/${bk_file}"
 
-      log_event "critical" "Can't make the backup. No such directory or file ${TMP_DIR}/${NOW}/${bk_file}"
+      log_event "critical" "Can't make the backup. No such directory or file ${TMP_DIR}/${NOW}/${bk_file}" "false"
 
       display --indent 6 --text "- Testing backup file" --result "FAIL" --color RED
       display --indent 8 --text "Result: ${bzip2_error}"
@@ -122,7 +138,7 @@ function make_server_files_backup() {
 
   else
 
-    log_event "error" "Directory ${bk_path} doesn't exists!"
+    log_event "error" "Directory ${bk_path} doesn't exists!" "false"
 
     display --indent 6 --text "- Creating backup file" --result "FAIL" --color RED
     display --indent 8 --text "Result: Directory '${bk_path}' doesn't exists" --tcolor RED
@@ -134,6 +150,16 @@ function make_server_files_backup() {
   log_break "true"
 
 }
+
+################################################################################
+# Make Mailcow Backup
+#
+# Arguments:
+#  $1 = ${directory_to_backup} - Path folder to Backup
+#
+# Outputs:
+#   0 if ok, 1 if error
+################################################################################
 
 function make_mailcow_backup() {
 
@@ -154,56 +180,55 @@ function make_mailcow_backup() {
     old_bk_file="${bk_type}_files-${ONEWEEKAGO}.tar.bz2"
     bk_file="${bk_type}_files-${NOW}.tar.bz2"
 
-    log_event "info" "Trying to make a backup of ${MAILCOW} ..."
+    log_event "info" "Trying to make a backup of ${MAILCOW} ..." "false"
     display --indent 6 --text "- Making ${YELLOW}${MAILCOW}${ENDCOLOR} backup" --result "DONE" --color GREEN
 
+    # Run built-in script for backup Mailcow
     "${MAILCOW}/helper-scripts/backup_and_restore.sh" backup all
     mailcow_backup_result=$?
-    if [[ "${mailcow_backup_result}" -eq 0 ]]; then
+    if [[ ${mailcow_backup_result} -eq 0 ]]; then
 
-      # Con un pequeño truco vamos a obtener el nombre de la carpeta que crea mailcow
+      # Small trick to get Mailcow base dir
       cd "${MAILCOW_TMP_BK}"
       cd mailcow-*
       MAILCOW_TMP_FOLDER="$(basename "${PWD}")"
       cd ..
 
-      log_event "info" "Making tar.bz2 from: ${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER} ..."
+      log_event "info" "Making tar.bz2 from: ${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER} ..." "false"
 
       ${TAR} -cf - --directory="${MAILCOW_TMP_BK}" "${MAILCOW_TMP_FOLDER}" | pv --width 70 -ns "$(du -sb "${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER}" | awk '{print $1}')" | lbzip2 >"${MAILCOW_TMP_BK}/${bk_file}"
 
-      # Clear pipe output
+      # Log
       clear_last_line
+      log_event "info" "Testing backup file: ${bk_file} ..." "false"
 
       # Test backup file
-      log_event "info" "Testing backup file: ${bk_file} ..."
       lbzip2 --test "${MAILCOW_TMP_BK}/${bk_file}"
 
       lbzip2_result=$?
       if [[ ${lbzip2_result} -eq 0 ]]; then
 
-        log_event "info" "${MAILCOW_TMP_BK}/${bk_file} backup created"
+        log_event "info" "${MAILCOW_TMP_BK}/${bk_file} backup created" "false"
 
         # New folder with $VPSNAME
-        output="$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}" 2>&1)"
-
-        # New folder with $bk_type
-        output="$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}/${bk_type}" 2>&1)"
+        dropbox_create_dir "${VPSNAME}"
+        dropbox_create_dir "${VPSNAME}/${bk_type}"
 
         dropbox_path="/${VPSNAME}/${bk_type}"
 
-        log_event "info" "Uploading Backup to Dropbox ..."
+        log_event "info" "Uploading Backup to Dropbox ..." "false"
         display --indent 6 --text "- Uploading backup file to Dropbox"
 
-        output=$(${DROPBOX_UPLOADER} upload "${MAILCOW_TMP_BK}/${bk_file}" "${DROPBOX_FOLDER}/${dropbox_path}" 2>&1)
-        clear_last_line
-        display --indent 6 --text "- Uploading backup file to Dropbox" --result "DONE" --color GREEN
+        # Upload new backup
+        dropbox_upload "${MAILCOW_TMP_BK}/${bk_file}" "${DROPBOX_FOLDER}/${dropbox_path}"
 
-        log_event "info" "Deleting old backup from Dropbox ..."
-        output=$(${DROPBOX_UPLOADER} remove "${DROPBOX_FOLDER}/${dropbox_path}/${bk_file}" 2>&1)
+        # Remove old backup
+        dropbox_delete "${DROPBOX_FOLDER}/${dropbox_path}/${bk_file}"
 
+        # Remove old backup from server
         rm --recursive --force "${MAILCOW_TMP_BK}"
 
-        log_event "info" "Mailcow backup finished"
+        log_event "info" "Mailcow backup finished" "false"
 
       fi
 
@@ -212,7 +237,7 @@ function make_mailcow_backup() {
       ERROR=true
       ERROR_TYPE="ERROR: No such directory or file ${MAILCOW_TMP_BK}"
 
-      log_event "error" "Can't make the backup!"
+      log_event "error" "Can't make the backup!" "false"
 
       return 1
 
@@ -220,7 +245,7 @@ function make_mailcow_backup() {
 
   else
 
-    log_event "error" "Directory '${MAILCOW}' doesnt exists!"
+    log_event "error" "Directory '${MAILCOW}' doesnt exists!" "false"
 
     return 1
 
@@ -229,6 +254,16 @@ function make_mailcow_backup() {
   log_break
 
 }
+
+################################################################################
+# Make all server configs Backup
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#   0 if ok, 1 if error
+################################################################################
 
 function make_all_server_config_backup() {
 
@@ -241,7 +276,7 @@ function make_all_server_config_backup() {
 
   # TAR Webserver Config Files
   if [[ ! -d ${WSERVER} ]]; then
-    log_event "warning" "WSERVER is not defined! Skipping webserver config files backup ..."
+    log_event "warning" "WSERVER is not defined! Skipping webserver config files backup ..." "false"
 
   else
     make_server_files_backup "configs" "nginx" "${WSERVER}" "."
@@ -250,7 +285,7 @@ function make_all_server_config_backup() {
 
   # TAR PHP Config Files
   if [[ ! -d ${PHP_CF} ]]; then
-    log_event "warning" "PHP_CF is not defined! Skipping PHP config files backup ..."
+    log_event "warning" "PHP_CF is not defined! Skipping PHP config files backup ..." "false"
 
   else
     BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
@@ -278,7 +313,7 @@ function make_all_server_config_backup() {
 
   fi
 
-    # TAR Devops Config Files
+  # TAR Devops Config Files
   if [[ ! -d ${BROLIT_CONFIG_PATH} ]]; then
     log_event "warning" "DEVOPS_CF is not defined! Skipping DevOps config files backup ..."
 
@@ -293,19 +328,29 @@ function make_all_server_config_backup() {
 
 }
 
+################################################################################
+# Make sites files Backup
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#   0 if ok, 1 if error
+################################################################################
+
 function make_sites_files_backup() {
 
   log_subsection "Backup Sites Files"
 
   # Get all directories
-  TOTAL_SITES=$(get_all_directories "${SITES}")
+  TOTAL_SITES="$(get_all_directories "${SITES}")"
 
   # Get length of $TOTAL_SITES
   COUNT_TOTAL_SITES="$(find "${SITES}" -maxdepth 1 -type d -printf '.' | wc -c)"
   COUNT_TOTAL_SITES="$((COUNT_TOTAL_SITES - 1))"
 
   # Log
-  log_event "info" "Found ${COUNT_TOTAL_SITES} directories"
+  log_event "info" "Found ${COUNT_TOTAL_SITES} directories" "false"
   display --indent 6 --text "- Directories found" --result "${COUNT_TOTAL_SITES}" --color WHITE
   log_break "true"
 
@@ -321,11 +366,11 @@ function make_sites_files_backup() {
 
   for j in ${TOTAL_SITES}; do
 
-    log_event "info" "Processing [${j}] ..."
+    log_event "info" "Processing [${j}] ..." "false"
 
     if [[ "$k" -gt 0 ]]; then
 
-      directory_name=$(basename "${j}")
+      directory_name="$(basename "${j}")"
 
       if [[ ${SITES_BL} != *"${directory_name}"* ]]; then
 
@@ -341,7 +386,7 @@ function make_sites_files_backup() {
 
       BK_FILE_INDEX=$((BK_FILE_INDEX + 1))
 
-      log_event "info" "Processed ${BK_FILE_INDEX} of ${COUNT_TOTAL_SITES} directories"
+      log_event "info" "Processed ${BK_FILE_INDEX} of ${COUNT_TOTAL_SITES} directories" "false"
 
     fi
 
@@ -359,6 +404,16 @@ function make_sites_files_backup() {
   mail_filesbackup_section "${ERROR}" "${ERROR_TYPE}"
 
 }
+
+################################################################################
+# Make all files Backup
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#   0 if ok, 1 if error
+################################################################################
 
 function make_all_files_backup() {
 
@@ -387,11 +442,19 @@ function make_all_files_backup() {
 
 }
 
-function make_files_backup() {
+################################################################################
+# Make files Backup
+#
+# Arguments:
+# $1 = ${bk_type} - Backup Type (site_configs or sites)
+# $2 = ${bk_path} - Path where directories to backup are stored
+# $3 = ${directory_to_backup} - The specific folder/file to backup
+#
+# Outputs:
+#   0 if ok, 1 if error
+################################################################################
 
-  # $1 = Backup Type (site_configs or sites)
-  # $2 = Path where directories to backup are stored
-  # $3 = The specific folder/file to backup
+function make_files_backup() {
 
   local bk_type=$1
   local bk_path=$2
@@ -474,9 +537,19 @@ function make_files_backup() {
 
 }
 
+################################################################################
+# Duplicity Backup
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#   0 if ok, 1 if error
+################################################################################
+
 function duplicity_backup() {
 
-  if [[ ${DUP_BK} = true ]]; then
+  if [[ ${DUP_BK} == true ]]; then
 
     # Check if DUPLICITY is installed
     DUPLICITY="$(which duplicity)"
@@ -500,6 +573,16 @@ function duplicity_backup() {
   fi
 
 }
+
+################################################################################
+# Make all databases Backup
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#   0 if ok, 1 if error
+################################################################################
 
 function make_all_databases_backup() {
 
@@ -555,6 +638,17 @@ function make_all_databases_backup() {
   mail_mysqlbackup_section "${ERROR}" "${ERROR_TYPE}"
 
 }
+
+################################################################################
+# Make database Backup
+#
+# Arguments:
+#  $1 = ${bk_type}
+#  $2 = ${database}
+#
+# Outputs:
+#   0 if ok, 1 if error
+################################################################################
 
 function make_database_backup() {
 
@@ -666,10 +760,18 @@ function make_database_backup() {
 
 }
 
-function make_project_backup() {
+################################################################################
+# Make project Backup
+#
+# Arguments:
+#  $1 = ${project_domain}
+#  $2 = ${backup_type} - (all,configs,sites,databases) - Default: all
+#
+# Outputs:
+#   0 if ok, 1 if error
+################################################################################
 
-  # $1 = ${project_domain}
-  # $2 = ${backup_type} - (all,configs,sites,databases) - Default: all
+function make_project_backup() {
 
   local project_domain=$1
   local backup_type=$2

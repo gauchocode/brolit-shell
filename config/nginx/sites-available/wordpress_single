@@ -37,7 +37,4 @@ server {
         ### WP-SEC
         #include /etc/nginx/globals/wordpress_sec.conf;
 
-        ### WP-SEO
-        #include /etc/nginx/globals/wordpress_seo.conf;
-
 }

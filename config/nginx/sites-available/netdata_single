@@ -1,5 +1,7 @@
 server {
+
         listen 80;
+        
         server_name domain.com;
 
         auth_basic "Protected";
@@ -16,12 +18,17 @@ server {
                 proxy_pass http://127.0.0.1:19999/;
                 proxy_redirect http://127.0.0.1:19999/ https://$server_name/;
         }
+
 }
 server {
+
         listen 80;
+
         server_name localhost 127.0.0.1;
+
         access_log off;
         #error_log /var/log/nginx/php.error.log debug;
+
         location /stub_status {
                 stub_status on;
                 #access_log off;
@@ -38,4 +45,5 @@ server {
                 fastcgi_index index.php;
                 fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
         }
+
 }
