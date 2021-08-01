@@ -18,7 +18,7 @@ function certbot_check_if_installed() {
 
   fi
 
-  log_event "debug" "certbot_installed=${certbot_installed}"
+  log_event "debug" "certbot_installed=${certbot_installed}" "false"
 
   # Return
   echo "${certbot_installed}"
@@ -37,7 +37,7 @@ function certbot_installer() {
 
   # Installing Certbot
   display --indent 6 --text "- Installing certbot and dependencies"
-  log_event "info" "Installing python3-certbot-dns-cloudflare and python3-certbot-nginx"
+  log_event "info" "Installing python3-certbot-dns-cloudflare and python3-certbot-nginx" "false"
 
   # apt command
   apt-get --yes install python3-certbot-dns-cloudflare python3-certbot-nginx -qq >/dev/null
@@ -45,7 +45,7 @@ function certbot_installer() {
   # Log
   clear_last_line
   display --indent 6 --text "- Installing certbot and dependencies" --result "DONE" --color GREEN
-  log_event "info" "certbot installation finished"
+  log_event "info" "certbot installation finished" "false"
 
 }
 
@@ -55,7 +55,7 @@ function certbot_purge() {
 
   # Log
   display --indent 6 --text "- Removing certbot and libraries"
-  log_event "info" "Removing certbot and libraries ..."
+  log_event "info" "Removing certbot and libraries..." "false"
 
   # apt command
   apt-get --yes purge python3-certbot-dns-cloudflare python3-certbot-nginx -qq >/dev/null
@@ -63,7 +63,7 @@ function certbot_purge() {
   # Log
   clear_last_line
   display --indent 6 --text "- Removing certbot and libraries" --result "DONE" --color GREEN
-  log_event "info" "certbot removed"
+  log_event "info" "certbot removed" "false"
 
 }
 

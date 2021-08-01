@@ -1,4 +1,5 @@
 server {
+    
     server_name  domain.com;
 
     proxy_redirect           off;
