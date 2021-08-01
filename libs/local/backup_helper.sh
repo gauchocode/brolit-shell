@@ -163,8 +163,6 @@ function make_server_files_backup() {
 
 function make_mailcow_backup() {
 
-  # $1 = Path folder to Backup
-
   local directory_to_backup=$1
 
   # VAR $bk_type rewrited
@@ -175,7 +173,7 @@ function make_mailcow_backup() {
 
   log_subsection "Mailcow Backup"
 
-  if [[ -n "${MAILCOW}" ]]; then
+  if [[ -n "${MAILCOW_DIR}" ]]; then
 
     old_bk_file="${bk_type}_files-${ONEWEEKAGO}.tar.bz2"
     bk_file="${bk_type}_files-${NOW}.tar.bz2"
@@ -184,7 +182,7 @@ function make_mailcow_backup() {
     display --indent 6 --text "- Making ${YELLOW}${MAILCOW}${ENDCOLOR} backup" --result "DONE" --color GREEN
 
     # Run built-in script for backup Mailcow
-    "${MAILCOW}/helper-scripts/backup_and_restore.sh" backup all
+    "${MAILCOW_DIR}/helper-scripts/backup_and_restore.sh" backup all
     mailcow_backup_result=$?
     if [[ ${mailcow_backup_result} -eq 0 ]]; then
 
@@ -196,6 +194,7 @@ function make_mailcow_backup() {
 
       log_event "info" "Making tar.bz2 from: ${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER} ..." "false"
 
+      # Tar file
       ${TAR} -cf - --directory="${MAILCOW_TMP_BK}" "${MAILCOW_TMP_FOLDER}" | pv --width 70 -ns "$(du -sb "${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER}" | awk '{print $1}')" | lbzip2 >"${MAILCOW_TMP_BK}/${bk_file}"
 
       # Log
