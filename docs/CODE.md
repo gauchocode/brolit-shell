@@ -20,6 +20,12 @@ Always use long parameter notation when available. This makes the script more re
   # Good:
   rm --recursive --force -- "${dir}"
 
+  # Very Bad:
+  rm --recursive --force -- "/{dir}" #If $dir is empty, it will delete everything!
+
+  # Good:
+  rm --recursive --force -- "/${dir:?}" #If $dir is empty, the command will fail
+  
   # Don’t use:
 
   cd "${foo}"

@@ -61,7 +61,7 @@ function security_clamav_scan() {
   # Check if file is empty
   if [[ -s ${report_file} ]]; then
 
-    rm -f "${report_file}"
+    rm --force "${report_file}"
 
     clamscan_result="false"
     log_event "info" "No malware found on ${directory}" "false"

@@ -200,10 +200,10 @@ function make_mailcow_backup() {
       # Back
       cd ..
 
-      log_event "info" "Making tar.bz2 from: ${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER} ..." "false"
+      log_event "info" "Making tar.bz2 from: ${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION} ..." "false"
 
       # Tar file
-      ${TAR} -cf - --directory="${MAILCOW_TMP_BK}" "${MAILCOW_TMP_FOLDER}" | pv --width 70 -ns "$(du -sb "${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER}" | awk '{print $1}')" | lbzip2 >"${MAILCOW_TMP_BK}/${bk_file}"
+      ${TAR} -cf - --directory="${MAILCOW_DIR}" "${MAILCOW_BACKUP_LOCATION}" | pv --width 70 -ns "$(du -sb "${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION}" | awk '{print $1}')" | lbzip2 >"${MAILCOW_TMP_BK}/${bk_file}"
 
       # Log
       clear_last_line
@@ -233,16 +233,13 @@ function make_mailcow_backup() {
         dropbox_delete "${DROPBOX_FOLDER}/${dropbox_path}/${bk_file}"
 
         # Remove old backup from server
-        rm --recursive --force "${MAILCOW_TMP_BK}"
+        rm --recursive --force "${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION:?}"
 
         log_event "info" "Mailcow backup finished" "false"
 
       fi
 
     else
-
-      ERROR=true
-      ERROR_TYPE="ERROR: No such directory or file ${MAILCOW_TMP_BK}"
 
       log_event "error" "Can't make the backup!" "false"
 
@@ -252,7 +249,7 @@ function make_mailcow_backup() {
 
   else
 
-    log_event "error" "Directory '${MAILCOW}' doesnt exists!" "false"
+    log_event "error" "Directory '${MAILCOW_DIR}' doesnt exists!" "false"
 
     return 1
 
