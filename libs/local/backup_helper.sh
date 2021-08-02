@@ -203,7 +203,7 @@ function make_mailcow_backup() {
       log_event "info" "Making tar.bz2 from: ${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION} ..." "false"
 
       # Tar file
-      ${TAR} -cf - --directory="${MAILCOW_DIR}" "${MAILCOW_BACKUP_LOCATION}" | pv --width 70 -ns "$(du -sb "${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION}" | awk '{print $1}')" | lbzip2 >"${MAILCOW_TMP_BK}/${bk_file}"
+      (${TAR} -cf - --directory="${MAILCOW_DIR}" "${MAILCOW_BACKUP_LOCATION}" | pv --width 70 -ns "$(du -sb "${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION}" | awk '{print $1}')" | lbzip2 >"${MAILCOW_TMP_BK}/${bk_file}")
 
       # Log
       clear_last_line
@@ -230,10 +230,11 @@ function make_mailcow_backup() {
         dropbox_upload "${MAILCOW_TMP_BK}/${bk_file}" "${DROPBOX_FOLDER}/${dropbox_path}"
 
         # Remove old backup
-        dropbox_delete "${DROPBOX_FOLDER}/${dropbox_path}/${bk_file}"
+        dropbox_delete "${DROPBOX_FOLDER}/${dropbox_path}/${old_bk_file}"
 
-        # Remove old backup from server
+        # Remove old backups from server
         rm --recursive --force "${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION:?}"
+        rm --recursive --force "${MAILCOW_TMP_BK}/${bk_file:?}"
 
         log_event "info" "Mailcow backup finished" "false"
 
@@ -656,9 +657,6 @@ function make_all_databases_backup() {
 
 function make_database_backup() {
 
-  # $1 = ${bk_type}
-  # $2 = ${database}
-
   local bk_type=$1 #configs,sites,databases
   local database=$2
 
@@ -683,7 +681,7 @@ function make_database_backup() {
   mysql_export_result=$?
   if [[ ${mysql_export_result} -eq 0 ]]; then
 
-    log_event "info" "Making a tar.bz2 file of ${db_file} ..."
+    log_event "info" "Making a tar.bz2 file of ${db_file} ..." "false"
     display --indent 6 --text "- Compressing database backup"
 
     # TAR
