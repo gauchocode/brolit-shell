@@ -178,18 +178,26 @@ function make_mailcow_backup() {
     old_bk_file="${bk_type}_files-${ONEWEEKAGO}.tar.bz2"
     bk_file="${bk_type}_files-${NOW}.tar.bz2"
 
-    log_event "info" "Trying to make a backup of ${MAILCOW} ..." "false"
-    display --indent 6 --text "- Making ${YELLOW}${MAILCOW}${ENDCOLOR} backup" --result "DONE" --color GREEN
+    log_event "info" "Trying to make a backup of ${MAILCOW_DIR} ..." "false"
+    display --indent 6 --text "- Making ${YELLOW}${MAILCOW_DIR}${ENDCOLOR} backup" --result "DONE" --color GREEN
+
+    # Small hack for pass backup directory to backup_and_restore.sh
+    MAILCOW_BACKUP_LOCATION="${MAILCOW_DIR}"
+    export MAILCOW_BACKUP_LOCATION
 
     # Run built-in script for backup Mailcow
     "${MAILCOW_DIR}/helper-scripts/backup_and_restore.sh" backup all
     mailcow_backup_result=$?
     if [[ ${mailcow_backup_result} -eq 0 ]]; then
 
-      # Small trick to get Mailcow base dir
-      cd "${MAILCOW_TMP_BK}"
+      # Small trick to get Mailcow backup base dir
+      cd "${MAILCOW_DIR}"
       cd mailcow-*
-      MAILCOW_TMP_FOLDER="$(basename "${PWD}")"
+
+      # New MAILCOW_BACKUP_LOCATION
+      MAILCOW_BACKUP_LOCATION="$(basename "${PWD}")"
+
+      # Back
       cd ..
 
       log_event "info" "Making tar.bz2 from: ${MAILCOW_TMP_BK}/${MAILCOW_TMP_FOLDER} ..." "false"
