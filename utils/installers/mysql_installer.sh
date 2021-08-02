@@ -34,7 +34,7 @@ function mysql_purge_installation() {
   display --indent 6 --text "- Purging MySQL packages"
 
   apt-get --yes purge mysql-server mysql-client mysql-common mysql-server-core-* mysql-client-core-* -qq >/dev/null
-  rm -rf /etc/mysql /var/lib/mysql
+  rm --recursive --force /etc/mysql /var/lib/mysql
   apt-get autoremove -qq >/dev/null
   apt-get autoclean -qq >/dev/null
 

@@ -199,8 +199,8 @@ function restore_database_backup() {
 
   if [[ ${exitstatus} -eq 0 ]]; then
     # Deleting temp files
-    rm -f "${project_backup%%.*}.tar.bz2"
-    rm -f "${project_backup}"
+    rm --force "${project_backup%%.*}.tar.bz2"
+    rm --force "${project_backup}"
 
     # Log
     display --indent 6 --text "- Cleanning temp files" --result "DONE" --color GREEN
