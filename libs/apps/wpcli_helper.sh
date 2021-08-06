@@ -413,6 +413,8 @@ function wpcli_core_update() {
 
     log_section "WordPress Updater"
 
+    log_event "debug" "Running: sudo -u www-data wp --path=\"${wp_site}\" update" "false"
+
     verify_core_update="$(sudo -u www-data wp --path="${wp_site}" update | grep ":" | cut -d ':' -f1)"
 
     if [[ ${verify_core_update} == "Success" ]]; then
@@ -1283,7 +1285,7 @@ function wpcli_user_create() {
     local mail=$3
     local role=$4
 
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} user create ${user} ${mail} --role=${role}"
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} user create ${user} ${mail} --role=${role}" "false"
 
     sudo -u www-data wp --path="${wp_site}" user create "${user}" "${mail}" --role="${role}"
 
@@ -1301,11 +1303,14 @@ function wpcli_user_reset_passw() {
     local wp_user=$2
     local wp_user_pass=$3
 
+    # Log
     log_event "info" "User password reset for ${wp_user}. New password: ${wp_user_pass}" "false"
+    log_event "debug" "Running: wp --allow-root --path=\"${wp_site}\" user update \"${wp_user}\" --user_pass=\"${wp_user_pass}\"" "false"
 
     # Command
     wp --allow-root --path="${wp_site}" user update "${wp_user}" --user_pass="${wp_user_pass}"
 
+    # Log
     display --indent 6 --text "- Password reset for ${wp_user}" --result "DONE" --color GREEN
     display --indent 8 --text "New password ${wp_user_pass}"
 
