@@ -187,6 +187,13 @@ function restore_database_backup() {
     mysql_database_create "${db_name}"
 
   else
+
+    # Create temporary folder for backups
+    if [[ ! -d "${TMP_DIR}/backups" ]]; then
+      mkdir "${TMP_DIR}/backups"
+      log_event "info" "Temp files directory created: ${TMP_DIR}/backups" "false"
+    fi
+    
     # Make backup of actual database
     log_event "info" "MySQL database ${db_name} already exists" "false"
     mysql_database_export "${db_name}" "${TMP_DIR}/backups/${db_name}_bk_before_restore.sql"
@@ -759,7 +766,7 @@ function restore_project() {
 
   # Select Backup File
   chosen_backup_to_restore="$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${dropbox_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
-  
+
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
