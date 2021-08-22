@@ -882,15 +882,12 @@ function mysql_database_import() {
 
 function mysql_database_export() {
 
-    # $1 = ${database}
-    # $2 = ${dump_file}
-
     local database=$1
     local dump_file=$2
 
     local dump_status
 
-    log_event "info" "Making a database backup of: ${database}"
+    log_event "info" "Making a database backup of: ${database}" "false"
 
     spinner_start "- Making a backup of: ${database}"
 
