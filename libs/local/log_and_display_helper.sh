@@ -290,6 +290,8 @@ function clear_screen() {
 function clear_last_line() {
 
   tput cuu 1
+  echo -e "${F_DEFAULT}                                                                                                         ${ENDCOLOR}" >&2
+  tput cuu 1
 
 }
 
