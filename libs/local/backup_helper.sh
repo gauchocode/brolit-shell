@@ -12,7 +12,7 @@
 # Get Backup Date
 #
 # Arguments:
-#   $1 = ${backup_file}
+#  $1 = ${backup_file}
 #
 # Outputs:
 #   ${backup_date}
@@ -417,7 +417,7 @@ function make_sites_files_backup() {
 #  none
 #
 # Outputs:
-#   0 if ok, 1 if error
+#  0 if ok, 1 if error
 ################################################################################
 
 function make_all_files_backup() {
@@ -451,12 +451,12 @@ function make_all_files_backup() {
 # Make files Backup
 #
 # Arguments:
-# $1 = ${bk_type} - Backup Type (site_configs or sites)
-# $2 = ${bk_path} - Path where directories to backup are stored
-# $3 = ${directory_to_backup} - The specific folder/file to backup
+#  $1 = ${bk_type} - Backup Type (site_configs or sites)
+#  $2 = ${bk_path} - Path where directories to backup are stored
+#  $3 = ${directory_to_backup} - The specific folder/file to backup
 #
 # Outputs:
-#   0 if ok, 1 if error
+#  0 if ok, 1 if error
 ################################################################################
 
 function make_files_backup() {
@@ -586,7 +586,7 @@ function duplicity_backup() {
 #  none
 #
 # Outputs:
-#   0 if ok, 1 if error
+#  0 if ok, 1 if error
 ################################################################################
 
 function make_all_databases_backup() {
@@ -611,7 +611,7 @@ function make_all_databases_backup() {
 
   # Log
   display --indent 6 --text "- Databases found" --result "${TOTAL_DBS}" --color WHITE
-  log_event "info" "Databases found: ${TOTAL_DBS}"
+  log_event "info" "Databases found: ${TOTAL_DBS}" "false"
   log_break "true"
 
   # MORE GLOBALS
@@ -621,13 +621,13 @@ function make_all_databases_backup() {
 
     if [[ ${DB_BL} != *"${DATABASE}"* ]]; then
 
-      log_event "info" "Processing [${DATABASE}] ..."
+      log_event "info" "Processing [${DATABASE}] ..." "false"
 
       make_database_backup "database" "${DATABASE}"
 
       BK_DB_INDEX=$((BK_DB_INDEX + 1))
 
-      log_event "info" "Backup ${BK_DB_INDEX} of ${TOTAL_DBS} done"
+      log_event "info" "Backup ${BK_DB_INDEX} of ${TOTAL_DBS} done" "false"
 
       log_break "true"
 
@@ -652,7 +652,7 @@ function make_all_databases_backup() {
 #  $2 = ${database}
 #
 # Outputs:
-#   0 if ok, 1 if error
+#  0 if ok, 1 if error
 ################################################################################
 
 function make_database_backup() {
@@ -674,11 +674,12 @@ function make_database_backup() {
   declare -g BACKUPED_DB_LIST
   declare -g BK_DB_SIZES
 
-  log_event "info" "Creating new database backup of ${database} ..."
+  log_event "info" "Creating new database backup of ${database} ..." "false"
 
   # Create dump file
   mysql_database_export "${database}" "${directory_to_backup}${db_file}"
   mysql_export_result=$?
+
   if [[ ${mysql_export_result} -eq 0 ]]; then
 
     log_event "info" "Making a tar.bz2 file of ${db_file} ..." "false"
@@ -689,10 +690,9 @@ function make_database_backup() {
 
     # Clear pipe output
     clear_last_line
-    clear_last_line
 
     # Test backup file
-    log_event "info" "Testing backup file: ${db_file} ..."
+    log_event "info" "Testing backup file: ${db_file} ..." "false"
     display --indent 6 --text "- Testing backup file"
 
     pv --width 70 "${TMP_DIR}/${NOW}/${bk_file}" | lbzip2 --test
@@ -705,7 +705,7 @@ function make_database_backup() {
     if [[ ${lbzip2_result} -eq 0 ]]; then
 
       # Log
-      log_event "info" "Backup file ${bk_file} created"
+      log_event "info" "Backup file ${bk_file} created" "false"
       display --indent 6 --text "- Compressing database backup" --result "DONE" --color GREEN
 
       # Changing global
@@ -716,10 +716,10 @@ function make_database_backup() {
       BK_DB_SIZES+=("${BK_DB_SIZE}")
 
       # Log
-      log_event "info" "Backup for ${database} created, final size: ${BK_DB_SIZE}"
+      log_event "info" "Backup for ${database} created, final size: ${BK_DB_SIZE}" "false"
       display --indent 8 --text "Backup final size: ${YELLOW}${BOLD}${BK_DB_SIZE}${ENDCOLOR}"
 
-      log_event "info" "Creating folders in Dropbox ..."
+      log_event "info" "Creating folders in Dropbox ..." "false"
 
       # New folder with $VPSNAME
       dropbox_create_dir "${VPSNAME}"
