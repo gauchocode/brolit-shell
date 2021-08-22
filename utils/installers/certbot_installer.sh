@@ -40,7 +40,7 @@ function certbot_installer() {
   log_event "info" "Installing python3-certbot-dns-cloudflare and python3-certbot-nginx" "false"
 
   # apt command
-  apt-get --yes install python3-certbot-dns-cloudflare python3-certbot-nginx -qq >/dev/null
+  apt-get --yes install python3-certbot python3-certbot-dns-cloudflare python3-certbot-nginx -qq >/dev/null
 
   # Log
   clear_last_line
@@ -58,7 +58,7 @@ function certbot_purge() {
   log_event "info" "Removing certbot and libraries..." "false"
 
   # apt command
-  apt-get --yes purge python3-certbot-dns-cloudflare python3-certbot-nginx -qq >/dev/null
+  apt-get --yes purge python3-certbot python3-certbot-dns-cloudflare python3-certbot-nginx -qq >/dev/null
 
   # Log
   clear_last_line
