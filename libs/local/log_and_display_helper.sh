@@ -62,18 +62,10 @@ function _spinner() {
       exit 1
     fi
 
-    clear_line
+    #clear_line
+    clear_last_line
 
     kill $3 >/dev/null 2>&1
-
-    # inform the user uppon success or failure
-    #echo -en "\b["
-    #if [[ $2 -eq 0 ]]; then
-    #    echo -en "${GREEN}${on_success}${NORMAL}"
-    #else
-    #    echo -en "${RED}${on_fail}${NORMAL}"
-    #fi
-    #echo -e "]"
 
     ;;
 
@@ -254,14 +246,17 @@ function log_subsection() {
   local message=$1
 
   if [[ "${QUIET}" -eq 0 ]]; then
+   
     # Console Display
     echo "" >&2
     echo -e "    [·] ${CYAN}${B_DEFAULT}${message}${ENDCOLOR}" >&2
     echo "    ------------------------------------------" >&2
+   
     # Log file
     echo " > -------------------------------------------------" >>"${LOG}"
     echo " > [·] ${message}" >>"${LOG}"
     echo " > -------------------------------------------------" >>"${LOG}"
+
   fi
 
 }
@@ -274,18 +269,14 @@ function clear_screen() {
 
 function clear_last_line() {
 
-  printf "\033[1A" >&2
-  echo -e "${F_DEFAULT}                                                                                                         ${ENDCOLOR}" >&2
-  echo -e "${F_DEFAULT}                                                                                                         ${ENDCOLOR}" >&2
-  printf "\033[1A" >&2
-  printf "\033[1A" >&2
+  tput cuu 1
 
 }
 
 function clear_line() {
 
   printf "\033[G" >&2
-  printf "                                                                                                         " >&2
+  echo -e "${F_DEFAULT}                                                                                                         ${ENDCOLOR}" >&2
   printf "\033[G" >&2
 
 }
@@ -379,7 +370,6 @@ function display() {
       # - for full shells, count with -m instead of -c, to support language locale (older busybox does not have -m)
       # - wc needs LANG to deal with multi-bytes characters but LANG has been unset in include/consts
       TEXT_C="$(string_remove_color_chars "${TEXT}")"
-      #TEXT_C="${TEXT}"
 
       LINESIZE="$(
         export LC_ALL=
@@ -392,13 +382,10 @@ function display() {
 
       if [[ ${EXEC_TYPE} == "default" ]]; then
 
-        # Check if we already have already discovered a proper echo command tool. It not, set it default to 'echo'.
-        #if [ "${ECHOCMD}" = "" ]; then ECHOCMD="echo"; fi
         echo -e "\033[${INDENT}C${TCOLOR}${TSTYLE}${TEXT}${NORMAL}\033[${SPACES}C${RESULTPART}${DEBUGTEXT}" >&2
 
       else
-        # EXEC_TYPE == external
-        # echo -e "\033[${INDENT}C${TEXT}\033[${SPACES}C${RESULTPART}${DEBUGTEXT}" >>"${LOG}"
+
         return 0
 
       fi

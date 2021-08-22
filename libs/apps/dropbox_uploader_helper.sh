@@ -21,19 +21,20 @@ function dropbox_create_dir() {
 
     output="$("${DROPBOX_UPLOADER}" -q mkdir "${dir_to_create}")"
     dropbox_create_dir_result=$?
+
     if [[ ${dropbox_create_dir_result} -eq 0 ]]; then
 
-        display --indent 6 --text "- Creating dropbox directory" --result "DONE" --color GREEN
-        log_event "info" "Dropbox directory ${dir_to_create} created"
+        #display --indent 6 --text "- Creating dropbox directory" --result "DONE" --color GREEN
+        log_event "info" "Dropbox directory ${dir_to_create} created" "false"
 
     else
 
         #display --indent 6 --text "- Creating dropbox directory" --result "WARNING" --color YELLOW
         #display --indent 8 --text "Maybe directory already exists" --tcolor YELLOW
 
-        log_event "debug" "Can't create directory ${dir_to_create} from dropbox. Maybe directory already exists."
-        log_event "debug" "Last command executed: ${DROPBOX_UPLOADER} -q mkdir ${dir_to_create}"
-        log_event "debug" "Last command output: ${output}"
+        log_event "debug" "Can't create directory ${dir_to_create} from dropbox. Maybe directory already exists." "false"
+        log_event "debug" "Last command executed: ${DROPBOX_UPLOADER} -q mkdir ${dir_to_create}" "false"
+        log_event "debug" "Last command output: ${output}" "false"
 
     fi
 
@@ -51,7 +52,7 @@ function dropbox_upload() {
 
     spinner_start "- Uploading file to Dropbox"
 
-    log_event "debug" "Running: ${DROPBOX_UPLOADER} upload ${file_to_upload} ${dropbox_directory}"
+    log_event "debug" "Running: ${DROPBOX_UPLOADER} upload ${file_to_upload} ${dropbox_directory}" "false"
 
     output="$("${DROPBOX_UPLOADER}" -q upload "${file_to_upload}" "${dropbox_directory}")"
     dropbox_file_to_upload_result=$?
@@ -62,16 +63,16 @@ function dropbox_upload() {
     if [[ ${dropbox_file_to_upload_result} -eq 0 ]]; then
 
         display --indent 6 --text "- Uploading file to Dropbox" --result "DONE" --color GREEN
-        log_event "info" "Dropbox file ${file_to_upload} uploaded"
+        log_event "info" "Dropbox file ${file_to_upload} uploaded" "false"
 
     else
 
         display --indent 6 --text "- Uploading file to Dropbox" --result "ERROR" --color RED
         display --indent 8 --text "Please red log file" --tcolor RED
 
-        log_event "error" "Can't upload file ${file_to_upload} to dropbox."
-        log_event "error" "Last command executed: ${DROPBOX_UPLOADER} upload ${file_to_upload} ${dropbox_directory}"
-        log_event "debug" "Last command output: ${output}"
+        log_event "error" "Can't upload file ${file_to_upload} to dropbox." "false"
+        log_event "error" "Last command executed: ${DROPBOX_UPLOADER} upload ${file_to_upload} ${dropbox_directory}" "false"
+        log_event "debug" "Last command output: ${output}" "false"
 
     fi
 
@@ -88,7 +89,7 @@ function dropbox_download() {
 
     tmp_file_name=$(extract_filename_from_path "${file_to_download}")
 
-    log_event "info" "Downloading file to Dropbox ..."
+    log_event "info" "Downloading file to Dropbox ..." "false"
 
     spinner_start "- Downloading file to Dropbox"
 
@@ -103,16 +104,16 @@ function dropbox_download() {
     if [[ ${dropbox_file_to_download_result} -eq 0 ]]; then
 
         display --indent 6 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
-        log_event "info" "${file_to_download} downloaded"
+        log_event "info" "${file_to_download} downloaded" "false"
 
     else
 
         display --indent 6 --text "- Downloading backup from dropbox" --result "ERROR" --color RED
         display --indent 8 --text "Please read log file" --tcolor RED
 
-        log_event "error" "Can't download file ${file_to_download} from dropbox."
-        log_event "error" "Last command executed: ${DROPBOX_UPLOADER} -q download ${file_to_download} ${local_directory}/${tmp_file_name}"
-        log_event "debug" "Last command output: ${output}"
+        log_event "error" "Can't download file ${file_to_download} from dropbox." "false"
+        log_event "error" "Last command executed: ${DROPBOX_UPLOADER} -q download ${file_to_download} ${local_directory}/${tmp_file_name}" "false"
+        log_event "debug" "Last command output: ${output}" "false"
 
         return 1
 
