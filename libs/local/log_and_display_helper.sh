@@ -62,8 +62,7 @@ function _spinner() {
       exit 1
     fi
 
-    #clear_line
-    clear_last_line
+    clear_line
 
     kill $3 >/dev/null 2>&1
 
@@ -119,9 +118,9 @@ function spinner_stop() {
 # Write on log
 #
 # Arguments:
-#   $1 = {log_type} (success, info, warning, error, critical)
-#   $2 = {message}
-#   $3 = {console_display} optional (true or false, default is false)
+#  $1 = {log_type} (success, info, warning, error, critical)
+#  $2 = {message}
+#  $3 = {console_display} optional (true or false, default is false)
 #
 # Outputs:
 #   nothing
@@ -194,10 +193,17 @@ function log_event() {
 
 }
 
-function log_break() {
+################################################################################
+# Break line on log
+#
+# Arguments:
+#  $1 = {console_display} optional (true or false, emtpy equals false)
+#
+# Outputs:
+#   nothing
+################################################################################
 
-  # Parameters
-  # $1 = {console_display} optional (true or false, emtpy equals false)
+function log_break() {
 
   local console_display=$1
 
@@ -215,10 +221,17 @@ function log_break() {
 
 }
 
-function log_section() {
+################################################################################
+# Log section
+#
+# Arguments:
+#  $1 = {message}
+#
+# Outputs:
+#   nothing
+################################################################################
 
-  # Parameters
-  # $1 = {message}
+function log_section() {
 
   local message=$1
 
@@ -238,10 +251,17 @@ function log_section() {
 
 }
 
-function log_subsection() {
+################################################################################
+# Log sub-section
+#
+# Arguments:
+#  $1 = {message}
+#
+# Outputs:
+#   nothing
+################################################################################
 
-  # Parameters
-  # $1 = {message}
+function log_subsection() {
 
   local message=$1
 
@@ -256,7 +276,7 @@ function log_subsection() {
     echo " > -------------------------------------------------" >>"${LOG}"
     echo " > [·] ${message}" >>"${LOG}"
     echo " > -------------------------------------------------" >>"${LOG}"
-
+    
   fi
 
 }
