@@ -735,13 +735,14 @@ function make_database_backup() {
 
       # Upload to Dropbox
       dropbox_upload "${TMP_DIR}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}${dropbox_path}"
+      
       dropbox_result=$?
       if [[ ${dropbox_result} -eq 0 ]]; then
 
         # Delete old backups
         dropbox_delete "${DROPBOX_FOLDER}${dropbox_path}/${old_bk_file}"
 
-        log_event "info" "Deleting temp database backup ${old_bk_file} from server"
+        log_event "info" "Deleting temp database backup ${old_bk_file} from server" "false"
         rm "${TMP_DIR}/${NOW}/${db_file}"
         rm "${TMP_DIR}/${NOW}/${bk_file}"
 
