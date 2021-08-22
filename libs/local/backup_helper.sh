@@ -690,6 +690,7 @@ function make_database_backup() {
 
     # Clear pipe output
     clear_last_line
+    clear_last_line
 
     # Test backup file
     log_event "info" "Testing backup file: ${db_file} ..." "false"

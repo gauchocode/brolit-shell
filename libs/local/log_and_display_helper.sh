@@ -62,7 +62,9 @@ function _spinner() {
       exit 1
     fi
 
-    clear_line
+    # Remove start spinner line
+    echo ""
+    clear_last_line
 
     kill $3 >/dev/null 2>&1
 
@@ -289,17 +291,7 @@ function clear_screen() {
 
 function clear_last_line() {
 
-  tput cuu 1
-  echo -e "${F_DEFAULT}                                                                                                         ${ENDCOLOR}" >&2
-  tput cuu 1
-
-}
-
-function clear_line() {
-
-  printf "\033[G" >&2
-  echo -e "${F_DEFAULT}                                                                                                         ${ENDCOLOR}" >&2
-  printf "\033[G" >&2
+  tput cuu1;tput el
 
 }
 

@@ -147,8 +147,8 @@ function netdata_uninstaller() {
     [Yy]*)
 
       # Log
-      clear_line
-      clear_line
+      clear_last_line
+      clear_last_line
       log_event "warning" "Uninstalling Netdata ..." "false"
 
       # Deleting mysql user
