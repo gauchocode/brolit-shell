@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://example.com
-# Version: 3.0.52
+# Version: 3.0.53
 ################################################################################
 
 function rclone_check_if_installed() {
