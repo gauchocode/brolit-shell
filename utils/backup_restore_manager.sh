@@ -201,6 +201,7 @@ function restore_manager_menu() {
 
     fi
     if [[ ${chosen_restore_options} == *"03"* ]]; then
+    
       restore_backup_from_file
 
     fi
