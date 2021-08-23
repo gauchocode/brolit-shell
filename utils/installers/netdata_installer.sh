@@ -125,12 +125,15 @@ function netdata_installer() {
   log_event "info" "Installing Netdata ..." "false"
   display --indent 6 --text "- Downloading and compiling netdata"
 
+  # Download and run
   bash <(curl -Ss https://my-netdata.io/kickstart.sh) all --dont-wait --disable-telemetry &>/dev/null
 
+  # Kill netdata and copy service
   killall netdata && cp system/netdata.service /etc/systemd/system/
 
-  log_event "info" "Netdata Installed" "false"
+  # Log
   clear_last_line
+  log_event "info" "Netdata installation finished" "false"
   display --indent 6 --text "- Downloading and compiling netdata" --result "DONE" --color GREEN
 
 }
@@ -206,35 +209,37 @@ function netdata_configuration() {
   mysql_user_create "netdata" "" "localhost"
   mysql_user_grant_privileges "netdata" "*" "localhost"
 
+  # Copy mysql config
   cat "${SFOLDER}/config/netdata/python.d/mysql.conf" >"/etc/netdata/python.d/mysql.conf"
 
   log_event "info" "MySQL config done!" "false"
   display --indent 6 --text "- MySQL configuration" --result "DONE" --color GREEN
 
-  # monit
+  # Monit
   cat "${SFOLDER}/config/netdata/python.d/monit.conf" >"/etc/netdata/python.d/monit.conf"
 
   log_event "info" "Monit config done!" "false"
   display --indent 6 --text "- Monit configuration" --result "DONE" --color GREEN
 
-  # web_log
+  # Web log
   cat "${SFOLDER}/config/netdata/python.d/web_log.conf" >"/etc/netdata/python.d/web_log.conf"
 
   log_event "info" "Nginx Web Log config done!" "false"
   display --indent 6 --text "- Nginx Web Log configuration" --result "DONE" --color GREEN
 
-  # health_alarm_notify
+  # Health alarm notify
   cat "${SFOLDER}/config/netdata/health_alarm_notify.conf" >"/etc/netdata/health_alarm_notify.conf"
   log_event "info" "Health alarm config done!" "false"
   display --indent 6 --text "- Health alarm configuration" --result "DONE" --color GREEN
 
-  # telegram
+  # Telegram
   _netdata_telegram_config
 
+  # Reload service
   systemctl daemon-reload && systemctl enable netdata && service netdata start
 
+  # Log
   log_event "info" "Netdata Configuration finished" "false"
-
   display --indent 6 --text "- Configuring netdata" --result "DONE" --color GREEN
 
 }
@@ -300,14 +305,18 @@ function netdata_installer_menu() {
 
         log_event "info" "Updating packages before installation ..." "false"
 
+        # Update
         apt-get --yes update -qq >/dev/null
 
         display --indent 6 --text "- Updating packages before installation" --result "DONE" --color GREEN
 
+        # Install required packages
         _netdata_required_packages
 
+        # Installe netdata
         netdata_installer
 
+        # If nginx is installed
         nginx_command="$(command -v nginx)"
         if [[ ! -x ${nginx_command} ]]; then
 
@@ -316,7 +325,7 @@ function netdata_installer_menu() {
 
           # Nginx Auth
           nginx_netdata_user="netdata"
-          nginx_netdata_pass="netdata"
+          nginx_netdata_pass=$(whiptail_imput "Netdata Installer" "Please, insert a password for netdata user:")
           nginx_generate_auth "${nginx_netdata_user}" "${nginx_netdata_pass}"
 
           config_field="SUPPORT.netdata[].config[].netdata_user"
