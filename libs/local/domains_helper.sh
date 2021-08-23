@@ -90,7 +90,7 @@ function get_root_domain() {
   local domain_extension
   local domain_no_ext
 
-  # Get Domain Ext
+  # Get domain extension
   domain_extension="$(get_domain_extension "${domain}")"
 
   # Check result
