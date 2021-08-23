@@ -791,6 +791,24 @@ function search() {
 
 ########################## UTILS FOR DEVOPS ###################################
 
+function brolit_ssh_keygen() {
+
+    local keydir
+
+    keydir=/root/pem
+    mkdir "${keydir}"
+
+    # Key generation
+    ssh-keygen -b 2048 -f identity -t rsa -f "${keydir}"
+
+    # Copy credentials
+    cat ${keydir}/identity.pub >>~/.ssh/authorized_keys
+
+    # Show identity content
+    cat ${keydir}/identity
+
+}
+
 function brolit_shell_config() {
 
     # Return JSON part
