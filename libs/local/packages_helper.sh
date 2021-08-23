@@ -393,7 +393,8 @@ function timezone_configuration() {
   clear_last_line
   clear_last_line
   clear_last_line
-  display --indent 6 --text "- Time Zone configuration" --result "DONE" --color GREEN
+  clear_last_line
+  display --indent 6 --text "- Timezone configuration" --result "DONE" --color GREEN
 
   log_break "false"
 

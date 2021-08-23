@@ -127,7 +127,11 @@ function mail_utils_installer() {
 
   pear channel-update pear.php.net
 
-  pear -q install mail mail_mime net_smtp
+  clear_last_line
+  clear_last_line
+
+  # Install
+  pear -q install mail mail_mime net_smtp >/dev/null
 
   # Log
   clear_last_line
