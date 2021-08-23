@@ -429,8 +429,6 @@ function script_init() {
   check_script_configuration
 
   # LOCAL IP (if server has configured a floating ip, it will return this)
-  #NETWORK_INTERFACE="$(ip link show | grep '2: ' | cut -d ':' -f2)"
-  #NETWORK_INTERFACE="$(string_remove_spaces "${NETWORK_INTERFACE}")"
   LOCAL_IP="$(/sbin/ifconfig eth0 | grep -w 'inet ' | awk '{print $2}')" # Could be a floating ip
 
   # PUBLIC IP (with https://www.ipify.org)

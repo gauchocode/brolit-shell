@@ -60,6 +60,9 @@ function server_setup() {
 
     done
 
+    # Install required packages
+    packages_check_required
+
     # Script config
     script_configuration_wizard "initial"
 
