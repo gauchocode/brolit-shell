@@ -189,6 +189,9 @@ function project_manager_menu_new_project_type_utils() {
         # Aks project domain
         project_domain="$(ask_project_domain "${filename}")"
 
+        # Extract root domain
+        root_domain="$(get_root_domain "${project_domain}")"
+
         # Aks project type
         project_type="$(ask_project_type)"
 
