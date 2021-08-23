@@ -61,14 +61,14 @@ function restore_backup_from_file() {
       # Directory_broser returns: " $filepath"/"$filename
       if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
 
-        log_event "info" "Operation cancelled!"
+        log_event "info" "Operation cancelled!" "false"
 
         # Return
         #return 1
 
       else
 
-        log_event "info" "File to restore: ${filename}"
+        log_event "info" "File to restore: ${filename}" "false"
         #restore_site_files
 
         # TODO: i need to do a refactor of restore_site_files to accept
@@ -94,14 +94,17 @@ function restore_backup_from_file() {
       # Directory_broser returns: " $filepath"/"$filename
       if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
 
-        log_event "info" "Operation cancelled!"
+        log_event "info" "Operation cancelled!" "false"
 
         # Return
         #return 1
 
       else
 
-        log_event "info" "File to restore: ${filename}"
+        log_event "info" "File to restore: ${filepath}/${filename}" "false"
+
+        # Copy to tmp dir
+        cp "${filepath}/${filename}" "${TMP_DIR}/backups/"
 
         project_name="$(ask_project_name "")"
         project_state="$(ask_project_state "")"
@@ -164,7 +167,7 @@ function restore_database_backup() {
 
   #$1 = ${project_name}
   #$2 = ${project_state}
-  #$3 = ${project_backup}
+  #$3 = ${project_backup} - The backup file must be in ${TMP_DIR}/backups/
 
   local project_name=$1
   local project_state=$2
