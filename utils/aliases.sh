@@ -796,13 +796,21 @@ function brolit_ssh_keygen() {
     local keydir
 
     keydir=/root/pem
-    mkdir "${keydir}"
 
-    # Key generation
-    ssh-keygen -b 2048 -f identity -t rsa -f "${keydir}/identity"
+    if [[ -f "${keydir}/identity" ]]; then
 
-    # Copy credentials
-    cat ${keydir}/identity.pub >>~/.ssh/authorized_keys
+        echo "A sshkey already exists, showing the content:"
+
+    else
+        mkdir "${keydir}"
+
+        # Key generation
+        ssh-keygen -b 2048 -f identity -t rsa -f "${keydir}/identity"
+
+        # Copy credentials
+        cat ${keydir}/identity.pub >>~/.ssh/authorized_keys
+
+    fi
 
     # Show identity content
     cat ${keydir}/identity
