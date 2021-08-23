@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.52
+# Version: 3.0.53
 ################################################################################
 
 source ~/.brolit-shell.conf
@@ -31,8 +31,8 @@ if [[ ${DROPBOX_ENABLE} == "true" && -f ${DPU_CONFIG_FILE} ]]; then
 fi
 
 # Version
-SCRIPT_VERSION="3.0.52"
-ALIASES_VERSION="3.0.52-058"
+SCRIPT_VERSION="3.0.53"
+ALIASES_VERSION="3.0.53-058"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -799,7 +799,7 @@ function brolit_ssh_keygen() {
     mkdir "${keydir}"
 
     # Key generation
-    ssh-keygen -b 2048 -f identity -t rsa -f "${keydir}"
+    ssh-keygen -b 2048 -f identity -t rsa -f "${keydir}/identity"
 
     # Copy credentials
     cat ${keydir}/identity.pub >>~/.ssh/authorized_keys
