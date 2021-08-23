@@ -941,6 +941,8 @@ function project_delete_database() {
       [Nn]*)
 
         # Log
+        clear_last_line
+        clear_last_line
         log_event "warning" "Aborting MySQL user deletion ..." "false"
         display --indent 6 --text "- Deleting MySQL user" --result "SKIPPED" --color YELLOW
 
@@ -957,7 +959,6 @@ function project_delete_database() {
   else
 
     # Return
-    echo "error"
     return 1
 
   fi
