@@ -463,9 +463,28 @@ function certbot_certificate_delete() {
 
     certbot --nginx delete --cert-name "${domains}"
 
-    # Log
-    log_event "debug" "Running: certbot delete --cert-name ${domains}" "false"
-    display --indent 6 --text "- Deleting certificate for ${domains}" --result "DONE" --color GREEN
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+      # Log
+      clear_last_line
+      clear_last_line
+      clear_last_line
+      clear_last_line
+      clear_last_line
+      log_event "debug" "Running: certbot delete --cert-name ${domains}" "false"
+      display --indent 6 --text "- Deleting certificate for ${domains}" --result "DONE" --color GREEN
+
+    else
+
+      # Log
+      log_event "error" "Running: certbot delete --cert-name ${domains}" "false"
+      display --indent 6 --text "- Deleting certificate for ${domains}" --result "FAIL" --color RED
+      display --indent 8 --text "Please read the log file" --tcolor RED
+
+      return 1
+
+    fi
 
   fi
 
