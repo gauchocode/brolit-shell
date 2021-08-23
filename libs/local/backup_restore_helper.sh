@@ -52,7 +52,7 @@ function restore_backup_from_file() {
     if [[ ${chosen_restore_type} == *"01"* ]]; then
 
       # RESTORE FILES
-      log_subsection "Restore from file"
+      log_subsection "Restore files from file"
 
       # Folder where sites are hosted: $SITES
       menu_title="SELECT BACKUP FILE TO RESTORE"
@@ -86,6 +86,7 @@ function restore_backup_from_file() {
     if [[ ${chosen_restore_type} == *"02"* ]]; then
 
       #RESTORE DATABASE
+      log_subsection "Restore database from file"
 
       # Folder where sites are hosted: $SITES
       menu_title="SELECT BACKUP FILE TO RESTORE"
@@ -104,7 +105,7 @@ function restore_backup_from_file() {
         log_event "info" "File to restore: ${filepath}/${filename}" "false"
 
         # Copy to tmp dir
-        cp "${filepath}/${filename}" "${TMP_DIR}/backups/"
+        cp "${filepath}/${filename}" "${TMP_DIR}"
 
         project_name="$(ask_project_name "")"
         project_state="$(ask_project_state "")"
@@ -167,7 +168,7 @@ function restore_database_backup() {
 
   #$1 = ${project_name}
   #$2 = ${project_state}
-  #$3 = ${project_backup} - The backup file must be in ${TMP_DIR}/backups/
+  #$3 = ${project_backup} - The backup file must be in ${TMP_DIR}
 
   local project_name=$1
   local project_state=$2
@@ -213,8 +214,8 @@ function restore_database_backup() {
     rm --force "${project_backup}"
 
     # Log
-    display --indent 6 --text "- Cleanning temp files" --result "DONE" --color GREEN
     log_event "info" "Temp files cleanned" "false"
+    display --indent 6 --text "- Cleanning temp files" --result "DONE" --color GREEN
 
     return 0
 
