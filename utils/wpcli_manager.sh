@@ -12,7 +12,7 @@ function wpcli_manager() {
 
   local wpcli_installed
   local wp_site
-  local chosen_wp_path
+  #local chosen_wp_path
 
   # Directory Browser
   startdir="${SITES}"
