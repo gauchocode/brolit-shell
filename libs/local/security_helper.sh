@@ -88,6 +88,8 @@ function security_clamav_scan() {
 #   Scan result.
 ################################################################################
 
+# IMPORTANT: Refactor before use this function, too many false positives
+
 function security_custom_scan() {
 
   local directory=$1
