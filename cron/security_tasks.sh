@@ -36,14 +36,15 @@ if [[ ${clamscan_result} == "true" ]]; then
 
 fi
 
+## Commented this, too many false positives
+
 # Custom Scan
-custom_scan_result="$(security_custom_scan "${SITES}")"
-
-if [[ ${custom_scan_result} != "" ]]; then
-
-    send_notification "⚠️ ${VPSNAME}" "Custom scan result: ${custom_scan_result}" ""
-
-fi
+#custom_scan_result="$(security_custom_scan "${SITES}")"
+#if [[ ${custom_scan_result} != "" ]]; then
+#
+#    send_notification "⚠️ ${VPSNAME}" "Custom scan result: ${custom_scan_result}" ""
+#
+#fi
 
 # Script cleanup
 cleanup

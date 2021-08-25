@@ -451,13 +451,13 @@ function _settings_config_notifications() {
                 if [[ -z ${MAILA} ]]; then
 
                     # Setting option on script config file
+
+                    ## old config
                     MAIL_NOTIF="true"
-
                     echo "MAIL_NOTIF=${MAIL_NOTIF}" >>/root/.brolit-shell.conf
-
                     echo "MAILA=${MAILA}" >>/root/.brolit-shell.conf
 
-                    # new config
+                    ## new config
                     config_field="NOTIFICATIONS.email[].status"
                     config_value="enable"
                     json_write_field "${config_file}" "${config_field}" "${config_value}"
@@ -516,6 +516,15 @@ function script_configuration_wizard() {
     # Important: Need to be runned only after load config files.
 
     local config_mode=$1
+
+    # Declare globals
+    declare -g SMTP_SERVER
+    declare -g SMTP_PORT
+    declare -g SMTP_TLS
+    declare -g SMTP_U
+    declare -g SMTP_P
+    declare -g MAILA
+    declare -g SITES
 
     if [[ ${config_mode} == "reconfigure" ]]; then
 
