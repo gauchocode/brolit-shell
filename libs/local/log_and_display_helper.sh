@@ -191,7 +191,7 @@ function log_event() {
     ;;
 
   *)
-    echo " > ${message}" >>"${LOG}"
+    echo "$(_timestamp)  > ${message}" >>"${LOG}"
     if [[ ${console_display} == "true" ]]; then
       echo -e "${CYAN}${B_DEFAULT} > ${message}${ENDCOLOR}" >&2
     fi
