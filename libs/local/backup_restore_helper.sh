@@ -36,7 +36,7 @@ function _make_temp_files_backup() {
 #################################################################################
 #
 
-function restore_backup_from_file() {
+function restore_backup_from_local_file() {
 
   local -n restore_type # whiptail array options
   local chosen_restore_type
@@ -45,14 +45,14 @@ function restore_backup_from_file() {
     "01)" "RESTORE FILES"
     "02)" "RESTORE DATABASE"
   )
-  chosen_restore_type=$(whiptail --title "RESTORE TYPE" --menu " " 20 78 10 "${restore_type[@]}" 3>&1 1>&2 2>&3)
+  chosen_restore_type="$(whiptail --title "RESTORE FROM LOCAL" --menu " " 20 78 10 "${restore_type[@]}" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_restore_type} == *"01"* ]]; then
 
       # RESTORE FILES
-      log_subsection "Restore files from file"
+      log_subsection "Restore files from local"
 
       # Folder where sites are hosted: $SITES
       menu_title="SELECT BACKUP FILE TO RESTORE"
@@ -69,15 +69,33 @@ function restore_backup_from_file() {
       else
 
         log_event "info" "File to restore: ${filename}" "false"
-        #restore_site_files
+
+        # Check if file is compressed
+        is_compressed="$(file ${filename} | grep "compressed")"
+
+        if [[ ${is_compressed} != "" ]]; then
+
+          # TODO: make a function with:
+          pv --width 70 "${chosen_backup_to_restore}" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
+
+          # TODO: search for .sql or sql.gz files
+
+          # We don't have a domain yet so let "restore_site_files" ask
+          restore_site_files ""
 
         # TODO: i need to do a refactor of restore_site_files to accept
         # domain, path_to_restore, backup_file
 
         # TODO: restore_type_selection_from_dropbox needs a refactor too
 
-        # TODO: make a function with:
-        # pv --width 70 "${chosen_backup_to_restore}" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
+        else
+
+          # Log
+          log_event "error" "File selected is not a backup file!" "false"
+          display --indent 6 --text "- Backup selection" --result "FAIL" --color RED
+          display --indent 8 --text "File selected is not a backup file!"
+
+        fi
 
       fi
 
@@ -197,7 +215,7 @@ function restore_database_backup() {
       mkdir "${TMP_DIR}/backups"
       log_event "info" "Temp files directory created: ${TMP_DIR}/backups" "false"
     fi
-    
+
     # Make backup of actual database
     log_event "info" "MySQL database ${db_name} already exists" "false"
     mysql_database_export "${db_name}" "${TMP_DIR}/backups/${db_name}_bk_before_restore.sql"
@@ -266,7 +284,7 @@ function restore_config_files_from_dropbox() {
     mv "${chosen_config_bk}" "${chosen_config_type}"
     cd "${chosen_config_type}"
 
-    log_event "info" "Uncompressing ${chosen_config_bk} ..."
+    log_event "info" "Uncompressing ${chosen_config_bk} ..." "false"
 
     pv --width 70 "${chosen_config_bk}" | tar xp -C "${SFOLDER}/tmp/${chosen_config_type}" --use-compress-program=lbzip2
 

@@ -191,7 +191,7 @@ function log_event() {
     ;;
 
   *)
-    echo "$(_timestamp)  > ${message}" >>"${LOG}"
+    echo "$(_timestamp) > ${message}" >>"${LOG}"
     if [[ ${console_display} == "true" ]]; then
       echo -e "${CYAN}${B_DEFAULT} > ${message}${ENDCOLOR}" >&2
     fi
@@ -224,7 +224,7 @@ function log_break() {
 
   fi
 
-  log_break=" > -------------------------------------------------"
+  log_break="$(_timestamp) > -------------------------------------------------"
   echo "${log_break}" >>"${LOG}"
 
 }
@@ -251,9 +251,9 @@ function log_section() {
     echo "----------------------------------------------" >&2
 
     # Log file
-    echo " > -------------------------------------------------" >>"${LOG}"
-    echo " > [+] Performing Action: ${message}" >>"${LOG}"
-    echo " > -------------------------------------------------" >>"${LOG}"
+    echo "$(_timestamp) > -------------------------------------------------" >>"${LOG}"
+    echo "$(_timestamp) > [+] Performing Action: ${message}" >>"${LOG}"
+    echo "$(_timestamp) > -------------------------------------------------" >>"${LOG}"
 
   fi
 
@@ -281,9 +281,9 @@ function log_subsection() {
     echo "    ------------------------------------------" >&2
    
     # Log file
-    echo " > -------------------------------------------------" >>"${LOG}"
-    echo " > [·] ${message}" >>"${LOG}"
-    echo " > -------------------------------------------------" >>"${LOG}"
+    echo "$(_timestamp) > -------------------------------------------------" >>"${LOG}"
+    echo "$(_timestamp) > [·] ${message}" >>"${LOG}"
+    echo "$(_timestamp) > -------------------------------------------------" >>"${LOG}"
     
   fi
 

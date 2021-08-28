@@ -3,12 +3,24 @@
 # Author: BROOBE - A Software Development Agency - https://broobe.com
 # Version: 3.0.53
 #############################################################################
+#
+# SFTP Local Helper: Local sftp configuration functions
+#
+################################################################################
+
+################################################################################
+# Private: add folder permission
+#
+# Arguments:
+#  $1 = username
+#  $2 = dir_path
+#  $3 = folder
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
 
 function _sftp_add_folder_permission() {
-
-    # $1 = username
-    # $2 = dir_path
-    # $3 = folder
 
     local username=$1
     local dir_path=$2
@@ -19,30 +31,30 @@ function _sftp_add_folder_permission() {
 
     # Log
     display --indent 6 --text "- Creating user subfolder" --result "DONE" --color GREEN
-    log_event "info" "Creating user subfolder: /home/${username}/${folder}"
+    log_event "info" "Creating user subfolder: /home/${username}/${folder}" "false"
 
     # Create project subfolder
     mkdir "${dir_path}/${folder}"
-    log_event "info" "Creating subfolder ${dir_path}/${folder}"
+    log_event "info" "Creating subfolder ${dir_path}/${folder}" "false"
 
     # Mounting
     mount --bind "${dir_path}${folder}" "/home/${username}/${folder}"
 
     # Log
     display --indent 6 --text "- Mounting subfolder" --result "DONE" --color GREEN
-    log_event "info" "Mounting subfolder ${dir_path}${folder} on /home/${username}/${folder}"
-    log_event "debug" "Running: mount --bind ${dir_path}${folder} /home/${username}/${folder}"
+    log_event "info" "Mounting subfolder ${dir_path}${folder} on /home/${username}/${folder}" "false"
+    log_event "debug" "Running: mount --bind ${dir_path}${folder} /home/${username}/${folder}" "false"
 
     # Mount permanent
     echo "${dir_path}/${folder} /home/${username}/${folder} none bind   0      0" >>"/etc/fstab"
 
     # Log
     display --indent 6 --text "- Writing fstab to make it permanent" --result "DONE" --color GREEN
-    log_event "debug" "Running: echo ${dir_path}${folder} /home/${username}/${folder} none bind   0      0  >>/etc/fstab"
+    log_event "debug" "Running: echo ${dir_path}${folder} /home/${username}/${folder} none bind   0      0  >>/etc/fstab" "false"
 
     # The command below will set the document root and all subfolders to 775
     find "${dir_path}/${folder}" -type d -exec chmod g+s {} \;
-    log_event "debug" "Running: find ${dir_path}${folder} -type d -exec chmod g+s {} \;"
+    log_event "debug" "Running: find ${dir_path}${folder} -type d -exec chmod g+s {} \;" "false"
 
     # We want any new files created in the document root from now on to inherit the group name
     chmod g+s "${dir_path}${folder}"
@@ -52,9 +64,17 @@ function _sftp_add_folder_permission() {
 
 }
 
-function _sftp_test_conection() {
+################################################################################
+# Private: test sftp connection
+#
+# Arguments:
+#  $1 = username
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
 
-    # $1 = username
+function _sftp_test_connection() {
 
     local username=$1
 
@@ -62,14 +82,20 @@ function _sftp_test_conection() {
 
 }
 
-#############################################################################
+################################################################################
+# Create sftp user
+#
+# Arguments:
+#  $1 = username
+#  $2 = groupname
+#  $3 = shell_access (true,false)
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
 
 #without-shell-access
 function sftp_create_user() {
-
-    # $1 = username
-    # $2 = groupname
-    # $3 = shell_access (true,false)
 
     local username=$1
     local groupname=$2
@@ -140,27 +166,49 @@ function sftp_create_user() {
 
 }
 
+################################################################################
+# Create sftp group
+#
+# Arguments:
+#  $1 = groupname #sftp_users
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
+
 function sftp_create_group() {
 
-    # $1 = groupname #sftp_users
     local groupname=$1
 
     groupadd "${groupname}"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
+
         # Log
         display --indent 6 --text "- Creating system group" --result "DONE" --color GREEN
-        log_event "info" "New group created: ${groupname}"
+        log_event "info" "New group created: ${groupname}" "false"
+
     else
+
         return 1
+
     fi
 
 }
 
+################################################################################
+# Delete sftp user
+#
+# Arguments:
+#  $1 = username
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
+
 function sftp_delete_user() {
 
-    # $1 = username
     local username=$1
 
     whiptail_message_with_skip_option "SFTP USER DELETE" "Are you sure you want to delete the user '${username}'? It will remove all user files."
@@ -172,11 +220,15 @@ function sftp_delete_user() {
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
+
             # Log
             display --indent 6 --text "- Deleting system user" --result "DONE" --color GREEN
-            log_event "info" "System user deleted: ${username}"
+            log_event "info" "System user deleted: ${username}" "false"
+
         else
+
             return 1
+
         fi
 
     else
