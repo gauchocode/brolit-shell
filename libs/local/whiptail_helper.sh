@@ -90,7 +90,7 @@ function whiptail_imput() {
 
     local whip_return
 
-    whip_return="$(whiptail --title "${whip_title}" --inputbox "${whip_title}" 10 60 3>&1 1>&2 2>&3)"
+    whip_return="$(whiptail --title "${whip_title}" --inputbox "${whip_message}" 10 60 3>&1 1>&2 2>&3)"
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
