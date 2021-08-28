@@ -1152,6 +1152,11 @@ function extract() {
   local directory_to_extract=$2
   local compress_type=$3
 
+  # Get filename and file extension
+  filename=$(basename -- "${file_path}")
+  #file_extension="${filename##*.}"
+  filename="${filename%.*}"
+
   # Log
   log_event "info" "Extracting compressed file: ${file_path}" "false"
   display --indent 2 --text "- Extracting compressed file"
@@ -1176,8 +1181,9 @@ function extract() {
       ;;
 
     *.bz2)
-      #bunzip2 "${file_path}" -C "${directory_to_extract}"
-      pv --width 70 "${file_path}" | bunzip2 "${directory_to_extract}"
+      #bunzip2 "${file_path}" "${directory_to_extract}"
+      #bzip2 -dc /home/chris/test.txt.bz2 >/tmp/test.txt
+      pv --width 70 "${file_path}" | bzip2 -dc "${directory_to_extract}/${filename}"
       ;;
 
     *.rar)
