@@ -1161,7 +1161,7 @@ function extract() {
     case "${file_path}" in
 
     *.tar.bz2)
-      if [ -z "${compress_type}" ]; then
+      if [[ -n "${compress_type}" ]]; then
         #tar xp "${file_path}" -C "${directory_to_extract}" --use-compress-program="${compress_type}"
         pv --width 70 "${file_path}" | tar xp -C "${directory_to_extract}" --use-compress-program="${compress_type}"
       else
