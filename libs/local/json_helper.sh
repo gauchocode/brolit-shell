@@ -12,11 +12,11 @@
 # Read json field from file
 #
 # Arguments:
-#   $1= ${json_file}
-#   $2= ${json_field}
+#  $1= ${json_file}
+#  $2= ${json_field}
 #
 # Outputs:
-#   ${json_field_value}
+#  ${json_field_value}
 ################################################################################
 
 function json_read_field() {
@@ -37,12 +37,12 @@ function json_read_field() {
 # Write json field value
 #
 # Arguments:
-#   $1= ${json_file}
-#   $2= ${json_field}
-#   $3= ${json_field_value}
+#  $1= ${json_file}
+#  $2= ${json_field}
+#  $3= ${json_field_value}
 #
 # Outputs:
-#   ${json_field_value}
+#  ${json_field_value}
 ################################################################################
 
 function json_write_field() {
@@ -73,11 +73,11 @@ function json_write_field() {
 # Transfor string to json
 #
 # Arguments:
-#   $1= ${mode} - Options: key-value, value-list
-#   $@
+#  $1= ${mode} - Options: key-value, value-list
+#  $@
 #
 # Outputs:
-#   ${json_string}
+#  ${json_string}
 ################################################################################
 
 function jsonify_output() {
@@ -149,10 +149,10 @@ function jsonify_output() {
 # Load global vars from json config file
 #
 # Arguments:
-#   $1= ${json_file} - Options: key-value, value-list
+#  $1= ${json_file} - Options: key-value, value-list
 #
 # Outputs:
-#   ${json_field_value}
+#  ${json_field_value}
 ################################################################################
 
 function json_to_vars() {
