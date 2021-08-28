@@ -16,7 +16,7 @@
 #  $2 = {whip_message}
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function whiptail_message() {
@@ -44,14 +44,10 @@ function whiptail_message() {
 #  $2 = {whip_message}
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function whiptail_message_with_skip_option() {
-
-    # Parameters
-    # $1 = {whip_title}
-    # $2 = {whip_message}
 
     local whip_title=$1
     local whip_message=$2
@@ -76,14 +72,10 @@ function whiptail_message_with_skip_option() {
 #  $2 = {whip_message}
 #
 # Outputs:
-#   ${whip_return} if ok, 1 on error.
+#  ${whip_return} if ok, 1 on error.
 ################################################################################
 
 function whiptail_imput() {
-
-    # Parameters
-    # $1 = {whip_title}
-    # $2 = {whip_message}
 
     local whip_title=$1
     local whip_message=$2
