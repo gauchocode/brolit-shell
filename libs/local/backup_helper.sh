@@ -486,6 +486,7 @@ function make_files_backup() {
 
   # Clear pipe output
   clear_last_line
+  clear_last_line
 
   lbzip2_result=$?
   if [[ "${lbzip2_result}" -eq 0 ]]; then

@@ -8,18 +8,24 @@
 #
 ################################################################################
 
+function _timestamp() {
+
+ date +"%Y-%m-%d %T"
+
+}
+
 ################################################################################
 # Private function to make spinner works
 #
 # Arguments:
-#   $1 start/stop
+#  $1 start/stop
 #
-#   on start: $2 display message
-#   on stop : $2 process exit status
+#  on start: $2 display message
+#  on stop : $2 process exit status
 #           $3 spinner function pid (supplied from spinner_stop)
 #
 # Outputs:
-#   nothing
+#  nothing
 ################################################################################
 
 function _spinner() {
@@ -103,10 +109,10 @@ function spinner_start() {
 # Stop spinner
 #
 # Arguments:
-#   $1 = command exit status
+#  $1 = command exit status
 #
 # Outputs:
-#   nothing
+#  nothing
 ################################################################################
 
 function spinner_stop() {
@@ -125,7 +131,7 @@ function spinner_stop() {
 #  $3 = {console_display} optional (true or false, default is false)
 #
 # Outputs:
-#   nothing
+#  nothing
 ################################################################################
 
 function log_event() {
@@ -139,35 +145,35 @@ function log_event() {
   case ${log_type} in
 
   success)
-    echo " > SUCCESS: ${message}" >>"${LOG}"
+    echo "$(_timestamp) > SUCCESS: ${message}" >>"${LOG}"
     if [[ ${console_display} == "true" ]]; then
       echo -e "${B_GREEN} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   info)
-    echo " > INFO: ${message}" >>"${LOG}"
+    echo "$(_timestamp) > INFO: ${message}" >>"${LOG}"
     if [[ ${console_display} == "true" ]]; then
       echo -e "${B_CYAN} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   warning)
-    echo " > WARNING: ${message}" >>"${LOG}"
+    echo "$(_timestamp) > WARNING: ${message}" >>"${LOG}"
     if [[ ${console_display} == "true" ]]; then
       echo -e "${YELLOW}${ITALIC} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   error)
-    echo " > ERROR: ${message}" >>"${LOG}"
+    echo "$(_timestamp) > ERROR: ${message}" >>"${LOG}"
     if [[ ${console_display} == "true" ]]; then
       echo -e "${RED} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   critical)
-    echo " > CRITICAL: ${message}" >>"${LOG}"
+    echo "$(_timestamp) > CRITICAL: ${message}" >>"${LOG}"
     if [[ ${console_display} == "true" ]]; then
       echo -e "${B_RED} > ${message}${ENDCOLOR}" >&2
     fi
@@ -176,7 +182,7 @@ function log_event() {
   debug)
     if [[ "${DEBUG}" -eq 1 ]]; then
 
-      echo " > DEBUG: ${message}" >>"${LOG}"
+      echo "$(_timestamp) > DEBUG: ${message}" >>"${LOG}"
       if [[ ${console_display} == "true" ]]; then
         echo -e "${B_MAGENTA} > ${message}${ENDCOLOR}" >&2
       fi

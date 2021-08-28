@@ -409,6 +409,7 @@ function wpcli_core_update() {
     # $1 = ${wp_site}
 
     local wp_site=$1
+    
     local verify_core_update
 
     log_section "WordPress Updater"
