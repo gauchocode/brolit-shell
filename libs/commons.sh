@@ -1136,8 +1136,8 @@ function extract_filename_from_path() {
 # Extract compressed files
 #
 # Arguments:
-#   $1 = ${file} - File to uncompress or extract
-#   $2 = ${directory} - Dir to uncompress file
+#   $1 = ${file_path} - File to uncompress or extract
+#   $2 = ${directory_to_extract} - Dir to uncompress file
 #   $3 = ${compress_type} - Optional: compress-program (ex: lbzip2)
 #
 # Outputs:
@@ -1148,89 +1148,87 @@ function extract_filename_from_path() {
 
 function extract() {
 
-  local file=$1
-  local directory=$2
+  local file_path=$1
+  local directory_to_extract=$2
   local compress_type=$3
 
   # Log
-  log_event "info" "Extracting compressed file: ${file}" "false"
+  log_event "info" "Extracting compressed file: ${file_path}" "false"
   display --indent 2 --text "- Extracting compressed file"
 
-  if [[ -f "${file}" ]]; then
+  if [[ -f "${file_path}" ]]; then
 
-    case "${file}" in
+    case "${file_path}" in
 
     *.tar.bz2)
       if [ -z "${compress_type}" ]; then
-        #tar xp "${file}" -C "${directory}" --use-compress-program="${compress_type}"
-        pv --width 70 "${directory}/${file}" | tar xp -C "${directory}" --use-compress-program="${compress_type}"
+        #tar xp "${file_path}" -C "${directory_to_extract}" --use-compress-program="${compress_type}"
+        pv --width 70 "${file_path}" | tar xp -C "${directory_to_extract}" --use-compress-program="${compress_type}"
       else
-        #tar xjf "${file}" -C "${directory}"
-        pv --width 70 "${directory}/${file}" | tar xp -C "${directory}"
+        #tar xjf "${file_path}" -C "${directory_to_extract}"
+        pv --width 70 "${file_path}" | tar xp -C "${directory_to_extract}"
       fi
       ;;
 
     *.tar.gz)
-      #tar -xzvf "${file}" -C "${directory}"
-      pv --width 70 "${directory}/${file}" | tar xzvf -C "${directory}"
+      #tar -xzvf "${file_path}" -C "${directory_to_extract}"
+      pv --width 70 "${file_path}" | tar xzvf -C "${directory_to_extract}"
       ;;
 
     *.bz2)
-      #bunzip2 "${file}" -C "${directory}"
-      pv --width 70 "${directory}/${file}" | bunzip2 -C "${directory}"
+      #bunzip2 "${file_path}" -C "${directory_to_extract}"
+      pv --width 70 "${file_path}" | bunzip2 -C "${directory_to_extract}"
       ;;
 
     *.rar)
-      #unrar x "${file}" "${directory}"
-      #pv --width 70 "${directory}/${file}" | unrar x "${directory}"
-      unrar x "${file}" "${directory}" | pv -l >/dev/null
+      #unrar x "${file_path}" "${directory_to_extract}"
+      unrar x "${file_path}" "${directory_to_extract}" | pv -l >/dev/null
       ;;
 
     *.gz)
-      #gunzip "${file}" -C "${directory}"
-      pv --width 70 "${directory}/${file}" | gunzip -C "${directory}"
+      #gunzip "${file_path}" -C "${directory_to_extract}"
+      pv --width 70 "${file_path}" | gunzip -C "${directory_to_extract}"
       ;;
 
     *.tar)
-      #tar xf "${file}" -C "${directory}"
-      pv --width 70 "${directory}/${file}" | tar xf -C "${directory}"
+      #tar xf "${file_path}" -C "${directory_to_extract}"
+      pv --width 70 "${file_path}" | tar xf -C "${directory_to_extract}"
       ;;
 
     *.tbz2)
-      #tar xjf "${file}" -C "${directory}"
-      pv --width 70 "${directory}/${file}" | tar xjf -C "${directory}"
+      #tar xjf "${file_path}" -C "${directory_to_extract}"
+      pv --width 70 "${file_path}" | tar xjf -C "${directory_to_extract}"
       ;;
 
     *.tgz)
-      #tar xzf "${file}" -C "${directory}"
-      pv --width 70 "${directory}/${file}" | tar xzf -C "${directory}"
+      #tar xzf "${file_path}" -C "${directory_to_extract}"
+      pv --width 70 "${file_path}" | tar xzf -C "${directory_to_extract}"
       ;;
 
     *.zip)
-      #unzip "${file}" "${directory}"
-      unzip -o "${file}" -d "${directory}" | pv -l >/dev/null
+      #unzip "${file_path}" "${directory}"
+      unzip -o "${file_path}" -d "${directory_to_extract}" | pv -l >/dev/null
       ;;
 
     *.Z)
-      #uncompress "${file}" "${directory}"
-      pv --width 70 "${directory}/${file}" | uncompress "${directory}"
+      #uncompress "${file_path}" "${directory}"
+      pv --width 70 "${file_path}" | uncompress "${directory_to_extract}"
       ;;
 
     *.7z)
-      #7z x "${file}" "${directory}"
-      #pv --width 70 "${directory}/${file}" | 7z x "${directory}"
-      7z x "${file}" "${directory}" | pv -l >/dev/null
+      #7z x "${file_path}" "${directory}"
+      7z x "${file_path}" "${directory_to_extract}" | pv -l >/dev/null
       ;;
 
     *.xz)
-      #tar xvf "${file}" -C "${directory}"
-      pv --width 70 "${directory}/${file}" | tar xvf -C "${directory}"
+      #tar xvf "${file_path}" -C "${directory}"
+      pv --width 70 "${file_path}" | tar xvf -C "${directory_to_extract}"
       ;;
 
     *)
-      log_event "error" "${file} cannot be extracted via extract()" "false"
+      log_event "error" "${file_path} cannot be extracted via extract()" "false"
       display --indent 2 --text "- Extracting compressed file" --result "FAIL" --color RED
-      display --indent 4 --text "${file} cannot be extracted" --tcolor RED
+      display --indent 4 --text "${file_path} cannot be extracted" --tcolor RED
       return 1
       ;;
 
@@ -1239,9 +1237,9 @@ function extract() {
   else
 
     # Log
-    log_event "error" "${file} is not a valid file" "false"
+    log_event "error" "${file_path} is not a valid file" "false"
     display --indent 2 --text "- Extracting compressed file" --result "FAIL" --color RED
-    display --indent 4 --text "${file} is not a valid file" --tcolor RED
+    display --indent 4 --text "${file_path} is not a valid file" --tcolor RED
     return 1
 
   fi
