@@ -102,11 +102,10 @@
         Important:https://www.electricmonk.nl/log/2015/07/13/ssh-chrootdirectory-sftponly-not-working-fixed/
 - [ ] Core: Add react-project support:
         https://www.digitalocean.com/community/tutorials/how-to-deploy-a-react-application-with-nginx-on-ubuntu-20-04
-- [ ] Moodle Support: https://websiteforstudents.com/how-to-install-moodle-on-ubuntu-20-04-18-04-with-nginx-and-lets-encrypt/
-      Moodle data must be on independent directory (need to implements backup/restore support too)
 
 ## For release 3.4
 
+- [ ] Configuration: Let configure all things via JSON files.
 - [ ] PHP: php_reconfigure refactor (replace strings instead of replace entired config files).
 - [ ] WordPress: Fallback for replace strings on wp database (if wp-cli fails, use old script version).
 - [ ] WordPress: WP Network support (nginx config, and wp-cli commands).
@@ -145,6 +144,8 @@
         https://help.ubuntu.com/lts/serverguide/automatic-updates.html
 - [ ] Installers: Mailcow installer and backup.
 - [ ] Include network (lan and internet) tests with iperf and speedtest-cli.
+- [ ] Moodle Support: https://websiteforstudents.com/how-to-install-moodle-on-ubuntu-20-04-18-04-with-nginx-and-lets-encrypt/
+      Moodle data must be on independent directory (need to implements backup/restore support too)
 
 ## For release 4.0
 
