@@ -75,8 +75,8 @@ function restore_backup_from_local_file() {
 
         if [[ ${is_compressed} != "" ]]; then
 
-          # TODO: make a function with:
-          pv --width 70 "${chosen_backup_to_restore}" | tar xp -C "${SFOLDER}/tmp/" --use-compress-program=lbzip2
+          # Decompress backup
+          extract "${chosen_backup_to_restore}" "${SFOLDER}/tmp/" "lbzip2"
 
           # TODO: search for .sql or sql.gz files
 
@@ -133,6 +133,83 @@ function restore_backup_from_local_file() {
       fi
 
     fi
+
+  fi
+
+}
+
+function restore_backup_from_ftp() {
+
+  whiptail_message_with_skip_option "RESTORE FROM FTP" "The script will prompt you for project details and the FTP credentials. Then it will download all files one by one. If a .sql or .sql.gz is present, it will ask you if you want to restore the database too."
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # RESTORE FILES
+    log_subsection "Restore files from ftp"
+
+    # Ask project state
+    project_state="$(ask_project_state "prod")"
+
+    # Ask project domain
+    project_domain="$(ask_project_domain "")"
+
+    # Ask project name
+    project_name="$(ask_project_name "")"
+
+    # FTP
+    ftp_domain="$(whiptail_imput "FTP SERVER IP/DOMAIN" "Please insert de FTP server IP/DOMAIN. Ex: ftp.domain.com")"
+    ftp_path="$(whiptail_imput "FTP SERVER PATH" "Please insert de FTP server path. Ex: /htdocs/website")"
+    ftp_user="$(whiptail_imput "FTP SERVER USER" "Please insert de FTP user.")"
+    ftp_pass="$(whiptail_imput "FTP SERVER PASS" "Please insert de FTP password.")"
+
+    ## Download files from ftp
+    ftp_download "${ftp_domain}" "${ftp_path}" "${ftp_user}" "${ftp_pass}" "${TMP_DIR}/${project_domain}"
+
+    # Search for .sql or sql.gz files
+    local find_result
+
+    # Find backups from downloaded ftp files
+    find_result="$({
+      find "${TMP_DIR}/${project_domain}" -name "*.sql"
+      find "${TMP_DIR}/${project_domain}" -name "*.sql.gz"
+    })"
+
+    if [[ ${find_result} != "" ]]; then
+
+      log_event "info" "Database backups found on downloaded files" "false"
+
+      array_to_checklist "${find_result}"
+
+      # Backup file selection
+      chosen_database_backup="$(whiptail --title "DATABASE TO RESTORE" --checklist "Select the database backup you want to restore." 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Restore database
+        restore_database_backup "${project_name}" "${project_state}" "${chosen_database_backup}"
+
+      else
+
+        log_event "info" "Database backup selection skipped" "false"
+        display --indent 6 --text "- Database backup selection" --result "SKIPPED" --color YELLOW
+
+      fi
+
+    fi
+
+    # find_result="$( { find "/root/brolit-shell" -name "*.zip" ; find "/root/brolit-shell" -name "*.pdf.bz2" ; } )" ; echo "${find_result}"
+
+    #restore_site_files "${project_domain}"
+
+    # Restore files
+    log_event "info" "Restoring backup files on ${folder_to_install} ..." "false"
+    display --indent 6 --text "- Restoring backup files"
+
+    mv "${TMP_DIR}/${project_domain}" "${SITES}"
+
+    display --indent 6 --text "- Restoring backup files" --result "DONE" --color GREEN
 
   fi
 
@@ -284,9 +361,8 @@ function restore_config_files_from_dropbox() {
     mv "${chosen_config_bk}" "${chosen_config_type}"
     cd "${chosen_config_type}"
 
-    log_event "info" "Uncompressing ${chosen_config_bk} ..." "false"
-
-    pv --width 70 "${chosen_config_bk}" | tar xp -C "${SFOLDER}/tmp/${chosen_config_type}" --use-compress-program=lbzip2
+    # Decompress
+    extract "${chosen_config_bk}" "${SFOLDER}/tmp/${chosen_config_type}" "lbzip2"
 
     if [[ "${chosen_config_bk}" == *"nginx"* ]]; then
 
@@ -615,15 +691,8 @@ function restore_type_selection_from_dropbox() {
           # Downloading Backup
           dropbox_download "${bk_to_dowload}" "${TMP_DIR}"
 
-          # Uncompressing
-          log_event "info" "Uncompressing ${chosen_backup_to_restore}" "false"
-          display --indent 2 --text "- Uncompressing backup"
-          pv --width 70 "${TMP_DIR}/${chosen_backup_to_restore}" | tar xp -C "${TMP_DIR}" --use-compress-program=lbzip2
-
-          # Log
-          clear_last_line
-          clear_last_line
-          display --indent 2 --text "- Uncompressing backup" --result "DONE" --color GREEN
+          # Decompress
+          extract "${TMP_DIR}/${chosen_backup_to_restore}" "${TMP_DIR}" "lbzip2"
 
           if [[ ${chosen_type} == *"${DBS_F}"* ]]; then
 
@@ -799,14 +868,8 @@ function restore_project() {
     bk_to_dowload="${chosen_server}/site/${chosen_project}/${chosen_backup_to_restore}"
     dropbox_download "${bk_to_dowload}" "${TMP_DIR}"
 
-    # Uncompress backup file
-    pv --width 70 "${TMP_DIR}/${chosen_backup_to_restore}" | ${TAR} xp -C "${TMP_DIR}" --use-compress-program=lbzip2
-
-    # Log
-    clear_last_line
-    display --indent 2 --text "- Uncompressing backup file" --result "DONE" --color GREEN
-    #log_event "debug" "Running: pv --width 70 ${TMP_DIR}/${chosen_backup_to_restore} | ${TAR} xp -C ${TMP_DIR} --use-compress-program=lbzip2"
-    log_event "info" "Backup file ${chosen_backup_to_restore} uncompressed" "false"
+    # Decompress
+    extract "${TMP_DIR}/${chosen_backup_to_restore}" "${TMP_DIR}" "lbzip2"
 
     # Project Type
     project_type=$(project_get_type "${TMP_DIR}/${chosen_project}")
@@ -902,15 +965,8 @@ function restore_project() {
 
     fi
 
-    # Uncompress backup file
-    log_event "info" "Uncompressing ${db_to_download}" "false"
-
-    pv --width 70 "${TMP_DIR}/${db_name}_database_${backup_date}.tar.bz2" | tar xp -C "${TMP_DIR}/" --use-compress-program=lbzip2
-
-    # Log
-    clear_last_line
-    clear_last_line
-    display --indent 6 --text "- Uncompressing backup file" --result "DONE" --color GREEN
+    # Decompress
+    extract "${TMP_DIR}/${db_name}_database_${backup_date}.tar.bz2" "${TMP_DIR}" "lbzip2"
 
     # Trying to extract project name from domain
     chosen_root_domain="$(get_root_domain "${chosen_domain}")"

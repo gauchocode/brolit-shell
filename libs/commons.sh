@@ -1182,8 +1182,7 @@ function extract() {
 
     *.bz2)
       #bunzip2 "${file_path}" "${directory_to_extract}"
-      #bzip2 -dc /home/chris/test.txt.bz2 >/tmp/test.txt
-      pv --width 70 "${file_path}" | bzip2 -dc "${directory_to_extract}/${filename}"
+      pv --width 70 "${file_path}" | bunzip2 >"${directory_to_extract}/${filename}"
       ;;
 
     *.rar)
@@ -1265,6 +1264,56 @@ function extract() {
 
   fi
 
+}
+
+function compress() {
+
+  local to_backup=$1    # could be a file or a directory. Ex: database.sql or foldername
+  local backup_base_dir=$2
+  local directory_output=$3
+  #local compress_type=$4
+
+  local backup_file
+
+  backup_file="${to_backup}.tar.bz2"
+
+  log_event "info" "Making a tar.bz2 file of ${to_backup} ..." "false"
+  display --indent 6 --text "- Compressing database backup"
+
+  # Examples
+  # TAR FILES
+  # (${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s "$(du -sb "${TMP_DIR}/${NOW}/${db_file}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${backup_file}")
+  # (${TAR} -cf - --directory="${MAILCOW_DIR}" "${MAILCOW_BACKUP_LOCATION}" | pv --width 70 -ns "$(du -sb "${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION}" | awk '{print $1}')" | lbzip2 >"${MAILCOW_TMP_BK}/${backup_file}")
+  # TAR DIRECTORY
+  # (${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv --width 70 --size "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${backup_file}") 2>&1
+
+  # TAR
+  (${TAR} -cf - --directory="${backup_base_dir}" "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | lbzip2 >"${directory_output}/${backup_file}")
+
+  # Clear pipe output
+  clear_last_line
+  clear_last_line
+
+  # Test backup file
+  log_event "info" "Testing backup file: ${filename} ..." "false"
+  display --indent 6 --text "- Testing backup file"
+
+  pv --width 70 "${TMP_DIR}/${NOW}/${backup_file}" | lbzip2 --test
+
+  # Clear pipe output
+  clear_last_line
+  clear_last_line
+
+  lbzip2_result=$?
+  if [[ ${lbzip2_result} -eq 0 ]]; then
+
+    return 0
+
+  else
+
+    return 1
+
+  fi
 }
 
 ################################################################################

@@ -69,7 +69,7 @@ function ask_project_name() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    log_event "debug" "Setting project_name: ${project_name}"
+    log_event "debug" "Setting project_name: ${project_name}" "false"
 
     # Return
     echo "${project_name}"
