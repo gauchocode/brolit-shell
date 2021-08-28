@@ -179,12 +179,13 @@ function restore_manager_menu() {
   log_event "info" "Selecting backup restore type ..." "false"
 
   restore_options=(
-    "01)" "RESTORE FROM DROPBOX"
-    "02)" "RESTORE FROM URL (BETA)"
-    "03)" "RESTORE FROM FILE (BETA)"
+    "01)" "FROM DROPBOX"
+    "02)" "FROM BACKUP LINK (BETA)"
+    "03)" "FROM LOCAL FILE (BETA)"
+    "04)" "FROM FTP (BETA)"
   )
 
-  chosen_restore_options="$(whiptail --title "RESTORE TYPE" --menu " " 20 78 10 "${restore_options[@]}" 3>&1 1>&2 2>&3)"
+  chosen_restore_options="$(whiptail --title "RESTORE BACKUP" --menu " " 20 78 10 "${restore_options[@]}" 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -201,8 +202,13 @@ function restore_manager_menu() {
 
     fi
     if [[ ${chosen_restore_options} == *"03"* ]]; then
-    
-      restore_backup_from_file
+
+      restore_backup_from_local_file
+
+    fi
+    if [[ ${chosen_restore_options} == *"04"* ]]; then
+
+      restore_backup_from_ftp
 
     fi
 

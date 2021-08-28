@@ -4,25 +4,49 @@
 # Version: 3.0.53
 ################################################################################
 #
-# Nginx best practices
-# https://github.com/audioscavenger/nginx-server-config
-# https://github.com/A5hleyRich/wordpress-nginx
-# https://github.com/pothi/wordpress-nginx
-# https://www.digitalocean.com/community/questions/how-can-i-improve-the-ttfb
-# https://haydenjames.io/nginx-tuning-tips-tls-ssl-https-ttfb-latency/
+# Netdata Installer
 #
+#   Refs:
+#       https://github.com/audioscavenger/nginx-server-config
+#       https://github.com/A5hleyRich/wordpress-nginx
+#       https://github.com/pothi/wordpress-nginx
+#       https://www.digitalocean.com/community/questions/how-can-i-improve-the-ttfb
+#       https://haydenjames.io/nginx-tuning-tips-tls-ssl-https-ttfb-latency/
+#
+################################################################################
+
+################################################################################
+# Nginx default installer
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 if ok, 1 on error.
 ################################################################################
 
 function nginx_default_installer() {
 
     display --indent 6 --text "- Nginx default installation"
 
+    # Install
     apt-get --yes install nginx -qq >/dev/null
 
+    # Log
     clear_last_line
     display --indent 6 --text "- Nginx default installation" --result "DONE" --color GREEN
 
 }
+
+################################################################################
+# Nginx custom installer (adding ppa)
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
 
 function nginx_custom_installer() {
 
@@ -32,42 +56,82 @@ function nginx_custom_installer() {
 
     apt-get update -qq >/dev/null
 
+    # Install
     apt-get --yes install nginx -qq >/dev/null
 
+    # Log
     clear_last_line
     display --indent 6 --text "- Nginx custom installation" --result "DONE" --color GREEN
 
 }
 
+################################################################################
+# Nginx webp installer
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
+
 function nginx_webp_installer() {
 
     display --indent 6 --text "- Installing imagemagick and webp package"
 
+    # Install
     apt-get --yes install imagemagick webp -qq >/dev/null
 
+    # Log
     clear_last_line
     display --indent 6 --text "- Installing imagemagick and webp package" --result "DONE" --color GREEN
 
 }
 
+################################################################################
+# Nginx purge installation
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
+
 function nginx_purge_installation() {
 
     display --indent 6 --text "- Purgin nginx from system"
 
+    # Purge
     apt-get --yes purge nginx -qq >/dev/null
 
+    # Log
     clear_last_line
     display --indent 6 --text "- Purgin nginx from system" --result "DONE" --color GREEN
 
 }
 
+################################################################################
+# Check if nginx is installed
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
+
 function nginx_check_if_installed() {
+
+    local nginx_installed
 
     nginx_installed="true"
 
     NGINX="$(which nginx)"
     if [[ ! -x "${NGINX}" ]]; then
+
         nginx_installed="false"
+
     fi
 
     # Return
@@ -75,11 +139,31 @@ function nginx_check_if_installed() {
 
 }
 
+################################################################################
+# Check nginx installed version
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  nginx version
+################################################################################
+
 function nginx_check_installed_version() {
 
     nginx --version | awk '{ print $5 }' | awk -F\, '{ print $1 }'
 
 }
+
+################################################################################
+# Nginx installer menu
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  nothing
+################################################################################
 
 function nginx_installer_menu() {
 

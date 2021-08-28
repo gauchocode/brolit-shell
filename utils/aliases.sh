@@ -687,14 +687,12 @@ function makezip() { zip -r "${1%%/}.zip" "$1"; }
 
 function extract() {
 
-    # Parameters
-    # $1 - File to uncompress or extract
-    # $2 - Dir to uncompress file
-    # $3 - Optional compress-program (ex: lbzip2)
-
     local file=$1
     local directory=$2
     local compress_type=$3
+
+    # Log
+    echo "Extracting compressed file: ${file}"
 
     if [[ -f "${file}" ]]; then
 
@@ -702,58 +700,74 @@ function extract() {
 
         *.tar.bz2)
             if [ -z "${compress_type}" ]; then
-                tar xp "${file}" -C "${directory}" --use-compress-program="${compress_type}"
+                #tar xp "${file}" -C "${directory}" --use-compress-program="${compress_type}"
+                pv --width 70 "${directory}/${file}" | tar xp -C "${directory}" --use-compress-program="${compress_type}"
             else
-                tar xjf "${file}" -C "${directory}"
+                #tar xjf "${file}" -C "${directory}"
+                pv --width 70 "${directory}/${file}" | tar xp -C "${directory}"
             fi
             ;;
 
         *.tar.gz)
-            tar -xzvf "${file}" -C "${directory}"
+            #tar -xzvf "${file}" -C "${directory}"
+            pv --width 70 "${directory}/${file}" | tar xzvf -C "${directory}"
             ;;
 
         *.bz2)
-            bunzip2 "${file}"
+            #bunzip2 "${file}" -C "${directory}"
+            pv --width 70 "${directory}/${file}" | bunzip2 -C "${directory}"
             ;;
 
         *.rar)
-            unrar x "${file}"
+            #unrar x "${file}" "${directory}"
+            #pv --width 70 "${directory}/${file}" | unrar x "${directory}"
+            unrar x "${file}" "${directory}" | pv -l >/dev/null
             ;;
 
         *.gz)
-            gunzip "${file}"
+            #gunzip "${file}" -C "${directory}"
+            pv --width 70 "${directory}/${file}" | gunzip -C "${directory}"
             ;;
 
         *.tar)
-            tar xf "${file}" -C "${directory}"
+            #tar xf "${file}" -C "${directory}"
+            pv --width 70 "${directory}/${file}" | tar xf -C "${directory}"
             ;;
 
         *.tbz2)
-            tar xjf "${file}" -C "${directory}"
+            #tar xjf "${file}" -C "${directory}"
+            pv --width 70 "${directory}/${file}" | tar xjf -C "${directory}"
             ;;
 
         *.tgz)
-            tar xzf "${file}" -C "${directory}"
+            #tar xzf "${file}" -C "${directory}"
+            pv --width 70 "${directory}/${file}" | tar xzf -C "${directory}"
             ;;
 
         *.zip)
-            unzip "${file}"
+            #unzip "${file}" "${directory}"
+            unzip -o "${file}" -d "${directory}" | pv -l >/dev/null
             ;;
 
         *.Z)
-            uncompress "${file}"
+            #uncompress "${file}" "${directory}"
+            pv --width 70 "${directory}/${file}" | uncompress "${directory}"
             ;;
 
         *.7z)
-            7z x "${file}"
+            #7z x "${file}" "${directory}"
+            #pv --width 70 "${directory}/${file}" | 7z x "${directory}"
+            7z x "${file}" "${directory}" | pv -l >/dev/null
             ;;
 
         *.xz)
-            tar xvf "${file}" -C "${directory}"
+            #tar xvf "${file}" -C "${directory}"
+            pv --width 70 "${directory}/${file}" | tar xvf -C "${directory}"
             ;;
 
         *)
             echo "${file} cannot be extracted via extract()"
+            return 1
             ;;
 
         esac
@@ -761,6 +775,20 @@ function extract() {
     else
 
         echo "${file} is not a valid file"
+        return 1
+
+    fi
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        echo "${file} extracted ok!"
+
+    else
+
+        echo "Error extracting ${file}"
+
+        return 1
 
     fi
 

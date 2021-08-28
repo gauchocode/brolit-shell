@@ -6,11 +6,7 @@
 #
 # Security Helper: Perform security actions.
 #
-# Refs: https://www.tecmint.com/scan-linux-for-malware-and-rootkits/
-#
-################################################################################
-#
-# Security Helper: Perform security actions.
+#   Refs: https://www.tecmint.com/scan-linux-for-malware-and-rootkits/
 #
 ################################################################################
 
@@ -18,10 +14,10 @@
 # Clamav Scan: Update clamav database and performs a scan.
 #
 # Arguments:
-#   $1 = {directory} - directory to scan
+#  $1 = {directory} - directory to scan
 #
 # Outputs:
-#   Clamav result.
+#  Clamav result.
 ################################################################################
 
 function security_clamav_scan() {
@@ -82,10 +78,10 @@ function security_clamav_scan() {
 # Custom Scan: Performs a custom scan.
 #
 # Arguments:
-#   $1 = {directory} - directory to scan
+#  $1 = {directory} - directory to scan
 #
 # Outputs:
-#   Scan result.
+#  Scan result.
 ################################################################################
 
 # IMPORTANT: Refactor before use this function, too many false positives
@@ -94,7 +90,7 @@ function security_custom_scan() {
 
   local directory=$1
 
-  log_event "info" "Running custom malware scanner"
+  log_event "info" "Running custom malware scanner" "false"
   display --indent 2 --text "- Running custom malware scanner"
 
   display --indent 2 --text "Result for base64_decode:"
