@@ -1144,14 +1144,17 @@ function extract_filename_from_path() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-# TODO: improve and use this instead of untar or unzip
+# TODO: need more testing
+
 function extract() {
 
   local file=$1
   local directory=$2
   local compress_type=$3
 
-  log_event "info" "Trying to extract compressed file: ${file}" "false"
+  # Log
+  log_event "info" "Extracting compressed file: ${file}" "false"
+  display --indent 2 --text "- Extracting compressed file"
 
   if [[ -f "${file}" ]]; then
 
@@ -1159,64 +1162,102 @@ function extract() {
 
     *.tar.bz2)
       if [ -z "${compress_type}" ]; then
-        tar xp "${file}" -C "${directory}" --use-compress-program="${compress_type}"
+        #tar xp "${file}" -C "${directory}" --use-compress-program="${compress_type}"
+        pv --width 70 "${directory}/${file}" | tar xp -C "${directory}" --use-compress-program="${compress_type}"
       else
-        tar xjf "${file}" -C "${directory}"
+        #tar xjf "${file}" -C "${directory}"
+        pv --width 70 "${directory}/${file}" | tar xp -C "${directory}"
       fi
       ;;
 
     *.tar.gz)
-      tar -xzvf "${file}" -C "${directory}"
+      #tar -xzvf "${file}" -C "${directory}"
+      pv --width 70 "${directory}/${file}" | tar xzvf -C "${directory}"
       ;;
 
     *.bz2)
-      bunzip2 "${file}"
+      #bunzip2 "${file}" -C "${directory}"
+      pv --width 70 "${directory}/${file}" | bunzip2 -C "${directory}"
       ;;
 
     *.rar)
-      unrar x "${file}"
+      #unrar x "${file}" "${directory}"
+      #pv --width 70 "${directory}/${file}" | unrar x "${directory}"
+      unrar x "${file}" "${directory}" | pv -l >/dev/null
       ;;
 
     *.gz)
-      gunzip "${file}"
+      #gunzip "${file}" -C "${directory}"
+      pv --width 70 "${directory}/${file}" | gunzip -C "${directory}"
       ;;
 
     *.tar)
-      tar xf "${file}" -C "${directory}"
+      #tar xf "${file}" -C "${directory}"
+      pv --width 70 "${directory}/${file}" | tar xf -C "${directory}"
       ;;
 
     *.tbz2)
-      tar xjf "${file}" -C "${directory}"
+      #tar xjf "${file}" -C "${directory}"
+      pv --width 70 "${directory}/${file}" | tar xjf -C "${directory}"
       ;;
 
     *.tgz)
-      tar xzf "${file}" -C "${directory}"
+      #tar xzf "${file}" -C "${directory}"
+      pv --width 70 "${directory}/${file}" | tar xzf -C "${directory}"
       ;;
 
     *.zip)
-      unzip "${file}"
+      #unzip "${file}" "${directory}"
+      unzip -o "${file}" -d "${directory}" | pv -l >/dev/null
       ;;
 
     *.Z)
-      uncompress "${file}"
+      #uncompress "${file}" "${directory}"
+      pv --width 70 "${directory}/${file}" | uncompress "${directory}"
       ;;
 
     *.7z)
-      7z x "${file}"
+      #7z x "${file}" "${directory}"
+      #pv --width 70 "${directory}/${file}" | 7z x "${directory}"
+      7z x "${file}" "${directory}" | pv -l >/dev/null
       ;;
 
     *.xz)
-      tar xvf "${file}" -C "${directory}"
+      #tar xvf "${file}" -C "${directory}"
+      pv --width 70 "${directory}/${file}" | tar xvf -C "${directory}"
       ;;
 
     *)
       log_event "error" "${file} cannot be extracted via extract()" "false"
+      display --indent 2 --text "- Extracting compressed file" --result "FAIL" --color RED
+      display --indent 4 --text "${file} cannot be extracted" --tcolor RED
+      return 1
       ;;
 
     esac
 
   else
+
+    # Log
     log_event "error" "${file} is not a valid file" "false"
+    display --indent 2 --text "- Extracting compressed file" --result "FAIL" --color RED
+    display --indent 4 --text "${file} is not a valid file" --tcolor RED
+    return 1
+
+  fi
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    log_event "info" "${file} extracted ok!" "false"
+    display --indent 2 --text "- Extracting compressed file" --result "DONE" --color GREEN
+
+  else
+
+    log_event "error" "Error extracting ${file}" "false"
+    display --indent 2 --text "- Extracting compressed file" --result "FAIL" --color RED
+
+    return 1
 
   fi
 
