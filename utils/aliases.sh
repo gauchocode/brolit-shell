@@ -720,8 +720,7 @@ function extract() {
 
         *.bz2)
             #bunzip2 "${file_path}" "${directory_to_extract}"
-            #bzip2 -dc /home/chris/test.txt.bz2 >/tmp/test.txt
-            pv --width 70 "${file_path}" | bzip2 -dc "${directory_to_extract}/${filename}"
+            pv --width 70 "${file_path}" | bunzip2 > "${directory_to_extract}/${filename}"
             ;;
 
         *.rar)
