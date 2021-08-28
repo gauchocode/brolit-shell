@@ -3,8 +3,22 @@
 # Author: BROOBE - A Software Development Agency - https://broobe.com
 # Version: 3.0.53
 ################################################################################
+#
+# Netdata Installer
+#
+#   Ref: https://github.com/nextcloud/vm/blob/master/apps/netdata.sh
+#
+################################################################################
 
-# Ref: https://github.com/nextcloud/vm/blob/master/apps/netdata.sh
+################################################################################
+# Private: install netdata required packages
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  nothing
+################################################################################
 
 function _netdata_required_packages() {
 
@@ -29,95 +43,148 @@ function _netdata_required_packages() {
 
 }
 
+################################################################################
+# Private: configure netdata alarm level
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  nothing
+################################################################################
+
 function _netdata_alarm_level() {
 
-  NETDATA_ALARM_LEVELS="warning critical"
-  NETDATA_ALARM_LEVEL=$(whiptail --title "NETDATA ALARM LEVEL" --menu "Choose the Alarm Level for Notifications" 20 78 10 "$(for x in ${NETDATA_ALARM_LEVELS}; do echo "$x [X]"; done)" 3>&1 1>&2 2>&3)
+  local netdata_alarm_levels
+  local netdata_alarm_level
+
+  netdata_alarm_levels="warning critical"
+  netdata_alarm_level=$(whiptail --title "NETDATA ALARM LEVEL" --menu "Choose the Alarm Level for Notifications" 20 78 10 "$(for x in ${netdata_alarm_levels}; do echo "$x [X]"; done)" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    echo "NETDATA_ALARM_LEVEL=${NETDATA_ALARM_LEVEL}" >>/root/.brolit-shell.conf
+    # old config
+    echo "NETDATA_ALARM_LEVEL=${netdata_alarm_level}" >>/root/.brolit-shell.conf
 
     # new config
     config_file="/root/.brolit_conf.json"
     config_field="SUPPORT.netdata[].config[].netdata_alarm_level"
-    config_value="${NETDATA_ALARM_LEVEL}"
+    config_value="${netdata_alarm_level}"
     json_write_field "${config_file}" "${config_field}" "${config_value}"
 
-    log_event "info" "Alarm Level for Notifications: ${NETDATA_ALARM_LEVEL}" "false"
+    log_event "info" "Alarm Level for Notifications: ${netdata_alarm_level}" "false"
+
+    echo "${netdata_alarm_level}"
 
   else
+
     return 1
 
   fi
 
 }
 
+################################################################################
+# Private: netdata telegram configuration
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  nothing
+################################################################################
+
 function _netdata_telegram_config() {
 
-  HEALTH_ALARM_NOTIFY_CONF="/etc/netdata/health_alarm_notify.conf"
+  local netdata_alarm_level
+  local health_alarm_notify_conf
+  local netdata_config_1_string
+  local netdata_config_2_string
 
-  DELIMITER="="
+  local delimiter
+
+  # Telegram
+  local send_telegram
+  local telegram_bot_token
+  local default_recipient_telegram
+
+  health_alarm_notify_conf="/etc/netdata/health_alarm_notify.conf"
+
+  delimiter="="
 
   KEY="SEND_TELEGRAM"
-  SEND_TELEGRAM=$(cat "/etc/netdata/health_alarm_notify.conf" | grep "^${KEY}${DELIMITER}" | cut -f2- -d"$DELIMITER")
+  send_telegram="$(grep "^${KEY}${delimiter}" "${health_alarm_notify_conf}" | cut -f2- -d"${delimiter}")"
 
   KEY="TELEGRAM_BOT_TOKEN"
-  TELEGRAM_BOT_TOKEN=$(cat "/etc/netdata/health_alarm_notify.conf" | grep "^${KEY}${DELIMITER}" | cut -f2- -d"$DELIMITER")
+  telegram_bot_token="$(grep "^${KEY}${delimiter}" "${health_alarm_notify_conf}" | cut -f2- -d"${delimiter}")"
 
   KEY="DEFAULT_RECIPIENT_TELEGRAM"
-  DEFAULT_RECIPIENT_TELEGRAM=$(cat "/etc/netdata/health_alarm_notify.conf" | grep "^${KEY}${DELIMITER}" | cut -f2- -d"$DELIMITER")
+  default_recipient_telegram="$(grep "^${KEY}${delimiter}" "${health_alarm_notify_conf}" | cut -f2- -d"${delimiter}")"
 
-  NETDATA_CONFIG_1_STRING+="\n . \n"
-  NETDATA_CONFIG_1_STRING+=" Configure Telegram Notifications? You will need:\n"
-  NETDATA_CONFIG_1_STRING+=" 1) Get a bot token. Contact @BotFather (https://t.me/BotFather) and send the command /newbot.\n"
-  NETDATA_CONFIG_1_STRING+=" Follow the instructions and paste the token to access the HTTP API:\n"
+  netdata_config_1_string+="\n . \n"
+  netdata_config_1_string+=" Configure Telegram Notifications? You will need:\n"
+  netdata_config_1_string+=" 1) Get a bot token. Contact @BotFather (https://t.me/BotFather) and send the command /newbot.\n"
+  netdata_config_1_string+=" Follow the instructions and paste the token to access the HTTP API:\n"
 
-  TELEGRAM_BOT_TOKEN=$(whiptail --title "Netdata: Telegram Configuration" --inputbox "${NETDATA_CONFIG_1_STRING}" 15 60 3>&1 1>&2 2>&3)
+  telegram_bot_token="$(whiptail --title "Netdata: Telegram Configuration" --inputbox "${netdata_config_1_string}" 15 60 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    SEND_TELEGRAM="YES"
-    sed -i "s/^\(SEND_TELEGRAM\s*=\s*\).*\$/\1\"$SEND_TELEGRAM\"/" $HEALTH_ALARM_NOTIFY_CONF
-    sed -i "s/^\(TELEGRAM_BOT_TOKEN\s*=\s*\).*\$/\1\"$TELEGRAM_BOT_TOKEN\"/" $HEALTH_ALARM_NOTIFY_CONF
+    send_telegram="YES"
+    sed -i "s/^\(SEND_TELEGRAM\s*=\s*\).*\$/\1\"$send_telegram\"/" $health_alarm_notify_conf
+    sed -i "s/^\(TELEGRAM_BOT_TOKEN\s*=\s*\).*\$/\1\"$telegram_bot_token\"/" $health_alarm_notify_conf
 
-    NETDATA_CONFIG_2_STRING+="\n . \n"
-    NETDATA_CONFIG_2_STRING+=" 2) Contact the @myidbot (https://t.me/myidbot) bot and send the command /getid to get \n"
-    NETDATA_CONFIG_2_STRING+=" your personal chat id or invite him into a group and issue the same command to get the group chat id.\n"
-    NETDATA_CONFIG_2_STRING+=" 3) Paste the ID here:\n"
+    netdata_config_2_string+="\n . \n"
+    netdata_config_2_string+=" 2) Contact the @myidbot (https://t.me/myidbot) bot and send the command /getid to get \n"
+    netdata_config_2_string+=" your personal chat id or invite him into a group and issue the same command to get the group chat id.\n"
+    netdata_config_2_string+=" 3) Paste the ID here:\n"
 
-    DEFAULT_RECIPIENT_TELEGRAM=$(whiptail --title "Netdata: Telegram Configuration" --inputbox "${NETDATA_CONFIG_2_STRING}" 15 60 3>&1 1>&2 2>&3)
+    default_recipient_telegram="$(whiptail --title "Netdata: Telegram Configuration" --inputbox "${netdata_config_2_string}" 15 60 3>&1 1>&2 2>&3)"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-      # choose the netdata alarm level
-      _netdata_alarm_level
+      # Choose the netdata alarm level
+      netdata_alarm_level="$(_netdata_alarm_level)"
 
-      # making changes on health_alarm_notify.conf
-      sed -i "s/^\(DEFAULT_RECIPIENT_TELEGRAM\s*=\s*\).*\$/\1\"$DEFAULT_RECIPIENT_TELEGRAM|$NETDATA_ALARM_LEVEL\"/" $HEALTH_ALARM_NOTIFY_CONF
+      log_event "debug" "Running: sed -i \"s/^\(DEFAULT_RECIPIENT_TELEGRAM\s*=\s*\).*\$/\1\"${default_recipient_telegram}|${netdata_alarm_level}\"/" $health_alarm_notify_conf\" "false"
+
+      # Making changes on health_alarm_notify.conf
+      sed -i "s/^\(DEFAULT_RECIPIENT_TELEGRAM\s*=\s*\).*\$/\1\"${default_recipient_telegram}|${netdata_alarm_level}\"/" $health_alarm_notify_conf
 
       # Uncomment the clear_alarm_always='YES' parameter on health_alarm_notify.conf
-      if grep -q '^#.*clear_alarm_always' $HEALTH_ALARM_NOTIFY_CONF; then
-        sed -i '/^#.*clear_alarm_always/ s/^#//' $HEALTH_ALARM_NOTIFY_CONF
+      if grep -q '^#.*clear_alarm_always' ${health_alarm_notify_conf}; then
+
+        sed -i '/^#.*clear_alarm_always/ s/^#//' $health_alarm_notify_conf
+
       fi
 
       display --indent 6 --text "- Telegram configuration" --result "DONE" --color GREEN
 
     else
+
       return 1
 
     fi
 
   else
+
     return 1
 
   fi
 
 }
 
+################################################################################
+# Netdata installer
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  nothing
 ################################################################################
 
 function netdata_installer() {
@@ -133,10 +200,21 @@ function netdata_installer() {
 
   # Log
   clear_last_line
+  clear_last_line
   log_event "info" "Netdata installation finished" "false"
   display --indent 6 --text "- Downloading and compiling netdata" --result "DONE" --color GREEN
 
 }
+
+################################################################################
+# Netdata uninstaller
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  nothing
+################################################################################
 
 function netdata_uninstaller() {
 
@@ -201,9 +279,18 @@ function netdata_uninstaller() {
 
 }
 
-function netdata_configuration() {
+################################################################################
+# Netdata configuration
+#  Ref: netdata config dir https://github.com/netdata/netdata/issues/4182
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  nothing
+################################################################################
 
-  # Ref: netdata config dir https://github.com/netdata/netdata/issues/4182
+function netdata_configuration() {
 
   # MySQL
   mysql_user_create "netdata" "" "localhost"
@@ -243,6 +330,16 @@ function netdata_configuration() {
   display --indent 6 --text "- Configuring netdata" --result "DONE" --color GREEN
 
 }
+
+################################################################################
+# Netdata installer menu
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  nothing
+################################################################################
 
 function netdata_installer_menu() {
 
@@ -318,7 +415,7 @@ function netdata_installer_menu() {
 
         # If nginx is installed
         nginx_command="$(command -v nginx)"
-        if [[ ! -x ${nginx_command} ]]; then
+        if [[ -x ${nginx_command} ]]; then
 
           # Netdata nginx proxy configuration
           nginx_server_create "${netdata_subdomain}" "netdata" "single" ""
