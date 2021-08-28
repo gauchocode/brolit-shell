@@ -10,7 +10,7 @@
 
 function _timestamp() {
 
- date +"%Y-%m-%d %T"
+ date +"%T"
 
 }
 
@@ -22,7 +22,7 @@ function _timestamp() {
 #
 #  on start: $2 display message
 #  on stop : $2 process exit status
-#           $3 spinner function pid (supplied from spinner_stop)
+#            $3 spinner function pid (supplied from spinner_stop)
 #
 # Outputs:
 #  nothing
