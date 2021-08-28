@@ -57,7 +57,8 @@ function json_write_field() {
     if [[ "${exitstatus}" -eq 0 ]]; then
 
         # Return
-        echo "${json_field_value}"
+        # echo "${json_field_value}"
+        return 0
 
     else
 
