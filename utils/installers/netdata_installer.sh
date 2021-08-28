@@ -382,7 +382,7 @@ function netdata_installer_menu() {
     possible_root_domain="$(get_root_domain "${netdata_subdomain}")"
 
     mysql_command="$(command -v mysql)"
-    if [[ ! -x ${mysql_command} ]]; then
+    if [[ -x ${mysql_command} ]]; then
       mysql_ask_root_psw
     fi
 
