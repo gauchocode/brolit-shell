@@ -1177,7 +1177,7 @@ function extract() {
 
     *.bz2)
       #bunzip2 "${file_path}" -C "${directory_to_extract}"
-      pv --width 70 "${file_path}" | bunzip2 -C "${directory_to_extract}"
+      pv --width 70 "${file_path}" | bunzip2 "${directory_to_extract}"
       ;;
 
     *.rar)
@@ -1215,10 +1215,10 @@ function extract() {
       pv --width 70 "${file_path}" | uncompress "${directory_to_extract}"
       ;;
 
-    *.7z)
+      #*.7z)
       #7z x "${file_path}" "${directory}"
-      7z x "${file_path}" "${directory_to_extract}" | pv -l >/dev/null
-      ;;
+      #7z x "${file_path}" "${directory_to_extract}" | pv -l >/dev/null
+      #;;
 
     *.xz)
       #tar xvf "${file_path}" -C "${directory}"
