@@ -409,7 +409,7 @@ function wpcli_core_update() {
     # $1 = ${wp_site}
 
     local wp_site=$1
-    
+
     local verify_core_update
 
     log_section "WordPress Updater"
@@ -1040,57 +1040,57 @@ function wpcli_seoyoast_reindex() {
 
 function wpcli_default_plugins_installer() {
 
-  local wp_plugins
-  local chosen_plugin_option
-  local plugin_zip
+    local wp_plugins
+    local chosen_plugin_option
+    local plugin_zip
 
-  # TODO: install from default options, install from zip or install from external config file.
-  # TODO: config file should contain something like this:
-  # Structure: "PLUGIN_NAME" , "PLUGIN_SOURCE", "PLUGIN_SLUG or PUBLIC_URL", "ACTIVATE_AFTER_INSTALL" (true or false)
-  # Example 1: "WP Rocket", "private", "https://example.com/plugin.zip", "false"
-  # Example 2: "SEO Yoast", "public-repo", "wordpress-seo", "true"
+    # TODO: install from default options, install from zip or install from external config file.
+    # TODO: config file should contain something like this:
+    # Structure: "PLUGIN_NAME" , "PLUGIN_SOURCE", "PLUGIN_SLUG or PUBLIC_URL", "ACTIVATE_AFTER_INSTALL" (true or false)
+    # Example 1: "WP Rocket", "private", "https://example.com/plugin.zip", "false"
+    # Example 2: "SEO Yoast", "public-repo", "wordpress-seo", "true"
 
-  # Array of plugin slugs to install
-  wp_plugins=(
-    "wordpress-seo" " " off
-    "seo-by-rank-math" " " off
-    "duracelltomi-google-tag-manager" " " off
-    "ewww-image-optimizer" " " off
-    "post-smtp" " " off
-    "contact-form-7" " " off
-    "advanced-custom-fields" " " off
-    "acf-vc-integrator" " " off
-    "wp-asset-clean-up" " " off
-    "w3-total-cache" " " off
-    "iwp-client" " " off
-    "wordfence" " " off
-    "better-wp-security" " " off
-    "quttera-web-malware-scanner" " " off
-    "zip-file" " " off
-  )
+    # Array of plugin slugs to install
+    wp_plugins=(
+        "wordpress-seo" " " off
+        "seo-by-rank-math" " " off
+        "duracelltomi-google-tag-manager" " " off
+        "ewww-image-optimizer" " " off
+        "post-smtp" " " off
+        "contact-form-7" " " off
+        "advanced-custom-fields" " " off
+        "acf-vc-integrator" " " off
+        "wp-asset-clean-up" " " off
+        "w3-total-cache" " " off
+        "iwp-client" " " off
+        "wordfence" " " off
+        "better-wp-security" " " off
+        "quttera-web-malware-scanner" " " off
+        "zip-file" " " off
+    )
 
-  # INSTALL_PLUGINS
-  chosen_plugin_option="$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to install." 20 78 15 "${wp_plugins[@]}" 3>&1 1>&2 2>&3)"
+    # INSTALL_PLUGINS
+    chosen_plugin_option="$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to install." 20 78 15 "${wp_plugins[@]}" 3>&1 1>&2 2>&3)"
 
-  log_subsection "WP Plugin Installer"
+    log_subsection "WP Plugin Installer"
 
-  for plugin in ${chosen_plugin_option}; do
+    for plugin in ${chosen_plugin_option}; do
 
-    if [[ ${plugin} == *"zip-file"* ]]; then
+        if [[ ${plugin} == *"zip-file"* ]]; then
 
-      plugin_zip="$(whiptail --title "WordPress Plugin" --inputbox "Please insert a public url with a plugin zip file." 10 60 "https://domain.com/plugin.zip" 3>&1 1>&2 2>&3)"
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
+            plugin_zip="$(whiptail --title "WordPress Plugin" --inputbox "Please insert a public url with a plugin zip file." 10 60 "https://domain.com/plugin.zip" 3>&1 1>&2 2>&3)"
+            exitstatus=$?
+            if [[ ${exitstatus} -eq 0 ]]; then
 
-        plugin="${plugin_zip}"
+                plugin="${plugin_zip}"
 
-      fi
+            fi
 
-    fi
+        fi
 
-    wpcli_install_plugin "${wp_site}" "${plugin}"
+        wpcli_install_plugin "${wp_site}" "${plugin}"
 
-  done
+    done
 
 }
 
@@ -1200,16 +1200,11 @@ function wpcli_search_and_replace() {
     wp --allow-root --path="${wp_site}" core is-installed --network
 
     is_network=$?
-    if [[ "${is_network}" -eq 0 ]]; then
+    if [[ ${is_network} -eq 0 ]]; then
 
         log_event "debug" "Running: wp --allow-root --path=${wp_site} search-replace --url=https://${wp_site_url} ${search} ${replace} --network" "false"
 
         wp --allow-root --path="${wp_site}" search-replace --url=https://"${wp_site_url}" "${search}" "${replace}" --network --quiet
-
-        display --indent 6 --text "- Running search and replace" --result "DONE" --color GREEN
-        display --indent 8 --text "${search} was replaced by ${replace}"
-
-        #return 0
 
     else
 
@@ -1217,8 +1212,23 @@ function wpcli_search_and_replace() {
 
         wp --allow-root --path="${wp_site}" search-replace "${search}" "${replace}" --quiet
 
+    fi
+
+    exitstatus=$?
+    if [[ $exitstatus -eq 0 ]]; then
+
+        # Log
+        log_event "info" "Search and replace finished ok" "false"
         display --indent 6 --text "- Running search and replace" --result "DONE" --color GREEN
         display --indent 8 --text "${search} was replaced by ${replace}"
+
+    else
+
+        # Log
+        log_event "error" "Something went wrong running search and replace!" "false"
+        display --indent 6 --text "- Running search and replace" --result "FAIL" --color RED
+
+        return 1
 
     fi
 

@@ -214,7 +214,7 @@ function restore_manager_menu() {
 
   else
 
-    log_event "debug" "Restore type selection skipped"
+    log_event "debug" "Restore type selection skipped" "false"
 
   fi
 

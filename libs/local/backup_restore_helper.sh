@@ -155,7 +155,7 @@ function restore_backup_from_ftp() {
     project_domain="$(ask_project_domain "")"
 
     # Ask project name
-    project_name="$(ask_project_name "")"
+    project_name="$(ask_project_name "${project_domain}")"
 
     # FTP
     ftp_domain="$(whiptail_imput "FTP SERVER IP/DOMAIN" "Please insert de FTP server IP/DOMAIN. Ex: ftp.domain.com")"
@@ -199,17 +199,8 @@ function restore_backup_from_ftp() {
 
     fi
 
-    # find_result="$( { find "/root/brolit-shell" -name "*.zip" ; find "/root/brolit-shell" -name "*.pdf.bz2" ; } )" ; echo "${find_result}"
-
-    #restore_site_files "${project_domain}"
-
     # Restore files
-    log_event "info" "Restoring backup files on ${folder_to_install} ..." "false"
-    display --indent 6 --text "- Restoring backup files"
-
-    mv "${TMP_DIR}/${project_domain}" "${SITES}"
-
-    display --indent 6 --text "- Restoring backup files" --result "DONE" --color GREEN
+    move_files "${TMP_DIR}/${project_domain}" "${SITES}"
 
   fi
 
@@ -232,7 +223,7 @@ function restore_backup_server_selection() {
     # Show dropbox output
     chosen_server="$(whiptail --title "RESTORE BACKUP" --menu "Choose Server to work with" 20 78 10 $(for x in ${dropbox_server_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)"
 
-    log_event "debug" "chosen_server: ${chosen_server}"
+    log_event "debug" "chosen_server: ${chosen_server}" "false"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -251,7 +242,7 @@ function restore_backup_server_selection() {
 
   else
 
-    log_event "error" "Dropbox uploader failed. Output: ${dropbox_server_list}. Exit status: ${exitstatus}"
+    log_event "error" "Dropbox uploader failed. Output: ${dropbox_server_list}. Exit status: ${exitstatus}" "false"
 
   fi
 
@@ -591,13 +582,7 @@ function restore_site_files() {
     fi
 
     # Restore files
-    log_event "info" "Restoring backup files on ${folder_to_install} ..."
-    display --indent 6 --text "- Restoring backup files"
-
-    mv "${project_tmp_new_folder}" "${folder_to_install}"
-
-    clear_last_line
-    display --indent 6 --text "- Restoring backup files" --result "DONE" --color GREEN
+    move_files "${project_tmp_new_folder}" "${folder_to_install}"
 
     # TODO: we need another aproach for other kind of projects
     # Search wp-config.php (to find wp installation on sub-folders)
@@ -700,18 +685,10 @@ function restore_type_selection_from_dropbox() {
             suffix="$(cut -d'_' -f2 <<<${chosen_project})"
             project_state="$(ask_project_state "${suffix}")"
 
-            # Extract project_name (its removes last part of db name with "_" char)
+            # Extract project_name (it will remove last part of db name with "_" char)
             project_name=${chosen_project%"_$suffix"}
 
-            project_name="$(whiptail --title "Project Name" --inputbox "Want to change the project name?" 10 60 "${project_name}" 3>&1 1>&2 2>&3)"
-            exitstatus=$?
-            if [[ ${exitstatus} -eq 0 ]]; then
-              log_event "debug" "Setting project_name=${project_name}"
-
-            else
-              return 1
-
-            fi
+            project_name="$(ask_project_name "${project_name}")"
 
             # Running mysql_name_sanitize $for project_name
             db_project_name="$(mysql_name_sanitize "${project_name}")"
@@ -788,9 +765,13 @@ function restore_type_selection_from_dropbox() {
 
               # Changing wordpress visibility
               if [[ ${project_state} == "prod" ]]; then
+
                 wpcli_change_wp_seo_visibility "${project_path}" "1"
+
               else
+
                 wpcli_change_wp_seo_visibility "${project_path}" "0"
+
               fi
 
             else

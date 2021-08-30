@@ -313,6 +313,7 @@ function script_init() {
   fi
 
   # Check if the script receives first parameter "--sl"
+  ## Only for BROLIT-UI
   if [[ ${1} == *"sl" ]]; then
     # And add second parameter to the log name
     log_name="log_lemp_utils_${2}.log"
@@ -896,6 +897,42 @@ function copy_files() {
 }
 
 ################################################################################
+# Move files
+#
+# Arguments:
+#   $1= ${source_path}
+#   $2= ${destination_path}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function move_files() {
+
+  local source_path=$1
+  local destination_path=$2
+
+  log_event "info" "Moving files from ${source_path} to ${destination_path}..." "false"
+  display --indent 6 --text "- Moving files to ${destination_path}"
+
+  # Moving
+  mv "${source_path}" "${destination_path}"
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    display --indent 6 --text "- Moving files to ${destination_path}" --result "DONE" --color GREEN
+
+  else
+
+    display --indent 6 --text "-  Moving files to ${destination_path}" --result "FAIL" --color RED
+    return 1
+
+  fi
+
+}
+
+################################################################################
 # Calculates disk usage
 #
 # Arguments:
@@ -1268,7 +1305,7 @@ function extract() {
 
 function compress() {
 
-  local to_backup=$1    # could be a file or a directory. Ex: database.sql or foldername
+  local to_backup=$1 # could be a file or a directory. Ex: database.sql or foldername
   local backup_base_dir=$2
   local directory_output=$3
   #local compress_type=$4
