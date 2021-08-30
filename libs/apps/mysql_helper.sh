@@ -910,8 +910,8 @@ function mysql_database_export() {
 
         # Log
         display --indent 6 --text "- Database backup for ${YELLOW}${database}${ENDCOLOR}" --result "ERROR" --color RED
-        log_event "error" "Something went wrong exporting database: ${database}."
-        log_event "error" "Last command executed: ${MYSQLDUMP_ROOT} ${database} > ${dump_file}"
+        log_event "error" "Something went wrong exporting database: ${database}." "false"
+        log_event "error" "Last command executed: ${MYSQLDUMP_ROOT} ${database} > ${dump_file}" "false"
 
         return 1
 

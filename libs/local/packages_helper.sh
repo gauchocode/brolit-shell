@@ -94,8 +94,7 @@ function package_install_if_not() {
   #p_result="$(command -v "${package}")"
   p_result="$(package_is_installed "${package}")"
 
-  #if [[ ! -x "${p_result}" ]]; then
-  if [[ "${p_result}" == "false" ]]; then
+  if [[ ${p_result} == "false" ]]; then
 
     # Log
     log_event "info" "Installing ${package} ..." "false"
