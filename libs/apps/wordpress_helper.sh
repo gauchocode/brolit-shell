@@ -12,10 +12,10 @@
 # Check if is a WordPress project
 #
 # Arguments:
-#   None
+#  None
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function is_wp_project() {
@@ -51,10 +51,10 @@ function is_wp_project() {
 # WordPress config path
 #
 # Arguments:
-#   $1 = ${dir_to_search}
+#  $1 = ${dir_to_search}
 #
 # Outputs:
-#   String with wp-config path
+#  String with wp-config path
 ################################################################################
 
 function wp_config_path() {
@@ -86,13 +86,13 @@ function wp_config_path() {
 # Update WordPress config
 #
 # Arguments:
-#   $1 = ${project_dir}
-#   $2 = ${wp_project_name}
-#   $3 = ${wp_project_state}
-#   $4 = ${db_user_pass}
+#  $1 = ${project_dir}
+#  $2 = ${wp_project_name}
+#  $3 = ${wp_project_state}
+#  $4 = ${db_user_pass}
 #
 # Outputs:
-#   String with wp-config path
+#  String with wp-config path
 ################################################################################
 
 #TODO: why not use https://developer.wordpress.org/cli/commands/config/create/ ?
@@ -144,10 +144,10 @@ function wp_update_wpconfig() {
 # Change WordPress permissions
 #
 # Arguments:
-#   $1 = ${project_dir}
+#  $1 = ${project_dir}
 #
 # Outputs:
-#   None
+#  None
 ################################################################################
 
 # TODO: check this ref: https://stackoverflow.com/questions/18352682/correct-file-permissions-for-wordpress
@@ -175,17 +175,17 @@ function wp_change_permissions() {
 }
 
 ################################################################################
-# Replace string on WordPress database
+# Replace string on WordPress database (without wp-cli)
 #
 # Arguments:
-#   $1 = ${db_prefix}
-#   $2 = ${target_db}
+#  $1 = ${db_prefix}
+#  $2 = ${target_db}
 #
 # Outputs:
-#   None
+#  None
 ################################################################################
 
-# Ref manual multisite: https://multilingualpress.org/docs/wordpress-multisite-database-tables/
+# Ref multisite: https://multilingualpress.org/docs/wordpress-multisite-database-tables/
 #
 #UPDATE ${db_prefix}${blog_id}_blogs SET domain='${domain}' WHERE blog_id='1';
 #UPDATE ${db_prefix}${blog_id}_blogs SET domain='${domain}' WHERE blog_id='2';
@@ -280,10 +280,10 @@ function wp_replace_string_on_database() {
 # Ask string to replace on WordPress database
 #
 # Arguments:
-#   $1 = ${wp_path}
+#  $1 = ${wp_path}
 #
 # Outputs:
-#   None
+#  None
 ################################################################################
 
 # TODO: need rethink this function
