@@ -151,9 +151,8 @@ function wp_update_wpconfig() {
 ################################################################################
 
 # TODO: check this ref: https://stackoverflow.com/questions/18352682/correct-file-permissions-for-wordpress
-function wp_change_permissions() {
 
-  # $1 = ${FOLDER_TO_INSTALL}/${CHOSEN_PROJECT} or ${FOLDER_TO_INSTALL}/${DOMAIN}
+function wp_change_permissions() {
 
   local project_dir=$1
 
@@ -203,23 +202,27 @@ function wp_change_permissions() {
 
 function wp_replace_string_on_database() {
 
-  # $1 = ${db_prefix}
-  # $2 = ${target_db}
-
   local db_prefix=$1
   local target_db=$2
+  local existing_URL=$3
+  local new_URL=$4
 
   local chosen_db
-  local databases
+  #local databases
 
   if [[ -z "${db_prefix}" ]]; then
 
     db_prefix="$(whiptail --title "WordPress DB Prefix" --inputbox "Please insert the WordPress Database Prefix. Example: wp_" 10 60 3>&1 1>&2 2>&3)"
+
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
+
       log_event "info" "Setting db prefix: '${db_prefix}'" "false"
+
     else
+
       return 1
+
     fi
 
   fi
@@ -233,41 +236,39 @@ function wp_replace_string_on_database() {
 
   fi
 
-  if [[ -z "${existing_URL}" ]]; then
-    existing_URL="$(whiptail --title "URL TO CHANGE" --inputbox "Insert the URL you want to change, including http:// or https://" 10 60 3>&1 1>&2 2>&3)"
+  if [[ -n "${existing_URL}" && -n "${new_URL}" ]]; then
+
+    #mysql_database_export "${chosen_db}" "${chosen_db}_bk_before_replace_urls.sql"
+
+    # Queries
+    SQL0="USE ${chosen_db};"
+    SQL1="UPDATE ${db_prefix}options SET option_value = replace(option_value, '${existing_URL}', '${new_URL}') WHERE option_name = 'home' OR option_name = 'siteurl';"
+    SQL2="UPDATE ${db_prefix}posts SET post_content = replace(post_content, '${existing_URL}', '${new_URL}');"
+    SQL3="UPDATE ${db_prefix}posts SET guid = replace(guid, '${existing_URL}', '${new_URL}');"
+    SQL4="UPDATE ${db_prefix}postmeta SET meta_value = replace(meta_value,'${existing_URL}','${new_URL}');"
+    SQL5="UPDATE ${db_prefix}usermeta SET meta_value = replace(meta_value, '${existing_URL}','${new_URL}');"
+    SQL6="UPDATE ${db_prefix}links SET link_url = replace(link_url, '${existing_URL}','${new_URL}');"
+    SQL7="UPDATE ${db_prefix}comments SET comment_content = replace(comment_content , '${existing_URL}','${new_URL}');"
+
+    log_event "info" "Replacing URLs in database ${chosen_db} ..." "false"
+
+    "${MYSQL_ROOT}" -e "${SQL0}${SQL1}${SQL2}${SQL3}${SQL4}${SQL5}${SQL6}${SQL7}"
+
     exitstatus=$?
+    if [[ $exitstatus -eq 0 ]]; then
 
-    log_event "info" "URL to change: '${existing_URL}'" "false"
+        # Log
+        log_event "info" "Search and replace finished ok" "false"
+        display --indent 6 --text "- Running search and replace" --result "DONE" --color GREEN
+        display --indent 8 --text "${existing_URL} was replaced by ${new_URL}"
 
-    if [[ ${exitstatus} -eq 0 ]]; then
+    else
 
-      if [[ -z "${new_URL}" ]]; then
-        new_URL="$(whiptail --title "THE NEW URL" --inputbox "Insert the new URL , including http:// or https://" 10 60 3>&1 1>&2 2>&3)"
-        exitstatus=$?
+        # Log
+        log_event "error" "Something went wrong running search and replace!" "false"
+        display --indent 6 --text "- Running search and replace" --result "FAIL" --color RED
 
-        if [[ ${exitstatus} -eq 0 ]]; then
-
-          mysql_database_export "${chosen_db}" "${chosen_db}_bk_before_replace_urls.sql"
-
-          # Queries
-          SQL0="USE ${chosen_db};"
-          SQL1="UPDATE ${db_prefix}options SET option_value = replace(option_value, '${existing_URL}', '${new_URL}') WHERE option_name = 'home' OR option_name = 'siteurl';"
-          SQL2="UPDATE ${db_prefix}posts SET post_content = replace(post_content, '${existing_URL}', '${new_URL}');"
-          SQL3="UPDATE ${db_prefix}posts SET guid = replace(guid, '${existing_URL}', '${new_URL}');"
-          SQL4="UPDATE ${db_prefix}postmeta SET meta_value = replace(meta_value,'${existing_URL}','${new_URL}');"
-          SQL5="UPDATE ${db_prefix}usermeta SET meta_value = replace(meta_value, '${existing_URL}','${new_URL}');"
-          SQL6="UPDATE ${db_prefix}links SET link_url = replace(link_url, '${existing_URL}','${new_URL}');"
-          SQL7="UPDATE ${db_prefix}comments SET comment_content = replace(comment_content , '${existing_URL}','${new_URL}');"
-
-          log_event "info" "Replacing URLs in database ${chosen_db} ..."
-
-          "${MYSQL_ROOT}" -e "${SQL0}${SQL1}${SQL2}${SQL3}${SQL4}${SQL5}${SQL6}${SQL7}"
-
-          log_event "info" "String replaced on database ${chosen_db} ..."
-
-        fi
-
-      fi
+        return 1
 
     fi
 
@@ -318,6 +319,19 @@ function wp_ask_url_search_and_replace() {
           wpcli_export_database "${wp_path}" "${TMP_DIR}/backups/${project_name}_bk_before_search_and_replace.sql"
 
           wpcli_search_and_replace "${wp_path}" "${existing_URL}" "${new_URL}"
+
+          exitstatus=$?
+
+          # If wp-cli method fails, it will try to replace via SQL Query
+          if [[ ${exitstatus} -eq 1 ]]; then
+
+            # Get database and database prefix from wp-config.php
+            db_prefix="$(cat "${wp_path}"/wp-config.php | grep "\$table_prefix" | cut -d \' -f 2)"
+            target_db="$(sed -n "s/define( *'DB_NAME', *'\([^']*\)'.*/\1/p" "${wp_path}"/wp-config.php)"
+
+            wp_replace_string_on_database "${db_prefix}" "${target_db}" "${existing_URL}" "${new_URL}"
+
+          fi
 
         else
 
