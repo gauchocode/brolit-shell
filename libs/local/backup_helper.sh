@@ -526,14 +526,14 @@ function make_files_backup() {
     rm --force "${TMP_DIR}/${NOW}/${bk_file}"
 
     # Log
-    log_event "info" "Temp backup deleted from server"
+    log_event "info" "Temp backup deleted from server" "false"
     #display --indent 6 --text "- Deleting temp files" --result "DONE" --color GREEN
 
   else
     ERROR=true
     ERROR_TYPE="ERROR: Making backup ${TMP_DIR}/${NOW}/${bk_file}"
 
-    log_event "error" "Something went wrong making backup file: ${TMP_DIR}/${NOW}/${bk_file}"
+    log_event "error" "Something went wrong making backup file: ${TMP_DIR}/${NOW}/${bk_file}" "false"
     display --indent 6 --text "- Compressing backup" --result "FAIL" --color RED
     display --indent 8 --text "Something went wrong making backup file: ${bk_file}" --tcolor RED
 
