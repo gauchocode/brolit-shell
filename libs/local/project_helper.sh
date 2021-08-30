@@ -69,12 +69,13 @@ function ask_project_name() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    log_event "debug" "Setting project_name: ${project_name}" "false"
+    log_event "info" "Project name: ${project_name}" "false"
 
     # Return
     echo "${project_name}"
 
   else
+
     return 1
 
   fi
@@ -166,7 +167,7 @@ function ask_folder_to_install_sites() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-      log_event "info" "Folder to work with: ${folder_to_install}"
+      log_event "info" "Folder to work with: ${folder_to_install}" "false"
 
       # Return
       echo "${folder_to_install}"
@@ -178,7 +179,7 @@ function ask_folder_to_install_sites() {
 
   else
 
-    log_event "info" "Folder to install: ${folder_to_install}"
+    log_event "info" "Folder to install: ${folder_to_install}" "false"
 
     # Return
     echo "${folder_to_install}"
