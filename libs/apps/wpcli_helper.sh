@@ -1204,18 +1204,21 @@ function wpcli_search_and_replace() {
 
         log_event "debug" "Running: wp --allow-root --path=${wp_site} search-replace --url=https://${wp_site_url} ${search} ${replace} --network" "false"
 
-        wp --allow-root --path="${wp_site}" search-replace --url=https://"${wp_site_url}" "${search}" "${replace}" --network --quiet
+        wpcli_result="$(wp --allow-root --path="${wp_site}" search-replace --url=https://"${wp_site_url}" "${search}" "${replace}" --network --quiet)"
 
     else
 
         log_event "debug" "Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace}" "false"
 
-        wp --allow-root --path="${wp_site}" search-replace "${search}" "${replace}" --quiet
+        wpcli_result="$(wp --allow-root --path="${wp_site}" search-replace "${search}" "${replace}" --quiet)"
 
     fi
 
-    exitstatus=$?
-    if [[ $exitstatus -eq 0 ]]; then
+    #exitstatus=$?
+    #if [[ $exitstatus -eq 0 ]]; then
+
+    error_found=$(echo "${wpcli_result}" | grep "Error")
+    if [[ ${error_found} == "" ]]; then
 
         # Log
         log_event "info" "Search and replace finished ok" "false"
