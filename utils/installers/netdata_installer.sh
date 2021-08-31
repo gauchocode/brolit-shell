@@ -29,10 +29,10 @@ function _netdata_alerts_configuration() {
   cp "${SFOLDER}/config/netdata/health.d/web_log.conf" "/etc/netdata/health.d/web_log.conf"
 
   # MySQL
-  cp "${SFOLDER}/config/netdata/health.d/myqsl.conf" "/etc/netdata/health.d/myqsl.conf"
+  cp "${SFOLDER}/config/netdata/health.d/mysql.conf" "/etc/netdata/health.d/mysql.conf"
 
   # PHP-FPM
-  cp "${SFOLDER}/config/netdata/health.d/phpfpm.conf" "/etc/netdata/health.d/phpfpm.conf"
+  cp "${SFOLDER}/config/netdata/health.d/php-fpm.conf" "/etc/netdata/health.d/php-fpm.conf"
 
   # Anomalies
   cp "${SFOLDER}/config/netdata/health.d/anomalies.conf" "/etc/netdata/health.d/anomalies.conf"
@@ -63,7 +63,7 @@ function _netdata_required_packages() {
 
   elif [[ ${ubuntu_version} == "2004" ]]; then
 
-    apt-get --yes install curl python3-mysqldb python3-pip lm-sensors libmnl netcat openssl -qq >/dev/null
+    apt-get --yes install curl python3-mysqldb python3-pip lm-sensors libmnl-dev netcat openssl -qq >/dev/null
 
   else
 
@@ -74,10 +74,13 @@ function _netdata_required_packages() {
   # New: anomalies support
   ## Ref: https://learn.netdata.cloud/docs/agent/collectors/python.d.plugin/anomalies
   "$(
-    sudo su -s /bin/bash netdata
-    pip3 install --user netdata-pandas==0.0.38 numba==0.50.1 scikit-learn==0.23.2 pyod==0.8.3
-    exit
+    {
+      sudo su -s /bin/bash netdata
+      pip3 install --user netdata-pandas==0.0.38 numba==0.50.1 scikit-learn==0.23.2 pyod==0.8.3
+      exit;
+    }
   )"
+
   cp "/usr/lib/netdata/conf.d/python.d.conf" "/etc/netdata/python.d.conf"
   cp "/usr/lib/netdata/conf.d/python.d/anomalies.conf" "/etc/netdata/python.d/anomalies.conf"
 
