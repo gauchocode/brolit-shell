@@ -10,7 +10,15 @@
 #
 ################################################################################
 
-### NEW
+################################################################################
+# Private: netdata alerts configuration
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  nothing
+################################################################################
 
 function _netdata_alerts_configuration() {
 
@@ -356,6 +364,9 @@ function netdata_configuration() {
 
   log_event "info" "Health alarm config done!" "false"
   display --indent 6 --text "- Health alarm configuration" --result "DONE" --color GREEN
+
+  # Alerts
+  _netdata_alerts_configuration
 
   # Telegram
   _netdata_telegram_config

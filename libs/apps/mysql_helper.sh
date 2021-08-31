@@ -12,10 +12,10 @@
 # Ask root password and configure it on .my.cnf
 #
 # Arguments:
-#   None
+#  None
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function mysql_ask_root_psw() {
@@ -58,10 +58,10 @@ function mysql_ask_root_psw() {
 # Ask database user scope
 #
 # Arguments:
-#   $1 = ${db_scope} - Optional
+#  $1 = ${db_scope} - Optional
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function mysql_ask_user_db_scope() {
@@ -88,10 +88,10 @@ function mysql_ask_user_db_scope() {
 # Ask database selection
 #
 # Arguments:
-#   $1 = ${db_scope} - Optional
+#  $1 = ${db_scope} - Optional
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function mysql_ask_database_selection() {
@@ -123,11 +123,11 @@ function mysql_ask_database_selection() {
 # Test user credentials
 #
 # Arguments:
-#   $1 = ${db_user}
-#   $2 = ${db_user_psw}
+#  $1 = ${db_user}
+#  $2 = ${db_user_psw}
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function mysql_test_user_credentials() {
@@ -148,7 +148,7 @@ function mysql_test_user_credentials() {
         # Log
         clear_last_line
         display --indent 6 --text "- Testing MySQL user credentials" --result "DONE" --color GREEN
-        log_event "info" " Testing MySQL user credentials. User '${db_user}' and pass '${db_user_psw}'"
+        log_event "info" " Testing MySQL user credentials. User '${db_user}' and pass '${db_user_psw}'" "false"
 
         return 0
 
@@ -157,8 +157,8 @@ function mysql_test_user_credentials() {
         # Log
         clear_last_line
         display --indent 6 --text "- Testing MySQL user credentials" --result "FAIL" --color RED
-        log_event "error" "Something went wrong testing MySQL user credentials. User '${db_user}' and pass '${db_user_psw}'"
-        log_event "debug" "Last command executed: ${MYSQL} -u${db_user} -p${db_user_psw} -e ;"
+        log_event "error" "Something went wrong testing MySQL user credentials. User '${db_user}' and pass '${db_user_psw}'" "false"
+        log_event "debug" "Last command executed: ${MYSQL} -u${db_user} -p${db_user_psw} -e ;" "false"
 
         return 1
 
@@ -170,10 +170,10 @@ function mysql_test_user_credentials() {
 # Count databases on MySQL
 #
 # Arguments:
-#   $1 = ${databases}
+#  $1 = ${databases}
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function mysql_count_dabases() {
@@ -198,10 +198,10 @@ function mysql_count_dabases() {
 # List databases on MySQL
 #
 # Arguments:
-#   ${stage} - Options: all, prod, dev, test, stage
+#  ${stage} - Options: all, prod, dev, test, stage
 #
 # Outputs:
-#   ${databases}, 1 on error.
+#  ${databases}, 1 on error.
 ################################################################################
 
 function mysql_list_databases() {
@@ -255,10 +255,10 @@ function mysql_list_databases() {
 # List users on MySQL
 #
 # Arguments:
-#   none
+#  none
 #
 # Outputs:
-#   ${users}, 1 on error.
+#  ${users}, 1 on error.
 ################################################################################
 
 function mysql_list_users() {
@@ -301,12 +301,12 @@ function mysql_list_users() {
 # Create database user
 #
 # Arguments:
-#   $1 = ${db_user}
-#   $2 = ${db_user_psw}
-#   $3 = ${db_user_scope} - optional
+#  $1 = ${db_user}
+#  $2 = ${db_user_psw}
+#  $3 = ${db_user_scope} - optional
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function mysql_user_create() {
@@ -321,12 +321,12 @@ function mysql_user_create() {
     display --indent 2 --text "- Creating MySQL user ${db_user}"
 
     # DB user host
-    if [[ -z ${db_user_scope} || ${db_user_scope} == "" ]]; then
+    if [[ -z ${db_user_scope} ]]; then
         db_user_scope="$(mysql_ask_user_db_scope "localhost")"
     fi
 
     # Query
-    if [[ -z ${db_user_psw} || ${db_user_psw} == "" ]]; then
+    if [[ -z ${db_user_psw} ]]; then
         query="CREATE USER '${db_user}'@'${db_user_scope}';"
 
     else
@@ -344,10 +344,12 @@ function mysql_user_create() {
         # Log
         clear_last_line
         display --indent 6 --text "- Creating MySQL user ${db_user}" --result "DONE" --color GREEN
+
         if [[ ${db_user_psw} != "" ]]; then
             display --indent 8 --text "User created with pass: ${db_user_psw}" --tcolor YELLOW
         fi
-        log_event "info" "MySQL user ${db_user} created with pass: ${db_user_psw}"
+
+        log_event "info" "MySQL user ${db_user} created with pass: ${db_user_psw}" "false"
 
         return 0
 
@@ -356,11 +358,11 @@ function mysql_user_create() {
         # Log
         clear_last_line
         display --indent 6 --text "- Creating MySQL user ${db_user}" --result "FAIL" --color RED
-        display --indent 8 --text "MySQL output: ${mysql_output}" --tcolor RED
-        display --indent 8 --text "Query executed: ${query}" --tcolor RED
-        log_event "error" "Something went wrong creating user: ${db_user}."
-        log_event "debug" "MySQL output: ${mysql_output}"
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e ${query}"
+        display --indent 8 --text "Please read the log file!" --tcolor RED
+
+        log_event "error" "Something went wrong creating user: ${db_user}." "false"
+        log_event "debug" "MySQL output: ${mysql_output}" "false"
+        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e ${query}" "false"
 
         return 1
 
@@ -372,11 +374,11 @@ function mysql_user_create() {
 # Delete database user
 #
 # Arguments:
-#   $1 = ${db_user}
-#   $2 = ${db_user_scope} - optional
+#  $1 = ${db_user}
+#  $2 = ${db_user_scope} - optional
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function mysql_user_delete() {
@@ -433,11 +435,11 @@ function mysql_user_delete() {
 # Change user password
 #
 # Arguments:
-#   $1 = ${db_user}
-#   $2 = ${db_user_psw}
+#  $1 = ${db_user}
+#  $2 = ${db_user_psw}
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function mysql_user_psw_change() {
@@ -451,7 +453,7 @@ function mysql_user_psw_change() {
     local query_1
     local query_2
 
-    log_event "info" "Changing password for user ${db_user} in MySQL"
+    log_event "info" "Changing password for user ${db_user} in MySQL" "false"
 
     # Query
     query_1="ALTER USER '${db_user}'@'localhost' IDENTIFIED BY '${db_user_psw}';"
@@ -467,7 +469,7 @@ function mysql_user_psw_change() {
         # Log
         display --indent 6 --text "- Changing password to user ${db_user}" --result "DONE" --color GREEN
         display --indent 8 --text "New password: ${db_user_psw}" --result "DONE" --color GREEN
-        log_event "info" "New password for user ${db_user}: ${db_user_psw}"
+        log_event "info" "New password for user ${db_user}: ${db_user_psw}" "false"
 
         return 0
 
@@ -475,8 +477,8 @@ function mysql_user_psw_change() {
 
         # Log
         display --indent 6 --text "- Changing password to user ${db_user}" --result "FAIL" --color RED
-        log_event "error" "Something went wrong changing password to user ${db_user}."
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\""
+        log_event "error" "Something went wrong changing password to user ${db_user}." "false"
+        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
 
         return 1
 
@@ -488,10 +490,10 @@ function mysql_user_psw_change() {
 # Change root password
 #
 # Arguments:
-#   $1 = ${db_user_psw}
+#  $1 = ${db_user_psw}
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function mysql_root_psw_change() {
@@ -536,7 +538,7 @@ function mysql_root_psw_change() {
         # Log
         display --indent 6 --text "- Setting new password for root" --result "DONE" --color GREEN
         display --indent 8 --text "New password: ${db_root_psw}"
-        log_event "info" "New password for root: ${db_root_psw}"
+        log_event "info" "New password for root: ${db_root_psw}" "false"
 
         return 0
 
@@ -544,8 +546,8 @@ function mysql_root_psw_change() {
 
         # Log
         display --indent 6 --text "- Setting new password for root" --result "FAIL" --color RED
-        log_event "error" "Something went wrong changing MySQL root password."
-        log_event "debug" "Last command executed: mysql mysql -e \"USE mysql;UPDATE user SET Password=PASSWORD('${db_root_psw}') WHERE User='${db_root_user}';FLUSH PRIVILEGES;\""
+        log_event "error" "Something went wrong changing MySQL root password." "false"
+        log_event "debug" "Last command executed: mysql mysql -e \"USE mysql;UPDATE user SET Password=PASSWORD('${db_root_psw}') WHERE User='${db_root_user}';FLUSH PRIVILEGES;\"" "false"
 
         return 1
 
@@ -557,12 +559,12 @@ function mysql_root_psw_change() {
 # Grant privileges to user
 #
 # Arguments:
-#   $1 = ${db_user}
-#   $2 = ${db_target}
-#   $3 = ${db_scope}
+#  $1 = ${db_user}
+#  $2 = ${db_target}
+#  $3 = ${db_scope}
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function mysql_user_grant_privileges() {
@@ -622,10 +624,10 @@ function mysql_user_grant_privileges() {
 # Check if user exists
 #
 # Arguments:
-#   $1 = ${db_user}
+#  $1 = ${db_user}
 #
 # Outputs:
-#   0 if user exists, 1 if not.
+#  0 if user exists, 1 if not.
 ################################################################################
 
 function mysql_user_exists() {
@@ -639,7 +641,7 @@ function mysql_user_exists() {
 
     user_exists="$(${MYSQL_ROOT} -e "${query}" | grep 1)"
 
-    log_event "debug" "Last command executed: ${MYSQL_ROOT} -e ${query} | grep 1"
+    log_event "debug" "Last command executed: ${MYSQL_ROOT} -e ${query} | grep 1" "false"
 
     if [[ ${user_exists} == "" ]]; then
         # Return 0 if user don't exists
@@ -655,10 +657,10 @@ function mysql_user_exists() {
 # Check if database exists
 #
 # Arguments:
-#   $1 = ${db_user}
+#  $1 = ${db_user}
 #
 # Outputs:
-#   0 if database exists, 1 if not.
+#  0 if database exists, 1 if not.
 ################################################################################
 
 function mysql_database_exists() {
@@ -685,10 +687,10 @@ function mysql_database_exists() {
 # Sanitize database name or username
 #
 # Arguments:
-#   $1 = ${string}
+#  $1 = ${string}
 #
 # Outputs:
-#   Sanetized ${string}.
+#  Sanetized ${string}.
 ################################################################################
 
 function mysql_name_sanitize() {
@@ -709,7 +711,7 @@ function mysql_name_sanitize() {
     clean=${clean//[^a-zA-Z0-9_]/}
 
     # Finally, lowercase with TR
-    clean=$(echo -n "${clean}" | tr A-Z a-z)
+    clean="$(echo -n "${clean}" | tr A-Z a-z)"
 
     #log_event "debug" "Sanitized name: ${clean}" "true"
 
@@ -722,10 +724,10 @@ function mysql_name_sanitize() {
 # Create database
 #
 # Arguments:
-#   $1 = ${database}
+#  $1 = ${database}
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function mysql_database_create() {
@@ -737,7 +739,7 @@ function mysql_database_create() {
     local mysql_output
     local mysql_result
 
-    log_event "info" "Creating ${database} database in MySQL ..."
+    log_event "info" "Creating ${database} database in MySQL ..." "false"
 
     # Query
     query_1="CREATE DATABASE IF NOT EXISTS ${database};"
@@ -751,7 +753,7 @@ function mysql_database_create() {
 
         # Log
         display --indent 6 --text "- Creating database: ${database}" --result "DONE" --color GREEN
-        log_event "info" "Database ${database} created"
+        log_event "info" "Database ${database} created" "false"
 
         return 0
 
@@ -759,8 +761,8 @@ function mysql_database_create() {
 
         # Log
         display --indent 6 --text "- Creating database: ${database}" --result "ERROR" --color RED
-        log_event "error" "Something went wrong creating database: ${database}."
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}\""
+        log_event "error" "Something went wrong creating database: ${database}." "false"
+        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}\"" "false"
 
         return 1
 
@@ -772,10 +774,10 @@ function mysql_database_create() {
 # Delete database
 #
 # Arguments:
-#   $1 = ${database}
+#  $1 = ${database}
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function mysql_database_drop() {
@@ -798,7 +800,7 @@ function mysql_database_drop() {
     if [[ ${mysql_result} -eq 0 ]]; then
 
         # Log
-        log_event "info" "- Database ${database} dropped successfully"
+        log_event "info" "- Database ${database} dropped successfully" "false"
         display --indent 6 --text "- Dropping database: ${database}" --result "DONE" --color GREEN
 
         return 0
@@ -807,10 +809,10 @@ function mysql_database_drop() {
 
         # Log
         display --indent 6 --text "- Dropping database: ${database}" --result "ERROR" --color RED
-        display --indent 8 --text "MySQL import output: ${mysql_output}" --tcolor RED
-        display --indent 8 --text "Query executed: ${query_1}" --tcolor RED
-        log_event "error" "Something went wrong dropping the database: ${database}"
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}\""
+        display --indent 8 --text "Please, read the log file!" --tcolor RED
+
+        log_event "error" "Something went wrong dropping the database: ${database}" "false"
+        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}\"" "false"
 
         return 1
 
@@ -822,11 +824,11 @@ function mysql_database_drop() {
 # Database import
 #
 # Arguments:
-#   $1 = ${database} (.sql)
-#   $2 = ${dump_file}
+#  $1 = ${database} (.sql)
+#  $2 = ${dump_file}
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function mysql_database_import() {
@@ -838,8 +840,8 @@ function mysql_database_import() {
 
     # Log
     display --indent 6 --text "- Importing backup into database: ${database}" --tcolor YELLOW
-    log_event "info" "Importing dump file ${dump_file} into database: ${database}"
-    log_event "debug" "Running: pv ${dump_file} | ${MYSQL_ROOT} -f -D ${database}"
+    log_event "info" "Importing dump file ${dump_file} into database: ${database}" "false"
+    log_event "debug" "Running: pv ${dump_file} | ${MYSQL_ROOT} -f -D ${database}" "false"
 
     # Execute command
     pv --width 70 "${dump_file}" | ${MYSQL_ROOT} -f -D "${database}"
@@ -851,7 +853,7 @@ function mysql_database_import() {
         # Log
         clear_last_line
         display --indent 6 --text "- Database backup import" --result "DONE" --color GREEN
-        log_event "info" "Database ${database} imported successfully"
+        log_event "info" "Database ${database} imported successfully" "false"
 
         return 0
 
@@ -860,6 +862,7 @@ function mysql_database_import() {
         # Log
         clear_last_line
         display --indent 6 --text "- Database backup import" --result "ERROR" --color RED
+        display --indent 8 --text "Please, read the log file!" --tcolor RED
         log_event "error" "Something went wrong importing database: ${database}"
         log_event "debug" "Last command executed: pv ${dump_file} | ${MYSQL_ROOT} -f -D ${database}"
 
@@ -873,11 +876,11 @@ function mysql_database_import() {
 # Database export
 #
 # Arguments:
-#   $1 = ${database}
-#   $2 = ${dump_file}
+#  $1 = ${database}
+#  $2 = ${dump_file}
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function mysql_database_export() {
@@ -902,7 +905,7 @@ function mysql_database_export() {
 
         # Log
         display --indent 6 --text "- Database backup for ${YELLOW}${database}${ENDCOLOR}" --result "DONE" --color GREEN
-        log_event "info" "Database ${database} exported successfully"
+        log_event "info" "Database ${database} exported successfully" "false"
 
         return 0
 
@@ -910,6 +913,7 @@ function mysql_database_export() {
 
         # Log
         display --indent 6 --text "- Database backup for ${YELLOW}${database}${ENDCOLOR}" --result "ERROR" --color RED
+        display --indent 8 --text "Please, read the log file!" --tcolor RED
         log_event "error" "Something went wrong exporting database: ${database}." "false"
         log_event "error" "Last command executed: ${MYSQLDUMP_ROOT} ${database} > ${dump_file}" "false"
 
@@ -923,17 +927,14 @@ function mysql_database_export() {
 # Database rename
 #
 # Arguments:
-#   $1 = ${database}
-#   $2 = ${dump_file}
+#  $1 = ${database_old_name}
+#  $2 = ${database_new_name}
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function mysql_database_rename() {
-
-    # $1 = ${database_old_name}
-    # $2 = ${database_new_name}
 
     local database_old_name=$1
     local database_new_name=$2
