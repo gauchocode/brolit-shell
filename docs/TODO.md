@@ -116,7 +116,6 @@
         Important: if create a project with stage different than prod, block search engine indexation
 - [ ] Installers: COPY_FROM_PROJECT option to exclude uploads directory
         rsync -ax --exclude [relative path to directory to exclude] /path/from /path/to
-- [ ] Installers: Option to select netdata metrics to be reported.
 - [ ] Hetzner cloud cli support: https://github.com/hetznercloud/cli
 - [ ] Network: implements hetzner network configuration.
       https://docs.hetzner.com/cloud/networks/server-configuration/
@@ -138,7 +137,8 @@
 - [ ] Backups: Rsync support on mounted device or with SSH config.
 - [ ] PHP: Option to change php version on installed site.
         https://easyengine.io/blog/easyengine-v4-0-15-released/
-- [ ] Notifications: Discord support
+- [ ] Installers: Option to select netdata metrics to be reported.
+- [ ] Installers: Netdata Discord support
         https://docs.netdata.cloud/health/notifications/discord/
 - [ ] Security: Option to auto-install security updates on Ubuntu: 
         https://help.ubuntu.com/lts/serverguide/automatic-updates.html
@@ -150,6 +150,8 @@
 ## For release 4.0
 
 - [ ] HTTP/2 Monitor Dashboard.
+- [ ] Uptime Kuma support: 
+        https://github.com/louislam/uptime-kuma
 - [ ] Docker support: 
         https://docs.docker.com/desktop/backup-and-restore/
         https://www.reddit.com/r/Wordpress/comments/jfn7z9/guide_wordpress_on_docker_with_nginx_traefik/
