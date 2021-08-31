@@ -23,10 +23,10 @@ log_event "info" "Running uptime_tasks.sh from cron ..." "false"
 script_init
 
 #Log
-log_section "Uptime Robot"
+log_section "Uptime Checker"
 
 # Get all directories
-all_sites=$(get_all_directories "${SITES}")
+all_sites="$(get_all_directories "${SITES}")"
 
 ## Get length of $all_sites
 count_all_sites=$(find "${SITES}" -maxdepth 1 -type d -printf '.' | wc -c)
