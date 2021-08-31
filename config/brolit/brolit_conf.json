@@ -13,7 +13,16 @@
     "BACKUPS": {
         "methods": [
             {
-                "dropbox": "false",
+                "dropbox": [
+                    {
+                        "status": "disable",
+                        "config": [
+                            {
+                                "file": "/root/.dropbox_uploader"
+                            }
+                        ]
+                    }
+                ],
                 "sftp": [
                     {
                         "status": "disable",
@@ -39,9 +48,16 @@
                     }
                 ]
             }
+        ],
+        "retention": [
+            {
+                "keep_daily": "7",
+                "keep_weekly": "",
+                "keep_monthly": ""
+            }
         ]
     },
-    "PROJECTS_PATH": "",
+    "PROJECTS_PATH": "/var/www",
     "NOTIFICATIONS": {
         "email": [
             {
@@ -65,6 +81,20 @@
                     {
                         "botfather_key": "",
                         "telegram_user_id": ""
+                    }
+                ]
+            }
+        ]
+    },
+    "FIREWALL": {
+        "config": [
+            {
+                "status": "disable",
+                "config": [
+                    {
+                        "ssh": "allow",
+                        "http": "allow",
+                        "https": "allow"
                     }
                 ]
             }

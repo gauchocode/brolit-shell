@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.53
+# Version: 3.0.54
 ################################################################################
 
 source ~/.brolit-shell.conf
@@ -31,8 +31,8 @@ if [[ ${DROPBOX_ENABLE} == "true" && -f ${DPU_CONFIG_FILE} ]]; then
 fi
 
 # Version
-SCRIPT_VERSION="3.0.53"
-ALIASES_VERSION="3.0.53-065"
+SCRIPT_VERSION="3.0.54"
+ALIASES_VERSION="3.0.54-065"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -659,7 +659,7 @@ function _project_get_config() {
     local project_config_file
 
     project_name="$(basename "${project_path}")"
-    project_config_file="${BROLIT_CONFIG_PATH}/${project_name}-brolit.conf"
+    project_config_file="${BROLIT_CONFIG_PATH}/${project_name}_conf.json"
 
     if [[ -e ${project_config_file} ]]; then
 
@@ -757,11 +757,6 @@ function extract() {
             #uncompress "${file_path}" "${directory}"
             pv --width 70 "${file_path}" | uncompress "${directory_to_extract}"
             ;;
-
-            #*.7z)
-            #7z x "${file_path}" "${directory}"
-            #7z x "${file_path}" "${directory_to_extract}" | pv -l >/dev/null
-            #;;
 
         *.xz)
             #tar xvf "${file_path}" -C "${directory}"
@@ -1193,7 +1188,7 @@ function read_site_config() {
     local project_config_file
 
     #DEVOPS_CONFIG_FILE="${SITES}/${project_domain}/brolit.conf"
-    project_config_file="${BROLIT_CONFIG_PATH}/${project_name}-brolit.conf"
+    project_config_file="${BROLIT_CONFIG_PATH}/${project_name}_conf.json"
 
     if [[ -f ${project_config_file} ]]; then
 

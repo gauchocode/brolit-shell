@@ -1,11 +1,23 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.53
+# Version: 3.0.54
 ################################################################################
+#
+# OpenVPN Installer
 #
 #   Ref: https://tecadmin.net/install-openvpn-client-on-ubuntu/
 #
+################################################################################
+
+################################################################################
+# Check if openvpn is installed
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   true or false
 ################################################################################
 
 function openvpn_check_if_installed() {
@@ -28,6 +40,16 @@ function openvpn_check_if_installed() {
   echo "${openvpn_installed}"
 
 }
+
+################################################################################
+# OpenVPN installer
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
 
 function openvpn_installer() {
 
@@ -53,6 +75,16 @@ function openvpn_installer() {
 
 }
 
+################################################################################
+# Purge OpenVPN packages
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
+
 function openvpn_purge() {
 
   log_subsection "OpenVPN Installer"
@@ -70,6 +102,16 @@ function openvpn_purge() {
   log_event "info" "openvpn removed" "false"
 
 }
+
+################################################################################
+# OpenVPN installer menu
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
 
 function openvpn_installer_menu() {
 

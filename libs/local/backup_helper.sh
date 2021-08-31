@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.53
+# Version: 3.0.54
 #############################################################################
 #
 # Backup Helper: Perform backup actions.
@@ -796,7 +796,7 @@ function make_project_backup() {
 
     project_name="$(project_get_name_from_domain "${project_domain}")"
 
-    project_config_file="${BROLIT_CONFIG_PATH}/${project_name}-brolit.conf"
+    project_config_file="${BROLIT_CONFIG_PATH}/${project_name}_conf.json"
 
     if [[ -f "${project_config_file}" ]]; then
 
