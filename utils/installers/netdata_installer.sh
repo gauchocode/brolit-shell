@@ -10,6 +10,27 @@
 #
 ################################################################################
 
+### NEW
+
+function _netdata_alerts_configuration() {
+
+  # CPU
+  cp "${SCRIPT}/config/netdata/health.d/cpu.conf" "/etc/netdata/health.d/cpu.conf"
+
+  # Web_log
+  cp "${SCRIPT}/config/netdata/health.d/web_log.conf" "/etc/netdata/health.d/web_log.conf"
+
+  # MySQL
+  cp "${SCRIPT}/config/netdata/health.d/myqsl.conf" "/etc/netdata/health.d/myqsl.conf"
+
+  # PHP-FPM
+  cp "${SCRIPT}/config/netdata/health.d/phpfpm.conf" "/etc/netdata/health.d/phpfpm.conf"
+
+  # Anomalies
+  cp "${SCRIPT}/config/netdata/health.d/anomalies.conf" "/etc/netdata/health.d/anomalies.conf"
+
+}
+
 ################################################################################
 # Private: install netdata required packages
 #
@@ -29,12 +50,27 @@ function _netdata_required_packages() {
   display --indent 6 --text "- Installing netdata required packages"
 
   if [[ ${ubuntu_version} == "1804" ]]; then
+
     apt-get --yes install zlib1g-dev uuid-dev libuv1-dev liblz4-dev libjudy-dev libssl-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python python-mysqldb lm-sensors libmnl netcat nodejs python-ipaddress python-dnspython iproute2 python-beanstalkc libuv liblz4 Judy openssl -qq >/dev/null
 
   elif [[ ${ubuntu_version} == "2004" ]]; then
-    apt-get --yes install curl python3-mysqldb lm-sensors libmnl netcat openssl -qq >/dev/null
+
+    apt-get --yes install curl python3-mysqldb python3-pip lm-sensors libmnl netcat openssl -qq >/dev/null
+
+  else
+
+    return 1
 
   fi
+
+  # New: anomalies support
+  ## Ref: https://learn.netdata.cloud/docs/agent/collectors/python.d.plugin/anomalies
+  "$(
+    sudo su -s /bin/bash netdata
+    pip3 install --user netdata-pandas==0.0.38 numba==0.50.1 scikit-learn==0.23.2 pyod==0.8.3
+  )"
+  cp "/usr/lib/netdata/conf.d/python.d.conf" "/etc/netdata/python.d.conf"
+  cp "/usr/lib/netdata/conf.d/python.d/anomalies.conf" "/etc/netdata/python.d/anomalies.conf"
 
   # Log
   clear_last_line
@@ -109,6 +145,7 @@ function _netdata_telegram_config() {
   local telegram_bot_token
   local default_recipient_telegram
 
+  # Netdata health alarms config
   health_alarm_notify_conf="/etc/netdata/health_alarm_notify.conf"
 
   delimiter="="
@@ -316,6 +353,7 @@ function netdata_configuration() {
 
   # Health alarm notify
   cat "${SFOLDER}/config/netdata/health_alarm_notify.conf" >"/etc/netdata/health_alarm_notify.conf"
+
   log_event "info" "Health alarm config done!" "false"
   display --indent 6 --text "- Health alarm configuration" --result "DONE" --color GREEN
 
