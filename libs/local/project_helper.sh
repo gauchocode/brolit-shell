@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.53
+# Version: 3.0.54
 ################################################################################
 #
 # Project Helper: Perform project actions.
@@ -291,7 +291,7 @@ function project_create_config() {
   local project_config_file
 
   # Project config file
-  project_config_file="${BROLIT_CONFIG_PATH}/${project_domain}-brolit.conf"
+  project_config_file="${BROLIT_CONFIG_PATH}/${project_name}_conf.json"
 
   if [[ -e ${project_config_file} ]]; then
 
@@ -302,7 +302,7 @@ function project_create_config() {
   else
 
     # Copy empty config file
-    cp "${SFOLDER}/config/brolit.conf" "${project_config_file}"
+    cp "${SFOLDER}/config/brolit/brolit_project_conf.json" "${project_config_file}"
 
   fi
 
@@ -337,6 +337,7 @@ function project_create_config() {
   content_pcert="$(jq ".project_cert_conf = \"${project_cert_conf}\"" "${project_config_file}")" && echo "${content_pcert}" >"${project_config_file}"
 
   # Log
+  log_event "info" "Project config file created: ${project_config_file}" "false"
   display --indent 6 --text "- Creating project config file" --result DONE --color GREEN
   display --indent 8 --text "${project_config_file}" --color YELLOW --tstyle ITALIC
 
@@ -442,7 +443,7 @@ function project_update_config() {
   project_name="$(project_get_name_from_domain "${project_domain}")"
 
   # Project config file
-  project_config_file="${BROLIT_CONFIG_PATH}/${project_name}-brolit.conf"
+  project_config_file="${BROLIT_CONFIG_PATH}/${project_name}_conf.json"
 
   if [[ -e ${project_config_file} ]]; then
 
@@ -489,7 +490,7 @@ function project_get_config() {
 
   project_name="$(project_get_name_from_domain "${project_domain}")"
 
-  project_config_file="${BROLIT_CONFIG_PATH}/${project_name}-brolit.conf"
+  project_config_file="${BROLIT_CONFIG_PATH}/${project_name}_conf.json"
 
   if [[ -e ${project_config_file} ]]; then
 

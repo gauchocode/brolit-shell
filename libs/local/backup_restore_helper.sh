@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.53
+# Version: 3.0.54
 ################################################################################
 #
 # Backup/Restore Helper: Backup and restore funtions.
@@ -861,7 +861,7 @@ function restore_project() {
     # Only for better code reading, i assign this new var:
     chosen_domain="${chosen_project}"
 
-    # TODO: Read from brolit.conf if not present call a function to do this:
+    # TODO: Read from /etc/brolit/${project_name}_conf.json if not present call a function to do this:
     case ${project_type} in
 
     wordpress)
