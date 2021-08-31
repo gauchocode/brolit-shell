@@ -13,15 +13,17 @@ function phpmyadmin_installer () {
   log_subsection "phpMyAdmin Installer"
 
   project_domain="$(whiptail --title "Domain" --inputbox "Insert the domain for PhpMyAdmin. Example: sql.domain.com" 10 60 3>&1 1>&2 2>&3)"
+  
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     log_event "info" "Setting project_domain=${project_domain}" "false"
 
     possible_root_domain="$(get_root_domain "${project_domain}")"
-    root_domain=$(cloudflare_ask_rootdomain "${possible_root_domain}")
+    root_domain="$(cloudflare_ask_rootdomain "${possible_root_domain}")"
 
   else
+
     return 1
 
   fi

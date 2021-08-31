@@ -23,19 +23,19 @@
 function _netdata_alerts_configuration() {
 
   # CPU
-  cp "${SCRIPT}/config/netdata/health.d/cpu.conf" "/etc/netdata/health.d/cpu.conf"
+  cp "${SFOLDER}/config/netdata/health.d/cpu.conf" "/etc/netdata/health.d/cpu.conf"
 
   # Web_log
-  cp "${SCRIPT}/config/netdata/health.d/web_log.conf" "/etc/netdata/health.d/web_log.conf"
+  cp "${SFOLDER}/config/netdata/health.d/web_log.conf" "/etc/netdata/health.d/web_log.conf"
 
   # MySQL
-  cp "${SCRIPT}/config/netdata/health.d/myqsl.conf" "/etc/netdata/health.d/myqsl.conf"
+  cp "${SFOLDER}/config/netdata/health.d/myqsl.conf" "/etc/netdata/health.d/myqsl.conf"
 
   # PHP-FPM
-  cp "${SCRIPT}/config/netdata/health.d/phpfpm.conf" "/etc/netdata/health.d/phpfpm.conf"
+  cp "${SFOLDER}/config/netdata/health.d/phpfpm.conf" "/etc/netdata/health.d/phpfpm.conf"
 
   # Anomalies
-  cp "${SCRIPT}/config/netdata/health.d/anomalies.conf" "/etc/netdata/health.d/anomalies.conf"
+  cp "${SFOLDER}/config/netdata/health.d/anomalies.conf" "/etc/netdata/health.d/anomalies.conf"
 
 }
 
@@ -76,6 +76,7 @@ function _netdata_required_packages() {
   "$(
     sudo su -s /bin/bash netdata
     pip3 install --user netdata-pandas==0.0.38 numba==0.50.1 scikit-learn==0.23.2 pyod==0.8.3
+    exit
   )"
   cp "/usr/lib/netdata/conf.d/python.d.conf" "/etc/netdata/python.d.conf"
   cp "/usr/lib/netdata/conf.d/python.d/anomalies.conf" "/etc/netdata/python.d/anomalies.conf"
