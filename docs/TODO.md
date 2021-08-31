@@ -35,7 +35,7 @@
 
 ### In Progress
 
-- [ ] Core: Generate project config file (domain-brolit.conf).
+- [ ] Core: Generate project config file (/etc/brolit/domain_conf.json).
 - [ ] Server Setup: option to run without menu.
         Example: ./runner.sh --task "server-setup" --mariadb "default" --mariadb-pass "root_pass" --nginx "default" --php "default" --certbot
 - [ ] Core: On project creation/restore need to ask first the project state, then project domain.
@@ -82,8 +82,6 @@
 - [ ] Backups: Refactor for backup/restore: 5 options (server_config, site_config, site, database and project).
 - [ ] Restore: Finish function restore_config_files_from_dropbox.
 - [ ] MySQL: Rename database (with and without WP).
-- [ ] Support for rclone: https://github.com/rclone/rclone
-      Add support to others storage service (Google Drive, SFTP, etc)
 
 ## For release 3.3
 
@@ -108,7 +106,6 @@
 - [ ] Configuration: Let configure all things via JSON files.
 - [ ] PHP: php_reconfigure refactor (replace strings instead of replace entired config files).
 - [ ] WordPress: Fallback for replace strings on wp database (if wp-cli fails, use old script version).
-- [ ] WordPress: WP Network support (nginx config, and wp-cli commands).
 - [ ] Wordpress: When restore or create a project on PROD state, ask if want to run "wpcli_run_startup_script"
 - [ ] Installers: Refactor of WORDPRESS_INSTALLER - COPY_FROM_PROJECT
         The idea is that you could create/copy/delete/update different kind of projects (WP, Laravel, React, Composer, Empty)
@@ -130,6 +127,7 @@
 - [ ] Buddypress support: https://github.com/buddypress/wp-cli-buddypress
 - [ ] IT Utils: Control of mounted partitions or directories.
 - [ ] IT Utils: Better malware detection with https://github.com/rfxn/linux-malware-detect
+- [ ] Addon: Fileover support with hetzner? https://community.hetzner.com/tutorials/failover-script
 
 ## For release 3.6
 
@@ -146,16 +144,19 @@
 - [ ] Include network (lan and internet) tests with iperf and speedtest-cli.
 - [ ] Moodle Support: https://websiteforstudents.com/how-to-install-moodle-on-ubuntu-20-04-18-04-with-nginx-and-lets-encrypt/
       Moodle data must be on independent directory (need to implements backup/restore support too)
+- [ ] Support for rclone: https://github.com/rclone/rclone
+      Add support to others storage service (Google Drive, SFTP, etc)
 
 ## For release 4.0
 
+- [ ] Cloud-init support?
 - [ ] HTTP/2 Monitor Dashboard.
 - [ ] Uptime Kuma support: 
         https://github.com/louislam/uptime-kuma
 - [ ] Docker support: 
         https://docs.docker.com/desktop/backup-and-restore/
         https://www.reddit.com/r/Wordpress/comments/jfn7z9/guide_wordpress_on_docker_with_nginx_traefik/
-- [ ] Better LEMP setup, tzdata y mysql_secure_installation without human intervention
+- [ ] WordPress: WP Network support (nginx config, and wp-cli commands).
 - [ ] Support for borgmatic?: https://github.com/witten/borgmatic
 - [ ] Core: Accept command via Telegram: https://github.com/topkecleon/telegram-bot-bash
 - [ ] Nginx: bad bot blocker.
