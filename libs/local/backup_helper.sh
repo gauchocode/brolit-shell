@@ -649,7 +649,7 @@ function make_database_backup() {
     #(${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s "$(du -sb "${TMP_DIR}/${NOW}/${db_file}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${bk_file}")
 
     # Compress backup
-    compress "${directory_to_backup}" "${db_file}" "${TMP_DIR}/${NOW}/${bk_file}"
+    compress "${directory_to_backup}" "${db_file}" "${bk_file}"
 
     # Check test result
     compress_result=$?
