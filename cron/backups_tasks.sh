@@ -20,9 +20,9 @@ source "${SFOLDER}/libs/commons.sh"
 script_init
 
 # Running from cron
-log_event "info" "Running backups_taks.sh ..."
+log_event "info" "Running backups_taks.sh ..." "false"
 
-log_event "info" "Running apt update ..."
+log_event "info" "Running apt update ..." "false"
 
 # Update packages index
 apt update
@@ -73,7 +73,7 @@ MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
 EMAIL_STATUS=$(mail_subject_status "${STATUS_BACKUP_DBS}" "${STATUS_BACKUP_FILES}" "${STATUS_SERVER}" "${STATUS_CERTS}" "${OUTDATED_PACKAGES}")
 
 # Preparing email to send
-log_event "info" "Sending Email to ${MAILA} ..."
+log_event "info" "Sending Email to ${MAILA} ..." "false"
 
 EMAIL_SUBJECT="${EMAIL_STATUS} [${NOWDISPLAY}] - Complete Backup on ${VPSNAME}"
 EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${PKG_MAIL_VAR} ${CERT_MAIL_VAR} ${CONFIG_MAIL_VAR} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
@@ -81,10 +81,9 @@ EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${PKG_MAIL_VAR} ${CERT_MAIL_VAR} ${CONFIG
 # Sending email notification
 mail_send_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
 
+# Cleanup
 remove_mail_notifications_files
-
-# Script cleanup
 cleanup
 
 # Log End
-log_event "info" "BACKUP TASKS SCRIPT End -- $(date +%Y%m%d_%H%M)"
+log_event "info" "BACKUP TASKS SCRIPT End -- $(date +%Y%m%d_%H%M)" "false"

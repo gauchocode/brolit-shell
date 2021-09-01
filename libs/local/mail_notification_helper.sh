@@ -592,6 +592,8 @@ function mail_mysqlbackup_section() {
 
     backup_type="Database"
 
+    log_event "debug" "Preparing mail databases backup section ..." "false"
+
     if [[ ${ERROR} = true ]]; then
         # Changing global
         STATUS_BACKUP_DBS="ERROR"

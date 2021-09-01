@@ -71,17 +71,6 @@ function _netdata_required_packages() {
 
   fi
 
-  # New: anomalies support
-  ## Ref: https://learn.netdata.cloud/docs/agent/collectors/python.d.plugin/anomalies
-
-  ## need to make this trick
-  sudo su -s /bin/bash netdata <<EOF
-pip3 install --user netdata-pandas==0.0.38 numba==0.50.1 scikit-learn==0.23.2 pyod==0.8.3
-EOF
-
-  cp "/usr/lib/netdata/conf.d/python.d.conf" "/etc/netdata/python.d.conf"
-  cp "/usr/lib/netdata/conf.d/python.d/anomalies.conf" "/etc/netdata/python.d/anomalies.conf"
-
   # Log
   clear_last_line
   clear_last_line
@@ -326,6 +315,21 @@ function netdata_uninstaller() {
 
 }
 
+function _netdata_anomalies_configuration() {
+
+  # New: anomalies support
+  ## Ref: https://learn.netdata.cloud/docs/agent/collectors/python.d.plugin/anomalies
+
+  ## need to make this trick
+  sudo su -s /bin/bash netdata <<EOF
+pip3 install --user netdata-pandas==0.0.38 numba==0.50.1 scikit-learn==0.23.2 pyod==0.8.3
+EOF
+
+  cp "/usr/lib/netdata/conf.d/python.d.conf" "/etc/netdata/python.d.conf"
+  cp "/usr/lib/netdata/conf.d/python.d/anomalies.conf" "/etc/netdata/python.d/anomalies.conf"
+
+}
+
 ################################################################################
 # Netdata configuration
 #  Ref: netdata config dir https://github.com/netdata/netdata/issues/4182
@@ -369,6 +373,9 @@ function netdata_configuration() {
 
   # Alerts
   _netdata_alerts_configuration
+
+  # Anomalies
+  _netdata_anomalies_configuration
 
   # Telegram
   _netdata_telegram_config
@@ -486,6 +493,7 @@ function netdata_installer_menu() {
 
         fi
 
+        # Configuration
         netdata_configuration
 
         # Confirm ROOT_DOMAIN
