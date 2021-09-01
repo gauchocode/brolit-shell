@@ -1314,8 +1314,8 @@ function compress() {
 
   backup_file="${to_backup}.tar.bz2"
 
-  log_event "info" "Making a tar.bz2 file of ${to_backup} ..." "false"
-  display --indent 6 --text "- Compressing database backup"
+  log_event "info" "Compressing '${to_backup}' ..." "false"
+  display --indent 6 --text "- Compressing ${to_backup}"
 
   # Examples
   # TAR FILES
@@ -1344,9 +1344,23 @@ function compress() {
   lbzip2_result=$?
   if [[ ${lbzip2_result} -eq 0 ]]; then
 
+    BK_FL_SIZE="$(find "${TMP_DIR}/${NOW}/" -name "${backup_file}" -exec ls -l --human-readable --block-size=M {} \; | awk '{ print $5 }')"
+
+    # Log
+    display --indent 6 --text "- Compressing backup" --result "DONE" --color GREEN
+    display --indent 8 --text "Final backup size: ${YELLOW}${BOLD}${BK_FL_SIZE}${ENDCOLOR}"
+
+    log_event "info" "Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}" "false"
+    log_event "info" "Creating folders in Dropbox ..." "false"
+
     return 0
 
   else
+
+    display --indent 6 --text "- Compressing backup" --result "FAIL" --color RED
+    display --indent 8 --text "Something went wrong making backup file: ${backup_file}" --tcolor RED
+
+    log_event "error" "Something went wrong making backup file: ${TMP_DIR}/${NOW}/${backup_file}" "false"
 
     return 1
 

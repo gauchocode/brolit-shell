@@ -484,13 +484,15 @@ function make_files_backup() {
 
   pv --width 70 "${TMP_DIR}/${NOW}/${bk_file}" | lbzip2 --test
 
+  lbzip2_result=$?
+
   # Clear pipe output
   clear_last_line
   clear_last_line
 
-  lbzip2_result=$?
   if [[ "${lbzip2_result}" -eq 0 ]]; then
 
+    # TODO: maybe put this vars on a temp file, then ask for them before prepare the email
     BACKUPED_LIST[$BK_FILE_INDEX]=${bk_file}
     BACKUPED_FL=${BACKUPED_LIST[${BK_FILE_INDEX}]}
 
@@ -502,8 +504,8 @@ function make_files_backup() {
     display --indent 6 --text "- Compressing backup" --result "DONE" --color GREEN
     display --indent 8 --text "Final backup size: ${YELLOW}${BOLD}${BK_FL_SIZE}${ENDCOLOR}"
 
-    log_event "info" "Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}"
-    log_event "info" "Creating folders in Dropbox ..."
+    log_event "info" "Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}" "false"
+    log_event "info" "Creating folders in Dropbox ..." "false"
 
     # New folder with $VPSNAME
     dropbox_create_dir "${VPSNAME}"
@@ -602,6 +604,7 @@ function make_all_databases_backup() {
 
   # Starting Messages
   log_subsection "Backup Databases"
+
   display --indent 6 --text "- Initializing database backup script" --result "DONE" --color GREEN
 
   # Get MySQL DBS
@@ -630,17 +633,17 @@ function make_all_databases_backup() {
 
       log_event "info" "Backup ${BK_DB_INDEX} of ${TOTAL_DBS} done" "false"
 
-      log_break "true"
-
     else
-      log_event "debug" "Ommiting blacklisted database: [${DATABASE}]"
+
+      log_event "debug" "Ommiting blacklisted database: [${DATABASE}]" "false"
 
     fi
+
+    log_break "true"
 
   done
 
   # Configure Email
-  log_event "debug" "Preparing mail databases backup section ..."
   mail_mysqlbackup_section "${ERROR}" "${ERROR_TYPE}"
 
 }
@@ -745,6 +748,7 @@ function make_database_backup() {
         dropbox_delete "${DROPBOX_FOLDER}${dropbox_path}/${old_bk_file}"
 
         log_event "info" "Deleting temp database backup ${old_bk_file} from server" "false"
+
         rm "${TMP_DIR}/${NOW}/${db_file}"
         rm "${TMP_DIR}/${NOW}/${bk_file}"
 

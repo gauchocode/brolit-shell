@@ -30,7 +30,7 @@ function certbot_certificate_install() {
 
   log_event "debug" "Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains}" "false"
 
-  certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}"
+  certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}" --quiet
 
   certbot_result=$?
   if [[ ${certbot_result} -eq 0 ]]; then
