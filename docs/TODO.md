@@ -24,16 +24,17 @@
 - [ ] LetsEncrypt: need a better way to re-install a certificate after a website migration.
 - [ ] Project: on project delete, if the script can't find the user, maybe it will be better list all mysql users with database permision (before database deletion).
 - [ ] WordPress: WP-CLI should not be required if server type != webserver.
+- [ ] Backups: When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?).
 
 ### Need more testing
 
 - [ ] Nginx: Globals configs support.
 - [ ] PHP: Option to enable or disable OpCache.
-- [ ] Backups: When restore or create a new project and the db_user already exists, we need to ask what todo (new user or continue?).
 - [ ] Installers: On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages.
 
 ### In Progress
 
+- [ ] Core: Stop netdata alerts when a backup or virus analysis is started.
 - [ ] Core: Generate project config file (/etc/brolit/domain_conf.json).
 - [ ] Server Setup: option to run without menu.
         Example: ./runner.sh --task "server-setup" --mariadb "default" --mariadb-pass "root_pass" --nginx "default" --php "default" --certbot

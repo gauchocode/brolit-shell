@@ -48,7 +48,7 @@ function dropbox_upload() {
     local output
     local dropbox_file_to_upload_result
 
-    log_event "info" "Uploading file to Dropbox ..."
+    log_event "info" "Uploading file to Dropbox ..." "false"
 
     spinner_start "- Uploading file to Dropbox"
 
