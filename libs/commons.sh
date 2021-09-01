@@ -1183,7 +1183,7 @@ function extract_filename_from_path() {
 
 # TODO: need more testing
 
-function extract() {
+function decompress() {
 
   local file_path=$1
   local directory_to_extract=$2
@@ -1268,7 +1268,7 @@ function extract() {
       ;;
 
     *)
-      log_event "error" "${file_path} cannot be extracted via extract()" "false"
+      log_event "error" "${file_path} cannot be extracted via decompress()" "false"
       display --indent 2 --text "- Extracting compressed file" --result "FAIL" --color RED
       display --indent 4 --text "${file_path} cannot be extracted" --tcolor RED
       return 1
@@ -1289,12 +1289,12 @@ function extract() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    log_event "info" "${file} extracted ok!" "false"
+    log_event "info" "${file_path} extracted ok!" "false"
     display --indent 2 --text "- Extracting compressed file" --result "DONE" --color GREEN
 
   else
 
-    log_event "error" "Error extracting ${file}" "false"
+    log_event "error" "Error extracting ${file_path}" "false"
     display --indent 2 --text "- Extracting compressed file" --result "FAIL" --color RED
 
     return 1
@@ -1305,8 +1305,8 @@ function extract() {
 
 function compress() {
 
-  local to_backup=$1 # could be a file or a directory. Ex: database.sql or foldername
-  local backup_base_dir=$2
+  local backup_base_dir=$1
+  local to_backup=$2 # could be a file or a directory. Ex: database.sql or foldername
   local directory_output=$3
   #local compress_type=$4
 
@@ -1365,6 +1365,7 @@ function compress() {
     return 1
 
   fi
+
 }
 
 ################################################################################
