@@ -70,40 +70,25 @@ function make_server_files_backup() {
   local bk_file
   local old_bk_file
   local dropbox_path
-  local bk_scf_size
+  #local bk_scf_size
 
   if [[ -n ${bk_path} ]]; then
 
-    old_bk_file="${bk_sup_type}-${bk_type}-files-${ONEWEEKAGO}.tar.bz2"
     bk_file="${bk_sup_type}-${bk_type}-files-${NOW}.tar.bz2"
+    old_bk_file="${bk_sup_type}-${bk_type}-files-${ONEWEEKAGO}.tar.bz2"
 
     # Here we use tar.bz2 with bzip2 compression method
-    log_event "info" "Making backup of ${bk_path}" "false"
-    log_event "debug" "Running: ${TAR} cjf ${TMP_DIR}/${NOW}/${bk_file} --directory=${bk_path} ${directory_to_backup}" "false"
+    #log_event "info" "Making backup of ${bk_path}" "false"
+    #log_event "debug" "Running: ${TAR} cjf ${TMP_DIR}/${NOW}/${bk_file} --directory=${bk_path} ${directory_to_backup}" "false"
 
-    (${TAR} cjf "${TMP_DIR}/${NOW}/${bk_file}" --directory="${bk_path}" "${directory_to_backup}")
+    #(${TAR} cjf "${TMP_DIR}/${NOW}/${bk_file}" --directory="${bk_path}" "${directory_to_backup}")
 
-    display --indent 6 --text "- Making ${YELLOW}${bk_sup_type}${ENDCOLOR} backup" --result "DONE" --color GREEN
-    display --indent 6 --text "- Compressing directory ${bk_path}" --result "DONE" --color GREEN
-
-    # Test backup file
-    log_event "info" "Testing backup file: ${bk_file} ..." "false"
-    lbzip2 --test "${TMP_DIR}/${NOW}/${bk_file}"
+    # Compress backup
+    compress "${bk_path}" "${directory_to_backup}" "${TMP_DIR}/${NOW}/${bk_file}"
 
     # Check test result
-    bzip2_result=$?
-    if [[ ${bzip2_result} -eq 0 ]]; then
-
-      log_event "info" "Backup ${bk_file} created" "false"
-
-      #BACKUPED_SCF_LIST[$BK_SCF_INDEX]="$(string_remove_special_chars "${bk_file}")"
-      BACKUPED_SCF_LIST[$BK_SCF_INDEX]=${bk_file}
-
-      # Calculate backup size
-      bk_scf_size="$(find . -name "${bk_file}" -exec ls -l --human-readable --block-size=K {} \; | awk '{ print $5 }')"
-      BK_SCF_SIZES[$BK_SCF_INDEX]="${bk_scf_size}"
-
-      display --indent 6 --text "- Testing compressed backup file" --result "DONE" --color GREEN
+    compress_result=$?
+    if [[ ${compress_result} -eq 0 ]]; then
 
       # New folder with $VPSNAME
       dropbox_create_dir "${VPSNAME}"
@@ -124,13 +109,6 @@ function make_server_files_backup() {
       dropbox_delete "${DROPBOX_FOLDER}/${dropbox_path}/${old_bk_file}"
 
     else
-
-      bzip2_error="No such directory or file ${TMP_DIR}/${NOW}/${bk_file}"
-
-      log_event "critical" "Can't make the backup. No such directory or file ${TMP_DIR}/${NOW}/${bk_file}" "false"
-
-      display --indent 6 --text "- Testing backup file" --result "FAIL" --color RED
-      display --indent 8 --text "Result: ${bzip2_error}"
 
       return 1
 
@@ -300,7 +278,7 @@ function make_all_server_config_backup() {
 
   # TAR MySQL Config Files
   if [[ ! -d ${MySQL_CF} ]]; then
-    log_event "warning" "MySQL_CF is not defined! Skipping MySQL config files backup ..."
+    log_event "warning" "MySQL_CF is not defined! Skipping MySQL config files backup ..." "false"
 
   else
     BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
@@ -310,7 +288,7 @@ function make_all_server_config_backup() {
 
   # TAR Let's Encrypt Config Files
   if [[ ! -d ${LENCRYPT_CF} ]]; then
-    log_event "warning" "LENCRYPT_CF is not defined! Skipping Letsencrypt config files backup ..."
+    log_event "warning" "LENCRYPT_CF is not defined! Skipping Letsencrypt config files backup ..." "false"
 
   else
     BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
@@ -320,7 +298,7 @@ function make_all_server_config_backup() {
 
   # TAR Devops Config Files
   if [[ ! -d ${BROLIT_CONFIG_PATH} ]]; then
-    log_event "warning" "DEVOPS_CF is not defined! Skipping DevOps config files backup ..."
+    log_event "warning" "DEVOPS_CF is not defined! Skipping DevOps config files backup ..." "false"
 
   else
     BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
@@ -362,8 +340,8 @@ function make_sites_files_backup() {
   # FILES BACKUP GLOBALS
   declare -i BK_FILE_INDEX=0
   declare -i BK_FL_ARRAY_INDEX=0
-  declare -g BACKUPED_LIST
-  declare -g BK_FL_SIZES
+  #declare -g BACKUPED_LIST
+  #declare -g BK_FL_SIZES
 
   declare directory_name=""
 
@@ -470,42 +448,25 @@ function make_files_backup() {
 
   local dropbox_path
 
-  log_event "info" "Making backup file from: ${directory_to_backup} ..."
-  display --indent 6 --text "- Making ${YELLOW}${directory_to_backup}${ENDCOLOR} backup" --result "DONE" --color GREEN
+  #log_event "info" "Making backup file from: ${directory_to_backup} ..."
+  #display --indent 6 --text "- Making ${YELLOW}${directory_to_backup}${ENDCOLOR} backup" --result "DONE" --color GREEN
 
-  (${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv --width 70 --size "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${bk_file}") 2>&1
+  #(${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv --width 70 --size "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${bk_file}") 2>&1
 
-  # Clear pipe output
-  clear_last_line
+  # Compress backup
+  compress "${bk_path}" "${directory_to_backup}" "${TMP_DIR}/${NOW}/${bk_file}"
 
-  # Test backup file
-  log_event "info" "Testing backup file: ${bk_file} ..."
-  display --indent 6 --text "- Testing backup file"
-
-  pv --width 70 "${TMP_DIR}/${NOW}/${bk_file}" | lbzip2 --test
-
-  lbzip2_result=$?
-
-  # Clear pipe output
-  clear_last_line
-  clear_last_line
-
-  if [[ "${lbzip2_result}" -eq 0 ]]; then
+  # Check test result
+  compress_result=$?
+  if [[ ${compress_result} -eq 0 ]]; then
 
     # TODO: maybe put this vars on a temp file, then ask for them before prepare the email
-    BACKUPED_LIST[$BK_FILE_INDEX]=${bk_file}
-    BACKUPED_FL=${BACKUPED_LIST[${BK_FILE_INDEX}]}
+    #BACKUPED_LIST[$BK_FILE_INDEX]=${bk_file}
+    #BACKUPED_FL=${BACKUPED_LIST[${BK_FILE_INDEX}]}
 
     # Calculate backup size
-    BK_FL_SIZE="$(find "${TMP_DIR}/${NOW}/" -name "${bk_file}" -exec ls -l --human-readable --block-size=M {} \; | awk '{ print $5 }')"
-    BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=${BK_FL_SIZE}
-
-    # Log
-    display --indent 6 --text "- Compressing backup" --result "DONE" --color GREEN
-    display --indent 8 --text "Final backup size: ${YELLOW}${BOLD}${BK_FL_SIZE}${ENDCOLOR}"
-
-    log_event "info" "Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}" "false"
-    log_event "info" "Creating folders in Dropbox ..." "false"
+    #BK_FL_SIZE="$(find "${TMP_DIR}/${NOW}/" -name "${bk_file}" -exec ls -l --human-readable --block-size=M {} \; | awk '{ print $5 }')"
+    #BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=${BK_FL_SIZE}
 
     # New folder with $VPSNAME
     dropbox_create_dir "${VPSNAME}"
@@ -532,12 +493,6 @@ function make_files_backup() {
     #display --indent 6 --text "- Deleting temp files" --result "DONE" --color GREEN
 
   else
-    ERROR=true
-    ERROR_TYPE="ERROR: Making backup ${TMP_DIR}/${NOW}/${bk_file}"
-
-    log_event "error" "Something went wrong making backup file: ${TMP_DIR}/${NOW}/${bk_file}" "false"
-    display --indent 6 --text "- Compressing backup" --result "FAIL" --color RED
-    display --indent 8 --text "Something went wrong making backup file: ${bk_file}" --tcolor RED
 
     return 1
 
@@ -662,7 +617,7 @@ function make_all_databases_backup() {
 
 function make_database_backup() {
 
-  local bk_type=$1 
+  local bk_type=$1
   local database=$2
 
   local mysql_export_result
@@ -676,8 +631,8 @@ function make_database_backup() {
   local dropbox_path
 
   # DATABASE BACKUP GLOBALS
-  declare -g BACKUPED_DB_LIST
-  declare -g BK_DB_SIZES
+  #declare -g BACKUPED_DB_LIST
+  #declare -g BK_DB_SIZES
 
   log_event "info" "Creating new database backup of ${database} ..." "false"
 
@@ -687,45 +642,25 @@ function make_database_backup() {
 
   if [[ ${mysql_export_result} -eq 0 ]]; then
 
-    log_event "info" "Making a tar.bz2 file of ${db_file} ..." "false"
-    display --indent 6 --text "- Compressing database backup"
+    #log_event "info" "Making a tar.bz2 file of ${db_file} ..." "false"
+    #display --indent 6 --text "- Compressing database backup"
 
     # TAR
-    (${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s "$(du -sb "${TMP_DIR}/${NOW}/${db_file}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${bk_file}")
+    #(${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s "$(du -sb "${TMP_DIR}/${NOW}/${db_file}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${bk_file}")
 
-    # Clear pipe output
-    clear_last_line
-    clear_last_line
+    # Compress backup
+    compress "${bk_path}" "${directory_to_backup}" "${TMP_DIR}/${NOW}/${bk_file}"
 
-    # Test backup file
-    log_event "info" "Testing backup file: ${db_file} ..." "false"
-    display --indent 6 --text "- Testing backup file"
-
-    pv --width 70 "${TMP_DIR}/${NOW}/${bk_file}" | lbzip2 --test
-
-    # Clear pipe output
-    clear_last_line
-    clear_last_line
-
-    lbzip2_result=$?
-    if [[ ${lbzip2_result} -eq 0 ]]; then
-
-      # Log
-      log_event "info" "Backup file ${bk_file} created" "false"
-      display --indent 6 --text "- Compressing database backup" --result "DONE" --color GREEN
+    # Check test result
+    compress_result=$?
+    if [[ ${compress_result} -eq 0 ]]; then
 
       # Changing global
-      BACKUPED_DB_LIST[$BK_DB_INDEX]="${bk_file}"
+      #BACKUPED_DB_LIST[$BK_DB_INDEX]="${bk_file}"
 
       # Calculate backup size
-      BK_DB_SIZE="$(find . -name "${bk_file}" -exec ls -l --human-readable --block-size=M {} \; | awk '{ print $5 }')"
-      BK_DB_SIZES+=("${BK_DB_SIZE}")
-
-      # Log
-      log_event "info" "Backup for ${database} created, final size: ${BK_DB_SIZE}" "false"
-      display --indent 8 --text "Backup final size: ${YELLOW}${BOLD}${BK_DB_SIZE}${ENDCOLOR}"
-
-      log_event "info" "Creating folders in Dropbox ..." "false"
+      #BK_DB_SIZE="$(find . -name "${bk_file}" -exec ls -l --human-readable --block-size=M {} \; | awk '{ print $5 }')"
+      #BK_DB_SIZES+=("${BK_DB_SIZE}")
 
       # New folder with $VPSNAME
       dropbox_create_dir "${VPSNAME}"
@@ -741,7 +676,7 @@ function make_database_backup() {
 
       # Upload to Dropbox
       dropbox_upload "${TMP_DIR}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}${dropbox_path}"
-      
+
       dropbox_result=$?
       if [[ ${dropbox_result} -eq 0 ]]; then
 

@@ -71,12 +71,12 @@ function restore_backup_from_local_file() {
         log_event "info" "File to restore: ${filename}" "false"
 
         # Check if file is compressed
-        is_compressed="$(file ${filename} | grep "compressed")"
+        is_compressed="$(file "${filename}" | grep "compressed")"
 
         if [[ ${is_compressed} != "" ]]; then
 
           # Decompress backup
-          extract "${chosen_backup_to_restore}" "${SFOLDER}/tmp/" "lbzip2"
+          decompress "${chosen_backup_to_restore}" "${SFOLDER}/tmp/" "lbzip2"
 
           # TODO: search for .sql or sql.gz files
 
@@ -353,7 +353,7 @@ function restore_config_files_from_dropbox() {
     cd "${chosen_config_type}"
 
     # Decompress
-    extract "${chosen_config_bk}" "${SFOLDER}/tmp/${chosen_config_type}" "lbzip2"
+    decompress "${chosen_config_bk}" "${SFOLDER}/tmp/${chosen_config_type}" "lbzip2"
 
     if [[ "${chosen_config_bk}" == *"nginx"* ]]; then
 
@@ -414,7 +414,7 @@ function restore_nginx_site_files() {
 
   # Extract tar.bz2 with lbzip2
   mkdir "${SFOLDER}/tmp/nginx"
-  extract "${bk_file}" "${SFOLDER}/tmp/nginx" "lbzip2"
+  decompress "${bk_file}" "${SFOLDER}/tmp/nginx" "lbzip2"
 
   # TODO: if nginx is installed, ask if nginx.conf must be replace
 
@@ -493,7 +493,7 @@ function restore_letsencrypt_site_files() {
   log_event "info" "Extracting ${bk_file} on ${SFOLDER}/tmp/"
 
   mkdir "${SFOLDER}/tmp/letsencrypt"
-  extract "${bk_file}" "${SFOLDER}/tmp/letsencrypt" "lbzip2"
+  decompress "${bk_file}" "${SFOLDER}/tmp/letsencrypt" "lbzip2"
 
   # Creating directories
   if [[ ! -d "/etc/letsencrypt/archive/" ]]; then
@@ -677,7 +677,7 @@ function restore_type_selection_from_dropbox() {
           dropbox_download "${bk_to_dowload}" "${TMP_DIR}"
 
           # Decompress
-          extract "${TMP_DIR}/${chosen_backup_to_restore}" "${TMP_DIR}" "lbzip2"
+          decompress "${TMP_DIR}/${chosen_backup_to_restore}" "${TMP_DIR}" "lbzip2"
 
           if [[ ${chosen_type} == *"${DBS_F}"* ]]; then
 
@@ -850,7 +850,7 @@ function restore_project() {
     dropbox_download "${bk_to_dowload}" "${TMP_DIR}"
 
     # Decompress
-    extract "${TMP_DIR}/${chosen_backup_to_restore}" "${TMP_DIR}" "lbzip2"
+    decompress "${TMP_DIR}/${chosen_backup_to_restore}" "${TMP_DIR}" "lbzip2"
 
     # Project Type
     project_type=$(project_get_type "${TMP_DIR}/${chosen_project}")
@@ -947,7 +947,7 @@ function restore_project() {
     fi
 
     # Decompress
-    extract "${TMP_DIR}/${db_name}_database_${backup_date}.tar.bz2" "${TMP_DIR}" "lbzip2"
+    decompress "${TMP_DIR}/${db_name}_database_${backup_date}.tar.bz2" "${TMP_DIR}" "lbzip2"
 
     # Trying to extract project name from domain
     chosen_root_domain="$(get_root_domain "${chosen_domain}")"

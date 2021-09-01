@@ -158,7 +158,7 @@ function wordpress_restore_from_source() {
 
     # Uncompressing
     log_event "info" "Uncompressing file backup: ${bk_f_file}" "true"
-    extract "${bk_f_file}"
+    decompress "${bk_f_file}"
 
     # Download Database Backup
     log_event "info" "Downloading database backup ${source_database}" "true"
@@ -176,7 +176,7 @@ function wordpress_restore_from_source() {
 
     # Extract
     gunzip -c "${bk_db_file}" >"${project_name}.sql"
-    #extract "${bk_db_file}"
+    #decompress "${bk_db_file}"
 
     # Import dump file
     mysql_database_import "${database_name}" "${project_name}.sql"
