@@ -322,7 +322,7 @@ function _netdata_anomalies_configuration() {
 
   ## need to make this trick
   sudo su -s /bin/bash netdata <<EOF
-pip3 install --user netdata-pandas==0.0.38 numba==0.50.1 scikit-learn==0.23.2 pyod==0.8.3
+pip3 install --quiet --user netdata-pandas==0.0.38 numba==0.50.1 scikit-learn==0.23.2 pyod==0.8.3
 EOF
 
   cp "/usr/lib/netdata/conf.d/python.d.conf" "/etc/netdata/python.d.conf"

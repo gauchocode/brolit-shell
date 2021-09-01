@@ -14,11 +14,11 @@
 # Install certificate with certbot
 #
 # Arguments:
-#   $1 = ${email}
-#   $2 = ${domains}
+#  $1 = ${email}
+#  $2 = ${domains}
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function certbot_certificate_install() {
@@ -45,7 +45,7 @@ function certbot_certificate_install() {
     certbot_certificate_delete_old_config "${domains}"
 
     # Running certbot again
-    certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}"
+    certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}" --quiet
 
     certbot_result=$?
     if [[ ${certbot_result} -eq 0 ]]; then
@@ -66,10 +66,10 @@ function certbot_certificate_install() {
 # Delete old certificate config
 #
 # Arguments:
-#   $1 = ${domains}
+#  $1 = ${domains}
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function certbot_certificate_delete_old_config() {
@@ -108,7 +108,7 @@ function certbot_certificate_delete_old_config() {
 #  $2 = ${domains}
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function certbot_certificate_expand() {
@@ -118,7 +118,20 @@ function certbot_certificate_expand() {
 
   log_event "debug" "Running: certbot --nginx --non-interactive --agree-tos --expand --redirect -m ${email} -d ${domains}" "false"
 
-  certbot --nginx --non-interactive --agree-tos --expand --redirect -m "${email}" -d "${domains}"
+  certbot --nginx --non-interactive --agree-tos --expand --redirect -m "${email}" -d "${domains}" --quiet
+
+  certbot_result=$?
+  if [[ ${certbot_result} -eq 0 ]]; then
+
+    log_event "info" "Certificate installation for ${domains} ok" "false"
+    display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
+
+  else
+
+    log_event "error" "Certificate installation for ${domains} failed!" "false"
+    display --indent 6 --text "- Installing certificate on domains" --result "FAIL" --color RED
+
+  fi
 
 }
 
@@ -129,14 +142,14 @@ function certbot_certificate_expand() {
 #  $1 = ${domains}
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function certbot_certificate_renew() {
 
   local domains=$1
 
-  log_event "debug" "Running: certbot renew -d ${domains}"
+  log_event "debug" "Running: certbot renew -d ${domains}" "false"
 
   certbot renew -d "${domains}"
 
@@ -149,7 +162,7 @@ function certbot_certificate_renew() {
 #  $1 = ${domains}
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function certbot_certificate_renew_test() {
@@ -171,7 +184,7 @@ function certbot_certificate_renew_test() {
 #  $1 = ${domains}
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function certbot_certificate_force_renew() {
@@ -261,7 +274,7 @@ function certbot_helper_installer_menu() {
 #  $2 = ${domains}
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function certbot_certonly_cloudflare() {
@@ -283,10 +296,12 @@ function certbot_certonly_cloudflare() {
 
   certbot_result=$?
   if [[ ${certbot_result} -eq 0 ]]; then
+
     log_event "info" "Certificate installation for ${domains} ok" "false"
     display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
 
   else
+
     log_event "warning" "Certificate installation failed, trying force-install ..." "false"
     display --indent 6 --text "- Installing certificate on domains" --result "FAIL" --color RED
 
@@ -298,10 +313,12 @@ function certbot_certonly_cloudflare() {
 
     certbot_result=$?
     if [[ ${certbot_result} -eq 0 ]]; then
+
       log_event "info" "Certificate installation for ${domains} ok" "false"
       display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
 
     else
+
       log_event "error" "Certificate installation for ${domains} failed!" "false"
       display --indent 6 --text "- Installing certificate on domains" --result "FAIL" --color RED
 
@@ -353,7 +370,7 @@ function certbot_show_domain_certificates_expiration_date() {
 # Show certificates valid days
 #
 # Arguments:
-#  $1 = ${domains}
+#  $1 = ${domains} - (domain.com,www.domain.com)
 #
 # Outputs:
 #   ${cert_days} if ok, "no-cert" on error.
@@ -361,8 +378,6 @@ function certbot_show_domain_certificates_expiration_date() {
 
 # TODO: Awful code, need a refactor
 function certbot_certificate_valid_days() {
-
-  # $1 = domains (domain.com,www.domain.com)
 
   local domain=$1
 
@@ -400,7 +415,7 @@ function certbot_certificate_valid_days() {
 
   fi
 
-  log_event "info" "Certificate valid for: ${cert_days} days"
+  log_event "info" "Certificate valid for: ${cert_days} days" "false"
 
   # Return
   echo "${cert_days}"
@@ -414,7 +429,7 @@ function certbot_certificate_valid_days() {
 #  $1 = ${domains}
 #
 # Outputs:
-#   ${cert_days} if ok, "no-cert" on error.
+#  ${cert_days} if ok, "no-cert" on error.
 ################################################################################
 
 function certbot_certificate_get_valid_days() {
@@ -447,7 +462,7 @@ function certbot_certificate_get_valid_days() {
 #  $1 = ${domains}
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#  0 if ok, 1 on error.
 ################################################################################
 
 function certbot_certificate_delete() {
@@ -461,7 +476,7 @@ function certbot_certificate_delete() {
 
   else
 
-    certbot --nginx delete --cert-name "${domains}"
+    certbot --nginx delete --cert-name "${domains}" --quiet
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -497,7 +512,7 @@ function certbot_certificate_delete() {
 #  none
 #
 # Outputs:
-#   ${domains} if ok, 1 on error.
+#  ${domains} if ok, 1 on error.
 ################################################################################
 
 function certbot_helper_ask_domains() {

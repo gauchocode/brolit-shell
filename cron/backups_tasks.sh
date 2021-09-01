@@ -25,7 +25,7 @@ log_event "info" "Running backups_taks.sh ..." "false"
 log_event "info" "Running apt update ..." "false"
 
 # Update packages index
-apt update
+apt-get update -qq
 
 # BACKUP_ALL
 log_section "Backup All"

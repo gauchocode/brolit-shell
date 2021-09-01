@@ -635,6 +635,7 @@ function make_all_databases_backup() {
 
     else
 
+      display --indent 6 --text "- Ommiting database [${DATABASE}]" --result "DONE" --color WHITE
       log_event "debug" "Ommiting blacklisted database: [${DATABASE}]" "false"
 
     fi
@@ -652,7 +653,7 @@ function make_all_databases_backup() {
 # Make database Backup
 #
 # Arguments:
-#  $1 = ${bk_type}
+#  $1 = ${bk_type} - configs,sites,databases
 #  $2 = ${database}
 #
 # Outputs:
@@ -661,7 +662,7 @@ function make_all_databases_backup() {
 
 function make_database_backup() {
 
-  local bk_type=$1 #configs,sites,databases
+  local bk_type=$1 
   local database=$2
 
   local mysql_export_result
@@ -810,7 +811,6 @@ function make_project_backup() {
 
       db_stage="$(project_get_stage_from_domain "${project_domain}")"
       db_name="$(project_get_name_from_domain "${project_domain}")"
-
       db_name="${db_name}_${db_stage}"
 
     fi
