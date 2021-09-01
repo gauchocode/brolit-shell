@@ -77,7 +77,6 @@ function _netdata_required_packages() {
     {
       sudo su -s /bin/bash netdata
       pip3 install --user netdata-pandas==0.0.38 numba==0.50.1 scikit-learn==0.23.2 pyod==0.8.3
-      exit;
     }
   )"
 
