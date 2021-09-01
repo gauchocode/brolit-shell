@@ -1307,7 +1307,7 @@ function compress() {
 
   local backup_base_dir=$1
   local to_backup=$2 # could be a file or a directory. Ex: database.sql or foldername
-  local directory_output=$3
+  local file_output=$3
   #local compress_type=$4
 
   local backup_file
@@ -1324,10 +1324,10 @@ function compress() {
   # TAR DIRECTORY
   # (${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv --width 70 --size "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${backup_file}") 2>&1
 
-  log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" \"${to_backup}\" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | lbzip2 >\"${directory_output}/${backup_file}\"" "false"
+  log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | lbzip2 >\"${file_output}\"" "false"
 
   # TAR
-  (${TAR} -cf - --directory="${backup_base_dir}" "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | lbzip2 >"${directory_output}/${backup_file}")
+  (${TAR} -cf - --directory="${backup_base_dir}" "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | lbzip2 >"${file_output}")
 
   # Clear pipe output
   clear_last_line
