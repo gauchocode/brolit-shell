@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.54
+# Version: 3.0.55
 ################################################################################
 #
 # Log and Display Helper: Log and display internal functions.

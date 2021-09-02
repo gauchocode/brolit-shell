@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.54
+# Version: 3.0.55
 #############################################################################
 
 # Source all apps libs
@@ -37,7 +37,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.0.54"
+  declare -g SCRIPT_V="3.0.55"
 
   # Hostname
   declare -g VPSNAME="$HOSTNAME"
@@ -1310,18 +1310,13 @@ function compress() {
   local file_output=$3
   #local compress_type=$4
 
-  local backup_file
-
-  backup_file="${to_backup}.tar.bz2"
+  #local backup_file
+  #backup_file="${to_backup}.tar.bz2"
 
   log_event "info" "Compressing '${to_backup}' ..." "false"
   display --indent 6 --text "- Compressing ${to_backup}"
 
   # Examples
-  # TAR FILES
-  # (${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s "$(du -sb "${TMP_DIR}/${NOW}/${db_file}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${backup_file}")
-  # (${TAR} -cf - --directory="${MAILCOW_DIR}" "${MAILCOW_BACKUP_LOCATION}" | pv --width 70 -ns "$(du -sb "${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION}" | awk '{print $1}')" | lbzip2 >"${MAILCOW_TMP_BK}/${backup_file}")
-  # TAR DIRECTORY
   # (${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv --width 70 --size "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${backup_file}") 2>&1
 
   log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | lbzip2 >\"${file_output}\"" "false"
@@ -1346,14 +1341,14 @@ function compress() {
   lbzip2_result=$?
   if [[ ${lbzip2_result} -eq 0 ]]; then
 
-    #BK_FL_SIZE="$(find "${TMP_DIR}/${NOW}/" -name "${file_output}" -exec ls -l --human-readable --block-size=M {} \; | awk '{ print $5 }')"
+    # Get file size
     BK_FL_SIZE="$(du --apparent-size -s -k "${file_output}" | awk '{ print $1 }' | awk '{printf "%.3f MiB %s\n", $1/1024, $2}')"
 
     # Log
-    display --indent 6 --text "- Compressing backup" --result "DONE" --color GREEN
+    display --indent 6 --text "- Compressing '${to_backup}'" --result "DONE" --color GREEN
     display --indent 8 --text "Final backup size: ${YELLOW}${BOLD}${BK_FL_SIZE}${ENDCOLOR}"
 
-    log_event "info" "Backup ${BACKUPED_FL} created, final size: ${BK_FL_SIZE}" "false"
+    log_event "info" "Backup ${file_output} created, final size: ${BK_FL_SIZE}" "false"
     log_event "info" "Creating folders in Dropbox ..." "false"
 
     return 0
@@ -1361,9 +1356,9 @@ function compress() {
   else
 
     display --indent 6 --text "- Compressing backup" --result "FAIL" --color RED
-    display --indent 8 --text "Something went wrong making backup file: ${backup_file}" --tcolor RED
+    display --indent 8 --text "Something went wrong making backup file: ${file_output}" --tcolor RED
 
-    log_event "error" "Something went wrong making backup file: ${TMP_DIR}/${NOW}/${backup_file}" "false"
+    log_event "error" "Something went wrong making backup file: ${file_output}" "false"
 
     return 1
 
