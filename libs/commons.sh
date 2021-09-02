@@ -1337,7 +1337,7 @@ function compress() {
   log_event "info" "Testing backup file: ${filename} ..." "false"
   display --indent 6 --text "- Testing backup file"
 
-  pv --width 70 "${TMP_DIR}/${NOW}/${backup_file}" | lbzip2 --test
+  pv --width 70 "${file_output}" | lbzip2 --test
 
   # Clear pipe output
   clear_last_line
@@ -1346,7 +1346,8 @@ function compress() {
   lbzip2_result=$?
   if [[ ${lbzip2_result} -eq 0 ]]; then
 
-    BK_FL_SIZE="$(find "${TMP_DIR}/${NOW}/" -name "${backup_file}" -exec ls -l --human-readable --block-size=M {} \; | awk '{ print $5 }')"
+    #BK_FL_SIZE="$(find "${TMP_DIR}/${NOW}/" -name "${file_output}" -exec ls -l --human-readable --block-size=M {} \; | awk '{ print $5 }')"
+    BK_FL_SIZE="$(du --apparent-size -s -k "${file_output}" | awk '{ print $1 }' | awk '{printf "%.3f MiB %s\n", $1/1024, $2}')"
 
     # Log
     display --indent 6 --text "- Compressing backup" --result "DONE" --color GREEN
