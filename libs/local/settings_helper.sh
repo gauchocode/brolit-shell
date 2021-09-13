@@ -94,7 +94,7 @@ function _settings_config_smtp() {
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # old config
-            echo "SMTP_SERVER="${SMTP_SERVER} >>/root/.brolit-shell.conf
+            echo "SMTP_SERVER=${SMTP_SERVER}" >>/root/.brolit-shell.conf
 
             # new config
             config_field="NOTIFICATIONS.email[].config[].smtp_server"
@@ -108,6 +108,7 @@ function _settings_config_smtp() {
         fi
     fi
     if [[ -z "${SMTP_PORT}" ]]; then
+
         SMTP_PORT=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server Port" 10 60 "${SMTP_PORT_OLD}" 3>&1 1>&2 2>&3)
 
         exitstatus=$?

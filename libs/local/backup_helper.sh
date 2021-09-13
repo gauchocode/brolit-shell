@@ -642,9 +642,6 @@ function make_database_backup() {
 
   if [[ ${mysql_export_result} -eq 0 ]]; then
 
-    #log_event "info" "Making a tar.bz2 file of ${db_file} ..." "false"
-    #display --indent 6 --text "- Compressing database backup"
-
     # TAR
     #(${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s "$(du -sb "${TMP_DIR}/${NOW}/${db_file}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${bk_file}")
 

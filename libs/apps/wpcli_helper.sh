@@ -414,9 +414,9 @@ function wpcli_core_update() {
 
     log_section "WordPress Updater"
 
-    log_event "debug" "Running: sudo -u www-data wp --path=\"${wp_site}\" update" "false"
+    log_event "debug" "Running: sudo -u www-data wp --path=\"${wp_site}\" core update" "false"
 
-    verify_core_update="$(sudo -u www-data wp --path="${wp_site}" update | grep ":" | cut -d ':' -f1)"
+    verify_core_update="$(sudo -u www-data wp --path="${wp_site}" core update | grep ":" | cut -d ':' -f1)"
 
     if [[ ${verify_core_update} == "Success" ]]; then
 
