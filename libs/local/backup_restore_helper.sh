@@ -842,8 +842,8 @@ function restore_project() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    display --indent 2 --text "- Selecting project backup" --result "DONE" --color GREEN
-    display --indent 4 --text "${chosen_backup_to_restore}" --tcolor YELLOW
+    display --indent 6 --text "- Selecting project backup" --result "DONE" --color GREEN
+    display --indent 8 --text "${chosen_backup_to_restore}" --tcolor YELLOW
 
     # Download backup
     bk_to_dowload="${chosen_server}/site/${chosen_project}/${chosen_backup_to_restore}"
@@ -853,7 +853,7 @@ function restore_project() {
     decompress "${TMP_DIR}/${chosen_backup_to_restore}" "${TMP_DIR}" "lbzip2"
 
     # Project Type
-    project_type=$(project_get_type "${TMP_DIR}/${chosen_project}")
+    project_type="$(project_get_type "${TMP_DIR}/${chosen_project}")"
 
     log_event "debug" "Project Type: ${project_type}" "false"
 
@@ -911,8 +911,8 @@ function restore_project() {
     project_state="$(cut -d'_' -f2 <<<${db_name})"
 
     # Log
-    log_event "debug" "Selected project: ${chosen_project}" "false"
-    log_event "debug" "Selected project state: ${project_state}" "false"
+    log_event "debug" "Project selected: ${chosen_project}" "false"
+    log_event "debug" "Project state: ${project_state}" "false"
     log_event "debug" "Backup date: ${backup_date}" "false"
 
     if [[ ${db_name} != "" ]]; then

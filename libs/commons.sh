@@ -921,10 +921,12 @@ function move_files() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
+    clear_last_line
     display --indent 6 --text "- Moving files to ${destination_path}" --result "DONE" --color GREEN
 
   else
 
+    clear_last_line
     display --indent 6 --text "-  Moving files to ${destination_path}" --result "FAIL" --color RED
     return 1
 
@@ -1196,7 +1198,7 @@ function decompress() {
 
   # Log
   log_event "info" "Extracting compressed file: ${file_path}" "false"
-  display --indent 2 --text "- Extracting compressed file"
+  display --indent 6 --text "- Extracting compressed file"
 
   if [[ -f "${file_path}" ]]; then
 
@@ -1269,8 +1271,8 @@ function decompress() {
 
     *)
       log_event "error" "${file_path} cannot be extracted via decompress()" "false"
-      display --indent 2 --text "- Extracting compressed file" --result "FAIL" --color RED
-      display --indent 4 --text "${file_path} cannot be extracted" --tcolor RED
+      display --indent 6 --text "- Extracting compressed file" --result "FAIL" --color RED
+      display --indent 8 --text "${file_path} cannot be extracted" --tcolor RED
       return 1
       ;;
 
@@ -1280,8 +1282,8 @@ function decompress() {
 
     # Log
     log_event "error" "${file_path} is not a valid file" "false"
-    display --indent 2 --text "- Extracting compressed file" --result "FAIL" --color RED
-    display --indent 4 --text "${file_path} is not a valid file" --tcolor RED
+    display --indent 6 --text "- Extracting compressed file" --result "FAIL" --color RED
+    display --indent 8 --text "${file_path} is not a valid file" --tcolor RED
     return 1
 
   fi
@@ -1289,13 +1291,19 @@ function decompress() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
+    clear_last_line
+    clear_last_line
+
     log_event "info" "${file_path} extracted ok!" "false"
-    display --indent 2 --text "- Extracting compressed file" --result "DONE" --color GREEN
+    display --indent 6 --text "- Extracting compressed file" --result "DONE" --color GREEN
 
   else
 
+    clear_last_line
+    clear_last_line
+
     log_event "error" "Error extracting ${file_path}" "false"
-    display --indent 2 --text "- Extracting compressed file" --result "FAIL" --color RED
+    display --indent 6 --text "- Extracting compressed file" --result "FAIL" --color RED
 
     return 1
 
