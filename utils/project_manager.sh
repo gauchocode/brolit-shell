@@ -176,6 +176,8 @@ function project_manager_menu_new_project_type_utils() {
 
       log_section "Nginx Manager"
 
+      log_subsection "Nginx server creation"
+
       # Select project to work with
       directory_browser "Select a project to work with" "${SITES}" #return $filename
 
@@ -183,8 +185,8 @@ function project_manager_menu_new_project_type_utils() {
 
         filename="${filename::-1}" # remove '/'
 
-        display --indent 2 --text "- Selecting project" --result DONE --color GREEN
-        display --indent 4 --text "Selected project: ${filename}"
+        display --indent 6 --text "- Selecting project" --result DONE --color GREEN
+        display --indent 8 --text "${filename}"
 
         # Aks project domain
         project_domain="$(ask_project_domain "${filename}")"
@@ -215,7 +217,7 @@ function project_manager_menu_new_project_type_utils() {
 
       else
 
-        display --indent 2 "Selecting website to work with" --result SKIPPED --color YELLOW
+        display --indent 6 "Selecting website to work with" --result SKIPPED --color YELLOW
 
       fi
 
