@@ -103,10 +103,16 @@ function dropbox_download() {
     # Check dropbox_file_to_download_result
     if [[ ${dropbox_file_to_download_result} -eq 0 ]]; then
 
+        clear_last_line
+        clear_last_line
+        
         display --indent 6 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
         log_event "info" "${file_to_download} downloaded" "false"
 
     else
+
+        clear_last_line
+        clear_last_line
 
         display --indent 6 --text "- Downloading backup from dropbox" --result "ERROR" --color RED
         display --indent 8 --text "Please read log file" --tcolor RED
