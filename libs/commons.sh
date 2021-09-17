@@ -1337,23 +1337,25 @@ function compress() {
   clear_last_line
 
   # Test backup file
-  log_event "info" "Testing backup file: ${filename} ..." "false"
+  log_event "info" "Testing backup file: ${file_output}" "false"
   display --indent 6 --text "- Testing backup file"
 
+  # Test backup with pv output
   pv --width 70 "${file_output}" | lbzip2 --test
+
+  lbzip2_result=$?
 
   # Clear pipe output
   clear_last_line
   clear_last_line
 
-  lbzip2_result=$?
   if [[ ${lbzip2_result} -eq 0 ]]; then
 
     # Get file size
     BK_FL_SIZE="$(du --apparent-size -s -k "${file_output}" | awk '{ print $1 }' | awk '{printf "%.3f MiB %s\n", $1/1024, $2}')"
 
     # Log
-    display --indent 6 --text "- Compressing '${to_backup}'" --result "DONE" --color GREEN
+    display --indent 6 --text "- Compressing backup file" --result "DONE" --color GREEN
     display --indent 8 --text "Final backup size: ${YELLOW}${BOLD}${BK_FL_SIZE}${ENDCOLOR}"
 
     log_event "info" "Backup ${file_output} created, final size: ${BK_FL_SIZE}" "false"
@@ -1363,7 +1365,7 @@ function compress() {
 
   else
 
-    display --indent 6 --text "- Compressing backup" --result "FAIL" --color RED
+    display --indent 6 --text "- Compressing backup file" --result "FAIL" --color RED
     display --indent 8 --text "Something went wrong making backup file: ${file_output}" --tcolor RED
 
     log_event "error" "Something went wrong making backup file: ${file_output}" "false"
