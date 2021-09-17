@@ -228,6 +228,7 @@ function project_manager_menu_new_project_type_utils() {
       # BENCH PROJECT GTMETRIX
 
       URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
+     
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
 
@@ -244,7 +245,7 @@ function project_manager_menu_new_project_type_utils() {
         display --indent 2 --text "- Testing project ${URL_TO_TEST}" --result DONE --color GREEN
         display --indent 4 --text "Please check results on ${MAGENTA}${gtmetrix_results_url}${ENDCOLOR}"
         #display --indent 4 --text "Please check results on log file" --tcolor MAGENTA
-        log_event "info" "gtmetrix_result: ${gtmetrix_result}"
+        log_event "info" "gtmetrix_result: ${gtmetrix_result}" "false"
 
       fi
 

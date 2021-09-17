@@ -734,8 +734,8 @@ function extract() {
             ;;
 
         *.tar)
-            #tar xf "${file_path}" -C "${directory_to_extract}"
-            pv --width 70 "${file_path}" | tar xf -C "${directory_to_extract}"
+            #tar xf "${file_path}"
+            pv --width 70 "${file_path}" | tar xf
             ;;
 
         *.tbz2)
