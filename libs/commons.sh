@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.55
+# Version: 3.0.56
 #############################################################################
 
 # Source all apps libs
@@ -37,7 +37,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.0.55"
+  declare -g SCRIPT_V="3.0.56"
 
   # Hostname
   declare -g VPSNAME="$HOSTNAME"
@@ -927,7 +927,7 @@ function move_files() {
   else
 
     clear_last_line
-    display --indent 6 --text "-  Moving files to ${destination_path}" --result "FAIL" --color RED
+    display --indent 6 --text "- Moving files to ${destination_path}" --result "FAIL" --color RED
     return 1
 
   fi
@@ -1318,14 +1318,8 @@ function compress() {
   local file_output=$3
   #local compress_type=$4
 
-  #local backup_file
-  #backup_file="${to_backup}.tar.bz2"
-
   log_event "info" "Compressing '${to_backup}' ..." "false"
   display --indent 6 --text "- Compressing ${to_backup}"
-
-  # Examples
-  # (${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv --width 70 --size "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${backup_file}") 2>&1
 
   log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | lbzip2 >\"${file_output}\"" "false"
 
