@@ -683,19 +683,24 @@ function mail_footer() {
 
     local script_v=$1
 
-    local footer_open
-    local script_string
-    local footer_close
+    #local footer_open
+    #local script_string
+    #local footer_close
     local html_close
     local mail_footer
 
-    footer_open="<div style=\"font-size:10px;float:left;font-family:Verdana,Helvetica,Arial;text-align:right;padding-right:5px;width:100%;height:20px\"><a href=\"https://www.broobe.com/web-mobile-development/?utm_source=linux-script&utm_medium=email&utm_campaign=landing_it\" style=\"color: #503fe0;font-weight: bold;font-style: italic;\">"
-    script_string="BROLIT SCRIPT Version: ${script_v} by BROOBE"
-    footer_close="</a></div></div>"
+    #footer_open="<div style=\"font-size:10px;float:left;font-family:Verdana,Helvetica,Arial;text-align:right;padding-right:5px;width:100%;height:20px\"><a href=\"https://www.broobe.com/web-mobile-development/?utm_source=linux-script&utm_medium=email&utm_campaign=landing_it\" style=\"color: #503fe0;font-weight: bold;font-style: italic;\">"
+    #script_string="BROLIT SCRIPT Version: ${script_v} by BROOBE"
+    #footer_close="</a></div></div>"
 
-    html_close="$(mail_html_end)"
+    # TODO: need to replace {{brolit_version}} from footer-tpl.html
 
-    mail_footer="${footer_open}${script_string}${footer_close}${html_close}"
+    html_footer="$(cat "${SFOLDER}/templates/emails/footer-tpl.html")"
+
+    #html_close="$(mail_html_end)"
+
+    #mail_footer="${footer_open}${script_string}${footer_close}${html_close}"
+    mail_footer="$(echo "${html_footer}" | sed -e "s/{{brolit_version}}/${script_v}/g" "${html_footer}")"
 
     # Return
     echo "${mail_footer}"
