@@ -1,0 +1,23 @@
+server {
+
+    listen 80;
+
+    server_name domain.com;
+
+    root /var/www/domain.com;
+
+    index index.html;
+
+    # Log
+    error_log   /var/log/nginx/domain.com-error.log;
+
+    ### INC
+    #include /var/www/domain.com/nginx.conf;
+    
+    ### PERF
+    #gzip_static on;
+
+    ### SEC
+    #include /etc/nginx/globals/security.conf;
+
+}
