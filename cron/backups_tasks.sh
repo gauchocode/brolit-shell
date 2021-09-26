@@ -59,7 +59,8 @@ mail_file_backup_html=$(<"${TMP_DIR}/file-bk-${NOW}.mail")
 mail_footer_html="$(mail_footer "${SCRIPT_V}")"
 
 # Preparing Mail Notifications Template
-mail_html="$(cat "${SFOLDER}/templates/emails/${template}/main-tpl.html")"
+email_template="default"
+mail_html="$(cat "${SFOLDER}/templates/emails/${email_template}/main-tpl.html")"
 
 mail_html="$(echo "${mail_html}" | sed -e "s/{{server_info}}/${mail_server_status_html}/g")"
 mail_html="$(echo "${mail_html}" | sed -e "s/{{packages_section}}/${mail_package_status_html}/g")"
