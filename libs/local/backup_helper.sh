@@ -583,7 +583,8 @@ function make_all_databases_backup() {
       backup_file="$(make_database_backup "${database}")"
 
       # Calculate backup size
-      database_backup_size="$(find . -name "${backup_file}" -exec ls -l --human-readable --block-size=M {} \; | awk '{ print $5 }')"
+      database_backup_size="$(du --apparent-size -s -k "${backup_file}" | awk '{ print $1 }' | awk '{printf "%.3f MiB %s\n", $1/1024, $2}')"
+      #database_backup_size="$(find . -name "${backup_file}" -exec ls -l --human-readable --block-size=M {} \; | awk '{ print $5 }')"
 
       backuped_databases_list[$database_backup_index]="${backup_file}"
       backuped_databases_sizes_list+=("${database_backup_size}")
