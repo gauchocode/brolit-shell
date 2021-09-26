@@ -180,7 +180,7 @@ function mail_package_status_section() {
     local pkg_body
 
     # TODO: config support
-    local template="default"
+    local email_template="default"
 
     # Check for important packages updates
     pkg_details=$(mail_package_section "${PACKAGES[@]}") # ${PACKAGES[@]} is a Global array with packages names
@@ -200,7 +200,7 @@ function mail_package_status_section() {
 
     fi
 
-    html_pkg_details="$(cat "${SFOLDER}/templates/emails/${template}/packages-tpl.html")"
+    html_pkg_details="$(cat "${SFOLDER}/templates/emails/${email_template}/packages-tpl.html")"
 
     html_pkg_details="$(echo "${html_pkg_details}" | sed -e "s/{{packages_status}}/${pkg_status}/g")"
     html_pkg_details="$(echo "${html_pkg_details}" | sed -e "s/{{packages_status_icon}}/${pkg_status_icon}/g")"
@@ -262,6 +262,9 @@ function mail_certificates_section() {
 
     # Changing global
     declare -g STATUS_CERTS="OK"
+
+    # TODO: config support
+    local email_template="default"
 
     # Changing locals
     cert_status_icon="✅"
@@ -339,11 +342,7 @@ function mail_certificates_section() {
 
     body="${body_open}${files_label}${email_cert_line}${files_label_end}${body_close}"
 
-    # Write e-mail parts files
-    #echo "${header}" >"${TMP_DIR}/cert-${NOW}.mail"
-    #echo "${body}" >>"${TMP_DIR}/cert-${NOW}.mail"
-
-    mail_certificates_html="$(cat "${SFOLDER}/templates/emails/${template}/certificates-tpl.html")"
+    mail_certificates_html="$(cat "${SFOLDER}/templates/emails/${email_template}/certificates-tpl.html")"
 
     mail_certificates_html="$(echo "${mail_certificates_html}" | sed -e "s/{{certificates_status}}/${STATUS_CERTS}/g")"
     mail_certificates_html="$(echo "${mail_certificates_html}" | sed -e "s/{{certificates_status_icon}}/${cert_status_icon}/g")"
@@ -385,6 +384,9 @@ function mail_filesbackup_section() {
     local files_inc_line_p4
     local files_inc_line_p5
     local bk_fl_size
+
+    # TODO: config support
+    local email_template="default"
 
     backup_type='Files'
 
@@ -445,7 +447,7 @@ function mail_filesbackup_section() {
 
     body="${body_open}${content}${size_label}${files_label}${files_inc}${files_label_end}${dbk_size_label}${body_close}"
 
-    mail_backup_files_html="$(cat "${SFOLDER}/templates/emails/${template}/backup_files-tpl.html")"
+    mail_backup_files_html="$(cat "${SFOLDER}/templates/emails/${email_template}/backup_files-tpl.html")"
 
     mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e "s/{{files_backup_status}}/${STATUS_BACKUP_FILES}/g")"
     mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e "s/{{files_backup_status_icon}}/${status_icon_f}/g")"
@@ -471,7 +473,6 @@ function mail_config_backup_section() {
     local status_icon_f
     local content
     local color
-    local header
     local body
     local count files_inc
     local files_inc_line_p1
@@ -485,6 +486,9 @@ function mail_config_backup_section() {
     local header_open
 
     local backup_type
+
+    # TODO: config support
+    local email_template="default"
 
     backup_type="Config"
 
@@ -538,7 +542,7 @@ function mail_config_backup_section() {
 
     body="${body_open}${content}${size_label}${files_label}${files_inc}${files_label_end}${dbk_size_label}${body_close}"
 
-    mail_backup_configs_html="$(cat "${SFOLDER}/templates/emails/${template}/backup_configs-tpl.html")"
+    mail_backup_configs_html="$(cat "${SFOLDER}/templates/emails/${email_template}/backup_configs-tpl.html")"
 
     mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e "s/{{configs_backup_status}}/${STATUS_BACKUP_FILES}/g")"
     mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e "s/{{configs_backup_status_icon}}/${status_icon_f}/g")"
@@ -562,15 +566,13 @@ function mail_databases_backup_section() {
     local count
     local bk_db_size
     local status_icon
-    local header_open1
-    local header_open2
-    local header_open
-    local header_text
-    local header_close
     local body_open
     local body_close
 
     local backup_type
+
+    # TODO: config support
+    local email_template="default"
 
     declare -g STATUS_BACKUP_DBS
 
@@ -626,7 +628,7 @@ function mail_databases_backup_section() {
 
     body="${body_open}${content}${SIZE_D}${files_label_D}${files_inc}${files_label_d_end}${body_close}"
 
-    mail_backup_databases_html="$(cat "${SFOLDER}/templates/emails/${template}/backup_databases-tpl.html")"
+    mail_backup_databases_html="$(cat "${SFOLDER}/templates/emails/${email_template}/backup_databases-tpl.html")"
 
     mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e "s/{{databases_backup_status}}/${STATUS_BACKUP_DBS}/g")"
     mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e "s/{{databases_backup_status_icon}}/${status_icon}/g")"
@@ -645,7 +647,9 @@ function mail_footer() {
 
     local mail_footer
 
-    html_footer="$(cat "${SFOLDER}/templates/emails/footer-tpl.html")"
+    local email_template="defaul"
+
+    html_footer="$(cat "${SFOLDER}/templates/emails/${email_template}/footer-tpl.html")"
 
     mail_footer="$(echo "${html_footer}" | sed -e "s/{{brolit_version}}/${script_v}/g")"
 
