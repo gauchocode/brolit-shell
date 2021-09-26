@@ -176,7 +176,7 @@ function mysql_test_user_credentials() {
 #  0 if ok, 1 on error.
 ################################################################################
 
-function mysql_count_dabases() {
+function mysql_count_databases() {
 
     local databases=$1
 
@@ -185,7 +185,7 @@ function mysql_count_dabases() {
     local db
 
     for db in ${databases}; do
-        if [[ $DB_BL != *"${db}"* ]]; then # $DB_BL contains blacklisted databases
+        if [[ $BLACKLISTED_DATABASES != *"${db}"* ]]; then # $BLACKLISTED_DATABASES contains blacklisted databases
             total_databases=$((total_databases + 1))
         fi
     done

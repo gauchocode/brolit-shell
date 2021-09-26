@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+    <title>BROLIT BACKUP</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            -webkit-text-size-adjust: none;
+            -ms-text-size-adjust: none;
+        }
+
+        img {
+            line-height: 100%;
+            outline: none;
+            text-decoration: none;
+            -ms-interpolation-mode: bicubic;
+        }
+
+        a img {
+            border: none;
+        }
+
+        #backgroundTable {
+            margin: 0;
+            padding: 0;
+            width: 100% !important;
+        }
+
+        a,
+        a:link {
+            color: #2A5DB0;
+            text-decoration: underline;
+        }
+
+        table td {
+            border-collapse: collapse;
+        }
+
+        span {
+            color: inherit;
+            border-bottom: none;
+        }
+
+        span:hover {
+            background-color: transparent;
+        }
+    </style>
+
+</head>
+
+<body style="background: #e1e1e1;font-family:Arial, Helvetica, sans-serif; font-size:1em;">
+
+    <div
+        style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px 0 0 10px;width:100%;">
+
+        <div id="email-container">
+
+            <div style="float:left;width:100%">
+
+                <!-- SECTION: SERVER INFO -->
+                {{server_info}}
+
+                <!-- SECTION: PKG STATUS -->
+                {{packages_section}}
+
+                <!-- SECTION: CERTIFICATES -->
+                {{certificates_section}}
+
+                <!-- SECTION: CONFIG BACKUP -->
+                {{configs_backup_section}}
+
+                <!-- SECTION: DATABASE BACKUP -->
+                {{databases_backup_section}}
+
+                <!-- SECTION: FILES BACKUP -->
+                {{files_backup_section}}
+
+                <!-- SECTION: EMAIL FOOTER -->
+                {{footer}}
+
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
