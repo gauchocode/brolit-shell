@@ -647,7 +647,7 @@ function mail_footer() {
 
     local mail_footer
 
-    local email_template="defaul"
+    local email_template="default"
 
     html_footer="$(cat "${SFOLDER}/templates/emails/${email_template}/footer-tpl.html")"
 
