@@ -355,7 +355,7 @@ function make_sites_files_backup() {
 
       directory_name="$(basename "${j}")"
 
-      if [[ ${SITES_BL} != *"${directory_name}"* ]]; then
+      if [[ ${BLACKLISTED_SITES} != *"${directory_name}"* ]]; then
 
         make_files_backup "site" "${SITES}" "${directory_name}"
         BK_FL_ARRAY_INDEX="$((BK_FL_ARRAY_INDEX + 1))"
@@ -550,12 +550,10 @@ function duplicity_backup() {
 function make_all_databases_backup() {
 
   # GLOBALS
-  declare -g BK_TYPE="database"
   declare -g ERROR=false
   declare -g ERROR_TYPE=""
-  declare -g DBS_F="databases"
 
-  export BK_TYPE DBS_F
+  local database_backup_index
 
   # Starting Messages
   log_subsection "Backup Databases"
@@ -563,35 +561,44 @@ function make_all_databases_backup() {
   display --indent 6 --text "- Initializing database backup script" --result "DONE" --color GREEN
 
   # Get MySQL DBS
-  DBS="$(mysql_list_databases "all")"
+  databases="$(mysql_list_databases "all")"
 
   # Get all databases name
-  TOTAL_DBS="$(mysql_count_dabases "${DBS}")"
+  total_databases="$(mysql_count_databases "${databases}")"
 
   # Log
-  display --indent 6 --text "- Databases found" --result "${TOTAL_DBS}" --color WHITE
-  log_event "info" "Databases found: ${TOTAL_DBS}" "false"
+  display --indent 6 --text "- Databases found" --result "${total_databases}" --color WHITE
+  log_event "info" "Databases found: ${total_databases}" "false"
   log_break "true"
 
   # MORE GLOBALS
-  declare -g BK_DB_INDEX=0
+  database_backup_index=0
 
-  for DATABASE in ${DBS}; do
+  for database in ${databases}; do
 
-    if [[ ${DB_BL} != *"${DATABASE}"* ]]; then
+    if [[ ${BLACKLISTED_DATABASES} != *"${database}"* ]]; then
 
-      log_event "info" "Processing [${DATABASE}] ..." "false"
+      log_event "info" "Processing [${database}] ..." "false"
 
-      make_database_backup "database" "${DATABASE}"
+      backup_file="$(make_database_backup "${database}")"
 
-      BK_DB_INDEX=$((BK_DB_INDEX + 1))
+      # Calculate backup size
+      database_backup_size="$(find . -name "${backup_file}" -exec ls -l --human-readable --block-size=M {} \; | awk '{ print $5 }')"
 
-      log_event "info" "Backup ${BK_DB_INDEX} of ${TOTAL_DBS} done" "false"
+      backuped_databases_list[$database_backup_index]="${backup_file}"
+      backuped_databases_sizes_list+=("${database_backup_size}")
+
+      # Upload backup
+      upload_backup_to_dropbox "${backup_file}"
+
+      database_backup_index=$((database_backup_index + 1))
+
+      log_event "info" "Backup ${database_backup_index} of ${total_databases} done" "false"
 
     else
 
-      display --indent 6 --text "- Ommiting database [${DATABASE}]" --result "DONE" --color WHITE
-      log_event "debug" "Ommiting blacklisted database: [${DATABASE}]" "false"
+      display --indent 6 --text "- Ommiting database ${database}" --result "DONE" --color WHITE
+      log_event "info" "Ommiting blacklisted database: ${database}" "false"
 
     fi
 
@@ -600,7 +607,7 @@ function make_all_databases_backup() {
   done
 
   # Configure Email
-  mail_mysqlbackup_section "${ERROR}" "${ERROR_TYPE}"
+  mail_databases_backup_section "${backuped_databases_list[@]}" "${backuped_databases_sizes_list[@]}" "${ERROR}" "${ERROR_TYPE}"
 
 }
 
@@ -608,8 +615,7 @@ function make_all_databases_backup() {
 # Make database Backup
 #
 # Arguments:
-#  $1 = ${bk_type} - configs,sites,databases
-#  $2 = ${database}
+#  $1 = ${database}
 #
 # Outputs:
 #  0 if ok, 1 if error
@@ -617,22 +623,17 @@ function make_all_databases_backup() {
 
 function make_database_backup() {
 
-  local bk_type=$1
-  local database=$2
+  local database=$1
 
   local mysql_export_result
 
   local directory_to_backup="${TMP_DIR}/${NOW}/"
-  local db_file="${database}_${bk_type}_${NOW}.sql"
+  local db_file="${database}_database_${NOW}.sql"
 
-  local old_bk_file="${database}_${bk_type}_${ONEWEEKAGO}.tar.bz2"
-  local bk_file="${database}_${bk_type}_${NOW}.tar.bz2"
+  local old_bk_file="${database}_database_${ONEWEEKAGO}.tar.bz2"
+  local bk_file="${database}_database_${NOW}.tar.bz2"
 
   local dropbox_path
-
-  # DATABASE BACKUP GLOBALS
-  #declare -g BACKUPED_DB_LIST
-  #declare -g BK_DB_SIZES
 
   log_event "info" "Creating new database backup of ${database} ..." "false"
 
@@ -642,9 +643,6 @@ function make_database_backup() {
 
   if [[ ${mysql_export_result} -eq 0 ]]; then
 
-    # TAR
-    #(${TAR} -cf - --directory="${directory_to_backup}" "${db_file}" | pv --width 70 -s "$(du -sb "${TMP_DIR}/${NOW}/${db_file}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${bk_file}")
-
     # Compress backup
     compress "${directory_to_backup}" "${db_file}" "${TMP_DIR}/${NOW}/${bk_file}"
 
@@ -652,44 +650,8 @@ function make_database_backup() {
     compress_result=$?
     if [[ ${compress_result} -eq 0 ]]; then
 
-      # Changing global
-      #BACKUPED_DB_LIST[$BK_DB_INDEX]="${bk_file}"
-
-      # Calculate backup size
-      #BK_DB_SIZE="$(find . -name "${bk_file}" -exec ls -l --human-readable --block-size=M {} \; | awk '{ print $5 }')"
-      #BK_DB_SIZES+=("${BK_DB_SIZE}")
-
-      # New folder with $VPSNAME
-      dropbox_create_dir "${VPSNAME}"
-
-      # New folder with $bk_type
-      dropbox_create_dir "${VPSNAME}/${bk_type}"
-
-      # New folder with $database (project DB)
-      dropbox_create_dir "${VPSNAME}/${bk_type}/${database}"
-
-      # Dropbox Path
-      dropbox_path="/${VPSNAME}/${bk_type}/${database}"
-
-      # Upload to Dropbox
-      dropbox_upload "${TMP_DIR}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}${dropbox_path}"
-
-      dropbox_result=$?
-      if [[ ${dropbox_result} -eq 0 ]]; then
-
-        # Delete old backups
-        dropbox_delete "${DROPBOX_FOLDER}${dropbox_path}/${old_bk_file}"
-
-        log_event "info" "Deleting temp database backup ${old_bk_file} from server" "false"
-
-        rm "${TMP_DIR}/${NOW}/${db_file}"
-        rm "${TMP_DIR}/${NOW}/${bk_file}"
-
-      else
-
-        return 1
-
-      fi
+      # Return
+      echo "${TMP_DIR}/${NOW}/${bk_file}"
 
     fi
 
@@ -748,7 +710,7 @@ function make_project_backup() {
     fi
 
     # Backup database
-    make_database_backup "database" "${db_name}"
+    make_database_backup "${db_name}"
 
     log_event "info" "Deleting backup from server ..." "false"
 
@@ -760,6 +722,45 @@ function make_project_backup() {
 
     ERROR=true
     log_event "error" "Something went wrong making a project backup" "false"
+
+  fi
+
+}
+
+function upload_backup_to_dropbox() {
+
+  local bk_type=$1
+  local bk_file=$2
+
+  # New folder with $VPSNAME
+  dropbox_create_dir "${VPSNAME}"
+
+  # New folder with "database"
+  dropbox_create_dir "${VPSNAME}/${bk_type}"
+
+  # New folder with $database (project DB)
+  dropbox_create_dir "${VPSNAME}/${bk_type}/${database}"
+
+  # Dropbox Path
+  dropbox_path="/${VPSNAME}/${bk_type}/${database}"
+
+  # Upload to Dropbox
+  dropbox_upload "${TMP_DIR}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}${dropbox_path}"
+
+  dropbox_result=$?
+  if [[ ${dropbox_result} -eq 0 ]]; then
+
+    # Delete old backups
+    dropbox_delete "${DROPBOX_FOLDER}${dropbox_path}/${old_bk_file}"
+
+    log_event "info" "Deleting temp ${bk_type} backup ${old_bk_file} from server" "false"
+
+    rm "${TMP_DIR}/${NOW}/${db_file}"
+    rm "${TMP_DIR}/${NOW}/${bk_file}"
+
+  else
+
+    return 1
 
   fi
 

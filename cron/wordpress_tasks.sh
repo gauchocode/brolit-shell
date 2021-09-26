@@ -48,7 +48,7 @@ for site in ${all_sites}; do
 
     log_event "info" "Project name: ${project_name}" "false"
 
-    if [[ ${SITES_BL} != *"${project_name}"* ]]; then
+    if [[ ${BLACKLISTED_SITES} != *"${project_name}"* ]]; then
 
       # If is wp
       is_wp="$(is_wp_project "${site}")"
