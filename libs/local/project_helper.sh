@@ -903,7 +903,7 @@ function project_delete_database() {
     fi
 
     # Make a database Backup
-    make_database_backup "${BK_TYPE}" "${chosen_database}"
+    make_database_backup "${chosen_database}"
 
     # Moving deleted project backups to another dropbox directory
     ${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${chosen_database}" "/${VPSNAME}/offline-site" 1>&2

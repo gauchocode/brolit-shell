@@ -4,14 +4,14 @@
 # Version: 3.0.56
 #############################################################################
 
-function test_mail_cert_section() {
+function test_mail_certificates_section() {
 
     local email_subject
     local email_content
     
-    log_subsection "Test: test_mail_cert_section"
+    log_subsection "Test: test_mail_certificates_section"
 
-    mail_cert_section
+    mail_certificates_section
 
     CERT_MAIL="${TMP_DIR}/cert-${NOW}.mail"
     CERT_MAIL_VAR=$(<"${CERT_MAIL}")
@@ -26,7 +26,7 @@ function test_mail_cert_section() {
     mail_send_notification "${email_subject}" "${email_content}"
 
     clear_last_line
-    display --indent 6 --text "- test_mail_cert_section" --result "DONE" --color WHITE
+    display --indent 6 --text "- test_mail_certificates_section" --result "DONE" --color WHITE
 
 }
 

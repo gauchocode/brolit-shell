@@ -26,7 +26,7 @@ log_event "info" "Running optimizer_tasks.sh from cron ..." "false"
 #PKG_MAIL_VAR=$(<"${PKG_MAIL}")
 
 # Check certificates installed
-#mail_cert_section
+#mail_certificates_section
 #CERT_MAIL="${TMP_DIR}/cert-${NOW}.mail"
 #CERT_MAIL_VAR=$(<"${CERT_MAIL}")
 

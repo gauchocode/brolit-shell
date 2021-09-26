@@ -43,12 +43,15 @@ function mail_send_notification() {
     local email_subject=$1
     local email_content=$2
 
+    # Log
+    log_event "info" "Sending Email to ${MAILA} ..." "false"
+    log_event "debug" "Running: sendEmail -f \"${SMTP_U}\" -t \"${MAILA}\" -u \"${email_subject}\" -o message-content-type=html -m \"${email_content}\" -s \"${SMTP_SERVER}:${SMTP_PORT}\" -o tls=\"${SMTP_TLS}\" -xu \"${SMTP_U}\" -xp \"${SMTP_P}\"" "false"
+
     # Use -l "/${SCRIPT}/sendemail.log" for custom log file
     sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${email_subject}" -o message-content-type=html -m "${email_content}" -s "${SMTP_SERVER}:${SMTP_PORT}" -o tls="${SMTP_TLS}" -xu "${SMTP_U}" -xp "${SMTP_P}" 1>&2
 
     # Log
-    log_event "info" "Email sent!"
-    log_event "debug" "Running: sendEmail -f \"${SMTP_U}\" -t \"${MAILA}\" -u \"${email_subject}\" -o message-content-type=html -m \"${email_content}\" -s \"${SMTP_SERVER}:${SMTP_PORT}\" -o tls=\"${SMTP_TLS}\" -xu \"${SMTP_U}\" -xp \"${SMTP_P}\""
+    log_event "info" "Email sent!" "false"
 
 }
 
@@ -106,63 +109,59 @@ function mail_server_status_section() {
 
     local IP=$1
 
-    declare -g STATUS_SERVER # Global to check section status
+    #declare -g STATUS_SERVER # Global to check section status
+
+    local server_status
 
     local disk_u
     local disk_u_ns
-    local status_s_icon
-    local status_s_color
     local header_open
     local header_text
     local header_close
     local body_open
     local content
     local body_close
-    local srv_header
-    local srv_body
     local body
 
-    ### Disk Usage
-    disk_u=$(calculate_disk_usage "${MAIN_VOL}")
+    # Disk Usage
+    disk_u="$(calculate_disk_usage "${MAIN_VOL}")"
 
     # Extract % to compare
-    disk_u_ns=$(echo "${disk_u}" | cut -f1 -d'%')
+    disk_u_ns="$(echo "${disk_u}" | cut -f1 -d'%')"
 
     # Cast to int
     casted_disk_u_ns=$(int() { printf '%d' "${disk_u_ns:-}" 2>/dev/null || :; })
 
     if [[ "${casted_disk_u_ns}" -gt 45 ]]; then
         # Changing global
-        STATUS_SERVER="WARNING"
+        server_status="WARNING"
 
         # Changing locals
-        status_s_icon="⚠"
-        status_s_color="#fb2f2f"
+        server_status_icon="⚠"
+        server_status_color="#fb2f2f"
 
     else
         # Changing global
-        STATUS_SERVER="OK"
+        server_status="OK"
 
         # Changing locals
-        status_s_icon="✅"
-        status_s_color="#503fe0"
+        server_status_icon="✅"
+        server_status_color="#503fe0"
 
     fi
 
-    header_open="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:${status_s_color};padding:5px 0 10px 10px;width:100%;height:30px\">"
-    header_text="Server Status: ${STATUS_SERVER} ${status_s_icon}"
-    header_close="</div>"
-    srv_header="${header_open}${header_text}${header_close}"
+    html_server_info_details="$(cat "${SFOLDER}/templates/emails/${template}/server_info-tpl.html")"
 
-    body_open="<div style=\"color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;\">"
-    body_content="<b>Server IP: ${IP}</b><br /><b>Disk usage: ${disk_u}</b><br />"
-    body_close="</div></div>"
-    srv_body="${body_open}${body_content}${body_close}"
-
-    body="${srv_header}${srv_body}"
+    html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{packages_status}}/${server_status}/g")"
+    html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{packages_status_icon}}/${server_status_icon}/g")"
+    html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{server_ipv4}}/${IP}/g")"
+    html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{server_ipv6}}/${IP}/g")"
+    html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{disk_usage}}/${disk_u}/g")"
 
     # Return
-    echo "${body}"
+    echo "${html_server_info_details}"
+
+    #echo "${html_server_info_details}" >"${TMP_DIR}/server_info-${NOW}.mail"
 
 }
 
@@ -179,6 +178,9 @@ function mail_package_status_section() {
     local body_open
     local body_close
     local pkg_body
+
+    # TODO: config support
+    local template="default"
 
     # Check for important packages updates
     pkg_details=$(mail_package_section "${PACKAGES[@]}") # ${PACKAGES[@]} is a Global array with packages names
@@ -198,19 +200,16 @@ function mail_package_status_section() {
 
     fi
 
-    header_open="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:${pkg_color};padding:5px 0 10px 10px;width:100%;height:30px\">"
-    header_text="Packages Status: ${pkg_status} ${pkg_status_icon}"
-    header_close="</div>"
+    html_pkg_details="$(cat "${SFOLDER}/templates/emails/${template}/packages-tpl.html")"
 
-    body_open="$(mail_section_start)"
-    pkg_details="<div>${pkg_details}</div>"
-    body_close="$(mail_section_end)"
+    html_pkg_details="$(echo "${html_pkg_details}" | sed -e "s/{{packages_status}}/${pkg_status}/g")"
+    html_pkg_details="$(echo "${html_pkg_details}" | sed -e "s/{{packages_status_icon}}/${pkg_status_icon}/g")"
+    html_pkg_details="$(echo "${html_pkg_details}" | sed -e "s/{{packages_status_details}}/${pkg_details}/g")"
 
-    pkg_header="${header_open}${header_text}${header_close}"
-    pkg_body="${pkg_header}${body_open}${pkg_details}${body_close}"
+    # Return
+    echo "${html_pkg_details}"
 
-    # Write e-mail parts files
-    echo "${pkg_body}" >"${TMP_DIR}/pkg-${NOW}.mail"
+    #echo "${html_pkg_details}" >"${TMP_DIR}/pkg-${NOW}.mail"
 
 }
 
@@ -227,6 +226,7 @@ function mail_package_section() {
     for package in "${PACKAGES[@]}"; do
 
         package_version_installed="$(apt-cache policy "${package}" | grep Installed | cut -d ':' -f 2)"
+
         if [[ ${package_version_installed} = "(none)" ]] && [[ ${package} = "mysql-server" ]]; then
             package="mariadb-server"
             package_version_installed="$(apt-cache policy "${package}" | grep Installed | cut -d ':' -f 2)"
@@ -245,16 +245,15 @@ function mail_package_section() {
 
 }
 
-function mail_cert_section() {
+function mail_certificates_section() {
+
+    local template="default"
 
     local domain
     local all_sites
     local cert_days
     local email_cert_line
     local email_cert_new_line
-    local email_cert_header_open
-    local email_cert_header_text
-    local email_cert_header_close
     local header_open1
     local header_open2
     local cert_status_icon
@@ -279,10 +278,10 @@ function mail_cert_section() {
 
         if [ "${k}" != "skip" ]; then
 
-            domain=$(basename "${site}")
+            domain="$(basename "${site}")"
 
-            # Check blacklist ${SITES_BL}
-            if [[ "${SITES_BL}" != *"${domain}"* ]]; then
+            # Check blacklist ${BLACKLISTED_SITES}
+            if [[ "${BLACKLISTED_SITES}" != *"${domain}"* ]]; then
 
                 log_event "info" "Getting certificate info for: ${domain}" "false"
 
@@ -292,7 +291,7 @@ function mail_cert_section() {
                 email_cert_new_line="<div style=\"float:left;width:100%\">"
                 email_cert_domain="<div>${domain}"
 
-                cert_days=$(certbot_certificate_valid_days "${domain}")
+                cert_days="$(certbot_certificate_valid_days "${domain}")"
 
                 if [[ ${cert_days} == "" ]]; then
                     # GREY LABEL
@@ -335,24 +334,23 @@ function mail_cert_section() {
 
     done
 
-    files_label_end="</div>"
-
-    header_open1="<div style=\"float:left;width:100%\"><div style=\"color:white;font-size:14px;font-weight:bold;font-family:Verdana,Helvetica,Arial;line-height:36px;float:left;background:"
-    header_open2=";padding:5px 0 10px 10px;width:100%;height:30px\">"
-    email_cert_header_open="${header_open1}${cert_status_color}${header_open2}"
-    email_cert_header_text="Certificates on server: ${STATUS_CERTS} ${cert_status_icon}"
-    email_cert_header_close="</div>"
-
     body_open="<div style=\"color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;\">"
     body_close="</div></div>"
 
-    header="${email_cert_header_open}${email_cert_header_text}${email_cert_header_close}"
     body="${body_open}${files_label}${email_cert_line}${files_label_end}${body_close}"
-    #body="${body_open}${CONTENT}${files_label}${email_cert_line}${files_label_end}${body_close}"
 
     # Write e-mail parts files
-    echo "${header}" >"${TMP_DIR}/cert-${NOW}.mail"
-    echo "${body}" >>"${TMP_DIR}/cert-${NOW}.mail"
+    #echo "${header}" >"${TMP_DIR}/cert-${NOW}.mail"
+    #echo "${body}" >>"${TMP_DIR}/cert-${NOW}.mail"
+
+    mail_certificates_html="$(cat "${SFOLDER}/templates/emails/${template}/certificates-tpl.html")"
+
+    mail_certificates_html="$(echo "${mail_certificates_html}" | sed -e "s/{{certificates_status}}/${STATUS_CERTS}/g")"
+    mail_certificates_html="$(echo "${mail_certificates_html}" | sed -e "s/{{certificates_status_icon}}/${cert_status_icon}/g")"
+    mail_certificates_html="$(echo "${mail_certificates_html}" | sed -e "s/{{certificates_list}}/${body}/g")"
+
+    # Return
+    echo "${mail_certificates_html}"
 
 }
 
@@ -441,27 +439,20 @@ function mail_filesbackup_section() {
 
     fi
 
-    # Header
-    header_open1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
-    header_open2=";padding:5px 0 10px 10px;width:100%;height:30px\">"
-    header_open="${header_open1}${color}${header_open2}"
-    header_text="Files Backup: ${STATUS_BACKUP_FILES} ${status_icon_f}"
-    header_close="</div>"
-
     # Body
     body_open='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
     body_close="</div></div>"
 
-    #MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
-
-    header="${header_open}${header_text}${header_close}"
     body="${body_open}${content}${size_label}${files_label}${files_inc}${files_label_end}${dbk_size_label}${body_close}"
-    #footer="${FOOTEROPEN}${SCRIPTSTRING}${FOOTERCLOSE}"
+
+    mail_backup_files_html="$(cat "${SFOLDER}/templates/emails/${template}/backup_files-tpl.html")"
+
+    mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e "s/{{files_backup_status}}/${STATUS_BACKUP_FILES}/g")"
+    mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e "s/{{files_backup_status_icon}}/${status_icon_f}/g")"
+    mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e "s/{{files_backup_list}}/${body}/g")"
 
     # Write e-mail parts files
-    echo "${header}" >"${TMP_DIR}/file-bk-${NOW}.mail"
-    echo "${body}" >>"${TMP_DIR}/file-bk-${NOW}.mail"
-    #echo "${footer}" >>"${TMP_DIR}/file-bk-${NOW}.mail"
+    echo "${mail_backup_files_html}" >>"${TMP_DIR}/file-bk-${NOW}.mail"
 
 }
 
@@ -542,38 +533,31 @@ function mail_config_backup_section() {
 
     fi
 
-    header_open1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
-    header_open2=";padding:5px 0 10px 10px;width:100%;height:30px\">"
-    header_open="${header_open1}${color}${header_open2}"
-    header_text="Config Backup: ${STATUS_BACKUP_FILES} ${status_icon_f}"
-    header_close="</div>"
-
     body_open="<div style=\"color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;\">"
     body_close="</div></div>"
 
-    #MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
-
-    header="${header_open}${header_text}${header_close}"
     body="${body_open}${content}${size_label}${files_label}${files_inc}${files_label_end}${dbk_size_label}${body_close}"
-    #FOOTER="${FOOTEROPEN}${SCRIPTSTRING}${FOOTERCLOSE}"
+
+    mail_backup_configs_html="$(cat "${SFOLDER}/templates/emails/${template}/backup_configs-tpl.html")"
+
+    mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e "s/{{configs_backup_status}}/${STATUS_BACKUP_FILES}/g")"
+    mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e "s/{{configs_backup_status_icon}}/${status_icon_f}/g")"
+    mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e "s/{{configs_backup_list}}/${body}/g")"
 
     # Write e-mail parts files
-    echo "${header}" >"${TMP_DIR}/config-bk-${NOW}.mail"
-    echo "${body}" >>"${TMP_DIR}/config-bk-${NOW}.mail"
-    #echo "${FOOTER}" >>"${TMP_DIR}/config-bk-${NOW}.mail"
+    echo "${mail_backup_configs_html}" >>"${TMP_DIR}/config-bk-${NOW}.mail"
 
 }
 
-function mail_mysqlbackup_section() {
+function mail_databases_backup_section() {
 
-    # $1 = ${ERROR}
-    # $2 = ${ERROR_TYPE}
+    # Global array ${backuped_databases_list}
+    # Global array ${backuped_databases_sizes_list}
 
-    # Global array ${BACKUPED_DB_LIST}
-    # Global array ${BK_DB_SIZES}
-
-    local ERROR=$1
-    local ERROR_TYPE=$2
+    local backuped_databases_list=$1
+    local backuped_databases_sizes_list=$2
+    local ERROR=$3
+    local ERROR_TYPE=$4
 
     local count
     local bk_db_size
@@ -617,9 +601,9 @@ function mail_mysqlbackup_section() {
 
         count=0
 
-        for backup_file in "${BACKUPED_DB_LIST[@]}"; do
+        for backup_file in "${backuped_databases_list[@]}"; do
 
-            bk_db_size=${BK_DB_SIZES[$count]}
+            bk_db_size=${backuped_databases_sizes_list[$count]}
 
             files_inc_line_p1="<div class=\"backup-details-line\">"
             files_inc_line_p2="<span style=\"margin-right:5px;\">${backup_file}</span>"
@@ -637,43 +621,19 @@ function mail_mysqlbackup_section() {
 
     fi
 
-    header_open1="<div style=\"float:left;width:100%\"><div style=\"font-size:14px;font-weight:bold;color:#FFF;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:"
-    header_open2=";padding:5px 0 10px 10px;width:100%;height:30px\">"
-    header_open="${header_open1}${color}${header_open2}"
-    header_text="Database Backup: ${STATUS_BACKUP_DBS} ${status_icon}"
-    header_close="</div>"
-
     body_open="<div style=\"color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px 0 0 10px;width:100%;\">"
     body_close="</div>"
 
-    header="${header_open}${header_text}${header_close}"
     body="${body_open}${content}${SIZE_D}${files_label_D}${files_inc}${files_label_d_end}${body_close}"
 
+    mail_backup_databases_html="$(cat "${SFOLDER}/templates/emails/${template}/backup_databases-tpl.html")"
+
+    mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e "s/{{databases_backup_status}}/${STATUS_BACKUP_DBS}/g")"
+    mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e "s/{{databases_backup_status_icon}}/${status_icon}/g")"
+    mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e "s/{{databases_backup_list}}/${body}/g")"
+
     # Write e-mail parts files
-    echo "${header}" >"${TMP_DIR}/db-bk-${NOW}.mail"
-    echo "${body}" >>"${TMP_DIR}/db-bk-${NOW}.mail"
-
-}
-
-function mail_section_start() {
-
-    local body_open
-
-    body_open="<div style=\"color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px 0 0 10px;width:100%;\">"
-
-    # Return
-    echo "${body_open}"
-
-}
-
-function mail_section_end() {
-
-    local body_close
-
-    body_close="</div>"
-
-    # Return
-    echo "${body_close}"
+    echo "${mail_backup_databases_html}" >>"${TMP_DIR}/db-bk-${NOW}.mail"
 
 }
 
@@ -683,38 +643,13 @@ function mail_footer() {
 
     local script_v=$1
 
-    local html_close
     local mail_footer
 
     html_footer="$(cat "${SFOLDER}/templates/emails/footer-tpl.html")"
-
-    #html_close="$(mail_html_end)"
 
     mail_footer="$(echo "${html_footer}" | sed -e "s/{{brolit_version}}/${script_v}/g")"
 
     # Return
     echo "${mail_footer}"
-
-}
-
-function mail_html_start() {
-
-    local html_open
-
-    html_open="<html><body>"
-
-    # Return
-    echo "${html_open}"
-
-}
-
-function mail_html_end() {
-
-    local html_close
-
-    html_close="</body></html>"
-
-    # Return
-    echo "${html_close}"
 
 }
