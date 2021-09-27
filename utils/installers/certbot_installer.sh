@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.56
+# Version: 3.0.60-beta
 ################################################################################
 
 function certbot_check_if_installed() {
