@@ -31,6 +31,7 @@ function backup_manager_menu() {
   )
 
   chosen_backup_type="$(whiptail --title "SELECT BACKUP TYPE" --menu " " 20 78 10 "${backup_options[@]}" 3>&1 1>&2 2>&3)"
+  
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -49,13 +50,13 @@ function backup_manager_menu() {
       make_all_files_backup
 
       # Mail section for Database Backup
-      mail_databases_backup_html=$(<"${TMP_DIR}/db-bk-${NOW}.mail")
+      mail_databases_backup_html=$(cat "${TMP_DIR}/db-bk-${NOW}.mail")
 
       # Mail section for Server Config Backup
-      mail_config_backup_html=$(<"${TMP_DIR}/config-bk-${NOW}.mail")
+      mail_config_backup_html=$(cat "${TMP_DIR}/config-bk-${NOW}.mail")
 
       # Mail section for Files Backup
-      mail_file_backup_html=$(<"${TMP_DIR}/file-bk-${NOW}.mail")
+      mail_file_backup_html=$(cat "${TMP_DIR}/file-bk-${NOW}.mail")
 
       # Footer
       mail_footer_html="$(mail_footer "${SCRIPT_V}")"
@@ -125,11 +126,9 @@ function backup_manager_menu() {
       # Files Backup
       make_all_files_backup
 
-      CONFIG_MAIL="${TMP_DIR}/config-bk-${NOW}.mail"
-      CONFIG_MAIL_VAR=$(<"${CONFIG_MAIL}")
+      CONFIG_MAIL_VAR=$(cat "${TMP_DIR}/config-bk-${NOW}.mail")
 
-      FILE_MAIL="${TMP_DIR}/file-bk-${NOW}.mail"
-      FILE_MAIL_VAR=$(<"${FILE_MAIL}")
+      FILE_MAIL_VAR=$(cat "${TMP_DIR}/file-bk-${NOW}.mail")
 
       log_event "info" "Sending Email to ${MAILA} ..." "false"
 
