@@ -1318,16 +1318,24 @@ function compress() {
   local file_output=$3
   #local compress_type=$4
 
-  log_event "info" "Compressing ${to_backup} ..." "false"
-  display --indent 6 --text "- Compressing ${to_backup}"
+  # Only for better displaying
+  if [[ ${to_backup} == "." ]]; then
+    to_backup_string="$(basename "${backup_base_dir}")"
+  else
+    to_backup_string="${to_backup}"
+  fi
+
+  log_event "info" "Compressing ${to_backup_string} ..." "false"
+  display --indent 6 --text "- Compressing ${to_backup_string}"
 
   log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | lbzip2 >\"${file_output}\"" "false"
 
   # TAR
-  (${TAR} -cf - --directory="${backup_base_dir}" "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | lbzip2 >"${file_output}")
+  ${TAR} -cf - --directory="${backup_base_dir}" "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | lbzip2 >"${file_output}"
 
   # Clear pipe output
-  clear_last_line;clear_last_line
+  clear_last_line
+  clear_last_line
 
   # Test backup file
   log_event "info" "Testing backup file: ${file_output}" "false"
@@ -1339,7 +1347,8 @@ function compress() {
   lbzip2_result=$?
 
   # Clear pipe output
-  clear_last_line;clear_last_line
+  clear_last_line
+  clear_last_line
 
   if [[ ${lbzip2_result} -eq 0 ]]; then
 
@@ -1347,7 +1356,7 @@ function compress() {
     backup_file_size="$(du --apparent-size -s -k "${file_output}" | awk '{ print $1 }' | awk '{printf "%.3f MiB %s\n", $1/1024, $2}')"
 
     # Log
-    display --indent 6 --text "- Compressing ${to_backup}" --result "DONE" --color GREEN
+    display --indent 6 --text "- Compressing ${to_backup_string}" --result "DONE" --color GREEN
     display --indent 8 --text "Final backup size: ${YELLOW}${BOLD}${backup_file_size}${ENDCOLOR}"
 
     log_event "info" "Backup ${file_output} created, final size: ${backup_file_size}" "false"

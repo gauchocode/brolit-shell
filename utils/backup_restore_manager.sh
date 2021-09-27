@@ -65,8 +65,6 @@ function backup_manager_menu() {
       mail_html="$(cat "${SFOLDER}/templates/emails/${email_template}/main-tpl.html")"
 
       mail_html="$(${mail_html//"{{server_info}}"/${mail_server_status_html}})"
-      #mail_html="$(${mail_html//"{{packages_section}}"/${mail_package_status_html}})"
-      #mail_html="$(${mail_html//"{{certificates_section}}"/${mail_certificates_html}})"
       mail_html="$(${mail_html//"{{configs_backup_section}}"/${mail_config_backup_html}})"
       mail_html="$(${mail_html//"{{databases_backup_section}}"/${mail_databases_backup_html}})"
       mail_html="$(${mail_html//"{{files_backup_section}}"/${mail_file_backup_html}})"
@@ -74,8 +72,6 @@ function backup_manager_menu() {
 
       # Checking result status for mail subject
       email_status="$(mail_subject_status "${STATUS_BACKUP_DBS}" "${STATUS_BACKUP_FILES}" "${STATUS_SERVER}" "${OUTDATED_PACKAGES}")"
-
-      log_event "info" "Sending Email to ${MAILA} ..."
 
       email_subject="${email_status} [${NOWDISPLAY}] - Complete Backup on ${VPSNAME}"
 
