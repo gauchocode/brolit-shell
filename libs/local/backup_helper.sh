@@ -590,7 +590,7 @@ function make_all_databases_backup() {
       backuped_databases_sizes_list+=("${database_backup_size}")
 
       # Upload backup
-      upload_backup_to_dropbox "${backup_file}"
+      upload_backup_to_dropbox "${database}" "database" "${backup_file}"
 
       database_backup_index=$((database_backup_index + 1))
 
@@ -730,34 +730,34 @@ function make_project_backup() {
 
 function upload_backup_to_dropbox() {
 
-  local bk_type=$1
-  local bk_file=$2
+  local project_name=$1
+  local backup_type=$1
+  local backup_file=$2
 
   # New folder with $VPSNAME
   dropbox_create_dir "${VPSNAME}"
 
   # New folder with "database"
-  dropbox_create_dir "${VPSNAME}/${bk_type}"
+  dropbox_create_dir "${VPSNAME}/${backup_type}"
 
   # New folder with $database (project DB)
-  dropbox_create_dir "${VPSNAME}/${bk_type}/${database}"
+  dropbox_create_dir "${VPSNAME}/${backup_type}/${database}"
 
   # Dropbox Path
-  dropbox_path="/${VPSNAME}/${bk_type}/${database}"
+  dropbox_path="/${VPSNAME}/${backup_type}/${database}"
 
   # Upload to Dropbox
-  dropbox_upload "${TMP_DIR}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}${dropbox_path}"
+  dropbox_upload "${TMP_DIR}/${NOW}/${backup_file}" "${DROPBOX_FOLDER}${dropbox_path}"
 
   dropbox_result=$?
   if [[ ${dropbox_result} -eq 0 ]]; then
 
     # Delete old backups
-    dropbox_delete "${DROPBOX_FOLDER}${dropbox_path}/${old_bk_file}"
+    dropbox_delete "${DROPBOX_FOLDER}${dropbox_path}/${old_backup_file}"
 
-    log_event "info" "Deleting temp ${bk_type} backup ${old_bk_file} from server" "false"
+    log_event "info" "Deleting temp ${backup_type} backup ${old_backup_file} from server" "false"
 
-    rm "${TMP_DIR}/${NOW}/${db_file}"
-    rm "${TMP_DIR}/${NOW}/${bk_file}"
+    rm "${TMP_DIR}/${NOW}/${backup_type}"
 
   else
 
