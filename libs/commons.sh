@@ -1318,7 +1318,7 @@ function compress() {
   local file_output=$3
   #local compress_type=$4
 
-  log_event "info" "Compressing '${to_backup}' ..." "false"
+  log_event "info" "Compressing ${to_backup} ..." "false"
   display --indent 6 --text "- Compressing ${to_backup}"
 
   log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | lbzip2 >\"${file_output}\"" "false"
@@ -1327,8 +1327,7 @@ function compress() {
   (${TAR} -cf - --directory="${backup_base_dir}" "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | lbzip2 >"${file_output}")
 
   # Clear pipe output
-  clear_last_line
-  clear_last_line
+  clear_last_line;clear_last_line
 
   # Test backup file
   log_event "info" "Testing backup file: ${file_output}" "false"
@@ -1340,8 +1339,7 @@ function compress() {
   lbzip2_result=$?
 
   # Clear pipe output
-  clear_last_line
-  clear_last_line
+  clear_last_line;clear_last_line
 
   if [[ ${lbzip2_result} -eq 0 ]]; then
 

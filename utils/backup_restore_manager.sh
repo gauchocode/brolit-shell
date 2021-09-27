@@ -24,9 +24,9 @@ function backup_manager_menu() {
   local chosen_backup_type
 
   backup_options=(
-    "01)" "BACKUP DATABASES"
-    "02)" "BACKUP FILES"
-    "03)" "BACKUP ALL"
+    "01)" "BACKUP ALL"
+    "02)" "BACKUP DATABASES"
+    "03)" "BACKUP FILES"
     "04)" "BACKUP PROJECT"
   )
 
@@ -35,6 +35,58 @@ function backup_manager_menu() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_backup_type} == *"01"* ]]; then
+
+      # BACKUP_ALL
+      log_section "Backup All"
+
+      # Preparing Mail Notifications Template
+      mail_server_status_html="$(mail_server_status_section "${SERVER_IP}")"
+
+      # Databases Backup
+      make_all_databases_backup
+
+      # Files Backup
+      make_all_files_backup
+
+      # Mail section for Database Backup
+      mail_databases_backup_html=$(<"${TMP_DIR}/db-bk-${NOW}.mail")
+
+      # Mail section for Server Config Backup
+      mail_config_backup_html=$(<"${TMP_DIR}/config-bk-${NOW}.mail")
+
+      # Mail section for Files Backup
+      mail_file_backup_html=$(<"${TMP_DIR}/file-bk-${NOW}.mail")
+
+      # Footer
+      mail_footer_html="$(mail_footer "${SCRIPT_V}")"
+
+      # Preparing Mail Notifications Template
+      email_template="default"
+      mail_html="$(cat "${SFOLDER}/templates/emails/${email_template}/main-tpl.html")"
+
+      mail_html="$(${mail_html//"{{server_info}}"/${mail_server_status_html}})"
+      #mail_html="$(${mail_html//"{{packages_section}}"/${mail_package_status_html}})"
+      #mail_html="$(${mail_html//"{{certificates_section}}"/${mail_certificates_html}})"
+      mail_html="$(${mail_html//"{{configs_backup_section}}"/${mail_config_backup_html}})"
+      mail_html="$(${mail_html//"{{databases_backup_section}}"/${mail_databases_backup_html}})"
+      mail_html="$(${mail_html//"{{files_backup_section}}"/${mail_file_backup_html}})"
+      mail_html="$(${mail_html//"{{footer}}"/${mail_footer_html}})"
+
+      # Checking result status for mail subject
+      email_status="$(mail_subject_status "${STATUS_BACKUP_DBS}" "${STATUS_BACKUP_FILES}" "${STATUS_SERVER}" "${OUTDATED_PACKAGES}")"
+
+      log_event "info" "Sending Email to ${MAILA} ..."
+
+      email_subject="${email_status} [${NOWDISPLAY}] - Complete Backup on ${VPSNAME}"
+
+      # Sending email notification
+      mail_send_notification "${email_subject}" "${mail_html}"
+
+      #remove_mail_notifications_files
+
+    fi
+
+    if [[ ${chosen_backup_type} == *"02"* ]]; then
 
       # DATABASE_BACKUP
       log_section "Databases Backup"
@@ -58,7 +110,7 @@ function backup_manager_menu() {
       mail_send_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
 
     fi
-    if [[ ${chosen_backup_type} == *"02"* ]]; then
+    if [[ ${chosen_backup_type} == *"03"* ]]; then
 
       # FILES_BACKUP
 
@@ -84,49 +136,6 @@ function backup_manager_menu() {
 
       # Sending email notification
       mail_send_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
-
-    fi
-    if [[ ${chosen_backup_type} == *"03"* ]]; then
-
-      # BACKUP_ALL
-      log_section "Backup All"
-
-      # Preparing Mail Notifications Template
-      #HTMLOPEN="$(mail_html_start)"
-      BODY_SRV="$(mail_server_status_section "${SERVER_IP}")"
-
-      # Databases Backup
-      make_all_databases_backup
-
-      # Files Backup
-      make_all_files_backup
-
-      # Mail section for Database Backup
-      DB_MAIL="${TMP_DIR}/db-bk-${NOW}.mail"
-      DB_MAIL_VAR=$(<"${DB_MAIL}")
-
-      # Mail section for Server Config Backup
-      CONFIG_MAIL="${TMP_DIR}/config-bk-${NOW}.mail"
-      CONFIG_MAIL_VAR=$(<"${CONFIG_MAIL}")
-
-      # Mail section for Files Backup
-      FILE_MAIL="${TMP_DIR}/file-bk-${NOW}.mail"
-      FILE_MAIL_VAR=$(<"${FILE_MAIL}")
-
-      MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
-
-      # Checking result status for mail subject
-      EMAIL_STATUS="$(mail_subject_status "${STATUS_BACKUP_DBS}" "${STATUS_BACKUP_FILES}" "${STATUS_SERVER}" "${OUTDATED_PACKAGES}")"
-
-      log_event "info" "Sending Email to ${MAILA} ..."
-
-      EMAIL_SUBJECT="${EMAIL_STATUS} [${NOWDISPLAY}] - Complete Backup on ${VPSNAME}"
-      EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${BODY_PKG} ${DB_MAIL_VAR} ${CONFIG_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
-
-      # Sending email notification
-      mail_send_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
-
-      #remove_mail_notifications_files
 
     fi
 

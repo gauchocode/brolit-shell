@@ -454,7 +454,7 @@ function make_files_backup() {
   #(${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv --width 70 --size "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${bk_file}") 2>&1
 
   # Compress backup
-  backup_file_size="$( "${bk_path}" "${directory_to_backup}" "${TMP_DIR}/${NOW}/${bk_file}")"
+  backup_file_size="$(compress "${bk_path}" "${directory_to_backup}" "${TMP_DIR}/${NOW}/${bk_file}")"
 
   # Check test result
   compress_result=$?
