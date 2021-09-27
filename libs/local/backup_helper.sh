@@ -74,14 +74,9 @@ function make_server_files_backup() {
 
   if [[ -n ${bk_path} ]]; then
 
+    # Backups file names
     bk_file="${bk_sup_type}-${bk_type}-files-${NOW}.tar.bz2"
     old_bk_file="${bk_sup_type}-${bk_type}-files-${ONEWEEKAGO}.tar.bz2"
-
-    # Here we use tar.bz2 with bzip2 compression method
-    #log_event "info" "Making backup of ${bk_path}" "false"
-    #log_event "debug" "Running: ${TAR} cjf ${TMP_DIR}/${NOW}/${bk_file} --directory=${bk_path} ${directory_to_backup}" "false"
-
-    #(${TAR} cjf "${TMP_DIR}/${NOW}/${bk_file}" --directory="${bk_path}" "${directory_to_backup}")
 
     # Compress backup
     backup_file_size="$(compress "${bk_path}" "${directory_to_backup}" "${TMP_DIR}/${NOW}/${bk_file}")"
@@ -254,8 +249,6 @@ function make_all_server_config_backup() {
 
   # SERVER CONFIG FILES GLOBALS
   declare -i BK_SCF_INDEX=0
-  declare -g BACKUPED_SCF_LIST
-  declare -g BK_SCF_SIZES
 
   # TAR Webserver Config Files
   if [[ ! -d ${WSERVER} ]]; then
