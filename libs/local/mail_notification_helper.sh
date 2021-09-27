@@ -47,11 +47,24 @@ function mail_send_notification() {
     log_event "info" "Sending Email to ${MAILA} ..." "false"
     log_event "debug" "Running: sendEmail -f \"${SMTP_U}\" -t \"${MAILA}\" -u \"${email_subject}\" -o message-content-type=html -m \"${email_content}\" -s \"${SMTP_SERVER}:${SMTP_PORT}\" -o tls=\"${SMTP_TLS}\" -xu \"${SMTP_U}\" -xp \"${SMTP_P}\"" "false"
 
-    # Use -l "/${SCRIPT}/sendemail.log" for custom log file
+    # Sending email
+    ## Use -l "/${SCRIPT}/sendemail.log" for custom log file
     sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${email_subject}" -o message-content-type=html -m "${email_content}" -s "${SMTP_SERVER}:${SMTP_PORT}" -o tls="${SMTP_TLS}" -xu "${SMTP_U}" -xp "${SMTP_P}" 1>&2
 
-    # Log
-    log_event "info" "Email sent!" "false"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        log_event "info" "Email sent!" "false"
+
+    else
+
+        # Log
+        log_event "info" "Something went wrong sending the email: '${email_subject}'" "false"
+        
+        return 1
+
+    fi
 
 }
 
@@ -116,8 +129,6 @@ function mail_server_status_section() {
     local disk_u
     local disk_u_ns
     local header_open
-    local header_text
-    local header_close
     local body_open
     local content
     local body_close
@@ -171,13 +182,11 @@ function mail_package_status_section() {
     local pkg_color
     local pkg_status
     local pkg_status_icon
-    local pkg_header
     local header_open
     local header_open1
     local header_open2
     local body_open
     local body_close
-    local pkg_body
 
     # TODO: config support
     local email_template="default"
@@ -209,8 +218,6 @@ function mail_package_status_section() {
     # Return
     echo "${html_pkg_details}"
 
-    #echo "${html_pkg_details}" >"${TMP_DIR}/pkg-${NOW}.mail"
-
 }
 
 function mail_package_section() {
@@ -232,7 +239,7 @@ function mail_package_section() {
             package_version_installed="$(apt-cache policy "${package}" | grep Installed | cut -d ':' -f 2)"
         fi
 
-        package_version_candidate=$(apt-cache policy "${package}" | grep Candidate | cut -d ':' -f 2)
+        package_version_candidate="$(apt-cache policy "${package}" | grep Candidate | cut -d ':' -f 2)"
 
         if [[ "${package_version_installed}" != "${package_version_candidate}" ]]; then
 
@@ -369,13 +376,10 @@ function mail_filesbackup_section() {
     local backup_type
     local color
     local content
-    local header
     local body
     local header_open1
     local header_open2
     local header_open
-    local header_text
-    local header_close
     local body_open
     local body_close
     local files_inc_line_p1
