@@ -580,17 +580,18 @@ function make_all_databases_backup() {
 
       log_event "info" "Processing [${database}] ..." "false"
 
+      # Make database backup
       backup_file="$(make_database_backup "${database}")"
 
-      # Calculate backup size
-      database_backup_size="$(du --apparent-size -s -k "${backup_file}" | awk '{ print $1 }' | awk '{printf "%.3f MiB %s\n", $1/1024, $2}')"
-      #database_backup_size="$(find . -name "${backup_file}" -exec ls -l --human-readable --block-size=M {} \; | awk '{ print $5 }')"
+      # Extract return from $backup_file
+      database_backup="$(echo "${backup_file}" | cut -d " " -f 1)"
+      database_backup_size="$(echo "${backup_file}" | cut -d " " -f 2)"
 
-      backuped_databases_list[$database_backup_index]="${backup_file}"
+      backuped_databases_list[$database_backup_index]="${database_backup}"
       backuped_databases_sizes_list+=("${database_backup_size}")
 
       # Upload backup
-      upload_backup_to_dropbox "${database}" "database" "${backup_file}"
+      upload_backup_to_dropbox "${database}" "database" "${database_backup}"
 
       database_backup_index=$((database_backup_index + 1))
 
@@ -619,7 +620,7 @@ function make_all_databases_backup() {
 #  $1 = ${database}
 #
 # Outputs:
-#  0 if ok, 1 if error
+#  "backupfile backup_file_size" if ok, 1 if error
 ################################################################################
 
 function make_database_backup() {
@@ -631,8 +632,7 @@ function make_database_backup() {
   local directory_to_backup="${TMP_DIR}/${NOW}/"
   local db_file="${database}_database_${NOW}.sql"
 
-  local old_bk_file="${database}_database_${ONEWEEKAGO}.tar.bz2"
-  local bk_file="${database}_database_${NOW}.tar.bz2"
+  local backup_file="${database}_database_${NOW}.tar.bz2"
 
   local dropbox_path
 
@@ -645,14 +645,19 @@ function make_database_backup() {
   if [[ ${mysql_export_result} -eq 0 ]]; then
 
     # Compress backup
-    compress "${directory_to_backup}" "${db_file}" "${TMP_DIR}/${NOW}/${bk_file}"
+    backup_file_size="$(compress "${directory_to_backup}" "${db_file}" "${TMP_DIR}/${NOW}/${backup_file}")"
 
     # Check test result
     compress_result=$?
     if [[ ${compress_result} -eq 0 ]]; then
 
       # Return
-      echo "${TMP_DIR}/${NOW}/${bk_file}"
+      ## backupfile backup_file_size
+      echo "${TMP_DIR}/${NOW}/${backup_file} ${backup_file_size}"
+
+    else
+
+      return 1
 
     fi
 
@@ -731,8 +736,8 @@ function make_project_backup() {
 function upload_backup_to_dropbox() {
 
   local project_name=$1
-  local backup_type=$1
-  local backup_file=$2
+  local backup_type=$2
+  local backup_file=$3
 
   # New folder with $VPSNAME
   dropbox_create_dir "${VPSNAME}"
@@ -753,6 +758,7 @@ function upload_backup_to_dropbox() {
   if [[ ${dropbox_result} -eq 0 ]]; then
 
     # Delete old backups
+    old_backup_file="${database}_${backup_type}_${ONEWEEKAGO}.tar.bz2"
     dropbox_delete "${DROPBOX_FOLDER}${dropbox_path}/${old_backup_file}"
 
     log_event "info" "Deleting temp ${backup_type} backup ${old_backup_file} from server" "false"

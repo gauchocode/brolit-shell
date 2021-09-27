@@ -1346,16 +1346,16 @@ function compress() {
   if [[ ${lbzip2_result} -eq 0 ]]; then
 
     # Get file size
-    BK_FL_SIZE="$(du --apparent-size -s -k "${file_output}" | awk '{ print $1 }' | awk '{printf "%.3f MiB %s\n", $1/1024, $2}')"
+    backup_file_size="$(du --apparent-size -s -k "${file_output}" | awk '{ print $1 }' | awk '{printf "%.3f MiB %s\n", $1/1024, $2}')"
 
     # Log
     display --indent 6 --text "- Compressing backup file" --result "DONE" --color GREEN
-    display --indent 8 --text "Final backup size: ${YELLOW}${BOLD}${BK_FL_SIZE}${ENDCOLOR}"
+    display --indent 8 --text "Final backup size: ${YELLOW}${BOLD}${backup_file_size}${ENDCOLOR}"
 
-    log_event "info" "Backup ${file_output} created, final size: ${BK_FL_SIZE}" "false"
+    log_event "info" "Backup ${file_output} created, final size: ${backup_file_size}" "false"
     log_event "info" "Creating folders in Dropbox ..." "false"
 
-    return 0
+    echo "${backup_file_size}"
 
   else
 
