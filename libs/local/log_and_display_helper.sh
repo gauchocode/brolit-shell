@@ -10,7 +10,7 @@
 
 function _timestamp() {
 
- date +"%T"
+  date +"%T"
 
 }
 
@@ -274,17 +274,17 @@ function log_subsection() {
   local message=$1
 
   if [[ "${QUIET}" -eq 0 ]]; then
-   
+
     # Console Display
     echo "" >&2
     echo -e "    [·] ${CYAN}${B_DEFAULT}${message}${ENDCOLOR}" >&2
     echo "    ------------------------------------------" >&2
-   
+
     # Log file
     echo "$(_timestamp) > -------------------------------------------------" >>"${LOG}"
     echo "$(_timestamp) > [·] ${message}" >>"${LOG}"
     echo "$(_timestamp) > -------------------------------------------------" >>"${LOG}"
-    
+
   fi
 
 }
@@ -297,7 +297,13 @@ function clear_screen() {
 
 function clear_last_line() {
 
-  tput cuu1;tput el
+  #tput cuu1;tput el
+
+  printf "\033[1A" >&2
+  echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
+  echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
+  printf "\033[1A" >&2
+  printf "\033[1A" >&2
 
 }
 

@@ -460,7 +460,7 @@ function mail_filesbackup_section() {
     mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e "s/{{files_backup_list}}/${body}/g")"
 
     # Write e-mail parts files
-    echo "${mail_backup_files_html}" >>"${TMP_DIR}/file-bk-${NOW}.mail"
+    echo "${mail_backup_files_html}" >"${TMP_DIR}/file-bk-${NOW}.mail"
 
 }
 
