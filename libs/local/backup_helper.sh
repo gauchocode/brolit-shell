@@ -363,7 +363,7 @@ function make_sites_files_backup() {
         log_break "true"
 
       else
-        log_event "info" "Omitting ${directory_name} (blacklisted) ..."
+        log_event "info" "Omitting ${directory_name} (blacklisted) ..." "false"
 
       fi
 
