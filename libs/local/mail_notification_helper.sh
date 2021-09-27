@@ -256,7 +256,7 @@ function mail_package_section() {
 
 function mail_certificates_section() {
 
-    local template="default"
+    local email_template="default"
 
     local domain
     local all_sites
@@ -460,7 +460,7 @@ function mail_filesbackup_section() {
     mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e "s/{{files_backup_list}}/${body}/g")"
 
     # Write e-mail parts files
-    echo "${mail_backup_files_html}" >"${TMP_DIR}/file-bk-${NOW}.mail"
+    echo "${mail_backup_files_html}" > "${TMP_DIR}/file-bk-${NOW}.mail"
 
 }
 
@@ -487,9 +487,6 @@ function mail_config_backup_section() {
     local files_inc_line_p4
     local files_inc_line_p5
     local bk_scf_size
-    local header_open1
-    local header_open2
-    local header_open
 
     local backup_type
 
@@ -555,7 +552,7 @@ function mail_config_backup_section() {
     mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e "s/{{configs_backup_list}}/${body}/g")"
 
     # Write e-mail parts files
-    echo "${mail_backup_configs_html}" >>"${TMP_DIR}/config-bk-${NOW}.mail"
+    echo "${mail_backup_configs_html}" > "${TMP_DIR}/config-bk-${NOW}.mail"
 
 }
 
@@ -586,7 +583,7 @@ function mail_databases_backup_section() {
 
     log_event "debug" "Preparing mail databases backup section ..." "false"
 
-    if [[ ${ERROR} = true ]]; then
+    if [[ ${ERROR} == true ]]; then
         # Changing global
         STATUS_BACKUP_DBS="ERROR"
 
@@ -641,7 +638,7 @@ function mail_databases_backup_section() {
     mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e "s/{{databases_backup_list}}/${body}/g")"
 
     # Write e-mail parts files
-    echo "${mail_backup_databases_html}" >>"${TMP_DIR}/db-bk-${NOW}.mail"
+    echo "${mail_backup_databases_html}" > "${TMP_DIR}/db-bk-${NOW}.mail"
 
 }
 
