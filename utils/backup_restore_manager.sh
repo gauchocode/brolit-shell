@@ -40,7 +40,7 @@ function backup_manager_menu() {
       log_section "Databases Backup"
 
       # Preparing Mail Notifications Template
-      HTMLOPEN="$(mail_html_start)"
+      #HTMLOPEN="$(mail_html_start)"
       BODY_SRV="$(mail_server_status_section "${SERVER_IP}")"
 
       # Databases Backup
@@ -65,7 +65,7 @@ function backup_manager_menu() {
       log_section "Files Backup"
 
       # Preparing Mail Notifications Template
-      HTMLOPEN="$(mail_html_start)"
+      #HTMLOPEN="$(mail_html_start)"
       BODY_SRV="$(mail_server_status_section "${SERVER_IP}")"
 
       # Files Backup
@@ -92,7 +92,7 @@ function backup_manager_menu() {
       log_section "Backup All"
 
       # Preparing Mail Notifications Template
-      HTMLOPEN="$(mail_html_start)"
+      #HTMLOPEN="$(mail_html_start)"
       BODY_SRV="$(mail_server_status_section "${SERVER_IP}")"
 
       # Databases Backup
@@ -126,7 +126,7 @@ function backup_manager_menu() {
       # Sending email notification
       mail_send_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
 
-      remove_mail_notifications_files
+      #remove_mail_notifications_files
 
     fi
 

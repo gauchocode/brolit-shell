@@ -134,6 +134,8 @@ function mail_server_status_section() {
     local body_close
     local body
 
+    local email_template="default"
+
     # Disk Usage
     disk_u="$(calculate_disk_usage "${MAIN_VOL}")"
 
@@ -161,7 +163,7 @@ function mail_server_status_section() {
 
     fi
 
-    html_server_info_details="$(cat "${SFOLDER}/templates/emails/${template}/server_info-tpl.html")"
+    html_server_info_details="$(cat "${SFOLDER}/templates/emails/${email_template}/server_info-tpl.html")"
 
     html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{packages_status}}/${server_status}/g")"
     html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{packages_status_icon}}/${server_status_icon}/g")"

@@ -83,5 +83,8 @@ mail_send_notification "${email_subject}" "${mail_html}"
 #remove_mail_notifications_files
 cleanup
 
+# Write e-mail (debug)
+echo "${mail_html}" >>"${TMP_DIR}/email-${NOW}.mail"
+
 # Log End
 log_event "info" "BACKUP TASKS SCRIPT End -- $(date +%Y%m%d_%H%M)" "false"
