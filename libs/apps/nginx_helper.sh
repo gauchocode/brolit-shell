@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://example.com
-# Version: 3.0.56
+# Version: 3.0.60-beta
 ################################################################################
 #
 # Nginx Helper: Perform nginx actions.
