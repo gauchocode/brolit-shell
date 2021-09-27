@@ -219,7 +219,7 @@ function log_break() {
 
   if [[ "${console_display}" == "true" ]]; then
 
-    log_break="        -------------------------------------------------"
+    log_break="        ----------------------------------------------------          "
     echo -e "${MAGENTA}${B_DEFAULT}${log_break}${ENDCOLOR}" >&2
 
   fi
