@@ -84,7 +84,7 @@ function make_server_files_backup() {
     #(${TAR} cjf "${TMP_DIR}/${NOW}/${bk_file}" --directory="${bk_path}" "${directory_to_backup}")
 
     # Compress backup
-    compress "${bk_path}" "${directory_to_backup}" "${TMP_DIR}/${NOW}/${bk_file}"
+    backup_file_size="$(compress "${bk_path}" "${directory_to_backup}" "${TMP_DIR}/${NOW}/${bk_file}")"
 
     # Check test result
     compress_result=$?
@@ -454,7 +454,7 @@ function make_files_backup() {
   #(${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv --width 70 --size "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${bk_file}") 2>&1
 
   # Compress backup
-  compress "${bk_path}" "${directory_to_backup}" "${TMP_DIR}/${NOW}/${bk_file}"
+  backup_file_size="$( "${bk_path}" "${directory_to_backup}" "${TMP_DIR}/${NOW}/${bk_file}")"
 
   # Check test result
   compress_result=$?
@@ -752,7 +752,7 @@ function upload_backup_to_dropbox() {
   dropbox_path="/${VPSNAME}/${backup_type}/${database}"
 
   # Upload to Dropbox
-  dropbox_upload "${TMP_DIR}/${NOW}/${backup_file}" "${DROPBOX_FOLDER}${dropbox_path}"
+  dropbox_upload "${backup_file}" "${DROPBOX_FOLDER}${dropbox_path}"
 
   dropbox_result=$?
   if [[ ${dropbox_result} -eq 0 ]]; then
@@ -763,7 +763,7 @@ function upload_backup_to_dropbox() {
 
     log_event "info" "Deleting temp ${backup_type} backup ${old_backup_file} from server" "false"
 
-    rm "${TMP_DIR}/${NOW}/${backup_type}"
+    rm "${backup_type}"
 
   else
 
