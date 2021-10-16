@@ -172,9 +172,7 @@ function mail_server_status_section() {
     html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{disk_usage}}/${disk_u}/g")"
 
     # Return
-    echo "${html_server_info_details}"
-
-    #echo "${html_server_info_details}" >"${TMP_DIR}/server_info-${NOW}.mail"
+    echo "${html_server_info_details}" >"${TMP_DIR}/server_info-${NOW}.mail"
 
 }
 
@@ -668,7 +666,7 @@ function mail_footer() {
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
     mail_footer="$(echo "${html_footer}" | sed -e 's|{{brolit_version}}|'"${script_v}"'|g')"
 
-    # Return
-    echo "${mail_footer}"
+    # Write e-mail parts files
+    echo "${mail_footer}" > "${TMP_DIR}/footer-${NOW}.mail"
 
 }
