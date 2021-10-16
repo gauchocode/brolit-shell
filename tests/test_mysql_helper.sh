@@ -56,7 +56,7 @@ function test_mysql_user_create() {
     # Passw generator
     db_pass="$(openssl rand -hex 12)"
 
-    mysql_user_create "${db_user}" "${db_pass}"
+    mysql_user_create "${db_user}" "${db_pass}" "localhost"
     user_create=$?
     if [[ ${user_create} -eq 0 ]]; then
         display --indent 6 --text "- mysql_user_create" --result "PASS" --color WHITE
