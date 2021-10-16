@@ -61,7 +61,7 @@ function mail_send_notification() {
 
         # Log
         log_event "info" "Something went wrong sending the email: '${email_subject}'" "false"
-        
+
         return 1
 
     fi
@@ -464,7 +464,7 @@ function mail_filesbackup_section() {
     mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e 's|{{files_backup_list}}|'"${body}"'|g')"
 
     # Write e-mail parts files
-    echo "${mail_backup_files_html}" > "${TMP_DIR}/file-bk-${NOW}.mail"
+    echo "${mail_backup_files_html}" >"${TMP_DIR}/file-bk-${NOW}.mail"
 
 }
 
@@ -558,7 +558,7 @@ function mail_config_backup_section() {
     mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e 's|{{configs_backup_list}}|'"${body}"'|g')"
 
     # Write e-mail parts files
-    echo "${mail_backup_configs_html}" > "${TMP_DIR}/config-bk-${NOW}.mail"
+    echo "${mail_backup_configs_html}" >"${TMP_DIR}/config-bk-${NOW}.mail"
 
 }
 
@@ -572,8 +572,6 @@ function mail_databases_backup_section() {
     local count
     local bk_db_size
     local status_icon
-    local body_open
-    local body_close
 
     local backup_type
 
@@ -593,7 +591,6 @@ function mail_databases_backup_section() {
         # Changing locals
         status_icon="⛔"
         content="<b>${backup_type} Backup with errors:<br />${ERROR_TYPE}<br /><br />Please check log file.</b> <br />"
-        color="#b51c1c"
 
     else
         # Changing global
@@ -602,9 +599,6 @@ function mail_databases_backup_section() {
         # Changing locals
         status_icon="✅"
         content=""
-        color="#503fe0"
-        SIZE_D=""
-        files_label_D="<b>Backup files includes:</b><br /><div style=\"color:#000;font-size:12px;line-height:24px;padding-left:10px;\">"
         files_inc=""
 
         count=0
@@ -627,27 +621,22 @@ function mail_databases_backup_section() {
 
         files_label_d_end="</div>"
 
+        content="${files_inc}${files_label_d_end}"
+
     fi
-
-    body_open="<div style=\"color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px 0 0 10px;width:100%;\">"
-    body_close="</div>"
-
-    body="${body_open}${content}${SIZE_D}${files_label_D}${files_inc}${files_label_d_end}${body_close}"
-
-    log_event "debug" "body output: ${body}" "false"
 
     mail_backup_databases_html="$(cat "${SFOLDER}/templates/emails/${email_template}/backup_databases-tpl.html")"
 
     #log_event "debug" "mail_backup_databases_html output: ${mail_backup_databases_html}" "false"
 
-    mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e "s/{{databases_backup_status}}/${STATUS_BACKUP_DBS}/g")"
-    mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e "s/{{databases_backup_status_icon}}/${status_icon}/g")"
+    mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e "s|{{databases_backup_status}}|'"${STATUS_BACKUP_DBS}"'|g")"
+    mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e "s|{{databases_backup_status_icon}}|'"${status_icon}"'|g")"
 
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
-    mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e 's|{{databases_backup_list}}|'"${body}"'|g')"
+    mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e 's|{{databases_backup_list}}|'"${content}"'|g')"
 
     # Write e-mail parts files
-    echo "${mail_backup_databases_html}" > "${TMP_DIR}/db-bk-${NOW}.mail"
+    echo "${mail_backup_databases_html}" >"${TMP_DIR}/db-bk-${NOW}.mail"
 
 }
 
@@ -667,6 +656,6 @@ function mail_footer() {
     mail_footer="$(echo "${html_footer}" | sed -e 's|{{brolit_version}}|'"${script_v}"'|g')"
 
     # Write e-mail parts files
-    echo "${mail_footer}" > "${TMP_DIR}/footer-${NOW}.mail"
+    echo "${mail_footer}" >"${TMP_DIR}/footer-${NOW}.mail"
 
 }
