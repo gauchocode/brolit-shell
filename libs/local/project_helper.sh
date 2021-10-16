@@ -1214,7 +1214,7 @@ function php_project_installer() {
   # Create database and user
   mysql_database_create "${database_name}"
   mysql_user_create "${database_user}" "${database_user_passw}" ""
-  mysql_user_grant_privileges "${database_user}" "${database_name}"
+  mysql_user_grant_privileges "${database_user}" "${database_name}" ""
 
   # Create project directory
   mkdir "${project_path}"

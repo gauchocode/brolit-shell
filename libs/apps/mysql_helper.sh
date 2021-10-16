@@ -233,7 +233,7 @@ function mysql_list_databases() {
 
         # Log
         display --indent 6 --text "- Listing MySQL databases" --result "DONE" --color GREEN
-        log_event "info" " Listing MySQL databases: '${databases}'" "false"
+        log_event "info" "Listing MySQL databases: '${databases}'" "false"
 
         # Return
         echo "${databases}"
@@ -318,7 +318,7 @@ function mysql_user_create() {
     local query
 
     # Log
-    display --indent 2 --text "- Creating MySQL user ${db_user}"
+    display --indent 6 --text "- Creating MySQL user ${db_user}"
 
     # DB user host
     if [[ -z ${db_user_scope} ]]; then
@@ -356,9 +356,9 @@ function mysql_user_create() {
     else
 
         # Log
-        clear_last_line
+        clear_last_line;clear_last_line # If fails, need to clear one more time
         display --indent 6 --text "- Creating MySQL user ${db_user}" --result "FAIL" --color RED
-        display --indent 8 --text "Please read the log file!" --tcolor RED
+        display --indent 8 --text "Maybe the user already exists. Please read the log file." --tcolor RED
 
         log_event "error" "Something went wrong creating user: ${db_user}." "false"
         log_event "debug" "MySQL output: ${mysql_output}" "false"

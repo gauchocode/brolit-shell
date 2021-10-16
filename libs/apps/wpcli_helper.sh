@@ -1119,7 +1119,7 @@ function wpcli_get_wpcore_version() {
 
 }
 
-function wpcli_get_db_prefix() {
+function wpcli_db_get_prefix() {
 
     # $1 = ${wp_site} (site path)
 
@@ -1144,7 +1144,32 @@ function wpcli_get_db_prefix() {
 
 }
 
-function wpcli_change_tables_prefix() {
+function wpcli_db_check() {
+
+    # $1 = ${wp_site}
+    
+    local wp_site=$1
+
+    local db_check
+
+    db_check="$(sudo -u www-data wp --path="${wp_site}" db check)"
+
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Return
+        echo "${db_check}"
+
+    else
+
+        return 1
+
+    fi
+
+}
+
+function wpcli_db_change_tables_prefix() {
 
     # $1 = ${wp_site} (site path)
     # $2 = ${db_prefix}
@@ -1217,7 +1242,7 @@ function wpcli_search_and_replace() {
     #exitstatus=$?
     #if [[ $exitstatus -eq 0 ]]; then
 
-    error_found=$(echo "${wpcli_result}" | grep "Error")
+    error_found="$(echo "${wpcli_result}" | grep "Error")"
     if [[ ${error_found} == "" ]]; then
 
         # Log

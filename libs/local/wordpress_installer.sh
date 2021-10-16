@@ -100,7 +100,7 @@ function wordpress_project_install() {
     # Logging
     display --indent 6 --text "- Creating WordPress project" --result "FAIL" --color RED
     display --indent 8 --text "Destination folder '${project_path}' already exist"
-    log_event "error" "Destination folder '${project_path}' already exist, aborting ..."
+    log_event "error" "Destination folder '${project_path}' already exist, aborting ..." "false"
 
     # Return
     return 1
@@ -110,14 +110,14 @@ function wordpress_project_install() {
   wp_change_permissions "${project_path}"
 
   # Create database and user
-  db_project_name=$(mysql_name_sanitize "${project_name}")
+  db_project_name="$(mysql_name_sanitize "${project_name}")"
   database_name="${db_project_name}_${project_state}"
   database_user="${db_project_name}_user"
   database_user_passw=$(openssl rand -hex 12)
 
   mysql_database_create "${database_name}"
-  mysql_user_create "${database_user}" "${database_user_passw}"
-  mysql_user_grant_privileges "${database_user}" "${database_name}"
+  mysql_user_create "${database_user}" "${database_user_passw}" ""
+  mysql_user_grant_privileges "${database_user}" "${database_name}" ""
 
   # Download WordPress
   wpcli_core_download "${project_path}"
@@ -239,8 +239,9 @@ function wordpress_project_copy() {
   startdir="${folder_to_install}"
   menutitle="Site Selection Menu"
   directory_browser "${menutitle}" "${startdir}"
-  copy_project_path=$filepath"/"$filename
+  copy_project_path="${filepath}/${filename}"
 
+  # Log
   display --indent 6 --text "- Preparing to copy project" --result "DONE" --color GREEN
   display --indent 8 --text "Path: ${copy_project_path}"
   log_event "info" "Setting copy_project_path=${copy_project_path}" "false"
@@ -284,10 +285,10 @@ function wordpress_project_copy() {
   log_event "info" "Creating database ${database_name}, and user ${database_user} with pass ${database_user_passw}"
 
   mysql_database_create "${database_name}"
-  mysql_user_create "${database_user}" "${database_user_passw}"
-  mysql_user_grant_privileges "${database_user}" "${database_name}"
+  mysql_user_create "${database_user}" "${database_user_passw}" ""
+  mysql_user_grant_privileges "${database_user}" "${database_name}" ""
 
-  log_event "info" "Copying database ${database_name} ..."
+  log_event "info" "Copying database ${database_name} ..." "false"
 
   # Create dump file
 
@@ -310,7 +311,7 @@ function wordpress_project_copy() {
     # Generate WP tables PREFIX
     tables_prefix="$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)"
     # Change WP tables PREFIX
-    wpcli_change_tables_prefix "${project_dir}" "${tables_prefix}"
+    wpcli_db_change_tables_prefix "${project_dir}" "${tables_prefix}"
 
     # WP Search and Replace URL
     wp_ask_url_search_and_replace "${project_dir}"
@@ -406,7 +407,7 @@ function wordpress_project_copy() {
   display --indent 6 --text "- WordPress installation for domain ${project_domain}" --result "DONE" --color GREEN
 
   # Send notification
-  send_notification "✅ ${VPSNAME}" "WordPress installation for domain ${project_domain} finished"
+  send_notification "✅ ${VPSNAME}" "WordPress installation for domain ${project_domain} finished" ""
 
   return 0
 

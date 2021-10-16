@@ -194,7 +194,7 @@ function database_tasks_handler() {
 
   create_db_user)
 
-    mysql_user_create "${dbuser}"
+    mysql_user_create "${dbuser}" "" ""
 
     exit
     ;;

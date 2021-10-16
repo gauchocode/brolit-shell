@@ -52,12 +52,12 @@ function dropbox_upload() {
 
     spinner_start "- Uploading file to Dropbox"
 
-    log_event "debug" "Running: ${DROPBOX_UPLOADER} upload ${file_to_upload} ${dropbox_directory}" "false"
+    #log_event "debug" "Running: ${DROPBOX_UPLOADER} upload ${file_to_upload} ${dropbox_directory}" "false"
 
     output="$("${DROPBOX_UPLOADER}" -q upload "${file_to_upload}" "${dropbox_directory}")"
     dropbox_file_to_upload_result=$?
 
-    spinner_stop "$dropbox_file_to_upload_result"
+    spinner_stop "${dropbox_file_to_upload_result}"
 
     # Check dropbox_file_to_upload_result
     if [[ ${dropbox_file_to_upload_result} -eq 0 ]]; then
@@ -73,6 +73,8 @@ function dropbox_upload() {
         log_event "error" "Can't upload file ${file_to_upload} to dropbox." "false"
         log_event "error" "Last command executed: ${DROPBOX_UPLOADER} upload ${file_to_upload} ${dropbox_directory}" "false"
         log_event "debug" "Last command output: ${output}" "false"
+
+        return 1
 
     fi
 
