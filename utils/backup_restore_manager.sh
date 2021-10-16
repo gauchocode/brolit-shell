@@ -31,7 +31,7 @@ function backup_manager_menu() {
   )
 
   chosen_backup_type="$(whiptail --title "SELECT BACKUP TYPE" --menu " " 20 78 10 "${backup_options[@]}" 3>&1 1>&2 2>&3)"
-  
+
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -65,17 +65,16 @@ function backup_manager_menu() {
       email_template="default"
       mail_html="$(cat "${SFOLDER}/templates/emails/${email_template}/main-tpl.html")"
 
-      #mail_html="$(${mail_html//"{{server_info}}"/${mail_server_status_html}})"
-      #mail_html="$(${mail_html//"{{configs_backup_section}}"/${mail_config_backup_html}})"
-      #mail_html="$(${mail_html//"{{databases_backup_section}}"/${mail_databases_backup_html}})"
-      #mail_html="$(${mail_html//"{{files_backup_section}}"/${mail_file_backup_html}})"
-      #mail_html="$(${mail_html//"{{footer}}"/${mail_footer_html}})"
-
-      mail_html="$(echo "${mail_html}" | sed -e "s/{{server_info}}/${mail_server_status_html}/g")"
-      mail_html="$(echo "${mail_html}" | sed -e "s/{{configs_backup_section}}/${mail_config_backup_html}/g")"
-      mail_html="$(echo "${mail_html}" | sed -e "s/{{databases_backup_section}}/${mail_databases_backup_html}/g")"
-      mail_html="$(echo "${mail_html}" | sed -e "s/{{files_backup_section}}/${mail_file_backup_html}/g")"
-      mail_html="$(echo "${mail_html}" | sed -e "s/{{footer}}/${mail_footer_html}/g")"
+      mail_html="$(echo "${mail_html}" | sed -e 's|{{server_info}}|'"${mail_server_status_html}"'|g')"
+      #log_event "debug" "mail_html output: ${mail_html}" "false"
+      mail_html="$(echo "${mail_html}" | sed -e 's|{{configs_backup_section}}|'"${mail_config_backup_html}"'|g')"
+      #log_event "debug" "mail_html output: ${mail_html}" "false"
+      mail_html="$(echo "${mail_html}" | sed -e 's|{{databases_backup_section}}|'"${mail_databases_backup_html}"'|g')"
+      #log_event "debug" "mail_html output: ${mail_html}" "false"
+      mail_html="$(echo "${mail_html}" | sed -e 's|{{files_backup_section}}|'"${mail_file_backup_html}"'|g')"
+      #log_event "debug" "mail_html output: ${mail_html}" "false"
+      mail_html="$(echo "${mail_html}" | sed -e 's|{{footer}}|'"${mail_footer_html}"'|g')"
+      #log_event "debug" "mail_html output: ${mail_html}" "false"
 
       # Checking result status for mail subject
       email_status="$(mail_subject_status "${STATUS_BACKUP_DBS}" "${STATUS_BACKUP_FILES}" "${STATUS_SERVER}" "${OUTDATED_PACKAGES}")"
