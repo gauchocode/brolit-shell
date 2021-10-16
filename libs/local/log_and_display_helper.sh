@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.60-beta
+# Version: 3.0.62
 ################################################################################
 #
 # Log and Display Helper: Log and display internal functions.
@@ -55,7 +55,7 @@ function _spinner() {
     delay=${SPINNER_DELAY:-0.15}
 
     while :; do
-      printf "\b${sp:i++%${#sp}:1}"
+      printf "\b${sp:i++%${#sp}:1}" >&2
       sleep "${delay}"
     done
 
@@ -69,7 +69,7 @@ function _spinner() {
     fi
 
     # Remove start spinner line
-    echo ""
+    echo "" >&2
     clear_last_line
 
     kill "${3}" >/dev/null 2>&1

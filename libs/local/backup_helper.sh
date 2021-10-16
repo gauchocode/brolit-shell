@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.60-beta
+# Version: 3.0.62
 #############################################################################
 #
 # Backup Helper: Perform backup actions.
@@ -577,8 +577,13 @@ function make_all_databases_backup() {
       backup_file="$(make_database_backup "${database}")"
 
       # Extract return from $backup_file
-      database_backup="$(echo "${backup_file}" | cut -d " " -f 1)"
-      database_backup_size="$(echo "${backup_file}" | cut -d " " -f 2)"
+      database_backup="$(echo "${backup_file}" | cut -d ";" -f 1)"
+      database_backup_size="$(echo "${backup_file}" | cut -d ";" -f 2)"
+
+      # Debug
+      #log_event "debug" "backup_file=${backup_file}" "false"
+      #log_event "debug" "database_backup=${database_backup}" "false"
+      #log_event "debug" "database_backup_size=${database_backup_size}" "false"
 
       backuped_databases_list[$database_backup_index]="${database_backup}"
       backuped_databases_sizes_list+=("${database_backup_size}")
@@ -646,7 +651,7 @@ function make_database_backup() {
 
       # Return
       ## backupfile backup_file_size
-      echo "${TMP_DIR}/${NOW}/${backup_file} ${backup_file_size}"
+      echo "${TMP_DIR}/${NOW}/${backup_file};${backup_file_size}"
 
     else
 
@@ -732,7 +737,7 @@ function upload_backup_to_dropbox() {
   local backup_type=$2
   local backup_file=$3
 
-  string_remove_spaces "${project_name}"
+  #string_remove_special_chars "${project_name}"
 
   # New folder with $VPSNAME
   dropbox_create_dir "${VPSNAME}"
