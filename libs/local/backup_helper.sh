@@ -629,7 +629,7 @@ function make_database_backup() {
 
   local dropbox_path
 
-  log_event "info" "Creating new database backup of ${database} ..." "false"
+  log_event "info" "Creating new database backup of '${database}'" "false"
 
   # Create dump file
   mysql_database_export "${database}" "${directory_to_backup}${db_file}"
@@ -732,17 +732,19 @@ function upload_backup_to_dropbox() {
   local backup_type=$2
   local backup_file=$3
 
+  string_remove_spaces "${project_name}"
+
   # New folder with $VPSNAME
   dropbox_create_dir "${VPSNAME}"
 
-  # New folder with "database"
+  # New folder with "project_name"
   dropbox_create_dir "${VPSNAME}/${backup_type}"
 
-  # New folder with $database (project DB)
-  dropbox_create_dir "${VPSNAME}/${backup_type}/${database}"
+  # New folder with $project_name (project DB)
+  dropbox_create_dir "${VPSNAME}/${backup_type}/${project_name}"
 
   # Dropbox Path
-  dropbox_path="/${VPSNAME}/${backup_type}/${database}"
+  dropbox_path="/${VPSNAME}/${backup_type}/${project_name}"
 
   # Upload to Dropbox
   dropbox_upload "${backup_file}" "${DROPBOX_FOLDER}${dropbox_path}"
@@ -750,13 +752,15 @@ function upload_backup_to_dropbox() {
   dropbox_result=$?
   if [[ ${dropbox_result} -eq 0 ]]; then
 
-    # Delete old backups
-    old_backup_file="${database}_${backup_type}_${ONEWEEKAGO}.tar.bz2"
+    # Old backup
+    old_backup_file="${project_name}_${backup_type}_${ONEWEEKAGO}.tar.bz2"
+
+    # Delete
     dropbox_delete "${DROPBOX_FOLDER}${dropbox_path}/${old_backup_file}"
 
     log_event "info" "Deleting temp ${backup_type} backup ${old_backup_file} from server" "false"
 
-    rm "${backup_type}"
+    rm "${backup_file}"
 
   else
 

@@ -2,6 +2,7 @@
 An attempt to bring order in good advice on writing Bash scripts I collected from several sources.
 
 ## Some sources
+* https://github.com/dylanaraps/pure-bash-bible
 * https://bertvv.github.io/cheat-sheets/Bash.html
 * https://github.com/anordal/shellharden/blob/master/how_to_do_things_safely_in_bash.md
 * https://www.reddit.com/r/commandline/comments/lha15t/bash_execution_tips_the_difference_between_and/

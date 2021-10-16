@@ -23,8 +23,8 @@ function test_wpcli_helper_funtions() {
     database_user_passw="$(openssl rand -hex 12)"
 
     mysql_database_create "${database_name}"
-    mysql_user_create "${database_user}" "${database_user_passw}"
-    mysql_user_grant_privileges "${database_user}" "${database_name}"
+    mysql_user_create "${database_user}" "${database_user_passw}" "localhost"
+    mysql_user_grant_privileges "${database_user}" "${database_name}" "localhost"
 
     # Download WordPress
     wpcli_core_download "${project_path}"
@@ -38,11 +38,11 @@ function test_wpcli_helper_funtions() {
 
     #test_wpcli_get_wpcore_version "${SITES}/${project_domain}"
 
-    #test_wpcli_get_db_prefix "${SITES}/${project_domain}"
+    #test_wpcli_db_get_prefix "${SITES}/${project_domain}"
 
-    #test_wpcli_change_tables_prefix "${SITES}/${project_domain}"
+    #test_wpcli_db_change_tables_prefix "${SITES}/${project_domain}"
 
-    #test_wpcli_get_db_prefix "${SITES}/${project_domain}"
+    #test_wpcli_db_get_prefix "${SITES}/${project_domain}"
 
     # Destroy mock project
     #rm -R "${SITES}/${project_domain}"
