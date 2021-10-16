@@ -216,7 +216,7 @@ function wpcli_main_menu() {
       TABLES_PREFIX="$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)"
 
       # Change WP tables PREFIX
-      wpcli_change_tables_prefix "${wp_site}" "${TABLES_PREFIX}"
+      wpcli_db_change_tables_prefix "${wp_site}" "${TABLES_PREFIX}"
 
     fi
     if [[ ${chosen_wpcli_options} == *"11"* ]]; then
