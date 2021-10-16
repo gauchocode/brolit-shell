@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.60-beta
+# Version: 3.0.62
 #############################################################################
 
 function cockpit_installer() {
