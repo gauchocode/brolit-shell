@@ -55,15 +55,25 @@ function backup_manager_menu() {
       # Preparing Mail Notifications Template
       email_template="default"
 
-      cp "${SFOLDER}/templates/emails/${email_template}/main-tpl.html" "${TMP_DIR}/full-email-${NOW}.mail"
+      # New full email file
+      email_html_file="${TMP_DIR}/full-email-${NOW}.mail"
 
-      sed -i '/{{server_info}}/r '"${TMP_DIR}/server_info-${NOW}.mail" "${TMP_DIR}/full-email-${NOW}.mail"
+      # Copy from template
+      cp "${SFOLDER}/templates/emails/${email_template}/main-tpl.html" "${email_html_file}"
 
-      sed -i '/{{databases_backup_section}}/r '"${TMP_DIR}/db-bk-${NOW}.mail" "${TMP_DIR}/full-email-${NOW}.mail"
-      sed -i '/{{mail_config_backup_html}}/r '"${TMP_DIR}/config-bk-${NOW}.mail" "${TMP_DIR}/full-email-${NOW}.mail"
-      sed -i '/{{files_backup_section}}/r '"${TMP_DIR}/file-bk-${NOW}.mail" "${TMP_DIR}/full-email-${NOW}.mail"
+      # Begin to replace
+      sed -i '/{{server_info}}/r '"${TMP_DIR}/server_info-${NOW}.mail" "${email_html_file}" | sed '/{{server_info}}/d' "${email_html_file}"
+      sed -i '/{{databases_backup_section}}/r '"${TMP_DIR}/db-bk-${NOW}.mail" "${email_html_file}" | sed '/{{databases_backup_section}}/d' "${email_html_file}"
+      sed -i '/{{mail_config_backup_html}}/r '"${TMP_DIR}/config-bk-${NOW}.mail" "${email_html_file}" | sed '/{{mail_config_backup_html}}/d' "${email_html_file}"
+      sed -i '/{{files_backup_section}}/r '"${TMP_DIR}/file-bk-${NOW}.mail" "${email_html_file}" | sed '/{{files_backup_section}}/d' "${email_html_file}"
+      sed -i '/{{footer}}/r '"${TMP_DIR}/footer-${NOW}.mail" "${email_html_file}" | sed '/{{footer}}/d' "${email_html_file}"
 
-      sed -i '/{{footer}}/r '"${TMP_DIR}/footer-${NOW}.mail" "${TMP_DIR}/full-email-${NOW}.mail"
+      # Delete vars not used here
+      sed '/{{packages_section}}/d' "${email_html_file}"
+      sed '/{{certificates_section}}/d' "${email_html_file}"
+
+      # Send html to a var
+      mail_html="$(cat "${email_html_file}")"
 
       # Checking result status for mail subject
       email_status="$(mail_subject_status "${STATUS_BACKUP_DBS}" "${STATUS_BACKUP_FILES}" "${STATUS_SERVER}" "${OUTDATED_PACKAGES}")"
