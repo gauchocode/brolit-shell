@@ -41,7 +41,7 @@ function backup_manager_menu() {
       log_section "Backup All"
 
       # Preparing Mail Notifications Template
-      mail_server_status_html="$(mail_server_status_section "${SERVER_IP}")"
+      mail_server_status_section "${SERVER_IP}"
 
       # Databases Backup
       make_all_databases_backup
@@ -49,32 +49,21 @@ function backup_manager_menu() {
       # Files Backup
       make_all_files_backup
 
-      # Mail section for Database Backup
-      mail_databases_backup_html=$(cat "${TMP_DIR}/db-bk-${NOW}.mail")
-
-      # Mail section for Server Config Backup
-      mail_config_backup_html=$(cat "${TMP_DIR}/config-bk-${NOW}.mail")
-
-      # Mail section for Files Backup
-      mail_file_backup_html=$(cat "${TMP_DIR}/file-bk-${NOW}.mail")
-
       # Footer
-      mail_footer_html="$(mail_footer "${SCRIPT_V}")"
+      mail_footer "${SCRIPT_V}"
 
       # Preparing Mail Notifications Template
       email_template="default"
-      mail_html="$(cat "${SFOLDER}/templates/emails/${email_template}/main-tpl.html")"
 
-      mail_html="$(echo "${mail_html}" | sed -e 's|{{server_info}}|'"${mail_server_status_html}"'|g')"
-      #log_event "debug" "mail_html output: ${mail_html}" "false"
-      mail_html="$(echo "${mail_html}" | sed -e 's|{{configs_backup_section}}|'"${mail_config_backup_html}"'|g')"
-      #log_event "debug" "mail_html output: ${mail_html}" "false"
-      mail_html="$(echo "${mail_html}" | sed -e 's|{{databases_backup_section}}|'"${mail_databases_backup_html}"'|g')"
-      #log_event "debug" "mail_html output: ${mail_html}" "false"
-      mail_html="$(echo "${mail_html}" | sed -e 's|{{files_backup_section}}|'"${mail_file_backup_html}"'|g')"
-      #log_event "debug" "mail_html output: ${mail_html}" "false"
-      mail_html="$(echo "${mail_html}" | sed -e 's|{{footer}}|'"${mail_footer_html}"'|g')"
-      #log_event "debug" "mail_html output: ${mail_html}" "false"
+      cp "${SFOLDER}/templates/emails/${email_template}/main-tpl.html" "${TMP_DIR}/full-email-${NOW}.mail"
+
+      sed -i '/{{server_info}}/r '"${TMP_DIR}/server_info-${NOW}.mail" "${TMP_DIR}/full-email-${NOW}.mail"
+
+      sed -i '/{{databases_backup_section}}/r '"${TMP_DIR}/db-bk-${NOW}.mail" "${TMP_DIR}/full-email-${NOW}.mail"
+      sed -i '/{{mail_config_backup_html}}/r '"${TMP_DIR}/config-bk-${NOW}.mail" "${TMP_DIR}/full-email-${NOW}.mail"
+      sed -i '/{{files_backup_section}}/r '"${TMP_DIR}/file-bk-${NOW}.mail" "${TMP_DIR}/full-email-${NOW}.mail"
+
+      sed -i '/{{footer}}/r '"${TMP_DIR}/footer-${NOW}.mail" "${TMP_DIR}/full-email-${NOW}.mail"
 
       # Checking result status for mail subject
       email_status="$(mail_subject_status "${STATUS_BACKUP_DBS}" "${STATUS_BACKUP_FILES}" "${STATUS_SERVER}" "${OUTDATED_PACKAGES}")"
