@@ -182,9 +182,6 @@ function mail_package_status_section() {
     local pkg_color
     local pkg_status
     local pkg_status_icon
-    local header_open
-    local header_open1
-    local header_open2
     local body_open
     local body_close
 
@@ -215,10 +212,10 @@ function mail_package_status_section() {
     html_pkg_details="$(echo "${html_pkg_details}" | sed -e "s/{{packages_status_icon}}/${pkg_status_icon}/g")"
 
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
-    html_pkg_details="$(echo "${html_pkg_details}" | sed -e 's|{{packages_status_details}}|'"${body}"'|g')"
+    html_pkg_details="$(echo "${html_pkg_details}" | sed -e 's|{{packages_status_details}}|'"${pkg_details}"'|g')"
 
     # Return
-    echo "${html_pkg_details}"
+    echo "${html_server_info_details}" >"${TMP_DIR}/packages-${NOW}.mail"
 
 }
 
@@ -263,8 +260,6 @@ function mail_certificates_section() {
     local cert_days
     local email_cert_line
     local email_cert_new_line
-    local header_open1
-    local header_open2
     local cert_status_icon
     local cert_status_color
     local files_label
@@ -284,7 +279,7 @@ function mail_certificates_section() {
     # This fix avoid getting the first parent directory, maybe we could find a better solution
     local k="skip"
 
-    all_sites=$(get_all_directories "${SITES}")
+    all_sites="$(get_all_directories "${SITES}")"
 
     for site in ${all_sites}; do
 
@@ -346,10 +341,7 @@ function mail_certificates_section() {
 
     done
 
-    body_open="<div style=\"color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;\">"
-    body_close="</div></div>"
-
-    body="${body_open}${files_label}${email_cert_line}${files_label_end}${body_close}"
+    body="${email_cert_line}"
 
     mail_certificates_html="$(cat "${SFOLDER}/templates/emails/${email_template}/certificates-tpl.html")"
 
@@ -360,7 +352,7 @@ function mail_certificates_section() {
     mail_certificates_html="$(echo "${mail_certificates_html}" | sed -e 's|{{certificates_list}}|'"${body}"'|g')"
 
     # Return
-    echo "${mail_certificates_html}"
+    echo "${mail_certificates_html}" >"${TMP_DIR}/certificates-${NOW}.mail"
 
 }
 
@@ -380,12 +372,6 @@ function mail_filesbackup_section() {
     local backup_type
     local color
     local content
-    local body
-    local header_open1
-    local header_open2
-    local header_open
-    local body_open
-    local body_close
     local files_inc_line_p1
     local files_inc_line_p2
     local files_inc_line_p3
@@ -441,19 +427,15 @@ function mail_filesbackup_section() {
 
         files_label_end="</div>"
 
-        if [[ "${DUP_BK}" = true ]]; then
+        if [[ "${DUP_BK}" == true ]]; then
             DBK_SIZE=$(du -hs "${DUP_ROOT}" | cut -f1)
             dbk_size_label="Duplicity Backup size: <b>${DBK_SIZE}</b><br /><b>Duplicity Backup includes:</b><br />${DUP_FOLDERS}"
 
         fi
 
+        content="${files_inc}${files_label_end}${dbk_size_label}"
+
     fi
-
-    # Body
-    body_open='<div style="color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;">'
-    body_close="</div></div>"
-
-    body="${body_open}${content}${size_label}${files_label}${files_inc}${files_label_end}${dbk_size_label}${body_close}"
 
     mail_backup_files_html="$(cat "${SFOLDER}/templates/emails/${email_template}/backup_files-tpl.html")"
 
@@ -461,7 +443,7 @@ function mail_filesbackup_section() {
     mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e "s/{{files_backup_status_icon}}/${status_icon_f}/g")"
 
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
-    mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e 's|{{files_backup_list}}|'"${body}"'|g')"
+    mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e 's|{{files_backup_list}}|'"${content}"'|g')"
 
     # Write e-mail parts files
     echo "${mail_backup_files_html}" >"${TMP_DIR}/file-bk-${NOW}.mail"
@@ -542,12 +524,9 @@ function mail_config_backup_section() {
 
         files_label_end="</div>"
 
+        content="${files_inc}${files_label_end}"
+
     fi
-
-    body_open="<div style=\"color:#000;font-size:12px;line-height:32px;float:left;font-family:Verdana,Helvetica,Arial;background:#D8D8D8;padding:10px;width:100%;\">"
-    body_close="</div></div>"
-
-    body="${body_open}${content}${size_label}${files_label}${files_inc}${files_label_end}${dbk_size_label}${body_close}"
 
     mail_backup_configs_html="$(cat "${SFOLDER}/templates/emails/${email_template}/backup_configs-tpl.html")"
 
@@ -555,7 +534,7 @@ function mail_config_backup_section() {
     mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e "s/{{configs_backup_status_icon}}/${status_icon_f}/g")"
 
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
-    mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e 's|{{configs_backup_list}}|'"${body}"'|g')"
+    mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e 's|{{configs_backup_list}}|'"${content}"'|g')"
 
     # Write e-mail parts files
     echo "${mail_backup_configs_html}" >"${TMP_DIR}/config-bk-${NOW}.mail"
