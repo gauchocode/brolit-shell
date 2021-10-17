@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.62
+# Version: 3.0.63
 ################################################################################
 
 # sendmail --help
@@ -128,7 +128,6 @@ function mail_server_status_section() {
 
     local disk_u
     local disk_u_ns
-    local header_open
     local body_open
     local content
     local body_close
@@ -208,8 +207,8 @@ function mail_package_status_section() {
 
     html_pkg_details="$(cat "${SFOLDER}/templates/emails/${email_template}/packages-tpl.html")"
 
-    html_pkg_details="$(echo "${html_pkg_details}" | sed -e "s/{{packages_status}}/${pkg_status}/g")"
-    html_pkg_details="$(echo "${html_pkg_details}" | sed -e "s/{{packages_status_icon}}/${pkg_status_icon}/g")"
+    html_pkg_details="$(echo "${html_pkg_details}" | sed -e 's|{{packages_status}}|'"${pkg_status}"'|g')"
+    html_pkg_details="$(echo "${html_pkg_details}" | sed -e 's|{{packages_status_icon}}|'"${pkg_status_icon}"'|g')"
 
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
     html_pkg_details="$(echo "${html_pkg_details}" | sed -e 's|{{packages_status_details}}|'"${pkg_details}"'|g')"
@@ -345,8 +344,8 @@ function mail_certificates_section() {
 
     mail_certificates_html="$(cat "${SFOLDER}/templates/emails/${email_template}/certificates-tpl.html")"
 
-    mail_certificates_html="$(echo "${mail_certificates_html}" | sed -e "s/{{certificates_status}}/${STATUS_CERTS}/g")"
-    mail_certificates_html="$(echo "${mail_certificates_html}" | sed -e "s/{{certificates_status_icon}}/${cert_status_icon}/g")"
+    mail_certificates_html="$(echo "${mail_certificates_html}" | sed -e 's|{{certificates_status}}|'"${STATUS_CERTS}"'|g')"
+    mail_certificates_html="$(echo "${mail_certificates_html}" | sed -e 's|{{certificates_status_icon}}|'"${cert_status_icon}"'|g')"
 
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
     mail_certificates_html="$(echo "${mail_certificates_html}" | sed -e 's|{{certificates_list}}|'"${body}"'|g')"
@@ -384,7 +383,7 @@ function mail_filesbackup_section() {
 
     backup_type='Files'
 
-    if [[ ${ERROR} = true ]]; then
+    if [[ ${ERROR} == true ]]; then
 
         # Changing global
         STATUS_BACKUP_FILES="ERROR"
@@ -439,8 +438,8 @@ function mail_filesbackup_section() {
 
     mail_backup_files_html="$(cat "${SFOLDER}/templates/emails/${email_template}/backup_files-tpl.html")"
 
-    mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e "s/{{files_backup_status}}/${STATUS_BACKUP_FILES}/g")"
-    mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e "s/{{files_backup_status_icon}}/${status_icon_f}/g")"
+    mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e 's|{{files_backup_status}}|'"${STATUS_BACKUP_FILES}"'|g')"
+    mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e 's|{{files_backup_status_icon}}|'"${status_icon_f}"'|g')"
 
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
     mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e 's|{{files_backup_list}}|'"${content}"'|g')"
@@ -464,7 +463,6 @@ function mail_config_backup_section() {
     local count
     local status_icon_f
     local content
-    local color
     local body
     local count files_inc
     local files_inc_line_p1
@@ -489,7 +487,6 @@ function mail_config_backup_section() {
         # Changing locals
         status_icon_f="⛔"
         content="<b>${backup_type} Backup Error: ${ERROR_TYPE}<br />Please check log file.</b> <br />"
-        color="red"
 
     else
 
@@ -499,9 +496,6 @@ function mail_config_backup_section() {
         # Changing locals
         status_icon_f="✅"
         content=""
-        color="#503fe0"
-        size_label=""
-        files_label="<b>Backup files includes:</b><br /><div style=\"color:#000;font-size:12px;line-height:24px;padding-left:10px;\">"
         files_inc=""
 
         count=0
@@ -530,8 +524,8 @@ function mail_config_backup_section() {
 
     mail_backup_configs_html="$(cat "${SFOLDER}/templates/emails/${email_template}/backup_configs-tpl.html")"
 
-    mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e "s/{{configs_backup_status}}/${STATUS_BACKUP_FILES}/g")"
-    mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e "s/{{configs_backup_status_icon}}/${status_icon_f}/g")"
+    mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e 's|{{configs_backup_status}}|'"${STATUS_BACKUP_FILES}"'|g')"
+    mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e 's|{{configs_backup_status_icon}}|'"${status_icon_f}"'|g')"
 
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
     mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e 's|{{configs_backup_list}}|'"${content}"'|g')"
@@ -606,10 +600,8 @@ function mail_databases_backup_section() {
 
     mail_backup_databases_html="$(cat "${SFOLDER}/templates/emails/${email_template}/backup_databases-tpl.html")"
 
-    #log_event "debug" "mail_backup_databases_html output: ${mail_backup_databases_html}" "false"
-
-    mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e "s|{{databases_backup_status}}|'"${STATUS_BACKUP_DBS}"'|g")"
-    mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e "s|{{databases_backup_status_icon}}|'"${status_icon}"'|g")"
+    mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e 's|{{databases_backup_status}}|'"${STATUS_BACKUP_DBS}"'|g')"
+    mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e 's|{{databases_backup_status_icon}}|'"${status_icon}"'|g')"
 
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
     mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e 's|{{databases_backup_list}}|'"${content}"'|g')"
