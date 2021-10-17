@@ -28,14 +28,14 @@ log_event "info" "Running apt update ..." "false"
 apt-get update -qq
 
 # Mail section for Server status and Packages
-mail_server_status_html="$(mail_server_status_section "${SERVER_IP}")"
-mail_package_status_html="$(mail_package_status_section "${PKG_DETAILS}")"
+mail_server_status_section "${SERVER_IP}"
+mail_package_status_section "${PKG_DETAILS}"
 
 # Certificates
 log_subsection "Certbot Certificates"
 
 # Check certificates installed
-mail_certificates_html="$(mail_certificates_section)"
+mail_certificates_section
 
 # BACKUP_ALL
 log_section "Backup All"
@@ -46,36 +46,38 @@ make_all_databases_backup
 # Files Backup
 make_all_files_backup
 
-# Mail section for Database Backup
-mail_databases_backup_html=$(<"${TMP_DIR}/db-bk-${NOW}.mail")
-
-# Mail section for Server Config Backup
-mail_config_backup_html=$(<"${TMP_DIR}/config-bk-${NOW}.mail")
-
-# Mail section for Files Backup
-mail_file_backup_html=$(<"${TMP_DIR}/file-bk-${NOW}.mail")
-
 # Footer
-mail_footer_html="$(mail_footer "${SCRIPT_V}")"
+mail_footer "${SCRIPT_V}"
 
 # Preparing Mail Notifications Template
 email_template="default"
-mail_html="$(cat "${SFOLDER}/templates/emails/${email_template}/main-tpl.html")"
 
-mail_html="$(echo "${mail_html}" | sed -e 's|{{server_info}}|'"${mail_server_status_html}"'|g')"
-#log_event "debug" "mail_html output: ${mail_html}" "false"
-mail_html="$(echo "${mail_html}" | sed -e 's|{{packages_section}}|'"${mail_package_status_html}"'|g')"
-#log_event "debug" "mail_html output: ${mail_html}" "false"
-mail_html="$(echo "${mail_html}" | sed -e 's|{{certificates_section}}|'"${mail_certificates_html}"'|g')"
-#log_event "debug" "mail_html output: ${mail_html}" "false"
-mail_html="$(echo "${mail_html}" | sed -e 's|{{configs_backup_section}}|'"${mail_config_backup_html}"'|g')"
-#log_event "debug" "mail_html output: ${mail_html}" "false"
-mail_html="$(echo "${mail_html}" | sed -e 's|{{databases_backup_section}}|'"${mail_databases_backup_html}"'|g')"
-#log_event "debug" "mail_html output: ${mail_html}" "false"
-mail_html="$(echo "${mail_html}" | sed -e 's|{{files_backup_section}}|'"${mail_file_backup_html}"'|g')"
-#log_event "debug" "mail_html output: ${mail_html}" "false"
-mail_html="$(echo "${mail_html}" | sed -e 's|{{footer}}|'"${mail_footer_html}"'|g')"
-#log_event "debug" "mail_html output: ${mail_html}" "false"
+# New full email file
+email_html_file="${TMP_DIR}/full-email-${NOW}.mail"
+
+# Copy from template
+cp "${SFOLDER}/templates/emails/${email_template}/main-tpl.html" "${email_html_file}"
+
+# Begin to replace
+sed -i '/{{server_info}}/r '"${TMP_DIR}/server_info-${NOW}.mail" "${email_html_file}"
+sed -i '/{{packages_section}}/r '"${TMP_DIR}/packages-${NOW}.mail" "${email_html_file}"
+sed -i '/{{certificates_section}}/r '"${TMP_DIR}/certificates-${NOW}.mail" "${email_html_file}"
+sed -i '/{{databases_backup_section}}/r '"${TMP_DIR}/db-bk-${NOW}.mail" "${email_html_file}"
+sed -i '/{{configs_backup_section}}/r '"${TMP_DIR}/config-bk-${NOW}.mail" "${email_html_file}"
+sed -i '/{{files_backup_section}}/r '"${TMP_DIR}/file-bk-${NOW}.mail" "${email_html_file}"
+sed -i '/{{footer}}/r '"${TMP_DIR}/footer-${NOW}.mail" "${email_html_file}"
+
+# Delete vars not used anymore
+grep -v "{{packages_section}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
+grep -v "{{certificates_section}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
+grep -v "{{server_info}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
+grep -v "{{databases_backup_section}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
+grep -v "{{configs_backup_section}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
+grep -v "{{files_backup_section}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
+grep -v "{{footer}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
+
+# Send html to a var
+mail_html="$(cat "${email_html_file}")"
 
 # Checking result status for mail subject
 email_status="$(mail_subject_status "${STATUS_BACKUP_DBS}" "${STATUS_BACKUP_FILES}" "${STATUS_SERVER}" "${STATUS_CERTS}" "${OUTDATED_PACKAGES}")"

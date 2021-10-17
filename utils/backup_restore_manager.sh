@@ -64,18 +64,18 @@ function backup_manager_menu() {
       # Begin to replace
       sed -i '/{{server_info}}/r '"${TMP_DIR}/server_info-${NOW}.mail" "${email_html_file}"
       sed -i '/{{databases_backup_section}}/r '"${TMP_DIR}/db-bk-${NOW}.mail" "${email_html_file}"
-      sed -i '/{{mail_config_backup_html}}/r '"${TMP_DIR}/config-bk-${NOW}.mail" "${email_html_file}"
+      sed -i '/{{configs_backup_section}}/r '"${TMP_DIR}/config-bk-${NOW}.mail" "${email_html_file}"
       sed -i '/{{files_backup_section}}/r '"${TMP_DIR}/file-bk-${NOW}.mail" "${email_html_file}"
       sed -i '/{{footer}}/r '"${TMP_DIR}/footer-${NOW}.mail" "${email_html_file}"
 
       # Delete vars not used anymore
-      sed -n '/{{packages_section}}/!p ' "${email_html_file}" &>/dev/null
-      sed -n '/{{certificates_section}}/!p ' "${email_html_file}" &>/dev/null
-      sed -n '/{{server_info}}/!p ' "${email_html_file}" &>/dev/null
-      sed -n '/{{databases_backup_section}}/!p ' "${email_html_file}" &>/dev/null
-      sed -n '/{{mail_config_backup_html}}/!p ' "${email_html_file}" &>/dev/null
-      sed -n '/{{files_backup_section}}/!p ' "${email_html_file}" &>/dev/null
-      sed -n '/{{footer}}/!p ' "${email_html_file}" &>/dev/null
+      grep -v "{{packages_section}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
+      grep -v "{{certificates_section}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
+      grep -v "{{server_info}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
+      grep -v "{{databases_backup_section}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
+      grep -v "{{configs_backup_section}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
+      grep -v "{{files_backup_section}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
+      grep -v "{{footer}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
 
       # Send html to a var
       mail_html="$(cat "${email_html_file}")"

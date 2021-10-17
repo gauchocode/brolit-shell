@@ -576,24 +576,33 @@ function make_all_databases_backup() {
       # Make database backup
       backup_file="$(make_database_backup "${database}")"
 
-      # Extract return from $backup_file
-      database_backup="$(echo "${backup_file}" | cut -d ";" -f 1)"
-      database_backup_size="$(echo "${backup_file}" | cut -d ";" -f 2)"
+      if [[ ${backup_file} != "" ]]; then
 
-      # Debug
-      #log_event "debug" "backup_file=${backup_file}" "false"
-      #log_event "debug" "database_backup=${database_backup}" "false"
-      #log_event "debug" "database_backup_size=${database_backup_size}" "false"
+        # Extract return from $backup_file
+        database_backup="$(echo "${backup_file}" | cut -d ";" -f 1)"
+        database_backup_size="$(echo "${backup_file}" | cut -d ";" -f 2)"
 
-      backuped_databases_list[$database_backup_index]="${database_backup}"
-      backuped_databases_sizes_list+=("${database_backup_size}")
+        # Debug
+        #log_event "debug" "backup_file=${backup_file}" "false"
+        #log_event "debug" "database_backup=${database_backup}" "false"
+        #log_event "debug" "database_backup_size=${database_backup_size}" "false"
 
-      # Upload backup
-      upload_backup_to_dropbox "${database}" "database" "${database_backup}"
+        backuped_databases_list[$database_backup_index]="${database_backup}"
+        backuped_databases_sizes_list+=("${database_backup_size}")
 
-      database_backup_index=$((database_backup_index + 1))
+        # Upload backup
+        upload_backup_to_dropbox "${database}" "database" "${database_backup}"
 
-      log_event "info" "Backup ${database_backup_index} of ${total_databases} done" "false"
+        database_backup_index=$((database_backup_index + 1))
+
+        log_event "info" "Backup ${database_backup_index} of ${total_databases} done" "false"
+
+      else
+
+        log_event "error" "Creating backup file for database" "false"
+        # TODO: create an array with error message to return
+
+      fi
 
     else
 
