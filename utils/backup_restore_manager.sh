@@ -41,7 +41,7 @@ function backup_manager_menu() {
       log_section "Backup All"
 
       # Preparing Mail Notifications Template
-      mail_server_status_section "${SERVER_IP}"
+      mail_server_status_section
 
       # Databases Backup
       make_all_databases_backup
@@ -98,8 +98,7 @@ function backup_manager_menu() {
       log_section "Databases Backup"
 
       # Preparing Mail Notifications Template
-      #HTMLOPEN="$(mail_html_start)"
-      BODY_SRV="$(mail_server_status_section "${SERVER_IP}")"
+      mail_server_status_section
 
       # Databases Backup
       make_all_databases_backup
@@ -107,13 +106,11 @@ function backup_manager_menu() {
       DB_MAIL="${TMP_DIR}/db-bk-${NOW}.mail"
       DB_MAIL_VAR=$(<"${DB_MAIL}")
 
-      log_event "info" "Sending Email to ${MAILA} ..." "false"
-
-      EMAIL_SUBJECT="${STATUS_ICON_D} [${NOWDISPLAY}] - Database Backup on ${VPSNAME}"
-      EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${DB_MAIL_VAR} ${MAIL_FOOTER}"
+      email_subject="${STATUS_ICON_D} [${NOWDISPLAY}] - Database Backup on ${VPSNAME}"
+      email_content="${HTMLOPEN} ${BODY_SRV} ${DB_MAIL_VAR} ${MAIL_FOOTER}"
 
       # Sending email notification
-      mail_send_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
+      mail_send_notification "${email_subject}" "${email_content}"
 
     fi
     if [[ ${chosen_backup_type} == *"03"* ]]; then
@@ -123,8 +120,7 @@ function backup_manager_menu() {
       log_section "Files Backup"
 
       # Preparing Mail Notifications Template
-      #HTMLOPEN="$(mail_html_start)"
-      BODY_SRV="$(mail_server_status_section "${SERVER_IP}")"
+      mail_server_status_section
 
       # Files Backup
       make_all_files_backup
@@ -133,13 +129,11 @@ function backup_manager_menu() {
 
       FILE_MAIL_VAR=$(cat "${TMP_DIR}/file-bk-${NOW}.mail")
 
-      log_event "info" "Sending Email to ${MAILA} ..." "false"
-
-      EMAIL_SUBJECT="${STATUS_ICON_F} [${NOWDISPLAY}] - Files Backup on ${VPSNAME}"
-      EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${CERT_MAIL_VAR} ${CONFIG_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
+      email_subject="${STATUS_ICON_F} [${NOWDISPLAY}] - Files Backup on ${VPSNAME}"
+      email_content="${HTMLOPEN} ${BODY_SRV} ${CERT_MAIL_VAR} ${CONFIG_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
 
       # Sending email notification
-      mail_send_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
+      mail_send_notification "${email_subject}" "${email_content}"
 
     fi
 

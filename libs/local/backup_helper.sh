@@ -67,10 +67,12 @@ function make_server_files_backup() {
   local bk_path=$3
   local directory_to_backup=$4
 
+  local got_error
   local bk_file
   local old_bk_file
   local dropbox_path
-  #local bk_scf_size
+
+  got_error=0
 
   if [[ -n ${bk_path} ]]; then
 
@@ -105,18 +107,28 @@ function make_server_files_backup() {
 
     else
 
-      return 1
+      error_msg="Something went wrong making a backup of ${directory_to_backup}."
+      error_type=""
+      got_error=1
+
+      # Return
+      echo "${got_error}"
 
     fi
 
   else
 
-    log_event "error" "Directory ${bk_path} doesn't exists!" "false"
+    log_event "error" "Directory ${bk_path} doesn't exists." "false"
 
     display --indent 6 --text "- Creating backup file" --result "FAIL" --color RED
     display --indent 8 --text "Result: Directory '${bk_path}' doesn't exists" --tcolor RED
 
-    return 1
+    error_msg="Directory ${bk_path} doesn't exists."
+    error_type=""
+    got_error=1
+
+    # Return
+    echo "${got_error}"
 
   fi
 
@@ -255,7 +267,7 @@ function make_all_server_config_backup() {
     log_event "warning" "WSERVER is not defined! Skipping webserver config files backup ..." "false"
 
   else
-    make_server_files_backup "configs" "nginx" "${WSERVER}" "."
+    nginx_files_backup_result="$(make_server_files_backup "configs" "nginx" "${WSERVER}" ".")"
 
   fi
 
@@ -265,7 +277,7 @@ function make_all_server_config_backup() {
 
   else
     BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
-    make_server_files_backup "configs" "php" "${PHP_CF}" "."
+    php_files_backup_result="$(make_server_files_backup "configs" "php" "${PHP_CF}" ".")"
 
   fi
 
@@ -275,7 +287,7 @@ function make_all_server_config_backup() {
 
   else
     BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
-    make_server_files_backup "configs" "mysql" "${MySQL_CF}" "."
+    mysql_files_backup_result="$(make_server_files_backup "configs" "mysql" "${MySQL_CF}" ".")"
 
   fi
 
@@ -285,22 +297,25 @@ function make_all_server_config_backup() {
 
   else
     BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
-    make_server_files_backup "configs" "letsencrypt" "${LENCRYPT_CF}" "."
+    le_files_backup_result="$(make_server_files_backup "configs" "letsencrypt" "${LENCRYPT_CF}" ".")"
 
   fi
 
   # TAR Devops Config Files
   if [[ ! -d ${BROLIT_CONFIG_PATH} ]]; then
-    log_event "warning" "DEVOPS_CF is not defined! Skipping DevOps config files backup ..." "false"
+    log_event "warning" "BROLIT_CONFIG_PATH is not defined! Skipping DevOps config files backup ..." "false"
 
   else
     BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
-    make_server_files_backup "configs" "brolit" "${BROLIT_CONFIG_PATH}" "."
+    brolit_files_backup_result="$(make_server_files_backup "configs" "brolit" "${BROLIT_CONFIG_PATH}" ".")"
 
   fi
 
   # Configure Files Backup Section for Email Notification
   mail_config_backup_section "${ERROR}" "${ERROR_TYPE}"
+
+  # Return
+  echo "${ERROR}"
 
 }
 
@@ -542,10 +557,9 @@ function duplicity_backup() {
 
 function make_all_databases_backup() {
 
-  # GLOBALS
-  declare -g ERROR=false
-  declare -g ERROR_TYPE=""
-
+  local got_error
+  local error_msg
+  local error_type
   local database_backup_index
 
   # Starting Messages
@@ -564,7 +578,7 @@ function make_all_databases_backup() {
   log_event "info" "Databases found: ${total_databases}" "false"
   log_break "true"
 
-  # MORE GLOBALS
+  got_error=0
   database_backup_index=0
 
   for database in ${databases}; do
@@ -600,7 +614,10 @@ function make_all_databases_backup() {
       else
 
         log_event "error" "Creating backup file for database" "false"
-        # TODO: create an array with error message to return
+
+        error_msg="Something went wrong making a backup of ${database}. ${error_msg}"
+        error_type=""
+        got_error=1
 
       fi
 
@@ -616,7 +633,10 @@ function make_all_databases_backup() {
   done
 
   # Configure Email
-  mail_databases_backup_section "${backuped_databases_list[@]}" "${backuped_databases_sizes_list[@]}" "${ERROR}" "${ERROR_TYPE}"
+  mail_databases_backup_section "${backuped_databases_list[@]}" "${backuped_databases_sizes_list[@]}" "${error_msg}" "${error_type}"
+
+  # Return
+  echo "${got_error}"
 
 }
 

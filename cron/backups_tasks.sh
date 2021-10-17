@@ -28,8 +28,8 @@ log_event "info" "Running apt update ..." "false"
 apt-get update -qq
 
 # Mail section for Server status and Packages
-mail_server_status_section "${SERVER_IP}"
-mail_package_status_section "${PKG_DETAILS}"
+mail_server_status_section
+mail_package_status_section
 
 # Certificates
 log_subsection "Certbot Certificates"
@@ -41,10 +41,10 @@ mail_certificates_section
 log_section "Backup All"
 
 # Databases Backup
-make_all_databases_backup
+database_backup_result="$(make_all_databases_backup)"
 
 # Files Backup
-make_all_files_backup
+files_backup_result="$(make_all_files_backup)"
 
 # Footer
 mail_footer "${SCRIPT_V}"
@@ -80,7 +80,7 @@ grep -v "{{footer}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${emai
 mail_html="$(cat "${email_html_file}")"
 
 # Checking result status for mail subject
-email_status="$(mail_subject_status "${STATUS_BACKUP_DBS}" "${STATUS_BACKUP_FILES}" "${STATUS_SERVER}" "${STATUS_CERTS}" "${OUTDATED_PACKAGES}")"
+email_status="$(mail_subject_status "${database_backup_result}" "${files_backup_result}" "${STATUS_SERVER}" "${STATUS_CERTS}" "${OUTDATED_PACKAGES}")"
 
 # Preparing email to send
 email_subject="${email_status} [${NOWDISPLAY}] - Complete Backup on ${VPSNAME}"

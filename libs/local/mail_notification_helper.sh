@@ -84,7 +84,7 @@ function mail_subject_status() {
 
     local status
 
-    if [[ "${status_d}" == *"ERROR"* ]] || [[ "${status_f}" == *"ERROR"* ]] || [[ "${status_s}" == *"ERROR"* ]] || [[ "${status_c}" == *"ERROR"* ]]; then
+    if [[ ${status_d} == 1 ]] || [[ ${status_f} == 1 ]] || [[ ${status_s} == 1 ]] || [[ ${status_c} == 1 ]]; then
         status="⛔ ERROR"
 
     else
@@ -117,20 +117,13 @@ function remove_mail_notifications_files() {
 
 function mail_server_status_section() {
 
-    # $1 = ${IP}        // Server's IP
-    # $2 = ${disk_u}    // Server's disk utilization
-
-    local IP=$1
-
     #declare -g STATUS_SERVER # Global to check section status
 
     local server_status
 
     local disk_u
     local disk_u_ns
-    local body_open
     local content
-    local body_close
     local body
 
     local email_template="default"
@@ -166,8 +159,8 @@ function mail_server_status_section() {
 
     html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{packages_status}}/${server_status}/g")"
     html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{packages_status_icon}}/${server_status_icon}/g")"
-    html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{server_ipv4}}/${IP}/g")"
-    html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{server_ipv6}}/${IP}/g")"
+    html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{server_ipv4}}/${SERVER_IP}/g")"
+    html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{server_ipv6}}/${SERVER_IPv6}/g")"
     html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{disk_usage}}/${disk_u}/g")"
 
     # Return
@@ -181,8 +174,6 @@ function mail_package_status_section() {
     local pkg_color
     local pkg_status
     local pkg_status_icon
-    local body_open
-    local body_close
 
     # TODO: config support
     local email_template="default"
@@ -401,9 +392,6 @@ function mail_filesbackup_section() {
         # Changing locals
         status_icon_f="✅"
         content=""
-        color="#503fe0"
-        size_label=""
-        files_label="<b>Backup files includes:</b><br /><div style=\"color:#000;font-size:12px;line-height:24px;padding-left:10px;\">"
         files_inc=""
 
         count=0
@@ -427,7 +415,7 @@ function mail_filesbackup_section() {
         files_label_end="</div>"
 
         if [[ "${DUP_BK}" == true ]]; then
-            DBK_SIZE=$(du -hs "${DUP_ROOT}" | cut -f1)
+            DBK_SIZE="$(du -hs "${DUP_ROOT}" | cut -f1)"
             dbk_size_label="Duplicity Backup size: <b>${DBK_SIZE}</b><br /><b>Duplicity Backup includes:</b><br />${DUP_FOLDERS}"
 
         fi
@@ -451,14 +439,10 @@ function mail_filesbackup_section() {
 
 function mail_config_backup_section() {
 
-    # $1 = ${ERROR}
-    # $2 = ${ERROR_TYPE}
-
-    # Global array ${BACKUPED_SCF_LIST[@]}
-    # Global array ${BK_SCF_SIZES}
-
-    local ERROR=$1
-    local ERROR_TYPE=$2
+    local backuped_config_list=$1
+    local backuped_config_sizes_list=$2
+    local error_msg=$3
+    local error_type=$4
 
     local count
     local status_icon_f
@@ -479,30 +463,24 @@ function mail_config_backup_section() {
 
     backup_type="Config"
 
-    if [ "${ERROR}" = true ]; then
+    if [[ ${error_msg} != "" ]]; then
 
-        # Changing global
-        STATUS_BACKUP_FILES='ERROR'
-
-        # Changing locals
+        status_backup_files='ERROR'
         status_icon_f="⛔"
-        content="<b>${backup_type} Backup Error: ${ERROR_TYPE}<br />Please check log file.</b> <br />"
+        content="<b>Config backup error:<br />${error_msg}<br />Please check log file for more information.</b><br />"
 
     else
 
-        # Changing global
-        STATUS_BACKUP_FILES="OK"
-
-        # Changing locals
+        status_backup_files="OK"
         status_icon_f="✅"
         content=""
         files_inc=""
 
         count=0
 
-        for backup_line in "${BACKUPED_SCF_LIST[@]}"; do
+        for backup_line in "${backuped_config_list[@]}"; do
 
-            bk_scf_size="${BK_SCF_SIZES[$count]}"
+            bk_scf_size="${backuped_config_sizes_list[$count]}"
 
             files_inc_line_p1="<div class=\"backup-details-line\">"
             files_inc_line_p2="<span style=\"margin-right:5px;\">${backup_line}</span>"
@@ -524,7 +502,7 @@ function mail_config_backup_section() {
 
     mail_backup_configs_html="$(cat "${SFOLDER}/templates/emails/${email_template}/backup_configs-tpl.html")"
 
-    mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e 's|{{configs_backup_status}}|'"${STATUS_BACKUP_FILES}"'|g')"
+    mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e 's|{{configs_backup_status}}|'"${status_backup_files}"'|g')"
     mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e 's|{{configs_backup_status_icon}}|'"${status_icon_f}"'|g')"
 
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
@@ -539,37 +517,34 @@ function mail_databases_backup_section() {
 
     local backuped_databases_list=$1
     local backuped_databases_sizes_list=$2
-    local ERROR=$3
-    local ERROR_TYPE=$4
+    local error_msg=$3
+    local error_type=$4
 
     local count
     local bk_db_size
-    local status_icon
 
-    local backup_type
+    local backup_status
+    local status_icon
 
     # TODO: config support
     local email_template="default"
 
-    declare -g STATUS_BACKUP_DBS
-
-    backup_type="Database"
-
     log_event "debug" "Preparing mail databases backup section ..." "false"
 
-    if [[ ${ERROR} == true ]]; then
-        # Changing global
-        STATUS_BACKUP_DBS="ERROR"
+    log_event "debug" "backuped_databases_list=$backuped_databases_list" "false"
+    log_event "debug" "backuped_databases_sizes_list=$backuped_databases_sizes_list" "false"
+    log_event "debug" "error_msg=$error_msg" "false"
+    log_event "debug" "error_type=$error_type" "false"
 
-        # Changing locals
+    if [[ ${error_msg} != "" ]]; then
+        
+        backup_status="ERROR"
         status_icon="⛔"
-        content="<b>${backup_type} Backup with errors:<br />${ERROR_TYPE}<br /><br />Please check log file.</b> <br />"
+        content="<b>Database backup with errors:<br />${error_type}<br /><br />Please check log file.</b> <br />"
 
     else
-        # Changing global
-        STATUS_BACKUP_DBS="OK"
 
-        # Changing locals
+        backup_status="OK"
         status_icon="✅"
         content=""
         files_inc=""
@@ -600,7 +575,7 @@ function mail_databases_backup_section() {
 
     mail_backup_databases_html="$(cat "${SFOLDER}/templates/emails/${email_template}/backup_databases-tpl.html")"
 
-    mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e 's|{{databases_backup_status}}|'"${STATUS_BACKUP_DBS}"'|g')"
+    mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e 's|{{databases_backup_status}}|'"${backup_status}"'|g')"
     mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e 's|{{databases_backup_status_icon}}|'"${status_icon}"'|g')"
 
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
