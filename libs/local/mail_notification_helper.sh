@@ -367,8 +367,8 @@ function mail_files_backup_section() {
     local bk_fl_size
 
     # Log
-    printf 'backuped_databases_list: %q\n' "${backuped_databases_list[@]}" >>"${LOG}"
-    printf 'backuped_databases_sizes_list: %q\n' "${backuped_databases_sizes_list[@]}" >>"${LOG}"
+    printf 'backuped_files_list: %q\n' "${backuped_files_list[@]}" >>"${LOG}"
+    printf 'backuped_files_sizes_list: %q\n' "${backuped_files_sizes_list[@]}" >>"${LOG}"
     log_event "debug" "error_msg=$error_msg" "false"
     log_event "debug" "error_type=$error_type" "false"
 
