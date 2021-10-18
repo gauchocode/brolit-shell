@@ -346,21 +346,18 @@ function mail_certificates_section() {
 
 }
 
-function mail_filesbackup_section() {
-
-    # $1 = ${ERROR}
-    # $2 = ${ERROR_TYPE}
+function mail_files_backup_section() {
 
     # Global array ${BACKUPED_LIST[@]}
     # Global array ${BK_FL_SIZES[@]}
 
-    local ERROR=$1
-    local ERROR_TYPE=$2
+    local error_msg=$1
+    local error_type=$2
+    local -n backuped_files_list=$3
+    local -n backuped_files_sizes_list=$4
 
     declare -g STATUS_BACKUP_FILES
 
-    local backup_type
-    local color
     local content
     local files_inc_line_p1
     local files_inc_line_p2
@@ -369,36 +366,33 @@ function mail_filesbackup_section() {
     local files_inc_line_p5
     local bk_fl_size
 
+    # Log
+    printf 'backuped_databases_list: %q\n' "${backuped_databases_list[@]}" >>"${LOG}"
+    printf 'backuped_databases_sizes_list: %q\n' "${backuped_databases_sizes_list[@]}" >>"${LOG}"
+    log_event "debug" "error_msg=$error_msg" "false"
+    log_event "debug" "error_type=$error_type" "false"
+
     # TODO: config support
     local email_template="default"
 
-    backup_type='Files'
+    if [[ ${error_msg} != "" ]]; then
 
-    if [[ ${ERROR} == true ]]; then
-
-        # Changing global
         STATUS_BACKUP_FILES="ERROR"
-
-        # Changing locals
         status_icon_f="⛔"
-        content="<b>${backup_type} Backup Error: ${ERROR_TYPE}<br />Please check log file.</b> <br />"
-        color="red"
+        content="<b>Files backup error: ${error_type}<br />Please check log file.</b> <br />"
 
     else
 
-        # Changing global
         STATUS_BACKUP_FILES="OK"
-
-        # Changing locals
         status_icon_f="✅"
         content=""
         files_inc=""
 
         count=0
 
-        for backup_file in "${BACKUPED_LIST[@]}"; do
+        for backup_file in "${backuped_files_list[@]}"; do
 
-            bk_fl_size="${BK_FL_SIZES[$count]}"
+            bk_fl_size="${backuped_files_sizes_list[$count]}"
 
             files_inc_line_p1="<div class=\"backup-details-line\">"
             files_inc_line_p2="<span style=\"margin-right:5px;\">${backup_file}</span>"
@@ -439,10 +433,10 @@ function mail_filesbackup_section() {
 
 function mail_config_backup_section() {
 
-    local -n backuped_config_list=$1
-    local -n backuped_config_sizes_list=$2
-    local error_msg=$3
-    local error_type=$4
+    local error_msg=$1
+    local error_type=$2
+    local -n backuped_config_list=$3
+    local -n backuped_config_sizes_list=$4
 
     local count
     local status_icon_f
@@ -456,12 +450,8 @@ function mail_config_backup_section() {
     local files_inc_line_p5
     local bk_scf_size
 
-    local backup_type
-
     # TODO: config support
     local email_template="default"
-
-    backup_type="Config"
 
     if [[ ${error_msg} != "" ]]; then
 
@@ -515,10 +505,10 @@ function mail_config_backup_section() {
 
 function mail_databases_backup_section() {
 
-    local -n backuped_databases_list=$1
-    local -n backuped_databases_sizes_list=$2
-    local error_msg=$3
-    local error_type=$4
+    local error_msg=$1
+    local error_type=$2
+    local -n backuped_databases_list=$3
+    local -n backuped_databases_sizes_list=$4
 
     local count
     local bk_db_size
@@ -531,8 +521,8 @@ function mail_databases_backup_section() {
 
     log_event "debug" "Preparing mail databases backup section ..." "false"
 
-    printf 'backuped_databases_list: %q\n' "${backuped_databases_list[@]}"  >>"${LOG}"
-    printf 'backuped_databases_sizes_list: %q\n' "${backuped_databases_sizes_list[@]}"  >>"${LOG}"
+    printf 'backuped_databases_list: %q\n' "${backuped_databases_list[@]}" >>"${LOG}"
+    printf 'backuped_databases_sizes_list: %q\n' "${backuped_databases_sizes_list[@]}" >>"${LOG}"
     log_event "debug" "error_msg=$error_msg" "false"
     log_event "debug" "error_type=$error_type" "false"
 

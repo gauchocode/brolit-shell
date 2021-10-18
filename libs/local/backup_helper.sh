@@ -68,7 +68,7 @@ function make_server_files_backup() {
   local directory_to_backup=$4
 
   local got_error
-  local bk_file
+  local backup_file
   local old_bk_file
   local dropbox_path
 
@@ -77,11 +77,11 @@ function make_server_files_backup() {
   if [[ -n ${bk_path} ]]; then
 
     # Backups file names
-    bk_file="${bk_sup_type}-${bk_type}-files-${NOW}.tar.bz2"
+    backup_file="${bk_sup_type}-${bk_type}-files-${NOW}.tar.bz2"
     old_bk_file="${bk_sup_type}-${bk_type}-files-${ONEWEEKAGO}.tar.bz2"
 
     # Compress backup
-    backup_file_size="$(compress "${bk_path}" "${directory_to_backup}" "${TMP_DIR}/${NOW}/${bk_file}")"
+    backup_file_size="$(compress "${bk_path}" "${directory_to_backup}" "${TMP_DIR}/${NOW}/${backup_file}")"
 
     # Check test result
     compress_result=$?
@@ -100,7 +100,7 @@ function make_server_files_backup() {
       dropbox_path="${VPSNAME}/${bk_type}/${bk_sup_type}"
 
       # Uploading backup files
-      dropbox_upload "${TMP_DIR}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${dropbox_path}"
+      dropbox_upload "${TMP_DIR}/${NOW}/${backup_file}" "${DROPBOX_FOLDER}/${dropbox_path}"
 
       # Deleting old backup files
       dropbox_delete "${DROPBOX_FOLDER}/${dropbox_path}/${old_bk_file}"
@@ -161,7 +161,7 @@ function make_mailcow_backup() {
   if [[ -n "${MAILCOW_DIR}" ]]; then
 
     old_bk_file="${bk_type}_files-${ONEWEEKAGO}.tar.bz2"
-    bk_file="${bk_type}_files-${NOW}.tar.bz2"
+    backup_file="${bk_type}_files-${NOW}.tar.bz2"
 
     log_event "info" "Trying to make a backup of ${MAILCOW_DIR} ..." "false"
     display --indent 6 --text "- Making ${YELLOW}${MAILCOW_DIR}${ENDCOLOR} backup" --result "DONE" --color GREEN
@@ -188,19 +188,19 @@ function make_mailcow_backup() {
       log_event "info" "Making tar.bz2 from: ${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION} ..." "false"
 
       # Tar file
-      (${TAR} -cf - --directory="${MAILCOW_DIR}" "${MAILCOW_BACKUP_LOCATION}" | pv --width 70 -ns "$(du -sb "${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION}" | awk '{print $1}')" | lbzip2 >"${MAILCOW_TMP_BK}/${bk_file}")
+      (${TAR} -cf - --directory="${MAILCOW_DIR}" "${MAILCOW_BACKUP_LOCATION}" | pv --width 70 -ns "$(du -sb "${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION}" | awk '{print $1}')" | lbzip2 >"${MAILCOW_TMP_BK}/${backup_file}")
 
       # Log
       clear_last_line
-      log_event "info" "Testing backup file: ${bk_file} ..." "false"
+      log_event "info" "Testing backup file: ${backup_file} ..." "false"
 
       # Test backup file
-      lbzip2 --test "${MAILCOW_TMP_BK}/${bk_file}"
+      lbzip2 --test "${MAILCOW_TMP_BK}/${backup_file}"
 
       lbzip2_result=$?
       if [[ ${lbzip2_result} -eq 0 ]]; then
 
-        log_event "info" "${MAILCOW_TMP_BK}/${bk_file} backup created" "false"
+        log_event "info" "${MAILCOW_TMP_BK}/${backup_file} backup created" "false"
 
         # New folder with $VPSNAME
         dropbox_create_dir "${VPSNAME}"
@@ -212,14 +212,14 @@ function make_mailcow_backup() {
         display --indent 6 --text "- Uploading backup file to Dropbox"
 
         # Upload new backup
-        dropbox_upload "${MAILCOW_TMP_BK}/${bk_file}" "${DROPBOX_FOLDER}/${dropbox_path}"
+        dropbox_upload "${MAILCOW_TMP_BK}/${backup_file}" "${DROPBOX_FOLDER}/${dropbox_path}"
 
         # Remove old backup
         dropbox_delete "${DROPBOX_FOLDER}/${dropbox_path}/${old_bk_file}"
 
         # Remove old backups from server
         rm --recursive --force "${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION:?}"
-        rm --recursive --force "${MAILCOW_TMP_BK}/${bk_file:?}"
+        rm --recursive --force "${MAILCOW_TMP_BK}/${backup_file:?}"
 
         log_event "info" "Mailcow backup finished" "false"
 
@@ -312,7 +312,7 @@ function make_all_server_config_backup() {
   fi
 
   # Configure Files Backup Section for Email Notification
-  mail_config_backup_section "${ERROR}" "${ERROR_TYPE}"
+  mail_config_backup_section "" "" "${ERROR}" "${ERROR_TYPE}"
 
   # Return
   echo "${ERROR}"
@@ -348,8 +348,6 @@ function make_sites_files_backup() {
   # FILES BACKUP GLOBALS
   declare -i BK_FILE_INDEX=0
   declare -i BK_FL_ARRAY_INDEX=0
-  #declare -g BACKUPED_LIST
-  #declare -g BK_FL_SIZES
 
   declare directory_name=""
 
@@ -365,7 +363,14 @@ function make_sites_files_backup() {
 
       if [[ ${BLACKLISTED_SITES} != *"${directory_name}"* ]]; then
 
-        make_files_backup "site" "${SITES}" "${directory_name}"
+        # TODO: make_files_backup should return backup_path/backup_file + backup_size
+
+        BK_FL_SIZE="$(make_files_backup "site" "${SITES}" "${directory_name}")"
+
+        BACKUPED_LIST[$BK_FILE_INDEX]=${directory_name}
+        #BACKUPED_FL=${BACKUPED_LIST[${BK_FILE_INDEX}]}
+        BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=${BK_FL_SIZE}
+
         BK_FL_ARRAY_INDEX="$((BK_FL_ARRAY_INDEX + 1))"
 
         log_break "true"
@@ -392,7 +397,7 @@ function make_sites_files_backup() {
   duplicity_backup
 
   # Configure Files Backup Section for Email Notification
-  mail_filesbackup_section "${ERROR}" "${ERROR_TYPE}"
+  mail_files_backup_section "${BACKUPED_LIST[@]}" "${BK_FL_SIZES[@]}" "${ERROR}" "${ERROR_TYPE}"
 
 }
 
@@ -452,29 +457,16 @@ function make_files_backup() {
   local directory_to_backup=$3
 
   local old_bk_file="${directory_to_backup}_${bk_type}-files_${ONEWEEKAGO}.tar.bz2"
-  local bk_file="${directory_to_backup}_${bk_type}-files_${NOW}.tar.bz2"
+  local backup_file="${directory_to_backup}_${bk_type}-files_${NOW}.tar.bz2"
 
   local dropbox_path
 
-  #log_event "info" "Making backup file from: ${directory_to_backup} ..."
-  #display --indent 6 --text "- Making ${YELLOW}${directory_to_backup}${ENDCOLOR} backup" --result "DONE" --color GREEN
-
-  #(${TAR} --exclude '.git' --exclude '*.log' -cf - --directory="${bk_path}" "${directory_to_backup}" | pv --width 70 --size "$(du -sb "${bk_path}/${directory_to_backup}" | awk '{print $1}')" | lbzip2 >"${TMP_DIR}/${NOW}/${bk_file}") 2>&1
-
   # Compress backup
-  backup_file_size="$(compress "${bk_path}" "${directory_to_backup}" "${TMP_DIR}/${NOW}/${bk_file}")"
+  backup_file_size="$(compress "${bk_path}" "${directory_to_backup}" "${TMP_DIR}/${NOW}/${backup_file}")"
 
   # Check test result
   compress_result=$?
   if [[ ${compress_result} -eq 0 ]]; then
-
-    # TODO: maybe put this vars on a temp file, then ask for them before prepare the email
-    #BACKUPED_LIST[$BK_FILE_INDEX]=${bk_file}
-    #BACKUPED_FL=${BACKUPED_LIST[${BK_FILE_INDEX}]}
-
-    # Calculate backup size
-    #BK_FL_SIZE="$(find "${TMP_DIR}/${NOW}/" -name "${bk_file}" -exec ls -l --human-readable --block-size=M {} \; | awk '{ print $5 }')"
-    #BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=${BK_FL_SIZE}
 
     # New folder with $VPSNAME
     dropbox_create_dir "${VPSNAME}"
@@ -488,17 +480,20 @@ function make_files_backup() {
     dropbox_path="${VPSNAME}/${bk_type}/${directory_to_backup}"
 
     # Upload backup
-    dropbox_upload "${TMP_DIR}/${NOW}/${bk_file}" "${DROPBOX_FOLDER}/${dropbox_path}"
+    dropbox_upload "${TMP_DIR}/${NOW}/${backup_file}" "${DROPBOX_FOLDER}/${dropbox_path}"
 
     # Delete old backup from Dropbox
     dropbox_delete "${DROPBOX_FOLDER}/${dropbox_path}/${old_bk_file}"
 
     # Delete temp backup
-    rm --force "${TMP_DIR}/${NOW}/${bk_file}"
+    rm --force "${TMP_DIR}/${NOW}/${backup_file}"
 
     # Log
     log_event "info" "Temp backup deleted from server" "false"
     #display --indent 6 --text "- Deleting temp files" --result "DONE" --color GREEN
+
+    # Return
+    echo "${backup_file}"
 
   else
 
@@ -633,7 +628,7 @@ function make_all_databases_backup() {
   done
 
   # Configure Email
-  mail_databases_backup_section "${backuped_databases_list[@]}" "${backuped_databases_sizes_list[@]}" "${error_msg}" "${error_type}"
+  mail_databases_backup_section "${error_msg}" "${error_type}" "${backuped_databases_list[@]}" "${backuped_databases_sizes_list[@]}"
 
   # Return
   echo "${got_error}"
