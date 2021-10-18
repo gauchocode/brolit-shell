@@ -333,8 +333,7 @@ function make_sites_files_backup() {
 
   local backup_file_size
 
-  local BK_FILE_INDEX=0
-  local BK_FL_ARRAY_INDEX=0
+  local backuped_files_index=0
 
   local directory_name=""
 
@@ -370,11 +369,13 @@ function make_sites_files_backup() {
 
         backup_file_size="$(make_files_backup "site" "${SITES}" "${directory_name}")"
 
-        BACKUPED_LIST[$BK_FILE_INDEX]="${directory_name}"
-        #BACKUPED_FL=${BACKUPED_LIST[${BK_FILE_INDEX}]}
-        BK_FL_SIZES[$BK_FL_ARRAY_INDEX]="${backup_file_size}"
+        backuped_files_list[$backuped_files_index]="${directory_name}"
+        backuped_files_sizes_list+=("${backup_file_size}")
 
-        BK_FL_ARRAY_INDEX="$((BK_FL_ARRAY_INDEX + 1))"
+        #BACKUPED_LIST[$BK_FILE_INDEX]="${directory_name}"
+        #BACKUPED_FL=${BACKUPED_LIST[${BK_FILE_INDEX}]}
+        #BK_FL_SIZES[$BK_FL_ARRAY_INDEX]="${backup_file_size}"
+        backuped_files_index=$((backuped_files_index + 1))
 
         log_break "true"
 
@@ -383,7 +384,7 @@ function make_sites_files_backup() {
 
       fi
 
-      BK_FILE_INDEX=$((BK_FILE_INDEX + 1))
+      #BK_FILE_INDEX=$((BK_FILE_INDEX + 1))
 
       log_event "info" "Processed ${BK_FILE_INDEX} of ${COUNT_TOTAL_SITES} directories" "false"
 
@@ -400,7 +401,7 @@ function make_sites_files_backup() {
   duplicity_backup
 
   # Configure Files Backup Section for Email Notification
-  mail_files_backup_section "${ERROR}" "${ERROR_TYPE}" "${BACKUPED_LIST[@]}" "${BK_FL_SIZES[@]}"
+  mail_files_backup_section "${ERROR}" "${ERROR_TYPE}" "${backuped_files_list[@]}" "${backuped_files_sizes_list[@]}"
 
 }
 
