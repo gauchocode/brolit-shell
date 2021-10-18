@@ -331,6 +331,15 @@ function make_all_server_config_backup() {
 
 function make_sites_files_backup() {
 
+  local backup_file_size
+
+  local BK_FILE_INDEX=0
+  local BK_FL_ARRAY_INDEX=0
+
+  local directory_name=""
+
+  local k
+
   log_subsection "Backup Sites Files"
 
   # Get all directories
@@ -344,12 +353,6 @@ function make_sites_files_backup() {
   log_event "info" "Found ${COUNT_TOTAL_SITES} directories" "false"
   display --indent 6 --text "- Directories found" --result "${COUNT_TOTAL_SITES}" --color WHITE
   log_break "true"
-
-  # FILES BACKUP GLOBALS
-  declare -i BK_FILE_INDEX=0
-  declare -i BK_FL_ARRAY_INDEX=0
-
-  declare directory_name=""
 
   k=0
 
@@ -365,11 +368,11 @@ function make_sites_files_backup() {
 
         # TODO: make_files_backup should return backup_path/backup_file + backup_size
 
-        BK_FL_SIZE="$(make_files_backup "site" "${SITES}" "${directory_name}")"
+        backup_file_size="$(make_files_backup "site" "${SITES}" "${directory_name}")"
 
-        BACKUPED_LIST[$BK_FILE_INDEX]=${directory_name}
+        BACKUPED_LIST[$BK_FILE_INDEX]="${directory_name}"
         #BACKUPED_FL=${BACKUPED_LIST[${BK_FILE_INDEX}]}
-        BK_FL_SIZES[$BK_FL_ARRAY_INDEX]=${BK_FL_SIZE}
+        BK_FL_SIZES[$BK_FL_ARRAY_INDEX]="${backup_file_size}"
 
         BK_FL_ARRAY_INDEX="$((BK_FL_ARRAY_INDEX + 1))"
 
@@ -397,7 +400,7 @@ function make_sites_files_backup() {
   duplicity_backup
 
   # Configure Files Backup Section for Email Notification
-  mail_files_backup_section "${BACKUPED_LIST[@]}" "${BK_FL_SIZES[@]}" "${ERROR}" "${ERROR_TYPE}"
+  mail_files_backup_section "${ERROR}" "${ERROR_TYPE}" "${BACKUPED_LIST[@]}" "${BK_FL_SIZES[@]}"
 
 }
 
@@ -493,7 +496,7 @@ function make_files_backup() {
     #display --indent 6 --text "- Deleting temp files" --result "DONE" --color GREEN
 
     # Return
-    echo "${backup_file}"
+    echo "${backup_file_size}"
 
   else
 
@@ -588,7 +591,8 @@ function make_all_databases_backup() {
       if [[ ${backup_file} != "" ]]; then
 
         # Extract return from $backup_file
-        database_backup="$(echo "${backup_file}" | cut -d ";" -f 1)"
+        database_backup_path="$(echo "${backup_file}" | cut -d ";" -f 1)"
+        database_backup="$(basename "${database_backup_path}")"
         database_backup_size="$(echo "${backup_file}" | cut -d ";" -f 2)"
 
         # Debug
