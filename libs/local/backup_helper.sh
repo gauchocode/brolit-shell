@@ -591,21 +591,17 @@ function make_all_databases_backup() {
 
       if [[ ${backup_file} != "" ]]; then
 
-        # Extract return from $backup_file
+        # Extract parameters from ${backup_file}
         database_backup_path="$(echo "${backup_file}" | cut -d ";" -f 1)"
-        database_backup="$(basename "${database_backup_path}")"
         database_backup_size="$(echo "${backup_file}" | cut -d ";" -f 2)"
 
-        # Debug
-        #log_event "debug" "backup_file=${backup_file}" "false"
-        #log_event "debug" "database_backup=${database_backup}" "false"
-        #log_event "debug" "database_backup_size=${database_backup_size}" "false"
+        database_backup_file="$(basename "${database_backup_path}")"
 
-        backuped_databases_list[$database_backup_index]="${database_backup}"
+        backuped_databases_list[$database_backup_index]="${database_backup_file}"
         backuped_databases_sizes_list+=("${database_backup_size}")
 
         # Upload backup
-        upload_backup_to_dropbox "${database}" "database" "${database_backup}"
+        upload_backup_to_dropbox "${database}" "database" "${database_backup_path}"
 
         database_backup_index=$((database_backup_index + 1))
 
