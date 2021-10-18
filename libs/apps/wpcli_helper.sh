@@ -1009,8 +1009,7 @@ function wpcli_seoyoast_reindex() {
 
     # Log
     display --indent 6 --text "- Running yoast re-index"
-    log_event "info" "Running yoast re-index"
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} yoast index --reindex"
+    log_event "info" "Running yoast re-index" "false"
 
     # Command
     sudo -u www-data wp --path="${wp_site}" yoast index --reindex
@@ -1021,7 +1020,7 @@ function wpcli_seoyoast_reindex() {
         # Log
         clear_last_line
         display --indent 6 --text "- Running yoast re-index" --result "DONE" --color GREEN
-        log_event "info" "Yoast re-index done!"
+        log_event "info" "Yoast re-index done!" "false"
 
         return 0
 
@@ -1030,7 +1029,8 @@ function wpcli_seoyoast_reindex() {
         # Log
         clear_last_line
         display --indent 6 --text "- Running yoast re-index" --result "FAIL" --color RED
-        log_event "error" "Yoast re-index failed!"
+        log_event "error" "Yoast re-index failed!" "false"
+        log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} yoast index --reindex" "false"
 
         return 1
 
@@ -1127,6 +1127,10 @@ function wpcli_db_get_prefix() {
 
     local db_prefix
 
+    # Log
+    display --indent 6 --text "- Getting database prefix"
+
+    # Command
     db_prefix="$(sudo -u www-data wp --path="${wp_site}" db prefix)"
 
     exitstatus=$?
@@ -1138,6 +1142,9 @@ function wpcli_db_get_prefix() {
 
     else
 
+        # Log
+        display --indent 6 --text "- Getting database prefix" --result "FAIL" --color RED
+
         return 1
 
     fi
@@ -1147,11 +1154,15 @@ function wpcli_db_get_prefix() {
 function wpcli_db_check() {
 
     # $1 = ${wp_site}
-    
+
     local wp_site=$1
 
     local db_check
 
+    # Log
+    display --indent 6 --text "- Checking database credentials"
+
+    # Command
     db_check="$(sudo -u www-data wp --path="${wp_site}" db check)"
 
     exitstatus=$?
@@ -1162,6 +1173,11 @@ function wpcli_db_check() {
         echo "${db_check}"
 
     else
+
+        # Log
+        display --indent 6 --text "- Checking database credentials" --result "FAIL" --color RED
+        display --indent 8 --text "Can't connect to database."
+        log_event "error" "Running: sudo -u www-data wp --path=${wp_site} db check" "false"
 
         return 1
 
@@ -1177,6 +1193,7 @@ function wpcli_db_change_tables_prefix() {
     local wp_site=$1
     local db_prefix=$2
 
+    # Log
     display --indent 6 --text "- Changing tables prefix"
     log_event "debug" "Running: wp --allow-root --path=${wp_site} rename-db-prefix ${db_prefix}" "false"
 

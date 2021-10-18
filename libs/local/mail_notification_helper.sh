@@ -439,8 +439,8 @@ function mail_filesbackup_section() {
 
 function mail_config_backup_section() {
 
-    local backuped_config_list=$1
-    local backuped_config_sizes_list=$2
+    local -n backuped_config_list=$1
+    local -n backuped_config_sizes_list=$2
     local error_msg=$3
     local error_type=$4
 
@@ -515,8 +515,8 @@ function mail_config_backup_section() {
 
 function mail_databases_backup_section() {
 
-    local backuped_databases_list=$1
-    local backuped_databases_sizes_list=$2
+    local -n backuped_databases_list=$1
+    local -n backuped_databases_sizes_list=$2
     local error_msg=$3
     local error_type=$4
 
@@ -531,13 +531,13 @@ function mail_databases_backup_section() {
 
     log_event "debug" "Preparing mail databases backup section ..." "false"
 
-    log_event "debug" "backuped_databases_list=$backuped_databases_list" "false"
-    log_event "debug" "backuped_databases_sizes_list=$backuped_databases_sizes_list" "false"
+    printf 'backuped_databases_list: %q\n' "${backuped_databases_list[@]}"  >>"${LOG}"
+    printf 'backuped_databases_sizes_list: %q\n' "${backuped_databases_sizes_list[@]}"  >>"${LOG}"
     log_event "debug" "error_msg=$error_msg" "false"
     log_event "debug" "error_type=$error_type" "false"
 
     if [[ ${error_msg} != "" ]]; then
-        
+
         backup_status="ERROR"
         status_icon="⛔"
         content="<b>Database backup with errors:<br />${error_type}<br /><br />Please check log file.</b> <br />"
