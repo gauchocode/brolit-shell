@@ -371,10 +371,6 @@ function make_sites_files_backup() {
 
         backuped_files_list[$backuped_files_index]="${directory_name}"
         backuped_files_sizes_list+=("${backup_file_size}")
-
-        #BACKUPED_LIST[$BK_FILE_INDEX]="${directory_name}"
-        #BACKUPED_FL=${BACKUPED_LIST[${BK_FILE_INDEX}]}
-        #BK_FL_SIZES[$BK_FL_ARRAY_INDEX]="${backup_file_size}"
         backuped_files_index=$((backuped_files_index + 1))
 
         log_break "true"
