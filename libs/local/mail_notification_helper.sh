@@ -248,7 +248,7 @@ function mail_certificates_section() {
     local email_cert_line
     local email_cert_new_line
     local cert_status_icon
-    local cert_status_color
+    #local cert_status_color
     local files_label
 
     # Changing global
@@ -259,7 +259,7 @@ function mail_certificates_section() {
 
     # Changing locals
     cert_status_icon="✅"
-    cert_status_color="#503fe0"
+    #cert_status_color="#503fe0"
     files_label="<b>Sites certificate expiration days:</b><br /><div style=\"color:#000;font-size:12px;line-height:24px;padding-left:10px;\">"
     email_cert_line=""
 
@@ -292,7 +292,7 @@ function mail_certificates_section() {
                     email_cert_days_container=" <span style=\"color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;\">"
                     email_cert_days="${email_cert_days_container} no certificate"
                     cert_status_icon="⚠️"
-                    cert_status_color="red"
+                    #cert_status_color="red"
                     STATUS_CERTS="WARNING"
 
                 else #certificate found
@@ -308,7 +308,7 @@ function mail_certificates_section() {
                             # RED LABEL
                             email_cert_days_container=" <span style=\"color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;\">"
                             cert_status_icon="⚠️"
-                            cert_status_color="red"
+                            #cert_status_color="red"
                             STATUS_CERTS="WARNING"
                         fi
 
@@ -353,7 +353,7 @@ function mail_files_backup_section() {
     local -n backuped_files_list=$3
     local -n backuped_files_sizes_list=$4
 
-    declare -g STATUS_BACKUP_FILES
+    local status_backup_files
 
     local content
     local files_inc_line_p1
@@ -374,13 +374,13 @@ function mail_files_backup_section() {
 
     if [[ ${error_msg} != "" ]]; then
 
-        STATUS_BACKUP_FILES="ERROR"
+        status_backup_files="ERROR"
         status_icon_f="⛔"
         content="<b>Files backup error: ${error_type}<br />Please check log file.</b> <br />"
 
     else
 
-        STATUS_BACKUP_FILES="OK"
+        status_backup_files="OK"
         status_icon_f="✅"
         content=""
         files_inc=""
@@ -389,8 +389,12 @@ function mail_files_backup_section() {
 
         for backup_file in "${backuped_files_list[@]}"; do
 
+            # Remove spaces from string
+            backup_file="$(string_remove_spaces "${backup_file}")"
+
             bk_fl_size="${backuped_files_sizes_list[$count]}"
 
+            # HTML lines
             files_inc_line_p1="<div class=\"backup-details-line\">"
             files_inc_line_p2="<span style=\"margin-right:5px;\">${backup_file}</span>"
             files_inc_line_p3="<span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\">${bk_fl_size}</span>"
@@ -405,19 +409,20 @@ function mail_files_backup_section() {
 
         files_label_end="</div>"
 
-        if [[ "${DUP_BK}" == true ]]; then
+        if [[ ${DUP_BK} == true ]]; then
             DBK_SIZE="$(du -hs "${DUP_ROOT}" | cut -f1)"
             dbk_size_label="Duplicity Backup size: <b>${DBK_SIZE}</b><br /><b>Duplicity Backup includes:</b><br />${DUP_FOLDERS}"
 
         fi
 
+        # Final HTML section
         content="${files_inc}${files_label_end}${dbk_size_label}"
 
     fi
 
     mail_backup_files_html="$(cat "${SFOLDER}/templates/emails/${email_template}/backup_files-tpl.html")"
 
-    mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e 's|{{files_backup_status}}|'"${STATUS_BACKUP_FILES}"'|g')"
+    mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e 's|{{files_backup_status}}|'"${status_backup_files}"'|g')"
     mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e 's|{{files_backup_status_icon}}|'"${status_icon_f}"'|g')"
 
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
