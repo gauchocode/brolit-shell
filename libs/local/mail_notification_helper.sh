@@ -119,7 +119,7 @@ function mail_server_status_section() {
 
     #declare -g STATUS_SERVER # Global to check section status
 
-    local server_status
+    local server_status=$1
 
     local disk_u
     local disk_u_ns
@@ -137,33 +137,29 @@ function mail_server_status_section() {
     # Cast to int
     casted_disk_u_ns=$(int() { printf '%d' "${disk_u_ns:-}" 2>/dev/null || :; })
 
-    if [[ "${casted_disk_u_ns}" -gt 45 ]]; then
-        # Changing global
-        server_status="WARNING"
+    if [[ ${casted_disk_u_ns} -gt 45 ]]; then
 
-        # Changing locals
+        server_status="WARNING"
         server_status_icon="⚠"
-        server_status_color="#fb2f2f"
+        #server_status_color="#fb2f2f"
 
     else
-        # Changing global
-        server_status="OK"
 
-        # Changing locals
+        server_status="OK"
         server_status_icon="✅"
-        server_status_color="#503fe0"
+        #server_status_color="#503fe0"
 
     fi
 
     html_server_info_details="$(cat "${SFOLDER}/templates/emails/${email_template}/server_info-tpl.html")"
 
-    html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{packages_status}}/${server_status}/g")"
-    html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{packages_status_icon}}/${server_status_icon}/g")"
+    html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{server_status}}/${server_status}/g")"
+    html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{server_status_icon}}/${server_status_icon}/g")"
     html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{server_ipv4}}/${SERVER_IP}/g")"
     html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{server_ipv6}}/${SERVER_IPv6}/g")"
     html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{disk_usage}}/${disk_u}/g")"
 
-    # Return
+    # Write e-mail parts files
     echo "${html_server_info_details}" >"${TMP_DIR}/server_info-${NOW}.mail"
 
 }
@@ -171,7 +167,7 @@ function mail_server_status_section() {
 function mail_package_status_section() {
 
     local pkg_details
-    local pkg_color
+    #local pkg_color
     local pkg_status
     local pkg_status_icon
 
@@ -183,14 +179,15 @@ function mail_package_status_section() {
 
     #if not empty, system is outdated
     if [[ ${pkg_details} != "" ]]; then
-        # Changing global
-        OUTDATED_PACKAGES=true
 
-        pkg_color="#b51c1c"
+        #OUTDATED_PACKAGES=true
+        #pkg_color="#b51c1c"
         pkg_status="OUTDATED_PACKAGES"
         pkg_status_icon="⚠"
+
     else
-        pkg_color='#503fe0'
+
+        #pkg_color='#503fe0'
         pkg_status="OK"
         pkg_status_icon="✅"
 
@@ -204,7 +201,7 @@ function mail_package_status_section() {
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
     html_pkg_details="$(echo "${html_pkg_details}" | sed -e 's|{{packages_status_details}}|'"${pkg_details}"'|g')"
 
-    # Return
+    # Write e-mail parts files
     echo "${html_server_info_details}" >"${TMP_DIR}/packages-${NOW}.mail"
 
 }
@@ -230,7 +227,7 @@ function mail_package_section() {
 
         package_version_candidate="$(apt-cache policy "${package}" | grep Candidate | cut -d ':' -f 2)"
 
-        if [[ "${package_version_installed}" != "${package_version_candidate}" ]]; then
+        if [[ ${package_version_installed} != "${package_version_candidate}" ]]; then
 
             # Return
             echo "<div style=\"color:#000;font-size:12px;line-height:24px;padding-left:10px;\">${package} ${package_version_installed} -> ${package_version_candidate}</div>"
