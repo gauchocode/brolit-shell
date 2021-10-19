@@ -323,22 +323,23 @@ function wpcli_core_download() {
 
             exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
-                display --indent 6 --text "- Wordpress installation for ${wp_site}" --result "DONE" --color GREEN
+                display --indent 6 --text "- Downloading WordPress ${wp_version}" --result "DONE" --color GREEN
                 return 0
 
             else
-                display --indent 6 --text "- Wordpress installation for ${wp_site}" --result "FAIL" --color RED
+                display --indent 6 --text "- Downloading WordPress ${wp_version}" --result "FAIL" --color RED
                 return 1
             fi
 
         fi
 
     else
+
         # Log failure
         error_msg="wp_site can't be empty!"
         log_event "fail" "${error_msg}" "true"
-        display --indent 6 --text "- Wordpress installation for ${wp_site}" --result "FAIL" --color RED
-        display --indent 8 --text "${error_msg}"
+        #display --indent 6 --text "- Wordpress installation for ${wp_site}" --result "FAIL" --color RED
+        #display --indent 8 --text "${error_msg}"
 
         # Return
         return 1
@@ -840,10 +841,12 @@ function wpcli_run_startup_script() {
 
     fi
 
+    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} core install --url=${site_url} --title=${site_name} --admin_user=${wp_user_name} --admin_password=${wp_user_passw} --admin_email=${wp_user_mail}"
+    
     # Install WordPress Site
     sudo -u www-data wp --path="${wp_site}" core install --url="${site_url}" --title="${site_name}" --admin_user="${wp_user_name}" --admin_password="${wp_user_passw}" --admin_email="${wp_user_mail}"
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} core install --url=${site_url} --title=${site_name} --admin_user=${wp_user_name} --admin_password=${wp_user_passw} --admin_email=${wp_user_mail}"
 
+    clear_last_line
     clear_last_line
     display --indent 6 --text "- WordPress site creation" --result "DONE" --color GREEN
 
