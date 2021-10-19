@@ -203,8 +203,9 @@ function wordpress_project_install() {
 
   # Log
   log_event "info" "WordPress installation for domain ${project_domain} finished" "false"
-  display --indent 6 --text "- WordPress installation for domain ${project_domain}" --result "DONE" --color GREEN
-
+  display --indent 6 --text "- WordPress installation" --result "DONE" --color GREEN
+  display --indent 8 --text "for domain ${project_domain}"
+  
   # Send notification
   send_notification "✅ ${VPSNAME}" "WordPress installation for domain ${project_domain} finished" ""
 
@@ -404,7 +405,8 @@ function wordpress_project_copy() {
 
   # Log
   log_event "info" "WordPress installation for domain ${project_domain} finished" "false"
-  display --indent 6 --text "- WordPress installation for domain ${project_domain}" --result "DONE" --color GREEN
+  display --indent 6 --text "- WordPress installation" --result "DONE" --color GREEN
+  display --indent 8 --text "for domain ${project_domain}"
 
   # Send notification
   send_notification "✅ ${VPSNAME}" "WordPress installation for domain ${project_domain} finished" ""
