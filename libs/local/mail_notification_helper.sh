@@ -443,7 +443,7 @@ function mail_config_backup_section() {
     local count
     local status_icon_f
     local content
-    local body
+    #local body
     local count files_inc
     local files_inc_line_p1
     local files_inc_line_p2

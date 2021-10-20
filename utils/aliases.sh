@@ -51,6 +51,7 @@ alias ..="cd .."
 
 alias userlist="cut -d: -f1 /etc/passwd"
 alias myip="curl http://ipecho.net/plain; echo"
+alias myipv6="$(curl --silent 'https://api64.ipify.org')"
 
 alias ports='netstat -tulanp'
 
@@ -720,7 +721,7 @@ function extract() {
 
         *.bz2)
             #bunzip2 "${file_path}" "${directory_to_extract}"
-            pv --width 70 "${file_path}" | bunzip2 > "${directory_to_extract}/${filename}"
+            pv --width 70 "${file_path}" | bunzip2 >"${directory_to_extract}/${filename}"
             ;;
 
         *.rar)
@@ -1019,6 +1020,7 @@ function dropbox_get_sites_backups() {
 # SERVER_DATA_RESULT => {
 # "backups":  {"2021-05-24":{"files":"autonube.com_site-files_2021-05-24.tar.bz2","database":"autonube_prod_database_2021-05-24.tar.bz2"} } ,
 #             {"2021-05-25":{"files":"autonube.com_site-files_2021-05-25.tar.bz2","database":"autonube_prod_database_2021-05-25.tar.bz2"} } ,
+
 function dropbox_get_backup() {
 
     # ${1} = ${chosen_project}
@@ -1075,8 +1077,13 @@ function dropbox_get_backup() {
 
     done
 
-    # Remove 3 last chars
-    backups_string="${backups_string::-3}"
+    if [[ $backups_string != "" ]]; then
+        # Remove 3 last chars
+        backups_string="${backups_string::-3}"
+
+    else
+        backups_string="empty-response"
+    fi
 
     # Return JSON
     echo "SERVER_DATA_RESULT => { ${backups_string} }"
