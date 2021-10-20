@@ -983,7 +983,7 @@ function sites_directories() {
 
 }
 
-function dropbox_get_sites_backups() {
+function dropbox_get_site_backups() {
 
     # ${1} = ${chosen_project}
 
@@ -994,8 +994,10 @@ function dropbox_get_sites_backups() {
 
     local backup_files
 
+    local backup_type="site"
+
     # Get dropbox backup list
-    dropbox_chosen_backup_path="${VPSNAME}/site/${chosen_project}"
+    dropbox_chosen_backup_path="${VPSNAME}/${backup_type}/${chosen_project}"
     dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}")"
 
     for backup_file in ${dropbox_backup_list}; do
@@ -1004,11 +1006,52 @@ function dropbox_get_sites_backups() {
 
     done
 
-    # Remove 3 last chars
-    backup_files="${backup_files::3}"
+    if [[ ${backup_files} != "" ]]; then
+        # Remove 3 last chars
+        backup_files="${backup_files::3}"
+    else
+        backup_files="empty-response"
+    fi
 
     # Return
     echo "${backup_files}"
+
+}
+
+function dropbox_get_sites_backups() {
+
+    local dropbox_chosen_backup_path
+    local dropbox_backup_list
+
+    local backup_files
+
+    local backup_type="site"
+    local backup_project=""
+    local backup_projects=""
+
+    # Get dropbox backup list
+    dropbox_chosen_backup_path="${VPSNAME}/${backup_type}"
+    dropbox_project_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}" | awk -F " " '{ print $2 }')"
+
+    for backup_dir in ${dropbox_project_backup_list}; do
+
+        backup_files="$(dropbox_get_backup "${backup_dir}")"
+
+        backup_project="\"${backup_dir}\" : { ${backup_files} }"
+
+        backup_projects="${backup_project},${backup_projects}"
+
+    done
+
+    if [[ ${backup_projects} != "" ]]; then
+        # Remove last char
+        backup_projects="${backup_projects::-1}"
+    else
+        backup_projects="empty-response"
+    fi
+
+    # Return JSON
+    echo "DROPBOX_DATA_RESULT => { ${backup_projects} }"
 
 }
 
@@ -1086,7 +1129,8 @@ function dropbox_get_backup() {
     fi
 
     # Return JSON
-    echo "SERVER_DATA_RESULT => { ${backups_string} }"
+    #echo "SERVER_DATA_RESULT => { ${backups_string} }"
+    echo "${backups_string}"
 
 }
 
