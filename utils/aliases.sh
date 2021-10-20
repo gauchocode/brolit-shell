@@ -1050,7 +1050,7 @@ function dropbox_get_sites_backups() {
     fi
 
     # Return JSON
-    echo "DROPBOX_DATA_RESULT => { ${backup_projects} }"
+    echo "BROLIT_RESULT => { ${backup_projects} }"
 
 }
 
@@ -1221,7 +1221,7 @@ function cloudflare_get_record_details() {
         else
 
             # Return JSON
-            echo "SERVER_DATA_RESULT => { \"cloudflare_data\": ${record} }"
+            echo "BROLIT_RESULT => { \"cloudflare_data\": ${record} }"
 
         fi
 
@@ -1246,7 +1246,7 @@ function read_site_config() {
         project_config="$(<"${project_config_file}")"
 
         # Return
-        echo "SERVER_DATA_RESULT => ${project_config}"
+        echo "BROLIT_RESULT => ${project_config}"
 
     else
 
@@ -1276,7 +1276,7 @@ function firewall_status() {
     json_string_d="$(_jsonify_output "value-list" "${ufw_status_details}")"
 
     # Return JSON
-    echo "FIREWALL_RESULT => ${json_string}, { ${json_string_d} }"
+    echo "BROLIT_RESULT => ${json_string}, { ${json_string_d} }"
 
 }
 
@@ -1289,7 +1289,7 @@ function firewall_app_list() {
     json_string="$(_jsonify_output "value-list" "${app_list}")"
 
     # Return JSON
-    echo "FIREWALL_RESULT => ${json_string}"
+    echo "BROLIT_RESULT => ${json_string}"
 
 }
 
@@ -1304,7 +1304,7 @@ function is_pkg_installed() {
     json_string="$(_jsonify_output "key-value" "${package}" "${package_installed}")"
 
     # Return JSON
-    echo "PACKAGE_RESULT => ${json_string}"
+    echo "BROLIT_RESULT => ${json_string}"
 
 }
 
@@ -1316,7 +1316,7 @@ function list_packages_to_upgrade() {
     json_string="$(_jsonify_output "value-list" "${pkgs}")"
 
     # Return JSON
-    echo "PACKAGE_UPGRADE_RESULT => ${json_string}"
+    echo "BROLIT_RESULT => ${json_string}"
 
 }
 
@@ -1341,6 +1341,6 @@ function show_server_data() {
     server_pkgs="$(packages_get_data)"
 
     # Return JSON
-    echo "SERVER_DATA_RESULT => { \"server_info\": { ${server_info} }, \"server_pkgs\": { ${server_pkgs} } , \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] }"
+    echo "BROLIT_RESULT => { \"server_info\": { ${server_info} }, \"server_pkgs\": { ${server_pkgs} } , \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] }"
 
 }
