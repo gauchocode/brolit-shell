@@ -202,7 +202,7 @@ function mail_package_status_section() {
     html_pkg_details="$(echo "${html_pkg_details}" | sed -e 's|{{packages_status_details}}|'"${pkg_details}"'|g')"
 
     # Write e-mail parts files
-    echo "${html_server_info_details}" >"${TMP_DIR}/packages-${NOW}.mail"
+    echo "${html_pkg_details}" >"${TMP_DIR}/packages-${NOW}.mail"
 
 }
 

@@ -35,9 +35,7 @@ function test_mail_package_section() {
     log_subsection "Test: test_mail_package_section"
 
     # Compare package versions
-    mail_package_status_section "${PKG_DETAILS}"
-    PKG_MAIL="${TMP_DIR}/pkg-${NOW}.mail"
-    PKG_MAIL_VAR=$(<"${PKG_MAIL}")
+    mail_package_status_section
 
     # Preparing email to send
     log_event "info" "Sending Email to ${MAILA} ..." "false"
