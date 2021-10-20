@@ -625,24 +625,24 @@ function _project_get_name_from_domain() {
 
 function _project_get_stage_from_domain() {
 
-  local project_domain=$1
+    local project_domain=$1
 
-  local project_stages
-  local possible_project_stage
+    local project_stages
+    local possible_project_stage
 
-  project_stages="demo stage test beta dev"
+    project_stages="demo stage test beta dev"
 
-  # Trying to extract project state from domain
-  possible_project_stage="$(_get_subdomain_part "${project_domain}" | cut -d "." -f 1)"
+    # Trying to extract project state from domain
+    possible_project_stage="$(_get_subdomain_part "${project_domain}" | cut -d "." -f 1)"
 
-  if [[ ${project_stages} != *"${possible_project_stage}"* ]]; then
+    if [[ ${project_stages} != *"${possible_project_stage}"* ]]; then
 
-    possible_project_stage="prod"
+        possible_project_stage="prod"
 
-  fi
+    fi
 
-  # Return
-  echo "${possible_project_stage}"
+    # Return
+    echo "${possible_project_stage}"
 
 }
 
@@ -1107,7 +1107,7 @@ function dropbox_get_backup() {
         backup_to_search="${project_db}_database_${backup_date}.tar.bz2"
 
         #echo "Running: ${DROPBOX_UPLOADER} -hq search \"${backup_to_search}\" | grep -E \"${backup_date}\""
-        
+
         search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${backup_date}" || ret=$?)" # using ret to bypass unexped errors
 
         backup_db="$(basename "${search_backup_db}")"
@@ -1276,7 +1276,8 @@ function firewall_status() {
     json_string_d="$(_jsonify_output "value-list" "${ufw_status_details}")"
 
     # Return JSON
-    echo "BROLIT_RESULT => ${json_string}, { ${json_string_d} }"
+    #echo "BROLIT_RESULT => ${json_string}, { ${json_string_d} }"
+    echo "${json_string}, { ${json_string_d} }"
 
 }
 
@@ -1329,7 +1330,10 @@ function show_server_data() {
     local server_pkgs
 
     server_info="$(serverinfo)"
+
     server_config="$(brolit_shell_config)"
+
+    server_firewall="$(firewall_status)"
 
     if [[ "$(_is_pkg_installed "mysql-server")" == "true" || "$(_is_pkg_installed "mariadb-server")" == "true" ]]; then
         server_databases="$(mysql_databases)"
@@ -1341,6 +1345,6 @@ function show_server_data() {
     server_pkgs="$(packages_get_data)"
 
     # Return JSON
-    echo "BROLIT_RESULT => { \"server_info\": { ${server_info} }, \"server_pkgs\": { ${server_pkgs} } , \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] }"
+    echo "BROLIT_RESULT => { \"server_info\": { ${server_info} },\"firewall_info\":  ${server_firewall} , \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] }"
 
 }
