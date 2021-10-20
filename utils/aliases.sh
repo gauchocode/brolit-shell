@@ -625,25 +625,24 @@ function _project_get_name_from_domain() {
 
 function _project_get_stage_from_domain() {
 
-    # Parameters
-    # $1 = ${project_domain}
+  local project_domain=$1
 
-    local project_domain=$1
+  local project_stages
+  local possible_project_stage
 
-    local project_states="dev,test,stage"
-    local possible_project_state
+  project_stages="demo stage test beta dev"
 
-    # Trying to extract project state from domain
-    possible_project_state="$(_get_subdomain_part "${project_domain}" | cut -d "." -f 1)"
+  # Trying to extract project state from domain
+  possible_project_stage="$(_get_subdomain_part "${project_domain}" | cut -d "." -f 1)"
 
-    if [[ ${possible_project_state} != *"${project_states}"* ]]; then
+  if [[ ${project_stages} != *"${possible_project_stage}"* ]]; then
 
-        possible_project_state="prod"
+    possible_project_stage="prod"
 
-    fi
+  fi
 
-    # Return
-    echo "${possible_project_state}"
+  # Return
+  echo "${possible_project_stage}"
 
 }
 
@@ -1108,6 +1107,7 @@ function dropbox_get_backup() {
         backup_to_search="${project_db}_database_${backup_date}.tar.bz2"
 
         #echo "Running: ${DROPBOX_UPLOADER} -hq search \"${backup_to_search}\" | grep -E \"${backup_date}\""
+        
         search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${backup_date}" || ret=$?)" # using ret to bypass unexped errors
 
         backup_db="$(basename "${search_backup_db}")"
