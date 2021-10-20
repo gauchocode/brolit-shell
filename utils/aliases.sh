@@ -946,7 +946,7 @@ function sites_directories() {
         if [[ ${directory_bl} != *"${site}"* ]]; then
 
             # Size
-            site_size_du="$(du --human-readable --max-depth=0 "${site}")"
+            site_size_du="$(du --human-readable --max-depth=0 "/var/www/${site}")"
             site_size="$(echo "${site_size_du}" | awk '{print $1;}')"
 
             # Cert
