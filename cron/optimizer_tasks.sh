@@ -19,17 +19,6 @@ source "${SFOLDER}/libs/commons.sh"
 # Running from cron
 log_event "info" "Running optimizer_tasks.sh from cron ..." "false"
 
-# Compare package versions
-#PKG_DETAILS=$(mail_package_section "${PACKAGES[@]}")
-#mail_package_status_section "${PKG_DETAILS}"
-#PKG_MAIL="${TMP_DIR}/pkg-${NOW}.mail"
-#PKG_MAIL_VAR=$(<"${PKG_MAIL}")
-
-# Check certificates installed
-#mail_certificates_section
-#CERT_MAIL="${TMP_DIR}/cert-${NOW}.mail"
-#CERT_MAIL_VAR=$(<"${CERT_MAIL}")
-
 # Running scripts
 optimize_images_complete
 
