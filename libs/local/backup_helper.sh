@@ -268,7 +268,7 @@ function make_all_server_config_backup() {
   log_subsection "Backup Server Config"
 
   # SERVER CONFIG FILES GLOBALS
-  declare -i BK_SCF_INDEX=0
+  #declare -i BK_SCF_INDEX=0
 
   # TAR Webserver Config Files
   if [[ ! -d ${WSERVER} ]]; then
@@ -289,7 +289,8 @@ function make_all_server_config_backup() {
     log_event "warning" "PHP_CF is not defined! Skipping PHP config files backup ..." "false"
 
   else
-    BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
+    
+    #BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
     php_files_backup_result="$(make_server_files_backup "configs" "php" "${PHP_CF}" ".")"
 
     backuped_config_list[$backuped_config_index]="${PHP_CF}"
@@ -304,7 +305,8 @@ function make_all_server_config_backup() {
     log_event "warning" "MySQL_CF is not defined! Skipping MySQL config files backup ..." "false"
 
   else
-    BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
+    
+    #BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
     mysql_files_backup_result="$(make_server_files_backup "configs" "mysql" "${MySQL_CF}" ".")"
 
     backuped_config_list[$backuped_config_index]="${MySQL_CF}"
@@ -319,7 +321,8 @@ function make_all_server_config_backup() {
     log_event "warning" "LENCRYPT_CF is not defined! Skipping Letsencrypt config files backup ..." "false"
 
   else
-    BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
+    
+    #BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
     le_files_backup_result="$(make_server_files_backup "configs" "letsencrypt" "${LENCRYPT_CF}" ".")"
 
     backuped_config_list[$backuped_config_index]="${LENCRYPT_CF}"
@@ -334,7 +337,8 @@ function make_all_server_config_backup() {
     log_event "warning" "BROLIT_CONFIG_PATH is not defined! Skipping DevOps config files backup ..." "false"
 
   else
-    BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
+    
+    #BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
     brolit_files_backup_result="$(make_server_files_backup "configs" "brolit" "${BROLIT_CONFIG_PATH}" ".")"
 
     backuped_config_list[$backuped_config_index]="${BROLIT_CONFIG_PATH}"
