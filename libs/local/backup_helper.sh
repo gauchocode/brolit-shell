@@ -105,6 +105,9 @@ function make_server_files_backup() {
       # Deleting old backup files
       dropbox_delete "${DROPBOX_FOLDER}/${dropbox_path}/${old_bk_file}"
 
+      # Return
+      echo "${backup_file_size}"
+
     else
 
       error_msg="Something went wrong making a backup of ${directory_to_backup}."
@@ -257,6 +260,11 @@ function make_mailcow_backup() {
 
 function make_all_server_config_backup() {
 
+  local -n backuped_config_list
+  local -n backuped_config_sizes_list
+
+  local backuped_config_index=0
+
   log_subsection "Backup Server Config"
 
   # SERVER CONFIG FILES GLOBALS
@@ -269,6 +277,11 @@ function make_all_server_config_backup() {
   else
     nginx_files_backup_result="$(make_server_files_backup "configs" "nginx" "${WSERVER}" ".")"
 
+    backuped_config_list[$backuped_config_index]="${WSERVER}"
+    backuped_config_sizes_list+=("${nginx_files_backup_result}")
+
+    backuped_config_index=$((backuped_config_index + 1))
+
   fi
 
   # TAR PHP Config Files
@@ -278,6 +291,11 @@ function make_all_server_config_backup() {
   else
     BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
     php_files_backup_result="$(make_server_files_backup "configs" "php" "${PHP_CF}" ".")"
+
+    backuped_config_list[$backuped_config_index]="${PHP_CF}"
+    backuped_config_sizes_list+=("${php_files_backup_result}")
+
+    backuped_config_index=$((backuped_config_index + 1))
 
   fi
 
@@ -289,6 +307,11 @@ function make_all_server_config_backup() {
     BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
     mysql_files_backup_result="$(make_server_files_backup "configs" "mysql" "${MySQL_CF}" ".")"
 
+    backuped_config_list[$backuped_config_index]="${MySQL_CF}"
+    backuped_config_sizes_list+=("${mysql_files_backup_result}")
+
+    backuped_config_index=$((backuped_config_index + 1))
+
   fi
 
   # TAR Let's Encrypt Config Files
@@ -298,6 +321,11 @@ function make_all_server_config_backup() {
   else
     BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
     le_files_backup_result="$(make_server_files_backup "configs" "letsencrypt" "${LENCRYPT_CF}" ".")"
+
+    backuped_config_list[$backuped_config_index]="${LENCRYPT_CF}"
+    backuped_config_sizes_list+=("${le_files_backup_result}")
+
+    backuped_config_index=$((backuped_config_index + 1))
 
   fi
 
@@ -309,10 +337,15 @@ function make_all_server_config_backup() {
     BK_SCF_INDEX=$((BK_SCF_INDEX + 1))
     brolit_files_backup_result="$(make_server_files_backup "configs" "brolit" "${BROLIT_CONFIG_PATH}" ".")"
 
+    backuped_config_list[$backuped_config_index]="${BROLIT_CONFIG_PATH}"
+    backuped_config_sizes_list+=("${brolit_files_backup_result}")
+
+    backuped_config_index=$((backuped_config_index + 1))
+
   fi
 
   # Configure Files Backup Section for Email Notification
-  mail_config_backup_section "" "" "${ERROR}" "${ERROR_TYPE}"
+  mail_config_backup_section "${ERROR}" "${ERROR_TYPE}" "${backuped_config_list[@]}" "${backuped_config_sizes_list[@]}"
 
   # Return
   echo "${ERROR}"
