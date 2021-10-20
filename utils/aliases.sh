@@ -1262,10 +1262,11 @@ function firewall_status() {
     # ufw app list, replace space with "-" and "/n" with space
     ufw_status="$(ufw status | sed -n '1 p' | cut -d " " -f 2 | tr " " "-" | sed -z 's/\n/ /g' | sed -z 's/--//g')"
 
+    # Details begins at line 5
     counter=5
-    ufw_status_line="$(ufw status | sed -n "${counter} p" | cut -d "-" -f 2 | tr " " "-" | sed -z 's/--//g')"
+    ufw_status_line="$(ufw status | sed -n "${counter} p" | cut -d "-" -f 2 | tr " " ";" | sed -z 's/;;//g')"
     while [ -n "${ufw_status_line}" ]; do
-        ufw_status_line="$(ufw status | sed -n "${counter} p" | cut -d "-" -f 2 | tr " " "-" | sed -z 's/--//g')"
+        ufw_status_line="$(ufw status | sed -n "${counter} p" | cut -d "-" -f 2 | tr " " ";" | sed -z 's/;;//g')"
         ufw_status_details="${ufw_status_details} ${ufw_status_line}"
         counter=$(($counter + 1))
     done

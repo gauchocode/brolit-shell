@@ -125,7 +125,9 @@ function firewall_allow_basic_services() {
 
 function firewall_fail2ban_status() {
 
-    fail2ban-client status
+    local service=$1
+
+    fail2ban-client status "${service}"
 
 }
 
