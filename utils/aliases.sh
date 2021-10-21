@@ -1009,7 +1009,7 @@ function dropbox_get_site_backups() {
         # Remove 3 last chars
         backup_files="${backup_files::3}"
     else
-        backup_files="empty-response"
+        backup_files="\"empty-response\""
     fi
 
     # Return
@@ -1046,7 +1046,7 @@ function dropbox_get_sites_backups() {
         # Remove last char
         backup_projects="${backup_projects::-1}"
     else
-        backup_projects="empty-response"
+        backup_projects="\"empty-response\""
     fi
 
     # Return JSON
@@ -1125,7 +1125,7 @@ function dropbox_get_backup() {
         backups_string="${backups_string::-3}"
 
     else
-        backups_string="empty-response"
+        backups_string="\"empty-response\""
     fi
 
     # Return JSON
@@ -1272,7 +1272,7 @@ function firewall_status() {
     done
 
     # String to JSON
-    json_string="$(_jsonify_output "key-value" "ufw-status" "${ufw_status}")"
+    json_string="$(_jsonify_output "key-value" "ufw-status" "\"${ufw_status}\"")"
     json_string_d="$(_jsonify_output "value-list" "${ufw_status_details}")"
 
     # Return JSON
