@@ -340,9 +340,6 @@ function mail_certificates_section() {
 
 function mail_files_backup_section() {
 
-    # Global array ${BACKUPED_LIST[@]}
-    # Global array ${BK_FL_SIZES[@]}
-
     local error_msg=$1
     local error_type=$2
     local -n backuped_files_list=$3
