@@ -248,11 +248,7 @@ function mail_certificates_section() {
     local email_cert_line
     local email_cert_new_line
     local cert_status_icon
-    #local cert_status_color
-    local files_label
-
-    # Changing global
-    declare -g STATUS_CERTS="OK"
+    local status_certs="OK"
 
     # TODO: config support
     local email_template="default"
@@ -260,7 +256,6 @@ function mail_certificates_section() {
     # Changing locals
     cert_status_icon="✅"
     #cert_status_color="#503fe0"
-    files_label="<b>Sites certificate expiration days:</b><br /><div style=\"color:#000;font-size:12px;line-height:24px;padding-left:10px;\">"
     email_cert_line=""
 
     # This fix avoid getting the first parent directory, maybe we could find a better solution
@@ -293,7 +288,7 @@ function mail_certificates_section() {
                     email_cert_days="${email_cert_days_container} no certificate"
                     cert_status_icon="⚠️"
                     #cert_status_color="red"
-                    STATUS_CERTS="WARNING"
+                    status_certs="WARNING"
 
                 else #certificate found
 
@@ -309,7 +304,7 @@ function mail_certificates_section() {
                             email_cert_days_container=" <span style=\"color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;\">"
                             cert_status_icon="⚠️"
                             #cert_status_color="red"
-                            STATUS_CERTS="WARNING"
+                            status_certs="WARNING"
                         fi
 
                     fi
@@ -332,7 +327,7 @@ function mail_certificates_section() {
 
     mail_certificates_html="$(cat "${SFOLDER}/templates/emails/${email_template}/certificates-tpl.html")"
 
-    mail_certificates_html="$(echo "${mail_certificates_html}" | sed -e 's|{{certificates_status}}|'"${STATUS_CERTS}"'|g')"
+    mail_certificates_html="$(echo "${mail_certificates_html}" | sed -e 's|{{certificates_status}}|'"${status_certs}"'|g')"
     mail_certificates_html="$(echo "${mail_certificates_html}" | sed -e 's|{{certificates_status_icon}}|'"${cert_status_icon}"'|g')"
 
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
@@ -363,11 +358,9 @@ function mail_files_backup_section() {
     local files_inc_line_p5
     local bk_fl_size
 
-    # Log
-    #printf 'backuped_files_list: %q\n' "${backuped_files_list[@]}" >>"${LOG}"
-    #printf 'backuped_files_sizes_list: %q\n' "${backuped_files_sizes_list[@]}" >>"${LOG}"
-    #log_event "debug" "error_msg=$error_msg" "false"
-    #log_event "debug" "error_type=$error_type" "false"
+    # Clear garbage output
+    clear_last_line
+    clear_last_line
 
     # TODO: config support
     local email_template="default"
@@ -443,7 +436,6 @@ function mail_config_backup_section() {
     local count
     local status_icon_f
     local content
-    #local body
     local count files_inc
     local files_inc_line_p1
     local files_inc_line_p2
@@ -451,6 +443,10 @@ function mail_config_backup_section() {
     local files_inc_line_p4
     local files_inc_line_p5
     local bk_scf_size
+
+    # Clear garbage output
+    clear_last_line
+    clear_last_line
 
     # TODO: config support
     local email_template="default"
@@ -521,12 +517,11 @@ function mail_databases_backup_section() {
     # TODO: config support
     local email_template="default"
 
-    log_event "debug" "Preparing mail databases backup section ..." "false"
+    # Clear garbage output
+    clear_last_line
+    clear_last_line
 
-    #printf 'backuped_databases_list: %q\n' "${backuped_databases_list[@]}" >>"${LOG}"
-    #printf 'backuped_databases_sizes_list: %q\n' "${backuped_databases_sizes_list[@]}" >>"${LOG}"
-    #log_event "debug" "error_msg=$error_msg" "false"
-    #log_event "debug" "error_type=$error_type" "false"
+    log_event "debug" "Preparing mail databases backup section ..." "false"
 
     if [[ ${error_msg} != "" ]]; then
 
