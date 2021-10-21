@@ -371,10 +371,11 @@ function make_sites_files_backup() {
   local backup_file_size
 
   local backuped_files_index=0
+  local backuped_directory_index=0
 
   local directory_name=""
 
-  local k
+  local k=0
 
   log_subsection "Backup Sites Files"
 
@@ -387,22 +388,18 @@ function make_sites_files_backup() {
 
   # Log
   log_event "info" "Found ${COUNT_TOTAL_SITES} directories" "false"
-  display --indent 6 --text "- Directories found" --result "${COUNT_TOTAL_SITES}" --color WHITE
   log_break "true"
-
-  k=0
+  display --indent 6 --text "- Directories found" --result "${COUNT_TOTAL_SITES}" --color WHITE
 
   for j in ${TOTAL_SITES}; do
 
     log_event "info" "Processing [${j}] ..." "false"
 
-    if [[ "$k" -gt 0 ]]; then
+    if [[ ${k} -gt 0 ]]; then
 
       directory_name="$(basename "${j}")"
 
       if [[ ${BLACKLISTED_SITES} != *"${directory_name}"* ]]; then
-
-        # TODO: make_files_backup should return backup_path/backup_file + backup_size
 
         backup_file_size="$(make_files_backup "site" "${SITES}" "${directory_name}")"
 
@@ -417,9 +414,9 @@ function make_sites_files_backup() {
 
       fi
 
-      #BK_FILE_INDEX=$((BK_FILE_INDEX + 1))
+      backuped_directory_index=$((backuped_directory_index + 1))
 
-      log_event "info" "Processed ${BK_FILE_INDEX} of ${COUNT_TOTAL_SITES} directories" "false"
+      log_event "info" "Processed ${backuped_directory_index} of ${COUNT_TOTAL_SITES} directories" "false"
 
     fi
 
