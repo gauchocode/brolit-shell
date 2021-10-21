@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.64
+# Version: 3.0.65
 ################################################################################
 #
 # Ref: https://linuxize.com/post/how-to-install-and-use-composer-on-ubuntu-20-04/
