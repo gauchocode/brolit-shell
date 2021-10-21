@@ -1272,7 +1272,7 @@ function firewall_status() {
     done
 
     # String to JSON
-    json_string="$(_jsonify_output "key-value" "ufw-status" "\"${ufw_status}\"")"
+    json_string="$(_jsonify_output "key-value" "ufw-status" "${ufw_status}")"
     json_string_d="$(_jsonify_output "value-list" "${ufw_status_details}")"
 
     # Return JSON
