@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.64
+# Version: 3.0.65
 ################################################################################
 #
 # Backup/Restore Manager: Perform backup and restore actions.
