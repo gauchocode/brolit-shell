@@ -126,7 +126,7 @@ function _jsonify_output() {
         printf "{"
         for ((i = 0; i < len; i += 2)); do
             printf "\"${vars[i]}\": \"${vars[i + 1]}\""
-            if [ ${i} -lt $((len - 2)) ]; then
+            if [ $i -lt $((len - 2)) ]; then
                 printf ", "
             fi
         done
@@ -152,7 +152,7 @@ function _jsonify_output() {
         printf "["
         for ((i = 0; i < len; i += 1)); do
             printf "\"${vars[i]}\""
-            if [ ${i} -lt $((len - 1)) ]; then
+            if [ $i -lt $((len - 1)) ]; then
                 printf ", "
             fi
         done
@@ -1270,7 +1270,7 @@ function firewall_status() {
     while [ -n "${ufw_status_line}" ]; do
         ufw_status_line="$(ufw status | sed -n "${counter} p" | cut -d "-" -f 2 | tr " " ";" | sed -z 's/;;//g')"
         ufw_status_details="${ufw_status_details} ${ufw_status_line}"
-        counter=$(($counter + 1))
+        counter=$((${counter} + 1))
     done
 
     # String to JSON
@@ -1279,16 +1279,16 @@ function firewall_status() {
     if [[ ${ufw_status_details} != "" ]]; then
 
         json_string_d="$(_jsonify_output "value-list" "${ufw_status_details}")"
+        
+        # Return JSON
+        echo "${json_string},{\"ufw-details\": ${json_string_d}}"
 
     else
 
-        json_string_d="empty-response"
+        # Return JSON
+        echo "${json_string},{\"ufw-details\": \"empty-response\"}"
 
     fi
-
-    # Return JSON
-    #echo "BROLIT_RESULT => ${json_string}, { ${json_string_d} }"
-    echo "${json_string},{\"ufw-details\": ${json_string_d}}"
 
 }
 
