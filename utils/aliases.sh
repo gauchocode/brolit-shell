@@ -32,7 +32,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.66"
-ALIASES_VERSION="3.0.66-068"
+ALIASES_VERSION="3.0.66-069"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -1270,7 +1270,7 @@ function firewall_status() {
     while [ -n "${ufw_status_line}" ]; do
         ufw_status_line="$(ufw status | sed -n "${counter} p" | cut -d "-" -f 2 | tr " " ";" | sed -z 's/;;//g')"
         ufw_status_details="${ufw_status_details} ${ufw_status_line}"
-        counter=$((${counter} + 1))
+        counter=$(($counter + 1))
     done
 
     # String to JSON
@@ -1279,7 +1279,7 @@ function firewall_status() {
     if [[ ${ufw_status_details} != "" ]]; then
 
         json_string_d="$(_jsonify_output "value-list" "${ufw_status_details}")"
-        
+
         # Return JSON
         echo "${json_string},{\"ufw-details\": ${json_string_d}}"
 
@@ -1356,6 +1356,6 @@ function show_server_data() {
     server_pkgs="$(packages_get_data)"
 
     # Return JSON
-    echo "BROLIT_RESULT => { \"server_info\": { ${server_info} },\"firewall_info\":  ${server_firewall} , \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] }"
+    echo "BROLIT_RESULT => { \"server_info\": { ${server_info} },\"firewall_info\":  [ ${server_firewall} ] , \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] }"
 
 }
