@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.65
+# Version: 3.0.66
 #############################################################################
 
 function tests_suite_menu() {

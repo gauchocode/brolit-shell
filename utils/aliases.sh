@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.65
+# Version: 3.0.66
 ################################################################################
 
 source ~/.brolit-shell.conf
 
 # Server Name
-VPSNAME="$HOSTNAME"
+VPSNAME="${HOSTNAME}"
 
 SFOLDER="/root/brolit-shell"
 
@@ -31,8 +31,8 @@ if [[ ${DROPBOX_ENABLE} == "true" && -f ${DPU_CONFIG_FILE} ]]; then
 fi
 
 # Version
-SCRIPT_VERSION="3.0.65"
-ALIASES_VERSION="3.0.65-067"
+SCRIPT_VERSION="3.0.66"
+ALIASES_VERSION="3.0.66-068"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -104,16 +104,12 @@ function _jsonify_output() {
 
     local mode=$1
 
+    # Remove fir parameter
+    shift
+
     # Mode "key-value" example:
     # > echo "key1 value1 key2 value2"
     # {'key1': value1, 'key2': value2}
-
-    # Mode "value-list" example:
-    # > echo "value1 value2 value3 value4"
-    # [ "value1" "value2" "value3" "value4" ]
-
-    # Remove fir parameter
-    shift
 
     if [[ ${mode} == "key-value" ]]; then
 
@@ -139,10 +135,14 @@ function _jsonify_output() {
 
     else
 
+        # Mode "value-list" example:
+        # > echo "value1 value2 value3 value4"
+        # [ "value1" "value2" "value3" "value4" ]
+
         arr=()
 
         while [ $# -ge 1 ]; do
-            arr=("${arr[@]}" $1)
+            arr=(${arr[@]} "${1}")
             shift
         done
 
@@ -152,7 +152,7 @@ function _jsonify_output() {
         printf "["
         for ((i = 0; i < len; i += 1)); do
             printf "\"${vars[i]}\""
-            if [ $i -lt $((len - 1)) ]; then
+            if [ "${i}" -lt $((len - 1)) ]; then
                 printf ", "
             fi
         done
@@ -1277,7 +1277,7 @@ function firewall_status() {
     if [[ ${ufw_status_details} != "" ]]; then
 
         json_string_d="$(_jsonify_output "value-list" "${ufw_status_details}")"
-    
+
     else
 
         json_string_d="empty-response"
@@ -1286,7 +1286,7 @@ function firewall_status() {
 
     # Return JSON
     #echo "BROLIT_RESULT => ${json_string}, { ${json_string_d} }"
-    echo "${json_string},{\"ufw-details\": \"${json_string_d}\"}"
+    echo "${json_string},{\"ufw-details\": ${json_string_d}}"
 
 }
 
