@@ -116,7 +116,7 @@ function _jsonify_output() {
         arr=()
 
         while [ $# -ge 1 ]; do
-            arr=("${arr[@]}" $1)
+            arr=("${arr[@]}" "${1}")
             shift
         done
 
@@ -126,7 +126,7 @@ function _jsonify_output() {
         printf "{"
         for ((i = 0; i < len; i += 2)); do
             printf "\"${vars[i]}\": \"${vars[i + 1]}\""
-            if [ $i -lt $((len - 2)) ]; then
+            if [ ${i} -lt $((len - 2)) ]; then
                 printf ", "
             fi
         done
@@ -142,7 +142,7 @@ function _jsonify_output() {
         arr=()
 
         while [ $# -ge 1 ]; do
-            arr=(${arr[@]} "${1}")
+            arr=("${arr[@]}" "${1}")
             shift
         done
 
@@ -152,7 +152,7 @@ function _jsonify_output() {
         printf "["
         for ((i = 0; i < len; i += 1)); do
             printf "\"${vars[i]}\""
-            if [ "${i}" -lt $((len - 1)) ]; then
+            if [ ${i} -lt $((len - 1)) ]; then
                 printf ", "
             fi
         done
@@ -1258,6 +1258,8 @@ function read_site_config() {
 }
 
 function firewall_status() {
+
+    local ufw_status=""
 
     # ufw app list, replace space with "-" and "/n" with space
     ufw_status="$(ufw status | sed -n '1 p' | cut -d " " -f 2 | tr " " "-" | sed -z 's/\n/ /g' | sed -z 's/--//g')"
