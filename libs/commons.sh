@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.66
+# Version: 3.0.67
 #############################################################################
 
 # Source all apps libs
@@ -37,7 +37,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.0.66"
+  declare -g SCRIPT_V="3.0.67"
 
   # Hostname
   declare -g VPSNAME="$HOSTNAME"
@@ -55,7 +55,7 @@ function _setup_globals_and_options() {
   fi
 
   # Folder blacklist
-  declare -g BLACKLISTED_SITES=".wp-cli,html,phpmyadmin"
+  declare -g BLACKLISTED_SITES=".wp-cli,.ssh,.cert,html,phpmyadmin"
 
   # Database blacklist
   declare -g BLACKLISTED_DATABASES="information_schema,performance_schema,mysql,sys,phpmyadmin"
