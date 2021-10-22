@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.66
+# Version: 3.0.67
 ################################################################################
 
 # sendmail --help

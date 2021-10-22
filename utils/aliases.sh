@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.66
+# Version: 3.0.67
 ################################################################################
 
 source ~/.brolit-shell.conf
@@ -31,8 +31,8 @@ if [[ ${DROPBOX_ENABLE} == "true" && -f ${DPU_CONFIG_FILE} ]]; then
 fi
 
 # Version
-SCRIPT_VERSION="3.0.66"
-ALIASES_VERSION="3.0.66-069"
+SCRIPT_VERSION="3.0.67"
+ALIASES_VERSION="3.0.67-070"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -1036,16 +1036,28 @@ function dropbox_get_sites_backups() {
 
         backup_files="$(dropbox_get_backup "${backup_dir}")"
 
-        backup_project="\"${backup_dir}\" : { ${backup_files} }"
+        if [[ $backup_dir != "error" ]];then
+
+            backup_project="\"${backup_dir}\" : { ${backup_files} }"
+
+        else
+
+            backup_project="\"${backup_dir}\" : ${backup_files}"
+
+        fi
 
         backup_projects="${backup_project},${backup_projects}"
 
     done
 
     if [[ ${backup_projects} != "" ]]; then
+
         # Remove last char
         backup_projects="${backup_projects::-1}"
+
     else
+
+    
         backup_projects="\"empty-response\""
     fi
 
