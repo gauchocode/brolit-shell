@@ -32,7 +32,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.65"
-ALIASES_VERSION="3.0.65-065"
+ALIASES_VERSION="3.0.65-067"
 
 # Log
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -129,7 +129,7 @@ function _jsonify_output() {
 
         printf "{"
         for ((i = 0; i < len; i += 2)); do
-            printf "\"${vars[i]}\": ${vars[i + 1]}"
+            printf "\"${vars[i]}\": \"${vars[i + 1]}\""
             if [ $i -lt $((len - 2)) ]; then
                 printf ", "
             fi
@@ -1273,11 +1273,20 @@ function firewall_status() {
 
     # String to JSON
     json_string="$(_jsonify_output "key-value" "ufw-status" "${ufw_status}")"
-    json_string_d="$(_jsonify_output "value-list" "${ufw_status_details}")"
+
+    if [[ ${ufw_status_details} != "" ]]; then
+
+        json_string_d="$(_jsonify_output "value-list" "${ufw_status_details}")"
+    
+    else
+
+        json_string_d="empty-response"
+
+    fi
 
     # Return JSON
     #echo "BROLIT_RESULT => ${json_string}, { ${json_string_d} }"
-    echo "${json_string}, { ${json_string_d} }"
+    echo "${json_string},{\"ufw-details\": \"${json_string_d}\"}"
 
 }
 
