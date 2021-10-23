@@ -77,14 +77,14 @@ function optimize_images_complete() {
 
   # TODO: First need to run without the parameter -mtime -7
 
-  optimize_image_size "${SITES}" "jpg" "${img_max_width}" "${img_max_height}"
+  optimize_image_size "${PROJECTS_PATH}" "jpg" "${img_max_width}" "${img_max_height}"
 
-  optimize_images "${SITES}" "jpg" "${img_compress}"
+  optimize_images "${PROJECTS_PATH}" "jpg" "${img_compress}"
 
-  optimize_images "${SITES}" "png" ""
+  optimize_images "${PROJECTS_PATH}" "png" ""
 
   # Change ownership
-  change_ownership "www-data" "www-data" "${SITES}"
+  change_ownership "www-data" "www-data" "${PROJECTS_PATH}"
 
 }
 
@@ -273,7 +273,7 @@ function optimize_pdfs() {
   #find -mtime -7 -type f -name "*.pdf" -exec gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dPDFSETTINGS=/screen -dNOPAUSE -dPrinted=false -dQUIET -sOutputFile=compressed.%f %f
 
   # Change ownership
-  change_ownership "www-data" "www-data" "${SITES}"
+  change_ownership "www-data" "www-data" "${PROJECTS_PATH}"
 
 }
 

@@ -153,7 +153,7 @@ function sftp_create_user() {
     log_event "info" "SSH access configured" "false"
 
     # Select project to work with
-    directory_browser "Select a project to work with" "${SITES}" #return $filename
+    directory_browser "Select a project to work with" "${PROJECTS_PATH}" #return $filename
     # Directory_broser returns: $filepath and $filename
     if [[ ${filename} != "" && ${filepath} != "" ]]; then
         # Create and add folder permission

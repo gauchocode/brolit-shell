@@ -153,7 +153,7 @@ function wordpress_project_install() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-      certbot_certificate_install "${MAILA}" "${project_domain},${project_root_domain}"
+      certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${project_domain},${project_root_domain}"
 
     else
 
@@ -177,7 +177,7 @@ function wordpress_project_install() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-      certbot_certificate_install "${MAILA}" "${cert_project_domain}"
+      certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${cert_project_domain}"
 
     else
 
@@ -346,7 +346,7 @@ function wordpress_project_copy() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-      certbot_certificate_install "${MAILA}" "${project_domain},${root_domain}"
+      certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${project_domain},${root_domain}"
 
     else
 
@@ -364,7 +364,7 @@ function wordpress_project_copy() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
       # New site Nginx configuration
-      nginx_create_empty_nginx_conf "${SITES}/${project_domain}"
+      nginx_create_empty_nginx_conf "${PROJECTS_PATH}/${project_domain}"
       nginx_create_globals_config
       nginx_server_create "${project_domain}" "wordpress" "single" ""
 
@@ -376,7 +376,7 @@ function wordpress_project_copy() {
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
-          certbot_certificate_install "${MAILA}" "${cert_project_domain}"
+          certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${cert_project_domain}"
 
         else
 

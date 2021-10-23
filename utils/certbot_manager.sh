@@ -40,7 +40,7 @@ function certbot_manager_menu() {
       domains="$(certbot_helper_ask_domains)"
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
-        certbot_helper_installer_menu "${MAILA}" "${domains}"
+        certbot_helper_installer_menu "${NOTIFICATION_EMAIL_MAILA}" "${domains}"
       fi
 
     fi
@@ -50,7 +50,7 @@ function certbot_manager_menu() {
       domains="$(certbot_helper_ask_domains)"
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
-        certbot_certificate_expand "${MAILA}" "${domains}"
+        certbot_certificate_expand "${NOTIFICATION_EMAIL_MAILA}" "${domains}"
       fi
 
     fi
