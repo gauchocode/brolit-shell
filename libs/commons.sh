@@ -330,9 +330,6 @@ function script_init() {
   # Script setup
   _setup_globals_and_options
 
-  # Clean old log files
-  find "${path_log}" -name "*.log" -type f -mtime +7 -print -delete >>"${LOG}"
-
   # Load colors and styles
   _setup_colors_and_styles
 
@@ -378,25 +375,15 @@ function script_init() {
   declare -g DPU_F
   declare -g DROPBOX_UPLOADER
 
-  #declare -g NETWORK_INTERFACE
+  # Dropbox-uploader directory
+  DPU_F="${SFOLDER}/tools/third-party/dropbox-uploader"
+  # Dropbox-uploader runner
+  DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
 
-  # BROOBE Utils config file
-  BROLIT_SHELL_CONFIG_FILE=~/.brolit-shell.conf
-  if test -f ${BROLIT_SHELL_CONFIG_FILE}; then
-    source "${BROLIT_SHELL_CONFIG_FILE}"
-
-  else
-    menu_first_run
-
-  fi
-
-  # Checking required packages to run
-  packages_check_required
-  packages_output=$?
-  if [[ ${packages_output} -eq 1 ]]; then
-    log_event "warning" "Some script dependencies are not setisfied" "true"
-    prompt_return_or_finish
-  fi
+  # Check configuration
+  ## TODO: remove hardcoded path
+  brolit_configuration_load "/root/.brolit_conf.json"
+  brolit_apps_configuration_load
 
   # Dropbox-uploader config file
   DPU_CONFIG_FILE=~/.dropbox_uploader
@@ -406,30 +393,15 @@ function script_init() {
   if [[ ${BACKUP_DROPBOX_STATUS} == "true" ]]; then
     # shellcheck source=~/.dropbox_uploader
     source "${DPU_CONFIG_FILE}"
-    # Dropbox-uploader directory
-    DPU_F="${SFOLDER}/tools/third-party/dropbox-uploader"
-    # Dropbox-uploader runner
-    DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
   fi
 
-  # Cloudflare config file
-  #CLF_CONFIG_FILE=~/.cloudflare.conf
-  #if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "true" && -f ${CLF_CONFIG_FILE} ]]; then
-  #  # shellcheck source=~/.cloudflare.conf
-  #  source "${CLF_CONFIG_FILE}"
-  #fi
-
-  # Telegram config file
-  #TEL_CONFIG_FILE=~/.telegram.conf
-  #if [[ ${NOTIFICATION_TELEGRAM_STATUS} == "true" && -f ${TEL_CONFIG_FILE} ]]; then
-  #  # shellcheck source=~/.telegram.conf
-  #  source "${TEL_CONFIG_FILE}"
-  #fi
-
-  # Check configuration
-  ## TODO: remove hardcoded path
-  brolit_configuration_load "/root/.brolit_conf.json"
-  brolit_apps_configuration_load
+  # Checking required packages to run
+  packages_check_required
+  packages_output=$?
+  if [[ ${packages_output} -eq 1 ]]; then
+    log_event "warning" "Some script dependencies are not setisfied" "true"
+    prompt_return_or_finish
+  fi
 
   # LOCAL IP (if server has configured a floating ip, it will return this)
   LOCAL_IP="$(/sbin/ifconfig eth0 | grep -w 'inet ' | awk '{print $2}')" # Could be a floating ip
@@ -446,10 +418,13 @@ function script_init() {
 
   log_event "info" "SERVER IP: ${SERVER_IP}" "false"
 
+  # Clean old log files
+  find "${path_log}" -name "*.log" -type f -mtime +7 -print -delete >>"${LOG}"
+
   # EXPORT VARS
   export SCRIPT_V VPSNAME BROLIT_CONFIG_PATH TMP_DIR SFOLDER DPU_F DROPBOX_UPLOADER PROJECTS_PATH BLACKLISTED_SITES BLACKLISTED_DATABASES WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V SERVER_CONFIG
   export LENCRYPT_CF MySQL_CF MYSQL MYSQL_CONF MYSQLDUMP MYSQL_ROOT MYSQLDUMP_ROOT TAR FIND DROPBOX_FOLDER MAILCOW_DIR MAILCOW_TMP_BK MHOST MUSER NOW NOWDISPLAY ONEWEEKAGO
-  export DISK_U ONE_FILE_BK LOCAL_IP SERVER_IP SERVER_IPv6 NOTIFICATION_EMAIL_SMTP_SERVER NOTIFICATION_EMAIL_SMTP_PORT NOTIFICATION_EMAIL_SMTP_TLS NOTIFICATION_EMAIL_SMTP_USER NOTIFICATION_EMAIL_SMTP_USER_PASS 
+  export DISK_U ONE_FILE_BK LOCAL_IP SERVER_IP SERVER_IPv6 NOTIFICATION_EMAIL_SMTP_SERVER NOTIFICATION_EMAIL_SMTP_PORT NOTIFICATION_EMAIL_SMTP_TLS NOTIFICATION_EMAIL_SMTP_USER NOTIFICATION_EMAIL_SMTP_USER_PASS
   #export STATUS_BACKUP_DBS STATUS_BACKUP_FILES STATUS_SERVER STATUS_CERTS OUTDATED_PACKAGES
   export BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR
   #export SUPPORT_CLOUDFLARE_EMAIL SUPPORT_CLOUDFLARE_API_KEY
@@ -1579,7 +1554,6 @@ function menu_first_run() {
 
   first_run_options=(
     "01)" "RUN SERVER SETUP"
-    "02)" "CONFIGURE BROLIT"
   )
 
   chosen_first_run_options="$(whiptail --title "BROLIT SCRIPT" --menu "${first_run_string}" 20 78 10 "${first_run_options[@]}" 3>&1 1>&2 2>&3)"
@@ -1594,9 +1568,6 @@ function menu_first_run() {
       server_setup
 
       exit 1
-
-    else
-      script_configuration_wizard "initial"
 
     fi
 
