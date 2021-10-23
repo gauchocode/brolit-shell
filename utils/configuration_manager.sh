@@ -59,12 +59,12 @@ function brolit_configuration_load() {
 
     if [ -f "${server_config_file}" ]; then
 
-        display --indent 6 --text "- Checking Brolit config file" --result "DONE" --color GREEN
+        display --indent 2 --text "- Checking Brolit config file" --result "DONE" --color GREEN
 
     else
 
-        display --indent 6 --text "- Checking Brolit config file" --result "WARNING" --color YELLOW
-        display --indent 8 --text "Config file not found: ${server_config_file}"
+        display --indent 2 --text "- Checking Brolit config file" --result "WARNING" --color YELLOW
+        display --indent 4 --text "Config file not found: ${server_config_file}"
 
         # Creating new config file
         while true; do
@@ -115,12 +115,12 @@ function brolit_configuration_load() {
 
         if [ -f "${BACKUP_DROPBOX_CONFIG_FILE}" ]; then
 
-            display --indent 6 --text "- Checking Dropbox config file" --result "DONE" --color GREEN
+            display --indent 2 --text "- Checking Dropbox config file" --result "DONE" --color GREEN
 
         else
 
-            display --indent 6 --text "- Checking Dropbox config file" --result "FAIL" --color RED
-            display --indent 8 --text "Config file not found: ${BACKUP_DROPBOX_CONFIG_FILE}"
+            display --indent 2 --text "- Checking Dropbox config file" --result "FAIL" --color RED
+            display --indent 4 --text "Config file not found: ${BACKUP_DROPBOX_CONFIG_FILE}"
 
             exit 1
 
@@ -324,10 +324,21 @@ function _settings_config_dropbox() {
     # Checking global var
     if [[ ${BACKUP_DROPBOX_STATUS} == "true" ]]; then
 
+        display --indent 2 --text "- Checking dropbox uploader"
+
         "${DROPBOX_UPLOADER}" list
 
-        # Generating Dropbox api config file
-        #generate_dropbox_config
+        exit_status=$?
+
+        if [[ ${exit_status} -ne 0 ]]; then
+
+            display --indent 2 --text "- Checking dropbox uploader" --result "DONE" --color GREEN
+
+        else
+
+            display --indent 2 --text "Please follow the dropbox uploader steps ..."
+
+        fi
 
     fi
 
