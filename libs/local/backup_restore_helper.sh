@@ -54,9 +54,9 @@ function restore_backup_from_local_file() {
       # RESTORE FILES
       log_subsection "Restore files from local"
 
-      # Folder where sites are hosted: $SITES
+      # Folder where sites are hosted: $PROJECTS_PATH
       menu_title="SELECT BACKUP FILE TO RESTORE"
-      file_browser "${menu_title}" "${SITES}"
+      file_browser "${menu_title}" "${PROJECTS_PATH}"
 
       # Directory_broser returns: " $filepath"/"$filename
       if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
@@ -106,9 +106,9 @@ function restore_backup_from_local_file() {
       #RESTORE DATABASE
       log_subsection "Restore database from file"
 
-      # Folder where sites are hosted: $SITES
+      # Folder where sites are hosted: $PROJECTS_PATH
       menu_title="SELECT BACKUP FILE TO RESTORE"
-      file_browser "${menu_title}" "${SITES}"
+      file_browser "${menu_title}" "${PROJECTS_PATH}"
 
       # Directory_broser returns: " $filepath"/"$filename
       if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
@@ -200,7 +200,7 @@ function restore_backup_from_ftp() {
     fi
 
     # Restore files
-    move_files "${TMP_DIR}/${project_domain}" "${SITES}"
+    move_files "${TMP_DIR}/${project_domain}" "${PROJECTS_PATH}"
 
   fi
 
@@ -568,7 +568,7 @@ function restore_site_files() {
     fi
 
     # Ask folder to install
-    folder_to_install="$(ask_folder_to_install_sites "${SITES}")"
+    folder_to_install="$(ask_folder_to_install_sites "${PROJECTS_PATH}")"
 
     # New destination directory
     actual_folder="${folder_to_install}/${chosen_domain}"
@@ -724,7 +724,7 @@ function restore_type_selection_from_dropbox() {
 
             # TODO: check project type (WP, Laravel, etc)
 
-            folder_to_install="$(ask_folder_to_install_sites "${SITES}")"
+            folder_to_install="$(ask_folder_to_install_sites "${PROJECTS_PATH}")"
             folder_to_install_result=$?
             if [[ ${folder_to_install_result} -eq 1 ]]; then
 
@@ -888,7 +888,7 @@ function restore_project() {
     esac
 
     # TODO: Need refactor, only works with WordPress
-    project_path="${SITES}/${new_project_domain}"
+    project_path="${PROJECTS_PATH}/${new_project_domain}"
     install_path="$(wp_config_path "${project_path}")"
     # TODO: wp_config_path could be an array of dir paths, need to check that
     if [[ ${install_path} != "" ]]; then
@@ -1015,7 +1015,7 @@ function restore_project() {
       cloudflare_set_record "${root_domain}" "${root_domain}" "A"
 
       # Let's Encrypt
-      certbot_certificate_install "${MAILA}" "${root_domain},www.${root_domain}"
+      certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${root_domain},www.${root_domain}"
 
     else
 
@@ -1026,7 +1026,7 @@ function restore_project() {
       cloudflare_set_record "${root_domain}" "${new_project_domain}" "A"
 
       # Let's Encrypt
-      certbot_certificate_install "${MAILA}" "${new_project_domain}"
+      certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${new_project_domain}"
 
     fi
 

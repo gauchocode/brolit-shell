@@ -503,7 +503,7 @@ function netdata_installer_menu() {
         cloudflare_set_record "${root_domain}" "${netdata_subdomain}" "A"
 
         # HTTPS with Certbot
-        certbot_certificate_install "${MAILA}" "${netdata_subdomain}"
+        certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${netdata_subdomain}"
 
         display --indent 6 --text "- Netdata installation" --result "DONE" --color GREEN
 

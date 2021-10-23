@@ -19,7 +19,7 @@ function _cloudflare_get_zone_id() {
     # Checking cloudflare credentials file
     generate_cloudflare_config
 
-    # Using globals: ${dns_cloudflare_email} and ${dns_cloudflare_api_key}
+    # Using globals: ${SUPPORT_CLOUDFLARE_EMAIL} and ${SUPPORT_CLOUDFLARE_API_KEY}
 
     # Log
     display --indent 6 --text "- Accessing Cloudflare API" --result "DONE" --color GREEN
@@ -29,8 +29,8 @@ function _cloudflare_get_zone_id() {
 
     # Get Zone ID
     zone_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" \
-        -H "X-Auth-Email: ${dns_cloudflare_email}" \
-        -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
+        -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+        -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
         -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1)"
 
     exitstatus=$?
@@ -47,7 +47,7 @@ function _cloudflare_get_zone_id() {
 
         # Log
         log_event "info" "Zone ID not found for domain ${zone_name}. Maybe domain is not configured yet."
-        log_event "debug" "Last command executed: curl -s -X GET \"https://api.cloudflare.com/client/v4/zones?name=${zone_name}\" -H \"X-Auth-Email: ${dns_cloudflare_email}\" -H \"X-Auth-Key: ${dns_cloudflare_api_key}\" -H \"Content-Type: application/json\" | grep -Po '(?<=\"id\":\")[^\"]*' | head -1"
+        log_event "debug" "Last command executed: curl -s -X GET \"https://api.cloudflare.com/client/v4/zones?name=${zone_name}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" | grep -Po '(?<=\"id\":\")[^\"]*' | head -1"
         display --indent 8 --text "Domain ${zone_name} not found" --tcolor YELLOW
 
         return 1
@@ -73,8 +73,8 @@ function cloudflare_get_zone_info() {
     log_event "info" "Getting zone information for: ${zone_name}"
 
     zone_info="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}&status=active" \
-        -H "X-Auth-Email: ${dns_cloudflare_email}" \
-        -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
+        -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+        -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
         -H "Content-Type: application/json")"
 
     exitstatus=$?
@@ -133,11 +133,11 @@ function cloudflare_clear_cache() {
 
         # Log
         log_event "info" "Clearing Cloudflare cache for domain: ${root_domain}"
-        log_event "debug" "Running: curl -s -X DELETE \"https://api.cloudflare.com/client/v4/zones/${zone_id}/purge_cache\" -H \"X-Auth-Email: ${dns_cloudflare_email}\" -H \"X-Auth-Key: ${dns_cloudflare_api_key}\" -H \"Content-Type:application/json\" --data '{\"purge_everything\":true}')"
+        log_event "debug" "Running: curl -s -X DELETE \"https://api.cloudflare.com/client/v4/zones/${zone_id}/purge_cache\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type:application/json\" --data '{\"purge_everything\":true}')"
 
         purge_cache="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/purge_cache" \
-            -H "X-Auth-Email: ${dns_cloudflare_email}" \
-            -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type:application/json" \
             --data '{"purge_everything":true}')"
 
@@ -179,8 +179,8 @@ function cloudflare_set_development_mode() {
         log_event "info" "Enabling Development Mode for domain: ${root_domain}"
 
         dev_mode_result="$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/development_mode" \
-            -H "X-Auth-Email: ${dns_cloudflare_email}" \
-            -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json" \
             --data "{\"value\":\"${dev_mode}\"}")"
 
@@ -190,7 +190,7 @@ function cloudflare_set_development_mode() {
         if [[ ${dev_mode_result} == *"\"success\":false"* || ${dev_mode_result} == "" ]]; then
             message="Error trying to change development mode for ${root_domain}. Results:\n ${dev_mode_result}"
             log_event "error" "${message}"
-            log_event "debug" "Last command executed: curl -X PATCH \"https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/development_mode\" -H \"X-Auth-Email: ${dns_cloudflare_email}\" -H \"X-Auth-Key: ${dns_cloudflare_api_key}\" -H \"Content-Type: application/json\" --data \"{\"value\":\"${dev_mode}\"}\""
+            log_event "debug" "Last command executed: curl -X PATCH \"https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/development_mode\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" --data \"{\"value\":\"${dev_mode}\"}\""
             display --indent 6 --text "- Enabling development mode" --result "FAIL" --color RED
 
             return 1
@@ -225,8 +225,8 @@ function cloudflare_get_ssl_mode() {
         display --indent 6 --text "- Gettinh SSL Mode for: ${zone_name}"
 
         ssl_mode_result=$(curl -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/ssl" \
-            -H "X-Auth-Email: ${dns_cloudflare_email}" \
-            -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json")
 
         # Return
@@ -260,8 +260,8 @@ function cloudflare_set_ssl_mode() {
         display --indent 6 --text "- Setting SSL Mode for: ${zone_name}"
 
         ssl_mode_result="$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/ssl" \
-            -H "X-Auth-Email: ${dns_cloudflare_email}" \
-            -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json" \
             --data "{\"value\":\"${ssl_mode}\"}")"
 
@@ -302,9 +302,9 @@ function cloudflare_record_exists() {
     record_name="${domain}"
 
     # Retrieve record_id
-    record_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${dns_cloudflare_email}" -H "X-Auth-Key: ${dns_cloudflare_api_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*')"
+    record_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*')"
 
-    log_event "debug" "Last command executed: curl -s -X GET \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}\" -H \"X-Auth-Email: ${dns_cloudflare_email}\" -H \"X-Auth-Key: ${dns_cloudflare_api_key}\" -H \"Content-Type: application/json\" | grep -Po '(?<=\"id\":\")[^\"]*'"
+    log_event "debug" "Last command executed: curl -s -X GET \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" | grep -Po '(?<=\"id\":\")[^\"]*'"
 
     exitstatus=$?
     if [[ ${record_id} == "" ]]; then
@@ -356,8 +356,8 @@ function cloudflare_get_record_details() {
 
         # DNS Record Details
         record="$(curl -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
-            -H "X-Auth-Email: ${dns_cloudflare_email}" \
-            -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json")"
 
         # Remove Cloudflare API garbage output
@@ -433,19 +433,19 @@ function cloudflare_set_record() {
         display --indent 6 --text "- Changing ${record_name} IP ..."
 
         # First delete
-        log_event "debug" "Running: curl -s -X DELETE \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}\" -H \"X-Auth-Email: ${dns_cloudflare_email}\" -H \"X-Auth-Key: ${dns_cloudflare_api_key}\" -H \"Content-Type: application/json\""
+        log_event "debug" "Running: curl -s -X DELETE \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\""
 
         delete="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
-            -H "X-Auth-Email: ${dns_cloudflare_email}" \
-            -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json")"
 
-        log_event "debug" "Running: curl -s -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" -H \"X-Auth-Email: ${dns_cloudflare_email}\" -H \"X-Auth-Key: ${dns_cloudflare_api_key}\" -H \"Content-Type: application/json\" --data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}\""
+        log_event "debug" "Running: curl -s -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" --data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}\""
 
         # Then create (work-around because sometimes update an entry does not work)
         update="$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
-            -H "X-Auth-Email: ${dns_cloudflare_email}" \
-            -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json" \
             --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"
 
@@ -476,8 +476,8 @@ function cloudflare_set_record() {
         log_event "debug" "Record ID not found. Trying to add the subdomain: ${record_name}"
 
         update="$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
-            -H "X-Auth-Email: ${dns_cloudflare_email}" \
-            -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json" \
             --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"
 
@@ -499,7 +499,7 @@ function cloudflare_set_record() {
 
             display --indent 6 --text "- Creating subdomain ${record_name}" --result "FAIL" --color RED
             log_event "error" "Error creating subdomain ${record_name}" "false"
-            log_event "debug" "Last command executed: curl -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" -H \"X-Auth-Email: ${dns_cloudflare_email}\" -H \"X-Auth-Key: ${dns_cloudflare_api_key}\" -H \"Content-Type: application/json\" --data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}\""
+            log_event "debug" "Last command executed: curl -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" --data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}\""
 
             return 1
 
@@ -540,8 +540,8 @@ function cloudflare_update_record() {
     if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
 
         update="$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
-            -H "X-Auth-Email: ${dns_cloudflare_email}" \
-            -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json" \
             --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"
 
@@ -581,8 +581,8 @@ function cloudflare_delete_a_record() {
         log_event "info" "Trying to delete the record ..."
 
         delete="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
-            -H "X-Auth-Email: ${dns_cloudflare_email}" \
-            -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json")"
 
         # Remove Cloudflare API garbage output
@@ -592,7 +592,7 @@ function cloudflare_delete_a_record() {
 
             message="A record delete failed. Results:\n${delete}"
             log_event "error" "${message}"
-            log_event "debug" "Last command executed: curl -s -X DELETE \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}\" -H \"X-Auth-Email: ${dns_cloudflare_email}\" -H \"X-Auth-Key: ${dns_cloudflare_api_key}\" -H \"Content-Type: application/json\""
+            log_event "debug" "Last command executed: curl -s -X DELETE \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\""
             display --indent 6 --text "- Deleting A record from Cloudflare" --result "FAIL" --color RED
             display --indent 8 --text "${message}" --tcolor RED
 
@@ -632,8 +632,8 @@ function cloudflare_set_cache_ttl_value() {
     if [[ ${exitstatus} -eq 0 ]]; then # Zone found
 
         cache_ttl_result="$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/browser_cache_ttl" \
-            -H "X-Auth-Email: ${dns_cloudflare_email}" \
-            -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json" \
             --data "{\"value\":\"${cache_ttl_value}\"}")"
 
@@ -679,8 +679,8 @@ function cloudflare_set_http3_setting() {
     if [[ ${exitstatus} -eq 0 ]]; then # Zone found
 
         cache_ttl_result="$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/http3" \
-            -H "X-Auth-Email: ${dns_cloudflare_email}" \
-            -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json" \
             --data "{\"value\":\"${http3_setting}\"}")"
 

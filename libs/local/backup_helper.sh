@@ -373,10 +373,10 @@ function make_sites_files_backup() {
   log_subsection "Backup Sites Files"
 
   # Get all directories
-  TOTAL_SITES="$(get_all_directories "${SITES}")"
+  TOTAL_SITES="$(get_all_directories "${PROJECTS_PATH}")"
 
   # Get length of $TOTAL_SITES
-  COUNT_TOTAL_SITES="$(find "${SITES}" -maxdepth 1 -type d -printf '.' | wc -c)"
+  COUNT_TOTAL_SITES="$(find "${PROJECTS_PATH}" -maxdepth 1 -type d -printf '.' | wc -c)"
   COUNT_TOTAL_SITES="$((COUNT_TOTAL_SITES - 1))"
 
   # Log
@@ -394,7 +394,7 @@ function make_sites_files_backup() {
 
       if [[ ${BLACKLISTED_SITES} != *"${directory_name}"* ]]; then
 
-        backup_file_size="$(make_files_backup "site" "${SITES}" "${directory_name}")"
+        backup_file_size="$(make_files_backup "site" "${PROJECTS_PATH}" "${directory_name}")"
 
         backuped_files_list[$backuped_files_index]="${directory_name}"
         backuped_files_sizes_list+=("${backup_file_size}")
@@ -460,7 +460,7 @@ function make_all_files_backup() {
   ## SERVER CONFIG FILES
   make_all_server_config_backup
 
-  ## SITES FILES
+  ## PROJECTS_PATH FILES
   make_sites_files_backup
 
 }
@@ -736,7 +736,7 @@ function make_project_backup() {
   local project_config_file
 
   # Backup files
-  make_files_backup "site" "${SITES}" "${project_domain}"
+  make_files_backup "site" "${PROJECTS_PATH}" "${project_domain}"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -751,7 +751,7 @@ function make_project_backup() {
 
     if [[ -f "${project_config_file}" ]]; then
 
-      db_name="$(project_get_config "${SITES}/${project_domain}" "project_db")"
+      db_name="$(project_get_config "${PROJECTS_PATH}/${project_domain}" "project_db")"
 
     else
 

@@ -28,7 +28,7 @@ log_event "info" "Running security_tasks.sh ..." "false"
 log_section "Security Tasks"
 
 # Clamav Scan
-clamscan_result="$(security_clamav_scan "${SITES}")"
+clamscan_result="$(security_clamav_scan "${PROJECTS_PATH}")"
 
 if [[ ${clamscan_result} == "true" ]]; then
 
@@ -39,7 +39,7 @@ fi
 ## Commented this, too many false positives
 
 # Custom Scan
-#custom_scan_result="$(security_custom_scan "${SITES}")"
+#custom_scan_result="$(security_custom_scan "${PROJECTS_PATH}")"
 #if [[ ${custom_scan_result} != "" ]]; then
 #
 #    send_notification "⚠️ ${VPSNAME}" "Custom scan result: ${custom_scan_result}" ""

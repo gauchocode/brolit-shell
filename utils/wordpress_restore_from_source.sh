@@ -121,7 +121,7 @@ function wordpress_restore_from_source() {
 
   source_database="$(ask_migration_source_db "$source_type")"
 
-  folder_to_install="$(ask_folder_to_install_sites "${SITES}")"
+  folder_to_install="$(ask_folder_to_install_sites "${PROJECTS_PATH}")"
 
   echo " > CREATING TMP DIRECTORY ..."
   mkdir "${SFOLDER}/tmp"
@@ -228,7 +228,7 @@ function wordpress_restore_from_source() {
   cloudflare_set_record "${root_domain}" "${project_domain}" "A"
 
   # HTTPS with Certbot
-  certbot_helper_installer_menu "${MAILA}" "${project_domain}"
+  certbot_helper_installer_menu "${NOTIFICATION_EMAIL_MAILA}" "${project_domain}"
 
   # WP Search and Replace URL
   wp_ask_url_search_and_replace

@@ -50,15 +50,15 @@ function monit_configure() {
   display --indent 6 --text "- Setting PHP version" --result "DONE" --color GREEN
 
   # Set SMTP vars
-  sed -i "s#SMTP_SERVER#${SMTP_SERVER}#" /etc/monit/conf.d/lemp-services
-  sed -i "s#SMTP_PORT#${SMTP_PORT}#" /etc/monit/conf.d/lemp-services
+  sed -i "s#NOTIFICATION_EMAIL_SMTP_SERVER#${NOTIFICATION_EMAIL_SMTP_SERVER}#" /etc/monit/conf.d/lemp-services
+  sed -i "s#NOTIFICATION_EMAIL_SMTP_PORT#${NOTIFICATION_EMAIL_SMTP_PORT}#" /etc/monit/conf.d/lemp-services
 
   # Run two times to cober all var appearance
-  sed -i "s#SMTP_U#${SMTP_U}#" /etc/monit/conf.d/lemp-services
-  sed -i "s#SMTP_U#${SMTP_U}#" /etc/monit/conf.d/lemp-services
+  sed -i "s#NOTIFICATION_EMAIL_SMTP_USER#${NOTIFICATION_EMAIL_SMTP_USER}#" /etc/monit/conf.d/lemp-services
+  sed -i "s#NOTIFICATION_EMAIL_SMTP_USER#${NOTIFICATION_EMAIL_SMTP_USER}#" /etc/monit/conf.d/lemp-services
 
-  sed -i "s#SMTP_P#${SMTP_P}#" /etc/monit/conf.d/lemp-services
-  sed -i "s#MAILA#${MAILA}#" /etc/monit/conf.d/lemp-services
+  sed -i "s#NOTIFICATION_EMAIL_SMTP_USER_PASS#${NOTIFICATION_EMAIL_SMTP_USER_PASS}#" /etc/monit/conf.d/lemp-services
+  sed -i "s#NOTIFICATION_EMAIL_MAILA#${NOTIFICATION_EMAIL_MAILA}#" /etc/monit/conf.d/lemp-services
   display --indent 6 --text "- Configuring SMTP" --result "DONE" --color GREEN
 
   log_event "info" "Restarting services ..."

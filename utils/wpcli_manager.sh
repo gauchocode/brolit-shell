@@ -15,7 +15,7 @@ function wpcli_manager() {
   #local chosen_wp_path
 
   # Directory Browser
-  startdir="${SITES}"
+  startdir="${PROJECTS_PATH}"
   menutitle="Site Selection Menu"
   directory_browser "${menutitle}" "${startdir}"
 
@@ -384,78 +384,78 @@ function wpcli_tasks_handler() {
 
   #create-user)
   #
-  #  wpcli_user_create "${SITES}/${DOMAIN}" "${choosen_user}" "${choosen_email}" "${choosen_role}"
+  #  wpcli_user_create "${PROJECTS_PATH}/${DOMAIN}" "${choosen_user}" "${choosen_email}" "${choosen_role}"
   #
   #  exit
   #  ;;
 
   plugin-install)
 
-    wpcli_install_plugin "${SITES}/${DOMAIN}" "${TVALUE}"
+    wpcli_install_plugin "${PROJECTS_PATH}/${DOMAIN}" "${TVALUE}"
 
     exit
     ;;
 
   plugin-activate)
 
-    wpcli_plugin_activate "${SITES}/${DOMAIN}" "${TVALUE}"
+    wpcli_plugin_activate "${PROJECTS_PATH}/${DOMAIN}" "${TVALUE}"
 
     exit
     ;;
 
   plugin-deactivate)
 
-    wpcli_plugin_deactivate "${SITES}/${DOMAIN}" "${TVALUE}"
+    wpcli_plugin_deactivate "${PROJECTS_PATH}/${DOMAIN}" "${TVALUE}"
 
     exit
     ;;
 
   plugin-version)
 
-    wpcli_plugin_get_version "${SITES}/${DOMAIN}" "${TVALUE}"
+    wpcli_plugin_get_version "${PROJECTS_PATH}/${DOMAIN}" "${TVALUE}"
 
     exit
     ;;
 
   plugin-update)
 
-    wpcli_plugin_update "${SITES}/${DOMAIN}" "${TVALUE}"
+    wpcli_plugin_update "${PROJECTS_PATH}/${DOMAIN}" "${TVALUE}"
 
     exit
     ;;
 
   clear-cache)
 
-    wpcli_rocket_cache_clean "${SITES}/${DOMAIN}"
+    wpcli_rocket_cache_clean "${PROJECTS_PATH}/${DOMAIN}"
 
     exit
     ;;
 
   cache-activate)
 
-    wpcli_rocket_cache_activate "${SITES}/${DOMAIN}"
+    wpcli_rocket_cache_activate "${PROJECTS_PATH}/${DOMAIN}"
 
     exit
     ;;
 
   cache-deactivate)
 
-    wpcli_rocket_cache_deactivate "${SITES}/${DOMAIN}"
+    wpcli_rocket_cache_deactivate "${PROJECTS_PATH}/${DOMAIN}"
 
     exit
     ;;
 
   verify-installation)
 
-    wpcli_core_verify "${SITES}/${DOMAIN}"
-    wpcli_plugin_verify "${SITES}/${DOMAIN}"
+    wpcli_core_verify "${PROJECTS_PATH}/${DOMAIN}"
+    wpcli_plugin_verify "${PROJECTS_PATH}/${DOMAIN}"
 
     exit
     ;;
 
   core-update)
 
-    wpcli_core_update "${SITES}/${DOMAIN}"
+    wpcli_core_update "${PROJECTS_PATH}/${DOMAIN}"
 
     exit
     ;;

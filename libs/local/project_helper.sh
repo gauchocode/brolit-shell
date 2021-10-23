@@ -819,14 +819,14 @@ function project_delete_files() {
   log_subsection "Delete Files"
 
   # Trying to know project type
-  project_type=$(project_get_type "${SITES}/${project_domain}")
+  project_type=$(project_get_type "${PROJECTS_PATH}/${project_domain}")
 
   log_event "info" "Project Type: ${project_type}"
 
   BK_TYPE="site"
 
   # Making a backup of project files
-  make_files_backup "${BK_TYPE}" "${SITES}" "${project_domain}"
+  make_files_backup "${BK_TYPE}" "${PROJECTS_PATH}" "${project_domain}"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -842,7 +842,7 @@ function project_delete_files() {
     display --indent 6 --text "- Moving to offline projects on Dropbox" --result "DONE" --color GREEN
 
     # Delete project files
-    rm --force --recursive "${SITES}/${project_domain}"
+    rm --force --recursive "${PROJECTS_PATH}/${project_domain}"
 
     # Log
     log_event "info" "Project files deleted for ${project_domain}" "false"
@@ -994,9 +994,9 @@ function project_delete() {
 
   if [[ ${project_domain} == "" ]]; then
 
-    # Folder where sites are hosted: ${SITES}
+    # Folder where sites are hosted: ${PROJECTS_PATH}
     menu_title="PROJECT DIRECTORY TO DELETE"
-    directory_browser "${menu_title}" "${SITES}"
+    directory_browser "${menu_title}" "${PROJECTS_PATH}"
 
     # Directory_broser returns: " $filepath"/"$filename
     if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
@@ -1087,7 +1087,7 @@ function project_change_status() {
 
   local to_change
 
-  startdir="${SITES}"
+  startdir="${PROJECTS_PATH}"
   directory_browser "${menutitle}" "${startdir}"
 
   to_change=${filename%/}
@@ -1245,7 +1245,7 @@ function php_project_installer() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-      certbot_certificate_install "${MAILA}" "${project_domain},${project_root_domain}"
+      certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${project_domain},${project_root_domain}"
 
     else
 
@@ -1270,7 +1270,7 @@ function php_project_installer() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-      certbot_certificate_install "${MAILA}" "${cert_project_domain}"
+      certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${cert_project_domain}"
 
     else
 
@@ -1386,7 +1386,7 @@ function nodejs_project_installer() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-      certbot_certificate_install "${MAILA}" "${project_domain},${project_root_domain}"
+      certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${project_domain},${project_root_domain}"
 
     else
 
@@ -1411,7 +1411,7 @@ function nodejs_project_installer() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-      certbot_certificate_install "${MAILA}" "${cert_project_domain}"
+      certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${cert_project_domain}"
 
     else
 
