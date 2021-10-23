@@ -2,7 +2,7 @@
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
 # Version: 3.0.67
-#############################################################################
+################################################################################
 #
 # Packages Helper: Perform apt actions.
 #
@@ -132,7 +132,7 @@ function package_install_if_not() {
 # Check package required (and install it)
 #
 # Arguments:
-#   None
+#   none
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -237,7 +237,7 @@ function packages_check_required() {
 # Install some it utils packages
 #
 # Arguments:
-#   None
+#   none
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -303,7 +303,7 @@ function packages_install_utils() {
 # Install some optional packages
 #
 # Arguments:
-#   None
+#   none
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -372,7 +372,7 @@ function packages_install_selection() {
 # Timezone configuration
 #
 # Arguments:
-#   None
+#   none
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -403,7 +403,7 @@ function timezone_configuration() {
 # Remove old packages
 #
 # Arguments:
-#   None
+#   none
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -431,7 +431,7 @@ function remove_old_packages() {
 # Install packages for image and pdf optimization
 #
 # Arguments:
-#   None
+#   none
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -454,7 +454,7 @@ function packages_install_optimization_utils() {
 # Installs security utils: clamav and lynis
 #
 # Arguments:
-#   None
+#   none
 #
 # Outputs:
 #   0 if it utils were installed, 1 on error.
@@ -472,7 +472,7 @@ function packages_install_security_utils() {
 # List packages that need to be upgraded
 #
 # Arguments:
-#   None
+#   none
 #
 # Outputs:
 #   list of packages.
@@ -488,5 +488,30 @@ function packages_need_upgrade() {
   pkgs="$(apt list --upgradable 2>/dev/null | awk -F/ "{print \$1}" | sed -e '1,/.../ d')"
 
   echo "${pkgs}"
+
+}
+
+################################################################################
+# Upgrade system packages
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   none
+################################################################################
+
+function packages_upgrade() {
+
+  # Log
+  log_event "info" "Upgrading packages ..." "false"
+  display --indent 6 --text "- Upgrading packages"
+
+  # apt commands
+  apt-get --yes upgrade -qq >/dev/null
+
+  # Log
+  clear_last_line
+  display --indent 6 --text "- Upgrading packages" --result "DONE" --color GREEN
 
 }

@@ -35,15 +35,13 @@ SCRIPT_VERSION="3.0.67"
 ALIASES_VERSION="3.0.67-070"
 
 # Log
-timestamp="$(date +%Y%m%d_%H%M%S)"
-log_name="bash_aliases_${timestamp}.log"
-path_log="/var/log/aliases"
-
-if [[ ! -d "${path_log}" ]]; then
-    mkdir "${path_log}"
-fi
-
-LOG="${path_log}/${log_name}"
+#timestamp="$(date +%Y%m%d_%H%M%S)"
+#log_name="bash_aliases_${timestamp}.log"
+#path_log="/var/log/aliases"
+#if [[ ! -d "${path_log}" ]]; then
+#    mkdir "${path_log}"
+#fi
+#LOG="${path_log}/${log_name}"
 
 ################################################################################
 
