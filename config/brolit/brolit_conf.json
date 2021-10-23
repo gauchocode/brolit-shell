@@ -1,5 +1,5 @@
 {
-    "BROLIT_CONFIG_VERSION": "3.0.1",
+    "BROLIT_CONFIG_VERSION": "3.0.2",
     "SERVER_ROLES": {
         "config": [
             {
@@ -44,6 +44,18 @@
                         "config": [
                             {
                                 "backup_path": ""
+                            }
+                        ]
+                    }
+                ],
+                "duplicity": [
+                    {
+                        "status": "disabled",
+                        "config": [
+                            {
+                                "backup_path": "",
+                                "backup_frequency": "7D",
+                                "backup_full_life": "14D"
                             }
                         ]
                     }
@@ -131,7 +143,7 @@
                 "status": "disabled",
                 "config": [
                     {
-                        "mailcow_path": ""
+                        "mailcow_path": "/opt/mailcow-dockerized"
                     }
                 ]
             }

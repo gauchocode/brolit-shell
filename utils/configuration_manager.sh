@@ -60,10 +60,12 @@ function brolit_configuration_load() {
     if [ -f "${server_config_file}" ]; then
 
         echo "Server config file found: ${server_config_file}"
+        display --indent 6 --text "- Checking Brolit config file" --result "DONE" --color GREEN
 
     else
 
-        echo "Server config file not found: ${server_config_file}"
+        display --indent 6 --text "- Checking Brolit config file" --result "WARNING" --color YELLOW
+        display --indent 8 "Config file not found: ${server_config_file}"
 
         # Creating new config file
         while true; do
@@ -76,6 +78,8 @@ function brolit_configuration_load() {
             [Yy]*)
 
                 cp "${SFOLDER}/config/brolit/brolit_conf.json" "${server_config_file}"
+
+                menu_first_run
 
                 break
                 ;;
@@ -110,10 +114,16 @@ function brolit_configuration_load() {
         BACKUP_DROPBOX_CONFIG_FILE="$(json_read_field "${server_config_file}" "BACKUPS.methods[].dropbox[].config[].file")"
 
         if [ -f "${BACKUP_DROPBOX_CONFIG_FILE}" ]; then
-            echo "Backup Dropbox config file found: ${BACKUP_DROPBOX_CONFIG_FILE}"
+
+            display --indent 6 --text "- Checking Dropbox config file" --result "DONE" --color GREEN
+
         else
-            echo "Backup Dropbox config file not found: ${BACKUP_DROPBOX_CONFIG_FILE}"
+
+            display --indent 6 --text "- Checking Dropbox config file" --result "FAIL" --color RED
+            display --indent 8 --text "Config file not found: ${BACKUP_DROPBOX_CONFIG_FILE}"
+
             exit 1
+
         fi
 
     fi
@@ -287,14 +297,47 @@ function brolit_apps_configuration_load() {
 
     _settings_config_dropbox
 
-    #_settings_config_cloudflare
+}
 
-    #_settings_config_telegram
+################################################################################
+# Private: mysql root password configuration
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
 
-    #_settings_config_notifications
+function _settings_config_mysql() {
 
-    #_settings_config_mailcow
+    if [[ "${SERVER_CONFIG}" == *"mysql"* ]]; then
 
-    #_settings_config_duplicity
+        mysql_ask_root_psw
+
+    fi
 
 }
+
+function _settings_config_dropbox() {
+
+    # Checking global var
+    if [[ ${BACKUP_DROPBOX_STATUS} == "true" ]]; then
+
+        "${DROPBOX_UPLOADER}" list
+
+        # Generating Dropbox api config file
+        #generate_dropbox_config
+
+    fi
+
+}
+
+################################################################################
+#botfather_whip_line+=" \n "
+#botfather_whip_line+=" Open Telegram and follow the next steps:\n\n"
+#botfather_whip_line+=" 1) Get a bot token. Contact @BotFather (https://t.me/BotFather) and send the command /newbot.\n"
+#botfather_whip_line+=" 2) Follow the instructions and paste the token to access the HTTP API:\n\n"
+#telegram_id_whip_line+=" 3) Contact the @myidbot (https://t.me/myidbot) bot and send the command /getid to get \n"
+#telegram_id_whip_line+=" your personal chat id or invite him into a group and issue the same command to get the group chat id.\n"
+#telegram_id_whip_line+=" 4) Paste the ID here:\n\n"
