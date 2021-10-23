@@ -10,8 +10,7 @@
 
 function server_config_checker() {
 
-    #local server_config_file="$1"
-    local server_config_file="/root/.brolit-shell.json"
+    local server_config_file="$1"
 
     if [ -f "$server_config_file" ]; then
         echo "Server config file found: $server_config_file"
