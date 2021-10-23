@@ -950,3 +950,19 @@ function mysql_database_rename() {
     mysql_database_drop "${database_old_name}"
 
 }
+
+# TO-CHECK
+function mysql_database_clone() {
+
+    local database_old_name=$1
+    local database_new_name=$2
+
+    local dump_file="${TMP_DIR}/${database_old_name}_bk_before_clone_db.sql"
+
+    mysql_database_export "${database_old_name}" "${dump_file}"
+
+    mysql_database_create "${database_new_name}"
+
+    mysql_database_import "${database_new_name}" "${dump_file}"
+
+}

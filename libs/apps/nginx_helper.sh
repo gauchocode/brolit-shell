@@ -526,8 +526,6 @@ function nginx_create_globals_config() {
 
 function nginx_create_empty_nginx_conf() {
 
-    #$1 = ${path}
-
     local path=$1
 
     if [[ ! -f "${path}/nginx.conf" ]]; then
@@ -555,10 +553,7 @@ function nginx_create_empty_nginx_conf() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function nginx_generate_auth() {
-
-    #$1 = ${user}
-    #$1 = ${psw}
+function nginx_generate_encrypted_auth() {
 
     local user=$1
     local psw=$2
@@ -568,5 +563,38 @@ function nginx_generate_auth() {
     fi
 
     printf "${user}:${psw}" >"/etc/nginx/passwords"
+
+}
+
+################################################################################
+# Add http2 support to nginx server configuration
+#
+# Arguments:
+#   $1 = ${nginx_server_file}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function nginx_server_add_http2_support() {
+
+    local nginx_server_file=$1
+
+    # Check if the file exists
+    nginx_server_file="/etc/nginx/sites-available/${1}"
+    if [[ ! -f "${nginx_server_file}" ]]; then
+        log_event "error" "File ${nginx_server_file} not found"
+        return 1
+    fi
+
+    # Add http2 to ports
+    sed -i "s/listen 443 ssl;/listen 443 ssl http2;/g" "${nginx_server_file}"
+    sed -i "s/listen [::]:443 ssl;/listen [::]:443 ssl http2;/g" "${nginx_server_file}"
+
+    # Log
+    log_event "info" "Adding http2 support to ${nginx_server_file}" "false"
+    display --indent 6 --text "- Adding http2 support" --result "DONE" --color GREEN
+
+    return 0
 
 }
