@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.67
+# Version: 3.0.68-beta
 ################################################################################
 #
 # WP-CLI Helper: Perform wpcli tasks.
