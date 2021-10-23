@@ -99,13 +99,12 @@ function _netdata_alarm_level() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    # old config
-    echo "NETDATA_ALARM_LEVEL=${netdata_alarm_level}" >>/root/.brolit-shell.conf
-
-    # new config
+    # Brolit config
     config_file="/root/.brolit_conf.json"
+
     config_field="SUPPORT.netdata[].config[].netdata_alarm_level"
     config_value="${netdata_alarm_level}"
+    
     json_write_field "${config_file}" "${config_field}" "${config_value}"
 
     log_event "info" "Alarm Level for Notifications: ${netdata_alarm_level}" "false"
