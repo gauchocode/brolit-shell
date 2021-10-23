@@ -21,4 +21,4 @@ chmod +x "${SFOLDER}/libs/commons.sh"
 source "${SFOLDER}/libs/commons.sh"
 
 ### Main Function
-server_config_checker "/root/.brolit_conf.json"
+brolit_configuration_load "/root/.brolit_conf.json"

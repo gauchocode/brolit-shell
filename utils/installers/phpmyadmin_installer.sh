@@ -30,31 +30,31 @@ function phpmyadmin_installer () {
 
   # Download phpMyAdmin
   display --indent 6 --text "- Downloading phpMyAdmin"
-  log_event "debug" "Running: curl --silent -L https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip > ${SITES}/phpMyAdmin-latest-all-languages.zip" "false"
+  log_event "debug" "Running: curl --silent -L https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip > ${PROJECTS_PATH}/phpMyAdmin-latest-all-languages.zip" "false"
   
-  curl --silent -L https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip > "${SITES}"/phpMyAdmin-latest-all-languages.zip
+  curl --silent -L https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip > "${PROJECTS_PATH}"/phpMyAdmin-latest-all-languages.zip
   
   clear_last_line
   display --indent 6 --text "- Downloading phpMyAdmin" --result "DONE" --color GREEN
 
   # Uncompress
   display --indent 6 --text "- Uncompressing phpMyAdmin"
-  log_event "debug" "Running: unzip -qq ${SITES}/phpMyAdmin-latest-all-languages.zip -d ${SITES}/${project_domain}" "false"
+  log_event "debug" "Running: unzip -qq ${PROJECTS_PATH}/phpMyAdmin-latest-all-languages.zip -d ${PROJECTS_PATH}/${project_domain}" "false"
   
-  unzip -qq "${SITES}/phpMyAdmin-latest-all-languages.zip" -d "${SITES}"
+  unzip -qq "${PROJECTS_PATH}/phpMyAdmin-latest-all-languages.zip" -d "${PROJECTS_PATH}"
   
   clear_last_line
   display --indent 6 --text "- Uncompressing phpMyAdmin" --result "DONE" --color GREEN
 
   # Delete downloaded file
-  rm "${SITES}/phpMyAdmin-latest-all-languages.zip"
+  rm "${PROJECTS_PATH}/phpMyAdmin-latest-all-languages.zip"
   
   display --indent 6 --text "- Deleting installer file" --result "DONE" --color GREEN
 
   # Change directory name
-  log_event "debug" "Running: mv ${SITES}/phpMyAdmin-* ${SITES}/${project_domain}" "false"
+  log_event "debug" "Running: mv ${PROJECTS_PATH}/phpMyAdmin-* ${PROJECTS_PATH}/${project_domain}" "false"
   
-  mv "${SITES}"/phpMyAdmin-* "${SITES}/${project_domain}"
+  mv "${PROJECTS_PATH}"/phpMyAdmin-* "${PROJECTS_PATH}/${project_domain}"
   
   display --indent 6 --text "- Changing directory name" --result "DONE" --color GREEN
 
@@ -65,7 +65,7 @@ function phpmyadmin_installer () {
   cloudflare_set_record "${root_domain}" "${project_domain}" "A"
 
   # HTTPS with Certbot
-  certbot_helper_installer_menu "${MAILA}" "${project_domain}"
+  certbot_helper_installer_menu "${NOTIFICATION_EMAIL_MAILA}" "${project_domain}"
 
   # Log
   log_event "info" "phpMyAdmin installer finished" "false"
