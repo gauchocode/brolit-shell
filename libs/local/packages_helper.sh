@@ -141,7 +141,7 @@ function package_install_if_not() {
 # TODO: need a refactor
 function packages_check_required() {
 
-  log_section "Script Package Manager"
+  #log_section "Script Package Manager"
 
   log_event "info" "Checking required packages ..." "false"
 

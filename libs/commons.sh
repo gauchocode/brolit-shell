@@ -230,7 +230,11 @@ function _check_scripts_permissions() {
 
   ### chmod
   find ./ -name "*.sh" -exec chmod +x {} \;
+
+  # Log
+  log_event "info" "Checking scripts permissions" "false"
   log_event "debug" "Executing chmod +x on *.sh" "false"
+  display --indent 6 --text "- Checking scripts permissions" --result "DONE" --color GREEN
 
 }
 
@@ -355,6 +359,8 @@ function script_init() {
   log_event "" "              ${SCRIPT_N} v${SCRIPT_V} by BROOBE" "true"
   log_event "" "                                             " "true"
   log_event "" "---------------------------------------------" "true"
+
+  log_section "Script Initialization"
 
   # Checking distro
   _check_distro
