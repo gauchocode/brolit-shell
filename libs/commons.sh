@@ -234,7 +234,7 @@ function _check_scripts_permissions() {
   # Log
   log_event "info" "Checking scripts permissions" "false"
   log_event "debug" "Executing chmod +x on *.sh" "false"
-  display --indent 6 --text "- Checking scripts permissions" --result "DONE" --color GREEN
+  display --indent 2 --text "- Checking scripts permissions" --result "DONE" --color GREEN
 
 }
 
@@ -1489,11 +1489,24 @@ function menu_main_options() {
 
     fi
     if [[ ${chosen_type} == *"06"* ]]; then
-      # shellcheck source=${SFOLDER}/utils/cloudflare_manager.sh
-      source "${SFOLDER}/utils/cloudflare_manager.sh"
 
-      log_section "Cloudflare Manager"
-      cloudflare_manager_menu
+      if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
+
+        # shellcheck source=${SFOLDER}/utils/cloudflare_manager.sh
+        source "${SFOLDER}/utils/cloudflare_manager.sh"
+
+        log_section "Cloudflare Manager"
+        cloudflare_manager_menu
+
+      else
+
+        display --indent 2 --text "Cloudflare support is disabled" --result WARNING --color YELLOW
+        display --indent 4 --text "Configure the api key on brolit_conf.json"
+        log_event "warning" "Cloudflare support is disabled" "false"
+
+        exit 1
+
+      fi
 
     fi
     if [[ ${chosen_type} == *"07"* ]]; then
