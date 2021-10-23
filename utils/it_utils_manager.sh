@@ -179,7 +179,7 @@ function menu_security_clamav_scan() {
 
   local to_scan
 
-  startdir="${SITES}"
+  startdir="${PROJECTS_PATH}"
   directory_browser "${menutitle}" "${startdir}"
 
   # If directory browser was cancelled
@@ -204,7 +204,7 @@ function menu_security_custom_scan() {
 
   local to_scan
 
-  startdir="${SITES}"
+  startdir="${PROJECTS_PATH}"
   directory_browser "${menutitle}" "${startdir}"
 
   # If directory browser was cancelled

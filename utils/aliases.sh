@@ -14,13 +14,13 @@ SFOLDER="/root/brolit-shell"
 BROLIT_CONFIG_PATH="/etc/brolit"
 
 CLF_CONFIG_FILE=~/.cloudflare.conf
-if [[ ${CLOUDFLARE_ENABLE} == "true" && -f ${CLF_CONFIG_FILE} ]]; then
+if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "true" && -f ${CLF_CONFIG_FILE} ]]; then
     # shellcheck source=${CLF_CONFIG_FILE}
     source "${CLF_CONFIG_FILE}"
 fi
 
 DPU_CONFIG_FILE=~/.dropbox_uploader
-if [[ ${DROPBOX_ENABLE} == "true" && -f ${DPU_CONFIG_FILE} ]]; then
+if [[ ${BACKUP_DROPBOX_STATUS} == "true" && -f ${DPU_CONFIG_FILE} ]]; then
     # shellcheck source=${DPU_CONFIG_FILE}
     source "${DPU_CONFIG_FILE}"
     # Dropbox-uploader directory
@@ -184,12 +184,12 @@ function _cloudflare_get_zone_id() {
     # Checking cloudflare credentials file
     # generate_cloudflare_config
 
-    # Using globals: ${dns_cloudflare_email} and ${dns_cloudflare_api_key}
+    # Using globals: ${SUPPORT_CLOUDFLARE_EMAIL} and ${SUPPORT_CLOUDFLARE_API_KEY}
 
     # Get Zone ID
     zone_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" \
-        -H "X-Auth-Email: ${dns_cloudflare_email}" \
-        -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
+        -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+        -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
         -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1)"
 
     exitstatus=$?
@@ -433,7 +433,7 @@ function _cloudflare_record_exists() {
     record_name="${domain}"
 
     # Retrieve record_id
-    record_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${dns_cloudflare_email}" -H "X-Auth-Key: ${dns_cloudflare_api_key}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*')"
+    record_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*')"
 
     exitstatus=$?
     if [[ ${record_id} == "" ]]; then
@@ -844,7 +844,7 @@ function brolit_ssh_keygen() {
 function brolit_shell_config() {
 
     # Return JSON part
-    echo "\"script_version\": \"${SCRIPT_VERSION}\" , \"server_type\": \"${SERVER_CONFIG}\" , \"netdata_url\": \"${NETDATA_SUBDOMAIN}\" , \"mail_notif\": \"${MAIL_NOTIF}\" , \"telegram_notif\": \"${TELEGRAM_NOTIF}\" , \"dropbox_enable\": \"${DROPBOX_ENABLE}\" , \"cloudflare_enable\": \"${CLOUDFLARE_ENABLE}\" , \"smtp_server\": \"${SMTP_SERVER}\""
+    echo "\"script_version\": \"${SCRIPT_VERSION}\" , \"server_type\": \"${SERVER_CONFIG}\" , \"netdata_url\": \"${NETDATA_SUBDOMAIN}\" , \"mail_notif\": \"${MAIL_NOTIF}\" , \"telegram_notif\": \"${NOTIFICATION_TELEGRAM_STATUS}\" , \"dropbox_enable\": \"${BACKUP_DROPBOX_STATUS}\" , \"cloudflare_enable\": \"${SUPPORT_CLOUDFLARE_STATUS}\" , \"smtp_server\": \"${NOTIFICATION_EMAIL_SMTP_SERVER}\""
 
 }
 
@@ -1095,7 +1095,7 @@ function dropbox_get_backup() {
         exit 1
     fi
 
-    project_db="$(_project_get_config "${SITES}/${project_domain}" "project_db")"
+    project_db="$(_project_get_config "${PROJECTS_PATH}/${project_domain}" "project_db")"
 
     if [[ ${project_db} == "false" ]]; then
 
@@ -1217,8 +1217,8 @@ function cloudflare_get_record_details() {
 
         # DNS Record Details
         record="$(curl -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
-            -H "X-Auth-Email: ${dns_cloudflare_email}" \
-            -H "X-Auth-Key: ${dns_cloudflare_api_key}" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json")"
 
         if [[ ${record} == *"\"success\":false"* || ${record} == "" ]]; then
@@ -1248,7 +1248,7 @@ function read_site_config() {
     local project_config
     local project_config_file
 
-    #DEVOPS_CONFIG_FILE="${SITES}/${project_domain}/brolit.conf"
+    #DEVOPS_CONFIG_FILE="${PROJECTS_PATH}/${project_domain}/brolit.conf"
     project_config_file="${BROLIT_CONFIG_PATH}/${project_name}_conf.json"
 
     if [[ -f ${project_config_file} ]]; then

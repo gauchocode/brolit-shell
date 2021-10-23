@@ -44,14 +44,17 @@ function server_setup() {
 
             ;;
 
+        # TODO
         webapp)
             log_event "info" "NEED IMPLEMENTATION" "true"
             ;;
 
+        # TODO
         cache)
             log_event "info" "NEED IMPLEMENTATION" "true"
             ;;
 
+        # TODO
         replica)
             log_event "info" "NEED IMPLEMENTATION" "true"
             ;;
@@ -82,7 +85,7 @@ function server_setup_tasks_handler() {
 
   local subtask=$1
 
-  log_subsection "WP-CLI Manager"
+  log_subsection "Server Setup Manager"
 
   case ${subtask} in
 

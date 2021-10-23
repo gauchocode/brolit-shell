@@ -400,10 +400,10 @@ function script_init() {
 
   # Dropbox-uploader config file
   DPU_CONFIG_FILE=~/.dropbox_uploader
-  if [[ ${DROPBOX_ENABLE} == "true" && ! -f ${DPU_CONFIG_FILE} ]]; then
+  if [[ ${BACKUP_DROPBOX_STATUS} == "true" && ! -f ${DPU_CONFIG_FILE} ]]; then
     generate_dropbox_config
   fi
-  if [[ ${DROPBOX_ENABLE} == "true" ]]; then
+  if [[ ${BACKUP_DROPBOX_STATUS} == "true" ]]; then
     # shellcheck source=~/.dropbox_uploader
     source "${DPU_CONFIG_FILE}"
     # Dropbox-uploader directory
@@ -413,21 +413,23 @@ function script_init() {
   fi
 
   # Cloudflare config file
-  CLF_CONFIG_FILE=~/.cloudflare.conf
-  if [[ ${CLOUDFLARE_ENABLE} == "true" && -f ${CLF_CONFIG_FILE} ]]; then
-    # shellcheck source=~/.cloudflare.conf
-    source "${CLF_CONFIG_FILE}"
-  fi
+  #CLF_CONFIG_FILE=~/.cloudflare.conf
+  #if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "true" && -f ${CLF_CONFIG_FILE} ]]; then
+  #  # shellcheck source=~/.cloudflare.conf
+  #  source "${CLF_CONFIG_FILE}"
+  #fi
 
   # Telegram config file
-  TEL_CONFIG_FILE=~/.telegram.conf
-  if [[ ${TELEGRAM_NOTIF} == "true" && -f ${TEL_CONFIG_FILE} ]]; then
-    # shellcheck source=~/.telegram.conf
-    source "${TEL_CONFIG_FILE}"
-  fi
+  #TEL_CONFIG_FILE=~/.telegram.conf
+  #if [[ ${NOTIFICATION_TELEGRAM_STATUS} == "true" && -f ${TEL_CONFIG_FILE} ]]; then
+  #  # shellcheck source=~/.telegram.conf
+  #  source "${TEL_CONFIG_FILE}"
+  #fi
 
   # Check configuration
-  check_script_configuration
+  ## TODO: remove hardcoded path
+  brolit_configuration_load "/root/.brolit_conf.json"
+  brolit_apps_configuration_load
 
   # LOCAL IP (if server has configured a floating ip, it will return this)
   LOCAL_IP="$(/sbin/ifconfig eth0 | grep -w 'inet ' | awk '{print $2}')" # Could be a floating ip
@@ -445,12 +447,12 @@ function script_init() {
   log_event "info" "SERVER IP: ${SERVER_IP}" "false"
 
   # EXPORT VARS
-  export SCRIPT_V VPSNAME BROLIT_CONFIG_PATH TMP_DIR SFOLDER DPU_F DROPBOX_UPLOADER SITES BLACKLISTED_SITES BLACKLISTED_DATABASES WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V SERVER_CONFIG
+  export SCRIPT_V VPSNAME BROLIT_CONFIG_PATH TMP_DIR SFOLDER DPU_F DROPBOX_UPLOADER PROJECTS_PATH BLACKLISTED_SITES BLACKLISTED_DATABASES WSERVER MAIN_VOL PACKAGES PHP_CF PHP_V SERVER_CONFIG
   export LENCRYPT_CF MySQL_CF MYSQL MYSQL_CONF MYSQLDUMP MYSQL_ROOT MYSQLDUMP_ROOT TAR FIND DROPBOX_FOLDER MAILCOW_DIR MAILCOW_TMP_BK MHOST MUSER NOW NOWDISPLAY ONEWEEKAGO
-  export DISK_U ONE_FILE_BK LOCAL_IP SERVER_IP SERVER_IPv6 SMTP_SERVER SMTP_PORT SMTP_TLS SMTP_U SMTP_P 
+  export DISK_U ONE_FILE_BK LOCAL_IP SERVER_IP SERVER_IPv6 NOTIFICATION_EMAIL_SMTP_SERVER NOTIFICATION_EMAIL_SMTP_PORT NOTIFICATION_EMAIL_SMTP_TLS NOTIFICATION_EMAIL_SMTP_USER NOTIFICATION_EMAIL_SMTP_USER_PASS 
   #export STATUS_BACKUP_DBS STATUS_BACKUP_FILES STATUS_SERVER STATUS_CERTS OUTDATED_PACKAGES
   export BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR
-  export dns_cloudflare_email dns_cloudflare_api_key
+  #export SUPPORT_CLOUDFLARE_EMAIL SUPPORT_CLOUDFLARE_API_KEY
   export LOG DEBUG EXEC_TYPE QUIET SKIPTESTS
 
 }
@@ -856,7 +858,7 @@ function directory_browser() {
 function get_all_directories() {
 
   # Parameters
-  # $1 = ${SITES}
+  # $1 = ${PROJECTS_PATH}
 
   local main_dir=$1
 
@@ -1794,7 +1796,7 @@ function tasks_handler() {
 
   project)
 
-    project_tasks_handler "${STASK}" "${SITES}" "${PTYPE}" "${DOMAIN}" "${PNAME}" "${PSTATE}"
+    project_tasks_handler "${STASK}" "${PROJECTS_PATH}" "${PTYPE}" "${DOMAIN}" "${PNAME}" "${PSTATE}"
 
     exit
     ;;

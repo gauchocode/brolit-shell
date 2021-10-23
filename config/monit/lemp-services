@@ -44,7 +44,7 @@ set eventqueue
 
 #Mail settings
 set mail-format {
-    from: SMTP_U
+    from: NOTIFICATION_EMAIL_SMTP_USER
     subject: $HOST - Monit Alert: $EVENT
     message: $EVENT Service $SERVICE
                     Date:        $DATE
@@ -54,10 +54,10 @@ set mail-format {
 
               Your faithful employee,
               Monit }
-set mailserver SMTP_SERVER port SMTP_PORT
-    username SMTP_U password "SMTP_P"
+set mailserver NOTIFICATION_EMAIL_SMTP_SERVER port NOTIFICATION_EMAIL_SMTP_PORT
+    username NOTIFICATION_EMAIL_SMTP_USER password "NOTIFICATION_EMAIL_SMTP_USER_PASS"
     using TLSV1 with timeout 30 seconds
-    set alert MAILA                                                             # email address which will receive monit alerts
+    set alert NOTIFICATION_EMAIL_MAILA                                                             # email address which will receive monit alerts
 
 #http settings
 set httpd port 2812 address 0.0.0.0                                             # allow connections on all adapters

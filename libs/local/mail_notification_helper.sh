@@ -44,12 +44,12 @@ function mail_send_notification() {
     local email_content=$2
 
     # Log
-    log_event "info" "Sending Email to ${MAILA} ..." "false"
-    log_event "debug" "Running: sendEmail -f \"${SMTP_U}\" -t \"${MAILA}\" -u \"${email_subject}\" -o message-content-type=html -m \"${email_content}\" -s \"${SMTP_SERVER}:${SMTP_PORT}\" -o tls=\"${SMTP_TLS}\" -xu \"${SMTP_U}\" -xp \"${SMTP_P}\"" "false"
+    log_event "info" "Sending Email to ${NOTIFICATION_EMAIL_MAILA} ..." "false"
+    log_event "debug" "Running: sendEmail -f \"${NOTIFICATION_EMAIL_SMTP_USER}\" -t \"${NOTIFICATION_EMAIL_MAILA}\" -u \"${email_subject}\" -o message-content-type=html -m \"${email_content}\" -s \"${NOTIFICATION_EMAIL_SMTP_SERVER}:${NOTIFICATION_EMAIL_SMTP_PORT}\" -o tls=\"${NOTIFICATION_EMAIL_SMTP_TLS}\" -xu \"${NOTIFICATION_EMAIL_SMTP_USER}\" -xp \"${NOTIFICATION_EMAIL_SMTP_USER_PASS}\"" "false"
 
     # Sending email
     ## Use -l "/${SCRIPT}/sendemail.log" for custom log file
-    sendEmail -f ${SMTP_U} -t "${MAILA}" -u "${email_subject}" -o message-content-type=html -m "${email_content}" -s "${SMTP_SERVER}:${SMTP_PORT}" -o tls="${SMTP_TLS}" -xu "${SMTP_U}" -xp "${SMTP_P}" 1>&2
+    sendEmail -f ${NOTIFICATION_EMAIL_SMTP_USER} -t "${NOTIFICATION_EMAIL_MAILA}" -u "${email_subject}" -o message-content-type=html -m "${email_content}" -s "${NOTIFICATION_EMAIL_SMTP_SERVER}:${NOTIFICATION_EMAIL_SMTP_PORT}" -o tls="${NOTIFICATION_EMAIL_SMTP_TLS}" -xu "${NOTIFICATION_EMAIL_SMTP_USER}" -xp "${NOTIFICATION_EMAIL_SMTP_USER_PASS}" 1>&2
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -261,7 +261,7 @@ function mail_certificates_section() {
     # This fix avoid getting the first parent directory, maybe we could find a better solution
     local k="skip"
 
-    all_sites="$(get_all_directories "${SITES}")"
+    all_sites="$(get_all_directories "${PROJECTS_PATH}")"
 
     for site in ${all_sites}; do
 

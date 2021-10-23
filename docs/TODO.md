@@ -77,8 +77,8 @@
 - [ ] Core: Complete refactor of script_configuration_wizard.
 - [ ] Core: Better structure of deleted projects on dropbox.
 - [ ] Core: Add an option to backup all and prepare VPS to be offline/deleted (add a VPS offline structure on dropbox).
-- [ ] Core: make new standard directory structure for projects "${SITES}/${ROOT_DOMAIN}/${SUBDOMAIN}/public". ?
-      Logs could be stored on "${SITES}/${ROOT_DOMAIN}/${SUBDOMAIN}/log"
+- [ ] Core: make new standard directory structure for projects "${PROJECTS_PATH}/${ROOT_DOMAIN}/${SUBDOMAIN}/public". ?
+      Logs could be stored on "${PROJECTS_PATH}/${ROOT_DOMAIN}/${SUBDOMAIN}/log"
 - [ ] Core: maybe with could ask for database user nomenclature. Today is "PROJECTNAME_user" and it could be "PROJECTNAME_PROJECTSTATE_user".
 - [ ] Backups: Refactor for backup/restore: 5 options (server_config, site_config, site, database and project).
 - [ ] Restore: Finish function restore_config_files_from_dropbox.

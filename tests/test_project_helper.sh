@@ -8,8 +8,8 @@ function test_project_helper_funtions() {
 
     local project_domain="dev.broobe.com"
 
-    #test_project_install "${SITES}" "wordpress"
-    test_project_update_config "${SITES}/${project_domain}" "project_db" "broobe_dev"
+    #test_project_install "${PROJECTS_PATH}" "wordpress"
+    test_project_update_config "${PROJECTS_PATH}/${project_domain}" "project_db" "broobe_dev"
 
 }
 
@@ -21,7 +21,7 @@ function test_project_install() {
     local project_name
     local project_state
 
-    project_path="${SITES}"
+    project_path="${PROJECTS_PATH}"
     project_type="wordpress"
     project_domain="test.domain.com"
     project_name="domain"

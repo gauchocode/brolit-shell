@@ -143,7 +143,7 @@ function backup_manager_menu() {
       log_section "Project Backup"
 
       # Select project to work with
-      directory_browser "Select a project to work with" "${SITES}" #return $filename
+      directory_browser "Select a project to work with" "${PROJECTS_PATH}" #return $filename
 
       # Directory_broser returns: $filepath and $filename
       if [[ ${filename} != "" && ${filepath} != "" ]]; then
@@ -276,7 +276,7 @@ function subtasks_backup_handler() {
 
   project)
 
-    project_type="$(project_get_config "${SITES}/${DOMAIN}" "project_type")"
+    project_type="$(project_get_config "${PROJECTS_PATH}/${DOMAIN}" "project_type")"
 
     make_project_backup "${DOMAIN}" "${project_type}"
 

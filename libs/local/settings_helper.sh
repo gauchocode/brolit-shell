@@ -24,19 +24,19 @@ function _settings_ask_valid_email() {
     local whip_title=$1
     local whip_text=$2
 
-    MAILA="$(whiptail --title "${whip_title}" --inputbox "${whip_text}" 10 60 "${MAILA_OLD}" 3>&1 1>&2 2>&3)"
+    NOTIFICATION_EMAIL_MAILA="$(whiptail --title "${whip_title}" --inputbox "${whip_text}" 10 60 "${MAILA_OLD}" 3>&1 1>&2 2>&3)"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Check if user enter a valid email
-        validator_email_format "${MAILA}"
+        validator_email_format "${NOTIFICATION_EMAIL_MAILA}"
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # Return
-            echo "${MAILA}"
+            echo "${NOTIFICATION_EMAIL_MAILA}"
 
         else
 
@@ -86,19 +86,19 @@ function _settings_config_smtp() {
 
     local config_file="/root/.brolit_conf.json"
 
-    if [[ -z "${SMTP_SERVER}" ]]; then
+    if [[ -z "${NOTIFICATION_EMAIL_SMTP_SERVER}" ]]; then
 
-        SMTP_SERVER=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server" 10 60 "${SMTP_SERVER_OLD}" 3>&1 1>&2 2>&3)
+        NOTIFICATION_EMAIL_SMTP_SERVER=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server" 10 60 "${SMTP_SERVER_OLD}" 3>&1 1>&2 2>&3)
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # old config
-            echo "SMTP_SERVER=${SMTP_SERVER}" >>/root/.brolit-shell.conf
+            echo "NOTIFICATION_EMAIL_SMTP_SERVER=${NOTIFICATION_EMAIL_SMTP_SERVER}" >>/root/.brolit-shell.conf
 
             # new config
             config_field="NOTIFICATIONS.email[].config[].smtp_server"
-            config_value="${SMTP_SERVER}"
+            config_value="${NOTIFICATION_EMAIL_SMTP_SERVER}"
             json_write_field "${config_file}" "${config_field}" "${config_value}"
 
         else
@@ -107,19 +107,19 @@ function _settings_config_smtp() {
 
         fi
     fi
-    if [[ -z "${SMTP_PORT}" ]]; then
+    if [[ -z "${NOTIFICATION_EMAIL_SMTP_PORT}" ]]; then
 
-        SMTP_PORT=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server Port" 10 60 "${SMTP_PORT_OLD}" 3>&1 1>&2 2>&3)
+        NOTIFICATION_EMAIL_SMTP_PORT=$(whiptail --title "SMTP SERVER" --inputbox "Please insert the SMTP Server Port" 10 60 "${SMTP_PORT_OLD}" 3>&1 1>&2 2>&3)
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # old config
-            echo "SMTP_PORT=${SMTP_PORT}" >>/root/.brolit-shell.conf
+            echo "NOTIFICATION_EMAIL_SMTP_PORT=${NOTIFICATION_EMAIL_SMTP_PORT}" >>/root/.brolit-shell.conf
 
             # new config
             config_field="NOTIFICATIONS.email[].config[].smtp_port"
-            config_value="${SMTP_PORT}"
+            config_value="${NOTIFICATION_EMAIL_SMTP_PORT}"
             json_write_field "${config_file}" "${config_field}" "${config_value}"
 
         else
@@ -129,19 +129,19 @@ function _settings_config_smtp() {
         fi
     fi
     # TODO: change to SMTP_TYPE (none, ssl, tls)
-    if [[ -z "${SMTP_TLS}" ]]; then
+    if [[ -z "${NOTIFICATION_EMAIL_SMTP_TLS}" ]]; then
 
-        SMTP_TLS=$(whiptail --title "SMTP TLS" --inputbox "SMTP yes or no:" 10 60 "${SMTP_TLS_OLD}" 3>&1 1>&2 2>&3)
+        NOTIFICATION_EMAIL_SMTP_TLS=$(whiptail --title "SMTP TLS" --inputbox "SMTP yes or no:" 10 60 "${SMTP_TLS_OLD}" 3>&1 1>&2 2>&3)
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # old config
-            echo "SMTP_TLS=${SMTP_TLS}" >>/root/.brolit-shell.conf
+            echo "NOTIFICATION_EMAIL_SMTP_TLS=${NOTIFICATION_EMAIL_SMTP_TLS}" >>/root/.brolit-shell.conf
 
             # new config
             config_field="NOTIFICATIONS.email[].config[].smtp_tls"
-            config_value="${SMTP_TLS}"
+            config_value="${NOTIFICATION_EMAIL_SMTP_TLS}"
             json_write_field "${config_file}" "${config_field}" "${config_value}"
 
         else
@@ -150,19 +150,19 @@ function _settings_config_smtp() {
 
         fi
     fi
-    if [[ -z "${SMTP_U}" ]]; then
+    if [[ -z "${NOTIFICATION_EMAIL_SMTP_USER}" ]]; then
 
-        SMTP_U=$(whiptail --title "SMTP User" --inputbox "Please insert the SMTP user" 10 60 "${SMTP_U_OLD}" 3>&1 1>&2 2>&3)
+        NOTIFICATION_EMAIL_SMTP_USER=$(whiptail --title "SMTP User" --inputbox "Please insert the SMTP user" 10 60 "${SMTP_U_OLD}" 3>&1 1>&2 2>&3)
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # old config
-            echo "SMTP_U=${SMTP_U}" >>/root/.brolit-shell.conf
+            echo "NOTIFICATION_EMAIL_SMTP_USER=${NOTIFICATION_EMAIL_SMTP_USER}" >>/root/.brolit-shell.conf
 
             # new config
             config_field="NOTIFICATIONS.email[].config[].smtp_u"
-            config_value="${SMTP_U}"
+            config_value="${NOTIFICATION_EMAIL_SMTP_USER}"
             json_write_field "${config_file}" "${config_field}" "${config_value}"
 
         else
@@ -171,19 +171,19 @@ function _settings_config_smtp() {
 
         fi
     fi
-    if [[ -z "${SMTP_P}" ]]; then
+    if [[ -z "${NOTIFICATION_EMAIL_SMTP_USER_PASS}" ]]; then
 
-        SMTP_P=$(whiptail --title "SMTP Password" --inputbox "Please insert the SMTP user password" 10 60 "${SMTP_P_OLD}" 3>&1 1>&2 2>&3)
+        NOTIFICATION_EMAIL_SMTP_USER_PASS=$(whiptail --title "SMTP Password" --inputbox "Please insert the SMTP user password" 10 60 "${SMTP_P_OLD}" 3>&1 1>&2 2>&3)
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # old config
-            echo "SMTP_P=${SMTP_P}" >>/root/.brolit-shell.conf
+            echo "NOTIFICATION_EMAIL_SMTP_USER_PASS=${NOTIFICATION_EMAIL_SMTP_USER_PASS}" >>/root/.brolit-shell.conf
 
             # new config
             config_field="NOTIFICATIONS.email[].config[].smtp_p"
-            config_value="${SMTP_P}"
+            config_value="${NOTIFICATION_EMAIL_SMTP_USER_PASS}"
             json_write_field "${config_file}" "${config_field}" "${config_value}"
         else
 
@@ -230,7 +230,7 @@ function _settings_config_duplicity() {
                 if [[ -z "${DUP_SRC_BK}" ]]; then
 
                     # Source of Directories to Backup
-                    DUP_SRC_BK_DEFAULT="${SITES}"
+                    DUP_SRC_BK_DEFAULT="${PROJECTS_PATH}"
                     DUP_SRC_BK=$(whiptail --title "Projects Root Directory" --inputbox "Insert the root directory of projects to backup" 10 60 "${DUP_SRC_BK_DEFAULT}" 3>&1 1>&2 2>&3)
                     exitstatus=$?
                     if [[ ${exitstatus} -eq 0 ]]; then
@@ -343,15 +343,15 @@ function _settings_config_mailcow() {
 function _settings_config_dropbox() {
 
     # Checking /root/.brolit-shell.conf global var
-    if [[ -z "${DROPBOX_ENABLE}" ]]; then
+    if [[ -z "${BACKUP_DROPBOX_STATUS}" ]]; then
 
         whiptail_message_with_skip_option "Dropbox Support" "This script supports Dropbox integration via API. If you have a Dropbox account you can configure it to backup and restore projects from here. Do you want to enable Dropbox support?"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # Setting option on script config file
-            DROPBOX_ENABLE="true"
-            echo "DROPBOX_ENABLE=${DROPBOX_ENABLE}" >>/root/.brolit-shell.conf
+            BACKUP_DROPBOX_STATUS="true"
+            echo "BACKUP_DROPBOX_STATUS=${BACKUP_DROPBOX_STATUS}" >>/root/.brolit-shell.conf
 
             # new config
             config_field="BACKUPS.methods[].dropbox"
@@ -362,8 +362,8 @@ function _settings_config_dropbox() {
             generate_dropbox_config
 
         else
-            DROPBOX_ENABLE="false"
-            echo "DROPBOX_ENABLE=${DROPBOX_ENABLE}" >>/root/.brolit-shell.conf
+            BACKUP_DROPBOX_STATUS="false"
+            echo "BACKUP_DROPBOX_STATUS=${BACKUP_DROPBOX_STATUS}" >>/root/.brolit-shell.conf
 
         fi
 
@@ -374,15 +374,15 @@ function _settings_config_dropbox() {
 function _settings_config_cloudflare() {
 
     # Checking /root/.brolit-shell.conf global var
-    if [[ -z "${CLOUDFLARE_ENABLE}" ]]; then
+    if [[ -z "${SUPPORT_CLOUDFLARE_STATUS}" ]]; then
 
         whiptail_message_with_skip_option "Cloudflare Support" "This script supports Cloudflare integration via API. If you have a Cloudflare account you can configure it to manage your domains from here. Do you want to enable Cloudflare support?"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # Setting option on script config file
-            CLOUDFLARE_ENABLE="true"
-            echo "CLOUDFLARE_ENABLE=${CLOUDFLARE_ENABLE}" >>/root/.brolit-shell.conf
+            SUPPORT_CLOUDFLARE_STATUS="true"
+            echo "SUPPORT_CLOUDFLARE_STATUS=${SUPPORT_CLOUDFLARE_STATUS}" >>/root/.brolit-shell.conf
 
             # new config
             config_field="SUPPORT.cloudflare[].status"
@@ -393,8 +393,8 @@ function _settings_config_cloudflare() {
             generate_cloudflare_config
 
         else
-            CLOUDFLARE_ENABLE="false"
-            echo "CLOUDFLARE_ENABLE=${CLOUDFLARE_ENABLE}" >>/root/.brolit-shell.conf
+            SUPPORT_CLOUDFLARE_STATUS="false"
+            echo "SUPPORT_CLOUDFLARE_STATUS=${SUPPORT_CLOUDFLARE_STATUS}" >>/root/.brolit-shell.conf
 
         fi
 
@@ -405,15 +405,15 @@ function _settings_config_cloudflare() {
 function _settings_config_telegram() {
 
     # Checking /root/.brolit-shell.conf global var
-    if [[ -z "${TELEGRAM_NOTIF}" ]]; then
+    if [[ -z "${NOTIFICATION_TELEGRAM_STATUS}" ]]; then
 
         whiptail_message_with_skip_option "Telegram Notification" "Do you want to enable Telegram notification support?"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # Setting option on script config file
-            TELEGRAM_NOTIF="true"
-            echo "TELEGRAM_NOTIF=${TELEGRAM_NOTIF}" >>/root/.brolit-shell.conf
+            NOTIFICATION_TELEGRAM_STATUS="true"
+            echo "NOTIFICATION_TELEGRAM_STATUS=${NOTIFICATION_TELEGRAM_STATUS}" >>/root/.brolit-shell.conf
 
             # new config
             config_field="NOTIFICATIONS.telegram[].status"
@@ -424,8 +424,8 @@ function _settings_config_telegram() {
             generate_telegram_config
 
         else
-            TELEGRAM_NOTIF="false"
-            echo "TELEGRAM_NOTIF=${TELEGRAM_NOTIF}" >>/root/.brolit-shell.conf
+            NOTIFICATION_TELEGRAM_STATUS="false"
+            echo "NOTIFICATION_TELEGRAM_STATUS=${NOTIFICATION_TELEGRAM_STATUS}" >>/root/.brolit-shell.conf
 
         fi
 
@@ -445,18 +445,18 @@ function _settings_config_notifications() {
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
-            if [[ -z "${MAILA}" ]]; then
+            if [[ -z "${NOTIFICATION_EMAIL_MAILA}" ]]; then
 
-                MAILA="$(_settings_ask_valid_email "E-Mail Notification" "Insert the email where you want to receive notifications:")"
+                NOTIFICATION_EMAIL_MAILA="$(_settings_ask_valid_email "E-Mail Notification" "Insert the email where you want to receive notifications:")"
 
-                if [[ -z ${MAILA} ]]; then
+                if [[ -z ${NOTIFICATION_EMAIL_MAILA} ]]; then
 
                     # Setting option on script config file
 
                     ## old config
                     MAIL_NOTIF="true"
                     echo "MAIL_NOTIF=${MAIL_NOTIF}" >>/root/.brolit-shell.conf
-                    echo "MAILA=${MAILA}" >>/root/.brolit-shell.conf
+                    echo "NOTIFICATION_EMAIL_MAILA=${NOTIFICATION_EMAIL_MAILA}" >>/root/.brolit-shell.conf
 
                     ## new config
                     config_field="NOTIFICATIONS.email[].status"
@@ -464,7 +464,7 @@ function _settings_config_notifications() {
                     json_write_field "${config_file}" "${config_field}" "${config_value}"
 
                     config_field="NOTIFICATIONS.email[].config[].maila"
-                    config_value="${MAILA}"
+                    config_value="${NOTIFICATION_EMAIL_MAILA}"
                     json_write_field "${config_file}" "${config_field}" "${config_value}"
 
                 fi
@@ -519,50 +519,50 @@ function script_configuration_wizard() {
     local config_mode=$1
 
     # Declare globals
-    declare -g SMTP_SERVER
-    declare -g SMTP_PORT
-    declare -g SMTP_TLS
-    declare -g SMTP_U
-    declare -g SMTP_P
-    declare -g MAILA
-    declare -g SITES
+    declare -g NOTIFICATION_EMAIL_SMTP_SERVER
+    declare -g NOTIFICATION_EMAIL_SMTP_PORT
+    declare -g NOTIFICATION_EMAIL_SMTP_TLS
+    declare -g NOTIFICATION_EMAIL_SMTP_USER
+    declare -g NOTIFICATION_EMAIL_SMTP_USER_PASS
+    declare -g NOTIFICATION_EMAIL_MAILA
+    declare -g PROJECTS_PATH
 
     if [[ ${config_mode} == "reconfigure" ]]; then
 
         # Backup vars
-        SMTP_SERVER_OLD=${SMTP_SERVER}
-        SMTP_PORT_OLD=${SMTP_PORT}
-        SMTP_TLS_OLD=${SMTP_TLS}
-        SMTP_U_OLD=${SMTP_U}
-        SMTP_P_OLD=${SMTP_P}
-        MAILA_OLD=${MAILA}
-        SITES_OLD=${SITES}
+        SMTP_SERVER_OLD=${NOTIFICATION_EMAIL_SMTP_SERVER}
+        SMTP_PORT_OLD=${NOTIFICATION_EMAIL_SMTP_PORT}
+        SMTP_TLS_OLD=${NOTIFICATION_EMAIL_SMTP_TLS}
+        SMTP_U_OLD=${NOTIFICATION_EMAIL_SMTP_USER}
+        SMTP_P_OLD=${NOTIFICATION_EMAIL_SMTP_USER_PASS}
+        MAILA_OLD=${NOTIFICATION_EMAIL_MAILA}
+        SITES_OLD=${PROJECTS_PATH}
 
         MAIL_NOTIF_OLD=${MAIL_NOTIF}
-        TELEGRAM_NOTIF_OLD=${TELEGRAM_NOTIF}
-        CLOUDFLARE_ENABLE_OLD=${CLOUDFLARE_ENABLE}
-        DROPBOX_ENABLE_OLD=${DROPBOX_ENABLE}
+        TELEGRAM_NOTIF_OLD=${NOTIFICATION_TELEGRAM_STATUS}
+        CLOUDFLARE_ENABLE_OLD=${SUPPORT_CLOUDFLARE_STATUS}
+        DROPBOX_ENABLE_OLD=${BACKUP_DROPBOX_STATUS}
         DUP_BK_OLD=${DUP_BK}
         MAILCOW_BK_OLD=${MAILCOW_BK}
 
         # Reset config vars
-        SMTP_SERVER=""
-        SMTP_PORT=""
-        SMTP_TLS=""
-        SMTP_U=""
-        SMTP_P=""
-        MAILA=""
-        SITES=""
+        NOTIFICATION_EMAIL_SMTP_SERVER=""
+        NOTIFICATION_EMAIL_SMTP_PORT=""
+        NOTIFICATION_EMAIL_SMTP_TLS=""
+        NOTIFICATION_EMAIL_SMTP_USER=""
+        NOTIFICATION_EMAIL_SMTP_USER_PASS=""
+        NOTIFICATION_EMAIL_MAILA=""
+        PROJECTS_PATH=""
 
         # Notif var
         MAIL_NOTIF="true"
-        TELEGRAM_NOTIF="false"
+        NOTIFICATION_TELEGRAM_STATUS="false"
 
         # Cloudflare
-        CLOUDFLARE_ENABLE="true"
+        SUPPORT_CLOUDFLARE_STATUS="true"
 
         # Backup
-        DROPBOX_ENABLE="true"
+        BACKUP_DROPBOX_STATUS="true"
         DUP_BK="false"
         MAILCOW_BK="false"
 
@@ -571,7 +571,7 @@ function script_configuration_wizard() {
 
     fi
 
-    if [[ -z "${SITES}" ]]; then
+    if [[ -z "${PROJECTS_PATH}" ]]; then
 
         if [[ -n "${SITES_OLD}" ]]; then
             # SITES_OLD defined
@@ -580,10 +580,10 @@ function script_configuration_wizard() {
             SITES_DEFAULT="/var/www"
         fi
 
-        SITES="$(whiptail --title "Websites Root Directory" --inputbox "The path where websites are stored. Ex: /var/www or /usr/share/nginx" 10 60 "${SITES_DEFAULT}" 3>&1 1>&2 2>&3)"
+        PROJECTS_PATH="$(whiptail --title "Websites Root Directory" --inputbox "The path where websites are stored. Ex: /var/www or /usr/share/nginx" 10 60 "${SITES_DEFAULT}" 3>&1 1>&2 2>&3)"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
-            echo "SITES=${SITES}" >>/root/.brolit-shell.conf
+            echo "PROJECTS_PATH=${PROJECTS_PATH}" >>/root/.brolit-shell.conf
         else
             exit 1
         fi
@@ -837,7 +837,7 @@ function generate_cloudflare_config() {
     local cfl_api_token_string
 
     # Checking vars of ${CLF_CONFIG_FILE}
-    if [[ -z ${dns_cloudflare_email} || -z ${dns_cloudflare_api_key} ]]; then
+    if [[ -z ${SUPPORT_CLOUDFLARE_EMAIL} || -z ${SUPPORT_CLOUDFLARE_API_KEY} ]]; then
 
         cfl_email_string="\n\nPlease insert the Cloudflare email account here:\n\n"
 
@@ -848,7 +848,7 @@ function generate_cloudflare_config() {
 
             declare -g CLF_CONFIG_FILE=~/.cloudflare.conf
 
-            echo "dns_cloudflare_email=${cfl_email}" >"${CLF_CONFIG_FILE}"
+            echo "SUPPORT_CLOUDFLARE_EMAIL=${cfl_email}" >"${CLF_CONFIG_FILE}"
 
             cfl_api_token_string+="\n Please insert the Cloudflare Global API Key.\n"
             cfl_api_token_string+=" 1) Log in on: cloudflare.com\n"
@@ -863,7 +863,7 @@ function generate_cloudflare_config() {
             if [[ ${exitstatus} -eq 0 ]]; then
 
                 # Write config file
-                echo "dns_cloudflare_api_key=${cfl_api_token}" >>"${CLF_CONFIG_FILE}"
+                echo "SUPPORT_CLOUDFLARE_API_KEY=${cfl_api_token}" >>"${CLF_CONFIG_FILE}"
                 log_event "info" "The Cloudflare configuration has been saved!"
 
             else
@@ -895,33 +895,33 @@ function generate_telegram_config() {
     # ${TEL_CONFIG_FILE} is a Global var
 
     local botfather_whip_line
-    local botfather_key
+    local NOTIFICATION_TELEGRAM_BOT_TOKEN
 
     botfather_whip_line+=" \n "
     botfather_whip_line+=" Open Telegram and follow the next steps:\n\n"
     botfather_whip_line+=" 1) Get a bot token. Contact @BotFather (https://t.me/BotFather) and send the command /newbot.\n"
     botfather_whip_line+=" 2) Follow the instructions and paste the token to access the HTTP API:\n\n"
 
-    botfather_key="$(whiptail --title "Telegram BotFather Configuration" --inputbox "${botfather_whip_line}" 15 60 3>&1 1>&2 2>&3)"
+    NOTIFICATION_TELEGRAM_BOT_TOKEN="$(whiptail --title "Telegram BotFather Configuration" --inputbox "${botfather_whip_line}" 15 60 3>&1 1>&2 2>&3)"
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
         declare -g TEL_CONFIG_FILE=~/.telegram.conf
 
         # Write config file
-        echo "botfather_key=${botfather_key}" >>"${TEL_CONFIG_FILE}"
+        echo "NOTIFICATION_TELEGRAM_BOT_TOKEN=${NOTIFICATION_TELEGRAM_BOT_TOKEN}" >>"${TEL_CONFIG_FILE}"
 
         telegram_id_whip_line+=" \n\n "
         telegram_id_whip_line+=" 3) Contact the @myidbot (https://t.me/myidbot) bot and send the command /getid to get \n"
         telegram_id_whip_line+=" your personal chat id or invite him into a group and issue the same command to get the group chat id.\n"
         telegram_id_whip_line+=" 4) Paste the ID here:\n\n"
 
-        telegram_user_id="$(whiptail --title "Telegram: BotID Configuration" --inputbox "${telegram_id_whip_line}" 15 60 3>&1 1>&2 2>&3)"
+        NOTIFICATION_TELEGRAM_CHAT_ID="$(whiptail --title "Telegram: BotID Configuration" --inputbox "${telegram_id_whip_line}" 15 60 3>&1 1>&2 2>&3)"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # Write config file
-            echo "telegram_user_id=${telegram_user_id}" >>"${TEL_CONFIG_FILE}"
+            echo "NOTIFICATION_TELEGRAM_CHAT_ID=${NOTIFICATION_TELEGRAM_CHAT_ID}" >>"${TEL_CONFIG_FILE}"
             log_event "info" "The Telegram configuration has been saved!" "false"
 
             telegram_send_notification "✅ ${VPSNAME}" "Telegram notifications configured!" ""

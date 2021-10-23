@@ -64,9 +64,9 @@ function project_manager_menu_new_project_type_utils() {
       # GENERATE PROJECT CONFIG
       log_subsection "Project Config"
 
-      # Folder where sites are hosted: $SITES
+      # Folder where sites are hosted: $PROJECTS_PATH
       menu_title="PROJECT TO WORK WITH"
-      directory_browser "${menu_title}" "${SITES}"
+      directory_browser "${menu_title}" "${PROJECTS_PATH}"
 
       # Directory_broser returns: " $filepath"/"$filename
       if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
@@ -86,9 +86,9 @@ function project_manager_menu_new_project_type_utils() {
       # CREATE PROJECT DATABASE & USER
       log_subsection "Create Project DB & User"
 
-      # Folder where sites are hosted: $SITES
+      # Folder where sites are hosted: $PROJECTS_PATH
       menu_title="PROJECT TO WORK WITH"
-      directory_browser "${menu_title}" "${SITES}"
+      directory_browser "${menu_title}" "${PROJECTS_PATH}"
 
       # Directory_broser returns: " $filepath"/"$filename
       if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
@@ -179,7 +179,7 @@ function project_manager_menu_new_project_type_utils() {
       log_subsection "Nginx server creation"
 
       # Select project to work with
-      directory_browser "Select a project to work with" "${SITES}" #return $filename
+      directory_browser "Select a project to work with" "${PROJECTS_PATH}" #return $filename
 
       if [[ ${filename} != "" ]]; then
 
@@ -203,7 +203,7 @@ function project_manager_menu_new_project_type_utils() {
           nginx_server_create "www.${root_domain}" "${project_type}" "root_domain" "${root_domain}"
 
           # Let's Encrypt
-          certbot_certificate_install "${MAILA}" "${root_domain},www.${root_domain}"
+          certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${root_domain},www.${root_domain}"
 
         else
 
@@ -211,7 +211,7 @@ function project_manager_menu_new_project_type_utils() {
           nginx_server_create "${project_domain}" "${project_type}" "single"
 
           # Let's Encrypt
-          certbot_certificate_install "${MAILA}" "${project_domain}"
+          certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${project_domain}"
 
         fi
 
@@ -295,28 +295,28 @@ function project_manager_menu_new_project_type_new_project() {
     if [[ ${chosen_project_type_options} == *"01"* ]]; then
 
       # WP PROJECT
-      project_install "${SITES}" "wordpress"
+      project_install "${PROJECTS_PATH}" "wordpress"
 
     fi
 
     if [[ ${chosen_project_type_options} == *"02"* ]]; then
 
       # LARAVEL PROJECT
-      project_install "${SITES}" "laravel"
+      project_install "${PROJECTS_PATH}" "laravel"
 
     fi
 
     if [[ ${chosen_project_type_options} == *"03"* ]]; then
 
       # OTHER PHP PROJECT
-      project_install "${SITES}" "php"
+      project_install "${PROJECTS_PATH}" "php"
 
     fi
 
     if [[ ${chosen_project_type_options} == *"04"* ]]; then
 
       # NODE JS PROJECT
-      project_install "${SITES}" "node-js"
+      project_install "${PROJECTS_PATH}" "node-js"
 
     fi
 
@@ -347,7 +347,7 @@ function project_manager_menu_new_project_type() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    project_install "${SITES}" "${project_type}"
+    project_install "${PROJECTS_PATH}" "${project_type}"
 
   fi
 

@@ -22,10 +22,10 @@ script_init
 log_event "info" "Running backups_tasks.sh" "false"
 
 # Get all directories
-all_sites="$(get_all_directories "${SITES}")"
+all_sites="$(get_all_directories "${PROJECTS_PATH}")"
 
 ## Get length of $all_sites
-count_all_sites="$(find "${SITES}" -maxdepth 1 -type d -printf '.' | wc -c)"
+count_all_sites="$(find "${PROJECTS_PATH}" -maxdepth 1 -type d -printf '.' | wc -c)"
 count_all_sites=$((count_all_sites - 1))
 
 # Log

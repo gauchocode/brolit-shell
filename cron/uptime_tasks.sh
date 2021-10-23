@@ -26,10 +26,10 @@ script_init
 log_section "Uptime Checker"
 
 # Get all directories
-all_sites="$(get_all_directories "${SITES}")"
+all_sites="$(get_all_directories "${PROJECTS_PATH}")"
 
 ## Get length of $all_sites
-count_all_sites=$(find "${SITES}" -maxdepth 1 -type d -printf '.' | wc -c)
+count_all_sites=$(find "${PROJECTS_PATH}" -maxdepth 1 -type d -printf '.' | wc -c)
 count_all_sites=$((count_all_sites - 1))
 
 log_event "info" "Found ${count_all_sites} directories" "false"
@@ -104,7 +104,7 @@ done
 #EMAIL_STATUS=$(mail_subject_status "${STATUS_BACKUP_DBS}" "${STATUS_BACKUP_FILES}" "${STATUS_SERVER}" "${OUTDATED_PACKAGES}")
 
 # Preparing email to send
-#log_event "info" "Sending Email to ${MAILA} ..." "true"
+#log_event "info" "Sending Email to ${NOTIFICATION_EMAIL_MAILA} ..." "true"
 
 #EMAIL_SUBJECT="${EMAIL_STATUS} on ${VPSNAME} Complete Backup - [${NOWDISPLAY}]"
 #EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${PKG_MAIL_VAR} ${CERT_MAIL_VAR} ${CONFIG_MAIL_VAR} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
