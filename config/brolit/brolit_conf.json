@@ -31,8 +31,8 @@
                                 "server_ip": "",
                                 "server_port": "",
                                 "server_user": "",
-                                "server_user_psw": "",
-                                "backup_path": ""
+                                "server_user_password": "",
+                                "server_remote_path": ""
                             }
                         ]
                     }
@@ -119,7 +119,7 @@
                     {
                         "netdata_subdomain": "",
                         "netdata_user": "",
-                        "netdata_pass": "",
+                        "netdata_user_pass": "",
                         "netdata_alarm_level": ""
                     }
                 ]
