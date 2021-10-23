@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.67
+# Version: 3.0.68-beta
 ################################################################################
 
 source ~/.brolit-shell.conf
@@ -31,8 +31,8 @@ if [[ ${DROPBOX_ENABLE} == "true" && -f ${DPU_CONFIG_FILE} ]]; then
 fi
 
 # Version
-SCRIPT_VERSION="3.0.67"
-ALIASES_VERSION="3.0.67-070"
+SCRIPT_VERSION="3.0.68-beta"
+ALIASES_VERSION="3.0.68-beta-070"
 
 # Log
 #timestamp="$(date +%Y%m%d_%H%M%S)"
