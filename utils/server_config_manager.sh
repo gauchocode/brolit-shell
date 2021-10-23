@@ -28,6 +28,77 @@ function server_config_checker() {
 
     # Read required vars from server config file
 
+    ## BACKUPS
+
+    ### methods
+
+    #### dropbox
+    backup_dropbox_status="$(json_read_field "${server_config_file}" "BACKUPS.methods[].dropbox[].status")"
+
+    if [[ ${backup_dropbox_status} == "enabled" ]]; then
+
+        backup_dropbox_config_file="$(json_read_field "${server_config_file}" "BACKUPS.methods[].dropbox[].config[].file")"
+ 
+        if [ -f "${backup_dropbox_config_file}" ]; then
+            echo "Backup Dropbox config file found: ${backup_dropbox_config_file}"
+        else
+            echo "Backup Dropbox config file not found: ${backup_dropbox_config_file}"
+            exit 1
+        fi
+
+    fi
+
+    #### sftp
+    backup_sftp_status="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].status")"
+
+    if [[ ${backup_sftp_status} == "enabled" ]]; then
+
+        backup_sftp_config_server_ip="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_ip")"
+        backup_sftp_config_server_port="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_port")"
+        backup_sftp_config_server_user="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_user")"
+        backup_sftp_config_server_user_password="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_user_password")"
+        backup_sftp_config_server_remote_path="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_remote_path")"
+
+        # Check if all required vars are set
+        if [ -z "${backup_sftp_config_server_ip}" ] || [ -z "${backup_sftp_config_server_port}" ] || [ -z "${backup_sftp_config_server_user}" ] || [ -z "${backup_sftp_config_server_user_password}" ] || [ -z "${backup_sftp_config_server_remote_path}" ]; then
+            echo "Missing required config vars for SFTP backup method"
+            exit 1
+        fi
+
+    fi
+
+    #### local
+    backup_local_status="$(json_read_field "${server_config_file}" "BACKUPS.methods[].local[].status")"
+
+    if [[ ${backup_local_status} == "enabled" ]]; then
+
+        backup_local_config_backup_path="$(json_read_field "${server_config_file}" "BACKUPS.methods[].local[].config[].backup_path")"
+
+        # Check if all required vars are set
+        if [ -z "${backup_local_config_backup_path}" ]; then
+            echo "Missing required config vars for local backup method"
+            exit 1
+        fi
+
+    fi
+
+    ## retention
+    backup_retention_keep_daily="$(json_read_field "${server_config_file}" "BACKUPS.retention[].keep_daily")"
+
+    if [ -z "${backup_retention_keep_daily}" ]; then
+        echo "Missing required config vars for backup retention"
+        exit 1
+    fi
+
+    ## PROJECTS_PATH
+
+    projects_path="$(json_read_field "${server_config_file}" "PROJECTS_PATH")"
+
+    if [ -z "${projects_path}" ]; then
+        echo "Missing required config vars for projects path"
+        exit 1
+    fi
+
     ## NOTIFICATIONS
 
     ### email
@@ -43,7 +114,7 @@ function server_config_checker() {
 
         # Check if all required vars are set
         if [[ -z "${notification_email_maila}" ]] || [[ -z "${notification_email_smtp_server}" ]] || [[ -z "${notification_email_smtp_port}" ]] || [[ -z "${notification_email_smtp_user}" ]] || [[ -z "${notification_email_smtp_user_pass}" ]]; then
-            echo "Notification email config is not complete: ${notification_email_maila} ${notification_email_smtp_server} ${notification_email_smtp_port} ${notification_email_smtp_user} ${notification_email_smtp_user_pass}"
+            echo "Missing required config vars for email notifications"
             exit 1
         fi
 
@@ -59,7 +130,7 @@ function server_config_checker() {
 
         # Check if all required vars are set
         if [[ -z "${notification_telegram_bot_token}" ]] || [[ -z "${notification_telegram_chat_id}" ]]; then
-            echo "Notification telegram config is not complete: ${notification_telegram_bot_token} ${notification_telegram_chat_id}"
+            echo "Missing required config vars for telegram notifications"
             exit 1
         fi
 
@@ -77,7 +148,25 @@ function server_config_checker() {
 
         # Check if all required vars are set
         if [[ -z "${support_cloudflare_email}" ]] || [[ -z "${support_cloudflare_api_key}" ]]; then
-            echo "Support cloudflare config is not complete: ${support_cloudflare_email} ${support_cloudflare_api_key}"
+            echo "Missing required config vars for cloudflare support"
+            exit 1
+        fi
+
+    fi
+
+    ### netdata
+    support_netdata_status="$(json_read_field "${server_config_file}" "SUPPORT.netdata[].status")"
+
+    if [[ ${support_netdata_status} == "enabled" ]]; then
+
+        support_netdata_config_subdomain="$(json_read_field "${server_config_file}" "SUPPORT.netdata[].config[].netdata_subdomain")"
+        support_netdata_config_user="$(json_read_field "${server_config_file}" "SUPPORT.netdata[].config[].netdata_user")"
+        support_netdata_config_user_pass="$(json_read_field "${server_config_file}" "SUPPORT.netdata[].config[].netdata_user_pass")"
+        support_netdata_config_alarm_level="$(json_read_field "${server_config_file}" "SUPPORT.netdata[].config[].netdata_alarm_level")"
+
+        # Check if all required vars are set
+        if [[ -z "${support_netdata_config_subdomain}" ]] || [[ -z "${support_netdata_config_user}" ]] || [[ -z "${support_netdata_config_user_pass}" ]] || [[ -z "${support_netdata_config_alarm_level}" ]]; then
+            echo "Missing required config vars for netdata support"
             exit 1
         fi
 
