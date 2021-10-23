@@ -106,8 +106,8 @@
                 "status": "disabled",
                 "config": [
                     {
-                        "dns_cloudflare_email": "",
-                        "dns_cloudflare_api_key": ""
+                        "email": "",
+                        "api_key": ""
                     }
                 ]
             }
