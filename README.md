@@ -104,7 +104,7 @@ Run it:
 ./runner.sh
 ```
 
-The first time you run `runner.sh`, you'll be guided through a wizard in order to configure it. This configuration will be stored in `~/.brolit-shell.conf`.
+The first time you run `runner.sh`, you'll be guided through a wizard in order to configure it. This configuration will be stored in `~/.brolit_conf.json`.
 
 ## Update
 
@@ -116,7 +116,7 @@ Run updater.sh
 
 ## Running as cron job
 
-This script relies on a different configuration file for each system user. The default configuration file location is `root/.brolit-shell.conf`.
+This script relies on a different configuration file for each system user. The default configuration file location is `root/.brolit_conf.json`.
 This means that if you setup the script with your user and then you try to run a cron job as root, it won't work.
 
 * To setup the script to run as a cron job please use the option "CRON TASKS"
