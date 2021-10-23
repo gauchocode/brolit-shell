@@ -68,6 +68,7 @@
 
 ## For release 3.2
 
+- [ ] Core: Let configure all things via JSON files.
 - [ ] Core: Let configure temp. backup directory.
 - [ ] Core: Docker support (backup, restore, list containers, status).
 - [ ] Core: Refactor settings config (change to a json config file?).
@@ -82,18 +83,17 @@
 - [ ] Backups: Refactor for backup/restore: 5 options (server_config, site_config, site, database and project).
 - [ ] Restore: Finish function restore_config_files_from_dropbox.
 - [ ] MySQL: Rename database (with and without WP).
+- [ ] Nginx: Add http2 support on nginx server config files.
 
 ## For release 3.3
 
 - [ ] Firewall: ufw support.
-- [ ] Core: Complete refactor of script_configuration_wizard.
 - [ ] Notifications: After install a new project (with credentials info).
 - [ ] Backups: On backup failure, the email must show what files fails and what files are correct backuped.
 - [ ] Backups: Implement on restore_from_backup easy way to restore all sites.
 - [ ] Scheduled options: backups, malware scans, image optimizations and wp actions (core and plugins updates, checksum and wp re-installation).
 - [ ] Refactor of RESTORE_FROM_SOURCE and complete server config restore.
 - [ ] Nginx: Multidomain support for nginx.
-- [ ] Nginx: Add http2 support on nginx server config files.
 - [ ] Nginx: New option to put website on maintenance (maybe rename index.html/php and create a new HTML).
 - [ ] Wordpress: Rollback plugins and core updates (wpcli_rollback_plugin_version)
 - [ ] SFTP: Option to create a user jail on sftp_create_user.
@@ -103,7 +103,6 @@
 
 ## For release 3.4
 
-- [ ] Configuration: Let configure all things via JSON files.
 - [ ] PHP: php_reconfigure refactor (replace strings instead of replace entired config files).
 - [ ] WordPress: Fallback for replace strings on wp database (if wp-cli fails, use old script version).
 - [ ] Wordpress: When restore or create a project on PROD state, ask if want to run "wpcli_run_startup_script"
@@ -136,7 +135,7 @@
 - [ ] PHP: Option to change php version on installed site.
         https://easyengine.io/blog/easyengine-v4-0-15-released/
 - [ ] Installers: Option to select netdata metrics to be reported.
-- [ ] Installers: Netdata Discord support
+
         https://docs.netdata.cloud/health/notifications/discord/
 - [ ] Security: Option to auto-install security updates on Ubuntu: 
         https://help.ubuntu.com/lts/serverguide/automatic-updates.html
@@ -151,6 +150,7 @@
 
 - [ ] Cloud-init support?
 - [ ] HTTP/2 Monitor Dashboard.
+- [ ] Netdata notifications Discord support.
 - [ ] Uptime Kuma support: 
         https://github.com/louislam/uptime-kuma
 - [ ] Docker support: 
