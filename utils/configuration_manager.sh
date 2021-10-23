@@ -59,13 +59,12 @@ function brolit_configuration_load() {
 
     if [ -f "${server_config_file}" ]; then
 
-        echo "Server config file found: ${server_config_file}"
         display --indent 6 --text "- Checking Brolit config file" --result "DONE" --color GREEN
 
     else
 
         display --indent 6 --text "- Checking Brolit config file" --result "WARNING" --color YELLOW
-        display --indent 8 "Config file not found: ${server_config_file}"
+        display --indent 8 --text "Config file not found: ${server_config_file}"
 
         # Creating new config file
         while true; do
@@ -96,6 +95,7 @@ function brolit_configuration_load() {
             *) echo " > Please answer yes or no." ;;
 
             esac
+
         done
 
     fi
