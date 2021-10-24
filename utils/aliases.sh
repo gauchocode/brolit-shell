@@ -7,7 +7,7 @@
 # Server Name
 #VPSNAME="${HOSTNAME}"
 
-#SFOLDER="/root/brolit-shell"
+SFOLDER="/root/brolit-shell"
 
 source "${SFOLDER}/libs/commons.sh"
 
