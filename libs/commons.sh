@@ -1449,8 +1449,7 @@ function menu_main_options() {
     "06)" "CLOUDFLARE MANAGER"
     "07)" "INSTALLERS & CONFIGS"
     "08)" "IT UTILS"
-    "09)" "SCRIPT OPTIONS"
-    "10)" "CRON TASKS"
+    "09)" "CRON TASKS"
   )
 
   chosen_type="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)"
@@ -1522,18 +1521,6 @@ function menu_main_options() {
 
     fi
     if [[ ${chosen_type} == *"09"* ]]; then
-
-      echo -ne "Are you sure you want to reconfigure the script? [y/n]"
-      read -r answer
-
-      if [[ ${answer} == "y" ]]; then
-        script_configuration_wizard "reconfigure"
-      fi
-
-      menu_main_options
-
-    fi
-    if [[ ${chosen_type} == *"10"* ]]; then
       # CRON SCRIPT TASKS
       menu_cron_script_tasks
 
