@@ -253,7 +253,7 @@ function brolit_configuration_load() {
 
         # Check if all required vars are set
         if [[ -z "${FIREWALL_CONFIG_APP_LIST_SSH}" ]] || [[ -z "${FIREWALL_CONFIG_APP_LIST_HTTP}" ]] || [[ -z "${FIREWALL_CONFIG_APP_LIST_HTTPS}" ]]; then
-            
+
             echo "Missing required config vars for firewall"
             exit 1
 
@@ -273,7 +273,7 @@ function brolit_configuration_load() {
 
         # Check if all required vars are set
         if [[ -z "${SUPPORT_CLOUDFLARE_EMAIL}" ]] || [[ -z "${SUPPORT_CLOUDFLARE_API_KEY}" ]]; then
-            
+
             echo "Missing required config vars for cloudflare support"
             exit 1
 
@@ -293,7 +293,7 @@ function brolit_configuration_load() {
 
         # Check if all required vars are set
         if [[ -z "${SUPPORT_NETDATA_CONFIG_SUBDOMAIN}" ]] || [[ -z "${SUPPORT_NETDATA_CONFIG_USER}" ]] || [[ -z "${SUPPORT_NETDATA_CONFIG_USER_PASS}" ]] || [[ -z "${SUPPORT_NETDATA_CONFIG_ALARM_LEVEL}" ]]; then
-           
+
             echo "Missing required config vars for netdata support"
             exit 1
 
@@ -348,6 +348,96 @@ function server_configuration_firewall() {
 
 }
 
+function server_configuration_services() {
+
+    local -n services_list=$@
+
+    for service in ${services_list}; do
+
+        case ${service} in
+
+        "mysql")
+
+            mysql_installed="$(package_is_installed "mysql-server")"
+
+            if [[ ${mysql_installed} -eq 1 ]]; then
+
+                mysql_installed="$(package_is_installed "mariadb-server")"
+
+                if [[ ${mysql_installed} -eq 1 ]]; then
+
+                    display --indent 2 --text "- Checking for installed DB engine" --result "WARNING" --color YELLOW
+                    display --indent 2 --text "MySQL or MariaDB server are not installed"
+
+                fi
+
+            fi
+
+            ;;
+
+        "nginx")
+
+            nginx_installed="$(package_is_installed "nginx")"
+            
+            if [[ ${nginx_installed} -eq 1 ]]; then
+
+                display --indent 2 --text "- Checking for installed web server" --result "OK" --color GREEN
+
+            else
+
+                display --indent 2 --text "- Checking for installed web server" --result "WARNING" --color YELLOW
+                display --indent 2 --text "Nginx is not installed"
+
+            fi
+
+            ;;
+
+        "php")
+
+            php_installed="$(package_is_installed "php")"
+
+            if [[ ${php_installed} -eq 1 ]]; then
+
+                display --indent 2 --text "- Checking for installed PHP engine" --result "OK" --color GREEN
+
+            else
+
+                display --indent 2 --text "- Checking for installed PHP engine" --result "WARNING" --color YELLOW
+                display --indent 2 --text "PHP is not installed"
+
+            fi
+
+            ;;
+
+        "python")
+
+            python_installed="$(package_is_installed "python")"
+
+            if [[ ${python_installed} -eq 1 ]]; then
+
+                display --indent 2 --text "- Checking for installed Python engine" --result "OK" --color GREEN
+
+            else
+
+                display --indent 2 --text "- Checking for installed Python engine" --result "WARNING" --color YELLOW
+                display --indent 2 --text "Python is not installed"
+
+            fi
+
+            ;;
+
+        *)
+
+            echo "Unknown service: ${service}"
+
+            ;;
+
+        esac
+
+    done
+
+}
+
 ################################################################################
 # Private: mysql root password configuration
 #
@@ -369,6 +459,16 @@ function _settings_config_mysql() {
     fi
 
 }
+
+################################################################################
+# Private: check Dropbox Uploader configuration
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
 
 function _settings_config_dropbox() {
 
