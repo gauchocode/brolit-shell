@@ -205,7 +205,7 @@ function brolit_configuration_load() {
 
         # Check if all required vars are set
         if [[ -z "${NOTIFICATION_EMAIL_MAILA}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_SERVER}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_PORT}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_USER}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_USER_PASS}" ]]; then
-            
+
             clear_last_line
             display --indent 4 --text "Missing required config vars for email notifications" --tcolor RED
             exit 1
@@ -214,7 +214,7 @@ function brolit_configuration_load() {
 
             clear_last_line
             display --indent 2 --text "- Checking Email notifications config" --result "DONE" --color GREEN
-        
+
         fi
 
     else
@@ -367,11 +367,11 @@ function _settings_config_dropbox() {
     # Checking global var
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
-        "${DROPBOX_UPLOADER}" -q list
+        output="$("${DROPBOX_UPLOADER}" list)"
 
-        exit_status=$?
+        exitstatus=$?
 
-        if [[ ${exit_status} -ne 0 ]]; then
+        if [[ ${exitstatus} -eq 0 && ${output} != "" ]]; then
 
             display --indent 2 --text "- Checking dropbox uploader" --result "DONE" --color GREEN
 

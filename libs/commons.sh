@@ -1646,7 +1646,7 @@ function menu_cron_script_tasks() {
       suggested_cron="45 04 * * *" # Every day at 04:45 AM
       scheduled_time="$(whiptail --title "CRON OPTIMIZER-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)"
       exitstatus=$?
-      if [[ ${exitstatus} = 0 ]]; then
+      if [[ ${exitstatus} -eq 0 ]]; then
 
         install_crontab_script "${SFOLDER}/cron/optimizer_tasks.sh" "${scheduled_time}"
 
