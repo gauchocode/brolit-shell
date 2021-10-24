@@ -5,7 +5,7 @@
 ################################################################################
 
 # Server Name
-#VPSNAME="${HOSTNAME}"
+VPSNAME="${HOSTNAME}"
 
 SFOLDER="/root/brolit-shell"
 
@@ -37,7 +37,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.68-beta"
-ALIASES_VERSION="3.0.68-beta-070"
+ALIASES_VERSION="3.0.68-beta-071"
 
 ################################################################################
 
