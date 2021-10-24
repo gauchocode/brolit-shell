@@ -122,6 +122,8 @@ function brolit_configuration_load() {
             display --indent 2 --text "- Checking Dropbox config file" --result "FAIL" --color RED
             display --indent 4 --text "Config file not found: ${BACKUP_DROPBOX_CONFIG_FILE}"
 
+            _settings_config_dropbox
+
             exit 1
 
         fi
@@ -187,7 +189,7 @@ function brolit_configuration_load() {
 
     ## NOTIFICATIONS
 
-    display --indent 2 --text "- Checking email notifications config"
+    display --indent 2 --text "- Checking Email notifications config"
 
     ### email
     NOTIFICATION_EMAIL_STATUS="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].status")"
@@ -203,16 +205,22 @@ function brolit_configuration_load() {
 
         # Check if all required vars are set
         if [[ -z "${NOTIFICATION_EMAIL_MAILA}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_SERVER}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_PORT}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_USER}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_USER_PASS}" ]]; then
+            
+            clear_last_line
             display --indent 4 --text "Missing required config vars for email notifications" --tcolor RED
             exit 1
+
         else
-            display --indent 2 --text "- Checking email notifications config" --result "DONE" --color GREEN
+
+            clear_last_line
+            display --indent 2 --text "- Checking Email notifications config" --result "DONE" --color GREEN
+        
         fi
 
     else
 
         clear_last_line
-        display --indent 2 --text "- Checking email notifications config" --result "WARNING" --color YELLOW
+        display --indent 2 --text "- Checking Email notifications config" --result "WARNING" --color YELLOW
         display --indent 4 --text "Email notifications are disabled"
 
     fi
