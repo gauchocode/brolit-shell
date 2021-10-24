@@ -51,7 +51,6 @@ function add_ppa() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-# TODO: Refactor to return 0 or 1
 function package_is_installed() {
 
   local package=$1
@@ -61,14 +60,14 @@ function package_is_installed() {
     log_event "info" "${package} is installed" "false"
 
     # Return
-    echo "true"
+    return 0
 
   else
 
     log_event "info" "${package} is not installed" "false"
 
     # Return
-    echo "false"
+    return 1
 
   fi
 
@@ -91,10 +90,9 @@ function package_install_if_not() {
   local p_result
 
   # Check if package is installed
-  #p_result="$(command -v "${package}")"
   p_result="$(package_is_installed "${package}")"
 
-  if [[ ${p_result} == "false" ]]; then
+  if [[ ${p_result} -eq 1 ]]; then
 
     # Log
     log_event "info" "Installing ${package} ..." "false"
@@ -117,8 +115,9 @@ function package_install_if_not() {
 
       # Log
       clear_last_line
-      log_event "error" "Installing package ${package}." "false"
-      display --indent 2 --text "- Installing ${package}" --result "FAIL" --color RED
+      log_event "error" "Installing ${package}. Package is already installed." "false"
+      display --indent 2 --text "- Installing ${package}" --result "WARNING" --color YELLOW
+      display --indent 4 --text "Package is already installed."
 
       return 1
 

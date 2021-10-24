@@ -1316,7 +1316,7 @@ function nodejs_project_installer() {
 
   nodejs_installed="$(package_is_installed "nodejs")"
 
-  if [[ ${nodejs_installed} == "false" ]]; then
+  if [[ ${nodejs_installed} -eq 1 ]]; then
 
     nodejs_installer
 
