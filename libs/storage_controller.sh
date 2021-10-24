@@ -42,7 +42,7 @@ function sc_create_dir() {
 
     local remote_directory=$1
 
-    if [[ ${BACKUP_DROPBOX_STATUS} == "true" ]]; then
+    if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
         dropbox_create_dir "${remote_directory}"
 
@@ -71,7 +71,7 @@ function sc_upload_backup() {
     local file_to_upload=$1
     local remote_directory=$2
 
-    if [[ ${BACKUP_DROPBOX_STATUS} == "true" ]]; then
+    if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
         dropbox_upload "${file_to_upload}" "${remote_directory}"
 
@@ -100,7 +100,7 @@ function sc_download_backup() {
     local file_to_download=$1
     local remote_directory=$2
 
-    if [[ ${BACKUP_DROPBOX_STATUS} == "true" ]]; then
+    if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
         dropbox_download "${file_to_download}" "${remote_directory}"
 
