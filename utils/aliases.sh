@@ -4,23 +4,24 @@
 # Version: 3.0.68-beta
 ################################################################################
 
-source ~/.brolit-shell.conf
-
 # Server Name
 VPSNAME="${HOSTNAME}"
 
 SFOLDER="/root/brolit-shell"
 
+source "${SFOLDER}/utils/configuration_manager.sh"
+brolit_configuration_load "/root/.brolit_conf.json"
+
 BROLIT_CONFIG_PATH="/etc/brolit"
 
 CLF_CONFIG_FILE=~/.cloudflare.conf
-if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "true" && -f ${CLF_CONFIG_FILE} ]]; then
+if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" && -f ${CLF_CONFIG_FILE} ]]; then
     # shellcheck source=${CLF_CONFIG_FILE}
     source "${CLF_CONFIG_FILE}"
 fi
 
 DPU_CONFIG_FILE=~/.dropbox_uploader
-if [[ ${BACKUP_DROPBOX_STATUS} == "true" && -f ${DPU_CONFIG_FILE} ]]; then
+if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" && -f ${DPU_CONFIG_FILE} ]]; then
     # shellcheck source=${DPU_CONFIG_FILE}
     source "${DPU_CONFIG_FILE}"
     # Dropbox-uploader directory
@@ -1034,7 +1035,7 @@ function dropbox_get_sites_backups() {
 
         backup_files="$(dropbox_get_backup "${backup_dir}")"
 
-        if [[ $backup_dir != "error" ]];then
+        if [[ $backup_dir != "error" ]]; then
 
             backup_project="\"${backup_dir}\" : { ${backup_files} }"
 
@@ -1055,7 +1056,6 @@ function dropbox_get_sites_backups() {
 
     else
 
-    
         backup_projects="\"empty-response\""
     fi
 

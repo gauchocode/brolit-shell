@@ -393,10 +393,10 @@ function script_init() {
 
   # Dropbox-uploader config file
   DPU_CONFIG_FILE=~/.dropbox_uploader
-  if [[ ${BACKUP_DROPBOX_STATUS} == "true" && ! -f ${DPU_CONFIG_FILE} ]]; then
+  if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" && ! -f ${DPU_CONFIG_FILE} ]]; then
     generate_dropbox_config
   fi
-  if [[ ${BACKUP_DROPBOX_STATUS} == "true" ]]; then
+  if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
     # shellcheck source=~/.dropbox_uploader
     source "${DPU_CONFIG_FILE}"
   fi
