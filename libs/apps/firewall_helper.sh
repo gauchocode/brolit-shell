@@ -91,15 +91,27 @@ function firewall_allow() {
     local service=$1
 
     # Ufw command
-    ufw allow "${service}"
+    ufw_output="$(ufw allow "${service}")"
 
     exitstatus=$?
 
-    if [ ${exitstatus} -eq 0 ]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
 
-        # Log
-        log_event "info" "Allowing ${service} on firewall" "false"
-        display --indent 2 --text "Allowing ${service} on firewall" --result "DONE" --color GREEN
+        if [[ ${ufw_output} == *"existing"* ]]; then
+
+            # Log
+            log_event "info" "Allowing ${service} on firewall" "false"
+            log_event "info" "Skipping adding existing rule" "false"
+            display --indent 2 --text "Allowing ${service} on firewall" --result "SKIP" --color YELLOW
+            display --indent 4 --text "Skipping adding existing rule"
+
+        else
+
+            # Log
+            log_event "info" "Allowing ${service} on firewall" "false"
+            display --indent 2 --text "Allowing ${service} on firewall" --result "DONE" --color GREEN
+
+        fi
 
     else
 
@@ -109,25 +121,6 @@ function firewall_allow() {
 
         return 1
     fi
-
-}
-
-################################################################################
-# Allow basic services on firewall
-#
-# Arguments:
-#   None
-#
-# Outputs:
-#   0 if ok, 1 on error.
-################################################################################
-
-function firewall_allow_basic_services() {
-
-    ufw allow ssh
-    ufw allow http
-    ufw allow https
-    ufw allow "Nginx Full"
 
 }
 
