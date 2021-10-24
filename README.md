@@ -42,7 +42,6 @@ BROLIT Shell is a **BASH** based cloud server control software which can be used
 * Fail2ban support.
 * Security Tools with malware scanners.
 * IP/Domain blacklist checker.
-* Step-by-step configuration wizard.
 * Benchmark tool.
 * And more ...
 
