@@ -373,7 +373,7 @@ function _settings_config_dropbox() {
 
         if [[ ${exitstatus} -eq 0 && ${output} != "" ]]; then
 
-            display --indent 2 --text "- Checking dropbox uploader" --result "DONE" --color GREEN
+            display --indent 2 --text "- Checking Dropbox Uploader" --result "DONE" --color GREEN
 
         else
 
