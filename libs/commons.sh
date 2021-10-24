@@ -358,7 +358,7 @@ function script_init() {
   log_event "" "╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝   ╚═╝   " "true"
   log_event "" "              ${SCRIPT_N} v${SCRIPT_V} by BROOBE" "true"
   log_event "" "                                             " "true"
-  log_event "" "---------------------------------------------" "true"
+  log_event "" "------------------------------------------------------------" "true"
 
   log_section "Script Initialization"
 
@@ -1500,7 +1500,7 @@ function menu_main_options() {
 
       else
 
-        display --indent 2 --text "Cloudflare support is disabled" --result WARNING --color YELLOW
+        display --indent 2 --text "- Cloudflare support is disabled" --result WARNING --color YELLOW
         display --indent 4 --text "Configure the api key on brolit_conf.json"
         log_event "warning" "Cloudflare support is disabled" "false"
 
