@@ -23,7 +23,7 @@ function _install_script_aliases() {
 
     if [[ ! -f ~/.bash_aliases ]]; then
 
-        cp "${SCRIPTPATH}/utils/aliases.sh" ~/.bash_aliases
+        cp "${SCRIPTPATH}/aliases.sh" ~/.bash_aliases
 
     else
 
@@ -31,7 +31,7 @@ function _install_script_aliases() {
 
         mv ~/.bash_aliases ~/.bash_aliases_bk-"${timestamp}"
 
-        cp "${SCRIPTPATH}/utils/aliases.sh" ~/.bash_aliases
+        cp "${SCRIPTPATH}/aliases.sh" ~/.bash_aliases
 
         source ~/.bash_aliases
 
