@@ -90,11 +90,25 @@ function firewall_allow() {
 
     local service=$1
 
+    # Ufw command
     ufw allow "${service}"
 
-    # Log
-    log_event "info" "Allowing ${service} on firewall" "false"
-    display --indent 2 --text "Allowing ${service} on firewall" --result "DONE" --color GREEN
+    exitstatus=$?
+
+    if [ ${exitstatus} -eq 0 ]; then
+
+        # Log
+        log_event "info" "Allowing ${service} on firewall" "false"
+        display --indent 2 --text "Allowing ${service} on firewall" --result "DONE" --color GREEN
+
+    else
+
+        # Log
+        log_event "error" "Allowing ${service} on firewall" "false"
+        display --indent 2 --text "Allowing ${service} on firewall" --result "FAIL" --color RED
+
+        return 1
+    fi
 
 }
 
