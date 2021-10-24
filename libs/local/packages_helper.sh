@@ -189,14 +189,8 @@ function packages_check_required() {
   MYSQL="$(command -v mysql)"
   if [[ ! -x ${MYSQL} ]]; then
 
-    if [[ ${SERVER_CONFIG} == *"mysql"* ]]; then
-
-      display --indent 2 --text "- Checking MySQL installation" --result "ERROR" --color RED
-      display --indent 4 --text "MySQL not found" --tcolor RED
-
-      return 1
-
-    fi
+    display --indent 2 --text "- Checking MySQL installation" --result "WARNING" --color YELLOW
+    display --indent 4 --text "MySQL not found" --tcolor RED
 
   else
 
@@ -215,15 +209,9 @@ function packages_check_required() {
   PHP="$(command -v php)"
   if [[ ! -x "${PHP}" ]]; then
 
-    if [[ ${SERVER_CONFIG} == *"php"* ]]; then
-
-      # Log
-      display --indent 2 --text "- Checking PHP installation" --result "ERROR" --color RED
-      display --indent 4 --text "PHP not found" --tcolor RED
-
-      return 1
-
-    fi
+    # Log
+    display --indent 2 --text "- Checking PHP installation" --result "WARNING" --color YELLOW
+    display --indent 4 --text "PHP not found" --tcolor RED
 
   fi
 
