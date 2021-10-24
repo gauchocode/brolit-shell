@@ -24,8 +24,8 @@ function add_ppa() {
 
     grep -h "^deb.*$i" /etc/apt/sources.list.d/* >/dev/null 2>&1
 
-    exit_status=$?
-    if [[ ${exit_status} -ne 0 ]]; then
+    exitstatus=$?
+    if [[ ${exitstatus} -ne 0 ]]; then
 
       log_event "info" "Adding ppa:$i" "false"
 
