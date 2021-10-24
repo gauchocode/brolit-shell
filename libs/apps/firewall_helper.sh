@@ -24,7 +24,30 @@
 
 function firewall_enable() {
 
-    ufw --force enable
+    # Ufw command
+    ufw_output="$(ufw --force enable)"
+
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        log_event "info" "Activating firewall" "false"
+        display --indent 2 --text "- Activating firewall" --result "DONE" --color GREEN
+        display --indent 4 --text "${ufw_output}"
+
+        return 0
+
+    else
+
+        # Log
+        log_event "error" "Activating firewall" "false"
+        display --indent 2 --text "- Activating firewall" --result "FAIL" --color RED
+        display --indent 4 --text "${ufw_output}"
+
+        return 1
+
+    fi
 
 }
 
@@ -40,7 +63,29 @@ function firewall_enable() {
 
 function firewall_disable() {
 
-    ufw --force disable
+    ufw_output="$(ufw --force disable)"
+
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        log_event "info" "Deactivating firewall" "false"
+        display --indent 2 --text "- Deactivating firewall" --result "DONE" --color GREEN
+        display --indent 4 --text "${ufw_output}"
+
+        return 0
+
+    else
+
+        # Log
+        log_event "error" "Deactivating firewall" "false"
+        display --indent 2 --text "- Deactivating firewall" --result "FAIL" --color RED
+        display --indent 4 --text "${ufw_output}"
+
+        return 1
+
+    fi
 
 }
 
@@ -72,7 +117,28 @@ function firewall_app_list() {
 
 function firewall_status() {
 
-    ufw status verbose
+    # Ufw command
+    ufw_output="$(ufw status verbose)"
+
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        log_event "info" "Getting firewall status" "false"
+        display --indent 2 --text "- Getting firewall status" --result "DONE" --color GREEN
+        display --indent 2 --text "Status: ${ufw_output}"
+
+        return 0
+
+    else
+
+        # Log
+        log_event "error" "Getting firewall status" "false"
+        display --indent 2 --text "- Getting firewall status" --result "FAIL" --color RED
+
+        return 1
+    fi
 
 }
 
@@ -105,11 +171,15 @@ function firewall_allow() {
             display --indent 2 --text "Allowing ${service} on firewall" --result "SKIP" --color YELLOW
             display --indent 4 --text "Skipping adding existing rule"
 
+            return 0
+
         else
 
             # Log
             log_event "info" "Allowing ${service} on firewall" "false"
             display --indent 2 --text "Allowing ${service} on firewall" --result "DONE" --color GREEN
+
+            return 0
 
         fi
 
@@ -120,6 +190,7 @@ function firewall_allow() {
         display --indent 2 --text "Allowing ${service} on firewall" --result "FAIL" --color RED
 
         return 1
+
     fi
 
 }
@@ -138,7 +209,29 @@ function firewall_fail2ban_status() {
 
     local service=$1
 
-    fail2ban-client status "${service}"
+    # Fail2ban command
+    ufw_output="$(fail2ban-client status "${service}")"
+
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        log_event "info" "Getting fail2ban status" "false"
+        display --indent 2 --text "- Getting fail2ban status" --result "DONE" --color GREEN
+        display --indent 2 --text "Status: ${ufw_output}"
+
+        return 0
+
+    else
+
+        # Log
+        log_event "error" "Getting fail2ban status" "false"
+        display --indent 2 --text "- Getting fail2ban status" --result "FAIL" --color RED
+
+        return 1
+
+    fi
 
 }
 
