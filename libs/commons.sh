@@ -4,6 +4,16 @@
 # Version: 3.0.68-beta
 ################################################################################
 
+################################################################################
+# Private: source all scripts
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   none
+################################################################################
+
 function _source_all_scripts() {
 
   # Source all apps libs
@@ -24,6 +34,9 @@ function _source_all_scripts() {
   # Load other sources
   source "${SFOLDER}/libs/notification_controller.sh"
   #source "${SFOLDER}/libs/storage_controller.sh"
+
+  log_event "info" "Sourcing dependencies ..." "false"
+  #display --indent 6 --text "- Sourcing dependencies" --result "DONE" --color GREEN
 
 }
 
