@@ -92,6 +92,10 @@ function firewall_allow() {
 
     ufw allow "${service}"
 
+    # Log
+    log_event "info" "Allowing ${service} on firewall" "false"
+    display --indent 2 --text "Allowing ${service} on firewall" --result "DONE" --color GREEN
+
 }
 
 ################################################################################

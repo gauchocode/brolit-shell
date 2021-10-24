@@ -326,33 +326,49 @@ function brolit_apps_configuration_load() {
 # TODO: maybe remove this from brolit_conf.json
 function server_configuration_firewall() {
 
-    firewall_enable
+    # firewall_enable
 
-    if [[ ${FIREWALL_CONFIG_APP_LIST_SSH} == "allow" ]]; then
+    # Check if firewall is enabled
+    if [[ ${FIREWALL_CONFIG_STATUS} == "enabled" ]]; then
 
-        firewall_allow "ssh"
+        # Get all listed apps
+        app_list="$(json_read_field "/root/.brolit_conf.json" "FIREWALL.config[].app_list[]")"
 
-    fi
+        # Get keys
+        app_list_keys="$(jq 'keys[]' <<<"${app_list}")"
 
-    if [[ ${FIREWALL_CONFIG_APP_LIST_HTTP} == "allow" ]]; then
+        # Get values
+        #app_list_values="$(jq .[] <<<"${app_list}")"
 
-        firewall_allow "http"
+        # Loop through all apps keys
+        for app_list_key in "${app_list_keys[@]}"; do
 
-    fi
+            app_list_value="$(jq -r \'."${app_list_key}"\' <<<"${app_list}")"
 
-    if [[ ${FIREWALL_CONFIG_APP_LIST_HTTPS} == "allow" ]]; then
+            if [[ ${app_list_value} == "allow" ]]; then
 
-        firewall_allow "https"
+                # Allow service on firewall
+                firewall_allow "${app_list_key}"
+
+            fi
+
+        done
+
+    else
+
+        # Log
+        log_event "info" "Firewall is disabled" "false"
+        display --indent 6 --text "- Firewall disabled" --result "WARNING" --color YELLOW
 
     fi
 
 }
 
-function server_configuration_services() {
+function server_configuration_services_check() {
 
-    local -n services_list=$@
+    local -n services_list=$1
 
-    for service in ${services_list}; do
+    for service in "${services_list[@]}"; do
 
         case ${service} in
 
@@ -378,7 +394,7 @@ function server_configuration_services() {
         "nginx")
 
             nginx_installed="$(package_is_installed "nginx")"
-            
+
             if [[ ${nginx_installed} -eq 1 ]]; then
 
                 display --indent 2 --text "- Checking for installed web server" --result "OK" --color GREEN
