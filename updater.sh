@@ -7,8 +7,6 @@
 SCRIPT="$(readlink -f "$0")"
 SCRIPTFILE="$(basename "${SCRIPT}")"
 SCRIPTPATH="$(dirname "${SCRIPT}")"
-#SCRIPTNAME="$0"
-#ARGS=("$@")
 BRANCH="master"
 
 # Foreground/Text Colours
