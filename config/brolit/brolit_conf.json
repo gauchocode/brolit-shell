@@ -107,7 +107,8 @@
                     {
                         "ssh": "allow",
                         "http": "allow",
-                        "https": "allow"
+                        "https": "allow",
+                        "8080": "disallow"
                     }
                 ]
             }
