@@ -326,10 +326,11 @@ function brolit_apps_configuration_load() {
 # TODO: maybe remove this from brolit_conf.json
 function server_configuration_firewall() {
 
-    # firewall_enable
-
     # Check if firewall is enabled
     if [[ ${FIREWALL_CONFIG_STATUS} == "enabled" ]]; then
+
+        # Enabling firewall
+        firewall_enable
 
         # Get all listed apps
         app_list="$(json_read_field "/root/.brolit_conf.json" "FIREWALL.config[].app_list[]")"
