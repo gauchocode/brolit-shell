@@ -9,9 +9,9 @@ VPSNAME="${HOSTNAME}"
 
 SFOLDER="/root/brolit-shell"
 
-source "${SFOLDER}/libs/commons.sh"
+#source "${SFOLDER}/libs/commons.sh"
 
-script_init
+#script_init
 
 #source "${SFOLDER}/utils/configuration_manager.sh"
 #brolit_configuration_load "/root/.brolit_conf.json"

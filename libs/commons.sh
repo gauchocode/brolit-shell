@@ -528,7 +528,7 @@ function install_script_aliases() {
   log_subsection "Bash Aliases"
 
   if [[ ! -f ~/.bash_aliases ]]; then
-    cp "${SFOLDER}/utils/aliases.sh" ~/.bash_aliases
+    cp "${SFOLDER}/aliases.sh" ~/.bash_aliases
     display --indent 2 --text "- Installing script aliases" --result "DONE" --color GREEN
     display --indent 4 --text "Please now run: source ~/.bash_aliases" --tcolor CYAN
 
@@ -541,7 +541,7 @@ function install_script_aliases() {
 
     display --indent 2 --text "- Backup old aliases" --result "DONE" --color GREEN
 
-    cp "${SFOLDER}/utils/aliases.sh" ~/.bash_aliases
+    cp "${SFOLDER}/aliases.sh" ~/.bash_aliases
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
