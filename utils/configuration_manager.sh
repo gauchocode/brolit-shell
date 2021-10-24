@@ -299,6 +299,31 @@ function brolit_apps_configuration_load() {
 
 }
 
+# TODO: maybe remove this from brolit_conf.json
+function server_configuration_firewall() {
+
+    firewall_enable
+
+    if [[ ${FIREWALL_CONFIG_APP_LIST_SSH} == "allow" ]]; then
+
+        firewall_allow "ssh"
+
+    fi
+
+    if [[ ${FIREWALL_CONFIG_APP_LIST_HTTP} == "allow" ]]; then
+
+        firewall_allow "http"
+
+    fi
+
+    if [[ ${FIREWALL_CONFIG_APP_LIST_HTTPS} == "allow" ]]; then
+
+        firewall_allow "https"
+
+    fi
+
+}
+
 ################################################################################
 # Private: mysql root password configuration
 #
