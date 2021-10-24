@@ -20,7 +20,7 @@ function server_setup() {
     # Options: webserver, database, webapp, cache, replica, other
     server_roles="$(settings_set_server_role)"
 
-    # Transforming to array
+    # String to array
     IFS=, read -ra server_roles_array <<< "$server_roles"
 
     for server_role in "${server_roles_array[@]}"; do
