@@ -253,8 +253,10 @@ function brolit_configuration_load() {
 
         # Check if all required vars are set
         if [[ -z "${FIREWALL_CONFIG_APP_LIST_SSH}" ]] || [[ -z "${FIREWALL_CONFIG_APP_LIST_HTTP}" ]] || [[ -z "${FIREWALL_CONFIG_APP_LIST_HTTPS}" ]]; then
+            
             echo "Missing required config vars for firewall"
             exit 1
+
         fi
 
     fi
@@ -271,8 +273,10 @@ function brolit_configuration_load() {
 
         # Check if all required vars are set
         if [[ -z "${SUPPORT_CLOUDFLARE_EMAIL}" ]] || [[ -z "${SUPPORT_CLOUDFLARE_API_KEY}" ]]; then
+            
             echo "Missing required config vars for cloudflare support"
             exit 1
+
         fi
 
     fi
@@ -289,8 +293,10 @@ function brolit_configuration_load() {
 
         # Check if all required vars are set
         if [[ -z "${SUPPORT_NETDATA_CONFIG_SUBDOMAIN}" ]] || [[ -z "${SUPPORT_NETDATA_CONFIG_USER}" ]] || [[ -z "${SUPPORT_NETDATA_CONFIG_USER_PASS}" ]] || [[ -z "${SUPPORT_NETDATA_CONFIG_ALARM_LEVEL}" ]]; then
+           
             echo "Missing required config vars for netdata support"
             exit 1
+
         fi
 
     fi
@@ -354,7 +360,9 @@ function server_configuration_firewall() {
 
 function _settings_config_mysql() {
 
-    if [[ "${SERVER_CONFIG}" == *"mysql"* ]]; then
+    is_mysql_installed="$(package_is_installed "mysql")"
+
+    if [[ ${is_mysql_installed} == "true" ]]; then
 
         mysql_ask_root_psw
 
