@@ -365,11 +365,9 @@ function _settings_config_mysql() {
 function _settings_config_dropbox() {
 
     # Checking global var
-    if [[ ${BACKUP_DROPBOX_STATUS} == "true" ]]; then
+    if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
-        display --indent 2 --text "- Checking dropbox uploader"
-
-        "${DROPBOX_UPLOADER}" list
+        "${DROPBOX_UPLOADER}" -q list
 
         exit_status=$?
 
@@ -379,7 +377,7 @@ function _settings_config_dropbox() {
 
         else
 
-            display --indent 2 --text "Please follow the dropbox uploader steps ..."
+            display --indent 2 --text "Something went wrong, please finish the configuration running: ${DROPBOX_UPLOADER}"
 
         fi
 
