@@ -2,26 +2,30 @@
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
 # Version: 3.0.68-beta
-#############################################################################
+################################################################################
 
-# Source all apps libs
-libs_apps_path="${SFOLDER}/libs/apps"
-libs_apps_scripts="$(find "${libs_apps_path}" -maxdepth 1 -name '*.sh' -type f -print)"
-for f in ${libs_apps_scripts}; do source "${f}"; done
+function _source_all_scripts() {
 
-# Source all local libs
-libs_local_path="${SFOLDER}/libs/local"
-libs_local_scripts="$(find "${libs_local_path}" -maxdepth 1 -name '*.sh' -type f -print)"
-for f in ${libs_local_scripts}; do source "${f}"; done
+  # Source all apps libs
+  libs_apps_path="${SFOLDER}/libs/apps"
+  libs_apps_scripts="$(find "${libs_apps_path}" -maxdepth 1 -name '*.sh' -type f -print)"
+  for f in ${libs_apps_scripts}; do source "${f}"; done
 
-# Source utils
-utils_path="${SFOLDER}/utils"
-utils_scripts="$(find "${utils_path}" -maxdepth 1 -name '*.sh' -type f -print)"
-for f in ${utils_scripts}; do source "${f}"; done
+  # Source all local libs
+  libs_local_path="${SFOLDER}/libs/local"
+  libs_local_scripts="$(find "${libs_local_path}" -maxdepth 1 -name '*.sh' -type f -print)"
+  for f in ${libs_local_scripts}; do source "${f}"; done
 
-# Load other sources
-source "${SFOLDER}/libs/notification_controller.sh"
-#source "${SFOLDER}/libs/storage_controller.sh"
+  # Source utils
+  utils_path="${SFOLDER}/utils"
+  utils_scripts="$(find "${utils_path}" -maxdepth 1 -name '*.sh' -type f -print)"
+  for f in ${utils_scripts}; do source "${f}"; done
+
+  # Load other sources
+  source "${SFOLDER}/libs/notification_controller.sh"
+  #source "${SFOLDER}/libs/storage_controller.sh"
+
+}
 
 ################################################################################
 # Private: setup global vars and script options
@@ -330,6 +334,9 @@ function script_init() {
   fi
 
   LOG="${path_log}/${log_name}"
+
+  # Source all scripts
+  _source_all_scripts
 
   # Script setup
   _setup_globals_and_options
