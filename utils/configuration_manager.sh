@@ -338,12 +338,12 @@ function server_configuration_firewall() {
         app_list_keys="$(jq -r 'keys[]' <<<"${app_list}" | sed ':a; N; $!ba; s/\n/ /g')"
 
         # String to array
-        IFS=, read -ra app_list_keys_array <<<"$app_list_keys"
+        IFS=' ' read -r -a app_list_keys_array <<<"$app_list_keys"
 
         # Loop through all apps keys
         for app_list_key in "${app_list_keys_array[@]}"; do
 
-            app_list_value="$(jq -r \'."${app_list_key}"\' <<<"${app_list}")"
+            app_list_value="$(jq -r ."${app_list_key}" <<<"${app_list}")"
 
             if [[ ${app_list_value} == "allow" ]]; then
 

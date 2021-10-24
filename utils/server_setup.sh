@@ -21,7 +21,7 @@ function server_setup() {
     server_roles="$(settings_set_server_role)"
 
     # String to array
-    IFS=, read -ra server_roles_array <<< "$server_roles"
+    IFS=',' read -r -a server_roles_array <<< "$server_roles"
 
     for server_role in "${server_roles_array[@]}"; do
 
