@@ -303,9 +303,11 @@ function _check_distro() {
 # Script init
 #
 # Arguments:
-#  Only to detect if script is runned by brolit app)
-#  ${1} = ${1} runner first parameter
-#  ${2} = ${2} runner second parameter
+#  ${1} = ${script_mode}        - sl or null (only for brolit-ui)
+#  ${2} = ${script_log_suffix}  - suffix for log file
+#  ${3} = ${script_log_debug}   - 1 or 0 (enabled/disabled)
+#  ${4} = ${script_quiet_mode}  - 1 or 0 (enabled/disabled)
+#  ${5} = ${script_skip_tests}  - 1 or 0 (enabled/disabled)
 #
 # Outputs:
 #   global vars
@@ -313,14 +315,21 @@ function _check_distro() {
 
 function script_init() {
 
+  # Parameters
+  local script_mode="${1}"
+  local script_log_suffix="${2}"
+  local script_log_debug="${3}"
+  local script_quiet_mode="${4}"
+  local script_skip_tests="${5}"
+
+  # Script modes
+  declare -g DEBUG="${script_log_debug}"
+  declare -g QUIET="${script_quiet_mode}"
+  declare -g SKIPTESTS="${script_skip_tests}"
+
   # Define log name
   declare -g LOG
   declare -g EXEC_TYPE
-
-  # Script modes
-  declare -g DEBUG=1
-  declare -g QUIET=0     # Show normal messages and warnings as well
-  declare -g SKIPTESTS=1 # Skip tests
 
   local timestamp
   local path_log
@@ -335,11 +344,10 @@ function script_init() {
 
   # Check if the script receives first parameter "--sl"
   ## Only for BROLIT-UI
-  if [[ ${1} == *"sl" ]]; then
+  if [[ ${script_mode} == *"sl" ]]; then
     # And add second parameter to the log name
-    log_name="log_lemp_utils_${2}.log"
+    log_name="log_lemp_utils_${script_log_suffix}.log"
     EXEC_TYPE="external"
-    DEBUG=0
   else
     # Default log name
     log_name="brolit_shell_${timestamp}.log"
