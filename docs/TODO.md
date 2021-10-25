@@ -28,6 +28,7 @@
 
 ### Need more testing
 
+- [ ] Nginx: Add http2 support on nginx server config files.
 - [ ] Nginx: Globals configs support.
 - [ ] PHP: Option to enable or disable OpCache.
 - [ ] Installers: On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages.
@@ -43,7 +44,7 @@
         Example: test.multiplacas.broobe.hosting OK
         Example 2: multiplacas.broobe.hosting X (OK only if prod).
 - [ ] WP-CLI: wpcli_search_and_replace receives domains instead urls (ex: domain.com instead http://domain.com).
-- [ ] Restore-project: cant restore non-wp projects.
+- [ ] Restore-project: can't restore non-wp projects.
 - [ ] Restore-database: granting privileges to user fails, database_name is empty.
 - [ ] Core: Add support to create projects with differents roles. Exanple: webserver, database, replica, etc.
         Need to change if later the script detects a php, nginx o mysql installation.
@@ -68,6 +69,7 @@
 
 ## For release 3.2
 
+- [ ] Core: ufw and fail2ban support.
 - [ ] Core: Let configure all things via JSON files.
 - [ ] Core: Let configure temp. backup directory.
 - [ ] Core: Docker support (backup, restore, list containers, status).
@@ -83,11 +85,10 @@
 - [ ] Backups: Refactor for backup/restore: 5 options (server_config, site_config, site, database and project).
 - [ ] Restore: Finish function restore_config_files_from_dropbox.
 - [ ] MySQL: Rename database (with and without WP).
-- [ ] Nginx: Add http2 support on nginx server config files.
+- [ ] Nginx: Add IPv6 support: https://geekflare.com/es/enable-ipv6-nginx-apache/
 
 ## For release 3.3
 
-- [ ] Firewall: ufw support.
 - [ ] Notifications: After install a new project (with credentials info).
 - [ ] Backups: On backup failure, the email must show what files fails and what files are correct backuped.
 - [ ] Backups: Implement on restore_from_backup easy way to restore all sites.

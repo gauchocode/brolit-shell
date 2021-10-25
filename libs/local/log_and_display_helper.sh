@@ -97,6 +97,8 @@ function _spinner() {
 
 function spinner_start() {
 
+  if [[ ${QUIET} -eq 1 ]]; then return 0; fi
+
   _spinner "start" "${1}" &
 
   # set global spinner pid
@@ -116,6 +118,8 @@ function spinner_start() {
 ################################################################################
 
 function spinner_stop() {
+
+  if [[ ${QUIET} -eq 1 ]]; then return 0; fi
 
   _spinner "stop" "${1}" "${_sp_pid}"
   unset _sp_pid
@@ -140,41 +144,39 @@ function log_event() {
   local message=$2
   local console_display=$3
 
-  # TODO: CHECK IF BROLIT IS EXECUTED BY WEBAPP
-
   case ${log_type} in
 
   success)
     echo "$(_timestamp) > SUCCESS: ${message}" >>"${LOG}"
-    if [[ ${console_display} == "true" ]]; then
+    if [[ ${console_display} == "true" && ${QUIET} -eq 0 ]]; then
       echo -e "${B_GREEN} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   info)
     echo "$(_timestamp) > INFO: ${message}" >>"${LOG}"
-    if [[ ${console_display} == "true" ]]; then
+    if [[ ${console_display} == "true" && ${QUIET} -eq 0 ]]; then
       echo -e "${B_CYAN} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   warning)
     echo "$(_timestamp) > WARNING: ${message}" >>"${LOG}"
-    if [[ ${console_display} == "true" ]]; then
+    if [[ ${console_display} == "true" && ${QUIET} -eq 0 ]]; then
       echo -e "${YELLOW}${ITALIC} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   error)
     echo "$(_timestamp) > ERROR: ${message}" >>"${LOG}"
-    if [[ ${console_display} == "true" ]]; then
+    if [[ ${console_display} == "true" && ${QUIET} -eq 0 ]]; then
       echo -e "${RED} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   critical)
     echo "$(_timestamp) > CRITICAL: ${message}" >>"${LOG}"
-    if [[ ${console_display} == "true" ]]; then
+    if [[ ${console_display} == "true" && ${QUIET} -eq 0 ]]; then
       echo -e "${B_RED} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
@@ -183,7 +185,7 @@ function log_event() {
     if [[ "${DEBUG}" -eq 1 ]]; then
 
       echo "$(_timestamp) > DEBUG: ${message}" >>"${LOG}"
-      if [[ ${console_display} == "true" ]]; then
+      if [[ ${console_display} == "true" && ${QUIET} -eq 0 ]]; then
         echo -e "${B_MAGENTA} > ${message}${ENDCOLOR}" >&2
       fi
 
@@ -192,7 +194,7 @@ function log_event() {
 
   *)
     echo "$(_timestamp) > ${message}" >>"${LOG}"
-    if [[ ${console_display} == "true" ]]; then
+    if [[ ${console_display} == "true" && ${QUIET} -eq 0 ]]; then
       echo -e "${CYAN}${B_DEFAULT} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
@@ -217,7 +219,7 @@ function log_break() {
 
   local log_break
 
-  if [[ "${console_display}" == "true" ]]; then
+  if [[ "${console_display}" == "true" && ${QUIET} -eq 0 ]]; then
 
     log_break="        ----------------------------------------------------          "
     echo -e "${MAGENTA}${B_DEFAULT}${log_break}${ENDCOLOR}" >&2
@@ -274,7 +276,7 @@ function log_subsection() {
 
   local message=$1
 
-  if [[ "${QUIET}" -eq 0 ]]; then
+  if [[ ${QUIET} -eq 0 ]]; then
 
     # Console Display
     echo "" >&2
@@ -299,13 +301,17 @@ function clear_screen() {
 
 function clear_last_line() {
 
-  #tput cuu1;tput el
+  if [[ ${QUIET} -eq 0 ]]; then
 
-  printf "\033[1A" >&2
-  echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
-  echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
-  printf "\033[1A" >&2
-  printf "\033[1A" >&2
+    #tput cuu1;tput el
+
+    printf "\033[1A" >&2
+    echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
+    echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
+    printf "\033[1A" >&2
+    printf "\033[1A" >&2
+
+  fi
 
 }
 
@@ -319,6 +325,8 @@ function display() {
   COLOR=""
   SPACES=0
   SHOWDEBUG=0
+
+  if [[ ${QUIET} -eq 1 ]]; then return 0; fi
 
   while [ $# -ge 1 ]; do
     case $1 in
