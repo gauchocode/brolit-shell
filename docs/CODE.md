@@ -5,11 +5,12 @@ An attempt to bring order in good advice on writing Bash scripts I collected fro
 * https://github.com/dylanaraps/pure-bash-bible
 * https://bertvv.github.io/cheat-sheets/Bash.html
 * https://github.com/anordal/shellharden/blob/master/how_to_do_things_safely_in_bash.md
+* https://stackoverflow.com/questions/10953833/passing-multiple-distinct-arrays-to-a-shell-function
 * https://www.reddit.com/r/commandline/comments/lha15t/bash_execution_tips_the_difference_between_and/
 
 ## Suggested tools
-* VSCode with shellcheck and Bash IDE extensions
-* WSL or WSL2 on Windows 10 env.
+* VSCode with shellcheck and Bash IDE extensions.
+* WSL or WSL2 on Windows 10/11 environments.
 
 ## Code: General
 The principles of Clean Code apply to Bash as well
