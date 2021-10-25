@@ -295,7 +295,11 @@ function log_subsection() {
 
 function clear_screen() {
 
-  echo -en "\ec" >&2
+  if [[ ${QUIET} -eq 0 ]]; then
+
+    echo -en "\ec" >&2
+
+  fi
 
 }
 
