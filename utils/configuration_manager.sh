@@ -10,6 +10,9 @@
 
 function brolit_configuration_load() {
 
+    # Load configuration file for aliases.sh
+    source "${SCRIPT}/libs/local/json_helper.sh"
+
     local server_config_file="$1"
 
     # Globals
@@ -57,7 +60,7 @@ function brolit_configuration_load() {
     declare -g SUPPORT_NETDATA_CONFIG_USER_PASS
     declare -g SUPPORT_NETDATA_CONFIG_ALARM_LEVEL
 
-    if [ -f "${server_config_file}" ]; then
+    if [[ -f "${server_config_file}" ]]; then
 
         display --indent 2 --text "- Checking Brolit config file" --result "DONE" --color GREEN
 
