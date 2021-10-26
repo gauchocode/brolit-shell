@@ -380,9 +380,9 @@ function make_sites_files_backup() {
   COUNT_TOTAL_SITES="$((COUNT_TOTAL_SITES - 1))"
 
   # Log
+  display --indent 6 --text "- Directories found" --result "${COUNT_TOTAL_SITES}" --color WHITE
   log_event "info" "Found ${COUNT_TOTAL_SITES} directories" "false"
   log_break "true"
-  display --indent 6 --text "- Directories found" --result "${COUNT_TOTAL_SITES}" --color WHITE
 
   for j in ${TOTAL_SITES}; do
 

@@ -4,13 +4,36 @@
 # Version: 3.0.68-beta
 ################################################################################
 
+################################################################################
+# Return Dropbox account space left
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   ${output}
+################################################################################
+
 function dropbox_account_space() {
 
     local output
 
     output="$("${DROPBOX_UPLOADER}" space 2>&1)"
 
+    # Return
+    echo "${output}"
+
 }
+
+################################################################################
+# Create directory in Dropbox
+#
+# Arguments:
+#   $1 = ${dir_to_create}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function dropbox_create_dir() {
 
@@ -27,6 +50,10 @@ function dropbox_create_dir() {
         #display --indent 6 --text "- Creating dropbox directory" --result "DONE" --color GREEN
         log_event "info" "Dropbox directory ${dir_to_create} created" "false"
 
+        # TODO: sometimes the directory is not created, so we need to check if it exists
+
+        return 0
+
     else
 
         #display --indent 6 --text "- Creating dropbox directory" --result "WARNING" --color YELLOW
@@ -36,9 +63,22 @@ function dropbox_create_dir() {
         log_event "debug" "Last command executed: ${DROPBOX_UPLOADER} -q mkdir ${dir_to_create}" "false"
         log_event "debug" "Last command output: ${output}" "false"
 
+        return 1
+
     fi
 
 }
+
+################################################################################
+# Upload file to Dropbox
+#
+# Arguments:
+#   $1 = ${file_to_upload}
+#   $2 = ${dropbox_directory}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function dropbox_upload() {
 
@@ -65,6 +105,8 @@ function dropbox_upload() {
         display --indent 6 --text "- Uploading file to Dropbox" --result "DONE" --color GREEN
         log_event "info" "Dropbox file ${file_to_upload} uploaded" "false"
 
+        return 0
+
     else
 
         display --indent 6 --text "- Uploading file to Dropbox" --result "ERROR" --color RED
@@ -79,6 +121,17 @@ function dropbox_upload() {
     fi
 
 }
+
+################################################################################
+# Drownload file from Dropbox
+#
+# Arguments:
+#   $1 = ${file_to_download}
+#   $2 = ${local_directory}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function dropbox_download() {
 
@@ -111,6 +164,8 @@ function dropbox_download() {
         display --indent 6 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
         log_event "info" "${file_to_download} downloaded" "false"
 
+        return 0
+
     else
 
         clear_last_line
@@ -129,6 +184,16 @@ function dropbox_download() {
 
 }
 
+################################################################################
+# Delete file in Dropbox
+#
+# Arguments:
+#   $1 = ${to_delete}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function dropbox_delete() {
 
     local to_delete=$1
@@ -143,6 +208,8 @@ function dropbox_delete() {
         display --indent 6 --text "- Deleting files from Dropbox" --result "DONE" --color GREEN
         log_event "info" "Files deleted from Dropbox"
 
+        return 0
+
     else
 
         display --indent 6 --text "- Deleting files from Dropbox" --result "WARNING" --color YELLOW
@@ -151,6 +218,8 @@ function dropbox_delete() {
         log_event "warning" "Can't remove ${to_delete} from dropbox. Maybe backup file doesn't exists." "false"
         log_event "warning" "Last command executed: ${DROPBOX_UPLOADER} remove ${to_delete}"
         log_event "debug" "Last command output: ${output}"
+
+        return 1
 
     fi
 
