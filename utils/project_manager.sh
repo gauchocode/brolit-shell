@@ -205,6 +205,13 @@ function project_manager_menu_new_project_type_utils() {
           # Let's Encrypt
           certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${root_domain},www.${root_domain}"
 
+          exitstatus=$?
+          if [[ ${exitstatus} -eq 0 ]]; then
+
+            nginx_server_add_http2_support "${project_domain}"
+
+          fi
+
         else
 
           # Nginx config
@@ -212,6 +219,13 @@ function project_manager_menu_new_project_type_utils() {
 
           # Let's Encrypt
           certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${project_domain}"
+
+          exitstatus=$?
+          if [[ ${exitstatus} -eq 0 ]]; then
+
+            nginx_server_add_http2_support "${project_domain}"
+
+          fi
 
         fi
 
@@ -228,7 +242,7 @@ function project_manager_menu_new_project_type_utils() {
       # BENCH PROJECT GTMETRIX
 
       URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
-     
+
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
 
@@ -343,7 +357,7 @@ function project_manager_menu_new_project_type() {
   installation_types="Laravel,PHP"
 
   project_type="$(whiptail --title "INSTALLATION TYPE" --menu "Choose an Installation Type" 20 78 10 "$(for x in ${installation_types}; do echo "$x [X]"; done)" 3>&1 1>&2 2>&3)"
-  
+
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
