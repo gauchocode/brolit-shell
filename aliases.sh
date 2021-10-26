@@ -18,10 +18,10 @@ source "${SFOLDER}/libs/commons.sh"
 #  ${4} = ${script_quiet_mode}  - 1 or 0 (enabled/disabled)
 #  ${5} = ${script_skip_tests}  - 1 or 0 (enabled/disabled)
 
-script_init "alias" "null" "0" "1" "1"
+#script_init "alias" "null" "0" "1" "1"
 
-#source "${SFOLDER}/utils/configuration_manager.sh"
-#brolit_configuration_load "/root/.brolit_conf.json"
+source "${SFOLDER}/utils/configuration_manager.sh"
+brolit_configuration_load "/root/.brolit_conf.json"
 
 BROLIT_CONFIG_PATH="/etc/brolit"
 
