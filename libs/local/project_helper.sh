@@ -1242,10 +1242,18 @@ function php_project_installer() {
 
     # HTTPS with Certbot
     project_domain="$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${project_root_domain}" 3>&1 1>&2 2>&3)"
+
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
       certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${project_domain},${project_root_domain}"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        nginx_server_add_http2_support "${project_domain}"
+
+      fi
 
     else
 
@@ -1271,6 +1279,13 @@ function php_project_installer() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
       certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${cert_project_domain}"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        nginx_server_add_http2_support "${project_domain}"
+
+      fi
 
     else
 
@@ -1383,15 +1398,23 @@ function nodejs_project_installer() {
 
     # HTTPS with Certbot
     project_domain="$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${project_root_domain}" 3>&1 1>&2 2>&3)"
+
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
       certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${project_domain},${project_root_domain}"
 
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        nginx_server_add_http2_support "${project_domain}"
+
+      fi
+
     else
 
       # Log
-      log_event "info" "HTTPS support for ${project_domain} skipped"
+      log_event "info" "HTTPS support for ${project_domain} skipped" "false"
       display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
     fi
@@ -1412,6 +1435,13 @@ function nodejs_project_installer() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
       certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${cert_project_domain}"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        nginx_server_add_http2_support "${project_domain}"
+
+      fi
 
     else
 

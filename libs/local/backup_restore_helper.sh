@@ -1017,6 +1017,13 @@ function restore_project() {
       # Let's Encrypt
       certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${root_domain},www.${root_domain}"
 
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        nginx_server_add_http2_support "${root_domain}"
+
+      fi
+
     else
 
       # Nginx config
@@ -1027,6 +1034,13 @@ function restore_project() {
 
       # Let's Encrypt
       certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${new_project_domain}"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        nginx_server_add_http2_support "${new_project_domain}"
+
+      fi
 
     fi
 

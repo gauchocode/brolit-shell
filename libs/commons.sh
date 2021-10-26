@@ -1329,6 +1329,7 @@ function compress() {
     to_backup_string="${to_backup}"
   fi
 
+  # Log
   log_event "info" "Compressing ${to_backup_string} ..." "false"
   display --indent 6 --text "- Compressing ${to_backup_string}"
 
@@ -1350,7 +1351,7 @@ function compress() {
 
   lbzip2_result=$?
 
-  # Clear pipe output
+  # Clear output
   clear_last_line
   clear_last_line
 
@@ -1360,14 +1361,15 @@ function compress() {
     backup_file_size="$(du --apparent-size -s -k "${file_output}" | awk '{ print $1 }' | awk '{printf "%.3f MiB %s\n", $1/1024, $2}')"
 
     # Log
-    display --indent 6 --text "- Compressing ${to_backup_string}" --result "DONE" --color GREEN
+    display --indent 6 --text "- Compressing backup file" --result "DONE" --color GREEN
     display --indent 8 --text "Final backup size: ${YELLOW}${BOLD}${backup_file_size}${ENDCOLOR}"
 
     log_event "info" "Backup ${file_output} created, final size: ${backup_file_size}" "false"
-    log_event "info" "Creating folders in Dropbox ..." "false"
 
     # Return
     echo "${backup_file_size}"
+
+    return 0
 
   else
 

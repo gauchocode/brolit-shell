@@ -150,10 +150,18 @@ function wordpress_project_install() {
 
     # HTTPS with Certbot
     project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${project_root_domain}" 3>&1 1>&2 2>&3)
+
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
       certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${project_domain},${project_root_domain}"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        nginx_server_add_http2_support "${project_domain}"
+
+      fi
 
     else
 
@@ -178,6 +186,13 @@ function wordpress_project_install() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
       certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${cert_project_domain}"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        nginx_server_add_http2_support "${project_domain}"
+
+      fi
 
     else
 
@@ -205,7 +220,7 @@ function wordpress_project_install() {
   log_event "info" "WordPress installation for domain ${project_domain} finished" "false"
   display --indent 6 --text "- WordPress installation" --result "DONE" --color GREEN
   display --indent 8 --text "for domain ${project_domain}"
-  
+
   # Send notification
   send_notification "✅ ${VPSNAME}" "WordPress installation for domain ${project_domain} finished" ""
 
@@ -348,6 +363,13 @@ function wordpress_project_copy() {
 
       certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${project_domain},${root_domain}"
 
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        nginx_server_add_http2_support "${project_domain}"
+
+      fi
+
     else
 
       log_event "info" "HTTPS support for ${project_domain} skipped"
@@ -378,6 +400,13 @@ function wordpress_project_copy() {
 
           certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${cert_project_domain}"
 
+          exitstatus=$?
+          if [[ ${exitstatus} -eq 0 ]]; then
+
+            nginx_server_add_http2_support "${project_domain}"
+
+          fi
+
         else
 
           log_event "info" "HTTPS support for ${project_domain} skipped" "false"
@@ -391,6 +420,8 @@ function wordpress_project_copy() {
         display --indent 8 --text "Please, fix nginx configuration, and run certbot manually to install a certificate"
         log_event "error" "Configuring nginx for ${project_domain}!" "false"
 
+        return 1
+
       fi
 
     else
@@ -398,6 +429,8 @@ function wordpress_project_copy() {
       display --indent 6 --text "- HTTPS support for ${project_domain}" --result "WARNING" --color YELLOW
       display --indent 8 --text "Can't update DNS record, please change it manually and run certbot to install certificate!"
       log_event "warning" "Can't update DNS record, please change it manually and run certbot to install certificate!" "false"
+
+      return 1
 
     fi
 

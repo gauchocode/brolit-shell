@@ -34,10 +34,14 @@ function certbot_certificate_install() {
 
   certbot_result=$?
   if [[ ${certbot_result} -eq 0 ]]; then
+
     log_event "info" "Certificate installation for ${domains} ok" "false"
     display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
 
+    return 0
+
   else
+  
     log_event "warning" "Certificate installation failed, trying force-install ..." "false"
     display --indent 6 --text "- Installing certificate on domains" --result "FAIL" --color RED
 
@@ -49,12 +53,18 @@ function certbot_certificate_install() {
 
     certbot_result=$?
     if [[ ${certbot_result} -eq 0 ]]; then
+
       log_event "info" "Certificate installation for ${domains} ok" "false"
       display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
 
+      return 0
+
     else
+
       log_event "error" "Certificate installation for ${domains} failed!" "false"
       display --indent 6 --text "- Installing certificate on domains" --result "FAIL" --color RED
+
+      return 1
 
     fi
 

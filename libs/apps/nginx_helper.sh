@@ -581,10 +581,13 @@ function nginx_server_add_http2_support() {
     local nginx_server_file=$1
 
     # Check if the file exists
-    nginx_server_file="/etc/nginx/sites-available/${1}"
+    nginx_server_file="/etc/nginx/sites-available/${nginx_server_file}"
+
     if [[ ! -f "${nginx_server_file}" ]]; then
-        log_event "error" "File ${nginx_server_file} not found"
+
+        log_event "error" "File ${nginx_server_file} not found" "false"
         return 1
+
     fi
 
     # Add http2 to ports
