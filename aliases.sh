@@ -20,7 +20,7 @@ source "${SFOLDER}/libs/commons.sh"
 
 #script_init "alias" "null" "0" "1" "1"
 
-source "${SCRIPT}/libs/local/json_helper.sh"
+source "${SFOLDER}/libs/local/json_helper.sh"
 
 source "${SFOLDER}/utils/configuration_manager.sh"
 
