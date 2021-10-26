@@ -9,16 +9,9 @@ VPSNAME="${HOSTNAME}"
 
 SFOLDER="/root/brolit-shell"
 
+declare -g QUIET=1
+
 source "${SFOLDER}/libs/commons.sh"
-
-# script_init arguments:
-#  ${1} = ${script_mode}        - sl or null (only for brolit-ui)
-#  ${2} = ${script_log_suffix}  - suffix for log file
-#  ${3} = ${script_log_debug}   - 1 or 0 (enabled/disabled)
-#  ${4} = ${script_quiet_mode}  - 1 or 0 (enabled/disabled)
-#  ${5} = ${script_skip_tests}  - 1 or 0 (enabled/disabled)
-
-#script_init "alias" "null" "0" "1" "1"
 
 source "${SFOLDER}/libs/local/json_helper.sh"
 
@@ -47,7 +40,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.68-beta"
-ALIASES_VERSION="3.0.68-beta-074"
+ALIASES_VERSION="3.0.68-beta-075"
 
 ################################################################################
 
