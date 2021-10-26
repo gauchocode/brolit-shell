@@ -20,7 +20,10 @@ source "${SFOLDER}/libs/commons.sh"
 
 #script_init "alias" "null" "0" "1" "1"
 
+source "${SCRIPT}/libs/local/json_helper.sh"
+
 source "${SFOLDER}/utils/configuration_manager.sh"
+
 brolit_configuration_load "/root/.brolit_conf.json"
 
 BROLIT_CONFIG_PATH="/etc/brolit"
@@ -44,7 +47,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.68-beta"
-ALIASES_VERSION="3.0.68-beta-072"
+ALIASES_VERSION="3.0.68-beta-074"
 
 ################################################################################
 
