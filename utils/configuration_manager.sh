@@ -10,9 +10,6 @@
 
 function brolit_configuration_load() {
 
-    # Load configuration file for aliases.sh
-    source "${SCRIPT}/libs/local/json_helper.sh"
-
     local server_config_file="$1"
 
     # Globals
