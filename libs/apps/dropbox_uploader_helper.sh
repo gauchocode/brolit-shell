@@ -26,6 +26,45 @@ function dropbox_account_space() {
 }
 
 ################################################################################
+# Check if directory exists on Dropbox account
+#
+# Arguments:
+#   ${1}- ${directory}
+#   ${2}- ${path}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function dropbox_check_if_directory_exists() {
+
+    local directory="$1"
+    local path="$2"
+
+    local output
+
+    output="$("${DROPBOX_UPLOADER}" list "${path}" | grep "${directory}" | awk -F " " '{print $1}' 2>&1)"
+
+    if [[ ${output} == "[D]" ]]; then
+
+        return 0
+
+    else
+
+        if [[ ${output} == "[F]" ]]; then
+
+            # Sometimes the api creates a file instead of a directory, so we need to delete it
+            dropbox_delete "${path}${directory}"
+
+        fi
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
 # Create directory in Dropbox
 #
 # Arguments:
@@ -42,28 +81,41 @@ function dropbox_create_dir() {
     local output
     local dropbox_create_dir_result
 
-    output="$("${DROPBOX_UPLOADER}" -q mkdir "${dir_to_create}")"
-    dropbox_create_dir_result=$?
+    local path
+    local directory
 
-    if [[ ${dropbox_create_dir_result} -eq 0 ]]; then
+    # Split $dir_to_create
+    directory="$(basename "${dir_to_create}")"
+    path="$(dirname "${dir_to_create}")"
 
-        #display --indent 6 --text "- Creating dropbox directory" --result "DONE" --color GREEN
-        log_event "info" "Dropbox directory ${dir_to_create} created" "false"
+    dropbox_check_if_directory_exists "${directory}" "${path}"
 
-        # TODO: sometimes the directory is not created, so we need to check if it exists
+    exitstatus=$?
 
-        return 0
+    if [[ ${exitstatus} -eq 1 ]]; then
 
-    else
+        output="$("${DROPBOX_UPLOADER}" -q mkdir "${dir_to_create}")"
+        dropbox_create_dir_result=$?
 
-        #display --indent 6 --text "- Creating dropbox directory" --result "WARNING" --color YELLOW
-        #display --indent 8 --text "Maybe directory already exists" --tcolor YELLOW
+        if [[ ${dropbox_create_dir_result} -eq 0 ]]; then
 
-        log_event "debug" "Can't create directory ${dir_to_create} from dropbox. Maybe directory already exists." "false"
-        log_event "debug" "Last command executed: ${DROPBOX_UPLOADER} -q mkdir ${dir_to_create}" "false"
-        log_event "debug" "Last command output: ${output}" "false"
+            #display --indent 6 --text "- Creating dropbox directory" --result "DONE" --color GREEN
+            log_event "info" "Dropbox directory ${dir_to_create} created" "false"
 
-        return 1
+            return 0
+
+        else
+
+            #display --indent 6 --text "- Creating dropbox directory" --result "WARNING" --color YELLOW
+            #display --indent 8 --text "Maybe directory already exists" --tcolor YELLOW
+
+            log_event "debug" "Can't create directory ${dir_to_create} from dropbox. Maybe directory already exists." "false"
+            log_event "debug" "Last command executed: ${DROPBOX_UPLOADER} -q mkdir ${dir_to_create}" "false"
+            log_event "debug" "Last command output: ${output}" "false"
+
+            return 1
+
+        fi
 
     fi
 
@@ -160,7 +212,7 @@ function dropbox_download() {
 
         clear_last_line
         clear_last_line
-        
+
         display --indent 6 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
         log_event "info" "${file_to_download} downloaded" "false"
 
