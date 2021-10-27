@@ -78,7 +78,7 @@ function make_server_files_backup() {
 
     # Backups file names
     backup_file="${bk_sup_type}-${bk_type}-files-${NOW}.tar.bz2"
-    old_bk_file="${bk_sup_type}-${bk_type}-files-${ONEWEEKAGO}.tar.bz2"
+    old_bk_file="${bk_sup_type}-${bk_type}-files-${DAYSAGO}.tar.bz2"
 
     # Compress backup
     backup_file_size="$(compress "${bk_path}" "${directory_to_backup}" "${TMP_DIR}/${NOW}/${backup_file}")"
@@ -163,7 +163,7 @@ function make_mailcow_backup() {
 
   if [[ -n "${MAILCOW_DIR}" ]]; then
 
-    old_bk_file="${bk_type}_files-${ONEWEEKAGO}.tar.bz2"
+    old_bk_file="${bk_type}_files-${DAYSAGO}.tar.bz2"
     backup_file="${bk_type}_files-${NOW}.tar.bz2"
 
     log_event "info" "Trying to make a backup of ${MAILCOW_DIR} ..." "false"
@@ -483,7 +483,7 @@ function make_files_backup() {
   local bk_path=$2
   local directory_to_backup=$3
 
-  local old_bk_file="${directory_to_backup}_${bk_type}-files_${ONEWEEKAGO}.tar.bz2"
+  local old_bk_file="${directory_to_backup}_${bk_type}-files_${DAYSAGO}.tar.bz2"
   local backup_file="${directory_to_backup}_${bk_type}-files_${NOW}.tar.bz2"
 
   local dropbox_path
@@ -806,7 +806,7 @@ function upload_backup_to_dropbox() {
   if [[ ${dropbox_result} -eq 0 ]]; then
 
     # Old backup
-    old_backup_file="${project_name}_${backup_type}_${ONEWEEKAGO}.tar.bz2"
+    old_backup_file="${project_name}_${backup_type}_${DAYSAGO}.tar.bz2"
 
     # Delete
     dropbox_delete "${DROPBOX_FOLDER}${dropbox_path}/${old_backup_file}"
