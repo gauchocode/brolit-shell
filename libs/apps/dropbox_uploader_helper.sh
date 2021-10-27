@@ -54,7 +54,7 @@ function dropbox_check_if_directory_exists() {
         if [[ ${output} == "[F]" ]]; then
 
             # Sometimes the api creates a file instead of a directory, so we need to delete it
-            dropbox_delete "${path}${directory}"
+            dropbox_delete "${path}/${directory}"
 
         fi
 
