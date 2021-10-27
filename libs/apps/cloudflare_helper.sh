@@ -16,16 +16,13 @@ function _cloudflare_get_zone_id() {
 
     local zone_id
 
-    # Checking cloudflare credentials file
-    generate_cloudflare_config
-
     # Using globals: ${SUPPORT_CLOUDFLARE_EMAIL} and ${SUPPORT_CLOUDFLARE_API_KEY}
 
     # Log
+    log_event "info" "Accessing Cloudflare API ..." "false"
+    log_event "info" "Getting Zone ID for domain: ${zone_name}" "false"
     display --indent 6 --text "- Accessing Cloudflare API" --result "DONE" --color GREEN
     display --indent 6 --text "- Checking if domain exists" --result "DONE" --color GREEN
-    log_event "info" "Accessing Cloudflare API ..."
-    log_event "info" "Getting Zone ID for domain: ${zone_name}"
 
     # Get Zone ID
     zone_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" \
