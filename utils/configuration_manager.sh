@@ -178,6 +178,20 @@ function brolit_configuration_load() {
         exit 1
     fi
 
+    BACKUP_RETENTION_KEEP_WEEKLY="$(json_read_field "${server_config_file}" "BACKUPS.retention[].keep_weekly")"
+
+    if [ -z "${BACKUP_RETENTION_KEEP_WEEKLY}" ]; then
+        echo "Missing required config vars for backup retention"
+        exit 1
+    fi
+
+    BACKUP_RETENTION_KEEP_MONTHLY="$(json_read_field "${server_config_file}" "BACKUPS.retention[].keep_monthly")"
+
+    if [ -z "${BACKUP_RETENTION_KEEP_MONTHLY}" ]; then
+        echo "Missing required config vars for backup retention"
+        exit 1
+    fi
+
     ## PROJECTS_PATH
 
     PROJECTS_PATH="$(json_read_field "${server_config_file}" "PROJECTS_PATH")"
