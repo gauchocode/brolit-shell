@@ -182,9 +182,6 @@ function _cloudflare_get_zone_id() {
 
     local zone_id
 
-    # Checking cloudflare credentials file
-    # generate_cloudflare_config
-
     # Using globals: ${SUPPORT_CLOUDFLARE_EMAIL} and ${SUPPORT_CLOUDFLARE_API_KEY}
 
     # Get Zone ID
