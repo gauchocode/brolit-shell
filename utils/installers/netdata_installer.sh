@@ -235,7 +235,9 @@ function netdata_installer() {
 
   if [[ $? -eq 0 ]]; then
 
-    NETDATA_CONFIG_STATUS="$(json_write_field "${BROLIT_CONFIG_FILE}" "SUPPORT.netdata[].status" "enabled")"
+    NETDATA_CONFIG_STATUS="enabled"
+    
+    json_write_field "${BROLIT_CONFIG_FILE}" "SUPPORT.netdata[].status" "${NETDATA_CONFIG_STATUS}"
 
     # new global value ("enabled")
     export NETDATA_CONFIG_STATUS
