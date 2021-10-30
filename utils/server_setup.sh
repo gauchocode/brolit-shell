@@ -14,7 +14,7 @@ function server_setup() {
     timezone_configuration
 
     # Installing basic packages
-    packages_install_utils
+    package_install_utils
 
     # Ask for server role
     # Options: webserver, database, webapp, cache, replica, other
@@ -64,13 +64,13 @@ function server_setup() {
     done
 
     # Install required packages
-    packages_check_required
+    package_check_required
 
     # Script config
     script_configuration_wizard "initial"
 
     # Select aditional packages to install
-    packages_install_selection
+    package_install_selection
 
     # Log
     display --indent 6 --text "- Server setup" --result "DONE" --color GREEN

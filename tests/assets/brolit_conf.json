@@ -1,0 +1,196 @@
+{
+    "BROLIT_SETUP": {
+        "config": [
+            {
+                "version": "3.2",
+                "debug": "true",
+                "quiet": "false"
+            }
+        ]
+    },
+    "SERVER_ROLES": {
+        "config": [
+            {
+                "webserver": "false",
+                "database": "false",
+                "docker": "false",
+                "cache": "false",
+                "other": "false"
+            }
+        ]
+    },
+    "PROJECTS": {
+        "path": "/var/www",
+        "config_path": "/etc/brolit"
+    },
+    "BACKUPS": {
+        "directories": [
+            {
+                "dir_1": "/var/www",
+                "dir_2": "",
+                "dir_3": ""
+            }
+        ],
+        "methods": [
+            {
+                "dropbox": [
+                    {
+                        "status": "disabled",
+                        "config": [
+                            {
+                                "file": "/root/.dropbox_uploader"
+                            }
+                        ]
+                    }
+                ],
+                "sftp": [
+                    {
+                        "status": "disabled",
+                        "config": [
+                            {
+                                "server_ip": "",
+                                "server_port": "",
+                                "server_user": "",
+                                "server_user_password": "",
+                                "server_remote_path": ""
+                            }
+                        ]
+                    }
+                ],
+                "local": [
+                    {
+                        "status": "disabled",
+                        "config": [
+                            {
+                                "backup_path": ""
+                            }
+                        ]
+                    }
+                ],
+                "duplicity": [
+                    {
+                        "status": "disabled",
+                        "config": [
+                            {
+                                "backup_destination_path": "",
+                                "backup_frequency": "7D",
+                                "backup_full_life": "14D"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "retention": [
+            {
+                "keep_daily": "7",
+                "keep_weekly": "0",
+                "keep_monthly": "0"
+            }
+        ]
+    },
+    "NOTIFICATIONS": {
+        "email": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "maila": "",
+                        "smtp_server": "",
+                        "smtp_port": "",
+                        "smtp_tls": "",
+                        "smtp_user": "",
+                        "smtp_user_pass": ""
+                    }
+                ]
+            }
+        ],
+        "telegram": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "NOTIFICATION_TELEGRAM_BOT_TOKEN": "",
+                        "NOTIFICATION_TELEGRAM_CHAT_ID": ""
+                    }
+                ]
+            }
+        ]
+    },
+    "FIREWALL": {
+        "config": [
+            {
+                "status": "disabled",
+                "app_list": [
+                    {
+                        "ssh": "allow",
+                        "http": "allow",
+                        "https": "allow",
+                        "465": "disallow",
+                        "587": "disallow",
+                        "2812": "disallow",
+                        "8080": "disallow",
+                        "19999": "disallow"
+                    }
+                ]
+            }
+        ]
+    },
+    "SUPPORT": {
+        "cloudflare": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "email": "",
+                        "api_key": ""
+                    }
+                ]
+            }
+        ],
+        "monit": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "monit_maila": "",
+                        "monit_httpd": "disabled",
+                        "monit_services": [
+                            {
+                                "system": "enabled",
+                                "nginx": "enabled",
+                                "php-fpm": "enabled",
+                                "mysql": "enabled",
+                                "netdata": "disabled",
+                                "redis": "disabled"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "netdata": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "netdata_subdomain": "",
+                        "netdata_user": "",
+                        "netdata_user_pass": "",
+                        "netdata_alarm_level": ""
+                    }
+                ]
+            }
+        ],
+        "mailcow": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "mailcow_path": "/opt/mailcow-dockerized"
+                    }
+                ]
+            }
+        ]
+    }
+}

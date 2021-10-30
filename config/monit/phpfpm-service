@@ -1,0 +1,8 @@
+#PHP-FPM
+check process phpPHP_V-fpm with pidfile /var/run/php/phpPHP_V-fpm.pid
+    start program = "/etc/init.d/phpPHP_V-fpm start"
+    stop program = "/etc/init.d/phpPHP_V-fpm stop"
+    if failed unixsocket /var/run/php/phpPHP_V-fpm.sock then restart
+    if cpu > 80% for 2 cycles then alert
+    if memory usage > 70% for 5 cycles then restart
+    #if totalmem > 1000 MB for 2 cycles then restart

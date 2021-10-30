@@ -65,7 +65,7 @@ function _update_last_optimization_date() {
 function optimize_images_complete() {
 
   # Check package required
-  packages_install_optimization_utils
+  package_install_optimization_utils
 
   # TODO: extract this to an option
   img_compress='80'

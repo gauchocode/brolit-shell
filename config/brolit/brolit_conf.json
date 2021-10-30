@@ -1,5 +1,13 @@
 {
-    "BROLIT_CONFIG_VERSION": "3.0.2",
+    "BROLIT_SETUP": {
+        "config": [
+            {
+                "version": "3.2",
+                "debug": "true",
+                "quiet": "false"
+            }
+        ]
+    },
     "SERVER_ROLES": {
         "config": [
             {
@@ -11,7 +19,18 @@
             }
         ]
     },
+    "PROJECTS": {
+        "path": "/var/www",
+        "config_path": "/etc/brolit"
+    },
     "BACKUPS": {
+        "directories": [
+            {
+                "dir_1": "/var/www",
+                "dir_2": "",
+                "dir_3": ""
+            }
+        ],
         "methods": [
             {
                 "dropbox": [
@@ -53,7 +72,7 @@
                         "status": "disabled",
                         "config": [
                             {
-                                "backup_path": "",
+                                "backup_destination_path": "",
                                 "backup_frequency": "7D",
                                 "backup_full_life": "14D"
                             }
@@ -65,12 +84,11 @@
         "retention": [
             {
                 "keep_daily": "7",
-                "keep_weekly": "",
-                "keep_monthly": ""
+                "keep_weekly": "0",
+                "keep_monthly": "0"
             }
         ]
     },
-    "PROJECTS_PATH": "/var/www",
     "NOTIFICATIONS": {
         "email": [
             {
@@ -108,7 +126,11 @@
                         "ssh": "allow",
                         "http": "allow",
                         "https": "allow",
-                        "8080": "disallow"
+                        "465": "disallow",
+                        "587": "disallow",
+                        "2812": "disallow",
+                        "8080": "disallow",
+                        "19999": "disallow"
                     }
                 ]
             }
@@ -122,6 +144,27 @@
                     {
                         "email": "",
                         "api_key": ""
+                    }
+                ]
+            }
+        ],
+        "monit": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "monit_maila": "",
+                        "monit_httpd": "disabled",
+                        "monit_services": [
+                            {
+                                "system": "enabled",
+                                "nginx": "enabled",
+                                "php-fpm": "enabled",
+                                "mysql": "enabled",
+                                "netdata": "disabled",
+                                "redis": "disabled"
+                            }
+                        ]
                     }
                 ]
             }

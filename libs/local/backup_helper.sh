@@ -286,7 +286,7 @@ function make_all_server_config_backup() {
     log_event "warning" "PHP_CF is not defined! Skipping PHP config files backup ..." "false"
 
   else
-    
+
     php_files_backup_result="$(make_server_files_backup "configs" "php" "${PHP_CF}" ".")"
 
     backuped_config_list[$backuped_config_index]="${PHP_CF}"
@@ -301,7 +301,7 @@ function make_all_server_config_backup() {
     log_event "warning" "MySQL_CF is not defined! Skipping MySQL config files backup ..." "false"
 
   else
-    
+
     mysql_files_backup_result="$(make_server_files_backup "configs" "mysql" "${MySQL_CF}" ".")"
 
     backuped_config_list[$backuped_config_index]="${MySQL_CF}"
@@ -316,7 +316,7 @@ function make_all_server_config_backup() {
     log_event "warning" "LENCRYPT_CF is not defined! Skipping Letsencrypt config files backup ..." "false"
 
   else
-    
+
     le_files_backup_result="$(make_server_files_backup "configs" "letsencrypt" "${LENCRYPT_CF}" ".")"
 
     backuped_config_list[$backuped_config_index]="${LENCRYPT_CF}"
@@ -331,7 +331,7 @@ function make_all_server_config_backup() {
     log_event "warning" "BROLIT_CONFIG_PATH is not defined! Skipping DevOps config files backup ..." "false"
 
   else
-    
+
     brolit_files_backup_result="$(make_server_files_backup "configs" "brolit" "${BROLIT_CONFIG_PATH}" ".")"
 
     backuped_config_list[$backuped_config_index]="${BROLIT_CONFIG_PATH}"
@@ -531,7 +531,7 @@ function make_files_backup() {
 }
 
 ################################################################################
-# Duplicity Backup
+# Duplicity Backup (BETA)
 #
 # Arguments:
 #  none
@@ -542,26 +542,34 @@ function make_files_backup() {
 
 function duplicity_backup() {
 
-  if [[ ${DUP_BK} == true ]]; then
+  if [[ ${BACKUP_DUPLICITY_STATUS} == "enabled" ]]; then
+
+    log_event "warning" "duplicity backup is in BETA state" "true"
 
     # Check if DUPLICITY is installed
-    DUPLICITY="$(which duplicity)"
-    if [[ ! -x ${DUPLICITY} ]]; then
-      apt-get install duplicity
-    fi
+    package_install_if_not "duplicity"
+
+    # Get all directories
+    all_sites="$(get_all_directories "${PROJECTS_PATH}")"
 
     # Loop in to Directories
-    for i in $(echo "${DUP_FOLDERS}" | sed "s/,/ /g"); do
-      duplicity --full-if-older-than "${DUP_BK_FULL_FREQ}" -v4 --no-encryption" ${DUP_SRC_BK}""${i}" file://"${DUP_ROOT}""${i}"
-      RETVAL=$?
+    #for i in $(echo "${PROJECTS_PATH}" | sed "s/,/ /g"); do
+    for i in ${all_sites}; do
 
-      # TODO: solo deberia borrar lo viejo si $RETVAL -eq 0
-      duplicity remove-older-than "${DUP_BK_FULL_LIFE}" --force "${DUP_ROOT}"/"${i}"
+      log_event "debug" "Running: duplicity --full-if-older-than \"${BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY}\" -v4 --no-encryption\" ${PROJECTS_PATH}\"\"${i}\" file://\"${BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH}\"\"${i}\"" "true"
+
+      duplicity --full-if-older-than "${BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY}" -v4 --no-encryption" ${PROJECTS_PATH}""${i}" file://"${BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH}""${i}"
+      exitstatus=$?
+
+      log_event "debug" "exitstatus=$?" "false"
+
+      # TODO: should only remove old entries only if ${exitstatus} -eq 0
+      duplicity remove-older-than "${BACKUP_DUPLICITY_CONFIG_FULL_LIFE}" --force "${BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH}"/"${i}"
 
     done
 
-    [ $RETVAL -eq 0 ] && echo "*** DUPLICITY SUCCESS ***" >>"${LOG}"
-    [ $RETVAL -ne 0 ] && echo "*** DUPLICITY ERROR ***" >>"${LOG}"
+    [ $exitstatus -eq 0 ] && echo "*** DUPLICITY SUCCESS ***" >>"${LOG}"
+    [ $exitstatus -ne 0 ] && echo "*** DUPLICITY ERROR ***" >>"${LOG}"
 
   fi
 
