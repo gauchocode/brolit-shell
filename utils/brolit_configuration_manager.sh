@@ -87,13 +87,15 @@ function brolit_configuration_load() {
 
     ## PROJECTS_PATH
 
-    PROJECTS_PATH="$(json_read_field "${server_config_file}" "PROJECTS_PATH")"
+    PROJECTS_PATH="$(json_read_field "${server_config_file}" "PROJECTS.path")"
 
     if [ -z "${PROJECTS_PATH}" ]; then
         echo "Missing required config vars for projects path"
         exit 1
     fi
 
+    # TODO: need to implement BACKUPS.direcotries
+    
     ## NOTIFICATIONS
     _brolit_configuration_load_email "${server_config_file}"
 
