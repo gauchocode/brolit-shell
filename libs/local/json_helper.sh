@@ -42,7 +42,7 @@ function json_read_field() {
 #  $3= ${json_field_value}
 #
 # Outputs:
-#  ${json_field_value}
+#  0 if ok, 1 on error.
 ################################################################################
 
 function json_write_field() {
@@ -56,8 +56,6 @@ function json_write_field() {
     exitstatus=$?
     if [[ "${exitstatus}" -eq 0 ]]; then
 
-        # Return
-        # echo "${json_field_value}"
         return 0
 
     else

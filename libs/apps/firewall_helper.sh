@@ -31,8 +31,10 @@ function firewall_enable() {
 
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        FIREWALL_CONFIG_STATUS="$(json_write_field "${BROLIT_CONFIG_FILE}" "FIREWALL.config[].status" "enabled")"
-
+        FIREWALL_CONFIG_STATUS="enabled"
+        
+        json_write_field "${BROLIT_CONFIG_FILE}" "FIREWALL.config[].status" "${FIREWALL_CONFIG_STATUS}"
+        
         # new global value ("enabled")
         export FIREWALL_CONFIG_STATUS
 
@@ -74,7 +76,9 @@ function firewall_disable() {
 
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        FIREWALL_CONFIG_STATUS="$(json_write_field "${BROLIT_CONFIG_FILE}" "FIREWALL.config[].status" "disabled")"
+        FIREWALL_CONFIG_STATUS="disabled"
+
+        json_write_field "${BROLIT_CONFIG_FILE}" "FIREWALL.config[].status" "${FIREWALL_CONFIG_STATUS}"
 
         # new global value ("enabled")
         export FIREWALL_CONFIG_STATUS
