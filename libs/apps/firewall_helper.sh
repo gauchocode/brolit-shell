@@ -133,7 +133,7 @@ function firewall_status() {
 
     # Ufw commands
     ufw_output="$(ufw status verbose)"
-    ufw_status="$(ufw status | sed -n '1 p' | cut -d " " -f 2 | tr " " "-" | sed -z 's/\n/ /g' | sed -z 's/--//g')"
+    ufw_status="$(ufw status | sed -n '1 p' | cut -d " " -f 2 | sed -z 's/\n//g')"
 
     exitstatus=$?
 
