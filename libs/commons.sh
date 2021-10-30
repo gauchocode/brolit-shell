@@ -331,6 +331,8 @@ function script_init() {
   declare -g LOG
   declare -g EXEC_TYPE
 
+  declare -g BROLIT_CONFIG_FILE="/root/.brolit_conf.json"
+
   local timestamp
   local path_log
   local log_name
@@ -409,9 +411,8 @@ function script_init() {
   DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
 
   # Check configuration
-  ## TODO: remove hardcoded path
-  brolit_configuration_load "/root/.brolit_conf.json"
-  brolit_apps_configuration_load
+  brolit_configuration_load "${BROLIT_CONFIG_FILE}"
+  brolit_configuration_apps_load
 
   # Dropbox-uploader config file
   DPU_CONFIG_FILE=~/.dropbox_uploader
@@ -424,7 +425,7 @@ function script_init() {
   fi
 
   # Checking required packages to run
-  packages_check_required
+  package_check_required
   packages_output=$?
   if [[ ${packages_output} -eq 1 ]]; then
     log_event "warning" "Some script dependencies are not setisfied" "true"
@@ -455,6 +456,7 @@ function script_init() {
   export DISK_U ONE_FILE_BK LOCAL_IP SERVER_IP SERVER_IPv6 NOTIFICATION_EMAIL_SMTP_SERVER NOTIFICATION_EMAIL_SMTP_PORT NOTIFICATION_EMAIL_SMTP_TLS NOTIFICATION_EMAIL_SMTP_USER NOTIFICATION_EMAIL_SMTP_USER_PASS
   export BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR
   export LOG DEBUG EXEC_TYPE QUIET SKIPTESTS
+  export BROLIT_CONFIG_FILE
 
 }
 

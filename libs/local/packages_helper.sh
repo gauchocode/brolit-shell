@@ -42,6 +42,46 @@ function add_ppa() {
 }
 
 ################################################################################
+# Updating packages list.
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function package_update() {
+
+  # Log
+  log_event "info" "Updating packages list ..." "false"
+  display --indent 6 --text "- Updating packages list"
+
+  # Update packages
+  apt-get --yes update -qq >/dev/null
+
+  exitstatus=$?
+  if [[ $exitstatus -eq 0 ]]; then
+
+    # Log
+    clear_last_line
+    display --indent 6 --text "- Updating packages list" --result "DONE" --color GREEN
+
+    return 0
+
+  else
+
+    # Log
+    clear_last_line
+    display --indent 6 --text "- Updating packages list" --result "FAIL" --color RED
+
+    return 1
+
+  fi
+
+}
+
+################################################################################
 # Check if package is installed. Ex: package_is_installed "mysql-server"
 #
 # Arguments:
@@ -94,6 +134,8 @@ function package_install_if_not() {
 
   if [[ ${p_result} -eq 1 ]]; then
 
+    package_update
+
     # Log
     log_event "info" "Installing ${package} ..." "false"
     display --indent 2 --text "- Installing ${package}"
@@ -138,7 +180,7 @@ function package_install_if_not() {
 ################################################################################
 
 # TODO: need a refactor
-function packages_check_required() {
+function package_check_required() {
 
   #log_section "Script Package Manager"
 
@@ -230,7 +272,7 @@ function packages_check_required() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function packages_install_utils() {
+function package_install_utils() {
 
   # Log
   log_subsection "Basic Packages Installation"
@@ -296,7 +338,7 @@ function packages_install_utils() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function packages_install_selection() {
+function package_install_selection() {
 
   # Define array of Apps to install
   local -n apps_to_install=(
@@ -424,7 +466,7 @@ function remove_old_packages() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function packages_install_optimization_utils() {
+function package_install_optimization_utils() {
 
   package_install_if_not "jpegoptim"
   package_install_if_not "optipng"
@@ -447,7 +489,7 @@ function packages_install_optimization_utils() {
 #   0 if it utils were installed, 1 on error.
 ################################################################################
 
-function packages_install_security_utils() {
+function package_install_security_utils() {
 
   package_install_if_not "clamav"
   package_install_if_not "clamav-freshclam"
@@ -488,7 +530,7 @@ function packages_need_upgrade() {
 #   none
 ################################################################################
 
-function packages_upgrade() {
+function package_upgrade_all() {
 
   # Log
   log_event "info" "Upgrading packages ..." "false"
@@ -500,5 +542,30 @@ function packages_upgrade() {
   # Log
   clear_last_line
   display --indent 6 --text "- Upgrading packages" --result "DONE" --color GREEN
+
+}
+
+################################################################################
+# Purge package
+#
+# Arguments:
+#   $1 = ${package}
+#
+# Outputs:
+#   none
+################################################################################
+
+function package_purge() {
+
+  # Log
+  log_event "info" "Uninstalling ${package} ..." "false"
+  display --indent 6 --text "- Uninstalling ${package}"
+
+  # Uninstalling packages
+  apt-get --yes purge "${package}" -qq >/dev/null
+
+  # Log
+  clear_last_line
+  display --indent 6 --text "- Uninstalling ${package}" --result "DONE" --color GREEN
 
 }

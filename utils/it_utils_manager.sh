@@ -151,7 +151,7 @@ function menu_security_utils() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    packages_install_security_utils
+    package_install_security_utils
 
     if [[ ${chosen_security_options} == *"01"* ]]; then
       menu_security_clamav_scan

@@ -378,8 +378,7 @@ function wpcli_core_reinstall() {
             log_event "info" "Wordpress re-installed" "false"
             display --indent 6 --text "- Wordpress re-install for ${wp_site}" --result "DONE" --color GREEN
 
-            # Return
-            echo "success"
+            return 0
 
         else
 
@@ -387,8 +386,7 @@ function wpcli_core_reinstall() {
             log_event "fail" "Something went wrong installing WordPress" "false"
             display --indent 6 --text "- Wordpress re-install for ${wp_site}" --result "FAIL" --color RED
 
-            # Return
-            echo "fail"
+            return 1
 
         fi
 
@@ -398,16 +396,23 @@ function wpcli_core_reinstall() {
         display --indent 6 --text "- Wordpress re-install for ${wp_site}" --result "FAIL" --color RED
         display --indent 8 --text "wp_site can't be empty"
 
-        # Return
-        echo "fail"
+        return 1
 
     fi
 
 }
 
-function wpcli_core_update() {
+################################################################################
+# Update WordPress core.
+#
+# Arguments:
+#   $1 = ${wp_site}
+#
+# Outputs:
+#   0 if option was configured, 1 on error.
+################################################################################
 
-    # $1 = ${wp_site}
+function wpcli_core_update() {
 
     local wp_site=$1
 
@@ -415,8 +420,7 @@ function wpcli_core_update() {
 
     log_section "WordPress Updater"
 
-    log_event "debug" "Running: sudo -u www-data wp --path=\"${wp_site}\" core update" "false"
-
+    # Command
     verify_core_update="$(sudo -u www-data wp --path="${wp_site}" core update | grep ":" | cut -d ':' -f1)"
 
     if [[ ${verify_core_update} == "Success" ]]; then
@@ -442,16 +446,18 @@ function wpcli_core_update() {
         log_event "info" "Wordpress core updated" "false"
         display --indent 6 --text "- Finishing update" --result "DONE" --color GREEN
 
+        return 0
+
     else
 
-        log_event "error" "Wordpress update failed" "false"
+        # Log
+        log_event "error" "WordPress update failed" "false"
+        log_event "error" "Last command executed: sudo -u www-data wp --path=\"${wp_site}\" core update" "false"
         display --indent 6 --text "- Download new WordPress version" --result "FAIL" --color RED
 
         return 1
 
     fi
-
-    echo "${verify_core_update}" #if ok, return "Success"
 
 }
 
@@ -842,7 +848,7 @@ function wpcli_run_startup_script() {
     fi
 
     log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} core install --url=${site_url} --title=${site_name} --admin_user=${wp_user_name} --admin_password=${wp_user_passw} --admin_email=${wp_user_mail}"
-    
+
     # Install WordPress Site
     sudo -u www-data wp --path="${wp_site}" core install --url="${site_url}" --title="${site_name}" --admin_user="${wp_user_name}" --admin_password="${wp_user_passw}" --admin_email="${wp_user_mail}"
 
@@ -1566,10 +1572,6 @@ function wpcli_config_get() {
 
 function wpcli_config_set() {
 
-    # $1 = ${wp_site}
-    # $2 = ${wp_config_option}
-    # $3 = ${wp_config_option_value}
-
     local wp_site=$1
     local wp_config_option=$2
     local wp_config_option_value=$3
@@ -1588,6 +1590,46 @@ function wpcli_config_set() {
 
         log_event "debug" "Command executed: sudo -u www-data wp --path=${wp_site} config set ${wp_config_option} ${wp_config_option_value}" "false"
         log_event "error" "wp config get return:${wp_config}" "false"
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Delete all comments marked as an specific status.
+#
+# Arguments:
+#   $1 = ${wp_site}
+#   $2 = ${wp_comment_status} - spam or hold
+#
+# Outputs:
+#   0 if option was configured, 1 on error.
+################################################################################
+
+function wpcli_delete_comments() {
+
+    local wp_site=$1
+    local wp_comment_status=$2
+
+    # Delete all comments listed as "${wp_comment_status}"
+    wp --allow-root --path="${wp_site}" comment delete "$(wp comment list --status="${wp_comment_status}" --format=ids)" --force
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        log_event "info" "Comments marked as ${wp_comment_status} deleted for ${wp_site}" "false"
+        display --indent 6 --text "- Comments marked as ${wp_comment_status} deleted" --result "DONE" --color GREEN
+
+        return 0
+
+    else
+
+        # Log
+        log_event "error" "Deleting comments marked as ${wp_comment_status} for ${wp_site}" "false"
+        display --indent 6 --text "- Comments marked as ${wp_comment_status} deleted" --result "FAIL" --color RED
+
         return 1
 
     fi

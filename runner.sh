@@ -24,7 +24,7 @@ source "${SFOLDER}/libs/commons.sh"
 ### Init #######################################################################
 
 # Script initialization
-script_init "${1}" "${2}"
+script_init "${1}" "${2}" "" "" ""
 
 if [[ $# -eq 0 ]]; then
 
