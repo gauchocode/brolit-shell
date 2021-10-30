@@ -432,6 +432,9 @@ function script_init() {
     prompt_return_or_finish
   fi
 
+  # Check firewall status
+  firewall_status
+
   # LOCAL IP (if server has configured a floating ip, it will return this)
   LOCAL_IP="$(/sbin/ifconfig eth0 | grep -w 'inet ' | awk '{print $2}')" # Could be a floating ip
 

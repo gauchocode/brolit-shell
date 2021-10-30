@@ -32,9 +32,9 @@ function firewall_enable() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         FIREWALL_CONFIG_STATUS="enabled"
-        
+
         json_write_field "${BROLIT_CONFIG_FILE}" "FIREWALL.config[].status" "${FIREWALL_CONFIG_STATUS}"
-        
+
         # new global value ("enabled")
         export FIREWALL_CONFIG_STATUS
 
@@ -131,19 +131,37 @@ function firewall_app_list() {
 
 function firewall_status() {
 
-    # Ufw command
+    # Ufw commands
     ufw_output="$(ufw status verbose)"
+    ufw_status="$(ufw status | sed -n '1 p' | cut -d " " -f 2 | tr " " "-" | sed -z 's/\n/ /g' | sed -z 's/--//g')"
 
     exitstatus=$?
 
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        # Log
-        log_event "info" "Getting firewall status" "false"
-        display --indent 2 --text "- Getting firewall status" --result "DONE" --color GREEN
-        display --indent 2 --text "Status: ${ufw_output}"
+        if [[ ${ufw_status} == "active" ]]; then
 
-        return 0
+            #FIREWALL_CONFIG_STATUS="enabled"
+
+            # Log
+            log_event "info" "Firewall status: ${ufw_status}" "false"
+            log_event "debug" "ufw status verbose ouput: ${ufw_output}" "false"
+            display --indent 2 --text "- Getting firewall status" --result "ACTIVE" --color GREEN
+
+            return 0
+
+        else
+
+            #FIREWALL_CONFIG_STATUS="disabled"
+
+            # Log
+            log_event "info" "Firewall status: ${ufw_status}" "false"
+            log_event "debug" "ufw status verbose ouput: ${ufw_output}" "false"
+            display --indent 2 --text "- Getting firewall status" --result "INACTIVE" --color YELLOW
+
+            return 1
+
+        fi
 
     else
 
