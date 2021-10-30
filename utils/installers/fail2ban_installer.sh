@@ -18,7 +18,7 @@ function fail2ban_check_if_installed() {
 
   fi
 
-  log_event "debug" "fail2ban_installed=${fail2ban_installed}"
+  log_event "debug" "fail2ban_installed=${fail2ban_installed}" "false"
 
   # Return
   echo "${fail2ban_installed}"

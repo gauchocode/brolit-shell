@@ -95,6 +95,7 @@ function wpcli_main_menu() {
     "13)" "DELETE NOT CORE FILES"
     "14)" "CREATE WP USER"
     "15)" "RESET WP USER PASSW"
+    "16)" "DELETE SPAM COMMENTS"
   )
 
   chosen_wpcli_options="$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 "${wpcli_options[@]}" 3>&1 1>&2 2>&3)"
@@ -181,8 +182,9 @@ function wpcli_main_menu() {
       # REINSTALL_WP
       log_subsection "WP Core Re-install"
 
-      wp_result="$(wpcli_core_reinstall "${wp_site}")"
-      if [[ "${wp_result}" = "success" ]]; then
+      wpcli_core_reinstall "${wp_site}"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
 
         send_notification "⚠️ ${VPSNAME}" "WordPress re-installed on: ${wp_site}"
 
@@ -296,6 +298,16 @@ function wpcli_main_menu() {
         fi
 
       fi
+
+    fi
+
+    if [[ ${chosen_wpcli_options} == *"16"* ]]; then
+
+      # DELETE SPAM COMMENTS
+      log_subsection "WP Delete Spam Comments"
+
+      wpcli_delete_comments "spam"
+      wpcli_delete_comments "hold"
 
     fi
 

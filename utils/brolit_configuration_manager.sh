@@ -10,52 +10,10 @@
 
 function brolit_configuration_load() {
 
-    local server_config_file="$1"
+    local server_config_file=$1
 
     # Globals
     declare -g PROJECTS_PATH
-
-    declare -g BACKUP_DROPBOX_STATUS
-    declare -g BACKUP_DROPBOX_CONFIG_FILE
-
-    declare -g BACKUP_SFTP_STATUS
-    declare -g BACKUP_SFTP_CONFIG_SERVER_IP
-    declare -g BACKUP_SFTP_CONFIG_SERVER_PORT
-    declare -g BACKUP_SFTP_CONFIG_SERVER_USER
-    declare -g BACKUP_SFTP_CONFIG_SERVER_USER_PASSWORD
-    declare -g BACKUP_SFTP_CONFIG_SERVER_REMOTE_PATH
-
-    declare -g BACKUP_LOCAL_STATUS
-    declare -g BACKUP_LOCAL_CONFIG_BACKUP_PATH
-
-    declare -g BACKUP_RETENTION_KEEP_DAILY
-
-    declare -g NOTIFICATION_EMAIL_STATUS
-    declare -g NOTIFICATION_EMAIL_MAILA
-    declare -g NOTIFICATION_EMAIL_SMTP_SERVER
-    declare -g NOTIFICATION_EMAIL_SMTP_PORT
-    declare -g NOTIFICATION_EMAIL_SMTP_TLS
-    declare -g NOTIFICATION_EMAIL_SMTP_USER
-    declare -g NOTIFICATION_EMAIL_SMTP_USER_PASS
-
-    declare -g NOTIFICATION_TELEGRAM_STATUS
-    declare -g NOTIFICATION_TELEGRAM_BOT_TOKEN
-    declare -g NOTIFICATION_TELEGRAM_CHAT_ID
-
-    declare -g FIREWALL_CONFIG_STATUS
-    declare -g FIREWALL_CONFIG_APP_LIST_SSH
-    declare -g FIREWALL_CONFIG_APP_LIST_HTTP
-    declare -g FIREWALL_CONFIG_APP_LIST_HTTPS
-
-    declare -g SUPPORT_CLOUDFLARE_STATUS
-    declare -g SUPPORT_CLOUDFLARE_EMAIL
-    declare -g SUPPORT_CLOUDFLARE_API_KEY
-
-    declare -g SUPPORT_NETDATA_STATUS
-    declare -g SUPPORT_NETDATA_CONFIG_SUBDOMAIN
-    declare -g SUPPORT_NETDATA_CONFIG_USER
-    declare -g SUPPORT_NETDATA_CONFIG_USER_PASS
-    declare -g SUPPORT_NETDATA_CONFIG_ALARM_LEVEL
 
     if [[ -f "${server_config_file}" ]]; then
 
@@ -107,30 +65,72 @@ function brolit_configuration_load() {
     ### methods
 
     #### dropbox
-    BACKUP_DROPBOX_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.methods[].dropbox[].status")"
-
-    if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
-
-        BACKUP_DROPBOX_CONFIG_FILE="$(json_read_field "${server_config_file}" "BACKUPS.methods[].dropbox[].config[].file")"
-
-        if [ -f "${BACKUP_DROPBOX_CONFIG_FILE}" ]; then
-
-            display --indent 2 --text "- Checking Dropbox config file" --result "DONE" --color GREEN
-
-        else
-
-            display --indent 2 --text "- Checking Dropbox config file" --result "FAIL" --color RED
-            display --indent 4 --text "Config file not found: ${BACKUP_DROPBOX_CONFIG_FILE}"
-
-            _settings_config_dropbox
-
-            exit 1
-
-        fi
-
-    fi
+    _brolit_configuration_load_dropbox "${server_config_file}"
 
     #### sftp
+    _brolit_configuration_load_sftp "${server_config_file}"
+
+    #### local
+    _brolit_configuration_load_local "${server_config_file}"
+
+    #### duplicity
+    _brolit_configuration_load_duplicity "${server_config_file}"
+
+    #### if all required vars are disabled, show error
+    if [[ ${BACKUP_DROPBOX_STATUS} != "enabled" ]] && [[ ${BACKUP_SFTP_STATUS} != "enabled" ]] && [[ ${BACKUP_LOCAL_STATUS} != "enabled" ]]; then
+        echo "No backup method enabled"
+        exit 1
+    fi
+
+    ### retention
+    _brolit_configuration_load_backup_retention "${server_config_file}"
+
+    ## PROJECTS_PATH
+
+    PROJECTS_PATH="$(json_read_field "${server_config_file}" "PROJECTS_PATH")"
+
+    if [ -z "${PROJECTS_PATH}" ]; then
+        echo "Missing required config vars for projects path"
+        exit 1
+    fi
+
+    ## NOTIFICATIONS
+    _brolit_configuration_load_email "${server_config_file}"
+
+    ### telegram
+    _brolit_configuration_load_telegram "${server_config_file}"
+
+    ## FIREWALL
+    _brolit_configuration_load_firewall "${server_config_file}"
+
+    ## SUPPORT
+
+    ### cloudflare
+    _brolit_configuration_load_cloudflare "${server_config_file}"
+
+    ### monit
+    _brolit_configuration_load_monit "${server_config_file}"
+
+    ### netdata
+    _brolit_configuration_load_netdata "${server_config_file}"
+
+    # Export vars
+    export PROJECTS_PATH
+
+}
+
+function _brolit_configuration_load_sftp() {
+
+    local server_config_file=$1
+
+    # Globals
+    declare -g BACKUP_SFTP_STATUS
+    declare -g BACKUP_SFTP_CONFIG_SERVER_IP
+    declare -g BACKUP_SFTP_CONFIG_SERVER_PORT
+    declare -g BACKUP_SFTP_CONFIG_SERVER_USER
+    declare -g BACKUP_SFTP_CONFIG_SERVER_USER_PASSWORD
+    declare -g BACKUP_SFTP_CONFIG_SERVER_REMOTE_PATH
+
     BACKUP_SFTP_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].status")"
 
     if [[ ${BACKUP_SFTP_STATUS} == "enabled" ]]; then
@@ -149,7 +149,53 @@ function brolit_configuration_load() {
 
     fi
 
-    #### local
+    export BACKUP_SFTP_STATUS BACKUP_SFTP_CONFIG_SERVER_IP BACKUP_SFTP_CONFIG_SERVER_PORT BACKUP_SFTP_CONFIG_SERVER_USER BACKUP_SFTP_CONFIG_SERVER_USER_PASSWORD
+
+}
+
+function _brolit_configuration_load_dropbox() {
+
+    local server_config_file=$1
+
+    # Globals
+    declare -g BACKUP_DROPBOX_STATUS
+    declare -g BACKUP_DROPBOX_CONFIG_FILE
+
+    BACKUP_DROPBOX_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.methods[].dropbox[].status")"
+
+    if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
+
+        BACKUP_DROPBOX_CONFIG_FILE="$(json_read_field "${server_config_file}" "BACKUPS.methods[].dropbox[].config[].file")"
+
+        if [ -f "${BACKUP_DROPBOX_CONFIG_FILE}" ]; then
+
+            display --indent 2 --text "- Checking Dropbox config file" --result "DONE" --color GREEN
+
+        else
+
+            display --indent 2 --text "- Checking Dropbox config file" --result "FAIL" --color RED
+            display --indent 4 --text "Config file not found: ${BACKUP_DROPBOX_CONFIG_FILE}"
+
+            _brolit_configuration_app_dropbox
+
+            exit 1
+
+        fi
+
+    fi
+
+    export BACKUP_DROPBOX_STATUS BACKUP_DROPBOX_CONFIG_FILE
+
+}
+
+function _brolit_configuration_load_local() {
+
+    local server_config_file=$1
+
+    # Globals
+    declare -g BACKUP_LOCAL_STATUS
+    declare -g BACKUP_LOCAL_CONFIG_BACKUP_PATH
+
     BACKUP_LOCAL_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.methods[].local[].status")"
 
     if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
@@ -164,11 +210,62 @@ function brolit_configuration_load() {
 
     fi
 
-    #### if all required vars are disabled, show error
-    if [[ ${BACKUP_DROPBOX_STATUS} != "enabled" ]] && [[ ${BACKUP_SFTP_STATUS} != "enabled" ]] && [[ ${BACKUP_LOCAL_STATUS} != "enabled" ]]; then
-        echo "No backup method enabled"
-        exit 1
+    export BACKUP_LOCAL_STATUS BACKUP_LOCAL_CONFIG_BACKUP_PATH
+
+}
+
+function _brolit_configuration_load_duplicity() {
+
+    local server_config_file=$1
+
+    # Globals
+    declare -g BACKUP_DUPLICITY_STATUS
+    declare -g BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH
+    declare -g BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY
+    declare -g BACKUP_DUPLICITY_CONFIG_FULL_LIFE
+
+    BACKUP_DUPLICITY_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.methods[].duplicity[].status")"
+
+    if [[ ${BACKUP_DUPLICITY_STATUS} == "enabled" ]]; then
+
+        BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH="$(json_read_field "${server_config_file}" "BACKUPS.methods[].duplicity[].config[].backup_destination_path")"
+
+        # Check if all required vars are set
+        if [ -z "${BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH}" ]; then
+            echo "Missing required config vars for local backup method"
+            exit 1
+        fi
+
+        BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY="$(json_read_field "${server_config_file}" "BACKUPS.methods[].duplicity[].config[].backup_frequency")"
+
+        # Check if all required vars are set
+        if [ -z "${BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY}" ]; then
+            echo "Missing required config vars for local backup method"
+            exit 1
+        fi
+
+        BACKUP_DUPLICITY_CONFIG_FULL_LIFE="$(json_read_field "${server_config_file}" "BACKUPS.methods[].duplicity[].config[].backup_full_life")"
+
+        # Check if all required vars are set
+        if [ -z "${BACKUP_DUPLICITY_CONFIG_FULL_LIFE}" ]; then
+            echo "Missing required config vars for local backup method"
+            exit 1
+        fi
+
     fi
+
+    export BACKUP_DUPLICITY_STATUS BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY BACKUP_DUPLICITY_CONFIG_FULL_LIFE
+
+}
+
+function _brolit_configuration_load_backup_retention() {
+
+    local server_config_file=$1
+
+    # Globals
+    declare -g BACKUP_RETENTION_KEEP_DAILY
+    declare -g BACKUP_RETENTION_KEEP_WEEKLY
+    declare -g BACKUP_RETENTION_KEEP_MONTHLY
 
     ## retention
     BACKUP_RETENTION_KEEP_DAILY="$(json_read_field "${server_config_file}" "BACKUPS.retention[].keep_daily")"
@@ -192,16 +289,22 @@ function brolit_configuration_load() {
         exit 1
     fi
 
-    ## PROJECTS_PATH
+    export BACKUP_RETENTION_KEEP_DAILY BACKUP_RETENTION_KEEP_WEEKLY BACKUP_RETENTION_KEEP_MONTHLY
 
-    PROJECTS_PATH="$(json_read_field "${server_config_file}" "PROJECTS_PATH")"
+}
 
-    if [ -z "${PROJECTS_PATH}" ]; then
-        echo "Missing required config vars for projects path"
-        exit 1
-    fi
+function _brolit_configuration_load_email() {
 
-    ## NOTIFICATIONS
+    local server_config_file=$1
+
+    # Globals
+    declare -g NOTIFICATION_EMAIL_STATUS
+    declare -g NOTIFICATION_EMAIL_MAILA
+    declare -g NOTIFICATION_EMAIL_SMTP_SERVER
+    declare -g NOTIFICATION_EMAIL_SMTP_PORT
+    declare -g NOTIFICATION_EMAIL_SMTP_TLS
+    declare -g NOTIFICATION_EMAIL_SMTP_USER
+    declare -g NOTIFICATION_EMAIL_SMTP_USER_PASS
 
     display --indent 2 --text "- Checking Email notifications config"
 
@@ -239,7 +342,19 @@ function brolit_configuration_load() {
 
     fi
 
-    ### telegram
+    export NOTIFICATION_EMAIL_STATUS NOTIFICATION_EMAIL_MAILA NOTIFICATION_EMAIL_SMTP_SERVER NOTIFICATION_EMAIL_SMTP_PORT NOTIFICATION_EMAIL_SMTP_TLS NOTIFICATION_EMAIL_SMTP_USER NOTIFICATION_EMAIL_SMTP_USER_PASS
+
+}
+
+function _brolit_configuration_load_telegram() {
+
+    local server_config_file=$1
+
+    # Globals
+    declare -g NOTIFICATION_TELEGRAM_STATUS
+    declare -g NOTIFICATION_TELEGRAM_BOT_TOKEN
+    declare -g NOTIFICATION_TELEGRAM_CHAT_ID
+
     NOTIFICATION_TELEGRAM_STATUS="$(json_read_field "${server_config_file}" "NOTIFICATIONS.telegram[].status")"
 
     if [[ ${NOTIFICATION_TELEGRAM_STATUS} == "enabled" ]]; then
@@ -255,7 +370,21 @@ function brolit_configuration_load() {
 
     fi
 
-    ## FIREWALL
+    export NOTIFICATION_TELEGRAM_STATUS NOTIFICATION_TELEGRAM_BOT_TOKEN NOTIFICATION_TELEGRAM_CHAT_ID
+
+}
+
+function _brolit_configuration_load_firewall() {
+
+    # TODO: need a refactor to make this more generic
+
+    local server_config_file=$1
+
+    # Globals
+    declare -g FIREWALL_CONFIG_STATUS
+    declare -g FIREWALL_CONFIG_APP_LIST_SSH
+    declare -g FIREWALL_CONFIG_APP_LIST_HTTP
+    declare -g FIREWALL_CONFIG_APP_LIST_HTTPS
 
     FIREWALL_CONFIG_STATUS="$(json_read_field "${server_config_file}" "FIREWALL.config[].status")"
 
@@ -275,9 +404,19 @@ function brolit_configuration_load() {
 
     fi
 
-    ## SUPPORT
+    export FIREWALL_CONFIG_APP_LIST_SSH FIREWALL_CONFIG_APP_LIST_HTTP FIREWALL_CONFIG_APP_LIST_HTTPS FIREWALL_CONFIG_STATUS
 
-    ### cloudflare
+}
+
+function _brolit_configuration_load_cloudflare() {
+
+    local server_config_file=$1
+
+    # Globals
+    declare -g SUPPORT_CLOUDFLARE_STATUS
+    declare -g SUPPORT_CLOUDFLARE_EMAIL
+    declare -g SUPPORT_CLOUDFLARE_API_KEY
+
     SUPPORT_CLOUDFLARE_STATUS="$(json_read_field "${server_config_file}" "SUPPORT.cloudflare[].status")"
 
     if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
@@ -295,7 +434,69 @@ function brolit_configuration_load() {
 
     fi
 
-    ### netdata
+    export SUPPORT_CLOUDFLARE_STATUS SUPPORT_CLOUDFLARE_EMAIL SUPPORT_CLOUDFLARE_API_KEY
+
+}
+
+function _brolit_configuration_load_monit() {
+
+    local server_config_file=$1
+
+    # Globals
+    declare -g MONIT_CONFIG_STATUS
+    declare -g MONIT_CONFIG_MAILA
+
+    MONIT_CONFIG_STATUS="$(json_read_field "${server_config_file}" "SUPPORT.monit[].status")"
+
+    if [[ ${MONIT_CONFIG_STATUS} == "enabled" ]]; then
+
+        MONIT_CONFIG_MAILA="$(json_read_field "${server_config_file}" "SUPPORT.monit[].config[].monit_maila")"
+
+        # Check if all required vars are set
+        if [[ -z "${MONIT_CONFIG_MAILA}" ]]; then
+
+            echo "Missing required config vars for monit"
+            exit 1
+
+        fi
+
+        MONIT_CONFIG_HTTPD="$(json_read_field "${server_config_file}" "SUPPORT.monit[].config[].monit_httpd")"
+
+        # Check if all required vars are set
+        if [[ -z "${MONIT_CONFIG_HTTPD}" ]]; then
+
+            echo "Missing required config vars for monit"
+            exit 1
+
+        fi
+
+        MONIT_CONFIG_SERVICES="$(json_read_field "${server_config_file}" "SUPPORT.monit[].config[].monit_services")"
+
+        # Check if all required vars are set
+        if [[ -z "${MONIT_CONFIG_SERVICES}" ]]; then
+
+            echo "Missing required config vars for monit"
+            exit 1
+
+        fi
+
+    fi
+
+    export MONIT_CONFIG_STATUS MONIT_CONFIG_MAILA
+
+}
+
+function _brolit_configuration_load_netdata() {
+
+    local server_config_file=$1
+
+    # Globals
+    declare -g SUPPORT_NETDATA_STATUS
+    declare -g SUPPORT_NETDATA_CONFIG_SUBDOMAIN
+    declare -g SUPPORT_NETDATA_CONFIG_USER
+    declare -g SUPPORT_NETDATA_CONFIG_USER_PASS
+    declare -g SUPPORT_NETDATA_CONFIG_ALARM_LEVEL
+
     SUPPORT_NETDATA_STATUS="$(json_read_field "${server_config_file}" "SUPPORT.netdata[].status")"
 
     if [[ ${SUPPORT_NETDATA_STATUS} == "enabled" ]]; then
@@ -315,30 +516,20 @@ function brolit_configuration_load() {
 
     fi
 
-    # Export vars
-    export PROJECTS_PATH
-    export BACKUP_DROPBOX_STATUS BACKUP_DROPBOX_CONFIG_FILE
-    export BACKUP_SFTP_STATUS BACKUP_SFTP_CONFIG_SERVER_IP BACKUP_SFTP_CONFIG_SERVER_PORT BACKUP_SFTP_CONFIG_SERVER_USER BACKUP_SFTP_CONFIG_SERVER_USER_PASSWORD
-    export BACKUP_LOCAL_STATUS BACKUP_LOCAL_CONFIG_BACKUP_PATH
-    export BACKUP_RETENTION_KEEP_DAILY
-    export NOTIFICATION_EMAIL_STATUS NOTIFICATION_EMAIL_MAILA NOTIFICATION_EMAIL_SMTP_SERVER NOTIFICATION_EMAIL_SMTP_PORT NOTIFICATION_EMAIL_SMTP_TLS NOTIFICATION_EMAIL_SMTP_USER NOTIFICATION_EMAIL_SMTP_USER_PASS
-    export NOTIFICATION_TELEGRAM_STATUS NOTIFICATION_TELEGRAM_BOT_TOKEN NOTIFICATION_TELEGRAM_CHAT_ID
-    export SUPPORT_CLOUDFLARE_STATUS SUPPORT_CLOUDFLARE_EMAIL SUPPORT_CLOUDFLARE_API_KEY
     export SUPPORT_NETDATA_STATUS SUPPORT_NETDATA_CONFIG_SUBDOMAIN SUPPORT_NETDATA_CONFIG_USER SUPPORT_NETDATA_CONFIG_USER_PASS SUPPORT_NETDATA_CONFIG_ALARM_LEVEL
-    export FIREWALL_CONFIG_APP_LIST_SSH FIREWALL_CONFIG_APP_LIST_HTTP FIREWALL_CONFIG_APP_LIST_HTTPS FIREWALL_CONFIG_STATUS
 
 }
 
-function brolit_apps_configuration_load() {
+function brolit_configuration_apps_load() {
 
-    _settings_config_mysql
+    _brolit_configuration_app_mysql
 
-    _settings_config_dropbox
+    _brolit_configuration_app_dropbox
 
 }
 
 # TODO: maybe remove this from brolit_conf.json
-function server_configuration_firewall() {
+function brolit_configuration_firewall() {
 
     # Check if firewall is enabled
     if [[ ${FIREWALL_CONFIG_STATUS} == "enabled" ]]; then
@@ -379,7 +570,7 @@ function server_configuration_firewall() {
 
 }
 
-function server_configuration_services_check() {
+function brolit_configuration_app_check() {
 
     local -n services_list=$1
 
@@ -479,7 +670,7 @@ function server_configuration_services_check() {
 #   nothing
 ################################################################################
 
-function _settings_config_mysql() {
+function _brolit_configuration_app_mysql() {
 
     is_mysql_installed="$(package_is_installed "mysql")"
 
@@ -501,7 +692,7 @@ function _settings_config_mysql() {
 #   nothing
 ################################################################################
 
-function _settings_config_dropbox() {
+function _brolit_configuration_app_dropbox() {
 
     # Checking global var
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
