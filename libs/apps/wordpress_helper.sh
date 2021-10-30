@@ -355,7 +355,7 @@ function wordpress_select_project_to_work_with() {
 
   local wordpress_projects=$1
 
-  # Get length of $wordpress_projects array
+  # Get length of ${wordpress_projects} array
   len=${#wordpress_projects[@]}
 
   if [[ $len != 0 ]]; then

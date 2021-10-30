@@ -35,7 +35,7 @@ function _netdata_alerts_configuration() {
   cp "${SFOLDER}/config/netdata/health.d/php-fpm.conf" "/etc/netdata/health.d/php-fpm.conf"
 
   # Anomalies
-  cp "${SFOLDER}/config/netdata/health.d/anomalies.conf" "/etc/netdata/health.d/anomalies.conf"
+  #cp "${SFOLDER}/config/netdata/health.d/anomalies.conf" "/etc/netdata/health.d/anomalies.conf"
 
 }
 
@@ -104,7 +104,7 @@ function _netdata_alarm_level() {
 
     config_field="SUPPORT.netdata[].config[].netdata_alarm_level"
     config_value="${netdata_alarm_level}"
-    
+
     json_write_field "${config_file}" "${config_field}" "${config_value}"
 
     log_event "info" "Alarm Level for Notifications: ${netdata_alarm_level}" "false"
@@ -232,6 +232,21 @@ function netdata_installer() {
 
   # Kill netdata and copy service
   killall netdata && cp system/netdata.service /etc/systemd/system/
+
+  if [[ $? -eq 0 ]]; then
+
+    NETDATA_CONFIG_STATUS="$(json_write_field "${BROLIT_CONFIG_FILE}" "SUPPORT.netdata[].status" "enabled")"
+
+    # new global value ("enabled")
+    export NETDATA_CONFIG_STATUS
+
+    return 0
+
+  else
+
+    return 1
+
+  fi
 
   # Log
   clear_last_line

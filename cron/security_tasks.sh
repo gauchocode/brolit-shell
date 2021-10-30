@@ -20,7 +20,7 @@ source "${SFOLDER}/libs/commons.sh"
 script_init
 
 # Check needed packages
-packages_install_security_utils
+package_install_security_utils
 
 # Running from cron
 log_event "info" "Running security_tasks.sh ..." "false"

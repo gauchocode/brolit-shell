@@ -31,6 +31,11 @@ function firewall_enable() {
 
     if [[ ${exitstatus} -eq 0 ]]; then
 
+        FIREWALL_CONFIG_STATUS="$(json_write_field "${BROLIT_CONFIG_FILE}" "FIREWALL.config[].status" "enabled")"
+
+        # new global value ("enabled")
+        export FIREWALL_CONFIG_STATUS
+
         # Log
         log_event "info" "Activating firewall" "false"
         display --indent 2 --text "- Activating firewall" --result "DONE" --color GREEN
@@ -68,6 +73,11 @@ function firewall_disable() {
     exitstatus=$?
 
     if [[ ${exitstatus} -eq 0 ]]; then
+
+        FIREWALL_CONFIG_STATUS="$(json_write_field "${BROLIT_CONFIG_FILE}" "FIREWALL.config[].status" "disabled")"
+
+        # new global value ("enabled")
+        export FIREWALL_CONFIG_STATUS
 
         # Log
         log_event "info" "Deactivating firewall" "false"
@@ -153,6 +163,8 @@ function firewall_status() {
 ################################################################################
 
 function firewall_allow() {
+
+    # TODO: need to change field on ${BROLIT_CONFIG_FILE}"
 
     local service=$1
 

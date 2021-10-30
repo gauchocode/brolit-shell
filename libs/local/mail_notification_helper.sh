@@ -399,7 +399,7 @@ function mail_files_backup_section() {
 
         files_label_end="</div>"
 
-        if [[ ${DUP_BK} == true ]]; then
+        if [[ ${BACKUP_DUPLICITY_STATUS} == "enabled" ]]; then
             DBK_SIZE="$(du -hs "${DUP_ROOT}" | cut -f1)"
             dbk_size_label="Duplicity Backup size: <b>${DBK_SIZE}</b><br /><b>Duplicity Backup includes:</b><br />${DUP_FOLDERS}"
 
