@@ -11,7 +11,7 @@ function tests_suite_menu() {
 
   tests_options=(
     "01)" "RUN ALL TESTS"
-    "02)" "RUN DISPLAY TESTS"
+    "02)" "RUN JSON HELPER TESTS"
     "03)" "RUN MYSQL TESTS"
     "04)" "RUN PHP TESTS"
     "05)" "RUN NGINX TESTS"
@@ -19,6 +19,7 @@ function tests_suite_menu() {
     "07)" "RUN CLOUDFLARE TESTS"
     "08)" "RUN PROJECT TESTS"
     "09)" "RUN OTHER TESTS"
+    "10)" "RUN DISPLAY TESTS"
   )
 
   chosen_tests_options=$(whiptail --title "TESTS SUITE" --menu " " 20 78 10 "${tests_options[@]}" 3>&1 1>&2 2>&3)
@@ -37,7 +38,7 @@ function tests_suite_menu() {
 
     fi
     if [[ ${chosen_tests_options} == *"02"* ]]; then
-      test_display_functions
+      test_json_helper_funtions
 
     fi
     if [[ ${chosen_tests_options} == *"03"* ]]; then
@@ -67,6 +68,10 @@ function tests_suite_menu() {
 
     if [[ ${chosen_tests_options} == *"09"* ]]; then
       test_common_funtions
+
+    fi
+    if [[ ${chosen_tests_options} == *"10"* ]]; then
+      test_display_functions
 
     fi
 
