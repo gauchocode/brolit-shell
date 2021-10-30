@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.68-beta
+# Version: 3.0.70-beta
 ################################################################################
 
 ################################################################################
@@ -54,7 +54,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.0.68-beta"
+  declare -g SCRIPT_V="3.0.70-beta"
 
   # Hostname
   declare -g VPSNAME="$HOSTNAME"
