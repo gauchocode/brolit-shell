@@ -182,7 +182,7 @@ function log_event() {
     ;;
 
   debug)
-    if [[ "${DEBUG}" -eq 1 ]]; then
+    if [[ ${DEBUG} == "true" ]]; then
 
       echo "$(_timestamp) > DEBUG: ${message}" >>"${LOG}"
       if [[ ${console_display} == "true" && ${QUIET} -eq 0 ]]; then
@@ -328,12 +328,13 @@ function display() {
   TSTYLE=""
   COLOR=""
   SPACES=0
-  SHOWDEBUG=0
 
   if [[ ${QUIET} -eq 1 ]]; then return 0; fi
 
   while [ $# -ge 1 ]; do
+
     case $1 in
+
     --color)
       shift
       case $1 in
@@ -344,17 +345,17 @@ function display() {
       MAGENTA) COLOR=${MAGENTA} ;;
       esac
       ;;
-    --debug)
-      SHOWDEBUG=1
-      ;;
+
     --indent)
       shift
       INDENT=$1
       ;;
+      
     --result)
       shift
       RESULT=$1
       ;;
+
     --tcolor)
       shift
       case $1 in
@@ -365,6 +366,7 @@ function display() {
       MAGENTA) TCOLOR=${MAGENTA} ;;
       esac
       ;;
+
     --tstyle)
       shift
       case $1 in
@@ -375,17 +377,22 @@ function display() {
       INVERTED) TSTYLE=${INVERTED} ;;
       esac
       ;;
+
     --text)
       shift
       TEXT=$1
       ;;
+
     *)
       echo "INVALID OPTION (Display): $1" >&2
       #ExitFatal
       ;;
+
     esac
+
     # Go to next parameter
     shift
+
   done
 
   if [[ -z "${RESULT}" ]]; then
@@ -416,7 +423,6 @@ function display() {
         echo "${TEXT_C}" | wc -m | tr -d ' '
       )"
 
-      if [[ "${SHOWDEBUG}" -eq 1 ]]; then DEBUGTEXT=" [${PURPLE}DEBUG${NORMAL}]"; else DEBUGTEXT=""; fi
       if [[ "${INDENT}" -gt 0 ]]; then SPACES=$((62 - INDENT - LINESIZE)); fi
       if [[ "${SPACES}" -lt 0 ]]; then SPACES=0; fi
 
