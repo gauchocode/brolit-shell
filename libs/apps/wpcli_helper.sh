@@ -1632,8 +1632,11 @@ function wpcli_delete_comments() {
     local wp_site=$1
     local wp_comment_status=$2
 
+    # List comments ids
+    comments_ids="$(wp --allow-root --path="${wp_site}" comment list --status="${wp_comment_status}" --format=ids)"
+
     # Delete all comments listed as "${wp_comment_status}"
-    wp --allow-root --path="${wp_site}" comment delete "$(wp --allow-root --path="${wp_site}" comment list --status="${wp_comment_status}" --format=ids)" --force
+    wp --allow-root --path="${wp_site}" comment delete "${comments_ids}" --force
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -1648,7 +1651,7 @@ function wpcli_delete_comments() {
 
         # Log
         log_event "error" "Deleting comments marked as ${wp_comment_status} for ${wp_site}" "false"
-        log_event "debug" "Las command executed: wp --allow-root --path=\"${wp_site}\" comment delete \"$(wp --allow-root --path=\"${wp_site}\" comment list --status=\"${wp_comment_status}\" --format=ids)\" --force" "false"
+        log_event "debug" "Las command executed: wp --allow-root --path=${wp_site} comment delete \"${comments_ids}\" --format=ids) --force" "false"
         display --indent 6 --text "- Comments marked as ${wp_comment_status} deleted" --result "FAIL" --color RED
 
         return 1
