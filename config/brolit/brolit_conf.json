@@ -12,11 +12,8 @@
     "SERVER_ROLES": {
         "config": [
             {
-                "webserver": "false",
-                "database": "false",
-                "docker": "false",
-                "cache": "false",
-                "other": "false"
+                "webserver": "disabled",
+                "database": "disabled"
             }
         ]
     },
