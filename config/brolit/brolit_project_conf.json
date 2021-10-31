@@ -1,15 +1,36 @@
 {
-    "project_name":"",
-    "project_stage":"",
-    "project_db_name":"",
-    "project_db_host":"",
-    "project_type":"",
-    "project_path":"",
-    "project_primary_subdomain":"",
-    "project_secondary_subdomains":[],
-    "project_nginx_conf":"",
-    "project_cert_conf":"",
-    "cloudflare_zone_id":"",
-    "backups_frecuency":"daily",
-    "backups_to_store":"7"
+    "brolit_project_config_version": "1.2",
+    "project": [
+        {
+            "name": "",
+            "stage": "",
+            "db_name": "",
+            "db_host": "",
+            "type": "",
+            "path": "",
+            "primary_subdomain": "",
+            "secondary_subdomains": [],
+            "nginx_conf": "",
+            "cert_conf": ""
+        }
+    ],
+    "cloudflare": [
+        {
+            "status": "disabled",
+            "config": [
+                {
+                    "email": "",
+                    "api_key": "",
+                    "zone_id": ""
+                }
+            ]
+        }
+    ],
+    "backup_retention": [
+        {
+            "keep_daily": "7",
+            "keep_weekly": "0",
+            "keep_monthly": "0"
+        }
+    ]
 }

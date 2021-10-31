@@ -28,8 +28,7 @@
         "directories": [
             {
                 "dir_1": "/var/www",
-                "dir_2": "",
-                "dir_3": ""
+                "dir_2": ""
             }
         ],
         "methods": [
