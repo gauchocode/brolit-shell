@@ -3,10 +3,22 @@
 # Author: BROOBE - A Software Development Agency - https://broobe.com
 # Version: 3.0.70-beta
 ################################################################################
+#
+# Server Setup: Perform server setup actions.
+#
+################################################################################
+
+################################################################################
+# Server Setup
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function server_setup() {
-
-    local server_roles
 
     log_section "Server Setup"
 
@@ -16,58 +28,30 @@ function server_setup() {
     # Installing basic packages
     package_install_utils
 
-    # Ask for server role
-    # Options: webserver, database, webapp, cache, replica, other
-    server_roles="$(settings_set_server_role)"
+    # Ask for server role. Options: webserver, database
+    _brolit_configuration_load_server_roles
 
-    # String to array
-    IFS=',' read -r -a server_roles_array <<< "$server_roles"
+    # Configuring server roles
 
-    for server_role in "${server_roles_array[@]}"; do
+    if [[ ${SERVER_ROLE_WEBSERVER} == "enabled" ]]; then
 
-        case ${server_role} in
+        # Nginx Installer
+        nginx_installer_menu
 
-        webserver)
+        # PHP Installer
+        php_installer_menu
 
-            # Nginx Installer
-            nginx_installer_menu
+    fi
 
-            # PHP Installer
-            php_installer_menu
+    if [[ ${SERVER_ROLE_DATABASE} == "enabled" ]]; then
 
-            ;;
+        # MySQL Installer
+        mysql_installer_menu
 
-        database)
-
-            # MySQL Installer
-            mysql_installer_menu
-
-            ;;
-
-        # TODO
-        webapp)
-            log_event "info" "NEED IMPLEMENTATION" "true"
-            ;;
-
-        # TODO
-        cache)
-            log_event "info" "NEED IMPLEMENTATION" "true"
-            ;;
-
-        # TODO
-        replica)
-            log_event "info" "NEED IMPLEMENTATION" "true"
-            ;;
-
-        esac
-
-    done
+    fi
 
     # Install required packages
     package_check_required
-
-    # Script config
-    script_configuration_wizard "initial"
 
     # Select aditional packages to install
     package_install_selection
@@ -78,38 +62,37 @@ function server_setup() {
 
 }
 
-
 ### WORK IN PROGRESS
 
 function server_setup_tasks_handler() {
 
-  local subtask=$1
+    local subtask=$1
 
-  log_subsection "Server Setup Manager"
+    log_subsection "Server Setup Manager"
 
-  case ${subtask} in
+    case ${subtask} in
 
-  lemp-install)
+    lemp-install)
 
-    server_setup "${DATABASE_ENGINE}" "${DATABASE_ROOT_PSW}" "${TIMEZONE}"
+        server_setup "${DATABASE_ENGINE}" "${DATABASE_ROOT_PSW}" "${TIMEZONE}"
 
-    exit
-    ;;
+        exit
+        ;;
 
-    #lamp-install)
-    #
-    #  server_setup "${DATABASE_ENGINE}" "${DATABASE_ROOT_PSW}" "${TIMEZONE}"
-    #
-    # exit
-    # ;;
+        #lamp-install)
+        #
+        #  server_setup "${DATABASE_ENGINE}" "${DATABASE_ROOT_PSW}" "${TIMEZONE}"
+        #
+        # exit
+        # ;;
 
-  *)
+    *)
 
-    log_event "error" "INVALID SUBTASK: ${subtask}" "true"
+        log_event "error" "INVALID SUBTASK: ${subtask}" "true"
 
-    exit
-    ;;
+        exit
+        ;;
 
-  esac
+    esac
 
 }
