@@ -1648,6 +1648,7 @@ function wpcli_delete_comments() {
 
         # Log
         log_event "error" "Deleting comments marked as ${wp_comment_status} for ${wp_site}" "false"
+        log_event "debug" "Las command executed: wp --allow-root --path=\"${wp_site}\" comment delete \"$(wp --allow-root --path=\"${wp_site}\" comment list --status=\"${wp_comment_status}\" --format=ids)\" --force" "false"
         display --indent 6 --text "- Comments marked as ${wp_comment_status} deleted" --result "FAIL" --color RED
 
         return 1
