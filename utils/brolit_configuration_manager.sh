@@ -14,6 +14,8 @@ function brolit_configuration_load() {
 
     # Globals
     declare -g PROJECTS_PATH
+    declare -g DEBUG
+    declare -g QUIET
 
     if [[ -f "${server_config_file}" ]]; then
 
@@ -86,7 +88,7 @@ function brolit_configuration_load() {
             exit 1
         fi
     fi
-    
+
     ## BACKUPS
 
     ### methods
@@ -145,6 +147,7 @@ function brolit_configuration_load() {
 
     # Export vars
     export PROJECTS_PATH
+    export DEBUG QUIET SKIPTESTS
 
 }
 

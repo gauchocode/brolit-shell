@@ -17,7 +17,7 @@ source "${SFOLDER}/libs/commons.sh"
 ################################################################################
 
 # Script Initialization
-script_init
+script_init "" "" ""
 
 # Check needed packages
 package_install_security_utils

@@ -17,7 +17,7 @@ source "${SFOLDER}/libs/commons.sh"
 ################################################################################
 
 # Script Initialization
-script_init
+script_init "" "" ""
 
 log_event "info" "Running backups_tasks.sh" "false"
 
