@@ -97,7 +97,7 @@ function _spinner() {
 
 function spinner_start() {
 
-  if [[ ${QUIET} -eq 1 ]]; then return 0; fi
+  if [[ ${QUIET} == "true" ]]; then return 0; fi
 
   _spinner "start" "${1}" &
 
@@ -119,7 +119,7 @@ function spinner_start() {
 
 function spinner_stop() {
 
-  if [[ ${QUIET} -eq 1 ]]; then return 0; fi
+  if [[ ${QUIET} == "true" ]]; then return 0; fi
 
   _spinner "stop" "${1}" "${_sp_pid}"
   unset _sp_pid
@@ -148,35 +148,35 @@ function log_event() {
 
   success)
     echo "$(_timestamp) > SUCCESS: ${message}" >>"${LOG}"
-    if [[ ${console_display} == "true" && ${QUIET} -eq 0 ]]; then
+    if [[ ${console_display} == "true" && ${QUIET} == "false" ]]; then
       echo -e "${B_GREEN} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   info)
     echo "$(_timestamp) > INFO: ${message}" >>"${LOG}"
-    if [[ ${console_display} == "true" && ${QUIET} -eq 0 ]]; then
+    if [[ ${console_display} == "true" && ${QUIET} == "false" ]]; then
       echo -e "${B_CYAN} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   warning)
     echo "$(_timestamp) > WARNING: ${message}" >>"${LOG}"
-    if [[ ${console_display} == "true" && ${QUIET} -eq 0 ]]; then
+    if [[ ${console_display} == "true" && ${QUIET} == "false" ]]; then
       echo -e "${YELLOW}${ITALIC} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   error)
     echo "$(_timestamp) > ERROR: ${message}" >>"${LOG}"
-    if [[ ${console_display} == "true" && ${QUIET} -eq 0 ]]; then
+    if [[ ${console_display} == "true" && ${QUIET} == "false" ]]; then
       echo -e "${RED} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   critical)
     echo "$(_timestamp) > CRITICAL: ${message}" >>"${LOG}"
-    if [[ ${console_display} == "true" && ${QUIET} -eq 0 ]]; then
+    if [[ ${console_display} == "true" && ${QUIET} == "false" ]]; then
       echo -e "${B_RED} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
@@ -185,7 +185,7 @@ function log_event() {
     if [[ ${DEBUG} == "true" ]]; then
 
       echo "$(_timestamp) > DEBUG: ${message}" >>"${LOG}"
-      if [[ ${console_display} == "true" && ${QUIET} -eq 0 ]]; then
+      if [[ ${console_display} == "true" && ${QUIET} == "false" ]]; then
         echo -e "${B_MAGENTA} > ${message}${ENDCOLOR}" >&2
       fi
 
@@ -194,7 +194,7 @@ function log_event() {
 
   *)
     echo "$(_timestamp) > ${message}" >>"${LOG}"
-    if [[ ${console_display} == "true" && ${QUIET} -eq 0 ]]; then
+    if [[ ${console_display} == "true" && ${QUIET} == "false" ]]; then
       echo -e "${CYAN}${B_DEFAULT} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
@@ -219,7 +219,7 @@ function log_break() {
 
   local log_break
 
-  if [[ "${console_display}" == "true" && ${QUIET} -eq 0 ]]; then
+  if [[ "${console_display}" == "true" && ${QUIET} == "false" ]]; then
 
     log_break="        ----------------------------------------------------          "
     echo -e "${MAGENTA}${B_DEFAULT}${log_break}${ENDCOLOR}" >&2
@@ -245,7 +245,7 @@ function log_section() {
 
   local message=$1
 
-  if [[ ${QUIET} -eq 0 ]]; then
+  if [[ ${QUIET} == "false" ]]; then
 
     # Console Display
     echo "" >&2
@@ -276,7 +276,7 @@ function log_subsection() {
 
   local message=$1
 
-  if [[ ${QUIET} -eq 0 ]]; then
+  if [[ ${QUIET} == "false" ]]; then
 
     # Console Display
     echo "" >&2
@@ -295,7 +295,7 @@ function log_subsection() {
 
 function clear_screen() {
 
-  if [[ ${QUIET} -eq 0 ]]; then
+  if [[ ${QUIET} == "false" ]]; then
 
     echo -en "\ec" >&2
 
@@ -305,7 +305,7 @@ function clear_screen() {
 
 function clear_last_line() {
 
-  if [[ ${QUIET} -eq 0 ]]; then
+  if [[ ${QUIET} == "false" ]]; then
 
     #tput cuu1;tput el
 
@@ -329,7 +329,7 @@ function display() {
   COLOR=""
   SPACES=0
 
-  if [[ ${QUIET} -eq 1 ]]; then return 0; fi
+  if [[ ${QUIET} == "true" ]]; then return 0; fi
 
   while [ $# -ge 1 ]; do
 
