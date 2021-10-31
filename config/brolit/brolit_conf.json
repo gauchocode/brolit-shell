@@ -4,7 +4,8 @@
             {
                 "version": "3.2",
                 "debug": "true",
-                "quiet": "false"
+                "quiet": "false",
+                "skip_test": "true"
             }
         ]
     },

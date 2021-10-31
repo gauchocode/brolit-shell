@@ -53,6 +53,7 @@ function wpcli_manager() {
 
     else
 
+      # Log
       log_event "info" "WordPress installation not found! Returning to Main Menu" "false"
       display --indent 2 --text "- Searching WordPress installation" --result "FAIL" --color RED
 

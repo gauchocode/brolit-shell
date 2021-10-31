@@ -305,9 +305,9 @@ function _check_distro() {
 # Arguments:
 #  ${1} = ${script_mode}        - sl or null (only for brolit-ui)
 #  ${2} = ${script_log_suffix}  - suffix for log file
-#  ${3} = ${script_log_debug}   - 1 or 0 (enabled/disabled)
-#  ${4} = ${script_quiet_mode}  - 1 or 0 (enabled/disabled)
-#  ${5} = ${script_skip_tests}  - 1 or 0 (enabled/disabled)
+#  ${3} = ${DEBUG}              - 1 or 0 (enabled/disabled)
+#  ${4} = ${QUIET}              - 1 or 0 (enabled/disabled)
+#  ${5} = ${SKIPTESTS}          - 1 or 0 (enabled/disabled)
 #
 # Outputs:
 #   global vars
@@ -318,14 +318,10 @@ function script_init() {
   # Parameters
   local script_mode="${1}"
   local script_log_suffix="${2}"
-  local script_log_debug="${3}"
-  local script_quiet_mode="${4}"
-  local script_skip_tests="${5}"
-
-  # Script modes
-  declare -g DEBUG="${script_log_debug}"
-  declare -g QUIET="${script_quiet_mode}"
-  declare -g SKIPTESTS="${script_skip_tests}"
+  
+  declare -g DEBUG="${3}"
+  declare -g QUIET="${4}"
+  declare -g SKIPTESTS="${5}"
 
   # Define log name
   declare -g LOG
