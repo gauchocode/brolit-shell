@@ -17,7 +17,12 @@ source "${SFOLDER}/libs/local/log_and_display_helper.sh"
 
 source "${SFOLDER}/utils/brolit_configuration_manager.sh"
 
+# TODO: workaround
+declare -g QUIET="true"
+
 brolit_configuration_load "/root/.brolit_conf.json"
+
+QUIET="false"
 
 BROLIT_CONFIG_PATH="/etc/brolit"
 
@@ -40,7 +45,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.0.70-beta"
-ALIASES_VERSION="3.0.70-beta-075"
+ALIASES_VERSION="3.0.70-beta-076"
 
 ################################################################################
 
