@@ -310,31 +310,40 @@ function project_create_config() {
   ## Doc: https://stackoverflow.com/a/61049639/2267761
 
   ## project_path
-  content_ppath="$(jq ".project_path = \"${project_path}\"" "${project_config_file}")" && echo "${content_ppath}" >"${project_config_file}"
+  json_write_field "${project_config_file}" "project[].path" "${project_path}"
+  #content_ppath="$(jq ".project_path = \"${project_path}\"" "${project_config_file}")" && echo "${content_ppath}" >"${project_config_file}"
 
   ## project_name
-  content_pname="$(jq ".project_name = \"${project_name}\"" "${project_config_file}")" && echo "${content_pname}" >"${project_config_file}"
+  json_write_field "${project_config_file}" "project[].name" "${project_name}"
+  #content_pname="$(jq ".project_name = \"${project_name}\"" "${project_config_file}")" && echo "${content_pname}" >"${project_config_file}"
 
   ## project_stage
-  content_pstage="$(jq ".project_stage = \"${project_stage}\"" "${project_config_file}")" && echo "${content_pstage}" >"${project_config_file}"
+  json_write_field "${project_config_file}" "project[].stage" "${project_stage}"
+  #content_pstage="$(jq ".project_stage = \"${project_stage}\"" "${project_config_file}")" && echo "${content_pstage}" >"${project_config_file}"
 
   ## project_db_name
-  content_pdbn="$(jq ".project_db_name = \"${project_db_name}\"" "${project_config_file}")" && echo "${content_pdbn}" >"${project_config_file}"
+  json_write_field "${project_config_file}" "project[].db_name" "${project_db_name}"
+  #content_pdbn="$(jq ".project_db_name = \"${project_db_name}\"" "${project_config_file}")" && echo "${content_pdbn}" >"${project_config_file}"
 
   ## project_db_host
-  content_pdbh="$(jq ".project_db_host = \"${project_db_host}\"" "${project_config_file}")" && echo "${content_pdbh}" >"${project_config_file}"
+  json_write_field "${project_config_file}" "project[].db_host" "${project_db_host}"
+  #content_pdbh="$(jq ".project_db_host = \"${project_db_host}\"" "${project_config_file}")" && echo "${content_pdbh}" >"${project_config_file}"
 
   ## project_type
-  content_ptype="$(jq ".project_type = \"${project_type}\"" "${project_config_file}")" && echo "${content_ptype}" >"${project_config_file}"
+  json_write_field "${project_config_file}" "project[].type" "${project_type}"
+  #content_ptype="$(jq ".project_type = \"${project_type}\"" "${project_config_file}")" && echo "${content_ptype}" >"${project_config_file}"
 
   ## project_subdomain
-  content_psubd="$(jq ".project_subdomain = \"${project_domain}\"" "${project_config_file}")" && echo "${content_psubd}" >"${project_config_file}"
+  json_write_field "${project_config_file}" "project[].primary_subdomain" "${project_domain}"
+  #content_psubd="$(jq ".project_subdomain = \"${project_domain}\"" "${project_config_file}")" && echo "${content_psubd}" >"${project_config_file}"
 
   ## project_nginx_conf
-  content_pnginx="$(jq ".project_nginx_conf = \"${project_nginx_conf}\"" "${project_config_file}")" && echo "${content_pnginx}" >"${project_config_file}"
+  json_write_field "${project_config_file}" "project[].nginx_conf" "${project_nginx_conf}"
+  #content_pnginx="$(jq ".project_nginx_conf = \"${project_nginx_conf}\"" "${project_config_file}")" && echo "${content_pnginx}" >"${project_config_file}"
 
   ## project_cert_conf
-  content_pcert="$(jq ".project_cert_conf = \"${project_cert_conf}\"" "${project_config_file}")" && echo "${content_pcert}" >"${project_config_file}"
+  json_write_field "${project_config_file}" "project[].cert_conf" "${project_cert_conf}"
+  #content_pcert="$(jq ".project_cert_conf = \"${project_cert_conf}\"" "${project_config_file}")" && echo "${content_pcert}" >"${project_config_file}"
 
   # Log
   log_event "info" "Project config file created: ${project_config_file}" "false"
@@ -354,8 +363,6 @@ function project_create_config() {
 ################################################################################
 
 function project_generate_config() {
-
-  # $1 = ${project_path}
 
   local project_path=$1
 
