@@ -58,8 +58,35 @@ function brolit_configuration_load() {
 
     fi
 
-    # Read required vars from server config file
+    # Check if is already defined
+    if [ -z "${DEBUG}" ]; then
+        # Read required vars from server config file
+        DEBUG="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].debug")"
 
+        if [ -z "${DEBUG}" ]; then
+            echo "Missing required config vars for projects path"
+            exit 1
+        fi
+    fi
+    # Check if is already defined
+    if [ -z "${QUIET}" ]; then
+        QUIET="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].quiet")"
+
+        if [ -z "${QUIET}" ]; then
+            echo "Missing required config vars for projects path"
+            exit 1
+        fi
+    fi
+    # Check if is already defined
+    if [ -z "${SKIPTESTS}" ]; then
+        SKIPTESTS="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].skip_test")"
+
+        if [ -z "${SKIPTESTS}" ]; then
+            echo "Missing required config vars for projects path"
+            exit 1
+        fi
+    fi
+    
     ## BACKUPS
 
     ### methods
@@ -95,7 +122,7 @@ function brolit_configuration_load() {
     fi
 
     # TODO: need to implement BACKUPS.direcotries
-    
+
     ## NOTIFICATIONS
     _brolit_configuration_load_email "${server_config_file}"
 
