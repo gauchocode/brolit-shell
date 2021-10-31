@@ -378,13 +378,17 @@ function project_generate_config() {
   project_domain="$(basename "${project_path}")"
   project_domain="$(ask_project_domain "${project_domain}")"
 
+  ## Project Stage
+  project_stage="$(project_get_stage_from_domain "${project_domain}")"
+  project_stage="$(ask_project_state "${project_stage}")"
+
+  # TODO: maybe we could suggest change project domain.
+
   ## Project Name
   project_name="$(project_get_name_from_domain "${project_domain}")"
   project_name="$(ask_project_name "${project_name}")"
 
-  ## Project Stage
-  project_stage="$(project_get_stage_from_domain "${project_domain}")"
-  project_stage="$(ask_project_state "${project_stage}")"
+  # TODO: ask for secondary subdomain (could be extracted from nginx server config)
 
   ## Project Type
   project_type="$(project_get_type "${project_path}")"
@@ -501,7 +505,7 @@ function project_get_config() {
 
   if [[ -e ${project_config_file} ]]; then
 
-    config_value="$(cat ${project_config_file} | jq -r ".${config_field}")"
+    config_value="$(cat "${project_config_file}" | jq -r ".${config_field}")"
 
     # Return
     echo "${config_value}"
