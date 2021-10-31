@@ -192,13 +192,17 @@ function wpcli_update() {
 
 function wpcli_uninstall() {
 
-    log_event "warning" "Uninstalling wp-cli ..."
+    # Log
+    log_event "warning" "Uninstalling wp-cli ..." "false"
+    display --indent 6 --text "- Uninstalling wp-cli"
 
+    # Command
     rm --recursive --force "/usr/local/bin/wp"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
+        # Log
         log_event "info" "wp-cli uninstalled" "false"
         display --indent 6 --text "- Uninstalling wp-cli" --result "DONE" --color GREEN
 
@@ -206,6 +210,7 @@ function wpcli_uninstall() {
 
     else
 
+        # Log
         log_event "error" "wp-cli was not uninstalled!" "false"
         display --indent 6 --text "- Uninstalling wp-cli" --result "FAIL" --color RED
 
@@ -1482,11 +1487,20 @@ function wpcli_rocket_settings_import() {
 # TODO: maybe a single function to get all options?
 # Ref: https://codex.wordpress.org/Option_Reference
 
+################################################################################
+# Get configured site home from WordPress installation options
+#
+# Arguments:
+#   $1 = ${wp_site}
+#
+# Outputs:
+#   ${wp_option_home}
+################################################################################
+
 function wpcli_option_get_home() {
 
-    # $1 = ${wp_site}
-
     local wp_site=$1
+
     local wp_option_home
 
     # wp-cli command
@@ -1500,11 +1514,20 @@ function wpcli_option_get_home() {
 
 }
 
+################################################################################
+# Get configured site url from WordPress installation options
+#
+# Arguments:
+#   $1 = ${wp_site}
+#
+# Outputs:
+#   ${wp_option_siteurl}
+################################################################################
+
 function wpcli_option_get_siteurl() {
 
-    # $1 = ${wp_site}
-
     local wp_site=$1
+
     local wp_option_siteurl
 
     # wp-cli command
@@ -1531,9 +1554,6 @@ function wpcli_option_get_siteurl() {
 ################################################################################
 
 function wpcli_config_get() {
-
-    # $1 = ${wp_site}
-    # $2 = ${wp_config_option}
 
     local wp_site=$1
     local wp_config_option=$2

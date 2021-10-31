@@ -318,10 +318,8 @@ function script_init() {
   # Parameters
   local script_mode="${1}"
   local script_log_suffix="${2}"
-  
-  declare -g DEBUG="${3}"
-  declare -g QUIET="${4}"
-  declare -g SKIPTESTS="${5}"
+
+  declare -g SKIPTESTS="${3}"
 
   # Define log name
   declare -g LOG
