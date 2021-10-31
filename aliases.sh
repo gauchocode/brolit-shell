@@ -9,8 +9,6 @@ VPSNAME="${HOSTNAME}"
 
 SFOLDER="/root/brolit-shell"
 
-declare -g QUIET=1
-
 source "${SFOLDER}/libs/commons.sh"
 
 source "${SFOLDER}/libs/local/json_helper.sh"
