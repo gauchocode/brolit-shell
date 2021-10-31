@@ -1646,13 +1646,14 @@ function wpcli_delete_comments() {
     else
 
         # Delete all comments listed as "${wp_comment_status}"
-        wp --allow-root --path="${wp_site}" comment delete "${comments_ids}" --force
+        wpcli_result="$(wp --allow-root --path="${wp_site}" comment delete "${comments_ids}" --force)"
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # Log
             log_event "info" "Comments marked as ${wp_comment_status} deleted for ${wp_site}" "false"
+            log_event "debug" "Command result: ${wpcli_result}" "false"
             display --indent 6 --text "- Deleting comments marked as ${wp_comment_status}" --result "DONE" --color GREEN
 
             return 0
