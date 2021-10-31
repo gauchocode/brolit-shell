@@ -89,6 +89,9 @@ function brolit_configuration_load() {
         fi
     fi
 
+    ## SERVER ROLES
+    _brolit_configuration_load_server_roles "${server_config_file}"
+
     ## BACKUPS
 
     ### methods
@@ -148,6 +151,45 @@ function brolit_configuration_load() {
     # Export vars
     export PROJECTS_PATH
     export DEBUG QUIET SKIPTESTS
+
+}
+
+function _brolit_configuration_load_server_roles() {
+
+    local server_config_file=$1
+
+    # Globals
+    declare -g SERVER_ROLE_WEBSERVER
+    declare -g SERVER_ROLE_DATABASE
+
+    # Check if is already defined
+    if [ -z "${SERVER_ROLE_WEBSERVER}" ]; then
+        # Read required vars from server config file
+        SERVER_ROLE_WEBSERVER="$(json_read_field "${server_config_file}" "SERVER_ROLES.config[].webserver")"
+
+        if [ -z "${SERVER_ROLE_WEBSERVER}" ]; then
+            echo "Missing required config vars for server role"
+            exit 1
+        fi
+    fi
+
+    # Check if is already defined
+    if [ -z "${SERVER_ROLE_DATABASE}" ]; then
+        # Read required vars from server config file
+        SERVER_ROLE_DATABASE="$(json_read_field "${server_config_file}" "SERVER_ROLES.config[].database")"
+
+        if [ -z "${SERVER_ROLE_DATABASE}" ]; then
+            echo "Missing required config vars for server role name"
+            exit 1
+        fi
+    fi
+
+    if [[ ${SERVER_ROLE_WEBSERVER} != "enabled" ]] && [[ ${SERVER_ROLE_DATABASE} != "enabled" ]]; then
+
+        echo "At least one server role need to be defined."
+        exit 1
+
+    fi
 
 }
 
