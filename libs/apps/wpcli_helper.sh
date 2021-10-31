@@ -1635,26 +1635,38 @@ function wpcli_delete_comments() {
     # List comments ids
     comments_ids="$(wp --allow-root --path="${wp_site}" comment list --status="${wp_comment_status}" --format=ids)"
 
-    # Delete all comments listed as "${wp_comment_status}"
-    wp --allow-root --path="${wp_site}" comment delete "${comments_ids}" --force
-
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
+    if [[ -z "${comments_ids}" ]]; then
 
         # Log
-        log_event "info" "Comments marked as ${wp_comment_status} deleted for ${wp_site}" "false"
-        display --indent 6 --text "- Comments marked as ${wp_comment_status} deleted" --result "DONE" --color GREEN
+        log_event "info" "There are no comments marked as ${wp_comment_status} for ${wp_site}" "false"
+        display --indent 6 --text "- Deleting comments marked as ${wp_comment_status}" --result "0" --color WHITE
 
         return 0
 
     else
 
-        # Log
-        log_event "error" "Deleting comments marked as ${wp_comment_status} for ${wp_site}" "false"
-        log_event "debug" "Las command executed: wp --allow-root --path=${wp_site} comment delete \"${comments_ids}\" --format=ids) --force" "false"
-        display --indent 6 --text "- Comments marked as ${wp_comment_status} deleted" --result "FAIL" --color RED
+        # Delete all comments listed as "${wp_comment_status}"
+        wp --allow-root --path="${wp_site}" comment delete "${comments_ids}" --force
 
-        return 1
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+            # Log
+            log_event "info" "Comments marked as ${wp_comment_status} deleted for ${wp_site}" "false"
+            display --indent 6 --text "- Deleting comments marked as ${wp_comment_status}" --result "DONE" --color GREEN
+
+            return 0
+
+        else
+
+            # Log
+            log_event "error" "Deleting comments marked as ${wp_comment_status} for ${wp_site}" "false"
+            log_event "debug" "Las command executed: wp --allow-root --path=${wp_site} comment delete \"${comments_ids}\" --format=ids) --force" "false"
+            display --indent 6 --text "- Deleting comments marked as ${wp_comment_status}" --result "FAIL" --color RED
+
+            return 1
+
+        fi
 
     fi
 
