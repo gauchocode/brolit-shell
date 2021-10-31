@@ -305,9 +305,7 @@ function _check_distro() {
 # Arguments:
 #  ${1} = ${script_mode}        - sl or null (only for brolit-ui)
 #  ${2} = ${script_log_suffix}  - suffix for log file
-#  ${3} = ${DEBUG}              - 1 or 0 (enabled/disabled)
-#  ${4} = ${QUIET}              - 1 or 0 (enabled/disabled)
-#  ${5} = ${SKIPTESTS}          - 1 or 0 (enabled/disabled)
+#  ${3} = ${SKIPTESTS}          - 1 or 0 (enabled/disabled)
 #
 # Outputs:
 #   global vars
@@ -452,7 +450,7 @@ function script_init() {
   export LENCRYPT_CF MySQL_CF MYSQL MYSQL_CONF MYSQLDUMP MYSQL_ROOT MYSQLDUMP_ROOT TAR FIND DROPBOX_FOLDER MAILCOW_DIR MAILCOW_TMP_BK MHOST MUSER NOW NOWDISPLAY DAYSAGO
   export DISK_U ONE_FILE_BK LOCAL_IP SERVER_IP SERVER_IPv6 NOTIFICATION_EMAIL_SMTP_SERVER NOTIFICATION_EMAIL_SMTP_PORT NOTIFICATION_EMAIL_SMTP_TLS NOTIFICATION_EMAIL_SMTP_USER NOTIFICATION_EMAIL_SMTP_USER_PASS
   export BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR
-  export LOG DEBUG EXEC_TYPE QUIET SKIPTESTS
+  export LOG DEBUG SKIPTESTS EXEC_TYPE
   export BROLIT_CONFIG_FILE
 
 }
@@ -1855,7 +1853,7 @@ function flags_handler() {
   declare -g TASK=""
   declare -g STASK=""
   declare -g TVALUE=""
-  declare -g SHOWDEBUG=0
+  declare -g DEBUG="false"
 
   ## PROJECT
   declare -g SITE=""
@@ -1882,8 +1880,8 @@ function flags_handler() {
       ;;
 
     -d | --debug)
-      SHOWDEBUG=1
-      export SHOWDEBUG
+      DEBUG="true"
+      export DEBUG
       ;;
 
     -e | --env)
