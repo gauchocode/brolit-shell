@@ -20,7 +20,7 @@ source "${SFOLDER}/libs/commons.sh"
 log_event "info" "Running uptime_tasks.sh from cron ..." "false"
 
 # Script Initialization
-script_init
+script_init "" "" ""
 
 #Log
 log_section "Uptime Checker"

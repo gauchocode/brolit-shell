@@ -307,8 +307,8 @@ function wpcli_main_menu() {
       # DELETE SPAM COMMENTS
       log_subsection "WP Delete Spam Comments"
 
-      wpcli_delete_comments "spam"
-      wpcli_delete_comments "hold"
+      wpcli_delete_comments "${wp_site}" "spam"
+      wpcli_delete_comments "${wp_site}" "hold"
 
     fi
 
