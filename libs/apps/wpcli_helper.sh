@@ -1633,7 +1633,7 @@ function wpcli_delete_comments() {
     local wp_comment_status=$2
 
     # Delete all comments listed as "${wp_comment_status}"
-    wp --allow-root --path="${wp_site}" comment delete "$(wp comment list --status="${wp_comment_status}" --format=ids)" --force
+    wp --allow-root --path="${wp_site}" comment delete "$(wp --allow-root --path="${wp_site}" comment list --status="${wp_comment_status}" --format=ids)" --force
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
