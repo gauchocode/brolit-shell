@@ -358,16 +358,16 @@ function wordpress_select_project_to_work_with() {
   # Get length of ${wordpress_projects} array
   len=${#wordpress_projects[@]}
 
-  if [[ $len != 0 ]]; then
+  if [[ $len != 1 ]]; then
 
     local chosen_wordpress_project
 
-    chosen_wordpress_project="$(whiptail --title "Project Selection" --menu "Select the version of PHP you want to work with:" 20 78 10 $(for x in ${wordpress_projects}; do echo "${x} [X]"; done) 3>&1 1>&2 2>&3)"
+    chosen_wordpress_project="$(whiptail --title "Project Selection" --menu "Select the project you want to work with:" 20 78 10 $(for x in ${wordpress_projects}; do echo "${x} [X]"; done) 3>&1 1>&2 2>&3)"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-      log_event "debug" "Working with ${chosen_wordpress_project}" "false"
+      log_event "info" "Working with ${chosen_wordpress_project}" "false"
 
       # Return
       echo "${chosen_wordpress_project}"

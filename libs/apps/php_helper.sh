@@ -456,7 +456,7 @@ function php_select_version_to_work_with() {
   # Get length of $php_v array
   len=${#php_v[@]}
 
-  if [[ $len != 0 ]]; then
+  if [[ $len != 1 ]]; then
 
     local chosen_php_v
 
