@@ -393,7 +393,7 @@ function script_init() {
   # Checking script permissions
   _check_scripts_permissions
 
-  # Checking required packages to run
+  # Checking required packages
   package_check_required
   packages_output=$?
   if [[ ${packages_output} -eq 1 ]]; then
@@ -423,6 +423,9 @@ function script_init() {
     # shellcheck source=~/.dropbox_uploader
     source "${DPU_CONFIG_FILE}"
   fi
+
+  # Checking optional packages
+  package_check_optionals
 
   # Check firewall status
   firewall_status

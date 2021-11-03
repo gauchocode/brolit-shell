@@ -130,7 +130,9 @@ function package_install_if_not() {
   local p_result
 
   # Check if package is installed
-  p_result="$(package_is_installed "${package}")"
+  package_is_installed "${package}"
+
+  p_result=$?
 
   if [[ ${p_result} -eq 1 ]]; then
 
