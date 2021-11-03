@@ -426,13 +426,12 @@ function netdata_installer_menu() {
 
   if [[ ! -x "${NETDATA}" ]]; then
 
-    if [[ -z "${netdata_subdomain}" ]]; then
+    if [[ -z "${SUPPORT_NETDATA_CONFIG_SUBDOMAIN}" ]]; then
 
       netdata_subdomain="$(whiptail --title "Netdata Installer" --inputbox "Please insert the subdomain you want to install Netdata. Ex: monitor.domain.com" 10 60 3>&1 1>&2 2>&3)"
+      
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
-
-        echo "NETDATA_SUBDOMAIN=${netdata_subdomain}" >>"/root/.brolit-shell.conf"
 
         # new config
         config_file="/root/.brolit_conf.json"
@@ -446,6 +445,7 @@ function netdata_installer_menu() {
         json_write_field "${config_file}" "${config_field}" "${config_value}"
 
       else
+
         return 1
 
       fi
@@ -492,7 +492,7 @@ function netdata_installer_menu() {
         if [[ -x ${nginx_command} ]]; then
 
           # Netdata nginx proxy configuration
-          nginx_server_create "${netdata_subdomain}" "netdata" "single" ""
+          nginx_server_create "${SUPPORT_NETDATA_CONFIG_SUBDOMAIN}" "netdata" "single" ""
 
           # Nginx Auth
           nginx_netdata_user="netdata"
