@@ -3,6 +3,20 @@
 # Author: BROOBE - A Software Development Agency - https://broobe.com
 # Version: 3.0.70-beta
 ################################################################################
+#
+# Certbot Installer: certbot installer functions.
+#
+################################################################################
+
+################################################################################
+# Check if certbot is installed.
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if certbot was installed, 1 on error.
+################################################################################
 
 function certbot_check_if_installed() {
 
@@ -25,13 +39,25 @@ function certbot_check_if_installed() {
 
 }
 
+################################################################################
+# Certbot Installer.
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if certbot was installed, 1 on error.
+################################################################################
+
 function certbot_installer() {
 
   log_subsection "Certbot Installer"
 
-  # Updating Repos
   display --indent 6 --text "- Updating repositories"
+
+  # Update repositories
   apt-get --yes update -qq >/dev/null
+
   clear_last_line
   display --indent 6 --text "- Updating repositories" --result "DONE" --color GREEN
 
@@ -42,12 +68,38 @@ function certbot_installer() {
   # apt command
   apt-get --yes install python3-certbot python3-certbot-dns-cloudflare python3-certbot-nginx -qq >/dev/null
 
-  # Log
-  clear_last_line
-  display --indent 6 --text "- Installing certbot and dependencies" --result "DONE" --color GREEN
-  log_event "info" "certbot installation finished" "false"
+  exitstatus=$?
+  if [[ ${exitstatus} -ne 0 ]]; then
+
+    # Log
+    clear_last_line
+    display --indent 6 --text "- Installing certbot and dependencies" --result "FAILED" --color RED
+    log_event "error" "Installing python3-certbot-dns-cloudflare and python3-certbot-nginx" "false"
+
+    return 1
+
+  else
+
+    # Log
+    clear_last_line
+    display --indent 6 --text "- Installing certbot and dependencies" --result "DONE" --color GREEN
+    log_event "info" "Certbot installation finished" "false"
+
+    return 0
+
+  fi
 
 }
+
+################################################################################
+# Uninstall Certbot.
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if certbot was installed, 1 on error.
+################################################################################
 
 function certbot_purge() {
 
@@ -60,12 +112,38 @@ function certbot_purge() {
   # apt command
   apt-get --yes purge python3-certbot python3-certbot-dns-cloudflare python3-certbot-nginx -qq >/dev/null
 
-  # Log
-  clear_last_line
-  display --indent 6 --text "- Removing certbot and libraries" --result "DONE" --color GREEN
-  log_event "info" "certbot removed" "false"
+  exitstatus=$?
+  if [[ ${exitstatus} -ne 0 ]]; then
+
+    # Log
+    clear_last_line
+    display --indent 6 --text "- Removing certbot and libraries" --result "FAILED" --color RED
+    log_event "error" "Removing certbot and libraries..." "false"
+
+    return 1
+
+  else
+
+    # Log
+    clear_last_line
+    display --indent 6 --text "- Removing certbot and libraries" --result "DONE" --color GREEN
+    log_event "info" "certbot removed" "false"
+
+    return 0
+
+  fi
 
 }
+
+################################################################################
+# Certbot installer menu.
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if certbot was installed, 1 on error.
+################################################################################
 
 function certbot_installer_menu() {
 
