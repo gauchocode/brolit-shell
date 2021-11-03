@@ -393,35 +393,35 @@ function script_init() {
   # Checking script permissions
   _check_scripts_permissions
 
-  # Some globals
-  declare -g DPU_F
-  declare -g DROPBOX_UPLOADER
-
-  # Dropbox-uploader directory
-  DPU_F="${SFOLDER}/tools/third-party/dropbox-uploader"
-  # Dropbox-uploader runner
-  DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
-
-  # Check configuration
-  brolit_configuration_load "${BROLIT_CONFIG_FILE}"
-  brolit_configuration_apps_load
-
-  # Dropbox-uploader config file
-  DPU_CONFIG_FILE=~/.dropbox_uploader
-  if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" && ! -f ${DPU_CONFIG_FILE} ]]; then
-    generate_dropbox_config
-  fi
-  if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
-    # shellcheck source=~/.dropbox_uploader
-    source "${DPU_CONFIG_FILE}"
-  fi
-
   # Checking required packages to run
   package_check_required
   packages_output=$?
   if [[ ${packages_output} -eq 1 ]]; then
     log_event "warning" "Some script dependencies are not setisfied" "true"
     prompt_return_or_finish
+  fi
+
+  # Some globals
+  declare -g DPU_F
+  declare -g DROPBOX_UPLOADER
+
+  # Check configuration
+  brolit_configuration_load "${BROLIT_CONFIG_FILE}"
+  brolit_configuration_apps_load
+
+  # Dropbox-uploader directory
+  DPU_F="${SFOLDER}/tools/third-party/dropbox-uploader"
+  # Dropbox-uploader runner
+  DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
+  # Dropbox-uploader config file
+  DPU_CONFIG_FILE=~/.dropbox_uploader
+  if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" && ! -f ${DPU_CONFIG_FILE} ]]; then
+    generate_dropbox_config
+  fi
+  if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
+
+    # shellcheck source=~/.dropbox_uploader
+    source "${DPU_CONFIG_FILE}"
   fi
 
   # Check firewall status

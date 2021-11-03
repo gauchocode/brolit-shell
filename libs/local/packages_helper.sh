@@ -186,13 +186,9 @@ function package_check_required() {
 
   log_event "info" "Checking required packages ..." "false"
 
-  # Declare globals
+  # Globals
   declare -g TAR
   declare -g FIND
-  declare -g MYSQL
-  declare -g MYSQLDUMP
-  declare -g PHP
-  declare -g CERTBOT
 
   # Install packages if not
   package_install_if_not "pv"
@@ -214,21 +210,38 @@ function package_check_required() {
   # FIND
   FIND="$(command -v find)"
 
+  # Log
+  display --indent 2 --text "- Checking script dependencies" --result "DONE" --color GREEN
+  log_event "info" "All required packages are installed" "false"
+
+}
+
+function package_check_optionals() {
+
+  # Globals
+  declare -g MYSQL
+  declare -g MYSQLDUMP
+  declare -g PHP
+  declare -g CERTBOT
+
   # CERTBOT
   CERTBOT="$(command -v certbot)"
+
   if [[ ! -x "${CERTBOT}" ]]; then
 
-    display --indent 2 --text "- Checking CERTBOT installation" --result "WARNING" --color YELLOW
-    display --indent 4 --text "CERTBOT not found" --tcolor YELLOW
+    certbot_installer
 
-    # TODO: ask for installation
-    return 1
+    #display --indent 2 --text "- Checking CERTBOT installation" --result "WARNING" --color YELLOW
+    #display --indent 4 --text "CERTBOT not found" --tcolor YELLOW
+
+    #return 1
 
   fi
 
   # MySQL
   MYSQL="$(command -v mysql)"
-  if [[ ! -x ${MYSQL} ]]; then
+
+  if [[ ! -x ${MYSQL} && "${SERVER_ROLE_DATABASE}" == "enabled" ]]; then
 
     display --indent 2 --text "- Checking MySQL installation" --result "WARNING" --color YELLOW
     display --indent 4 --text "MySQL not found" --tcolor RED
@@ -248,17 +261,14 @@ function package_check_required() {
 
   # PHP
   PHP="$(command -v php)"
-  if [[ ! -x "${PHP}" ]]; then
+  
+  if [[ ! -x "${PHP}" && "${SERVER_ROLE_WEBSERVER}" == "enabled" ]]; then
 
     # Log
     display --indent 2 --text "- Checking PHP installation" --result "WARNING" --color YELLOW
     display --indent 4 --text "PHP not found" --tcolor RED
 
   fi
-
-  # Log
-  display --indent 2 --text "- Checking script dependencies" --result "DONE" --color GREEN
-  log_event "info" "All required packages are installed" "false"
 
 }
 
