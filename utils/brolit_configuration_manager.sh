@@ -106,6 +106,12 @@ function brolit_configuration_load() {
     ### mysql
     _brolit_configuration_load_mysql "${server_config_file}"
 
+    # If Server role 'database' is enabled, mariadb or mysql must be enabled
+    if [[ ${PACKAGES_MARIADB_CONFIG_STATUS} != "enabled" ]] && [[ ${PACKAGES_MYSQL_CONFIG_STATUS} != "enabled" ]] && [[ ${SERVER_ROLE_DATABASE} == "enabled" ]]; then
+        log_event "warning" "No database engine is enabled" "true"
+        exit 1
+    fi
+
     ### certbot
     _brolit_configuration_load_certbot "${server_config_file}"
 
