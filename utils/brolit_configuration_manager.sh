@@ -606,7 +606,7 @@ function _brolit_configuration_load_php() {
         else
 
             if [[ ${PACKAGES_PHP_CONFIG_VERSION} == "default" ]]; then
-                
+
                 source "${SFOLDER}/installers/php_installer.sh"
                 PHP_V="$(php_get_standard_distro_version)"
 
@@ -1033,9 +1033,13 @@ function _brolit_configuration_app_dropbox() {
 
             display --indent 2 --text "- Checking Dropbox Uploader" --result "DONE" --color GREEN
 
+            return 0
+
         else
 
             display --indent 2 --text "Something went wrong, please finish the configuration running: ${DROPBOX_UPLOADER}"
+
+            return 1
 
         fi
 
