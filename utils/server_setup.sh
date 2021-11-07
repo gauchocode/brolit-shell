@@ -85,8 +85,8 @@ function server_setup() {
 
         fi
 
-        display --indent 6 --text "- Database engine MariaDB" --result "${PACKAGES_MARIADB_CONFIG_STATUS}" --color WHITE
-        display --indent 6 --text "- Database engine MySQL" --result "${PACKAGES_MYSQL_CONFIG_STATUS}" --color WHITE
+        #display --indent 6 --text "- Database engine MariaDB" --result "${PACKAGES_MARIADB_CONFIG_STATUS}" --color WHITE
+        #display --indent 6 --text "- Database engine MySQL" --result "${PACKAGES_MYSQL_CONFIG_STATUS}" --color WHITE
 
         display --indent 6 --text "- Server role 'database'" --result "ENABLED" --color WHITE
 
@@ -125,9 +125,9 @@ function server_setup() {
     fi
 
     # Log
-    log_event "info" "SERVER SETUP COMPLETED" "false"
-    display --indent 6 --text "- Server setup" --result "DONE" --color GREEN
-    display --indent 8 --text "Now you can run the script again." --tcolor YELLOW
+    #log_event "info" "SERVER SETUP COMPLETED" "false"
+    #display --indent 6 --text "- Server setup" --result "DONE" --color GREEN
+    #display --indent 8 --text "Now you can run the script again." --tcolor YELLOW
 
 }
 

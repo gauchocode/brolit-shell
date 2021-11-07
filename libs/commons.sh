@@ -81,12 +81,11 @@ function _setup_globals_and_options() {
   declare -g MAILCOW_DIR="/opt/mailcow-dockerized/"
   declare -g MAILCOW_TMP_BK="${SFOLDER}/tmp/mailcow"
 
-  # PHP
+  # Packages to watch
   #declare -g PHP_V
   #PHP_V="$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")"
   #php_exit=$?
   #if [[ ${php_exit} -eq 1 ]]; then
-    # Packages to watch
   #  PACKAGES=(linux-firmware dpkg nginx "php${PHP_V}-fpm" mysql-server openssl)
   #fi
 
@@ -1590,8 +1589,6 @@ function menu_first_run() {
       source "${SFOLDER}/utils/server_setup.sh"
 
       server_setup ""
-
-      exit 1
 
     fi
 
