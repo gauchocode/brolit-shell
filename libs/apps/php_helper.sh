@@ -121,8 +121,13 @@ function php_reconfigure() {
 
   log_subsection "PHP Reconfigure"
 
+  # If $php_v is set to default
+  if [[ ${php_v} == "default" ]]; then
+    php_v="$(php_get_standard_distro_version)"
+  fi
+
   # If $php_v not set, it will use $PHP_V global
-  if [[ ${php_v} == "" ]]; then php_v="${PHP_V}"; fi
+  if [[ -z ${php_v} ]]; then php_v="${PHP_V}"; fi
 
   log_event "info" "Moving php.ini configuration file" "false"
   cat "${SFOLDER}/config/php/php.ini" >"/etc/php/${php_v}/fpm/php.ini"

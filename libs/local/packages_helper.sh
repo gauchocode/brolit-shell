@@ -20,6 +20,16 @@
 
 function add_ppa() {
 
+  # Log
+  log_event "info" "Adding repos and updating package lists ..." "false"
+  display --indent 6 --text "- Adding repos and updating package lists"
+
+  # It provides some useful scripts for adding and removing PPA
+  apt-get --yes install software-properties-common >/dev/null
+
+  # Updating packages lists
+  apt-get --yes update -qq >/dev/null
+
   for i in "$@"; do
 
     grep -h "^deb.*$i" /etc/apt/sources.list.d/* >/dev/null 2>&1
@@ -113,8 +123,40 @@ function package_is_installed() {
 
 }
 
+function package_install() {
+
+  # Log
+  log_event "info" "Installing ${package} ..." "false"
+  display --indent 2 --text "- Installing ${package}"
+
+  # apt command
+  apt-get --yes install "${package}" -qq >/dev/null
+
+  exitstatus=$?
+  if [[ $exitstatus -eq 0 ]]; then
+
+    # Log
+    clear_last_line
+    log_event "info" "Package ${package} installed" "false"
+    display --indent 2 --text "- Installing ${package}" --result "DONE" --color GREEN
+
+    return 0
+
+  else
+
+    # Log
+    clear_last_line
+    log_event "error" "Installing ${package}. Package is already installed." "false"
+    display --indent 2 --text "- Installing ${package}" --result "WARNING" --color YELLOW
+    display --indent 4 --text "Package is already installed."
+
+    return 1
+
+  fi
+}
+
 ################################################################################
-# Install package
+# Install package if not.
 #
 # Arguments:
 #   $1 = ${package}
@@ -127,45 +169,13 @@ function package_install_if_not() {
 
   local package=$1
 
-  local p_result
-
   # Check if package is installed
   package_is_installed "${package}"
 
-  p_result=$?
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 1 ]]; then
 
-  if [[ ${p_result} -eq 1 ]]; then
-
-    package_update
-
-    # Log
-    log_event "info" "Installing ${package} ..." "false"
-    display --indent 2 --text "- Installing ${package}"
-
-    # apt command
-    apt-get --yes install "${package}" -qq >/dev/null
-
-    exitstatus=$?
-    if [[ $exitstatus -eq 0 ]]; then
-
-      # Log
-      clear_last_line
-      log_event "info" "Package ${package} installed" "false"
-      display --indent 2 --text "- Installing ${package}" --result "DONE" --color GREEN
-
-      return 0
-
-    else
-
-      # Log
-      clear_last_line
-      log_event "error" "Installing ${package}. Package is already installed." "false"
-      display --indent 2 --text "- Installing ${package}" --result "WARNING" --color YELLOW
-      display --indent 4 --text "Package is already installed."
-
-      return 1
-
-    fi
+    package_install "${package}"
 
   fi
 
@@ -205,6 +215,9 @@ function package_check_required() {
   package_install_if_not "net-tools"
   package_install_if_not "sendemail"
   package_install_if_not "libio-socket-ssl-perl"
+  package_install_if_not "bat"
+  package_install_if_not "ncdu"
+  package_install_if_not "ppa-purge"
 
   # TAR
   TAR="$(command -v tar)"
@@ -263,147 +276,12 @@ function package_check_optionals() {
 
   # PHP
   PHP="$(command -v php)"
-  
+
   if [[ ! -x "${PHP}" && "${SERVER_ROLE_WEBSERVER}" == "enabled" ]]; then
 
     # Log
     display --indent 2 --text "- Checking PHP installation" --result "WARNING" --color YELLOW
     display --indent 4 --text "PHP not found" --tcolor RED
-
-  fi
-
-}
-
-################################################################################
-# Install some it utils packages
-#
-# Arguments:
-#   none
-#
-# Outputs:
-#   0 if ok, 1 on error.
-################################################################################
-
-function package_install_utils() {
-
-  # Log
-  log_subsection "Basic Packages Installation"
-
-  log_event "info" "Adding repos and updating package lists ..." "false"
-  display --indent 6 --text "- Adding repos and updating package lists"
-
-  # Updating packages lists
-  apt-get --yes install software-properties-common >/dev/null
-  apt-get --yes update -qq >/dev/null
-
-  # Log
-  clear_last_line
-  display --indent 6 --text "- Adding repos and updating package lists" --result "DONE" --color GREEN
-
-  log_event "info" "Upgrading packages before installation ..." "false"
-  display --indent 6 --text "- Upgrading packages before installation"
-
-  # Upgrading packages
-  apt-get --yes dist-upgrade -qq >/dev/null
-
-  # Log
-  clear_last_line
-  display --indent 6 --text "- Upgrading packages before installation" --result "DONE" --color GREEN
-
-  # Installing packages
-  log_event "info" "Installing bat ncdu ppa-purge packages ..." "false"
-  display --indent 6 --text "- Installing it utils packages"
-
-  # Installing packages
-  apt-get --yes install bat ncdu ppa-purge -qq >/dev/null
-
-  exitstatus=$?
-  if [[ $exitstatus -eq 0 ]]; then
-
-    # Log
-    clear_last_line
-    clear_last_line
-    display --indent 6 --text "- Installing it utils packages" --result "DONE" --color GREEN
-
-    return 0
-
-  else
-
-    # Log
-    clear_last_line
-    clear_last_line
-    display --indent 6 --text "- Installing it utils packages" --result "FAIL" --color RED
-
-    return 1
-
-  fi
-
-}
-
-################################################################################
-# Install some optional packages
-#
-# Arguments:
-#   none
-#
-# Outputs:
-#   0 if ok, 1 on error.
-################################################################################
-
-function package_install_selection() {
-
-  # Define array of Apps to install
-  local -n apps_to_install=(
-    "certbot" " " off
-    "monit" " " off
-    "netdata" " " off
-    #"cockpit" " " off
-  )
-
-  local chosen_apps
-
-  chosen_apps="$(whiptail --title "Apps Selection" --checklist "Select the apps you want to install:" 20 78 15 "${apps_to_install[@]}" 3>&1 1>&2 2>&3)"
-
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    log_subsection "Package Installer"
-
-    for app in ${chosen_apps}; do
-
-      app=$(sed -e 's/^"//' -e 's/"$//' <<<${app}) #needed to ommit double quotes
-
-      log_event "info" "Executing ${app} installer ..." "false"
-
-      case ${app} in
-
-      certbot)
-        certbot_installer
-        ;;
-
-      monit)
-        monit_installer_menu
-        ;;
-
-      netdata)
-        netdata_installer
-        ;;
-
-      cockpit)
-        cockpit_installer
-        ;;
-
-      *)
-        log_event "error" "Package installer for ${app} not found!" "false"
-        ;;
-
-      esac
-
-    done
-
-  else
-
-    log_event "info" "Package installer ommited ..." "false"
 
   fi
 
@@ -422,21 +300,23 @@ function package_install_selection() {
 # TODO: move to system_helper.sh ?
 function timezone_configuration() {
 
-  # Log
-  log_subsection "Timezone Configuration"
-
   # Configure timezone
-  dpkg-reconfigure tzdata
+  local configured_timezone
 
-  # Log
-  clear_last_line
-  clear_last_line
-  clear_last_line
-  clear_last_line
-  clear_last_line
-  display --indent 6 --text "- Timezone configuration" --result "DONE" --color GREEN
+  configured_timezone="$(cat /etc/timezone)"
 
-  log_break "false"
+  if [[ "${configured_timezone}" != "${SERVER_TIMEZONE}" ]]; then
+
+    echo "${SERVER_TIMEZONE}" | tee /etc/timezone
+    dpkg-reconfigure --frontend noninteractive tzdata
+
+    # Log
+    clear_last_line
+    log_event "info" "Setting Timezone: ${SERVER_TIMEZONE}" "false"
+    display --indent 6 --text "- Timezone configuration" --result "DONE" --color GREEN
+    display --indent 8 --text "${SERVER_TIMEZONE}"
+
+  fi
 
 }
 
