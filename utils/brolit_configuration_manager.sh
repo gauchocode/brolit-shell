@@ -586,15 +586,15 @@ function _brolit_configuration_load_php() {
     declare -g PACKAGES_PHP_CONFIG_VERSION
     declare -g PACKAGES_PHP_CONFIG_OPCODE
 
-    PACKAGES_PHP_CONFIG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.php-fpm[].status")"
+    PACKAGES_PHP_CONFIG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.php[].status")"
 
     if [[ ${PACKAGES_PHP_CONFIG_STATUS} == "enabled" ]]; then
 
-        PACKAGES_PHP_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.php-fpm[].version")"
+        PACKAGES_PHP_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.php[].version")"
         # Check if all required vars are set
         if [[ -z "${PACKAGES_PHP_CONFIG_VERSION}" ]]; then
         
-            log_event "error" "Missing required config vars for php-fpm" "true"
+            log_event "error" "Missing required config vars for php" "true"
             exit 1
 
         else
@@ -607,7 +607,7 @@ function _brolit_configuration_load_php() {
 
         fi
 
-        PACKAGES_PHP_CONFIG_OPCODE="$(json_read_field "${server_config_file}" "PACKAGES.php-fpm[].config[].opcode")"
+        PACKAGES_PHP_CONFIG_OPCODE="$(json_read_field "${server_config_file}" "PACKAGES.php[].config[].opcode")"
         # Check if all required vars are set
         if [[ -z "${PACKAGES_PHP_CONFIG_OPCODE}" ]]; then
             log_event "error" "Missing required config vars for php-fpm" "true"
@@ -629,21 +629,21 @@ function _brolit_configuration_load_mariadb() {
     declare -g PACKAGES_MARIADB_CONFIG_VERSION
     declare -g PACKAGES_MARIADB_CONFIG_PORTS
 
-    PACKAGES_MARIADB_CONFIG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.mariadb-server[].status")"
+    PACKAGES_MARIADB_CONFIG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.mariadb[].status")"
 
     if [[ ${PACKAGES_MARIADB_CONFIG_STATUS} == "enabled" ]]; then
 
-        PACKAGES_MARIADB_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.mariadb-server[].version")"
+        PACKAGES_MARIADB_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.mariadb[].version")"
         # Check if all required vars are set
         if [[ -z "${PACKAGES_MARIADB_CONFIG_VERSION}" ]]; then
-            log_event "error" "Missing required config vars for mariadb-server" "true"
+            log_event "error" "Missing required config vars for mariadb" "true"
             exit 1
         fi
 
-        PACKAGES_MARIADB_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.mariadb-server[].config[].port")"
+        PACKAGES_MARIADB_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.mariadb[].config[].port")"
         # Check if all required vars are set
         if [[ -z "${PACKAGES_MARIADB_CONFIG_PORTS}" ]]; then
-            log_event "error" "Missing required config vars for mariadb-server" "true"
+            log_event "error" "Missing required config vars for mariadb" "true"
             exit 1
         fi
 
@@ -662,21 +662,21 @@ function _brolit_configuration_load_mysql() {
     declare -g PACKAGES_MYSQL_CONFIG_VERSION
     declare -g PACKAGES_MYSQL_CONFIG_PORTS
 
-    PACKAGES_MYSQL_CONFIG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.mysql-server[].status")"
+    PACKAGES_MYSQL_CONFIG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.mysql[].status")"
 
     if [[ ${PACKAGES_MYSQL_CONFIG_STATUS} == "enabled" ]]; then
 
-        PACKAGES_MYSQL_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.mysql-server[].version")"
+        PACKAGES_MYSQL_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.mysql[].version")"
         # Check if all required vars are set
         if [[ -z "${PACKAGES_MYSQL_CONFIG_VERSION}" ]]; then
-            log_event "error" "Missing required config vars for mysql-server" "true"
+            log_event "error" "Missing required config vars for mysql" "true"
             exit 1
         fi
 
-        PACKAGES_MYSQL_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.mysql-server[].config[].port")"
+        PACKAGES_MYSQL_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.mysql[].config[].port")"
         # Check if all required vars are set
         if [[ -z "${PACKAGES_MYSQL_CONFIG_PORTS}" ]]; then
-            log_event "error" "Missing required config vars for mysql-server" "true"
+            log_event "error" "Missing required config vars for mysql" "true"
             exit 1
         fi
 
@@ -697,21 +697,21 @@ function _brolit_configuration_load_mysql() {
     declare -g PACKAGES_REDIS_CONFIG_VERSION
     declare -g PACKAGES_REDIS_CONFIG_PORTS
 
-    PACKAGES_REDIS_CONFIG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.redis-server[].status")"
+    PACKAGES_REDIS_CONFIG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.redis[].status")"
 
     if [[ ${PACKAGES_REDIS_CONFIG_STATUS} == "enabled" ]]; then
 
-        PACKAGES_REDIS_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.redis-server[].version")"
+        PACKAGES_REDIS_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.redis[].version")"
         # Check if all required vars are set
         if [[ -z "${PACKAGES_REDIS_CONFIG_VERSION}" ]]; then
-            log_event "error" "Missing required config vars for redis-server" "true"
+            log_event "error" "Missing required config vars for redis" "true"
             exit 1
         fi
 
-        PACKAGES_REDIS_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.redis-server[].config[].port")"
+        PACKAGES_REDIS_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.redis[].config[].port")"
         # Check if all required vars are set
         if [[ -z "${PACKAGES_REDIS_CONFIG_PORTS}" ]]; then
-            log_event "error" "Missing required config vars for redis-server" "true"
+            log_event "error" "Missing required config vars for redis" "true"
             exit 1
         fi
 
