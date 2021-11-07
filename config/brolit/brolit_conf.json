@@ -170,7 +170,7 @@
                 ]
             }
         ],
-        "php-fpm": [
+        "php": [
             {
                 "status": "disabled",
                 "version": "default",
@@ -181,7 +181,7 @@
                 ]
             }
         ],
-        "mariadb-server": [
+        "mariadb": [
             {
                 "status": "disabled",
                 "version": "default",
@@ -192,7 +192,7 @@
                 ]
             }
         ],
-        "mysql-server": [
+        "mysql": [
             {
                 "status": "disabled",
                 "version": "default",
@@ -203,7 +203,7 @@
                 ]
             }
         ],
-        "redis-server": [
+        "redis": [
             {
                 "status": "disabled",
                 "version": "default",
