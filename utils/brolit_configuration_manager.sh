@@ -9,7 +9,7 @@
 ################################################################################
 
 # TODO: temporary fix, please change asap
-source "${SFOLDER}/libs/local/packages_helper.sh"
+#source "${SFOLDER}/libs/local/packages_helper.sh"
 
 function brolit_configuration_load() {
 
@@ -625,7 +625,7 @@ function _brolit_configuration_load_php() {
             exit 1
         fi
 
-        package_is_installed "php-fpm"
+        package_is_installed "php${PHP_V}-fpm"
         exitstatus=$?
         if [[ exitstatus -eq 1 ]]; then
 

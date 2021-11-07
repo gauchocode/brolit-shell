@@ -115,9 +115,9 @@ function php_redis_installer() {
 
 function mail_utils_installer() {
 
-  package_is_installed="$(pear list | grep -w "Mail" | cut -d " " -f1)"
+  pear_mail_is_installed="$(pear list | grep -w "Mail" | cut -d " " -f1)"
 
-  if [[ ${package_is_installed} != "Mail" ]]; then
+  if [[ ${pear_mail_is_installed} != "Mail" ]]; then
 
     # Log
     display --indent 6 --text "- Installing mail smtp"
