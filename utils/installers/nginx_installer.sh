@@ -16,7 +16,7 @@
 ################################################################################
 
 ################################################################################
-# Nginx default installer
+# Nginx installer
 #
 # Arguments:
 #  none
@@ -25,43 +25,30 @@
 #  0 if ok, 1 on error.
 ################################################################################
 
-function nginx_default_installer() {
+function nginx_installer() {
 
-    display --indent 6 --text "- Nginx default installation"
+    local nginx_version=$1
 
-    # Install
-    apt-get --yes install nginx -qq >/dev/null
+    if [[ -z "${nginx_version}" || ${nginx_version} == "default" ]]; then
 
-    # Log
-    clear_last_line
-    display --indent 6 --text "- Nginx default installation" --result "DONE" --color GREEN
+        package_install_if_not "nginx"
 
-}
+    else
 
-################################################################################
-# Nginx custom installer (adding ppa)
-#
-# Arguments:
-#  none
-#
-# Outputs:
-#  0 if ok, 1 on error.
-################################################################################
+        display --indent 6 --text "- Nginx custom installation"
 
-function nginx_custom_installer() {
+        add_ppa "nginx/stable"
 
-    display --indent 6 --text "- Nginx default installation"
+        apt-get update -qq >/dev/null
 
-    add_ppa "nginx/stable"
+        # Install
+        apt-get --yes install nginx -qq >/dev/null
 
-    apt-get update -qq >/dev/null
+        # Log
+        clear_last_line
+        display --indent 6 --text "- Nginx custom installation" --result "DONE" --color GREEN
 
-    # Install
-    apt-get --yes install nginx -qq >/dev/null
-
-    # Log
-    clear_last_line
-    display --indent 6 --text "- Nginx custom installation" --result "DONE" --color GREEN
+    fi
 
 }
 
@@ -77,65 +64,9 @@ function nginx_custom_installer() {
 
 function nginx_webp_installer() {
 
-    display --indent 6 --text "- Installing imagemagick and webp package"
-
     # Install
-    apt-get --yes install imagemagick webp -qq >/dev/null
-
-    # Log
-    clear_last_line
-    display --indent 6 --text "- Installing imagemagick and webp package" --result "DONE" --color GREEN
-
-}
-
-################################################################################
-# Nginx purge installation
-#
-# Arguments:
-#  none
-#
-# Outputs:
-#  0 if ok, 1 on error.
-################################################################################
-
-function nginx_purge_installation() {
-
-    display --indent 6 --text "- Purgin nginx from system"
-
-    # Purge
-    apt-get --yes purge nginx -qq >/dev/null
-
-    # Log
-    clear_last_line
-    display --indent 6 --text "- Purgin nginx from system" --result "DONE" --color GREEN
-
-}
-
-################################################################################
-# Check if nginx is installed
-#
-# Arguments:
-#  none
-#
-# Outputs:
-#  0 if ok, 1 on error.
-################################################################################
-
-function nginx_check_if_installed() {
-
-    local nginx_installed
-
-    nginx_installed="true"
-
-    NGINX="$(which nginx)"
-    if [[ ! -x "${NGINX}" ]]; then
-
-        nginx_installed="false"
-
-    fi
-
-    # Return
-    echo "${nginx_installed}"
+    package_install_if_not "webp"
+    package_install_if_not "imagemagick"
 
 }
 
@@ -170,9 +101,10 @@ function nginx_installer_menu() {
     local nginx_installer_options
     local chosen_nginx_installer_option
 
-    nginx_check_if_installed
+    package_is_installed "nginx"
 
-    if [[ ${nginx_installed} == "false" ]]; then
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 1 ]]; then
 
         nginx_installer_options=(
             "01)" "INSTALL NGINX STANDARD"
@@ -180,13 +112,15 @@ function nginx_installer_menu() {
         )
 
         chosen_nginx_installer_option="$(whiptail --title "NGINX INSTALLER" --menu "Choose a Nginx version to install" 20 78 10 "${nginx_installer_options[@]}" 3>&1 1>&2 2>&3)"
+
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
             if [[ ${chosen_nginx_installer_option} == *"01"* ]]; then
 
                 log_subsection "Nginx Installer"
-                nginx_default_installer
+
+                nginx_installer "default"
 
                 nginx_reconfigure
 
@@ -194,7 +128,8 @@ function nginx_installer_menu() {
             if [[ ${chosen_nginx_installer_option} == *"02"* ]]; then
 
                 log_subsection "Nginx Installer"
-                nginx_custom_installer
+
+                nginx_installer ""
 
                 nginx_reconfigure
 
@@ -216,8 +151,8 @@ function nginx_installer_menu() {
             if [[ ${chosen_nginx_installer_option} == *"01"* ]]; then
 
                 log_subsection "Nginx Installer"
-                
-                nginx_purge_installation
+
+                package_purge "nginx"
 
             fi
             if [[ ${chosen_nginx_installer_option} == *"02"* ]]; then

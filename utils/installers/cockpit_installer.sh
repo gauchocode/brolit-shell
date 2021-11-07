@@ -3,27 +3,61 @@
 # Author: BROOBE - A Software Development Agency - https://broobe.com
 # Version: 3.0.70-beta
 #############################################################################
+#
+# Cockpit Installer
+#
+#   Refs:
+#       https://www.linuxtechi.com/how-to-install-cockpit-on-ubuntu-20-04/
+#
+################################################################################
+
+################################################################################
+# Cockpit installer
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
 
 function cockpit_installer() {
 
     log_subsection "Cockpit Installer"
 
-    # Log
-    log_event "info" "Installing cockpit" "false"
-    display --indent 2 --text "- Installing cockpit"
+    package_is_installed "cockpit"
 
-    # apt command
-    apt-get --yes update -qq > /dev/null
-    apt-get --yes install cockpit cockpit-docker cockpit-networkmanager cockpit-storaged cockpit-system cockpit-packagekit cockpit-shell -qq > /dev/null
+    exitstatus=$?
+    if [ ${exitstatus} -eq 0 ]; then
 
-    # Firewall config
-    ufw allow 9090
+        log_info "info" "Cockpit is already installed" "false"
 
-    # Log
-    log_event "info" "Cockpit must be running on port 9090" "false"
-    clear_last_line
-    display --indent 2 --text "- Installing cockpit" --result "DONE" --color GREEN
-    display --indent 4 --text "Running on port 9090"
+        return 0
+
+    else
+
+        # Package update
+        package_update
+
+        # Install cockpit
+        package_install "cockpit"
+
+        # Install cockpit extensions
+        package_install "cockpit-docker"
+        package_install "cockpit-networkmanager"
+        package_install "cockpit-storaged"
+        package_install "cockpit-packagekit"
+        package_install "cockpit-shell"
+        package_install "cockpit-system"
+
+        # Firewall config
+        firewall_allow "9090"
+
+        # Log
+        log_event "info" "Cockpit should be running on port 9090" "false"
+        display --indent 4 --text "Running on port 9090" --tcolor YELLOW
+
+    fi
 
 }
 

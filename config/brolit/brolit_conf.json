@@ -2,14 +2,16 @@
     "BROLIT_SETUP": {
         "config": [
             {
-                "version": "3.2",
+                "version": "3.3",
                 "debug": "true",
                 "quiet": "false",
-                "skip_test": "true"
+                "skip_test": "true",
+                "check_pkgs": "false"
             }
         ]
     },
-    "SERVER_ROLES": {
+    "SERVER_CONFIG": {
+        "timezone": "America/Argentina/Buenos_Aires",
         "config": [
             {
                 "webserver": "disabled",
@@ -145,6 +147,86 @@
                 ]
             }
         ],
+        "mailcow": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "mailcow_path": "/opt/mailcow-dockerized"
+                    }
+                ]
+            }
+        ]
+    },
+    "PACKAGES": {
+        "nginx": [
+            {
+                "status": "disabled",
+                "version": "default",
+                "config": [
+                    {
+                        "port": "default"
+                    }
+                ]
+            }
+        ],
+        "php-fpm": [
+            {
+                "status": "disabled",
+                "version": "default",
+                "config": [
+                    {
+                        "opcode": "disabled"
+                    }
+                ]
+            }
+        ],
+        "mariadb-server": [
+            {
+                "status": "disabled",
+                "version": "default",
+                "config": [
+                    {
+                        "port": "default"
+                    }
+                ]
+            }
+        ],
+        "mysql-server": [
+            {
+                "status": "disabled",
+                "version": "default",
+                "config": [
+                    {
+                        "port": "default"
+                    }
+                ]
+            }
+        ],
+        "redis-server": [
+            {
+                "status": "disabled",
+                "version": "default",
+                "config": [
+                    {
+                        "subdomain": "",
+                        "user": "",
+                        "user_pass": "",
+                        "port": ""
+                    }
+                ]
+            }
+        ],
+        "certbot": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "email": ""
+                    }
+                ]
+            }
+        ],
         "monit": [
             {
                 "status": "disabled",
@@ -171,20 +253,32 @@
                 "status": "disabled",
                 "config": [
                     {
-                        "netdata_subdomain": "",
-                        "netdata_user": "",
-                        "netdata_user_pass": "",
-                        "netdata_alarm_level": ""
+                        "subdomain": "",
+                        "user": "",
+                        "user_pass": "",
+                        "alarm_level": ""
                     }
                 ]
             }
         ],
-        "mailcow": [
+        "cockpit": [
             {
                 "status": "disabled",
                 "config": [
                     {
-                        "mailcow_path": "/opt/mailcow-dockerized"
+                        "subdomain": "",
+                        "port": "9090"
+                    }
+                ]
+            }
+        ],
+        "custom": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "lynis": "true",
+                        "clamav": "true"
                     }
                 ]
             }
