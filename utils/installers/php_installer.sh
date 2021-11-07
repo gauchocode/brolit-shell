@@ -58,7 +58,6 @@ function php_installer() {
 
     # Log
     clear_last_line
-    clear_last_line
     display --indent 6 --text "- Installing php-${php_v} and libraries" --result "DONE" --color GREEN
     log_event "info" "php-${php_v} installed" "false"
 
