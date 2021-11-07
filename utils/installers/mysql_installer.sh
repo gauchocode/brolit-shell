@@ -11,7 +11,7 @@ function mysql_default_installer() {
   exitstatus=$?
   if [ ${exitstatus} -eq 0 ]; then
 
-    log_info "info" "MySQL is already installed" "false"
+    log_event "info" "MySQL is already installed" "false"
 
     return 1
 
@@ -38,7 +38,7 @@ function mariadb_default_installer() {
   exitstatus=$?
   if [ ${exitstatus} -eq 0 ]; then
 
-    log_info "info" "MariaDB is already installed" "false"
+    log_event "info" "MariaDB is already installed" "false"
 
     return 1
 

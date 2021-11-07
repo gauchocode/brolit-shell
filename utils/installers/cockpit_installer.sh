@@ -28,7 +28,7 @@ function cockpit_installer() {
     exitstatus=$?
     if [ ${exitstatus} -eq 0 ]; then
 
-        log_info "info" "Cockpit is already installed" "false"
+        log_event "info" "Cockpit is already installed" "false"
 
         return 0
 

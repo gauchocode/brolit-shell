@@ -34,7 +34,7 @@ function nginx_installer() {
     exitstatus=$?
     if [ ${exitstatus} -eq 0 ]; then
 
-        log_info "info" "Nginx is already installed" "false"
+        log_event "info" "Nginx is already installed" "false"
 
         return 1
 
