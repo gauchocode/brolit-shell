@@ -406,6 +406,8 @@ function nginx_configuration_test() {
         log_event "info" "Nginx configuration changed!" "false"
         display --indent 6 --text "- Testing nginx configuration" --result "DONE" --color GREEN
 
+        return 0
+
     else
 
         debug="$(nginx -t 2>&1)"
@@ -414,6 +416,8 @@ function nginx_configuration_test() {
         # Log
         log_event "error" "Problem changing Nginx configuration. Debug: ${debug}"
         display --indent 6 --text "- Testing nginx configuration" --result "FAIL" --color RED
+
+        return 1
 
     fi
 

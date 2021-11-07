@@ -32,7 +32,6 @@ function server_setup() {
     package_upgrade_all
 
     # Configuring server roles
-
     if [[ ${SERVER_ROLE_WEBSERVER} == "enabled" ]]; then
 
         if [[ ${PACKAGES_NGINX_CONFIG_STATUS} == "enabled" ]]; then
@@ -54,12 +53,18 @@ function server_setup() {
             # Reconfigure
             php_reconfigure "${PACKAGES_PHP_CONFIG_VERSION}"
 
-            # Opcache
-            if [[ ${PACKAGES_PHP_CONFIG_OPCODE} == "enabled" ]]; then
-                php_opcode_config "enable"
-            fi
+        else
+
+            log_event "error" "PHP not enabled" "false"
+            display --indent 6 --text "PHP not enabled" --tcolor YELLOW
 
         fi
+
+        display --indent 6 --text "Server role 'webserver'" --result "ENABLED" --color WHITE
+
+    else
+
+        display --indent 6 --text "Server role 'webserver'" --result "DISABLED" --color WHITE
 
     fi
 
@@ -71,11 +76,18 @@ function server_setup() {
             mysql_initial_config
 
         fi
+
         if [[ ${PACKAGES_MYSQL_CONFIG_STATUS} == "enabled" ]]; then
             mysql_default_installer
             mysql_initial_config
 
         fi
+
+        display --indent 6 --text "Server role 'database'" --result "ENABLED" --color WHITE
+
+    else
+
+        display --indent 6 --text "Server role 'database'" --result "DISABLED" --color WHITE
 
     fi
 
