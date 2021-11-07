@@ -90,7 +90,7 @@ function brolit_configuration_load() {
     fi
 
     ## SERVER ROLES
-    _brolit_configuration_load_server_roles "${server_config_file}"
+    _brolit_configuration_load_server_config "${server_config_file}"
 
     ## PACKAGES
 
@@ -171,18 +171,26 @@ function brolit_configuration_load() {
 
 }
 
-function _brolit_configuration_load_server_roles() {
+function _brolit_configuration_load_server_config() {
 
     local server_config_file=$1
 
     # Globals
+    declare -g SERVER_TIMEZONE
     declare -g SERVER_ROLE_WEBSERVER
     declare -g SERVER_ROLE_DATABASE
+
+    # Read required vars from server config file
+    SERVER_TIMEZONE="$(json_read_field "${server_config_file}" "SERVER_CONFIG.timezone")"
+    if [ -z "${SERVER_TIMEZONE}" ]; then
+        log_event "error" "Missing required config vars for server config" "true"
+        exit 1
+    fi
 
     # Check if is already defined
     if [ -z "${SERVER_ROLE_WEBSERVER}" ]; then
         # Read required vars from server config file
-        SERVER_ROLE_WEBSERVER="$(json_read_field "${server_config_file}" "SERVER_ROLES.config[].webserver")"
+        SERVER_ROLE_WEBSERVER="$(json_read_field "${server_config_file}" "SERVER_CONFIG.config[].webserver")"
         if [ -z "${SERVER_ROLE_WEBSERVER}" ]; then
             log_event "error" "Missing required config vars for server role" "true"
             exit 1
@@ -192,7 +200,7 @@ function _brolit_configuration_load_server_roles() {
     # Check if is already defined
     if [ -z "${SERVER_ROLE_DATABASE}" ]; then
         # Read required vars from server config file
-        SERVER_ROLE_DATABASE="$(json_read_field "${server_config_file}" "SERVER_ROLES.config[].database")"
+        SERVER_ROLE_DATABASE="$(json_read_field "${server_config_file}" "SERVER_CONFIG.config[].database")"
         if [ -z "${SERVER_ROLE_DATABASE}" ]; then
             log_event "error" "Missing required config vars for server role" "true"
             exit 1
