@@ -604,7 +604,7 @@ function _brolit_configuration_load_php() {
 
             if [[ ${PACKAGES_PHP_CONFIG_VERSION} == "default" ]]; then
 
-                source "${SFOLDER}/installers/php_installer.sh"
+                source "${SFOLDER}/utils/installers/php_installer.sh"
                 PHP_V="$(php_get_standard_distro_version)"
 
             else
