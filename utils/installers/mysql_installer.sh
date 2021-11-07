@@ -6,25 +6,55 @@
 
 function mysql_default_installer() {
 
-  log_subsection "MySQL Installer"
+  package_is_installed "mysql-server"
 
-  log_event "info" "Running MySQL default installer" "false"
+  exitstatus=$?
+  if [ ${exitstatus} -eq 0 ]; then
 
-  apt-get --yes install mysql-server -qq >/dev/null
+    log_info "info" "MySQL is already installed" "false"
 
-  display --indent 6 --text "- MySQL default installation" --result "DONE" --color GREEN
+    return 1
+
+  else
+
+    log_subsection "MySQL Installer"
+
+    log_event "info" "Running MySQL default installer" "false"
+
+    apt-get --yes install mysql-server -qq >/dev/null
+
+    display --indent 6 --text "- MySQL default installation" --result "DONE" --color GREEN
+
+    return 0
+
+  fi
 
 }
 
 function mariadb_default_installer() {
 
-  log_subsection "MySQL Installer"
+  package_is_installed "mariadb-server"
 
-  log_event "info" "Running MariaDB default installer" "false"
+  exitstatus=$?
+  if [ ${exitstatus} -eq 0 ]; then
 
-  apt-get --yes install mariadb-server mariadb-client -qq >/dev/null
+    log_info "info" "MariaDB is already installed" "false"
 
-  display --indent 6 --text "- MariaDB default installation" --result "DONE" --color GREEN
+    return 1
+
+  else
+
+    log_subsection "MariaDB Installer"
+
+    log_event "info" "Running MariaDB default installer" "false"
+
+    apt-get --yes install mariadb-server mariadb-client -qq >/dev/null
+
+    display --indent 6 --text "- MariaDB default installation" --result "DONE" --color GREEN
+
+    return 0
+
+  fi
 
 }
 
@@ -61,34 +91,34 @@ function mysql_check_installed_version() {
 
 function mysql_initial_config() {
 
-    local query_1
-    local query_2
-    local query_3
-    local query_4
-    local query_5
-    local query_6
-    local root_pass
-    
-    log_event "info" "Running mysql_initial_config" "false"
+  local query_1
+  local query_2
+  local query_3
+  local query_4
+  local query_5
+  local query_6
+  local root_pass
 
-    root_pass="$(mysql_ask_root_psw)"
+  log_event "info" "Running mysql_initial_config" "false"
 
-    # Queries
-    ## -- set root password
-    query_1="UPDATE mysql.user SET Password=PASSWORD('${root_pass}') WHERE User='root';"
-    ## -- delete anonymous users
-    query_2="DELETE FROM mysql.user WHERE User='';"
-    # -- delete remote root capabilities
-    query_3="DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"
-    # -- drop database 'test'
-    query_4="DROP DATABASE IF EXISTS test;"
-    # -- also make sure there are lingering permissions to it
-    query_5="DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';"
-    # -- make changes immediately
-    query_6="FLUSH PRIVILEGES;"
+  root_pass="$(mysql_ask_root_psw)"
 
-    # Execute command
-    mysql -sfu root -e "${query_1}${query_2}${query_3}${query_4}${query_5}${query_6}"
+  # Queries
+  ## -- set root password
+  query_1="UPDATE mysql.user SET Password=PASSWORD('${root_pass}') WHERE User='root';"
+  ## -- delete anonymous users
+  query_2="DELETE FROM mysql.user WHERE User='';"
+  # -- delete remote root capabilities
+  query_3="DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"
+  # -- drop database 'test'
+  query_4="DROP DATABASE IF EXISTS test;"
+  # -- also make sure there are lingering permissions to it
+  query_5="DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';"
+  # -- make changes immediately
+  query_6="FLUSH PRIVILEGES;"
+
+  # Execute command
+  mysql -sfu root -e "${query_1}${query_2}${query_3}${query_4}${query_5}${query_6}"
 
 }
 
@@ -110,7 +140,7 @@ function mysql_installer_menu() {
     )
 
     chosen_mysql_installer_option="$(whiptail --title "MySQL INSTALLER" --menu "Choose a MySQL version to install" 20 78 10 "${mysql_installer_options[@]}" 3>&1 1>&2 2>&3)"
-    
+
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 

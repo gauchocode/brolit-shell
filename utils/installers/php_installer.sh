@@ -115,26 +115,32 @@ function php_redis_installer() {
 
 function mail_utils_installer() {
 
-  # Log
-  display --indent 6 --text "- Installing mail smtp"
-  log_event "info" "Installing mail mail_mime and net_smtp ..." "false"
+  package_is_installed="$(pear list | grep -w "Mail" | cut -d " " -f1)"
 
-  # Creating tmp directory
-  # Ref: https://stackoverflow.com/questions/59720692/php-7-4-1-pecl-is-not-working-trying-to-access-array-offset-on-value-of-type
-  mkdir -p /tmp/pear/cache
+  if [[ ${package_is_installed} != "Mail" ]]; then
 
-  pear channel-update pear.php.net
+    # Log
+    display --indent 6 --text "- Installing mail smtp"
+    log_event "info" "Installing mail mail_mime and net_smtp ..." "false"
 
-  clear_last_line
-  clear_last_line
+    # Creating tmp directory
+    # Ref: https://stackoverflow.com/questions/59720692/php-7-4-1-pecl-is-not-working-trying-to-access-array-offset-on-value-of-type
+    mkdir -p /tmp/pear/cache
 
-  # Install
-  pear -q install mail mail_mime net_smtp >/dev/null
+    pear channel-update pear.php.net
 
-  # Log
-  clear_last_line
-  display --indent 6 --text "- Installing mail smtp" --result "DONE" --color GREEN
-  log_event "info" "mail mail_mime and net_smtp installed" "false"
+    clear_last_line
+    clear_last_line
+
+    # Install
+    pear -q install mail mail_mime net_smtp >/dev/null
+
+    # Log
+    clear_last_line
+    display --indent 6 --text "- Installing mail smtp" --result "DONE" --color GREEN
+    log_event "info" "mail mail_mime and net_smtp installed" "false"
+
+  fi
 
 }
 

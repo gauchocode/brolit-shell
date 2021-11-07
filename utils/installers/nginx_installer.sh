@@ -29,26 +29,39 @@ function nginx_installer() {
 
     local nginx_version=$1
 
-    log_subsection "Nginx Installer"
+    package_is_installed "nginx"
 
-    if [[ -z "${nginx_version}" || ${nginx_version} == "default" ]]; then
+    exitstatus=$?
+    if [ ${exitstatus} -eq 0 ]; then
 
-        package_install_if_not "nginx"
+        log_info "info" "Nginx is already installed" "false"
+
+        return 1
 
     else
 
-        display --indent 6 --text "- Nginx custom installation"
+        log_subsection "Nginx Installer"
 
-        add_ppa "nginx/stable"
+        if [[ -z "${nginx_version}" || ${nginx_version} == "default" ]]; then
 
-        apt-get update -qq >/dev/null
+            package_install_if_not "nginx"
 
-        # Install
-        apt-get --yes install nginx -qq >/dev/null
+        else
 
-        # Log
-        clear_last_line
-        display --indent 6 --text "- Nginx custom installation" --result "DONE" --color GREEN
+            display --indent 6 --text "- Nginx custom installation"
+
+            add_ppa "nginx/stable"
+
+            apt-get update -qq >/dev/null
+
+            # Install
+            apt-get --yes install nginx -qq >/dev/null
+
+            # Log
+            clear_last_line
+            display --indent 6 --text "- Nginx custom installation" --result "DONE" --color GREEN
+
+        fi
 
     fi
 
