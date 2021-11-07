@@ -16,6 +16,9 @@ function php_get_standard_distro_version() {
   elif [[ ${DISTRO_V} -eq "2004" ]]; then
     php_v="7.4" #Ubuntu 20.04 LTS Default
 
+  elif [[ ${DISTRO_V} -eq "2204" ]]; then
+    php_v="8.0" #Ubuntu 22.04 LTS Default
+
   else
     log_event "critical" "Non standard distro!" "true"
     return 1
@@ -24,6 +27,8 @@ function php_get_standard_distro_version() {
 
   # Return
   echo "${php_v}"
+
+  return 0
 
 }
 
