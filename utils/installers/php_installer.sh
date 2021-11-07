@@ -35,7 +35,7 @@ function php_installer() {
 
   log_subsection "PHP Installer"
 
-  if [[ -z ${php_v} || ${php_v} == "" ]]; then
+  if [[ -z ${php_v} || ${php_v} == "default" ]]; then
     php_v="$(php_get_standard_distro_version)"
   fi
 
@@ -94,24 +94,11 @@ function php_select_version_to_install() {
 
 function php_redis_installer() {
 
-  # Log
-  display --indent 6 --text "- Installing redis server"
-  log_event "info" "Installing redis server ..." "false"
-
   # apt command
-  apt-get --yes install redis-server php-redis -qq >/dev/null
-  systemctl enable redis-server.service
-
-  # Creating config file
-  cp "${SFOLDER}/config/redis/redis.conf" "/etc/redis/redis.conf"
+  package_install_if_not "php-redis"
 
   # Service restart
   service redis-server restart
-
-  # Log
-  clear_last_line
-  display --indent 6 --text "- Installing redis server" --result "DONE" --color GREEN
-  log_event "info" "redis server installed" "false"
 
 }
 
@@ -161,16 +148,16 @@ function php_purge_installation() {
   log_subsection "PHP Installer"
 
   # Log
-  display --indent 6 --text "- Removing PHP-${PHP_V} and libraries"
   log_event "info" "Removing PHP-${PHP_V} and libraries ..." "false"
+  display --indent 6 --text "- Removing PHP-${PHP_V} and libraries"
 
   # apt command
   apt-get --yes purge "php${PHP_V}-fpm" "php${PHP_V}-mysql" php-xml "php${PHP_V}-xml" "php${PHP_V}-cli" "php${PHP_V}-curl" "php${PHP_V}-mbstring" "php${PHP_V}-gd" php-imagick "php${PHP_V}-intl" "php${PHP_V}-zip" "php${PHP_V}-bz2" php-bcmath "php${PHP_V}-soap" "php${PHP_V}-dev" php-pear -qq >/dev/null
 
   # Log
   clear_last_line
+  log_event "info" "php-${PHP_V} and libraries deleted" "false"
   display --indent 6 --text "- Removing PHP-${PHP_V} and libraries" --result "DONE" --color GREEN
-  log_event "info" "PHP-${PHP_V} deleted!" "false"
 
 }
 
@@ -193,16 +180,14 @@ function php_installer_menu() {
 
   else
 
-    php_installer_title="PHP HELPER"
+    php_installer_title="PHP INSTALLER"
     php_installer_message="Choose an option to run:"
     php_installer_options=(
       "01)" "INSTALL PHP DEFAULT"
       "02)" "INSTALL PHP CUSTOM"
       "03)" "RECONFIGURE PHP"
-      "04)" "ENABLE OPCACHE"
-      "05)" "DISABLE OPCACHE"
-      "06)" "OPTIMIZE PHP"
-      "07)" "UNINSTALL PHP"
+      "04)" "OPTIMIZE PHP"
+      "05)" "UNINSTALL PHP"
     )
 
   fi
@@ -252,28 +237,16 @@ function php_installer_menu() {
     if [[ ${chosen_php_installer_options} == *"03"* ]]; then
 
       # RECONFIGURE PHP
-      php_reconfigure
+      php_reconfigure ""
 
     fi
     if [[ ${chosen_php_installer_options} == *"04"* ]]; then
-
-      # ENABLE OPCACHE
-      php_opcode_config "enable"
-
-    fi
-    if [[ ${chosen_php_installer_options} == *"05"* ]]; then
-
-      # DISABLE OPCACHE
-      php_opcode_config "disable"
-
-    fi
-    if [[ ${chosen_php_installer_options} == *"06"* ]]; then
 
       # PHP OPTIZATIONS
       php_fpm_optimizations
 
     fi
-    if [[ ${chosen_php_installer_options} == *"07"* ]]; then
+    if [[ ${chosen_php_installer_options} == *"05"* ]]; then
 
       # REMOVE PHP
       php_purge_installation
