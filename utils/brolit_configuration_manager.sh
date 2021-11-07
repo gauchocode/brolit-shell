@@ -776,6 +776,14 @@ function _brolit_configuration_load_certbot() {
             exit 1
         fi
 
+        package_is_installed "certbot"
+        exitstatus=$?
+        if [[ exitstatus -eq 1 ]]; then
+
+            menu_first_run
+
+        fi
+
     fi
 
     export PACKAGES_CERTBOT_CONFIG_STATUS PACKAGES_CERTBOT_CONFIG_MAILA

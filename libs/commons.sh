@@ -1563,12 +1563,12 @@ function menu_first_run() {
   local first_run_string
   local chosen_first_run_options
 
-  first_run_string+="\n It seems to be the first time you run Brolit Shell.\n"
+  first_run_string+="\n Some changes in the brolit_conf.json where made.\n"
   first_run_string+=" What do you want to do?:\n"
   first_run_string+="\n"
 
   first_run_options=(
-    "01)" "RUN SERVER SETUP"
+    "01)" "RUN BROLIT SETUP"
   )
 
   chosen_first_run_options="$(whiptail --title "BROLIT SCRIPT" --menu "${first_run_string}" 20 78 10 "${first_run_options[@]}" 3>&1 1>&2 2>&3)"
