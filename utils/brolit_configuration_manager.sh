@@ -593,7 +593,7 @@ function _brolit_configuration_load_php() {
         PACKAGES_PHP_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.php[].version")"
         # Check if all required vars are set
         if [[ -z "${PACKAGES_PHP_CONFIG_VERSION}" ]]; then
-        
+
             log_event "error" "Missing required config vars for php" "true"
             exit 1
 
@@ -612,6 +612,14 @@ function _brolit_configuration_load_php() {
         if [[ -z "${PACKAGES_PHP_CONFIG_OPCODE}" ]]; then
             log_event "error" "Missing required config vars for php-fpm" "true"
             exit 1
+        fi
+
+        package_is_installed "php-fpm"
+        exitstatus=$?
+        if [[ exitstatus -eq 1 ]]; then
+
+            menu_first_run
+
         fi
 
     fi
@@ -647,6 +655,14 @@ function _brolit_configuration_load_mariadb() {
             exit 1
         fi
 
+        package_is_installed "mariadb-server"
+        exitstatus=$?
+        if [[ exitstatus -eq 1 ]]; then
+
+            menu_first_run
+
+        fi
+
     fi
 
     export PACKAGES_MARIADB_CONFIG_STATUS PACKAGES_MARIADB_CONFIG_VERSION PACKAGES_MARIADB_CONFIG_PORTS
@@ -678,6 +694,14 @@ function _brolit_configuration_load_mysql() {
         if [[ -z "${PACKAGES_MYSQL_CONFIG_PORTS}" ]]; then
             log_event "error" "Missing required config vars for mysql" "true"
             exit 1
+        fi
+
+        package_is_installed "mysql-server"
+        exitstatus=$?
+        if [[ exitstatus -eq 1 ]]; then
+
+            menu_first_run
+
         fi
 
     fi
