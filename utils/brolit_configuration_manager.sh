@@ -8,6 +8,9 @@
 #
 ################################################################################
 
+# TODO: temporary fix, please change asap
+source "${SFOLDER}/libs/local/packages_helper.sh"
+
 function brolit_configuration_load() {
 
     local server_config_file=$1
