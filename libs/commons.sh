@@ -407,7 +407,6 @@ function script_init() {
 
   # Check configuration
   brolit_configuration_load "${BROLIT_CONFIG_FILE}"
-  brolit_configuration_apps_load
 
   # Dropbox-uploader directory
   DPU_F="${SFOLDER}/tools/third-party/dropbox-uploader"
@@ -423,9 +422,6 @@ function script_init() {
     # shellcheck source=~/.dropbox_uploader
     source "${DPU_CONFIG_FILE}"
   fi
-
-  # Checking optional packages
-  package_check_optionals
 
   # Check firewall status
   firewall_status
