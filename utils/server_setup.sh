@@ -85,6 +85,9 @@ function server_setup() {
 
         fi
 
+        display --indent 6 --text "- Database engine MariaDB" --result "${PACKAGES_MARIADB_CONFIG_STATUS}" --color WHITE
+        display --indent 6 --text "- Database engine MySQL" --result "${PACKAGES_MYSQL_CONFIG_STATUS}" --color WHITE
+
         display --indent 6 --text "- Server role 'database'" --result "ENABLED" --color WHITE
 
     else
