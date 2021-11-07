@@ -276,16 +276,13 @@ function _brolit_configuration_load_dropbox() {
 
             display --indent 2 --text "- Checking Dropbox config file" --result "FAIL" --color RED
             display --indent 4 --text "Config file not found: ${BACKUP_DROPBOX_CONFIG_FILE}"
-
-            _brolit_configuration_app_dropbox
+            display --indent 4 --text "Please finish the configuration running: ${DROPBOX_UPLOADER}"
 
             exit 1
 
         fi
 
     fi
-
-    _brolit_configuration_app_dropbox
 
     export BACKUP_DROPBOX_STATUS BACKUP_DROPBOX_CONFIG_FILE
 
@@ -1005,43 +1002,6 @@ function _brolit_configuration_app_mysql() {
     if [[ ${is_mysql_installed} == "true" ]]; then
 
         mysql_ask_root_psw
-
-    fi
-
-}
-
-################################################################################
-# Private: check Dropbox Uploader configuration
-#
-# Arguments:
-#   none
-#
-# Outputs:
-#   nothing
-################################################################################
-
-function _brolit_configuration_app_dropbox() {
-
-    # Checking global var
-    if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
-
-        output="$("${DROPBOX_UPLOADER}" list)"
-
-        exitstatus=$?
-
-        if [[ ${exitstatus} -eq 0 && ${output} != "" ]]; then
-
-            display --indent 2 --text "- Checking Dropbox Uploader" --result "DONE" --color GREEN
-
-            return 0
-
-        else
-
-            display --indent 2 --text "Something went wrong, please finish the configuration running: ${DROPBOX_UPLOADER}"
-
-            return 1
-
-        fi
 
     fi
 
