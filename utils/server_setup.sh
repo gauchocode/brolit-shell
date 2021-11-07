@@ -79,9 +79,6 @@ function server_setup() {
 
     fi
 
-    # Install required packages
-    package_check_required
-
     # Check aditional packages to install
     if [[ ${PACKAGES_CERTBOT_CONFIG_STATUS} == "enabled" ]]; then
         certbot_installer
