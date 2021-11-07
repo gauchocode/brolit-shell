@@ -60,11 +60,13 @@ function server_setup() {
 
         fi
 
-        display --indent 6 --text "Server role 'webserver'" --result "ENABLED" --color WHITE
+        log_break "true"
+
+        display --indent 6 --text "- Server role 'webserver'" --result "ENABLED" --color WHITE
 
     else
 
-        display --indent 6 --text "Server role 'webserver'" --result "DISABLED" --color WHITE
+        display --indent 6 --text "- Server role 'webserver'" --result "DISABLED" --color WHITE
 
     fi
 
@@ -83,11 +85,11 @@ function server_setup() {
 
         fi
 
-        display --indent 6 --text "Server role 'database'" --result "ENABLED" --color WHITE
+        display --indent 6 --text "- Server role 'database'" --result "ENABLED" --color WHITE
 
     else
 
-        display --indent 6 --text "Server role 'database'" --result "DISABLED" --color WHITE
+        display --indent 6 --text "- Server role 'database'" --result "DISABLED" --color WHITE
 
     fi
 
