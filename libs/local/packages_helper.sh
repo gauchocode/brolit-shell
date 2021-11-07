@@ -233,62 +233,6 @@ function package_check_required() {
 
 }
 
-function package_check_optionals() {
-
-  # Globals
-  declare -g MYSQL
-  declare -g MYSQLDUMP
-  declare -g PHP
-  declare -g CERTBOT
-
-  # CERTBOT
-  CERTBOT="$(command -v certbot)"
-
-  if [[ ! -x "${CERTBOT}" ]]; then
-
-    certbot_installer
-
-    #display --indent 2 --text "- Checking CERTBOT installation" --result "WARNING" --color YELLOW
-    #display --indent 4 --text "CERTBOT not found" --tcolor YELLOW
-
-    #return 1
-
-  fi
-
-  # MySQL
-  MYSQL="$(command -v mysql)"
-
-  if [[ ! -x ${MYSQL} && "${SERVER_ROLE_DATABASE}" == "enabled" ]]; then
-
-    display --indent 2 --text "- Checking MySQL installation" --result "WARNING" --color YELLOW
-    display --indent 4 --text "MySQL not found" --tcolor RED
-
-  else
-
-    MYSQLDUMP="$(command -v mysqldump)"
-
-    if [[ -f ${MYSQL_CONF} ]]; then
-      # Append login parameters to command
-      MYSQL_ROOT="${MYSQL} --defaults-file=${MYSQL_CONF}"
-      MYSQLDUMP_ROOT="${MYSQLDUMP} --defaults-file=${MYSQL_CONF}"
-
-    fi
-
-  fi
-
-  # PHP
-  PHP="$(command -v php)"
-
-  if [[ ! -x "${PHP}" && "${SERVER_ROLE_WEBSERVER}" == "enabled" ]]; then
-
-    # Log
-    display --indent 2 --text "- Checking PHP installation" --result "WARNING" --color YELLOW
-    display --indent 4 --text "PHP not found" --tcolor RED
-
-  fi
-
-}
-
 ################################################################################
 # Timezone configuration
 #

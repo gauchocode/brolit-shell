@@ -118,7 +118,7 @@ function brolit_configuration_load() {
     ## BACKUPS methods
 
     #### dropbox
-    _brolit_configuration_load_dropbox "${server_config_file}"
+    _brolit_configuration_load_dropbox "${server_config_file}" 
 
     #### sftp
     _brolit_configuration_load_sftp "${server_config_file}"
@@ -278,6 +278,8 @@ function _brolit_configuration_load_dropbox() {
         fi
 
     fi
+
+    _brolit_configuration_app_dropbox
 
     export BACKUP_DROPBOX_STATUS BACKUP_DROPBOX_CONFIG_FILE
 
@@ -669,6 +671,8 @@ function _brolit_configuration_load_mysql() {
 
     fi
 
+    _brolit_configuration_app_mysql
+
     export PACKAGES_MYSQL_CONFIG_STATUS PACKAGES_MYSQL_CONFIG_VERSION PACKAGES_MYSQL_CONFIG_PORTS
 
 }
@@ -803,14 +807,6 @@ function _brolit_configuration_load_netdata() {
     fi
 
     export PACKAGES_NETDATA_STATUS PACKAGES_NETDATA_CONFIG_SUBDOMAIN PACKAGES_NETDATA_CONFIG_USER PACKAGES_NETDATA_CONFIG_USER_PASS PACKAGES_NETDATA_CONFIG_ALARM_LEVEL
-
-}
-
-function brolit_configuration_apps_load() {
-
-    _brolit_configuration_app_mysql
-
-    _brolit_configuration_app_dropbox
 
 }
 
