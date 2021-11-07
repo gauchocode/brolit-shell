@@ -314,6 +314,10 @@ function timezone_configuration() {
 
     # Log
     clear_last_line
+    clear_last_line
+    clear_last_line
+    clear_last_line
+    clear_last_line
     log_event "info" "Setting Timezone: ${SERVER_TIMEZONE}" "false"
     display --indent 6 --text "- Timezone configuration" --result "DONE" --color GREEN
     display --indent 8 --text "${SERVER_TIMEZONE}"
