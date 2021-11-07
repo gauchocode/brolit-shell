@@ -23,8 +23,6 @@
 
 function cockpit_installer() {
 
-    log_subsection "Cockpit Installer"
-
     package_is_installed "cockpit"
 
     exitstatus=$?
@@ -35,6 +33,8 @@ function cockpit_installer() {
         return 0
 
     else
+
+        log_subsection "Cockpit Installer"
 
         # Package update
         package_update
