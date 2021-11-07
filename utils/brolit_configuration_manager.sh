@@ -38,7 +38,7 @@ function brolit_configuration_load() {
 
                 cp "${SFOLDER}/config/brolit/brolit_conf.json" "${server_config_file}"
 
-                menu_first_run
+                log_event "critical" "Please, edit brolit_conf.json first, and then run the script again." "true"
 
                 break
                 ;;
@@ -66,7 +66,7 @@ function brolit_configuration_load() {
         DEBUG="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].debug")"
 
         if [ -z "${DEBUG}" ]; then
-            echo "Missing required config vars for projects path"
+            echo "Missing required config vars"
             exit 1
         fi
     fi
@@ -75,7 +75,7 @@ function brolit_configuration_load() {
         QUIET="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].quiet")"
 
         if [ -z "${QUIET}" ]; then
-            echo "Missing required config vars for projects path"
+            echo "Missing required config vars"
             exit 1
         fi
     fi
@@ -84,7 +84,7 @@ function brolit_configuration_load() {
         SKIPTESTS="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].skip_test")"
 
         if [ -z "${SKIPTESTS}" ]; then
-            echo "Missing required config vars for projects path"
+            echo "Missing required config vars"
             exit 1
         fi
     fi
@@ -92,9 +92,30 @@ function brolit_configuration_load() {
     ## SERVER ROLES
     _brolit_configuration_load_server_roles "${server_config_file}"
 
-    ## BACKUPS
+    ## PACKAGES
 
-    ### methods
+    ### nginx
+    _brolit_configuration_load_nginx "${server_config_file}"
+
+    ### php-fpm
+    _brolit_configuration_load_php "${server_config_file}"
+
+    ### mariadb
+    _brolit_configuration_load_mariadb "${server_config_file}"
+
+    ### mysql
+    _brolit_configuration_load_mysql "${server_config_file}"
+
+    ### certbot
+    _brolit_configuration_load_certbot "${server_config_file}"
+
+    ### monit
+    _brolit_configuration_load_monit "${server_config_file}"
+
+    ### netdata
+    _brolit_configuration_load_netdata "${server_config_file}"
+
+    ## BACKUPS methods
 
     #### dropbox
     _brolit_configuration_load_dropbox "${server_config_file}"
@@ -110,19 +131,18 @@ function brolit_configuration_load() {
 
     #### if all required vars are disabled, show error
     if [[ ${BACKUP_DROPBOX_STATUS} != "enabled" ]] && [[ ${BACKUP_SFTP_STATUS} != "enabled" ]] && [[ ${BACKUP_LOCAL_STATUS} != "enabled" ]]; then
-        echo "No backup method enabled"
+        log_event "warning" "No backup method enabled" "true"
         exit 1
     fi
 
-    ### retention
+    ## BACKUPS retention
     _brolit_configuration_load_backup_retention "${server_config_file}"
 
     ## PROJECTS_PATH
-
     PROJECTS_PATH="$(json_read_field "${server_config_file}" "PROJECTS.path")"
 
     if [ -z "${PROJECTS_PATH}" ]; then
-        echo "Missing required config vars for projects path"
+        log_event "warning" "Missing required config vars for projects path" "true"
         exit 1
     fi
 
@@ -142,11 +162,8 @@ function brolit_configuration_load() {
     ### cloudflare
     _brolit_configuration_load_cloudflare "${server_config_file}"
 
-    ### monit
-    _brolit_configuration_load_monit "${server_config_file}"
-
-    ### netdata
-    _brolit_configuration_load_netdata "${server_config_file}"
+    ### mailcow
+    #_brolit_configuration_load_mailcow "${server_config_file}"
 
     # Export vars
     export PROJECTS_PATH
@@ -166,9 +183,8 @@ function _brolit_configuration_load_server_roles() {
     if [ -z "${SERVER_ROLE_WEBSERVER}" ]; then
         # Read required vars from server config file
         SERVER_ROLE_WEBSERVER="$(json_read_field "${server_config_file}" "SERVER_ROLES.config[].webserver")"
-
         if [ -z "${SERVER_ROLE_WEBSERVER}" ]; then
-            echo "Missing required config vars for server role"
+            log_event "error" "Missing required config vars for server role" "true"
             exit 1
         fi
     fi
@@ -177,18 +193,15 @@ function _brolit_configuration_load_server_roles() {
     if [ -z "${SERVER_ROLE_DATABASE}" ]; then
         # Read required vars from server config file
         SERVER_ROLE_DATABASE="$(json_read_field "${server_config_file}" "SERVER_ROLES.config[].database")"
-
         if [ -z "${SERVER_ROLE_DATABASE}" ]; then
-            echo "Missing required config vars for server role name"
+            log_event "error" "Missing required config vars for server role" "true"
             exit 1
         fi
     fi
 
     if [[ ${SERVER_ROLE_WEBSERVER} != "enabled" ]] && [[ ${SERVER_ROLE_DATABASE} != "enabled" ]]; then
-
-        echo "At least one server role need to be defined."
+        log_event "error" "At least one server role need to be defined." "true"
         exit 1
-
     fi
 
 }
@@ -217,7 +230,7 @@ function _brolit_configuration_load_sftp() {
 
         # Check if all required vars are set
         if [ -z "${BACKUP_SFTP_CONFIG_SERVER_IP}" ] || [ -z "${BACKUP_SFTP_CONFIG_SERVER_PORT}" ] || [ -z "${BACKUP_SFTP_CONFIG_SERVER_USER}" ] || [ -z "${BACKUP_SFTP_CONFIG_SERVER_USER_PASSWORD}" ] || [ -z "${BACKUP_SFTP_CONFIG_SERVER_REMOTE_PATH}" ]; then
-            echo "Missing required config vars for SFTP backup method"
+            log_event "error" "Missing required config vars for SFTP backup method" "true"
             exit 1
         fi
 
@@ -273,12 +286,10 @@ function _brolit_configuration_load_local() {
     BACKUP_LOCAL_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.methods[].local[].status")"
 
     if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
-
         BACKUP_LOCAL_CONFIG_BACKUP_PATH="$(json_read_field "${server_config_file}" "BACKUPS.methods[].local[].config[].backup_path")"
-
         # Check if all required vars are set
         if [ -z "${BACKUP_LOCAL_CONFIG_BACKUP_PATH}" ]; then
-            echo "Missing required config vars for local backup method"
+            log_event "error" "Missing required config vars for local backup method" "true"
             exit 1
         fi
 
@@ -306,7 +317,7 @@ function _brolit_configuration_load_duplicity() {
 
         # Check if all required vars are set
         if [ -z "${BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH}" ]; then
-            echo "Missing required config vars for local backup method"
+            log_event "error" "Missing required config vars for duplicity backup method" "true"
             exit 1
         fi
 
@@ -314,7 +325,7 @@ function _brolit_configuration_load_duplicity() {
 
         # Check if all required vars are set
         if [ -z "${BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY}" ]; then
-            echo "Missing required config vars for local backup method"
+            log_event "error" "Missing required config vars for duplicity backup method" "true"
             exit 1
         fi
 
@@ -322,7 +333,7 @@ function _brolit_configuration_load_duplicity() {
 
         # Check if all required vars are set
         if [ -z "${BACKUP_DUPLICITY_CONFIG_FULL_LIFE}" ]; then
-            echo "Missing required config vars for local backup method"
+            log_event "error" "Missing required config vars for duplicity backup method" "true"
             exit 1
         fi
 
@@ -345,21 +356,21 @@ function _brolit_configuration_load_backup_retention() {
     BACKUP_RETENTION_KEEP_DAILY="$(json_read_field "${server_config_file}" "BACKUPS.retention[].keep_daily")"
 
     if [ -z "${BACKUP_RETENTION_KEEP_DAILY}" ]; then
-        echo "Missing required config vars for backup retention"
+        log_event "error" "Missing required config vars for backup retention" "true"
         exit 1
     fi
 
     BACKUP_RETENTION_KEEP_WEEKLY="$(json_read_field "${server_config_file}" "BACKUPS.retention[].keep_weekly")"
 
     if [ -z "${BACKUP_RETENTION_KEEP_WEEKLY}" ]; then
-        echo "Missing required config vars for backup retention"
+        log_event "error" "Missing required config vars for backup retention" "true"
         exit 1
     fi
 
     BACKUP_RETENTION_KEEP_MONTHLY="$(json_read_field "${server_config_file}" "BACKUPS.retention[].keep_monthly")"
 
     if [ -z "${BACKUP_RETENTION_KEEP_MONTHLY}" ]; then
-        echo "Missing required config vars for backup retention"
+        log_event "error" "Missing required config vars for backup retention" "true"
         exit 1
     fi
 
@@ -438,7 +449,7 @@ function _brolit_configuration_load_telegram() {
 
         # Check if all required vars are set
         if [[ -z "${NOTIFICATION_TELEGRAM_BOT_TOKEN}" ]] || [[ -z "${NOTIFICATION_TELEGRAM_CHAT_ID}" ]]; then
-            echo "Missing required config vars for telegram notifications"
+            log_event "error" "Missing required config vars for telegram notifications" "true"
             exit 1
         fi
 
@@ -470,10 +481,8 @@ function _brolit_configuration_load_firewall() {
 
         # Check if all required vars are set
         if [[ -z "${FIREWALL_CONFIG_APP_LIST_SSH}" ]] || [[ -z "${FIREWALL_CONFIG_APP_LIST_HTTP}" ]] || [[ -z "${FIREWALL_CONFIG_APP_LIST_HTTPS}" ]]; then
-
-            echo "Missing required config vars for firewall"
+            log_event "error" "Missing required config vars for firewall" "true"
             exit 1
-
         fi
 
     fi
@@ -498,12 +507,14 @@ function _brolit_configuration_load_cloudflare() {
         SUPPORT_CLOUDFLARE_EMAIL="$(json_read_field "${server_config_file}" "SUPPORT.cloudflare[].config[].email")"
         SUPPORT_CLOUDFLARE_API_KEY="$(json_read_field "${server_config_file}" "SUPPORT.cloudflare[].config[].api_key")"
 
+        # Write .cloudflare.conf (needed for certbot support)
+        echo "dns_cloudflare_email = ${SUPPORT_CLOUDFLARE_EMAIL}" >~/.cloudflare.conf
+        echo "dns_cloudflare_api_key = ${SUPPORT_CLOUDFLARE_API_KEY}" >>~/.cloudflare.conf
+
         # Check if all required vars are set
         if [[ -z "${SUPPORT_CLOUDFLARE_EMAIL}" ]] || [[ -z "${SUPPORT_CLOUDFLARE_API_KEY}" ]]; then
-
-            echo "Missing required config vars for cloudflare support"
+            log_event "error" "Missing required config vars for Cloudflare support" "true"
             exit 1
-
         fi
 
     fi
@@ -512,51 +523,246 @@ function _brolit_configuration_load_cloudflare() {
 
 }
 
-function _brolit_configuration_load_monit() {
+### PACKAGES
+
+function _brolit_configuration_load_nginx() {
 
     local server_config_file=$1
 
     # Globals
-    declare -g MONIT_CONFIG_STATUS
-    declare -g MONIT_CONFIG_MAILA
+    declare -g PACKAGES_NGINX_CONFIG_STATUS
+    declare -g PACKAGES_NGINX_CONFIG_VERSION
+    declare -g PACKAGES_NGINX_CONFIG_PORTS
 
-    MONIT_CONFIG_STATUS="$(json_read_field "${server_config_file}" "SUPPORT.monit[].status")"
+    PACKAGES_NGINX_CONFIG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.nginx[].status")"
 
-    if [[ ${MONIT_CONFIG_STATUS} == "enabled" ]]; then
+    if [[ ${PACKAGES_NGINX_CONFIG_STATUS} == "enabled" ]]; then
 
-        MONIT_CONFIG_MAILA="$(json_read_field "${server_config_file}" "SUPPORT.monit[].config[].monit_maila")"
-
+        PACKAGES_NGINX_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.nginx[].version")"
         # Check if all required vars are set
-        if [[ -z "${MONIT_CONFIG_MAILA}" ]]; then
-
-            echo "Missing required config vars for monit"
+        if [[ -z "${PACKAGES_NGINX_CONFIG_VERSION}" ]]; then
+            log_event "error" "Missing required config vars for nginx" "true"
             exit 1
-
         fi
 
-        MONIT_CONFIG_HTTPD="$(json_read_field "${server_config_file}" "SUPPORT.monit[].config[].monit_httpd")"
-
+        PACKAGES_NGINX_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.nginx[].config[].port")"
         # Check if all required vars are set
-        if [[ -z "${MONIT_CONFIG_HTTPD}" ]]; then
-
-            echo "Missing required config vars for monit"
+        if [[ -z "${PACKAGES_NGINX_CONFIG_PORTS}" ]]; then
+            log_event "error" "Missing required config vars for nginx" "true"
             exit 1
-
         fi
 
-        MONIT_CONFIG_SERVICES="$(json_read_field "${server_config_file}" "SUPPORT.monit[].config[].monit_services")"
+        package_is_installed "nginx"
+        exitstatus=$?
+        if [[ exitstatus -eq 1 ]]; then
 
-        # Check if all required vars are set
-        if [[ -z "${MONIT_CONFIG_SERVICES}" ]]; then
-
-            echo "Missing required config vars for monit"
-            exit 1
+            menu_first_run
 
         fi
 
     fi
 
-    export MONIT_CONFIG_STATUS MONIT_CONFIG_MAILA
+    export PACKAGES_NGINX_CONFIG_STATUS PACKAGES_NGINX_CONFIG_VERSION PACKAGES_NGINX_CONFIG_PORTS
+
+}
+
+function _brolit_configuration_load_php() {
+
+    local server_config_file=$1
+
+    # Globals
+    declare -g PACKAGES_PHP_CONFIG_STATUS
+    declare -g PACKAGES_PHP_CONFIG_VERSION
+    declare -g PACKAGES_PHP_CONFIG_OPCODE
+
+    PACKAGES_PHP_CONFIG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.php-fpm[].status")"
+
+    if [[ ${PACKAGES_PHP_CONFIG_STATUS} == "enabled" ]]; then
+
+        PACKAGES_PHP_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.php-fpm[].version")"
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_PHP_CONFIG_VERSION}" ]]; then
+            log_event "error" "Missing required config vars for php-fpm" "true"
+            exit 1
+        fi
+
+        PACKAGES_PHP_CONFIG_OPCODE="$(json_read_field "${server_config_file}" "PACKAGES.php-fpm[].config[].opcode")"
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_PHP_CONFIG_OPCODE}" ]]; then
+            log_event "error" "Missing required config vars for php-fpm" "true"
+            exit 1
+        fi
+
+    fi
+
+    export PACKAGES_PHP_CONFIG_STATUS PACKAGES_PHP_CONFIG_VERSION PACKAGES_PHP_CONFIG_OPCODE
+
+}
+
+function _brolit_configuration_load_mariadb() {
+
+    local server_config_file=$1
+
+    # Globals
+    declare -g PACKAGES_MARIADB_CONFIG_STATUS
+    declare -g PACKAGES_MARIADB_CONFIG_VERSION
+    declare -g PACKAGES_MARIADB_CONFIG_PORTS
+
+    PACKAGES_MARIADB_CONFIG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.mariadb-server[].status")"
+
+    if [[ ${PACKAGES_MARIADB_CONFIG_STATUS} == "enabled" ]]; then
+
+        PACKAGES_MARIADB_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.mariadb-server[].version")"
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_MARIADB_CONFIG_VERSION}" ]]; then
+            log_event "error" "Missing required config vars for mariadb-server" "true"
+            exit 1
+        fi
+
+        PACKAGES_MARIADB_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.mariadb-server[].config[].port")"
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_MARIADB_CONFIG_PORTS}" ]]; then
+            log_event "error" "Missing required config vars for mariadb-server" "true"
+            exit 1
+        fi
+
+    fi
+
+    export PACKAGES_MARIADB_CONFIG_STATUS PACKAGES_MARIADB_CONFIG_VERSION PACKAGES_MARIADB_CONFIG_PORTS
+
+}
+
+function _brolit_configuration_load_mysql() {
+
+    local server_config_file=$1
+
+    # Globals
+    declare -g PACKAGES_MYSQL_CONFIG_STATUS
+    declare -g PACKAGES_MYSQL_CONFIG_VERSION
+    declare -g PACKAGES_MYSQL_CONFIG_PORTS
+
+    PACKAGES_MYSQL_CONFIG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.mysql-server[].status")"
+
+    if [[ ${PACKAGES_MYSQL_CONFIG_STATUS} == "enabled" ]]; then
+
+        PACKAGES_MYSQL_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.mysql-server[].version")"
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_MYSQL_CONFIG_VERSION}" ]]; then
+            log_event "error" "Missing required config vars for mysql-server" "true"
+            exit 1
+        fi
+
+        PACKAGES_MYSQL_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.mysql-server[].config[].port")"
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_MYSQL_CONFIG_PORTS}" ]]; then
+            log_event "error" "Missing required config vars for mysql-server" "true"
+            exit 1
+        fi
+
+    fi
+
+    export PACKAGES_MYSQL_CONFIG_STATUS PACKAGES_MYSQL_CONFIG_VERSION PACKAGES_MYSQL_CONFIG_PORTS
+
+}
+
+function _brolit_configuration_load_mysql() {
+
+    local server_config_file=$1
+
+    # Globals
+    declare -g PACKAGES_REDIS_CONFIG_STATUS
+    declare -g PACKAGES_REDIS_CONFIG_VERSION
+    declare -g PACKAGES_REDIS_CONFIG_PORTS
+
+    PACKAGES_REDIS_CONFIG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.redis-server[].status")"
+
+    if [[ ${PACKAGES_REDIS_CONFIG_STATUS} == "enabled" ]]; then
+
+        PACKAGES_REDIS_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.redis-server[].version")"
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_REDIS_CONFIG_VERSION}" ]]; then
+            log_event "error" "Missing required config vars for redis-server" "true"
+            exit 1
+        fi
+
+        PACKAGES_REDIS_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.redis-server[].config[].port")"
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_REDIS_CONFIG_PORTS}" ]]; then
+            log_event "error" "Missing required config vars for redis-server" "true"
+            exit 1
+        fi
+
+    fi
+
+    export PACKAGES_REDIS_CONFIG_STATUS PACKAGES_REDIS_CONFIG_VERSION PACKAGES_REDIS_CONFIG_PORTS
+
+}
+
+function _brolit_configuration_load_certbot() {
+
+    local server_config_file=$1
+
+    # Globals
+    declare -g PACKAGES_CERTBOT_CONFIG_STATUS
+    declare -g PACKAGES_CERTBOT_CONFIG_MAILA
+
+    PACKAGES_CERTBOT_CONFIG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.certbot[].status")"
+
+    if [[ ${PACKAGES_CERTBOT_CONFIG_STATUS} == "enabled" ]]; then
+
+        PACKAGES_CERTBOT_CONFIG_MAILA="$(json_read_field "${server_config_file}" "PACKAGES.certbot[].config[].email")"
+
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_CERTBOT_CONFIG_MAILA}" ]]; then
+            log_event "error" "Missing required config vars for monit" "true"
+            exit 1
+        fi
+
+    fi
+
+    export PACKAGES_CERTBOT_CONFIG_STATUS PACKAGES_CERTBOT_CONFIG_MAILA
+
+}
+
+function _brolit_configuration_load_monit() {
+
+    local server_config_file=$1
+
+    # Globals
+    declare -g PACKAGES_MONIT_CONFIG_STATUS
+    declare -g PACKAGES_MONIT_CONFIG_MAILA
+
+    PACKAGES_MONIT_CONFIG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.monit[].status")"
+
+    if [[ ${PACKAGES_MONIT_CONFIG_STATUS} == "enabled" ]]; then
+
+        PACKAGES_MONIT_CONFIG_MAILA="$(json_read_field "${server_config_file}" "PACKAGES.monit[].config[].monit_maila")"
+
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_MONIT_CONFIG_MAILA}" ]]; then
+            log_event "error" "Missing required config vars for monit" "true"
+            exit 1
+        fi
+
+        MONIT_CONFIG_HTTPD="$(json_read_field "${server_config_file}" "PACKAGES.monit[].config[].monit_httpd")"
+
+        # Check if all required vars are set
+        if [[ -z "${MONIT_CONFIG_HTTPD}" ]]; then
+            log_event "error" "Missing required config vars for monit" "true"
+            exit 1
+        fi
+
+        MONIT_CONFIG_SERVICES="$(json_read_field "${server_config_file}" "PACKAGES.monit[].config[].monit_services")"
+
+        # Check if all required vars are set
+        if [[ -z "${MONIT_CONFIG_SERVICES}" ]]; then
+            log_event "error" "Missing required config vars for monit" "true"
+            exit 1
+        fi
+
+    fi
+
+    export PACKAGES_MONIT_CONFIG_STATUS PACKAGES_MONIT_CONFIG_MAILA
 
 }
 
@@ -565,32 +771,30 @@ function _brolit_configuration_load_netdata() {
     local server_config_file=$1
 
     # Globals
-    declare -g SUPPORT_NETDATA_STATUS
-    declare -g SUPPORT_NETDATA_CONFIG_SUBDOMAIN
-    declare -g SUPPORT_NETDATA_CONFIG_USER
-    declare -g SUPPORT_NETDATA_CONFIG_USER_PASS
-    declare -g SUPPORT_NETDATA_CONFIG_ALARM_LEVEL
+    declare -g PACKAGES_NETDATA_STATUS
+    declare -g PACKAGES_NETDATA_CONFIG_SUBDOMAIN
+    declare -g PACKAGES_NETDATA_CONFIG_USER
+    declare -g PACKAGES_NETDATA_CONFIG_USER_PASS
+    declare -g PACKAGES_NETDATA_CONFIG_ALARM_LEVEL
 
-    SUPPORT_NETDATA_STATUS="$(json_read_field "${server_config_file}" "SUPPORT.netdata[].status")"
+    PACKAGES_NETDATA_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].status")"
 
-    if [[ ${SUPPORT_NETDATA_STATUS} == "enabled" ]]; then
+    if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
 
-        SUPPORT_NETDATA_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "SUPPORT.netdata[].config[].netdata_subdomain")"
-        SUPPORT_NETDATA_CONFIG_USER="$(json_read_field "${server_config_file}" "SUPPORT.netdata[].config[].netdata_user")"
-        SUPPORT_NETDATA_CONFIG_USER_PASS="$(json_read_field "${server_config_file}" "SUPPORT.netdata[].config[].netdata_user_pass")"
-        SUPPORT_NETDATA_CONFIG_ALARM_LEVEL="$(json_read_field "${server_config_file}" "SUPPORT.netdata[].config[].netdata_alarm_level")"
+        PACKAGES_NETDATA_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].subdomain")"
+        PACKAGES_NETDATA_CONFIG_USER="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].user")"
+        PACKAGES_NETDATA_CONFIG_USER_PASS="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].user_pass")"
+        PACKAGES_NETDATA_CONFIG_ALARM_LEVEL="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].alarm_level")"
 
         # Check if all required vars are set
-        if [[ -z "${SUPPORT_NETDATA_CONFIG_SUBDOMAIN}" ]] || [[ -z "${SUPPORT_NETDATA_CONFIG_USER}" ]] || [[ -z "${SUPPORT_NETDATA_CONFIG_USER_PASS}" ]] || [[ -z "${SUPPORT_NETDATA_CONFIG_ALARM_LEVEL}" ]]; then
-
-            echo "Missing required config vars for netdata support"
+        if [[ -z "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}" ]] || [[ -z "${PACKAGES_NETDATA_CONFIG_USER}" ]] || [[ -z "${PACKAGES_NETDATA_CONFIG_USER_PASS}" ]] || [[ -z "${PACKAGES_NETDATA_CONFIG_ALARM_LEVEL}" ]]; then
+            log_event "error" "Missing required config vars for netdata support" "true"
             exit 1
-
         fi
 
     fi
 
-    export SUPPORT_NETDATA_STATUS SUPPORT_NETDATA_CONFIG_SUBDOMAIN SUPPORT_NETDATA_CONFIG_USER SUPPORT_NETDATA_CONFIG_USER_PASS SUPPORT_NETDATA_CONFIG_ALARM_LEVEL
+    export PACKAGES_NETDATA_STATUS PACKAGES_NETDATA_CONFIG_SUBDOMAIN PACKAGES_NETDATA_CONFIG_USER PACKAGES_NETDATA_CONFIG_USER_PASS PACKAGES_NETDATA_CONFIG_ALARM_LEVEL
 
 }
 

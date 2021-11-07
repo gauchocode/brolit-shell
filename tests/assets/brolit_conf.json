@@ -174,10 +174,10 @@
                 "status": "disabled",
                 "config": [
                     {
-                        "netdata_subdomain": "",
-                        "netdata_user": "",
-                        "netdata_user_pass": "",
-                        "netdata_alarm_level": ""
+                        "subdomain": "",
+                        "user": "",
+                        "user_pass": "",
+                        "alarm_level": ""
                     }
                 ]
             }

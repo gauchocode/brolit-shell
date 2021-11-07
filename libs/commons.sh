@@ -323,7 +323,7 @@ function script_init() {
   declare -g LOG
   declare -g EXEC_TYPE
 
-  declare -g BROLIT_CONFIG_FILE="/root/.brolit_conf.json"
+  declare -g BROLIT_CONFIG_FILE=~/.brolit_conf.json
 
   local timestamp
   local path_log
@@ -1593,7 +1593,7 @@ function menu_first_run() {
       # shellcheck source=../utils/server_setup.sh
       source "${SFOLDER}/utils/server_setup.sh"
 
-      server_setup
+      server_setup ""
 
       exit 1
 

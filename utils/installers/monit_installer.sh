@@ -28,12 +28,12 @@ function monit_installer() {
 
   if [[ $? -eq 0 ]]; then
 
-    MONIT_CONFIG_STATUS="enabled"
+    PACKAGES_MONIT_CONFIG_STATUS="enabled"
 
-    json_write_field "${BROLIT_CONFIG_FILE}" "SUPPORT.monit[].status" "${MONIT_CONFIG_STATUS}"
+    json_write_field "${BROLIT_CONFIG_FILE}" "SUPPORT.monit[].status" "${PACKAGES_MONIT_CONFIG_STATUS}"
 
     # new global value ("enabled")
-    export MONIT_CONFIG_STATUS
+    export PACKAGES_MONIT_CONFIG_STATUS
 
     return 0
 
@@ -63,12 +63,12 @@ function monit_purge() {
 
   if [[ $? -eq 0 ]]; then
 
-    MONIT_CONFIG_STATUS="disabled"
+    PACKAGES_MONIT_CONFIG_STATUS="disabled"
     
-    json_write_field "${BROLIT_CONFIG_FILE}" "SUPPORT.monit[].status" "${MONIT_CONFIG_STATUS}"
+    json_write_field "${BROLIT_CONFIG_FILE}" "SUPPORT.monit[].status" "${PACKAGES_MONIT_CONFIG_STATUS}"
 
     # new global value ("enabled")
-    export MONIT_CONFIG_STATUS
+    export PACKAGES_MONIT_CONFIG_STATUS
 
     return 0
 
