@@ -149,6 +149,11 @@ function php_reconfigure() {
   service php"${php_v}"-fpm reload
   display --indent 6 --text "- Reloading php${php_v}-fpm service" --result "DONE" --color GREEN
 
+  # Opcache
+  if [[ ${PACKAGES_PHP_CONFIG_OPCODE} == "enabled" ]]; then
+    php_opcode_config "enable"
+  fi
+
 }
 
 function php_set_version_on_config() {

@@ -29,6 +29,8 @@ function nginx_installer() {
 
     local nginx_version=$1
 
+    log_subsection "Nginx Installer"
+
     if [[ -z "${nginx_version}" || ${nginx_version} == "default" ]]; then
 
         package_install_if_not "nginx"
