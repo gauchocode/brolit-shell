@@ -118,7 +118,7 @@ function brolit_configuration_load() {
     ## BACKUPS methods
 
     #### dropbox
-    _brolit_configuration_load_dropbox "${server_config_file}" 
+    _brolit_configuration_load_dropbox "${server_config_file}"
 
     #### sftp
     _brolit_configuration_load_sftp "${server_config_file}"
@@ -581,6 +581,7 @@ function _brolit_configuration_load_php() {
     local server_config_file=$1
 
     # Globals
+    declare -g PHP_V
     declare -g PACKAGES_PHP_CONFIG_STATUS
     declare -g PACKAGES_PHP_CONFIG_VERSION
     declare -g PACKAGES_PHP_CONFIG_OPCODE
@@ -592,8 +593,18 @@ function _brolit_configuration_load_php() {
         PACKAGES_PHP_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.php-fpm[].version")"
         # Check if all required vars are set
         if [[ -z "${PACKAGES_PHP_CONFIG_VERSION}" ]]; then
+        
             log_event "error" "Missing required config vars for php-fpm" "true"
             exit 1
+
+        else
+
+            if [[ ${PACKAGES_PHP_CONFIG_VERSION} == "default" ]]; then
+                PHP_V="$(php_get_standard_distro_version)"
+            else
+                PHP_V="${PACKAGES_PHP_CONFIG_VERSION}"
+            fi
+
         fi
 
         PACKAGES_PHP_CONFIG_OPCODE="$(json_read_field "${server_config_file}" "PACKAGES.php-fpm[].config[].opcode")"
@@ -605,7 +616,7 @@ function _brolit_configuration_load_php() {
 
     fi
 
-    export PACKAGES_PHP_CONFIG_STATUS PACKAGES_PHP_CONFIG_VERSION PACKAGES_PHP_CONFIG_OPCODE
+    export PHP_V PACKAGES_PHP_CONFIG_STATUS PACKAGES_PHP_CONFIG_VERSION PACKAGES_PHP_CONFIG_OPCODE
 
 }
 
