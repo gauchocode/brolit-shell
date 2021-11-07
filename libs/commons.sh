@@ -24,12 +24,12 @@ function _source_all_scripts() {
   # Source all local libs
   libs_local_path="${SFOLDER}/libs/local"
   libs_local_scripts="$(find "${libs_local_path}" -maxdepth 1 -name '*.sh' -type f -print)"
-  for f in ${libs_local_scripts}; do source "${f}"; done
+  for j in ${libs_local_scripts}; do source "${j}"; done
 
   # Source utils
   utils_path="${SFOLDER}/utils"
   utils_scripts="$(find "${utils_path}" -maxdepth 1 -name '*.sh' -type f -print)"
-  for f in ${utils_scripts}; do source "${f}"; done
+  for k in ${utils_scripts}; do source "${k}"; done
 
   # Load other sources
   source "${SFOLDER}/libs/notification_controller.sh"
@@ -394,18 +394,10 @@ function script_init() {
 
   # Checking required packages
   package_check_required
-  packages_output=$?
-  if [[ ${packages_output} -eq 1 ]]; then
-    log_event "warning" "Some script dependencies are not setisfied" "true"
-    prompt_return_or_finish
-  fi
 
   # Some globals
   declare -g DPU_F
   declare -g DROPBOX_UPLOADER
-
-  # Check configuration
-  brolit_configuration_load "${BROLIT_CONFIG_FILE}"
 
   # Dropbox-uploader directory
   DPU_F="${SFOLDER}/tools/third-party/dropbox-uploader"
@@ -413,11 +405,11 @@ function script_init() {
   DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
   # Dropbox-uploader config file
   DPU_CONFIG_FILE=~/.dropbox_uploader
-  if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" && ! -f ${DPU_CONFIG_FILE} ]]; then
-    generate_dropbox_config
-  fi
-  if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
+  # Check configuration
+  brolit_configuration_load "${BROLIT_CONFIG_FILE}"
+
+  if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
     # shellcheck source=~/.dropbox_uploader
     source "${DPU_CONFIG_FILE}"
   fi
