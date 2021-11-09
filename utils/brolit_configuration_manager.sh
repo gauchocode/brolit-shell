@@ -92,35 +92,6 @@ function brolit_configuration_load() {
     ## SERVER ROLES
     _brolit_configuration_load_server_config "${server_config_file}"
 
-    ## PACKAGES
-
-    ### nginx
-    _brolit_configuration_load_nginx "${server_config_file}"
-
-    ### php-fpm
-    _brolit_configuration_load_php "${server_config_file}"
-
-    ### mariadb
-    _brolit_configuration_load_mariadb "${server_config_file}"
-
-    ### mysql
-    _brolit_configuration_load_mysql "${server_config_file}"
-
-    # If Server role 'database' is enabled, mariadb or mysql must be enabled
-    if [[ ${PACKAGES_MARIADB_CONFIG_STATUS} != "enabled" ]] && [[ ${PACKAGES_MYSQL_CONFIG_STATUS} != "enabled" ]] && [[ ${SERVER_ROLE_DATABASE} == "enabled" ]]; then
-        log_event "warning" "No database engine is enabled" "true"
-        exit 1
-    fi
-
-    ### certbot
-    _brolit_configuration_load_certbot "${server_config_file}"
-
-    ### monit
-    _brolit_configuration_load_monit "${server_config_file}"
-
-    ### netdata
-    _brolit_configuration_load_netdata "${server_config_file}"
-
     ## BACKUPS methods
 
     #### dropbox
@@ -170,6 +141,35 @@ function brolit_configuration_load() {
 
     ### mailcow
     #_brolit_configuration_load_mailcow "${server_config_file}"
+
+    ## PACKAGES
+
+    ### nginx
+    _brolit_configuration_load_nginx "${server_config_file}"
+
+    ### php-fpm
+    _brolit_configuration_load_php "${server_config_file}"
+
+    ### mariadb
+    _brolit_configuration_load_mariadb "${server_config_file}"
+
+    ### mysql
+    _brolit_configuration_load_mysql "${server_config_file}"
+
+    # If Server role 'database' is enabled, mariadb or mysql must be enabled
+    if [[ ${PACKAGES_MARIADB_CONFIG_STATUS} != "enabled" ]] && [[ ${PACKAGES_MYSQL_CONFIG_STATUS} != "enabled" ]] && [[ ${SERVER_ROLE_DATABASE} == "enabled" ]]; then
+        log_event "warning" "No database engine is enabled" "true"
+        exit 1
+    fi
+
+    ### certbot
+    _brolit_configuration_load_certbot "${server_config_file}"
+
+    ### monit
+    _brolit_configuration_load_monit "${server_config_file}"
+
+    ### netdata
+    _brolit_configuration_load_netdata "${server_config_file}"
 
     # Export vars
     export PROJECTS_PATH
@@ -782,6 +782,10 @@ function _brolit_configuration_load_certbot() {
             menu_config_changes_detected "certbot" "true"
 
         fi
+
+    else
+
+        display --indent 2 --text "- Certbot disabled" --result "WARNING" --color YELLOW
 
     fi
 
