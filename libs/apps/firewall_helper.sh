@@ -203,7 +203,7 @@ function firewall_allow() {
             # Log
             log_event "info" "Allowing ${service} on firewall" "false"
             log_event "info" "Skipping adding existing rule" "false"
-            display --indent 2 --text "Allowing ${service} on firewall" --result "SKIP" --color YELLOW
+            display --indent 2 --text "- Allowing ${service} on firewall" --result "SKIP" --color YELLOW
             display --indent 4 --text "Skipping adding existing rule"
 
             return 0
@@ -212,7 +212,7 @@ function firewall_allow() {
 
             # Log
             log_event "info" "Allowing ${service} on firewall" "false"
-            display --indent 2 --text "Allowing ${service} on firewall" --result "DONE" --color GREEN
+            display --indent 2 --text "- Allowing ${service} on firewall" --result "DONE" --color GREEN
 
             return 0
 
@@ -222,7 +222,7 @@ function firewall_allow() {
 
         # Log
         log_event "error" "Allowing ${service} on firewall" "false"
-        display --indent 2 --text "Allowing ${service} on firewall" --result "FAIL" --color RED
+        display --indent 2 --text "- Allowing ${service} on firewall" --result "FAIL" --color RED
 
         return 1
 

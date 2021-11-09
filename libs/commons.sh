@@ -1586,7 +1586,7 @@ function menu_config_changes_detected() {
       "01)" "RUN BROLIT SETUP"
     )
 
-    chosen_first_run_options="$(whiptail --title "BROLIT SCRIPT" --menu "${first_run_string}" 20 78 10 "${first_run_options[@]}" 3>&1 1>&2 2>&3)"
+    chosen_first_run_options="$(whiptail --title "BROLIT SETUP" --menu "${first_run_string}" 20 78 10 "${first_run_options[@]}" 3>&1 1>&2 2>&3)"
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
