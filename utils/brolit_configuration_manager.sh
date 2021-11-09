@@ -523,8 +523,8 @@ function _brolit_configuration_load_cloudflare() {
         SUPPORT_CLOUDFLARE_API_KEY="$(json_read_field "${server_config_file}" "SUPPORT.cloudflare[].config[].api_key")"
 
         # Write .cloudflare.conf (needed for certbot support)
-        echo "dns_cloudflare_email = ${SUPPORT_CLOUDFLARE_EMAIL}" >~/.cloudflare.conf
-        echo "dns_cloudflare_api_key = ${SUPPORT_CLOUDFLARE_API_KEY}" >>~/.cloudflare.conf
+        echo "dns_cloudflare_email=${SUPPORT_CLOUDFLARE_EMAIL}" >~/.cloudflare.conf
+        echo "dns_cloudflare_api_key=${SUPPORT_CLOUDFLARE_API_KEY}" >>~/.cloudflare.conf
 
         # Check if all required vars are set
         if [[ -z "${SUPPORT_CLOUDFLARE_EMAIL}" ]] || [[ -z "${SUPPORT_CLOUDFLARE_API_KEY}" ]]; then
