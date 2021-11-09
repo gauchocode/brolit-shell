@@ -127,7 +127,7 @@ function package_install() {
 
   # Log
   log_event "info" "Installing ${package} ..." "false"
-  display --indent 2 --text "- Installing ${package}"
+  display --indent 6 --text "- Installing ${package}"
 
   # apt command
   apt-get --yes install "${package}" -qq >/dev/null
@@ -139,7 +139,7 @@ function package_install() {
     clear_last_line
     clear_last_line
     log_event "info" "Package ${package} installed" "false"
-    display --indent 2 --text "- Installing ${package}" --result "DONE" --color GREEN
+    display --indent 6 --text "- Installing ${package}" --result "DONE" --color GREEN
 
     return 0
 
@@ -149,8 +149,8 @@ function package_install() {
     clear_last_line
     clear_last_line
     log_event "error" "Installing ${package}. Package is already installed." "false"
-    display --indent 2 --text "- Installing ${package}" --result "WARNING" --color YELLOW
-    display --indent 4 --text "Package is already installed."
+    display --indent 6 --text "- Installing ${package}" --result "WARNING" --color YELLOW
+    display --indent 8 --text "Package is already installed."
 
     return 1
 
@@ -196,7 +196,7 @@ function package_install_if_not() {
 # TODO: need a refactor
 function package_check_required() {
 
-  #log_section "Script Package Manager"
+  log_section "Package Manager"
 
   log_event "info" "Checking required packages ..." "false"
 
@@ -311,6 +311,8 @@ function remove_old_packages() {
 
 function package_install_optimization_utils() {
 
+  log_subsection "Package Manager"
+
   package_install_if_not "jpegoptim"
   package_install_if_not "optipng"
   package_install_if_not "pngquant"
@@ -333,6 +335,8 @@ function package_install_optimization_utils() {
 ################################################################################
 
 function package_install_security_utils() {
+
+  log_subsection "Package Manager"
 
   package_install_if_not "clamav"
   package_install_if_not "clamav-freshclam"
