@@ -30,7 +30,7 @@ set mail-format {
 
               Monit }
 set mailserver NOTIFICATION_EMAIL_SMTP_SERVER port NOTIFICATION_EMAIL_SMTP_PORT
-    username NOTIFICATION_EMAIL_SMTP_USER password "NOTIFICATION_EMAIL_SMTP_USER_PASS"
+    username NOTIFICATION_EMAIL_SMTP_USER password "NOTIFICATION_EMAIL_SMTP_UPASS"
     using TLSV1 with timeout 30 seconds
     set alert NOTIFICATION_EMAIL_MAILA
 
