@@ -923,7 +923,7 @@ function brolit_configuration_firewall() {
     else
 
         # Check if firewall configuration in config file
-        if [[ ${FIREWALL_CONFIG_STATUS} == "enabled" ]]; then
+        if [[ ${FIREWALL_CONFIG_STATUS} == "disabled" ]]; then
 
             # Enabling firewall
             firewall_disable
