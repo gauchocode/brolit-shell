@@ -136,7 +136,7 @@ function package_install() {
   if [[ $exitstatus -eq 0 ]]; then
 
     # Log
-    clear_last_line
+    #clear_last_line
     clear_last_line
     log_event "info" "Package ${package} installed" "false"
     display --indent 6 --text "- Installing ${package}" --result "DONE" --color GREEN
@@ -146,7 +146,7 @@ function package_install() {
   else
 
     # Log
-    clear_last_line
+    #clear_last_line
     clear_last_line
     log_event "error" "Installing ${package}. Package is already installed." "false"
     display --indent 6 --text "- Installing ${package}" --result "WARNING" --color YELLOW

@@ -254,6 +254,29 @@ function _check_scripts_permissions() {
 
 }
 
+# TODO: refactor this function
+function _check_server_ip() {
+
+  # LOCAL IP (if server has configured a floating ip, it will return this)
+  LOCAL_IP="$(/sbin/ifconfig eth0 | grep -w 'inet ' | awk '{print $2}')" # Could be a floating ip
+
+  # PUBLIC IP (with https://www.ipify.org)
+  SERVER_IP="$(curl --silent 'https://api.ipify.org')"
+  if [[ ${SERVER_IP} == "" ]]; then
+    # Alternative method
+    SERVER_IP="$(curl --silent http://ipv4.icanhazip.com)"
+  else
+    # If api.apify.org works, get IPv6 too
+    SERVER_IPv6="$(curl --silent 'https://api64.ipify.org')"
+  fi
+
+  log_event "info" "SERVER IPv4: ${SERVER_IP}" "false"
+  log_event "info" "SERVER IPv6: ${SERVER_IPv6}" "false"
+  display --indent 2 --text "- Getting server IP" --result "DONE" --color GREEN
+  display --indent 4 --text "${SERVER_IP}"
+
+}
+
 ################################################################################
 # Private: check linux distro
 #
@@ -392,6 +415,15 @@ function script_init() {
   # Checking script permissions
   _check_scripts_permissions
 
+  # Checking server IP
+  _check_server_ip
+
+  # Clean old log files
+  find "${path_log}" -name "*.log" -type f -mtime +7 -print -delete >>"${LOG}"
+  # Log
+  log_event "info" "Deleting old script logs" "false"
+  display --indent 2 --text "- Deleting old script logs" --result "DONE" --color GREEN
+
   # Some globals
   declare -g DPU_F
   declare -g DROPBOX_UPLOADER
@@ -411,32 +443,8 @@ function script_init() {
     source "${DPU_CONFIG_FILE}"
   fi
 
-  # LOCAL IP (if server has configured a floating ip, it will return this)
-  LOCAL_IP="$(/sbin/ifconfig eth0 | grep -w 'inet ' | awk '{print $2}')" # Could be a floating ip
-
-  # PUBLIC IP (with https://www.ipify.org)
-  SERVER_IP="$(curl --silent 'https://api.ipify.org')"
-  if [[ ${SERVER_IP} == "" ]]; then
-    # Alternative method
-    SERVER_IP="$(curl --silent http://ipv4.icanhazip.com)"
-  else
-    # If api.apify.org works, get IPv6 too
-    SERVER_IPv6="$(curl --silent 'https://api64.ipify.org')"
-  fi
-
-  log_event "info" "SERVER IPv4: ${SERVER_IP}" "false"
-  log_event "info" "SERVER IPv6: ${SERVER_IPv6}" "false"
-  display --indent 2 --text "- Getting server IP" --result "DONE" --color GREEN
-  display --indent 4 --text "${SERVER_IP}"
-
   # Checking required packages
   package_check_required
-
-  # Clean old log files
-  find "${path_log}" -name "*.log" -type f -mtime +7 -print -delete >>"${LOG}"
-  # Log
-  log_event "info" "Deleting old script logs" "false"
-  display --indent 2 --text "- Deleting old script logs" --result "DONE" --color GREEN
 
   # EXPORT VARS
   export SCRIPT_V VPSNAME BROLIT_CONFIG_PATH TMP_DIR SFOLDER DPU_F DROPBOX_UPLOADER PROJECTS_PATH BLACKLISTED_SITES BLACKLISTED_DATABASES WSERVER MAIN_VOL PACKAGES PHP_CF
