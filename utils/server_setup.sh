@@ -69,6 +69,7 @@ function server_app_setup() {
         ;;
 
     "monit")
+        log_subsection "Monit Installer"
         package_install_if_not "monit"
         monit_configure
         ;;

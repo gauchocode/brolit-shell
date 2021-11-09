@@ -64,7 +64,7 @@ function monit_purge() {
   if [[ $? -eq 0 ]]; then
 
     PACKAGES_MONIT_CONFIG_STATUS="disabled"
-    
+
     json_write_field "${BROLIT_CONFIG_FILE}" "SUPPORT.monit[].status" "${PACKAGES_MONIT_CONFIG_STATUS}"
 
     # new global value ("enabled")
@@ -92,41 +92,65 @@ function monit_purge() {
 
 function monit_configure() {
 
-  if [[ ! -x "${PHP_V}" ]]; then
-    PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
+  cat "${SFOLDER}/config/monit/monitrc" >/etc/monit/monitrc
 
-  fi
+  # ${MONIT_CONFIG_SERVICES}
 
-  # Configuring monit
-  log_event "info" "Configuring monit ..." "false"
+  # Get all listed apps
+  services_list="$(json_read_field "/root/.brolit_conf.json" "${MONIT_CONFIG_SERVICES}")"
 
-  # Using script template
-  #cat "${SFOLDER}/config/monit/lemp-services" >/etc/monit/conf.d/lemp-services
-  #cat "${SFOLDER}/config/monit/monitrc" >/etc/monit/monitrc
-  display --indent 6 --text "- Copying monit config" --result "DONE" --color GREEN
+  # Get keys
+  services_list_keys="$(jq -r 'keys[]' <<<"${services_list}" | sed ':a; N; $!ba; s/\n/ /g')"
 
-  # Set Hostname
-  sed -i "s#HOSTNAME#${VPSNAME}#" /etc/monit/conf.d/lemp-services
+  # String to array
+  IFS=' ' read -r -a services_list_keys_array <<<"$services_list_keys"
 
-  # Set PHP_V
-  php_set_version_on_config "${PHP_V}" "/etc/monit/conf.d/lemp-services"
-  display --indent 6 --text "- Setting PHP version" --result "DONE" --color GREEN
+  # Loop through all apps keys
+  for services_list_key in "${services_list_keys_array[@]}"; do
 
-  # Set SMTP vars
-  sed -i "s#NOTIFICATION_EMAIL_SMTP_SERVER#${NOTIFICATION_EMAIL_SMTP_SERVER}#" /etc/monit/conf.d/lemp-services
-  sed -i "s#NOTIFICATION_EMAIL_SMTP_PORT#${NOTIFICATION_EMAIL_SMTP_PORT}#" /etc/monit/conf.d/lemp-services
+  services_list_value="$(jq -r ."${services_list_key}" <<<"${services_list}")"
 
-  # Run two times to cober all var appearance
-  sed -i "s#NOTIFICATION_EMAIL_SMTP_USER#${NOTIFICATION_EMAIL_SMTP_USER}#" /etc/monit/conf.d/lemp-services
-  sed -i "s#NOTIFICATION_EMAIL_SMTP_USER#${NOTIFICATION_EMAIL_SMTP_USER}#" /etc/monit/conf.d/lemp-services
+    if [[ ${services_list_value} == "allow" ]]; then
 
-  sed -i "s#NOTIFICATION_EMAIL_SMTP_USER_PASS#${NOTIFICATION_EMAIL_SMTP_USER_PASS}#" /etc/monit/conf.d/lemp-services
-  sed -i "s#NOTIFICATION_EMAIL_MAILA#${NOTIFICATION_EMAIL_MAILA}#" /etc/monit/conf.d/lemp-services
-  display --indent 6 --text "- Configuring SMTP" --result "DONE" --color GREEN
+      # Configuring monit
+      ## Using script template
+      cat "${SFOLDER}/config/monit/${services_list_key}" >"/etc/monit/conf.d/${services_list_key}"
+
+      # Log
+      log_event "info" "Configuring ${services_list_key} on monit" "false"
+      display --indent 6 --text "- Configuring ${services_list_key}" --result "DONE" --color GREEN
+
+      if [[ ! -x "${PHP_V}" && ${services_list_key} == "phpfpm" ]]; then
+        PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
+        # Set PHP_V
+        php_set_version_on_config "${PHP_V}" "/etc/monit/conf.d/${services_list_key}"
+      fi
+
+      if [[ ! -x "${PHP_V}" && ${services_list_key} == "system" ]]; then
+        # Set Hostname
+        sed -i "s#HOSTNAME#${VPSNAME}#" "/etc/monit/conf.d/${services_list_key}"
+
+        # Set SMTP vars
+        sed -i "s#NOTIFICATION_EMAIL_SMTP_SERVER#${NOTIFICATION_EMAIL_SMTP_SERVER}#" "/etc/monit/conf.d/${services_list_key}"
+        sed -i "s#NOTIFICATION_EMAIL_SMTP_PORT#${NOTIFICATION_EMAIL_SMTP_PORT}#" "/etc/monit/conf.d/${services_list_key}"
+
+        # Run two times to cober all var appearance
+        sed -i "s#NOTIFICATION_EMAIL_SMTP_USER#${NOTIFICATION_EMAIL_SMTP_USER}#" "/etc/monit/conf.d/${services_list_key}"
+        sed -i "s#NOTIFICATION_EMAIL_SMTP_USER#${NOTIFICATION_EMAIL_SMTP_USER}#" "/etc/monit/conf.d/${services_list_key}"
+
+        sed -i "s#NOTIFICATION_EMAIL_SMTP_USER_PASS#${NOTIFICATION_EMAIL_SMTP_USER_PASS}#" "/etc/monit/conf.d/${services_list_key}"
+        sed -i "s#NOTIFICATION_EMAIL_MAILA#${NOTIFICATION_EMAIL_MAILA}#" "/etc/monit/conf.d/${services_list_key}"
+
+      fi
+
+    fi
+
+  done
 
   log_event "info" "Restarting services ..."
 
   # Service restart
+  ## TODO: need a refactor
   systemctl restart "php${PHP_V}-fpm"
   systemctl restart nginx.service
   service monit restart
