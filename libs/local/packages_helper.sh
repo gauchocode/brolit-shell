@@ -193,10 +193,9 @@ function package_install_if_not() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-# TODO: need a refactor
 function package_check_required() {
 
-  log_section "Package Manager"
+  log_subsection "Package Manager"
 
   log_event "info" "Checking required packages ..." "false"
 
@@ -228,7 +227,7 @@ function package_check_required() {
   FIND="$(command -v find)"
 
   # Log
-  display --indent 2 --text "- Checking script dependencies" --result "DONE" --color GREEN
+  display --indent 6 --text "- Checking script dependencies" --result "DONE" --color GREEN
   log_event "info" "All required packages are installed" "false"
 
 }
