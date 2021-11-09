@@ -136,7 +136,7 @@ function monit_configure() {
         sed -i "s#NOTIFICATION_EMAIL_SMTP_USER#${NOTIFICATION_EMAIL_SMTP_USER}#" "/etc/monit/conf.d/${services_list_key}"
         sed -i "s#NOTIFICATION_EMAIL_SMTP_USER#${NOTIFICATION_EMAIL_SMTP_USER}#" "/etc/monit/conf.d/${services_list_key}"
 
-        sed -i "s#NOTIFICATION_EMAIL_SMTP_USER_PASS#${NOTIFICATION_EMAIL_SMTP_USER_PASS}#" "/etc/monit/conf.d/${services_list_key}"
+        sed -i "s#NOTIFICATION_EMAIL_SMTP_UPASS#${NOTIFICATION_EMAIL_SMTP_UPASS}#" "/etc/monit/conf.d/${services_list_key}"
         sed -i "s#NOTIFICATION_EMAIL_MAILA#${NOTIFICATION_EMAIL_MAILA}#" "/etc/monit/conf.d/${services_list_key}"
 
       fi

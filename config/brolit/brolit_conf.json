@@ -240,7 +240,6 @@
                                 "nginx": "enabled",
                                 "phpfpm": "enabled",
                                 "mysql": "enabled",
-                                "netdata": "disabled",
                                 "redis": "disabled"
                             }
                         ]
