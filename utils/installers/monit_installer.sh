@@ -108,7 +108,7 @@ function monit_configure() {
 
   services_list_value="$(jq -r ."${services_list_key}" <<<"${services_list}")"
 
-    if [[ ${services_list_value} == "allow" ]]; then
+    if [[ ${services_list_value} == "enabled" ]]; then
 
       # Configuring monit
       ## Using script template
