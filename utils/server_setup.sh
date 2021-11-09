@@ -8,6 +8,88 @@
 #
 ################################################################################
 
+function server_prepare() {
+
+    # Configuring packages
+    timezone_configuration
+
+    # Packages update
+    package_update
+
+    # Packages upgrade
+    package_upgrade_all
+
+}
+
+function server_app_setup() {
+
+    local app_setup="${1}"
+
+    case "${app_setup}" in
+
+    "nginx")
+        # Nginx Installer
+        nginx_installer "default"
+        nginx_reconfigure
+        ;;
+
+    "php")
+
+        # PHP Installer
+        php_installer "${PACKAGES_PHP_CONFIG_VERSION}"
+
+        # Mail utils packages
+        mail_utils_installer
+
+        # Reconfigure
+        php_reconfigure "${PACKAGES_PHP_CONFIG_VERSION}"
+
+        ;;
+
+    "mysql")
+        mysql_default_installer
+        mysql_initial_config
+
+        ;;
+
+    "mariadb")
+        mariadb_default_installer
+        mysql_initial_config
+
+        ;;
+
+    "redis")
+        redis_installer
+        if [[ ${PACKAGES_PHP_CONFIG_STATUS} == "enabled" ]]; then
+            php_redis_installer
+        fi
+
+        ;;
+
+    "monit")
+        package_install_if_not "monit"
+        monit_configure
+        ;;
+
+    "certbot")
+        certbot_installer
+        ;;
+
+    "netdata")
+        netdata_installer
+        ;;
+
+    "cockpit")
+        cockpit_installer
+        ;;
+
+    *)
+        echo "Please answer yes or no."
+        ;;
+
+    esac
+
+}
 ################################################################################
 # Server Setup
 #
@@ -18,18 +100,13 @@
 #   0 if ok, 1 on error.
 ################################################################################
 
+# TODO: maybe only use when runned by flags.
+
 function server_setup() {
 
     log_section "Server Setup"
 
-    # Configuring packages
-    timezone_configuration
-
-    # Packages update
-    package_update
-
-    # Packages upgrade
-    package_upgrade_all
+    server_prepare
 
     # Configuring server roles
     if [[ ${SERVER_ROLE_WEBSERVER} == "enabled" ]]; then

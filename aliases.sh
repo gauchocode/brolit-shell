@@ -1267,7 +1267,7 @@ function read_site_config() {
 
 }
 
-function firewall_status() {
+function firewall_show_status() {
 
     local ufw_status=""
 
@@ -1354,7 +1354,7 @@ function show_server_data() {
 
     server_config="$(brolit_shell_config)"
 
-    server_firewall="$(firewall_status)"
+    server_firewall="$(firewall_show_status)"
 
     if [[ "$(_is_pkg_installed "mysql-server")" == "true" || "$(_is_pkg_installed "mariadb-server")" == "true" ]]; then
         server_databases="$(mysql_databases)"

@@ -126,7 +126,7 @@ function firewall_app_list() {
 #   None
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#   0 if is active, 1 on error.
 ################################################################################
 
 function firewall_status() {
@@ -170,6 +170,7 @@ function firewall_status() {
         display --indent 2 --text "- Getting firewall status" --result "FAIL" --color RED
 
         return 1
+
     fi
 
 }
