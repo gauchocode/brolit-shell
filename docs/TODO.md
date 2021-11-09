@@ -35,6 +35,8 @@
 
 ### In Progress
 
+- [ ] Core: Let configure all things via JSON files.
+- [ ] Core: Refactor settings config (change to a json config file).
 - [ ] Core: Stop netdata alerts when a backup or virus analysis is started.
 - [ ] Core: Generate project config file (/etc/brolit/domain_conf.json).
 - [ ] Server Setup: option to run without menu.
@@ -70,13 +72,10 @@
 ## For release 3.2
 
 - [ ] Core: ufw and fail2ban support.
-- [ ] Core: Let configure all things via JSON files.
 - [ ] Core: Let configure temp. backup directory.
 - [ ] Core: Docker support (backup, restore, list containers, status).
-- [ ] Core: Refactor settings config (change to a json config file?).
 - [ ] Core: Resolve small "TODOs" comments on the project.
 - [ ] Core: Prevent execute the script more than once at a time (maybe a .lock file?).
-- [ ] Core: Complete refactor of script_configuration_wizard.
 - [ ] Core: Better structure of deleted projects on dropbox.
 - [ ] Core: Add an option to backup all and prepare VPS to be offline/deleted (add a VPS offline structure on dropbox).
 - [ ] Core: make new standard directory structure for projects "${PROJECTS_PATH}/${ROOT_DOMAIN}/${SUBDOMAIN}/public". ?
