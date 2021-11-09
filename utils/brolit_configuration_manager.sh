@@ -8,9 +8,6 @@
 #
 ################################################################################
 
-# TODO: temporary fix, please change asap
-#source "${SFOLDER}/libs/local/packages_helper.sh"
-
 function brolit_configuration_load() {
 
     local server_config_file=$1
@@ -503,6 +500,8 @@ function _brolit_configuration_load_firewall() {
 
     fi
 
+    brolit_configuration_firewall
+
     export FIREWALL_CONFIG_APP_LIST_SSH FIREWALL_CONFIG_APP_LIST_HTTP FIREWALL_CONFIG_APP_LIST_HTTPS FIREWALL_CONFIG_STATUS
 
 }
@@ -572,7 +571,7 @@ function _brolit_configuration_load_nginx() {
         exitstatus=$?
         if [[ exitstatus -eq 1 ]]; then
 
-            menu_first_run
+            menu_config_changes_detected "nginx" "true"
 
         fi
 
@@ -629,7 +628,7 @@ function _brolit_configuration_load_php() {
         exitstatus=$?
         if [[ exitstatus -eq 1 ]]; then
 
-            menu_first_run
+            menu_config_changes_detected "php" "true"
 
         fi
 
@@ -670,7 +669,7 @@ function _brolit_configuration_load_mariadb() {
         exitstatus=$?
         if [[ exitstatus -eq 1 ]]; then
 
-            menu_first_run
+            menu_config_changes_detected "mariadb" "true"
 
         fi
 
@@ -711,7 +710,7 @@ function _brolit_configuration_load_mysql() {
         exitstatus=$?
         if [[ exitstatus -eq 1 ]]; then
 
-            menu_first_run
+            menu_config_changes_detected "mysql" "true"
 
         fi
 
@@ -780,7 +779,7 @@ function _brolit_configuration_load_certbot() {
         exitstatus=$?
         if [[ exitstatus -eq 1 ]]; then
 
-            menu_first_run
+            menu_config_changes_detected "certbot" "true"
 
         fi
 
@@ -826,6 +825,14 @@ function _brolit_configuration_load_monit() {
             exit 1
         fi
 
+        package_is_installed "monit"
+        exitstatus=$?
+        if [[ exitstatus -eq 1 ]]; then
+
+            menu_config_changes_detected "monit" "true"
+
+        fi
+
     fi
 
     export PACKAGES_MONIT_CONFIG_STATUS PACKAGES_MONIT_CONFIG_MAILA
@@ -858,141 +865,68 @@ function _brolit_configuration_load_netdata() {
             exit 1
         fi
 
+        # Checking if Netdata is installed
+        NETDATA="$(which netdata)"
+        if [[ ! -x "${NETDATA}" ]]; then
+            menu_config_changes_detected "netdata" "true"
+        fi
+
     fi
 
     export PACKAGES_NETDATA_STATUS PACKAGES_NETDATA_CONFIG_SUBDOMAIN PACKAGES_NETDATA_CONFIG_USER PACKAGES_NETDATA_CONFIG_USER_PASS PACKAGES_NETDATA_CONFIG_ALARM_LEVEL
 
 }
 
-# TODO: maybe remove this from brolit_conf.json
 function brolit_configuration_firewall() {
 
-    # Check if firewall is enabled
-    if [[ ${FIREWALL_CONFIG_STATUS} == "enabled" ]]; then
+    # Check firewall status
+    firewall_status
 
-        # Enabling firewall
-        firewall_enable
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 1 ]]; then
 
-        # Get all listed apps
-        app_list="$(json_read_field "/root/.brolit_conf.json" "FIREWALL.config[].app_list[]")"
+        # Check if firewall configuration in config file
+        if [[ ${FIREWALL_CONFIG_STATUS} == "enabled" ]]; then
 
-        # Get keys
-        app_list_keys="$(jq -r 'keys[]' <<<"${app_list}" | sed ':a; N; $!ba; s/\n/ /g')"
+            # Enabling firewall
+            firewall_enable
 
-        # String to array
-        IFS=' ' read -r -a app_list_keys_array <<<"$app_list_keys"
+            # Get all listed apps
+            app_list="$(json_read_field "/root/.brolit_conf.json" "FIREWALL.config[].app_list[]")"
 
-        # Loop through all apps keys
-        for app_list_key in "${app_list_keys_array[@]}"; do
+            # Get keys
+            app_list_keys="$(jq -r 'keys[]' <<<"${app_list}" | sed ':a; N; $!ba; s/\n/ /g')"
 
-            app_list_value="$(jq -r ."${app_list_key}" <<<"${app_list}")"
+            # String to array
+            IFS=' ' read -r -a app_list_keys_array <<<"$app_list_keys"
 
-            if [[ ${app_list_value} == "allow" ]]; then
+            # Loop through all apps keys
+            for app_list_key in "${app_list_keys_array[@]}"; do
 
-                # Allow service on firewall
-                firewall_allow "${app_list_key}"
+                app_list_value="$(jq -r ."${app_list_key}" <<<"${app_list}")"
 
-            fi
+                if [[ ${app_list_value} == "allow" ]]; then
 
-        done
-
-    else
-
-        # Log
-        log_event "info" "Firewall is disabled" "false"
-        display --indent 6 --text "- Firewall disabled" --result "WARNING" --color YELLOW
-
-    fi
-
-}
-
-function brolit_configuration_app_check() {
-
-    local -n services_list=$1
-
-    for service in "${services_list[@]}"; do
-
-        case ${service} in
-
-        "mysql")
-
-            mysql_installed="$(package_is_installed "mysql-server")"
-
-            if [[ ${mysql_installed} -eq 1 ]]; then
-
-                mysql_installed="$(package_is_installed "mariadb-server")"
-
-                if [[ ${mysql_installed} -eq 1 ]]; then
-
-                    display --indent 2 --text "- Checking for installed DB engine" --result "WARNING" --color YELLOW
-                    display --indent 2 --text "MySQL or MariaDB server are not installed"
+                    # Allow service on firewall
+                    firewall_allow "${app_list_key}"
 
                 fi
 
-            fi
+            done
 
-            ;;
+        fi
 
-        "nginx")
+    else
 
-            nginx_installed="$(package_is_installed "nginx")"
+        # Check if firewall configuration in config file
+        if [[ ${FIREWALL_CONFIG_STATUS} == "enabled" ]]; then
 
-            if [[ ${nginx_installed} -eq 1 ]]; then
+            # Enabling firewall
+            firewall_disable
 
-                display --indent 2 --text "- Checking for installed web server" --result "OK" --color GREEN
+        fi
 
-            else
-
-                display --indent 2 --text "- Checking for installed web server" --result "WARNING" --color YELLOW
-                display --indent 2 --text "Nginx is not installed"
-
-            fi
-
-            ;;
-
-        "php")
-
-            php_installed="$(package_is_installed "php")"
-
-            if [[ ${php_installed} -eq 1 ]]; then
-
-                display --indent 2 --text "- Checking for installed PHP engine" --result "OK" --color GREEN
-
-            else
-
-                display --indent 2 --text "- Checking for installed PHP engine" --result "WARNING" --color YELLOW
-                display --indent 2 --text "PHP is not installed"
-
-            fi
-
-            ;;
-
-        "python")
-
-            python_installed="$(package_is_installed "python")"
-
-            if [[ ${python_installed} -eq 1 ]]; then
-
-                display --indent 2 --text "- Checking for installed Python engine" --result "OK" --color GREEN
-
-            else
-
-                display --indent 2 --text "- Checking for installed Python engine" --result "WARNING" --color YELLOW
-                display --indent 2 --text "Python is not installed"
-
-            fi
-
-            ;;
-
-        *)
-
-            echo "Unknown service: ${service}"
-
-            ;;
-
-        esac
-
-    done
+    fi
 
 }
 
