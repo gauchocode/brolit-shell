@@ -414,9 +414,6 @@ function script_init() {
     source "${DPU_CONFIG_FILE}"
   fi
 
-  # Check firewall status
-  firewall_status
-
   # LOCAL IP (if server has configured a floating ip, it will return this)
   LOCAL_IP="$(/sbin/ifconfig eth0 | grep -w 'inet ' | awk '{print $2}')" # Could be a floating ip
 
@@ -1557,36 +1554,58 @@ function menu_main_options() {
 #   nothing
 ################################################################################
 
-function menu_first_run() {
+function menu_config_changes_detected() {
 
-  local first_run_options
-  local first_run_string
-  local chosen_first_run_options
+  local app_setup="${1}"
+  local bypass_prompt="${2}"
 
-  first_run_string+="\n Some changes in the brolit_conf.json where made.\n"
-  first_run_string+=" What do you want to do?:\n"
-  first_run_string+="\n"
+  if [[ ${bypass_prompt} == "true" ]]; then
 
-  first_run_options=(
-    "01)" "RUN BROLIT SETUP"
-  )
+    log_event "debug" "Bypassing prompt" "false"
 
-  chosen_first_run_options="$(whiptail --title "BROLIT SCRIPT" --menu "${first_run_string}" 20 78 10 "${first_run_options[@]}" 3>&1 1>&2 2>&3)"
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
+    # shellcheck source=../utils/server_setup.sh
+    source "${SFOLDER}/utils/server_setup.sh"
 
-    if [[ ${chosen_first_run_options} == *"01"* ]]; then
+    server_prepare
 
-      # shellcheck source=../utils/server_setup.sh
-      source "${SFOLDER}/utils/server_setup.sh"
+    server_app_setup "${app_setup}"
 
-      server_setup ""
-
-    fi
+    return 0
 
   else
 
-    exit 1
+    local first_run_options
+    local first_run_string
+    local chosen_first_run_options
+
+    first_run_string+="\n Some changes in the brolit_conf.json where made.\n"
+    first_run_string+=" What do you want to do?:\n"
+    first_run_string+="\n"
+
+    first_run_options=(
+      "01)" "RUN BROLIT SETUP"
+    )
+
+    chosen_first_run_options="$(whiptail --title "BROLIT SCRIPT" --menu "${first_run_string}" 20 78 10 "${first_run_options[@]}" 3>&1 1>&2 2>&3)"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+      if [[ ${chosen_first_run_options} == *"01"* ]]; then
+
+        # shellcheck source=../utils/server_setup.sh
+        source "${SFOLDER}/utils/server_setup.sh"
+
+        server_prepare
+
+        server_app_setup "${app_setup}"
+
+      fi
+
+    else
+
+      exit 1
+
+    fi
 
   fi
 
