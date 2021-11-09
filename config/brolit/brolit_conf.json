@@ -238,7 +238,7 @@
                             {
                                 "system": "enabled",
                                 "nginx": "enabled",
-                                "php-fpm": "enabled",
+                                "phpfpm": "enabled",
                                 "mysql": "enabled",
                                 "netdata": "disabled",
                                 "redis": "disabled"
