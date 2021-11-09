@@ -92,12 +92,10 @@ function monit_purge() {
 
 function monit_configure() {
 
-  cat "${SFOLDER}/config/monit/monitrc" >/etc/monit/monitrc
-
-  # ${MONIT_CONFIG_SERVICES}
+  cat "${SFOLDER}/config/monit/monitrc" >"/etc/monit/monitrc"
 
   # Get all listed apps
-  services_list="$(json_read_field "/root/.brolit_conf.json" "${MONIT_CONFIG_SERVICES}")"
+  services_list="${MONIT_CONFIG_SERVICES}"
 
   # Get keys
   services_list_keys="$(jq -r 'keys[]' <<<"${services_list}" | sed ':a; N; $!ba; s/\n/ /g')"

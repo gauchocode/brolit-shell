@@ -392,9 +392,6 @@ function script_init() {
   # Checking script permissions
   _check_scripts_permissions
 
-  # Checking required packages
-  package_check_required
-
   # Some globals
   declare -g DPU_F
   declare -g DROPBOX_UPLOADER
@@ -427,10 +424,19 @@ function script_init() {
     SERVER_IPv6="$(curl --silent 'https://api64.ipify.org')"
   fi
 
-  log_event "info" "SERVER IP: ${SERVER_IP}" "false"
+  log_event "info" "SERVER IPv4: ${SERVER_IP}" "false"
+  log_event "info" "SERVER IPv6: ${SERVER_IPv6}" "false"
+  display --indent 2 --text "- Getting server IP" --result "DONE" --color GREEN
+  display --indent 4 --text "${SERVER_IP}"
+
+  # Checking required packages
+  package_check_required
 
   # Clean old log files
   find "${path_log}" -name "*.log" -type f -mtime +7 -print -delete >>"${LOG}"
+  # Log
+  log_event "info" "Deleting old script logs" "false"
+  display --indent 2 --text "- Deleting old script logs" --result "DONE" --color GREEN
 
   # EXPORT VARS
   export SCRIPT_V VPSNAME BROLIT_CONFIG_PATH TMP_DIR SFOLDER DPU_F DROPBOX_UPLOADER PROJECTS_PATH BLACKLISTED_SITES BLACKLISTED_DATABASES WSERVER MAIN_VOL PACKAGES PHP_CF

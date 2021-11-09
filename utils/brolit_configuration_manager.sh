@@ -821,7 +821,7 @@ function _brolit_configuration_load_monit() {
             exit 1
         fi
 
-        MONIT_CONFIG_SERVICES="$(json_read_field "${server_config_file}" "PACKAGES.monit[].config[].monit_services")"
+        MONIT_CONFIG_SERVICES="$(json_read_field "${server_config_file}" "PACKAGES.monit[].config[].monit_services[]")"
 
         # Check if all required vars are set
         if [[ -z "${MONIT_CONFIG_SERVICES}" ]]; then
