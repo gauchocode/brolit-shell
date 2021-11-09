@@ -10,6 +10,8 @@
 
 function server_prepare() {
 
+    log_subsection "Preparing server"
+
     # Configuring packages
     timezone_configuration
 
