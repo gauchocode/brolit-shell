@@ -97,7 +97,7 @@ function _spinner() {
 
 function spinner_start() {
 
-  if [[ ${QUIET} == "true" ]]; then return 0; fi
+  if [[ ${QUIET} == "true" || ${EXEC_TYPE} == "alias" ]]; then return 0; fi
 
   _spinner "start" "${1}" &
 
@@ -119,7 +119,7 @@ function spinner_start() {
 
 function spinner_stop() {
 
-  if [[ ${QUIET} == "true" ]]; then return 0; fi
+  if [[ ${QUIET} == "true" || ${EXEC_TYPE} == "alias" ]]; then return 0; fi
 
   _spinner "stop" "${1}" "${_sp_pid}"
   unset _sp_pid
@@ -224,7 +224,12 @@ function log_break() {
 
   local log_break
 
-  if [[ "${console_display}" == "true" && ${QUIET} == "false" ]]; then
+  if [[ ${EXEC_TYPE} == "alias" ]]; then
+    # if alias, do not log
+    return 0
+  fi
+
+  if [[ ${console_display} == "true" && ${QUIET} == "false" ]]; then
 
     log_break="        ----------------------------------------------------          "
     echo -e "${MAGENTA}${B_DEFAULT}${log_break}${ENDCOLOR}" >&2
@@ -250,7 +255,7 @@ function log_section() {
 
   local message=$1
 
-  if [[ ${QUIET} == "false" ]]; then
+  if [[ ${QUIET} == "false" && ${EXEC_TYPE} != "alias" ]]; then
 
     # Console Display
     echo "" >&2
@@ -281,7 +286,7 @@ function log_subsection() {
 
   local message=$1
 
-  if [[ ${QUIET} == "false" ]]; then
+  if [[ ${QUIET} == "false" && ${EXEC_TYPE} != "alias" ]]; then
 
     # Console Display
     echo "" >&2
@@ -300,7 +305,7 @@ function log_subsection() {
 
 function clear_screen() {
 
-  if [[ ${QUIET} == "false" ]]; then
+  if [[ ${QUIET} == "false" && ${EXEC_TYPE} != "alias" ]]; then
 
     echo -en "\ec" >&2
 
@@ -310,7 +315,7 @@ function clear_screen() {
 
 function clear_last_line() {
 
-  if [[ ${QUIET} == "false" ]]; then
+  if [[ ${QUIET} == "false" && ${EXEC_TYPE} != "alias" ]]; then
 
     #tput cuu1;tput el
 
@@ -334,7 +339,7 @@ function display() {
   COLOR=""
   SPACES=0
 
-  if [[ ${QUIET} == "true" ]]; then return 0; fi
+  if [[ ${QUIET} == "true" || ${EXEC_TYPE} != "alias" ]]; then return 0; fi
 
   while [ $# -ge 1 ]; do
 
@@ -355,7 +360,7 @@ function display() {
       shift
       INDENT=$1
       ;;
-      
+
     --result)
       shift
       RESULT=$1
