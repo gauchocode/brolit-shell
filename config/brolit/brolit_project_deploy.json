@@ -1,0 +1,36 @@
+{
+    "brolit_project_deploy_config_version": "1.2",
+    "project": [
+        {
+            "path": "",
+            "name": "",
+            "stage": "",
+            "type": "",
+            "db_name": "",
+            "db_host": "",
+            "primary_subdomain": "",
+            "secondary_subdomains": [],
+            "nginx_conf": "",
+            "cert_conf": ""
+        }
+    ],
+    "cloudflare": [
+        {
+            "status": "disabled",
+            "config": [
+                {
+                    "email": "",
+                    "api_key": "",
+                    "zone_id": ""
+                }
+            ]
+        }
+    ],
+    "backup_retention": [
+        {
+            "keep_daily": "7",
+            "keep_weekly": "0",
+            "keep_monthly": "0"
+        }
+    ]
+}
