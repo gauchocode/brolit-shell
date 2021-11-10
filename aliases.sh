@@ -24,6 +24,8 @@ source "${SFOLDER}/utils/brolit_configuration_manager.sh"
 # TODO: workaround
 declare -g EXEC_TYPE="alias"
 
+export EXEC_TYPE
+
 brolit_configuration_load "/root/.brolit_conf.json"
 
 BROLIT_CONFIG_PATH="/etc/brolit"
