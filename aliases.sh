@@ -22,11 +22,9 @@ source "${SFOLDER}/libs/apps/firewall_helper.sh"
 source "${SFOLDER}/utils/brolit_configuration_manager.sh"
 
 # TODO: workaround
-declare -g QUIET="true"
+declare -g EXEC_TYPE="alias"
 
 brolit_configuration_load "/root/.brolit_conf.json"
-
-QUIET="false"
 
 BROLIT_CONFIG_PATH="/etc/brolit"
 
