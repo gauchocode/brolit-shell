@@ -144,6 +144,11 @@ function log_event() {
   local message=$2
   local console_display=$3
 
+  if [[ ${EXEC_TYPE} == "alias" ]]; then
+    # if alias, do not log
+    return 0
+  fi
+
   case ${log_type} in
 
   success)
