@@ -17,6 +17,8 @@ source "${SFOLDER}/libs/local/log_and_display_helper.sh"
 
 source "${SFOLDER}/libs/local/packages_helper.sh"
 
+source "${SFOLDER}/libs/apps/firewall_helper.sh"
+
 source "${SFOLDER}/utils/brolit_configuration_manager.sh"
 
 # TODO: workaround
