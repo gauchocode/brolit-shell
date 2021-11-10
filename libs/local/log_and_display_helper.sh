@@ -339,7 +339,7 @@ function display() {
   COLOR=""
   SPACES=0
 
-  if [[ ${QUIET} == "true" || ${EXEC_TYPE} != "alias" ]]; then return 0; fi
+  if [[ ${QUIET} == "true" || ${EXEC_TYPE} == "alias" ]]; then return 0; fi
 
   while [ $# -ge 1 ]; do
 
