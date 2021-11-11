@@ -1580,7 +1580,10 @@ function menu_config_changes_detected() {
     # shellcheck source=../utils/server_setup.sh
     source "${SFOLDER}/utils/server_setup.sh"
 
-    server_prepare
+    # Check global to prevent running the script twice
+    if [[ ${SERVER_PREPARED} == "false" ]]; then
+      server_prepare
+    fi
 
     server_app_setup "${app_setup}"
 
@@ -1609,7 +1612,10 @@ function menu_config_changes_detected() {
         # shellcheck source=../utils/server_setup.sh
         source "${SFOLDER}/utils/server_setup.sh"
 
-        server_prepare
+        # Check global to prevent running the script twice
+        if [[ ${SERVER_PREPARED} == "false" ]]; then
+          server_prepare
+        fi
 
         server_app_setup "${app_setup}"
 
