@@ -17,6 +17,8 @@ function brolit_configuration_load() {
     declare -g DEBUG
     declare -g QUIET
 
+    declare -g SERVER_PREPARED="false"
+
     if [[ -f "${server_config_file}" ]]; then
 
         display --indent 2 --text "- Checking Brolit config file" --result "DONE" --color GREEN
@@ -173,6 +175,7 @@ function brolit_configuration_load() {
 
     # Export vars
     export PROJECTS_PATH
+    export SERVER_PREPARED
     export DEBUG QUIET SKIPTESTS
 
 }
