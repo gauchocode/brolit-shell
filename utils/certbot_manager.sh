@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.71
+# Version: 3.0.72
 #############################################################################
 #
 # Ref: https://certbot.eff.org/docs/using.html

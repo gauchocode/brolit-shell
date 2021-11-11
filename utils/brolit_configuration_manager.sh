@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.71
+# Version: 3.0.72
 ################################################################################
 #
 # Server Config Manager: Brolit server configuration management.
@@ -113,7 +113,7 @@ function brolit_configuration_load() {
 
         log_event "warning" "No backup method enabled" "false"
         display --indent 2 --text "- Backup method selected" --result "NONE" --color RED
-        display --indent 4 --text "Please select at leat on backup method"
+        display --indent 4 --text "Please select at least one backup method"
 
     fi
 
