@@ -110,8 +110,11 @@ function brolit_configuration_load() {
 
     #### if all required vars are disabled, show error
     if [[ ${BACKUP_DROPBOX_STATUS} != "enabled" ]] && [[ ${BACKUP_SFTP_STATUS} != "enabled" ]] && [[ ${BACKUP_LOCAL_STATUS} != "enabled" ]]; then
-        log_event "warning" "No backup method enabled" "true"
-        exit 1
+
+        log_event "warning" "No backup method enabled" "false"
+        display --indent 6 --text "- Backup method selected" --result "NONE" --color RED
+        display --indent 8 --text "Please select at leat on backup method"
+
     fi
 
     ## BACKUPS retention

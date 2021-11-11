@@ -424,6 +424,9 @@ function script_init() {
   log_event "info" "Deleting old script logs" "false"
   display --indent 2 --text "- Deleting old script logs" --result "DONE" --color GREEN
 
+  # Checking required packages
+  package_check_required
+
   # Some globals
   declare -g DPU_F
   declare -g DROPBOX_UPLOADER
@@ -442,9 +445,6 @@ function script_init() {
     # shellcheck source=~/.dropbox_uploader
     source "${DPU_CONFIG_FILE}"
   fi
-
-  # Checking required packages
-  package_check_required
 
   # EXPORT VARS
   export SCRIPT_V VPSNAME BROLIT_CONFIG_PATH TMP_DIR SFOLDER DPU_F DROPBOX_UPLOADER PROJECTS_PATH BLACKLISTED_SITES BLACKLISTED_DATABASES WSERVER MAIN_VOL PACKAGES PHP_CF
