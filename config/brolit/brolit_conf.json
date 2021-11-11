@@ -2,7 +2,7 @@
     "BROLIT_SETUP": {
         "config": [
             {
-                "version": "3.3",
+                "version": "3.4",
                 "debug": "true",
                 "quiet": "false",
                 "skip_test": "true",
@@ -12,6 +12,7 @@
     },
     "SERVER_CONFIG": {
         "timezone": "America/Argentina/Buenos_Aires",
+        "type": "production",
         "config": [
             {
                 "webserver": "disabled",
