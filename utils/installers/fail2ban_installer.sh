@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://example.com
-# Version: 3.0.71
+# Version: 3.0.72
 ################################################################################
 
 function fail2ban_check_if_installed() {
