@@ -286,7 +286,7 @@ function log_subsection() {
 
   local message=$1
 
-  if [[ ${QUIET} == "false" && ${EXEC_TYPE} != "alias" ]]; then
+  if [[ ${QUIET} != "true" && ${EXEC_TYPE} != "alias" ]]; then
 
     # Console Display
     echo "" >&2
@@ -305,7 +305,7 @@ function log_subsection() {
 
 function clear_screen() {
 
-  if [[ ${QUIET} == "false" && ${EXEC_TYPE} != "alias" ]]; then
+  if [[ ${QUIET} != "true" && ${EXEC_TYPE} != "alias" ]]; then
 
     echo -en "\ec" >&2
 
@@ -315,7 +315,7 @@ function clear_screen() {
 
 function clear_last_line() {
 
-  if [[ ${QUIET} == "false" && ${EXEC_TYPE} != "alias" ]]; then
+  if [[ ${QUIET} != "true" && ${EXEC_TYPE} != "alias" ]]; then
 
     #tput cuu1;tput el
 
