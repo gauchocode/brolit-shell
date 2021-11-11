@@ -21,6 +21,9 @@ function server_prepare() {
     # Packages upgrade
     package_upgrade_all
 
+    # Change global
+    SERVER_PREPARED="true"
+
 }
 
 function server_app_setup() {
