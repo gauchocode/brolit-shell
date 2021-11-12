@@ -93,10 +93,14 @@ function _setup_globals_and_options() {
   declare -g MHOST="localhost"
   declare -g MUSER="root"
 
-  #MySQL credentials file
+  # MySQL credentials file
   declare -g MYSQL_CONF="/root/.my.cnf"
   declare -g MYSQL
   declare -g MYSQLDUMP
+
+  # Apps globals
+  declare -g TAR
+  declare -g FIND
 
   # Main partition
   declare -g MAIN_VOL
@@ -130,6 +134,35 @@ function _setup_globals_and_options() {
   if [[ ! -d "${TMP_DIR}/${NOW}" ]]; then
     mkdir "${TMP_DIR}/${NOW}"
   fi
+
+  # TAR
+  TAR="$(command -v tar)"
+
+  # FIND
+  FIND="$(command -v find)"
+
+  # CERTBOT
+  CERTBOT="$(command -v certbot)"
+
+  # MySQL
+  MYSQL="$(command -v mysql)"
+  if [[ -x ${MYSQL} ]]; then
+
+    MYSQLDUMP="$(command -v mysqldump)"
+
+    if [[ -f ${MYSQL_CONF} ]]; then
+      # Append login parameters to command
+      MYSQL_ROOT="${MYSQL} --defaults-file=${MYSQL_CONF}"
+      MYSQLDUMP_ROOT="${MYSQLDUMP} --defaults-file=${MYSQL_CONF}"
+
+    fi
+
+  fi
+
+  # PHP
+  PHP="$(command -v php)"
+
+  export TAR FIND MYSQLDUMP MYSQL_ROOT MYSQLDUMP_ROOT PHP CERTBOT MySQL_CF MYSQL MYSQL_CONF DROPBOX_FOLDER MAIN_VOL TMP_DIR
 
 }
 
@@ -199,6 +232,8 @@ function _setup_colors_and_styles() {
     B_BLACK='' B_RED='' B_GREEN='' B_YELLOW='' B_ORANGE='' B_MAGENTA='' B_CYAN='' B_WHITE='' B_ENDCOLOR='' B_DEFAULT=''
 
   fi
+
+  export BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR
 
 }
 
@@ -447,10 +482,9 @@ function script_init() {
   fi
 
   # EXPORT VARS
-  export SCRIPT_V VPSNAME BROLIT_CONFIG_PATH TMP_DIR SFOLDER DPU_F DROPBOX_UPLOADER PROJECTS_PATH BLACKLISTED_SITES BLACKLISTED_DATABASES WSERVER MAIN_VOL PACKAGES PHP_CF
-  export LENCRYPT_CF MySQL_CF MYSQL MYSQL_CONF MYSQLDUMP MYSQL_ROOT MYSQLDUMP_ROOT TAR FIND DROPBOX_FOLDER MAILCOW_DIR MAILCOW_TMP_BK MHOST MUSER NOW NOWDISPLAY DAYSAGO
+  export SCRIPT_V VPSNAME BROLIT_CONFIG_PATH SFOLDER DPU_F DROPBOX_UPLOADER BLACKLISTED_SITES BLACKLISTED_DATABASES WSERVER PACKAGES PHP_CF
+  export LENCRYPT_CF DROPBOX_FOLDER MAILCOW_DIR MAILCOW_TMP_BK MHOST MUSER NOW NOWDISPLAY DAYSAGO
   export DISK_U ONE_FILE_BK LOCAL_IP SERVER_IP SERVER_IPv6 NOTIFICATION_EMAIL_SMTP_SERVER NOTIFICATION_EMAIL_SMTP_PORT NOTIFICATION_EMAIL_SMTP_TLS NOTIFICATION_EMAIL_SMTP_USER NOTIFICATION_EMAIL_SMTP_UPASS
-  export BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR
   export LOG DEBUG SKIPTESTS EXEC_TYPE
   export BROLIT_CONFIG_FILE
 
