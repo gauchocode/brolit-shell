@@ -182,6 +182,28 @@
                 ]
             }
         ],
+        "python": [
+            {
+                "status": "disabled",
+                "version": "default",
+                "config": [
+                    {
+                        "pip": "enabled"
+                    }
+                ]
+            }
+        ],
+        "nodejs": [
+            {
+                "status": "disabled",
+                "version": "default",
+                "config": [
+                    {
+                        "npm": "enabled"
+                    }
+                ]
+            }
+        ],
         "mariadb": [
             {
                 "status": "disabled",
