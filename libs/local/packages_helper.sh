@@ -199,10 +199,6 @@ function package_check_required() {
 
   log_event "info" "Checking required packages ..." "false"
 
-  # Globals
-  declare -g TAR
-  declare -g FIND
-
   # Install packages if not
   package_install_if_not "pv"
   package_install_if_not "bc"
@@ -219,12 +215,6 @@ function package_check_required() {
   package_install_if_not "bat"
   package_install_if_not "ncdu"
   package_install_if_not "ppa-purge"
-
-  # TAR
-  TAR="$(command -v tar)"
-
-  # FIND
-  FIND="$(command -v find)"
 
   # Log
   display --indent 6 --text "- Checking script dependencies" --result "DONE" --color GREEN
