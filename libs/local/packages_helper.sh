@@ -220,7 +220,9 @@ function package_check_required() {
   display --indent 6 --text "- Checking script dependencies" --result "DONE" --color GREEN
   log_event "info" "All required packages are installed" "false"
 
+  # Break and space
   log_break "true"
+  echo ""
 
 }
 

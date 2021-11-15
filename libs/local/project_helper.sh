@@ -245,7 +245,12 @@ function project_get_stage_from_domain() {
   project_stages="demo stage test beta dev"
 
   # Trying to extract project state from domain
-  possible_project_stage="$(get_subdomain_part "${project_domain}" | cut -d "." -f 1)"
+  subdomain_part="$(get_subdomain_part "${project_domain}")"
+  possible_project_stage="$(echo "${subdomain_part}" | cut -d "." -f 1)"
+
+  # Log
+  log_event "debug" "subdomain_part=${subdomain_part}" "false"
+  log_event "debug" "possible_project_stage=${possible_project_stage}" "false"
 
   if [[ ${project_stages} != *"${possible_project_stage}"* ]]; then
 
