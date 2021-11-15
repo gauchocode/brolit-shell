@@ -252,7 +252,7 @@ function project_get_stage_from_domain() {
   log_event "debug" "subdomain_part=${subdomain_part}" "false"
   log_event "debug" "possible_project_stage=${possible_project_stage}" "false"
 
-  if [[ ${project_stages} != *"${possible_project_stage}"* ]]; then
+  if [[ ${project_stages} != *"${possible_project_stage}"* || ${possible_project_stage} == "" ]]; then
 
     possible_project_stage="prod"
 
