@@ -167,6 +167,9 @@ function brolit_configuration_load() {
         exit 1
     fi
 
+    ### redis
+    _brolit_configuration_load_redis "${server_config_file}"
+
     ### certbot
     _brolit_configuration_load_certbot "${server_config_file}"
 
@@ -728,7 +731,7 @@ function _brolit_configuration_load_mysql() {
 
 }
 
-function _brolit_configuration_load_mysql() {
+function _brolit_configuration_load_redis() {
 
     local server_config_file=$1
 
