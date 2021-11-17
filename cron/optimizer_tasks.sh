@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.72
+# Version: 3.1
 ################################################################################
 
 ### Main dir check
@@ -26,7 +26,7 @@ optimize_pdfs
 
 delete_old_logs
 
-remove_old_packages
+packages_remove_old
 
 optimize_ram_usage
 

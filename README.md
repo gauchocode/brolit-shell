@@ -1,6 +1,6 @@
 # BROLIT Shell
 
-BROLIT Shell is a **BASH** based cloud server control software which can be used to quickly install a LEMP Stack on Ubuntu 18.04 and 20.04 servers, automate and restore backups, install PHP projects, and other IT tasks.
+BROLIT Shell is a **BASH** based cloud server control software which can be used to quickly install a LEMP Stack on Ubuntu 18.04 and 20.04 servers, automate and restore backups, install PHP projects, and some usefull IT tasks.
 
 ![ScreenShot](./screenshot.jpg)
 
@@ -29,7 +29,7 @@ BROLIT Shell is a **BASH** based cloud server control software which can be used
 * LEMP automated installer (Nginx, MySQL/MariaDB, PHP).
 * Files and database backups (MySQL or MariaDB).
 * Upload backups to Dropbox (API v2).
-* Restore backups from Dropbox or URL.
+* Restore backups from Dropbox, URL or local files.
 * WordPress automated installer.
 * WP-CLI actions helper.
 * Let's Encrypt actions helper.
@@ -39,7 +39,7 @@ BROLIT Shell is a **BASH** based cloud server control software which can be used
 * Cloudflare support (via API).
 * PHP-FPM optimization tool (beta).
 * Image optimization tools.
-* Fail2ban support.
+* UFW and Fail2ban support.
 * Security Tools with malware scanners.
 * IP/Domain blacklist checker.
 * Benchmark tool.
@@ -59,23 +59,7 @@ Works on Ubuntu 18.04 LTS and Ubuntu 20.04 LTS.
 
 The script needs to be runned by root.
 
-The script is based on this standard:
-
-If you want to create a new web project for mydomain.com it will create:
-* A database with name 'MYDOMAIN_STAGE' (the script will ask you the project stage). Ex: mydomain_prod
-* A database user with name 'MYDOMAIN_user'. Ex: mydomain_user
-* A directory for the project files named 'mydomain.com'.
-* A nginx configuration for 'mydomain.com'.
-
-So, the restore script only works if this nomenclature is respected.
-
 ## Installation
-
-If git is not installed:
-
-```bash
-sudo apt-get update && sudo apt-get install git -y
-```
 
 Cloning repo:
 
@@ -103,7 +87,13 @@ Run it:
 ./runner.sh
 ```
 
-The first time you run `runner.sh`, you'll be guided through a wizard in order to configure it. This configuration will be stored in `~/.brolit_conf.json`.
+The first time you run `runner.sh`, it will create the startup config file: `~/.brolit_conf.json`.
+Open and edit this json file. 
+
+You can find some example configurations here: 
+[.brolit_conf.json - lemp insecured](./docs/.brolit_conf-lemp_ins.json)
+[.brolit_conf.json - lemp secured](./docs/.brolit_conf-lemp_sec.json)
+[.brolit_conf.json - lemp custom](./docs/.brolit_conf-lemp_custom.json)
 
 ## Update
 
