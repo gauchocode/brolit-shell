@@ -35,13 +35,11 @@ function security_clamav_scan() {
   # Update clamav database
   freshclam
 
+  # Log
+  log_subsection "Malware Scan"
+
+  display --indent 6 --text "- Searching for malware"
   log_event "info" "Running clamscan on ${directory}" "false"
-
-  if [[ ! -d "${SFOLDER}/reports" ]]; then
-
-    mkdir "${SFOLDER}/reports"
-
-  fi
 
   report_file="${SFOLDER}/reports/clamav-results-${timestamp}.log"
 
@@ -50,22 +48,32 @@ function security_clamav_scan() {
   # --infected (Only print infected files)
   # --no-summary (Disable summary at end of scanning)
 
-  log_event "debug" "Running: clamscan --recursive --infected --no-summary ${directory} | grep FOUND >>${report_file}" "false"
+  log_event "debug" "Running: clamscan --recursive --infected --no-summary ${directory} | grep -i 'FOUND' >>${report_file}" "false"
 
-  clamscan_result="$(clamscan --recursive --infected --no-summary "${directory}" | grep FOUND >>"${report_file}")"
+  clamscan_result="$(clamscan --recursive --infected --no-summary "${directory}" | grep -i 'FOUND' >>"${report_file}")"
 
   # Check if file is empty
   if [[ -s ${report_file} ]]; then
 
-    rm --force "${report_file}"
+    # The file is not-empty.
+    clamscan_result="true"
 
-    clamscan_result="false"
-    log_event "info" "No malware found on ${directory}" "false"
+    # Log
+    display --indent 6 --text "- Searching for malware" --result "DONE" --color GREEN
+    display --indent 8 --text "Malware found on ${directory}" --tcolor RED
+    log_event "warning" "Malware found on ${directory}. Please check result file: ${report_file}" "false"
 
   else
 
-    clamscan_result="true"
-    log_event "warning" "Malware found on ${directory}. Please check result file: ${report_file}" "false"
+    # The file is empty.
+    rm --force "${report_file}"
+
+    clamscan_result="false"
+
+    # Log
+    display --indent 6 --text "- Searching for malware" --result "DONE" --color GREEN
+    display --indent 8 --text "No malware found on ${directory}"
+    log_event "info" "No malware found on ${directory}" "false"
 
   fi
 

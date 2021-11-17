@@ -385,12 +385,18 @@ function script_init() {
   local timestamp
   local path_log
   local log_name
+  local path_reports
 
   # Log
   timestamp="$(date +%Y%m%d_%H%M%S)"
   path_log="${SFOLDER}/log"
   if [[ ! -d "${SFOLDER}/log" ]]; then
     mkdir "${SFOLDER}/log"
+  fi
+  # Reports
+  path_reports="${SFOLDER}/reports"
+  if [[ ! -d "${path_reports}" ]]; then
+    mkdir "${path_reports}"
   fi
 
   # Check if the script receives first parameter "--sl"
@@ -455,6 +461,7 @@ function script_init() {
 
   # Clean old log files
   find "${path_log}" -name "*.log" -type f -mtime +7 -print -delete >>"${LOG}"
+  find "${path_reports}" -name "*.log" -type f -mtime +7 -print -delete >>"${LOG}"
   # Log
   log_event "info" "Deleting old script logs" "false"
   display --indent 2 --text "- Deleting old script logs" --result "DONE" --color GREEN
