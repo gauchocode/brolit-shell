@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://example.com
-# Version: 3.0.72
+# Version: 3.1
 ################################################################################
 
 function php_get_standard_distro_version() {

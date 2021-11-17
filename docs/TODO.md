@@ -1,6 +1,6 @@
 # TODO List
 
-## For release 3.1
+## For release 3.2
 
 ### Know Bugs
 
@@ -18,7 +18,6 @@
 ### Need improvements
 
 - [ ] Core: need to check if select domain is a root domain or www domain, and ask if the user want to create a redirection.
-- [ ] Core: create a way to check if nginx, php, and other parameters are correct before run the script.
 - [ ] Nginx-LetsEncrypt: regenerate nginx server configuration projects fails after running certbot.
 - [ ] Nginx-LetsEncrypt: When copy or generate a new nginx server configuration need to check certificates.
 - [ ] LetsEncrypt: need a better way to re-install a certificate after a website migration.
@@ -31,12 +30,10 @@
 - [ ] Nginx: Add http2 support on nginx server config files.
 - [ ] Nginx: Globals configs support.
 - [ ] PHP: Option to enable or disable OpCache.
-- [ ] Installers: On LEMP setup, after basic installation must init plugin options wizard before ask to install aditional packages.
 
 ### In Progress
 
-- [ ] Core: Let configure all things via JSON files.
-- [ ] Core: Refactor settings config (change to a json config file).
+- [ ] Core: ufw and fail2ban support.
 - [ ] Core: Stop netdata alerts when a backup or virus analysis is started.
 - [ ] Core: Generate project config file (/etc/brolit/domain_conf.json).
 - [ ] Server Setup: option to run without menu.
@@ -59,41 +56,31 @@
 - [ ] Cloudflare: the script should ask you if you want to work with Cloudflare support (also when you create a new project).
 - [ ] WP-CLI: Better error handling.
 
-### Done ✓
+## For release 3.3
 
-- [x] WordPress: support for multiple WP installations inside the main project directory.
-- [x] Nginx: New option to put a website offline/online.
-- [x] Log/Display: Better log handling and display improvements.
-- [x] When a certificate expired, the email subject didn't show the Warning message.
-- [x] Project Utils: A new option "Create project database" to create a database, and a database user for an specific project.
-- [x] MySQL: when create a new user, ask what kind of connection do you want: localhost or % (any host).
-- [x] Notifications: malware scans and others scheduled options.
-
-## For release 3.2
-
-- [ ] Core: ufw and fail2ban support.
 - [ ] Core: Let configure temp. backup directory.
 - [ ] Core: Docker support (backup, restore, list containers, status).
 - [ ] Core: Resolve small "TODOs" comments on the project.
 - [ ] Core: Prevent execute the script more than once at a time (maybe a .lock file?).
 - [ ] Core: Better structure of deleted projects on dropbox.
 - [ ] Core: Add an option to backup all and prepare VPS to be offline/deleted (add a VPS offline structure on dropbox).
+- [ ] Core: create a way to check if nginx, php, and mysql are configured with the script recommendations.
 - [ ] Core: make new standard directory structure for projects "${PROJECTS_PATH}/${ROOT_DOMAIN}/${SUBDOMAIN}/public". ?
       Logs could be stored on "${PROJECTS_PATH}/${ROOT_DOMAIN}/${SUBDOMAIN}/log"
 - [ ] Core: maybe with could ask for database user nomenclature. Today is "PROJECTNAME_user" and it could be "PROJECTNAME_PROJECTSTATE_user".
 - [ ] Backups: Refactor for backup/restore: 5 options (server_config, site_config, site, database and project).
-- [ ] Restore: Finish function restore_config_files_from_dropbox.
+- [ ] Restore: Refactor function restore_config_files_from_dropbox.
+- [ ] Nginx: Multidomain support for nginx.
 - [ ] MySQL: Rename database (with and without WP).
 - [ ] Nginx: Add IPv6 support: https://geekflare.com/es/enable-ipv6-nginx-apache/
 
-## For release 3.3
+## For release 3.4
 
 - [ ] Notifications: After install a new project (with credentials info).
 - [ ] Backups: On backup failure, the email must show what files fails and what files are correct backuped.
 - [ ] Backups: Implement on restore_from_backup easy way to restore all sites.
 - [ ] Scheduled options: backups, malware scans, image optimizations and wp actions (core and plugins updates, checksum and wp re-installation).
 - [ ] Refactor of RESTORE_FROM_SOURCE and complete server config restore.
-- [ ] Nginx: Multidomain support for nginx.
 - [ ] Nginx: New option to put website on maintenance (maybe rename index.html/php and create a new HTML).
 - [ ] Wordpress: Rollback plugins and core updates (wpcli_rollback_plugin_version)
 - [ ] SFTP: Option to create a user jail on sftp_create_user.
@@ -101,7 +88,7 @@
 - [ ] Core: Add react-project support:
         https://www.digitalocean.com/community/tutorials/how-to-deploy-a-react-application-with-nginx-on-ubuntu-20-04
 
-## For release 3.4
+## For release 3.5
 
 - [ ] PHP: php_reconfigure refactor (replace strings instead of replace entired config files).
 - [ ] WordPress: Fallback for replace strings on wp database (if wp-cli fails, use old script version).
@@ -116,7 +103,7 @@
 - [ ] Network: implements hetzner network configuration.
       https://docs.hetzner.com/cloud/networks/server-configuration/
 
-## For release 3.5
+## For release 3.6
 
 - [ ] Backups: Support for dailys, weeklys y monthlys backups.
 - [ ] Backups: Directory Blacklist with whiptail (for backup configuration).
@@ -128,7 +115,7 @@
 - [ ] IT Utils: Better malware detection with https://github.com/rfxn/linux-malware-detect
 - [ ] Addon: Fileover support with hetzner? https://community.hetzner.com/tutorials/failover-script
 
-## For release 3.6
+## For release 3.7
 
 - [ ] Backups: Expand Duplicity support with a restore option.
 - [ ] Backups: Rsync support on mounted device or with SSH config.

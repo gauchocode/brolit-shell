@@ -1,0 +1,309 @@
+{
+    "BROLIT_SETUP": {
+        "config": [
+            {
+                "version": "3.4",
+                "debug": "true",
+                "quiet": "false",
+                "skip_test": "true",
+                "check_pkgs": "false"
+            }
+        ]
+    },
+    "SERVER_CONFIG": {
+        "timezone": "America/Argentina/Buenos_Aires",
+        "type": "production",
+        "config": [
+            {
+                "webserver": "enabled",
+                "database": "enabled"
+            }
+        ]
+    },
+    "PROJECTS": {
+        "path": "/var/www",
+        "config_path": "/etc/brolit"
+    },
+    "BACKUPS": {
+        "directories": [
+            {
+                "dir_1": "/var/www",
+                "dir_2": ""
+            }
+        ],
+        "methods": [
+            {
+                "dropbox": [
+                    {
+                        "status": "enabled",
+                        "config": [
+                            {
+                                "file": "/root/.dropbox_uploader"
+                            }
+                        ]
+                    }
+                ],
+                "sftp": [
+                    {
+                        "status": "disabled",
+                        "config": [
+                            {
+                                "server_ip": "",
+                                "server_port": "",
+                                "server_user": "",
+                                "server_user_password": "",
+                                "server_remote_path": ""
+                            }
+                        ]
+                    }
+                ],
+                "local": [
+                    {
+                        "status": "disabled",
+                        "config": [
+                            {
+                                "backup_path": ""
+                            }
+                        ]
+                    }
+                ],
+                "duplicity": [
+                    {
+                        "status": "disabled",
+                        "config": [
+                            {
+                                "backup_destination_path": "",
+                                "backup_frequency": "7D",
+                                "backup_full_life": "14D"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "retention": [
+            {
+                "keep_daily": "7",
+                "keep_weekly": "0",
+                "keep_monthly": "0"
+            }
+        ]
+    },
+    "NOTIFICATIONS": {
+        "email": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "maila": "",
+                        "smtp_server": "",
+                        "smtp_port": "",
+                        "smtp_tls": "",
+                        "smtp_user": "",
+                        "smtp_user_pass": ""
+                    }
+                ]
+            }
+        ],
+        "telegram": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "NOTIFICATION_TELEGRAM_BOT_TOKEN": "",
+                        "NOTIFICATION_TELEGRAM_CHAT_ID": ""
+                    }
+                ]
+            }
+        ]
+    },
+    "FIREWALL": {
+        "config": [
+            {
+                "status": "disabled",
+                "app_list": [
+                    {
+                        "ssh": "allow",
+                        "http": "allow",
+                        "https": "allow",
+                        "465": "disallow",
+                        "587": "disallow",
+                        "2812": "disallow",
+                        "8080": "disallow",
+                        "19999": "disallow"
+                    }
+                ]
+            }
+        ]
+    },
+    "SUPPORT": {
+        "cloudflare": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "email": "",
+                        "api_key": ""
+                    }
+                ]
+            }
+        ],
+        "mailcow": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "mailcow_path": "/opt/mailcow-dockerized"
+                    }
+                ]
+            }
+        ]
+    },
+    "PACKAGES": {
+        "nginx": [
+            {
+                "status": "enabled",
+                "version": "default",
+                "config": [
+                    {
+                        "port": "default"
+                    }
+                ]
+            }
+        ],
+        "php": [
+            {
+                "status": "enabled",
+                "version": "default",
+                "config": [
+                    {
+                        "opcode": "disabled"
+                    }
+                ]
+            }
+        ],
+        "python": [
+            {
+                "status": "disabled",
+                "version": "default",
+                "config": [
+                    {
+                        "pip": "enabled"
+                    }
+                ]
+            }
+        ],
+        "nodejs": [
+            {
+                "status": "disabled",
+                "version": "default",
+                "config": [
+                    {
+                        "npm": "enabled"
+                    }
+                ]
+            }
+        ],
+        "mariadb": [
+            {
+                "status": "disabled",
+                "version": "default",
+                "config": [
+                    {
+                        "port": "default"
+                    }
+                ]
+            }
+        ],
+        "mysql": [
+            {
+                "status": "enabled",
+                "version": "default",
+                "config": [
+                    {
+                        "port": "default"
+                    }
+                ]
+            }
+        ],
+        "redis": [
+            {
+                "status": "disabled",
+                "version": "default",
+                "config": [
+                    {
+                        "subdomain": "",
+                        "user": "",
+                        "user_pass": "",
+                        "port": ""
+                    }
+                ]
+            }
+        ],
+        "certbot": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "email": ""
+                    }
+                ]
+            }
+        ],
+        "monit": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "monit_maila": "",
+                        "monit_httpd": "disabled",
+                        "monit_services": [
+                            {
+                                "system": "enabled",
+                                "nginx": "enabled",
+                                "phpfpm": "enabled",
+                                "mysql": "enabled",
+                                "redis": "disabled"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "netdata": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "subdomain": "",
+                        "user": "",
+                        "user_pass": "",
+                        "alarm_level": ""
+                    }
+                ]
+            }
+        ],
+        "cockpit": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "subdomain": "",
+                        "port": "9090"
+                    }
+                ]
+            }
+        ],
+        "custom": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "lynis": "true",
+                        "clamav": "true"
+                    }
+                ]
+            }
+        ]
+    }
+}
