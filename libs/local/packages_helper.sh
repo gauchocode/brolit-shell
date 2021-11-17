@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.72
+# Version: 3.1
 ################################################################################
 #
 # Packages Helper: Perform apt actions.
@@ -227,44 +227,6 @@ function package_check_required() {
 }
 
 ################################################################################
-# Timezone configuration
-#
-# Arguments:
-#   none
-#
-# Outputs:
-#   0 if ok, 1 on error.
-################################################################################
-
-# TODO: move to system_helper.sh ?
-function timezone_configuration() {
-
-  # Configure timezone
-  local configured_timezone
-
-  configured_timezone="$(cat /etc/timezone)"
-
-  if [[ "${configured_timezone}" != "${SERVER_TIMEZONE}" ]]; then
-
-    echo "${SERVER_TIMEZONE}" | tee /etc/timezone
-    dpkg-reconfigure --frontend noninteractive tzdata
-
-    # Log
-    clear_last_line
-    clear_last_line
-    clear_last_line
-    clear_last_line
-    clear_last_line
-    clear_last_line
-    log_event "info" "Setting Timezone: ${SERVER_TIMEZONE}" "false"
-    display --indent 6 --text "- Timezone configuration" --result "DONE" --color GREEN
-    display --indent 8 --text "${SERVER_TIMEZONE}"
-
-  fi
-
-}
-
-################################################################################
 # Remove old packages
 #
 # Arguments:
@@ -274,7 +236,7 @@ function timezone_configuration() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function remove_old_packages() {
+function packages_remove_old() {
 
   # Log
   log_event "info" "Cleanning old system packages ..." "false"

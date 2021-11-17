@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.72
+# Version: 3.1
 ################################################################################
 #
 # Server and image optimizations Manager.
@@ -53,7 +53,7 @@ function server_optimizations_menu() {
     fi
     if [[ ${chosen_server_optimizations_options} == *"04"* ]]; then
       # Remove old packages from system
-      remove_old_packages
+      packages_remove_old
 
     fi
     if [[ ${chosen_server_optimizations_options} == *"05"* ]]; then

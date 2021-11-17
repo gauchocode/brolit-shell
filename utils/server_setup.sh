@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.0.72
+# Version: 3.1
 ################################################################################
 #
 # Server Setup: Perform server setup actions.
@@ -13,7 +13,7 @@ function server_prepare() {
     log_subsection "Preparing server"
 
     # Configuring packages
-    timezone_configuration
+    system_timezone_configuration
 
     # Packages update
     package_update
