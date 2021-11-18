@@ -125,6 +125,8 @@ function package_is_installed() {
 
 function package_install() {
 
+  local package=$1
+
   # Log
   log_event "info" "Installing ${package} ..." "false"
   display --indent 6 --text "- Installing ${package}"
