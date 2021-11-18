@@ -89,8 +89,10 @@ function nodejs_installer() {
 
     # Updating Repos
     display --indent 6 --text "- Updating repositories"
+    
     apt-get --yes update -qq >/dev/null
-    clear_last_line
+
+    clear_previous_lines "1"
     display --indent 6 --text "- Updating repositories" --result "DONE" --color GREEN
 
     # Installing nodejs
@@ -101,7 +103,7 @@ function nodejs_installer() {
     apt-get --yes install nodejs npm -qq >/dev/null
 
     # Log
-    clear_last_line
+    clear_previous_lines "1"
     display --indent 6 --text "- Installing nodejs and dependencies" --result "DONE" --color GREEN
     log_event "info" "nodejs installation finished"
 
@@ -119,7 +121,7 @@ function nodejs_purge() {
     apt-get --yes purge nodejs npm -qq >/dev/null
 
     # Log
-    clear_last_line
+    clear_previous_lines "1"
     display --indent 6 --text "- Removing nodejs and libraries" --result "DONE" --color GREEN
     log_event "info" "nodejs removed"
 

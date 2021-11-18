@@ -25,7 +25,7 @@ function test_mail_certificates_section() {
     # Sending email notification
     mail_send_notification "${email_subject}" "${email_content}"
 
-    clear_last_line
+    clear_previous_lines "1"
     display --indent 6 --text "- test_mail_certificates_section" --result "DONE" --color WHITE
 
 }
@@ -46,7 +46,7 @@ function test_mail_package_section() {
     # Sending email notification
     mail_send_notification "${email_subject}" "${email_content}"
 
-    clear_last_line
+    clear_previous_lines "1"
     display --indent 6 --text "- test_mail_package_section" --result "DONE" --color WHITE
 
 }

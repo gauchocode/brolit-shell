@@ -418,8 +418,7 @@ function php_fpm_optimizations() {
 
     [Yy]*)
 
-      clear_last_line
-      clear_last_line
+      clear_previous_lines "2"
 
       sed -ie "s|^pm\.max_children =.*$|pm\.max_children = ${PM_MAX_CHILDREN}|g" "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
       sed -ie "s|^pm\.start_servers =.*$|pm\.start_servers = ${PM_START_SERVERS}|g" "/etc/php/${PHP_V}/fpm/pool.d/www.conf"

@@ -255,7 +255,7 @@ function project_manager_menu_new_project_type_utils() {
 
         gtmetrix_results_url="$(echo "${gtmetrix_result}" | grep -Po '(?<=Report:)[^"]*' | head -1 | cut -d " " -f 2)"
 
-        clear_last_line
+        clear_previous_lines "1"
         display --indent 2 --text "- Testing project ${URL_TO_TEST}" --result DONE --color GREEN
         display --indent 4 --text "Please check results on ${MAGENTA}${gtmetrix_results_url}${ENDCOLOR}"
         #display --indent 4 --text "Please check results on log file" --tcolor MAGENTA

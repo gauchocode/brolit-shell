@@ -57,7 +57,7 @@ function php_installer() {
     apt-get --yes install "php${php_v}-fpm" "php${php_v}-mysql" "php-imagick" "php${php_v}-xml" "php${php_v}-cli" "php${php_v}-curl" "php${php_v}-mbstring" "php${php_v}-gd" "php${php_v}-intl" "php${php_v}-zip" "php${php_v}-bz2" "php${php_v}-bcmath" "php${php_v}-soap" "php${php_v}-dev" "php-pear" -qq >/dev/null
 
     # Log
-    clear_last_line
+    clear_previous_lines "1"
     display --indent 6 --text "- Installing php-${php_v} and libraries" --result "DONE" --color GREEN
     log_event "info" "php-${php_v} installed" "false"
 
@@ -129,14 +129,13 @@ function mail_utils_installer() {
 
     pear channel-update pear.php.net
 
-    clear_last_line
-    clear_last_line
+    clear_previous_lines "2"
 
     # Install
     pear -q install mail mail_mime net_smtp >/dev/null
 
     # Log
-    clear_last_line
+    clear_previous_lines "1"
     display --indent 6 --text "- Installing mail smtp" --result "DONE" --color GREEN
     log_event "info" "mail mail_mime and net_smtp installed" "false"
 
@@ -154,7 +153,7 @@ function php_purge_all_installations() {
   apt-get --yes purge php* -qq >/dev/null
 
   # Log
-  clear_last_line
+  clear_previous_lines "1"
   display --indent 6 --text "- Purging PHP and libraries" --result "DONE" --color GREEN
   log_event "info" "PHP purged!" "false"
 
@@ -172,7 +171,7 @@ function php_purge_installation() {
   apt-get --yes purge "php${PHP_V}-fpm" "php${PHP_V}-mysql" php-xml "php${PHP_V}-xml" "php${PHP_V}-cli" "php${PHP_V}-curl" "php${PHP_V}-mbstring" "php${PHP_V}-gd" php-imagick "php${PHP_V}-intl" "php${PHP_V}-zip" "php${PHP_V}-bz2" php-bcmath "php${PHP_V}-soap" "php${PHP_V}-dev" php-pear -qq >/dev/null
 
   # Log
-  clear_last_line
+  clear_previous_lines "1"
   log_event "info" "php-${PHP_V} and libraries deleted" "false"
   display --indent 6 --text "- Removing PHP-${PHP_V} and libraries" --result "DONE" --color GREEN
 

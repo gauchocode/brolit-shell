@@ -345,7 +345,7 @@ function nginx_server_change_phpv() {
     sed -i "s#${current_php_v}#${new_php_v}#" "${nginx_server_file}"
 
     # Log
-    clear_last_line
+    clear_previous_lines "1"
     display --indent 6 --text "- Changing PHP version on nginx server file" --result "DONE" --color GREEN
     display --indent 8 --text "PHP version changed to ${new_php_v}"
     log_event "info" "PHP version for ${nginx_server_file} changed from ${current_php_v} to ${new_php_v}" "false"

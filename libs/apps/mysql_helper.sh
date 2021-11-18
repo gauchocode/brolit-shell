@@ -146,7 +146,7 @@ function mysql_test_user_credentials() {
     if [[ ${mysql_result} -eq 0 ]]; then
 
         # Log
-        clear_last_line
+        clear_previous_lines "1"
         display --indent 6 --text "- Testing MySQL user credentials" --result "DONE" --color GREEN
         log_event "info" " Testing MySQL user credentials. User '${db_user}' and pass '${db_user_psw}'" "false"
 
@@ -155,7 +155,7 @@ function mysql_test_user_credentials() {
     else
 
         # Log
-        clear_last_line
+        clear_previous_lines "1"
         display --indent 6 --text "- Testing MySQL user credentials" --result "FAIL" --color RED
         log_event "error" "Something went wrong testing MySQL user credentials. User '${db_user}' and pass '${db_user_psw}'" "false"
         log_event "debug" "Last command executed: ${MYSQL} -u${db_user} -p${db_user_psw} -e ;" "false"
@@ -342,7 +342,7 @@ function mysql_user_create() {
     if [[ ${mysql_result} -eq 0 ]]; then
 
         # Log
-        clear_last_line
+        clear_previous_lines "1"
         display --indent 6 --text "- Creating MySQL user ${db_user}" --result "DONE" --color GREEN
 
         if [[ ${db_user_psw} != "" ]]; then
@@ -356,7 +356,7 @@ function mysql_user_create() {
     else
 
         # Log
-        clear_last_line;clear_last_line # If fails, need to clear one more time
+        clear_previous_lines "2"
         display --indent 6 --text "- Creating MySQL user ${db_user}" --result "FAIL" --color RED
         display --indent 8 --text "Maybe the user already exists. Please read the log file." --tcolor RED
 
@@ -410,7 +410,7 @@ function mysql_user_delete() {
     if [[ ${mysql_result} -eq 0 ]]; then
 
         # Log
-        clear_last_line
+        clear_previous_lines "1"
         log_event "info" " Database user ${db_user} deleted" "false"
         log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
         display --indent 6 --text "- Deleting user ${db_user}" --result "DONE" --color GREEN
@@ -420,7 +420,7 @@ function mysql_user_delete() {
     else
 
         # Log
-        clear_last_line
+        clear_previous_lines "1"
         log_event "error" "Something went wrong deleting user: ${db_user}." "false"
         log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
         display --indent 6 --text "- Deleting ${db_user} user in MySQL" --result "FAIL" --color RED
@@ -599,7 +599,7 @@ function mysql_user_grant_privileges() {
     if [[ ${mysql_result} -eq 0 ]]; then
 
         # Log
-        clear_last_line
+        clear_previous_lines "1"
         log_event "info" "Privileges granted to user ${db_user}" "false"
         log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
         display --indent 6 --text "- Granting privileges to ${db_user}" --result "DONE" --color GREEN
@@ -609,7 +609,7 @@ function mysql_user_grant_privileges() {
     else
 
         # Log
-        clear_last_line
+        clear_previous_lines "1"
         log_event "error" "Something went wrong granting privileges to user ${db_user}." "false"
         log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
         display --indent 6 --text "- Granting privileges to ${db_user}" --result "FAIL" --color RED
@@ -851,7 +851,7 @@ function mysql_database_import() {
     if [[ ${import_status} -eq 0 ]]; then
 
         # Log
-        clear_last_line
+        clear_previous_lines "1"
         display --indent 6 --text "- Database backup import" --result "DONE" --color GREEN
         log_event "info" "Database ${database} imported successfully" "false"
 
@@ -860,7 +860,7 @@ function mysql_database_import() {
     else
 
         # Log
-        clear_last_line
+        clear_previous_lines "1"
         display --indent 6 --text "- Database backup import" --result "ERROR" --color RED
         display --indent 8 --text "Please, read the log file!" --tcolor RED
         log_event "error" "Something went wrong importing database: ${database}"
