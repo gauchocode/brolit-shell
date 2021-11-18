@@ -21,8 +21,8 @@
 function add_ppa() {
 
   # Log
-  log_event "info" "Adding repos and updating package lists ..." "false"
   display --indent 6 --text "- Adding repos and updating package lists"
+  log_event "info" "Adding repos and updating package lists ..." "false"
 
   # It provides some useful scripts for adding and removing PPA
   apt-get --yes install software-properties-common >/dev/null
@@ -128,8 +128,8 @@ function package_install() {
   local package=$1
 
   # Log
-  log_event "info" "Installing ${package} ..." "false"
   display --indent 6 --text "- Installing ${package}"
+  log_event "info" "Installing ${package} ..." "false"
 
   # apt command
   apt-get --yes install "${package}" -qq >/dev/null
@@ -148,9 +148,9 @@ function package_install() {
 
     # Log
     clear_previous_lines "1"
-    log_event "error" "Installing ${package}. Package is already installed." "false"
     display --indent 6 --text "- Installing ${package}" --result "WARNING" --color YELLOW
     display --indent 8 --text "Package is already installed."
+    log_event "error" "Installing ${package}. Package is already installed." "false"
 
     return 1
 
@@ -238,8 +238,8 @@ function package_check_required() {
 function packages_remove_old() {
 
   # Log
-  log_event "info" "Cleanning old system packages ..." "false"
   display --indent 6 --text "- Cleanning old system packages"
+  log_event "info" "Cleanning old system packages ..." "false"
 
   # apt commands
   apt-get --yes clean -qq >/dev/null
@@ -248,8 +248,8 @@ function packages_remove_old() {
 
   # Log
   clear_previous_lines "1"
-  log_event "info" "Old system packages cleaned" "false"
   display --indent 6 --text "- Cleanning old system packages" --result "DONE" --color GREEN
+  log_event "info" "Old system packages cleaned" "false"
 
 }
 
