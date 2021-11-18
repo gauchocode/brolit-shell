@@ -356,6 +356,8 @@ function package_upgrade_all() {
 
 function package_purge() {
 
+  local package=$1
+
   # Log
   log_event "info" "Uninstalling ${package} ..." "false"
   display --indent 6 --text "- Uninstalling ${package}"
