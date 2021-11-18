@@ -70,7 +70,7 @@ function _spinner() {
 
     # Remove start spinner line
     echo "" >&2
-    clear_last_line
+    clear_previous_lines "1"
 
     kill "${3}" >/dev/null 2>&1
 
@@ -313,17 +313,23 @@ function clear_screen() {
 
 }
 
-function clear_last_line() {
+function clear_previous_lines() {
+
+  local lines=$1
 
   if [[ ${QUIET} != "true" && ${EXEC_TYPE} != "alias" ]]; then
 
-    #tput cuu1;tput el
+    #loop until i equals 0
+    for ((i = $lines; i == 0; i--)); do
+      #tput cuu1;tput el
 
-    printf "\033[1A" >&2
-    echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
-    echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
-    printf "\033[1A" >&2
-    printf "\033[1A" >&2
+      printf "\033[1A" >&2
+      echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
+      echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
+      printf "\033[1A" >&2
+      printf "\033[1A" >&2
+
+    done
 
   fi
 

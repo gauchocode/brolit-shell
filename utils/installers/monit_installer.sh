@@ -215,8 +215,7 @@ function monit_installer_menu() {
     done
 
     # Called twice to remove last messages
-    clear_last_line
-    clear_last_line
+    clear_previous_lines "2"
 
   fi
 

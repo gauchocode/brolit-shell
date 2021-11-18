@@ -53,8 +53,6 @@
         Ref https://www.digitalocean.com/community/tools/nginx
 - [ ] Nginx: At startup, check if nginx has globals installed.
 - [ ] Project Utils: Add delete database and create database option.
-- [ ] Cloudflare: the script should ask you if you want to work with Cloudflare support (also when you create a new project).
-- [ ] WP-CLI: Better error handling.
 
 ## For release 3.3
 

@@ -73,7 +73,7 @@ function cockpit_purge() {
     apt-get --yes purge cockpit cockpit-docker cockpit-networkmanager cockpit-storaged cockpit-system cockpit-packagekit cockpit-shell -qq >/dev/null
 
     # Log
-    clear_last_line
+    clear_previous_lines "1"
     display --indent 6 --text "- Removing cockpit and libraries" --result "DONE" --color GREEN
     log_event "info" "cockpit removed"
 
