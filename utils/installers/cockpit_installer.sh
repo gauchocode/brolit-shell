@@ -43,11 +43,11 @@ function cockpit_installer() {
         package_install "cockpit"
 
         # Install cockpit extensions
-        package_install "cockpit-docker"
+        package_install "cockpit-dashboard"
+        package_install "cockpit-bridge"
         package_install "cockpit-networkmanager"
         package_install "cockpit-storaged"
         package_install "cockpit-packagekit"
-        package_install "cockpit-shell"
         package_install "cockpit-system"
 
         # Firewall config
@@ -67,15 +67,20 @@ function cockpit_purge() {
 
     # Log
     display --indent 6 --text "- Removing cockpit and libraries"
-    log_event "info" "Removing cockpit and libraries ..."
+    log_event "info" "Removing cockpit and libraries ..." "false"
 
     # apt command
-    apt-get --yes purge cockpit cockpit-docker cockpit-networkmanager cockpit-storaged cockpit-system cockpit-packagekit cockpit-shell -qq >/dev/null
+    package_purge "cockpit-dashboard"
+    package_purge "cockpit-bridge"
+    package_purge "cockpit-networkmanager"
+    package_purge "cockpit-storaged"
+    package_purge "cockpit-packagekit"
+    package_purge "cockpit-system"
+
+    package_purge "cockpit"
 
     # Log
     clear_previous_lines "1"
-    display --indent 6 --text "- Removing cockpit and libraries" --result "DONE" --color GREEN
-    log_event "info" "cockpit removed"
 
 }
 

@@ -291,7 +291,6 @@ function log_subsection() {
     # Console Display
     echo "" >&2
     echo -e "    [·] ${CYAN}${B_DEFAULT}${message}${ENDCOLOR}" >&2
-    #echo "    ----------------------------------------------" >&2
     echo "    —————————————————————————————————————————————————————" >&2
 
     # Log file
@@ -319,15 +318,16 @@ function clear_previous_lines() {
 
   if [[ ${QUIET} != "true" && ${EXEC_TYPE} != "alias" ]]; then
 
-    #loop until i equals 0
-    for ((i = $lines; i == 0; i--)); do
-      #tput cuu1;tput el
+    #loop starting $lines going down to 0
+    for ((i=lines; i>0; i--)); do
 
-      printf "\033[1A" >&2
-      echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
-      echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
-      printf "\033[1A" >&2
-      printf "\033[1A" >&2
+      tput cuu1;tput el
+
+      #printf "\033[1A" >&2
+      #echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
+      #echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
+      #printf "\033[1A" >&2
+      #printf "\033[1A" >&2
 
     done
 
