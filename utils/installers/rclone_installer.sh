@@ -31,8 +31,10 @@ function rclone_installer() {
 
   # Updating Repos
   display --indent 6 --text "- Updating repositories"
+
   apt-get --yes update -qq >/dev/null
-  clear_last_line
+
+  clear_previous_lines "1"
   display --indent 6 --text "- Updating repositories" --result "DONE" --color GREEN
 
   # Installing Certbot
@@ -43,7 +45,7 @@ function rclone_installer() {
   apt-get --yes install rclone -qq >/dev/null
 
   # Log
-  clear_last_line
+  clear_previous_lines "1"
   display --indent 6 --text "- Installing rclone" --result "DONE" --color GREEN
   log_event "info" "rclone installation finished"
 
@@ -61,7 +63,7 @@ function rclone_purge() {
   apt-get --yes purge rclone -qq >/dev/null
 
   # Log
-  clear_last_line
+  clear_previous_lines "1"
   display --indent 6 --text "- Removing rclone" --result "DONE" --color GREEN
   log_event "info" "rclone removed" "false"
 

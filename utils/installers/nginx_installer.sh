@@ -58,7 +58,7 @@ function nginx_installer() {
             apt-get --yes install nginx -qq >/dev/null
 
             # Log
-            clear_last_line
+            clear_previous_lines
             display --indent 6 --text "- Nginx custom installation" --result "DONE" --color GREEN
 
         fi

@@ -34,7 +34,7 @@ function phpmyadmin_installer () {
   
   curl --silent -L https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip > "${PROJECTS_PATH}"/phpMyAdmin-latest-all-languages.zip
   
-  clear_last_line
+  clear_previous_lines "1"
   display --indent 6 --text "- Downloading phpMyAdmin" --result "DONE" --color GREEN
 
   # Uncompress
@@ -43,7 +43,7 @@ function phpmyadmin_installer () {
   
   unzip -qq "${PROJECTS_PATH}/phpMyAdmin-latest-all-languages.zip" -d "${PROJECTS_PATH}"
   
-  clear_last_line
+  clear_previous_lines "1"
   display --indent 6 --text "- Uncompressing phpMyAdmin" --result "DONE" --color GREEN
 
   # Delete downloaded file

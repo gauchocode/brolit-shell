@@ -356,8 +356,7 @@ function mail_files_backup_section() {
     local bk_fl_size
 
     # Clear garbage output
-    clear_last_line
-    clear_last_line
+    clear_previous_lines "2"
 
     # TODO: config support
     local email_template="default"
@@ -442,8 +441,7 @@ function mail_config_backup_section() {
     local bk_scf_size
 
     # Clear garbage output
-    clear_last_line
-    clear_last_line
+    clear_previous_lines "2"
 
     # TODO: config support
     local email_template="default"
@@ -515,8 +513,7 @@ function mail_databases_backup_section() {
     local email_template="default"
 
     # Clear garbage output
-    clear_last_line
-    clear_last_line
+    clear_previous_lines "2"
 
     log_event "debug" "Preparing mail databases backup section ..." "false"
 

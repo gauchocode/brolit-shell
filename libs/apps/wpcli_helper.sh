@@ -120,10 +120,7 @@ function wpcli_install() {
         mv wp-cli.phar "/usr/local/bin/wp"
 
         # Log
-        #clear_last_line
-        #clear_last_line
-        #clear_last_line
-        clear_last_line
+        clear_previous_lines "1"
         display --indent 6 --text "- Installing wp-cli" --result "DONE" --color GREEN
         log_event "info" "wp-cli installed" "false"
 
@@ -132,10 +129,7 @@ function wpcli_install() {
     else
 
         # Log
-        #clear_last_line
-        #clear_last_line
-        #clear_last_line
-        clear_last_line
+        clear_previous_lines "1"
         display --indent 6 --text "- Installing wp-cli" --result "FAIL" --color RED
         log_event "error" "wp-cli was not installed!" "false"
 
@@ -299,7 +293,7 @@ function wpcli_core_download() {
 
             sleep 15
 
-            clear_last_line
+            clear_previous_lines "1"
 
             exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
@@ -324,7 +318,7 @@ function wpcli_core_download() {
 
             sleep 15
 
-            clear_last_line
+            clear_previous_lines "1"
 
             exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
@@ -529,14 +523,14 @@ function wpcli_install_plugin() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        clear_last_line
+        clear_previous_lines "1"
         display --indent 6 --text "- Installing plugin ${plugin}" --result "DONE" --color GREEN
 
         return 0
 
     else
 
-        clear_last_line
+        clear_previous_lines "1"
         display --indent 6 --text "- Installing plugin ${plugin}" --result "FAIL" --color RED
 
         return 1
@@ -601,12 +595,12 @@ function wpcli_plugin_activate() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        clear_last_line
+        clear_previous_lines "1"
         display --indent 6 --text "- Activating plugin ${plugin}" --result "DONE" --color GREEN
 
     else
 
-        clear_last_line
+        clear_previous_lines "1"
         display --indent 6 --text "- Activating plugin ${plugin}" --result "FAIL" --color RED
 
     fi
@@ -631,12 +625,12 @@ function wpcli_plugin_deactivate() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        clear_last_line
+        clear_previous_lines "1"
         display --indent 6 --text "- Deactivating plugin ${plugin}" --result "DONE" --color GREEN
 
     else
 
-        clear_last_line
+        clear_previous_lines "1"
         display --indent 6 --text "- Deactivating plugin ${plugin}" --result "FAIL" --color RED
 
     fi
@@ -656,7 +650,7 @@ function wpcli_plugin_delete() {
 
     sudo -u www-data wp --path="${wp_site}" plugin delete "${plugin}" --quiet
 
-    clear_last_line
+    clear_previous_lines "1"
     display --indent 6 --text "- Deleting plugin ${plugin}" --result "DONE" --color GREEN
 
 }
@@ -857,8 +851,7 @@ function wpcli_run_startup_script() {
     # Install WordPress Site
     sudo -u www-data wp --path="${wp_site}" core install --url="${site_url}" --title="${site_name}" --admin_user="${wp_user_name}" --admin_password="${wp_user_passw}" --admin_email="${wp_user_mail}"
 
-    clear_last_line
-    clear_last_line
+    clear_previous_lines "2"
     display --indent 6 --text "- WordPress site creation" --result "DONE" --color GREEN
 
     # Delete default post, page, and comment
@@ -1032,7 +1025,7 @@ function wpcli_seoyoast_reindex() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log
-        clear_last_line
+        clear_previous_lines "1"
         display --indent 6 --text "- Running yoast re-index" --result "DONE" --color GREEN
         log_event "info" "Yoast re-index done!" "false"
 
@@ -1041,7 +1034,7 @@ function wpcli_seoyoast_reindex() {
     else
 
         # Log
-        clear_last_line
+        clear_previous_lines "1"
         display --indent 6 --text "- Running yoast re-index" --result "FAIL" --color RED
         log_event "error" "Yoast re-index failed!" "false"
         log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} yoast index --reindex" "false"
@@ -1218,7 +1211,6 @@ function wpcli_db_change_tables_prefix() {
 
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        #clear_last_line
         display --indent 6 --text "- Changing tables prefix" --result "DONE" --color GREEN
         display --indent 8 --text "New tables prefix ${TABLES_PREFIX}"
 
@@ -1226,7 +1218,6 @@ function wpcli_db_change_tables_prefix() {
 
     else
 
-        #clear_last_line
         display --indent 6 --text "- Changing tables prefix" --result "FAIL" --color RED
         log_event "error" "Changing tables prefix for site ${wp_site}" "false"
 

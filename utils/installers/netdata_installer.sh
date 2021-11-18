@@ -72,8 +72,7 @@ function _netdata_required_packages() {
   fi
 
   # Log
-  clear_last_line
-  clear_last_line
+  clear_previous_lines "2"
   display --indent 6 --text "- Installing netdata required packages" --result "DONE" --color GREEN
 
 }
@@ -251,8 +250,7 @@ function netdata_installer() {
   fi
 
   # Log
-  clear_last_line
-  clear_last_line
+  clear_previous_lines "2"
   log_event "info" "Netdata installation finished" "false"
   display --indent 6 --text "- Downloading and compiling netdata" --result "DONE" --color GREEN
 
@@ -280,8 +278,7 @@ function netdata_uninstaller() {
     [Yy]*)
 
       # Log
-      clear_last_line
-      clear_last_line
+      clear_previous_lines "2"
       log_event "warning" "Uninstalling Netdata ..." "false"
 
       # Deleting mysql user
@@ -469,8 +466,7 @@ function netdata_installer_menu() {
 
       [Yy]*)
 
-        clear_last_line
-        clear_last_line
+        clear_previous_lines "2"
 
         log_subsection "Netdata Installer"
 

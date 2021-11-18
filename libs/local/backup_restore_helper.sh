@@ -22,8 +22,8 @@ function _make_temp_files_backup() {
   mv "${folder_to_backup}" "${SFOLDER}/tmp/old_backup"
 
   # Log
+  clear_previous_lines "1"
   log_event "info" "Temp backup completed and stored here: ${SFOLDER}/tmp/old_backup" "false"
-  clear_last_line
   display --indent 6 --text "- Creating backup on temp directory" --result "DONE" --color GREEN
 
 }
@@ -343,8 +343,10 @@ function restore_config_files_from_dropbox() {
 
     # Downloading Config Backup
     display --indent 6 --text "- Downloading config backup from dropbox"
+    
     dropbox_output="$(${DROPBOX_UPLOADER} download "${dropbox_chosen_type_path}/${chosen_config_type}/${chosen_config_bk}" 1>&2)"
-    clear_last_line
+    
+    clear_previous_lines "1"
     display --indent 6 --text "- Downloading config backup from dropbox" --result "DONE" --color GREEN
 
     # Restore files
@@ -408,8 +410,10 @@ function restore_nginx_site_files() {
   # Downloading Config Backup
   log_event "info" "Downloading nginx backup from dropbox" "false"
   display --indent 6 --text "- Downloading nginx backup from dropbox"
+  
   dropbox_output="$(${DROPBOX_UPLOADER} download "${bk_to_download}" 1>&2)"
-  clear_last_line
+  
+  clear_previous_lines "1"
   display --indent 6 --text "- Downloading nginx backup from dropbox" --result "DONE" --color GREEN
 
   # Extract tar.bz2 with lbzip2

@@ -31,12 +31,7 @@ function system_timezone_configuration() {
         dpkg-reconfigure --frontend noninteractive tzdata
 
         # Log
-        clear_last_line
-        clear_last_line
-        clear_last_line
-        clear_last_line
-        clear_last_line
-        clear_last_line
+        clear_previous_lines "6"
         log_event "info" "Setting Timezone: ${SERVER_TIMEZONE}" "false"
         display --indent 6 --text "- Timezone configuration" --result "DONE" --color GREEN
         display --indent 8 --text "${SERVER_TIMEZONE}"
@@ -106,7 +101,7 @@ function system_change_server_hostname() {
 
     log_subsection "Change Hostname"
 
-    cur_hostname=$(cat /etc/hostname)
+    cur_hostname="$(cat /etc/hostname)"
 
     # Display the current hostname
     log_event "info" "Current hostname: ${cur_hostname}" "false"
@@ -176,7 +171,7 @@ function system_add_floating_IP() {
 
     local ubuntu_v
 
-    ubuntu_v=$(get_ubuntu_version)
+    ubuntu_v="$(get_ubuntu_version)"
 
     log_subsection "Adding Floating IP"
     log_event "info" "Trying to add ${floating_IP} as floating ip on Ubuntu ${ubuntu_v}" "false"
