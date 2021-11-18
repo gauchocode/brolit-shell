@@ -86,11 +86,10 @@ function cockpit_purge() {
 
 function cockpit_installer_menu() {
 
-    local cockpit_is_installed
+    package_is_installed "cockpit"
 
-    cockpit_is_installed="$(cockpit_check_if_installed)"
-
-    if [[ ${cockpit_is_installed} == "false" ]]; then
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 1 ]]; then
 
         cockpit_installer_title="COCKPIT INSTALLER"
         cockpit_installer_message="Choose an option to run:"
