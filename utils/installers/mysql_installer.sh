@@ -60,6 +60,7 @@ function mariadb_default_installer() {
 
 function mysql_purge_installation() {
 
+  # Log
   log_event "warning" "Purging mysql-* packages ..." "false"
   display --indent 6 --text "- Purging MySQL packages"
 
@@ -68,8 +69,9 @@ function mysql_purge_installation() {
   apt-get autoremove -qq >/dev/null
   apt-get autoclean -qq >/dev/null
 
+  # Log
+  clear_previous_lines "1"
   log_event "info" "mysql-* packages purged!" "false"
-  clear_last_line
   display --indent 6 --text "- Purging MySQL packages" --result "DONE" --color GREEN
 
 }
@@ -172,15 +174,13 @@ function mysql_installer_menu() {
 
       case $yn in
       [Yy]*)
-        clear_last_line
-        clear_last_line
+        clear_previous_lines "2"
         mysql_purge_installation
         break
         ;;
 
       [Nn]*)
-        clear_last_line
-        clear_last_line
+        clear_previous_lines "2"
         log_event "warning" "Operation cancelled" "false"
         break
         ;;

@@ -430,20 +430,20 @@ function _brolit_configuration_load_email() {
         # Check if all required vars are set
         if [[ -z "${NOTIFICATION_EMAIL_MAILA}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_SERVER}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_PORT}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_USER}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_UPASS}" ]]; then
 
-            clear_last_line
+            clear_previous_lines "1"
             display --indent 4 --text "Missing required config vars for email notifications" --tcolor RED
             exit 1
 
         else
 
-            clear_last_line
+            clear_previous_lines "1"
             display --indent 2 --text "- Checking Email notifications config" --result "DONE" --color GREEN
 
         fi
 
     else
 
-        clear_last_line
+        clear_previous_lines "1"
         display --indent 2 --text "- Checking Email notifications config" --result "WARNING" --color YELLOW
         display --indent 4 --text "Email notifications are disabled"
 

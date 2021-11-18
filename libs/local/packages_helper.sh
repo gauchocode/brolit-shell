@@ -74,7 +74,7 @@ function package_update() {
   if [[ $exitstatus -eq 0 ]]; then
 
     # Log
-    clear_last_line
+    clear_previous_lines "1"
     display --indent 6 --text "- Updating packages list" --result "DONE" --color GREEN
 
     return 0
@@ -82,7 +82,7 @@ function package_update() {
   else
 
     # Log
-    clear_last_line
+    clear_previous_lines "1"
     display --indent 6 --text "- Updating packages list" --result "FAIL" --color RED
 
     return 1
@@ -136,8 +136,7 @@ function package_install() {
   if [[ $exitstatus -eq 0 ]]; then
 
     # Log
-    #clear_last_line
-    clear_last_line
+    clear_previous_lines "1"
     log_event "info" "Package ${package} installed" "false"
     display --indent 6 --text "- Installing ${package}" --result "DONE" --color GREEN
 
@@ -146,8 +145,7 @@ function package_install() {
   else
 
     # Log
-    #clear_last_line
-    clear_last_line
+    clear_previous_lines "1"
     log_event "error" "Installing ${package}. Package is already installed." "false"
     display --indent 6 --text "- Installing ${package}" --result "WARNING" --color YELLOW
     display --indent 8 --text "Package is already installed."
@@ -212,7 +210,6 @@ function package_check_required() {
   package_install_if_not "net-tools"
   package_install_if_not "sendemail"
   package_install_if_not "libio-socket-ssl-perl"
-  package_install_if_not "bat"
   package_install_if_not "ncdu"
   package_install_if_not "ppa-purge"
 
@@ -248,7 +245,7 @@ function packages_remove_old() {
   apt-get --yes autoclean -qq >/dev/null
 
   # Log
-  clear_last_line
+  clear_previous_lines "1"
   log_event "info" "Old system packages cleaned" "false"
   display --indent 6 --text "- Cleanning old system packages" --result "DONE" --color GREEN
 
@@ -342,7 +339,7 @@ function package_upgrade_all() {
   apt-get --yes upgrade -qq >/dev/null
 
   # Log
-  clear_last_line
+  clear_previous_lines "1"
   display --indent 6 --text "- Upgrading packages" --result "DONE" --color GREEN
 
 }
@@ -367,7 +364,7 @@ function package_purge() {
   apt-get --yes purge "${package}" -qq >/dev/null
 
   # Log
-  clear_last_line
+  clear_previous_lines "1"
   display --indent 6 --text "- Uninstalling ${package}" --result "DONE" --color GREEN
 
 }

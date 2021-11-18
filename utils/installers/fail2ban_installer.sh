@@ -31,8 +31,10 @@ function fail2ban_installer() {
 
   # Updating Repos
   display --indent 6 --text "- Updating repositories"
+  
   apt-get --yes update -qq >/dev/null
-  clear_last_line
+
+  clear_previous_lines "1"
   display --indent 6 --text "- Updating repositories" --result "DONE" --color GREEN
 
   # Installing fail2ban
@@ -43,7 +45,7 @@ function fail2ban_installer() {
   apt-get --yes install fail2ban -qq >/dev/null
 
   # Log
-  clear_last_line
+  clear_previous_lines "1"
   display --indent 6 --text "- Installing fail2ban and dependencies" --result "DONE" --color GREEN
   log_event "info" "fail2ban installation finished"
 
@@ -61,7 +63,7 @@ function fail2ban_purge() {
   apt-get --yes purge fail2ban -qq >/dev/null
 
   # Log
-  clear_last_line
+  clear_previous_lines "1"
   display --indent 6 --text "- Removing fail2ban and libraries" --result "DONE" --color GREEN
   log_event "info" "fail2ban removed"
 

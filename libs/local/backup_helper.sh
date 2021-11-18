@@ -194,7 +194,7 @@ function make_mailcow_backup() {
       (${TAR} -cf - --directory="${MAILCOW_DIR}" "${MAILCOW_BACKUP_LOCATION}" | pv --width 70 -ns "$(du -sb "${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION}" | awk '{print $1}')" | lbzip2 >"${MAILCOW_TMP_BK}/${backup_file}")
 
       # Log
-      clear_last_line
+      clear_previous_lines "1"
       log_event "info" "Testing backup file: ${backup_file} ..." "false"
 
       # Test backup file

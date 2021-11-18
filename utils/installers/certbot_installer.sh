@@ -58,7 +58,7 @@ function certbot_installer() {
   # Update repositories
   apt-get --yes update -qq >/dev/null
 
-  clear_last_line
+  clear_previous_lines "1"
   display --indent 6 --text "- Updating repositories" --result "DONE" --color GREEN
 
   # Installing Certbot
@@ -72,7 +72,7 @@ function certbot_installer() {
   if [[ ${exitstatus} -ne 0 ]]; then
 
     # Log
-    clear_last_line
+    clear_previous_lines "1"
     display --indent 6 --text "- Installing certbot and dependencies" --result "FAILED" --color RED
     log_event "error" "Installing python3-certbot-dns-cloudflare and python3-certbot-nginx" "false"
 
@@ -81,7 +81,7 @@ function certbot_installer() {
   else
 
     # Log
-    clear_last_line
+    clear_previous_lines "1"
     display --indent 6 --text "- Installing certbot and dependencies" --result "DONE" --color GREEN
     log_event "info" "Certbot installation finished" "false"
 
@@ -116,7 +116,7 @@ function certbot_purge() {
   if [[ ${exitstatus} -ne 0 ]]; then
 
     # Log
-    clear_last_line
+    clear_previous_lines "1"
     display --indent 6 --text "- Removing certbot and libraries" --result "FAILED" --color RED
     log_event "error" "Removing certbot and libraries..." "false"
 
@@ -125,7 +125,7 @@ function certbot_purge() {
   else
 
     # Log
-    clear_last_line
+    clear_previous_lines "1"
     display --indent 6 --text "- Removing certbot and libraries" --result "DONE" --color GREEN
     log_event "info" "certbot removed" "false"
 

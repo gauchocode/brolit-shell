@@ -925,7 +925,7 @@ function project_delete_database() {
     ${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${chosen_database}" "/${VPSNAME}/offline-site" 1>&2
 
     # Log
-    clear_last_line
+    clear_previous_lines "1"
     log_event "debug" "Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${chosen_database} /${VPSNAME}/offline-site" "false"
     display --indent 6 --text "- Moving dropbox backup to offline directory" --result "DONE" --color GREEN
 
@@ -946,8 +946,7 @@ function project_delete_database() {
       [Yy]*)
 
         # Log
-        clear_last_line
-        clear_last_line
+        clear_previous_lines "2"
 
         # User delete
         mysql_user_delete "${database_user}"
@@ -959,8 +958,7 @@ function project_delete_database() {
       [Nn]*)
 
         # Log
-        clear_last_line
-        clear_last_line
+        clear_previous_lines "2"
         log_event "warning" "Aborting MySQL user deletion ..." "false"
         display --indent 6 --text "- Deleting MySQL user" --result "SKIPPED" --color YELLOW
 

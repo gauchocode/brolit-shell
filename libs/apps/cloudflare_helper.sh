@@ -56,10 +56,7 @@ function _cloudflare_get_zone_id() {
 function _cloudflare_clear_garbage_output() {
 
     # Remove Cloudflare API garbage output
-    clear_last_line
-    clear_last_line
-    clear_last_line
-    clear_last_line
+    clear_previous_lines "4"
 
 }
 

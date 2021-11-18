@@ -964,12 +964,12 @@ function move_files() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    clear_last_line
+    clear_previous_lines "1"
     display --indent 6 --text "- Moving files to ${destination_path}" --result "DONE" --color GREEN
 
   else
 
-    clear_last_line
+    clear_previous_lines "1"
     display --indent 6 --text "- Moving files to ${destination_path}" --result "FAIL" --color RED
     return 1
 
@@ -1193,8 +1193,7 @@ function prompt_return_or_finish() {
 
   done
 
-  clear_last_line
-  clear_last_line
+  clear_previous_lines "2"
 
 }
 
@@ -1334,16 +1333,14 @@ function decompress() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    clear_last_line
-    clear_last_line
+    clear_previous_lines "2"
 
     log_event "info" "${file_path} extracted ok!" "false"
     display --indent 6 --text "- Extracting compressed file" --result "DONE" --color GREEN
 
   else
 
-    clear_last_line
-    clear_last_line
+    clear_previous_lines "2"
 
     log_event "error" "Error extracting ${file_path}" "false"
     display --indent 6 --text "- Extracting compressed file" --result "FAIL" --color RED
@@ -1378,8 +1375,7 @@ function compress() {
   ${TAR} -cf - --directory="${backup_base_dir}" "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | lbzip2 >"${file_output}"
 
   # Clear pipe output
-  clear_last_line
-  clear_last_line
+  clear_previous_lines "2"
 
   # Test backup file
   log_event "info" "Testing backup file: ${file_output}" "false"
@@ -1391,8 +1387,7 @@ function compress() {
   lbzip2_result=$?
 
   # Clear output
-  clear_last_line
-  clear_last_line
+  clear_previous_lines "2"
 
   if [[ ${lbzip2_result} -eq 0 ]]; then
 
