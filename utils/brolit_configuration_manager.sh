@@ -484,8 +484,6 @@ function _brolit_configuration_load_telegram() {
 
 function _brolit_configuration_load_firewall_ufw() {
 
-    # TODO: need a refactor to make this more generic
-
     local server_config_file=$1
 
     # Globals
@@ -505,9 +503,9 @@ function _brolit_configuration_load_firewall_ufw() {
             exit 1
         fi
 
-        brolit_configuration_firewall_ufw
-
     fi
+
+    brolit_configuration_firewall_ufw
 
     export FIREWALL_UFW_APP_LIST_SSH FIREWALL_UFW_STATUS
 
@@ -530,9 +528,9 @@ function _brolit_configuration_load_firewall_fail2ban() {
             exit 1
         fi
 
-        brolit_configuration_firewall_fail2ban
-
     fi
+
+    brolit_configuration_firewall_fail2ban
 
     export FIREWALL_FAIL2BAN_STATUS
 
@@ -915,49 +913,58 @@ function _brolit_configuration_load_netdata() {
 
 function brolit_configuration_firewall_ufw() {
 
-    # Check firewall status
-    firewall_status
+    # Check if firewall configuration in config file
+    if [[ ${FIREWALL_UFW_STATUS} == "enabled" ]]; then
 
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 1 ]]; then
+        # Check firewall status
+        firewall_status
 
-        # Check if firewall configuration in config file
-        if [[ ${FIREWALL_UFW_STATUS} == "enabled" ]]; then
-
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 1 ]]; then
             # Enabling firewall
             firewall_enable
 
-            # Get all listed apps
-            app_list="$(json_read_field "/root/.brolit_conf.json" "FIREWALL.ufw[].config[]")"
-
-            # Get keys
-            app_list_keys="$(jq -r 'keys[]' <<<"${app_list}" | sed ':a; N; $!ba; s/\n/ /g')"
-
-            # String to array
-            IFS=' ' read -r -a app_list_keys_array <<<"$app_list_keys"
-
-            # Loop through all apps keys
-            for app_list_key in "${app_list_keys_array[@]}"; do
-
-                app_list_value="$(jq -r ."${app_list_key}" <<<"${app_list}")"
-
-                if [[ ${app_list_value} == "allow" ]]; then
-
-                    # Allow service on firewall
-                    firewall_allow "${app_list_key}"
-
-                fi
-
-            done
-
         fi
 
-    else
+        # Get all listed apps
+        app_list="$(json_read_field "/root/.brolit_conf.json" "FIREWALL.ufw[].config[]")"
 
-        # Check if firewall configuration in config file
-        if [[ ${FIREWALL_UFW_STATUS} == "disabled" ]]; then
+        # Get keys
+        app_list_keys="$(jq -r 'keys[]' <<<"${app_list}" | sed ':a; N; $!ba; s/\n/ /g')"
 
-            # Enabling firewall
+        # String to array
+        IFS=' ' read -r -a app_list_keys_array <<<"$app_list_keys"
+
+        # Loop through all apps keys
+        for app_list_key in "${app_list_keys_array[@]}"; do
+
+            app_list_value="$(jq -r ."${app_list_key}" <<<"${app_list}")"
+
+            if [[ ${app_list_value} == "allow" ]]; then
+
+                # Allow service on firewall
+                firewall_allow "${app_list_key}"
+
+            else
+
+                # Deny service on firewall
+                firewall_deny "${app_list_key}"
+
+            fi
+
+        done
+
+    fi
+
+    # Check if firewall configuration in config file
+    if [[ ${FIREWALL_UFW_STATUS} == "disabled" ]]; then
+
+        # Check firewall status
+        firewall_status
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+            # Disabling firewall
             firewall_disable
 
         fi
