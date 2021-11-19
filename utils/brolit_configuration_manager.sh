@@ -930,7 +930,7 @@ function brolit_configuration_firewall_ufw() {
             firewall_enable
 
             # Get all listed apps
-            app_list="$(json_read_field "/root/.brolit_conf.json" "FIREWALL.config[].app_list[]")"
+            app_list="$(json_read_field "/root/.brolit_conf.json" "FIREWALL.ufw[].config[]")"
 
             # Get keys
             app_list_keys="$(jq -r 'keys[]' <<<"${app_list}" | sed ':a; N; $!ba; s/\n/ /g')"
