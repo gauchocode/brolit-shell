@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.1
+# Version: 3.1.2
 ################################################################################
 #
 # Firewall Helper: Perform firewall actions.
@@ -190,7 +190,7 @@ function firewall_allow() {
 
     local ufw_output
 
-    # Ufw command
+    # ufw command
     ufw_output="$(ufw allow "${service}")"
 
     exitstatus=$?
@@ -202,8 +202,8 @@ function firewall_allow() {
             # Log
             log_event "info" "Allowing ${service} on firewall" "false"
             log_event "info" "Skipping adding existing rule" "false"
-            display --indent 2 --text "- Allowing ${service} on firewall" --result "SKIP" --color YELLOW
-            display --indent 4 --text "Skipping adding existing rule"
+            #display --indent 2 --text "- Allowing ${service} on firewall" --result "SKIP" --color YELLOW
+            #display --indent 4 --text "Skipping adding existing rule"
 
             return 0
 
@@ -243,7 +243,7 @@ function firewall_deny() {
 
     local service=$1
 
-    # Ufw command
+    # ufw command
     ufw_output="$(ufw deny "${service}")"
 
     exitstatus=$?
@@ -255,8 +255,8 @@ function firewall_deny() {
             # Log
             log_event "info" "Denying ${service} on firewall" "false"
             log_event "info" "Skipping adding existing rule" "false"
-            display --indent 2 --text "- Denying ${service} on firewall" --result "SKIP" --color YELLOW
-            display --indent 4 --text "Skipping adding existing rule"
+            #display --indent 2 --text "- Denying ${service} on firewall" --result "SKIP" --color YELLOW
+            #display --indent 4 --text "Skipping adding existing rule"
 
             return 0
 
@@ -296,8 +296,10 @@ function firewall_fail2ban_status() {
 
     local service=$1
 
+    local fail2ban_output
+
     # Fail2ban command
-    ufw_output="$(fail2ban-client status "${service}" > /dev/null)"
+    fail2ban_output="$(fail2ban-client status "${service}" > /dev/null)"
 
     exitstatus=$?
 
@@ -306,7 +308,7 @@ function firewall_fail2ban_status() {
         # Log
         log_event "info" "Getting fail2ban status" "false"
         display --indent 2 --text "- Getting fail2ban status" --result "DONE" --color GREEN
-        display --indent 2 --text "Status: ${ufw_output}"
+        display --indent 2 --text "Status: ${fail2ban_output}"
 
         return 0
 
