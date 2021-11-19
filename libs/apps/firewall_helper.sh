@@ -188,6 +188,8 @@ function firewall_allow() {
 
     local service=$1
 
+    local ufw_output
+
     # Ufw command
     ufw_output="$(ufw allow "${service}")"
 
