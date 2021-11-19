@@ -947,8 +947,12 @@ function brolit_configuration_firewall_ufw() {
 
             else
 
-                # Deny service on firewall
-                firewall_deny "${app_list_key}"
+                if [[ ${app_list_value} == "deny" ]]; then
+
+                    # Deny service on firewall
+                    firewall_deny "${app_list_key}"
+
+                fi
 
             fi
 
