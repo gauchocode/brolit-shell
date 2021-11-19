@@ -4,28 +4,6 @@
 # Version: 3.1.1
 ################################################################################
 
-function fail2ban_check_if_installed() {
-
-  local fail2ban
-
-  fail2ban="$(command -v fail2ban)"
-
-  if [[ ! -x "${fail2ban}" ]]; then
-
-    log_event "debug" "fail2ban_installed=false" "false"
-
-    return 1
-
-  else
-
-    log_event "debug" "fail2ban_installed=true" "false"
-
-    return 0
-
-  fi
-
-}
-
 function fail2ban_installer() {
 
   log_subsection "Fail2ban Installer"
@@ -72,11 +50,11 @@ function fail2ban_purge() {
 
 function fail2ban_installer_menu() {
 
-  local fail2ban_is_installed
+  package_is_installed "fail2ban"
 
-  fail2ban_is_installed="$(fail2ban_check_if_installed)"
+  exitstatus=$?
 
-  if [[ ${fail2ban_is_installed} == "false" ]]; then
+  if [[ ${exitstatus} -eq 1 ]]; then
 
     fail2ban_installer_title="FAIL2BAN INSTALLER"
     fail2ban_installer_message="Choose an option to run:"
