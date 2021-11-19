@@ -234,7 +234,7 @@ function firewall_allow() {
 # Fail2ban status
 #
 # Arguments:
-#   None
+#   $1 = {service} - Optional
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -245,7 +245,7 @@ function firewall_fail2ban_status() {
     local service=$1
 
     # Fail2ban command
-    ufw_output="$(fail2ban-client status "${service}")"
+    ufw_output="$(fail2ban-client status "${service}" > /dev/null)"
 
     exitstatus=$?
 
