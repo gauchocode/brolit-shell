@@ -6,22 +6,23 @@
 
 function fail2ban_check_if_installed() {
 
-  local fail2ban_installed
   local fail2ban
 
   fail2ban="$(command -v fail2ban)"
+
   if [[ ! -x "${fail2ban}" ]]; then
-    fail2ban_installed="false"
+
+    log_event "debug" "fail2ban_installed=false" "false"
+
+    return 1
 
   else
-    fail2ban_installed="true"
+
+    log_event "debug" "fail2ban_installed=true" "false"
+
+    return 0
 
   fi
-
-  log_event "debug" "fail2ban_installed=${fail2ban_installed}" "false"
-
-  # Return
-  echo "${fail2ban_installed}"
 
 }
 
@@ -38,16 +39,16 @@ function fail2ban_installer() {
   display --indent 6 --text "- Updating repositories" --result "DONE" --color GREEN
 
   # Installing fail2ban
-  display --indent 6 --text "- Installing fail2ban and dependencies"
-  log_event "info" "Installing fail2ban"
+  display --indent 6 --text "- Installing fail2ban"
+  log_event "info" "Installing fail2ban" "false"
 
   # apt command
   apt-get --yes install fail2ban -qq >/dev/null
 
   # Log
   clear_previous_lines "1"
-  display --indent 6 --text "- Installing fail2ban and dependencies" --result "DONE" --color GREEN
-  log_event "info" "fail2ban installation finished"
+  display --indent 6 --text "- Installing fail2ban" --result "DONE" --color GREEN
+  log_event "info" "fail2ban installation finished" "false"
 
 }
 
@@ -57,7 +58,7 @@ function fail2ban_purge() {
 
   # Log
   display --indent 6 --text "- Removing fail2ban and libraries"
-  log_event "info" "Removing fail2ban and libraries ..."
+  log_event "info" "Removing fail2ban and libraries ..." "false"
 
   # apt command
   apt-get --yes purge fail2ban -qq >/dev/null
@@ -65,7 +66,7 @@ function fail2ban_purge() {
   # Log
   clear_previous_lines "1"
   display --indent 6 --text "- Removing fail2ban and libraries" --result "DONE" --color GREEN
-  log_event "info" "fail2ban removed"
+  log_event "info" "fail2ban removed" "false"
 
 }
 
