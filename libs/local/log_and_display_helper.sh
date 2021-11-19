@@ -4,7 +4,7 @@
 # Version: 3.1.1
 ################################################################################
 #
-# Log and Display Helper: Log and display internal functions.
+# Log and Display Helper: Log and display functions.
 #
 ################################################################################
 
@@ -302,6 +302,16 @@ function log_subsection() {
 
 }
 
+################################################################################
+# Clear screen
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
+
 function clear_screen() {
 
   if [[ ${QUIET} != "true" && ${EXEC_TYPE} != "alias" ]]; then
@@ -312,6 +322,16 @@ function clear_screen() {
 
 }
 
+################################################################################
+# Clear previous lines
+#
+# Arguments:
+#   $1 = {lines}
+#
+# Outputs:
+#   nothing
+################################################################################
+
 function clear_previous_lines() {
 
   local lines=$1
@@ -321,19 +341,29 @@ function clear_previous_lines() {
     #loop starting $lines going down to 0
     for ((i=lines; i>0; i--)); do
 
-      tput cuu1;tput el
+      #tput cuu1;tput el
 
-      #printf "\033[1A" >&2
-      #echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
-      #echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
-      #printf "\033[1A" >&2
-      #printf "\033[1A" >&2
+      printf "\033[1A" >&2
+      echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
+      echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
+      printf "\033[1A" >&2
+      printf "\033[1A" >&2
 
     done
 
   fi
 
 }
+
+################################################################################
+# Display message on terminal
+#
+# Arguments:
+#   --text, --color, --indent, --result, --tcolor, --tstyle
+#
+# Outputs:
+#   nothing
+################################################################################
 
 function display() {
 
