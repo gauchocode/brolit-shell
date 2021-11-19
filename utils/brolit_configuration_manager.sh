@@ -987,7 +987,7 @@ function brolit_configuration_firewall_fail2ban() {
             if [[ ${exitstatus} -eq 1 ]]; then
 
                 # Install fail2ban
-                fail2ban_install
+                package_install "fail2ban"
 
                 # TODO: need to configure fail2ban
 
