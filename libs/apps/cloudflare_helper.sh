@@ -1,22 +1,41 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1
+# Version: 3.1.1
 ################################################################################
 #
-#   Ref: https://api.cloudflare.com/
+# Packages Helper: Perform apt actions.
 #
+#       Ref: https://api.cloudflare.com/
+#
+################################################################################
+
+################################################################################
+# Private: get the Cloudflare domain zone id
+#
+# Arguments:
+#   $1 = ${zone_name}
+#
+# Outputs:
+#   0 if ok, 1 on error.
 ################################################################################
 
 function _cloudflare_get_zone_id() {
-
-    # $1 = ${zone_name}
 
     local zone_name=$1
 
     local zone_id
 
     # Using globals: ${SUPPORT_CLOUDFLARE_EMAIL} and ${SUPPORT_CLOUDFLARE_API_KEY}
+    if [[ -z ${SUPPORT_CLOUDFLARE_EMAIL} || -z ${SUPPORT_CLOUDFLARE_API_KEY} ]]; then
+
+        display --indent 6 --text "- Accessing Cloudflare API" --result "FAIL" --color RED
+        display --indent 8 --text "Cloudflare credentials not set"
+        log_event "error" "Cloudflare credentials not set" "false"
+
+        return 1
+
+    fi
 
     # Log
     log_event "info" "Accessing Cloudflare API ..." "false"
@@ -53,18 +72,21 @@ function _cloudflare_get_zone_id() {
 
 }
 
-function _cloudflare_clear_garbage_output() {
-
-    # Remove Cloudflare API garbage output
-    clear_previous_lines "4"
-
-}
-
+################################################################################
+# Get the Cloudflare domain zone information
+#
+# Arguments:
+#   $1 = ${zone_name}
+#
+# Outputs:
+#   0 if ok, 1 on error.
 ################################################################################
 
 function cloudflare_get_zone_info() {
 
-    log_event "info" "Getting zone information for: ${zone_name}"
+    local zone_name=$1
+
+    log_event "info" "Getting zone information for: ${zone_name}" "false"
 
     zone_info="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}&status=active" \
         -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
@@ -74,10 +96,12 @@ function cloudflare_get_zone_info() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        log_event "debug" "Zone information: ${zone_info}"
+        log_event "debug" "Zone information: ${zone_info}" "false"
 
         # Return
         echo "${zone_id}"
+
+        return 0
 
     else
 
@@ -87,9 +111,17 @@ function cloudflare_get_zone_info() {
 
 }
 
-function cloudflare_domain_exists() {
+################################################################################
+# Check if domain exists on Cloudflare account
+#
+# Arguments:
+#   $1 = ${root_domain}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    # $1 = ${root_domain}
+function cloudflare_domain_exists() {
 
     local root_domain=$1
 
@@ -111,9 +143,17 @@ function cloudflare_domain_exists() {
 
 }
 
-function cloudflare_clear_cache() {
+################################################################################
+# Clear Cloudflare cache for domain
+#
+# Arguments:
+#   $1 = ${root_domain}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    # $1 = ${root_domain}
+function cloudflare_clear_cache() {
 
     local root_domain=$1
 
@@ -126,7 +166,7 @@ function cloudflare_clear_cache() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log
-        log_event "info" "Clearing Cloudflare cache for domain: ${root_domain}"
+        log_event "info" "Clearing Cloudflare cache for domain: ${root_domain}" "false"
         log_event "debug" "Running: curl -s -X DELETE \"https://api.cloudflare.com/client/v4/zones/${zone_id}/purge_cache\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type:application/json\" --data '{\"purge_everything\":true}')"
 
         purge_cache="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/purge_cache" \
@@ -155,10 +195,18 @@ function cloudflare_clear_cache() {
 
 }
 
-function cloudflare_set_development_mode() {
+################################################################################
+# Set develoment mode for domain
+#
+# Arguments:
+#   $1 = ${root_domain}
+#   $2 = ${dev_mode}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    # $1 = ${root_domain}
-    # $2 = ${dev_mode}
+function cloudflare_set_development_mode() {
 
     local root_domain=$1
     local dev_mode=$2
@@ -170,7 +218,7 @@ function cloudflare_set_development_mode() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        log_event "info" "Enabling Development Mode for domain: ${root_domain}"
+        log_event "info" "Enabling Development Mode for domain: ${root_domain}" "false"
 
         dev_mode_result="$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/development_mode" \
             -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
@@ -179,7 +227,7 @@ function cloudflare_set_development_mode() {
             --data "{\"value\":\"${dev_mode}\"}")"
 
         # Remove Cloudflare API garbage output
-        _cloudflare_clear_garbage_output
+        clear_previous_lines "4"
 
         if [[ ${dev_mode_result} == *"\"success\":false"* || ${dev_mode_result} == "" ]]; then
             message="Error trying to change development mode for ${root_domain}. Results:\n ${dev_mode_result}"
@@ -203,6 +251,16 @@ function cloudflare_set_development_mode() {
     fi
 
 }
+
+################################################################################
+# Get configured ssl mode for domain
+#
+# Arguments:
+#   $1 = ${root_domain}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function cloudflare_get_ssl_mode() {
 
@@ -235,10 +293,18 @@ function cloudflare_get_ssl_mode() {
 
 }
 
-function cloudflare_set_ssl_mode() {
+################################################################################
+# Set configured ssl mode for domain
+#
+# Arguments:
+#   $1 = ${root_domain}
+#   $2 = ${ssl_mode} default value: off, valid values: off, flexible, full, strict
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    # $1 = ${root_domain}
-    # $2 = ${ssl_mode} default value: off, valid values: off, flexible, full, strict
+function cloudflare_set_ssl_mode() {
 
     local root_domain=$1
     local ssl_mode=$2
@@ -260,7 +326,7 @@ function cloudflare_set_ssl_mode() {
             --data "{\"value\":\"${ssl_mode}\"}")"
 
         # Remove Cloudflare API garbage output
-        _cloudflare_clear_garbage_output
+        clear_previous_lines "4"
 
         if [[ ${ssl_mode_result} == *"\"success\":false"* || ${ssl_mode_result} == "" ]]; then
             message="Error trying to change ssl mode for ${root_domain}. Results:\n ${ssl_mode_result}"
@@ -281,16 +347,24 @@ function cloudflare_set_ssl_mode() {
 
 }
 
-function cloudflare_record_exists() {
+################################################################################
+# Check if record exists for the configured domain
+#
+# Arguments:
+#   $1 = ${domain}
+#   $2 = ${zone_id}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    # $1 = ${domain}
-    # $2 = ${zone_id}
+function cloudflare_record_exists() {
 
     local domain=$1
     local zone_id=$2
 
     # Cloudflare API to change DNS records
-    log_event "info" "Checking if record ${domain} exists"
+    log_event "info" "Checking if record ${domain} exists" "false"
 
     # Only for better readibility
     record_name="${domain}"
@@ -322,11 +396,19 @@ function cloudflare_record_exists() {
 
 }
 
-function cloudflare_get_record_details() {
+################################################################################
+# Get record details for the configured domain
+#
+# Arguments:
+#   $1 = ${root_domain}
+#   $2 = ${domain}
+#   $3 = ${field} - Values: all, id, type, name, content, proxiable, proxied, ttl, locked, zone_id, zone_name, created_on, modified_on
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    # $1 = ${root_domain}
-    # $2 = ${domain}
-    # $3 = ${field} - Values: all, id, type, name, content, proxiable, proxied, ttl, locked, zone_id, zone_name, created_on, modified_on
+function cloudflare_get_record_details() {
 
     local root_domain=$1
     local domain=$2
@@ -355,7 +437,7 @@ function cloudflare_get_record_details() {
             -H "Content-Type: application/json")"
 
         # Remove Cloudflare API garbage output
-        _cloudflare_clear_garbage_output
+        clear_previous_lines "4"
 
         if [[ ${record} == *"\"success\":false"* || ${record} == "" ]]; then
 
@@ -380,12 +462,20 @@ function cloudflare_get_record_details() {
 
 }
 
-function cloudflare_set_record() {
+################################################################################
+# Set record details for the configured domain
+#
+# Arguments:
+#   $1 = ${root_domain}
+#   $2 = ${domain}
+#   $3 = ${record_type} - valid values: A, AAAA, CNAME, HTTPS, TXT, SRV, LOC, MX, NS, SPF, CERT, DNSKEY, DS, NAPTR, SMIMEA, SSHFP, SVCB, TLSA, URI
+#   $4 = ${proxy_status} - true/false
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    # $1 = ${root_domain}
-    # $2 = ${domain}
-    # $3 = ${record_type} - valid values: A, AAAA, CNAME, HTTPS, TXT, SRV, LOC, MX, NS, SPF, CERT, DNSKEY, DS, NAPTR, SMIMEA, SSHFP, SVCB, TLSA, URI
-    # $4 = ${proxy_status} - true/false
+function cloudflare_set_record() {
 
     local root_domain=$1
     local domain=$2
@@ -444,7 +534,7 @@ function cloudflare_set_record() {
             --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"
 
         # Remove Cloudflare API garbage output
-        _cloudflare_clear_garbage_output
+        clear_previous_lines "4"
 
         if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
             message="Update failed. Results:\n${update}"
@@ -479,7 +569,7 @@ function cloudflare_set_record() {
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # Remove Cloudflare API garbage output
-            _cloudflare_clear_garbage_output
+            clear_previous_lines "4"
 
             display --indent 6 --text "- Creating subdomain ${MAGENTA}${record_name}${ENDCOLOR}" --result "DONE" --color GREEN
             log_event "info" "Subdomain ${record_name} added successfully" "false"
@@ -489,7 +579,7 @@ function cloudflare_set_record() {
         else
 
             # Remove Cloudflare API garbage output
-            _cloudflare_clear_garbage_output
+            clear_previous_lines "4"
 
             display --indent 6 --text "- Creating subdomain ${record_name}" --result "FAIL" --color RED
             log_event "error" "Error creating subdomain ${record_name}" "false"
@@ -503,12 +593,20 @@ function cloudflare_set_record() {
 
 }
 
-function cloudflare_update_record() {
+################################################################################
+# Update record details for the configured domain
+#
+# Arguments:
+#   $1 = ${root_domain}
+#   $2 = ${domain}
+#   $3 = ${record_type} - valid values: A, AAAA, CNAME, HTTPS, TXT, SRV, LOC, MX, NS, SPF, CERT, DNSKEY, DS, NAPTR, SMIMEA, SSHFP, SVCB, TLSA, URI
+#   $4 = ${proxy_status} - true/false
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    # $1 = ${root_domain}
-    # $2 = ${domain}
-    # $3 = ${record_type} - valid values: A, AAAA, CNAME, HTTPS, TXT, SRV, LOC, MX, NS, SPF, CERT, DNSKEY, DS, NAPTR, SMIMEA, SSHFP, SVCB, TLSA, URI
-    # $4 = ${proxy_status} - true/false
+function cloudflare_update_record() {
 
     local root_domain=$1
     local domain=$2
@@ -540,16 +638,24 @@ function cloudflare_update_record() {
             --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"
 
         # Remove Cloudflare API garbage output
-        _cloudflare_clear_garbage_output
+        clear_previous_lines "4"
 
     fi
 
 }
 
-function cloudflare_delete_a_record() {
+################################################################################
+# Delete record
+#
+# Arguments:
+#   $1 = ${root_domain}
+#   $2 = ${domain}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    # $1 = ${root_domain}
-    # $2 = ${domain}
+function cloudflare_delete_a_record() {
 
     local root_domain=$1
     local domain=$2
@@ -580,7 +686,7 @@ function cloudflare_delete_a_record() {
             -H "Content-Type: application/json")"
 
         # Remove Cloudflare API garbage output
-        _cloudflare_clear_garbage_output
+        clear_previous_lines "4"
 
         if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
 
@@ -611,11 +717,19 @@ function cloudflare_delete_a_record() {
 
 }
 
-function cloudflare_set_cache_ttl_value() {
+################################################################################
+# Set cache TTL
+#
+# Arguments:
+#   $1 = ${root_domain}
+#   $2 = ${cache_ttl_value} - default value: 14400, valid values: 0, 30, 60, 300, 1200, 1800, 3600, 7200, 10800, 14400, 18000, 28800, 43200, 57600, 72000, 86400, 172800, 259200, 345600, 432000, 691200, 1382400, 2073600, 2678400, 5356800, 16070400, 31536000
+#                             setting a TTL of 0 is equivalent to selecting 'Respect Existing Headers'
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    # $1 = ${root_domain}
-    # $2 = ${cache_ttl_value} - default value: 14400, valid values: 0, 30, 60, 300, 1200, 1800, 3600, 7200, 10800, 14400, 18000, 28800, 43200, 57600, 72000, 86400, 172800, 259200, 345600, 432000, 691200, 1382400, 2073600, 2678400, 5356800, 16070400, 31536000
-    #                           setting a TTL of 0 is equivalent to selecting 'Respect Existing Headers'
+function cloudflare_set_cache_ttl_value() {
 
     local root_domain=$1
     local cache_ttl_value=$2
@@ -632,7 +746,7 @@ function cloudflare_set_cache_ttl_value() {
             --data "{\"value\":\"${cache_ttl_value}\"}")"
 
         # Remove Cloudflare API garbage output
-        _cloudflare_clear_garbage_output
+        clear_previous_lines "4"
 
         if [[ ${cache_ttl_result} == *"\"success\":false"* || ${cache_ttl_result} == "" ]]; then
             message="Error trying to set cache ttl for ${root_domain}. Results:\n ${cache_ttl_result}"
@@ -657,12 +771,20 @@ function cloudflare_set_cache_ttl_value() {
 
 ################################################################################
 
-# PRO
+# CLOUDFLARE PRO
+
+################################################################################
+# Set http3
+#
+# Arguments:
+#   $1 = ${root_domain}
+#   $2 = ${http3_setting} - default value: off, valid values: on, off
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function cloudflare_set_http3_setting() {
-
-    # $1 = ${root_domain}
-    # $2 = ${http3_setting} - default value: off, valid values: on, off
 
     local root_domain=$1
     local http3_setting=$2
@@ -680,12 +802,14 @@ function cloudflare_set_http3_setting() {
 
         if [[ ${cache_ttl_result} == *"\"success\":false"* || ${cache_ttl_result} == "" ]]; then
             message="Error trying to set http3 for ${root_domain}. Results:\n ${cache_ttl_result}"
-            log_event "error" "${message}"
+            log_event "error" "${message}" "false"
             return 1
 
         else
             message="HTTP3 setting for ${root_domain} is ${cache_ttl_result}"
-            log_event "info" "${message}"
+            log_event "info" "${message}" "false"
+
+            return 0
 
         fi
 
