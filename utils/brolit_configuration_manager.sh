@@ -980,7 +980,7 @@ function brolit_configuration_firewall_fail2ban() {
         if [[ ${FIREWALL_FAIL2BAN_STATUS} == "enabled" ]]; then
 
             # Enabling firewall
-            fail2ban_check_if_installed
+            package_is_installed "fail2ban"
 
             exitstatus=$?
 
