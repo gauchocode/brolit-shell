@@ -490,19 +490,17 @@ function _brolit_configuration_load_firewall_ufw() {
 
     # Globals
     declare -g FIREWALL_UFW_STATUS
-    declare -g FIREWALL_CONFIG_APP_LIST_SSH
-    declare -g FIREWALL_CONFIG_APP_LIST_HTTP
-    declare -g FIREWALL_CONFIG_APP_LIST_HTTPS
+    declare -g FIREWALL_UFW_APP_LIST_SSH
 
     FIREWALL_UFW_STATUS="$(json_read_field "${server_config_file}" "FIREWALL.ufw[].status")"
 
     if [[ ${FIREWALL_UFW_STATUS} == "enabled" ]]; then
 
         # Mandatory
-        FIREWALL_CONFIG_APP_LIST_SSH="$(json_read_field "${server_config_file}" "FIREWALL.ufw[].config[].ssh")"
+        FIREWALL_UFW_APP_LIST_SSH="$(json_read_field "${server_config_file}" "FIREWALL.ufw[].config[].ssh")"
 
         # Check if all required vars are set
-        if [[ -z "${FIREWALL_CONFIG_APP_LIST_SSH}" ]]; then
+        if [[ -z "${FIREWALL_UFW_APP_LIST_SSH}" ]]; then
             log_event "error" "Missing required config vars for firewall" "true"
             exit 1
         fi
@@ -511,7 +509,7 @@ function _brolit_configuration_load_firewall_ufw() {
 
     fi
 
-    export FIREWALL_CONFIG_APP_LIST_SSH FIREWALL_CONFIG_APP_LIST_HTTP FIREWALL_CONFIG_APP_LIST_HTTPS FIREWALL_UFW_STATUS
+    export FIREWALL_UFW_APP_LIST_SSH FIREWALL_UFW_STATUS
 
 }
 
