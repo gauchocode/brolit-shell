@@ -136,7 +136,6 @@ function firewall_status() {
     ufw_status="$(ufw status | sed -n '1 p' | cut -d " " -f 2 | sed -z 's/\n//g')"
 
     exitstatus=$?
-
     if [[ ${exitstatus} -eq 0 ]]; then
 
         if [[ ${ufw_status} == "active" ]]; then
@@ -221,6 +220,59 @@ function firewall_allow() {
         # Log
         log_event "error" "Allowing ${service} on firewall" "false"
         display --indent 2 --text "- Allowing ${service} on firewall" --result "FAIL" --color RED
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Deny specific services on firewall.
+#
+# Arguments:
+#   $1 = ${service}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function firewall_deny() {
+
+    local service=$1
+
+    # Ufw command
+    ufw_output="$(ufw deny "${service}")"
+
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        if [[ ${ufw_output} == *"existing"* ]]; then
+
+            # Log
+            log_event "info" "Denying ${service} on firewall" "false"
+            log_event "info" "Skipping adding existing rule" "false"
+            display --indent 2 --text "- Denying ${service} on firewall" --result "SKIP" --color YELLOW
+            display --indent 4 --text "Skipping adding existing rule"
+
+            return 0
+
+        else
+
+            # Log
+            log_event "info" "Denying ${service} on firewall" "false"
+            display --indent 2 --text "- Denying ${service} on firewall" --result "DONE" --color GREEN
+
+            return 0
+
+        fi
+
+    else
+
+        # Log
+        log_event "error" "Denying ${service} on firewall" "false"
+        display --indent 2 --text "- Denying ${service} on firewall" --result "FAIL" --color RED
 
         return 1
 
