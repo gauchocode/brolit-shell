@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1
+# Version: 3.1.1
 ################################################################################
 
 function fail2ban_check_if_installed() {
@@ -31,7 +31,7 @@ function fail2ban_installer() {
 
   # Updating Repos
   display --indent 6 --text "- Updating repositories"
-  
+
   apt-get --yes update -qq >/dev/null
 
   clear_previous_lines "1"

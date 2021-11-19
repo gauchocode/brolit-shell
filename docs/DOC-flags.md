@@ -25,12 +25,6 @@ Options:
 
 ## Some examples
 
-### LEMP Setup
-
-```
-./runner.sh --task "server-setup" --mariadb "default" --mariadb-pass "root_pass" --nginx "default" --php "default" --certbot
-```
-
 ### Backup
 
 #### Backup All (files, config and databases)
