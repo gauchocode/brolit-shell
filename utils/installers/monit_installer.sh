@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.1
+# Version: 3.1.2
 ################################################################################
 #
 # Monit Installer

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.1
+# Version: 3.1.2
 ################################################################################
 #
 # Server Config Manager: Brolit server configuration management.
@@ -982,18 +982,8 @@ function brolit_configuration_firewall_fail2ban() {
     # Check if firewall configuration in config file
     if [[ ${FIREWALL_FAIL2BAN_STATUS} == "enabled" ]]; then
 
-        # Enabling firewall
-        package_is_installed "fail2ban"
-
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 1 ]]; then
-
-            # Install fail2ban
-            package_install "fail2ban"
-
-            # TODO: need to configure fail2ban
-
-        fi
+        # TODO: need to configure fail2ban
+        log_event "debug" "TODO: need to configure fail2ban" "false"
 
     fi
 

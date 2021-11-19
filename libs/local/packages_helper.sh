@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.1
+# Version: 3.1.2
 ################################################################################
 #
 # Packages Helper: Perform apt actions.
@@ -213,6 +213,7 @@ function package_check_required() {
   package_install_if_not "sendemail"
   package_install_if_not "libio-socket-ssl-perl"
   package_install_if_not "ncdu"
+  package_install_if_not "fail2ban"
   package_install_if_not "ppa-purge"
 
   # Log
