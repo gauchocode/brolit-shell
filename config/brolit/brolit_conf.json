@@ -127,11 +127,11 @@
                         "ssh": "allow",
                         "http": "allow",
                         "https": "allow",
-                        "465": "disallow",
-                        "587": "disallow",
-                        "2812": "disallow",
-                        "8080": "disallow",
-                        "19999": "disallow"
+                        "465": "",
+                        "587": "",
+                        "2812": "",
+                        "8080": "deny",
+                        "19999": ""
                     }
                 ]
             }
