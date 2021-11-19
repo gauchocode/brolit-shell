@@ -2,7 +2,7 @@
     "BROLIT_SETUP": {
         "config": [
             {
-                "version": "3.4.1",
+                "version": "3.5",
                 "debug": "true",
                 "quiet": "false",
                 "skip_test": "true",
@@ -13,6 +13,7 @@
     "SERVER_CONFIG": {
         "timezone": "America/Argentina/Buenos_Aires",
         "type": "production",
+        "additional_ips": [ "" , "" ],
         "config": [
             {
                 "webserver": "disabled",
@@ -118,10 +119,10 @@
         ]
     },
     "FIREWALL": {
-        "config": [
+        "ufw": [
             {
                 "status": "disabled",
-                "app_list": [
+                "config": [
                     {
                         "ssh": "allow",
                         "http": "allow",
@@ -131,6 +132,24 @@
                         "2812": "disallow",
                         "8080": "disallow",
                         "19999": "disallow"
+                    }
+                ]
+            }
+        ],
+        "fail2ban": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "bandtime": "600",
+                        "findtime": "600",
+                        "maxretry": "3",
+                        "ignoreip": [ "127.0.0.1" , "" ],
+                        "destemail": "",
+                        "sendername": "Fail2Ban",
+                        "banaction": "iptables-multiport",
+                        "mta": "sendmail",
+                        "protocol": "tcp"
                     }
                 ]
             }

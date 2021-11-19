@@ -137,7 +137,8 @@ function brolit_configuration_load() {
     _brolit_configuration_load_telegram "${server_config_file}"
 
     ## FIREWALL
-    _brolit_configuration_load_firewall "${server_config_file}"
+    _brolit_configuration_load_firewall_ufw "${server_config_file}"
+    _brolit_configuration_load_firewall_fail2ban "${server_config_file}"
 
     ## SUPPORT
 
@@ -481,37 +482,61 @@ function _brolit_configuration_load_telegram() {
 
 }
 
-function _brolit_configuration_load_firewall() {
+function _brolit_configuration_load_firewall_ufw() {
 
     # TODO: need a refactor to make this more generic
 
     local server_config_file=$1
 
     # Globals
-    declare -g FIREWALL_CONFIG_STATUS
+    declare -g FIREWALL_UFW_STATUS
     declare -g FIREWALL_CONFIG_APP_LIST_SSH
     declare -g FIREWALL_CONFIG_APP_LIST_HTTP
     declare -g FIREWALL_CONFIG_APP_LIST_HTTPS
 
-    FIREWALL_CONFIG_STATUS="$(json_read_field "${server_config_file}" "FIREWALL.config[].status")"
+    FIREWALL_UFW_STATUS="$(json_read_field "${server_config_file}" "FIREWALL.ufw[].status")"
 
-    if [[ ${FIREWALL_CONFIG_STATUS} == "enabled" ]]; then
+    if [[ ${FIREWALL_UFW_STATUS} == "enabled" ]]; then
 
-        FIREWALL_CONFIG_APP_LIST_SSH="$(json_read_field "${server_config_file}" "FIREWALL.config[].app_list[].ssh")"
-        FIREWALL_CONFIG_APP_LIST_HTTP="$(json_read_field "${server_config_file}" "FIREWALL.config[].app_list[].http")"
-        FIREWALL_CONFIG_APP_LIST_HTTPS="$(json_read_field "${server_config_file}" "FIREWALL.config[].app_list[].https")"
+        # Mandatory
+        FIREWALL_CONFIG_APP_LIST_SSH="$(json_read_field "${server_config_file}" "FIREWALL.ufw[].config[].ssh")"
 
         # Check if all required vars are set
-        if [[ -z "${FIREWALL_CONFIG_APP_LIST_SSH}" ]] || [[ -z "${FIREWALL_CONFIG_APP_LIST_HTTP}" ]] || [[ -z "${FIREWALL_CONFIG_APP_LIST_HTTPS}" ]]; then
+        if [[ -z "${FIREWALL_CONFIG_APP_LIST_SSH}" ]]; then
             log_event "error" "Missing required config vars for firewall" "true"
             exit 1
         fi
 
+        brolit_configuration_firewall_ufw
+
     fi
 
-    brolit_configuration_firewall
+    export FIREWALL_CONFIG_APP_LIST_SSH FIREWALL_CONFIG_APP_LIST_HTTP FIREWALL_CONFIG_APP_LIST_HTTPS FIREWALL_UFW_STATUS
 
-    export FIREWALL_CONFIG_APP_LIST_SSH FIREWALL_CONFIG_APP_LIST_HTTP FIREWALL_CONFIG_APP_LIST_HTTPS FIREWALL_CONFIG_STATUS
+}
+
+function _brolit_configuration_load_firewall_fail2ban() {
+
+    local server_config_file=$1
+
+    # Globals
+    declare -g FIREWALL_FAIL2BAN_STATUS
+
+    FIREWALL_FAIL2BAN_STATUS="$(json_read_field "${server_config_file}" "FIREWALL.fail2ban[].status")"
+
+    if [[ ${FIREWALL_FAIL2BAN_STATUS} == "enabled" ]]; then
+
+        # Check if all required vars are set
+        if [[ -z "${FIREWALL_FAIL2BAN_STATUS}" ]]; then
+            log_event "error" "Missing required config vars for firewall" "true"
+            exit 1
+        fi
+
+        brolit_configuration_firewall_fail2ban
+
+    fi
+
+    export FIREWALL_FAIL2BAN_STATUS
 
 }
 
@@ -890,7 +915,7 @@ function _brolit_configuration_load_netdata() {
 
 }
 
-function brolit_configuration_firewall() {
+function brolit_configuration_firewall_ufw() {
 
     # Check firewall status
     firewall_status
@@ -899,7 +924,7 @@ function brolit_configuration_firewall() {
     if [[ ${exitstatus} -eq 1 ]]; then
 
         # Check if firewall configuration in config file
-        if [[ ${FIREWALL_CONFIG_STATUS} == "enabled" ]]; then
+        if [[ ${FIREWALL_UFW_STATUS} == "enabled" ]]; then
 
             # Enabling firewall
             firewall_enable
@@ -932,10 +957,41 @@ function brolit_configuration_firewall() {
     else
 
         # Check if firewall configuration in config file
-        if [[ ${FIREWALL_CONFIG_STATUS} == "disabled" ]]; then
+        if [[ ${FIREWALL_UFW_STATUS} == "disabled" ]]; then
 
             # Enabling firewall
             firewall_disable
+
+        fi
+
+    fi
+
+}
+
+function brolit_configuration_firewall_fail2ban() {
+
+    # Check firewall status
+    firewall_fail2ban_status
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 1 ]]; then
+
+        # Check if firewall configuration in config file
+        if [[ ${FIREWALL_FAIL2BAN_STATUS} == "enabled" ]]; then
+
+            # Enabling firewall
+            fail2ban_check_if_installed
+
+            exitstatus=$?
+
+            if [[ ${exitstatus} -eq 1 ]]; then
+
+                # Install fail2ban
+                fail2ban_install
+
+                # TODO: need to configure fail2ban
+
+            fi
 
         fi
 
