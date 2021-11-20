@@ -271,11 +271,17 @@ function project_get_stage_from_domain() {
 #  $2 = ${project_name}
 #  $3 = ${project_stage}
 #  $4 = ${project_type}
-#  $5 = ${project_db_name}
-#  $6 = ${project_db_host}
-#  $7 = ${project_domain}
-#  $8 = ${project_nginx_conf}
-#  $9 = ${project_cert_conf}
+#  $5 = ${project_db_status}
+#  $6 = ${project_db_engine}
+#  $7 = ${project_db_name}
+#  $8 = ${project_db_host}
+#  $9 = ${project_db_user}
+#  $10 = ${project_db_pass}
+#  $11 = ${project_prymary_subdomain}
+#  $12 = ${project_secondary_subdomains}
+#  $13 = ${project_override_nginx_conf}
+#  $14 = ${project_use_hhtp2}
+#  $15 = ${project_certbot_mode}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -283,15 +289,21 @@ function project_get_stage_from_domain() {
 
 function project_create_config() {
 
-  local project_path=$1
-  local project_name=$2
-  local project_stage=$3
-  local project_type=$4
-  local project_db_name=$5
-  local project_db_host=$6
-  local project_domain=$7
-  local project_nginx_conf=$8
-  local project_cert_conf=$9
+  local project_path=${1}
+  local project_name=${2}
+  local project_stage=${3}
+  local project_type=${4}
+  local project_db_status=${5}
+  local project_db_engine=${6}
+  local project_db_name=${7}
+  local project_db_host=${8}
+  local project_db_user=${9}
+  local project_db_pass=${10}
+  local project_prymary_subdomain=${11}
+  local project_secondary_subdomains=${12}
+  local project_override_nginx_conf=${13}
+  local project_use_hhtp2=${14}
+  local project_certbot_mode=${15}
 
   local project_config_file
 
@@ -314,41 +326,51 @@ function project_create_config() {
   # Write config file
   ## Doc: https://stackoverflow.com/a/61049639/2267761
 
-  ## project_path
+  ## project path
   json_write_field "${project_config_file}" "project[].path" "${project_path}"
-  #content_ppath="$(jq ".project_path = \"${project_path}\"" "${project_config_file}")" && echo "${content_ppath}" >"${project_config_file}"
 
-  ## project_name
+  ## project name
   json_write_field "${project_config_file}" "project[].name" "${project_name}"
-  #content_pname="$(jq ".project_name = \"${project_name}\"" "${project_config_file}")" && echo "${content_pname}" >"${project_config_file}"
 
-  ## project_stage
+  ## project stage
   json_write_field "${project_config_file}" "project[].stage" "${project_stage}"
-  #content_pstage="$(jq ".project_stage = \"${project_stage}\"" "${project_config_file}")" && echo "${content_pstage}" >"${project_config_file}"
 
-  ## project_db_name
-  json_write_field "${project_config_file}" "project[].db_name" "${project_db_name}"
-  #content_pdbn="$(jq ".project_db_name = \"${project_db_name}\"" "${project_config_file}")" && echo "${content_pdbn}" >"${project_config_file}"
-
-  ## project_db_host
-  json_write_field "${project_config_file}" "project[].db_host" "${project_db_host}"
-  #content_pdbh="$(jq ".project_db_host = \"${project_db_host}\"" "${project_config_file}")" && echo "${content_pdbh}" >"${project_config_file}"
-
-  ## project_type
+  ## project type
   json_write_field "${project_config_file}" "project[].type" "${project_type}"
-  #content_ptype="$(jq ".project_type = \"${project_type}\"" "${project_config_file}")" && echo "${content_ptype}" >"${project_config_file}"
 
-  ## project_subdomain
-  json_write_field "${project_config_file}" "project[].primary_subdomain" "${project_domain}"
-  #content_psubd="$(jq ".project_subdomain = \"${project_domain}\"" "${project_config_file}")" && echo "${content_psubd}" >"${project_config_file}"
+  ## project database status
+  json_write_field "${project_config_file}" "project[].database[].status" "${project_db_status}"
 
-  ## project_nginx_conf
-  json_write_field "${project_config_file}" "project[].nginx_conf" "${project_nginx_conf}"
-  #content_pnginx="$(jq ".project_nginx_conf = \"${project_nginx_conf}\"" "${project_config_file}")" && echo "${content_pnginx}" >"${project_config_file}"
+  ## project database engine
+  json_write_field "${project_config_file}" "project[].database[].status" "${project_db_engine}"
 
-  ## project_cert_conf
-  json_write_field "${project_config_file}" "project[].cert_conf" "${project_cert_conf}"
-  #content_pcert="$(jq ".project_cert_conf = \"${project_cert_conf}\"" "${project_config_file}")" && echo "${content_pcert}" >"${project_config_file}"
+  ## project database config name
+  json_write_field "${project_config_file}" "project[].database[].config[].name" "${project_db_name}"
+
+  ## project database config host
+  json_write_field "${project_config_file}" "project[].database[].config[].host" "${project_db_host}"
+
+  ## project database config user
+  json_write_field "${project_config_file}" "project[].database[].config[].user" "${project_db_user}"
+
+  ## project database config pass
+  json_write_field "${project_config_file}" "project[].database[].config[].pass" "${project_db_pass}"
+
+  ## project primary_subdomain
+  json_write_field "${project_config_file}" "project[].primary_subdomain" "${project_prymary_subdomain}"
+
+  ## project secondary_subdomains
+  ## TODO
+  #json_write_field "${project_config_file}" "project[].secondary_subdomains[]" "${project_secondary_subdomains}"
+
+  ## project override_nginx_conf
+  json_write_field "${project_config_file}" "project[].override_nginx_conf" "${project_override_nginx_conf}"
+
+  ## project use_hhtp2
+  json_write_field "${project_config_file}" "project[].use_hhtp2" "${project_use_hhtp2}"
+
+  ## project certbot_mode
+  json_write_field "${project_config_file}" "project[].certbot_mode" "${project_certbot_mode}"
 
   # Log
   log_event "info" "Project config file created: ${project_config_file}" "false"
@@ -407,6 +429,13 @@ function project_generate_config() {
 
     project_db="$(mysql_ask_database_selection)"
 
+    if [[ -z ${project_db} ]]; then
+
+      project_db_status="disabled"
+      log_event "info" "No database selected, aborting..." "false"
+
+    fi
+
   fi
 
   ## Project DB User
@@ -419,16 +448,33 @@ function project_generate_config() {
   project_nginx_conf="/etc/nginx/sites-available/${project_domain}"
 
   # Create project config file
-  cert_path="/etc/letsencrypt/live/${project_domain}"
-  if [[ -d ${cert_path} ]]; then
+  #cert_path="/etc/letsencrypt/live/${project_domain}"
+  #if [[ -d ${cert_path} ]]; then
 
-    project_create_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db}" "${project_db_host}" "${project_domain}" "${project_nginx_conf}" "${cert_path}"
+  # Arguments:
+  #  $1 = ${project_path}
+  #  $2 = ${project_name}
+  #  $3 = ${project_stage}
+  #  $4 = ${project_type}
+  #  $5 = ${project_db_status}
+  #  $6 = ${project_db_engine}
+  #  $7 = ${project_db_name}
+  #  $8 = ${project_db_host}
+  #  $9 = ${project_db_user}
+  #  $10 = ${project_db_pass}
+  #  $11 = ${project_prymary_subdomain}
+  #  $12 = ${project_secondary_subdomains}
+  #  $13 = ${project_override_nginx_conf}
+  #  $14 = ${project_use_hhtp2}
+  #  $15 = ${project_certbot_mode}
 
-  else
+  project_create_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "mysql" "${project_db_name}" "${project_db_host}" "${project_db_user}" "${project_db_pass}" "${project_domain}" "" "${project_nginx_conf}" "" "${cert_path}"
 
-    project_create_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db}" "${project_db_host}" "${project_domain}" "${project_nginx_conf}" ""
+  #else
 
-  fi
+  #  project_create_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db}" "${project_db_host}" "${project_domain}" "${project_nginx_conf}" ""
+
+  #fi
 
 }
 
