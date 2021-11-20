@@ -125,6 +125,9 @@ function monit_configure() {
       fi
 
       if [[ ! -x "${PHP_V}" && ${services_list_key} == "system" ]]; then
+
+        # TODO: if $NOTIFICATION_EMAIL_SMTP_SERVER is not set it will fail
+
         # Set Hostname
         sed -i "s#HOSTNAME#${VPSNAME}#" "/etc/monit/conf.d/${services_list_key}"
 
