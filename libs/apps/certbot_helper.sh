@@ -448,7 +448,7 @@ function certbot_certificate_get_valid_days() {
 
   local cert_days
 
-  cert_days_output="$(certbot certificates --domain "${domain}")"
+  cert_days_output="$(certbot certificates --domain "${domain}" 2>&1)"
   cert_days="$(echo "${cert_days_output}" | grep -Eo 'VALID: [0-9]+[0-9]' | cut -d ' ' -f 2)"
 
   if [[ ${cert_days} == "" ]]; then

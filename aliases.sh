@@ -9,24 +9,10 @@ VPSNAME="${HOSTNAME}"
 
 SFOLDER="/root/brolit-shell"
 
-source "${SFOLDER}/libs/commons.sh"
-
-source "${SFOLDER}/libs/local/json_helper.sh"
-
-source "${SFOLDER}/libs/local/log_and_display_helper.sh"
-
-source "${SFOLDER}/libs/local/packages_helper.sh"
-
-source "${SFOLDER}/libs/apps/firewall_helper.sh"
-
-source "${SFOLDER}/utils/brolit_configuration_manager.sh"
-
 # TODO: workaround
 declare -g EXEC_TYPE="alias"
 
 export EXEC_TYPE
-
-brolit_configuration_load "/root/.brolit_conf.json"
 
 BROLIT_CONFIG_PATH="/etc/brolit"
 
@@ -49,7 +35,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.1.2"
-ALIASES_VERSION="3.1.2-076"
+ALIASES_VERSION="3.1.2-088"
 
 ################################################################################
 
@@ -95,16 +81,41 @@ alias get_aliases_version='echo $ALIASES_VERSION'
 
 ################################################################################
 
-################################################################################
-# Transfor string to json
-#
-# Arguments:
-#   $1= ${mode} - Options: key-value, value-list
-#   $@
-#
-# Outputs:
-#   ${json_string}
-################################################################################
+function _json_read_field() {
+
+    local json_file=$1
+    local json_field=$2
+
+    local json_field_value
+
+    json_field_value="$(cat "${json_file}" | jq -r ".${json_field}")"
+
+    # Return
+    echo "${json_field_value}"
+
+}
+
+function _json_write_field() {
+
+    local json_file=$1
+    local json_field=$2
+    local json_field_value=$3
+
+    json_field_value="$(jq ".${json_field} = \"${json_field_value}\"" "${json_file}")" && echo "${json_field_value}" >"${json_file}"
+
+    exitstatus=$?
+    if [[ "${exitstatus}" -eq 0 ]]; then
+
+        return 0
+
+    else
+
+        log_event "error" "Getting value from ${json_field}" "false"
+        return 1
+
+    fi
+
+}
 
 function _jsonify_output() {
 
@@ -385,7 +396,7 @@ function _certbot_certificate_get_valid_days() {
 
     local cert_days
 
-    cert_days_output="$(certbot certificates --domain "${domain}")"
+    cert_days_output="$(certbot certificates --domain "${domain}" 2>&1)"
     cert_days="$(echo "${cert_days_output}" | grep -Eo 'VALID: [0-9]+[0-9]' | cut -d ' ' -f 2)"
 
     if [[ ${cert_days} == "" ]]; then
