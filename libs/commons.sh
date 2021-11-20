@@ -538,13 +538,13 @@ function customize_ubuntu_login_message() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    log_event "info" "Ubuntu Welcome message changed!" "false"
+    log_event "info" "Welcome message changed!" "false"
 
     return 0
 
   else
 
-    log_event "error" "Something went wrong trying to change Ubuntu Welcome message" "false"
+    log_event "error" "Something went wrong trying to change Welcome message" "false"
 
     return 1
 
