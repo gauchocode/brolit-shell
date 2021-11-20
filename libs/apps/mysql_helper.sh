@@ -843,6 +843,10 @@ function mysql_database_import() {
     log_event "info" "Importing dump file ${dump_file} into database: ${database}" "false"
     log_event "debug" "Running: pv ${dump_file} | ${MYSQL_ROOT} -f -D ${database}" "false"
 
+    # String “utf8mb4_0900_ai_ci” replaced it with “utf8mb4_general_ci“
+    # This is a workaround for a bug in MySQL 5.7.x and 5.6.x where the default collation is “utf8mb4_0900_ai_ci”.
+    sed -i 's/utf8mb4_0900_ai_ci/utf8mb4_general_ci/g' "${dump_file}"
+
     # Execute command
     pv --width 70 "${dump_file}" | ${MYSQL_ROOT} -f -D "${database}"
 
