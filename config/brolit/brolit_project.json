@@ -6,12 +6,25 @@
             "name": "",
             "stage": "",
             "type": "",
-            "db_name": "",
-            "db_host": "",
+            "database": [
+                {
+                    "status": "disabled",
+                    "engine": "mysql",
+                    "config": [
+                        {
+                            "name": "",
+                            "host": "",
+                            "user": "",
+                            "pass": ""
+                        }
+                    ]
+                }
+            ],
             "primary_subdomain": "",
             "secondary_subdomains": [],
-            "nginx_conf": "",
-            "cert_conf": ""
+            "override_nginx_conf": "",
+            "use_hhtp2": "",
+            "certbot_mode": ""
         }
     ],
     "cloudflare": [

@@ -194,9 +194,10 @@ function dropbox_download() {
     local output
     local dropbox_file_to_download_result
 
-    tmp_file_name=$(extract_filename_from_path "${file_to_download}")
+    tmp_file_name="$(extract_filename_from_path "${file_to_download}")"
 
-    log_event "info" "Downloading file to Dropbox ..." "false"
+    # Log
+    log_event "info" "Trying to download ${file_to_download} from Dropbox" "false"
 
     spinner_start "- Downloading file to Dropbox"
 
@@ -221,7 +222,7 @@ function dropbox_download() {
 
         clear_previous_lines "2"
 
-        display --indent 6 --text "- Downloading backup from dropbox" --result "ERROR" --color RED
+        display --indent 6 --text "- Downloading backup from dropbox" --result "FAIL" --color RED
         display --indent 8 --text "Please read log file" --tcolor RED
 
         log_event "error" "Can't download file ${file_to_download} from dropbox." "false"

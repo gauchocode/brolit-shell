@@ -85,6 +85,10 @@ function server_app_setup() {
         netdata_installer
         ;;
 
+    "grafana")
+        grafana_installer
+        ;;
+
     "cockpit")
         cockpit_installer
         ;;
