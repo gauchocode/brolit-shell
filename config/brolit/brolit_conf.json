@@ -161,6 +161,11 @@
                 "status": "disabled"
             }
         ],
+        "composer": [
+            {
+                "status": "disabled"
+            }
+        ],
         "cloudflare": [
             {
                 "status": "disabled",
@@ -314,6 +319,18 @@
                     {
                         "subdomain": "",
                         "port": "9090"
+                    }
+                ]
+            }
+        ],
+        "grafana": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "subdomain": "",
+                        "user": "",
+                        "user_pass": ""
                     }
                 ]
             }

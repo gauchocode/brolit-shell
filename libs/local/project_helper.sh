@@ -492,12 +492,10 @@ function project_update_config() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function project_get_config() {
+function project_get_brolit_config_file() {
 
   local project_path=$1
-  local config_field=$2
 
-  local config_value
   local project_domain
   local project_name
   local project_config_file
@@ -510,15 +508,60 @@ function project_get_config() {
 
   if [[ -e ${project_config_file} ]]; then
 
-    config_value="$(cat "${project_config_file}" | jq -r ".${config_field}")"
-
     # Return
-    echo "${config_value}"
+    echo "${project_config_file}"
+
+    return 0
 
   else
 
     # Return
     echo "false"
+
+    return 1
+
+  fi
+
+}
+
+################################################################################
+# Get project config
+#
+# Arguments:
+#  $1 = ${project_path}
+#  $2 = ${config_field}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function project_get_config() {
+
+  local project_path=$1
+  local config_field=$2
+
+  local config_value
+  local project_domain
+  local project_name
+  local project_config_file
+
+  project_config_file="$(project_get_brolit_config_file "${project_path}")"
+
+  if [[ ${project_config_file} != "false" ]]; then
+
+    config_value="$(cat "${project_config_file}" | jq -r ".${config_field}")"
+
+    # Return
+    echo "${config_value}"
+
+    return 0
+
+  else
+
+    # Return
+    echo "false"
+
+    return 1
 
   fi
 
@@ -542,45 +585,67 @@ function project_get_configured_database() {
 
   local wpconfig_path
 
-  case ${project_type} in
+  # First try to read from brolit project config
+  db_name="$(project_get_config "${project_path}" "project[].db_name")"
 
-  wordpress)
+  if [[ ${db_name} != "false" ]]; then
 
-    wpconfig_path=$(wp_config_path "${project_path}")
-
-    db_name=$(cat "${wpconfig_path}/wp-config.php" | grep DB_NAME | cut -d \' -f 4)
-
-    # Return
-    echo "${db_name}"
-
-    ;;
-
-  laravel)
-
-    # Read "${project_path}"/.env to extract DB_USER
-    db_name="$(grep -oP '^DB_DATABASE=\K.*' "${project_path}"/.env)"
+    log_event "debug" "Extracted db_name : ${db_name}" "false"
 
     # Return
     echo "${db_name}"
 
-    ;;
+    return 0
 
-  node-js)
+  else
 
-    # Read "${project_path}"/.env to extract DB_USER
-    db_name="$(grep -oP '^DB_NAME=\K.*' "${project_path}"/.env)"
+    case ${project_type} in
 
-    # Return
-    echo "${db_name}"
+    wordpress)
 
-    ;;
+      wpconfig_path=$(wp_config_path "${project_path}")
 
-  *)
-    display --indent 8 --text "Project Type Unknown" --tcolor RED
-    return 1
-    ;;
+      db_name=$(cat "${wpconfig_path}/wp-config.php" | grep DB_NAME | cut -d \' -f 4)
 
-  esac
+      log_event "debug" "Extracted db_name : ${db_name}" "false"
+
+      # Return
+      echo "${db_name}"
+
+      ;;
+
+    laravel)
+
+      # Read "${project_path}"/.env to extract DB_USER
+      db_name="$(grep -oP '^DB_DATABASE=\K.*' "${project_path}"/.env)"
+
+      log_event "debug" "Extracted db_name : ${db_name}" "false"
+
+      # Return
+      echo "${db_name}"
+
+      ;;
+
+    node-js)
+
+      # Read "${project_path}"/.env to extract DB_USER
+      db_name="$(grep -oP '^DB_NAME=\K.*' "${project_path}"/.env)"
+
+      log_event "debug" "Extracted db_name : ${db_name}" "false"
+
+      # Return
+      echo "${db_name}"
+
+      ;;
+
+    *)
+      display --indent 8 --text "Project Type Unknown" --tcolor RED
+      return 1
+      ;;
+
+    esac
+
+  fi
 
 }
 
@@ -600,43 +665,65 @@ function project_get_configured_database_user() {
   local project_path=$1
   local project_type=$2
 
-  case $project_type in
+  # First try to read from brolit project config
+  db_user="$(project_get_config "${project_path}" "project[].db_user")"
 
-  wordpress)
+  if [[ ${db_user} != "false" ]]; then
 
-    db_user=$(cat "${project_path}"/wp-config.php | grep DB_USER | cut -d \' -f 4)
-
-    # Return
-    echo "${db_user}"
-
-    ;;
-
-  laravel)
-
-    # Read "${project_path}"/.env to extract DB_USER
-    db_user="$(grep -oP '^DB_USERNAME=\K.*' "${project_path}"/.env)"
+    log_event "debug" "Extracted db_name : ${db_user}" "false"
 
     # Return
     echo "${db_user}"
 
-    ;;
+    return 0
 
-  node-js)
+  else
 
-    # Read "${project_path}"/.env to extract DB_USER
-    db_user="$(grep -oP '^DB_USER=\K.*' "${project_path}"/.env)"
+    case $project_type in
 
-    # Return
-    echo "${db_user}"
+    wordpress)
 
-    ;;
+      db_user=$(cat "${project_path}"/wp-config.php | grep DB_USER | cut -d \' -f 4)
 
-  *)
-    display --indent 8 --text "Project Type Unknown" --tcolor RED
-    return 1
-    ;;
+      log_event "debug" "Extracted db_user: ${db_user}" "false"
 
-  esac
+      # Return
+      echo "${db_user}"
+
+      ;;
+
+    laravel)
+
+      # Read "${project_path}"/.env to extract DB_USER
+      db_user="$(grep -oP '^DB_USERNAME=\K.*' "${project_path}"/.env)"
+
+      log_event "debug" "Extracted db_user: ${db_user}" "false"
+
+      # Return
+      echo "${db_user}"
+
+      ;;
+
+    node-js)
+
+      # Read "${project_path}"/.env to extract DB_USER
+      db_user="$(grep -oP '^DB_USER=\K.*' "${project_path}"/.env)"
+
+      log_event "debug" "Extracted db_user: ${db_user}" "false"
+
+      # Return
+      echo "${db_user}"
+
+      ;;
+
+    *)
+      display --indent 8 --text "Project Type Unknown" --tcolor RED
+      return 1
+      ;;
+
+    esac
+
+  fi
 
 }
 
@@ -656,43 +743,66 @@ function project_get_configured_database_userpassw() {
   local project_path=$1
   local project_type=$2
 
-  case $project_type in
+  # First try to read from brolit project config
+  db_pass="$(project_get_config "${project_path}" "project[].db_pass")"
 
-  wordpress)
-    db_pass=$(cat "${project_path}"/wp-config.php | grep DB_PASSWORD | cut -d \' -f 4)
+  if [[ ${db_pass} != "false" ]]; then
+
+    log_event "debug" "Extracted db_name : ${db_pass}" "false"
 
     # Return
     echo "${db_pass}"
 
-    ;;
+    return 0
 
-  laravel)
+  else
 
-    # Read "${project_path}"/.env to extract DB_USER
-    db_user="$(grep -oP '^DB_PASSWORD=\K.*' "${project_path}"/.env)"
+    case $project_type in
 
-    # Return
-    echo "${db_user}"
+    wordpress)
 
-    ;;
+      db_pass=$(cat "${project_path}"/wp-config.php | grep DB_PASSWORD | cut -d \' -f 4)
 
-  \
-    node-js)
+      log_event "debug" "Extracted db_pass: ${db_pass}" "false"
 
-    # Read "${project_path}"/.env to extract DB_USER
-    db_user="$(grep -oP '^DB_PASSWORD=\K.*' "${project_path}"/.env)"
+      # Return
+      echo "${db_pass}"
 
-    # Return
-    echo "${db_user}"
+      ;;
 
-    ;;
+    laravel)
 
-  *)
-    display --indent 8 --text "Project Type Unknown" --tcolor RED
-    return 1
-    ;;
+      # Read "${project_path}"/.env to extract DB_USER
+      db_user="$(grep -oP '^DB_PASSWORD=\K.*' "${project_path}"/.env)"
 
-  esac
+      log_event "debug" "Extracted db_pass: ${db_pass}" "false"
+
+      # Return
+      echo "${db_user}"
+
+      ;;
+
+    \
+      node-js)
+
+      # Read "${project_path}"/.env to extract DB_USER
+      db_user="$(grep -oP '^DB_PASSWORD=\K.*' "${project_path}"/.env)"
+
+      log_event "debug" "Extracted db_pass: ${db_pass}" "false"
+
+      # Return
+      echo "${db_user}"
+
+      ;;
+
+    *)
+      display --indent 8 --text "Project Type Unknown" --tcolor RED
+      return 1
+      ;;
+
+    esac
+
+  fi
 
 }
 

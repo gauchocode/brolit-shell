@@ -21,7 +21,7 @@ function composer_installer() {
   actual_signature="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
 
   if [[ ${expected_signature} != "${actual_signature}" ]]; then
-    log_event "error" "Invalid installer signature"
+    log_event "error" "Invalid installer signature" "false"
     rm composer-setup.php
     return 1
 
@@ -33,11 +33,11 @@ function composer_installer() {
 
     rm composer-setup.php
 
-    log_event "info" "Composer Installer finished"
+    log_event "info" "Composer Installer finished" "false"
 
   else
-    log_event "error" "Composer Installer failed"
-    log_event "debug" "composer_result=${composer_result}"
+    log_event "error" "Composer Installer failed" "false"
+    log_event "debug" "composer_result=${composer_result}" "false"
 
   fi
 
