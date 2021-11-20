@@ -911,6 +911,43 @@ function _brolit_configuration_load_netdata() {
 
 }
 
+function _brolit_configuration_load_grafana() {
+
+    local server_config_file=$1
+
+    # Globals
+    declare -g PACKAGES_GRAFANA_STATUS
+    declare -g PACKAGES_GRAFANA_CONFIG_SUBDOMAIN
+    declare -g PACKAGES_GRAFANA_CONFIG_USER
+    declare -g PACKAGES_GRAFANA_CONFIG_USER_PASS
+    declare -g PACKAGES_GRAFANA_CONFIG_ALARM_LEVEL
+
+    PACKAGES_GRAFANA_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].status")"
+
+    if [[ ${PACKAGES_GRAFANA_STATUS} == "enabled" ]]; then
+
+        PACKAGES_GRAFANA_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].config[].subdomain")"
+        PACKAGES_GRAFANA_CONFIG_USER="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].config[].user")"
+        PACKAGES_GRAFANA_CONFIG_USER_PASS="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].config[].user_pass")"
+
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_GRAFANA_CONFIG_SUBDOMAIN}" ]] || [[ -z "${PACKAGES_GRAFANA_CONFIG_USER}" ]] || [[ -z "${PACKAGES_GRAFANA_CONFIG_USER_PASS}" ]] ]]; then
+            log_event "error" "Missing required config vars for grafana support" "true"
+            exit 1
+        fi
+
+        # Checking if Netdata is installed
+        GRAFANA="$(which grafana)"
+        if [[ ! -x "${GRAFANA}" ]]; then
+            menu_config_changes_detected "grafana" "true"
+        fi
+
+    fi
+
+    export PACKAGES_GRAFANA_STATUS PACKAGES_GRAFANA_CONFIG_SUBDOMAIN PACKAGES_GRAFANA_CONFIG_USER PACKAGES_GRAFANA_CONFIG_USER_PASS PACKAGES_GRAFANA_CONFIG_ALARM_LEVEL
+
+}
+
 function brolit_configuration_firewall_ufw() {
 
     # Check if firewall configuration in config file

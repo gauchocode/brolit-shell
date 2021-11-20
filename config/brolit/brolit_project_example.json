@@ -1,17 +1,30 @@
 {
-    "brolit_project_deploy_config_version": "1.2",
+    "brolit_project_config_version": "1.2",
     "project": [
         {
             "path": "/var/www/example-domain.com",
             "name": "exampledomain",
             "stage": "prod",
             "type": "wordpress",
-            "db_name": "exampledomain_prod",
-            "db_host": "localhost",
+            "database": [
+                {
+                    "status": "enabled",
+                    "engine": "mysql",
+                    "config": [
+                        {
+                            "name": "exampledomain_prod",
+                            "host": "localhost",
+                            "user": "exampledomain_user",
+                            "pass": "PASSWORD_EXAMPLE"
+                        }
+                    ]
+                }
+            ],
             "primary_subdomain": "example-domain.com",
-            "secondary_subdomains": [ "www.example-domain.com", "www2.example-domain.com" ],
-            "override_nginx_conf": "true",
-            "use_hhtp2": "true",
+            "secondary_subdomains": [ "www.example-domain.com" , "www2.example-domain.com" ],
+            "override_nginx_conf": "false",
+            "use_hhtp2": "",
+            "ipv6_support": "false",
             "certbot_mode": "cloudflare"
         }
     ],

@@ -343,9 +343,9 @@ function restore_config_files_from_dropbox() {
 
     # Downloading Config Backup
     display --indent 6 --text "- Downloading config backup from dropbox"
-    
+
     dropbox_output="$(${DROPBOX_UPLOADER} download "${dropbox_chosen_type_path}/${chosen_config_type}/${chosen_config_bk}" 1>&2)"
-    
+
     clear_previous_lines "1"
     display --indent 6 --text "- Downloading config backup from dropbox" --result "DONE" --color GREEN
 
@@ -410,9 +410,9 @@ function restore_nginx_site_files() {
   # Downloading Config Backup
   log_event "info" "Downloading nginx backup from dropbox" "false"
   display --indent 6 --text "- Downloading nginx backup from dropbox"
-  
+
   dropbox_output="$(${DROPBOX_UPLOADER} download "${bk_to_download}" 1>&2)"
-  
+
   clear_previous_lines "1"
   display --indent 6 --text "- Downloading nginx backup from dropbox" --result "DONE" --color GREEN
 
@@ -869,43 +869,48 @@ function restore_project() {
     case ${project_type} in
 
     wordpress)
-      display --indent 4 --text "Project Type WordPress" --tcolor GREEN
+
+      display --indent 6 --text "Project Type WordPress" --tcolor GREEN
 
       # Reading config file
-      db_name="$(project_get_configured_database "${TMP_DIR}/${chosen_project}" "wordpress")"
-      db_user="$(project_get_configured_database_user "${TMP_DIR}/${chosen_project}" "wordpress")"
-      db_pass="$(project_get_configured_database_userpassw "${TMP_DIR}/${chosen_project}" "wordpress")"
+      db_name="$(project_get_configured_database "${TMP_DIR}/${chosen_project}" "${project_type}")"
+      db_user="$(project_get_configured_database_user "${TMP_DIR}/${chosen_project}" "${project_type}")"
+      db_pass="$(project_get_configured_database_userpassw "${TMP_DIR}/${chosen_project}" "${project_type}")"
 
       # Restore site files
       new_project_domain="$(restore_site_files "${chosen_domain}")"
+
+      project_path="${PROJECTS_PATH}/${new_project_domain}"
+      install_path="$(wp_config_path "${project_path}")"
+
+      # TODO: wp_config_path could be an array of dir paths, need to check that
+      if [[ ${install_path} != "" ]]; then
+
+        log_event "info" "WordPress installation found: ${project_site}/${install_path}" "false"
+
+      else
+
+        log_event "error" "WordPress installation not found" "false"
+
+        return 1
+
+      fi
+
       ;;
 
     laravel)
-      display --indent 4 --text "Project Type Laravel" --tcolor RED
+
+      display --indent 6 --text "Project Type Laravel" --tcolor RED
       ;;
 
     *)
-      display --indent 4 --text "Project Type Unknown" --tcolor RED
+
+      display --indent 6 --text "Project Type Unknown" --tcolor RED
+
       return 1
       ;;
 
     esac
-
-    # TODO: Need refactor, only works with WordPress
-    project_path="${PROJECTS_PATH}/${new_project_domain}"
-    install_path="$(wp_config_path "${project_path}")"
-    # TODO: wp_config_path could be an array of dir paths, need to check that
-    if [[ ${install_path} != "" ]]; then
-
-      log_event "info" "WordPress installation found: ${project_site}/${install_path}" "false"
-
-    else
-
-      log_event "error" "WordPress installation not found" "false"
-
-      return 1
-
-    fi
 
     # Database Backup
     backup_date="$(echo "${chosen_backup_to_restore}" | grep -Eo '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')"
@@ -921,22 +926,13 @@ function restore_project() {
 
     if [[ ${db_name} != "" ]]; then
 
-      # Log
-      log_event "debug" "Extracted db_name from wp-config: ${db_name}" "false"
-      log_event "debug" "Extracted db_user from wp-config: ${db_user}" "false"
-      log_event "debug" "Extracted db_pass from wp-config: ${db_pass}" "false"
-
-      display --indent 6 --text "- Downloading backup from dropbox"
-      display --indent 8 --text "${chosen_server}/database/${db_name}/${db_name}_database_${backup_date}.tar.bz2"
-      log_event "info" "Trying to download ${chosen_server}/database/${db_name}/${db_name}_database_${backup_date}.tar.bz2" "false"
-
       # Downloading Database Backup
       dropbox_download "${db_to_download}" "${TMP_DIR}"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 1 ]]; then
 
-        # TODO: ask to download manually calling restore_database_backup
+        # TODO: ask to download manually calling restore_database_backup or skip database restore part
 
         return 1
 
@@ -944,7 +940,7 @@ function restore_project() {
 
     else
 
-      # TODO: ask to download manually calling restore_database_backup
+      # TODO: ask to download manually calling restore_database_backup or skip database restore part
 
       return 1
 
@@ -978,11 +974,13 @@ function restore_project() {
     user_db_exists=$?
     if [[ ${user_db_exists} -eq 0 ]]; then
 
+      # Create MySQL user
       db_pass="$(openssl rand -hex 12)"
       mysql_user_create "${db_user}" "${db_pass}" ""
 
     else
 
+      # Log
       log_event "warning" "MySQL user ${db_user} already exists" "false"
       display --indent 6 --text "- Creating ${db_user} user in MySQL" --result "FAIL" --color RED
       display --indent 8 --text "MySQL user ${db_user} already exists."
@@ -993,11 +991,6 @@ function restore_project() {
 
     # Grant privileges to database user
     mysql_user_grant_privileges "${db_user}" "${db_name}"
-
-    # Change wp-config.php database parameters
-    wp_update_wpconfig "${install_path}" "${db_project_name}" "${project_state}" "${db_pass}"
-
-    # Create new configs
 
     # TODO: remove hardcoded parameters "wordpress" and "single"
     # Here we need to check if is root_domain to ask for work with www too or if has www, ask to work with root_domain too
@@ -1012,7 +1005,7 @@ function restore_project() {
     if [[ ${new_project_domain} == "${root_domain}" || ${new_project_domain} == "www.${root_domain}" ]]; then
 
       # Nginx config
-      nginx_server_create "www.${root_domain}" "wordpress" "root_domain" "${root_domain}"
+      nginx_server_create "www.${root_domain}" "${project_type}" "root_domain" "${root_domain}"
 
       # Cloudflare API
       # TODO: must check for CNAME with www
@@ -1031,7 +1024,7 @@ function restore_project() {
     else
 
       # Nginx config
-      nginx_server_create "${new_project_domain}" "wordpress" "single"
+      nginx_server_create "${new_project_domain}" "${project_type}" "single"
 
       # Cloudflare API
       cloudflare_set_record "${root_domain}" "${new_project_domain}" "A"
@@ -1048,21 +1041,35 @@ function restore_project() {
 
     fi
 
-    # TODO: check if is a WP project
+    # Check if is a WP project
 
-    # Change urls on database
-    # wp_ask_url_search_and_replace "${install_path}"
-    wpcli_search_and_replace "${install_path}" "${chosen_domain}" "${new_project_domain}"
+    if [[ ${project_type} == "wordpress" ]]; then
 
-    # Shuffle salts
-    wpcli_set_salts "${install_path}"
+      # Change wp-config.php database parameters
+      wp_update_wpconfig "${install_path}" "${db_project_name}" "${project_state}" "${db_pass}"
 
-    # Changing wordpress visibility
-    if [[ ${project_state} == "prod" ]]; then
-      wpcli_change_wp_seo_visibility "${install_path}" "1"
+      # Change urls on database
+      # wp_ask_url_search_and_replace "${install_path}"
 
-    else
-      wpcli_change_wp_seo_visibility "${install_path}" "0"
+      # TODO: non protocol before domains (need to check if http or https before)?
+      if [[ ${chosen_domain} == "${new_project_domain}" ]]; then
+
+        # Change urls on database
+        wpcli_search_and_replace "${install_path}" "${chosen_domain}" "${new_project_domain}"
+
+      fi
+
+      # Shuffle salts
+      wpcli_set_salts "${install_path}"
+
+      # Changing wordpress visibility
+      if [[ ${project_state} == "prod" ]]; then
+        wpcli_change_wp_seo_visibility "${install_path}" "1"
+
+      else
+        wpcli_change_wp_seo_visibility "${install_path}" "0"
+
+      fi
 
     fi
 
