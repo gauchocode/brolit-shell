@@ -40,14 +40,6 @@ function grafana_installer() {
 
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        # Check if firewall is enabled
-        if [ "$(ufw status | grep -c "Status: active")" -eq "1" ]; then
-            ufw allow 3000
-        fi
-
-        # Start grafana server service
-        sudo /bin/systemctl start grafana-server
-
         PACKAGES_GRAFANA_CONFIG_STATUS="enabled"
 
         json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.grafana[].status" "${PACKAGES_GRAFANA_CONFIG_STATUS}"
@@ -114,8 +106,13 @@ function grafana_configure() {
 
     log_event "info" "Restarting services ..."
 
-    # Service restart
-    systemctl restart grafana
+    # Check if firewall is enabled
+    if [ "$(ufw status | grep -c "Status: active")" -eq "1" ]; then
+        ufw allow 3000
+    fi
+
+    # Start grafana server service
+    sudo /bin/systemctl start grafana-server
 
     # Log
     display --indent 6 --text "- Restarting services" --result "DONE" --color GREEN
@@ -145,7 +142,13 @@ function grafana_installer_menu() {
     if [[ ! -x "${GRAFANA}" ]]; then
 
         grafana_installer
-        #grafana_configure
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+            grafana_configure
+
+        fi
 
     else
 
