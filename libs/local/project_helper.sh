@@ -280,7 +280,7 @@ function project_get_stage_from_domain() {
 #  $11 = ${project_prymary_subdomain}
 #  $12 = ${project_secondary_subdomains}
 #  $13 = ${project_override_nginx_conf}
-#  $14 = ${project_use_hhtp2}
+#  $14 = ${project_use_http2}
 #  $15 = ${project_certbot_mode}
 #
 # Outputs:
@@ -302,7 +302,7 @@ function project_create_config() {
   local project_prymary_subdomain=${11}
   local project_secondary_subdomains=${12}
   local project_override_nginx_conf=${13}
-  local project_use_hhtp2=${14}
+  local project_use_http2=${14}
   local project_certbot_mode=${15}
 
   local project_config_file
@@ -367,7 +367,7 @@ function project_create_config() {
   json_write_field "${project_config_file}" "project[].override_nginx_conf" "${project_override_nginx_conf}"
 
   ## project use_hhtp2
-  json_write_field "${project_config_file}" "project[].use_hhtp2" "${project_use_hhtp2}"
+  json_write_field "${project_config_file}" "project[].use_hhtp2" "${project_use_http2}"
 
   ## project certbot_mode
   json_write_field "${project_config_file}" "project[].certbot_mode" "${project_certbot_mode}"
@@ -465,7 +465,7 @@ function project_generate_config() {
   #  $11 = ${project_prymary_subdomain}
   #  $12 = ${project_secondary_subdomains}
   #  $13 = ${project_override_nginx_conf}
-  #  $14 = ${project_use_hhtp2}
+  #  $14 = ${project_use_http2}
   #  $15 = ${project_certbot_mode}
 
   project_create_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "mysql" "${project_db_name}" "${project_db_host}" "${project_db_user}" "${project_db_pass}" "${project_domain}" "" "${project_nginx_conf}" "" "${cert_path}"
