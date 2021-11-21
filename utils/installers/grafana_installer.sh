@@ -31,9 +31,22 @@ function grafana_installer() {
 
     echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list
 
-    package_install_if_not "grafana"
+    clear_previous_lines "2"
 
-    if [[ $? -eq 0 ]]; then
+    package_update
+
+    package_install_if_not "grafana"
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Check if firewall is enabled
+        if [ "$(ufw status | grep -c "Status: active")" -eq "1" ]; then
+            ufw allow 3000
+        fi
+
+        # Start grafana server service
+        sudo /bin/systemctl start grafana-server
 
         PACKAGES_GRAFANA_CONFIG_STATUS="enabled"
 
