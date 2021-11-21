@@ -945,15 +945,15 @@ function _brolit_configuration_load_grafana() {
 
     if [[ ${PACKAGES_GRAFANA_STATUS} == "enabled" ]]; then
 
-        PACKAGES_GRAFANA_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].config[].subdomain")"
-        PACKAGES_GRAFANA_CONFIG_USER="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].config[].user")"
-        PACKAGES_GRAFANA_CONFIG_USER_PASS="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].config[].user_pass")"
+        #PACKAGES_GRAFANA_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].config[].subdomain")"
+        #PACKAGES_GRAFANA_CONFIG_USER="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].config[].user")"
+        #PACKAGES_GRAFANA_CONFIG_USER_PASS="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].config[].user_pass")"
 
         # Check if all required vars are set
-        if [[ -z "${PACKAGES_GRAFANA_CONFIG_SUBDOMAIN}" ]] || [[ -z "${PACKAGES_GRAFANA_CONFIG_USER}" ]] || [[ -z "${PACKAGES_GRAFANA_CONFIG_USER_PASS}" ]]; then
-            log_event "error" "Missing required config vars for grafana support" "true"
-            exit 1
-        fi
+        #if [[ -z "${PACKAGES_GRAFANA_CONFIG_SUBDOMAIN}" ]] || [[ -z "${PACKAGES_GRAFANA_CONFIG_USER}" ]] || [[ -z "${PACKAGES_GRAFANA_CONFIG_USER_PASS}" ]]; then
+        #    log_event "error" "Missing required config vars for grafana support" "true"
+        #    exit 1
+        #fi
 
         # Checking if Netdata is installed
         GRAFANA="$(which grafana)"
