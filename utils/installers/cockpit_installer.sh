@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.3
+# Version: 3.1.5-beta
 #############################################################################
 #
 # Cockpit Installer
@@ -81,54 +81,5 @@ function cockpit_purge() {
 
     # Log
     clear_previous_lines "1"
-
-}
-
-function cockpit_installer_menu() {
-
-    package_is_installed "cockpit"
-
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 1 ]]; then
-
-        cockpit_installer_title="COCKPIT INSTALLER"
-        cockpit_installer_message="Choose an option to run:"
-        cockpit_installer_options=(
-            "01)" "INSTALL COCKPIT"
-        )
-
-        chosen_cockpit_installer_options="$(whiptail --title "${cockpit_installer_title}" --menu "${cockpit_installer_message}" 20 78 10 "${cockpit_installer_options[@]}" 3>&1 1>&2 2>&3)"
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
-
-            if [[ ${chosen_cockpit_installer_options} == *"01"* ]]; then
-
-                cockpit_installer
-
-            fi
-
-        fi
-
-    else
-
-        cockpit_installer_title="COCKPIT INSTALLER"
-        cockpit_installer_message="Choose an option to run:"
-        cockpit_installer_options=(
-            "01)" "UNINSTALL COCKPIT"
-        )
-
-        chosen_cockpit_installer_options="$(whiptail --title "${cockpit_installer_title}" --menu "${cockpit_installer_message}" 20 78 10 "${cockpit_installer_options[@]}" 3>&1 1>&2 2>&3)"
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
-
-            if [[ ${chosen_cockpit_installer_options} == *"01"* ]]; then
-
-                cockpit_purge
-
-            fi
-
-        fi
-
-    fi
 
 }

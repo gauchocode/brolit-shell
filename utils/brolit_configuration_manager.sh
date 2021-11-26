@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.3
+# Version: 3.1.5-beta
 ################################################################################
 #
 # Server Config Manager: Brolit server configuration management.
@@ -536,13 +536,13 @@ function _brolit_configuration_load_nginx() {
             exit 1
         fi
 
-        package_is_installed "nginx"
-        exitstatus=$?
-        if [[ exitstatus -eq 1 ]]; then
+    fi
 
-            menu_config_changes_detected "nginx" "true"
+    package_is_installed "nginx"
+    exitstatus=$?
+    if [[ exitstatus -eq 1 ]]; then
 
-        fi
+        menu_config_changes_detected "nginx" "true"
 
     fi
 

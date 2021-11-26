@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.3
+# Version: 3.1.5-beta
 ################################################################################
 #
 # Grafana Installer
@@ -24,35 +24,42 @@ function grafana_installer() {
 
     log_subsection "Grafana Installer"
 
-    # Add Grafana repository
-    apt-get install -y -qq apt-transport-https
-    apt-get install -y -qq software-properties-common wget
-    wget -q -O - https://packages.grafana.com/gpg.key | apt-key add -
+    # Check if Grafana repository is already installed
+    if [[ -z "$(grep "grafana" /etc/apt/sources.list)" ]]; then
 
-    echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list
+        # Add Grafana repository
+        apt-get install -y -qq apt-transport-https
+        apt-get install -y -qq software-properties-common wget
+        wget -q -O - https://packages.grafana.com/gpg.key | apt-key add -
 
-    clear_previous_lines "2"
+        echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list
 
-    package_update
+        clear_previous_lines "2"
 
-    package_install_if_not "grafana"
-    exitstatus=$?
+        package_update
 
-    if [[ ${exitstatus} -eq 0 ]]; then
+        package_install_if_not "grafana"
+        exitstatus=$?
 
-        PACKAGES_GRAFANA_CONFIG_STATUS="enabled"
+        if [[ ${exitstatus} -eq 0 ]]; then
 
-        json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.grafana[].status" "${PACKAGES_GRAFANA_CONFIG_STATUS}"
+            PACKAGES_GRAFANA_CONFIG_STATUS="enabled"
 
-        # new global value ("enabled")
-        export PACKAGES_GRAFANA_CONFIG_STATUS
+            json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.grafana[].status" "${PACKAGES_GRAFANA_CONFIG_STATUS}"
 
-        return 0
+            # new global value ("enabled")
+            export PACKAGES_GRAFANA_CONFIG_STATUS
+
+            return 0
+
+        else
+
+            return 1
+
+        fi
 
     else
-
-        return 1
-
+        log_event "warning" "Grafana repository is already installed" "false"
     fi
 
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.3
+# Version: 3.1.5-beta
 ################################################################################
 #
 # Json Helper: Functions to read and write json files.

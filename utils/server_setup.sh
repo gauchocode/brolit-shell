@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.3
+# Version: 3.1.5-beta
 ################################################################################
 #
 # Server Setup: Perform server setup actions.
@@ -33,68 +33,157 @@ function server_app_setup() {
     case "${app_setup}" in
 
     "nginx")
-        # Nginx Installer
-        nginx_installer "default"
-        nginx_reconfigure
+
+        if [[ ${PACKAGES_NGINX_CONFIG_STATUS} == "enabled" ]]; then
+            # Nginx Installer
+            nginx_installer "${PACKAGES_NGINX_CONFIG_VERSION}"
+            # Reconfigure
+            nginx_reconfigure
+            nginx_new_default_server
+            nginx_create_globals_config
+            #nginx_delete_default_directory
+        else
+            package_purge "nginx"
+        fi
+
         ;;
 
     "php")
 
-        # PHP Installer
-        php_installer "${PACKAGES_PHP_CONFIG_VERSION}"
-
-        # Mail utils packages
-        mail_utils_installer
-
-        # Reconfigure
-        php_reconfigure "${PACKAGES_PHP_CONFIG_VERSION}"
+        if [[ ${PACKAGES_PHP_CONFIG_STATUS} == "enabled" ]]; then
+            # PHP Installer
+            php_installer "${PACKAGES_PHP_CONFIG_VERSION}"
+            # Mail utils packages
+            mail_utils_installer
+            # Redis
+            #php_redis_installer #TODO: only if redis is enabled
+            # Reconfigure
+            php_reconfigure "${PACKAGES_PHP_CONFIG_VERSION}"
+        else
+            package_purge "php"
+        fi
 
         ;;
 
     "mysql")
-        mysql_default_installer
-        mysql_initial_config
+
+        if [[ ${PACKAGES_MYSQL_CONFIG_STATUS} == "enabled" ]]; then
+            mysql_default_installer
+            mysql_initial_config
+        else
+            package_purge "mariadb"
+        fi
 
         ;;
 
     "mariadb")
-        mariadb_default_installer
-        mysql_initial_config
+
+        if [[ ${PACKAGES_MARIADB_CONFIG_STATUS} == "enabled" ]]; then
+            mariadb_default_installer
+            mysql_initial_config
+        else
+            package_purge "mariadb"
+        fi
 
         ;;
 
     "redis")
-        redis_installer
-        if [[ ${PACKAGES_PHP_CONFIG_STATUS} == "enabled" ]]; then
-            php_redis_installer
+
+        if [[ ${PACKAGES_REDIS_CONFIG_STATUS} == "enabled" ]]; then
+
+            redis_installer
+            if [[ ${PACKAGES_PHP_CONFIG_STATUS} == "enabled" ]]; then
+                php_redis_installer
+            fi
+            
+        else
+            package_purge "redis"
+        fi
+
+        ;;
+
+    "nodejs")
+
+        if [[ ${PACKAGES_NODEJS_CONFIG_STATUS} == "enabled" ]]; then
+            nodejs_installer ""
+        else
+            nodejs_purge
         fi
 
         ;;
 
     "monit")
-        log_subsection "Monit Installer"
-        package_install_if_not "monit"
-        monit_configure
+
+        if [[ ${PACKAGES_MONIT_CONFIG_STATUS} == "enabled" ]]; then
+            log_subsection "Monit Installer"
+            package_install_if_not "monit"
+            monit_configure
+        else
+            monit_purge
+        fi
+
         ;;
 
     "certbot")
-        certbot_installer
+
+        if [[ ${PACKAGES_CERTBOT_CONFIG_STATUS} == "enabled" ]]; then
+            certbot_installer
+        else
+            certbot_purge
+        fi
+
         ;;
 
     "netdata")
-        netdata_installer
+
+        if [[ ${PACKAGES_NETDATA_CONFIG_STATUS} == "enabled" ]]; then
+            netdata_installer
+        else
+            netdata_uninstaller
+        fi
+
         ;;
 
     "grafana")
-        grafana_installer
+
+        if [[ ${PACKAGES_GRAFANA_CONFIG_STATUS} == "enabled" ]]; then
+            grafana_installer
+        else
+            package_purge "grafana"
+        fi
+
         ;;
 
     "cockpit")
-        cockpit_installer
+
+        if [[ ${PACKAGES_COCKPIT_CONFIG_STATUS} == "enabled" ]]; then
+            cockpit_installer
+        else
+            package_purge "cockpit"
+        fi
+
+        ;;
+
+    "teleport")
+
+        if [[ ${PACKAGES_TELEPORT_CONFIG_STATUS} == "enabled" ]]; then
+
+            teleport_installer
+
+            if [[ "${PACKAGES_TELEPORT_CONFIG_IS_SERVER}" == "true" ]]; then
+                teleport_configure "server"
+            else
+                teleport_configure "client"
+            fi
+
+        else
+            package_purge "teleport"
+        fi
+
         ;;
 
     *)
-        echo "Please answer yes or no."
+        echo "App not supported yet."
         ;;
 
     esac

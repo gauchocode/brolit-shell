@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.3
+# Version: 3.1.5-beta
 ################################################################################
 
 ################################################################################
@@ -54,7 +54,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.1.3"
+  declare -g SCRIPT_V="3.1.5-beta"
 
   # Hostname
   declare -g VPSNAME="$HOSTNAME"
@@ -1584,9 +1584,10 @@ function menu_main_options() {
 
   else
 
-    log_event "info" "Exiting script ..." "false"
-
+    # Log
+    echo ""
     echo -e "${B_RED}Exiting script ...${ENDCOLOR}"
+    log_event "info" "Exiting script ..." "false"
 
     exit 0
 

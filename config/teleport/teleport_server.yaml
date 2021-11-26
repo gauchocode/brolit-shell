@@ -1,0 +1,34 @@
+version: v2
+teleport:
+  nodename: TELEPORT_NODENAME
+  data_dir: /var/lib/teleport
+  log:
+    output: stderr
+    severity: INFO
+    format:
+      output: text
+  ca_pin: []
+  diag_addr: ""
+auth_service:
+  enabled: "yes"
+  listen_addr: 0.0.0.0:3025
+  cluster_name: TELEPORT_CLUSTER_NAME
+  proxy_listener_mode: multiplex
+ssh_service:
+  enabled: "yes"
+  labels:
+    env: SERVER_ENV
+    type: SERVER_TYPE
+    role: SERVER_ROLE
+  commands:
+  - name: hostname
+    command: [hostname]
+    period: 1m0s
+proxy_service:
+  enabled: "yes"
+  web_listen_addr: 0.0.0.0:443
+  public_addr: TELEPORT_CLUSTER_DOMAIN:443
+  https_keypairs: []
+  acme:
+    enabled: "yes"
+    email: TELEPORT_EMAIL
