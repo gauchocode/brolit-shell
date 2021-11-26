@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.3
+# Version: 3.1.5-beta
 ################################################################################
 #
 # PHP Helper: Perform php configuration tasks.
@@ -182,7 +182,7 @@ function php_set_version_on_config() {
     sed -i "s+PHP_V+${php_v}+g" "${config_file}"
 
     # Log
-    log_event "debug" "Running: s+PHP_V+${php_v}+g ${config_file}"
+    log_event "debug" "Running: s+PHP_V+${php_v}+g ${config_file}" "false"
 
   else
 
@@ -462,8 +462,11 @@ function php_select_version_to_work_with() {
 
   local php_v=$1
 
+  # String to array
+  IFS=' ' read -r -a php_v_array <<<"$php_v"
+
   # Get length of $php_v array
-  len=${#php_v[@]}
+  len=${#php_v_array[@]}
 
   if [[ $len != 1 ]]; then
 

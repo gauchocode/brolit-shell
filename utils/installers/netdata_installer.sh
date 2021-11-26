@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.3
+# Version: 3.1.5-beta
 ################################################################################
 #
 # Netdata Installer
@@ -235,7 +235,7 @@ function netdata_installer() {
   if [[ $? -eq 0 ]]; then
 
     NETDATA_CONFIG_STATUS="enabled"
-    
+
     json_write_field "${BROLIT_CONFIG_FILE}" "SUPPORT.netdata[].status" "${NETDATA_CONFIG_STATUS}"
 
     # new global value ("enabled")
@@ -268,63 +268,38 @@ function netdata_installer() {
 
 function netdata_uninstaller() {
 
-  while true; do
+  # Log
+  clear_previous_lines "2"
+  log_event "warning" "Uninstalling Netdata ..." "false"
 
-    echo -e "${YELLOW}${ITALIC} > Do you really want to uninstall netdata?${ENDCOLOR}"
-    read -p "Please type 'y' or 'n'" yn
+  # Deleting mysql user
+  mysql_user_delete "netdata" "localhost"
 
-    case $yn in
+  # Search for netdata nginx server file
+  netdata_server_file="$(grep "proxy_pass http://127.0.0.1:19999/" /etc/nginx/sites-available/* | cut -d ":" -f1)"
+  netdata_server_file="$(basename "${netdata_server_file}")"
 
-    [Yy]*)
+  # Deleting nginx server files
+  nginx_server_delete "${netdata_server_file}"
 
-      # Log
-      clear_previous_lines "2"
-      log_event "warning" "Uninstalling Netdata ..." "false"
+  # Deleting installation files
+  rm --force --recursive "/etc/netdata"
+  rm --force "/etc/systemd/system/netdata.service"
+  rm --force "/usr/sbin/netdata"
 
-      # Deleting mysql user
-      mysql_user_delete "netdata" "localhost"
+  # Running uninstaller
+  if [[ -f "/usr/libexec/netdata-uninstaller.sh" ]]; then
+    source "/usr/libexec/netdata-uninstaller.sh" --yes --dont-wait
+  fi
 
-      # Search for netdata nginx server file
-      netdata_server_file="$(grep "proxy_pass http://127.0.0.1:19999/" /etc/nginx/sites-available/* | cut -d ":" -f1)"
-      netdata_server_file="$(basename "${netdata_server_file}")"
+  # new config
+  config_file="/root/.brolit_conf.json"
+  config_field="SUPPORT.netdata[].status"
+  config_value="disable"
+  json_write_field "${config_file}" "${config_field}" "${config_value}"
 
-      # Deleting nginx server files
-      nginx_server_delete "${netdata_server_file}"
-
-      # Deleting installation files
-      rm --force --recursive "/etc/netdata"
-      rm --force "/etc/systemd/system/netdata.service"
-      rm --force "/usr/sbin/netdata"
-
-      # Running uninstaller
-      if [[ -f "/usr/libexec/netdata-uninstaller.sh" ]]; then
-        source "/usr/libexec/netdata-uninstaller.sh" --yes --dont-wait
-      fi
-
-      # new config
-      config_file="/root/.brolit_conf.json"
-      config_field="SUPPORT.netdata[].status"
-      config_value="disable"
-      json_write_field "${config_file}" "${config_field}" "${config_value}"
-
-      log_event "info" "Netdata removed ok!" "false"
-      display --indent 6 --text "- Uninstalling netdata" --result "DONE" --color GREEN
-
-      break
-      ;;
-
-    [Nn]*)
-
-      log_event "warning" "Aborting netdata installer script ..." "false"
-
-      break
-      ;;
-
-    *) echo " > Please answer yes or no." ;;
-
-    esac
-
-  done
+  log_event "info" "Netdata removed ok!" "false"
+  display --indent 6 --text "- Uninstalling netdata" --result "DONE" --color GREEN
 
 }
 
@@ -426,7 +401,7 @@ function netdata_installer_menu() {
     if [[ -z "${PACKAGE_NETDATA_CONFIG_SUBDOMAIN}" ]]; then
 
       netdata_subdomain="$(whiptail --title "Netdata Installer" --inputbox "Please insert the subdomain you want to install Netdata. Ex: monitor.domain.com" 10 60 3>&1 1>&2 2>&3)"
-      
+
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 

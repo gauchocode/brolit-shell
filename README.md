@@ -14,6 +14,7 @@ BROLIT Shell is a **BASH** based cloud server control software which can be used
 
 * Performance.
 * Pre-installed on linux systems.
+* Not overloaded with dependencies.
 
 ## Why BROLIT Shell?
 
@@ -148,9 +149,13 @@ Please read CONTRIBUTING.md for details on our code of conduct, and the process 
 
 [Best Practices](./docs/CODE.md)
 
-## Authors
+## Team
 
-* **Leandro Padula** - *Initial work* - [BROOBE](https://www.broobe.com)
+This theme is maintained by the following person(s) and a bunch of [awesome contributors](https://github.com/lpadula/brolit-shell/graphs/contributors).
+
+[![Leandro Padula](https://github.com/lpadula.png?size=100)](https://github.com/lpadula) |
+--- |
+[Leandro Padula](https://github.com/lpadula) |
 
 ## License
 

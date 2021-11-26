@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.3
+# Version: 3.1.5-beta
 #############################################################################
 
 function mysql_default_installer() {
@@ -124,72 +124,3 @@ function mysql_initial_config() {
 
 }
 
-function mysql_installer_menu() {
-
-  local mysql_installed
-  local mysql_installer_options
-  local chosen_mysql_installer_option
-
-  mysql_installed="true"
-
-  mysql_check_if_installed
-
-  if [[ ${mysql_installed} == "false" ]]; then
-
-    mysql_installer_options=(
-      "01)" "INSTALL MARIADB"
-      "02)" "INSTALL MYSQL"
-    )
-
-    chosen_mysql_installer_option="$(whiptail --title "MySQL INSTALLER" --menu "Choose a MySQL version to install" 20 78 10 "${mysql_installer_options[@]}" 3>&1 1>&2 2>&3)"
-
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-
-      if [[ ${chosen_mysql_installer_option} == *"01"* ]]; then
-        mariadb_default_installer
-
-      fi
-      if [[ ${chosen_mysql_installer_option} == *"02"* ]]; then
-        mysql_default_installer
-
-      fi
-
-      # Secure mysql installation
-      # mysql_secure_installation
-      mysql_initial_config
-
-    else
-      log_event "warning" "Operation cancelled" "false"
-      return 1
-
-    fi
-
-  else
-
-    while true; do
-
-      echo -e "${YELLOW}${ITALIC} > MySQL already installed, do you want to remove it?${ENDCOLOR}"
-      read -p "Please type 'y' or 'n'" yn
-
-      case $yn in
-      [Yy]*)
-        clear_previous_lines "2"
-        mysql_purge_installation
-        break
-        ;;
-
-      [Nn]*)
-        clear_previous_lines "2"
-        log_event "warning" "Operation cancelled" "false"
-        break
-        ;;
-
-      *) echo " > Please answer yes or no." ;;
-      esac
-
-    done
-
-  fi
-
-}

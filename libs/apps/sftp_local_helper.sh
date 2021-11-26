@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.3
+# Version: 3.1.5-beta
 #############################################################################
 #
 # SFTP Local Helper: Local sftp configuration functions
@@ -46,7 +46,7 @@ function _sftp_add_folder_permission() {
     log_event "debug" "Running: mount --bind ${dir_path}${folder} /home/${username}/${folder}" "false"
 
     # Mount permanent
-    echo "${dir_path}/${folder} /home/${username}/${folder} none bind   0      0" >>"/etc/fstab"
+    echo "${dir_path}${folder} /home/${username}/${folder} none bind   0      0" >>"/etc/fstab"
 
     # Log
     display --indent 6 --text "- Writing fstab to make it permanent" --result "DONE" --color GREEN

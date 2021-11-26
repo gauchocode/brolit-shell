@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.3
+# Version: 3.1.5-beta
 ################################################################################
 
 function php_get_standard_distro_version() {
@@ -241,11 +241,6 @@ function php_installer_menu() {
       php_custom_installer
       mail_utils_installer
       #php_redis_installer
-
-      # TODO: if you install a new PHP version, maybe you want to reconfigure an specific nginx_server
-      # nginx_reconfigure_sites()
-      # fastcgi_pass unix:/var/run/php/php5.6-fpm.sock;
-      # fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
 
     fi
 

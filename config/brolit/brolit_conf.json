@@ -2,18 +2,23 @@
     "BROLIT_SETUP": {
         "config": [
             {
-                "version": "3.5",
+                "version": "3.6.2",
                 "debug": "true",
                 "quiet": "false",
                 "skip_test": "true",
-                "check_pkgs": "false"
+                "check_packages": "false",
+                "check_mounted_p": "false"
             }
         ]
     },
     "SERVER_CONFIG": {
         "timezone": "America/Argentina/Buenos_Aires",
         "type": "production",
-        "additional_ips": [ "" , "" ],
+        "ftp_config": "/root/.brolit_ftp.conf",
+        "additional_ips": [
+            "",
+            ""
+        ],
         "config": [
             {
                 "webserver": "disabled",
@@ -129,7 +134,7 @@
                         "https": "allow",
                         "465": "",
                         "587": "",
-                        "2812": "",
+                        "3022": "",
                         "8080": "deny",
                         "19999": ""
                     }
@@ -144,7 +149,10 @@
                         "bandtime": "600",
                         "findtime": "600",
                         "maxretry": "3",
-                        "ignoreip": [ "127.0.0.1" , "" ],
+                        "ignoreip": [
+                            "127.0.0.1",
+                            ""
+                        ],
                         "destemail": "",
                         "sendername": "Fail2Ban",
                         "banaction": "iptables-multiport",
@@ -156,16 +164,6 @@
         ]
     },
     "SUPPORT": {
-        "wpcli": [
-            {
-                "status": "disabled"
-            }
-        ],
-        "composer": [
-            {
-                "status": "disabled"
-            }
-        ],
         "cloudflare": [
             {
                 "status": "disabled",
@@ -207,6 +205,12 @@
                 "config": [
                     {
                         "opcode": "disabled"
+                    }
+                ],
+                "extensions": [
+                    {
+                        "wpcli": "disabled",
+                        "composer": "disabled"
                     }
                 ]
             }
@@ -267,6 +271,24 @@
                         "port": ""
                     }
                 ]
+            }
+        ],
+        "docker": [
+            {
+                "status": "disabled",
+                "version": "default",
+                "compose": [
+                    {
+                        "status": "disabled",
+                        "version": "default"
+                    }
+                ]
+            }
+        ],
+        "portainer": [
+            {
+                "status": "disabled",
+                "version": "default"
             }
         ],
         "certbot": [
@@ -331,6 +353,48 @@
                         "subdomain": "",
                         "user": "",
                         "user_pass": ""
+                    }
+                ]
+            }
+        ],
+        "loki": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "name": "",
+                        "url": "",
+                        "port": ""
+                    }
+                ]
+            }
+        ],
+        "promtail": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "name": "",
+                        "url": "",
+                        "port": ""
+                    }
+                ]
+            }
+        ],
+        "teleport": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "is_server": "false",
+                        "nodename": "",
+                        "cluster_name": "",
+                        "public_addr": "",
+                        "advertise_ip": "",
+                        "email": "",
+                        "user": "",
+                        "proxy_service": "disabled",
+                        "labels": []
                     }
                 ]
             }

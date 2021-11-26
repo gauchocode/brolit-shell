@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.3
+# Version: 3.1.5-beta
 ################################################################################
 #
 #   Ref: https://github.com/nodesource/distributions#debinstall
@@ -124,55 +124,5 @@ function nodejs_purge() {
     clear_previous_lines "1"
     display --indent 6 --text "- Removing nodejs and libraries" --result "DONE" --color GREEN
     log_event "info" "nodejs removed"
-
-}
-
-function nodejs_installer_menu() {
-
-    local nodejs_is_installed
-
-    nodejs_is_installed="$(nodejs_check_if_installed)"
-
-    if [[ ${nodejs_is_installed} == "false" ]]; then
-
-        nodejs_installer_title="NodeJS INSTALLER"
-        nodejs_installer_message="Choose an option to run:"
-        nodejs_installer_options=(
-            "01)" "INSTALL NODEJS"
-        )
-
-        chosen_nodejs_installer_options="$(whiptail --title "${nodejs_installer_title}" --menu "${nodejs_installer_message}" 20 78 10 "${nodejs_installer_options[@]}" 3>&1 1>&2 2>&3)"
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
-
-            if [[ ${chosen_nodejs_installer_options} == *"01"* ]]; then
-
-                nodejs_installer ""
-
-            fi
-
-        fi
-
-    else
-
-        nodejs_installer_title="NODEJS INSTALLER"
-        nodejs_installer_message="Choose an option to run:"
-        nodejs_installer_options=(
-            "01)" "UNINSTALL NODEJS"
-        )
-
-        chosen_nodejs_installer_options="$(whiptail --title "${nodejs_installer_title}" --menu "${nodejs_installer_message}" 20 78 10 "${nodejs_installer_options[@]}" 3>&1 1>&2 2>&3)"
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
-
-            if [[ ${chosen_nodejs_installer_options} == *"01"* ]]; then
-
-                nodejs_purge
-
-            fi
-
-        fi
-
-    fi
 
 }
