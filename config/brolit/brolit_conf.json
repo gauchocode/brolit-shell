@@ -6,15 +6,14 @@
                 "debug": "true",
                 "quiet": "false",
                 "skip_test": "true",
-                "check_packages": "false",
-                "check_mounted_p": "false"
-            }
+                "check_packages": "false"            }
         ]
     },
     "SERVER_CONFIG": {
         "timezone": "America/Argentina/Buenos_Aires",
         "type": "production",
         "ftp_config": "/root/.brolit_ftp.conf",
+        "unattended_upgrades": "false",
         "additional_ips": [
             "",
             ""
