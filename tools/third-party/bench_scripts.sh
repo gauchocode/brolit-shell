@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://example.com
-# Version: 3.1.5-beta
+# Version: 3.1.6
 ################################################################################
 #
 # Ref: https://github.com/haydenjames/bench-scripts
