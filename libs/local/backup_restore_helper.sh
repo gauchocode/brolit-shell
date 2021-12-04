@@ -208,10 +208,6 @@ function restore_backup_from_ftp() {
 
 function restore_backup_server_selection() {
 
-  SITES_F="site"
-  CONFIG_F="configs"
-  DBS_F="database"
-
   local dropbox_server_list # list servers directories on dropbox
   local chosen_server       # whiptail var
 
@@ -683,7 +679,7 @@ function restore_type_selection_from_dropbox() {
           # Decompress
           decompress "${TMP_DIR}/${chosen_backup_to_restore}" "${TMP_DIR}" "lbzip2"
 
-          if [[ ${chosen_type} == *"${DBS_F}"* ]]; then
+          if [[ ${chosen_type} == *"database"* ]]; then
 
             # Asking project state with suggested actual state
             suffix="$(cut -d'_' -f2 <<<${chosen_project})"
@@ -716,8 +712,13 @@ function restore_type_selection_from_dropbox() {
             else
 
               # User already exists
-              log_event "warning" "MySQL user ${db_user} already exists" "false"
-              whiptail_message "WARNING" "MySQL user ${db_user} already exists. Please after the script ends, check project configuration files."
+
+              # Log
+              display --indent 6 --text "- Create MySQL user" --result "FAIL" --color RED
+              display --indent 8 --text "MySQL user ${db_user} already exists" --tcolor YELLOW --tstyle ITALIC
+              display --indent 8 --text "After the script ends, check project configuration files" --tcolor YELLOW --tstyle ITALIC
+
+              log_event "warning" "MySQL user ${db_user} already exists. Please after the script ends, check project configuration files." "false"
 
             fi
 
@@ -787,10 +788,8 @@ function restore_type_selection_from_dropbox() {
           else
             # site
 
-            # Here, for convention, chosen_project should be CHOSEN_DOMAIN...
-            # Only for better code reading, i assign this new var:
-            chosen_domain="${chosen_project}"
-            restore_site_files "${chosen_domain}"
+            # At this point chosen_project is the new project domain
+            restore_site_files "${chosen_project}"
 
           fi
 
@@ -949,9 +948,8 @@ function restore_project() {
     # Decompress
     decompress "${TMP_DIR}/${db_name}_database_${backup_date}.tar.bz2" "${TMP_DIR}" "lbzip2"
 
-    # Trying to extract project name from domain
-    chosen_root_domain="$(get_root_domain "${chosen_domain}")"
-    possible_project_name="$(extract_domain_extension "${chosen_root_domain}")"
+    # Extract project name from domain
+    possible_project_name="$(project_get_name_from_domain "${chosen_domain}")"
 
     # Asking project state with suggested actual state
     suffix="$(cut -d'_' -f2 <<<${chosen_project})"
@@ -966,6 +964,7 @@ function restore_project() {
     # Restore database function
     restore_database_backup "${db_project_name}" "${project_state}" "${db_name}_database_${backup_date}.tar.bz2"
 
+    # Database parameters   
     db_name="${db_project_name}_${project_state}"
     db_user="${db_project_name}_user"
 
@@ -990,15 +989,12 @@ function restore_project() {
     fi
 
     # Grant privileges to database user
-    mysql_user_grant_privileges "${db_user}" "${db_name}"
-
-    # TODO: remove hardcoded parameters "wordpress" and "single"
-    # Here we need to check if is root_domain to ask for work with www too or if has www, ask to work with root_domain too
+    mysql_user_grant_privileges "${db_user}" "${db_name}" ""
 
     possible_root_domain="$(get_root_domain "${new_project_domain}")"
     root_domain="$(ask_root_domain "${possible_root_domain}")"
 
-    # TODO: if $new_project_domain == $chosen_domain, maybe ask if want to restore nginx and let's encrypt config files
+    # TODO: if ${new_project_domain} == ${chosen_domain}, maybe ask if want to restore nginx and let's encrypt config files
     # restore_letsencrypt_site_files "${chosen_domain}" "${backup_date}"
     # restore_nginx_site_files "${chosen_domain}" "${backup_date}"
 
@@ -1022,6 +1018,8 @@ function restore_project() {
       fi
 
     else
+
+      # TODO: remove hardcoded parameters "wordpress" and "single"
 
       # Nginx config
       nginx_server_create "${new_project_domain}" "${project_type}" "single"
@@ -1049,10 +1047,8 @@ function restore_project() {
       wp_update_wpconfig "${install_path}" "${db_project_name}" "${project_state}" "${db_pass}"
 
       # Change urls on database
-      # wp_ask_url_search_and_replace "${install_path}"
-
       # TODO: non protocol before domains (need to check if http or https before)?
-      if [[ ${chosen_domain} == "${new_project_domain}" ]]; then
+      if [[ ${chosen_domain} != "${new_project_domain}" ]]; then
 
         # Change urls on database
         wpcli_search_and_replace "${install_path}" "${chosen_domain}" "${new_project_domain}"
