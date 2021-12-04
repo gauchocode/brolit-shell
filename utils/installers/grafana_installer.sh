@@ -80,7 +80,9 @@ function grafana_purge() {
 
     package_purge "grafana"
 
-    if [[ $? -eq 0 ]]; then
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
 
         PACKAGES_GRAFANA_CONFIG_STATUS="disabled"
 
@@ -115,7 +117,7 @@ function grafana_configure() {
 
     # Check if firewall is enabled
     if [ "$(ufw status | grep -c "Status: active")" -eq "1" ]; then
-        ufw allow 3000
+        firewall_allow "3000"
     fi
 
     # Start grafana server service
@@ -126,71 +128,5 @@ function grafana_configure() {
 
     log_event "info" "Grafana configured" "false"
     display --indent 6 --text "- Grafana configuration" --result "DONE" --color GREEN
-
-}
-
-################################################################################
-# Grafana installer menu
-#
-# Arguments:
-#   none
-#
-# Outputs:
-#   none
-################################################################################
-
-function grafana_installer_menu() {
-
-    # TODO: Add a menu to reconfigure or uninstall if grafana is installed
-
-    # Check if Grafana is installed
-    GRAFANA="$(command -v grafana)"
-
-    if [[ ! -x "${GRAFANA}" ]]; then
-
-        grafana_installer
-
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
-
-            grafana_configure
-
-        fi
-
-    else
-
-        while true; do
-
-            echo -e "${YELLOW}${ITALIC} > Grafana is already installed. Do you want to reconfigure grafana?${ENDCOLOR}"
-            read -p "Please type 'y' or 'n'" yn
-
-            case $yn in
-
-            [Yy]*)
-
-                log_subsection "Grafana Configurator"
-
-                grafana_configure
-
-                break
-                ;;
-
-            [Nn]*)
-
-                log_event "warning" "Aborting grafana configuration script ..." "false"
-
-                break
-                ;;
-
-            *) echo " > Please answer yes or no." ;;
-
-            esac
-
-        done
-
-        # Called twice to remove last messages
-        clear_previous_lines "2"
-
-    fi
 
 }
