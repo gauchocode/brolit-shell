@@ -14,7 +14,7 @@ function composer_installer() {
   local expected_signature
   local actual_signature
 
-  log_event "info" "Running composer installer"
+  log_event "info" "Running composer installer" "false"
 
   expected_signature="$(wget -q -O - https://composer.github.io/installer.sig)"
   php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
