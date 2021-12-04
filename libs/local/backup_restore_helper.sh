@@ -786,7 +786,7 @@ function restore_type_selection_from_dropbox() {
           if [[ ${chosen_type} == *"database"* ]]; then
 
             # Asking project state with suggested actual state
-            suffix="$(cut -d'_' -f2 <<<${chosen_project})"
+            suffix=${chosen_project%_*}     ## strip the tail
             project_state="$(ask_project_state "${suffix}")"
 
             # Extract project_name (it will remove last part of db name with "_" char)
@@ -918,8 +918,6 @@ function restore_type_selection_from_dropbox() {
 
 function restore_project() {
 
-  # $1 = ${chosen_server}
-
   local chosen_server=$1
 
   local dropbox_project_list
@@ -1028,12 +1026,8 @@ function restore_project() {
     backup_date="$(echo "${chosen_backup_to_restore}" | grep -Eo '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')"
     db_to_download="${chosen_server}/database/${db_name}/${db_name}_database_${backup_date}.tar.bz2"
 
-    # Extracting project_state from
-    project_state="$(cut -d'_' -f2 <<<${db_name})"
-
     # Log
-    log_event "debug" "Project selected: ${chosen_project}" "false"
-    log_event "debug" "Project state: ${project_state}" "false"
+    log_event "debug" "Project database selected: ${chosen_project}" "false"
     log_event "debug" "Backup date: ${backup_date}" "false"
 
     if [[ ${db_name} != "" ]]; then
@@ -1062,10 +1056,10 @@ function restore_project() {
     decompress "${TMP_DIR}/${db_name}_database_${backup_date}.tar.bz2" "${TMP_DIR}" "lbzip2"
 
     # Extract project name from domain
-    possible_project_name="$(project_get_name_from_domain "${chosen_domain}")"
+    possible_project_name="$(project_get_name_from_domain "${new_project_domain}")"
 
     # Asking project state with suggested actual state
-    suffix="$(cut -d'_' -f2 <<<${chosen_project})"
+    suffix=${chosen_project%_*}     ## strip the tail
     project_state="$(ask_project_state "${suffix}")"
 
     # Asking project name
