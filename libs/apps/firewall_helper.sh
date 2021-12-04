@@ -179,7 +179,7 @@ function firewall_status() {
 # Allow specific services on firewall.
 #
 # Arguments:
-#   $1 = ${service}
+#   $1 = ${service} - service or port
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -197,6 +197,9 @@ function firewall_allow() {
     exitstatus=$?
 
     if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Change brolit_conf.json
+        json_write_field "${BROLIT_CONFIG_FILE}" "FIREWALL.ufw[].config[].${service}" "allow"
 
         if [[ ${ufw_output} == *"existing"* ]]; then
 
@@ -251,6 +254,9 @@ function firewall_deny() {
 
     if [[ ${exitstatus} -eq 0 ]]; then
 
+        # Change brolit_conf.json
+        json_write_field "${BROLIT_CONFIG_FILE}" "FIREWALL.ufw[].config[].${service}" "deny"
+
         if [[ ${ufw_output} == *"existing"* ]]; then
 
             # Log
@@ -300,7 +306,7 @@ function firewall_fail2ban_status() {
     local fail2ban_output
 
     # Fail2ban command
-    fail2ban_output="$(fail2ban-client status "${service}" > /dev/null)"
+    fail2ban_output="$(fail2ban-client status "${service}" >/dev/null)"
 
     exitstatus=$?
 

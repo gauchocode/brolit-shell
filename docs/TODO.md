@@ -33,7 +33,7 @@
 
 ### In Progress
 
-- [ ] Core: ufw and fail2ban support.
+- [ ] Core: ufw support.
 - [ ] Core: Stop netdata alerts when a backup or virus analysis is started.
 - [ ] Core: Generate project config file (/etc/brolit/domain_conf.json).
 - [ ] Core: Flags should receive a json file to deploy or restore a new project.
@@ -46,13 +46,14 @@
 
 ## For release 3.3
 
+- [ ] Core: fail2ban support.
+- [ ] Core: composer support.
+- [ ] Core: node.js support.
 - [ ] Core: Let configure temp. backup directory.
-- [ ] Core: Docker support (backup, restore, list containers, status).
+- [ ] Core: Docker support (deploy, backup, restore, delete, list containers, status).
+        https://github.com/urre/wordpress-nginx-docker-compose
+        https://serverfault.com/questions/1009841/backup-of-dockerized-wordpress
 - [ ] Core: Docker compose support.
-- [ ] Core: Podman support.
-- [ ] Core: Git deployment support.
-- [ ] Core: Resolve small "TODOs" comments on the project.
-- [ ] Core: Prevent execute the script more than once at a time (maybe a .lock file?).
 - [ ] Core: Better structure of deleted projects on dropbox.
 - [ ] Core: Add an option to backup all and prepare VPS to be offline/deleted (add a VPS offline structure on dropbox).
 - [ ] Core: create a way to check if nginx, php, and mysql are configured with the script recommendations.
@@ -60,6 +61,7 @@
       Logs could be stored on "${PROJECTS_PATH}/${ROOT_DOMAIN}/${SUBDOMAIN}/log"
 - [ ] Core: maybe with could ask for database user nomenclature. Today is "PROJECTNAME_user" and it could be "PROJECTNAME_PROJECTSTATE_user".
 - [ ] Backups: Refactor for backup/restore: 5 options (server_config, site_config, site, database and project).
+- [ ] Backups: Backup retention configuration from brolit_conf.json
 - [ ] Restore: Refactor function restore_config_files_from_dropbox.
 - [ ] Nginx: Multidomain support for nginx.
 - [ ] MySQL: Rename database (with and without WP).
@@ -69,6 +71,10 @@
 
 ## For release 3.4
 
+- [ ] Core: Podman support.
+- [ ] Core: Git deployment support.
+- [ ] Core: Resolve small "TODOs" comments on the project.
+- [ ] Core: Prevent execute the script more than once at a time (maybe a .lock file?).
 - [ ] Core: Add support to create projects with a database on different server.
         https://www.digitalocean.com/community/tutorials/automating-the-deployment-of-a-scalable-wordpress-site
         https://spinupwp.com/scaling-wordpress-dedicated-database-server/
