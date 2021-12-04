@@ -826,7 +826,7 @@ function restore_type_selection_from_dropbox() {
             fi
 
             # Grant privileges to database user
-            mysql_user_grant_privileges "${db_user}" "${db_project_name}_${project_state}"
+            mysql_user_grant_privileges "${db_user}" "${db_project_name}_${project_state}" ""
 
             # TODO: ask if want to change project db parameters and make cloudflare changes
 
