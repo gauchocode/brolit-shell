@@ -8,23 +8,46 @@
 #
 ################################################################################
 
-# This is executed if we want to restore a file backup on directory with the same name
-function _make_temp_files_backup() {
+################################################################################
+# Make temp directory backup.
+# This should be executed if we want to restore a file backup on directory
+# with the same name.
+#
+# Arguments:
+#   $1 = ${folder_to_backup}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  # $1 = Folder to backup
+function _make_temp_files_backup() {
 
   local folder_to_backup=$1
 
   display --indent 6 --text "- Creating backup on temp directory"
 
   # Moving project files to temp directory
-  mkdir "${SFOLDER}/tmp/old_backup"
-  mv "${folder_to_backup}" "${SFOLDER}/tmp/old_backup"
+  mkdir "${SFOLDER}/tmp/old_backups"
+  mv "${folder_to_backup}" "${SFOLDER}/tmp/old_backups"
 
-  # Log
-  clear_previous_lines "1"
-  log_event "info" "Temp backup completed and stored here: ${SFOLDER}/tmp/old_backup" "false"
-  display --indent 6 --text "- Creating backup on temp directory" --result "DONE" --color GREEN
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Log
+    clear_previous_lines "1"
+    log_event "info" "Temp backup completed and stored here: ${SFOLDER}/tmp/old_backups" "false"
+    display --indent 6 --text "- Creating backup on temp directory" --result "DONE" --color GREEN
+
+    return 0
+
+  else
+
+    # Log
+    display --indent 6 --text "-- ERROR: Could not move project files to temp directory"
+
+    return 1
+
+  fi
 
 }
 
@@ -35,6 +58,16 @@ function _make_temp_files_backup() {
 #
 #################################################################################
 #
+
+################################################################################
+# Restore backup from local file
+#
+# Arguments:
+#   $1 = ${folder_to_backup}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function restore_backup_from_local_file() {
 
@@ -138,6 +171,16 @@ function restore_backup_from_local_file() {
 
 }
 
+################################################################################
+# Restore backup from ftp/sftp server
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function restore_backup_from_ftp() {
 
   whiptail_message_with_skip_option "RESTORE FROM FTP" "The script will prompt you for project details and the FTP credentials. Then it will download all files one by one. If a .sql or .sql.gz is present, it will ask you if you want to restore the database too."
@@ -206,6 +249,16 @@ function restore_backup_from_ftp() {
 
 }
 
+################################################################################
+# Restore backup from dropbox (server selection)
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function restore_backup_server_selection() {
 
   local dropbox_server_list # list servers directories on dropbox
@@ -232,6 +285,7 @@ function restore_backup_server_selection() {
       restore_type_selection_from_dropbox "${chosen_server}" "${dropbox_type_list}"
 
     else
+
       restore_manager_menu
 
     fi
@@ -246,11 +300,19 @@ function restore_backup_server_selection() {
 
 }
 
-function restore_database_backup() {
+################################################################################
+# Restore database backup
+#
+# Arguments:
+#   $1 = ${project_name}
+#   $2 = ${project_state}
+#   $3 = ${project_backup} - The backup file must be in ${TMP_DIR}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  #$1 = ${project_name}
-  #$2 = ${project_state}
-  #$3 = ${project_backup} - The backup file must be in ${TMP_DIR}
+function restore_database_backup() {
 
   local project_name=$1
   local project_state=$2
@@ -309,10 +371,18 @@ function restore_database_backup() {
 
 }
 
-function restore_config_files_from_dropbox() {
+################################################################################
+# Restore database backup
+#
+# Arguments:
+#   $1 = ${dropbox_chosen_type_path}
+#   $2 = ${dropbox_project_list}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  #$1 = ${dropbox_chosen_type_path}
-  #$2 = ${dropbox_project_list}
+function restore_config_files_from_dropbox() {
 
   local dropbox_chosen_type_path=$1
   local dropbox_project_list=$2
@@ -383,10 +453,18 @@ function restore_config_files_from_dropbox() {
 
 }
 
-function restore_nginx_site_files() {
+################################################################################
+# Restore nginx site files
+#
+# Arguments:
+#   $1 = ${domain}
+#   $2 = ${date}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  # $1 = ${domain} optional
-  # $2 = ${date} optional
+function restore_nginx_site_files() {
 
   local domain=$1
   local date=$2
@@ -471,10 +549,18 @@ function restore_nginx_site_files() {
 
 }
 
-function restore_letsencrypt_site_files() {
+################################################################################
+# Restore letsencrypt files
+#
+# Arguments:
+#   $1 = ${domain}
+#   $2 = ${date}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  # $1 = ${domain}
-  # $2 = ${date}
+function restore_letsencrypt_site_files() {
 
   local domain=$1
   local date=$2
@@ -536,6 +622,16 @@ function restore_letsencrypt_site_files() {
   display --indent 6 --text "- Restoring letsencrypt config files" --result "DONE" --color GREEN
 
 }
+
+################################################################################
+# Restore site files
+#
+# Arguments:
+#   $1 = ${chosen_domain}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function restore_site_files() {
 
@@ -612,14 +708,22 @@ function restore_site_files() {
 
 }
 
+################################################################################
+# Restore type selection from dropbox
+#
+# Arguments:
+#   $1 = ${chosen_server}
+#   $2 = ${dropbox_type_list}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function restore_type_selection_from_dropbox() {
 
   # TODO: check project type (WP? Laravel? other?)
   # ask for directory_browser if apply
   # add credentials on external txt and send email
-
-  # $1 = chosen_server
-  # $2 = dropbox_type_list
 
   local chosen_server=$1
   local dropbox_type_list=$2
@@ -686,9 +790,8 @@ function restore_type_selection_from_dropbox() {
             project_state="$(ask_project_state "${suffix}")"
 
             # Extract project_name (it will remove last part of db name with "_" char)
-            project_name=${chosen_project%"_$suffix"}
-
-            project_name="$(ask_project_name "${project_name}")"
+            possible_project_name=${chosen_project%"_$suffix"}
+            project_name="$(ask_project_name "${possible_project_name}")"
 
             # Running mysql_name_sanitize $for project_name
             db_project_name="$(mysql_name_sanitize "${project_name}")"
@@ -802,6 +905,16 @@ function restore_type_selection_from_dropbox() {
   fi
 
 }
+
+################################################################################
+# Restore project
+#
+# Arguments:
+#   $1 = ${chosen_server}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function restore_project() {
 
@@ -964,7 +1077,7 @@ function restore_project() {
     # Restore database function
     restore_database_backup "${db_project_name}" "${project_state}" "${db_name}_database_${backup_date}.tar.bz2"
 
-    # Database parameters   
+    # Database parameters
     db_name="${db_project_name}_${project_state}"
     db_user="${db_project_name}_user"
 
