@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.5-beta
+# Version: 3.1.6
 ################################################################################
 #
 # Server Setup: Perform server setup actions.
