@@ -39,8 +39,8 @@ function grafana_installer() {
         package_update
 
         package_install_if_not "grafana"
+        
         exitstatus=$?
-
         if [[ ${exitstatus} -eq 0 ]]; then
 
             PACKAGES_GRAFANA_CONFIG_STATUS="enabled"
@@ -81,7 +81,6 @@ function grafana_purge() {
     package_purge "grafana"
 
     exitstatus=$?
-
     if [[ ${exitstatus} -eq 0 ]]; then
 
         PACKAGES_GRAFANA_CONFIG_STATUS="disabled"
@@ -114,6 +113,8 @@ function grafana_purge() {
 function grafana_configure() {
 
     log_event "info" "Restarting services ..."
+
+    # TODO: if is nginx installed, then create nginx server and proxy grafana
 
     # Check if firewall is enabled
     if [ "$(ufw status | grep -c "Status: active")" -eq "1" ]; then
