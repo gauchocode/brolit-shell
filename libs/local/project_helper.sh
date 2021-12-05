@@ -342,7 +342,7 @@ function project_create_config() {
   json_write_field "${project_config_file}" "project[].database[].status" "${project_db_status}"
 
   ## project database engine
-  json_write_field "${project_config_file}" "project[].database[].status" "${project_db_engine}"
+  json_write_field "${project_config_file}" "project[].database[].engine" "${project_db_engine}"
 
   ## project database config name
   json_write_field "${project_config_file}" "project[].database[].config[].name" "${project_db_name}"
@@ -421,35 +421,40 @@ function project_generate_config() {
   project_type="$(project_get_type "${project_path}")"
 
   ## Project DB
-  project_db="${project_name}_${project_stage}"
+  project_db_name="${project_name}_${project_stage}"
 
-  mysql_database_exists "${project_db}"
+  mysql_database_exists "${project_db_name}"
   exitstatus=$?
   if [[ ${exitstatus} -eq 1 ]]; then
 
-    project_db="$(mysql_ask_database_selection)"
+    project_db_name="$(mysql_ask_database_selection)"
 
-    if [[ -z ${project_db} ]]; then
+    if [[ -z ${project_db_name} ]]; then
 
       project_db_status="disabled"
       log_event "info" "No database selected, aborting..." "false"
+
+    else
+
+      ## Project DB User
+      project_db_user="$(project_get_configured_database_user "${project_path}" "${project_type}")"
+
+      ## Project DB User Pass
+      project_db_user="$(project_get_configured_database_userpassw "${project_path}" "${project_type}")"
+
+      ## Project DB Host
+      project_db_host="$(mysql_ask_user_db_scope "localhost")"
 
     fi
 
   fi
 
-  ## Project DB User
-  #project_db_user="${project_name}_user"
-
-  ## Project DB Host
-  project_db_host="$(mysql_ask_user_db_scope "localhost")"
-
   ## Check if file exists
   project_nginx_conf="/etc/nginx/sites-available/${project_domain}"
 
-  # Create project config file
   #cert_path="/etc/letsencrypt/live/${project_domain}"
-  #if [[ -d ${cert_path} ]]; then
+
+  # Create project config file
 
   # Arguments:
   #  $1 = ${project_path}
@@ -469,12 +474,6 @@ function project_generate_config() {
   #  $15 = ${project_certbot_mode}
 
   project_create_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "mysql" "${project_db_name}" "${project_db_host}" "${project_db_user}" "${project_db_pass}" "${project_domain}" "" "${project_nginx_conf}" "" "${cert_path}"
-
-  #else
-
-  #  project_create_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db}" "${project_db_host}" "${project_domain}" "${project_nginx_conf}" ""
-
-  #fi
 
 }
 
