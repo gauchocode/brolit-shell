@@ -437,6 +437,9 @@ function project_generate_config() {
 
   else
 
+    ## Project DB status
+    project_db_status="enabled"
+
     ## Project DB User
     project_db_user="$(project_get_configured_database_user "${project_path}" "${project_type}")"
 
@@ -450,6 +453,8 @@ function project_generate_config() {
 
   ## Check if file exists
   project_nginx_conf="/etc/nginx/sites-available/${project_domain}"
+
+  # TODO: certbot, cloudflare and backup retention options
 
   #cert_path="/etc/letsencrypt/live/${project_domain}"
 
@@ -1453,6 +1458,13 @@ function php_project_installer() {
 
         nginx_server_add_http2_support "${project_domain}"
 
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+          http2_support="true"
+
+        fi
+
       fi
 
     else
@@ -1463,6 +1475,27 @@ function php_project_installer() {
     fi
 
   fi
+
+  # Create project config file
+
+  # Arguments:
+  #  $1 = ${project_path}
+  #  $2 = ${project_name}
+  #  $3 = ${project_stage}
+  #  $4 = ${project_type}
+  #  $5 = ${project_db_status}
+  #  $6 = ${project_db_engine}
+  #  $7 = ${project_db_name}
+  #  $8 = ${project_db_host}
+  #  $9 = ${project_db_user}
+  #  $10 = ${project_db_pass}
+  #  $11 = ${project_prymary_subdomain}
+  #  $12 = ${project_secondary_subdomains}
+  #  $13 = ${project_override_nginx_conf}
+  #  $14 = ${project_use_http2}
+  #  $15 = ${project_certbot_mode}
+
+  project_create_config "${project_path}" "${project_name}" "${project_state}" "php" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "/etc/nginx/sites-available/${project_domain}" "${http2_support}" "${cert_path}"
 
   # Log
   log_event "info" "PHP project installation for domain ${project_domain} finished" "false"
