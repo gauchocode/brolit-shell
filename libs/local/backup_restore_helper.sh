@@ -211,6 +211,17 @@ function restore_backup_from_ftp() {
     ## Download files from ftp
     ftp_download "${ftp_domain}" "${ftp_path}" "${ftp_user}" "${ftp_pass}" "${TMP_DIR}/${project_domain}"
 
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 1 ]]; then
+
+      # Log
+      log_event "error" "FTP connection failed!" "false"
+      display --indent 6 --text "- Restore project" --result "FAIL" --color RED
+
+      return 1
+
+    fi
+
     # Search for .sql or sql.gz files
     local find_result
 
@@ -248,6 +259,170 @@ function restore_backup_from_ftp() {
     move_files "${TMP_DIR}/${project_domain}" "${PROJECTS_PATH}"
 
   fi
+
+}
+
+################################################################################
+# Restore backup from public url (ex: https://domain.com/backup.tar.gz)
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+# TODO: need refactor
+function restore_from_public_url() {
+
+  # Project details
+  project_domain="$(ask_project_domain "")"
+
+  possible_root_domain="$(get_root_domain "${project_domain}")"
+
+  root_domain="$(cloudflare_ask_rootdomain "${possible_root_domain}")"
+
+  possible_project_name="$(project_get_name_from_domain "${project_domain}")"
+
+  project_name="$(ask_project_name "${possible_project_name}")"
+
+  project_state="$(ask_project_state "")"
+
+  source_files_url=$(whiptail --title "Source File URL" --inputbox "Please insert the URL where backup files are stored." 10 60 "https://domain.com/backup-files.zip" 3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Return
+    echo "${source_files_url}"
+
+  else
+    return 1
+
+  fi
+
+  folder_to_install="$(ask_folder_to_install_sites "${PROJECTS_PATH}")"
+
+  log_event "debug" "Creating tmp directories" "false"
+  mkdir "${TMP_DIR}"
+  mkdir "${TMP_DIR}/${project_domain}"
+  cd "${TMP_DIR}/${project_domain}"
+
+  # File Backup details
+  bk_f_file=${source_files_url##*/}
+
+  # Log
+  log_event "info" "Downloading file backup ${source_files_url}" "true"
+  log_event "debug" "Running: wget ${source_files_url}" "false"
+
+  # Download File Backup
+  wget "${source_files_url}"
+
+  # Uncompressing
+  log_event "info" "Uncompressing file backup: ${bk_f_file}" "true"
+  decompress "${bk_f_file}"
+
+  # Create database and user
+  db_project_name=$(mysql_name_sanitize "${project_name}")
+
+  database_name="${db_project_name}_${project_state}"
+  database_user="${db_project_name}_user"
+  database_user_passw=$(openssl rand -hex 12)
+
+  mysql_database_create "${database_name}"
+  mysql_user_create "${database_user}" "${database_user_passw}" "localhost"
+  mysql_user_grant_privileges "${database_user}" "${database_name}" "localhost"
+
+  # Search for .sql or sql.gz files
+  local find_result
+
+  # Find backups from downloaded ftp files
+  find_result="$({
+    find "${TMP_DIR}/${project_domain}" -name "*.sql"
+    find "${TMP_DIR}/${project_domain}" -name "*.sql.gz"
+  })"
+
+  if [[ ${find_result} != "" ]]; then
+
+    log_event "info" "Database backups found on downloaded files" "false"
+
+    array_to_checklist "${find_result}"
+
+    # Backup file selection
+    chosen_database_backup="$(whiptail --title "DATABASE TO RESTORE" --checklist "Select the database backup you want to restore." 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+      # Restore database
+      restore_database_backup "${project_name}" "${project_state}" "${chosen_database_backup}"
+
+    else
+
+      log_event "info" "Database backup selection skipped" "false"
+      display --indent 6 --text "- Database backup selection" --result "SKIPPED" --color YELLOW
+
+    fi
+
+  fi
+
+  # Move to ${folder_to_install}
+  log_event "info" "Moving ${project_domain} to ${folder_to_install} ..." "false"
+  mv "${SFOLDER}/tmp/${project_domain}" "${folder_to_install}/${project_domain}"
+
+  change_ownership "www-data" "www-data" "${folder_to_install}/${project_domain}"
+
+  actual_folder="${folder_to_install}/${project_domain}"
+
+  install_path="$(wp_config_path "${actual_folder}")"
+  if [[ -z "${install_path}" ]]; then
+
+    log_event "info" "WordPress installation found" "false"
+
+    # Change file and dir permissions
+    wp_change_permissions "${actual_folder}/${install_path}"
+
+    # Change wp-config.php database parameters
+    if [[ -z "${DB_PASS}" ]]; then
+      wp_update_wpconfig "${actual_folder}/${install_path}" "${project_name}" "${project_state}" ""
+
+    else
+      wp_update_wpconfig "${actual_folder}/${install_path}" "${project_name}" "${project_state}" "${DB_PASS}"
+
+    fi
+
+  fi
+
+  # Create nginx config files for site
+  nginx_server_create "${project_domain}" "wordpress" "single"
+
+  # Get server IP
+  #IP=$(dig +short myip.opendns.com @resolver1.opendns.com) 2>/dev/null
+
+  # TODO: Ask for subdomains to change in Cloudflare (root domain asked before)
+  # SUGGEST "${project_domain}" and "www${project_domain}"
+
+  # Cloudflare API to change DNS records
+  cloudflare_set_record "${root_domain}" "${project_domain}" "A"
+
+  # HTTPS with Certbot
+  certbot_helper_installer_menu "${NOTIFICATION_EMAIL_MAILA}" "${project_domain}"
+
+  # WP Search and Replace URL
+  wp_ask_url_search_and_replace
+
+  # Remove tmp files
+  log_event "info" "Removing downloaded files ..." "false"
+  rm -r "${SFOLDER}/tmp/${project_domain}"
+
+  # Send notifications
+  send_notification "✅ ${VPSNAME}" "Project ${project_name} restored!"
+
+  HTMLOPEN='<html><body>'
+  BODY_SRV_MIG='Migración finalizada en '${ELAPSED_TIME}'<br/>'
+  BODY_DB='Database: '${project_name}'_'${project_state}'<br/>Database User: '${project_name}'_user <br/>Database User Pass: '${DB_PASS}'<br/>'
+  HTMLCLOSE='</body></html>'
+
+  mail_send_notification "✅ ${VPSNAME} - Project ${project_name} restored!" "${HTMLOPEN} ${BODY_SRV_MIG} ${BODY_DB} ${BODY_CLF} ${HTMLCLOSE}"
 
 }
 
