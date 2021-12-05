@@ -202,10 +202,7 @@ function restore_manager_menu() {
     fi
     if [[ ${chosen_restore_options} == *"02"* ]]; then
 
-      # shellcheck source=${SFOLDER}/utils/restore_from_public_url.sh
-      source "${SFOLDER}/utils/restore_from_public_url.sh"
-
-      restore_from_public_url
+      restore_backup_from_public_url
 
     fi
     if [[ ${chosen_restore_options} == *"03"* ]]; then
