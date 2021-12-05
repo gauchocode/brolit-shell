@@ -319,7 +319,7 @@ function project_create_config() {
   else
 
     # Copy empty config file
-    cp "${SFOLDER}/config/brolit/brolit_project_conf.json" "${project_config_file}"
+    cp "${SFOLDER}/config/brolit/brolit_project.json" "${project_config_file}"
 
   fi
 
