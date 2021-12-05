@@ -955,9 +955,11 @@ function _brolit_configuration_load_grafana() {
         #    exit 1
         #fi
 
-        # Checking if Netdata is installed
-        GRAFANA="$(which grafana)"
-        if [[ ! -x "${GRAFANA}" ]]; then
+        # Checking if Grafana is installed
+        package_is_installed "grafana"
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 1 ]]; then
             menu_config_changes_detected "grafana" "true"
         fi
 
