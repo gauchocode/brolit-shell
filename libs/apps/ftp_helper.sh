@@ -30,7 +30,20 @@ function ftp_download() {
     local local_directory=$6
     #local excluded_dirs=$5
 
+    log_event "debug" "Running: wget -r -l 0 --reject=log,.ftpquota ftp://\"${ftp_ip}/${ftp_path}\" --ftp-user=\"${ftp_user}\" --ftp-password=\"${ftp_pass}\" -nH --cut-dirs=1 --directory-prefix=\"${local_directory}\"" "false"
+    
     # wget -r -l 0 --reject=log,.ftpquota --exclude-directories=/public_html/cgi-bin,/public_html/.well-known ftp://"${ftp_ip}/${ftp_path}" --ftp-user="${ftp_user}" --ftp-password="${ftp_pass}" -nH --cut-dirs=1
     wget -r -l 0 --reject=log,.ftpquota ftp://"${ftp_ip}/${ftp_path}" --ftp-user="${ftp_user}" --ftp-password="${ftp_pass}" -nH --cut-dirs=1 --directory-prefix="${local_directory}"
+
+    exitstatus=$?
+    if [ $exitstatus -ne 0 ]; then
+
+        # Log
+        log_event "error" "Failed to download from FTP server" "false"
+        display --indent 6 --text "- Downloading from FTP" --result "FAIL" --color RED
+
+        return 1
+        
+    fi
 
 }
