@@ -421,7 +421,7 @@ function project_generate_config() {
   project_type="$(project_get_type "${project_path}")"
 
   ## Project DB
-  project_db_name="${project_name}_${project_stage}"
+  project_db_name="$(project_get_configured_database "${project_path}" "${project_type}")"
 
   mysql_database_exists "${project_db_name}"
   exitstatus=$?
@@ -433,19 +433,18 @@ function project_generate_config() {
 
       project_db_status="disabled"
       log_event "info" "No database selected, aborting..." "false"
-
-    else
-
-      ## Project DB User
-      project_db_user="$(project_get_configured_database_user "${project_path}" "${project_type}")"
-
-      ## Project DB User Pass
-      project_db_user="$(project_get_configured_database_userpassw "${project_path}" "${project_type}")"
-
-      ## Project DB Host
-      project_db_host="$(mysql_ask_user_db_scope "localhost")"
-
     fi
+
+  else
+
+    ## Project DB User
+    project_db_user="$(project_get_configured_database_user "${project_path}" "${project_type}")"
+
+    ## Project DB User Pass
+    project_db_pass="$(project_get_configured_database_userpassw "${project_path}" "${project_type}")"
+
+    ## Project DB Host
+    project_db_host="$(mysql_ask_user_db_scope "localhost")"
 
   fi
 
