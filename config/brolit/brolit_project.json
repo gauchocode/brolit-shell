@@ -24,6 +24,7 @@
             "secondary_subdomains": [],
             "override_nginx_conf": "",
             "use_hhtp2": "",
+            "ipv6_support": "",
             "certbot_mode": ""
         }
     ],
@@ -34,7 +35,9 @@
                 {
                     "email": "",
                     "api_key": "",
-                    "zone_id": ""
+                    "zone_id": "",
+                    "proxy": "",
+                    "ssl_mode": ""
                 }
             ]
         }

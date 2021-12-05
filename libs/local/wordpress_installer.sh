@@ -192,6 +192,13 @@ function wordpress_project_install() {
 
         nginx_server_add_http2_support "${project_domain}"
 
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+          http2_support="true"
+
+        fi
+
       fi
 
     else
@@ -206,15 +213,30 @@ function wordpress_project_install() {
   # Create project config file
   cert_primary_domain="$(echo "${cert_project_domain}" | cut -d "," -f 1)"
   cert_path="/etc/letsencrypt/live/${cert_primary_domain}"
-  if [[ -d ${cert_path} ]]; then
-
-    project_create_config "${project_path}" "${project_name}" "${project_state}" "wordpress" "${database_name}" "localhost" "${project_domain}" "/etc/nginx/sites-available/${project_domain}" "${cert_path}"
-
-  else
-
-    project_create_config "${project_path}" "${project_name}" "${project_state}" "wordpress" "${database_name}" "localhost" "${project_domain}" "/etc/nginx/sites-available/${project_domain}" ""
-
+  if [[ ! -d ${cert_path} ]]; then
+    cert_path=""
   fi
+
+  # Create project config file
+
+  # Arguments:
+  #  $1 = ${project_path}
+  #  $2 = ${project_name}
+  #  $3 = ${project_stage}
+  #  $4 = ${project_type}
+  #  $5 = ${project_db_status}
+  #  $6 = ${project_db_engine}
+  #  $7 = ${project_db_name}
+  #  $8 = ${project_db_host}
+  #  $9 = ${project_db_user}
+  #  $10 = ${project_db_pass}
+  #  $11 = ${project_prymary_subdomain}
+  #  $12 = ${project_secondary_subdomains}
+  #  $13 = ${project_override_nginx_conf}
+  #  $14 = ${project_use_http2}
+  #  $15 = ${project_certbot_mode}
+
+  project_create_config "${project_path}" "${project_name}" "${project_state}" "wordpress" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "/etc/nginx/sites-available/${project_domain}" "${http2_support}" "${cert_path}"
 
   # Log
   log_event "info" "WordPress installation for domain ${project_domain} finished" "false"
