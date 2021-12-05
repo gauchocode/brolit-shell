@@ -123,6 +123,16 @@ function package_is_installed() {
 
 }
 
+################################################################################
+# Install package with apt.
+#
+# Arguments:
+#   $1 = ${package}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function package_install() {
 
   local package=$1
