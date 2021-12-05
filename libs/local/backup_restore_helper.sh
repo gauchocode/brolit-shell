@@ -273,7 +273,7 @@ function restore_backup_from_ftp() {
 ################################################################################
 
 # TODO: need refactor
-function restore_from_public_url() {
+function restore_backup_from_public_url() {
 
   # Project details
   project_domain="$(ask_project_domain "")"
@@ -316,6 +316,17 @@ function restore_from_public_url() {
 
   # Download File Backup
   wget "${source_files_url}"
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 1 ]]; then
+
+    # Log
+    log_event "error" "Download failed!" "false"
+    display --indent 6 --text "- Restore project" --result "FAIL" --color RED
+
+    return 1
+
+  fi
 
   # Uncompressing
   log_event "info" "Uncompressing file backup: ${bk_f_file}" "true"
