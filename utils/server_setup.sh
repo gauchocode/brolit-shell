@@ -16,7 +16,7 @@ function server_prepare() {
     system_timezone_configuration
 
     # Unattended upgrades
-    system_enable_unnatended_upgrades
+    system_unnatended_upgrades
 
     # Packages update
     package_update

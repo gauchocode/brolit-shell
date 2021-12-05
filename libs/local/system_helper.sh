@@ -10,6 +10,8 @@
 
 ################################################################################
 # Enable system automatic updates
+# Ref:
+#   https://www.linuxbabe.com/ubuntu/automatic-security-update-unattended-upgrades-ubuntu
 #
 # Arguments:
 #   none
@@ -18,47 +20,55 @@
 #   0 if ok, 1 on error.
 ################################################################################
 
-function system_enable_unnatended_upgrades() {
+function system_unnatended_upgrades() {
 
-    # Ref:
-    #   https://www.linuxbabe.com/ubuntu/automatic-security-update-unattended-upgrades-ubuntu
+    # Check if unattended-upgrades is enabled on brolit_conf.json
+    if [[ ${UNATTENDED_UPGRADES} == "enabled" ]]; then
 
-    # Check if /etc/apt/apt.conf.d/20auto-upgrades exists
-    if [[ -f /etc/apt/apt.conf.d/20auto-updates ]]; then
+        # Check if /etc/apt/apt.conf.d/20auto-upgrades exists
+        if [[ -f /etc/apt/apt.conf.d/20auto-updates ]]; then
 
-        # Log
-        log_event "info" "Unnatended upgrades already configured" "false"
-        display --indent 6 --text "- Unnatended upgrades" --result "DONE" --color GREEN
+            # Log
+            log_event "info" "Unnatended upgrades already configured" "false"
+            display --indent 6 --text "- Unnatended upgrades" --result "ENABLED" --color GREEN
 
-        return 0
+            return 0
+
+        else
+
+            # Enable automatic security updates
+            package_update
+            package_install "unattended-upgrades"
+            package_install "update-notifier-common"
+
+            # Uncomment to enable notifications
+            sed -i "s#//Unattended-Upgrade::Mail \"\";#Unattended-Upgrade::Mail \"${NOTIFICATION_EMAIL_MAILA}\";#" /etc/apt/apt.conf.d/50unattended-upgrades
+            sed -i "s#//Unattended-Upgrade::MailReport \"on-change\";#Unattended-Upgrade::Mail \"only-on-error\";#" /etc/apt/apt.conf.d/50unattended-upgrades
+            sed -i "s#//Unattended-Upgrade::Remove-Unused-Dependencies \"false\";#Unattended-Upgrade::Remove-Unused-Dependencies \"true\";#" /etc/apt/apt.conf.d/50unattended-upgrades
+
+            sed -i "s#//Unattended-Upgrade::Automatic-Reboot \"false\";#Unattended-Upgrade::Automatic-Reboot \"true\";#" /etc/apt/apt.conf.d/50unattended-upgrades
+            sed -i "s#//Unattended-Upgrade::Automatic-Reboot-Time \"02:00\";#Unattended-Upgrade::Automatic-Reboot-Time \"03:00\";#" /etc/apt/apt.conf.d/50unattended-upgrades
+
+            # Create /etc/apt/apt.conf.d/20auto-upgrades
+            touch /etc/apt/apt.conf.d/20auto-upgrades
+
+            # Adding new lines into /etc/apt/apt.conf.d/20auto-upgrades
+            echo "APT::Periodic::Update-Package-Lists \"1\";" >>/etc/apt/apt.conf.d/20auto-upgrades
+            echo "APT::Periodic::Unattended-Upgrade \"1\";" >>/etc/apt/apt.conf.d/20auto-upgrades
+
+            # Log
+            log_event "info" "Unnatended upgrades configured" "false"
+            display --indent 6 --text "- Unnatended upgrades" --result "ENABLED" --color GREEN
+
+            return 0
+
+        fi
 
     else
 
-        # Enable automatic security updates
-        package_update
-        package_install "unattended-upgrades"
-        package_install "update-notifier-common"
-
-        # Uncomment to enable notifications
-        sed -i "s#//Unattended-Upgrade::Mail \"\";#Unattended-Upgrade::Mail \"${NOTIFICATION_EMAIL_MAILA}\";#" /etc/apt/apt.conf.d/50unattended-upgrades
-        sed -i "s#//Unattended-Upgrade::MailReport \"on-change\";#Unattended-Upgrade::Mail \"only-on-error\";#" /etc/apt/apt.conf.d/50unattended-upgrades
-        sed -i "s#//Unattended-Upgrade::Remove-Unused-Dependencies \"false\";#Unattended-Upgrade::Remove-Unused-Dependencies \"true\";#" /etc/apt/apt.conf.d/50unattended-upgrades
-
-        sed -i "s#//Unattended-Upgrade::Automatic-Reboot \"false\";#Unattended-Upgrade::Automatic-Reboot \"true\";#" /etc/apt/apt.conf.d/50unattended-upgrades
-        sed -i "s#//Unattended-Upgrade::Automatic-Reboot-Time \"02:00\";#Unattended-Upgrade::Automatic-Reboot-Time \"03:00\";#" /etc/apt/apt.conf.d/50unattended-upgrades
-
-        # Create /etc/apt/apt.conf.d/20auto-upgrades
-        touch /etc/apt/apt.conf.d/20auto-upgrades
-
-        # Adding new lines into /etc/apt/apt.conf.d/20auto-upgrades
-        echo "APT::Periodic::Update-Package-Lists \"1\";" >>/etc/apt/apt.conf.d/20auto-upgrades
-        echo "APT::Periodic::Unattended-Upgrade \"1\";" >>/etc/apt/apt.conf.d/20auto-upgrades
-
         # Log
-        log_event "info" "Unnatended upgrades configured" "false"
-        display --indent 6 --text "- Unnatended upgrades" --result "DONE" --color GREEN
-
-        return 0
+        log_event "info" "Unnatended upgrades not enabled on brolit_conf.json" "false"
+        display --indent 6 --text "- Unnatended upgrades" --result "DISABLED" --color YELLOW
 
     fi
 
