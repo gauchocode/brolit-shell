@@ -149,7 +149,7 @@ function server_app_setup() {
         if [[ ${PACKAGES_GRAFANA_CONFIG_STATUS} == "enabled" ]]; then
             grafana_installer
         else
-            package_purge "grafana"
+            grafana_purge
         fi
 
         ;;

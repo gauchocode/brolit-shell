@@ -39,7 +39,7 @@ function grafana_installer() {
         package_update
 
         package_install_if_not "grafana"
-        
+
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -126,8 +126,7 @@ function grafana_configure() {
 
     # Log
     display --indent 6 --text "- Restarting services" --result "DONE" --color GREEN
-
-    log_event "info" "Grafana configured" "false"
     display --indent 6 --text "- Grafana configuration" --result "DONE" --color GREEN
+    log_event "info" "Grafana configured" "false"
 
 }
