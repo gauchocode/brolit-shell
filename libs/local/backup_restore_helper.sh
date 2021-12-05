@@ -197,8 +197,10 @@ function restore_backup_from_ftp() {
     # Ask project domain
     project_domain="$(ask_project_domain "")"
 
+    possible_project_domain="$(project_get_name_from_domain "${project_domain}")"
+
     # Ask project name
-    project_name="$(ask_project_name "${project_domain}")"
+    project_name="$(ask_project_name "${possible_project_domain}")"
 
     # FTP
     ftp_domain="$(whiptail_imput "FTP SERVER IP/DOMAIN" "Please insert de FTP server IP/DOMAIN. Ex: ftp.domain.com")"
@@ -786,7 +788,7 @@ function restore_type_selection_from_dropbox() {
           if [[ ${chosen_type} == *"database"* ]]; then
 
             # Asking project state with suggested actual state
-            suffix=${chosen_project%_*}     ## strip the tail
+            suffix=${chosen_project%_*} ## strip the tail
             project_state="$(ask_project_state "${suffix}")"
 
             # Extract project_name (it will remove last part of db name with "_" char)
@@ -1059,7 +1061,7 @@ function restore_project() {
     possible_project_name="$(project_get_name_from_domain "${new_project_domain}")"
 
     # Asking project state with suggested actual state
-    suffix=${chosen_project%_*}     ## strip the tail
+    suffix=${chosen_project%_*} ## strip the tail
     project_state="$(ask_project_state "${suffix}")"
 
     # Asking project name
