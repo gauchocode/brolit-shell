@@ -97,7 +97,7 @@ function wordpress_project_install() {
 
   else
 
-    # Logging
+    # Log
     display --indent 6 --text "- Creating WordPress project" --result "FAIL" --color RED
     display --indent 8 --text "Destination folder '${project_path}' already exist"
     log_event "error" "Destination folder '${project_path}' already exist, aborting ..." "false"
