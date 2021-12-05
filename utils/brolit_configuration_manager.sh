@@ -24,6 +24,7 @@ function _brolit_configuration_load_server_config() {
 
     # Globals
     declare -g SERVER_TIMEZONE
+    declare -g UNATTENDED_UPGRADES
     declare -g SERVER_ROLE_WEBSERVER
     declare -g SERVER_ROLE_DATABASE
 
@@ -34,9 +35,13 @@ function _brolit_configuration_load_server_config() {
         exit 1
     fi
 
-    # Check if is already defined
+    UNATTENDED_UPGRADES="$(json_read_field "${server_config_file}" "SERVER_CONFIG.unattended_upgrades")"
+    if [ -z "${UNATTENDED_UPGRADES}" ]; then
+        log_event "error" "Missing required config vars for server config" "true"
+        exit 1
+    fi
+
     if [ -z "${SERVER_ROLE_WEBSERVER}" ]; then
-        # Read required vars from server config file
         SERVER_ROLE_WEBSERVER="$(json_read_field "${server_config_file}" "SERVER_CONFIG.config[].webserver")"
         if [ -z "${SERVER_ROLE_WEBSERVER}" ]; then
             log_event "error" "Missing required config vars for server role" "true"
@@ -44,9 +49,7 @@ function _brolit_configuration_load_server_config() {
         fi
     fi
 
-    # Check if is already defined
     if [ -z "${SERVER_ROLE_DATABASE}" ]; then
-        # Read required vars from server config file
         SERVER_ROLE_DATABASE="$(json_read_field "${server_config_file}" "SERVER_CONFIG.config[].database")"
         if [ -z "${SERVER_ROLE_DATABASE}" ]; then
             log_event "error" "Missing required config vars for server role" "true"
@@ -319,7 +322,6 @@ function _brolit_configuration_load_email() {
         NOTIFICATION_EMAIL_SMTP_USER="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].smtp_user")"
         NOTIFICATION_EMAIL_SMTP_UPASS="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].smtp_user_pass")"
 
-        # Check if all required vars are set
         if [[ -z "${NOTIFICATION_EMAIL_MAILA}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_SERVER}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_PORT}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_USER}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_UPASS}" ]]; then
 
             clear_previous_lines "1"
@@ -1090,7 +1092,7 @@ function _brolit_configuration_app_mysql() {
 }
 
 ################################################################################
-# Load Brolit configuration
+# Check brolit configuration file
 #
 # Arguments:
 #   $1 = ${server_config_file}
@@ -1099,16 +1101,9 @@ function _brolit_configuration_app_mysql() {
 #   nothing
 ################################################################################
 
-function brolit_configuration_load() {
+function brolit_configuration_file_check() {
 
     local server_config_file=$1
-
-    # Globals
-    declare -g PROJECTS_PATH
-    declare -g DEBUG
-    declare -g QUIET
-
-    declare -g SERVER_PREPARED="false"
 
     if [[ -f "${server_config_file}" ]]; then
 
@@ -1152,6 +1147,31 @@ function brolit_configuration_load() {
         done
 
     fi
+
+}
+
+################################################################################
+# Load Brolit configuration
+#
+# Arguments:
+#   $1 = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function brolit_configuration_load() {
+
+    local server_config_file=$1
+
+    # Globals
+    declare -g PROJECTS_PATH
+    declare -g DEBUG
+    declare -g QUIET
+
+    declare -g SERVER_PREPARED="false"
+
+    brolit_configuration_file_check "${server_config_file}"
 
     # Check if is already defined
     if [ -z "${DEBUG}" ]; then

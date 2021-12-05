@@ -15,6 +15,9 @@ function server_prepare() {
     # Configuring packages
     system_timezone_configuration
 
+    # Unattended upgrades
+    system_enable_unnatended_upgrades
+
     # Packages update
     package_update
 
@@ -23,6 +26,8 @@ function server_prepare() {
 
     # Change global
     SERVER_PREPARED="true"
+
+    export SERVER_PREPARED
 
 }
 
