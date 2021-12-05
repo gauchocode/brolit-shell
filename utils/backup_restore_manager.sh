@@ -187,7 +187,7 @@ function restore_manager_menu() {
 
   restore_options=(
     "01)" "FROM DROPBOX"
-    "02)" "FROM BACKUP LINK (BETA)"
+    "02)" "FROM PUBLIC LINK (BETA)"
     "03)" "FROM LOCAL FILE (BETA)"
     "04)" "FROM FTP (BETA)"
   )
@@ -202,10 +202,10 @@ function restore_manager_menu() {
     fi
     if [[ ${chosen_restore_options} == *"02"* ]]; then
 
-      # shellcheck source=${SFOLDER}/utils/wordpress_restore_from_source.sh
-      source "${SFOLDER}/utils/wordpress_restore_from_source.sh"
+      # shellcheck source=${SFOLDER}/utils/restore_from_public_url.sh
+      source "${SFOLDER}/utils/restore_from_public_url.sh"
 
-      wordpress_restore_from_source
+      restore_from_public_url
 
     fi
     if [[ ${chosen_restore_options} == *"03"* ]]; then
