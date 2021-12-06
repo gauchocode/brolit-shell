@@ -103,32 +103,18 @@ function restore_backup_from_local_file() {
 
         log_event "info" "File to restore: ${filename}" "false"
 
-        # Check if file is compressed
-        is_compressed="$(file "${filename}" | grep "compressed")"
+        # Decompress backup
+        decompress "${chosen_backup_to_restore}" "${SFOLDER}/tmp/" "lbzip2"
 
-        if [[ ${is_compressed} != "" ]]; then
+        # TODO: search for .sql or sql.gz files
 
-          # Decompress backup
-          decompress "${chosen_backup_to_restore}" "${SFOLDER}/tmp/" "lbzip2"
-
-          # TODO: search for .sql or sql.gz files
-
-          # We don't have a domain yet so let "restore_site_files" ask
-          restore_site_files ""
+        # We don't have a domain yet so let "restore_site_files" ask
+        restore_site_files ""
 
         # TODO: i need to do a refactor of restore_site_files to accept
         # domain, path_to_restore, backup_file
 
         # TODO: restore_type_selection_from_dropbox needs a refactor too
-
-        else
-
-          # Log
-          log_event "error" "File selected is not a backup file!" "false"
-          display --indent 6 --text "- Backup selection" --result "FAIL" --color RED
-          display --indent 8 --text "File selected is not a backup file!"
-
-        fi
 
       fi
 
