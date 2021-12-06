@@ -104,7 +104,12 @@ function restore_backup_from_local_file() {
         log_event "info" "File to restore: ${filename}" "false"
 
         # Decompress backup
-        decompress "${chosen_backup_to_restore}" "${SFOLDER}/tmp/" "lbzip2"
+        decompress "${filename}" "${SFOLDER}/tmp/" "lbzip2"
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 1 ]]; then
+          return 1
+        fi
 
         # TODO: search for .sql or sql.gz files
 
