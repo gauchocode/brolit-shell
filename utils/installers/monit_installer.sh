@@ -61,7 +61,8 @@ function monit_purge() {
 
   package_purge "monit"
 
-  if [[ $? -eq 0 ]]; then
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     PACKAGES_MONIT_CONFIG_STATUS="disabled"
 
@@ -161,65 +162,5 @@ function monit_configure() {
 
   log_event "info" "Monit configured" "false"
   display --indent 6 --text "- Monit configuration" --result "DONE" --color GREEN
-
-}
-
-################################################################################
-# Monit installer menu
-#
-# Arguments:
-#   none
-#
-# Outputs:
-#   none
-################################################################################
-
-function monit_installer_menu() {
-
-  # TODO: Add a menu to reconfigure or uninstall if monit is installed
-
-  # Check if Monit is installed
-  MONIT="$(command -v monit)"
-
-  if [[ ! -x "${MONIT}" ]]; then
-
-    monit_installer
-    monit_configure
-
-  else
-
-    while true; do
-
-      echo -e "${YELLOW}${ITALIC} > Monit is already installed. Do you want to reconfigure monit?${ENDCOLOR}"
-      read -p "Please type 'y' or 'n'" yn
-
-      case $yn in
-
-      [Yy]*)
-
-        log_subsection "Monit Configurator"
-
-        monit_configure
-
-        break
-        ;;
-
-      [Nn]*)
-
-        log_event "warning" "Aborting monit configuration script ..." "false"
-
-        break
-        ;;
-
-      *) echo " > Please answer yes or no." ;;
-
-      esac
-
-    done
-
-    # Called twice to remove last messages
-    clear_previous_lines "2"
-
-  fi
 
 }
