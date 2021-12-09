@@ -105,6 +105,8 @@ function ask_project_domain() {
     # Return
     echo "${project_domain}"
 
+    return 0
+
   else
 
     return 1
