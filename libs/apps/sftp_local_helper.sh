@@ -116,6 +116,7 @@ function sftp_create_user() {
 
     # Add user to the groups
     usermod -aG "${groupname}" "${username}"
+    
     # Log
     display --indent 6 --text "- Adding user to group ${groupname}" --result "DONE" --color GREEN
     log_event "info" "User added to group ${groupname}"
