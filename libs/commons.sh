@@ -1004,6 +1004,56 @@ function calculate_disk_usage() {
 }
 
 ################################################################################
+# Count directories on a specific path
+#
+# Arguments:
+#   $1 = ${dir_path}
+#
+# Outputs:
+#   number of directories
+################################################################################
+
+function count_directories_on_directory() {
+
+  local dir_path=$1
+
+  local dir_count
+
+  dir_count="$(find "${dir_path}" -maxdepth 1 -type d | wc -l)"
+
+  log_event "info" "Number of directories in ${dir_path}: ${dir_count}" "false"
+
+  # Return
+  echo "${dir_count}"
+
+}
+
+################################################################################
+# Count files on a specific path
+#
+# Arguments:
+#   $1 = ${dir_path}
+#
+# Outputs:
+#   number of files
+################################################################################
+
+function count_files_on_directory() {
+
+  local dir_path=$1
+
+  local dir_count
+
+  dir_count="$(find "${dir_path}" -maxdepth 1 -type f | wc -l)"
+
+  log_event "info" "Number of files in ${dir_path}: ${dir_count}" "false"
+
+  # Return
+  echo "${dir_count}"
+
+}
+
+################################################################################
 # Remove spaces chars from string
 #
 # Arguments:

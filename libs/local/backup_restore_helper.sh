@@ -103,8 +103,22 @@ function restore_backup_from_local_file() {
 
         log_event "info" "File to restore: ${filename}" "false"
 
+        # Ask project domain
+        project_domain="$(ask_project_domain "")"
+
         # Decompress backup
-        decompress "${filename}" "${SFOLDER}/tmp/" "lbzip2"
+        mkdir "${TMP_DIR}/${project_domain}"
+        decompress "${filename}" "${TMP_DIR}/${project_domain}" "lbzip2"
+
+        dir_count="$(count_directories_on_directory "${TMP_DIR}/${project_domain}")"
+
+        if [[ ${dir_count} -eq 1 ]]; then
+
+          # Move files one level up
+          main_dir="$(ls -1 "${TMP_DIR}/${project_domain}")"
+          mv "${TMP_DIR}/${project_domain}/${main_dir}/"{.,}* "${TMP_DIR}/${project_domain}"
+
+        fi
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 1 ]]; then
@@ -115,9 +129,6 @@ function restore_backup_from_local_file() {
 
         # We don't have a domain yet so let "restore_site_files" ask
         restore_site_files ""
-
-        # TODO: i need to do a refactor of restore_site_files to accept
-        # domain, path_to_restore, backup_file
 
         # TODO: restore_type_selection_from_dropbox needs a refactor too
 
@@ -806,17 +817,21 @@ function restore_letsencrypt_site_files() {
 # Restore site files
 #
 # Arguments:
-#   $1 = ${chosen_domain}
+#   $1 = ${domain}
+#   $2 = ${backup_path}
+#   $3 = ${path_to_restore}
 #
 # Outputs:
 #   0 if ok, 1 on error.
 ################################################################################
 
+# TODO: refactor to accept domain, backup_file, path_to_restore
+
 function restore_site_files() {
 
-  # $1 = ${chosen_domain} Here, should match with PROJECT_DOMAIN
-
   local domain=$1
+  #local backup_path=$2
+  #local path_to_restore=$3
 
   local actual_folder
   local folder_to_install
@@ -834,8 +849,8 @@ function restore_site_files() {
     display --indent 8 --text "${chosen_domain}" --tcolor YELLOW
 
     # If user change project domains, we need to do this
-    project_tmp_old_folder="${SFOLDER}/tmp/${domain}"
-    project_tmp_new_folder="${SFOLDER}/tmp/${chosen_domain}"
+    project_tmp_old_folder="${TMP_DIR}/${domain}"
+    project_tmp_new_folder="${TMP_DIR}/${chosen_domain}"
 
     # Renaming
     if [[ ${project_tmp_old_folder} != "${project_tmp_new_folder}" ]]; then
