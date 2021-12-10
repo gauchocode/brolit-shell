@@ -74,6 +74,8 @@ function restore_backup_from_local_file() {
   local -n restore_type # whiptail array options
   local chosen_restore_type
 
+  # TODO: Restore project?
+
   restore_type=(
     "01)" "RESTORE FILES"
     "02)" "RESTORE DATABASE"
@@ -1159,6 +1161,9 @@ function restore_project() {
 
     # Decompress
     decompress "${TMP_DIR}/${chosen_backup_to_restore}" "${TMP_DIR}" "lbzip2"
+
+    # Create nginx.conf file if not exists
+    touch "${TMP_DIR}/nginx.conf"
 
     # Project Type
     project_type="$(project_get_type "${TMP_DIR}/${chosen_project}")"

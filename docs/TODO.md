@@ -15,7 +15,8 @@
 ### Need improvements
 
 - [ ] Core: need to check if select domain is a root domain or www domain, and ask if the user want to create a redirection.
-- [ ] Nginx: If you put a root domain to create a new project, it should ask you if you want to use www subdomain.
+- [ ] Cloudflare: Creating a new root domain project, will try to add an A record but need to create a CNAME for www too.
+- [ ] Cloudflare-Certbot: Change proxy mode with Cloudflare API when create a certificate with Cloudflare.
         Also, if you use www, it should ask you if you want to use the root domain too.
 - [ ] Nginx-LetsEncrypt: regenerate nginx server configuration projects fails after running certbot.
 - [ ] Nginx-LetsEncrypt: When copy or generate a new nginx server configuration need to check certificates.
