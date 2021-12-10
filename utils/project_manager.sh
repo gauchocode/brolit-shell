@@ -97,7 +97,8 @@ function project_manager_menu_new_project_type_utils() {
 
       else
 
-        project_name="$(extract_domain_extension "${filename%/}")"
+        # Filename should be the project domain
+        project_name="$(project_get_name_from_domain "${filename%/}")"
         project_name="$(mysql_name_sanitize "${project_name}")"
         project_name="$(ask_project_name "${project_name}")"
 
