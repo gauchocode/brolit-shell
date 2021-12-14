@@ -100,3 +100,76 @@ function nginx_check_installed_version() {
     nginx --version | awk '{ print $5 }' | awk -F\, '{ print $1 }'
 
 }
+
+################################################################################
+# Nginx installer menu
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  nothing
+################################################################################
+
+function nginx_installer_menu() {
+
+    local nginx_installer_options
+    local chosen_nginx_installer_option
+
+    package_is_installed "nginx"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 1 ]]; then
+
+        nginx_installer_options=(
+            "01)" "INSTALL NGINX STANDARD"
+            "02)" "INSTALL NGINX LAST STABLE"
+        )
+
+        chosen_nginx_installer_option="$(whiptail --title "NGINX INSTALLER" --menu "Choose a Nginx version to install" 20 78 10 "${nginx_installer_options[@]}" 3>&1 1>&2 2>&3)"
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+            if [[ ${chosen_nginx_installer_option} == *"01"* ]]; then
+                log_subsection "Nginx Installer"
+                nginx_installer "default"
+                nginx_reconfigure
+            fi
+
+            if [[ ${chosen_nginx_installer_option} == *"02"* ]]; then
+                log_subsection "Nginx Installer"
+                nginx_installer ""
+                nginx_reconfigure
+            fi
+
+        fi
+
+    else
+
+        nginx_installer_options=(
+            "01)" "UNINSTALL NGINX"
+            "02)" "RECONFIGURE NGINX"
+        )
+        chosen_nginx_installer_option="$(whiptail --title "NGINX INSTALLER" --menu "Choose a Nginx version to install" 20 78 10 "${nginx_installer_options[@]}" 3>&1 1>&2 2>&3)"
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+            if [[ ${chosen_nginx_installer_option} == *"01"* ]]; then
+                log_subsection "Nginx Installer"
+                package_purge "nginx"
+            fi
+
+            if [[ ${chosen_nginx_installer_option} == *"02"* ]]; then
+                log_subsection "Nginx Installer"
+                nginx_delete_default_directory
+                nginx_reconfigure
+                nginx_new_default_server
+                nginx_create_globals_config
+            fi
+
+        fi
+
+    fi
+}
