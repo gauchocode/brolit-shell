@@ -85,6 +85,7 @@
 - [ ] Scheduled options: backups, malware scans, image optimizations and wp actions (core and plugins updates, checksum and wp re-installation).
 - [ ] Refactor of RESTORE_FROM_SOURCE and complete server config restore.
 - [ ] Nginx: New option to put website on maintenance (maybe rename index.html/php and create a new HTML).
+- [ ] LetsEncrypt: Add more options of certificates creation (certonly and return the path).
 - [ ] Wordpress: Rollback plugins and core updates (wpcli_rollback_plugin_version)
 - [ ] SFTP: Option to create a user jail on sftp_create_user.
         Important:https://www.electricmonk.nl/log/2015/07/13/ssh-chrootdirectory-sftponly-not-working-fixed/
