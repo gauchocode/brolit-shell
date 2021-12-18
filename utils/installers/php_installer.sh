@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.6
+# Version: 3.1.7
 ################################################################################
 
 function php_get_standard_distro_version() {
@@ -174,6 +174,72 @@ function php_purge_installation() {
   clear_previous_lines "1"
   log_event "info" "php-${PHP_V} and libraries deleted" "false"
   display --indent 6 --text "- Removing PHP-${PHP_V} and libraries" --result "DONE" --color GREEN
+
+}
+
+function php_composer_installer() {
+
+  local composer_result
+  local expected_signature
+  local actual_signature
+
+  log_event "info" "Running composer installer" "false"
+
+  expected_signature="$(wget -q -O - https://composer.github.io/installer.sig)"
+  php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+  actual_signature="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
+
+  if [[ ${expected_signature} != "${actual_signature}" ]]; then
+    log_event "error" "Invalid installer signature" "false"
+    rm composer-setup.php
+    return 1
+
+  fi
+
+  composer_result="$(${PHP} composer-setup.php --quiet --install-dir=/usr/local/bin --filename=composer)"
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    rm composer-setup.php
+
+    log_event "info" "Composer Installer finished" "false"
+
+  else
+    log_event "error" "Composer Installer failed" "false"
+    log_event "debug" "composer_result=${composer_result}" "false"
+
+  fi
+
+  # Return
+  echo "${exitstatus}"
+
+}
+
+function php_composer_update_version() {
+
+  composer self-update
+
+}
+
+function php_composer_update() {
+
+  composer update
+
+}
+
+function php_composer_remove() {
+
+  rm -rf /usr/local/bin/composer
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    log_event "info" "Composer removed" "false"
+
+  else
+    log_event "error" "Composer removal failed" "false"
+
+  fi
 
 }
 

@@ -2,7 +2,7 @@
     "BROLIT_SETUP": {
         "config": [
             {
-                "version": "3.6.2",
+                "version": "3.6.3",
                 "debug": "true",
                 "quiet": "false",
                 "skip_test": "true",
@@ -210,6 +210,7 @@
                 "extensions": [
                     {
                         "wpcli": "disabled",
+                        "redis": "disabled",
                         "composer": "disabled"
                     }
                 ]

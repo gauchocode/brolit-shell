@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.6
+# Version: 3.1.7
 #############################################################################
 
 function mysql_default_installer() {

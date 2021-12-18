@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.6
+# Version: 3.1.7
 ################################################################################
 #
 # Server Config Manager: Brolit server configuration management.
@@ -568,31 +568,37 @@ function _brolit_configuration_load_php() {
 
     # Globals
     declare -g PHP_V
-    declare -g PACKAGES_PHP_CONFIG_STATUS
-    declare -g PACKAGES_PHP_CONFIG_VERSION
+    ## Core
+    declare -g PACKAGES_PHP_STATUS
+    declare -g PACKAGES_PHP_VERSION
+    ## Config
     declare -g PACKAGES_PHP_CONFIG_OPCODE
+    ## Extensions
+    declare -g PACKAGES_PHP_EXTENSIONS_WPCLI
+    declare -g PACKAGES_PHP_EXTENSIONS_REDIS
+    declare -g PACKAGES_PHP_EXTENSIONS_COMPOSER
 
-    PACKAGES_PHP_CONFIG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.php[].status")"
+    PACKAGES_PHP_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.php[].status")"
 
-    if [[ ${PACKAGES_PHP_CONFIG_STATUS} == "enabled" ]]; then
+    if [[ ${PACKAGES_PHP_STATUS} == "enabled" ]]; then
 
-        PACKAGES_PHP_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.php[].version")"
+        PACKAGES_PHP_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.php[].version")"
         # Check if all required vars are set
-        if [[ -z "${PACKAGES_PHP_CONFIG_VERSION}" ]]; then
+        if [[ -z "${PACKAGES_PHP_VERSION}" ]]; then
 
             log_event "error" "Missing required config vars for php" "true"
             exit 1
 
         else
 
-            if [[ ${PACKAGES_PHP_CONFIG_VERSION} == "default" ]]; then
+            if [[ ${PACKAGES_PHP_VERSION} == "default" ]]; then
 
                 source "${SFOLDER}/utils/installers/php_installer.sh"
                 PHP_V="$(php_get_standard_distro_version)"
 
             else
 
-                PHP_V="${PACKAGES_PHP_CONFIG_VERSION}"
+                PHP_V="${PACKAGES_PHP_VERSION}"
 
             fi
 
@@ -601,7 +607,28 @@ function _brolit_configuration_load_php() {
         PACKAGES_PHP_CONFIG_OPCODE="$(json_read_field "${server_config_file}" "PACKAGES.php[].config[].opcode")"
         # Check if all required vars are set
         if [[ -z "${PACKAGES_PHP_CONFIG_OPCODE}" ]]; then
-            log_event "error" "Missing required config vars for php-fpm" "true"
+            log_event "error" "Missing required config vars for php" "true"
+            exit 1
+        fi
+
+        PACKAGES_PHP_EXTENSIONS_WPCLI="$(json_read_field "${server_config_file}" "PACKAGES.php[].extensions[].wpcli")"
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_PHP_EXTENSIONS_WPCLI}" ]]; then
+            log_event "error" "Missing required config vars for php" "true"
+            exit 1
+        fi
+
+        PACKAGES_PHP_EXTENSIONS_REDIS="$(json_read_field "${server_config_file}" "PACKAGES.php[].extensions[].redis")"
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_PHP_EXTENSIONS_REDIS}" ]]; then
+            log_event "error" "Missing required config vars for php" "true"
+            exit 1
+        fi
+
+        PACKAGES_PHP_EXTENSIONS_COMPOSER="$(json_read_field "${server_config_file}" "PACKAGES.php[].extensions[].composer")"
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_PHP_EXTENSIONS_COMPOSER}" ]]; then
+            log_event "error" "Missing required config vars for php" "true"
             exit 1
         fi
 
@@ -615,7 +642,7 @@ function _brolit_configuration_load_php() {
 
     fi
 
-    export PHP_V PACKAGES_PHP_CONFIG_STATUS PACKAGES_PHP_CONFIG_VERSION PACKAGES_PHP_CONFIG_OPCODE
+    export PHP_V PACKAGES_PHP_STATUS PACKAGES_PHP_VERSION PACKAGES_PHP_CONFIG_OPCODE
 
 }
 
