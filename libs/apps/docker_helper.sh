@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.6
+# Version: 3.1.7
 ################################################################################
 #
 # Docker Helper: Perform docker actions.
@@ -190,6 +190,8 @@ function docker_system_prune() {
 # Outputs:
 #   0 if ok, 1 on error.
 ################################################################################
+
+# TODO: maybe it should be better use docker-compose
 
 function docker_wordpress_install() {
 

@@ -34,9 +34,6 @@ BROLIT Shell is a **BASH** based cloud server control software which can be used
 * WordPress automated installer.
 * WP-CLI actions helper.
 * Let's Encrypt actions helper.
-* Monit installer and configuration helper.
-* Netdata installer and configuration helper.
-* Certbot installer and configuration helper.
 * Cloudflare support (via API).
 * PHP-FPM optimization tool (beta).
 * Image optimization tools.
@@ -45,22 +42,52 @@ BROLIT Shell is a **BASH** based cloud server control software which can be used
 * IP/Domain blacklist checker.
 * Benchmark tool.
 * And more ...
-
-## TODO List
-[TODO List](./docs/TODO.md)
-
-## Changelog
-[Changelog](./docs/CHANGELOG.md)
-
 ## Supports
 
-Works on Ubuntu 18.04 LTS and Ubuntu 20.04 LTS.
+**Ubuntu LTS** 18.04 or 20.04
+
+| Packages | Versions | BROLIT config |
+| :------------- | :----------: | :----------: |
+| **Nginx** | 1.18.x | `nginx.conf` + server blocks |
+| **Lets Encrypt** | 0.40.x | default config |
+| **MySQL** | 8.0.x | `my.cnf` |
+| **MariaDB** | 8.0.x | `my.cnf` |
+| **PHP-FPM** | 7.4.x | `php.ini` + `php-fpm.conf` + `www.conf` |
+| **Redis** | 5.0.x | `redis.conf` + `object-cache.php` |
+| **WordPress** | 5.8.2 | default config |
+| **WP-CLI** | 2.5.0 | default config |
+| **Monit** | 5.26.x | default config |
+| **Netdata** | 1.32.x | default config |
+| **UFW Firewall** | 0.36 | default config |
+| **Fail2Ban** | 0.11.x | default config |
+| **ClamAV** | 0.103.x | `freshclam.conf` |
+| **Lynis** | 2.6.x | default config |
+| **Cockpit** | 0.102.x | default config |
+| **Grafana** | SOON | default config |
+| **Loki** | SOON | default config |
+| **Teleport** | SOON | default config |
 
 ## IMPORTANT: Read before install
 
 The script needs to be runned by root.
 
 ## Installation
+
+### Cloud-init
+
+```bash
+#cloud-config
+package_update: true
+package_upgrade: true
+packages:
+ - git
+runcmd:
+- cd /root/
+- git clone https://github.com/lpadula/brolit-shell
+- chmod +x brolit-shell/runner.sh
+```
+
+### Manual
 
 Cloning repo:
 
@@ -74,15 +101,15 @@ Change directories to the new ~/brolit-shell directory:
 cd ~/brolit-shell
 ```
 
-## Getting started
-
 Give the execution permission to the script:
 
 ```bash
 chmod +x runner.sh
 ```
 
-Run it:
+## Getting started
+
+Execute BROLIT:
 
 ```bash
 ./runner.sh
@@ -140,6 +167,12 @@ Blacklist check UNIX/Linux utility.
 ### Nench
 
 VPS benchmark script — based on the popular bench.sh, plus CPU and ioping tests, and dual-stack IPv4 and v6 speedtests by default
+
+## TODO List
+[TODO List](./docs/TODO.md)
+
+## Changelog
+[Changelog](./docs/CHANGELOG.md)
 
 ## Contributing
 

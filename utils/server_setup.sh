@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.6
+# Version: 3.1.7
 ################################################################################
 #
 # Server Setup: Perform server setup actions.
@@ -55,16 +55,30 @@ function server_app_setup() {
 
     "php")
 
-        if [[ ${PACKAGES_PHP_CONFIG_STATUS} == "enabled" ]]; then
+        if [[ ${PACKAGES_PHP_STATUS} == "enabled" ]]; then
             # PHP Installer
-            php_installer "${PACKAGES_PHP_CONFIG_VERSION}"
+            php_installer "${PACKAGES_PHP_VERSION}"
             # Mail utils packages
             mail_utils_installer
-            # Redis
-            #php_redis_installer #TODO: only if redis is enabled
             # Reconfigure
-            php_reconfigure "${PACKAGES_PHP_CONFIG_VERSION}"
+            php_reconfigure "${PACKAGES_PHP_VERSION}"
+
+            # If PACKAGES_PHP_EXTENSIONS_WPCLI is enabled, install wp-cli
+            if [[ ${PACKAGES_PHP_EXTENSIONS_WPCLI} == "enabled" ]]; then
+                wpcli_install_if_not_installed
+            fi
+            # If PACKAGES_PHP_EXTENSIONS_REDIS is enabled, install wp-cli
+            if [[ ${PACKAGES_PHP_EXTENSIONS_REDIS} == "enabled" ]]; then
+                php_redis_installer
+            fi
+            # If PACKAGES_PHP_EXTENSIONS_COMPOSER is enabled, install wp-cli
+            if [[ ${PACKAGES_PHP_EXTENSIONS_COMPOSER} == "enabled" ]]; then
+                php_composer_installer
+            fi
+
         else
+            php_composer_remove
+            wpcli_uninstall
             package_purge "php"
         fi
 
@@ -97,7 +111,7 @@ function server_app_setup() {
         if [[ ${PACKAGES_REDIS_CONFIG_STATUS} == "enabled" ]]; then
 
             redis_installer
-            if [[ ${PACKAGES_PHP_CONFIG_STATUS} == "enabled" ]]; then
+            if [[ ${PACKAGES_PHP_STATUS} == "enabled" ]]; then
                 php_redis_installer
             fi
             
@@ -223,16 +237,16 @@ function server_setup() {
 
         fi
 
-        if [[ ${PACKAGES_PHP_CONFIG_STATUS} == "enabled" ]]; then
+        if [[ ${PACKAGES_PHP_STATUS} == "enabled" ]]; then
 
             # PHP Installer
-            php_installer "${PACKAGES_PHP_CONFIG_VERSION}"
+            php_installer "${PACKAGES_PHP_VERSION}"
 
             # Mail utils packages
             mail_utils_installer
 
             # Reconfigure
-            php_reconfigure "${PACKAGES_PHP_CONFIG_VERSION}"
+            php_reconfigure "${PACKAGES_PHP_VERSION}"
 
         else
 
@@ -283,7 +297,7 @@ function server_setup() {
 
         redis_installer
 
-        if [[ ${PACKAGES_PHP_CONFIG_STATUS} == "enabled" ]]; then
+        if [[ ${PACKAGES_PHP_STATUS} == "enabled" ]]; then
             php_redis_installer
         fi
 
