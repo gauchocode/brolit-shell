@@ -42,4 +42,4 @@ fi
 cleanup
 
 # Log End
-log_event "info" "BROLIT SCRIPT End -- $(date +%Y%m%d_%H%M)" "false"
+log_event "info" "BROLIT SHELL end -- $(date +%Y%m%d_%H%M)" "false"
