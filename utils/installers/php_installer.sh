@@ -196,11 +196,12 @@ function php_composer_installer() {
 
   fi
 
-  composer_result="$(${PHP} composer-setup.php --quiet --install-dir=/usr/local/bin --filename=composer)"
+  composer_result="$(${PHP} "${SCRIPTPATH}"/composer-setup.php --quiet --install-dir=/usr/local/bin --filename=composer)"
+
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    rm composer-setup.php
+    rm "${SCRIPTPATH}/composer-setup.php"
 
     log_event "info" "Composer Installer finished" "false"
 
