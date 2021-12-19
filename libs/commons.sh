@@ -360,9 +360,7 @@ function _check_distro() {
 # Script init
 #
 # Arguments:
-#  ${1} = ${script_mode}        - sl or null (only for brolit-ui)
-#  ${2} = ${script_log_suffix}  - suffix for log file
-#  ${3} = ${SKIPTESTS}          - 1 or 0 (enabled/disabled)
+#  ${1} = ${SKIPTESTS}          - 1 or 0 (enabled/disabled)
 #
 # Outputs:
 #   global vars
@@ -371,10 +369,7 @@ function _check_distro() {
 function script_init() {
 
   # Parameters
-  local script_mode="${1}"
-  local script_log_suffix="${2}"
-
-  declare -g SKIPTESTS="${3}"
+  declare -g SKIPTESTS="${1}"
 
   # Define log name
   declare -g LOG
@@ -399,11 +394,10 @@ function script_init() {
     mkdir "${path_reports}"
   fi
 
-  # Check if the script receives first parameter "--sl"
   ## Only for BROLIT-UI
-  if [[ ${script_mode} == *"sl" ]]; then
+  if [[ -n ${SLOG} ]]; then
     # And add second parameter to the log name
-    log_name="log_lemp_utils_${script_log_suffix}.log"
+    log_name="log_lemp_utils_${SLOG}.log"
     EXEC_TYPE="external"
   else
     # Default log name
@@ -427,6 +421,10 @@ function script_init() {
 
   # Log Start
   log_event "info" "Script Start -- $(date +%Y%m%d_%H%M)" "false"
+
+  # Brolit configuration check
+  brolit_configuration_file_check "${BROLIT_CONFIG_FILE}"
+  brolit_configuration_setup_check "${BROLIT_CONFIG_FILE}"
 
   # Welcome Message
   log_event "" "WELCOME TO" "true"
@@ -1662,7 +1660,7 @@ function menu_config_changes_detected() {
 
   if [[ ${bypass_prompt} == "true" ]]; then
 
-    log_event "debug" "Bypassing prompt" "false"
+    log_event "debug" "Bypassing prompt..." "false"
 
     # shellcheck source=../utils/server_setup.sh
     source "${SFOLDER}/utils/server_setup.sh"
@@ -2101,6 +2099,9 @@ function flags_handler() {
     shift
 
   done
+
+  # Script initialization
+  script_init "true"
 
   tasks_handler "${TASK}"
 

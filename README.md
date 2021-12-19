@@ -48,7 +48,7 @@ BROLIT Shell is a **BASH** based cloud server control software which can be used
 
 | Packages | Versions | BROLIT config |
 | :------------- | :----------: | :----------: |
-| **Nginx** | 1.18.x | `nginx.conf` + server blocks |
+| **Nginx** | 1.18.x | `nginx.conf` + `mime.types` + server blocks |
 | **Lets Encrypt** | 0.40.x | default config |
 | **MySQL** | 8.0.x | `my.cnf` |
 | **MariaDB** | 8.0.x | `my.cnf` |

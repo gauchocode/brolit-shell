@@ -26,7 +26,8 @@ function monit_installer() {
 
   package_install_if_not "monit"
 
-  if [[ $? -eq 0 ]]; then
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     PACKAGES_MONIT_CONFIG_STATUS="enabled"
 
@@ -68,7 +69,7 @@ function monit_purge() {
 
     json_write_field "${BROLIT_CONFIG_FILE}" "SUPPORT.monit[].status" "${PACKAGES_MONIT_CONFIG_STATUS}"
 
-    # new global value ("enabled")
+    # new global value ("disabled")
     export PACKAGES_MONIT_CONFIG_STATUS
 
     return 0
@@ -107,7 +108,7 @@ function monit_configure() {
   # Loop through all apps keys
   for services_list_key in "${services_list_keys_array[@]}"; do
 
-  services_list_value="$(jq -r ."${services_list_key}" <<<"${services_list}")"
+    services_list_value="$(jq -r ."${services_list_key}" <<<"${services_list}")"
 
     if [[ ${services_list_value} == "enabled" ]]; then
 
@@ -115,33 +116,52 @@ function monit_configure() {
       ## Using script template
       cat "${SFOLDER}/config/monit/${services_list_key}" >"/etc/monit/conf.d/${services_list_key}"
 
-      # Log
-      log_event "info" "Configuring ${services_list_key} on monit" "false"
-      display --indent 6 --text "- Configuring ${services_list_key}" --result "DONE" --color GREEN
+      if [[ ${services_list_key} == "system" ]]; then
 
-      if [[ ! -x "${PHP_V}" && ${services_list_key} == "phpfpm" ]]; then
-        PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
-        # Set PHP_V
-        php_set_version_on_config "${PHP_V}" "/etc/monit/conf.d/${services_list_key}"
-      fi
+        if [[ ${NOTIFICATION_EMAIL_STATUS} == "enabled" ]]; then
 
-      if [[ ! -x "${PHP_V}" && ${services_list_key} == "system" ]]; then
+          # Set Hostname
+          sed -i "s#HOSTNAME#${VPSNAME}#" "/etc/monit/conf.d/${services_list_key}"
 
-        # TODO: if $NOTIFICATION_EMAIL_SMTP_SERVER is not set it will fail
+          # Set SMTP vars
+          ## Run two times to cober all var appearance
+          sed -i "s#NOTIFICATION_EMAIL_SMTP_SERVER#${NOTIFICATION_EMAIL_SMTP_SERVER}#" "/etc/monit/conf.d/${services_list_key}"
+          sed -i "s#NOTIFICATION_EMAIL_SMTP_PORT#${NOTIFICATION_EMAIL_SMTP_PORT}#" "/etc/monit/conf.d/${services_list_key}"
+          ## Run two times to cober all var appearance
+          sed -i "s#NOTIFICATION_EMAIL_SMTP_USER#${NOTIFICATION_EMAIL_SMTP_USER}#" "/etc/monit/conf.d/${services_list_key}"
+          sed -i "s#NOTIFICATION_EMAIL_SMTP_USER#${NOTIFICATION_EMAIL_SMTP_USER}#" "/etc/monit/conf.d/${services_list_key}"
+          sed -i "s#NOTIFICATION_EMAIL_SMTP_UPASS#${NOTIFICATION_EMAIL_SMTP_UPASS}#" "/etc/monit/conf.d/${services_list_key}"
 
-        # Set Hostname
-        sed -i "s#HOSTNAME#${VPSNAME}#" "/etc/monit/conf.d/${services_list_key}"
+          # Email to send monit notifications
+          sed -i "s#NOTIFICATION_EMAIL_MAILA#${PACKAGES_MONIT_CONFIG_MAILA}#" "/etc/monit/conf.d/${services_list_key}"
 
-        # Set SMTP vars
-        sed -i "s#NOTIFICATION_EMAIL_SMTP_SERVER#${NOTIFICATION_EMAIL_SMTP_SERVER}#" "/etc/monit/conf.d/${services_list_key}"
-        sed -i "s#NOTIFICATION_EMAIL_SMTP_PORT#${NOTIFICATION_EMAIL_SMTP_PORT}#" "/etc/monit/conf.d/${services_list_key}"
+          # Log
+          log_event "info" "Configuring ${services_list_key} on monit" "false"
+          display --indent 6 --text "- Configuring ${services_list_key}" --result "DONE" --color GREEN
 
-        # Run two times to cober all var appearance
-        sed -i "s#NOTIFICATION_EMAIL_SMTP_USER#${NOTIFICATION_EMAIL_SMTP_USER}#" "/etc/monit/conf.d/${services_list_key}"
-        sed -i "s#NOTIFICATION_EMAIL_SMTP_USER#${NOTIFICATION_EMAIL_SMTP_USER}#" "/etc/monit/conf.d/${services_list_key}"
+        else
 
-        sed -i "s#NOTIFICATION_EMAIL_SMTP_UPASS#${NOTIFICATION_EMAIL_SMTP_UPASS}#" "/etc/monit/conf.d/${services_list_key}"
-        sed -i "s#NOTIFICATION_EMAIL_MAILA#${NOTIFICATION_EMAIL_MAILA}#" "/etc/monit/conf.d/${services_list_key}"
+          # Remove system email config
+          rm -f "/etc/monit/conf.d/${services_list_key}"
+
+          # Log
+          display --indent 6 --text "- Configuring ${services_list_key}" --result "SKIPPED" --color YELLOW
+          display --indent 8 --text "Email notifications not enabled"
+          log_event "warning" "Configuring ${services_list_key} on monit failed. Email notifications not enabled." "false"
+
+        fi
+
+      else
+
+        if [[ ! -x "${PHP_V}" && ${services_list_key} == "phpfpm" ]]; then
+          PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
+          # Set PHP_V
+          php_set_version_on_config "${PHP_V}" "/etc/monit/conf.d/${services_list_key}"
+        fi
+
+        # Log
+        log_event "info" "Configuring ${services_list_key} on monit" "false"
+        display --indent 6 --text "- Configuring ${services_list_key}" --result "DONE" --color GREEN
 
       fi
 
@@ -149,7 +169,7 @@ function monit_configure() {
 
   done
 
-  log_event "info" "Restarting services ..."
+  log_event "info" "Restarting services ..." "false"
 
   # Service restart
   ## TODO: need a refactor

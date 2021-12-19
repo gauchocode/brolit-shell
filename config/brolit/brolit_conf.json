@@ -6,7 +6,8 @@
                 "debug": "true",
                 "quiet": "false",
                 "skip_test": "true",
-                "check_packages": "false"            }
+                "check_packages": "false"
+            }
         ]
     },
     "SERVER_CONFIG": {

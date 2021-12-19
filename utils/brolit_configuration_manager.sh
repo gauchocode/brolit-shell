@@ -819,7 +819,7 @@ function _brolit_configuration_load_certbot() {
 
         # Check if all required vars are set
         if [[ -z "${PACKAGES_CERTBOT_CONFIG_MAILA}" ]]; then
-            log_event "error" "Missing required config vars for monit" "true"
+            log_event "error" "Missing required config vars for certbot" "true"
             exit 1
         fi
 
@@ -1176,29 +1176,12 @@ function brolit_configuration_file_check() {
     fi
 
 }
-
-################################################################################
-# Load Brolit configuration
-#
-# Arguments:
-#   $1 = ${server_config_file}
-#
-# Outputs:
-#   nothing
-################################################################################
-
-function brolit_configuration_load() {
+function brolit_configuration_setup_check() {
 
     local server_config_file=$1
 
-    # Globals
-    declare -g PROJECTS_PATH
     declare -g DEBUG
     declare -g QUIET
-
-    declare -g SERVER_PREPARED="false"
-
-    brolit_configuration_file_check "${server_config_file}"
 
     # Check if is already defined
     if [ -z "${DEBUG}" ]; then
@@ -1228,6 +1211,28 @@ function brolit_configuration_load() {
             exit 1
         fi
     fi
+
+    export DEBUG QUIET SKIPTESTS
+
+}
+################################################################################
+# Load Brolit configuration
+#
+# Arguments:
+#   $1 = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function brolit_configuration_load() {
+
+    local server_config_file=$1
+
+    # Globals
+    declare -g PROJECTS_PATH
+
+    declare -g SERVER_PREPARED="false"
 
     ## SERVER ROLES
     _brolit_configuration_load_server_config "${server_config_file}"
@@ -1324,7 +1329,6 @@ function brolit_configuration_load() {
     # Export vars
     export PROJECTS_PATH
     export SERVER_PREPARED
-    export DEBUG QUIET SKIPTESTS
 
 }
 

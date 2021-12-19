@@ -292,8 +292,6 @@ function nginx_server_change_domain() {
 
 function nginx_server_get_current_phpv() {
 
-    #$1 = ${nginx_server_file} / ${tool} or ${project_domain}
-
     local nginx_server_file=$1
 
     # Replace string to match PHP version
@@ -301,8 +299,8 @@ function nginx_server_get_current_phpv() {
     current_php_v=${current_php_v_string#"php"}
 
     # Log
-    log_event "debug" "Get php version from nginx server: ${nginx_server_file}"
-    log_event "debug" "Current php version: ${current_php_v}"
+    log_event "debug" "Get php version from nginx server: ${nginx_server_file}" "false"
+    log_event "debug" "Current php version: ${current_php_v}" "false"
 
     # Return
     echo "${current_php_v}"
@@ -372,7 +370,7 @@ function nginx_reconfigure() {
     display --indent 6 --text "- Updating nginx.conf" --result "DONE" --color GREEN
 
     # mime.types
-    cat "${SFOLDER}/config/nginx/mime.types" >"/etc/nginx/mime.types;"
+    cat "${SFOLDER}/config/nginx/mime.types" >"/etc/nginx/mime.types"
     display --indent 6 --text "- Updating mime.types" --result "DONE" --color GREEN
 
     #Test the validity of the nginx configuration
