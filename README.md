@@ -2,7 +2,7 @@
 
 BROLIT Shell is a **BASH** based cloud server control software which can be used to quickly install a LEMP Stack on Ubuntu 18.04 and 20.04 servers, automate and restore backups, install PHP projects, and some usefull IT tasks.
 
-![ScreenShot](./screenshot.jpg)
+![ScreenShot](./screenshot.png)
 
 ## Motivation
 
@@ -20,7 +20,6 @@ BROLIT Shell is a **BASH** based cloud server control software which can be used
 
 * Backup and restore projects easily.
 * Create, deploy and host php projects.
-* Option to run some taks from a single line command.
 * Third party integrations: Dropbox, Cloudflare, Telegram, Netdata and more.
 * WordPress support.
 * Open-source.
@@ -42,6 +41,7 @@ BROLIT Shell is a **BASH** based cloud server control software which can be used
 * IP/Domain blacklist checker.
 * Benchmark tool.
 * And more ...
+
 ## Supports
 
 **Ubuntu LTS** 18.04 or 20.04
@@ -56,8 +56,8 @@ BROLIT Shell is a **BASH** based cloud server control software which can be used
 | **Redis** | 5.0.x | `redis.conf` + `object-cache.php` |
 | **WordPress** | 5.8.2 | default config |
 | **WP-CLI** | 2.5.0 | default config |
-| **Monit** | 5.26.x | default config |
-| **Netdata** | 1.32.x | default config |
+| **Monit** | 5.26.x | `monitrc` + `mysql` + `phpfpm` + `nginx` + `redis` + `system` |
+| **Netdata** | 1.32.x | `health_alarm_notify.conf` + custom `health.d` conf |
 | **UFW Firewall** | 0.36 | default config |
 | **Fail2Ban** | 0.11.x | default config |
 | **ClamAV** | 0.103.x | `freshclam.conf` |
@@ -66,6 +66,26 @@ BROLIT Shell is a **BASH** based cloud server control software which can be used
 | **Grafana** | SOON | default config |
 | **Loki** | SOON | default config |
 | **Teleport** | SOON | default config |
+
+## Third Party Utils
+
+BROLIT Shell uses some third-party tools:
+
+### Dropbox Uploader
+
+Dropbox Uploader is a BASH script which can be used to upload, download, list or delete files from Dropbox, an online file sharing, synchronization and backup service.
+
+### Google PageSpeed Insights API Tools
+
+gitool.sh shell script to query Google PageSpeed Insights v4 & v5 API for site & origin metrics for FCP & DCL with additional support for GTMetrix & WebpageTest.org API tests.
+
+### Blacklist Checker
+
+Blacklist check UNIX/Linux utility.
+
+### Nench
+
+VPS benchmark script — based on the popular bench.sh, plus CPU and ioping tests, and dual-stack IPv4 and v6 speedtests by default.
 
 ## IMPORTANT: Read before install
 
@@ -119,9 +139,9 @@ The first time you run `runner.sh`, it will create the startup config file: `~/.
 Open and edit this json file. 
 
 You can find some example configurations here: 
-[.brolit_conf.json - lemp insecured](./docs/.brolit_conf-lemp_ins.json)
-[.brolit_conf.json - lemp secured](./docs/.brolit_conf-lemp_sec.json)
-[.brolit_conf.json - lemp custom](./docs/.brolit_conf-lemp_custom.json)
+* [.brolit_conf.json - lemp insecured](./docs/.brolit_conf-lemp_ins.json)
+* [.brolit_conf.json - lemp secured](./docs/.brolit_conf-lemp_sec.json)
+* [.brolit_conf.json - lemp custom](./docs/.brolit_conf-lemp_custom.json)
 
 ## Update
 
@@ -133,7 +153,7 @@ Run updater.sh
 
 ## Running as cron job
 
-This script relies on a different configuration file for each system user. The default configuration file location is `root/.brolit_conf.json`.
+This script relies on a different configuration file for each system user. The default configuration file location is `/root/.brolit_conf.json`.
 This means that if you setup the script with your user and then you try to run a cron job as root, it won't work.
 
 * To setup the script to run as a cron job please use the option "CRON TASKS"
@@ -147,26 +167,6 @@ You can run some tasks like this:
 ```
 
 More information here: [FLAGS](./docs/DOC-flags.md)
-
-## Third Party Utils
-
-BROLIT Shell uses some third-party tools:
-
-### Dropbox Uploader
-
-Dropbox Uploader is a BASH script which can be used to upload, download, list or delete files from Dropbox, an online file sharing, synchronization and backup service.
-
-### Google PageSpeed Insights API Tools
-
-gitool.sh shell script to query Google PageSpeed Insights v4 & v5 API for site & origin metrics for FCP & DCL with additional support for GTMetrix & WebpageTest.org API tests
-
-### Blacklist Checker
-
-Blacklist check UNIX/Linux utility.
-
-### Nench
-
-VPS benchmark script — based on the popular bench.sh, plus CPU and ioping tests, and dual-stack IPv4 and v6 speedtests by default
 
 ## TODO List
 [TODO List](./docs/TODO.md)
@@ -192,4 +192,4 @@ This theme is maintained by the following person(s) and a bunch of [awesome cont
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
