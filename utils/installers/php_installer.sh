@@ -132,7 +132,10 @@ function mail_utils_installer() {
     clear_previous_lines "2"
 
     # Install
-    pear -q install mail mail_mime net_smtp >/dev/null
+    #pear -q install mail mail_mime net_smtp >/dev/null
+    pear -q install mail >/dev/null
+    pear -q install mail_mime >/dev/null
+    pear -q install net_smtp >/dev/null
 
     # Log
     clear_previous_lines "1"
