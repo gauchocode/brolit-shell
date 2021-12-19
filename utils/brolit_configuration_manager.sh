@@ -1134,12 +1134,12 @@ function brolit_configuration_file_check() {
 
     if [[ -f "${server_config_file}" ]]; then
 
-        display --indent 2 --text "- Checking Brolit config file" --result "DONE" --color GREEN
+        log_event "info" "Brolit config file found: ${server_config_file}" "true"
 
     else
 
         display --indent 2 --text "- Checking Brolit config file" --result "WARNING" --color YELLOW
-        display --indent 4 --text "Config file not found: ${server_config_file}"
+        display --indent 4 --text "Config file not found!"
 
         # Creating new config file
         while true; do
