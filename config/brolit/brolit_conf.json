@@ -14,7 +14,7 @@
         "timezone": "America/Argentina/Buenos_Aires",
         "type": "production",
         "ftp_config": "/root/.brolit_ftp.conf",
-        "unattended_upgrades": "enabled",
+        "unattended_upgrades": "disabled",
         "additional_ips": [
             "",
             ""
