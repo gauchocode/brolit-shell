@@ -135,10 +135,9 @@ Execute BROLIT:
 ./runner.sh
 ```
 
-The first time you run `runner.sh`, it will create the startup config file: `~/.brolit_conf.json`.
-Open and edit this json file. 
+The first time you run BROLIT, it will prompt you to create a new config file: `~/.brolit_conf.json`. Then open and edit this json file. 
 
-You can find some example configurations here: 
+You can find some configurations examples here: 
 * [.brolit_conf.json - lemp insecured](./docs/.brolit_conf-lemp_ins.json)
 * [.brolit_conf.json - lemp secured](./docs/.brolit_conf-lemp_sec.json)
 * [.brolit_conf.json - lemp custom](./docs/.brolit_conf-lemp_custom.json)
