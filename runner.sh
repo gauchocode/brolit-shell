@@ -23,10 +23,10 @@ source "${SFOLDER}/libs/commons.sh"
 
 ### Init #######################################################################
 
-# Script initialization
-script_init "${1}" "${2}" ""
-
 if [[ $# -eq 0 ]]; then
+
+  # Script initialization
+  script_init "true"
 
   # RUNNING MAIN MENU
   menu_main_options
