@@ -308,7 +308,7 @@ function _brolit_configuration_load_email() {
     declare -g NOTIFICATION_EMAIL_SMTP_USER
     declare -g NOTIFICATION_EMAIL_SMTP_UPASS
 
-    display --indent 2 --text "- Checking Email notifications config"
+    #display --indent 2 --text "- Checking email notifications config"
 
     ### email
     NOTIFICATION_EMAIL_STATUS="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].status")"
@@ -324,21 +324,16 @@ function _brolit_configuration_load_email() {
 
         if [[ -z "${NOTIFICATION_EMAIL_MAILA}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_SERVER}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_PORT}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_USER}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_UPASS}" ]]; then
 
-            clear_previous_lines "1"
+            #clear_previous_lines "1"
             display --indent 4 --text "Missing required config vars for email notifications" --tcolor RED
             exit 1
-
-        else
-
-            clear_previous_lines "1"
-            display --indent 2 --text "- Checking Email notifications config" --result "DONE" --color GREEN
 
         fi
 
     else
 
-        clear_previous_lines "1"
-        display --indent 2 --text "- Checking Email notifications config" --result "WARNING" --color YELLOW
+        #clear_previous_lines "1"
+        display --indent 2 --text "- Checking email notifications config" --result "WARNING" --color YELLOW
         display --indent 4 --text "Email notifications are disabled"
 
     fi
