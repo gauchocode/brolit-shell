@@ -444,9 +444,6 @@ function mysql_user_delete() {
 
 function mysql_user_psw_change() {
 
-    # $1 = ${db_user}
-    # $2 = ${db_user_psw}
-
     local db_user=$1
     local db_user_psw=$2
 
@@ -497,8 +494,6 @@ function mysql_user_psw_change() {
 ################################################################################
 
 function mysql_root_psw_change() {
-
-    # $1 = ${db_root_psw}
 
     local db_root_psw=$1
 
