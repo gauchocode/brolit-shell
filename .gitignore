@@ -1,4 +1,5 @@
 .vscode/
+.gitpod.yml
 settings.json
 res
 tmp/
