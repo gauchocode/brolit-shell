@@ -283,6 +283,7 @@ function mysql_list_users() {
 
         # Return
         echo "${users}"
+        return 0
 
     else
 
