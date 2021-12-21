@@ -1548,12 +1548,13 @@ function menu_main_options() {
     "01)" "BACKUP OPTIONS"
     "02)" "RESTORE OPTIONS"
     "03)" "PROJECT UTILS"
-    "04)" "WP-CLI MANAGER"
-    "05)" "CERTBOT MANAGER"
-    "06)" "CLOUDFLARE MANAGER"
-    "07)" "INSTALLERS & CONFIGS"
-    "08)" "IT UTILS"
-    "09)" "CRON TASKS"
+    "04)" "DATABASE MANAGER"
+    "05)" "WP-CLI MANAGER"
+    "06)" "CERTBOT MANAGER"
+    "07)" "CLOUDFLARE MANAGER"
+    "08)" "INSTALLERS & CONFIGS"
+    "09)" "IT UTILS"
+    "10)" "CRON TASKS"
   )
 
   chosen_type="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)"
@@ -1576,6 +1577,14 @@ function menu_main_options() {
     fi
 
     if [[ ${chosen_type} == *"04"* ]]; then
+      # shellcheck source=${SFOLDER}/utils/database_manager.sh
+      source "${SFOLDER}/utils/database_manager.sh"
+
+      log_section "Database Manager"
+      database_manager_menu   
+
+    fi
+    if [[ ${chosen_type} == *"05"* ]]; then
       # shellcheck source=${SFOLDER}/utils/wpcli_manager.sh
       source "${SFOLDER}/utils/wpcli_manager.sh"
 
@@ -1583,7 +1592,7 @@ function menu_main_options() {
       wpcli_manager
 
     fi
-    if [[ ${chosen_type} == *"05"* ]]; then
+    if [[ ${chosen_type} == *"06"* ]]; then
       # shellcheck source=${SFOLDER}/utils/certbot_manager.sh
       source "${SFOLDER}/utils/certbot_manager.sh"
 
@@ -1591,7 +1600,7 @@ function menu_main_options() {
       certbot_manager_menu
 
     fi
-    if [[ ${chosen_type} == *"06"* ]]; then
+    if [[ ${chosen_type} == *"07"* ]]; then
 
       if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
 
@@ -1612,19 +1621,19 @@ function menu_main_options() {
       fi
 
     fi
-    if [[ ${chosen_type} == *"07"* ]]; then
+    if [[ ${chosen_type} == *"08"* ]]; then
 
       log_section "Installers and Configurators"
       installers_and_configurators
 
     fi
-    if [[ ${chosen_type} == *"08"* ]]; then
+    if [[ ${chosen_type} == *"09"* ]]; then
 
       log_section "IT Utils"
       it_utils_menu
 
     fi
-    if [[ ${chosen_type} == *"09"* ]]; then
+    if [[ ${chosen_type} == *"10"* ]]; then
       # CRON SCRIPT TASKS
       menu_cron_script_tasks
 
