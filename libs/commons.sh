@@ -285,7 +285,6 @@ function _check_scripts_permissions() {
   # Log
   log_event "info" "Checking scripts permissions" "false"
   log_event "debug" "Executing chmod +x on *.sh" "false"
-  display --indent 2 --text "- Checking scripts permissions" --result "DONE" --color GREEN
 
 }
 
@@ -426,11 +425,7 @@ function script_init() {
   brolit_configuration_file_check "${BROLIT_CONFIG_FILE}"
   brolit_configuration_setup_check "${BROLIT_CONFIG_FILE}"
 
-  # Welcome Message
-  log_event "" "WELCOME TO" "true"
-
-  ### Welcome #####################################################################
-  # Ref: http://patorjk.com/software/taag/ (ANSI SHADOW Font)
+  ### Welcome Message ###########################################################
 
   log_event "" "                                             " "true"
   log_event "" "██████╗ ██████╗  ██████╗ ██╗     ██╗████████╗" "true"
@@ -443,7 +438,7 @@ function script_init() {
   log_event "" "                                             " "true"
   log_event "" "------------------------------------------------------------" "true"
 
-  log_section "Script Initialization"
+  log_section "Initialization"
 
   # Checking distro
   _check_distro
@@ -467,27 +462,11 @@ function script_init() {
   # Checking required packages
   package_check_required
 
-  # Some globals
-  declare -g DPU_F
-  declare -g DROPBOX_UPLOADER
-
-  # Dropbox-uploader directory
-  DPU_F="${SFOLDER}/tools/third-party/dropbox-uploader"
-  # Dropbox-uploader runner
-  DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
-  # Dropbox-uploader config file
-  DPU_CONFIG_FILE=~/.dropbox_uploader
-
   # Check configuration
   brolit_configuration_load "${BROLIT_CONFIG_FILE}"
 
-  if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
-    # shellcheck source=~/.dropbox_uploader
-    source "${DPU_CONFIG_FILE}"
-  fi
-
   # EXPORT VARS
-  export SCRIPT_V VPSNAME BROLIT_CONFIG_PATH SFOLDER DPU_F DROPBOX_UPLOADER BLACKLISTED_SITES BLACKLISTED_DATABASES WSERVER PACKAGES PHP_CF
+  export SCRIPT_V VPSNAME BROLIT_CONFIG_PATH SFOLDER BLACKLISTED_SITES BLACKLISTED_DATABASES WSERVER PACKAGES PHP_CF
   export LENCRYPT_CF DROPBOX_FOLDER MAILCOW_DIR MAILCOW_TMP_BK MHOST MUSER NOW NOWDISPLAY DAYSAGO
   export DISK_U ONE_FILE_BK LOCAL_IP SERVER_IP SERVER_IPv6 NOTIFICATION_EMAIL_SMTP_SERVER NOTIFICATION_EMAIL_SMTP_PORT NOTIFICATION_EMAIL_SMTP_TLS NOTIFICATION_EMAIL_SMTP_USER NOTIFICATION_EMAIL_SMTP_UPASS
   export LOG DEBUG SKIPTESTS EXEC_TYPE
