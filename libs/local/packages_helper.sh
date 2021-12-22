@@ -212,7 +212,6 @@ function package_check_required() {
   # Install packages if not
   package_install_if_not "pv"
   package_install_if_not "bc"
-  package_install_if_not "jq"
   package_install_if_not "lbzip2"
   package_install_if_not "zip"
   package_install_if_not "unzip"

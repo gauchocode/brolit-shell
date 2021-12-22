@@ -421,6 +421,9 @@ function script_init() {
   # Log Start
   log_event "info" "Script Start -- $(date +%Y%m%d_%H%M)" "false"
 
+  # Install basic required package
+  package_install_if_not "jq"
+
   # Brolit configuration check
   brolit_configuration_file_check "${BROLIT_CONFIG_FILE}"
   brolit_configuration_setup_check "${BROLIT_CONFIG_FILE}"

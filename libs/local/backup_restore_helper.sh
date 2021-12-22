@@ -417,7 +417,7 @@ function restore_backup_from_public_url() {
   # SUGGEST "${project_domain}" and "www${project_domain}"
 
   # Cloudflare API to change DNS records
-  cloudflare_set_record "${root_domain}" "${project_domain}" "A"
+  cloudflare_set_record "${root_domain}" "${project_domain}" "A" "${SERVER_IP}"
 
   # HTTPS with Certbot
   certbot_helper_installer_menu "${NOTIFICATION_EMAIL_MAILA}" "${project_domain}"
@@ -1311,7 +1311,7 @@ function restore_project() {
 
       # Cloudflare API
       # TODO: must check for CNAME with www
-      cloudflare_set_record "${root_domain}" "${root_domain}" "A"
+      cloudflare_set_record "${root_domain}" "${root_domain}" "A" "${SERVER_IP}"
 
       # Let's Encrypt
       certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${root_domain},www.${root_domain}"
@@ -1331,7 +1331,7 @@ function restore_project() {
       nginx_server_create "${new_project_domain}" "${project_type}" "single"
 
       # Cloudflare API
-      cloudflare_set_record "${root_domain}" "${new_project_domain}" "A"
+      cloudflare_set_record "${root_domain}" "${new_project_domain}" "A" "${SERVER_IP}"
 
       # Let's Encrypt
       certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${new_project_domain}"
