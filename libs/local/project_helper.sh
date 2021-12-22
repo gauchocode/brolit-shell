@@ -1221,7 +1221,8 @@ function project_delete() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         # Delete Cloudflare entries
-        cloudflare_delete_a_record "${project_domain}"
+        root_domain="$(get_root_domain "${project_domain}")"
+        cloudflare_delete_record "${root_domain}" "${project_domain}" "A"
 
       else
 
@@ -1232,7 +1233,8 @@ function project_delete() {
     else
 
       # Delete Cloudflare entries
-      cloudflare_delete_a_record "${project_domain}"
+      root_domain="$(get_root_domain "${project_domain}")"
+      cloudflare_delete_record "${root_domain}" "${project_domain}" "A"
 
     fi
 
@@ -1407,10 +1409,10 @@ function php_project_installer() {
   if [[ ${project_domain} == *"${common_subdomain}"* ]]; then
 
     # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A"
+    cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A" "${SERVER_IP}"
 
     # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_domain}" "CNAME"
+    cloudflare_set_record "${project_root_domain}" "${project_domain}" "CNAME" "${SERVER_IP}"
 
     # New site Nginx configuration
     nginx_server_create "${project_domain}" "php" "root_domain" "${project_root_domain}"
@@ -1441,7 +1443,7 @@ function php_project_installer() {
   else
 
     # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_domain}" "A"
+    cloudflare_set_record "${project_root_domain}" "${project_domain}" "A" "${SERVER_IP}"
 
     # New site Nginx configuration
     nginx_create_empty_nginx_conf "${project_path}"
@@ -1591,10 +1593,10 @@ function nodejs_project_installer() {
   if [[ ${project_domain} == *"${common_subdomain}"* ]]; then
 
     # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A"
+    cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A" "${SERVER_IP}"
 
     # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_domain}" "CNAME"
+    cloudflare_set_record "${project_root_domain}" "${project_domain}" "CNAME" "${SERVER_IP}"
 
     # New site Nginx configuration
     nginx_server_create "${project_domain}" "php" "root_domain" "${project_root_domain}"
@@ -1625,7 +1627,7 @@ function nodejs_project_installer() {
   else
 
     # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_domain}" "A"
+    cloudflare_set_record "${project_root_domain}" "${project_domain}" "A" "${SERVER_IP}"
 
     # New site Nginx configuration
     nginx_create_empty_nginx_conf "${project_path}"
