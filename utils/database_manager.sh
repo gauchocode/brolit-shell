@@ -87,7 +87,7 @@ function database_manager_menu() {
 
       # List databases
       databases="$(mysql_list_databases "all")"
-      chosen_database="$(whiptail --title "DATABASE MANAGER" --menu "Choose a database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)"
+      chosen_database="$(whiptail --title "DATABASE MANAGER" --menu "Choose the database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)"
 
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
@@ -116,6 +116,66 @@ function database_manager_menu() {
           mysql_database_rename "${chosen_database}" "${chosen_database_name}"
         fi
 
+      fi
+
+    fi
+
+    if [[ ${chosen_database_manager_option} == *"05"* ]]; then
+
+      # LIST USERS
+      mysql_list_users
+
+    fi
+
+    if [[ ${chosen_database_manager_option} == *"06"* ]]; then
+
+      # CREATE USER DATABASE
+      chosen_username="$(whiptail --title "DATABASE MANAGER" --inputbox "Insert the username you want to create, example: my_domain_prod" 10 60 3>&1 1>&2 2>&3)"
+      exitstatus=$?
+
+      if [[ ${exitstatus} = 0 ]]; then
+
+        mysql_user_create "${chosen_username}"
+
+      fi
+
+    fi
+
+    if [[ ${chosen_database_manager_option} == *"07"* ]]; then
+
+      # DELETE USER
+
+      # List users
+      database_users="$(mysql_list_users)"
+      chosen_user="$(whiptail --title "DATABASE MANAGER" --menu "Choose the user you want to delete" 20 78 10 $(for x in ${database_users}; do echo "$x [U]"; done) 3>&1 1>&2 2>&3)"
+
+      exitstatus=$?
+      if [[ ${exitstatus} = 0 ]]; then
+
+        mysql_user_delete "${chosen_user}"
+
+      fi
+
+    fi
+
+    # RESET MYSQL USER PASSWORD
+    if [[ ${chosen_database_manager_option} == *"08"* ]]; then
+
+      # List users
+      database_users="$(mysql_list_users)"
+      chosen_user="$(whiptail --title "DATABASE MANAGER" --menu "Choose a user to work with" 20 78 10 $(for x in ${database_users}; do echo "$x [U]"; done) 3>&1 1>&2 2>&3)"
+
+      exitstatus=$?
+      if [[ ${exitstatus} = 0 ]]; then
+
+        new_user_psw="$(whiptail --title "MYSQL USER PASSWORD" --inputbox "Insert the new user password:" 10 60 3>&1 1>&2 2>&3)"
+        exitstatus=$?
+        if [[ ${exitstatus} = 0 ]]; then
+
+          mysql_user_psw_change "${chosen_user}" "${new_user_psw}"
+
+        fi
+      
       fi
 
     fi
