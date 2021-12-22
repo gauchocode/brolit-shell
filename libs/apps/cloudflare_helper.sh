@@ -481,6 +481,7 @@ function cloudflare_set_record() {
     local domain=$2
     local record_type=$3
     local proxy_status=$4
+    local cur_ip=$5
 
     local ttl
     local record_type
@@ -503,8 +504,6 @@ function cloudflare_set_record() {
         proxy_status=true #need to be a bool, not a string
 
     fi
-
-    cur_ip="${SERVER_IP}"
 
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
 
@@ -612,6 +611,7 @@ function cloudflare_update_record() {
     local domain=$2
     local record_type=$3
     local proxy_status=$4
+    local cur_ip=$5
 
     local ttl
     local record_type
@@ -620,9 +620,6 @@ function cloudflare_update_record() {
     local record_id
 
     record_name="${domain}"
-
-    # TODO: This should be a parameter ($record_content)
-    cur_ip="${SERVER_IP}"
 
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
 
@@ -655,10 +652,11 @@ function cloudflare_update_record() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function cloudflare_delete_a_record() {
+function cloudflare_delete_record() {
 
     local root_domain=$1
     local domain=$2
+    local record_type=$3
 
     # Cloudflare API to delete record
     log_event "info" "Accessing to Cloudflare API to delete record ${domain}"
@@ -666,7 +664,6 @@ function cloudflare_delete_a_record() {
     record_name="${domain}"
 
     #TODO: in the future we must rewrite the vars and remove this ugly replace
-    record_type="A"
     ttl=1 #1 for Auto
 
     cur_ip="${SERVER_IP}"
@@ -678,7 +675,7 @@ function cloudflare_delete_a_record() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then # Record found on Cloudflare
 
-        log_event "info" "Trying to delete the record ..."
+        log_event "info" "Trying to delete the record ..." "false"
 
         delete="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
             -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
