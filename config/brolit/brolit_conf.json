@@ -406,6 +406,7 @@
                 "status": "disabled",
                 "config": [
                     {
+                        "vim": "true",
                         "lynis": "true",
                         "clamav": "true",
                         "bat": "true"
