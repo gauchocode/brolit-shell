@@ -659,11 +659,10 @@ function cloudflare_delete_record() {
     local record_type=$3
 
     # Cloudflare API to delete record
-    log_event "info" "Accessing to Cloudflare API to delete record ${domain}"
+    log_event "info" "Accessing to Cloudflare API to delete record ${domain}" "false"
 
     record_name="${domain}"
 
-    #TODO: in the future we must rewrite the vars and remove this ugly replace
     ttl=1 #1 for Auto
 
     cur_ip="${SERVER_IP}"
@@ -685,7 +684,7 @@ function cloudflare_delete_record() {
         # Remove Cloudflare API garbage output
         clear_previous_lines "4"
 
-        if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
+        if [[ ${delete} == *"\"success\":false"* || ${delete} == "" ]]; then
 
             message="A record delete failed. Results:\n${delete}"
             log_event "error" "${message}"
