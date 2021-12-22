@@ -155,7 +155,7 @@ function cloudflare_manager_menu() {
 
         cur_ip="${SERVER_IP}"
 
-        cloudflare_update_record "${root_domain}" "${dns_entry}" "A" "enable" "${cur_ip}"
+        cloudflare_set_record "${root_domain}" "${dns_entry}" "A" "enable" "${cur_ip}"
 
       fi
 
