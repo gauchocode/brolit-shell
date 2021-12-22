@@ -217,13 +217,11 @@ function package_check_required() {
   package_install_if_not "zip"
   package_install_if_not "unzip"
   package_install_if_not "git"
-  package_install_if_not "vim"
   package_install_if_not "dnsutils"
   package_install_if_not "net-tools"
   package_install_if_not "sendemail"
   package_install_if_not "libio-socket-ssl-perl"
   package_install_if_not "ncdu"
-  package_install_if_not "fail2ban"
   package_install_if_not "ppa-purge"
 
   # Log

@@ -1179,7 +1179,7 @@ function restore_project() {
 
     wordpress)
 
-      display --indent 6 --text "Project Type WordPress" --tcolor GREEN
+      display --indent 8 --text "Project Type WordPress" --tcolor GREEN
 
       # Reading config file
       db_name="$(project_get_configured_database "${TMP_DIR}/${chosen_project}" "${project_type}")"
@@ -1209,12 +1209,12 @@ function restore_project() {
 
     laravel)
 
-      display --indent 6 --text "Project Type Laravel" --tcolor RED
+      display --indent 8 --text "Project Type Laravel" --tcolor RED
       ;;
 
     *)
 
-      display --indent 6 --text "Project Type Unknown" --tcolor RED
+      display --indent 8 --text "Project Type Unknown" --tcolor RED
 
       return 1
       ;;

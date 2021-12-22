@@ -114,7 +114,7 @@ function server_app_setup() {
             if [[ ${PACKAGES_PHP_STATUS} == "enabled" ]]; then
                 php_redis_installer
             fi
-            
+
         else
             package_purge "redis"
         fi

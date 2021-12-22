@@ -134,13 +134,24 @@ function _brolit_configuration_load_dropbox() {
 
         if [ -f "${BACKUP_DROPBOX_CONFIG_FILE}" ]; then
 
-            display --indent 2 --text "- Checking Dropbox config file" --result "DONE" --color GREEN
+            # Some globals
+            declare -g DPU_F
+            declare -g DROPBOX_UPLOADER
+
+            # Dropbox-uploader directory
+            DPU_F="${SFOLDER}/tools/third-party/dropbox-uploader"
+            # Dropbox-uploader runner
+            DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
+            # shellcheck source=~/.dropbox_uploader
+            source "${BACKUP_DROPBOX_CONFIG_FILE}"
+
+            export DPU_F DROPBOX_UPLOADER
 
         else
 
             display --indent 2 --text "- Checking Dropbox config file" --result "FAIL" --color RED
-            display --indent 4 --text "Config file not found: ${BACKUP_DROPBOX_CONFIG_FILE}"
-            display --indent 4 --text "Please finish the configuration running: ${DROPBOX_UPLOADER}"
+            display --indent 4 --text "Config file not found: ${BACKUP_DROPBOX_CONFIG_FILE}" --tcolor YELLOW
+            display --indent 4 --text "Please finish the configuration running: ${DROPBOX_UPLOADER}" --tcolor YELLOW
 
             exit 1
 
@@ -993,6 +1004,53 @@ function _brolit_configuration_load_grafana() {
 
 }
 
+function _brolit_configuration_load_custom_pkgs() {
+
+    local server_config_file=$1
+
+    # Globals
+    declare -g PACKAGES_CUSTOM_CONFIG_STATUS
+
+    PACKAGES_CUSTOM_CONFIG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.custom[].status")"
+
+    if [[ ${PACKAGES_CUSTOM_CONFIG_STATUS} == "enabled" ]]; then
+
+        # Get all listed apps
+        app_list="$(json_read_field "${server_config_file}" "PACKAGES.custom[].config[]")"
+
+        # Get keys
+        app_list_keys="$(jq -r 'keys[]' <<<"${app_list}" | sed ':a; N; $!ba; s/\n/ /g')"
+
+        # String to array
+        IFS=' ' read -r -a app_list_keys_array <<<"$app_list_keys"
+
+        # Loop through all apps keys
+        for app_list_key in "${app_list_keys_array[@]}"; do
+
+            app_list_value="$(jq -r ."${app_list_key}" <<<"${app_list}")"
+
+            if [[ ${app_list_value} == "true" ]]; then
+
+                # Allow service on firewall
+                package_install_if_not "${app_list_key}"
+
+            else
+
+                if [[ ${app_list_value} == "false" ]]; then
+
+                    # Deny service on firewall
+                    package_purge "${app_list_key}"
+
+                fi
+
+            fi
+
+        done
+
+    fi
+
+}
+
 ################################################################################
 # Private: load ufw configuration
 #
@@ -1019,7 +1077,7 @@ function _brolit_configuration_firewall_ufw() {
         fi
 
         # Get all listed apps
-        app_list="$(json_read_field "/root/.brolit_conf.json" "FIREWALL.ufw[].config[]")"
+        app_list="$(json_read_field "${server_config_file}" "FIREWALL.ufw[].config[]")"
 
         # Get keys
         app_list_keys="$(jq -r 'keys[]' <<<"${app_list}" | sed ':a; N; $!ba; s/\n/ /g')"
@@ -1083,6 +1141,8 @@ function _brolit_configuration_firewall_fail2ban() {
 
     # Check if firewall configuration in config file
     if [[ ${FIREWALL_FAIL2BAN_STATUS} == "enabled" ]]; then
+
+        package_install_if_not "fail2ban"
 
         # TODO: need to configure fail2ban
         log_event "debug" "TODO: need to configure fail2ban" "false"
@@ -1320,6 +1380,9 @@ function brolit_configuration_load() {
 
     ### grafana
     _brolit_configuration_load_grafana "${server_config_file}"
+
+    ### custom
+    _brolit_configuration_load_custom_pkgs "${server_config_file}"
 
     # Export vars
     export PROJECTS_PATH
