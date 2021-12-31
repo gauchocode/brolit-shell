@@ -637,7 +637,7 @@ function project_get_configured_database() {
   local wpconfig_path
 
   # First try to read from brolit project config
-  db_name="$(project_get_config "${project_path}" "project[].db_name")"
+  db_name="$(project_get_config "${project_path}" "project[].database[].config[].name")"
 
   if [[ ${db_name} != "false" ]]; then
 
@@ -717,9 +717,9 @@ function project_get_configured_database_user() {
   local project_type=$2
 
   # First try to read from brolit project config
-  db_user="$(project_get_config "${project_path}" "project[].db_user")"
+  db_user="$(project_get_config "${project_path}" "project[].database[].config[].user")"
 
-  if [[ ${db_user} != "false" ]]; then
+  if [[ ${db_user} != "" ]]; then
 
     log_event "debug" "Extracted db_name : ${db_user}" "false"
 
@@ -730,7 +730,7 @@ function project_get_configured_database_user() {
 
   else
 
-    case $project_type in
+    case ${project_type} in
 
     wordpress)
 
@@ -795,7 +795,7 @@ function project_get_configured_database_userpassw() {
   local project_type=$2
 
   # First try to read from brolit project config
-  db_pass="$(project_get_config "${project_path}" "project[].db_pass")"
+  db_pass="$(project_get_config "${project_path}" "project[].database[].config[].pass")"
 
   if [[ ${db_pass} != "false" ]]; then
 
@@ -1001,7 +1001,7 @@ function project_delete_files() {
   # Trying to know project type
   project_type=$(project_get_type "${PROJECTS_PATH}/${project_domain}")
 
-  log_event "info" "Project Type: ${project_type}"
+  log_event "info" "Project Type: ${project_type}" "false"
 
   BK_TYPE="site"
 
@@ -1245,6 +1245,8 @@ function project_delete() {
 
   # Delete Database
   project_delete_database "${project_db_name}" "${project_db_user}"
+
+  # TODO: Delete config file? or maybe rename it with "-offline"?
 
   # Delete tmp backups
   display --indent 2 --text "Please, remove ${TMP_DIR} after check backup was uploaded ok" --tcolor YELLOW
