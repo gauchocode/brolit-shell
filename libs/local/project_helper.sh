@@ -939,6 +939,9 @@ function project_install() {
 
   wordpress)
 
+    # Check if wp-cli is installed
+    wpcli_install_if_not_installed
+
     # Execute function
     wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
 
