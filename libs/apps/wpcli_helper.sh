@@ -119,6 +119,9 @@ function wpcli_install() {
         chmod +x wp-cli.phar
         mv wp-cli.phar "/usr/local/bin/wp"
 
+        # Update brolit_conf.json
+        json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.php[].extensions[].wpcli" "enabled"
+
         # Log
         clear_previous_lines "1"
         display --indent 6 --text "- Installing wp-cli" --result "DONE" --color GREEN
