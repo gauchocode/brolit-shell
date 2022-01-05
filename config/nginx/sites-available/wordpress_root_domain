@@ -21,7 +21,7 @@ server {
     }
 
     ### INC
-    include /var/www/root_domain.com/nginx.conf;
+    #include /var/www/root_domain.com/nginx.conf;
     
     ### PERF
     gzip_static on;
@@ -33,6 +33,7 @@ server {
     #include /etc/nginx/globals/wordpress_sec.conf;
 
 }
+
 server {
 
     listen 80;
