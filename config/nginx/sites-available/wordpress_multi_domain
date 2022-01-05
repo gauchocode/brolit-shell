@@ -34,6 +34,7 @@ server {
     #include /etc/nginx/globals/wordpress_sec.conf;
 
 }
+
 server {
 
     listen 80;

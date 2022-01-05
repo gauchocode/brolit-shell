@@ -522,13 +522,13 @@ function _brolit_configuration_load_nginx() {
     local server_config_file=$1
 
     # Globals
-    declare -g PACKAGES_NGINX_CONFIG_STATUS
+    declare -g PACKAGES_NGINX_STATUS
     declare -g PACKAGES_NGINX_CONFIG_VERSION
     declare -g PACKAGES_NGINX_CONFIG_PORTS
 
-    PACKAGES_NGINX_CONFIG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.nginx[].status")"
+    PACKAGES_NGINX_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.nginx[].status")"
 
-    if [[ ${PACKAGES_NGINX_CONFIG_STATUS} == "enabled" ]]; then
+    if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
 
         PACKAGES_NGINX_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.nginx[].version")"
         # Check if all required vars are set
@@ -554,7 +554,7 @@ function _brolit_configuration_load_nginx() {
 
     fi
 
-    export PACKAGES_NGINX_CONFIG_STATUS PACKAGES_NGINX_CONFIG_VERSION PACKAGES_NGINX_CONFIG_PORTS
+    export PACKAGES_NGINX_STATUS PACKAGES_NGINX_CONFIG_VERSION PACKAGES_NGINX_CONFIG_PORTS
 
 }
 
@@ -667,13 +667,13 @@ function _brolit_configuration_load_mariadb() {
     local server_config_file=$1
 
     # Globals
-    declare -g PACKAGES_MARIADB_CONFIG_STATUS
+    declare -g PACKAGES_MARIADB_STATUS
     declare -g PACKAGES_MARIADB_CONFIG_VERSION
     declare -g PACKAGES_MARIADB_CONFIG_PORTS
 
-    PACKAGES_MARIADB_CONFIG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.mariadb[].status")"
+    PACKAGES_MARIADB_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.mariadb[].status")"
 
-    if [[ ${PACKAGES_MARIADB_CONFIG_STATUS} == "enabled" ]]; then
+    if [[ ${PACKAGES_MARIADB_STATUS} == "enabled" ]]; then
 
         PACKAGES_MARIADB_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.mariadb[].version")"
         # Check if all required vars are set
@@ -699,7 +699,7 @@ function _brolit_configuration_load_mariadb() {
 
     fi
 
-    export PACKAGES_MARIADB_CONFIG_STATUS PACKAGES_MARIADB_CONFIG_VERSION PACKAGES_MARIADB_CONFIG_PORTS
+    export PACKAGES_MARIADB_STATUS PACKAGES_MARIADB_CONFIG_VERSION PACKAGES_MARIADB_CONFIG_PORTS
 
 }
 
@@ -718,13 +718,13 @@ function _brolit_configuration_load_mysql() {
     local server_config_file=$1
 
     # Globals
-    declare -g PACKAGES_MYSQL_CONFIG_STATUS
+    declare -g PACKAGES_MYSQL_STATUS
     declare -g PACKAGES_MYSQL_CONFIG_VERSION
     declare -g PACKAGES_MYSQL_CONFIG_PORTS
 
-    PACKAGES_MYSQL_CONFIG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.mysql[].status")"
+    PACKAGES_MYSQL_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.mysql[].status")"
 
-    if [[ ${PACKAGES_MYSQL_CONFIG_STATUS} == "enabled" ]]; then
+    if [[ ${PACKAGES_MYSQL_STATUS} == "enabled" ]]; then
 
         PACKAGES_MYSQL_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.mysql[].version")"
         # Check if all required vars are set
@@ -752,7 +752,7 @@ function _brolit_configuration_load_mysql() {
 
     _brolit_configuration_app_mysql
 
-    export PACKAGES_MYSQL_CONFIG_STATUS PACKAGES_MYSQL_CONFIG_VERSION PACKAGES_MYSQL_CONFIG_PORTS
+    export PACKAGES_MYSQL_STATUS PACKAGES_MYSQL_CONFIG_VERSION PACKAGES_MYSQL_CONFIG_PORTS
 
 }
 
@@ -771,13 +771,13 @@ function _brolit_configuration_load_redis() {
     local server_config_file=$1
 
     # Globals
-    declare -g PACKAGES_REDIS_CONFIG_STATUS
+    declare -g PACKAGES_REDIS_STATUS
     declare -g PACKAGES_REDIS_CONFIG_VERSION
     declare -g PACKAGES_REDIS_CONFIG_PORTS
 
-    PACKAGES_REDIS_CONFIG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.redis[].status")"
+    PACKAGES_REDIS_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.redis[].status")"
 
-    if [[ ${PACKAGES_REDIS_CONFIG_STATUS} == "enabled" ]]; then
+    if [[ ${PACKAGES_REDIS_STATUS} == "enabled" ]]; then
 
         PACKAGES_REDIS_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.redis[].version")"
         # Check if all required vars are set
@@ -795,7 +795,7 @@ function _brolit_configuration_load_redis() {
 
     fi
 
-    export PACKAGES_REDIS_CONFIG_STATUS PACKAGES_REDIS_CONFIG_VERSION PACKAGES_REDIS_CONFIG_PORTS
+    export PACKAGES_REDIS_STATUS PACKAGES_REDIS_CONFIG_VERSION PACKAGES_REDIS_CONFIG_PORTS
 
 }
 
@@ -814,12 +814,12 @@ function _brolit_configuration_load_certbot() {
     local server_config_file=$1
 
     # Globals
-    declare -g PACKAGES_CERTBOT_CONFIG_STATUS
+    declare -g PACKAGES_CERTBOT_STATUS
     declare -g PACKAGES_CERTBOT_CONFIG_MAILA
 
-    PACKAGES_CERTBOT_CONFIG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.certbot[].status")"
+    PACKAGES_CERTBOT_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.certbot[].status")"
 
-    if [[ ${PACKAGES_CERTBOT_CONFIG_STATUS} == "enabled" ]]; then
+    if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
 
         PACKAGES_CERTBOT_CONFIG_MAILA="$(json_read_field "${server_config_file}" "PACKAGES.certbot[].config[].email")"
 
@@ -843,7 +843,7 @@ function _brolit_configuration_load_certbot() {
 
     fi
 
-    export PACKAGES_CERTBOT_CONFIG_STATUS PACKAGES_CERTBOT_CONFIG_MAILA
+    export PACKAGES_CERTBOT_STATUS PACKAGES_CERTBOT_CONFIG_MAILA
 
 }
 
@@ -1361,7 +1361,7 @@ function brolit_configuration_load() {
     _brolit_configuration_load_mysql "${server_config_file}"
 
     # If Server role 'database' is enabled, mariadb or mysql must be enabled
-    if [[ ${PACKAGES_MARIADB_CONFIG_STATUS} != "enabled" ]] && [[ ${PACKAGES_MYSQL_CONFIG_STATUS} != "enabled" ]] && [[ ${SERVER_ROLE_DATABASE} == "enabled" ]]; then
+    if [[ ${PACKAGES_MARIADB_STATUS} != "enabled" ]] && [[ ${PACKAGES_MYSQL_STATUS} != "enabled" ]] && [[ ${SERVER_ROLE_DATABASE} == "enabled" ]]; then
         log_event "warning" "No database engine is enabled" "true"
         exit 1
     fi
