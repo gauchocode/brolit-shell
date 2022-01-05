@@ -157,6 +157,7 @@ function server_app_setup() {
 
         if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
             netdata_installer
+            netdata_configuration
         else
             netdata_uninstaller
         fi
