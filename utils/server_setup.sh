@@ -39,7 +39,7 @@ function server_app_setup() {
 
     "nginx")
 
-        if [[ ${PACKAGES_NGINX_CONFIG_STATUS} == "enabled" ]]; then
+        if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
             # Nginx Installer
             nginx_installer "${PACKAGES_NGINX_CONFIG_VERSION}"
             # Reconfigure
@@ -86,7 +86,7 @@ function server_app_setup() {
 
     "mysql")
 
-        if [[ ${PACKAGES_MYSQL_CONFIG_STATUS} == "enabled" ]]; then
+        if [[ ${PACKAGES_MYSQL_STATUS} == "enabled" ]]; then
             mysql_default_installer
             mysql_initial_config
         else
@@ -97,7 +97,7 @@ function server_app_setup() {
 
     "mariadb")
 
-        if [[ ${PACKAGES_MARIADB_CONFIG_STATUS} == "enabled" ]]; then
+        if [[ ${PACKAGES_MARIADB_STATUS} == "enabled" ]]; then
             mariadb_default_installer
             mysql_initial_config
         else
@@ -108,7 +108,7 @@ function server_app_setup() {
 
     "redis")
 
-        if [[ ${PACKAGES_REDIS_CONFIG_STATUS} == "enabled" ]]; then
+        if [[ ${PACKAGES_REDIS_STATUS} == "enabled" ]]; then
 
             redis_installer
             if [[ ${PACKAGES_PHP_STATUS} == "enabled" ]]; then
@@ -123,7 +123,7 @@ function server_app_setup() {
 
     "nodejs")
 
-        if [[ ${PACKAGES_NODEJS_CONFIG_STATUS} == "enabled" ]]; then
+        if [[ ${PACKAGES_NODEJS_STATUS} == "enabled" ]]; then
             nodejs_installer ""
         else
             nodejs_purge
@@ -145,7 +145,7 @@ function server_app_setup() {
 
     "certbot")
 
-        if [[ ${PACKAGES_CERTBOT_CONFIG_STATUS} == "enabled" ]]; then
+        if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
             certbot_installer
         else
             certbot_purge
@@ -155,7 +155,7 @@ function server_app_setup() {
 
     "netdata")
 
-        if [[ ${PACKAGES_NETDATA_CONFIG_STATUS} == "enabled" ]]; then
+        if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
             netdata_installer
         else
             netdata_uninstaller
@@ -165,7 +165,7 @@ function server_app_setup() {
 
     "grafana")
 
-        if [[ ${PACKAGES_GRAFANA_CONFIG_STATUS} == "enabled" ]]; then
+        if [[ ${PACKAGES_GRAFANA_STATUS} == "enabled" ]]; then
             grafana_installer
         else
             grafana_purge
@@ -175,7 +175,7 @@ function server_app_setup() {
 
     "cockpit")
 
-        if [[ ${PACKAGES_COCKPIT_CONFIG_STATUS} == "enabled" ]]; then
+        if [[ ${PACKAGES_COCKPIT_STATUS} == "enabled" ]]; then
             cockpit_installer
         else
             package_purge "cockpit"
@@ -185,7 +185,7 @@ function server_app_setup() {
 
     "teleport")
 
-        if [[ ${PACKAGES_TELEPORT_CONFIG_STATUS} == "enabled" ]]; then
+        if [[ ${PACKAGES_TELEPORT_STATUS} == "enabled" ]]; then
 
             teleport_installer
 
@@ -229,7 +229,7 @@ function server_setup() {
     # Configuring server roles
     if [[ ${SERVER_ROLE_WEBSERVER} == "enabled" ]]; then
 
-        if [[ ${PACKAGES_NGINX_CONFIG_STATUS} == "enabled" ]]; then
+        if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
 
             # Nginx Installer
             nginx_installer "default"
@@ -268,13 +268,13 @@ function server_setup() {
     if [[ ${SERVER_ROLE_DATABASE} == "enabled" ]]; then
 
         # MySQL Installer
-        if [[ ${PACKAGES_MARIADB_CONFIG_STATUS} == "enabled" ]]; then
+        if [[ ${PACKAGES_MARIADB_STATUS} == "enabled" ]]; then
             mariadb_default_installer
             mysql_initial_config
 
         fi
 
-        if [[ ${PACKAGES_MYSQL_CONFIG_STATUS} == "enabled" ]]; then
+        if [[ ${PACKAGES_MYSQL_STATUS} == "enabled" ]]; then
             mysql_default_installer
             mysql_initial_config
 
@@ -289,11 +289,11 @@ function server_setup() {
     fi
 
     # Check aditional packages to install
-    if [[ ${PACKAGES_CERTBOT_CONFIG_STATUS} == "enabled" ]]; then
+    if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
         certbot_installer
     fi
 
-    if [[ ${PACKAGES_REDIS_CONFIG_STATUS} == "enabled" ]]; then
+    if [[ ${PACKAGES_REDIS_STATUS} == "enabled" ]]; then
 
         redis_installer
 
@@ -312,7 +312,7 @@ function server_setup() {
         netdata_installer
     fi
 
-    if [[ ${PACKAGES_COCKPIT_CONFIG_STATUS} == "enabled" ]]; then
+    if [[ ${PACKAGES_COCKPIT_STATUS} == "enabled" ]]; then
         cockpit_installer
     fi
 

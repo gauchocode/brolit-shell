@@ -1,6 +1,7 @@
 server {
 
     charset utf-8;
+    
     listen 80;
 
     server_name domain.com;
@@ -24,7 +25,7 @@ server {
     }
 
     ### INC
-    include /var/www/root_domain.com/nginx.conf;
+    #include /var/www/root_domain.com/nginx.conf;
     
     ### PERF
     gzip_static on;

@@ -43,12 +43,12 @@ function grafana_installer() {
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
-            PACKAGES_GRAFANA_CONFIG_STATUS="enabled"
+            PACKAGES_GRAFANA_STATUS="enabled"
 
-            json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.grafana[].status" "${PACKAGES_GRAFANA_CONFIG_STATUS}"
+            json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.grafana[].status" "${PACKAGES_GRAFANA_STATUS}"
 
             # new global value ("enabled")
-            export PACKAGES_GRAFANA_CONFIG_STATUS
+            export PACKAGES_GRAFANA_STATUS
 
             return 0
 
@@ -83,12 +83,12 @@ function grafana_purge() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        PACKAGES_GRAFANA_CONFIG_STATUS="disabled"
+        PACKAGES_GRAFANA_STATUS="disabled"
 
-        json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.grafana[].status" "${PACKAGES_GRAFANA_CONFIG_STATUS}"
+        json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.grafana[].status" "${PACKAGES_GRAFANA_STATUS}"
 
         # new global value ("disabled")
-        export PACKAGES_GRAFANA_CONFIG_STATUS
+        export PACKAGES_GRAFANA_STATUS
 
         return 0
 
