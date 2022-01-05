@@ -223,6 +223,8 @@ function _netdata_telegram_config() {
 
 function netdata_installer() {
 
+  _netdata_required_packages
+
   log_event "info" "Installing Netdata ..." "false"
   display --indent 6 --text "- Downloading and compiling netdata"
 
@@ -230,29 +232,44 @@ function netdata_installer() {
   bash <(curl -Ss https://my-netdata.io/kickstart.sh) all --dont-wait --disable-telemetry &>/dev/null
 
   # Kill netdata and copy service
-  killall netdata && cp system/netdata.service /etc/systemd/system/
+  #killall netdata && cp system/netdata.service /etc/systemd/system/
 
-  if [[ $? -eq 0 ]]; then
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
 
-    NETDATA_CONFIG_STATUS="enabled"
+    # Log
+    clear_previous_lines "2"
+    log_event "info" "Netdata installation finished" "false"
+    display --indent 6 --text "- Downloading and compiling netdata" --result "DONE" --color GREEN
 
-    json_write_field "${BROLIT_CONFIG_FILE}" "SUPPORT.netdata[].status" "${NETDATA_CONFIG_STATUS}"
+    # If nginx is installed
+    nginx_command="$(command -v nginx)"
+    if [[ -x ${nginx_command} ]]; then
 
-    # new global value ("enabled")
-    export NETDATA_CONFIG_STATUS
+      # Netdata nginx proxy configuration
+      nginx_server_create "${PACKAGE_NETDATA_CONFIG_SUBDOMAIN}" "netdata" "single" ""
 
-    return 0
+      # Nginx Auth
+      nginx_generate_auth "${PACKAGES_NETDATA_CONFIG_USER}" "${PACKAGES_NETDATA_CONFIG_USER_PASS}"
+
+      # Confirm ROOT_DOMAIN
+      root_domain="$(get_root_domain "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}")"
+
+      # Cloudflare API
+      cloudflare_set_record "${possible_root_domain}" "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}" "A"
+
+      # HTTPS with Certbot
+      certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}"
+
+      display --indent 6 --text "- Netdata installation" --result "DONE" --color GREEN
+
+    fi
 
   else
 
     return 1
 
   fi
-
-  # Log
-  clear_previous_lines "2"
-  log_event "info" "Netdata installation finished" "false"
-  display --indent 6 --text "- Downloading and compiling netdata" --result "DONE" --color GREEN
 
 }
 
@@ -331,6 +348,8 @@ EOF
 
 function netdata_configuration() {
 
+  # TODO: check if mysql or mariadb are installed
+
   # MySQL
   mysql_user_create "netdata" "" "localhost"
   mysql_user_grant_privileges "netdata" "*" "localhost"
@@ -340,6 +359,8 @@ function netdata_configuration() {
 
   log_event "info" "MySQL config done!" "false"
   display --indent 6 --text "- MySQL configuration" --result "DONE" --color GREEN
+
+  # TODO: check if monit is installed
 
   # Monit
   cat "${SFOLDER}/config/netdata/python.d/monit.conf" >"/etc/netdata/python.d/monit.conf"
@@ -457,28 +478,6 @@ function netdata_installer_menu() {
 
         # Installe netdata
         netdata_installer
-
-        # If nginx is installed
-        nginx_command="$(command -v nginx)"
-        if [[ -x ${nginx_command} ]]; then
-
-          # Netdata nginx proxy configuration
-          nginx_server_create "${PACKAGE_NETDATA_CONFIG_SUBDOMAIN}" "netdata" "single" ""
-
-          # Nginx Auth
-          nginx_netdata_user="netdata"
-          nginx_netdata_pass=$(whiptail_imput "Netdata Installer" "Please, insert a password for netdata user:")
-          nginx_generate_auth "${nginx_netdata_user}" "${nginx_netdata_pass}"
-
-          config_field="SUPPORT.netdata[].config[].netdata_user"
-          config_value="${nginx_netdata_user}"
-          json_write_field "${config_file}" "${config_field}" "${config_value}"
-
-          config_field="SUPPORT.netdata[].config[].netdata_pass"
-          config_value="${nginx_netdata_pass}"
-          json_write_field "${config_file}" "${config_field}" "${config_value}"
-
-        fi
 
         # Configuration
         netdata_configuration
