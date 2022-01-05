@@ -151,7 +151,7 @@ function _brolit_configuration_load_dropbox() {
 
             display --indent 2 --text "- Checking Dropbox config file" --result "FAIL" --color RED
             display --indent 4 --text "Config file not found: ${BACKUP_DROPBOX_CONFIG_FILE}" --tcolor YELLOW
-            display --indent 4 --text "Please finish the configuration running: ${DROPBOX_UPLOADER}" --tcolor YELLOW
+            display --indent 4 --text "Please finish the configuration running: ${BACKUP_DROPBOX_CONFIG_FILE}" --tcolor YELLOW
 
             exit 1
 
