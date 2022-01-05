@@ -132,16 +132,17 @@ function _brolit_configuration_load_dropbox() {
 
         BACKUP_DROPBOX_CONFIG_FILE="$(json_read_field "${server_config_file}" "BACKUPS.methods[].dropbox[].config[].file")"
 
+        # Some globals
+        declare -g DPU_F
+        declare -g DROPBOX_UPLOADER
+
+        # Dropbox-uploader directory
+        DPU_F="${SFOLDER}/tools/third-party/dropbox-uploader"
+        # Dropbox-uploader runner
+        DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
+
         if [ -f "${BACKUP_DROPBOX_CONFIG_FILE}" ]; then
 
-            # Some globals
-            declare -g DPU_F
-            declare -g DROPBOX_UPLOADER
-
-            # Dropbox-uploader directory
-            DPU_F="${SFOLDER}/tools/third-party/dropbox-uploader"
-            # Dropbox-uploader runner
-            DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
             # shellcheck source=~/.dropbox_uploader
             source "${BACKUP_DROPBOX_CONFIG_FILE}"
 
@@ -151,7 +152,7 @@ function _brolit_configuration_load_dropbox() {
 
             display --indent 2 --text "- Checking Dropbox config file" --result "FAIL" --color RED
             display --indent 4 --text "Config file not found: ${BACKUP_DROPBOX_CONFIG_FILE}" --tcolor YELLOW
-            display --indent 4 --text "Please finish the configuration running: ${BACKUP_DROPBOX_CONFIG_FILE}" --tcolor YELLOW
+            display --indent 4 --text "Please finish the configuration running: ${DROPBOX_UPLOADER}" --tcolor YELLOW
 
             exit 1
 
