@@ -146,8 +146,8 @@ You can run some tasks like this:
 
 More information here: [FLAGS](./docs/DOC-flags.md)
 
-## Update
-🚨🚨🚨 **BREAKING CHANGES SINCE VERSION 3.0** 🚨🚨🚨
+## 🚨 Update
+**BREAKING CHANGES SINCE VERSION 3.0**
 
 Before upgrade:
 
@@ -161,13 +161,9 @@ Before upgrade:
 ## :compass: TODO List
 [TODO List](./docs/TODO.md)
 
-## Changelog
-[Changelog](./docs/CHANGELOG.md)
-
 ## :wave: Contributing
-Please read CONTRIBUTING.md for details on our code of conduct, and the process for submitting pull requests to us.
+Please read [CONTRIBUTING](./docs/CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
 
-## Code: Bash Best Practices
 [Best Practices](./docs/CODE.md)
 
 ## :busts_in_silhouette: Team
