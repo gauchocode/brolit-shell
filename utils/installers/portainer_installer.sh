@@ -137,17 +137,30 @@ function portainer_configure() {
 
     log_event "info" "Configuring portainer ..."
 
-    # TODO: if is nginx installed, then create nginx server and proxy portainer
-
     # Check if firewall is enabled
     if [ "$(ufw status | grep -c "Status: active")" -eq "1" ]; then
         firewall_allow "${PACKAGES_PORTAINER_CONFIG_PORT}"
     fi
 
-    nginx_server_create "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}" "portainer"
+    if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
 
-    # Replace port on nginx server config
-    sed -i "s/PORTAINER_PORT/${PACKAGES_PORTAINER_CONFIG_PORT}/g" "${WSERVER}/sites-available/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}"
+        nginx_server_create "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}" "portainer" "single" ""
+
+        # Replace port on nginx server config
+        sed -i "s/PORTAINER_PORT/${PACKAGES_PORTAINER_CONFIG_PORT}/g" "${WSERVER}/sites-available/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}"
+    fi
+
+    if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
+
+        local root_domain
+
+        root_domain="$(domain_get_root "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}")"
+
+        cloudflare_set_record "${root_domain}" "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}" "A" "false" "${SERVER_IP}"
+
+    fi
+
+    # TODO: if Cloudflare update OK, then run certbot
 
     # Log
     display --indent 6 --text "- Portainer configuration" --result "DONE" --color GREEN
