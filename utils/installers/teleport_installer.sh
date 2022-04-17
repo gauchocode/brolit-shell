@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 
 function teleport_installer() {
 
     # Download pubkey for Teleport
-    curl https://deb.releases.teleport.dev/teleport-pubkey.asc | sudo apt-key add -
+    ${CURL} https://deb.releases.teleport.dev/teleport-pubkey.asc | sudo apt-key add -
 
     # Adding Teleport repository
     add-apt-repository 'deb https://deb.releases.teleport.dev/ stable main'

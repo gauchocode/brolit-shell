@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 # WP-CLI Manager: WP-CLI functions manager.
@@ -44,7 +44,7 @@ function wpcli_manager() {
     # Install_path could return more than one wp installation
     project_path="$(wordpress_select_project_to_work_with "${install_path}")"
 
-    if [[ ${project_path} != '' ]]; then
+    if [[ -n ${project_path} ]]; then
 
       log_event "debug" "Working with ${project_path}" "false"
 
@@ -54,7 +54,8 @@ function wpcli_manager() {
     else
 
       # Log
-      log_event "info" "WordPress installation not found! Returning to Main Menu" "false"
+      log_event "debug" "project_path=${project_path}" "false"
+      log_event "info" "WordPress installation not found!" "false"
       display --indent 2 --text "- Searching WordPress installation" --result "FAIL" --color RED
 
       whiptail --title "WARNING" --msgbox "WordPress installation not found! Press Enter to return to the Main Menu." 8 78
@@ -72,10 +73,10 @@ function wpcli_main_menu() {
 
   # $1 = ${wp_site}
 
-  local wp_site=$1
+  local wp_site="${1}"
 
   local wpcli_options
-  local wp_result
+  #local wp_result
   local chosen_wpcli_options
   local chosen_del_theme_option
   local wp_del_themes
@@ -97,6 +98,7 @@ function wpcli_main_menu() {
     "14)" "CREATE WP USER"
     "15)" "RESET WP USER PASSW"
     "16)" "DELETE SPAM COMMENTS"
+    "17)" "SET MAINTENANCE MODE"
   )
 
   chosen_wpcli_options="$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 "${wpcli_options[@]}" 3>&1 1>&2 2>&3)"
@@ -155,7 +157,7 @@ function wpcli_main_menu() {
 
       log_subsection "WP Re-install Plugins"
 
-      wpcli_force_reinstall_plugins "${wp_site}"
+      wpcli_plugin_reinstall "${wp_site}" "all"
 
     fi
 
@@ -187,7 +189,7 @@ function wpcli_main_menu() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        send_notification "⚠️ ${VPSNAME}" "WordPress re-installed on: ${wp_site}"
+        send_notification "⚠️ ${SERVER_NAME}" "WordPress re-installed on: ${wp_site}"
 
       fi
 
@@ -312,6 +314,18 @@ function wpcli_main_menu() {
 
     fi
 
+    if [[ ${chosen_wpcli_options} == *"17"* ]]; then
+
+      choosen_mode="$(whiptail --title "WORDPRESS MAINTENANCE MODE" --inputbox "Set new maintenance mode (‘activate’, ‘deactivate’)" 10 60 "" 3>&1 1>&2 2>&3)"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        wpcli_maintenance_mode_set "${wp_site}" "${choosen_mode}"
+
+      fi
+
+    fi
+
     prompt_return_or_finish
     wpcli_main_menu "${wp_site}"
 
@@ -327,7 +341,7 @@ function wpcli_profiler_menu() {
 
   # $1 = ${wp_site}
 
-  local wp_site=$1
+  local wp_site="${1}"
 
   local is_installed
   local profiler_options
@@ -389,7 +403,7 @@ function wpcli_profiler_menu() {
 
 function wpcli_tasks_handler() {
 
-  local subtask=$1
+  local subtask="${1}"
 
   log_subsection "WP-CLI Manager"
 

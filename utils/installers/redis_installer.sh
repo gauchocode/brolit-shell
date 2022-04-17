@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 
 function redis_installer() {
@@ -12,7 +12,7 @@ function redis_installer() {
   systemctl enable redis-server.service
 
   # Creating config file
-  cp "${SFOLDER}/config/redis/redis.conf" "/etc/redis/redis.conf"
+  cp "${BROLIT_MAIN_DIR}/config/redis/redis.conf" "/etc/redis/redis.conf"
 
   # Service restart
   service redis-server restart

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 #############################################################################
 #
 # SFTP Local Helper: Local sftp configuration functions
@@ -22,19 +22,19 @@
 
 function _sftp_add_folder_permission() {
 
-    local username=$1
-    local dir_path=$2
-    local folder=$3
+    local username="${1}"
+    local dir_path="${2}"
+    local folder="${3}"
 
     # Create user subfolder
-    mkdir "/home/${username}/${folder}"
+    mkdir -p "/home/${username}/${folder}"
 
     # Log
     display --indent 6 --text "- Creating user subfolder" --result "DONE" --color GREEN
     log_event "info" "Creating user subfolder: /home/${username}/${folder}" "false"
 
     # Create project subfolder
-    mkdir "${dir_path}/${folder}"
+    mkdir -p "${dir_path}/${folder}"
     log_event "info" "Creating subfolder ${dir_path}/${folder}" "false"
 
     # Mounting
@@ -76,7 +76,7 @@ function _sftp_add_folder_permission() {
 
 function _sftp_test_connection() {
 
-    local username=$1
+    local username="${1}"
 
     sftp "${username}@localhost"
 
@@ -97,9 +97,9 @@ function _sftp_test_connection() {
 #without-shell-access
 function sftp_create_user() {
 
-    local username=$1
-    local groupname=$2
-    local shell_access=$3 #no or yes
+    local username="${1}"
+    local groupname="${2}"
+    local shell_access="${3}" #no or yes
 
     # TODO: non-interactive adduser
     # ref: https://askubuntu.com/questions/94060/run-adduser-non-interactively
@@ -126,8 +126,8 @@ function sftp_create_user() {
     log_event "debug" "Running: mv /etc/ssh/sshd_config /etc/ssh/sshd_config.bk"
 
     # Copy new config
-    cp "${SFOLDER}/config/sftp/sshd_config" "/etc/ssh/sshd_config"
-    log_event "debug" "Running: cp ${SFOLDER}/config/sftp/sshd_config /etc/ssh/sshd_config"
+    cp "${BROLIT_MAIN_DIR}/config/sftp/sshd_config" "/etc/ssh/sshd_config"
+    log_event "debug" "Running: cp ${BROLIT_MAIN_DIR}/config/sftp/sshd_config /etc/ssh/sshd_config"
 
     # Replace SFTP_U to new sftp user
     if [[ ${username} != "" ]]; then
@@ -179,7 +179,7 @@ function sftp_create_user() {
 
 function sftp_create_group() {
 
-    local groupname=$1
+    local groupname="${1}"
 
     groupadd "${groupname}"
 
@@ -210,7 +210,7 @@ function sftp_create_group() {
 
 function sftp_delete_user() {
 
-    local username=$1
+    local username="${1}"
 
     whiptail_message_with_skip_option "SFTP USER DELETE" "Are you sure you want to delete the user '${username}'? It will remove all user files."
     exitstatus=$?

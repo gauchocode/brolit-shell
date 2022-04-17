@@ -1,12 +1,121 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 # Project Helper: Perform project actions.
 #
 ################################################################################
+
+################################################################################
+# Get project config option from env file
+#
+# Arguments:
+#  $1 = ${file}
+#  $2 = ${variable}
+#
+# Outputs:
+#  ${content} if ok, 1 on error.
+################################################################################
+
+function project_get_config_var() {
+
+  local file="${1}"
+  local variable="${2}"
+
+  local content
+
+  if [[ ! -f ${file} ]]; then
+
+    log_event "error" "Config file doesn't exist: ${file}" "false"
+    exit 1
+
+  fi
+
+  #sed -i "s/^${variable}\=.*/${variable}=\"${content}\"/" "${file}"
+
+  # Read "${file}"/.env to extract ${variable}
+  content="$(grep -oP "^${variable}=\K.*" "${file}")"
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Log
+    log_event "debug" "Reading variable '${variable}' content from file: ${file}" "false"
+    log_event "debug" "${variable}=${content}" "false"
+    display --indent 6 --text "- Reading .env variable" --result "DONE" --color GREEN
+    display --indent 8 --text "${variable}=${content}" --tcolor GREEN
+
+    # Return
+    echo "${content}"
+
+    return 0
+
+  else
+
+    # Log
+    log_event "error" "Reading variable '${variable}' content from file: ${file}" "false"
+    log_event "debug" "Output: ${content}" "false"
+    display --indent 6 --text "- Reading .env variable" --result "FAIL" --color RED
+    display --indent 8 --text "Please read the log file" --tcolor RED
+
+    return 1
+
+  fi
+
+}
+
+################################################################################
+# Set project config option
+#
+# Arguments:
+#  $1 = ${file}
+#  $2 = ${variable}
+#  $3 = ${content}
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
+
+function project_set_config_var() {
+
+  local file="${1}"
+  local variable="${2}"
+  local content="${3}"
+
+  if [[ ! -f ${file} ]]; then
+
+    log_event "error" "Config file doesn't exist: ${file}" "false"
+    exit 1
+
+  fi
+
+  sed_output="$(sed -i "s/^${variable}\=.*/${variable}=\"${content}\"/" "${file}")"
+
+  sed_result=$?
+  if [[ ${sed_result} -eq 0 ]]; then
+
+    # Log
+    log_event "info" "Setting ${variable}=${content}" "false"
+    display --indent 6 --text "- Setting .env option" --result "DONE" --color GREEN
+    display --indent 8 --text "${variable}=${content}" --tcolor GREEN
+
+    return 0
+
+  else
+
+    # Log
+    log_event "error" "Setting/updating field: ${variable}" "false"
+    log_event "debug" "Output: ${sed_output}" "false"
+    display --indent 6 --text "- Setting .env option" --result "FAIL" --color RED
+    display --indent 8 --text "Please read the log file" --tcolor RED
+
+    return 1
+
+  fi
+
+}
 
 ################################################################################
 # Ask project state
@@ -18,9 +127,9 @@
 #   0 if ok, 1 on error.
 ################################################################################
 
-function ask_project_state() {
+function project_ask_state() {
 
-  local suggested_state=$1
+  local suggested_state="${1}"
 
   local project_states
   local project_state
@@ -55,9 +164,9 @@ function ask_project_state() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function ask_project_name() {
+function project_ask_name() {
 
-  local project_name=$1
+  local project_name="${1}"
 
   local possible_name
 
@@ -93,9 +202,9 @@ function ask_project_name() {
 ################################################################################
 
 # TODO: project_domain should be an array?
-function ask_project_domain() {
+function project_ask_domain() {
 
-  local project_domain=$1
+  local project_domain="${1}"
 
   project_domain="$(whiptail --title "Domain" --inputbox "Insert the project's domain. Example: landing.domain.com" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
 
@@ -125,12 +234,12 @@ function ask_project_domain() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function ask_project_type() {
+function project_ask_type() {
 
   local project_types
   local project_type
 
-  project_types="WordPress X Laravel X Basic-PHP X HTML X"
+  project_types="WordPress X Laravel X PHP X HTML X"
 
   project_type="$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 $(for x in ${project_types}; do echo "$x"; done) 3>&1 1>&2 2>&3)"
   exitstatus=$?
@@ -159,11 +268,11 @@ function ask_project_type() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function ask_folder_to_install_sites() {
+function project_ask_folder_to_install() {
 
-  local folder_to_install=$1
+  local folder_to_install="${1}"
 
-  if [[ -z "${folder_to_install}" ]]; then
+  if [[ -z ${folder_to_install} ]]; then
 
     folder_to_install="$(whiptail --title "Folder to work with" --inputbox "Please select the project folder you want to work with:" 10 60 "${folder_to_install}" 3>&1 1>&2 2>&3)"
     exitstatus=$?
@@ -202,7 +311,7 @@ function ask_folder_to_install_sites() {
 
 function project_get_name_from_domain() {
 
-  local project_domain=$1
+  local project_domain="${1}"
 
   local project_stages
   local possible_project_name
@@ -210,7 +319,7 @@ function project_get_name_from_domain() {
   declare -a possible_project_stages_on_subdomain=("www" "demo" "stage" "test" "beta" "dev")
 
   # Extract project name from domain
-  possible_project_name="$(extract_domain_extension "${project_domain}")"
+  possible_project_name="$(domain_extract_extension "${project_domain}")"
 
   # Remove stage from domain
   for p in "${possible_project_stages_on_subdomain[@]}"; do
@@ -239,7 +348,7 @@ function project_get_name_from_domain() {
 
 function project_get_stage_from_domain() {
 
-  local project_domain=$1
+  local project_domain="${1}"
 
   local project_stages
   local possible_project_stage
@@ -247,7 +356,7 @@ function project_get_stage_from_domain() {
   project_stages="demo stage test beta dev"
 
   # Trying to extract project state from domain
-  subdomain_part="$(get_subdomain_part "${project_domain}")"
+  subdomain_part="$(domain_get_subdomain_part "${project_domain}")"
   possible_project_stage="$(echo "${subdomain_part}" | cut -d "." -f 1)"
 
   # Log
@@ -266,7 +375,7 @@ function project_get_stage_from_domain() {
 }
 
 ################################################################################
-# Create project config file
+# Update/Create project config file
 #
 # Arguments:
 #  $1 = ${project_path}
@@ -289,23 +398,23 @@ function project_get_stage_from_domain() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function project_create_config() {
+function project_update_brolit_config() {
 
-  local project_path=${1}
-  local project_name=${2}
-  local project_stage=${3}
-  local project_type=${4}
-  local project_db_status=${5}
-  local project_db_engine=${6}
-  local project_db_name=${7}
-  local project_db_host=${8}
-  local project_db_user=${9}
-  local project_db_pass=${10}
-  local project_prymary_subdomain=${11}
-  local project_secondary_subdomains=${12}
-  local project_override_nginx_conf=${13}
-  local project_use_http2=${14}
-  local project_certbot_mode=${15}
+  local project_path="${1}"
+  local project_name="${2}"
+  local project_stage="${3}"
+  local project_type="${4}"
+  local project_db_status="${5}"
+  local project_db_engine="${6}"
+  local project_db_name="${7}"
+  local project_db_host="${8}"
+  local project_db_user="${9}"
+  local project_db_pass="${10}"
+  local project_prymary_subdomain="${11}"
+  local project_secondary_subdomains="${12}"
+  local project_override_nginx_conf="${13}"
+  local project_use_http2="${14}"
+  local project_certbot_mode="${15}"
 
   local project_config_file
 
@@ -316,20 +425,20 @@ function project_create_config() {
 
     # Log
     display --indent 6 --text "- Project config file already exists" --result WARNING --color YELLOW
-    display --indent 8 --text "Updating config file ..." --result WARNING --color YELLOW --tstyle ITALIC
+    display --indent 8 --text "Updating config file ..." --color YELLOW --tstyle ITALIC
 
   else
 
+    # Log
+    display --indent 6 --text "- Creating BROLIT project config"
+
     # Copy empty config file
-    cp "${SFOLDER}/config/brolit/brolit_project.json" "${project_config_file}"
+    cp "${BROLIT_MAIN_DIR}/config/brolit/brolit_project.json" "${project_config_file}"
 
   fi
 
   # Write config file
   ## Doc: https://stackoverflow.com/a/61049639/2267761
-
-  ## project path
-  json_write_field "${project_config_file}" "project[].path" "${project_path}"
 
   ## project name
   json_write_field "${project_config_file}" "project[].name" "${project_name}"
@@ -339,6 +448,9 @@ function project_create_config() {
 
   ## project type
   json_write_field "${project_config_file}" "project[].type" "${project_type}"
+
+  ## project files path
+  json_write_field "${project_config_file}" "project[].files[].config[].path" "${project_path}"
 
   ## project database status
   json_write_field "${project_config_file}" "project[].database[].status" "${project_db_status}"
@@ -375,9 +487,11 @@ function project_create_config() {
   json_write_field "${project_config_file}" "project[].certbot_mode" "${project_certbot_mode}"
 
   # Log
+  clear_previous_lines "1"
+  display --indent 6 --text "- Creating BROLIT project config" --result DONE --color GREEN
+  display --indent 8 --text "${project_config_file}" --color GREEN --tstyle ITALIC
+
   log_event "info" "Project config file created: ${project_config_file}" "false"
-  display --indent 6 --text "- Creating project config file" --result DONE --color GREEN
-  display --indent 8 --text "${project_config_file}" --color YELLOW --tstyle ITALIC
 
 }
 
@@ -391,9 +505,9 @@ function project_create_config() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function project_generate_config() {
+function project_generate_brolit_config() {
 
-  local project_path=$1
+  local project_path="${1}"
 
   local project_config_file
 
@@ -405,17 +519,35 @@ function project_generate_config() {
 
   ## Project Domain
   project_domain="$(basename "${project_path}")"
-  project_domain="$(ask_project_domain "${project_domain}")"
+  project_domain="$(project_ask_domain "${project_domain}")"
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 1 ]]; then
+    # Log
+    log_event "info" "Operation aborted by user..." "false"
+    return 1
+  fi
 
   ## Project Stage
   project_stage="$(project_get_stage_from_domain "${project_domain}")"
-  project_stage="$(ask_project_state "${project_stage}")"
+  project_stage="$(project_ask_state "${project_stage}")"
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 1 ]]; then
+    # Log
+    log_event "info" "Operation aborted by user..." "false"
+    return 1
+  fi
 
   # TODO: maybe we could suggest change project domain.
 
   ## Project Name
   project_name="$(project_get_name_from_domain "${project_domain}")"
-  project_name="$(ask_project_name "${project_name}")"
+  project_name="$(project_ask_name "${project_name}")"
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 1 ]]; then
+    # Log
+    log_event "info" "Operation aborted by user..." "false"
+    return 1
+  fi
 
   # TODO: ask for secondary subdomain (could be extracted from nginx server config)
 
@@ -435,12 +567,18 @@ function project_generate_config() {
 
       project_db_status="disabled"
       log_event "info" "No database selected, aborting..." "false"
+
+      return 1
+
     fi
 
   else
 
     ## Project DB status
     project_db_status="enabled"
+
+    ## Project DB Engine
+    project_db_engine="$(project_get_configured_database_engine "${project_path}" "${project_type}")"
 
     ## Project DB User
     project_db_user="$(project_get_configured_database_user "${project_path}" "${project_type}")"
@@ -479,7 +617,45 @@ function project_generate_config() {
   #  $14 = ${project_use_http2}
   #  $15 = ${project_certbot_mode}
 
-  project_create_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "mysql" "${project_db_name}" "${project_db_host}" "${project_db_user}" "${project_db_pass}" "${project_domain}" "" "${project_nginx_conf}" "" "${cert_path}"
+  project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "${project_db_engine}" "${project_db_name}" "${project_db_host}" "${project_db_user}" "${project_db_pass}" "${project_domain}" "" "${project_nginx_conf}" "" "${cert_path}"
+
+}
+
+################################################################################
+# Get project config var
+#
+# Arguments:
+#  $1 = ${project_path}
+#  $2 = ${config_field}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function project_get_brolit_config_var() {
+
+  local project_path="${1}"
+  local config_field="${2}"
+
+  local config_value
+  local project_config_file
+
+  project_config_file="$(project_get_brolit_config_file "${project_path}")"
+
+  if [[ ${project_config_file} != "false" ]]; then
+
+    config_value="$(cat "${project_config_file}" | jq -r ".${config_field}")"
+
+    # Return
+    echo "${config_value}"
+
+    return 0
+
+  else
+
+    return 1
+
+  fi
 
 }
 
@@ -495,11 +671,11 @@ function project_generate_config() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function project_update_config() {
+function project_set_brolit_config_var() {
 
-  local project_path=$1
-  local config_field=$2
-  local config_value=$3
+  local project_path="${1}"
+  local config_field="${2}"
+  local config_value="${3}"
 
   local project_domain
   local project_name
@@ -545,7 +721,7 @@ function project_update_config() {
 
 function project_get_brolit_config_file() {
 
-  local project_path=$1
+  local project_path="${1}"
 
   local project_domain
   local project_name
@@ -576,45 +752,148 @@ function project_get_brolit_config_file() {
 }
 
 ################################################################################
-# Get project config
+# Get configured database engine
 #
 # Arguments:
 #  $1 = ${project_path}
-#  $2 = ${config_field}
+#  $2 = ${project_type}
+#
+# Outputs:
+#   ${db_engine} if ok, 1 on error.
+################################################################################
+
+function project_get_configured_database_engine() {
+
+  local project_path="${1}"
+  local project_type="${2}"
+
+  # First try to read from brolit project config
+  db_engine="$(project_get_brolit_config_var "${project_path}" "project[].database[].engine")"
+
+  if [[ -z ${db_engine} ]]; then
+
+    case ${project_type} in
+
+    wordpress)
+
+      # Return
+      echo "mysql"
+
+      ;;
+
+    laravel)
+
+      db_engine="$(project_get_config_var "${project_path}/.env" "DB_CONNECTION")"
+
+      # Return
+      echo "${db_engine}"
+
+      ;;
+
+    php)
+
+      db_engine="$(project_get_config_var "${project_path}/.env" "DB_CONNECTION")"
+
+      # Return
+      echo "${db_engine}"
+
+      ;;
+
+    node-js)
+
+      db_engine="$(project_get_config_var "${project_path}/.env" "DB_CONNECTION")"
+
+      # Return
+      echo "${db_engine}"
+
+      ;;
+
+    *)
+
+      log_event "debug" "No database information for project." "false"
+
+      return 1
+
+      ;;
+
+    esac
+
+  else
+
+    echo "${db_engine}"
+
+  fi
+
+}
+
+################################################################################
+# Set/Update database engine
+#
+# Arguments:
+#  $1 = ${project_path}
+#  $2 = ${project_type}
+#  $3 = ${db_engine}
 #
 # Outputs:
 #   0 if ok, 1 on error.
 ################################################################################
 
-function project_get_config() {
+function project_set_configured_database_engine() {
 
-  local project_path=$1
-  local config_field=$2
+  local project_path="${1}"
+  local project_type="${2}"
+  local db_engine="${3}"
 
-  local config_value
-  local project_domain
-  local project_name
-  local project_config_file
+  # Set brolit project config var
+  project_set_brolit_config_var "${project_path}" "project[].database[].engine" "${db_engine}"
 
-  project_config_file="$(project_get_brolit_config_file "${project_path}")"
+  case ${project_type} in
 
-  if [[ ${project_config_file} != "false" ]]; then
+  wordpress)
 
-    config_value="$(cat "${project_config_file}" | jq -r ".${config_field}")"
+    # Nothing to do
 
     # Return
-    echo "${config_value}"
+    return 0
+
+    ;;
+
+  laravel)
+
+    # Set/Update
+    project_set_config_var "${project_path}/.env" "DB_CONNECTION" "${db_engine}"
 
     return 0
 
-  else
+    ;;
 
-    # Return
-    echo "false"
+  php)
+
+    # Set/Update
+    project_set_config_var "${project_path}/.env" "DB_CONNECTION" "${db_engine}"
+
+    return 0
+
+    ;;
+
+  node-js)
+
+    # Set/Update
+    project_set_config_var "${project_path}/.env" "DB_CONNECTION" "${db_engine}"
+
+    return 0
+
+    ;;
+
+  *)
+
+    log_event "error" "Unknown project type" "false"
 
     return 1
 
-  fi
+    ;;
+
+  esac
 
 }
 
@@ -631,15 +910,15 @@ function project_get_config() {
 
 function project_get_configured_database() {
 
-  local project_path=$1
-  local project_type=$2
+  local project_path="${1}"
+  local project_type="${2}"
 
   local wpconfig_path
 
   # First try to read from brolit project config
-  db_name="$(project_get_config "${project_path}" "project[].database[].config[].name")"
+  db_name="$(project_get_brolit_config_var "${project_path}" "project[].database[].config[].name")"
 
-  if [[ ${db_name} != "false" ]]; then
+  if [[ ${db_name} != "" ]]; then
 
     log_event "debug" "Extracted db_name : ${db_name}" "false"
 
@@ -656,9 +935,8 @@ function project_get_configured_database() {
 
       wpconfig_path=$(wp_config_path "${project_path}")
 
-      db_name=$(cat "${wpconfig_path}/wp-config.php" | grep DB_NAME | cut -d \' -f 4)
-
-      log_event "debug" "Extracted db_name : ${db_name}" "false"
+      #db_name=$(cat "${wpconfig_path}/wp-config.php" | grep DB_NAME | cut -d \' -f 4)
+      db_name="$(wp_config_get_option "${wpconfig_path}" "DB_NAME")"
 
       # Return
       echo "${db_name}"
@@ -667,10 +945,16 @@ function project_get_configured_database() {
 
     laravel)
 
-      # Read "${project_path}"/.env to extract DB_USER
-      db_name="$(grep -oP '^DB_DATABASE=\K.*' "${project_path}"/.env)"
+      db_name="$(project_get_config_var "${project_path}/.env" "DB_DATABASE")"
 
-      log_event "debug" "Extracted db_name : ${db_name}" "false"
+      # Return
+      echo "${db_name}"
+
+      ;;
+
+    php)
+
+      db_name="$(project_get_config_var "${project_path}/.env" "DB_DATABASE")"
 
       # Return
       echo "${db_name}"
@@ -679,10 +963,7 @@ function project_get_configured_database() {
 
     node-js)
 
-      # Read "${project_path}"/.env to extract DB_USER
-      db_name="$(grep -oP '^DB_NAME=\K.*' "${project_path}"/.env)"
-
-      log_event "debug" "Extracted db_name : ${db_name}" "false"
+      db_name="$(project_get_config_var "${project_path}/.env" "DB_DATABASE")"
 
       # Return
       echo "${db_name}"
@@ -690,13 +971,87 @@ function project_get_configured_database() {
       ;;
 
     *)
-      display --indent 8 --text "Project Type Unknown" --tcolor RED
+
+      log_event "debug" "No database information for project." "false"
       return 1
+
       ;;
 
     esac
 
   fi
+
+}
+
+################################################################################
+# Set/Update configured database
+#
+# Arguments:
+#  $1 = ${project_path}
+#  $2 = ${project_type}
+#  $3 = ${db_name}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function project_set_configured_database() {
+
+  local project_path="${1}"
+  local project_type="${2}"
+  local db_name="${3}"
+
+  # Set brolit project config var
+  project_set_brolit_config_var "${project_path}" "project[].database[].config[].name" "${db_name}"
+
+  case ${project_type} in
+
+  wordpress)
+
+    # Set/Update
+    wp_config_set_option "${project_path}" "DB_NAME" "${db_name}"
+
+    # Return
+    return 0
+
+    ;;
+
+  laravel)
+
+    # Set/Update
+    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${db_name}"
+
+    return 0
+
+    ;;
+
+  php)
+
+    # Set/Update
+    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${db_name}"
+
+    return 0
+
+    ;;
+
+  node-js)
+
+    # Set/Update
+    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${db_name}"
+
+    return 0
+
+    ;;
+
+  *)
+
+    log_event "error" "Unknown project type" "false"
+
+    return 1
+
+    ;;
+
+  esac
 
 }
 
@@ -713,20 +1068,20 @@ function project_get_configured_database() {
 
 function project_get_configured_database_user() {
 
-  local project_path=$1
-  local project_type=$2
+  local project_path="${1}"
+  local project_type="${2}"
+
+  local db_user
 
   # First try to read from brolit project config
-  db_user="$(project_get_config "${project_path}" "project[].database[].config[].user")"
+  db_user="$(project_get_brolit_config_var "${project_path}" "project[].database[].config[].user")"
 
-  if [[ ${db_user} != "" ]]; then
+  if [[ -n ${db_user} ]]; then
 
-    log_event "debug" "Extracted db_name : ${db_user}" "false"
+    log_event "debug" "Extracted db_user : ${db_user}" "false"
 
     # Return
     echo "${db_user}"
-
-    return 0
 
   else
 
@@ -734,9 +1089,7 @@ function project_get_configured_database_user() {
 
     wordpress)
 
-      db_user=$(cat "${project_path}"/wp-config.php | grep DB_USER | cut -d \' -f 4)
-
-      log_event "debug" "Extracted db_user: ${db_user}" "false"
+      db_user="$(wp_config_get_option "${project_path}/wp-config.php" "DB_USER")"
 
       # Return
       echo "${db_user}"
@@ -745,10 +1098,16 @@ function project_get_configured_database_user() {
 
     laravel)
 
-      # Read "${project_path}"/.env to extract DB_USER
-      db_user="$(grep -oP '^DB_USERNAME=\K.*' "${project_path}"/.env)"
+      db_user="$(project_get_config_var "${project_path}/.env" "DB_USERNAME")"
 
-      log_event "debug" "Extracted db_user: ${db_user}" "false"
+      # Return
+      echo "${db_user}"
+
+      ;;
+
+    php)
+
+      db_user="$(project_get_config_var "${project_path}/.env" "DB_USERNAME")"
 
       # Return
       echo "${db_user}"
@@ -757,10 +1116,7 @@ function project_get_configured_database_user() {
 
     node-js)
 
-      # Read "${project_path}"/.env to extract DB_USER
-      db_user="$(grep -oP '^DB_USER=\K.*' "${project_path}"/.env)"
-
-      log_event "debug" "Extracted db_user: ${db_user}" "false"
+      db_user="$(project_get_config_var "${project_path}/.env" "DB_USERNAME")"
 
       # Return
       echo "${db_user}"
@@ -768,13 +1124,87 @@ function project_get_configured_database_user() {
       ;;
 
     *)
-      display --indent 8 --text "Project Type Unknown" --tcolor RED
+      log_event "debug" "No database information for project." "false"
       return 1
       ;;
 
     esac
 
   fi
+
+  return 0
+
+}
+
+################################################################################
+# Set/Update database user
+#
+# Arguments:
+#  $1 = ${project_path}
+#  $2 = ${project_type}
+#  $3 = ${db_user}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function project_set_configured_database_user() {
+
+  local project_path="${1}"
+  local project_type="${2}"
+  local db_user_passw="${3}"
+
+  # Set brolit project config var
+  project_set_brolit_config_var "${project_path}" "project[].database[].config[].user" "${db_user}"
+
+  case ${project_type} in
+
+  wordpress)
+
+    # Set/Update
+    wp_config_set_option "${project_path}" "DB_USER" "${db_user_passw}"
+
+    # Return
+    return 0
+
+    ;;
+
+  laravel)
+
+    # Set/Update
+    project_set_config_var "${project_path}/.env" "DB_USERNAME" "${db_user_passw}"
+
+    return 0
+
+    ;;
+
+  php)
+
+    # Set/Update
+    project_set_config_var "${project_path}/.env" "DB_USERNAME" "${db_user_passw}"
+
+    return 0
+
+    ;;
+
+  node-js)
+
+    # Set/Update
+    project_set_config_var "${project_path}/.env" "DB_USERNAME" "${db_user_passw}"
+
+    return 0
+
+    ;;
+
+  *)
+
+    log_event "error" "Unknown project type" "false"
+
+    return 1
+
+    ;;
+
+  esac
 
 }
 
@@ -791,18 +1221,20 @@ function project_get_configured_database_user() {
 
 function project_get_configured_database_userpassw() {
 
-  local project_path=$1
-  local project_type=$2
+  local project_path="${1}"
+  local project_type="${2}"
+
+  local db_user_passw
 
   # First try to read from brolit project config
-  db_pass="$(project_get_config "${project_path}" "project[].database[].config[].pass")"
+  db_user_passw="$(project_get_brolit_config_var "${project_path}" "project[].database[].config[].pass")"
 
-  if [[ ${db_pass} != "false" ]]; then
+  if [[ ${db_user_passw} != "false" ]]; then
 
-    log_event "debug" "Extracted db_name : ${db_pass}" "false"
+    log_event "debug" "Extracted db_name : ${db_user_passw}" "false"
 
     # Return
-    echo "${db_pass}"
+    echo "${db_user_passw}"
 
     return 0
 
@@ -812,48 +1244,121 @@ function project_get_configured_database_userpassw() {
 
     wordpress)
 
-      db_pass=$(cat "${project_path}"/wp-config.php | grep DB_PASSWORD | cut -d \' -f 4)
-
-      log_event "debug" "Extracted db_pass: ${db_pass}" "false"
+      db_user_passw="$(wp_config_get_option "${project_path}/wp-config.php" "DB_PASSWORD")"
 
       # Return
-      echo "${db_pass}"
+      echo "${db_user_passw}"
 
       ;;
 
     laravel)
 
-      # Read "${project_path}"/.env to extract DB_USER
-      db_user="$(grep -oP '^DB_PASSWORD=\K.*' "${project_path}"/.env)"
-
-      log_event "debug" "Extracted db_pass: ${db_pass}" "false"
+      db_user_passw="$(project_get_config_var "${project_path}/.env" "DB_PASSWORD")"
 
       # Return
-      echo "${db_user}"
+      echo "${db_user_passw}"
 
       ;;
 
-    \
-      node-js)
+    php)
 
-      # Read "${project_path}"/.env to extract DB_USER
-      db_user="$(grep -oP '^DB_PASSWORD=\K.*' "${project_path}"/.env)"
-
-      log_event "debug" "Extracted db_pass: ${db_pass}" "false"
+      db_user_passw="$(project_get_config_var "${project_path}/.env" "DB_PASSWORD")"
 
       # Return
-      echo "${db_user}"
+      echo "${db_user_passw}"
+
+      ;;
+
+    node-js)
+
+      db_user_passw="$(project_get_config_var "${project_path}/.env" "DB_PASSWORD")"
+
+      # Return
+      echo "${db_user_passw}"
 
       ;;
 
     *)
-      display --indent 8 --text "Project Type Unknown" --tcolor RED
+
+      log_event "debug" "No database information for project." "false"
       return 1
       ;;
 
     esac
 
   fi
+
+}
+
+################################################################################
+# Set/Update database user password
+#
+# Arguments:
+#  $1 = ${project_path}
+#  $2 = ${project_type}
+#  $3 = ${db_user_passw}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function project_set_configured_database_userpassw() {
+
+  local project_path="${1}"
+  local project_type="${2}"
+  local db_user_passw="${3}"
+
+  # Set brolit project config var
+  project_set_brolit_config_var "${project_path}" "project[].database[].config[].pass" "${db_user_passw}"
+
+  case ${project_type} in
+
+  wordpress)
+
+    # Set/Update
+    wp_config_set_option "${project_path}" "DB_PASSWORD" "${db_user_passw}"
+
+    # Return
+    return 0
+
+    ;;
+
+  laravel)
+
+    # Set/Update
+    project_set_config_var "${project_path}/.env" "DB_PASSWORD" "${db_user_passw}"
+
+    return 0
+
+    ;;
+
+  php)
+
+    # Set/Update
+    project_set_config_var "${project_path}/.env" "DB_PASSWORD" "${db_user_passw}"
+
+    return 0
+
+    ;;
+
+  node-js)
+
+    # Set/Update
+    project_set_config_var "${project_path}/.env" "DB_PASSWORD" "${db_user_passw}"
+
+    return 0
+
+    ;;
+
+  *)
+
+    log_event "error" "Unknown project type" "false"
+
+    return 1
+
+    ;;
+
+  esac
 
 }
 
@@ -874,41 +1379,43 @@ function project_get_configured_database_userpassw() {
 
 function project_install() {
 
-  local dir_path=$1
-  local project_type=$2
-  local project_domain=$3
-  local project_name=$4
-  local project_state=$5
+  local dir_path="${1}"
+  local project_type="${2}"
+  local project_domain="${3}"
+  local project_name="${4}"
+  local project_state="${5}"
 
   # TODO: need to check if user cancels some of this options
 
-  if [[ ${project_type} == '' ]]; then
-    project_type="$(ask_project_type)"
+  if [[ -z ${project_type} ]]; then
+    project_type="$(project_ask_type)"
   fi
 
   log_section "Project Installer (${project_type})"
 
-  if [[ ${project_domain} == '' ]]; then
-    project_domain="$(ask_project_domain "")"
+  if [[ -z ${project_domain} ]]; then
+    project_domain="$(project_ask_domain "")"
   fi
 
-  folder_to_install="$(ask_folder_to_install_sites "${dir_path}")"
+  folder_to_install="$(project_ask_folder_to_install "${dir_path}")"
   project_path="${folder_to_install}/${project_domain}"
 
-  possible_root_domain="$(get_root_domain "${project_domain}")"
+  possible_root_domain="$(domain_get_root "${project_domain}")"
   root_domain="$(cloudflare_ask_rootdomain "${possible_root_domain}")"
 
-  if [[ ${project_name} == '' ]]; then
+  # TODO: check when add www.DOMAIN.com and then select other stage != prod
+  if [[ -z ${project_state} ]]; then
 
-    possible_project_name="$(extract_domain_extension "${project_domain}")"
+    suggested_state="$(domain_get_subdomain_part "${project_domain}")"
 
-    project_name="$(ask_project_name "${possible_project_name}")"
+    project_state="$(project_ask_state "${suggested_state}")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 1 ]]; then
 
+      # Log
       log_event "info" "Operation cancelled!" "false"
-      display --indent 2 --text "- Asking project name" --result SKIPPED --color YELLOW
+      display --indent 2 --text "- Asking project stage" --result SKIPPED --color YELLOW
 
       return 1
 
@@ -916,18 +1423,17 @@ function project_install() {
 
   fi
 
-  # TODO: check when add www.DOMAIN.com and then select other stage != prod
-  if [[ ${project_state} == '' ]]; then
+  if [[ -z ${project_name} ]]; then
 
-    suggested_state="$(get_subdomain_part "${project_domain}")"
+    possible_project_name="$(project_get_name_from_domain "${project_domain}")"
 
-    project_state="$(ask_project_state "${suggested_state}")"
+    project_name="$(project_ask_name "${possible_project_name}")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 1 ]]; then
 
       log_event "info" "Operation cancelled!" "false"
-      display --indent 2 --text "- Asking project stage" --result SKIPPED --color YELLOW
+      display --indent 2 --text "- Asking project name" --result SKIPPED --color YELLOW
 
       return 1
 
@@ -991,9 +1497,7 @@ function project_install() {
 
 function project_delete_files() {
 
-  local project_domain=$1
-
-  local dropbox_output
+  local project_domain="${1}"
 
   # Log
   log_subsection "Delete Files"
@@ -1005,34 +1509,44 @@ function project_delete_files() {
 
   BK_TYPE="site"
 
-  # Making a backup of project files
-  make_files_backup "${BK_TYPE}" "${PROJECTS_PATH}" "${project_domain}"
+  # Backup files
+  #backup_file_size="$(backup_project_files "${BK_TYPE}" "${PROJECTS_PATH}" "${project_domain}")"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Creating new folder structure for old projects
-    dropbox_output="$(${DROPBOX_UPLOADER} -q mkdir "/${VPSNAME}/offline-site" 2>&1)"
+    storage_create_dir "/${SERVER_NAME}/projects-offline"
+    storage_create_dir "/${SERVER_NAME}/projects-offline/site"
 
-    # Moving deleted project backups to another dropbox directory
-    dropbox_output="$(${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${project_domain}" "/${VPSNAME}/offline-site" 2>&1)"
+    # Moving old project backups to another directory
+    storage_move "/${SERVER_NAME}/projects-online/${BK_TYPE}/${project_domain}" "/${SERVER_NAME}/projects-offline/site"
 
-    # TODO: if destination folder already exists, it will fail
-    log_event "debug" "${DROPBOX_UPLOADER} move ${VPSNAME}/${BK_TYPE}/${project_domain} /${VPSNAME}/offline-site" "false"
-    display --indent 6 --text "- Moving to offline projects on Dropbox" --result "DONE" --color GREEN
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+      # Delete project files on server
+      #storage_delete_backup ""
+      rm --force --recursive "${PROJECTS_PATH}/${project_domain:?}"
 
-    # Delete project files
-    rm --force --recursive "${PROJECTS_PATH}/${project_domain}"
+      # Log
+      log_event "info" "Project files deleted for ${project_domain}" "false"
+      display --indent 6 --text "- Deleting project files on server" --result "DONE" --color GREEN
 
-    # Log
-    log_event "info" "Project files deleted for ${project_domain}" "false"
-    display --indent 6 --text "- Deleting project files on server" --result "DONE" --color GREEN
+      # Make a copy of nginx configuration file
+      cp --recursive "/etc/nginx/sites-available/${project_domain}" "${BROLIT_TMP_DIR}"
 
-    # Make a copy of nginx configuration file
-    cp --recursive "/etc/nginx/sites-available/${project_domain}" "${TMP_DIR}"
+      # Send notification
+      send_notification "⚠️ ${SERVER_NAME}" "Project files for '${project_domain}' deleted."
 
-    # Send notification
-    send_notification "⚠️ ${VPSNAME}" "Project files for '${project_domain}' deleted!"
+    else
+
+      # Log
+      log_event "info" "Something went wrong trying to move old backups." "false"
+      display --indent 6 --text "- Deleting project files on server" --result "FAIL" --color RED
+
+      return 1
+
+    fi
 
   else
 
@@ -1055,8 +1569,8 @@ function project_delete_files() {
 
 function project_delete_database() {
 
-  local database_name=$1
-  local database_user=$2
+  local database_name="${1}"
+  local database_user="${2}"
 
   local databases
   local chosen_database
@@ -1082,27 +1596,36 @@ function project_delete_database() {
 
     fi
 
-    # Make a database Backup
-    make_database_backup "${chosen_database}"
+    # TODO: check database engine
+    # Make database backup
+    backup_file="$(backup_project_database "${chosen_database}" "mysql")"
 
-    # Moving deleted project backups to another dropbox directory
-    ${DROPBOX_UPLOADER} move "/${VPSNAME}/${BK_TYPE}/${chosen_database}" "/${VPSNAME}/offline-site" 1>&2
+    if [[ ${backup_file} != "" ]]; then
 
-    # Log
-    clear_previous_lines "1"
-    log_event "debug" "Running: dropbox_uploader.sh move ${VPSNAME}/${BK_TYPE}/${chosen_database} /${VPSNAME}/offline-site" "false"
-    display --indent 6 --text "- Moving dropbox backup to offline directory" --result "DONE" --color GREEN
+      # Moving deleted project backups to another directory
+      storage_create_dir "/${SERVER_NAME}/projects-offline"
+      storage_create_dir "/${SERVER_NAME}/projects-offline/${BK_TYPE}"
+      storage_move "/${SERVER_NAME}/projects-online/${BK_TYPE}/${chosen_database}" "/${SERVER_NAME}/projects-offline/${BK_TYPE}"
 
-    # Delete project database
-    mysql_database_drop "${chosen_database}"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
 
-    # Send notification
-    send_notification "⚠️ ${VPSNAME}" "Project database'${chosen_database}' deleted!"
+        # TODO: check database engine
+        # Delete project database
+        mysql_database_drop "${chosen_database}"
 
+        # Send notification
+        send_notification "⚠️ ${SERVER_NAME}" "Project database'${chosen_database}' deleted!"
+
+      fi
+
+    fi
+
+    # TODO: check database engine
     # Delete mysql user
     while true; do
 
-      echo -e "${B_RED}${ITALIC} > Do you want to remove database user? Maybe is used by another project.${ENDCOLOR}"
+      echo -e "${B_RED}${ITALIC} > Remove database user: ${database_user}? Maybe is used by another project.${ENDCOLOR}"
       read -p "Please type 'y' or 'n'" yn
 
       case $yn in
@@ -1156,32 +1679,27 @@ function project_delete_database() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-# TODO: NEED REFACTOR
-# 1- Files backup with file_backups functions, checking if site is WP or what.
-# 2- Ask for confirm delete temp files.
-# 3- Ask what to do with letsencrypt and nginx server config files
-
 function project_delete() {
 
-  local project_domain=$1
-  local delete_cf_entry=$2
+  local project_domain="${1}"
+  local delete_cf_entry="${2}"
 
   local files_skipped="false"
 
   log_section "Project Delete"
 
-  if [[ ${project_domain} == "" ]]; then
+  if [[ -z ${project_domain} ]]; then
 
     # Folder where sites are hosted: ${PROJECTS_PATH}
     menu_title="PROJECT DIRECTORY TO DELETE"
     directory_browser "${menu_title}" "${PROJECTS_PATH}"
 
     # Directory_broser returns: " $filepath"/"$filename
-    if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
+    if [[ -z ${filepath} ]]; then
 
       # Log
       log_event "info" "Files deletion skipped ..." "false"
-      display --indent 2 --text "- Selecting directory for deletion" --result "SKIPPED" --color YELLOW
+      display --indent 6 --text "- Selecting directory for deletion" --result "SKIPPED" --color YELLOW
 
       files_skipped="true"
 
@@ -1207,15 +1725,13 @@ function project_delete() {
     # Delete Files
     project_delete_files "${project_domain}"
 
-    # TODO: upload to dropbox config_file ??
-
     # Delete nginx configuration file
     nginx_server_delete "${project_domain}"
 
     # Delete certificates
     certbot_certificate_delete "${project_domain}"
 
-    if [[ ${delete_cf_entry} != "true" ]]; then
+    if [[ ${delete_cf_entry} != "true" && ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
 
       # Cloudflare Manager
       project_domain="$(whiptail --title "CLOUDFLARE MANAGER" --inputbox "Do you want to delete the Cloudflare entries for the followings subdomains?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
@@ -1224,7 +1740,7 @@ function project_delete() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         # Delete Cloudflare entries
-        root_domain="$(get_root_domain "${project_domain}")"
+        root_domain="$(domain_get_root "${project_domain}")"
         cloudflare_delete_record "${root_domain}" "${project_domain}" "A"
 
       else
@@ -1236,7 +1752,7 @@ function project_delete() {
     else
 
       # Delete Cloudflare entries
-      root_domain="$(get_root_domain "${project_domain}")"
+      root_domain="$(domain_get_root "${project_domain}")"
       cloudflare_delete_record "${root_domain}" "${project_domain}" "A"
 
     fi
@@ -1246,10 +1762,18 @@ function project_delete() {
   # Delete Database
   project_delete_database "${project_db_name}" "${project_db_user}"
 
-  # TODO: Delete config file? or maybe rename it with "-offline"?
+  # TODO: upload config_file to dropbox
+
+  # Delete config file
+  project_config="${BROLIT_CONFIG_PATH}/${project_name}_conf.json"
+  rm --force "${project_config}"
+
+  # Log
+  log_event "info" "Removing project config file: ${project_config}" "false"
+  display --indent 6 --text "- Removing project config file" --result "DONE" --color GREEN
 
   # Delete tmp backups
-  display --indent 2 --text "Please, remove ${TMP_DIR} after check backup was uploaded ok" --tcolor YELLOW
+  display --indent 2 --text "Please, remove ${BROLIT_TMP_DIR} after check backup was uploaded ok" --tcolor YELLOW
 
 }
 
@@ -1265,7 +1789,7 @@ function project_delete() {
 
 function project_change_status() {
 
-  local project_status=$1
+  local project_status="${1}"
 
   local to_change
 
@@ -1290,50 +1814,215 @@ function project_change_status() {
 
 function project_get_type() {
 
-  local dir_path=$1
+  local dir_path="${1}"
 
   local project_type
-  local is_wp
 
-  if [[ ${dir_path} != "" ]]; then
+  # TODO: if brolit_conf exists, should check this file and get project type
 
-    is_wp="$(wp_config_path "${dir_path}")"
+  if [[ -n ${dir_path} ]]; then
 
-    if [[ ${is_wp} != "" ]]; then
+    # WP?
+    wp_path="$(wp_config_path "${dir_path}")"
+    if [[ -n ${wp_path} ]]; then
 
-      project_type="wordpress"
+      # Return
+      echo "wordpress"
+
+      return 0
+
+    fi
+
+    # Laravel?
+    laravel_v="$(php "${dir_path}/artisan" --version | grep -oE "Laravel Framework [0-9]+\.[0-9]+\.[0-9]+")"
+    if [[ -n ${laravel_v} ]]; then
+
+      # Return
+      echo "laravel"
+
+      return 0
+
+    fi
+
+    # other-php?
+    php="$(find "${dir_path}" -name "index.php" -type f)"
+    if [[ -n ${php} ]]; then
+
+      # Return
+      echo "php"
+
+      return 0
+
+    fi
+
+    # Node.js?
+    nodejs="$(find "${dir_path}" -name "package.json" -type f)"
+    if [[ -n ${nodejs} ]]; then
+
+      # Return
+      echo "nodejs"
+
+      return 0
+
+    fi
+
+    # html-only?
+    html="$(find "${dir_path}" -name "index.html" -type f)"
+    if [[ -n ${html} ]]; then
+
+      # Return
+      echo "html"
+
+      return 0
+
+    fi
+
+    # docker-compose?
+    docker="$(find "${dir_path}" -name "docker-compose.yml" -type f | find "${dir_path}" -name "docker-compose.yaml" -type f)"
+    if [[ -n ${docker} ]]; then
+
+      # Return
+      echo "docker-compose"
+
+      return 0
+
+    fi
+
+    # Unknown
+    # if reach this point, it's not a project?
+
+    # Return
+    echo "unknown"
+
+    return 0
+
+  else
+
+    return 1
+
+  fi
+
+}
+
+################################################################################
+# Create nginx server for an existing project
+#
+# Arguments:
+#   $1 = ${dir_path}
+#
+# Outputs:
+#   ${project_type}
+################################################################################
+
+function project_create_nginx_server() {
+
+  local project_domain
+  local root_domain
+  local project_type
+  local exitstatus
+  local cloudflare_exitstatus
+
+  log_section "Project Manager"
+
+  log_subsection "Nginx server creation"
+
+  # Select project to work with
+  directory_browser "Select a project to work with" "${PROJECTS_PATH}" #return $filename
+
+  if [[ -n ${filename} ]]; then
+
+    filename="${filename::-1}" # remove '/'
+
+    display --indent 6 --text "- Selecting project" --result DONE --color GREEN
+    display --indent 8 --text "${filename}"
+
+    # Aks project domain
+    project_domain="$(project_ask_domain "${filename}")"
+
+    # Extract root domain
+    root_domain="$(domain_get_root "${project_domain}")"
+
+    # Aks project type
+    project_type="$(project_ask_type)"
+
+    if [[ ${project_domain} == "${root_domain}" || ${project_domain} == "www.${root_domain}" ]]; then
+
+      # Nginx config
+      nginx_server_create "www.${root_domain}" "${project_type}" "root_domain" "${root_domain}"
+
+      if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
+
+        # Cloudflare
+        #cloudflare_update_record "${root_domain}" "${root_domain}" "A" "false" "${SERVER_IP}"
+        #cloudflare_update_record "${root_domain}" "www.${root_domain}" "CNAME" "false" "${root_domain}"
+
+        cloudflare_set_record "${root_domain}" "${root_domain}" "A" "false" "${SERVER_IP}"
+        cloudflare_set_record "${root_domain}" "www.${root_domain}" "CNAME" "false" "${root_domain}"
+
+        cloudflare_exitstatus=$?
+
+      fi
+
+      if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
+
+        # If ${cloudflare_exitstatus} is empty, will pass too
+        if [[ ${cloudflare_exitstatus} -ne 1 ]]; then
+
+          # Let's Encrypt
+          certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${root_domain},www.${root_domain}"
+
+          exitstatus=$?
+          if [[ ${exitstatus} -eq 0 ]]; then
+
+            nginx_server_add_http2_support "${project_domain}"
+
+          fi
+
+        fi
+
+      fi
 
     else
 
-      laravel_v="$(php "${project_dir}/artisan" --version)"
+      # Nginx config
+      nginx_server_create "${project_domain}" "${project_type}" "single"
 
-      if [[ ${laravel_v} != "" ]]; then
+      if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
 
-        project_type="laravel"
+        # Cloudflare
+        #cloudflare_update_record "${root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
+        cloudflare_set_record "${root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
 
-      else
-        # TODO: implements nodejs,pure php, and others
-        project_type="project_type_unknown"
+        cloudflare_exitstatus=$?
+
+      fi
+
+      if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
+
+        # If ${cloudflare_exitstatus} is empty, will pass too
+        if [[ ${cloudflare_exitstatus} -ne 1 ]]; then
+
+          # Let's Encrypt
+          certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain}"
+
+          exitstatus=$?
+          if [[ ${exitstatus} -eq 0 ]]; then
+
+            nginx_server_add_http2_support "${project_domain}"
+
+          fi
+
+        fi
 
       fi
 
     fi
 
+  else
+
+    display --indent 6 "Selecting website to work with" --result SKIPPED --color YELLOW
+
   fi
-
-  # Return
-  echo "${project_type}"
-
-}
-
-function check_laravel_version() {
-
-  # TODO
-
-  local project_dir=$1
-
-  # Return
-  echo "${laravel_v}"
 
 }
 
@@ -1353,25 +2042,18 @@ function check_laravel_version() {
 
 function php_project_installer() {
 
-  local project_path=$1
-  local project_domain=$2
-  local project_name=$3
-  local project_state=$4
-  local project_root_domain=$5
+  local project_path="${1}"
+  local project_domain="${2}"
+  local project_name="${3}"
+  local project_state="${4}"
+  local project_root_domain="${5}"
 
   log_subsection "PHP Project Install"
 
-  if [[ ${project_root_domain} == '' ]]; then
+  if [[ ! -d ${project_path} ]]; then
 
-    possible_root_domain="$(get_root_domain "${project_domain}")"
-    project_root_domain="$(cloudflare_ask_rootdomain "${possible_root_domain}")"
-
-  fi
-
-  if [[ ! -d "${project_path}" ]]; then
-    # Download WP
-    mkdir "${project_path}"
-    change_ownership "www-data" "www-data" "${project_path}"
+    # Create project directory
+    mkdir -p "${project_path}"
 
     # Log
     #display --indent 6 --text "- Making a copy of the WordPress project" --result "DONE" --color GREEN
@@ -1381,7 +2063,7 @@ function php_project_installer() {
     # Log
     display --indent 6 --text "- Creating PHP project" --result "FAIL" --color RED
     display --indent 8 --text "Destination folder '${project_path}' already exist"
-    log_event "error" "Destination folder '${project_path}' already exist, aborting ..."
+    log_event "error" "Destination folder '${project_path}' already exist, aborting ..." "false"
 
     # Return
     return 1
@@ -1398,9 +2080,6 @@ function php_project_installer() {
   mysql_user_create "${database_user}" "${database_user_passw}" ""
   mysql_user_grant_privileges "${database_user}" "${database_name}" ""
 
-  # Create project directory
-  mkdir "${project_path}"
-
   # Create index.php
   echo "<?php phpinfo(); ?>" >"${project_path}/index.php"
 
@@ -1408,16 +2087,22 @@ function php_project_installer() {
   change_ownership "www-data" "www-data" "${project_path}"
 
   # TODO: ask for Cloudflare support and check if root_domain is configured on the cf account
+  if [[ ${project_root_domain} == '' ]]; then
+
+    possible_root_domain="$(domain_get_root "${project_domain}")"
+    project_root_domain="$(cloudflare_ask_rootdomain "${possible_root_domain}")"
+
+  fi
 
   # If domain contains www, should work without www too
   common_subdomain='www'
   if [[ ${project_domain} == *"${common_subdomain}"* ]]; then
 
     # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A" "${SERVER_IP}"
+    cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A" "false" "${SERVER_IP}"
 
     # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_domain}" "CNAME" "${SERVER_IP}"
+    cloudflare_set_record "${project_root_domain}" "${project_domain}" "CNAME" "false" "${project_root_domain}"
 
     # New site Nginx configuration
     nginx_server_create "${project_domain}" "php" "root_domain" "${project_root_domain}"
@@ -1428,12 +2113,22 @@ function php_project_installer() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-      certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${project_domain},${project_root_domain}"
+      if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
 
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
+        certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain},${project_root_domain}"
 
-        nginx_server_add_http2_support "${project_domain}"
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+          nginx_server_add_http2_support "${project_domain}"
+
+        fi
+
+      else
+
+        log_event "warning" "Certbot is not enabled or installed" "false"
+        display --indent 6 --text "- Certificate installation" --result "SKIPPED" --color YELLOW
+        display --indent 8 --text "Certbot is not enabled or installed" --tcolor YELLOW
 
       fi
 
@@ -1448,7 +2143,7 @@ function php_project_installer() {
   else
 
     # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_domain}" "A" "${SERVER_IP}"
+    cloudflare_set_record "${project_root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
 
     # New site Nginx configuration
     nginx_create_empty_nginx_conf "${project_path}"
@@ -1460,7 +2155,7 @@ function php_project_installer() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-      certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${cert_project_domain}"
+      certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${cert_project_domain}"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
@@ -1504,14 +2199,14 @@ function php_project_installer() {
   #  $14 = ${project_use_http2}
   #  $15 = ${project_certbot_mode}
 
-  project_create_config "${project_path}" "${project_name}" "${project_state}" "php" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "/etc/nginx/sites-available/${project_domain}" "${http2_support}" "${cert_path}"
+  project_update_brolit_config "${project_path}" "${project_name}" "${project_state}" "php" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "/etc/nginx/sites-available/${project_domain}" "${http2_support}" "${cert_path}"
 
   # Log
   log_event "info" "PHP project installation for domain ${project_domain} finished" "false"
   display --indent 6 --text "- PHP project installation for domain ${project_domain}" --result "DONE" --color GREEN
 
   # Send notification
-  send_notification "${VPSNAME}" "PHP project installation for domain ${project_domain} finished!"
+  send_notification "${SERVER_NAME}" "PHP project installation for domain ${project_domain} finished!"
 
 }
 
@@ -1531,11 +2226,11 @@ function php_project_installer() {
 
 function nodejs_project_installer() {
 
-  local project_path=$1
-  local project_domain=$2
-  local project_name=$3
-  local project_state=$4
-  local project_root_domain=$5
+  local project_path="${1}"
+  local project_domain="${2}"
+  local project_name="${3}"
+  local project_state="${4}"
+  local project_root_domain="${5}"
 
   log_subsection "NodeJS Project Install"
 
@@ -1549,14 +2244,15 @@ function nodejs_project_installer() {
 
   if [[ ${project_root_domain} == '' ]]; then
 
-    possible_root_domain="$(get_root_domain "${project_domain}")"
+    possible_root_domain="$(domain_get_root "${project_domain}")"
     project_root_domain="$(cloudflare_ask_rootdomain "${possible_root_domain}")"
 
   fi
 
   if [[ ! -d "${project_path}" ]]; then
-    # Download WP
-    mkdir "${project_path}"
+
+    # Create project directory
+    mkdir -p "${project_path}"
     change_ownership "www-data" "www-data" "${project_path}"
 
   else
@@ -1582,9 +2278,6 @@ function nodejs_project_installer() {
   mysql_user_create "${database_user}" "${database_user_passw}" ""
   mysql_user_grant_privileges "${database_user}" "${database_name}"
 
-  # Create project directory
-  mkdir "${project_path}"
-
   # Create index.html
   echo "Please configure the project and remove this file." >"${project_path}/index.html"
 
@@ -1598,41 +2291,45 @@ function nodejs_project_installer() {
   if [[ ${project_domain} == *"${common_subdomain}"* ]]; then
 
     # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A" "${SERVER_IP}"
+    cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A" "false" "${SERVER_IP}"
 
     # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_domain}" "CNAME" "${SERVER_IP}"
+    cloudflare_set_record "${project_root_domain}" "${project_domain}" "CNAME" "false" "${project_root_domain}"
 
     # New site Nginx configuration
     nginx_server_create "${project_domain}" "php" "root_domain" "${project_root_domain}"
 
-    # HTTPS with Certbot
-    project_domain="$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${project_root_domain}" 3>&1 1>&2 2>&3)"
+    if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
 
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-
-      certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${project_domain},${project_root_domain}"
+      # HTTPS with Certbot
+      project_domain="$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${project_root_domain}" 3>&1 1>&2 2>&3)"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        nginx_server_add_http2_support "${project_domain}"
+        certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain},${project_root_domain}"
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+          nginx_server_add_http2_support "${project_domain}"
+
+        fi
+
+      else
+
+        # Log
+        log_event "info" "HTTPS support for ${project_domain} skipped" "false"
+        display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
       fi
-
-    else
-
-      # Log
-      log_event "info" "HTTPS support for ${project_domain} skipped" "false"
-      display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
     fi
 
   else
 
     # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_domain}" "A" "${SERVER_IP}"
+    cloudflare_set_record "${project_root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
 
     # New site Nginx configuration
     nginx_create_empty_nginx_conf "${project_path}"
@@ -1644,7 +2341,7 @@ function nodejs_project_installer() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-      certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${cert_project_domain}"
+      certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${cert_project_domain}"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
@@ -1667,6 +2364,17 @@ function nodejs_project_installer() {
   display --indent 6 --text "- NodeJS project installation for domain ${project_domain}" --result "DONE" --color GREEN
 
   # Send notification
-  send_notification "✅ ${VPSNAME}" "NodeJS project installation for domain ${project_domain} finished!"
+  send_notification "✅ ${SERVER_NAME}" "NodeJS project installation for domain ${project_domain} finished!"
+
+}
+
+function check_laravel_version() {
+
+  # TODO
+
+  local project_dir="${1}"
+
+  # Return
+  echo "${laravel_v}"
 
 }

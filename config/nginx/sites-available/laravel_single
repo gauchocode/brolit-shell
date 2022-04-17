@@ -6,11 +6,11 @@ server {
 
     server_name domain.com;
 
-    root /var/www/root_domain.com/public;
+    root /var/www/domain.com/public;
     
     index index.html index.htm index.php;
     
-    error_log   /var/log/nginx/root_domain.com-error.log;
+    error_log   /var/log/nginx/domain.com-error.log;
 
     error_page 404 /index.php;
     
@@ -25,7 +25,7 @@ server {
     }
 
     ### INC
-    #include /var/www/root_domain.com/nginx.conf;
+    #include /var/www/domain.com/nginx.conf;
     
     ### PERF
     gzip_static on;

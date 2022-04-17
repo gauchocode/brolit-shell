@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 # WordPress Helper: Perform wordpress actions.
@@ -22,7 +22,7 @@ function is_wp_project() {
 
   # $1 = project directory
 
-  local project_dir=$1
+  local project_dir="${1}"
 
   local is_wp="false"
 
@@ -59,7 +59,7 @@ function is_wp_project() {
 
 function wp_config_path() {
 
-  local dir_to_search=$1
+  local dir_to_search="${1}"
 
   # Log
   log_event "info" "Searching WordPress Installation on directory: ${dir_to_search}" "false"
@@ -67,7 +67,11 @@ function wp_config_path() {
   # Find where wp-config.php is
   find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')"
 
-  if [[ ${find_output} != "" ]]; then
+  # Check if directory exists
+  if [[ -d ${find_output} ]]; then
+
+    # Log
+    log_event "debug" "wp-config.php found: ${find_output}" "false"
 
     # Return
     echo "${find_output}"
@@ -75,6 +79,103 @@ function wp_config_path() {
     return 0
 
   else
+
+    return 1
+
+  fi
+
+}
+
+################################################################################
+# Get WordPress config option
+#
+# Arguments:
+#  $1 = ${project_dir}
+#  $2 = ${wp_option}
+#
+# Outputs:
+#  ${wp_value} if ok, 1 on error.
+################################################################################
+
+function wp_config_get_option() {
+
+  local wp_project_dir="${1}"
+  local wp_option="${2}"
+
+  local wp_value
+
+  # Update wp-config.php
+  log_event "info" "Getting config option value in ${wp_project_dir}/wp-config.php" "false"
+
+  wp_value="$(cat "${wp_project_dir}/wp-config.php" | grep "${wp_option}" | cut -d \' -f 4)"
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Log
+    log_event "info" "Option ${wp_option}=${wp_value}" "false"
+    display --indent 6 --text "- Getting wp-config.php option" --result "DONE" --color GREEN
+    display --indent 8 --text "${wp_option}=${wp_value}" --tcolor GREEN
+
+    # Return
+    echo "${wp_value}"
+
+    return 0
+
+  else
+
+    # Log
+    log_event "error" "Getting wp-config.php option: ${wp_option}" "false"
+    log_event "debug" "Output: ${wp_value}" "false"
+    display --indent 6 --text "- Getting wp-config.php option" --result "FAIL" --color RED
+    display --indent 8 --text "Please read the log file" --tcolor RED
+
+    return 1
+
+  fi
+
+}
+
+################################################################################
+# Set/Update WordPress config option
+#
+# Arguments:
+#  $1 = ${project_dir}
+#  $2 = ${wp_option}
+#  $3 = ${wp_value}
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
+
+function wp_config_set_option() {
+
+  local wp_project_dir="${1}"
+  local wp_option="${2}"
+  local wp_value="${3}"
+
+  # Update wp-config.php
+  log_event "info" "Changing config parameters on ${wp_project_dir}/wp-config.php" "false"
+
+  sed_output="$(sed -i "/${wp_option}/s/'[^']*'/'${wp_value}'/2" "${wp_project_dir}/wp-config.php")"
+
+  sed_result=$?
+  if [[ ${sed_result} -eq 0 ]]; then
+
+    # Log
+    log_event "info" "Setting ${wp_option}=${wp_value}" "false"
+    display --indent 6 --text "- Setting wp-config.php option" --result "DONE" --color GREEN
+    display --indent 8 --text "${wp_option}=${wp_value}" --tcolor GREEN
+
+    return 0
+
+  else
+
+    # Log
+    log_event "error" "Setting/updating field: ${wp_option}" "false"
+    log_event "debug" "Output: ${sed_output}" "false"
+    display --indent 6 --text "- Setting wp-config.php option" --result "FAIL" --color RED
+    display --indent 8 --text "Please read the log file" --tcolor RED
 
     return 1
 
@@ -92,51 +193,29 @@ function wp_config_path() {
 #  $4 = ${db_user_pass}
 #
 # Outputs:
-#  String with wp-config path
+#  0 if ok, 1 on error.
 ################################################################################
 
 #TODO: why not use https://developer.wordpress.org/cli/commands/config/create/ ?
 function wp_update_wpconfig() {
 
-  local wp_project_dir=$1
-  local wp_project_name=$2
-  local wp_project_state=$3
-  local db_user_pass=$4
+  local wp_project_dir="${1}"
+  local wp_project_name="${2}"
+  local wp_project_state="${3}"
+  local db_user_pass="${4}"
 
-  local sed_output
+  # Command
+  #sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" "${wp_project_dir}/wp-config.php"
+  wp_config_set_option "${wp_project_dir}" "DB_HOST" "localhost"
 
-  # Change wp-config.php database parameters
-  log_event "info" "Changing database parameters on ${wp_project_dir}/wp-config.php" "false"
+  #sed_output="$(sed -i "/DB_NAME/s/'[^']*'/'${wp_project_name}_${wp_project_state}'/2" "${wp_project_dir}/wp-config.php")"
+  wp_config_set_option "${wp_project_dir}" "DB_NAME" "${wp_project_name}_${wp_project_state}"
 
-  sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" "${wp_project_dir}/wp-config.php"
+  #sed_output="$(sed -i "/DB_USER/s/'[^']*'/'${wp_project_name}_user'/2" "${wp_project_dir}/wp-config.php")"
+  wp_config_set_option "${wp_project_dir}" "DB_USER" "${wp_project_name}_user"
 
-  if [[ ${wp_project_name} != "" ]]; then
-
-    sed_output="$(sed -i "/DB_NAME/s/'[^']*'/'${wp_project_name}_${wp_project_state}'/2" "${wp_project_dir}/wp-config.php")"
-
-  fi
-  if [[ ${db_user_pass} != "" ]]; then
-
-    sed_output="$(sed -i "/DB_USER/s/'[^']*'/'${wp_project_name}_user'/2" "${wp_project_dir}/wp-config.php")"
-    sed_output="$(sed -i "/DB_PASSWORD/s/'[^']*'/'${db_user_pass}'/2" "${wp_project_dir}/wp-config.php")"
-
-  fi
-
-  sed_result=$?
-  if [[ ${sed_result} -eq 0 ]]; then
-
-    display --indent 6 --text "- Changing database parameters on wp-config.php" --result "DONE" --color GREEN
-
-    return 0
-
-  else
-
-    display --indent 6 --text "- Changing database parameters on wp-config.php" --result "FAIL" --color RED
-    display --indent 8 --text "Output: ${sed_output}" --tcolor RED
-
-    return 1
-
-  fi
+  #sed_output="$(sed -i "/DB_PASSWORD/s/'[^']*'/'${db_user_pass}'/2" "${wp_project_dir}/wp-config.php")"
+  wp_config_set_option "${wp_project_dir}" "DB_PASSWORD" "${db_user_pass}"
 
 }
 
@@ -154,7 +233,7 @@ function wp_update_wpconfig() {
 
 function wp_change_permissions() {
 
-  local project_dir=$1
+  local project_dir="${1}"
 
   # Change ownership
   change_ownership "www-data" "www-data" "${project_dir}"
@@ -202,10 +281,10 @@ function wp_change_permissions() {
 
 function wp_replace_string_on_database() {
 
-  local db_prefix=$1
-  local target_db=$2
-  local existing_URL=$3
-  local new_URL=$4
+  local db_prefix="${1}"
+  local target_db="${2}"
+  local existing_URL="${3}"
+  local new_URL="${4}"
 
   local chosen_db
   #local databases
@@ -257,18 +336,18 @@ function wp_replace_string_on_database() {
     exitstatus=$?
     if [[ $exitstatus -eq 0 ]]; then
 
-        # Log
-        log_event "info" "Search and replace finished ok" "false"
-        display --indent 6 --text "- Running search and replace" --result "DONE" --color GREEN
-        display --indent 8 --text "${existing_URL} was replaced by ${new_URL}"
+      # Log
+      log_event "info" "Search and replace finished ok" "false"
+      display --indent 6 --text "- Running search and replace" --result "DONE" --color GREEN
+      display --indent 8 --text "${existing_URL} was replaced by ${new_URL}"
 
     else
 
-        # Log
-        log_event "error" "Something went wrong running search and replace!" "false"
-        display --indent 6 --text "- Running search and replace" --result "FAIL" --color RED
+      # Log
+      log_event "error" "Something went wrong running search and replace!" "false"
+      display --indent 6 --text "- Running search and replace" --result "FAIL" --color RED
 
-        return 1
+      return 1
 
     fi
 
@@ -289,7 +368,7 @@ function wp_replace_string_on_database() {
 # TODO: need rethink this function
 function wp_ask_url_search_and_replace() {
 
-  local wp_path=$1
+  local wp_path="${1}"
 
   local existing_URL
   local new_URL
@@ -309,14 +388,14 @@ function wp_ask_url_search_and_replace() {
         if [[ ${exitstatus} -eq 0 ]]; then
 
           # Create temporary folder for backups
-          if [[ ! -d "${TMP_DIR}/backups" ]]; then
-            mkdir "${TMP_DIR}/backups"
-            log_event "info" "Temp files directory created: ${TMP_DIR}/backups" "false"
+          if [[ ! -d "${BROLIT_TMP_DIR}/backups" ]]; then
+            mkdir -p "${BROLIT_TMP_DIR}/backups"
+            log_event "info" "Temp files directory created: ${BROLIT_TMP_DIR}/backups" "false"
           fi
 
           project_name="$(basename "${wp_path}")"
 
-          wpcli_export_database "${wp_path}" "${TMP_DIR}/backups/${project_name}_bk_before_search_and_replace.sql"
+          wpcli_export_database "${wp_path}" "${BROLIT_TMP_DIR}/backups/${project_name}_bk_before_search_and_replace.sql"
 
           wpcli_search_and_replace "${wp_path}" "${existing_URL}" "${new_URL}"
 
@@ -353,7 +432,7 @@ function wp_ask_url_search_and_replace() {
 
 function wordpress_select_project_to_work_with() {
 
-  local wordpress_projects=$1
+  local wordpress_projects="${1}"
 
   # Get length of ${wordpress_projects} array
   len=${#wordpress_projects[@]}

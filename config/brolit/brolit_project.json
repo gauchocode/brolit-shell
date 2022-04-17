@@ -1,11 +1,35 @@
 {
-    "brolit_project_config_version": "1.2",
+    "brolit_project_config_version": "1.4.0",
     "project": [
         {
-            "path": "",
             "name": "",
             "stage": "",
             "type": "",
+            "proxy_to_port": "",
+            "primary_subdomain": "",
+            "secondary_subdomains": [],
+            "override_nginx_conf": "",
+            "use_hhtp2": "",
+            "ipv6_support": "",
+            "certbot_mode": "",
+            "files": [
+                {
+                    "status": "disabled",
+                    "config": [
+                        {
+                            "path": "",
+                            "host": "",
+                            "user": "",
+                            "pass": "",
+                            "git_repo": "",
+                            "git_branch": "",
+                            "git_user": "",
+                            "git_pass": "",
+                            "git_auto_pull_cron": ""
+                        }
+                    ]
+                }
+            ],
             "database": [
                 {
                     "status": "disabled",
@@ -19,13 +43,7 @@
                         }
                     ]
                 }
-            ],
-            "primary_subdomain": "",
-            "secondary_subdomains": [],
-            "override_nginx_conf": "",
-            "use_hhtp2": "",
-            "ipv6_support": "",
-            "certbot_mode": ""
+            ]
         }
     ],
     "cloudflare": [

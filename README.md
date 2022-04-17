@@ -1,35 +1,49 @@
 # BROLIT Shell
 
+<!-- Table of Contents -->
+## :notebook_with_decorative_cover: Table of Contents
+
+- [About the Project](#star2-about-the-project)
+  * [Motivation](#motivation)
+  * [Why Bash?](#space_invader-why-bash)
+  * [Features](#dart-features)
+  * [Support](#warning-Supports)
+- [Getting Started](#toolbox-getting-started)
+  * [Prerequisites](#bangbang-prerequisites)
+  * [Installation](#gear-installation)
+  * [Run](#running-run)
+  * [Deployment](#triangular_flag_on_post-deployment)
+- [Roadmap](#compass-roadmap)
+- [Contributing](#wave-contributing)
+  * [Code of Conduct](#scroll-code-of-conduct)
+- [FAQ](#grey_question-faq)
+- [Team](#team)
+- [License](#license)
+- [Acknowledgements](#gem-acknowledgements)
+## :star2: About the Project
+
 BROLIT Shell is a **BASH** based cloud server control software which can be used to quickly install a LEMP Stack on Ubuntu 18.04 and 20.04 servers, automate and restore backups, install PHP projects, and some usefull IT tasks.
 
 ![ScreenShot](./screenshot.png)
 
-## Motivation
+### Motivation
 
 * Standarize servers configuration.
 * Automatization of IT/DevOps tasks.
 * Reduce time and errors on IT/DevOps tasks.
 
-## Why Bash?
+### :space_invader: Why Bash?
 
-* Performance.
 * Pre-installed on linux systems.
 * Not overloaded with dependencies.
 
-## Why BROLIT Shell?
-
-* Backup and restore projects easily.
-* Create, deploy and host php projects.
-* Third party integrations: Dropbox, Cloudflare, Telegram, Netdata and more.
-* WordPress support.
+### :dart: Features
 * Open-source.
-
-## Features
-
 * LEMP automated installer (Nginx, MySQL/MariaDB, PHP).
-* Files and database backups (MySQL or MariaDB).
-* Upload backups to Dropbox (API v2).
+* Backup and restore projects easily.
+* Upload backups to Dropbox (API v2) or FTP server.
 * Restore backups from Dropbox, URL or local files.
+* Create, deploy and host php projects.
 * WordPress automated installer.
 * WP-CLI actions helper.
 * Let's Encrypt actions helper.
@@ -39,12 +53,12 @@ BROLIT Shell is a **BASH** based cloud server control software which can be used
 * UFW and Fail2ban support.
 * Security Tools with malware scanners.
 * IP/Domain blacklist checker.
-* Benchmark tool.
+* Email and Telegram notifications.
 * And more ...
 
-## Supports
+### :warning: Supports
 
-**Ubuntu LTS** 18.04 or 20.04
+**Ubuntu LTS** 18.04, 20.04 or 22.04
 
 | Packages | Versions | BROLIT config |
 | :------------- | :----------: | :----------: |
@@ -67,32 +81,29 @@ BROLIT Shell is a **BASH** based cloud server control software which can be used
 | **Loki** | SOON | default config |
 | **Teleport** | SOON | default config |
 
-## Third Party Utils
+### Third Party Utils
 
 BROLIT Shell uses some third-party tools:
 
-### Dropbox Uploader
+#### Dropbox Uploader
 
 Dropbox Uploader is a BASH script which can be used to upload, download, list or delete files from Dropbox, an online file sharing, synchronization and backup service.
 
-### Google PageSpeed Insights API Tools
+#### Google PageSpeed Insights API Tools
 
 gitool.sh shell script to query Google PageSpeed Insights v4 & v5 API for site & origin metrics for FCP & DCL with additional support for GTMetrix & WebpageTest.org API tests.
 
-### Blacklist Checker
+#### Blacklist Checker
 
 Blacklist check UNIX/Linux utility.
 
-### Nench
+#### Nench
 
 VPS benchmark script — based on the popular bench.sh, plus CPU and ioping tests, and dual-stack IPv4 and v6 speedtests by default.
 
-## IMPORTANT: Read before install
-
-The script needs to be runned by root.
-
 ## Installation
 
+### IMPORTANT: The script needs to be runned by root.
 ### Cloud-init
 
 ```bash
@@ -135,20 +146,20 @@ Execute BROLIT:
 ./runner.sh
 ```
 
-The first time you run BROLIT, it will prompt you to create a new config file: `~/.brolit_conf.json`. Then open and edit this json file. 
-
-You can find some configurations examples here: 
-* [.brolit_conf.json - lemp insecured](./docs/.brolit_conf-lemp_ins.json)
-* [.brolit_conf.json - lemp secured](./docs/.brolit_conf-lemp_sec.json)
-* [.brolit_conf.json - lemp custom](./docs/.brolit_conf-lemp_custom.json)
+The first time you run BROLIT, it will prompt you to create a new config file: `~/.brolit_conf.json`. Then open and edit this json file.
 
 ## Update
 
-Run updater.sh
+🚨🚨🚨 BREAKING CHANGES SINCE VERSION 3.0 🚨🚨🚨
 
-```bash
-./updater.sh
-```
+Before you upgrade:
+
+1- Backup and rename the .brolit_conf.json
+2- Run updater.sh
+3- Run runner.sh to regenerate .brolit_conf.json
+4- Edit .brolit_conf.json
+5- If you use dropbox as backup system, please move old backups to another folder (new directory structure since version 3.2)
+6- Run runner.sh
 
 ## Running as cron job
 
@@ -173,7 +184,7 @@ More information here: [FLAGS](./docs/DOC-flags.md)
 ## Changelog
 [Changelog](./docs/CHANGELOG.md)
 
-## Contributing
+## :wave: Contributing
 
 Please read CONTRIBUTING.md for details on our code of conduct, and the process for submitting pull requests to us.
 

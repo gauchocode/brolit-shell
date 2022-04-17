@@ -1,15 +1,10 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 # Telegram Notification Helper: Perform Telegram actions.
-#
-# It uses globals defined on telegram.conf
-#
-# 	${NOTIFICATION_TELEGRAM_BOT_TOKEN}
-#	${NOTIFICATION_TELEGRAM_CHAT_ID}
 #
 ################################################################################
 
@@ -28,9 +23,9 @@
 
 function telegram_send_notification() {
 
-	local notification_title=$1
-	local notification_content=$2
-	local notification_type=$3
+	local notification_title="${1}"
+	local notification_content="${2}"
+	local notification_type="${3}"
 
 	local timeout
 	local notif_sound

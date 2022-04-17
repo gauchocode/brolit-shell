@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 
 # Installers directory path
-installers_path="${SFOLDER}/utils/installers"
+installers_path="${BROLIT_MAIN_DIR}/utils/installers"
 
 # Source all installers
 installers="$(find "${installers_path}" -maxdepth 1 -name '*.sh' -type f -print)"

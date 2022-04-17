@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 #############################################################################
 
 function test_wpcli_helper_funtions() {
@@ -27,7 +27,7 @@ function test_wpcli_helper_funtions() {
     mysql_user_grant_privileges "${database_user}" "${database_name}" "localhost"
 
     # Download WordPress
-    wpcli_core_download "${project_path}"
+    wpcli_core_download "${project_path}" ""
 
     # Create wp-config.php
     wpcli_create_config "${project_path}" "${database_name}" "${database_user}" "${database_user_passw}" "es_ES"
@@ -52,7 +52,7 @@ function test_wpcli_helper_funtions() {
 }
 function test_wpcli_option_get_home() {
 
-    local project_path=$1
+    local project_path="${1}"
 
     log_subsection "Test: test_wpcli_option_get_home"
 
@@ -76,11 +76,11 @@ function test_wordpress_helper_funtions() {
     project_domain="test.domain.com"
 
     # Create mock project
-    wpcli_core_download "${SFOLDER}/tmp/${project_domain}"
+    wpcli_core_download "${BROLIT_MAIN_DIR}/tmp/${project_domain}" ""
 
     # Tests
-    test_wp_config_path "${SFOLDER}/tmp/${project_domain}"
-    test_is_wp_project "${SFOLDER}/tmp/${project_domain}"
+    test_wp_config_path "${BROLIT_MAIN_DIR}/tmp/${project_domain}"
+    test_is_wp_project "${BROLIT_MAIN_DIR}/tmp/${project_domain}"
 
     # Deleting temp files
     #rm -R "${PROJECTS_PATH}/${project_domain}"

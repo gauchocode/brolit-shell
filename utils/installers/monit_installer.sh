@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 # Monit Installer
@@ -29,12 +29,12 @@ function monit_installer() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    PACKAGES_MONIT_CONFIG_STATUS="enabled"
+    PACKAGES_MONIT_STATUS="enabled"
 
-    json_write_field "${BROLIT_CONFIG_FILE}" "SUPPORT.monit[].status" "${PACKAGES_MONIT_CONFIG_STATUS}"
+    json_write_field "${BROLIT_CONFIG_FILE}" "SUPPORT.monit[].status" "${PACKAGES_MONIT_STATUS}"
 
     # new global value ("enabled")
-    export PACKAGES_MONIT_CONFIG_STATUS
+    export PACKAGES_MONIT_STATUS
 
     return 0
 
@@ -65,12 +65,12 @@ function monit_purge() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    PACKAGES_MONIT_CONFIG_STATUS="disabled"
+    PACKAGES_MONIT_STATUS="disabled"
 
-    json_write_field "${BROLIT_CONFIG_FILE}" "SUPPORT.monit[].status" "${PACKAGES_MONIT_CONFIG_STATUS}"
+    json_write_field "${BROLIT_CONFIG_FILE}" "SUPPORT.monit[].status" "${PACKAGES_MONIT_STATUS}"
 
     # new global value ("disabled")
-    export PACKAGES_MONIT_CONFIG_STATUS
+    export PACKAGES_MONIT_STATUS
 
     return 0
 
@@ -94,7 +94,7 @@ function monit_purge() {
 
 function monit_configure() {
 
-  cat "${SFOLDER}/config/monit/monitrc" >"/etc/monit/monitrc"
+  cat "${BROLIT_MAIN_DIR}/config/monit/monitrc" >"/etc/monit/monitrc"
 
   # Get all listed apps
   services_list="${MONIT_CONFIG_SERVICES}"
@@ -114,14 +114,14 @@ function monit_configure() {
 
       # Configuring monit
       ## Using script template
-      cat "${SFOLDER}/config/monit/${services_list_key}" >"/etc/monit/conf.d/${services_list_key}"
+      cat "${BROLIT_MAIN_DIR}/config/monit/${services_list_key}" >"/etc/monit/conf.d/${services_list_key}"
 
       if [[ ${services_list_key} == "system" ]]; then
 
         if [[ ${NOTIFICATION_EMAIL_STATUS} == "enabled" ]]; then
 
           # Set Hostname
-          sed -i "s#HOSTNAME#${VPSNAME}#" "/etc/monit/conf.d/${services_list_key}"
+          sed -i "s#HOSTNAME#${SERVER_NAME}#" "/etc/monit/conf.d/${services_list_key}"
 
           # Set SMTP vars
           ## Run two times to cober all var appearance

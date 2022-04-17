@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 # Optimizations Helper: Optimizations tasks.
@@ -22,7 +22,7 @@ function _check_last_optimization_date() {
 
   server_opt_info=~/.server_opt-info
   if [[ -e ${server_opt_info} ]]; then
-    # shellcheck source=${server_opt_info}
+    # shellcheck source=~/.server_opt-info
     source "${server_opt_info}"
     echo "${last_run}"
 
@@ -130,10 +130,10 @@ function optimize_ram_usage() {
 
 function optimize_image_size() {
 
-  local path=$1
-  local file_extension=$2
-  local img_max_width=$3
-  local img_max_height=$4
+  local path="${1}"
+  local file_extension="${2}"
+  local img_max_width="${3}"
+  local img_max_height="${4}"
 
   local last_run
 
@@ -182,9 +182,9 @@ function optimize_image_size() {
 
 function optimize_images() {
 
-  local path=$1
-  local file_extension=$2
-  local img_compress=$3
+  local path="${1}"
+  local file_extension="${2}"
+  local img_compress="${3}"
 
   local last_run
 

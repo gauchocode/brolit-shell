@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 #############################################################################
 
 function test_php_helper_funtions() {
@@ -18,7 +18,7 @@ function test_php_set_version_on_config() {
     log_subsection "Test: php_set_version_on_config"
 
     # test file
-    cp "${SFOLDER}/config/nginx/sites-available/wordpress_single" "/etc/nginx/sites-available/domain.com.conf"
+    cp "${BROLIT_MAIN_DIR}/config/nginx/sites-available/wordpress_single" "/etc/nginx/sites-available/domain.com.conf"
 
     php_set_version_on_config "7.4" "/etc/nginx/sites-available/domain.com.conf"
 
@@ -39,10 +39,10 @@ function test_php_opcode_config() {
 
     log_subsection "Test: php_opcode_config"
 
-    cp "/etc/php/7.4/fpm/php.ini" "${SFOLDER}/tmp/php_op1.ini"
-    php_opcode_config "enable" "${SFOLDER}/tmp/php_op1.ini"
+    cp "/etc/php/7.4/fpm/php.ini" "${BROLIT_MAIN_DIR}/tmp/php_op1.ini"
+    php_opcode_config "enable" "${BROLIT_MAIN_DIR}/tmp/php_op1.ini"
 
-    cp "${SFOLDER}/tmp/php_op1.ini" "${SFOLDER}/tmp/php_op2.ini"
-    php_opcode_config "disable" "${SFOLDER}/tmp/php_op2.ini"
+    cp "${BROLIT_MAIN_DIR}/tmp/php_op1.ini" "${BROLIT_MAIN_DIR}/tmp/php_op2.ini"
+    php_opcode_config "disable" "${BROLIT_MAIN_DIR}/tmp/php_op2.ini"
 
 }
