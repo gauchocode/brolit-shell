@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://example.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 # MySQL Helper: Perform mysql actions.
@@ -66,7 +66,7 @@ function mysql_ask_root_psw() {
 
 function mysql_ask_user_db_scope() {
 
-    local db_scope=$1
+    local db_scope="${1}"
 
     db_scope="$(whiptail --title "MySQL User Scope" --inputbox "Set the scope for the database user. You can use '%' to accept all connections." 10 60 "${db_scope}" 3>&1 1>&2 2>&3)"
     exitstatus=$?
@@ -132,8 +132,8 @@ function mysql_ask_database_selection() {
 
 function mysql_test_user_credentials() {
 
-    local db_user=$1
-    local db_user_psw=$2
+    local db_user="${1}"
+    local db_user_psw="${2}"
 
     local mysql_output
     local mysql_result
@@ -178,7 +178,7 @@ function mysql_test_user_credentials() {
 
 function mysql_count_databases() {
 
-    local databases=$1
+    local databases="${1}"
 
     local total_databases=0
 
@@ -206,9 +206,11 @@ function mysql_count_databases() {
 
 function mysql_list_databases() {
 
-    local stage=$1
+    local stage="${1}"
 
     local databases
+
+    log_event "info" "Listing '${databases}' MySQL databases" "false"
 
     if [[ ${stage} == "all" ]]; then
 
@@ -312,9 +314,9 @@ function mysql_list_users() {
 
 function mysql_user_create() {
 
-    local db_user=$1
-    local db_user_psw=$2
-    local db_user_scope=$3
+    local db_user="${1}"
+    local db_user_psw="${2}"
+    local db_user_scope="${3}"
 
     local query
 
@@ -384,15 +386,15 @@ function mysql_user_create() {
 
 function mysql_user_delete() {
 
-    local db_user=$1
-    local db_user_scope=$2
+    local db_user="${1}"
+    local db_user_scope="${2}"
 
     local query_1
     local query_2
 
     # Log
-    display --indent 6 --text "- Deleting user ${db_user}"
-    log_event "info" "Deleting ${db_user} user in MySQL ..."
+    display --indent 6 --text "- Deleting user ${db_user} in MySQL"
+    log_event "info" "Deleting ${db_user} user in MySQL ..." "false"
 
     # DB user host
     if [[ -z ${db_user_scope} || ${db_user_scope} == "" ]]; then
@@ -411,7 +413,7 @@ function mysql_user_delete() {
     if [[ ${mysql_result} -eq 0 ]]; then
 
         # Log
-        clear_previous_lines "1"
+        clear_previous_lines "2"
         log_event "info" " Database user ${db_user} deleted" "false"
         log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
         display --indent 6 --text "- Deleting user ${db_user}" --result "DONE" --color GREEN
@@ -421,7 +423,7 @@ function mysql_user_delete() {
     else
 
         # Log
-        clear_previous_lines "1"
+        clear_previous_lines "2"
         log_event "error" "Something went wrong deleting user: ${db_user}." "false"
         log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
         display --indent 6 --text "- Deleting ${db_user} user in MySQL" --result "FAIL" --color RED
@@ -445,8 +447,8 @@ function mysql_user_delete() {
 
 function mysql_user_psw_change() {
 
-    local db_user=$1
-    local db_user_psw=$2
+    local db_user="${1}"
+    local db_user_psw="${2}"
 
     local query_1
     local query_2
@@ -496,7 +498,7 @@ function mysql_user_psw_change() {
 
 function mysql_root_psw_change() {
 
-    local db_root_psw=$1
+    local db_root_psw="${1}"
 
     log_event "info" "Changing password for root in MySQL"
 
@@ -565,9 +567,9 @@ function mysql_root_psw_change() {
 
 function mysql_user_grant_privileges() {
 
-    local db_user=$1
-    local db_target=$2
-    local db_scope=$3
+    local db_user="${1}"
+    local db_target="${2}"
+    local db_scope="${3}"
 
     local query_1
     local query_2
@@ -628,7 +630,7 @@ function mysql_user_grant_privileges() {
 
 function mysql_user_exists() {
 
-    local db_user=$1
+    local db_user="${1}"
 
     local query
     local user_exists
@@ -661,7 +663,7 @@ function mysql_user_exists() {
 
 function mysql_database_exists() {
 
-    local database=$1
+    local database="${1}"
 
     local result
 
@@ -691,7 +693,7 @@ function mysql_database_exists() {
 
 function mysql_name_sanitize() {
 
-    local string=$1
+    local string="${1}"
 
     local clean
 
@@ -728,7 +730,7 @@ function mysql_name_sanitize() {
 
 function mysql_database_create() {
 
-    local database=$1
+    local database="${1}"
 
     local query_1
 
@@ -778,7 +780,7 @@ function mysql_database_create() {
 
 function mysql_database_drop() {
 
-    local database=$1
+    local database="${1}"
 
     local query_1
     local mysql_result
@@ -796,7 +798,7 @@ function mysql_database_drop() {
     if [[ ${mysql_result} -eq 0 ]]; then
 
         # Log
-        log_event "info" "- Database ${database} dropped successfully" "false"
+        log_event "info" "Database ${database} dropped successfully" "false"
         display --indent 6 --text "- Dropping database: ${database}" --result "DONE" --color GREEN
 
         return 0
@@ -829,10 +831,10 @@ function mysql_database_drop() {
 
 function mysql_database_import() {
 
-    local database=$1
-    local dump_file=$2
+    local database="${1}"
+    local dump_file="${2}"
 
-    local import_status
+    #local import_status
 
     # Log
     display --indent 6 --text "- Importing backup into database: ${database}" --tcolor YELLOW
@@ -846,9 +848,9 @@ function mysql_database_import() {
     # Execute command
     pv --width 70 "${dump_file}" | ${MYSQL_ROOT} -f -D "${database}"
 
-    # Check result
-    import_status=$?
-    if [[ ${import_status} -eq 0 ]]; then
+    #import_status=$?
+    #if [[ ${import_status} -eq 0 ]]; then
+    if [[ ${PIPESTATUS[1]} -eq 0 ]]; then
 
         # Log
         clear_previous_lines "1"
@@ -885,8 +887,8 @@ function mysql_database_import() {
 
 function mysql_database_export() {
 
-    local database=$1
-    local dump_file=$2
+    local database="${1}"
+    local dump_file="${2}"
 
     local dump_status
 
@@ -936,10 +938,10 @@ function mysql_database_export() {
 
 function mysql_database_rename() {
 
-    local database_old_name=$1
-    local database_new_name=$2
+    local database_old_name="${1}"
+    local database_new_name="${2}"
 
-    local dump_file="${TMP_DIR}/${database_old_name}_bk_before_rename_db.sql"
+    local dump_file="${BROLIT_TMP_DIR}/${database_old_name}_bk_before_rename_db.sql"
 
     mysql_database_export "${database_old_name}" "${dump_file}"
 
@@ -954,10 +956,10 @@ function mysql_database_rename() {
 # TO-CHECK
 function mysql_database_clone() {
 
-    local database_old_name=$1
-    local database_new_name=$2
+    local database_old_name="${1}"
+    local database_new_name="${2}"
 
-    local dump_file="${TMP_DIR}/${database_old_name}_bk_before_clone_db.sql"
+    local dump_file="${BROLIT_TMP_DIR}/${database_old_name}_bk_before_clone_db.sql"
 
     mysql_database_export "${database_old_name}" "${dump_file}"
 
