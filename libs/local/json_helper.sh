@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 # Json Helper: Functions to read and write json files.
@@ -21,8 +21,8 @@
 
 function json_read_field() {
 
-    local json_file=$1
-    local json_field=$2
+    local json_file="${1}"
+    local json_field="${2}"
 
     local json_field_value
 
@@ -47,9 +47,9 @@ function json_read_field() {
 
 function json_write_field() {
 
-    local json_file=$1
-    local json_field=$2
-    local json_field_value=$3
+    local json_file="${1}"
+    local json_field="${2}"
+    local json_field_value="${3}"
 
     json_field_value="$(jq ".${json_field} = \"${json_field_value}\"" "${json_file}")" && echo "${json_field_value}" >"${json_file}"
 
@@ -80,7 +80,7 @@ function json_write_field() {
 
 function jsonify_output() {
 
-    local mode=$1
+    local mode="${1}"
 
     display --indent 6 --text "- Running jsonify_output with mode: $mode"
 
@@ -155,7 +155,7 @@ function jsonify_output() {
 
 function json_to_vars() {
 
-    local json_file=$1
+    local json_file="${1}"
 
     # TODO: read json file and ouput global vars.
     #

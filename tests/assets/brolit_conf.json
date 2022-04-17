@@ -110,8 +110,8 @@
                 "status": "disabled",
                 "config": [
                     {
-                        "NOTIFICATION_TELEGRAM_BOT_TOKEN": "",
-                        "NOTIFICATION_TELEGRAM_CHAT_ID": ""
+                        "bot_token": "",
+                        "chat_id": ""
                     }
                 ]
             }

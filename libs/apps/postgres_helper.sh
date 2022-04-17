@@ -4,7 +4,7 @@
 # Version: 3.2-rc1
 ################################################################################
 #
-# MySQL Helper: Perform mysql actions.
+# Postgres Helper: Perform postgres actions.
 #
 ################################################################################
 
@@ -18,29 +18,29 @@
 #  0 if ok, 1 on error.
 ################################################################################
 
-function mysql_ask_root_psw() {
+function postgres_ask_root_psw() {
 
-    local mysql_root_pass
+    local postgres_root_pass
 
-    # Check MySQL credentials on .my.cnf
+    # Check Postgres credentials on .my.cnf
     if [[ ! -f ${MYSQL_CONF} ]]; then
 
-        mysql_root_pass="$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root password" 10 60 "${mysql_root_pass}" 3>&1 1>&2 2>&3)"
+        postgres_root_pass="$(whiptail --title "Postgres root password" --inputbox "Please insert the Postgres root password" 10 60 "${postgres_root_pass}" 3>&1 1>&2 2>&3)"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
-            until mysql -u root -p"${mysql_root_pass}" -e ";"; do
-                read -s -p " > Can't connect to MySQL, please re-enter ${MUSER} password: " mysql_root_pass
+            until mysql -u root -p"${postgres_root_pass}" -e ";"; do
+                read -s -p " > Can't connect to Postgres, please re-enter ${MUSER} password: " postgres_root_pass
 
             done
 
-            # Create new MySQL credentials file
+            # Create new Postgres credentials file
             echo "[client]" >/root/.my.cnf
             echo "user=root" >>/root/.my.cnf
-            echo "password=${mysql_root_pass}" >>/root/.my.cnf
+            echo "password=${postgres_root_pass}" >>/root/.my.cnf
 
             # Return
-            echo "${mysql_root_pass}"
+            echo "${postgres_root_pass}"
 
             return 0
 
@@ -64,11 +64,11 @@ function mysql_ask_root_psw() {
 #  0 if ok, 1 on error.
 ################################################################################
 
-function mysql_ask_user_db_scope() {
+function postgres_ask_user_db_scope() {
 
     local db_scope="${1}"
 
-    db_scope="$(whiptail --title "MySQL User Scope" --inputbox "Set the scope for the database user. You can use '%' to accept all connections." 10 60 "${db_scope}" 3>&1 1>&2 2>&3)"
+    db_scope="$(whiptail --title "Postgres User Scope" --inputbox "Set the scope for the database user. You can use '%' to accept all connections." 10 60 "${db_scope}" 3>&1 1>&2 2>&3)"
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -94,14 +94,14 @@ function mysql_ask_user_db_scope() {
 #  0 if ok, 1 on error.
 ################################################################################
 
-function mysql_ask_database_selection() {
+function postgres_ask_database_selection() {
 
     local databases
     local chosen_db
 
-    databases="$(mysql_list_databases "all")"
+    databases="$(postgres_list_databases "all")"
 
-    chosen_db="$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to work with" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) 3>&1 1>&2 2>&3)"
+    chosen_db="$(whiptail --title "POSTGRES DATABASES" --menu "Choose a Database to work with" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) 3>&1 1>&2 2>&3)"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -130,25 +130,25 @@ function mysql_ask_database_selection() {
 #  0 if ok, 1 on error.
 ################################################################################
 
-function mysql_test_user_credentials() {
+function postgres_test_user_credentials() {
 
     local db_user="${1}"
     local db_user_psw="${2}"
 
-    local mysql_output
-    local mysql_result
+    local postgres_output
+    local postgres_result
 
     # Execute command
-    mysql_output="$("${MYSQL}" -u "${db_user}" -p"${db_user_psw}" -e ";")"
+    postgres_output="$("${POSTGRES}" -u "${db_user}" -p"${db_user_psw}" -e ";")"
 
     # Check result
-    mysql_result=$?
-    if [[ ${mysql_result} -eq 0 ]]; then
+    postgres_result=$?
+    if [[ ${postgres_result} -eq 0 ]]; then
 
         # Log
         clear_previous_lines "1"
-        display --indent 6 --text "- Testing MySQL user credentials" --result "DONE" --color GREEN
-        log_event "info" " Testing MySQL user credentials. User '${db_user}' and pass '${db_user_psw}'" "false"
+        display --indent 6 --text "- Testing Postgres user credentials" --result "DONE" --color GREEN
+        log_event "info" " Testing Postgres user credentials. User '${db_user}' and pass '${db_user_psw}'" "false"
 
         return 0
 
@@ -156,9 +156,9 @@ function mysql_test_user_credentials() {
 
         # Log
         clear_previous_lines "1"
-        display --indent 6 --text "- Testing MySQL user credentials" --result "FAIL" --color RED
-        log_event "error" "Something went wrong testing MySQL user credentials. User '${db_user}' and pass '${db_user_psw}'" "false"
-        log_event "debug" "Last command executed: ${MYSQL} -u${db_user} -p${db_user_psw} -e ;" "false"
+        display --indent 6 --text "- Testing Postgres user credentials" --result "FAIL" --color RED
+        log_event "error" "Something went wrong testing Postgres user credentials. User '${db_user}' and pass '${db_user_psw}'" "false"
+        log_event "debug" "Last command executed: ${POSTGRES} -u${db_user} -p${db_user_psw} -e ;" "false"
 
         return 1
 
@@ -167,7 +167,7 @@ function mysql_test_user_credentials() {
 }
 
 ################################################################################
-# Count databases on MySQL
+# Count databases on Postgres
 #
 # Arguments:
 #  $1 = ${databases}
@@ -176,7 +176,7 @@ function mysql_test_user_credentials() {
 #  0 if ok, 1 on error.
 ################################################################################
 
-function mysql_count_databases() {
+function postgres_count_databases() {
 
     local databases="${1}"
 
@@ -185,9 +185,11 @@ function mysql_count_databases() {
     local db
 
     for db in ${databases}; do
-        if [[ $BLACKLISTED_DATABASES != *"${db}"* ]]; then # $BLACKLISTED_DATABASES contains blacklisted databases
+
+        if [[ ${BLACKLISTED_DATABASES} != *"${db}"* ]]; then # $BLACKLISTED_DATABASES contains blacklisted databases
             total_databases=$((total_databases + 1))
         fi
+    
     done
 
     # Return
@@ -195,7 +197,7 @@ function mysql_count_databases() {
 }
 
 ################################################################################
-# List databases on MySQL
+# List databases on Postgres
 #
 # Arguments:
 #  ${stage} - Options: all, prod, dev, test, stage
@@ -204,29 +206,32 @@ function mysql_count_databases() {
 #  ${databases}, 1 on error.
 ################################################################################
 
-function mysql_list_databases() {
+function postgres_list_databases() {
 
     local stage="${1}"
 
     local databases
 
-    log_event "info" "Listing '${databases}' MySQL databases" "false"
+    log_event "info" "Listing '${stage}' Postgres databases" "false"
 
     if [[ ${stage} == "all" ]]; then
 
         # Run command
-        databases="$(${MYSQL_ROOT} -Bse 'show databases')"
+
+        # List postgress databases
+        databases="$(${PSQL_ROOT} -c "SELECT datname FROM pg_database WHERE datistemplate = false;" -t)"
+        #databases="$(${PSQL_ROOT} -t -A -c "SELECT datname FROM pg_database WHERE datname <> ALL ('{template0,template1,postgres}')")"
 
     else
 
         # Run command
-        databases="$(${MYSQL_ROOT} -Bse 'show databases' | grep "${stage}")"
+        databases="$(${PSQL_ROOT} -c "SELECT datname FROM pg_database WHERE datistemplate = false;" -t | grep "${stage}")"
 
     fi
 
     # Check result
-    mysql_result=$?
-    if [[ ${mysql_result} -eq 0 && ${databases} != "error" ]]; then
+    postgres_result=$?
+    if [[ ${postgres_result} -eq 0 && ${databases} != "error" ]]; then
 
         # Replace all newlines with a space
         databases="${databases//$'\n'/ }"
@@ -234,8 +239,8 @@ function mysql_list_databases() {
         databases="${databases//\\n/ }"
 
         # Log
-        display --indent 6 --text "- Listing MySQL databases" --result "DONE" --color GREEN
-        log_event "info" "Listing MySQL databases: '${databases}'" "false"
+        display --indent 6 --text "- Listing Postgres databases" --result "DONE" --color GREEN
+        log_event "info" "Listing Postgres databases: '${databases}'" "false"
 
         # Return
         echo "${databases}"
@@ -243,9 +248,9 @@ function mysql_list_databases() {
     else
 
         # Log
-        display --indent 6 --text "- Listing MySQL databases" --result "FAIL" --color RED
-        log_event "error" "Something went wrong listing MySQL databases" "false"
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -Bse 'show databases'" "false"
+        display --indent 6 --text "- Listing Postgres databases" --result "FAIL" --color RED
+        log_event "error" "Something went wrong listing Postgres databases" "false"
+        log_event "debug" "Last command executed: ${PSQL_ROOT} -c \"SELECT datname FROM pg_database WHERE datistemplate = false;\" -t" "false"
 
         return 1
 
@@ -254,7 +259,7 @@ function mysql_list_databases() {
 }
 
 ################################################################################
-# List users on MySQL
+# List users on Postgres
 #
 # Arguments:
 #  none
@@ -263,16 +268,17 @@ function mysql_list_databases() {
 #  ${users}, 1 on error.
 ################################################################################
 
-function mysql_list_users() {
+function postgres_list_users() {
 
     local users
 
     # Run command
-    users="$(${MYSQL_ROOT} -e 'SELECT user FROM mysql.user;')"
+    # https://unix.stackexchange.com/questions/201666/command-to-list-postgresql-user-accounts
+    users="$(${PSQL_ROOT} -c 'SELECT u.usename AS "User Name" FROM pg_catalog.pg_user u;' -t)"
 
     # Check result
-    mysql_result=$?
-    if [[ ${mysql_result} -eq 0 && ${users} != "error" ]]; then
+    postgres_result=$?
+    if [[ ${postgres_result} -eq 0 && ${users} != "error" ]]; then
 
         # Replace all newlines with a space
         users="${users//$'\n'/ }"
@@ -280,8 +286,8 @@ function mysql_list_users() {
         users="${users//\\n/ }"
 
         # Log
-        display --indent 6 --text "- Listing MySQL users" --result "DONE" --color GREEN
-        log_event "info" " Listing MySQL users: '${users}'" "false"
+        display --indent 6 --text "- Listing Postgres users" --result "DONE" --color GREEN
+        log_event "info" " Listing Postgres users: '${users}'" "false"
 
         # Return
         echo "${users}"
@@ -290,9 +296,9 @@ function mysql_list_users() {
     else
 
         # Log
-        display --indent 6 --text "- Listing MySQL users" --result "FAIL" --color RED
-        log_event "error" "Something went wrong listing MySQL users" "false"
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e SELECT user FROM mysql.user;'" "false"
+        display --indent 6 --text "- Listing Postgres users" --result "FAIL" --color RED
+        log_event "error" "Something went wrong listing Postgres users" "false"
+        log_event "debug" "Last command executed: ${PSQL_ROOT} -c 'SELECT u.usename AS \"User Name\" FROM pg_catalog.pg_user u;' -t" "false"
 
         return 1
 
@@ -312,47 +318,45 @@ function mysql_list_users() {
 #  0 if ok, 1 on error.
 ################################################################################
 
-function mysql_user_create() {
+function postgres_user_create() {
 
     local db_user="${1}"
     local db_user_psw="${2}"
-    local db_user_scope="${3}"
+    #local db_user_scope="${3}"
 
     local query
 
     # Log
-    display --indent 6 --text "- Creating MySQL user ${db_user}"
+    display --indent 6 --text "- Creating Postgres user ${db_user}"
 
     # DB user host
     if [[ -z ${db_user_scope} ]]; then
-        db_user_scope="$(mysql_ask_user_db_scope "localhost")"
+        db_user_scope="$(postgres_ask_user_db_scope "localhost")"
     fi
 
     # Query
-    if [[ -z ${db_user_psw} ]]; then
-        query="CREATE USER '${db_user}'@'${db_user_scope}';"
-
-    else
-        query="CREATE USER '${db_user}'@'${db_user_scope}' IDENTIFIED BY '${db_user_psw}';"
-
-    fi
+    #if [[ -z ${db_user_psw} ]]; then
+    #    query="CREATE USER '${db_user}'@'${db_user_scope}';"
+    #else
+    query="CREATE USER '${db_user}' WITH PASSWORD '${db_user_psw}';"
+    #fi
 
     # Execute command
-    ${MYSQL_ROOT} -e "${query}"
+    ${PSQL_ROOT} -c "${query}"
 
     # Check result
-    mysql_result=$?
-    if [[ ${mysql_result} -eq 0 ]]; then
+    postgres_result=$?
+    if [[ ${postgres_result} -eq 0 ]]; then
 
         # Log
         clear_previous_lines "1"
-        display --indent 6 --text "- Creating MySQL user ${db_user}" --result "DONE" --color GREEN
+        display --indent 6 --text "- Creating Postgres user ${db_user}" --result "DONE" --color GREEN
 
         if [[ ${db_user_psw} != "" ]]; then
             display --indent 8 --text "User created with pass: ${db_user_psw}" --tcolor YELLOW
         fi
 
-        log_event "info" "MySQL user ${db_user} created with pass: ${db_user_psw}" "false"
+        log_event "info" "Postgres user ${db_user} created with pass: ${db_user_psw}" "false"
 
         return 0
 
@@ -360,12 +364,12 @@ function mysql_user_create() {
 
         # Log
         clear_previous_lines "2"
-        display --indent 6 --text "- Creating MySQL user ${db_user}" --result "FAIL" --color RED
+        display --indent 6 --text "- Creating Postgres user ${db_user}" --result "FAIL" --color RED
         display --indent 8 --text "Maybe the user already exists. Please read the log file." --tcolor RED
 
         log_event "error" "Something went wrong creating user: ${db_user}." "false"
-        log_event "debug" "MySQL output: ${mysql_output}" "false"
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e ${query}" "false"
+        log_event "debug" "Postgres output: ${postgres_output}" "false"
+        log_event "debug" "Last command executed: ${PSQL_ROOT} -c ${query}" "false"
 
         return 1
 
@@ -384,7 +388,7 @@ function mysql_user_create() {
 #  0 if ok, 1 on error.
 ################################################################################
 
-function mysql_user_delete() {
+function postgres_user_delete() {
 
     local db_user="${1}"
     local db_user_scope="${2}"
@@ -393,12 +397,12 @@ function mysql_user_delete() {
     local query_2
 
     # Log
-    display --indent 6 --text "- Deleting user ${db_user} in MySQL"
-    log_event "info" "Deleting ${db_user} user in MySQL ..." "false"
+    display --indent 6 --text "- Deleting user ${db_user}"
+    log_event "info" "Deleting ${db_user} user in Postgres ..." "false"
 
     # DB user host
     if [[ -z ${db_user_scope} || ${db_user_scope} == "" ]]; then
-        db_user_scope="$(mysql_ask_user_db_scope "localhost")"
+        db_user_scope="$(postgres_ask_user_db_scope "localhost")"
     fi
 
     # Query
@@ -406,16 +410,16 @@ function mysql_user_delete() {
     query_2="FLUSH PRIVILEGES;"
 
     # Execute command
-    ${MYSQL_ROOT} -e "${query_1}${query_2}"
+    ${PSQL_ROOT} -e "${query_1}${query_2}"
 
     # Check result
-    mysql_result=$?
-    if [[ ${mysql_result} -eq 0 ]]; then
+    postgres_result=$?
+    if [[ ${postgres_result} -eq 0 ]]; then
 
         # Log
-        clear_previous_lines "2"
+        clear_previous_lines "1"
         log_event "info" " Database user ${db_user} deleted" "false"
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
+        log_event "debug" "Last command executed: ${PSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
         display --indent 6 --text "- Deleting user ${db_user}" --result "DONE" --color GREEN
 
         return 0
@@ -423,10 +427,10 @@ function mysql_user_delete() {
     else
 
         # Log
-        clear_previous_lines "2"
+        clear_previous_lines "1"
         log_event "error" "Something went wrong deleting user: ${db_user}." "false"
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
-        display --indent 6 --text "- Deleting ${db_user} user in MySQL" --result "FAIL" --color RED
+        log_event "debug" "Last command executed: ${PSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
+        display --indent 6 --text "- Deleting ${db_user} user in Postgres" --result "FAIL" --color RED
 
         return 1
 
@@ -445,7 +449,7 @@ function mysql_user_delete() {
 #  0 if ok, 1 on error.
 ################################################################################
 
-function mysql_user_psw_change() {
+function postgres_user_psw_change() {
 
     local db_user="${1}"
     local db_user_psw="${2}"
@@ -453,18 +457,18 @@ function mysql_user_psw_change() {
     local query_1
     local query_2
 
-    log_event "info" "Changing password for user ${db_user} in MySQL" "false"
+    log_event "info" "Changing password for user ${db_user} in Postgres" "false"
 
     # Query
     query_1="ALTER USER '${db_user}'@'localhost' IDENTIFIED BY '${db_user_psw}';"
     query_2="FLUSH PRIVILEGES;"
 
     # Execute command
-    ${MYSQL_ROOT} -e "${query_1}${query_2}"
+    ${PSQL_ROOT} -e "${query_1}${query_2}"
 
     # Check result
-    mysql_result=$?
-    if [[ ${mysql_result} -eq 0 ]]; then
+    postgres_result=$?
+    if [[ ${postgres_result} -eq 0 ]]; then
 
         # Log
         display --indent 6 --text "- Changing password to user ${db_user}" --result "DONE" --color GREEN
@@ -478,7 +482,7 @@ function mysql_user_psw_change() {
         # Log
         display --indent 6 --text "- Changing password to user ${db_user}" --result "FAIL" --color RED
         log_event "error" "Something went wrong changing password to user ${db_user}." "false"
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
+        log_event "debug" "Last command executed: ${PSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
 
         return 1
 
@@ -496,21 +500,21 @@ function mysql_user_psw_change() {
 #  0 if ok, 1 on error.
 ################################################################################
 
-function mysql_root_psw_change() {
+function postgres_root_psw_change() {
 
     local db_root_psw="${1}"
 
-    log_event "info" "Changing password for root in MySQL"
+    log_event "info" "Changing password for root in Postgres"
 
-    # Kill any mysql processes currently running
-    service mysql stop
-    killall -vw mysqld
-    display --indent 2 --text "- Shutting down any mysql processes" --result "DONE" --color GREEN
+    # Kill any postgres processes currently running
+    service postgres stop
+    killall -vw postgres
+    display --indent 2 --text "- Shutting down any postgres processes" --result "DONE" --color GREEN
 
-    # Start mysql without grant tables
+    # Start postgres without grant tables
     mysqld_safe --skip-grant-tables >res 2>&1 &
 
-    # Sleep for 5 while the new mysql process loads (if get a connection error you might need to increase this.)
+    # Sleep for 5 while the new postgres process loads (if get a connection error you might need to increase this.)
     sleep 5
 
     # Creating new password if db_root_psw is empty
@@ -521,17 +525,17 @@ function mysql_root_psw_change() {
     fi
 
     # Update root user with new password
-    mysql mysql -e "USE mysql;UPDATE user SET Password=PASSWORD('${db_root_psw}') WHERE User='${db_root_user}';FLUSH PRIVILEGES;"
+    #mysql mysql -e "USE mysql;UPDATE user SET Password=PASSWORD('${db_root_psw}') WHERE User='${db_root_user}';FLUSH PRIVILEGES;"
 
-    # Kill the insecure mysql process
-    killall -v mysqld
+    # Kill the insecure postgres process
+    killall -v postgres
 
-    # Starting mysql again
-    service mysql restart
+    # Starting postgres again
+    service postgres restart
 
     # Check result
-    mysql_result=$?
-    if [[ ${mysql_result} -eq 0 ]]; then
+    postgres_result=$?
+    if [[ ${postgres_result} -eq 0 ]]; then
 
         # Log
         display --indent 6 --text "- Setting new password for root" --result "DONE" --color GREEN
@@ -544,7 +548,7 @@ function mysql_root_psw_change() {
 
         # Log
         display --indent 6 --text "- Setting new password for root" --result "FAIL" --color RED
-        log_event "error" "Something went wrong changing MySQL root password." "false"
+        log_event "error" "Something went wrong changing Postgres root password." "false"
         log_event "debug" "Last command executed: mysql mysql -e \"USE mysql;UPDATE user SET Password=PASSWORD('${db_root_psw}') WHERE User='${db_root_user}';FLUSH PRIVILEGES;\"" "false"
 
         return 1
@@ -565,7 +569,7 @@ function mysql_root_psw_change() {
 #  0 if ok, 1 on error.
 ################################################################################
 
-function mysql_user_grant_privileges() {
+function postgres_user_grant_privileges() {
 
     local db_user="${1}"
     local db_target="${2}"
@@ -574,15 +578,15 @@ function mysql_user_grant_privileges() {
     local query_1
     local query_2
 
-    local mysql_output
-    local mysql_result
+    local postgres_output
+    local postgres_result
 
     # Log
     display --indent 6 --text "- Granting privileges to ${db_user}"
 
     # DB user host
     if [[ ${db_scope} == "" ]]; then
-        db_scope="$(mysql_ask_user_db_scope "localhost")"
+        db_scope="$(postgres_ask_user_db_scope "localhost")"
     fi
 
     # Query
@@ -590,16 +594,16 @@ function mysql_user_grant_privileges() {
     query_2="FLUSH PRIVILEGES;"
 
     # Execute command
-    ${MYSQL_ROOT} -e "${query_1}${query_2}"
+    ${PSQL_ROOT} -c "${query_1}${query_2}"
 
     # Check result
-    mysql_result=$?
-    if [[ ${mysql_result} -eq 0 ]]; then
+    postgres_result=$?
+    if [[ ${postgres_result} -eq 0 ]]; then
 
         # Log
         clear_previous_lines "1"
         log_event "info" "Privileges granted to user ${db_user}" "false"
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
+        log_event "debug" "Last command executed: ${PSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
         display --indent 6 --text "- Granting privileges to ${db_user}" --result "DONE" --color GREEN
 
         return 0
@@ -609,7 +613,7 @@ function mysql_user_grant_privileges() {
         # Log
         clear_previous_lines "1"
         log_event "error" "Something went wrong granting privileges to user ${db_user}." "false"
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
+        log_event "debug" "Last command executed: ${PSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
         display --indent 6 --text "- Granting privileges to ${db_user}" --result "FAIL" --color RED
 
         return 1
@@ -628,7 +632,7 @@ function mysql_user_grant_privileges() {
 #  0 if user exists, 1 if not.
 ################################################################################
 
-function mysql_user_exists() {
+function postgres_user_exists() {
 
     local db_user="${1}"
 
@@ -637,9 +641,9 @@ function mysql_user_exists() {
 
     query="SELECT COUNT(*) FROM mysql.user WHERE user = '${db_user}';"
 
-    user_exists="$(${MYSQL_ROOT} -e "${query}" | grep 1)"
+    user_exists="$(${PSQL_ROOT} -e "${query}" | grep 1)"
 
-    log_event "debug" "Last command executed: ${MYSQL_ROOT} -e ${query} | grep 1" "false"
+    log_event "debug" "Last command executed: ${PSQL_ROOT} -e ${query} | grep 1" "false"
 
     if [[ ${user_exists} == "" ]]; then
         # Return 0 if user don't exists
@@ -661,14 +665,14 @@ function mysql_user_exists() {
 #  0 if database exists, 1 if not.
 ################################################################################
 
-function mysql_database_exists() {
+function postgres_database_exists() {
 
     local database="${1}"
 
     local result
 
     # Run command
-    result="$(${MYSQL_ROOT} -e "SHOW DATABASES LIKE '${database}';")"
+    result="$(${PSQL_ROOT} -e "SHOW DATABASES LIKE '${database}';")"
 
     if [[ -z ${result} ]]; then
         # Return 1 if database don't exists
@@ -691,13 +695,13 @@ function mysql_database_exists() {
 #  Sanetized ${string}.
 ################################################################################
 
-function mysql_name_sanitize() {
+function postgres_name_sanitize() {
 
     local string="${1}"
 
     local clean
 
-    #log_event "debug" "Running mysql_name_sanitize for ${string}" "true"
+    #log_event "debug" "Running postgres_name_sanitize for ${string}" "true"
 
     # First, strip "-"
     clean=${string//-/}
@@ -728,26 +732,26 @@ function mysql_name_sanitize() {
 #  0 if ok, 1 on error.
 ################################################################################
 
-function mysql_database_create() {
+function postgres_database_create() {
 
     local database="${1}"
 
     local query_1
 
-    local mysql_output
-    local mysql_result
+    local postgres_output
+    local postgres_result
 
-    log_event "info" "Creating ${database} database in MySQL ..." "false"
+    log_event "info" "Creating ${database} database in Postgres ..." "false"
 
     # Query
-    query_1="CREATE DATABASE IF NOT EXISTS ${database};"
+    query_1="CREATE DATABASE ${database};"
 
     # Execute command
-    ${MYSQL_ROOT} -e "${query_1}"
+    ${PSQL_ROOT} -c "${query_1}"
 
     # Check result
-    mysql_result=$?
-    if [[ ${mysql_result} -eq 0 ]]; then
+    postgres_result=$?
+    if [[ ${postgres_result} -eq 0 ]]; then
 
         # Log
         display --indent 6 --text "- Creating database: ${database}" --result "DONE" --color GREEN
@@ -760,7 +764,7 @@ function mysql_database_create() {
         # Log
         display --indent 6 --text "- Creating database: ${database}" --result "ERROR" --color RED
         log_event "error" "Something went wrong creating database: ${database}." "false"
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}\"" "false"
+        log_event "debug" "Last command executed: ${PSQL_ROOT} -c \"${query_1}\"" "false"
 
         return 1
 
@@ -778,24 +782,24 @@ function mysql_database_create() {
 #  0 if ok, 1 on error.
 ################################################################################
 
-function mysql_database_drop() {
+function postgres_database_drop() {
 
     local database="${1}"
 
     local query_1
-    local mysql_result
+    local postgres_result
 
-    log_event "info" "Droping the database: ${database}"
+    log_event "info" "Droping database: ${database}" "false"
 
     # Query
     query_1="DROP DATABASE ${database};"
 
     # Execute command
-    ${MYSQL_ROOT} -e "${query_1}"
+    ${PSQL_ROOT} -c "${query_1}"
 
     # Check result
-    mysql_result=$?
-    if [[ ${mysql_result} -eq 0 ]]; then
+    postgres_result=$?
+    if [[ ${postgres_result} -eq 0 ]]; then
 
         # Log
         log_event "info" "Database ${database} dropped successfully" "false"
@@ -810,7 +814,7 @@ function mysql_database_drop() {
         display --indent 8 --text "Please, read the log file!" --tcolor RED
 
         log_event "error" "Something went wrong dropping the database: ${database}" "false"
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}\"" "false"
+        log_event "debug" "Last command executed: ${PSQL_ROOT} -e \"${query_1}\"" "false"
 
         return 1
 
@@ -829,28 +833,24 @@ function mysql_database_drop() {
 #  0 if ok, 1 on error.
 ################################################################################
 
-function mysql_database_import() {
+function postgres_database_import() {
 
     local database="${1}"
     local dump_file="${2}"
 
-    #local import_status
+    local import_status
 
     # Log
     display --indent 6 --text "- Importing backup into database: ${database}" --tcolor YELLOW
     log_event "info" "Importing dump file ${dump_file} into database: ${database}" "false"
-    log_event "debug" "Running: pv ${dump_file} | ${MYSQL_ROOT} -f -D ${database}" "false"
-
-    # String “utf8mb4_0900_ai_ci” replaced it with “utf8mb4_general_ci“
-    # This is a workaround for a bug in MySQL 5.7.x and 5.6.x where the default collation is “utf8mb4_0900_ai_ci”.
-    sed -i 's/utf8mb4_0900_ai_ci/utf8mb4_general_ci/g' "${dump_file}"
 
     # Execute command
-    pv --width 70 "${dump_file}" | ${MYSQL_ROOT} -f -D "${database}"
+    ${PSQL_ROOT} "${database}" <"${dump_file}"
+    #pv --width 70 "${dump_file}" | ${PSQL_ROOT} -f -D "${database}"
 
-    #import_status=$?
-    #if [[ ${import_status} -eq 0 ]]; then
-    if [[ ${PIPESTATUS[1]} -eq 0 ]]; then
+    # Check result
+    import_status=$?
+    if [[ ${import_status} -eq 0 ]]; then
 
         # Log
         clear_previous_lines "1"
@@ -866,7 +866,7 @@ function mysql_database_import() {
         display --indent 6 --text "- Database backup import" --result "ERROR" --color RED
         display --indent 8 --text "Please, read the log file!" --tcolor RED
         log_event "error" "Something went wrong importing database: ${database}"
-        log_event "debug" "Last command executed: pv ${dump_file} | ${MYSQL_ROOT} -f -D ${database}"
+        log_event "debug" "Last command executed: pv ${dump_file} | ${PSQL_ROOT} -f -D ${database}"
 
         return 1
 
@@ -885,7 +885,7 @@ function mysql_database_import() {
 #  0 if ok, 1 on error.
 ################################################################################
 
-function mysql_database_export() {
+function postgres_database_export() {
 
     local database="${1}"
     local dump_file="${2}"
@@ -896,8 +896,8 @@ function mysql_database_export() {
 
     spinner_start "- Making a backup of: ${database}"
 
-    # Run mysqldump
-    ${MYSQLDUMP_ROOT} "${database}" >"${dump_file}"
+    # Run pg_dump
+    ${PSQLDUMP_ROOT} "${database}" >"${dump_file}"
 
     dump_status=$?
     spinner_stop "${dump_status}"
@@ -917,7 +917,7 @@ function mysql_database_export() {
         display --indent 6 --text "- Database backup for ${YELLOW}${database}${ENDCOLOR}" --result "ERROR" --color RED
         display --indent 8 --text "Please, read the log file!" --tcolor RED
         log_event "error" "Something went wrong exporting database: ${database}." "false"
-        log_event "error" "Last command executed: ${MYSQLDUMP_ROOT} ${database} > ${dump_file}" "false"
+        log_event "error" "Last command executed: ${PSQLDUMP_ROOT} ${database} > ${dump_file}" "false"
 
         return 1
 
@@ -936,35 +936,35 @@ function mysql_database_export() {
 #  0 if ok, 1 on error.
 ################################################################################
 
-function mysql_database_rename() {
+function postgres_database_rename() {
 
     local database_old_name="${1}"
     local database_new_name="${2}"
 
     local dump_file="${BROLIT_TMP_DIR}/${database_old_name}_bk_before_rename_db.sql"
 
-    mysql_database_export "${database_old_name}" "${dump_file}"
+    postgres_database_export "${database_old_name}" "${dump_file}"
 
-    mysql_database_create "${database_new_name}"
+    postgres_database_create "${database_new_name}"
 
-    mysql_database_import "${database_new_name}" "${dump_file}"
+    postgres_database_import "${database_new_name}" "${dump_file}"
 
-    mysql_database_drop "${database_old_name}"
+    postgres_database_drop "${database_old_name}"
 
 }
 
 # TO-CHECK
-function mysql_database_clone() {
+function postgres_database_clone() {
 
     local database_old_name="${1}"
     local database_new_name="${2}"
 
     local dump_file="${BROLIT_TMP_DIR}/${database_old_name}_bk_before_clone_db.sql"
 
-    mysql_database_export "${database_old_name}" "${dump_file}"
+    postgres_database_export "${database_old_name}" "${dump_file}"
 
-    mysql_database_create "${database_new_name}"
+    postgres_database_create "${database_new_name}"
 
-    mysql_database_import "${database_new_name}" "${dump_file}"
+    postgres_database_import "${database_new_name}" "${dump_file}"
 
 }

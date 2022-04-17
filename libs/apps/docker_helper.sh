@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 # Docker Helper: Perform docker actions.
@@ -113,7 +113,7 @@ function docker_stop_container() {
 
 function docker_list_images() {
 
-    package_is_installed "docker"
+    #package_is_installed "docker"
 
     exitstatus=$?
     if [[ "${exitstatus}" -eq 0 ]]; then
@@ -121,6 +121,38 @@ function docker_list_images() {
         # Docker list images
         docker_images="$(docker images --format '{{.Repository}}:{{.Tag}}')"
         echo "${docker_images}"
+
+        return 0
+
+    else
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Get container id
+#
+# Arguments:
+#   $1 = ${image_name}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function docker_get_container_id() {
+
+    local image_name="${1}"
+
+    #package_is_installed "docker"
+
+    container_id="$(docker ps | grep "${image_name}" | awk '{print $1;}')"
+
+    if [[ -n ${container_id} ]]; then
+
+        echo "${container_id}"
 
         return 0
 
@@ -146,13 +178,14 @@ function docker_delete_image() {
 
     local image_to_delete="${1}"
 
-    package_is_installed "docker"
+    #package_is_installed "docker"
 
     exitstatus=$?
-    if [[ "${exitstatus}" -eq 0 ]]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
 
         # Docker delete image
         docker_delete_image="$(docker rmi "${image_to_delete}")"
+
         echo "${docker_delete_image}"
 
         return 0

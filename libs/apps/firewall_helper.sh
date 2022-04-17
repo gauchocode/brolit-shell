@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 # Firewall Helper: Perform firewall actions.
@@ -41,8 +41,8 @@ function firewall_enable() {
 
         # Log
         log_event "info" "Activating firewall" "false"
-        display --indent 2 --text "- Activating firewall" --result "DONE" --color GREEN
-        display --indent 4 --text "${ufw_output}"
+        display --indent 6 --text "- Activating firewall" --result "DONE" --color GREEN
+        display --indent 8 --text "${ufw_output}"
 
         return 0
 
@@ -50,8 +50,8 @@ function firewall_enable() {
 
         # Log
         log_event "error" "Activating firewall" "false"
-        display --indent 2 --text "- Activating firewall" --result "FAIL" --color RED
-        display --indent 4 --text "${ufw_output}"
+        display --indent 6 --text "- Activating firewall" --result "FAIL" --color RED
+        display --indent 8 --text "${ufw_output}"
 
         return 1
 
@@ -141,23 +141,18 @@ function firewall_status() {
 
         if [[ ${ufw_status} == "active" ]]; then
 
-            #FIREWALL_UFW_STATUS="enabled"
-
             # Log
             log_event "info" "Firewall status: ${ufw_status}" "false"
             log_event "debug" "ufw status verbose ouput: ${ufw_output}" "false"
-            display --indent 2 --text "- Getting firewall status" --result "ACTIVE" --color GREEN
 
             return 0
 
         else
 
-            #FIREWALL_UFW_STATUS="disabled"
-
             # Log
             log_event "info" "Firewall status: ${ufw_status}" "false"
             log_event "debug" "ufw status verbose ouput: ${ufw_output}" "false"
-            display --indent 2 --text "- Getting firewall status" --result "INACTIVE" --color YELLOW
+            display --indent 6 --text "- Getting firewall status" --result "INACTIVE" --color YELLOW
 
             return 1
 
@@ -167,7 +162,7 @@ function firewall_status() {
 
         # Log
         log_event "error" "Getting firewall status" "false"
-        display --indent 2 --text "- Getting firewall status" --result "FAIL" --color RED
+        display --indent 6 --text "- Getting firewall status" --result "FAIL" --color RED
 
         return 1
 
@@ -187,7 +182,7 @@ function firewall_status() {
 
 function firewall_allow() {
 
-    local service=$1
+    local service="${1}"
 
     local ufw_output
 
@@ -215,7 +210,7 @@ function firewall_allow() {
 
             # Log
             log_event "info" "Allowing ${service} on firewall" "false"
-            display --indent 2 --text "- Allowing ${service} on firewall" --result "DONE" --color GREEN
+            display --indent 6 --text "- Allowing ${service} on firewall" --result "DONE" --color GREEN
 
             return 0
 
@@ -225,7 +220,7 @@ function firewall_allow() {
 
         # Log
         log_event "error" "Allowing ${service} on firewall" "false"
-        display --indent 2 --text "- Allowing ${service} on firewall" --result "FAIL" --color RED
+        display --indent 6 --text "- Allowing ${service} on firewall" --result "FAIL" --color RED
 
         return 1
 
@@ -245,7 +240,7 @@ function firewall_allow() {
 
 function firewall_deny() {
 
-    local service=$1
+    local service="${1}"
 
     # ufw command
     ufw_output="$(ufw deny "${service}")"
@@ -271,7 +266,7 @@ function firewall_deny() {
 
             # Log
             log_event "info" "Denying ${service} on firewall" "false"
-            display --indent 2 --text "- Denying ${service} on firewall" --result "DONE" --color GREEN
+            display --indent 6 --text "- Denying ${service} on firewall" --result "DONE" --color GREEN
 
             return 0
 
@@ -281,7 +276,7 @@ function firewall_deny() {
 
         # Log
         log_event "error" "Denying ${service} on firewall" "false"
-        display --indent 2 --text "- Denying ${service} on firewall" --result "FAIL" --color RED
+        display --indent 6 --text "- Denying ${service} on firewall" --result "FAIL" --color RED
 
         return 1
 
@@ -301,7 +296,7 @@ function firewall_deny() {
 
 function firewall_fail2ban_status() {
 
-    local service=$1
+    local service="${1}"
 
     local fail2ban_output
 
@@ -314,8 +309,8 @@ function firewall_fail2ban_status() {
 
         # Log
         log_event "info" "Getting fail2ban status" "false"
-        display --indent 2 --text "- Getting fail2ban status" --result "DONE" --color GREEN
-        display --indent 2 --text "Status: ${fail2ban_output}"
+        display --indent 6 --text "- Getting fail2ban status" --result "DONE" --color GREEN
+        display --indent 8 --text "Status: ${fail2ban_output}"
 
         return 0
 
@@ -323,7 +318,7 @@ function firewall_fail2ban_status() {
 
         # Log
         log_event "error" "Getting fail2ban status" "false"
-        display --indent 2 --text "- Getting fail2ban status" --result "FAIL" --color RED
+        display --indent 6 --text "- Getting fail2ban status" --result "FAIL" --color RED
 
         return 1
 
@@ -359,7 +354,7 @@ function firewall_fail2ban_restart() {
 
 function firewall_fail2ban_ban_ip() {
 
-    local ip=$1
+    local ip="${1}"
 
     fail2ban-client set sshd banip "${ip}"
 
@@ -377,7 +372,7 @@ function firewall_fail2ban_ban_ip() {
 
 function firewall_fail2ban_unban_ip() {
 
-    local ip=$1
+    local ip="${1}"
 
     fail2ban-client set sshd unbanip "${ip}"
 

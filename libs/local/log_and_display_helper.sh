@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 # Log and Display Helper: Log and display functions.
@@ -38,7 +38,7 @@ function _spinner() {
   start)
 
     # calculate the column where spinner and status msg will be displayed
-    TEXT=$2
+    TEXT="${2}"
     INDENT=6
     LINESIZE=$(
       export LC_ALL=
@@ -140,9 +140,9 @@ function spinner_stop() {
 
 function log_event() {
 
-  local log_type=$1
-  local message=$2
-  local console_display=$3
+  local log_type="${1}"
+  local message="${2}"
+  local console_display="${3}"
 
   if [[ ${EXEC_TYPE} == "alias" ]]; then
     # if alias, do not log
@@ -220,7 +220,7 @@ function log_event() {
 
 function log_break() {
 
-  local console_display=$1
+  local console_display="${1}"
 
   local log_break
 
@@ -253,7 +253,7 @@ function log_break() {
 
 function log_section() {
 
-  local message=$1
+  local message="${1}"
 
   if [[ ${QUIET} == "false" && ${EXEC_TYPE} != "alias" ]]; then
 
@@ -284,7 +284,7 @@ function log_section() {
 
 function log_subsection() {
 
-  local message=$1
+  local message="${1}"
 
   if [[ ${QUIET} != "true" && ${EXEC_TYPE} != "alias" ]]; then
 
@@ -334,20 +334,20 @@ function clear_screen() {
 
 function clear_previous_lines() {
 
-  local lines=$1
+  local lines="${1}"
 
   if [[ ${QUIET} != "true" && ${EXEC_TYPE} != "alias" ]]; then
 
     #loop starting $lines going down to 0
     for ((i=lines; i>0; i--)); do
 
-      #tput cuu1;tput el
+      tput cuu1 >&2;tput el >&2;
 
-      printf "\033[1A" >&2
-      echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
-      echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
-      printf "\033[1A" >&2
-      printf "\033[1A" >&2
+      #printf "\033[1A" >&2
+      #echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
+      #echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
+      #printf "\033[1A" >&2
+      #printf "\033[1A" >&2
 
     done
 
@@ -394,12 +394,12 @@ function display() {
 
     --indent)
       shift
-      INDENT=$1
+      INDENT="${1}"
       ;;
 
     --result)
       shift
-      RESULT=$1
+      RESULT="${1}"
       ;;
 
     --tcolor)
@@ -426,7 +426,7 @@ function display() {
 
     --text)
       shift
-      TEXT=$1
+      TEXT="${1}"
       ;;
 
     *)

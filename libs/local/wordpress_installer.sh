@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 # WordPress Installer: WordPress installer functions.
@@ -24,11 +24,11 @@
 
 function wordpress_project_installer() {
 
-  local project_path=$1
-  local project_domain=$2
-  local project_name=$3
-  local project_state=$4
-  local project_root_domain=$5
+  local project_path="${1}"
+  local project_domain="${2}"
+  local project_name="${3}"
+  local project_state="${4}"
+  local project_root_domain="${5}"
 
   local installation_types
   local installation_type
@@ -72,22 +72,22 @@ function wordpress_project_installer() {
 
 function wordpress_project_install() {
 
-  local project_path=$1
-  local project_domain=$2
-  local project_name=$3
-  local project_state=$4
-  local project_root_domain=$5
+  local project_path="${1}"
+  local project_domain="${2}"
+  local project_name="${3}"
+  local project_state="${4}"
+  local project_root_domain="${5}"
 
-  log_subsection "WordPress Clean Install"
+  log_subsection "WordPress Install"
 
-  if [[ "${project_root_domain}" = '' ]]; then
+  if [[ -z ${project_root_domain} ]]; then
 
-    possible_root_domain="$(get_root_domain "${project_domain}")"
+    possible_root_domain="$(domain_get_root "${project_domain}")"
     project_root_domain="$(cloudflare_ask_rootdomain "${possible_root_domain}")"
 
   fi
 
-  if [[ ! -d "${project_path}" ]]; then
+  if [[ ! -d ${project_path} ]]; then
 
     # Create project directory
     mkdir "${project_path}"
@@ -120,7 +120,7 @@ function wordpress_project_install() {
   mysql_user_grant_privileges "${database_user}" "${database_name}" ""
 
   # Download WordPress
-  wpcli_core_download "${project_path}"
+  wpcli_core_download "${project_path}" ""
 
   # Create wp-config.php
   wpcli_create_config "${project_path}" "${database_name}" "${database_user}" "${database_user_passw}" "es_ES"
@@ -140,62 +140,70 @@ function wordpress_project_install() {
   if [[ ${project_domain} == *"${common_subdomain}"* ]]; then
 
     # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A" "${SERVER_IP}"
+    cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A" "false" "${SERVER_IP}"
 
     # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_domain}" "CNAME" "${SERVER_IP}"
+    cloudflare_set_record "${project_root_domain}" "${project_domain}" "CNAME" "false" "${project_root_domain}"
 
     # New site Nginx configuration
     nginx_server_create "${project_domain}" "wordpress" "root_domain" "${project_root_domain}"
 
-    # HTTPS with Certbot
-    project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${project_root_domain}" 3>&1 1>&2 2>&3)
+    if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
 
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-
-      certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${project_domain},${project_root_domain}"
+      # HTTPS with Certbot
+      project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${project_root_domain}" 3>&1 1>&2 2>&3)
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        nginx_server_add_http2_support "${project_domain}"
+        certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain},${project_root_domain}"
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+          nginx_server_add_http2_support "${project_domain}"
+
+        fi
+
+      else
+
+        log_event "info" "HTTPS support for ${project_domain} skipped"
+        display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
       fi
-
-    else
-
-      log_event "info" "HTTPS support for ${project_domain} skipped"
-      display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
     fi
 
   else
 
     # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_domain}" "A" "${SERVER_IP}"
+    cloudflare_set_record "${project_root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
 
     # New site Nginx configuration
     nginx_create_empty_nginx_conf "${project_path}"
     nginx_create_globals_config
     nginx_server_create "${project_domain}" "wordpress" "single" ""
 
-    # HTTPS with Certbot
-    cert_project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
+    if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
 
-      certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${cert_project_domain}"
-
+      # HTTPS with Certbot
+      cert_project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        nginx_server_add_http2_support "${project_domain}"
+        certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${cert_project_domain}"
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
-          http2_support="true"
+          nginx_server_add_http2_support "${project_domain}"
+
+          exitstatus=$?
+          if [[ ${exitstatus} -eq 0 ]]; then
+
+            http2_support="true"
+
+          fi
 
         fi
 
@@ -236,7 +244,7 @@ function wordpress_project_install() {
   #  $14 = ${project_use_http2}
   #  $15 = ${project_certbot_mode}
 
-  project_create_config "${project_path}" "${project_name}" "${project_state}" "wordpress" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "/etc/nginx/sites-available/${project_domain}" "${http2_support}" "${cert_path}"
+  project_update_brolit_config "${project_path}" "${project_name}" "${project_state}" "wordpress" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "/etc/nginx/sites-available/${project_domain}" "${http2_support}" "${cert_path}"
 
   # Log
   log_event "info" "WordPress installation for domain ${project_domain} finished" "false"
@@ -244,7 +252,7 @@ function wordpress_project_install() {
   display --indent 8 --text "for domain ${project_domain}"
 
   # Send notification
-  send_notification "✅ ${VPSNAME}" "WordPress installation for domain ${project_domain} finished" ""
+  send_notification "✅ ${SERVER_NAME}" "WordPress installation for domain ${project_domain} finished" ""
 
   return 0
 
@@ -264,13 +272,15 @@ function wordpress_project_install() {
 #   0 if ok, 1 on error.
 ################################################################################
 
+# TODO: NEEDS REFACTOR
+
 function wordpress_project_copy() {
 
-  local project_path=$1
-  local project_domain=$2
-  local project_name=$3
-  local project_state=$4
-  local project_root_domain=$5
+  local project_path="${1}"
+  local project_domain="${2}"
+  local project_name="${3}"
+  local project_state="${4}"
+  local project_root_domain="${5}"
 
   log_subsection "Copy From Project"
 
@@ -336,7 +346,7 @@ function wordpress_project_copy() {
   bk_file="db-${db_tocopy}.sql"
 
   # Make a database Backup
-  mysql_database_export "${db_tocopy}" "${TMP_DIR}/${bk_file}"
+  mysql_database_export "${db_tocopy}" "${BROLIT_TMP_DIR}/${bk_file}"
   mysql_database_export_result=$?
   if [[ ${mysql_database_export_result} -eq 0 ]]; then
 
@@ -344,7 +354,7 @@ function wordpress_project_copy() {
     target_db="${project_name}_${project_state}"
 
     # Importing dump file
-    mysql_database_import "${target_db}" "${TMP_DIR}/${bk_file}"
+    mysql_database_import "${target_db}" "${BROLIT_TMP_DIR}/${bk_file}"
 
     # Generate WP tables PREFIX
     tables_prefix="$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)"
@@ -370,39 +380,43 @@ function wordpress_project_copy() {
   if [[ ${project_domain} == *"${common_subdomain}"* ]]; then
 
     # Cloudflare API to change DNS records
-    cloudflare_set_record "${root_domain}" "${root_domain}" "A" "${SERVER_IP}"
+    cloudflare_set_record "${root_domain}" "${root_domain}" "A" "false" "${SERVER_IP}"
 
     # Cloudflare API to change DNS records
-    cloudflare_set_record "${root_domain}" "${project_domain}" "CNAME" "${SERVER_IP}"
+    cloudflare_set_record "${root_domain}" "${project_domain}" "CNAME" "false" "${root_domain}"
 
     # New site Nginx configuration
     nginx_server_create "${project_domain}" "wordpress" "root_domain" "${root_domain}"
 
-    # HTTPS with Certbot
-    project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${root_domain}" 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
+    if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
 
-      certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${project_domain},${root_domain}"
-
+      # HTTPS with Certbot
+      project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${root_domain}" 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        nginx_server_add_http2_support "${project_domain}"
+        certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain},${root_domain}"
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+          nginx_server_add_http2_support "${project_domain}"
+
+        fi
+
+      else
+
+        log_event "info" "HTTPS support for ${project_domain} skipped"
+        display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
       fi
-
-    else
-
-      log_event "info" "HTTPS support for ${project_domain} skipped"
-      display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
     fi
 
   else
 
     # Cloudflare API to change DNS records
-    cloudflare_set_record "${root_domain}" "${project_domain}" "A" "${SERVER_IP}"
+    cloudflare_set_record "${root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -415,24 +429,28 @@ function wordpress_project_copy() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        # HTTPS with Certbot
-        cert_project_domain="$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
+        if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
 
-          certbot_certificate_install "${NOTIFICATION_EMAIL_MAILA}" "${cert_project_domain}"
-
+          # HTTPS with Certbot
+          cert_project_domain="$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
           exitstatus=$?
           if [[ ${exitstatus} -eq 0 ]]; then
 
-            nginx_server_add_http2_support "${project_domain}"
+            certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${cert_project_domain}"
+
+            exitstatus=$?
+            if [[ ${exitstatus} -eq 0 ]]; then
+
+              nginx_server_add_http2_support "${project_domain}"
+
+            fi
+
+          else
+
+            log_event "info" "HTTPS support for ${project_domain} skipped" "false"
+            display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
           fi
-
-        else
-
-          log_event "info" "HTTPS support for ${project_domain} skipped" "false"
-          display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 
         fi
 
@@ -464,7 +482,7 @@ function wordpress_project_copy() {
   display --indent 8 --text "for domain ${project_domain}"
 
   # Send notification
-  send_notification "✅ ${VPSNAME}" "WordPress installation for domain ${project_domain} finished" ""
+  send_notification "✅ ${SERVER_NAME}" "WordPress installation for domain ${project_domain} finished" ""
 
   return 0
 

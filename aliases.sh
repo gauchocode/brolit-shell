@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 
 # Server Name
-VPSNAME="${HOSTNAME}"
+SERVER_NAME="${HOSTNAME}"
 
-SFOLDER="/root/brolit-shell"
+BROLIT_MAIN_DIR="/root/brolit-shell"
 
 # TODO: workaround
 declare -g EXEC_TYPE="alias"
@@ -17,25 +17,25 @@ export EXEC_TYPE
 BROLIT_CONFIG_PATH="/etc/brolit"
 
 CLF_CONFIG_FILE=~/.cloudflare.conf
-if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" && -f ${CLF_CONFIG_FILE} ]]; then
-    # shellcheck source=${CLF_CONFIG_FILE}
+if [[ -f ${CLF_CONFIG_FILE} ]]; then
+    # shellcheck source=~/.cloudflare.conf
     source "${CLF_CONFIG_FILE}"
 fi
 
 DPU_CONFIG_FILE=~/.dropbox_uploader
-if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" && -f ${DPU_CONFIG_FILE} ]]; then
-    # shellcheck source=${DPU_CONFIG_FILE}
+if [[ -f ${DPU_CONFIG_FILE} ]]; then
+    # shellcheck source=~/.dropbox_uploader
     source "${DPU_CONFIG_FILE}"
     # Dropbox-uploader directory
-    DPU_F="${SFOLDER}/tools/third-party/dropbox-uploader"
+    DPU_F="${BROLIT_MAIN_DIR}/tools/third-party/dropbox-uploader"
     # Dropbox-uploader runner
     DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
 
 fi
 
 # Version
-SCRIPT_VERSION="3.1.7"
-ALIASES_VERSION="3.1.7-088"
+SCRIPT_VERSION="3.2-rc1"
+ALIASES_VERSION="3.2-rc1-093"
 
 ################################################################################
 
@@ -43,7 +43,7 @@ alias ..="cd .."
 
 alias userlist="cut -d: -f1 /etc/passwd"
 alias myip="curl http://ipecho.net/plain; echo"
-alias myipv6="$(curl --silent 'https://api64.ipify.org')"
+alias myipv6="curl --silent 'https://api64.ipify.org'"
 
 alias ports='netstat -tulanp'
 
@@ -83,8 +83,8 @@ alias get_aliases_version='echo $ALIASES_VERSION'
 
 function _json_read_field() {
 
-    local json_file=$1
-    local json_field=$2
+    local json_file="${1}"
+    local json_field="${2}"
 
     local json_field_value
 
@@ -97,9 +97,9 @@ function _json_read_field() {
 
 function _json_write_field() {
 
-    local json_file=$1
-    local json_field=$2
-    local json_field_value=$3
+    local json_file="${1}"
+    local json_field="${2}"
+    local json_field_value="${3}"
 
     json_field_value="$(jq ".${json_field} = \"${json_field_value}\"" "${json_file}")" && echo "${json_field_value}" >"${json_file}"
 
@@ -119,7 +119,7 @@ function _json_write_field() {
 
 function _jsonify_output() {
 
-    local mode=$1
+    local mode="${1}"
 
     # Remove fir parameter
     shift
@@ -185,7 +185,7 @@ function _string_remove_spaces() {
     # Parameters
     # $1 = ${string}
 
-    local string=$1
+    local string="${1}"
 
     # Return
     echo "${string//[[:blank:]]/}"
@@ -196,7 +196,7 @@ function _cloudflare_get_zone_id() {
 
     # $1 = ${zone_name}
 
-    local zone_name=$1
+    local zone_name="${1}"
 
     local zone_id
 
@@ -229,7 +229,7 @@ function _is_pkg_installed() {
 
     # $1 = ${package}
 
-    local package=$1
+    local package="${1}"
 
     if [ "$(dpkg-query -W -f='${Status}' "${package}" 2>/dev/null | grep -c "ok installed")" == "1" ]; then
 
@@ -376,9 +376,9 @@ function _apache_check_installed_version() {
 
 }
 
-function _get_backup_date() {
+function _backup_get_date() {
 
-    local backup_file=$1
+    local backup_file="${1}"
 
     local backup_date
 
@@ -392,7 +392,7 @@ function _get_backup_date() {
 function _certbot_certificate_get_valid_days() {
     # $1 = domains (domain.com,www.domain.com)
 
-    local domain=$1
+    local domain="${1}"
 
     local cert_days
 
@@ -417,7 +417,7 @@ function _cloudflare_domain_exists() {
 
     # $1 = ${root_domain}
 
-    local root_domain=$1
+    local root_domain="${1}"
 
     local zone_name
     local zone_id
@@ -442,8 +442,8 @@ function _cloudflare_record_exists() {
     # $1 = ${domain}
     # $2 = ${zone_id}
 
-    local domain=$1
-    local zone_id=$2
+    local domain="${1}"
+    local zone_id="${2}"
 
     # Only for better readibility
     record_name="${domain}"
@@ -473,7 +473,7 @@ function _get_domain_extension() {
     # Parameters
     # $1 = ${domain}
 
-    local domain=$1
+    local domain="${1}"
 
     local first_lvl
     local next_lvl
@@ -488,7 +488,7 @@ function _get_domain_extension() {
     next_lvl="${first_lvl}"
 
     local -i count=0
-    while ! grep --word-regexp --quiet ".${domain_ext}" "${SFOLDER}/config/domain_extension-list" && [ ! "${domain_ext#"$next_lvl"}" = "" ]; do
+    while ! grep --word-regexp --quiet ".${domain_ext}" "${BROLIT_MAIN_DIR}/config/domain_extension-list" && [ ! "${domain_ext#"$next_lvl"}" = "" ]; do
 
         # Remove next level domain-name
         domain_ext=${domain_ext#"$next_lvl."}
@@ -498,7 +498,7 @@ function _get_domain_extension() {
 
     done
 
-    if grep --word-regexp --quiet ".${domain_ext}" "${SFOLDER}/config/domain_extension-list"; then
+    if grep --word-regexp --quiet ".${domain_ext}" "${BROLIT_MAIN_DIR}/config/domain_extension-list"; then
 
         domain_ext=.${domain_ext}
 
@@ -518,7 +518,7 @@ function _get_subdomain_part() {
     # Parameters
     # $1 = ${domain}
 
-    local domain=$1
+    local domain="${1}"
 
     local domain_extension
     local domain_no_ext
@@ -563,7 +563,7 @@ function _get_root_domain() {
     # Parameters
     # $1 = ${domain}
 
-    local domain=$1
+    local domain="${1}"
 
     local domain_extension
     local domain_no_ext
@@ -596,7 +596,7 @@ function _extract_domain_extension() {
     # Parameters
     # $1 = ${domain}
 
-    local domain=$1
+    local domain="${1}"
 
     local domain_extension
     local domain_no_ext
@@ -618,12 +618,127 @@ function _extract_domain_extension() {
 
 }
 
+function _wp_config_path() {
+
+  local dir_to_search="${1}"
+
+  # Find where wp-config.php is
+  find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')"
+
+  # Check if directory exists
+  if [[ -d ${find_output} ]]; then
+
+    # Return
+    echo "${find_output}"
+
+    return 0
+
+  else
+
+    return 1
+
+  fi
+
+}
+
+function _project_get_type() {
+
+  local dir_path="${1}"
+
+  #local project_type
+
+  # TODO: if brolit_conf exists, should check this file and get project type
+
+  if [[ -n ${dir_path} ]]; then
+
+    # WP?
+    wp_path="$(_wp_config_path "${dir_path}")"
+    if [[ -n ${wp_path} ]]; then
+
+      # Return
+      echo "wordpress"
+
+      return 0
+
+    fi
+
+    # Laravel?
+    laravel_v="$(php "${dir_path}/artisan" --version | grep -oE "Laravel Framework [0-9]+\.[0-9]+\.[0-9]+")"
+    if [[ -n ${laravel_v} ]]; then
+
+      # Return
+      echo "laravel"
+
+      return 0
+
+    fi
+
+    # other-php?
+    php="$(find "${dir_path}" -name "index.php" -type f)"
+    if [[ -n ${php} ]]; then
+
+      # Return
+      echo "php"
+
+      return 0
+
+    fi
+
+    # Node.js?
+    nodejs="$(find "${dir_path}" -name "package.json" -type f)"
+    if [[ -n ${nodejs} ]]; then
+
+      # Return
+      echo "nodejs"
+
+      return 0
+
+    fi
+
+    # html-only?
+    html="$(find "${dir_path}" -name "index.html" -type f)"
+    if [[ -n ${html} ]]; then
+
+      # Return
+      echo "html"
+
+      return 0
+
+    fi
+
+    # docker-compose?
+    docker="$(find "${dir_path}" -name "docker-compose.yml" -type f | find "${dir_path}" -name "docker-compose.yaml" -type f)"
+    if [[ -n ${docker} ]]; then
+
+      # Return
+      echo "docker-compose"
+
+      return 0
+
+    fi
+
+    # Unknown
+    # if reach this point, it's not a project?
+
+    # Return
+    echo "unknown"
+
+    return 0
+
+  else
+
+    return 1
+
+  fi
+
+}
+
 function _project_get_name_from_domain() {
 
     # Parameters
     # $1 = ${project_domain}
 
-    local project_domain=$1
+    local project_domain="${1}"
 
     # Trying to extract project name from domain
     root_domain="$(_get_root_domain "${project_domain}")"
@@ -639,7 +754,7 @@ function _project_get_name_from_domain() {
 
 function _project_get_stage_from_domain() {
 
-    local project_domain=$1
+    local project_domain="${1}"
 
     local project_stages
     local possible_project_stage
@@ -665,8 +780,8 @@ function _project_get_config() {
     # $1 = ${project_path}
     # $2 = ${config_field}
 
-    local project_path=$1
-    local config_field=$2
+    local project_path="${1}"
+    local config_field="${2}"
 
     local config_value
     local project_name
@@ -677,7 +792,7 @@ function _project_get_config() {
 
     if [[ -e ${project_config_file} ]]; then
 
-        config_value="$(cat ${project_config_file} | jq -r ".${config_field}")"
+        config_value="$(cat "${project_config_file}" | jq -r ".${config_field}")"
 
         # Return
         echo "${config_value}"
@@ -701,9 +816,9 @@ function makezip() { zip -r "${1%%/}.zip" "$1"; }
 
 function extract() {
 
-    local file_path=$1
-    local directory_to_extract=$2
-    local compress_type=$3
+    local file_path="${1}"
+    local directory_to_extract="${2}"
+    local compress_type="${3}"
 
     # Get filename and file extension
     filename=$(basename -- "${file_path}")
@@ -806,20 +921,11 @@ function extract() {
 
 }
 
-# Make dir and cd
-function mcd() {
-
-    local dir=$1
-
-    mkdir -p "${dir}"
-    cd "${dir}"
-}
-
 # Search with grep
 function search() {
 
-    local path=$1
-    local string=$2
+    local path="${1}"
+    local string="${2}"
 
     # grep parameters:
     # -r or -R is recursive,
@@ -831,29 +937,69 @@ function search() {
 
 ########################## UTILS FOR DEVOPS ###################################
 
-function brolit_ssh_keygen() {
+function cronjob_check() {
 
-    local keydir
+    local script="${1}"
+    local cron_file="${2}"
 
-    keydir=/root/pem
+    if [[ -z ${cron_file} ]]; then
+        cron_file="/var/spool/cron/crontabs/root"
+    fi
 
-    if [[ -f "${keydir}/identity" ]]; then
+    # Command
+    grep -qi "${script}" "${cron_file}"
 
-        echo "A sshkey already exists, showing the content:"
+    grep_result=$?
+    if [[ ${grep_result} != 0 ]]; then
+
+        # Return JSON
+        echo "BROLIT_RESULT => { Cronjob not found }"
+        return 0
 
     else
-        mkdir "${keydir}"
-
-        # Key generation
-        ssh-keygen -b 2048 -f identity -t rsa -f "${keydir}/identity"
-
-        # Copy credentials
-        cat ${keydir}/identity.pub >>~/.ssh/authorized_keys
+        # Return JSON
+        echo "BROLIT_RESULT => { Cronjob found }"
+        return 1
 
     fi
 
-    # Show identity content
-    cat ${keydir}/identity
+}
+
+function cronjob_install() {
+
+    local script="${1}"
+    local scheduled_time="${2}"
+
+    local cron_file
+
+    cron_file="/var/spool/cron/crontabs/root"
+
+    if [[ ! -f ${cron_file} ]]; then
+
+        touch "${cron_file}"
+        /usr/bin/crontab "${cron_file}"
+
+    fi
+
+    # Command
+    grep -qi "${script}" "${cron_file}"
+
+    grep_result=$?
+    if [[ ${grep_result} != 0 ]]; then
+
+        /bin/echo "${scheduled_time} ${script}" >>"${cron_file}"
+
+        # Return JSON
+        echo "BROLIT_RESULT => { Cronjob installed }"
+        return 0
+
+    else
+
+        # Return JSON
+        echo "BROLIT_RESULT => { Cronjob already exists }"
+        return 1
+
+    fi
 
 }
 
@@ -890,11 +1036,11 @@ function serverinfo() {
     if [[ ${public_ip} == "${inet_ip}" ]]; then
 
         # Return JSON part
-        echo "\"server_name\": \"${VPSNAME}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , \"disk_size\": \"${disk_size}\" , \"disk_usage\": \"${disk_usage}\""
+        echo "\"server_name\": \"${SERVER_NAME}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , \"disk_size\": \"${disk_size}\" , \"disk_usage\": \"${disk_usage}\""
     else
 
         # Return JSON part
-        echo "\"server_name\": \"${VPSNAME}\" , \"floating_ip\": \"${inet_ip}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , \"disk_size\": \"${disk_size}\" , \"disk_usage\": \"${disk_usage}\""
+        echo "\"server_name\": \"${SERVER_NAME}\" , \"floating_ip\": \"${inet_ip}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , \"disk_size\": \"${disk_size}\" , \"disk_usage\": \"${disk_usage}\""
 
     fi
 
@@ -963,6 +1109,9 @@ function sites_directories() {
             site_size_du="$(du --human-readable --max-depth=0 "/var/www/${site}")"
             site_size="$(echo "${site_size_du}" | awk '{print $1;}')"
 
+            # Type
+            site_type="$(_project_get_type "/var/www/${site}")"
+
             # Cert
             site_cert="$(_certbot_certificate_get_valid_days "${site}")"
 
@@ -971,7 +1120,7 @@ function sites_directories() {
             site_cf="$(_cloudflare_domain_exists "${root_domain}")"
 
             # Json
-            site_data="{\"name\":\"${site}\" , \"size\":\"${site_size}\" , \"certificate_days_to_expire\":\"${site_cert}\" , \"domain_on_cloudflare\":\"${site_cf}\"}"
+            site_data="{\"name\":\"${site}\" , \"type\":\"${site_type}\" , \"size\":\"${site_size}\" , \"certificate_days_to_expire\":\"${site_cert}\" , \"domain_on_cloudflare\":\"${site_cf}\"}"
 
             directories="${directories} , ${site_data}"
 
@@ -1000,7 +1149,7 @@ function dropbox_get_site_backups() {
 
     # ${1} = ${chosen_project}
 
-    local chosen_project=$1
+    local chosen_project="${1}"
 
     local dropbox_chosen_backup_path
     local dropbox_backup_list
@@ -1010,7 +1159,7 @@ function dropbox_get_site_backups() {
     local backup_type="site"
 
     # Get dropbox backup list
-    dropbox_chosen_backup_path="${VPSNAME}/${backup_type}/${chosen_project}"
+    dropbox_chosen_backup_path="${SERVER_NAME}/projects-online/${backup_type}/${chosen_project}"
     dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}")"
 
     for backup_file in ${dropbox_backup_list}; do
@@ -1043,7 +1192,7 @@ function dropbox_get_sites_backups() {
     local backup_projects=""
 
     # Get dropbox backup list
-    dropbox_chosen_backup_path="${VPSNAME}/${backup_type}"
+    dropbox_chosen_backup_path="${SERVER_NAME}/projects-online/${backup_type}"
     dropbox_project_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}" | awk -F " " '{ print $2 }')"
 
     for backup_dir in ${dropbox_project_backup_list}; do
@@ -1079,20 +1228,11 @@ function dropbox_get_sites_backups() {
 
 }
 
-# TODO: {"2020-05-19":{"files":"ZZZZZ1","database":"YYYY1"},"2020-05-20":{"files":"ZZZZZ2","database":"YYYY2"}}
-# SERVER_DATA_RESULT => {
-#    "2021-05-23":{"files":"autonube.com_site-files_2021-05-23.tar.bz2","database":"autonube_prod_database_2021-05-23.tar.bz2"} ,
-#    "2021-05-24":{"files":"autonube.com_site-files_2021-05-24.tar.bz2","database":"autonube_prod_database_2021-05-24.tar.bz2"} ,
-#
-# SERVER_DATA_RESULT => {
-# "backups":  {"2021-05-24":{"files":"autonube.com_site-files_2021-05-24.tar.bz2","database":"autonube_prod_database_2021-05-24.tar.bz2"} } ,
-#             {"2021-05-25":{"files":"autonube.com_site-files_2021-05-25.tar.bz2","database":"autonube_prod_database_2021-05-25.tar.bz2"} } ,
-
 function dropbox_get_backup() {
 
     # ${1} = ${chosen_project}
 
-    local project_domain=$1
+    local project_domain="${1}"
 
     local project_name
     local project_db
@@ -1121,13 +1261,15 @@ function dropbox_get_backup() {
     fi
 
     # Get dropbox backup list
-    dropbox_site_backup_path="${VPSNAME}/site/${project_domain}"
+    dropbox_site_backup_path="${SERVER_NAME}/projects-online/site/${project_domain}"
+
+    #echo "Running: ${DROPBOX_UPLOADER} -hq list \"${dropbox_site_backup_path}\" | grep -E \"${project_domain}_site-files_[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}.tar.bz2\""
 
     dropbox_site_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_site_backup_path}" | grep -Eo "${project_domain}_site-files_[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}.tar.bz2")"
 
     for backup_file in ${dropbox_site_backup_list}; do
 
-        backup_date="$(_get_backup_date "${backup_file}")"
+        backup_date="$(_backup_get_date "${backup_file}")"
 
         backup_to_search="${project_db}_database_${backup_date}.tar.bz2"
 
@@ -1213,7 +1355,7 @@ function cloudflare_get_record_details() {
 
     # $1 = ${domain}
 
-    local domain=$1
+    local domain="${1}"
 
     local record_name
     local zone_id
@@ -1258,7 +1400,7 @@ function read_site_config() {
 
     # ${1} = ${project_domain}
 
-    local project_domain=$1
+    local project_domain="${1}"
 
     local project_config
     local project_config_file
@@ -1332,7 +1474,7 @@ function firewall_app_list() {
 
 function is_pkg_installed() {
 
-    local package=$1
+    local package="${1}"
 
     local package_installed
 
