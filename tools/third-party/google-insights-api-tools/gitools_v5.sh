@@ -183,7 +183,7 @@ slacksend() {
 }
 
 wpt_run() {
-  WPT_URL=$1
+  WPT_URL="${1}"
   WPT_REGION=${2}
   WPT_SPEED=${3:-Cable}
   WPT_SPEED=$(echo $WPT_SPEED | awk '{print tolower($0)}')
@@ -686,7 +686,7 @@ wpt_run() {
 }
 
 gt_run() {
-  fulldomain=$1
+  fulldomain="${1}"
   prefix=$(echo $fulldomain | awk -F '://' '{print $1}')
   domain=$(echo $fulldomain | awk -F '://' '{print $2}')
   # browser = 3 chrome
@@ -776,7 +776,7 @@ gt_run() {
 ####################
 gi_run_five() {
   strategy=$2
-  fulldomain=$1
+  fulldomain="${1}"
   prefix=$(echo $fulldomain | awk -F '://' '{print $1}')
   domain=$(echo $fulldomain | awk -F '://' '{print $2}')
   turl_echo="${PSI_FIVE_URL}?url=${prefix}%3A%2F%2F${domain}&strategy=${strategy}&key=YOUR_GOOGLE_API_KEY"
@@ -942,7 +942,7 @@ gi_run_five() {
 ####################
 gi_run() {
   strategy=$3
-  fulldomain=$1
+  fulldomain="${1}"
   origin_check=$2
   prefix=$(echo $fulldomain | awk -F '://' '{print $1}')
   domain=$(echo $fulldomain | awk -F '://' '{print $2}')
