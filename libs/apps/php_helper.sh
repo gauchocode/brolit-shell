@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 # PHP Helper: Perform php configuration tasks.
@@ -113,11 +113,19 @@ function php_check_activated_version() {
 
 }
 
+################################################################################
+# Reconfigure PHP
+#
+# Arguments:
+#  $1 = ${php_v} - Optional
+#
+# Outputs:
+#  String with default version.
+################################################################################
+
 function php_reconfigure() {
 
-  #$1 = ${php_v} - Optional
-
-  local php_v=$1
+  local php_v="${1}"
 
   log_subsection "PHP Reconfigure"
 
@@ -130,11 +138,11 @@ function php_reconfigure() {
   if [[ -z ${php_v} ]]; then php_v="${PHP_V}"; fi
 
   log_event "info" "Moving php.ini configuration file" "false"
-  cat "${SFOLDER}/config/php/php.ini" >"/etc/php/${php_v}/fpm/php.ini"
+  cat "${BROLIT_MAIN_DIR}/config/php/php.ini" >"/etc/php/${php_v}/fpm/php.ini"
   display --indent 6 --text "- Moving php.ini configuration file" --result "DONE" --color GREEN
 
   log_event "info" "Moving php-fpm.conf configuration file" "false"
-  cat "${SFOLDER}/config/php/php-fpm.conf" >"/etc/php/${php_v}/fpm/php-fpm.conf"
+  cat "${BROLIT_MAIN_DIR}/config/php/php-fpm.conf" >"/etc/php/${php_v}/fpm/php-fpm.conf"
   display --indent 6 --text "- Moving php-fpm.conf configuration file" --result "DONE" --color GREEN
 
   # Replace string to match PHP version
@@ -156,13 +164,21 @@ function php_reconfigure() {
 
 }
 
+################################################################################
+# Set/Update php version on config
+#
+# Arguments:
+#  $1 = ${php_v}
+#  $2 = ${config_file}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function php_set_version_on_config() {
 
-  #$1 = ${php_v}
-  #$2 = ${config_file}
-
-  local php_v=$1
-  local config_file=$2
+  local php_v="${1}"
+  local config_file="${2}"
 
   local php_installed_versions
 
@@ -187,8 +203,8 @@ function php_set_version_on_config() {
   else
 
     # Log
-    log_event "error" "Setting PHP version on config file, fails."
-    log_event "debug" "Destination file '${config_file}' does not exists"
+    log_event "error" "Setting PHP version on config file, fails." "false"
+    log_event "debug" "Destination file '${config_file}' does not exists" "false"
 
     return 1
 
@@ -201,8 +217,8 @@ function php_opcode_config() {
   #$1 = ${status}            // enable or disable
   #$1 = ${config_file}       // optional
 
-  local status=$1
-  local config_file=$2
+  local status="${1}"
+  local config_file="${2}"
 
   local val
 
@@ -301,11 +317,11 @@ function php_fpm_optimizations() {
   RAM="$(grep MemTotal /proc/meminfo | awk '{print $2}' | xargs -I {} echo "scale=0; {}/1024^2" | bc)"
 
   # Calculating avg ram used by this process
-  PHP_AVG_RAM="$(ps --no-headers -o "rss,cmd" -C php-fpm"${PHP_V}" | awk '{ sum+=$1 } END { printf ("%d%s\n", sum/NR/1024,"") }')"
-  MYSQL_AVG_RAM="$(ps --no-headers -o "rss,cmd" -C mysqld | awk '{ sum+=$1 } END { printf ("%d%s\n", sum/NR/1024,"") }')"
-  NGINX_AVG_RAM="$(ps --no-headers -o "rss,cmd" -C nginx | awk '{ sum+=$1 } END { printf ("%d%s\n", sum/NR/1024,"") }')"
-  REDIS_AVG_RAM="$(ps --no-headers -o "rss,cmd" -C redis-server | awk '{ sum+=$1 } END { printf ("%d%s\n", sum/NR/1024,"") }')"
-  NETDATA_AVG_RAM="$(ps --no-headers -o "rss,cmd" -C netdata | awk '{ sum+=$1 } END { printf ("%d%s\n", sum/NR/1024,"") }')"
+  PHP_AVG_RAM="$(ps --no-headers -o "rss,cmd" -C php-fpm"${PHP_V}" | awk '{ sum+="${1}" } END { printf ("%d%s\n", sum/NR/1024,"") }')"
+  MYSQL_AVG_RAM="$(ps --no-headers -o "rss,cmd" -C mysqld | awk '{ sum+="${1}" } END { printf ("%d%s\n", sum/NR/1024,"") }')"
+  NGINX_AVG_RAM="$(ps --no-headers -o "rss,cmd" -C nginx | awk '{ sum+="${1}" } END { printf ("%d%s\n", sum/NR/1024,"") }')"
+  REDIS_AVG_RAM="$(ps --no-headers -o "rss,cmd" -C redis-server | awk '{ sum+="${1}" } END { printf ("%d%s\n", sum/NR/1024,"") }')"
+  NETDATA_AVG_RAM="$(ps --no-headers -o "rss,cmd" -C netdata | awk '{ sum+="${1}" } END { printf ("%d%s\n", sum/NR/1024,"") }')"
 
   # Show/Log Server Info
   #display --indent 6 --text "- Creating user in MySQL: ${db_user}" --result "DONE" --color GREEN
@@ -352,7 +368,7 @@ function php_fpm_optimizations() {
   PM_PROCESS_IDDLE_TIMEOUT_ORIGIN=$(cat "/etc/php/${PHP_V}/fpm/pool.d/www.conf" | grep "^${KEY} ${DELIMITER}" | cut -f2- -d"$DELIMITER")
 
   # Show/Log PHP-FPM actual config
-  #display --indent 6 --text "Getting PHP actual configuration ..."
+  # display --indent 6 --text "Getting PHP actual configuration ..."
   log_subsection "PHP actual configuration"
   display --indent 6 --text "PM_MAX_CHILDREN_ORIGIN: ${PM_MAX_CHILDREN_ORIGIN}"
   display --indent 6 --text "PM_START_SERVERS_ORIGIN: ${PM_START_SERVERS_ORIGIN}"
@@ -368,11 +384,11 @@ function php_fpm_optimizations() {
   log_event "info" "PM_MAX_REQUESTS: ${PM_MAX_REQUESTS_ORIGIN}" "false"
   log_event "info" "PM_PROCESS_IDDLE_TIMEOUT: ${PM_PROCESS_IDDLE_TIMEOUT_ORIGIN}" "false"
 
-  #Settings	Value Explanation
-  #max_children	(Total RAM - Memory used for Linux, DB, etc.) / process size
-  #start_servers	Number of CPU cores x 4
-  #min_spare_servers	Number of CPU cores x 2
-  #max_spare_servers	Same as start_servers
+  # Settings	Value Explanation
+  # max_children	(Total RAM - Memory used for Linux, DB, etc.) / process size
+  # start_servers	Number of CPU cores x 4
+  # min_spare_servers	Number of CPU cores x 2
+  # max_spare_servers	Same as start_servers
 
   PM_MAX_CHILDREN=$((("${RAM}" * 1024 - ("${MYSQL_AVG_RAM}" - "${NGINX_AVG_RAM}" - "${REDIS_AVG_RAM}" - "${NETDATA_AVG_RAM}" - "${RAM_BUFFER}")) / "${PHP_AVG_RAM}"))
   PM_START_SERVERS=$(("${CPUS}" * 4))
@@ -460,7 +476,7 @@ function php_fpm_optimizations() {
 
 function php_select_version_to_work_with() {
 
-  local php_v=$1
+  local php_v="${1}"
 
   # String to array
   IFS=' ' read -r -a php_v_array <<<"$php_v"

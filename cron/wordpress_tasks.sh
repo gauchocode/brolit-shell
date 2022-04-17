@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 
 ### Main dir check
-SFOLDER=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-SFOLDER=$(cd "$(dirname "${SFOLDER}")" && pwd)
-if [[ -z "${SFOLDER}" ]]; then
+BROLIT_MAIN_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+BROLIT_MAIN_DIR=$(cd "$(dirname "${BROLIT_MAIN_DIR}")" && pwd)
+if [[ -z "${BROLIT_MAIN_DIR}" ]]; then
   exit 1 # error; the path is not accessible
 fi
 
-# shellcheck source=${SFOLDER}/libs/commons.sh
-source "${SFOLDER}/libs/commons.sh"
+# shellcheck source=${BROLIT_MAIN_DIR}/libs/commons.sh
+source "${BROLIT_MAIN_DIR}/libs/commons.sh"
 
 ################################################################################
 
@@ -89,7 +89,7 @@ for site in ${all_sites}; do
           log_event "error" "WordPress Checksum failed!" "false"
 
           # Send notification
-          send_notification "⛔ ${VPSNAME}" "WordPress checksum failed for site ${project_name}: ${notification_text}"
+          send_notification "⛔ ${SERVER_NAME}" "WordPress checksum failed for site ${project_name}: ${notification_text}"
 
         else
 

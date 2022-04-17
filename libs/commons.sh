@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 
 ################################################################################
@@ -17,23 +17,23 @@
 function _source_all_scripts() {
 
   # Source all apps libs
-  libs_apps_path="${SFOLDER}/libs/apps"
+  libs_apps_path="${BROLIT_MAIN_DIR}/libs/apps"
   libs_apps_scripts="$(find "${libs_apps_path}" -maxdepth 1 -name '*.sh' -type f -print)"
   for f in ${libs_apps_scripts}; do source "${f}"; done
 
   # Source all local libs
-  libs_local_path="${SFOLDER}/libs/local"
+  libs_local_path="${BROLIT_MAIN_DIR}/libs/local"
   libs_local_scripts="$(find "${libs_local_path}" -maxdepth 1 -name '*.sh' -type f -print)"
   for j in ${libs_local_scripts}; do source "${j}"; done
 
   # Source utils
-  utils_path="${SFOLDER}/utils"
+  utils_path="${BROLIT_MAIN_DIR}/utils"
   utils_scripts="$(find "${utils_path}" -maxdepth 1 -name '*.sh' -type f -print)"
   for k in ${utils_scripts}; do source "${k}"; done
 
   # Load other sources
-  source "${SFOLDER}/libs/notification_controller.sh"
-  #source "${SFOLDER}/libs/storage_controller.sh"
+  source "${BROLIT_MAIN_DIR}/libs/notification_controller.sh"
+  source "${BROLIT_MAIN_DIR}/libs/storage_controller.sh"
 
   log_event "info" "Sourcing dependencies ..." "false"
   #display --indent 6 --text "- Sourcing dependencies" --result "DONE" --color GREEN
@@ -54,17 +54,13 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.1.7"
+  declare -g SCRIPT_V="3.2-rc1"
 
   # Hostname
-  declare -g VPSNAME="$HOSTNAME"
+  declare -g SERVER_NAME="$HOSTNAME"
 
   # Default directories
   declare -g BROLIT_CONFIG_PATH="/etc/brolit"
-  declare -g WSERVER="/etc/nginx"           # Webserver config files location
-  declare -g MySQL_CF="/etc/mysql"          # MySQL config files location
-  declare -g PHP_CF="/etc/php"              # PHP config files location
-  declare -g LENCRYPT_CF="/etc/letsencrypt" # Let's Encrypt config files location
 
   # Creating brolit folder
   if [[ ! -d ${BROLIT_CONFIG_PATH} ]]; then
@@ -75,28 +71,11 @@ function _setup_globals_and_options() {
   declare -g BLACKLISTED_SITES=".wp-cli,.ssh,.cert,html,phpmyadmin"
 
   # Database blacklist
-  declare -g BLACKLISTED_DATABASES="information_schema,performance_schema,mysql,sys,phpmyadmin"
+  declare -g BLACKLISTED_DATABASES="information_schema,performance_schema,mysql,sys,phpmyadmin,postgres"
 
   # MAILCOW BACKUP
   declare -g MAILCOW_DIR="/opt/mailcow-dockerized/"
-  declare -g MAILCOW_TMP_BK="${SFOLDER}/tmp/mailcow"
-
-  # Packages to watch
-  #declare -g PHP_V
-  #PHP_V="$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")"
-  #php_exit=$?
-  #if [[ ${php_exit} -eq 1 ]]; then
-  #  PACKAGES=(linux-firmware dpkg nginx "php${PHP_V}-fpm" mysql-server openssl)
-  #fi
-
-  # MySQL host and user
-  declare -g MHOST="localhost"
-  declare -g MUSER="root"
-
-  # MySQL credentials file
-  declare -g MYSQL_CONF="/root/.my.cnf"
-  declare -g MYSQL
-  declare -g MYSQLDUMP
+  declare -g MAILCOW_TMP_BK="${BROLIT_MAIN_DIR}/tmp/mailcow"
 
   # Apps globals
   declare -g TAR
@@ -106,9 +85,6 @@ function _setup_globals_and_options() {
   declare -g MAIN_VOL
   MAIN_VOL="$(df / | grep -Eo '/dev/[^ ]+')"
 
-  # Dropbox Folder Backup
-  declare -g DROPBOX_FOLDER="/"
-
   # Time Vars
   declare -g NOW
   NOW="$(date +"%Y-%m-%d")"
@@ -116,24 +92,9 @@ function _setup_globals_and_options() {
   declare -g NOWDISPLAY
   NOWDISPLAY="$(date +"%d-%m-%Y")"
 
-  declare -g DAYSAGO
-  DAYSAGO="$(date --date="${BACKUP_RETENTION_KEEP_DAILY} days ago" +"%Y-%m-%d")"
-
   # Others
   declare -g startdir=""
   declare -g menutitle="Config Selection Menu"
-
-  # Temp folders
-  declare -g TMP_DIR
-
-  TMP_DIR="${SFOLDER}/tmp"
-  # Creating temporary folders
-  if [[ ! -d ${TMP_DIR} ]]; then
-    mkdir "${TMP_DIR}"
-  fi
-  if [[ ! -d "${TMP_DIR}/${NOW}" ]]; then
-    mkdir "${TMP_DIR}/${NOW}"
-  fi
 
   # TAR
   TAR="$(command -v tar)"
@@ -141,28 +102,11 @@ function _setup_globals_and_options() {
   # FIND
   FIND="$(command -v find)"
 
-  # CERTBOT
-  CERTBOT="$(command -v certbot)"
+  # CURL (better curl to download files and getting http return codes)
+  ## Ref: https://everything.curl.dev/usingcurl/returns
+  CURL="curl --silent -L --fail --connect-timeout 3 --retry 0 -s -o /dev/null -w \"%{http_code}\""
 
-  # MySQL
-  MYSQL="$(command -v mysql)"
-  if [[ -x ${MYSQL} ]]; then
-
-    MYSQLDUMP="$(command -v mysqldump)"
-
-    if [[ -f ${MYSQL_CONF} ]]; then
-      # Append login parameters to command
-      MYSQL_ROOT="${MYSQL} --defaults-file=${MYSQL_CONF}"
-      MYSQLDUMP_ROOT="${MYSQLDUMP} --defaults-file=${MYSQL_CONF}"
-
-    fi
-
-  fi
-
-  # PHP
-  PHP="$(command -v php)"
-
-  export TAR FIND MYSQLDUMP MYSQL_ROOT MYSQLDUMP_ROOT PHP CERTBOT MySQL_CF MYSQL MYSQL_CONF DROPBOX_FOLDER MAIN_VOL TMP_DIR
+  export NOW NOWDISPLAY CURL TAR FIND MAIN_VOL
 
 }
 
@@ -289,7 +233,11 @@ function _check_scripts_permissions() {
 }
 
 # TODO: refactor this function
-function _check_server_ip() {
+function get_server_ips() {
+
+  declare -g LOCAL_IP
+  declare -g SERVER_IP
+  declare -g SERVER_IPv6
 
   # LOCAL IP (if server has configured a floating ip, it will return this)
   LOCAL_IP="$(/sbin/ifconfig eth0 | grep -w 'inet ' | awk '{print $2}')" # Could be a floating ip
@@ -306,8 +254,8 @@ function _check_server_ip() {
 
   log_event "info" "SERVER IPv4: ${SERVER_IP}" "false"
   log_event "info" "SERVER IPv6: ${SERVER_IPv6}" "false"
-  display --indent 2 --text "- Getting server IP" --result "DONE" --color GREEN
-  display --indent 4 --text "${SERVER_IP}"
+
+  export LOCAL_IP SERVER_IP SERVER_IPv6
 
 }
 
@@ -359,7 +307,7 @@ function _check_distro() {
 # Script init
 #
 # Arguments:
-#  ${1} = ${SKIPTESTS}          - 1 or 0 (enabled/disabled)
+#  ${1} = ${SKIPTESTS} - 1 or 0 (enabled/disabled)
 #
 # Outputs:
 #   global vars
@@ -383,12 +331,12 @@ function script_init() {
 
   # Log
   timestamp="$(date +%Y%m%d_%H%M%S)"
-  path_log="${SFOLDER}/log"
-  if [[ ! -d "${SFOLDER}/log" ]]; then
-    mkdir "${SFOLDER}/log"
+  path_log="${BROLIT_MAIN_DIR}/log"
+  if [[ ! -d "${BROLIT_MAIN_DIR}/log" ]]; then
+    mkdir "${BROLIT_MAIN_DIR}/log"
   fi
   # Reports
-  path_reports="${SFOLDER}/reports"
+  path_reports="${BROLIT_MAIN_DIR}/reports"
   if [[ ! -d "${path_reports}" ]]; then
     mkdir "${path_reports}"
   fi
@@ -452,8 +400,8 @@ function script_init() {
   # Checking script permissions
   _check_scripts_permissions
 
-  # Checking server IP
-  _check_server_ip
+  # Get server IPs
+  get_server_ips
 
   # Clean old log files
   find "${path_log}" -name "*.log" -type f -mtime +7 -print -delete >>"${LOG}"
@@ -469,9 +417,9 @@ function script_init() {
   brolit_configuration_load "${BROLIT_CONFIG_FILE}"
 
   # EXPORT VARS
-  export SCRIPT_V VPSNAME BROLIT_CONFIG_PATH SFOLDER BLACKLISTED_SITES BLACKLISTED_DATABASES WSERVER PACKAGES PHP_CF
-  export LENCRYPT_CF DROPBOX_FOLDER MAILCOW_DIR MAILCOW_TMP_BK MHOST MUSER NOW NOWDISPLAY DAYSAGO
-  export DISK_U ONE_FILE_BK LOCAL_IP SERVER_IP SERVER_IPv6 NOTIFICATION_EMAIL_SMTP_SERVER NOTIFICATION_EMAIL_SMTP_PORT NOTIFICATION_EMAIL_SMTP_TLS NOTIFICATION_EMAIL_SMTP_USER NOTIFICATION_EMAIL_SMTP_UPASS
+  export SCRIPT_V SERVER_NAME BROLIT_CONFIG_PATH BROLIT_MAIN_DIR BLACKLISTED_SITES BLACKLISTED_DATABASES PACKAGES
+  export LENCRYPT_CONF_DIR MAILCOW_DIR MAILCOW_TMP_BK
+  export DISK_U ONE_FILE_BK NOTIFICATION_EMAIL_SMTP_SERVER NOTIFICATION_EMAIL_SMTP_PORT NOTIFICATION_EMAIL_SMTP_TLS NOTIFICATION_EMAIL_SMTP_USER NOTIFICATION_EMAIL_SMTP_UPASS
   export LOG DEBUG SKIPTESTS EXEC_TYPE
   export BROLIT_CONFIG_FILE
 
@@ -507,7 +455,7 @@ function customize_ubuntu_login_message() {
   chmod -x /etc/update-motd.d/*
 
   # Copy new login message
-  cp "${SFOLDER}/config/motd/00-header" "/etc/update-motd.d"
+  cp "${BROLIT_MAIN_DIR}/config/motd/00-header" "/etc/update-motd.d"
 
   # Enable new message
   chmod +x "/etc/update-motd.d/00-header"
@@ -547,7 +495,7 @@ function install_script_aliases() {
   log_subsection "Bash Aliases"
 
   if [[ ! -f ~/.bash_aliases ]]; then
-    cp "${SFOLDER}/aliases.sh" ~/.bash_aliases
+    cp "${BROLIT_MAIN_DIR}/aliases.sh" ~/.bash_aliases
     display --indent 2 --text "- Installing script aliases" --result "DONE" --color GREEN
     display --indent 4 --text "Please now run: source ~/.bash_aliases" --tcolor CYAN
 
@@ -560,7 +508,7 @@ function install_script_aliases() {
 
     display --indent 2 --text "- Backup old aliases" --result "DONE" --color GREEN
 
-    cp "${SFOLDER}/aliases.sh" ~/.bash_aliases
+    cp "${BROLIT_MAIN_DIR}/aliases.sh" ~/.bash_aliases
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -594,7 +542,7 @@ function install_script_aliases() {
 
 function validator_email_format() {
 
-  local email=$1
+  local email="${1}"
 
   if [[ ! "${email}" =~ ^[A-Za-z0-9._%+-]+@[[:alnum:].-]+\.[A-Za-z]{2,63}$ ]]; then
 
@@ -692,7 +640,7 @@ function die() {
   # $1 = {msg}
   # $2 = {code}
 
-  local msg=$1
+  local msg="${1}"
   local code=${2-1} # default exit status 1
 
   log_event "info" "${msg}" "false"
@@ -717,17 +665,23 @@ function get_ubuntu_version() {
 
 }
 
-# TODO: refactor this
-declare -a checklist_array
+################################################################################
+# Array to checklist
+#
+# Arguments:
+#   $1 = {array}
+#
+# Outputs:
+#   ${checklist_array}
+################################################################################
 
 function array_to_checklist() {
 
-  # Parameters
-  # $1 = {array}
-
-  local array=$1
+  local array="${1}"
 
   local i
+
+  declare -a checklist_array
 
   i=0
   for option in ${array}; do
@@ -741,6 +695,8 @@ function array_to_checklist() {
 
   done
 
+  export checklist_array
+
 }
 
 ################################################################################
@@ -751,47 +707,47 @@ function array_to_checklist() {
 #   $2= ${startdir}
 #
 # Outputs:
-#   $filename and $filepath
+#   ${filename} and ${filepath}
 ################################################################################
 
 function file_browser() {
 
-  local menutitle=$1
-  local startdir=$2
+  local menutitle="${1}"
+  local startdir="${2}"
 
   local dir_list
 
-  if [ -z "${startdir}" ]; then
+  if [[ -z ${startdir} ]]; then
     dir_list=$(ls -lhp | awk -F ' ' ' { print $9 " " $5 } ')
   else
     cd "${startdir}"
     dir_list=$(ls -lhp | awk -F ' ' ' { print $9 " " $5 } ')
   fi
-  curdir=$(pwd)
-  if [ "$curdir" == "/" ]; then # Check if you are at root folder
+  curdir="$(pwd)"
+  if [[ "${curdir}" == "/" ]]; then # Check if you are at root folder
     selection=$(whiptail --title "${menutitle}" \
       --menu "Select a Folder or Tab Key\n$curdir" 0 0 0 \
       --cancel-button Cancel \
-      --ok-button Select $dir_list 3>&1 1>&2 2>&3)
+      --ok-button Select "${dir_list}" 3>&1 1>&2 2>&3)
   else # Not Root Dir so show ../ BACK Selection in Menu
     selection=$(whiptail --title "${menutitle}" \
       --menu "Select a Folder or Tab Key\n$curdir" 0 0 0 \
       --cancel-button Cancel \
-      --ok-button Select ../ BACK $dir_list 3>&1 1>&2 2>&3)
+      --ok-button Select ../ BACK "${dir_list}" 3>&1 1>&2 2>&3)
   fi
   RET=$?
-  if [ $RET -eq 1 ]; then # Check if User Selected Cancel
+  if [[ $RET -eq 1 ]]; then # Check if User Selected Cancel
     return 1
-  elif [ $RET -eq 0 ]; then
-    if [[ -f "$selection" ]]; then # Check if File Selected
-      if (whiptail --title "Confirm Selection" --yesno "Selection : $selection\n" 0 0 \
+  elif [[ $RET -eq 0 ]]; then
+    if [[ -f "${selection}" ]]; then # Check if File Selected
+      if (whiptail --title "Confirm Selection" --yesno "Selection : ${selection}\n" 0 0 \
         --yes-button "Confirm" \
         --no-button "Retry"); then
 
         # Return 1
-        filename="$selection"
+        filename="${selection}"
         # Return 2
-        filepath="$curdir" # Return full filepath and filename as selection variables
+        filepath="${curdir}" # Return full filepath and filename as selection variables
 
       fi
 
@@ -814,12 +770,8 @@ function file_browser() {
 
 function directory_browser() {
 
-  # Parameters
-  # $1= ${menutitle}
-  # $2= ${startdir}
-
-  local menutitle=$1
-  local startdir=$2
+  local menutitle="${1}"
+  local startdir="${2}"
 
   local dir_list
 
@@ -830,16 +782,16 @@ function directory_browser() {
     dir_list=$(ls -lhp | awk -F ' ' ' { print $9 " " $5 } ')
   fi
   curdir=$(pwd)
-  if [ "$curdir" == "/" ]; then # Check if you are at root folder
+  if [ "${curdir}" == "/" ]; then # Check if you are at root folder
     selection=$(whiptail --title "${menutitle}" \
       --menu "Select a Folder or Tab Key\n$curdir" 0 0 0 \
       --cancel-button Cancel \
-      --ok-button Select $dir_list 3>&1 1>&2 2>&3)
+      --ok-button Select ${dir_list} 3>&1 1>&2 2>&3)
   else # Not Root Dir so show ../ BACK Selection in Menu
     selection=$(whiptail --title "${menutitle}" \
-      --menu "Select a Folder or Tab Key\n$curdir" 0 0 0 \
+      --menu "Select a Folder or Tab Key\n${curdir}" 0 0 0 \
       --cancel-button Cancel \
-      --ok-button Select ../ BACK $dir_list 3>&1 1>&2 2>&3)
+      --ok-button Select ../ BACK ${dir_list} 3>&1 1>&2 2>&3)
   fi
   RET=$?
   if [ $RET -eq 1 ]; then # Check if User Selected Cancel
@@ -877,10 +829,7 @@ function directory_browser() {
 
 function get_all_directories() {
 
-  # Parameters
-  # $1 = ${PROJECTS_PATH}
-
-  local main_dir=$1
+  local main_dir="${1}"
 
   first_level_dir="$(find "${main_dir}" -maxdepth 1 -type d)"
 
@@ -903,9 +852,11 @@ function get_all_directories() {
 
 function copy_files() {
 
-  local source_path=$1
-  local destination_path=$2
-  local excluded_path=$3
+  local source_path="${1}"
+  local destination_path="${2}"
+  local excluded_path="${3}"
+
+  log_event "info" "Copying files from ${source_path} to ${destination_path}..." "false"
 
   if [[ ${excluded_path} != "" ]]; then
 
@@ -914,6 +865,20 @@ function copy_files() {
   else
 
     rsync -ax "${source_path}" "${destination_path}"
+
+  fi
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    clear_previous_lines "1"
+    display --indent 6 --text "- Copying files to ${destination_path}" --result "DONE" --color GREEN
+
+  else
+
+    clear_previous_lines "2"
+    display --indent 6 --text "- Copying files to ${destination_path}" --result "FAIL" --color RED
+    return 1
 
   fi
 
@@ -932,8 +897,8 @@ function copy_files() {
 
 function move_files() {
 
-  local source_path=$1
-  local destination_path=$2
+  local source_path="${1}"
+  local destination_path="${2}"
 
   log_event "info" "Moving files from ${source_path} to ${destination_path}..." "false"
   display --indent 6 --text "- Moving files to ${destination_path}"
@@ -949,7 +914,7 @@ function move_files() {
 
   else
 
-    clear_previous_lines "1"
+    clear_previous_lines "2"
     display --indent 6 --text "- Moving files to ${destination_path}" --result "FAIL" --color RED
     return 1
 
@@ -969,7 +934,7 @@ function move_files() {
 
 function calculate_disk_usage() {
 
-  local disk_volume=$1
+  local disk_volume="${1}"
 
   local disk_u
 
@@ -995,11 +960,11 @@ function calculate_disk_usage() {
 
 function count_directories_on_directory() {
 
-  local dir_path=$1
+  local dir_path="${1}"
 
   local dir_count
 
-  dir_count="$(find "${dir_path}" -maxdepth 1 -type d | wc -l)"
+  dir_count="$(ls -l "${dir_path}" | grep -c ^d)"
 
   log_event "info" "Number of directories in ${dir_path}: ${dir_count}" "false"
 
@@ -1020,7 +985,7 @@ function count_directories_on_directory() {
 
 function count_files_on_directory() {
 
-  local dir_path=$1
+  local dir_path="${1}"
 
   local dir_count
 
@@ -1045,7 +1010,7 @@ function count_files_on_directory() {
 
 function string_remove_spaces() {
 
-  local string=$1
+  local string="${1}"
 
   # Return
   echo "${string//[[:blank:]]/}"
@@ -1072,7 +1037,7 @@ function string_remove_special_chars() {
   # The second one translates uppercase characters to lowercase.
   # The third get rid of characters like \r \n or ^C.
 
-  local string=$1
+  local string="${1}"
 
   # Return
   echo "${string}" | tr -dc ".[:alnum:]-\n\r" # Let '.' and '-' chars
@@ -1091,10 +1056,7 @@ function string_remove_special_chars() {
 
 function string_remove_color_chars() {
 
-  # Parameters
-  # $1 = ${string}
-
-  local string=$1
+  local string="${1}"
 
   # Text Styles
   declare -a text_styles=("${NORMAL}" "${BOLD}" "${ITALIC}" "${UNDERLINED}" "${INVERTED}")
@@ -1166,9 +1128,9 @@ function string_remove_color_chars() {
 
 function change_ownership() {
 
-  local user=$1
-  local group=$2
-  local path=$3
+  local user="${1}"
+  local group="${2}"
+  local path="${3}"
 
   # Command
   chown -R "${user}":"${group}" "${path}"
@@ -1188,12 +1150,24 @@ function change_ownership() {
     log_event "error" "Changing ownership of ${path} to ${user}:${group}" "false"
     log_event "debug" "Command executed: chown -R ${user}:${group} ${path}" "false"
 
+    clear_previous_lines "1"
     display --indent 6 --text "- Changing directory ownership" --result FAIL --color RED
 
     return 1
 
   fi
+
 }
+
+################################################################################
+# Prompt return or finish
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   none
+################################################################################
 
 function prompt_return_or_finish() {
 
@@ -1227,12 +1201,19 @@ function prompt_return_or_finish() {
 
 }
 
+################################################################################
+# Prompt return or finish
+#
+# Arguments:
+#   $1 = ${file_with_path}
+#
+# Outputs:
+#   $file_name
+################################################################################
+
 function extract_filename_from_path() {
 
-  # Parameters
-  # $1 = ${file_with_path}
-
-  local file_with_path=$1
+  local file_with_path="${1}"
 
   local file_name
 
@@ -1255,17 +1236,14 @@ function extract_filename_from_path() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-# TODO: need more testing
-
 function decompress() {
 
-  local file_path=$1
-  local directory_to_extract=$2
-  local compress_type=$3
+  local file_path="${1}"
+  local directory_to_extract="${2}"
+  local compress_type="${3}"
 
   # Get filename and file extension
   filename=$(basename -- "${file_path}")
-  #file_extension="${filename##*.}"
   filename="${filename%.*}"
 
   # Log
@@ -1354,14 +1332,15 @@ function decompress() {
 
     # Log
     log_event "error" "${file_path} is not a valid file" "false"
+    clear_previous_lines "1"
     display --indent 6 --text "- Extracting compressed file" --result "FAIL" --color RED
     display --indent 8 --text "${file_path} is not a valid file" --tcolor RED
     return 1
 
   fi
 
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
+  #exitstatus=$?
+  if [[ ${PIPESTATUS[1]} -eq 0 ]]; then
 
     clear_previous_lines "2"
 
@@ -1381,12 +1360,24 @@ function decompress() {
 
 }
 
+################################################################################
+# Compress files or directories
+#
+# Arguments:
+#   $1 = ${file_path} - File to uncompress or extract
+#   $2 = ${directory_to_extract} - Dir to uncompress file
+#   $3 = ${compress_type} - Optional: compress-program (ex: lbzip2)
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function compress() {
 
-  local backup_base_dir=$1
-  local to_backup=$2 # could be a file or a directory. Ex: database.sql or foldername
-  local file_output=$3
-  #local compress_type=$4
+  local backup_base_dir="${1}"
+  local to_backup="${2}" # could be a file or a directory. Ex: database.sql or foldername
+  local file_output="${3}"
+  #local compress_type="${4}"
 
   # Only for better displaying
   if [[ ${to_backup} == "." ]]; then
@@ -1396,18 +1387,16 @@ function compress() {
   fi
 
   # Log
-  log_event "info" "Compressing ${to_backup_string} ..." "false"
   display --indent 6 --text "- Compressing ${to_backup_string}"
-
-  log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | lbzip2 >\"${file_output}\"" "false"
+  log_event "info" "Compressing ${to_backup_string} ..." "false"
+  log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" --exclude="*.log" -h \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | lbzip2 >\"${file_output}\"" "false"
 
   # TAR
-  ${TAR} -cf - --directory="${backup_base_dir}" "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | lbzip2 >"${file_output}"
+  ## -h will follow symlinks
+  ${TAR} -cf - --directory="${backup_base_dir}" --exclude="*.log" -h "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | lbzip2 >"${file_output}"
 
-  # Clear pipe output
+  # Log
   clear_previous_lines "2"
-
-  # Test backup file
   log_event "info" "Testing backup file: ${file_output}" "false"
   display --indent 6 --text "- Testing backup file"
 
@@ -1424,12 +1413,6 @@ function compress() {
     # Get file size
     backup_file_size="$(du --apparent-size -s -k "${file_output}" | awk '{ print $1 }' | awk '{printf "%.3f MiB %s\n", $1/1024, $2}')"
 
-    # Log
-    display --indent 6 --text "- Compressing backup file" --result "DONE" --color GREEN
-    display --indent 8 --text "Final backup size: ${YELLOW}${BOLD}${backup_file_size}${ENDCOLOR}"
-
-    log_event "info" "Backup ${file_output} created, final size: ${backup_file_size}" "false"
-
     # Return
     echo "${backup_file_size}"
 
@@ -1437,7 +1420,7 @@ function compress() {
 
   else
 
-    display --indent 6 --text "- Compressing backup file" --result "FAIL" --color RED
+    display --indent 6 --text "- Compressing ${to_backup_string}" --result "FAIL" --color RED
     display --indent 8 --text "Something went wrong making backup file: ${file_output}" --tcolor RED
 
     log_event "error" "Something went wrong making backup file: ${file_output}" "false"
@@ -1459,10 +1442,10 @@ function compress() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function install_crontab_script() {
+function brolit_cronjob_install() {
 
-  local script=$1
-  local scheduled_time=$2
+  local script="${1}"
+  local scheduled_time="${2}"
 
   local cron_file
 
@@ -1488,7 +1471,7 @@ function install_crontab_script() {
   grep_result=$?
   if [[ ${grep_result} != 0 ]]; then
 
-    log_event "info" "Updating cron job for script: ${script}"
+    log_event "info" "Updating cron job for script: ${script}" "false"
     /bin/echo "${scheduled_time} ${script}" >>"${cron_file}"
 
     display --indent 2 --text "- Updating cron job" --result DONE --color GREEN
@@ -1496,13 +1479,59 @@ function install_crontab_script() {
     return 0
 
   else
-    log_event "warning" "Script already installed"
+    log_event "warning" "Script already installed" "false"
     display --indent 2 --text "- Updating cron job" --result FAIL --color YELLOW
     display --indent 4 --text "Script already installed"
 
     return 1
 
   fi
+
+}
+
+################################################################################
+# SSH Keygen
+#
+# Arguments:
+#   $1 = ${keydir}
+#
+# Outputs:
+#   $key
+################################################################################
+
+function brolit_ssh_keygen() {
+
+  local keydir="${1}"
+
+  if [[ -f "${keydir}/identity" ]]; then
+
+    # Log
+    log_event "warning" "A sshkey already exists, showing the content:" "false"
+    display --indent 6 --text "- Generating ssh key" --result SKIPPED --color GREEN
+    display --indent 8 --text "A sshkey already exists. Showing key:"
+
+  else
+
+    # Log
+    log_event "info" "Generating ssh key" "false"
+
+    mkdir "${keydir}"
+
+    # Key generation
+    ssh-keygen -b 2048 -f identity -t rsa -f "${keydir}/identity"
+
+    # Copy credentials
+    cat "${keydir}/identity.pub" >>~/.ssh/authorized_keys
+
+    display --indent 6 --text "- Generating ssh key" --result DONE --color GREEN
+    display --indent 8 --text "Generated key:"
+
+  fi
+
+  # Show identity content
+  cat "${keydir}/identity"
+
+  log_break "true"
 
 }
 
@@ -1559,24 +1588,24 @@ function menu_main_options() {
     fi
 
     if [[ ${chosen_type} == *"04"* ]]; then
-      # shellcheck source=${SFOLDER}/utils/database_manager.sh
-      source "${SFOLDER}/utils/database_manager.sh"
+      # shellcheck source=${BROLIT_MAIN_DIR}/utils/database_manager.sh
+      source "${BROLIT_MAIN_DIR}/utils/database_manager.sh"
 
       log_section "Database Manager"
-      database_manager_menu   
+      database_manager_menu
 
     fi
     if [[ ${chosen_type} == *"05"* ]]; then
-      # shellcheck source=${SFOLDER}/utils/wpcli_manager.sh
-      source "${SFOLDER}/utils/wpcli_manager.sh"
+      # shellcheck source=${BROLIT_MAIN_DIR}/utils/wpcli_manager.sh
+      source "${BROLIT_MAIN_DIR}/utils/wpcli_manager.sh"
 
       log_section "WP-CLI Manager"
       wpcli_manager
 
     fi
     if [[ ${chosen_type} == *"06"* ]]; then
-      # shellcheck source=${SFOLDER}/utils/certbot_manager.sh
-      source "${SFOLDER}/utils/certbot_manager.sh"
+      # shellcheck source=${BROLIT_MAIN_DIR}/utils/certbot_manager.sh
+      source "${BROLIT_MAIN_DIR}/utils/certbot_manager.sh"
 
       log_section "Certbot Manager"
       certbot_manager_menu
@@ -1586,8 +1615,8 @@ function menu_main_options() {
 
       if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
 
-        # shellcheck source=${SFOLDER}/utils/cloudflare_manager.sh
-        source "${SFOLDER}/utils/cloudflare_manager.sh"
+        # shellcheck source=${BROLIT_MAIN_DIR}/utils/cloudflare_manager.sh
+        source "${BROLIT_MAIN_DIR}/utils/cloudflare_manager.sh"
 
         log_section "Cloudflare Manager"
         cloudflare_manager_menu
@@ -1649,12 +1678,23 @@ function menu_config_changes_detected() {
   local app_setup="${1}"
   local bypass_prompt="${2}"
 
+  if [[ ${CHECKPKGS} == "false" ]]; then
+
+    # Log
+    display --indent 6 --text "- Detecting changes on ${app_setup} configuration" --result "SKIPPED" --color YELLOW
+    log_event "debug" "Changes in brolit_conf.json for package ${app_setup} were detected, but CHECKPKGS is set to false." "false"
+
+    return 1
+
+  fi
+
   if [[ ${bypass_prompt} == "true" ]]; then
 
-    log_event "debug" "Bypassing prompt..." "false"
+    # Log
+    display --indent 6 --text "- Detecting changes on ${app_setup} configuration" --result "DONE" --color GREEN
 
     # shellcheck source=../utils/server_setup.sh
-    source "${SFOLDER}/utils/server_setup.sh"
+    source "${BROLIT_MAIN_DIR}/utils/server_setup.sh"
 
     # Check global to prevent running the script twice
     if [[ ${SERVER_PREPARED} == "false" ]]; then
@@ -1671,7 +1711,7 @@ function menu_config_changes_detected() {
     local first_run_string
     local chosen_first_run_options
 
-    first_run_string+="\n Some changes in the brolit_conf.json where made.\n"
+    first_run_string+="\n Changes in the brolit_conf.json where detected.\n"
     first_run_string+=" What do you want to do?:\n"
     first_run_string+="\n"
 
@@ -1686,7 +1726,7 @@ function menu_config_changes_detected() {
       if [[ ${chosen_first_run_options} == *"01"* ]]; then
 
         # shellcheck source=../utils/server_setup.sh
-        source "${SFOLDER}/utils/server_setup.sh"
+        source "${BROLIT_MAIN_DIR}/utils/server_setup.sh"
 
         # Check global to prevent running the script twice
         if [[ ${SERVER_PREPARED} == "false" ]]; then
@@ -1744,7 +1784,7 @@ function menu_cron_script_tasks() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        install_crontab_script "${SFOLDER}/cron/backups_tasks.sh" "${scheduled_time}"
+        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/backups_tasks.sh" "${scheduled_time}"
 
       fi
 
@@ -1757,7 +1797,7 @@ function menu_cron_script_tasks() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        install_crontab_script "${SFOLDER}/cron/optimizer_tasks.sh" "${scheduled_time}"
+        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/optimizer_tasks.sh" "${scheduled_time}"
 
       fi
 
@@ -1770,7 +1810,7 @@ function menu_cron_script_tasks() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        install_crontab_script "${SFOLDER}/cron/wordpress_tasks.sh" "${scheduled_time}"
+        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/wordpress_tasks.sh" "${scheduled_time}"
 
       fi
 
@@ -1783,7 +1823,7 @@ function menu_cron_script_tasks() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        install_crontab_script "${SFOLDER}/cron/security_tasks.sh" "${scheduled_time}"
+        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/security_tasks.sh" "${scheduled_time}"
 
       fi
 
@@ -1796,7 +1836,7 @@ function menu_cron_script_tasks() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        install_crontab_script "${SFOLDER}/cron/uptime_tasks.sh" "${scheduled_time}"
+        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/uptime_tasks.sh" "${scheduled_time}"
 
       fi
 
@@ -1809,7 +1849,7 @@ function menu_cron_script_tasks() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        install_crontab_script "${SFOLDER}/cron/updater.sh" "${scheduled_time}"
+        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/updater.sh" "${scheduled_time}"
 
       fi
 
@@ -1875,7 +1915,7 @@ function show_help() {
 
 function tasks_handler() {
 
-  local task=$1
+  local task="${1}"
 
   case ${task} in
 
@@ -1924,6 +1964,16 @@ function tasks_handler() {
   aliases-install)
 
     install_script_aliases
+
+    exit
+    ;;
+
+  ssh-keygen)
+
+    if [[ -z ${STASK} ]]; then
+      keydir=/root/pem
+    fi
+    brolit_ssh_keygen "${keydir}"
 
     exit
     ;;
@@ -1989,62 +2039,62 @@ function flags_handler() {
 
     -e | --env)
       shift
-      ENV=${1}
+      ENV="${1}"
       export ENV
       ;;
 
     -sl | --slog)
       shift
-      SLOG=${1}
+      SLOG="${1}"
       export SLOG
       ;;
 
     -t | --task)
       shift
-      TASK=${1}
+      TASK="${1}"
       export TASK
       ;;
 
     -st | --subtask)
       shift
-      STASK=${1}
+      STASK="${1}"
       export STASK
       ;;
 
     -tv | --task-value)
       shift
-      TVALUE=${1}
+      TVALUE="${1}"
       export TVALUE
       ;;
 
     # PROJECT
     -s | --site)
       shift
-      SITE=${1}
+      SITE="${1}"
       export SITE
       ;;
 
     -pn | --pname)
       shift
-      PNAME=${1}
+      PNAME="${1}"
       export PNAME
       ;;
 
     -pt | --ptype)
       shift
-      PTYPE=${1}
+      PTYPE="${1}"
       export PTYPE
       ;;
 
     -ps | --pstate)
       shift
-      PSTATE=${1}
+      PSTATE="${1}"
       export PSTATE
       ;;
 
     -do | --domain)
       shift
-      DOMAIN=${1}
+      DOMAIN="${1}"
       export DOMAIN
       ;;
 
@@ -2052,31 +2102,31 @@ function flags_handler() {
 
     -db | --dbname)
       shift
-      DBNAME=${1}
+      DBNAME="${1}"
       export DBNAME
       ;;
 
     -dbn | --dbname-new)
       shift
-      DBNAME_N=${1}
+      DBNAME_N="${1}"
       export DBNAME_N
       ;;
 
     -dbs | --dbstage)
       shift
-      DBSTAGE=${1}
+      DBSTAGE="${1}"
       export DBSTAGE
       ;;
 
     -dbu | --dbuser)
       shift
-      DBUSER=${1}
+      DBUSER="${1}"
       export DBUSER
       ;;
 
     -dbup | --dbuser-psw)
       shift
-      DBUSERPSW=${1}
+      DBUSERPSW="${1}"
       export DBUSERPSW
       ;;
 

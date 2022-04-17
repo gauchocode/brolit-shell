@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 #############################################################################
 
 function cloudflare_manager_menu() {
@@ -65,7 +65,7 @@ function cloudflare_manager_menu() {
 
       if [[ ${exitstatus} = 0 ]]; then
 
-        root_domain="$(get_root_domain "${dns_entry}")"
+        root_domain="$(domain_get_root "${dns_entry}")"
 
         cur_ip="${SERVER_IP}"
 
@@ -84,7 +84,7 @@ function cloudflare_manager_menu() {
 
       if [[ ${exitstatus} = 0 ]]; then
 
-        root_domain="$(get_root_domain "${dns_entry}")"
+        root_domain="$(domain_get_root "${dns_entry}")"
 
         cur_ip="${SERVER_IP}"
 
@@ -151,7 +151,7 @@ function cloudflare_manager_menu() {
 
       if [[ ${exitstatus} = 0 ]]; then
 
-        root_domain="$(get_root_domain "${dns_entry}")"
+        root_domain="$(domain_get_root "${dns_entry}")"
 
         cur_ip="${SERVER_IP}"
 
@@ -170,7 +170,7 @@ function cloudflare_manager_menu() {
 
       if [[ ${exitstatus} = 0 ]]; then
 
-        root_domain="$(get_root_domain "${dns_entry}")"
+        root_domain="$(domain_get_root "${dns_entry}")"
 
         cur_ip="${SERVER_IP}"
 
@@ -189,7 +189,7 @@ function cloudflare_manager_menu() {
 
       if [[ ${exitstatus} = 0 ]]; then
 
-        root_domain="$(get_root_domain "${dns_entry}")"
+        root_domain="$(domain_get_root "${dns_entry}")"
 
         cloudflare_delete_record "${root_domain}" "${dns_entry}" "A"
 
@@ -208,7 +208,7 @@ function cloudflare_manager_menu() {
 
 function cloudflare_tasks_handler() {
 
-  local subtask=$1
+  local subtask="${1}"
 
   log_subsection "Cloudflare Manager"
 
@@ -253,7 +253,7 @@ function cloudflare_ask_rootdomain() {
   # Parameters
   # $1 = ${root_domain} (could be empty)
 
-  local root_domain=$1
+  local root_domain="${1}"
 
   if [[ -z "${root_domain}" ]]; then
 
@@ -288,7 +288,7 @@ function cloudflare_ask_subdomains() {
   # Parameters
   # $1 = ${subdomains} optional to select default option (could be empty)
 
-  local subdomains=$1
+  local subdomains="${1}"
 
   subdomains="$(whiptail --title "Cloudflare Subdomains" --inputbox "Insert the subdomains you want to update in Cloudflare (comma separated). Example: www.broobe.com,broobe.com" 10 60 "${DOMAIN}" 3>&1 1>&2 2>&3)"
   exitstatus=$?

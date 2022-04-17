@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 #############################################################################
 
 function test_mail_certificates_section() {
@@ -13,13 +13,13 @@ function test_mail_certificates_section() {
 
     mail_certificates_section
 
-    CERT_MAIL="${TMP_DIR}/cert-${NOW}.mail"
+    CERT_MAIL="${BROLIT_TMP_DIR}/cert-${NOW}.mail"
     CERT_MAIL_VAR=$(<"${CERT_MAIL}")
 
     # Preparing email to send
     log_event "info" "Sending Email to ${NOTIFICATION_EMAIL_MAILA} ..." "false"
 
-    email_subject="${STATUS_ICON_D} [${NOWDISPLAY}] - Cert Expiration Info on ${VPSNAME}"
+    email_subject="${STATUS_ICON_D} [${NOWDISPLAY}] - Cert Expiration Info on ${SERVER_NAME}"
     email_content="${HTMLOPEN} ${BODY_SRV} ${CERT_MAIL_VAR} ${MAIL_FOOTER}"
 
     # Sending email notification
@@ -40,7 +40,7 @@ function test_mail_package_section() {
     # Preparing email to send
     log_event "info" "Sending Email to ${NOTIFICATION_EMAIL_MAILA} ..." "false"
 
-    email_subject="${EMAIL_STATUS} [${NOWDISPLAY}] Packages Status Info on ${VPSNAME}"
+    email_subject="${EMAIL_STATUS} [${NOWDISPLAY}] Packages Status Info on ${SERVER_NAME}"
     email_content="${HTMLOPEN} ${BODY_SRV} ${PKG_MAIL_VAR} ${MAIL_FOOTER}"
 
     # Sending email notification

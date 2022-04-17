@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 # Netdata Installer
@@ -27,7 +27,7 @@
 
 function nginx_installer() {
 
-    local nginx_version=$1
+    local nginx_version="${1}"
 
     package_is_installed "nginx"
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 # Security Helper: Perform security actions.
@@ -22,7 +22,7 @@
 
 function security_clamav_scan() {
 
-  local directory=$1
+  local directory="${1}"
 
   local timestamp
   local report_file
@@ -41,7 +41,7 @@ function security_clamav_scan() {
   display --indent 6 --text "- Searching for malware"
   log_event "info" "Running clamscan on ${directory}" "false"
 
-  report_file="${SFOLDER}/reports/clamav-results-${timestamp}.log"
+  report_file="${BROLIT_MAIN_DIR}/reports/clamav-results-${timestamp}.log"
 
   # Run on specific directory with parameters:
   # -r recursive (Scan subdirectories recursively)
@@ -96,7 +96,7 @@ function security_clamav_scan() {
 
 function security_custom_scan() {
 
-  local directory=$1
+  local directory="${1}"
 
   log_event "info" "Running custom malware scanner" "false"
   display --indent 2 --text "- Running custom malware scanner"

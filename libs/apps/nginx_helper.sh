@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 # Nginx Helper: Perform nginx actions.
@@ -23,10 +23,10 @@
 
 function nginx_server_create() {
 
-    local project_domain=$1
-    local project_type=$2
-    local server_type=$3
-    local redirect_domains=$4
+    local project_domain="${1}"
+    local project_type="${2}"
+    local server_type="${3}"
+    local redirect_domains="${4}"
 
     local debug
 
@@ -57,7 +57,7 @@ function nginx_server_create() {
         nginx_server_file="${WSERVER}/sites-available/${project_domain}"
 
         # Copy config from template file
-        cp "${SFOLDER}/config/nginx/sites-available/${project_type}_${server_type}" "${nginx_server_file}"
+        cp "${BROLIT_MAIN_DIR}/config/nginx/sites-available/${project_type}_${server_type}" "${nginx_server_file}"
 
         # Symbolic link
         ln -s "${nginx_server_file}" "${WSERVER}/sites-enabled/${project_domain}"
@@ -65,7 +65,9 @@ function nginx_server_create() {
         # Search and replace domain.com string with correct project_domain
         sed -i "s/domain.com/${project_domain}/g" "${nginx_server_file}"
 
-        display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
+        # Log
+        display --indent 6 --text "- Creating nginx server config" --result DONE --color GREEN
+        display --indent 8 --text "Using '${server_type}' template"
 
         ;;
 
@@ -78,7 +80,15 @@ function nginx_server_create() {
         nginx_server_file_link="${WSERVER}/sites-enabled/${redirect_domains}"
 
         # Copy config from template file
-        cp "${SFOLDER}/config/nginx/sites-available/${project_type}_${server_type}" "${nginx_server_file}"
+        cp "${BROLIT_MAIN_DIR}/config/nginx/sites-available/${project_type}_${server_type}" "${nginx_server_file}"
+
+        # -L returns true if the "file" exists and is a symbolic link
+        if [[ -L ${nginx_server_file_link} ]]; then
+
+            # Remove previous symbolic link
+            rm "${nginx_server_file_link}"
+
+        fi
 
         # Creating symbolic link
         ln -s "${nginx_server_file}" "${nginx_server_file_link}"
@@ -89,14 +99,17 @@ function nginx_server_create() {
         # Search and replace domain.com string with correct project_domain
         sed -i "s/domain.com/${project_domain}/g" "${nginx_server_file}"
 
-        display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result DONE --color GREEN
+        # Log
+        display --indent 6 --text "- Creating nginx server config" --result DONE --color GREEN
+        display --indent 8 --text "Using '${server_type}' template"
 
         ;;
 
     multi_domain)
 
         log_event "info" "TODO: implements multidomain support" "false"
-        display --indent 6 --text "- Creating nginx server config from '${server_type}' template" --result FAIL --color RED
+        display --indent 6 --text "- Creating nginx server config" --result FAIL --color RED
+        display --indent 8 --text "Using '${server_type}' template"
         display --indent 8 --text "TODO: implements multidomain support"
 
         ;;
@@ -133,7 +146,7 @@ function nginx_server_create() {
 
 function nginx_server_delete() {
 
-    local filename=$1
+    local filename="${1}"
 
     if [[ ${filename} != "" ]]; then
 
@@ -173,8 +186,8 @@ function nginx_server_change_status() {
     # -f FILE - True if the FILE exists and is a regular file (not a directory or device).
     # -h FILE - True if the FILE exists and is a symbolic link.
 
-    local project_domain=$1
-    local project_status=$2
+    local project_domain="${1}"
+    local project_status="${2}"
 
     local result
     local debug
@@ -249,8 +262,8 @@ function nginx_server_change_status() {
 
 function nginx_server_set_domain() {
 
-    local nginx_server_file=$1
-    local domain_name=$2
+    local nginx_server_file="${1}"
+    local domain_name="${2}"
 
     # Search and replace domain.com string with correct project_domain
     sed -i "s/domain.com/${domain_name}/g" "${WSERVER}/sites-available/${nginx_server_file}"
@@ -271,9 +284,9 @@ function nginx_server_set_domain() {
 
 function nginx_server_change_domain() {
 
-    local nginx_server_file=$1
-    local domain_name_old=$2
-    local domain_name_new=$3
+    local nginx_server_file="${1}"
+    local domain_name_old="${2}"
+    local domain_name_new="${3}"
 
     # Search and replace domain.com string with correct project_domain
     sed -i "s/${domain_name_old}/${domain_name_new}/g" "${WSERVER}/sites-available/${nginx_server_file}"
@@ -292,7 +305,7 @@ function nginx_server_change_domain() {
 
 function nginx_server_get_current_phpv() {
 
-    local nginx_server_file=$1
+    local nginx_server_file="${1}"
 
     # Replace string to match PHP version
     current_php_v_string=$(cat ${nginx_server_file} | grep fastcgi_pass | cut -d '/' -f 4 | cut -d '-' -f 1)
@@ -320,12 +333,12 @@ function nginx_server_get_current_phpv() {
 
 function nginx_server_change_phpv() {
 
-    local nginx_server_file=$1
-    local new_php_v=$2
+    local nginx_server_file="${1}"
+    local new_php_v="${2}"
 
-    # TODO: if $new_php_v is not set, must ask wich PHP_V
+    # TODO: if ${new_php_v} is not set, must ask wich PHP_V
 
-    if [[ ${new_php_v} = "" ]]; then
+    if [[ -z ${new_php_v} ]]; then
         new_php_v="$(php_check_activated_version)"
 
     fi
@@ -333,8 +346,6 @@ function nginx_server_change_phpv() {
     # Updating nginx server file
     log_event "info" "Changing PHP version on nginx server file" "false"
     display --indent 6 --text "- Changing PHP version on nginx server file"
-
-    # TODO: ask wich version of php want to work with
 
     # Get current php version
     current_php_v="$(nginx_server_get_current_phpv "${nginx_server_file}")"
@@ -366,11 +377,11 @@ function nginx_server_change_phpv() {
 function nginx_reconfigure() {
 
     # nginx.conf broobe standard configuration
-    cat "${SFOLDER}/config/nginx/nginx.conf" >"/etc/nginx/nginx.conf"
+    cat "${BROLIT_MAIN_DIR}/config/nginx/nginx.conf" >"/etc/nginx/nginx.conf"
     display --indent 6 --text "- Updating nginx.conf" --result "DONE" --color GREEN
 
     # mime.types
-    cat "${SFOLDER}/config/nginx/mime.types" >"/etc/nginx/mime.types"
+    cat "${BROLIT_MAIN_DIR}/config/nginx/mime.types" >"/etc/nginx/mime.types"
     display --indent 6 --text "- Updating mime.types" --result "DONE" --color GREEN
 
     #Test the validity of the nginx configuration
@@ -434,7 +445,7 @@ function nginx_configuration_test() {
 function nginx_new_default_server() {
 
     # New default nginx configuration
-    cat "${SFOLDER}/config/nginx/sites-available/default" >"/etc/nginx/sites-available/default"
+    cat "${BROLIT_MAIN_DIR}/config/nginx/sites-available/default" >"/etc/nginx/sites-available/default"
 
     # Log
     log_event "info" "Creating default nginx server..." "false"
@@ -489,24 +500,28 @@ function nginx_create_globals_config() {
     nginx_globals="/etc/nginx/globals/"
 
     if [[ -d "${nginx_globals}" ]]; then
-        log_event "warning" "Directory ${nginx_globals} already exists ..."
+        log_event "warning" "Directory ${nginx_globals} already exists ..." "false"
         return 1
 
     else
-        log_event "info" "Creating directory ${nginx_globals} exists ..."
-        mkdir "${nginx_globals}"
+        log_event "info" "Creating directory ${nginx_globals} exists ..." "false"
+        mkdir -p "${nginx_globals}"
 
     fi
 
     # Copy files
-    cp "${SFOLDER}/config/nginx/globals/security.conf" "/etc/nginx/globals/security.conf"
-    cp "${SFOLDER}/config/nginx/globals/wordpress_sec.conf" "/etc/nginx/globals/wordpress_sec.conf"
+    cp "${BROLIT_MAIN_DIR}/config/nginx/globals/security.conf" "/etc/nginx/globals/security.conf"
 
     display --indent 6 --text "- Creating nginx globals config" --result "DONE" --color GREEN
 
     # Replace string to match PHP version
-    php_set_version_on_config "${PHP_V}" "/etc/nginx/globals/wordpress_sec.conf"
-    display --indent 6 --text "- Configuring globals for phpfpm-${PHP_V}" --result "DONE" --color GREEN
+    if [[ ${PACKAGES_PHP_STATUS} == "enabled" ]]; then
+    
+        cp "${BROLIT_MAIN_DIR}/config/nginx/globals/wordpress_sec.conf" "/etc/nginx/globals/wordpress_sec.conf"
+        php_set_version_on_config "${PHP_V}" "/etc/nginx/globals/wordpress_sec.conf"
+
+        display --indent 6 --text "- Configuring globals for phpfpm-${PHP_V}" --result "DONE" --color GREEN
+    fi
 
     # Change ownership
     change_ownership "www-data" "www-data" "/etc/nginx/globals/"
@@ -528,7 +543,7 @@ function nginx_create_globals_config() {
 
 function nginx_create_empty_nginx_conf() {
 
-    local path=$1
+    local path="${1}"
 
     if [[ ! -f "${path}/nginx.conf" ]]; then
 
@@ -557,14 +572,33 @@ function nginx_create_empty_nginx_conf() {
 
 function nginx_generate_encrypted_auth() {
 
-    local user=$1
-    local psw=$2
+    local user="${1}"
+    local psw="${2}"
 
-    if [[ -z ${psw} ]]; then
-        psw="$(openssl passwd -apr1)"
+    log_event "info" "Creating nginx encrypted authentication." "false"
+
+    if [[ -n ${psw} ]]; then
+        #encrypted_psw="$(openssl passwd -apr1 ${psw})"
+        encrypted_psw="$(mkpasswd -m sha-512 "${psw}")"
     fi
 
-    printf "${user}:${psw}" >"/etc/nginx/passwords"
+    log_event "info" "User: ${user}" "false"
+    log_event "info" "Pass: ${psw}" "false"
+    log_event "info" "Encrypted Pass: ${encrypted_psw}" "false"
+    log_event "info" "Saving auth data on: /etc/nginx/.passwords" "false"
+
+    printf "${user}:${encrypted_psw}" >"/etc/nginx/.passwords"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 1 ]]; then
+
+        log_event "error" "Something went wrong writing: /etc/nginx/.passwords" "false"
+        return 1
+
+    fi
+
+    chmod 640 "/etc/nginx/.passwords"
+    chown www-data:www-data "/etc/nginx/.passwords"
 
 }
 
@@ -580,7 +614,7 @@ function nginx_generate_encrypted_auth() {
 
 function nginx_server_add_http2_support() {
 
-    local nginx_server_file=$1
+    local nginx_server_file="${1}"
 
     # Check if the file exists
     nginx_server_file="/etc/nginx/sites-available/${nginx_server_file}"

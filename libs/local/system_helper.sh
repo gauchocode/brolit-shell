@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 # System Helper: Perform system actions.
@@ -118,7 +118,7 @@ function system_timezone_configuration() {
 
 function system_change_current_ssh_port() {
 
-    local new_ssh_port=$1
+    local new_ssh_port="${1}"
 
     local current_ssh_port
 
@@ -131,7 +131,7 @@ function system_change_current_ssh_port() {
     display --indent 6 --text "- Current SSH port: ${current_ssh_port}"
 
     # Download secure sshd_config
-    cp -f "${SFOLDER}/config/sshd_config" "/etc/ssh/sshd_config"
+    cp -f "${BROLIT_MAIN_DIR}/config/sshd_config" "/etc/ssh/sshd_config"
 
     # Change ssh default port
     sed -i "s/Port 22/Port ${new_ssh_port}/" "/etc/ssh/sshd_config"
@@ -161,7 +161,7 @@ function system_change_current_ssh_port() {
 
 function system_change_server_hostname() {
 
-    local new_hostname=$1
+    local new_hostname="${1}"
 
     local cur_hostname
 
@@ -200,7 +200,7 @@ function system_change_server_hostname() {
 
 function system_detect_ip_version() {
 
-    local ip_address=$1
+    local ip_address="${1}"
 
     local ip_version
 
@@ -233,7 +233,7 @@ function system_detect_ip_version() {
 
 function system_add_floating_IP() {
 
-    local floating_IP=$1
+    local floating_IP="${1}"
 
     local ubuntu_v
 
@@ -244,7 +244,7 @@ function system_add_floating_IP() {
 
     if [[ "${ubuntu_v}" == "1804" ]]; then
 
-        cp "${SFOLDER}/config/networking/60-my-floating-ip.cfg" /etc/network/interfaces.d/60-my-floating-ip.cfg
+        cp "${BROLIT_MAIN_DIR}/config/networking/60-my-floating-ip.cfg" /etc/network/interfaces.d/60-my-floating-ip.cfg
         sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/network/interfaces.d/60-my-floating-ip.cfg
         display --indent 6 --text "- Making network config changes" --result "DONE" --color GREEN
 
@@ -260,7 +260,7 @@ function system_add_floating_IP() {
 
         if [[ "${ubuntu_v}" == "2004" ]]; then
 
-            cp "${SFOLDER}/config/networking/60-floating-ip.yaml" /etc/netplan/60-floating-ip.yaml
+            cp "${BROLIT_MAIN_DIR}/config/networking/60-floating-ip.yaml" /etc/netplan/60-floating-ip.yaml
             sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/netplan/60-floating-ip.yaml
             display --indent 6 --text "- Making network config changes" --result "DONE" --color GREEN
 

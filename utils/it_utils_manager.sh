@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 
 function it_utils_menu() {
@@ -35,8 +35,8 @@ function it_utils_menu() {
     fi
     # SERVER OPTIMIZATIONS
     if [[ ${chosen_it_util_options} == *"02"* ]]; then
-      # shellcheck source=${SFOLDER}/utils/server_and_image_optimizations.sh
-      source "${SFOLDER}/utils/server_and_image_optimizations.sh"
+      # shellcheck source=${BROLIT_MAIN_DIR}/utils/server_and_image_optimizations.sh
+      source "${BROLIT_MAIN_DIR}/utils/server_and_image_optimizations.sh"
       server_optimizations_menu
     fi
     # CHANGE SSH PORT
@@ -94,8 +94,8 @@ function it_utils_menu() {
       db_root_psw="$(whiptail --title "MYSQL ROOT PASSWORD" --inputbox "Insert the new root password for MySQL:" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
-        # shellcheck source=${SFOLDER}/libs/mysql_helper.sh
-        source "${SFOLDER}/libs/mysql_helper.sh" "${IP_TO_TEST}"
+        # shellcheck source=${BROLIT_MAIN_DIR}/libs/mysql_helper.sh
+        source "${BROLIT_MAIN_DIR}/libs/mysql_helper.sh" "${IP_TO_TEST}"
         mysql_root_psw_change "${db_root_psw}"
       fi
     fi
@@ -105,14 +105,14 @@ function it_utils_menu() {
       IP_TO_TEST="$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
-        # shellcheck source=${SFOLDER}/tools/third-party/blacklist-checker/bl.sh
-        source "${SFOLDER}/tools/third-party/blacklist-checker/bl.sh" "${IP_TO_TEST}"
+        # shellcheck source=${BROLIT_MAIN_DIR}/tools/third-party/blacklist-checker/bl.sh
+        source "${BROLIT_MAIN_DIR}/tools/third-party/blacklist-checker/bl.sh" "${IP_TO_TEST}"
       fi
     fi
     # BENCHMARK SERVER
     if [[ ${chosen_it_util_options} == *"10"* ]]; then
-      # shellcheck source=${SFOLDER}/tools/bench_scripts.sh
-      source "${SFOLDER}/tools/third-party/bench_scripts.sh"
+      # shellcheck source=${BROLIT_MAIN_DIR}/tools/bench_scripts.sh
+      source "${BROLIT_MAIN_DIR}/tools/third-party/bench_scripts.sh"
 
     fi
     # INSTALL ALIASES

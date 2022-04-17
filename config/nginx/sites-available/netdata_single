@@ -5,7 +5,7 @@ server {
         server_name domain.com;
 
         auth_basic "Protected";
-        auth_basic_user_file passwords;
+        auth_basic_user_file /etc/nginx/.passwords;
 
         access_log off;
         #error_log /var/log/nginx/domain.com.error.log debug;

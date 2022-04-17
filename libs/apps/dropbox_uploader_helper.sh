@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 
 ################################################################################
@@ -43,18 +43,28 @@ function dropbox_check_if_directory_exists() {
 
     local output
 
-    output="$("${DROPBOX_UPLOADER}" list "${path}" | grep "${directory}" | awk -F " " '{print $1}' 2>&1)"
+    # Log
+    log_event "debug" "Check if directory exists on Dropbox account: ${directory}" "false"
+    log_event "debug" "Running: \"${DROPBOX_UPLOADER}\" list \"${path}\" | grep -w \"${directory}\" | awk -F \" \" "'{print $1}'" 2>&1" "false"
 
+    # Command
+    output="$("${DROPBOX_UPLOADER}" list "${path}" | grep -w "${directory}" | awk -F " " '{print $1}' 2>&1)"
+
+    # If directory exists
     if [[ ${output} == "[D]" ]]; then
+
+        log_event "debug" "Directory exists" "false"
 
         return 0
 
-    else
+    else # If file exists
 
         if [[ ${output} == "[F]" ]]; then
 
+            log_event "debug" "File exists, but should be a directory. Deleting..." "false"
+
             # Sometimes the api creates a file instead of a directory, so we need to delete it
-            dropbox_delete "${path}/${directory}"
+            dropbox_delete "${path}/${directory}" "true"
 
         fi
 
@@ -76,7 +86,7 @@ function dropbox_check_if_directory_exists() {
 
 function dropbox_create_dir() {
 
-    local dir_to_create=$1
+    local dir_to_create="${1}"
 
     local output
     local dropbox_create_dir_result
@@ -91,12 +101,11 @@ function dropbox_create_dir() {
     dropbox_check_if_directory_exists "${directory}" "${path}"
 
     exitstatus=$?
-
     if [[ ${exitstatus} -eq 1 ]]; then
 
         output="$("${DROPBOX_UPLOADER}" -q mkdir "${dir_to_create}")"
-        dropbox_create_dir_result=$?
 
+        dropbox_create_dir_result=$?
         if [[ ${dropbox_create_dir_result} -eq 0 ]]; then
 
             #display --indent 6 --text "- Creating dropbox directory" --result "DONE" --color GREEN
@@ -109,7 +118,7 @@ function dropbox_create_dir() {
             #display --indent 6 --text "- Creating dropbox directory" --result "WARNING" --color YELLOW
             #display --indent 8 --text "Maybe directory already exists" --tcolor YELLOW
 
-            log_event "debug" "Can't create directory ${dir_to_create} from dropbox. Maybe directory already exists." "false"
+            log_event "debug" "Can't create directory ${dir_to_create} from Dropbox. Maybe directory already exists." "false"
             log_event "debug" "Last command executed: ${DROPBOX_UPLOADER} -q mkdir ${dir_to_create}" "false"
             log_event "debug" "Last command output: ${output}" "false"
 
@@ -134,18 +143,19 @@ function dropbox_create_dir() {
 
 function dropbox_upload() {
 
-    local file_to_upload=$1
-    local dropbox_directory=$2
+    local file_to_upload="${1}"
+    local dropbox_directory="${2}"
 
     local output
     local dropbox_file_to_upload_result
 
-    log_event "info" "Uploading file to Dropbox ..." "false"
-
     spinner_start "- Uploading file to Dropbox"
 
-    #log_event "debug" "Running: ${DROPBOX_UPLOADER} upload ${file_to_upload} ${dropbox_directory}" "false"
+    # Log
+    log_event "info" "Uploading file to Dropbox ..." "false"
+    log_event "debug" "Running: \"${DROPBOX_UPLOADER}\" -q upload \"${file_to_upload}\" \"${dropbox_directory}\"" "false"
 
+    # Command
     output="$("${DROPBOX_UPLOADER}" -q upload "${file_to_upload}" "${dropbox_directory}")"
     dropbox_file_to_upload_result=$?
 
@@ -164,7 +174,7 @@ function dropbox_upload() {
         display --indent 6 --text "- Uploading file to Dropbox" --result "ERROR" --color RED
         display --indent 8 --text "Please red log file" --tcolor RED
 
-        log_event "error" "Can't upload file ${file_to_upload} to dropbox." "false"
+        log_event "error" "Can't upload file ${file_to_upload} to Dropbox." "false"
         log_event "error" "Last command executed: ${DROPBOX_UPLOADER} upload ${file_to_upload} ${dropbox_directory}" "false"
         log_event "debug" "Last command output: ${output}" "false"
 
@@ -187,11 +197,11 @@ function dropbox_upload() {
 
 function dropbox_download() {
 
-    local file_to_download=$1
-    local local_directory=$2
+    local file_to_download="${1}"
+    local local_directory="${2}"
 
     local tmp_file_name
-    local output
+    local dropbox_output
     local dropbox_file_to_download_result
 
     tmp_file_name="$(extract_filename_from_path "${file_to_download}")"
@@ -199,11 +209,9 @@ function dropbox_download() {
     # Log
     log_event "info" "Trying to download ${file_to_download} from Dropbox" "false"
 
-    spinner_start "- Downloading file to Dropbox"
+    spinner_start "- Downloading file from Dropbox"
 
-    #log_event "debug" "Running: ${DROPBOX_UPLOADER} -q download ${file_to_download} ${local_directory}/${tmp_file_name}"
-
-    output="$("${DROPBOX_UPLOADER}" -q download "${file_to_download}" "${local_directory}/${tmp_file_name}")"
+    dropbox_output="$("${DROPBOX_UPLOADER}" -q download "${file_to_download}" "${local_directory}/${tmp_file_name}")"
     dropbox_file_to_download_result=$?
 
     spinner_stop "${dropbox_file_to_download_result}"
@@ -213,7 +221,7 @@ function dropbox_download() {
 
         clear_previous_lines "2"
 
-        display --indent 6 --text "- Downloading backup from dropbox" --result "DONE" --color GREEN
+        display --indent 6 --text "- Downloading backup from Dropbox" --result "DONE" --color GREEN
         log_event "info" "${file_to_download} downloaded" "false"
 
         return 0
@@ -222,12 +230,12 @@ function dropbox_download() {
 
         clear_previous_lines "2"
 
-        display --indent 6 --text "- Downloading backup from dropbox" --result "FAIL" --color RED
+        display --indent 6 --text "- Downloading backup from Dropbox" --result "FAIL" --color RED
         display --indent 8 --text "Please read log file" --tcolor RED
 
         log_event "error" "Can't download file ${file_to_download} from dropbox." "false"
         log_event "error" "Last command executed: ${DROPBOX_UPLOADER} -q download ${file_to_download} ${local_directory}/${tmp_file_name}" "false"
-        log_event "debug" "Last command output: ${output}" "false"
+        log_event "debug" "Last command output: ${dropbox_output}" "false"
 
         return 1
 
@@ -240,6 +248,7 @@ function dropbox_download() {
 #
 # Arguments:
 #   $1 = ${to_delete}
+#   $2 = ${force_delete}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -247,28 +256,59 @@ function dropbox_download() {
 
 function dropbox_delete() {
 
-    local to_delete=$1
+    local to_delete="${1}"
+    local force_delete="${2}"
 
     local output
+    local search_file
     local dropbox_remove_result
 
-    output="$("${DROPBOX_UPLOADER}" remove "${to_delete}")"
-    dropbox_remove_result=$?
-    if [[ ${dropbox_remove_result} -eq 0 ]]; then
+    if [[ ${force_delete} != "true" ]]; then
 
-        display --indent 6 --text "- Deleting files from Dropbox" --result "DONE" --color GREEN
-        log_event "info" "Files deleted from Dropbox"
+        # Log
+        log_event "debug" "Search \"${directory}\" to delete on Dropbox account" "false"
+        log_event "debug" "Running: \"${DROPBOX_UPLOADER}\" -hq search \"${to_delete}\"" "false"
 
-        return 0
+        # Command
+        search_file="$("${DROPBOX_UPLOADER}" -hq search "${to_delete}")"
+
+    fi
+
+    # Check if not empty
+    if [[ -n ${search_file} || ${force_delete} == "true" ]]; then
+
+        log_event "debug" "Running: \"${DROPBOX_UPLOADER}\" remove \"${to_delete}\"" "false"
+
+        # Command
+        output="$("${DROPBOX_UPLOADER}" remove "${to_delete}")"
+
+        dropbox_remove_result=$?
+        if [[ ${dropbox_remove_result} -eq 0 ]]; then
+
+            display --indent 6 --text "- Deleting old files from Dropbox" --result "DONE" --color GREEN
+            log_event "info" "Files deleted from Dropbox" "false"
+
+            return 0
+
+        else
+
+            display --indent 6 --text "- Deleting old files from Dropbox" --result "WARNING" --color YELLOW
+            display --indent 8 --text "Can't remove backup from Dropbox." --tcolor YELLOW
+
+            log_event "warning" "Can't remove ${to_delete} from Dropbox." "false"
+            log_event "warning" "Last command executed: ${DROPBOX_UPLOADER} remove ${to_delete}" "false"
+            log_event "debug" "Last command output: ${output}" "false"
+
+            return 1
+
+        fi
 
     else
 
-        display --indent 6 --text "- Deleting files from Dropbox" --result "WARNING" --color YELLOW
-        display --indent 8 --text "Maybe backup file doesn't exists" --tcolor YELLOW
+        #display --indent 6 --text "- Deleting old files from Dropbox" --result "SKIPPED" --color WHITE
+        #display --indent 8 --text "Backup file doesn't exists" --tcolor WHITE
 
-        log_event "warning" "Can't remove ${to_delete} from dropbox. Maybe backup file doesn't exists." "false"
-        log_event "warning" "Last command executed: ${DROPBOX_UPLOADER} remove ${to_delete}"
-        log_event "debug" "Last command output: ${output}"
+        log_event "warning" "Can't remove ${to_delete} from Dropbox, backup file doesn't exists." "false"
 
         return 1
 

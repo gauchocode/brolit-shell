@@ -1272,7 +1272,7 @@ function db_list
 #$2 = Remote directory
 function db_monitor_nonblock
 {
-    local TIMEOUT=$1
+    local TIMEOUT="${1}"
     local DIR_DST=$(normalize_path "$2")
 
     if [[ "$DIR_DST" == "/" ]]; then
@@ -1355,7 +1355,7 @@ function db_monitor_nonblock
 #$2 = Remote directory
 function db_monitor
 {
-    local TIMEOUT=$1
+    local TIMEOUT="${1}"
     local DIR_DST=$(normalize_path "$2")
 
     while (true); do

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 #############################################################################
 #
 # Backup Helper: Perform backup actions.
@@ -18,9 +18,9 @@
 #   ${backup_date}
 ################################################################################
 
-function get_backup_date() {
+function backup_get_date() {
 
-  local backup_file=$1
+  local backup_file="${1}"
 
   local backup_date
 
@@ -35,80 +35,83 @@ function get_backup_date() {
 # Make server files Backup
 #
 # Arguments:
-#  $1 = ${bk_type} - Backup Type: configs, logs, data
+#  $1 = ${backup_type} - Backup Type: configs, logs, data
 #  $2 = ${bk_sup_type} - Backup SubType: php, nginx, mysql
-#  $3 = ${bk_path} - Path folder to Backup
+#  $3 = ${backup_path} - Path folder to Backup
 #  $4 = ${directory_to_backup} - Folder to Backup
 #
 # Outputs:
 #   0 if ok, 1 if error
 ################################################################################
 
-################################################################################
-#
-# IMPORTANT: Maybe a new backup directory structure:
-#
-# VPS_NAME -> SERVER_CONFIGS (PHP, MySQL, Custom Status Log)
-#          -> PROYECTS -> ACTIVE
-#                      -> INACTIVE
-#                      -> ACTIVE/INACTIVE  -> DATABASE
-#                                          -> FILES
-#                                          -> CONFIGS (nginx, letsencrypt)
-#          -> DATABASES
-#          -> SITES_NO_DB
-#
-
-function make_server_files_backup() {
+function backup_server_config() {
 
   # TODO: need to implement error_type
 
-  local bk_type=$1
-  local bk_sup_type=$2
-  local bk_path=$3
-  local directory_to_backup=$4
+  local backup_type="${1}"
+  local bk_sup_type="${2}"
+  local backup_path="${3}"
+  local directory_to_backup="${4}"
 
   local got_error
   local backup_file
-  local old_bk_file
-  local dropbox_path
+  local old_backup_file
+  local remote_path 
 
   got_error=0
 
-  if [[ -n ${bk_path} ]]; then
+  if [[ -n ${backup_path} ]]; then
 
     # Backups file names
-    backup_file="${bk_sup_type}-${bk_type}-files-${NOW}.tar.bz2"
-    old_bk_file="${bk_sup_type}-${bk_type}-files-${DAYSAGO}.tar.bz2"
+    backup_file="${bk_sup_type}-${backup_type}-files-${NOW}.tar.bz2"
+    old_backup_file="${bk_sup_type}-${backup_type}-files-${DAYSAGO}.tar.bz2"
+
+    # Log
+    display --indent 6 --text "- Files backup for ${YELLOW}${bk_sup_type}${ENDCOLOR}"
+    log_event "info" "Files backup for : ${bk_sup_type}" "false"
 
     # Compress backup
-    backup_file_size="$(compress "${bk_path}" "${directory_to_backup}" "${TMP_DIR}/${NOW}/${backup_file}")"
+    backup_file_size="$(compress "${backup_path}" "${directory_to_backup}" "${BROLIT_TMP_DIR}/${NOW}/${backup_file}")"
 
     # Check test result
     compress_result=$?
     if [[ ${compress_result} -eq 0 ]]; then
 
-      # New folder with $VPSNAME
-      dropbox_create_dir "${VPSNAME}"
+      # Log
+      clear_previous_lines "1"
+      display --indent 6 --text "- Files backup for ${YELLOW}${bk_sup_type}${ENDCOLOR}" --result "DONE" --color GREEN
+      display --indent 8 --text "Final backup size: ${YELLOW}${backup_file_size}${ENDCOLOR}"
 
-      # New folder with $bk_type
-      dropbox_create_dir "${VPSNAME}/${bk_type}"
+      # Remote Path
+      remote_path="${SERVER_NAME}/server-config/${bk_sup_type}"
 
-      # New folder with $bk_sup_type (php, nginx, mysql)
-      dropbox_create_dir "${VPSNAME}/${bk_type}/${bk_sup_type}"
-
-      # Dropbox Path
-      dropbox_path="${VPSNAME}/${bk_type}/${bk_sup_type}"
+      # Create folder structure
+      storage_create_dir "${SERVER_NAME}"
+      storage_create_dir "${SERVER_NAME}/server-config"
+      storage_create_dir "${SERVER_NAME}/server-config/${bk_sup_type}"
 
       # Uploading backup files
-      dropbox_upload "${TMP_DIR}/${NOW}/${backup_file}" "${DROPBOX_FOLDER}/${dropbox_path}"
+      storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${remote_path}"
 
-      # Deleting old backup files
-      dropbox_delete "${DROPBOX_FOLDER}/${dropbox_path}/${old_bk_file}"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
 
-      # Return
-      echo "${backup_file_size}"
+        # Deleting old backup file
+        storage_delete_backup "${remote_path}/${old_backup_file}"
+
+        # Deleting tmp backup file
+        rm --force "${BROLIT_TMP_DIR}/${NOW}/${backup_file}"
+
+        # Return
+        echo "${backup_file_size}"
+
+      fi
 
     else
+
+      # Log
+      clear_previous_lines "1"
+      display --indent 6 --text "- Files backup for ${YELLOW}${bk_sup_type}${ENDCOLOR}" --result "FAIL" --color RED
 
       error_msg="Something went wrong making a backup of ${directory_to_backup}."
       error_type=""
@@ -121,12 +124,12 @@ function make_server_files_backup() {
 
   else
 
-    log_event "error" "Directory ${bk_path} doesn't exists." "false"
+    log_event "error" "Directory ${backup_path} doesn't exists." "false"
 
     display --indent 6 --text "- Creating backup file" --result "FAIL" --color RED
-    display --indent 8 --text "Result: Directory '${bk_path}' doesn't exists" --tcolor RED
+    display --indent 8 --text "Result: Directory '${backup_path}' doesn't exists" --tcolor RED
 
-    error_msg="Directory ${bk_path} doesn't exists."
+    error_msg="Directory ${backup_path} doesn't exists."
     error_type=""
     got_error=1
 
@@ -140,6 +143,107 @@ function make_server_files_backup() {
 }
 
 ################################################################################
+# Make all server configs Backup
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#   0 if ok, 1 if error
+################################################################################
+
+function backup_all_server_configs() {
+
+  #local -n backuped_config_list
+  #local -n backuped_config_sizes_list
+
+  local backuped_config_index=0
+
+  log_subsection "Backup Server Config"
+
+  # TAR Webserver Config Files
+  if [[ ! -d ${WSERVER} ]]; then
+    log_event "warning" "WSERVER is not defined! Skipping webserver config files backup ..." "false"
+
+  else
+    nginx_files_backup_result="$(backup_server_config "configs" "nginx" "${WSERVER}" ".")"
+
+    backuped_config_list[$backuped_config_index]="${WSERVER}"
+    backuped_config_sizes_list+=("${nginx_files_backup_result}")
+
+    backuped_config_index=$((backuped_config_index + 1))
+
+  fi
+
+  # TAR PHP Config Files
+  if [[ ! -d ${PHP_CONF_DIR} ]]; then
+    log_event "warning" "PHP_CONF_DIR is not defined! Skipping PHP config files backup ..." "false"
+
+  else
+
+    php_files_backup_result="$(backup_server_config "configs" "php" "${PHP_CONF_DIR}" ".")"
+
+    backuped_config_list[$backuped_config_index]="${PHP_CONF_DIR}"
+    backuped_config_sizes_list+=("${php_files_backup_result}")
+
+    backuped_config_index=$((backuped_config_index + 1))
+
+  fi
+
+  # TAR MySQL Config Files
+  if [[ ! -d ${MYSQL_CONF_DIR} ]]; then
+    log_event "warning" "MYSQL_CONF_DIR is not defined! Skipping MySQL config files backup ..." "false"
+
+  else
+
+    mysql_files_backup_result="$(backup_server_config "configs" "mysql" "${MYSQL_CONF_DIR}" ".")"
+
+    backuped_config_list[$backuped_config_index]="${MYSQL_CONF_DIR}"
+    backuped_config_sizes_list+=("${mysql_files_backup_result}")
+
+    backuped_config_index=$((backuped_config_index + 1))
+
+  fi
+
+  # TAR Let's Encrypt Config Files
+  if [[ ! -d ${LENCRYPT_CONF_DIR} ]]; then
+    log_event "warning" "LENCRYPT_CONF_DIR is not defined! Skipping Letsencrypt config files backup ..." "false"
+
+  else
+
+    le_files_backup_result="$(backup_server_config "configs" "letsencrypt" "${LENCRYPT_CONF_DIR}" ".")"
+
+    backuped_config_list[$backuped_config_index]="${LENCRYPT_CONF_DIR}"
+    backuped_config_sizes_list+=("${le_files_backup_result}")
+
+    backuped_config_index=$((backuped_config_index + 1))
+
+  fi
+
+  # TAR Devops Config Files
+  if [[ ! -d ${BROLIT_CONFIG_PATH} ]]; then
+    log_event "warning" "BROLIT_CONFIG_PATH is not defined! Skipping DevOps config files backup ..." "false"
+
+  else
+
+    brolit_files_backup_result="$(backup_server_config "configs" "brolit" "${BROLIT_CONFIG_PATH}" ".")"
+
+    backuped_config_list[$backuped_config_index]="${BROLIT_CONFIG_PATH}"
+    backuped_config_sizes_list+=("${brolit_files_backup_result}")
+
+    backuped_config_index=$((backuped_config_index + 1))
+
+  fi
+
+  # Configure Files Backup Section for Email Notification
+  mail_config_backup_section "${ERROR}" "${ERROR_MSG}" "${backuped_config_list[@]}" "${backuped_config_sizes_list[@]}"
+
+  # Return
+  echo "${ERROR}"
+
+}
+
+################################################################################
 # Make Mailcow Backup
 #
 # Arguments:
@@ -149,22 +253,21 @@ function make_server_files_backup() {
 #   0 if ok, 1 if error
 ################################################################################
 
-function make_mailcow_backup() {
+function backup_mailcow() {
 
-  local directory_to_backup=$1
+  local directory_to_backup="${1}"
 
-  # VAR $bk_type rewrited
-  local bk_type="mailcow"
+  # VAR $backup_type rewrited
+  local backup_type="mailcow"
   local mailcow_backup_result
-
   local dropbox_path
 
   log_subsection "Mailcow Backup"
 
   if [[ -n "${MAILCOW_DIR}" ]]; then
 
-    old_bk_file="${bk_type}_files-${DAYSAGO}.tar.bz2"
-    backup_file="${bk_type}_files-${NOW}.tar.bz2"
+    old_backup_file="${backup_type}_files-${DAYSAGO}.tar.bz2"
+    backup_file="${backup_type}_files-${NOW}.tar.bz2"
 
     log_event "info" "Trying to make a backup of ${MAILCOW_DIR} ..." "false"
     display --indent 6 --text "- Making ${YELLOW}${MAILCOW_DIR}${ENDCOLOR} backup" --result "DONE" --color GREEN
@@ -205,26 +308,31 @@ function make_mailcow_backup() {
 
         log_event "info" "${MAILCOW_TMP_BK}/${backup_file} backup created" "false"
 
-        # New folder with $VPSNAME
-        dropbox_create_dir "${VPSNAME}"
-        dropbox_create_dir "${VPSNAME}/${bk_type}"
+        # New folder with $SERVER_NAME
+        dropbox_create_dir "${SERVER_NAME}"
+        dropbox_create_dir "${SERVER_NAME}/${backup_type}"
 
-        dropbox_path="/${VPSNAME}/${bk_type}"
+        dropbox_path="/${SERVER_NAME}/projects-online/${backup_type}"
 
         log_event "info" "Uploading Backup to Dropbox ..." "false"
         display --indent 6 --text "- Uploading backup file to Dropbox"
 
         # Upload new backup
-        dropbox_upload "${MAILCOW_TMP_BK}/${backup_file}" "${DROPBOX_FOLDER}/${dropbox_path}"
+        storage_upload_backup "${MAILCOW_TMP_BK}/${backup_file}" "${dropbox_path}"
 
-        # Remove old backup
-        dropbox_delete "${DROPBOX_FOLDER}/${dropbox_path}/${old_bk_file}"
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
 
-        # Remove old backups from server
-        rm --recursive --force "${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION:?}"
-        rm --recursive --force "${MAILCOW_TMP_BK}/${backup_file:?}"
+          # Remove old backup
+          dropbox_delete "${dropbox_path}/${old_backup_file}" "false"
 
-        log_event "info" "Mailcow backup finished" "false"
+          # Remove old backups from server
+          rm --recursive --force "${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION:?}"
+          rm --recursive --force "${MAILCOW_TMP_BK}/${backup_file:?}"
+
+          log_event "info" "Mailcow backup finished" "false"
+
+        fi
 
       fi
 
@@ -244,108 +352,7 @@ function make_mailcow_backup() {
 
   fi
 
-  log_break
-
-}
-
-################################################################################
-# Make all server configs Backup
-#
-# Arguments:
-#  none
-#
-# Outputs:
-#   0 if ok, 1 if error
-################################################################################
-
-function make_all_server_config_backup() {
-
-  #local -n backuped_config_list
-  #local -n backuped_config_sizes_list
-
-  local backuped_config_index=0
-
-  log_subsection "Backup Server Config"
-
-  # TAR Webserver Config Files
-  if [[ ! -d ${WSERVER} ]]; then
-    log_event "warning" "WSERVER is not defined! Skipping webserver config files backup ..." "false"
-
-  else
-    nginx_files_backup_result="$(make_server_files_backup "configs" "nginx" "${WSERVER}" ".")"
-
-    backuped_config_list[$backuped_config_index]="${WSERVER}"
-    backuped_config_sizes_list+=("${nginx_files_backup_result}")
-
-    backuped_config_index=$((backuped_config_index + 1))
-
-  fi
-
-  # TAR PHP Config Files
-  if [[ ! -d ${PHP_CF} ]]; then
-    log_event "warning" "PHP_CF is not defined! Skipping PHP config files backup ..." "false"
-
-  else
-
-    php_files_backup_result="$(make_server_files_backup "configs" "php" "${PHP_CF}" ".")"
-
-    backuped_config_list[$backuped_config_index]="${PHP_CF}"
-    backuped_config_sizes_list+=("${php_files_backup_result}")
-
-    backuped_config_index=$((backuped_config_index + 1))
-
-  fi
-
-  # TAR MySQL Config Files
-  if [[ ! -d ${MySQL_CF} ]]; then
-    log_event "warning" "MySQL_CF is not defined! Skipping MySQL config files backup ..." "false"
-
-  else
-
-    mysql_files_backup_result="$(make_server_files_backup "configs" "mysql" "${MySQL_CF}" ".")"
-
-    backuped_config_list[$backuped_config_index]="${MySQL_CF}"
-    backuped_config_sizes_list+=("${mysql_files_backup_result}")
-
-    backuped_config_index=$((backuped_config_index + 1))
-
-  fi
-
-  # TAR Let's Encrypt Config Files
-  if [[ ! -d ${LENCRYPT_CF} ]]; then
-    log_event "warning" "LENCRYPT_CF is not defined! Skipping Letsencrypt config files backup ..." "false"
-
-  else
-
-    le_files_backup_result="$(make_server_files_backup "configs" "letsencrypt" "${LENCRYPT_CF}" ".")"
-
-    backuped_config_list[$backuped_config_index]="${LENCRYPT_CF}"
-    backuped_config_sizes_list+=("${le_files_backup_result}")
-
-    backuped_config_index=$((backuped_config_index + 1))
-
-  fi
-
-  # TAR Devops Config Files
-  if [[ ! -d ${BROLIT_CONFIG_PATH} ]]; then
-    log_event "warning" "BROLIT_CONFIG_PATH is not defined! Skipping DevOps config files backup ..." "false"
-
-  else
-
-    brolit_files_backup_result="$(make_server_files_backup "configs" "brolit" "${BROLIT_CONFIG_PATH}" ".")"
-
-    backuped_config_list[$backuped_config_index]="${BROLIT_CONFIG_PATH}"
-    backuped_config_sizes_list+=("${brolit_files_backup_result}")
-
-    backuped_config_index=$((backuped_config_index + 1))
-
-  fi
-
-  # Configure Files Backup Section for Email Notification
-  mail_config_backup_section "${ERROR}" "${ERROR_TYPE}" "${backuped_config_list[@]}" "${backuped_config_sizes_list[@]}"
-
-  # Return
-  echo "${ERROR}"
+  log_break "true"
 
 }
 
@@ -359,15 +366,13 @@ function make_all_server_config_backup() {
 #   0 if ok, 1 if error
 ################################################################################
 
-function make_sites_files_backup() {
+function backup_all_projects_files() {
 
   local backup_file_size
+  local directory_name
 
   local backuped_files_index=0
   local backuped_directory_index=0
-
-  local directory_name=""
-
   local k=0
 
   log_subsection "Backup Sites Files"
@@ -394,7 +399,7 @@ function make_sites_files_backup() {
 
       if [[ ${BLACKLISTED_SITES} != *"${directory_name}"* ]]; then
 
-        backup_file_size="$(make_files_backup "site" "${PROJECTS_PATH}" "${directory_name}")"
+        backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${directory_name}")"
 
         backuped_files_list[$backuped_files_index]="${directory_name}"
         backuped_files_sizes_list+=("${backup_file_size}")
@@ -418,13 +423,13 @@ function make_sites_files_backup() {
   done
 
   # Deleting old backup files
-  rm --recursive --force "${TMP_DIR:?}/${NOW}"
+  rm --recursive --force "${BROLIT_TMP_DIR:?}/${NOW}"
 
   # DUPLICITY
-  duplicity_backup
+  backup_duplicity
 
   # Configure Files Backup Section for Email Notification
-  mail_files_backup_section "${ERROR}" "${ERROR_TYPE}" "${backuped_files_list[@]}" "${backuped_files_sizes_list[@]}"
+  mail_files_backup_section "${ERROR}" "${ERROR_MSG}" "${backuped_files_list[@]}" "${backuped_files_sizes_list[@]}"
 
 }
 
@@ -438,30 +443,28 @@ function make_sites_files_backup() {
 #  0 if ok, 1 if error
 ################################################################################
 
-function make_all_files_backup() {
+function backup_all_files() {
 
   ## MAILCOW FILES
   if [[ ${MAILCOW_BK} == true ]]; then
 
     if [[ ! -d ${MAILCOW_TMP_BK} ]]; then
 
-      log_event "info" "Folder ${MAILCOW_TMP_BK} doesn't exist. Creating now ..."
+      log_event "info" "Folder ${MAILCOW_TMP_BK} doesn't exist. Creating now ..." "false"
 
-      mkdir "${MAILCOW_TMP_BK}"
+      mkdir -p "${MAILCOW_TMP_BK}"
 
     fi
 
-    make_mailcow_backup "${MAILCOW}"
+    backup_mailcow "${MAILCOW}"
 
   fi
 
-  # TODO: error_type needs refactoring
-
   ## SERVER CONFIG FILES
-  make_all_server_config_backup
+  backup_all_server_configs
 
   ## PROJECTS_PATH FILES
-  make_sites_files_backup
+  backup_all_projects_files
 
 }
 
@@ -469,62 +472,88 @@ function make_all_files_backup() {
 # Make files Backup
 #
 # Arguments:
-#  $1 = ${bk_type} - Backup Type (site_configs or sites)
-#  $2 = ${bk_path} - Path where directories to backup are stored
+#  $1 = ${backup_type} - Backup Type (site_configs or sites)
+#  $2 = ${backup_path} - Path where directories to backup are stored
 #  $3 = ${directory_to_backup} - The specific folder/file to backup
 #
 # Outputs:
 #  0 if ok, 1 if error
 ################################################################################
 
-function make_files_backup() {
+function backup_project_files() {
 
-  local bk_type=$1
-  local bk_path=$2
-  local directory_to_backup=$3
+  local backup_type="${1}"
+  local backup_path="${2}"
+  local directory_to_backup="${3}"
 
-  local old_bk_file="${directory_to_backup}_${bk_type}-files_${DAYSAGO}.tar.bz2"
-  local backup_file="${directory_to_backup}_${bk_type}-files_${NOW}.tar.bz2"
+  local old_backup_file="${directory_to_backup}_${backup_type}-files_${DAYSAGO}.tar.bz2"
+  local backup_file="${directory_to_backup}_${backup_type}-files_${NOW}.tar.bz2"
 
   local dropbox_path
 
-  # Compress backup
-  backup_file_size="$(compress "${bk_path}" "${directory_to_backup}" "${TMP_DIR}/${NOW}/${backup_file}")"
+  # Create directory structure
+  storage_create_dir "${SERVER_NAME}"
+  storage_create_dir "${SERVER_NAME}/projects-online"
+  storage_create_dir "${SERVER_NAME}/projects-online/${backup_type}"
+  storage_create_dir "${SERVER_NAME}/projects-online/${backup_type}/${directory_to_backup}"
 
-  # Check test result
-  compress_result=$?
-  if [[ ${compress_result} -eq 0 ]]; then
+  remote_path="${SERVER_NAME}/projects-online/${backup_type}/${directory_to_backup}"
 
-    # New folder with $VPSNAME
-    dropbox_create_dir "${VPSNAME}"
-
-    # New folder with $bk_type
-    dropbox_create_dir "${VPSNAME}/${bk_type}"
-
-    # New folder with $directory_to_backup (project folder)
-    dropbox_create_dir "${VPSNAME}/${bk_type}/${directory_to_backup}"
-
-    dropbox_path="${VPSNAME}/${bk_type}/${directory_to_backup}"
-
-    # Upload backup
-    dropbox_upload "${TMP_DIR}/${NOW}/${backup_file}" "${DROPBOX_FOLDER}/${dropbox_path}"
-
-    # Delete old backup from Dropbox
-    dropbox_delete "${DROPBOX_FOLDER}/${dropbox_path}/${old_bk_file}"
-
-    # Delete temp backup
-    rm --force "${TMP_DIR}/${NOW}/${backup_file}"
+  if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" || ${BACKUP_SFTP_STATUS} == "enabled" ]]; then
 
     # Log
-    log_event "info" "Temp backup deleted from server" "false"
-    #display --indent 6 --text "- Deleting temp files" --result "DONE" --color GREEN
+    display --indent 6 --text "- Files backup for ${YELLOW}${directory_to_backup}${ENDCOLOR}"
+    log_event "info" "Files backup for : ${directory_to_backup}" "false"
 
-    # Return
-    echo "${backup_file_size}"
+    # Compress backup
+    backup_file_size="$(compress "${backup_path}" "${directory_to_backup}" "${BROLIT_TMP_DIR}/${NOW}/${backup_file}")"
 
-  else
+    # Check test result
+    compress_result=$?
+    if [[ ${compress_result} -eq 0 ]]; then
 
-    return 1
+      # Log
+      clear_previous_lines "1"
+      display --indent 6 --text "- Files backup for ${YELLOW}${directory_to_backup}${ENDCOLOR}" --result "DONE" --color GREEN
+      display --indent 8 --text "Final backup size: ${YELLOW}${backup_file_size}${ENDCOLOR}"
+
+      log_event "info" "Backup ${BROLIT_TMP_DIR}/${NOW}/${backup_file} created, final size: ${backup_file_size}" "false"
+
+      # Upload backup
+      storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${remote_path}"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Delete old backup from Dropbox
+        storage_delete_backup "${remote_path}/${old_backup_file}"
+
+        # Delete temp backup
+        rm --force "${BROLIT_TMP_DIR}/${NOW}/${backup_file}"
+
+        # Log
+        log_event "info" "Temp backup deleted from server" "false"
+
+        # Return
+        echo "${backup_file_size}"
+
+      fi
+
+    else
+
+      # Log
+      clear_previous_lines "1"
+      display --indent 6 --text "- Files backup for ${directory_to_backup}" --result "FAIL" --color RED
+
+      return 1
+
+    fi
+
+  fi
+
+  if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
+
+    storage_upload_backup "${backup_path}/${directory_to_backup}" "${remote_path}"
 
   fi
 
@@ -540,7 +569,7 @@ function make_files_backup() {
 #   0 if ok, 1 if error
 ################################################################################
 
-function duplicity_backup() {
+function backup_duplicity() {
 
   if [[ ${BACKUP_DUPLICITY_STATUS} == "enabled" ]]; then
 
@@ -585,7 +614,7 @@ function duplicity_backup() {
 #  0 if ok, 1 if error
 ################################################################################
 
-function make_all_databases_backup() {
+function backup_all_databases() {
 
   local got_error
   local error_msg
@@ -595,21 +624,92 @@ function make_all_databases_backup() {
   # Starting Messages
   log_subsection "Backup Databases"
 
+  if [[ ${PACKAGES_MARIADB_STATUS} != "enabled" ]] && [[ ${PACKAGES_MYSQL_STATUS} != "enabled" ]] && [[ ${PACKAGES_POSTGRES_STATUS} != "enabled" ]]; then
+
+    display --indent 6 --text "- Initializing database backup script" --result "SKIPPED" --color YELLOW
+    display --indent 8 --text "No database engine present on server" --tcolor YELLOW
+    return 1
+
+  fi
+
   display --indent 6 --text "- Initializing database backup script" --result "DONE" --color GREEN
 
-  # Get MySQL DBS
-  databases="$(mysql_list_databases "all")"
+  if [[ ${PACKAGES_MARIADB_STATUS} == "enabled" ]] || [[ ${PACKAGES_MYSQL_STATUS} == "enabled" ]]; then
 
-  # Get all databases name
-  total_databases="$(mysql_count_databases "${databases}")"
+    # Get MySQL DBS
+    mysql_databases="$(mysql_list_databases "all")"
 
-  # Log
-  display --indent 6 --text "- Databases found" --result "${total_databases}" --color WHITE
-  log_event "info" "Databases found: ${total_databases}" "false"
-  log_break "true"
+    # Count MySQL databases
+    databases_count="$(mysql_count_databases "${mysql_databases}")"
 
-  got_error=0
-  database_backup_index=0
+    # Log
+    display --indent 6 --text "- MySql databases found" --result "${databases_count}" --color WHITE
+    log_event "info" "MySql databases found: ${databases_count}" "false"
+    log_break "true"
+
+    # Loop in to MySQL Databases and make backup
+    backup_databases "${mysql_databases}" "mysql"
+
+    backup_databases_status=$?
+    if [[ ${backup_databases_status} -eq 1 ]]; then
+
+      got_error="true"
+      error_msg="${error_msg}${error_msg:+\n}MySQL backup failed"
+      error_type="${error_type}${error_type:+\n}MySQL"
+
+    fi
+
+  fi
+
+  if [[ ${PACKAGES_POSTGRES_STATUS} == "enabled" ]]; then
+
+    # Get PostgreSQL DBS
+    psql_databases="$(postgres_list_databases "all")"
+
+    # Count PostgreSQL databases
+    databases_count="$(postgres_count_databases "${psql_databases}")"
+
+    # Log
+    display --indent 6 --text "- PSql databases found" --result "${databases_count}" --color WHITE
+    log_event "info" "PSql databases found: ${databases_count}" "false"
+    log_break "true"
+
+    # Loop in to PostgreSQL Databases and make backup
+    backup_databases "${psql_databases}" "psql"
+
+    backup_databases_status=$?
+    if [[ ${backup_databases_status} -eq 1 ]]; then
+
+      got_error="true"
+      error_msg="${error_msg}${error_msg:+\n}PostgreSQL backup failed"
+      error_type="${error_type}${error_type:+\n}PostgreSQL"
+
+    fi
+
+  fi
+
+  return 0
+
+}
+
+################################################################################
+# Make databases backup
+#
+# Arguments:
+#  $1 = ${databases}
+#  $2 = ${db_engine}
+#
+# Outputs:
+#  0 if ok, 1 if error
+################################################################################
+
+function backup_databases() {
+
+  local databases="${1}"
+  local db_engine="${2}"
+
+  local got_error=0
+  local database_backup_index=0
 
   for database in ${databases}; do
 
@@ -618,7 +718,7 @@ function make_all_databases_backup() {
       log_event "info" "Processing [${database}] ..." "false"
 
       # Make database backup
-      backup_file="$(make_database_backup "${database}")"
+      backup_file="$(backup_project_database "${database}" "${db_engine}")"
 
       if [[ ${backup_file} != "" ]]; then
 
@@ -631,20 +731,41 @@ function make_all_databases_backup() {
         backuped_databases_list[$database_backup_index]="${database_backup_file}"
         backuped_databases_sizes_list+=("${database_backup_size}")
 
-        # Upload backup
-        upload_backup_to_dropbox "${database}" "database" "${database_backup_path}"
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+          # Old backup
+          old_backup_file="${database}_database_${DAYSAGO}.tar.bz2"
+
+          # Delete old backup from Dropbox
+          storage_delete_backup "/${SERVER_NAME}/projects-online/database/${database}/${old_backup_file}"
+
+          exitstatus=$?
+          if [[ ${exitstatus} -eq 0 ]]; then
+
+            # Delete temp backup
+            rm --force "${BROLIT_TMP_DIR}/${NOW}/${database_backup_path}"
+
+            # Log
+            log_event "info" "${BROLIT_TMP_DIR}/${NOW}/${database_backup_path} backup deleted from server." "false"
+
+            # Return
+            # echo "${database_backup_size}"
+
+          fi
+
+        fi
 
         database_backup_index=$((database_backup_index + 1))
 
-        log_event "info" "Backup ${database_backup_index} of ${total_databases} done" "false"
+        log_event "info" "Backup ${database_backup_index} of ${databases_count} done" "false"
 
       else
 
-        log_event "error" "Creating backup file for database" "false"
-
-        error_msg="Something went wrong making a backup of ${database}. ${error_msg}"
-        error_type=""
+        #error_type=""
         got_error=1
+
+        log_event "error" "Something went wrong making a backup of ${database}." "false"
 
       fi
 
@@ -663,7 +784,7 @@ function make_all_databases_backup() {
   mail_databases_backup_section "${error_msg}" "${error_type}" "${backuped_databases_list[@]}" "${backuped_databases_sizes_list[@]}"
 
   # Return
-  echo "${got_error}"
+  return ${got_error}
 
 }
 
@@ -677,37 +798,65 @@ function make_all_databases_backup() {
 #  "backupfile backup_file_size" if ok, 1 if error
 ################################################################################
 
-function make_database_backup() {
+function backup_project_database() {
 
-  local database=$1
+  local database="${1}"
+  local db_engine="${2}"
 
-  local mysql_export_result
+  local export_result
 
-  local directory_to_backup="${TMP_DIR}/${NOW}/"
+  local directory_to_backup="${BROLIT_TMP_DIR}/${NOW}/"
   local db_file="${database}_database_${NOW}.sql"
 
   local backup_file="${database}_database_${NOW}.tar.bz2"
 
-  local dropbox_path
-
   log_event "info" "Creating new database backup of '${database}'" "false"
 
-  # Create dump file
-  mysql_database_export "${database}" "${directory_to_backup}${db_file}"
-  mysql_export_result=$?
+  if [[ ${db_engine} == "mysql" ]]; then
+    # Create dump file
+    mysql_database_export "${database}" "${directory_to_backup}${db_file}"
+  else
 
-  if [[ ${mysql_export_result} -eq 0 ]]; then
+    if [[ ${db_engine} == "psql" ]]; then
+      # Create dump file
+      postgres_database_export "${database}" "${directory_to_backup}${db_file}"
+    fi
+
+  fi
+
+  export_result=$?
+  if [[ ${export_result} -eq 0 ]]; then
 
     # Compress backup
-    backup_file_size="$(compress "${directory_to_backup}" "${db_file}" "${TMP_DIR}/${NOW}/${backup_file}")"
+    backup_file_size="$(compress "${directory_to_backup}" "${db_file}" "${BROLIT_TMP_DIR}/${NOW}/${backup_file}")"
 
     # Check test result
     compress_result=$?
     if [[ ${compress_result} -eq 0 ]]; then
 
-      # Return
-      ## backupfile backup_file_size
-      echo "${TMP_DIR}/${NOW}/${backup_file};${backup_file_size}"
+      # Log
+      display --indent 8 --text "Final backup size: ${YELLOW}${backup_file_size}${ENDCOLOR}"
+
+      # Create dir structure
+      storage_create_dir "/${SERVER_NAME}/projects-online"
+      storage_create_dir "/${SERVER_NAME}/projects-online/database"
+      storage_create_dir "/${SERVER_NAME}/projects-online/database/${database}"
+
+      # Upload database backup
+      storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "/${SERVER_NAME}/projects-online/database/${database}"
+
+      upload_result=$?
+      if [[ ${upload_result} -eq 0 ]]; then
+
+        rm --force "${directory_to_backup}/${db_file}"
+
+        # Return
+        ## output format: backupfile backup_file_size
+        echo "${BROLIT_TMP_DIR}/${NOW}/${backup_file};${backup_file_size}"
+
+        return 0
+
+      fi
 
     else
 
@@ -718,7 +867,10 @@ function make_database_backup() {
   else
 
     ERROR=true
-    ERROR_TYPE="mysqldump error with ${database}"
+    ERROR_MSG="Error creating dump file for database: ${database}"
+    log_event "error" "${ERROR_MSG}" "false"
+
+    return 1
 
   fi
 
@@ -735,16 +887,16 @@ function make_database_backup() {
 #   0 if ok, 1 if error
 ################################################################################
 
-function make_project_backup() {
+function backup_project() {
 
-  local project_domain=$1
-  local backup_type=$2
+  local project_domain="${1}"
+  local backup_type="${2}"
 
   local project_name
   local project_config_file
 
   # Backup files
-  make_files_backup "site" "${PROJECTS_PATH}" "${project_domain}"
+  backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${project_domain}")"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -759,22 +911,39 @@ function make_project_backup() {
 
     if [[ -f "${project_config_file}" ]]; then
 
-      db_name="$(project_get_config "${PROJECTS_PATH}/${project_domain}" "project_db")"
+      project_type="$(project_get_brolit_config_var "${project_config_file}" "project[].type")"
+      db_name="$(project_get_configured_database "${BROLIT_TMP_DIR}/${project_name}" "${project_type}")"
+      db_engine="$(project_get_configured_database_engine "${BROLIT_TMP_DIR}/${project_name}" "${project_type}")"
 
     else
 
+      #db_engine="$(project_get_configured_database_engine "${BROLIT_TMP_DIR}/${project_name}" "${project_type}")"
       db_stage="$(project_get_stage_from_domain "${project_domain}")"
       db_name="$(project_get_name_from_domain "${project_domain}")"
       db_name="${db_name}_${db_stage}"
 
     fi
 
-    # Backup database
-    make_database_backup "${db_name}"
+    # TODO: check database engine
+    mysql_database_exists "${db_name}"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+      # Backup database
+      backup_project_database "${db_name}" "mysql"
+
+    else
+
+      # Log
+      log_event "info" "Database ${db_name} not found" "false"
+      display --indent 6 --text "Database backup" --result "SKIPPED" --color YELLOW
+      display --indent 8 --text "Database ${db_name} not found" --tcolor YELLOW
+
+    fi
 
     log_event "info" "Deleting backup from server ..." "false"
 
-    rm --recursive --force "${TMP_DIR}/${NOW}/${backup_type}"
+    rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${backup_type:?}"
 
     log_event "info" "Project backup done" "false"
 
@@ -782,50 +951,6 @@ function make_project_backup() {
 
     ERROR=true
     log_event "error" "Something went wrong making a project backup" "false"
-
-  fi
-
-}
-
-function upload_backup_to_dropbox() {
-
-  local project_name=$1
-  local backup_type=$2
-  local backup_file=$3
-
-  #string_remove_special_chars "${project_name}"
-
-  # New folder with $VPSNAME
-  dropbox_create_dir "${VPSNAME}"
-
-  # New folder with "project_name"
-  dropbox_create_dir "${VPSNAME}/${backup_type}"
-
-  # New folder with $project_name (project DB)
-  dropbox_create_dir "${VPSNAME}/${backup_type}/${project_name}"
-
-  # Dropbox Path
-  dropbox_path="/${VPSNAME}/${backup_type}/${project_name}"
-
-  # Upload to Dropbox
-  dropbox_upload "${backup_file}" "${DROPBOX_FOLDER}${dropbox_path}"
-
-  dropbox_result=$?
-  if [[ ${dropbox_result} -eq 0 ]]; then
-
-    # Old backup
-    old_backup_file="${project_name}_${backup_type}_${DAYSAGO}.tar.bz2"
-
-    # Delete
-    dropbox_delete "${DROPBOX_FOLDER}${dropbox_path}/${old_backup_file}"
-
-    log_event "info" "Deleting temp ${backup_type} backup ${old_backup_file} from server" "false"
-
-    rm "${backup_file}"
-
-  else
-
-    return 1
 
   fi
 

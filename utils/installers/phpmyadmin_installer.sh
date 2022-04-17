@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 #############################################################################
 
 function phpmyadmin_installer () {
@@ -19,7 +19,7 @@ function phpmyadmin_installer () {
 
     log_event "info" "Setting project_domain=${project_domain}" "false"
 
-    possible_root_domain="$(get_root_domain "${project_domain}")"
+    possible_root_domain="$(domain_get_root "${project_domain}")"
     root_domain="$(cloudflare_ask_rootdomain "${possible_root_domain}")"
 
   else
@@ -30,9 +30,9 @@ function phpmyadmin_installer () {
 
   # Download phpMyAdmin
   display --indent 6 --text "- Downloading phpMyAdmin"
-  log_event "debug" "Running: curl --silent -L https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip > ${PROJECTS_PATH}/phpMyAdmin-latest-all-languages.zip" "false"
+  log_event "debug" "Running: ${CURL} https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip > ${PROJECTS_PATH}/phpMyAdmin-latest-all-languages.zip" "false"
   
-  curl --silent -L https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip > "${PROJECTS_PATH}"/phpMyAdmin-latest-all-languages.zip
+  ${CURL} https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip > "${PROJECTS_PATH}"/phpMyAdmin-latest-all-languages.zip
   
   clear_previous_lines "1"
   display --indent 6 --text "- Downloading phpMyAdmin" --result "DONE" --color GREEN
