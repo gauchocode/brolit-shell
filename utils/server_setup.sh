@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 # Server Setup: Perform server setup actions.
@@ -90,7 +90,7 @@ function server_app_setup() {
             mysql_default_installer
             mysql_initial_config
         else
-            package_purge "mariadb"
+            package_purge "mysql-server"
         fi
 
         ;;
@@ -98,10 +98,20 @@ function server_app_setup() {
     "mariadb")
 
         if [[ ${PACKAGES_MARIADB_STATUS} == "enabled" ]]; then
-            mariadb_default_installer
+            mysql_mariadb_default_installer
             mysql_initial_config
         else
-            package_purge "mariadb"
+            package_purge "mariadb-server"
+        fi
+
+        ;;
+
+    "postgres")
+
+        if [[ ${PACKAGES_POSTGRES_STATUS} == "enabled" ]]; then
+            postgres_default_installer
+        else
+            package_purge "postgresql"
         fi
 
         ;;
@@ -117,6 +127,8 @@ function server_app_setup() {
 
         else
             package_purge "redis"
+            package_purge "redis-server"
+            package_purge "redis-tools"
         fi
 
         ;;
@@ -133,7 +145,7 @@ function server_app_setup() {
 
     "monit")
 
-        if [[ ${PACKAGES_MONIT_CONFIG_STATUS} == "enabled" ]]; then
+        if [[ ${PACKAGES_MONIT_STATUS} == "enabled" ]]; then
             log_subsection "Monit Installer"
             package_install_if_not "monit"
             monit_configure
@@ -180,6 +192,17 @@ function server_app_setup() {
             cockpit_installer
         else
             package_purge "cockpit"
+        fi
+
+        ;;
+
+    "portainer")
+
+        if [[ ${PACKAGES_PORTAINER_STATUS} == "enabled" ]]; then
+            portainer_installer
+            portainer_configure
+        else
+            portainer_purge
         fi
 
         ;;
@@ -270,7 +293,7 @@ function server_setup() {
 
         # MySQL Installer
         if [[ ${PACKAGES_MARIADB_STATUS} == "enabled" ]]; then
-            mariadb_default_installer
+            mysql_mariadb_default_installer
             mysql_initial_config
 
         fi
@@ -304,7 +327,7 @@ function server_setup() {
 
     fi
 
-    if [[ ${PACKAGES_MONIT_CONFIG_STATUS} == "enabled" ]]; then
+    if [[ ${PACKAGES_MONIT_STATUS} == "enabled" ]]; then
         package_install_if_not "monit"
         monit_configure
     fi

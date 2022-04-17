@@ -1,62 +1,54 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
-#############################################################################
+# Version: 3.2-rc1
+################################################################################
+
+################################################################################
+# MySQL installer
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function mysql_default_installer() {
 
-  package_is_installed "mysql-server"
+  log_subsection "MySQL Installer"
 
-  exitstatus=$?
-  if [ ${exitstatus} -eq 0 ]; then
-
-    log_event "info" "MySQL is already installed" "false"
-
-    return 1
-
-  else
-
-    log_subsection "MySQL Installer"
-
-    log_event "info" "Running MySQL default installer" "false"
-
-    apt-get --yes install mysql-server -qq >/dev/null
-
-    display --indent 6 --text "- MySQL default installation" --result "DONE" --color GREEN
-
-    return 0
-
-  fi
+  package_install "mysql-server"
 
 }
 
-function mariadb_default_installer() {
+################################################################################
+# MySQL installer
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  package_is_installed "mariadb-server"
+function mysql_mariadb_default_installer() {
 
-  exitstatus=$?
-  if [ ${exitstatus} -eq 0 ]; then
+  log_subsection "MariaDB Installer"
 
-    log_event "info" "MariaDB is already installed" "false"
-
-    return 1
-
-  else
-
-    log_subsection "MariaDB Installer"
-
-    log_event "info" "Running MariaDB default installer" "false"
-
-    apt-get --yes install mariadb-server mariadb-client -qq >/dev/null
-
-    display --indent 6 --text "- MariaDB default installation" --result "DONE" --color GREEN
-
-    return 0
-
-  fi
+  package_install "mariadb-server"
 
 }
+
+################################################################################
+# MySQL purge/remove installation
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   none
+################################################################################
 
 function mysql_purge_installation() {
 
@@ -76,20 +68,59 @@ function mysql_purge_installation() {
 
 }
 
+################################################################################
+# MySQL check if is installed
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function mysql_check_if_installed() {
 
   MYSQL="$(which mysql)"
-  if [[ ! -x "${MYSQL}" ]]; then
-    mysql_installed="false"
+
+  if [[ ! -x ${MYSQL} ]]; then
+
+    echo "false"
+    return 1
+
+  else
+
+    echo "true"
+    return 0
+
   fi
 
 }
+
+################################################################################
+# MySQL check installed version
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   mysql version string
+################################################################################
 
 function mysql_check_installed_version() {
 
   mysql --version | awk '{ print $5 }' | awk -F\, '{ print $1 }'
 
 }
+
+################################################################################
+# MySQL initial config
+#
+# Arguments:
+#   $1 = ${project_domain}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function mysql_initial_config() {
 
@@ -101,13 +132,17 @@ function mysql_initial_config() {
   local query_6
   local root_pass
 
+  # Log
   log_event "info" "Running mysql_initial_config" "false"
+  display --indent 6 --text "- MySQL initial configuration"
 
+  # Ask new root password
   root_pass="$(mysql_ask_root_psw)"
 
   # Queries
   ## -- set root password
-  query_1="UPDATE mysql.user SET Password=PASSWORD('${root_pass}') WHERE User='root';"
+  #query_1="UPDATE mysql.user SET Password=PASSWORD('${root_pass}') WHERE User='root';"
+  query_1="SET PASSWORD FOR 'root'@'localhost' = PASSWORD('${root_pass}');"
   ## -- delete anonymous users
   query_2="DELETE FROM mysql.user WHERE User='';"
   # -- delete remote root capabilities
@@ -122,5 +157,23 @@ function mysql_initial_config() {
   # Execute command
   mysql -sfu root -e "${query_1}${query_2}${query_3}${query_4}${query_5}${query_6}"
 
-}
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
 
+    # Log
+    clear_previous_lines "1"
+    display --indent 6 --text "- MySQL initial configuration" --result "DONE" --color GREEN
+
+    return 0
+
+  else
+
+    # Log
+    clear_previous_lines "1"
+    display --indent 6 --text "- MySQL initial configuration" --result "FAIL" --color RED
+
+    return 1
+
+  fi
+
+}

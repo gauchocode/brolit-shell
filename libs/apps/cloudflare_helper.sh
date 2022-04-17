@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 # Packages Helper: Perform apt actions.
@@ -22,7 +22,7 @@
 
 function _cloudflare_get_zone_id() {
 
-    local zone_name=$1
+    local zone_name="${1}"
 
     local zone_id
 
@@ -84,7 +84,7 @@ function _cloudflare_get_zone_id() {
 
 function cloudflare_get_zone_info() {
 
-    local zone_name=$1
+    local zone_name="${1}"
 
     log_event "info" "Getting zone information for: ${zone_name}" "false"
 
@@ -123,7 +123,7 @@ function cloudflare_get_zone_info() {
 
 function cloudflare_domain_exists() {
 
-    local root_domain=$1
+    local root_domain="${1}"
 
     local zone_name
     local zone_id
@@ -155,7 +155,7 @@ function cloudflare_domain_exists() {
 
 function cloudflare_clear_cache() {
 
-    local root_domain=$1
+    local root_domain="${1}"
 
     local zone_name
     local purge_cache
@@ -208,8 +208,8 @@ function cloudflare_clear_cache() {
 
 function cloudflare_set_development_mode() {
 
-    local root_domain=$1
-    local dev_mode=$2
+    local root_domain="${1}"
+    local dev_mode="${2}"
 
     local purge_cache
 
@@ -266,7 +266,7 @@ function cloudflare_get_ssl_mode() {
 
     # $1 = ${root_domain}
 
-    local root_domain=$1
+    local root_domain="${1}"
 
     zone_id=$(_cloudflare_get_zone_id "${root_domain}")
 
@@ -306,8 +306,8 @@ function cloudflare_get_ssl_mode() {
 
 function cloudflare_set_ssl_mode() {
 
-    local root_domain=$1
-    local ssl_mode=$2
+    local root_domain="${1}"
+    local ssl_mode="${2}"
 
     local ssl_mode_result
 
@@ -360,8 +360,8 @@ function cloudflare_set_ssl_mode() {
 
 function cloudflare_record_exists() {
 
-    local domain=$1
-    local zone_id=$2
+    local domain="${1}"
+    local zone_id="${2}"
 
     # Cloudflare API to change DNS records
     log_event "info" "Checking if record ${domain} exists" "false"
@@ -374,7 +374,6 @@ function cloudflare_record_exists() {
 
     log_event "debug" "Last command executed: curl -s -X GET \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" | grep -Po '(?<=\"id\":\")[^\"]*'"
 
-    exitstatus=$?
     if [[ ${record_id} == "" ]]; then
 
         log_event "info" "Record ${record_name} not found on Cloudflare"
@@ -410,9 +409,9 @@ function cloudflare_record_exists() {
 
 function cloudflare_get_record_details() {
 
-    local root_domain=$1
-    local domain=$2
-    local field=$3
+    local root_domain="${1}"
+    local domain="${2}"
+    local field="${3}"
 
     local record_name
     local cur_ip
@@ -470,6 +469,7 @@ function cloudflare_get_record_details() {
 #   $2 = ${domain}
 #   $3 = ${record_type} - valid values: A, AAAA, CNAME, HTTPS, TXT, SRV, LOC, MX, NS, SPF, CERT, DNSKEY, DS, NAPTR, SMIMEA, SSHFP, SVCB, TLSA, URI
 #   $4 = ${proxy_status} - true/false
+#   $5 = ${cur_ip}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -477,17 +477,18 @@ function cloudflare_get_record_details() {
 
 function cloudflare_set_record() {
 
-    local root_domain=$1
-    local domain=$2
-    local record_type=$3
-    local proxy_status=$4
-    local cur_ip=$5
+    local root_domain="${1}"
+    local domain="${2}"
+    local record_type="${3}"
+    local proxy_status="${4}"
+    local cur_ip="${5}"
 
     local ttl
     local record_type
     local cur_ip
     local zone_id
     local record_id
+    local record_name
 
     record_name="${domain}"
 
@@ -555,36 +556,36 @@ function cloudflare_set_record() {
 
     else
 
+        # Log
         display --indent 6 --text "- Creating subdomain ${MAGENTA}${record_name}${ENDCOLOR}"
         log_event "debug" "Record ID not found. Trying to add the subdomain: ${record_name}"
+        log_event "debug" "Running: curl -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" --data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}\""
 
+        # Command
         update="$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
             -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
             -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json" \
             --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"
 
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
+        # Remove Cloudflare API garbage output
+        clear_previous_lines "4"
 
-            # Remove Cloudflare API garbage output
-            clear_previous_lines "4"
-
-            display --indent 6 --text "- Creating subdomain ${MAGENTA}${record_name}${ENDCOLOR}" --result "DONE" --color GREEN
-            log_event "info" "Subdomain ${record_name} added successfully" "false"
-
-            return 0
-
-        else
-
-            # Remove Cloudflare API garbage output
-            clear_previous_lines "4"
+        if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
 
             display --indent 6 --text "- Creating subdomain ${record_name}" --result "FAIL" --color RED
             log_event "error" "Error creating subdomain ${record_name}" "false"
-            log_event "debug" "Last command executed: curl -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" --data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}\""
+            log_event "debug" "Command returned: ${update}" "false"
 
             return 1
+
+        else
+
+            display --indent 6 --text "- Creating subdomain ${MAGENTA}${record_name}${ENDCOLOR}" --result "DONE" --color GREEN
+            log_event "info" "Subdomain ${record_name} added successfully" "false"
+            log_event "debug" "Command returned: ${update}" "false"
+
+            return 0
 
         fi
 
@@ -600,6 +601,7 @@ function cloudflare_set_record() {
 #   $2 = ${domain}
 #   $3 = ${record_type} - valid values: A, AAAA, CNAME, HTTPS, TXT, SRV, LOC, MX, NS, SPF, CERT, DNSKEY, DS, NAPTR, SMIMEA, SSHFP, SVCB, TLSA, URI
 #   $4 = ${proxy_status} - true/false
+#   $5 = ${cur_ip}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -607,11 +609,11 @@ function cloudflare_set_record() {
 
 function cloudflare_update_record() {
 
-    local root_domain=$1
-    local domain=$2
-    local record_type=$3
-    local proxy_status=$4
-    local cur_ip=$5
+    local root_domain="${1}"
+    local domain="${2}"
+    local record_type="${3}"
+    local proxy_status="${4}"
+    local cur_ip="${5}"
 
     local ttl
     local record_type
@@ -637,7 +639,27 @@ function cloudflare_update_record() {
         # Remove Cloudflare API garbage output
         clear_previous_lines "4"
 
+        if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
+
+            display --indent 6 --text "- Updating subdomain ${record_name}" --result "FAIL" --color RED
+            log_event "error" "Updating subdomain ${record_name}" "false"
+            log_event "debug" "Command returned: ${update}" "false"
+
+            return 1
+
+        else
+
+            display --indent 6 --text "- Updating subdomain ${MAGENTA}${record_name}${ENDCOLOR}" --result "DONE" --color GREEN
+            log_event "info" "Subdomain ${record_name} updated successfully" "false"
+            log_event "debug" "Command returned: ${update}" "false"
+
+            return 0
+
+        fi
+
     fi
+
+    # TODO: add an error message trying to update a record that does not exist.
 
 }
 
@@ -654,9 +676,9 @@ function cloudflare_update_record() {
 
 function cloudflare_delete_record() {
 
-    local root_domain=$1
-    local domain=$2
-    local record_type=$3
+    local root_domain="${1}"
+    local domain="${2}"
+    local record_type="${3}"
 
     # Cloudflare API to delete record
     log_event "info" "Accessing to Cloudflare API to delete record ${domain}" "false"
@@ -727,8 +749,8 @@ function cloudflare_delete_record() {
 
 function cloudflare_set_cache_ttl_value() {
 
-    local root_domain=$1
-    local cache_ttl_value=$2
+    local root_domain="${1}"
+    local cache_ttl_value="${2}"
 
     zone_id=$(_cloudflare_get_zone_id "${root_domain}")
 
@@ -782,8 +804,8 @@ function cloudflare_set_cache_ttl_value() {
 
 function cloudflare_set_http3_setting() {
 
-    local root_domain=$1
-    local http3_setting=$2
+    local root_domain="${1}"
+    local http3_setting="${2}"
 
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
 

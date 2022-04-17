@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 
 ################################################################################
@@ -71,7 +71,7 @@ function rclone_read_config() {
 
 function rclone_create_dir() {
 
-    local remote_directory=$1
+    local remote_directory="${1}"
 
     # Create Backup Dir
     rclone mkdir "${REMOTE_NAME}:${remote_directory}"
@@ -93,8 +93,8 @@ function rclone_create_dir() {
 
 function rclone_upload() {
 
-    local file_to_upload=$1
-    local remote_directory=$2
+    local file_to_upload="${1}"
+    local remote_directory="${2}"
 
     # Sync backup
     rclone sync "${file_to_upload}" "${REMOTE_NAME}:${remote_directory}" --progress
@@ -114,10 +114,10 @@ function rclone_upload() {
 
 function rclone_download() {
 
-    local file_to_download=$1
-    local remote_directory=$2
+    local file_to_download="${1}"
+    local remote_directory="${2}"
 
     # Download backup
-    rclone copy "${REMOTE_NAME}:${remote_directory}/${file_to_download}" "${TMP_DIR}" -P
+    rclone copy "${REMOTE_NAME}:${remote_directory}/${file_to_download}" "${BROLIT_TMP_DIR}" -P
 
 }

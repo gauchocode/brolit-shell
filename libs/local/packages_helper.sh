@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 # Packages Helper: Perform apt actions.
@@ -103,7 +103,7 @@ function package_update() {
 
 function package_is_installed() {
 
-  local package=$1
+  local package="${1}"
 
   if [[ "$(dpkg-query -W -f='${Status}' "${package}" 2>/dev/null | grep -c "ok installed")" == "1" ]]; then
 
@@ -135,7 +135,7 @@ function package_is_installed() {
 
 function package_install() {
 
-  local package=$1
+  local package="${1}"
 
   # Log
   display --indent 6 --text "- Installing ${package}"
@@ -179,7 +179,7 @@ function package_install() {
 
 function package_install_if_not() {
 
-  local package=$1
+  local package="${1}"
 
   # Check if package is installed
   package_is_installed "${package}"
@@ -216,6 +216,7 @@ function package_check_required() {
   package_install_if_not "zip"
   package_install_if_not "unzip"
   package_install_if_not "git"
+  package_install_if_not "whois"
   package_install_if_not "dnsutils"
   package_install_if_not "net-tools"
   package_install_if_not "sendemail"
@@ -366,7 +367,7 @@ function package_upgrade_all() {
 
 function package_purge() {
 
-  local package=$1
+  local package="${1}"
 
   # Log
   log_event "info" "Uninstalling ${package} ..." "false"

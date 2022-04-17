@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 # Certbot Helper: Certbot functions.
@@ -23,8 +23,8 @@
 
 function certbot_certificate_install() {
 
-  local email=$1
-  local domains=$2
+  local email="${1}"
+  local domains="${2}"
 
   local certbot_result
 
@@ -41,7 +41,9 @@ function certbot_certificate_install() {
     return 0
 
   else
-  
+
+    # Log
+    clear_previous_lines "3"
     log_event "warning" "Certificate installation failed, trying force-install ..." "false"
     display --indent 6 --text "- Installing certificate on domains" --result "FAIL" --color RED
 
@@ -61,8 +63,12 @@ function certbot_certificate_install() {
 
     else
 
+      # Log
+      clear_previous_lines "3"
       log_event "error" "Certificate installation for ${domains} failed!" "false"
       display --indent 6 --text "- Installing certificate on domains" --result "FAIL" --color RED
+      display --indent 8 --text "Please check and then run:" --tcolor RED
+      display --indent 8 --text "certbot --nginx -d ${domains}" --tcolor RED
 
       return 1
 
@@ -84,7 +90,7 @@ function certbot_certificate_install() {
 
 function certbot_certificate_delete_old_config() {
 
-  local domains=$1
+  local domains="${1}"
 
   for domain in ${domains}; do
 
@@ -123,8 +129,8 @@ function certbot_certificate_delete_old_config() {
 
 function certbot_certificate_expand() {
 
-  local email=$1
-  local domains=$2
+  local email="${1}"
+  local domains="${2}"
 
   log_event "debug" "Running: certbot --nginx --non-interactive --agree-tos --expand --redirect -m ${email} -d ${domains}" "false"
 
@@ -138,6 +144,8 @@ function certbot_certificate_expand() {
 
   else
 
+    # Log
+    clear_previous_lines "3"
     log_event "error" "Certificate installation for ${domains} failed!" "false"
     display --indent 6 --text "- Installing certificate on domains" --result "FAIL" --color RED
 
@@ -157,7 +165,7 @@ function certbot_certificate_expand() {
 
 function certbot_certificate_renew() {
 
-  local domains=$1
+  local domains="${1}"
 
   log_event "debug" "Running: certbot renew -d ${domains}" "false"
 
@@ -177,7 +185,7 @@ function certbot_certificate_renew() {
 
 function certbot_certificate_renew_test() {
 
-  local domains=$1
+  local domains="${1}"
 
   # Test renew for all installed certificates
 
@@ -199,7 +207,7 @@ function certbot_certificate_renew_test() {
 
 function certbot_certificate_force_renew() {
 
-  local domains=$1
+  local domains="${1}"
 
   log_event "debug" "Running: certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m ${email} -d ${domains}" "false"
 
@@ -220,8 +228,8 @@ function certbot_certificate_force_renew() {
 
 function certbot_helper_installer_menu() {
 
-  local email=$1
-  local domains=$2
+  local email="${1}"
+  local domains="${2}"
 
   local cb_installer_options
   local chosen_cb_installer_option
@@ -239,11 +247,20 @@ function certbot_helper_installer_menu() {
 
     if [[ ${chosen_cb_installer_option} == *"01"* ]]; then
 
-      # INSTALL_WITH_NGINX
+      if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
 
-      log_subsection "Certificate Installation with Certbot Nginx"
+        # INSTALL_WITH_NGINX
+        log_subsection "Certificate Installation with Certbot Nginx"
 
-      certbot_certificate_install "${email}" "${domains}"
+        certbot_certificate_install "${email}" "${domains}"
+
+      else
+
+        log_event "warning" "Certbot is not enabled or installed" "false"
+        display --indent 6 --text "- Certificate installation" --result "FAIL" --color RED
+        display --indent 8 --text "Certbot is not enabled or installed" --tcolor RED
+
+      fi
 
     fi
     if [[ ${chosen_cb_installer_option} == *"02"* ]]; then
@@ -294,8 +311,8 @@ function certbot_certonly_cloudflare() {
 
   # Ref: https://mangolassi.it/topic/18355/setup-letsencrypt-certbot-with-cloudflare-dns-authentication-ubuntu/2
 
-  local email=$1
-  local domains=$2
+  local email="${1}"
+  local domains="${2}"
 
   log_event "debug" "Running: certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m ${email} -d ${domains} --preferred-challenges dns-01" "false"
 
@@ -312,6 +329,8 @@ function certbot_certonly_cloudflare() {
 
   else
 
+    # Log
+    clear_previous_lines "3"
     log_event "warning" "Certificate installation failed, trying force-install ..." "false"
     display --indent 6 --text "- Installing certificate on domains" --result "FAIL" --color RED
 
@@ -329,8 +348,12 @@ function certbot_certonly_cloudflare() {
 
     else
 
+      # Log
+      clear_previous_lines "3"
       log_event "error" "Certificate installation for ${domains} failed!" "false"
       display --indent 6 --text "- Installing certificate on domains" --result "FAIL" --color RED
+      display --indent 8 --text "Please check and then run:" --tcolor RED
+      display --indent 8 --text "certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -d ${domains}" --tcolor RED
 
     fi
 
@@ -368,7 +391,7 @@ function certbot_show_certificates_info() {
 
 function certbot_show_domain_certificates_expiration_date() {
 
-  local domains=$1
+  local domains="${1}"
 
   log_event "debug" "Running: certbot certificates --cert-name ${domains}" "false"
 
@@ -389,35 +412,35 @@ function certbot_show_domain_certificates_expiration_date() {
 # TODO: Awful code, need a refactor
 function certbot_certificate_valid_days() {
 
-  local domain=$1
+  local domain="${1}"
 
   local cert_days
   local root_domain
   local subdomain_part
 
-  root_domain="$(get_root_domain "${domain}")"
-  subdomain_part="$(get_subdomain_part "${domain}")"
+  root_domain="$(domain_get_root "${domain}")"
+  subdomain_part="$(domain_get_subdomain_part "${domain}")"
 
-  cert_days=$(certbot certificates --cert-name "${domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
+  cert_days="$(certbot certificates --cert-name "${domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
 
   if [[ ${cert_days} == "" ]]; then
 
     if [[ ${subdomain_part} == "www" ]]; then
 
-      cert_days=$(certbot certificates --cert-name "${root_domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
+      cert_days="$(certbot certificates --cert-name "${root_domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
 
       if [[ "${cert_days}" == "" ]]; then
         # New try with -0001
-        cert_days=$(certbot certificates --cert-name "${root_domain}-0001" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
+        cert_days="$(certbot certificates --cert-name "${root_domain}-0001" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
 
       fi
 
     else
 
-      cert_days=$(certbot certificates --cert-name "www.${root_domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
+      cert_days="$(certbot certificates --cert-name "www.${root_domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
 
       if [[ "${cert_days}" == "" ]]; then
-        cert_days=$(certbot certificates --cert-name "${domain}-0001" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)
+        cert_days="$(certbot certificates --cert-name "${domain}-0001" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
 
       fi
 
@@ -444,7 +467,7 @@ function certbot_certificate_valid_days() {
 
 function certbot_certificate_get_valid_days() {
 
-  local domain=$1
+  local domain="${1}"
 
   local cert_days
 
@@ -477,9 +500,9 @@ function certbot_certificate_get_valid_days() {
 
 function certbot_certificate_delete() {
 
-  local domains=$1
+  local domains="${1}"
 
-  if [[ -z "${domains}" ]]; then
+  if [[ -z ${domains} ]]; then
 
     #Run certbot delete wizard
     certbot --nginx delete
@@ -499,9 +522,10 @@ function certbot_certificate_delete() {
     else
 
       # Log
+      clear_previous_lines "1"
       log_event "error" "Running: certbot delete --cert-name ${domains}" "false"
       display --indent 6 --text "- Deleting certificate for ${domains}" --result "FAIL" --color RED
-      display --indent 8 --text "Please read the log file" --tcolor RED
+      display --indent 8 --text "No certificate found" --tcolor RED
 
       return 1
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 #############################################################################
 
 function test_project_helper_funtions() {
@@ -9,7 +9,7 @@ function test_project_helper_funtions() {
     local project_domain="dev.broobe.com"
 
     #test_project_install "${PROJECTS_PATH}" "wordpress"
-    test_project_update_config "${PROJECTS_PATH}/${project_domain}" "project_db" "broobe_dev"
+    test_project_set_brolit_config_var "${PROJECTS_PATH}/${project_domain}" "project_db" "broobe_dev"
 
 }
 
@@ -33,12 +33,12 @@ function test_project_install() {
 
 }
 
-function test_project_update_config() {
+function test_project_set_brolit_config_var() {
 
-    local project_path=$1
-    local config_field=$2
-    local config_value=$3
+    local project_path="${1}"
+    local config_field="${2}"
+    local config_value="${3}"
 
-    project_update_config "${project_path}" "${config_field}" "${config_value}"
+    project_set_brolit_config_var "${project_path}" "${config_field}" "${config_value}"
 
 }

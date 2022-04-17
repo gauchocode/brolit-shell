@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 
 # sendmail --help
@@ -40,8 +40,8 @@ function mail_send_notification() {
     # $1 = ${email_subject} // Email's subject
     # $2 = ${email_content} // Email's content
 
-    local email_subject=$1
-    local email_content=$2
+    local email_subject="${1}"
+    local email_content="${2}"
 
     # Log
     log_event "info" "Sending Email to ${NOTIFICATION_EMAIL_MAILA} ..." "false"
@@ -76,11 +76,11 @@ function mail_subject_status() {
     # $4 = ${status_c} // Certificates status
     # $5 = ${outdated} // System Packages status
 
-    local status_d=$1
-    local status_f=$2
-    local status_s=$3
-    local status_c=$4
-    local outdated=$5
+    local status_d="${1}"
+    local status_f="${2}"
+    local status_s="${3}"
+    local status_c="${4}"
+    local outdated="${5}"
 
     local status
 
@@ -105,11 +105,11 @@ function mail_subject_status() {
 function remove_mail_notifications_files() {
 
     # Remove one per line only for better readibility
-    rm --force "${TMP_DIR}/cert-${NOW}.mail"
-    rm --force "${TMP_DIR}/pkg-${NOW}.mail"
-    rm --force "${TMP_DIR}/file-bk-${NOW}.mail"
-    rm --force "${TMP_DIR}/config-bk-${NOW}.mail"
-    rm --force "${TMP_DIR}/db-bk-${NOW}.mail"
+    rm --force "${BROLIT_TMP_DIR}/cert-${NOW}.mail"
+    rm --force "${BROLIT_TMP_DIR}/pkg-${NOW}.mail"
+    rm --force "${BROLIT_TMP_DIR}/file-bk-${NOW}.mail"
+    rm --force "${BROLIT_TMP_DIR}/config-bk-${NOW}.mail"
+    rm --force "${BROLIT_TMP_DIR}/db-bk-${NOW}.mail"
 
     log_event "info" "Email temporary files removed!" "false"
 
@@ -119,7 +119,7 @@ function mail_server_status_section() {
 
     #declare -g STATUS_SERVER # Global to check section status
 
-    local server_status=$1
+    local server_status="${1}"
 
     local disk_u
     local disk_u_ns
@@ -151,7 +151,7 @@ function mail_server_status_section() {
 
     fi
 
-    html_server_info_details="$(cat "${SFOLDER}/templates/emails/${email_template}/server_info-tpl.html")"
+    html_server_info_details="$(cat "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/server_info-tpl.html")"
 
     html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{server_status}}/${server_status}/g")"
     html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{server_status_icon}}/${server_status_icon}/g")"
@@ -160,7 +160,7 @@ function mail_server_status_section() {
     html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{disk_usage}}/${disk_u}/g")"
 
     # Write e-mail parts files
-    echo "${html_server_info_details}" >"${TMP_DIR}/server_info-${NOW}.mail"
+    echo "${html_server_info_details}" >"${BROLIT_TMP_DIR}/server_info-${NOW}.mail"
 
 }
 
@@ -193,7 +193,7 @@ function mail_package_status_section() {
 
     fi
 
-    html_pkg_details="$(cat "${SFOLDER}/templates/emails/${email_template}/packages-tpl.html")"
+    html_pkg_details="$(cat "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/packages-tpl.html")"
 
     html_pkg_details="$(echo "${html_pkg_details}" | sed -e 's|{{packages_status}}|'"${pkg_status}"'|g')"
     html_pkg_details="$(echo "${html_pkg_details}" | sed -e 's|{{packages_status_icon}}|'"${pkg_status_icon}"'|g')"
@@ -202,7 +202,7 @@ function mail_package_status_section() {
     html_pkg_details="$(echo "${html_pkg_details}" | sed -e 's|{{packages_status_details}}|'"${pkg_details}"'|g')"
 
     # Write e-mail parts files
-    echo "${html_pkg_details}" >"${TMP_DIR}/packages-${NOW}.mail"
+    echo "${html_pkg_details}" >"${BROLIT_TMP_DIR}/packages-${NOW}.mail"
 
 }
 
@@ -210,7 +210,7 @@ function mail_package_section() {
 
     # $1 = ${PACKAGES} // Packages to be updated
 
-    local -n PACKAGES=$1
+    local -n PACKAGES="${1}"
 
     local package
     local package_version_installed
@@ -325,7 +325,7 @@ function mail_certificates_section() {
 
     body="${email_cert_line}"
 
-    mail_certificates_html="$(cat "${SFOLDER}/templates/emails/${email_template}/certificates-tpl.html")"
+    mail_certificates_html="$(cat "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/certificates-tpl.html")"
 
     mail_certificates_html="$(echo "${mail_certificates_html}" | sed -e 's|{{certificates_status}}|'"${status_certs}"'|g')"
     mail_certificates_html="$(echo "${mail_certificates_html}" | sed -e 's|{{certificates_status_icon}}|'"${cert_status_icon}"'|g')"
@@ -334,16 +334,16 @@ function mail_certificates_section() {
     mail_certificates_html="$(echo "${mail_certificates_html}" | sed -e 's|{{certificates_list}}|'"${body}"'|g')"
 
     # Return
-    echo "${mail_certificates_html}" >"${TMP_DIR}/certificates-${NOW}.mail"
+    echo "${mail_certificates_html}" >"${BROLIT_TMP_DIR}/certificates-${NOW}.mail"
 
 }
 
 function mail_files_backup_section() {
 
-    local error_msg=$1
-    local error_type=$2
-    local -n backuped_files_list=$3
-    local -n backuped_files_sizes_list=$4
+    local error_msg="${1}"
+    local error_type="${2}"
+    local -n backuped_files_list="${3}"
+    local -n backuped_files_sizes_list="${4}"
 
     local status_backup_files
 
@@ -409,7 +409,7 @@ function mail_files_backup_section() {
 
     fi
 
-    mail_backup_files_html="$(cat "${SFOLDER}/templates/emails/${email_template}/backup_files-tpl.html")"
+    mail_backup_files_html="$(cat "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/backup_files-tpl.html")"
 
     mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e 's|{{files_backup_status}}|'"${status_backup_files}"'|g')"
     mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e 's|{{files_backup_status_icon}}|'"${status_icon_f}"'|g')"
@@ -418,21 +418,21 @@ function mail_files_backup_section() {
     mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e 's|{{files_backup_list}}|'"${content}"'|g')"
 
     # Write e-mail parts files
-    echo "${mail_backup_files_html}" >"${TMP_DIR}/file-bk-${NOW}.mail"
+    echo "${mail_backup_files_html}" >"${BROLIT_TMP_DIR}/file-bk-${NOW}.mail"
 
 }
 
 function mail_config_backup_section() {
 
-    local error_msg=$1
-    local error_type=$2
-    local -n backuped_config_list=$3
-    local -n backuped_config_sizes_list=$4
+    local error_msg="${1}"
+    local error_type="${2}"
+    local -n backuped_config_list="${3}"
+    local -n backuped_config_sizes_list="${4}"
 
     local count
     local status_icon_f
     local content
-    local count files_inc
+    local files_inc
     local files_inc_line_p1
     local files_inc_line_p2
     local files_inc_line_p3
@@ -483,7 +483,7 @@ function mail_config_backup_section() {
 
     fi
 
-    mail_backup_configs_html="$(cat "${SFOLDER}/templates/emails/${email_template}/backup_configs-tpl.html")"
+    mail_backup_configs_html="$(cat "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/backup_configs-tpl.html")"
 
     mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e 's|{{configs_backup_status}}|'"${status_backup_files}"'|g')"
     mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e 's|{{configs_backup_status_icon}}|'"${status_icon_f}"'|g')"
@@ -492,16 +492,16 @@ function mail_config_backup_section() {
     mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e 's|{{configs_backup_list}}|'"${content}"'|g')"
 
     # Write e-mail parts files
-    echo "${mail_backup_configs_html}" >"${TMP_DIR}/config-bk-${NOW}.mail"
+    echo "${mail_backup_configs_html}" >"${BROLIT_TMP_DIR}/config-bk-${NOW}.mail"
 
 }
 
 function mail_databases_backup_section() {
 
-    local error_msg=$1
-    local error_type=$2
-    local -n backuped_databases_list=$3
-    local -n backuped_databases_sizes_list=$4
+    local error_msg="${1}"
+    local error_type="${2}"
+    local -n backuped_databases_list="${3}"
+    local -n backuped_databases_sizes_list="${4}"
 
     local count
     local bk_db_size
@@ -513,7 +513,7 @@ function mail_databases_backup_section() {
     local email_template="default"
 
     # Clear garbage output
-    clear_previous_lines "2"
+    clear_previous_lines "4"
 
     log_event "debug" "Preparing mail databases backup section ..." "false"
 
@@ -554,7 +554,7 @@ function mail_databases_backup_section() {
 
     fi
 
-    mail_backup_databases_html="$(cat "${SFOLDER}/templates/emails/${email_template}/backup_databases-tpl.html")"
+    mail_backup_databases_html="$(cat "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/backup_databases-tpl.html")"
 
     mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e 's|{{databases_backup_status}}|'"${backup_status}"'|g')"
     mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e 's|{{databases_backup_status_icon}}|'"${status_icon}"'|g')"
@@ -563,7 +563,7 @@ function mail_databases_backup_section() {
     mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e 's|{{databases_backup_list}}|'"${content}"'|g')"
 
     # Write e-mail parts files
-    echo "${mail_backup_databases_html}" >"${TMP_DIR}/db-bk-${NOW}.mail"
+    echo "${mail_backup_databases_html}" >"${BROLIT_TMP_DIR}/db-bk-${NOW}.mail"
 
 }
 
@@ -571,18 +571,18 @@ function mail_footer() {
 
     # $1 = ${SCRIPT_V}
 
-    local script_v=$1
+    local script_v="${1}"
 
     local mail_footer
 
     local email_template="default"
 
-    html_footer="$(cat "${SFOLDER}/templates/emails/${email_template}/footer-tpl.html")"
+    html_footer="$(cat "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/footer-tpl.html")"
 
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
     mail_footer="$(echo "${html_footer}" | sed -e 's|{{brolit_version}}|'"${script_v}"'|g')"
 
     # Write e-mail parts files
-    echo "${mail_footer}" >"${TMP_DIR}/footer-${NOW}.mail"
+    echo "${mail_footer}" >"${BROLIT_TMP_DIR}/footer-${NOW}.mail"
 
 }

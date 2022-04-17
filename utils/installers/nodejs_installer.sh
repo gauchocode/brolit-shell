@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 #   Ref: https://github.com/nodesource/distributions#debinstall
@@ -34,7 +34,7 @@ function nodejs_installer() {
 
     # $1 = ${nodejs_version} - optional
 
-    local nodejs_version=$1
+    local nodejs_version="${1}"
 
     local nodejs_installer_title
     local nodejs_installer_message

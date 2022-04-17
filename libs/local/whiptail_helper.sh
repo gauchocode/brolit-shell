@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 #
 # Whiptail Helper: whiptail functions.
@@ -23,8 +23,8 @@
 
 function whiptail_message() {
 
-    local whip_title=$1
-    local whip_message=$2
+    local whip_title="${1}"
+    local whip_message="${2}"
 
     whiptail --title "${whip_title}" --msgbox "${whip_message}" 15 60 3>&1 1>&2 2>&3
     exitstatus=$?
@@ -51,8 +51,8 @@ function whiptail_message() {
 
 function whiptail_message_with_skip_option() {
 
-    local whip_title=$1
-    local whip_message=$2
+    local whip_title="${1}"
+    local whip_message="${2}"
 
     whiptail --title "${whip_title}" --yesno "${whip_message}" 15 60 3>&1 1>&2 2>&3
     exitstatus=$?
@@ -79,8 +79,8 @@ function whiptail_message_with_skip_option() {
 
 function whiptail_imput() {
 
-    local whip_title=$1
-    local whip_message=$2
+    local whip_title="${1}"
+    local whip_message="${2}"
 
     local whip_return
 

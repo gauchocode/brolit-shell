@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 #############################################################################
 #
 # SFTP Local Helper: Local sftp configuration functions
@@ -23,12 +23,12 @@
 
 function ftp_download() {
 
-    local ftp_ip=$1
-    local ftp_path=$2
-    local ftp_user=$3
-    local ftp_pass=$4
-    local local_directory=$6
-    #local excluded_dirs=$5
+    local ftp_ip="${1}"
+    local ftp_path="${2}"
+    local ftp_user="${3}"
+    local ftp_pass="${4}"
+    local local_directory="${6}"
+    #local excluded_dirs="${5}"
 
     log_event "debug" "Running: wget -r -l 0 --reject=log,.ftpquota ftp://${ftp_ip}/${ftp_path} --ftp-user=\"${ftp_user}\" --ftp-password=\"${ftp_pass}\" -nH --cut-dirs=1 --directory-prefix=\"${local_directory}\"" "false"
     

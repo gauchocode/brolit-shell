@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 
 ### Main dir check
-SFOLDER=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-SFOLDER=$(cd "$(dirname "${SFOLDER}")" && pwd)
-if [[ -z "${SFOLDER}" ]]; then
+BROLIT_MAIN_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+BROLIT_MAIN_DIR=$(cd "$(dirname "${BROLIT_MAIN_DIR}")" && pwd)
+if [[ -z "${BROLIT_MAIN_DIR}" ]]; then
   exit 1 # error; the path is not accessible
 fi
 
-# shellcheck source=${SFOLDER}/libs/commons.sh
-source "${SFOLDER}/libs/commons.sh"
+# shellcheck source=${BROLIT_MAIN_DIR}/libs/commons.sh
+source "${BROLIT_MAIN_DIR}/libs/commons.sh"
 
 ################################################################################
 
@@ -30,13 +30,13 @@ packages_remove_old
 
 optimize_ram_usage
 
-#DB_MAIL="${TMP_DIR}/db-bk-${NOW}.mail"
+#DB_MAIL="${BROLIT_TMP_DIR}/db-bk-${NOW}.mail"
 #DB_MAIL_VAR=$(<"${DB_MAIL}")
 
-#ONFIG_MAIL="${TMP_DIR}/config-bk-${NOW}.mail"
+#ONFIG_MAIL="${BROLIT_TMP_DIR}/config-bk-${NOW}.mail"
 #CONFIG_MAIL_VAR=$(<"${CONFIG_MAIL}")
 
-#FILE_MAIL="${TMP_DIR}/file-bk-${NOW}.mail"
+#FILE_MAIL="${BROLIT_TMP_DIR}/file-bk-${NOW}.mail"
 #FILE_MAIL_VAR=$(<"${FILE_MAIL}")
 
 #MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
@@ -47,7 +47,7 @@ optimize_ram_usage
 # Preparing email to send
 #log_event "info" "Sending Email to ${NOTIFICATION_EMAIL_MAILA} ..." "true"
 
-#EMAIL_SUBJECT="${EMAIL_STATUS} on ${VPSNAME} Complete Backup - [${NOWDISPLAY}]"
+#EMAIL_SUBJECT="${EMAIL_STATUS} on ${SERVER_NAME} Complete Backup - [${NOWDISPLAY}]"
 #EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${PKG_MAIL_VAR} ${CERT_MAIL_VAR} ${CONFIG_MAIL_VAR} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
 
 # Sending email notification

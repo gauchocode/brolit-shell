@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.1.7
+# Version: 3.2-rc1
 ################################################################################
 
 function php_get_standard_distro_version() {
@@ -20,7 +20,10 @@ function php_get_standard_distro_version() {
     php_v="8.0" #Ubuntu 22.04 LTS Default
 
   else
-    log_event "critical" "Non standard distro!" "true"
+    # Log
+    display --indent 6 --text "- Checking distro version" --result "WARNING" --color YELLOW
+    display --indent 8 --text "Non standard distro" --tcolor RED
+    log_event "critical" "Non standard distro!" "false"
     return 1
 
   fi
@@ -36,7 +39,7 @@ function php_installer() {
 
   # $1 = ${php_v} - optional
 
-  local php_v=$1
+  local php_v="${1}"
 
   log_subsection "PHP Installer"
 
@@ -199,6 +202,7 @@ function php_composer_installer() {
 
   fi
 
+  # Command
   composer_result="$(${PHP} "${SCRIPTPATH}"/composer-setup.php --quiet --install-dir=/usr/local/bin --filename=composer)"
 
   exitstatus=$?
@@ -208,14 +212,22 @@ function php_composer_installer() {
 
     log_event "info" "Composer Installer finished" "false"
 
+    # Return
+    echo "${exitstatus}"
+
+    return 0
+
   else
+
     log_event "error" "Composer Installer failed" "false"
     log_event "debug" "composer_result=${composer_result}" "false"
 
-  fi
+    # Return
+    echo "${exitstatus}"
 
-  # Return
-  echo "${exitstatus}"
+    return 1
+
+  fi
 
 }
 

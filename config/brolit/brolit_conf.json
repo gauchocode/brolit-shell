@@ -2,11 +2,12 @@
     "BROLIT_SETUP": {
         "config": [
             {
-                "version": "3.6.3",
+                "version": "3.7.6",
                 "debug": "true",
                 "quiet": "false",
                 "skip_test": "true",
-                "check_packages": "false"
+                "tmp_dir": "tmp",
+                "check_packages": "true"
             }
         ]
     },
@@ -31,10 +32,19 @@
         "config_path": "/etc/brolit"
     },
     "BACKUPS": {
-        "directories": [
+        "config": [
             {
-                "dir_1": "/var/www",
-                "dir_2": ""
+                "projects": "enabled",
+                "databases": "enabled",
+                "server_cfg": "enabled",
+                "compression_type": "lbzip2",
+                "retention": [
+                    {
+                        "keep_daily": "7",
+                        "keep_weekly": "0",
+                        "keep_monthly": "0"
+                    }
+                ]
             }
         ],
         "methods": [
@@ -78,20 +88,13 @@
                         "status": "disabled",
                         "config": [
                             {
-                                "backup_destination_path": "",
+                                "backup_path": "",
                                 "backup_frequency": "7D",
                                 "backup_full_life": "14D"
                             }
                         ]
                     }
                 ]
-            }
-        ],
-        "retention": [
-            {
-                "keep_daily": "7",
-                "keep_weekly": "0",
-                "keep_monthly": "0"
             }
         ]
     },
@@ -116,8 +119,8 @@
                 "status": "disabled",
                 "config": [
                     {
-                        "NOTIFICATION_TELEGRAM_BOT_TOKEN": "",
-                        "NOTIFICATION_TELEGRAM_CHAT_ID": ""
+                        "bot_token": "",
+                        "chat_id": ""
                     }
                 ]
             }
@@ -199,6 +202,42 @@
                 ]
             }
         ],
+        "mysql": [
+            {
+                "status": "disabled",
+                "version": "default",
+                "config": [
+                    {
+                        "port": "default"
+                    }
+                ]
+            }
+        ],
+        "postgres": [
+            {
+                "status": "disabled",
+                "version": "default",
+                "config": [
+                    {
+                        "port": "default"
+                    }
+                ]
+            }
+        ],
+        "redis": [
+            {
+                "status": "disabled",
+                "version": "default",
+                "config": [
+                    {
+                        "subdomain": "",
+                        "user": "",
+                        "user_pass": "",
+                        "port": ""
+                    }
+                ]
+            }
+        ],
         "php": [
             {
                 "status": "disabled",
@@ -250,31 +289,6 @@
                 ]
             }
         ],
-        "mysql": [
-            {
-                "status": "disabled",
-                "version": "default",
-                "config": [
-                    {
-                        "port": "default"
-                    }
-                ]
-            }
-        ],
-        "redis": [
-            {
-                "status": "disabled",
-                "version": "default",
-                "config": [
-                    {
-                        "subdomain": "",
-                        "user": "",
-                        "user_pass": "",
-                        "port": ""
-                    }
-                ]
-            }
-        ],
         "docker": [
             {
                 "status": "disabled",
@@ -290,7 +304,14 @@
         "portainer": [
             {
                 "status": "disabled",
-                "version": "default"
+                "version": "default",
+                "config": [
+                    {
+                        "port": "9000",
+                        "nginx_proxy": "",
+                        "subdomain": ""
+                    }
+                ]
             }
         ],
         "certbot": [
@@ -330,8 +351,24 @@
                     {
                         "subdomain": "",
                         "user": "",
-                        "user_pass": "",
-                        "alarm_level": ""
+                        "user_pass": ""
+                    }
+                ],
+                "notifications": [
+                    {
+                        "alarm_level": "CRITICAL",
+                        "maila": "",
+                        "telegram": [
+                            {
+                                "status": "disabled",
+                                "config": [
+                                    {
+                                        "bot_token": "",
+                                        "chat_id": ""
+                                    }
+                                ]
+                            }
+                        ]
                     }
                 ]
             }
