@@ -2,7 +2,6 @@
 
 <!-- Table of Contents -->
 ## :notebook_with_decorative_cover: Table of Contents
-
 - [About the Project](#star2-about-the-project)
   * [Motivation](#motivation)
   * [Why Bash?](#space_invader-why-bash)
@@ -21,19 +20,16 @@
 - [License](#license)
 - [Acknowledgements](#gem-acknowledgements)
 ## :star2: About the Project
-
 BROLIT Shell is a **BASH** based cloud server control software which can be used to quickly install a LEMP Stack on Ubuntu 18.04 and 20.04 servers, automate and restore backups, install PHP projects, and some usefull IT tasks.
 
 ![ScreenShot](./screenshot.png)
 
 ### Motivation
-
 * Standarize servers configuration.
 * Automatization of IT/DevOps tasks.
 * Reduce time and errors on IT/DevOps tasks.
 
 ### :space_invader: Why Bash?
-
 * Pre-installed on linux systems.
 * Not overloaded with dependencies.
 
@@ -82,30 +78,24 @@ BROLIT Shell is a **BASH** based cloud server control software which can be used
 | **Teleport** | SOON | default config |
 
 ### Third Party Utils
-
 BROLIT Shell uses some third-party tools:
 
 #### Dropbox Uploader
-
 Dropbox Uploader is a BASH script which can be used to upload, download, list or delete files from Dropbox, an online file sharing, synchronization and backup service.
 
 #### Google PageSpeed Insights API Tools
-
 gitool.sh shell script to query Google PageSpeed Insights v4 & v5 API for site & origin metrics for FCP & DCL with additional support for GTMetrix & WebpageTest.org API tests.
 
 #### Blacklist Checker
-
 Blacklist check UNIX/Linux utility.
 
 #### Nench
-
 VPS benchmark script — based on the popular bench.sh, plus CPU and ioping tests, and dual-stack IPv4 and v6 speedtests by default.
 
-## Installation
+## :gear: Installation
 
 ### IMPORTANT: The script needs to be runned by root.
 ### Cloud-init
-
 ```bash
 #cloud-config
 package_update: true
@@ -119,87 +109,73 @@ runcmd:
 ```
 
 ### Manual
-
 Cloning repo:
-
 ```bash
 git clone https://github.com/lpadula/brolit-shell
 ```
 
 Change directories to the new ~/brolit-shell directory:
-
 ```bash
 cd ~/brolit-shell
 ```
 
 Give the execution permission to the script:
-
 ```bash
 chmod +x runner.sh
 ```
 
-## Getting started
-
+## :triangular_flag_on_post: First steps
 Execute BROLIT:
-
 ```bash
 ./runner.sh
 ```
 
 The first time you run BROLIT, it will prompt you to create a new config file: `~/.brolit_conf.json`. Then open and edit this json file.
 
-## Update
-
-🚨🚨🚨 BREAKING CHANGES SINCE VERSION 3.0 🚨🚨🚨
-
-Before you upgrade:
-
-1- Backup and rename the .brolit_conf.json
-2- Run updater.sh
-3- Run runner.sh to regenerate .brolit_conf.json
-4- Edit .brolit_conf.json
-5- If you use dropbox as backup system, please move old backups to another folder (new directory structure since version 3.2)
-6- Run runner.sh
-
 ## Running as cron job
-
 This script relies on a different configuration file for each system user. The default configuration file location is `/root/.brolit_conf.json`.
 This means that if you setup the script with your user and then you try to run a cron job as root, it won't work.
 
 * To setup the script to run as a cron job please use the option "CRON TASKS"
 
 ## Running tasks without menu
-
 You can run some tasks like this:
-
 ```
 ./runner.sh --task "cloudflare-api" --subtask "clear_cache" --domain "broobe.com"
 ```
 
 More information here: [FLAGS](./docs/DOC-flags.md)
 
-## TODO List
+## Update
+🚨🚨🚨 **BREAKING CHANGES SINCE VERSION 3.0** 🚨🚨🚨
+
+Before upgrade:
+
+1. Backup and rename the .brolit_conf.json
+2. Run updater.sh
+3. Run runner.sh to regenerate .brolit_conf.json
+4. Edit .brolit_conf.json
+5. If you use dropbox as backup system, please move old backups to another folder (new directory structure since version 3.2)
+6. Run runner.sh
+
+## :compass: TODO List
 [TODO List](./docs/TODO.md)
 
 ## Changelog
 [Changelog](./docs/CHANGELOG.md)
 
 ## :wave: Contributing
-
 Please read CONTRIBUTING.md for details on our code of conduct, and the process for submitting pull requests to us.
 
 ## Code: Bash Best Practices
-
 [Best Practices](./docs/CODE.md)
 
-## Team
-
+## :busts_in_silhouette: Team
 This theme is maintained by the following person(s) and a bunch of [awesome contributors](https://github.com/lpadula/brolit-shell/graphs/contributors).
 
 [![Leandro Padula](https://github.com/lpadula.png?size=100)](https://github.com/lpadula) |
 --- |
 [Leandro Padula](https://github.com/lpadula) |
 
-## License
-
+## :warning: License
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
