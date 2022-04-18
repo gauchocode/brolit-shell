@@ -35,7 +35,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.2-rc1"
-ALIASES_VERSION="3.2-rc1-093"
+ALIASES_VERSION="3.2-rc1-094"
 
 ################################################################################
 
@@ -1247,7 +1247,7 @@ function dropbox_get_backup() {
     backups_string=''
 
     if [[ ${project_domain} == "" ]]; then
-        exit 1
+        return 1
     fi
 
     project_db="$(_project_get_config "${PROJECTS_PATH}/${project_domain}" "project_db")"
