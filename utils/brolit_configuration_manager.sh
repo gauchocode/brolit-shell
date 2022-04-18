@@ -764,12 +764,17 @@ function _brolit_configuration_load_mariadb() {
 
     else
 
-        # Check which mysql version is installed
-        is_mariadb="$(mysql -V | grep MariaDB)"
+        # ${PACKAGES_MYSQL_STATUS} == "disabled"
 
-        # Checking if MYSQL is installed and is MariaDB
-        if [[ -x ${MYSQL} && -n ${is_mariadb} ]]; then
-            menu_config_changes_detected "mariadb" "true"
+        if [[ -x ${MYSQL} ]]; then
+            # Check which mysql version is installed
+            is_mariadb="$(mysql -V | grep MariaDB)"
+
+            # Checking if MYSQL is installed and is not MariaDB
+            if [[ -n ${is_mariadb} ]]; then
+                menu_config_changes_detected "mariadb" "true"
+            fi
+
         fi
 
     fi
@@ -862,13 +867,17 @@ function _brolit_configuration_load_mysql() {
         fi
 
     else
+        # ${PACKAGES_MYSQL_STATUS} == "disabled"
 
-        # Check which mysql version is installed
-        is_mariadb="$(mysql -V | grep MariaDB)"
+        if [[ -x ${MYSQL} ]]; then
+            # Check which mysql version is installed
+            is_mariadb="$(mysql -V | grep MariaDB)"
 
-        # Checking if MYSQL is installed and is not MariaDB
-        if [[ -x ${MYSQL} && -z ${is_mariadb} ]]; then
-            menu_config_changes_detected "mysql" "true"
+            # Checking if MYSQL is installed and is not MariaDB
+            if [[ -z ${is_mariadb} ]]; then
+                menu_config_changes_detected "mysql" "true"
+            fi
+
         fi
 
     fi
