@@ -1072,6 +1072,7 @@ function restore_project() {
   local chosen_backup_to_restore
   local db_to_download
   local project_db_status
+  local project_type
 
   log_section "Restore Project Backup"
 
@@ -1118,8 +1119,6 @@ function restore_project() {
     # Project Type
     project_type="$(project_get_type "${BROLIT_TMP_DIR}/${chosen_project}")"
 
-    log_event "debug" "Project Type: ${project_type}" "false"
-
     # Here, for convention, ${chosen_project} should be $chosen_domain... only for better code reading:
     chosen_domain="${chosen_project}"
 
@@ -1139,7 +1138,7 @@ function restore_project() {
     display --indent 8 --text "Project Type ${project_type}" --tcolor GREEN
 
     # Reading config file
-    if [[ ${project_type} != "html" ]]; then
+    if [[ ${project_type} -ne "html" ]]; then
       # Database vars
       db_engine="$(project_get_configured_database_engine "${BROLIT_TMP_DIR}/${chosen_project}" "${project_type}")"
       db_name="$(project_get_configured_database "${BROLIT_TMP_DIR}/${chosen_project}" "${project_type}")"
