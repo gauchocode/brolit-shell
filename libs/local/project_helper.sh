@@ -1826,6 +1826,8 @@ function project_get_type() {
     wp_path="$(wp_config_path "${dir_path}")"
     if [[ -n ${wp_path} ]]; then
 
+      log_event "debug" "Project Type: wordpress" "false"
+
       # Return
       echo "wordpress"
 
@@ -1836,6 +1838,8 @@ function project_get_type() {
     # Laravel?
     laravel_v="$(php "${dir_path}/artisan" --version | grep -oE "Laravel Framework [0-9]+\.[0-9]+\.[0-9]+")"
     if [[ -n ${laravel_v} ]]; then
+
+      log_event "debug" "Project Type: laravel" "false"
 
       # Return
       echo "laravel"
@@ -1848,6 +1852,8 @@ function project_get_type() {
     php="$(find "${dir_path}" -name "index.php" -type f)"
     if [[ -n ${php} ]]; then
 
+      log_event "debug" "Project Type: php" "false"
+
       # Return
       echo "php"
 
@@ -1858,6 +1864,8 @@ function project_get_type() {
     # Node.js?
     nodejs="$(find "${dir_path}" -name "package.json" -type f)"
     if [[ -n ${nodejs} ]]; then
+
+      log_event "debug" "Project Type: nodejs" "false"
 
       # Return
       echo "nodejs"
@@ -1870,6 +1878,8 @@ function project_get_type() {
     html="$(find "${dir_path}" -name "index.html" -type f)"
     if [[ -n ${html} ]]; then
 
+      log_event "debug" "Project Type: html" "false"
+
       # Return
       echo "html"
 
@@ -1881,6 +1891,8 @@ function project_get_type() {
     docker="$(find "${dir_path}" -name "docker-compose.yml" -type f | find "${dir_path}" -name "docker-compose.yaml" -type f)"
     if [[ -n ${docker} ]]; then
 
+      log_event "debug" "Project Type: docker-compose" "false"
+
       # Return
       echo "docker-compose"
 
@@ -1890,7 +1902,8 @@ function project_get_type() {
 
     # Unknown
     # if reach this point, it's not a project?
-
+    log_event "debug" "Project Type: unknown" "false"
+    
     # Return
     echo "unknown"
 
