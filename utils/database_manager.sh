@@ -225,9 +225,9 @@ function database_manager_menu() {
 
       # List users
       if [[ ${chosen_database_engine_options} == "MYSQL" ]]; then
-        mysql_list_users
+        database_users="$(mysql_list_users)"
       else
-        postgres_list_users
+        database_users="$(postgres_list_users)"
       fi
 
       chosen_user="$(whiptail --title "DATABASE MANAGER" --menu "Choose the user you want to delete" 20 78 10 $(for x in ${database_users}; do echo "$x [U]"; done) 3>&1 1>&2 2>&3)"
