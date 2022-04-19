@@ -241,9 +241,10 @@ function project_ask_type() {
   local project_types
   local project_type
 
-  project_types="WordPress [X] Laravel [X] PHP [X] HTML [X] OTHER [X]"
+  project_types="WordPress Laravel PHP HTML docker-compose Other"
 
-  project_type="$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 $(for x in ${project_types}; do echo "$x"; done) 3>&1 1>&2 2>&3)"
+  project_type="$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 $(for x in ${project_types}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)"
+
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -1996,7 +1997,7 @@ function project_create_nginx_server() {
 
     # Aks project type
     project_type="$(project_ask_type "${suggested_project_type}")"
-    if [[ ${project_domain} == "docker-compose" || ${project_domain} == "other" ]]; then
+    if [[ ${project_type} == "docker-compose" || ${project_type} == "other" ]]; then
       project_type="proxy"
       project_port="$(project_ask_port "")"
     fi
