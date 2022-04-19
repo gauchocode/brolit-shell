@@ -40,7 +40,7 @@ function _make_temp_files_backup() {
 
     # Rename it with a timestamp
     mv "${BROLIT_MAIN_DIR}/tmp/old_backups/${base_directory}" "${BROLIT_MAIN_DIR}/tmp/old_backups/${base_directory}_${timestamp}"
-    
+
   fi
 
   mv "${folder_to_backup}" "${BROLIT_MAIN_DIR}/tmp/old_backups"
@@ -827,7 +827,7 @@ function restore_backup_files() {
   log_subsection "Restore Files Backup"
 
   chosen_domain="$(whiptail --title "Project Domain" --inputbox "Want to change the project's domain? Default:" 10 60 "${domain}" 3>&1 1>&2 2>&3)"
-  
+
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -1220,8 +1220,8 @@ function restore_project() {
 
     fi
 
-    possible_root_domain="$(domain_get_root "${new_project_domain}")"
-    root_domain="$(ask_root_domain "${possible_root_domain}")"
+    root_domain="$(domain_get_root "${new_project_domain}")"
+    #root_domain="$(ask_root_domain "${possible_root_domain}")"
 
     # TODO: if ${new_project_domain} == ${chosen_domain}, maybe ask if want to restore nginx and let's encrypt config files
     # restore_letsencrypt_site_files "${chosen_domain}" "${project_backup_date}"
@@ -1276,7 +1276,7 @@ function restore_project() {
 
     fi
 
-    # TODO: create brolit_project_conf.json file with project info
+    # Create/update brolit_project_conf.json file with project info
     project_update_brolit_config "${PROJECTS_PATH}/${chosen_domain}" "${chosen_project}" "${project_state}" "${project_type}" "${project_db_status}" "${db_engine}" "${db_name}" "${db_user}" "${db_pass}" "${new_project_domain}"
 
     # TODO: make a function of this on wordpress helper
@@ -1311,6 +1311,25 @@ function restore_project() {
 
       fi
 
+    else
+
+      # TODO: search .env file
+      project_env="${PROJECTS_PATH}/${chosen_domain}/.env"
+
+      if [[ -f ${project_env} ]]; then
+
+        # Update project .env file
+        #project_set_config_var "${project_env}" "DB_CONNECTION" "${chosen_project}"
+        project_set_config_var "${project_env}" "DB_DATABASE" "${db_project_name}_${project_state}"
+        project_set_config_var "${project_env}" "DB_USERNAME" "${db_project_name}_user"
+        project_set_config_var "${project_env}" "DB_PASSWORD" "${db_pass}"
+
+      else
+
+        log_event "info" ".env file not found on project directory" "false"
+
+      fi
+
     fi
 
     # Send notification
@@ -1320,7 +1339,7 @@ function restore_project() {
 
 }
 
-# TODO: better name?
+# TODO: better name? should implement database engine option
 function restore_backup_database() {
 
   local project_name="${1}"
