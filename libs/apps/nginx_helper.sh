@@ -13,9 +13,10 @@
 #
 # Arguments:
 #   $1 = ${project_domain}
-#   $2 = ${project_type} (default, wordpress, symphony, phpmyadmin, netdata)
+#   $2 = ${project_type} (default, wordpress, symphony, phpmyadmin, netdata, proxy)
 #   $3 = ${server_type} (single, root_domain, multi_domain)
 #   $4 = ${redirect_domains} (list of domains or subdomains that will be redirect to project_domain) - Optional
+#   $5 = ${proxy_port} (only if project_type==proxy) - Optional
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -27,6 +28,7 @@ function nginx_server_create() {
     local project_type="${2}"
     local server_type="${3}"
     local redirect_domains="${4}"
+    local proxy_port="${4}"
 
     local debug
 
@@ -62,8 +64,11 @@ function nginx_server_create() {
         # Symbolic link
         ln -s "${nginx_server_file}" "${WSERVER}/sites-enabled/${project_domain}"
 
-        # Search and replace domain.com string with correct project_domain
+        # Search and replace domain.com string with ${project_domain}
         sed -i "s/domain.com/${project_domain}/g" "${nginx_server_file}"
+
+        # Search and replace PROXY_PORT string with ${proxy_port}
+        sed -i "s/PROXY_PORT/${proxy_port}/g" "${nginx_server_file}"
 
         # Log
         display --indent 6 --text "- Creating nginx server config" --result DONE --color GREEN

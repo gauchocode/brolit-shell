@@ -236,10 +236,12 @@ function project_ask_domain() {
 
 function project_ask_type() {
 
+  local suggested_project_type="${1}"
+
   local project_types
   local project_type
 
-  project_types="WordPress X Laravel X PHP X HTML X"
+  project_types="WordPress [X] Laravel [X] PHP [X] HTML [X] OTHER [X]"
 
   project_type="$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 $(for x in ${project_types}; do echo "$x"; done) 3>&1 1>&2 2>&3)"
   exitstatus=$?
@@ -252,6 +254,40 @@ function project_ask_type() {
     echo "${project_type}"
 
   else
+    return 1
+
+  fi
+
+}
+
+################################################################################
+# Ask project port
+#
+# Arguments:
+#   ${suggested_proxy_port}
+#
+# Outputs:
+#   ${proxy_port} if ok, 1 on error.
+################################################################################
+
+function project_ask_port() {
+
+  local suggested_proxy_port="${1}"
+
+  local proxy_port
+
+  proxy_port="$(whiptail --title "Domain" --inputbox "Insert the port you want to proxy." 10 60 "${suggested_proxy_port}" 3>&1 1>&2 2>&3)"
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Return
+    echo "${proxy_port}"
+
+    return 0
+
+  else
+
     return 1
 
   fi
@@ -1388,7 +1424,7 @@ function project_install() {
   # TODO: need to check if user cancels some of this options
 
   if [[ -z ${project_type} ]]; then
-    project_type="$(project_ask_type)"
+    project_type="$(project_ask_type "")"
   fi
 
   log_section "Project Installer (${project_type})"
@@ -1903,7 +1939,7 @@ function project_get_type() {
     # Unknown
     # if reach this point, it's not a project?
     log_event "debug" "Project Type: unknown" "false"
-    
+
     # Return
     echo "unknown"
 
@@ -1955,20 +1991,25 @@ function project_create_nginx_server() {
     # Extract root domain
     root_domain="$(domain_get_root "${project_domain}")"
 
-    # Aks project type
-    project_type="$(project_ask_type)"
+    # Try to get project type
+    suggested_project_type="$(project_get_type "${filepath}/${filename}")"
 
+    # Aks project type
+    project_type="$(project_ask_type "${suggested_project_type}")"
+    if [[ ${project_domain} == "docker-compose" || ${project_domain} == "other" ]]; then
+      project_type="proxy"
+      project_port="$(project_ask_port "")"
+    fi
+
+    # Working with root domain or www?
     if [[ ${project_domain} == "${root_domain}" || ${project_domain} == "www.${root_domain}" ]]; then
 
       # Nginx config
-      nginx_server_create "www.${root_domain}" "${project_type}" "root_domain" "${root_domain}"
+      nginx_server_create "www.${root_domain}" "${project_type}" "root_domain" "${root_domain}" "" "${project_port}"
 
       if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
 
         # Cloudflare
-        #cloudflare_update_record "${root_domain}" "${root_domain}" "A" "false" "${SERVER_IP}"
-        #cloudflare_update_record "${root_domain}" "www.${root_domain}" "CNAME" "false" "${root_domain}"
-
         cloudflare_set_record "${root_domain}" "${root_domain}" "A" "false" "${SERVER_IP}"
         cloudflare_set_record "${root_domain}" "www.${root_domain}" "CNAME" "false" "${root_domain}"
 
@@ -1998,7 +2039,7 @@ function project_create_nginx_server() {
     else
 
       # Nginx config
-      nginx_server_create "${project_domain}" "${project_type}" "single"
+      nginx_server_create "${project_domain}" "${project_type}" "single" "" "${project_port}"
 
       if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
 

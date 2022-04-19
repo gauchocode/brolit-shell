@@ -48,6 +48,8 @@
 - [ ] Restore-database: granting privileges to user fails, database_name is empty.
 - [ ] Postgres: Better postgres support. On "DATABASE MANAGEMENT" Menu, add Database Engine selection.
 - [ ] Storage-controller: add function to list directories and files from storage.
+- [ ] PHP: At BROLIT init, if php is installed, check default version.
+        https://stackoverflow.com/questions/42619312/switch-php-versions-on-commandline-ubuntu-16-04
 
 ## For release 3.3
 
