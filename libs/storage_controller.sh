@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc1
+# Version: 3.2-rc2
 ################################################################################
 #
 # Storage Controller: Controller to upload and download backups.
