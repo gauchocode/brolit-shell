@@ -56,8 +56,11 @@ function php_installer() {
     display --indent 6 --text "- Installing php-${php_v} and libraries"
     log_event "info" "Installing php-${php_v} and libraries ..." "false"
 
+    # Will remove all apt-get command output
+    # sudo DEBIAN_FRONTEND=noninteractive apt-get install PACKAGE -y -qq < /dev/null > /dev/null
+
     # apt command
-    apt-get --yes install "php${php_v}-fpm" "php${php_v}-mysql" "php-imagick" "php${php_v}-xml" "php${php_v}-cli" "php${php_v}-curl" "php${php_v}-mbstring" "php${php_v}-gd" "php${php_v}-intl" "php${php_v}-zip" "php${php_v}-bz2" "php${php_v}-bcmath" "php${php_v}-soap" "php${php_v}-dev" "php-pear" -qq >/dev/null
+    sudo DEBIAN_FRONTEND=noninteractive apt-get --yes install "php${php_v}-fpm" "php${php_v}-mysql" "php-imagick" "php${php_v}-xml" "php${php_v}-cli" "php${php_v}-curl" "php${php_v}-mbstring" "php${php_v}-gd" "php${php_v}-intl" "php${php_v}-zip" "php${php_v}-bz2" "php${php_v}-bcmath" "php${php_v}-soap" "php${php_v}-dev" "php-pear" -qq  < /dev/null > /dev/null
 
     # Log
     clear_previous_lines "1"
