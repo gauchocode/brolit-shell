@@ -86,8 +86,8 @@ function firewall_disable() {
 
         # Log
         log_event "info" "Deactivating firewall" "false"
-        display --indent 2 --text "- Deactivating firewall" --result "DONE" --color GREEN
-        display --indent 4 --text "${ufw_output}"
+        display --indent 6 --text "- Deactivating firewall" --result "DONE" --color GREEN
+        display --indent 8 --text "${ufw_output}"
 
         return 0
 
@@ -95,8 +95,8 @@ function firewall_disable() {
 
         # Log
         log_event "error" "Deactivating firewall" "false"
-        display --indent 2 --text "- Deactivating firewall" --result "FAIL" --color RED
-        display --indent 4 --text "${ufw_output}"
+        display --indent 6 --text "- Deactivating firewall" --result "FAIL" --color RED
+        display --indent 8 --text "${ufw_output}"
 
         return 1
 
