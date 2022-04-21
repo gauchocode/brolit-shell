@@ -28,7 +28,7 @@ function nginx_server_create() {
     local project_type="${2}"
     local server_type="${3}"
     local redirect_domains="${4}"
-    local proxy_port="${4}"
+    local proxy_port="${5}"
 
     local debug
 
