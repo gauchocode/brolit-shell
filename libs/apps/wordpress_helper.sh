@@ -110,7 +110,7 @@ function wp_config_get_option() {
   wp_value="$(cat "${wp_project_dir}/wp-config.php" | grep "${wp_option}" | cut -d \' -f 4)"
 
   exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
+  if [[ ${exitstatus} -eq 0 && -n ${wp_value} ]]; then
 
     # Log
     log_event "info" "Option ${wp_option}=${wp_value}" "false"

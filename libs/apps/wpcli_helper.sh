@@ -1831,6 +1831,47 @@ function wpcli_change_wp_seo_visibility() {
 
 }
 
+################################################################################
+# Update upload_path
+#
+# Arguments:
+#   $1 = ${wp_site} (site path)
+#   $2 = ${upload_path}
+#
+# Outputs:
+#   0 on success, 1 on error
+################################################################################
+
+function wpcli_update_upload_path() {
+
+    local wp_site="${1}"
+    local upload_path="${2}"
+
+    log_event "debug" "Running: wp --allow-root --path=\"${wp_site}\" rocket clean --confirm" "false"
+
+    # Command
+    wp --allow-root --path="${wp_site}" option update upload_path "${upload_path}"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        display --indent 6 --text "- Updating upload path for ${wp_site}" --result "DONE" --color GREEN
+        log_event "error" "New upload path: ${upload_path}" "false"
+
+        return 0
+
+    else
+
+        # Log
+        display --indent 6 --text "- Updating upload path for ${wp_site}" --result "FAIL" --color RED
+        log_event "error" "Updating upload path: ${upload_path}" "false"
+
+        return 1
+
+    fi
+}
+
 ### wpcli plugins specific functions
 
 ################################################################################
