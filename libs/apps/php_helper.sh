@@ -131,7 +131,7 @@ function php_reconfigure() {
 
   # If $php_v is set to default
   if [[ ${php_v} == "default" ]]; then
-    php_v="$(php_get_standard_distro_version)"
+    php_v="$(php_get_distro_default_version)"
   fi
 
   # If $php_v not set, it will use $PHP_V global

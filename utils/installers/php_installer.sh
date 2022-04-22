@@ -4,7 +4,17 @@
 # Version: 3.2-rc2
 ################################################################################
 
-function php_get_standard_distro_version() {
+################################################################################
+# Get default php version for distro
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function php_get_distro_default_version() {
 
   local php_v
 
@@ -35,16 +45,24 @@ function php_get_standard_distro_version() {
 
 }
 
-function php_installer() {
+################################################################################
+# Php installer
+#
+# Arguments:
+#   $1 = ${php_v} - optional
+#
+# Outputs:
+#   nothing
+################################################################################
 
-  # $1 = ${php_v} - optional
+function php_installer() {
 
   local php_v="${1}"
 
   log_subsection "PHP Installer"
 
   if [[ -z ${php_v} || ${php_v} == "default" ]]; then
-    php_v="$(php_get_standard_distro_version)"
+    php_v="$(php_get_distro_default_version)"
   fi
 
   package_is_installed "php${php_v}-fpm"
@@ -60,7 +78,7 @@ function php_installer() {
     # sudo DEBIAN_FRONTEND=noninteractive apt-get install PACKAGE -y -qq < /dev/null > /dev/null
 
     # apt command
-    sudo DEBIAN_FRONTEND=noninteractive apt-get --yes install "php${php_v}-fpm" "php${php_v}-mysql" "php-imagick" "php${php_v}-xml" "php${php_v}-cli" "php${php_v}-curl" "php${php_v}-mbstring" "php${php_v}-gd" "php${php_v}-intl" "php${php_v}-zip" "php${php_v}-bz2" "php${php_v}-bcmath" "php${php_v}-soap" "php${php_v}-dev" "php-pear" -qq  < /dev/null > /dev/null
+    sudo DEBIAN_FRONTEND=noninteractive apt-get --yes install "php${php_v}-fpm" "php${php_v}-mysql" "php-imagick" "php${php_v}-xml" "php${php_v}-cli" "php${php_v}-curl" "php${php_v}-mbstring" "php${php_v}-gd" "php${php_v}-intl" "php${php_v}-zip" "php${php_v}-bz2" "php${php_v}-bcmath" "php${php_v}-soap" "php${php_v}-dev" "php-pear" -qq </dev/null >/dev/null
 
     # Log
     clear_previous_lines "1"
@@ -70,6 +88,16 @@ function php_installer() {
   fi
 
 }
+
+################################################################################
+# Php custom installer
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
 
 function php_custom_installer() {
 
@@ -88,6 +116,7 @@ function php_select_version_to_install() {
   local phpv
 
   phpv_to_install=(
+    "8.1" " " off
     "8.0" " " off
     "7.4" " " off
     "7.3" " " off
@@ -303,7 +332,7 @@ function php_installer_menu() {
 
   else
 
-    PHP_V="$(php_get_standard_distro_version)"
+    PHP_V="$(php_get_distro_default_version)"
 
   fi
 
