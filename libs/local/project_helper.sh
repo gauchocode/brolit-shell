@@ -972,7 +972,6 @@ function project_get_configured_database() {
 
       wpconfig_path=$(wp_config_path "${project_path}")
 
-      #db_name=$(cat "${wpconfig_path}/wp-config.php" | grep DB_NAME | cut -d \' -f 4)
       db_name="$(wp_config_get_option "${wpconfig_path}" "DB_NAME")"
 
       # Return
@@ -1126,7 +1125,7 @@ function project_get_configured_database_user() {
 
     wordpress)
 
-      db_user="$(wp_config_get_option "${project_path}/wp-config.php" "DB_USER")"
+      db_user="$(wp_config_get_option "${project_path}" "DB_USER")"
 
       # Return
       echo "${db_user}"
@@ -1281,7 +1280,7 @@ function project_get_configured_database_userpassw() {
 
     wordpress)
 
-      db_user_passw="$(wp_config_get_option "${project_path}/wp-config.php" "DB_PASSWORD")"
+      db_user_passw="$(wp_config_get_option "${project_path}" "DB_PASSWORD")"
 
       # Return
       echo "${db_user_passw}"
@@ -1752,7 +1751,7 @@ function project_delete() {
   if [[ ${files_skipped} == "false" ]]; then
 
     log_event "info" "Project to delete: ${project_domain}" "false"
-    display --indent 2 --text "- Selecting ${project_domain} for deletion" --result "DONE" --color GREEN
+    display --indent 6 --text "- Selecting ${project_domain} for deletion" --result "DONE" --color GREEN
 
     # Get project type and db credentials before delete files_skipped
     project_type="$(project_get_type "${project_domain}")"
