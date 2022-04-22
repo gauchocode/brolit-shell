@@ -950,14 +950,15 @@ function project_get_configured_database() {
   local project_path="${1}"
   local project_type="${2}"
 
+  local db_name
   local wpconfig_path
 
   # First try to read from brolit project config
   db_name="$(project_get_brolit_config_var "${project_path}" "project[].database[].config[].name")"
 
-  if [[ ${db_name} != "" ]]; then
+  if [[ -n ${db_name} ]]; then
 
-    log_event "debug" "Extracted db_name : ${db_name}" "false"
+    log_event "debug" "Extracted db_name: ${db_name}" "false"
 
     # Return
     echo "${db_name}"
@@ -1269,7 +1270,7 @@ function project_get_configured_database_userpassw() {
 
   if [[ ${db_user_passw} != "false" ]]; then
 
-    log_event "debug" "Extracted db_name : ${db_user_passw}" "false"
+    log_event "debug" "Extracted db_name: ${db_user_passw}" "false"
 
     # Return
     echo "${db_user_passw}"
