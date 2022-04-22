@@ -974,6 +974,8 @@ function project_get_configured_database() {
 
       db_name="$(wp_config_get_option "${wpconfig_path}" "DB_NAME")"
 
+      # TODO: error check or empty $db_name
+
       # Return
       echo "${db_name}"
 

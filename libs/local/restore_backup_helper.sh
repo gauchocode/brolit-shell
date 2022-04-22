@@ -850,10 +850,8 @@ function restore_backup_files() {
 
     # Check if destination folder exist
     if [[ -d ${actual_folder} ]]; then
-
       # If exists, make a backup
       _make_temp_files_backup "${actual_folder}"
-
     fi
 
     # Restore files
@@ -1122,6 +1120,8 @@ function restore_project() {
 
     # Project Type
     project_type="$(project_get_type "${BROLIT_TMP_DIR}/${chosen_project}")"
+    
+    display --indent 8 --text "Project Type ${project_type}" --tcolor GREEN
 
     # Here, for convention, ${chosen_project} should be $chosen_domain... only for better code reading:
     chosen_domain="${chosen_project}"
@@ -1139,19 +1139,17 @@ function restore_project() {
     # Asking project name
     project_name="$(project_ask_name "${possible_project_name}")"
 
-    display --indent 8 --text "Project Type ${project_type}" --tcolor GREEN
+    install_path="${PROJECTS_PATH}/${new_project_domain}"
 
     # Reading config file
 
     ## Database vars (only return something if project type has a database)
-    db_engine="$(project_get_configured_database_engine "${BROLIT_TMP_DIR}/${new_project_domain}" "${project_type}")"
-    db_name="$(project_get_configured_database "${BROLIT_TMP_DIR}/${new_project_domain}" "${project_type}")"
-    db_user="$(project_get_configured_database_user "${BROLIT_TMP_DIR}/${new_project_domain}" "${project_type}")"
-    db_pass="$(project_get_configured_database_userpassw "${BROLIT_TMP_DIR}/${new_project_domain}" "${project_type}")"
+    db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}")"
+    db_name="$(project_get_configured_database "${install_path}" "${project_type}")"
+    db_user="$(project_get_configured_database_user "${install_path}" "${project_type}")"
+    db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}")"
     # Sanitize ${project_name}
     #db_project_name="$(mysql_name_sanitize "${project_name}")"
-
-    install_path="${PROJECTS_PATH}/${new_project_domain}"
 
     if [[ -n ${db_name} ]]; then
 
@@ -1306,6 +1304,9 @@ function restore_project() {
 
       # Shuffle salts
       wpcli_set_salts "${install_path}"
+
+      # Update upload_path
+      wpcli_update_upload_path "${install_path}"
 
       # Changing wordpress visibility
       if [[ ${project_state} == "prod" ]]; then
