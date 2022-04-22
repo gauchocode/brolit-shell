@@ -204,17 +204,10 @@ function wp_update_wpconfig() {
   local wp_project_state="${3}"
   local db_user_pass="${4}"
 
-  # Command
-  #sed -i "/DB_HOST/s/'[^']*'/'localhost'/2" "${wp_project_dir}/wp-config.php"
+  # Commands
   wp_config_set_option "${wp_project_dir}" "DB_HOST" "localhost"
-
-  #sed_output="$(sed -i "/DB_NAME/s/'[^']*'/'${wp_project_name}_${wp_project_state}'/2" "${wp_project_dir}/wp-config.php")"
   wp_config_set_option "${wp_project_dir}" "DB_NAME" "${wp_project_name}_${wp_project_state}"
-
-  #sed_output="$(sed -i "/DB_USER/s/'[^']*'/'${wp_project_name}_user'/2" "${wp_project_dir}/wp-config.php")"
   wp_config_set_option "${wp_project_dir}" "DB_USER" "${wp_project_name}_user"
-
-  #sed_output="$(sed -i "/DB_PASSWORD/s/'[^']*'/'${db_user_pass}'/2" "${wp_project_dir}/wp-config.php")"
   wp_config_set_option "${wp_project_dir}" "DB_PASSWORD" "${db_user_pass}"
 
 }

@@ -183,9 +183,19 @@ function restore_backup_from_local() {
       project_state="$(project_ask_state "prod")"
       filename="$(basename "${source_files}")"
 
-      # TODO: create database user
+      # TODO: check if project has/need a database
 
-      restore_database_backup "${project_name}" "${project_state}" "${filename}"
+      # Reading config file
+      ## Database vars (only return something if project type has a database)
+      db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}")"
+      db_name="$(project_get_configured_database "${install_path}" "${project_type}")"
+      db_user="$(project_get_configured_database_user "${install_path}" "${project_type}")"
+      db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}")"
+
+      #restore_database_backup "${project_name}" "${project_state}" "${filename}"
+      restore_backup_database "${db_engine}" "${project_state}" "${project_name}_${project_state}" "${db_user}" "${db_pass}" "${filename}"
+
+      # TODO: create nginx server config, run certbot and cloudflare update
 
     fi
 
@@ -266,7 +276,13 @@ function restore_backup_from_ftp() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         # Restore database
-        restore_database_backup "${project_name}" "${project_state}" "${chosen_database_backup}"
+        #restore_database_backup "${project_name}" "${project_state}" "${chosen_database_backup}"
+        db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}")"
+        db_name="$(project_get_configured_database "${install_path}" "${project_type}")"
+        db_user="$(project_get_configured_database_user "${install_path}" "${project_type}")"
+        db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}")"
+
+        restore_backup_database "${db_engine}" "${project_state}" "${project_name}_${project_state}" "${db_user}" "${db_pass}" "${chosen_database_backup}"
 
       else
 
@@ -415,7 +431,13 @@ function restore_backup_from_public_url() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
       # Restore database
-      restore_database_backup "${project_name}" "${project_state}" "${chosen_database_backup}"
+      #restore_database_backup "${project_name}" "${project_state}" "${chosen_database_backup}"
+      db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}")"
+      db_name="$(project_get_configured_database "${install_path}" "${project_type}")"
+      db_user="$(project_get_configured_database_user "${install_path}" "${project_type}")"
+      db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}")"
+
+      restore_backup_database "${db_engine}" "${project_state}" "${project_name}_${project_state}" "${db_user}" "${db_pass}" "${chosen_database_backup}"
 
     else
 
@@ -439,9 +461,17 @@ function restore_backup_from_public_url() {
       ${CURL} "${source_db_url}" >"${BROLIT_TMP_DIR}/${backup_file}"
 
       # Restore database
-      restore_database_backup "${project_name}" "${project_state}" "${backup_file}"
+      #restore_database_backup "${project_name}" "${project_state}" "${backup_file}"
+
+      db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}")"
+      db_name="$(project_get_configured_database "${install_path}" "${project_type}")"
+      db_user="$(project_get_configured_database_user "${install_path}" "${project_type}")"
+      db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}")"
+
+      restore_backup_database "${db_engine}" "${project_state}" "${project_name}_${project_state}" "${db_user}" "${db_pass}" "${backup_file}"
 
     else
+
       return 1
 
     fi
@@ -965,8 +995,22 @@ function restore_type_selection_from_dropbox() {
 
           if [[ ${chosen_type} == *"database"* ]]; then
 
+            # TODO: check database backup type (mysql or postgres)
+            local db_engine="mysql"
+            local db_name="${db_project_name}_${project_state}"
+
+            if [[ -z ${db_user} ]]; then
+              db_user="${db_project_name}_user"
+            fi
+
+            if [[ -z ${db_pass} ]]; then
+              # Passw generator
+              db_pass="$(openssl rand -hex 12)"
+            fi
+
             # Restore Database Backup
-            restore_backup_database "${db_project_name}" "${project_state}" "${chosen_backup_to_restore}"
+            #restore_backup_database "${db_project_name}" "${project_state}" "${chosen_backup_to_restore}" "${db_engine}" "${db_name}" "${db_user}" "${db_pass}"
+            restore_backup_database "${db_engine}" "${project_state}" "${db_name}" "${db_user}" "${db_pass}" "${chosen_backup_to_restore}"
 
             # TODO: ask if want to change project db parameters and make cloudflare changes
 
@@ -1120,7 +1164,7 @@ function restore_project() {
 
     # Project Type
     project_type="$(project_get_type "${BROLIT_TMP_DIR}/${chosen_project}")"
-    
+
     display --indent 8 --text "Project Type ${project_type}" --tcolor GREEN
 
     # Here, for convention, ${chosen_project} should be $chosen_domain... only for better code reading:
@@ -1142,7 +1186,6 @@ function restore_project() {
     install_path="${PROJECTS_PATH}/${new_project_domain}"
 
     # Reading config file
-
     ## Database vars (only return something if project type has a database)
     db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}")"
     db_name="$(project_get_configured_database "${install_path}" "${project_type}")"
@@ -1158,13 +1201,8 @@ function restore_project() {
       db_to_download="${chosen_server}/projects-${chosen_status}/database/${db_name}/${db_name}_database_${project_backup_date}.tar.bz2"
       db_to_restore="${db_name}_database_${project_backup_date}.tar.bz2"
 
-      # Log
-      log_event "debug" "Project database selected: ${chosen_project}" "false"
-      log_event "debug" "Backup date: ${project_backup_date}" "false"
-
       # Downloading Database Backup
-      dropbox_download "${db_to_download}" "${BROLIT_TMP_DIR}"
-
+      storage_download_backup "${db_to_download}" "${BROLIT_TMP_DIR}"
       exitstatus=$?
       if [[ ${exitstatus} -eq 1 ]]; then
 
@@ -1176,42 +1214,52 @@ function restore_project() {
 
           # Get dropbox backup list
           remote_backup_path="${chosen_server}/projects-${chosen_status}/database/${chosen_project}"
-          #remote_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${remote_backup_path}" | awk '{print $3;}')"
           remote_backup_list="$(storage_list_dir "${remote_backup_path}")"
 
           # Select Backup File
           chosen_backup_to_restore="$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${remote_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
           exitstatus=$?
-          if [[ ${exitstatus} -eq 0 ]]; then
-
-            # Decompress
-            decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "lbzip2"
-
-            # Restore Database Backup
-            restore_backup_database "${db_name}" "${project_state}" "${db_to_restore}"
-
-            project_db_status="enabled"
-
+          if [[ ${exitstatus} -eq 1 ]]; then
+            database_restore_skipped="true"
+            display --indent 2 --text "- Restore project backup" --result "SKIPPED" --color YELLOW
           fi
 
         else
-
+          database_restore_skipped="true"
           display --indent 2 --text "- Restore project backup" --result "SKIPPED" --color YELLOW
 
-          return 1
+        fi
 
+      fi
+
+      if [[ ${database_restore_skipped} != "true" ]]; then
+        # Decompress
+        decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "lbzip2"
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+          # Restore Database Backup
+          # TODO: check database backup type (mysql or postgres)
+          local db_engine="mysql"
+
+          if [[ -z ${db_user} ]]; then
+            db_user="${db_project_name}_user"
+          fi
+          if [[ -z ${db_pass} ]]; then
+            # Passw generator
+            db_pass="$(openssl rand -hex 12)"
+          fi
+
+          # Restore Database Backup
+          restore_backup_database "${db_engine}" "${project_state}" "${db_name}" "${db_user}" "${db_pass}" "${db_to_restore}"
+
+          project_db_status="enabled"
+          
         fi
 
       else
 
-        # Decompress
-        decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "lbzip2"
-
-        # Restore Database Backup
-        #project_backup_file="${project_name}_database_${project_backup_date}.tar.bz2"
-        restore_backup_database "${db_name}" "${project_state}" "${db_to_restore}"
-
-        project_db_status="enabled"
+        return 1
 
       fi
 
@@ -1235,7 +1283,6 @@ function restore_project() {
       nginx_server_create "www.${root_domain}" "${project_type}" "root_domain" "${root_domain}"
 
       if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
-
         # Cloudflare API
         # TODO: must check for CNAME with www
         cloudflare_set_record "${root_domain}" "${root_domain}" "A" "false" "${SERVER_IP}"
@@ -1244,12 +1291,10 @@ function restore_project() {
 
       # Let's Encrypt
       certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${root_domain},www.${root_domain}"
-
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
-
+        # http2 support
         nginx_server_add_http2_support "${root_domain}"
-
       fi
 
     else
@@ -1260,20 +1305,16 @@ function restore_project() {
       nginx_server_create "${new_project_domain}" "${project_type}" "single"
 
       if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
-
         # Cloudflare API
         cloudflare_set_record "${root_domain}" "${new_project_domain}" "A" "false" "${SERVER_IP}"
-
       fi
 
       # Let's Encrypt
       certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${new_project_domain}"
-
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
-
+        # http2 support
         nginx_server_add_http2_support "${new_project_domain}"
-
       fi
 
     fi
@@ -1281,8 +1322,8 @@ function restore_project() {
     # Create/update brolit_project_conf.json file with project info
     project_update_brolit_config "${PROJECTS_PATH}/${chosen_domain}" "${chosen_project}" "${project_state}" "${project_type}" "${project_db_status}" "${db_engine}" "${db_name}" "${db_user}" "${db_pass}" "${new_project_domain}"
 
-    # TODO: make a function of this on wordpress helper
-    #wordpress_post_install_tasks ""
+    # TODO: make a function of this on project helper?
+    #project_post_install_tasks "${project_type}" "${project_name}" "${project_state}" "${chosen_domain}" "${new_project_domain}" "http/https" "${install_path}"
 
     # Check if is a WP project
     if [[ ${project_type} == "wordpress" ]]; then
@@ -1290,16 +1331,12 @@ function restore_project() {
       wp_change_permissions "${install_path}"
 
       # Change wp-config.php database parameters
-      #wp_update_wpconfig "${install_path}" "${db_project_name}" "${project_state}" "${db_pass}"
-      wp_update_wpconfig "${install_path}" "${db_name}" "${project_state}" "${db_pass}"
+      wp_update_wpconfig "${install_path}" "${db_project_name}" "${project_state}" "${db_pass}"
 
-      # Change urls on database
       # TODO: non protocol before domains (need to check if http or https before)?
       if [[ ${chosen_domain} != "${new_project_domain}" ]]; then
-
         # Change urls on database
         wpcli_search_and_replace "${install_path}" "${chosen_domain}" "${new_project_domain}"
-
       fi
 
       # Shuffle salts
@@ -1348,28 +1385,64 @@ function restore_project() {
 # TODO: better name? should implement database engine option
 function restore_backup_database() {
 
-  local project_name="${1}"
+  local db_engine="${1}"
   local project_state="${2}"
-  local project_backup_file="${3}"
+  local db_name="${3}"
+  local db_user="${4}"
+  local db_pass="${5}"
+  local project_backup_file="${6}"
 
-  local db_name
-  local db_user
-  local db_pass
+  local db_exists
+  local user_db_exists
 
-  # Restore database function
-  restore_database_backup "${project_name}" "${project_state}" "${project_backup_file}"
+  # Log
+  log_subsection "Restore Database Backup"
+  log_event "info" "Working with ${project_name}_${project_state}" "false"
 
-  # Database parameters
-  db_name="${project_name}_${project_state}"
-  db_user="${project_name}_user"
+  # Check if database already exists
+  mysql_database_exists "${db_name}"
+  db_exists=$?
+  if [[ ${db_exists} -eq 1 ]]; then
+    # Create database
+    mysql_database_create "${db_name}"
+
+  else # Create temporary folder for backups
+
+    if [[ ! -d "${BROLIT_TMP_DIR}/backups" ]]; then
+      mkdir -p "${BROLIT_TMP_DIR}/backups"
+      log_event "debug" "Temp files directory created: ${BROLIT_TMP_DIR}/backups" "false"
+    fi
+
+    # Make backup of actual database
+    log_event "info" "MySQL database ${db_name} already exists" "false"
+    mysql_database_export "${db_name}" "${BROLIT_TMP_DIR}/backups/${db_name}_bk_before_restore.sql"
+
+  fi
+
+  # Backup file
+  project_backup="${project_backup_file%%.*}.sql"
+  log_event "info" "Backup file to import ${project_backup}" "false"
+
+  # Restore database
+  mysql_database_import "${db_name}" "${BROLIT_TMP_DIR}/${project_backup}"
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Deleting temp files
+    rm --force "${project_backup%%.*}.tar.bz2" && rm --force "${project_backup}"
+
+    # Log
+    log_event "debug" "Temp files cleanned" "false"
+    display --indent 6 --text "- Cleanning temp files" --result "DONE" --color GREEN
+
+  else
+    return 1
+  fi
 
   # Check if user database already exists
   mysql_user_exists "${db_user}"
   user_db_exists=$?
   if [[ ${user_db_exists} -eq 0 ]]; then
-
-    # Passw generator
-    db_pass="$(openssl rand -hex 12)"
     # Create database user with autogenerated pass
     mysql_user_create "${db_user}" "${db_pass}" "localhost"
 
@@ -1386,82 +1459,5 @@ function restore_backup_database() {
 
   # Grant privileges to database user
   mysql_user_grant_privileges "${db_user}" "${db_name}" "localhost"
-
-}
-
-################################################################################
-# Restore database backup
-#
-# Arguments:
-#   $1 = ${project_name}
-#   $2 = ${project_state}
-#   $3 = ${project_backup} - The backup file must be in ${BROLIT_TMP_DIR}
-#
-# Outputs:
-#   0 if ok, 1 on error.
-################################################################################
-
-function restore_database_backup() {
-
-  local project_name="${1}"
-  local project_state="${2}"
-  local project_backup="${3}"
-
-  local db_name
-  local db_exists
-  local user_db_exists
-  local db_pass
-
-  # Log
-  log_subsection "Restore Database Backup"
-  log_event "info" "Working with ${project_name}_${project_state}" "false"
-
-  db_name="${project_name}_${project_state}"
-
-  # Check if database already exists
-  mysql_database_exists "${db_name}"
-  db_exists=$?
-  if [[ ${db_exists} -eq 1 ]]; then
-    # Create database
-    mysql_database_create "${db_name}"
-
-  else
-
-    # Create temporary folder for backups
-    if [[ ! -d "${BROLIT_TMP_DIR}/backups" ]]; then
-      mkdir -p "${BROLIT_TMP_DIR}/backups"
-      log_event "info" "Temp files directory created: ${BROLIT_TMP_DIR}/backups" "false"
-    fi
-
-    # Make backup of actual database
-    log_event "info" "MySQL database ${db_name} already exists" "false"
-    mysql_database_export "${db_name}" "${BROLIT_TMP_DIR}/backups/${db_name}_bk_before_restore.sql"
-
-  fi
-
-  # Backup file
-  project_backup="${project_backup%%.*}.sql"
-  log_event "info" "Backup file to import ${project_backup}" "false"
-
-  # Restore database
-  mysql_database_import "${db_name}" "${BROLIT_TMP_DIR}/${project_backup}"
-
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    # Deleting temp files
-    rm --force "${project_backup%%.*}.tar.bz2"
-    rm --force "${project_backup}"
-
-    # Log
-    log_event "info" "Temp files cleanned" "false"
-    display --indent 6 --text "- Cleanning temp files" --result "DONE" --color GREEN
-
-    return 0
-
-  else
-
-    return 1
-
-  fi
 
 }
