@@ -621,7 +621,7 @@ function _brolit_configuration_load_php() {
 
             if [[ ${PACKAGES_PHP_VERSION} == "default" ]]; then
 
-                PHP_V="$(php_get_standard_distro_version)"
+                PHP_V="$(php_get_distro_default_version)"
 
             else
 

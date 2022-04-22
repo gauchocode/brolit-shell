@@ -1066,8 +1066,8 @@ function restore_project() {
 
   local dropbox_project_list
   local chosen_project
-  local dropbox_chosen_backup_path
-  local dropbox_backup_list
+  local remote_backup_path
+  local remote_backup_list
   local bk_to_dowload
   local chosen_backup_to_restore
   local db_to_download
@@ -1086,8 +1086,9 @@ function restore_project() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Get dropbox backup list
-    dropbox_chosen_backup_path="${chosen_server}/projects-${chosen_status}/site/${chosen_project}"
-    dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}" | awk '{print $3;}')"
+    remote_backup_path="${chosen_server}/projects-${chosen_status}/site/${chosen_project}"
+    #remote_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${remote_backup_path}" | awk '{print $3;}')"
+    remote_backup_list="$(storage_list_dir "${remote_backup_path}")"
 
   else
 
@@ -1098,7 +1099,7 @@ function restore_project() {
   fi
 
   # Select Backup File
-  chosen_backup_to_restore="$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${dropbox_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
+  chosen_backup_to_restore="$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${remote_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -1138,15 +1139,14 @@ function restore_project() {
     display --indent 8 --text "Project Type ${project_type}" --tcolor GREEN
 
     # Reading config file
-    if [[ ${project_type} -ne "html" ]]; then
-      # Database vars
-      db_engine="$(project_get_configured_database_engine "${BROLIT_TMP_DIR}/${chosen_project}" "${project_type}")"
-      db_name="$(project_get_configured_database "${BROLIT_TMP_DIR}/${chosen_project}" "${project_type}")"
-      db_user="$(project_get_configured_database_user "${BROLIT_TMP_DIR}/${chosen_project}" "${project_type}")"
-      db_pass="$(project_get_configured_database_userpassw "${BROLIT_TMP_DIR}/${chosen_project}" "${project_type}")"
-      # Sanitize ${project_name}
-      db_project_name="$(mysql_name_sanitize "${project_name}")"
-    fi
+
+    ## Database vars (only return something if project type has a database)
+    db_engine="$(project_get_configured_database_engine "${BROLIT_TMP_DIR}/${chosen_project}" "${project_type}")"
+    db_name="$(project_get_configured_database "${BROLIT_TMP_DIR}/${chosen_project}" "${project_type}")"
+    db_user="$(project_get_configured_database_user "${BROLIT_TMP_DIR}/${chosen_project}" "${project_type}")"
+    db_pass="$(project_get_configured_database_userpassw "${BROLIT_TMP_DIR}/${chosen_project}" "${project_type}")"
+    # Sanitize ${project_name}
+    #db_project_name="$(mysql_name_sanitize "${project_name}")"
 
     install_path="${PROJECTS_PATH}/${new_project_domain}"
 
@@ -1174,11 +1174,12 @@ function restore_project() {
         if [[ ${exitstatus} -eq 0 ]]; then
 
           # Get dropbox backup list
-          dropbox_chosen_backup_path="${chosen_server}/projects-${chosen_status}/database/${chosen_project}"
-          dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}" | awk '{print $3;}')"
+          remote_backup_path="${chosen_server}/projects-${chosen_status}/database/${chosen_project}"
+          #remote_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${remote_backup_path}" | awk '{print $3;}')"
+          remote_backup_list="$(storage_list_dir "${remote_backup_path}")"
 
           # Select Backup File
-          chosen_backup_to_restore="$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${dropbox_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
+          chosen_backup_to_restore="$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${remote_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
           exitstatus=$?
           if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -1288,7 +1289,8 @@ function restore_project() {
       wp_change_permissions "${install_path}"
 
       # Change wp-config.php database parameters
-      wp_update_wpconfig "${install_path}" "${db_project_name}" "${project_state}" "${db_pass}"
+      #wp_update_wpconfig "${install_path}" "${db_project_name}" "${project_state}" "${db_pass}"
+      wp_update_wpconfig "${install_path}" "${db_name}" "${project_state}" "${db_pass}"
 
       # Change urls on database
       # TODO: non protocol before domains (need to check if http or https before)?
@@ -1320,8 +1322,8 @@ function restore_project() {
 
         # Update project .env file
         #project_set_config_var "${project_env}" "DB_CONNECTION" "${chosen_project}"
-        project_set_config_var "${project_env}" "DB_DATABASE" "${db_project_name}_${project_state}"
-        project_set_config_var "${project_env}" "DB_USERNAME" "${db_project_name}_user"
+        project_set_config_var "${project_env}" "DB_DATABASE" "${db_name}_${project_state}"
+        project_set_config_var "${project_env}" "DB_USERNAME" "${db_name}_user"
         project_set_config_var "${project_env}" "DB_PASSWORD" "${db_pass}"
 
       else
@@ -1345,6 +1347,10 @@ function restore_backup_database() {
   local project_name="${1}"
   local project_state="${2}"
   local project_backup_file="${3}"
+
+  local db_name
+  local db_user
+  local db_pass
 
   # Restore database function
   restore_database_backup "${project_name}" "${project_state}" "${project_backup_file}"
