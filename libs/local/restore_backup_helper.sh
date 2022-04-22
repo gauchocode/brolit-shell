@@ -1130,7 +1130,7 @@ function restore_project() {
     possible_project_name="$(project_get_name_from_domain "${new_project_domain}")"
 
     # Asking project state with suggested actual state
-    suffix=${chosen_project%_*} ## strip the tail
+    suffix=${new_project_domain%_*} ## strip the tail
     project_state="$(project_ask_state "${suffix}")"
 
     # Asking project name
@@ -1141,10 +1141,10 @@ function restore_project() {
     # Reading config file
 
     ## Database vars (only return something if project type has a database)
-    db_engine="$(project_get_configured_database_engine "${BROLIT_TMP_DIR}/${chosen_project}" "${project_type}")"
-    db_name="$(project_get_configured_database "${BROLIT_TMP_DIR}/${chosen_project}" "${project_type}")"
-    db_user="$(project_get_configured_database_user "${BROLIT_TMP_DIR}/${chosen_project}" "${project_type}")"
-    db_pass="$(project_get_configured_database_userpassw "${BROLIT_TMP_DIR}/${chosen_project}" "${project_type}")"
+    db_engine="$(project_get_configured_database_engine "${BROLIT_TMP_DIR}/${new_project_domain}" "${project_type}")"
+    db_name="$(project_get_configured_database "${BROLIT_TMP_DIR}/${new_project_domain}" "${project_type}")"
+    db_user="$(project_get_configured_database_user "${BROLIT_TMP_DIR}/${new_project_domain}" "${project_type}")"
+    db_pass="$(project_get_configured_database_userpassw "${BROLIT_TMP_DIR}/${new_project_domain}" "${project_type}")"
     # Sanitize ${project_name}
     #db_project_name="$(mysql_name_sanitize "${project_name}")"
 
@@ -1155,7 +1155,7 @@ function restore_project() {
       # Database Backup
       project_backup_date="$(backup_get_date "${chosen_backup_to_restore}")"
       db_to_download="${chosen_server}/projects-${chosen_status}/database/${db_name}/${db_name}_database_${project_backup_date}.tar.bz2"
-      db_to_restore="${BROLIT_TMP_DIR}/${db_name}_database_${project_backup_date}.tar.bz2"
+      db_to_restore="${db_name}_database_${project_backup_date}.tar.bz2"
 
       # Log
       log_event "debug" "Project database selected: ${chosen_project}" "false"
@@ -1184,7 +1184,7 @@ function restore_project() {
           if [[ ${exitstatus} -eq 0 ]]; then
 
             # Decompress
-            decompress "${db_to_restore}" "${BROLIT_TMP_DIR}" "lbzip2"
+            decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "lbzip2"
 
             # Restore Database Backup
             restore_backup_database "${db_name}" "${project_state}" "${db_to_restore}"
@@ -1204,7 +1204,7 @@ function restore_project() {
       else
 
         # Decompress
-        decompress "${db_to_restore}" "${BROLIT_TMP_DIR}" "lbzip2"
+        decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "lbzip2"
 
         # Restore Database Backup
         #project_backup_file="${project_name}_database_${project_backup_date}.tar.bz2"
