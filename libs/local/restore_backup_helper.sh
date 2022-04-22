@@ -1115,6 +1115,10 @@ function restore_project() {
   local db_to_download
   local project_db_status
   local project_type
+  local db_engine
+  local db_name
+  local db_user
+  local db_pass
 
   log_section "Restore Project Backup"
 
@@ -1177,8 +1181,8 @@ function restore_project() {
     possible_project_name="$(project_get_name_from_domain "${new_project_domain}")"
 
     # Asking project state with suggested actual state
-    suffix=${new_project_domain%_*} ## strip the tail
-    project_state="$(project_ask_state "${suffix}")"
+    possible_project_state=$(project_get_stage_from_domain "${new_project_domain}")
+    project_state="$(project_ask_state "${possible_project_state}")"
 
     # Asking project name
     project_name="$(project_ask_name "${possible_project_name}")"
@@ -1243,7 +1247,7 @@ function restore_project() {
           local db_engine="mysql"
 
           if [[ -z ${db_user} ]]; then
-            db_user="${db_project_name}_user"
+            db_user="${project_name}_user"
           fi
           if [[ -z ${db_pass} ]]; then
             # Passw generator
