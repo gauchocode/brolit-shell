@@ -45,7 +45,7 @@ function storage_list_dir() {
 
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
-        remote_list="$("${DROPBOX_UPLOADER}" -hq list "${remote_directory}" | awk '{print $2;}')"
+        remote_list="$("${DROPBOX_UPLOADER}" -hq list "${remote_directory}" | awk '{print $3;}')"
 
     fi
     if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
