@@ -842,7 +842,7 @@ function restore_backup_files() {
 
     # Renaming
     if [[ ${project_tmp_old_folder} != "${project_tmp_new_folder}" ]]; then
-      mv "${project_tmp_old_folder}" "${project_tmp_new_folder}"
+      move_files "${project_tmp_old_folder}" "${project_tmp_new_folder}"
     fi
 
     # New destination directory
@@ -1087,7 +1087,6 @@ function restore_project() {
 
     # Get dropbox backup list
     remote_backup_path="${chosen_server}/projects-${chosen_status}/site/${chosen_project}"
-    #remote_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${remote_backup_path}" | awk '{print $3;}')"
     remote_backup_list="$(storage_list_dir "${remote_backup_path}")"
 
   else
@@ -1113,9 +1112,13 @@ function restore_project() {
 
     # Decompress
     decompress "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}" "${BROLIT_TMP_DIR}" "lbzip2"
+    if [[ $? -eq 1 ]]; then
+      display --indent 6 --text "- Decompressing project backup" --result "FAILED" --color RED
+      return 1
+    fi
 
     # Create nginx.conf file if not exists
-    touch "${BROLIT_TMP_DIR}/nginx.conf"
+    touch "${BROLIT_TMP_DIR}/${chosen_project}/nginx.conf"
 
     # Project Type
     project_type="$(project_get_type "${BROLIT_TMP_DIR}/${chosen_project}")"
