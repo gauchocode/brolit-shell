@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc2
+# Version: 3.2-rc3
 ################################################################################
 #
 # Database Manager: Perform database actions.
@@ -97,7 +97,7 @@ function project_manager_menu_new_project_type_utils() {
 
       else
 
-        project_state="$(project_ask_state "")"
+        project_stage="$(project_ask_state "")"
 
         # Filename should be the project domain
         project_name="$(project_get_name_from_domain "${filename%/}")"
@@ -121,16 +121,16 @@ function project_manager_menu_new_project_type_utils() {
         # Database
         database_user_passw="$(openssl rand -hex 12)"
 
-        mysql_database_create "${project_name}_${project_state}"
+        mysql_database_create "${project_name}_${project_stage}"
         mysql_user_db_scope="$(mysql_ask_user_db_scope)"
         mysql_user_create "${project_name}_user" "${database_user_passw}" "${mysql_user_db_scope}"
-        mysql_user_grant_privileges "${project_name}_user" "${project_name}_${project_state}" "${mysql_user_db_scope}"
+        mysql_user_grant_privileges "${project_name}_user" "${project_name}_${project_stage}" "${mysql_user_db_scope}"
 
         # TODO: Error check
         # TODO: Ask to update project config
 
         project_type="$(project_get_type "${filepath}/${filename}")"
-        project_set_configured_database "${filepath}/${filename}" "${project_type}" "${project_name}_${project_state}"
+        project_set_configured_database "${filepath}/${filename}" "${project_type}" "${project_name}_${project_stage}"
         project_set_configured_database_user "${filepath}/${filename}" "${project_type}" "${project_name}_user"
         project_set_configured_database_userpassw "${filepath}/${filename}" "${project_type}" "${database_user_passw}"
 

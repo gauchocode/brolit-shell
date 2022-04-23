@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc2
+# Version: 3.2-rc3
 ################################################################################
 
 ################################################################################
@@ -54,7 +54,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.2-rc2"
+  declare -g SCRIPT_V="3.2-rc3"
 
   # Hostname
   declare -g SERVER_NAME="$HOSTNAME"
@@ -1892,7 +1892,7 @@ function show_help() {
     -d  --domain      Domain for tasks execution
     -pn --pname       Project Name
     -pt --ptype       Project Type (wordpress,laravel)
-    -ps --pstate      Project State (prod,dev,test,stage)
+    -ps --pstate      Project Stage (prod,dev,test,stage)
     -q, --quiet       Quiet (no output)
     -v, --verbose     Output more information. (Items echoed to 'verbose')
     -d, --debug       Runs script in BASH debug mode (set -x)

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc2
+# Version: 3.2-rc3
 ################################################################################
 #
 # WordPress Installer: WordPress installer functions.
@@ -15,7 +15,7 @@
 #   $1 = ${project_path}
 #   $2 = ${project_domain}
 #   $3 = ${project_name}
-#   $4 = ${project_state}
+#   $4 = ${project_stage}
 #   $5 = ${project_root_domain}   # Optional
 #
 # Outputs:
@@ -27,7 +27,7 @@ function wordpress_project_installer() {
   local project_path="${1}"
   local project_domain="${2}"
   local project_name="${3}"
-  local project_state="${4}"
+  local project_stage="${4}"
   local project_root_domain="${5}"
 
   local installation_types
@@ -44,11 +44,11 @@ function wordpress_project_installer() {
 
     if [[ ${installation_type} == *"COPY"* ]]; then
 
-      wordpress_project_copy "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${project_root_domain}"
+      wordpress_project_copy "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
 
     else # Clean Install
 
-      wordpress_project_install "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${project_root_domain}"
+      wordpress_project_install "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
 
     fi
 
@@ -63,7 +63,7 @@ function wordpress_project_installer() {
 #   $1 = ${project_path}
 #   $2 = ${project_domain}
 #   $3 = ${project_name}
-#   $4 = ${project_state}
+#   $4 = ${project_stage}
 #   $5 = ${project_root_domain}   # Optional
 #
 # Outputs:
@@ -75,7 +75,7 @@ function wordpress_project_install() {
   local project_path="${1}"
   local project_domain="${2}"
   local project_name="${3}"
-  local project_state="${4}"
+  local project_stage="${4}"
   local project_root_domain="${5}"
 
   log_subsection "WordPress Install"
@@ -111,7 +111,7 @@ function wordpress_project_install() {
 
   # Create database and user
   db_project_name="$(mysql_name_sanitize "${project_name}")"
-  database_name="${db_project_name}_${project_state}"
+  database_name="${db_project_name}_${project_stage}"
   database_user="${db_project_name}_user"
   database_user_passw=$(openssl rand -hex 12)
 
@@ -244,7 +244,7 @@ function wordpress_project_install() {
   #  $14 = ${project_use_http2}
   #  $15 = ${project_certbot_mode}
 
-  project_update_brolit_config "${project_path}" "${project_name}" "${project_state}" "wordpress" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "/etc/nginx/sites-available/${project_domain}" "${http2_support}" "${cert_path}"
+  project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "wordpress" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "/etc/nginx/sites-available/${project_domain}" "${http2_support}" "${cert_path}"
 
   # Log
   log_event "info" "WordPress installation for domain ${project_domain} finished" "false"
@@ -265,7 +265,7 @@ function wordpress_project_install() {
 #   $1 = ${project_path}
 #   $2 = ${project_domain}
 #   $3 = ${project_name}
-#   $4 = ${project_state}
+#   $4 = ${project_stage}
 #   $5 = ${project_root_domain}   # Optional
 #
 # Outputs:
@@ -279,7 +279,7 @@ function wordpress_project_copy() {
   local project_path="${1}"
   local project_domain="${2}"
   local project_name="${3}"
-  local project_state="${4}"
+  local project_stage="${4}"
   local project_root_domain="${5}"
 
   log_subsection "Copy From Project"
@@ -326,7 +326,7 @@ function wordpress_project_copy() {
 
   # Create database and user
   db_project_name="$(mysql_name_sanitize "${project_name}")"
-  database_name="${db_project_name}_${project_state}"
+  database_name="${db_project_name}_${project_stage}"
   database_user="${db_project_name}_user"
   database_user_passw="$(openssl rand -hex 12)"
 
@@ -351,7 +351,7 @@ function wordpress_project_copy() {
   if [[ ${mysql_database_export_result} -eq 0 ]]; then
 
     # Target database
-    target_db="${project_name}_${project_state}"
+    target_db="${project_name}_${project_stage}"
 
     # Importing dump file
     mysql_database_import "${target_db}" "${BROLIT_TMP_DIR}/${bk_file}"

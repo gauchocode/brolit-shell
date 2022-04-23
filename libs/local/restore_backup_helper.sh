@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc2
+# Version: 3.2-rc3
 ################################################################################
 #
 # Backup/Restore Helper: Backup and restore funtions.
@@ -180,7 +180,7 @@ function restore_backup_from_local() {
       cp "${source_files}" "${BROLIT_TMP_DIR}"
 
       project_name="$(project_ask_name "")"
-      project_state="$(project_ask_state "prod")"
+      project_stage="$(project_ask_state "prod")"
       filename="$(basename "${source_files}")"
 
       # TODO: check if project has/need a database
@@ -192,8 +192,8 @@ function restore_backup_from_local() {
       db_user="$(project_get_configured_database_user "${install_path}" "${project_type}")"
       db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}")"
 
-      #restore_database_backup "${project_name}" "${project_state}" "${filename}"
-      restore_backup_database "${db_engine}" "${project_state}" "${project_name}_${project_state}" "${db_user}" "${db_pass}" "${filename}"
+      #restore_database_backup "${project_name}" "${project_stage}" "${filename}"
+      restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${filename}"
 
       # TODO: create nginx server config, run certbot and cloudflare update
 
@@ -223,8 +223,8 @@ function restore_backup_from_ftp() {
     # RESTORE FILES
     log_subsection "Restore files from ftp"
 
-    # Ask project state
-    project_state="$(project_ask_state "prod")"
+    # Ask project stage
+    project_stage="$(project_ask_state "prod")"
 
     # Ask project domain
     project_domain="$(project_ask_domain "")"
@@ -276,13 +276,13 @@ function restore_backup_from_ftp() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         # Restore database
-        #restore_database_backup "${project_name}" "${project_state}" "${chosen_database_backup}"
+        #restore_database_backup "${project_name}" "${project_stage}" "${chosen_database_backup}"
         db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}")"
         db_name="$(project_get_configured_database "${install_path}" "${project_type}")"
         db_user="$(project_get_configured_database_user "${install_path}" "${project_type}")"
         db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}")"
 
-        restore_backup_database "${db_engine}" "${project_state}" "${project_name}_${project_state}" "${db_user}" "${db_pass}" "${chosen_database_backup}"
+        restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${chosen_database_backup}"
 
       else
 
@@ -312,7 +312,7 @@ function restore_backup_from_ftp() {
 
 function restore_backup_from_public_url() {
 
-  local project_state
+  local project_stage
   local project_domain
   local project_name
   local possible_project_name
@@ -322,8 +322,8 @@ function restore_backup_from_public_url() {
   # RESTORE FILES
   log_subsection "Restore files from public URL"
 
-  # Ask project state
-  project_state="$(project_ask_state "prod")"
+  # Ask project stage
+  project_stage="$(project_ask_state "prod")"
 
   # Project domain
   project_domain="$(project_ask_domain "")"
@@ -401,7 +401,7 @@ function restore_backup_from_public_url() {
   # Create database and user
   db_project_name=$(mysql_name_sanitize "${project_name}")
 
-  database_name="${db_project_name}_${project_state}"
+  database_name="${db_project_name}_${project_stage}"
   database_user="${db_project_name}_user"
   database_user_passw=$(openssl rand -hex 12)
 
@@ -431,13 +431,13 @@ function restore_backup_from_public_url() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
       # Restore database
-      #restore_database_backup "${project_name}" "${project_state}" "${chosen_database_backup}"
+      #restore_database_backup "${project_name}" "${project_stage}" "${chosen_database_backup}"
       db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}")"
       db_name="$(project_get_configured_database "${install_path}" "${project_type}")"
       db_user="$(project_get_configured_database_user "${install_path}" "${project_type}")"
       db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}")"
 
-      restore_backup_database "${db_engine}" "${project_state}" "${project_name}_${project_state}" "${db_user}" "${db_pass}" "${chosen_database_backup}"
+      restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${chosen_database_backup}"
 
     else
 
@@ -461,14 +461,14 @@ function restore_backup_from_public_url() {
       ${CURL} "${source_db_url}" >"${BROLIT_TMP_DIR}/${backup_file}"
 
       # Restore database
-      #restore_database_backup "${project_name}" "${project_state}" "${backup_file}"
+      #restore_database_backup "${project_name}" "${project_stage}" "${backup_file}"
 
       db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}")"
       db_name="$(project_get_configured_database "${install_path}" "${project_type}")"
       db_user="$(project_get_configured_database_user "${install_path}" "${project_type}")"
       db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}")"
 
-      restore_backup_database "${db_engine}" "${project_state}" "${project_name}_${project_state}" "${db_user}" "${db_pass}" "${backup_file}"
+      restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${backup_file}"
 
     else
 
@@ -516,7 +516,7 @@ function restore_backup_from_public_url() {
       wp_change_permissions "${actual_folder}/${install_path}"
 
       # Change wp-config.php database parameters
-      wp_update_wpconfig "${actual_folder}/${install_path}" "${project_name}" "${project_state}" "${database_user_passw}"
+      wp_update_wpconfig "${actual_folder}/${install_path}" "${project_name}" "${project_stage}" "${database_user_passw}"
 
       # WP Search and Replace URL
       wp_ask_url_search_and_replace "${actual_folder}/${install_path}"
@@ -526,7 +526,7 @@ function restore_backup_from_public_url() {
   fi
 
   # Create brolit_config.json file
-  project_update_brolit_config "${actual_folder}/${install_path}" "${project_name}" "${project_state}" "${project_type}" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "" "true" ""
+  project_update_brolit_config "${actual_folder}/${install_path}" "${project_name}" "${project_stage}" "${project_type}" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "" "true" ""
 
   # Remove tmp files
   log_event "info" "Removing temporary folders ..." "false"
@@ -537,7 +537,7 @@ function restore_backup_from_public_url() {
 
   HTMLOPEN='<html><body>'
   BODY_SRV_MIG='Migración finalizada en '${ELAPSED_TIME}'<br/>'
-  BODY_DB='Database: '${project_name}'_'${project_state}'<br/>Database User: '${project_name}'_user <br/>Database User Pass: '${database_user_passw}'<br/>'
+  BODY_DB='Database: '${project_name}'_'${project_stage}'<br/>Database User: '${project_name}'_user <br/>Database User Pass: '${database_user_passw}'<br/>'
   HTMLCLOSE='</body></html>'
 
   mail_send_notification "✅ ${SERVER_NAME} - Project ${project_name} restored!" "${HTMLOPEN} ${BODY_SRV_MIG} ${BODY_DB} ${BODY_CLF} ${HTMLCLOSE}"
@@ -970,9 +970,9 @@ function restore_type_selection_from_dropbox() {
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
-          # Asking project state with suggested actual state
+          # Asking project stage with suggested actual state
           suffix=${chosen_project%_*} ## strip the tail
-          project_state="$(project_ask_state "${suffix}")"
+          project_stage="$(project_ask_state "${suffix}")"
 
           #possible_project_name="$(domain_extract_extension "${chosen_project}")"
           possible_project_name="$(project_get_name_from_domain "${chosen_project}")"
@@ -997,7 +997,7 @@ function restore_type_selection_from_dropbox() {
 
             # TODO: check database backup type (mysql or postgres)
             local db_engine="mysql"
-            local db_name="${db_project_name}_${project_state}"
+            local db_name="${db_project_name}_${project_stage}"
 
             if [[ -z ${db_user} ]]; then
               db_user="${db_project_name}_user"
@@ -1009,8 +1009,8 @@ function restore_type_selection_from_dropbox() {
             fi
 
             # Restore Database Backup
-            #restore_backup_database "${db_project_name}" "${project_state}" "${chosen_backup_to_restore}" "${db_engine}" "${db_name}" "${db_user}" "${db_pass}"
-            restore_backup_database "${db_engine}" "${project_state}" "${project_name}_${project_state}" "${db_user}" "${db_pass}" "${chosen_backup_to_restore}"
+            #restore_backup_database "${db_project_name}" "${project_stage}" "${chosen_backup_to_restore}" "${db_engine}" "${db_name}" "${db_user}" "${db_pass}"
+            restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${chosen_backup_to_restore}"
 
             # TODO: ask if want to change project db parameters and make cloudflare changes
 
@@ -1046,7 +1046,7 @@ function restore_type_selection_from_dropbox() {
               log_event "info" "WordPress installation found: ${project_path}" "false"
 
               # Change wp-config.php database parameters
-              wp_update_wpconfig "${project_path}" "${project_name}" "${project_state}" "${db_pass}"
+              wp_update_wpconfig "${project_path}" "${project_name}" "${project_stage}" "${db_pass}"
 
               # Change Salts
               wpcli_set_salts "${project_path}"
@@ -1055,7 +1055,7 @@ function restore_type_selection_from_dropbox() {
               wp_ask_url_search_and_replace "${project_path}"
 
               # Changing wordpress visibility
-              if [[ ${project_state} == "prod" ]]; then
+              if [[ ${project_stage} == "prod" ]]; then
 
                 wpcli_change_wp_seo_visibility "${project_path}" "1"
 
@@ -1180,9 +1180,9 @@ function restore_project() {
     # Extract project name from domain
     possible_project_name="$(project_get_name_from_domain "${new_project_domain}")"
 
-    # Asking project state with suggested actual state
-    possible_project_state=$(project_get_stage_from_domain "${new_project_domain}")
-    project_state="$(project_ask_state "${possible_project_state}")"
+    # Asking project stage with suggested actual state
+    possible_project_stage=$(project_get_stage_from_domain "${new_project_domain}")
+    project_stage="$(project_ask_state "${possible_project_stage}")"
 
     # Asking project name
     project_name="$(project_ask_name "${possible_project_name}")"
@@ -1255,7 +1255,7 @@ function restore_project() {
           fi
 
           # Restore Database Backup
-          restore_backup_database "${db_engine}" "${project_state}" "${project_name}_${project_state}" "${db_user}" "${db_pass}" "${db_to_restore}"
+          restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${db_to_restore}"
 
           project_db_status="enabled"
           
@@ -1274,110 +1274,14 @@ function restore_project() {
 
     fi
 
-    root_domain="$(domain_get_root "${new_project_domain}")"
-    #root_domain="$(ask_root_domain "${possible_root_domain}")"
-
-    # TODO: if ${new_project_domain} == ${chosen_domain}, maybe ask if want to restore nginx and let's encrypt config files
-    # restore_letsencrypt_site_files "${chosen_domain}" "${project_backup_date}"
-    # restore_nginx_site_files "${chosen_domain}" "${project_backup_date}"
-
-    if [[ ${new_project_domain} == "${root_domain}" || ${new_project_domain} == "www.${root_domain}" ]]; then
-
-      # Nginx config
-      nginx_server_create "www.${root_domain}" "${project_type}" "root_domain" "${root_domain}"
-
-      if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
-        # Cloudflare API
-        # TODO: must check for CNAME with www
-        cloudflare_set_record "${root_domain}" "${root_domain}" "A" "false" "${SERVER_IP}"
-
-      fi
-
-      # Let's Encrypt
-      certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${root_domain},www.${root_domain}"
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-        # http2 support
-        nginx_server_add_http2_support "${root_domain}"
-      fi
-
-    else
-
-      # TODO: remove hardcoded parameter "single"
-
-      # Nginx config
-      nginx_server_create "${new_project_domain}" "${project_type}" "single"
-
-      if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
-        # Cloudflare API
-        cloudflare_set_record "${root_domain}" "${new_project_domain}" "A" "false" "${SERVER_IP}"
-      fi
-
-      # Let's Encrypt
-      certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${new_project_domain}"
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-        # http2 support
-        nginx_server_add_http2_support "${new_project_domain}"
-      fi
-
-    fi
+    # Project domain configuration (webserver+certbot+DNS)
+    project_update_domain_config "${new_project_domain}" "${project_type}" ""
 
     # Create/update brolit_project_conf.json file with project info
-    project_update_brolit_config "${PROJECTS_PATH}/${chosen_domain}" "${chosen_project}" "${project_state}" "${project_type}" "${project_db_status}" "${db_engine}" "${db_name}" "${db_user}" "${db_pass}" "${new_project_domain}"
+    project_update_brolit_config "${PROJECTS_PATH}/${chosen_domain}" "${chosen_project}" "${project_stage}" "${project_type}" "${project_db_status}" "${db_engine}" "${db_name}" "${db_user}" "${db_pass}" "${new_project_domain}"
 
-    # TODO: make a function of this on project helper?
-    #project_post_install_tasks "${project_type}" "${project_name}" "${project_state}" "${chosen_domain}" "${new_project_domain}" "http/https" "${install_path}"
-
-    # Check if is a WP project
-    if [[ ${project_type} == "wordpress" ]]; then
-
-      wp_change_permissions "${install_path}"
-
-      # Change wp-config.php database parameters
-      wp_update_wpconfig "${install_path}" "${db_project_name}" "${project_state}" "${db_pass}"
-
-      # TODO: non protocol before domains (need to check if http or https before)?
-      if [[ ${chosen_domain} != "${new_project_domain}" ]]; then
-        # Change urls on database
-        wpcli_search_and_replace "${install_path}" "${chosen_domain}" "${new_project_domain}"
-      fi
-
-      # Shuffle salts
-      wpcli_set_salts "${install_path}"
-
-      # Update upload_path
-      wpcli_update_upload_path "${install_path}"
-
-      # Changing wordpress visibility
-      if [[ ${project_state} == "prod" ]]; then
-        wpcli_change_wp_seo_visibility "${install_path}" "1"
-
-      else
-        wpcli_change_wp_seo_visibility "${install_path}" "0"
-
-      fi
-
-    else
-
-      # TODO: search .env file
-      project_env="${PROJECTS_PATH}/${chosen_domain}/.env"
-
-      if [[ -f ${project_env} ]]; then
-
-        # Update project .env file
-        #project_set_config_var "${project_env}" "DB_CONNECTION" "${chosen_project}"
-        project_set_config_var "${project_env}" "DB_DATABASE" "${db_name}_${project_state}"
-        project_set_config_var "${project_env}" "DB_USERNAME" "${db_name}_user"
-        project_set_config_var "${project_env}" "DB_PASSWORD" "${db_pass}"
-
-      else
-
-        log_event "info" ".env file not found on project directory" "false"
-
-      fi
-
-    fi
+    # Post-restore/install tasks
+    project_post_install_tasks "${project_type}" "${project_name}" "${project_stage}" "${chosen_domain}" "${new_project_domain}" "http/https" "${install_path}"
 
     # Send notification
     send_notification "✅ ${SERVER_NAME}" "Project ${new_project_domain} restored!"
@@ -1390,7 +1294,7 @@ function restore_project() {
 function restore_backup_database() {
 
   local db_engine="${1}"
-  local project_state="${2}"
+  local project_stage="${2}"
   local db_name="${3}"
   local db_user="${4}"
   local db_pass="${5}"
@@ -1401,7 +1305,7 @@ function restore_backup_database() {
 
   # Log
   log_subsection "Restore Database Backup"
-  log_event "info" "Working with ${project_name}_${project_state}" "false"
+  log_event "info" "Working with ${project_name}_${project_stage}" "false"
 
   # Check if database already exists
   mysql_database_exists "${db_name}"

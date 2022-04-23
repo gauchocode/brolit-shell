@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc2
+# Version: 3.2-rc3
 ################################################################################
 #
 # WordPress Helper: Perform wordpress actions.
@@ -189,7 +189,7 @@ function wp_config_set_option() {
 # Arguments:
 #  $1 = ${project_dir}
 #  $2 = ${wp_project_name}
-#  $3 = ${wp_project_state}
+#  $3 = ${wp_project_stage}
 #  $4 = ${db_user_pass}
 #
 # Outputs:
@@ -201,12 +201,12 @@ function wp_update_wpconfig() {
 
   local wp_project_dir="${1}"
   local wp_project_name="${2}"
-  local wp_project_state="${3}"
+  local wp_project_stage="${3}"
   local db_user_pass="${4}"
 
   # Commands
   wp_config_set_option "${wp_project_dir}" "DB_HOST" "localhost"
-  wp_config_set_option "${wp_project_dir}" "DB_NAME" "${wp_project_name}_${wp_project_state}"
+  wp_config_set_option "${wp_project_dir}" "DB_NAME" "${wp_project_name}_${wp_project_stage}"
   wp_config_set_option "${wp_project_dir}" "DB_USER" "${wp_project_name}_user"
   wp_config_set_option "${wp_project_dir}" "DB_PASSWORD" "${db_user_pass}"
 
