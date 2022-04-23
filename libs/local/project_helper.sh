@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc2
+# Version: 3.2-rc3
 ################################################################################
 #
 # Project Helper: Perform project actions.
@@ -118,7 +118,7 @@ function project_set_config_var() {
 }
 
 ################################################################################
-# Ask project state
+# Ask project stage
 #
 # Arguments:
 #   $1 = ${suggested_state} - optional to select default option#
@@ -131,18 +131,18 @@ function project_ask_state() {
 
   local suggested_state="${1}"
 
-  local project_states
-  local project_state
+  local project_stages
+  local project_stage
 
-  project_states="prod demo stage test beta dev"
+  project_stages="prod demo stage test beta dev"
 
-  project_state="$(whiptail --title "Project Stage" --menu "Choose Project Stage" 20 78 10 $(for x in ${project_states}; do echo "$x [X]"; done) --default-item "${suggested_state}" 3>&1 1>&2 2>&3)"
+  project_stage="$(whiptail --title "Project Stage" --menu "Choose Project Stage" 20 78 10 $(for x in ${project_stages}; do echo "$x [X]"; done) --default-item "${suggested_state}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Return
-    echo "${project_state}"
+    echo "${project_stage}"
 
     return 0
 
@@ -392,7 +392,7 @@ function project_get_stage_from_domain() {
 
   project_stages="demo stage test beta dev"
 
-  # Trying to extract project state from domain
+  # Trying to extract project stage from domain
   subdomain_part="$(domain_get_subdomain_part "${project_domain}")"
   possible_project_stage="$(echo "${subdomain_part}" | cut -d "." -f 1)"
 
@@ -1409,7 +1409,7 @@ function project_set_configured_database_userpassw() {
 #  $2 = ${project_type}
 #  $3 = ${project_domain}
 #  $4 = ${project_name}
-#  $5 = ${project_state}
+#  $5 = ${project_stage}
 #  $6 = ${project_root_domain}   # Optional
 #
 # Outputs:
@@ -1422,7 +1422,7 @@ function project_install() {
   local project_type="${2}"
   local project_domain="${3}"
   local project_name="${4}"
-  local project_state="${5}"
+  local project_stage="${5}"
 
   # TODO: need to check if user cancels some of this options
 
@@ -1443,11 +1443,11 @@ function project_install() {
   root_domain="$(cloudflare_ask_rootdomain "${possible_root_domain}")"
 
   # TODO: check when add www.DOMAIN.com and then select other stage != prod
-  if [[ -z ${project_state} ]]; then
+  if [[ -z ${project_stage} ]]; then
 
     suggested_state="$(domain_get_subdomain_part "${project_domain}")"
 
-    project_state="$(project_ask_state "${suggested_state}")"
+    project_stage="$(project_ask_state "${suggested_state}")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 1 ]]; then
@@ -1488,28 +1488,28 @@ function project_install() {
     wpcli_install_if_not_installed
 
     # Execute function
-    wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
+    wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${root_domain}"
 
     ;;
 
   laravel)
     # Execute function
-    # laravel_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
+    # laravel_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${root_domain}"
     # log_event "warning" "Laravel installer should be implemented soon, trying to install like pure php project ..."
-    php_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
+    php_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${root_domain}"
 
     ;;
 
   php)
 
-    php_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
+    php_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${root_domain}"
 
     ;;
 
   node-js)
 
     #display --indent 8 --text "Project Type NodeJS" --tcolor RED
-    nodejs_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_state}" "${root_domain}"
+    nodejs_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${root_domain}"
 
     return 1
     ;;
@@ -2004,76 +2004,8 @@ function project_create_nginx_server() {
       project_port="$(project_ask_port "")"
     fi
 
-    # Working with root domain or www?
-    if [[ ${project_domain} == "${root_domain}" || ${project_domain} == "www.${root_domain}" ]]; then
-
-      # Nginx config
-      nginx_server_create "www.${root_domain}" "${project_type}" "root_domain" "${root_domain}" "" "${project_port}"
-
-      if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
-
-        # Cloudflare
-        cloudflare_set_record "${root_domain}" "${root_domain}" "A" "false" "${SERVER_IP}"
-        cloudflare_set_record "${root_domain}" "www.${root_domain}" "CNAME" "false" "${root_domain}"
-
-        cloudflare_exitstatus=$?
-
-      fi
-
-      if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
-
-        # If ${cloudflare_exitstatus} is empty, will pass too
-        if [[ ${cloudflare_exitstatus} -ne 1 ]]; then
-
-          # Let's Encrypt
-          certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${root_domain},www.${root_domain}"
-
-          exitstatus=$?
-          if [[ ${exitstatus} -eq 0 ]]; then
-
-            nginx_server_add_http2_support "${project_domain}"
-
-          fi
-
-        fi
-
-      fi
-
-    else
-
-      # Nginx config
-      nginx_server_create "${project_domain}" "${project_type}" "single" "" "${project_port}"
-
-      if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
-
-        # Cloudflare
-        #cloudflare_update_record "${root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
-        cloudflare_set_record "${root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
-
-        cloudflare_exitstatus=$?
-
-      fi
-
-      if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
-
-        # If ${cloudflare_exitstatus} is empty, will pass too
-        if [[ ${cloudflare_exitstatus} -ne 1 ]]; then
-
-          # Let's Encrypt
-          certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain}"
-
-          exitstatus=$?
-          if [[ ${exitstatus} -eq 0 ]]; then
-
-            nginx_server_add_http2_support "${project_domain}"
-
-          fi
-
-        fi
-
-      fi
-
-    fi
+    # Update project domain config
+    project_update_domain_config "${project_domain}" "${project_type}" "${project_port}"
 
   else
 
@@ -2090,7 +2022,7 @@ function project_create_nginx_server() {
 #  $1 = ${project_path}
 #  $2 = ${project_domain}
 #  $3 = ${project_name}
-#  $4 = ${project_state}
+#  $4 = ${project_stage}
 #  $5 = ${project_root_domain}   # Optional
 #
 # Outputs:
@@ -2102,7 +2034,7 @@ function php_project_installer() {
   local project_path="${1}"
   local project_domain="${2}"
   local project_name="${3}"
-  local project_state="${4}"
+  local project_stage="${4}"
   local project_root_domain="${5}"
 
   log_subsection "PHP Project Install"
@@ -2128,7 +2060,7 @@ function php_project_installer() {
   fi
 
   db_project_name=$(mysql_name_sanitize "${project_name}")
-  database_name="${db_project_name}_${project_state}"
+  database_name="${db_project_name}_${project_stage}"
   database_user="${db_project_name}_user"
   database_user_passw="$(openssl rand -hex 12)"
 
@@ -2256,7 +2188,7 @@ function php_project_installer() {
   #  $14 = ${project_use_http2}
   #  $15 = ${project_certbot_mode}
 
-  project_update_brolit_config "${project_path}" "${project_name}" "${project_state}" "php" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "/etc/nginx/sites-available/${project_domain}" "${http2_support}" "${cert_path}"
+  project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "php" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "/etc/nginx/sites-available/${project_domain}" "${http2_support}" "${cert_path}"
 
   # Log
   log_event "info" "PHP project installation for domain ${project_domain} finished" "false"
@@ -2274,7 +2206,7 @@ function php_project_installer() {
 #  $1 = ${project_path}
 #  $2 = ${project_domain}
 #  $3 = ${project_name}
-#  $4 = ${project_state}
+#  $4 = ${project_stage}
 #  $5 = ${project_root_domain}   # Optional
 #
 # Outputs:
@@ -2286,7 +2218,7 @@ function nodejs_project_installer() {
   local project_path="${1}"
   local project_domain="${2}"
   local project_name="${3}"
-  local project_state="${4}"
+  local project_stage="${4}"
   local project_root_domain="${5}"
 
   log_subsection "NodeJS Project Install"
@@ -2326,7 +2258,7 @@ function nodejs_project_installer() {
 
   # DB
   db_project_name="$(mysql_name_sanitize "${project_name}")"
-  database_name="${db_project_name}_${project_state}"
+  database_name="${db_project_name}_${project_stage}"
   database_user="${db_project_name}_user"
   database_user_passw="$(openssl rand -hex 12)"
 
@@ -2433,5 +2365,129 @@ function check_laravel_version() {
 
   # Return
   echo "${laravel_v}"
+
+}
+
+function project_update_domain_config() {
+
+  local project_domain="${1}"
+  local project_type="${2}"
+  local project_port="${3}"
+
+  root_domain="$(domain_get_root "${new_project_domain}")"
+  #root_domain="$(ask_root_domain "${possible_root_domain}")"
+
+  # TODO: if ${project_domain} == ${chosen_domain}, maybe ask if want to restore nginx and let's encrypt config files
+  # restore_letsencrypt_site_files "${chosen_domain}" "${project_backup_date}"
+  # restore_nginx_site_files "${chosen_domain}" "${project_backup_date}"
+
+  # Working with root domain or www?
+  if [[ ${project_domain} == "${root_domain}" || ${project_domain} == "www.${root_domain}" ]]; then
+
+    # Nginx config
+    nginx_server_create "www.${root_domain}" "${project_type}" "root_domain" "${root_domain}" "" "${project_port}"
+
+    # Cloudflare
+    if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
+      ## Set records
+      cloudflare_set_record "${root_domain}" "${root_domain}" "A" "false" "${SERVER_IP}"
+      cloudflare_set_record "${root_domain}" "www.${root_domain}" "CNAME" "false" "${root_domain}"
+      cloudflare_exitstatus=$?
+    fi
+
+    if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
+      if [[ ${cloudflare_exitstatus} -ne 1 ]]; then # If ${cloudflare_exitstatus} is empty, will pass too
+        # Let's Encrypt
+        certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${root_domain},www.${root_domain}"
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then nginx_server_add_http2_support "${project_domain}"; fi
+      fi
+    fi
+
+  else # Working with single domain
+
+    # Nginx config
+    nginx_server_create "${project_domain}" "${project_type}" "single" "" "${project_port}"
+
+    # Cloudflare
+    if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
+      ## Set records
+      cloudflare_set_record "${root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
+      cloudflare_exitstatus=$?
+    fi
+
+    if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
+      if [[ ${cloudflare_exitstatus} -ne 1 ]]; then # If ${cloudflare_exitstatus} is empty, will pass too
+        # Let's Encrypt
+        certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain}"
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then nginx_server_add_http2_support "${project_domain}"; fi
+      fi
+    fi
+
+  fi
+
+}
+
+function project_post_install_tasks() {
+
+  local install_path="${1}"
+  local project_type="${2}"
+  local project_name="${3}"
+  local project_stage="${4}"
+  local project_db_pass="${5}"
+  local old_project_domain="${6}"
+  local new_project_domain="${7}"
+
+  local project_env
+
+  # Check if is a WP project
+  if [[ ${project_type} == "wordpress" ]]; then
+
+    wp_change_permissions "${install_path}"
+
+    # Change wp-config.php database parameters
+    wp_update_wpconfig "${install_path}" "${project_name}" "${project_stage}" "${project_db_pass}"
+
+    # TODO: non protocol before domains (need to check if http or https before)?
+    if [[ ${old_project_domain} != "${new_project_domain}" ]]; then
+      # Change urls on database
+      wpcli_search_and_replace "${install_path}" "${old_project_domain}" "${new_project_domain}"
+    fi
+
+    # Shuffle salts
+    wpcli_set_salts "${install_path}"
+
+    # Update upload_path
+    wpcli_update_upload_path "${install_path}"
+
+    # Changing WordPress visibility
+    if [[ ${project_stage} == "prod" ]]; then
+      # Let search engines index the project
+      wpcli_change_wp_seo_visibility "${install_path}" "1"
+    else
+      wpcli_change_wp_seo_visibility "${install_path}" "0"
+    fi
+
+  else
+
+    # TODO: search .env file
+    project_env="${PROJECTS_PATH}/${new_project_domain}/.env"
+
+    if [[ -f ${project_env} ]]; then
+
+      # Update project .env file
+      #project_set_config_var "${project_env}" "DB_CONNECTION" "${chosen_project}"
+      project_set_config_var "${project_env}" "DB_DATABASE" "${project_name}_${project_stage}"
+      project_set_config_var "${project_env}" "DB_USERNAME" "${project_name}_user"
+      project_set_config_var "${project_env}" "DB_PASSWORD" "${project_db_pass}"
+
+    else
+
+      log_event "info" ".env file not found on project directory" "false"
+
+    fi
+
+  fi
 
 }

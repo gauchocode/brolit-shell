@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc2
+# Version: 3.2-rc3
 ################################################################################
 
 # Server Name
@@ -34,8 +34,8 @@ if [[ -f ${DPU_CONFIG_FILE} ]]; then
 fi
 
 # Version
-SCRIPT_VERSION="3.2-rc2"
-ALIASES_VERSION="3.2-rc2-094"
+SCRIPT_VERSION="3.2-rc3"
+ALIASES_VERSION="3.2-rc3-094"
 
 ################################################################################
 
@@ -761,7 +761,7 @@ function _project_get_stage_from_domain() {
 
     project_stages="demo stage test beta dev"
 
-    # Trying to extract project state from domain
+    # Trying to extract project stage from domain
     possible_project_stage="$(_get_subdomain_part "${project_domain}" | cut -d "." -f 1)"
 
     if [[ ${project_stages} != *"${possible_project_stage}"* ]]; then
@@ -1255,8 +1255,8 @@ function dropbox_get_backup() {
     if [[ ${project_db} == "false" ]]; then
 
         project_name="$(_project_get_name_from_domain "${project_domain}")"
-        project_state="$(_project_get_stage_from_domain "${project_domain}")"
-        project_db="${project_name}_${project_state}"
+        project_stage="$(_project_get_stage_from_domain "${project_domain}")"
+        project_db="${project_name}_${project_stage}"
 
     fi
 

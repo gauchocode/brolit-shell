@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc2
+# Version: 3.2-rc3
 #############################################################################
 
 function test_project_helper_funtions() {
@@ -19,15 +19,15 @@ function test_project_install() {
     local project_type
     local project_domain
     local project_name
-    local project_state
+    local project_stage
 
     project_path="${PROJECTS_PATH}"
     project_type="wordpress"
     project_domain="test.domain.com"
     project_name="domain"
-    project_state="test"
+    project_stage="test"
 
-    project_install "${project_path}" "${project_type}" "${project_domain}" "${project_name}" "${project_state}"
+    project_install "${project_path}" "${project_type}" "${project_domain}" "${project_name}" "${project_stage}"
 
     project_delete "${project_domain}" "true"
 

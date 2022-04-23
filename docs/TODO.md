@@ -41,8 +41,8 @@
 
 - [ ] Core: Stop netdata alerts when a backup or virus analysis is started.
 - [ ] Core: Flags should receive a json file to deploy or restore a new project.
-- [ ] Core: On project creation/restore need to ask first the project state, then project domain.
-        If project state != prod and subdomains is not containing the stage, need to suggest one.
+- [ ] Core: On project creation/restore need to ask first the project stage, then project domain.
+        If project stage != prod and subdomains is not containing the stage, need to suggest one.
         Example: test.landing.broobe.net OK
         Example 2: landing.broobe.net X (OK only if prod).
 - [ ] Restore-database: granting privileges to user fails, database_name is empty.

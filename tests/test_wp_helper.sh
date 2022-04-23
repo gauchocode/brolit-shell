@@ -1,24 +1,24 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc2
+# Version: 3.2-rc3
 #############################################################################
 
 function test_wpcli_helper_funtions() {
 
     local project_name
-    local project_state
+    local project_stage
     local project_domain
     local project_path
 
     project_name="domain"
-    project_state="test"
+    project_stage="test"
     project_domain="test.domain.com"
     project_path="${PROJECTS_PATH}/${project_domain}"
 
     # Create mock project
     db_project_name=$(mysql_name_sanitize "${project_name}")
-    database_name="${db_project_name}_${project_state}"
+    database_name="${db_project_name}_${project_stage}"
     database_user="${db_project_name}_user"
     database_user_passw="$(openssl rand -hex 12)"
 
