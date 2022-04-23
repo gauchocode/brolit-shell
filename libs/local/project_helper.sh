@@ -2438,6 +2438,7 @@ function project_post_install_tasks() {
   local project_db_pass="${5}"
   local old_project_domain="${6}"
   local new_project_domain="${7}"
+  #local project_port="${8}"
 
   local project_env
 
