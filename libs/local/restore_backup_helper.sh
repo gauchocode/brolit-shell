@@ -1258,7 +1258,7 @@ function restore_project() {
           restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${db_to_restore}"
 
           project_db_status="enabled"
-          
+
         fi
 
       else
@@ -1277,14 +1277,14 @@ function restore_project() {
     # Project domain configuration (webserver+certbot+DNS)
     project_update_domain_config "${new_project_domain}" "${project_type}" ""
 
-    # Create/update brolit_project_conf.json file with project info
-    project_update_brolit_config "${PROJECTS_PATH}/${chosen_domain}" "${chosen_project}" "${project_stage}" "${project_type}" "${project_db_status}" "${db_engine}" "${db_name}" "${db_user}" "${db_pass}" "${new_project_domain}"
-
     # Post-restore/install tasks
-    project_post_install_tasks "${project_type}" "${project_name}" "${project_stage}" "${chosen_domain}" "${new_project_domain}" "http/https" "${install_path}"
+    project_post_install_tasks "${install_path}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${chosen_domain}" "${new_project_domain}"
+
+    # Create/update brolit_project_conf.json file with project info
+    project_update_brolit_config "${PROJECTS_PATH}/${chosen_domain}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "${db_engine}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${new_project_domain}"
 
     # Send notification
-    send_notification "✅ ${SERVER_NAME}" "Project ${new_project_domain} restored!"
+    send_notification "✅ ${SERVER_NAME}" "Project ${new_project_domain} restored!" "0"
 
   fi
 
