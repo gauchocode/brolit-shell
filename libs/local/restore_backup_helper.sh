@@ -1010,7 +1010,7 @@ function restore_type_selection_from_dropbox() {
 
             # Restore Database Backup
             #restore_backup_database "${db_project_name}" "${project_state}" "${chosen_backup_to_restore}" "${db_engine}" "${db_name}" "${db_user}" "${db_pass}"
-            restore_backup_database "${db_engine}" "${project_state}" "${db_name}" "${db_user}" "${db_pass}" "${chosen_backup_to_restore}"
+            restore_backup_database "${db_engine}" "${project_state}" "${project_name}_${project_state}" "${db_user}" "${db_pass}" "${chosen_backup_to_restore}"
 
             # TODO: ask if want to change project db parameters and make cloudflare changes
 
@@ -1255,7 +1255,7 @@ function restore_project() {
           fi
 
           # Restore Database Backup
-          restore_backup_database "${db_engine}" "${project_state}" "${db_name}" "${db_user}" "${db_pass}" "${db_to_restore}"
+          restore_backup_database "${db_engine}" "${project_state}" "${project_name}_${project_state}" "${db_user}" "${db_pass}" "${db_to_restore}"
 
           project_db_status="enabled"
           
