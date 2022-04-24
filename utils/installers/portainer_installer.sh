@@ -71,7 +71,7 @@ function portainer_installer() {
 
             PACKAGES_PORTAINER_STATUS="enabled"
 
-            json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.portainer[].status" "${PACKAGES_GRAFANA_STATUS}"
+            json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.portainer[].status" "${PACKAGES_PORTAINER_STATUS}"
 
             # new global value ("enabled")
             export PACKAGES_PORTAINER_STATUS
