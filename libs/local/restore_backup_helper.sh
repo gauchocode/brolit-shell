@@ -1281,7 +1281,7 @@ function restore_project() {
     project_post_install_tasks "${install_path}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${chosen_domain}" "${new_project_domain}"
 
     # Create/update brolit_project_conf.json file with project info
-    project_update_brolit_config "${PROJECTS_PATH}/${chosen_domain}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "${db_engine}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${new_project_domain}"
+    project_update_brolit_config "${install_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "${db_engine}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${new_project_domain}"
 
     # Send notification
     send_notification "✅ ${SERVER_NAME}" "Project ${new_project_domain} restored!" "0"
