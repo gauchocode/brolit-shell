@@ -20,6 +20,9 @@ CLF_CONFIG_FILE=~/.cloudflare.conf
 if [[ -f ${CLF_CONFIG_FILE} ]]; then
     # shellcheck source=~/.cloudflare.conf
     source "${CLF_CONFIG_FILE}"
+    # Declare new global vars from cloudflare config file
+    declare -g SUPPORT_CLOUDFLARE_EMAIL="${dns_cloudflare_email}"
+    declare -g SUPPORT_CLOUDFLARE_API_KEY="${dns_cloudflare_api_key}"
 fi
 
 DPU_CONFIG_FILE=~/.dropbox_uploader
@@ -35,7 +38,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.2-rc3"
-ALIASES_VERSION="3.2-rc3-094"
+ALIASES_VERSION="3.2-rc3-095"
 
 ################################################################################
 
@@ -620,115 +623,118 @@ function _extract_domain_extension() {
 
 function _wp_config_path() {
 
-  local dir_to_search="${1}"
+    local dir_to_search="${1}"
 
-  # Find where wp-config.php is
-  find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')"
+    # Find where wp-config.php is
+    find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')"
 
-  # Check if directory exists
-  if [[ -d ${find_output} ]]; then
+    # Check if directory exists
+    if [[ -d ${find_output} ]]; then
 
-    # Return
-    echo "${find_output}"
+        # Return
+        echo "${find_output}"
 
-    return 0
+        return 0
 
-  else
+    else
 
-    return 1
+        return 1
 
-  fi
+    fi
 
 }
 
 function _project_get_type() {
 
-  local dir_path="${1}"
+    local dir_path="${1}"
 
-  #local project_type
+    #local project_type
 
-  # TODO: if brolit_conf exists, should check this file and get project type
+    # TODO: if brolit_conf exists, should check this file and get project type
 
-  if [[ -n ${dir_path} ]]; then
+    if [[ -n ${dir_path} ]]; then
 
-    # WP?
-    wp_path="$(_wp_config_path "${dir_path}")"
-    if [[ -n ${wp_path} ]]; then
+        # WP?
+        wp_path="$(_wp_config_path "${dir_path}")"
+        if [[ -n ${wp_path} ]]; then
 
-      # Return
-      echo "wordpress"
+            # Return
+            echo "wordpress"
 
-      return 0
+            return 0
+
+        fi
+
+        # Laravel?
+        laravel_v="$(php "${dir_path}/artisan" --version | grep -oE "Laravel Framework [0-9]+\.[0-9]+\.[0-9]+")"
+        if [[ -n ${laravel_v} ]]; then
+
+            # Return
+            echo "laravel"
+
+            return 0
+
+        fi
+
+        # other-php?
+        php="$(find "${dir_path}" -name "index.php" -type f)"
+        if [[ -n ${php} ]]; then
+
+            # Return
+            echo "php"
+
+            return 0
+
+        fi
+
+        # Node.js?
+        nodejs="$(find "${dir_path}" -name "package.json" -type f)"
+        if [[ -n ${nodejs} ]]; then
+
+            # Return
+            echo "nodejs"
+
+            return 0
+
+        fi
+
+        # html-only?
+        html="$(find "${dir_path}" -name "index.html" -type f)"
+        if [[ -n ${html} ]]; then
+
+            # Return
+            echo "html"
+
+            return 0
+
+        fi
+
+        # docker-compose?
+        docker="$(
+            find "${dir_path}" -name "docker-compose.yml" -type f
+            find "${dir_path}" -name "docker-compose.yaml" -type f
+        )"
+        if [[ -n ${docker} ]]; then
+
+            # Return
+            echo "docker-compose"
+
+            return 0
+
+        fi
+
+        # Unknown
+
+        # Return
+        echo "unknown"
+
+        return 0
+
+    else
+
+        return 1
 
     fi
-
-    # Laravel?
-    laravel_v="$(php "${dir_path}/artisan" --version | grep -oE "Laravel Framework [0-9]+\.[0-9]+\.[0-9]+")"
-    if [[ -n ${laravel_v} ]]; then
-
-      # Return
-      echo "laravel"
-
-      return 0
-
-    fi
-
-    # other-php?
-    php="$(find "${dir_path}" -name "index.php" -type f)"
-    if [[ -n ${php} ]]; then
-
-      # Return
-      echo "php"
-
-      return 0
-
-    fi
-
-    # Node.js?
-    nodejs="$(find "${dir_path}" -name "package.json" -type f)"
-    if [[ -n ${nodejs} ]]; then
-
-      # Return
-      echo "nodejs"
-
-      return 0
-
-    fi
-
-    # html-only?
-    html="$(find "${dir_path}" -name "index.html" -type f)"
-    if [[ -n ${html} ]]; then
-
-      # Return
-      echo "html"
-
-      return 0
-
-    fi
-
-    # docker-compose?
-    docker="$(find "${dir_path}" -name "docker-compose.yml" -type f; find "${dir_path}" -name "docker-compose.yaml" -type f)"
-    if [[ -n ${docker} ]]; then
-
-      # Return
-      echo "docker-compose"
-
-      return 0
-
-    fi
-
-    # Unknown
-
-    # Return
-    echo "unknown"
-
-    return 0
-
-  else
-
-    return 1
-
-  fi
 
 }
 
