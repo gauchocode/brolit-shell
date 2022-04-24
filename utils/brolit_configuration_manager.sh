@@ -1296,16 +1296,16 @@ function _brolit_configuration_load_portainer() {
 
     PACKAGES_PORTAINER_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].status")"
 
-    package_is_installed "docker"
-    exitstatus="$?"
-    if [[ ${exitstatus} -eq 1 ]]; then
-        log_event "error" "In order to install Portainer, docker and docker-compose must be installed." "true"
-        exit 1
-    fi
-
     PORTAINER="$(docker_get_container_id "portainer")"
 
     if [[ ${PACKAGES_PORTAINER_STATUS} == "enabled" ]]; then
+
+        package_is_installed "docker"
+        exitstatus="$?"
+        if [[ ${exitstatus} -eq 1 ]]; then
+            log_event "error" "In order to install Portainer, docker and docker-compose must be installed." "true"
+            exit 1
+        fi
 
         PACKAGES_PORTAINER_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].config[].subdomain")"
         PACKAGES_PORTAINER_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].config[].port")"
