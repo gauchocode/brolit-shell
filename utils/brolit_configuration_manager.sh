@@ -1267,7 +1267,7 @@ function _brolit_configuration_load_docker() {
 
     fi
 
-    export PACKAGES_DOCKER_STATUS PACKAGES_DOCKER_COMPOSE_STATUS
+    export DOCKER DOCKER_COMPOSE PACKAGES_DOCKER_STATUS PACKAGES_DOCKER_COMPOSE_STATUS
 
 }
 
@@ -1298,7 +1298,6 @@ function _brolit_configuration_load_portainer() {
 
     package_is_installed "docker"
     docker_installed="$?"
-
     if [[ ${docker_installed} -eq 0 ]]; then
         PORTAINER="$(docker_get_container_id "portainer")"
     fi
