@@ -72,7 +72,7 @@ function certbot_installer() {
   if [[ ${exitstatus} -ne 0 ]]; then
 
     # Log
-    clear_previous_lines "1"
+    clear_previous_lines "2"
     display --indent 6 --text "- Installing certbot and dependencies" --result "FAILED" --color RED
     log_event "error" "Installing python3-certbot-dns-cloudflare and python3-certbot-nginx" "false"
 
@@ -81,7 +81,7 @@ function certbot_installer() {
   else
 
     # Log
-    clear_previous_lines "1"
+    clear_previous_lines "2"
     display --indent 6 --text "- Installing certbot and dependencies" --result "DONE" --color GREEN
     log_event "info" "Certbot installation finished" "false"
 
