@@ -146,8 +146,6 @@ function docker_get_container_id() {
 
     local image_name="${1}"
 
-    #package_is_installed "docker"
-
     container_id="$(docker ps | grep "${image_name}" | awk '{print $1;}')"
 
     if [[ -n ${container_id} ]]; then

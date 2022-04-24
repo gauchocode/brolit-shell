@@ -2,7 +2,7 @@
     "BROLIT_SETUP": {
         "config": [
             {
-                "version": "3.7.6",
+                "version": "3.8",
                 "debug": "true",
                 "quiet": "false",
                 "skip_test": "true",
@@ -295,7 +295,7 @@
                 "version": "default",
                 "compose": [
                     {
-                        "status": "disabled",
+                        "status": "enabled",
                         "version": "default"
                     }
                 ]
@@ -304,11 +304,11 @@
         "portainer": [
             {
                 "status": "disabled",
-                "version": "default",
+                "version": "lastest",
                 "config": [
                     {
                         "port": "9000",
-                        "nginx_proxy": "",
+                        "nginx_proxy": "enabled",
                         "subdomain": ""
                     }
                 ]
@@ -380,60 +380,6 @@
                     {
                         "subdomain": "",
                         "port": "9090"
-                    }
-                ]
-            }
-        ],
-        "grafana": [
-            {
-                "status": "disabled",
-                "config": [
-                    {
-                        "subdomain": "",
-                        "user": "",
-                        "user_pass": ""
-                    }
-                ]
-            }
-        ],
-        "loki": [
-            {
-                "status": "disabled",
-                "config": [
-                    {
-                        "name": "",
-                        "url": "",
-                        "port": ""
-                    }
-                ]
-            }
-        ],
-        "promtail": [
-            {
-                "status": "disabled",
-                "config": [
-                    {
-                        "name": "",
-                        "url": "",
-                        "port": ""
-                    }
-                ]
-            }
-        ],
-        "teleport": [
-            {
-                "status": "disabled",
-                "config": [
-                    {
-                        "is_server": "false",
-                        "nodename": "",
-                        "cluster_name": "",
-                        "public_addr": "",
-                        "advertise_ip": "",
-                        "email": "",
-                        "user": "",
-                        "proxy_service": "disabled",
-                        "labels": []
                     }
                 ]
             }

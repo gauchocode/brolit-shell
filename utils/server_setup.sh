@@ -176,22 +176,34 @@ function server_app_setup() {
 
         ;;
 
-    "grafana")
-
-        if [[ ${PACKAGES_GRAFANA_STATUS} == "enabled" ]]; then
-            grafana_installer
-        else
-            grafana_purge
-        fi
-
-        ;;
-
     "cockpit")
 
         if [[ ${PACKAGES_COCKPIT_STATUS} == "enabled" ]]; then
             cockpit_installer
         else
             package_purge "cockpit"
+        fi
+
+        ;;
+
+    "docker")
+
+        if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then
+            log_subsection "Docker Installer"
+            package_install_if_not "docker"
+        else
+            package_purge "docker"
+        fi
+
+        ;;
+
+    "docker-compose")
+
+        if [[ ${PACKAGES_DOCKER_COMPOSE_STATUS} == "enabled" ]]; then
+            log_subsection "Docker compose Installer"
+            package_install_if_not "docker-compose"
+        else
+            package_purge "docker-compose"
         fi
 
         ;;
@@ -203,24 +215,6 @@ function server_app_setup() {
             portainer_configure
         else
             portainer_purge
-        fi
-
-        ;;
-
-    "teleport")
-
-        if [[ ${PACKAGES_TELEPORT_STATUS} == "enabled" ]]; then
-
-            teleport_installer
-
-            if [[ "${PACKAGES_TELEPORT_CONFIG_IS_SERVER}" == "true" ]]; then
-                teleport_configure "server"
-            else
-                teleport_configure "client"
-            fi
-
-        else
-            package_purge "teleport"
         fi
 
         ;;
