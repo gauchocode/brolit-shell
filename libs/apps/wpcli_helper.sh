@@ -1847,16 +1847,19 @@ function wpcli_update_upload_path() {
     local wp_site="${1}"
     local upload_path="${2}"
 
-    log_event "debug" "Running: wp --allow-root --path=\"${wp_site}\" rocket clean --confirm" "false"
+    local wp_command
 
-    # Command
-    wp --allow-root --path="${wp_site}" option update upload_path "${upload_path}"
+    log_event "debug" "Running: wp --allow-root --path=\"${wp_site}\" option update upload_path \"${upload_path}\"" "false"
+
+    # wp-cli command
+    wp_command="$(wp --allow-root --path="${wp_site}" option update upload_path "${upload_path}")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log
-        display --indent 6 --text "- Updating upload path for ${wp_site}" --result "DONE" --color GREEN
+        clear_previous_lines "1"
+        display --indent 6 --text "- Updating project upload path" --result "DONE" --color GREEN
         log_event "error" "New upload path: ${upload_path}" "false"
 
         return 0
@@ -1866,6 +1869,7 @@ function wpcli_update_upload_path() {
         # Log
         display --indent 6 --text "- Updating upload path for ${wp_site}" --result "FAIL" --color RED
         log_event "error" "Updating upload path: ${upload_path}" "false"
+        log_event "error" "wp-cli command output: ${wp_command}" "false"
 
         return 1
 

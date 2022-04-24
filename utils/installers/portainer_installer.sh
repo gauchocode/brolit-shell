@@ -45,14 +45,18 @@ function portainer_installer() {
 
             docker-compose up -d
 
-            nginx_server_create "${project_domain}" "single" "portainer" ""
+            if [[ ${PACKAGES_PORTAINER_CONFIG_NGINX} == "enabled" ]]; then
 
-            if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
+                nginx_server_create "${project_domain}" "single" "portainer" ""
 
-                # Extract root domain
-                root_domain="$(domain_get_root "${project_domain}")"
+                if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
 
-                cloudflare_set_record "${root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
+                    # Extract root domain
+                    root_domain="$(domain_get_root "${project_domain}")"
+
+                    cloudflare_set_record "${root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
+
+                fi
 
             fi
 
