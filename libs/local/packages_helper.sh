@@ -101,15 +101,22 @@ function package_update() {
 #   0 if ok, 1 on error.
 ################################################################################
 
+
 function package_is_installed() {
 
   local package="${1}"
 
+  local bin_path
+
   if [[ "$(dpkg-query -W -f='${Status}' "${package}" 2>/dev/null | grep -c "ok installed")" == "1" ]]; then
 
-    log_event "info" "${package} is installed" "false"
+    bin_path=$(which "${package}")
+
+    log_event "info" "${package} is installed on: ${bin_path}" "false"
 
     # Return
+    echo "${bin_path}"
+
     return 0
 
   else
