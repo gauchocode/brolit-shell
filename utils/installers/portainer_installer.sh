@@ -37,7 +37,16 @@ function portainer_installer() {
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
+            # Create project directory
             mkdir -p "${PROJECTS_PATH}/${project_domain}"
+
+            # Copy docker-compose file to project directory
+            cp "${BROLIT_MAIN_DIR}/utils/installers/docker-compose/portainer/docker-compose.yml" "${PROJECTS_PATH}/${project_domain}"
+
+            # Replace domain in docker-compose file
+            sed -i "s/PORTAINER_SUBDOMAIN/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/g" "${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
+            # Replace port in docker-compose file
+            sed -i "s/PORTAINER_PORT/${PACKAGES_PORTAINER_CONFIG_PORT}/g" "${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
 
             cd "${PROJECTS_PATH}/${project_domain}"
 
@@ -47,7 +56,7 @@ function portainer_installer() {
 
             if [[ ${PACKAGES_PORTAINER_CONFIG_NGINX} == "enabled" ]]; then
 
-                nginx_server_create "${project_domain}" "single" "portainer" ""
+                nginx_server_create "${project_domain}" "portainer" "single" "" "${PACKAGES_PORTAINER_CONFIG_PORT}"
 
                 if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
 

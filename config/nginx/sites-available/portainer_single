@@ -11,14 +11,14 @@ server {
         client_max_body_size 50m;
 
         location / {
-                proxy_pass http://127.0.0.1:PORTAINER_PORT;
+                proxy_pass http://127.0.0.1:PROXY_PORT;
                 proxy_http_version 1.1;
                 proxy_set_header Upgrade $http_upgrade;
                 proxy_set_header Connection "Upgrade";
                 proxy_set_header Host $host;
         }
         location /api/websocket/ {
-                proxy_pass http://127.0.0.1:PORTAINER_PORT/api/websocket/;
+                proxy_pass http://127.0.0.1:PROXY_PORT/api/websocket/;
                 proxy_http_version 1.1;
                 proxy_set_header Upgrade $http_upgrade;
                 proxy_set_header Connection "Upgrade";

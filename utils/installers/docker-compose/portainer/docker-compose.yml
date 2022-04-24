@@ -8,13 +8,13 @@ services:
     command: -H unix:///var/run/docker.sock
     restart: always
     environment:
-      - VIRTUAL_HOST=portainer.apps01.broobe.net
-      - VIRTUAL_PORT=9000
+      - VIRTUAL_HOST=PORTAINER_SUBDOMAIN
+      - VIRTUAL_PORT=PORTAINER_PORT
     ports:
       - 9000:9000
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - portainer_data:/data
+      - ./portainer_data:/data
 
-volumes:
-  portainer_data:
+#volumes:
+#  portainer_data:
