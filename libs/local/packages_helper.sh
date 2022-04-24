@@ -110,7 +110,7 @@ function package_is_installed() {
 
   if [[ "$(dpkg-query -W -f='${Status}' "${package}" 2>/dev/null | grep -c "ok installed")" == "1" ]]; then
 
-    bin_path="$(command -v "${package}")"
+    bin_path="$(command -v "${package}" 2>/dev/null)"
 
     log_event "info" "${package} is installed on: ${bin_path}" "false"
 
