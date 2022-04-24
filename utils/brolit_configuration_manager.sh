@@ -1240,8 +1240,8 @@ function _brolit_configuration_load_docker() {
     PACKAGES_DOCKER_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.docker[].status")"
     PACKAGES_DOCKER_COMPOSE_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.docker[].compose[].status")"
 
-    DOCKER="$(which docker)"
-    DOCKER_COMPOSE="$(which docker-compose)"
+    DOCKER="$(package_is_installed "docker")"
+    DOCKER_COMPOSE="$(package_is_installed "docker-compose")"
 
     if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then
 
