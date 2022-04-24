@@ -1310,12 +1310,12 @@ function _brolit_configuration_load_portainer() {
             exit 1
         fi
 
-        PACKAGES_PORTAINER_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].config[].subdomain")"
         PACKAGES_PORTAINER_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].config[].port")"
         PACKAGES_PORTAINER_CONFIG_NGINX="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].config[].nginx_proxy")"
+        PACKAGES_PORTAINER_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].config[].subdomain")"
 
         # Check if all required vars are set
-        if [[ -z ${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN} ]] || [[ -z ${PACKAGES_PORTAINER_CONFIG_PORT} ]] || [[ -z ${PACKAGES_PORTAINER_CONFIG_NGINX} ]] || [[ -z ${PACKAGES_PORTAINER_NOTIFICATION_ALARM_LEVEL} ]]; then
+        if [[ -z ${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN} ]] || [[ -z ${PACKAGES_PORTAINER_CONFIG_PORT} ]] || [[ -z ${PACKAGES_PORTAINER_CONFIG_NGINX} ]]; then
             log_event "error" "Missing required config vars for portainer support" "true"
             exit 1
         fi
@@ -1334,7 +1334,7 @@ function _brolit_configuration_load_portainer() {
 
     fi
 
-    export PACKAGES_PORTAINER_STATUS PACKAGES_PORTAINER_CONFIG_SUBDOMAIN PACKAGES_PORTAINER_CONFIG_USER PACKAGES_PORTAINER_CONFIG_USER_PASS PACKAGES_PORTAINER_NOTIFICATION_ALARM_LEVEL
+    export PACKAGES_PORTAINER_STATUS PACKAGES_PORTAINER_CONFIG_SUBDOMAIN PACKAGES_PORTAINER_CONFIG_PORT PACKAGES_PORTAINER_CONFIG_NGINX
 
 }
 
