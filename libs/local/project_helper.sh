@@ -456,7 +456,8 @@ function project_update_brolit_config() {
   local project_config_file
 
   # Project config file
-  project_config_file="${BROLIT_CONFIG_PATH}/${project_name}_conf.json"
+  #project_config_file="${BROLIT_CONFIG_PATH}/${project_name}_conf.json"
+  project_config_file="${BROLIT_CONFIG_PATH}/${project_prymary_subdomain}_conf.json"
 
   if [[ -e ${project_config_file} ]]; then
 
@@ -1927,7 +1928,7 @@ function project_get_type() {
     fi
 
     # docker-compose?
-    docker="$(find "${dir_path}" -name "docker-compose.yml" -type f | find "${dir_path}" -name "docker-compose.yaml" -type f)"
+    docker="$(find "${dir_path}" -name "docker-compose.yml" -type f; find "${dir_path}" -name "docker-compose.yaml" -type f)"
     if [[ -n ${docker} ]]; then
 
       log_event "debug" "Project Type: docker-compose" "false"
@@ -1940,7 +1941,6 @@ function project_get_type() {
     fi
 
     # Unknown
-    # if reach this point, it's not a project?
     log_event "debug" "Project Type: unknown" "false"
 
     # Return

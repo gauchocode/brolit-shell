@@ -707,7 +707,7 @@ function _project_get_type() {
     fi
 
     # docker-compose?
-    docker="$(find "${dir_path}" -name "docker-compose.yml" -type f | find "${dir_path}" -name "docker-compose.yaml" -type f)"
+    docker="$(find "${dir_path}" -name "docker-compose.yml" -type f; find "${dir_path}" -name "docker-compose.yaml" -type f)"
     if [[ -n ${docker} ]]; then
 
       # Return
@@ -718,7 +718,6 @@ function _project_get_type() {
     fi
 
     # Unknown
-    # if reach this point, it's not a project?
 
     # Return
     echo "unknown"

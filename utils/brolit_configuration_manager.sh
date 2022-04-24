@@ -1253,14 +1253,14 @@ function _brolit_configuration_load_portainer() {
         fi
 
         # Checking if Portainer is not installed
-        if [[ -z "${PORTAINER}" ]]; then
+        if [[ -z ${PORTAINER} ]]; then
             menu_config_changes_detected "portainer" "true"
         fi
 
     else
 
         # Checking if Portainer is installed
-        if [[ -n "${PORTAINER}" ]]; then
+        if [[ -n ${PORTAINER} ]]; then
             menu_config_changes_detected "portainer" "true"
         fi
 
