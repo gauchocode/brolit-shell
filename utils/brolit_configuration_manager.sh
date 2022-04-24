@@ -1216,6 +1216,62 @@ function _brolit_configuration_load_netdata() {
 }
 
 ################################################################################
+# Private: load docker configuration
+#
+# Arguments:
+#   $1 = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function _brolit_configuration_load_docker() {
+
+    local server_config_file="${1}"
+
+    local exitstatus
+
+    # Globals
+    declare -g DOCKER
+    declare -g PACKAGES_DOCKER_STATUS
+    declare -g DOCKER_COMPOSE
+    declare -g PACKAGES_DOCKER_COMPOSE_STATUS
+
+    PACKAGES_DOCKER_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.docker[].status")"
+    PACKAGES_DOCKER_COMPOSE_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.docker[].compose[].status")"
+
+    DOCKER="$(which docker)"
+    DOCKER_COMPOSE="$(which docker-compose)"
+
+    if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then
+
+        # Checking if docker is not installed
+        if [[ -z ${DOCKER} ]]; then
+            menu_config_changes_detected "docker" "true"
+
+            if [[ ${PACKAGES_DOCKER_COMPOSE_STATUS} == "enabled" ]]; then
+                menu_config_changes_detected "docker-compose" "true"
+            fi
+
+        fi
+
+    else
+
+        # Checking if docker is installed
+        if [[ -n ${DOCKER} ]]; then
+            menu_config_changes_detected "docker" "true"
+        fi
+        if [[ -n ${DOCKER_COMPOSE} ]]; then
+            menu_config_changes_detected "docker-compose" "true"
+        fi
+
+    fi
+
+    export PACKAGES_DOCKER_STATUS PACKAGES_DOCKER_COMPOSE_STATUS
+
+}
+
+################################################################################
 # Private: load portainer configuration
 #
 # Arguments:
@@ -1229,6 +1285,8 @@ function _brolit_configuration_load_portainer() {
 
     local server_config_file="${1}"
 
+    local exitstatus
+
     # Globals
     declare -g PORTAINER
     declare -g PACKAGES_PORTAINER_STATUS
@@ -1236,9 +1294,16 @@ function _brolit_configuration_load_portainer() {
     declare -g PACKAGES_PORTAINER_CONFIG_PORT
     declare -g PACKAGES_PORTAINER_CONFIG_NGINX
 
-    PORTAINER="$(docker_get_container_id "portainer")"
-
     PACKAGES_PORTAINER_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].status")"
+
+    package_is_installed "docker"
+    exitstatus="$?"
+    if [[ ${exitstatus} -eq 1 ]]; then
+        log_event "error" "In order to install Portainer, docker and docker-compose must be installed." "true"
+        exit 1
+    fi
+
+    PORTAINER="$(docker_get_container_id "portainer")"
 
     if [[ ${PACKAGES_PORTAINER_STATUS} == "enabled" ]]; then
 
@@ -1247,7 +1312,7 @@ function _brolit_configuration_load_portainer() {
         PACKAGES_PORTAINER_CONFIG_NGINX="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].config[].nginx_proxy")"
 
         # Check if all required vars are set
-        if [[ -z "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}" ]] || [[ -z "${PACKAGES_PORTAINER_CONFIG_PORT}" ]] || [[ -z "${PACKAGES_PORTAINER_CONFIG_NGINX}" ]] || [[ -z "${PACKAGES_PORTAINER_NOTIFICATION_ALARM_LEVEL}" ]]; then
+        if [[ -z ${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN} ]] || [[ -z ${PACKAGES_PORTAINER_CONFIG_PORT} ]] || [[ -z ${PACKAGES_PORTAINER_CONFIG_NGINX} ]] || [[ -z ${PACKAGES_PORTAINER_NOTIFICATION_ALARM_LEVEL} ]]; then
             log_event "error" "Missing required config vars for portainer support" "true"
             exit 1
         fi
@@ -1267,69 +1332,6 @@ function _brolit_configuration_load_portainer() {
     fi
 
     export PACKAGES_PORTAINER_STATUS PACKAGES_PORTAINER_CONFIG_SUBDOMAIN PACKAGES_PORTAINER_CONFIG_USER PACKAGES_PORTAINER_CONFIG_USER_PASS PACKAGES_PORTAINER_NOTIFICATION_ALARM_LEVEL
-
-}
-
-################################################################################
-# Private: load grafana configuration
-#
-# Arguments:
-#   $1 = ${server_config_file}
-#
-# Outputs:
-#   nothing
-################################################################################
-
-function _brolit_configuration_load_grafana() {
-
-    local server_config_file="${1}"
-
-    # Globals
-    declare -g PACKAGES_GRAFANA_STATUS
-    declare -g PACKAGES_GRAFANA_CONFIG_SUBDOMAIN
-    declare -g PACKAGES_GRAFANA_CONFIG_USER
-    declare -g PACKAGES_GRAFANA_CONFIG_USER_PASS
-    declare -g PACKAGES_GRAFANA_CONFIG_ALARM_LEVEL
-
-    PACKAGES_GRAFANA_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].status")"
-
-    GRAFANA="$(which grafana)"
-
-    if [[ ${PACKAGES_GRAFANA_STATUS} == "enabled" ]]; then
-
-        #PACKAGES_GRAFANA_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].config[].subdomain")"
-        #PACKAGES_GRAFANA_CONFIG_USER="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].config[].user")"
-        #PACKAGES_GRAFANA_CONFIG_USER_PASS="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].config[].user_pass")"
-
-        # Check if all required vars are set
-        #if [[ -z "${PACKAGES_GRAFANA_CONFIG_SUBDOMAIN}" ]] || [[ -z "${PACKAGES_GRAFANA_CONFIG_USER}" ]] || [[ -z "${PACKAGES_GRAFANA_CONFIG_USER_PASS}" ]]; then
-        #    log_event "error" "Missing required config vars for grafana support" "true"
-        #    exit 1
-        #fi
-
-        # Checking if Grafana is installed
-        #package_is_installed "grafana"
-
-        #exitstatus=$?
-        #if [[ ${exitstatus} -eq 1 ]]; then
-        #    menu_config_changes_detected "grafana" "true"
-        #fi
-
-        # Checking if Grafana is not installed
-        if [[ ! -x "${GRAFANA}" ]]; then
-            menu_config_changes_detected "grafana" "true"
-        fi
-
-    else
-
-        # Checking if Grafana is installed
-        if [[ -x "${GRAFANA}" ]]; then
-            menu_config_changes_detected "grafana" "true"
-        fi
-
-    fi
-
-    export PACKAGES_GRAFANA_STATUS PACKAGES_GRAFANA_CONFIG_SUBDOMAIN PACKAGES_GRAFANA_CONFIG_USER PACKAGES_GRAFANA_CONFIG_USER_PASS PACKAGES_GRAFANA_CONFIG_ALARM_LEVEL
 
 }
 
@@ -1688,7 +1690,7 @@ function brolit_configuration_load() {
         exit 1
     fi
 
-    # TODO: need to implement BACKUPS.direcotries
+    # TODO: need to implement BACKUPS.directories
 
     ## NOTIFICATIONS
     _brolit_configuration_load_email "${server_config_file}"
@@ -1740,11 +1742,14 @@ function brolit_configuration_load() {
     ### monit
     _brolit_configuration_load_monit "${server_config_file}"
 
+    ### docker
+    _brolit_configuration_load_docker "${server_config_file}"
+
     ### netdata
     _brolit_configuration_load_netdata "${server_config_file}"
 
-    ### grafana
-    _brolit_configuration_load_grafana "${server_config_file}"
+    ### portainer
+    _brolit_configuration_load_portainer "${server_config_file}"
 
     ### custom
     _brolit_configuration_load_custom_pkgs "${server_config_file}"
@@ -1754,12 +1759,3 @@ function brolit_configuration_load() {
     export SERVER_PREPARED
 
 }
-
-################################################################################
-#botfather_whip_line+=" \n "
-#botfather_whip_line+=" Open Telegram and follow the next steps:\n\n"
-#botfather_whip_line+=" 1) Get a bot token. Contact @BotFather (https://t.me/BotFather) and send the command /newbot.\n"
-#botfather_whip_line+=" 2) Follow the instructions and paste the token to access the HTTP API:\n\n"
-#telegram_id_whip_line+=" 3) Contact the @myidbot (https://t.me/myidbot) bot and send the command /getid to get \n"
-#telegram_id_whip_line+=" your personal chat id or invite him into a group and issue the same command to get the group chat id.\n"
-#telegram_id_whip_line+=" 4) Paste the ID here:\n\n"
