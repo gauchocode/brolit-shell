@@ -20,6 +20,8 @@
 
 function portainer_installer() {
 
+    local portainer
+
     log_subsection "Portainer Installer"
 
     package_update
@@ -32,38 +34,36 @@ function portainer_installer() {
 
     if [[ -z ${portainer} ]]; then
 
-        project_domain="$(project_ask_domain)"
-
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # Create project directory
-            mkdir -p "${PROJECTS_PATH}/${project_domain}"
+            mkdir -p "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}"
 
             # Copy docker-compose file to project directory
-            cp "${BROLIT_MAIN_DIR}/utils/installers/docker-compose/portainer/docker-compose.yml" "${PROJECTS_PATH}/${project_domain}"
+            cp "${BROLIT_MAIN_DIR}/utils/installers/docker-compose/portainer/docker-compose.yml" "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}"
 
             # Replace domain in docker-compose file
-            sed -i "s/PORTAINER_SUBDOMAIN/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/g" "${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
+            sed -i "s/PORTAINER_SUBDOMAIN/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/g" "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/docker-compose.yml"
             # Replace port in docker-compose file
-            sed -i "s/PORTAINER_PORT/${PACKAGES_PORTAINER_CONFIG_PORT}/g" "${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
+            sed -i "s/PORTAINER_PORT/${PACKAGES_PORTAINER_CONFIG_PORT}/g" "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/docker-compose.yml"
 
-            cd "${PROJECTS_PATH}/${project_domain}"
+            # Run docker-compose pull on specific directory
+            docker-compose -f "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/docker-compose.yml" pull
 
-            docker-compose pull
-
-            docker-compose up -d
+            # Run docker-compose up -d on specific directory
+            docker-compose -f "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/docker-compose.yml" up -d
 
             if [[ ${PACKAGES_PORTAINER_CONFIG_NGINX} == "enabled" ]]; then
 
-                nginx_server_create "${project_domain}" "portainer" "single" "" "${PACKAGES_PORTAINER_CONFIG_PORT}"
+                nginx_server_create "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}" "portainer" "single" "" "${PACKAGES_PORTAINER_CONFIG_PORT}"
 
                 if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
 
                     # Extract root domain
-                    root_domain="$(domain_get_root "${project_domain}")"
+                    root_domain="$(domain_get_root "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}")"
 
-                    cloudflare_set_record "${root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
+                    cloudflare_set_record "${root_domain}" "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}" "A" "false" "${SERVER_IP}"
 
                 fi
 
