@@ -15,18 +15,53 @@
 #   none
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#   ${docker_version} if ok, 1 on error.
 ################################################################################
 
 function docker_version() {
 
+    local docker_version
+
     package_is_installed "docker"
 
     exitstatus=$?
-    if [[ "${exitstatus}" -eq 0 ]]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
 
         docker_version="$(docker version --format '{{.Server.Version}}')"
+
         echo "${docker_version}"
+
+        return 0
+    else
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Get docker-compose version.
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   ${docker_compose_version} if ok, 1 on error.
+################################################################################
+
+function docker_compose_version() {
+
+    local docker_compose_version
+
+    package_is_installed "docker-compose"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        docker_compose_version="$(docker-compose --version | awk '{print $3}' | cut -d ',' -f1)"
+
+        echo "${docker_compose_version}"
 
         return 0
     else
@@ -49,13 +84,14 @@ function docker_version() {
 
 function docker_list_containers() {
 
-    package_is_installed "docker"
+    local docker_containers
+
+    # List docker containers.
+    docker_containers="$(docker ps -a --format '{{.Names}}')"
 
     exitstatus=$?
-    if [[ "${exitstatus}" -eq 0 ]]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
 
-        # List docker containers.
-        docker_containers="$(docker ps -a --format '{{.Names}}')"
         echo "${docker_containers}"
 
         return 0
@@ -82,13 +118,14 @@ function docker_stop_container() {
 
     local container_to_stop="${1}"
 
-    package_is_installed "docker"
+    local docker_stop_container
+
+    # Stop docker container.
+    docker_stop_container="$(docker stop "${container_to_stop}")"
 
     exitstatus=$?
-    if [[ "${exitstatus}" -eq 0 ]]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
 
-        # Stop docker container.
-        docker_stop_container="$(docker stop "${container_to_stop}")"
         echo "${docker_stop_container}"
 
         return 0
@@ -113,13 +150,14 @@ function docker_stop_container() {
 
 function docker_list_images() {
 
-    #package_is_installed "docker"
+    local docker_images
+
+    # Docker list images
+    docker_images="$(docker images --format '{{.Repository}}:{{.Tag}}')"
 
     exitstatus=$?
-    if [[ "${exitstatus}" -eq 0 ]]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
 
-        # Docker list images
-        docker_images="$(docker images --format '{{.Repository}}:{{.Tag}}')"
         echo "${docker_images}"
 
         return 0
@@ -145,6 +183,8 @@ function docker_list_images() {
 function docker_get_container_id() {
 
     local image_name="${1}"
+
+    local container_id
 
     container_id="$(docker ps | grep "${image_name}" | awk '{print $1;}')"
 
@@ -176,13 +216,13 @@ function docker_delete_image() {
 
     local image_to_delete="${1}"
 
-    #package_is_installed "docker"
+    local docker_delete_image
+
+    # Docker delete image
+    docker_delete_image="$(docker rmi "${image_to_delete}")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
-
-        # Docker delete image
-        docker_delete_image="$(docker rmi "${image_to_delete}")"
 
         echo "${docker_delete_image}"
 
