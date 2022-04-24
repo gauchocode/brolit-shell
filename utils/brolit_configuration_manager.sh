@@ -1285,7 +1285,7 @@ function _brolit_configuration_load_portainer() {
 
     local server_config_file="${1}"
 
-    local exitstatus
+    local docker_installed
 
     # Globals
     declare -g PORTAINER
@@ -1296,13 +1296,16 @@ function _brolit_configuration_load_portainer() {
 
     PACKAGES_PORTAINER_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].status")"
 
-    PORTAINER="$(docker_get_container_id "portainer")"
+    package_is_installed "docker"
+    docker_installed="$?"
+
+    if [[ ${docker_installed} -eq 0 ]]; then
+        PORTAINER="$(docker_get_container_id "portainer")"
+    fi
 
     if [[ ${PACKAGES_PORTAINER_STATUS} == "enabled" ]]; then
 
-        package_is_installed "docker"
-        exitstatus="$?"
-        if [[ ${exitstatus} -eq 1 ]]; then
+        if [[ ${docker_installed} -eq 1 ]]; then
             log_event "error" "In order to install Portainer, docker and docker-compose must be installed." "true"
             exit 1
         fi
