@@ -112,7 +112,7 @@ function package_is_installed() {
 
     bin_path="$(command -v "${package}" 2>/dev/null)"
 
-    log_event "info" "${package} is installed on: ${bin_path}" "false"
+    log_event "debug" "${package} is installed on: ${bin_path}" "false"
 
     # Return
     echo "${bin_path}"
@@ -191,13 +191,19 @@ function package_install_if_not() {
 
   local package="${1}"
 
+  local pkg_bin
+
   # Check if package is installed
-  package_is_installed "${package}"
+  pkg_bin="$(package_is_installed "${package}")"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 1 ]]; then
 
     package_install "${package}"
+
+  else
+
+    log_event "debug" "${package} is already installed. Package binary on: ${pkg_bin}" "false"
 
   fi
 
