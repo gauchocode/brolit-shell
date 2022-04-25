@@ -21,11 +21,10 @@
 function docker_version() {
 
     local docker_version
+    local docker
 
-    package_is_installed "docker"
-
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
+    docker="$(package_is_installed "docker")"
+    if [[ -n ${docker} ]]; then
 
         docker_version="$(docker version --format '{{.Server.Version}}')"
 
@@ -53,11 +52,10 @@ function docker_version() {
 function docker_compose_version() {
 
     local docker_compose_version
+    local docker_compose
 
-    package_is_installed "docker-compose"
-
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
+    docker_compose="$(package_is_installed "docker-compose")"
+    if [[ -n ${docker_compose} ]]; then
 
         docker_compose_version="$(docker-compose --version | awk '{print $3}' | cut -d ',' -f1)"
 
