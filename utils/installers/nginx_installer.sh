@@ -29,7 +29,7 @@ function nginx_installer() {
 
     local nginx_version="${1}"
 
-    package_is_installed "nginx"
+    nginx_bin="$(package_is_installed "nginx")"
 
     exitstatus=$?
     if [ ${exitstatus} -eq 0 ]; then
@@ -116,7 +116,7 @@ function nginx_installer_menu() {
     local nginx_installer_options
     local chosen_nginx_installer_option
 
-    package_is_installed "nginx"
+    nginx_bin="$(package_is_installed "nginx")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 1 ]]; then

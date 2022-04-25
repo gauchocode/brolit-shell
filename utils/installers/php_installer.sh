@@ -65,7 +65,7 @@ function php_installer() {
     php_v="$(php_get_distro_default_version)"
   fi
 
-  package_is_installed "php${php_v}-fpm"
+  php_bin="$(package_is_installed "php${php_v}-fpm")"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 1 ]]; then

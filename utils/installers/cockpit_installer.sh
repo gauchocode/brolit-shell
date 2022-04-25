@@ -23,7 +23,9 @@
 
 function cockpit_installer() {
 
-    package_is_installed "cockpit"
+    local cockpit_bin
+
+    cockpit_bin="$(package_is_installed "cockpit")"
 
     exitstatus=$?
     if [ ${exitstatus} -eq 0 ]; then
