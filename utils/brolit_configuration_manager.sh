@@ -534,7 +534,7 @@ function _brolit_configuration_load_nginx() {
     declare -g WSERVER="/etc/nginx" # Webserver config files location
 
     # NGINX
-    package_is_installed "nginx"
+    nginx_bin="$(package_is_installed "nginx")"
     exitstatus=$?
 
     PACKAGES_NGINX_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.nginx[].status")"
@@ -1285,6 +1285,7 @@ function _brolit_configuration_load_portainer() {
 
     local server_config_file="${1}"
 
+    local docker
     local docker_installed
 
     # Globals
@@ -1296,9 +1297,10 @@ function _brolit_configuration_load_portainer() {
 
     PACKAGES_PORTAINER_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].status")"
 
-    package_is_installed "docker"
+    docker="$(package_is_installed "docker")"
     docker_installed="$?"
     if [[ ${docker_installed} -eq 0 ]]; then
+        log_event "debug" "Docker installed on: ${docker}. Now checking if Portainer image is present..." "true"
         PORTAINER="$(docker_get_container_id "portainer")"
     fi
 
