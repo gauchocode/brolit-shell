@@ -6,20 +6,16 @@
 
 function postgres_default_installer() {
 
-  package_is_installed "postgresql"
+  postgresql_bin="$(package_is_installed "postgresql")"
 
   exitstatus=$?
   if [ ${exitstatus} -eq 0 ]; then
-
     log_event "info" "Postgres is already installed" "false"
-
     return 1
 
   else
 
     log_subsection "Postgres Installer"
-
-    log_event "info" "Running Postgres default installer" "false"
 
     apt-get --yes install postgresql postgresql-contrib -qq >/dev/null
 
