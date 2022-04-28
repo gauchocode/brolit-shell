@@ -38,7 +38,7 @@ fi
 
 # Version
 SCRIPT_VERSION="3.2-rc3"
-ALIASES_VERSION="3.2-rc3-095"
+ALIASES_VERSION="3.2-rc3-099"
 
 ################################################################################
 
@@ -1012,6 +1012,13 @@ function brolit_shell_config() {
 
     # Return JSON part
     echo "\"script_version\": \"${SCRIPT_VERSION}\" , \"netdata_url\": \"${NETDATA_SUBDOMAIN}\" , \"mail_notif\": \"${MAIL_NOTIF}\" , \"telegram_notif\": \"${NOTIFICATION_TELEGRAM_STATUS}\" , \"dropbox_enable\": \"${BACKUP_DROPBOX_STATUS}\" , \"cloudflare_enable\": \"${SUPPORT_CLOUDFLARE_STATUS}\" , \"smtp_server\": \"${NOTIFICATION_EMAIL_SMTP_SERVER}\""
+
+}
+
+function server_disk_info() {
+
+    # Return JSON
+    df -hP | grep '^/dev' | awk 'BEGIN {printf"{\"discarray\":["}{if($1=="Filesystem")next;if(a)printf",";printf"{\"mount\":\""$6"\",\"size\":\""$2"\",\"used\":\""$3"\",\"avail\":\""$4"\",\"use%\":\""$5"\"}";a++;}END{print"]}";}'
 
 }
 
