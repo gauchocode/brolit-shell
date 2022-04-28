@@ -20,7 +20,7 @@
 - [License](#license)
 - [Acknowledgements](#gem-acknowledgements)
 ## :star2: About the Project
-BROLIT Shell is a **BASH** based cloud server control software which can be used to quickly install a LEMP Stack on Ubuntu 18.04 and 20.04 servers, automate and restore backups, install PHP projects, and some usefull IT tasks.
+BROLIT Shell is a **BASH** based cloud server control software which can be used to quickly install a LEMP Stack on Ubuntu 18.04, 20.04 and 22.04 servers, automate and restore backups, install PHP projects, and some usefull IT tasks.
 
 ![ScreenShot](./screenshot.png)
 
@@ -58,23 +58,23 @@ BROLIT Shell is a **BASH** based cloud server control software which can be used
 
 | Packages | Versions | BROLIT config |
 | :------------- | :----------: | :----------: |
-| **Nginx** | 1.18.x | `nginx.conf` + `mime.types` + server blocks |
-| **Lets Encrypt** | 0.40.x | default config |
-| **MySQL** | 8.0.x | `my.cnf` |
-| **MariaDB** | 8.0.x | `my.cnf` |
-| **PHP-FPM** | 7.4.x | `php.ini` + `php-fpm.conf` + `www.conf` |
-| **Redis** | 5.0.x | `redis.conf` + `object-cache.php` |
-| **WordPress** | 5.8.2 | default config |
-| **WP-CLI** | 2.5.0 | default config |
-| **Monit** | 5.26.x | `monitrc` + `mysql` + `phpfpm` + `nginx` + `redis` + `system` |
+| **Nginx** | O.S default | `nginx.conf` + `mime.types` + server blocks |
+| **Lets Encrypt** | O.S default | default config |
+| **MySQL** | O.S default | `my.cnf` |
+| **MariaDB** | O.S default | `my.cnf` |
+| **PHP-FPM** | 7.4.x/8.1.x | `php.ini` + `php-fpm.conf` + `www.conf` |
+| **Redis** | O.S default | `redis.conf` + `object-cache.php` |
+| **WordPress** | latest | default config |
+| **WP-CLI** | 2.6.0 | default config |
+| **Monit** | O.S default | `monitrc` + `mysql` + `phpfpm` + `nginx` + `redis` + `system` |
 | **Netdata** | 1.32.x | `health_alarm_notify.conf` + custom `health.d` conf |
-| **UFW Firewall** | 0.36 | default config |
-| **Fail2Ban** | 0.11.x | default config |
-| **ClamAV** | 0.103.x | `freshclam.conf` |
+| **UFW Firewall** | O.S default | default config |
+| **Fail2Ban** | O.S default | default config |
+| **ClamAV** | O.S default | `freshclam.conf` |
 | **Lynis** | 2.6.x | default config |
 | **Cockpit** | 0.102.x | default config |
+| **Portainer** | latest | dockerized (optional nginx proxy support) |
 | **Grafana** | SOON | default config |
-| **Loki** | SOON | default config |
 | **Teleport** | SOON | default config |
 
 ### Third Party Utils
