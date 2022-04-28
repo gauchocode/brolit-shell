@@ -1876,6 +1876,92 @@ function wpcli_update_upload_path() {
     fi
 }
 
+################################################################################
+# Set Debug mode
+#
+# Arguments:
+#   $1 = ${wp_site} (site path)
+#   $2 = ${debug_mode} (true or false)
+# Outputs:
+#   0 on success, 1 on error
+################################################################################
+
+function wpcli_set_debug_mode() {
+
+    local wp_site="${1}"
+    local debug_mode="${2}"
+
+    # Log
+    log_event "debug" "Running: wp --allow-root --path=\"${wp_site}\" config set --raw WP_DEBUG \"${debug_mode}\"" "false"
+    log_event "debug" "Running: wp --allow-root --path=\"${wp_site}\" config set --raw WP_DEBUG_LOG \"${debug_mode}\"" "false"
+    log_event "debug" "Running: wp --allow-root --path=\"${wp_site}\" config set --raw WP_DEBUG_DISPLAY \"${debug_mode}\"" "false"
+
+    # Command
+    wp --allow-root --path="${wp_site}" config set --raw WP_DEBUG "${debug_mode}"
+    wp --allow-root --path="${wp_site}" config set --raw WP_DEBUG_LOG "${debug_mode}"
+    wp --allow-root --path="${wp_site}" config set --raw WP_DEBUG_DISPLAY "${debug_mode}"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        display --indent 6 --text "- Cache flush for ${wp_site}" --result "DONE" --color GREEN
+        log_event "error" "Cache flush for ${wp_site}" "false"
+
+        return 0
+
+    else
+
+        # Log
+        display --indent 6 --text "- Cache flush for ${wp_site}" --result "FAIL" --color RED
+        log_event "error" "Cache flush for ${wp_site}" "false"
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Flush WordPress cache (core)
+#
+# Arguments:
+#   $1 = ${wp_site} (site path)
+#
+# Outputs:
+#   0 on success, 1 on error
+################################################################################
+
+function wpcli_cache_flush() {
+
+    local wp_site="${1}"
+
+    log_event "debug" "Running: wp --allow-root --path=\"${wp_site}\" cache flush" "false"
+
+    # Command
+    wp --allow-root --path="${wp_site}" cache flush
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        display --indent 6 --text "- Cache flush for ${wp_site}" --result "DONE" --color GREEN
+        log_event "error" "Cache flush for ${wp_site}" "false"
+
+        return 0
+
+    else
+
+        # Log
+        display --indent 6 --text "- Cache flush for ${wp_site}" --result "FAIL" --color RED
+        log_event "error" "Cache flush for ${wp_site}" "false"
+
+        return 1
+
+    fi
+
+}
+
 ### wpcli plugins specific functions
 
 ################################################################################

@@ -1300,7 +1300,7 @@ function _brolit_configuration_load_portainer() {
     docker="$(package_is_installed "docker")"
     docker_installed="$?"
     if [[ ${docker_installed} -eq 0 ]]; then
-        log_event "debug" "Docker installed on: ${docker}. Now checking if Portainer image is present..." "true"
+        log_event "debug" "Docker installed on: ${docker}. Now checking if Portainer image is present..." "false"
         PORTAINER="$(docker_get_container_id "portainer")"
     fi
 
