@@ -1928,7 +1928,10 @@ function project_get_type() {
     fi
 
     # docker-compose?
-    docker="$(find "${dir_path}" -name "docker-compose.yml" -type f; find "${dir_path}" -name "docker-compose.yaml" -type f)"
+    docker="$(
+      find "${dir_path}" -name "docker-compose.yml" -type f
+      find "${dir_path}" -name "docker-compose.yaml" -type f
+    )"
     if [[ -n ${docker} ]]; then
 
       log_event "debug" "Project Type: docker-compose" "false"
@@ -2466,9 +2469,13 @@ function project_post_install_tasks() {
     if [[ ${project_stage} == "prod" ]]; then
       # Let search engines index the project
       wpcli_change_wp_seo_visibility "${install_path}" "1"
+      # Set debug mode to false
+      wpcli_set_debug_mode "${install_path}" "false"
     else
       wpcli_change_wp_seo_visibility "${install_path}" "0"
     fi
+
+    wpcli_cache_flush "${install_path}"
 
   else
 
