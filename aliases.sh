@@ -1018,7 +1018,7 @@ function brolit_shell_config() {
 function server_disk_info() {
 
     # Return JSON
-    df -hP | grep '^/dev' | awk 'BEGIN {printf"{\"discarray\":["}{if($1=="Filesystem")next;if(a)printf",";printf"{\"mount\":\""$6"\",\"size\":\""$2"\",\"used\":\""$3"\",\"avail\":\""$4"\",\"use%\":\""$5"\"}";a++;}END{print"]}";}'
+    df -hP | grep '^/dev' | awk 'BEGIN {printf"{\"disks_info\":["}{if($1=="Filesystem")next;if(a)printf",";printf"{\"mount\":\""$6"\",\"size\":\""$2"\",\"used\":\""$3"\",\"avail\":\""$4"\",\"use%\":\""$5"\"}";a++;}END{print"]}";}'
 
 }
 
@@ -1057,6 +1057,8 @@ function serverinfo() {
     fi
 
 }
+
+# TODO postgresql_databases
 
 function mysql_databases() {
 
