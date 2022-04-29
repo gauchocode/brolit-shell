@@ -127,7 +127,7 @@ function project_set_config_var() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function project_ask_state() {
+function project_ask_stage() {
 
   local suggested_state="${1}"
 
@@ -567,7 +567,7 @@ function project_generate_brolit_config() {
 
   ## Project Stage
   project_stage="$(project_get_stage_from_domain "${project_domain}")"
-  project_stage="$(project_ask_state "${project_stage}")"
+  project_stage="$(project_ask_stage "${project_stage}")"
   exitstatus=$?
   if [[ ${exitstatus} -eq 1 ]]; then
     # Log
@@ -1448,7 +1448,7 @@ function project_install() {
 
     suggested_state="$(domain_get_subdomain_part "${project_domain}")"
 
-    project_stage="$(project_ask_state "${suggested_state}")"
+    project_stage="$(project_ask_stage "${suggested_state}")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 1 ]]; then
