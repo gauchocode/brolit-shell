@@ -219,7 +219,7 @@ function dropbox_download() {
     # Check dropbox_file_to_download_result
     if [[ ${dropbox_file_to_download_result} -eq 0 ]]; then
 
-        clear_previous_lines "2"
+        clear_previous_lines "1"
 
         display --indent 6 --text "- Downloading backup from Dropbox" --result "DONE" --color GREEN
         log_event "info" "${file_to_download} downloaded" "false"
