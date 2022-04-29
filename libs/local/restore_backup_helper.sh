@@ -180,7 +180,7 @@ function restore_backup_from_local() {
       cp "${source_files}" "${BROLIT_TMP_DIR}"
 
       project_name="$(project_ask_name "")"
-      project_stage="$(project_ask_state "prod")"
+      project_stage="$(project_ask_stage "prod")"
       filename="$(basename "${source_files}")"
 
       # TODO: check if project has/need a database
@@ -224,7 +224,7 @@ function restore_backup_from_ftp() {
     log_subsection "Restore files from ftp"
 
     # Ask project stage
-    project_stage="$(project_ask_state "prod")"
+    project_stage="$(project_ask_stage "prod")"
 
     # Ask project domain
     project_domain="$(project_ask_domain "")"
@@ -323,7 +323,7 @@ function restore_backup_from_public_url() {
   log_subsection "Restore files from public URL"
 
   # Ask project stage
-  project_stage="$(project_ask_state "prod")"
+  project_stage="$(project_ask_stage "prod")"
 
   # Project domain
   project_domain="$(project_ask_domain "")"
@@ -972,9 +972,12 @@ function restore_type_selection_from_dropbox() {
 
           # Asking project stage with suggested actual state
           suffix=${chosen_project%_*} ## strip the tail
-          project_stage="$(project_ask_state "${suffix}")"
+          project_stage="$(project_ask_stage "${suffix}")"
 
-          #possible_project_name="$(domain_extract_extension "${chosen_project}")"
+          # On site chosen_project = project domain, on database chosen_project = database name
+          ## If chosen_project = database name, we need to extract the original project_stage
+          possible_project_name=${chosen_project%$suffix}; #Remove suffix
+          ## If chosen_project = project domain, we need to extract the domain extension
           possible_project_name="$(project_get_name_from_domain "${chosen_project}")"
 
           # Asking project name
@@ -988,7 +991,6 @@ function restore_type_selection_from_dropbox() {
 
           # Downloading Backup
           storage_download_backup "${bk_to_dowload}" "${BROLIT_TMP_DIR}"
-          #dropbox_download "${bk_to_dowload}" "${BROLIT_TMP_DIR}"
 
           # Decompress
           decompress "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}" "${BROLIT_TMP_DIR}" "lbzip2"
@@ -1182,7 +1184,7 @@ function restore_project() {
 
     # Asking project stage with suggested actual state
     possible_project_stage=$(project_get_stage_from_domain "${new_project_domain}")
-    project_stage="$(project_ask_state "${possible_project_stage}")"
+    project_stage="$(project_ask_stage "${possible_project_stage}")"
 
     # Asking project name
     project_name="$(project_ask_name "${possible_project_name}")"
