@@ -85,7 +85,9 @@ function portainer_installer() {
         fi
 
     else
+
         log_event "warning" "Portainer is already installed" "false"
+
     fi
 
 }
@@ -171,9 +173,11 @@ function portainer_configure() {
 
         cloudflare_set_record "${root_domain}" "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}" "A" "false" "${SERVER_IP}"
 
-    fi
+        if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
+            certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}"
+        fi
 
-    # TODO: if Cloudflare update OK, then run certbot
+    fi
 
     # Log
     display --indent 6 --text "- Portainer configuration" --result "DONE" --color GREEN

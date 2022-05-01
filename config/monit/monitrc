@@ -156,9 +156,9 @@
 ## enable SSL for the HTTP interface.
 #
 set httpd port 2812 and
-#     use address localhost          # only accept connection from localhost
-     allow 0.0.0.0/0.0.0.0          # allow localhost to connect to the server and
-     allow admin:monit2020*         # require user 'admin' with password 'monit'
+#     use address localhost             # only accept connection from localhost
+     allow 0.0.0.0/0.0.0.0              # allow localhost to connect to the server and
+     allow MONIT_USER:MONIT_PASSWORD         # require user 'admin' with password 'monit'
 #     #with ssl {            # enable SSL/TLS and set path to server certificate
 #     #    pemfile: /etc/ssl/certs/monit.pem
 #     #}
