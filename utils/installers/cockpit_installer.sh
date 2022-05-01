@@ -27,8 +27,7 @@ function cockpit_installer() {
 
     cockpit_bin="$(package_is_installed "cockpit")"
 
-    exitstatus=$?
-    if [ ${exitstatus} -eq 0 ]; then
+    if [[ -n ${cockpit_bin} ]]; then
 
         log_event "info" "Cockpit is already installed" "false"
 
@@ -42,15 +41,38 @@ function cockpit_installer() {
         package_update
 
         # Install cockpit
-        package_install "cockpit"
+        package_install "-t ${UBUNTU_CODENAME}-backports cockpit"
 
-        # Install cockpit extensions
-        package_install "cockpit-dashboard"
-        package_install "cockpit-bridge"
-        package_install "cockpit-networkmanager"
-        package_install "cockpit-storaged"
-        package_install "cockpit-packagekit"
-        package_install "cockpit-system"
+        # Install cockpit extensions from backports repository
+        package_install "-t ${UBUNTU_CODENAME}-backports cockpit-bridge"
+        package_install "-t ${UBUNTU_CODENAME}-backports cockpit-networkmanager"
+        package_install "-t ${UBUNTU_CODENAME}-backports cockpit-sosreport"
+        package_install "-t ${UBUNTU_CODENAME}-backports cockpit-storaged"
+        package_install "-t ${UBUNTU_CODENAME}-backports cockpit-packagekit"
+        package_install "-t ${UBUNTU_CODENAME}-backports cockpit-system"
+        package_install "-t ${UBUNTU_CODENAME}-backports cockpit-podman"
+        package_install "-t ${UBUNTU_CODENAME}-backports cockpit-machines"
+        package_install "-t ${UBUNTU_CODENAME}-backports cockpit-pcp"
+
+        if [[ ${PACKAGES_COCKPIT_CONFIG_NGINX} == "enabled" ]]; then
+
+            # Ref: https://github.com/cockpit-project/cockpit/wiki/Proxying-Cockpit-over-NGINX
+            nginx_server_create "${PACKAGES_COCKPIT_CONFIG_SUBDOMAIN}" "cockpit" "single" "" "${PACKAGES_COCKPIT_CONFIG_PORT}"
+
+            if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
+
+                # Extract root domain
+                root_domain="$(domain_get_root "${PACKAGES_COCKPIT_CONFIG_SUBDOMAIN}")"
+
+                cloudflare_set_record "${root_domain}" "${PACKAGES_COCKPIT_CONFIG_SUBDOMAIN}" "A" "false" "${SERVER_IP}"
+                
+                if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
+                    certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${PACKAGES_COCKPIT_CONFIG_SUBDOMAIN}"
+                fi
+
+            fi
+
+        fi
 
         # Firewall config
         firewall_allow "9090"
@@ -75,9 +97,11 @@ function cockpit_purge() {
     package_purge "cockpit-dashboard"
     package_purge "cockpit-bridge"
     package_purge "cockpit-networkmanager"
+    package_purge "cockpit-sosreport"
     package_purge "cockpit-storaged"
     package_purge "cockpit-packagekit"
     package_purge "cockpit-system"
+    package_purge "cockpit-podman"
 
     package_purge "cockpit"
 

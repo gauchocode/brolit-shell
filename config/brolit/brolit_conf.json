@@ -2,7 +2,7 @@
     "BROLIT_SETUP": {
         "config": [
             {
-                "version": "3.8",
+                "version": "3.9.1",
                 "debug": "true",
                 "quiet": "false",
                 "skip_test": "true",
@@ -178,16 +178,6 @@
                     }
                 ]
             }
-        ],
-        "mailcow": [
-            {
-                "status": "disabled",
-                "config": [
-                    {
-                        "mailcow_path": "/opt/mailcow-dockerized"
-                    }
-                ]
-            }
         ]
     },
     "PACKAGES": {
@@ -304,11 +294,25 @@
         "portainer": [
             {
                 "status": "disabled",
-                "version": "lastest",
+                "version": "latest",
                 "config": [
                     {
                         "port": "9000",
                         "nginx_proxy": "enabled",
+                        "subdomain": ""
+                    }
+                ]
+            }
+        ],
+        "mailcow": [
+            {
+                "status": "disabled",
+                "version": "latest",
+                "config": [
+                    {
+                        "mailcow_path": "/opt/mailcow-dockerized",
+                        "port": "default",
+                        "nginx_proxy": "disabled",
                         "subdomain": ""
                     }
                 ]
@@ -330,13 +334,20 @@
                 "config": [
                     {
                         "monit_maila": "",
-                        "monit_httpd": "disabled",
+                        "monit_httpd": [
+                            {
+                                "status": "enabled",
+                                "user": "admin",
+                                "pass": "monit_pass"
+                            }
+                        ],
                         "monit_services": [
                             {
                                 "system": "enabled",
                                 "nginx": "enabled",
                                 "phpfpm": "enabled",
                                 "mysql": "enabled",
+                                "postgres": "disabled",
                                 "redis": "disabled"
                             }
                         ]
@@ -368,6 +379,15 @@
                                     }
                                 ]
                             }
+                        ],
+                        "discord": [
+                            {
+                                "status": "disabled",
+                                "config": [
+                                    {
+                                        "webhook_url": ""                                    }
+                                ]
+                            }
                         ]
                     }
                 ]
@@ -378,8 +398,19 @@
                 "status": "disabled",
                 "config": [
                     {
-                        "subdomain": "",
-                        "port": "9090"
+                        "port": "9090",
+                        "nginx_proxy": "disabled",
+                        "subdomain": ""
+                    }
+                ]
+            }
+        ],
+        "zabbix": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "subdomain": ""
                     }
                 ]
             }

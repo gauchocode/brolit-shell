@@ -4,12 +4,12 @@
 # Version: 3.2-rc3
 ################################################################################
 #
-# Portainer Installer
+# Mailcow Installer
 #
 ################################################################################
 
 ################################################################################
-# Portainer install
+# Mailcow install
 #
 # Arguments:
 #   none
@@ -18,21 +18,21 @@
 #   0 if it utils were installed, 1 on error.
 ################################################################################
 
-function portainer_installer() {
+function mailcow_installer() {
 
-    local portainer
+    local mailcow
 
-    log_subsection "Portainer Installer"
+    log_subsection "Mailcow Installer"
 
     package_update
 
     package_install_if_not "docker.io"
     package_install_if_not "docker-compose"
 
-    # Check if portainer is running
-    portainer="$(docker_get_container_id "portainer")"
+    # Check if mailcow is running
+    mailcow="$(docker_get_container_id "mailcow")"
 
-    if [[ -z ${portainer} ]]; then
+    if [[ -z ${mailcow} ]]; then
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
@@ -69,12 +69,12 @@ function portainer_installer() {
 
             fi
 
-            PACKAGES_PORTAINER_STATUS="enabled"
+            PACKAGES_MAILCOW_STATUS="enabled"
 
-            json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.portainer[].status" "${PACKAGES_PORTAINER_STATUS}"
+            json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.portainer[].status" "${PACKAGES_MAILCOW_STATUS}"
 
             # new global value ("enabled")
-            export PACKAGES_PORTAINER_STATUS
+            export PACKAGES_MAILCOW_STATUS
 
             return 0
 
@@ -85,15 +85,13 @@ function portainer_installer() {
         fi
 
     else
-
-        log_event "warning" "Portainer is already installed" "false"
-
+        log_event "warning" "Mailcow is already installed" "false"
     fi
 
 }
 
 ################################################################################
-# Portainer purge/remove
+# Mailcow purge/remove
 #
 # Arguments:
 #   none
@@ -102,20 +100,20 @@ function portainer_installer() {
 #   0 if it utils were installed, 1 on error.
 ################################################################################
 
-function portainer_purge() {
+function mailcow_purge() {
 
-    log_subsection "Portainer Installer"
+    log_subsection "Mailcow Installer"
 
-    # Get Portainer Container ID
-    container_id="$(docker ps | grep portainer | awk '{print $1;}')"
+    # Get Mailcow Container ID
+    container_id="$(docker ps | grep mailcow | awk '{print $1;}')"
 
-    # Stop Portainer Container
+    # Stop Mailcow Container
     docker stop "${container_id}"
 
-    # Remove Portainer Container
-    docker rm -f portainer
+    # Remove Mailcow Container
+    docker rm -f mailcow
 
-    # Remove Portainer Volume
+    # Remove Mailcow Volume
     volume rm portainer_data
 
     exitstatus=$?
@@ -139,7 +137,7 @@ function portainer_purge() {
 }
 
 ################################################################################
-# Configure Portainer service
+# Configure Mailcow service
 #
 # Arguments:
 #   none
@@ -148,39 +146,37 @@ function portainer_purge() {
 #   0 if it utils were installed, 1 on error.
 ################################################################################
 
-function portainer_configure() {
+function mailcow_configure() {
 
-    log_event "info" "Configuring portainer ..."
+    log_event "info" "Configuring mailcow ..." "false"
 
     # Check if firewall is enabled
     if [ "$(ufw status | grep -c "Status: active")" -eq "1" ]; then
-        firewall_allow "${PACKAGES_PORTAINER_CONFIG_PORT}"
+        firewall_allow "${PACKAGES_MAILCOW_CONFIG_PORT}"
     fi
 
     if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
 
-        nginx_server_create "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}" "portainer" "single" ""
+        nginx_server_create "${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}" "mailcow" "single" "" "${PACKAGES_MAILCOW_CONFIG_PORT}"
 
         # Replace port on nginx server config
-        sed -i "s/PORTAINER_PORT/${PACKAGES_PORTAINER_CONFIG_PORT}/g" "${WSERVER}/sites-available/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}"
+        sed -i "s/PORTAINER_PORT/${PACKAGES_MAILCOW_CONFIG_PORT}/g" "${WSERVER}/sites-available/${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}"
     fi
 
     if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
 
         local root_domain
 
-        root_domain="$(domain_get_root "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}")"
+        root_domain="$(domain_get_root "${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}")"
 
-        cloudflare_set_record "${root_domain}" "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}" "A" "false" "${SERVER_IP}"
-
-        if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
-            certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}"
-        fi
+        cloudflare_set_record "${root_domain}" "${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}" "A" "false" "${SERVER_IP}"
 
     fi
 
+    # TODO: if Cloudflare update OK, then run certbot
+
     # Log
-    display --indent 6 --text "- Portainer configuration" --result "DONE" --color GREEN
-    log_event "info" "Portainer configured" "false"
+    display --indent 6 --text "- Mailcow configuration" --result "DONE" --color GREEN
+    log_event "info" "Mailcow configured" "false"
 
 }
