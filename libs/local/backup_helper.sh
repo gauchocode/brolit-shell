@@ -260,7 +260,7 @@ function backup_mailcow() {
   # VAR $backup_type rewrited
   local backup_type="mailcow"
   local mailcow_backup_result
-  local dropbox_path
+  local storage_path
 
   log_subsection "Mailcow Backup"
 
@@ -309,22 +309,19 @@ function backup_mailcow() {
         log_event "info" "${MAILCOW_TMP_BK}/${backup_file} backup created" "false"
 
         # New folder with $SERVER_NAME
-        dropbox_create_dir "${SERVER_NAME}"
-        dropbox_create_dir "${SERVER_NAME}/${backup_type}"
+        storage_create_dir "${SERVER_NAME}"
+        storage_create_dir "${SERVER_NAME}/${backup_type}"
 
-        dropbox_path="/${SERVER_NAME}/projects-online/${backup_type}"
-
-        log_event "info" "Uploading Backup to Dropbox ..." "false"
-        display --indent 6 --text "- Uploading backup file to Dropbox"
+        storage_path="/${SERVER_NAME}/projects-online/${backup_type}"
 
         # Upload new backup
-        storage_upload_backup "${MAILCOW_TMP_BK}/${backup_file}" "${dropbox_path}"
+        storage_upload_backup "${MAILCOW_TMP_BK}/${backup_file}" "${storage_path}"
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
           # Remove old backup
-          dropbox_delete "${dropbox_path}/${old_backup_file}" "false"
+          storage_delete_backup "${storage_path}/${old_backup_file}" "false"
 
           # Remove old backups from server
           rm --recursive --force "${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION:?}"
@@ -489,7 +486,7 @@ function backup_project_files() {
   local old_backup_file="${directory_to_backup}_${backup_type}-files_${DAYSAGO}.tar.bz2"
   local backup_file="${directory_to_backup}_${backup_type}-files_${NOW}.tar.bz2"
 
-  local dropbox_path
+  local storage_path
 
   # Create directory structure
   storage_create_dir "${SERVER_NAME}"

@@ -94,7 +94,26 @@ function monit_purge() {
 
 function monit_configure() {
 
+  # Copy monitrc file
   cat "${BROLIT_MAIN_DIR}/config/monit/monitrc" >"/etc/monit/monitrc"
+
+  # Replace httpd user
+  local monit_user="${PACKAGE_MONIT_HTTPD_USER}"
+  sed -i "s#MONIT_USER#${monit_user}#" "/etc/monit/monitrc"
+
+  # Replace httpd password
+  local monit_pass="${PACKAGE_MONIT_HTTPD_PASSWORD}"
+  sed -i "s#MONIT_PASSWORD#${monit_pass}#" "/etc/monit/monitrc"
+
+  if [[ $PACKAGES_NETDATA_STATUS == "enabled" ]]; then
+
+    # Replace monit httpd user
+    sed -i "s#MONIT_USER#${monit_user}#" "/etc/netdata/python.d/monit.conf"
+
+    # Replace monit httpd  password
+    sed -i "s#MONIT_PASSWORD#${monit_pass}#" "/etc/netdata/python.d/monit.conf"
+
+  fi
 
   # Get all listed apps
   services_list="${MONIT_CONFIG_SERVICES}"
@@ -154,7 +173,8 @@ function monit_configure() {
       else
 
         if [[ ! -x "${PHP_V}" && ${services_list_key} == "phpfpm" ]]; then
-          PHP_V=$(php -r "echo PHP_VERSION;" | grep --only-matching --perl-regexp "7.\d+")
+          PHP_V=$(php -r "echo PHP_VERSION;")
+          PHP_V=${PHP_V:0:3} #get only first 3 chars (ex. 8.1)
           # Set PHP_V
           php_set_version_on_config "${PHP_V}" "/etc/monit/conf.d/${services_list_key}"
         fi

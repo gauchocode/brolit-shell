@@ -26,8 +26,8 @@ function _netdata_alerts_configuration() {
   local netdata_config_dir
 
   #netdata_install_dir="/etc/netdata"
-  netdata_install_dir="/opt/netdata"
-  netdata_config_dir="${netdata_install_dir}/etc/netdata/health.d/"
+  netdata_install_dir="/etc/netdata"
+  netdata_config_dir="${netdata_install_dir}/health.d/"
 
   # CPU
   cp "${BROLIT_MAIN_DIR}/config/netdata/health.d/cpu.conf" "${netdata_config_dir}/cpu.conf"
@@ -116,9 +116,9 @@ function _netdata_email_config() {
   default_recipient_email="$(grep "^${KEY}${delimiter}" "${health_alarm_notify_conf}" | cut -f2- -d"${delimiter}")"
 
   send_email="YES"
-  sed -i "s/^\(SEND_EMAIL\s*=\s*\).*\$/\1\"$send_email\"/" $health_alarm_notify_conf
+  sed -i "s/^\(SEND_EMAIL\s*=\s*\).*\$/\1\"${send_email}\"/" ${health_alarm_notify_conf}
 
-  default_recipient_email="${PACKAGES_NETDATA_NOTIFICATION_MAILA}"
+  default_recipient_email="${NOTIFICATION_EMAIL_MAILA}"
 
   # Choose the netdata alarm level
   netdata_alarm_level="${PACKAGES_NETDATA_NOTIFICATION_ALARM_LEVEL}"
@@ -129,11 +129,11 @@ function _netdata_email_config() {
   # Uncomment the clear_alarm_always='YES' parameter on health_alarm_notify.conf
   if grep -q '^#.*clear_alarm_always' ${health_alarm_notify_conf}; then
 
-    sed -i '/^#.*clear_alarm_always/ s/^#//' $health_alarm_notify_conf
+    sed -i '/^#.*clear_alarm_always/ s/^#//' ${health_alarm_notify_conf}
 
   fi
 
-  display --indent 6 --text "- Telegram configuration" --result "DONE" --color GREEN
+  display --indent 6 --text "- Configuring Email notifications" --result "DONE" --color GREEN
 
 }
 
@@ -175,8 +175,8 @@ function _netdata_telegram_config() {
   telegram_bot_token="${PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_BOT_TOKEN}"
 
   send_telegram="YES"
-  sed -i "s/^\(SEND_TELEGRAM\s*=\s*\).*\$/\1\"$send_telegram\"/" $health_alarm_notify_conf
-  sed -i "s/^\(NOTIFICATION_TELEGRAM_BOT_TOKEN\s*=\s*\).*\$/\1\"$telegram_bot_token\"/" $health_alarm_notify_conf
+  sed -i "s/^\(SEND_TELEGRAM\s*=\s*\).*\$/\1\"${send_telegram}\"/" ${health_alarm_notify_conf}
+  sed -i "s/^\(TELEGRAM_BOT_TOKEN\s*=\s*\).*\$/\1\"${telegram_bot_token}\"/" ${health_alarm_notify_conf}
 
   default_recipient_telegram="${PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_CHAT_ID}"
 
@@ -189,11 +189,11 @@ function _netdata_telegram_config() {
   # Uncomment the clear_alarm_always='YES' parameter on health_alarm_notify.conf
   if grep -q '^#.*clear_alarm_always' ${health_alarm_notify_conf}; then
 
-    sed -i '/^#.*clear_alarm_always/ s/^#//' $health_alarm_notify_conf
+    sed -i '/^#.*clear_alarm_always/ s/^#//' ${health_alarm_notify_conf}
 
   fi
 
-  display --indent 6 --text "- Telegram configuration" --result "DONE" --color GREEN
+  display --indent 6 --text "- Configuring Telegram notifications" --result "DONE" --color GREEN
 
 }
 
@@ -424,7 +424,7 @@ function netdata_configuration() {
   systemctl daemon-reload && systemctl enable netdata && service netdata start
 
   # Log
-  log_event "info" "Netdata Configuration finished" "false"
+  log_event "info" "Netdata configuration finished" "false"
   display --indent 6 --text "- Configuring netdata" --result "DONE" --color GREEN
 
 }

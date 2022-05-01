@@ -68,14 +68,10 @@ function _setup_globals_and_options() {
   fi
 
   # Folder blacklist
-  declare -g BLACKLISTED_SITES=".wp-cli,.ssh,.cert,html,phpmyadmin"
+  declare -g BLACKLISTED_SITES=".wp-cli,.ssh,.local,.cert,html,phpmyadmin"
 
   # Database blacklist
   declare -g BLACKLISTED_DATABASES="information_schema,performance_schema,mysql,sys,phpmyadmin,postgres"
-
-  # MAILCOW BACKUP
-  declare -g MAILCOW_DIR="/opt/mailcow-dockerized/"
-  declare -g MAILCOW_TMP_BK="${BROLIT_MAIN_DIR}/tmp/mailcow"
 
   # Apps globals
   declare -g TAR
@@ -404,11 +400,12 @@ function script_init() {
   get_server_ips
 
   # Clean old log files
-  find "${path_log}" -name "*.log" -type f -mtime +7 -print -delete >>"${LOG}"
-  find "${path_reports}" -name "*.log" -type f -mtime +7 -print -delete >>"${LOG}"
-
-  # Log
-  log_event "info" "Deleting old script logs" "false"
+  ## Find and delete old log files
+  del_logs="$(find "${path_log}" -name "*.log" -type f -mtime +7 -print -delete)"
+  del_reports="$(find "${path_reports}" -name "*.log" -type f -mtime +7 -print -delete)"
+  ## Log
+  log_event "info" "Deleting old script logs: ${del_logs}" "false"
+  log_event "info" "Deleting old script reports: ${del_reports}" "false"
 
   # Checking required packages
   package_check_required
@@ -418,7 +415,6 @@ function script_init() {
 
   # EXPORT VARS
   export SCRIPT_V SERVER_NAME BROLIT_CONFIG_PATH BROLIT_MAIN_DIR BLACKLISTED_SITES BLACKLISTED_DATABASES PACKAGES
-  export LENCRYPT_CONF_DIR MAILCOW_DIR MAILCOW_TMP_BK
   export DISK_U ONE_FILE_BK NOTIFICATION_EMAIL_SMTP_SERVER NOTIFICATION_EMAIL_SMTP_PORT NOTIFICATION_EMAIL_SMTP_TLS NOTIFICATION_EMAIL_SMTP_USER NOTIFICATION_EMAIL_SMTP_UPASS
   export LOG DEBUG SKIPTESTS EXEC_TYPE
   export BROLIT_CONFIG_FILE

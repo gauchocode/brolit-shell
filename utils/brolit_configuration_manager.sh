@@ -1335,7 +1335,68 @@ function _brolit_configuration_load_portainer() {
 
     fi
 
-    export PACKAGES_PORTAINER_STATUS PACKAGES_PORTAINER_CONFIG_SUBDOMAIN PACKAGES_PORTAINER_CONFIG_PORT PACKAGES_PORTAINER_CONFIG_NGINX
+    export PORTAINER PACKAGES_PORTAINER_STATUS PACKAGES_PORTAINER_CONFIG_SUBDOMAIN PACKAGES_PORTAINER_CONFIG_PORT PACKAGES_PORTAINER_CONFIG_NGINX
+
+}
+
+function _brolit_configuration_load_mailcow() {
+
+    local server_config_file="${1}"
+
+    local docker
+    local docker_installed
+
+    # Globals
+    declare -g MAILCOW
+    declare -g PACKAGES_MAILCOW_STATUS
+    declare -g PACKAGES_MAILCOW_CONFIG_SUBDOMAIN
+    declare -g PACKAGES_MAILCOW_CONFIG_PORT
+    declare -g PACKAGES_MAILCOW_CONFIG_NGINX
+    ## MAILCOW BACKUP
+    declare -g MAILCOW_DIR="/opt/mailcow-dockerized/"
+    declare -g MAILCOW_TMP_BK="${BROLIT_MAIN_DIR}/tmp/mailcow"
+
+    PACKAGES_MAILCOW_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.mailcow[].status")"
+
+    docker="$(package_is_installed "docker")"
+    docker_installed="$?"
+    if [[ ${docker_installed} -eq 0 ]]; then
+        log_event "debug" "Docker installed on: ${docker}. Now checking if Portainer image is present..." "false"
+        MAILCOW="$(docker_get_container_id "mailcow")"
+    fi
+
+    if [[ ${PACKAGES_MAILCOW_STATUS} == "enabled" ]]; then
+
+        if [[ ${docker_installed} -eq 1 ]]; then
+            log_event "error" "In order to install Portainer, docker and docker-compose must be installed." "true"
+            exit 1
+        fi
+
+        PACKAGES_MAILCOW_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.mailcow[].config[].port")"
+        PACKAGES_MAILCOW_CONFIG_NGINX="$(json_read_field "${server_config_file}" "PACKAGES.mailcow[].config[].nginx_proxy")"
+        PACKAGES_MAILCOW_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.mailcow[].config[].subdomain")"
+
+        # Check if all required vars are set
+        if [[ -z ${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN} ]] || [[ -z ${PACKAGES_MAILCOW_CONFIG_PORT} ]] || [[ -z ${PACKAGES_MAILCOW_CONFIG_NGINX} ]]; then
+            log_event "error" "Missing required config vars for mailcow support" "true"
+            exit 1
+        fi
+
+        # Checking if Portainer is not installed
+        if [[ -z ${MAILCOW} ]]; then
+            menu_config_changes_detected "mailcow" "true"
+        fi
+
+    else
+
+        # Checking if Portainer is installed
+        if [[ -n ${MAILCOW} ]]; then
+            menu_config_changes_detected "mailcow" "true"
+        fi
+
+    fi
+
+    export MAILCOW MAILCOW_DIR MAILCOW_TMP_BK PACKAGES_MAILCOW_STATUS PACKAGES_MAILCOW_CONFIG_SUBDOMAIN PACKAGES_MAILCOW_CONFIG_PORT PACKAGES_MAILCOW_CONFIG_NGINX
 
 }
 
@@ -1711,9 +1772,6 @@ function brolit_configuration_load() {
     ### cloudflare
     _brolit_configuration_load_cloudflare "${server_config_file}"
 
-    ### mailcow
-    #_brolit_configuration_load_mailcow "${server_config_file}"
-
     ## PACKAGES
 
     ### nginx
@@ -1754,6 +1812,9 @@ function brolit_configuration_load() {
 
     ### portainer
     _brolit_configuration_load_portainer "${server_config_file}"
+
+    ### mailcow
+    _brolit_configuration_load_mailcow "${server_config_file}"
 
     ### custom
     _brolit_configuration_load_custom_pkgs "${server_config_file}"
