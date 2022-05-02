@@ -181,7 +181,17 @@ function server_app_setup() {
         if [[ ${PACKAGES_COCKPIT_STATUS} == "enabled" ]]; then
             cockpit_installer
         else
-            package_purge "cockpit"
+            cockpit_purge
+        fi
+
+        ;;
+
+    "zabbix")
+
+        if [[ ${PACKAGES_ZABBIX_STATUS} == "enabled" ]]; then
+            zabbix_installer
+        else
+            zabbix_purge
         fi
 
         ;;
