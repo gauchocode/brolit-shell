@@ -226,7 +226,7 @@ function netdata_installer() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Log
-    clear_previous_lines "2"
+    clear_previous_lines "1"
     log_event "info" "Netdata installation finished" "false"
     display --indent 6 --text "- Downloading and compiling netdata" --result "DONE" --color GREEN
 
@@ -286,8 +286,10 @@ function netdata_installer() {
 
 function netdata_uninstaller() {
 
+  log_subsection "Netdata Installer"
+
   # Log
-  clear_previous_lines "2"
+  #clear_previous_lines "2"
   log_event "warning" "Uninstalling Netdata ..." "false"
 
   # Stop netdata service
