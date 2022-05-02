@@ -1216,6 +1216,117 @@ function _brolit_configuration_load_netdata() {
 }
 
 ################################################################################
+# Private: load cockpit configuration
+#
+# Arguments:
+#   $1 = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function _brolit_configuration_load_cockpit() {
+
+    local server_config_file="${1}"
+
+    # Globals
+    declare -g COCKPIT
+    declare -g COCKPIT_PR
+    declare -g PACKAGES_COCKPIT_STATUS
+    declare -g PACKAGES_COCKPIT_CONFIG_SUBDOMAIN
+    declare -g PACKAGES_COCKPIT_CONFIG_NGINX_PROXY
+    declare -g PACKAGES_COCKPIT_CONFIG_PORT
+
+    COCKPIT="$(which cockpit)"
+    COCKPIT_PR="$(pgrep cockpit)"
+
+    PACKAGES_COCKPIT_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.cockpit[].status")"
+
+    if [[ ${PACKAGES_COCKPIT_STATUS} == "enabled" ]]; then
+
+        PACKAGES_COCKPIT_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.cockpit[].config[].subdomain")"
+        PACKAGES_COCKPIT_CONFIG_NGINX_PROXY="$(json_read_field "${server_config_file}" "PACKAGES.cockpit[].config[].nginx_proxy")"
+        PACKAGES_COCKPIT_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.cockpit[].config[].port")"
+
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_COCKPIT_CONFIG_SUBDOMAIN}" ]] || [[ -z "${PACKAGES_COCKPIT_CONFIG_NGINX_PROXY}" ]] || [[ -z "${PACKAGES_COCKPIT_CONFIG_PORT}" ]]; then
+            log_event "error" "Missing required config vars for netdata support" "true"
+            exit 1
+        fi
+
+        # Checking if Cockpit is not installed
+        if [[ ! -x "${COCKPIT}" && -z "${COCKPIT_PR}" ]]; then
+            menu_config_changes_detected "cockpit" "true"
+        fi
+
+    else
+
+        # Checking if Cockpit is installed
+        if [[ -x "${COCKPIT}" || -n "${COCKPIT_PR}" ]]; then
+            menu_config_changes_detected "cockpit" "true"
+        fi
+
+    fi
+
+    export COCKPIT PACKAGES_COCKPIT_STATUS PACKAGES_COCKPIT_CONFIG_SUBDOMAIN PACKAGES_COCKPIT_CONFIG_NGINX_PROXY PACKAGES_COCKPIT_CONFIG_PORT
+
+}
+
+################################################################################
+# Private: load zabbix configuration
+#
+# Arguments:
+#   $1 = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function _brolit_configuration_load_zabbix() {
+
+    local server_config_file="${1}"
+
+    # Globals
+    declare -g ZABBIX
+    declare -g ZABBIX_PR
+    declare -g PACKAGES_ZABBIX_STATUS
+    declare -g PACKAGES_ZABBIX_CONFIG_SUBDOMAIN
+
+    ZABBIX="$(which zabbix)"
+    ZABBIX_PR="$(pgrep zabbix)"
+
+    PACKAGES_ZABBIX_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.zabbix[].status")"
+
+    if [[ ${PACKAGES_ZABBIX_STATUS} == "enabled" ]]; then
+
+        PACKAGES_ZABBIX_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.zabbix[].config[].subdomain")"
+
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_ZABBIX_CONFIG_SUBDOMAIN}" ]]; then
+            log_event "error" "Missing required config vars for netdata support" "true"
+            exit 1
+        fi
+
+        # Checking if Cockpit is not installed
+        if [[ ! -x "${ZABBIX}" && -z "${ZABBIX_PR}" ]]; then
+            menu_config_changes_detected "zabbix" "true"
+        fi
+
+    else
+
+        # Checking if Cockpit is installed
+        if [[ -x "${ZABBIX}" || -n "${ZABBIX_PR}" ]]; then
+            menu_config_changes_detected "zabbix" "true"
+        fi
+
+    fi
+
+    export ZABBIX PACKAGES_ZABBIX_STATUS PACKAGES_ZABBIX_CONFIG_SUBDOMAIN
+
+}
+
+
+################################################################################
 # Private: load docker configuration
 #
 # Arguments:
@@ -1809,6 +1920,12 @@ function brolit_configuration_load() {
 
     ### netdata
     _brolit_configuration_load_netdata "${server_config_file}"
+
+    ### cockpit
+    _brolit_configuration_load_cockpit "${server_config_file}"
+
+    ### zabbix
+    _brolit_configuration_load_zabbix "${server_config_file}"
 
     ### portainer
     _brolit_configuration_load_portainer "${server_config_file}"
