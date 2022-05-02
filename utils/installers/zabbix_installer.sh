@@ -105,8 +105,9 @@ function zabbix_installer() {
         firewall_allow "10051" # Zabbix server port
 
         # Log
-        log_event "info" "Zabbix should be running on port 10051" "false"
-        display --indent 4 --text "Running on port 10051" --tcolor YELLOW
+        log_event "info" "Zabbix installed" "false"
+        display --indent 6 --text "Zabbix installation" --result "DONE" --color GREEN
+        display --indent 8 --text "Please visit ${PACKAGES_ZABBIX_CONFIG_SUBDOMAIN} to finish the setup" --tcolor YELLOW
 
     fi
 
