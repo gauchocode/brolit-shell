@@ -209,6 +209,8 @@ function _netdata_telegram_config() {
 
 function netdata_installer() {
 
+  log_subsection "Netdata Installer"
+
   _netdata_required_packages
 
   log_event "info" "Installing Netdata ..." "false"
