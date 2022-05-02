@@ -1103,10 +1103,12 @@ function _brolit_configuration_load_monit() {
             exit 1
         fi
 
-        MONIT_CONFIG_HTTPD="$(json_read_field "${server_config_file}" "PACKAGES.monit[].config[].monit_httpd")"
+        PACKAGES_MONIT_CONFIG_HTTPD_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.monit[].config[].monit_httpd[].status")"
+        PACKAGES_MONIT_CONFIG_HTTPD_USER="$(json_read_field "${server_config_file}" "PACKAGES.monit[].config[].monit_httpd[].user")"
+        PACKAGES_MONIT_CONFIG_HTTPD_PASS="$(json_read_field "${server_config_file}" "PACKAGES.monit[].config[].monit_httpd[].pass")"
 
         # Check if all required vars are set
-        if [[ -z ${MONIT_CONFIG_HTTPD} ]]; then
+        if [[ -z ${PACKAGES_MONIT_CONFIG_HTTPD_STATUS} ]]; then
             log_event "error" "Missing required config vars for monit" "true"
             exit 1
         fi
@@ -1133,7 +1135,7 @@ function _brolit_configuration_load_monit() {
 
     fi
 
-    export PACKAGES_MONIT_STATUS PACKAGES_MONIT_CONFIG_MAILA
+    export MONIT PACKAGES_MONIT_STATUS PACKAGES_MONIT_CONFIG_MAILA PACKAGES_MONIT_CONFIG_HTTPD_STATUS PACKAGES_MONIT_CONFIG_HTTPD_USER PACKAGES_MONIT_CONFIG_HTTPD_PASS
 
 }
 
@@ -1324,7 +1326,6 @@ function _brolit_configuration_load_zabbix() {
     export ZABBIX PACKAGES_ZABBIX_STATUS PACKAGES_ZABBIX_CONFIG_SUBDOMAIN
 
 }
-
 
 ################################################################################
 # Private: load docker configuration

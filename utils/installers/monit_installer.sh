@@ -97,15 +97,19 @@ function monit_configure() {
   # Copy monitrc file
   cat "${BROLIT_MAIN_DIR}/config/monit/monitrc" >"/etc/monit/monitrc"
 
-  # Replace httpd user
-  local monit_user="${PACKAGE_MONIT_HTTPD_USER}"
-  sed -i "s#MONIT_USER#${monit_user}#" "/etc/monit/monitrc"
+  if [[ ${PACKAGES_MONIT_CONFIG_HTTPD_STATUS} == "enabled" ]]; then
 
-  # Replace httpd password
-  local monit_pass="${PACKAGE_MONIT_HTTPD_PASSWORD}"
-  sed -i "s#MONIT_PASSWORD#${monit_pass}#" "/etc/monit/monitrc"
+    # Replace httpd user
+    local monit_user="${PACKAGES_MONIT_CONFIG_HTTPD_USER}"
+    sed -i "s#MONIT_USER#${monit_user}#" "/etc/monit/monitrc"
 
-  if [[ $PACKAGES_NETDATA_STATUS == "enabled" ]]; then
+    # Replace httpd password
+    local monit_pass="${PACKAGES_MONIT_CONFIG_HTTPD_PASS}"
+    sed -i "s#MONIT_PASSWORD#${monit_pass}#" "/etc/monit/monitrc"
+
+  fi
+
+  if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
 
     # Replace monit httpd user
     sed -i "s#MONIT_USER#${monit_user}#" "/etc/netdata/python.d/monit.conf"
