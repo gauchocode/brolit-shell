@@ -203,6 +203,17 @@
                 ]
             }
         ],
+        "mariadb": [
+            {
+                "status": "disabled",
+                "version": "default",
+                "config": [
+                    {
+                        "port": "default"
+                    }
+                ]
+            }
+        ],
         "postgres": [
             {
                 "status": "disabled",
@@ -264,17 +275,6 @@
                 "config": [
                     {
                         "npm": "enabled"
-                    }
-                ]
-            }
-        ],
-        "mariadb": [
-            {
-                "status": "disabled",
-                "version": "default",
-                "config": [
-                    {
-                        "port": "default"
                     }
                 ]
             }
@@ -385,7 +385,8 @@
                                 "status": "disabled",
                                 "config": [
                                     {
-                                        "webhook_url": ""                                    }
+                                        "webhook_url": ""
+                                    }
                                 ]
                             }
                         ]
