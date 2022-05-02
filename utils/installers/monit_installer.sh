@@ -107,6 +107,9 @@ function monit_configure() {
     local monit_pass="${PACKAGES_MONIT_CONFIG_HTTPD_PASS}"
     sed -i "s#MONIT_PASSWORD#${monit_pass}#" "/etc/monit/monitrc"
 
+    # Allow monit httpd port
+    firewall_allow "2812"
+
   fi
 
   if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
