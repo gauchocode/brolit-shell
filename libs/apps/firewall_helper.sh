@@ -8,7 +8,7 @@
 #
 # Refs: https://linuxize.com/post/how-to-setup-a-firewall-with-ufw-on-ubuntu-20-04/
 #       https://linuxize.com/post/install-configure-fail2ban-on-ubuntu-20-04/
-#       https://community.hetzner.com/tutorials/simple-firewall-management-with-ufw
+#       https://community.hetzner.com/tutorials/simple-firewall-management-with-ufw/
 #       https://www.linode.com/docs/guides/using-fail2ban-to-secure-your-server-a-tutorial/
 #
 ################################################################################

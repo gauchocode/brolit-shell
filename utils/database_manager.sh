@@ -407,7 +407,7 @@ function database_tasks_handler() {
 
   delete_db_user)
 
-    mysql_user_delete "${dbuser}"
+    mysql_user_delete "${dbuser}" "localhost"
 
     exit
     ;;
