@@ -94,7 +94,7 @@ function test_mysql_user_delete() {
     # DB User
     db_user="test_user"
     
-    mysql_user_delete "${db_user}"
+    mysql_user_delete "${db_user}" "localhost"
     user_delete=$?
     if [[ ${user_delete} -eq 0 ]]; then
         display --indent 6 --text "- test_mysql_user_delete" --result "PASS" --color WHITE
