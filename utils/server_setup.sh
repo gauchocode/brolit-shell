@@ -146,8 +146,7 @@ function server_app_setup() {
     "monit")
 
         if [[ ${PACKAGES_MONIT_STATUS} == "enabled" ]]; then
-            log_subsection "Monit Installer"
-            package_install_if_not "monit"
+            monit_installer
             monit_configure
         else
             monit_purge

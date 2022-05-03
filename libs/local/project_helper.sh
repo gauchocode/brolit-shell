@@ -1676,7 +1676,7 @@ function project_delete_database() {
         clear_previous_lines "2"
 
         # User delete
-        mysql_user_delete "${database_user}"
+        mysql_user_delete "${database_user}" "localhost"
 
         break
 

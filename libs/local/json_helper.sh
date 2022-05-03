@@ -54,7 +54,7 @@ function json_write_field() {
     json_field_value="$(jq ".${json_field} = \"${json_field_value}\"" "${json_file}")" && echo "${json_field_value}" >"${json_file}"
 
     exitstatus=$?
-    if [[ "${exitstatus}" -eq 0 ]]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
 
         return 0
 
