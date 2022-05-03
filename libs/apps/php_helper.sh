@@ -310,15 +310,15 @@ function php_fpm_optimizations() {
 
   log_subsection "PHP-FPM Optimization Tool"
 
-  RAM_BUFFER="512"
+  RAM_BUFFER="1024"
 
   # Getting server info
   CPUS="$(grep -c "processor" /proc/cpuinfo)"
-  #RAM="$(grep MemTotal /proc/meminfo | awk '{print $2}' | xargs -I {} echo "scale=0; {}/1024^2" | bc)"
-  RAM="$(grep MemTotal /proc/meminfo | awk '{print $2}' | xargs -I {} echo "scale=1; {}/1024^2" | bc)"
+  RAM="$(grep MemTotal /proc/meminfo | awk '{print $2}' | xargs -I {} echo "scale=1; {}/1024" | bc | cut -d "." -f1)"
 
   # Calculating avg ram used by this process
-  PHP_AVG_RAM="$(ps ax --no-headers -o "%mem,cmd" | grep '[f]'pm | awk 'NR != 1 {x[$2] += $1} END{ for(z in x) {print x[z]""}}')"
+  PHP_AVG_RAM="90"
+  #PHP_AVG_RAM="$(ps ax --no-headers -o "%mem,cmd" | grep '[f]'pm | awk 'NR != 1 {x[$2] += $1} END{ for(z in x) {print x[z]""}}')"
   MYSQL_AVG_RAM="$(ps ax --no-headers -o "%mem,cmd" | grep mysqld | awk 'NR != 2 {x[$2] += $1} END{ for(z in x) {print x[z]""}}')"
   NGINX_AVG_RAM="$(ps --no-headers -o "%mem,cmd" -C nginx | awk 'NR != 1 {x[$2] += $1} END{ for(z in x) {print x[z]""}}')"
   NETDATA_AVG_RAM="$(ps --no-headers -o "%mem,cmd" -C netdata | awk 'NR != 1 {x[$2] += $1} END{ for(z in x) {print x[z]""}}')"
@@ -389,11 +389,12 @@ function php_fpm_optimizations() {
   # max_spare_servers	Same as start_servers
 
   # Log
-  log_event "debug" "PM_MAX_CHILDREN= ((${RAM} * 1024 - (${MYSQL_AVG_RAM} - ${NGINX_AVG_RAM} - ${NETDATA_AVG_RAM} - ${RAM_BUFFER})) / ${PHP_AVG_RAM}))" "false"
-
-  PM_MAX_CHILDREN=$((("${RAM}" * 1024 - ("${MYSQL_AVG_RAM}" - "${NGINX_AVG_RAM}" - "${NETDATA_AVG_RAM}" - "${RAM_BUFFER}")) / "${PHP_AVG_RAM}"))
+  log_event "debug" "PM_MAX_CHILDREN=(${RAM} - (${MYSQL_AVG_RAM} + ${NGINX_AVG_RAM} + ${NETDATA_AVG_RAM} + ${RAM_BUFFER})) / ${PHP_AVG_RAM}))" "false"
+  
+  RAM_D="$(echo "${RAM} - (${MYSQL_AVG_RAM} + ${NGINX_AVG_RAM} + ${NETDATA_AVG_RAM} + ${RAM_BUFFER})" | bc)"
+  PM_MAX_CHILDREN="$(echo "${RAM_D} / ${PHP_AVG_RAM}" | bc | cut -d "." -f1)"
   PM_START_SERVERS=$(("${CPUS}" * 4))
-  PM_MIN_SPARE_SERVERS=$(("${CPUS}*2"))
+  PM_MIN_SPARE_SERVERS=$(("${CPUS} * 2"))
 
   # This fix:
   # ALERT: [pool www] pm.min_spare_servers(8) and pm.max_spare_servers(32) cannot be greater than pm.max_children(30)
@@ -460,8 +461,10 @@ function php_fpm_optimizations() {
 
     [Nn]*)
 
+      clear_previous_lines "2"
       log_event "info" "Skipping php-fpm optimization..." "false"
       display --indent 6 --text "- Applying optimizations" --result "SKIPPED" --color YELLOW
+
       break
       ;;
 
