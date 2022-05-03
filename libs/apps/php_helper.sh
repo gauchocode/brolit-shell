@@ -321,13 +321,12 @@ function php_fpm_optimizations() {
   PHP_AVG_RAM="$(ps ax --no-headers -o "%mem,cmd" | grep '[f]'pm | awk 'NR != 1 {x[$2] += $1} END{ for(z in x) {print x[z]""}}')"
   MYSQL_AVG_RAM="$(ps ax --no-headers -o "%mem,cmd" | grep mysqld | awk 'NR != 2 {x[$2] += $1} END{ for(z in x) {print x[z]""}}')"
   NGINX_AVG_RAM="$(ps --no-headers -o "%mem,cmd" -C nginx | awk 'NR != 1 {x[$2] += $1} END{ for(z in x) {print x[z]""}}')"
-  #REDIS_AVG_RAM="$(ps --no-headers -o "%mem,cmd" -C redis-server | awk 'NR != 1 {x[$2] += $1} END{ for(z in x) {print x[z]""}}')"
   NETDATA_AVG_RAM="$(ps --no-headers -o "%mem,cmd" -C netdata | awk 'NR != 1 {x[$2] += $1} END{ for(z in x) {print x[z]""}}')"
 
   # Show/Log Server Info
   #display --indent 6 --text "- Creating user in MySQL: ${db_user}" --result "DONE" --color GREEN
   #display --indent 6 --text "Getting server info ..."
-  log_subsection "Server Specs"
+  log_subsection "Server specs and Mem info"
   display --indent 6 --text "PHP_V: ${PHP_V}"
   display --indent 6 --text "RAM_BUFFER: ${RAM_BUFFER}"
   display --indent 6 --text "CPUS: ${CPUS}"
@@ -335,7 +334,6 @@ function php_fpm_optimizations() {
   display --indent 6 --text "PHP_AVG_RAM: ${PHP_AVG_RAM}"
   display --indent 6 --text "MYSQL_AVG_RAM: ${MYSQL_AVG_RAM}"
   display --indent 6 --text "NGINX_AVG_RAM: ${NGINX_AVG_RAM}"
-  display --indent 6 --text "REDIS_AVG_RAM: ${REDIS_AVG_RAM}"
   display --indent 6 --text "NETDATA_AVG_RAM: ${NETDATA_AVG_RAM}"
 
   log_event "info" "PHP_V: ${PHP_V}" "false"
@@ -345,7 +343,6 @@ function php_fpm_optimizations() {
   log_event "info" "PHP_AVG_RAM: ${PHP_AVG_RAM}" "false"
   log_event "info" "MYSQL_AVG_RAM: ${MYSQL_AVG_RAM}" "false"
   log_event "info" "NGINX_AVG_RAM: ${NGINX_AVG_RAM}" "false"
-  log_event "info" "REDIS_AVG_RAM: ${REDIS_AVG_RAM}" "false"
   log_event "info" "NETDATA_AVG_RAM: ${NETDATA_AVG_RAM}" "false"
 
   DELIMITER="="
@@ -390,18 +387,18 @@ function php_fpm_optimizations() {
   # start_servers	Number of CPU cores x 4
   # min_spare_servers	Number of CPU cores x 2
   # max_spare_servers	Same as start_servers
-
   PM_MAX_CHILDREN=$((("${RAM}" * 1024 - ("${MYSQL_AVG_RAM}" - "${NGINX_AVG_RAM}" - "${NETDATA_AVG_RAM}" - "${RAM_BUFFER}")) / "${PHP_AVG_RAM}"))
   PM_START_SERVERS=$(("${CPUS}" * 4))
   PM_MIN_SPARE_SERVERS=$(("${CPUS}*2"))
+
+  # Log
+  log_event "debug" "PM_MAX_CHILDREN= ${RAM} * 1024 - (${MYSQL_AVG_RAM} - ${NGINX_AVG_RAM} - ${NETDATA_AVG_RAM} - ${RAM_BUFFER})) / ${PHP_AVG_RAM}" "false"
 
   # This fix:
   # ALERT: [pool www] pm.min_spare_servers(8) and pm.max_spare_servers(32) cannot be greater than pm.max_children(30)
   PM_MAX_SPARE_SERVERS=$(("${PM_START_SERVERS}" * 2))
   if [[ ${PM_MAX_CHILDREN} < ${PM_MAX_SPARE_SERVERS} ]]; then
-
     PM_MAX_SPARE_SERVERS=${PM_MAX_CHILDREN}
-
   fi
 
   PM_MAX_REQUESTS=500
