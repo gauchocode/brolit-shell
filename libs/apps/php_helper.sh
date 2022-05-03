@@ -387,12 +387,13 @@ function php_fpm_optimizations() {
   # start_servers	Number of CPU cores x 4
   # min_spare_servers	Number of CPU cores x 2
   # max_spare_servers	Same as start_servers
+
+  # Log
+  log_event "debug" "PM_MAX_CHILDREN= ((${RAM} * 1024 - (${MYSQL_AVG_RAM} - ${NGINX_AVG_RAM} - ${NETDATA_AVG_RAM} - ${RAM_BUFFER})) / ${PHP_AVG_RAM}))" "false"
+
   PM_MAX_CHILDREN=$((("${RAM}" * 1024 - ("${MYSQL_AVG_RAM}" - "${NGINX_AVG_RAM}" - "${NETDATA_AVG_RAM}" - "${RAM_BUFFER}")) / "${PHP_AVG_RAM}"))
   PM_START_SERVERS=$(("${CPUS}" * 4))
   PM_MIN_SPARE_SERVERS=$(("${CPUS}*2"))
-
-  # Log
-  log_event "debug" "PM_MAX_CHILDREN= ${RAM} * 1024 - (${MYSQL_AVG_RAM} - ${NGINX_AVG_RAM} - ${NETDATA_AVG_RAM} - ${RAM_BUFFER})) / ${PHP_AVG_RAM}" "false"
 
   # This fix:
   # ALERT: [pool www] pm.min_spare_servers(8) and pm.max_spare_servers(32) cannot be greater than pm.max_children(30)
