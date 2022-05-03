@@ -319,9 +319,9 @@ function php_fpm_optimizations() {
 
   # Calculating avg ram used by this process
   PHP_AVG_RAM="$(ps ax --no-headers -o "%mem,cmd" | grep '[f]'pm | awk 'NR != 1 {x[$2] += $1} END{ for(z in x) {print x[z]""}}')"
-  MYSQL_AVG_RAM="$(ps --no-headers -o "%mem,cmd" -C mysqld | awk 'NR != 1 {x[$2] += $1} END{ for(z in x) {print x[z]""}}')"
+  MYSQL_AVG_RAM="$(ps ax --no-headers -o "%mem,cmd" | grep mysqld | awk 'NR != 2 {x[$2] += $1} END{ for(z in x) {print x[z]""}}')"
   NGINX_AVG_RAM="$(ps --no-headers -o "%mem,cmd" -C nginx | awk 'NR != 1 {x[$2] += $1} END{ for(z in x) {print x[z]""}}')"
-  REDIS_AVG_RAM="$(ps --no-headers -o "%mem,cmd" -C redis-server | awk 'NR != 1 {x[$2] += $1} END{ for(z in x) {print x[z]""}}')"
+  #REDIS_AVG_RAM="$(ps --no-headers -o "%mem,cmd" -C redis-server | awk 'NR != 1 {x[$2] += $1} END{ for(z in x) {print x[z]""}}')"
   NETDATA_AVG_RAM="$(ps --no-headers -o "%mem,cmd" -C netdata | awk 'NR != 1 {x[$2] += $1} END{ for(z in x) {print x[z]""}}')"
 
   # Show/Log Server Info
@@ -391,7 +391,7 @@ function php_fpm_optimizations() {
   # min_spare_servers	Number of CPU cores x 2
   # max_spare_servers	Same as start_servers
 
-  PM_MAX_CHILDREN=$((("${RAM}" * 1024 - ("${MYSQL_AVG_RAM}" - "${NGINX_AVG_RAM}" - "${REDIS_AVG_RAM}" - "${NETDATA_AVG_RAM}" - "${RAM_BUFFER}")) / "${PHP_AVG_RAM}"))
+  PM_MAX_CHILDREN=$((("${RAM}" * 1024 - ("${MYSQL_AVG_RAM}" - "${NGINX_AVG_RAM}" - "${NETDATA_AVG_RAM}" - "${RAM_BUFFER}")) / "${PHP_AVG_RAM}"))
   PM_START_SERVERS=$(("${CPUS}" * 4))
   PM_MIN_SPARE_SERVERS=$(("${CPUS}*2"))
 
