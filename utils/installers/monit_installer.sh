@@ -112,13 +112,13 @@ function monit_configure() {
 
   fi
 
-  if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
+  if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" && -d "${NETDATA_INSTALL_DIR}" ]]; then
 
     # Replace monit httpd user
-    sed -i "s#MONIT_USER#${monit_user}#" "/etc/netdata/python.d/monit.conf"
+    sed -i "s#MONIT_USER#${monit_user}#" "${NETDATA_INSTALL_DIR}/python.d/monit.conf"
 
     # Replace monit httpd  password
-    sed -i "s#MONIT_PASSWORD#${monit_pass}#" "/etc/netdata/python.d/monit.conf"
+    sed -i "s#MONIT_PASSWORD#${monit_pass}#" "${NETDATA_INSTALL_DIR}/python.d/monit.conf"
 
   fi
 

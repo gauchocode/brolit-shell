@@ -22,11 +22,8 @@
 
 function _netdata_alerts_configuration() {
 
-  local netdata_install_dir
   local netdata_config_dir
 
-  #netdata_install_dir="/etc/netdata"
-  netdata_install_dir="/etc/netdata"
   netdata_config_dir="${netdata_install_dir}/health.d/"
 
   # CPU
@@ -105,7 +102,7 @@ function _netdata_email_config() {
   local default_recipient_email
 
   # Netdata health alarms config
-  health_alarm_notify_conf="/etc/netdata/health_alarm_notify.conf"
+  health_alarm_notify_conf="${NETDATA_INSTALL_DIR}/health_alarm_notify.conf"
 
   delimiter="="
 
@@ -159,7 +156,7 @@ function _netdata_telegram_config() {
   local default_recipient_telegram
 
   # Netdata health alarms config
-  health_alarm_notify_conf="/etc/netdata/health_alarm_notify.conf"
+  health_alarm_notify_conf="${NETDATA_INSTALL_DIR}/health_alarm_notify.conf"
 
   delimiter="="
 
@@ -222,6 +219,14 @@ function netdata_installer() {
   # Kill netdata and copy service
   #killall netdata && cp system/netdata.service /etc/systemd/system/
 
+  declare -g NETDATA_INSTALL_DIR
+  # Some operating systems will use /opt/netdata/etc/netdata/ as the config directory
+  if [[ -d "/etc/netdata" ]]; then
+    NETDATA_INSTALL_DIR="/etc/netdata"
+  else
+    NETDATA_INSTALL_DIR="/opt/netdata/etc/netdata"
+  fi
+
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -265,6 +270,8 @@ function netdata_installer() {
       display --indent 6 --text "- Netdata installation" --result "DONE" --color GREEN
 
     fi
+
+    export NETDATA_INSTALL_DIR
 
   else
 
@@ -348,8 +355,8 @@ function _netdata_anomalies_configuration() {
 pip3 install --quiet --user netdata-pandas==0.0.38 numba==0.50.1 scikit-learn==0.23.2 pyod==0.8.3
 EOF
 
-  cp "/usr/lib/netdata/conf.d/python.d.conf" "/etc/netdata/python.d.conf"
-  cp "/usr/lib/netdata/conf.d/python.d/anomalies.conf" "/etc/netdata/python.d/anomalies.conf"
+  cp "/usr/lib/netdata/conf.d/python.d.conf" "${NETDATA_INSTALL_DIR}/python.d.conf"
+  cp "/usr/lib/netdata/conf.d/python.d/anomalies.conf" "${NETDATA_INSTALL_DIR}/python.d/anomalies.conf"
 
 }
 
@@ -374,7 +381,7 @@ function netdata_configuration() {
     mysql_user_grant_privileges "netdata" "*" "localhost"
 
     ## Copy mysql config
-    cat "${BROLIT_MAIN_DIR}/config/netdata/python.d/mysql.conf" >"/etc/netdata/python.d/mysql.conf"
+    cat "${BROLIT_MAIN_DIR}/config/netdata/python.d/mysql.conf" >"${NETDATA_INSTALL_DIR}/python.d/mysql.conf"
 
     log_event "info" "MySQL config done!" "false"
     display --indent 6 --text "- MySQL configuration" --result "DONE" --color GREEN
@@ -385,7 +392,7 @@ function netdata_configuration() {
   if [[ ${PACKAGES_MONIT_STATUS} == "enabled" ]]; then
 
     ## Monit
-    cat "${BROLIT_MAIN_DIR}/config/netdata/python.d/monit.conf" >"/etc/netdata/python.d/monit.conf"
+    cat "${BROLIT_MAIN_DIR}/config/netdata/python.d/monit.conf" >"${NETDATA_INSTALL_DIR}/python.d/monit.conf"
 
     ## Log
     log_event "info" "Monit configuration for netdata done." "false"
@@ -394,13 +401,13 @@ function netdata_configuration() {
   fi
 
   # Web log
-  cat "${BROLIT_MAIN_DIR}/config/netdata/python.d/web_log.conf" >"/etc/netdata/python.d/web_log.conf"
+  cat "${BROLIT_MAIN_DIR}/config/netdata/python.d/web_log.conf" >"${NETDATA_INSTALL_DIR}/python.d/web_log.conf"
 
   log_event "info" "Nginx Web Log config done!" "false"
   display --indent 6 --text "- Nginx Web Log configuration" --result "DONE" --color GREEN
 
   # Health alarm notify
-  cat "${BROLIT_MAIN_DIR}/config/netdata/health_alarm_notify.conf" >"/etc/netdata/health_alarm_notify.conf"
+  cat "${BROLIT_MAIN_DIR}/config/netdata/health_alarm_notify.conf" >"${NETDATA_INSTALL_DIR}/health_alarm_notify.conf"
 
   log_event "info" "Health alarm config done!" "false"
   display --indent 6 --text "- Health alarm configuration" --result "DONE" --color GREEN
