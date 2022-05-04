@@ -24,7 +24,7 @@ function _netdata_alerts_configuration() {
 
   local netdata_config_dir
 
-  netdata_config_dir="${netdata_install_dir}/health.d/"
+  netdata_config_dir="${NETDATA_INSTALL_DIR}/health.d/"
 
   # CPU
   cp "${BROLIT_MAIN_DIR}/config/netdata/health.d/cpu.conf" "${netdata_config_dir}/cpu.conf"
