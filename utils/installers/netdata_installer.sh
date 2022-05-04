@@ -439,6 +439,7 @@ function netdata_configuration() {
   systemctl daemon-reload && systemctl enable netdata && service netdata start
 
   # Log
+  clear_previous_lines "2"
   log_event "info" "Netdata configuration finished" "false"
   display --indent 6 --text "- Configuring netdata" --result "DONE" --color GREEN
 
