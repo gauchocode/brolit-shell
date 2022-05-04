@@ -132,11 +132,14 @@ function zabbix_purge() {
     log_event "info" "Removing zabbix and dependencies ..." "false"
 
     # Remove zabbix and dependencies
+    package_purge "zabbix-release"
     package_purge "zabbix-server-mysql"
     package_purge "zabbix-frontend-php"
     package_purge "zabbix-nginx-conf"
+    package_purge "zabbix-proxy-mysql"
     package_purge "zabbix-sql-scripts"
     package_purge "zabbix-agent"
+    package_purge "zabbix-agent2"
 
     # TODO: delete nginx and letsencrypt config and cloudflare entry
 
