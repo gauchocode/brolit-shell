@@ -25,7 +25,9 @@ log_event "info" "Running backups_tasks.sh ..." "false"
 # If NETDATA is installed, disabled alarms
 if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
 
-  #The API is available by default, but it is protected by an api authorization token
+  # Doc: https://learn.netdata.cloud/docs/agent/web/api/health
+
+  # The API is available by default, but it is protected by an api authorization token
   # that is stored in the file you will see in the following entry of http://NODE:19999/netdata.conf:
   # netdata management api key file = /var/lib/netdata/netdata.api.key
 
@@ -120,6 +122,29 @@ cleanup
 
 # Write e-mail (debug)
 echo "${mail_html}" >"${BROLIT_TMP_DIR}/email-${NOW}.mail"
+
+# If NETDATA is installed, restore alarm status
+if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
+
+  # Doc: https://learn.netdata.cloud/docs/agent/web/api/health
+
+  # The API is available by default, but it is protected by an api authorization token
+  # that is stored in the file you will see in the following entry of http://NODE:19999/netdata.conf:
+  # netdata management api key file = /var/lib/netdata/netdata.api.key
+
+  netdata_api_key="$(cat /var/lib/netdata/netdata.api.key)"
+
+  ## If all you need is temporarily disable all health checks, then you issue the following before your maintenance period starts:
+  #curl "http://NODE:19999/api/v1/manage/health?cmd=DISABLE ALL" -H "X-Auth-Token: Mytoken"
+
+  ## If you want the health checks to be running but to not receive any notifications during your maintenance period, you can instead use this:
+  curl "http://localhost:19999/api/v1/manage/health?cmd=RESET" -H "X-Auth-Token: ${netdata_api_key}"
+
+  # Log
+  log_event "info" "Restoring netdata alarms status..." "false"
+  log_event "info" "Running: curl \"http://localhost:19999/api/v1/manage/health?cmd=RESET\" -H \"X-Auth-Token: ${netdata_api_key}\"" "false"
+
+fi
 
 # Log End
 log_event "info" "BACKUP TASKS SCRIPT End -- $(date +%Y%m%d_%H%M)" "false"

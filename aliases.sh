@@ -1198,7 +1198,6 @@ function dropbox_get_sites_backups() {
 
     local dropbox_chosen_backup_path
     local dropbox_backup_list
-
     local backup_files
 
     local backup_type="site"
@@ -1213,14 +1212,10 @@ function dropbox_get_sites_backups() {
 
         backup_files="$(dropbox_get_backup "${backup_dir}")"
 
-        if [[ $backup_dir != "error" ]]; then
-
+        if [[ ${backup_dir} != "error" ]]; then
             backup_project="\"${backup_dir}\" : { ${backup_files} }"
-
         else
-
             backup_project="\"${backup_dir}\" : ${backup_files}"
-
         fi
 
         backup_projects="${backup_project},${backup_projects}"
@@ -1228,12 +1223,8 @@ function dropbox_get_sites_backups() {
     done
 
     if [[ ${backup_projects} != "" ]]; then
-
-        # Remove last char
-        backup_projects="${backup_projects::-1}"
-
+        backup_projects="${backup_projects::-1}" # Remove last char
     else
-
         backup_projects="\"empty-response\""
     fi
 
@@ -1286,8 +1277,6 @@ function dropbox_get_backup() {
         backup_date="$(_backup_get_date "${backup_file}")"
 
         backup_to_search="${project_db}_database_${backup_date}.tar.bz2"
-
-        #echo "Running: ${DROPBOX_UPLOADER} -hq search \"${backup_to_search}\" | grep -E \"${backup_date}\""
 
         search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${backup_date}" || ret=$?)" # using ret to bypass unexped errors
 
