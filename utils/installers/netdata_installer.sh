@@ -76,7 +76,7 @@ function _netdata_required_packages() {
   fi
 
   # Log
-  clear_previous_lines "2"
+  clear_previous_lines "1"
   display --indent 6 --text "- Installing netdata required packages" --result "DONE" --color GREEN
 
 }
@@ -231,7 +231,7 @@ function netdata_installer() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Log
-    #clear_previous_lines "1"
+    clear_previous_lines "1"
     log_event "info" "Netdata installation finished" "false"
     display --indent 6 --text "- Downloading and compiling netdata" --result "DONE" --color GREEN
 
@@ -427,8 +427,8 @@ function netdata_configuration() {
     _netdata_telegram_config
 
     # Send test alarms to sysadmin
-    display --indent 8 --text "Now you cand test notifications running:" --tcolor YELLOW
-    display --indent 8 --text "/usr/libexec/netdata/plugins.d/alarm-notify.sh test" --tcolor CYAN
+    display --indent 8 --text "Now you can test notifications running:" --tcolor YELLOW
+    display --indent 8 --text "/usr/libexec/netdata/plugins.d/alarm-notify.sh test" --tcolor YELLOW
 
   fi
 
