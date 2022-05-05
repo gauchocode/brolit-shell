@@ -15,7 +15,7 @@ declare -g BROLIT_PROJECT_CONFIG_PATH="/etc/brolit"
 
 #declare -g BROLIT_TMP_DIR="/root/brolit-shell/tmp"
 declare -g BROLIT_LITE_OUTPUT_DIR="/root/brolit-shell/tmp/lite-output"
-if [[ -d ${BROLIT_LITE_OUTPUT_DIR} ]]; then
+if [[ ! -d ${BROLIT_LITE_OUTPUT_DIR} ]]; then
     mkdir -p "${BROLIT_LITE_OUTPUT_DIR}"
 fi
 
