@@ -22,17 +22,36 @@ script_init "true"
 # Running from cron
 log_event "info" "Running backups_tasks.sh ..." "false"
 
-log_event "info" "Running apt update ..." "false"
+# If NETDATA is installed, disabled alarms
+if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
+
+  #The API is available by default, but it is protected by an api authorization token
+  # that is stored in the file you will see in the following entry of http://NODE:19999/netdata.conf:
+  # netdata management api key file = /var/lib/netdata/netdata.api.key
+
+  netdata_api_key="$(cat /var/lib/netdata/netdata.api.key)"
+
+  ## If all you need is temporarily disable all health checks, then you issue the following before your maintenance period starts:
+  #curl "http://NODE:19999/api/v1/manage/health?cmd=DISABLE ALL" -H "X-Auth-Token: Mytoken"
+
+  ## If you want the health checks to be running but to not receive any notifications during your maintenance period, you can instead use this:
+  curl "http://localhost:19999/api/v1/manage/health?cmd=SILENCE ALL" -H "X-Auth-Token: ${netdata_api_key}"
+
+  # Log
+  log_event "info" "Disabling netdata alarms ..." "false"
+  log_event "info" "Running: curl \"http://localhost:19999/api/v1/manage/health?cmd=SILENCE ALL\" -H \"X-Auth-Token: ${netdata_api_key}\"" "false"
+
+fi
 
 # Update packages index
-apt-get update -qq
+package_update
 
 # Mail section for Server status and Packages
 mail_server_status_section
 mail_package_status_section
 
 # Certificates
-log_subsection "Certbot Certificates"
+log_event "info" "Certbot Certificates" "false"
 
 # Check certificates installed
 mail_certificates_section
@@ -68,13 +87,20 @@ sed -i '/{{files_backup_section}}/r '"${BROLIT_TMP_DIR}/file-bk-${NOW}.mail" "${
 sed -i '/{{footer}}/r '"${BROLIT_TMP_DIR}/footer-${NOW}.mail" "${email_html_file}"
 
 # Delete vars not used anymore
-grep -v "{{server_info}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
-grep -v "{{packages_section}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
-grep -v "{{certificates_section}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
-grep -v "{{databases_backup_section}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
-grep -v "{{configs_backup_section}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
-grep -v "{{files_backup_section}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
-grep -v "{{footer}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
+grep -v "{{server_info}}" "${email_html_file}" >"${email_html_file}_tmp"
+mv "${email_html_file}_tmp" "${email_html_file}"
+grep -v "{{packages_section}}" "${email_html_file}" >"${email_html_file}_tmp"
+mv "${email_html_file}_tmp" "${email_html_file}"
+grep -v "{{certificates_section}}" "${email_html_file}" >"${email_html_file}_tmp"
+mv "${email_html_file}_tmp" "${email_html_file}"
+grep -v "{{databases_backup_section}}" "${email_html_file}" >"${email_html_file}_tmp"
+mv "${email_html_file}_tmp" "${email_html_file}"
+grep -v "{{configs_backup_section}}" "${email_html_file}" >"${email_html_file}_tmp"
+mv "${email_html_file}_tmp" "${email_html_file}"
+grep -v "{{files_backup_section}}" "${email_html_file}" >"${email_html_file}_tmp"
+mv "${email_html_file}_tmp" "${email_html_file}"
+grep -v "{{footer}}" "${email_html_file}" >"${email_html_file}_tmp"
+mv "${email_html_file}_tmp" "${email_html_file}"
 
 # Send html to a var
 mail_html="$(cat "${email_html_file}")"
