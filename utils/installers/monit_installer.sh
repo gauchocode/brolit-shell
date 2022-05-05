@@ -89,7 +89,7 @@ function monit_purge() {
 #   none
 #
 # Outputs:
-#   0 if it utils were installed, 1 on error.
+#   0 if monit were installed, 1 on error.
 ################################################################################
 
 function monit_configure() {

@@ -4,19 +4,23 @@
 # Version: 3.2-rc4
 ################################################################################
 
-# Server Name
-SERVER_NAME="${HOSTNAME}"
+# Var declarations
 
-BROLIT_MAIN_DIR="/root/brolit-shell"
+## Server Name
+declare -g SERVER_NAME="${HOSTNAME}"
 
-# TODO: workaround
-declare -g EXEC_TYPE="alias"
+## Dirs
+declare -g BROLIT_MAIN_DIR="/root/brolit-shell"
+declare -g BROLIT_PROJECT_CONFIG_PATH="/etc/brolit"
 
-export EXEC_TYPE
+#declare -g BROLIT_TMP_DIR="/root/brolit-shell/tmp"
+declare -g BROLIT_LITE_OUTPUT_DIR="/root/brolit-shell/tmp/lite-output"
+if [[ -d ${BROLIT_LITE_OUTPUT_DIR} ]]; then
+    mkdir -p "${BROLIT_LITE_OUTPUT_DIR}"
+fi
 
-BROLIT_CONFIG_PATH="/etc/brolit"
-
-CLF_CONFIG_FILE=~/.cloudflare.conf
+# Cloudflare
+declare -g CLF_CONFIG_FILE=~/.cloudflare.conf
 if [[ -f ${CLF_CONFIG_FILE} ]]; then
     # shellcheck source=~/.cloudflare.conf
     source "${CLF_CONFIG_FILE}"
@@ -37,51 +41,24 @@ if [[ -f ${DPU_CONFIG_FILE} ]]; then
 fi
 
 # Version
-SCRIPT_VERSION="3.2-rc4"
-ALIASES_VERSION="3.2-rc4-099"
+BROLIT_VERSION="3.2-rc4"
+BROLIT_LITE_VERSION="3.2-rc4-099"
 
 ################################################################################
 
-alias ..="cd .."
+### HELPERS
 
-alias userlist="cut -d: -f1 /etc/passwd"
-alias myip="curl http://ipecho.net/plain; echo"
-alias myipv6="curl --silent 'https://api64.ipify.org'"
+################################################################################
 
-alias ports='netstat -tulanp'
-
-alias path='echo -e ${PATH//:/\\n}'
-
-alias now="echo It\'s now $(date +%T)"
-
-## Colorize the grep command output for ease of use (good for log files)
-alias grep='grep --color=auto'
-
-alias lt='ls --human-readable --size -1 -S --classify'
-alias lss='du -h --max-depth=1'
-
-alias cpv='rsync -ah --info=progress2'
-
-## Get top process eating memory
-alias psmem='ps auxf | sort -nr -k 4'
-alias psmem10='ps auxf | sort -nr -k 4 | head -10'
-alias psmem20='ps auxf | sort -nr -k 4 | head -20'
-
-## Get top process eating cpu
-alias pscpu='ps auxf | sort -nr -k 3'
-alias pscpu10='ps auxf | sort -nr -k 3 | head -10'
-alias pscpu20='ps auxf | sort -nr -k 3 | head -20'
-
-alias atop='atop -a 1'
-
-## Get cpu info
-alias cpuinfo='lscpu'
-alias cpucores='grep -c "processor" /proc/cpuinfo'
-alias ramamount='grep MemTotal /proc/meminfo | cut -d ":" -f 2'
-
-alias get_script_version='echo $SCRIPT_VERSION'
-alias get_aliases_version='echo $ALIASES_VERSION'
-
+################################################################################
+# Private: Read field from json file
+#
+# Arguments:
+#  $1 = ${json_file}
+#  $2 = ${json_field}
+#
+# Outputs:
+#   0 if monit were installed, 1 on error.
 ################################################################################
 
 function _json_read_field() {
@@ -97,6 +74,18 @@ function _json_read_field() {
     echo "${json_field_value}"
 
 }
+
+################################################################################
+# Private: Write field to json file
+#
+# Arguments:
+#  $1 = ${json_file}
+#  $2 = ${json_field}}
+#  $3 = ${json_field_value}
+#
+# Outputs:
+#   0 if monit were installed, 1 on error.
+################################################################################
 
 function _json_write_field() {
 
@@ -119,6 +108,16 @@ function _json_write_field() {
     fi
 
 }
+
+################################################################################
+# Private: Transfor output to json
+#
+# Arguments:
+#  $1 = ${mode}
+#
+# Outputs:
+#   0 if monit were installed, 1 on error.
+################################################################################
 
 function _jsonify_output() {
 
@@ -183,10 +182,17 @@ function _jsonify_output() {
 
 }
 
-function _string_remove_spaces() {
+################################################################################
+# Private: Remove spaces from string
+#
+# Arguments:
+#  $1 = ${string}
+#
+# Outputs:
+#   0 if monit were installed, 1 on error.
+################################################################################
 
-    # Parameters
-    # $1 = ${string}
+function _string_remove_spaces() {
 
     local string="${1}"
 
@@ -195,9 +201,17 @@ function _string_remove_spaces() {
 
 }
 
-function _cloudflare_get_zone_id() {
+################################################################################
+# Private: Get Domain zone id from cloudflare
+#
+# Arguments:
+#  $1 = ${zone_name}
+#
+# Outputs:
+#   0 if monit were installed, 1 on error.
+################################################################################
 
-    # $1 = ${zone_name}
+function _cloudflare_get_zone_id() {
 
     local zone_name="${1}"
 
@@ -228,9 +242,17 @@ function _cloudflare_get_zone_id() {
 
 }
 
-function _is_pkg_installed() {
+################################################################################
+# Private: Check if package is installed
+#
+# Arguments:
+#  $1 = ${package}
+#
+# Outputs:
+#   0 if monit were installed, 1 on error.
+################################################################################
 
-    # $1 = ${package}
+function _is_pkg_installed() {
 
     local package="${1}"
 
@@ -247,6 +269,16 @@ function _is_pkg_installed() {
     fi
 
 }
+
+################################################################################
+# Private: Check php installed version
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#   0 if monit were installed, 1 on error.
+################################################################################
 
 function _php_check_installed_version() {
 
@@ -306,6 +338,16 @@ function _php_check_installed_version() {
 
 }
 
+################################################################################
+# Private: Check mysql installed version
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#   0 if monit were installed, 1 on error.
+################################################################################
+
 function _mysql_check_installed_version() {
 
     local mysql_installed_pkg
@@ -337,6 +379,16 @@ function _mysql_check_installed_version() {
 
 }
 
+################################################################################
+# Private: Check nginx installed version
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#   0 if monit were installed, 1 on error.
+################################################################################
+
 function _nginx_check_installed_version() {
 
     local nginx_installed_version
@@ -358,6 +410,16 @@ function _nginx_check_installed_version() {
     fi
 
 }
+
+################################################################################
+# Private: Check apache installed version
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#   0 if monit were installed, 1 on error.
+################################################################################
 
 function _apache_check_installed_version() {
 
@@ -644,6 +706,16 @@ function _wp_config_path() {
 
 }
 
+################################################################################
+# Private: Get project type
+#
+# Arguments:
+#   $1 = ${dir_path}
+#
+# Outputs:
+#   ${project_type}
+################################################################################
+
 function _project_get_type() {
 
     local dir_path="${1}"
@@ -738,10 +810,17 @@ function _project_get_type() {
 
 }
 
-function _project_get_name_from_domain() {
+################################################################################
+# Private: Get project name from domain
+#
+# Arguments:
+#   $1 = ${project_domain}
+#
+# Outputs:
+#   ${project_type}
+################################################################################
 
-    # Parameters
-    # $1 = ${project_domain}
+function _project_get_name_from_domain() {
 
     local project_domain="${1}"
 
@@ -756,6 +835,16 @@ function _project_get_name_from_domain() {
     echo "${possible_name}"
 
 }
+
+################################################################################
+# Private: Get project stage from domain
+#
+# Arguments:
+#   $1 = ${project_domain}
+#
+# Outputs:
+#   ${project_type}
+################################################################################
 
 function _project_get_stage_from_domain() {
 
@@ -780,10 +869,18 @@ function _project_get_stage_from_domain() {
 
 }
 
-function _project_get_config() {
+################################################################################
+# Private: Get project config
+#
+# Arguments:
+#   $1 = ${project_path}
+#   $2 = ${config_field}
+#
+# Outputs:
+#   ${project_type}
+################################################################################
 
-    # $1 = ${project_path}
-    # $2 = ${config_field}
+function _project_get_config() {
 
     local project_path="${1}"
     local config_field="${2}"
@@ -793,7 +890,7 @@ function _project_get_config() {
     local project_config_file
 
     project_name="$(basename "${project_path}")"
-    project_config_file="${BROLIT_CONFIG_PATH}/${project_name}_conf.json"
+    project_config_file="${BROLIT_PROJECT_CONFIG_PATH}/${project_name}_conf.json"
 
     if [[ -e ${project_config_file} ]]; then
 
@@ -809,135 +906,6 @@ function _project_get_config() {
 
     fi
 
-}
-
-################################################################################
-
-# Creates an archive (*.tar.gz) from given directory
-function maketar() { tar cvzf "${1%%/}.tar.gz" "${1%%/}/"; }
-
-# Create a ZIP archive of a file or folder
-function makezip() { zip -r "${1%%/}.zip" "$1"; }
-
-function extract() {
-
-    local file_path="${1}"
-    local directory_to_extract="${2}"
-    local compress_type="${3}"
-
-    # Get filename and file extension
-    filename=$(basename -- "${file_path}")
-    #file_extension="${filename##*.}"
-    filename="${filename%.*}"
-
-    # Log
-    echo "Extracting compressed file: ${file_path}"
-
-    if [[ -f "${file_path}" ]]; then
-
-        case "${file_path}" in
-
-        *.tar.bz2)
-            if [[ -n "${compress_type}" ]]; then
-                #tar xp "${file_path}" -C "${directory_to_extract}" --use-compress-program="${compress_type}"
-                pv --width 70 "${file_path}" | tar xp -C "${directory_to_extract}" --use-compress-program="${compress_type}"
-            else
-                #tar xjf "${file_path}" -C "${directory_to_extract}"
-                pv --width 70 "${file_path}" | tar xp -C "${directory_to_extract}"
-            fi
-            ;;
-
-        *.tar.gz)
-            #tar -xzvf "${file_path}" -C "${directory_to_extract}"
-            pv --width 70 "${file_path}" | tar xzvf -C "${directory_to_extract}"
-            ;;
-
-        *.bz2)
-            #bunzip2 "${file_path}" "${directory_to_extract}"
-            pv --width 70 "${file_path}" | bunzip2 >"${directory_to_extract}/${filename}"
-            ;;
-
-        *.rar)
-            #unrar x "${file_path}" "${directory_to_extract}"
-            unrar x "${file_path}" "${directory_to_extract}" | pv -l >/dev/null
-            ;;
-
-        *.gz)
-            #gunzip "${file_path}" -C "${directory_to_extract}"
-            pv --width 70 "${file_path}" | gunzip -C "${directory_to_extract}"
-            ;;
-
-        *.tar)
-            #tar xf "${file_path}"
-            pv --width 70 "${file_path}" | tar xf
-            ;;
-
-        *.tbz2)
-            #tar xjf "${file_path}" -C "${directory_to_extract}"
-            pv --width 70 "${file_path}" | tar xjf -C "${directory_to_extract}"
-            ;;
-
-        *.tgz)
-            #tar xzf "${file_path}" -C "${directory_to_extract}"
-            pv --width 70 "${file_path}" | tar xzf -C "${directory_to_extract}"
-            ;;
-
-        *.zip)
-            #unzip "${file_path}" "${directory}"
-            unzip -o "${file_path}" -d "${directory_to_extract}" | pv -l >/dev/null
-            ;;
-
-        *.Z)
-            #uncompress "${file_path}" "${directory}"
-            pv --width 70 "${file_path}" | uncompress "${directory_to_extract}"
-            ;;
-
-        *.xz)
-            #tar xvf "${file_path}" -C "${directory}"
-            pv --width 70 "${file_path}" | tar xvf -C "${directory_to_extract}"
-            ;;
-
-        *)
-            echo "${file_path} cannot be extracted via extract()"
-            return 1
-            ;;
-
-        esac
-
-    else
-
-        echo "${file_path} is not a valid file"
-        return 1
-
-    fi
-
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-
-        echo "${file_path} extracted in ${directory_to_extract}"
-
-    else
-
-        echo "Error extracting ${file_path} in ${directory_to_extract}"
-
-        return 1
-
-    fi
-
-}
-
-# Search with grep
-function search() {
-
-    local path="${1}"
-    local string="${2}"
-
-    # grep parameters:
-    # -r or -R is recursive,
-    # -n is line number, and
-    # -w stands for match the whole word.
-    # -l (lower-case L) can be added to just give the file name of matching files.
-    grep -rnw "$path" -e "$string"
 }
 
 ########################## UTILS FOR DEVOPS ###################################
@@ -1008,12 +976,33 @@ function cronjob_install() {
 
 }
 
-function brolit_shell_config() {
+################################################################################
+# Private: Get Brolit shell config
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+# Should be deprecated
+function _brolit_shell_config() {
 
     # Return JSON part
-    echo "\"script_version\": \"${SCRIPT_VERSION}\" , \"netdata_url\": \"${NETDATA_SUBDOMAIN}\" , \"mail_notif\": \"${MAIL_NOTIF}\" , \"telegram_notif\": \"${NOTIFICATION_TELEGRAM_STATUS}\" , \"dropbox_enable\": \"${BACKUP_DROPBOX_STATUS}\" , \"cloudflare_enable\": \"${SUPPORT_CLOUDFLARE_STATUS}\" , \"smtp_server\": \"${NOTIFICATION_EMAIL_SMTP_SERVER}\""
+    echo "\"script_version\": \"${BROLIT_VERSION}\" , \"netdata_url\": \"${NETDATA_SUBDOMAIN}\" , \"mail_notif\": \"${MAIL_NOTIF}\" , \"telegram_notif\": \"${NOTIFICATION_TELEGRAM_STATUS}\" , \"dropbox_enable\": \"${BACKUP_DROPBOX_STATUS}\" , \"cloudflare_enable\": \"${SUPPORT_CLOUDFLARE_STATUS}\" , \"smtp_server\": \"${NOTIFICATION_EMAIL_SMTP_SERVER}\""
 
 }
+
+################################################################################
+# Server disks information
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function server_disk_info() {
 
@@ -1022,7 +1011,17 @@ function server_disk_info() {
 
 }
 
-function serverinfo() {
+################################################################################
+# Private: Get server info
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if monit were installed, 1 on error.
+################################################################################
+
+function _serverinfo() {
 
     local distro
     local cpu_cores
@@ -1058,9 +1057,19 @@ function serverinfo() {
 
 }
 
+################################################################################
+# Private: MySQL databases
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   ${databases} if ok, 1 on error.
+################################################################################
+
 # TODO postgresql_databases
 
-function mysql_databases() {
+function _mysql_databases() {
 
     local database
     local databases
@@ -1099,7 +1108,67 @@ function mysql_databases() {
 
 }
 
-# TODO: add read_site_config on json results
+################################################################################
+# Private: Get packages data
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+# JSON FORMAT:
+#
+# {
+#  "webservers":[
+#    {"name":"nginx","version":"1.0","default":"true"},
+#    {"name":"apache","version":"2.0","default":"false"}
+#   ],
+# "databases":[
+#    {"name":"mysql","version":"1.0","default":"true"},
+#    {"name":"mariadb","version":"2.0","default":"false"}
+#   ],
+# "languages":[
+#    {"name":"php","version":"7.4","default":"true"},
+#    {"name":"php","version":"7.3","default":"false"}
+#    ]
+# }
+
+function _packages_get_data() {
+
+    local php_v_installed
+    local all_php_data
+    local php_default
+
+    ## webserver
+    apache_v_installed="$(_apache_check_installed_version)"
+    nginx_v_installed="$(_nginx_check_installed_version)"
+    webservers_v_installed="${nginx_v_installed}${apache_v_installed}"
+
+    if [[ ${webservers_v_installed} == "" ]]; then
+
+        webservers_v_installed="\"no-webserver\""
+
+    else
+
+        # Remove 3 last chars
+        webservers_v_installed="${webservers_v_installed::-3}"
+
+    fi
+
+    ## databases
+    mysql_v_installed="$(_mysql_check_installed_version)"
+
+    ## languages
+    php_v_installed="$(_php_check_installed_version)"
+
+    # Return JSON part
+    echo "\"webservers\":[ ${webservers_v_installed} ], \"databases\": [ ${mysql_v_installed} ], \"languages\": [ ${php_v_installed} ]"
+
+}
+
+# TODO: add read_project_config on json results
 function sites_directories() {
 
     local directories
@@ -1194,48 +1263,17 @@ function dropbox_get_site_backups() {
 
 }
 
-function dropbox_get_sites_backups() {
+################################################################################
+# Private: Get backup from Dropbox
+#
+# Arguments:
+#   ${1} = ${chosen_project}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    local dropbox_chosen_backup_path
-    local dropbox_backup_list
-    local backup_files
-
-    local backup_type="site"
-    local backup_project=""
-    local backup_projects=""
-
-    # Get dropbox backup list
-    dropbox_chosen_backup_path="${SERVER_NAME}/projects-online/${backup_type}"
-    dropbox_project_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}" | awk -F " " '{ print $2 }')"
-
-    for backup_dir in ${dropbox_project_backup_list}; do
-
-        backup_files="$(dropbox_get_backup "${backup_dir}")"
-
-        if [[ ${backup_dir} != "error" ]]; then
-            backup_project="\"${backup_dir}\" : { ${backup_files} }"
-        else
-            backup_project="\"${backup_dir}\" : ${backup_files}"
-        fi
-
-        backup_projects="${backup_project},${backup_projects}"
-
-    done
-
-    if [[ ${backup_projects} != "" ]]; then
-        backup_projects="${backup_projects::-1}" # Remove last char
-    else
-        backup_projects="\"empty-response\""
-    fi
-
-    # Return JSON
-    echo "BROLIT_RESULT => { ${backup_projects} }"
-
-}
-
-function dropbox_get_backup() {
-
-    # ${1} = ${chosen_project}
+function _dropbox_get_backup() {
 
     local project_domain="${1}"
 
@@ -1304,53 +1342,52 @@ function dropbox_get_backup() {
 
 }
 
-# JSON FORMAT:
+################################################################################
+# Get project backups from Dropbox
 #
-# {
-#  "webservers":[
-#    {"name":"nginx","version":"1.0","default":"true"},
-#    {"name":"apache","version":"2.0","default":"false"}
-#   ],
-# "databases":[
-#    {"name":"mysql","version":"1.0","default":"true"},
-#    {"name":"mariadb","version":"2.0","default":"false"}
-#   ],
-# "languages":[
-#    {"name":"php","version":"7.4","default":"true"},
-#    {"name":"php","version":"7.3","default":"false"}
-#    ]
-# }
+# Arguments:
+#   none
+#
+# Outputs:
+#   json file, 1 on error.
+################################################################################
 
-function packages_get_data() {
+function dropbox_get_sites_backups() {
 
-    local php_v_installed
-    local all_php_data
-    local php_default
+    local dropbox_chosen_backup_path
+    local dropbox_backup_list
+    local backup_files
 
-    ## webserver
-    apache_v_installed="$(_apache_check_installed_version)"
-    nginx_v_installed="$(_nginx_check_installed_version)"
-    webservers_v_installed="${nginx_v_installed}${apache_v_installed}"
+    local backup_type="site"
+    local backup_project=""
+    local backup_projects=""
 
-    if [[ ${webservers_v_installed} == "" ]]; then
+    # Get dropbox backup list
+    dropbox_chosen_backup_path="${SERVER_NAME}/projects-online/${backup_type}"
+    dropbox_project_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}" | awk -F " " '{ print $2 }')"
 
-        webservers_v_installed="\"no-webserver\""
+    for backup_dir in ${dropbox_project_backup_list}; do
 
+        backup_files="$(_dropbox_get_backup "${backup_dir}")"
+
+        if [[ ${backup_dir} != "error" ]]; then
+            backup_project="\"${backup_dir}\" : { ${backup_files} }"
+        else
+            backup_project="\"${backup_dir}\" : ${backup_files}"
+        fi
+
+        backup_projects="${backup_project},${backup_projects}"
+
+    done
+
+    if [[ ${backup_projects} != "" ]]; then
+        backup_projects="${backup_projects::-1}" # Remove last char
     else
-
-        # Remove 3 last chars
-        webservers_v_installed="${webservers_v_installed::-3}"
-
+        backup_projects="\"empty-response\""
     fi
 
-    ## databases
-    mysql_v_installed="$(_mysql_check_installed_version)"
-
-    ## languages
-    php_v_installed="$(_php_check_installed_version)"
-
-    # Return JSON part
-    echo "\"webservers\":[ ${webservers_v_installed} ], \"databases\": [ ${mysql_v_installed} ], \"languages\": [ ${php_v_installed} ]"
+    # Return/Write JSON
+    echo "BROLIT_RESULT => { ${backup_projects} }" >"${BROLIT_LITE_OUTPUT_DIR}/dropbox_get_sites_backups.json"
 
 }
 
@@ -1399,9 +1436,17 @@ function cloudflare_get_record_details() {
 
 }
 
-function read_site_config() {
+################################################################################
+# Get project config
+#
+# Arguments:
+#   ${1} = ${project_domain}
+#
+# Outputs:
+#   0 if monit were installed, 1 on error.
+################################################################################
 
-    # ${1} = ${project_domain}
+function read_project_config() {
 
     local project_domain="${1}"
 
@@ -1409,7 +1454,7 @@ function read_site_config() {
     local project_config_file
 
     #DEVOPS_CONFIG_FILE="${PROJECTS_PATH}/${project_domain}/brolit.conf"
-    project_config_file="${BROLIT_CONFIG_PATH}/${project_name}_conf.json"
+    project_config_file="${BROLIT_PROJECT_CONFIG_PATH}/${project_name}_conf.json"
 
     if [[ -f ${project_config_file} ]]; then
 
@@ -1421,7 +1466,7 @@ function read_site_config() {
     else
 
         # Return
-        echo "no-site-config"
+        echo "BROLIT_RESULT => { no-site-config }"
 
     fi
 
@@ -1471,7 +1516,7 @@ function firewall_app_list() {
     json_string="$(_jsonify_output "value-list" "${app_list}")"
 
     # Return JSON
-    echo "BROLIT_RESULT => ${json_string}"
+    echo "BROLIT_RESULT => ${json_string}" >"${BROLIT_LITE_OUTPUT_DIR}/firewall_app_list.json"
 
 }
 
@@ -1498,9 +1543,19 @@ function list_packages_to_upgrade() {
     json_string="$(_jsonify_output "value-list" "${pkgs}")"
 
     # Return JSON
-    echo "BROLIT_RESULT => ${json_string}"
+    echo "BROLIT_RESULT => ${json_string}" >"${BROLIT_LITE_OUTPUT_DIR}/list_packages_to_upgrade.json"
 
 }
+
+################################################################################
+# Show server data
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function show_server_data() {
 
@@ -1510,22 +1565,22 @@ function show_server_data() {
     local server_sites
     local server_pkgs
 
-    server_info="$(serverinfo)"
+    server_info="$(_serverinfo)"
 
-    server_config="$(brolit_shell_config)"
+    server_config="$(_brolit_shell_config)"
 
     server_firewall="$(firewall_show_status)"
 
     if [[ "$(_is_pkg_installed "mysql-server")" == "true" || "$(_is_pkg_installed "mariadb-server")" == "true" ]]; then
-        server_databases="$(mysql_databases)"
+        server_databases="$(_mysql_databases)"
     else
         server_databases="\"no-databases\""
     fi
 
     server_sites="$(sites_directories)"
-    server_pkgs="$(packages_get_data)"
+    server_pkgs="$(_packages_get_data)"
 
     # Return JSON
-    echo "BROLIT_RESULT => { \"server_info\": { ${server_info} },\"firewall_info\":  [ ${server_firewall} ] , \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] }"
+    echo "BROLIT_RESULT => { \"server_info\": { ${server_info} },\"firewall_info\":  [ ${server_firewall} ] , \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] }" >"${BROLIT_LITE_OUTPUT_DIR}/show_server_data.json"
 
 }
