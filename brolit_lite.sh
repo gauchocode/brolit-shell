@@ -1387,13 +1387,21 @@ function dropbox_get_sites_backups() {
     fi
 
     # Return/Write JSON
-    echo "BROLIT_RESULT => { ${backup_projects} }" >"${BROLIT_LITE_OUTPUT_DIR}/dropbox_get_sites_backups.json"
+    echo "{ ${backup_projects} }" >"${BROLIT_LITE_OUTPUT_DIR}/dropbox_get_sites_backups.json"
 
 }
 
-function cloudflare_get_record_details() {
+################################################################################
+# Get record details from Cloudflare
+#
+# Arguments:
+#   ${1} = ${domain}
+#
+# Outputs:
+#   json file, 1 on error.
+################################################################################
 
-    # $1 = ${domain}
+function cloudflare_get_record_details() {
 
     local domain="${1}"
 
@@ -1428,7 +1436,7 @@ function cloudflare_get_record_details() {
         else
 
             # Return JSON
-            echo "BROLIT_RESULT => { \"cloudflare_data\": ${record} }"
+            echo "{ \"cloudflare_data\": ${record} }"
 
         fi
 
@@ -1516,22 +1524,7 @@ function firewall_app_list() {
     json_string="$(_jsonify_output "value-list" "${app_list}")"
 
     # Return JSON
-    echo "BROLIT_RESULT => ${json_string}" >"${BROLIT_LITE_OUTPUT_DIR}/firewall_app_list.json"
-
-}
-
-function is_pkg_installed() {
-
-    local package="${1}"
-
-    local package_installed
-
-    package_installed="$(_is_pkg_installed "${package}")"
-
-    json_string="$(_jsonify_output "key-value" "${package}" "${package_installed}")"
-
-    # Return JSON
-    echo "BROLIT_RESULT => ${json_string}"
+    echo "${json_string}" > "${BROLIT_LITE_OUTPUT_DIR}/firewall_app_list.json"
 
 }
 
@@ -1543,7 +1536,7 @@ function list_packages_to_upgrade() {
     json_string="$(_jsonify_output "value-list" "${pkgs}")"
 
     # Return JSON
-    echo "BROLIT_RESULT => ${json_string}" >"${BROLIT_LITE_OUTPUT_DIR}/list_packages_to_upgrade.json"
+    echo "${json_string}" >"${BROLIT_LITE_OUTPUT_DIR}/list_packages_to_upgrade.json"
 
 }
 
@@ -1581,6 +1574,6 @@ function show_server_data() {
     server_pkgs="$(_packages_get_data)"
 
     # Return JSON
-    echo "BROLIT_RESULT => { \"server_info\": { ${server_info} },\"firewall_info\":  [ ${server_firewall} ] , \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] }" >"${BROLIT_LITE_OUTPUT_DIR}/show_server_data.json"
+    echo "{ \"server_info\": { ${server_info} },\"firewall_info\":  [ ${server_firewall} ] , \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] }" >"${BROLIT_LITE_OUTPUT_DIR}/show_server_data.json"
 
 }
