@@ -1392,6 +1392,10 @@ function dropbox_get_sites_backups() {
     local backup_project=""
     local backup_projects=""
 
+    local timestamp
+
+    timestamp="$(_timestamp)"
+
     # Get dropbox backup list
     dropbox_chosen_backup_path="${SERVER_NAME}/projects-online/${backup_type}"
     dropbox_project_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}" | awk -F " " '{ print $2 }')"
@@ -1417,7 +1421,7 @@ function dropbox_get_sites_backups() {
     fi
 
     # Write JSON file
-    echo "{ ${backup_projects} }" >"${BROLIT_LITE_OUTPUT_DIR}/dropbox_get_sites_backups.json"
+    echo "{ \"${timestamp}\" : { ${backup_projects} } }" >"${BROLIT_LITE_OUTPUT_DIR}/dropbox_get_sites_backups.json"
 
     # Return JSON
     cat "${BROLIT_LITE_OUTPUT_DIR}/dropbox_get_sites_backups.json"
@@ -1542,7 +1546,7 @@ function read_project_config() {
         project_config="$(<"${project_config_file}")"
 
         # Write JSON file
-        echo "{ ${timestamp} ${project_config} }" >"${BROLIT_LITE_OUTPUT_DIR}/read_project_config.json"
+        echo "{ \"${timestamp}\" : ${project_config} }" >"${BROLIT_LITE_OUTPUT_DIR}/read_project_config.json"
 
         # Return JSON
         cat "${BROLIT_LITE_OUTPUT_DIR}/read_project_config.json"
@@ -1550,7 +1554,7 @@ function read_project_config() {
     else
 
         # Write JSON file
-        echo "{ ${timestamp} { no-site-config } }" >"${BROLIT_LITE_OUTPUT_DIR}/firewall_app_list.json"
+        echo "{ \"${timestamp}\" : { no-site-config } }" >"${BROLIT_LITE_OUTPUT_DIR}/firewall_app_list.json"
 
         # Return JSON
         cat "${BROLIT_LITE_OUTPUT_DIR}/read_project_config.json"
@@ -1572,7 +1576,7 @@ function firewall_app_list() {
     timestamp="$(_timestamp)"
 
     # Write JSON file
-    echo "{ ${timestamp} ${json_string} }" >"${BROLIT_LITE_OUTPUT_DIR}/firewall_app_list.json"
+    echo "{ \"${timestamp}\" :  ${json_string} }" >"${BROLIT_LITE_OUTPUT_DIR}/firewall_app_list.json"
 
     # Return JSON
     cat "${BROLIT_LITE_OUTPUT_DIR}/list_packages_to_upgrade.json"
@@ -1591,7 +1595,7 @@ function list_packages_to_upgrade() {
     timestamp="$(_timestamp)"
 
     # Write JSON file
-    echo "{ ${timestamp} ${json_string} }" >"${BROLIT_LITE_OUTPUT_DIR}/list_packages_to_upgrade.json"
+    echo "{ \"${timestamp}\" :  ${json_string} }" >"${BROLIT_LITE_OUTPUT_DIR}/list_packages_to_upgrade.json"
 
     # Return JSON
     cat "${BROLIT_LITE_OUTPUT_DIR}/list_packages_to_upgrade.json"
@@ -1635,7 +1639,7 @@ function show_server_data() {
     timestamp="$(_timestamp)"
 
     # Write JSON file
-    echo "{ ${timestamp} { { \"server_info\": { ${server_info} },\"firewall_info\":  [ ${server_firewall} ] , \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] } }" >"${BROLIT_LITE_OUTPUT_DIR}/show_server_data.json"
+    echo "{ \"${timestamp}\" : { { \"server_info\": { ${server_info} },\"firewall_info\":  [ ${server_firewall} ] , \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] } }" >"${BROLIT_LITE_OUTPUT_DIR}/show_server_data.json"
 
     # Return JSON
     cat "${BROLIT_LITE_OUTPUT_DIR}/show_server_data.json"
