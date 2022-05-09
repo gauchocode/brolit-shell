@@ -1405,6 +1405,8 @@ function _dropbox_get_backup() {
 
 function dropbox_get_sites_backups() {
 
+    local force="${1}"
+
     local dropbox_chosen_backup_path
     local dropbox_backup_list
     local backup_files
@@ -1415,37 +1417,43 @@ function dropbox_get_sites_backups() {
 
     local timestamp
 
-    timestamp="$(_timestamp)"
+    local json_output_file="${BROLIT_LITE_OUTPUT_DIR}/dropbox_get_sites_backups.json"
 
-    # Get dropbox backup list
-    dropbox_chosen_backup_path="${SERVER_NAME}/projects-online/${backup_type}"
-    dropbox_project_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}" | awk -F " " '{ print $2 }')"
+    if [[ ${force} == "true" || ! -f "${json_output_file}" ]];then
 
-    for backup_dir in ${dropbox_project_backup_list}; do
+        timestamp="$(_timestamp)"
 
-        backup_files="$(_dropbox_get_backup "${backup_dir}")"
+        # Get dropbox backup list
+        dropbox_chosen_backup_path="${SERVER_NAME}/projects-online/${backup_type}"
+        dropbox_project_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}" | awk -F " " '{ print $2 }')"
 
-        if [[ ${backup_dir} != "error" ]]; then
-            backup_project="\"${backup_dir}\" : { ${backup_files} }"
+        for backup_dir in ${dropbox_project_backup_list}; do
+
+            backup_files="$(_dropbox_get_backup "${backup_dir}")"
+
+            if [[ ${backup_dir} != "error" ]]; then
+                backup_project="\"${backup_dir}\" : { ${backup_files} }"
+            else
+                backup_project="\"${backup_dir}\" : ${backup_files}"
+            fi
+
+            backup_projects="${backup_project},${backup_projects}"
+
+        done
+
+        if [[ ${backup_projects} != "" ]]; then
+            backup_projects="${backup_projects::-1}" # Remove last char
         else
-            backup_project="\"${backup_dir}\" : ${backup_files}"
+            backup_projects="\"empty-response\""
         fi
 
-        backup_projects="${backup_project},${backup_projects}"
+        # Write JSON file
+        echo "{ \"${timestamp}\" : { ${backup_projects} } }" >"${json_output_file}"
 
-    done
-
-    if [[ ${backup_projects} != "" ]]; then
-        backup_projects="${backup_projects::-1}" # Remove last char
-    else
-        backup_projects="\"empty-response\""
     fi
 
-    # Write JSON file
-    echo "{ \"${timestamp}\" : { ${backup_projects} } }" >"${BROLIT_LITE_OUTPUT_DIR}/dropbox_get_sites_backups.json"
-
     # Return JSON
-    cat "${BROLIT_LITE_OUTPUT_DIR}/dropbox_get_sites_backups.json"
+    cat "${json_output_file}"
 
 }
 
@@ -1606,22 +1614,30 @@ function firewall_app_list() {
 
 function list_packages_to_upgrade() {
 
+    local force="${1}"
+
     local timestamp
 
-    # apt commands
-    pkgs="$(apt list --upgradable 2>/dev/null | awk -F/ "{print \$1}" | sed -e '1,/.../ d')"
+    local json_output_file="${BROLIT_LITE_OUTPUT_DIR}/list_packages_to_upgrade.json"
 
-    pkgs="$(_string_replace_newline_with_spaces "${pkgs}")"
+    if [[ ${force} == "true" || ! -f "${json_output_file}" ]];then
 
-    json_string="$(_jsonify_output "value-list" ${pkgs})" #${pkgs} should pass it without quotes to make it works
+        # apt commands
+        pkgs="$(apt list --upgradable 2>/dev/null | awk -F/ "{print \$1}" | sed -e '1,/.../ d')"
 
-    timestamp="$(_timestamp)"
+        pkgs="$(_string_replace_newline_with_spaces "${pkgs}")"
 
-    # Write JSON file
-    echo "{ \"${timestamp}\" :  ${json_string} }" >"${BROLIT_LITE_OUTPUT_DIR}/list_packages_to_upgrade.json"
+        json_string="$(_jsonify_output "value-list" ${pkgs})" #${pkgs} should pass it without quotes to make it works
+
+        timestamp="$(_timestamp)"
+
+        # Write JSON file
+        echo "{ \"${timestamp}\" :  ${json_string} }" >"${json_output_file}"
+
+    fi
 
     # Return JSON
-    cat "${BROLIT_LITE_OUTPUT_DIR}/list_packages_to_upgrade.json"
+    cat "${json_output_file}"
 
 }
 
@@ -1637,6 +1653,8 @@ function list_packages_to_upgrade() {
 
 function show_server_data() {
 
+    local force="${1}"
+
     local server_info
     local server_config
     local server_databases
@@ -1644,27 +1662,33 @@ function show_server_data() {
     local server_pkgs
     local timestamp
 
-    server_info="$(_serverinfo)"
+    local json_output_file="${BROLIT_LITE_OUTPUT_DIR}/show_server_data.json"
 
-    server_config="$(_brolit_shell_config)"
+    if [[ ${force} == "true" || ! -f "${json_output_file}" ]];then
 
-    server_firewall="$(firewall_show_status)"
+        server_info="$(_serverinfo)"
 
-    if [[ "$(_is_pkg_installed "mysql-server")" == "true" || "$(_is_pkg_installed "mariadb-server")" == "true" ]]; then
-        server_databases="$(_mysql_databases)"
-    else
-        server_databases="\"no-databases\""
+        server_config="$(_brolit_shell_config)"
+
+        server_firewall="$(firewall_show_status)"
+
+        if [[ "$(_is_pkg_installed "mysql-server")" == "true" || "$(_is_pkg_installed "mariadb-server")" == "true" ]]; then
+            server_databases="$(_mysql_databases)"
+        else
+            server_databases="\"no-databases\""
+        fi
+
+        server_sites="$(_sites_directories)"
+        server_pkgs="$(_packages_get_data)"
+
+        timestamp="$(_timestamp)"
+
+        # Write JSON file
+        echo "{ \"${timestamp}\" : { \"server_info\": { ${server_info} },\"firewall_info\":  [ ${server_firewall} ] , \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] } }" >"${json_output_file}"
+        
     fi
 
-    server_sites="$(_sites_directories)"
-    server_pkgs="$(_packages_get_data)"
-
-    timestamp="$(_timestamp)"
-
-    # Write JSON file
-    echo "{ \"${timestamp}\" : { \"server_info\": { ${server_info} },\"firewall_info\":  [ ${server_firewall} ] , \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] } }" >"${BROLIT_LITE_OUTPUT_DIR}/show_server_data.json"
-
     # Return JSON
-    cat "${BROLIT_LITE_OUTPUT_DIR}/show_server_data.json"
+    cat "${json_output_file}"
 
 }
