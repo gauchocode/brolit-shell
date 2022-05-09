@@ -174,6 +174,8 @@ function _jsonify_output() {
         # > echo "value1 value2 value3 value4"
         # [ "value1" "value2" "value3" "value4" ]
 
+        #echo $@
+
         arr=()
 
         while [ $# -ge 1 ]; do
@@ -214,6 +216,25 @@ function _string_remove_spaces() {
 
     # Return
     echo "${string//[[:blank:]]/}"
+
+}
+
+################################################################################
+# Private: Replace /n for space char
+#
+# Arguments:
+#  $1 = ${string}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function _string_replace_newline_with_spaces() {
+
+    local string="${1}"
+
+    # Return
+    echo "${string//$'\n'/ }"
 
 }
 
@@ -1023,7 +1044,7 @@ function _brolit_shell_config() {
 function _server_disks_info() {
 
     # Return JSON
-    df -hP | grep '^/dev' | awk 'BEGIN {printf"{\"disks_info\":["}{if($1=="Filesystem")next;if(a)printf",";printf"{\"mount\":\""$6"\",\"size\":\""$2"\",\"used\":\""$3"\",\"avail\":\""$4"\",\"use%\":\""$5"\"}";a++;}END{print"]}";}'
+    df -hP | grep '^/dev' | awk 'BEGIN {printf"\"disks_info\":["}{if($1=="Filesystem")next;if(a)printf",";printf"{\"mount\":\""$6"\",\"size\":\""$2"\",\"used\":\""$3"\",\"avail\":\""$4"\",\"use%\":\""$5"\"}";a++;}END{print"]";}'
 
 }
 
@@ -1066,12 +1087,12 @@ function _serverinfo() {
     if [[ ${public_ip} == "${inet_ip}" ]]; then
 
         # Return JSON part
-        echo "\"server_name\": \"${SERVER_NAME}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , \"disks_info\": \"${disks_info}\""
+        echo "\"server_name\": \"${SERVER_NAME}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , ${disks_info}"
 
     else
 
         # Return JSON part
-        echo "\"server_name\": \"${SERVER_NAME}\" , \"floating_ip\": \"${inet_ip}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , \"disks_info\": \"${disks_info}\""
+        echo "\"server_name\": \"${SERVER_NAME}\" , \"floating_ip\": \"${inet_ip}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , ${disks_info}"
 
     fi
 
@@ -1590,7 +1611,9 @@ function list_packages_to_upgrade() {
     # apt commands
     pkgs="$(apt list --upgradable 2>/dev/null | awk -F/ "{print \$1}" | sed -e '1,/.../ d')"
 
-    json_string="$(_jsonify_output "value-list" "${pkgs}")"
+    pkgs="$(_string_replace_newline_with_spaces "${pkgs}")"
+
+    json_string="$(_jsonify_output "value-list" ${pkgs})" #${pkgs} should pass it without quotes to make it works
 
     timestamp="$(_timestamp)"
 
@@ -1639,7 +1662,7 @@ function show_server_data() {
     timestamp="$(_timestamp)"
 
     # Write JSON file
-    echo "{ \"${timestamp}\" : { { \"server_info\": { ${server_info} },\"firewall_info\":  [ ${server_firewall} ] , \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] } }" >"${BROLIT_LITE_OUTPUT_DIR}/show_server_data.json"
+    echo "{ \"${timestamp}\" : { \"server_info\": { ${server_info} },\"firewall_info\":  [ ${server_firewall} ] , \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] } }" >"${BROLIT_LITE_OUTPUT_DIR}/show_server_data.json"
 
     # Return JSON
     cat "${BROLIT_LITE_OUTPUT_DIR}/show_server_data.json"
