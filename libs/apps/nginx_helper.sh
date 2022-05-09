@@ -504,7 +504,7 @@ function nginx_create_globals_config() {
     # nginx.conf broobe standard configuration
     nginx_globals="/etc/nginx/globals/"
 
-    if [[ -d "${nginx_globals}" ]]; then
+    if [[ -d ${nginx_globals} ]]; then
         log_event "warning" "Directory ${nginx_globals} already exists ..." "false"
         return 1
 

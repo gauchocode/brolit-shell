@@ -2,7 +2,7 @@
     "BROLIT_SETUP": {
         "config": [
             {
-                "version": "3.9.1",
+                "version": "3.9.8",
                 "debug": "true",
                 "quiet": "false",
                 "skip_test": "true",
@@ -34,8 +34,18 @@
     "BACKUPS": {
         "config": [
             {
-                "projects": "enabled",
-                "databases": "enabled",
+                "projects": [
+                    {
+                        "status": "enabled",
+                        "exclude": [ "*.log", "*.tmp" ]
+                    }
+                ],
+                "databases": [
+                    {
+                        "status": "enabled",
+                        "exclude": [ "information_schema,performance_schema,mysql,sys,phpmyadmin" ]
+                    }
+                ],
                 "server_cfg": "enabled",
                 "compression_type": "lbzip2",
                 "retention": [
