@@ -44,6 +44,31 @@ function _netdata_alerts_configuration() {
 }
 
 ################################################################################
+# Private: netdata anomalies configuration
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  nothing
+################################################################################
+
+function _netdata_anomalies_configuration() {
+
+  # New: anomalies support
+  ## Ref: https://learn.netdata.cloud/docs/agent/collectors/python.d.plugin/anomalies
+
+  ## need to make this trick
+  sudo su -s /bin/bash netdata <<EOF
+pip3 install --quiet --user netdata-pandas==0.0.38 numba==0.50.1 scikit-learn==0.23.2 pyod==0.8.3
+EOF
+
+  cp "/usr/lib/netdata/conf.d/python.d.conf" "${NETDATA_INSTALL_DIR}/python.d.conf"
+  cp "/usr/lib/netdata/conf.d/python.d/anomalies.conf" "${NETDATA_INSTALL_DIR}/python.d/anomalies.conf"
+
+}
+
+################################################################################
 # Private: install netdata required packages
 #
 # Arguments:
@@ -321,6 +346,7 @@ function netdata_uninstaller() {
   rm --force --recursive "/opt/netdata"
   rm --force --recursive "/usr/lib/netdata"
   rm --force --recursive "/usr/share/netdata"
+  rm --force --recursive "/usr/libexec/netdata"
   rm --force "/usr/sbin/netdata"
   rm --force "/etc/logrotate.d/netdata"
   rm --force "/etc/systemd/system/netdata.service"
@@ -332,7 +358,6 @@ function netdata_uninstaller() {
   rm --force "/etc/systemd/system/netdata-updater.timer"
   rm --force "/lib/systemd/system/netdata-updater.timer"
   rm --force "/usr/lib/systemd/system/netdata-updater.timer"
-  rm --force "/usr/libexec/netdata"
   rm --force "/etc/init.d/netdata"
   rm --force "/etc/periodic/daily/netdata-updater"
   rm --force "/etc/cron.daily/netdata-updater"
@@ -345,21 +370,6 @@ function netdata_uninstaller() {
   display --indent 6 --text "- Uninstalling netdata" --result "DONE" --color GREEN
 
   export NETDATA_CONFIG_STATUS
-
-}
-
-function _netdata_anomalies_configuration() {
-
-  # New: anomalies support
-  ## Ref: https://learn.netdata.cloud/docs/agent/collectors/python.d.plugin/anomalies
-
-  ## need to make this trick
-  sudo su -s /bin/bash netdata <<EOF
-pip3 install --quiet --user netdata-pandas==0.0.38 numba==0.50.1 scikit-learn==0.23.2 pyod==0.8.3
-EOF
-
-  cp "/usr/lib/netdata/conf.d/python.d.conf" "${NETDATA_INSTALL_DIR}/python.d.conf"
-  cp "/usr/lib/netdata/conf.d/python.d/anomalies.conf" "${NETDATA_INSTALL_DIR}/python.d/anomalies.conf"
 
 }
 

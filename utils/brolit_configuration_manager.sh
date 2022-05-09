@@ -263,6 +263,60 @@ function _brolit_configuration_load_backup_duplicity() {
 #   nothing
 ################################################################################
 
+function _brolit_configuration_load_backup_config() {
+
+    local server_config_file="${1}"
+
+    # Globals
+    declare -g BACKUP_CONFIG_PROJECTS_STATUS
+    declare -g BACKUP_CONFIG_PROJECTS_EXCLUDE_LIST
+    declare -g BACKUP_CONFIG_DATABASES_STATUS
+    declare -g BACKUP_CONFIG_DATABASES_EXCLUDE_LIST
+    declare -g BACKUP_CONFIG_SERVER_CFG_STATUS
+    declare -g BACKUP_CONFIG_COMPRESSION_TYPE
+
+    ## Backup config projects
+    BACKUP_CONFIG_PROJECTS_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].status")"
+    if [[ -z ${BACKUP_CONFIG_PROJECTS_STATUS} ]]; then
+        log_event "error" "Missing required config vars for backup retention" "true"
+        exit 1
+    fi
+
+    ## Backup config databases
+    BACKUP_CONFIG_DATABASES_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.config[].databases[].status")"
+    if [[ -z ${BACKUP_CONFIG_DATABASES_STATUS} ]]; then
+        log_event "error" "Missing required config vars for backup retention" "true"
+        exit 1
+    fi
+
+    ## Backup config server_cfg
+    BACKUP_CONFIG_SERVER_CFG_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.config[].server_cfg[].status")"
+    if [[ -z ${BACKUP_CONFIG_SERVER_CFG_STATUS} ]]; then
+        log_event "error" "Missing required config vars for backup retention" "true"
+        exit 1
+    fi
+
+    ## Backup config compression_type
+    BACKUP_CONFIG_COMPRESSION_TYPE="$(json_read_field "${server_config_file}" "BACKUPS.config[].compression_type")"
+    if [[ -z ${BACKUP_CONFIG_COMPRESSION_TYPE} ]]; then
+        log_event "error" "Missing required config vars for backup retention" "true"
+        exit 1
+    fi
+
+    export BACKUP_CONFIG_PROJECTS_STATUS BACKUP_CONFIG_DATABASES_STATUS BACKUP_CONFIG_SERVER_CFG_STATUS
+
+}
+
+################################################################################
+# Private: load backup retentions configuration
+#
+# Arguments:
+#   $1 = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
 function _brolit_configuration_load_backup_retention() {
 
     local server_config_file="${1}"
@@ -1749,7 +1803,7 @@ function brolit_configuration_setup_check() {
     declare -g BROLIT_TMP_DIR
 
     # Check if is already defined
-    if [ -z "${DEBUG}" ]; then
+    if [[ -z ${DEBUG} ]]; then
         # Read required vars from server config file
         DEBUG="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].debug")"
 
@@ -1759,7 +1813,7 @@ function brolit_configuration_setup_check() {
         fi
     fi
     # Check if is already defined
-    if [ -z "${QUIET}" ]; then
+    if [[ -z ${QUIET} ]]; then
         QUIET="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].quiet")"
 
         if [ -z "${QUIET}" ]; then
@@ -1768,7 +1822,7 @@ function brolit_configuration_setup_check() {
         fi
     fi
     # Check if is already defined
-    if [ -z "${SKIPTESTS}" ]; then
+    if [[ -z ${SKIPTESTS} ]]; then
         SKIPTESTS="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].skip_test")"
 
         if [ -z "${SKIPTESTS}" ]; then
@@ -1777,7 +1831,7 @@ function brolit_configuration_setup_check() {
         fi
     fi
     # Check if is already defined
-    if [ -z "${CHECKPKGS}" ]; then
+    if [[ -z ${CHECKPKGS} ]]; then
         CHECKPKGS="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].check_packages")"
 
         if [ -z "${CHECKPKGS}" ]; then
@@ -1833,18 +1887,24 @@ function brolit_configuration_load() {
     ## SERVER ROLES
     _brolit_configuration_load_server_config "${server_config_file}"
 
-    ## BACKUPS methods
+    ## BACKUPS
 
-    #### dropbox
+    ## BACKUPS config
+    _brolit_configuration_load_backup_config "${server_config_file}"
+
+    ## BACKUPS retention
+    _brolit_configuration_load_backup_retention "${server_config_file}"
+
+    #### BACKUPS Method: dropbox
     _brolit_configuration_load_backup_dropbox "${server_config_file}"
 
-    #### sftp
+    #### BACKUPS Method: sftp
     _brolit_configuration_load_backup_sftp "${server_config_file}"
 
-    #### local
+    #### BACKUPS Method: local
     _brolit_configuration_load_backup_local "${server_config_file}"
 
-    #### duplicity
+    #### BACKUPS Method: duplicity
     _brolit_configuration_load_backup_duplicity "${server_config_file}"
 
     #### if all required vars are disabled, show error
@@ -1856,13 +1916,10 @@ function brolit_configuration_load() {
 
     fi
 
-    ## BACKUPS retention
-    _brolit_configuration_load_backup_retention "${server_config_file}"
-
     ## PROJECTS_PATH
     PROJECTS_PATH="$(json_read_field "${server_config_file}" "PROJECTS.path")"
 
-    if [ -z "${PROJECTS_PATH}" ]; then
+    if [[ -z ${PROJECTS_PATH} ]]; then
         log_event "warning" "Missing required config vars for projects path" "true"
         exit 1
     fi
@@ -1870,9 +1927,11 @@ function brolit_configuration_load() {
     # TODO: need to implement BACKUPS.directories
 
     ## NOTIFICATIONS
+
+    ### Email
     _brolit_configuration_load_email "${server_config_file}"
 
-    ### telegram
+    ### Telegram
     _brolit_configuration_load_telegram "${server_config_file}"
 
     ## FIREWALL
