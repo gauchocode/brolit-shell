@@ -51,6 +51,22 @@ BROLIT_LITE_VERSION="3.2-rc4-099"
 ################################################################################
 
 ################################################################################
+# Private: Generate a timestamp
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#   timestamp
+################################################################################
+
+function _timestamp() {
+
+    date +"%Y-%m-%dT%H:%M:%S"
+
+}
+
+################################################################################
 # Private: Read field from json file
 #
 # Arguments:
@@ -58,7 +74,7 @@ BROLIT_LITE_VERSION="3.2-rc4-099"
 #  $2 = ${json_field}
 #
 # Outputs:
-#   0 if monit were installed, 1 on error.
+#   0 if ok, 1 on error.
 ################################################################################
 
 function _json_read_field() {
@@ -84,7 +100,7 @@ function _json_read_field() {
 #  $3 = ${json_field_value}
 #
 # Outputs:
-#   0 if monit were installed, 1 on error.
+#   0 if ok, 1 on error.
 ################################################################################
 
 function _json_write_field() {
@@ -116,7 +132,7 @@ function _json_write_field() {
 #  $1 = ${mode}
 #
 # Outputs:
-#   0 if monit were installed, 1 on error.
+#   0 if ok, 1 on error.
 ################################################################################
 
 function _jsonify_output() {
@@ -189,7 +205,7 @@ function _jsonify_output() {
 #  $1 = ${string}
 #
 # Outputs:
-#   0 if monit were installed, 1 on error.
+#   0 if ok, 1 on error.
 ################################################################################
 
 function _string_remove_spaces() {
@@ -208,7 +224,7 @@ function _string_remove_spaces() {
 #  $1 = ${zone_name}
 #
 # Outputs:
-#   0 if monit were installed, 1 on error.
+#   0 if ok, 1 on error.
 ################################################################################
 
 function _cloudflare_get_zone_id() {
@@ -249,7 +265,7 @@ function _cloudflare_get_zone_id() {
 #  $1 = ${package}
 #
 # Outputs:
-#   0 if monit were installed, 1 on error.
+#   0 if ok, 1 on error.
 ################################################################################
 
 function _is_pkg_installed() {
@@ -277,7 +293,7 @@ function _is_pkg_installed() {
 #  none
 #
 # Outputs:
-#   0 if monit were installed, 1 on error.
+#   0 if ok, 1 on error.
 ################################################################################
 
 function _php_check_installed_version() {
@@ -345,7 +361,7 @@ function _php_check_installed_version() {
 #  none
 #
 # Outputs:
-#   0 if monit were installed, 1 on error.
+#   0 if mysql is installed, 1 on error.
 ################################################################################
 
 function _mysql_check_installed_version() {
@@ -386,7 +402,7 @@ function _mysql_check_installed_version() {
 #  none
 #
 # Outputs:
-#   0 if monit were installed, 1 on error.
+#   0 if nginx is installed, 1 on error.
 ################################################################################
 
 function _nginx_check_installed_version() {
@@ -418,7 +434,7 @@ function _nginx_check_installed_version() {
 #  none
 #
 # Outputs:
-#   0 if monit were installed, 1 on error.
+#   0 if apache is installed, 1 on error.
 ################################################################################
 
 function _apache_check_installed_version() {
@@ -995,7 +1011,7 @@ function _brolit_shell_config() {
 }
 
 ################################################################################
-# Server disks information
+# Private: Server disks information
 #
 # Arguments:
 #   none
@@ -1004,7 +1020,7 @@ function _brolit_shell_config() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function server_disk_info() {
+function _server_disks_info() {
 
     # Return JSON
     df -hP | grep '^/dev' | awk 'BEGIN {printf"{\"disks_info\":["}{if($1=="Filesystem")next;if(a)printf",";printf"{\"mount\":\""$6"\",\"size\":\""$2"\",\"used\":\""$3"\",\"avail\":\""$4"\",\"use%\":\""$5"\"}";a++;}END{print"]}";}'
@@ -1026,8 +1042,9 @@ function _serverinfo() {
     local distro
     local cpu_cores
     local ram_amount
-    local disk_volume
-    local disk_usage
+    local disks_info
+    #local disk_volume
+    #local disk_usage
     local public_ip
     local inet_ip # configured on network file
 
@@ -1040,18 +1057,21 @@ function _serverinfo() {
     ram_amount="$(grep MemTotal /proc/meminfo | cut -d ":" -f 2)"
     ram_amount="$(_string_remove_spaces "${ram_amount}")"
 
-    disk_volume="$(df / | grep -Eo '/dev/[^ ]+')"
-    disk_size="$(df -h | grep -w "${disk_volume}" | awk '{print $2}')"
-    disk_usage="$(df -h | grep -w "${disk_volume}" | awk '{print $5}')"
+    #disk_volume="$(df / | grep -Eo '/dev/[^ ]+')"
+    #disk_size="$(df -h | grep -w "${disk_volume}" | awk '{print $2}')"
+    #disk_usage="$(df -h | grep -w "${disk_volume}" | awk '{print $5}')"
+
+    disks_info="$(_server_disks_info)"
 
     if [[ ${public_ip} == "${inet_ip}" ]]; then
 
         # Return JSON part
-        echo "\"server_name\": \"${SERVER_NAME}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , \"disk_size\": \"${disk_size}\" , \"disk_usage\": \"${disk_usage}\""
+        echo "\"server_name\": \"${SERVER_NAME}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , \"disks_info\": \"${disks_info}\""
+
     else
 
         # Return JSON part
-        echo "\"server_name\": \"${SERVER_NAME}\" , \"floating_ip\": \"${inet_ip}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , \"disk_size\": \"${disk_size}\" , \"disk_usage\": \"${disk_usage}\""
+        echo "\"server_name\": \"${SERVER_NAME}\" , \"floating_ip\": \"${inet_ip}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , \"disks_info\": \"${disks_info}\""
 
     fi
 
@@ -1168,8 +1188,18 @@ function _packages_get_data() {
 
 }
 
+################################################################################
+# Private: Sites directories
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 # TODO: add read_project_config on json results
-function sites_directories() {
+function _sites_directories() {
 
     local directories
     local all_directories
@@ -1386,13 +1416,16 @@ function dropbox_get_sites_backups() {
         backup_projects="\"empty-response\""
     fi
 
-    # Return/Write JSON
+    # Write JSON file
     echo "{ ${backup_projects} }" >"${BROLIT_LITE_OUTPUT_DIR}/dropbox_get_sites_backups.json"
+
+    # Return JSON
+    cat "${BROLIT_LITE_OUTPUT_DIR}/dropbox_get_sites_backups.json"
 
 }
 
 ################################################################################
-# Get record details from Cloudflare
+# Private: Get record details from Cloudflare
 #
 # Arguments:
 #   ${1} = ${domain}
@@ -1401,7 +1434,7 @@ function dropbox_get_sites_backups() {
 #   json file, 1 on error.
 ################################################################################
 
-function cloudflare_get_record_details() {
+function _cloudflare_get_record_details() {
 
     local domain="${1}"
 
@@ -1444,42 +1477,6 @@ function cloudflare_get_record_details() {
 
 }
 
-################################################################################
-# Get project config
-#
-# Arguments:
-#   ${1} = ${project_domain}
-#
-# Outputs:
-#   0 if monit were installed, 1 on error.
-################################################################################
-
-function read_project_config() {
-
-    local project_domain="${1}"
-
-    local project_config
-    local project_config_file
-
-    #DEVOPS_CONFIG_FILE="${PROJECTS_PATH}/${project_domain}/brolit.conf"
-    project_config_file="${BROLIT_PROJECT_CONFIG_PATH}/${project_name}_conf.json"
-
-    if [[ -f ${project_config_file} ]]; then
-
-        project_config="$(<"${project_config_file}")"
-
-        # Return
-        echo "BROLIT_RESULT => ${project_config}"
-
-    else
-
-        # Return
-        echo "BROLIT_RESULT => { no-site-config }"
-
-    fi
-
-}
-
 function firewall_show_status() {
 
     local ufw_status=""
@@ -1515,7 +1512,56 @@ function firewall_show_status() {
 
 }
 
+################################################################################
+# Get project config
+#
+# Arguments:
+#   ${1} = ${project_domain}
+#
+# Outputs:
+#   0 if monit were installed, 1 on error.
+################################################################################
+
+# TODO: read all projects configs and return JSON
+
+function read_project_config() {
+
+    local project_domain="${1}"
+
+    local project_config
+    local project_config_file
+
+    local timestamp
+
+    timestamp="$(_timestamp)"
+
+    project_config_file="${BROLIT_PROJECT_CONFIG_PATH}/${project_name}_conf.json"
+
+    if [[ -f ${project_config_file} ]]; then
+
+        project_config="$(<"${project_config_file}")"
+
+        # Write JSON file
+        echo "{ ${timestamp} ${project_config} }" >"${BROLIT_LITE_OUTPUT_DIR}/read_project_config.json"
+
+        # Return JSON
+        cat "${BROLIT_LITE_OUTPUT_DIR}/read_project_config.json"
+
+    else
+
+        # Write JSON file
+        echo "{ ${timestamp} { no-site-config } }" >"${BROLIT_LITE_OUTPUT_DIR}/firewall_app_list.json"
+
+        # Return JSON
+        cat "${BROLIT_LITE_OUTPUT_DIR}/read_project_config.json"
+
+    fi
+
+}
+
 function firewall_app_list() {
+
+    local timestamp
 
     # ufw app list, replace space with "-" and "/n" with space
     app_list="$(ufw app list | cut -d ":" -f 2 | tr " " "-" | sed -z 's/\n/ /g' | sed -z 's/--//g')"
@@ -1523,20 +1569,32 @@ function firewall_app_list() {
     # String to JSON
     json_string="$(_jsonify_output "value-list" "${app_list}")"
 
+    timestamp="$(_timestamp)"
+
+    # Write JSON file
+    echo "{ ${timestamp} ${json_string} }" >"${BROLIT_LITE_OUTPUT_DIR}/firewall_app_list.json"
+
     # Return JSON
-    echo "${json_string}" > "${BROLIT_LITE_OUTPUT_DIR}/firewall_app_list.json"
+    cat "${BROLIT_LITE_OUTPUT_DIR}/list_packages_to_upgrade.json"
 
 }
 
 function list_packages_to_upgrade() {
+
+    local timestamp
 
     # apt commands
     pkgs="$(apt list --upgradable 2>/dev/null | awk -F/ "{print \$1}" | sed -e '1,/.../ d')"
 
     json_string="$(_jsonify_output "value-list" "${pkgs}")"
 
+    timestamp="$(_timestamp)"
+
+    # Write JSON file
+    echo "{ ${timestamp} ${json_string} }" >"${BROLIT_LITE_OUTPUT_DIR}/list_packages_to_upgrade.json"
+
     # Return JSON
-    echo "${json_string}" >"${BROLIT_LITE_OUTPUT_DIR}/list_packages_to_upgrade.json"
+    cat "${BROLIT_LITE_OUTPUT_DIR}/list_packages_to_upgrade.json"
 
 }
 
@@ -1557,6 +1615,7 @@ function show_server_data() {
     local server_databases
     local server_sites
     local server_pkgs
+    local timestamp
 
     server_info="$(_serverinfo)"
 
@@ -1570,10 +1629,15 @@ function show_server_data() {
         server_databases="\"no-databases\""
     fi
 
-    server_sites="$(sites_directories)"
+    server_sites="$(_sites_directories)"
     server_pkgs="$(_packages_get_data)"
 
+    timestamp="$(_timestamp)"
+
+    # Write JSON file
+    echo "{ ${timestamp} { { \"server_info\": { ${server_info} },\"firewall_info\":  [ ${server_firewall} ] , \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] } }" >"${BROLIT_LITE_OUTPUT_DIR}/show_server_data.json"
+
     # Return JSON
-    echo "{ \"server_info\": { ${server_info} },\"firewall_info\":  [ ${server_firewall} ] , \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] }" >"${BROLIT_LITE_OUTPUT_DIR}/show_server_data.json"
+    cat "${BROLIT_LITE_OUTPUT_DIR}/show_server_data.json"
 
 }

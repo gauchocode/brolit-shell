@@ -164,9 +164,9 @@ function nginx_installer_menu() {
             if [[ ${chosen_nginx_installer_option} == *"02"* ]]; then
                 log_subsection "Nginx Installer"
                 nginx_delete_default_directory
-                nginx_reconfigure
                 nginx_new_default_server
                 nginx_create_globals_config
+                nginx_reconfigure
             fi
 
         fi
