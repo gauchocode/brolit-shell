@@ -47,14 +47,29 @@ function storage_list_dir() {
 
         remote_list="$("${DROPBOX_UPLOADER}" -hq list "${remote_directory}" | awk '{print $3;}')"
 
+        # Log
+        log_event "info" "Listing directory: ${remote_directory}" "false"
+        log_event "info" "Remote list: ${remote_list}" "false"
+        log_event "debug" "Command executed: \"${DROPBOX_UPLOADER}\" -hq list \"${remote_directory}\" | awk '{print $3;}'" "false"
+
     fi
     if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
 
-        ls "${remote_directory}"
+        remote_list="$(ls "${remote_directory}")"
+
+        # Log
+        log_event "info" "Listing directory: ${remote_directory}" "false"
+        log_event "info" "Remote list: ${remote_list}" "false"
+        log_event "debug" "Command executed: ls ${remote_directory}" "false"
 
     fi
 
-    echo "${remote_list}"
+    storage_result=$?
+    if [[ ${storage_result} -eq 0 ]]; then
+        echo "${remote_list}"
+    else
+        return 1
+    fi
 
 }
 
@@ -73,6 +88,8 @@ function storage_create_dir() {
 
     local remote_directory="${1}"
 
+    local storage_result
+
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
         dropbox_create_dir "${remote_directory}"
@@ -82,6 +99,11 @@ function storage_create_dir() {
 
         mkdir --force "${BACKUP_LOCAL_CONFIG_BACKUP_PATH}/${remote_directory}"
 
+    fi
+
+    storage_result=$?
+    if [[ ${storage_result} -eq 1 ]]; then
+        return 1
     fi
 
 }
@@ -103,6 +125,7 @@ function storage_move() {
     local destination="${2}"
 
     local dropbox_output
+    local storage_result
 
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
@@ -117,6 +140,11 @@ function storage_move() {
 
         mv "${to_move}" "${destination}"
 
+    fi
+
+    storage_result=$?
+    if [[ ${storage_result} -eq 1 ]]; then
+        return 1
     fi
 
 }
@@ -163,6 +191,7 @@ function storage_upload_backup() {
     if [[ ${storage_result} -eq 1 ]]; then
         return 1
     fi
+
 }
 
 ################################################################################
