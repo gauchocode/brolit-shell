@@ -1158,7 +1158,7 @@ function restore_project() {
 
     # Download backup
     bk_to_dowload="${chosen_server}/projects-${chosen_status}/site/${chosen_project}/${chosen_backup_to_restore}"
-    storage_download "${bk_to_dowload}" "${BROLIT_TMP_DIR}"
+    storage_download_backup "${bk_to_dowload}" "${BROLIT_TMP_DIR}"
 
     # Decompress
     decompress "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}" "${BROLIT_TMP_DIR}" "lbzip2"
