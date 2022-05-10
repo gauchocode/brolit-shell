@@ -181,6 +181,8 @@ function storage_download_backup() {
     local file_to_download="${1}"
     local remote_directory="${2}"
 
+    local download_result
+
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
         dropbox_download "${file_to_download}" "${remote_directory}"
@@ -190,6 +192,11 @@ function storage_download_backup() {
 
         rclone_download "${file_to_download}" "${remote_directory}"
 
+    fi
+
+    download_result=$?
+    if [[ ${download_result} -eq 1 ]]; then
+        return 1
     fi
 
 }
@@ -208,22 +215,24 @@ function storage_delete_backup() {
 
     local file_to_delete="${1}"
 
+    local delete_result
+
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
         dropbox_delete "${file_to_delete}" "false"
 
     fi
-    #if [[ ${BACKUP_RCLONE_STATUS} == "enabled" ]]; then
-    #
-    #    rclone_upload "${file_to_upload}" "${remote_directory}"
-    #
-    #fi
     if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
 
         rm --recursive --force "${file_to_delete}"
 
         # TODO: check if files need to be compressed (maybe an option?).
 
+    fi
+
+    delete_result=$?
+    if [[ ${delete_result} -eq 1 ]]; then
+        return 1
     fi
 
 }
