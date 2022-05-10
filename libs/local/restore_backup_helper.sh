@@ -1128,7 +1128,7 @@ function restore_project() {
 
   # Get dropbox folders list
   #storage_project_list="$(${DROPBOX_UPLOADER} -hq list "${chosen_server}/projects-${chosen_status}/site" | awk '{print $2;}')"
-  storage_project_list="$(storage_list_dir "${${chosen_server}/projects-${chosen_status}/site}")"
+  storage_project_list="$(storage_list_dir "${chosen_server}/projects-${chosen_status}/site")"
 
   # Select Project
   chosen_project="$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose a project backup to restore:" 20 78 10 $(for x in ${storage_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)"
