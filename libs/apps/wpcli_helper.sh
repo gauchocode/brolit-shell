@@ -1905,16 +1905,16 @@ function wpcli_set_debug_mode() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log
-        display --indent 6 --text "- Cache flush for ${wp_site}" --result "DONE" --color GREEN
-        log_event "error" "Cache flush for ${wp_site}" "false"
+        display --indent 6 --text "- Set debug mode: ${debug_mode}" --result "DONE" --color GREEN
+        log_event "error" "Set debug mode: ${debug_mode}" "false"
 
         return 0
 
     else
 
         # Log
-        display --indent 6 --text "- Cache flush for ${wp_site}" --result "FAIL" --color RED
-        log_event "error" "Cache flush for ${wp_site}" "false"
+        display --indent 6 --text "- Set debug mode: ${debug_mode}" --result "FAIL" --color RED
+        log_event "error" "Set debug mode: ${debug_mode}" "false"
 
         return 1
 
@@ -1936,6 +1936,7 @@ function wpcli_cache_flush() {
 
     local wp_site="${1}"
 
+    # Log
     log_event "debug" "Running: wp --allow-root --path=\"${wp_site}\" cache flush" "false"
 
     # Command
@@ -1945,6 +1946,7 @@ function wpcli_cache_flush() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log
+        clear_previous_lines "1"
         display --indent 6 --text "- Cache flush for ${wp_site}" --result "DONE" --color GREEN
         log_event "error" "Cache flush for ${wp_site}" "false"
 
@@ -1953,6 +1955,7 @@ function wpcli_cache_flush() {
     else
 
         # Log
+        clear_previous_lines "1"
         display --indent 6 --text "- Cache flush for ${wp_site}" --result "FAIL" --color RED
         log_event "error" "Cache flush for ${wp_site}" "false"
 
@@ -1978,6 +1981,7 @@ function wpcli_rocket_cache_clean() {
 
     local wp_site="${1}"
 
+    # Log
     log_event "debug" "Running: wp --allow-root --path=\"${wp_site}\" rocket clean --confirm" "false"
 
     # Command
@@ -2018,6 +2022,7 @@ function wpcli_rocket_cache_activate() {
 
     local wp_site="${1}"
 
+    # Log
     log_event "debug" "Running: wp --allow-root --path=\"${wp_site}\" rocket activate-cache" "false"
 
     # Command
@@ -2058,6 +2063,7 @@ function wpcli_rocket_cache_deactivate() {
 
     local wp_site="${1}"
 
+    # Log
     log_event "debug" "Running: wp --allow-root --path=\"${wp_site}\" rocket deactivate-cache" "false"
 
     # Command
@@ -2096,10 +2102,9 @@ function wpcli_rocket_cache_deactivate() {
 
 function wpcli_rocket_settings_export() {
 
-    # $1 = ${wp_site} (site path)
-
     local wp_site="${1}"
 
+    # Log
     log_event "debug" "Running: wp --allow-root --path=\"${wp_site}\" rocket export" "false"
 
     # Command

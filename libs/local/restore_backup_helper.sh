@@ -527,7 +527,8 @@ function restore_backup_from_public_url() {
   fi
 
   # Create brolit_config.json file
-  project_update_brolit_config "${actual_folder}/${install_path}" "${project_name}" "${project_stage}" "${project_type}" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "" "true" ""
+  project_update_brolit_config "${actual_folder}/${install_path}" "${project_name}" "${project_stage}" "${project_type}"
+  "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "" "true" ""
 
   # Remove tmp files
   log_event "info" "Removing temporary folders ..." "false"
@@ -558,7 +559,7 @@ function restore_backup_from_public_url() {
 function restore_backup_server_selection() {
 
   local remote_server_list # list servers directories on dropbox
-  local chosen_server       # whiptail var
+  local chosen_server      # whiptail var
 
   # Server selection
   #remote_server_list="$("${DROPBOX_UPLOADER}" -hq list "/" | awk '{print $2;}')"
@@ -978,7 +979,7 @@ function restore_type_selection_from_storage() {
 
           # On site chosen_project = project domain, on database chosen_project = database name
           ## If chosen_project = database name, we need to extract the original project_stage
-          possible_project_name=${chosen_project%$suffix}; #Remove suffix
+          possible_project_name=${chosen_project%$suffix} #Remove suffix
           ## If chosen_project = project domain, we need to extract the domain extension
           possible_project_name="$(project_get_name_from_domain "${chosen_project}")"
 
@@ -1285,7 +1286,7 @@ function restore_project() {
     project_post_install_tasks "${install_path}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${chosen_domain}" "${new_project_domain}"
 
     # Create/update brolit_project_conf.json file with project info
-    project_update_brolit_config "${install_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "${db_engine}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${new_project_domain}"
+    project_update_brolit_config "${install_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "${db_engine}" "${project_name}_${project_stage}" "localhost" "${db_user}" "${db_pass}" "${new_project_domain}" "" "" "" ""
 
     # Send notification
     send_notification "✅ ${SERVER_NAME}" "Project ${new_project_domain} restored!" "0"
