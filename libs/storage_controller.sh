@@ -45,12 +45,20 @@ function storage_list_dir() {
 
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
+        # Dropbox API returns files names on the third column
         remote_list="$("${DROPBOX_UPLOADER}" -hq list "${remote_directory}" | awk '{print $3;}')"
+
+        # If remote_list is empty, try to check the second column where directory names are
+        if [[ -z ${remote_list} ]]; then
+
+            remote_list="$("${DROPBOX_UPLOADER}" -hq list "${remote_directory}" | awk '{print $2;}')"
+
+        fi
 
         # Log
         log_event "info" "Listing directory: ${remote_directory}" "false"
         log_event "info" "Remote list: ${remote_list}" "false"
-        log_event "debug" "Command executed: \"${DROPBOX_UPLOADER}\" -hq list \"${remote_directory}\" | awk '{print $3;}'" "false"
+        log_event "debug" "Command executed: ${DROPBOX_UPLOADER} -hq list \"${remote_directory}\" | awk '{print $ 3;}'" "false"
 
     fi
     if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
@@ -65,7 +73,7 @@ function storage_list_dir() {
     fi
 
     storage_result=$?
-    if [[ ${storage_result} -eq 0 ]]; then
+    if [[ ${storage_result} -eq 0 && -n ${remote_list} ]]; then
         echo "${remote_list}"
     else
         return 1
