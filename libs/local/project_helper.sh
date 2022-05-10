@@ -433,7 +433,7 @@ function project_get_stage_from_domain() {
 #
 # Outputs:
 #   0 if ok, 1 on error.
-################################################################################
+################################################################################ 
 
 function project_update_brolit_config() {
 
@@ -456,7 +456,6 @@ function project_update_brolit_config() {
   local project_config_file
 
   # Project config file
-  #project_config_file="${BROLIT_CONFIG_PATH}/${project_name}_conf.json"
   project_config_file="${BROLIT_CONFIG_PATH}/${project_prymary_subdomain}_conf.json"
 
   if [[ -e ${project_config_file} ]]; then
