@@ -54,24 +54,9 @@ function portainer_installer() {
             # Run docker-compose up -d on specific directory
             docker-compose -f "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/docker-compose.yml" up -d
 
-            if [[ ${PACKAGES_PORTAINER_CONFIG_NGINX} == "enabled" ]]; then
-
-                nginx_server_create "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}" "portainer" "single" "" "${PACKAGES_PORTAINER_CONFIG_PORT}"
-
-                if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
-
-                    # Extract root domain
-                    root_domain="$(domain_get_root "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}")"
-
-                    cloudflare_set_record "${root_domain}" "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}" "A" "false" "${SERVER_IP}"
-
-                fi
-
-            fi
-
             PACKAGES_PORTAINER_STATUS="enabled"
 
-            json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.portainer[].status" "${PACKAGES_PORTAINER_STATUS}"
+            #json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.portainer[].status" "${PACKAGES_PORTAINER_STATUS}"
 
             # new global value ("enabled")
             export PACKAGES_PORTAINER_STATUS
@@ -150,19 +135,23 @@ function portainer_purge() {
 
 function portainer_configure() {
 
-    log_event "info" "Configuring portainer ..."
+    log_event "info" "Configuring Portainer ..." "false"
 
-    # Check if firewall is enabled
-    if [ "$(ufw status | grep -c "Status: active")" -eq "1" ]; then
-        firewall_allow "${PACKAGES_PORTAINER_CONFIG_PORT}"
-    fi
+    if [[ ${PACKAGES_NGINX_STATUS} == "enabled" && ${PACKAGES_PORTAINER_CONFIG_NGINX} == "enabled" ]]; then
 
-    if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
-
-        nginx_server_create "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}" "portainer" "single" ""
+        # Create nginx server block
+        nginx_server_create "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}" "portainer" "single" "" "${PACKAGES_PORTAINER_CONFIG_PORT}"
 
         # Replace port on nginx server config
         sed -i "s/PORTAINER_PORT/${PACKAGES_PORTAINER_CONFIG_PORT}/g" "${WSERVER}/sites-available/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}"
+
+    else # If not use nginx as reverse proxy
+
+        # Check if firewall is enabled
+        if [ "$(ufw status | grep -c "Status: active")" -eq "1" ]; then
+            firewall_allow "${PACKAGES_PORTAINER_CONFIG_PORT}"
+        fi
+
     fi
 
     if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
