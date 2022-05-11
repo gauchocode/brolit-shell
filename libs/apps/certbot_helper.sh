@@ -108,7 +108,7 @@ function certbot_certificate_delete_old_config() {
     fi
     if [[ -f "/etc/letsencrypt/renewal/${domain}.conf" ]]; then
       # Delete
-      rm --force"/etc/letsencrypt/renewal/${domain}.conf"
+      rm --force "/etc/letsencrypt/renewal/${domain}.conf"
       display --indent 6 --text "- Deleting /etc/letsencrypt/renewal/${domain}.conf" --result "DONE" --color GREEN
     fi
 
