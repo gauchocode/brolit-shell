@@ -999,7 +999,7 @@ function _brolit_configuration_load_postgres() {
 
         # Append login parameters to command
         PSQL_ROOT="sudo -u postgres -i psql --quiet"
-        PSQLDUMP_ROOT="sudo -u postgres -i pg_dump --quiet"
+        PSQLDUMP_ROOT="sudo -u postgres -i pg_dump"
 
     else
 
