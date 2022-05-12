@@ -38,40 +38,20 @@ function mailcow_installer() {
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # Create project directory
-            mkdir -p "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}"
+            mkdir -p "${PROJECTS_PATH}/${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}"
 
-            # Copy docker-compose file to project directory
-            cp "${BROLIT_MAIN_DIR}/utils/installers/docker-compose/portainer/docker-compose.yml" "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}"
-
-            # Replace domain in docker-compose file
-            sed -i "s/PORTAINER_SUBDOMAIN/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/g" "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/docker-compose.yml"
-            # Replace port in docker-compose file
-            sed -i "s/PORTAINER_PORT/${PACKAGES_PORTAINER_CONFIG_PORT}/g" "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/docker-compose.yml"
+            # Clone repo in to project directory
+            git clone https://github.com/mailcow/mailcow-dockerized "${PROJECTS_PATH}/${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}"
 
             # Run docker-compose pull on specific directory
-            docker-compose -f "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/docker-compose.yml" pull
+            docker-compose -f "${PROJECTS_PATH}/${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}/docker-compose.yml" pull
 
             # Run docker-compose up -d on specific directory
-            docker-compose -f "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/docker-compose.yml" up -d
-
-            if [[ ${PACKAGES_PORTAINER_CONFIG_NGINX} == "enabled" ]]; then
-
-                nginx_server_create "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}" "portainer" "single" "" "${PACKAGES_PORTAINER_CONFIG_PORT}"
-
-                if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
-
-                    # Extract root domain
-                    root_domain="$(domain_get_root "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}")"
-
-                    cloudflare_set_record "${root_domain}" "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}" "A" "false" "${SERVER_IP}"
-
-                fi
-
-            fi
+            docker-compose -f "${PROJECTS_PATH}/${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}/docker-compose.yml" up -d
 
             PACKAGES_MAILCOW_STATUS="enabled"
 
-            json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.portainer[].status" "${PACKAGES_MAILCOW_STATUS}"
+            json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.mailcow[].status" "${PACKAGES_MAILCOW_STATUS}"
 
             # new global value ("enabled")
             export PACKAGES_MAILCOW_STATUS
@@ -114,17 +94,17 @@ function mailcow_purge() {
     docker rm -f mailcow
 
     # Remove Mailcow Volume
-    volume rm portainer_data
+    #volume rm mailcow_data
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        PACKAGES_PORTAINER_STATUS="disabled"
+        PACKAGES_MAILCOW_STATUS="disabled"
 
-        json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.portainer[].status" "${PACKAGES_PORTAINER_STATUS}"
+        json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.mailcow[].status" "${PACKAGES_MAILCOW_STATUS}"
 
         # new global value ("disabled")
-        export PACKAGES_PORTAINER_STATUS
+        export PACKAGES_MAILCOW_STATUS
 
         return 0
 

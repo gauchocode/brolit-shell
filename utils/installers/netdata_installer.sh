@@ -330,7 +330,10 @@ function netdata_uninstaller() {
   package_purge "netdata"
 
   # Deleting mysql user
-  mysql_user_delete "netdata" "localhost"
+  ## Check if mysql or mariadb are enabled
+  if [[ ${PACKAGES_MARIADB_STATUS} == "enabled" ]] || [[ ${PACKAGES_MYSQL_STATUS} == "enabled" ]]; then
+    mysql_user_delete "netdata" "localhost"
+  fi
 
   # Remove nginx server config files
 
@@ -339,7 +342,10 @@ function netdata_uninstaller() {
   netdata_server_file_name="$(basename "${netdata_server_file}")"
 
   ## Deleting nginx server files
-  nginx_server_delete "${netdata_server_file_name}"
+  ## Check if nginx is installed
+  if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
+    nginx_server_delete "${netdata_server_file_name}"
+  fi
 
   # Deleting installation files
   rm --force --recursive "/etc/netdata"

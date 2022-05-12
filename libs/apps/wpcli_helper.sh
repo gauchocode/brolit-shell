@@ -191,7 +191,6 @@ function wpcli_uninstall() {
 
     # Log
     log_event "warning" "Uninstalling wp-cli ..." "false"
-    display --indent 6 --text "- Uninstalling wp-cli"
 
     # Command
     rm --recursive --force "/usr/local/bin/wp"
