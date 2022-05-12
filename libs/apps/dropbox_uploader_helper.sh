@@ -53,7 +53,7 @@ function dropbox_check_if_directory_exists() {
     # If directory exists
     if [[ ${output} == "[D]" ]]; then
 
-        log_event "debug" "Directory exists" "false"
+        log_event "debug" "Directory ${directory} exists" "false"
 
         return 0
 
@@ -108,15 +108,11 @@ function dropbox_create_dir() {
         dropbox_create_dir_result=$?
         if [[ ${dropbox_create_dir_result} -eq 0 ]]; then
 
-            #display --indent 6 --text "- Creating dropbox directory" --result "DONE" --color GREEN
             log_event "info" "Dropbox directory ${dir_to_create} created" "false"
 
             return 0
 
         else
-
-            #display --indent 6 --text "- Creating dropbox directory" --result "WARNING" --color YELLOW
-            #display --indent 8 --text "Maybe directory already exists" --tcolor YELLOW
 
             log_event "debug" "Can't create directory ${dir_to_create} from Dropbox. Maybe directory already exists." "false"
             log_event "debug" "Last command executed: ${DROPBOX_UPLOADER} -q mkdir ${dir_to_create}" "false"
@@ -161,7 +157,6 @@ function dropbox_upload() {
 
     spinner_stop "${dropbox_file_to_upload_result}"
 
-    # Check dropbox_file_to_upload_result
     if [[ ${dropbox_file_to_upload_result} -eq 0 ]]; then
 
         display --indent 6 --text "- Uploading file to Dropbox" --result "DONE" --color GREEN
@@ -277,8 +272,6 @@ function dropbox_delete() {
     # Check if not empty
     if [[ -n ${search_file} || ${force_delete} == "true" ]]; then
 
-        log_event "debug" "Running: \"${DROPBOX_UPLOADER}\" remove \"${to_delete}\"" "false"
-
         # Command
         output="$("${DROPBOX_UPLOADER}" remove "${to_delete}")"
 
@@ -305,13 +298,46 @@ function dropbox_delete() {
 
     else
 
-        #display --indent 6 --text "- Deleting old files from Dropbox" --result "SKIPPED" --color WHITE
-        #display --indent 8 --text "Backup file doesn't exists" --tcolor WHITE
-
         log_event "warning" "Can't remove ${to_delete} from Dropbox, backup file doesn't exists." "false"
 
         return 1
 
     fi
+
+}
+
+################################################################################
+# List directory on Dropbox
+#
+# Arguments:
+#   $1 = ${directory}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function dropbox_list_directory() {
+
+    local directory="${1}"
+
+    local dir_list
+
+    # Log
+    log_event "debug" "Listing directory ${directory} on Dropbox" "false"
+
+    # Dropbox API returns files names on the third column
+    dir_list="$("${DROPBOX_UPLOADER}" -hq list "${directory}" | awk '{print $3;}')"
+
+    # If dir_list is empty, try to check the second column where directory names are
+    if [[ -z ${dir_list} ]]; then
+
+        dir_list="$("${DROPBOX_UPLOADER}" -hq list "${directory}" | awk '{print $2;}')"
+
+    fi
+
+    # Log
+    log_event "info" "Listing directory: ${directory}" "false"
+    log_event "info" "Remote list: ${dir_list}" "false"
+    log_event "debug" "Command executed: ${DROPBOX_UPLOADER} -hq list \"${directory}\" | awk '{print $ 3;}'" "false"
 
 }
