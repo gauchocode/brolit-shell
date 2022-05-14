@@ -39,7 +39,6 @@
 
 ### In Progress
 
-- [ ] Core: Stop netdata alerts when a backup or virus analysis is started.
 - [ ] Core: Flags should receive a json file to deploy or restore a new project.
 - [ ] Core: On project creation/restore need to ask first the project stage, then project domain.
         If project stage != prod and subdomains is not containing the stage, need to suggest one.
@@ -54,7 +53,6 @@
 ## For release 3.3
 
 - [ ] Core: Create a brolit_server_conf.json with server information (IPs, SSH users, /etc/fstab config). Should be updated periodically.
-- [ ] Core: Better documentation with Gitbook or Docusaurus.
 - [ ] Core: Resolve small "TODOs" comments.
 - [ ] Core: Replace aliases with some internal functions.
 - [ ] Core: Implementation of brolit_project.json (restore and deploy).
