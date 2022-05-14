@@ -1032,12 +1032,11 @@ function _brolit_configuration_load_redis() {
     # Globals
     declare -g PACKAGES_REDIS_STATUS
     declare -g PACKAGES_REDIS_CONFIG_VERSION
-    declare -g PACKAGES_REDIS_CONFIG_PORTS
+    #declare -g PACKAGES_REDIS_CONFIG_PORTS
 
     REDIS="$(command -v redis-cli)"
 
     PACKAGES_REDIS_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.redis[].status")"
-
     if [[ ${PACKAGES_REDIS_STATUS} == "enabled" ]]; then
 
         PACKAGES_REDIS_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.redis[].version")"
@@ -1047,12 +1046,12 @@ function _brolit_configuration_load_redis() {
             exit 1
         fi
 
-        PACKAGES_REDIS_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.redis[].config[].port")"
+        #PACKAGES_REDIS_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.redis[].config[].port")"
         # Check if all required vars are set
-        if [[ -z ${PACKAGES_REDIS_CONFIG_PORTS} ]]; then
-            log_event "error" "Missing required config vars for redis" "true"
-            exit 1
-        fi
+        #if [[ -z ${PACKAGES_REDIS_CONFIG_PORTS} ]]; then
+        #    log_event "error" "Missing required config vars for redis" "true"
+        #    exit 1
+        #fi
 
         # Checking if Redis is not installed
         if [[ ! -x ${REDIS} ]]; then
@@ -1068,7 +1067,7 @@ function _brolit_configuration_load_redis() {
 
     fi
 
-    export REDIS PACKAGES_REDIS_STATUS PACKAGES_REDIS_CONFIG_VERSION PACKAGES_REDIS_CONFIG_PORTS
+    export REDIS PACKAGES_REDIS_STATUS PACKAGES_REDIS_CONFIG_VERSION #PACKAGES_REDIS_CONFIG_PORTS
 
 }
 
@@ -1096,7 +1095,6 @@ function _brolit_configuration_load_certbot() {
 
     CERTBOT="$(which certbot)"
     #CERTBOT="$(command -v certbot)"
-
     if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
 
         PACKAGES_CERTBOT_CONFIG_MAILA="$(json_read_field "${server_config_file}" "PACKAGES.certbot[].config[].email")"

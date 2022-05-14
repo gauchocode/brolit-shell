@@ -18,3 +18,20 @@ function redis_installer() {
   service redis-server restart
 
 }
+
+function redis_configure() {
+
+  local redis_conf
+  local redis_pass
+
+  redis_conf="/etc/redis/redis.conf"
+
+  redis_pass="$(openssl rand 60 | openssl base64 -A)"
+
+  # Write redis_pass on redis.conf
+  sed -i "s/^# requirepass.*/requirepass ${redis_pass}/" "${redis_conf}"
+
+  # Service restart
+  service redis-server restart
+
+}

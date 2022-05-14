@@ -2,7 +2,7 @@
     "BROLIT_SETUP": {
         "config": [
             {
-                "version": "3.9.8",
+                "version": "3.9.9",
                 "debug": "true",
                 "quiet": "false",
                 "skip_test": "true",
@@ -240,15 +240,7 @@
         "redis": [
             {
                 "status": "disabled",
-                "version": "default",
-                "config": [
-                    {
-                        "subdomain": "",
-                        "user": "",
-                        "user_pass": "",
-                        "port": ""
-                    }
-                ]
+                "version": "default"
             }
         ],
         "php": [
