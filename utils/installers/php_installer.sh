@@ -46,6 +46,171 @@ function php_get_distro_default_version() {
 }
 
 ################################################################################
+# Check if php is installed
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   0 if php is installed, 1 on error.
+################################################################################
+
+# TODO: refactor to return 0 or 1
+function php_check_if_installed() {
+
+  local php_installed
+  local php
+
+  php="$(command -v php)"
+  if [[ ! -x "${php}" ]]; then
+    php_installed="false"
+
+  else
+    php_installed="true"
+
+  fi
+
+  log_event "debug" "php_installed=${php_installed}" "false"
+
+  # Return
+  echo "${php_installed}"
+
+}
+
+################################################################################
+# Check php installed versions
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   Array of installed versions.
+################################################################################
+
+function php_check_installed_version() {
+
+  local php_fpm_installed_pkg
+  local php_installed_versions
+
+  # Installed versions
+  php_fpm_installed_pkg="$(sudo dpkg --list | grep -oh 'php[0-9]\.[0-9]\-fpm')"
+
+  # Grep -oh parameters explanation:
+  #
+  # -h, --no-filename
+  #   Suppress the prefixing of file names on output. This is the default
+  #   when there is only  one  file  (or only standard input) to search.
+  # -o, --only-matching
+  #   Print  only  the matched (non-empty) parts of a matching line,
+  #   with each such part on a separate output line.
+  #
+  # In this case, output example: php7.2-fpm php7.3-fpm php7.4-fpm
+
+  # Extract only version numbers
+  php_installed_versions="$(echo -n "${php_fpm_installed_pkg}" | grep -Eo '[+-]?[0-9]+([.][0-9]+)?' | tr '\n' ' ')"
+  # The "tr '\n' ' '" part, will replace /n with space
+  # Return example: 7.4 7.2 7.0
+
+  # Check elements number on string
+  count_elements="$(echo "${php_installed_versions}" | wc -w)"
+
+  if [[ $count_elements == "1" ]]; then
+
+    # Remove last space
+    php_installed_versions="$(string_remove_spaces "${php_installed_versions}")"
+
+  fi
+
+  log_event "debug" "Setting php_installed_versions=${php_installed_versions}" "false"
+
+  # Return
+  echo "${php_installed_versions}"
+
+}
+
+################################################################################
+# Reconfigure PHP
+#
+# Arguments:
+#  $1 = ${php_v} - Optional
+#
+# Outputs:
+#  String with default version.
+################################################################################
+
+function php_reconfigure() {
+
+  local php_v="${1}"
+
+  local brolit_php_ini
+  local brolit_fpm_conf
+  local actual_php_ini
+  local actual_fpm_conf
+
+  local timestamp
+
+  log_subsection "PHP Reconfigure"
+
+  # If $php_v is set to default
+  if [[ ${php_v} == "default" ]]; then
+    php_v="$(php_get_distro_default_version)"
+  fi
+
+  # If $php_v not set, it will use $PHP_V global
+  if [[ -z ${php_v} ]]; then php_v="${PHP_V}"; fi
+
+  # Local templates
+  brolit_php_ini="${BROLIT_MAIN_DIR}/config/php/php.ini"
+  brolit_fpm_conf="${BROLIT_MAIN_DIR}/config/php/php-fpm.conf"
+
+  # TODO: maybe use specific config for each version?
+  #brolit_fpm_conf="${BROLIT_MAIN_DIR}/config/php/php${php_v}-fpm.conf"
+
+  # Server conf files
+  actual_php_ini="/etc/php/${php_v}/fpm/php.ini"
+  actual_fpm_conf="/etc/php/${php_v}/fpm/php-fpm.conf"
+
+  if [[ -f ${actual_php_ini} ]]; then
+    timestamp="$(date +%Y%m%d_%H%M%S)"
+    # Make a copy of the php.ini file
+    cp "${actual_php_ini}" "${actual_php_ini}.bak-${timestamp}"
+  fi
+  if [[ -f ${actual_fpm_conf} ]]; then
+    timestamp="$(date +%Y%m%d_%H%M%S)"
+    # Make a copy of the php-fpm.conf file
+    cp "${actual_fpm_conf}" "${actual_fpm_conf}.bak-${timestamp}"
+  fi
+
+  # php.ini
+  cat "${brolit_php_ini}" >"${actual_php_ini}"
+  log_event "info" "Updating php.ini configuration file" "false"
+  display --indent 6 --text "- Updating php.ini configuration file" --result "DONE" --color GREEN
+
+  # fpm.conf
+  cat "${brolit_fpm_conf}" >"${actual_fpm_conf}"
+  log_event "info" "Moving php-fpm.conf configuration file" "false"
+  display --indent 6 --text "- Moving php-fpm.conf configuration file" --result "DONE" --color GREEN
+
+  # Replace string to match PHP version
+  php_set_version_on_config "${php_v}" "${actual_fpm_conf}"
+  log_event "info" "Replacing string to match PHP version" "false"
+  display --indent 6 --text "- Replacing string to match PHP version" --result "DONE" --color GREEN
+
+  # Uncomment some vars on www.conf file
+  sed -i '/process_idle_timeout/s/^;//g' "/etc/php/${php_v}/fpm/pool.d/www.conf"
+  sed -i '/max_requests/s/^;//g' "/etc/php/${php_v}/fpm/pool.d/www.conf"
+  sed -i '/status_path/s/^;//g' "/etc/php/${php_v}/fpm/pool.d/www.conf"
+  log_event "debug" "Uncommenting vars on www.conf file" "false"
+
+  # Opcache
+  php_opcode_config "${php_v}"
+
+  service php"${php_v}"-fpm reload
+  display --indent 6 --text "- Reloading php${php_v}-fpm service" --result "DONE" --color GREEN
+
+}
+
+################################################################################
 # Php installer
 #
 # Arguments:
@@ -109,6 +274,16 @@ function php_custom_installer() {
 
 }
 
+################################################################################
+# Select PHP Version to install
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
+
 function php_select_version_to_install() {
 
   local phpv_to_install
@@ -138,6 +313,16 @@ function php_select_version_to_install() {
 
 }
 
+################################################################################
+# PHP redis module installer
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
+
 function php_redis_installer() {
 
   # apt command
@@ -147,6 +332,16 @@ function php_redis_installer() {
   service redis-server restart
 
 }
+
+################################################################################
+# Mail utils installer
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
 
 function mail_utils_installer() {
 
@@ -167,7 +362,6 @@ function mail_utils_installer() {
     clear_previous_lines "2"
 
     # Install
-    #pear -q install mail mail_mime net_smtp >/dev/null
     pear -q install mail >/dev/null
     pear -q install mail_mime >/dev/null
     pear -q install net_smtp >/dev/null
@@ -180,6 +374,16 @@ function mail_utils_installer() {
   fi
 
 }
+
+################################################################################
+# PHP purge all installations
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
 
 function php_purge_all_installations() {
 
@@ -196,6 +400,16 @@ function php_purge_all_installations() {
   log_event "info" "PHP purged!" "false"
 
 }
+
+################################################################################
+# PHP purge installation
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
 
 function php_purge_installation() {
 
@@ -214,6 +428,16 @@ function php_purge_installation() {
   display --indent 6 --text "- Removing PHP-${PHP_V} and libraries" --result "DONE" --color GREEN
 
 }
+
+################################################################################
+# PHP Composer installer
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
 
 function php_composer_installer() {
 
@@ -263,17 +487,47 @@ function php_composer_installer() {
 
 }
 
+################################################################################
+# PHP Composer update version
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
+
 function php_composer_update_version() {
 
   composer self-update
 
 }
 
+################################################################################
+# PHP Composer update
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
+
 function php_composer_update() {
 
   composer update
 
 }
+
+################################################################################
+# PHP Composer remove
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
 
 function php_composer_remove() {
 
@@ -284,12 +538,27 @@ function php_composer_remove() {
 
     log_event "info" "Composer removed" "false"
 
+    return 0
+
   else
+
     log_event "error" "Composer removal failed" "false"
+
+    return 1
 
   fi
 
 }
+
+################################################################################
+# PHP installer menu
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
 
 function php_installer_menu() {
 
@@ -362,13 +631,14 @@ function php_installer_menu() {
     if [[ ${chosen_php_installer_options} == *"03"* ]]; then
 
       # RECONFIGURE PHP
-      php_reconfigure ""
+      php_reconfigure "${PHP_V}"
 
     fi
     if [[ ${chosen_php_installer_options} == *"04"* ]]; then
 
       # PHP OPTIZATIONS
-      php_fpm_optimizations
+      # TODO: need to check php versions installed (could be more than one)
+      php_fpm_optimizations "${PHP_V}"
 
     fi
     if [[ ${chosen_php_installer_options} == *"05"* ]]; then
