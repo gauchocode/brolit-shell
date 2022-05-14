@@ -335,6 +335,11 @@ function _brolit_configuration_load_backup_retention() {
     if [[ -z ${BACKUP_RETENTION_KEEP_DAILY} ]]; then
         log_event "error" "Missing required config vars for backup retention" "true"
         exit 1
+    else
+        if [[ ${BACKUP_RETENTION_KEEP_DAILY} -gt 0 ]]; then
+            log_event "error" "keep_daily config var should be greater than 0" "true"
+            exit 1
+        fi
     fi
 
     BACKUP_RETENTION_KEEP_WEEKLY="$(json_read_field "${server_config_file}" "BACKUPS.config[].retention[].keep_weekly")"
@@ -351,8 +356,8 @@ function _brolit_configuration_load_backup_retention() {
 
     # Calculated vars
     DAYSAGO="$(date --date="${BACKUP_RETENTION_KEEP_DAILY} days ago" +"%Y-%m-%d")"
-    WEEKSAGO="$(date --date="${BACKUP_RETENTION_KEEP_DAILY} weeks ago" +"%Y-%m-%d")"
-    MONTHSAGO="$(date --date="${BACKUP_RETENTION_KEEP_DAILY} months ago" +"%Y-%m-%d")"
+    WEEKSAGO="$(date --date="${BACKUP_RETENTION_KEEP_WEEKLY} weeks ago" +"%Y-%m-%d")"
+    MONTHSAGO="$(date --date="${BACKUP_RETENTION_KEEP_MONTHLY} months ago" +"%Y-%m-%d")"
     ## Get current month and week day number
     MONTH_DAY=$(date +"%d")
     WEEK_DAY=$(date +"%u")

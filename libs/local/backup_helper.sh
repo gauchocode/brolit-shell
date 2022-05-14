@@ -32,67 +32,6 @@ function backup_get_date() {
 }
 
 ################################################################################
-
-# NEW
-
-function backup_delete_old_one() {
-
-  local backup_dir="${1}"
-
-  local backup_date
-  local backup_file
-  local backup_files
-  #local backup_file_date
-
-  # Only for testing
-  backup_dir="${chosen_server}/projects-${chosen_status}/database/${db_name}"
-
-  # CODE REFERENCE
-  actual_date=$(date +%u)
-
-  if [[ ${actual_date} -eq 1 ]]; then
-    date_day=$(date -d "-28 days" +"%d")
-    if [[ ${date_day} -gt 7 ]]; then
-      date_to_delete=$(date -d "-28 days" +"%Y-%m-%d")
-      storage_delete_backup "${backup_dir}/${db_name}_database_${date_to_delete}.tar.bz2"
-
-    fi
-
-    date_day=$(date -d "-364 days" +"%d")
-    date_month=$(date -d "-364 days" +"%m")
-    if [[ ${date_day} -le 7 ]] && [[ ${date_month} -gt 1 ]]; then
-      date_to_delete=$(date -d "-364 days" +"%Y-%m-%d")
-      storage_delete_backup "${date_to_delete}"
-    fi
-  else
-    date_to_delete=$(date -d "-7 days" +"%Y-%m-%d")
-    storage_delete_backup "${date_to_delete}"
-  fi
-
-  ################################################################################
-
-  # Get all files
-  #backup_files="$(storage_list_dir "${backup_dir}")"
-
-  # Loop all files
-  #for backup_file in ${backup_files}; do
-
-  # Get backup date
-  #  backup_file_date="$(backup_get_date "${backup_file}")"
-
-  # Compare dates
-  #  if [[ "${backup_file_date}" != "${backup_date}" ]]; then
-
-  # Delete file
-  #    storage_delete_backup "${backup_dir}/${backup_file}"
-
-  #  fi
-
-  #done
-
-}
-
-################################################################################
 # Make server files Backup
 #
 # Arguments:
@@ -338,10 +277,24 @@ function backup_mailcow() {
 
   log_subsection "Mailcow Backup"
 
-  if [[ -n "${MAILCOW_DIR}" ]]; then
+  if [[ -n ${MAILCOW_DIR} ]]; then
 
-    old_backup_file="${backup_type}_files-${DAYSAGO}.tar.bz2"
-    backup_file="${backup_type}_files-${NOW}.tar.bz2"
+    # Backups file names
+    if [[ ${MONTH_DAY} -eq 1 ]]; then
+      ## On first month day do
+      backup_file="${backup_type}_files-${NOW}-monthly.tar.bz2"
+      old_backup_file="${backup_type}_files-${MONTHSAGO}-monthly.tar.bz2"
+    else
+      ## On saturdays do
+      if [[ ${WEEK_DAY} -eq 6 ]]; then
+        backup_file="${backup_type}_files-${NOW}-weekly.tar.bz2"
+        old_backup_file="${backup_type}_files-${WEEKSAGO}-weekly.tar.bz2"
+      else
+        ## On any regular day do
+        backup_file="${backup_type}_files-${NOW}.tar.bz2"
+        old_backup_file="${backup_type}_files-${DAYSAGO}.tar.bz2"
+      fi
+    fi
 
     log_event "info" "Trying to make a backup of ${MAILCOW_DIR} ..." "false"
     display --indent 6 --text "- Making ${YELLOW}${MAILCOW_DIR}${ENDCOLOR} backup" --result "DONE" --color GREEN
@@ -557,10 +510,26 @@ function backup_project_files() {
   local backup_path="${2}"
   local directory_to_backup="${3}"
 
-  local old_backup_file="${directory_to_backup}_${backup_type}-files_${DAYSAGO}.tar.bz2"
-  local backup_file="${directory_to_backup}_${backup_type}-files_${NOW}.tar.bz2"
-
+  local backup_file
+  local old_backup_file
   local storage_path
+
+  # Backups file names
+  if [[ ${MONTH_DAY} -eq 1 ]]; then
+    ## On first month day do
+    backup_file="${directory_to_backup}_${backup_type}-files_${NOW}-monthly.tar.bz2"
+    old_backup_file="${directory_to_backup}_${backup_type}-files_${MONTHSAGO}-monthly.tar.bz2"
+  else
+    ## On saturdays do
+    if [[ ${WEEK_DAY} -eq 6 ]]; then
+      backup_file="${directory_to_backup}_${backup_type}-files_${NOW}-weekly.tar.bz2"
+      old_backup_file="${directory_to_backup}_${backup_type}-files_${WEEKSAGO}-weekly.tar.bz2"
+    else
+      ## On any regular day do
+      backup_file="${directory_to_backup}_${backup_type}-files_${NOW}.tar.bz2"
+      old_backup_file="${directory_to_backup}_${backup_type}-files_${DAYSAGO}.tar.bz2"
+    fi
+  fi
 
   # Create directory structure
   storage_create_dir "${SERVER_NAME}"
