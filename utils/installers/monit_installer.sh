@@ -199,7 +199,6 @@ function monit_configure() {
   log_event "info" "Restarting services ..." "false"
 
   # Service restart
-  ## TODO: need a refactor
   systemctl restart "php${PHP_V}-fpm"
   systemctl restart nginx.service
   service monit restart
