@@ -197,7 +197,8 @@ function php_reconfigure() {
   display --indent 6 --text "- Replacing string to match PHP version" --result "DONE" --color GREEN
 
   # Uncomment some vars on www.conf file
-  sed -i '/process_idle_timeout/s/^;//g' "/etc/php/${php_v}/fpm/pool.d/www.conf"
+  # TODO: this will break original www.conf, maybe we should work with a brolit config file?
+  #sed -i '/process_idle_timeout/s/^;//g' "/etc/php/${php_v}/fpm/pool.d/www.conf"
   sed -i '/max_requests/s/^;//g' "/etc/php/${php_v}/fpm/pool.d/www.conf"
   sed -i '/status_path/s/^;//g' "/etc/php/${php_v}/fpm/pool.d/www.conf"
   log_event "debug" "Uncommenting vars on www.conf file" "false"

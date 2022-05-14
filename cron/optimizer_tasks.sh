@@ -19,6 +19,11 @@ source "${BROLIT_MAIN_DIR}/libs/commons.sh"
 # Running from cron
 log_event "info" "Running optimizer_tasks.sh from cron ..." "false"
 
+# If NETDATA is installed, disabled alarms
+if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
+  netdata_alerts_disable
+fi
+
 # Running scripts
 optimize_images_complete
 
@@ -49,6 +54,11 @@ optimize_ram_usage
 
 #EMAIL_SUBJECT="${EMAIL_STATUS} on ${SERVER_NAME} Complete Backup - [${NOWDISPLAY}]"
 #EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${PKG_MAIL_VAR} ${CERT_MAIL_VAR} ${CONFIG_MAIL_VAR} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
+
+# If NETDATA is installed, enable alarms
+if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
+  netdata_alerts_enable
+fi
 
 # Sending email notification
 #mail_send_notification "${EMAIL_SUBJECT}" "${EMAIL_CONTENT}"
