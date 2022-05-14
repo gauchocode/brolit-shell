@@ -329,31 +329,36 @@ function _brolit_configuration_load_backup_retention() {
     declare -g BACKUP_RETENTION_KEEP_MONTHLY
 
     declare -g DAYSAGO
-    DAYSAGO="$(date --date="${BACKUP_RETENTION_KEEP_DAILY} days ago" +"%Y-%m-%d")"
 
     ## retention
     BACKUP_RETENTION_KEEP_DAILY="$(json_read_field "${server_config_file}" "BACKUPS.config[].retention[].keep_daily")"
-
-    if [ -z "${BACKUP_RETENTION_KEEP_DAILY}" ]; then
+    if [[ -z ${BACKUP_RETENTION_KEEP_DAILY} ]]; then
         log_event "error" "Missing required config vars for backup retention" "true"
         exit 1
     fi
 
     BACKUP_RETENTION_KEEP_WEEKLY="$(json_read_field "${server_config_file}" "BACKUPS.config[].retention[].keep_weekly")"
-
-    if [ -z "${BACKUP_RETENTION_KEEP_WEEKLY}" ]; then
+    if [[ -z ${BACKUP_RETENTION_KEEP_WEEKLY} ]]; then
         log_event "error" "Missing required config vars for backup retention" "true"
         exit 1
     fi
-
     BACKUP_RETENTION_KEEP_MONTHLY="$(json_read_field "${server_config_file}" "BACKUPS.config[].retention[].keep_monthly")"
 
-    if [ -z "${BACKUP_RETENTION_KEEP_MONTHLY}" ]; then
+    if [[ -z ${BACKUP_RETENTION_KEEP_MONTHLY} ]]; then
         log_event "error" "Missing required config vars for backup retention" "true"
         exit 1
     fi
 
-    export DAYSAGO BACKUP_RETENTION_KEEP_DAILY BACKUP_RETENTION_KEEP_WEEKLY BACKUP_RETENTION_KEEP_MONTHLY
+    # Calculated vars
+    DAYSAGO="$(date --date="${BACKUP_RETENTION_KEEP_DAILY} days ago" +"%Y-%m-%d")"
+    WEEKSAGO="$(date --date="${BACKUP_RETENTION_KEEP_DAILY} weeks ago" +"%Y-%m-%d")"
+    MONTHSAGO="$(date --date="${BACKUP_RETENTION_KEEP_DAILY} months ago" +"%Y-%m-%d")"
+    ## Get current month and week day number
+    MONTH_DAY=$(date +"%d")
+    WEEK_DAY=$(date +"%u")
+
+    export DAYSAGO WEEKSAGO MONTHSAGO MONTH_DAY WEEK_DAY
+    export BACKUP_RETENTION_KEEP_DAILY BACKUP_RETENTION_KEEP_WEEKLY BACKUP_RETENTION_KEEP_MONTHLY
 
 }
 
