@@ -121,6 +121,7 @@ function server_app_setup() {
         if [[ ${PACKAGES_REDIS_STATUS} == "enabled" ]]; then
 
             redis_installer
+            redis_configure
             if [[ ${PACKAGES_PHP_STATUS} == "enabled" ]]; then
                 php_redis_installer
             fi
@@ -323,6 +324,7 @@ function server_setup() {
     if [[ ${PACKAGES_REDIS_STATUS} == "enabled" ]]; then
 
         redis_installer
+        redis_configure
 
         if [[ ${PACKAGES_PHP_STATUS} == "enabled" ]]; then
             php_redis_installer
