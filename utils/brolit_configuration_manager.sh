@@ -336,7 +336,7 @@ function _brolit_configuration_load_backup_retention() {
         log_event "error" "Missing required config vars for backup retention" "true"
         exit 1
     else
-        if [[ ${BACKUP_RETENTION_KEEP_DAILY} -gt 0 ]]; then
+        if [[ ${BACKUP_RETENTION_KEEP_DAILY} -le 0 ]]; then
             log_event "error" "keep_daily config var should be greater than 0" "true"
             exit 1
         fi
