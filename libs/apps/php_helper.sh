@@ -9,89 +9,6 @@
 ################################################################################
 
 ################################################################################
-# Check if php is installed
-#
-# Arguments:
-#   None
-#
-# Outputs:
-#   0 if php is installed, 1 on error.
-################################################################################
-
-# TODO: refactor to return 0 or 1
-function php_check_if_installed() {
-
-  local php_installed
-  local php
-
-  php="$(command -v php)"
-  if [[ ! -x "${php}" ]]; then
-    php_installed="false"
-
-  else
-    php_installed="true"
-
-  fi
-
-  log_event "debug" "php_installed=${php_installed}" "false"
-
-  # Return
-  echo "${php_installed}"
-
-}
-
-################################################################################
-# Check php installed versions
-#
-# Arguments:
-#   None
-#
-# Outputs:
-#   Array of installed versions.
-################################################################################
-
-function php_check_installed_version() {
-
-  local php_fpm_installed_pkg
-  local php_installed_versions
-
-  # Installed versions
-  php_fpm_installed_pkg="$(sudo dpkg --list | grep -oh 'php[0-9]\.[0-9]\-fpm')"
-
-  # Grep -oh parameters explanation:
-  #
-  # -h, --no-filename
-  #   Suppress the prefixing of file names on output. This is the default
-  #   when there is only  one  file  (or only standard input) to search.
-  # -o, --only-matching
-  #   Print  only  the matched (non-empty) parts of a matching line,
-  #   with each such part on a separate output line.
-  #
-  # In this case, output example: php7.2-fpm php7.3-fpm php7.4-fpm
-
-  # Extract only version numbers
-  php_installed_versions="$(echo -n "${php_fpm_installed_pkg}" | grep -Eo '[+-]?[0-9]+([.][0-9]+)?' | tr '\n' ' ')"
-  # The "tr '\n' ' '" part, will replace /n with space
-  # Return example: 7.4 7.2 7.0
-
-  # Check elements number on string
-  count_elements="$(echo "${php_installed_versions}" | wc -w)"
-
-  if [[ $count_elements == "1" ]]; then
-
-    # Remove last space
-    php_installed_versions="$(string_remove_spaces "${php_installed_versions}")"
-
-  fi
-
-  log_event "debug" "Setting php_installed_versions=${php_installed_versions}" "false"
-
-  # Return
-  echo "${php_installed_versions}"
-
-}
-
-################################################################################
 # Check php activated version
 #
 # Arguments:
@@ -110,57 +27,6 @@ function php_check_activated_version() {
 
   # Return
   echo "${php_default}"
-
-}
-
-################################################################################
-# Reconfigure PHP
-#
-# Arguments:
-#  $1 = ${php_v} - Optional
-#
-# Outputs:
-#  String with default version.
-################################################################################
-
-function php_reconfigure() {
-
-  local php_v="${1}"
-
-  log_subsection "PHP Reconfigure"
-
-  # If $php_v is set to default
-  if [[ ${php_v} == "default" ]]; then
-    php_v="$(php_get_distro_default_version)"
-  fi
-
-  # If $php_v not set, it will use $PHP_V global
-  if [[ -z ${php_v} ]]; then php_v="${PHP_V}"; fi
-
-  log_event "info" "Moving php.ini configuration file" "false"
-  cat "${BROLIT_MAIN_DIR}/config/php/php.ini" >"/etc/php/${php_v}/fpm/php.ini"
-  display --indent 6 --text "- Moving php.ini configuration file" --result "DONE" --color GREEN
-
-  log_event "info" "Moving php-fpm.conf configuration file" "false"
-  cat "${BROLIT_MAIN_DIR}/config/php/php-fpm.conf" >"/etc/php/${php_v}/fpm/php-fpm.conf"
-  display --indent 6 --text "- Moving php-fpm.conf configuration file" --result "DONE" --color GREEN
-
-  # Replace string to match PHP version
-  log_event "info" "Replacing string to match PHP version" "false"
-  php_set_version_on_config "${php_v}" "/etc/php/${php_v}/fpm/php-fpm.conf"
-  display --indent 6 --text "- Replacing string to match PHP version" --result "DONE" --color GREEN
-
-  # Uncomment /status from fpm configuration
-  log_event "debug" "Uncommenting /status from fpm configuration" "false"
-  sed -i '/status_path/s/^;//g' "/etc/php/${php_v}/fpm/pool.d/www.conf"
-
-  service php"${php_v}"-fpm reload
-  display --indent 6 --text "- Reloading php${php_v}-fpm service" --result "DONE" --color GREEN
-
-  # Opcache
-  if [[ ${PACKAGES_PHP_CONFIG_OPCODE} == "enabled" ]]; then
-    php_opcode_config "enable"
-  fi
 
 }
 
@@ -212,25 +78,35 @@ function php_set_version_on_config() {
 
 }
 
+################################################################################
+# Set/Update php opcode config
+#
+# Arguments:
+#  $1 = ${php_v}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function php_opcode_config() {
 
-  #$1 = ${status}            // enable or disable
-  #$1 = ${config_file}       // optional
+  local php_v="${1}"
 
-  local status="${1}"
-  local config_file="${2}"
+  local config_file
 
   local val
 
   log_subsection "PHP Opcode Config"
 
-  if [[ -z ${config_file} || ${config_file} == "" ]]; then
+  if [[ -z ${php_v} ]]; then
 
-    config_file="/etc/php/${PHP_V}/fpm/php.ini"
+    return 1
 
   fi
 
-  if [[ $status == "enable" ]]; then
+  config_file="/etc/php/${php_v}/fpm/php.ini"
+
+  if [[ ${PACKAGES_PHP_CONFIG_OPCODE} == "enabled" ]]; then
 
     val=1
 
@@ -293,10 +169,20 @@ function php_opcode_config() {
 
   fi
 
-  service php"${PHP_V}"-fpm reload
-  display --indent 6 --text "- Reloading php${PHP_V}-fpm service" --result "DONE" --color GREEN
+  service php"${php_v}"-fpm reload
+  display --indent 6 --text "- Reloading php${php_v}-fpm service" --result "DONE" --color GREEN
 
 }
+
+################################################################################
+# Count php installed versions
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function php_count_installed_versions() {
 
@@ -304,9 +190,19 @@ function php_count_installed_versions() {
 
 }
 
+################################################################################
+# PHP-FPM optimizations
+#
+# Arguments:
+#  $1 = ${php_v}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function php_fpm_optimizations() {
 
-  # TODO: need to check php versions installed (could be more than one)
+  local php_v="${1}"
 
   log_subsection "PHP-FPM Optimization Tool"
 
@@ -327,20 +223,20 @@ function php_fpm_optimizations() {
   #display --indent 6 --text "- Creating user in MySQL: ${db_user}" --result "DONE" --color GREEN
   #display --indent 6 --text "Getting server info ..."
   log_subsection "Server specs and Mem info"
-  display --indent 6 --text "PHP_V: ${PHP_V}"
+  display --indent 6 --text "PHP_V: ${php_v}"
   display --indent 6 --text "RAM_BUFFER: ${RAM_BUFFER}"
   display --indent 6 --text "CPUS: ${CPUS}"
   display --indent 6 --text "RAM: ${RAM}"
-  display --indent 6 --text "PHP_AVG_RAM: ${PHP_AVG_RAM}"
+  #display --indent 6 --text "PHP_AVG_RAM: ${PHP_AVG_RAM}"
   display --indent 6 --text "MYSQL_AVG_RAM: ${MYSQL_AVG_RAM}"
   display --indent 6 --text "NGINX_AVG_RAM: ${NGINX_AVG_RAM}"
   display --indent 6 --text "NETDATA_AVG_RAM: ${NETDATA_AVG_RAM}"
 
-  log_event "info" "PHP_V: ${PHP_V}" "false"
+  log_event "info" "PHP_V: ${php_v}" "false"
   log_event "info" "RAM_BUFFER: ${RAM_BUFFER}" "false"
   log_event "info" "CPUS: ${CPUS}" "false"
   log_event "info" "RAM: ${RAM}" "false"
-  log_event "info" "PHP_AVG_RAM: ${PHP_AVG_RAM}" "false"
+  #log_event "info" "PHP_AVG_RAM: ${PHP_AVG_RAM}" "false"
   log_event "info" "MYSQL_AVG_RAM: ${MYSQL_AVG_RAM}" "false"
   log_event "info" "NGINX_AVG_RAM: ${NGINX_AVG_RAM}" "false"
   log_event "info" "NETDATA_AVG_RAM: ${NETDATA_AVG_RAM}" "false"
@@ -348,22 +244,22 @@ function php_fpm_optimizations() {
   DELIMITER="="
 
   KEY="pm.max_children"
-  PM_MAX_CHILDREN_ORIGIN=$(cat "/etc/php/${PHP_V}/fpm/pool.d/www.conf" | grep "^${KEY} ${DELIMITER}" | cut -f2- -d"$DELIMITER")
+  PM_MAX_CHILDREN_ORIGIN=$(cat "/etc/php/${php_v}/fpm/pool.d/www.conf" | grep "^${KEY} ${DELIMITER}" | cut -f2- -d"$DELIMITER")
 
   KEY="pm.start_servers"
-  PM_START_SERVERS_ORIGIN=$(cat "/etc/php/${PHP_V}/fpm/pool.d/www.conf" | grep "^${KEY} ${DELIMITER}" | cut -f2- -d"$DELIMITER")
+  PM_START_SERVERS_ORIGIN=$(cat "/etc/php/${php_v}/fpm/pool.d/www.conf" | grep "^${KEY} ${DELIMITER}" | cut -f2- -d"$DELIMITER")
 
   KEY="pm.min_spare_servers"
-  PM_MIN_SPARE_SERVERS_ORIGIN=$(cat "/etc/php/${PHP_V}/fpm/pool.d/www.conf" | grep "^${KEY} ${DELIMITER}" | cut -f2- -d"$DELIMITER")
+  PM_MIN_SPARE_SERVERS_ORIGIN=$(cat "/etc/php/${php_v}/fpm/pool.d/www.conf" | grep "^${KEY} ${DELIMITER}" | cut -f2- -d"$DELIMITER")
 
   KEY="pm.max_spare_servers"
-  PM_MAX_SPARE_SERVERS_ORIGIN=$(cat "/etc/php/${PHP_V}/fpm/pool.d/www.conf" | grep "^${KEY} ${DELIMITER}" | cut -f2- -d"$DELIMITER")
+  PM_MAX_SPARE_SERVERS_ORIGIN=$(cat "/etc/php/${php_v}/fpm/pool.d/www.conf" | grep "^${KEY} ${DELIMITER}" | cut -f2- -d"$DELIMITER")
 
   KEY="pm.max_requests"
-  PM_MAX_REQUESTS_ORIGIN=$(cat "/etc/php/${PHP_V}/fpm/pool.d/www.conf" | grep "^${KEY} ${DELIMITER}" | cut -f2- -d"$DELIMITER")
+  PM_MAX_REQUESTS_ORIGIN=$(cat "/etc/php/${php_v}/fpm/pool.d/www.conf" | grep "^${KEY} ${DELIMITER}" | cut -f2- -d"$DELIMITER")
 
   KEY="pm.process_idle_timeout"
-  PM_PROCESS_IDDLE_TIMEOUT_ORIGIN=$(cat "/etc/php/${PHP_V}/fpm/pool.d/www.conf" | grep "^${KEY} ${DELIMITER}" | cut -f2- -d"$DELIMITER")
+  PM_PROCESS_IDDLE_TIMEOUT_ORIGIN=$(cat "/etc/php/${php_v}/fpm/pool.d/www.conf" | grep "^${KEY} ${DELIMITER}" | cut -f2- -d"$DELIMITER")
 
   # Show/Log PHP-FPM actual config
   # display --indent 6 --text "Getting PHP actual configuration ..."
@@ -390,7 +286,7 @@ function php_fpm_optimizations() {
 
   # Log
   log_event "debug" "PM_MAX_CHILDREN=(${RAM} - (${MYSQL_AVG_RAM} + ${NGINX_AVG_RAM} + ${NETDATA_AVG_RAM} + ${RAM_BUFFER})) / ${PHP_AVG_RAM}))" "false"
-  
+
   RAM_D="$(echo "${RAM} - (${MYSQL_AVG_RAM} + ${NGINX_AVG_RAM} + ${NETDATA_AVG_RAM} + ${RAM_BUFFER})" | bc)"
   PM_MAX_CHILDREN="$(echo "${RAM_D} / ${PHP_AVG_RAM}" | bc | cut -d "." -f1)"
   PM_START_SERVERS=$(("${CPUS}" * 4))
@@ -436,21 +332,21 @@ function php_fpm_optimizations() {
 
       clear_previous_lines "2"
 
-      sed -ie "s|^pm\.max_children =.*$|pm\.max_children = ${PM_MAX_CHILDREN}|g" "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
-      sed -ie "s|^pm\.start_servers =.*$|pm\.start_servers = ${PM_START_SERVERS}|g" "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
-      sed -ie "s|^pm\.min_spare_servers =.*$|pm\.min_spare_servers = ${PM_MIN_SPARE_SERVERS}|g" "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
-      sed -ie "s|^pm\.max_spare_servers =.*$|pm\.max_spare_servers = ${PM_MAX_SPARE_SERVERS}|g" "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
-      sed -ie "s|^pm\.max_requests =.*$|pm\.max_requests = ${PM_MAX_REQUESTS}|g" "/etc/php/${PHP_V}/fpm/pool.d/www.conf"
+      sed -ie "s|^pm\.max_children =.*$|pm\.max_children = ${PM_MAX_CHILDREN}|g" "/etc/php/${php_v}/fpm/pool.d/www.conf"
+      sed -ie "s|^pm\.start_servers =.*$|pm\.start_servers = ${PM_START_SERVERS}|g" "/etc/php/${php_v}/fpm/pool.d/www.conf"
+      sed -ie "s|^pm\.min_spare_servers =.*$|pm\.min_spare_servers = ${PM_MIN_SPARE_SERVERS}|g" "/etc/php/${php_v}/fpm/pool.d/www.conf"
+      sed -ie "s|^pm\.max_spare_servers =.*$|pm\.max_spare_servers = ${PM_MAX_SPARE_SERVERS}|g" "/etc/php/${php_v}/fpm/pool.d/www.conf"
+      sed -ie "s|^pm\.max_requests =.*$|pm\.max_requests = ${PM_MAX_REQUESTS}|g" "/etc/php/${php_v}/fpm/pool.d/www.conf"
 
       #Test the validity of your php-fpm configuration
-      result="$(php-fpm"${PHP_V}" -t 2>&1 | grep -w "test" | cut -d"." -f3 | cut -d" " -f4)"
+      result="$(php-fpm"${php_v}" -t 2>&1 | grep -w "test" | cut -d"." -f3 | cut -d" " -f4)"
 
       if [[ ${result} == "successful" ]]; then
         log_event "info" "PHP optimizations applied!" "false"
         display --indent 6 --text "- Applying optimizations" --result "DONE" --color GREEN
 
       else
-        debug="$(php-fpm"${PHP_V}" -t 2>&1)"
+        debug="$(php-fpm"${php_v}" -t 2>&1)"
         log_event "error" "PHP optimizations fail: ${debug}" "false"
         display --indent 6 --text "- Applying optimizations" --result "FAIL" --color RED
 

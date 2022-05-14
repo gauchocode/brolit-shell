@@ -68,7 +68,7 @@
 - [ ] Restore: Refactor function restore_config_files_from_dropbox.
 - [ ] Nginx: Multidomain support for nginx.
 - [ ] MySQL: Rename database (with and without WP).
-- [ ] PHP: php_reconfigure refactor (replace strings instead of replace entired config files).
+- [ ] PHP: php_reconfigure maybe PHP config files need to have specific version template.
 - [ ] Nginx: Better nginx config. 
         Ref https://www.digitalocean.com/community/tools/nginx
 
