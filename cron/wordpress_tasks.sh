@@ -19,6 +19,11 @@ source "${BROLIT_MAIN_DIR}/libs/commons.sh"
 # Script Initialization
 script_init "true"
 
+# If NETDATA is installed, disable alarms
+if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
+  netdata_alerts_disable
+fi
+
 log_event "info" "Running backups_tasks.sh" "false"
 
 # Get all directories
@@ -115,3 +120,8 @@ for site in ${all_sites}; do
   k=$k+1
 
 done
+
+# If NETDATA is installed, enable alarms
+if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
+  netdata_alerts_enable
+fi

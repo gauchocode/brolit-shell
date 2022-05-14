@@ -19,6 +19,11 @@ source "${BROLIT_MAIN_DIR}/libs/commons.sh"
 # Script Initialization
 script_init "true"
 
+# If NETDATA is installed, disable alarms
+if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
+  netdata_alerts_disable
+fi
+
 # Check needed packages
 package_install_security_utils
 
@@ -48,6 +53,11 @@ fi
 
 # Script cleanup
 cleanup
+
+# If NETDATA is installed, enable alarms
+if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
+  netdata_alerts_enable
+fi
 
 # Log End
 log_event "info" "SECURITY TASKS SCRIPT End -- $(date +%Y%m%d_%H%M)" "false"
