@@ -31,7 +31,7 @@ function monit_installer() {
 
     PACKAGES_MONIT_STATUS="enabled"
 
-    json_write_field "${BROLIT_CONFIG_FILE}" "SUPPORT.monit[].status" "${PACKAGES_MONIT_STATUS}"
+    json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.monit[].status" "${PACKAGES_MONIT_STATUS}"
 
     # new global value ("enabled")
     export PACKAGES_MONIT_STATUS
@@ -67,7 +67,7 @@ function monit_purge() {
 
     PACKAGES_MONIT_STATUS="disabled"
 
-    json_write_field "${BROLIT_CONFIG_FILE}" "SUPPORT.monit[].status" "${PACKAGES_MONIT_STATUS}"
+    json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.monit[].status" "${PACKAGES_MONIT_STATUS}"
 
     # new global value ("disabled")
     export PACKAGES_MONIT_STATUS
