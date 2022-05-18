@@ -1527,7 +1527,7 @@ function _brolit_configuration_load_mailcow() {
     declare -g PACKAGES_MAILCOW_STATUS
     declare -g PACKAGES_MAILCOW_CONFIG_SUBDOMAIN
     declare -g PACKAGES_MAILCOW_CONFIG_PORT
-    declare -g PACKAGES_MAILCOW_CONFIG_NGINX
+
     ## MAILCOW BACKUP
     declare -g MAILCOW_DIR="/opt/mailcow-dockerized/"
     declare -g MAILCOW_TMP_BK="${BROLIT_MAIN_DIR}/tmp/mailcow"
@@ -1549,11 +1549,10 @@ function _brolit_configuration_load_mailcow() {
         fi
 
         PACKAGES_MAILCOW_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.mailcow[].config[].port")"
-        PACKAGES_MAILCOW_CONFIG_NGINX="$(json_read_field "${server_config_file}" "PACKAGES.mailcow[].config[].nginx_proxy")"
         PACKAGES_MAILCOW_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.mailcow[].config[].subdomain")"
 
         # Check if all required vars are set
-        if [[ -z ${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN} ]] || [[ -z ${PACKAGES_MAILCOW_CONFIG_PORT} ]] || [[ -z ${PACKAGES_MAILCOW_CONFIG_NGINX} ]]; then
+        if [[ -z ${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN} ]] || [[ -z ${PACKAGES_MAILCOW_CONFIG_PORT} ]]; then
             log_event "error" "Missing required config vars for mailcow support" "true"
             exit 1
         fi
@@ -1572,7 +1571,7 @@ function _brolit_configuration_load_mailcow() {
 
     fi
 
-    export MAILCOW MAILCOW_DIR MAILCOW_TMP_BK PACKAGES_MAILCOW_STATUS PACKAGES_MAILCOW_CONFIG_SUBDOMAIN PACKAGES_MAILCOW_CONFIG_PORT PACKAGES_MAILCOW_CONFIG_NGINX
+    export MAILCOW MAILCOW_DIR MAILCOW_TMP_BK PACKAGES_MAILCOW_STATUS PACKAGES_MAILCOW_CONFIG_SUBDOMAIN PACKAGES_MAILCOW_CONFIG_PORT
 
 }
 

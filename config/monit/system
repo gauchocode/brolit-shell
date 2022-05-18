@@ -1,7 +1,8 @@
 #System Monitoring
-check system HOSTNAME
-    if memory usage > 80% for 2 cycles then alert
-    if cpu usage > 95% for 10 cycles then alert
+
+#check system HOSTNAME
+#    if memory usage > 80% for 2 cycles then alert
+#    if cpu usage > 95% for 10 cycles then alert
 #    if cpu usage (user) > 70% for 2 cycles then alert
 #    if cpu usage (system) > 30% then alert
 #    if cpu usage (wait) > 20% then alert
@@ -10,13 +11,14 @@ check system HOSTNAME
 #    if cpu usage > 95% for 10 cycles then alert
 #    if swap usage > 25% then alert
 
-check filesystem rootfs with path /                                      # alert if low on disk space.
+# Alert if low on disk space.
+check filesystem rootfs with path /                                      
     if space usage > 60% then alert
 
 #Event queue
 set eventqueue
-    basedir /var/lib/monit/events                                        # set the base directory where events will be stored
-    slots 100                                                            # optionally limit the queue size
+    basedir /var/lib/monit/events                   # set the base directory where events will be stored
+    slots 100                                       # optionally limit the queue size
 
 #Mail settings
 set mail-format {
@@ -31,7 +33,7 @@ set mail-format {
               Monit }
 set mailserver NOTIFICATION_EMAIL_SMTP_SERVER port NOTIFICATION_EMAIL_SMTP_PORT
     username NOTIFICATION_EMAIL_SMTP_USER password "NOTIFICATION_EMAIL_SMTP_UPASS"
-    using TLSV1 with timeout 30 seconds
+    using TLSV13 with timeout 30 seconds
     set alert NOTIFICATION_EMAIL_MAILA
 
 #http settings
