@@ -152,17 +152,16 @@ function mailcow_configure() {
     log_event "info" "Configuring mailcow ..." "false"
 
     # Check if firewall is enabled
-    if [ "$(ufw status | grep -c "Status: active")" -eq "1" ]; then
-        firewall_allow "${PACKAGES_MAILCOW_CONFIG_PORT}"
-    fi
+    #if [ "$(ufw status | grep -c "Status: active")" -eq "1" ]; then
+    # TODO: check ports: https://mailcow.github.io/mailcow-dockerized-docs/prerequisite/prerequisite-system/#default-ports
+    #    firewall_allow "${PACKAGES_MAILCOW_CONFIG_PORT}"
+    #fi
 
-    if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
-
-        nginx_server_create "${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}" "mailcow" "single" "" "${PACKAGES_MAILCOW_CONFIG_PORT}"
-
-        # Replace port on nginx server config
-        sed -i "s/PORTAINER_PORT/${PACKAGES_MAILCOW_CONFIG_PORT}/g" "${WSERVER}/sites-available/${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}"
-    fi
+    #if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
+    #    nginx_server_create "${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}" "mailcow" "single" "" "${PACKAGES_MAILCOW_CONFIG_PORT}"
+    #    # Replace port on nginx server config
+    #    sed -i "s/PORTAINER_PORT/${PACKAGES_MAILCOW_CONFIG_PORT}/g" "${WSERVER}/sites-available/${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}"
+    #fi
 
     if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
 
