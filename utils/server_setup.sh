@@ -229,6 +229,17 @@ function server_app_setup() {
 
         ;;
 
+    "mailcow")
+
+        if [[ ${PACKAGES_MAILCOW_STATUS} == "enabled" ]]; then
+            mailcow_installer
+
+        else
+            mailcow_purge
+        fi
+
+        ;;
+
     *)
         echo "App not supported yet."
         ;;
