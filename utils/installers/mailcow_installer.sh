@@ -21,6 +21,7 @@
 function mailcow_installer() {
 
     local mailcow
+    local mailcow_config_output
 
     log_subsection "Mailcow Installer"
 
@@ -43,6 +44,11 @@ function mailcow_installer() {
             # Clone repo in to project directory
             git clone https://github.com/mailcow/mailcow-dockerized "${PROJECTS_PATH}/${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}"
 
+            # Configure Mailcow
+            mailcow_config_output="$(./generate_config.sh)"
+
+            # TODO: check $mailcow_config_output
+
             # Run docker-compose pull on specific directory
             docker-compose -f "${PROJECTS_PATH}/${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}/docker-compose.yml" pull
 
@@ -51,10 +57,12 @@ function mailcow_installer() {
 
             PACKAGES_MAILCOW_STATUS="enabled"
 
-            json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.mailcow[].status" "${PACKAGES_MAILCOW_STATUS}"
+            # json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.mailcow[].status" "${PACKAGES_MAILCOW_STATUS}"
 
             # new global value ("enabled")
             export PACKAGES_MAILCOW_STATUS
+
+            log_event "info" "You can now access https://${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN} with the default credentials: admin + password moohoo." "true"
 
             return 0
 
@@ -66,6 +74,7 @@ function mailcow_installer() {
 
     else
         log_event "warning" "Mailcow is already installed" "false"
+
     fi
 
 }
