@@ -45,26 +45,30 @@ function mailcow_installer() {
             git clone https://github.com/mailcow/mailcow-dockerized "${PROJECTS_PATH}/${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}"
 
             # Configure Mailcow
-            mailcow_config_output="$(./generate_config.sh)"
+            mailcow_config_output="$("${PROJECTS_PATH}/${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}"/generate_config.sh)"
 
             # TODO: check $mailcow_config_output
+            exitstatus=$?
+            if [[ ${exitstatus} -eq 0 ]]; then
 
-            # Run docker-compose pull on specific directory
-            docker-compose -f "${PROJECTS_PATH}/${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}/docker-compose.yml" pull
+                # Run docker-compose pull on specific directory
+                docker-compose -f "${PROJECTS_PATH}/${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}/docker-compose.yml" pull
 
-            # Run docker-compose up -d on specific directory
-            docker-compose -f "${PROJECTS_PATH}/${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}/docker-compose.yml" up -d
+                # Run docker-compose up -d on specific directory
+                docker-compose -f "${PROJECTS_PATH}/${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}/docker-compose.yml" up -d
 
-            PACKAGES_MAILCOW_STATUS="enabled"
+                PACKAGES_MAILCOW_STATUS="enabled"
 
-            # json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.mailcow[].status" "${PACKAGES_MAILCOW_STATUS}"
+                # json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.mailcow[].status" "${PACKAGES_MAILCOW_STATUS}"
 
-            # new global value ("enabled")
-            export PACKAGES_MAILCOW_STATUS
+                # new global value ("enabled")
+                export PACKAGES_MAILCOW_STATUS
 
-            log_event "info" "You can now access https://${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN} with the default credentials: admin + password moohoo." "true"
+                log_event "info" "You can now access https://${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN} with the default credentials: admin + password moohoo." "true"
 
-            return 0
+                return 0
+
+            fi
 
         else
 
@@ -91,16 +95,24 @@ function mailcow_installer() {
 
 function mailcow_purge() {
 
+    local docker_compose_file="${PROJECTS_PATH}/${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}/docker-compose.yml"
+
     log_subsection "Mailcow Installer"
 
-    # Get Mailcow Container ID
-    container_id="$(docker ps | grep mailcow | awk '{print $1;}')"
+    # Get Mailcow container ID
+    #container_id="$(docker ps | grep mailcow | awk '{print $1;}')"
 
-    # Stop Mailcow Container
-    docker stop "${container_id}"
+    # Stop Mailcow container
+    #docker stop "${container_id}"
 
-    # Remove Mailcow Container
-    docker rm -f mailcow
+    # Remove Mailcow container
+    #docker rm -f mailcow
+
+    # Stop Mailcow containers
+    docker-compose -f "${docker_compose_file}" stop
+
+    # Remove Mailcow container
+    docker-compose -f "${docker_compose_file}" rm
 
     # Remove Mailcow Volume
     #volume rm mailcow_data
@@ -110,7 +122,7 @@ function mailcow_purge() {
 
         PACKAGES_MAILCOW_STATUS="disabled"
 
-        json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.mailcow[].status" "${PACKAGES_MAILCOW_STATUS}"
+        #json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.mailcow[].status" "${PACKAGES_MAILCOW_STATUS}"
 
         # new global value ("disabled")
         export PACKAGES_MAILCOW_STATUS
