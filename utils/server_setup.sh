@@ -233,7 +233,7 @@ function server_app_setup() {
 
         if [[ ${PACKAGES_MAILCOW_STATUS} == "enabled" ]]; then
             mailcow_installer
-
+            mailcow_configure
         else
             mailcow_purge
         fi
