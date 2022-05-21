@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc4
+# Version: 3.2-rc5
 ################################################################################
 
 # Var declarations
@@ -41,8 +41,8 @@ if [[ -f ${DPU_CONFIG_FILE} ]]; then
 fi
 
 # Version
-BROLIT_VERSION="3.2-rc4"
-BROLIT_LITE_VERSION="3.2-rc4-099"
+BROLIT_VERSION="3.2-rc5"
+BROLIT_LITE_VERSION="3.2-rc5-099"
 
 ################################################################################
 
@@ -391,19 +391,17 @@ function _mysql_check_installed_version() {
     local mysql_installed_version
 
     # MySQL or MariaDB?
-    mysql_installed_pkg="$(sudo dpkg --list | grep -Eo 'mysql-server-[0-9]+([.][0-9]+)?')"
+    mysql_installed_pkg="$(apt -qq list mysql-server --installed 2>/dev/null | cut -d "/" -f1)"
 
-    if [[ ${mysql_installed_pkg} != "" ]]; then
-
+    if [[ -z ${mysql_installed_pkg} ]]; then
         # Extract only version numbers
         mysql_installed_version="$(mysql -V | awk -F' ' '{print $3}' | grep -o '[0-9.]*$' | tr '\n' ' ')"
 
     else
 
-        mysql_installed_pkg="$(sudo dpkg --list | grep -Eo 'mariadb-server-[0-9]+([.][0-9]+)?')"
+        mysql_installed_pkg="$(apt -qq list mariadb-server --installed 2>/dev/null | cut -d "/" -f1)"
 
-        if [[ ${mysql_installed_pkg} != "" ]]; then
-
+        if [[ -z ${mysql_installed_pkg} ]]; then
             # Extract only version numbers
             mysql_installed_version="$(mysql -V | grep -Eo '[+-]?[0-9]+([.][0-9]+)+([.][0-9]+)?-MariaDB' | cut -d "-" -f 1)"
 
@@ -1419,7 +1417,7 @@ function dropbox_get_sites_backups() {
 
     local json_output_file="${BROLIT_LITE_OUTPUT_DIR}/dropbox_get_sites_backups.json"
 
-    if [[ ${force} == "true" || ! -f "${json_output_file}" ]];then
+    if [[ ${force} == "true" || ! -f "${json_output_file}" ]]; then
 
         timestamp="$(_timestamp)"
 
@@ -1620,7 +1618,7 @@ function list_packages_to_upgrade() {
 
     local json_output_file="${BROLIT_LITE_OUTPUT_DIR}/list_packages_to_upgrade.json"
 
-    if [[ ${force} == "true" || ! -f "${json_output_file}" ]];then
+    if [[ ${force} == "true" || ! -f "${json_output_file}" ]]; then
 
         # apt commands
         pkgs="$(apt list --upgradable 2>/dev/null | awk -F/ "{print \$1}" | sed -e '1,/.../ d')"
@@ -1664,7 +1662,7 @@ function show_server_data() {
 
     local json_output_file="${BROLIT_LITE_OUTPUT_DIR}/show_server_data.json"
 
-    if [[ ${force} == "true" || ! -f "${json_output_file}" ]];then
+    if [[ ${force} == "true" || ! -f "${json_output_file}" ]]; then
 
         server_info="$(_serverinfo)"
 
@@ -1685,7 +1683,7 @@ function show_server_data() {
 
         # Write JSON file
         echo "{ \"${timestamp}\" : { \"server_info\": { ${server_info} },\"firewall_info\":  [ ${server_firewall} ] , \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] } }" >"${json_output_file}"
-        
+
     fi
 
     # Return JSON

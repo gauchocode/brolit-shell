@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc4
+# Version: 3.2-rc5
 ################################################################################
 #
 # Mailcow Installer
@@ -45,9 +45,8 @@ function mailcow_installer() {
             git clone https://github.com/mailcow/mailcow-dockerized "${PROJECTS_PATH}/${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}"
 
             # Configure Mailcow
-            mailcow_config_output="$("${PROJECTS_PATH}/${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}"/generate_config.sh)"
+            ./"${PROJECTS_PATH}/${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}"/generate_config.sh
 
-            # TODO: check $mailcow_config_output
             exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -56,13 +55,6 @@ function mailcow_installer() {
 
                 # Run docker-compose up -d on specific directory
                 docker-compose -f "${PROJECTS_PATH}/${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN}/docker-compose.yml" up -d
-
-                PACKAGES_MAILCOW_STATUS="enabled"
-
-                # json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.mailcow[].status" "${PACKAGES_MAILCOW_STATUS}"
-
-                # new global value ("enabled")
-                export PACKAGES_MAILCOW_STATUS
 
                 log_event "info" "You can now access https://${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN} with the default credentials: admin + password moohoo." "true"
 
