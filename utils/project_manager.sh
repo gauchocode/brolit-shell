@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc4
+# Version: 3.2-rc5
 ################################################################################
 #
 # Database Manager: Perform database actions.
