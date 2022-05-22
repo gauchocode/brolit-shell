@@ -242,7 +242,7 @@ function dropbox_download() {
 # Delete file in Dropbox
 #
 # Arguments:
-#   $1 = ${to_delete}
+#   $1 = ${to_delete} - full path to file
 #   $2 = ${force_delete}
 #
 # Outputs:
@@ -256,6 +256,7 @@ function dropbox_delete() {
 
     local output
     local search_file
+    local search_result
     local dropbox_remove_result
 
     if [[ ${force_delete} != "true" ]]; then
@@ -264,13 +265,15 @@ function dropbox_delete() {
         log_event "debug" "Search \"${directory}\" to delete on Dropbox account" "false"
         log_event "debug" "Running: \"${DROPBOX_UPLOADER}\" -hq search \"${to_delete}\"" "false"
 
+        search_file="$(basename "${to_delete}")"
+
         # Command
-        search_file="$("${DROPBOX_UPLOADER}" -hq search "${to_delete}")"
+        search_result="$("${DROPBOX_UPLOADER}" -hq search "${search_file}")"
 
     fi
 
     # Check if not empty
-    if [[ -n ${search_file} || ${force_delete} == "true" ]]; then
+    if [[ -n ${search_result} || ${force_delete} == "true" ]]; then
 
         # Command
         output="$("${DROPBOX_UPLOADER}" remove "${to_delete}")"
