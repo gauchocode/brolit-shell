@@ -1845,7 +1845,7 @@ function menu_cron_script_tasks() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/brolit_ui_tasks.sh" "${scheduled_time}"
+        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/brolit_ui_tasks.sh > /dev/null" "${scheduled_time}"
 
       fi
 
