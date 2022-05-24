@@ -1439,7 +1439,7 @@ function dropbox_get_sites_backups() {
 
         done
 
-        if [[ ${backup_projects} != "" ]]; then
+        if [[ -n ${backup_projects} ]]; then
             backup_projects="${backup_projects::-1}" # Remove last char
         else
             backup_projects="\"empty-response\""
