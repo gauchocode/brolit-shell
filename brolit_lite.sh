@@ -1338,7 +1338,7 @@ function _dropbox_get_backup() {
     # Reset
     backups_string=''
 
-    if [[ ${project_domain} == "" ]]; then
+    if [[ -z ${project_domain} ]]; then
         return 1
     fi
 
@@ -1369,15 +1369,15 @@ function _dropbox_get_backup() {
 
         backup_db="$(basename "${search_backup_db}")"
 
-        if [[ ${search_backup_db} != "" ]]; then
-            backups_string="${backups_string}\"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"${backup_db}\"} , "
+        if [[ -n ${search_backup_db} ]]; then
+            backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"${backup_db}\"} , "
         else
-            backups_string="${backups_string}\"$backup_date\":{\"files\":\"${backup_file}\",\"database\":\"false\"} , "
+            backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"false\"} , "
         fi
 
     done
 
-    if [[ $backups_string != "" ]]; then
+    if [[ -n $backups_string ]]; then
         # Remove 3 last chars
         backups_string="${backups_string::-3}"
 
