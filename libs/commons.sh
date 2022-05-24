@@ -1765,7 +1765,7 @@ function menu_cron_script_tasks() {
     "03)" "WORDPRESS TASKS"
     "04)" "SECURITY TASKS"
     "05)" "UPTIME TASKS"
-    "06)" "SCRIPT UPDATER"
+    "06)" "BROLIT UI HELPER"
   )
   chosen_type="$(whiptail --title "CRONEABLE TASKS" --menu "\n" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)"
 
@@ -1839,13 +1839,13 @@ function menu_cron_script_tasks() {
     fi
     if [[ ${chosen_type} == *"06"* ]]; then
 
-      # SCRIPT-UPDATER
-      suggested_cron="45 22 * * *" # Every day at 22:45 AM
-      scheduled_time="$(whiptail --title "CRON UPTIME-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)"
+      # BROLIT HELPER
+      suggested_cron="*/15 * * * *" # Every 15 minutes
+      scheduled_time="$(whiptail --title "CRON BROLIT-HELPER" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/updater.sh" "${scheduled_time}"
+        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/brolit_ui_tasks.sh" "${scheduled_time}"
 
       fi
 
