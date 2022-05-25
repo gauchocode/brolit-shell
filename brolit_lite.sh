@@ -891,9 +891,10 @@ function _project_get_stage_from_domain() {
     project_stages="demo stage test beta dev"
 
     # Trying to extract project stage from domain
-    possible_project_stage="$(_get_subdomain_part "${project_domain}" | cut -d "." -f 1)"
+    subdomain_part="$(_get_subdomain_part "${project_domain}")"
+    possible_project_stage="$(echo "${subdomain_part}" | cut -d "." -f 1)"
 
-    if [[ ${project_stages} != *"${possible_project_stage}"* ]]; then
+    if [[ ${project_stages} != *"${possible_project_stage}"* || ${possible_project_stage} == "" ]]; then
 
         possible_project_stage="prod"
 
@@ -1295,12 +1296,11 @@ function dropbox_get_site_backups() {
     dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}")"
 
     for backup_file in ${dropbox_backup_list}; do
-
+        # Append
         backup_files="\"${backup_file}\" , ${backup_files}"
-
     done
 
-    if [[ ${backup_files} != "" ]]; then
+    if [[ -n ${backup_files} ]]; then
         # Remove 3 last chars
         backup_files="${backup_files::3}"
     else
