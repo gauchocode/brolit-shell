@@ -859,15 +859,26 @@ function _project_get_name_from_domain() {
 
     local project_domain="${1}"
 
-    # Trying to extract project name from domain
-    root_domain="$(_get_root_domain "${project_domain}")"
-    possible_project_name="$(_extract_domain_extension "${root_domain}")"
+    local project_stages
+    local possible_project_name
 
-    # Replace '-' and '.' chars
-    possible_name="$(echo "${possible_project_name}" | sed -r 's/[.-]+/_/g')"
+    declare -a possible_project_stages_on_subdomain=("www" "demo" "stage" "test" "beta" "dev")
+
+    # Extract project name from domain
+    possible_project_name="$(_extract_domain_extension "${project_domain}")"
+
+    # Remove stage from domain
+    for p in "${possible_project_stages_on_subdomain[@]}"; do
+
+        possible_project_name="$(echo "${possible_project_name}" | sed -r "s/${p}.//g")"
+
+    done
+
+    # Remove "-" char " and replace '.' with '_'
+    possible_project_name="$(echo "${possible_project_name}" | sed -r 's/[-]+//g' | sed -r 's/[.]+/_/g')"
 
     # Return
-    echo "${possible_name}"
+    echo "${possible_project_name}"
 
 }
 
@@ -1356,7 +1367,6 @@ function _dropbox_get_backup() {
     dropbox_site_backup_path="${SERVER_NAME}/projects-online/site/${project_domain}"
 
     #echo "Running: ${DROPBOX_UPLOADER} -hq list \"${dropbox_site_backup_path}\" | grep -E \"${project_domain}_site-files_[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}.tar.bz2\""
-
     dropbox_site_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_site_backup_path}" | grep -Eo "${project_domain}_site-files_[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}.tar.bz2")"
 
     for backup_file in ${dropbox_site_backup_list}; do
@@ -1365,7 +1375,8 @@ function _dropbox_get_backup() {
 
         backup_to_search="${project_db}_database_${backup_date}.tar.bz2"
 
-        search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${backup_date}" || ret=$?)" # using ret to bypass unexped errors
+        #echo "Running: ${DROPBOX_UPLOADER} -hq search \"${backup_to_search}\" | grep -E \"${project_db}/${backup_to_search}\""
+        search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${project_db}/${backup_to_search}" || ret=$?)" # using ret to bypass unexped errors
 
         backup_db="$(basename "${search_backup_db}")"
 
