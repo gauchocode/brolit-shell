@@ -365,8 +365,8 @@ function project_get_name_from_domain() {
 
   done
 
-  # Replace '-' and '.' chars with '_'
-  possible_project_name="$(echo "${possible_project_name}" | sed -r 's/[.-]+/_/g')"
+  # Remove "-" char " and replace '.' with '_'
+  possible_project_name="$(echo "${possible_project_name}" | sed -r 's/[-]+//g' | sed -r 's/[.]+/_/g')"
 
   # Return
   echo "${possible_project_name}"
@@ -433,7 +433,7 @@ function project_get_stage_from_domain() {
 #
 # Outputs:
 #   0 if ok, 1 on error.
-################################################################################ 
+################################################################################
 
 function project_update_brolit_config() {
 
