@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc6
+# Version: 3.2-rc7
 ################################################################################
 
 ################################################################################
@@ -54,7 +54,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.2-rc6"
+  declare -g SCRIPT_V="3.2-rc7"
 
   # Hostname
   declare -g SERVER_NAME="$HOSTNAME"
@@ -66,12 +66,6 @@ function _setup_globals_and_options() {
   if [[ ! -d ${BROLIT_CONFIG_PATH} ]]; then
     mkdir "${BROLIT_CONFIG_PATH}"
   fi
-
-  # Folder blacklist
-  declare -g BLACKLISTED_SITES=".wp-cli,.ssh,.local,.cert,html,phpmyadmin"
-
-  # Database blacklist
-  declare -g BLACKLISTED_DATABASES="information_schema,performance_schema,mysql,sys,phpmyadmin,postgres"
 
   # Apps globals
   declare -g TAR
@@ -414,7 +408,7 @@ function script_init() {
   brolit_configuration_load "${BROLIT_CONFIG_FILE}"
 
   # EXPORT VARS
-  export SCRIPT_V SERVER_NAME BROLIT_CONFIG_PATH BROLIT_MAIN_DIR BLACKLISTED_SITES BLACKLISTED_DATABASES PACKAGES
+  export SCRIPT_V SERVER_NAME BROLIT_CONFIG_PATH BROLIT_MAIN_DIR PACKAGES
   export DISK_U ONE_FILE_BK NOTIFICATION_EMAIL_SMTP_SERVER NOTIFICATION_EMAIL_SMTP_PORT NOTIFICATION_EMAIL_SMTP_TLS NOTIFICATION_EMAIL_SMTP_USER NOTIFICATION_EMAIL_SMTP_UPASS
   export LOG DEBUG SKIPTESTS EXEC_TYPE
   export BROLIT_CONFIG_FILE

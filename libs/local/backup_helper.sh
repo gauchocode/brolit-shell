@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc6
+# Version: 3.2-rc7
 #############################################################################
 #
 # Backup Helper: Perform backup actions.
@@ -771,31 +771,6 @@ function backup_databases() {
         backuped_databases_list[$database_backup_index]="${database_backup_file}"
         backuped_databases_sizes_list+=("${database_backup_size}")
 
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
-
-          # Old backup
-          old_backup_file="${database}_database_${DAYSAGO}.tar.bz2"
-
-          # Delete old backup from Dropbox
-          storage_delete_backup "/${SERVER_NAME}/projects-online/database/${database}/${old_backup_file}"
-
-          exitstatus=$?
-          if [[ ${exitstatus} -eq 0 ]]; then
-
-            # Delete temp backup
-            rm --force "${BROLIT_TMP_DIR}/${NOW}/${database_backup_path}"
-
-            # Log
-            log_event "info" "${BROLIT_TMP_DIR}/${NOW}/${database_backup_path} backup deleted from server." "false"
-
-            # Return
-            # echo "${database_backup_size}"
-
-          fi
-
-        fi
-
         database_backup_index=$((database_backup_index + 1))
 
         log_event "info" "Backup ${database_backup_index} of ${databases_count} done" "false"
@@ -845,21 +820,41 @@ function backup_project_database() {
 
   local export_result
 
-  local directory_to_backup="${BROLIT_TMP_DIR}/${NOW}/"
-  local db_file="${database}_database_${NOW}.sql"
-
-  local backup_file="${database}_database_${NOW}.tar.bz2"
+  local dump_file
+  local backup_file
+  #local directory_to_backup="${BROLIT_TMP_DIR}/${NOW}/"
 
   log_event "info" "Creating new database backup of '${database}'" "false"
 
+  # Backups file names
+  if [[ ${MONTH_DAY} -eq 1 ]]; then
+    ## On first month day do
+    dump_file="${database}_database_${NOW}-monthly.sql"
+    backup_file="${database}_database_${NOW}-monthly.tar.bz2"
+    old_backup_file="${database}_database_${MONTHSAGO}-monthly.tar.bz2"
+  else
+    ## On saturdays do
+    if [[ ${WEEK_DAY} -eq 6 ]]; then
+      dump_file="${database}_database_${NOW}-weekly.sql"
+      backup_file="${database}_database_${NOW}-weekly.tar.bz2"
+      old_backup_file="${database}_database_${WEEKSAGO}-weekly.tar.bz2"
+    else
+      ## On any regular day do
+      dump_file="${database}_database_${NOW}.sql"
+      backup_file="${database}_database_${NOW}.tar.bz2"
+      old_backup_file="${database}_database_${DAYSAGO}.tar.bz2"
+    fi
+  fi
+
+  # Database engine
   if [[ ${db_engine} == "mysql" ]]; then
-    # Create dump file
-    mysql_database_export "${database}" "${directory_to_backup}${db_file}"
+    ## Create dump file
+    mysql_database_export "${database}" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
   else
 
     if [[ ${db_engine} == "psql" ]]; then
-      # Create dump file
-      postgres_database_export "${database}" "${directory_to_backup}${db_file}"
+      ## Create dump file
+      postgres_database_export "${database}" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
     fi
 
   fi
@@ -868,7 +863,7 @@ function backup_project_database() {
   if [[ ${export_result} -eq 0 ]]; then
 
     # Compress backup
-    backup_file_size="$(compress "${directory_to_backup}" "${db_file}" "${BROLIT_TMP_DIR}/${NOW}/${backup_file}")"
+    backup_file_size="$(compress "${BROLIT_TMP_DIR}/${NOW}/" "${dump_file}" "${BROLIT_TMP_DIR}/${NOW}/${backup_file}")"
 
     # Check test result
     compress_result=$?
@@ -885,14 +880,19 @@ function backup_project_database() {
       # Upload database backup
       storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "/${SERVER_NAME}/projects-online/database/${database}"
 
-      upload_result=$?
-      if [[ ${upload_result} -eq 0 ]]; then
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
 
-        rm --force "${directory_to_backup}/${db_file}"
+        # Delete old backup from storage
+        storage_delete_backup "/${SERVER_NAME}/projects-online/database/${database}/${old_backup_file}"
+
+        # Delete local temp files
+        rm --force "${BROLIT_TMP_DIR}/${NOW}"
 
         # Return
         ## output format: backupfile backup_file_size
-        echo "${BROLIT_TMP_DIR}/${NOW}/${backup_file};${backup_file_size}"
+        #echo "${BROLIT_TMP_DIR}/${NOW}/${backup_file};${backup_file_size}"
+        echo "${backup_file};${backup_file_size}"
 
         return 0
 

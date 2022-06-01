@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc6
+# Version: 3.2-rc7
 ################################################################################
 
 # Var declarations
@@ -12,6 +12,8 @@ declare -g SERVER_NAME="${HOSTNAME}"
 ## Dirs
 declare -g BROLIT_MAIN_DIR="/root/brolit-shell"
 declare -g BROLIT_PROJECT_CONFIG_PATH="/etc/brolit"
+
+declare -g BROLIT_CONFIG_FILE=~/.brolit_conf.json
 
 #declare -g BROLIT_TMP_DIR="/root/brolit-shell/tmp"
 declare -g BROLIT_LITE_OUTPUT_DIR="/root/brolit-shell/tmp/lite-output"
@@ -41,8 +43,8 @@ if [[ -f ${DPU_CONFIG_FILE} ]]; then
 fi
 
 # Version
-BROLIT_VERSION="3.2-rc6"
-BROLIT_LITE_VERSION="3.2-rc6-099"
+BROLIT_VERSION="3.2-rc7"
+BROLIT_LITE_VERSION="3.2-rc7-099"
 
 ################################################################################
 
@@ -874,7 +876,7 @@ function _project_get_name_from_domain() {
 
     done
 
-    # Remove "-" char " and replace '.' with '_'
+    # Remove "-" and replace '.' with '_'
     possible_project_name="$(echo "${possible_project_name}" | sed -r 's/[-]+//g' | sed -r 's/[.]+/_/g')"
 
     # Return
@@ -1125,9 +1127,10 @@ function _mysql_databases() {
     local database
     local databases
     local all_databases
+    local database_bl
 
     # Database blacklist
-    local database_bl="information_schema,performance_schema,mysql,sys,phpmyadmin"
+    database_bl="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].databases[].exclude[]")"
 
     # Run command
     all_databases="$(mysql -Bse 'show databases')"
@@ -1240,7 +1243,7 @@ function _sites_directories() {
     local site_size
 
     # Directory blacklist
-    local directory_bl="html,phpmyadmin,sql"
+    directory_bl="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].projects[].exclude[]")"
 
     # Run command
     all_directories="$(ls /var/www)"
