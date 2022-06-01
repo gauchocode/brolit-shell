@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc6
+# Version: 3.2-rc7
 ################################################################################
 #
 # Server Config Manager: Brolit server configuration management.
@@ -269,11 +269,17 @@ function _brolit_configuration_load_backup_config() {
 
     # Globals
     declare -g BACKUP_CONFIG_PROJECTS_STATUS
-    declare -g BACKUP_CONFIG_PROJECTS_EXCLUDE_LIST
+    #declare -g BACKUP_CONFIG_PROJECTS_EXCLUDE_LIST
     declare -g BACKUP_CONFIG_DATABASES_STATUS
-    declare -g BACKUP_CONFIG_DATABASES_EXCLUDE_LIST
+    #declare -g BACKUP_CONFIG_DATABASES_EXCLUDE_LIST
     declare -g BACKUP_CONFIG_SERVER_CFG_STATUS
     declare -g BACKUP_CONFIG_COMPRESSION_TYPE
+
+    declare -g BLACKLISTED_SITES
+    declare -g BLACKLISTED_DATABASES
+
+    # TODO: replace with json_read_field
+    declare -g BLACKLISTED_SITES=".wp-cli,.ssh,.local,.cert,html,phpmyadmin"
 
     ## Backup config projects
     BACKUP_CONFIG_PROJECTS_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].status")"
@@ -281,7 +287,7 @@ function _brolit_configuration_load_backup_config() {
         log_event "error" "Missing required config vars for backup retention" "true"
         exit 1
     fi
-    BACKUP_CONFIG_PROJECTS_EXCLUDE_LIST="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].exclude")"
+    #BLACKLISTED_SITES="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].exclude")"
 
     ## Backup config databases
     BACKUP_CONFIG_DATABASES_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.config[].databases[].status")"
@@ -289,7 +295,7 @@ function _brolit_configuration_load_backup_config() {
         log_event "error" "Missing required config vars for backup retention" "true"
         exit 1
     fi
-    BACKUP_CONFIG_DATABASES_EXCLUDE_LIST="$(json_read_field "${server_config_file}" "BACKUPS.config[].databases[].exclude")"
+    BLACKLISTED_DATABASES="$(json_read_field "${server_config_file}" "BACKUPS.config[].databases[].exclude[]")"
 
     ## Backup config server_cfg
     BACKUP_CONFIG_SERVER_CFG_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.config[].server_cfg")"
@@ -305,7 +311,10 @@ function _brolit_configuration_load_backup_config() {
         exit 1
     fi
 
-    export BACKUP_CONFIG_PROJECTS_STATUS BACKUP_CONFIG_DATABASES_STATUS BACKUP_CONFIG_SERVER_CFG_STATUS BACKUP_CONFIG_PROJECTS_EXCLUDE_LIST BACKUP_CONFIG_DATABASES_EXCLUDE_LIST
+    export BACKUP_CONFIG_PROJECTS_STATUS BACKUP_CONFIG_DATABASES_STATUS BACKUP_CONFIG_SERVER_CFG_STATUS
+
+    export BLACKLISTED_SITES BLACKLISTED_DATABASES
+    #export BACKUP_CONFIG_PROJECTS_EXCLUDE_LIST BACKUP_CONFIG_DATABASES_EXCLUDE_LIST
 
 }
 
