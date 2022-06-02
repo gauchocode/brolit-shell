@@ -16,6 +16,9 @@ source "${BROLIT_MAIN_DIR}/libs/commons.sh"
 
 ################################################################################
 
+# Script Initialization
+script_init "true"
+
 # Running from cron
 log_event "info" "Running optimizer_tasks.sh from cron ..." "false"
 

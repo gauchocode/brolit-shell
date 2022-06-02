@@ -822,7 +822,6 @@ function backup_project_database() {
 
   local dump_file
   local backup_file
-  #local directory_to_backup="${BROLIT_TMP_DIR}/${NOW}/"
 
   log_event "info" "Creating new database backup of '${database}'" "false"
 
@@ -887,7 +886,7 @@ function backup_project_database() {
         storage_delete_backup "/${SERVER_NAME}/projects-online/database/${database}/${old_backup_file}"
 
         # Delete local temp files
-        rm --force "${BROLIT_TMP_DIR}/${NOW}"
+        rm --recursive --force "${BROLIT_TMP_DIR}/${NOW:?}"
 
         # Return
         ## output format: backupfile backup_file_size
