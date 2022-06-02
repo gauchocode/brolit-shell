@@ -101,7 +101,6 @@ function package_update() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-
 function package_is_installed() {
 
   local package="${1}"
@@ -152,7 +151,7 @@ function package_install() {
   # sudo DEBIAN_FRONTEND=noninteractive apt-get install PACKAGE -y -qq < /dev/null > /dev/null
 
   # apt command
-  sudo DEBIAN_FRONTEND=noninteractive apt-get --yes install "${package}" -qq < /dev/null > /dev/null
+  sudo DEBIAN_FRONTEND=noninteractive apt-get --yes install "${package}" -qq </dev/null >/dev/null
 
   exitstatus=$?
   if [[ $exitstatus -eq 0 ]]; then
@@ -300,6 +299,14 @@ function package_install_optimization_utils() {
   package_install_if_not "ghostscript"
   package_install_if_not "mogrify"
   package_install_if_not "imagemagick-*"
+
+  # Load commands
+  declare -g MOGRIFY="$(command -v mogrify)"
+  declare -g JPEGOPTIM="$(command -v jpegoptim)"
+  declare -g OPTIPNG="$(command -v optipng)"
+  declare -g GHOSTSCRIPT="$(command -v ghostscript)"
+
+  export MOGRIFY JPEGOPTIM OPTIPNG GHOSTSCRIPT
 
 }
 
