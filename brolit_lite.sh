@@ -44,7 +44,7 @@ fi
 
 # Version
 BROLIT_VERSION="3.2-rc7"
-BROLIT_LITE_VERSION="3.2-rc7-099"
+BROLIT_LITE_VERSION="3.2-rc7-100"
 
 ################################################################################
 
@@ -1370,13 +1370,13 @@ function _dropbox_get_backup() {
     dropbox_site_backup_path="${SERVER_NAME}/projects-online/site/${project_domain}"
 
     #echo "Running: ${DROPBOX_UPLOADER} -hq list \"${dropbox_site_backup_path}\" | grep -E \"${project_domain}_site-files_[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}.tar.bz2\""
-    dropbox_site_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_site_backup_path}" | grep -Eo "${project_domain}_site-files_[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}.tar.bz2")"
+    dropbox_site_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_site_backup_path}" | grep -Eo "${project_domain}_site-files_[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}.*")"
 
     for backup_file in ${dropbox_site_backup_list}; do
 
         backup_date="$(_backup_get_date "${backup_file}")"
 
-        backup_to_search="${project_db}_database_${backup_date}.tar.bz2"
+        backup_to_search="${project_db}_database_${backup_date}"
 
         #echo "Running: ${DROPBOX_UPLOADER} -hq search \"${backup_to_search}\" | grep -E \"${project_db}/${backup_to_search}\""
         search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${project_db}/${backup_to_search}" || ret=$?)" # using ret to bypass unexped errors
