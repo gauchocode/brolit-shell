@@ -297,8 +297,7 @@ function package_install_optimization_utils() {
   package_install_if_not "webp"
   package_install_if_not "gifsicle"
   package_install_if_not "ghostscript"
-  package_install_if_not "mogrify"
-  package_install_if_not "imagemagick-*"
+  package_install_if_not "imagemagick"
 
   # Load commands
   declare -g MOGRIFY="$(command -v mogrify)"
