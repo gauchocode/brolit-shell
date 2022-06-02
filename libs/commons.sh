@@ -35,8 +35,7 @@ function _source_all_scripts() {
   source "${BROLIT_MAIN_DIR}/libs/notification_controller.sh"
   source "${BROLIT_MAIN_DIR}/libs/storage_controller.sh"
 
-  log_event "info" "Sourcing dependencies ..." "false"
-  #display --indent 6 --text "- Sourcing dependencies" --result "DONE" --color GREEN
+  #log_event "info" "Sourcing dependencies ..." "false"
 
 }
 
