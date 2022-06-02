@@ -137,9 +137,10 @@ function optimize_image_size() {
 
   local last_run
 
-  # Run ImageMagick mogrify
-  log_event "info" "Running mogrify to optimize image sizes ..."
   log_subsection "Image Resizer"
+
+  # Run ImageMagick mogrify
+  log_event "info" "Running mogrify to optimize image sizes ..." "false"
 
   last_run=$(_check_last_optimization_date)
 
@@ -147,7 +148,7 @@ function optimize_image_size() {
 
     display --indent 6 --text "- Optimizing images sizes for first time"
 
-    log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;"
+    log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;" "false"
     ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \;
 
     display --indent 6 --text "- Optimizing images sizes for first time" --result "DONE" --color GREEN
@@ -156,7 +157,7 @@ function optimize_image_size() {
 
     display --indent 6 --text "- Optimizing images of last 7 days"
 
-    log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;"
+    log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;" "false"
     ${FIND} "${path}" -mtime -7 -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \;
 
     display --indent 6 --text "- Optimizing images of last 7 days" --result "DONE" --color GREEN
@@ -200,12 +201,12 @@ function optimize_images() {
 
     if [[ "${last_run}" == "never" ]]; then
 
-      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;"
+      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;" "false"
       ${FIND} "${path}" -type f -regex ".*\.\(jpg\|jpeg\)" -exec "${JPEGOPTIM}" --max="${img_compress}" --strip-all --all-progressive {} \;
 
     else
 
-      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;"
+      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;" "false"
       ${FIND} "${path}" -mtime -7 -type f -regex ".*\.\(jpg\|jpeg\)" -exec "${JPEGOPTIM}" --max="${img_compress}" --strip-all --all-progressive {} \;
 
     fi
@@ -220,12 +221,12 @@ function optimize_images() {
 
     if [[ "${last_run}" == "never" ]]; then
 
-      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${OPTIPNG} -strip-all {} \;"
+      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${OPTIPNG} -strip-all {} \;" "false"
       ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${OPTIPNG}" -o7 -strip all {} \;
 
     else
 
-      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${OPTIPNG} -strip-all {} \;"
+      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${OPTIPNG} -strip-all {} \;" "false"
       ${FIND} "${path}" -mtime -7 -type f -name "*.${file_extension}" -exec "${OPTIPNG}" -o7 -strip all {} \;
 
     fi
@@ -234,7 +235,7 @@ function optimize_images() {
 
   else
 
-    log_event "warning" "Unsopported file extension ${file_extension}"
+    log_event "warning" "Unsopported file extension ${file_extension}" "false"
     display --indent 6 --text "- Optimizing images" --result "FAIL" --color RED
     display --indent 8 --text "Unsopported file extension: ${file_extension}"
 
@@ -262,7 +263,7 @@ function optimize_pdfs() {
   last_run=$(_check_last_optimization_date)
 
   # Run pdf optimizer
-  log_event "error" "TODO: Running pdfwrite ..."
+  log_event "error" "TODO: Running pdfwrite ..." "false"
 
   #Here is a solution for getting the output of find into a bash array:
   #array=()
