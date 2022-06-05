@@ -63,13 +63,13 @@ function backup_server_config() {
   if [[ -n ${backup_path} ]]; then
 
     # Backups file names
-    if [[ ${MONTH_DAY} -eq 1 ]]; then
+    if [[ ${MONTH_DAY} -eq 1 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
       ## On first month day do
       backup_file="${bk_sup_type}-${backup_type}-files-${NOW}-monthly.tar.bz2"
       old_backup_file="${bk_sup_type}-${backup_type}-files-${MONTHSAGO}-monthly.tar.bz2"
     else
       ## On saturdays do
-      if [[ ${WEEK_DAY} -eq 6 ]]; then
+      if [[ ${WEEK_DAY} -eq 6 && ${BACKUP_RETENTION_KEEP_WEEKLY} -gt 0 ]]; then
         backup_file="${bk_sup_type}-${backup_type}-files-${NOW}-weekly.tar.bz2"
         old_backup_file="${bk_sup_type}-${backup_type}-files-${WEEKSAGO}-weekly.tar.bz2"
       else
@@ -81,7 +81,7 @@ function backup_server_config() {
 
     # Log
     display --indent 6 --text "- Files backup for ${YELLOW}${bk_sup_type}${ENDCOLOR}"
-    log_event "info" "Files backup for : ${bk_sup_type}" "false"
+    log_event "info" "Files backup for: ${bk_sup_type}" "false"
 
     # Compress backup
     backup_file_size="$(compress "${backup_path}" "${directory_to_backup}" "${BROLIT_TMP_DIR}/${NOW}/${backup_file}")"
@@ -280,13 +280,13 @@ function backup_mailcow() {
   if [[ -n ${MAILCOW_DIR} ]]; then
 
     # Backups file names
-    if [[ ${MONTH_DAY} -eq 1 ]]; then
+    if [[ ${MONTH_DAY} -eq 1 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
       ## On first month day do
       backup_file="${backup_type}_files-${NOW}-monthly.tar.bz2"
       old_backup_file="${backup_type}_files-${MONTHSAGO}-monthly.tar.bz2"
     else
       ## On saturdays do
-      if [[ ${WEEK_DAY} -eq 6 ]]; then
+      if [[ ${WEEK_DAY} -eq 6 && ${BACKUP_RETENTION_KEEP_WEEKLY} -gt 0 ]]; then
         backup_file="${backup_type}_files-${NOW}-weekly.tar.bz2"
         old_backup_file="${backup_type}_files-${WEEKSAGO}-weekly.tar.bz2"
       else
@@ -515,13 +515,13 @@ function backup_project_files() {
   local storage_path
 
   # Backups file names
-  if [[ ${MONTH_DAY} -eq 1 ]]; then
+  if [[ ${MONTH_DAY} -eq 1 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
     ## On first month day do
     backup_file="${directory_to_backup}_${backup_type}-files_${NOW}-monthly.tar.bz2"
     old_backup_file="${directory_to_backup}_${backup_type}-files_${MONTHSAGO}-monthly.tar.bz2"
   else
     ## On saturdays do
-    if [[ ${WEEK_DAY} -eq 6 ]]; then
+    if [[ ${WEEK_DAY} -eq 6 && ${BACKUP_RETENTION_KEEP_WEEKLY} -gt 0 ]]; then
       backup_file="${directory_to_backup}_${backup_type}-files_${NOW}-weekly.tar.bz2"
       old_backup_file="${directory_to_backup}_${backup_type}-files_${WEEKSAGO}-weekly.tar.bz2"
     else
@@ -826,14 +826,14 @@ function backup_project_database() {
   log_event "info" "Creating new database backup of '${database}'" "false"
 
   # Backups file names
-  if [[ ${MONTH_DAY} -eq 1 ]]; then
+  if [[ ${MONTH_DAY} -eq 1 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
     ## On first month day do
     dump_file="${database}_database_${NOW}-monthly.sql"
     backup_file="${database}_database_${NOW}-monthly.tar.bz2"
     old_backup_file="${database}_database_${MONTHSAGO}-monthly.tar.bz2"
   else
     ## On saturdays do
-    if [[ ${WEEK_DAY} -eq 6 ]]; then
+    if [[ ${WEEK_DAY} -eq 6 && ${BACKUP_RETENTION_KEEP_WEEKLY} -gt 0 ]]; then
       dump_file="${database}_database_${NOW}-weekly.sql"
       backup_file="${database}_database_${NOW}-weekly.tar.bz2"
       old_backup_file="${database}_database_${WEEKSAGO}-weekly.tar.bz2"
@@ -886,7 +886,7 @@ function backup_project_database() {
         storage_delete_backup "/${SERVER_NAME}/projects-online/database/${database}/${old_backup_file}"
 
         # Delete local temp files
-        rm --recursive --force "${BROLIT_TMP_DIR}/${NOW:?}"
+        rm --force "${BROLIT_TMP_DIR}/${NOW}/${backup_file}"
 
         # Return
         ## output format: backupfile backup_file_size
@@ -980,10 +980,11 @@ function backup_project() {
 
     fi
 
-    log_event "info" "Deleting backup from server ..." "false"
-
+    # Delete backup from server
     rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${backup_type:?}"
 
+    # Log
+    #log_event "info" "Deleting backup from server ..." "false"
     log_event "info" "Project backup done" "false"
 
   else
