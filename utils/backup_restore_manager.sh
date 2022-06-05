@@ -88,8 +88,6 @@ function backup_manager_menu() {
       # Sending email notification
       mail_send_notification "${email_subject}" "${mail_html}"
 
-      #remove_mail_notifications_files
-
     fi
 
     if [[ ${chosen_backup_type} == *"02"* ]]; then
