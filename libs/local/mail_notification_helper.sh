@@ -54,10 +54,16 @@ function mail_send_notification() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
+        # Remove tmp files
+        _remove_mail_notifications_files
+
         # Log
         log_event "info" "Email sent!" "false"
 
     else
+
+        # Remove tmp files
+        _remove_mail_notifications_files
 
         # Log
         log_event "info" "Something went wrong sending the email: '${email_subject}'" "false"
@@ -102,16 +108,18 @@ function mail_subject_status() {
 
 }
 
-function remove_mail_notifications_files() {
+function _remove_mail_notifications_files() {
+
+    rm --force "${BROLIT_TMP_DIR}/*.mail"
 
     # Remove one per line only for better readibility
-    rm --force "${BROLIT_TMP_DIR}/cert-${NOW}.mail"
-    rm --force "${BROLIT_TMP_DIR}/pkg-${NOW}.mail"
-    rm --force "${BROLIT_TMP_DIR}/file-bk-${NOW}.mail"
-    rm --force "${BROLIT_TMP_DIR}/config-bk-${NOW}.mail"
-    rm --force "${BROLIT_TMP_DIR}/db-bk-${NOW}.mail"
+    #rm --force "${BROLIT_TMP_DIR}/cert-${NOW}.mail"
+    #rm --force "${BROLIT_TMP_DIR}/pkg-${NOW}.mail"
+    #rm --force "${BROLIT_TMP_DIR}/file-bk-${NOW}.mail"
+    #rm --force "${BROLIT_TMP_DIR}/config-bk-${NOW}.mail"
+    #rm --force "${BROLIT_TMP_DIR}/db-bk-${NOW}.mail"
 
-    log_event "info" "Email temporary files removed!" "false"
+    log_event "debug" "Email temporary files removed!" "false"
 
 }
 

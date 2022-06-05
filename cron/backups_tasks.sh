@@ -99,7 +99,6 @@ email_subject="${email_status} [${NOWDISPLAY}] - Complete Backup on ${SERVER_NAM
 mail_send_notification "${email_subject}" "${mail_html}"
 
 # Cleanup
-remove_mail_notifications_files
 cleanup
 
 # Write e-mail (debug)
