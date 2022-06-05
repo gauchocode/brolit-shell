@@ -886,6 +886,7 @@ function backup_project_database() {
         storage_delete_backup "/${SERVER_NAME}/projects-online/database/${database}/${old_backup_file}"
 
         # Delete local temp files
+        rm --force "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
         rm --force "${BROLIT_TMP_DIR}/${NOW}/${backup_file}"
 
         # Return
