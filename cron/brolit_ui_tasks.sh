@@ -17,6 +17,6 @@ source "${BROLIT_MAIN_DIR}/brolit_lite.sh"
 ################################################################################
 
 show_server_data "true"
-list_packages_to_upgrade "true"
-firewall_app_list "true"
 dropbox_get_sites_backups "true"
+firewall_get_apps_details "true"
+list_packages_to_upgrade "true"
