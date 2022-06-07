@@ -44,7 +44,7 @@ fi
 
 # Version
 BROLIT_VERSION="3.2-rc7"
-BROLIT_LITE_VERSION="3.2-rc7-100"
+BROLIT_LITE_VERSION="3.2-rc7-102"
 
 ################################################################################
 
@@ -1604,7 +1604,17 @@ function read_project_config() {
 
 }
 
-function firewall_app_list() {
+################################################################################
+# Get app details, return JSON
+#
+# Arguments:
+#   nothing
+#
+# Outputs:
+#   json output with firewall apps details
+################################################################################
+
+function firewall_get_apps_details() {
 
     local timestamp
 
@@ -1617,12 +1627,22 @@ function firewall_app_list() {
     timestamp="$(_timestamp)"
 
     # Write JSON file
-    echo "{ \"${timestamp}\" :  ${json_string} }" >"${BROLIT_LITE_OUTPUT_DIR}/firewall_app_list.json"
+    echo "{ \"${timestamp}\" :  ${json_string} }" >"${BROLIT_LITE_OUTPUT_DIR}/firewall_apps_details.json"
 
     # Return JSON
-    cat "${BROLIT_LITE_OUTPUT_DIR}/list_packages_to_upgrade.json"
+    cat "${BROLIT_LITE_OUTPUT_DIR}/firewall_apps_details.json"
 
 }
+
+################################################################################
+# List package to upgrade, return JSON
+#
+# Arguments:
+#   $force
+#
+# Outputs:
+#   json output with packages to upgrade
+################################################################################
 
 function list_packages_to_upgrade() {
 
