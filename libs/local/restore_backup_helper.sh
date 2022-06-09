@@ -1164,7 +1164,7 @@ function restore_project() {
     # Decompress
     decompress "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}" "${BROLIT_TMP_DIR}" "lbzip2"
     if [[ $? -eq 1 ]]; then
-      display --indent 6 --text "- Decompressing project backup" --result "FAILED" --color RED
+      # TODO: implement error type
       return 1
     fi
 
@@ -1207,6 +1207,8 @@ function restore_project() {
 
       # Database Backup
       project_backup_date="$(backup_get_date "${chosen_backup_to_restore}")"
+
+      # TODO: update this to match monthly and weekly backups
       db_to_download="${chosen_server}/projects-${chosen_status}/database/${db_name}/${db_name}_database_${project_backup_date}.tar.bz2"
       db_to_restore="${db_name}_database_${project_backup_date}.tar.bz2"
 

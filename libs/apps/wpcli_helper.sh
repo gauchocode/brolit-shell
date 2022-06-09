@@ -1541,6 +1541,8 @@ function wpcli_db_change_tables_prefix() {
 ################################################################################
 # Search and replace
 #
+#   Ref: https://developer.wordpress.org/cli/commands/search-replace/
+#
 # Arguments:
 #   $1 = ${wp_site}
 #   $2 = ${search}
@@ -1552,13 +1554,11 @@ function wpcli_db_change_tables_prefix() {
 
 function wpcli_search_and_replace() {
 
-    # Ref: https://developer.wordpress.org/cli/commands/search-replace/
-
     local wp_site="${1}"
     local search="${2}"
     local replace="${3}"
 
-    #local wp_site_url
+    local wp_site_url
 
     # Folder Name need to be the Site URL
     wp_site_url="$(basename "${wp_site}")"
