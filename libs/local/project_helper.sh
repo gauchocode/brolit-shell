@@ -2376,7 +2376,7 @@ function project_update_domain_config() {
   local project_type="${2}"
   local project_port="${3}"
 
-  root_domain="$(domain_get_root "${new_project_domain}")"
+  root_domain="$(domain_get_root "${project_domain}")"
   #root_domain="$(ask_root_domain "${possible_root_domain}")"
 
   # TODO: if ${project_domain} == ${chosen_domain}, maybe ask if want to restore nginx and let's encrypt config files
