@@ -356,8 +356,8 @@ function _brolit_configuration_load_backup_retention() {
         log_event "error" "Missing required config vars for backup retention" "true"
         exit 1
     fi
+    
     BACKUP_RETENTION_KEEP_MONTHLY="$(json_read_field "${server_config_file}" "BACKUPS.config[].retention[].keep_monthly")"
-
     if [[ -z ${BACKUP_RETENTION_KEEP_MONTHLY} ]]; then
         log_event "error" "Missing required config vars for backup retention" "true"
         exit 1
