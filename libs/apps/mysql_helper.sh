@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc7
+# Version: 3.2-rc8
 ################################################################################
 #
 # MySQL Helper: Perform mysql actions.
@@ -185,7 +185,7 @@ function mysql_count_databases() {
     local db
 
     for db in ${databases}; do
-        if [[ $BLACKLISTED_DATABASES != *"${db}"* ]]; then # $BLACKLISTED_DATABASES contains blacklisted databases
+        if [[ $EXCLUDED_DATABASES_LIST != *"${db}"* ]]; then # $EXCLUDED_DATABASES_LIST contains blacklisted databases
             total_databases=$((total_databases + 1))
         fi
     done

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc7
+# Version: 3.2-rc8
 ################################################################################
 #
 # System Helper: Perform system actions.
@@ -237,9 +237,10 @@ function system_add_floating_IP() {
 
     local ubuntu_v
 
+    log_subsection "Adding Floating IP"
+
     ubuntu_v="$(get_ubuntu_version)"
 
-    log_subsection "Adding Floating IP"
     log_event "info" "Trying to add ${floating_IP} as floating ip on Ubuntu ${ubuntu_v}" "false"
 
     if [[ "${ubuntu_v}" == "1804" ]]; then

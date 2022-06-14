@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc7
+# Version: 3.2-rc8
 ################################################################################
 
 # sendmail --help
@@ -277,8 +277,8 @@ function mail_certificates_section() {
 
             domain="$(basename "${site}")"
 
-            # Check blacklist ${BLACKLISTED_SITES}
-            if [[ "${BLACKLISTED_SITES}" != *"${domain}"* ]]; then
+            # Check blacklist ${EXCLUDED_FILES_LIST}
+            if [[ "${EXCLUDED_FILES_LIST}" != *"${domain}"* ]]; then
 
                 log_event "info" "Getting certificate info for: ${domain}" "false"
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc7
+# Version: 3.2-rc8
 #############################################################################
 #
 # Backup Helper: Perform backup actions.
@@ -421,7 +421,7 @@ function backup_all_projects_files() {
 
       directory_name="$(basename "${j}")"
 
-      if [[ ${BLACKLISTED_SITES} != *"${directory_name}"* ]]; then
+      if [[ ${EXCLUDED_FILES_LIST} != *"${directory_name}"* ]]; then
 
         backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${directory_name}")"
 
@@ -753,7 +753,7 @@ function backup_databases() {
 
   for database in ${databases}; do
 
-    if [[ ${BLACKLISTED_DATABASES} != *"${database}"* ]]; then
+    if [[ ${EXCLUDED_DATABASES_LIST} != *"${database}"* ]]; then
 
       log_event "info" "Processing [${database}] ..." "false"
 

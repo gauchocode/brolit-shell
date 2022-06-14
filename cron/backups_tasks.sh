@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc7
+# Version: 3.2-rc8
 ################################################################################
 
 ### Main dir check
