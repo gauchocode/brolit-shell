@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc7
+# Version: 3.2-rc8
 ################################################################################
 
 ### Main dir check
@@ -53,7 +53,7 @@ for site in ${all_sites}; do
 
     log_event "info" "Project name: ${project_name}" "false"
 
-    if [[ ${BLACKLISTED_SITES} != *"${project_name}"* ]]; then
+    if [[ ${EXCLUDED_FILES_LIST} != *"${project_name}"* ]]; then
 
       # If is wp
       is_wp="$(is_wp_project "${site}")"

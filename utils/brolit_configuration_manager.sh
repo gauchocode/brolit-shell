@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc7
+# Version: 3.2-rc8
 ################################################################################
 #
 # Server Config Manager: Brolit server configuration management.
@@ -27,31 +27,32 @@ function _brolit_configuration_load_server_config() {
     declare -g UNATTENDED_UPGRADES
     declare -g SERVER_ROLE_WEBSERVER
     declare -g SERVER_ROLE_DATABASE
+    declare -g SERVER_ADDITIONAL_IPS
 
     # Read required vars from server config file
     SERVER_TIMEZONE="$(json_read_field "${server_config_file}" "SERVER_CONFIG.timezone")"
-    if [ -z "${SERVER_TIMEZONE}" ]; then
+    if [[ -z "${SERVER_TIMEZONE}" ]]; then
         log_event "error" "Missing required config vars for server config" "true"
         exit 1
     fi
 
     UNATTENDED_UPGRADES="$(json_read_field "${server_config_file}" "SERVER_CONFIG.unattended_upgrades")"
-    if [ -z "${UNATTENDED_UPGRADES}" ]; then
+    if [[ -z "${UNATTENDED_UPGRADES}" ]]; then
         log_event "error" "Missing required config vars for server config." "true"
         exit 1
     fi
 
-    if [ -z "${SERVER_ROLE_WEBSERVER}" ]; then
+    if [[ -z "${SERVER_ROLE_WEBSERVER}" ]]; then
         SERVER_ROLE_WEBSERVER="$(json_read_field "${server_config_file}" "SERVER_CONFIG.config[].webserver")"
-        if [ -z "${SERVER_ROLE_WEBSERVER}" ]; then
+        if [[ -z "${SERVER_ROLE_WEBSERVER}" ]]; then
             log_event "error" "Missing required config vars for server role." "true"
             exit 1
         fi
     fi
 
-    if [ -z "${SERVER_ROLE_DATABASE}" ]; then
+    if [[ -z "${SERVER_ROLE_DATABASE}" ]]; then
         SERVER_ROLE_DATABASE="$(json_read_field "${server_config_file}" "SERVER_CONFIG.config[].database")"
-        if [ -z "${SERVER_ROLE_DATABASE}" ]; then
+        if [[ -z "${SERVER_ROLE_DATABASE}" ]]; then
             log_event "error" "Missing required config vars for server role." "true"
             exit 1
         fi
@@ -62,6 +63,11 @@ function _brolit_configuration_load_server_config() {
         log_event "error" "Please edit the file .brolit_conf.json and execute BROLIT again." "true"
         exit 1
     fi
+
+    # Read optional vars from server config file
+    SERVER_ADDITIONAL_IPS="$(json_read_field "${server_config_file}" "SERVER_CONFIG.additional_ips")"
+    
+    export SERVER_TIMEZONE UNATTENDED_UPGRADES SERVER_ROLE_WEBSERVER SERVER_ROLE_DATABASE SERVER_ADDITIONAL_IPS
 
 }
 
@@ -275,11 +281,11 @@ function _brolit_configuration_load_backup_config() {
     declare -g BACKUP_CONFIG_SERVER_CFG_STATUS
     declare -g BACKUP_CONFIG_COMPRESSION_TYPE
 
-    declare -g BLACKLISTED_SITES
-    declare -g BLACKLISTED_DATABASES
+    declare -g EXCLUDED_FILES_LIST
+    declare -g EXCLUDED_DATABASES_LIST
 
     # TODO: replace with json_read_field
-    declare -g BLACKLISTED_SITES=".wp-cli,.ssh,.local,.cert,html,phpmyadmin"
+    declare -g EXCLUDED_FILES_LIST=".wp-cli,.ssh,.local,.cert,html,phpmyadmin"
 
     ## Backup config projects
     BACKUP_CONFIG_PROJECTS_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].status")"
@@ -287,7 +293,7 @@ function _brolit_configuration_load_backup_config() {
         log_event "error" "Missing required config vars for backup retention" "true"
         exit 1
     fi
-    #BLACKLISTED_SITES="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].exclude")"
+    EXCLUDED_FILES_LIST="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].exclude")"
 
     ## Backup config databases
     BACKUP_CONFIG_DATABASES_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.config[].databases[].status")"
@@ -295,7 +301,7 @@ function _brolit_configuration_load_backup_config() {
         log_event "error" "Missing required config vars for backup retention" "true"
         exit 1
     fi
-    BLACKLISTED_DATABASES="$(json_read_field "${server_config_file}" "BACKUPS.config[].databases[].exclude[]")"
+    EXCLUDED_DATABASES_LIST="$(json_read_field "${server_config_file}" "BACKUPS.config[].databases[].exclude[]")"
 
     ## Backup config server_cfg
     BACKUP_CONFIG_SERVER_CFG_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.config[].server_cfg")"
@@ -313,7 +319,7 @@ function _brolit_configuration_load_backup_config() {
 
     export BACKUP_CONFIG_PROJECTS_STATUS BACKUP_CONFIG_DATABASES_STATUS BACKUP_CONFIG_SERVER_CFG_STATUS
 
-    export BLACKLISTED_SITES BLACKLISTED_DATABASES
+    export EXCLUDED_FILES_LIST EXCLUDED_DATABASES_LIST
     #export BACKUP_CONFIG_PROJECTS_EXCLUDE_LIST BACKUP_CONFIG_DATABASES_EXCLUDE_LIST
 
 }
@@ -356,7 +362,7 @@ function _brolit_configuration_load_backup_retention() {
         log_event "error" "Missing required config vars for backup retention" "true"
         exit 1
     fi
-    
+
     BACKUP_RETENTION_KEEP_MONTHLY="$(json_read_field "${server_config_file}" "BACKUPS.config[].retention[].keep_monthly")"
     if [[ -z ${BACKUP_RETENTION_KEEP_MONTHLY} ]]; then
         log_event "error" "Missing required config vars for backup retention" "true"

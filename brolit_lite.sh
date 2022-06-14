@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc7
+# Version: 3.2-rc8
 ################################################################################
 
 # Var declarations
@@ -43,8 +43,8 @@ if [[ -f ${DPU_CONFIG_FILE} ]]; then
 fi
 
 # Version
-BROLIT_VERSION="3.2-rc7"
-BROLIT_LITE_VERSION="3.2-rc7-102"
+BROLIT_VERSION="3.2-rc8"
+BROLIT_LITE_VERSION="3.2-rc8-102"
 
 ################################################################################
 
