@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc8
+# Version: 3.2-rc9
 ################################################################################
 #
 # WordPress Installer: WordPress installer functions.
@@ -86,7 +86,7 @@ function wordpress_project_install() {
   fi
 
   if [[ ! -d ${project_path} ]]; then
-  
+
     # Create project directory
     mkdir "${project_path}"
 
