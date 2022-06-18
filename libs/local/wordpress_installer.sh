@@ -81,14 +81,12 @@ function wordpress_project_install() {
   log_subsection "WordPress Install"
 
   if [[ -z ${project_root_domain} ]]; then
-
     possible_root_domain="$(domain_get_root "${project_domain}")"
     project_root_domain="$(cloudflare_ask_rootdomain "${possible_root_domain}")"
-
   fi
 
   if [[ ! -d ${project_path} ]]; then
-
+  
     # Create project directory
     mkdir "${project_path}"
 
@@ -126,107 +124,90 @@ function wordpress_project_install() {
   wpcli_create_config "${project_path}" "${database_name}" "${database_user}" "${database_user_passw}" "es_ES"
 
   # Startup Script for WordPress installation
-
   # TODO: should pass https://$project_domain instead?
   wpcli_run_startup_script "${project_path}" "${project_domain}"
 
-  # Set WP salts
-  wpcli_set_salts "${project_path}"
-
   # TODO: ask for Cloudflare support and check if root_domain is configured on the cf account
 
+  # Project domain configuration (webserver+certbot+DNS)
+  project_update_domain_config "${project_domain}" "wordpress" ""
+
   # If domain contains www, should work without www too
-  common_subdomain='www'
-  if [[ ${project_domain} == *"${common_subdomain}"* ]]; then
+  #common_subdomain='www'
+  #if [[ ${project_domain} == *"${common_subdomain}"* ]]; then
+  #
+  #  # Cloudflare API to change DNS records
+  #  cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A" "false" "${SERVER_IP}"
+  #
+  #  # Cloudflare API to change DNS records
+  #  cloudflare_set_record "${project_root_domain}" "${project_domain}" "CNAME" "false" "${project_root_domain}"
+  #
+  #  # New site Nginx configuration
+  #  nginx_server_create "${project_domain}" "wordpress" "root_domain" "${project_root_domain}"
+  #
+  #  if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
+  #
+  #    # HTTPS with Certbot
+  #    project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${project_root_domain}" 3>&1 1>&2 2>&3)
+  #
+  #    exitstatus=$?
+  #    if [[ ${exitstatus} -eq 0 ]]; then
+  #
+  #      certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain},${project_root_domain}"
+  #
+  #      exitstatus=$?
+  #      if [[ ${exitstatus} -eq 0 ]]; then
+  #        nginx_server_add_http2_support "${project_domain}"
+  #      fi
+  #
+  #    else
+  #      log_event "info" "HTTPS support for ${project_domain} skipped"
+  #      display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
+  #    fi
+  #  fi
+  #else
+  #  # Cloudflare API to change DNS records
+  #  cloudflare_set_record "${project_root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
+  #  # New site Nginx configuration
+  #  nginx_create_empty_nginx_conf "${project_path}"
+  #  nginx_create_globals_config
+  #  nginx_server_create "${project_domain}" "wordpress" "single" ""
+  #  if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
+  #    # HTTPS with Certbot
+  #    cert_project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
+  #    exitstatus=$?
+  #    if [[ ${exitstatus} -eq 0 ]]; then
+  #      certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${cert_project_domain}"
+  #      exitstatus=$?
+  #      if [[ ${exitstatus} -eq 0 ]]; then
+  #        nginx_server_add_http2_support "${project_domain}"
+  #        exitstatus=$?
+  #        if [[ ${exitstatus} -eq 0 ]]; then
+  #          http2_support="true"
+  #        fi
+  #      fi
+  #    fi
+  #  else
+  #    log_event "info" "HTTPS support for ${project_domain} skipped" "false"
+  #    display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
+  #  fi
+  #fi
 
-    # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A" "false" "${SERVER_IP}"
+  # Post-restore/install tasks
+  project_post_install_tasks "${project_path}" "wordpress" "${project_name}" "${project_stage}" "${database_user_passw}" "" ""
 
-    # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_domain}" "CNAME" "false" "${project_root_domain}"
-
-    # New site Nginx configuration
-    nginx_server_create "${project_domain}" "wordpress" "root_domain" "${project_root_domain}"
-
-    if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
-
-      # HTTPS with Certbot
-      project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${project_root_domain}" 3>&1 1>&2 2>&3)
-
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain},${project_root_domain}"
-
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
-
-          nginx_server_add_http2_support "${project_domain}"
-
-        fi
-
-      else
-
-        log_event "info" "HTTPS support for ${project_domain} skipped"
-        display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
-
-      fi
-
-    fi
-
+  # TODO: refactor this
+  # Cert config files
+  cert_path=""
+  if [[ -d "/etc/letsencrypt/live/${project_domain}" ]]; then
+    cert_path="/etc/letsencrypt/live/${project_domain}"
   else
-
-    # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
-
-    # New site Nginx configuration
-    nginx_create_empty_nginx_conf "${project_path}"
-    nginx_create_globals_config
-    nginx_server_create "${project_domain}" "wordpress" "single" ""
-
-    if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
-
-      # HTTPS with Certbot
-      cert_project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${cert_project_domain}"
-
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
-
-          nginx_server_add_http2_support "${project_domain}"
-
-          exitstatus=$?
-          if [[ ${exitstatus} -eq 0 ]]; then
-
-            http2_support="true"
-
-          fi
-
-        fi
-
-      fi
-
-    else
-
-      log_event "info" "HTTPS support for ${project_domain} skipped" "false"
-      display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
-
+    if [[ -d "/etc/letsencrypt/live/www.${project_domain}" ]]; then
+      cert_path="/etc/letsencrypt/live/www.${project_domain}"
     fi
-
   fi
 
   # Create project config file
-  cert_primary_domain="$(echo "${cert_project_domain}" | cut -d "," -f 1)"
-  cert_path="/etc/letsencrypt/live/${cert_primary_domain}"
-  if [[ ! -d ${cert_path} ]]; then
-    cert_path=""
-  fi
-
-  # Create project config file
-
   # Arguments:
   #  $1 = ${project_path}
   #  $2 = ${project_name}
@@ -243,7 +224,6 @@ function wordpress_project_install() {
   #  $13 = ${project_override_nginx_conf}
   #  $14 = ${project_use_http2}
   #  $15 = ${project_certbot_mode}
-
   project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "wordpress" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "/etc/nginx/sites-available/${project_domain}" "${http2_support}" "${cert_path}"
 
   # Log
