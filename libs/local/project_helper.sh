@@ -2453,9 +2453,11 @@ function project_post_install_tasks() {
     wp_update_wpconfig "${install_path}" "${project_name}" "${project_stage}" "${project_db_pass}"
 
     # TODO: non protocol before domains (need to check if http or https before)?
-    if [[ ${old_project_domain} != "${new_project_domain}" ]]; then
-      # Change urls on database
-      wpcli_search_and_replace "${install_path}" "${old_project_domain}" "${new_project_domain}"
+    if [[ -n ${old_project_domain} && -n ${new_project_domain} ]]; then
+      if [[ ${old_project_domain} != "${new_project_domain}" ]]; then
+        # Change urls on database
+        wpcli_search_and_replace "${install_path}" "${old_project_domain}" "${new_project_domain}"
+      fi
     fi
 
     # Shuffle salts
