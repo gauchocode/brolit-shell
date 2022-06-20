@@ -42,9 +42,12 @@ if [[ -f ${DPU_CONFIG_FILE} ]]; then
 
 fi
 
+declare -g PROJECTS_PATH
+PROJECTS_PATH="$(json_read_field "${BROLIT_CONFIG_FILE}" "PROJECTS.path")"
+
 # Version
 BROLIT_VERSION="3.2-rc9"
-BROLIT_LITE_VERSION="3.2-rc9-102"
+BROLIT_LITE_VERSION="3.2-rc9-103"
 
 ################################################################################
 
