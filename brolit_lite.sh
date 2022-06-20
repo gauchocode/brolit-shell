@@ -1247,18 +1247,18 @@ function _sites_directories() {
 
     # Run command
     ## List only directories
-    all_directories="$(ls -l /var/www | grep "^d" | awk -F" " '{print $9}')"
+    all_directories="$(ls -l "${PROJECTS_PATH}" | grep "^d" | awk -F" " '{print $9}')"
 
     for site in ${all_directories}; do
 
         if [[ ${directory_bl} != *"${site}"* ]]; then
 
             # Size
-            site_size_du="$(du --human-readable --max-depth=0 "/var/www/${site}")"
+            site_size_du="$(du --human-readable --max-depth=0 "${PROJECTS_PATH}/${site}")"
             site_size="$(echo "${site_size_du}" | awk '{print $1;}')"
 
             # Type
-            site_type="$(_project_get_type "/var/www/${site}")"
+            site_type="$(_project_get_type "${PROJECTS_PATH}/${site}")"
 
             # Cert
             site_cert="$(_certbot_certificate_get_valid_days "${site}")"
