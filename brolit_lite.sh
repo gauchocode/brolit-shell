@@ -4,57 +4,6 @@
 # Version: 3.2-rc9
 ################################################################################
 
-# Var declarations
-
-## Server Name
-declare -g SERVER_NAME="${HOSTNAME}"
-
-## Dirs
-declare -g BROLIT_MAIN_DIR="/root/brolit-shell"
-declare -g BROLIT_PROJECT_CONFIG_PATH="/etc/brolit"
-
-declare -g BROLIT_CONFIG_FILE=~/.brolit_conf.json
-
-#declare -g BROLIT_TMP_DIR="/root/brolit-shell/tmp"
-declare -g BROLIT_LITE_OUTPUT_DIR="/root/brolit-shell/tmp/lite-output"
-if [[ ! -d ${BROLIT_LITE_OUTPUT_DIR} ]]; then
-    mkdir -p "${BROLIT_LITE_OUTPUT_DIR}"
-fi
-
-# Cloudflare
-declare -g CLF_CONFIG_FILE=~/.cloudflare.conf
-if [[ -f ${CLF_CONFIG_FILE} ]]; then
-    # shellcheck source=~/.cloudflare.conf
-    source "${CLF_CONFIG_FILE}"
-    # Declare new global vars from cloudflare config file
-    declare -g SUPPORT_CLOUDFLARE_EMAIL="${dns_cloudflare_email}"
-    declare -g SUPPORT_CLOUDFLARE_API_KEY="${dns_cloudflare_api_key}"
-fi
-
-DPU_CONFIG_FILE=~/.dropbox_uploader
-if [[ -f ${DPU_CONFIG_FILE} ]]; then
-    # shellcheck source=~/.dropbox_uploader
-    source "${DPU_CONFIG_FILE}"
-    # Dropbox-uploader directory
-    DPU_F="${BROLIT_MAIN_DIR}/tools/third-party/dropbox-uploader"
-    # Dropbox-uploader runner
-    DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
-
-fi
-
-declare -g PROJECTS_PATH
-PROJECTS_PATH="$(_json_read_field "${BROLIT_CONFIG_FILE}" "PROJECTS.path")"
-
-# Version
-BROLIT_VERSION="3.2-rc9"
-BROLIT_LITE_VERSION="3.2-rc9-103"
-
-################################################################################
-
-### HELPERS
-
-################################################################################
-
 ################################################################################
 # Private: Generate a timestamp
 #
@@ -279,6 +228,59 @@ function _cloudflare_get_zone_id() {
         echo "Domain ${zone_name} not found"
 
         return 1
+
+    fi
+
+}
+
+################################################################################
+# Private: Get record details from Cloudflare
+#
+# Arguments:
+#   ${1} = ${domain}
+#
+# Outputs:
+#   json file, 1 on error.
+################################################################################
+
+function _cloudflare_get_record_details() {
+
+    local domain="${1}"
+
+    local record_name
+    local zone_id
+    local record_id
+
+    record_name="${domain}"
+
+    root_domain="$(_get_root_domain "${domain}")"
+
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+
+    record_id="$(_cloudflare_record_exists "${record_name}" "${zone_id}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
+
+        # DNS Record Details
+        record="$(curl -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+            -H "Content-Type: application/json")"
+
+        if [[ ${record} == *"\"success\":false"* || ${record} == "" ]]; then
+
+            # Return
+            echo "Get record details failed"
+
+            return 1
+
+        else
+
+            # Return JSON
+            echo "{ \"cloudflare_data\": ${record} }"
+
+        fi
 
     fi
 
@@ -1474,57 +1476,63 @@ function dropbox_get_sites_backups() {
 }
 
 ################################################################################
-# Private: Get record details from Cloudflare
 #
-# Arguments:
-#   ${1} = ${domain}
+# Var declarations
 #
-# Outputs:
-#   json file, 1 on error.
 ################################################################################
 
-function _cloudflare_get_record_details() {
+## Server Name
+declare -g SERVER_NAME="${HOSTNAME}"
 
-    local domain="${1}"
+## Dirs
+declare -g BROLIT_MAIN_DIR="/root/brolit-shell"
+declare -g BROLIT_PROJECT_CONFIG_PATH="/etc/brolit"
 
-    local record_name
-    local zone_id
-    local record_id
+declare -g BROLIT_CONFIG_FILE=~/.brolit_conf.json
 
-    record_name="${domain}"
+#declare -g BROLIT_TMP_DIR="/root/brolit-shell/tmp"
+declare -g BROLIT_LITE_OUTPUT_DIR="/root/brolit-shell/tmp/lite-output"
+if [[ ! -d ${BROLIT_LITE_OUTPUT_DIR} ]]; then
+    mkdir -p "${BROLIT_LITE_OUTPUT_DIR}"
+fi
 
-    root_domain="$(_get_root_domain "${domain}")"
+# Cloudflare
+declare -g CLF_CONFIG_FILE=~/.cloudflare.conf
+if [[ -f ${CLF_CONFIG_FILE} ]]; then
+    # shellcheck source=~/.cloudflare.conf
+    source "${CLF_CONFIG_FILE}"
+    # Declare new global vars from cloudflare config file
+    declare -g SUPPORT_CLOUDFLARE_EMAIL="${dns_cloudflare_email}"
+    declare -g SUPPORT_CLOUDFLARE_API_KEY="${dns_cloudflare_api_key}"
+fi
 
-    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+DPU_CONFIG_FILE=~/.dropbox_uploader
+if [[ -f ${DPU_CONFIG_FILE} ]]; then
+    # shellcheck source=~/.dropbox_uploader
+    source "${DPU_CONFIG_FILE}"
+    # Dropbox-uploader directory
+    DPU_F="${BROLIT_MAIN_DIR}/tools/third-party/dropbox-uploader"
+    # Dropbox-uploader runner
+    DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
 
-    record_id="$(_cloudflare_record_exists "${record_name}" "${zone_id}")"
+fi
 
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
+declare -g PROJECTS_PATH
+PROJECTS_PATH="$(_json_read_field "${BROLIT_CONFIG_FILE}" "PROJECTS.path")"
 
-        # DNS Record Details
-        record="$(curl -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
-            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
-            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
-            -H "Content-Type: application/json")"
+# Version
+BROLIT_VERSION="3.2-rc9"
+BROLIT_LITE_VERSION="3.2-rc9-104"
 
-        if [[ ${record} == *"\"success\":false"* || ${record} == "" ]]; then
-
-            # Return
-            echo "Get record details failed"
-
-            return 1
-
-        else
-
-            # Return JSON
-            echo "{ \"cloudflare_data\": ${record} }"
-
-        fi
-
-    fi
-
-}
+################################################################################
+# Show firewall status
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   A json string with ufw status and details.
+################################################################################
 
 function firewall_show_status() {
 
