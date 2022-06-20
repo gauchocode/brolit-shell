@@ -2464,7 +2464,8 @@ function project_post_install_tasks() {
     wpcli_set_salts "${install_path}"
 
     # Update upload_path
-    wpcli_update_upload_path "${install_path}"
+    ## Context: https://core.trac.wordpress.org/ticket/41947
+    wpcli_update_upload_path "${install_path}" "wp-content/uploads"
 
     # Changing WordPress visibility
     if [[ ${project_stage} == "prod" ]]; then
