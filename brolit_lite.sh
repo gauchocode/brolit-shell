@@ -1246,7 +1246,8 @@ function _sites_directories() {
     directory_bl="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].projects[].exclude[]")"
 
     # Run command
-    all_directories="$(ls /var/www)"
+    ## List only directories
+    all_directories="$(ls -l /var/www | grep "^d" | awk -F" " '{print $9}')"
 
     for site in ${all_directories}; do
 
