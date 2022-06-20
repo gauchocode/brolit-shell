@@ -400,7 +400,7 @@ function _mysql_check_installed_version() {
     # MySQL or MariaDB?
     mysql_installed_pkg="$(apt -qq list mysql-server --installed 2>/dev/null | cut -d "/" -f1)"
 
-    if [[ -z ${mysql_installed_pkg} ]]; then
+    if [[ -n ${mysql_installed_pkg} ]]; then
         # Extract only version numbers
         mysql_installed_version="$(mysql -V | awk -F' ' '{print $3}' | grep -o '[0-9.]*$' | tr '\n' ' ')"
 
