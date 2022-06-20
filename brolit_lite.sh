@@ -483,6 +483,16 @@ function _apache_check_installed_version() {
 
 }
 
+################################################################################
+# Private: Get date from backup file
+#
+# Arguments:
+#  $1 = ${backup_file}
+#
+# Outputs:
+#   ${backup_date}.
+################################################################################
+
 function _backup_get_date() {
 
     local backup_file="${1}"
@@ -496,8 +506,17 @@ function _backup_get_date() {
 
 }
 
+################################################################################
+# Private: Get date from backup file
+#
+# Arguments:
+#  $1 = ${domains} - (domain.com,www.domain.com)
+#
+# Outputs:
+#   ${cert_days}.
+################################################################################
+
 function _certbot_certificate_get_valid_days() {
-    # $1 = domains (domain.com,www.domain.com)
 
     local domain="${1}"
 
@@ -520,9 +539,17 @@ function _certbot_certificate_get_valid_days() {
 
 }
 
-function _cloudflare_domain_exists() {
+################################################################################
+# Private: Check if domain exists on Cloudflare account
+#
+# Arguments:
+#  $1 = ${root_domain}
+#
+# Outputs:
+#   true or false.
+################################################################################
 
-    # $1 = ${root_domain}
+function _cloudflare_domain_exists() {
 
     local root_domain="${1}"
 
@@ -543,6 +570,17 @@ function _cloudflare_domain_exists() {
     fi
 
 }
+
+################################################################################
+# Private: Check if record exists on Cloudflare account
+#
+# Arguments:
+#  $1 = ${domain}
+#  $2 = ${zone_id}
+#
+# Outputs:
+#   true or false.
+################################################################################
 
 function _cloudflare_record_exists() {
 
@@ -575,10 +613,17 @@ function _cloudflare_record_exists() {
 
 }
 
-function _get_domain_extension() {
+################################################################################
+# Private: Get domain extension from domain
+#
+# Arguments:
+#  $1 = ${domain}
+#
+# Outputs:
+#   ${domain_ext}
+################################################################################
 
-    # Parameters
-    # $1 = ${domain}
+function _get_domain_extension() {
 
     local domain="${1}"
 
@@ -620,10 +665,17 @@ function _get_domain_extension() {
 
 }
 
-function _get_subdomain_part() {
+################################################################################
+# Private: Get subdomain part from domain
+#
+# Arguments:
+#  $1 = ${domain}
+#
+# Outputs:
+#   ${subdomain_part}
+################################################################################
 
-    # Parameters
-    # $1 = ${domain}
+function _get_subdomain_part() {
 
     local domain="${1}"
 
@@ -665,10 +717,17 @@ function _get_subdomain_part() {
 
 }
 
-function _get_root_domain() {
+################################################################################
+# Private: Get root domain from domain
+#
+# Arguments:
+#  $1 = ${domain}
+#
+# Outputs:
+#   ${root_domain}
+################################################################################
 
-    # Parameters
-    # $1 = ${domain}
+function _get_root_domain() {
 
     local domain="${1}"
 
@@ -698,10 +757,17 @@ function _get_root_domain() {
 
 }
 
-function _extract_domain_extension() {
+################################################################################
+# Private: Extract domain extension from domain
+#
+# Arguments:
+#  $1 = ${domain}
+#
+# Outputs:
+#   ${domain_no_ext}
+################################################################################
 
-    # Parameters
-    # $1 = ${domain}
+function _extract_domain_extension() {
 
     local domain="${1}"
 
@@ -724,6 +790,16 @@ function _extract_domain_extension() {
     fi
 
 }
+
+################################################################################
+# Private: Get Wordpress config path
+#
+# Arguments:
+#  $1 = ${dir_to_search}
+#
+# Outputs:
+#   ${find_output}
+################################################################################
 
 function _wp_config_path() {
 
@@ -964,7 +1040,18 @@ function _project_get_config() {
 
 ########################## UTILS FOR DEVOPS ###################################
 
-function cronjob_check() {
+################################################################################
+# Private: Check if a script is installed as a cron job
+#
+# Arguments:
+#   $1 = ${script}
+#   $2 = ${cron_file}
+#
+# Outputs:
+#   0 if not found, 1 if found
+################################################################################
+
+function _cronjob_check() {
 
     local script="${1}"
     local cron_file="${2}"
@@ -992,7 +1079,18 @@ function cronjob_check() {
 
 }
 
-function cronjob_install() {
+################################################################################
+# Private: Install script as a cron job
+#
+# Arguments:
+#   $1 = ${script}
+#   $2 = ${scheduled_time}
+#
+# Outputs:
+#   0 if script was installed ok, 1 on error
+################################################################################
+
+function _cronjob_install() {
 
     local script="${1}"
     local scheduled_time="${2}"
@@ -1040,11 +1138,41 @@ function cronjob_install() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-# Should be deprecated
+# Should be deprecated?
 function _brolit_shell_config() {
 
+    # Read brolit_conf.json
+
+    ## Netdata subdomain
+    netdata_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "PACKAGES.netdata[].status")"
+    if [[ ${netdata_status} == "enabled" ]]; then
+        netdata_subdomain="$(_json_read_field "${BROLIT_CONFIG_FILE}" "PACKAGES.netdata[].config[].subdomain")"
+    else
+        netdata_subdomain="false"
+    fi
+
+    ## Mail notification config
+    mail_notification_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.email[].status")"
+    if [[ ${mail_notification_status} == "enabled" ]]; then
+        mail_notification_config="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.email[].config[].maila")"
+    else
+        mail_notification_config="false"
+    fi
+
+    ## Telegram notification config
+    telegram_notification_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.telegram[].status")"
+    
+    ## Dropbox config
+    backup_dropbox_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].methods[].dropbox[].status")"
+
+    ## Cloudflare config
+    cloudflare_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "SUPPORT.cloudflare[].status")"
+
+    ## SMTP Server config
+    #smtp_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].methods[].smtp[].status")"
+
     # Return JSON part
-    echo "\"script_version\": \"${BROLIT_VERSION}\" , \"netdata_url\": \"${NETDATA_SUBDOMAIN}\" , \"mail_notif\": \"${MAIL_NOTIF}\" , \"telegram_notif\": \"${NOTIFICATION_TELEGRAM_STATUS}\" , \"dropbox_enable\": \"${BACKUP_DROPBOX_STATUS}\" , \"cloudflare_enable\": \"${SUPPORT_CLOUDFLARE_STATUS}\" , \"smtp_server\": \"${NOTIFICATION_EMAIL_SMTP_SERVER}\""
+    echo "\"script_version\": \"${BROLIT_VERSION}\" , \"netdata_url\": \"${netdata_subdomain}\" , \"mail_notif\": \"${mail_notification_config}\" , \"telegram_notif\": \"${telegram_notification_status}\" , \"dropbox_enable\": \"${backup_dropbox_status}\" , \"cloudflare_enable\": \"${cloudflare_status}\" , \"smtp_server\": \"${NOTIFICATION_EMAIL_SMTP_SERVER}\""
 
 }
 
@@ -1522,7 +1650,7 @@ PROJECTS_PATH="$(_json_read_field "${BROLIT_CONFIG_FILE}" "PROJECTS.path")"
 
 # Version
 BROLIT_VERSION="3.2-rc9"
-BROLIT_LITE_VERSION="3.2-rc9-104"
+BROLIT_LITE_VERSION="3.2-rc9-105"
 
 ################################################################################
 # Show firewall status
