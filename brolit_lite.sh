@@ -1163,7 +1163,7 @@ function _brolit_shell_config() {
     telegram_notification_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.telegram[].status")"
     
     ## Dropbox config
-    backup_dropbox_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].methods[].dropbox[].status")"
+    backup_dropbox_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.methods[].dropbox[].status")"
 
     ## Cloudflare config
     cloudflare_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "SUPPORT.cloudflare[].status")"
