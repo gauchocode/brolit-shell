@@ -61,6 +61,8 @@ function portainer_installer() {
             # Run docker-compose up -d on specific directory
             docker-compose -f "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/docker-compose.yml" up -d
 
+            clear_previous_lines "3"
+
             PACKAGES_PORTAINER_STATUS="enabled"
 
             #json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.portainer[].status" "${PACKAGES_PORTAINER_STATUS}"

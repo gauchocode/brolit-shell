@@ -93,7 +93,7 @@ function _setup_globals_and_options() {
 
   # CURL (better curl to download files and getting http return codes)
   ## Ref: https://everything.curl.dev/usingcurl/returns
-  CURL="curl --silent -L --fail --connect-timeout 3 --retry 0 -s -o /dev/null -w \"%{http_code}\""
+  CURL="curl --silent -L --fail --connect-timeout 3 --retry 0"
 
   export NOW NOWDISPLAY CURL TAR FIND MAIN_VOL
 
