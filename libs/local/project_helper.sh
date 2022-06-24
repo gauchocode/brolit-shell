@@ -1538,21 +1538,18 @@ function project_delete_files() {
 
   local project_domain="${1}"
 
+  BK_TYPE="site"
+
   # Log
   log_subsection "Delete Files"
 
   # Trying to know project type
   project_type=$(project_get_type "${PROJECTS_PATH}/${project_domain}")
 
-  log_event "info" "Project Type: ${project_type}" "false"
-
-  BK_TYPE="site"
-
-  # Backup files
-  #backup_file_size="$(backup_project_files "${BK_TYPE}" "${PROJECTS_PATH}" "${project_domain}")"
-
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
+
+    log_event "info" "Project Type: ${project_type}" "false"
 
     # Creating new folder structure for old projects
     storage_create_dir "/${SERVER_NAME}/projects-offline"
