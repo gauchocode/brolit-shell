@@ -32,7 +32,7 @@ function phpmyadmin_installer () {
   display --indent 6 --text "- Downloading phpMyAdmin"
   log_event "debug" "Running: ${CURL} https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip > ${PROJECTS_PATH}/phpMyAdmin-latest-all-languages.zip" "false"
   
-  ${CURL} https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip > "${PROJECTS_PATH}"/phpMyAdmin-latest-all-languages.zip
+  ${CURL} "https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.zip" > "${PROJECTS_PATH}/phpMyAdmin-latest-all-languages.zip"
   
   clear_previous_lines "1"
   display --indent 6 --text "- Downloading phpMyAdmin" --result "DONE" --color GREEN

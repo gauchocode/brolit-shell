@@ -52,7 +52,9 @@ function _sftp_add_folder_permission() {
     display --indent 6 --text "- Writing fstab to make it permanent" --result "DONE" --color GREEN
     log_event "debug" "Running: echo ${dir_path}${folder} /home/${username}/${folder} none bind   0      0  >>/etc/fstab" "false"
 
-    # The command below will set the document root and all subfolders to 775
+    ## Ref: https://tecadmin.net/how-to-create-sftp-user-for-a-web-server-document-root/
+    find "${dir_path}/${folder}" -type d -exec chmod 775 {} \;
+    find "${dir_path}/${folder}" -type f -exec chmod 664 {} \; 
     find "${dir_path}/${folder}" -type d -exec chmod g+s {} \;
     log_event "debug" "Running: find ${dir_path}${folder} -type d -exec chmod g+s {} \;" "false"
 
@@ -99,7 +101,8 @@ function sftp_create_user() {
 
     local username="${1}"
     local groupname="${2}"
-    local shell_access="${3}" #no or yes
+    local project_path="${3}"
+    local shell_access="${4}" #no or yes
 
     # TODO: non-interactive adduser
     # ref: https://askubuntu.com/questions/94060/run-adduser-non-interactively
@@ -116,7 +119,9 @@ function sftp_create_user() {
 
     # Add user to the groups
     usermod -aG "${groupname}" "${username}"
-    
+
+    _sftp_add_folder_permission "${username}" "${project_path}" "public"
+
     # Log
     display --indent 6 --text "- Adding user to group ${groupname}" --result "DONE" --color GREEN
     log_event "info" "User added to group ${groupname}"
@@ -130,10 +135,10 @@ function sftp_create_user() {
     log_event "debug" "Running: cp ${BROLIT_MAIN_DIR}/config/sftp/sshd_config /etc/ssh/sshd_config"
 
     # Replace SFTP_U to new sftp user
-    if [[ ${username} != "" ]]; then
+    if [[ -n ${project_path} ]]; then
         # Replacing SFTP_U with $username
-        sed -i "s+SFTP_U+${username}+g" "/etc/ssh/sshd_config"
-        log_event "debug" "Running: s+SFTP_U+${username}+g /etc/ssh/sshd_config"
+        sed -i "s+SFTP_PATH+${project_path}+g" "/etc/ssh/sshd_config"
+        log_event "debug" "Running: s+SFTP_PATH+${project_path}+g /etc/ssh/sshd_config"
         #sed -i "/SFTP_U/s/'[^']*'/'${username}'/2" "/etc/ssh/sshd_config"
         #log_event "debug" "Running: sed -i /SFTP_U/s/'[^']*'/'${username}'/2 /etc/ssh/sshd_config"
     else
@@ -152,15 +157,6 @@ function sftp_create_user() {
     # Log
     display --indent 6 --text "- Configuring SSH access" --result "DONE" --color GREEN
     log_event "info" "SSH access configured" "false"
-
-    # Select project to work with
-    directory_browser "Select a project to work with" "${PROJECTS_PATH}" #return $filename
-    # Directory_broser returns: $filepath and $filename
-    if [[ ${filename} != "" && ${filepath} != "" ]]; then
-        # Create and add folder permission
-        _sftp_add_folder_permission "${username}" "${filepath}/${filename}" "public"
-
-    fi
 
     # Service restart
     service sshd restart

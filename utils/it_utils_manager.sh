@@ -74,7 +74,16 @@ function it_utils_menu() {
       sftp_user="$(whiptail --title "CREATE SFTP USER" --inputbox "Insert the username:" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} = 0 ]]; then
-        sftp_create_user "${sftp_user}" "www-data" "no"
+        # Select project to work with
+        directory_browser "Select a project to work with" "${PROJECTS_PATH}" #return $filename
+        # Directory_broser returns: $filepath and $filename
+        if [[ ${filename} != "" && ${filepath} != "" ]]; then
+          # Create and add folder permission
+          project_path="${filepath}/${filename}"
+        fi
+
+        sftp_create_user "${sftp_user}" "www-data" "${project_path}" "no"
+
       fi
     fi
     # DELETE SFTP USER
@@ -224,4 +233,3 @@ function menu_security_custom_scan() {
   fi
 
 }
-

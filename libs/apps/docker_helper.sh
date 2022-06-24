@@ -285,3 +285,57 @@ function docker_wordpress_install() {
     #docker logs wordpress
 
 }
+
+################################################################################
+# Docker MySQL database import
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function docker_mysql_database_import() {
+
+    local container_name="${1}"
+    local mysql_user="${2}"
+    local mysql_user_passw="${3}"
+    local mysql_database="${3}"
+    local dump_file="${4}"
+
+    # Docker run
+    # Example: docker exec -i db mysql -uroot -pexample wordpress < dump.sql
+    docker exec -i "${container_name}" mysql -u"${mysql_user}" -p"${mysql_user_passw}" "${mysql_database}" < "${dump_file}"
+
+    # Docker logs
+    #docker logs wordpress
+
+}
+
+################################################################################
+# Docker MySQL database backup
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function docker_mysql_database_backup() {
+
+    local container_name="${1}"
+    local mysql_user="${2}"
+    local mysql_user_passw="${3}"
+    local mysql_database="${3}"
+    local dump_file="${4}"
+
+    # Docker run
+    # Example: docker exec -i db mysqldump -uroot -pexample wordpress > dump.sql
+    docker exec -i "${container_name}" mysqldump -u"${mysql_user}" -p"${mysql_user_passw}" "${mysql_database}" > "${dump_file}"
+
+    # Docker logs
+    #docker logs wordpress
+
+}
