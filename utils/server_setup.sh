@@ -79,7 +79,7 @@ function server_app_setup() {
         else
             php_composer_remove
             wpcli_uninstall
-            package_purge "php"
+            php_purge_installation
         fi
 
         ;;
