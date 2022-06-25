@@ -749,7 +749,7 @@ function _brolit_configuration_load_php() {
 
     else
 
-        # Checking if php is  installed
+        # Checking if php is installed
         if [[ -x ${PHP} ]]; then
             menu_config_changes_detected "php" "true"
         fi
