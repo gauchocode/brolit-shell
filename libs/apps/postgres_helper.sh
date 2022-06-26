@@ -841,7 +841,7 @@ function postgres_database_import() {
     local import_status
 
     # Log
-    display --indent 6 --text "- Importing backup into database: ${database}" --tcolor YELLOW
+    display --indent 6 --text "- Importing into database: ${database}" --tcolor YELLOW
     log_event "info" "Importing dump file ${dump_file} into database: ${database}" "false"
 
     # Execute command

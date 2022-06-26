@@ -899,11 +899,14 @@ function move_files() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     clear_previous_lines "1"
-    display --indent 6 --text "- Moving files to ${destination_path}" --result "DONE" --color GREEN
+    log_event "info" "Files moved from ${source_path} to ${destination_path}" "false"
+    #display --indent 6 --text "- Moving files to ${destination_path}" --result "DONE" --color GREEN
+    return 0
 
   else
 
     clear_previous_lines "2"
+    log_event "error" "Moving files from ${source_path} to ${destination_path} failed!" "false"
     display --indent 6 --text "- Moving files to ${destination_path}" --result "FAIL" --color RED
     return 1
 

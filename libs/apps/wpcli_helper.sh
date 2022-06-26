@@ -1590,7 +1590,7 @@ function wpcli_search_and_replace() {
         # Log
         log_event "info" "Search and replace finished ok" "false"
         display --indent 6 --text "- Running search and replace" --result "DONE" --color GREEN
-        display --indent 8 --text "${search} was replaced by ${replace}"
+        display --indent 8 --text "${search} was replaced by ${replace}" --tcolor YELLOW
 
     else
 
@@ -1904,6 +1904,7 @@ function wpcli_set_debug_mode() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log
+        clear_previous_lines "3"
         display --indent 6 --text "- Set debug mode: ${debug_mode}" --result "DONE" --color GREEN
         log_event "error" "Set debug mode: ${debug_mode}" "false"
 
@@ -1912,6 +1913,7 @@ function wpcli_set_debug_mode() {
     else
 
         # Log
+        clear_previous_lines "3"
         display --indent 6 --text "- Set debug mode: ${debug_mode}" --result "FAIL" --color RED
         log_event "error" "Set debug mode: ${debug_mode}" "false"
 
@@ -1946,7 +1948,7 @@ function wpcli_cache_flush() {
 
         # Log
         clear_previous_lines "1"
-        display --indent 6 --text "- Cache flush for ${wp_site}" --result "DONE" --color GREEN
+        display --indent 6 --text "- Flush cache" --result "DONE" --color GREEN
         log_event "error" "Cache flush for ${wp_site}" "false"
 
         return 0
