@@ -1248,10 +1248,10 @@ function restore_project() {
           # TODO: check database backup type (mysql or postgres)
           local db_engine="mysql"
 
-          if [[ -z ${db_user} ]]; then
+          if [[ -z ${db_user} || "${db_user}" != "${project_name}_user" ]]; then
             db_user="${project_name}_user"
           fi
-          if [[ -z ${db_pass} ]]; then
+          if [[ -z ${db_pass} || "${db_user}" != "${project_name}_user" ]]; then
             # Passw generator
             db_pass="$(openssl rand -hex 12)"
           fi
