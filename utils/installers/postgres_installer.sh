@@ -35,8 +35,9 @@ function postgres_purge_installation() {
 
   # Apt
   apt-get --yes purge postgresql postgresql-common postgresql-contrib -qq >/dev/null
-  apt-get autoremove -qq >/dev/null
-  apt-get autoclean -qq >/dev/null
+
+  # Remove old packages
+  packages_remove_old
 
   # Log
   clear_previous_lines "1"
