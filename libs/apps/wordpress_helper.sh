@@ -332,7 +332,7 @@ function wp_replace_string_on_database() {
       # Log
       log_event "info" "Search and replace finished ok" "false"
       display --indent 6 --text "- Running search and replace" --result "DONE" --color GREEN
-      display --indent 8 --text "${existing_URL} was replaced by ${new_URL}"
+      display --indent 8 --text "${existing_URL} was replaced by ${new_URL}" --tcolor YELLOW
 
     else
 
