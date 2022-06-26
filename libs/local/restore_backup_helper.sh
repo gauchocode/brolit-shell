@@ -932,6 +932,8 @@ function restore_type_selection_from_storage() {
   local folder_to_install          # directory to install project
   local project_site
   local possible_project_name
+  local db_user
+  local db_pass
 
   chosen_type="$(whiptail --title "RESTORE FROM BACKUP" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 $(for x in ${dropbox_type_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)"
 
@@ -1003,18 +1005,15 @@ function restore_type_selection_from_storage() {
             # TODO: check database backup type (mysql or postgres)
             local db_engine="mysql"
             local db_name="${db_project_name}_${project_stage}"
-
-            if [[ -z ${db_user} ]]; then
-              db_user="${db_project_name}_user"
-            fi
-
-            if [[ -z ${db_pass} ]]; then
+            #if [[ -z ${db_user} ]]; then
+            db_user="${db_project_name}_user"
+            #fi
+            #if [[ -z ${db_pass} ]]; then
               # Passw generator
               db_pass="$(openssl rand -hex 12)"
-            fi
+            #fi
 
             # Restore Database Backup
-            #restore_backup_database "${db_project_name}" "${project_stage}" "${chosen_backup_to_restore}" "${db_engine}" "${db_name}" "${db_user}" "${db_pass}"
             restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${chosen_backup_to_restore}"
 
             # TODO: ask if want to change project db parameters and make cloudflare changes
@@ -1024,9 +1023,7 @@ function restore_type_selection_from_storage() {
             folder_to_install="$(project_ask_folder_to_install "${PROJECTS_PATH}")"
             folder_to_install_result=$?
             if [[ ${folder_to_install_result} -eq 1 ]]; then
-
               return 0
-
             fi
 
             startdir="${folder_to_install}"
@@ -1035,15 +1032,13 @@ function restore_type_selection_from_storage() {
 
             directory_browser_result=$?
             if [[ ${directory_browser_result} -eq 1 ]]; then
-
               return 0
-
             fi
 
             project_site=$filepath"/"$filename
             install_path="$(wp_config_path "${folder_to_install}/${filename}")"
 
-            if [[ "${install_path}" != "" ]]; then
+            if [[ -n "${install_path}" ]]; then
 
               # Select wordpress installation to work with
               project_path="$(wordpress_select_project_to_work_with "${install_path}")"
@@ -1366,7 +1361,7 @@ function restore_backup_database() {
     # Log
     log_event "warning" "MySQL user ${db_user} already exists" "false"
     display --indent 6 --text "- Creating ${db_user} user in MySQL" --result "FAIL" --color RED
-    display --indent 8 --text "MySQL user ${db_user} already exists."
+    display --indent 8 --text "MySQL user already exists" --tcolor YELLOW
 
     whiptail_message "WARNING" "MySQL user ${db_user} already exists. Please after the script ends, check project configuration files."
 
