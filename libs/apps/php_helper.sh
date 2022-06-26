@@ -220,7 +220,6 @@ function php_fpm_optimizations() {
   NETDATA_AVG_RAM="$(ps --no-headers -o "%mem,cmd" -C netdata | awk 'NR != 1 {x[$2] += $1} END{ for(z in x) {print x[z]""}}')"
 
   # Show/Log Server Info
-  #display --indent 6 --text "- Creating user in MySQL: ${db_user}" --result "DONE" --color GREEN
   #display --indent 6 --text "Getting server info ..."
   log_subsection "Server specs and Mem info"
   display --indent 6 --text "PHP_V: ${php_v}"
