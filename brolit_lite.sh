@@ -1490,9 +1490,9 @@ function _dropbox_get_backup() {
         return 1
     fi
 
-    project_db="$(_project_get_config "${PROJECTS_PATH}/${project_domain}" "project_db")"
+    project_db="$(_project_get_config "${PROJECTS_PATH}/${project_domain}" "project[].database[].name")"
 
-    if [[ ${project_db} == "false" ]]; then
+    if [[ -z ${project_db} || ${project_db} == "false" ]]; then
 
         project_name="$(_project_get_name_from_domain "${project_domain}")"
         project_stage="$(_project_get_stage_from_domain "${project_domain}")"
@@ -1650,7 +1650,7 @@ PROJECTS_PATH="$(_json_read_field "${BROLIT_CONFIG_FILE}" "PROJECTS.path")"
 
 # Version
 BROLIT_VERSION="3.2-rc9"
-BROLIT_LITE_VERSION="3.2-rc9-105"
+BROLIT_LITE_VERSION="3.2-rc9-106"
 
 ################################################################################
 # Show firewall status

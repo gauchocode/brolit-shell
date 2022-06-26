@@ -420,8 +420,11 @@ function php_purge_installation() {
   log_event "info" "Removing PHP-${PHP_V} and libraries ..." "false"
   display --indent 6 --text "- Removing PHP-${PHP_V} and libraries"
 
-  # apt command
-  apt-get --yes purge "php${PHP_V}-fpm" "php${PHP_V}-mysql" php-xml "php${PHP_V}-xml" "php${PHP_V}-cli" "php${PHP_V}-curl" "php${PHP_V}-mbstring" "php${PHP_V}-gd" php-imagick "php${PHP_V}-intl" "php${PHP_V}-zip" "php${PHP_V}-bz2" php-bcmath "php${PHP_V}-soap" "php${PHP_V}-dev" php-pear -qq >/dev/null
+  # Apt command
+  apt-get --yes purge php-common "php${PHP_V}-fpm" "php${PHP_V}-mysql" php-xml "php${PHP_V}-xml" "php${PHP_V}-cli" "php${PHP_V}-curl" "php${PHP_V}-mbstring" "php${PHP_V}-gd" php-imagick "php${PHP_V}-intl" "php${PHP_V}-zip" "php${PHP_V}-bz2" php-bcmath "php${PHP_V}-soap" "php${PHP_V}-dev" php-pear -qq >/dev/null
+
+  # Remove old packages
+  packages_remove_old
 
   # Log
   clear_previous_lines "1"
@@ -446,6 +449,7 @@ function php_composer_installer() {
   local expected_signature
   local actual_signature
 
+  # Log
   log_event "info" "Running composer installer" "false"
 
   expected_signature="$(wget -q -O - https://composer.github.io/installer.sig)"
@@ -453,8 +457,10 @@ function php_composer_installer() {
   actual_signature="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
 
   if [[ ${expected_signature} != "${actual_signature}" ]]; then
-    log_event "error" "Invalid installer signature" "false"
+
+    # Remove
     rm composer-setup.php
+
     return 1
 
   fi
@@ -465,6 +471,7 @@ function php_composer_installer() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
+    # Remove
     rm "${SCRIPTPATH}/composer-setup.php"
 
     log_event "info" "Composer Installer finished" "false"
@@ -476,6 +483,7 @@ function php_composer_installer() {
 
   else
 
+    # Log
     log_event "error" "Composer Installer failed" "false"
     log_event "debug" "composer_result=${composer_result}" "false"
 
