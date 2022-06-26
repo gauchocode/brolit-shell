@@ -58,8 +58,9 @@ function mysql_purge_installation() {
 
   apt-get --yes purge mysql-server mysql-client mysql-common mysql-server-core-* mysql-client-core-* -qq >/dev/null
   rm --recursive --force /etc/mysql /var/lib/mysql
-  apt-get autoremove -qq >/dev/null
-  apt-get autoclean -qq >/dev/null
+  
+  # Remove old packages
+  packages_remove_old
 
   # Log
   clear_previous_lines "1"
