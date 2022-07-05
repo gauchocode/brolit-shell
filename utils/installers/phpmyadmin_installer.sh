@@ -62,7 +62,7 @@ function phpmyadmin_installer () {
   nginx_server_create "${project_domain}" "phpmyadmin" "single" ""
 
   # Cloudflare API to change DNS records
-  cloudflare_set_record "${root_domain}" "${project_domain}" "A" "${SERVER_IP}"
+  cloudflare_set_record "${root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
 
   # HTTPS with Certbot
   certbot_helper_installer_menu "${NOTIFICATION_EMAIL_MAILA}" "${project_domain}"
