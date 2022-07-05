@@ -66,7 +66,7 @@ function _brolit_configuration_load_server_config() {
 
     # Read optional vars from server config file
     SERVER_ADDITIONAL_IPS="$(json_read_field "${server_config_file}" "SERVER_CONFIG.additional_ips")"
-    
+
     export SERVER_TIMEZONE UNATTENDED_UPGRADES SERVER_ROLE_WEBSERVER SERVER_ROLE_DATABASE SERVER_ADDITIONAL_IPS
 
 }
@@ -1972,9 +1972,6 @@ function brolit_configuration_load() {
     ### nginx
     _brolit_configuration_load_nginx "${server_config_file}"
 
-    ### php-fpm
-    _brolit_configuration_load_php "${server_config_file}"
-
     ### mariadb
     _brolit_configuration_load_mariadb "${server_config_file}"
 
@@ -1992,6 +1989,9 @@ function brolit_configuration_load() {
 
     ### redis
     _brolit_configuration_load_redis "${server_config_file}"
+
+    ### php-fpm
+    _brolit_configuration_load_php "${server_config_file}"
 
     ### certbot
     _brolit_configuration_load_certbot "${server_config_file}"

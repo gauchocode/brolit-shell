@@ -118,9 +118,9 @@ Subsystem sftp internal-sftp
 
 # Example of overriding settings on a per-user basis
 Match User SFTP_U
-	ChrootDirectory SFTP_PATH
+	ChrootDirectory /home/%u
 	X11Forwarding no
 	AllowTcpForwarding no
-#	PermitTTY SHELL_ACCESS
+	PermitTTY SHELL_ACCESS
 	ForceCommand internal-sftp
 	PasswordAuthentication yes

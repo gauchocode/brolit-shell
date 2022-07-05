@@ -82,7 +82,7 @@ function it_utils_menu() {
           project_path="${filepath}/${filename}"
         fi
 
-        sftp_create_user "${sftp_user}" "www-data" "${project_path}" "no"
+        sftp_create_user "${sftp_user}" "" "www-data" "${project_path}" "no"
 
       fi
     fi
