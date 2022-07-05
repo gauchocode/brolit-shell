@@ -28,6 +28,7 @@ function _sftp_add_folder_permission() {
 
     # Create user subfolder
     mkdir -p "/home/${username}/${folder}"
+    chown root "/home/${username}"
 
     # Log
     display --indent 6 --text "- Creating user subfolder" --result "DONE" --color GREEN
@@ -54,7 +55,7 @@ function _sftp_add_folder_permission() {
 
     ## Ref: https://tecadmin.net/how-to-create-sftp-user-for-a-web-server-document-root/
     find "${dir_path}/${folder}" -type d -exec chmod 775 {} \;
-    find "${dir_path}/${folder}" -type f -exec chmod 664 {} \; 
+    find "${dir_path}/${folder}" -type f -exec chmod 664 {} \;
     find "${dir_path}/${folder}" -type d -exec chmod g+s {} \;
     log_event "debug" "Running: find ${dir_path}${folder} -type d -exec chmod g+s {} \;" "false"
 
@@ -96,24 +97,44 @@ function _sftp_test_connection() {
 #  0 if ok, 1 on error.
 ################################################################################
 
+# Ref: https://askubuntu.com/questions/134425/how-can-i-chroot-sftp-only-ssh-users-into-their-homes
+
 #without-shell-access
 function sftp_create_user() {
 
     local username="${1}"
-    local groupname="${2}"
-    local project_path="${3}"
-    local shell_access="${4}" #no or yes
+    local userpassw="${2}"
+    local groupname="${3}"
+    local project_path="${4}"
+    local shell_access="${5}" #no or yes
 
-    # TODO: non-interactive adduser
+    # Non-interactive adduser
     # ref: https://askubuntu.com/questions/94060/run-adduser-non-interactively
-    adduser "${username}"
+    adduser --disabled-password --gecos "" "${username}"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
+
         # Log
-        display --indent 6 --text "- Creating system user" --result "DONE" --color GREEN
-        log_event "info" "New user created: ${username}"
+        display --indent 6 --text "- Creating sftp user" --result "DONE" --color GREEN
+        log_event "info" "New sftp user created: ${username}"
+
+        if [[ -z ${userpassw} ]]; then
+
+            userpassw="$(openssl rand -hex 12)"
+
+        fi
+
+        # Changing password
+        chpasswd <<<"${username}:${userpassw}"
+
+        # Log
+        display --indent 6 --text "- Setting sftp user password" --result "DONE" --color GREEN
+        display --indent 8 --text "Password: ${userpassw}" --tcolor YELLOW
+        log_event "info" "Sftp user password: ${userpassw}"
+
     else
+
         return 1
     fi
 
@@ -134,13 +155,12 @@ function sftp_create_user() {
     cp "${BROLIT_MAIN_DIR}/config/sftp/sshd_config" "/etc/ssh/sshd_config"
     log_event "debug" "Running: cp ${BROLIT_MAIN_DIR}/config/sftp/sshd_config /etc/ssh/sshd_config"
 
-    # Replace SFTP_U to new sftp user
+    # Replace SFTP_U and SFTP_PATH
     if [[ -n ${project_path} ]]; then
-        # Replacing SFTP_U with $username
+        sed -i "s+SFTP_U+${username}+g" "/etc/ssh/sshd_config"
         sed -i "s+SFTP_PATH+${project_path}+g" "/etc/ssh/sshd_config"
+        log_event "debug" "Running: s+SFTP_U+${username}+g /etc/ssh/sshd_config"
         log_event "debug" "Running: s+SFTP_PATH+${project_path}+g /etc/ssh/sshd_config"
-        #sed -i "/SFTP_U/s/'[^']*'/'${username}'/2" "/etc/ssh/sshd_config"
-        #log_event "debug" "Running: sed -i /SFTP_U/s/'[^']*'/'${username}'/2 /etc/ssh/sshd_config"
     else
         return 1
     fi

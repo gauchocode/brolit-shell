@@ -1123,7 +1123,6 @@ function restore_project() {
   log_subsection "Restore Project Backup"
 
   # Get dropbox folders list
-  #storage_project_list="$(${DROPBOX_UPLOADER} -hq list "${chosen_server}/projects-${chosen_status}/site" | awk '{print $2;}')"
   storage_project_list="$(storage_list_dir "${chosen_server}/projects-${chosen_status}/site")"
 
   # Select Project
