@@ -17,9 +17,9 @@ function cloudflare_manager_menu() {
     "04)" "DISABLE CF PROXY"
     "05)" "SET SSL MODE"
     "06)" "SET CACHE TTL VALUE"
-    "07)" "ADD NEW ENTRY"
-    "08)" "UPDATE ENTRY"
-    "09)" "DELETE ENTRY"
+    "07)" "ADD/UPDATE A RECORD"
+    "08)" "ADD/UPDATE CNAME RECORD"
+    "09)" "DELETE RECORD"
   )
   chosen_cf_options="$(whiptail --title "CLOUDFLARE MANAGER" --menu " " 20 78 10 "${cf_options[@]}" 3>&1 1>&2 2>&3)"
   exitstatus=$?
@@ -144,18 +144,26 @@ function cloudflare_manager_menu() {
 
     if [[ ${chosen_cf_options} == *"07"* ]]; then
 
-      # ADD NEW ENTRY
+      # ADD/UPDATE A RECORD
 
-      dns_entry="$(whiptail --title "DNS Entry" --inputbox "Insert the entry you want to work with, example: www.mydomain.com" 10 60 3>&1 1>&2 2>&3)"
+      local dns_entry ip_entry
+
+      dns_entry="$(whiptail --title "DNS Entry" --inputbox "Insert the subdomain you want to add/update, example: www.mydomain.com" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
 
       if [[ ${exitstatus} = 0 ]]; then
 
-        root_domain="$(domain_get_root "${dns_entry}")"
+        ip_entry="$(whiptail --title "DNS Entry" --inputbox "Insert the IP you want to work with. Default: current server IP." 20 78 10 "${SERVER_IP}" 3>&1 1>&2 2>&3)"
+        exitstatus=$?
 
-        cur_ip="${SERVER_IP}"
+        if [[ ${exitstatus} = 0 ]]; then
 
-        cloudflare_set_record "${root_domain}" "${dns_entry}" "A" "enable" "${cur_ip}"
+          root_domain="$(domain_get_root "${dns_entry}")"
+
+          #cloudflare_set_record "${root_domain}" "${dns_entry}" "A" "enable" "${cur_ip}"
+          cloudflare_update_record "${root_domain}" "${dns_entry}" "A" "disabled" "${ip_entry}"
+
+        fi
 
       fi
 
@@ -163,18 +171,26 @@ function cloudflare_manager_menu() {
 
     if [[ ${chosen_cf_options} == *"08"* ]]; then
 
-      # UPDATE ENTRY
+      # ADD/UPDATE CNAME RECORD
 
-      dns_entry="$(whiptail --title "DNS Entry" --inputbox "Insert the entry you want to work with, example: www.mydomain.com" 10 60 3>&1 1>&2 2>&3)"
+      local dns_entry content_entry
+
+      dns_entry="$(whiptail --title "DNS Entry" --inputbox "Insert the subdomain you want to add/update, example: www.mydomain.com" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
 
       if [[ ${exitstatus} = 0 ]]; then
 
-        root_domain="$(domain_get_root "${dns_entry}")"
+        content_entry="$(whiptail --title "DNS Entry" --inputbox "Insert the sub/domain you want to work with." 10 60 3>&1 1>&2 2>&3)"
+        exitstatus=$?
 
-        cur_ip="${SERVER_IP}"
+        if [[ ${exitstatus} = 0 ]]; then
 
-        cloudflare_update_record "${root_domain}" "${dns_entry}" "A" "enable" "${cur_ip}"
+          root_domain="$(domain_get_root "${dns_entry}")"
+
+          #cloudflare_set_record "${root_domain}" "${dns_entry}" "A" "enable" "${cur_ip}"
+          cloudflare_update_record "${root_domain}" "${dns_entry}" "CNAME" "disabled" "${content_entry}"
+
+        fi
 
       fi
 
