@@ -160,8 +160,8 @@ function cloudflare_manager_menu() {
 
           root_domain="$(domain_get_root "${dns_entry}")"
 
-          #cloudflare_set_record "${root_domain}" "${dns_entry}" "A" "enable" "${cur_ip}"
-          cloudflare_update_record "${root_domain}" "${dns_entry}" "A" "disabled" "${ip_entry}"
+          cloudflare_set_record "${root_domain}" "${dns_entry}" "A" "enable" "${ip_entry}"
+          #cloudflare_update_record "${root_domain}" "${dns_entry}" "A" "disabled" "${ip_entry}"
 
         fi
 
@@ -187,8 +187,8 @@ function cloudflare_manager_menu() {
 
           root_domain="$(domain_get_root "${dns_entry}")"
 
-          #cloudflare_set_record "${root_domain}" "${dns_entry}" "A" "enable" "${cur_ip}"
-          cloudflare_update_record "${root_domain}" "${dns_entry}" "CNAME" "disabled" "${content_entry}"
+          cloudflare_set_record "${root_domain}" "${dns_entry}" "A" "enable" "${content_entry}"
+          #cloudflare_update_record "${root_domain}" "${dns_entry}" "CNAME" "disabled" "${content_entry}"
 
         fi
 
