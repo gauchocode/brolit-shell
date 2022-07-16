@@ -399,8 +399,8 @@ function script_init() {
   del_reports="$(find "${path_reports}" -name "*.log" -type f -mtime +7 -print -delete)"
 
   ## Log
-  log_event "info" "Deleting old script logs: ${del_logs}" "false"
-  log_event "info" "Deleting old script reports: ${del_reports}" "false"
+  log_event "info" "Deleting old script logs... ${del_logs}" "false"
+  log_event "info" "Deleting old script reports... ${del_reports}" "false"
 
   # Checking required packages
   package_check_required
@@ -458,13 +458,11 @@ function customize_ubuntu_login_message() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     log_event "info" "Welcome message changed!" "false"
-
     return 0
 
   else
 
     log_event "error" "Something went wrong trying to change Welcome message" "false"
-
     return 1
 
   fi
