@@ -1954,10 +1954,10 @@ function brolit_configuration_load() {
     _brolit_configuration_load_telegram "${server_config_file}"
 
     ## SECURITY
-    SECURITY_STATUS="$(json_read_field "${server_config_file}" "PROJECTS.firewall[].status")"
+    SECURITY_STATUS="$(json_read_field "${server_config_file}" "SECURITY.firewall[].status")"
     if [[ ${SECURITY_STATUS} == "enabled" ]]; then
         # Firewall config file
-        firewall_config_file="$(json_read_field "${server_config_file}" "PROJECTS.firewall[].config[].file")"
+        firewall_config_file="$(json_read_field "${server_config_file}" "SECURITY.firewall[].config[].file")"
         # Load config
         # TODO: needs refactor
         _brolit_configuration_load_firewall_ufw "${firewall_config_file}"
