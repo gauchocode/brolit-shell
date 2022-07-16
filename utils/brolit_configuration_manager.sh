@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc9
+# Version: 3.2-rc10
 ################################################################################
 #
 # Server Config Manager: Brolit server configuration management.
@@ -570,12 +570,12 @@ function _brolit_configuration_load_cloudflare() {
     declare -g SUPPORT_CLOUDFLARE_EMAIL
     declare -g SUPPORT_CLOUDFLARE_API_KEY
 
-    SUPPORT_CLOUDFLARE_STATUS="$(json_read_field "${server_config_file}" "SUPPORT.cloudflare[].status")"
+    SUPPORT_CLOUDFLARE_STATUS="$(json_read_field "${server_config_file}" "DNS.cloudflare[].status")"
 
     if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
 
-        SUPPORT_CLOUDFLARE_EMAIL="$(json_read_field "${server_config_file}" "SUPPORT.cloudflare[].config[].email")"
-        SUPPORT_CLOUDFLARE_API_KEY="$(json_read_field "${server_config_file}" "SUPPORT.cloudflare[].config[].api_key")"
+        SUPPORT_CLOUDFLARE_EMAIL="$(json_read_field "${server_config_file}" "DNS.cloudflare[].config[].email")"
+        SUPPORT_CLOUDFLARE_API_KEY="$(json_read_field "${server_config_file}" "DNS.cloudflare[].config[].api_key")"
 
         # Write .cloudflare.conf (needed for certbot support)
         echo "dns_cloudflare_email=${SUPPORT_CLOUDFLARE_EMAIL}" >~/.cloudflare.conf
@@ -1933,22 +1933,17 @@ function brolit_configuration_load() {
 
     #### if all required vars are disabled, show error
     if [[ ${BACKUP_DROPBOX_STATUS} != "enabled" ]] && [[ ${BACKUP_SFTP_STATUS} != "enabled" ]] && [[ ${BACKUP_LOCAL_STATUS} != "enabled" ]]; then
-
         log_event "warning" "No backup method enabled" "false"
         display --indent 6 --text "- Backup method selected" --result "NONE" --color RED
         display --indent 8 --text "Please select at least one backup method"
-
     fi
 
     ## PROJECTS_PATH
     PROJECTS_PATH="$(json_read_field "${server_config_file}" "PROJECTS.path")"
-
     if [[ -z ${PROJECTS_PATH} ]]; then
         log_event "warning" "Missing required config vars for projects path" "true"
         exit 1
     fi
-
-    # TODO: need to implement BACKUPS.directories
 
     ## NOTIFICATIONS
 
@@ -1958,13 +1953,20 @@ function brolit_configuration_load() {
     ### Telegram
     _brolit_configuration_load_telegram "${server_config_file}"
 
-    ## FIREWALL
-    _brolit_configuration_load_firewall_ufw "${server_config_file}"
-    _brolit_configuration_load_firewall_fail2ban "${server_config_file}"
+    ## SECURITY
+    SECURITY_STATUS="$(json_read_field "${server_config_file}" "PROJECTS.firewall[].status")"
+    if [[ ${SECURITY_STATUS} == "enabled" ]]; then
+        # Firewall config file
+        firewall_config_file="$(json_read_field "${server_config_file}" "PROJECTS.firewall[].config[].file")"
+        # Load config
+        # TODO: needs refactor
+        _brolit_configuration_load_firewall_ufw "${firewall_config_file}"
+        _brolit_configuration_load_firewall_fail2ban "${firewall_config_file}"
+    fi
 
-    ## SUPPORT
+    ## DNS
 
-    ### cloudflare
+    ### Cloudflare
     _brolit_configuration_load_cloudflare "${server_config_file}"
 
     ## PACKAGES

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc9
+# Version: 3.2-rc10
 ################################################################################
 #
 # Database Manager: Perform database actions.
@@ -151,7 +151,7 @@ function database_manager_menu() {
       chosen_database="$(whiptail --title "DATABASE MANAGER" --menu "Choose a database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)"
 
       exitstatus=$?
-      if [[ ${exitstatus} = 0 ]]; then
+      if [[ ${exitstatus} -eq 0 ]]; then
 
         chosen_database_name="$(whiptail --title "DATABASE MANAGER" --inputbox "Insert the database name you want to create, example: my_domain_prod" 10 60 3>&1 1>&2 2>&3)"
         exitstatus=$?
@@ -233,7 +233,7 @@ function database_manager_menu() {
       chosen_user="$(whiptail --title "DATABASE MANAGER" --menu "Choose the user you want to delete" 20 78 10 $(for x in ${database_users}; do echo "$x [U]"; done) 3>&1 1>&2 2>&3)"
 
       exitstatus=$?
-      if [[ ${exitstatus} = 0 ]]; then
+      if [[ ${exitstatus} -eq 0 ]]; then
 
         if [[ ${chosen_database_engine_options} == "MYSQL" ]]; then
 
@@ -263,12 +263,12 @@ function database_manager_menu() {
       chosen_user="$(whiptail --title "DATABASE MANAGER" --menu "Choose a user to work with" 20 78 10 $(for x in ${database_users}; do echo "$x [U]"; done) 3>&1 1>&2 2>&3)"
 
       exitstatus=$?
-      if [[ ${exitstatus} = 0 ]]; then
+      if [[ ${exitstatus} -eq 0 ]]; then
 
         new_user_psw="$(whiptail --title "MYSQL USER PASSWORD" --inputbox "Insert the new user password:" 10 60 3>&1 1>&2 2>&3)"
 
         exitstatus=$?
-        if [[ ${exitstatus} = 0 ]]; then
+        if [[ ${exitstatus} -eq 0 ]]; then
 
           if [[ ${chosen_database_engine_options} == "MYSQL" ]]; then
 
@@ -300,7 +300,7 @@ function database_manager_menu() {
       chosen_user="$(whiptail --title "DATABASE MANAGER" --menu "Choose a user to work with" 20 78 10 $(for x in ${database_users}; do echo "$x [U]"; done) 3>&1 1>&2 2>&3)"
 
       exitstatus=$?
-      if [[ ${exitstatus} = 0 ]]; then
+      if [[ ${exitstatus} -eq 0 ]]; then
 
         # List databases
         if [[ ${chosen_database_engine_options} == "MYSQL" ]]; then
@@ -312,7 +312,7 @@ function database_manager_menu() {
         chosen_database="$(whiptail --title "DATABASE MANAGER" --menu "Choose the database to grant privileges" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)"
 
         exitstatus=$?
-        if [[ ${exitstatus} = 0 ]]; then
+        if [[ ${exitstatus} -eq 0 ]]; then
 
           if [[ ${chosen_database_engine_options} == "MYSQL" ]]; then
             mysql_user_grant_privileges "${chosen_user}" "${chosen_database}" "localhost"
