@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://example.com
-# Version: 3.2-rc9
+# Version: 3.2-rc10
 ################################################################################
 #
 # MinIO Helper: Perform minio-client actions.
