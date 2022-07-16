@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc9
+# Version: 3.2-rc10
 ################################################################################
 
 ################################################################################
@@ -1161,12 +1161,12 @@ function _brolit_shell_config() {
 
     ## Telegram notification config
     telegram_notification_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.telegram[].status")"
-    
+
     ## Dropbox config
     backup_dropbox_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.methods[].dropbox[].status")"
 
     ## Cloudflare config
-    cloudflare_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "SUPPORT.cloudflare[].status")"
+    cloudflare_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "DNS.cloudflare[].status")"
 
     ## SMTP Server config
     #smtp_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].methods[].smtp[].status")"
@@ -1209,27 +1209,31 @@ function _serverinfo() {
     local cpu_cores
     local ram_amount
     local disks_info
-    #local disk_volume
-    #local disk_usage
     local public_ip
-    local inet_ip # configured on network file
+    local public_ipv6
+    local local_ip
 
+    local_ip="$(ip route get 1 | awk '{print $(NF-2);exit}')"
+
+    # Get public IP (ref: https://www.ipify.org)
     public_ip="$(curl --silent https://api.ipify.org)"
-    inet_ip="$(/sbin/ifconfig eth0 | grep -w "inet" | awk '{print $2}')"
+    if [[ -z ${public_ip} ]]; then
+        # Alternative method
+        public_ip="$(curl --silent http://ipv4.icanhazip.com)"
+    else
+        # If api.apify.org works, get IPv6 too
+        public_ipv6="$(curl --silent 'https://api64.ipify.org')"
+    fi
 
     distro="$(lsb_release -d | awk -F"\t" '{print $2}')"
 
+    # Hardware info
     cpu_cores="$(grep -c "processor" /proc/cpuinfo)"
     ram_amount="$(grep MemTotal /proc/meminfo | cut -d ":" -f 2)"
     ram_amount="$(_string_remove_spaces "${ram_amount}")"
-
-    #disk_volume="$(df / | grep -Eo '/dev/[^ ]+')"
-    #disk_size="$(df -h | grep -w "${disk_volume}" | awk '{print $2}')"
-    #disk_usage="$(df -h | grep -w "${disk_volume}" | awk '{print $5}')"
-
     disks_info="$(_server_disks_info)"
 
-    if [[ ${public_ip} == "${inet_ip}" ]]; then
+    if [[ -z ${public_ip} ]]; then
 
         # Return JSON part
         echo "\"server_name\": \"${SERVER_NAME}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , ${disks_info}"
@@ -1237,7 +1241,7 @@ function _serverinfo() {
     else
 
         # Return JSON part
-        echo "\"server_name\": \"${SERVER_NAME}\" , \"floating_ip\": \"${inet_ip}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , ${disks_info}"
+        echo "\"server_name\": \"${SERVER_NAME}\" , \"floating_ip\": \"${local_ip}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , ${disks_info}"
 
     fi
 
@@ -1649,8 +1653,8 @@ declare -g PROJECTS_PATH
 PROJECTS_PATH="$(_json_read_field "${BROLIT_CONFIG_FILE}" "PROJECTS.path")"
 
 # Version
-BROLIT_VERSION="3.2-rc9"
-BROLIT_LITE_VERSION="3.2-rc9-107"
+BROLIT_VERSION="3.2-rc10"
+BROLIT_LITE_VERSION="3.2-rc10-107"
 
 ################################################################################
 # Show firewall status

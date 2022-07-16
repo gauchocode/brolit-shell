@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc9
+# Version: 3.2-rc10
 ################################################################################
 
 ### Main dir check
@@ -59,7 +59,7 @@ for site in ${all_sites}; do
       curl --silent -L "${project_name}" 2>&1 | grep -q "${keyword}"
       curl_output=$?
 
-      if [[ ${curl_output} == 0 ]]; then
+      if [[ ${curl_output} -eq 0 ]]; then
 
         log_event "info" "Website ${project_name} is online" "false"
         display --indent 2 --text "- Testing ${project_name}" --result "UP" --color GREEN

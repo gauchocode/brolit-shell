@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc9
+# Version: 3.2-rc10
 ################################################################################
 
 ################################################################################
@@ -53,7 +53,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.2-rc9"
+  declare -g SCRIPT_V="3.2-rc10"
 
   # Hostname
   declare -g SERVER_NAME="$HOSTNAME"
@@ -187,7 +187,7 @@ function _check_root() {
   is_root="$(id -u)" # if return 0, the script is runned by the root user
 
   # Check if user is root
-  if [[ ${is_root} != 0 ]]; then
+  if [[ ${is_root} -ne 0 ]]; then
     # $USER is a env var
     log_event "critical" "Script runned by ${USER}, but must be root! Exiting ..." "true"
     exit 1
@@ -229,7 +229,8 @@ function get_server_ips() {
   declare -g SERVER_IPv6
 
   # LOCAL IP (if server has configured a floating ip, it will return this)
-  LOCAL_IP="$(/sbin/ifconfig eth0 | grep -w 'inet ' | awk '{print $2}')" # Could be a floating ip
+  #LOCAL_IP="$(/sbin/ifconfig eth0 | grep -w 'inet ' | awk '{print $2}')"
+  LOCAL_IP="$(ip route get 1 | awk '{print $(NF-2);exit}')"
 
   # PUBLIC IP (with https://www.ipify.org)
   SERVER_IP="$(curl --silent 'https://api.ipify.org')"
@@ -241,6 +242,7 @@ function get_server_ips() {
     SERVER_IPv6="$(curl --silent 'https://api64.ipify.org')"
   fi
 
+  log_event "info" "LOCAL IPv4: ${LOCAL_IP}" "false"
   log_event "info" "SERVER IPv4: ${SERVER_IP}" "false"
   log_event "info" "SERVER IPv6: ${SERVER_IPv6}" "false"
 
@@ -358,7 +360,7 @@ function script_init() {
   # Log Start
   log_event "info" "Script Start -- $(date +%Y%m%d_%H%M)" "false"
 
-  # Install basic required package
+  # Install required package to read configuration file
   package_install_if_not "jq"
 
   # Brolit configuration check
@@ -386,16 +388,16 @@ function script_init() {
   # Checking if user is root
   _check_root
 
-  # Checking script permissions
+  # Checking scripts permissions
   _check_scripts_permissions
 
   # Get server IPs
   get_server_ips
 
-  # Clean old log files
-  ## Find and delete old log files
+  # Clean old Brolit log files
   del_logs="$(find "${path_log}" -name "*.log" -type f -mtime +7 -print -delete)"
   del_reports="$(find "${path_reports}" -name "*.log" -type f -mtime +7 -print -delete)"
+
   ## Log
   log_event "info" "Deleting old script logs: ${del_logs}" "false"
   log_event "info" "Deleting old script reports: ${del_reports}" "false"
@@ -1461,7 +1463,7 @@ function brolit_cronjob_install() {
   grep -qi "${script}" "${cron_file}"
 
   grep_result=$?
-  if [[ ${grep_result} != 0 ]]; then
+  if [[ ${grep_result} -ne 0 ]]; then
 
     log_event "info" "Updating cron job for script: ${script}" "false"
     /bin/echo "${scheduled_time} ${script}" >>"${cron_file}"

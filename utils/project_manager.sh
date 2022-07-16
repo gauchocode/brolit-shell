@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc9
+# Version: 3.2-rc10
 ################################################################################
 #
 # Database Manager: Perform database actions.
@@ -43,7 +43,7 @@ function project_manager_menu_new_project_type_utils() {
   chosen_project_utils_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_utils_options[@]}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
-  if [[ ${exitstatus} = 0 ]]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_project_utils_options} == *"01"* ]]; then
 
@@ -193,7 +193,7 @@ function project_manager_menu_new_project_type_utils() {
       URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
 
       exitstatus=$?
-      if [[ ${exitstatus} = 0 ]]; then
+      if [[ ${exitstatus} -eq 0 ]]; then
 
         log_section "GTMETRIX"
 
@@ -253,7 +253,7 @@ function project_manager_menu_new_project_type_new_project() {
   chosen_project_type_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_type_options[@]}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
-  if [[ ${exitstatus} = 0 ]]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_project_type_options} == *"01"* ]]; then
 
