@@ -1773,9 +1773,24 @@ function brolit_configuration_file_check() {
 
     local server_config_file="${1}"
 
+    local brolit_config_template="${BROLIT_MAIN_DIR}/config/brolit/brolit_conf.json"
+
+    local brolit_installed_config_version
+    local brolit_release_config_version
+
     if [[ -f "${server_config_file}" ]]; then
 
         log_event "info" "Brolit config file found: ${server_config_file}" "true"
+
+        brolit_installed_config_version="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].version")"
+        brolit_release_config_version="$(json_read_field "${brolit_config_template}" "BROLIT_SETUP.config[].version")"
+
+        if [[ ${brolit_installed_config_version} != "${brolit_release_config_version}" ]]; then
+            log_event "error" "Brolit config version outdated! Please regenerate config file." "false"
+            display --indent 6 --text "- Checking Brolit config version" --result "WARNING" --color YELLOW
+            display --indent 8 --text "Brolit config version outdated!"
+            exit 1
+        fi
 
     else
 
@@ -1792,7 +1807,7 @@ function brolit_configuration_file_check() {
 
             [Yy]*)
 
-                cp "${BROLIT_MAIN_DIR}/config/brolit/brolit_conf.json" "${server_config_file}"
+                cp "${brolit_config_template}" "${server_config_file}"
 
                 log_event "critical" "Please, edit brolit_conf.json first, and then run the script again." "true"
 
@@ -1905,7 +1920,6 @@ function brolit_configuration_load() {
 
     # Globals
     declare -g PROJECTS_PATH
-
     declare -g SERVER_PREPARED="false"
 
     ## SERVER ROLES
