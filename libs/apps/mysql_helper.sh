@@ -26,6 +26,7 @@ function mysql_ask_root_psw() {
     if [[ ! -f ${MYSQL_CONF} ]]; then
 
         mysql_root_pass="$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root password" 10 60 "${mysql_root_pass}" 3>&1 1>&2 2>&3)"
+        
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -69,6 +70,7 @@ function mysql_ask_user_db_scope() {
     local db_scope="${1}"
 
     db_scope="$(whiptail --title "MySQL User Scope" --inputbox "Set the scope for the database user. You can use '%' to accept all connections." 10 60 "${db_scope}" 3>&1 1>&2 2>&3)"
+    
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -793,7 +795,6 @@ function mysql_database_drop() {
     # Execute command
     ${MYSQL_ROOT} -e "${query_1}"
 
-    # Check result
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
@@ -834,8 +835,6 @@ function mysql_database_import() {
     local database="${1}"
     local dump_file="${2}"
 
-    #local import_status
-
     # Log
     display --indent 6 --text "- Importing backup into: ${database}" --tcolor YELLOW
     log_event "info" "Importing dump file ${dump_file} into database: ${database}" "false"
@@ -848,8 +847,6 @@ function mysql_database_import() {
     # Execute command
     pv --width 70 "${dump_file}" | ${MYSQL_ROOT} -f -D "${database}"
 
-    #import_status=$?
-    #if [[ ${import_status} -eq 0 ]]; then
     if [[ ${PIPESTATUS[1]} -eq 0 ]]; then
 
         # Log
