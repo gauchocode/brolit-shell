@@ -266,66 +266,57 @@ function mail_certificates_section() {
     #cert_status_color="#503fe0"
     email_cert_line=""
 
-    # This fix avoid getting the first parent directory, maybe we could find a better solution
-    local k="skip"
-
     all_sites="$(get_all_directories "${PROJECTS_PATH}")"
 
     for site in ${all_sites}; do
 
-        if [ "${k}" != "skip" ]; then
+        domain="$(basename "${site}")"
 
-            domain="$(basename "${site}")"
+        # Check blacklist ${IGNORED_PROJECTS_LIST}
+        if [[ "${IGNORED_PROJECTS_LIST}" != *"${domain}"* ]]; then
 
-            # Check blacklist ${IGNORED_PROJECTS_LIST}
-            if [[ "${IGNORED_PROJECTS_LIST}" != *"${domain}"* ]]; then
+            log_event "info" "Getting certificate info for: ${domain}" "false"
 
-                log_event "info" "Getting certificate info for: ${domain}" "false"
+            # Change global
+            BK_FL_ARRAY_INDEX="$((BK_FL_ARRAY_INDEX + 1))"
 
-                # Change global
-                BK_FL_ARRAY_INDEX="$((BK_FL_ARRAY_INDEX + 1))"
+            email_cert_new_line="<div style=\"float:left;width:100%\">"
+            email_cert_domain="<div>${domain}"
 
-                email_cert_new_line="<div style=\"float:left;width:100%\">"
-                email_cert_domain="<div>${domain}"
+            cert_days="$(certbot_certificate_valid_days "${domain}")"
 
-                cert_days="$(certbot_certificate_valid_days "${domain}")"
+            if [[ ${cert_days} == "" ]]; then
+                # GREY LABEL
+                email_cert_days_container=" <span style=\"color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;\">"
+                email_cert_days="${email_cert_days_container} no certificate"
+                cert_status_icon="⚠️"
+                #cert_status_color="red"
+                status_certs="WARNING"
 
-                if [[ ${cert_days} == "" ]]; then
-                    # GREY LABEL
-                    email_cert_days_container=" <span style=\"color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;\">"
-                    email_cert_days="${email_cert_days_container} no certificate"
-                    cert_status_icon="⚠️"
-                    #cert_status_color="red"
-                    status_certs="WARNING"
+            else #certificate found
 
-                else #certificate found
-
-                    if (("${cert_days}" >= 14)); then
-                        # GREEN LABEL
-                        email_cert_days_container=" <span style=\"color:white;background-color:#27b50d;border-radius:12px;padding:0 5px 0 5px;\">"
+                if (("${cert_days}" >= 14)); then
+                    # GREEN LABEL
+                    email_cert_days_container=" <span style=\"color:white;background-color:#27b50d;border-radius:12px;padding:0 5px 0 5px;\">"
+                else
+                    if (("${cert_days}" >= 7)); then
+                        # ORANGE LABEL
+                        email_cert_days_container=" <span style=\"color:white;background-color:#df761d;border-radius:12px;padding:0 5px 0 5px;\">"
                     else
-                        if (("${cert_days}" >= 7)); then
-                            # ORANGE LABEL
-                            email_cert_days_container=" <span style=\"color:white;background-color:#df761d;border-radius:12px;padding:0 5px 0 5px;\">"
-                        else
-                            # RED LABEL
-                            email_cert_days_container=" <span style=\"color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;\">"
-                            cert_status_icon="⚠️"
-                            #cert_status_color="red"
-                            status_certs="WARNING"
-                        fi
-
+                        # RED LABEL
+                        email_cert_days_container=" <span style=\"color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;\">"
+                        cert_status_icon="⚠️"
+                        #cert_status_color="red"
+                        status_certs="WARNING"
                     fi
-                    email_cert_days="${email_cert_days_container}${cert_days} days"
 
                 fi
-
-                email_cert_end_line="</span></div></div>"
-                email_cert_line="${email_cert_line}${email_cert_new_line}${email_cert_domain}${email_cert_days}${email_cert_end_line}"
+                email_cert_days="${email_cert_days_container}${cert_days} days"
 
             fi
-        else
-            k=""
+
+            email_cert_end_line="</span></div></div>"
+            email_cert_line="${email_cert_line}${email_cert_new_line}${email_cert_domain}${email_cert_days}${email_cert_end_line}"
 
         fi
 
