@@ -415,13 +415,17 @@ function backup_all_projects_files() {
 
   for j in ${TOTAL_SITES}; do
 
-    log_event "info" "Processing [${j}] ..." "false"
-
     if [[ ${k} -gt 0 ]]; then
 
       directory_name="$(basename "${j}")"
 
-      if [[ ${EXCLUDED_FILES_LIST} != *"${directory_name}"* ]]; then
+      log_event "info" "Processing [${directory_name}] ..." "false"
+
+      project_is_excluded "${directory_name}"
+
+      result=$?
+      if [[ ${result} -eq 0 ]]; then
+        #if [[ ${IGNORED_PROJECTS_LIST} != *"${directory_name}"* ]]; then
 
         backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${directory_name}")"
 
@@ -432,7 +436,11 @@ function backup_all_projects_files() {
         log_break "true"
 
       else
+
+        # Log
         log_event "info" "Omitting ${directory_name} (blacklisted) ..." "false"
+        display --indent 6 --text "- Ommiting excluded directory" --result "DONE" --color WHITE
+        display --indent 8 --text "${directory_name}" --tcolor WHITE
 
       fi
 

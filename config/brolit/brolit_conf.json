@@ -2,7 +2,7 @@
     "BROLIT_SETUP": {
         "config": [
             {
-                "version": "3.10.0",
+                "version": "3.10.1",
                 "debug": "true",
                 "quiet": "false",
                 "skip_test": "true",
@@ -37,15 +37,16 @@
                 "projects": [
                     {
                         "status": "enabled",
-                        "exclude": [
+                        "ignored": [
                             "html",
                             ".wp-cli",
                             ".cert"
                         ],
-                        "ignore": [
+                        "excluded_on_tar": [
                             "*.log",
                             "*.tmp",
-                            "*.cache"
+                            "*.cache",
+                            "*.git"
                         ]
                     }
                 ],

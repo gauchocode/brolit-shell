@@ -118,6 +118,38 @@ function project_set_config_var() {
 }
 
 ################################################################################
+# Check if project is excluded on config
+#
+# Arguments:
+#   $1= ${project}
+#
+# Outputs:
+#   1 on true or 0 on false.
+################################################################################
+
+function project_is_excluded() {
+
+  local project #string
+
+  # String to Array
+  IFS="," read -a excluded_projects_array <<<"${IGNORED_PROJECTS_LIST}"
+
+  for i in "${excluded_projects_array[@]}"; do
+    :
+
+    if [[ ${project} == "${i}" ]]; then
+
+      return 1
+
+    fi
+
+  done
+
+  return 0
+
+}
+
+################################################################################
 # Ask project stage
 #
 # Arguments:

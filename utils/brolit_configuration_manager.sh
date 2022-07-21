@@ -206,6 +206,77 @@ function _brolit_configuration_load_backup_local() {
 }
 
 ################################################################################
+# Private: load s3 backup configuration
+#
+# Arguments:
+#   $1 = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function _brolit_configuration_load_backup_s3() {
+
+    local server_config_file="${1}"
+
+    # Globals
+    declare -g BACKUP_S3_STATUS
+    declare -g BACKUP_S3_BUCKET
+    declare -g BACKUP_S3_ACCESS_KEY
+    declare -g BACKUP_S3_SECRET_KEY
+    declare -g BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH
+    #declare -g BACKUP_S3_CONFIG_BACKUP_FREQUENCY
+    #declare -g BACKUP_S3_CONFIG_FULL_LIFE
+
+    BACKUP_S3_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].status")"
+
+    if [[ ${BACKUP_S3_STATUS} == "enabled" ]]; then
+
+        # Check if all required vars are set
+
+        BACKUP_S3_BUCKET="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].bucket")"
+        if [ -z "${BACKUP_S3_BUCKET}" ]; then
+            log_event "error" "Missing required config vars for s3 backup method" "true"
+            exit 1
+        fi
+
+        BACKUP_S3_ACCESS_KEY="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].access_key")"
+        if [ -z "${BACKUP_S3_ACCESS_KEY}" ]; then
+            log_event "error" "Missing required config vars for s3 backup method" "true"
+            exit 1
+        fi
+
+        BACKUP_S3_SECRET_KEY="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].secret_key")"
+        if [ -z "${BACKUP_S3_SECRET_KEY}" ]; then
+            log_event "error" "Missing required config vars for s3 backup method" "true"
+            exit 1
+        fi
+
+        BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].backup_path")"
+        if [ -z "${BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH}" ]; then
+            log_event "error" "Missing required config vars for s3 backup method" "true"
+            exit 1
+        fi
+
+        #BACKUP_S3_CONFIG_BACKUP_FREQUENCY="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].backup_frequency")"
+        #if [ -z "${BACKUP_S3_CONFIG_BACKUP_FREQUENCY}" ]; then
+        #    log_event "error" "Missing required config vars for s3 backup method" "true"
+        #    exit 1
+        #fi
+
+        #BACKUP_S3_CONFIG_FULL_LIFE="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].backup_full_life")"
+        #if [ -z "${BACKUP_S3_CONFIG_FULL_LIFE}" ]; then
+        #    log_event "error" "Missing required config vars for s3 backup method" "true"
+        #    exit 1
+        #fi
+
+    fi
+
+    export BACKUP_S3_STATUS BACKUP_S3_BUCKET BACKUP_S3_ACCESS_KEY BACKUP_S3_SECRET_KEY BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH
+
+}
+
+################################################################################
 # Private: load duplicity backup configuration
 #
 # Arguments:
@@ -229,25 +300,21 @@ function _brolit_configuration_load_backup_duplicity() {
 
     if [[ ${BACKUP_DUPLICITY_STATUS} == "enabled" ]]; then
 
-        BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH="$(json_read_field "${server_config_file}" "BACKUPS.methods[].duplicity[].config[].backup_destination_path")"
-
         # Check if all required vars are set
+
+        BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH="$(json_read_field "${server_config_file}" "BACKUPS.methods[].duplicity[].config[].backup_destination_path")"
         if [ -z "${BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH}" ]; then
             log_event "error" "Missing required config vars for duplicity backup method" "true"
             exit 1
         fi
 
         BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY="$(json_read_field "${server_config_file}" "BACKUPS.methods[].duplicity[].config[].backup_frequency")"
-
-        # Check if all required vars are set
         if [ -z "${BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY}" ]; then
             log_event "error" "Missing required config vars for duplicity backup method" "true"
             exit 1
         fi
 
         BACKUP_DUPLICITY_CONFIG_FULL_LIFE="$(json_read_field "${server_config_file}" "BACKUPS.methods[].duplicity[].config[].backup_full_life")"
-
-        # Check if all required vars are set
         if [ -z "${BACKUP_DUPLICITY_CONFIG_FULL_LIFE}" ]; then
             log_event "error" "Missing required config vars for duplicity backup method" "true"
             exit 1
@@ -275,17 +342,13 @@ function _brolit_configuration_load_backup_config() {
 
     # Globals
     declare -g BACKUP_CONFIG_PROJECTS_STATUS
-    #declare -g BACKUP_CONFIG_PROJECTS_EXCLUDE_LIST
     declare -g BACKUP_CONFIG_DATABASES_STATUS
-    #declare -g BACKUP_CONFIG_DATABASES_EXCLUDE_LIST
     declare -g BACKUP_CONFIG_SERVER_CFG_STATUS
     declare -g BACKUP_CONFIG_COMPRESSION_TYPE
 
-    declare -g EXCLUDED_FILES_LIST
+    declare -g IGNORED_PROJECTS_LIST #".wp-cli,.ssh,.local,.cert,html,phpmyadmin"
     declare -g EXCLUDED_DATABASES_LIST
-
-    # TODO: replace with json_read_field
-    declare -g EXCLUDED_FILES_LIST=".wp-cli,.ssh,.local,.cert,html,phpmyadmin"
+    declare -g EXCLUDED_FILES_LIST #"*.log,*.tmp,.git"
 
     ## Backup config projects
     BACKUP_CONFIG_PROJECTS_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].status")"
@@ -293,7 +356,8 @@ function _brolit_configuration_load_backup_config() {
         log_event "error" "Missing required config vars for backup retention" "true"
         exit 1
     fi
-    EXCLUDED_FILES_LIST="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].exclude")"
+    IGNORED_PROJECTS_LIST="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].ignored")"
+    EXCLUDED_FILES_LIST="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].excluded_on_tar")"
 
     ## Backup config databases
     BACKUP_CONFIG_DATABASES_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.config[].databases[].status")"
@@ -319,7 +383,7 @@ function _brolit_configuration_load_backup_config() {
 
     export BACKUP_CONFIG_PROJECTS_STATUS BACKUP_CONFIG_DATABASES_STATUS BACKUP_CONFIG_SERVER_CFG_STATUS
 
-    export EXCLUDED_FILES_LIST EXCLUDED_DATABASES_LIST
+    export IGNORED_PROJECTS_LIST EXCLUDED_FILES_LIST EXCLUDED_DATABASES_LIST
     #export BACKUP_CONFIG_PROJECTS_EXCLUDE_LIST BACKUP_CONFIG_DATABASES_EXCLUDE_LIST
 
 }
@@ -845,8 +909,6 @@ function _brolit_configuration_load_mariadb() {
 
     else
 
-        # ${PACKAGES_MYSQL_STATUS} == "disabled"
-
         if [[ -x ${MYSQL} ]]; then
             # Check which mysql version is installed
             is_mariadb="$(mysql -V | grep MariaDB)"
@@ -859,8 +921,6 @@ function _brolit_configuration_load_mariadb() {
         fi
 
     fi
-
-    #_brolit_configuration_app_mysql
 
     export MHOST MUSER MYSQL_CONF_DIR MYSQL MYSQL_CONF MYSQL_ROOT MYSQLDUMP_ROOT MYSQLDUMP
     export PACKAGES_MARIADB_STATUS PACKAGES_MARIADB_CONFIG_VERSION PACKAGES_MARIADB_CONFIG_PORTS
@@ -1071,13 +1131,6 @@ function _brolit_configuration_load_redis() {
             exit 1
         fi
 
-        #PACKAGES_REDIS_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.redis[].config[].port")"
-        # Check if all required vars are set
-        #if [[ -z ${PACKAGES_REDIS_CONFIG_PORTS} ]]; then
-        #    log_event "error" "Missing required config vars for redis" "true"
-        #    exit 1
-        #fi
-
         # Checking if Redis is not installed
         if [[ ! -x ${REDIS} ]]; then
             menu_config_changes_detected "redis" "true"
@@ -1092,7 +1145,7 @@ function _brolit_configuration_load_redis() {
 
     fi
 
-    export REDIS PACKAGES_REDIS_STATUS PACKAGES_REDIS_CONFIG_VERSION #PACKAGES_REDIS_CONFIG_PORTS
+    export REDIS PACKAGES_REDIS_STATUS PACKAGES_REDIS_CONFIG_VERSION
 
 }
 
@@ -1647,6 +1700,8 @@ function _brolit_configuration_load_custom_pkgs() {
 #   nothing
 ################################################################################
 
+# TODO: Need a refactor to detect changes on port config.
+
 function _brolit_configuration_firewall_ufw() {
 
     # Check if firewall configuration in config file
@@ -1832,6 +1887,17 @@ function brolit_configuration_file_check() {
     fi
 
 }
+
+################################################################################
+# Load brolit setup configuration
+#
+# Arguments:
+#   $1 = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
 function brolit_configuration_setup_check() {
 
     local server_config_file="${1}"
@@ -1942,11 +2008,18 @@ function brolit_configuration_load() {
     #### BACKUPS Method: local
     _brolit_configuration_load_backup_local "${server_config_file}"
 
+    #### BACKUPS Method: s3
+    _brolit_configuration_load_backup_s3 "${server_config_file}"
+
+    # TODO:
     #### BACKUPS Method: duplicity
-    _brolit_configuration_load_backup_duplicity "${server_config_file}"
+    #_brolit_configuration_load_backup_duplicity "${server_config_file}"
 
     #### if all required vars are disabled, show error
-    if [[ ${BACKUP_DROPBOX_STATUS} != "enabled" ]] && [[ ${BACKUP_SFTP_STATUS} != "enabled" ]] && [[ ${BACKUP_LOCAL_STATUS} != "enabled" ]]; then
+    if [[ ${BACKUP_DROPBOX_STATUS} != "enabled" ]] &&
+        [[ ${BACKUP_SFTP_STATUS} != "enabled" ]] &&
+        [[ ${BACKUP_S3_STATUS} != "enabled" ]] &&
+        [[ ${BACKUP_LOCAL_STATUS} != "enabled" ]]; then
         log_event "warning" "No backup method enabled" "false"
         display --indent 6 --text "- Backup method selected" --result "NONE" --color RED
         display --indent 8 --text "Please select at least one backup method"
@@ -1998,7 +2071,10 @@ function brolit_configuration_load() {
     _brolit_configuration_load_postgres "${server_config_file}"
 
     # If Server role 'database' is enabled, mariadb or mysql must be enabled
-    if [[ ${PACKAGES_MARIADB_STATUS} != "enabled" ]] && [[ ${PACKAGES_MYSQL_STATUS} != "enabled" ]] && [[ ${PACKAGES_POSTGRES_STATUS} != "enabled" ]] && [[ ${SERVER_ROLE_DATABASE} == "enabled" ]]; then
+    if [[ ${PACKAGES_MARIADB_STATUS} != "enabled" ]] &&
+        [[ ${PACKAGES_MYSQL_STATUS} != "enabled" ]] &&
+        [[ ${PACKAGES_POSTGRES_STATUS} != "enabled" ]] &&
+        [[ ${SERVER_ROLE_DATABASE} == "enabled" ]]; then
         log_event "warning" "No database engine is enabled" "true"
         exit 1
     fi
