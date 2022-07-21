@@ -1444,6 +1444,7 @@ function compress() {
     display --indent 8 --text "Something went wrong making backup file: ${file_output}" --tcolor RED
 
     log_event "error" "Something went wrong making backup file: ${file_output}" "false"
+    log_event "debug" "Output: ${lbzip2_result}" "false"
 
     return 1
 

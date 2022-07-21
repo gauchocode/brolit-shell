@@ -56,7 +56,9 @@ function backup_server_config() {
   local got_error
   local backup_file
   local old_backup_file
+  local daysago
   local remote_path
+  local backup_keep_daily
 
   got_error=0
 
@@ -73,9 +75,18 @@ function backup_server_config() {
         backup_file="${bk_sup_type}-${backup_type}-files-${NOW}-weekly.tar.bz2"
         old_backup_file="${bk_sup_type}-${backup_type}-files-${WEEKSAGO}-weekly.tar.bz2"
       else
-        ## On any regular day do
-        backup_file="${bk_sup_type}-${backup_type}-files-${NOW}.tar.bz2"
-        old_backup_file="${bk_sup_type}-${backup_type}-files-${DAYSAGO}.tar.bz2"
+        if [[ ${WEEK_DAY} -eq 7 && ${BACKUP_RETENTION_KEEP_WEEKLY} -gt 0 ||
+          ${MONTH_DAY} -eq 2 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
+          ## The day after a week day or month day
+          backup_keep_daily=$((BACKUP_RETENTION_KEEP_DAILY - 1))
+          daysago="$(date --date="${backup_keep_daily} days ago" +"%Y-%m-%d")"
+          backup_file="${bk_sup_type}-${backup_type}-files-${NOW}.tar.bz2"
+          old_backup_file="${bk_sup_type}-${backup_type}-files-${daysago}.tar.bz2"
+        else
+          ## On any regular day do
+          backup_file="${bk_sup_type}-${backup_type}-files-${NOW}.tar.bz2"
+          old_backup_file="${bk_sup_type}-${backup_type}-files-${DAYSAGO}.tar.bz2"
+        fi
       fi
     fi
 
@@ -426,9 +437,19 @@ function backup_all_projects_files() {
 
       backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${directory_name}")"
 
-      backuped_files_list[$backuped_files_index]="${directory_name}"
-      backuped_files_sizes_list+=("${backup_file_size}")
-      backuped_files_index=$((backuped_files_index + 1))
+      if [[ -n ${backup_file_size} ]]; then
+
+        backuped_files_list[$backuped_files_index]="${directory_name}"
+        backuped_files_sizes_list+=("${backup_file_size}")
+        backuped_files_index=$((backuped_files_index + 1))
+
+      else
+
+        ERROR=true
+        ERROR_MSG="Error creating backup file for site: ${directory_name}"
+        #log_event "error" "${ERROR_MSG}" "false"
+
+      fi
 
     else
 
@@ -552,7 +573,7 @@ function backup_project_files() {
     # String to Array
     excluded_files_list="$(string_remove_spaces "${EXCLUDED_FILES_LIST}")"
     excluded_files_list="$(echo "${excluded_files_list}" | tr '\n' ',')"
-    IFS="," read -a excluded_array <<<${excluded_files_list}
+    IFS="," read -a excluded_array <<<"${excluded_files_list}"
     for i in "${excluded_array[@]}"; do
       :
       exclude_parameters="${exclude_parameters} --exclude='${i}'"
