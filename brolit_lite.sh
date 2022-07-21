@@ -1380,11 +1380,11 @@ function _sites_directories() {
     local site_size
 
     # Directory blacklist
-    directory_bl="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].projects[].exclude[]")"
+    directory_bl="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].projects[].ignored[]")"
 
-    # Run command
     ## List only directories
-    all_directories="$(ls -l "${PROJECTS_PATH}" | grep "^d" | awk -F" " '{print $9}')"
+    #all_directories="$(ls -l "${PROJECTS_PATH}" | grep "^d" | awk -F" " '{print $9}')"
+    all_directories="$(find "${PROJECTS_PATH}" -maxdepth 1 -type d -not -path '*/.*')"
 
     for site in ${all_directories}; do
 
