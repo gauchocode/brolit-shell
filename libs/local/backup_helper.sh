@@ -84,7 +84,7 @@ function backup_server_config() {
     log_event "info" "Files backup for: ${bk_sup_type}" "false"
 
     # Compress backup
-    backup_file_size="$(compress "${backup_path}" "${directory_to_backup}" "${BROLIT_TMP_DIR}/${NOW}/${backup_file}")"
+    backup_file_size="$(compress "${backup_path}" "${directory_to_backup}" "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "")"
 
     # Check test result
     compress_result=$?
@@ -521,6 +521,7 @@ function backup_project_files() {
   local backup_file
   local old_backup_file
   local storage_path
+  local exclude_parameters
 
   # Backups file names
   if [[ ${MONTH_DAY} -eq 1 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
@@ -553,8 +554,17 @@ function backup_project_files() {
     display --indent 6 --text "- Files backup for ${YELLOW}${directory_to_backup}${ENDCOLOR}"
     log_event "info" "Files backup for : ${directory_to_backup}" "false"
 
+    # Excluding files/directories from TAR
+    exclude_parameters=""
+    # String to Array
+    IFS="," read -a excluded_array <<<"${EXCLUDED_FILES_LIST}"
+    for i in "${excluded_array[@]}"; do
+      :
+      exclude_parameters="${exclude_parameters} --exclude='${i}'"
+    done
+
     # Compress backup
-    backup_file_size="$(compress "${backup_path}" "${directory_to_backup}" "${BROLIT_TMP_DIR}/${NOW}/${backup_file}")"
+    backup_file_size="$(compress "${backup_path}" "${directory_to_backup}" "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${exclude_parameters}")"
 
     # Check test result
     compress_result=$?
@@ -870,7 +880,7 @@ function backup_project_database() {
   if [[ ${export_result} -eq 0 ]]; then
 
     # Compress backup
-    backup_file_size="$(compress "${BROLIT_TMP_DIR}/${NOW}/" "${dump_file}" "${BROLIT_TMP_DIR}/${NOW}/${backup_file}")"
+    backup_file_size="$(compress "${BROLIT_TMP_DIR}/${NOW}/" "${dump_file}" "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "")"
 
     # Check test result
     compress_result=$?
