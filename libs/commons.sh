@@ -847,7 +847,7 @@ function get_all_directories() {
   local main_dir="${1}"
 
   # -not -path '*/.*' will ommit hidden directories
-  first_level_dir="$(find "${main_dir}" -maxdepth 1 -type d -not -path '*/.*')"
+  first_level_dir="$(find "${main_dir}" -maxdepth 1 -mindepth 1 -type d -not -path '*/.*')"
 
   # Return
   echo "${first_level_dir}"

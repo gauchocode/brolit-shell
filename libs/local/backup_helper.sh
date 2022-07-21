@@ -398,7 +398,6 @@ function backup_all_projects_files() {
 
   local backuped_files_index=0
   local backuped_directory_index=0
-  local k=0
 
   log_subsection "Backup Sites Files"
 
@@ -416,41 +415,35 @@ function backup_all_projects_files() {
 
   for j in ${working_sites_directories}; do
 
-    if [[ ${k} -gt 0 ]]; then
+    directory_name="$(basename "${j}")"
 
-      directory_name="$(basename "${j}")"
+    log_event "info" "Processing [${directory_name}] ..." "false"
 
-      log_event "info" "Processing [${directory_name}] ..." "false"
+    project_is_ignored "${directory_name}"
 
-      project_is_ignored "${directory_name}"
+    result=$?
+    if [[ ${result} -eq 0 ]]; then
 
-      result=$?
-      if [[ ${result} -eq 0 ]]; then
+      backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${directory_name}")"
 
-        backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${directory_name}")"
+      backuped_files_list[$backuped_files_index]="${directory_name}"
+      backuped_files_sizes_list+=("${backup_file_size}")
+      backuped_files_index=$((backuped_files_index + 1))
 
-        backuped_files_list[$backuped_files_index]="${directory_name}"
-        backuped_files_sizes_list+=("${backup_file_size}")
-        backuped_files_index=$((backuped_files_index + 1))
+    else
 
-      else
-
-        # Log
-        log_event "info" "Omitting ${directory_name} (blacklisted) ..." "false"
-        display --indent 6 --text "- Ommiting excluded directory" --result "DONE" --color WHITE
-        display --indent 8 --text "${directory_name}" --tcolor WHITE
-
-      fi
-
-      log_break "true"
-
-      backuped_directory_index=$((backuped_directory_index + 1))
-
-      log_event "info" "Processed ${backuped_directory_index} of ${COUNT_TOTAL_SITES} directories" "false"
+      # Log
+      log_event "info" "Omitting ${directory_name} (blacklisted) ..." "false"
+      display --indent 6 --text "- Ommiting excluded directory" --result "DONE" --color WHITE
+      display --indent 8 --text "${directory_name}" --tcolor WHITE
 
     fi
 
-    k=$k+1
+    log_break "true"
+
+    backuped_directory_index=$((backuped_directory_index + 1))
+
+    log_event "info" "Processed ${backuped_directory_index} of ${COUNT_TOTAL_SITES} directories" "false"
 
   done
 
@@ -559,8 +552,9 @@ function backup_project_files() {
     # String to Array
     excluded_files_list="$(string_remove_spaces "${EXCLUDED_FILES_LIST}")"
     excluded_files_list="$(echo "${excluded_files_list}" | tr '\n' ',')"
-    IFS="," read -a excluded_array <<< ${excluded_files_list}
-    for i in "${excluded_array[@]}"; do :
+    IFS="," read -a excluded_array <<<${excluded_files_list}
+    for i in "${excluded_array[@]}"; do
+      :
       exclude_parameters="${exclude_parameters} --exclude='${i}'"
     done
 
@@ -641,7 +635,6 @@ function backup_duplicity() {
     all_sites="$(get_all_directories "${PROJECTS_PATH}")"
 
     # Loop in to Directories
-    #for i in $(echo "${PROJECTS_PATH}" | sed "s/,/ /g"); do
     for i in ${all_sites}; do
 
       log_event "debug" "Running: duplicity --full-if-older-than \"${BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY}\" -v4 --no-encryption\" ${PROJECTS_PATH}\"\"${i}\" file://\"${BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH}\"\"${i}\"" "true"

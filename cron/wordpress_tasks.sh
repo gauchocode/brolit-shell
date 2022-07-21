@@ -41,83 +41,75 @@ display --indent 2 --text "- Directories found" --result "${count_all_sites}" --
 whitelisted_wp_files="readme.html,license.txt,wp-config-sample.php"
 file_index=0
 
-k=0
-
 for site in ${all_sites}; do
 
   log_event "info" "Processing [${site}] ..."
 
-  if [[ "$k" -gt 0 ]]; then
+  project_name="$(basename "${site}")"
 
-    project_name="$(basename "${site}")"
+  log_event "info" "Project name: ${project_name}" "false"
 
-    log_event "info" "Project name: ${project_name}" "false"
+  if [[ ${IGNORED_PROJECTS_LIST} != *"${project_name}"* ]]; then
 
-    if [[ ${IGNORED_PROJECTS_LIST} != *"${project_name}"* ]]; then
+    # If is wp
+    is_wp="$(is_wp_project "${site}")"
 
-      # If is wp
-      is_wp="$(is_wp_project "${site}")"
+    if [[ ${is_wp} == "true" ]]; then
 
-      if [[ ${is_wp} == "true" ]]; then
+      notification_text=""
 
-        notification_text=""
+      # VERIFY_WP
+      mapfile -t wpcli_core_verify_results < <(wpcli_core_verify "${site}")
+      for wpcli_core_verify_result in "${wpcli_core_verify_results[@]}"; do
 
-        # VERIFY_WP
-        mapfile -t wpcli_core_verify_results < <(wpcli_core_verify "${site}")
-        for wpcli_core_verify_result in "${wpcli_core_verify_results[@]}"; do
+        # Ommit empty elements created by spaces on mapfile
+        if [[ "${wpcli_core_verify_result}" != "" ]]; then
 
-          # Ommit empty elements created by spaces on mapfile
-          if [[ "${wpcli_core_verify_result}" != "" ]]; then
+          # Check results
+          wpcli_core_verify_result_file="$(echo "${wpcli_core_verify_result}" | grep "File doesn't" | cut -d ":" -f3)"
 
-            # Check results
-            wpcli_core_verify_result_file="$(echo "${wpcli_core_verify_result}" | grep "File doesn't" | cut -d ":" -f3)"
+          # Remove white space
+          wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
 
-            # Remove white space
-            wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
+          # Ommit empty elements
+          if [[ ${wpcli_core_verify_result_file} != "" ]] && [[ ${whitelisted_wp_files} != *"${wpcli_core_verify_result_file}"* ]]; then
 
-            # Ommit empty elements
-            if [[ ${wpcli_core_verify_result_file} != "" ]] && [[ ${whitelisted_wp_files} != *"${wpcli_core_verify_result_file}"* ]]; then
+            log_event "info" "${wpcli_core_verify_result_file}" "false"
 
-              log_event "info" "${wpcli_core_verify_result_file}" "false"
-
-              # Telegram text
-              notification_text+="${wpcli_core_verify_result} "
-
-            fi
+            # Telegram text
+            notification_text+="${wpcli_core_verify_result} "
 
           fi
 
-        done
-
-        if [[ ${notification_text} != "" ]]; then
-
-          log_event "error" "WordPress Checksum failed!" "false"
-
-          # Send notification
-          send_notification "⛔ ${SERVER_NAME}" "WordPress checksum failed for site ${project_name}: ${notification_text}"
-
-        else
-
-          log_event "info" "WordPress Checksum OK!" "false"
-
         fi
+
+      done
+
+      if [[ ${notification_text} != "" ]]; then
+
+        log_event "error" "WordPress Checksum failed!" "false"
+
+        # Send notification
+        send_notification "⛔ ${SERVER_NAME}" "WordPress checksum failed for site ${project_name}: ${notification_text}"
+
+      else
+
+        log_event "info" "WordPress Checksum OK!" "false"
 
       fi
 
-    else
-      log_event "info" "Omitting ${project_name} project (blacklisted) ..."
-
     fi
 
-    file_index=$((file_index + 1))
-
-    log_event "info" "Processed ${file_index} of ${count_all_sites} projects"
+  else
+    log_event "info" "Omitting ${project_name} project (blacklisted) ..."
 
   fi
 
-  log_break
+  file_index=$((file_index + 1))
 
-  k=$k+1
+  log_event "info" "Processed ${file_index} of ${count_all_sites} projects"
+
+  log_break
 
 done
 

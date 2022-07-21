@@ -1374,11 +1374,11 @@ function _project_is_ignored() {
     local project="${1}"               #string
     local ignored_projects_list="${2}" #string
 
-    ignored_projects_list="$(string_remove_spaces "${ignored_projects_list}")"
+    ignored_projects_list="$(echo "${ignored_projects_list//[[:blank:]]/}")"
     ignored_projects_list="$(echo "${ignored_projects_list}" | tr '\n' ',')"
 
     # String to Array
-    IFS="," read -a excluded_projects_array <<<"${ignored_projects_list}"
+    IFS="," read -a excluded_projects_array <<< "${ignored_projects_list}"
     for i in "${excluded_projects_array[@]}"; do
         :
 
@@ -1420,7 +1420,6 @@ function _sites_directories() {
     ignored_sites="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].projects[].ignored[]")"
 
     ## List only directories
-    #all_directories="$(ls -l "${PROJECTS_PATH}" | grep "^d" | awk -F" " '{print $9}')"
     all_directories="$(find "${PROJECTS_PATH}" -maxdepth 1 -type d -not -path '*/.*')"
 
     for site_path in ${all_directories}; do
