@@ -356,8 +356,8 @@ function _brolit_configuration_load_backup_config() {
         log_event "error" "Missing required config vars for backup retention" "true"
         exit 1
     fi
-    IGNORED_PROJECTS_LIST="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].ignored")"
-    EXCLUDED_FILES_LIST="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].excluded_on_tar")"
+    IGNORED_PROJECTS_LIST="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].ignored[]")"
+    EXCLUDED_FILES_LIST="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].excluded_on_tar[]")"
 
     ## Backup config databases
     BACKUP_CONFIG_DATABASES_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.config[].databases[].status")"
