@@ -127,13 +127,15 @@ function project_set_config_var() {
 #   1 on true or 0 on false.
 ################################################################################
 
-function project_is_excluded() {
+function project_is_ignored() {
 
-  local project #string
+  local project="${1}" #string
+
+  ignored_projects_list="$(string_remove_spaces "${IGNORED_PROJECTS_LIST}")"
+  ignored_projects_list="$(echo "${ignored_projects_list}" | tr '\n' ',')"
 
   # String to Array
-  IFS="," read -a excluded_projects_array <<<"${IGNORED_PROJECTS_LIST}"
-
+  IFS="," read -a excluded_projects_array <<<"${ignored_projects_list}"
   for i in "${excluded_projects_array[@]}"; do
     :
 

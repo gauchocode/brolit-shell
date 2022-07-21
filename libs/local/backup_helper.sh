@@ -421,19 +421,16 @@ function backup_all_projects_files() {
 
       log_event "info" "Processing [${directory_name}] ..." "false"
 
-      project_is_excluded "${directory_name}"
+      project_is_ignored "${directory_name}"
 
       result=$?
       if [[ ${result} -eq 0 ]]; then
-        #if [[ ${IGNORED_PROJECTS_LIST} != *"${directory_name}"* ]]; then
 
         backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${directory_name}")"
 
         backuped_files_list[$backuped_files_index]="${directory_name}"
         backuped_files_sizes_list+=("${backup_file_size}")
         backuped_files_index=$((backuped_files_index + 1))
-
-        log_break "true"
 
       else
 
@@ -443,6 +440,8 @@ function backup_all_projects_files() {
         display --indent 8 --text "${directory_name}" --tcolor WHITE
 
       fi
+
+      log_break "true"
 
       backuped_directory_index=$((backuped_directory_index + 1))
 
@@ -557,9 +556,10 @@ function backup_project_files() {
     # Excluding files/directories from TAR
     exclude_parameters=""
     # String to Array
-    IFS="," read -a excluded_array <<<"${EXCLUDED_FILES_LIST}"
-    for i in "${excluded_array[@]}"; do
-      :
+    excluded_files_list="$(string_remove_spaces "${EXCLUDED_FILES_LIST}")"
+    excluded_files_list="$(echo "${excluded_files_list}" | tr '\n' ',')"
+    IFS="," read -a excluded_array <<< ${excluded_files_list}
+    for i in "${excluded_array[@]}"; do :
       exclude_parameters="${exclude_parameters} --exclude='${i}'"
     done
 
