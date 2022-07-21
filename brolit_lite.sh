@@ -1404,7 +1404,6 @@ function _project_is_ignored() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-# TODO: add read_project_config on json results
 function _sites_directories() {
 
     local site
@@ -1420,7 +1419,7 @@ function _sites_directories() {
     ignored_sites="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].projects[].ignored[]")"
 
     ## List only directories
-    all_directories="$(find "${PROJECTS_PATH}" -maxdepth 1 -type d -not -path '*/.*')"
+    all_directories="$(find "${PROJECTS_PATH}" -maxdepth 1 -mindepth 1 -type d -not -path '*/.*')"
 
     for site_path in ${all_directories}; do
 
