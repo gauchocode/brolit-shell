@@ -23,6 +23,7 @@ function it_utils_menu() {
     "10)" "BENCHMARK SERVER"
     "11)" "INSTALL ALIASES"
     "12)" "INSTALL WELCOME MESSAGE"
+    "13)" "ADD BROLIT UI INTEGRATION"
   )
   chosen_it_util_options="$(whiptail --title "IT UTILS" --menu "Choose a script to Run" 20 78 10 "${it_util_options[@]}" 3>&1 1>&2 2>&3)"
 
@@ -133,6 +134,10 @@ function it_utils_menu() {
     if [[ ${chosen_it_util_options} == *"12"* ]]; then
       customize_ubuntu_login_message
 
+    fi
+    # ADD BROLIT UI INTEGRATION
+    if [[ ${chosen_it_util_options} == *"13"* ]]; then
+      brolit_ssh_keygen "/root/pem"
     fi
 
     prompt_return_or_finish
