@@ -1360,6 +1360,41 @@ function _packages_get_data() {
 }
 
 ################################################################################
+# Check if project is excluded on config
+#
+# Arguments:
+#   $1= ${project}
+#
+# Outputs:
+#   1 on true or 0 on false.
+################################################################################
+
+function _project_is_ignored() {
+
+    local project="${1}"               #string
+    local ignored_projects_list="${2}" #string
+
+    ignored_projects_list="$(string_remove_spaces "${ignored_projects_list}")"
+    ignored_projects_list="$(echo "${ignored_projects_list}" | tr '\n' ',')"
+
+    # String to Array
+    IFS="," read -a excluded_projects_array <<<"${ignored_projects_list}"
+    for i in "${excluded_projects_array[@]}"; do
+        :
+
+        if [[ ${project} == "${i}" ]]; then
+
+            return 1
+
+        fi
+
+    done
+
+    return 0
+
+}
+
+################################################################################
 # Private: Sites directories
 #
 # Arguments:
@@ -1372,23 +1407,30 @@ function _packages_get_data() {
 # TODO: add read_project_config on json results
 function _sites_directories() {
 
+    local site
+    local site_path
+    local ignored_sites
     local directories
     local all_directories
     local site_cert
-    local directory_bl
     local site_size_du
     local site_size
 
-    # Directory blacklist
-    directory_bl="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].projects[].ignored[]")"
+    # Ignored Sites
+    ignored_sites="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].projects[].ignored[]")"
 
     ## List only directories
     #all_directories="$(ls -l "${PROJECTS_PATH}" | grep "^d" | awk -F" " '{print $9}')"
     all_directories="$(find "${PROJECTS_PATH}" -maxdepth 1 -type d -not -path '*/.*')"
 
-    for site in ${all_directories}; do
+    for site_path in ${all_directories}; do
 
-        if [[ ${directory_bl} != *"${site}"* ]]; then
+        site="$(basename "${site_path}")"
+
+        _project_is_ignored "${site}" "${ignored_sites}"
+
+        result=$?
+        if [[ ${result} -eq 0 ]]; then
 
             # Size
             site_size_du="$(du --human-readable --max-depth=0 "${PROJECTS_PATH}/${site}")"
