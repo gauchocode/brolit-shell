@@ -53,7 +53,7 @@ for site in ${all_sites}; do
 
     log_event "info" "Project name: ${project_name}" "false"
 
-    if [[ ${EXCLUDED_FILES_LIST} != *"${project_name}"* ]]; then
+    if [[ ${IGNORED_PROJECTS_LIST} != *"${project_name}"* ]]; then
 
       # If is wp
       is_wp="$(is_wp_project "${site}")"

@@ -277,8 +277,8 @@ function mail_certificates_section() {
 
             domain="$(basename "${site}")"
 
-            # Check blacklist ${EXCLUDED_FILES_LIST}
-            if [[ "${EXCLUDED_FILES_LIST}" != *"${domain}"* ]]; then
+            # Check blacklist ${IGNORED_PROJECTS_LIST}
+            if [[ "${IGNORED_PROJECTS_LIST}" != *"${domain}"* ]]; then
 
                 log_event "info" "Getting certificate info for: ${domain}" "false"
 

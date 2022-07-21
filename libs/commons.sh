@@ -1371,6 +1371,8 @@ function compress() {
   local file_output="${3}"
   #local compress_type="${4}"
 
+  local exclude_parameters
+
   # Only for better displaying
   if [[ ${to_backup} == "." ]]; then
     to_backup_string="$(basename "${backup_base_dir}")"
@@ -1378,14 +1380,23 @@ function compress() {
     to_backup_string="${to_backup}"
   fi
 
+  # Excluding files/directories from TAR
+  exclude_parameters=""
+  # String to Array
+  IFS="," read -a excluded_array <<<"${EXCLUDED_FILES_LIST}"
+  for i in "${excluded_array[@]}"; do
+    :
+    exclude_parameters="${exclude_parameters} --exclude='${i}'"
+  done
+
   # Log
   display --indent 6 --text "- Compressing ${to_backup_string}"
   log_event "info" "Compressing ${to_backup_string} ..." "false"
-  log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" --exclude="*.log" -h \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | lbzip2 >\"${file_output}\"" "false"
+  log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" \"${exclude_parameters}\" -h \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | lbzip2 >\"${file_output}\"" "false"
 
   # TAR
   ## -h will follow symlinks
-  ${TAR} -cf - --directory="${backup_base_dir}" --exclude="*.log" -h "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | lbzip2 >"${file_output}"
+  ${TAR} -cf - --directory="${backup_base_dir}" "${exclude_parameters}" -h "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | lbzip2 >"${file_output}"
 
   # Log
   clear_previous_lines "2"
