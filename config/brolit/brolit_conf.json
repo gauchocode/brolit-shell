@@ -38,9 +38,7 @@
                     {
                         "status": "enabled",
                         "ignored": [
-                            "html",
-                            ".wp-cli",
-                            ".cert"
+                            "html"
                         ],
                         "excluded_on_tar": [
                             "*.log",

@@ -284,7 +284,7 @@ function _check_distro() {
 
       if [[ ${DISTRO} == "Pop!_OS" ]]; then
 
-        log_event "warning" "BROLIT Shell has partial support for Pop!_OS, some features maybe not work as espected!" "true"
+        log_event "warning" "BROLIT Shell has partial support for Pop!_OS, some features may not work as expected!" "true"
 
       fi
 
@@ -521,13 +521,15 @@ function install_script_aliases() {
 
 }
 
+################################################################################
+# Validate email format
 #
-#############################################################################
+# Arguments:
+#   none
 #
-# * Validators
-#
-#############################################################################
-#
+# Outputs:
+#   0 if ok, 1 on error
+################################################################################
 
 function validator_email_format() {
 
@@ -547,7 +549,20 @@ function validator_email_format() {
 
 }
 
+################################################################################
+# Cron format validator
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error
+################################################################################
+
 function validator_cron_format() {
+
+  # TODO: refactor
+  # Ref: http://litux.nl/Scripts/books/8015final/lib0066.html
 
   local limit
   local check_format
@@ -577,7 +592,7 @@ function validator_cron_format() {
   fi
 
   if [[ "$1" =~ ^[\*]+[/]+[0-9] ]]; then
-    if [[ "$(echo $1 | cut -f 2 -d /)" -lt $limit ]]; then
+    if [[ "$(echo $1 | cut -f 2 -d /)" -lt ${limit} ]]; then
       check_format='ok'
     fi
   fi
@@ -588,7 +603,7 @@ function validator_cron_format() {
     crn_values=${crn_values//-/ }
     crn_values=${crn_values//\// }
     for crn_vl in $crn_values; do
-      if [[ "$crn_vl" -gt $limit ]]; then
+      if [[ ${crn_vl} -gt ${limit} ]]; then
         check_format='invalid'
       fi
     done
@@ -599,22 +614,26 @@ function validator_cron_format() {
   for crn_vl in $crn_values; do
     if [[ "$crn_vl" =~ ^[0-9]+$ ]] && [ "$crn_vl" -le $limit ]; then
       check_format='ok'
+      return 0
     fi
   done
 
   if [[ ${check_format} != 'ok' ]]; then
     check_result "${E_INVALID}" "invalid $2 format :: $1"
+    return 1
   fi
 
 }
 
+################################################################################
+# Clean up
 #
-#############################################################################
+# Arguments:
+#   none
 #
-# * Helpers
-#
-#############################################################################
-#
+# Outputs:
+#   none
+################################################################################
 
 function cleanup() {
 
@@ -623,11 +642,18 @@ function cleanup() {
 
 }
 
-function die() {
+################################################################################
+# Die
+#
+# Arguments:
+#   $1 = {msg}
+#   $2 = {code}
+#
+# Outputs:
+#   ${code}
+################################################################################
 
-  # Parameters
-  # $1 = {msg}
-  # $2 = {code}
+function die() {
 
   local msg="${1}"
   local code=${2-1} # default exit status 1
@@ -820,7 +846,8 @@ function get_all_directories() {
 
   local main_dir="${1}"
 
-  first_level_dir="$(find "${main_dir}" -maxdepth 1 -type d)"
+  # -not -path '*/.*' will ommit hidden directories
+  first_level_dir="$(find "${main_dir}" -maxdepth 1 -type d -not -path '*/.*')"
 
   # Return
   echo "${first_level_dir}"
@@ -847,7 +874,7 @@ function copy_files() {
 
   log_event "info" "Copying files from ${source_path} to ${destination_path}..." "false"
 
-  if [[ ${excluded_path} != "" ]]; then
+  if [[ -n ${excluded_path} ]]; then
 
     rsync -ax --exclude "${excluded_path}" "${source_path}" "${destination_path}"
 

@@ -394,6 +394,7 @@ function backup_all_projects_files() {
 
   local backup_file_size
   local directory_name
+  local working_sites_directories
 
   local backuped_files_index=0
   local backuped_directory_index=0
@@ -402,9 +403,9 @@ function backup_all_projects_files() {
   log_subsection "Backup Sites Files"
 
   # Get all directories
-  TOTAL_SITES="$(get_all_directories "${PROJECTS_PATH}")"
+  working_sites_directories="$(get_all_directories "${PROJECTS_PATH}")"
 
-  # Get length of $TOTAL_SITES
+  # Get length of ${working_sites_directories}
   COUNT_TOTAL_SITES="$(find "${PROJECTS_PATH}" -maxdepth 1 -type d -printf '.' | wc -c)"
   COUNT_TOTAL_SITES="$((COUNT_TOTAL_SITES - 1))"
 
@@ -413,7 +414,7 @@ function backup_all_projects_files() {
   log_event "info" "Found ${COUNT_TOTAL_SITES} directories" "false"
   log_break "true"
 
-  for j in ${TOTAL_SITES}; do
+  for j in ${working_sites_directories}; do
 
     if [[ ${k} -gt 0 ]]; then
 
