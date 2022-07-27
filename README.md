@@ -106,14 +106,14 @@ packages:
  - git
 runcmd:
 - cd /root/
-- git clone https://github.com/lpadula/brolit-shell
+- git clone https://github.com/broobe/brolit-shell
 - chmod +x brolit-shell/runner.sh
 ```
 
 ### Manual
 Cloning repo:
 ```bash
-git clone https://github.com/lpadula/brolit-shell
+git clone https://github.com/broobe/brolit-shell
 ```
 
 Change directories to the new ~/brolit-shell directory:
@@ -169,7 +169,7 @@ Please read [CONTRIBUTING](./docs/CONTRIBUTING.md) for details on our code of co
 [Best Practices](./docs/CODE.md)
 
 ## :busts_in_silhouette: Team
-This theme is maintained by the following person(s) and a bunch of [awesome contributors](https://github.com/lpadula/brolit-shell/graphs/contributors).
+This theme is maintained by the following person(s) and a bunch of [awesome contributors](https://github.com/broobe/brolit-shell/graphs/contributors).
 
 [![Leandro Padula](https://github.com/lpadula.png?size=100)](https://github.com/lpadula) |
 --- |
