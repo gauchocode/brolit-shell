@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc9
+# Version: 3.2-rc10
 ################################################################################
 
 ################################################################################
@@ -53,7 +53,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.2-rc9"
+  declare -g SCRIPT_V="3.2-rc10"
 
   # Hostname
   declare -g SERVER_NAME="$HOSTNAME"
@@ -187,7 +187,7 @@ function _check_root() {
   is_root="$(id -u)" # if return 0, the script is runned by the root user
 
   # Check if user is root
-  if [[ ${is_root} != 0 ]]; then
+  if [[ ${is_root} -ne 0 ]]; then
     # $USER is a env var
     log_event "critical" "Script runned by ${USER}, but must be root! Exiting ..." "true"
     exit 1
@@ -229,7 +229,8 @@ function get_server_ips() {
   declare -g SERVER_IPv6
 
   # LOCAL IP (if server has configured a floating ip, it will return this)
-  LOCAL_IP="$(/sbin/ifconfig eth0 | grep -w 'inet ' | awk '{print $2}')" # Could be a floating ip
+  #LOCAL_IP="$(/sbin/ifconfig eth0 | grep -w 'inet ' | awk '{print $2}')"
+  LOCAL_IP="$(ip route get 1 | awk '{print $(NF-2);exit}')"
 
   # PUBLIC IP (with https://www.ipify.org)
   SERVER_IP="$(curl --silent 'https://api.ipify.org')"
@@ -241,6 +242,7 @@ function get_server_ips() {
     SERVER_IPv6="$(curl --silent 'https://api64.ipify.org')"
   fi
 
+  log_event "info" "LOCAL IPv4: ${LOCAL_IP}" "false"
   log_event "info" "SERVER IPv4: ${SERVER_IP}" "false"
   log_event "info" "SERVER IPv6: ${SERVER_IPv6}" "false"
 
@@ -282,7 +284,7 @@ function _check_distro() {
 
       if [[ ${DISTRO} == "Pop!_OS" ]]; then
 
-        log_event "warning" "BROLIT Shell has partial support for Pop!_OS, some features maybe not work as espected!" "true"
+        log_event "warning" "BROLIT Shell has partial support for Pop!_OS, some features may not work as expected!" "true"
 
       fi
 
@@ -358,7 +360,7 @@ function script_init() {
   # Log Start
   log_event "info" "Script Start -- $(date +%Y%m%d_%H%M)" "false"
 
-  # Install basic required package
+  # Install required package to read configuration file
   package_install_if_not "jq"
 
   # Brolit configuration check
@@ -386,19 +388,19 @@ function script_init() {
   # Checking if user is root
   _check_root
 
-  # Checking script permissions
+  # Checking scripts permissions
   _check_scripts_permissions
 
   # Get server IPs
   get_server_ips
 
-  # Clean old log files
-  ## Find and delete old log files
+  # Clean old Brolit log files
   del_logs="$(find "${path_log}" -name "*.log" -type f -mtime +7 -print -delete)"
   del_reports="$(find "${path_reports}" -name "*.log" -type f -mtime +7 -print -delete)"
+
   ## Log
-  log_event "info" "Deleting old script logs: ${del_logs}" "false"
-  log_event "info" "Deleting old script reports: ${del_reports}" "false"
+  log_event "info" "Deleting old script logs... ${del_logs}" "false"
+  log_event "info" "Deleting old script reports... ${del_reports}" "false"
 
   # Checking required packages
   package_check_required
@@ -456,13 +458,11 @@ function customize_ubuntu_login_message() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     log_event "info" "Welcome message changed!" "false"
-
     return 0
 
   else
 
     log_event "error" "Something went wrong trying to change Welcome message" "false"
-
     return 1
 
   fi
@@ -521,13 +521,15 @@ function install_script_aliases() {
 
 }
 
+################################################################################
+# Validate email format
 #
-#############################################################################
+# Arguments:
+#   none
 #
-# * Validators
-#
-#############################################################################
-#
+# Outputs:
+#   0 if ok, 1 on error
+################################################################################
 
 function validator_email_format() {
 
@@ -547,7 +549,20 @@ function validator_email_format() {
 
 }
 
+################################################################################
+# Cron format validator
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error
+################################################################################
+
 function validator_cron_format() {
+
+  # TODO: refactor
+  # Ref: http://litux.nl/Scripts/books/8015final/lib0066.html
 
   local limit
   local check_format
@@ -577,7 +592,7 @@ function validator_cron_format() {
   fi
 
   if [[ "$1" =~ ^[\*]+[/]+[0-9] ]]; then
-    if [[ "$(echo $1 | cut -f 2 -d /)" -lt $limit ]]; then
+    if [[ "$(echo $1 | cut -f 2 -d /)" -lt ${limit} ]]; then
       check_format='ok'
     fi
   fi
@@ -588,7 +603,7 @@ function validator_cron_format() {
     crn_values=${crn_values//-/ }
     crn_values=${crn_values//\// }
     for crn_vl in $crn_values; do
-      if [[ "$crn_vl" -gt $limit ]]; then
+      if [[ ${crn_vl} -gt ${limit} ]]; then
         check_format='invalid'
       fi
     done
@@ -599,22 +614,26 @@ function validator_cron_format() {
   for crn_vl in $crn_values; do
     if [[ "$crn_vl" =~ ^[0-9]+$ ]] && [ "$crn_vl" -le $limit ]; then
       check_format='ok'
+      return 0
     fi
   done
 
   if [[ ${check_format} != 'ok' ]]; then
     check_result "${E_INVALID}" "invalid $2 format :: $1"
+    return 1
   fi
 
 }
 
+################################################################################
+# Clean up
 #
-#############################################################################
+# Arguments:
+#   none
 #
-# * Helpers
-#
-#############################################################################
-#
+# Outputs:
+#   none
+################################################################################
 
 function cleanup() {
 
@@ -623,11 +642,18 @@ function cleanup() {
 
 }
 
-function die() {
+################################################################################
+# Die
+#
+# Arguments:
+#   $1 = {msg}
+#   $2 = {code}
+#
+# Outputs:
+#   ${code}
+################################################################################
 
-  # Parameters
-  # $1 = {msg}
-  # $2 = {code}
+function die() {
 
   local msg="${1}"
   local code=${2-1} # default exit status 1
@@ -820,7 +846,8 @@ function get_all_directories() {
 
   local main_dir="${1}"
 
-  first_level_dir="$(find "${main_dir}" -maxdepth 1 -type d)"
+  # -not -path '*/.*' will ommit hidden directories
+  first_level_dir="$(find "${main_dir}" -maxdepth 1 -mindepth 1 -type d -not -path '*/.*')"
 
   # Return
   echo "${first_level_dir}"
@@ -847,7 +874,7 @@ function copy_files() {
 
   log_event "info" "Copying files from ${source_path} to ${destination_path}..." "false"
 
-  if [[ ${excluded_path} != "" ]]; then
+  if [[ -n ${excluded_path} ]]; then
 
     rsync -ax --exclude "${excluded_path}" "${source_path}" "${destination_path}"
 
@@ -1369,7 +1396,8 @@ function compress() {
   local backup_base_dir="${1}"
   local to_backup="${2}" # could be a file or a directory. Ex: database.sql or foldername
   local file_output="${3}"
-  #local compress_type="${4}"
+  local exclude_parameters="${4}"
+  #local compress_type="${5}"
 
   # Only for better displaying
   if [[ ${to_backup} == "." ]]; then
@@ -1381,11 +1409,11 @@ function compress() {
   # Log
   display --indent 6 --text "- Compressing ${to_backup_string}"
   log_event "info" "Compressing ${to_backup_string} ..." "false"
-  log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" --exclude="*.log" -h \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | lbzip2 >\"${file_output}\"" "false"
+  log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" ${exclude_parameters} -h \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | lbzip2 >\"${file_output}\"" "false"
 
   # TAR
   ## -h will follow symlinks
-  ${TAR} -cf - --directory="${backup_base_dir}" --exclude="*.log" -h "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | lbzip2 >"${file_output}"
+  ${TAR} -cf - --directory="${backup_base_dir}" ${exclude_parameters} -h "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | lbzip2 >"${file_output}"
 
   # Log
   clear_previous_lines "2"
@@ -1416,6 +1444,7 @@ function compress() {
     display --indent 8 --text "Something went wrong making backup file: ${file_output}" --tcolor RED
 
     log_event "error" "Something went wrong making backup file: ${file_output}" "false"
+    log_event "debug" "Output: ${lbzip2_result}" "false"
 
     return 1
 
@@ -1461,7 +1490,7 @@ function brolit_cronjob_install() {
   grep -qi "${script}" "${cron_file}"
 
   grep_result=$?
-  if [[ ${grep_result} != 0 ]]; then
+  if [[ ${grep_result} -ne 0 ]]; then
 
     log_event "info" "Updating cron job for script: ${script}" "false"
     /bin/echo "${scheduled_time} ${script}" >>"${cron_file}"

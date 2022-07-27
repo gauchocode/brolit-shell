@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc9
+# Version: 3.2-rc10
 ################################################################################
 
 function it_utils_menu() {
@@ -23,11 +23,12 @@ function it_utils_menu() {
     "10)" "BENCHMARK SERVER"
     "11)" "INSTALL ALIASES"
     "12)" "INSTALL WELCOME MESSAGE"
+    "13)" "ADD BROLIT UI INTEGRATION"
   )
   chosen_it_util_options="$(whiptail --title "IT UTILS" --menu "Choose a script to Run" 20 78 10 "${it_util_options[@]}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
-  if [[ ${exitstatus} = 0 ]]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     # SECURITY TOOLS
     if [[ ${chosen_it_util_options} == *"01"* ]]; then
@@ -44,7 +45,7 @@ function it_utils_menu() {
 
       new_ssh_port="$(whiptail --title "CHANGE SSH PORT" --inputbox "Insert the new SSH port:" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
-      if [[ ${exitstatus} = 0 ]]; then
+      if [[ ${exitstatus} -eq 0 ]]; then
         system_change_current_ssh_port "${new_ssh_port}"
       fi
     fi
@@ -53,7 +54,7 @@ function it_utils_menu() {
 
       new_server_hostname="$(whiptail --title "CHANGE SERVER HOSTNAME" --inputbox "Insert the new hostname:" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
-      if [[ ${exitstatus} = 0 ]]; then
+      if [[ ${exitstatus} -eq 0 ]]; then
         system_change_server_hostname "${new_server_hostname}"
       fi
     fi
@@ -62,7 +63,7 @@ function it_utils_menu() {
 
       floating_IP="$(whiptail --title "ADD FLOATING IP" --inputbox "Insert the floating IP:" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
-      if [[ ${exitstatus} = 0 ]]; then
+      if [[ ${exitstatus} -eq 0 ]]; then
         system_add_floating_IP "${floating_IP}"
       fi
     fi
@@ -73,7 +74,7 @@ function it_utils_menu() {
 
       sftp_user="$(whiptail --title "CREATE SFTP USER" --inputbox "Insert the username:" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
-      if [[ ${exitstatus} = 0 ]]; then
+      if [[ ${exitstatus} -eq 0 ]]; then
         # Select project to work with
         directory_browser "Select a project to work with" "${PROJECTS_PATH}" #return $filename
         # Directory_broser returns: $filepath and $filename
@@ -93,7 +94,7 @@ function it_utils_menu() {
 
       sftp_user="$(whiptail --title "DELETE SFTP USER" --inputbox "Insert the username:" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
-      if [[ ${exitstatus} = 0 ]]; then
+      if [[ ${exitstatus} -eq 0 ]]; then
         sftp_delete_user "${sftp_user}"
       fi
     fi
@@ -102,7 +103,7 @@ function it_utils_menu() {
 
       db_root_psw="$(whiptail --title "MYSQL ROOT PASSWORD" --inputbox "Insert the new root password for MySQL:" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
-      if [[ ${exitstatus} = 0 ]]; then
+      if [[ ${exitstatus} -eq 0 ]]; then
         # shellcheck source=${BROLIT_MAIN_DIR}/libs/mysql_helper.sh
         source "${BROLIT_MAIN_DIR}/libs/mysql_helper.sh" "${IP_TO_TEST}"
         mysql_root_psw_change "${db_root_psw}"
@@ -113,7 +114,7 @@ function it_utils_menu() {
 
       IP_TO_TEST="$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
-      if [[ ${exitstatus} = 0 ]]; then
+      if [[ ${exitstatus} -eq 0 ]]; then
         # shellcheck source=${BROLIT_MAIN_DIR}/tools/third-party/blacklist-checker/bl.sh
         source "${BROLIT_MAIN_DIR}/tools/third-party/blacklist-checker/bl.sh" "${IP_TO_TEST}"
       fi
@@ -133,6 +134,10 @@ function it_utils_menu() {
     if [[ ${chosen_it_util_options} == *"12"* ]]; then
       customize_ubuntu_login_message
 
+    fi
+    # ADD BROLIT UI INTEGRATION
+    if [[ ${chosen_it_util_options} == *"13"* ]]; then
+      brolit_ssh_keygen "/root/pem"
     fi
 
     prompt_return_or_finish

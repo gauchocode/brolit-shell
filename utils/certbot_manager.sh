@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc9
+# Version: 3.2-rc10
 #############################################################################
 #
 # Ref: https://certbot.eff.org/docs/using.html
@@ -32,14 +32,14 @@ function certbot_manager_menu() {
   chosen_cb_options="$(whiptail --title "CERTBOT MANAGER" --menu " " 20 78 10 "${certbot_options[@]}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
-  if [[ ${exitstatus} = 0 ]]; then
+  if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_cb_options} == *"01"* ]]; then
 
       # INSTALL-CERTIFICATE
       domains="$(certbot_helper_ask_domains)"
       exitstatus=$?
-      if [[ ${exitstatus} = 0 ]]; then
+      if [[ ${exitstatus} -eq 0 ]]; then
         certbot_helper_installer_menu "${NOTIFICATION_EMAIL_MAILA}" "${domains}"
       fi
 
@@ -49,7 +49,7 @@ function certbot_manager_menu() {
       # EXPAND-CERTIFICATE
       domains="$(certbot_helper_ask_domains)"
       exitstatus=$?
-      if [[ ${exitstatus} = 0 ]]; then
+      if [[ ${exitstatus} -eq 0 ]]; then
         certbot_certificate_expand "${NOTIFICATION_EMAIL_MAILA}" "${domains}"
       fi
 
@@ -65,7 +65,7 @@ function certbot_manager_menu() {
       # FORCE-RENEW-CERTIFICATE
       domains="$(certbot_helper_ask_domains)"
       exitstatus=$?
-      if [[ ${exitstatus} = 0 ]]; then
+      if [[ ${exitstatus} -eq 0 ]]; then
         certbot_certificate_force_renew "${domains}"
       fi
 
