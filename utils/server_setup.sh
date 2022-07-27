@@ -257,8 +257,6 @@ function server_app_setup() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-# TODO: maybe only use when runned by flags.
-
 function server_setup() {
 
     log_section "Server Setup"
@@ -357,7 +355,7 @@ function server_setup() {
     fi
 
     # Log
-    #log_event "info" "SERVER SETUP COMPLETED" "false"
+    log_event "info" "Server setup completed" "false"
     #display --indent 6 --text "- Server setup" --result "DONE" --color GREEN
     #display --indent 8 --text "Now you can run the script again." --tcolor YELLOW
 
