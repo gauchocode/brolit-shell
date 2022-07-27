@@ -446,51 +446,57 @@ function php_purge_installation() {
 function php_composer_installer() {
 
   local composer_result
-  local expected_signature
-  local actual_signature
+  #local expected_signature
+  #local actual_signature
 
   # Log
   log_event "info" "Running composer installer" "false"
 
-  expected_signature="$(wget -q -O - https://composer.github.io/installer.sig)"
-  php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-  actual_signature="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
+  #expected_signature="$(wget -q -O - https://composer.github.io/installer.sig)"
+  #php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+  #actual_signature="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
 
-  if [[ ${expected_signature} != "${actual_signature}" ]]; then
+  #if [[ ${expected_signature} != "${actual_signature}" ]]; then
+    # Signature failure
+  #  log_event "info" "Signature failure of composer-setup.php" "false"
+  #  rm "${BROLIT_TMP_DIR}/composer-setup.php"
+  #  return 1
+  #fi
 
-    # Remove
-    rm composer-setup.php
-
-    return 1
-
-  fi
-
-  # Command
-  composer_result="$(${PHP} "${SCRIPTPATH}"/composer-setup.php --quiet --install-dir=/usr/local/bin --filename=composer)"
+  # Download installer
+  ${CURL} https://getcomposer.org/installer > "${BROLIT_TMP_DIR}/composer-setup.php"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    # Remove
-    rm "${SCRIPTPATH}/composer-setup.php"
+    # Command
+    composer_result="$(${PHP} "${BROLIT_TMP_DIR}/composer-setup.php" --quiet --install-dir=/usr/local/bin --filename=composer)"
 
-    log_event "info" "Composer Installer finished" "false"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
 
-    # Return
-    echo "${exitstatus}"
+      # Remove
+      rm "${BROLIT_TMP_DIR}/composer-setup.php"
 
-    return 0
+      log_event "info" "Composer installer finished" "false"
 
-  else
+      # Return
+      echo "${exitstatus}"
 
-    # Log
-    log_event "error" "Composer Installer failed" "false"
-    log_event "debug" "composer_result=${composer_result}" "false"
+      return 0
 
-    # Return
-    echo "${exitstatus}"
+    else
 
-    return 1
+      # Log
+      log_event "error" "Composer installer failed" "false"
+      log_event "debug" "composer_result=${composer_result}" "false"
+
+      # Return
+      echo "${exitstatus}"
+
+      return 1
+
+    fi
 
   fi
 
