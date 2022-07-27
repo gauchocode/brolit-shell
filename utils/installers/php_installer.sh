@@ -457,14 +457,14 @@ function php_composer_installer() {
   #actual_signature="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
 
   #if [[ ${expected_signature} != "${actual_signature}" ]]; then
-    # Signature failure
+  # Signature failure
   #  log_event "info" "Signature failure of composer-setup.php" "false"
   #  rm "${BROLIT_TMP_DIR}/composer-setup.php"
   #  return 1
   #fi
 
   # Download installer
-  ${CURL} https://getcomposer.org/installer > "${BROLIT_TMP_DIR}/composer-setup.php"
+  ${CURL} https://getcomposer.org/installer >"${BROLIT_TMP_DIR}/composer-setup.php"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
