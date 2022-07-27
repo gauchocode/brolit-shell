@@ -275,9 +275,9 @@ function project_ask_type() {
   local project_types
   local project_type
 
-  project_types="WordPress Laravel PHP HTML docker-compose Other"
+  project_types="wordpress laravel php html docker proxy"
 
-  project_type="$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 $(for x in ${project_types}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)"
+  project_type="$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 $(for x in ${project_types}; do echo "${x} [D]"; done) --default-item "${suggested_project_type}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -311,7 +311,7 @@ function project_ask_port() {
 
   local proxy_port
 
-  proxy_port="$(whiptail --title "Domain" --inputbox "Insert the port you want to proxy." 10 60 "${suggested_proxy_port}" 3>&1 1>&2 2>&3)"
+  proxy_port="$(whiptail --title "Domain" --inputbox "Insert the internal port you want to proxy:" 10 60 "${suggested_proxy_port}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -1964,10 +1964,10 @@ function project_get_type() {
     )"
     if [[ -n ${docker} ]]; then
 
-      log_event "debug" "Project Type: docker-compose" "false"
+      log_event "debug" "Project Type: docker" "false"
 
       # Return
-      echo "docker-compose"
+      echo "docker"
 
       return 0
 
@@ -2032,7 +2032,7 @@ function project_create_nginx_server() {
 
     # Aks project type
     project_type="$(project_ask_type "${suggested_project_type}")"
-    if [[ ${project_type} == "docker-compose" || ${project_type} == "other" ]]; then
+    if [[ ${project_type} == "docker" || ${project_type} == "other" ]]; then
       project_type="proxy"
       project_port="$(project_ask_port "")"
     fi
