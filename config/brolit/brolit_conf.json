@@ -2,7 +2,7 @@
     "BROLIT_SETUP": {
         "config": [
             {
-                "version": "3.9.9",
+                "version": "3.10.1",
                 "debug": "true",
                 "quiet": "false",
                 "skip_test": "true",
@@ -37,13 +37,23 @@
                 "projects": [
                     {
                         "status": "enabled",
-                        "exclude": [ "*.log", "*.tmp" ]
+                        "ignored": [
+                            "html"
+                        ],
+                        "excluded_on_tar": [
+                            "*.log",
+                            "*.tmp",
+                            "*.cache",
+                            "*.git"
+                        ]
                     }
                 ],
                 "databases": [
                     {
                         "status": "enabled",
-                        "exclude": [ "information_schema,performance_schema,mysql,sys,phpmyadmin" ]
+                        "exclude": [
+                            "information_schema,performance_schema,mysql,sys,phpmyadmin"
+                        ]
                     }
                 ],
                 "server_cfg": "enabled",
@@ -93,6 +103,19 @@
                         ]
                     }
                 ],
+                "s3": [
+                    {
+                        "status": "disabled",
+                        "config": [
+                            {
+                                "bucket": "",
+                                "backup_path": "",
+                                "access_key": "",
+                                "secret_key": ""
+                            }
+                        ]
+                    }
+                ],
                 "duplicity": [
                     {
                         "status": "disabled",
@@ -136,50 +159,19 @@
             }
         ]
     },
-    "FIREWALL": {
-        "ufw": [
+    "SECURITY": {
+        "firewall": [
             {
                 "status": "disabled",
                 "config": [
                     {
-                        "ssh": "allow",
-                        "http": "allow",
-                        "https": "allow",
-                        "465": "",
-                        "587": "",
-                        "2812": "",
-                        "3022": "",
-                        "3000": "",
-                        "8000": "",
-                        "8080": "",
-                        "19999": ""
-                    }
-                ]
-            }
-        ],
-        "fail2ban": [
-            {
-                "status": "disabled",
-                "config": [
-                    {
-                        "bandtime": "600",
-                        "findtime": "600",
-                        "maxretry": "3",
-                        "ignoreip": [
-                            "127.0.0.1",
-                            ""
-                        ],
-                        "destemail": "",
-                        "sendername": "Fail2Ban",
-                        "banaction": "iptables-multiport",
-                        "mta": "sendmail",
-                        "protocol": "tcp"
+                        "file": "/root/.brolit_firewall_conf.json"
                     }
                 ]
             }
         ]
     },
-    "SUPPORT": {
+    "DNS": {
         "cloudflare": [
             {
                 "status": "disabled",

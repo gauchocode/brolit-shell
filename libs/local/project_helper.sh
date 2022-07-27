@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc9
+# Version: 3.2-rc10
 ################################################################################
 #
 # Project Helper: Perform project actions.
@@ -114,6 +114,40 @@ function project_set_config_var() {
     return 1
 
   fi
+
+}
+
+################################################################################
+# Check if project is excluded on config
+#
+# Arguments:
+#   $1= ${project}
+#
+# Outputs:
+#   1 on true or 0 on false.
+################################################################################
+
+function project_is_ignored() {
+
+  local project="${1}" #string
+
+  ignored_projects_list="$(string_remove_spaces "${IGNORED_PROJECTS_LIST}")"
+  ignored_projects_list="$(echo "${ignored_projects_list}" | tr '\n' ',')"
+
+  # String to Array
+  IFS="," read -a excluded_projects_array <<<"${ignored_projects_list}"
+  for i in "${excluded_projects_array[@]}"; do
+    :
+
+    if [[ ${project} == "${i}" ]]; then
+
+      return 1
+
+    fi
+
+  done
+
+  return 0
 
 }
 

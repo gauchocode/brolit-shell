@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc9
+# Version: 3.2-rc10
 ################################################################################
 
 ### Main dir check
@@ -44,45 +44,37 @@ file_index=0
 # Folder blacklist
 blacklist=".wp-cli,phpmyadmin,html"
 
-k=0
-
 for site in ${all_sites}; do
 
-  if [[ "$k" -gt 0 ]]; then
+  project_name="$(basename "${site}")"
 
-    project_name="$(basename "${site}")"
+  if [[ ${blacklist} != *"${project_name}"* ]]; then
 
-    if [[ ${blacklist} != *"${project_name}"* ]]; then
+    log_event "info" "Project name: ${project_name}" "false"
 
-      log_event "info" "Project name: ${project_name}" "false"
+    curl --silent -L "${project_name}" 2>&1 | grep -q "${keyword}"
+    curl_output=$?
 
-      curl --silent -L "${project_name}" 2>&1 | grep -q "${keyword}"
-      curl_output=$?
+    if [[ ${curl_output} -eq 0 ]]; then
 
-      if [[ ${curl_output} == 0 ]]; then
-
-        log_event "info" "Website ${project_name} is online" "false"
-        display --indent 2 --text "- Testing ${project_name}" --result "UP" --color GREEN
-
-      else
-
-        log_event "error" "Website ${project_name} is offline" "false"
-        display --indent 2 --text "- Testing ${project_name}" --result "DOWN" --color RED
-
-        # Send notification
-        send_notification "⛔ ${SERVER_NAME}" "Website ${project_name} is offline"
-
-      fi
+      log_event "info" "Website ${project_name} is online" "false"
+      display --indent 2 --text "- Testing ${project_name}" --result "UP" --color GREEN
 
     else
 
-      log_event "error" "Found ${project_name} on blacklist, skipping ..." "false"
+      log_event "error" "Website ${project_name} is offline" "false"
+      display --indent 2 --text "- Testing ${project_name}" --result "DOWN" --color RED
+
+      # Send notification
+      send_notification "⛔ ${SERVER_NAME}" "Website ${project_name} is offline"
 
     fi
 
-  fi
+  else
 
-  k=$k+1
+    log_event "error" "Found ${project_name} on blacklist, skipping ..." "false"
+
+  fi
 
 done
 

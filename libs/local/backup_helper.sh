@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc9
+# Version: 3.2-rc10
 #############################################################################
 #
 # Backup Helper: Perform backup actions.
@@ -56,7 +56,9 @@ function backup_server_config() {
   local got_error
   local backup_file
   local old_backup_file
+  local daysago
   local remote_path
+  local backup_keep_daily
 
   got_error=0
 
@@ -73,9 +75,18 @@ function backup_server_config() {
         backup_file="${bk_sup_type}-${backup_type}-files-${NOW}-weekly.tar.bz2"
         old_backup_file="${bk_sup_type}-${backup_type}-files-${WEEKSAGO}-weekly.tar.bz2"
       else
-        ## On any regular day do
-        backup_file="${bk_sup_type}-${backup_type}-files-${NOW}.tar.bz2"
-        old_backup_file="${bk_sup_type}-${backup_type}-files-${DAYSAGO}.tar.bz2"
+        if [[ ${WEEK_DAY} -eq 7 && ${BACKUP_RETENTION_KEEP_WEEKLY} -gt 0 ||
+          ${MONTH_DAY} -eq 2 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
+          ## The day after a week day or month day
+          backup_keep_daily=$((BACKUP_RETENTION_KEEP_DAILY - 1))
+          daysago="$(date --date="${backup_keep_daily} days ago" +"%Y-%m-%d")"
+          backup_file="${bk_sup_type}-${backup_type}-files-${NOW}.tar.bz2"
+          old_backup_file="${bk_sup_type}-${backup_type}-files-${daysago}.tar.bz2"
+        else
+          ## On any regular day do
+          backup_file="${bk_sup_type}-${backup_type}-files-${NOW}.tar.bz2"
+          old_backup_file="${bk_sup_type}-${backup_type}-files-${DAYSAGO}.tar.bz2"
+        fi
       fi
     fi
 
@@ -84,7 +95,7 @@ function backup_server_config() {
     log_event "info" "Files backup for: ${bk_sup_type}" "false"
 
     # Compress backup
-    backup_file_size="$(compress "${backup_path}" "${directory_to_backup}" "${BROLIT_TMP_DIR}/${NOW}/${backup_file}")"
+    backup_file_size="$(compress "${backup_path}" "${directory_to_backup}" "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "")"
 
     # Check test result
     compress_result=$?
@@ -394,17 +405,17 @@ function backup_all_projects_files() {
 
   local backup_file_size
   local directory_name
+  local working_sites_directories
 
   local backuped_files_index=0
   local backuped_directory_index=0
-  local k=0
 
   log_subsection "Backup Sites Files"
 
   # Get all directories
-  TOTAL_SITES="$(get_all_directories "${PROJECTS_PATH}")"
+  working_sites_directories="$(get_all_directories "${PROJECTS_PATH}")"
 
-  # Get length of $TOTAL_SITES
+  # Get length of ${working_sites_directories}
   COUNT_TOTAL_SITES="$(find "${PROJECTS_PATH}" -maxdepth 1 -type d -printf '.' | wc -c)"
   COUNT_TOTAL_SITES="$((COUNT_TOTAL_SITES - 1))"
 
@@ -413,36 +424,47 @@ function backup_all_projects_files() {
   log_event "info" "Found ${COUNT_TOTAL_SITES} directories" "false"
   log_break "true"
 
-  for j in ${TOTAL_SITES}; do
+  for j in ${working_sites_directories}; do
 
-    log_event "info" "Processing [${j}] ..." "false"
+    directory_name="$(basename "${j}")"
 
-    if [[ ${k} -gt 0 ]]; then
+    log_event "info" "Processing [${directory_name}] ..." "false"
 
-      directory_name="$(basename "${j}")"
+    project_is_ignored "${directory_name}"
 
-      if [[ ${EXCLUDED_FILES_LIST} != *"${directory_name}"* ]]; then
+    result=$?
+    if [[ ${result} -eq 0 ]]; then
 
-        backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${directory_name}")"
+      backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${directory_name}")"
+
+      if [[ -n ${backup_file_size} ]]; then
 
         backuped_files_list[$backuped_files_index]="${directory_name}"
         backuped_files_sizes_list+=("${backup_file_size}")
         backuped_files_index=$((backuped_files_index + 1))
 
-        log_break "true"
-
       else
-        log_event "info" "Omitting ${directory_name} (blacklisted) ..." "false"
+
+        ERROR=true
+        ERROR_MSG="Error creating backup file for site: ${directory_name}"
+        #log_event "error" "${ERROR_MSG}" "false"
 
       fi
 
-      backuped_directory_index=$((backuped_directory_index + 1))
+    else
 
-      log_event "info" "Processed ${backuped_directory_index} of ${COUNT_TOTAL_SITES} directories" "false"
+      # Log
+      log_event "info" "Omitting ${directory_name} (blacklisted) ..." "false"
+      display --indent 6 --text "- Ommiting excluded directory" --result "DONE" --color WHITE
+      display --indent 8 --text "${directory_name}" --tcolor WHITE
 
     fi
 
-    k=$k+1
+    log_break "true"
+
+    backuped_directory_index=$((backuped_directory_index + 1))
+
+    log_event "info" "Processed ${backuped_directory_index} of ${COUNT_TOTAL_SITES} directories" "false"
 
   done
 
@@ -513,6 +535,7 @@ function backup_project_files() {
   local backup_file
   local old_backup_file
   local storage_path
+  local exclude_parameters
 
   # Backups file names
   if [[ ${MONTH_DAY} -eq 1 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
@@ -545,8 +568,19 @@ function backup_project_files() {
     display --indent 6 --text "- Files backup for ${YELLOW}${directory_to_backup}${ENDCOLOR}"
     log_event "info" "Files backup for : ${directory_to_backup}" "false"
 
+    # Excluding files/directories from TAR
+    exclude_parameters=""
+    # String to Array
+    excluded_files_list="$(string_remove_spaces "${EXCLUDED_FILES_LIST}")"
+    excluded_files_list="$(echo "${excluded_files_list}" | tr '\n' ',')"
+    IFS="," read -a excluded_array <<<"${excluded_files_list}"
+    for i in "${excluded_array[@]}"; do
+      :
+      exclude_parameters="${exclude_parameters} --exclude='${i}'"
+    done
+
     # Compress backup
-    backup_file_size="$(compress "${backup_path}" "${directory_to_backup}" "${BROLIT_TMP_DIR}/${NOW}/${backup_file}")"
+    backup_file_size="$(compress "${backup_path}" "${directory_to_backup}" "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${exclude_parameters}")"
 
     # Check test result
     compress_result=$?
@@ -622,7 +656,6 @@ function backup_duplicity() {
     all_sites="$(get_all_directories "${PROJECTS_PATH}")"
 
     # Loop in to Directories
-    #for i in $(echo "${PROJECTS_PATH}" | sed "s/,/ /g"); do
     for i in ${all_sites}; do
 
       log_event "debug" "Running: duplicity --full-if-older-than \"${BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY}\" -v4 --no-encryption\" ${PROJECTS_PATH}\"\"${i}\" file://\"${BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH}\"\"${i}\"" "true"
@@ -862,7 +895,7 @@ function backup_project_database() {
   if [[ ${export_result} -eq 0 ]]; then
 
     # Compress backup
-    backup_file_size="$(compress "${BROLIT_TMP_DIR}/${NOW}/" "${dump_file}" "${BROLIT_TMP_DIR}/${NOW}/${backup_file}")"
+    backup_file_size="$(compress "${BROLIT_TMP_DIR}/${NOW}/" "${dump_file}" "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "")"
 
     # Check test result
     compress_result=$?
