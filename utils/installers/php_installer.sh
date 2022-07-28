@@ -335,6 +335,28 @@ function php_redis_installer() {
 }
 
 ################################################################################
+# PHP memcached module installer
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function php_memcached_installer() {
+
+  # apt command
+  package_install_if_not "memcached"
+  package_install_if_not "libmemcached-tools"
+  package_install_if_not "php-memcached"
+
+  # Service restart
+  systemctl restart memcached
+
+}
+
+################################################################################
 # Mail utils installer
 #
 # Arguments:
