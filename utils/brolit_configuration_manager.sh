@@ -744,6 +744,7 @@ function _brolit_configuration_load_php() {
     ## Extensions
     declare -g PACKAGES_PHP_EXTENSIONS_WPCLI
     declare -g PACKAGES_PHP_EXTENSIONS_REDIS
+    declare -g PACKAGES_PHP_EXTENSIONS_MEMCACHED
     declare -g PACKAGES_PHP_EXTENSIONS_COMPOSER
 
     # PHP
@@ -797,6 +798,13 @@ function _brolit_configuration_load_php() {
             exit 1
         fi
 
+        PACKAGES_PHP_EXTENSIONS_MEMCACHED="$(json_read_field "${server_config_file}" "PACKAGES.php[].extensions[].memcached")"
+        # Check if all required vars are set
+        if [[ -z ${PACKAGES_PHP_EXTENSIONS_MEMCACHED} ]]; then
+            log_event "error" "Missing required config vars for php" "true"
+            exit 1
+        fi
+
         PACKAGES_PHP_EXTENSIONS_COMPOSER="$(json_read_field "${server_config_file}" "PACKAGES.php[].extensions[].composer")"
         # Check if all required vars are set
         if [[ -z ${PACKAGES_PHP_EXTENSIONS_COMPOSER} ]]; then
@@ -820,7 +828,7 @@ function _brolit_configuration_load_php() {
 
     fi
 
-    export PHP PHP_CONF_DIR PHP_V PACKAGES_PHP_STATUS PACKAGES_PHP_VERSION PACKAGES_PHP_CONFIG_OPCODE
+    export PHP PHP_CONF_DIR PHP_V PACKAGES_PHP_STATUS PACKAGES_PHP_VERSION PACKAGES_PHP_CONFIG_OPCODE PACKAGES_PHP_EXTENSIONS_REDIS PACKAGES_PHP_EXTENSIONS_MEMCACHED PACKAGES_PHP_EXTENSIONS_COMPOSER PACKAGES_PHP_EXTENSIONS_WPCLI
 
 }
 
