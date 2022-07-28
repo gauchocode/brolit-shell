@@ -130,7 +130,7 @@ function package_is_installed() {
 }
 
 ################################################################################
-# Install package with apt.
+# Install package with apt command
 #
 # Arguments:
 #   $1 = ${package}
