@@ -71,6 +71,10 @@ function server_app_setup() {
             if [[ ${PACKAGES_PHP_EXTENSIONS_REDIS} == "enabled" ]]; then
                 php_redis_installer
             fi
+            # If PACKAGES_PHP_EXTENSIONS_MEMCACHED is enabled, install wp-cli
+            if [[ ${PACKAGES_PHP_EXTENSIONS_MEMCACHED} == "enabled" ]]; then
+                php_memcached_installer
+            fi
             # If PACKAGES_PHP_EXTENSIONS_COMPOSER is enabled, install wp-cli
             if [[ ${PACKAGES_PHP_EXTENSIONS_COMPOSER} == "enabled" ]]; then
                 php_composer_installer
