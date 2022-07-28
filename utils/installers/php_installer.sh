@@ -344,6 +344,8 @@ function php_redis_installer() {
 #   nothing
 ################################################################################
 
+# Ref: https://linuxize.com/post/how-to-install-memcached-on-ubuntu-20-04/
+
 function php_memcached_installer() {
 
   # apt command
