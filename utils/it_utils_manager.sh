@@ -24,6 +24,7 @@ function it_utils_menu() {
     "11)" "INSTALL ALIASES"
     "12)" "INSTALL WELCOME MESSAGE"
     "13)" "ADD BROLIT UI INTEGRATION"
+    "14)" "ENABLE SSH ROOT ACCESS"
   )
   chosen_it_util_options="$(whiptail --title "IT UTILS" --menu "Choose a script to Run" 20 78 10 "${it_util_options[@]}" 3>&1 1>&2 2>&3)"
 
@@ -138,6 +139,20 @@ function it_utils_menu() {
     # ADD BROLIT UI INTEGRATION
     if [[ ${chosen_it_util_options} == *"13"* ]]; then
       brolit_ssh_keygen "/root/pem"
+    fi
+    # ENABLE SSH ROOT ACCESS
+    if [[ ${chosen_it_util_options} == *"14"* ]]; then
+      # TODO: https://linuxconfig.org/allow-ssh-root-login-on-ubuntu-20-04-focal-fossa-linux
+      sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+      systemctl restart ssh
+      sudo passwd
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+        log_event "info" "root password changed" "false"
+        display --indent 6 --text "- Changing root password" --result "DONE" --color GREEN
+      fi
+
     fi
 
     prompt_return_or_finish

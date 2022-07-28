@@ -28,8 +28,19 @@ function json_read_field() {
 
     json_field_value="$(cat "${json_file}" | jq -r ".${json_field}")"
 
-    # Return
-    echo "${json_field_value}"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+    
+        # Return
+        echo "${json_field_value}"
+        return 0
+
+    else
+
+        log_event "error" "Getting value from ${json_field}" "false"
+        return 1
+
+    fi
 
 }
 
@@ -60,7 +71,9 @@ function json_write_field() {
 
     else
 
-        log_event "error" "Getting value from ${json_field}" "false"
+        log_event "error" "Something went wrong trying to update a value in ${json_file}" "false"
+        log_event "debug" "json field: ${json_field}" "false"
+        log_event "debug" "json field value: ${json_field_value}" "false"
         return 1
 
     fi
