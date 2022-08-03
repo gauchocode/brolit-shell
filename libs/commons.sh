@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc10
+# Version: 3.2-rc11
 ################################################################################
 
 ################################################################################
@@ -53,7 +53,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.2-rc10"
+  declare -g SCRIPT_V="3.2-rc11"
 
   # Hostname
   declare -g SERVER_NAME="$HOSTNAME"
@@ -1409,11 +1409,11 @@ function compress() {
   # Log
   display --indent 6 --text "- Compressing ${to_backup_string}"
   log_event "info" "Compressing ${to_backup_string} ..." "false"
-  log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" ${exclude_parameters} -h \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | lbzip2 >\"${file_output}\"" "false"
+  log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" ${exclude_parameters} -h \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | ${BACKUP_CONFIG_COMPRESSION_TYPE} >\"${file_output}\"" "false"
 
   # TAR
   ## -h will follow symlinks
-  ${TAR} -cf - --directory="${backup_base_dir}" ${exclude_parameters} -h "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | lbzip2 >"${file_output}"
+  ${TAR} -cf - --directory="${backup_base_dir}" ${exclude_parameters} -h "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | ${BACKUP_CONFIG_COMPRESSION_TYPE} >"${file_output}"
 
   # Log
   clear_previous_lines "2"
@@ -1421,14 +1421,14 @@ function compress() {
   display --indent 6 --text "- Testing backup file"
 
   # Test backup with pv output
-  pv --width 70 "${file_output}" | lbzip2 --test
+  pv --width 70 "${file_output}" | ${BACKUP_CONFIG_COMPRESSION_TYPE} --test
 
-  lbzip2_result=$?
+  compress_result=$?
 
   # Clear output
   clear_previous_lines "2"
 
-  if [[ ${lbzip2_result} -eq 0 ]]; then
+  if [[ ${compress_result} -eq 0 ]]; then
 
     # Get file size
     backup_file_size="$(du --apparent-size -s -k "${file_output}" | awk '{ print $1 }' | awk '{printf "%.3f MiB %s\n", $1/1024, $2}')"
@@ -1444,7 +1444,7 @@ function compress() {
     display --indent 8 --text "Something went wrong making backup file: ${file_output}" --tcolor RED
 
     log_event "error" "Something went wrong making backup file: ${file_output}" "false"
-    log_event "debug" "Output: ${lbzip2_result}" "false"
+    log_event "debug" "Output: ${compress_result}" "false"
 
     return 1
 

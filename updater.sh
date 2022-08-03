@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc10
+# Version: 3.2-rc11
 #############################################################################
 
 SCRIPT="$(readlink -f "$0")"
