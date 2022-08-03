@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc10
+# Version: 3.2-rc11
 ################################################################################
 #
 # Project Helper: Perform project actions.
@@ -1313,7 +1313,7 @@ function project_get_configured_database_userpassw() {
 
   else
 
-    case $project_type in
+    case ${project_type} in
 
     wordpress)
 

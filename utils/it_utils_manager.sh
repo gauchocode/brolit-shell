@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc10
+# Version: 3.2-rc11
 ################################################################################
 
 function it_utils_menu() {
@@ -142,15 +142,29 @@ function it_utils_menu() {
     fi
     # ENABLE SSH ROOT ACCESS
     if [[ ${chosen_it_util_options} == *"14"* ]]; then
-      # TODO: https://linuxconfig.org/allow-ssh-root-login-on-ubuntu-20-04-focal-fossa-linux
-      sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-      systemctl restart ssh
-      sudo passwd
 
+      log_subsection "Enable ssh root access"
+
+      sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+      
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
-        log_event "info" "root password changed" "false"
-        display --indent 6 --text "- Changing root password" --result "DONE" --color GREEN
+        
+        log_event "info" "Permit ssh root login" "false"
+        display --indent 6 --text "- Permit ssh root login" --result "DONE" --color GREEN
+
+        systemctl restart ssh
+
+        # Change root password
+        sudo passwd
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+          clear_previous_lines "3"
+          log_event "info" "root password changed" "false"
+          display --indent 6 --text "- Changing root password" --result "DONE" --color GREEN
+        fi
+
       fi
 
     fi

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc10
+# Version: 3.2-rc11
 #############################################################################
 #
 # Backup Helper: Perform backup actions.
@@ -67,25 +67,25 @@ function backup_server_config() {
     # Backups file names
     if [[ ${MONTH_DAY} -eq 1 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
       ## On first month day do
-      backup_file="${bk_sup_type}-${backup_type}-files-${NOW}-monthly.tar.bz2"
-      old_backup_file="${bk_sup_type}-${backup_type}-files-${MONTHSAGO}-monthly.tar.bz2"
+      backup_file="${bk_sup_type}-${backup_type}-files-${NOW}-monthly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+      old_backup_file="${bk_sup_type}-${backup_type}-files-${MONTHSAGO}-monthly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
     else
       ## On saturdays do
       if [[ ${WEEK_DAY} -eq 6 && ${BACKUP_RETENTION_KEEP_WEEKLY} -gt 0 ]]; then
-        backup_file="${bk_sup_type}-${backup_type}-files-${NOW}-weekly.tar.bz2"
-        old_backup_file="${bk_sup_type}-${backup_type}-files-${WEEKSAGO}-weekly.tar.bz2"
+        backup_file="${bk_sup_type}-${backup_type}-files-${NOW}-weekly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+        old_backup_file="${bk_sup_type}-${backup_type}-files-${WEEKSAGO}-weekly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
       else
         if [[ ${WEEK_DAY} -eq 7 && ${BACKUP_RETENTION_KEEP_WEEKLY} -gt 0 ||
           ${MONTH_DAY} -eq 2 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
           ## The day after a week day or month day
           backup_keep_daily=$((BACKUP_RETENTION_KEEP_DAILY - 1))
           daysago="$(date --date="${backup_keep_daily} days ago" +"%Y-%m-%d")"
-          backup_file="${bk_sup_type}-${backup_type}-files-${NOW}.tar.bz2"
-          old_backup_file="${bk_sup_type}-${backup_type}-files-${daysago}.tar.bz2"
+          backup_file="${bk_sup_type}-${backup_type}-files-${NOW}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+          old_backup_file="${bk_sup_type}-${backup_type}-files-${daysago}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
         else
           ## On any regular day do
-          backup_file="${bk_sup_type}-${backup_type}-files-${NOW}.tar.bz2"
-          old_backup_file="${bk_sup_type}-${backup_type}-files-${DAYSAGO}.tar.bz2"
+          backup_file="${bk_sup_type}-${backup_type}-files-${NOW}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+          old_backup_file="${bk_sup_type}-${backup_type}-files-${DAYSAGO}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
         fi
       fi
     fi

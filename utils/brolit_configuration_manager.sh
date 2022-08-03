@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc10
+# Version: 3.2-rc11
 ################################################################################
 #
 # Server Config Manager: Brolit server configuration management.
@@ -345,6 +345,7 @@ function _brolit_configuration_load_backup_config() {
     declare -g BACKUP_CONFIG_DATABASES_STATUS
     declare -g BACKUP_CONFIG_SERVER_CFG_STATUS
     declare -g BACKUP_CONFIG_COMPRESSION_TYPE
+    declare -g BACKUP_CONFIG_COMPRESSION_EXTENSION
 
     declare -g IGNORED_PROJECTS_LIST #".wp-cli,.ssh,.local,.cert,html,phpmyadmin"
     declare -g EXCLUDED_DATABASES_LIST
@@ -379,9 +380,28 @@ function _brolit_configuration_load_backup_config() {
     if [[ -z ${BACKUP_CONFIG_COMPRESSION_TYPE} ]]; then
         log_event "error" "Missing required config vars for backup retention" "true"
         exit 1
+    else
+
+        case ${BACKUP_CONFIG_COMPRESSION_TYPE} in
+
+        lbzip2)
+            BACKUP_CONFIG_COMPRESSION_EXTENSION=".tar.bz2"
+            ;;
+
+        zstd)
+            BACKUP_CONFIG_COMPRESSION_EXTENSION="zst"
+            ;;
+
+        *)
+            log_event "debug" "Backup compression type not supported!" "true"
+            exit 1
+            ;;
+
+        esac
+
     fi
 
-    export BACKUP_CONFIG_PROJECTS_STATUS BACKUP_CONFIG_DATABASES_STATUS BACKUP_CONFIG_SERVER_CFG_STATUS
+    export BACKUP_CONFIG_PROJECTS_STATUS BACKUP_CONFIG_DATABASES_STATUS BACKUP_CONFIG_SERVER_CFG_STATUS BACKUP_CONFIG_COMPRESSION_TYPE BACKUP_CONFIG_COMPRESSION_EXTENSION
 
     export IGNORED_PROJECTS_LIST EXCLUDED_FILES_LIST EXCLUDED_DATABASES_LIST
     #export BACKUP_CONFIG_PROJECTS_EXCLUDE_LIST BACKUP_CONFIG_DATABASES_EXCLUDE_LIST
