@@ -262,7 +262,7 @@ function dropbox_delete() {
     if [[ ${force_delete} != "true" ]]; then
 
         # Log
-        log_event "debug" "Search \"${directory}\" to delete on Dropbox account" "false"
+        log_event "info" "Search \"${to_delete}\" to delete on Dropbox account" "false"
         log_event "debug" "Running: \"${DROPBOX_UPLOADER}\" -hq search \"${to_delete}\"" "false"
 
         search_file="$(basename "${to_delete}")"

@@ -683,7 +683,7 @@ function restore_nginx_site_files() {
   local to_restore
   local dropbox_output # var for dropbox output
 
-  bk_file="nginx-configs-files-${date}.tar.bz2"
+  bk_file="nginx-configs-files-${date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
   bk_to_download="${chosen_server}/configs/nginx/${bk_file}"
 
   # Subsection
@@ -698,7 +698,7 @@ function restore_nginx_site_files() {
   clear_previous_lines "1"
   display --indent 6 --text "- Downloading nginx backup from dropbox" --result "DONE" --color GREEN
 
-  # Extract tar.bz2 with lbzip2
+  # Extract
   mkdir -p "${BROLIT_MAIN_DIR}/tmp/nginx"
   decompress "${bk_file}" "${BROLIT_MAIN_DIR}/tmp/nginx" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
 
@@ -777,16 +777,14 @@ function restore_letsencrypt_site_files() {
   local bk_file
   local bk_to_download
 
-  bk_file="letsencrypt-configs-files-${date}.tar.bz2"
+  bk_file="letsencrypt-configs-files-${date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
   bk_to_download="${chosen_server}/configs/letsencrypt/${bk_file}"
 
   log_event "debug" "Running: ${DROPBOX_UPLOADER} download ${bk_to_download}"
 
   dropbox_output=$(${DROPBOX_UPLOADER} download "${bk_to_download}" 1>&2)
 
-  # Extract tar.bz2 with lbzip2
-  log_event "info" "Extracting ${bk_file} on ${BROLIT_MAIN_DIR}/tmp/"
-
+  # Extract
   mkdir "${BROLIT_MAIN_DIR}/tmp/letsencrypt"
   decompress "${bk_file}" "${BROLIT_MAIN_DIR}/tmp/letsencrypt" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
 
@@ -1203,8 +1201,8 @@ function restore_project() {
       project_backup_date="$(backup_get_date "${chosen_backup_to_restore}")"
 
       # TODO: update this to match monthly and weekly backups
-      db_to_download="${chosen_server}/projects-${chosen_status}/database/${db_name}/${db_name}_database_${project_backup_date}.tar.bz2"
-      db_to_restore="${db_name}_database_${project_backup_date}.tar.bz2"
+      db_to_download="${chosen_server}/projects-${chosen_status}/database/${db_name}/${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+      db_to_restore="${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
 
       # Downloading Database Backup
       storage_download_backup "${db_to_download}" "${BROLIT_TMP_DIR}"
@@ -1339,7 +1337,7 @@ function restore_backup_database() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Deleting temp files
-    rm --force "${project_backup%%.*}.tar.bz2" && rm --force "${project_backup}"
+    rm --force "${project_backup%%.*}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}" && rm --force "${project_backup}"
 
     # Log
     log_event "debug" "Temp files cleanned" "false"
