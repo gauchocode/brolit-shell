@@ -1358,16 +1358,6 @@ function decompress() {
       pv --width 70 "${file_path}" | tar xzf -C "${directory_to_extract}"
       ;;
 
-    *.zip)
-      #unzip "${file_path}" "${directory}"
-      unzip -o "${file_path}" -d "${directory_to_extract}" | pv -l >/dev/null
-      ;;
-
-    *.Z)
-      #uncompress "${file_path}" "${directory}"
-      pv --width 70 "${file_path}" | uncompress "${directory_to_extract}"
-      ;;
-
       #*.7z)
       #7z x "${file_path}" "${directory}"
       #7z x "${file_path}" "${directory_to_extract}" | pv -l >/dev/null
@@ -1376,6 +1366,21 @@ function decompress() {
     *.xz)
       #tar xvf "${file_path}" -C "${directory}"
       pv --width 70 "${file_path}" | tar xvf -C "${directory_to_extract}"
+      ;;
+
+    *.zip)
+      #unzip "${file_path}" "${directory}"
+      unzip -o "${file_path}" -d "${directory_to_extract}" | pv -l >/dev/null
+      ;;
+
+    *.zst)
+      #tar --use-compress-program zstd -cf "${file_path}" "${directory_to_extract}"
+      pv --width 70 "${file_path}" | tar xp -C "${directory_to_extract}" --use-compress-program="${compress_type}"
+      ;;
+
+    *.Z)
+      #uncompress "${file_path}" "${directory}"
+      pv --width 70 "${file_path}" | uncompress "${directory_to_extract}"
       ;;
 
     *)
