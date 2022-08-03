@@ -855,6 +855,46 @@ function get_all_directories() {
 }
 
 ################################################################################
+# Get size of an specific file
+#
+# Arguments:
+#   $1= ${file}
+#
+# Outputs:
+#   String with directories
+################################################################################
+
+function get_file_size() {
+
+  local file="${1}"
+
+  # Get file size
+  backup_file_size="$(du --apparent-size -s -k "${file}" | awk '{ print $1 }' | awk '{printf "%.3f MiB %s\n", $1/1024, $2}')"
+
+  file_size_result=$?
+
+  if [[ ${file_size_result} -eq 0 ]]; then
+
+    log_event "info" "File size: ${backup_file_size}" "false"
+
+    # Return
+    echo "${backup_file_size}"
+
+    return 0
+
+  else
+
+    log_event "error" "Something went wrong trying to get file size of: ${file}" "false"
+    log_event "debug" "Last command executed: du --apparent-size -s -k \"${file}\" | awk '{ print $1 }' | awk '{printf \"%.3f MiB %s\n\", $1/1024, $2}'" "false"
+    log_event "debug" "Output: ${file_size_result}" "false"
+
+    return 1
+
+  fi
+
+}
+
+################################################################################
 # Copy files (with rsync)
 #
 # Arguments:
@@ -1431,7 +1471,9 @@ function compress() {
   if [[ ${compress_result} -eq 0 ]]; then
 
     # Get file size
-    backup_file_size="$(du --apparent-size -s -k "${file_output}" | awk '{ print $1 }' | awk '{printf "%.3f MiB %s\n", $1/1024, $2}')"
+    backup_file_size="$(get_file_size "${file_output}")"
+
+    log_event "info" "Backup file test finished ok." "false"
 
     # Return
     echo "${backup_file_size}"
