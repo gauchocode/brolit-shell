@@ -136,7 +136,7 @@ function restore_backup_from_local() {
       basepath="$(dirname "${source_files}")"
 
       # Decompress backup
-      decompress "${source_files}" "${basepath}/${project_domain}" "lbzip2"
+      decompress "${source_files}" "${basepath}/${project_domain}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
 
       dir_count="$(count_directories_on_directory "${basepath}/${project_domain}")"
 
@@ -382,7 +382,7 @@ function restore_backup_from_public_url() {
   fi
 
   # Uncompressing
-  decompress "${BROLIT_TMP_DIR}/${project_domain}/${backup_file}" "${BROLIT_TMP_DIR}" "lbzip2"
+  decompress "${BROLIT_TMP_DIR}/${project_domain}/${backup_file}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 1 ]]; then
@@ -646,7 +646,7 @@ function restore_config_files_from_dropbox() {
     mv "${chosen_config_bk}" "${chosen_config_type}"
 
     # Decompress
-    decompress "${chosen_config_bk}" "${BROLIT_MAIN_DIR}/tmp/${chosen_config_type}" "lbzip2"
+    decompress "${chosen_config_bk}" "${BROLIT_MAIN_DIR}/tmp/${chosen_config_type}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
 
     if [[ "${chosen_config_bk}" == *"nginx"* ]]; then
 
@@ -700,7 +700,7 @@ function restore_nginx_site_files() {
 
   # Extract tar.bz2 with lbzip2
   mkdir -p "${BROLIT_MAIN_DIR}/tmp/nginx"
-  decompress "${bk_file}" "${BROLIT_MAIN_DIR}/tmp/nginx" "lbzip2"
+  decompress "${bk_file}" "${BROLIT_MAIN_DIR}/tmp/nginx" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
 
   # TODO: if nginx is installed, ask if nginx.conf must be replace
 
@@ -788,7 +788,7 @@ function restore_letsencrypt_site_files() {
   log_event "info" "Extracting ${bk_file} on ${BROLIT_MAIN_DIR}/tmp/"
 
   mkdir "${BROLIT_MAIN_DIR}/tmp/letsencrypt"
-  decompress "${bk_file}" "${BROLIT_MAIN_DIR}/tmp/letsencrypt" "lbzip2"
+  decompress "${bk_file}" "${BROLIT_MAIN_DIR}/tmp/letsencrypt" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
 
   # Creating directories
   if [[ ! -d "/etc/letsencrypt/archive/" ]]; then
@@ -998,7 +998,7 @@ function restore_type_selection_from_storage() {
           storage_download_backup "${bk_to_dowload}" "${BROLIT_TMP_DIR}"
 
           # Decompress
-          decompress "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}" "${BROLIT_TMP_DIR}" "lbzip2"
+          decompress "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
 
           if [[ ${chosen_type} == *"database"* ]]; then
 
@@ -1156,7 +1156,7 @@ function restore_project() {
     storage_download_backup "${bk_to_dowload}" "${BROLIT_TMP_DIR}"
 
     # Decompress
-    decompress "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}" "${BROLIT_TMP_DIR}" "lbzip2"
+    decompress "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
     if [[ $? -eq 1 ]]; then
       # TODO: implement error type
       return 1
@@ -1239,7 +1239,8 @@ function restore_project() {
 
       if [[ ${database_restore_skipped} != "true" ]]; then
         # Decompress
-        decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "lbzip2"
+        decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+        
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
