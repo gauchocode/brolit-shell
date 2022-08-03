@@ -293,17 +293,17 @@ function backup_mailcow() {
     # Backups file names
     if [[ ${MONTH_DAY} -eq 1 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
       ## On first month day do
-      backup_file="${backup_type}_files-${NOW}-monthly.tar.bz2"
-      old_backup_file="${backup_type}_files-${MONTHSAGO}-monthly.tar.bz2"
+      backup_file="${backup_type}_files-${NOW}-monthly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+      old_backup_file="${backup_type}_files-${MONTHSAGO}-monthly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
     else
       ## On saturdays do
       if [[ ${WEEK_DAY} -eq 6 && ${BACKUP_RETENTION_KEEP_WEEKLY} -gt 0 ]]; then
-        backup_file="${backup_type}_files-${NOW}-weekly.tar.bz2"
-        old_backup_file="${backup_type}_files-${WEEKSAGO}-weekly.tar.bz2"
+        backup_file="${backup_type}_files-${NOW}-weekly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+        old_backup_file="${backup_type}_files-${WEEKSAGO}-weekly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
       else
         ## On any regular day do
-        backup_file="${backup_type}_files-${NOW}.tar.bz2"
-        old_backup_file="${backup_type}_files-${DAYSAGO}.tar.bz2"
+        backup_file="${backup_type}_files-${NOW}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+        old_backup_file="${backup_type}_files-${DAYSAGO}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
       fi
     fi
 
@@ -329,7 +329,7 @@ function backup_mailcow() {
       # Back
       cd ..
 
-      log_event "info" "Making tar.bz2 from: ${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION} ..." "false"
+      log_event "info" "Making ${BACKUP_CONFIG_COMPRESSION_EXTENSION} from: ${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION} ..." "false"
 
       # Tar file
       (${TAR} -cf - --directory="${MAILCOW_DIR}" "${MAILCOW_BACKUP_LOCATION}" | pv --width 70 -ns "$(du -sb "${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION}" | awk '{print $1}')" | lbzip2 >"${MAILCOW_TMP_BK}/${backup_file}")
@@ -540,17 +540,17 @@ function backup_project_files() {
   # Backups file names
   if [[ ${MONTH_DAY} -eq 1 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
     ## On first month day do
-    backup_file="${directory_to_backup}_${backup_type}-files_${NOW}-monthly.tar.bz2"
-    old_backup_file="${directory_to_backup}_${backup_type}-files_${MONTHSAGO}-monthly.tar.bz2"
+    backup_file="${directory_to_backup}_${backup_type}-files_${NOW}-monthly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+    old_backup_file="${directory_to_backup}_${backup_type}-files_${MONTHSAGO}-monthly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
   else
     ## On saturdays do
     if [[ ${WEEK_DAY} -eq 6 && ${BACKUP_RETENTION_KEEP_WEEKLY} -gt 0 ]]; then
-      backup_file="${directory_to_backup}_${backup_type}-files_${NOW}-weekly.tar.bz2"
-      old_backup_file="${directory_to_backup}_${backup_type}-files_${WEEKSAGO}-weekly.tar.bz2"
+      backup_file="${directory_to_backup}_${backup_type}-files_${NOW}-weekly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+      old_backup_file="${directory_to_backup}_${backup_type}-files_${WEEKSAGO}-weekly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
     else
       ## On any regular day do
-      backup_file="${directory_to_backup}_${backup_type}-files_${NOW}.tar.bz2"
-      old_backup_file="${directory_to_backup}_${backup_type}-files_${DAYSAGO}.tar.bz2"
+      backup_file="${directory_to_backup}_${backup_type}-files_${NOW}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+      old_backup_file="${directory_to_backup}_${backup_type}-files_${DAYSAGO}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
     fi
   fi
 
@@ -862,19 +862,19 @@ function backup_project_database() {
   if [[ ${MONTH_DAY} -eq 1 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
     ## On first month day do
     dump_file="${database}_database_${NOW}-monthly.sql"
-    backup_file="${database}_database_${NOW}-monthly.tar.bz2"
-    old_backup_file="${database}_database_${MONTHSAGO}-monthly.tar.bz2"
+    backup_file="${database}_database_${NOW}-monthly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+    old_backup_file="${database}_database_${MONTHSAGO}-monthly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
   else
     ## On saturdays do
     if [[ ${WEEK_DAY} -eq 6 && ${BACKUP_RETENTION_KEEP_WEEKLY} -gt 0 ]]; then
       dump_file="${database}_database_${NOW}-weekly.sql"
-      backup_file="${database}_database_${NOW}-weekly.tar.bz2"
-      old_backup_file="${database}_database_${WEEKSAGO}-weekly.tar.bz2"
+      backup_file="${database}_database_${NOW}-weekly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+      old_backup_file="${database}_database_${WEEKSAGO}-weekly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
     else
       ## On any regular day do
       dump_file="${database}_database_${NOW}.sql"
-      backup_file="${database}_database_${NOW}.tar.bz2"
-      old_backup_file="${database}_database_${DAYSAGO}.tar.bz2"
+      backup_file="${database}_database_${NOW}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+      old_backup_file="${database}_database_${DAYSAGO}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
     fi
   fi
 
