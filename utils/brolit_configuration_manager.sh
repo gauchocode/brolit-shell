@@ -385,7 +385,7 @@ function _brolit_configuration_load_backup_config() {
         case ${BACKUP_CONFIG_COMPRESSION_TYPE} in
 
         lbzip2)
-            BACKUP_CONFIG_COMPRESSION_EXTENSION=".tar.bz2"
+            BACKUP_CONFIG_COMPRESSION_EXTENSION="tar.bz2"
             ;;
 
         zstd)
