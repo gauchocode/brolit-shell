@@ -529,7 +529,6 @@ function project_install_tasks_handler() {
 
   clean)
 
-    # "${PROJECT_CONFIG_FILE}" "${PROJECT_INSTALL_TYPE}"
     project_install "${PROJECT_FILES_CONFIG_PATH}" "${PROJECT_TYPE}" "${PROJECT_DOMAIN}" "${PROJECT_NAME}" "${PROJECT_STAGE}"
 
     exit
