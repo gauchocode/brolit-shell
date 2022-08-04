@@ -400,7 +400,7 @@ function project_manager_menu_new_project_type_new_project() {
     if [[ ${chosen_project_type_options} == *"04"* ]]; then
 
       # NODE JS PROJECT
-      project_install "${PROJECTS_PATH}" "node-js"
+      project_install "${PROJECTS_PATH}" "nodejs"
 
     fi
 
@@ -465,17 +465,74 @@ function project_tasks_handler() {
 
   case ${subtask} in
 
-  install)
-
-    project_install "${sites}" "${ptype}" "${domain}" "${pname}" "${pstate}"
-
-    exit
-    ;;
+  #  install)
+  #
+  #    project_install "${sites}" "${ptype}" "${domain}" "${pname}" "${pstate}"
+  #
+  #    exit
+  #    ;;
 
   delete)
 
     # Second parameter with "true" will delete cloudflare entry
     project_delete "${domain}" "true"
+
+    exit
+    ;;
+
+  *)
+
+    log_event "error" "INVALID PROJECT TASK: ${subtask}" "true"
+
+    exit
+    ;;
+
+  esac
+
+}
+
+################################################################################
+# Task handler for project functions
+#
+# Arguments:
+#  $1 = ${subtask}
+#  $2 = ${sites}
+#  $3 = ${ptype}
+#  $4 = ${domain}
+#  $5 = ${pname}
+#  $6 = ${pstate}
+#
+# Outputs:
+#   global vars
+################################################################################
+
+function project_install_tasks_handler() {
+
+  local project_config_file="${1}"
+  local project_install_type="${2}"
+
+  if [[ ! -f ${project_config_file} ]]; then
+    log_event "error" "Project config file not found! Wrong path?" "true"
+    exit 1
+  else
+    # Load config file
+    project_manager_config_loader "${project_config_file}"
+  fi
+
+  case ${project_install_type} in
+
+  clean)
+
+    # "${PROJECT_CONFIG_FILE}" "${PROJECT_INSTALL_TYPE}"
+    project_install "${PROJECT_FILES_CONFIG_PATH}" "${PROJECT_TYPE}" "${PROJECT_DOMAIN}" "${PROJECT_NAME}" "${PROJECT_STAGE}"
+
+    exit
+    ;;
+
+  copy)
+
+    #project_install "${sites}" "${ptype}" "${domain}" "${pname}" "${pstate}"
+    log_event "error" "Create new project from a template should be implemented." "true"
 
     exit
     ;;
