@@ -551,8 +551,8 @@ function project_update_brolit_config() {
   ## project override_nginx_conf
   json_write_field "${project_config_file}" "project[].override_nginx_conf" "${project_override_nginx_conf}"
 
-  ## project use_hhtp2
-  json_write_field "${project_config_file}" "project[].use_hhtp2" "${project_use_http2}"
+  ## project use_http2
+  json_write_field "${project_config_file}" "project[].use_http2" "${project_use_http2}"
 
   ## project certbot_mode
   json_write_field "${project_config_file}" "project[].certbot_mode" "${project_certbot_mode}"
