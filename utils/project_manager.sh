@@ -22,32 +22,36 @@ function project_manager_config_loader() {
   PROJECT_NAME="$(json_read_field "${project_config_file}" "project[].name")"
   if [[ -z ${PROJECT_NAME} ]]; then
     # Error
+    log_event "error" "Required var PROJECT_NAME not set!" "true"
     exit 1
   fi
 
   PROJECT_STAGE="$(json_read_field "${project_config_file}" "project[].stage")"
   if [[ -z ${PROJECT_STAGE} ]]; then
     # Error
+    log_event "error" "Required var PROJECT_STAGE not set!" "true"
     exit 1
   fi
 
   PROJECT_TYPE="$(json_read_field "${project_config_file}" "project[].type")"
   if [[ -z ${PROJECT_TYPE} ]]; then
     # Error
+    log_event "error" "Required var PROJECT_TYPE not set!" "true"
     exit 1
   fi
 
   # Optional
   PROJECT_PROXY_TO_PORT="$(json_read_field "${project_config_file}" "project[].proxy_to_port")"
   # TODO: check if empty or is a valid number
-  if [[ -z ${PROJECT_PROXY_TO_PORT} ]]; then
-    # Error
-    exit 1
-  fi
+  #if [[ -z ${PROJECT_PROXY_TO_PORT} ]]; then
+  # Error
+  #  exit 1
+  #fi
 
   PROJECT_PRIMARY_SUBDOMAIN="$(json_read_field "${project_config_file}" "project[].primary_subdomain")"
   if [[ -z ${PROJECT_PRIMARY_SUBDOMAIN} ]]; then
     # Error
+    log_event "error" "Required var PROJECT_PRIMARY_SUBDOMAIN not set!" "true"
     exit 1
   fi
 
@@ -61,12 +65,14 @@ function project_manager_config_loader() {
   PROJECT_USE_HTTP2="$(json_read_field "${project_config_file}" "project[].use_http2")"
   if [[ -z ${PROJECT_USE_HTTP2} ]]; then
     # Error
+    log_event "error" "Required var PROJECT_USE_HTTP2 not set!" "true"
     exit 1
   fi
 
   PROJECT_CERTBOT_MODE="$(json_read_field "${project_config_file}" "project[].certbot_mode")"
   if [[ -z ${PROJECT_CERTBOT_MODE} ]]; then
     # Error
+    log_event "error" "Required var PROJECT_CERTBOT_MODE not set!" "true"
     exit 1
   fi
 
