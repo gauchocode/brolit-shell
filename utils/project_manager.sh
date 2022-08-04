@@ -4,9 +4,130 @@
 # Version: 3.2-rc11
 ################################################################################
 #
-# Database Manager: Perform database actions.
+# Project Manager: Perform project actions.
 #
 ################################################################################
+
+function project_manager_config_loader() {
+
+  local project_config_file="${1}"
+
+  # Globals
+  declare -g BROLIT_PROJECT_CONFIG_VERSION
+  declare -g PROJECT_NAME
+
+  BROLIT_PROJECT_CONFIG_VERSION="$(json_read_field "${project_config_file}" "brolit_project_config_version")"
+
+  ## PROJECT
+  PROJECT_NAME="$(json_read_field "${project_config_file}" "project[].name")"
+  if [[ -z ${PROJECT_NAME} ]]; then
+    # Error
+    exit 1
+  fi
+
+  PROJECT_STAGE="$(json_read_field "${project_config_file}" "project[].stage")"
+  if [[ -z ${PROJECT_STAGE} ]]; then
+    # Error
+    exit 1
+  fi
+
+  PROJECT_TYPE="$(json_read_field "${project_config_file}" "project[].type")"
+  if [[ -z ${PROJECT_TYPE} ]]; then
+    # Error
+    exit 1
+  fi
+
+  # Optional
+  PROJECT_PROXY_TO_PORT="$(json_read_field "${project_config_file}" "project[].proxy_to_port")"
+  # TODO: check if empty or is a valid number
+  if [[ -z ${PROJECT_PROXY_TO_PORT} ]]; then
+    # Error
+    exit 1
+  fi
+
+  PROJECT_PRIMARY_SUBDOMAIN="$(json_read_field "${project_config_file}" "project[].primary_subdomain")"
+  if [[ -z ${PROJECT_PRIMARY_SUBDOMAIN} ]]; then
+    # Error
+    exit 1
+  fi
+
+  # TODO: read array values
+  #PROJECT_SECONDARY_SUBDOMAINS="$(json_read_field "${project_config_file}" "project[].primary_subdomain")"
+  #if [[ -z ${PROJECT_SECONDARY_SUBDOMAINS} ]]; then
+  # Error
+  #  exit 1
+  #fi
+
+  PROJECT_USE_HTTP2="$(json_read_field "${project_config_file}" "project[].use_http2")"
+  if [[ -z ${PROJECT_USE_HTTP2} ]]; then
+    # Error
+    exit 1
+  fi
+
+  PROJECT_CERTBOT_MODE="$(json_read_field "${project_config_file}" "project[].certbot_mode")"
+  if [[ -z ${PROJECT_CERTBOT_MODE} ]]; then
+    # Error
+    exit 1
+  fi
+
+  PROJECT_FILES_STATUS="$(json_read_field "${project_config_file}" "project[].files[].status")"
+  if [[ ${PROJECT_FILES_STATUS} == "enabled" ]]; then
+
+    PROJECT_FILES_CONFIG_PATH="$(json_read_field "${project_config_file}" "project[].files[].config[].path")"
+    if [[ -z ${PROJECT_FILES_CONFIG_PATH} ]]; then
+      # Error
+      exit 1
+    fi
+
+    PROJECT_FILES_CONFIG_HOST="$(json_read_field "${project_config_file}" "project[].files[].config[].path")"
+    if [[ -z ${PROJECT_FILES_CONFIG_HOST} ]]; then
+      # Error
+      exit 1
+    fi
+
+  fi
+
+  PROJECT_DATABASE_STATUS="$(json_read_field "${project_config_file}" "project[].database[].status")"
+  if [[ ${PROJECT_DATABASE_STATUS} == "enabled" ]]; then
+
+    PROJECT_DATABASE_ENGINE="$(json_read_field "${project_config_file}" "project[].database[].engine")"
+    if [[ -z ${PROJECT_DATABASE_ENGINE} ]]; then
+      # Error
+      exit 1
+    fi
+
+    PROJECT_DATABASE_CONFIG_NAME="$(json_read_field "${project_config_file}" "project[].database[].config[].name")"
+    if [[ -z ${PROJECT_DATABASE_CONFIG_NAME} ]]; then
+      # Error
+      exit 1
+    fi
+
+    PROJECT_DATABASE_CONFIG_HOST="$(json_read_field "${project_config_file}" "project[].database[].config[].host")"
+    if [[ -z ${PROJECT_DATABASE_CONFIG_HOST} ]]; then
+      # Error
+      exit 1
+    fi
+
+    PROJECT_DATABASE_CONFIG_USER="$(json_read_field "${project_config_file}" "project[].database[].config[].user")"
+    if [[ -z ${PROJECT_DATABASE_CONFIG_USER} ]]; then
+      # Error
+      exit 1
+    fi
+
+    PROJECT_DATABASE_CONFIG_PASS="$(json_read_field "${project_config_file}" "project[].database[].config[].pass")"
+    if [[ -z ${PROJECT_DATABASE_CONFIG_PASS} ]]; then
+      # Error
+      exit 1
+    fi
+
+  fi
+
+  export BROLIT_PROJECT_CONFIG_VERSION PROJECT_NAME PROJECT_STAGE PROJECT_TYPE PROJECT_PROXY_TO_PORT
+  export PROJECT_PRIMARY_SUBDOMAIN PROJECT_SECONDARY_SUBDOMAINS PROJECT_USE_HTTP2 PROJECT_CERTBOT_MODE
+  export PROJECT_FILES_STATUS PROJECT_FILES_CONFIG_PATH PROJECT_FILES_CONFIG_HOST
+  export PROJECT_DATABASE_STATUS PROJECT_DATABASE_ENGINE PROJECT_DATABASE_CONFIG_NAME PROJECT_DATABASE_CONFIG_HOST PROJECT_DATABASE_CONFIG_USER PROJECT_DATABASE_CONFIG_PASS
+
+}
 
 ################################################################################
 # Project Utils Menu
