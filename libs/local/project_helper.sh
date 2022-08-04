@@ -275,7 +275,7 @@ function project_ask_type() {
   local project_types
   local project_type
 
-  project_types="wordpress laravel php html docker proxy"
+  project_types="wordpress laravel php react html docker proxy"
 
   project_type="$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 $(for x in ${project_types}; do echo "${x} [D]"; done) --default-item "${suggested_project_type}" 3>&1 1>&2 2>&3)"
 
@@ -870,7 +870,7 @@ function project_get_configured_database_engine() {
 
       ;;
 
-    node-js)
+    nodejs)
 
       db_engine="$(project_get_config_var "${project_path}/.env" "DB_CONNECTION")"
 
@@ -947,7 +947,7 @@ function project_set_configured_database_engine() {
 
     ;;
 
-  node-js)
+  nodejs)
 
     # Set/Update
     project_set_config_var "${project_path}/.env" "DB_CONNECTION" "${db_engine}"
@@ -1034,7 +1034,7 @@ function project_get_configured_database() {
 
       ;;
 
-    node-js)
+    nodejs)
 
       db_name="$(project_get_config_var "${project_path}/.env" "DB_DATABASE")"
 
@@ -1107,7 +1107,7 @@ function project_set_configured_database() {
 
     ;;
 
-  node-js)
+  nodejs)
 
     # Set/Update
     project_set_config_var "${project_path}/.env" "DB_DATABASE" "${db_name}"
@@ -1187,7 +1187,7 @@ function project_get_configured_database_user() {
 
       ;;
 
-    node-js)
+    nodejs)
 
       db_user="$(project_get_config_var "${project_path}/.env" "DB_USERNAME")"
 
@@ -1260,7 +1260,7 @@ function project_set_configured_database_user() {
 
     ;;
 
-  node-js)
+  nodejs)
 
     # Set/Update
     project_set_config_var "${project_path}/.env" "DB_USERNAME" "${db_user_passw}"
@@ -1342,7 +1342,7 @@ function project_get_configured_database_userpassw() {
 
       ;;
 
-    node-js)
+    nodejs)
 
       db_user_passw="$(project_get_config_var "${project_path}/.env" "DB_PASSWORD")"
 
@@ -1414,7 +1414,7 @@ function project_set_configured_database_userpassw() {
 
     ;;
 
-  node-js)
+  nodejs)
 
     # Set/Update
     project_set_config_var "${project_path}/.env" "DB_PASSWORD" "${db_user_passw}"
@@ -1457,6 +1457,7 @@ function project_install() {
   local project_domain="${3}"
   local project_name="${4}"
   local project_stage="${5}"
+  local project_install_mode="${6}" # clean or copy
 
   # TODO: need to check if user cancels some of this options
 
@@ -1522,7 +1523,7 @@ function project_install() {
     wpcli_install_if_not_installed
 
     # Execute function
-    wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${root_domain}"
+    wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${root_domain}" "${project_install_mode}"
 
     ;;
 
@@ -1540,16 +1541,16 @@ function project_install() {
 
     ;;
 
-  node-js)
+  nodejs)
 
     #display --indent 8 --text "Project Type NodeJS" --tcolor RED
     nodejs_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${root_domain}"
 
-    return 1
+    #return 1
     ;;
 
   *)
-    log_event "error" "Project Type ${project_type} unkwnown, aborting ..." "false"
+    log_event "error" "Project type '${project_type}' unkwnown, aborting ..." "false"
     ;;
 
   esac
@@ -1888,6 +1889,14 @@ function project_get_type() {
 
   local project_type
 
+  local wp_path
+  local laravel
+  local php
+  local nodejs
+  local react
+  local html
+  local docker
+
   # TODO: if brolit_conf exists, should check this file and get project type
 
   if [[ -n ${dir_path} ]]; then
@@ -1906,8 +1915,8 @@ function project_get_type() {
     fi
 
     # Laravel?
-    laravel_v="$(php "${dir_path}/artisan" --version | grep -oE "Laravel Framework [0-9]+\.[0-9]+\.[0-9]+")"
-    if [[ -n ${laravel_v} ]]; then
+    laravel="$(php "${dir_path}/artisan" --version | grep -oE "Laravel Framework [0-9]+\.[0-9]+\.[0-9]+")"
+    if [[ -n ${laravel} ]]; then
 
       log_event "debug" "Project Type: laravel" "false"
 
@@ -1944,6 +1953,19 @@ function project_get_type() {
 
     fi
 
+    # React?
+    react="$(find "${dir_path}/node_modules/react/cjs/" -name "react.development.js" -type f)"
+    if [[ -n ${react} ]]; then
+
+      log_event "debug" "Project Type: react" "false"
+
+      # Return
+      echo "react"
+
+      return 0
+
+    fi
+    
     # html-only?
     html="$(find "${dir_path}" -name "index.html" -type f)"
     if [[ -n ${html} ]]; then
@@ -1977,11 +1999,13 @@ function project_get_type() {
     log_event "debug" "Project Type: unknown" "false"
 
     # Return
-    echo "unknown"
+    echo "other"
 
     return 0
 
   else
+
+    log_event "error" "Working directory doesn't exist." "false"
 
     return 1
 
@@ -2032,7 +2056,7 @@ function project_create_nginx_server() {
 
     # Aks project type
     project_type="$(project_ask_type "${suggested_project_type}")"
-    if [[ ${project_type} == "docker" || ${project_type} == "other" ]]; then
+    if [[ ${project_type} == "docker" || ${project_type} == "proxy" ]]; then
       project_type="proxy"
       project_port="$(project_ask_port "")"
     fi

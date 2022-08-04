@@ -1358,11 +1358,6 @@ function decompress() {
       pv --width 70 "${file_path}" | tar xzf -C "${directory_to_extract}"
       ;;
 
-      #*.7z)
-      #7z x "${file_path}" "${directory}"
-      #7z x "${file_path}" "${directory_to_extract}" | pv -l >/dev/null
-      #;;
-
     *.xz)
       #tar xvf "${file_path}" -C "${directory}"
       pv --width 70 "${file_path}" | tar xvf -C "${directory_to_extract}"
@@ -2003,7 +1998,14 @@ function tasks_handler() {
 
   project)
 
-    project_tasks_handler "${STASK}" "${PROJECTS_PATH}" "${PTYPE}" "${DOMAIN}" "${PNAME}" "${PSTATE}"
+    project_tasks_handler "${STASK}" "${PROJECTS_PATH}"
+
+    exit
+    ;;
+
+  project-install)
+
+    project_install_tasks_handler "${PROJECT_CONFIG_FILE}" "${PROJECT_INSTALL_TYPE}"
 
     exit
     ;;
