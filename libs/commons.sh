@@ -2005,7 +2005,7 @@ function tasks_handler() {
 
   project-install)
 
-    project_install_tasks_handler "${PROJECT_CONFIG_FILE}" "${PROJECT_INSTALL_TYPE}"
+    project_install_tasks_handler "${FILE}" "${TYPE}"
 
     exit
     ;;
@@ -2123,6 +2123,18 @@ function flags_handler() {
       shift
       TASK="${1}"
       export TASK
+      ;;
+
+    -tf | --file)
+      shift
+      FILE="${1}"
+      export FILE
+      ;;
+
+    -tt | --type)
+      shift
+      TYPE="${1}"
+      export TYPE
       ;;
 
     -st | --subtask)
