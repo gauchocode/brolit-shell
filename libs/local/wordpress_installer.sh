@@ -29,28 +29,35 @@ function wordpress_project_installer() {
   local project_name="${3}"
   local project_stage="${4}"
   local project_root_domain="${5}"
+  local project_install_mode="${6}"
 
-  local installation_types
-  local installation_type
+  local project_install_modes
 
-  # Installation types
-  installation_types=(
-    "01)" "CLEAN INSTALL"
-    "02)" "COPY FROM PROJECT"
-  )
-  installation_type=$(whiptail --title "INSTALLATION TYPE" --menu "Choose an Installation Type" 20 78 10 "${installation_types[@]}" 3>&1 1>&2 2>&3)
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    if [[ ${installation_type} == *"COPY"* ]]; then
-
-      wordpress_project_copy "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
-
-    else # Clean Install
-
-      wordpress_project_install "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
-
+  if [[ -z ${project_install_mode} ]]; then
+    # Installation types
+    project_install_modes=(
+      "01)" "CLEAN INSTALL"
+      "02)" "COPY FROM PROJECT"
+    )
+    installation_type=$(whiptail --title "INSTALLATION TYPE" --menu "Choose an Installation Type" 20 78 10 "${project_install_modes[@]}" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+      if [[ ${installation_type} == *"CLEAN"* ]]; then
+        project_install_mode="clean"
+      else # Clean Install
+        project_install_mode="copy"
+      fi
     fi
+  fi
+
+  if [[ ${project_install_mode} == "copy" ]]; then
+
+    # TODO: need a refactor
+    wordpress_project_copy "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
+
+  else # Clean Install
+
+    wordpress_project_install "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
 
   fi
 
@@ -131,67 +138,6 @@ function wordpress_project_install() {
 
   # Project domain configuration (webserver+certbot+DNS)
   project_update_domain_config "${project_domain}" "wordpress" ""
-
-  # If domain contains www, should work without www too
-  #common_subdomain='www'
-  #if [[ ${project_domain} == *"${common_subdomain}"* ]]; then
-  #
-  #  # Cloudflare API to change DNS records
-  #  cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A" "false" "${SERVER_IP}"
-  #
-  #  # Cloudflare API to change DNS records
-  #  cloudflare_set_record "${project_root_domain}" "${project_domain}" "CNAME" "false" "${project_root_domain}"
-  #
-  #  # New site Nginx configuration
-  #  nginx_server_create "${project_domain}" "wordpress" "root_domain" "${project_root_domain}"
-  #
-  #  if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
-  #
-  #    # HTTPS with Certbot
-  #    project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${project_root_domain}" 3>&1 1>&2 2>&3)
-  #
-  #    exitstatus=$?
-  #    if [[ ${exitstatus} -eq 0 ]]; then
-  #
-  #      certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain},${project_root_domain}"
-  #
-  #      exitstatus=$?
-  #      if [[ ${exitstatus} -eq 0 ]]; then
-  #        nginx_server_add_http2_support "${project_domain}"
-  #      fi
-  #
-  #    else
-  #      log_event "info" "HTTPS support for ${project_domain} skipped"
-  #      display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
-  #    fi
-  #  fi
-  #else
-  #  # Cloudflare API to change DNS records
-  #  cloudflare_set_record "${project_root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
-  #  # New site Nginx configuration
-  #  nginx_create_empty_nginx_conf "${project_path}"
-  #  nginx_create_globals_config
-  #  nginx_server_create "${project_domain}" "wordpress" "single" ""
-  #  if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
-  #    # HTTPS with Certbot
-  #    cert_project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)
-  #    exitstatus=$?
-  #    if [[ ${exitstatus} -eq 0 ]]; then
-  #      certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${cert_project_domain}"
-  #      exitstatus=$?
-  #      if [[ ${exitstatus} -eq 0 ]]; then
-  #        nginx_server_add_http2_support "${project_domain}"
-  #        exitstatus=$?
-  #        if [[ ${exitstatus} -eq 0 ]]; then
-  #          http2_support="true"
-  #        fi
-  #      fi
-  #    fi
-  #  else
-  #    log_event "info" "HTTPS support for ${project_domain} skipped" "false"
-  #    display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
-  #  fi
-  #fi
 
   # Post-restore/install tasks
   project_post_install_tasks "${project_path}" "wordpress" "${project_name}" "${project_stage}" "${database_user_passw}" "" ""
