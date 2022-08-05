@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc11
+# Version: 3.2-rc12
 ################################################################################
 #
 # Project Manager: Perform project actions.
@@ -523,13 +523,18 @@ function project_install_tasks_handler() {
   else
     # Load config file
     project_manager_config_loader "${project_config_file}"
+    log_event "debug" "PROJECT_FILES_CONFIG_PATH=${PROJECT_FILES_CONFIG_PATH}" "false"
+    log_event "debug" "PROJECT_TYPE=${PROJECT_TYPE}" "false"
+    log_event "debug" "PROJECT_PRIMARY_SUBDOMAIN=${PROJECT_PRIMARY_SUBDOMAIN}" "false"
+    log_event "debug" "PROJECT_NAME=${PROJECT_NAME}" "false"
+    log_event "debug" "PROJECT_STAGE=${PROJECT_STAGE}" "false"
   fi
 
   case ${project_install_type} in
 
   clean)
 
-    project_install "${PROJECT_FILES_CONFIG_PATH}" "${PROJECT_TYPE}" "${PROJECT_DOMAIN}" "${PROJECT_NAME}" "${PROJECT_STAGE}"
+    project_install "${PROJECT_FILES_CONFIG_PATH}" "${PROJECT_TYPE}" "${PROJECT_PRIMARY_SUBDOMAIN}" "${PROJECT_NAME}" "${PROJECT_STAGE}" "${project_install_type}"
 
     exit
     ;;
@@ -544,7 +549,7 @@ function project_install_tasks_handler() {
 
   *)
 
-    log_event "error" "INVALID PROJECT TASK: ${subtask}" "true"
+    log_event "error" "INVALID PROJECT INSTALLER TYPE: ${project_install_type}" "true"
 
     exit
     ;;

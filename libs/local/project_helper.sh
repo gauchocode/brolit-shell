@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc11
+# Version: 3.2-rc12
 ################################################################################
 #
 # Project Helper: Perform project actions.
@@ -520,6 +520,9 @@ function project_update_brolit_config() {
   ## project type
   json_write_field "${project_config_file}" "project[].type" "${project_type}"
 
+  ## project files status
+  json_write_field "${project_config_file}" "project[].files[].status" "enabled"
+
   ## project files path
   json_write_field "${project_config_file}" "project[].files[].config[].path" "${project_path}"
 
@@ -552,10 +555,10 @@ function project_update_brolit_config() {
   json_write_field "${project_config_file}" "project[].override_nginx_conf" "${project_override_nginx_conf}"
 
   ## project use_http2
-  json_write_field "${project_config_file}" "project[].use_http2" "${project_use_http2}"
+  #json_write_field "${project_config_file}" "project[].use_http2" "${project_use_http2}"
 
   ## project certbot_mode
-  json_write_field "${project_config_file}" "project[].certbot_mode" "${project_certbot_mode}"
+  #json_write_field "${project_config_file}" "project[].certbot_mode" "${project_certbot_mode}"
 
   # Log
   clear_previous_lines "1"
@@ -1966,7 +1969,7 @@ function project_get_type() {
       return 0
 
     fi
-    
+
     # html-only?
     html="$(find "${dir_path}" -name "index.html" -type f)"
     if [[ -n ${html} ]]; then

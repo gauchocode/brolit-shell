@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc11
+# Version: 3.2-rc12
 ################################################################################
 #
 # WordPress Installer: WordPress installer functions.
@@ -93,15 +93,12 @@ function wordpress_project_install() {
   fi
 
   if [[ ! -d ${project_path} ]]; then
-
     # Create project directory
     mkdir "${project_path}"
-
     # Change directory owner
     change_ownership "www-data" "www-data" "${project_path}"
 
   else
-
     # Log
     display --indent 6 --text "- Creating WordPress project" --result "FAIL" --color RED
     display --indent 8 --text "Destination folder '${project_path}' already exist"
@@ -121,8 +118,8 @@ function wordpress_project_install() {
   database_user_passw=$(openssl rand -hex 12)
 
   mysql_database_create "${database_name}"
-  mysql_user_create "${database_user}" "${database_user_passw}" ""
-  mysql_user_grant_privileges "${database_user}" "${database_name}" ""
+  mysql_user_create "${database_user}" "${database_user_passw}" "localhost"
+  mysql_user_grant_privileges "${database_user}" "${database_name}" "localhost"
 
   # Download WordPress
   wpcli_core_download "${project_path}" ""
@@ -170,7 +167,7 @@ function wordpress_project_install() {
   #  $13 = ${project_override_nginx_conf}
   #  $14 = ${project_use_http2}
   #  $15 = ${project_certbot_mode}
-  project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "wordpress" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "/etc/nginx/sites-available/${project_domain}" "${http2_support}" "${cert_path}"
+  project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "wordpress" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "/etc/nginx/sites-available/${project_domain}" "" "${cert_path}"
 
   # Log
   log_event "info" "WordPress installation for domain ${project_domain} finished" "false"
