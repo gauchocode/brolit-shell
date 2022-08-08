@@ -254,32 +254,62 @@ function docker_system_prune() {
 # Docker WordPress install.
 #
 # Arguments:
-#   none
+#   $1 = ${project_path}
+#   $2 = ${project_domain}
+#   $3 = ${project_name}
+#   $4 = ${project_stage}
+#   $5 = ${project_root_domain}         # Optional
+#   $6 = ${docker_compose_template}     # Optional
 #
 # Outputs:
 #   0 if ok, 1 on error.
 ################################################################################
 
-# TODO: maybe it should be better use docker-compose
-
 function docker_wordpress_install() {
 
-    local docker_image="wordpress:latest"
-    local docker_port="8088"
-    #local php_version="7.4"
+    local project_path="${1}"
+    local project_domain="${2}"
+    local project_name="${3}"
+    local project_stage="${4}"
+    local project_root_domain="${5}"
+    local docker_compose_template="${6}"
 
-    local wordpress_database_host="localhost"
-    local wordpress_database_name="wordpress"
-    local wordpress_database_user="wordpress"
-    local wordpress_database_password="wordpress"
-    local wordpress_database_prefix="wp_"
+    local env_file
 
-    local wordpress_user="wordpress"
-    local wordpress_user_password="wordpress"
-    local wordpress_user_email="wordpress@localhost"
+    log_subsection "WordPress Install (Docker)"
+
+    log_event "info" "Working directory: ${PROJECT_FILES_CONFIG_PATH}/${project_domain}" "false"
+
+    # Create directory structure
+    mkdir "${PROJECT_FILES_CONFIG_PATH}/${project_domain}"
+    # Copy docker-compose template files
+    cp "${BROLIT_MAIN_DIR}/config/docker-compose/wordpress/.env" "${PROJECT_FILES_CONFIG_PATH}/${project_domain}"
+    # Replace variables on .env file
+    env_file="${PROJECT_FILES_CONFIG_PATH}/${project_domain}/.env"
+    # Setting PROJECT_NAME
+    log_event "debug" "Setting PROJECT_NAME=${project_name}" "false"
+    sed -ie "s|^PROJECT_NAME=.*$|PROJECT_NAME=${project_name}|g" "${env_file}"
+    # Setting CERT_EMAIL
+    log_event "debug" "Setting CERT_EMAIL=${PACKAGES_CERTBOT_CONFIG_MAILA}" "false"
+    sed -ie "s|^CERT_EMAIL=.*$|CERT_EMAIL=${PACKAGES_CERTBOT_CONFIG_MAILA}|g" "${env_file}"
+    # Setting PROJECT_DOMAIN
+    log_event "debug" "Setting PROJECT_DOMAIN=${project_domain}" "false"
+    sed -ie "s|^PROJECT_DOMAIN=.*$|PROJECT_DOMAIN=${project_domain}|g" "${env_file}"
+    # Setting PHPMYADMIN_DOMAIN
+    log_event "debug" "Setting PHPMYADMIN_DOMAIN=db.${project_domain}" "false"
+    sed -ie "s|^PHPMYADMIN_DOMAIN=.*$|PHPMYADMIN_DOMAIN=db.${project_domain}|g" "${env_file}"
+
+    # Run docker-compose commands
+    docker-compose pull
+    docker-compose up -d
+
+    # TODO:
+    ## 1- Create new nginx with proxy config
+    ## 2- Update cloudflare DNS entries
+    ## 3- Run certbot
 
     # Docker run
-    docker run --name wordpress -d -p "${docker_port}":80 -e WORDPRESS_DB_HOST="${wordpress_database_host}" -e WORDPRESS_DB_NAME="${wordpress_database_name}" -e WORDPRESS_DB_USER="${wordpress_database_user}" -e WORDPRESS_DB_PASSWORD="${wordpress_database_password}" -e WORDPRESS_DB_PREFIX="${wordpress_database_prefix}" -e WORDPRESS_USER="${wordpress_user}" -e WORDPRESS_USER_PASSWORD="${wordpress_user_password}" -e WORDPRESS_USER_EMAIL="${wordpress_user_email}" "${docker_image}"
+    #docker run --name wordpress -d -p "${docker_port}":80 -e WORDPRESS_DB_HOST="${wordpress_database_host}" -e WORDPRESS_DB_NAME="${wordpress_database_name}" -e WORDPRESS_DB_USER="${wordpress_database_user}" -e WORDPRESS_DB_PASSWORD="${wordpress_database_password}" -e WORDPRESS_DB_PREFIX="${wordpress_database_prefix}" -e WORDPRESS_USER="${wordpress_user}" -e WORDPRESS_USER_PASSWORD="${wordpress_user_password}" -e WORDPRESS_USER_EMAIL="${wordpress_user_email}" "${docker_image}"
 
     # Docker logs
     #docker logs wordpress
@@ -306,7 +336,7 @@ function docker_mysql_database_import() {
 
     # Docker run
     # Example: docker exec -i db mysql -uroot -pexample wordpress < dump.sql
-    docker exec -i "${container_name}" mysql -u"${mysql_user}" -p"${mysql_user_passw}" "${mysql_database}" < "${dump_file}"
+    docker exec -i "${container_name}" mysql -u"${mysql_user}" -p"${mysql_user_passw}" "${mysql_database}" <"${dump_file}"
 
     # Docker logs
     #docker logs wordpress
@@ -333,7 +363,7 @@ function docker_mysql_database_backup() {
 
     # Docker run
     # Example: docker exec -i db mysqldump -uroot -pexample wordpress > dump.sql
-    docker exec -i "${container_name}" mysqldump -u"${mysql_user}" -p"${mysql_user_passw}" "${mysql_database}" > "${dump_file}"
+    docker exec -i "${container_name}" mysqldump -u"${mysql_user}" -p"${mysql_user_passw}" "${mysql_database}" >"${dump_file}"
 
     # Docker logs
     #docker logs wordpress
