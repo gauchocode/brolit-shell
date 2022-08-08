@@ -285,7 +285,7 @@ function docker_wordpress_install() {
     # Copy docker-compose template files
     cp "${BROLIT_MAIN_DIR}/config/docker-compose/wordpress/.env" "${project_path}"
     # Replace variables on .env file
-    env_file="${PROJECT_FILES_CONFIG_PATH}/${project_domain}/.env"
+    env_file="${project_path}/.env"
     # Setting PROJECT_NAME
     log_event "debug" "Setting PROJECT_NAME=${project_name}" "false"
     sed -ie "s|^PROJECT_NAME=.*$|PROJECT_NAME=${project_name}|g" "${env_file}"
