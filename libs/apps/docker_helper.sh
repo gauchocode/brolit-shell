@@ -309,12 +309,7 @@ function docker_wordpress_install() {
     ## 1- Create new nginx with proxy config
     ## 2- Update cloudflare DNS entries
     ## 3- Run certbot
-
-    # Docker run
-    #docker run --name wordpress -d -p "${docker_port}":80 -e WORDPRESS_DB_HOST="${wordpress_database_host}" -e WORDPRESS_DB_NAME="${wordpress_database_name}" -e WORDPRESS_DB_USER="${wordpress_database_user}" -e WORDPRESS_DB_PASSWORD="${wordpress_database_password}" -e WORDPRESS_DB_PREFIX="${wordpress_database_prefix}" -e WORDPRESS_USER="${wordpress_user}" -e WORDPRESS_USER_PASSWORD="${wordpress_user_password}" -e WORDPRESS_USER_EMAIL="${wordpress_user_email}" "${docker_image}"
-
-    # Docker logs
-    #docker logs wordpress
+    ## 4- Create brolit project config.
 
 }
 
@@ -333,11 +328,16 @@ function docker_mysql_database_import() {
     local container_name="${1}"
     local mysql_user="${2}"
     local mysql_user_passw="${3}"
-    local mysql_database="${3}"
-    local dump_file="${4}"
+    local mysql_database="${4}"
+    local dump_file="${5}"
+
+    # TODO: 
+    # 1- List container names
+    # 2- Select container name to work with
 
     # Docker run
     # Example: docker exec -i db mysql -uroot -pexample wordpress < dump.sql
+    log_event "debug" "Running: docker exec -i \"${container_name}\" mysql -u\"${mysql_user}\" -p\"${mysql_user_passw}\" ${mysql_database} < ${dump_file}" "false"
     docker exec -i "${container_name}" mysql -u"${mysql_user}" -p"${mysql_user_passw}" "${mysql_database}" <"${dump_file}"
 
     # Docker logs
@@ -360,11 +360,12 @@ function docker_mysql_database_backup() {
     local container_name="${1}"
     local mysql_user="${2}"
     local mysql_user_passw="${3}"
-    local mysql_database="${3}"
-    local dump_file="${4}"
+    local mysql_database="${4}"
+    local dump_file="${5}"
 
     # Docker run
     # Example: docker exec -i db mysqldump -uroot -pexample wordpress > dump.sql
+    log_event "debug" "Running: docker exec -i \"${container_name}\" mysql -u\"${mysql_user}\" -p\"${mysql_user_passw}\" ${mysql_database} > ${dump_file}" "false"
     docker exec -i "${container_name}" mysqldump -u"${mysql_user}" -p"${mysql_user_passw}" "${mysql_database}" >"${dump_file}"
 
     # Docker logs

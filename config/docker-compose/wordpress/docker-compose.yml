@@ -22,7 +22,7 @@ services:
             - internal
 
     # DATABASES    
-    mariadb:
+    mysql:
         container_name: mariadb_${PROJECT_NAME}
         image: mariadb
         restart: always
