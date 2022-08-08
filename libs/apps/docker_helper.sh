@@ -281,9 +281,10 @@ function docker_wordpress_install() {
     log_event "info" "Working directory: ${PROJECT_FILES_CONFIG_PATH}/${project_domain}" "false"
 
     # Create directory structure
-    mkdir "${project_path}"
+    mkdir -p "${project_path}"
     # Copy docker-compose template files
     cp "${BROLIT_MAIN_DIR}/config/docker-compose/wordpress/.env" "${project_path}"
+    cp "${BROLIT_MAIN_DIR}/config/docker-compose/wordpress/docker-compose.yml" "${project_path}"
     # Replace variables on .env file
     env_file="${project_path}/.env"
     # Setting PROJECT_NAME
