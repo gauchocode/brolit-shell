@@ -11,7 +11,7 @@ services:
         tty: true
         hostname: ${PROJECT_DOMAIN}
         environment:
-            WORDPRESS_DB_HOST: mariadb
+            WORDPRESS_DB_HOST: mysql
             WORDPRESS_DB_USER: ${MYSQL_USER}
             WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
             WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
@@ -58,7 +58,7 @@ services:
     wordpress-cli:
         container_name: wpcli_${PROJECT_NAME}
         depends_on:
-        - mariadb
+        - mysql
         - wordpress
         image: wordpress:cli
         # vstm: This is required to run wordpress-cli with the same user-id as wordpress. 
@@ -126,7 +126,7 @@ services:
         - 8443:443
         hostname: ${PHPMYADMIN_DOMAIN}
         environment:
-            PMA_HOST: mariadb
+            PMA_HOST: mysql
             PMA_USER: ${MYSQL_USER}
             PMA_PASSWORD: ${MYSQL_PASSWORD} 
         restart: always
