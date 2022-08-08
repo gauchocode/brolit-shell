@@ -20,10 +20,11 @@ function tests_suite_menu() {
     "08)" "RUN PROJECT TESTS"
     "09)" "RUN OTHER TESTS"
     "10)" "RUN DISPLAY TESTS"
+    "11)" "RUN DOCKER TESTS"
   )
 
   chosen_tests_options=$(whiptail --title "TESTS SUITE" --menu " " 20 78 10 "${tests_options[@]}" 3>&1 1>&2 2>&3)
-  
+
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -72,6 +73,10 @@ function tests_suite_menu() {
     fi
     if [[ ${chosen_tests_options} == *"10"* ]]; then
       test_display_functions
+
+    fi
+    if [[ ${chosen_tests_options} == *"11"* ]]; then
+      test_docker_helper_functions
 
     fi
 
