@@ -25,9 +25,12 @@ function test_docker_helper_functions() {
     docker_wordpress_install "/var/www/dockertest.broobe.net" "dockertest.broobe.net" "dockertest" "prod" "broobe.net" ""
 
     # Docker MySQL database import
-    docker_mysql_database_import "mysql" "db_user" "db_user_pass" "db_name" "assets/dump.sql"
+    docker_mysql_database_import "mariadb_dockertest" "db_user" "db_user_pass" "db_name" "assets/dump.sql"
 
     # Docker MySQL database backup
-    docker_mysql_database_backup "mysql" "db_user" "db_user_pass" "db_name" "assets/dump.sql"
+    docker_mysql_database_backup "mariadb_dockertest" "db_user" "db_user_pass" "db_name" "assets/dump.sql"
+
+    # Docker list images
+    docker_list_images
 
 }
