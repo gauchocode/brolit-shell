@@ -21,6 +21,13 @@
 
 function test_docker_helper_functions() {
 
+    # Docker Wordpress Install
     docker_wordpress_install "/var/www/dockertest.example.net" "dockertest.example.net" "dockertest" "prod" "example.net" ""
+
+    # Docker MySQL database import
+    docker_mysql_database_import "mysql" "db_user" "db_user_pass" "db_name" "assets/dump.sql"
+
+    # Docker MySQL database backup
+    docker_mysql_database_backup "mysql" "db_user" "db_user_pass" "db_name" "assets/dump.sql"
 
 }
