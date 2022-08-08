@@ -287,6 +287,7 @@ function docker_wordpress_install() {
     cp "${BROLIT_MAIN_DIR}/config/docker-compose/wordpress/docker-compose.yml" "${project_path}"
     # Replace variables on .env file
     env_file="${project_path}/.env"
+    compose_file="${project_path}/docker-compose.yml"
     # Setting PROJECT_NAME
     log_event "debug" "Setting PROJECT_NAME=${project_name}" "false"
     sed -ie "s|^PROJECT_NAME=.*$|PROJECT_NAME=${project_name}|g" "${env_file}"
@@ -301,8 +302,8 @@ function docker_wordpress_install() {
     sed -ie "s|^PHPMYADMIN_DOMAIN=.*$|PHPMYADMIN_DOMAIN=db.${project_domain}|g" "${env_file}"
 
     # Run docker-compose commands
-    docker-compose pull
-    docker-compose up -d
+    docker-compose -f "${compose_file}" pull
+    docker-compose -f "${compose_file}" up -d
 
     # TODO:
     ## 1- Create new nginx with proxy config
