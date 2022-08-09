@@ -1,52 +1,50 @@
 {
-    "FIREWALL": {
-        "ufw": [
-            {
-                "status": "enabled",
-                "config": [
-                    {
-                        "ssh": "allow",
-                        "http": "allow",
-                        "https": "allow",
-                        "81": "",
-                        "88": "",
-                        "465": "",
-                        "587": "",
-                        "2812": "",
-                        "3022": "",
-                        "3000": "",
-                        "8000": "",
-                        "8006": "",
-                        "8080": "",
-                        "8088": "",
-                        "9000": "",
-                        "9001": "",
-                        "9443": "",
-                        "19999": ""
-                    }
-                ]
-            }
-        ],
-        "fail2ban": [
-            {
-                "status": "enabled",
-                "config": [
-                    {
-                        "bandtime": "600",
-                        "findtime": "600",
-                        "maxretry": "3",
-                        "ignoreip": [
-                            "127.0.0.1",
-                            ""
-                        ],
-                        "destemail": "",
-                        "sendername": "Fail2Ban",
-                        "banaction": "iptables-multiport",
-                        "mta": "sendmail",
-                        "protocol": "tcp"
-                    }
-                ]
-            }
-        ]
-    }
+    "ufw": [
+        {
+            "status": "enabled",
+            "config": [
+                {
+                    "ssh": "allow",
+                    "http": "allow",
+                    "https": "allow",
+                    "81": "",
+                    "88": "",
+                    "465": "",
+                    "587": "",
+                    "2812": "",
+                    "3022": "",
+                    "3000": "",
+                    "8000": "",
+                    "8006": "",
+                    "8080": "",
+                    "8088": "",
+                    "9000": "",
+                    "9001": "",
+                    "9443": "",
+                    "19999": ""
+                }
+            ]
+        }
+    ],
+    "fail2ban": [
+        {
+            "status": "enabled",
+            "config": [
+                {
+                    "bandtime": "600",
+                    "findtime": "600",
+                    "maxretry": "3",
+                    "ignoreip": [
+                        "127.0.0.1",
+                        ""
+                    ],
+                    "destemail": "",
+                    "sendername": "Fail2Ban",
+                    "banaction": "iptables-multiport",
+                    "mta": "sendmail",
+                    "protocol": "tcp"
+                }
+            ]
+        }
+    ]
 }
