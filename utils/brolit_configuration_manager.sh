@@ -344,6 +344,8 @@ function _brolit_configuration_load_backup_config() {
     declare -g BACKUP_CONFIG_PROJECTS_STATUS
     declare -g BACKUP_CONFIG_DATABASES_STATUS
     declare -g BACKUP_CONFIG_SERVER_CFG_STATUS
+    declare -g BACKUP_CONFIG_ADDITIONAL_DIRS
+    declare -g BACKUP_CONFIG_FOLLOW_SYMLINKS
     declare -g BACKUP_CONFIG_COMPRESSION_TYPE
     declare -g BACKUP_CONFIG_COMPRESSION_EXTENSION
 
@@ -357,8 +359,12 @@ function _brolit_configuration_load_backup_config() {
         log_event "error" "Missing required config vars for backup retention" "true"
         exit 1
     fi
+    BACKUP_CONFIG_FOLLOW_SYMLINKS="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].follow_symlinks")"
     IGNORED_PROJECTS_LIST="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].ignored[]")"
     EXCLUDED_FILES_LIST="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].excluded_on_tar[]")"
+
+    ## Backup additional directories
+    BACKUP_CONFIG_ADDITIONAL_DIRS="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].additional_dirs[]")"
 
     ## Backup config databases
     BACKUP_CONFIG_DATABASES_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.config[].databases[].status")"
@@ -401,10 +407,9 @@ function _brolit_configuration_load_backup_config() {
 
     fi
 
-    export BACKUP_CONFIG_PROJECTS_STATUS BACKUP_CONFIG_DATABASES_STATUS BACKUP_CONFIG_SERVER_CFG_STATUS BACKUP_CONFIG_COMPRESSION_TYPE BACKUP_CONFIG_COMPRESSION_EXTENSION
-
+    export BACKUP_CONFIG_PROJECTS_STATUS BACKUP_CONFIG_DATABASES_STATUS BACKUP_CONFIG_SERVER_CFG_STATUS BACKUP_CONFIG_ADDITIONAL_DIRS
+    export BACKUP_CONFIG_FOLLOW_SYMLINKS BACKUP_CONFIG_COMPRESSION_TYPE BACKUP_CONFIG_COMPRESSION_EXTENSION
     export IGNORED_PROJECTS_LIST EXCLUDED_FILES_LIST EXCLUDED_DATABASES_LIST
-    #export BACKUP_CONFIG_PROJECTS_EXCLUDE_LIST BACKUP_CONFIG_DATABASES_EXCLUDE_LIST
 
 }
 
@@ -576,27 +581,27 @@ function _brolit_configuration_load_firewall_ufw() {
     local server_config_file="${1}"
 
     # Globals
-    declare -g FIREWALL_UFW_STATUS
-    declare -g FIREWALL_UFW_APP_LIST_SSH
+    declare -g SECURITY_UFW_STATUS
+    declare -g SECURITY_UFW_APP_LIST_SSH
 
-    FIREWALL_UFW_STATUS="$(json_read_field "${server_config_file}" "FIREWALL.ufw[].status")"
+    SECURITY_UFW_STATUS="$(json_read_field "${server_config_file}" "ufw[].status")"
 
-    if [[ ${FIREWALL_UFW_STATUS} == "enabled" ]]; then
+    if [[ ${SECURITY_UFW_STATUS} == "enabled" ]]; then
 
         # Mandatory
-        FIREWALL_UFW_APP_LIST_SSH="$(json_read_field "${server_config_file}" "FIREWALL.ufw[].config[].ssh")"
+        SECURITY_UFW_APP_LIST_SSH="$(json_read_field "${server_config_file}" "ufw[].config[].ssh")"
 
         # Check if all required vars are set
-        if [[ -z "${FIREWALL_UFW_APP_LIST_SSH}" ]]; then
+        if [[ -z "${SECURITY_UFW_APP_LIST_SSH}" ]]; then
             log_event "error" "Missing required config vars for firewall" "true"
             exit 1
         fi
 
     fi
 
-    _brolit_configuration_firewall_ufw
+    _brolit_configuration_firewall_ufw "${server_config_file}"
 
-    export FIREWALL_UFW_APP_LIST_SSH FIREWALL_UFW_STATUS
+    export SECURITY_UFW_APP_LIST_SSH SECURITY_UFW_STATUS
 
 }
 
@@ -617,7 +622,7 @@ function _brolit_configuration_load_firewall_fail2ban() {
     # Globals
     declare -g FIREWALL_FAIL2BAN_STATUS
 
-    FIREWALL_FAIL2BAN_STATUS="$(json_read_field "${server_config_file}" "FIREWALL.fail2ban[].status")"
+    FIREWALL_FAIL2BAN_STATUS="$(json_read_field "${server_config_file}" "fail2ban[].status")"
 
     if [[ ${FIREWALL_FAIL2BAN_STATUS} == "enabled" ]]; then
 
@@ -1732,8 +1737,10 @@ function _brolit_configuration_load_custom_pkgs() {
 
 function _brolit_configuration_firewall_ufw() {
 
+    local server_config_file="${1}"
+
     # Check if firewall configuration in config file
-    if [[ ${FIREWALL_UFW_STATUS} == "enabled" ]]; then
+    if [[ ${SECURITY_UFW_STATUS} == "enabled" ]]; then
 
         # Check firewall status
         firewall_status
@@ -1746,7 +1753,7 @@ function _brolit_configuration_firewall_ufw() {
         fi
 
         # Get all listed apps
-        app_list="$(json_read_field "${server_config_file}" "FIREWALL.ufw[].config[]")"
+        app_list="$(json_read_field "${server_config_file}" "ufw[].config[]")"
 
         # Get keys
         app_list_keys="$(jq -r 'keys[]' <<<"${app_list}" | sed ':a; N; $!ba; s/\n/ /g')"
@@ -1780,7 +1787,7 @@ function _brolit_configuration_firewall_ufw() {
     fi
 
     # Check if firewall configuration in config file
-    if [[ ${FIREWALL_UFW_STATUS} == "disabled" ]]; then
+    if [[ ${SECURITY_UFW_STATUS} == "disabled" ]]; then
 
         # Check firewall status
         firewall_status
@@ -2069,17 +2076,20 @@ function brolit_configuration_load() {
     _brolit_configuration_load_telegram "${server_config_file}"
 
     ## SECURITY
-    SECURITY_STATUS="$(json_read_field "${server_config_file}" "SECURITY.firewall[].status")"
+    SECURITY_STATUS="$(json_read_field "${server_config_file}" "SECURITY.status")"
     if [[ ${SECURITY_STATUS} == "enabled" ]]; then
         # Firewall config file
-        firewall_config_file="$(json_read_field "${server_config_file}" "SECURITY.firewall[].config[].file")"
+        firewall_config_file="$(json_read_field "${server_config_file}" "SECURITY.config[].file")"
         if [[ ! -f ${firewall_config_file} ]]; then
             cp "${BROLIT_MAIN_DIR}/config/brolit/brolit_firewall_conf.json" "${firewall_config_file}"
         fi
         # Load config
+        BROLIT_SECURITY_CONFIG_FILE="${firewall_config_file}"
         # TODO: needs refactor
-        _brolit_configuration_load_firewall_ufw "${firewall_config_file}"
-        _brolit_configuration_load_firewall_fail2ban "${firewall_config_file}"
+        _brolit_configuration_load_firewall_ufw "${BROLIT_SECURITY_CONFIG_FILE}"
+        _brolit_configuration_load_firewall_fail2ban "${BROLIT_SECURITY_CONFIG_FILE}"
+
+        export BROLIT_SECURITY_CONFIG_FILE
     fi
 
     ## DNS

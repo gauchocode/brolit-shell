@@ -75,7 +75,7 @@ function backup_server_config() {
         backup_file="${bk_sup_type}-${backup_type}-files-${NOW}-weekly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
         old_backup_file="${bk_sup_type}-${backup_type}-files-${WEEKSAGO}-weekly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
       else
-        if [[ ${WEEK_DAY} -eq 7 && ${BACKUP_RETENTION_KEEP_WEEKLY} -gt 0 ||
+        if [[ ${WEEK_DAY} -eq 7 && ${BACKUP_RETENTION_KEEP_WEEKLY} -gt 0 || \
           ${MONTH_DAY} -eq 2 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
           ## The day after a week day or month day
           backup_keep_daily=$((BACKUP_RETENTION_KEEP_DAILY - 1))
@@ -491,26 +491,14 @@ function backup_all_projects_files() {
 
 function backup_all_files() {
 
-  ## MAILCOW FILES
-  if [[ ${MAILCOW_BK} == true ]]; then
-
-    if [[ ! -d ${MAILCOW_TMP_BK} ]]; then
-
-      log_event "info" "Folder ${MAILCOW_TMP_BK} doesn't exist. Creating now ..." "false"
-
-      mkdir -p "${MAILCOW_TMP_BK}"
-
-    fi
-
-    backup_mailcow "${MAILCOW}"
-
-  fi
-
   ## SERVER CONFIG FILES
   backup_all_server_configs
 
-  ## PROJECTS_PATH FILES
+  ## PROJECTS FILES
   backup_all_projects_files
+
+  ## ADDITIONAL DIRS
+  backup_additional_dirs
 
 }
 
@@ -1027,5 +1015,77 @@ function backup_project() {
     log_event "error" "Something went wrong making a project backup" "false"
 
   fi
+
+}
+
+################################################################################
+# Make additional directories Backup
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 if ok, 1 if error
+################################################################################
+
+function backup_additional_dirs() {
+
+  local backup_file_size
+  local directory_name
+  local working_sites_directories
+
+  local count_total_dirs=0
+  local backuped_files_index=0
+  local backuped_directory_index=0
+
+  log_subsection "Backup Additional Directories"
+
+  # Get all directories
+  working_sites_directories="$(get_all_directories "${BACKUP_CONFIG_ADDITIONAL_DIRS}")"
+
+  # Get length of ${working_sites_directories}
+  count_total_dirs="$(find "${BACKUP_CONFIG_ADDITIONAL_DIRS}" -maxdepth 1 -type d -printf '.' | wc -c)"
+  count_total_dirs="$((count_total_dirs - 1))"
+
+  # Log
+  display --indent 6 --text "- Directories found" --result "${count_total_dirs}" --color WHITE
+  log_event "info" "Found ${count_total_dirs} directories" "false"
+  log_break "true"
+
+  for j in ${working_sites_directories}; do
+
+    directory_name="$(basename "${j}")"
+
+    log_event "info" "Processing [${directory_name}] ..." "false"
+
+    backup_file_size="$(backup_project_files "other" "${PROJECTS_PATH}" "${directory_name}")"
+
+    if [[ -n ${backup_file_size} ]]; then
+
+      backuped_files_list[$backuped_files_index]="${directory_name}"
+      backuped_files_sizes_list+=("${backup_file_size}")
+      backuped_files_index=$((backuped_files_index + 1))
+
+    else
+
+      ERROR=true
+      ERROR_MSG="Error creating backup file for site: ${directory_name}"
+      #log_event "error" "${ERROR_MSG}" "false"
+
+    fi
+
+    log_break "true"
+
+    backuped_directory_index=$((backuped_directory_index + 1))
+
+    log_event "info" "Processed ${backuped_directory_index} of ${count_total_dirs} directories" "false"
+
+  done
+
+  # Deleting old backup files
+  rm --recursive --force "${BROLIT_TMP_DIR:?}/${NOW}"
+
+  # Configure Files Backup Section for Email Notification
+  mail_files_backup_section "${ERROR}" "${ERROR_MSG}" "${backuped_files_list[@]}" "${backuped_files_sizes_list[@]}"
 
 }

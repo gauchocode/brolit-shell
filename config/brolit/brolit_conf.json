@@ -2,7 +2,7 @@
     "BROLIT_SETUP": {
         "config": [
             {
-                "version": "3.10.2",
+                "version": "3.10.3",
                 "debug": "true",
                 "quiet": "false",
                 "skip_test": "true",
@@ -37,6 +37,7 @@
                 "projects": [
                     {
                         "status": "enabled",
+                        "follow_symlinks": "true",
                         "ignored": [
                             "html"
                         ],
@@ -48,6 +49,11 @@
                         ]
                     }
                 ],
+                "server_cfg": "enabled",
+                "additional_dirs": [
+                    "",
+                    ""
+                ],
                 "databases": [
                     {
                         "status": "enabled",
@@ -56,7 +62,6 @@
                         ]
                     }
                 ],
-                "server_cfg": "enabled",
                 "compression_type": "lbzip2",
                 "retention": [
                     {
@@ -160,14 +165,10 @@
         ]
     },
     "SECURITY": {
-        "firewall": [
+        "status": "disabled",
+        "config": [
             {
-                "status": "disabled",
-                "config": [
-                    {
-                        "file": "/root/.brolit_firewall_conf.json"
-                    }
-                ]
+                "file": "/root/.brolit_firewall_conf.json"
             }
         ]
     },
