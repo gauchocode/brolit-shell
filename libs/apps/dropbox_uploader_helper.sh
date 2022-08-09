@@ -216,16 +216,16 @@ function dropbox_download() {
 
         clear_previous_lines "1"
 
-        display --indent 6 --text "- Downloading backup from Dropbox" --result "DONE" --color GREEN
+        display --indent 6 --text "- Downloading file from Dropbox" --result "DONE" --color GREEN
         log_event "info" "${file_to_download} downloaded" "false"
 
         return 0
 
     else
 
-        clear_previous_lines "2"
+        clear_previous_lines "1"
 
-        display --indent 6 --text "- Downloading backup from Dropbox" --result "FAIL" --color RED
+        display --indent 6 --text "- Downloading file from Dropbox" --result "FAIL" --color RED
         display --indent 8 --text "Please read log file" --tcolor RED
 
         log_event "error" "Can't download file ${file_to_download} from dropbox." "false"
