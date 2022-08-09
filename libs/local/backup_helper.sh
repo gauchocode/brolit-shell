@@ -22,6 +22,7 @@ function _get_backup_filename() {
 
   local backup_prefix_name="${1}"
   local backup_date="${2}"
+  local backup_extension=${3}
 
   local daysago
   local backup_file
@@ -30,27 +31,27 @@ function _get_backup_filename() {
   local daysago
 
   # Backups file names
-  if [[ ${MONTH_DAY} -eq 1 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
+  if [[ $((10#$MONTH_DAY)) -eq 1 && $((10#$BACKUP_RETENTION_KEEP_MONTHLY)) -gt 0 ]]; then
     ## On first month day do
-    backup_file="${bk_sup_type}-${backup_type}-files-${NOW}-monthly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-    backup_file_old="${bk_sup_type}-${backup_type}-files-${MONTHSAGO}-monthly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+    backup_file="${backup_prefix_name}_${NOW}-monthly.${backup_extension}"
+    backup_file_old="${backup_prefix_name}_${MONTHSAGO}-monthly.${backup_extension}"
   else
     ## On saturdays do
-    if [[ ${WEEK_DAY} -eq 6 && ${BACKUP_RETENTION_KEEP_WEEKLY} -gt 0 ]]; then
-      backup_file="${bk_sup_type}-${backup_type}-files-${NOW}-weekly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-      backup_file_old="${bk_sup_type}-${backup_type}-files-${WEEKSAGO}-weekly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+    if [[ $((10#$WEEK_DAY)) -eq 6 && $((10#$BACKUP_RETENTION_KEEP_WEEKLY)) -gt 0 ]]; then
+      backup_file="${backup_prefix_name}_${NOW}-weekly.${backup_extension}"
+      backup_file_old="${backup_prefix_name}_${WEEKSAGO}-weekly.${backup_extension}"
     else
-      if [[ ${WEEK_DAY} -eq 7 && ${BACKUP_RETENTION_KEEP_WEEKLY} -gt 0 || \
-        ${MONTH_DAY} -eq 2 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
+      if [[ $((10#$WEEK_DAY)) -eq 7 && $((10#$BACKUP_RETENTION_KEEP_WEEKLY)) -gt 0 || \
+        $((10#$MONTH_DAY)) -eq 2 && $((10#$BACKUP_RETENTION_KEEP_MONTHLY)) -gt 0 ]]; then
         ## The day after a week day or month day
         backup_keep_daily=$((BACKUP_RETENTION_KEEP_DAILY - 1))
         daysago="$(date --date="${backup_keep_daily} days ago" +"%Y-%m-%d")"
-        backup_file="${bk_sup_type}-${backup_type}-files-${NOW}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-        backup_file_old="${bk_sup_type}-${backup_type}-files-${daysago}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+        backup_file="${backup_prefix_name}_${NOW}.${backup_extension}"
+        backup_file_old="${backup_prefix_name}_${daysago}.${backup_extension}"
       else
         ## On any regular day do
-        backup_file="${bk_sup_type}-${backup_type}-files-${NOW}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-        backup_file_old="${bk_sup_type}-${backup_type}-files-${DAYSAGO}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+        backup_file="${backup_prefix_name}_${NOW}.${backup_extension}"
+        backup_file_old="${backup_prefix_name}_${DAYSAGO}.${backup_extension}"
       fi
     fi
   fi
@@ -120,8 +121,8 @@ function backup_server_config() {
   if [[ -n ${backup_path} ]]; then
 
     backup_prefix_name="${bk_sup_type}-${backup_type}-files"
-    backup_file="$(_get_backup_filename "${backup_prefix_name}" "")"
-    backup_file_old="$(_get_backup_filename "${backup_prefix_name}" "old")"
+    backup_file="$(_get_backup_filename "${backup_prefix_name}" "actual" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
+    backup_file_old="$(_get_backup_filename "${backup_prefix_name}" "old" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
 
     # Log
     display --indent 6 --text "- Files backup for ${YELLOW}${bk_sup_type}${ENDCOLOR}"
@@ -318,27 +319,17 @@ function backup_mailcow() {
   local backup_type="mailcow"
   local mailcow_backup_result
   local storage_path
+  local backup_prefix_name
+  local backup_file
+  local backup_file_old
 
   log_subsection "Mailcow Backup"
 
   if [[ -n ${MAILCOW_DIR} ]]; then
 
-    # Backups file names
-    if [[ ${MONTH_DAY} -eq 1 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
-      ## On first month day do
-      backup_file="${backup_type}_files-${NOW}-monthly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-      old_backup_file="${backup_type}_files-${MONTHSAGO}-monthly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-    else
-      ## On saturdays do
-      if [[ ${WEEK_DAY} -eq 6 && ${BACKUP_RETENTION_KEEP_WEEKLY} -gt 0 ]]; then
-        backup_file="${backup_type}_files-${NOW}-weekly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-        old_backup_file="${backup_type}_files-${WEEKSAGO}-weekly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-      else
-        ## On any regular day do
-        backup_file="${backup_type}_files-${NOW}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-        old_backup_file="${backup_type}_files-${DAYSAGO}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-      fi
-    fi
+    backup_prefix_name="${backup_type}-files"
+    backup_file="$(_get_backup_filename "${backup_prefix_name}" "actual" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
+    backup_file_old="$(_get_backup_filename "${backup_prefix_name}" "old" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
 
     log_event "info" "Trying to make a backup of ${MAILCOW_DIR} ..." "false"
     display --indent 6 --text "- Making ${YELLOW}${MAILCOW_DIR}${ENDCOLOR} backup" --result "DONE" --color GREEN
@@ -392,7 +383,7 @@ function backup_mailcow() {
         if [[ ${exitstatus} -eq 0 ]]; then
 
           # Remove old backup
-          storage_delete_backup "${storage_path}/${old_backup_file}" "false"
+          storage_delete_backup "${storage_path}/${backup_file_old}" "false"
 
           # Remove old backups from server
           rm --recursive --force "${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION:?}"
@@ -554,26 +545,15 @@ function backup_project_files() {
   local directory_to_backup="${3}"
 
   local backup_file
-  local old_backup_file
+  local backup_file_old
+  local backup_prefix_name
   local storage_path
   local exclude_parameters
 
   # Backups file names
-  if [[ ${MONTH_DAY} -eq 1 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
-    ## On first month day do
-    backup_file="${directory_to_backup}_${backup_type}-files_${NOW}-monthly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-    old_backup_file="${directory_to_backup}_${backup_type}-files_${MONTHSAGO}-monthly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-  else
-    ## On saturdays do
-    if [[ ${WEEK_DAY} -eq 6 && ${BACKUP_RETENTION_KEEP_WEEKLY} -gt 0 ]]; then
-      backup_file="${directory_to_backup}_${backup_type}-files_${NOW}-weekly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-      old_backup_file="${directory_to_backup}_${backup_type}-files_${WEEKSAGO}-weekly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-    else
-      ## On any regular day do
-      backup_file="${directory_to_backup}_${backup_type}-files_${NOW}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-      old_backup_file="${directory_to_backup}_${backup_type}-files_${DAYSAGO}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-    fi
-  fi
+  backup_prefix_name="${directory_to_backup}_${backup_type}-files"
+  backup_file="$(_get_backup_filename "${backup_prefix_name}" "actual" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
+  backup_file_old="$(_get_backup_filename "${backup_prefix_name}" "old" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
 
   # Create directory structure
   storage_create_dir "${SERVER_NAME}"
@@ -621,7 +601,7 @@ function backup_project_files() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         # Delete old backup from Dropbox
-        storage_delete_backup "${remote_path}/${old_backup_file}"
+        storage_delete_backup "${remote_path}/${backup_file_old}"
 
         # Delete temp backup
         rm --force "${BROLIT_TMP_DIR}/${NOW}/${backup_file}"
@@ -876,28 +856,15 @@ function backup_project_database() {
 
   local dump_file
   local backup_file
+  local backup_file_old
 
   log_event "info" "Creating new database backup of '${database}'" "false"
 
   # Backups file names
-  if [[ ${MONTH_DAY} -eq 1 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
-    ## On first month day do
-    dump_file="${database}_database_${NOW}-monthly.sql"
-    backup_file="${database}_database_${NOW}-monthly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-    old_backup_file="${database}_database_${MONTHSAGO}-monthly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-  else
-    ## On saturdays do
-    if [[ ${WEEK_DAY} -eq 6 && ${BACKUP_RETENTION_KEEP_WEEKLY} -gt 0 ]]; then
-      dump_file="${database}_database_${NOW}-weekly.sql"
-      backup_file="${database}_database_${NOW}-weekly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-      old_backup_file="${database}_database_${WEEKSAGO}-weekly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-    else
-      ## On any regular day do
-      dump_file="${database}_database_${NOW}.sql"
-      backup_file="${database}_database_${NOW}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-      old_backup_file="${database}_database_${DAYSAGO}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-    fi
-  fi
+  backup_prefix_name="${database}_database"
+  dump_file="$(_get_backup_filename "${backup_prefix_name}" "actual" "sql")"
+  backup_file="$(_get_backup_filename "${backup_prefix_name}" "actual" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
+  backup_file_old="$(_get_backup_filename "${backup_prefix_name}" "old" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
 
   # Database engine
   if [[ ${db_engine} == "mysql" ]]; then
@@ -937,7 +904,7 @@ function backup_project_database() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         # Delete old backup from storage
-        storage_delete_backup "/${SERVER_NAME}/projects-online/database/${database}/${old_backup_file}"
+        storage_delete_backup "/${SERVER_NAME}/projects-online/database/${database}/${backup_file_old}"
 
         # Delete local temp files
         rm --force "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
@@ -1065,6 +1032,7 @@ function backup_additional_dirs() {
 
   local backup_file_size
   local directory_name
+  local directory_path
   local working_sites_directories
 
   local count_total_dirs=0
@@ -1074,24 +1042,27 @@ function backup_additional_dirs() {
   log_subsection "Backup Additional Directories"
 
   # Get all directories
-  working_sites_directories="$(get_all_directories "${BACKUP_CONFIG_ADDITIONAL_DIRS}")"
+  working_sites_directories="${BACKUP_CONFIG_ADDITIONAL_DIRS}"
 
   # Get length of ${working_sites_directories}
-  count_total_dirs="$(find "${BACKUP_CONFIG_ADDITIONAL_DIRS}" -maxdepth 1 -type d -printf '.' | wc -c)"
-  count_total_dirs="$((count_total_dirs - 1))"
+  count_total_dirs="$(wc -w <<< "$working_sites_directories")"
 
   # Log
   display --indent 6 --text "- Directories found" --result "${count_total_dirs}" --color WHITE
   log_event "info" "Found ${count_total_dirs} directories" "false"
   log_break "true"
 
+  # Creating tmp dir
+  mkdir -p "${BROLIT_TMP_DIR}/${NOW}"
+
   for j in ${working_sites_directories}; do
 
     directory_name="$(basename "${j}")"
+    directory_path="$(dirname "${j}")"
 
     log_event "info" "Processing [${directory_name}] ..." "false"
 
-    backup_file_size="$(backup_project_files "other" "${PROJECTS_PATH}" "${directory_name}")"
+    backup_file_size="$(backup_project_files "other" "${directory_path}" "${directory_name}")"
 
     if [[ -n ${backup_file_size} ]]; then
 
