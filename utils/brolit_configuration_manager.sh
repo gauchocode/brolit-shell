@@ -364,7 +364,7 @@ function _brolit_configuration_load_backup_config() {
     EXCLUDED_FILES_LIST="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].excluded_on_tar[]")"
 
     ## Backup additional directories
-    BACKUP_CONFIG_ADDITIONAL_DIRS="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].additional_dirs[]")"
+    BACKUP_CONFIG_ADDITIONAL_DIRS="$(json_read_field "${server_config_file}" "BACKUPS.config[].additional_dirs[]")"
 
     ## Backup config databases
     BACKUP_CONFIG_DATABASES_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.config[].databases[].status")"
