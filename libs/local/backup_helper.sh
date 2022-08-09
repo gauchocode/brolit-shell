@@ -9,6 +9,61 @@
 ################################################################################
 
 ################################################################################
+# Get Backup filename
+#
+# Arguments:
+#  $1 = ${backup_prefix_name}
+#
+# Outputs:
+#   ${backup_filename}
+################################################################################
+
+function _get_backup_filename() {
+
+  local backup_prefix_name="${1}"
+  local backup_date="${2}"
+
+  local daysago
+  local backup_file
+  local backup_file_old
+  local backup_keep_daily
+  local daysago
+
+  # Backups file names
+  if [[ ${MONTH_DAY} -eq 1 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
+    ## On first month day do
+    backup_file="${bk_sup_type}-${backup_type}-files-${NOW}-monthly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+    backup_file_old="${bk_sup_type}-${backup_type}-files-${MONTHSAGO}-monthly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+  else
+    ## On saturdays do
+    if [[ ${WEEK_DAY} -eq 6 && ${BACKUP_RETENTION_KEEP_WEEKLY} -gt 0 ]]; then
+      backup_file="${bk_sup_type}-${backup_type}-files-${NOW}-weekly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+      backup_file_old="${bk_sup_type}-${backup_type}-files-${WEEKSAGO}-weekly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+    else
+      if [[ ${WEEK_DAY} -eq 7 && ${BACKUP_RETENTION_KEEP_WEEKLY} -gt 0 || \
+        ${MONTH_DAY} -eq 2 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
+        ## The day after a week day or month day
+        backup_keep_daily=$((BACKUP_RETENTION_KEEP_DAILY - 1))
+        daysago="$(date --date="${backup_keep_daily} days ago" +"%Y-%m-%d")"
+        backup_file="${bk_sup_type}-${backup_type}-files-${NOW}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+        backup_file_old="${bk_sup_type}-${backup_type}-files-${daysago}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+      else
+        ## On any regular day do
+        backup_file="${bk_sup_type}-${backup_type}-files-${NOW}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+        backup_file_old="${bk_sup_type}-${backup_type}-files-${DAYSAGO}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+      fi
+    fi
+  fi
+  # Return
+  if [[ ${backup_date} == "old" ]]; then
+    echo "${backup_file_old}"
+  else
+    echo "${backup_file}"
+  fi
+
+}
+
+################################################################################
 # Get Backup Date
 #
 # Arguments:
@@ -55,7 +110,7 @@ function backup_server_config() {
 
   local got_error
   local backup_file
-  local old_backup_file
+  local backup_file_old
   local daysago
   local remote_path
   local backup_keep_daily
@@ -64,31 +119,9 @@ function backup_server_config() {
 
   if [[ -n ${backup_path} ]]; then
 
-    # Backups file names
-    if [[ ${MONTH_DAY} -eq 1 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
-      ## On first month day do
-      backup_file="${bk_sup_type}-${backup_type}-files-${NOW}-monthly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-      old_backup_file="${bk_sup_type}-${backup_type}-files-${MONTHSAGO}-monthly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-    else
-      ## On saturdays do
-      if [[ ${WEEK_DAY} -eq 6 && ${BACKUP_RETENTION_KEEP_WEEKLY} -gt 0 ]]; then
-        backup_file="${bk_sup_type}-${backup_type}-files-${NOW}-weekly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-        old_backup_file="${bk_sup_type}-${backup_type}-files-${WEEKSAGO}-weekly.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-      else
-        if [[ ${WEEK_DAY} -eq 7 && ${BACKUP_RETENTION_KEEP_WEEKLY} -gt 0 || \
-          ${MONTH_DAY} -eq 2 && ${BACKUP_RETENTION_KEEP_MONTHLY} -gt 0 ]]; then
-          ## The day after a week day or month day
-          backup_keep_daily=$((BACKUP_RETENTION_KEEP_DAILY - 1))
-          daysago="$(date --date="${backup_keep_daily} days ago" +"%Y-%m-%d")"
-          backup_file="${bk_sup_type}-${backup_type}-files-${NOW}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-          old_backup_file="${bk_sup_type}-${backup_type}-files-${daysago}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-        else
-          ## On any regular day do
-          backup_file="${bk_sup_type}-${backup_type}-files-${NOW}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-          old_backup_file="${bk_sup_type}-${backup_type}-files-${DAYSAGO}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-        fi
-      fi
-    fi
+    backup_prefix_name="${bk_sup_type}-${backup_type}-files"
+    backup_file="$(_get_backup_filename "${backup_prefix_name}" "")"
+    backup_file_old="$(_get_backup_filename "${backup_prefix_name}" "old")"
 
     # Log
     display --indent 6 --text "- Files backup for ${YELLOW}${bk_sup_type}${ENDCOLOR}"
@@ -121,7 +154,7 @@ function backup_server_config() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         # Deleting old backup file
-        storage_delete_backup "${remote_path}/${old_backup_file}"
+        storage_delete_backup "${remote_path}/${backup_file_old}"
 
         # Deleting tmp backup file
         rm --force "${BROLIT_TMP_DIR}/${NOW}/${backup_file}"
