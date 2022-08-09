@@ -151,8 +151,9 @@ function restore_backup_from_local() {
       # Moving project files to brolit temp directory
       mv "${basepath}/${project_domain}" "${BROLIT_TMP_DIR}"
 
-      # Project domain asked inside this function again (need a refactor)
-      restore_backup_files "${project_domain}"
+      # TODO: Project domain asked inside this function again (need a refactor)
+      # Restore site files
+      project_domain="$(restore_backup_files "${project_domain}")"
 
     fi
 
@@ -636,10 +637,9 @@ function restore_config_files_from_dropbox() {
     display --indent 6 --text "- Downloading config backup from dropbox"
 
     dropbox_download "${chosen_type_path}/${chosen_config_type}/${chosen_config_bk}" "${BROLIT_MAIN_DIR}/tmp"
-    #dropbox_output="$(${DROPBOX_UPLOADER} download "${chosen_type_path}/${chosen_config_type}/${chosen_config_bk}" 1>&2)"
 
-    clear_previous_lines "1"
-    display --indent 6 --text "- Downloading config backup from dropbox" --result "DONE" --color GREEN
+    #clear_previous_lines "1"
+    #display --indent 6 --text "- Downloading config backup from dropbox" --result "DONE" --color GREEN
 
     # Restore files
     mkdir -p "${chosen_config_type}"
@@ -1073,7 +1073,9 @@ function restore_type_selection_from_storage() {
             # site
 
             # At this point chosen_project is the new project domain
-            restore_backup_files "${chosen_project}"
+            # TODO: Project domain asked inside this function again (need a refactor)
+            # Restore site files
+            project_domain="$(restore_backup_files "${chosen_project}")"
 
           fi
 
