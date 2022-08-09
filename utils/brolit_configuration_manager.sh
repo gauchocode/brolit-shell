@@ -2073,6 +2073,9 @@ function brolit_configuration_load() {
     if [[ ${SECURITY_STATUS} == "enabled" ]]; then
         # Firewall config file
         firewall_config_file="$(json_read_field "${server_config_file}" "SECURITY.firewall[].config[].file")"
+        if [[ ! -f ${firewall_config_file} ]]; then
+            cp "${BROLIT_MAIN_DIR}/config/brolit/brolit_firewall_conf.json" "${firewall_config_file}"
+        fi
         # Load config
         # TODO: needs refactor
         _brolit_configuration_load_firewall_ufw "${firewall_config_file}"
