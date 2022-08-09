@@ -32,12 +32,12 @@ function firewall_enable() {
 
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        FIREWALL_UFW_STATUS="enabled"
+        SECURITY_UFW_STATUS="enabled"
 
-        json_write_field "${BROLIT_CONFIG_FILE}" "FIREWALL.ufw[].status" "${FIREWALL_UFW_STATUS}"
+        json_write_field "${BROLIT_SECURITY_CONFIG_FILE}" "ufw[].status" "${SECURITY_UFW_STATUS}"
 
         # new global value ("enabled")
-        export FIREWALL_UFW_STATUS
+        export SECURITY_UFW_STATUS
 
         # Log
         log_event "info" "Activating firewall" "false"
@@ -77,12 +77,12 @@ function firewall_disable() {
 
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        FIREWALL_UFW_STATUS="disabled"
+        SECURITY_UFW_STATUS="disabled"
 
-        json_write_field "${BROLIT_CONFIG_FILE}" "FIREWALL.ufw[].status" "${FIREWALL_UFW_STATUS}"
+        json_write_field "${BROLIT_SECURITY_CONFIG_FILE}" "ufw[].status" "${SECURITY_UFW_STATUS}"
 
         # new global value ("enabled")
-        export FIREWALL_UFW_STATUS
+        export SECURITY_UFW_STATUS
 
         # Log
         log_event "info" "Deactivating firewall" "false"
@@ -194,7 +194,7 @@ function firewall_allow() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Change brolit_conf.json
-        json_write_field "${BROLIT_CONFIG_FILE}" "FIREWALL.ufw[].config[].${service}" "allow"
+        json_write_field "${BROLIT_SECURITY_CONFIG_FILE}" "ufw[].config[].${service}" "allow"
 
         if [[ ${ufw_output} == *"existing"* ]]; then
 
@@ -250,7 +250,7 @@ function firewall_deny() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Change brolit_conf.json
-        json_write_field "${BROLIT_CONFIG_FILE}" "FIREWALL.ufw[].config[].${service}" "deny"
+        json_write_field "${BROLIT_SECURITY_CONFIG_FILE}" "ufw[].config[].${service}" "deny"
 
         if [[ ${ufw_output} == *"existing"* ]]; then
 
