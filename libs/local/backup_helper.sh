@@ -215,6 +215,9 @@ function backup_all_server_configs() {
   #local -n backuped_config_list
   #local -n backuped_config_sizes_list
 
+  local directory_name
+  local directory_path
+
   local backuped_config_index=0
 
   log_subsection "Backup Server Config"
@@ -224,7 +227,11 @@ function backup_all_server_configs() {
     log_event "warning" "WSERVER is not defined! Skipping webserver config files backup ..." "false"
 
   else
-    nginx_files_backup_result="$(backup_server_config "configs" "nginx" "${WSERVER}" ".")"
+
+    directory_name="$(basename "${WSERVER}")"
+    directory_path="$(dirname "${WSERVER}")"
+
+    nginx_files_backup_result="$(backup_server_config "configs" "nginx" "${directory_path}" "${directory_name}")"
 
     backuped_config_list[$backuped_config_index]="${WSERVER}"
     backuped_config_sizes_list+=("${nginx_files_backup_result}")
@@ -239,7 +246,10 @@ function backup_all_server_configs() {
 
   else
 
-    php_files_backup_result="$(backup_server_config "configs" "php" "${PHP_CONF_DIR}" ".")"
+    directory_name="$(basename "${PHP_CONF_DIR}")"
+    directory_path="$(dirname "${PHP_CONF_DIR}")"
+
+    php_files_backup_result="$(backup_server_config "configs" "php" "${directory_path}" "${directory_name}")"
 
     backuped_config_list[$backuped_config_index]="${PHP_CONF_DIR}"
     backuped_config_sizes_list+=("${php_files_backup_result}")
@@ -254,7 +264,10 @@ function backup_all_server_configs() {
 
   else
 
-    mysql_files_backup_result="$(backup_server_config "configs" "mysql" "${MYSQL_CONF_DIR}" ".")"
+    directory_name="$(basename "${MYSQL_CONF_DIR}")"
+    directory_path="$(dirname "${MYSQL_CONF_DIR}")"
+
+    mysql_files_backup_result="$(backup_server_config "configs" "mysql" "${directory_path}" "${directory_name}")"
 
     backuped_config_list[$backuped_config_index]="${MYSQL_CONF_DIR}"
     backuped_config_sizes_list+=("${mysql_files_backup_result}")
@@ -269,7 +282,10 @@ function backup_all_server_configs() {
 
   else
 
-    le_files_backup_result="$(backup_server_config "configs" "letsencrypt" "${LENCRYPT_CONF_DIR}" ".")"
+    directory_name="$(basename "${LENCRYPT_CONF_DIR}")"
+    directory_path="$(dirname "${LENCRYPT_CONF_DIR}")"
+
+    le_files_backup_result="$(backup_server_config "configs" "letsencrypt" "${directory_path}" "${directory_name}")"
 
     backuped_config_list[$backuped_config_index]="${LENCRYPT_CONF_DIR}"
     backuped_config_sizes_list+=("${le_files_backup_result}")
@@ -284,7 +300,10 @@ function backup_all_server_configs() {
 
   else
 
-    brolit_files_backup_result="$(backup_server_config "configs" "brolit" "${BROLIT_CONFIG_PATH}" ".")"
+    directory_name="$(basename "${BROLIT_CONFIG_PATH}")"
+    directory_path="$(dirname "${BROLIT_CONFIG_PATH}")"
+
+    brolit_files_backup_result="$(backup_server_config "configs" "brolit" "${directory_path}" "${directory_name}")"
 
     backuped_config_list[$backuped_config_index]="${BROLIT_CONFIG_PATH}"
     backuped_config_sizes_list+=("${brolit_files_backup_result}")
@@ -1045,7 +1064,7 @@ function backup_additional_dirs() {
   working_sites_directories="${BACKUP_CONFIG_ADDITIONAL_DIRS}"
 
   # Get length of ${working_sites_directories}
-  count_total_dirs="$(wc -w <<< "$working_sites_directories")"
+  count_total_dirs="$(wc -w <<<"$working_sites_directories")"
 
   # Log
   display --indent 6 --text "- Directories found" --result "${count_total_dirs}" --color WHITE
