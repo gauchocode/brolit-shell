@@ -180,25 +180,18 @@ function restore_backup_from_local() {
       log_event "info" "File to restore: ${source_files}" "false"
 
       # Copy to tmp dir
-      cp "${source_files}" "${BROLIT_TMP_DIR}"
+      copy_files "${source_files}" "${BROLIT_TMP_DIR}"
 
-      project_name="$(project_ask_name "")"
       project_stage="$(project_ask_stage "prod")"
+      project_name="$(project_ask_name "")"
       filename="$(basename "${source_files}")"
 
-      # TODO: check if project has/need a database
-
-      # Reading config file
-      ## Database vars (only return something if project type has a database)
-      db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}")"
-      db_name="$(project_get_configured_database "${install_path}" "${project_type}")"
-      db_user="$(project_get_configured_database_user "${install_path}" "${project_type}")"
-      db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}")"
+      # TODO: check if database has project files already deployed
 
       #restore_database_backup "${project_name}" "${project_stage}" "${filename}"
-      restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${filename}"
+      restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${project_name}_${db_user}" "" "${filename}"
 
-      # TODO: create nginx server config, run certbot and cloudflare update
+      # TODO: asks if create nginx server config, run certbot and cloudflare update
 
     fi
 
@@ -1008,8 +1001,8 @@ function restore_type_selection_from_storage() {
             db_user="${db_project_name}_user"
             #fi
             #if [[ -z ${db_pass} ]]; then
-              # Passw generator
-              db_pass="$(openssl rand -hex 12)"
+            # Passw generator
+            db_pass="$(openssl rand -hex 12)"
             #fi
 
             # Restore Database Backup
@@ -1241,7 +1234,7 @@ function restore_project() {
       if [[ ${database_restore_skipped} != "true" ]]; then
         # Decompress
         decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
-        
+
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
