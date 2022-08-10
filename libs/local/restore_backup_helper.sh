@@ -88,7 +88,7 @@ function _make_temp_files_backup() {
 
 function restore_backup_from_local() {
 
-  local -n restore_type # whiptail array options
+  local restore_type # whiptail array options
   local chosen_restore_type
 
   restore_type=(
@@ -118,11 +118,12 @@ function restore_backup_from_local() {
 
       if [[ -f ${source_files} ]]; then
 
-        display --indent 6 --text "Selected source: ${source_files}"
+        display --indent 6 --text "Selected source: ${YELLOW}${source_files}${ENDCOLOR}"
 
       else
 
-        display --indent 6 --text "Selected source: ${source_files}" --result "ERROR" --color RED
+        clear_previous_lines "1"
+        display --indent 6 --text "Selected source: ${YELLOW}${source_files}${ENDCOLOR}" --result "ERROR" --color RED
         display --indent 6 --text "File not found" --tcolor RED
         return 1
 
@@ -144,7 +145,7 @@ function restore_backup_from_local() {
 
         # Move files one level up
         main_dir="$(ls -1 "${basepath}/${project_domain}")"
-        mv "${basepath}/${project_domain}/${main_dir}/"{.,}* "${basepath}/${project_domain}"
+        mv "${basepath}/${project_domain}/${main_dir}/"{.,}* "${basepath}/${project_domain}" 2>/dev/null
 
       fi
 

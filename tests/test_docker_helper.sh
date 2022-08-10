@@ -21,6 +21,8 @@
 
 function test_docker_helper_functions() {
 
+    # TODO: create a function that change WP_PORT (always assign a new port that is not in use)
+
     # Docker Wordpress Install
     docker_wordpress_install "/var/www/dockertest.broobe.net" "dockertest.broobe.net" "dockertest" "prod" "broobe.net" ""
 
@@ -32,5 +34,17 @@ function test_docker_helper_functions() {
 
     # Docker list images
     docker_list_images
+
+    # Docker project files import
+    # TODO: should only import wp-content? how about wp-config.php?
+    docker_project_files_import "/root/backup.tar.bz2" "/var/www/dockertest.broobe.net" "wordpress"
+
+    # Create nginx proxy
+    ## TODO: read port from docker-compose .env file
+    nginx_server_create "dockertest.broobe.net" "proxy" "single" "" "88"
+
+    # TODO: run wp-cli commands?
+
+    # TODO: generate certbot certificates and install it.
 
 }

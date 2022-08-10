@@ -331,7 +331,7 @@ function docker_mysql_database_import() {
     local mysql_database="${4}"
     local dump_file="${5}"
 
-    # TODO: 
+    # TODO:
     # 1- List container names
     # 2- Select container name to work with
 
@@ -370,5 +370,56 @@ function docker_mysql_database_backup() {
 
     # Docker logs
     #docker logs wordpress
+
+}
+
+################################################################################
+# Docker project files import on volume
+#
+# Arguments:
+#   $1 = ${project_files}
+#   $2 = ${project_path}
+#   $3 = ${project_type}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function docker_project_files_import() {
+
+    local project_backup_file="${1}"
+    local project_path="${2}"
+    local project_type="${3}"
+
+    local project_backup_path
+    local project_volume_path
+    local delimiter
+    local key
+    local rand
+
+    rand="$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)"
+    project_backup_path="${BROLIT_MAIN_DIR}/tmp/${rand}"
+    mkdir -p "${project_backup_path}"
+
+    decompress "${project_backup_file}" "${project_backup_path}" "lbzip2"
+
+    # Get inner directory (should be only one)
+    inner_dir="$(get_all_directories "${project_backup_path}")"
+
+    # Read ${project_path}/.env on root?
+    if [[ -f "${project_path}/.env" ]]; then
+
+        delimiter="="
+        key="WWW_DATA_DIR"
+        project_volume_path=$(cat "${project_path}/.env" | grep "^${key} ${delimiter}" | cut -f2- -d"${delimiter}")
+        
+        if [[ -n ${project_volume_path} ]]; then
+
+            # TODO: check if volume is created? check if container is running?
+            copy_files "${project_backup_path}/${inner_dir}" "${project_volume_path}"
+
+        fi
+
+    fi
 
 }

@@ -1477,7 +1477,6 @@ function wpcli_db_check() {
     db_check="$(sudo -u www-data wp --path="${wp_site}" db check)"
 
     exitstatus=$?
-
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Return
@@ -1571,19 +1570,18 @@ function wpcli_search_and_replace() {
 
         log_event "debug" "Running: wp --allow-root --path=${wp_site} search-replace --url=https://${wp_site_url} ${search} ${replace} --network" "false"
 
-        wpcli_result="$(wp --allow-root --path="${wp_site}" search-replace --url=https://"${wp_site_url}" "${search}" "${replace}" --network --quiet)"
+        wpcli_result="$(wp --allow-root --path="${wp_site}" search-replace --url=https://"${wp_site_url}" "${search}" "${replace}" --network)"
 
     else
 
         log_event "debug" "Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace}" "false"
 
-        wpcli_result="$(wp --allow-root --path="${wp_site}" search-replace "${search}" "${replace}" --quiet)"
+        wpcli_result="$(wp --allow-root --path="${wp_site}" search-replace "${search}" "${replace}")"
 
     fi
 
     #exitstatus=$?
     #if [[ $exitstatus -eq 0 ]]; then
-
     error_found="$(echo "${wpcli_result}" | grep "Error")"
     if [[ ${error_found} == "" ]]; then
 
@@ -1591,6 +1589,14 @@ function wpcli_search_and_replace() {
         log_event "info" "Search and replace finished ok" "false"
         display --indent 6 --text "- Running search and replace" --result "DONE" --color GREEN
         display --indent 8 --text "${search} was replaced by ${replace}" --tcolor YELLOW
+
+        # Cache Flush
+        sudo -u www-data wp --path="${wp_site}" cache flush --quiet
+        display --indent 6 --text "- Flush cache" --result "DONE" --color GREEN
+
+        # Rewrite Flush
+        sudo -u www-data wp --path="${wp_site}" rewrite flush --quiet
+        display --indent 6 --text "- Flush rewrite" --result "DONE" --color GREEN
 
     else
 
@@ -1601,14 +1607,6 @@ function wpcli_search_and_replace() {
         return 1
 
     fi
-
-    # Cache Flush
-    sudo -u www-data wp --path="${wp_site}" cache flush --quiet
-    display --indent 6 --text "- Flush cache" --result "DONE" --color GREEN
-
-    # Rewrite Flush
-    sudo -u www-data wp --path="${wp_site}" rewrite flush --quiet
-    display --indent 6 --text "- Flush rewrite" --result "DONE" --color GREEN
 
 }
 
@@ -1813,6 +1811,7 @@ function wpcli_change_wp_seo_visibility() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log
+        clear_previous_lines "1"
         display --indent 6 --text "- Changing site visibility to ${visibility}" --result "DONE" --color GREEN
         log_event "error" "Changing site visibility to ${visibility} on site ${wp_site}" "false"
 
@@ -1821,6 +1820,7 @@ function wpcli_change_wp_seo_visibility() {
     else
 
         # Log
+        clear_previous_lines "1"
         display --indent 6 --text "- Changing site visibility to ${visibility}" --result "FAIL" --color RED
         log_event "error" "Changing site visibility to ${visibility} on site ${wp_site}" "false"
 
@@ -1896,9 +1896,9 @@ function wpcli_set_debug_mode() {
     log_event "debug" "Running: wp --allow-root --path=\"${wp_site}\" config set --raw WP_DEBUG_DISPLAY \"${debug_mode}\"" "false"
 
     # Command
-    wp --allow-root --path="${wp_site}" config set --raw WP_DEBUG "${debug_mode}"
-    wp --allow-root --path="${wp_site}" config set --raw WP_DEBUG_LOG "${debug_mode}"
-    wp --allow-root --path="${wp_site}" config set --raw WP_DEBUG_DISPLAY "${debug_mode}"
+    wp --allow-root --path="${wp_site}" config set --raw WP_DEBUG "${debug_mode}" --quiet
+    wp --allow-root --path="${wp_site}" config set --raw WP_DEBUG_LOG "${debug_mode}" --quiet
+    wp --allow-root --path="${wp_site}" config set --raw WP_DEBUG_DISPLAY "${debug_mode}" --quiet
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
