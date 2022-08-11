@@ -344,6 +344,7 @@ function script_init() {
     log_name="brolit_shell_${timestamp}.log"
     EXEC_TYPE="default"
   fi
+  export EXEC_TYPE
 
   LOG="${path_log}/${log_name}"
 
@@ -413,7 +414,7 @@ function script_init() {
   # EXPORT VARS
   export SCRIPT_V SERVER_NAME BROLIT_CONFIG_PATH BROLIT_MAIN_DIR PACKAGES
   export DISK_U ONE_FILE_BK NOTIFICATION_EMAIL_SMTP_SERVER NOTIFICATION_EMAIL_SMTP_PORT NOTIFICATION_EMAIL_SMTP_TLS NOTIFICATION_EMAIL_SMTP_USER NOTIFICATION_EMAIL_SMTP_UPASS
-  export LOG DEBUG SKIPTESTS EXEC_TYPE
+  export LOG DEBUG SKIPTESTS
   export BROLIT_CONFIG_FILE
 
 }
