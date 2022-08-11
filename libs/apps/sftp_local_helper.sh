@@ -12,9 +12,9 @@
 # Private: add folder permission
 #
 # Arguments:
-#  $1 = username
-#  $2 = dir_path
-#  $3 = folder
+#  $1 = ${username}
+#  $2 = ${dir_path}
+#  $3 = ${folder}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -53,7 +53,9 @@ function _sftp_add_folder_permission() {
     display --indent 6 --text "- Writing fstab to make it permanent" --result "DONE" --color GREEN
     log_event "debug" "Running: echo ${dir_path}${folder} /home/${username}/${folder} none bind   0      0  >>/etc/fstab" "false"
 
-    ## Ref: https://tecadmin.net/how-to-create-sftp-user-for-a-web-server-document-root/
+    ## Refs: 
+    ### https://tecadmin.net/how-to-create-sftp-user-for-a-web-server-document-root/
+    ### https://serverfault.com/questions/584986/bad-ownership-or-modes-for-chroot-directory-component
     find "${dir_path}/${folder}" -type d -exec chmod 775 {} \;
     find "${dir_path}/${folder}" -type f -exec chmod 664 {} \;
     find "${dir_path}/${folder}" -type d -exec chmod g+s {} \;
@@ -71,7 +73,7 @@ function _sftp_add_folder_permission() {
 # Private: test sftp connection
 #
 # Arguments:
-#  $1 = username
+#  $1 = ${username}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -89,9 +91,9 @@ function _sftp_test_connection() {
 # Create sftp user
 #
 # Arguments:
-#  $1 = username
-#  $2 = groupname
-#  $3 = shell_access (true,false)
+#  $1 = ${username}
+#  $2 = ${groupname}
+#  $3 = ${shell_access} (true,false)
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -187,7 +189,7 @@ function sftp_create_user() {
 # Create sftp group
 #
 # Arguments:
-#  $1 = groupname #sftp_users
+#  $1 = ${groupname} #sftp_users
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -218,7 +220,7 @@ function sftp_create_group() {
 # Delete sftp user
 #
 # Arguments:
-#  $1 = username
+#  $1 = ${username}
 #
 # Outputs:
 #  0 if ok, 1 on error.
