@@ -234,14 +234,17 @@ function restore_backup_from_ftp() {
 
     # Ask project stage
     project_stage="$(project_ask_stage "prod")"
+    [ $? -eq 1 ] && return 1
 
     # Ask project domain
     project_domain="$(project_ask_domain "")"
+    [ $? -eq 1 ] && return 1
 
     possible_project_domain="$(project_get_name_from_domain "${project_domain}")"
 
     # Ask project name
     project_name="$(project_ask_name "${possible_project_domain}")"
+    [ $? -eq 1 ] && return 1
 
     # FTP
     ftp_domain="$(whiptail_imput "FTP SERVER IP/DOMAIN" "Please insert de FTP server IP/DOMAIN. Ex: ftp.domain.com")"
@@ -291,7 +294,7 @@ function restore_backup_from_ftp() {
         db_user="$(project_get_configured_database_user "${install_path}" "${project_type}")"
         db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}")"
 
-        restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${chosen_database_backup}"
+        restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${BROLIT_TMP_DIR}/${chosen_database_backup}"
 
       else
 
@@ -446,7 +449,7 @@ function restore_backup_from_public_url() {
       db_user="$(project_get_configured_database_user "${install_path}" "${project_type}")"
       db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}")"
 
-      restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${chosen_database_backup}"
+      restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${BROLIT_TMP_DIR}/${chosen_database_backup}"
 
     else
 
@@ -470,14 +473,12 @@ function restore_backup_from_public_url() {
       ${CURL} "${source_db_url}" >"${BROLIT_TMP_DIR}/${backup_file}"
 
       # Restore database
-      #restore_database_backup "${project_name}" "${project_stage}" "${backup_file}"
-
       db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}")"
       db_name="$(project_get_configured_database "${install_path}" "${project_type}")"
       db_user="$(project_get_configured_database_user "${install_path}" "${project_type}")"
       db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}")"
 
-      restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${backup_file}"
+      restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${BROLIT_TMP_DIR}/${backup_file}"
 
     else
 
@@ -1020,7 +1021,7 @@ function restore_type_selection_from_storage() {
             #fi
 
             # Restore Database Backup
-            restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${chosen_backup_to_restore}"
+            restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}"
 
             # TODO: ask if want to change project db parameters and make cloudflare changes
 
@@ -1265,7 +1266,7 @@ function restore_project() {
           fi
 
           # Restore Database Backup
-          restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${db_to_restore}"
+          restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${BROLIT_TMP_DIR}/${db_to_restore}"
 
           project_db_status="enabled"
 
@@ -1350,7 +1351,7 @@ function restore_backup_database() {
   fi
 
   # Restore database
-  mysql_database_import "${db_name}" "${BROLIT_TMP_DIR}/${project_backup}"
+  mysql_database_import "${db_name}" "${project_backup}"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
