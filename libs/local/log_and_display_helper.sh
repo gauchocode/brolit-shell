@@ -153,14 +153,14 @@ function log_event() {
 
     objName="output"
     objJSON="{\"time\": \"$(_timestamp)\",\"message\": \"message\",\"log_type\": \"log_type\"}"
-    echo "${BROLIT_UI_LOG}" |
+    echo "${LOG}" |
       jq --arg objectName "${objName}" \
         --argjson jsonString "${objJSON}" \
         '.output[$objectName] += $jsonString'
 
-    #json_write_field "${BROLIT_UI_LOG}" "time" "$(_timestamp)"
-    #json_write_field "${BROLIT_UI_LOG}" "message" "${message}"
-    #json_write_field "${BROLIT_UI_LOG}" "log_type" "${log_type}"
+    #json_write_field "${LOG}" "time" "$(_timestamp)"
+    #json_write_field "${LOG}" "message" "${message}"
+    #json_write_field "${LOG}" "log_type" "${log_type}"
     return 0
   fi
 
