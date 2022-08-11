@@ -151,16 +151,22 @@ function log_event() {
   # If is a BROLIT UI exec
   if [[ ${EXEC_TYPE} == "external" && -n ${log_type} ]]; then
 
-    objName="output"
-    objJSON="{\"time\": \"$(_timestamp)\",\"message\": \"message\",\"log_type\": \"log_type\"}"
-    echo "${LOG}" |
-      jq --arg objectName "${objName}" \
-        --argjson jsonString "${objJSON}" \
-        '.output[$objectName] += $jsonString'
+    #objName="output"
+    #objJSON="{\"time\": \"$(_timestamp)\",\"message\": \"message\",\"log_type\": \"log_type\"}"
+    #echo "${LOG}" | jq --arg objectName "${objName}" --argjson jsonString "${objJSON}" '.output[$objectName] += $jsonString'
 
-    #json_write_field "${LOG}" "time" "$(_timestamp)"
-    #json_write_field "${LOG}" "message" "${message}"
-    #json_write_field "${LOG}" "log_type" "${log_type}"
+    inner=$(
+      jq -n --arg time "$(_timestamp)" \
+        --arg message "${message}" \
+        --arg log_type "${log_type}" \
+        '$ARGS.named'
+    )
+    final=$(
+      jq -n --arg status "1" \
+        --argjson output "[$inner]" \
+        '$ARGS.named'
+    )
+    echo "${final}" >>"${LOG}"
     return 0
   fi
 
