@@ -191,7 +191,7 @@ function restore_backup_from_local() {
       backup_file="${tmp_dir}/${filename}"
 
       # Decompress
-      decompress "${filename}" "${tmp_dir}" ""
+      decompress "${tmp_dir}/${filename}" "${tmp_dir}" ""
 
       dump_file="$(find "${tmp_dir}" -maxdepth 1 -mindepth 1 -type f -not -path '*/.*')"
 
@@ -332,28 +332,29 @@ function restore_backup_from_public_url() {
 
   # Ask project stage
   project_stage="$(project_ask_stage "prod")"
+  [ $? -eq 1 ] && return 1
 
   # Project domain
   project_domain="$(project_ask_domain "")"
+  [ $? -eq 1 ] && return 1
 
   # Cloudflare support
   if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
     root_domain="$(domain_get_root "${project_domain}")"
+    [ $? -eq 1 ] && return 1
   fi
 
   # Project name
   possible_project_name="$(project_get_name_from_domain "${project_domain}")"
   project_name="$(project_ask_name "${possible_project_name}")"
+  [ $? -eq 1 ] && return 1
 
   source_files_url=$(whiptail --title "Source File URL" --inputbox "Please insert the URL where backup files are stored." 10 60 "https://domain.com/backup-files.zip" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
-
     display --indent 6 --text "${source_files_url}"
-
   else
     return 1
-
   fi
 
   # File Backup details
