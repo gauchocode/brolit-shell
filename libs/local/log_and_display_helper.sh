@@ -149,7 +149,7 @@ function log_event() {
   [[ ${EXEC_TYPE} == "alias" ]] && return 0
 
   # If is a BROLIT UI exec
-  if [[ ${EXEC_TYPE} == "external" && ${log_type} != "" ]]; then
+  if [[ ${EXEC_TYPE} == "external" && -n ${log_type} ]]; then
 
     objName="output"
     objJSON="{\"time\": \"$(_timestamp)\",\"message\": \"message\",\"log_type\": \"log_type\"}"
@@ -391,7 +391,7 @@ function display() {
   COLOR=""
   SPACES=0
 
-  if [[ ${QUIET} == "true" || ${EXEC_TYPE} == "alias" ]]; then return 0; fi
+  if [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]]; then return 0; fi
 
   while [ $# -ge 1 ]; do
 
