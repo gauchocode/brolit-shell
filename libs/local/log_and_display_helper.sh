@@ -239,12 +239,9 @@ function log_break() {
 
   local log_break
 
-  if [[ ${EXEC_TYPE} == "alias" ]]; then
-    # if alias, do not log
-    return 0
-  fi
+  if [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]]; then return 0; fi
 
-  if [[ ${console_display} == "true" && ${QUIET} == "false" ]]; then
+  if [[ ${console_display} == "true" ]]; then
 
     log_break="        ----------------------------------------------------          "
     echo -e "${MAGENTA}${B_DEFAULT}${log_break}${ENDCOLOR}" >&2
@@ -270,20 +267,18 @@ function log_section() {
 
   local message="${1}"
 
-  if [[ ${QUIET} == "false" && ${EXEC_TYPE} != "alias" ]]; then
+  if [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]]; then return 0; fi
 
-    # Console Display
-    echo "" >&2
-    echo -e "[+] Performing Action: ${YELLOW}${B_DEFAULT}${message}${ENDCOLOR}" >&2
-    #echo "--------------------------------------------------" >&2
-    echo "—————————————————————————————————————————————————————————" >&2
+  # Console Display
+  echo "" >&2
+  echo -e "[+] Performing Action: ${YELLOW}${B_DEFAULT}${message}${ENDCOLOR}" >&2
+  #echo "--------------------------------------------------" >&2
+  echo "—————————————————————————————————————————————————————————" >&2
 
-    # Log file
-    echo "$(_timestamp) > ------------------------------------------------------------" >>"${LOG}"
-    echo "$(_timestamp) > [+] Performing Action: ${message}" >>"${LOG}"
-    echo "$(_timestamp) > ------------------------------------------------------------" >>"${LOG}"
-
-  fi
+  # Log file
+  echo "$(_timestamp) > ------------------------------------------------------------" >>"${LOG}"
+  echo "$(_timestamp) > [+] Performing Action: ${message}" >>"${LOG}"
+  echo "$(_timestamp) > ------------------------------------------------------------" >>"${LOG}"
 
 }
 
@@ -301,19 +296,17 @@ function log_subsection() {
 
   local message="${1}"
 
-  if [[ ${QUIET} != "true" && ${EXEC_TYPE} != "alias" ]]; then
+  if [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]]; then return 0; fi
 
-    # Console Display
-    echo "" >&2
-    echo -e "    [·] ${CYAN}${B_DEFAULT}${message}${ENDCOLOR}" >&2
-    echo "    —————————————————————————————————————————————————————" >&2
+  # Console Display
+  echo "" >&2
+  echo -e "    [·] ${CYAN}${B_DEFAULT}${message}${ENDCOLOR}" >&2
+  echo "    —————————————————————————————————————————————————————" >&2
 
-    # Log file
-    echo "$(_timestamp) > ------------------------------------------------------------" >>"${LOG}"
-    echo "$(_timestamp) > [·] ${message}" >>"${LOG}"
-    echo "$(_timestamp) > ------------------------------------------------------------" >>"${LOG}"
-
-  fi
+  # Log file
+  echo "$(_timestamp) > ------------------------------------------------------------" >>"${LOG}"
+  echo "$(_timestamp) > [·] ${message}" >>"${LOG}"
+  echo "$(_timestamp) > ------------------------------------------------------------" >>"${LOG}"
 
 }
 
@@ -329,11 +322,9 @@ function log_subsection() {
 
 function clear_screen() {
 
-  if [[ ${QUIET} != "true" && ${EXEC_TYPE} != "alias" ]]; then
+  if [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]]; then return 0; fi
 
-    echo -en "\ec" >&2
-
-  fi
+  echo -en "\ec" >&2
 
 }
 
@@ -351,23 +342,21 @@ function clear_previous_lines() {
 
   local lines="${1}"
 
-  if [[ ${QUIET} != "true" && ${EXEC_TYPE} != "alias" ]]; then
+  if [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]]; then return 0; fi
 
-    #loop starting $lines going down to 0
-    for ((i = lines; i > 0; i--)); do
+  #loop starting $lines going down to 0
+  for ((i = lines; i > 0; i--)); do
 
-      tput cuu1 >&2
-      tput el >&2
+    tput cuu1 >&2
+    tput el >&2
 
-      #printf "\033[1A" >&2
-      #echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
-      #echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
-      #printf "\033[1A" >&2
-      #printf "\033[1A" >&2
+    #printf "\033[1A" >&2
+    #echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
+    #echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
+    #printf "\033[1A" >&2
+    #printf "\033[1A" >&2
 
-    done
-
-  fi
+  done
 
 }
 
