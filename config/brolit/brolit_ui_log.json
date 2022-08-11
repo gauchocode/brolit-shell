@@ -1,10 +1,6 @@
 {
-    "status": 0,
+    "status": "0",
     "output": [
-        {
-            "time": "",
-            "message": "",
-            "log_type": ""
-        }
+       
     ]
 }
