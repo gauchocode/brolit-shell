@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc12
+# Version: 3.2-rc13
 ################################################################################
 
 ################################################################################
@@ -53,7 +53,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.2-rc12"
+  declare -g SCRIPT_V="3.2-rc13"
 
   # Hostname
   declare -g SERVER_NAME="$HOSTNAME"
@@ -335,8 +335,10 @@ function script_init() {
   ## Only for BROLIT-UI
   if [[ -n ${SLOG} ]]; then
     # And add second parameter to the log name
-    log_name="log_lemp_utils_${SLOG}.log"
+    #log_name="log_lemp_utils_${SLOG}.log"
+    log_name="${SLOG}.json"
     EXEC_TYPE="external"
+    cp "${BROLIT_MAIN_DIR}/config/brolit/brolit_ui_log.json" "${path_log}/${log_name}"
   else
     # Default log name
     log_name="brolit_shell_${timestamp}.log"

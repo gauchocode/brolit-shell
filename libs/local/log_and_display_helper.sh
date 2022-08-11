@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc12
+# Version: 3.2-rc13
 ################################################################################
 #
 # Log and Display Helper: Log and display functions.
@@ -144,8 +144,23 @@ function log_event() {
   local message="${2}"
   local console_display="${3}"
 
-  if [[ ${EXEC_TYPE} == "alias" ]]; then
-    # if alias, do not log
+  # If alias, do not log
+  # TODO: deprecated?
+  [[ ${EXEC_TYPE} == "alias" ]] && return 0
+
+  # If is a BROLIT UI exec
+  if [[ ${EXEC_TYPE} == "external" && ${log_type} != "" ]]; then
+
+    objName="output"
+    objJSON="{\"time\": \"$(_timestamp)\",\"message\": \"message\",\"log_type\": \"log_type\"}"
+    echo "${BROLIT_UI_LOG}" |
+      jq --arg objectName "${objName}" \
+        --argjson jsonString "${objJSON}" \
+        '.output[$objectName] += $jsonString'
+
+    #json_write_field "${BROLIT_UI_LOG}" "time" "$(_timestamp)"
+    #json_write_field "${BROLIT_UI_LOG}" "message" "${message}"
+    #json_write_field "${BROLIT_UI_LOG}" "log_type" "${log_type}"
     return 0
   fi
 
@@ -339,9 +354,10 @@ function clear_previous_lines() {
   if [[ ${QUIET} != "true" && ${EXEC_TYPE} != "alias" ]]; then
 
     #loop starting $lines going down to 0
-    for ((i=lines; i>0; i--)); do
+    for ((i = lines; i > 0; i--)); do
 
-      tput cuu1 >&2;tput el >&2;
+      tput cuu1 >&2
+      tput el >&2
 
       #printf "\033[1A" >&2
       #echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2

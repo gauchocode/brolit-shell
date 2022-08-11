@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc12
+# Version: 3.2-rc13
 ################################################################################
 #
 # Backup/Restore Helper: Backup and restore funtions.
