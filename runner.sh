@@ -2,12 +2,12 @@
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
 # Script Name: BROLIT Shell
-# Version: 3.2-rc12
+# Version: 3.2-rc13
 ################################################################################
 
 ### Environment checks
 [ "${BASH_VERSINFO:-0}" -lt 4 ] && {
-  echo "At least Bash version 4 is required. Aborting..." >&2
+  echo "At least BASH version 4 is required. Aborting..." >&2
   exit 2
 }
 
