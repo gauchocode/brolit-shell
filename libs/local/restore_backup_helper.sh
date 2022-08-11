@@ -179,17 +179,30 @@ function restore_backup_from_local() {
 
       log_event "info" "File to restore: ${source_files}" "false"
 
+      # Create tmp dir
+      rand=$(openssl rand -hex 5)
+      tmp_dir="${BROLIT_TMP_DIR}/${rand}"
+      mkdir -p "${tmp_dir}"
+
       # Copy to tmp dir
-      copy_files "${source_files}" "${BROLIT_TMP_DIR}"
+      copy_files "${source_files}" "${tmp_dir}"
+
+      filename="$(basename "${source_files}")"
+      backup_file="${tmp_dir}/${filename}"
+
+      # Decompress
+      decompress "${filename}" "${tmp_dir}" ""
+
+      dump_file="$(find "${tmp_dir}" -maxdepth 1 -mindepth 1 -type f -not -path '*/.*')"
 
       project_stage="$(project_ask_stage "prod")"
       project_name="$(project_ask_name "")"
-      filename="$(basename "${source_files}")"
+      database_user="${project_name}_user"
+      database_user_passw=$(openssl rand -hex 12)
 
       # TODO: check if database has project files already deployed
 
-      #restore_database_backup "${project_name}" "${project_stage}" "${filename}"
-      restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${project_name}_${db_user}" "" "${filename}"
+      restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${database_user}" "${database_user_passw}" "${dump_file}"
 
       # TODO: asks if create nginx server config, run certbot and cloudflare update
 
@@ -1301,7 +1314,19 @@ function restore_backup_database() {
 
   # Log
   log_subsection "Restore Database Backup"
-  log_event "info" "Working with ${project_name}_${project_stage}" "false"
+
+  # Check backup file
+  project_backup="${project_backup_file%%.*}.sql"
+  if [[ ! -f ${project_backup} ]]; then
+    # Log
+    log_event "error" "Backup file '${project_backup}' not found." "false"
+    display --indent 6 --text "- Checking backup file" --result "ERROR" --color RED
+    display --indent 8 --text "Backup ${project_backup} not found" --tcolor RED
+    return 1
+  fi
+
+  log_event "info" "Backup file to import ${project_backup}" "false"
+  #log_event "info" "Working with ${project_name}_${project_stage}" "false"
 
   # Check if database already exists
   mysql_database_exists "${db_name}"
@@ -1322,10 +1347,6 @@ function restore_backup_database() {
     mysql_database_export "${db_name}" "${BROLIT_TMP_DIR}/backups/${db_name}_bk_before_restore.sql"
 
   fi
-
-  # Backup file
-  project_backup="${project_backup_file%%.*}.sql"
-  log_event "info" "Backup file to import ${project_backup}" "false"
 
   # Restore database
   mysql_database_import "${db_name}" "${BROLIT_TMP_DIR}/${project_backup}"
