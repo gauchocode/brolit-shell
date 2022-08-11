@@ -636,14 +636,10 @@ function project_generate_brolit_config() {
   if [[ ${exitstatus} -eq 1 ]]; then
 
     project_db_name="$(mysql_ask_database_selection)"
-
     if [[ -z ${project_db_name} ]]; then
-
       project_db_status="disabled"
       log_event "info" "No database selected, aborting..." "false"
-
       return 1
-
     fi
 
   else
@@ -1466,6 +1462,7 @@ function project_install() {
 
   if [[ -z ${project_type} ]]; then
     project_type="$(project_ask_type "")"
+    [[ $? -eq 1 ]] && return 1
   fi
 
   log_section "Project Installer (${project_type})"
@@ -1486,17 +1483,14 @@ function project_install() {
 
     suggested_state="$(domain_get_subdomain_part "${project_domain}")"
 
+    # Project stage
     project_stage="$(project_ask_stage "${suggested_state}")"
-
     exitstatus=$?
     if [[ ${exitstatus} -eq 1 ]]; then
-
       # Log
       log_event "info" "Operation cancelled!" "false"
       display --indent 2 --text "- Asking project stage" --result SKIPPED --color YELLOW
-
       return 1
-
     fi
 
   fi
@@ -1505,16 +1499,14 @@ function project_install() {
 
     possible_project_name="$(project_get_name_from_domain "${project_domain}")"
 
+    # Project Name
     project_name="$(project_ask_name "${possible_project_name}")"
-
     exitstatus=$?
     if [[ ${exitstatus} -eq 1 ]]; then
-
+      # Log
       log_event "info" "Operation cancelled!" "false"
       display --indent 2 --text "- Asking project name" --result SKIPPED --color YELLOW
-
       return 1
-
     fi
 
   fi

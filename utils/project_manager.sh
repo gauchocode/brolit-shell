@@ -225,6 +225,7 @@ function project_manager_menu_new_project_type_utils() {
       else
 
         project_stage="$(project_ask_stage "")"
+        [[ $? -eq 1 ]] && return 1
 
         # Filename should be the project domain
         project_name="$(project_get_name_from_domain "${filename%/}")"

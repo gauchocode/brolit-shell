@@ -196,7 +196,11 @@ function restore_backup_from_local() {
       dump_file="$(find "${tmp_dir}" -maxdepth 1 -mindepth 1 -type f -not -path '*/.*')"
 
       project_stage="$(project_ask_stage "prod")"
+      [[ $? -eq 1 ]] && return 1
+
       project_name="$(project_ask_name "")"
+      [[ $? -eq 1 ]] && return 1
+
       database_user="${project_name}_user"
       database_user_passw=$(openssl rand -hex 12)
 
@@ -234,17 +238,17 @@ function restore_backup_from_ftp() {
 
     # Ask project stage
     project_stage="$(project_ask_stage "prod")"
-    [ $? -eq 1 ] && return 1
+    [[ $? -eq 1 ]] && return 1
 
     # Ask project domain
     project_domain="$(project_ask_domain "")"
-    [ $? -eq 1 ] && return 1
+    [[ $? -eq 1 ]] && return 1
 
     possible_project_domain="$(project_get_name_from_domain "${project_domain}")"
 
     # Ask project name
     project_name="$(project_ask_name "${possible_project_domain}")"
-    [ $? -eq 1 ] && return 1
+    [[ $? -eq 1 ]] && return 1
 
     # FTP
     ftp_domain="$(whiptail_imput "FTP SERVER IP/DOMAIN" "Please insert de FTP server IP/DOMAIN. Ex: ftp.domain.com")"
@@ -335,22 +339,22 @@ function restore_backup_from_public_url() {
 
   # Ask project stage
   project_stage="$(project_ask_stage "prod")"
-  [ $? -eq 1 ] && return 1
+  [[ $? -eq 1 ]] && return 1
 
   # Project domain
   project_domain="$(project_ask_domain "")"
-  [ $? -eq 1 ] && return 1
+  [[ $? -eq 1 ]] && return 1
 
   # Cloudflare support
   if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
     root_domain="$(domain_get_root "${project_domain}")"
-    [ $? -eq 1 ] && return 1
+    [[ $? -eq 1 ]] && return 1
   fi
 
   # Project name
   possible_project_name="$(project_get_name_from_domain "${project_domain}")"
   project_name="$(project_ask_name "${possible_project_name}")"
-  [ $? -eq 1 ] && return 1
+  [[ $? -eq 1 ]] && return 1
 
   source_files_url=$(whiptail --title "Source File URL" --inputbox "Please insert the URL where backup files are stored." 10 60 "https://domain.com/backup-files.zip" 3>&1 1>&2 2>&3)
   exitstatus=$?
@@ -1139,7 +1143,6 @@ function restore_project() {
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
-
     # Get backup list
     remote_backup_path="${chosen_server}/projects-${chosen_status}/site/${chosen_project}"
     remote_backup_list="$(storage_list_dir "${remote_backup_path}")"
@@ -1166,10 +1169,8 @@ function restore_project() {
 
     # Decompress
     decompress "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
-    if [[ $? -eq 1 ]]; then
-      # TODO: implement error type
-      return 1
-    fi
+    [[ $? -eq 1 ]] && return 1
+    # TODO: implement error type
 
     # Create nginx.conf file if not exists
     touch "${BROLIT_TMP_DIR}/${chosen_project}/nginx.conf"
@@ -1191,9 +1192,11 @@ function restore_project() {
     # Asking project stage with suggested actual state
     possible_project_stage=$(project_get_stage_from_domain "${new_project_domain}")
     project_stage="$(project_ask_stage "${possible_project_stage}")"
+    [[ $? -eq 1 ]] && return 1
 
     # Asking project name
     project_name="$(project_ask_name "${possible_project_name}")"
+    [[ $? -eq 1 ]] && return 1
 
     install_path="${PROJECTS_PATH}/${new_project_domain}"
 
