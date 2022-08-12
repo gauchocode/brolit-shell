@@ -120,4 +120,4 @@ log_section "Running Tests Suite"
 tests_suite_menu
 
 # Log End
-log_event "info" "BROLIT Tests End -- $(date +%Y%m%d_%H%M)" "true"
+log_event "info" "Exiting script ..." "false" "1"

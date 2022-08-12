@@ -338,7 +338,6 @@ function script_init() {
     #log_name="log_lemp_utils_${SLOG}.log"
     log_name="${SLOG}.json"
     EXEC_TYPE="external"
-    cp "${BROLIT_MAIN_DIR}/config/brolit/brolit_ui_log.json" "${path_log}/${log_name}"
   else
     # Default log name
     log_name="brolit_shell_${timestamp}.log"
@@ -1727,9 +1726,9 @@ function menu_main_options() {
     # Log
     echo ""
     echo -e "${B_RED}Exiting script ...${ENDCOLOR}"
-    log_event "info" "Exiting script ..." "false"
-
-    exit 0
+    #log_event "info" "Exiting script ..." "false"
+    
+    return 0
 
   fi
 
