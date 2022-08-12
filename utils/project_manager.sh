@@ -256,7 +256,6 @@ function project_manager_menu_new_project_type_utils() {
 
         # TODO: Error check
         # TODO: Ask to update project config
-
         project_type="$(project_get_type "${filepath}/${filename}")"
         project_set_configured_database "${filepath}/${filename}" "${project_type}" "${project_name}_${project_stage}"
         project_set_configured_database_user "${filepath}/${filename}" "${project_type}" "${project_name}_user"
@@ -269,7 +268,6 @@ function project_manager_menu_new_project_type_utils() {
     if [[ ${chosen_project_utils_options} == *"05"* ]]; then
 
       # RENAME DATABASE
-
       local chosen_db
       local new_database_name
 
@@ -317,7 +315,6 @@ function project_manager_menu_new_project_type_utils() {
     if [[ ${chosen_project_utils_options} == *"09"* ]]; then
 
       # BENCH PROJECT GTMETRIX
-
       URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
 
       exitstatus=$?
@@ -334,8 +331,8 @@ function project_manager_menu_new_project_type_utils() {
 
         clear_previous_lines "1"
         display --indent 2 --text "- Testing project ${URL_TO_TEST}" --result DONE --color GREEN
-        display --indent 4 --text "Please check results on ${MAGENTA}${gtmetrix_results_url}${ENDCOLOR}"
-        #display --indent 4 --text "Please check results on log file" --tcolor MAGENTA
+        display --indent 4 --text "Please check results on:"
+        display --indent 4 --text "${gtmetrix_results_url}" --tcolor MAGENTA
         log_event "info" "gtmetrix_result: ${gtmetrix_result}" "false"
 
       fi

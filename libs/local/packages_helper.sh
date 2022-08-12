@@ -202,7 +202,11 @@ function package_install_if_not() {
 
   else
 
-    log_event "debug" "${package} is already installed. Package binary on: ${pkg_bin}" "false"
+    log_event "debug" "${package} is already installed." "false"
+
+    if [[ ${pkg_bin} != "" ]]; then
+      log_event "debug" "Package binary on: ${pkg_bin}" "false"
+    fi
 
   fi
 
@@ -300,10 +304,15 @@ function package_install_optimization_utils() {
   package_install_if_not "imagemagick"
 
   # Load commands
-  declare -g MOGRIFY="$(command -v mogrify)"
-  declare -g JPEGOPTIM="$(command -v jpegoptim)"
-  declare -g OPTIPNG="$(command -v optipng)"
-  declare -g GHOSTSCRIPT="$(command -v ghostscript)"
+  declare -g MOGRIFY
+  declare -g JPEGOPTIM
+  declare -g OPTIPNG
+  declare -g GHOSTSCRIPT
+
+  MOGRIFY="$(command -v mogrify)"
+  JPEGOPTIM="$(command -v jpegoptim)"
+  OPTIPNG="$(command -v optipng)"
+  GHOSTSCRIPT="$(command -v ghostscript)"
 
   export MOGRIFY JPEGOPTIM OPTIPNG GHOSTSCRIPT
 

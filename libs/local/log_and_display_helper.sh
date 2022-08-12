@@ -133,16 +133,21 @@ function spinner_stop() {
 #  $1 = {log_type} (success, info, warning, error, critical)
 #  $2 = {message}
 #  $3 = {console_display} optional (true or false, default is false)
+#  $4 = {status} optional (1 only if script execution ends)
 #
 # Outputs:
 #  nothing
 ################################################################################
+
+# TODO: refactor to something like these?
+## log --message "- Testing project ${URL_TO_TEST}" --type "info" --display "false" --status "0"
 
 function log_event() {
 
   local log_type="${1}"
   local message="${2}"
   local console_display="${3}"
+  local status="${4}            " #optional
 
   # If alias, do not log
   # TODO: deprecated?
@@ -151,10 +156,6 @@ function log_event() {
   # If is a BROLIT UI exec
   if [[ ${EXEC_TYPE} == "external" && -n ${log_type} ]]; then
 
-    #objName="output"
-    #objJSON="{\"time\": \"$(_timestamp)\",\"message\": \"message\",\"log_type\": \"log_type\"}"
-    #echo "${LOG}" | jq --arg objectName "${objName}" --argjson jsonString "${objJSON}" '.output[$objectName] += $jsonString'
-
     inner=$(
       jq -n --arg time "$(_timestamp)" \
         --arg message "${message}" \
@@ -162,11 +163,17 @@ function log_event() {
         '$ARGS.named'
     )
     final=$(
-      jq -n --arg status "1" \
+      jq -n --arg status "${status}" \
         --argjson output "[$inner]" \
         '$ARGS.named'
     )
-    echo "${final}" >>"${LOG}"
+    
+    if [[ ${status} == "1" ]]; then
+      echo "${final}," >>"${LOG}"
+    else
+      echo "${final}]" >>"${LOG}"
+    fi
+
     return 0
   fi
 

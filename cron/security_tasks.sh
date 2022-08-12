@@ -60,4 +60,4 @@ if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
 fi
 
 # Log End
-log_event "info" "SECURITY TASKS SCRIPT End -- $(date +%Y%m%d_%H%M)" "false"
+log_event "info" "Exiting script ..." "false" "1"
