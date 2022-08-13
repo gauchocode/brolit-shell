@@ -1471,11 +1471,11 @@ function project_install() {
     project_domain="$(project_ask_domain "")"
   fi
 
-  #folder_to_install="$(project_ask_folder_to_install "${dir_path}")"
+  # If ${dir_path} is empty, use default project path
+  [[ -z ${dir_path} ]] && dir_path="${PROJECTS_PATH}"
+
   project_path="${dir_path}/${project_domain}"
 
-  #possible_root_domain="$(domain_get_root "${project_domain}")"
-  #root_domain="$(cloudflare_ask_rootdomain "${possible_root_domain}")"
   root_domain="$(domain_get_root "${project_domain}")"
 
   # TODO: check when add www.DOMAIN.com and then select other stage != prod
