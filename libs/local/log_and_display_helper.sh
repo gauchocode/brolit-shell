@@ -97,7 +97,7 @@ function _spinner() {
 
 function spinner_start() {
 
-  if [[ ${QUIET} == "true" || ${EXEC_TYPE} == "alias" ]]; then return 0; fi
+  [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]] && return 0
 
   _spinner "start" "${1}" &
 
@@ -119,10 +119,80 @@ function spinner_start() {
 
 function spinner_stop() {
 
-  if [[ ${QUIET} == "true" || ${EXEC_TYPE} == "alias" ]]; then return 0; fi
+  [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]] && return 0
 
   _spinner "stop" "${1}" "${_sp_pid}"
   unset _sp_pid
+
+}
+
+################################################################################
+# Removes color related chars from a string
+#
+# Arguments:
+#   $1 = ${string}
+#
+# Outputs:
+#   string
+################################################################################
+
+function _string_remove_color_chars() {
+
+  local string="${1}"
+
+  # Text Styles
+  declare -a text_styles=("${NORMAL}" "${BOLD}" "${ITALIC}" "${UNDERLINED}" "${INVERTED}")
+
+  # Foreground/Text Colours
+  declare -a text_colors=("${BLACK}" "${RED}" "${GREEN}" "${YELLOW}" "${ORANGE}" "${MAGENTA}" "${CYAN}" "${WHITE}" "${ENDCOLOR}" "${F_DEFAULT}")
+
+  # Background Colours
+  declare -a text_background=("${B_BLACK}" "${B_RED}" "${B_GREEN}" "${B_YELLOW}" "${B_ORANGE}" "${B_MAGENTA}" "${B_CYAN}" "${B_WHITE}" "${B_ENDCOLOR}" "${B_DEFAULT}")
+
+  for i in "${text_styles[@]}"; do
+
+    # First we need to remove special char '\'
+    i="$(echo "${i}" | sed -E 's/\\//g')"
+    string="$(echo "${string}" | sed -E 's/\\//g')"
+
+    # Second we need to remove special char '['
+    i="$(echo "${i}" | sed -E 's/\[//g')"
+    string="$(echo "${string}" | sed -E 's/\[//g')"
+
+    string="$(echo "${string}" | sed -E "s/$i//")"
+
+  done
+
+  for j in "${text_colors[@]}"; do
+
+    # First we need to remove special char '\'
+    j="$(echo "${j}" | sed -E 's/\\//g')"
+    string="$(echo "${string}" | sed -E 's/\\//g')"
+
+    # Second we need to remove special char '['
+    j="$(echo "${j}" | sed -E 's/\[//g')"
+    string="$(echo "${string}" | sed -E 's/\[//g')"
+
+    string="$(echo "${string}" | sed -E "s/$j//")"
+
+  done
+
+  for k in "${text_background[@]}"; do
+
+    # First we need to remove special char '\'
+    k="$(echo "${k}" | sed -E 's/\\//g')"
+    string="$(echo "${string}" | sed -E 's/\\//g')"
+
+    # Second we need to remove special char '['
+    k="$(echo "${k}" | sed -E 's/\[//g')"
+    string="$(echo "${string}" | sed -E 's/\[//g')"
+
+    string="$(echo "${string}" | sed -E "s/$k//")"
+
+  done
+
+  # Return
+  echo "${string}"
 
 }
 
@@ -153,9 +223,9 @@ function log_event() {
   [[ -z ${status} ]] && status="0"
 
   # Do not log
-  [[ ${EXEC_TYPE} == "alias" ]] && return 0
+  [[ ${DEBUG} == "false" && ${log_type} == "debug" ]] && return 0
   [[ ${EXEC_TYPE} == "external" && -z ${log_type} ]] && return 0
-  [[ ${DEBUG} == "true" && ${log_type} == "debug" ]] && return 0
+  [[ ${EXEC_TYPE} == "alias" ]] && return 0
 
   # If is a BROLIT UI exec
   if [[ ${EXEC_TYPE} == "external" && -n ${log_type} ]]; then
@@ -456,7 +526,7 @@ function display() {
   done
 
   if [[ -n "${TEXT}" ]]; then
-  
+
     if [[ -z "${RESULT}" ]]; then
       RESULTPART=""
     else
@@ -474,7 +544,7 @@ function display() {
     # Display:
     # - for full shells, count with -m instead of -c, to support language locale (older busybox does not have -m)
     # - wc needs LANG to deal with multi-bytes characters but LANG has been unset in include/consts
-    TEXT_C="$(string_remove_color_chars "${TEXT}")"
+    TEXT_C="$(_string_remove_color_chars "${TEXT}")"
 
     LINESIZE="$(
       export LC_ALL=
