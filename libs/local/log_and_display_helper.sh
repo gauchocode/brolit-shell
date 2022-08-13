@@ -149,6 +149,9 @@ function log_event() {
   local console_display="${3}"
   local status="${4}" #optional
 
+  # Status 0 if empty
+  [[ -z ${status} ]] && status="0"
+
   # Do not log
   [[ ${EXEC_TYPE} == "alias" ]] && return 0
   [[ ${EXEC_TYPE} == "external" && -z ${log_type} ]] && return 0
