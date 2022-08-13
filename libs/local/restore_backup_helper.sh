@@ -1178,8 +1178,6 @@ function restore_project() {
     # Project Type
     project_type="$(project_get_type "${BROLIT_TMP_DIR}/${chosen_project}")"
 
-    display --indent 8 --text "Project Type ${project_type}" --tcolor GREEN
-
     # Here, for convention, ${chosen_project} should be $chosen_domain... only for better code reading:
     chosen_domain="${chosen_project}"
 

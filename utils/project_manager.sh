@@ -182,7 +182,7 @@ function project_manager_menu_new_project_type_utils() {
     if [[ ${chosen_project_utils_options} == *"02"* ]]; then
 
       # DELETE PROJECT
-      project_delete ""
+      project_delete "" ""
 
     fi
 
