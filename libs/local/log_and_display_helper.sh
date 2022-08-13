@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc13
+# Version: 3.2.0
 ################################################################################
 #
 # Log and Display Helper: Log and display functions.
@@ -451,6 +451,9 @@ function clear_previous_lines() {
 
 function display() {
 
+  local text_c
+  local linesize
+
   INDENT=0
   TEXT=""
   RESULT=""
@@ -530,33 +533,24 @@ function display() {
     if [[ -z "${RESULT}" ]]; then
       RESULTPART=""
     else
-
-      #if [[ ${EXEC_TYPE} == "default" ]]; then
       RESULTPART=" [ ${COLOR}${B_DEFAULT}${RESULT}${NORMAL} ]"
-      #else
-      #  RESULTPART=" [ ${RESULT} ]"
-      #fi
-
     fi
-    #SHOW=0
-    #if [[ ${SHOW} -eq 0 ]]; then
 
     # Display:
     # - for full shells, count with -m instead of -c, to support language locale (older busybox does not have -m)
     # - wc needs LANG to deal with multi-bytes characters but LANG has been unset in include/consts
-    TEXT_C="$(_string_remove_color_chars "${TEXT}")"
+    text_c="$(_string_remove_color_chars "${TEXT}")"
 
-    LINESIZE="$(
+    linesize="$(
       export LC_ALL=
-      echo "${TEXT_C}" | wc -m | tr -d ' '
+      echo "${text_c}" | wc -m | tr -d ' '
     )"
 
-    if [[ "${INDENT}" -gt 0 ]]; then SPACES=$((62 - INDENT - LINESIZE)); fi
-    if [[ "${SPACES}" -lt 0 ]]; then SPACES=0; fi
+    [[ "${INDENT}" -gt 0 ]] && SPACES=$((62 - INDENT - linesize))
+    [[ "${SPACES}" -lt 0 ]] && SPACES=0
 
     echo -e "\033[${INDENT}C${TCOLOR}${TSTYLE}${TEXT}${NORMAL}\033[${SPACES}C${RESULTPART}${DEBUGTEXT}" >&2
 
-    #fi
   fi
 
 }

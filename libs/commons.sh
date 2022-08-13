@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2-rc13
+# Version: 3.2.0
 ################################################################################
 
 ################################################################################
@@ -53,7 +53,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.2-rc13"
+  declare -g SCRIPT_V="3.2.0"
 
   # Hostname
   declare -g SERVER_NAME="$HOSTNAME"
@@ -221,20 +221,29 @@ function _check_scripts_permissions() {
 
 }
 
-# TODO: refactor this function
+################################################################################
+# Get server IPs
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   none
+################################################################################
+
+# TODO: Should return server IPs
 function get_server_ips() {
 
   declare -g LOCAL_IP
   declare -g SERVER_IP
   declare -g SERVER_IPv6
 
-  # LOCAL IP (if server has configured a floating ip, it will return this)
-  #LOCAL_IP="$(/sbin/ifconfig eth0 | grep -w 'inet ' | awk '{print $2}')"
+  # If the server has configured a floating ip, it will return this:
   LOCAL_IP="$(ip route get 1 | awk '{print $(NF-2);exit}')"
 
   # PUBLIC IP (with https://www.ipify.org)
   SERVER_IP="$(curl --silent 'https://api.ipify.org')"
-  if [[ ${SERVER_IP} == "" ]]; then
+  if [[ -z ${SERVER_IP} ]]; then
     # Alternative method
     SERVER_IP="$(curl --silent http://ipv4.icanhazip.com)"
   else
@@ -360,7 +369,7 @@ function script_init() {
   clear_screen
 
   # Log Start
-  log_event "info" "Script Start -- $(date +%Y%m%d_%H%M)" "false"
+  log_event "info" "BROLIT Shell start" "false"
 
   # Install required package to read configuration file
   package_install_if_not "jq"
@@ -397,12 +406,12 @@ function script_init() {
   get_server_ips
 
   # Clean old Brolit log files
-  del_logs="$(find "${path_log}" -name "*.log" -type f -mtime +7 -print -delete)"
-  del_reports="$(find "${path_reports}" -name "*.log" -type f -mtime +7 -print -delete)"
+  del_logs="$(find "${path_log}" -name "*.log" -type f -mtime +7 -print -delete | tr '\n' ' ')"
+  del_reports="$(find "${path_reports}" -name "*.log" -type f -mtime +7 -print -delete | tr '\n' ' ')"
 
   ## Log
-  log_event "info" "Deleting old script logs... ${del_logs}" "false"
-  log_event "info" "Deleting old script reports... ${del_reports}" "false"
+  log_event "debug" "Deleting old script logs: ${del_logs}" "false"
+  log_event "debug" "Deleting old script reports: ${del_reports}" "false"
 
   # Checking required packages
   package_check_required
@@ -1657,7 +1666,7 @@ function menu_main_options() {
     echo ""
     echo -e "${B_RED}Exiting script ...${ENDCOLOR}"
     #log_event "info" "Exiting script ..." "false"
-    
+
     return 0
 
   fi
