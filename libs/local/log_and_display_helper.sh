@@ -179,6 +179,7 @@ function log_event() {
     fi
 
     return 0
+
   fi
 
   case ${log_type} in
@@ -252,15 +253,15 @@ function log_break() {
 
   local log_break
 
-  if [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]]; then return 0; fi
+  [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]] && return 0
 
+  # Console Display
   if [[ ${console_display} == "true" ]]; then
-
     log_break="        ----------------------------------------------------          "
     echo -e "${MAGENTA}${B_DEFAULT}${log_break}${ENDCOLOR}" >&2
-
   fi
 
+  # Write log file
   log_break="$(_timestamp) > ------------------------------------------------------------"
   echo "${log_break}" >>"${LOG}"
 
@@ -280,7 +281,7 @@ function log_section() {
 
   local message="${1}"
 
-  if [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]]; then return 0; fi
+  [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]] && return 0
 
   # Console Display
   echo "" >&2
@@ -288,7 +289,7 @@ function log_section() {
   #echo "--------------------------------------------------" >&2
   echo "—————————————————————————————————————————————————————————" >&2
 
-  # Log file
+  # Write log file
   echo "$(_timestamp) > ------------------------------------------------------------" >>"${LOG}"
   echo "$(_timestamp) > [+] Performing Action: ${message}" >>"${LOG}"
   echo "$(_timestamp) > ------------------------------------------------------------" >>"${LOG}"
@@ -309,14 +310,14 @@ function log_subsection() {
 
   local message="${1}"
 
-  if [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]]; then return 0; fi
+  [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]] && return 0
 
   # Console Display
   echo "" >&2
   echo -e "    [·] ${CYAN}${B_DEFAULT}${message}${ENDCOLOR}" >&2
   echo "    —————————————————————————————————————————————————————" >&2
 
-  # Log file
+  # Write log file
   echo "$(_timestamp) > ------------------------------------------------------------" >>"${LOG}"
   echo "$(_timestamp) > [·] ${message}" >>"${LOG}"
   echo "$(_timestamp) > ------------------------------------------------------------" >>"${LOG}"
@@ -335,8 +336,9 @@ function log_subsection() {
 
 function clear_screen() {
 
-  if [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]]; then return 0; fi
+  [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]] && return 0
 
+  # Console Display
   echo -en "\ec" >&2
 
 }
@@ -355,19 +357,13 @@ function clear_previous_lines() {
 
   local lines="${1}"
 
-  if [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]]; then return 0; fi
+  [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]] && return 0
 
-  #loop starting $lines going down to 0
+  # Loop starting $lines going down to 0
   for ((i = lines; i > 0; i--)); do
 
     tput cuu1 >&2
     tput el >&2
-
-    #printf "\033[1A" >&2
-    #echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
-    #echo -e "${F_DEFAULT}                                                                               ${ENDCOLOR}" >&2
-    #printf "\033[1A" >&2
-    #printf "\033[1A" >&2
 
   done
 
@@ -393,7 +389,7 @@ function display() {
   COLOR=""
   SPACES=0
 
-  if [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]]; then return 0; fi
+  [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]] && return 0
 
   while [ $# -ge 1 ]; do
 
@@ -448,8 +444,8 @@ function display() {
       ;;
 
     *)
-      echo "INVALID OPTION (Display): $1" >&2
-      #ExitFatal
+      log_event "critical" "Invalid parameter for 'display' function: $1" "true"
+      exit 1
       ;;
 
     esac
@@ -459,49 +455,38 @@ function display() {
 
   done
 
-  if [[ -z "${RESULT}" ]]; then
-    RESULTPART=""
-  else
-
-    # EXEC_TYPE defined globally
-    if [[ ${EXEC_TYPE} == "default" ]]; then
-      RESULTPART=" [ ${COLOR}${B_DEFAULT}${RESULT}${NORMAL} ]"
-    else
-      RESULTPART=" [ ${RESULT} ]"
-    fi
-
-  fi
-
   if [[ -n "${TEXT}" ]]; then
-    SHOW=0
+  
+    if [[ -z "${RESULT}" ]]; then
+      RESULTPART=""
+    else
 
-    if [[ ${SHOW} -eq 0 ]]; then
-
-      # Display:
-      # - for full shells, count with -m instead of -c, to support language locale (older busybox does not have -m)
-      # - wc needs LANG to deal with multi-bytes characters but LANG has been unset in include/consts
-      TEXT_C="$(string_remove_color_chars "${TEXT}")"
-
-      LINESIZE="$(
-        export LC_ALL=
-        echo "${TEXT_C}" | wc -m | tr -d ' '
-      )"
-
-      if [[ "${INDENT}" -gt 0 ]]; then SPACES=$((62 - INDENT - LINESIZE)); fi
-      if [[ "${SPACES}" -lt 0 ]]; then SPACES=0; fi
-
-      if [[ ${EXEC_TYPE} == "default" ]]; then
-
-        echo -e "\033[${INDENT}C${TCOLOR}${TSTYLE}${TEXT}${NORMAL}\033[${SPACES}C${RESULTPART}${DEBUGTEXT}" >&2
-
-      else
-
-        return 0
-
-      fi
+      #if [[ ${EXEC_TYPE} == "default" ]]; then
+      RESULTPART=" [ ${COLOR}${B_DEFAULT}${RESULT}${NORMAL} ]"
+      #else
+      #  RESULTPART=" [ ${RESULT} ]"
+      #fi
 
     fi
+    #SHOW=0
+    #if [[ ${SHOW} -eq 0 ]]; then
 
+    # Display:
+    # - for full shells, count with -m instead of -c, to support language locale (older busybox does not have -m)
+    # - wc needs LANG to deal with multi-bytes characters but LANG has been unset in include/consts
+    TEXT_C="$(string_remove_color_chars "${TEXT}")"
+
+    LINESIZE="$(
+      export LC_ALL=
+      echo "${TEXT_C}" | wc -m | tr -d ' '
+    )"
+
+    if [[ "${INDENT}" -gt 0 ]]; then SPACES=$((62 - INDENT - LINESIZE)); fi
+    if [[ "${SPACES}" -lt 0 ]]; then SPACES=0; fi
+
+    echo -e "\033[${INDENT}C${TCOLOR}${TSTYLE}${TEXT}${NORMAL}\033[${SPACES}C${RESULTPART}${DEBUGTEXT}" >&2
+
+    #fi
   fi
 
 }
