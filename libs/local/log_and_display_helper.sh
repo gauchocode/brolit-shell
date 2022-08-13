@@ -147,11 +147,11 @@ function log_event() {
   local log_type="${1}"
   local message="${2}"
   local console_display="${3}"
-  local status="${4}            " #optional
+  local status="${4}" #optional
 
-  # If alias, do not log
-  # TODO: deprecated?
+  # Do not log
   [[ ${EXEC_TYPE} == "alias" ]] && return 0
+  [[ ${EXEC_TYPE} == "external" && -z ${log_type} ]] && return 0
 
   # If is a BROLIT UI exec
   if [[ ${EXEC_TYPE} == "external" && -n ${log_type} ]]; then
@@ -167,11 +167,11 @@ function log_event() {
         --argjson output "[$inner]" \
         '$ARGS.named'
     )
-    
+
     if [[ ${status} == "1" ]]; then
-      echo "${final}," >>"${LOG}"
-    else
       echo "${final}]" >>"${LOG}"
+    else
+      echo "${final}," >>"${LOG}"
     fi
 
     return 0
