@@ -1631,8 +1631,6 @@ function project_delete_files() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    log_event "info" "Project Type: ${project_type}" "false"
-
     # Creating new folder structure for old projects
     storage_create_dir "/${SERVER_NAME}/projects-offline"
     storage_create_dir "/${SERVER_NAME}/projects-offline/site"
@@ -1828,6 +1826,13 @@ function project_delete() {
 
     fi
 
+  else
+
+    if [[ ! -f ${PROJECTS_PATH}/${project_domain} ]]; then
+      log_event "error" "Project directory to delete not found: ${PROJECTS_PATH}/${project_domain}" "true"
+      return 1
+    fi
+
   fi
 
   if [[ ${files_skipped} == "false" ]]; then
@@ -1952,10 +1957,14 @@ function project_get_type() {
     wp_path="$(wp_config_path "${dir_path}")"
     if [[ -n ${wp_path} ]]; then
 
-      log_event "debug" "Project Type: wordpress" "false"
+      project_type="wordpress"
+
+      # Log
+      log_event "debug" "Project type: ${project_type}" "false"
+      display --indent 8 --text "Project type ${project_type}" --tcolor GREEN
 
       # Return
-      echo "wordpress"
+      echo "${project_type}"
 
       return 0
 
@@ -1965,10 +1974,14 @@ function project_get_type() {
     laravel="$(php "${dir_path}/artisan" --version | grep -oE "Laravel Framework [0-9]+\.[0-9]+\.[0-9]+")"
     if [[ -n ${laravel} ]]; then
 
-      log_event "debug" "Project Type: laravel" "false"
+      project_type="laravel"
+
+      # Log
+      log_event "debug" "Project type: ${project_type}" "false"
+      display --indent 8 --text "Project type ${project_type}" --tcolor GREEN
 
       # Return
-      echo "laravel"
+      echo "${project_type}"
 
       return 0
 
@@ -1978,23 +1991,31 @@ function project_get_type() {
     php="$(find "${dir_path}" -name "index.php" -type f)"
     if [[ -n ${php} ]]; then
 
-      log_event "debug" "Project Type: php" "false"
+      project_type="php"
+
+      # Log
+      log_event "debug" "Project type: ${project_type}" "false"
+      display --indent 8 --text "Project type ${project_type}" --tcolor GREEN
 
       # Return
-      echo "php"
+      echo "${project_type}"
 
       return 0
 
     fi
 
-    # Node.js?
+    # node.js?
     nodejs="$(find "${dir_path}" -name "package.json" -type f)"
     if [[ -n ${nodejs} ]]; then
 
-      log_event "debug" "Project Type: nodejs" "false"
+      project_type="nodejs"
+
+      # Log
+      log_event "debug" "Project type: ${project_type}" "false"
+      display --indent 8 --text "Project type ${project_type}" --tcolor GREEN
 
       # Return
-      echo "nodejs"
+      echo "${project_type}"
 
       return 0
 
@@ -2004,10 +2025,14 @@ function project_get_type() {
     react="$(find "${dir_path}/node_modules/react/cjs/" -name "react.development.js" -type f)"
     if [[ -n ${react} ]]; then
 
-      log_event "debug" "Project Type: react" "false"
+      project_type="react"
+
+      # Log
+      log_event "debug" "Project type: ${project_type}" "false"
+      display --indent 8 --text "Project type ${project_type}" --tcolor GREEN
 
       # Return
-      echo "react"
+      echo "${project_type}"
 
       return 0
 
@@ -2017,10 +2042,14 @@ function project_get_type() {
     html="$(find "${dir_path}" -name "index.html" -type f)"
     if [[ -n ${html} ]]; then
 
-      log_event "debug" "Project Type: html" "false"
+      project_type="html"
+
+      # Log
+      log_event "debug" "Project type: ${project_type}" "false"
+      display --indent 8 --text "Project type ${project_type}" --tcolor GREEN
 
       # Return
-      echo "html"
+      echo "${project_type}"
 
       return 0
 
@@ -2033,17 +2062,21 @@ function project_get_type() {
     )"
     if [[ -n ${docker} ]]; then
 
-      log_event "debug" "Project Type: docker" "false"
+      project_type="docker"
+
+      # Log
+      log_event "debug" "Project type: ${project_type}" "false"
+      display --indent 8 --text "Project type ${project_type}" --tcolor GREEN
 
       # Return
-      echo "docker"
+      echo "${project_type}"
 
       return 0
 
     fi
 
     # Unknown
-    log_event "debug" "Project Type: unknown" "false"
+    log_event "debug" "Project type: unknown" "false"
 
     # Return
     echo "other"
@@ -2052,7 +2085,7 @@ function project_get_type() {
 
   else
 
-    log_event "error" "Working directory doesn't exist." "false"
+    log_event "error" "Can't get project type, working directory doesn't exist." "false"
 
     return 1
 
