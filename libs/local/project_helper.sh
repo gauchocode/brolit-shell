@@ -1458,8 +1458,6 @@ function project_install() {
   local project_stage="${5}"
   local project_install_mode="${6}" # clean or copy
 
-  # TODO: need to check if user cancels some of this options
-
   if [[ -z ${project_type} ]]; then
     project_type="$(project_ask_type "")"
     [[ $? -eq 1 ]] && return 1
@@ -1521,6 +1519,10 @@ function project_install() {
     # Execute function
     wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${root_domain}" "${project_install_mode}"
 
+    # Startup Script for WordPress installation
+    # TODO: should pass https://$project_domain instead?
+    [[ ${EXEC_TYPE} == "default" ]] && wpcli_run_startup_script "${project_path}" "${project_domain}"
+
     ;;
 
   laravel)
@@ -1547,11 +1549,60 @@ function project_install() {
 
   *)
     log_event "error" "Project type '${project_type}' unkwnown, aborting ..." "false"
+    return 1
     ;;
 
   esac
 
-  log_event "info" "Project installation finished" "false"
+  ### NEW ###
+
+  # TODO: ask for Cloudflare support and check if root_domain is configured on the cf account
+
+  # Project domain configuration (webserver+certbot+DNS)
+  project_update_domain_config "${project_domain}" "${project_type}" ""
+
+  # Post-restore/install tasks
+  project_post_install_tasks "${project_path}" "${project_type}" "${project_name}" "${project_stage}" "${database_user_passw}" "" ""
+
+  # TODO: refactor this
+  # Cert config files
+  cert_path=""
+  if [[ -d "/etc/letsencrypt/live/${project_domain}" ]]; then
+    cert_path="/etc/letsencrypt/live/${project_domain}"
+  else
+    if [[ -d "/etc/letsencrypt/live/www.${project_domain}" ]]; then
+      cert_path="/etc/letsencrypt/live/www.${project_domain}"
+    fi
+  fi
+
+  # Create project config file
+  # Arguments:
+  #  $1 = ${project_path}
+  #  $2 = ${project_name}
+  #  $3 = ${project_stage}
+  #  $4 = ${project_type}
+  #  $5 = ${project_db_status}
+  #  $6 = ${project_db_engine}
+  #  $7 = ${project_db_name}
+  #  $8 = ${project_db_host}
+  #  $9 = ${project_db_user}
+  #  $10 = ${project_db_pass}
+  #  $11 = ${project_prymary_subdomain}
+  #  $12 = ${project_secondary_subdomains}
+  #  $13 = ${project_override_nginx_conf}
+  #  $14 = ${project_use_http2}
+  #  $15 = ${project_certbot_mode}
+  project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "${project_type} " "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "/etc/nginx/sites-available/${project_domain}" "" "${cert_path}"
+
+  # Log
+  log_event "info" "${project_type} project installation for domain ${project_domain} finished" "false"
+  display --indent 6 --text "- ${project_type} project installation" --result "DONE" --color GREEN
+  display --indent 8 --text "for domain ${project_domain}"
+
+  # Send notification
+  send_notification "✅ ${SERVER_NAME}" "${project_type} project  installation for domain ${project_domain} finished" ""
+
+  ### END NEW ###
 
 }
 
@@ -2097,9 +2148,6 @@ function php_project_installer() {
     # Create project directory
     mkdir -p "${project_path}"
 
-    # Log
-    #display --indent 6 --text "- Making a copy of the WordPress project" --result "DONE" --color GREEN
-
   else
 
     # Log
@@ -2127,128 +2175,6 @@ function php_project_installer() {
 
   # Change ownership
   change_ownership "www-data" "www-data" "${project_path}"
-
-  # TODO: ask for Cloudflare support and check if root_domain is configured on the cf account
-  if [[ ${project_root_domain} == '' ]]; then
-
-    possible_root_domain="$(domain_get_root "${project_domain}")"
-    project_root_domain="$(cloudflare_ask_rootdomain "${possible_root_domain}")"
-
-  fi
-
-  # If domain contains www, should work without www too
-  common_subdomain='www'
-  if [[ ${project_domain} == *"${common_subdomain}"* ]]; then
-
-    # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A" "false" "${SERVER_IP}"
-
-    # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_domain}" "CNAME" "false" "${project_root_domain}"
-
-    # New site Nginx configuration
-    nginx_server_create "${project_domain}" "php" "root_domain" "${project_root_domain}"
-
-    # HTTPS with Certbot
-    project_domain="$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${project_root_domain}" 3>&1 1>&2 2>&3)"
-
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-
-      if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
-
-        certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain},${project_root_domain}"
-
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
-
-          nginx_server_add_http2_support "${project_domain}"
-
-        fi
-
-      else
-
-        log_event "warning" "Certbot is not enabled or installed" "false"
-        display --indent 6 --text "- Certificate installation" --result "SKIPPED" --color YELLOW
-        display --indent 8 --text "Certbot is not enabled or installed" --tcolor YELLOW
-
-      fi
-
-    else
-
-      # Log
-      log_event "info" "HTTPS support for ${project_domain} skipped"
-      display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
-
-    fi
-
-  else
-
-    # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
-
-    # New site Nginx configuration
-    nginx_create_empty_nginx_conf "${project_path}"
-    nginx_create_globals_config
-    nginx_server_create "${project_domain}" "php" "single"
-
-    # HTTPS with Certbot
-    cert_project_domain="$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-
-      certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${cert_project_domain}"
-
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        nginx_server_add_http2_support "${project_domain}"
-
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
-
-          http2_support="true"
-
-        fi
-
-      fi
-
-    else
-
-      log_event "info" "HTTPS support for ${project_domain} skipped" "false"
-      display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
-
-    fi
-
-  fi
-
-  # Create project config file
-
-  # Arguments:
-  #  $1 = ${project_path}
-  #  $2 = ${project_name}
-  #  $3 = ${project_stage}
-  #  $4 = ${project_type}
-  #  $5 = ${project_db_status}
-  #  $6 = ${project_db_engine}
-  #  $7 = ${project_db_name}
-  #  $8 = ${project_db_host}
-  #  $9 = ${project_db_user}
-  #  $10 = ${project_db_pass}
-  #  $11 = ${project_prymary_subdomain}
-  #  $12 = ${project_secondary_subdomains}
-  #  $13 = ${project_override_nginx_conf}
-  #  $14 = ${project_use_http2}
-  #  $15 = ${project_certbot_mode}
-
-  project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "php" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "/etc/nginx/sites-available/${project_domain}" "${http2_support}" "${cert_path}"
-
-  # Log
-  log_event "info" "PHP project installation for domain ${project_domain} finished" "false"
-  display --indent 6 --text "- PHP project installation for domain ${project_domain}" --result "DONE" --color GREEN
-
-  # Send notification
-  send_notification "${SERVER_NAME}" "PHP project installation for domain ${project_domain} finished!"
 
 }
 
@@ -2325,88 +2251,6 @@ function nodejs_project_installer() {
 
   # Change ownership
   change_ownership "www-data" "www-data" "${project_path}"
-
-  # TODO: ask for Cloudflare support and check if root_domain is configured on the cf account
-
-  # If domain contains www, should work without www too
-  common_subdomain='www'
-  if [[ ${project_domain} == *"${common_subdomain}"* ]]; then
-
-    # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A" "false" "${SERVER_IP}"
-
-    # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_domain}" "CNAME" "false" "${project_root_domain}"
-
-    # New site Nginx configuration
-    nginx_server_create "${project_domain}" "php" "root_domain" "${project_root_domain}"
-
-    if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
-
-      # HTTPS with Certbot
-      project_domain="$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${project_root_domain}" 3>&1 1>&2 2>&3)"
-
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain},${project_root_domain}"
-
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
-
-          nginx_server_add_http2_support "${project_domain}"
-
-        fi
-
-      else
-
-        # Log
-        log_event "info" "HTTPS support for ${project_domain} skipped" "false"
-        display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
-
-      fi
-
-    fi
-
-  else
-
-    # Cloudflare API to change DNS records
-    cloudflare_set_record "${project_root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
-
-    # New site Nginx configuration
-    nginx_create_empty_nginx_conf "${project_path}"
-    nginx_create_globals_config
-    nginx_server_create "${project_domain}" "nodejs" "single"
-
-    # HTTPS with Certbot
-    cert_project_domain="$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-
-      certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${cert_project_domain}"
-
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        nginx_server_add_http2_support "${project_domain}"
-
-      fi
-
-    else
-
-      log_event "info" "HTTPS support for ${project_domain} skipped" "false"
-      display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
-
-    fi
-
-  fi
-
-  # Log
-  log_event "info" "NodeJS project installation for domain ${project_domain} finished" "false"
-  display --indent 6 --text "- NodeJS project installation for domain ${project_domain}" --result "DONE" --color GREEN
-
-  # Send notification
-  send_notification "✅ ${SERVER_NAME}" "NodeJS project installation for domain ${project_domain} finished!"
 
 }
 
