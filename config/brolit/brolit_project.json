@@ -11,10 +11,10 @@
             "override_nginx_conf": "",
             "use_http2": "true",
             "ipv6_support": "false",
-            "certbot_mode": "",
+            "certbot_mode": "nginx",
             "files": [
                 {
-                    "status": "disabled",
+                    "status": "enabled",
                     "config": [
                         {
                             "path": "",
@@ -32,12 +32,12 @@
             ],
             "database": [
                 {
-                    "status": "disabled",
+                    "status": "enabled",
                     "engine": "mysql",
                     "config": [
                         {
                             "name": "",
-                            "host": "",
+                            "host": "localhost",
                             "user": "",
                             "pass": ""
                         }
