@@ -155,6 +155,7 @@ function log_event() {
   # Do not log
   [[ ${EXEC_TYPE} == "alias" ]] && return 0
   [[ ${EXEC_TYPE} == "external" && -z ${log_type} ]] && return 0
+  [[ ${DEBUG} == "true" && ${log_type} == "debug" ]] && return 0
 
   # If is a BROLIT UI exec
   if [[ ${EXEC_TYPE} == "external" && -n ${log_type} ]]; then
@@ -218,13 +219,9 @@ function log_event() {
     ;;
 
   debug)
-    if [[ ${DEBUG} == "true" ]]; then
-
-      echo "$(_timestamp) > DEBUG: ${message}" >>"${LOG}"
-      if [[ ${console_display} == "true" && ${QUIET} == "false" ]]; then
-        echo -e "${B_MAGENTA} > ${message}${ENDCOLOR}" >&2
-      fi
-
+    echo "$(_timestamp) > DEBUG: ${message}" >>"${LOG}"
+    if [[ ${console_display} == "true" && ${QUIET} == "false" ]]; then
+      echo -e "${B_MAGENTA} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
