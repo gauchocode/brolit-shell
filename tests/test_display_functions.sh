@@ -43,13 +43,13 @@ function test_string_remove_color_chars() {
     # Test 1
     message1="${YELLOW}- Testing colored message${ENDCOLOR}"
     echo "${message1}"
-    colored_test_1=$(string_remove_color_chars "${message1}")
+    colored_test_1=$(_string_remove_color_chars "${message1}")
     echo "${colored_test_1}"
 
     # Test 2
     message2="- Testing message with colored ${YELLOW}word${ENDCOLOR}"
     echo "${message2}"
-    colored_test_2=$(string_remove_color_chars "${message2}")
+    colored_test_2=$(_string_remove_color_chars "${message2}")
     echo "${colored_test_2}"
 
 }
