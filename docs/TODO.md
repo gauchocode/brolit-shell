@@ -19,6 +19,7 @@
 
 ### Need improvements
 
+- [ ] Core: Main menu should not show options disabled on .brolit_conf.json
 - [ ] Core: need to check if select domain is a root domain or www domain, and ask if the user want to create a redirection.
 - [ ] Cloudflare-Certbot: Change proxy mode with Cloudflare API when create a certificate with Cloudflare.
         Also, if you use www, it should ask you if you want to use the root domain too.

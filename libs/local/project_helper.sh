@@ -1953,6 +1953,26 @@ function project_get_type() {
 
   if [[ -n ${dir_path} ]]; then
 
+    # docker-compose?
+    docker="$(
+      find "${dir_path}" -name "docker-compose.yml" -type f
+      find "${dir_path}" -name "docker-compose.yaml" -type f
+    )"
+    if [[ -n ${docker} ]]; then
+
+      project_type="docker"
+
+      # Log
+      log_event "debug" "Project type: ${project_type}" "false"
+      display --indent 8 --text "Project type ${project_type}" --tcolor GREEN
+
+      # Return
+      echo "${project_type}"
+
+      return 0
+
+    fi
+
     # WP?
     wp_path="$(wp_config_path "${dir_path}")"
     if [[ -n ${wp_path} ]]; then
@@ -2043,26 +2063,6 @@ function project_get_type() {
     if [[ -n ${html} ]]; then
 
       project_type="html"
-
-      # Log
-      log_event "debug" "Project type: ${project_type}" "false"
-      display --indent 8 --text "Project type ${project_type}" --tcolor GREEN
-
-      # Return
-      echo "${project_type}"
-
-      return 0
-
-    fi
-
-    # docker-compose?
-    docker="$(
-      find "${dir_path}" -name "docker-compose.yml" -type f
-      find "${dir_path}" -name "docker-compose.yaml" -type f
-    )"
-    if [[ -n ${docker} ]]; then
-
-      project_type="docker"
 
       # Log
       log_event "debug" "Project type: ${project_type}" "false"
