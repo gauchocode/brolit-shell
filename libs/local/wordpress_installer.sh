@@ -22,6 +22,8 @@
 #   0 if ok, 1 on error.
 ################################################################################
 
+# TODO: refactor
+
 function wordpress_project_installer() {
 
   local project_path="${1}"
@@ -37,8 +39,11 @@ function wordpress_project_installer() {
     # Installation types
     project_install_modes=(
       "01)" "CLEAN INSTALL"
-      "02)" "COPY FROM PROJECT"
     )
+    #project_install_modes=(
+    #  "01)" "CLEAN INSTALL"
+    #  "02)" "COPY FROM PROJECT"
+    #)
     installation_type=$(whiptail --title "INSTALLATION TYPE" --menu "Choose an Installation Type" 20 78 10 "${project_install_modes[@]}" 3>&1 1>&2 2>&3)
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -53,7 +58,8 @@ function wordpress_project_installer() {
   if [[ ${project_install_mode} == "copy" ]]; then
 
     # TODO: need a refactor
-    wordpress_project_copy "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
+    #wordpress_project_copy "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
+    log_event "error" "Not implemented yet" "true"
 
   else # Clean Install
 
@@ -156,6 +162,7 @@ function wordpress_project_copy() {
 
   log_subsection "Copy From Project"
 
+  folder_to_install="${project_path}"
   startdir="${folder_to_install}"
   menutitle="Site Selection Menu"
   directory_browser "${menutitle}" "${startdir}"
@@ -176,7 +183,6 @@ function wordpress_project_copy() {
     # Make a copy of the existing project
     log_event "info" "Making a copy of ${copy_project} on ${project_dir} ..." "false"
 
-    #cd "${folder_to_install}"
     copy_files "${folder_to_install}/${copy_project}" "${project_dir}"
 
     # Logging
