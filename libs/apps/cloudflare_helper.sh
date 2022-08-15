@@ -440,6 +440,7 @@ function cloudflare_get_record_details() {
 
         if [[ ${record} == *"\"success\":false"* || ${record} == "" ]]; then
 
+            # Log
             log_event "error" "Get record details failed. Results:\n${record}"
             display --indent 6 --text "- Getting record details" --result "FAIL" --color RED
             display --indent 8 --text "${message}" --tcolor RED
@@ -448,6 +449,7 @@ function cloudflare_get_record_details() {
 
         else
 
+            # Log
             log_event "info" "Getting record details. Results:\n${record}"
             display --indent 6 --text "- Getting record details" --result "DONE" --color GREEN
 
@@ -630,7 +632,14 @@ function cloudflare_update_record() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
 
-        update="$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
+        log_event "info" "Trying to update the record '${record_name}'" "false"
+        log_event "debug" "Running: curl -s -X PATCH \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}\" \ 
+        -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" \ 
+        -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" \ 
+        -H \"Content-Type: application/json\" \
+        --data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}\""
+
+        update="$(curl -s -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
             -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
             -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json" \
