@@ -271,19 +271,36 @@ function certbot_helper_installer_menu() {
 
       certbot_certonly_cloudflare "${email}" "${domains}"
 
-      cb_warning_text+="\n Now you need to follow the next steps: \n"
-      cb_warning_text+="1- Login to your Cloudflare account and select the domain we want to work. \n"
-      cb_warning_text+="2- Go to de 'DNS' option panel and Turn ON the proxy Cloudflare setting over the domain/s \n"
-      cb_warning_text+="3- Go to 'SSL/TLS' option panel and change the SSL setting from 'Flexible' to 'Full'. \n"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
 
-      whiptail_message "CERTBOT MANAGER" "${cb_warning_text}"
-      #root_domain=$(cloudflare_ask_rootdomain "${domains}")
+        # Loop through a comma-separated shell variable
+        # Not messing with IFS, not calling external command
+        # Ref: https://stackoverflow.com/questions/27702452/loop-through-a-comma-separated-shell-variable
+        for domain in ${domains//,/ }; do
 
-      # TODO: list entries to add proxy on cloudflare records
-      #cloudflare_set_record "${root_domain}" "" "true"
+          root_domain=$(domain_get_root "${domain}")
 
-      # Changing SSL Mode flor Cloudflare record
-      #cloudflare_set_ssl_mode "${root_domain}" "full"
+          #cloudflare_get_record_details
+
+          # Enable cf proxy on record
+          cloudflare_update_record "${root_domain}" "${domain}" "A" "true" "${SERVER_IP}"
+
+          # Changing SSL Mode flor Cloudflare record
+          cloudflare_set_ssl_mode "${root_domain}" "full"
+
+        done
+
+      else
+
+        cb_warning_text+="\n Now you need to follow the next steps: \n"
+        cb_warning_text+="1- Login to your Cloudflare account and select the domain we want to work. \n"
+        cb_warning_text+="2- Go to de 'DNS' option panel and Turn ON the proxy Cloudflare setting over the domain/s \n"
+        cb_warning_text+="3- Go to 'SSL/TLS' option panel and change the SSL setting from 'Flexible' to 'Full'. \n"
+
+        whiptail_message "CERTBOT MANAGER" "${cb_warning_text}"
+
+      fi
 
     fi
 
