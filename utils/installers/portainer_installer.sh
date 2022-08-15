@@ -104,16 +104,31 @@ function portainer_purge() {
     container_id="$(docker ps | grep portainer | awk '{print $1;}')"
 
     # Stop Portainer Container
-    docker stop "${container_id}"
+    result_stop="$(docker stop "${container_id}")"
+    if [[ -z ${result_stop} ]]; then
+        display --indent 6 --text "- Stopping portainer container" --result "FAIL" --color RED
+        log_event "error" "Portainer container not found." "true"
+        return 1
+    fi
+
+    display --indent 6 --text "- Stopping portainer container" --result "DONE" --color GREEN
 
     # Remove Portainer Container
-    docker rm -f portainer
+    result_remove="$(docker rm -f portainer)"
+    if [[ -z ${result_remove} ]]; then
+        display --indent 6 --text "- Deleting portainer container" --result "FAIL" --color RED
+        log_event "error" "Deleting portainer container." "true"
+        return 1
+    fi
+
+    # Remove Portainer Data
+    rm --recursive "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN:?}"
 
     # Remove Portainer Volume
-    volume rm portainer_data
+    #docker volume rm portainer_data
 
     exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
+    if [[ ${exitstatus} -eq 0 && ${PACKAGES_PORTAINER_STATUS} == "enabled" ]]; then
 
         PACKAGES_PORTAINER_STATUS="disabled"
 
