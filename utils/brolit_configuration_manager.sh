@@ -2148,7 +2148,7 @@ function brolit_configuration_load() {
     _brolit_configuration_load_portainer "${server_config_file}"
 
     ### mailcow
-    _brolit_configuration_load_mailcow "${server_config_file}"
+    #_brolit_configuration_load_mailcow "${server_config_file}"
 
     ### custom
     _brolit_configuration_load_custom_pkgs "${server_config_file}"
