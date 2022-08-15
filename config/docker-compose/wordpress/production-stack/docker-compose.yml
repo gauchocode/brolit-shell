@@ -36,25 +36,10 @@ services:
             MYSQL_RANDOM_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
         volumes:
             - ${MYSQL_DATA_DIR}:/var/lib/mysql
-        ports:
-            - "3306:3306"
+    #    ports:
+    #        - "3306:3306"
         networks:
             - internal
-
-#     mysql:
-#         container_name: mysql_${PROJECT_NAME}
-#         image: mysql:8.0
-#         command: --default-authentication-plugin=mysql_native_password  
-#         expose:
-#        - "3306"
-#        restart: unless-stopped
-#        environment:
-#            MYSQL_DATABASE: ${MYSQL_DATABASE}
-#            MYSQL_USER: ${MYSQL_USER}
-#            MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-#            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}  
-#        volumes:
-#            - ${MYSQL_DATA_DIR}:/var/lib/mysql
 
     # WP-CLI
     wordpress-cli:
@@ -68,8 +53,31 @@ services:
         # vstm: add shared volume
         volumes:
         - ${WWW_DATA_DIR}:/var/www/html
+
+    # REDIS
+    wpredis:
+        container_name: redis_${PROJECT_NAME}
+        image: redis:6
+        restart: unless-stopped
+        volumes:
+            - ${REDIS_DATA}:/data
+        networks:
+            - internal
     
-    # WEBSERVER
+    # PHPMYADMIN
+    phpmyadmin:
+        container_name: phpmyadmin_${PROJECT_NAME}
+        image: phpmyadmin/phpmyadmin
+        ports:
+        - ${PHPMYADMIN_PORT}:80
+        hostname: ${PHPMYADMIN_DOMAIN}
+        environment:
+            PMA_HOST: mysql
+        restart: always
+        networks:
+            - internal
+
+#    # WEBSERVER
 #    nginx:
 #        container_name: nginx_${PROJECT_NAME}
 #        image: nginx:latest
@@ -84,7 +92,7 @@ services:
 #         networks:
 #            - proxy
 #            - internal
-
+#
 #    litespeed:
 #        container_name: openlitespeed_${PROJECT_NAME}
 #        image: litespeedtech/openlitespeed:${OLS_VERSION}-${PHP_VERSION}
@@ -108,44 +116,64 @@ services:
 #         networks:
 #            - proxy
 #            - internal
-
-    # REDIS
-    wpredis:
-        container_name: redis_${PROJECT_NAME}
-        image: redis:6
-        restart: unless-stopped
-        volumes:
-            - ${REDIS_DATA}:/data
-        networks:
-            - internal
-    
-    # PHPMYADMIN
-    phpmyadmin:
-        container_name: phpmyadmin_${PROJECT_NAME}
-        image: phpmyadmin/phpmyadmin
-        ports:
-        - 8080:80
-        - 8443:443
-        hostname: ${PHPMYADMIN_DOMAIN}
-        environment:
-            PMA_HOST: mysql
-            PMA_USER: ${MYSQL_USER}
-            PMA_PASSWORD: ${MYSQL_PASSWORD} 
-        restart: always
-        volumes:
-            - ${PHPMYADMIN_DATA}:/data
-        networks:
-            - internal
-    
-    # CERTBOT
-    certbot:
-        container_name: certbot_${PROJECT_NAME}
-        image: certbot/certbot:latest
-        #command: certonly --webroot --webroot-path=/var/www/html --email ${CERT_EMAIL} --agree-tos --no-eff-email -d domain.com -d www.domain.com
-        volumes:
-            - ${CERT_CONF_DIR}:/etc/letsencrypt
-            - ${CERT_LOGS_DIR}:/var/log/letsencrypt
-            - ${WWW_DATA_DIR}:/var/www/html
+#
+#    # CERTBOT
+#    certbot:
+#        container_name: certbot_${PROJECT_NAME}
+#        image: certbot/certbot:latest
+#        command: certonly --webroot --webroot-path=/var/www/html --email ${CERT_EMAIL} --agree-tos --no-eff-email -d ${PROJECT_ROOT_DOMAIN} -d ${PROJECT_DOMAIN}
+#        volumes:
+#            - ${CERT_CONF_DIR}:/etc/letsencrypt
+#            - ${CERT_LOGS_DIR}:/var/log/letsencrypt
+#            - ${WWW_DATA_DIR}:/var/www/html
+#
+#    # SSH
+#    server:
+#        container_name: wp-ssh_${PROJECT_NAME}
+#        build:
+#            context: ./docker
+#            args:
+#                SSH_MASTER_USER: ${SSH_MASTER_USER}
+#                SSH_MASTER_PASS: ${SSH_MASTER_PASS}
+#        hostname: ${PROJECT_NAME}
+#        ports:
+#            - "${SSH_HOST_PORT}:22"
+#        volumes:
+#            - '${WWW_DATA_DIR}/wp-content:/uploads'
+#        networks:
+#            - internal
+#
+#  ftp:
+#    # optionally replace username/repo:tag with your name and image details
+#    image: stilliard/pure-ftpd:latest
+#    container_name: ftp-cronoslab
+#    deploy:
+#      replicas: 1
+#      restart_policy:
+#        condition: on-failure
+#    environment:
+#      PUBLICHOST: 116.203.122.108
+#      FTP_USER_NAME: "ftp_user"
+#      FTP_USER_PASS: "ftp_user_passw"
+#      FTP_USER_HOME: "/var/www/html"
+#      FTP_USER_UID: 33
+#      FTP_USER_GID: 33
+#    volumes:
+#      #  - './wordpress:/var/www/html'
+#      - './wp-content:/var/www/html/wp-content'
+#      - './ftp:/etc/ssl/private'
+#    ports:
+#      - target: 21
+#        published: 21
+#        protocol: tcp
+#        mode: host
+#      # Bind each passive ports to the host
+#      - target: 30000
+#        published: 30000
+#        protocol: tcp
+#        mode: host
+#    networks:
+#      - wp-network
 
 networks:
   internal:

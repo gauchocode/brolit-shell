@@ -369,10 +369,10 @@ function project_manager_menu_new_project_type_new_project() {
   whip_description=" "
 
   project_type_options=(
-    "01)" "CREATE WP PROJECT"
-    "02)" "CREATE LARAVEL PROJECT"
-    "03)" "CREATE OTHER PHP PROJECT"
-    "04)" "CREATE NODE JS PROJECT"
+    "01)" "NEW WORDPRESS PROJECT"
+    "02)" "NEW LARAVEL PROJECT"
+    "03)" "NEW PHP PROJECT"
+    "04)" "NEW NODEJS PROJECT"
   )
 
   chosen_project_type_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_type_options[@]}" 3>&1 1>&2 2>&3)"
