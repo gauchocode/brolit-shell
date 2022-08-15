@@ -1019,6 +1019,34 @@ function calculate_disk_usage() {
 }
 
 ################################################################################
+# Check if a specific port is in use
+#
+# Arguments:
+#   $1 = ${port}
+#
+# Outputs:
+#   0 if port is in use, or 1 if not
+################################################################################
+
+function network_port_is_use() {
+
+  local port="${1}"
+
+  local result
+
+  result="$(lsof -i:"${port}")"
+
+  if [[ -n ${result} ]]; then
+    log_event "info" "Port ${port} is use by another service." "false"
+    return 0
+  else
+    log_event "info" "Port ${port} is not in use." "false"
+    return 1
+  fi
+
+}
+
+################################################################################
 # Count directories on a specific path
 #
 # Arguments:
@@ -1236,6 +1264,8 @@ function extract_filename_from_path() {
 #   0 if ok, 1 on error.
 ################################################################################
 
+# TODO: pv only if EXEC_TYPE == default
+
 function decompress() {
 
   local file_path="${1}"
@@ -1256,10 +1286,8 @@ function decompress() {
 
     *.tar.bz2)
       if [[ -n "${compress_type}" ]]; then
-        #tar xp "${file_path}" -C "${directory_to_extract}" --use-compress-program="${compress_type}"
         pv --width 70 "${file_path}" | tar xp -C "${directory_to_extract}" --use-compress-program="${compress_type}"
       else
-        #tar xjf "${file_path}" -C "${directory_to_extract}"
         pv --width 70 "${file_path}" | tar xp -C "${directory_to_extract}"
       fi
       ;;
