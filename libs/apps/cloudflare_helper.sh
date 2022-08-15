@@ -59,6 +59,8 @@ function _cloudflare_get_zone_id() {
         # Return
         echo "${zone_id}"
 
+        return 0
+
     else
 
         # Log
@@ -129,17 +131,9 @@ function cloudflare_domain_exists() {
     local zone_id
 
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 && ${zone_id} != "" ]]; then
+    [[ $? -eq 0 && ${zone_id} != "" ]] && return 0
 
-        # Return
-        return 0
-
-    else
-
-        # Return
-        return 1
-    fi
+    return 1
 
 }
 
@@ -362,6 +356,14 @@ function cloudflare_record_exists() {
 
     local domain="${1}"
     local zone_id="${2}"
+    local record_type="${3}"
+
+    local record_name
+    local record_id
+
+    # IMPORTANT: We have only insterest on A and CNAME records
+    # So, we need to check
+    [[ -z ${record_type} ]] && record_type="A"
 
     # Cloudflare API to change DNS records
     log_event "info" "Checking if record ${domain} exists" "false"
@@ -370,13 +372,13 @@ function cloudflare_record_exists() {
     record_name="${domain}"
 
     # Retrieve record_id
-    record_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*')"
+    record_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}&type=${record_type}" -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*')"
 
-    log_event "debug" "Last command executed: curl -s -X GET \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" | grep -Po '(?<=\"id\":\")[^\"]*'"
+    log_event "debug" "Last command executed: curl -s -X GET \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}&type=${record_type}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" | grep -Po '(?<=\"id\":\")[^\"]*'"
 
     if [[ ${record_id} == "" ]]; then
 
-        log_event "info" "Record ${record_name} not found on Cloudflare"
+        log_event "info" "Record ${record_name} not found on Cloudflare" "false"
         display --indent 6 --text "- Record ${record_name} not found"
 
         return 1
@@ -386,10 +388,12 @@ function cloudflare_record_exists() {
         # Clean output
         record_id="$(echo "${record_id}" | tr -d '\n')"
 
-        log_event "info" "Record ${record_name} found with id: ${record_id}"
+        log_event "info" "Record ${record_name} found with id: ${record_id}" "false"
 
         # Return
         echo "${record_id}"
+
+        return 0
 
     fi
 
@@ -424,7 +428,7 @@ function cloudflare_get_record_details() {
 
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
 
-    record_id="$(cloudflare_record_exists "${record_name}" "${zone_id}")"
+    record_id="$(cloudflare_record_exists "${record_name}" "${zone_id}" "${record_type}")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
@@ -510,7 +514,7 @@ function cloudflare_set_record() {
 
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
 
-    record_id="$(cloudflare_record_exists "${record_name}" "${zone_id}")"
+    record_id="$(cloudflare_record_exists "${record_name}" "${zone_id}" "${record_type}")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
@@ -629,7 +633,7 @@ function cloudflare_update_record() {
 
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
 
-    record_id="$(cloudflare_record_exists "${record_name}" "${zone_id}")"
+    record_id="$(cloudflare_record_exists "${record_name}" "${zone_id}" "${record_type}")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
@@ -702,7 +706,7 @@ function cloudflare_delete_record() {
 
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
 
-    record_id="$(cloudflare_record_exists "${record_name}" "${zone_id}")"
+    record_id="$(cloudflare_record_exists "${record_name}" "${zone_id}" "${record_type}")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then # Record found on Cloudflare
