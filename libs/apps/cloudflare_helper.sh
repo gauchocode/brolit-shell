@@ -623,6 +623,8 @@ function cloudflare_update_record() {
     local zone_id
     local record_id
 
+    ttl=3600
+
     record_name="${domain}"
 
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
