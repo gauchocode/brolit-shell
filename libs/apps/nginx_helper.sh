@@ -104,6 +104,9 @@ function nginx_server_create() {
         # Search and replace domain.com string with correct project_domain
         sed -i "s/domain.com/${project_domain}/g" "${nginx_server_file}"
 
+        # Search and replace PROXY_PORT string with ${proxy_port}
+        sed -i "s/PROXY_PORT/${proxy_port}/g" "${nginx_server_file}"
+
         # Log
         display --indent 6 --text "- Creating nginx server config" --result DONE --color GREEN
         display --indent 8 --text "Using '${server_type}' template"
@@ -521,7 +524,7 @@ function nginx_create_globals_config() {
 
     # Replace string to match PHP version
     if [[ ${PACKAGES_PHP_STATUS} == "enabled" ]]; then
-    
+
         cp "${BROLIT_MAIN_DIR}/config/nginx/globals/wordpress_sec.conf" "/etc/nginx/globals/wordpress_sec.conf"
         php_set_version_on_config "${PHP_V}" "/etc/nginx/globals/wordpress_sec.conf"
 
