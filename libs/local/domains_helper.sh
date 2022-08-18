@@ -36,6 +36,7 @@ function domain_extract_extension() {
 
     # Return
     echo "${domain_no_ext}"
+    return 0
 
   else
 
