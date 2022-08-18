@@ -1695,7 +1695,7 @@ function menu_main_options() {
     echo -e "${B_RED}Exiting script ...${ENDCOLOR}"
     #log_event "info" "Exiting script ..." "false"
 
-    return 0
+    exit 0
 
   fi
 

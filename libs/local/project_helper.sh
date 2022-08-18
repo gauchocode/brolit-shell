@@ -489,6 +489,9 @@ function project_update_brolit_config() {
 
   local project_config_file
 
+  # Log
+  log_subsection "Update Project Config"
+
   # Project config file
   project_config_file="${BROLIT_CONFIG_PATH}/${project_prymary_subdomain}_conf.json"
 
@@ -2298,11 +2301,28 @@ function check_laravel_version() {
 
 }
 
+################################################################################
+# Update domain configuration (Nginx + Cloudflare)
+#
+# Arguments:
+#  $1 = ${project_domain}
+#  $2 = ${project_type}
+#  $3 = ${project_port}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function project_update_domain_config() {
 
   local project_domain="${1}"
   local project_type="${2}"
   local project_port="${3}"
+
+  local root_domain
+
+  # Log
+  log_subsection "Update Domain Configuration"
 
   root_domain="$(domain_get_root "${project_domain}")"
   #root_domain="$(ask_root_domain "${possible_root_domain}")"
@@ -2371,6 +2391,9 @@ function project_post_install_tasks() {
   #local project_port="${8}"
 
   local project_env
+
+  # Log
+  log_subsection "Post Install Tasks"
 
   # Check if is a WP project
   if [[ ${project_type} == "wordpress" ]]; then

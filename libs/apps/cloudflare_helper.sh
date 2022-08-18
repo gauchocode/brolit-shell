@@ -28,20 +28,18 @@ function _cloudflare_get_zone_id() {
 
     # Using globals: ${SUPPORT_CLOUDFLARE_EMAIL} and ${SUPPORT_CLOUDFLARE_API_KEY}
     if [[ -z ${SUPPORT_CLOUDFLARE_EMAIL} || -z ${SUPPORT_CLOUDFLARE_API_KEY} ]]; then
-
+        # Log
         display --indent 6 --text "- Accessing Cloudflare API" --result "FAIL" --color RED
         display --indent 8 --text "Cloudflare credentials not set"
         log_event "error" "Cloudflare credentials not set" "false"
-
         return 1
-
     fi
 
     # Log
-    log_event "info" "Accessing Cloudflare API ..." "false"
-    log_event "info" "Getting Zone ID for domain: ${zone_name}" "false"
-    display --indent 6 --text "- Accessing Cloudflare API" --result "DONE" --color GREEN
-    display --indent 6 --text "- Checking if domain exists" --result "DONE" --color GREEN
+    log_event "debug" "Accessing Cloudflare API ..." "false"
+    log_event "debug" "Getting Zone ID for domain: ${zone_name}" "false"
+    #display --indent 6 --text "- Accessing Cloudflare API" --result "DONE" --color GREEN
+    #display --indent 6 --text "- Checking if domain exists" --result "DONE" --color GREEN
 
     # Get Zone ID
     zone_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" \
@@ -50,26 +48,19 @@ function _cloudflare_get_zone_id() {
         -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1)"
 
     exitstatus=$?
-    if [[ ${exitstatus} -eq 0 && ${zone_id} != "" ]]; then
-
+    if [[ ${exitstatus} -eq 0 && -n ${zone_id} ]]; then
         # Log
         log_event "info" "Zone ID found: ${zone_id} for domain ${zone_name}"
         display --indent 8 --text "Domain ${zone_name} found" --tcolor GREEN
-
         # Return
         echo "${zone_id}"
-
         return 0
-
     else
-
         # Log
         log_event "info" "Zone ID not found for domain ${zone_name}. Maybe domain is not configured yet."
         log_event "debug" "Last command executed: curl -s -X GET \"https://api.cloudflare.com/client/v4/zones?name=${zone_name}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" | grep -Po '(?<=\"id\":\")[^\"]*' | head -1"
         display --indent 8 --text "Domain ${zone_name} not found" --tcolor YELLOW
-
         return 1
-
     fi
 
 }
@@ -107,6 +98,7 @@ function cloudflare_get_zone_info() {
 
     else
 
+        log_event "error" "Getting zone information for: ${zone_name}" "false"
         return 1
 
     fi
@@ -131,7 +123,7 @@ function cloudflare_domain_exists() {
     local zone_id
 
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
-    [[ $? -eq 0 && ${zone_id} != "" ]] && return 0
+    [[ $? -eq 0 && -n ${zone_id} ]] && return 0
 
     return 1
 
@@ -258,8 +250,6 @@ function cloudflare_set_development_mode() {
 
 function cloudflare_get_ssl_mode() {
 
-    # $1 = ${root_domain}
-
     local root_domain="${1}"
 
     zone_id=$(_cloudflare_get_zone_id "${root_domain}")
@@ -267,22 +257,27 @@ function cloudflare_get_ssl_mode() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        log_event "info" "Gettinh SSL Mode for: ${zone_name}"
-        display --indent 6 --text "- Gettinh SSL Mode for: ${zone_name}"
-
         ssl_mode_result=$(curl -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/ssl" \
             -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
             -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json")
 
+        # Log
+        display --indent 6 --text "- Getting SSL Mode for: ${zone_name}" --result "DONE" --color GREEN
+        display --indent 8 --text "SSL Mode: ${ssl_mode_result}" --tcolor YELLOW
+        log_event "info" "Getting SSL Mode for: ${zone_name}" "false"
+        log_event "info" "SSL Mode: ${ssl_mode_result}" "false"
+
         # Return
         # Possible return values: off, flexible, full, strict
         echo "${ssl_mode_result}"
+        return 0
 
     else
-
+        # Log
+        display --indent 6 --text "- Getting SSL Mode for: ${zone_name}" --result "FAIL" --color RED
+        log_event "error" "Getting SSL Mode for: ${zone_name}" "false"
         return 1
-
     fi
 
 }
@@ -310,27 +305,26 @@ function cloudflare_set_ssl_mode() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        log_event "info" "Setting SSL Mode for: ${zone_name}"
-        display --indent 6 --text "- Setting SSL Mode for: ${zone_name}"
+        log_event "info" "Setting SSL Mode for: ${root_domain}"
 
-        ssl_mode_result="$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/ssl" \
+        ssl_mode_result="$(curl -s -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/ssl" \
             -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
             -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json" \
             --data "{\"value\":\"${ssl_mode}\"}")"
 
         # Remove Cloudflare API garbage output
-        clear_previous_lines "4"
+        #clear_previous_lines "4"
 
         if [[ ${ssl_mode_result} == *"\"success\":false"* || ${ssl_mode_result} == "" ]]; then
-            message="Error trying to change ssl mode for ${root_domain}. Results:\n ${ssl_mode_result}"
-            log_event "error" "${message}"
+            log_event "error" "Error trying to set ssl mode for ${root_domain}. Results:\n ${ssl_mode_result}" "false"
             return 1
 
         else
-            message="SSL mode for ${root_domain} is ${ssl_mode}"
-            log_event "info" "${message}"
-
+            display --indent 6 --text "- Setting SSL Mode for: ${root_domain}" --result "DONE" --color GREEN
+            display --indent 8 --text "New SSL Mode: ${ssl_mode}" --tcolor YELLOW
+            log_event "info" "New SSL mode for ${root_domain} is ${ssl_mode}" "false"
+            return 0
         fi
 
     else
@@ -374,27 +368,20 @@ function cloudflare_record_exists() {
     # Retrieve record_id
     record_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}&type=${record_type}" -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*')"
 
-    log_event "debug" "Last command executed: curl -s -X GET \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}&type=${record_type}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" | grep -Po '(?<=\"id\":\")[^\"]*'"
-
-    if [[ ${record_id} == "" ]]; then
-
-        log_event "info" "Record ${record_name} not found on Cloudflare" "false"
+    if [[ -z ${record_id} ]]; then
+        # Log
         display --indent 6 --text "- Record ${record_name} not found"
-
+        log_event "error" "Record ${record_name} not found on Cloudflare" "false"
+        log_event "debug" "Last command executed: curl -s -X GET \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}&type=${record_type}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" | grep -Po '(?<=\"id\":\")[^\"]*'"
         return 1
-
     else
-
         # Clean output
         record_id="$(echo "${record_id}" | tr -d '\n')"
-
+        # Log
         log_event "info" "Record ${record_name} found with id: ${record_id}" "false"
-
         # Return
         echo "${record_id}"
-
         return 0
-
     fi
 
 }
@@ -431,7 +418,7 @@ function cloudflare_get_record_details() {
     record_id="$(cloudflare_record_exists "${record_name}" "${zone_id}" "${record_type}")"
 
     exitstatus=$?
-    if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
+    if [[ ${exitstatus} -eq 0 && -n ${record_id} ]]; then
 
         # DNS Record Details
         record="$(curl -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
@@ -443,24 +430,22 @@ function cloudflare_get_record_details() {
         clear_previous_lines "4"
 
         if [[ ${record} == *"\"success\":false"* || ${record} == "" ]]; then
-
             # Log
             log_event "error" "Get record details failed. Results:\n${record}"
             display --indent 6 --text "- Getting record details" --result "FAIL" --color RED
             display --indent 8 --text "${message}" --tcolor RED
-
             return 1
-
         else
-
-            # Log
-            log_event "info" "Getting record details. Results:\n${record}"
-            display --indent 6 --text "- Getting record details" --result "DONE" --color GREEN
-
+            # Get record details
             record_detail="$(echo "${record}" | grep -Po '(?<="'"${field}"'":")[^"]*' | head -1)"
-
+            # Log
+            log_event "info" "Getting record details. Results:\n${record}" "false"
+            log_event "info" "${field}: ${record_detail}" "false"
+            display --indent 6 --text "- Getting record details" --result "DONE" --color GREEN
             display --indent 8 --text "${field}: ${record_detail}" --tcolor GREEN
-
+            # Return
+            echo "${record_detail}"
+            return 0
         fi
 
     fi
@@ -496,33 +481,27 @@ function cloudflare_set_record() {
     local record_id
     local record_name
 
+    # Only for convention
     record_name="${domain}"
 
     #TODO: in the future we must rewrite the vars and remove this ugly replace
     ttl=1 #1 for Auto
 
-    if [[ -z "${proxy_status}" || ${proxy_status} == "" || ${proxy_status} == "false" ]]; then
+    # Default value
+    proxy_status=false #need to be a bool, not a string
 
-        # Default value
-        proxy_status=false #need to be a bool, not a string
-
-    else
-
-        proxy_status=true #need to be a bool, not a string
-
-    fi
+    [[ ${proxy_status} == "true" ]] && proxy_status=true
 
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
-
     record_id="$(cloudflare_record_exists "${record_name}" "${zone_id}" "${record_type}")"
 
     exitstatus=$?
-    if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
+    if [[ ${exitstatus} -eq 0 && -n ${record_id} ]]; then
 
         # Log
         display --indent 6 --text "- Changing ${record_name} IP ..."
 
-        # First delete
+        # First delete existing entry
         log_event "debug" "Running: curl -s -X DELETE \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\""
 
         delete="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
@@ -533,26 +512,26 @@ function cloudflare_set_record() {
         log_event "debug" "Running: curl -s -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" --data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}\""
 
         # Then create (work-around because sometimes update an entry does not work)
-        update="$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
+        update="$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
             -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
             -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json" \
             --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"
 
         # Remove Cloudflare API garbage output
-        clear_previous_lines "4"
+        # clear_previous_lines "4"
 
         if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
-            message="Update failed. Results:\n${update}"
-            log_event "error" "${message}" "false"
+            # Log
+            log_event "error" "Update failed. Results:\n${update}" "false"
             display --indent 6 --text "- Updating subdomain on Cloudflare" --result "FAIL" --color RED
-            display --indent 8 --text "${message}" --tcolor RED
+            display --indent 8 --text "Please red the log file" --tcolor RED
 
             return 1
 
         else
-            message="IP changed to: ${SERVER_IP}"
-            log_event "info" "${message}" "false"
+            # Log
+            log_event "info" "IP changed to: ${SERVER_IP}" "false"
             display --indent 6 --text "- Updating subdomain on Cloudflare" --result "DONE" --color GREEN
             display --indent 8 --text "IP: ${SERVER_IP}" --tcolor GREEN
 
@@ -565,34 +544,30 @@ function cloudflare_set_record() {
         # Log
         display --indent 6 --text "- Creating subdomain ${MAGENTA}${record_name}${ENDCOLOR}"
         log_event "debug" "Record ID not found. Trying to add the subdomain: ${record_name}"
-        log_event "debug" "Running: curl -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" --data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}\""
+        log_event "debug" "Running: curl -s -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" --data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}\""
 
         # Command
-        update="$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
+        update="$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
             -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
             -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json" \
             --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"
 
         # Remove Cloudflare API garbage output
-        clear_previous_lines "4"
+        # clear_previous_lines "4"
 
         if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
-
-            display --indent 6 --text "- Creating subdomain ${record_name}" --result "FAIL" --color RED
+            # Log
+            display --indent 6 --text "- Creating subdomain ${MAGENTA}${record_name}${ENDCOLOR}" --result "FAIL" --color RED
             log_event "error" "Error creating subdomain ${record_name}" "false"
             log_event "debug" "Command returned: ${update}" "false"
-
             return 1
-
         else
-
+            # Log
             display --indent 6 --text "- Creating subdomain ${MAGENTA}${record_name}${ENDCOLOR}" --result "DONE" --color GREEN
             log_event "info" "Subdomain ${record_name} added successfully" "false"
             log_event "debug" "Command returned: ${update}" "false"
-
             return 0
-
         fi
 
     fi
@@ -632,11 +607,10 @@ function cloudflare_update_record() {
     record_name="${domain}"
 
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
-
     record_id="$(cloudflare_record_exists "${record_name}" "${zone_id}" "${record_type}")"
 
     exitstatus=$?
-    if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then
+    if [[ ${exitstatus} -eq 0 && -n ${record_id} ]]; then
 
         log_event "info" "Trying to update the record '${record_name}'" "false"
         log_event "debug" "Running: curl -s -X PATCH \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}\" \ 
@@ -652,29 +626,28 @@ function cloudflare_update_record() {
             --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"
 
         # Remove Cloudflare API garbage output
-        clear_previous_lines "4"
+        #clear_previous_lines "4"
 
         if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
-
+            # Log
             display --indent 6 --text "- Updating subdomain ${record_name}" --result "FAIL" --color RED
             log_event "error" "Updating subdomain ${record_name}" "false"
             log_event "debug" "Command returned: ${update}" "false"
-
             return 1
-
         else
-
+            # Log
             display --indent 6 --text "- Updating subdomain ${MAGENTA}${record_name}${ENDCOLOR}" --result "DONE" --color GREEN
             log_event "info" "Subdomain ${record_name} updated successfully" "false"
             log_event "debug" "Command returned: ${update}" "false"
-
             return 0
-
         fi
 
-    fi
+    else
 
-    # TODO: add an error message trying to update a record that does not exist.
+        # TODO: add an error message trying to update a record that does not exist.
+        return 1
+
+    fi
 
 }
 
@@ -695,8 +668,11 @@ function cloudflare_delete_record() {
     local domain="${2}"
     local record_type="${3}"
 
-    # Cloudflare API to delete record
-    log_event "info" "Accessing to Cloudflare API to delete record ${domain}" "false"
+    local ttl
+    local cur_ip
+    local zone_id
+    local record_id
+    local record_name
 
     record_name="${domain}"
 
@@ -705,13 +681,12 @@ function cloudflare_delete_record() {
     cur_ip="${SERVER_IP}"
 
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
-
     record_id="$(cloudflare_record_exists "${record_name}" "${zone_id}" "${record_type}")"
 
     exitstatus=$?
-    if [[ ${exitstatus} -eq 0 && ${record_id} != "" ]]; then # Record found on Cloudflare
+    if [[ ${exitstatus} -eq 0 && -n ${record_id} ]]; then # Record found on Cloudflare
 
-        log_event "info" "Trying to delete the record ..." "false"
+        log_event "info" "Trying to delete the '${record_type}' record from: '${domain}'" "false"
 
         delete="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
             -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
@@ -719,27 +694,25 @@ function cloudflare_delete_record() {
             -H "Content-Type: application/json")"
 
         # Remove Cloudflare API garbage output
-        clear_previous_lines "4"
+        #clear_previous_lines "4"
 
         if [[ ${delete} == *"\"success\":false"* || ${delete} == "" ]]; then
-
-            message="A record delete failed. Results:\n${delete}"
-            log_event "error" "${message}"
+            # Log
+            log_event "error" "'${record_type}' record delete failed. Results:\n${delete}" "false"
             log_event "debug" "Last command executed: curl -s -X DELETE \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\""
-            display --indent 6 --text "- Deleting A record from Cloudflare" --result "FAIL" --color RED
-            display --indent 8 --text "${message}" --tcolor RED
+            display --indent 6 --text "- Deleting '${record_type}' record from Cloudflare" --result "FAIL" --color RED
+            display --indent 8 --text "Results:\n${delete}" --tcolor RED
 
             return 1
 
         else
-            message="A record deleted: ${record_name}"
-            log_event "info" "${message}"
-            display --indent 6 --text "- Deleting A record from Cloudflare" --result "DONE" --color GREEN
+            # Log
+            log_event "info" "'${record_type}' record deleted: ${record_name}" "false"
+            display --indent 6 --text "- Deleting '${record_type}' record from Cloudflare" --result "DONE" --color GREEN
             display --indent 8 --text "Record deleted: ${record_name}" --tcolor YELLOW
+            return 0
 
         fi
-
-        return 0
 
     else
 
