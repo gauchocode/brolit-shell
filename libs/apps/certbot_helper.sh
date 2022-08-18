@@ -235,6 +235,15 @@ function certbot_helper_installer_menu() {
   local chosen_cb_installer_option
   local cb_warning_text
   local certbot_result
+  local error
+
+  if [[ ${PACKAGES_CERTBOT_STATUS} != "enabled" ]]; then
+    # Log
+    log_event "warning" "Certbot is not enabled or installed" "false"
+    display --indent 6 --text "- Certificate installation" --result "FAIL" --color RED
+    display --indent 8 --text "Certbot is not enabled or installed" --tcolor RED
+    return 1
+  fi
 
   cb_installer_options=(
     "01)" "INSTALL WITH NGINX"
@@ -247,26 +256,16 @@ function certbot_helper_installer_menu() {
 
     if [[ ${chosen_cb_installer_option} == *"01"* ]]; then
 
-      if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
+      # INSTALL_WITH_NGINX
+      log_subsection "Certificate Installation with Certbot Nginx"
 
-        # INSTALL_WITH_NGINX
-        log_subsection "Certificate Installation with Certbot Nginx"
-
-        certbot_certificate_install "${email}" "${domains}"
-
-      else
-
-        log_event "warning" "Certbot is not enabled or installed" "false"
-        display --indent 6 --text "- Certificate installation" --result "FAIL" --color RED
-        display --indent 8 --text "Certbot is not enabled or installed" --tcolor RED
-
-      fi
+      certbot_certificate_install "${email}" "${domains}"
 
     fi
+
     if [[ ${chosen_cb_installer_option} == *"02"* ]]; then
 
       # INSTALL_WITH_CLOUDFLARE
-
       log_subsection "Certificate Installation with Certbot Cloudflare"
 
       certbot_certonly_cloudflare "${email}" "${domains}"
@@ -281,15 +280,15 @@ function certbot_helper_installer_menu() {
 
           root_domain=$(domain_get_root "${domain}")
 
-          #cloudflare_get_record_details
-
           # Enable cf proxy on record
-          cloudflare_update_record "${root_domain}" "${domain}" "A" "true" "${SERVER_IP}"
-
-          # Changing SSL Mode flor Cloudflare record
-          cloudflare_set_ssl_mode "${root_domain}" "full"
+          [[ $? -eq 0 ]] && cloudflare_update_record "${root_domain}" "${domain}" "A" "true" "${SERVER_IP}"
+          [[ $? -eq 1 ]] && cloudflare_update_record "${root_domain}" "${domain}" "CNAME" "true" "${SERVER_IP}"
+          [[ $? -eq 1 ]] && error=true
 
         done
+
+        # Changing SSL Mode flor Cloudflare record
+        [[ ${error} != true ]] && cloudflare_set_ssl_mode "${root_domain}" "full"
 
       else
 

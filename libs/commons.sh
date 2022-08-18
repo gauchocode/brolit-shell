@@ -1693,7 +1693,6 @@ function menu_main_options() {
     # Log
     echo ""
     echo -e "${B_RED}Exiting script ...${ENDCOLOR}"
-    #log_event "info" "Exiting script ..." "false"
 
     exit 0
 
