@@ -33,8 +33,6 @@ function project_get_config_var() {
 
   fi
 
-  #sed -i "s/^${variable}\=.*/${variable}=\"${content}\"/" "${file}"
-
   # Read "${file}"/.env to extract ${variable}
   content="$(grep -oP "^${variable}=\K.*" "${file}")"
 
@@ -46,6 +44,8 @@ function project_get_config_var() {
     log_event "debug" "${variable}=${content}" "false"
     display --indent 6 --text "- Reading .env variable" --result "DONE" --color GREEN
     display --indent 8 --text "${variable}=${content}" --tcolor GREEN
+
+    content="$(string_remove_quotes "${content}")"
 
     # Return
     echo "${content}"

@@ -282,7 +282,7 @@ function certbot_helper_installer_menu() {
 
           # Enable cf proxy on record
           [[ $? -eq 0 ]] && cloudflare_update_record "${root_domain}" "${domain}" "A" "true" "${SERVER_IP}"
-          [[ $? -eq 1 ]] && cloudflare_update_record "${root_domain}" "${domain}" "CNAME" "true" "${SERVER_IP}"
+          [[ $? -eq 1 ]] && cloudflare_update_record "${root_domain}" "${domain}" "CNAME" "true" "${root_domain}"
           [[ $? -eq 1 ]] && error=true
 
         done
