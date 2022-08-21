@@ -1116,6 +1116,29 @@ function string_remove_spaces() {
 }
 
 ################################################################################
+# Remove first and last quote (") from a string
+#
+# Arguments:
+#   $1 = ${string}
+#
+# Outputs:
+#   string
+################################################################################
+
+function string_remove_quotes() {
+
+  local string="${1}"
+
+  local new_string
+
+  new_string="$(sed -e 's/^"//' -e 's/"$//' <<<"$string")"
+
+  # Return
+  echo "${new_string}"
+
+}
+
+################################################################################
 # Remove special chars from string
 #
 # Arguments:
