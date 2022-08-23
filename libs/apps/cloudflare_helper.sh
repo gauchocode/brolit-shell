@@ -554,7 +554,7 @@ function cloudflare_set_record() {
             --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"
 
         # Remove Cloudflare API garbage output
-        # clear_previous_lines "4"
+        clear_previous_lines "1"
 
         if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
             # Log
