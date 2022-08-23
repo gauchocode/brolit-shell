@@ -1958,8 +1958,8 @@ function project_get_type() {
 
     # docker-compose?
     docker="$(
-      find "${dir_path}" -name "docker-compose.yml" -type f
-      find "${dir_path}" -name "docker-compose.yaml" -type f
+      find "${dir_path}" -maxdepth 2 -name "docker-compose.yml" -type f
+      find "${dir_path}" -maxdepth 2 -name "docker-compose.yaml" -type f
     )"
     if [[ -n ${docker} ]]; then
 
