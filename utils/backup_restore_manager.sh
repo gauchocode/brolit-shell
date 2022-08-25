@@ -150,8 +150,6 @@ function backup_manager_menu() {
 
         backup_project "${DOMAIN}" "all"
 
-        display --indent 6 --text "- Project backup" --result "DONE" --color GREEN
-
       else
 
         display --indent 6 --text "- Project backup" --result "SKIPPED" --color YELLOW
