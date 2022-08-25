@@ -976,57 +976,82 @@ function backup_project() {
   local project_config_file
 
   # Backup files
+  log_subsection "Backup Project Files"
   backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${project_domain}")"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    # TODO: Check others project types
+    project_type="$(project_get_type "${PROJECTS_PATH}/${project_domain}")"
 
-    log_event "info" "Trying to get database name from project ..." "false"
+    if [[ ${project_type} != "html" ]]; then
 
-    project_name="$(project_get_name_from_domain "${project_domain}")"
+      log_event "info" "Trying to get database name from project ..." "false"
 
-    project_config_file="${BROLIT_CONFIG_PATH}/${project_name}_conf.json"
+      project_name="$(project_get_name_from_domain "${project_domain}")"
 
-    if [[ -f "${project_config_file}" ]]; then
+      project_config_file="${BROLIT_CONFIG_PATH}/${project_name}_conf.json"
 
-      project_type="$(project_get_brolit_config_var "${project_config_file}" "project[].type")"
-      db_name="$(project_get_configured_database "${BROLIT_TMP_DIR}/${project_name}" "${project_type}")"
-      db_engine="$(project_get_configured_database_engine "${BROLIT_TMP_DIR}/${project_name}" "${project_type}")"
+      if [[ -f "${project_config_file}" ]]; then
 
-    else
+        project_type="$(project_get_brolit_config_var "${project_config_file}" "project[].type")"
+        db_name="$(project_get_configured_database "${BROLIT_TMP_DIR}/${project_name}" "${project_type}")"
+        db_engine="$(project_get_configured_database_engine "${BROLIT_TMP_DIR}/${project_name}" "${project_type}")"
 
-      #db_engine="$(project_get_configured_database_engine "${BROLIT_TMP_DIR}/${project_name}" "${project_type}")"
-      db_stage="$(project_get_stage_from_domain "${project_domain}")"
-      db_name="$(project_get_name_from_domain "${project_domain}")"
-      db_name="${db_name}_${db_stage}"
+      else
 
-    fi
+        #db_engine="$(project_get_configured_database_engine "${BROLIT_TMP_DIR}/${project_name}" "${project_type}")"
+        db_stage="$(project_get_stage_from_domain "${project_domain}")"
+        db_name="$(project_get_name_from_domain "${project_domain}")"
+        db_name="${db_name}_${db_stage}"
 
-    # TODO: check database engine
-    mysql_database_exists "${db_name}"
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
+      fi
 
-      # Backup database
-      backup_project_database "${db_name}" "mysql"
+      # Check on Mysql
+      mysql_database_exists "${db_name}"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
 
-    else
+        # Backup database
+        log_subsection "Backup Project Database"
+        backup_project_database "${db_name}" "mysql"
 
-      # Log
-      log_event "info" "Database ${db_name} not found" "false"
-      display --indent 6 --text "Database backup" --result "SKIPPED" --color YELLOW
-      display --indent 8 --text "Database ${db_name} not found" --tcolor YELLOW
+      else
+
+        # Log
+        log_event "info" "Database ${db_name} not found on MySQL" "false"
+        display --indent 8 --text "Database ${db_name} not found on MySQL" --tcolor YELLOW
+
+        # Check on Postgres
+        postgres_database_exists "${db_name}"
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+          # Backup database
+          log_subsection "Backup Project Database"
+          backup_project_database "${db_name}" "postgres"
+
+        else
+
+          # Log
+          log_event "info" "Database ${db_name} not found" "false"
+          display --indent 8 --text "Database ${db_name} not found on MySQL" --tcolor YELLOW
+          display --indent 6 --text " - Database backup" --result "SKIPPED" --color YELLOW
+
+        fi
+
+      fi
 
     fi
 
     # Delete backup from server
     rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${backup_type:?}"
+    #log_event "info" "Deleting backup from server ..." "false"
 
     # Log
-    #log_event "info" "Deleting backup from server ..." "false"
-    log_event "info" "Project backup done" "false"
+    log_event "info" "Project Backup done" "false"
+    display --indent 6 --text "- Project Backup" --result "DONE" --color GREEN
 
   else
 
