@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.0
+# Version: 3.2.1
 ################################################################################
 #
 # Monit Installer
@@ -107,7 +107,7 @@ function monit_configure() {
     local monit_pass="${PACKAGES_MONIT_CONFIG_HTTPD_PASS}"
     sed -i "s#MONIT_PASSWORD#${monit_pass}#" "/etc/monit/monitrc"
 
-    if [[ $SECURITY_STATUS == "enabled" ]]; then
+    if [[ ${SECURITY_STATUS} == "enabled" ]]; then
       # Allow monit httpd port
       firewall_allow "2812"
     fi

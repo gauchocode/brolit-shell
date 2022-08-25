@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.0
+# Version: 3.2.1
 #############################################################################
 
 function test_mail_certificates_section() {
