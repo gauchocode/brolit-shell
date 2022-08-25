@@ -1870,8 +1870,6 @@ function brolit_configuration_file_check() {
 
     if [[ -f "${server_config_file}" ]]; then
 
-        log_event "info" "Brolit config file found: ${server_config_file}" "true"
-
         brolit_installed_config_version="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].version")"
         brolit_release_config_version="$(json_read_field "${brolit_config_template}" "BROLIT_SETUP.config[].version")"
 
@@ -1901,7 +1899,7 @@ function brolit_configuration_file_check() {
 
                 log_event "critical" "Please, edit brolit_conf.json first, and then run the script again." "true"
 
-                break
+                exit 1
                 ;;
 
             [Nn]*)
@@ -1909,8 +1907,6 @@ function brolit_configuration_file_check() {
                 echo -e "${YELLOW}${ITALIC} > BROLIT can not run without a config file. Exiting ...${ENDCOLOR}"
 
                 exit 1
-
-                #break
                 ;;
 
             *) echo " > Please answer yes or no." ;;
