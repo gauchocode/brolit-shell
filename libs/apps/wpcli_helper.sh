@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.0
+# Version: 3.2.1
 ################################################################################
 #
 # WP-CLI Helper: Perform wpcli tasks.
@@ -1670,6 +1670,7 @@ function wpcli_export_database() {
     local wp_site="${1}"
     local dump_file="${2}"
 
+    # Log
     log_event "debug" "Running: wp --allow-root --path=${wp_site} db export ${dump_file}" "false"
 
     # Command
@@ -1762,12 +1763,13 @@ function wpcli_user_reset_passw() {
     log_event "debug" "Running: wp --allow-root --path=\"${wp_site}\" user update \"${wp_user}\" --user_pass=\"${wp_user_pass}\"" "false"
 
     # Command
-    wp --allow-root --path="${wp_site}" user update "${wp_user}" --user_pass="${wp_user_pass}"
+    wp --allow-root --path="${wp_site}" user update "${wp_user}" --user_pass="${wp_user_pass}" --skip-email
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log
+        clear_previous_lines "1"
         display --indent 6 --text "- Password reset for ${wp_user}" --result "DONE" --color GREEN
         display --indent 8 --text "New password ${wp_user_pass}"
         log_event "error" "New password for user ${user} on site ${wp_site}" "false"
@@ -1777,6 +1779,7 @@ function wpcli_user_reset_passw() {
     else
 
         # Log
+        clear_previous_lines "1"
         display --indent 6 --text "- Password reset for ${wp_user}" --result "FAIL" --color RED
         log_event "error" "Trying to reset password for user ${user} on site ${wp_site}" "false"
 

@@ -4,7 +4,6 @@
             {
                 "version": "3.10.3",
                 "debug": "true",
-                "quiet": "false",
                 "skip_test": "true",
                 "tmp_dir": "tmp",
                 "check_packages": "true"
@@ -332,7 +331,7 @@
                         "monit_maila": "",
                         "monit_httpd": [
                             {
-                                "status": "enabled",
+                                "status": "disabled",
                                 "user": "admin",
                                 "pass": "monit_pass"
                             }

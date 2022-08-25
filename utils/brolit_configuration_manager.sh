@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.0
+# Version: 3.2.1
 ################################################################################
 #
 # Server Config Manager: Brolit server configuration management.
@@ -1938,47 +1938,35 @@ function brolit_configuration_setup_check() {
     local server_config_file="${1}"
 
     declare -g DEBUG
-    declare -g QUIET
     declare -g SKIPTESTS
     declare -g BROLIT_TMP_DIR
 
-    # Check if is already defined
+    # Read vars from server config file
+
     if [[ -z ${DEBUG} ]]; then
-        # Read required vars from server config file
         DEBUG="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].debug")"
-
-        if [ -z "${DEBUG}" ]; then
-            echo "Missing required config vars"
+        if [[ ${DEBUG} != "true" && ${DEBUG} != "false" ]]; then
+            echo "DEBUG value should be 'true' or 'false'"
             exit 1
         fi
     fi
-    # Check if is already defined
-    if [[ -z ${QUIET} ]]; then
-        QUIET="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].quiet")"
 
-        if [ -z "${QUIET}" ]; then
-            echo "Missing required config vars"
-            exit 1
-        fi
-    fi
-    # Check if is already defined
     if [[ -z ${SKIPTESTS} ]]; then
         SKIPTESTS="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].skip_test")"
-
-        if [ -z "${SKIPTESTS}" ]; then
-            echo "Missing required config vars"
+        if [[ ${SKIPTESTS} != "true" && ${SKIPTESTS} != "false" ]]; then
+            echo "SKIPTESTS value should be 'true' or 'false'"
             exit 1
         fi
     fi
-    # Check if is already defined
+
     if [[ -z ${CHECKPKGS} ]]; then
         CHECKPKGS="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].check_packages")"
-
-        if [ -z "${CHECKPKGS}" ]; then
-            echo "Missing required config vars"
+        if [[ ${CHECKPKGS} != "true" && ${SKIPTESTS} != "false" ]]; then
+            echo "CHECKPKGS value should be 'true' or 'false'"
             exit 1
         fi
     fi
+
     # Check if is already defined
     if [[ -z ${BROLIT_TMP_DIR} ]]; then
         BROLIT_TMP_DIR="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].tmp_dir")"
@@ -1995,14 +1983,14 @@ function brolit_configuration_setup_check() {
 
         # Creating temporary folders
         if [[ ! -d ${BROLIT_TMP_DIR} ]]; then
-            mkdir "${BROLIT_TMP_DIR}"
+            mkdir -p "${BROLIT_TMP_DIR}"
         fi
         if [[ ! -d "${BROLIT_TMP_DIR}/${NOW}" ]]; then
-            mkdir "${BROLIT_TMP_DIR}/${NOW}"
+            mkdir -p "${BROLIT_TMP_DIR}/${NOW}"
         fi
     fi
 
-    export DEBUG QUIET SKIPTESTS CHECKPKGS BROLIT_TMP_DIR
+    export DEBUG SKIPTESTS CHECKPKGS BROLIT_TMP_DIR
 
 }
 ################################################################################
