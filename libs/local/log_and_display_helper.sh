@@ -197,7 +197,7 @@ function _string_remove_color_chars() {
 }
 
 ################################################################################
-# Write on log
+# Write on log file *.log (or *.json if ${EXEC_TYPE} == "external").
 #
 # Arguments:
 #  $1 = {log_type} (success, info, warning, error, critical)
@@ -256,49 +256,49 @@ function log_event() {
 
   success)
     echo "$(_timestamp) > SUCCESS: ${message}" >>"${LOG}"
-    if [[ ${console_display} == "true" && ${QUIET} == "false" ]]; then
+    if [[ ${console_display} == "true" && ${QUIET} != "true" ]]; then
       echo -e "${B_GREEN} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   info)
     echo "$(_timestamp) > INFO: ${message}" >>"${LOG}"
-    if [[ ${console_display} == "true" && ${QUIET} == "false" ]]; then
+    if [[ ${console_display} == "true" && ${QUIET} != "true" ]]; then
       echo -e "${B_CYAN} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   warning)
     echo "$(_timestamp) > WARNING: ${message}" >>"${LOG}"
-    if [[ ${console_display} == "true" && ${QUIET} == "false" ]]; then
+    if [[ ${console_display} == "true" && ${QUIET} != "true" ]]; then
       echo -e "${YELLOW}${ITALIC} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   error)
     echo "$(_timestamp) > ERROR: ${message}" >>"${LOG}"
-    if [[ ${console_display} == "true" && ${QUIET} == "false" ]]; then
+    if [[ ${console_display} == "true" && ${QUIET} != "true" ]]; then
       echo -e "${RED} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   critical)
     echo "$(_timestamp) > CRITICAL: ${message}" >>"${LOG}"
-    if [[ ${console_display} == "true" && ${QUIET} == "false" ]]; then
+    if [[ ${console_display} == "true" && ${QUIET} != "true" ]]; then
       echo -e "${B_RED} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   debug)
     echo "$(_timestamp) > DEBUG: ${message}" >>"${LOG}"
-    if [[ ${console_display} == "true" && ${QUIET} == "false" ]]; then
+    if [[ ${console_display} == "true" && ${QUIET} != "true" ]]; then
       echo -e "${B_MAGENTA} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   *)
     echo "$(_timestamp) > ${message}" >>"${LOG}"
-    if [[ ${console_display} == "true" && ${QUIET} == "false" ]]; then
+    if [[ ${console_display} == "true" && ${QUIET} != "true" ]]; then
       echo -e "${CYAN}${B_DEFAULT} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
