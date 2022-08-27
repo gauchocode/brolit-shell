@@ -1967,7 +1967,7 @@ function project_get_type() {
 
       # Log
       log_event "debug" "Project type: ${project_type}" "false"
-      display --indent 8 --text " - Project type: ${project_type}" --tcolor MAGENTA
+      display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
 
       # Return
       echo "${project_type}"
@@ -1984,7 +1984,7 @@ function project_get_type() {
 
       # Log
       log_event "debug" "Project type: ${project_type}" "false"
-      display --indent 8 --text " - Project type: ${project_type}" --tcolor MAGENTA
+      display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
 
       # Return
       echo "${project_type}"
@@ -2001,7 +2001,7 @@ function project_get_type() {
 
       # Log
       log_event "debug" "Project type: ${project_type}" "false"
-      display --indent 8 --text " - Project type: ${project_type}" --tcolor MAGENTA
+      display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
 
       # Return
       echo "${project_type}"
@@ -2018,7 +2018,7 @@ function project_get_type() {
 
       # Log
       log_event "debug" "Project type: ${project_type}" "false"
-      display --indent 8 --text " - Project type: ${project_type}" --tcolor MAGENTA
+      display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
 
       # Return
       echo "${project_type}"
@@ -2035,7 +2035,7 @@ function project_get_type() {
 
       # Log
       log_event "debug" "Project type: ${project_type}" "false"
-      display --indent 8 --text " - Project type: ${project_type}" --tcolor MAGENTA
+      display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
 
       # Return
       echo "${project_type}"
@@ -2052,7 +2052,7 @@ function project_get_type() {
 
       # Log
       log_event "debug" "Project type: ${project_type}" "false"
-      display --indent 8 --text " - Project type: ${project_type}" --tcolor MAGENTA
+      display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
 
       # Return
       echo "${project_type}"
@@ -2069,7 +2069,7 @@ function project_get_type() {
 
       # Log
       log_event "debug" "Project type: ${project_type}" "false"
-      display --indent 8 --text " - Project type: ${project_type}" --tcolor MAGENTA
+      display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
 
       # Return
       echo "${project_type}"

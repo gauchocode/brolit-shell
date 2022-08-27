@@ -418,7 +418,7 @@ function postgres_user_delete() {
 
         # Log
         clear_previous_lines "1"
-        log_event "info" " Database user ${db_user} deleted" "false"
+        log_event "info" "Database user ${db_user} deleted" "false"
         log_event "debug" "Last command executed: ${PSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
         display --indent 6 --text "- Deleting user ${db_user}" --result "DONE" --color GREEN
 

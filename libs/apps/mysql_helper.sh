@@ -416,7 +416,7 @@ function mysql_user_delete() {
 
         # Log
         clear_previous_lines "2"
-        log_event "info" " Database user ${db_user} deleted" "false"
+        log_event "info" "Database user ${db_user} deleted" "false"
         log_event "debug" "Last command executed: ${MYSQL_ROOT} -e \"${query_1}${query_2}\"" "false"
         display --indent 6 --text "- Deleting user ${db_user}" --result "DONE" --color GREEN
 
