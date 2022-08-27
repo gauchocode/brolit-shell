@@ -145,6 +145,7 @@ function _brolit_configuration_load_backup_dropbox() {
 
         # Dropbox-uploader directory
         DPU_F="${BROLIT_MAIN_DIR}/tools/third-party/dropbox-uploader"
+        
         # Dropbox-uploader runner
         DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
 
@@ -1965,7 +1966,7 @@ function brolit_configuration_file_check() {
 #   nothing
 ################################################################################
 
-function czzz() {
+function brolit_configuration_setup_check() {
 
     local server_config_file="${1}"
 
@@ -1978,7 +1979,7 @@ function czzz() {
     if [[ -z ${DEBUG} ]]; then
         DEBUG="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].debug")"
         if [[ ${DEBUG} != "true" && ${DEBUG} != "false" ]]; then
-            echo "DEBUG value should be 'true' or 'false'"
+            echo "debug value should be 'true' or 'false'"
             exit 1
         fi
     fi
@@ -1986,7 +1987,7 @@ function czzz() {
     if [[ -z ${SKIPTESTS} ]]; then
         SKIPTESTS="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].skip_test")"
         if [[ ${SKIPTESTS} != "true" && ${SKIPTESTS} != "false" ]]; then
-            echo "SKIPTESTS value should be 'true' or 'false'"
+            echo "skip_test value should be 'true' or 'false'"
             exit 1
         fi
     fi
@@ -1994,7 +1995,7 @@ function czzz() {
     if [[ -z ${CHECKPKGS} ]]; then
         CHECKPKGS="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].check_packages")"
         if [[ ${CHECKPKGS} != "true" && ${CHECKPKGS} != "false" ]]; then
-            echo "CHECKPKGS value should be 'true' or 'false'"
+            echo "check_packages value should be 'true' or 'false'"
             exit 1
         fi
     fi
@@ -2004,7 +2005,7 @@ function czzz() {
         BROLIT_TMP_DIR="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].tmp_dir")"
 
         if [[ -z ${BROLIT_TMP_DIR} ]]; then
-            echo "Missing required config vars"
+            echo "Missing required config vars: tmp_dir"
             exit 1
         fi
 
