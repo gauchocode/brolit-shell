@@ -69,13 +69,20 @@ function backup_manager_menu() {
       sed -i '/{{footer}}/r '"${BROLIT_TMP_DIR}/footer-${NOW}.mail" "${email_html_file}"
 
       # Delete vars not used anymore
-      grep -v "{{packages_section}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
-      grep -v "{{certificates_section}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
-      grep -v "{{server_info}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
-      grep -v "{{databases_backup_section}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
-      grep -v "{{configs_backup_section}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
-      grep -v "{{files_backup_section}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
-      grep -v "{{footer}}" "${email_html_file}" > "${email_html_file}_tmp"; mv "${email_html_file}_tmp" "${email_html_file}"
+      grep -v "{{packages_section}}" "${email_html_file}" >"${email_html_file}_tmp"
+      mv "${email_html_file}_tmp" "${email_html_file}"
+      grep -v "{{certificates_section}}" "${email_html_file}" >"${email_html_file}_tmp"
+      mv "${email_html_file}_tmp" "${email_html_file}"
+      grep -v "{{server_info}}" "${email_html_file}" >"${email_html_file}_tmp"
+      mv "${email_html_file}_tmp" "${email_html_file}"
+      grep -v "{{databases_backup_section}}" "${email_html_file}" >"${email_html_file}_tmp"
+      mv "${email_html_file}_tmp" "${email_html_file}"
+      grep -v "{{configs_backup_section}}" "${email_html_file}" >"${email_html_file}_tmp"
+      mv "${email_html_file}_tmp" "${email_html_file}"
+      grep -v "{{files_backup_section}}" "${email_html_file}" >"${email_html_file}_tmp"
+      mv "${email_html_file}_tmp" "${email_html_file}"
+      grep -v "{{footer}}" "${email_html_file}" >"${email_html_file}_tmp"
+      mv "${email_html_file}_tmp" "${email_html_file}"
 
       # Send html to a var
       mail_html="$(cat "${email_html_file}")"
@@ -85,8 +92,9 @@ function backup_manager_menu() {
 
       email_subject="${email_status} [${NOWDISPLAY}] - Complete Backup on ${SERVER_NAME}"
 
-      # Sending email notification
+      # Sending notifications
       mail_send_notification "${email_subject}" "${mail_html}"
+      send_notification "✅ ${SERVER_NAME}" "Task: 'Backup All' completed." ""
 
     fi
 
@@ -107,8 +115,9 @@ function backup_manager_menu() {
       email_subject="${STATUS_ICON_D} [${NOWDISPLAY}] - Database Backup on ${SERVER_NAME}"
       email_content="${HTMLOPEN} ${BODY_SRV} ${DB_MAIL_VAR} ${MAIL_FOOTER}"
 
-      # Sending email notification
+      # Sending notifications
       mail_send_notification "${email_subject}" "${email_content}"
+      send_notification "✅ ${SERVER_NAME}" "Task: 'Databases Backup' completed." ""
 
     fi
     if [[ ${chosen_backup_type} == *"03"* ]]; then
@@ -130,8 +139,9 @@ function backup_manager_menu() {
       email_subject="${STATUS_ICON_F} [${NOWDISPLAY}] - Files Backup on ${SERVER_NAME}"
       email_content="${HTMLOPEN} ${BODY_SRV} ${CERT_MAIL_VAR} ${CONFIG_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
 
-      # Sending email notification
+      # Sending notifications
       mail_send_notification "${email_subject}" "${email_content}"
+      send_notification "✅ ${SERVER_NAME}" "Task: 'Files Backup' completed." ""
 
     fi
 
@@ -149,6 +159,10 @@ function backup_manager_menu() {
         DOMAIN="$(basename "${filepath}/${filename}")"
 
         backup_project "${DOMAIN}" "all"
+
+        # Sending notifications
+        #mail_send_notification "${email_subject}" "${email_content}"
+        send_notification "✅ ${SERVER_NAME}" "Task: 'Project Backup' completed." ""
 
       else
 
