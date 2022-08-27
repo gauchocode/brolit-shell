@@ -1965,7 +1965,7 @@ function brolit_configuration_file_check() {
 #   nothing
 ################################################################################
 
-function brolit_configuration_setup_check() {
+function czzz() {
 
     local server_config_file="${1}"
 
@@ -1993,7 +1993,7 @@ function brolit_configuration_setup_check() {
 
     if [[ -z ${CHECKPKGS} ]]; then
         CHECKPKGS="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].check_packages")"
-        if [[ ${CHECKPKGS} != "true" && ${SKIPTESTS} != "false" ]]; then
+        if [[ ${CHECKPKGS} != "true" && ${CHECKPKGS} != "false" ]]; then
             echo "CHECKPKGS value should be 'true' or 'false'"
             exit 1
         fi
