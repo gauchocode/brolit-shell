@@ -529,7 +529,7 @@ function _brolit_configuration_load_email() {
 }
 
 ################################################################################
-# Private: load telegram notifications configuration
+# Private: load Telegram notifications configuration
 #
 # Arguments:
 #   $1 = ${server_config_file}
@@ -563,6 +563,42 @@ function _brolit_configuration_load_telegram() {
     fi
 
     export NOTIFICATION_TELEGRAM_STATUS NOTIFICATION_TELEGRAM_BOT_TOKEN NOTIFICATION_TELEGRAM_CHAT_ID
+
+}
+
+################################################################################
+# Private: load Discord notifications configuration
+#
+# Arguments:
+#   $1 = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function _brolit_configuration_load_discord() {
+
+    local server_config_file="${1}"
+
+    # Globals
+    declare -g NOTIFICATION_DISCORD_STATUS
+    declare -g NOTIFICATION_DISCORD_WEBHOOK
+
+    NOTIFICATION_DISCORD_STATUS="$(json_read_field "${server_config_file}" "NOTIFICATIONS.discord[].status")"
+
+    if [[ ${NOTIFICATION_DISCORD_STATUS} == "enabled" ]]; then
+
+        NOTIFICATION_DISCORD_WEBHOOK="$(json_read_field "${server_config_file}" "NOTIFICATIONS.discord[].config[].webhook")"
+
+        # Check if all required vars are set
+        if [[ -z "${NOTIFICATION_DISCORD_WEBHOOK}" ]]; then
+            log_event "error" "Missing required config vars for Discord notifications" "true"
+            exit 1
+        fi
+
+    fi
+
+    export NOTIFICATION_DISCORD_STATUS NOTIFICATION_DISCORD_WEBHOOK
 
 }
 
@@ -2058,6 +2094,9 @@ function brolit_configuration_load() {
 
     ### Telegram
     _brolit_configuration_load_telegram "${server_config_file}"
+
+    ### Discord
+    _brolit_configuration_load_discord "${server_config_file}"
 
     ## SECURITY
     SECURITY_STATUS="$(json_read_field "${server_config_file}" "SECURITY.status")"

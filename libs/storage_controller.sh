@@ -45,7 +45,6 @@ function storage_list_dir() {
 
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
-
         # Dropbox API returns files names on the third column
         remote_list="$("${DROPBOX_UPLOADER}" -hq list "${remote_directory}" | awk '{print $3;}')"
 
@@ -111,9 +110,7 @@ function storage_create_dir() {
     fi
 
     storage_result=$?
-    if [[ ${storage_result} -eq 1 ]]; then
-        return 1
-    fi
+    [[ ${storage_result} -eq 1 ]] && return 1
 
 }
 
@@ -152,9 +149,7 @@ function storage_move() {
     fi
 
     storage_result=$?
-    if [[ ${storage_result} -eq 1 ]]; then
-        return 1
-    fi
+    [[ ${storage_result} -eq 1 ]] && return 1
 
 }
 
@@ -197,9 +192,7 @@ function storage_upload_backup() {
     fi
 
     storage_result=$?
-    if [[ ${storage_result} -eq 1 ]]; then
-        return 1
-    fi
+    [[ ${storage_result} -eq 1 ]] && return 1
 
 }
 
@@ -232,10 +225,8 @@ function storage_download_backup() {
 
     fi
 
-    download_result=$?
-    if [[ ${download_result} -eq 1 ]]; then
-        return 1
-    fi
+    download_result=$?s
+    [[ ${download_result} -eq 1 ]] && return 1
 
 }
 
@@ -269,8 +260,6 @@ function storage_delete_backup() {
     fi
 
     delete_result=$?
-    if [[ ${delete_result} -eq 1 ]]; then
-        return 1
-    fi
+    [[ ${delete_result} -eq 1 ]] && return 1
 
 }

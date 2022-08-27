@@ -234,7 +234,7 @@ function restore_backup_from_ftp() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # RESTORE FILES
-    log_subsection "Restore files from ftp"
+    log_subsection "Restore files from FTP"
 
     # Ask project stage
     project_stage="$(project_ask_stage "prod")"
@@ -367,14 +367,14 @@ function restore_backup_from_public_url() {
   # File Backup details
   backup_file=${source_files_url##*/}
 
+  # Create tmp dir structure
+  mkdir -p "${BROLIT_TMP_DIR}"
+  mkdir -p "${BROLIT_TMP_DIR}/${project_domain}"
+
   # Log
   display --indent 6 --text "- Downloading file backup"
   log_event "info" "Downloading file backup ${source_files_url}" "false"
   log_event "debug" "Running: ${CURL} ${source_files_url} >${BROLIT_TMP_DIR}/${project_domain}/${backup_file}" "false"
-
-  # Create tmp dir structure
-  mkdir -p "${BROLIT_TMP_DIR}"
-  mkdir -p "${BROLIT_TMP_DIR}/${project_domain}"
 
   # Download File Backup
   ${CURL} "${source_files_url}" >"${BROLIT_TMP_DIR}/${project_domain}/${backup_file}"
@@ -434,7 +434,7 @@ function restore_backup_from_public_url() {
     find "${BROLIT_TMP_DIR}/${project_domain}" -name "*.sql.gz"
   })"
 
-  if [[ ${find_result} != "" ]]; then
+  if [[ -n ${find_result} ]]; then
 
     log_event "info" "Database backups found on downloaded files" "false"
 
@@ -497,62 +497,31 @@ function restore_backup_from_public_url() {
 
   mv "${BROLIT_TMP_DIR}/${project_domain}" "${PROJECTS_PATH}/${project_domain}"
 
-  change_ownership "www-data" "www-data" "${PROJECTS_PATH}/${project_domain}"
+  #change_ownership "www-data" "www-data" "${PROJECTS_PATH}/${project_domain}"
 
   actual_folder="${PROJECTS_PATH}/${project_domain}"
 
-  # Create nginx config files for site
-  nginx_server_create "${project_domain}" "wordpress" "single"
-
-  # Change DNS record
-  if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
-
-    # TODO: Ask for subdomains to change in Cloudflare (root domain asked before)
-    # SUGGEST "${project_domain}" and "www${project_domain}"
-
-    # Cloudflare API to change DNS records
-    cloudflare_set_record "${root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
-
-  fi
-
-  # HTTPS with Certbot
-  certbot_helper_installer_menu "${NOTIFICATION_EMAIL_MAILA}" "${project_domain}"
-
   project_type="$(project_get_type "${actual_folder}")"
 
-  if [[ ${project_type} == "wordpress" ]]; then
+  # Project domain configuration (webserver+certbot+DNS)
+  project_update_domain_config "${project_domain}" "${project_type}" ""
 
-    install_path="$(wp_config_path "${actual_folder}")"
-    if [[ -z "${install_path}" ]]; then
-
-      log_event "info" "WordPress installation found" "false"
-
-      # Change file and dir permissions
-      wp_change_permissions "${actual_folder}/${install_path}"
-
-      # Change wp-config.php database parameters
-      wp_update_wpconfig "${actual_folder}/${install_path}" "${project_name}" "${project_stage}" "${database_user_passw}"
-
-      # WP Search and Replace URL
-      wp_ask_url_search_and_replace "${actual_folder}/${install_path}"
-
-    fi
-
-  fi
+  # Post-restore/install tasks
+  # TODO: neet to get old domain for replace on database
+  project_post_install_tasks "${install_path}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${project_domain}" "${project_domain}"
 
   # Create brolit_config.json file
-  project_update_brolit_config "${actual_folder}/${install_path}" "${project_name}" "${project_stage}" "${project_type}"
-  "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "" "true" ""
+  project_update_brolit_config "${actual_folder}/${install_path}" "${project_name}" "${project_stage}" "${project_type}" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "" "true" ""
 
   # Remove tmp files
   log_event "info" "Removing temporary folders ..." "false"
   rm --force --recursive "${BROLIT_TMP_DIR}/${project_domain:?}"
 
   # Send notifications
-  send_notification "✅ ${SERVER_NAME}" "Project ${project_name} restored!"
+  send_notification "✅ ${SERVER_NAME}" "Project ${project_name} restored!" ""
 
   HTMLOPEN='<html><body>'
-  BODY_SRV_MIG='Migración finalizada en '${ELAPSED_TIME}'<br/>'
+  BODY_SRV_MIG='Project restore ended '${ELAPSED_TIME}'<br/>'
   BODY_DB='Database: '${project_name}'_'${project_stage}'<br/>Database User: '${project_name}'_user <br/>Database User Pass: '${database_user_passw}'<br/>'
   HTMLCLOSE='</body></html>'
 
@@ -585,10 +554,10 @@ function restore_backup_server_selection() {
     # Show output
     chosen_server="$(whiptail --title "RESTORE BACKUP" --menu "Choose a server to work with" 20 78 10 $(for x in ${remote_server_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
 
-    log_event "debug" "chosen_server: ${chosen_server}" "false"
-
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
+
+      log_event "debug" "chosen_server: ${chosen_server}" "false"
 
       # List options
       dropbox_type_list='project site database'
@@ -605,6 +574,8 @@ function restore_backup_server_selection() {
   else
 
     log_event "error" "Dropbox uploader failed. Output: ${remote_server_list}. Exit status: ${exitstatus}" "false"
+
+    return 1
 
   fi
 
@@ -623,13 +594,13 @@ function restore_backup_server_selection() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function restore_config_files_from_dropbox() {
+function restore_config_files_from_storage() {
 
   local chosen_type_path="${1}"
   local storage_project_list="${2}"
 
   local chosen_config_type # whiptail var
-  local dropbox_bk_list    # dropbox backup list
+  local storage_file_list  # backup list
   local chosen_config_bk   # whiptail var
 
   log_subsection "Restore Server config files"
@@ -638,18 +609,20 @@ function restore_config_files_from_dropbox() {
   chosen_config_type="$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Choose a config backup type." 20 78 10 $(for x in ${storage_project_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
-    #Restore from Dropbox
-    dropbox_bk_list="$(${DROPBOX_UPLOADER} -hq list "${chosen_type_path}/${chosen_config_type}" | awk '{print $2;}')"
+    #Restore file list
+    #dropbox_bk_list="$(${DROPBOX_UPLOADER} -hq list "${chosen_type_path}/${chosen_config_type}" | awk '{print $2;}')"
+    storage_file_list="$(storage_list_dir "${chosen_type_path}/${chosen_config_type}")"
   fi
 
-  chosen_config_bk="$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Choose a config backup file to restore." 20 78 10 $(for x in ${dropbox_bk_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
+  chosen_config_bk="$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Choose a config backup file to restore." 20 78 10 $(for x in ${storage_file_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Downloading Config Backup
     display --indent 6 --text "- Downloading config backup from dropbox"
 
-    dropbox_download "${chosen_type_path}/${chosen_config_type}/${chosen_config_bk}" "${BROLIT_MAIN_DIR}/tmp"
+    #dropbox_download "${chosen_type_path}/${chosen_config_type}/${chosen_config_bk}" "${BROLIT_MAIN_DIR}/tmp"
+    storage_download_backup "${chosen_type_path}/${chosen_config_type}/${chosen_config_bk}" "${BROLIT_MAIN_DIR}/tmp"
 
     #clear_previous_lines "1"
     #display --indent 6 --text "- Downloading config backup from dropbox" --result "DONE" --color GREEN
@@ -700,16 +673,12 @@ function restore_nginx_site_files() {
   bk_to_download="${chosen_server}/configs/nginx/${bk_file}"
 
   # Subsection
-  log_subsection "Nginx Server Configuration Restore"
+  log_subsection "Nginx server configuration Restore"
 
   # Downloading Config Backup
-  log_event "info" "Downloading nginx backup from dropbox" "false"
-  display --indent 6 --text "- Downloading nginx backup from dropbox"
-
-  dropbox_output="$(${DROPBOX_UPLOADER} download "${bk_to_download}" 1>&2)"
-
-  clear_previous_lines "1"
-  display --indent 6 --text "- Downloading nginx backup from dropbox" --result "DONE" --color GREEN
+  #dropbox_output="$(${DROPBOX_UPLOADER} download "${bk_to_download}" 1>&2)"
+  storage_download_backup "${bk_to_download}" "${BROLIT_TMP_DIR}"
+  [[ $? -eq 1 ]] && return 1
 
   # Extract
   mkdir -p "${BROLIT_MAIN_DIR}/tmp/nginx"
@@ -727,7 +696,7 @@ function restore_nginx_site_files() {
       startdir="${BROLIT_MAIN_DIR}/tmp/nginx/sites-available"
       file_browser "$menutitle" "$startdir"
 
-      to_restore=${filepath}"/"${filename}
+      to_restore="${filepath}/${filename}"
       log_event "info" "File to restore: ${to_restore} ..." "false"
 
     else
@@ -766,6 +735,7 @@ function restore_nginx_site_files() {
 
     log_event "error" "/etc/nginx/sites-available NOT exist... Skipping!" "false"
     #echo "ERROR: nginx main dir is not present!"
+    return 1
 
   fi
 
@@ -969,7 +939,7 @@ function restore_type_selection_from_storage() {
 
       if [[ ${chosen_type} == *"configs"* ]]; then
 
-        restore_config_files_from_dropbox "${chosen_type_path}" "${storage_project_list}"
+        restore_config_files_from_storage "${chosen_type_path}" "${storage_project_list}"
 
       else # DB or SITE
 
