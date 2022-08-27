@@ -151,6 +151,16 @@
                 ]
             }
         ],
+        "discord": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "webhook": ""
+                    }
+                ]
+            }
+        ],
         "telegram": [
             {
                 "status": "disabled",

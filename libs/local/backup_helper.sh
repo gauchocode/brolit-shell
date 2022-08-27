@@ -1035,8 +1035,8 @@ function backup_project() {
         else
 
           # Log
-          log_event "info" "Database ${db_name} not found" "false"
-          display --indent 8 --text "Database ${db_name} not found on MySQL" --tcolor YELLOW
+          log_event "info" "Database ${db_name} not found on Postgres" "false"
+          display --indent 8 --text "Database ${db_name} not found on Postgres" --tcolor YELLOW
           display --indent 6 --text " - Database backup" --result "SKIPPED" --color YELLOW
 
         fi
@@ -1045,13 +1045,15 @@ function backup_project() {
 
     fi
 
+    log_break
+
     # Delete backup from server
     rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${backup_type:?}"
     #log_event "info" "Deleting backup from server ..." "false"
 
     # Log
     log_event "info" "Project Backup done" "false"
-    display --indent 6 --text "- Project Backup" --result "DONE" --color GREEN
+    display --indent 6 --text " - Project Backup" --result "DONE" --color GREEN
 
   else
 
