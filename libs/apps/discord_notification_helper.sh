@@ -32,7 +32,7 @@ function discord_send_notification() {
     log_event "debug" "Running: ${CURL} -H \"Content-Type: application/json\" -X POST -d '{\"content\":\"'\"${notification_title} : ${notification_content}\"'\"}' \"${NOTIFICATION_DISCORD_WEBHOOK}\"" "false"
 
     # Discord command
-    ${CURL} -H "Content-Type: application/json" -X POST -d '{"content":"'"${notification_title} : ${notification_content}"'"}' "${NOTIFICATION_DISCORD_WEBHOOK}"
+    ${CURL} -H "Content-Type: application/json" -X POST -d '{"content":"'"**${notification_title}**:\n${notification_content}"'"}' "${NOTIFICATION_DISCORD_WEBHOOK}"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -45,8 +45,10 @@ function discord_send_notification() {
 
     else
         # Log on failure
-        log_event "error" "Discord notification error!" "false"
+        log_event "error" "Discord notification error." "false"
+        log_event "error" "Please, check webhook url on .brolit_conf.json" "false"
         display --indent 6 --text "- Sending Discord notification" --result "FAIL" --color RED
+        display --indent 8 --text "Check webhook url on .brolit_conf.json" --result "FAIL" --color RED
 
         return 1
 
