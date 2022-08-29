@@ -33,39 +33,39 @@ function wordpress_project_installer() {
   local project_root_domain="${5}"
   local project_install_mode="${6}"
 
-  local project_install_modes
+  #local project_install_modes
+  #
+  #if [[ -z ${project_install_mode} ]]; then
+  #  # Installation types
+  #  project_install_modes=(
+  #    "01)" "CLEAN INSTALL"
+  #  )
+  #  #project_install_modes=(
+  #  #  "01)" "CLEAN INSTALL"
+  #  #  "02)" "COPY FROM PROJECT"
+  #  #)
+  #  installation_type=$(whiptail --title "INSTALLATION TYPE" --menu "Choose an Installation Type" 20 78 10 "${project_install_modes[@]}" 3>&1 1>&2 2>&3)
+  #  exitstatus=$?
+  #  if [[ ${exitstatus} -eq 0 ]]; then
+  #    if [[ ${installation_type} == *"CLEAN"* ]]; then
+  #      project_install_mode="clean"
+  #    else # Clean Install
+  #      project_install_mode="copy"
+  #    fi
+  #  fi
+  #fi
 
-  if [[ -z ${project_install_mode} ]]; then
-    # Installation types
-    project_install_modes=(
-      "01)" "CLEAN INSTALL"
-    )
-    #project_install_modes=(
-    #  "01)" "CLEAN INSTALL"
-    #  "02)" "COPY FROM PROJECT"
-    #)
-    installation_type=$(whiptail --title "INSTALLATION TYPE" --menu "Choose an Installation Type" 20 78 10 "${project_install_modes[@]}" 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-      if [[ ${installation_type} == *"CLEAN"* ]]; then
-        project_install_mode="clean"
-      else # Clean Install
-        project_install_mode="copy"
-      fi
-    fi
-  fi
-
-  if [[ ${project_install_mode} == "copy" ]]; then
-
-    # TODO: need a refactor
-    #wordpress_project_copy "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
-    log_event "error" "Not implemented yet" "true"
-
-  else # Clean Install
+  #if [[ ${project_install_mode} == "copy" ]]; then
+  #
+  #  # TODO: need a refactor
+  #  #wordpress_project_copy "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
+  #  log_event "error" "Not implemented yet" "true"
+  #
+  #else # Clean Install
 
     wordpress_project_install "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
 
-  fi
+  #fi
 
 }
 
@@ -91,7 +91,7 @@ function wordpress_project_install() {
   local project_stage="${4}"
   local project_root_domain="${5}"
 
-  log_subsection "WordPress Install"
+  log_subsection "WordPress Install (clean)"
 
   if [[ -z ${project_root_domain} ]]; then
     project_root_domain="$(domain_get_root "${project_domain}")"

@@ -7,9 +7,8 @@
 ### Main dir check
 BROLIT_MAIN_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 BROLIT_MAIN_DIR=$(cd "$(dirname "${BROLIT_MAIN_DIR}")" && pwd)
-if [[ -z "${BROLIT_MAIN_DIR}" ]]; then
-  exit 1 # error; the path is not accessible
-fi
+
+[[ -z "${BROLIT_MAIN_DIR}" ]] && exit 1 # error; the path is not accessible
 
 # shellcheck source=${BROLIT_MAIN_DIR}/libs/commons.sh
 source "${BROLIT_MAIN_DIR}/libs/commons.sh"
@@ -98,16 +97,16 @@ email_subject="${email_status} [${NOWDISPLAY}] - Complete Backup on ${SERVER_NAM
 # Sending email notification
 mail_send_notification "${email_subject}" "${mail_html}"
 
-# Cleanup
-cleanup
-
 # Write e-mail (debug)
-echo "${mail_html}" >"${BROLIT_TMP_DIR}/email-${NOW}.mail"
+# echo "${mail_html}" >"${BROLIT_TMP_DIR}/email-${NOW}.mail"
 
 # If NETDATA is installed, restore alarm status
 if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
   netdata_alerts_enable
 fi
+
+# Cleanup
+cleanup
 
 # Log End
 log_event "info" "Exiting script ..." "false" "1"
