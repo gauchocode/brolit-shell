@@ -35,10 +35,18 @@
 #        -o tls=<auto|yes|no>         -o fqdn=FQDN
 #
 
-function mail_send_notification() {
+################################################################################
+# Mail subject status.
+#
+# Arguments:
+#   $1 = ${email_subject} // Email's subject
+#   $2 = ${email_content} // Email's content
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    # $1 = ${email_subject} // Email's subject
-    # $2 = ${email_content} // Email's content
+function mail_send_notification() {
 
     local email_subject="${1}"
     local email_content="${2}"
@@ -74,13 +82,21 @@ function mail_send_notification() {
 
 }
 
-function mail_subject_status() {
+################################################################################
+# Mail subject status.
+#
+# Arguments:
+#   $1 = ${status_d} // Database backup status
+#   $2 = ${status_f} // Files backup status
+#   $3 = ${status_s} // Server status
+#   $4 = ${status_c} // Certificates status
+#   $5 = ${outdated} // System Packages status
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    # $1 = ${status_d} // Database backup status
-    # $2 = ${status_f} // Files backup status
-    # $3 = ${status_s} // Server status
-    # $4 = ${status_c} // Certificates status
-    # $5 = ${outdated} // System Packages status
+function mail_subject_status() {
 
     local status_d="${1}"
     local status_f="${2}"
@@ -123,9 +139,17 @@ function _remove_mail_notifications_files() {
 
 }
 
-function mail_server_status_section() {
+################################################################################
+# Mail server status section.
+#
+# Arguments:
+#   $1 = ${server_status}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    #declare -g STATUS_SERVER # Global to check section status
+function mail_server_status_section() {
 
     local server_status="${1}"
 
@@ -172,10 +196,19 @@ function mail_server_status_section() {
 
 }
 
+################################################################################
+# Mail packages status section.
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function mail_package_status_section() {
 
     local pkg_details
-    #local pkg_color
     local pkg_status
     local pkg_status_icon
 
@@ -214,9 +247,17 @@ function mail_package_status_section() {
 
 }
 
-function mail_package_section() {
+################################################################################
+# Mail files backup section.
+#
+# Arguments:
+#   $1 = ${PACKAGES} // Packages to be updated
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    # $1 = ${PACKAGES} // Packages to be updated
+function mail_package_section() {
 
     local -n PACKAGES="${1}"
 
@@ -245,6 +286,16 @@ function mail_package_section() {
     done
 
 }
+
+################################################################################
+# Mail certificates section.
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function mail_certificates_section() {
 
@@ -337,6 +388,19 @@ function mail_certificates_section() {
 
 }
 
+################################################################################
+# Mail files backup section.
+#
+# Arguments:
+#   $1 = ${error_msg}
+#   $2 = ${error_type}
+#   $3 = ${backuped_files_list}
+#   $4 = ${backuped_files_sizes_list}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function mail_files_backup_section() {
 
     local error_msg="${1}"
@@ -412,7 +476,6 @@ function mail_files_backup_section() {
 
     mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e 's|{{files_backup_status}}|'"${status_backup_files}"'|g')"
     mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e 's|{{files_backup_status_icon}}|'"${status_icon_f}"'|g')"
-
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
     mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e 's|{{files_backup_list}}|'"${content}"'|g')"
 
@@ -420,6 +483,19 @@ function mail_files_backup_section() {
     echo "${mail_backup_files_html}" >"${BROLIT_TMP_DIR}/file-bk-${NOW}.mail"
 
 }
+
+################################################################################
+# Mail config backup section.
+#
+# Arguments:
+#   $1 = ${error_msg}
+#   $2 = ${error_type}
+#   $3 = ${backuped_config_list}
+#   $4 = ${backuped_config_sizes_list}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function mail_config_backup_section() {
 
@@ -486,7 +562,6 @@ function mail_config_backup_section() {
 
     mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e 's|{{configs_backup_status}}|'"${status_backup_files}"'|g')"
     mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e 's|{{configs_backup_status_icon}}|'"${status_icon_f}"'|g')"
-
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
     mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e 's|{{configs_backup_list}}|'"${content}"'|g')"
 
@@ -494,6 +569,19 @@ function mail_config_backup_section() {
     echo "${mail_backup_configs_html}" >"${BROLIT_TMP_DIR}/config-bk-${NOW}.mail"
 
 }
+
+################################################################################
+# Mail database backup section.
+#
+# Arguments:
+#   $1 = ${error_msg}
+#   $2 = ${error_type}
+#   $3 = ${backuped_databases_list}
+#   $4 = ${backuped_databases_sizes_list}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function mail_databases_backup_section() {
 
@@ -557,7 +645,6 @@ function mail_databases_backup_section() {
 
     mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e 's|{{databases_backup_status}}|'"${backup_status}"'|g')"
     mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e 's|{{databases_backup_status_icon}}|'"${status_icon}"'|g')"
-
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
     mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e 's|{{databases_backup_list}}|'"${content}"'|g')"
 
@@ -566,9 +653,106 @@ function mail_databases_backup_section() {
 
 }
 
-function mail_footer() {
+################################################################################
+############################## NEW FUNCTION ####################################
+################################################################################
 
-    # $1 = ${SCRIPT_V}
+################################################################################
+# Mail backup section.
+#
+# Arguments:
+#   $1 = ${error_msg}
+#   $2 = ${error_type}
+#   $3 = ${backuped_list}
+#   $4 = ${backuped_sizes_list}
+#   $5 = ${backup_type} // databases, files, configuration
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function mail_backup_section() {
+
+    local error_msg="${1}"
+    local error_type="${2}"
+    local backuped_list="${3}"
+    local backuped_sizes_list="${4}"
+    local backup_type="${5}"
+
+    local count
+    local bk_size
+    local backup_status
+    local status_icon
+
+    # TODO: config support
+    local email_template="default"
+
+    # Clear garbage output
+    # clear_previous_lines "4"
+
+    log_event "debug" "Preparing mail ${backup_type} backup section ..." "false"
+
+    if [[ ${error_msg} != "" ]]; then
+
+        backup_status="ERROR"
+        status_icon="⛔"
+        content="<b>${backup_type} backup with errors:<br />${error_type}<br /><br />Please check log file.</b> <br />"
+
+    else
+
+        backup_status="OK"
+        status_icon="✅"
+        content=""
+        files_inc=""
+
+        count=0
+
+        for backup_file in "${backuped_list[@]}"; do
+
+            bk_size=${backuped_sizes_list[$count]}
+
+            files_inc_line_p1="<div class=\"backup-details-line\">"
+            files_inc_line_p2="<span style=\"margin-right:5px;\">${backup_file}</span>"
+            files_inc_line_p3="<span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\">${bk_size}</span>"
+            files_inc_line_p4="</div>"
+            files_inc_line_p5="${files_inc}"
+
+            files_inc="${files_inc_line_p1}${files_inc_line_p2}${files_inc_line_p3}${files_inc_line_p4}${files_inc_line_p5}"
+
+            count=$((count + 1))
+
+        done
+
+        files_label_d_end="</div>"
+
+        content="${files_inc}${files_label_d_end}"
+
+    fi
+
+    mail_backup_html="$(cat "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/backup_${backup_type}-tpl.html")"
+
+    mail_backup_html="$(echo "${mail_backup_html}" | sed -e 's|{{backup_status}}|'"${backup_status}"'|g')"
+    mail_backup_html="$(echo "${mail_backup_html}" | sed -e 's|{{backup_status_icon}}|'"${status_icon}"'|g')"
+    # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
+    mail_backup_html="$(echo "${mail_backup_html}" | sed -e 's|{{backup_list}}|'"${content}"'|g')"
+
+    # Write e-mail parts files
+    #echo "${mail_backup_html}" >"${BROLIT_TMP_DIR}/db-bk-${NOW}.mail"
+    echo "${mail_backup_html}" >"${BROLIT_TMP_DIR}/${backup_type}-bk-${NOW}.mail"
+
+}
+
+################################################################################
+# Mail footer.
+#
+# Arguments:
+#   $1 = ${script_v}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function mail_footer() {
 
     local script_v="${1}"
 
