@@ -813,7 +813,7 @@ function backup_databases() {
       # Make database backup
       backup_file="$(backup_project_database "${database}" "${db_engine}")"
 
-      if [[ ${backup_file} != "" ]]; then
+      if [[ -n ${backup_file} ]]; then
 
         # Extract parameters from ${backup_file}
         database_backup_path="$(echo "${backup_file}" | cut -d ";" -f 1)"
@@ -1033,6 +1033,8 @@ function backup_project() {
           backup_project_database "${db_name}" "postgres"
 
         else
+
+          ERROR=true
 
           # Log
           log_event "info" "Database ${db_name} not found on Postgres" "false"
