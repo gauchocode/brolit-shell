@@ -8,6 +8,16 @@
 #
 ################################################################################
 
+################################################################################
+# wpcli manager function
+#
+# Arguments:
+#   $1 = none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function wpcli_manager() {
 
   local wpcli_installed
@@ -69,9 +79,17 @@ function wpcli_manager() {
 
 }
 
-function wpcli_main_menu() {
+################################################################################
+# Main menu for wpcli functions
+#
+# Arguments:
+#   $1 = ${wp_site}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  # $1 = ${wp_site}
+function wpcli_main_menu() {
 
   local wp_site="${1}"
 
@@ -125,7 +143,6 @@ function wpcli_main_menu() {
 
       for theme_del in ${chosen_del_theme_option}; do
         theme_del=$(sed -e 's/^"//' -e 's/"$//' <<<${theme_del}) #needed to ommit double quotes
-        #echo "theme delete $theme_del"
         wpcli_theme_delete "${wp_site}" "${theme_del}"
       done
 

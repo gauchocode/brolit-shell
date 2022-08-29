@@ -2065,6 +2065,7 @@ function tasks_handler() {
 function flags_handler() {
 
   # GLOBALS
+
   ## OPTIONS
   declare -g ENV=""
   declare -g SLOG=""
@@ -2208,7 +2209,7 @@ function flags_handler() {
       ;;
 
     *)
-      echo "INVALID OPTION: $1" >&2
+      echo "Invalid option: ${1}" >&2
       exit
       ;;
 
