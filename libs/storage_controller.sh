@@ -138,18 +138,28 @@ function storage_move() {
         dropbox_output="$(${DROPBOX_UPLOADER} move "${to_move}" "${destination}" 2>&1)"
 
         # TODO: if destination folder already exists, it will fail
-        log_event "debug" "${DROPBOX_UPLOADER} move ${to_move} ${destination}" "false"
         display --indent 6 --text "- Moving files to offline-projects on Dropbox" --result "DONE" --color GREEN
 
     fi
     if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
 
-        mv "${to_move}" "${destination}"
+        move_files "${to_move}" "${destination}"
 
     fi
 
     storage_result=$?
-    [[ ${storage_result} -eq 1 ]] && return 1
+    if [[ ${storage_result} -eq 1 ]]; then
+
+        # Log
+        log_event "error" "Moving files to offline-projects on Dropbox" "false"
+        log_event "debug" "${DROPBOX_UPLOADER} move ${to_move} ${destination}" "false"
+        log_event "debug" "dropbox_uploader output: ${dropbox_output}" "false"
+        display --indent 6 --text "- Moving files to offline-projects on Dropbox" --result "FAIL" --color RED
+        display --indent 8 --text "Please move files running: ${DROPBOX_UPLOADER} move ${to_move} ${destination}" --tcolor RED
+
+        return 1
+
+    fi
 
 }
 
