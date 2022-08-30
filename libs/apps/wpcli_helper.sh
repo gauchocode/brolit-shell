@@ -1016,7 +1016,7 @@ function wpcli_run_startup_script() {
     if [[ -z ${wp_user_passw} ]]; then
         local suggested_passw
         suggested_passw="$(openssl rand -hex 12)"
-        wp_user_passw="$(whiptail --title "Site Name" --inputbox "Select this random generated password or insert a new one: " 20 78 10 "${suggested_passw}" 3>&1 1>&2 2>&3)"
+        wp_user_passw="$(whiptail --title "Site Name" --inputbox "Select this random generated password or insert a new one: " 10 60 "'${suggested_passw}'" 3>&1 1>&2 2>&3)"
     fi
     exitstatus=$?
     if [[ ! ${exitstatus} -eq 0 ]]; then
@@ -1042,6 +1042,11 @@ function wpcli_run_startup_script() {
     clear_previous_lines "2"
     display --indent 6 --text "- WordPress site creation" --result "DONE" --color GREEN
 
+    # Force siteurl and home options value
+    sudo -u www-data wp --path="${wp_site}" option update home "${site_url}" --quiet
+    sudo -u www-data wp --path="${wp_site}" option update siteurl "${site_url}" --quiet
+    display --indent 6 --text "- Updating URL on database" --result "DONE" --color GREEN
+
     # Delete default post, page, and comment
     sudo -u www-data wp --path="${wp_site}" site empty --yes --quiet
     display --indent 6 --text "- Deleting default content" --result "DONE" --color GREEN
@@ -1063,7 +1068,6 @@ function wpcli_run_startup_script() {
     # Changing comment status
     sudo -u www-data wp --path="${wp_site}" option update default_comment_status closed --quiet
     display --indent 6 --text "- Setting comments off" --result "DONE" --color GREEN
-    #wp post create --post_type=page --post_status=publish --post_title='Home' --allow-root
 
     wp_change_permissions "${wp_site}"
 
