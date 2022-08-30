@@ -938,6 +938,7 @@ function copy_files() {
 
     clear_previous_lines "1"
     display --indent 6 --text "- Copying files to ${destination_path}" --result "DONE" --color GREEN
+    return 0
 
   else
 
