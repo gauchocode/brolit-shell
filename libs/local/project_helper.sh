@@ -1461,6 +1461,7 @@ function project_install() {
   local project_stage="${5}"
   local project_install_mode="${6}" # clean or copy
 
+  local project_root_domain
   local project_secondary_subdomain
 
   if [[ -z ${project_type} ]]; then
@@ -1479,7 +1480,7 @@ function project_install() {
 
   project_path="${dir_path}/${project_domain}"
 
-  root_domain="$(domain_get_root "${project_domain}")"
+  project_root_domain="$(domain_get_root "${project_domain}")"
 
   # TODO: check when add www.DOMAIN.com and then select other stage != prod
   if [[ -z ${project_stage} ]]; then
@@ -1524,7 +1525,7 @@ function project_install() {
     wpcli_install_if_not_installed
 
     # Execute function
-    wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${root_domain}" "${project_install_mode}"
+    wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}" "${project_install_mode}"
 
     # Startup Script for WordPress installation
     # TODO: should pass https://$project_domain instead?
@@ -1534,22 +1535,22 @@ function project_install() {
 
   laravel)
     # Execute function
-    # laravel_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${root_domain}"
+    # laravel_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
     # log_event "warning" "Laravel installer should be implemented soon, trying to install like pure php project ..."
-    php_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${root_domain}"
+    php_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
 
     ;;
 
   php)
 
-    php_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${root_domain}"
+    php_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
 
     ;;
 
   nodejs)
 
     #display --indent 8 --text "Project Type NodeJS" --tcolor RED
-    nodejs_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${root_domain}"
+    nodejs_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
 
     #return 1
     ;;
@@ -1563,7 +1564,7 @@ function project_install() {
 
   ### NEW ###
 
-  # TODO: ask for Cloudflare support and check if root_domain is configured on the cf account
+  # TODO: ask for Cloudflare support and check if $project_root_domain is configured on the cf account
 
   # Project domain configuration (webserver+certbot+DNS)
   project_update_domain_config "${project_domain}" "${project_type}" ""
@@ -1809,6 +1810,7 @@ function project_delete() {
   local project_domain="${1}"
   local delete_cf_entry="${2}"
 
+  local project_root_domain
   local files_skipped="false"
 
   log_section "Project Delete"
@@ -1872,8 +1874,8 @@ function project_delete() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         # Delete Cloudflare entries
-        root_domain="$(domain_get_root "${project_domain}")"
-        cloudflare_delete_record "${root_domain}" "${project_domain}" "A"
+        project_root_domain="$(domain_get_root "${project_domain}")"
+        cloudflare_delete_record "${project_root_domain}" "${project_domain}" "A"
 
       else
 
@@ -1884,8 +1886,8 @@ function project_delete() {
     else
 
       # Delete Cloudflare entries
-      root_domain="$(domain_get_root "${project_domain}")"
-      cloudflare_delete_record "${root_domain}" "${project_domain}" "A"
+      project_root_domain="$(domain_get_root "${project_domain}")"
+      cloudflare_delete_record "${project_root_domain}" "${project_domain}" "A"
 
     fi
 
@@ -2115,7 +2117,7 @@ function project_get_type() {
 function project_create_nginx_server() {
 
   local project_domain
-  local root_domain
+  local project_root_domain
   local project_type
   local exitstatus
   local cloudflare_exitstatus
@@ -2138,7 +2140,7 @@ function project_create_nginx_server() {
     project_domain="$(project_ask_domain "${filename}")"
 
     # Extract root domain
-    root_domain="$(domain_get_root "${project_domain}")"
+    project_root_domain="$(domain_get_root "${project_domain}")"
 
     # Try to get project type
     suggested_project_type="$(project_get_type "${filepath}/${filename}")"
@@ -2325,36 +2327,36 @@ function project_update_domain_config() {
   local project_type="${2}"
   local project_port="${3}"
 
-  local root_domain
+  local project_root_domain
 
   # Log
   log_subsection "Update Domain Configuration"
 
-  root_domain="$(domain_get_root "${project_domain}")"
-  #root_domain="$(ask_root_domain "${possible_root_domain}")"
+  project_root_domain="$(domain_get_root "${project_domain}")"
+  #project_root_domain="$(ask_root_domain "${possible_root_domain}")"
 
   # TODO: if ${project_domain} == ${chosen_domain}, maybe ask if want to restore nginx and let's encrypt config files
   # restore_letsencrypt_site_files "${chosen_domain}" "${project_backup_date}"
   # restore_nginx_site_files "${chosen_domain}" "${project_backup_date}"
 
   # Working with root domain or www?
-  if [[ ${project_domain} == "${root_domain}" || ${project_domain} == "www.${root_domain}" ]]; then
+  if [[ ${project_domain} == "${project_root_domain}" || ${project_domain} == "www.${project_root_domain}" ]]; then
 
     # Nginx config
-    nginx_server_create "www.${root_domain}" "${project_type}" "root_domain" "${root_domain}" "" "${project_port}"
+    nginx_server_create "www.${project_root_domain}" "${project_type}" "root_domain" "${project_root_domain}" "" "${project_port}"
 
     # Cloudflare
     if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
       ## Set records
-      cloudflare_set_record "${root_domain}" "${root_domain}" "A" "false" "${SERVER_IP}"
-      cloudflare_set_record "${root_domain}" "www.${root_domain}" "CNAME" "false" "${root_domain}"
+      cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A" "false" "${SERVER_IP}"
+      cloudflare_set_record "${project_root_domain}" "www.${project_root_domain}" "CNAME" "false" "${project_root_domain}"
       cloudflare_exitstatus=$?
     fi
 
     if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
       if [[ ${cloudflare_exitstatus} -ne 1 ]]; then # If ${cloudflare_exitstatus} is empty, will pass too
         # Let's Encrypt
-        certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${root_domain},www.${root_domain}"
+        certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_root_domain},www.${project_root_domain}"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then nginx_server_add_http2_support "${project_domain}"; fi
       fi
@@ -2368,7 +2370,7 @@ function project_update_domain_config() {
     # Cloudflare
     if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
       ## Set records
-      cloudflare_set_record "${root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
+      cloudflare_set_record "${project_root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
       cloudflare_exitstatus=$?
     fi
 
