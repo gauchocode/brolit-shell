@@ -130,9 +130,11 @@ function wordpress_project_install() {
 
   # Download WordPress
   wpcli_core_download "${project_path}" ""
+  [[ $? -eq 1 ]] && return 1
 
   # Create wp-config.php
   wpcli_create_config "${project_path}" "${database_name}" "${database_user}" "${database_user_passw}" "es_ES"
+  [[ $? -eq 1 ]] && return 1
 
   return 0
 
