@@ -504,7 +504,7 @@ function restore_backup_from_public_url() {
   project_type="$(project_get_type "${actual_folder}")"
 
   # Project domain configuration (webserver+certbot+DNS)
-  project_update_domain_config "${project_domain}" "${project_type}" ""
+  https_enable="$(project_update_domain_config "${project_domain}" "${project_type}" "")"
 
   # Post-restore/install tasks
   # TODO: neet to get old domain for replace on database
@@ -1257,7 +1257,7 @@ function restore_project() {
     fi
 
     # Project domain configuration (webserver+certbot+DNS)
-    project_update_domain_config "${new_project_domain}" "${project_type}" ""
+    https_enable="$(project_update_domain_config "${new_project_domain}" "${project_type}" "")"
 
     # Post-restore/install tasks
     project_post_install_tasks "${install_path}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${chosen_domain}" "${new_project_domain}"

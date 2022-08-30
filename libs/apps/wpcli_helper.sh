@@ -985,7 +985,7 @@ function wpcli_run_startup_script() {
     local wp_user_passw="${5}"
     local wp_user_mail="${6}"
 
-    if [[ ${site_name} == "" ]]; then
+    if [[ -z ${site_name} ]]; then
         site_name="$(whiptail --title "Site Name" --inputbox "Insert the site name. Example: My Website" 10 60 3>&1 1>&2 2>&3)"
     fi
     exitstatus=$?
@@ -994,9 +994,9 @@ function wpcli_run_startup_script() {
         return 1
 
     fi
-    # TODO: check if receive a domain or a url like: http://siteurl.com
-    if [[ ${site_url} == "" ]]; then
-        site_url="$(whiptail --title "Site URL" --inputbox "Insert the site URL. Example: mydomain.com" 10 60 3>&1 1>&2 2>&3)"
+    # TODO: check if receive a domain or a url like: https://siteurl.com
+    if [[ -z ${site_url} ]]; then
+        site_url="$(whiptail --title "Site URL" --inputbox "Insert the site URL. Example: https://mydomain.com" 10 60 3>&1 1>&2 2>&3)"
     fi
     exitstatus=$?
     if [[ ! ${exitstatus} -eq 0 ]]; then
@@ -1004,7 +1004,7 @@ function wpcli_run_startup_script() {
         return 1
 
     fi
-    if [[ ${wp_user_name} == "" ]]; then
+    if [[ -z ${wp_user_name} ]]; then
         wp_user_name="$(whiptail --title "Wordpress User" --inputbox "Insert a username for admin." 10 60 3>&1 1>&2 2>&3)"
     fi
     exitstatus=$?
@@ -1013,8 +1013,10 @@ function wpcli_run_startup_script() {
         return 1
 
     fi
-    if [[ ${wp_user_passw} == "" ]]; then
-        wp_user_passw="$(whiptail --title "Site Name" --inputbox "Insert the user password." 10 60 3>&1 1>&2 2>&3)"
+    if [[ -z ${wp_user_passw} ]]; then
+        local suggested_passw
+        suggested_passw="$(openssl rand -hex 12)"
+        wp_user_passw="$(whiptail --title "Site Name" --inputbox "Select this random generated password or insert a new one: " 20 78 10 "${suggested_passw}" 3>&1 1>&2 2>&3)"
     fi
     exitstatus=$?
     if [[ ! ${exitstatus} -eq 0 ]]; then
@@ -1089,9 +1091,8 @@ function wpcli_create_config() {
     local db_user_passw="${4}"
     local wp_locale="${5}"
 
-    if [[ ${wp_locale} == "" ]]; then
-        wp_locale="es_ES"
-    fi
+    # Default locale
+    [[ -z ${wp_locale} ]] && wp_locale="es_ES"
 
     # Log
     log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} config create --dbname=${database} --dbuser=${db_user_name} --dbpass=${db_user_passw} --locale=${wp_locale}"
@@ -1103,9 +1104,12 @@ function wpcli_create_config() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         display --indent 6 --text "- Creating wp-config" --result "DONE" --color GREEN
+
+        return 0
     else
 
         display --indent 6 --text "- Creating wp-config" --result "FAIL" --color RED
+
         return 1
 
     fi

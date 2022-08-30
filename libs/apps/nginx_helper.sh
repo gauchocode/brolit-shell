@@ -583,10 +583,11 @@ function nginx_generate_encrypted_auth() {
     local user="${1}"
     local psw="${2}"
 
+    local encrypted_psw
+
     log_event "info" "Creating nginx encrypted authentication." "false"
 
     if [[ -n ${psw} ]]; then
-        #encrypted_psw="$(openssl passwd -apr1 ${psw})"
         encrypted_psw="$(mkpasswd -m sha-512 "${psw}")"
     fi
 

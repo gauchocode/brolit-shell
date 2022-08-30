@@ -1464,6 +1464,7 @@ function project_install() {
   local project_root_domain
   local project_secondary_subdomain
 
+  # Project Type
   if [[ -z ${project_type} ]]; then
     project_type="$(project_ask_type "")"
     [[ $? -eq 1 ]] && return 1
@@ -1471,15 +1472,19 @@ function project_install() {
 
   log_section "Project Installer (${project_type})"
 
+  # Project Domain
   if [[ -z ${project_domain} ]]; then
     project_domain="$(project_ask_domain "")"
+    [[ $? -eq 1 ]] && return 1
   fi
 
   # If ${dir_path} is empty, use default project path
   [[ -z ${dir_path} ]] && dir_path="${PROJECTS_PATH}"
 
+  # Project Path
   project_path="${dir_path}/${project_domain}"
 
+  # Project root domain
   project_root_domain="$(domain_get_root "${project_domain}")"
 
   # TODO: check when add www.DOMAIN.com and then select other stage != prod
@@ -1527,10 +1532,6 @@ function project_install() {
     # Execute function
     wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}" "${project_install_mode}"
 
-    # Startup Script for WordPress installation
-    # TODO: should pass https://$project_domain instead?
-    [[ ${EXEC_TYPE} == "default" ]] && wpcli_run_startup_script "${project_path}" "${project_domain}"
-
     ;;
 
   laravel)
@@ -1564,10 +1565,17 @@ function project_install() {
 
   ### NEW ###
 
-  # TODO: ask for Cloudflare support and check if $project_root_domain is configured on the cf account
-
   # Project domain configuration (webserver+certbot+DNS)
-  project_update_domain_config "${project_domain}" "${project_type}" ""
+  https_enable="$(project_update_domain_config "${project_domain}" "${project_type}" "")"
+
+  # Startup Script for WordPress installation
+  if [[ ${https_enable} == "true" ]]; then
+    project_site_url="https://${project_domain}"
+  else
+    project_site_url="http://${project_domain}"
+  fi
+
+  [[ ${EXEC_TYPE} == "default" && ${project_type} == "wordpress" ]] && wpcli_run_startup_script "${project_path}" "${project_site_url}"
 
   # Post-restore/install tasks
   project_post_install_tasks "${project_path}" "${project_type}" "${project_name}" "${project_stage}" "${database_user_passw}" "" ""
@@ -2153,7 +2161,7 @@ function project_create_nginx_server() {
     fi
 
     # Update project domain config
-    project_update_domain_config "${project_domain}" "${project_type}" "${project_port}"
+    https_enable="$(project_update_domain_config "${project_domain}" "${project_type}" "${project_port}")"
 
   else
 
@@ -2328,6 +2336,7 @@ function project_update_domain_config() {
   local project_port="${3}"
 
   local project_root_domain
+  local project_https_enable="false"
 
   # Log
   log_subsection "Update Domain Configuration"
@@ -2355,10 +2364,15 @@ function project_update_domain_config() {
 
     if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
       if [[ ${cloudflare_exitstatus} -ne 1 ]]; then # If ${cloudflare_exitstatus} is empty, will pass too
+        # Wait 2 seconds for DNS update
+        sleep 2
         # Let's Encrypt
         certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_root_domain},www.${project_root_domain}"
         exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then nginx_server_add_http2_support "${project_domain}"; fi
+        if [[ ${exitstatus} -eq 0 ]]; then
+          nginx_server_add_http2_support "${project_domain}"
+          project_https_enable="true"
+        fi
       fi
     fi
 
@@ -2376,14 +2390,21 @@ function project_update_domain_config() {
 
     if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
       if [[ ${cloudflare_exitstatus} -ne 1 ]]; then # If ${cloudflare_exitstatus} is empty, will pass too
+        # Wait 2 seconds for DNS update
+        sleep 2
         # Let's Encrypt
         certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain}"
         exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then nginx_server_add_http2_support "${project_domain}"; fi
+        if [[ ${exitstatus} -eq 0 ]]; then
+          nginx_server_add_http2_support "${project_domain}"
+          project_https_enable="true"
+        fi
       fi
     fi
 
   fi
+
+  echo "${project_https_enable}"
 
 }
 
