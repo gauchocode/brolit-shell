@@ -61,9 +61,11 @@ function wordpress_project_installer() {
   #  #wordpress_project_copy "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
   #  log_event "error" "Not implemented yet" "true"
   #
-  #else # Clean Install
+  #else
 
-    wordpress_project_install "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
+  # Clean Install
+
+  wordpress_project_install "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
 
   #fi
 

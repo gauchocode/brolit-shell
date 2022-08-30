@@ -525,25 +525,45 @@ function certbot_certificate_delete() {
 
   else
 
-    certbot --nginx delete --cert-name "${domains}" --quiet
+    local certbot_result
 
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
+    # Check if certificate exist
+    certbot_result="$(certbot certificates | grep "${domains}")"
 
-      # Log
-      clear_previous_lines "5"
-      log_event "debug" "Running: certbot delete --cert-name ${domains}" "false"
-      display --indent 6 --text "- Deleting certificate for ${domains}" --result "DONE" --color GREEN
+    if [[ -n ${certbot_result} ]]; then
+
+      certbot --nginx delete --cert-name "${domains}" --quiet
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        clear_previous_lines "5"
+        display --indent 6 --text "- Deleting certificate for ${domains}" --result "DONE" --color GREEN
+
+        return 0
+
+      else
+
+        # Log
+        clear_previous_lines "1"
+        log_event "error" "Running: certbot delete --cert-name ${domains}" "false"
+        display --indent 6 --text "- Deleting certificate for ${domains}" --result "FAIL" --color RED
+        display --indent 8 --text "Please, read the log file" --tcolor RED
+
+        return 1
+
+      fi
 
     else
 
       # Log
       clear_previous_lines "1"
-      log_event "error" "Running: certbot delete --cert-name ${domains}" "false"
-      display --indent 6 --text "- Deleting certificate for ${domains}" --result "FAIL" --color RED
+      log_event "info" "Certificate for domain: ${domains} not found." "false"
+      display --indent 6 --text "- Deleting certificate for ${domains}" --result "SKIPPED" --color YELLOW
       display --indent 8 --text "No certificate found" --tcolor RED
 
-      return 1
+      return 0
 
     fi
 
