@@ -1623,28 +1623,30 @@ function project_delete_files() {
 
   local project_domain="${1}"
 
-  BK_TYPE="site"
+  local bk_type
+
+  bk_type="site"
 
   # Log
   log_subsection "Delete Files"
 
   # Trying to know project type
-  project_type=$(project_get_type "${PROJECTS_PATH}/${project_domain}")
+  #project_type=$(project_get_type "${PROJECTS_PATH}/${project_domain}")
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Creating new folder structure for old projects
     storage_create_dir "/${SERVER_NAME}/projects-offline"
-    storage_create_dir "/${SERVER_NAME}/projects-offline/site"
+    storage_create_dir "/${SERVER_NAME}/projects-offline/${bk_type}"
 
     # Moving old project backups to another directory
-    storage_move "/${SERVER_NAME}/projects-online/${BK_TYPE}/${project_domain}" "/${SERVER_NAME}/projects-offline/site"
+    storage_move "/${SERVER_NAME}/projects-online/${bk_type}/${project_domain}" "/${SERVER_NAME}/projects-offline/${bk_type}"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
+      
       # Delete project files on server
-      #storage_delete_backup ""
       rm --force --recursive "${PROJECTS_PATH}/${project_domain:?}"
 
       # Log
@@ -1813,7 +1815,7 @@ function project_delete() {
     menu_title="PROJECT DIRECTORY TO DELETE"
     directory_browser "${menu_title}" "${PROJECTS_PATH}"
 
-    # Directory_broser returns: " $filepath"/"$filename
+    # Directory_broser returns: " ${filepath}"/"${filename}
     if [[ -z ${filepath} ]]; then
 
       # Log
