@@ -1461,6 +1461,8 @@ function project_install() {
   local project_stage="${5}"
   local project_install_mode="${6}" # clean or copy
 
+  local project_secondary_subdomain
+
   if [[ -z ${project_type} ]]; then
     project_type="$(project_ask_type "")"
     [[ $? -eq 1 ]] && return 1
@@ -1511,6 +1513,8 @@ function project_install() {
     fi
 
   fi
+
+  [[ ${project_domain} == "${project_root_domain}" ]] && project_domain="www.${project_domain}" && project_secondary_subdomain="${project_root_domain}"
 
   case ${project_type} in
 
@@ -1595,15 +1599,15 @@ function project_install() {
   #  $13 = ${project_override_nginx_conf}
   #  $14 = ${project_use_http2}
   #  $15 = ${project_certbot_mode}
-  project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "${project_type} " "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "/etc/nginx/sites-available/${project_domain}" "" "${cert_path}"
+  project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "${project_type} " "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "${project_secondary_subdomain}" "/etc/nginx/sites-available/${project_domain}" "" "${cert_path}"
 
   # Log
-  log_event "info" "${project_type} project installation for domain ${project_domain} finished" "false"
+  log_event "info" "New ${project_type} project installation for '${project_domain}' finished ok." "false"
   display --indent 6 --text "- ${project_type} project installation" --result "DONE" --color GREEN
   display --indent 8 --text "for domain ${project_domain}"
 
   # Send notification
-  send_notification "✅ ${SERVER_NAME}" "${project_type} project  installation for domain ${project_domain} finished" ""
+  send_notification "✅ ${SERVER_NAME}" "New ${project_type} project installation for '${project_domain}' finished ok!" ""
 
   ### END NEW ###
 
@@ -1645,7 +1649,7 @@ function project_delete_files() {
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
-      
+
       # Delete project files on server
       rm --force --recursive "${PROJECTS_PATH}/${project_domain:?}"
 
@@ -1654,7 +1658,7 @@ function project_delete_files() {
       display --indent 6 --text "- Deleting project files on server" --result "DONE" --color GREEN
 
       # Make a copy of nginx configuration file
-      cp --recursive "/etc/nginx/sites-available/${project_domain}" "${BROLIT_TMP_DIR}"
+      copy_files "/etc/nginx/sites-available/${project_domain}" "${BROLIT_TMP_DIR}"
 
       # Send notification
       send_notification "⚠️ ${SERVER_NAME}" "Project files for '${project_domain}' deleted."
