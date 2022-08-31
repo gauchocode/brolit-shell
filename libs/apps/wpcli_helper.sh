@@ -985,53 +985,57 @@ function wpcli_run_startup_script() {
     local wp_user_passw="${5}"
     local wp_user_mail="${6}"
 
+    # Site Name
     if [[ -z ${site_name} ]]; then
         site_name="$(whiptail --title "Site Name" --inputbox "Insert the site name. Example: My Website" 10 60 3>&1 1>&2 2>&3)"
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 1 || ${site_name} == "" ]]; then
+            # Return
+            return 1
+        fi
     fi
-    exitstatus=$?
-    if [[ ${exitstatus} == "" ]]; then
-        # Return
-        return 1
 
-    fi
+    # Site URL
     # TODO: check if receive a domain or a url like: https://siteurl.com
     if [[ -z ${site_url} ]]; then
         site_url="$(whiptail --title "Site URL" --inputbox "Insert the site URL. Example: https://mydomain.com" 10 60 3>&1 1>&2 2>&3)"
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 1 || ${site_url} == "" ]]; then
+            # Return
+            return 1
+        fi
     fi
-    exitstatus=$?
-    if [[ ! ${exitstatus} -eq 0 ]]; then
-        # Return
-        return 1
 
-    fi
+    # Wordpress User
     if [[ -z ${wp_user_name} ]]; then
         wp_user_name="$(whiptail --title "Wordpress User" --inputbox "Insert a username for admin." 10 60 3>&1 1>&2 2>&3)"
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 1 || ${wp_user_name} == "" ]]; then
+            # Return
+            return 1
+        fi
     fi
-    exitstatus=$?
-    if [[ ! ${exitstatus} -eq 0 ]]; then
-        # Return
-        return 1
 
-    fi
+    # Wordpress User Password
     if [[ -z ${wp_user_passw} ]]; then
         local suggested_passw
         suggested_passw="$(openssl rand -hex 12)"
-        wp_user_passw="$(whiptail --title "Site Name" --inputbox "Select this random generated password or insert a new one: " 10 60 "'${suggested_passw}'" 3>&1 1>&2 2>&3)"
+        wp_user_passw="$(whiptail --title "User Password" --inputbox "Select this random generated password or insert a new one: " 10 60 "${suggested_passw}" 3>&1 1>&2 2>&3)"
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 1 || ${wp_user_passw} == "" ]]; then
+            # Return
+            return 1
+        fi
     fi
-    exitstatus=$?
-    if [[ ! ${exitstatus} -eq 0 ]]; then
-        # Return
-        return 1
 
-    fi
-    if [[ ${wp_user_mail} == "" ]]; then
+    # Wordpress User Email
+    if [[ -z ${wp_user_mail} ]]; then
         wp_user_mail="$(whiptail --title "WordPress User Mail" --inputbox "Insert the user email." 10 60 3>&1 1>&2 2>&3)"
-    fi
-    exitstatus=$?
-    if [[ ! ${exitstatus} -eq 0 ]]; then
-        # Return
-        return 1
-
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 1 || ${wp_user_mail} == "" ]]; then
+            # Return
+            return 1
+        fi
     fi
 
     log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} core install --url=${site_url} --title=${site_name} --admin_user=${wp_user_name} --admin_password=${wp_user_passw} --admin_email=${wp_user_mail}"
@@ -1039,37 +1043,52 @@ function wpcli_run_startup_script() {
     # Install WordPress Site
     sudo -u www-data wp --path="${wp_site}" core install --url="${site_url}" --title="${site_name}" --admin_user="${wp_user_name}" --admin_password="${wp_user_passw}" --admin_email="${wp_user_mail}"
 
-    clear_previous_lines "2"
-    display --indent 6 --text "- WordPress site creation" --result "DONE" --color GREEN
+    if [[ ${exitstatus} -eq 0 ]]; then
 
-    # Force siteurl and home options value
-    sudo -u www-data wp --path="${wp_site}" option update home "${site_url}" --quiet
-    sudo -u www-data wp --path="${wp_site}" option update siteurl "${site_url}" --quiet
-    display --indent 6 --text "- Updating URL on database" --result "DONE" --color GREEN
+        clear_previous_lines "2"
+        display --indent 6 --text "- WordPress site creation" --result "DONE" --color GREEN
 
-    # Delete default post, page, and comment
-    sudo -u www-data wp --path="${wp_site}" site empty --yes --quiet
-    display --indent 6 --text "- Deleting default content" --result "DONE" --color GREEN
+        # Force siteurl and home options value
+        sudo -u www-data wp --path="${wp_site}" option update home "${site_url}" --quiet
+        sudo -u www-data wp --path="${wp_site}" option update siteurl "${site_url}" --quiet
+        display --indent 6 --text "- Updating URL on database" --result "DONE" --color GREEN
 
-    # Delete default themes
-    sudo -u www-data wp --path="${wp_site}" theme delete twentyseventeen --quiet
-    sudo -u www-data wp --path="${wp_site}" theme delete twentynineteen --quiet
-    display --indent 6 --text "- Deleting default themes" --result "DONE" --color GREEN
+        # Delete default post, page, and comment
+        sudo -u www-data wp --path="${wp_site}" site empty --yes --quiet
+        display --indent 6 --text "- Deleting default content" --result "DONE" --color GREEN
 
-    # Delete default plugins
-    sudo -u www-data wp --path="${wp_site}" plugin delete akismet --quiet
-    sudo -u www-data wp --path="${wp_site}" plugin delete hello --quiet
-    display --indent 6 --text "- Deleting default plugins" --result "DONE" --color GREEN
+        # Delete default themes
+        sudo -u www-data wp --path="${wp_site}" theme delete twentyseventeen --quiet
+        sudo -u www-data wp --path="${wp_site}" theme delete twentynineteen --quiet
+        display --indent 6 --text "- Deleting default themes" --result "DONE" --color GREEN
 
-    # Changing permalinks structure
-    sudo -u www-data wp --path="${wp_site}" rewrite structure '/%postname%/' --quiet
-    display --indent 6 --text "- Changing rewrite structure" --result "DONE" --color GREEN
+        # Delete default plugins
+        sudo -u www-data wp --path="${wp_site}" plugin delete akismet --quiet
+        sudo -u www-data wp --path="${wp_site}" plugin delete hello --quiet
+        display --indent 6 --text "- Deleting default plugins" --result "DONE" --color GREEN
 
-    # Changing comment status
-    sudo -u www-data wp --path="${wp_site}" option update default_comment_status closed --quiet
-    display --indent 6 --text "- Setting comments off" --result "DONE" --color GREEN
+        # Changing permalinks structure
+        sudo -u www-data wp --path="${wp_site}" rewrite structure '/%postname%/' --quiet
+        display --indent 6 --text "- Changing rewrite structure" --result "DONE" --color GREEN
 
-    wp_change_permissions "${wp_site}"
+        # Changing comment status
+        sudo -u www-data wp --path="${wp_site}" option update default_comment_status closed --quiet
+        display --indent 6 --text "- Setting comments off" --result "DONE" --color GREEN
+
+        wp_change_permissions "${wp_site}"
+
+        return 0
+
+    else
+
+        clear_previous_lines "2"
+        display --indent 6 --text "- WordPress site creation" --result "FAIL" --color RED
+        display --indent 8 --text "Please, read the log file." --tcolor RED
+
+        # Return
+        return 1
+
+    fi
 
 }
 

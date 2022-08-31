@@ -255,36 +255,28 @@ function wordpress_project_copy() {
   # Set WP salts
   wpcli_set_salts "${project_dir}"
 
-  # TODO: ask for Cloudflare support and check if root_domain is configured on the cf account
-
   # If domain contains www, should work without www too
   common_subdomain='www'
   if [[ ${project_domain} == *"${common_subdomain}"* ]]; then
 
     # Cloudflare API to change DNS records
-    cloudflare_set_record "${root_domain}" "${root_domain}" "A" "false" "${SERVER_IP}"
+    cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A" "false" "${SERVER_IP}"
 
     # Cloudflare API to change DNS records
-    cloudflare_set_record "${root_domain}" "${project_domain}" "CNAME" "false" "${root_domain}"
+    cloudflare_set_record "${project_root_domain}" "${project_domain}" "CNAME" "false" "${project_root_domain}"
 
     # New site Nginx configuration
-    nginx_server_create "${project_domain}" "wordpress" "root_domain" "${root_domain}"
+    nginx_server_create "${project_domain}" "wordpress" "root_domain" "${project_root_domain}"
 
     if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
 
       # HTTPS with Certbot
-      project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${root_domain}" 3>&1 1>&2 2>&3)
+      project_domain=$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain},${project_root_domain}" 3>&1 1>&2 2>&3)
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain},${root_domain}"
-
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
-
-          nginx_server_add_http2_support "${project_domain}"
-
-        fi
+        certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain},${project_root_domain}"
+        [[ $? -eq 0 ]] && nginx_server_add_http2_support "${project_domain}"
 
       else
 
@@ -298,7 +290,7 @@ function wordpress_project_copy() {
   else
 
     # Cloudflare API to change DNS records
-    cloudflare_set_record "${root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
+    cloudflare_set_record "${project_root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -319,13 +311,7 @@ function wordpress_project_copy() {
           if [[ ${exitstatus} -eq 0 ]]; then
 
             certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${cert_project_domain}"
-
-            exitstatus=$?
-            if [[ ${exitstatus} -eq 0 ]]; then
-
-              nginx_server_add_http2_support "${project_domain}"
-
-            fi
+            [[ $? -eq 0 ]] && nginx_server_add_http2_support "${project_domain}"
 
           else
 
