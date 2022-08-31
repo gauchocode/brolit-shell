@@ -373,6 +373,7 @@ function project_manager_menu_new_project_type_new_project() {
     "02)" "NEW LARAVEL PROJECT"
     "03)" "NEW PHP PROJECT"
     "04)" "NEW NODEJS PROJECT"
+    "05)" "NEW WORDPRESS PROJECT (DOCKER) -BETA-"
   )
 
   chosen_project_type_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_type_options[@]}" 3>&1 1>&2 2>&3)"
@@ -405,6 +406,13 @@ function project_manager_menu_new_project_type_new_project() {
 
       # NODE JS PROJECT
       project_install "${PROJECTS_PATH}" "nodejs"
+
+    fi
+
+    if [[ ${chosen_project_type_options} == *"05"* ]]; then
+
+      # WORDPRESS PROJECT (DOCKER)
+      docker_project_install "${PROJECTS_PATH}" "wordpress"
 
     fi
 
