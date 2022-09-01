@@ -1046,6 +1046,31 @@ function network_port_is_use() {
 }
 
 ################################################################################
+# Find next available port (port range for check)
+#
+# Arguments:
+#   $1 = ${port_start} - port range start
+#   $2 = ${port_end} - port range end
+#
+# Outputs:
+#   0 if port is in use, or 1 if not
+################################################################################
+
+function network_next_available_port() {
+
+  local port_start="${1}"
+  local port_end="${2}"
+
+  local port
+
+  for port in $(seq "${port_start}" "${port_end}"); do
+    echo -ne "\035" | telnet 127.0.0.1 "${port}" >/dev/null 2>&1
+    [ $? -eq 1 ] && echo "${port}" && break
+  done
+
+}
+
+################################################################################
 # Count directories on a specific path
 #
 # Arguments:

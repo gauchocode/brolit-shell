@@ -463,19 +463,36 @@ function docker_project_files_import() {
 
 ### NEW NEW NEW NEW NEW NEW NEW
 
+################################################################################
+# Docker create new project install
+# Arguments:
+#   $1 = ${dir_path}
+#   $2 = ${project_type}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function docker_project_install() {
+
+    local dir_path="${1}"
+    local project_type="${2}"
 
     local project_path
 
     # PUT ON A NEW FUNCTION?
 
     # Project Type
-    if [[ -z ${project_type} ]]; then
-        project_type="$(project_ask_type "")"
-        [[ $? -eq 1 ]] && return 1
-    fi
+    #if [[ -z ${project_type} ]]; then
+    #    project_type="$(project_ask_type "")"
+    #    [[ $? -eq 1 ]] && return 1
+    #fi
 
     log_section "Project Installer (${project_type} on docker)"
+
+    # Project Port (docker internal)
+    ## Will find the next port available from 81 to 200
+    port_available="$(network_next_available_port "81" "200")"
 
     # Project Domain
     if [[ -z ${project_domain} ]]; then
@@ -538,7 +555,7 @@ function docker_project_install() {
         copy_files "${BROLIT_MAIN_DIR}/config/docker-compose/wordpress/production-stack-proxy/" "${project_path}"
 
         # Replace .env vars
-        local wp_port=81
+        local wp_port="${port_available}"
         local project_database="${project_name}_${project_stage}"
         local project_database_user="${project_name}_user"
         local project_database_user_passw=$(openssl rand -hex 5)
@@ -560,30 +577,47 @@ function docker_project_install() {
         local compose_file="${project_path}/docker-compose.yml"
 
         # Execute docker-compose commands
-        docker-compose -f "${compose_file}" pull
-        docker-compose -f "${compose_file}" up -d
+        docker-compose -f "${compose_file}" pull --quiet
+        docker-compose -f "${compose_file}" up --detach # Not quiet option. FRQ: https://github.com/docker/compose/issues/6026
 
         # Check exitcode
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
 
-        # Edit wp-config.php
-        echo "define('FORCE_SSL_ADMIN', true);" >>"${project_path}/wordpress/wp-config.php"
-        echo "if (strpos(\$_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false){" >>"${project_path}/wordpress/wp-config.php"
-        echo "\$_SERVER['HTTPS'] = 'on';" >>"${project_path}/wordpress/wp-config.php"
-        echo "\$_SERVER['SERVER_PORT'] = 443;" >>"${project_path}/wordpress/wp-config.php"
-        echo "}" >>"${project_path}/wordpress/wp-config.php"
-        echo "if (isset(\$_SERVER['HTTP_X_FORWARDED_HOST'])) {" >>"${project_path}/wordpress/wp-config.php"
-        echo "\$_SERVER['HTTP_HOST'] = \$_SERVER['HTTP_X_FORWARDED_HOST'];" >>"${project_path}/wordpress/wp-config.php"
-        echo "}" >>"${project_path}/wordpress/wp-config.php"
-        echo "define('WP_HOME','https://${project_domain}/');" >>"${project_path}/wordpress/wp-config.php"
-        echo "define('WP_SITEURL','https://${project_domain}/');" >>"${project_path}/wordpress/wp-config.php"
+            # Log
+            log_event "info" "Downloading docker images." "false"
+            log_event "info" "Building docker images." "false"
+            display --indent 6 --text "- Downloading docker images" --result "DONE" --color GREEN
+            display --indent 6 --text "- Building docker images" --result "DONE" --color GREEN
 
-        # Add .htaccess
-        echo "# PHP Values" >"${project_path}/wordpress/.htaccess"
-        echo "php_value upload_max_filesize 500M" >>"${project_path}/wordpress/.htaccess"
-        echo "php_value post_max_size 500M" >>"${project_path}/wordpress/.htaccess"
+            # Edit wp-config.php
+            echo "define('FORCE_SSL_ADMIN', true);" >>"${project_path}/wordpress/wp-config.php"
+            echo "if (strpos(\$_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false){" >>"${project_path}/wordpress/wp-config.php"
+            echo "  \$_SERVER['HTTPS'] = 'on';" >>"${project_path}/wordpress/wp-config.php"
+            echo "  \$_SERVER['SERVER_PORT'] = 443;" >>"${project_path}/wordpress/wp-config.php"
+            echo "}" >>"${project_path}/wordpress/wp-config.php"
+            echo "if (isset(\$_SERVER['HTTP_X_FORWARDED_HOST'])) {" >>"${project_path}/wordpress/wp-config.php"
+            echo "  \$_SERVER['HTTP_HOST'] = \$_SERVER['HTTP_X_FORWARDED_HOST'];" >>"${project_path}/wordpress/wp-config.php"
+            echo "}" >>"${project_path}/wordpress/wp-config.php"
+            echo "define('WP_HOME','https://${project_domain}/');" >>"${project_path}/wordpress/wp-config.php"
+            echo "define('WP_SITEURL','https://${project_domain}/');" >>"${project_path}/wordpress/wp-config.php"
 
-        # Execute function
-        #wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}" "${project_install_mode}"
+            # Log
+            log_event "info" "Making changes on wp-config.php to work with nginx proxy on host." "false"
+            display --indent 6 --text "- Making changes on wp-config.php" --result "DONE" --color GREEN
+
+            # Add .htaccess
+            echo "# PHP Values" >"${project_path}/wordpress/.htaccess"
+            echo "php_value upload_max_filesize 500M" >>"${project_path}/wordpress/.htaccess"
+            echo "php_value post_max_size 500M" >>"${project_path}/wordpress/.htaccess"
+
+            # Log
+            log_event "info" "Creating .htaccess with needed php parameters." "false"
+            display --indent 6 --text "- Creating .htaccess on project" --result "DONE" --color GREEN
+
+            # Execute function
+            #wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}" "${project_install_mode}"
+        fi
 
         ;;
 
