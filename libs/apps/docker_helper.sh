@@ -547,7 +547,7 @@ function docker_project_install() {
         ## PROJECT
         sed -ie "s|^PROJECT_NAME=.*$|PROJECT_NAME=${project_name}|g" "${project_path}/.env"
         sed -ie "s|^PROJECT_DOMAIN=.*$|PROJECT_DOMAIN=${project_domain}|g" "${project_path}/.env"
-        
+
         ## WP
         sed -ie "s|^WP_PORT=.*$|WP_PORT=${wp_port}|g" "${project_path}/.env"
 
@@ -557,9 +557,30 @@ function docker_project_install() {
         sed -ie "s|^MYSQL_PASSWORD=.*$|MYSQL_PASSWORD=${project_database_user_passw}|g" "${project_path}/.env"
         sed -ie "s|^MYSQL_ROOT_PASSWORD=.*$|MYSQL_ROOT_PASSWORD=${project_database_root_passw}|g" "${project_path}/.env"
 
+        local compose_file="${project_path}/docker-compose.yml"
+
         # Execute docker-compose commands
-        docker-compose pull
-        docker-compose up -d
+        docker-compose -f "${compose_file}" pull
+        docker-compose -f "${compose_file}" up -d
+
+        # Check exitcode
+
+        # Edit wp-config.php
+        echo "define('FORCE_SSL_ADMIN', true);" >>"${project_path}/wordpress/wp-config.php"
+        echo "if (strpos(\$_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false){" >>"${project_path}/wordpress/wp-config.php"
+        echo "\$_SERVER['HTTPS'] = 'on';" >>"${project_path}/wordpress/wp-config.php"
+        echo "\$_SERVER['SERVER_PORT'] = 443;" >>"${project_path}/wordpress/wp-config.php"
+        echo "}" >>"${project_path}/wordpress/wp-config.php"
+        echo "if (isset(\$_SERVER['HTTP_X_FORWARDED_HOST'])) {" >>"${project_path}/wordpress/wp-config.php"
+        echo "\$_SERVER['HTTP_HOST'] = \$_SERVER['HTTP_X_FORWARDED_HOST'];" >>"${project_path}/wordpress/wp-config.php"
+        echo "}" >>"${project_path}/wordpress/wp-config.php"
+        echo "define('WP_HOME','https://${project_domain}/');" >>"${project_path}/wordpress/wp-config.php"
+        echo "define('WP_SITEURL','https://${project_domain}/');" >>"${project_path}/wordpress/wp-config.php"
+
+        # Add .htaccess
+        echo "# PHP Values" >"${project_path}/wordpress/.htaccess"
+        echo "php_value upload_max_filesize 500M" >>"${project_path}/wordpress/.htaccess"
+        echo "php_value post_max_size 500M" >>"${project_path}/wordpress/.htaccess"
 
         # Execute function
         #wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}" "${project_install_mode}"
@@ -590,19 +611,19 @@ function docker_project_install() {
     ### NEW ###
 
     # Project domain configuration (webserver+certbot+DNS)
-    https_enable="$(project_update_domain_config "${project_domain}" "${project_type}" "")"
+    https_enable="$(project_update_domain_config "${project_domain}" "proxy" "${wp_port}")"
 
     # Startup Script for WordPress installation
-    if [[ ${https_enable} == "true" ]]; then
-        project_site_url="https://${project_domain}"
-    else
-        project_site_url="http://${project_domain}"
-    fi
+    #if [[ ${https_enable} == "true" ]]; then
+    #    project_site_url="https://${project_domain}"
+    #else
+    #    project_site_url="http://${project_domain}"
+    #fi
 
-    [[ ${EXEC_TYPE} == "default" && ${project_type} == "wordpress" ]] && wpcli_run_startup_script "${project_path}" "${project_site_url}"
+    #[[ ${EXEC_TYPE} == "default" && ${project_type} == "wordpress" ]] && wpcli_run_startup_script "${project_path}" "${project_site_url}"
 
     # Post-restore/install tasks
-    project_post_install_tasks "${project_path}" "${project_type}" "${project_name}" "${project_stage}" "${database_user_passw}" "" ""
+    #project_post_install_tasks "${project_path}" "${project_type}" "${project_name}" "${project_stage}" "${database_user_passw}" "" ""
 
     # TODO: refactor this
     # Cert config files
@@ -640,6 +661,6 @@ function docker_project_install() {
     display --indent 8 --text "for domain ${project_domain}"
 
     # Send notification
-    send_notification "✅ ${SERVER_NAME}" "New ${project_type} project installation for '${project_domain}' finished ok!" ""
+    send_notification "✅ ${SERVER_NAME}" "New ${project_type} project (docker) installation for '${project_domain}' finished ok!" ""
 
 }
