@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.1
+# Version: 3.2.2
 ################################################################################
 
 ################################################################################
@@ -51,7 +51,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.2.1"
+  declare -g SCRIPT_V="3.2.2"
 
   # Hostname
   declare -g SERVER_NAME="$HOSTNAME"
@@ -925,25 +925,28 @@ function copy_files() {
 
   if [[ -n ${excluded_path} ]]; then
 
-    rsync -ax --exclude "${excluded_path}" "${source_path}" "${destination_path}"
+    rsync -ax --exclude "${excluded_path}" "${source_path}" "${destination_path}" --quiet
 
   else
 
-    rsync -ax "${source_path}" "${destination_path}"
+    rsync -ax "${source_path}" "${destination_path}" --quiet
 
   fi
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    clear_previous_lines "1"
+    # Log
     display --indent 6 --text "- Copying files to ${destination_path}" --result "DONE" --color GREEN
+    
     return 0
 
   else
 
+    # Log
     clear_previous_lines "2"
     display --indent 6 --text "- Copying files to ${destination_path}" --result "FAIL" --color RED
+    
     return 1
 
   fi

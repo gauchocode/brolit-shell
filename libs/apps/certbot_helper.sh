@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.1
+# Version: 3.2.2
 ################################################################################
 #
 # Certbot Helper: Certbot functions.
@@ -43,7 +43,7 @@ function certbot_certificate_install() {
   else
 
     # Log
-    clear_previous_lines "3"
+    #clear_previous_lines "3"
     log_event "warning" "Certificate installation failed, trying force-install ..." "false"
     display --indent 6 --text "- Installing certificate on domains" --result "FAIL" --color RED
 
@@ -132,15 +132,21 @@ function certbot_certificate_expand() {
   local email="${1}"
   local domains="${2}"
 
+  local certbot_result
+
   log_event "debug" "Running: certbot --nginx --non-interactive --agree-tos --expand --redirect -m ${email} -d ${domains}" "false"
 
+  # Certbot command
   certbot --nginx --non-interactive --agree-tos --expand --redirect -m "${email}" -d "${domains}" --quiet
 
   certbot_result=$?
   if [[ ${certbot_result} -eq 0 ]]; then
 
+    # Log
     log_event "info" "Certificate installation for ${domains} ok" "false"
     display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
+
+    return 0
 
   else
 
@@ -148,6 +154,8 @@ function certbot_certificate_expand() {
     clear_previous_lines "3"
     log_event "error" "Certificate installation for ${domains} failed!" "false"
     display --indent 6 --text "- Installing certificate on domains" --result "FAIL" --color RED
+
+    return 1
 
   fi
 
@@ -167,9 +175,33 @@ function certbot_certificate_renew() {
 
   local domains="${1}"
 
+  local certbot_result
+
   log_event "debug" "Running: certbot renew -d ${domains}" "false"
 
+  # Certbot command
   certbot renew -d "${domains}"
+
+  certbot_result=$?
+  if [[ ${certbot_result} -eq 0 ]]; then
+
+    log_event "info" "Certificate renew for ${domains} ok" "false"
+    display --indent 6 --text "- Certificate renew" --result "DONE" --color GREEN
+
+    return 0
+
+  else
+
+    # Log
+    clear_previous_lines "3"
+    log_event "error" "Certificate renew for ${domains} failed!" "false"
+    display --indent 6 --text "- Renew certificate on domains" --result "FAIL" --color RED
+    display --indent 8 --text "Please check and then run:" --tcolor RED
+    display --indent 8 --text "certbot --nginx -d ${domains}" --tcolor RED
+
+    return 1
+
+  fi
 
 }
 
@@ -187,11 +219,33 @@ function certbot_certificate_renew_test() {
 
   local domains="${1}"
 
-  # Test renew for all installed certificates
+  local certbot_result
 
   log_event "debug" "Running: certbot renew --dry-run -d ${domains}" "false"
 
+  # Certbot command
   certbot renew --dry-run -d "${domains}"
+
+  certbot_result=$?
+  if [[ ${certbot_result} -eq 0 ]]; then
+
+    log_event "info" "Certificate renew for ${domains} ok" "false"
+    display --indent 6 --text "- Certificate renew" --result "DONE" --color GREEN
+
+    return 0
+
+  else
+
+    # Log
+    clear_previous_lines "3"
+    log_event "error" "Certificate renew for ${domains} failed!" "false"
+    display --indent 6 --text "- Renew certificate on domains" --result "FAIL" --color RED
+    display --indent 8 --text "Please check and then run:" --tcolor RED
+    display --indent 8 --text "certbot --nginx -d ${domains}" --tcolor RED
+
+    return 1
+
+  fi
 
 }
 
@@ -209,9 +263,33 @@ function certbot_certificate_force_renew() {
 
   local domains="${1}"
 
+  local certbot_result
+
   log_event "debug" "Running: certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m ${email} -d ${domains}" "false"
 
+  # Certbot command
   certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m "${email}" -d "${domains}"
+
+  certbot_result=$?
+  if [[ ${certbot_result} -eq 0 ]]; then
+
+    log_event "info" "Certificate renew for ${domains} ok" "false"
+    display --indent 6 --text "- Certificate renew" --result "DONE" --color GREEN
+
+    return 0
+
+  else
+
+    # Log
+    clear_previous_lines "3"
+    log_event "error" "Certificate renew for ${domains} failed!" "false"
+    display --indent 6 --text "- Renew certificate on domains" --result "FAIL" --color RED
+    display --indent 8 --text "Please check and then run:" --tcolor RED
+    display --indent 8 --text "certbot --nginx -d ${domains}" --tcolor RED
+
+    return 1
+
+  fi
 
 }
 
@@ -490,15 +568,19 @@ function certbot_certificate_get_valid_days() {
   cert_days_output="$(certbot certificates --domain "${domain}" 2>&1)"
   cert_days="$(echo "${cert_days_output}" | grep -Eo 'VALID: [0-9]+[0-9]' | cut -d ' ' -f 2)"
 
-  if [[ ${cert_days} == "" ]]; then
+  if [[ -z ${cert_days} ]]; then
 
     # Return
     echo "no-cert"
+
+    return 1
 
   else
 
     # Return
     echo "${cert_days}"
+
+    return 0
 
   fi
 
@@ -591,6 +673,8 @@ function certbot_helper_ask_domains() {
 
     # Return
     echo "${domains}"
+
+    return 0
 
   else
 

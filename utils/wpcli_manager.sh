@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.1
+# Version: 3.2.2
 ################################################################################
 #
 # WP-CLI Manager: WP-CLI functions manager.
