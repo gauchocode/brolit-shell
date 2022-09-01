@@ -1902,12 +1902,14 @@ function project_delete() {
   fi
 
   # Delete Database
-  project_delete_database "${project_db_name}" "${project_db_user}"
+  if [[ ${PACKAGES_MYSQL_STATUS} == "enabled" || ${PACKAGES_POSTGRES_STATUS} == "enabled" ]]; then
+    project_delete_database "${project_db_name}" "${project_db_user}"
+  fi
 
   # TODO: upload config_file to dropbox
 
   # Delete config file
-  project_config="${BROLIT_CONFIG_PATH}/${project_name}_conf.json"
+  project_config="${BROLIT_CONFIG_PATH}/${project_domain}_conf.json"
   rm --force "${project_config}"
 
   # Log
