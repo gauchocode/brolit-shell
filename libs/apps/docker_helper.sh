@@ -403,6 +403,8 @@ function docker_mysql_database_backup() {
     # Docker run
     # Example: docker exec -i db mysqldump -uroot -pexample wordpress > dump.sql
     log_event "debug" "Running: docker exec -i \"${container_name}\" mysql -u\"${mysql_user}\" -p\"${mysql_user_passw}\" ${mysql_database} > ${dump_file}" "false"
+    
+    # Docker command
     docker exec -i "${container_name}" mysqldump -u"${mysql_user}" -p"${mysql_user_passw}" "${mysql_database}" >"${dump_file}"
 
     # Docker logs
