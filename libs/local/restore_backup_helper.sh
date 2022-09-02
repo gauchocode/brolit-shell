@@ -1162,6 +1162,7 @@ function restore_project() {
 
         db_to_download="${chosen_server}/projects-${chosen_status}/database/${db_name}/${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
         db_to_restore="${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+        project_backup="${project_backup_file%%.*}.sql"
 
         # Downloading Database Backup
         storage_download_backup "${db_to_download}" "${BROLIT_TMP_DIR}"
@@ -1170,9 +1171,10 @@ function restore_project() {
         decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
 
         # TODO: read .env to get mysql pass
+        db_user_pass="$(project_get_config_var "${project_path}/.env" "MYSQL_PASSWORD")"
 
         # Docker MySQL database import
-        docker_mysql_database_import "mariadb_${project_name}" "${project_name}_user" "db_user_pass" "${project_name}_prod" "${BROLIT_TMP_DIR}/${db_to_restore}"
+        docker_mysql_database_import "mariadb_${project_name}" "${project_name}_user" "${db_user_pass}" "${project_name}_prod" "${BROLIT_TMP_DIR}/${project_backup}"
 
         display --indent 2 --text "- Import database into docker volume" --result "DONE" --color GREEN
 
