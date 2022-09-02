@@ -314,13 +314,17 @@ function certbot_helper_installer_menu() {
   local cb_warning_text
   local certbot_result
   local error
+  local root_domain
 
   if [[ ${PACKAGES_CERTBOT_STATUS} != "enabled" ]]; then
+
     # Log
     log_event "warning" "Certbot is not enabled or installed" "false"
     display --indent 6 --text "- Certificate installation" --result "FAIL" --color RED
     display --indent 8 --text "Certbot is not enabled or installed" --tcolor RED
+
     return 1
+
   fi
 
   cb_installer_options=(
@@ -421,6 +425,8 @@ function certbot_certonly_cloudflare() {
     log_event "info" "Certificate installation for ${domains} ok" "false"
     display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
 
+    return 0
+
   else
 
     # Log
@@ -437,8 +443,11 @@ function certbot_certonly_cloudflare() {
     certbot_result=$?
     if [[ ${certbot_result} -eq 0 ]]; then
 
+      # Log
       log_event "info" "Certificate installation for ${domains} ok" "false"
       display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
+
+      return 0
 
     else
 
@@ -448,6 +457,8 @@ function certbot_certonly_cloudflare() {
       display --indent 6 --text "- Installing certificate on domains" --result "FAIL" --color RED
       display --indent 8 --text "Please check and then run:" --tcolor RED
       display --indent 8 --text "certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -d ${domains}" --tcolor RED
+
+      return 1
 
     fi
 
@@ -517,13 +528,13 @@ function certbot_certificate_valid_days() {
 
   cert_days="$(certbot certificates --cert-name "${domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
 
-  if [[ ${cert_days} == "" ]]; then
+  if [[ -z ${cert_days} ]]; then
 
     if [[ ${subdomain_part} == "www" ]]; then
 
       cert_days="$(certbot certificates --cert-name "${root_domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
 
-      if [[ "${cert_days}" == "" ]]; then
+      if [[ -z "${cert_days}" ]]; then
         # New try with -0001
         cert_days="$(certbot certificates --cert-name "${root_domain}-0001" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
 
@@ -533,7 +544,7 @@ function certbot_certificate_valid_days() {
 
       cert_days="$(certbot certificates --cert-name "www.${root_domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
 
-      if [[ "${cert_days}" == "" ]]; then
+      if [[ -z ${cert_days} ]]; then
         cert_days="$(certbot certificates --cert-name "${domain}-0001" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
 
       fi
