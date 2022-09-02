@@ -1144,8 +1144,8 @@ function restore_project() {
 
       if [[ -d "${PROJECTS_PATH}/${chosen_project}" ]]; then
 
-        # Rename actual wp-content
-        mv "${PROJECTS_PATH}/${chosen_project}/wordpress/wp-content" "${PROJECTS_PATH}/${chosen_project}/wordpress/wp-content_"
+        # Remove actual wp-content
+        rm -R "${PROJECTS_PATH}/${chosen_project}/wordpress/wp-content_"
 
         move_files "${BROLIT_TMP_DIR}/${chosen_project}/wp-content" "${PROJECTS_PATH}/${chosen_project}/wordpress"
 
