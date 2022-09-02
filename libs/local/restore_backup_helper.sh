@@ -1156,13 +1156,13 @@ function restore_project() {
         project_stage=$(project_get_stage_from_domain "${chosen_project}")
 
         db_name="${project_name}_${project_stage}"
-        new_project_domain="${chosen_domain}"
+        new_project_domain="${chosen_project}"
 
         project_backup_date="$(backup_get_date "${chosen_backup_to_restore}")"
 
         db_to_download="${chosen_server}/projects-${chosen_status}/database/${db_name}/${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
         db_to_restore="${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-        project_backup="${project_backup_file%%.*}.sql"
+        project_backup="${db_to_restore%%.*}.sql"
 
         # Downloading Database Backup
         storage_download_backup "${db_to_download}" "${BROLIT_TMP_DIR}"
