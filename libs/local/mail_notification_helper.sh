@@ -65,16 +65,22 @@ function mail_send_notification() {
         # Remove tmp files
         _remove_mail_notifications_files
 
-        # Log
-        log_event "info" "Email sent!" "false"
+        # Log on success
+        clear_previous_lines "1"
+        log_event "info" "Email notification sent!"
+        display --indent 6 --text "- Sending Email notification" --result "DONE" --color GREEN
+
+        return 0
 
     else
 
         # Remove tmp files
         _remove_mail_notifications_files
 
-        # Log
+        # Log on failure
+        clear_previous_lines "1"
         log_event "info" "Something went wrong sending the email: '${email_subject}'" "false"
+        display --indent 6 --text "- Sending Email notification" --result "FAIL" --color RED
 
         return 1
 
