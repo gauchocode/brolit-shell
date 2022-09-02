@@ -60,6 +60,7 @@ function telegram_send_notification() {
 	# Check Result
 	telegram_notif_result="$(echo "${telegram_notif_response}" | grep "ok" | cut -d ":" -f2 | cut -d "," -f1)"
 	if [[ ${telegram_notif_result} == "true" ]]; then
+
 		# Log on success
 		log_event "info" "Telegram notification sent!"
 		display --indent 6 --text "- Sending Telegram notification" --result "DONE" --color GREEN
@@ -67,6 +68,7 @@ function telegram_send_notification() {
 		return 0
 
 	else
+	
 		# Log on failure
 		log_event "error" "Telegram notification error!" "false"
 		log_event "debug" "Telegram api call: curl --silent --insecure --max-time ${timeout} --data chat_id=${NOTIFICATION_TELEGRAM_CHAT_ID} --data disable_notification=${notif_sound} --data parse_mode=${display_mode} --data text=${notif_text} ${notif_url}" "false"
