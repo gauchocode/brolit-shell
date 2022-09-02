@@ -1171,7 +1171,7 @@ function restore_project() {
         decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
 
         # TODO: read .env to get mysql pass
-        db_user_pass="$(project_get_config_var "${project_path}/.env" "MYSQL_PASSWORD")"
+        db_user_pass="$(project_get_config_var "${PROJECTS_PATH}/${chosen_project}/.env" "MYSQL_PASSWORD")"
 
         # Docker MySQL database import
         docker_mysql_database_import "mariadb_${project_name}" "${project_name}_user" "${db_user_pass}" "${project_name}_prod" "${BROLIT_TMP_DIR}/${project_backup}"
