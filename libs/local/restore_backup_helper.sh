@@ -1142,17 +1142,18 @@ function restore_project() {
 
     if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" && ${PACKAGES_PHP_STATUS} != "enabled" ]]; then
 
-      if [[ -d "$PROJECTS_PATH/${chosen_project}" ]]; then
+      if [[ -d "${PROJECTS_PATH}/${chosen_project}" ]]; then
 
         # Rename actual wp-content
         mv "${PROJECTS_PATH}/${chosen_project}/wordpress/wp-content" "${PROJECTS_PATH}/${chosen_project}/wordpress/wp-content_"
 
-        move_files "${BROLIT_TMP_DIR}/${chosen_project}/wordpress/wp-content" "${PROJECTS_PATH}/${chosen_project}/wordpress"
+        move_files "${BROLIT_TMP_DIR}/${chosen_project}/wp-content" "${PROJECTS_PATH}/${chosen_project}/wordpress"
 
         display --indent 2 --text "- Import files into docker volume" --result "DONE" --color GREEN
 
         # TODO: update this to match monthly and weekly backups
         project_name="$(project_get_name_from_domain "${chosen_project}")"
+        project_stage=$(project_get_stage_from_domain "${chosen_project}")
 
         db_name="${project_name}_${project_stage}"
         new_project_domain="${chosen_domain}"
