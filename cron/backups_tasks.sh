@@ -22,9 +22,7 @@ script_init "true"
 log_event "info" "Running backups_tasks.sh ..." "false"
 
 # If NETDATA is installed, disabled alarms
-if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
-  netdata_alerts_disable
-fi
+[[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]] && netdata_alerts_disable
 
 # Update packages index
 package_update
@@ -101,9 +99,7 @@ mail_send_notification "${email_subject}" "${mail_html}"
 # echo "${mail_html}" >"${BROLIT_TMP_DIR}/email-${NOW}.mail"
 
 # If NETDATA is installed, restore alarm status
-if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
-  netdata_alerts_enable
-fi
+[[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]] && netdata_alerts_enable
 
 # Cleanup
 cleanup
