@@ -235,7 +235,7 @@ function storage_download_backup() {
 
     fi
 
-    download_result=$?s
+    download_result=$?
     [[ ${download_result} -eq 1 ]] && return 1
 
 }
