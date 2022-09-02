@@ -1151,8 +1151,6 @@ function restore_project() {
 
         display --indent 2 --text "- Import files into docker volume" --result "DONE" --color GREEN
 
-        echo "Import database into docker volume"
-
         # TODO: update this to match monthly and weekly backups
         project_name="$(project_get_name_from_domain "${chosen_project}")"
 
