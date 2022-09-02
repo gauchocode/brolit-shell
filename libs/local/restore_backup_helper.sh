@@ -1151,16 +1151,22 @@ function restore_project() {
         echo "Import database into docker volume"
 
         # TODO: update this to match monthly and weekly backups
+        project_name="$(project_get_name_from_domain "${chosen_project}")"
+        db_name="${project_name}"
+
         db_to_download="${chosen_server}/projects-${chosen_status}/database/${db_name}/${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
         db_to_restore="${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
 
         # Downloading Database Backup
         storage_download_backup "${db_to_download}" "${BROLIT_TMP_DIR}"
 
+        # Decompress
+        decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+
         # TODO: read .env to get mysql pass
 
         # Docker MySQL database import
-        docker_mysql_database_import "mariadb_${project_name}" "${project_name}_user" "db_user_pass" "${project_name}_prod" "assets/dump.sql"
+        docker_mysql_database_import "mariadb_${project_name}" "${project_name}_user" "db_user_pass" "${project_name}_prod" "${BROLIT_TMP_DIR}/${db_to_restore}"
 
         display --indent 2 --text "- Import database into docker volume" --result "DONE" --color GREEN
 
