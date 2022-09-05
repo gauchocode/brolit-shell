@@ -1189,7 +1189,7 @@ function _brolit_shell_config() {
 function _server_disks_info() {
 
     # Return JSON
-    df -hP | grep '^/dev' | awk 'BEGIN {printf"\"disks_info\":["}{if($1=="Filesystem")next;if(a)printf",";printf"{\"mount\":\""$6"\",\"size\":\""$2"\",\"used\":\""$3"\",\"avail\":\""$4"\",\"use%\":\""$5"\"}";a++;}END{printf"]";}'
+    df -hP | grep '^/dev' | awk 'BEGIN {printf"\"disks_info\":["}{if($1=="Filesystem")next;if(a)printf",";print"{\"mount\":\""$6"\",\"size\":\""$2"\",\"used\":\""$3"\",\"avail\":\""$4"\",\"use%\":\""$5"\"}";a++;}END{printf"]";}'
 
 }
 
