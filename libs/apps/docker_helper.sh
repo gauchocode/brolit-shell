@@ -481,6 +481,7 @@ function docker_project_install() {
     local project_type="${2}"
 
     local project_path
+    local port_available
 
     # PUT ON A NEW FUNCTION?
 
@@ -575,6 +576,9 @@ function docker_project_install() {
         sed -ie "s|^MYSQL_USER=.*$|MYSQL_USER=${project_database_user}|g" "${project_path}/.env"
         sed -ie "s|^MYSQL_PASSWORD=.*$|MYSQL_PASSWORD=${project_database_user_passw}|g" "${project_path}/.env"
         sed -ie "s|^MYSQL_ROOT_PASSWORD=.*$|MYSQL_ROOT_PASSWORD=${project_database_root_passw}|g" "${project_path}/.env"
+        
+        # Remove tmp file
+        rm "${project_path}/.enve"
 
         local compose_file="${project_path}/docker-compose.yml"
 
@@ -587,6 +591,8 @@ function docker_project_install() {
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # Log
+            wait 2
+            clear_previous_lines "6"
             log_event "info" "Downloading docker images." "false"
             log_event "info" "Building docker images." "false"
             display --indent 6 --text "- Downloading docker images" --result "DONE" --color GREEN
@@ -647,7 +653,7 @@ function docker_project_install() {
     ### NEW ###
 
     # Project domain configuration (webserver+certbot+DNS)
-    https_enable="$(project_update_domain_config "${project_domain}" "proxy" "${wp_port}")"
+    https_enable="$(project_update_domain_config "${project_domain}" "proxy" "${port_available}")"
 
     # Startup Script for WordPress installation
     #if [[ ${https_enable} == "true" ]]; then

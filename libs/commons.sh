@@ -938,7 +938,7 @@ function copy_files() {
 
     # Log
     display --indent 6 --text "- Copying files to ${destination_path}" --result "DONE" --color GREEN
-    
+
     return 0
 
   else
@@ -946,7 +946,7 @@ function copy_files() {
     # Log
     clear_previous_lines "2"
     display --indent 6 --text "- Copying files to ${destination_path}" --result "FAIL" --color RED
-    
+
     return 1
 
   fi
@@ -1066,9 +1066,16 @@ function network_next_available_port() {
 
   local port
 
+  log_event "debug" "Getting next available port from ${port_start} to ${port_end}" "false"
+
   for port in $(seq "${port_start}" "${port_end}"); do
     echo -ne "\035" | telnet 127.0.0.1 "${port}" >/dev/null 2>&1
-    [ $? -eq 1 ] && echo "${port}" && break
+    if [[ $? -eq 1 ]]; then
+      log_event "debug" "Available port: ${port}" "false"
+      # Return
+      echo "${port}"
+      break
+    fi
   done
 
 }
