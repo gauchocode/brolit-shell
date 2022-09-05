@@ -1189,7 +1189,7 @@ function _brolit_shell_config() {
 function _server_disks_info() {
 
     # Return JSON
-    df -hP | grep '^/dev' | awk 'BEGIN {printf"\"disks_info\":["}{if($1=="Filesystem")next;if(a)printf",";printf"{\"mount\":\""$6"\",\"size\":\""$2"\",\"used\":\""$3"\",\"avail\":\""$4"\",\"use%\":\""$5"\"}";a++;}END{print"]";}'
+    df -hP | grep '^/dev' | awk 'BEGIN {printf"\"disks_info\":["}{if($1=="Filesystem")next;if(a)printf",";printf"{\"mount\":\""$6"\",\"size\":\""$2"\",\"used\":\""$3"\",\"avail\":\""$4"\",\"use%\":\""$5"\"}";a++;}END{printf"]";}'
 
 }
 
@@ -1349,7 +1349,9 @@ function _packages_get_data() {
     fi
 
     ## databases
-    mysql_v_installed="$(_mysql_check_installed_version)"
+    if [[ "$(_is_pkg_installed "mysql-server")" == "true" || "$(_is_pkg_installed "mariadb-server")" == "true" ]]; then
+        mysql_v_installed="$(_mysql_check_installed_version)"
+    fi
 
     ## languages
     php_v_installed="$(_php_check_installed_version)"
@@ -1378,7 +1380,7 @@ function _project_is_ignored() {
     ignored_projects_list="$(echo "${ignored_projects_list}" | tr '\n' ',')"
 
     # String to Array
-    IFS="," read -a excluded_projects_array <<< "${ignored_projects_list}"
+    IFS="," read -a excluded_projects_array <<<"${ignored_projects_list}"
     for i in "${excluded_projects_array[@]}"; do
         :
 
