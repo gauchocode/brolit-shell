@@ -2354,7 +2354,7 @@ function project_update_domain_config() {
   if [[ ${project_domain} == "${project_root_domain}" || ${project_domain} == "www.${project_root_domain}" ]]; then
 
     # Nginx config
-    nginx_server_create "www.${project_root_domain}" "${project_type}" "root_domain" "${project_root_domain}" "" "${project_port}"
+    nginx_server_create "www.${project_root_domain}" "${project_type}" "root_domain" "${project_root_domain}" "${project_port}"
 
     # Cloudflare
     if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then

@@ -403,7 +403,7 @@ function docker_mysql_database_backup() {
     # Docker run
     # Example: docker exec -i db mysqldump -uroot -pexample wordpress > dump.sql
     log_event "debug" "Running: docker exec -i \"${container_name}\" mysql -u\"${mysql_user}\" -p\"${mysql_user_passw}\" ${mysql_database} > ${dump_file}" "false"
-    
+
     # Docker command
     docker exec -i "${container_name}" mysqldump -u"${mysql_user}" -p"${mysql_user_passw}" "${mysql_database}" >"${dump_file}"
 
@@ -576,7 +576,7 @@ function docker_project_install() {
         sed -ie "s|^MYSQL_USER=.*$|MYSQL_USER=${project_database_user}|g" "${project_path}/.env"
         sed -ie "s|^MYSQL_PASSWORD=.*$|MYSQL_PASSWORD=${project_database_user_passw}|g" "${project_path}/.env"
         sed -ie "s|^MYSQL_ROOT_PASSWORD=.*$|MYSQL_ROOT_PASSWORD=${project_database_root_passw}|g" "${project_path}/.env"
-        
+
         # Remove tmp file
         rm "${project_path}/.enve"
 
@@ -598,6 +598,15 @@ function docker_project_install() {
             display --indent 6 --text "- Downloading docker images" --result "DONE" --color GREEN
             display --indent 6 --text "- Building docker images" --result "DONE" --color GREEN
 
+            # Add .htaccess
+            echo "# PHP Values" >"${project_path}/wordpress/.htaccess"
+            echo "php_value upload_max_filesize 500M" >>"${project_path}/wordpress/.htaccess"
+            echo "php_value post_max_size 500M" >>"${project_path}/wordpress/.htaccess"
+
+            # Log
+            log_event "info" "Creating .htaccess with needed php parameters." "false"
+            display --indent 6 --text "- Creating .htaccess on project" --result "DONE" --color GREEN
+
             # Edit wp-config.php
             echo "define('FORCE_SSL_ADMIN', true);" >>"${project_path}/wordpress/wp-config.php"
             echo "if (strpos(\$_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false){" >>"${project_path}/wordpress/wp-config.php"
@@ -613,15 +622,6 @@ function docker_project_install() {
             # Log
             log_event "info" "Making changes on wp-config.php to work with nginx proxy on host." "false"
             display --indent 6 --text "- Making changes on wp-config.php" --result "DONE" --color GREEN
-
-            # Add .htaccess
-            echo "# PHP Values" >"${project_path}/wordpress/.htaccess"
-            echo "php_value upload_max_filesize 500M" >>"${project_path}/wordpress/.htaccess"
-            echo "php_value post_max_size 500M" >>"${project_path}/wordpress/.htaccess"
-
-            # Log
-            log_event "info" "Creating .htaccess with needed php parameters." "false"
-            display --indent 6 --text "- Creating .htaccess on project" --result "DONE" --color GREEN
 
             # Execute function
             #wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}" "${project_install_mode}"
