@@ -901,8 +901,8 @@ function _project_get_type() {
 
         # docker-compose?
         docker="$(
-            find "${dir_path}" -name "docker-compose.yml" -type f
-            find "${dir_path}" -name "docker-compose.yaml" -type f
+            find "${dir_path}" -maxdepth 2 -name "docker-compose.yml" -type f
+            find "${dir_path}" -maxdepth 2 -name "docker-compose.yaml" -type f
         )"
         if [[ -n ${docker} ]]; then
 
@@ -919,6 +919,57 @@ function _project_get_type() {
         echo "unknown"
 
         return 0
+
+    else
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Private: Get project installation type
+#
+# Arguments:
+#   $1 = ${dir_path}
+#
+# Outputs:
+#   ${project_installation_type}
+################################################################################
+
+function _project_get_installation_type() {
+
+    local dir_path="${1}"
+
+    #local project_installation_type
+
+    # TODO: if brolit_conf exists, should check this file and get project type
+
+    if [[ -n ${dir_path} ]]; then
+
+        # docker-compose?
+        docker="$(
+            find "${dir_path}" -maxdepth 2 -name "docker-compose.yml" -type f
+            find "${dir_path}" -maxdepth 2 -name "docker-compose.yaml" -type f
+        )"
+        if [[ -n ${docker} ]]; then
+
+            # Return
+            echo "docker-compose"
+
+            return 0
+
+        else
+
+            # Default
+
+            # Return
+            echo "default"
+
+            return 0
+
+        fi
 
     else
 
@@ -1436,8 +1487,11 @@ function _sites_directories() {
             site_size_du="$(du --human-readable --max-depth=0 "${PROJECTS_PATH}/${site}")"
             site_size="$(echo "${site_size_du}" | awk '{print $1;}')"
 
-            # Type
+            # Project Type
             site_type="$(_project_get_type "${PROJECTS_PATH}/${site}")"
+
+            # Project Installation Type
+            install_type="$(_project_get_installation_type "${PROJECTS_PATH}/${site}")"
 
             # Cert
             site_cert="$(_certbot_certificate_get_valid_days "${site}")"
@@ -1447,7 +1501,7 @@ function _sites_directories() {
             site_cf="$(_cloudflare_domain_exists "${root_domain}")"
 
             # Json
-            site_data="{\"name\":\"${site}\" , \"type\":\"${site_type}\" , \"size\":\"${site_size}\" , \"certificate_days_to_expire\":\"${site_cert}\" , \"domain_on_cloudflare\":\"${site_cf}\"}"
+            site_data="{\"name\":\"${site}\" , \"install_type\":\"${install_type}\", \"type\":\"${site_type}\" , \"size\":\"${site_size}\" , \"certificate_days_to_expire\":\"${site_cert}\" , \"domain_on_cloudflare\":\"${site_cf}\"}"
 
             directories="${directories} , ${site_data}"
 
