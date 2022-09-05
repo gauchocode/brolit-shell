@@ -1178,7 +1178,17 @@ function restore_project() {
         # Decompress
         decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
 
-        # TODO: read .env to get mysql pass
+        # Read wp-config to get WP DATABASE PREFIX and replace on docker .env file
+        database_prefix_to_restore="$(wp_config_get_option "${BROLIT_TMP_DIR}/${chosen_project}" "table_prefix")"
+        database_prefix_actual="$(project_get_config_var "${PROJECTS_PATH}/${chosen_project}/.env" "WORDPRESS_TABLE_PREFIX")"
+        if [[ ${database_prefix_to_restore} != "${database_prefix_actual}" ]]; then
+          # Set new database prefix
+          project_set_config_var "${PROJECTS_PATH}/${chosen_project}/.env" "WORDPRESS_TABLE_PREFIX" "${database_prefix_to_restore}"
+          # Rebuild docker image
+          docker-compose -f "${PROJECTS_PATH}/${chosen_project}/docker-compose.yml" up --detach
+        fi
+
+        # Read .env to get mysql pass
         db_user_pass="$(project_get_config_var "${PROJECTS_PATH}/${chosen_project}/.env" "MYSQL_PASSWORD")"
 
         # Docker MySQL database import
