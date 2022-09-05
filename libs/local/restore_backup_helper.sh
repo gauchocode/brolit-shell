@@ -1101,6 +1101,8 @@ function restore_project() {
   local db_user
   local db_pass
 
+  local installation_type
+
   log_subsection "Restore Project Backup"
 
   # Get dropbox folders list
@@ -1140,12 +1142,18 @@ function restore_project() {
     [[ $? -eq 1 ]] && return 1
     # TODO: implement error type
 
+    # TODO: get project type & installation type
+    # TODO: if project type==docker download, extract, move to /var/www, run docker commands, execute domain tasks
+    # TODO: if project type!=wordpress then... needs implementation.
+    # If project type==wordpress then...
     if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" && ${PACKAGES_PHP_STATUS} != "enabled" ]]; then
 
       if [[ -d "${PROJECTS_PATH}/${chosen_project}" ]]; then
 
+        installation_type="docker"
+
         # Remove actual wp-content
-        rm -R "${PROJECTS_PATH}/${chosen_project}/wordpress/wp-content_"
+        rm -R "${PROJECTS_PATH}/${chosen_project}/wordpress/wp-content"
 
         move_files "${BROLIT_TMP_DIR}/${chosen_project}/wp-content" "${PROJECTS_PATH}/${chosen_project}/wordpress"
 
@@ -1300,8 +1308,12 @@ function restore_project() {
     # Project domain configuration (webserver+certbot+DNS)
     https_enable="$(project_update_domain_config "${new_project_domain}" "${project_type}" "")"
 
-    # Post-restore/install tasks
-    project_post_install_tasks "${install_path}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${chosen_domain}" "${new_project_domain}"
+    if [[ ${installation_type} != "docker" ]]; then
+
+      # Post-restore/install tasks
+      project_post_install_tasks "${install_path}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${chosen_domain}" "${new_project_domain}"
+
+    fi
 
     # Create/update brolit_project_conf.json file with project info
     project_update_brolit_config "${install_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "${db_engine}" "${project_name}_${project_stage}" "localhost" "${db_user}" "${db_pass}" "${new_project_domain}" "" "" "" ""
