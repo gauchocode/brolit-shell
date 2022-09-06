@@ -1959,7 +1959,7 @@ function show_server_data() {
         echo "{ \"${timestamp}\" : { \"server_info\": { ${server_info} },\"firewall_info\":  [ ${server_firewall} ] , \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] } }" >"${json_output_file}"
 
         # Remove new lines
-        tr -d "\n\r" < "${json_output_file}"
+        echo "$(tr -d "\n\r" < "${json_output_file}")" >"${json_output_file}"
 
     fi
 
