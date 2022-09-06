@@ -1284,8 +1284,6 @@ function _serverinfo() {
     ram_amount="$(_string_remove_spaces "${ram_amount}")"
     disks_info="$(_server_disks_info)"
 
-    string_remove_spaces
-
     if [[ -z ${public_ip} ]]; then
 
         # Return JSON part
