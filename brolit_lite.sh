@@ -1284,6 +1284,8 @@ function _serverinfo() {
     ram_amount="$(_string_remove_spaces "${ram_amount}")"
     disks_info="$(_server_disks_info)"
 
+    string_remove_spaces
+
     if [[ -z ${public_ip} ]]; then
 
         # Return JSON part
@@ -1957,6 +1959,9 @@ function show_server_data() {
 
         # Write JSON file
         echo "{ \"${timestamp}\" : { \"server_info\": { ${server_info} },\"firewall_info\":  [ ${server_firewall} ] , \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] } }" >"${json_output_file}"
+
+        # Remove new lines
+        tr -d "\n\r" < "${json_output_file}"
 
     fi
 
