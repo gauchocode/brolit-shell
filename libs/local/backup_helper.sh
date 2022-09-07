@@ -1007,6 +1007,10 @@ function backup_project() {
 
       fi
 
+      # TODO: check project type
+      # If docker:
+      ## docker_mysql_database_backup
+
       # Check on Mysql
       mysql_database_exists "${db_name}"
       exitstatus=$?

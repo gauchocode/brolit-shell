@@ -57,7 +57,7 @@
                     {
                         "status": "enabled",
                         "exclude": [
-                            "information_schema,performance_schema,mysql,sys,phpmyadmin"
+                            "information_schema,performance_schema,mysql,sys,phpmyadmin,postgres"
                         ]
                     }
                 ],

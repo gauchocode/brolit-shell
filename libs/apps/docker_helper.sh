@@ -392,7 +392,7 @@ function docker_mysql_database_import() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function docker_mysql_database_backup() {
+function docker_mysql_database_export() {
 
     local container_name="${1}"
     local mysql_user="${2}"
