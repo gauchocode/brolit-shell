@@ -66,7 +66,7 @@ function _json_write_field() {
     json_field_value="$(jq ".${json_field} = \"${json_field_value}\"" "${json_file}")" && echo "${json_field_value}" >"${json_file}"
 
     exitstatus=$?
-    if [[ "${exitstatus}" -eq 0 ]]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
 
         return 0
 
@@ -1308,8 +1308,6 @@ function _serverinfo() {
 #   ${databases} if ok, 1 on error.
 ################################################################################
 
-# TODO postgresql_databases
-
 function _mysql_databases() {
 
     local database
@@ -1328,13 +1326,8 @@ function _mysql_databases() {
     if [[ ${mysql_result} -eq 0 && ${all_databases} != "error" ]]; then
 
         for database in ${all_databases}; do
-            if [[ ${database_bl} != *"${database}"* ]]; then
-                databases="${databases} , \"${database}\""
-            fi
+            [[ ${database_bl} != *"${database}"* ]] && databases="${databases} ${database}"
         done
-
-        # Remove 3 fist chars
-        databases="${databases:3}"
 
         # Return
         echo "${databases}"
@@ -1343,6 +1336,51 @@ function _mysql_databases() {
 
         # Log
         echo "Something went wrong listing MySQL databases!"
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Private: Postgresql databases
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   ${databases} if ok, 1 on error.
+################################################################################
+
+function _psql_databases() {
+
+    local database
+    local databases
+    local all_databases
+    local database_bl
+
+    # Database blacklist
+    database_bl="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].databases[].exclude[]")"
+
+    # Get PostgreSQL databases
+    all_databases="$(sudo -u postgres -i psql --quiet -c "SELECT datname FROM pg_database WHERE datistemplate = false;" -t)"
+
+    # Check result
+    psql_result=$?
+    if [[ ${psql_result} -eq 0 && ${all_databases} != "error" ]]; then
+
+        for database in ${all_databases}; do
+            [[ ${database_bl} != *"${database}"* ]] && databases="${databases} ${database}"
+        done
+
+        # Return
+        echo "${databases}"
+
+    else
+
+        # Log
+        echo "Something went wrong listing PostgreSQL databases!"
 
         return 1
 
@@ -1913,6 +1951,21 @@ function list_packages_to_upgrade() {
 
 }
 
+function _mysql_get_database_size() {
+
+    local database="${1}"
+    local query
+
+    #query="SELECT table_schema, (SUM(data_length)+SUM(index_length)) / 1024 / 1024 FROM information_schema.TABLES WHERE table_schema LIKE \"wiki_broobe_prod\" GROUP BY table_schema;"
+    query="SELECT table_schema, (SUM(data_length)+SUM(index_length)) / 1024 / 1024 FROM information_schema.TABLES WHERE table_schema LIKE \"${database}\" GROUP BY table_schema;"
+
+    # Run command
+    all_databases="$(mysql -Bse "${query}")"
+
+    echo "${all_databases}" | awk '{ print $2 }'
+
+}
+
 ################################################################################
 # Show server data
 #
@@ -1929,6 +1982,11 @@ function show_server_data() {
 
     local server_info
     local server_config
+    local mysql_databases
+    local mysql_databases_json
+    local psql_databases
+    local psql_databases_json
+    local depends_on
     local server_databases
     local server_sites
     local server_pkgs
@@ -1944,11 +2002,47 @@ function show_server_data() {
 
         server_firewall="$(firewall_show_status)"
 
-        if [[ "$(_is_pkg_installed "mysql-server")" == "true" || "$(_is_pkg_installed "mariadb-server")" == "true" ]]; then
-            server_databases="$(_mysql_databases)"
-        else
-            server_databases="\"no-databases\""
-        fi
+        [[ "$(_is_pkg_installed "mysql-server")" == "true" || "$(_is_pkg_installed "mariadb-server")" == "true" ]] && mysql_databases="$(_mysql_databases)"
+
+        # Loop Mysql databases
+        db_type="mysql"
+        for database in ${mysql_databases}; do
+
+            # Get file size
+            db_size="$(_mysql_get_database_size "${database}")"
+
+            # TODO
+            depends_on="none"
+
+            mysql_databases_json="{\"name\":\"${database}\" , \"type\":\"${db_type}\", \"size\":\"${db_size}\" , \"depends_on\":\"${depends_on}\"},${mysql_databases_json}"
+
+        done
+
+        [[ "$(_is_pkg_installed "postgresql")" == "true" ]] && psql_databases="$(_psql_databases)"
+
+        # Loop Psql databases
+        db_type="postgresql"
+        for database in ${psql_databases}; do
+
+            # TODO
+            db_size="$(all_databases="$(sudo -u postgres -i psql --quiet -c "SELECT pg_size_pretty( pg_database_size('${database}') );" -t)")"
+            #db_size="0"
+            #db_size="$(_psql_get_database_size "${database}")"
+
+            # TODO
+            depends_on="none"
+
+            psql_databases_json="{\"name\":\"${database}\" , \"type\":\"${db_type}\", \"size\":\"${db_size}\" , \"depends_on\":\"${depends_on}\"},${psql_databases_json}"
+
+        done
+        
+        mysql_databases_json="$(printf "%s" "${mysql_databases_json%,}")"
+        psql_databases_json="$(printf "%s" "${psql_databases_json%,}")"
+        
+        server_databases="${mysql_databases_json},${psql_databases_json}"
+        server_databases="$(printf "%s" "${server_databases%,}")"
+
+        [[ -z ${server_databases} ]] && server_databases="\"no-databases\""
 
         server_sites="$(_sites_directories)"
         server_pkgs="$(_packages_get_data)"
@@ -1959,7 +2053,7 @@ function show_server_data() {
         echo "{ \"${timestamp}\" : { \"server_info\": { ${server_info} },\"firewall_info\":  [ ${server_firewall} ] , \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] } }" >"${json_output_file}"
 
         # Remove new lines
-        echo "$(tr -d "\n\r" < "${json_output_file}")" >"${json_output_file}"
+        echo "$(tr -d "\n\r" <"${json_output_file}")" >"${json_output_file}"
 
     fi
 

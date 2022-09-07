@@ -51,7 +51,7 @@ function test_docker_helper_functions() {
     docker_mysql_database_import "mariadb_${project_name}" "${project_name}_user" "db_user_pass" "${project_name}_prod" "assets/dump.sql"
 
     # Docker MySQL database backup
-    docker_mysql_database_backup "mariadb_${project_name}" "${project_name}_user" "db_user_pass" "${project_name}_prod" "assets/dump.sql"
+    docker_mysql_database_export "mariadb_${project_name}" "${project_name}_user" "db_user_pass" "${project_name}_prod" "assets/dump.sql"
 
     # Docker list images
     #docker_list_images
