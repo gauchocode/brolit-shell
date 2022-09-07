@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.2
+# Version: 3.2.3
 ################################################################################
 
 ################################################################################
@@ -1747,8 +1747,8 @@ declare -g PROJECTS_PATH
 PROJECTS_PATH="$(_json_read_field "${BROLIT_CONFIG_FILE}" "PROJECTS.path")"
 
 # Version
-BROLIT_VERSION="3.2.2"
-BROLIT_LITE_VERSION="3.2.2-107"
+BROLIT_VERSION="3.2.3"
+BROLIT_LITE_VERSION="3.2.3-107"
 
 ################################################################################
 # Show firewall status

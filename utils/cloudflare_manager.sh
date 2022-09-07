@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.2
+# Version: 3.2.3
 #############################################################################
 
 function cloudflare_manager_menu() {
