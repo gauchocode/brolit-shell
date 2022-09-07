@@ -1938,7 +1938,7 @@ function menu_cron_script_tasks() {
     if [[ ${chosen_type} == *"06"* ]]; then
 
       # BROLIT HELPER
-      suggested_cron="*/15 * * * *" # Every 15 minutes
+      suggested_cron="*/30 * * * *" # Every 30 minutes
       scheduled_time="$(whiptail --title "CRON BROLIT-HELPER" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then

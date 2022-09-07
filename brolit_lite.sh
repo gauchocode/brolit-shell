@@ -812,9 +812,7 @@ function _wp_config_path() {
     if [[ -d ${find_output} ]]; then
 
         # Return
-        echo "${find_output}"
-
-        return 0
+        echo "${find_output}" && return 0
 
     else
 
@@ -838,7 +836,11 @@ function _project_get_type() {
 
     local dir_path="${1}"
 
-    #local project_type
+    local composer
+    local laravel
+    local php
+    local nodejs
+    local html
 
     # TODO: if brolit_conf exists, should check this file and get project type
 
@@ -847,78 +849,42 @@ function _project_get_type() {
         # WP?
         wp_path="$(_wp_config_path "${dir_path}")"
         if [[ -n ${wp_path} ]]; then
-
             # Return
-            echo "wordpress"
-
-            return 0
-
+            echo "wordpress" && return 0
         fi
 
         # Laravel?
-        laravel_v="$(php "${dir_path}/artisan" --version | grep -oE "Laravel Framework [0-9]+\.[0-9]+\.[0-9]+")"
-        if [[ -n ${laravel_v} ]]; then
-
+        composer="$(find "${dir_path}" -maxdepth 2 -name "composer.json" -type f)"
+        laravel="$(cat "${composer}" | grep "laravel/framework")"
+        if [[ -n ${laravel} ]]; then
             # Return
-            echo "laravel"
-
-            return 0
-
+            echo "laravel" && return 0
         fi
 
         # other-php?
-        php="$(find "${dir_path}" -name "index.php" -type f)"
+        php="$(find "${dir_path}" -maxdepth 2 -name "index.php" -type f)"
         if [[ -n ${php} ]]; then
-
             # Return
-            echo "php"
-
-            return 0
-
+            echo "php" && return 0
         fi
 
         # Node.js?
-        nodejs="$(find "${dir_path}" -name "package.json" -type f)"
+        ## TODO: need to change the detection method
+        nodejs="$(find "${dir_path}" -maxdepth 2 -name "package.json" -type f)"
         if [[ -n ${nodejs} ]]; then
-
             # Return
-            echo "nodejs"
-
-            return 0
-
+            echo "nodejs" && return 0
         fi
 
         # html-only?
-        html="$(find "${dir_path}" -name "index.html" -type f)"
+        html="$(find "${dir_path}" -maxdepth 2 -name "index.html" -type f)"
         if [[ -n ${html} ]]; then
-
             # Return
-            echo "html"
-
-            return 0
-
+            echo "html" && return 0
         fi
-
-        # docker-compose?
-        docker="$(
-            find "${dir_path}" -maxdepth 2 -name "docker-compose.yml" -type f
-            find "${dir_path}" -maxdepth 2 -name "docker-compose.yaml" -type f
-        )"
-        if [[ -n ${docker} ]]; then
-
-            # Return
-            echo "docker-compose"
-
-            return 0
-
-        fi
-
-        # Unknown
 
         # Return
-        echo "unknown"
-
-        return 0
+        echo "unknown" && return 0
 
     else
 
@@ -956,18 +922,12 @@ function _project_get_installation_type() {
         if [[ -n ${docker} ]]; then
 
             # Return
-            echo "docker-compose"
+            echo "docker-compose" && return 0
 
-            return 0
-
-        else
-
-            # Default
+        else # Default
 
             # Return
-            echo "default"
-
-            return 0
+            echo "default" && return 0
 
         fi
 
@@ -2035,10 +1995,10 @@ function show_server_data() {
             psql_databases_json="{\"name\":\"${database}\" , \"type\":\"${db_type}\", \"size\":\"${db_size}\" , \"depends_on\":\"${depends_on}\"},${psql_databases_json}"
 
         done
-        
+
         mysql_databases_json="$(printf "%s" "${mysql_databases_json%,}")"
         psql_databases_json="$(printf "%s" "${psql_databases_json%,}")"
-        
+
         server_databases="${mysql_databases_json},${psql_databases_json}"
         server_databases="$(printf "%s" "${server_databases%,}")"
 

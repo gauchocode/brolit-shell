@@ -1947,6 +1947,59 @@ function project_change_status() {
 }
 
 ################################################################################
+# Get project install type
+#
+# Arguments:
+#   $1 = ${dir_path}
+#
+# Outputs:
+#   ${project_type}
+################################################################################
+
+function project_get_install_type() {
+
+  local dir_path="${1}"
+
+  #local project_installation_type
+
+  # TODO: if brolit_conf.json exists, should check this file and get project install type
+
+  if [[ -n ${dir_path} ]]; then
+
+    # docker-compose?
+    docker="$(
+      find "${dir_path}" -maxdepth 2 -name "docker-compose.yml" -type f
+      find "${dir_path}" -maxdepth 2 -name "docker-compose.yaml" -type f
+    )"
+    if [[ -n ${docker} ]]; then
+
+      project_type="docker-compose"
+
+      # Log
+      log_event "debug" "Project type: ${project_type}" "false"
+      display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
+
+      # Return
+      echo "${project_type}" && return 0
+
+    else
+
+      # Default
+
+      # Return
+      echo "default" && return 0
+
+    fi
+
+  else
+
+    return 1
+
+  fi
+
+}
+
+################################################################################
 # Get project type
 #
 # Arguments:
@@ -1974,26 +2027,6 @@ function project_get_type() {
 
   if [[ -n ${dir_path} ]]; then
 
-    # docker-compose?
-    docker="$(
-      find "${dir_path}" -maxdepth 2 -name "docker-compose.yml" -type f
-      find "${dir_path}" -maxdepth 2 -name "docker-compose.yaml" -type f
-    )"
-    if [[ -n ${docker} ]]; then
-
-      project_type="docker"
-
-      # Log
-      log_event "debug" "Project type: ${project_type}" "false"
-      display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
-
-      # Return
-      echo "${project_type}"
-
-      return 0
-
-    fi
-
     # WP?
     wp_path="$(wp_config_path "${dir_path}")"
     if [[ -n ${wp_path} ]]; then
@@ -2005,14 +2038,13 @@ function project_get_type() {
       display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
 
       # Return
-      echo "${project_type}"
-
-      return 0
+      echo "${project_type}" && return 0
 
     fi
 
     # Laravel?
-    laravel="$(php "${dir_path}/artisan" --version | grep -oE "Laravel Framework [0-9]+\.[0-9]+\.[0-9]+")"
+    composer="$(find "${dir_path}" -maxdepth 2 -name "composer.json" -type f)"
+    laravel="$(cat "${composer}" | grep "laravel/framework")"
     if [[ -n ${laravel} ]]; then
 
       project_type="laravel"
@@ -2022,9 +2054,7 @@ function project_get_type() {
       display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
 
       # Return
-      echo "${project_type}"
-
-      return 0
+      echo "${project_type}" && return 0
 
     fi
 
@@ -2039,9 +2069,7 @@ function project_get_type() {
       display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
 
       # Return
-      echo "${project_type}"
-
-      return 0
+      echo "${project_type}" && return 0
 
     fi
 
@@ -2056,9 +2084,7 @@ function project_get_type() {
       display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
 
       # Return
-      echo "${project_type}"
-
-      return 0
+      echo "${project_type}" && return 0
 
     fi
 
@@ -2073,9 +2099,7 @@ function project_get_type() {
       display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
 
       # Return
-      echo "${project_type}"
-
-      return 0
+      echo "${project_type}" && return 0
 
     fi
 
@@ -2090,9 +2114,7 @@ function project_get_type() {
       display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
 
       # Return
-      echo "${project_type}"
-
-      return 0
+      echo "${project_type}" && return 0
 
     fi
 
@@ -2100,9 +2122,7 @@ function project_get_type() {
     log_event "debug" "Project type: unknown" "false"
 
     # Return
-    echo "other"
-
-    return 0
+    echo "other" && return 0
 
   else
 

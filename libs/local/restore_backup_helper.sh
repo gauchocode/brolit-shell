@@ -501,14 +501,27 @@ function restore_backup_from_public_url() {
 
   actual_folder="${PROJECTS_PATH}/${project_domain}"
 
-  project_type="$(project_get_type "${actual_folder}")"
+  project_get_install_type="$(project_get_install_type "${actual_folder}")"
 
-  # Project domain configuration (webserver+certbot+DNS)
-  https_enable="$(project_update_domain_config "${project_domain}" "${project_type}" "")"
+  if [[ $project_get_install_type == "default" ]]; then
 
-  # Post-restore/install tasks
-  # TODO: neet to get old domain for replace on database
-  project_post_install_tasks "${install_path}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${project_domain}" "${project_domain}"
+    project_type="$(project_get_type "${actual_folder}")"
+
+    # Project domain configuration (webserver+certbot+DNS)
+    https_enable="$(project_update_domain_config "${project_domain}" "${project_type}" "")"
+
+    # Post-restore/install tasks
+    # TODO: neet to get old domain for replace on database
+    project_post_install_tasks "${install_path}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${project_domain}" "${project_domain}"
+
+  else
+
+    # TODO: search available port
+
+    # Project domain configuration (webserver+certbot+DNS)
+    https_enable="$(project_update_domain_config "${project_domain}" "proxy" "")"
+
+  fi
 
   # Create brolit_config.json file
   project_update_brolit_config "${actual_folder}/${install_path}" "${project_name}" "${project_stage}" "${project_type}" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "" "true" ""
@@ -1143,10 +1156,13 @@ function restore_project() {
     # TODO: implement error type
 
     # TODO: get project type & installation type
+    project_get_type="$(project_get_type "${PROJECTS_PATH}/${chosen_project}")"
+    project_get_install_type="$(project_get_install_type "${PROJECTS_PATH}/${chosen_project}")"
+
     # TODO: if project type==docker download, extract, move to /var/www, run docker commands, execute domain tasks
     # TODO: if project type!=wordpress then... needs implementation.
-    # If project type==wordpress then...
-    if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" && ${PACKAGES_PHP_STATUS} != "enabled" ]]; then
+
+    if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" && ${project_get_install_type} == "docker-compose" && ${project_get_type} == "wordpress" ]]; then
 
       if [[ -d "${PROJECTS_PATH}/${chosen_project}" ]]; then
 
