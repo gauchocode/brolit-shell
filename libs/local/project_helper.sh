@@ -84,21 +84,21 @@ function project_set_config_var() {
   local variable="${2}"
   local content="${3}"
 
+  # Check if confif file exists
   if [[ ! -f ${file} ]]; then
-
     log_event "error" "Config file doesn't exist: ${file}" "false"
     exit 1
-
   fi
 
+  # Write file
   sed_output="$(sed -i "s/^${variable}\=.*/${variable}=\"${content}\"/" "${file}")"
 
   sed_result=$?
   if [[ ${sed_result} -eq 0 ]]; then
 
     # Log
-    log_event "info" "Setting ${variable}=${content}" "false"
-    display --indent 6 --text "- Setting .env option" --result "DONE" --color GREEN
+    log_event "info" "Updating ${variable}=${content}" "false"
+    display --indent 6 --text "- Updating .env variable" --result "DONE" --color GREEN
     display --indent 8 --text "${variable}=${content}" --tcolor GREEN
 
     return 0
@@ -106,9 +106,9 @@ function project_set_config_var() {
   else
 
     # Log
-    log_event "error" "Setting/updating field: ${variable}" "false"
+    log_event "error" "Updating field: ${variable}" "false"
     log_event "debug" "Output: ${sed_output}" "false"
-    display --indent 6 --text "- Setting .env option" --result "FAIL" --color RED
+    display --indent 6 --text "- Updating .env variable" --result "FAIL" --color RED
     display --indent 8 --text "Please read the log file" --tcolor RED
 
     return 1
@@ -1976,8 +1976,8 @@ function project_get_install_type() {
       project_type="docker-compose"
 
       # Log
-      log_event "debug" "Project type: ${project_type}" "false"
-      display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
+      log_event "debug" "Project install type: ${project_type}" "false"
+      display --indent 8 --text "Project install type: ${project_type}" --tcolor MAGENTA
 
       # Return
       echo "${project_type}" && return 0
