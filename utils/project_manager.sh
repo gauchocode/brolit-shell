@@ -555,7 +555,7 @@ function project_install_tasks_handler() {
 
   *)
 
-    log_event "error" "INVALID PROJECT INSTALLER TYPE: ${project_install_type}" "true"
+    log_event "error" "INVALID PROJECT INSTALL TYPE: ${project_install_type}" "true"
 
     exit
     ;;
