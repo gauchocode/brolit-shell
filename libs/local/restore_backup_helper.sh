@@ -244,15 +244,15 @@ function restore_backup_from_ftp() {
     project_domain="$(project_ask_domain "")"
     [[ $? -eq 1 ]] && return 1
 
-    possible_project_domain="$(project_get_name_from_domain "${project_domain}")"
+    possible_project_name="$(project_get_name_from_domain "${project_domain}")"
 
     # Ask project name
-    project_name="$(project_ask_name "${possible_project_domain}")"
+    project_name="$(project_ask_name "${Restore files from FTP}")"
     [[ $? -eq 1 ]] && return 1
 
     # FTP
     ftp_domain="$(whiptail_imput "FTP SERVER IP/DOMAIN" "Please insert de FTP server IP/DOMAIN. Ex: ftp.domain.com")"
-    ftp_path="$(whiptail_imput "FTP SERVER PATH" "Please insert de FTP server path. Ex: /htdocs/website")"
+    ftp_path="$(whiptail_imput "FTP SERVER PATH" "Please insert de FTP server path. Ex: public_html")"
     ftp_user="$(whiptail_imput "FTP SERVER USER" "Please insert de FTP user.")"
     ftp_pass="$(whiptail_imput "FTP SERVER PASS" "Please insert de FTP password.")"
 
