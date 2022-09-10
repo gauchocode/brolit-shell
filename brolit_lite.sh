@@ -185,14 +185,14 @@ function _string_remove_spaces() {
 
 function _string_remove_quotes() {
 
-  local string="${1}"
+    local string="${1}"
 
-  local new_string
+    local new_string
 
-  new_string="$(sed -e 's/^"//' -e 's/"$//' <<<"$string")"
+    new_string="$(sed -e 's/^"//' -e 's/"$//' <<<"$string")"
 
-  # Return
-  echo "${new_string}"
+    # Return
+    echo "${new_string}"
 
 }
 
@@ -878,10 +878,12 @@ function _project_get_type() {
 
         # Laravel?
         composer="$(find "${dir_path}" -maxdepth 2 -name "composer.json" -type f)"
-        laravel="$(cat "${composer}" | grep "laravel/framework")"
-        if [[ -n ${laravel} ]]; then
-            # Return
-            echo "laravel" && return 0
+        if [[ -f ${composer} ]]; then
+            laravel="$(cat "${composer}" | grep "laravel/framework")"
+            if [[ -n ${laravel} ]]; then
+                # Return
+                echo "laravel" && return 0
+            fi
         fi
 
         # other-php?
@@ -914,6 +916,7 @@ function _project_get_type() {
         return 1
 
     fi
+    
 
 }
 
@@ -1046,33 +1049,33 @@ function _project_get_stage_from_domain() {
 
 function _project_get_brolit_config_file() {
 
-  local project_path="${1}"
+    local project_path="${1}"
 
-  local project_domain
-  local project_name
-  local project_config_file
+    local project_domain
+    local project_name
+    local project_config_file
 
-  project_domain="$(basename "${project_path}")"
+    project_domain="$(basename "${project_path}")"
 
-  project_name="$(_project_get_name_from_domain "${project_domain}")"
+    project_name="$(_project_get_name_from_domain "${project_domain}")"
 
-  project_config_file="${BROLIT_CONFIG_PATH}/${project_name}_conf.json"
+    project_config_file="${BROLIT_CONFIG_PATH}/${project_name}_conf.json"
 
-  if [[ -e ${project_config_file} ]]; then
+    if [[ -e ${project_config_file} ]]; then
 
-    # Return
-    echo "${project_config_file}"
+        # Return
+        echo "${project_config_file}"
 
-    return 0
+        return 0
 
-  else
+    else
 
-    # Return
-    echo "false"
+        # Return
+        echo "false"
 
-    return 1
+        return 1
 
-  fi
+    fi
 
 }
 
@@ -1089,28 +1092,28 @@ function _project_get_brolit_config_file() {
 
 function _project_get_brolit_config_var() {
 
-  local project_path="${1}"
-  local config_field="${2}"
+    local project_path="${1}"
+    local config_field="${2}"
 
-  local config_value
-  local project_config_file
+    local config_value
+    local project_config_file
 
-  project_config_file="$(_project_get_brolit_config_file "${project_path}")"
+    project_config_file="$(_project_get_brolit_config_file "${project_path}")"
 
-  if [[ ${project_config_file} != "false" ]]; then
+    if [[ ${project_config_file} != "false" ]]; then
 
-    config_value="$(cat "${project_config_file}" | jq -r ".${config_field}")"
+        config_value="$(cat "${project_config_file}" | jq -r ".${config_field}")"
 
-    # Return
-    echo "${config_value}"
+        # Return
+        echo "${config_value}"
 
-    return 0
+        return 0
 
-  else
+    else
 
-    return 1
+        return 1
 
-  fi
+    fi
 
 }
 
@@ -1126,24 +1129,24 @@ function _project_get_brolit_config_var() {
 
 function _wp_config_path() {
 
-  local dir_to_search="${1}"
+    local dir_to_search="${1}"
 
-  # Find where wp-config.php is
-  find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')"
+    # Find where wp-config.php is
+    find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')"
 
-  # Check if directory exists
-  if [[ -d ${find_output} ]]; then
+    # Check if directory exists
+    if [[ -d ${find_output} ]]; then
 
-    # Return
-    echo "${find_output}"
+        # Return
+        echo "${find_output}"
 
-    return 0
+        return 0
 
-  else
+    else
 
-    return 1
+        return 1
 
-  fi
+    fi
 
 }
 
@@ -1160,27 +1163,27 @@ function _wp_config_path() {
 
 function _wp_config_get_option() {
 
-  local wp_project_dir="${1}"
-  local wp_option="${2}"
+    local wp_project_dir="${1}"
+    local wp_option="${2}"
 
-  local wp_value
+    local wp_value
 
-  # Update wp-config.php
-  wp_value="$(cat "${wp_project_dir}/wp-config.php" | grep "${wp_option}" | cut -d \' -f 4)"
+    # Update wp-config.php
+    wp_value="$(cat "${wp_project_dir}/wp-config.php" | grep "${wp_option}" | cut -d \' -f 4)"
 
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 && -n ${wp_value} ]]; then
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 && -n ${wp_value} ]]; then
 
-    # Return
-    echo "${wp_value}"
+        # Return
+        echo "${wp_value}"
 
-    return 0
+        return 0
 
-  else
+    else
 
-    return 1
+        return 1
 
-  fi
+    fi
 
 }
 
@@ -1197,31 +1200,31 @@ function _wp_config_get_option() {
 
 function _project_get_config_var() {
 
-  local file="${1}"
-  local variable="${2}"
+    local file="${1}"
+    local variable="${2}"
 
-  local content
+    local content
 
-  [[ ! -f ${file} ]] && exit 1
+    [[ ! -f ${file} ]] && exit 1
 
-  # Read "${file}"/.env to extract ${variable}
-  content="$(grep -oP "^${variable}=\K.*" "${file}")"
+    # Read "${file}"/.env to extract ${variable}
+    content="$(grep -oP "^${variable}=\K.*" "${file}")"
 
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
 
-    content="$(string_remove_quotes "${content}")"
+        content="$(string_remove_quotes "${content}")"
 
-    # Return
-    echo "${content}"
+        # Return
+        echo "${content}"
 
-    return 0
+        return 0
 
-  else
+    else
 
-    return 1
+        return 1
 
-  fi
+    fi
 
 }
 
@@ -1238,75 +1241,75 @@ function _project_get_config_var() {
 
 function _project_get_configured_database() {
 
-  local project_path="${1}"
-  local project_type="${2}"
+    local project_path="${1}"
+    local project_type="${2}"
 
-  local db_name
-  local wpconfig_path
+    local db_name
+    local wpconfig_path
 
-  # First try to read from brolit project config
-  db_name="$(_project_get_brolit_config_var "${project_path}" "project[].database[].config[].name")"
+    # First try to read from brolit project config
+    db_name="$(_project_get_brolit_config_var "${project_path}" "project[].database[].config[].name")"
 
-  if [[ -n ${db_name} ]]; then
+    if [[ -n ${db_name} ]]; then
 
-    # Return
-    echo "${db_name}"
+        # Return
+        echo "${db_name}"
 
-    return 0
+        return 0
 
-  else
+    else
 
-    case ${project_type} in
+        case ${project_type} in
 
-    wordpress)
+        wordpress)
 
-      wpconfig_path=$(_wp_config_path "${project_path}")
+            wpconfig_path=$(_wp_config_path "${project_path}")
 
-      db_name="$(_wp_config_get_option "${wpconfig_path}" "DB_NAME")"
+            db_name="$(_wp_config_get_option "${wpconfig_path}" "DB_NAME")"
 
-      # TODO: error check or empty $db_name
+            # TODO: error check or empty $db_name
 
-      # Return
-      echo "${db_name}"
+            # Return
+            echo "${db_name}"
 
-      ;;
+            ;;
 
-    laravel)
+        laravel)
 
-      db_name="$(_project_get_config_var "${project_path}/.env" "DB_DATABASE")"
+            db_name="$(_project_get_config_var "${project_path}/.env" "DB_DATABASE")"
 
-      # Return
-      echo "${db_name}"
+            # Return
+            echo "${db_name}"
 
-      ;;
+            ;;
 
-    php)
+        php)
 
-      db_name="$(_project_get_config_var "${project_path}/.env" "DB_DATABASE")"
+            db_name="$(_project_get_config_var "${project_path}/.env" "DB_DATABASE")"
 
-      # Return
-      echo "${db_name}"
+            # Return
+            echo "${db_name}"
 
-      ;;
+            ;;
 
-    nodejs)
+        nodejs)
 
-      db_name="$(_project_get_config_var "${project_path}/.env" "DB_DATABASE")"
+            db_name="$(_project_get_config_var "${project_path}/.env" "DB_DATABASE")"
 
-      # Return
-      echo "${db_name}"
+            # Return
+            echo "${db_name}"
 
-      ;;
+            ;;
 
-    *)
+        *)
 
-      return 1
+            return 1
 
-      ;;
+            ;;
 
-    esac
+        esac
 
-  fi
+    fi
 
 }
 
