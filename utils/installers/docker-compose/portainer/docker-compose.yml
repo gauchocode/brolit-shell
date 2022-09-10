@@ -6,15 +6,35 @@ services:
     image: portainer/portainer-ce
     container_name: portainer
     command: -H unix:///var/run/docker.sock
-    restart: always
+    restart: unless-stopped
     environment:
-      - VIRTUAL_HOST=PORTAINER_SUBDOMAIN
-      - VIRTUAL_PORT=PORTAINER_PORT
+      - VIRTUAL_HOST=${VIRTUAL_HOST}
+      - VIRTUAL_PORT=${PORTAINER_PORT}
     ports:
-      - 9000:9000
+      - ${PORTAINER_PORT}:9000
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./portainer_data:/data
+      - ${PORTAINER_DATA}:/data
+      
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - TZ=${WATCHTOWER_TIMEZONE}
+      - WATCHTOWER_MONITOR_ONLY=true
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_SCHEDULE= 0 0 04 ? * FRI # At 04:00 AM, only on Friday
+      - WATCHTOWER_NOTIFICATIONS=${WATCHTOWER_NOTIFICATIONS}
+      - WATCHTOWER_NOTIFICATION_EMAIL_FROM=${WATCHTOWER_NOTIFICATION_EMAIL_FROM}
+      - WATCHTOWER_NOTIFICATION_EMAIL_TO=${WATCHTOWER_NOTIFICATION_EMAIL_TO}
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER=${WATCHTOWER_NOTIFICATION_EMAIL_SERVER}
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD=${WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD}
+      - WATCHTOWER_NOTIFICATION_EMAIL_SUBJECTTAG=${WATCHTOWER_NOTIFICATION_EMAIL_SUBJECT}
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER=${WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER}
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT=${WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT}
 
-#volumes:
-#  portainer_data:
+volumes:
+  portainer_data:
