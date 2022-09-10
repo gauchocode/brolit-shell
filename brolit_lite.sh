@@ -1212,7 +1212,7 @@ function _project_get_config_var() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        content="$(string_remove_quotes "${content}")"
+        content="$(_string_remove_quotes "${content}")"
 
         # Return
         echo "${content}"
