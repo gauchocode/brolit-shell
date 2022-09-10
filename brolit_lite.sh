@@ -916,7 +916,6 @@ function _project_get_type() {
         return 1
 
     fi
-    
 
 }
 
@@ -1248,16 +1247,28 @@ function _project_get_configured_database() {
     local wpconfig_path
 
     # First try to read from brolit project config
-    db_name="$(_project_get_brolit_config_var "${project_path}" "project[].database[].config[].name")"
 
-    if [[ -n ${db_name} ]]; then
+    ## Project has database?
+    db_status="$(_project_get_brolit_config_var "${project_path}" "project[].database[].status")"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
 
-        # Return
-        echo "${db_name}"
+        if [[ ${db_status} == "disabled" ]]; then
+            echo "no-database"
+            return 0
+        else
+            ## Get database name
+            db_name="$(_project_get_brolit_config_var "${project_path}" "project[].database[].config[].name")"
 
-        return 0
+            # Return
+            [[ -z ${db_name} ]] && return 1
+            echo "${db_name}" && return 0
+
+        fi
 
     else
+
+        # not brolit project config file found
 
         case ${project_type} in
 
@@ -1267,10 +1278,9 @@ function _project_get_configured_database() {
 
             db_name="$(_wp_config_get_option "${wpconfig_path}" "DB_NAME")"
 
-            # TODO: error check or empty $db_name
-
             # Return
-            echo "${db_name}"
+            [[ -z ${db_name} ]] && return 1
+            echo "${db_name}" && return 0
 
             ;;
 
@@ -1279,7 +1289,8 @@ function _project_get_configured_database() {
             db_name="$(_project_get_config_var "${project_path}/.env" "DB_DATABASE")"
 
             # Return
-            echo "${db_name}"
+            [[ -z ${db_name} ]] && return 1
+            echo "${db_name}" && return 0
 
             ;;
 
@@ -1288,7 +1299,8 @@ function _project_get_configured_database() {
             db_name="$(_project_get_config_var "${project_path}/.env" "DB_DATABASE")"
 
             # Return
-            echo "${db_name}"
+            [[ -z ${db_name} ]] && return 1
+            echo "${db_name}" && return 0
 
             ;;
 
@@ -1297,13 +1309,15 @@ function _project_get_configured_database() {
             db_name="$(_project_get_config_var "${project_path}/.env" "DB_DATABASE")"
 
             # Return
-            echo "${db_name}"
+            [[ -z ${db_name} ]] && return 1
+            echo "${db_name}" && return 0
 
             ;;
 
         *)
 
-            return 1
+            echo "no-database" && return 0
+            #return 1
 
             ;;
 
@@ -1859,12 +1873,8 @@ function _dropbox_get_backup() {
     project_db="$(_project_get_configured_database "${PROJECTS_PATH}/${project_domain}" "${project_type}")"
 
     #echo "project_db:${project_db}"
-
-    if [[ -z ${project_db} || ${project_db} == "false" || ${project_db} == "null" ]]; then
-        project_name="$(_project_get_name_from_domain "${project_domain}")"
-        project_stage="$(_project_get_stage_from_domain "${project_domain}")"
-        project_db="${project_name}_${project_stage}"
-    fi
+    exitstatus=$?
+    [[ ${exitstatus} -eq 1 ]] && project_db="error"
 
     # Get dropbox backup list
     dropbox_site_backup_path="${SERVER_NAME}/projects-online/site/${project_domain}"
@@ -1900,7 +1910,6 @@ function _dropbox_get_backup() {
     fi
 
     # Return JSON
-    #echo "SERVER_DATA_RESULT => { ${backups_string} }"
     echo "${backups_string}"
 
 }
