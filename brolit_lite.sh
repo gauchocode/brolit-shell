@@ -174,6 +174,29 @@ function _string_remove_spaces() {
 }
 
 ################################################################################
+# Remove first and last quote (") from a string
+#
+# Arguments:
+#   $1 = ${string}
+#
+# Outputs:
+#   string
+################################################################################
+
+function _string_remove_quotes() {
+
+  local string="${1}"
+
+  local new_string
+
+  new_string="$(sed -e 's/^"//' -e 's/"$//' <<<"$string")"
+
+  # Return
+  echo "${new_string}"
+
+}
+
+################################################################################
 # Private: Replace /n for space char
 #
 # Arguments:
@@ -1011,41 +1034,236 @@ function _project_get_stage_from_domain() {
 }
 
 ################################################################################
-# Private: Get project config
+# Get project config var
 #
 # Arguments:
-#   $1 = ${project_path}
-#   $2 = ${config_field}
+#  $1 = ${project_path}
+#  $2 = ${config_field}
 #
 # Outputs:
-#   ${project_type}
+#   0 if ok, 1 on error.
 ################################################################################
 
-function _project_get_config() {
+function _project_get_brolit_config_var() {
 
-    local project_path="${1}"
-    local config_field="${2}"
+  local project_path="${1}"
+  local config_field="${2}"
 
-    local config_value
-    local project_name
-    local project_config_file
+  local config_value
+  local project_config_file
 
-    project_name="$(basename "${project_path}")"
-    project_config_file="${BROLIT_PROJECT_CONFIG_PATH}/${project_name}_conf.json"
+  project_config_file="$(project_get_brolit_config_file "${project_path}")"
 
-    if [[ -e ${project_config_file} ]]; then
+  if [[ ${project_config_file} != "false" ]]; then
 
-        config_value="$(cat "${project_config_file}" | jq -r ".${config_field}")"
+    config_value="$(cat "${project_config_file}" | jq -r ".${config_field}")"
 
-        # Return
-        echo "${config_value}"
+    # Return
+    echo "${config_value}"
 
-    else
+    return 0
 
-        # Return
-        echo "false"
+  else
 
-    fi
+    return 1
+
+  fi
+
+}
+
+################################################################################
+# WordPress config path
+#
+# Arguments:
+#  $1 = ${dir_to_search}
+#
+# Outputs:
+#  String with wp-config path
+################################################################################
+
+function _wp_config_path() {
+
+  local dir_to_search="${1}"
+
+  # Find where wp-config.php is
+  find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')"
+
+  # Check if directory exists
+  if [[ -d ${find_output} ]]; then
+
+    # Return
+    echo "${find_output}"
+
+    return 0
+
+  else
+
+    return 1
+
+  fi
+
+}
+
+################################################################################
+# Get WordPress config option
+#
+# Arguments:
+#  $1 = ${project_dir}
+#  $2 = ${wp_option}
+#
+# Outputs:
+#  ${wp_value} if ok, 1 on error.
+################################################################################
+
+function _wp_config_get_option() {
+
+  local wp_project_dir="${1}"
+  local wp_option="${2}"
+
+  local wp_value
+
+  # Update wp-config.php
+  wp_value="$(cat "${wp_project_dir}/wp-config.php" | grep "${wp_option}" | cut -d \' -f 4)"
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 && -n ${wp_value} ]]; then
+
+    # Return
+    echo "${wp_value}"
+
+    return 0
+
+  else
+
+    return 1
+
+  fi
+
+}
+
+################################################################################
+# Get project config option from env file
+#
+# Arguments:
+#  $1 = ${file}
+#  $2 = ${variable}
+#
+# Outputs:
+#  ${content} if ok, 1 on error.
+################################################################################
+
+function _project_get_config_var() {
+
+  local file="${1}"
+  local variable="${2}"
+
+  local content
+
+  [[ ! -f ${file} ]] && exit 1
+
+  # Read "${file}"/.env to extract ${variable}
+  content="$(grep -oP "^${variable}=\K.*" "${file}")"
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    content="$(string_remove_quotes "${content}")"
+
+    # Return
+    echo "${content}"
+
+    return 0
+
+  else
+
+    return 1
+
+  fi
+
+}
+
+################################################################################
+# Get configured database
+#
+# Arguments:
+#  $1 = ${project_path}
+#  $2 = ${project_type}
+#
+# Outputs:
+#   ${db_name} if ok, 1 on error.
+################################################################################
+
+function _project_get_configured_database() {
+
+  local project_path="${1}"
+  local project_type="${2}"
+
+  local db_name
+  local wpconfig_path
+
+  # First try to read from brolit project config
+  db_name="$(_project_get_brolit_config_var "${project_path}" "project[].database[].config[].name")"
+
+  if [[ -n ${db_name} ]]; then
+
+    # Return
+    echo "${db_name}"
+
+    return 0
+
+  else
+
+    case ${project_type} in
+
+    wordpress)
+
+      wpconfig_path=$(_wp_config_path "${project_path}")
+
+      db_name="$(_wp_config_get_option "${wpconfig_path}" "DB_NAME")"
+
+      # TODO: error check or empty $db_name
+
+      # Return
+      echo "${db_name}"
+
+      ;;
+
+    laravel)
+
+      db_name="$(_project_get_config_var "${project_path}/.env" "DB_DATABASE")"
+
+      # Return
+      echo "${db_name}"
+
+      ;;
+
+    php)
+
+      db_name="$(_project_get_config_var "${project_path}/.env" "DB_DATABASE")"
+
+      # Return
+      echo "${db_name}"
+
+      ;;
+
+    nodejs)
+
+      db_name="$(_project_get_config_var "${project_path}/.env" "DB_DATABASE")"
+
+      # Return
+      echo "${db_name}"
+
+      ;;
+
+    *)
+
+      return 1
+
+      ;;
+
+    esac
+
+  fi
 
 }
 
@@ -1572,6 +1790,9 @@ function _dropbox_get_backup() {
 
     local project_domain="${1}"
 
+    # TODO: if standard is respected $project_domain = project directory name
+    # Should change $1 for project_dir and then do something like "get_domain_from_project_config"
+
     local project_name
     local project_db
     local dropbox_site_backup_path
@@ -1584,18 +1805,19 @@ function _dropbox_get_backup() {
     # Reset
     backups_string=''
 
-    if [[ -z ${project_domain} ]]; then
-        return 1
-    fi
+    [[ -z ${project_domain} ]] && return 1
 
-    project_db="$(_project_get_config "${BROLIT_PROJECT_CONFIG_PATH}/${project_domain}_conf.json" "project[].database[].name")"
+    #project_db="$(_project_get_brolit_config_var "${BROLIT_PROJECT_CONFIG_PATH}/${project_domain}_conf.json" "project[].database[].name")"
+    project_type="$(_project_get_type "${PROJECTS_PATH}/${project_domain}")"
+    #project_install_type="$(_project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
+    project_db="$(_project_get_configured_database "${PROJECTS_PATH}/${project_domain}" "${project_type}")"
+
+    #echo "project_db:${project_db}"
 
     if [[ -z ${project_db} || ${project_db} == "false" || ${project_db} == "null" ]]; then
-
         project_name="$(_project_get_name_from_domain "${project_domain}")"
         project_stage="$(_project_get_stage_from_domain "${project_domain}")"
         project_db="${project_name}_${project_stage}"
-
     fi
 
     # Get dropbox backup list
