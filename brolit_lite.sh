@@ -1879,24 +1879,29 @@ function _dropbox_get_backup() {
     # Get dropbox backup list
     dropbox_site_backup_path="${SERVER_NAME}/projects-online/site/${project_domain}"
 
-    #echo "Running: ${DROPBOX_UPLOADER} -hq list \"${dropbox_site_backup_path}\" | grep -E \"${project_domain}_site-files_[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}.tar.bz2\""
     dropbox_site_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_site_backup_path}" | grep -Eo "${project_domain}_site-files_[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}.*")"
 
     for backup_file in ${dropbox_site_backup_list}; do
 
         backup_date="$(_backup_get_date "${backup_file}")"
 
-        backup_to_search="${project_db}_database_${backup_date}"
+        if [[ ${project_db} != "error" && ${project_db} != "no-database" ]]; then
 
-        #echo "Running: ${DROPBOX_UPLOADER} -hq search \"${backup_to_search}\" | grep -E \"${project_db}/${backup_to_search}\""
-        search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${project_db}/${backup_to_search}" || ret=$?)" # using ret to bypass unexped errors
+            # Database backup
+            backup_to_search="${project_db}_database_${backup_date}"
+            search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${project_db}/${backup_to_search}" || ret=$?)" # using ret to bypass unexped errors
+            backup_db="$(basename "${search_backup_db}")"
 
-        backup_db="$(basename "${search_backup_db}")"
+            if [[ -n ${search_backup_db} ]]; then
+                backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"${backup_db}\"} , "
+            else
+                backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"not-found\"} , "
+            fi
 
-        if [[ -n ${search_backup_db} ]]; then
-            backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"${backup_db}\"} , "
         else
-            backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"false\"} , "
+            # At this point ${project_db} == error or no-database
+            backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"${project_db}\"} , "
+
         fi
 
     done
