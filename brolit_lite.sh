@@ -1034,6 +1034,49 @@ function _project_get_stage_from_domain() {
 }
 
 ################################################################################
+# Get project config
+#
+# Arguments:
+#  $1 = ${project_path}
+#  $2 = ${config_field}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function _project_get_brolit_config_file() {
+
+  local project_path="${1}"
+
+  local project_domain
+  local project_name
+  local project_config_file
+
+  project_domain="$(basename "${project_path}")"
+
+  project_name="$(_project_get_name_from_domain "${project_domain}")"
+
+  project_config_file="${BROLIT_CONFIG_PATH}/${project_name}_conf.json"
+
+  if [[ -e ${project_config_file} ]]; then
+
+    # Return
+    echo "${project_config_file}"
+
+    return 0
+
+  else
+
+    # Return
+    echo "false"
+
+    return 1
+
+  fi
+
+}
+
+################################################################################
 # Get project config var
 #
 # Arguments:
@@ -1052,7 +1095,7 @@ function _project_get_brolit_config_var() {
   local config_value
   local project_config_file
 
-  project_config_file="$(project_get_brolit_config_file "${project_path}")"
+  project_config_file="$(_project_get_brolit_config_file "${project_path}")"
 
   if [[ ${project_config_file} != "false" ]]; then
 
