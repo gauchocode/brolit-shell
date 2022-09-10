@@ -990,18 +990,28 @@ function project_get_configured_database() {
   local wpconfig_path
 
   # First try to read from brolit project config
-  db_name="$(project_get_brolit_config_var "${project_path}" "project[].database[].config[].name")"
 
-  if [[ -n ${db_name} ]]; then
+  ## Project has database?
+  db_status="$(_project_get_brolit_config_var "${project_path}" "project[].database[].status")"
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
 
-    log_event "debug" "Extracted db_name: ${db_name}" "false"
+    if [[ ${db_status} == "disabled" ]]; then
+      echo "no-database"
+      return 0
+    else
+      ## Get database name
+      db_name="$(_project_get_brolit_config_var "${project_path}" "project[].database[].config[].name")"
 
-    # Return
-    echo "${db_name}"
+      # Return
+      [[ -z ${db_name} ]] && return 1
+      echo "${db_name}" && return 0
 
-    return 0
+    fi
 
   else
+
+    # not brolit project config file found
 
     case ${project_type} in
 
@@ -1011,10 +1021,9 @@ function project_get_configured_database() {
 
       db_name="$(wp_config_get_option "${wpconfig_path}" "DB_NAME")"
 
-      # TODO: error check or empty $db_name
-
       # Return
-      echo "${db_name}"
+      [[ -z ${db_name} ]] && return 1
+      echo "${db_name}" && return 0
 
       ;;
 
@@ -1023,7 +1032,8 @@ function project_get_configured_database() {
       db_name="$(project_get_config_var "${project_path}/.env" "DB_DATABASE")"
 
       # Return
-      echo "${db_name}"
+      [[ -z ${db_name} ]] && return 1
+      echo "${db_name}" && return 0
 
       ;;
 
@@ -1032,7 +1042,8 @@ function project_get_configured_database() {
       db_name="$(project_get_config_var "${project_path}/.env" "DB_DATABASE")"
 
       # Return
-      echo "${db_name}"
+      [[ -z ${db_name} ]] && return 1
+      echo "${db_name}" && return 0
 
       ;;
 
@@ -1041,14 +1052,15 @@ function project_get_configured_database() {
       db_name="$(project_get_config_var "${project_path}/.env" "DB_DATABASE")"
 
       # Return
-      echo "${db_name}"
+      [[ -z ${db_name} ]] && return 1
+      echo "${db_name}" && return 0
 
       ;;
 
     *)
 
-      log_event "debug" "No database information for project." "false"
-      return 1
+      echo "no-database" && return 0
+      #return 1
 
       ;;
 
