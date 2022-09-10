@@ -247,7 +247,7 @@ function restore_backup_from_ftp() {
     possible_project_name="$(project_get_name_from_domain "${project_domain}")"
 
     # Ask project name
-    project_name="$(project_ask_name "${Restore files from FTP}")"
+    project_name="$(project_ask_name "${possible_project_name}")"
     [[ $? -eq 1 ]] && return 1
 
     # FTP
