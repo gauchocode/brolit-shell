@@ -1759,8 +1759,8 @@ function _sites_directories() {
         result=$?
         if [[ ${result} -eq 0 ]]; then
 
-            # Size
-            site_size_du="$(du --human-readable --max-depth=0 "${PROJECTS_PATH}/${site}")"
+            # Size in MBs
+            site_size_du="$(du --human-readable --block-size=1M --max-depth=0 "${PROJECTS_PATH}/${site}")"
             site_size="$(echo "${site_size_du}" | awk '{print $1;}')"
 
             # Project Type
@@ -1867,7 +1867,6 @@ function _dropbox_get_backup() {
 
     [[ -z ${project_domain} ]] && return 1
 
-    #project_db="$(_project_get_brolit_config_var "${BROLIT_PROJECT_CONFIG_PATH}/${project_domain}_conf.json" "project[].database[].name")"
     project_type="$(_project_get_type "${PROJECTS_PATH}/${project_domain}")"
     #project_install_type="$(_project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
     project_db="$(_project_get_configured_database "${PROJECTS_PATH}/${project_domain}" "${project_type}")"
@@ -2030,7 +2029,7 @@ PROJECTS_PATH="$(_json_read_field "${BROLIT_CONFIG_FILE}" "PROJECTS.path")"
 
 # Version
 BROLIT_VERSION="3.2.3"
-BROLIT_LITE_VERSION="3.2.3-107"
+BROLIT_LITE_VERSION="3.2.3-109"
 
 ################################################################################
 # Show firewall status
@@ -2158,7 +2157,7 @@ function firewall_get_apps_details() {
 # List package to upgrade, return JSON
 #
 # Arguments:
-#   $force
+#   $1 - ${force}
 #
 # Outputs:
 #   json output with packages to upgrade
@@ -2193,6 +2192,16 @@ function list_packages_to_upgrade() {
 
 }
 
+################################################################################
+# Mysql get database size
+#
+# Arguments:
+#   $1 - ${database}
+#
+# Outputs:
+#   ${database_size}
+################################################################################
+
 function _mysql_get_database_size() {
 
     local database="${1}"
@@ -2202,14 +2211,14 @@ function _mysql_get_database_size() {
 
     query="SELECT table_schema, (SUM(data_length)+SUM(index_length)) / 1024 / 1024 FROM information_schema.TABLES WHERE table_schema LIKE \"${database}\" GROUP BY table_schema;"
 
-    # Get database size
+    # Get database size in MBs
     database_size="$(mysql -Bse "${query}")"
     database_size="$(echo "${database_size}" | awk '{ print $2 }')"
 
     # Round number
     database_size="$(printf "%.2f\n" "${database_size}")"
 
-    echo "${database_size} MBs"
+    echo "${database_size}"
 
 }
 
