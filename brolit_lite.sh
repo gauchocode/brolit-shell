@@ -2198,13 +2198,18 @@ function _mysql_get_database_size() {
     local database="${1}"
     local query
 
-    #query="SELECT table_schema, (SUM(data_length)+SUM(index_length)) / 1024 / 1024 FROM information_schema.TABLES WHERE table_schema LIKE \"wiki_broobe_prod\" GROUP BY table_schema;"
+    local database_size
+
     query="SELECT table_schema, (SUM(data_length)+SUM(index_length)) / 1024 / 1024 FROM information_schema.TABLES WHERE table_schema LIKE \"${database}\" GROUP BY table_schema;"
 
-    # Run command
-    all_databases="$(mysql -Bse "${query}")"
+    # Get database size
+    database_size="$(mysql -Bse "${query}")"
+    database_size="$(echo "${database_size}" | awk '{ print $2 }')"
 
-    echo "${all_databases}" | awk '{ print $2 }'
+    # Round number
+    database_size="$(printf "%.2f\n" "${database_size}")"
+
+    echo "${database_size} MBs"
 
 }
 
@@ -2238,11 +2243,17 @@ function show_server_data() {
 
     if [[ ${force} == "true" || ! -f "${json_output_file}" ]]; then
 
+        timestamp="$(_timestamp)"
+
         server_info="$(_serverinfo)"
 
         server_config="$(_brolit_shell_config)"
 
         server_firewall="$(firewall_show_status)"
+
+        server_pkgs="$(_packages_get_data)"
+
+        server_sites="$(_sites_directories)"
 
         [[ "$(_is_pkg_installed "mysql-server")" == "true" || "$(_is_pkg_installed "mariadb-server")" == "true" ]] && mysql_databases="$(_mysql_databases)"
 
@@ -2267,8 +2278,7 @@ function show_server_data() {
         for database in ${psql_databases}; do
 
             # TODO
-            db_size="$(all_databases="$(sudo -u postgres -i psql --quiet -c "SELECT pg_size_pretty( pg_database_size('${database}') );" -t)")"
-            #db_size="0"
+            db_size="$(sudo -u postgres -i psql --quiet -c "SELECT pg_size_pretty( pg_database_size('${database}') );" -t)"
             #db_size="$(_psql_get_database_size "${database}")"
 
             # TODO
@@ -2285,11 +2295,6 @@ function show_server_data() {
         server_databases="$(printf "%s" "${server_databases%,}")"
 
         [[ -z ${server_databases} ]] && server_databases="\"no-databases\""
-
-        server_sites="$(_sites_directories)"
-        server_pkgs="$(_packages_get_data)"
-
-        timestamp="$(_timestamp)"
 
         # Write JSON file
         echo "{ \"${timestamp}\" : { \"server_info\": { ${server_info} },\"firewall_info\":  [ ${server_firewall} ] , \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] } }" >"${json_output_file}"
