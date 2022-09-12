@@ -65,7 +65,7 @@ function _get_backup_filename() {
 }
 
 ################################################################################
-# Get Backup Date
+# Get backup Date
 #
 # Arguments:
 #  $1 = ${backup_file}
@@ -84,6 +84,34 @@ function backup_get_date() {
 
   # Return
   echo "${backup_date}"
+
+}
+
+################################################################################
+# Get backup rotation type (daily, weekly, monthtly)
+#
+# Arguments:
+#  $1 = ${backup_file}
+#
+# Outputs:
+#   ${backup_rotation_type}
+################################################################################
+
+function backup_get_rotation_type() {
+
+  local backup_file="${1}"
+
+  local backup_weekly
+  local backup_monthly
+
+  backup_weekly="$(echo "${backup_file}" | grep 'weekly')"
+  [[ -n ${backup_weekly} ]] && echo "weekly" && return 0
+
+  backup_monthly="$(echo "${backup_file}" | grep 'monthly')"
+  [[ -n ${backup_monthly} ]] && echo "monthly" && return 0
+
+  # Or daily
+  echo "daily" && return 0
 
 }
 

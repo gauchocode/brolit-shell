@@ -2258,8 +2258,6 @@ function show_server_data() {
 
         server_config="$(_brolit_shell_config)"
 
-        server_firewall="$(firewall_show_status)"
-
         server_pkgs="$(_packages_get_data)"
 
         server_sites="$(_sites_directories)"
@@ -2286,7 +2284,8 @@ function show_server_data() {
         db_type="postgresql"
         for database in ${psql_databases}; do
 
-            # TODO
+            # Get file size
+            # TODO: should return only number on KBs
             db_size="$(sudo -u postgres -i psql --quiet -c "SELECT pg_size_pretty( pg_database_size('${database}') );" -t)"
             #db_size="$(_psql_get_database_size "${database}")"
 
@@ -2306,7 +2305,7 @@ function show_server_data() {
         [[ -z ${server_databases} ]] && server_databases="\"no-databases\""
 
         # Write JSON file
-        echo "{ \"${timestamp}\" : { \"server_info\": { ${server_info} },\"firewall_info\":  [ ${server_firewall} ] , \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] } }" >"${json_output_file}"
+        echo "{ \"${timestamp}\" : { \"server_info\": { ${server_info} }, \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] } }" >"${json_output_file}"
 
         # Remove new lines
         echo "$(tr -d "\n\r" <"${json_output_file}")" >"${json_output_file}"
