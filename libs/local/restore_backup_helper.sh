@@ -1360,10 +1360,10 @@ function restore_project() {
 
     fi
 
-    # Project domain configuration (webserver+certbot+DNS)
-    https_enable="$(project_update_domain_config "${new_project_domain}" "${project_type}" "")"
-
     if [[ ${installation_type} != "docker" ]]; then
+
+      # Project domain configuration (webserver+certbot+DNS)
+      https_enable="$(project_update_domain_config "${new_project_domain}" "${project_type}" "")"
 
       # Post-restore/install tasks
       project_post_install_tasks "${install_path}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${chosen_domain}" "${new_project_domain}"
