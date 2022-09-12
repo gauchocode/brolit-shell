@@ -992,7 +992,7 @@ function project_get_configured_database() {
   # First try to read from brolit project config
 
   ## Project has database?
-  db_status="$(_project_get_brolit_config_var "${project_path}" "project[].database[].status")"
+  db_status="$(project_get_brolit_config_var "${project_path}" "project[].database[].status")"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -1001,7 +1001,7 @@ function project_get_configured_database() {
       return 0
     else
       ## Get database name
-      db_name="$(_project_get_brolit_config_var "${project_path}" "project[].database[].config[].name")"
+      db_name="$(project_get_brolit_config_var "${project_path}" "project[].database[].config[].name")"
 
       # Return
       [[ -z ${db_name} ]] && return 1
