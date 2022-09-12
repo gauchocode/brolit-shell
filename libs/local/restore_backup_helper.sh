@@ -923,7 +923,7 @@ function restore_type_selection_from_storage() {
   local storage_backup_list        # dropbox listing directories
   local domain                     # extracted domain
   local db_project_name            # extracted db name
-  local bk_to_dowload              # backup to download
+  local backup_to_dowload          # backup to download
   local folder_to_install          # directory to install project
   #local project_site
   local possible_project_name
@@ -989,10 +989,10 @@ function restore_type_selection_from_storage() {
         db_project_name="$(mysql_name_sanitize "${project_name}")"
 
         project_backup_date="$(backup_get_date "${chosen_backup_to_restore}")"
-        bk_to_dowload="${chosen_type_path}/${chosen_project}/${chosen_backup_to_restore}"
+        backup_to_dowload="${chosen_type_path}/${chosen_project}/${chosen_backup_to_restore}"
 
         # Downloading Backup
-        storage_download_backup "${bk_to_dowload}" "${BROLIT_TMP_DIR}"
+        storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
 
         # Decompress
         decompress "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
@@ -1040,10 +1040,10 @@ function restore_type_selection_from_storage() {
         db_project_name="$(mysql_name_sanitize "${project_name}")"
 
         project_backup_date="$(backup_get_date "${chosen_backup_to_restore}")"
-        bk_to_dowload="${chosen_type_path}/${chosen_project}/${chosen_backup_to_restore}"
+        backup_to_dowload="${chosen_type_path}/${chosen_project}/${chosen_backup_to_restore}"
 
         # Downloading Backup
-        storage_download_backup "${bk_to_dowload}" "${BROLIT_TMP_DIR}"
+        storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
 
         # Decompress
         decompress "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
@@ -1126,7 +1126,7 @@ function restore_project() {
   local chosen_project
   local remote_backup_path
   local remote_backup_list
-  local bk_to_dowload
+  local backup_to_dowload
   local chosen_backup_to_restore
   local db_to_download
   local project_db_status
@@ -1169,8 +1169,8 @@ function restore_project() {
     display --indent 8 --text "${chosen_backup_to_restore}" --tcolor YELLOW
 
     # Download backup
-    bk_to_dowload="${chosen_server}/projects-${chosen_status}/site/${chosen_project}/${chosen_backup_to_restore}"
-    storage_download_backup "${bk_to_dowload}" "${BROLIT_TMP_DIR}"
+    backup_to_dowload="${chosen_server}/projects-${chosen_status}/site/${chosen_project}/${chosen_backup_to_restore}"
+    storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
 
     # Decompress
     decompress "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
@@ -1279,17 +1279,24 @@ function restore_project() {
       db_name="$(project_get_configured_database "${install_path}" "${project_type}")"
       db_user="$(project_get_configured_database_user "${install_path}" "${project_type}")"
       db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}")"
-      # Sanitize ${project_name}
-      #db_project_name="$(mysql_name_sanitize "${project_name}")"
 
       if [[ -n ${db_name} ]]; then
 
-        # Database Backup
+        # Get backup rotation type (daily, weekly, monthly)
+        backup_rotation_type="$(backup_get_rotation_type "${chosen_backup_to_restore}")"
+
+        # Get backup date
         project_backup_date="$(backup_get_date "${chosen_backup_to_restore}")"
 
-        # TODO: update this to match monthly and weekly backups
-        db_to_download="${chosen_server}/projects-${chosen_status}/database/${db_name}/${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-        db_to_restore="${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+        # Download database backup
+        if [[ ${backup_rotation_type} == "daily" ]]; then
+          db_to_restore="${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+        else
+          db_to_restore="${db_name}_database_${project_backup_date}-${backup_rotation_type}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+        fi
+
+        # Database backup full remote path
+        db_to_download="${chosen_server}/projects-${chosen_status}/database/${db_name}/${db_to_restore}"
 
         # Downloading Database Backup
         storage_download_backup "${db_to_download}" "${BROLIT_TMP_DIR}"
@@ -1303,7 +1310,7 @@ function restore_project() {
           if [[ ${exitstatus} -eq 0 ]]; then
 
             # Get dropbox backup list
-            remote_backup_path="${chosen_server}/projects-${chosen_status}/database/${chosen_project}"
+            remote_backup_path="${chosen_server}/projects-${chosen_status}/database/${db_name}"
             remote_backup_list="$(storage_list_dir "${remote_backup_path}")"
 
             # Select Backup File
@@ -1330,9 +1337,6 @@ function restore_project() {
           if [[ ${exitstatus} -eq 0 ]]; then
 
             # Restore Database Backup
-            # TODO: check database backup type (mysql or postgres)
-            local db_engine="mysql"
-
             [[ -z ${db_user} || "${db_user}" != "${project_name}_user" ]] && db_user="${project_name}_user"
             [[ -z ${db_pass} || "${db_user}" != "${project_name}_user" ]] && db_pass="$(openssl rand -hex 12)"
 
