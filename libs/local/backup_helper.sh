@@ -18,11 +18,11 @@
 #   ${backup_filename}
 ################################################################################
 
-function _get_backup_filename() {
+function backup_get_filename() {
 
   local backup_prefix_name="${1}"
   local backup_date="${2}"
-  local backup_extension=${3}
+  local backup_extension="${3}"
 
   local daysago
   local backup_file
@@ -55,6 +55,10 @@ function _get_backup_filename() {
       fi
     fi
   fi
+
+  log_event "debug" "backup_get_filename: backup_file=${backup_file}" "false"
+  log_event "debug" "backup_get_filename: backup_file_old=${backup_file_old}" "false"
+  
   # Return
   if [[ ${backup_date} == "old" ]]; then
     echo "${backup_file_old}"
@@ -149,8 +153,8 @@ function backup_server_config() {
   if [[ -n ${backup_path} ]]; then
 
     backup_prefix_name="${bk_sup_type}-${backup_type}-files"
-    backup_file="$(_get_backup_filename "${backup_prefix_name}" "actual" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
-    backup_file_old="$(_get_backup_filename "${backup_prefix_name}" "old" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
+    backup_file="$(backup_get_filename "${backup_prefix_name}" "actual" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
+    backup_file_old="$(backup_get_filename "${backup_prefix_name}" "old" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
 
     # Log
     display --indent 6 --text "- Files backup for ${YELLOW}${bk_sup_type}${ENDCOLOR}"
@@ -250,7 +254,7 @@ function backup_all_server_configs() {
 
   log_subsection "Backup Server Config"
 
-  # TAR Webserver Config Files
+  # TAR Webserver config files
   if [[ ! -d ${WSERVER} ]]; then
     log_event "warning" "WSERVER is not defined! Skipping webserver config files backup ..." "false"
 
@@ -268,11 +272,8 @@ function backup_all_server_configs() {
 
   fi
 
-  # TAR PHP Config Files
-  if [[ ! -d ${PHP_CONF_DIR} ]]; then
-    log_event "warning" "PHP_CONF_DIR is not defined! Skipping PHP config files backup ..." "false"
-
-  else
+  # TAR PHP config files
+  if [[ -d ${PHP_CONF_DIR} ]]; then
 
     directory_name="$(basename "${PHP_CONF_DIR}")"
     directory_path="$(dirname "${PHP_CONF_DIR}")"
@@ -286,11 +287,8 @@ function backup_all_server_configs() {
 
   fi
 
-  # TAR MySQL Config Files
-  if [[ ! -d ${MYSQL_CONF_DIR} ]]; then
-    log_event "warning" "MYSQL_CONF_DIR is not defined! Skipping MySQL config files backup ..." "false"
-
-  else
+  # TAR MySQL config files
+  if [[ -d ${MYSQL_CONF_DIR} ]]; then
 
     directory_name="$(basename "${MYSQL_CONF_DIR}")"
     directory_path="$(dirname "${MYSQL_CONF_DIR}")"
@@ -304,11 +302,8 @@ function backup_all_server_configs() {
 
   fi
 
-  # TAR Let's Encrypt Config Files
-  if [[ ! -d ${LENCRYPT_CONF_DIR} ]]; then
-    log_event "warning" "LENCRYPT_CONF_DIR is not defined! Skipping Letsencrypt config files backup ..." "false"
-
-  else
+  # TAR Let's Encrypt config files
+  if [[ -d ${LENCRYPT_CONF_DIR} ]]; then
 
     directory_name="$(basename "${LENCRYPT_CONF_DIR}")"
     directory_path="$(dirname "${LENCRYPT_CONF_DIR}")"
@@ -322,11 +317,8 @@ function backup_all_server_configs() {
 
   fi
 
-  # TAR Devops Config Files
-  if [[ ! -d ${BROLIT_CONFIG_PATH} ]]; then
-    log_event "warning" "BROLIT_CONFIG_PATH is not defined! Skipping DevOps config files backup ..." "false"
-
-  else
+  # TAR Brolit config files
+  if [[ -d ${BROLIT_CONFIG_PATH} ]]; then
 
     directory_name="$(basename "${BROLIT_CONFIG_PATH}")"
     directory_path="$(dirname "${BROLIT_CONFIG_PATH}")"
@@ -375,8 +367,8 @@ function backup_mailcow() {
   if [[ -n ${MAILCOW_DIR} ]]; then
 
     backup_prefix_name="${backup_type}-files"
-    backup_file="$(_get_backup_filename "${backup_prefix_name}" "actual" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
-    backup_file_old="$(_get_backup_filename "${backup_prefix_name}" "old" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
+    backup_file="$(backup_get_filename "${backup_prefix_name}" "actual" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
+    backup_file_old="$(backup_get_filename "${backup_prefix_name}" "old" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
 
     log_event "info" "Trying to make a backup of ${MAILCOW_DIR} ..." "false"
     display --indent 6 --text "- Making ${YELLOW}${MAILCOW_DIR}${ENDCOLOR} backup" --result "DONE" --color GREEN
@@ -599,8 +591,8 @@ function backup_project_files() {
 
   # Backups file names
   backup_prefix_name="${directory_to_backup}_${backup_type}-files"
-  backup_file="$(_get_backup_filename "${backup_prefix_name}" "actual" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
-  backup_file_old="$(_get_backup_filename "${backup_prefix_name}" "old" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
+  backup_file="$(backup_get_filename "${backup_prefix_name}" "actual" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
+  backup_file_old="$(backup_get_filename "${backup_prefix_name}" "old" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
 
   # Create directory structure
   storage_create_dir "${SERVER_NAME}"
@@ -755,9 +747,10 @@ function backup_all_databases() {
 
   display --indent 6 --text "- Initializing database backup script" --result "DONE" --color GREEN
 
+  # Mysql backup
   if [[ ${PACKAGES_MARIADB_STATUS} == "enabled" ]] || [[ ${PACKAGES_MYSQL_STATUS} == "enabled" ]]; then
 
-    # Get MySQL DBS
+    # Get MySQL databases
     mysql_databases="$(mysql_list_databases "all")"
 
     # Count MySQL databases
@@ -782,9 +775,10 @@ function backup_all_databases() {
 
   fi
 
+  # Postgres backup
   if [[ ${PACKAGES_POSTGRES_STATUS} == "enabled" ]]; then
 
-    # Get PostgreSQL DBS
+    # Get PostgreSQL databases
     psql_databases="$(postgres_list_databases "all")"
 
     # Count PostgreSQL databases
@@ -909,9 +903,9 @@ function backup_project_database() {
 
   # Backups file names
   backup_prefix_name="${database}_database"
-  dump_file="$(_get_backup_filename "${backup_prefix_name}" "actual" "sql")"
-  backup_file="$(_get_backup_filename "${backup_prefix_name}" "actual" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
-  backup_file_old="$(_get_backup_filename "${backup_prefix_name}" "old" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
+  dump_file="$(backup_get_filename "${backup_prefix_name}" "actual" "sql")"
+  backup_file="$(backup_get_filename "${backup_prefix_name}" "actual" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
+  backup_file_old="$(backup_get_filename "${backup_prefix_name}" "old" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
 
   # Database engine
   if [[ ${db_engine} == "mysql" ]]; then
