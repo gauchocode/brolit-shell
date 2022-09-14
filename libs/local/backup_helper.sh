@@ -857,10 +857,11 @@ function backup_databases() {
 
       else
 
-        #error_type=""
         got_error=1
+        error_type="database_backup"
 
         log_event "error" "Something went wrong making a backup of ${database}." "false"
+        log_event "debug" "backup_project_database result: ${backup_file}." "false"
 
       fi
 
@@ -958,11 +959,7 @@ function backup_project_database() {
         rm --force "${BROLIT_TMP_DIR}/${NOW}/${backup_file}"
 
         # Return
-        ## output format: backupfile backup_file_size
-        #echo "${BROLIT_TMP_DIR}/${NOW}/${backup_file};${backup_file_size}"
-        echo "${backup_file};${backup_file_size}"
-
-        return 0
+        echo "${backup_file};${backup_file_size}" && return 0
 
       fi
 
@@ -1000,7 +997,12 @@ function backup_project() {
   local project_domain="${1}"
   local backup_type="${2}"
 
+  local db_stage
+  local db_name
+  local db_engine
+  local backup_file
   local project_name
+  local project_type
   local project_config_file
 
   # Backup files
@@ -1046,7 +1048,7 @@ function backup_project() {
 
         # Backup database
         log_subsection "Backup Project Database"
-        backup_project_database "${db_name}" "mysql"
+        backup_file="$(backup_project_database "${db_name}" "mysql")"
 
       else
 
@@ -1062,7 +1064,7 @@ function backup_project() {
 
           # Backup database
           log_subsection "Backup Project Database"
-          backup_project_database "${db_name}" "postgres"
+          backup_file="$(backup_project_database "${db_name}" "postgres")"
 
         else
 
