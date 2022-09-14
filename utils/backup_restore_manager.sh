@@ -276,7 +276,8 @@ function subtasks_backup_handler() {
 
   databases)
 
-    backup_project_database "${DBNAME}" "mysql"
+    # TODO: postgres support
+    backup_file="$(backup_project_database "${DBNAME}" "mysql")"
 
     exit
     ;;
