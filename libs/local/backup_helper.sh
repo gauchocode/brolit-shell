@@ -965,7 +965,7 @@ function backup_project_database() {
 
         got_error=1
         error_type="upload_backup"
-        error_msg="Error uploading file: ${backup_file}"
+        error_msg="Error uploading file: ${backup_file}. Upload result: ${upload_result}"
 
         log_event "error" "${error_msg}" "false"
 

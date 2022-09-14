@@ -209,6 +209,8 @@ function storage_upload_backup() {
 
     [[ -n ${error_type} ]] && echo "${error_type}" && return 1
 
+    return 0
+
 }
 
 ################################################################################
