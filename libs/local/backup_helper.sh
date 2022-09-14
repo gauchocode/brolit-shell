@@ -961,9 +961,25 @@ function backup_project_database() {
         # Return
         echo "${backup_file};${backup_file_size}" && return 0
 
+      else
+
+        got_error=1
+        error_type="upload_backup"
+        error_msg="Error uploading file: ${backup_file}"
+
+        log_event "error" "${error_msg}" "false"
+
+        return 1
+
       fi
 
     else
+
+      got_error=1
+      error_type="compress_backup"
+      error_msg="Error compressing file: ${dump_file}"
+
+      log_event "error" "${error_msg}" "false"
 
       return 1
 
@@ -971,9 +987,11 @@ function backup_project_database() {
 
   else
 
-    ERROR=true
-    ERROR_MSG="Error creating dump file for database: ${database}"
-    log_event "error" "${ERROR_MSG}" "false"
+    got_error=1
+    error_type="export_database"
+    error_msg="Error creating dump file for database: ${database}"
+
+    log_event "error" "${error_msg}" "false"
 
     return 1
 

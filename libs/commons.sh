@@ -1464,6 +1464,8 @@ function compress() {
   local file_output="${3}"
   local exclude_parameters="${4}"
 
+  local backup_file_size
+
   # Only for better displaying
   if [[ ${to_backup} == "." ]]; then
     to_backup_string="$(basename "${backup_base_dir}")"
@@ -1508,9 +1510,7 @@ function compress() {
     log_event "info" "Backup file test finished ok." "false"
 
     # Return
-    echo "${backup_file_size}"
-
-    return 0
+    echo "${backup_file_size}" && return 0
 
   else
 
