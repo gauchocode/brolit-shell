@@ -243,14 +243,12 @@ function _cloudflare_get_zone_id() {
     if [[ ${exitstatus} -eq 0 && ${zone_id} != "" ]]; then
 
         # Return
-        echo "${zone_id}"
+        echo "${zone_id}" && return 0
 
     else
 
         # Return
-        echo "Domain ${zone_name} not found"
-
-        return 1
+        echo "Domain ${zone_name} not found" && return 1
 
     fi
 
@@ -271,15 +269,14 @@ function _cloudflare_get_record_details() {
     local domain="${1}"
 
     local record_name
+    local root_domain
     local zone_id
     local record_id
 
     record_name="${domain}"
-
     root_domain="$(_get_root_domain "${domain}")"
 
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
-
     record_id="$(_cloudflare_record_exists "${record_name}" "${zone_id}")"
 
     exitstatus=$?
@@ -294,14 +291,12 @@ function _cloudflare_get_record_details() {
         if [[ ${record} == *"\"success\":false"* || ${record} == "" ]]; then
 
             # Return
-            echo "Get record details failed"
-
-            return 1
+            echo "Get record details failed" && return 1
 
         else
 
             # Return JSON
-            echo "{ \"cloudflare_data\": ${record} }"
+            echo "{ \"cloudflare_data\": ${record} }" && return 0
 
         fi
 
@@ -460,14 +455,14 @@ function _nginx_check_installed_version() {
 
     # Check if package is installed
     nginx_installed_pkg="$(sudo dpkg --list | grep -Eo 'nginx-core')"
-    if [[ ${nginx_installed_pkg} != "" ]]; then
+    if [[ -n ${nginx_installed_pkg} ]]; then
 
         # Installed versions
         nginxv="$(nginx -v 2>&1)"
         nginxv="$(_string_remove_spaces "${nginxv}")"
         nginx_installed_version="$(echo "${nginxv}" | cut -d "(" -f 1 | grep -o '[0-9.]*$')"
 
-        if [[ ${nginx_installed_version} != "" ]]; then
+        if [[ -n ${nginx_installed_version} ]]; then
             # Return
             echo "{\"name\":\"nginx\",\"version\":\"${nginx_installed_version}\",\"default\":\"true\"} , "
         fi
@@ -492,12 +487,12 @@ function _apache_check_installed_version() {
 
     # Check if package is installed
     apache2_installed_pkg="$(sudo dpkg --list | grep -Eo 'apache2-bin')"
-    if [[ ${apache2_installed_pkg} != "" ]]; then
+    if [[ -n ${apache2_installed_pkg} ]]; then
 
         # Installed versions
         apache_installed_version="$(apache2 -v | awk -F' ' '{print $3}' | grep -o '[0-9.]*$' | tr '\n' ' ' | cut -d " " -f 1)"
 
-        if [[ ${apache_installed_version} != "" ]]; then
+        if [[ -n ${apache_installed_version} ]]; then
             # Return
             echo "{\"name\":\"apache2\",\"version\":\"${apache_installed_version}\",\"default\":\"true\"} , "
         fi
@@ -548,7 +543,7 @@ function _certbot_certificate_get_valid_days() {
     cert_days_output="$(certbot certificates --domain "${domain}" 2>&1)"
     cert_days="$(echo "${cert_days_output}" | grep -Eo 'VALID: [0-9]+[0-9]' | cut -d ' ' -f 2)"
 
-    if [[ ${cert_days} == "" ]]; then
+    if [[ -z ${cert_days} ]]; then
 
         # Return
         echo "no-cert"
@@ -607,9 +602,6 @@ function _cloudflare_domain_exists() {
 
 function _cloudflare_record_exists() {
 
-    # $1 = ${domain}
-    # $2 = ${zone_id}
-
     local domain="${1}"
     local zone_id="${2}"
 
@@ -619,20 +611,14 @@ function _cloudflare_record_exists() {
     # Retrieve record_id
     record_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}" -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*')"
 
-    exitstatus=$?
-    if [[ ${record_id} == "" ]]; then
+    #exitstatus=$?
+    [[ -z ${record_id} ]] && return 1
 
-        return 1
+    # Clean output
+    record_id="$(echo "${record_id}" | tr -d '\n')"
 
-    else
-
-        # Clean output
-        record_id="$(echo "${record_id}" | tr -d '\n')"
-
-        # Return
-        echo "${record_id}"
-
-    fi
+    # Return
+    echo "${record_id}"
 
 }
 
@@ -770,7 +756,7 @@ function _get_root_domain() {
         root_domain=${domain_no_ext##*.}${domain_extension}
 
         # Return
-        echo "${root_domain}"
+        echo "${root_domain}" && return 0
 
     else
 
@@ -1063,16 +1049,12 @@ function _project_get_brolit_config_file() {
     if [[ -e ${project_config_file} ]]; then
 
         # Return
-        echo "${project_config_file}"
-
-        return 0
+        echo "${project_config_file}" && return 0
 
     else
 
         # Return
-        echo "false"
-
-        return 1
+        echo "false" && return 1
 
     fi
 
@@ -1802,9 +1784,17 @@ function _sites_directories() {
 
 }
 
-function dropbox_get_site_backups() {
+################################################################################
+# Get site backups
+#
+# Arguments:
+#   ${1} = ${chosen_project}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-    # ${1} = ${chosen_project}
+function dropbox_get_site_backups() {
 
     local chosen_project="${1}"
 
@@ -2029,7 +2019,7 @@ PROJECTS_PATH="$(_json_read_field "${BROLIT_CONFIG_FILE}" "PROJECTS.path")"
 
 # Version
 BROLIT_VERSION="3.2.3"
-BROLIT_LITE_VERSION="3.2.3-109"
+BROLIT_LITE_VERSION="3.2.3-111"
 
 ################################################################################
 # Show firewall status
@@ -2060,7 +2050,7 @@ function firewall_show_status() {
     # String to JSON
     json_string="$(_jsonify_output "key-value" "ufw-status" "${ufw_status}")"
 
-    if [[ ${ufw_status_details} != "" ]]; then
+    if [[ -n ${ufw_status_details} ]]; then
 
         json_string_d="$(_jsonify_output "value-list" "${ufw_status_details}")"
 

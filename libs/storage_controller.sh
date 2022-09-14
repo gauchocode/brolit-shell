@@ -179,9 +179,13 @@ function storage_upload_backup() {
     local file_to_upload="${1}"
     local remote_directory="${2}"
 
+    local error_type
+
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
         dropbox_upload "${file_to_upload}" "${remote_directory}"
+
+        [[ $? -eq 1 ]] && error_type="dropbox"
 
     fi
     if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
@@ -199,10 +203,11 @@ function storage_upload_backup() {
 
         # TODO: check if files need to be compressed (maybe an option?).
 
+        [[ $? -eq 1 ]] && error_type="rsync,${error_type}"
+
     fi
 
-    storage_result=$?
-    [[ ${storage_result} -eq 1 ]] && return 1
+    [[ -n ${error_type} ]] && echo "${error_type}" && return 1
 
 }
 
@@ -222,21 +227,26 @@ function storage_download_backup() {
     local file_to_download="${1}"
     local remote_directory="${2}"
 
-    local download_result
+    local error_type
+    local local_result
+    local dropbox_result
 
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
         dropbox_download "${file_to_download}" "${remote_directory}"
+        dropbox_result=$?
+        error_type="dropbox"
 
     fi
     if [[ ${BACKUP_RCLONE_STATUS} == "enabled" ]]; then
 
         rclone_download "${file_to_download}" "${remote_directory}"
+        local_result=$?
+        error_type="rsync"
 
     fi
 
-    download_result=$?
-    [[ ${download_result} -eq 1 ]] && return 1
+    [[ ${dropbox_result} -eq 1 || ${local_result} -eq 1 ]] && echo "${error_type}" && return 1
 
 }
 
@@ -254,11 +264,14 @@ function storage_delete_backup() {
 
     local file_to_delete="${1}"
 
-    local delete_result
+    local dropbox_result
+    local local_result=$?
 
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
         dropbox_delete "${file_to_delete}" "false"
+        dropbox_result=$?
+        error_type="dropbox"
 
     fi
     if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
@@ -266,10 +279,11 @@ function storage_delete_backup() {
         rm --recursive --force "${file_to_delete}"
 
         # TODO: check if files need to be compressed (maybe an option?).
+        local_result=$?
+        error_type="rsync"
 
     fi
 
-    delete_result=$?
-    [[ ${delete_result} -eq 1 ]] && return 1
+    [[ ${dropbox_result} -eq 1 || ${local_result} -eq 1 ]] && echo "${error_type}" && return 1
 
 }

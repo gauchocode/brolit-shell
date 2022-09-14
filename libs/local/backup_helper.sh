@@ -58,7 +58,7 @@ function backup_get_filename() {
 
   log_event "debug" "backup_get_filename: backup_file=${backup_file}" "false"
   log_event "debug" "backup_get_filename: backup_file_old=${backup_file_old}" "false"
-  
+
   # Return
   if [[ ${backup_date} == "old" ]]; then
     echo "${backup_file_old}"
@@ -141,14 +141,15 @@ function backup_server_config() {
   local backup_path="${3}"
   local directory_to_backup="${4}"
 
-  local got_error
+  #local got_error
   local backup_file
   local backup_file_old
   local daysago
   local remote_path
   local backup_keep_daily
+  local upload_result
 
-  got_error=0
+  #got_error=0
 
   if [[ -n ${backup_path} ]]; then
 
@@ -181,7 +182,7 @@ function backup_server_config() {
       storage_create_dir "${SERVER_NAME}/server-config/${bk_sup_type}"
 
       # Uploading backup files
-      storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${remote_path}"
+      upload_result="$(storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${remote_path}")"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
@@ -193,7 +194,20 @@ function backup_server_config() {
         rm --force "${BROLIT_TMP_DIR}/${NOW}/${backup_file}"
 
         # Return
-        echo "${backup_file_size}"
+        echo "${backup_file_size}" && return 0
+
+      else
+
+        # Log
+        log_event "debug" "storage_upload_backup return: ${upload_result}" "false"
+
+        # Error
+        #got_error=1
+        error_type="upload_error"
+        error_msg="Error running storage upload backup on: ${upload_result}."
+
+        # Return
+        echo "${error_type}" && return 1
 
       fi
 
@@ -203,12 +217,13 @@ function backup_server_config() {
       clear_previous_lines "1"
       display --indent 6 --text "- Files backup for ${YELLOW}${bk_sup_type}${ENDCOLOR}" --result "FAIL" --color RED
 
+      # Error
+      #got_error=1
+      error_type="compress_error"
       error_msg="Something went wrong making a backup of ${directory_to_backup}."
-      error_type=""
-      got_error=1
 
       # Return
-      echo "${got_error}"
+      echo "${error_type}" && return 1
 
     fi
 
@@ -219,12 +234,13 @@ function backup_server_config() {
     display --indent 6 --text "- Creating backup file" --result "FAIL" --color RED
     display --indent 8 --text "Result: Directory '${backup_path}' doesn't exists" --tcolor RED
 
+    # Error
+    #got_error=1
+    error_type="directory_error"
     error_msg="Directory ${backup_path} doesn't exists."
-    error_type=""
-    got_error=1
 
     # Return
-    echo "${got_error}"
+    echo "${error_type}" && return 1
 
   fi
 
@@ -409,14 +425,14 @@ function backup_mailcow() {
 
         log_event "info" "${MAILCOW_TMP_BK}/${backup_file} backup created" "false"
 
-        # New folder with $SERVER_NAME
+        # New folder with ${SERVER_NAME}
         storage_create_dir "${SERVER_NAME}"
         storage_create_dir "${SERVER_NAME}/${backup_type}"
 
         storage_path="/${SERVER_NAME}/projects-online/${backup_type}"
 
         # Upload new backup
-        storage_upload_backup "${MAILCOW_TMP_BK}/${backup_file}" "${storage_path}"
+        upload_result="$(storage_upload_backup "${MAILCOW_TMP_BK}/${backup_file}" "${storage_path}")"
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
@@ -436,16 +452,14 @@ function backup_mailcow() {
 
     else
 
-      log_event "error" "Can't make the backup!" "false"
-
-      return 1
+      log_event "error" "Can't make the backup!" "false" &&
+        return 1
 
     fi
 
   else
 
     log_event "error" "Directory '${MAILCOW_DIR}' doesnt exists!" "false"
-
     return 1
 
   fi
@@ -634,7 +648,7 @@ function backup_project_files() {
       log_event "info" "Backup ${BROLIT_TMP_DIR}/${NOW}/${backup_file} created, final size: ${backup_file_size}" "false"
 
       # Upload backup
-      storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${remote_path}"
+      upload_result="$(storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${remote_path}")"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
@@ -649,7 +663,7 @@ function backup_project_files() {
         log_event "info" "Temp backup deleted from server" "false"
 
         # Return
-        echo "${backup_file_size}"
+        echo "${backup_file_size}" && return 0
 
       fi
 
@@ -662,12 +676,6 @@ function backup_project_files() {
       return 1
 
     fi
-
-  fi
-
-  if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
-
-    storage_upload_backup "${backup_path}/${directory_to_backup}" "${remote_path}"
 
   fi
 
@@ -729,7 +737,6 @@ function backup_duplicity() {
 
 function backup_all_databases() {
 
-  local got_error
   local error_msg
   local error_type
   local database_backup_index
@@ -767,9 +774,8 @@ function backup_all_databases() {
     backup_databases_status=$?
     if [[ ${backup_databases_status} -eq 1 ]]; then
 
-      got_error="true"
-      error_msg="${error_msg}${error_msg:+\n}MySQL backup failed"
       error_type="${error_type}${error_type:+\n}MySQL"
+      error_msg="${error_msg}${error_msg:+\n}MySQL backup failed"
 
     fi
 
@@ -795,15 +801,14 @@ function backup_all_databases() {
     backup_databases_status=$?
     if [[ ${backup_databases_status} -eq 1 ]]; then
 
-      got_error="true"
-      error_msg="${error_msg}${error_msg:+\n}PostgreSQL backup failed"
       error_type="${error_type}${error_type:+\n}PostgreSQL"
+      error_msg="${error_msg}${error_msg:+\n}PostgreSQL backup failed"
 
     fi
 
   fi
 
-  return 0
+  [[ -n ${error_type} ]] && echo "${error_type}" && return 1
 
 }
 
@@ -939,7 +944,8 @@ function backup_project_database() {
       storage_create_dir "/${SERVER_NAME}/projects-online/database/${database}"
 
       # Upload database backup
-      storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "/${SERVER_NAME}/projects-online/database/${database}"
+      remote_path="/${SERVER_NAME}/projects-online/database/${database}"
+      upload_result="$(storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${remote_path}")"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
