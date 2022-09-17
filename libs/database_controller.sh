@@ -9,6 +9,44 @@
 ################################################################################
 
 ################################################################################
+# List databases
+#
+# Arguments:
+#  $1 - ${stage} - Options: all, prod, dev, test, stage
+#  $2 - ${database_engine}
+#
+# Outputs:
+#  ${databases}, 1 on error.
+################################################################################
+
+function database_list_all() {
+
+    local stage="${1}"
+    local database_engine="${2}"
+
+    case ${database_engine} in
+
+    mysql)
+
+        mysql_list_databases "${stage}"
+        return $?
+        ;;
+
+    postgres)
+
+        postgres_list_databases "${stage}"
+        return $?
+        ;;
+
+    *)
+        return 1
+        ;;
+
+    esac
+
+}
+
+################################################################################
 # Drop database
 #
 # Arguments:
