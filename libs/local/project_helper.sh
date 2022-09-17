@@ -1730,14 +1730,14 @@ function project_delete_database() {
   local chosen_database
 
   # List databases
-  databases="$(mysql_list_databases "all")"
-  chosen_database="$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database_name}" 3>&1 1>&2 2>&3)"
+  databases="$(database_list_all "all" "${database_engine}")"
+  chosen_database="$(whiptail --title "DATABASES" --menu "Choose a Database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database_name}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Log
-    log_subsection "Delete Database"
+    log_subsection "Delete Database (${database_engine})"
 
     # Remove stage from database name
     project_name="${chosen_database%_*}"
@@ -1792,8 +1792,8 @@ function project_delete_database() {
 
         # Log
         clear_previous_lines "2"
-        log_event "warning" "Aborting MySQL user deletion ..." "false"
-        display --indent 6 --text "- Deleting MySQL user" --result "SKIPPED" --color YELLOW
+        log_event "warning" "Aborting database user deletion ..." "false"
+        display --indent 6 --text "- Deleting database user" --result "SKIPPED" --color YELLOW
 
         break
 
