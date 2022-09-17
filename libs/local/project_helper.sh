@@ -840,6 +840,9 @@ function project_get_configured_database_engine() {
   local project_path="${1}"
   local project_type="${2}"
 
+  local db_engine
+  local exitstatus
+
   # First try to read from brolit project config
   db_engine="$(project_get_brolit_config_var "${project_path}" "project[].database[].engine")"
 
@@ -850,34 +853,37 @@ function project_get_configured_database_engine() {
     wordpress)
 
       # Return
-      echo "mysql"
+      echo "mysql" && return 0
 
       ;;
 
     laravel)
 
       db_engine="$(project_get_config_var "${project_path}/.env" "DB_CONNECTION")"
+      exitstatus=$?
 
       # Return
-      echo "${db_engine}"
+      echo "${db_engine}" && return ${exitstatus}
 
       ;;
 
     php)
 
       db_engine="$(project_get_config_var "${project_path}/.env" "DB_CONNECTION")"
+      exitstatus=$?
 
       # Return
-      echo "${db_engine}"
+      echo "${db_engine}" && return ${exitstatus}
 
       ;;
 
     nodejs)
 
       db_engine="$(project_get_config_var "${project_path}/.env" "DB_CONNECTION")"
+      exitstatus=$?
 
       # Return
-      echo "${db_engine}"
+      echo "${db_engine}" && return ${exitstatus}
 
       ;;
 
@@ -893,7 +899,8 @@ function project_get_configured_database_engine() {
 
   else
 
-    echo "${db_engine}"
+    # TODO: check if is mysql or postgres
+    echo "${db_engine}" && return 0
 
   fi
 
@@ -1717,6 +1724,7 @@ function project_delete_database() {
 
   local database_name="${1}"
   local database_user="${2}"
+  local database_engine="${3}"
 
   local databases
   local chosen_database
@@ -1731,34 +1739,27 @@ function project_delete_database() {
     # Log
     log_subsection "Delete Database"
 
-    BK_TYPE="database"
-
     # Remove stage from database name
     project_name="${chosen_database%_*}"
 
-    if [[ -z ${database_user} ]]; then
+    # TODO: get user from project config
+    [[ -z ${database_user} ]] && database_user="${project_name}_user"
 
-      database_user="${project_name}_user"
-
-    fi
-
-    # TODO: check database engine
     # Make database backup
-    backup_file="$(backup_project_database "${chosen_database}" "mysql")"
+    backup_file="$(backup_project_database "${chosen_database}" "${database_engine}")"
 
-    if [[ ${backup_file} != "" ]]; then
+    if [[ -n ${backup_file} ]]; then
 
       # Moving deleted project backups to another directory
       storage_create_dir "/${SERVER_NAME}/projects-offline"
-      storage_create_dir "/${SERVER_NAME}/projects-offline/${BK_TYPE}"
-      storage_move "/${SERVER_NAME}/projects-online/${BK_TYPE}/${chosen_database}" "/${SERVER_NAME}/projects-offline/${BK_TYPE}"
+      storage_create_dir "/${SERVER_NAME}/projects-offline/database"
+      storage_move "/${SERVER_NAME}/projects-online/database/${chosen_database}" "/${SERVER_NAME}/projects-offline/database"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        # TODO: check database engine
         # Delete project database
-        mysql_database_drop "${chosen_database}"
+        database_drop "${chosen_database}" "${database_engine}"
 
         # Send notification
         send_notification "⚠️ ${SERVER_NAME}" "Project database'${chosen_database}' deleted!"
@@ -1767,7 +1768,6 @@ function project_delete_database() {
 
     fi
 
-    # TODO: check database engine
     # Delete mysql user
     while true; do
 
@@ -1782,7 +1782,7 @@ function project_delete_database() {
         clear_previous_lines "2"
 
         # User delete
-        mysql_user_delete "${database_user}" "localhost"
+        database_user_delete "${database_user}" "localhost" "${database_engine}"
 
         break
 
@@ -1836,14 +1836,11 @@ function project_delete() {
   log_section "Project Delete"
 
   if [[ -z ${project_domain} ]]; then
-
     # Folder where sites are hosted: ${PROJECTS_PATH}
     menu_title="PROJECT DIRECTORY TO DELETE"
     directory_browser "${menu_title}" "${PROJECTS_PATH}"
-
     # Directory_broser returns: " ${filepath}"/"${filename}
     if [[ -z ${filepath} ]]; then
-
       # Log
       log_event "info" "Files deletion skipped ..." "false"
       display --indent 6 --text "- Selecting directory for deletion" --result "SKIPPED" --color YELLOW
@@ -1851,10 +1848,8 @@ function project_delete() {
       files_skipped="true"
 
     else
-
       # Removing last slash from string
       project_domain=${filename%/}
-
     fi
 
   else
@@ -1889,18 +1884,13 @@ function project_delete() {
 
       # Cloudflare Manager
       project_domain="$(whiptail --title "CLOUDFLARE MANAGER" --inputbox "Do you want to delete the Cloudflare entries for the followings subdomains?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
-
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
-
         # Delete Cloudflare entries
         project_root_domain="$(domain_get_root "${project_domain}")"
         cloudflare_delete_record "${project_root_domain}" "${project_domain}" "A"
-
       else
-
         log_event "info" "Cloudflare entries not deleted. Skipped by user." "false"
-
       fi
 
     else
@@ -1914,11 +1904,14 @@ function project_delete() {
   fi
 
   # Delete Database
-  if [[ ${PACKAGES_MYSQL_STATUS} == "enabled" || ${PACKAGES_POSTGRES_STATUS} == "enabled" ]]; then
-    project_delete_database "${project_db_name}" "${project_db_user}"
+  project_db_engine="$(project_get_configured_database_engine "${PROJECTS_PATH}/${project_domain}" "${project_type}")"
+  if [[ $? -eq 0 ]]; then
+    project_delete_database "${project_db_name}" "${project_db_user}" "${project_db_engine}"
+  else
+    log_event "warning" "Can not determine database engine." "false"
   fi
 
-  # TODO: upload config_file to dropbox
+  # TODO: backup project config file, maybe inside /site ?
 
   # Delete config file
   project_config="${BROLIT_CONFIG_PATH}/${project_domain}_conf.json"
