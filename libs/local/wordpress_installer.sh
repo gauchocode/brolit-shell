@@ -95,9 +95,7 @@ function wordpress_project_install() {
 
   log_subsection "WordPress Install (clean)"
 
-  if [[ -z ${project_root_domain} ]]; then
-    project_root_domain="$(domain_get_root "${project_domain}")"
-  fi
+  [[ -z ${project_root_domain} ]] && project_root_domain="$(domain_get_root "${project_domain}")"
 
   if [[ ! -d ${project_path} ]]; then
     # Create project directory
@@ -111,8 +109,7 @@ function wordpress_project_install() {
     display --indent 8 --text "Destination folder '${project_path}' already exist"
     log_event "error" "Destination folder '${project_path}' already exist, aborting ..." "false"
 
-    # Return
-    return 1
+    exit 1
 
   fi
 
@@ -224,7 +221,7 @@ function wordpress_project_copy() {
 
   # We get the database name from the copied wp-config.php
   source_wpconfig="${folder_to_install}/${copy_project}"
-  db_tocopy="$(cat ${source_wpconfig}/wp-config.php | grep DB_NAME | cut -d \' -f 4)"
+  db_tocopy="$(cat "${source_wpconfig}"/wp-config.php | grep DB_NAME | cut -d \' -f 4)"
   bk_file="db-${db_tocopy}.sql"
 
   # Make a database Backup
