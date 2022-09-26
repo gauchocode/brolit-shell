@@ -44,12 +44,10 @@ function telegram_send_notification() {
 
 	# notif_sound = 1 for silent notification (without sound)
 	notif_sound=0
-	if [[ ${notification_type} -eq 1 ]]; then
-		notif_sound=1
-	fi
+	[[ ${notification_type} -eq 1 ]] && notif_sound=1
 
 	# Notification text
-	notif_text="<b>${notification_title}: </b><pre>${notification_content}</pre>"
+	notif_text="<b>${notification_title}: </b>${notification_content}"
 
 	# Log
 	log_event "info" "Sending Telegram notification ..." "false"
@@ -62,7 +60,7 @@ function telegram_send_notification() {
 	if [[ ${telegram_notif_result} == "true" ]]; then
 
 		# Log on success
-		log_event "info" "Telegram notification sent!"
+		log_event "info" "Telegram notification sent." "false"
 		display --indent 6 --text "- Sending Telegram notification" --result "DONE" --color GREEN
 
 		return 0
