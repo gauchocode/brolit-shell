@@ -131,19 +131,18 @@ function project_is_ignored() {
 
   local project="${1}" #string
 
-  ignored_projects_list="$(string_remove_spaces "${IGNORED_PROJECTS_LIST}")"
-  ignored_projects_list="$(echo "${ignored_projects_list}" | tr '\n' ',')"
+  local ignored_list
+  local excluded_projects_array
+
+  ignored_list="$(string_remove_spaces "${IGNORED_PROJECTS_LIST}")"
+  ignored_list="$(echo "${ignored_list}" | tr '\n' ',')"
 
   # String to Array
-  IFS="," read -a excluded_projects_array <<<"${ignored_projects_list}"
+  IFS="," read -r -a excluded_projects_array <<<"${ignored_list}"
   for i in "${excluded_projects_array[@]}"; do
     :
 
-    if [[ ${project} == "${i}" ]]; then
-
-      return 1
-
-    fi
+    [[ ${project} == "${i}" ]] && return 1
 
   done
 
@@ -176,9 +175,7 @@ function project_ask_stage() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Return
-    echo "${project_stage}"
-
-    return 0
+    echo "${project_stage}" && return 0
 
   else
 
@@ -215,7 +212,7 @@ function project_ask_name() {
     log_event "info" "Project name: ${project_name}" "false"
 
     # Return
-    echo "${project_name}"
+    echo "${project_name}" && return 0
 
   else
 
@@ -315,16 +312,10 @@ function project_ask_port() {
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
-
     # Return
-    echo "${proxy_port}"
-
-    return 0
-
+    echo "${proxy_port}" && return 0
   else
-
     return 1
-
   fi
 
 }
@@ -343,16 +334,16 @@ function project_ask_folder_to_install() {
 
   local folder_to_install="${1}"
 
+  local exitstatus
+
   if [[ -z ${folder_to_install} ]]; then
 
     folder_to_install="$(whiptail --title "Folder to work with" --inputbox "Please select the project folder you want to work with:" 10 60 "${folder_to_install}" 3>&1 1>&2 2>&3)"
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
-
       log_event "info" "Folder to work with: ${folder_to_install}" "false"
-
       # Return
-      echo "${folder_to_install}"
+      echo "${folder_to_install}" && return 0
 
     else
       return 1
@@ -360,11 +351,9 @@ function project_ask_folder_to_install() {
     fi
 
   else
-
     log_event "info" "Folder to install: ${folder_to_install}" "false"
-
     # Return
-    echo "${folder_to_install}"
+    echo "${folder_to_install}" && return 0
 
   fi
 
@@ -830,6 +819,7 @@ function project_get_brolit_config_file() {
 # Arguments:
 #  $1 = ${project_path}
 #  $2 = ${project_type}
+#  $3 = ${project_install_type}
 #
 # Outputs:
 #   ${db_engine} if ok, 1 on error.
@@ -839,9 +829,12 @@ function project_get_configured_database_engine() {
 
   local project_path="${1}"
   local project_type="${2}"
+  local project_install_type="${3}"
 
   local db_engine
   local exitstatus
+
+  # TODO: implements ${project_install_type}
 
   # First try to read from brolit project config
   db_engine="$(project_get_brolit_config_var "${project_path}" "project[].database[].engine")"
@@ -1480,16 +1473,18 @@ function project_install() {
   local project_stage="${5}"
   local project_install_mode="${6}" # clean or copy
 
+  local cert_path
+  local suggested_stage
   local project_root_domain
   local project_secondary_subdomain
+
+  log_section "Project Installer (${project_type})"
 
   # Project Type
   if [[ -z ${project_type} ]]; then
     project_type="$(project_ask_type "")"
     [[ $? -eq 1 ]] && return 1
   fi
-
-  log_section "Project Installer (${project_type})"
 
   # Project Domain
   if [[ -z ${project_domain} ]]; then
@@ -1502,17 +1497,19 @@ function project_install() {
 
   # Project Path
   project_path="${dir_path}/${project_domain}"
-
-  # Project root domain
-  project_root_domain="$(domain_get_root "${project_domain}")"
+  if [[ -f ${project_path} ]]; then
+    # Log
+    display --indent 6 --text "- Creating WordPress project" --result "FAIL" --color RED
+    display --indent 8 --text "Destination folder '${project_path}' already exist"
+    log_event "error" "Destination folder '${project_path}' already exist, aborting ..." "false"
+    return 1
+  fi
 
   # TODO: check when add www.DOMAIN.com and then select other stage != prod
   if [[ -z ${project_stage} ]]; then
-
-    suggested_state="$(domain_get_subdomain_part "${project_domain}")"
-
     # Project stage
-    project_stage="$(project_ask_stage "${suggested_state}")"
+    suggested_stage="$(domain_get_subdomain_part "${project_domain}")"
+    project_stage="$(project_ask_stage "${suggested_stage}")"
     exitstatus=$?
     if [[ ${exitstatus} -eq 1 ]]; then
       # Log
@@ -1520,14 +1517,11 @@ function project_install() {
       display --indent 2 --text "- Asking project stage" --result SKIPPED --color YELLOW
       return 1
     fi
-
   fi
 
   if [[ -z ${project_name} ]]; then
-
-    possible_project_name="$(project_get_name_from_domain "${project_domain}")"
-
     # Project Name
+    possible_project_name="$(project_get_name_from_domain "${project_domain}")"
     project_name="$(project_ask_name "${possible_project_name}")"
     exitstatus=$?
     if [[ ${exitstatus} -eq 1 ]]; then
@@ -1536,8 +1530,10 @@ function project_install() {
       display --indent 2 --text "- Asking project name" --result SKIPPED --color YELLOW
       return 1
     fi
-
   fi
+
+  # Project root domain
+  project_root_domain="$(domain_get_root "${project_domain}")"
 
   [[ ${project_domain} == "${project_root_domain}" ]] && project_domain="www.${project_domain}" && project_secondary_subdomain="${project_root_domain}"
 
@@ -1550,6 +1546,7 @@ function project_install() {
 
     # Execute function
     wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}" "${project_install_mode}"
+    [[ $? -eq 1 ]] && return 1
 
     ;;
 
@@ -1558,12 +1555,14 @@ function project_install() {
     # laravel_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
     # log_event "warning" "Laravel installer should be implemented soon, trying to install like pure php project ..."
     php_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
+    [[ $? -eq 1 ]] && return 1
 
     ;;
 
   php)
 
     php_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
+    [[ $? -eq 1 ]] && return 1
 
     ;;
 
@@ -1571,8 +1570,8 @@ function project_install() {
 
     #display --indent 8 --text "Project Type NodeJS" --tcolor RED
     nodejs_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
+    [[ $? -eq 1 ]] && return 1
 
-    #return 1
     ;;
 
   *)
@@ -1582,18 +1581,13 @@ function project_install() {
 
   esac
 
-  ### NEW ###
-
   # Project domain configuration (webserver+certbot+DNS)
   https_enable="$(project_update_domain_config "${project_domain}" "${project_type}" "")"
 
-  # Startup Script for WordPress installation
-  if [[ ${https_enable} == "true" ]]; then
-    project_site_url="https://${project_domain}"
-  else
-    project_site_url="http://${project_domain}"
-  fi
+  # Define project site url
+  [[ ${https_enable} == "true" ]] && project_site_url="https://${project_domain}" || project_site_url="http://${project_domain}"
 
+  # Startup Script for WordPress installation
   [[ ${EXEC_TYPE} == "default" && ${project_type} == "wordpress" ]] && wpcli_run_startup_script "${project_path}" "${project_site_url}"
 
   # Post-restore/install tasks
@@ -1604,29 +1598,11 @@ function project_install() {
   cert_path=""
   if [[ -d "/etc/letsencrypt/live/${project_domain}" ]]; then
     cert_path="/etc/letsencrypt/live/${project_domain}"
-  else
-    if [[ -d "/etc/letsencrypt/live/www.${project_domain}" ]]; then
-      cert_path="/etc/letsencrypt/live/www.${project_domain}"
-    fi
+  elif [[ -d "/etc/letsencrypt/live/www.${project_domain}" ]]; then
+    cert_path="/etc/letsencrypt/live/www.${project_domain}"
   fi
 
   # Create project config file
-  # Arguments:
-  #  $1 = ${project_path}
-  #  $2 = ${project_name}
-  #  $3 = ${project_stage}
-  #  $4 = ${project_type}
-  #  $5 = ${project_db_status}
-  #  $6 = ${project_db_engine}
-  #  $7 = ${project_db_name}
-  #  $8 = ${project_db_host}
-  #  $9 = ${project_db_user}
-  #  $10 = ${project_db_pass}
-  #  $11 = ${project_prymary_subdomain}
-  #  $12 = ${project_secondary_subdomains}
-  #  $13 = ${project_override_nginx_conf}
-  #  $14 = ${project_use_http2}
-  #  $15 = ${project_certbot_mode}
   project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "${project_type} " "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "${project_secondary_subdomain}" "/etc/nginx/sites-available/${project_domain}" "" "${cert_path}"
 
   # Log
@@ -1636,8 +1612,6 @@ function project_install() {
 
   # Send notification
   send_notification "✅ ${SERVER_NAME}" "New ${project_type} project installation for '${project_domain}' finished ok!" ""
-
-  ### END NEW ###
 
 }
 
@@ -1663,7 +1637,7 @@ function project_delete_files() {
   log_subsection "Delete Files"
 
   # Trying to know project type
-  #project_type=$(project_get_type "${PROJECTS_PATH}/${project_domain}")
+  project_type=$(project_get_type "${PROJECTS_PATH}/${project_domain}")
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -1725,12 +1699,13 @@ function project_delete_database() {
   local database_name="${1}"
   local database_user="${2}"
   local database_engine="${3}"
+  local project_install_type="${4}"
 
   local databases
   local chosen_database
 
   # List databases
-  databases="$(database_list_all "all" "${database_engine}")"
+  databases="$(database_list_all "all" "${database_engine}" "${project_install_type}")"
   chosen_database="$(whiptail --title "DATABASES" --menu "Choose a Database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database_name}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
@@ -1772,7 +1747,7 @@ function project_delete_database() {
     while true; do
 
       echo -e "${B_RED}${ITALIC} > Remove database user: ${database_user}? Maybe is used by another project.${ENDCOLOR}"
-      read -p "Please type 'y' or 'n'" yn
+      read -r -p "Please type 'y' or 'n'" yn
 
       case $yn in
 
@@ -1830,7 +1805,10 @@ function project_delete() {
   local project_domain="${1}"
   local delete_cf_entry="${2}"
 
+  local project_type
   local project_root_domain
+  local project_install_type
+
   local files_skipped="false"
 
   log_section "Project Delete"
@@ -1868,6 +1846,7 @@ function project_delete() {
 
     # Get project type and db credentials before delete files_skipped
     project_type="$(project_get_type "${project_domain}")"
+    project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
     project_db_name=$(project_get_configured_database "${project_domain}" "${project_type}")
     project_db_user=$(project_get_configured_database_user "${project_domain}" "${project_type}")
 
@@ -1904,9 +1883,9 @@ function project_delete() {
   fi
 
   # Delete Database
-  project_db_engine="$(project_get_configured_database_engine "${PROJECTS_PATH}/${project_domain}" "${project_type}")"
+  project_db_engine="$(project_get_configured_database_engine "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")"
   if [[ $? -eq 0 ]]; then
-    project_delete_database "${project_db_name}" "${project_db_user}" "${project_db_engine}"
+    project_delete_database "${project_db_name}" "${project_db_user}" "${project_db_engine}" "${project_install_type}"
   else
     log_event "warning" "Can not determine database engine." "false"
   fi

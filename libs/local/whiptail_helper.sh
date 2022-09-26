@@ -28,13 +28,7 @@ function whiptail_message() {
 
     whiptail --title "${whip_title}" --msgbox "${whip_message}" 15 60 3>&1 1>&2 2>&3
     exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-        return 0
-
-    else
-        return 1
-
-    fi
+    [[ ${exitstatus} -eq 0 ]] && return 0 || return 1
 
 }
 
@@ -56,13 +50,7 @@ function whiptail_message_with_skip_option() {
 
     whiptail --title "${whip_title}" --yesno "${whip_message}" 15 60 3>&1 1>&2 2>&3
     exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-        return 0
-
-    else
-        return 1
-
-    fi
+    [[ ${exitstatus} -eq 0 ]] && return 0 || return 1
 
 }
 
@@ -77,19 +65,21 @@ function whiptail_message_with_skip_option() {
 #  ${whip_return} if ok, 1 on error.
 ################################################################################
 
-function whiptail_imput() {
+function whiptail_input() {
 
     local whip_title="${1}"
     local whip_message="${2}"
+    local whip_default="${3}"
 
     local whip_return
 
-    whip_return="$(whiptail --title "${whip_title}" --inputbox "${whip_message}" 10 60 3>&1 1>&2 2>&3)"
+    whip_return="$(whiptail --title "${whip_title}" --inputbox "${whip_message}" 15 60 "${whip_default}" 3>&1 1>&2 2>&3)"
+
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Return
-        echo "${whip_return}"
+        echo "${whip_return}" && return 0
 
     else
 

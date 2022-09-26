@@ -2216,7 +2216,7 @@ function _mysql_get_database_size() {
 # Show server data
 #
 # Arguments:
-#   none
+#   $1 - ${force}
 #
 # Outputs:
 #   0 if ok, 1 on error.

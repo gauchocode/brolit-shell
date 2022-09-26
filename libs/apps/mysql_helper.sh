@@ -25,13 +25,14 @@ function mysql_ask_root_psw() {
     # Check MySQL credentials on .my.cnf
     if [[ ! -f ${MYSQL_CONF} ]]; then
 
-        mysql_root_pass="$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root password" 10 60 "${mysql_root_pass}" 3>&1 1>&2 2>&3)"
-        
+        #mysql_root_pass="$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root password" 10 60 "${mysql_root_pass}" 3>&1 1>&2 2>&3)"
+        mysql_root_pass="$(whiptail_input "MySQL root password" "Please insert the MySQL root password" "${mysql_root_pass}")"
+
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
             until mysql -u root -p"${mysql_root_pass}" -e ";"; do
-                read -s -p " > Can't connect to MySQL, please re-enter ${MUSER} password: " mysql_root_pass
+                read -r -s -p " > Can't connect to MySQL, please re-enter ${MUSER} password: " mysql_root_pass
 
             done
 
@@ -41,9 +42,7 @@ function mysql_ask_root_psw() {
             echo "password=${mysql_root_pass}" >>/root/.my.cnf
 
             # Return
-            echo "${mysql_root_pass}"
-
-            return 0
+            echo "${mysql_root_pass}" && return 0
 
         else
 
@@ -69,17 +68,16 @@ function mysql_ask_user_db_scope() {
 
     local db_scope="${1}"
 
-    db_scope="$(whiptail --title "MySQL User Scope" --inputbox "Set the scope for the database user. You can use '%' to accept all connections." 10 60 "${db_scope}" 3>&1 1>&2 2>&3)"
-    
+    #db_scope="$(whiptail --title "MySQL User Scope" --inputbox "Set the scope for the database user. You can use '%' to accept all connections." 10 60 "${db_scope}" 3>&1 1>&2 2>&3)"
+    db_scope="$(whiptail_input "MySQL User Scope" "Set the scope for the database user. You can use '%' to accept all connections." "${db_scope}")"
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Return
-        echo "${db_scope}"
-
-        return 0
+        echo "${db_scope}" && return 0
 
     else
+
         return 1
 
     fi
@@ -99,24 +97,26 @@ function mysql_ask_user_db_scope() {
 function mysql_ask_database_selection() {
 
     local databases
-    local chosen_db
+    local chosen_database
 
+    # List databases
     databases="$(mysql_list_databases "all")"
 
-    chosen_db="$(whiptail --title "MYSQL DATABASES" --menu "Choose a Database to work with" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) 3>&1 1>&2 2>&3)"
+    # Database selection menu
+    chosen_database="$(whiptail --title "MYSQL Databases" --menu "Choose a Database to work with" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) 3>&1 1>&2 2>&3)"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        log_event "debug" "Setting chosen_db=${chosen_db}"
+        log_event "debug" "Setting chosen_db=${chosen_database}"
 
         # Return
-        echo "${chosen_db}"
-
-        return 0
+        echo "${chosen_database}" && return 0
 
     else
+
         return 1
+
     fi
 
 }
@@ -209,21 +209,21 @@ function mysql_count_databases() {
 function mysql_list_databases() {
 
     local stage="${1}"
+    local install_type="${2}"
 
+    local mysql_exec
     local databases
 
-    log_event "info" "Listing '${databases}' MySQL databases" "false"
+    [[ ${install_type} == "docker" ]] && mysql_exec="${MYSQL_DOCKER_EXEC}" || mysql_exec="${MYSQL_ROOT}"
+
+    log_event "info" "Listing '${stage}' MySQL databases" "false"
 
     if [[ ${stage} == "all" ]]; then
-
         # Run command
         databases="$(${MYSQL_ROOT} -Bse 'show databases')"
-
     else
-
         # Run command
         databases="$(${MYSQL_ROOT} -Bse 'show databases' | grep "${stage}")"
-
     fi
 
     # Check result
@@ -326,9 +326,7 @@ function mysql_user_create() {
     display --indent 6 --text "- Creating MySQL user ${db_user}"
 
     # DB user host
-    if [[ -z ${db_user_scope} ]]; then
-        db_user_scope="$(mysql_ask_user_db_scope "localhost")"
-    fi
+    [[ -z ${db_user_scope} ]] && db_user_scope="$(mysql_ask_user_db_scope "localhost")"
 
     # Query
     if [[ -z ${db_user_psw} ]]; then
@@ -339,7 +337,7 @@ function mysql_user_create() {
 
     fi
 
-    # Execute command
+    # Execute mysql query
     ${MYSQL_ROOT} -e "${query}"
 
     # Check result
@@ -350,7 +348,7 @@ function mysql_user_create() {
         clear_previous_lines "1"
         display --indent 6 --text "- Creating MySQL user ${db_user}" --result "DONE" --color GREEN
 
-        if [[ ${db_user_psw} != "" ]]; then
+        if [[ -n ${db_user_psw} ]]; then
             display --indent 8 --text "User created with pass: ${db_user_psw}" --tcolor YELLOW
         fi
 
@@ -926,7 +924,7 @@ function mysql_database_export() {
 # Database rename
 #
 # Arguments:
-#  $1 = ${database_old_name}
+
 #  $2 = ${database_new_name}
 #
 # Outputs:

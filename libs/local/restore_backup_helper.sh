@@ -251,10 +251,10 @@ function restore_backup_from_ftp() {
     [[ $? -eq 1 ]] && return 1
 
     # FTP
-    ftp_domain="$(whiptail_imput "FTP SERVER IP/DOMAIN" "Please insert de FTP server IP/DOMAIN. Ex: ftp.domain.com")"
-    ftp_path="$(whiptail_imput "FTP SERVER PATH" "Please insert de FTP server path. Ex: public_html")"
-    ftp_user="$(whiptail_imput "FTP SERVER USER" "Please insert de FTP user.")"
-    ftp_pass="$(whiptail_imput "FTP SERVER PASS" "Please insert de FTP password.")"
+    ftp_domain="$(whiptail_input "FTP SERVER IP/DOMAIN" "Please insert de FTP server IP/DOMAIN. Ex: ftp.domain.com")"
+    ftp_path="$(whiptail_input "FTP SERVER PATH" "Please insert de FTP server path. Ex: public_html")"
+    ftp_user="$(whiptail_input "FTP SERVER USER" "Please insert de FTP user.")"
+    ftp_pass="$(whiptail_input "FTP SERVER PASS" "Please insert de FTP password.")"
 
     ## Download files from ftp
     ftp_download "${ftp_domain}" "${ftp_path}" "${ftp_user}" "${ftp_pass}" "${BROLIT_TMP_DIR}/${project_domain}"
@@ -888,7 +888,7 @@ function restore_backup_files() {
     change_ownership "www-data" "www-data" "${actual_folder}"
 
     # Return
-    echo "${chosen_domain}"
+    echo "${chosen_domain}" && return 0
 
   else
 
