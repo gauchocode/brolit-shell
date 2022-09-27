@@ -1857,6 +1857,7 @@ function menu_cron_script_tasks() {
   local runner_options
   local chosen_type
   local scheduled_time
+  local suggested_cron
 
   runner_options=(
     "01)" "BACKUPS TASKS"
@@ -1875,7 +1876,7 @@ function menu_cron_script_tasks() {
 
       # BACKUPS-TASKS
       suggested_cron="45 00 * * *" # Every day at 00:45 AM
-      scheduled_time="$(whiptail --title "CRON BACKUPS-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)"
+      scheduled_time="$(whiptail_input "CRON BACKUPS-TASKS" "Insert a cron expression for selected task:" "${suggested_cron}")"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -1888,7 +1889,7 @@ function menu_cron_script_tasks() {
 
       # OPTIMIZER-TASKS
       suggested_cron="45 04 * * *" # Every day at 04:45 AM
-      scheduled_time="$(whiptail --title "CRON OPTIMIZER-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)"
+      scheduled_time="$(whiptail_input "CRON OPTIMIZER-TASKS" "Insert a cron expression for selected task:" "${suggested_cron}")"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -1901,7 +1902,7 @@ function menu_cron_script_tasks() {
 
       # WORDPRESS-TASKS
       suggested_cron="45 23 * * *" # Every day at 23:45 AM
-      scheduled_time="$(whiptail --title "CRON WORDPRESS-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)"
+      scheduled_time="$(whiptail_input "CRON WORDPRESS-TASKS" "Insert a cron expression for selected task:" "${suggested_cron}")"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -1914,7 +1915,7 @@ function menu_cron_script_tasks() {
 
       # UPTIME-TASKS
       suggested_cron="55 03 * * *" # Every day at 22:45 AM
-      scheduled_time="$(whiptail --title "CRON SECURITY-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)"
+      scheduled_time="$(whiptail_input "CRON SECURITY-TASKS" "Insert a cron expression for selected task:" "${suggested_cron}")"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -1927,7 +1928,7 @@ function menu_cron_script_tasks() {
 
       # UPTIME-TASKS
       suggested_cron="45 22 * * *" # Every day at 22:45 AM
-      scheduled_time="$(whiptail --title "CRON UPTIME-TASKS" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)"
+      scheduled_time="$(whiptail_input "CRON UPTIME-TASKS" "Insert a cron expression for selected task:" "${suggested_cron}")"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -1940,7 +1941,7 @@ function menu_cron_script_tasks() {
 
       # BROLIT HELPER
       suggested_cron="*/30 * * * *" # Every 30 minutes
-      scheduled_time="$(whiptail --title "CRON BROLIT-HELPER" --inputbox "Insert a cron expression for the task:" 10 60 "${suggested_cron}" 3>&1 1>&2 2>&3)"
+      scheduled_time="$(whiptail_input "CRON BROLIT-HELPER" "Insert a cron expression for selected task:" "${suggested_cron}")"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 

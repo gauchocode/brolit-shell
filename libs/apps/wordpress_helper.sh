@@ -284,7 +284,7 @@ function wp_replace_string_on_database() {
 
   if [[ -z "${db_prefix}" ]]; then
 
-    db_prefix="$(whiptail --title "WordPress DB Prefix" --inputbox "Please insert the WordPress Database Prefix. Example: wp_" 10 60 3>&1 1>&2 2>&3)"
+    db_prefix="$(whiptail_input "WordPress DB Prefix" "Please insert the WordPress Database Prefix. Example: wp_" "")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -299,7 +299,7 @@ function wp_replace_string_on_database() {
 
   fi
 
-  if [[ -z "${target_db}" ]]; then
+  if [[ -z ${target_db} ]]; then
 
     chosen_db="$(mysql_ask_database_selection)"
 
@@ -334,6 +334,8 @@ function wp_replace_string_on_database() {
       display --indent 6 --text "- Running search and replace" --result "DONE" --color GREEN
       display --indent 8 --text "${existing_URL} was replaced by ${new_URL}" --tcolor YELLOW
 
+      return 0
+
     else
 
       # Log
@@ -366,18 +368,18 @@ function wp_ask_url_search_and_replace() {
   local existing_URL
   local new_URL
 
-  if [[ -z "${existing_URL}" ]]; then
+  if [[ -z ${existing_URL} ]]; then
 
-    existing_URL="$(whiptail --title "URL TO CHANGE" --inputbox "Insert the URL you want to change, including http:// or https://" 10 60 3>&1 1>&2 2>&3)"
+    existing_URL="$(whiptail_input "URL TO CHANGE" "Insert the URL you want to change, including http:// or https://" "")"
+
     exitstatus=$?
-
     if [[ ${exitstatus} -eq 0 ]]; then
 
-      if [[ -z "${new_URL}" ]]; then
+      if [[ -z ${new_URL} ]]; then
 
-        new_URL="$(whiptail --title "THE NEW URL" --inputbox "Insert the new URL , including http:// or https://" 10 60 3>&1 1>&2 2>&3)"
+        new_URL="$(whiptail_input "THE NEW URL" "Insert the new URL , including http:// or https://" "")"
+        
         exitstatus=$?
-
         if [[ ${exitstatus} -eq 0 ]]; then
 
           # Create temporary folder for backups
