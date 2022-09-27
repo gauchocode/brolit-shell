@@ -1222,7 +1222,7 @@ function restore_project() {
         database_prefix_actual="$(project_get_config_var "${PROJECTS_PATH}/${chosen_project}/.env" "WORDPRESS_TABLE_PREFIX")"
         if [[ ${database_prefix_to_restore} != "${database_prefix_actual}" ]]; then
           # Set new database prefix
-          project_set_config_var "${PROJECTS_PATH}/${chosen_project}/.env" "WORDPRESS_TABLE_PREFIX" "${database_prefix_to_restore}"
+          project_set_config_var "${PROJECTS_PATH}/${chosen_project}/.env" "WORDPRESS_TABLE_PREFIX" "${database_prefix_to_restore}" "double"
           # Rebuild docker image
           docker-compose -f "${PROJECTS_PATH}/${chosen_project}/docker-compose.yml" up --detach
           # Clear screen output

@@ -73,6 +73,7 @@ function project_get_config_var() {
 #  $1 = ${file}
 #  $2 = ${variable}
 #  $3 = ${content}
+#  $4 = ${quotes} - optional (none, single, double)
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -83,15 +84,32 @@ function project_set_config_var() {
   local file="${1}"
   local variable="${2}"
   local content="${3}"
+  local quotes="${4}"
 
   # Check if confif file exists
-  if [[ ! -f ${file} ]]; then
-    log_event "error" "Config file doesn't exist: ${file}" "false"
-    exit 1
-  fi
+  [[ ! -f ${file} ]] && log_event "error" "Config file doesn't exist: ${file}" "false" && exit 1
 
-  # Write file
-  sed_output="$(sed -i "s/^${variable}\=.*/${variable}=\"${content}\"/" "${file}")"
+  case ${quotes} in
+
+  single)
+
+    # Write file
+    sed_output="$(sed -i "s/^${variable}\=.*/${variable}=\'${content}\'/" "${file}")"
+    ;;
+
+  double)
+
+    # Write file
+    sed_output="$(sed -i "s/^${variable}\=.*/${variable}=\"${content}\"/" "${file}")"
+    ;;
+
+  *) # empty or other different form single or double
+
+    # Write file
+    sed_output="$(sed -i "s/^${variable}\=.*/${variable}=${content}/" "${file}")"
+    ;;
+
+  esac
 
   sed_result=$?
   if [[ ${sed_result} -eq 0 ]]; then
@@ -934,7 +952,7 @@ function project_set_configured_database_engine() {
   laravel)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_CONNECTION" "${db_engine}"
+    project_set_config_var "${project_path}/.env" "DB_CONNECTION" "${db_engine}" "none"
 
     return 0
 
@@ -943,7 +961,7 @@ function project_set_configured_database_engine() {
   php)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_CONNECTION" "${db_engine}"
+    project_set_config_var "${project_path}/.env" "DB_CONNECTION" "${db_engine}" "none"
 
     return 0
 
@@ -952,7 +970,7 @@ function project_set_configured_database_engine() {
   nodejs)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_CONNECTION" "${db_engine}"
+    project_set_config_var "${project_path}/.env" "DB_CONNECTION" "${db_engine}" "none"
 
     return 0
 
@@ -1106,7 +1124,7 @@ function project_set_configured_database() {
   laravel)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${db_name}"
+    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${db_name}" "none"
 
     return 0
 
@@ -1115,7 +1133,7 @@ function project_set_configured_database() {
   php)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${db_name}"
+    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${db_name}" "none"
 
     return 0
 
@@ -1124,7 +1142,7 @@ function project_set_configured_database() {
   nodejs)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${db_name}"
+    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${db_name}" "none"
 
     return 0
 
@@ -1239,17 +1257,17 @@ function project_set_configured_database_user() {
 
   local project_path="${1}"
   local project_type="${2}"
-  local db_user_passw="${3}"
+  local db_username="${3}"
 
   # Set brolit project config var
-  project_set_brolit_config_var "${project_path}" "project[].database[].config[].user" "${db_user}"
+  project_set_brolit_config_var "${project_path}" "project[].database[].config[].user" "${db_username}"
 
   case ${project_type} in
 
   wordpress)
 
     # Set/Update
-    wp_config_set_option "${project_path}" "DB_USER" "${db_user_passw}"
+    wp_config_set_option "${project_path}" "DB_USER" "${db_username}"
 
     # Return
     return 0
@@ -1259,7 +1277,7 @@ function project_set_configured_database_user() {
   laravel)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_USERNAME" "${db_user_passw}"
+    project_set_config_var "${project_path}/.env" "DB_USERNAME" "${db_username}" "none"
 
     return 0
 
@@ -1268,7 +1286,7 @@ function project_set_configured_database_user() {
   php)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_USERNAME" "${db_user_passw}"
+    project_set_config_var "${project_path}/.env" "DB_USERNAME" "${db_username}" "none"
 
     return 0
 
@@ -1277,7 +1295,7 @@ function project_set_configured_database_user() {
   nodejs)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_USERNAME" "${db_user_passw}"
+    project_set_config_var "${project_path}/.env" "DB_USERNAME" "${db_username}" "none"
 
     return 0
 
@@ -1413,7 +1431,7 @@ function project_set_configured_database_userpassw() {
   laravel)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_PASSWORD" "${db_user_passw}"
+    project_set_config_var "${project_path}/.env" "DB_PASSWORD" "${db_user_passw}" "none"
 
     return 0
 
@@ -1422,7 +1440,7 @@ function project_set_configured_database_userpassw() {
   php)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_PASSWORD" "${db_user_passw}"
+    project_set_config_var "${project_path}/.env" "DB_PASSWORD" "${db_user_passw}" "none"
 
     return 0
 
@@ -1431,7 +1449,7 @@ function project_set_configured_database_userpassw() {
   nodejs)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_PASSWORD" "${db_user_passw}"
+    project_set_config_var "${project_path}/.env" "DB_PASSWORD" "${db_user_passw}" "none"
 
     return 0
 
@@ -2473,10 +2491,10 @@ function project_post_install_tasks() {
     if [[ -f ${project_env} ]]; then
 
       # Update project .env file
-      #project_set_config_var "${project_env}" "DB_CONNECTION" "${chosen_project}"
-      project_set_config_var "${project_env}" "DB_DATABASE" "${project_name}_${project_stage}"
-      project_set_config_var "${project_env}" "DB_USERNAME" "${project_name}_user"
-      project_set_config_var "${project_env}" "DB_PASSWORD" "${project_db_pass}"
+      #project_set_config_var "${project_env}" "DB_CONNECTION" "${chosen_project}" "none"
+      project_set_config_var "${project_env}" "DB_DATABASE" "${project_name}_${project_stage}" "none"
+      project_set_config_var "${project_env}" "DB_USERNAME" "${project_name}_user" "none"
+      project_set_config_var "${project_env}" "DB_PASSWORD" "${project_db_pass}" "none"
 
     else
 
