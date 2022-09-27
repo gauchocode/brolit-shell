@@ -29,47 +29,29 @@ function cloudflare_manager_menu() {
     if [[ ${chosen_cf_options} == *"01"* ]]; then
 
       # SET DEVELOPMENT MODE
-
-      root_domain="$(whiptail --title "Root Domain" --inputbox "Insert the root domain, example: mydomain.com" 10 60 3>&1 1>&2 2>&3)"
-      exitstatus=$?
-
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        cloudflare_set_development_mode "${root_domain}" "on"
-
-      fi
+      root_domain="$(whiptail_input "Root Domain" "Insert the root domain, example: mydomain.com" "")"
+      [[ $? -eq 0 ]] && cloudflare_set_development_mode "${root_domain}" "on"
 
     fi
 
     if [[ ${chosen_cf_options} == *"02"* ]]; then
 
       # DELETE CACHE
-
-      root_domain="$(whiptail --title "Root Domain" --inputbox "Insert the root domain, example: mydomain.com" 10 60 3>&1 1>&2 2>&3)"
-      exitstatus=$?
-
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        cloudflare_clear_cache "${root_domain}"
-
-      fi
+      root_domain="$(whiptail_input "Root Domain" "Insert the root domain, example: mydomain.com" "")"
+      [[ $? -eq 0 ]] && cloudflare_clear_cache "${root_domain}"
 
     fi
 
     if [[ ${chosen_cf_options} == *"03"* ]]; then
 
       # ENABLE CF PROXY
-
-      dns_entry="$(whiptail --title "DNS Entry" --inputbox "Insert the entry you want to work with, example: www.mydomain.com" 10 60 3>&1 1>&2 2>&3)"
+      dns_entry="$(whiptail_input "DNS Entry" "Insert the entry you want to work with, example: www.mydomain.com" "")"
       exitstatus=$?
 
       if [[ ${exitstatus} -eq 0 ]]; then
 
         root_domain="$(domain_get_root "${dns_entry}")"
-
-        cur_ip="${SERVER_IP}"
-
-        cloudflare_update_record "${root_domain}" "${dns_entry}" "A" "enable" "${cur_ip}"
+        cloudflare_update_record "${root_domain}" "${dns_entry}" "A" "enable" "${SERVER_IP}"
 
       fi
 
@@ -78,17 +60,13 @@ function cloudflare_manager_menu() {
     if [[ ${chosen_cf_options} == *"04"* ]]; then
 
       # DISABLE CF PROXY
+      dns_entry="$(whiptail_input "DNS Entry" "Insert the entry you want to work with, example: www.mydomain.com" "")"
 
-      dns_entry="$(whiptail --title "DNS Entry" --inputbox "Insert the entry you want to work with, example: www.mydomain.com" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
-
       if [[ ${exitstatus} -eq 0 ]]; then
 
         root_domain="$(domain_get_root "${dns_entry}")"
-
-        cur_ip="${SERVER_IP}"
-
-        cloudflare_update_record "${root_domain}" "${dns_entry}" "A" "disable" "${cur_ip}"
+        cloudflare_update_record "${root_domain}" "${dns_entry}" "A" "disable" "${SERVER_IP}"
 
       fi
 
@@ -97,10 +75,9 @@ function cloudflare_manager_menu() {
     if [[ ${chosen_cf_options} == *"05"* ]]; then
 
       # SET SSL MODE
+      root_domain="$(whiptail_input "Root Domain" "Insert the root domain, example: mydomain.com" "")"
 
-      root_domain="$(whiptail --title "Root Domain" --inputbox "Insert the root domain, example: mydomain.com" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
-
       if [[ ${exitstatus} -eq 0 ]]; then
 
         # Define array of SSL modes
@@ -114,14 +91,7 @@ function cloudflare_manager_menu() {
         local chosen_ssl_mode
 
         chosen_ssl_mode="$(whiptail --title "CLOUDFLARE SSL MODE" --menu "Select the new SSL mode:" 20 78 10 "${ssl_modes[@]}" 3>&1 1>&2 2>&3)"
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
-
-          log_event "info" "SSL Mode selected: ${chosen_ssl_mode}" "true"
-
-          cloudflare_set_ssl_mode "${root_domain}" "${chosen_ssl_mode}"
-
-        fi
+        [[ $? -eq 0 ]] && cloudflare_set_ssl_mode "${root_domain}" "${chosen_ssl_mode}"
 
       fi
 
@@ -130,32 +100,24 @@ function cloudflare_manager_menu() {
     if [[ ${chosen_cf_options} == *"06"* ]]; then
 
       # SET CACHE TTL VALUE
-
-      root_domain="$(whiptail --title "Root Domain" --inputbox "Insert the root domain, example: mydomain.com" 10 60 3>&1 1>&2 2>&3)"
-      exitstatus=$?
-
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        cloudflare_set_cache_ttl_value "${root_domain}" "0"
-
-      fi
+      root_domain="$(whiptail_input "Root Domain" "Insert the root domain, example: mydomain.com" "")"
+      [[ $? -eq 0 ]] && cloudflare_set_cache_ttl_value "${root_domain}" "0"
 
     fi
 
     if [[ ${chosen_cf_options} == *"07"* ]]; then
 
       # ADD/UPDATE A RECORD
+      local dns_entry
+      local ip_entry
+      dns_entry="$(whiptail_input "DNS Entry" "Insert the entry you want to work with, example: www.mydomain.com" "")"
 
-      local dns_entry ip_entry
-
-      dns_entry="$(whiptail --title "DNS Entry" --inputbox "Insert the subdomain you want to add/update, example: www.mydomain.com" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
-
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        ip_entry="$(whiptail --title "DNS Entry" --inputbox "Insert the IP you want to work with. Default: current server IP." 20 78 10 "${SERVER_IP}" 3>&1 1>&2 2>&3)"
-        exitstatus=$?
+        ip_entry="$(whiptail --title "IP Entry" --inputbox "Insert the IP you want to work with. Default: current server IP." 20 78 10 "${SERVER_IP}" 3>&1 1>&2 2>&3)"
 
+        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
           root_domain="$(domain_get_root "${dns_entry}")"
@@ -172,21 +134,18 @@ function cloudflare_manager_menu() {
     if [[ ${chosen_cf_options} == *"08"* ]]; then
 
       # ADD/UPDATE CNAME RECORD
-
       local dns_entry content_entry
 
-      dns_entry="$(whiptail --title "DNS Entry" --inputbox "Insert the subdomain you want to add/update, example: www.mydomain.com" 10 60 3>&1 1>&2 2>&3)"
+      dns_entry="$(whiptail_input "DNS Entry" "Insert the entry you want to work with, example: www.mydomain.com" "")"
+
       exitstatus=$?
-
       if [[ ${exitstatus} -eq 0 ]]; then
+        content_entry="$(whiptail_input "DNS Entry" "Insert the entry you want to work with, example: www.mydomain.com" "")"
 
-        content_entry="$(whiptail --title "DNS Entry" --inputbox "Insert the sub/domain you want to work with." 10 60 3>&1 1>&2 2>&3)"
         exitstatus=$?
-
         if [[ ${exitstatus} -eq 0 ]]; then
 
           root_domain="$(domain_get_root "${dns_entry}")"
-
           cloudflare_set_record "${root_domain}" "${dns_entry}" "A" "enable" "${content_entry}"
           #cloudflare_update_record "${root_domain}" "${dns_entry}" "CNAME" "disabled" "${content_entry}"
 
@@ -199,14 +158,12 @@ function cloudflare_manager_menu() {
     if [[ ${chosen_cf_options} == *"09"* ]]; then
 
       # DELETE ENTRY
+      dns_entry="$(whiptail_input "DNS Entry" "Insert the entry you want to work with, example: www.mydomain.com" "")"
 
-      dns_entry="$(whiptail --title "DNS Entry" --inputbox "Insert the entry you want to work with, example: www.mydomain.com" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
-
       if [[ ${exitstatus} -eq 0 ]]; then
 
         root_domain="$(domain_get_root "${dns_entry}")"
-
         cloudflare_delete_record "${root_domain}" "${dns_entry}" "A"
 
       fi
@@ -267,27 +224,19 @@ function cloudflare_ask_rootdomain() {
   # TODO: check with CF API if root domain exists
 
   # Parameters
-  # $1 = ${root_domain} (could be empty)
+  # $1 = ${suggested_root_domain} (could be empty)
 
-  local root_domain="${1}"
+  local suggested_root_domain="${1}"
 
-  if [[ -z "${root_domain}" ]]; then
+  local root_domain
 
-    root_domain="$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the project (Only for Cloudflare API). Example: broobe.com" 10 60 3>&1 1>&2 2>&3)"
-
-  else
-
-    root_domain="$(whiptail --title "Root Domain" --inputbox "Insert the root domain of the project (Only for Cloudflare API). Example: broobe.com" 10 60 "${root_domain}" 3>&1 1>&2 2>&3)"
-
-  fi
+  root_domain="$(whiptail_input "Root Domain" "Insert the root domain, example: mydomain.com" "${suggested_root_domain}")"
 
   exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
+  if [[ ${exitstatus} -eq 0 && -n ${root_domain} ]]; then
 
     # Return
-    echo "${root_domain}"
-
-    return 0
+    echo "${root_domain}" && return 0
 
   else
 
@@ -306,17 +255,18 @@ function cloudflare_ask_subdomains() {
 
   local subdomains="${1}"
 
-  subdomains="$(whiptail --title "Cloudflare Subdomains" --inputbox "Insert the subdomains you want to update in Cloudflare (comma separated). Example: www.broobe.com,broobe.com" 10 60 "${DOMAIN}" 3>&1 1>&2 2>&3)"
-  exitstatus=$?
+  subdomains="$(whiptail_input "Cloudflare Subdomains" "Insert the subdomains you want to update in Cloudflare (comma separated). Example: www.broobe.com,broobe.com" "${DOMAIN}")"
   
+  exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     log_event "info" "Setting subdomains: ${subdomains}" "false"
 
     # Return
-    echo "${subdomains}"
+    echo "${subdomains}" && return 0
 
   else
+
     return 1
 
   fi

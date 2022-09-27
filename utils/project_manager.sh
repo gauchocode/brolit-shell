@@ -273,21 +273,22 @@ function project_manager_menu_new_project_type_utils() {
 
       chosen_db="$(mysql_ask_database_selection)"
 
-      new_database_name="$(whiptail --title "Database Name" --inputbox "Insert a new database name (only separator allow is '_'). Old name was: ${chosen_db}" 10 60 "" 3>&1 1>&2 2>&3)"
+      new_database_name="$(whiptail_input "Database Name" "Insert a new database name (only separator allow is '_'). Old name was: ${chosen_db}" "")"
+
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
         log_event "debug" "Setting new_database_name: ${new_database_name}" "false"
 
         # Return
-        echo "${new_database_name}"
+        #echo "${new_database_name}"
+        mysql_database_rename "${chosen_db}" "${new_database_name}"
 
       else
+
         return 1
 
       fi
-
-      mysql_database_rename "${chosen_db}" "${new_database_name}"
 
     fi
 

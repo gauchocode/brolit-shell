@@ -88,8 +88,8 @@ function database_manager_menu() {
     if [[ ${chosen_database_manager_option} == *"02"* ]]; then
 
       # CREATE DATABASE
+      chosen_database_name="$(whiptail_input "DATABASE MANAGER" "Insert the database name you want to create, example: my_domain_prod" "")"
 
-      chosen_database_name="$(whiptail --title "DATABASE MANAGER" --inputbox "Insert the database name you want to create, example: my_domain_prod" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
 
       if [[ ${exitstatus} -eq 0 ]]; then
@@ -153,9 +153,9 @@ function database_manager_menu() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        chosen_database_name="$(whiptail --title "DATABASE MANAGER" --inputbox "Insert the database name you want to create, example: my_domain_prod" 10 60 3>&1 1>&2 2>&3)"
-        exitstatus=$?
+        chosen_database_name="$(whiptail_input "DATABASE MANAGER" "Insert the database name you want to create, example: my_domain_prod" "")"
 
+        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
           if [[ ${chosen_database_engine_options} == "MYSQL" ]]; then
@@ -188,20 +188,19 @@ function database_manager_menu() {
     if [[ ${chosen_database_manager_option} == *"06"* ]]; then
 
       # CREATE USER DATABASE
-      chosen_username="$(whiptail --title "DATABASE MANAGER" --inputbox "Insert the username you want to create, example: my_domain_user" 10 60 3>&1 1>&2 2>&3)"
-      
+      chosen_username="$(whiptail_input "DATABASE MANAGER" "Insert the username you want to create, example: my_domain_user" "")"
+
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        chosen_userpsw="$(whiptail --title "DATABASE MANAGER" --inputbox "Insert the user password (or leave it empty to create a random generate one):" 10 60 3>&1 1>&2 2>&3)"
-        
+        local suggested_userpsw
+
+        suggested_userpsw="$(openssl rand -hex 12)"
+
+        chosen_userpsw="$(whiptail_input "DATABASE MANAGER" "Use this random generated password, edit or leave it empty:" "${suggested_userpsw}")"
+
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
-
-          if [[ -z ${chosen_userpsw} ]]; then
-            # TODO: ask if user wants to create a random generated password or not
-            chosen_userpsw="$(openssl rand -hex 12)"
-          fi
 
           if [[ ${chosen_database_engine_options} == "MYSQL" ]]; then
 

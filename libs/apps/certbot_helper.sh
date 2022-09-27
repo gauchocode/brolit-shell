@@ -678,14 +678,12 @@ function certbot_helper_ask_domains() {
 
   local domains
 
-  domains="$(whiptail --title "CERTBOT MANAGER" --inputbox "Insert the domain and/or subdomains that you want to work with. Ex: broobe.com,www.broobe.com" 10 60 3>&1 1>&2 2>&3)"
+  domains="$(whiptail_input "CERTBOT MANAGER" "Insert the domain and/or subdomains that you want to work with. Ex: broobe.com,www.broobe.com" "" )"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Return
-    echo "${domains}"
-
-    return 0
+    echo "${domains}" && return 0
 
   else
 

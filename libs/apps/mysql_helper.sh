@@ -25,7 +25,6 @@ function mysql_ask_root_psw() {
     # Check MySQL credentials on .my.cnf
     if [[ ! -f ${MYSQL_CONF} ]]; then
 
-        #mysql_root_pass="$(whiptail --title "MySQL root password" --inputbox "Please insert the MySQL root password" 10 60 "${mysql_root_pass}" 3>&1 1>&2 2>&3)"
         mysql_root_pass="$(whiptail_input "MySQL root password" "Please insert the MySQL root password" "${mysql_root_pass}")"
 
         exitstatus=$?
@@ -68,7 +67,6 @@ function mysql_ask_user_db_scope() {
 
     local db_scope="${1}"
 
-    #db_scope="$(whiptail --title "MySQL User Scope" --inputbox "Set the scope for the database user. You can use '%' to accept all connections." 10 60 "${db_scope}" 3>&1 1>&2 2>&3)"
     db_scope="$(whiptail_input "MySQL User Scope" "Set the scope for the database user. You can use '%' to accept all connections." "${db_scope}")"
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
