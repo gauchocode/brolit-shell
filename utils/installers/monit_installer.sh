@@ -107,21 +107,15 @@ function monit_configure() {
     local monit_pass="${PACKAGES_MONIT_CONFIG_HTTPD_PASS}"
     sed -i "s#MONIT_PASSWORD#${monit_pass}#" "/etc/monit/monitrc"
 
-    if [[ ${SECURITY_STATUS} == "enabled" ]]; then
-      # Allow monit httpd port
-      firewall_allow "2812"
-    fi
+    [[ ${SECURITY_STATUS} == "enabled" ]] && firewall_allow "2812"
 
   fi
 
   if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" && -d "${NETDATA_INSTALL_DIR}" ]]; then
-
     # Replace monit httpd user
     sed -i "s#MONIT_USER#${monit_user}#" "${NETDATA_INSTALL_DIR}/python.d/monit.conf"
-
     # Replace monit httpd  password
     sed -i "s#MONIT_PASSWORD#${monit_pass}#" "${NETDATA_INSTALL_DIR}/python.d/monit.conf"
-
   fi
 
   # Get all listed apps
@@ -141,7 +135,6 @@ function monit_configure() {
     if [[ ${services_list_value} == "enabled" ]]; then
 
       # Configuring monit
-      ## Using script template
       cat "${BROLIT_MAIN_DIR}/config/monit/${services_list_key}" >"/etc/monit/conf.d/${services_list_key}"
 
       if [[ ${services_list_key} == "system" ]]; then
@@ -186,6 +179,8 @@ function monit_configure() {
           PHP_V=${PHP_V:0:3} #get only first 3 chars (ex. 8.1)
           # Set PHP_V
           php_set_version_on_config "${PHP_V}" "/etc/monit/conf.d/${services_list_key}"
+          # Service restart
+          systemctl restart "php${PHP_V}-fpm"
         fi
 
         # Log
@@ -201,7 +196,6 @@ function monit_configure() {
   log_event "info" "Restarting services ..." "false"
 
   # Service restart
-  systemctl restart "php${PHP_V}-fpm"
   systemctl restart nginx.service
   service monit restart
 

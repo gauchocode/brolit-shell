@@ -39,9 +39,10 @@ function portainer_installer() {
     # Check if portainer is running
     portainer="$(docker_get_container_id "portainer")"
 
+    exitstatus=$?
+
     if [[ -z ${portainer} ]]; then
 
-        exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # Create project directory

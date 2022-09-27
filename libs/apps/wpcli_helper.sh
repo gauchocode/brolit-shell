@@ -987,55 +987,35 @@ function wpcli_run_startup_script() {
 
     # Site Name
     if [[ -z ${site_name} ]]; then
-        site_name="$(whiptail --title "Site Name" --inputbox "Insert the site name. Example: My Website" 10 60 3>&1 1>&2 2>&3)"
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 1 || ${site_name} == "" ]]; then
-            # Return
-            return 1
-        fi
+        site_name="$(whiptail_input "Site Name" "Insert the site name. Example: My Website" "")"
+        [[ $? -eq 1 || -z ${site_name} ]] && return 1
     fi
 
     # Site URL
     # TODO: check if receive a domain or a url like: https://siteurl.com
     if [[ -z ${site_url} ]]; then
-        site_url="$(whiptail --title "Site URL" --inputbox "Insert the site URL. Example: https://mydomain.com" 10 60 3>&1 1>&2 2>&3)"
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 1 || ${site_url} == "" ]]; then
-            # Return
-            return 1
-        fi
+        site_url="$(whiptail_input "Site URL" "Insert the site URL. Example: https://mydomain.com" "")"
+        [[ $? -eq 1 || -z ${site_url} ]] && return 1
     fi
 
     # Wordpress User
     if [[ -z ${wp_user_name} ]]; then
-        wp_user_name="$(whiptail --title "Wordpress User" --inputbox "Insert a username for admin." 10 60 3>&1 1>&2 2>&3)"
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 1 || ${wp_user_name} == "" ]]; then
-            # Return
-            return 1
-        fi
+        wp_user_name="$(whiptail_input "Wordpress User" "Insert a username for admin." "")"
+        [[ $? -eq 1 || -z ${wp_user_name} ]] && return 1
     fi
 
     # Wordpress User Password
     if [[ -z ${wp_user_passw} ]]; then
         local suggested_passw
         suggested_passw="$(openssl rand -hex 12)"
-        wp_user_passw="$(whiptail --title "User Password" --inputbox "Select this random generated password or insert a new one: " 10 60 "${suggested_passw}" 3>&1 1>&2 2>&3)"
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 1 || ${wp_user_passw} == "" ]]; then
-            # Return
-            return 1
-        fi
+        wp_user_passw="$(whiptail_input "Wordpress User Password" "Select this random generated password or insert a new one: " "${suggested_passw}")"
+        [[ $? -eq 1 || -z ${wp_user_passw} ]] && return 1
     fi
 
     # Wordpress User Email
     if [[ -z ${wp_user_mail} ]]; then
-        wp_user_mail="$(whiptail --title "WordPress User Mail" --inputbox "Insert the user email." 10 60 3>&1 1>&2 2>&3)"
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 1 || ${wp_user_mail} == "" ]]; then
-            # Return
-            return 1
-        fi
+        wp_user_mail="$(whiptail_input "Wordpress User Mail" "Insert the user email." "")"
+        [[ $? -eq 1 || -z ${wp_user_mail} ]] && return 1
     fi
 
     log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} core install --url=${site_url} --title=${site_name} --admin_user=${wp_user_name} --admin_password=${wp_user_passw} --admin_email=${wp_user_mail}"
@@ -1387,13 +1367,8 @@ function wpcli_default_plugins_installer() {
 
         if [[ ${plugin} == *"zip-file"* ]]; then
 
-            plugin_zip="$(whiptail --title "WordPress Plugin" --inputbox "Please insert a public url with a plugin zip file." 10 60 "https://domain.com/plugin.zip" 3>&1 1>&2 2>&3)"
-            exitstatus=$?
-            if [[ ${exitstatus} -eq 0 ]]; then
-
-                plugin="${plugin_zip}"
-
-            fi
+            plugin_zip="$(whiptail_input "Wordpress Plugin" "Please insert a public url with a plugin zip file." 10 60 "https://domain.com/plugin.zip" "")"
+            [[ $? -eq 0 ]] && plugin="${plugin_zip}"
 
         fi
 
@@ -1428,9 +1403,7 @@ function wpcli_get_wpcore_version() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Return
-        echo "${core_version}"
-
-        return 0
+        echo "${core_version}" && return 0
 
     else
 
@@ -1466,9 +1439,7 @@ function wpcli_db_get_prefix() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Return
-        echo "${db_prefix}"
-
-        return 0
+        echo "${db_prefix}" && return 0
 
     else
 
@@ -1507,7 +1478,7 @@ function wpcli_db_check() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Return
-        echo "${db_check}"
+        echo "${db_check}" && return 0
 
     else
 
@@ -1624,6 +1595,8 @@ function wpcli_search_and_replace() {
         # Rewrite Flush
         sudo -u www-data wp --path="${wp_site}" rewrite flush --quiet
         display --indent 6 --text "- Flush rewrite" --result "DONE" --color GREEN
+
+        return 0
 
     else
 
