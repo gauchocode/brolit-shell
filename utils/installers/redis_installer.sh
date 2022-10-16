@@ -9,8 +9,8 @@ function redis_installer() {
   log_subsection "Redis Installer"
 
   # Install redis
-  package_install_if_not "redis"
-  package_install_if_not "redis-server"
+  package_install "redis"
+  package_install "redis-server"
 
   systemctl enable redis-server.service --quiet
 
