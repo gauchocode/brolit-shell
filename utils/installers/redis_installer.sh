@@ -29,10 +29,16 @@ function redis_configure() {
 
   redis_conf="/etc/redis/redis.conf"
 
-  redis_pass="$(openssl rand 60 | openssl base64 -A)"
+  redis_pass="$(openssl rand 10 | openssl base64 -A)"
 
   # Write redis_pass on redis.conf
-  echo "requirepass ${redis_pass}" >>"${redis_conf}"
+  sed -i "s/TO_CHANGE/\"${redis_pass}\"/g" "${redis_conf}"
+
+  # Log
+  log_event "info" "Configuring redis-server" "false"
+  log_event "info" "Redis server config on ${redis_conf}" "false"
+  display --indent 6 --text "- Configuring redis-server" --result "DONE" --color GREEN
+  display --indent 8 --text "Password set on ${redis_conf}" --tcolor yellow
 
   # Service restart
   service redis-server restart
@@ -50,7 +56,9 @@ function redis_purge() {
   rm "${redis_conf}"
 
   # Remove packages
-  package_purge "redis redis-server redis-tools"
+  package_purge "redis"
+  package_purge "redis-server"
+  package_purge "redis-tools"
 
   return $?
 
