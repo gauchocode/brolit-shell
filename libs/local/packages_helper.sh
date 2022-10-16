@@ -114,9 +114,7 @@ function package_is_installed() {
     log_event "debug" "${package} is installed on: ${bin_path}" "false"
 
     # Return
-    echo "${bin_path}"
-
-    return 0
+    echo "${bin_path}" && return 0
 
   else
 
@@ -204,9 +202,7 @@ function package_install_if_not() {
 
     log_event "debug" "${package} is already installed." "false"
 
-    if [[ ${pkg_bin} != "" ]]; then
-      log_event "debug" "Package binary on: ${pkg_bin}" "false"
-    fi
+    [[ -n ${pkg_bin} ]] && log_event "debug" "Package binary on: ${pkg_bin}" "false"
 
   fi
 
@@ -420,7 +416,7 @@ function package_purge() {
   else
 
     # Log
-    clear_previous_lines "1"
+    clear_previous_lines "2"
     display --indent 6 --text "- Uninstalling ${package}" --result "FAILED" --color RED
     log_event "error" "Removing ${package}" "false"
     log_event "debug" "Command executed: apt-get --yes purge ${package} -qq >/dev/null" "false"
