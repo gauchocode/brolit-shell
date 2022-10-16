@@ -131,9 +131,7 @@ function server_app_setup() {
             fi
 
         else
-            package_purge "redis"
-            package_purge "redis-server"
-            package_purge "redis-tools"
+            redis_purge
         fi
 
         ;;
