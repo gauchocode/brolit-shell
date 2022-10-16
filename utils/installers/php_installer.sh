@@ -469,12 +469,12 @@ function php_purge_installation() {
 
 function php_composer_installer() {
 
-  local composer_result
   #local expected_signature
   #local actual_signature
 
   # Log
   log_event "info" "Running composer installer" "false"
+  display --indent 6 --text "- Installing php composer" --result "DONE" --color GREEN
 
   #expected_signature="$(wget -q -O - https://composer.github.io/installer.sig)"
   #php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
@@ -494,7 +494,7 @@ function php_composer_installer() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Command
-    composer_result="$(${PHP} "${BROLIT_TMP_DIR}/composer-setup.php" --quiet --install-dir=/usr/local/bin --filename=composer)"
+    ${PHP} "${BROLIT_TMP_DIR}/composer-setup.php" --quiet --install-dir=/usr/local/bin --filename=composer
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -502,23 +502,23 @@ function php_composer_installer() {
       # Remove
       rm "${BROLIT_TMP_DIR}/composer-setup.php"
 
+      # Log
       log_event "info" "Composer installer finished" "false"
+      display --indent 6 --text "- Installing php composer" --result "DONE" --color GREEN
 
       # Return
-      echo "${exitstatus}"
-
-      return 0
+      echo "${exitstatus}" && return 0
 
     else
 
       # Log
       log_event "error" "Composer installer failed" "false"
-      log_event "debug" "composer_result=${composer_result}" "false"
+      log_event "debug" "Command executed: ${PHP} ${BROLIT_TMP_DIR}/composer-setup.php --quiet --install-dir=/usr/local/bin --filename=composer" "false"
+      display --indent 6 --text "- Installing php composer" --result "FAIL" --color RED
+      display --indent 8 --text "Read the log file for more information" --tcolor RED
 
       # Return
-      echo "${exitstatus}"
-
-      return 1
+      echo "${exitstatus}" && return 1
 
     fi
 
