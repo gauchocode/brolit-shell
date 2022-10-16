@@ -32,7 +32,7 @@ function redis_configure() {
   redis_pass="$(openssl rand 60 | openssl base64 -A)"
 
   # Write redis_pass on redis.conf
-  sed -i "requirepass ${redis_pass}" >>"${redis_conf}"
+  echo "requirepass ${redis_pass}" >>"${redis_conf}"
 
   # Service restart
   service redis-server restart
