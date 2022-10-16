@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.3
+# Version: 3.2.4
 ################################################################################
 #
 # Certbot Installer: certbot installer functions.
@@ -105,35 +105,10 @@ function certbot_purge() {
 
   log_subsection "Certbot Installer"
 
-  # Log
-  display --indent 6 --text "- Removing certbot and libraries"
-  log_event "info" "Removing certbot and libraries..." "false"
-
   # apt command
-  package_purge "python3-certbot"
-  package_purge "python3-certbot-dns-cloudflare"
-  package_purge "python3-certbot-nginx"
+  package_purge "python3-certbot python3-certbot-dns-cloudflare python3-certbot-nginx"
 
-  exitstatus=$?
-  if [[ ${exitstatus} -ne 0 ]]; then
-
-    # Log
-    clear_previous_lines "1"
-    display --indent 6 --text "- Removing certbot and libraries" --result "FAILED" --color RED
-    log_event "error" "Removing certbot and libraries..." "false"
-
-    return 1
-
-  else
-
-    # Log
-    clear_previous_lines "1"
-    display --indent 6 --text "- Removing certbot and libraries" --result "DONE" --color GREEN
-    log_event "info" "certbot removed" "false"
-
-    return 0
-
-  fi
+  return $?
 
 }
 

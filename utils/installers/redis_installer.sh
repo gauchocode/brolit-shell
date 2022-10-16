@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.3
+# Version: 3.2.4
 ################################################################################
 
 function redis_installer() {
@@ -41,37 +41,17 @@ function redis_configure() {
 
 function redis_purge() {
 
+  local redis_conf
+
   log_subsection "Redis Installer"
 
   # Remove  redis.conf
+  redis_conf="/etc/redis/redis.conf"
   rm "${redis_conf}"
-
-  # Log
-  display --indent 6 --text "- Removing redis and libraries"
-  log_event "info" "Removing redis and libraries..." "false"
 
   # Remove packages
   package_purge "redis redis-server redis-tools"
 
-  exitstatus=$?
-  if [[ ${exitstatus} -ne 0 ]]; then
-
-    # Log
-    clear_previous_lines "1"
-    display --indent 6 --text "- Removing redis and libraries" --result "FAILED" --color RED
-    log_event "error" "Removing redis and libraries..." "false"
-
-    return 1
-
-  else
-
-    # Log
-    clear_previous_lines "1"
-    display --indent 6 --text "- Removing redis and libraries" --result "DONE" --color GREEN
-    log_event "info" "redis removed" "false"
-
-    return 0
-
-  fi
+  return $?
 
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.3
+# Version: 3.2.4
 #############################################################################
 #
 # Cockpit Installer
@@ -106,6 +106,8 @@ function cockpit_purge() {
     package_purge "cockpit"
 
     # Log
-    clear_previous_lines "1"
+    #clear_previous_lines "1"
+
+    return $?
 
 }
