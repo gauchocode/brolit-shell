@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.3
+# Version: 3.2.4
 ################################################################################
 #
 # Packages Helper: Perform apt actions.
@@ -407,8 +407,25 @@ function package_purge() {
   # Uninstalling packages
   apt-get --yes purge "${package}" -qq >/dev/null
 
-  # Log
-  clear_previous_lines "1"
-  display --indent 6 --text "- Uninstalling ${package}" --result "DONE" --color GREEN
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Log
+    clear_previous_lines "1"
+    display --indent 6 --text "- Uninstalling ${package}" --result "DONE" --color GREEN
+    log_event "info" "${package} removed" "false"
+
+    return 0
+
+  else
+
+    # Log
+    clear_previous_lines "1"
+    display --indent 6 --text "- Uninstalling ${package}" --result "FAILED" --color RED
+    log_event "error" "Removing ${package}" "false"
+
+    return 1
+
+  fi
 
 }
