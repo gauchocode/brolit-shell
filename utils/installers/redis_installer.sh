@@ -32,7 +32,7 @@ function redis_configure() {
   redis_pass="$(openssl rand 10 | openssl base64 -A)"
 
   # Write redis_pass on redis.conf
-  sed -i "s/TO_CHANGE/\"${redis_pass}\"/g" "${redis_conf}"
+  sed -i "s/TO_CHANGE/${redis_pass}/g" "${redis_conf}"
 
   # Log
   log_event "info" "Configuring redis-server" "false"
