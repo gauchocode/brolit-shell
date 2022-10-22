@@ -1282,6 +1282,7 @@ function restore_project() {
         # TODO: Check if docker and docker-compose are installed
 
         # TODO: Check ports on .env or docker-compose.yml
+        project_port="$(project_ask_port "")"
 
         # Log
         log_event "info" "Trying to restore a docker project." "false"
@@ -1296,6 +1297,8 @@ function restore_project() {
         # TODO: Check errors
 
       else
+
+        project_port="default"
 
         # Create nginx.conf file if not exists
         touch "${BROLIT_TMP_DIR}/${chosen_project}/nginx.conf"
@@ -1390,7 +1393,7 @@ function restore_project() {
     fi
 
     # Project domain configuration (webserver+certbot+DNS)
-    https_enable="$(project_update_domain_config "${new_project_domain}" "${project_type}" "${project_install_type}" "")"
+    https_enable="$(project_update_domain_config "${new_project_domain}" "${project_type}" "${project_install_type}" "${project_port}")"
 
     # TODO: refactor this
     if [[ ${installation_type} != "docker" || ${project_install_type} != "docker-compose" ]]; then

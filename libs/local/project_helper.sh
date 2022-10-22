@@ -2046,18 +2046,22 @@ function project_get_type() {
 
     # Laravel?
     composer="$(find "${dir_path}" -maxdepth 2 -name "composer.json" -type f)"
-    laravel="$(cat "${composer}" | grep "laravel/framework")"
-    if [[ -n ${laravel} ]]; then
+    if [[ -n ${composer} ]]; then
 
-      project_type="laravel"
+      laravel="$(cat "${composer}" | grep "laravel/framework")"
+      if [[ -n ${laravel} ]]; then
 
-      # Log
-      log_event "debug" "Project type: ${project_type}" "false"
-      display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
+        project_type="laravel"
 
-      # Return
-      echo "${project_type}" && return 0
+        # Log
+        log_event "debug" "Project type: ${project_type}" "false"
+        display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
 
+        # Return
+        echo "${project_type}" && return 0
+
+      fi
+      
     fi
 
     # other-php?
