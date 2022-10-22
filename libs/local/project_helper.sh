@@ -2091,18 +2091,20 @@ function project_get_type() {
     fi
 
     # React?
-    react="$(find "${dir_path}/node_modules/react/cjs/" -name "react.development.js" -type f)"
-    if [[ -n ${react} ]]; then
+    if [[ -f "${dir_path}/node_modules/react/cjs/" ]]; then
+      react="$(find "${dir_path}/node_modules/react/cjs/" -name "react.development.js" -type f)"
+      if [[ -n ${react} ]]; then
 
-      project_type="react"
+        project_type="react"
 
-      # Log
-      log_event "debug" "Project type: ${project_type}" "false"
-      display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
+        # Log
+        log_event "debug" "Project type: ${project_type}" "false"
+        display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
 
-      # Return
-      echo "${project_type}" && return 0
+        # Return
+        echo "${project_type}" && return 0
 
+      fi
     fi
 
     # html-only?
@@ -2357,7 +2359,8 @@ function project_update_domain_config() {
 
   local project_domain="${1}"
   local project_type="${2}"
-  local project_port="${3}"
+  local project_install_type="${3}"
+  local project_port="${4}"
 
   local project_root_domain
   local project_https_enable="false"
@@ -2402,8 +2405,17 @@ function project_update_domain_config() {
 
   else # Working with single domain
 
-    # Nginx config
-    nginx_server_create "${project_domain}" "${project_type}" "single" "" "${project_port}"
+    # TODO: Refactor this
+
+    if [[ ${project_install_type} == "docker-compose" ]]; then
+      # Nginx config
+      nginx_server_create "${project_domain}" "proxy" "single" "" "${project_port}"
+
+    else
+      # Nginx config
+      nginx_server_create "${project_domain}" "${project_type}" "single" "" "${project_port}"
+
+    fi
 
     # Cloudflare
     if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
