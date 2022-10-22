@@ -1250,9 +1250,6 @@ function restore_project() {
 
     else
 
-      # Create nginx.conf file if not exists
-      touch "${BROLIT_TMP_DIR}/${chosen_project}/nginx.conf"
-
       # Project Install Type
       project_install_type="$(project_get_install_type "${BROLIT_TMP_DIR}/${chosen_project}")"
 
@@ -1299,6 +1296,9 @@ function restore_project() {
         # TODO: Check errors
 
       else
+
+        # Create nginx.conf file if not exists
+        touch "${BROLIT_TMP_DIR}/${chosen_project}/nginx.conf"
 
         # Reading config file
         ## Database vars (only return something if project type has a database)
@@ -1389,10 +1389,11 @@ function restore_project() {
 
     fi
 
-    if [[ ${installation_type} != "docker" ]]; then
+    # Project domain configuration (webserver+certbot+DNS)
+    https_enable="$(project_update_domain_config "${new_project_domain}" "${project_type}" "${project_install_type}" "")"
 
-      # Project domain configuration (webserver+certbot+DNS)
-      https_enable="$(project_update_domain_config "${new_project_domain}" "${project_type}" "")"
+    # TODO: refactor this
+    if [[ ${installation_type} != "docker" || ${project_install_type} != "docker-compose" ]]; then
 
       # Post-restore/install tasks
       project_post_install_tasks "${install_path}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${chosen_domain}" "${new_project_domain}"
