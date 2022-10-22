@@ -2304,5 +2304,5 @@ function show_server_data() {
 
     # Return JSON
     cat "${json_output_file}"
-
+    
 }
