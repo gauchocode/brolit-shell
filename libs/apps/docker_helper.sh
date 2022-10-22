@@ -653,7 +653,7 @@ function docker_project_install() {
     ### NEW ###
 
     # Project domain configuration (webserver+certbot+DNS)
-    https_enable="$(project_update_domain_config "${project_domain}" "proxy" "${port_available}")"
+    https_enable="$(project_update_domain_config "${project_domain}" "proxy" "docker-compose" "${port_available}")"
 
     # Startup Script for WordPress installation
     #if [[ ${https_enable} == "true" ]]; then
