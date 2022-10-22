@@ -4,38 +4,6 @@
 # Version: 3.2.4
 ################################################################################
 
-# Server Name
-SERVER_NAME="${HOSTNAME}"
-
-BROLIT_MAIN_DIR="/root/brolit-shell"
-
-# TODO: workaround
-declare -g EXEC_TYPE="alias"
-
-export EXEC_TYPE
-
-BROLIT_CONFIG_PATH="/etc/brolit"
-
-CLF_CONFIG_FILE=~/.cloudflare.conf
-if [[ -f ${CLF_CONFIG_FILE} ]]; then
-    # shellcheck source=~/.cloudflare.conf
-    source "${CLF_CONFIG_FILE}"
-    # Declare new global vars from cloudflare config file
-    declare -g SUPPORT_CLOUDFLARE_EMAIL="${dns_cloudflare_email}"
-    declare -g SUPPORT_CLOUDFLARE_API_KEY="${dns_cloudflare_api_key}"
-fi
-
-DPU_CONFIG_FILE=~/.dropbox_uploader
-if [[ -f ${DPU_CONFIG_FILE} ]]; then
-    # shellcheck source=~/.dropbox_uploader
-    source "${DPU_CONFIG_FILE}"
-    # Dropbox-uploader directory
-    DPU_F="${BROLIT_MAIN_DIR}/tools/third-party/dropbox-uploader"
-    # Dropbox-uploader runner
-    DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
-
-fi
-
 # Version
 SCRIPT_VERSION="3.2.4"
 ALIASES_VERSION="3.2.4-099"
@@ -43,6 +11,8 @@ ALIASES_VERSION="3.2.4-099"
 ################################################################################
 
 alias ..="cd .."
+
+alias servername="echo ${HOSTNAME}"
 
 alias userlist="cut -d: -f1 /etc/passwd"
 alias myip="curl http://ipecho.net/plain; echo"
@@ -208,5 +178,5 @@ function search() {
     # -n is line number, and
     # -w stands for match the whole word.
     # -l (lower-case L) can be added to just give the file name of matching files.
-    grep -rnw "$path" -e "$string"
+    grep -rnw "${path}" -e "${string}"
 }

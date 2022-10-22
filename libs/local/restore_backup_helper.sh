@@ -1177,9 +1177,12 @@ function restore_project() {
     [[ $? -eq 1 ]] && return 1
     # TODO: implement error type
 
-    # TODO: get project type & installation type
-    project_type="$(project_get_type "${PROJECTS_PATH}/${chosen_project}")"
-    project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${chosen_project}")"
+    # TODO: need to change this!
+    # If a directory exists, get project type & installation type
+    if [[ -d "${PROJECTS_PATH}/${chosen_project}" ]]; then
+      project_type="$(project_get_type "${PROJECTS_PATH}/${chosen_project}")"
+      project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${chosen_project}")"
+    fi
 
     # TODO: if project type==docker download, extract, move to /var/www, run docker commands, execute domain tasks
     # TODO: if project type!=wordpress then... needs implementation.
@@ -1250,10 +1253,13 @@ function restore_project() {
       # Create nginx.conf file if not exists
       touch "${BROLIT_TMP_DIR}/${chosen_project}/nginx.conf"
 
+      # Project Install Type
+      project_install_type="$(project_get_install_type "${BROLIT_TMP_DIR}/${chosen_project}")"
+
       # Project Type
       project_type="$(project_get_type "${BROLIT_TMP_DIR}/${chosen_project}")"
 
-      # Here, for convention, ${chosen_project} should be $chosen_domain... only for better code reading:
+      # Here, for convention, ${chosen_project} should be ${chosen_domain}... only for better code reading:
       chosen_domain="${chosen_project}"
 
       # Restore site files
@@ -1273,89 +1279,112 @@ function restore_project() {
 
       install_path="${PROJECTS_PATH}/${new_project_domain}"
 
-      # Reading config file
-      ## Database vars (only return something if project type has a database)
-      db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}")"
-      db_name="$(project_get_configured_database "${install_path}" "${project_type}")"
-      db_user="$(project_get_configured_database_user "${install_path}" "${project_type}")"
-      db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}")"
+      # DOCKER WAY (NEW)
+      if [[ ${project_install_type} == "docker-compose" ]]; then
 
-      if [[ -n ${db_name} ]]; then
+        # TODO: Check if docker and docker-compose are installed
 
-        # Get backup rotation type (daily, weekly, monthly)
-        backup_rotation_type="$(backup_get_rotation_type "${chosen_backup_to_restore}")"
+        # TODO: Check ports on .env or docker-compose.yml
 
-        # Get backup date
-        project_backup_date="$(backup_get_date "${chosen_backup_to_restore}")"
+        # Log
+        log_event "info" "Trying to restore a docker project." "false"
+        display --indent 6 --text "- Trying to restore a docker project ..." # --result "DONE" --color GREEN
 
-        # Download database backup
-        if [[ ${backup_rotation_type} == "daily" ]]; then
-          db_to_restore="${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-        else
-          db_to_restore="${db_name}_database_${project_backup_date}-${backup_rotation_type}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-        fi
+        # Rebuild docker image
+        docker-compose -f "${PROJECTS_PATH}/${chosen_project}/docker-compose.yml" up --detach
 
-        # Database backup full remote path
-        db_to_download="${chosen_server}/projects-${chosen_status}/database/${db_name}/${db_to_restore}"
+        # Clear screen output
+        clear_previous_lines "3"
 
-        # Downloading Database Backup
-        storage_download_backup "${db_to_download}" "${BROLIT_TMP_DIR}"
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 1 ]]; then
+        # TODO: Check errors
 
-          # TODO: ask to download manually calling restore_database_backup or skip database restore part
-          whiptail_message_with_skip_option "RESTORE BACKUP" "Database backup not found. Do you want to select manually the database backup to restore?"
+      else
 
+        # Reading config file
+        ## Database vars (only return something if project type has a database)
+        db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}")"
+        db_name="$(project_get_configured_database "${install_path}" "${project_type}")"
+        db_user="$(project_get_configured_database_user "${install_path}" "${project_type}")"
+        db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}")"
+
+        if [[ -n ${db_name} ]]; then
+
+          # Get backup rotation type (daily, weekly, monthly)
+          backup_rotation_type="$(backup_get_rotation_type "${chosen_backup_to_restore}")"
+
+          # Get backup date
+          project_backup_date="$(backup_get_date "${chosen_backup_to_restore}")"
+
+          # Download database backup
+          if [[ ${backup_rotation_type} == "daily" ]]; then
+            db_to_restore="${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+          else
+            db_to_restore="${db_name}_database_${project_backup_date}-${backup_rotation_type}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+          fi
+
+          # Database backup full remote path
+          db_to_download="${chosen_server}/projects-${chosen_status}/database/${db_name}/${db_to_restore}"
+
+          # Downloading Database Backup
+          storage_download_backup "${db_to_download}" "${BROLIT_TMP_DIR}"
           exitstatus=$?
-          if [[ ${exitstatus} -eq 0 ]]; then
+          if [[ ${exitstatus} -eq 1 ]]; then
 
-            # Get dropbox backup list
-            remote_backup_path="${chosen_server}/projects-${chosen_status}/database/${db_name}"
-            remote_backup_list="$(storage_list_dir "${remote_backup_path}")"
+            # TODO: ask to download manually calling restore_database_backup or skip database restore part
+            whiptail_message_with_skip_option "RESTORE BACKUP" "Database backup not found. Do you want to select manually the database backup to restore?"
 
-            # Select Backup File
-            chosen_backup_to_restore="$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${remote_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
             exitstatus=$?
-            if [[ ${exitstatus} -eq 1 ]]; then
+            if [[ ${exitstatus} -eq 0 ]]; then
+
+              # Get dropbox backup list
+              remote_backup_path="${chosen_server}/projects-${chosen_status}/database/${db_name}"
+              remote_backup_list="$(storage_list_dir "${remote_backup_path}")"
+
+              # Select Backup File
+              chosen_backup_to_restore="$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${remote_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
+              exitstatus=$?
+              if [[ ${exitstatus} -eq 1 ]]; then
+                database_restore_skipped="true"
+                display --indent 6 --text "- Restore project backup" --result "SKIPPED" --color YELLOW
+              fi
+
+            else
               database_restore_skipped="true"
               display --indent 6 --text "- Restore project backup" --result "SKIPPED" --color YELLOW
+
+            fi
+
+          fi
+
+          if [[ ${database_restore_skipped} != "true" ]]; then
+            # Decompress
+            decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+
+            exitstatus=$?
+            if [[ ${exitstatus} -eq 0 ]]; then
+
+              # Restore Database Backup
+              [[ -z ${db_user} || "${db_user}" != "${project_name}_user" ]] && db_user="${project_name}_user"
+              [[ -z ${db_pass} || "${db_user}" != "${project_name}_user" ]] && db_pass="$(openssl rand -hex 12)"
+
+              # Restore Database Backup
+              restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${BROLIT_TMP_DIR}/${db_to_restore}"
+
+              project_db_status="enabled"
+
             fi
 
           else
-            database_restore_skipped="true"
-            display --indent 6 --text "- Restore project backup" --result "SKIPPED" --color YELLOW
 
-          fi
-
-        fi
-
-        if [[ ${database_restore_skipped} != "true" ]]; then
-          # Decompress
-          decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
-
-          exitstatus=$?
-          if [[ ${exitstatus} -eq 0 ]]; then
-
-            # Restore Database Backup
-            [[ -z ${db_user} || "${db_user}" != "${project_name}_user" ]] && db_user="${project_name}_user"
-            [[ -z ${db_pass} || "${db_user}" != "${project_name}_user" ]] && db_pass="$(openssl rand -hex 12)"
-
-            # Restore Database Backup
-            restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${BROLIT_TMP_DIR}/${db_to_restore}"
-
-            project_db_status="enabled"
+            return 1
 
           fi
 
         else
-
-          return 1
-
+          # TODO: ask to download manually calling restore_database_backup or skip database restore part
+          project_db_status="disabled"
         fi
 
-      else
-        # TODO: ask to download manually calling restore_database_backup or skip database restore part
-        project_db_status="disabled"
       fi
 
     fi
