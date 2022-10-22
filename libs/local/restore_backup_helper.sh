@@ -503,12 +503,12 @@ function restore_backup_from_public_url() {
 
   project_install_type="$(project_get_install_type "${actual_folder}")"
 
-  if [[ $project_install_type == "default" ]]; then
+  if [[ ${project_install_type} == "default" ]]; then
 
     project_type="$(project_get_type "${actual_folder}")"
 
     # Project domain configuration (webserver+certbot+DNS)
-    https_enable="$(project_update_domain_config "${project_domain}" "${project_type}" "")"
+    https_enable="$(project_update_domain_config "${project_domain}" "default" "${project_type}" "")"
 
     # Post-restore/install tasks
     # TODO: neet to get old domain for replace on database
@@ -519,7 +519,7 @@ function restore_backup_from_public_url() {
     # TODO: search available port
 
     # Project domain configuration (webserver+certbot+DNS)
-    https_enable="$(project_update_domain_config "${project_domain}" "proxy" "")"
+    https_enable="$(project_update_domain_config "${project_domain}" "proxy" "${project_install_type}" "")"
 
   fi
 
