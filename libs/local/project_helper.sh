@@ -1600,7 +1600,7 @@ function project_install() {
   esac
 
   # Project domain configuration (webserver+certbot+DNS)
-  https_enable="$(project_update_domain_config "${project_domain}" "${project_type}" "")"
+  https_enable="$(project_update_domain_config "${project_domain}" "default" "${project_type}" "")"
 
   # Define project site url
   [[ ${https_enable} == "true" ]] && project_site_url="https://${project_domain}" || project_site_url="http://${project_domain}"
