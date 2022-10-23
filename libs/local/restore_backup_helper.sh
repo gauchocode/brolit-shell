@@ -624,7 +624,6 @@ function restore_config_files_from_storage() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
     #Restore file list
-    #dropbox_bk_list="$(${DROPBOX_UPLOADER} -hq list "${chosen_type_path}/${chosen_config_type}" | awk '{print $2;}')"
     storage_file_list="$(storage_list_dir "${chosen_type_path}/${chosen_config_type}")"
   fi
 
@@ -941,6 +940,9 @@ function restore_type_selection_from_storage() {
 
     chosen_status="$(whiptail --title "RESTORE FROM BACKUP" --menu "Choose a backup status." 20 78 10 $(for x in ${project_status_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)"
 
+    chosen_type_path="${chosen_server}/projects-${chosen_status}/${chosen_restore_type}"
+    storage_project_list="$(storage_list_dir "${chosen_type_path}")"
+
     ### NEW
     case ${chosen_restore_type} in
 
@@ -951,10 +953,6 @@ function restore_type_selection_from_storage() {
       ;;
 
     configs)
-
-      chosen_type_path="${chosen_server}/projects-${chosen_status}/${chosen_restore_type}"
-      #storage_project_list="$("${DROPBOX_UPLOADER}" -hq list "${chosen_type_path}" | awk '{print $2;}')"
-      storage_project_list="$(storage_list_dir "${chosen_type_path}")"
 
       restore_config_files_from_storage "${chosen_type_path}" "${storage_project_list}"
 
@@ -967,8 +965,7 @@ function restore_type_selection_from_storage() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
         storage_chosen_backup_path="${chosen_type_path}/${chosen_project}"
-        storage_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${storage_chosen_backup_path}" | awk '{print $3;}')"
-
+        storage_backup_list="$(storage_list_dir "${storage_chosen_backup_path}")"
       fi
       # Select Backup File
       chosen_backup_to_restore="$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${storage_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
@@ -998,7 +995,6 @@ function restore_type_selection_from_storage() {
         decompress "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
 
         chosen_type_path="${chosen_server}/projects-${chosen_status}/${chosen_restore_type}"
-        #storage_project_list="$("${DROPBOX_UPLOADER}" -hq list "${chosen_type_path}" | awk '{print $2;}')"
         storage_project_list="$(storage_list_dir "${chosen_type_path}")"
 
         # At this point chosen_project is the new project domain
@@ -1017,7 +1013,8 @@ function restore_type_selection_from_storage() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
         storage_chosen_backup_path="${chosen_type_path}/${chosen_project}"
-        storage_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${storage_chosen_backup_path}" | awk '{print $3;}')"
+        #storage_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${storage_chosen_backup_path}" | awk '{print $3;}')"
+        storage_backup_list="$(storage_list_dir "${storage_chosen_backup_path}")"
 
       fi
       # Select Backup File

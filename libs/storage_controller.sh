@@ -49,11 +49,7 @@ function storage_list_dir() {
         remote_list="$("${DROPBOX_UPLOADER}" -hq list "${remote_directory}" | awk '{print $3;}')"
 
         # If remote_list is empty, try to check the second column where directory names are
-        if [[ -z ${remote_list} ]]; then
-
-            remote_list="$("${DROPBOX_UPLOADER}" -hq list "${remote_directory}" | awk '{print $2;}')"
-
-        fi
+        [[ -z ${remote_list} ]] && remote_list="$("${DROPBOX_UPLOADER}" -hq list "${remote_directory}" | awk '{print $2;}')"
 
         # Log
         log_event "info" "Listing directory: ${remote_directory}" "false"
