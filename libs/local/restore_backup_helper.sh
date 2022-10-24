@@ -1065,32 +1065,16 @@ function restore_type_selection_from_storage() {
         #folder_to_install_result=$?
         #[[ ${folder_to_install_result} -eq 1 ]] && return 1
 
-        directory_browser "Site Selection Menu" "${folder_to_install}"
+        directory_browser "Site Selection Menu" "${PROJECTS_PATH}"
         directory_browser_result=$?
         [[ ${directory_browser_result} -eq 1 ]] && return 1
 
         # TODO: check project type (WP, Laravel, etc)
-        project_type="$(project_get_type "${folder_to_install}/${filename}")"
+        project_type="$(project_get_type "${PROJECTS_PATH}/${filename}")"
 
         # Post-restore/install tasks
         # TODO: neet to get old domain for replace on database
-        project_post_install_tasks "${folder_to_install}/${filename}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${project_domain}" "${project_domain}"
-
-        # Change wp-config.php database parameters
-        #wp_update_wpconfig "${project_path}" "${project_name}" "${project_stage}" "${db_pass}"
-
-        # Change Salts
-        #wpcli_set_salts "${project_path}"
-
-        # Change URLs
-        #wp_ask_url_search_and_replace "${project_path}"
-
-        # Changing wordpress visibility
-        #if [[ ${project_stage} == "prod" ]]; then
-        #  wpcli_change_wp_seo_visibility "${project_path}" "1"
-        #else
-        #  wpcli_change_wp_seo_visibility "${project_path}" "0"
-        #fi
+        project_post_install_tasks "${PROJECTS_PATH}/${filename}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${project_domain}" "${project_domain}"
 
       fi
 
