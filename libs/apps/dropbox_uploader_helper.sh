@@ -211,23 +211,19 @@ function dropbox_download() {
 
     spinner_stop "${dropbox_file_to_download_result}"
 
-    # Check dropbox_file_to_download_result
     if [[ ${dropbox_file_to_download_result} -eq 0 ]]; then
-
-        clear_previous_lines "1"
-
+        # Log
+        #clear_previous_lines "1"
         display --indent 6 --text "- Downloading file from Dropbox" --result "DONE" --color GREEN
         log_event "info" "${file_to_download} downloaded" "false"
 
         return 0
 
     else
-
+        # Log
         clear_previous_lines "1"
-
         display --indent 6 --text "- Downloading file from Dropbox" --result "FAIL" --color RED
         display --indent 8 --text "Please read log file" --tcolor RED
-
         log_event "error" "Can't download file ${file_to_download} from dropbox." "false"
         log_event "error" "Last command executed: ${DROPBOX_UPLOADER} -q download ${file_to_download} ${local_directory}/${tmp_file_name}" "false"
         log_event "debug" "Last command output: ${dropbox_output}" "false"
