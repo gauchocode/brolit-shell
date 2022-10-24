@@ -221,7 +221,6 @@ function php_fpm_optimizations() {
   #PHP_AVG_RAM="$(ps ax --no-headers -o "%mem,cmd" | grep '[f]'pm | awk 'NR != 1 {x[$2] += $1} END{ for(z in x) {print x[z]""}}')"
   MYSQL_AVG_RAM="$(ps ax --no-headers -o "%mem,cmd" | grep mysqld | awk 'NR != 2 {x[$2] += $1} END{ for(z in x) {print x[z]""}}')"
   NGINX_AVG_RAM="$(ps --no-headers -o "%mem,cmd" -C nginx | awk 'NR != 1 {x[$2] += $1} END{ for(z in x) {print x[z]""}}')"
-  #NETDATA_AVG_RAM="$(ps --no-headers -o "%mem,cmd" -C netdata | awk 'NR != 1 {x[$2] += $1} END{ for(z in x) {print x[z]""}}')"
 
   # Show/Log Server Info
   #display --indent 6 --text "Getting server info ..."
@@ -233,7 +232,6 @@ function php_fpm_optimizations() {
   #display --indent 6 --text "PHP_AVG_RAM: ${PHP_AVG_RAM}"
   display --indent 6 --text "MYSQL_AVG_RAM: ${MYSQL_AVG_RAM}"
   display --indent 6 --text "NGINX_AVG_RAM: ${NGINX_AVG_RAM}"
-  #display --indent 6 --text "NETDATA_AVG_RAM: ${NETDATA_AVG_RAM}"
 
   log_event "info" "PHP_V: ${php_v}" "false"
   log_event "info" "RAM_BUFFER: ${RAM_BUFFER}" "false"
@@ -242,7 +240,6 @@ function php_fpm_optimizations() {
   #log_event "info" "PHP_AVG_RAM: ${PHP_AVG_RAM}" "false"
   log_event "info" "MYSQL_AVG_RAM: ${MYSQL_AVG_RAM}" "false"
   log_event "info" "NGINX_AVG_RAM: ${NGINX_AVG_RAM}" "false"
-  #log_event "info" "NETDATA_AVG_RAM: ${NETDATA_AVG_RAM}" "false"
 
   DELIMITER="="
 
