@@ -204,6 +204,9 @@ function php_fpm_optimizations() {
 
   local php_v="${1}"
 
+  local ram_reserved
+  local ram_dedicated
+
   log_subsection "PHP-FPM Optimization Tool"
 
   RAM_BUFFER="1024"
@@ -270,12 +273,12 @@ function php_fpm_optimizations() {
   display --indent 6 --text "PM_MAX_REQUESTS_ORIGIN: ${PM_MAX_REQUESTS_ORIGIN}"
   display --indent 6 --text "PM_PROCESS_IDDLE_TIMEOUT_ORIGIN: ${PM_PROCESS_IDDLE_TIMEOUT_ORIGIN}"
 
-  log_event "info" "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN_ORIGIN}" "false"
-  log_event "info" "PM_START_SERVERS: ${PM_START_SERVERS_ORIGIN}" "false"
-  log_event "info" "PM_MIN_SPARE_SERVERS: ${PM_MIN_SPARE_SERVERS_ORIGIN}" "false"
-  log_event "info" "PM_MAX_SPARE_SERVERS: ${PM_MAX_SPARE_SERVERS_ORIGIN}" "false"
-  log_event "info" "PM_MAX_REQUESTS: ${PM_MAX_REQUESTS_ORIGIN}" "false"
-  log_event "info" "PM_PROCESS_IDDLE_TIMEOUT: ${PM_PROCESS_IDDLE_TIMEOUT_ORIGIN}" "false"
+  log_event "debug" "PM_MAX_CHILDREN: ${PM_MAX_CHILDREN_ORIGIN}" "false"
+  log_event "debug" "PM_START_SERVERS: ${PM_START_SERVERS_ORIGIN}" "false"
+  log_event "debug" "PM_MIN_SPARE_SERVERS: ${PM_MIN_SPARE_SERVERS_ORIGIN}" "false"
+  log_event "debug" "PM_MAX_SPARE_SERVERS: ${PM_MAX_SPARE_SERVERS_ORIGIN}" "false"
+  log_event "debug" "PM_MAX_REQUESTS: ${PM_MAX_REQUESTS_ORIGIN}" "false"
+  log_event "debug" "PM_PROCESS_IDDLE_TIMEOUT: ${PM_PROCESS_IDDLE_TIMEOUT_ORIGIN}" "false"
 
   # Settings	Value Explanation
   # max_children	(Total RAM - Memory used for Linux, DB, etc.) / process size
@@ -283,20 +286,22 @@ function php_fpm_optimizations() {
   # min_spare_servers	Number of CPU cores x 2
   # max_spare_servers	Same as start_servers
 
-  # Log
-  log_event "debug" "PM_MAX_CHILDREN=(${RAM} - (${MYSQL_AVG_RAM} + ${NGINX_AVG_RAM} + ${NETDATA_AVG_RAM} + ${RAM_BUFFER})) / ${PHP_AVG_RAM}))" "false"
+  ram_reserved="$(echo "(${MYSQL_AVG_RAM} + ${NGINX_AVG_RAM} + ${NETDATA_AVG_RAM} + ${RAM_BUFFER})" | bc)"
+  ram_dedicated="$(echo "(${RAM} - ${ram_reserved})" | bc)"
 
-  RAM_D="$(echo "${RAM} - (${MYSQL_AVG_RAM} + ${NGINX_AVG_RAM} + ${NETDATA_AVG_RAM} + ${RAM_BUFFER})" | bc)"
-  PM_MAX_CHILDREN="$(echo "${RAM_D} / ${PHP_AVG_RAM}" | bc | cut -d "." -f1)"
+  # Log
+  log_event "debug" "ram_reserved=(${MYSQL_AVG_RAM} + ${NGINX_AVG_RAM} + ${NETDATA_AVG_RAM} + ${RAM_BUFFER})" "false"
+  log_event "debug" "ram_dedicated=(${RAM} - ${ram_reserved})" "false"
+  log_event "debug" "PM_MAX_CHILDREN=(${ram_dedicated} / ${PHP_AVG_RAM})" "false"
+
+  PM_MAX_CHILDREN="$(echo "${ram_dedicated} / ${PHP_AVG_RAM}" | bc | cut -d "." -f1)"
   PM_START_SERVERS=$(("${CPUS}" * 4))
   PM_MIN_SPARE_SERVERS=$(("${CPUS} * 2"))
 
   # This fix:
   # ALERT: [pool www] pm.min_spare_servers(8) and pm.max_spare_servers(32) cannot be greater than pm.max_children(30)
   PM_MAX_SPARE_SERVERS=$(("${PM_START_SERVERS}" * 2))
-  if [[ ${PM_MAX_CHILDREN} < ${PM_MAX_SPARE_SERVERS} ]]; then
-    PM_MAX_SPARE_SERVERS=${PM_MAX_CHILDREN}
-  fi
+  [[ ${PM_MAX_CHILDREN} < ${PM_MAX_SPARE_SERVERS} ]] && PM_MAX_SPARE_SERVERS=${PM_MAX_CHILDREN}
 
   PM_MAX_REQUESTS=500
   PM_PROCESS_IDDLE_TIMEOUT="10s"
