@@ -923,7 +923,7 @@ function restore_type_selection_from_storage() {
   local domain                     # extracted domain
   local db_project_name            # extracted db name
   local backup_to_dowload          # backup to download
-  local folder_to_install          # directory to install project
+  #local folder_to_install          # directory to install project
   #local project_site
   local possible_project_name
   local db_user
@@ -1013,9 +1013,7 @@ function restore_type_selection_from_storage() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
         storage_chosen_backup_path="${chosen_type_path}/${chosen_project}"
-        #storage_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${storage_chosen_backup_path}" | awk '{print $3;}')"
         storage_backup_list="$(storage_list_dir "${storage_chosen_backup_path}")"
-
       fi
       # Select Backup File
       chosen_backup_to_restore="$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${storage_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
