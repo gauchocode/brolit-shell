@@ -227,9 +227,7 @@ function php_installer() {
 
   log_subsection "PHP Installer"
 
-  if [[ -z ${php_v} || ${php_v} == "default" ]]; then
-    php_v="$(php_get_distro_default_version)"
-  fi
+  [[ -z ${php_v} || ${php_v} == "default" ]] && php_v="$(php_get_distro_default_version)"
 
   php_bin="$(package_is_installed "php${php_v}-fpm")"
 
@@ -246,10 +244,22 @@ function php_installer() {
     # apt command
     sudo DEBIAN_FRONTEND=noninteractive apt-get --yes install "php${php_v}-fpm" "php${php_v}-mysql" "php-imagick" "php${php_v}-xml" "php${php_v}-cli" "php${php_v}-curl" "php${php_v}-mbstring" "php${php_v}-gd" "php${php_v}-intl" "php${php_v}-zip" "php${php_v}-bz2" "php${php_v}-bcmath" "php${php_v}-soap" "php${php_v}-dev" "php-pear" -qq </dev/null >/dev/null
 
-    # Log
-    clear_previous_lines "1"
-    display --indent 6 --text "- Installing php-${php_v} and libraries" --result "DONE" --color GREEN
-    log_event "info" "php-${php_v} installed" "false"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 1 ]]; then
+      # Log
+      clear_previous_lines "1"
+      display --indent 6 --text "- Installing php-${php_v} and libraries" --result "DONE" --color GREEN
+      log_event "info" "php-${php_v} installed" "false"
+
+      declare -g PHP="php" && export PHP
+
+      return 0
+    
+    else
+
+      return 1
+
+    fi
 
   fi
 
