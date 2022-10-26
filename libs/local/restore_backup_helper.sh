@@ -1177,7 +1177,7 @@ function restore_project() {
 
         move_files "${BROLIT_TMP_DIR}/${chosen_project}/wp-content" "${PROJECTS_PATH}/${chosen_project}/wordpress"
 
-        display --indent 2 --text "- Import files into docker volume" --result "DONE" --color GREEN
+        display --indent 6 --text "- Import files into docker volume" --result "DONE" --color GREEN
 
         # TODO: update this to match monthly and weekly backups
         project_name="$(project_get_name_from_domain "${chosen_project}")"

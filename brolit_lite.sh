@@ -845,11 +845,15 @@ function _project_get_type() {
 
     local dir_path="${1}"
 
-    local composer
+    #local project_type
+
+    local wp_path
     local laravel
     local php
     local nodejs
+    local react
     local html
+    local docker
 
     # TODO: if brolit_conf exists, should check this file and get project type
 
@@ -887,6 +891,17 @@ function _project_get_type() {
             echo "nodejs" && return 0
         fi
 
+        # React?
+        if [[ -f "${dir_path}/node_modules/react/cjs/" ]]; then
+            react="$(find "${dir_path}/node_modules/react/cjs/" -name "react.development.js" -type f)"
+            if [[ -n ${react} ]]; then
+
+                # Return
+                echo "react" && return 0
+
+            fi
+        fi
+
         # html-only?
         html="$(find "${dir_path}" -maxdepth 2 -name "index.html" -type f)"
         if [[ -n ${html} ]]; then
@@ -915,7 +930,7 @@ function _project_get_type() {
 #   ${project_installation_type}
 ################################################################################
 
-function _project_get_installation_type() {
+function _project_get_install_type() {
 
     local dir_path="${1}"
 
@@ -1119,9 +1134,7 @@ function _wp_config_path() {
     if [[ -d ${find_output} ]]; then
 
         # Return
-        echo "${find_output}"
-
-        return 0
+        echo "${find_output}" && return 0
 
     else
 
@@ -1749,7 +1762,7 @@ function _sites_directories() {
             site_type="$(_project_get_type "${PROJECTS_PATH}/${site}")"
 
             # Project Installation Type
-            install_type="$(_project_get_installation_type "${PROJECTS_PATH}/${site}")"
+            install_type="$(_project_get_install_type "${PROJECTS_PATH}/${site}")"
 
             # Cert
             site_cert="$(_certbot_certificate_get_valid_days "${site}")"
@@ -2304,5 +2317,5 @@ function show_server_data() {
 
     # Return JSON
     cat "${json_output_file}"
-    
+
 }
