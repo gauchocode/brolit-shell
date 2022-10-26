@@ -689,7 +689,6 @@ function restore_nginx_site_files() {
   log_subsection "Nginx server configuration Restore"
 
   # Downloading Config Backup
-  #dropbox_output="$(${DROPBOX_UPLOADER} download "${bk_to_download}" 1>&2)"
   storage_download_backup "${bk_to_download}" "${BROLIT_TMP_DIR}"
   [[ $? -eq 1 ]] && return 1
 
@@ -925,6 +924,7 @@ function restore_type_selection_from_storage() {
   local backup_to_dowload          # backup to download
   #local folder_to_install          # directory to install project
   #local project_site
+  local dump_file
   local possible_project_name
   local database_engine
   local database_name
@@ -1045,6 +1045,8 @@ function restore_type_selection_from_storage() {
         # Decompress
         decompress "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
 
+        dump_file="${chosen_backup_to_restore%%.*}.sql"
+
         # Ask with whiptail if the database is associated to an existing project (yes or no)
         whiptail_message_with_skip_option "RESTORE BACKUP" "Is the database associated to an existing project?"
 
@@ -1072,7 +1074,7 @@ function restore_type_selection_from_storage() {
             fi
 
             # Restore database on docker container
-            docker_mysql_database_import "${docker_project_name}_mysql" "${docker_mysql_user}" "${docker_mysql_user_pass}" "${docker_mysql_database}" "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}"
+            docker_mysql_database_import "${docker_project_name}_mysql" "${docker_mysql_user}" "${docker_mysql_user_pass}" "${docker_mysql_database}" "${BROLIT_TMP_DIR}/${dump_file}"
 
           else
 
@@ -1087,6 +1089,8 @@ function restore_type_selection_from_storage() {
 
             # If database_ vars are not empty, restore database
             if [[ -n "${database_engine}" ]] && [[ -n "${database_name}" ]] && [[ -n "${database_user}" ]] && [[ -n "${database_user_pass}" ]]; then
+
+              # TODO: check if volume is created? check if container is running?
 
               # Restore Database Backup
               restore_backup_database "${database_engine}" "${project_stage}" "${database_name}" "${database_user}" "${database_user_pass}" "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}"
@@ -1120,7 +1124,7 @@ function restore_type_selection_from_storage() {
           #fi
 
           # Restore Database Backup
-          restore_backup_database "${database_engine}" "${project_stage}" "${database_name}" "${database_user}" "${database_user_pass}" "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}"
+          restore_backup_database "${database_engine}" "${project_stage}" "${database_name}" "${database_user}" "${database_user_pass}" "${BROLIT_TMP_DIR}/${dump_file}"
 
           # TODO: ask if want to change project db parameters and make Cloudflare changes
 
@@ -1281,7 +1285,7 @@ function restore_project() {
         db_user_pass="$(project_get_config_var "${PROJECTS_PATH}/${chosen_project}/.env" "MYSQL_PASSWORD")"
 
         # Docker MySQL database import
-        docker_mysql_database_import "mariadb_${project_name}" "${project_name}_user" "${db_user_pass}" "${project_name}_prod" "${BROLIT_TMP_DIR}/${project_backup}"
+        docker_mysql_database_import "${project_name}_mysql" "${project_name}_user" "${db_user_pass}" "${project_name}_prod" "${BROLIT_TMP_DIR}/${project_backup}"
 
         display --indent 6 --text "- Import database into docker volume" --result "DONE" --color GREEN
 
