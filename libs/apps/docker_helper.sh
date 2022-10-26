@@ -480,6 +480,7 @@ function docker_project_install() {
 
     local project_path
     local port_available
+    local php_version
 
     # PUT ON A NEW FUNCTION?
 
@@ -541,6 +542,20 @@ function docker_project_install() {
             return 1
         fi
 
+    fi
+
+    # TODO: Only for wordpress/laravel/php projects
+    # PHP Version
+    # Whiptail menu to ask php version to work with
+    php_versions="7.4 8.1"
+    php_version="$(whiptail --title "PHP Version" --menu "Choose a PHP version for the Docker container:" 20 78 10 $(for x in ${php_versions}; do echo "$x [X]"; done) --default-item "7.4" 3>&1 1>&2 2>&3)"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 1 ]]; then
+        # Log
+        log_event "info" "Operation cancelled!" "false"
+        display --indent 2 --text "- Asking php version" --result SKIPPED --color YELLOW
+        return 1
     fi
 
     [[ ${project_domain} == "${project_root_domain}" ]] && project_domain="www.${project_domain}" && project_secondary_subdomain="${project_root_domain}"
@@ -639,12 +654,93 @@ function docker_project_install() {
         #
         #        ;;
         #
-        #    php)
-        #
-        #        php_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
-        #
-        #        ;;
-        #
+    php)
+
+        # Create project directory
+        mkdir -p "${project_path}"
+
+        # Copy docker-compose files
+        copy_files "${BROLIT_MAIN_DIR}/config/docker-compose/php/production-stack-proxy/" "${project_path}"
+
+        # Replace .env vars
+        local webserver_port="${port_available}"
+        local project_database="${project_name}_${project_stage}"
+        local project_database_user="${project_name}_user"
+
+        local project_database_user_passw
+        local project_database_root_passw
+
+        project_database_user_passw="$(openssl rand -hex 5)"
+        project_database_root_passw="$(openssl rand -hex 5)"
+
+        ## PROJECT
+        sed -ie "s|^PROJECT_NAME=.*$|PROJECT_NAME=${project_name}|g" "${project_path}/.env"
+        sed -ie "s|^PROJECT_DOMAIN=.*$|PROJECT_DOMAIN=${project_domain}|g" "${project_path}/.env"
+
+        ## PHP
+        sed -ie "s|^PHP_VERSION=.*$|PHP_VERSION=${php_version}|g" "${project_path}/.env"
+
+        ## WEBSERVER
+        sed -ie "s|^WEBSERVER_PORT=.*$|WP_PORT=${webserver_port}|g" "${project_path}/.env"
+
+        ##  MYSQL
+        sed -ie "s|^MYSQL_DATABASE=.*$|MYSQL_DATABASE=${project_database}|g" "${project_path}/.env"
+        sed -ie "s|^MYSQL_USER=.*$|MYSQL_USER=${project_database_user}|g" "${project_path}/.env"
+        sed -ie "s|^MYSQL_PASSWORD=.*$|MYSQL_PASSWORD=${project_database_user_passw}|g" "${project_path}/.env"
+        sed -ie "s|^MYSQL_ROOT_PASSWORD=.*$|MYSQL_ROOT_PASSWORD=${project_database_root_passw}|g" "${project_path}/.env"
+
+        # Remove tmp file
+        rm "${project_path}/.enve"
+
+        local compose_file="${project_path}/docker-compose.yml"
+
+        # Execute docker-compose commands
+        docker-compose -f "${compose_file}" pull --quiet
+        docker-compose -f "${compose_file}" up --detach # Not quiet option. FRQ: https://github.com/docker/compose/issues/6026
+
+        # Check exitcode
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+            # Log
+            wait 2
+            clear_previous_lines "6"
+            log_event "info" "Downloading docker images." "false"
+            log_event "info" "Building docker images." "false"
+            display --indent 6 --text "- Downloading docker images" --result "DONE" --color GREEN
+            display --indent 6 --text "- Building docker images" --result "DONE" --color GREEN
+
+            # Add .htaccess
+            echo "# PHP Values" >"${project_path}/wordpress/.htaccess"
+            echo "php_value upload_max_filesize 500M" >>"${project_path}/wordpress/.htaccess"
+            echo "php_value post_max_size 500M" >>"${project_path}/wordpress/.htaccess"
+
+            # Log
+            log_event "info" "Creating .htaccess with needed php parameters." "false"
+            display --indent 6 --text "- Creating .htaccess on project" --result "DONE" --color GREEN
+
+            # Edit wp-config.php
+            echo "define('FORCE_SSL_ADMIN', true);" >>"${project_path}/wordpress/wp-config.php"
+            echo "if (strpos(\$_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false){" >>"${project_path}/wordpress/wp-config.php"
+            echo "  \$_SERVER['HTTPS'] = 'on';" >>"${project_path}/wordpress/wp-config.php"
+            echo "  \$_SERVER['SERVER_PORT'] = 443;" >>"${project_path}/wordpress/wp-config.php"
+            echo "}" >>"${project_path}/wordpress/wp-config.php"
+            echo "if (isset(\$_SERVER['HTTP_X_FORWARDED_HOST'])) {" >>"${project_path}/wordpress/wp-config.php"
+            echo "  \$_SERVER['HTTP_HOST'] = \$_SERVER['HTTP_X_FORWARDED_HOST'];" >>"${project_path}/wordpress/wp-config.php"
+            echo "}" >>"${project_path}/wordpress/wp-config.php"
+            echo "define('WP_HOME','https://${project_domain}/');" >>"${project_path}/wordpress/wp-config.php"
+            echo "define('WP_SITEURL','https://${project_domain}/');" >>"${project_path}/wordpress/wp-config.php"
+
+            # Log
+            log_event "info" "Making changes on wp-config.php to work with nginx proxy on host." "false"
+            display --indent 6 --text "- Making changes on wp-config.php" --result "DONE" --color GREEN
+
+            # Execute function
+            #wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}" "${project_install_mode}"
+        fi
+
+        ;;
+
     *)
         log_event "error" "Project type '${project_type}' unkwnown, aborting ..." "false"
         return 1
