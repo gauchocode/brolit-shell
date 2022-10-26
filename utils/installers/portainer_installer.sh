@@ -43,47 +43,39 @@ function portainer_installer() {
 
     if [[ -n ${portainer} ]]; then
 
-        if [[ ${exitstatus} -eq 0 ]]; then
+        # Create project directory
+        mkdir -p "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}"
 
-            # Create project directory
-            mkdir -p "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}"
+        # Copy docker-compose.yml and .env files to project directory
+        cp "${BROLIT_MAIN_DIR}/utils/installers/docker-compose/portainer/docker-compose.yml" "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}"
+        cp "${BROLIT_MAIN_DIR}/utils/installers/docker-compose/portainer/.env" "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}"
 
-            # Copy docker-compose.yml and .env files to project directory
-            cp "${BROLIT_MAIN_DIR}/utils/installers/docker-compose/portainer/docker-compose.yml" "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}"
-            cp "${BROLIT_MAIN_DIR}/utils/installers/docker-compose/portainer/.env" "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}"
+        # Configure .env file (portainer and watchtower)
+        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "VIRTUAL_HOST" "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}" "none"
+        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "PORTAINER_PORT" "${PACKAGES_PORTAINER_CONFIG_PORT}" "none"
+        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_TIMEZONE" "${SERVER_TIMEZONE}" "none"
+        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_FROM" "${NOTIFICATION_EMAIL_SMTP_USER}" "none"
+        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_TO" "${NOTIFICATION_EMAIL_MAILA}" "none"
+        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_SERVER" "${NOTIFICATION_EMAIL_SMTP_SERVER}" "none"
+        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD" "${NOTIFICATION_EMAIL_SMTP_UPASS}" "none"
+        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER" "${NOTIFICATION_EMAIL_SMTP_USER}" "none"
+        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT" "${NOTIFICATION_EMAIL_SMTP_PORT}" "none"
 
-            # Configure .env file (portainer and watchtower)
-            project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "VIRTUAL_HOST" "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}" "none"
-            project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "PORTAINER_PORT" "${PACKAGES_PORTAINER_CONFIG_PORT}" "none"
-            project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_TIMEZONE" "${SERVER_TIMEZONE}" "none"
-            project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_FROM" "${NOTIFICATION_EMAIL_SMTP_USER}" "none"
-            project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_TO" "${NOTIFICATION_EMAIL_MAILA}" "none"
-            project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_SERVER" "${NOTIFICATION_EMAIL_SMTP_SERVER}" "none"
-            project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD" "${NOTIFICATION_EMAIL_SMTP_UPASS}" "none"
-            project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER" "${NOTIFICATION_EMAIL_SMTP_USER}" "none"
-            project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT" "${NOTIFICATION_EMAIL_SMTP_PORT}" "none"
+        # Run docker-compose pull on specific directory
+        docker-compose -f "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/docker-compose.yml" pull
 
-            # Run docker-compose pull on specific directory
-            docker-compose -f "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/docker-compose.yml" pull
+        # Run docker-compose up -d on specific directory
+        docker-compose -f "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/docker-compose.yml" up -d
 
-            # Run docker-compose up -d on specific directory
-            docker-compose -f "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/docker-compose.yml" up -d
+        clear_previous_lines "3"
 
-            clear_previous_lines "3"
+        # TODO: if we will let install via command line:
+        #PACKAGES_PORTAINER_STATUS="enabled"
+        #json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.portainer[].status" "${PACKAGES_PORTAINER_STATUS}"
+        # new global value ("enabled")
+        #export PACKAGES_PORTAINER_STATUS
 
-            # TODO: if we will let install via command line:
-            #PACKAGES_PORTAINER_STATUS="enabled"
-            #json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.portainer[].status" "${PACKAGES_PORTAINER_STATUS}"
-            # new global value ("enabled")
-            #export PACKAGES_PORTAINER_STATUS
-
-            return 0
-
-        else
-
-            return 1
-
-        fi
+        return 0
 
     else
 
