@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.4
+# Version: 3.2.5
 ################################################################################
 #
 # Backup/Restore Helper: Backup and restore funtions.
@@ -926,8 +926,10 @@ function restore_type_selection_from_storage() {
   #local folder_to_install          # directory to install project
   #local project_site
   local possible_project_name
-  local db_user
-  local db_pass
+  local database_engine
+  local database_name
+  local database_user
+  local database_user_pass
 
   chosen_restore_type="$(whiptail --title "RESTORE FROM BACKUP" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 $(for x in ${remote_type_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)"
 
@@ -1043,36 +1045,100 @@ function restore_type_selection_from_storage() {
         # Decompress
         decompress "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
 
-        # TODO: check database backup type (mysql or postgres)
-        local db_engine="mysql"
-        local db_name="${db_project_name}_${project_stage}"
-        #if [[ -z ${db_user} ]]; then
-        db_user="${db_project_name}_user"
-        #fi
-        #if [[ -z ${db_pass} ]]; then
-        # Passw generator
-        db_pass="$(openssl rand -hex 12)"
-        #fi
+        # Ask with whiptail if the database is associated to an existing project (yes or no)
+        whiptail_message_with_skip_option "RESTORE BACKUP" "Is the database associated to an existing project?"
 
-        # Restore Database Backup
-        restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}"
+        # If yes select a project from ${PROJECTS_PATH} directory
+        if [[ $? -eq 0 ]]; then
+          # Select project to work with
+          directory_browser "Select a project to work with" "${PROJECTS_PATH}" #return $filename
 
-        # TODO: ask if want to change project db parameters and make Cloudflare changes
+          # Check install_type (default or docker)
+          install_type="$(project_get_install_type "${PROJECTS_PATH}/${filename}")"
+          # Check project_type
+          project_type="$(project_get_type "${PROJECTS_PATH}/${filename}")"
 
-        #folder_to_install="$(project_ask_folder_to_install "${PROJECTS_PATH}")"
-        #folder_to_install_result=$?
-        #[[ ${folder_to_install_result} -eq 1 ]] && return 1
+          if [[ ${install_type} == "docker-compose" ]]; then
 
-        directory_browser "Site Selection Menu" "${PROJECTS_PATH}"
-        directory_browser_result=$?
-        [[ ${directory_browser_result} -eq 1 ]] && return 1
+            [[ ${PACKAGES_DOCKER_STATUS} != "enabled" ]] && log_event "error" "Docker is not enabled from brolit_conf.json" "true" && exit 1
 
-        # TODO: check project type (WP, Laravel, etc)
-        project_type="$(project_get_type "${PROJECTS_PATH}/${filename}")"
+            # Read MYSQL_DATABASE, MYSQL_USER and MYSQL_PASSWORD from docker .env file
+            docker_env_file="/${PROJECTS_PATH}/${filename}/.env"
+            if [[ -f "${docker_env_file}" ]]; then
+              docker_project_name="$(grep PROJECT_NAME "${docker_env_file}" | cut -d '=' -f2)"
+              docker_mysql_database="$(grep MYSQL_DATABASE "${docker_env_file}" | cut -d '=' -f2)"
+              docker_mysql_user="$(grep MYSQL_USER "${docker_env_file}" | cut -d '=' -f2)"
+              docker_mysql_user_pass="$(grep MYSQL_PASSWORD "${docker_env_file}" | cut -d '=' -f2)"
+            fi
 
-        # Post-restore/install tasks
-        # TODO: neet to get old domain for replace on database
-        project_post_install_tasks "${PROJECTS_PATH}/${filename}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${project_domain}" "${project_domain}"
+            # Restore database on docker container
+            docker_mysql_database_import "${docker_project_name}_mysql" "${docker_mysql_user}" "${docker_mysql_user_pass}" "${docker_mysql_database}" "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}"
+
+          else
+
+            # Get ${database_engine} from project config
+            database_engine="$(project_get_configured_database_engine "${PROJECTS_PATH}/${filename}" "${project_type}")"
+            # Get ${database_name} from project config
+            database_name="$(project_get_configured_database "${PROJECTS_PATH}/${filename}" "${project_type}")"
+            # Get ${database_user} from project config
+            database_user="$(project_get_configured_database_user "${PROJECTS_PATH}/${filename}" "${project_type}")"
+            # Get ${database_user_pass} from project config
+            database_user_pass="$(project_get_configured_database_userpassw "${PROJECTS_PATH}/${filename}" "${project_type}")"
+
+            # If database_ vars are not empty, restore database
+            if [[ -n "${database_engine}" ]] && [[ -n "${database_name}" ]] && [[ -n "${database_user}" ]] && [[ -n "${database_user_pass}" ]]; then
+
+              # Restore Database Backup
+              restore_backup_database "${database_engine}" "${project_stage}" "${database_name}" "${database_user}" "${database_user_pass}" "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}"
+              return 0
+
+            else
+
+              log_event "error" "Can't read database config from project file. Please, check project config." "true"
+              return 1
+
+            fi
+
+          fi
+
+        else
+
+          # Get database backup type (mysql or postgres) from dump file
+          database_engine="$(backup_get_database_type "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}")"
+
+          database_engine="mysql"
+          database_name="${db_project_name}_${project_stage}"
+
+          # TODO: check if database exists
+
+          #if [[ -z ${db_user} ]]; then
+          database_user="${db_project_name}_user"
+          #fi
+          #if [[ -z ${db_pass} ]]; then
+          # Passw generator
+          database_user_pass="$(openssl rand -hex 12)"
+          #fi
+
+          # Restore Database Backup
+          restore_backup_database "${database_engine}" "${project_stage}" "${database_name}" "${database_user}" "${database_user_pass}" "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}"
+
+          # TODO: ask if want to change project db parameters and make Cloudflare changes
+
+          #folder_to_install="$(project_ask_folder_to_install "${PROJECTS_PATH}")"
+          #folder_to_install_result=$?
+          #[[ ${folder_to_install_result} -eq 1 ]] && return 1
+
+          #directory_browser "Site Selection Menu" "${PROJECTS_PATH}"
+          #directory_browser_result=$?
+          #[[ ${directory_browser_result} -eq 1 ]] && return 1
+
+          # TODO: check project type (WP, Laravel, etc)
+          #project_type="$(project_get_type "${PROJECTS_PATH}/${filename}")"
+
+          # Post-restore/install tasks
+          # TODO: neet to get old domain for replace on database
+          #project_post_install_tasks "${PROJECTS_PATH}/${filename}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${project_domain}" "${project_domain}"
+        fi
 
       fi
 

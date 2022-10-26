@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.4
+# Version: 3.2.5
 ################################################################################
 #
 # WordPress Helper: Perform wordpress actions.
@@ -9,18 +9,64 @@
 ################################################################################
 
 ################################################################################
-# Check if is a WordPress project
+# Download Wordpress from official repository
 #
 # Arguments:
-#  None
+#  ${1} = wp_version (latest, 6.0.3, 6.0.2, etc)
+#  ${2} = destination_path
 #
 # Outputs:
 #  0 if ok, 1 on error.
 ################################################################################
 
-function is_wp_project() {
+function wp_download() {
 
-  # $1 = project directory
+  local wp_version=${1}
+  local destination_path=${2}
+
+  if [[ -z ${wp_version} || ${wp_version} == "latest" ]]; then
+
+    # Download latest version
+    ${CURL} -O "https://wordpress.org/latest.tar.gz" > "${destination_path}/wordpress.tar.gz"
+
+  else
+
+    # Download specific version
+    ${CURL} -O "https://wordpress.org/wordpress-${wp_version}.tar.gz" > "${destination_path}/wordpress.tar.gz"
+
+  fi
+
+  curl_output=$?
+  if [[ ${curl_output} -eq 0 ]]; then
+
+    log_event "debug" "WordPress ${wp_version} downloaded OK." "false"
+    display --indent 6 --text "- Downloading WordPress ${wp_version}" --result "DONE" --color GREEN
+
+    return 0
+
+  else
+
+    log_event "error" "Downloading WordPress ${wp_version}" "false"
+    log_event "debug" "Command executed: ${CURL} -O https://wordpress.org/wordpress-${wp_version}.tar.gz" "false"
+    display --indent 6 --text "Downloading WordPress ${wp_version}" --result "FAIL" --color RED
+
+    return 1
+
+  fi
+
+}
+
+################################################################################
+# Check if is a WordPress project
+#
+# Arguments:
+#  ${1} = project directory
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
+
+function wp_is_project() {
 
   local project_dir="${1}"
 
@@ -35,7 +81,7 @@ function is_wp_project() {
     log_event "info" "${project_dir} is a WordPress project" "false"
 
     # Return
-    echo "${is_wp}"
+    echo "${is_wp}" && return 0
 
   else
 
@@ -51,7 +97,7 @@ function is_wp_project() {
 # WordPress config path
 #
 # Arguments:
-#  $1 = ${dir_to_search}
+#  ${1} = ${dir_to_search}
 #
 # Outputs:
 #  String with wp-config path
@@ -74,9 +120,7 @@ function wp_config_path() {
     log_event "debug" "wp-config.php found: ${find_output}" "false"
 
     # Return
-    echo "${find_output}"
-
-    return 0
+    echo "${find_output}" && return 0
 
   else
 
@@ -118,9 +162,7 @@ function wp_config_get_option() {
     display --indent 8 --text "${wp_option}=${wp_value}" --tcolor GREEN
 
     # Return
-    echo "${wp_value}"
-
-    return 0
+    echo "${wp_value}" && return 0
 
   else
 
@@ -378,7 +420,7 @@ function wp_ask_url_search_and_replace() {
       if [[ -z ${new_URL} ]]; then
 
         new_URL="$(whiptail_input "THE NEW URL" "Insert the new URL , including http:// or https://" "")"
-        
+
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -444,7 +486,7 @@ function wordpress_select_project_to_work_with() {
       log_event "info" "Working with ${chosen_wordpress_project}" "false"
 
       # Return
-      echo "${chosen_wordpress_project}"
+      echo "${chosen_wordpress_project}" && return 0
 
     else
 
@@ -457,7 +499,7 @@ function wordpress_select_project_to_work_with() {
   else
 
     # Return
-    echo "${wordpress_projects}"
+    echo "${wordpress_projects}" && return 0
 
   fi
 

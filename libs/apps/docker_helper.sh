@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.4
+# Version: 3.2.5
 ################################################################################
 #
 # Docker Helper: Perform docker actions.
@@ -559,8 +559,12 @@ function docker_project_install() {
         local wp_port="${port_available}"
         local project_database="${project_name}_${project_stage}"
         local project_database_user="${project_name}_user"
-        local project_database_user_passw=$(openssl rand -hex 5)
-        local project_database_root_passw=$(openssl rand -hex 5)
+
+        local project_database_user_passw
+        local project_database_root_passw
+
+        project_database_user_passw="$(openssl rand -hex 5)"
+        project_database_root_passw="$(openssl rand -hex 5)"
 
         ## PROJECT
         sed -ie "s|^PROJECT_NAME=.*$|PROJECT_NAME=${project_name}|g" "${project_path}/.env"

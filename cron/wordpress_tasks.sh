@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.4
+# Version: 3.2.5
 ################################################################################
 
 ### Main dir check
@@ -52,7 +52,7 @@ for site in ${all_sites}; do
   if [[ ${IGNORED_PROJECTS_LIST} != *"${project_name}"* ]]; then
 
     # If is wp
-    is_wp="$(is_wp_project "${site}")"
+    is_wp="$(wp_is_project "${site}")"
 
     if [[ ${is_wp} == "true" ]]; then
 
