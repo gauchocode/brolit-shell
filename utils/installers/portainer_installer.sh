@@ -41,7 +41,7 @@ function portainer_installer() {
 
     exitstatus=$?
 
-    if [[ -n ${portainer} ]]; then
+    if [[ -z ${portainer} ]]; then
 
         # Create project directory
         mkdir -p "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}"
@@ -69,19 +69,13 @@ function portainer_installer() {
 
         clear_previous_lines "3"
 
-        # TODO: if we will let install via command line:
-        #PACKAGES_PORTAINER_STATUS="enabled"
-        #json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.portainer[].status" "${PACKAGES_PORTAINER_STATUS}"
-        # new global value ("enabled")
-        #export PACKAGES_PORTAINER_STATUS
-
         return 0
 
     else
 
         log_event "warning" "Portainer is already installed" "false"
 
-        return 0
+        return 1
 
     fi
 
