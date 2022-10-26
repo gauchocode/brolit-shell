@@ -187,10 +187,8 @@ function docker_get_container_id() {
     container_id="$(docker ps | grep "${image_name}" | awk '{print $1;}')"
 
     if [[ -n ${container_id} ]]; then
-
-        echo "${container_id}"
-
-        return 0
+        # Return
+        echo "${container_id}" && return 0
 
     else
 
@@ -368,17 +366,17 @@ function docker_mysql_database_import() {
     local mysql_database="${4}"
     local dump_file="${5}"
 
-    # TODO:
-    # 1- List container names
-    # 2- Select container name to work with
+    # Log
+    display --indent 6 --text " - Importing database"
+    log_event "debug" "Running: docker exec -i \"${container_name}\" mysql -u\"${mysql_user}\" -p\"${mysql_user_passw}\" ${mysql_database} < ${dump_file}" "false"
 
     # Docker run
     # Example: docker exec -i db mysql -uroot -pexample wordpress < dump.sql
-    log_event "debug" "Running: docker exec -i \"${container_name}\" mysql -u\"${mysql_user}\" -p\"${mysql_user_passw}\" ${mysql_database} < ${dump_file}" "false"
     docker exec -i "${container_name}" mysql -u"${mysql_user}" -p"${mysql_user_passw}" "${mysql_database}" <"${dump_file}"
 
-    # Docker logs
-    #docker logs wordpress
+    # Log
+    clear_previous_lines "1"
+    display --indent 6 --text " - Importing database" --result "DONE" --color GREEN
 
 }
 

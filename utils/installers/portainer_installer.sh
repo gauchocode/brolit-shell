@@ -41,7 +41,7 @@ function portainer_installer() {
 
     exitstatus=$?
 
-    if [[ -z ${portainer} ]]; then
+    if [[ -n ${portainer} ]]; then
 
         if [[ ${exitstatus} -eq 0 ]]; then
 
