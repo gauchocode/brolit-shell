@@ -1,0 +1,64 @@
+version: '3.1'
+
+services:
+
+    mysql:
+        image: 'mariadb:10.6'
+        container_name: ${PROJECT_NAME}_mysql
+        environment:
+            MYSQL_DATABASE: ${MYSQL_DATABASE}
+            MYSQL_USER: ${MYSQL_USER}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+            MYSQL_RANDOM_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+        volumes:
+            - ${MYSQL_DATA_DIR}:/var/lib/mysql
+        networks:
+            - internal
+            
+    webserver:
+        image: 'nginx:alpine'
+        container_name: ${PROJECT_NAME}_nginx
+        working_dir: /application
+        volumes:
+            - ${WWW_DATA_DIR}:/application
+            - './php-${PHP_VERSION}_docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf'
+        ports:
+            - '${WEBSERVER_PORT}:80'
+        networks:
+            - internal
+            
+    php-fpm:
+        build: php-${PHP_VERSION}_docker/php-fpm
+        container_name: ${PROJECT_NAME}_php-fpm
+        working_dir: /application
+        volumes:
+            - ${WWW_DATA_DIR}:/application
+            - './php-${PHP_VERSION}_docker/php-fpm/php-ini-overrides.ini:/etc/php/${PHP_VERSION}/fpm/conf.d/99-overrides.ini'
+        networks:
+            - internal
+
+    redis:
+        image: 'redis:6.0-alpine'
+        container_name: ${PROJECT_NAME}_redis
+        restart: unless-stopped
+        volumes:
+            - ${REDIS_DATA}:/data
+        networks:
+            - internal
+
+    #phpmyadmin:
+    #    image: phpmyadmin/phpmyadmin
+    #    container_name: ${PROJECT_NAME}_phpmyadmin
+    #    restart: always
+    #    ports:
+    #    - ${PHPMYADMIN_PORT}:80
+    #    hostname: ${PHPMYADMIN_DOMAIN}
+    #    environment:
+    #        PMA_HOST: mysql
+    #    networks:
+    #        - internal
+
+networks:
+  internal:
+    name: ${PROJECT_NAME}_net
+    driver: bridge
