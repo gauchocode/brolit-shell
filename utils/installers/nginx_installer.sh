@@ -68,6 +68,35 @@ function nginx_installer() {
 }
 
 ################################################################################
+# Nginx purge
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
+
+function nginx_purge() {
+
+    # Remove nginx
+    apt-get --yes purge nginx nginx-common >/dev/null
+
+    # Remove nginx config files
+    rm -rf /etc/nginx
+
+    # Remove nginx log files
+    rm -rf /var/log/nginx
+
+    # Remove nginx cache files
+    rm -rf /var/cache/nginx
+
+    # Remove nginx pid files
+    rm -rf /var/run/nginx
+
+}
+
+################################################################################
 # Nginx webp installer
 #
 # Arguments:
@@ -158,7 +187,7 @@ function nginx_installer_menu() {
 
             if [[ ${chosen_nginx_installer_option} == *"01"* ]]; then
                 log_subsection "Nginx Installer"
-                package_purge "nginx"
+                nginx_purge
             fi
 
             if [[ ${chosen_nginx_installer_option} == *"02"* ]]; then
