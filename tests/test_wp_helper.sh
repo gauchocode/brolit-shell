@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.4
+# Version: 3.2.5
 #############################################################################
 
 function test_wpcli_helper_funtions() {
@@ -105,11 +105,11 @@ function test_is_wp_project() {
 
     log_subsection "Test: test_is_wp_project"
 
-    result="$(is_wp_project "${project_path}")"
+    result="$(wp_is_project "${project_path}")"
     if [[ ${result} = "true" ]]; then
-        display --indent 6 --text "- is_wp_project result ${result}" --result "PASS" --color WHITE
+        display --indent 6 --text "- wp_is_project result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- is_wp_project" --result "FAIL" --color RED
+        display --indent 6 --text "- wp_is_project" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
