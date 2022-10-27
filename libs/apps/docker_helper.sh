@@ -492,10 +492,6 @@ function docker_project_install() {
 
     log_section "Project Installer (${project_type} on docker)"
 
-    # Project Port (docker internal)
-    ## Will find the next port available from 81 to 200
-    port_available="$(network_next_available_port "81" "200")"
-
     # Project Domain
     if [[ -z ${project_domain} ]]; then
         project_domain="$(project_ask_domain "")"
@@ -543,6 +539,10 @@ function docker_project_install() {
         fi
 
     fi
+
+    # Project Port (docker internal)
+    ## Will find the next port available from 81 to 200
+    port_available="$(network_next_available_port "81" "200")"
 
     # TODO: Only for wordpress/laravel/php projects
     # PHP Version

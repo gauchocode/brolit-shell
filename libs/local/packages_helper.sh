@@ -231,6 +231,7 @@ function package_check_required() {
   package_install_if_not "zip"
   package_install_if_not "unzip"
   package_install_if_not "git"
+  package_install_if_not "telnet"
   package_install_if_not "whois"
   package_install_if_not "dnsutils"
   package_install_if_not "net-tools"
