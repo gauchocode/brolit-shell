@@ -254,7 +254,7 @@ function php_installer() {
       declare -g PHP="php" && export PHP
 
       return 0
-    
+
     else
 
       return 1
@@ -504,7 +504,7 @@ function php_composer_installer() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Command
-    ${PHP} "${BROLIT_TMP_DIR}/composer-setup.php" --quiet --install-dir=/usr/local/bin --filename=composer
+    php "${BROLIT_TMP_DIR}/composer-setup.php" --quiet --install-dir=/usr/local/bin --filename=composer
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -523,7 +523,8 @@ function php_composer_installer() {
 
       # Log
       log_event "error" "Composer installer failed" "false"
-      log_event "debug" "Command executed: ${PHP} ${BROLIT_TMP_DIR}/composer-setup.php --quiet --install-dir=/usr/local/bin --filename=composer" "false"
+      log_event "debug" "Command executed: ${CURL} https://getcomposer.org/installer >${BROLIT_TMP_DIR}/composer-setup.php" "false"
+      log_event "debug" "Command executed: php ${BROLIT_TMP_DIR}/composer-setup.php --quiet --install-dir=/usr/local/bin --filename=composer" "false"
       display --indent 6 --text "- Installing php composer" --result "FAIL" --color RED
       display --indent 8 --text "Read the log file for more information" --tcolor RED
 
