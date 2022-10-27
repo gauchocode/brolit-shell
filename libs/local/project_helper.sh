@@ -2409,13 +2409,13 @@ function project_update_domain_config() {
 
     # TODO: Refactor this
 
-    if [[ ${project_install_type} == "docker-compose" ]]; then
+    if [[ ${project_install_type} == "proxy" || ${project_install_type} == "docker"* ]]; then
       # Nginx config
       nginx_server_create "${project_domain}" "proxy" "single" "" "${project_port}"
 
     else
       # Nginx config
-      nginx_server_create "${project_domain}" "${project_type}" "single" "" "${project_port}"
+      nginx_server_create "${project_domain}" "${project_type}" "single" "" ""
 
     fi
 
