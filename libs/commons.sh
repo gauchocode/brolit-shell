@@ -1070,13 +1070,14 @@ function network_next_available_port() {
   log_event "debug" "Getting next available port from ${port_start} to ${port_end}" "false"
 
   for port in $(seq "${port_start}" "${port_end}"); do
+
     echo -ne "\035" | telnet 127.0.0.1 "${port}" >/dev/null 2>&1
     if [[ $? -eq 1 ]]; then
       log_event "debug" "Available port: ${port}" "false"
       # Return
-      echo "${port}"
-      break
+      echo "${port}" && return 0
     fi
+    
   done
 
 }
