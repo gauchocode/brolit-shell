@@ -1334,14 +1334,12 @@ function project_get_configured_database_userpassw() {
   # First try to read from brolit project config
   db_user_passw="$(project_get_brolit_config_var "${project_path}" "project[].database[].config[].pass")"
 
-  if [[ ${db_user_passw} != "false" ]]; then
+  if [[ -n ${db_user_passw} && ${db_user_passw} != "false" ]]; then
 
-    log_event "debug" "Extracted db_name: ${db_user_passw}" "false"
+    log_event "debug" "Extracted db_user_passw: ${db_user_passw}" "false"
 
     # Return
-    echo "${db_user_passw}"
-
-    return 0
+    echo "${db_user_passw}" && return 0
 
   else
 
@@ -1352,7 +1350,7 @@ function project_get_configured_database_userpassw() {
       db_user_passw="$(wp_config_get_option "${project_path}" "DB_PASSWORD")"
 
       # Return
-      echo "${db_user_passw}"
+      echo "${db_user_passw}" && return 0
 
       ;;
 
@@ -1361,7 +1359,7 @@ function project_get_configured_database_userpassw() {
       db_user_passw="$(project_get_config_var "${project_path}/.env" "DB_PASSWORD")"
 
       # Return
-      echo "${db_user_passw}"
+      echo "${db_user_passw}" && return 0
 
       ;;
 
@@ -1370,7 +1368,7 @@ function project_get_configured_database_userpassw() {
       db_user_passw="$(project_get_config_var "${project_path}/.env" "DB_PASSWORD")"
 
       # Return
-      echo "${db_user_passw}"
+      echo "${db_user_passw}" && return 0
 
       ;;
 
@@ -1379,7 +1377,7 @@ function project_get_configured_database_userpassw() {
       db_user_passw="$(project_get_config_var "${project_path}/.env" "DB_PASSWORD")"
 
       # Return
-      echo "${db_user_passw}"
+      echo "${db_user_passw}" && return 0
 
       ;;
 
@@ -2061,7 +2059,7 @@ function project_get_type() {
         echo "${project_type}" && return 0
 
       fi
-      
+
     fi
 
     # other-php?
