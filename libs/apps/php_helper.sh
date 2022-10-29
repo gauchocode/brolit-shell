@@ -25,8 +25,16 @@ function php_check_activated_version() {
   # Activated default version
   php_default=$(php -version | grep -Po '^PHP \K([0-9]*.[0-9]*.[0-9]*)' | tr ' ' -)
 
-  # Return
-  echo "${php_default}"
+  if [[ -n ${php_default} ]]; then
+
+    # Return
+    echo "${php_default}" && return 0
+
+  else
+
+    return 1
+
+  fi
 
 }
 
@@ -50,7 +58,7 @@ function php_set_version_on_config() {
 
   if [[ ${config_file} != "" ]]; then
 
-    if [[ ${php_v} == "" ]]; then
+    if [[ -z ${php_v} ]]; then
 
       # Get array with installed versions
       php_installed_versions="$(php_check_installed_version)"

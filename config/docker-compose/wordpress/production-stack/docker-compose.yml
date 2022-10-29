@@ -16,18 +16,6 @@ services:
             - ${MYSQL_DATA_DIR}:/var/lib/mysql
         networks:
             - internal
-    
-    phpmyadmin:
-        image: phpmyadmin/phpmyadmin
-        container_name: ${PROJECT_NAME}_phpmyadmin
-        restart: always
-        ports:
-        - ${PHPMYADMIN_PORT}:80
-        hostname: ${PHPMYADMIN_DOMAIN}
-        environment:
-            PMA_HOST: mysql
-        networks:
-            - internal
 
     webserver:
         image: 'nginx:alpine'
@@ -72,6 +60,33 @@ services:
         restart: unless-stopped
         volumes:
             - ${REDIS_DATA}:/data
+        networks:
+            - internal
+
+#    phpmyadmin:
+#        image: phpmyadmin/phpmyadmin
+#        container_name: ${PROJECT_NAME}_phpmyadmin
+#        restart: always
+#        ports:
+#            - ${PHPMYADMIN_PORT}:80
+#        hostname: ${PHPMYADMIN_DOMAIN}
+#        environment:
+#            PMA_HOST: mysql
+#        networks:
+#            - internal
+
+    server:
+        container_name: ${PROJECT_NAME}_wp-ssh
+        build:
+            context: ./ssh_docker
+            args:
+                SSH_MASTER_USER: ${SSH_MASTER_USER}
+                SSH_MASTER_PASS: ${SSH_MASTER_PASS}
+        hostname: ${PROJECT_NAME}
+        ports:
+            - "${SSH_HOST_PORT}:22"
+        volumes:
+            - ${WWW_DATA_DIR}/wp-content:/uploads
         networks:
             - internal
 

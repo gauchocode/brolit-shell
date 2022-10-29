@@ -345,10 +345,9 @@ function nginx_server_change_phpv() {
     local new_php_v="${2}"
 
     # TODO: if ${new_php_v} is not set, must ask wich PHP_V
-
     if [[ -z ${new_php_v} ]]; then
         new_php_v="$(php_check_activated_version)"
-
+        [[ $? -eq 1 ]] && return 1
     fi
 
     # Updating nginx server file
@@ -553,14 +552,13 @@ function nginx_create_empty_nginx_conf() {
 
     local path="${1}"
 
-    if [[ ! -f "${path}/nginx.conf" ]]; then
+    if [[ -d "${path}" && ! -f "${path}/nginx.conf" ]]; then
 
         # Create empty file
-        touch "${path}/nginx.conf"
-
-        return 0
+        touch "${path}/nginx.conf" &&  return 0
 
     else
+
         return 1
 
     fi
@@ -585,12 +583,11 @@ function nginx_generate_encrypted_auth() {
 
     local encrypted_psw
 
-    log_event "info" "Creating nginx encrypted authentication." "false"
+    log_event "info" "Creating nginx encrypted authentication" "false"
 
-    if [[ -n ${psw} ]]; then
-        encrypted_psw="$(mkpasswd -m sha-512 "${psw}")"
-    fi
-
+    [[ -n ${psw} ]] && encrypted_psw="$(mkpasswd -m sha-512 "${psw}")"
+    
+    # Log
     log_event "info" "User: ${user}" "false"
     log_event "info" "Pass: ${psw}" "false"
     log_event "info" "Encrypted Pass: ${encrypted_psw}" "false"
