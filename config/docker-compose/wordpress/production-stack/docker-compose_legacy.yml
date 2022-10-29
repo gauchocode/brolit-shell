@@ -36,8 +36,6 @@ services:
             MYSQL_RANDOM_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
         volumes:
             - ${MYSQL_DATA_DIR}:/var/lib/mysql
-    #    ports:
-    #        - "3306:3306"
         networks:
             - internal
 

@@ -167,7 +167,7 @@ function portainer_configure() {
     else # If not use nginx as reverse proxy
 
         # Check if firewall is enabled
-        if [ "$(ufw status | grep -c "Status: active")" -eq "1" ]; then
+        if [[ "$(ufw status | grep -c "Status: active")" -eq "1" ]]; then
             firewall_allow "${PACKAGES_PORTAINER_CONFIG_PORT}"
         fi
 
