@@ -198,7 +198,6 @@
         "nginx": [
             {
                 "status": "disabled",
-                "version": "default",
                 "config": [
                     {
                         "port": "default"
@@ -209,7 +208,6 @@
         "mysql": [
             {
                 "status": "disabled",
-                "version": "default",
                 "config": [
                     {
                         "port": "default"
@@ -220,7 +218,6 @@
         "mariadb": [
             {
                 "status": "disabled",
-                "version": "default",
                 "config": [
                     {
                         "port": "default"
@@ -231,7 +228,6 @@
         "postgres": [
             {
                 "status": "disabled",
-                "version": "default",
                 "config": [
                     {
                         "port": "default"
@@ -241,8 +237,7 @@
         ],
         "redis": [
             {
-                "status": "disabled",
-                "version": "default"
+                "status": "disabled"
             }
         ],
         "php": [
@@ -289,7 +284,6 @@
         "docker": [
             {
                 "status": "disabled",
-                "version": "default",
                 "compose": [
                     {
                         "status": "enabled",
@@ -307,6 +301,17 @@
                         "port": "9000",
                         "nginx_proxy": "enabled",
                         "subdomain": ""
+                    }
+                ]
+            }
+        ],
+        "portainer_agent": [
+            {
+                "status": "disabled",
+                "version": "latest",
+                "config": [
+                    {
+                        "port": "9001"
                     }
                 ]
             }
@@ -365,6 +370,7 @@
                 "status": "disabled",
                 "config": [
                     {
+                        "web_admin": "disabled",
                         "subdomain": "",
                         "user": "",
                         "user_pass": ""
