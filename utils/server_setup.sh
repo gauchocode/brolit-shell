@@ -231,6 +231,17 @@ function server_app_setup() {
 
         ;;
 
+    "portainer_agent")
+
+        if [[ ${PACKAGES_PORTAINER_AGENT_STATUS} == "enabled" ]]; then
+            portainer_agent_installer
+            portainer_agent_configure
+        else
+            portainer_agent_purge
+        fi
+
+        ;;
+
     "mailcow")
 
         if [[ ${PACKAGES_MAILCOW_STATUS} == "enabled" ]]; then
