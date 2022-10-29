@@ -145,7 +145,7 @@ function _brolit_configuration_load_backup_dropbox() {
 
         # Dropbox-uploader directory
         DPU_F="${BROLIT_MAIN_DIR}/tools/third-party/dropbox-uploader"
-        
+
         # Dropbox-uploader runner
         DROPBOX_UPLOADER="${DPU_F}/dropbox_uploader.sh"
 
@@ -1359,6 +1359,7 @@ function _brolit_configuration_load_netdata() {
     declare -g NETDATA
     declare -g NETDATA_PR
     declare -g PACKAGES_NETDATA_STATUS
+    declare -g PACKAGES_NETDATA_CONFIG_WEB_ADMIN
     declare -g PACKAGES_NETDATA_CONFIG_SUBDOMAIN
     declare -g PACKAGES_NETDATA_CONFIG_USER
     declare -g PACKAGES_NETDATA_CONFIG_USER_PASS
@@ -1374,13 +1375,25 @@ function _brolit_configuration_load_netdata() {
 
     if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
 
-        PACKAGES_NETDATA_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].subdomain")"
-        PACKAGES_NETDATA_CONFIG_USER="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].user")"
-        PACKAGES_NETDATA_CONFIG_USER_PASS="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].user_pass")"
+        if [[ ${PACKAGES_NETDATA_CONFIG_WEB_ADMIN} == "enabled" ]]; then
+            PACKAGES_NETDATA_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].subdomain")"
+            PACKAGES_NETDATA_CONFIG_USER="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].user")"
+            PACKAGES_NETDATA_CONFIG_USER_PASS="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].user_pass")"
+            # Check if all required vars are set
+            if [[ -z "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}" ]] || [[ -z "${PACKAGES_NETDATA_CONFIG_USER}" ]] || [[ -z "${PACKAGES_NETDATA_CONFIG_USER_PASS}" ]]; then
+                log_event "error" "Missing required config vars for netdata support" "true"
+                exit 1
+            fi
+        fi
 
         PACKAGES_NETDATA_NOTIFICATION_ALARM_LEVEL="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].notifications[].alarm_level")"
-        PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].notifications[].telegram[].status")"
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_NETDATA_NOTIFICATION_ALARM_LEVEL}" ]]; then
+            log_event "error" "Missing required config vars for netdata support" "true"
+            exit 1
+        fi
 
+        PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].notifications[].telegram[].status")"
         if [[ ${PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_STATUS} == "enabled" ]]; then
 
             PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_BOT_TOKEN="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].notifications[].telegram[].config[].bot_token")"
@@ -1392,12 +1405,6 @@ function _brolit_configuration_load_netdata() {
                 exit 1
             fi
 
-        fi
-
-        # Check if all required vars are set
-        if [[ -z "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}" ]] || [[ -z "${PACKAGES_NETDATA_CONFIG_USER}" ]] || [[ -z "${PACKAGES_NETDATA_CONFIG_USER_PASS}" ]] || [[ -z "${PACKAGES_NETDATA_NOTIFICATION_ALARM_LEVEL}" ]]; then
-            log_event "error" "Missing required config vars for netdata support" "true"
-            exit 1
         fi
 
         # Checking if Netdata is not installed
@@ -1414,7 +1421,7 @@ function _brolit_configuration_load_netdata() {
 
     fi
 
-    export PACKAGES_NETDATA_STATUS PACKAGES_NETDATA_CONFIG_SUBDOMAIN PACKAGES_NETDATA_CONFIG_USER PACKAGES_NETDATA_CONFIG_USER_PASS PACKAGES_NETDATA_NOTIFICATION_ALARM_LEVEL
+    export PACKAGES_NETDATA_STATUS PACKAGES_NETDATA_CONFIG_WEB_ADMIN PACKAGES_NETDATA_CONFIG_SUBDOMAIN PACKAGES_NETDATA_CONFIG_USER PACKAGES_NETDATA_CONFIG_USER_PASS PACKAGES_NETDATA_NOTIFICATION_ALARM_LEVEL
     export PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_STATUS PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_BOT_TOKEN PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_CHAT_ID
 
 }
@@ -1650,6 +1657,70 @@ function _brolit_configuration_load_portainer() {
     fi
 
     export PORTAINER PACKAGES_PORTAINER_STATUS PACKAGES_PORTAINER_CONFIG_SUBDOMAIN PACKAGES_PORTAINER_CONFIG_PORT PACKAGES_PORTAINER_CONFIG_NGINX
+
+}
+
+################################################################################
+# Private: load portainer agent configuration
+#
+# Arguments:
+#   $1 = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function _brolit_configuration_load_portainer_agent() {
+
+    local server_config_file="${1}"
+
+    local docker
+    local docker_installed
+
+    # Globals
+    declare -g PORTAINER_AGENT
+    declare -g PACKAGES_PORTAINER_AGENT_STATUS
+    declare -g PACKAGES_PORTAINER_AGENT_CONFIG_PORT
+
+    PACKAGES_PORTAINER_AGENT_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.portainer_agent[].status")"
+
+    docker="$(package_is_installed "docker")"
+    docker_installed="$?"
+    if [[ ${docker_installed} -eq 0 ]]; then
+        log_event "debug" "Docker installed on: ${docker}. Now checking if Portainer Agent image is present..." "false"
+        PORTAINER_AGENT="$(docker_get_container_id "portainer_agent")"
+    fi
+
+    if [[ ${PACKAGES_PORTAINER_AGENT_STATUS} == "enabled" ]]; then
+
+        if [[ ${docker_installed} -eq 1 ]]; then
+            log_event "error" "In order to install Portainer Agent, docker and docker-compose must be installed." "true"
+            exit 1
+        fi
+
+        PACKAGES_PORTAINER_AGENT_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.portainer_agent[].config[].port")"
+
+        # Check if all required vars are set
+        if [[ -z ${PACKAGES_PORTAINER_AGENT_CONFIG_PORT} ]]; then
+            log_event "error" "Missing required config vars for portainer support" "true"
+            exit 1
+        fi
+
+        # Checking if Portainer Agent is not installed
+        if [[ -z ${PORTAINER_AGENT} ]]; then
+            menu_config_changes_detected "portainer_agent" "true"
+        fi
+
+    else
+
+        # Checking if Portainer Agent is installed
+        if [[ -n ${PORTAINER_AGENT} ]]; then
+            menu_config_changes_detected "portainer_agent" "true"
+        fi
+
+    fi
+
+    export PORTAINER_AGENT PACKAGES_PORTAINER_AGENT_STATUS PACKAGES_PORTAINER_AGENT_CONFIG_PORT
 
 }
 

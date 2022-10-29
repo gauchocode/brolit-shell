@@ -38,34 +38,6 @@ function _netdata_alerts_configuration() {
   # PHP-FPM
   cp "${BROLIT_MAIN_DIR}/config/netdata/health.d/php-fpm.conf" "${netdata_config_dir}/php-fpm.conf"
 
-  # Anomalies
-  #cp "${BROLIT_MAIN_DIR}/config/netdata/health.d/anomalies.conf" "${netdata_config_dir}/anomalies.conf"
-
-}
-
-################################################################################
-# Private: netdata anomalies configuration
-#
-# Arguments:
-#  none
-#
-# Outputs:
-#  nothing
-################################################################################
-
-function _netdata_anomalies_configuration() {
-
-  # New: anomalies support
-  ## Ref: https://learn.netdata.cloud/docs/agent/collectors/python.d.plugin/anomalies
-
-  ## need to make this trick
-  sudo su -s /bin/bash netdata <<EOF
-pip3 install --quiet --user netdata-pandas==0.0.38 numba==0.50.1 scikit-learn==0.23.2 pyod==0.8.3
-EOF
-
-  cp "/usr/lib/netdata/conf.d/python.d.conf" "${NETDATA_INSTALL_DIR}/python.d.conf"
-  cp "/usr/lib/netdata/conf.d/python.d/anomalies.conf" "${NETDATA_INSTALL_DIR}/python.d/anomalies.conf"
-
 }
 
 ################################################################################
@@ -231,6 +203,10 @@ function _netdata_telegram_config() {
 
 function netdata_installer() {
 
+  local netdata_installer_exitstatus
+
+  declare -g NETDATA_INSTALL_DIR
+
   log_subsection "Netdata Installer"
 
   _netdata_required_packages
@@ -241,62 +217,65 @@ function netdata_installer() {
   # Download and run
   bash <(curl -Ss https://my-netdata.io/kickstart.sh) --dont-wait --disable-telemetry &>/dev/null
 
+  netdata_installer_exitstatus=$?
+
   # Kill netdata and copy service
   #killall netdata && cp system/netdata.service /etc/systemd/system/
 
-  declare -g NETDATA_INSTALL_DIR
   # Some operating systems will use /opt/netdata/etc/netdata/ as the config directory
-  if [[ -d "/etc/netdata" ]]; then
-    NETDATA_INSTALL_DIR="/etc/netdata"
-  else
-    NETDATA_INSTALL_DIR="/opt/netdata/etc/netdata"
-  fi
+  [[ -d "/etc/netdata" ]] && NETDATA_INSTALL_DIR="/etc/netdata" || NETDATA_INSTALL_DIR="/opt/netdata/etc/netdata"
 
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
+  if [[ ${netdata_installer_exitstatus} -eq 0 ]]; then
 
-    # Log
-    clear_previous_lines "1"
-    log_event "info" "Netdata installation finished" "false"
-    display --indent 6 --text "- Downloading and compiling netdata" --result "DONE" --color GREEN
+    if [[ ${PACKAGES_NETDATA_CONFIG_WEB_ADMIN} == "enabled" ]]; then
+      # Log
+      clear_previous_lines "1"
+      log_event "info" "Netdata installation finished" "false"
+      display --indent 6 --text "- Downloading and compiling netdata" --result "DONE" --color GREEN
 
-    # If nginx is installed
-    nginx_command="$(command -v nginx)"
-    if [[ -x ${nginx_command} ]]; then
+      # If nginx is installed
+      nginx_command="$(command -v nginx)"
+      if [[ -x ${nginx_command} ]]; then
 
-      # Netdata nginx proxy configuration
-      nginx_server_create "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}" "netdata" "single" ""
+        # Netdata nginx proxy configuration
+        nginx_server_create "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}" "netdata" "single" ""
 
-      # Nginx Auth
-      nginx_generate_encrypted_auth "${PACKAGES_NETDATA_CONFIG_USER}" "${PACKAGES_NETDATA_CONFIG_USER_PASS}"
+        # Nginx Auth
+        nginx_generate_encrypted_auth "${PACKAGES_NETDATA_CONFIG_USER}" "${PACKAGES_NETDATA_CONFIG_USER_PASS}"
 
-      if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
+        if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
 
-        # Confirm ROOT_DOMAIN
-        root_domain="$(domain_get_root "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}")"
+          # Confirm ROOT_DOMAIN
+          root_domain="$(domain_get_root "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}")"
 
-        # Cloudflare API
-        cloudflare_set_record "${root_domain}" "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}" "A" "false" "${SERVER_IP}"
+          # Cloudflare API
+          cloudflare_set_record "${root_domain}" "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}" "A" "false" "${SERVER_IP}"
 
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
+          exitstatus=$?
+          if [[ ${exitstatus} -eq 0 ]]; then
 
-          if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
+            if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
 
-            # HTTPS with Certbot
-            certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}"
+              # HTTPS with Certbot
+              certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}"
+
+            fi
 
           fi
 
         fi
 
+        display --indent 6 --text "- Netdata installation" --result "DONE" --color GREEN
+
       fi
 
-      display --indent 6 --text "- Netdata installation" --result "DONE" --color GREEN
+      export NETDATA_INSTALL_DIR
+
+    else
+
+      return 0
 
     fi
-
-    export NETDATA_INSTALL_DIR
 
   else
 
@@ -321,7 +300,6 @@ function netdata_uninstaller() {
   log_subsection "Netdata Installer"
 
   # Log
-  #clear_previous_lines "2"
   log_event "warning" "Uninstalling Netdata ..." "false"
 
   # Stop netdata service
@@ -330,21 +308,19 @@ function netdata_uninstaller() {
   package_purge "netdata"
 
   # Deleting mysql user
-  ## Check if mysql or mariadb are enabled
   if [[ ${PACKAGES_MARIADB_STATUS} == "enabled" ]] || [[ ${PACKAGES_MYSQL_STATUS} == "enabled" ]]; then
     mysql_user_delete "netdata" "localhost"
   fi
 
-  # Remove nginx server config files
-
-  ## Search for netdata nginx server file
-  netdata_server_file="$(grep "proxy_pass http://127.0.0.1:19999/" /etc/nginx/sites-available/* | cut -d ":" -f1)"
-  netdata_server_file_name="$(basename "${netdata_server_file}")"
-
-  ## Deleting nginx server files
-  ## Check if nginx is installed
+  # Deleting nginx server files
   if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
+
+    ## Search for netdata nginx server file
+    netdata_server_file="$(grep "proxy_pass http://127.0.0.1:19999/" /etc/nginx/sites-available/* | cut -d ":" -f1)"
+    netdata_server_file_name="$(basename "${netdata_server_file}")"
+
     nginx_server_delete "${netdata_server_file_name}"
+
   fi
 
   # Deleting installation files
@@ -448,14 +424,10 @@ function netdata_configuration() {
 
   fi
 
-  # Anomalies
-  #_netdata_anomalies_configuration
-
   # Reload service
   systemctl daemon-reload && systemctl enable netdata --quiet && service netdata start
 
   # Log
-  #clear_previous_lines "2"
   log_event "info" "Netdata configuration finished" "false"
   display --indent 6 --text "- Configuring netdata" --result "DONE" --color GREEN
 
