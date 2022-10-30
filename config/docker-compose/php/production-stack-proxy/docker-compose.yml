@@ -5,6 +5,8 @@ services:
     mysql:
         image: 'mariadb:10.6'
         container_name: ${PROJECT_NAME}_mysql
+        restart: always
+        command: --max_allowed_packet=256M
         environment:
             MYSQL_DATABASE: ${MYSQL_DATABASE}
             MYSQL_USER: ${MYSQL_USER}
@@ -18,6 +20,7 @@ services:
     webserver:
         image: 'nginx:alpine'
         container_name: ${PROJECT_NAME}_nginx
+        restart: always
         security_opt:
             - no-new-privileges:true
         working_dir: /application
@@ -32,11 +35,12 @@ services:
     php-fpm:
         build: php-${PHP_VERSION}_docker/php-fpm
         container_name: ${PROJECT_NAME}_php-fpm
+        restart: always
         working_dir: /application
         volumes:
             - ${WWW_DATA_DIR}:/application
             - ./php-${PHP_VERSION}_docker/php-fpm/php-ini-overrides.ini:/etc/php/${PHP_VERSION}/fpm/conf.d/99-overrides.ini
-            - ./php-${PHP_VERSION}_docker/php-fpm/www.conf-overrides:/etc/php/${PHP_VERSION}/fpm/pool.d/www.conf
+            - ./php-${PHP_VERSION}_docker/php-fpm/www.conf-overrides:/etc/php/${PHP_VERSION}/fpm/pool.d/z-optimised.conf
         networks:
             - internal
 
@@ -49,17 +53,33 @@ services:
         networks:
             - internal
 
-    #phpmyadmin:
-    #    image: phpmyadmin/phpmyadmin
-    #    container_name: ${PROJECT_NAME}_phpmyadmin
-    #    restart: always
-    #    ports:
-    #    - ${PHPMYADMIN_PORT}:80
-    #    hostname: ${PHPMYADMIN_DOMAIN}
-    #    environment:
-    #        PMA_HOST: mysql
-    #    networks:
-    #        - internal
+#    phpmyadmin:
+#        image: phpmyadmin/phpmyadmin
+#        container_name: ${PROJECT_NAME}_phpmyadmin
+#        restart: always
+#        ports:
+#            - ${PHPMYADMIN_PORT}:80
+#        hostname: ${PHPMYADMIN_DOMAIN}
+#        environment:
+#            PMA_HOST: mysql
+#        networks:
+#            - internal
+
+    server:
+        container_name: ${PROJECT_NAME}_ssh
+        build:
+            context: ./ssh_docker
+            args:
+                SSH_MASTER_USER: ${SSH_MASTER_USER}
+                SSH_MASTER_PASS: ${SSH_MASTER_PASS}
+        hostname: ${PROJECT_DOMAIN}
+        working_dir: /home/${SSH_MASTER_USER}/application
+        volumes:
+            - ${WWW_DATA_DIR}:/home/${SSH_MASTER_USER}/application
+        ports:
+            - "${SSH_HOST_PORT}:22"
+        networks:
+            - internal
 
 networks:
   internal:
