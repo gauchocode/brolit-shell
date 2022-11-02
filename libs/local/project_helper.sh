@@ -2021,7 +2021,6 @@ function project_get_type() {
   local nodejs
   local react
   local html
-  local docker
 
   # TODO: if brolit_conf exists, should check this file and get project type
 
