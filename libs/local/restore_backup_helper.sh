@@ -134,13 +134,13 @@ function restore_backup_from_local() {
       # Ask project domain
       project_domain="$(project_ask_domain "")"
 
+      # Get basepath
       basepath="$(dirname "${source_files}")"
 
       # Decompress backup
       decompress "${source_files}" "${basepath}/${project_domain}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
 
       dir_count="$(count_directories_on_directory "${basepath}/${project_domain}")"
-
       if [[ ${dir_count} -eq 1 ]]; then
 
         # Move files one level up
@@ -155,6 +155,14 @@ function restore_backup_from_local() {
       # TODO: Project domain asked inside this function again (need a refactor)
       # Restore site files
       project_domain="$(restore_backup_files "${project_domain}")"
+
+      # Get project install type
+      project_install_type="$(project_get_install_type "${basepath}/${project_domain}")"
+
+      if [[ ${project_install_type} != "proxy" && ${project_install_type} != "docker"* ]]; then
+        # Change ownership
+        change_ownership "www-data" "www-data" "${actual_folder}"
+      fi
 
     fi
 
@@ -846,8 +854,8 @@ function restore_backup_files() {
   #local backup_path="${2}"
 
   local actual_folder
-  local folder_to_install
   local chosen_domain
+  #local folder_to_install
 
   log_subsection "Restore Files Backup"
 
@@ -881,9 +889,6 @@ function restore_backup_files() {
 
     # Restore files
     move_files "${project_tmp_new_folder}" "${PROJECTS_PATH}"
-
-    # Change ownership
-    change_ownership "www-data" "www-data" "${actual_folder}"
 
     # Return
     echo "${chosen_domain}" && return 0
@@ -1003,6 +1008,14 @@ function restore_type_selection_from_storage() {
         # TODO: Project domain asked inside this function again (need a refactor)
         # Restore site files
         project_domain="$(restore_backup_files "${chosen_project}")"
+
+        # Get project install type
+        project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
+
+        if [[ ${project_install_type} != "proxy" && ${project_install_type} != "docker"* ]]; then
+          # Change ownership
+          change_ownership "www-data" "www-data" "${actual_folder}"
+        fi
 
       fi
 
@@ -1310,6 +1323,14 @@ function restore_project() {
 
       # Restore site files
       new_project_domain="$(restore_backup_files "${chosen_domain}")"
+
+      # Get project install type
+      project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${chosen_domain}")"
+
+      if [[ ${project_install_type} != "proxy" && ${project_install_type} != "docker"* ]]; then
+        # Change ownership
+        change_ownership "www-data" "www-data" "${actual_folder}"
+      fi
 
       # Extract project name from domain
       possible_project_name="$(project_get_name_from_domain "${new_project_domain}")"
