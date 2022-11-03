@@ -480,10 +480,10 @@ function mail_files_backup_section() {
 
     mail_backup_files_html="$(cat "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/backup_files-tpl.html")"
 
-    mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e 's|{{files_backup_status}}|'"${status_backup_files}"'|g')"
-    mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e 's|{{files_backup_status_icon}}|'"${status_icon_f}"'|g')"
+    mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e 's|{{backup_status}}|'"${status_backup_files}"'|g')"
+    mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e 's|{{backup_status_icon}}|'"${status_icon_f}"'|g')"
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
-    mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e 's|{{files_backup_list}}|'"${content}"'|g')"
+    mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e 's|{{backup_list}}|'"${content}"'|g')"
 
     # Write e-mail parts files
     echo "${mail_backup_files_html}" >"${BROLIT_TMP_DIR}/files-bk-${NOW}.mail"
@@ -566,10 +566,10 @@ function mail_config_backup_section() {
 
     mail_backup_configs_html="$(cat "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/backup_configs-tpl.html")"
 
-    mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e 's|{{configs_backup_status}}|'"${status_backup_files}"'|g')"
-    mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e 's|{{configs_backup_status_icon}}|'"${status_icon_f}"'|g')"
+    mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e 's|{{backup_status}}|'"${status_backup_files}"'|g')"
+    mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e 's|{{status_icon}}|'"${status_icon_f}"'|g')"
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
-    mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e 's|{{configs_backup_list}}|'"${content}"'|g')"
+    mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e 's|{{backup_list}}|'"${content}"'|g')"
 
     # Write e-mail parts files
     echo "${mail_backup_configs_html}" >"${BROLIT_TMP_DIR}/configuration-bk-${NOW}.mail"
@@ -649,10 +649,10 @@ function mail_databases_backup_section() {
 
     mail_backup_databases_html="$(cat "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/backup_databases-tpl.html")"
 
-    mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e 's|{{databases_backup_status}}|'"${backup_status}"'|g')"
-    mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e 's|{{databases_backup_status_icon}}|'"${status_icon}"'|g')"
+    mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e 's|{{backup_status}}|'"${backup_status}"'|g')"
+    mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e 's|{{backup_status_icon}}|'"${status_icon}"'|g')"
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
-    mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e 's|{{databases_backup_list}}|'"${content}"'|g')"
+    mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e 's|{{backup_list}}|'"${content}"'|g')"
 
     # Write e-mail parts files
     echo "${mail_backup_databases_html}" >"${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail"
@@ -682,7 +682,7 @@ function mail_backup_section() {
     local error_msg="${1}"
     local error_type="${2}"
     local backup_type="${3}"
-    local backuped_list="$@"
+    local -n backuped_list="${4}"
     #local -n backuped_list="${4}"
     #local -n backuped_sizes_list="${5}"
     
@@ -704,10 +704,12 @@ function mail_backup_section() {
     # TODO: config support
     local email_template="default"
 
-    # Clear garbage output
-    # clear_previous_lines "4"
-
+    # Log
     log_event "debug" "Preparing mail ${backup_type} backup section ..." "false"
+    log_event "debug" "error_msg=${error_msg}" "false"
+    log_event "debug" "error_type=${error_type}" "false"
+    log_event "debug" "backup_type=${backup_type}" "false"
+    log_event "debug" "backuped_list=${backuped_list}" "true"
 
     if [[ -n ${error_msg} ]]; then
 
@@ -747,16 +749,20 @@ function mail_backup_section() {
         section_content="${files_inc}${files_label_d_end}"
 
     fi
+    
+    # Log
+    log_event "debug" "Using template: ${BROLIT_MAIN_DIR}/templates/emails/${email_template}/backup_${backup_type}-tpl.html" "false"
+    log_event "debug" "Replacing vars ..." "false"
+    log_event "debug" "cat ${BROLIT_MAIN_DIR}/templates/emails/${email_template}/backup_${backup_type}-tpl.html | sed -e 's|{{backup_status}}|'"${backup_status}"'|g'" "false"
 
     mail_backup_html="$(cat "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/backup_${backup_type}-tpl.html")"
 
+	# Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
     mail_backup_html="$(echo "${mail_backup_html}" | sed -e 's|{{backup_status}}|'"${backup_status}"'|g')"
-    mail_backup_html="$(echo "${mail_backup_html}" | sed -e 's|{{backup_status_icon}}|'"${status_icon}"'|g')"
-    # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
+    mail_backup_html="$(echo "${mail_backup_html}" | sed -e 's|{{status_icon}}|'"${status_icon}"'|g')"
     mail_backup_html="$(echo "${mail_backup_html}" | sed -e 's|{{backup_list}}|'"${section_content}"'|g')"
 
     # Write e-mail parts files
-    #echo "${mail_backup_html}" >"${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail"
     echo "${mail_backup_html}" >"${BROLIT_TMP_DIR}/${backup_type}-bk-${NOW}.mail"
 
 }
