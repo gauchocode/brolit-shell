@@ -1737,9 +1737,9 @@ function project_delete_database() {
     [[ -z ${database_user} ]] && database_user="${project_name}_user"
 
     # Make database backup
-    backup_file="$(backup_project_database "${chosen_database}" "${database_engine}")"
-
-    if [[ -n ${backup_file} ]]; then
+    backup_project_database_output="$(backup_project_database "${chosen_database}" "${database_engine}")"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
 
       # Moving deleted project backups to another directory
       storage_create_dir "/${SERVER_NAME}/projects-offline"
@@ -1756,6 +1756,11 @@ function project_delete_database() {
         send_notification "⚠️ ${SERVER_NAME}" "Project database'${chosen_database}' deleted!"
 
       fi
+
+    else
+
+      # TODO: better error handling
+      log_event "error" "${backup_project_database_output}" "false"
 
     fi
 
