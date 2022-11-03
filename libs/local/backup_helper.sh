@@ -134,22 +134,17 @@ function backup_get_rotation_type() {
 
 function backup_server_config() {
 
-  # TODO: need to implement error_type
-
   local backup_type="${1}"
   local bk_sup_type="${2}"
   local backup_path="${3}"
   local directory_to_backup="${4}"
 
-  #local got_error
   local backup_file
   local backup_file_old
   local daysago
   local remote_path
   local backup_keep_daily
   local upload_result
-
-  #got_error=0
 
   if [[ -n ${backup_path} ]]; then
 
@@ -207,7 +202,7 @@ function backup_server_config() {
         error_msg="Error running storage upload backup on: ${upload_result}."
 
         # Return
-        echo "${error_type}" && return 1
+        echo "${error_type};${error_msg}" && return 1
 
       fi
 
@@ -223,7 +218,7 @@ function backup_server_config() {
       error_msg="Something went wrong making a backup of ${directory_to_backup}."
 
       # Return
-      echo "${error_type}" && return 1
+      echo "${error_type};${error_msg}" && return 1
 
     fi
 
@@ -240,7 +235,7 @@ function backup_server_config() {
     error_msg="Directory ${backup_path} doesn't exists."
 
     # Return
-    echo "${error_type}" && return 1
+    echo "${error_type};${error_msg}" && return 1
 
   fi
 
@@ -257,24 +252,24 @@ function backup_server_config() {
 # Outputs:
 #   0 if ok, 1 if error
 ################################################################################
-
+# TODO: needs refactor
 function backup_all_server_configs() {
 
   #local -n backuped_config_list
-  #local -n backuped_config_sizes_list
 
   local directory_name
   local directory_path
 
   local backuped_config_index=0
 
+  local got_error=0
+  local error_msg="none"
+  local error_type="none"
+
   log_subsection "Backup Server Config"
 
   # TAR Webserver config files
-  if [[ ! -d ${WSERVER} ]]; then
-    log_event "warning" "WSERVER is not defined! Skipping webserver config files backup ..." "false"
-
-  else
+  if [[ -d ${WSERVER} ]]; then
 
     directory_name="$(basename "${WSERVER}")"
     directory_path="$(dirname "${WSERVER}")"
@@ -282,8 +277,6 @@ function backup_all_server_configs() {
     nginx_files_backup_result="$(backup_server_config "configs" "nginx" "${directory_path}" "${directory_name}")"
 
     backuped_config_list[$backuped_config_index]="${WSERVER};${nginx_files_backup_result}"
-    #backuped_config_sizes_list+=("${nginx_files_backup_result}")
-
     backuped_config_index=$((backuped_config_index + 1))
 
   fi
@@ -299,8 +292,6 @@ function backup_all_server_configs() {
     php_files_backup_result="$(backup_server_config "configs" "php" "${directory_path}" "${directory_name}")"
 
     backuped_config_list[$backuped_config_index]="${PHP_CONF_DIR};${php_files_backup_result}"
-    #backuped_config_sizes_list+=("${php_files_backup_result}")
-
     backuped_config_index=$((backuped_config_index + 1))
 
   fi
@@ -316,8 +307,6 @@ function backup_all_server_configs() {
     mysql_files_backup_result="$(backup_server_config "configs" "mysql" "${directory_path}" "${directory_name}")"
 
     backuped_config_list[$backuped_config_index]="${MYSQL_CONF_DIR};${mysql_files_backup_result}"
-    #backuped_config_sizes_list+=("${mysql_files_backup_result}")
-
     backuped_config_index=$((backuped_config_index + 1))
 
   fi
@@ -333,8 +322,6 @@ function backup_all_server_configs() {
     le_files_backup_result="$(backup_server_config "configs" "letsencrypt" "${directory_path}" "${directory_name}")"
 
     backuped_config_list[$backuped_config_index]="${LENCRYPT_CONF_DIR};${le_files_backup_result}"
-    #backuped_config_sizes_list+=("${le_files_backup_result}")
-
     backuped_config_index=$((backuped_config_index + 1))
 
   fi
@@ -349,19 +336,22 @@ function backup_all_server_configs() {
 
     brolit_files_backup_result="$(backup_server_config "configs" "brolit" "${directory_path}" "${directory_name}")"
 
+    #exitstatus=$?
+    #if [[ ${exitstatus} -eq 0 ]]; then
     backuped_config_list[$backuped_config_index]="${BROLIT_CONFIG_PATH};${brolit_files_backup_result}"
-    #backuped_config_sizes_list+=("${brolit_files_backup_result}")
-
     backuped_config_index=$((backuped_config_index + 1))
+    #else
+    #  error_type="$(echo "${brolit_files_backup_result}" | cut -d ";" -f 1)"
+    #  error_msg="$(echo "${brolit_files_backup_result}" | cut -d ";" -f 2)"
+    #fi
 
   fi
 
   # Configure Files Backup Section for Email Notification
-  mail_backup_section "${ERROR}" "${ERROR_MSG}" "configuration" "${backuped_config_list[@]}"
-  #mail_config_backup_section "${ERROR}" "${ERROR_MSG}" "${backuped_config_list[@]}" "${backuped_config_sizes_list[@]}"
+  mail_backup_section "${error_msg}" "${error_type}" "configuration" "${backuped_config_list[@]}"
 
   # Return
-  echo "${ERROR}"
+  echo "${ERROR}" && return ${got_error}
 
 }
 
@@ -496,6 +486,10 @@ function backup_all_projects_files() {
   local backuped_files_index=0
   local backuped_directory_index=0
 
+  local got_error=0
+  local error_msg="none"
+  local error_type="none"
+
   log_subsection "Backup Sites Files"
 
   # Get all directories
@@ -524,14 +518,13 @@ function backup_all_projects_files() {
 
         # I'm using only an array, because passing two arrays to a function could be a problem (bash)
         backuped_files_list[$backuped_files_index]="${directory_name};${backup_file_size}"
-        #backuped_files_sizes_list+=("${backup_file_size}")
         backuped_files_index=$((backuped_files_index + 1))
 
       else
 
-        ERROR=true
-        ERROR_MSG="Error creating backup file for site: ${directory_name}"
-        #log_event "error" "${ERROR_MSG}" "false"
+        got_error=1
+        error_type="files_backup"
+        error_msg="Error creating backup file for site: ${directory_name}"
 
       fi
 
@@ -544,11 +537,11 @@ function backup_all_projects_files() {
 
     fi
 
+    # Log
     log_break "true"
+    log_event "info" "Processed ${backuped_directory_index} of ${COUNT_TOTAL_SITES} directories" "false"
 
     backuped_directory_index=$((backuped_directory_index + 1))
-
-    log_event "info" "Processed ${backuped_directory_index} of ${COUNT_TOTAL_SITES} directories" "false"
 
   done
 
@@ -559,8 +552,9 @@ function backup_all_projects_files() {
   backup_duplicity
 
   # Configure Files Backup Section for Email Notification
-  mail_backup_section "${ERROR}" "${ERROR_MSG}" "files" "${backuped_files_list[@]}"
-  #mail_files_backup_section "${ERROR}" "${ERROR_MSG}" "${backuped_files_list[@]}" "${backuped_files_sizes_list[@]}"
+  mail_backup_section "${error_msg}" "${error_type}" "files" "${backuped_files_list[@]}"
+
+  return ${got_error}
 
 }
 
@@ -1151,6 +1145,10 @@ function backup_additional_dirs() {
   local backuped_files_index=0
   local backuped_directory_index=0
 
+  local got_error=0
+  local error_msg="none"
+  local error_type="none"
+
   log_subsection "Backup Additional Directories"
 
   # Get all directories
@@ -1179,14 +1177,13 @@ function backup_additional_dirs() {
     if [[ -n ${backup_file_size} ]]; then
 
       backuped_files_list[$backuped_files_index]="${directory_name};${backup_file_size}"
-      #backuped_files_sizes_list+=("${backup_file_size}")
       backuped_files_index=$((backuped_files_index + 1))
 
     else
 
-      ERROR=true
-      ERROR_MSG="Error creating backup file for site: ${directory_name}"
-      #log_event "error" "${ERROR_MSG}" "false"
+      got_error=1
+      error_type="files_backup"
+      error_msg="Error creating backup file for site: ${directory_name}"
 
     fi
 
@@ -1202,7 +1199,8 @@ function backup_additional_dirs() {
   rm --recursive --force "${BROLIT_TMP_DIR:?}/${NOW}"
 
   # Configure Files Backup Section for Email Notification
-  mail_backup_section"${ERROR}" "${ERROR_MSG}" "files" "${backuped_files_list[@]}"
-  #mail_files_backup_section "${ERROR}" "${ERROR_MSG}" "${backuped_files_list[@]}" "${backuped_files_sizes_list[@]}"
+  mail_backup_section"${error_msg}" "${error_type}" "files" "${backuped_files_list[@]}"
+
+  return ${got_error}
 
 }
