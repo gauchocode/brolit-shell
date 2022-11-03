@@ -459,6 +459,10 @@ function mail_backup_section() {
             bk_name="$(echo "${backup_file}" | cut -d ";" -f1)"
             bk_size="$(echo "${backup_file}" | cut -d ";" -f2)"
 
+            log_event "debug" "backup_file=${backup_file}" "false"
+            log_event "debug" "bk_name=${bk_name}" "false"
+            log_event "debug" "bk_size=${bk_size}" "false"
+
             # File list section
             files_inc_line_p1="<div class=\"backup-details-line\">"
             files_inc_line_p2="<span style=\"margin-right:5px;\">${bk_name}</span>"
