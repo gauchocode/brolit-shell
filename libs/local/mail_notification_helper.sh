@@ -682,8 +682,7 @@ function mail_backup_section() {
     local error_msg="${1}"
     local error_type="${2}"
     local backup_type="${3}"
-    local -n backuped_list="$4[@] "
-    local -n backuped_sizes_list="$5[@] "
+    local -n backuped_list=("$@")
     #local -n backuped_list="${4}"
     #local -n backuped_sizes_list="${5}"
     
@@ -727,10 +726,11 @@ function mail_backup_section() {
 
         for backup_file in "${backuped_list[@]}"; do
 
-            bk_size=${backuped_sizes_list[$count]}
+            bk_name="$(echo "${backup_file}" | cut -d ";" -f1)"
+            bk_size="$(echo "${backup_file}" | cut -d ";" -f2)"
 
             files_inc_line_p1="<div class=\"backup-details-line\">"
-            files_inc_line_p2="<span style=\"margin-right:5px;\">${backup_file}</span>"
+            files_inc_line_p2="<span style=\"margin-right:5px;\">${bk_name}</span>"
             files_inc_line_p3="<span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\">${bk_size}</span>"
             files_inc_line_p4="</div>"
 

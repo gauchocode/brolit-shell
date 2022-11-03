@@ -281,8 +281,8 @@ function backup_all_server_configs() {
 
     nginx_files_backup_result="$(backup_server_config "configs" "nginx" "${directory_path}" "${directory_name}")"
 
-    backuped_config_list[$backuped_config_index]="${WSERVER}"
-    backuped_config_sizes_list+=("${nginx_files_backup_result}")
+    backuped_config_list[$backuped_config_index]="${WSERVER};${nginx_files_backup_result}"
+    #backuped_config_sizes_list+=("${nginx_files_backup_result}")
 
     backuped_config_index=$((backuped_config_index + 1))
 
@@ -298,8 +298,8 @@ function backup_all_server_configs() {
 
     php_files_backup_result="$(backup_server_config "configs" "php" "${directory_path}" "${directory_name}")"
 
-    backuped_config_list[$backuped_config_index]="${PHP_CONF_DIR}"
-    backuped_config_sizes_list+=("${php_files_backup_result}")
+    backuped_config_list[$backuped_config_index]="${PHP_CONF_DIR};${php_files_backup_result}"
+    #backuped_config_sizes_list+=("${php_files_backup_result}")
 
     backuped_config_index=$((backuped_config_index + 1))
 
@@ -315,8 +315,8 @@ function backup_all_server_configs() {
 
     mysql_files_backup_result="$(backup_server_config "configs" "mysql" "${directory_path}" "${directory_name}")"
 
-    backuped_config_list[$backuped_config_index]="${MYSQL_CONF_DIR}"
-    backuped_config_sizes_list+=("${mysql_files_backup_result}")
+    backuped_config_list[$backuped_config_index]="${MYSQL_CONF_DIR};${mysql_files_backup_result}"
+    #backuped_config_sizes_list+=("${mysql_files_backup_result}")
 
     backuped_config_index=$((backuped_config_index + 1))
 
@@ -332,8 +332,8 @@ function backup_all_server_configs() {
 
     le_files_backup_result="$(backup_server_config "configs" "letsencrypt" "${directory_path}" "${directory_name}")"
 
-    backuped_config_list[$backuped_config_index]="${LENCRYPT_CONF_DIR}"
-    backuped_config_sizes_list+=("${le_files_backup_result}")
+    backuped_config_list[$backuped_config_index]="${LENCRYPT_CONF_DIR};${le_files_backup_result}"
+    #backuped_config_sizes_list+=("${le_files_backup_result}")
 
     backuped_config_index=$((backuped_config_index + 1))
 
@@ -349,15 +349,15 @@ function backup_all_server_configs() {
 
     brolit_files_backup_result="$(backup_server_config "configs" "brolit" "${directory_path}" "${directory_name}")"
 
-    backuped_config_list[$backuped_config_index]="${BROLIT_CONFIG_PATH}"
-    backuped_config_sizes_list+=("${brolit_files_backup_result}")
+    backuped_config_list[$backuped_config_index]="${BROLIT_CONFIG_PATH};${brolit_files_backup_result}"
+    #backuped_config_sizes_list+=("${brolit_files_backup_result}")
 
     backuped_config_index=$((backuped_config_index + 1))
 
   fi
 
   # Configure Files Backup Section for Email Notification
-  mail_backup_section "${ERROR}" "${ERROR_MSG}" "configuration" "${backuped_config_list[@]}" "${backuped_config_sizes_list[@]}"
+  mail_backup_section "${ERROR}" "${ERROR_MSG}" "configuration" "${backuped_config_list[@]}"
   #mail_config_backup_section "${ERROR}" "${ERROR_MSG}" "${backuped_config_list[@]}" "${backuped_config_sizes_list[@]}"
 
   # Return
@@ -516,17 +516,15 @@ function backup_all_projects_files() {
 
     log_event "info" "Processing [${directory_name}] ..." "false"
 
-    project_is_ignored "${directory_name}"
-
-    result=$?
-    if [[ ${result} -eq 0 ]]; then
+    if [[ $(project_is_ignored "${directory_name}") -eq 0 ]]; then
 
       backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${directory_name}")"
 
       if [[ -n ${backup_file_size} ]]; then
 
-        backuped_files_list[$backuped_files_index]="${directory_name}"
-        backuped_files_sizes_list+=("${backup_file_size}")
+        # I'm using only an array, because passing two arrays to a function could be a problem (bash)
+        backuped_files_list[$backuped_files_index]="${directory_name};${backup_file_size}"
+        #backuped_files_sizes_list+=("${backup_file_size}")
         backuped_files_index=$((backuped_files_index + 1))
 
       else
@@ -561,7 +559,7 @@ function backup_all_projects_files() {
   backup_duplicity
 
   # Configure Files Backup Section for Email Notification
-  mail_backup_section "${ERROR}" "${ERROR_MSG}" "files" "${backuped_files_list[@]}" "${backuped_files_sizes_list[@]}"
+  mail_backup_section "${ERROR}" "${ERROR_MSG}" "files" "${backuped_files_list[@]}"
   #mail_files_backup_section "${ERROR}" "${ERROR_MSG}" "${backuped_files_list[@]}" "${backuped_files_sizes_list[@]}"
 
 }
@@ -858,8 +856,8 @@ function backup_databases() {
 
         database_backup_file="$(basename "${database_backup_path}")"
 
-        backuped_databases_list[$database_backup_index]="${database_backup_file}"
-        backuped_databases_sizes_list+=("${database_backup_size}")
+        backuped_databases_list[$database_backup_index]="${database_backup_file};${database_backup_size}"
+        #backuped_databases_sizes_list+=("${database_backup_size}")
 
         database_backup_index=$((database_backup_index + 1))
 
@@ -887,7 +885,7 @@ function backup_databases() {
   done
 
   # Configure Email
-  mail_backup_section "${error_msg}" "${error_type}" "databases" "${backuped_databases_list[@]}" "${backuped_databases_sizes_list[@]}"
+  mail_backup_section "${error_msg}" "${error_type}" "databases" "${backuped_databases_list[@]}"
   #mail_databases_backup_section "${error_msg}" "${error_type}" "${backuped_databases_list[@]}" "${backuped_databases_sizes_list[@]}"
 
   # Return
@@ -1177,8 +1175,8 @@ function backup_additional_dirs() {
 
     if [[ -n ${backup_file_size} ]]; then
 
-      backuped_files_list[$backuped_files_index]="${directory_name}"
-      backuped_files_sizes_list+=("${backup_file_size}")
+      backuped_files_list[$backuped_files_index]="${directory_name};${backup_file_size}"
+      #backuped_files_sizes_list+=("${backup_file_size}")
       backuped_files_index=$((backuped_files_index + 1))
 
     else
@@ -1201,7 +1199,7 @@ function backup_additional_dirs() {
   rm --recursive --force "${BROLIT_TMP_DIR:?}/${NOW}"
 
   # Configure Files Backup Section for Email Notification
-  mail_backup_section"${ERROR}" "${ERROR_MSG}" "files" "${backuped_files_list[@]}" "${backuped_files_sizes_list[@]}"
+  mail_backup_section"${ERROR}" "${ERROR_MSG}" "files" "${backuped_files_list[@]}"
   #mail_files_backup_section "${ERROR}" "${ERROR_MSG}" "${backuped_files_list[@]}" "${backuped_files_sizes_list[@]}"
 
 }
