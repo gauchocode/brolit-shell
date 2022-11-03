@@ -682,7 +682,7 @@ function mail_backup_section() {
     local error_msg="${1}"
     local error_type="${2}"
     local backup_type="${3}"
-    local -n backuped_list=("$@")
+    local backuped_list="$@"
     #local -n backuped_list="${4}"
     #local -n backuped_sizes_list="${5}"
     
