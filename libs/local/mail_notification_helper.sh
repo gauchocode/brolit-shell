@@ -681,10 +681,10 @@ function mail_backup_section() {
 
     local error_msg="${1}"
     local error_type="${2}"
-    local backuped_list="${3}"
-    local backuped_sizes_list="${4}"
-    local backup_type="${5}"
-
+    local backup_type="${3}"
+    local -n backuped_list="${4}"
+    local -n backuped_sizes_list="${5}"
+    
     local count
     local bk_size
     local backup_status
