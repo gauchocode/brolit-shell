@@ -250,6 +250,8 @@ function subtasks_backup_handler() {
 
   local subtask="${1}"
 
+  local backup_project_database_output
+
   case ${subtask} in
 
   all)
@@ -277,7 +279,9 @@ function subtasks_backup_handler() {
   databases)
 
     # TODO: postgres support
-    backup_file="$(backup_project_database "${DBNAME}" "mysql")"
+    backup_project_database_output="$(backup_project_database "${DBNAME}" "mysql")"
+
+    # TODO: error handling
 
     exit
     ;;
