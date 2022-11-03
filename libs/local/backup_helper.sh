@@ -291,6 +291,8 @@ function backup_all_server_configs() {
   # TAR PHP config files
   if [[ -d ${PHP_CONF_DIR} ]]; then
 
+    log_break "true"
+
     directory_name="$(basename "${PHP_CONF_DIR}")"
     directory_path="$(dirname "${PHP_CONF_DIR}")"
 
@@ -305,6 +307,8 @@ function backup_all_server_configs() {
 
   # TAR MySQL config files
   if [[ -d ${MYSQL_CONF_DIR} ]]; then
+
+    log_break "true"
 
     directory_name="$(basename "${MYSQL_CONF_DIR}")"
     directory_path="$(dirname "${MYSQL_CONF_DIR}")"
@@ -321,6 +325,8 @@ function backup_all_server_configs() {
   # TAR Let's Encrypt config files
   if [[ -d ${LENCRYPT_CONF_DIR} ]]; then
 
+    log_break "true"
+
     directory_name="$(basename "${LENCRYPT_CONF_DIR}")"
     directory_path="$(dirname "${LENCRYPT_CONF_DIR}")"
 
@@ -335,6 +341,8 @@ function backup_all_server_configs() {
 
   # TAR Brolit config files
   if [[ -d ${BROLIT_CONFIG_PATH} ]]; then
+
+    log_break "true"
 
     directory_name="$(basename "${BROLIT_CONFIG_PATH}")"
     directory_path="$(dirname "${BROLIT_CONFIG_PATH}")"
