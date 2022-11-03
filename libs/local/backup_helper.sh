@@ -41,7 +41,7 @@ function backup_get_filename() {
       backup_file="${backup_prefix_name}_${NOW}-weekly.${backup_extension}"
       backup_file_old="${backup_prefix_name}_${WEEKSAGO}-weekly.${backup_extension}"
     else
-      if [[ $((10#$WEEK_DAY)) -eq 7 && $((10#$BACKUP_RETENTION_KEEP_WEEKLY)) -gt 0 || \
+      if [[ $((10#$WEEK_DAY)) -eq 7 && $((10#$BACKUP_RETENTION_KEEP_WEEKLY)) -gt 0 ||
         $((10#$MONTH_DAY)) -eq 2 && $((10#$BACKUP_RETENTION_KEEP_MONTHLY)) -gt 0 ]]; then
         ## The day after a week day or month day
         backup_keep_daily=$((BACKUP_RETENTION_KEEP_DAILY - 1))
@@ -836,8 +836,11 @@ function backup_databases() {
   local databases="${1}"
   local db_engine="${2}"
 
-  local got_error=0
   local database_backup_index=0
+
+  local got_error=0
+  local error_msg="none"
+  local error_type="none"
 
   for database in ${databases}; do
 
@@ -846,18 +849,18 @@ function backup_databases() {
       log_event "info" "Processing [${database}] ..." "false"
 
       # Make database backup
-      backup_file="$(backup_project_database "${database}" "${db_engine}")"
+      backup_project_database_output="$(backup_project_database "${database}" "${db_engine}")"
 
-      if [[ -n ${backup_file} ]]; then
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
 
-        # Extract parameters from ${backup_file}
-        database_backup_path="$(echo "${backup_file}" | cut -d ";" -f 1)"
-        database_backup_size="$(echo "${backup_file}" | cut -d ";" -f 2)"
+        # Extract parameters from ${backup_project_database_output}
+        database_backup_path="$(echo "${backup_project_database_output}" | cut -d ";" -f 1)"
+        database_backup_size="$(echo "${backup_project_database_output}" | cut -d ";" -f 2)"
 
         database_backup_file="$(basename "${database_backup_path}")"
 
         backuped_databases_list[$database_backup_index]="${database_backup_file};${database_backup_size}"
-        #backuped_databases_sizes_list+=("${database_backup_size}")
 
         database_backup_index=$((database_backup_index + 1))
 
@@ -869,7 +872,7 @@ function backup_databases() {
         error_type="database_backup"
 
         log_event "error" "Something went wrong making a backup of ${database}." "false"
-        log_event "debug" "backup_project_database result: ${backup_file}." "false"
+        log_event "debug" "backup_project_database result: ${backup_project_database_output}." "false"
 
       fi
 
@@ -886,7 +889,6 @@ function backup_databases() {
 
   # Configure Email
   mail_backup_section "${error_msg}" "${error_type}" "databases" "${backuped_databases_list[@]}"
-  #mail_databases_backup_section "${error_msg}" "${error_type}" "${backuped_databases_list[@]}" "${backuped_databases_sizes_list[@]}"
 
   # Return
   return ${got_error}
@@ -913,6 +915,9 @@ function backup_project_database() {
   local dump_file
   local backup_file
   local backup_file_old
+
+  local error_type
+  local error_msg
 
   log_event "info" "Creating new database backup of '${database}'" "false"
 
@@ -972,37 +977,33 @@ function backup_project_database() {
 
       else
 
-        got_error=1
         error_type="upload_backup"
         error_msg="Error uploading file: ${backup_file}. Upload result: ${upload_result}"
 
         log_event "error" "${error_msg}" "false"
 
-        return 1
+        # Return
+        echo "${backup_file};${error_type};${error_msg}" && return 1
 
       fi
 
     else
 
-      got_error=1
       error_type="compress_backup"
       error_msg="Error compressing file: ${dump_file}"
 
-      log_event "error" "${error_msg}" "false"
-
-      return 1
+      # Return
+      echo "${backup_file};${error_type};${error_msg}" && return 1
 
     fi
 
   else
 
-    got_error=1
     error_type="export_database"
     error_msg="Error creating dump file for database: ${database}"
 
-    log_event "error" "${error_msg}" "false"
-
-    return 1
+    # Return
+    echo "${backup_file};${error_type};${error_msg}" && return 1
 
   fi
 
@@ -1122,6 +1123,8 @@ function backup_project() {
 
     ERROR=true
     log_event "error" "Something went wrong making a project backup" "false"
+
+    return 1
 
   fi
 
