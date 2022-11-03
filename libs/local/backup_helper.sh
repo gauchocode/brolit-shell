@@ -349,7 +349,8 @@ function backup_all_server_configs() {
   fi
 
   # Configure Files Backup Section for Email Notification
-  mail_config_backup_section "${ERROR}" "${ERROR_MSG}" "${backuped_config_list[@]}" "${backuped_config_sizes_list[@]}"
+  mail_backup_section "${ERROR}" "${ERROR_MSG}" "${backuped_config_list[@]}" "${backuped_config_sizes_list[@]}" "configuration"
+  #mail_config_backup_section "${ERROR}" "${ERROR_MSG}" "${backuped_config_list[@]}" "${backuped_config_sizes_list[@]}"
 
   # Return
   echo "${ERROR}"
@@ -552,7 +553,8 @@ function backup_all_projects_files() {
   backup_duplicity
 
   # Configure Files Backup Section for Email Notification
-  mail_files_backup_section "${ERROR}" "${ERROR_MSG}" "${backuped_files_list[@]}" "${backuped_files_sizes_list[@]}"
+  mail_backup_section "${ERROR}" "${ERROR_MSG}" "${backuped_files_list[@]}" "${backuped_files_sizes_list[@]}" "files"
+  #mail_files_backup_section "${ERROR}" "${ERROR_MSG}" "${backuped_files_list[@]}" "${backuped_files_sizes_list[@]}"
 
 }
 
@@ -877,7 +879,8 @@ function backup_databases() {
   done
 
   # Configure Email
-  mail_databases_backup_section "${error_msg}" "${error_type}" "${backuped_databases_list[@]}" "${backuped_databases_sizes_list[@]}"
+  mail_backup_section "${error_msg}" "${error_type}" "${backuped_databases_list[@]}" "${backuped_databases_sizes_list[@]}" "databases"
+  #mail_databases_backup_section "${error_msg}" "${error_type}" "${backuped_databases_list[@]}" "${backuped_databases_sizes_list[@]}"
 
   # Return
   return ${got_error}
@@ -1190,6 +1193,7 @@ function backup_additional_dirs() {
   rm --recursive --force "${BROLIT_TMP_DIR:?}/${NOW}"
 
   # Configure Files Backup Section for Email Notification
-  mail_files_backup_section "${ERROR}" "${ERROR_MSG}" "${backuped_files_list[@]}" "${backuped_files_sizes_list[@]}"
+  mail_backup_section"${ERROR}" "${ERROR_MSG}" "${backuped_files_list[@]}" "${backuped_files_sizes_list[@]}" "files"
+  #mail_files_backup_section "${ERROR}" "${ERROR_MSG}" "${backuped_files_list[@]}" "${backuped_files_sizes_list[@]}"
 
 }

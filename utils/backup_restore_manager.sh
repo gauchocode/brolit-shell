@@ -63,9 +63,9 @@ function backup_manager_menu() {
 
       # Begin to replace
       sed -i '/{{server_info}}/r '"${BROLIT_TMP_DIR}/server_info-${NOW}.mail" "${email_html_file}"
-      sed -i '/{{databases_backup_section}}/r '"${BROLIT_TMP_DIR}/db-bk-${NOW}.mail" "${email_html_file}"
-      sed -i '/{{configs_backup_section}}/r '"${BROLIT_TMP_DIR}/config-bk-${NOW}.mail" "${email_html_file}"
-      sed -i '/{{files_backup_section}}/r '"${BROLIT_TMP_DIR}/file-bk-${NOW}.mail" "${email_html_file}"
+      sed -i '/{{databases_backup_section}}/r '"${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail" "${email_html_file}"
+      sed -i '/{{configs_backup_section}}/r '"${BROLIT_TMP_DIR}/configuration-bk-${NOW}.mail" "${email_html_file}"
+      sed -i '/{{files_backup_section}}/r '"${BROLIT_TMP_DIR}/files-bk-${NOW}.mail" "${email_html_file}"
       sed -i '/{{footer}}/r '"${BROLIT_TMP_DIR}/footer-${NOW}.mail" "${email_html_file}"
 
       # Delete vars not used anymore
@@ -109,7 +109,7 @@ function backup_manager_menu() {
       # Databases Backup
       backup_all_databases
 
-      DB_MAIL="${BROLIT_TMP_DIR}/db-bk-${NOW}.mail"
+      DB_MAIL="${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail"
       DB_MAIL_VAR=$(<"${DB_MAIL}")
 
       email_subject="${STATUS_ICON_D} [${NOWDISPLAY}] - Database Backup on ${SERVER_NAME}"
@@ -132,9 +132,9 @@ function backup_manager_menu() {
       # Files Backup
       backup_all_files
 
-      CONFIG_MAIL_VAR=$(cat "${BROLIT_TMP_DIR}/config-bk-${NOW}.mail")
+      CONFIG_MAIL_VAR=$(cat "${BROLIT_TMP_DIR}/configuration-bk-${NOW}.mail")
 
-      FILE_MAIL_VAR=$(cat "${BROLIT_TMP_DIR}/file-bk-${NOW}.mail")
+      FILE_MAIL_VAR=$(cat "${BROLIT_TMP_DIR}/files-bk-${NOW}.mail")
 
       email_subject="${STATUS_ICON_F} [${NOWDISPLAY}] - Files Backup on ${SERVER_NAME}"
       email_content="${HTMLOPEN} ${BODY_SRV} ${CERT_MAIL_VAR} ${CONFIG_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"

@@ -62,9 +62,9 @@ cp "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/main-tpl.html" "${emai
 sed -i '/{{server_info}}/r '"${BROLIT_TMP_DIR}/server_info-${NOW}.mail" "${email_html_file}"
 sed -i '/{{packages_section}}/r '"${BROLIT_TMP_DIR}/packages-${NOW}.mail" "${email_html_file}"
 sed -i '/{{certificates_section}}/r '"${BROLIT_TMP_DIR}/certificates-${NOW}.mail" "${email_html_file}"
-sed -i '/{{databases_backup_section}}/r '"${BROLIT_TMP_DIR}/db-bk-${NOW}.mail" "${email_html_file}"
-sed -i '/{{configs_backup_section}}/r '"${BROLIT_TMP_DIR}/config-bk-${NOW}.mail" "${email_html_file}"
-sed -i '/{{files_backup_section}}/r '"${BROLIT_TMP_DIR}/file-bk-${NOW}.mail" "${email_html_file}"
+sed -i '/{{databases_backup_section}}/r '"${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail" "${email_html_file}"
+sed -i '/{{configs_backup_section}}/r '"${BROLIT_TMP_DIR}/configuration-bk-${NOW}.mail" "${email_html_file}"
+sed -i '/{{files_backup_section}}/r '"${BROLIT_TMP_DIR}/files-bk-${NOW}.mail" "${email_html_file}"
 sed -i '/{{footer}}/r '"${BROLIT_TMP_DIR}/footer-${NOW}.mail" "${email_html_file}"
 
 # Delete vars not used anymore

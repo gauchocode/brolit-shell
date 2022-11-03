@@ -137,9 +137,9 @@ function _remove_mail_notifications_files() {
     # Remove one per line only for better readibility
     #rm --force "${BROLIT_TMP_DIR}/cert-${NOW}.mail"
     #rm --force "${BROLIT_TMP_DIR}/pkg-${NOW}.mail"
-    #rm --force "${BROLIT_TMP_DIR}/file-bk-${NOW}.mail"
-    #rm --force "${BROLIT_TMP_DIR}/config-bk-${NOW}.mail"
-    #rm --force "${BROLIT_TMP_DIR}/db-bk-${NOW}.mail"
+    #rm --force "${BROLIT_TMP_DIR}/files-bk-${NOW}.mail"
+    #rm --force "${BROLIT_TMP_DIR}/configuration-bk-${NOW}.mail"
+    #rm --force "${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail"
 
     log_event "debug" "Email temporary files removed!" "false"
 
@@ -486,7 +486,7 @@ function mail_files_backup_section() {
     mail_backup_files_html="$(echo "${mail_backup_files_html}" | sed -e 's|{{files_backup_list}}|'"${content}"'|g')"
 
     # Write e-mail parts files
-    echo "${mail_backup_files_html}" >"${BROLIT_TMP_DIR}/file-bk-${NOW}.mail"
+    echo "${mail_backup_files_html}" >"${BROLIT_TMP_DIR}/files-bk-${NOW}.mail"
 
 }
 
@@ -572,7 +572,7 @@ function mail_config_backup_section() {
     mail_backup_configs_html="$(echo "${mail_backup_configs_html}" | sed -e 's|{{configs_backup_list}}|'"${content}"'|g')"
 
     # Write e-mail parts files
-    echo "${mail_backup_configs_html}" >"${BROLIT_TMP_DIR}/config-bk-${NOW}.mail"
+    echo "${mail_backup_configs_html}" >"${BROLIT_TMP_DIR}/configuration-bk-${NOW}.mail"
 
 }
 
@@ -610,7 +610,7 @@ function mail_databases_backup_section() {
 
     log_event "debug" "Preparing mail databases backup section ..." "false"
 
-    if [[ ${error_msg} != "" ]]; then
+    if [[ -n ${error_msg} ]]; then
 
         backup_status="ERROR"
         status_icon="⛔"
@@ -655,7 +655,7 @@ function mail_databases_backup_section() {
     mail_backup_databases_html="$(echo "${mail_backup_databases_html}" | sed -e 's|{{databases_backup_list}}|'"${content}"'|g')"
 
     # Write e-mail parts files
-    echo "${mail_backup_databases_html}" >"${BROLIT_TMP_DIR}/db-bk-${NOW}.mail"
+    echo "${mail_backup_databases_html}" >"${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail"
 
 }
 
@@ -689,6 +689,16 @@ function mail_backup_section() {
     local bk_size
     local backup_status
     local status_icon
+    local section_content
+
+    local files_inc
+    local files_inc_line_p1
+    local files_inc_line_p2
+    local files_inc_line_p3
+    local files_inc_line_p4
+    local files_inc_line_p5
+
+    local mail_backup_html
 
     # TODO: config support
     local email_template="default"
@@ -698,17 +708,17 @@ function mail_backup_section() {
 
     log_event "debug" "Preparing mail ${backup_type} backup section ..." "false"
 
-    if [[ ${error_msg} != "" ]]; then
+    if [[ -n ${error_msg} ]]; then
 
         backup_status="ERROR"
         status_icon="⛔"
-        content="<b>${backup_type} backup with errors:<br />${error_type}<br /><br />Please check log file.</b> <br />"
+        section_content="<b>${backup_type} backup with errors:<br />${error_type}<br /><br />Please check log file.</b> <br />"
 
     else
 
         backup_status="OK"
         status_icon="✅"
-        content=""
+        section_content=""
         files_inc=""
 
         count=0
@@ -721,6 +731,7 @@ function mail_backup_section() {
             files_inc_line_p2="<span style=\"margin-right:5px;\">${backup_file}</span>"
             files_inc_line_p3="<span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\">${bk_size}</span>"
             files_inc_line_p4="</div>"
+
             files_inc_line_p5="${files_inc}"
 
             files_inc="${files_inc_line_p1}${files_inc_line_p2}${files_inc_line_p3}${files_inc_line_p4}${files_inc_line_p5}"
@@ -731,7 +742,7 @@ function mail_backup_section() {
 
         files_label_d_end="</div>"
 
-        content="${files_inc}${files_label_d_end}"
+        section_content="${files_inc}${files_label_d_end}"
 
     fi
 
@@ -740,10 +751,10 @@ function mail_backup_section() {
     mail_backup_html="$(echo "${mail_backup_html}" | sed -e 's|{{backup_status}}|'"${backup_status}"'|g')"
     mail_backup_html="$(echo "${mail_backup_html}" | sed -e 's|{{backup_status_icon}}|'"${status_icon}"'|g')"
     # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
-    mail_backup_html="$(echo "${mail_backup_html}" | sed -e 's|{{backup_list}}|'"${content}"'|g')"
+    mail_backup_html="$(echo "${mail_backup_html}" | sed -e 's|{{backup_list}}|'"${section_content}"'|g')"
 
     # Write e-mail parts files
-    #echo "${mail_backup_html}" >"${BROLIT_TMP_DIR}/db-bk-${NOW}.mail"
+    #echo "${mail_backup_html}" >"${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail"
     echo "${mail_backup_html}" >"${BROLIT_TMP_DIR}/${backup_type}-bk-${NOW}.mail"
 
 }

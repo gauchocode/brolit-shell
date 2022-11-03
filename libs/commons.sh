@@ -1617,6 +1617,9 @@ function brolit_ssh_keygen() {
     # Key generation
     ssh-keygen -b 2048 -f identity -t rsa -f "${keydir}/identity"
 
+    # Create .ssh directory if not exists
+    [[ ! -d "${HOME}/.ssh" ]] && mkdir "${HOME}/.ssh"
+
     # Copy credentials
     cat "${keydir}/identity.pub" >>~/.ssh/authorized_keys
 
