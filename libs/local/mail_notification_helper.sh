@@ -660,10 +660,6 @@ function mail_databases_backup_section() {
 }
 
 ################################################################################
-############################## NEW FUNCTION ####################################
-################################################################################
-
-################################################################################
 # Mail backup section.
 #
 # Arguments:
@@ -682,7 +678,7 @@ function mail_backup_section() {
     local error_msg="${1}"
     local error_type="${2}"
     local backup_type="${3}"
-    local -n backuped_list="${4}"
+    local -n backuped_list="$@"
     #local -n backuped_list="${4}"
     #local -n backuped_sizes_list="${5}"
     
@@ -752,14 +748,12 @@ function mail_backup_section() {
     
     # Log
     log_event "debug" "Using template: ${BROLIT_MAIN_DIR}/templates/emails/${email_template}/backup_${backup_type}-tpl.html" "false"
-    log_event "debug" "Replacing vars ..." "false"
-    log_event "debug" "cat ${BROLIT_MAIN_DIR}/templates/emails/${email_template}/backup_${backup_type}-tpl.html | sed -e 's|{{backup_status}}|'"${backup_status}"'|g'" "false"
 
     mail_backup_html="$(cat "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/backup_${backup_type}-tpl.html")"
 
 	# Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
     mail_backup_html="$(echo "${mail_backup_html}" | sed -e 's|{{backup_status}}|'"${backup_status}"'|g')"
-    mail_backup_html="$(echo "${mail_backup_html}" | sed -e 's|{{status_icon}}|'"${status_icon}"'|g')"
+    mail_backup_html="$(echo "${mail_backup_html}" | sed -e 's|{{backup_status_icon}}|'"${status_icon}"'|g')"
     mail_backup_html="$(echo "${mail_backup_html}" | sed -e 's|{{backup_list}}|'"${section_content}"'|g')"
 
     # Write e-mail parts files
