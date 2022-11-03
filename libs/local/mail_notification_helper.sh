@@ -415,19 +415,19 @@ function mail_backup_section() {
 
     shift 3
     local backuped_list="$@"
-    
-    local count
+
+    #local count
     local bk_size
     local backup_status
-    local status_icon
+    local backup_status_icon
     local section_content
 
     local files_inc
+    local files_inc_buff
     local files_inc_line_p1
     local files_inc_line_p2
     local files_inc_line_p3
     local files_inc_line_p4
-    local files_inc_line_p5
 
     local mail_backup_html
 
@@ -439,38 +439,34 @@ function mail_backup_section() {
     log_event "debug" "error_msg=${error_msg}" "false"
     log_event "debug" "error_type=${error_type}" "false"
     log_event "debug" "backup_type=${backup_type}" "false"
-    log_event "debug" "backuped_list=${backuped_list}" "true"
+    log_event "debug" "backuped_list=${backuped_list}" "false"
 
-    if [[ -n ${error_msg} ]]; then
+    if [[ ${error_msg} != "none" ]]; then
 
         backup_status="ERROR"
-        status_icon="⛔"
+        backup_status_icon="⛔"
         section_content="<b>${backup_type} backup with errors:<br />${error_type}<br /><br />Please check log file.</b> <br />"
 
     else
 
         backup_status="OK"
-        status_icon="✅"
+        backup_status_icon="✅"
         section_content=""
         files_inc=""
-
-        count=0
 
         for backup_file in "${backuped_list[@]}"; do
 
             bk_name="$(echo "${backup_file}" | cut -d ";" -f1)"
             bk_size="$(echo "${backup_file}" | cut -d ";" -f2)"
 
+            # File list section
             files_inc_line_p1="<div class=\"backup-details-line\">"
             files_inc_line_p2="<span style=\"margin-right:5px;\">${bk_name}</span>"
             files_inc_line_p3="<span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\">${bk_size}</span>"
             files_inc_line_p4="</div>"
 
-            files_inc_line_p5="${files_inc}"
-
-            files_inc="${files_inc_line_p1}${files_inc_line_p2}${files_inc_line_p3}${files_inc_line_p4}${files_inc_line_p5}"
-
-            count=$((count + 1))
+            files_inc_buff="${files_inc}"
+            files_inc="${files_inc_line_p1}${files_inc_line_p2}${files_inc_line_p3}${files_inc_line_p4}${files_inc_buff}"
 
         done
 
@@ -479,15 +475,15 @@ function mail_backup_section() {
         section_content="${files_inc}${files_label_d_end}"
 
     fi
-    
+
     # Log
     log_event "debug" "Using template: ${BROLIT_MAIN_DIR}/templates/emails/${email_template}/backup_${backup_type}-tpl.html" "false"
 
     mail_backup_html="$(cat "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/backup_${backup_type}-tpl.html")"
 
-	# Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
+    # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
     mail_backup_html="$(echo "${mail_backup_html}" | sed -e 's|{{backup_status}}|'"${backup_status}"'|g')"
-    mail_backup_html="$(echo "${mail_backup_html}" | sed -e 's|{{backup_status_icon}}|'"${status_icon}"'|g')"
+    mail_backup_html="$(echo "${mail_backup_html}" | sed -e 's|{{backup_status_icon}}|'"${backup_status_icon}"'|g')"
     mail_backup_html="$(echo "${mail_backup_html}" | sed -e 's|{{backup_list}}|'"${section_content}"'|g')"
 
     # Write e-mail parts files
