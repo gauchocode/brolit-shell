@@ -38,13 +38,13 @@ packages_remove_old
 
 optimize_ram_usage
 
-#DB_MAIL="${BROLIT_TMP_DIR}/db-bk-${NOW}.mail"
+#DB_MAIL="${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail"
 #DB_MAIL_VAR=$(<"${DB_MAIL}")
 
-#ONFIG_MAIL="${BROLIT_TMP_DIR}/config-bk-${NOW}.mail"
+#ONFIG_MAIL="${BROLIT_TMP_DIR}/configuration-bk-${NOW}.mail"
 #CONFIG_MAIL_VAR=$(<"${CONFIG_MAIL}")
 
-#FILE_MAIL="${BROLIT_TMP_DIR}/file-bk-${NOW}.mail"
+#FILE_MAIL="${BROLIT_TMP_DIR}/files-bk-${NOW}.mail"
 #FILE_MAIL_VAR=$(<"${FILE_MAIL}")
 
 #MAIL_FOOTER=$(mail_footer "${SCRIPT_V}")
