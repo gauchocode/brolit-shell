@@ -1199,7 +1199,7 @@ function backup_additional_dirs() {
   rm --recursive --force "${BROLIT_TMP_DIR:?}/${NOW}"
 
   # Configure Files Backup Section for Email Notification
-  mail_backup_section"${error_msg}" "${error_type}" "files" "${backuped_files_list[@]}"
+  mail_backup_section "${error_msg}" "${error_type}" "files" "${backuped_files_list[@]}"
 
   return ${got_error}
 
