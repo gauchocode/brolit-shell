@@ -882,15 +882,15 @@ function get_file_size() {
   backup_file_size="$(du --apparent-size -s -k "${file}" | awk '{ print $1 }' | awk '{printf "%.3f MiB %s\n", $1/1024, $2}')"
 
   file_size_result=$?
-
   if [[ ${file_size_result} -eq 0 ]]; then
 
     log_event "info" "File size: ${backup_file_size}" "false"
 
-    # Return
-    echo "${backup_file_size}"
+    # Prepare string
+    backup_file_size="$(string_remove_spaces "${backup_file_size}")"
 
-    return 0
+    # Return
+    echo "${backup_file_size}" && return 0
 
   else
 
