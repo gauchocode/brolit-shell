@@ -232,15 +232,13 @@ function storage_download_backup() {
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
         dropbox_download "${file_to_download}" "${remote_directory}"
-        dropbox_result=$?
-        error_type="dropbox"
+        [[ $? -eq 1 ]] && error_type="dropbox"
 
     fi
     if [[ ${BACKUP_RCLONE_STATUS} == "enabled" ]]; then
 
         rclone_download "${file_to_download}" "${remote_directory}"
-        local_result=$?
-        error_type="rsync"
+        [[ $? -eq 1 ]] && error_type="rsync"
 
     fi
 
@@ -268,17 +266,14 @@ function storage_delete_backup() {
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
         dropbox_delete "${file_to_delete}" "false"
-        dropbox_result=$?
-        error_type="dropbox"
+        [[ $? -eq 1 ]] && error_type="dropbox"
 
     fi
     if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
 
         rm --recursive --force "${file_to_delete}"
-
         # TODO: check if files need to be compressed (maybe an option?).
-        local_result=$?
-        error_type="rsync"
+        [[ $? -eq 1 ]] && error_type="rsync"
 
     fi
 
