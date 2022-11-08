@@ -392,8 +392,8 @@ function _php_check_installed_version() {
 
     done
 
-    # Remove 3 fist chars
-    all_php_data="${all_php_data:3}"
+    # Remove 3 first chars
+    #all_php_data="${all_php_data:3}"
 
     # Return
     echo "${all_php_data}"
@@ -1721,7 +1721,7 @@ function _packages_get_data() {
 	psql_v_installed="$(_psql_check_installed_version)"
 	dbs_v_installed="${dbs_v_installed}${psql_v_installed}"
 	if [[ -z ${dbs_v_installed} ]]; then
-		dbs_v_installed="no-database-engine"
+		dbs_v_installed="\"no-database-engine\""
 	else
 		# Remove 3 last chars
         dbs_v_installed="${dbs_v_installed::-3}"
@@ -1731,9 +1731,9 @@ function _packages_get_data() {
     php_v_installed="$(_php_check_installed_version)"
     if [[ -z ${php_v_installed} ]]; then
         php_v_installed="\"no-languages\""
-    else
-        # Remove 3 last chars
-        php_v_installed="${php_v_installed::-3}"
+    #else
+    #    # Remove 3 last chars
+    #    php_v_installed="${php_v_installed::-3}"
     fi
 
     # Return JSON part
