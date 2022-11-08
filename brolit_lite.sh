@@ -440,6 +440,38 @@ function _mysql_check_installed_version() {
 }
 
 ################################################################################
+# Private: Check psql installed version
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#   0 if psql is installed, 1 on error.
+################################################################################
+
+function _psql_check_installed_version() {
+
+    local psql_installed_pkg
+    local psql_installed_version
+
+    # Check if package is installed
+    psql_installed_pkg="$(sudo dpkg --list | grep -Eo 'postgresql')"
+    if [[ -n ${psql_installed_pkg} ]]; then
+
+        # Installed versions
+        psql_installed_version="$(psql --version 2>&1)"
+        psql_installed_version="$(echo "${psql_installed_version}" | cut -d " " -f 3 | grep -o '[0-9.]*$')"
+
+        if [[ -n ${psql_installed_version} ]]; then
+            # Return
+            echo "{\"name\":\"postgresql\",\"version\":\"${psql_installed_version}\",\"default\":\"true\"} , "
+        fi
+
+    fi
+
+}
+
+################################################################################
 # Private: Check nginx installed version
 #
 # Arguments:
@@ -1439,8 +1471,10 @@ function _brolit_shell_config() {
     mail_notification_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.email[].status")"
     if [[ ${mail_notification_status} == "enabled" ]]; then
         mail_notification_config="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.email[].config[].maila")"
+        mail_notification_smtp="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.email[].config[].smtp_server")"
     else
         mail_notification_config="false"
+        mail_notification_smtp="false"
     fi
 
     ## Telegram notification config
@@ -1456,7 +1490,7 @@ function _brolit_shell_config() {
     #smtp_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].methods[].smtp[].status")"
 
     # Return JSON part
-    echo "\"script_version\": \"${BROLIT_VERSION}\" , \"netdata_url\": \"${netdata_subdomain}\" , \"mail_notif\": \"${mail_notification_config}\" , \"telegram_notif\": \"${telegram_notification_status}\" , \"dropbox_enable\": \"${backup_dropbox_status}\" , \"cloudflare_enable\": \"${cloudflare_status}\" , \"smtp_server\": \"${NOTIFICATION_EMAIL_SMTP_SERVER}\""
+    echo "\"script_version\": \"${BROLIT_VERSION}\" , \"netdata_url\": \"${netdata_subdomain}\" , \"mail_notif\": \"${mail_notification_config}\" , \"telegram_notif\": \"${telegram_notification_status}\" , \"dropbox_enable\": \"${backup_dropbox_status}\" , \"cloudflare_enable\": \"${cloudflare_status}\" , \"smtp_server\": \"${mail_notification_smtp}\""
 
 }
 
@@ -1650,6 +1684,8 @@ function _psql_databases() {
 
 function _packages_get_data() {
 
+    local mysql_v_installed
+    local psql_v_installed
     local php_v_installed
     local all_php_data
     local php_default
@@ -1673,6 +1709,9 @@ function _packages_get_data() {
     ## databases
     if [[ "$(_is_pkg_installed "mysql-server")" == "true" || "$(_is_pkg_installed "mariadb-server")" == "true" ]]; then
         mysql_v_installed="$(_mysql_check_installed_version)"
+    fi
+    if [[ "$(_is_pkg_installed "postgresql")" == "true" ]]; then
+        psql_v_installed="$(_psql_check_installed_version)"
     fi
 
     ## languages
