@@ -1188,10 +1188,9 @@ function backup_additional_dirs() {
     fi
 
     log_break "true"
+    log_event "info" "Processed ${backuped_directory_index} of ${count_total_dirs} directories" "false"
 
     backuped_directory_index=$((backuped_directory_index + 1))
-
-    log_event "info" "Processed ${backuped_directory_index} of ${count_total_dirs} directories" "false"
 
   done
 
