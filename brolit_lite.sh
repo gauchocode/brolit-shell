@@ -318,15 +318,15 @@ function _is_pkg_installed() {
 
     local package="${1}"
 
-    if [ "$(dpkg-query -W -f='${Status}' "${package}" 2>/dev/null | grep -c "ok installed")" == "1" ]; then
+    if [[ "$(dpkg-query -W -f='${Status}' "${package}" 2>/dev/null | grep -c "ok installed")" == "1" ]]; then
 
         # Return
-        echo "true"
+        echo "true" && return 0
 
     else
 
         # Return
-        echo "false"
+        echo "false" && return 1
 
     fi
 
@@ -421,21 +421,28 @@ function _mysql_check_installed_version() {
     if [[ -n ${mysql_installed_pkg} ]]; then
         # Extract only version numbers
         mysql_installed_version="$(mysql -V | awk -F' ' '{print $3}' | grep -o '[0-9.]*$' | tr '\n' ' ')"
+        
+        # Return
+    	echo "{\"name\":\"${mysql_installed_pkg}\",\"version\":\"${mysql_installed_version}\",\"default\":\"true\"} , " && return 0
 
     else
 
         mysql_installed_pkg="$(apt -qq list mariadb-server --installed 2>/dev/null | cut -d "/" -f1)"
 
-        if [[ -z ${mysql_installed_pkg} ]]; then
+        if [[ -n ${mysql_installed_pkg} ]]; then
             # Extract only version numbers
             mysql_installed_version="$(mysql -V | grep -Eo '[+-]?[0-9]+([.][0-9]+)+([.][0-9]+)?-MariaDB' | cut -d "-" -f 1)"
+            
+            # Return
+    		echo "{\"name\":\"${mysql_installed_pkg}\",\"version\":\"${mysql_installed_version}\",\"default\":\"true\"} , " && return 0
 
         fi
 
     fi
 
-    # Return
-    echo "{\"name\":\"${mysql_installed_pkg}\",\"version\":\"${mysql_installed_version}\",\"default\":\"true\"}"
+	# Return
+    return 1
+
 
 }
 
@@ -464,9 +471,17 @@ function _psql_check_installed_version() {
 
         if [[ -n ${psql_installed_version} ]]; then
             # Return
-            echo "{\"name\":\"postgresql\",\"version\":\"${psql_installed_version}\",\"default\":\"true\"} , "
+            echo "{\"name\":\"postgresql\",\"version\":\"${psql_installed_version}\",\"default\":\"true\"} , " && return 0
+        else
+        	
+        	echo "{\"name\":\"postgresql\",\"version\":\"unknown\",\"default\":\"true\"} , " && return 1
+        	
         fi
-
+        
+	else
+	
+		return 1
+		
     fi
 
 }
@@ -1694,31 +1709,35 @@ function _packages_get_data() {
     apache_v_installed="$(_apache_check_installed_version)"
     nginx_v_installed="$(_nginx_check_installed_version)"
     webservers_v_installed="${nginx_v_installed}${apache_v_installed}"
-
-    if [[ ${webservers_v_installed} == "" ]]; then
-
+    if [[ -z ${webservers_v_installed} ]]; then
         webservers_v_installed="\"no-webserver\""
-
     else
-
         # Remove 3 last chars
         webservers_v_installed="${webservers_v_installed::-3}"
-
     fi
 
     ## databases
-    if [[ "$(_is_pkg_installed "mysql-server")" == "true" || "$(_is_pkg_installed "mariadb-server")" == "true" ]]; then
-        mysql_v_installed="$(_mysql_check_installed_version)"
-    fi
-    if [[ "$(_is_pkg_installed "postgresql")" == "true" ]]; then
-        psql_v_installed="$(_psql_check_installed_version)"
-    fi
+    mysql_v_installed="$(_mysql_check_installed_version)"
+	psql_v_installed="$(_psql_check_installed_version)"
+	dbs_v_installed="${dbs_v_installed}${psql_v_installed}"
+	if [[ -z ${dbs_v_installed} ]]; then
+		dbs_v_installed="no-database-engine"
+	else
+		# Remove 3 last chars
+        dbs_v_installed="${dbs_v_installed::-3}"
+	fi
 
     ## languages
     php_v_installed="$(_php_check_installed_version)"
+    if [[ -z ${php_v_installed} ]]; then
+        php_v_installed="\"no-languages\""
+    else
+        # Remove 3 last chars
+        php_v_installed="${php_v_installed::-3}"
+    fi
 
     # Return JSON part
-    echo "\"webservers\":[ ${webservers_v_installed} ], \"databases\": [ ${mysql_v_installed} ], \"languages\": [ ${php_v_installed} ]"
+    echo "\"webservers\":[ ${webservers_v_installed} ], \"databases\": [ ${dbs_v_installed} ], \"languages\": [ ${php_v_installed} ]"
 
 }
 
@@ -2341,7 +2360,7 @@ function show_server_data() {
         mysql_databases_json="$(printf "%s" "${mysql_databases_json%,}")"
         psql_databases_json="$(printf "%s" "${psql_databases_json%,}")"
 
-        server_databases="${mysql_databases_json},${psql_databases_json}"
+        server_databases="${mysql_databases_json}${psql_databases_json}"
         server_databases="$(printf "%s" "${server_databases%,}")"
 
         [[ -z ${server_databases} ]] && server_databases="\"no-databases\""
