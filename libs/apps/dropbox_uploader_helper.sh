@@ -26,6 +26,48 @@ function dropbox_account_space() {
 }
 
 ################################################################################
+# Check if file exists on Dropbox account
+#
+# Arguments:
+#   ${1}- ${file}
+#   ${2}- ${path}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function dropbox_check_if_file_exists() {
+
+    local file="${1}"
+    local path="${2}"
+
+    local output
+
+    # Log
+    log_event "debug" "Check if file exists on Dropbox account: ${file}" "false"
+    log_event "debug" "Running: \"${DROPBOX_UPLOADER}\" list \"${path}\" | grep -w \"${file}\" | awk -F \" \" "'{print $1}'" 2>&1" "false"
+
+    # Command
+    output="$("${DROPBOX_UPLOADER}" list "${path}" | grep -w "${file}" | awk -F " " '{print $1}' 2>&1)"
+
+    # If file exists
+    if [[ ${output} == "[F]" ]]; then
+
+        log_event "debug" "Directory ${file} exists" "false"
+
+        return 0
+
+    else # If file not exists
+
+        log_event "debug" "File not exists" "false"
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
 # Check if directory exists on Dropbox account
 #
 # Arguments:
@@ -38,8 +80,8 @@ function dropbox_account_space() {
 
 function dropbox_check_if_directory_exists() {
 
-    local directory="$1"
-    local path="$2"
+    local directory="${1}"
+    local path="${2}"
 
     local output
 
@@ -213,7 +255,6 @@ function dropbox_download() {
 
     if [[ ${dropbox_file_to_download_result} -eq 0 ]]; then
         # Log
-        #clear_previous_lines "1"
         display --indent 6 --text "- Downloading file from Dropbox" --result "DONE" --color GREEN
         log_event "info" "${file_to_download} downloaded" "false"
 
@@ -238,7 +279,7 @@ function dropbox_download() {
 # Delete file in Dropbox
 #
 # Arguments:
-#   $1 = ${to_delete} - full path to file
+#   $1 = ${to_delete} - full path to file or directory
 #   $2 = ${force_delete}
 #
 # Outputs:
@@ -254,6 +295,8 @@ function dropbox_delete() {
     local search_file
     local search_result
     local dropbox_remove_result
+
+    # TODO: implements dropbox_check_if_file_exists
 
     if [[ ${force_delete} != "true" ]]; then
 
