@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.5
+# Version: 3.2.6
 #############################################################################
 
 function test_nginx_helper_functions() {

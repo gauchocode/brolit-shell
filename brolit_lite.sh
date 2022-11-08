@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.5
+# Version: 3.2.6
 ################################################################################
 
 ################################################################################
@@ -333,6 +333,34 @@ function _is_pkg_installed() {
 }
 
 ################################################################################
+# Private: Check phyton installed version
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function _python_check_installed_version() {
+
+    local python_installed_pkg
+    local python_installed_versions
+
+    # Installed versions
+    python_installed_pkg="$(sudo dpkg --list | grep -oh ' python[0-9]\.[0-9] ')"
+    
+    if [[ -n ${python_installed_pkg} ]]; then
+    	# Installed versions
+        python_installed_version="$(python3 --version 2>&1)"
+        python_installed_version="$(echo "${python_installed_version}" | cut -d " " -f 2 | grep -o '[0-9.]*$')"
+    	# Return
+    	echo "{\"name\":\"python\",\"version\":\"${python_installed_version}\",\"default\":\"true\"} , " && return 0
+    fi
+    
+}
+
+################################################################################
 # Private: Check php installed version
 #
 # Arguments:
@@ -375,28 +403,36 @@ function _php_check_installed_version() {
     #    php_installed_versions="$(_string_remove_spaces "${php_installed_versions}")"
     #
     #fi
+    
+    if [[ -n ${php_installed_versions} ]]; then
 
-    for php_v in ${php_installed_versions}; do
+		for php_v in ${php_installed_versions}; do
 
-        # Default versions
-        php_default_version="$(php -v | grep -Eo 'PHP [0-9.].[0-9.]' | cut -d " " -f 2)"
+		    # Default versions
+		    php_default_version="$(php -v | grep -Eo 'PHP [0-9.].[0-9.]' | cut -d " " -f 2)"
 
-        if [[ ${php_default_version} == "${php_v}" ]]; then
-            php_default=true
-        else
-            php_default=false
-        fi
+		    if [[ ${php_default_version} == "${php_v}" ]]; then
+		        php_default=true
+		    else
+		        php_default=false
+		    fi
 
-        phpv_data="{\"name\":\"php\",\"version\":\"${php_v}\",\"default\":\"${php_default}\"}"
-        all_php_data="${all_php_data} , ${phpv_data}"
+		    phpv_data="{\"name\":\"php\",\"version\":\"${php_v}\",\"default\":\"${php_default}\"}"
+		    all_php_data="${all_php_data} , ${phpv_data}"
 
-    done
+		done
 
-    # Remove 3 first chars
-    #all_php_data="${all_php_data:3}"
-
-    # Return
-    echo "${all_php_data}"
+		# Remove 3 first chars
+		all_php_data="${all_php_data:3}"
+		
+		# Return
+    	echo "${all_php_data} , " && return 0
+    
+    else
+    
+    	return 1
+    
+    fi
 
 }
 
@@ -1701,6 +1737,8 @@ function _packages_get_data() {
 
     local mysql_v_installed
     local psql_v_installed
+    local lang_v_installed
+    local python_v_installed
     local php_v_installed
     local all_php_data
     local php_default
@@ -1729,15 +1767,17 @@ function _packages_get_data() {
 
     ## languages
     php_v_installed="$(_php_check_installed_version)"
-    if [[ -z ${php_v_installed} ]]; then
-        php_v_installed="\"no-languages\""
-    #else
-    #    # Remove 3 last chars
-    #    php_v_installed="${php_v_installed::-3}"
+    python_v_installed="$(_python_check_installed_version)"
+    lang_v_installed="${php_v_installed}${python_v_installed}"
+    if [[ -z ${lang_v_installed} ]]; then
+        lang_v_installed="\"no-languages\""
+    else
+        # Remove 3 last chars
+        lang_v_installed="${lang_v_installed::-3}"
     fi
 
     # Return JSON part
-    echo "\"webservers\":[ ${webservers_v_installed} ], \"databases\": [ ${dbs_v_installed} ], \"languages\": [ ${php_v_installed} ]"
+    echo "\"webservers\":[ ${webservers_v_installed} ], \"databases\": [ ${dbs_v_installed} ], \"languages\": [ ${lang_v_installed} ]"
 
 }
 
@@ -1764,11 +1804,7 @@ function _project_is_ignored() {
     for i in "${excluded_projects_array[@]}"; do
         :
 
-        if [[ ${project} == "${i}" ]]; then
-
-            return 1
-
-        fi
+        [[ ${project} == "${i}" ]] && return 1
 
     done
 
@@ -2089,8 +2125,8 @@ declare -g PROJECTS_PATH
 PROJECTS_PATH="$(_json_read_field "${BROLIT_CONFIG_FILE}" "PROJECTS.path")"
 
 # Version
-BROLIT_VERSION="3.2.5"
-BROLIT_LITE_VERSION="3.2.5-111"
+BROLIT_VERSION="3.2.6"
+BROLIT_LITE_VERSION="3.2.6-111"
 
 ################################################################################
 # Show firewall status
