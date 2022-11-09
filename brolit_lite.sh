@@ -662,12 +662,12 @@ function _cloudflare_domain_exists() {
     if [[ ${exitstatus} -eq 0 && ${zone_id} != "" ]]; then
 
         # Return
-        echo "true"
+        echo "true" && return 0
 
     else
 
         # Return
-        echo "false"
+        echo "false" && return 1
     fi
 
 }
@@ -747,7 +747,7 @@ function _get_domain_extension() {
         domain_ext=.${domain_ext}
 
         # Return
-        echo "${domain_ext}"
+        echo "${domain_ext}" && return 0
 
     else
 
@@ -792,12 +792,12 @@ function _get_subdomain_part() {
             subdomain_part=${domain//.$root_domain/}
 
             # Return
-            echo "${subdomain_part}"
+            echo "${subdomain_part}" && return 0
 
         else
 
             # Return
-            echo ""
+            echo "" && return 0
 
         fi
 
@@ -2396,8 +2396,11 @@ function show_server_data() {
         mysql_databases_json="$(printf "%s" "${mysql_databases_json%,}")"
         psql_databases_json="$(printf "%s" "${psql_databases_json%,}")"
 
-        server_databases="${mysql_databases_json}${psql_databases_json}"
+        server_databases="${mysql_databases_json},${psql_databases_json}"
+        # Remove last comma
         server_databases="$(printf "%s" "${server_databases%,}")"
+        # Remove first comma
+        server_databases="$(printf "%s" "${server_databases#,}")"
 
         [[ -z ${server_databases} ]] && server_databases="\"no-databases\""
 
