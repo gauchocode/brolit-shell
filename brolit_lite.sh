@@ -361,6 +361,34 @@ function _python_check_installed_version() {
 }
 
 ################################################################################
+# Private: Check nodejs installed version
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function _nodejs_check_installed_version() {
+
+    local nodejs_installed_pkg
+    local nodejs_installed_versions
+
+    # Installed versions
+    nodejs_installed_pkg="$(which node)"
+    
+    if [[ -n ${nodejs_installed_pkg} ]]; then
+    	# Installed versions
+        nodejs_installed_versions="$(node --version 2>&1)"
+        nodejs_installed_versions="$(echo "${nodejs_installed_versions}" | cut -d " " -f 2 | grep -o '[0-9.]*$')"
+    	# Return
+    	echo "{\"name\":\"nodejs\",\"version\":\"${nodejs_installed_versions}\",\"default\":\"true\"} , " && return 0
+    fi
+    
+}
+
+################################################################################
 # Private: Check php installed version
 #
 # Arguments:
@@ -1740,6 +1768,7 @@ function _packages_get_data() {
     local lang_v_installed
     local python_v_installed
     local php_v_installed
+    local nodejs_v_installed
     local all_php_data
     local php_default
 
@@ -1768,7 +1797,8 @@ function _packages_get_data() {
     ## languages
     php_v_installed="$(_php_check_installed_version)"
     python_v_installed="$(_python_check_installed_version)"
-    lang_v_installed="${php_v_installed}${python_v_installed}"
+    nodejs_v_installed="$(_nodejs_check_installed_version)"
+    lang_v_installed="${php_v_installed}${python_v_installed}${nodejs_v_installed}"
     if [[ -z ${lang_v_installed} ]]; then
         lang_v_installed="\"no-languages\""
     else
