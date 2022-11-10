@@ -2081,9 +2081,17 @@ function project_delete() {
 
   fi
 
-  # Delete Database
-  project_db_engine="$(project_get_configured_database_engine "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")"
-  if [[ $? -eq 0 ]]; then
+  [[ -z ${project_type} ]] && project_type="$(project_ask_type)"
+  [[ -z ${project_install_type} ]] && project_install_type="default"
+
+  if [[ -f ${PROJECTS_PATH}/${project_domain} ]]; then
+    project_db_engine="$(project_get_configured_database_engine "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")"
+  else
+    project_db_engine="$(database_ask_engine)"
+  fi
+
+  if [[ -n ${project_db_engine} ]]; then
+    # Delete Database
     project_delete_database "${project_db_name}" "${project_db_user}" "${project_db_engine}" "${project_install_type}"
   else
     log_event "warning" "Can not determine database engine." "false"
@@ -2136,16 +2144,14 @@ function project_change_status() {
 #   $1 = ${dir_path}
 #
 # Outputs:
-#   ${project_type}
+#   ${project_install_type}
 ################################################################################
 
 function project_get_install_type() {
 
   local dir_path="${1}"
 
-  #local project_installation_type
-
-  # TODO: if brolit_conf.json exists, should check this file and get project install type
+  local project_install_type
 
   if [[ -n ${dir_path} ]]; then
 
@@ -2156,18 +2162,16 @@ function project_get_install_type() {
     )"
     if [[ -n ${docker} ]]; then
 
-      project_type="docker-compose"
+      project_install_type="docker-compose"
 
       # Log
-      log_event "debug" "Project install type: ${project_type}" "false"
-      display --indent 8 --text "Project install type: ${project_type}" --tcolor MAGENTA
+      log_event "debug" "Project install type: ${project_install_type}" "false"
+      display --indent 8 --text "Project install type: ${project_install_type}" --tcolor MAGENTA
 
       # Return
-      echo "${project_type}" && return 0
+      echo "${project_install_type}" && return 0
 
     else
-
-      # Default
 
       # Return
       echo "default" && return 0
@@ -2175,6 +2179,8 @@ function project_get_install_type() {
     fi
 
   else
+
+    # TODO: get from brolit project config?
 
     return 1
 

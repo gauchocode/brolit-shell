@@ -1097,16 +1097,18 @@ function backup_project() {
     #log_event "info" "Deleting backup from server ..." "false"
 
     # Log
+    log_break
     log_event "info" "Project Backup done" "false"
-    display --indent 6 --text " - Project Backup" --result "DONE" --color GREEN
+    display --indent 6 --text "- Project Backup" --result "DONE" --color GREEN
 
     return ${got_error}
 
   else
 
     # Log
+    log_break
     log_event "error" "Something went wrong making the files backup" "false"
-    display --indent 6 --text " - Project Backup" --result "FAIL" --color RED
+    display --indent 6 --text "- Project Backup" --result "FAIL" --color RED
     display --indent 8 --text "Something went wrong making the files backup" --tcolor RED
 
     return 1
