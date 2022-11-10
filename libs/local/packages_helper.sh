@@ -271,6 +271,9 @@ function packages_remove_old() {
   apt-get --yes autoremove -qq >/dev/null
   apt-get --yes autoclean -qq >/dev/null
 
+  # apt cache
+  rm -rf /var/cache/apt/*
+
   # Log
   clear_previous_lines "1"
   display --indent 6 --text "- Cleanning old system packages" --result "DONE" --color GREEN

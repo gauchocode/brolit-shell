@@ -269,13 +269,10 @@ function restore_backup_from_ftp() {
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 1 ]]; then
-
       # Log
       log_event "error" "FTP connection failed!" "false"
       display --indent 6 --text "- Restore project" --result "FAIL" --color RED
-
       return 1
-
     fi
 
     # Search for .sql or sql.gz files
@@ -300,11 +297,16 @@ function restore_backup_from_ftp() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         # Restore database
-        #restore_database_backup "${project_name}" "${project_stage}" "${chosen_database_backup}"
-        db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}")"
-        db_name="$(project_get_configured_database "${install_path}" "${project_type}")"
-        db_user="$(project_get_configured_database_user "${install_path}" "${project_type}")"
-        db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}")"
+
+        ## Get project_type && project_install_type
+        project_type="$(project_get_type "${project_name}")"
+        project_install_type="$(project_get_install_type "${install_path}")"
+
+        ## Get database information
+        db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}" "${project_install_type}")"
+        db_name="$(project_get_configured_database "${install_path}" "${project_type}" "${project_install_type}")"
+        db_user="$(project_get_configured_database_user "${install_path}" "${project_type}" "${project_install_type}")"
+        db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}" "${project_install_type}")"
 
         restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${BROLIT_TMP_DIR}/${chosen_database_backup}"
 
@@ -455,11 +457,16 @@ function restore_backup_from_public_url() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
       # Restore database
-      #restore_database_backup "${project_name}" "${project_stage}" "${chosen_database_backup}"
-      db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}")"
-      db_name="$(project_get_configured_database "${install_path}" "${project_type}")"
-      db_user="$(project_get_configured_database_user "${install_path}" "${project_type}")"
-      db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}")"
+
+      ## Get project_type && project_install_type
+      project_type="$(project_get_type "${project_name}")"
+      project_install_type="$(project_get_install_type "${install_path}")"
+
+      ## Get database information
+      db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}" "${project_install_type}")"
+      db_name="$(project_get_configured_database "${install_path}" "${project_type}" "${project_install_type}")"
+      db_user="$(project_get_configured_database_user "${install_path}" "${project_type}" "${project_install_type}")"
+      db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}" "${project_install_type}")"
 
       restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${BROLIT_TMP_DIR}/${chosen_database_backup}"
 
@@ -485,10 +492,16 @@ function restore_backup_from_public_url() {
       ${CURL} "${source_db_url}" >"${BROLIT_TMP_DIR}/${backup_file}"
 
       # Restore database
-      db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}")"
-      db_name="$(project_get_configured_database "${install_path}" "${project_type}")"
-      db_user="$(project_get_configured_database_user "${install_path}" "${project_type}")"
-      db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}")"
+
+      ## Get project_type && project_install_type
+      project_type="$(project_get_type "${project_name}")"
+      project_install_type="$(project_get_install_type "${install_path}")"
+
+      ## Get database information
+      db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}" "${project_install_type}")"
+      db_name="$(project_get_configured_database "${install_path}" "${project_type}" "${project_install_type}")"
+      db_user="$(project_get_configured_database_user "${install_path}" "${project_type}" "${project_install_type}")"
+      db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}" "${project_install_type}")"
 
       restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${BROLIT_TMP_DIR}/${backup_file}"
 
@@ -1068,12 +1081,12 @@ function restore_type_selection_from_storage() {
           # Select project to work with
           directory_browser "Select a project to work with" "${PROJECTS_PATH}" #return $filename
 
-          # Check install_type (default or docker)
-          install_type="$(project_get_install_type "${PROJECTS_PATH}/${filename}")"
+          # Check project_install_type (default or docker)
+          project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${filename}")"
           # Check project_type
           project_type="$(project_get_type "${PROJECTS_PATH}/${filename}")"
 
-          if [[ ${install_type} == "docker-compose" ]]; then
+          if [[ ${project_install_type} == "docker-compose" ]]; then
 
             [[ ${PACKAGES_DOCKER_STATUS} != "enabled" ]] && log_event "error" "Docker is not enabled from brolit_conf.json" "true" && exit 1
 
@@ -1092,13 +1105,13 @@ function restore_type_selection_from_storage() {
           else
 
             # Get ${database_engine} from project config
-            database_engine="$(project_get_configured_database_engine "${PROJECTS_PATH}/${filename}" "${project_type}")"
+            database_engine="$(project_get_configured_database_engine "${PROJECTS_PATH}/${filename}" "${project_type}" "${project_install_type}")"
             # Get ${database_name} from project config
-            database_name="$(project_get_configured_database "${PROJECTS_PATH}/${filename}" "${project_type}")"
+            database_name="$(project_get_configured_database "${PROJECTS_PATH}/${filename}" "${project_type}" "${project_install_type}")"
             # Get ${database_user} from project config
-            database_user="$(project_get_configured_database_user "${PROJECTS_PATH}/${filename}" "${project_type}")"
+            database_user="$(project_get_configured_database_user "${PROJECTS_PATH}/${filename}" "${project_type}" "${project_install_type}")"
             # Get ${database_user_pass} from project config
-            database_user_pass="$(project_get_configured_database_userpassw "${PROJECTS_PATH}/${filename}" "${project_type}")"
+            database_user_pass="$(project_get_configured_database_userpassw "${PROJECTS_PATH}/${filename}" "${project_type}" "${project_install_type}")"
 
             # If database_ vars are not empty, restore database
             if [[ -n "${database_engine}" ]] && [[ -n "${database_name}" ]] && [[ -n "${database_user}" ]] && [[ -n "${database_user_pass}" ]]; then
@@ -1374,11 +1387,16 @@ function restore_project() {
         touch "${BROLIT_TMP_DIR}/${chosen_project}/nginx.conf"
 
         # Reading config file
-        ## Database vars (only return something if project type has a database)
-        db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}")"
-        db_name="$(project_get_configured_database "${install_path}" "${project_type}")"
-        db_user="$(project_get_configured_database_user "${install_path}" "${project_type}")"
-        db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}")"
+
+        ## Get project_type && project_install_type
+        project_type="$(project_get_type "${project_name}")"
+        project_install_type="$(project_get_install_type "${install_path}")"
+
+        ## Get database information
+        db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}" "${project_install_type}")"
+        db_name="$(project_get_configured_database "${install_path}" "${project_type}" "${project_install_type}")"
+        db_user="$(project_get_configured_database_user "${install_path}" "${project_type}" "${project_install_type}")"
+        db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}" "${project_install_type}")"
 
         if [[ -n ${db_name} ]]; then
 

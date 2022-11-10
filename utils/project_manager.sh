@@ -257,9 +257,10 @@ function project_manager_menu_new_project_type_utils() {
         # TODO: Error check
         # TODO: Ask to update project config
         project_type="$(project_get_type "${filepath}/${filename}")"
-        project_set_configured_database "${filepath}/${filename}" "${project_type}" "${project_name}_${project_stage}"
-        project_set_configured_database_user "${filepath}/${filename}" "${project_type}" "${project_name}_user"
-        project_set_configured_database_userpassw "${filepath}/${filename}" "${project_type}" "${database_user_passw}"
+        project_install_type="$(project_get_install_type "${filepath}/${filename}")"
+        project_set_configured_database "${filepath}/${filename}" "${project_type}" "${project_install_type}" "${project_name}_${project_stage}"
+        project_set_configured_database_user "${filepath}/${filename}" "${project_type}" "${project_install_type}" "${project_name}_user"
+        project_set_configured_database_userpassw "${filepath}/${filename}" "${project_type}" "${project_install_type}" "${database_user_passw}"
 
       fi
 
