@@ -1380,12 +1380,12 @@ function restore_project() {
         project_port="default"
 
         # Create nginx.conf file if not exists
-        touch "${BROLIT_TMP_DIR}/${chosen_project}/nginx.conf"
+        touch "${PROJECTS_PATH}/${new_project_domain}/nginx.conf"
 
         # Reading config file
 
         ## Get project_type && project_install_type
-        project_type="$(project_get_type "${project_name}")"
+        project_type="$(project_get_type "${install_path}")"
         project_install_type="$(project_get_install_type "${install_path}")"
 
         ## Get database information
@@ -1394,7 +1394,7 @@ function restore_project() {
         db_user="$(project_get_configured_database_user "${install_path}" "${project_type}" "${project_install_type}")"
         db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}" "${project_install_type}")"
 
-        if [[ -n ${db_name} ]]; then
+        if [[ -n ${db_name} && ${db_name} != "no-database" ]]; then
 
           # Get backup rotation type (daily, weekly, monthly)
           backup_rotation_type="$(backup_get_rotation_type "${chosen_backup_to_restore}")"
