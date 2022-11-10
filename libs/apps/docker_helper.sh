@@ -367,7 +367,7 @@ function docker_mysql_database_import() {
     local dump_file="${5}"
 
     # Log
-    display --indent 6 --text " - Importing database"
+    display --indent 6 --text "- Importing database"
     log_event "debug" "Running: docker exec -i \"${container_name}\" mysql -u\"${mysql_user}\" -p\"${mysql_user_passw}\" ${mysql_database} < ${dump_file}" "false"
 
     # Docker run
@@ -376,7 +376,7 @@ function docker_mysql_database_import() {
 
     # Log
     clear_previous_lines "1"
-    display --indent 6 --text " - Importing database" --result "DONE" --color GREEN
+    display --indent 6 --text "- Importing database" --result "DONE" --color GREEN
 
 }
 

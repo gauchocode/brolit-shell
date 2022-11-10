@@ -10,6 +10,36 @@
 
 # TODO: use database controller
 
+function database_ask_engine() {
+
+  local database_engine_options
+  local chosen_database_engine
+
+  if [[ ${PACKAGES_POSTGRES_STATUS} == "enabled" ]] && { [[ ${PACKAGES_MARIADB_STATUS} == "enabled" ]] || [[ ${PACKAGES_MYSQL_STATUS} == "enabled" ]]; }; then
+
+    database_engine_options=(
+      "MYSQL" "      [X]"
+      "POSTGRESQL" "      [X]"
+    )
+
+    chosen_database_engine="$(whiptail --title "DATABASE MANAGER" --menu " " 20 78 10 "${database_engine_options[@]}" 3>&1 1>&2 2>&3)"
+
+  else
+
+    if [[ ${PACKAGES_MARIADB_STATUS} == "enabled" || ${PACKAGES_MYSQL_STATUS} == "enabled" ]]; then
+
+      echo "MYSQL" && return 0
+
+    else
+
+      [[ ${PACKAGES_POSTGRES_STATUS} == "enabled" ]] && echo "POSTGRESQL" || return 1
+
+    fi
+
+  fi
+
+}
+
 ################################################################################
 # Database Manager Menu
 #
@@ -28,23 +58,9 @@ function database_manager_menu() {
   local database_list_options
   local chosen_database_list_option
 
-  if [[ ${PACKAGES_MARIADB_STATUS} == "enabled" || ${PACKAGES_MYSQL_STATUS} == "enabled" && ${PACKAGES_POSTGRES_STATUS} == "enabled" ]]; then
-    database_engine_options=(
-      "MYSQL" "      [X]"
-      "POSTGRESQL" "      [X]"
-    )
-
-    chosen_database_engine_options="$(whiptail --title "DATABASE MANAGER" --menu " " 20 78 10 "${database_engine_options[@]}" 3>&1 1>&2 2>&3)"
-
-  else
-
-    if [[ ${PACKAGES_MARIADB_STATUS} == "enabled" || ${PACKAGES_MYSQL_STATUS} == "enabled" ]]; then
-      chosen_database_engine_options="MYSQL"
-    else
-      chosen_database_engine_options="POSTGRESQL"
-    fi
-
-  fi
+  # Select database engine
+  chosen_database_engine="$(database_ask_engine)"
+  [[ -z ${chosen_database_engine} ]] && return 1
 
   database_manager_options=(
     "01)" "LIST DATABASES"
@@ -73,7 +89,7 @@ function database_manager_menu() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        if [[ ${chosen_database_engine_options} == "MYSQL" ]]; then
+        if [[ ${chosen_database_engine} == "MYSQL" ]]; then
           databases="$(mysql_list_databases "${chosen_database_list_option}")"
         else
           databases="$(postgres_list_databases "${chosen_database_list_option}")"
@@ -94,7 +110,7 @@ function database_manager_menu() {
 
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        if [[ ${chosen_database_engine_options} == "MYSQL" ]]; then
+        if [[ ${chosen_database_engine} == "MYSQL" ]]; then
 
           mysql_database_create "${chosen_database_name}"
 
@@ -113,7 +129,7 @@ function database_manager_menu() {
       # DELETE DATABASE
 
       # List databases
-      if [[ ${chosen_database_engine_options} == "MYSQL" ]]; then
+      if [[ ${chosen_database_engine} == "MYSQL" ]]; then
         databases="$(mysql_list_databases "all")"
       else
         databases="$(postgres_list_databases "all")"
@@ -124,7 +140,7 @@ function database_manager_menu() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        if [[ ${chosen_database_engine_options} == "MYSQL" ]]; then
+        if [[ ${chosen_database_engine} == "MYSQL" ]]; then
 
           mysql_database_drop "${chosen_database}"
 
@@ -143,7 +159,7 @@ function database_manager_menu() {
       # RENAME DATABASE
 
       # List databases
-      if [[ ${chosen_database_engine_options} == "MYSQL" ]]; then
+      if [[ ${chosen_database_engine} == "MYSQL" ]]; then
         databases="$(mysql_list_databases "all")"
       else
         databases="$(postgres_list_databases "all")"
@@ -158,7 +174,7 @@ function database_manager_menu() {
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
-          if [[ ${chosen_database_engine_options} == "MYSQL" ]]; then
+          if [[ ${chosen_database_engine} == "MYSQL" ]]; then
 
             mysql_database_rename "${chosen_database}" "${chosen_database_name}"
 
@@ -177,7 +193,7 @@ function database_manager_menu() {
     if [[ ${chosen_database_manager_option} == *"05"* ]]; then
 
       # LIST USERS
-      if [[ ${chosen_database_engine_options} == "MYSQL" ]]; then
+      if [[ ${chosen_database_engine} == "MYSQL" ]]; then
         mysql_list_users
       else
         postgres_list_users
@@ -202,7 +218,7 @@ function database_manager_menu() {
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
-          if [[ ${chosen_database_engine_options} == "MYSQL" ]]; then
+          if [[ ${chosen_database_engine} == "MYSQL" ]]; then
 
             mysql_user_create "${chosen_username}" "${chosen_userpsw}" "localhost"
 
@@ -223,7 +239,7 @@ function database_manager_menu() {
       # DELETE USER
 
       # List users
-      if [[ ${chosen_database_engine_options} == "MYSQL" ]]; then
+      if [[ ${chosen_database_engine} == "MYSQL" ]]; then
         database_users="$(mysql_list_users)"
       else
         database_users="$(postgres_list_users)"
@@ -234,7 +250,7 @@ function database_manager_menu() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        if [[ ${chosen_database_engine_options} == "MYSQL" ]]; then
+        if [[ ${chosen_database_engine} == "MYSQL" ]]; then
 
           mysql_user_delete "${chosen_user}" "localhost"
 
@@ -253,7 +269,7 @@ function database_manager_menu() {
       # RESET MYSQL USER PASSWORD
 
       # List users
-      if [[ ${chosen_database_engine_options} == "MYSQL" ]]; then
+      if [[ ${chosen_database_engine} == "MYSQL" ]]; then
         database_users="$(mysql_list_users)"
       else
         database_users="$(postgres_list_users)"
@@ -269,7 +285,7 @@ function database_manager_menu() {
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
-          if [[ ${chosen_database_engine_options} == "MYSQL" ]]; then
+          if [[ ${chosen_database_engine} == "MYSQL" ]]; then
 
             mysql_user_psw_change "${chosen_user}" "${new_user_psw}"
 
@@ -290,7 +306,7 @@ function database_manager_menu() {
       # GRANT PRIVILEGES
 
       # List users
-      if [[ ${chosen_database_engine_options} == "MYSQL" ]]; then
+      if [[ ${chosen_database_engine} == "MYSQL" ]]; then
         database_users="$(mysql_list_users)"
       else
         database_users="$(postgres_list_users)"
@@ -302,7 +318,7 @@ function database_manager_menu() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         # List databases
-        if [[ ${chosen_database_engine_options} == "MYSQL" ]]; then
+        if [[ ${chosen_database_engine} == "MYSQL" ]]; then
           databases="$(mysql_list_databases "all")"
         else
           databases="$(postgres_list_databases "all")"
@@ -313,7 +329,7 @@ function database_manager_menu() {
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
-          if [[ ${chosen_database_engine_options} == "MYSQL" ]]; then
+          if [[ ${chosen_database_engine} == "MYSQL" ]]; then
             mysql_user_grant_privileges "${chosen_user}" "${chosen_database}" "localhost"
           else
             postgres_user_grant_privileges "${chosen_user}" "${chosen_database}" "localhost"

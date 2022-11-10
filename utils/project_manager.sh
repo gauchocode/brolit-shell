@@ -442,13 +442,13 @@ function project_manager_menu_new_project_type_new_project() {
 
 function project_manager_menu_new_project_type() {
 
-  local installation_types
+  local project_types
   local project_type
 
   # Installation types
-  installation_types="Laravel,PHP"
+  project_types="Laravel,PHP"
 
-  project_type="$(whiptail --title "INSTALLATION TYPE" --menu "Choose an Installation Type" 20 78 10 "$(for x in ${installation_types}; do echo "$x [X]"; done)" 3>&1 1>&2 2>&3)"
+  project_type="$(whiptail --title "NEW PROJECT TYPE" --menu "Choose an Installation Type" 20 78 10 "$(for x in ${project_types}; do echo "$x [X]"; done)" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
