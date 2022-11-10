@@ -510,7 +510,7 @@ function backup_all_projects_files() {
 
     log_event "info" "Processing [${directory_name}] ..." "false"
 
-    if [[ $(project_is_ignored "${directory_name}") -eq 0 ]]; then
+    if [[ "$(project_is_ignored "${directory_name}")" == "true" ]]; then
 
       backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${directory_name}")"
 
@@ -1019,13 +1019,13 @@ function backup_project() {
   local project_domain="${1}"
   local backup_type="${2}"
 
+  local got_error=0
+
   local db_stage
   local db_name
   local db_engine
   local backup_file
-  local project_name
   local project_type
-  local project_config_file
 
   # Backup files
   log_subsection "Backup Project Files"
@@ -1034,68 +1034,55 @@ function backup_project() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
+    # Project Type
     project_type="$(project_get_type "${PROJECTS_PATH}/${project_domain}")"
 
-    if [[ ${project_type} != "html" ]]; then
+    # Project install type
+    project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
 
-      log_event "info" "Trying to get database name from project ..." "false"
+    # If ${project_install_type} == docker -> docker_mysql_database_backup ?
+    # Should consider the case where a project is dockerized but uses an external database?
+    if [[ ${project_install_type} == "default" && ${project_type} != "html" ]]; then
 
-      project_name="$(project_get_name_from_domain "${project_domain}")"
+      log_event "info" "Trying to get database name from project config file..." "false"
 
-      project_config_file="${BROLIT_CONFIG_PATH}/${project_name}_conf.json"
+      db_name="$(project_get_configured_database "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")"
+      db_engine="$(project_get_configured_database_engine "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")"
 
-      if [[ -f "${project_config_file}" ]]; then
+      if [[ -z "${db_name}" ]]; then
 
-        project_type="$(project_get_brolit_config_var "${project_config_file}" "project[].type")"
-        db_name="$(project_get_configured_database "${BROLIT_TMP_DIR}/${project_name}" "${project_type}")"
-        db_engine="$(project_get_configured_database_engine "${BROLIT_TMP_DIR}/${project_name}" "${project_type}")"
+        log_event "warning" "Trying to get database name from convention name..." "false"
 
-      else
-
-        #db_engine="$(project_get_configured_database_engine "${BROLIT_TMP_DIR}/${project_name}" "${project_type}")"
         db_stage="$(project_get_stage_from_domain "${project_domain}")"
         db_name="$(project_get_name_from_domain "${project_domain}")"
         db_name="${db_name}_${db_stage}"
 
       fi
 
-      # TODO: check project type
-      # If docker:
-      ## docker_mysql_database_backup
+      if [[ -z "${db_engine}" ]]; then
 
-      # Check on Mysql
-      mysql_database_exists "${db_name}"
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
+        # Check on Mysql
+        [[ $(mysql_database_exists "${db_name}") -eq 0 ]] && db_engine="mysql"
+        # Check on Postgres
+        [[ $(postgres_database_exists "${db_name}") -eq 0 ]] && db_engine="postgres"
+
+      fi
+
+      if [[ "${db_engine}" == "mysql" ]]; then
 
         # Backup database
         log_subsection "Backup Project Database"
         backup_file="$(backup_project_database "${db_name}" "mysql")"
+        got_error=$?
 
       else
 
-        # Log
-        log_event "info" "Database ${db_name} not found on MySQL" "false"
-        display --indent 8 --text "Database ${db_name} not found on MySQL" --tcolor YELLOW
-
-        # Check on Postgres
-        postgres_database_exists "${db_name}"
-
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
+        if [[ "${db_engine}" == "postgres" ]]; then
 
           # Backup database
           log_subsection "Backup Project Database"
           backup_file="$(backup_project_database "${db_name}" "postgres")"
-
-        else
-
-          ERROR=true
-
-          # Log
-          log_event "info" "Database ${db_name} not found on Postgres" "false"
-          display --indent 8 --text "Database ${db_name} not found on Postgres" --tcolor YELLOW
-          display --indent 6 --text " - Database backup" --result "SKIPPED" --color YELLOW
+          got_error=$?
 
         fi
 
@@ -1113,10 +1100,14 @@ function backup_project() {
     log_event "info" "Project Backup done" "false"
     display --indent 6 --text " - Project Backup" --result "DONE" --color GREEN
 
+    return ${got_error}
+
   else
 
-    ERROR=true
-    log_event "error" "Something went wrong making a project backup" "false"
+    # Log
+    log_event "error" "Something went wrong making the files backup" "false"
+    display --indent 6 --text " - Project Backup" --result "FAIL" --color RED
+    display --indent 8 --text "Something went wrong making the files backup" --tcolor RED
 
     return 1
 

@@ -650,7 +650,7 @@ function docker_project_install() {
         #        # Execute function
         #        # laravel_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
         #        # log_event "warning" "Laravel installer should be implemented soon, trying to install like pure php project ..."
-        #        php_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
+        #        project_installer_php "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
         #
         #        ;;
         #
