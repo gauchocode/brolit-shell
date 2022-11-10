@@ -26,12 +26,8 @@ function project_get_config_var() {
 
   local content
 
-  if [[ ! -f ${file} ]]; then
-
-    log_event "error" "Config file doesn't exist: ${file}" "false"
-    exit 1
-
-  fi
+  # Check if config file exists
+  [[ ! -f ${file} ]] && log_event "error" "Config file doesn't exist: ${file}" "false" && exit 1
 
   # Read "${file}"/.env to extract ${variable}
   content="$(grep -oP "^${variable}=\K.*" "${file}")"
@@ -48,9 +44,7 @@ function project_get_config_var() {
     content="$(string_remove_quotes "${content}")"
 
     # Return
-    echo "${content}"
-
-    return 0
+    echo "${content}" && return 0
 
   else
 
@@ -86,7 +80,7 @@ function project_set_config_var() {
   local content="${3}"
   local quotes="${4}"
 
-  # Check if confif file exists
+  # Check if config file exists
   [[ ! -f ${file} ]] && log_event "error" "Config file doesn't exist: ${file}" "false" && exit 1
 
   case ${quotes} in
@@ -149,6 +143,7 @@ function project_is_ignored() {
 
   local project="${1}" #string
 
+  local ignored="false"
   local ignored_list
   local excluded_projects_array
 
@@ -160,11 +155,12 @@ function project_is_ignored() {
   for i in "${excluded_projects_array[@]}"; do
     :
 
-    [[ ${project} == "${i}" ]] && return 1
+    [[ ${project} == "${i}" ]] && ignored="true" && break
 
   done
 
-  return 0
+  # Return
+  [[ ${ignored} == "true" ]] && return 1 || return 0
 
 }
 
@@ -261,9 +257,7 @@ function project_ask_domain() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Return
-    echo "${project_domain}"
-
-    return 0
+    echo "${project_domain}" && return 0
 
   else
 
@@ -301,7 +295,7 @@ function project_ask_type() {
     project_type="$(echo "${project_type}" | tr '[A-Z]' '[a-z]')"
 
     # Return
-    echo "${project_type}"
+    echo "${project_type}" && return 0
 
   else
     return 1
@@ -638,8 +632,11 @@ function project_generate_brolit_config() {
   ## Project Type
   project_type="$(project_get_type "${project_path}")"
 
+  ## Project Install Type
+  project_install_type="$(project_get_install_type "${project_path}")"
+
   ## Project DB
-  project_db_name="$(project_get_configured_database "${project_path}" "${project_type}")"
+  project_db_name="$(project_get_configured_database "${project_path}" "${project_type}" "${project_install_type}")"
 
   mysql_database_exists "${project_db_name}"
   exitstatus=$?
@@ -658,13 +655,13 @@ function project_generate_brolit_config() {
     project_db_status="enabled"
 
     ## Project DB Engine
-    project_db_engine="$(project_get_configured_database_engine "${project_path}" "${project_type}")"
+    project_db_engine="$(project_get_configured_database_engine "${project_path}" "${project_type}" "${project_install_type}")"
 
     ## Project DB User
-    project_db_user="$(project_get_configured_database_user "${project_path}" "${project_type}")"
+    project_db_user="$(project_get_configured_database_user "${project_path}" "${project_type}" "${project_install_type}")"
 
     ## Project DB User Pass
-    project_db_pass="$(project_get_configured_database_userpassw "${project_path}" "${project_type}")"
+    project_db_pass="$(project_get_configured_database_userpassw "${project_path}" "${project_type}" "${project_install_type}")"
 
     ## Project DB Host
     project_db_host="$(mysql_ask_user_db_scope "localhost")"
@@ -727,9 +724,7 @@ function project_get_brolit_config_var() {
     config_value="$(cat "${project_config_file}" | jq -r ".${config_field}")"
 
     # Return
-    echo "${config_value}"
-
-    return 0
+    echo "${config_value}" && return 0
 
   else
 
@@ -789,7 +784,7 @@ function project_set_brolit_config_var() {
 }
 
 ################################################################################
-# Get project config
+# Get brolit project config file
 #
 # Arguments:
 #  $1 = ${project_path}
@@ -816,15 +811,69 @@ function project_get_brolit_config_file() {
   if [[ -e ${project_config_file} ]]; then
 
     # Return
-    echo "${project_config_file}"
-
-    return 0
+    echo "${project_config_file}" && return 0
 
   else
 
     # Return
-    echo "false"
+    echo "false" && return 1
 
+  fi
+
+}
+
+################################################################################
+# Get project config file
+#
+# Arguments:
+#  $1 = ${project_path}
+#  $2 = ${project_type}
+#  $3 = ${project_install_type}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function project_get_config_file() {
+
+  local project_path="${1}"
+  local project_type="${2}"
+  local project_install_type="${3}"
+
+  if [[ ${project_install_type} == "docker"* ]]; then
+
+    # Get WWW_DATA_DIR value from .env file
+    project_dir="$(cat "${project_path}/.env" | grep WWW_DATA_DIR | cut -d "=" -f 2)"
+
+    # Check exitstatus
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+      # Overwrite ${project_path}
+      project_path="${PROJECTS_PATH}${project_dir}"
+
+    else
+
+      # Log
+      log_event "error" "Unable to get WWW_DATA_DIR value from .env file" "false"
+      display --indent 6 --text "- Unable to get WWW_DATA_DIR value from .env file" --result FAIL --color RED
+
+      return 1
+
+    fi
+
+  fi
+
+  [[ ${project_type} == "wordpress" ]] && project_config_file="${project_path}/wp-config.php" || project_config_file="${project_path}/.env"
+
+  if [[ -f "${project_config_file}" ]]; then
+
+    # Return
+    echo "${project_config_file}" && return 0
+
+  else
+
+    # Return
     return 1
 
   fi
@@ -843,6 +892,10 @@ function project_get_brolit_config_file() {
 #   ${db_engine} if ok, 1 on error.
 ################################################################################
 
+# First we will try to read directly from a project config file (wp-config.php or .env)
+# If project config file is not present, we will try to read from brolit project config
+# If not, it will fail
+
 function project_get_configured_database_engine() {
 
   local project_path="${1}"
@@ -852,12 +905,11 @@ function project_get_configured_database_engine() {
   local db_engine
   local exitstatus
 
-  # TODO: implements ${project_install_type}
+  # Get project config file
+  project_config_file="$(project_get_config_file "${project_path}" "${project_type}" "${project_install_type}")"
 
-  # First try to read from brolit project config
-  db_engine="$(project_get_brolit_config_var "${project_path}" "project[].database[].engine")"
-
-  if [[ -z ${db_engine} ]]; then
+  # Check project .env file
+  if [[ -n "${project_config_file}" ]]; then
 
     case ${project_type} in
 
@@ -870,7 +922,7 @@ function project_get_configured_database_engine() {
 
     laravel)
 
-      db_engine="$(project_get_config_var "${project_path}/.env" "DB_CONNECTION")"
+      db_engine="$(project_get_config_var "${project_config_file}" "DB_CONNECTION")"
       exitstatus=$?
 
       # Return
@@ -880,7 +932,7 @@ function project_get_configured_database_engine() {
 
     php)
 
-      db_engine="$(project_get_config_var "${project_path}/.env" "DB_CONNECTION")"
+      db_engine="$(project_get_config_var "${project_config_file}" "DB_CONNECTION")"
       exitstatus=$?
 
       # Return
@@ -890,7 +942,7 @@ function project_get_configured_database_engine() {
 
     nodejs)
 
-      db_engine="$(project_get_config_var "${project_path}/.env" "DB_CONNECTION")"
+      db_engine="$(project_get_config_var "${project_config_file}" "DB_CONNECTION")"
       exitstatus=$?
 
       # Return
@@ -900,7 +952,9 @@ function project_get_configured_database_engine() {
 
     *)
 
-      log_event "debug" "No database information for project." "false"
+      # Log
+      log_event "error" "Project Type unknown. Unable to get database engine from project config file" "false"
+      display --indent 6 --text "- Unable to get database engine" --result FAIL --color RED
 
       return 1
 
@@ -910,8 +964,24 @@ function project_get_configured_database_engine() {
 
   else
 
-    # TODO: check if is mysql or postgres
-    echo "${db_engine}" && return 0
+    log_event "debug" "Can't find project config file. Now trying to read from brolit project config ..." "false"
+
+    db_engine="$(project_get_brolit_config_var "${project_path}" "project[].database[].engine")"
+    if [[ -n ${db_engine} ]]; then
+
+      # Return
+      echo "${db_engine}" && return 0
+
+    else
+
+      # Log
+      log_event "error" "Unable to get database engine from project config file" "false"
+      display --indent 6 --text "- Unable to get database engine" --result FAIL --color RED
+
+      # Return
+      return 1
+
+    fi
 
   fi
 
@@ -923,7 +993,8 @@ function project_get_configured_database_engine() {
 # Arguments:
 #  $1 = ${project_path}
 #  $2 = ${project_type}
-#  $3 = ${db_engine}
+#  $3 = ${project_install_type}
+#  $4 = ${db_engine}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -933,17 +1004,19 @@ function project_set_configured_database_engine() {
 
   local project_path="${1}"
   local project_type="${2}"
-  local db_engine="${3}"
+  local project_install_type="${3}"
+  local db_engine="${4}"
 
-  # Set brolit project config var
-  project_set_brolit_config_var "${project_path}" "project[].database[].engine" "${db_engine}"
+  local got_error=0
+
+  # Get project config file
+  project_config_file="$(project_get_config_file "${project_path}" "${project_type}" "${project_install_type}")"
 
   case ${project_type} in
 
   wordpress)
 
     # Nothing to do
-
     # Return
     return 0
 
@@ -951,28 +1024,22 @@ function project_set_configured_database_engine() {
 
   laravel)
 
-    # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_CONNECTION" "${db_engine}" "none"
-
-    return 0
+    # Set/Update Project Config File
+    project_set_config_var "${project_config_file}" "DB_CONNECTION" "${db_engine}" "none" || got_error=1
 
     ;;
 
   php)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_CONNECTION" "${db_engine}" "none"
-
-    return 0
+    project_set_config_var "${project_config_file}" "DB_CONNECTION" "${db_engine}" "none" || got_error=1
 
     ;;
 
   nodejs)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_CONNECTION" "${db_engine}" "none"
-
-    return 0
+    project_set_config_var "${project_config_file}" "DB_CONNECTION" "${db_engine}" "none" || got_error=1
 
     ;;
 
@@ -980,11 +1047,32 @@ function project_set_configured_database_engine() {
 
     log_event "error" "Unknown project type" "false"
 
-    return 1
+    got_error=1
 
     ;;
 
   esac
+
+  if [[ ${got_error} -eq 0 ]]; then
+
+    # Set brolit project config var
+    project_set_brolit_config_var "${project_path}" "project[].database[].engine" "${db_engine}"
+
+    # Log
+    log_event "info" "Database engine set to ${db_engine}" "false"
+    display --indent 6 --text "- Database engine set to ${db_engine}" --result DONE --color GREEN
+
+    return 0
+
+  else
+
+    # Log
+    log_event "error" "Unable to set database engine to ${db_engine}" "false"
+    display --indent 6 --text "- Unable to set database engine to ${db_engine}" --result FAIL --color RED
+
+    return 1
+
+  fi
 
 }
 
@@ -996,93 +1084,97 @@ function project_set_configured_database_engine() {
 #  $2 = ${project_type}
 #
 # Outputs:
-#   ${db_name} if ok, 1 on error.
+#   ${database_name} if ok, 1 on error.
 ################################################################################
 
 function project_get_configured_database() {
 
   local project_path="${1}"
   local project_type="${2}"
+  local project_install_type="${3}"
 
-  local db_name
+  local project_config_file
+  local database_name
   local wpconfig_path
 
-  # First try to read from brolit project config
+  # Get project config file
+  project_config_file="$(project_get_config_file "${project_path}" "${project_type}" "${project_install_type}")"
 
-  ## Project has database?
-  db_status="$(project_get_brolit_config_var "${project_path}" "project[].database[].status")"
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    if [[ ${db_status} == "disabled" ]]; then
-      echo "no-database"
-      return 0
-    else
-      ## Get database name
-      db_name="$(project_get_brolit_config_var "${project_path}" "project[].database[].config[].name")"
-
-      # Return
-      [[ -z ${db_name} ]] && return 1
-      echo "${db_name}" && return 0
-
-    fi
-
-  else
-
-    # not brolit project config file found
+  # Check project config file
+  if [[ -n "${project_config_file}" ]]; then
 
     case ${project_type} in
 
     wordpress)
 
-      wpconfig_path=$(wp_config_path "${project_path}")
+      wpconfig_path=$(wp_config_path "${project_config_file}")
 
-      db_name="$(wp_config_get_option "${wpconfig_path}" "DB_NAME")"
+      database_name="$(wp_config_get_option "${wpconfig_path}" "DB_NAME")"
 
       # Return
-      [[ -z ${db_name} ]] && return 1
-      echo "${db_name}" && return 0
+      [[ -z ${database_name} ]] && return 1
+      echo "${database_name}" && return 0
 
       ;;
 
     laravel)
 
-      db_name="$(project_get_config_var "${project_path}/.env" "DB_DATABASE")"
+      database_name="$(project_get_config_var "${project_config_file}" "DB_DATABASE")"
 
       # Return
-      [[ -z ${db_name} ]] && return 1
-      echo "${db_name}" && return 0
+      [[ -z ${database_name} ]] && return 1
+      echo "${database_name}" && return 0
 
       ;;
 
     php)
 
-      db_name="$(project_get_config_var "${project_path}/.env" "DB_DATABASE")"
+      database_name="$(project_get_config_var "${project_config_file}" "DB_DATABASE")"
 
       # Return
-      [[ -z ${db_name} ]] && return 1
-      echo "${db_name}" && return 0
+      [[ -z ${database_name} ]] && return 1
+      echo "${database_name}" && return 0
 
       ;;
 
     nodejs)
 
-      db_name="$(project_get_config_var "${project_path}/.env" "DB_DATABASE")"
+      database_name="$(project_get_config_var "${project_config_file}" "DB_DATABASE")"
 
       # Return
-      [[ -z ${db_name} ]] && return 1
-      echo "${db_name}" && return 0
+      [[ -z ${database_name} ]] && return 1
+      echo "${database_name}" && return 0
 
       ;;
 
     *)
 
       echo "no-database" && return 0
-      #return 1
 
       ;;
 
     esac
+
+  else
+
+    ## Project has database?
+    db_status="$(project_get_brolit_config_var "${project_path}" "project[].database[].status")"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+      if [[ ${db_status} == "disabled" ]]; then
+        echo "no-database" && return 0
+      else
+        ## Get database name
+        database_name="$(project_get_brolit_config_var "${project_path}" "project[].database[].config[].name")"
+
+        # Return
+        [[ -z ${database_name} ]] && return 1
+        echo "${database_name}" && return 0
+
+      fi
+
+    fi
 
   fi
 
@@ -1094,7 +1186,8 @@ function project_get_configured_database() {
 # Arguments:
 #  $1 = ${project_path}
 #  $2 = ${project_type}
-#  $3 = ${db_name}
+#  $3 = ${project_install_type}
+#  $4 = ${db_name}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1104,47 +1197,41 @@ function project_set_configured_database() {
 
   local project_path="${1}"
   local project_type="${2}"
-  local db_name="${3}"
+  local project_install_type="${3}"
+  local db_name="${4}"
 
-  # Set brolit project config var
-  project_set_brolit_config_var "${project_path}" "project[].database[].config[].name" "${db_name}"
+  local got_error=0
+
+  # Get project config file
+  project_config_file="$(project_get_config_file "${project_path}" "${project_type}" "${project_install_type}")"
 
   case ${project_type} in
 
   wordpress)
 
     # Set/Update
-    wp_config_set_option "${project_path}" "DB_NAME" "${db_name}"
-
-    # Return
-    return 0
+    wp_config_set_option "${project_path}" "DB_NAME" "${db_name}" || got_error=1
 
     ;;
 
   laravel)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${db_name}" "none"
-
-    return 0
+    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${db_name}" "none" || got_error=1
 
     ;;
 
   php)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${db_name}" "none"
-
-    return 0
+    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${db_name}" "none" || got_error=1
 
     ;;
 
   nodejs)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${db_name}" "none"
-
-    return 0
+    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${db_name}" "none" || got_error=1
 
     ;;
 
@@ -1152,11 +1239,32 @@ function project_set_configured_database() {
 
     log_event "error" "Unknown project type" "false"
 
-    return 1
+    got_error=1
 
     ;;
 
   esac
+
+  if [[ ${got_error} -eq 0 ]]; then
+
+    # Set brolit project config var
+    project_set_brolit_config_var "${project_path}" "project[].database[].config[].name" "${db_name}"
+
+    # Log
+    log_event "info" "Database name set to ${db_name}" "false"
+    display --indent 6 --text "- Database name set to ${db_name}" --result DONE --color GREEN
+
+    return 0
+
+  else
+
+    # Log
+    log_event "error" "Unable to set database name to ${db_name}" "false"
+    display --indent 6 --text "- Unable to set database name to ${db_name}" --result FAIL --color RED
+
+    return 1
+
+  fi
 
 }
 
@@ -1175,20 +1283,16 @@ function project_get_configured_database_user() {
 
   local project_path="${1}"
   local project_type="${2}"
+  local project_install_type="${3}"
 
   local db_user
+  local project_config_file
 
-  # First try to read from brolit project config
-  db_user="$(project_get_brolit_config_var "${project_path}" "project[].database[].config[].user")"
+  # Get project config file
+  project_config_file="$(project_get_config_file "${project_path}" "${project_type}" "${project_install_type}")"
 
-  if [[ -n ${db_user} ]]; then
-
-    log_event "debug" "Extracted db_user : ${db_user}" "false"
-
-    # Return
-    echo "${db_user}"
-
-  else
+  # Check project .env file
+  if [[ -n "${project_config_file}" ]]; then
 
     case ${project_type} in
 
@@ -1197,34 +1301,34 @@ function project_get_configured_database_user() {
       db_user="$(wp_config_get_option "${project_path}" "DB_USER")"
 
       # Return
-      echo "${db_user}"
+      echo "${db_user}" && return 0
 
       ;;
 
     laravel)
 
-      db_user="$(project_get_config_var "${project_path}/.env" "DB_USERNAME")"
+      db_user="$(project_get_config_var "${project_config_file}" "DB_USERNAME")"
 
       # Return
-      echo "${db_user}"
+      echo "${db_user}" && return 0
 
       ;;
 
     php)
 
-      db_user="$(project_get_config_var "${project_path}/.env" "DB_USERNAME")"
+      db_user="$(project_get_config_var "${project_config_file}" "DB_USERNAME")"
 
       # Return
-      echo "${db_user}"
+      echo "${db_user}" && return 0
 
       ;;
 
     nodejs)
 
-      db_user="$(project_get_config_var "${project_path}/.env" "DB_USERNAME")"
+      db_user="$(project_get_config_var "${project_config_file}" "DB_USERNAME")"
 
       # Return
-      echo "${db_user}"
+      echo "${db_user}" && return 0
 
       ;;
 
@@ -1235,9 +1339,28 @@ function project_get_configured_database_user() {
 
     esac
 
-  fi
+  else
 
-  return 0
+    # First try to read from brolit project config
+    db_user="$(project_get_brolit_config_var "${project_path}" "project[].database[].config[].user")"
+
+    if [[ -n ${db_user} ]]; then
+
+      log_event "debug" "Extracted db_user : ${db_user}" "false"
+
+      # Return
+      echo "${db_user}" && return 0
+
+    else
+
+      # Log
+      log_event "error" "Unable to extract db_user from brolit project config" "false"
+
+      return 1
+
+    fi
+
+  fi
 
 }
 
@@ -1247,7 +1370,8 @@ function project_get_configured_database_user() {
 # Arguments:
 #  $1 = ${project_path}
 #  $2 = ${project_type}
-#  $3 = ${db_user}
+#  $3 = ${project_install_type}
+#  $4 = ${database_username}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1257,47 +1381,41 @@ function project_set_configured_database_user() {
 
   local project_path="${1}"
   local project_type="${2}"
-  local db_username="${3}"
+  local project_install_type="${3}"
+  local database_username="${4}"
 
-  # Set brolit project config var
-  project_set_brolit_config_var "${project_path}" "project[].database[].config[].user" "${db_username}"
+  local got_error=0
+
+  # Get project config file
+  project_config_file="$(project_get_config_file "${project_path}" "${project_type}" "${project_install_type}")"
 
   case ${project_type} in
 
   wordpress)
 
     # Set/Update
-    wp_config_set_option "${project_path}" "DB_USER" "${db_username}"
-
-    # Return
-    return 0
+    wp_config_set_option "${project_path}" "DB_USER" "${database_username}" || got_error=1
 
     ;;
 
   laravel)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_USERNAME" "${db_username}" "none"
-
-    return 0
+    project_set_config_var "${project_config_file}" "DB_USERNAME" "${database_username}" "none" || got_error=1
 
     ;;
 
   php)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_USERNAME" "${db_username}" "none"
-
-    return 0
+    project_set_config_var "${project_config_file}" "DB_USERNAME" "${database_username}" "none" || got_error=1
 
     ;;
 
   nodejs)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_USERNAME" "${db_username}" "none"
-
-    return 0
+    project_set_config_var "${project_config_file}" "DB_USERNAME" "${database_username}" "none" || got_error=1
 
     ;;
 
@@ -1310,6 +1428,27 @@ function project_set_configured_database_user() {
     ;;
 
   esac
+
+  if [[ ${got_error} -eq 0 ]]; then
+
+    # Set brolit project config var
+    project_set_brolit_config_var "${project_path}" "project[].database[].config[].user" "${database_username}"
+
+    # Log
+    log_event "info" "Database name set to ${db_name}" "false"
+    display --indent 6 --text "- Database name set to ${db_name}" --result DONE --color GREEN
+
+    return 0
+
+  else
+
+    # Log
+    log_event "error" "Unable to set database name to ${db_name}" "false"
+    display --indent 6 --text "- Unable to set database name to ${db_name}" --result FAIL --color RED
+
+    return 1
+
+  fi
 
 }
 
@@ -1328,20 +1467,15 @@ function project_get_configured_database_userpassw() {
 
   local project_path="${1}"
   local project_type="${2}"
+  local project_install_type="${3}"
 
   local db_user_passw
 
-  # First try to read from brolit project config
-  db_user_passw="$(project_get_brolit_config_var "${project_path}" "project[].database[].config[].pass")"
+  # Get project config file
+  project_config_file="$(project_get_config_file "${project_path}" "${project_type}" "${project_install_type}")"
 
-  if [[ -n ${db_user_passw} && ${db_user_passw} != "false" ]]; then
-
-    log_event "debug" "Extracted db_user_passw: ${db_user_passw}" "false"
-
-    # Return
-    echo "${db_user_passw}" && return 0
-
-  else
+  # Check project .env file
+  if [[ -n "${project_config_file}" ]]; then
 
     case ${project_type} in
 
@@ -1356,7 +1490,7 @@ function project_get_configured_database_userpassw() {
 
     laravel)
 
-      db_user_passw="$(project_get_config_var "${project_path}/.env" "DB_PASSWORD")"
+      db_user_passw="$(project_get_config_var "${project_config_file}" "DB_PASSWORD")"
 
       # Return
       echo "${db_user_passw}" && return 0
@@ -1365,7 +1499,7 @@ function project_get_configured_database_userpassw() {
 
     php)
 
-      db_user_passw="$(project_get_config_var "${project_path}/.env" "DB_PASSWORD")"
+      db_user_passw="$(project_get_config_var "${project_config_file}" "DB_PASSWORD")"
 
       # Return
       echo "${db_user_passw}" && return 0
@@ -1374,7 +1508,7 @@ function project_get_configured_database_userpassw() {
 
     nodejs)
 
-      db_user_passw="$(project_get_config_var "${project_path}/.env" "DB_PASSWORD")"
+      db_user_passw="$(project_get_config_var "${project_config_file}" "DB_PASSWORD")"
 
       # Return
       echo "${db_user_passw}" && return 0
@@ -1389,6 +1523,27 @@ function project_get_configured_database_userpassw() {
 
     esac
 
+  else
+
+    # First try to read from brolit project config
+    db_user_passw="$(project_get_brolit_config_var "${project_path}" "project[].database[].config[].pass")"
+
+    if [[ -n ${db_user_passw} && ${db_user_passw} != "false" ]]; then
+
+      log_event "debug" "Extracted db_user_passw: ${db_user_passw}" "false"
+
+      # Return
+      echo "${db_user_passw}" && return 0
+
+    else
+
+      # Log error
+      log_event "error" "Unable to extract db_user_passw from brolit project config" "false"
+
+      return 1
+
+    fi
+
   fi
 
 }
@@ -1399,7 +1554,8 @@ function project_get_configured_database_userpassw() {
 # Arguments:
 #  $1 = ${project_path}
 #  $2 = ${project_type}
-#  $3 = ${db_user_passw}
+#  $3 = ${project_install_type}
+#  $4 = ${db_user_passw}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1409,10 +1565,11 @@ function project_set_configured_database_userpassw() {
 
   local project_path="${1}"
   local project_type="${2}"
-  local db_user_passw="${3}"
+  local project_install_type="${3}"
+  local db_user_passw="${4}"
 
-  # Set brolit project config var
-  project_set_brolit_config_var "${project_path}" "project[].database[].config[].pass" "${db_user_passw}"
+  # Get project config file
+  project_config_file="$(project_get_config_file "${project_path}" "${project_type}" "${project_install_type}")"
 
   case ${project_type} in
 
@@ -1429,7 +1586,7 @@ function project_set_configured_database_userpassw() {
   laravel)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_PASSWORD" "${db_user_passw}" "none"
+    project_set_config_var "${project_config_file}" "DB_PASSWORD" "${db_user_passw}" "none"
 
     return 0
 
@@ -1438,7 +1595,7 @@ function project_set_configured_database_userpassw() {
   php)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_PASSWORD" "${db_user_passw}" "none"
+    project_set_config_var "${project_config_file}" "DB_PASSWORD" "${db_user_passw}" "none"
 
     return 0
 
@@ -1447,7 +1604,7 @@ function project_set_configured_database_userpassw() {
   nodejs)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_PASSWORD" "${db_user_passw}" "none"
+    project_set_config_var "${project_config_file}" "DB_PASSWORD" "${db_user_passw}" "none"
 
     return 0
 
@@ -1462,6 +1619,27 @@ function project_set_configured_database_userpassw() {
     ;;
 
   esac
+
+  if [[ ${got_error} -eq 0 ]]; then
+
+    # Set brolit project config var
+    project_set_brolit_config_var "${project_path}" "project[].database[].config[].pass" "${db_user_passw}"
+
+    # Log
+    log_event "info" "Database name set to ${db_name}" "false"
+    display --indent 6 --text "- Database name set to ${db_name}" --result DONE --color GREEN
+
+    return 0
+
+  else
+
+    # Log
+    log_event "error" "Unable to set database name to ${db_name}" "false"
+    display --indent 6 --text "- Unable to set database name to ${db_name}" --result FAIL --color RED
+
+    return 1
+
+  fi
 
 }
 
@@ -1570,14 +1748,14 @@ function project_install() {
     # Execute function
     # laravel_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
     # log_event "warning" "Laravel installer should be implemented soon, trying to install like pure php project ..."
-    php_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
+    project_installer_php "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
     [[ $? -eq 1 ]] && return 1
 
     ;;
 
   php)
 
-    php_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
+    project_installer_php "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
     [[ $? -eq 1 ]] && return 1
 
     ;;
@@ -1585,7 +1763,7 @@ function project_install() {
   nodejs)
 
     #display --indent 8 --text "Project Type NodeJS" --tcolor RED
-    nodejs_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
+    project_installer_nodejs "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
     [[ $? -eq 1 ]] && return 1
 
     ;;
@@ -1868,8 +2046,8 @@ function project_delete() {
     # Get project type and db credentials before delete files_skipped
     project_type="$(project_get_type "${project_domain}")"
     project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
-    project_db_name=$(project_get_configured_database "${project_domain}" "${project_type}")
-    project_db_user=$(project_get_configured_database_user "${project_domain}" "${project_type}")
+    project_db_name=$(project_get_configured_database "${project_domain}" "${project_type}" "${project_install_type}")
+    project_db_user=$(project_get_configured_database_user "${project_domain}" "${project_type}" "${project_install_type}")
 
     # Delete Files
     project_delete_files "${project_domain}"
@@ -2217,7 +2395,7 @@ function project_create_nginx_server() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function php_project_installer() {
+function project_installer_php() {
 
   local project_path="${1}"
   local project_domain="${2}"
@@ -2244,7 +2422,7 @@ function php_project_installer() {
 
   fi
 
-  db_project_name=$(mysql_name_sanitize "${project_name}")
+  db_project_name="$(mysql_name_sanitize "${project_name}")"
   database_name="${db_project_name}_${project_stage}"
   database_user="${db_project_name}_user"
   database_user_passw="$(openssl rand -hex 12)"
@@ -2276,7 +2454,7 @@ function php_project_installer() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function nodejs_project_installer() {
+function project_installer_nodejs() {
 
   local project_path="${1}"
   local project_domain="${2}"
@@ -2338,14 +2516,27 @@ function nodejs_project_installer() {
 
 }
 
-function check_laravel_version() {
+################################################################################
+# Get laravel version from project
+#
+# Arguments:
+#  $1 = ${project_dir}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
-  # TODO
+function check_laravel_version() {
 
   local project_dir="${1}"
 
+  local laravel_version
+
+  # Get laravel version from project
+  laravel_version="$(grep -oP '("laravel/framework":).+[1-9]?' "${project_dir}/composer.json" | grep -oP '[0-9]+\.[0-9]+')"
+
   # Return
-  echo "${laravel_v}"
+  echo "${laravel_version}"
 
 }
 
