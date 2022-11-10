@@ -136,7 +136,7 @@ function project_set_config_var() {
 #   $1= ${project}
 #
 # Outputs:
-#   1 on true or 0 on false.
+#   true or false
 ################################################################################
 
 function project_is_ignored() {
@@ -160,7 +160,7 @@ function project_is_ignored() {
   done
 
   # Return
-  [[ ${ignored} == "true" ]] && return 1 || return 0
+  echo "${ignored}"
 
 }
 
