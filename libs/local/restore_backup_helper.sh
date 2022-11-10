@@ -91,6 +91,8 @@ function restore_backup_from_local() {
   local restore_type # whiptail array options
   local chosen_restore_type
 
+  local destination_dir
+
   restore_type=(
     "01)" "RESTORE PROJECT (NOT IMPLEMENTED YET)"
     "02)" "RESTORE FILES"
@@ -142,7 +144,6 @@ function restore_backup_from_local() {
 
       dir_count="$(count_directories_on_directory "${basepath}/${project_domain}")"
       if [[ ${dir_count} -eq 1 ]]; then
-
         # Move files one level up
         main_dir="$(ls -1 "${basepath}/${project_domain}")"
         mv "${basepath}/${project_domain}/${main_dir}/"{.,}* "${basepath}/${project_domain}" 2>/dev/null
@@ -156,12 +157,14 @@ function restore_backup_from_local() {
       # Restore site files
       project_domain="$(restore_backup_files "${project_domain}")"
 
+      destination_dir="${PROJECTS_PATH}/${project_domain}"
+
       # Get project install type
       project_install_type="$(project_get_install_type "${basepath}/${project_domain}")"
 
       if [[ ${project_install_type} != "proxy" && ${project_install_type} != "docker"* ]]; then
         # Change ownership
-        change_ownership "www-data" "www-data" "${actual_folder}"
+        change_ownership "www-data" "www-data" "${destination_dir}"
       fi
 
     fi
@@ -520,13 +523,13 @@ function restore_backup_from_public_url() {
 
   #change_ownership "www-data" "www-data" "${PROJECTS_PATH}/${project_domain}"
 
-  actual_folder="${PROJECTS_PATH}/${project_domain}"
+  destination_dir="${PROJECTS_PATH}/${project_domain}"
 
-  project_install_type="$(project_get_install_type "${actual_folder}")"
+  project_install_type="$(project_get_install_type "${destination_dir}")"
 
   if [[ ${project_install_type} == "default" ]]; then
 
-    project_type="$(project_get_type "${actual_folder}")"
+    project_type="$(project_get_type "${destination_dir}")"
 
     # Project domain configuration (webserver+certbot+DNS)
     https_enable="$(project_update_domain_config "${project_domain}" "default" "${project_type}" "")"
@@ -545,7 +548,7 @@ function restore_backup_from_public_url() {
   fi
 
   # Create brolit_config.json file
-  project_update_brolit_config "${actual_folder}/${install_path}" "${project_name}" "${project_stage}" "${project_type}" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "" "true" ""
+  project_update_brolit_config "${destination_dir}/${install_path}" "${project_name}" "${project_stage}" "${project_type}" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "" "true" ""
 
   # Remove tmp files
   log_event "info" "Removing temporary folders ..." "false"
@@ -866,9 +869,10 @@ function restore_backup_files() {
   local domain="${1}"
   #local backup_path="${2}"
 
-  local actual_folder
+  local destination_dir
   local chosen_domain
-  #local folder_to_install
+  local project_tmp_dir_old
+  local project_tmp_dir_new
 
   log_subsection "Restore Files Backup"
 
@@ -883,25 +887,20 @@ function restore_backup_files() {
     display --indent 8 --text "${chosen_domain}" --tcolor YELLOW
 
     # If user change project domains, we need to do this
-    project_tmp_old_folder="${BROLIT_TMP_DIR}/${domain}"
-    project_tmp_new_folder="${BROLIT_TMP_DIR}/${chosen_domain}"
+    project_tmp_dir_old="${BROLIT_TMP_DIR}/${domain}"
+    project_tmp_dir_new="${BROLIT_TMP_DIR}/${chosen_domain}"
 
-    # Renaming
-    if [[ ${project_tmp_old_folder} != "${project_tmp_new_folder}" ]]; then
-      move_files "${project_tmp_old_folder}" "${project_tmp_new_folder}"
-    fi
+    # Rename directory
+    [[ ${project_tmp_dir_old} != "${project_tmp_dir_new}" ]] && move_files "${project_tmp_dir_old}" "${project_tmp_dir_new}"
 
     # New destination directory
-    actual_folder="${PROJECTS_PATH}/${chosen_domain}"
+    destination_dir="${PROJECTS_PATH}/${chosen_domain}"
 
-    # Check if destination folder exist
-    if [[ -d ${actual_folder} ]]; then
-      # If exists, make a backup
-      _make_temp_files_backup "${actual_folder}"
-    fi
+    # If exists, make a backup
+    [[ -d ${destination_dir} ]] && _make_temp_files_backup "${destination_dir}"
 
     # Restore files
-    move_files "${project_tmp_new_folder}" "${PROJECTS_PATH}"
+    move_files "${project_tmp_dir_new}" "${PROJECTS_PATH}"
 
     # Return
     echo "${chosen_domain}" && return 0
@@ -1027,7 +1026,7 @@ function restore_type_selection_from_storage() {
 
         if [[ ${project_install_type} != "proxy" && ${project_install_type} != "docker"* ]]; then
           # Change ownership
-          change_ownership "www-data" "www-data" "${actual_folder}"
+          change_ownership "www-data" "www-data" "${PROJECTS_PATH}/${project_domain}"
         fi
 
       fi
@@ -1325,9 +1324,6 @@ function restore_project() {
 
     else
 
-      # Project Install Type
-      project_install_type="$(project_get_install_type "${BROLIT_TMP_DIR}/${chosen_project}")"
-
       # Project Type
       project_type="$(project_get_type "${BROLIT_TMP_DIR}/${chosen_project}")"
 
@@ -1337,12 +1333,12 @@ function restore_project() {
       # Restore site files
       new_project_domain="$(restore_backup_files "${chosen_domain}")"
 
-      # Get project install type
-      project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${chosen_domain}")"
+      # Project Install Type
+      project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${new_project_domain}")"
 
       if [[ ${project_install_type} != "proxy" && ${project_install_type} != "docker"* ]]; then
         # Change ownership
-        change_ownership "www-data" "www-data" "${actual_folder}"
+        change_ownership "www-data" "www-data" "${PROJECTS_PATH}/${new_project_domain}"
       fi
 
       # Extract project name from domain
@@ -1360,7 +1356,7 @@ function restore_project() {
       install_path="${PROJECTS_PATH}/${new_project_domain}"
 
       # DOCKER WAY (NEW)
-      if [[ ${project_install_type} == "docker-compose" ]]; then
+      if [[ ${project_install_type} == "docker"* ]]; then
 
         # TODO: Check if docker and docker-compose are installed
 
