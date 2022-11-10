@@ -510,7 +510,7 @@ function backup_all_projects_files() {
 
     log_event "info" "Processing [${directory_name}] ..." "false"
 
-    if [[ "$(project_is_ignored "${directory_name}")" == "true" ]]; then
+    if [[ "$(project_is_ignored "${directory_name}")" == "false" ]]; then
 
       backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${directory_name}")"
 
