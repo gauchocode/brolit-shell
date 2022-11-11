@@ -37,9 +37,7 @@ display --indent 2 --text "- Directories found" --result "${count_all_sites}" --
 
 # GLOBALS
 keyword="wp-content"
-file_index=0
-#BK_FL_ARRAY_INDEX=0
-#declare -a BACKUPED_LIST
+#file_index=0
 
 # Folder blacklist
 blacklist=".wp-cli,phpmyadmin,html"
