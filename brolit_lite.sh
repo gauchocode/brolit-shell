@@ -2105,7 +2105,7 @@ function _dropbox_get_backup() {
 #   json file, 1 on error.
 ################################################################################
 
-function _dropbox_get_sites_backups() {
+function dropbox_get_sites_backups() {
 
     local force="${1}"
 
