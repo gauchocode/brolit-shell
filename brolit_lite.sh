@@ -345,19 +345,19 @@ function _is_pkg_installed() {
 function _python_check_installed_version() {
 
     local python_installed_pkg
-    local python_installed_versions
+    local python_installed_version
 
     # Installed versions
     python_installed_pkg="$(sudo dpkg --list | grep -oh ' python[0-9]\.[0-9] ')"
-    
+
     if [[ -n ${python_installed_pkg} ]]; then
-    	# Installed versions
+        # Installed versions
         python_installed_version="$(python3 --version 2>&1)"
         python_installed_version="$(echo "${python_installed_version}" | cut -d " " -f 2 | grep -o '[0-9.]*$')"
-    	# Return
-    	echo "{\"name\":\"python\",\"version\":\"${python_installed_version}\",\"default\":\"true\"} , " && return 0
+        # Return
+        echo "{\"name\":\"python\",\"version\":\"${python_installed_version}\",\"default\":\"true\"} , " && return 0
     fi
-    
+
 }
 
 ################################################################################
@@ -377,15 +377,15 @@ function _nodejs_check_installed_version() {
 
     # Installed versions
     nodejs_installed_pkg="$(which node)"
-    
+
     if [[ -n ${nodejs_installed_pkg} ]]; then
-    	# Installed versions
+        # Installed versions
         nodejs_installed_versions="$(node --version 2>&1)"
         nodejs_installed_versions="$(echo "${nodejs_installed_versions}" | cut -d " " -f 2 | grep -o '[0-9.]*$')"
-    	# Return
-    	echo "{\"name\":\"nodejs\",\"version\":\"${nodejs_installed_versions}\",\"default\":\"true\"} , " && return 0
+        # Return
+        echo "{\"name\":\"nodejs\",\"version\":\"${nodejs_installed_versions}\",\"default\":\"true\"} , " && return 0
     fi
-    
+
 }
 
 ################################################################################
@@ -431,35 +431,32 @@ function _php_check_installed_version() {
     #    php_installed_versions="$(_string_remove_spaces "${php_installed_versions}")"
     #
     #fi
-    
+
     if [[ -n ${php_installed_versions} ]]; then
 
-		for php_v in ${php_installed_versions}; do
+        for php_v in ${php_installed_versions}; do
 
-		    # Default versions
-		    php_default_version="$(php -v | grep -Eo 'PHP [0-9.].[0-9.]' | cut -d " " -f 2)"
+            # Default versions
+            php_default_version="$(php -v | grep -Eo 'PHP [0-9.].[0-9.]' | cut -d " " -f 2)"
 
-		    if [[ ${php_default_version} == "${php_v}" ]]; then
-		        php_default=true
-		    else
-		        php_default=false
-		    fi
+            [[ ${php_default_version} == "${php_v}" ]] && php_default=true || php_default=false
 
-		    phpv_data="{\"name\":\"php\",\"version\":\"${php_v}\",\"default\":\"${php_default}\"}"
-		    all_php_data="${all_php_data} , ${phpv_data}"
+            # Json
+            phpv_data="{\"name\":\"php\",\"version\":\"${php_v}\",\"default\":\"${php_default}\"}"
+            all_php_data="${all_php_data} , ${phpv_data}"
 
-		done
+        done
 
-		# Remove 3 first chars
-		all_php_data="${all_php_data:3}"
-		
-		# Return
-    	echo "${all_php_data} , " && return 0
-    
+        # Remove 3 first chars
+        all_php_data="${all_php_data:3}"
+
+        # Return
+        echo "${all_php_data} , " && return 0
+
     else
-    
-    	return 1
-    
+
+        return 1
+
     fi
 
 }
@@ -485,9 +482,9 @@ function _mysql_check_installed_version() {
     if [[ -n ${mysql_installed_pkg} ]]; then
         # Extract only version numbers
         mysql_installed_version="$(mysql -V | awk -F' ' '{print $3}' | grep -o '[0-9.]*$' | tr '\n' ' ')"
-        
+
         # Return
-    	echo "{\"name\":\"${mysql_installed_pkg}\",\"version\":\"${mysql_installed_version}\",\"default\":\"true\"} , " && return 0
+        echo "{\"name\":\"${mysql_installed_pkg}\",\"version\":\"${mysql_installed_version}\",\"default\":\"true\"} , " && return 0
 
     else
 
@@ -496,17 +493,16 @@ function _mysql_check_installed_version() {
         if [[ -n ${mysql_installed_pkg} ]]; then
             # Extract only version numbers
             mysql_installed_version="$(mysql -V | grep -Eo '[+-]?[0-9]+([.][0-9]+)+([.][0-9]+)?-MariaDB' | cut -d "-" -f 1)"
-            
+
             # Return
-    		echo "{\"name\":\"${mysql_installed_pkg}\",\"version\":\"${mysql_installed_version}\",\"default\":\"true\"} , " && return 0
+            echo "{\"name\":\"${mysql_installed_pkg}\",\"version\":\"${mysql_installed_version}\",\"default\":\"true\"} , " && return 0
 
         fi
 
     fi
 
-	# Return
+    # Return
     return 1
-
 
 }
 
@@ -537,15 +533,15 @@ function _psql_check_installed_version() {
             # Return
             echo "{\"name\":\"postgresql\",\"version\":\"${psql_installed_version}\",\"default\":\"true\"} , " && return 0
         else
-        	
-        	echo "{\"name\":\"postgresql\",\"version\":\"unknown\",\"default\":\"true\"} , " && return 1
-        	
+
+            echo "{\"name\":\"postgresql\",\"version\":\"unknown\",\"default\":\"true\"} , " && return 1
+
         fi
-        
-	else
-	
-		return 1
-		
+
+    else
+
+        return 1
+
     fi
 
 }
@@ -943,6 +939,43 @@ function _wp_config_path() {
 }
 
 ################################################################################
+# Check if project is listed as ignored on config
+#
+# Arguments:
+#   $1= ${project}
+#
+# Outputs:
+#   true or false
+################################################################################
+
+function _project_is_ignored() {
+
+    local project="${1}" #string
+
+    local ignored="false"
+    local ignored_list
+    local excluded_projects_array
+
+    IGNORED_PROJECTS_LIST="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].projects[].ignored[]")"
+
+    ignored_list="$(_string_remove_spaces "${IGNORED_PROJECTS_LIST}")"
+    ignored_list="$(echo "${ignored_list}" | tr '\n' ',')"
+
+    # String to Array
+    IFS="," read -r -a excluded_projects_array <<<"${ignored_list}"
+    for i in "${excluded_projects_array[@]}"; do
+        :
+
+        [[ ${project} == "${i}" ]] && ignored="true" && break
+
+    done
+
+    # Return
+    echo "${ignored}"
+
+}
+
+################################################################################
 # Private: Get project type
 #
 # Arguments:
@@ -1045,9 +1078,7 @@ function _project_get_install_type() {
 
     local dir_path="${1}"
 
-    #local project_installation_type
-
-    # TODO: if brolit_conf exists, should check this file and get project type
+    local project_install_type
 
     if [[ -n ${dir_path} ]]; then
 
@@ -1058,10 +1089,12 @@ function _project_get_install_type() {
         )"
         if [[ -n ${docker} ]]; then
 
-            # Return
-            echo "docker-compose" && return 0
+            project_install_type="docker-compose"
 
-        else # Default
+            # Return
+            echo "${project_install_type}" && return 0
+
+        else
 
             # Return
             echo "default" && return 0
@@ -1069,6 +1102,8 @@ function _project_get_install_type() {
         fi
 
     else
+
+        # TODO: get from brolit project config?
 
         return 1
 
@@ -1333,6 +1368,48 @@ function _project_get_config_var() {
 
 }
 
+function _project_get_config_file() {
+
+    local project_path="${1}"
+    local project_type="${2}"
+    local project_install_type="${3}"
+
+    if [[ ${project_install_type} == "docker"* ]]; then
+
+        # Get WWW_DATA_DIR value from .env file
+        project_dir="$(cat "${project_path}/.env" | grep WWW_DATA_DIR | cut -d "=" -f 2)"
+
+        # Check exitstatus
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+            # Overwrite ${project_path}
+            project_path="${PROJECTS_PATH}${project_dir}"
+
+        else
+
+            return 1
+
+        fi
+
+    fi
+
+    [[ ${project_type} == "wordpress" ]] && project_config_file="${project_path}/wp-config.php" || project_config_file="${project_path}/.env"
+
+    if [[ -f "${project_config_file}" ]]; then
+
+        # Return
+        echo "${project_config_file}" && return 0
+
+    else
+
+        # Return
+        return 1
+
+    fi
+
+}
+
 ################################################################################
 # Get configured database
 #
@@ -1348,86 +1425,90 @@ function _project_get_configured_database() {
 
     local project_path="${1}"
     local project_type="${2}"
+    local project_install_type="${3}"
 
-    local db_name
+    local project_config_file
+    local database_name
     local wpconfig_path
 
-    # First try to read from brolit project config
+    # Get project config file
+    project_config_file="$(_project_get_config_file "${project_path}" "${project_type}" "${project_install_type}")"
 
-    ## Project has database?
-    db_status="$(_project_get_brolit_config_var "${project_path}" "project[].database[].status")"
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-
-        if [[ ${db_status} == "disabled" ]]; then
-            echo "no-database"
-            return 0
-        else
-            ## Get database name
-            db_name="$(_project_get_brolit_config_var "${project_path}" "project[].database[].config[].name")"
-
-            # Return
-            [[ -z ${db_name} ]] && return 1
-            echo "${db_name}" && return 0
-
-        fi
-
-    else
-
-        # not brolit project config file found
+    # Check project config file
+    if [[ -n "${project_config_file}" ]]; then
 
         case ${project_type} in
 
         wordpress)
 
-            wpconfig_path=$(_wp_config_path "${project_path}")
+            wpconfig_path=$(_wp_config_path "${project_config_file}")
 
-            db_name="$(_wp_config_get_option "${wpconfig_path}" "DB_NAME")"
+            database_name="$(_wp_config_get_option "${wpconfig_path}" "DB_NAME")"
 
             # Return
-            [[ -z ${db_name} ]] && return 1
-            echo "${db_name}" && return 0
+            [[ -z ${database_name} ]] && return 1
+            echo "${database_name}" && return 0
 
             ;;
 
         laravel)
 
-            db_name="$(_project_get_config_var "${project_path}/.env" "DB_DATABASE")"
+            database_name="$(_project_get_config_var "${project_config_file}" "DB_DATABASE")"
 
             # Return
-            [[ -z ${db_name} ]] && return 1
-            echo "${db_name}" && return 0
+            [[ -z ${database_name} ]] && return 1
+            echo "${database_name}" && return 0
 
             ;;
 
         php)
 
-            db_name="$(_project_get_config_var "${project_path}/.env" "DB_DATABASE")"
+            database_name="$(_project_get_config_var "${project_config_file}" "DB_DATABASE")"
 
             # Return
-            [[ -z ${db_name} ]] && return 1
-            echo "${db_name}" && return 0
+            [[ -z ${database_name} ]] && return 1
+            echo "${database_name}" && return 0
 
             ;;
 
         nodejs)
 
-            db_name="$(_project_get_config_var "${project_path}/.env" "DB_DATABASE")"
+            database_name="$(_project_get_config_var "${project_config_file}" "DB_DATABASE")"
 
             # Return
-            [[ -z ${db_name} ]] && return 1
-            echo "${db_name}" && return 0
+            [[ -z ${database_name} ]] && return 1
+            echo "${database_name}" && return 0
 
             ;;
 
         *)
 
             echo "no-database" && return 0
-            #return 1
 
             ;;
 
         esac
+
+    else
+
+        ## Project has database?
+        db_status="$(_project_get_config_var "${project_path}" "project[].database[].status")"
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+            if [[ ${db_status} == "disabled" ]]; then
+                echo "no-database" && return 0
+            else
+                ## Get database name
+                database_name="$(_project_get_config_var "${project_path}" "project[].database[].config[].name")"
+
+                # Return
+                [[ -z ${database_name} ]] && return 1
+                echo "${database_name}" && return 0
+
+            fi
+
+        fi
 
     fi
 
@@ -1785,14 +1866,14 @@ function _packages_get_data() {
 
     ## databases
     mysql_v_installed="$(_mysql_check_installed_version)"
-	psql_v_installed="$(_psql_check_installed_version)"
-	dbs_v_installed="${dbs_v_installed}${psql_v_installed}"
-	if [[ -z ${dbs_v_installed} ]]; then
-		dbs_v_installed="\"no-database-engine\""
-	else
-		# Remove 3 last chars
+    psql_v_installed="$(_psql_check_installed_version)"
+    dbs_v_installed="${mysql_v_installed}${psql_v_installed}"
+    if [[ -z ${dbs_v_installed} ]]; then
+        dbs_v_installed="\"no-database-engine\""
+    else
+        # Remove 3 last chars
         dbs_v_installed="${dbs_v_installed::-3}"
-	fi
+    fi
 
     ## languages
     php_v_installed="$(_php_check_installed_version)"
@@ -1812,37 +1893,6 @@ function _packages_get_data() {
 }
 
 ################################################################################
-# Check if project is excluded on config
-#
-# Arguments:
-#   $1= ${project}
-#
-# Outputs:
-#   1 on true or 0 on false.
-################################################################################
-
-function _project_is_ignored() {
-
-    local project="${1}"               #string
-    local ignored_projects_list="${2}" #string
-
-    ignored_projects_list="$(echo "${ignored_projects_list//[[:blank:]]/}")"
-    ignored_projects_list="$(echo "${ignored_projects_list}" | tr '\n' ',')"
-
-    # String to Array
-    IFS="," read -a excluded_projects_array <<<"${ignored_projects_list}"
-    for i in "${excluded_projects_array[@]}"; do
-        :
-
-        [[ ${project} == "${i}" ]] && return 1
-
-    done
-
-    return 0
-
-}
-
-################################################################################
 # Private: Sites directories
 #
 # Arguments:
@@ -1856,15 +1906,11 @@ function _sites_directories() {
 
     local site
     local site_path
-    local ignored_sites
     local directories
     local all_directories
     local site_cert
     local site_size_du
     local site_size
-
-    # Ignored Sites
-    ignored_sites="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].projects[].ignored[]")"
 
     ## List only directories
     all_directories="$(find "${PROJECTS_PATH}" -maxdepth 1 -mindepth 1 -type d -not -path '*/.*')"
@@ -1873,10 +1919,7 @@ function _sites_directories() {
 
         site="$(basename "${site_path}")"
 
-        _project_is_ignored "${site}" "${ignored_sites}"
-
-        result=$?
-        if [[ ${result} -eq 0 ]]; then
+        if [[ $(_project_is_ignored "${site}") == "false" ]]; then
 
             # Size in MBs
             site_size_du="$(du --human-readable --block-size=1M --max-depth=0 "${PROJECTS_PATH}/${site}")"
@@ -1994,50 +2037,57 @@ function _dropbox_get_backup() {
 
     [[ -z ${project_domain} ]] && return 1
 
-    project_type="$(_project_get_type "${PROJECTS_PATH}/${project_domain}")"
-    #project_install_type="$(_project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
-    project_db="$(_project_get_configured_database "${PROJECTS_PATH}/${project_domain}" "${project_type}")"
+    # First check if project is listed as ignored on brolit config
+    if [[ $(_project_is_ignored "${project_domain}") == "true" ]]; then
 
-    #echo "project_db:${project_db}"
-    exitstatus=$?
-    [[ ${exitstatus} -eq 1 ]] && project_db="error"
-
-    # Get dropbox backup list
-    dropbox_site_backup_path="${SERVER_NAME}/projects-online/site/${project_domain}"
-
-    dropbox_site_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_site_backup_path}" | grep -Eo "${project_domain}_site-files_[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}.*")"
-
-    for backup_file in ${dropbox_site_backup_list}; do
-
-        backup_date="$(_backup_get_date "${backup_file}")"
-
-        if [[ ${project_db} != "error" && ${project_db} != "no-database" ]]; then
-
-            # Database backup
-            backup_to_search="${project_db}_database_${backup_date}"
-            search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${project_db}/${backup_to_search}" || ret=$?)" # using ret to bypass unexped errors
-            backup_db="$(basename "${search_backup_db}")"
-
-            if [[ -n ${search_backup_db} ]]; then
-                backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"${backup_db}\"} , "
-            else
-                backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"not-found\"} , "
-            fi
-
-        else
-            # At this point ${project_db} == error or no-database
-            backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"${project_db}\"} , "
-
-        fi
-
-    done
-
-    if [[ -n $backups_string ]]; then
-        # Remove 3 last chars
-        backups_string="${backups_string::-3}"
+        backups_string="\"project-listed-as-ignored\":\"empty-response\""
 
     else
-        backups_string="\"empty-response\""
+
+        project_type="$(_project_get_type "${PROJECTS_PATH}/${project_domain}")"
+        project_install_type="$(_project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
+
+        project_db="$(_project_get_configured_database "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")"
+        exitstatus=$?
+        [[ ${exitstatus} -eq 1 ]] && project_db="error"
+
+        # Get dropbox backup list
+        dropbox_site_backup_path="${SERVER_NAME}/projects-online/site/${project_domain}"
+        dropbox_site_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_site_backup_path}" | grep -Eo "${project_domain}_site-files_[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}.*")"
+
+        for backup_file in ${dropbox_site_backup_list}; do
+
+            backup_date="$(_backup_get_date "${backup_file}")"
+
+            if [[ ${project_db} != "error" && ${project_db} != "no-database" ]]; then
+
+                # Database backup
+                backup_to_search="${project_db}_database_${backup_date}"
+                search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${project_db}/${backup_to_search}" || ret=$?)" # using ret to bypass unexped errors
+                backup_db="$(basename "${search_backup_db}")"
+
+                if [[ -n ${search_backup_db} ]]; then
+                    backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"${backup_db}\"} , "
+                else
+                    backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"not-found\"} , "
+                fi
+
+            else
+                # At this point ${project_db} == error or no-database
+                backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"${project_db}\"} , "
+
+            fi
+
+        done
+
+        if [[ -n ${backups_string} ]]; then
+            # Remove 3 last chars
+            backups_string="${backups_string::-3}"
+
+        else
+            backups_string="\"something-went-wrong\":\"dropbox-empty-response\""
+        fi
+
     fi
 
     # Return JSON
@@ -2055,7 +2105,7 @@ function _dropbox_get_backup() {
 #   json file, 1 on error.
 ################################################################################
 
-function dropbox_get_sites_backups() {
+function _dropbox_get_sites_backups() {
 
     local force="${1}"
 
@@ -2156,7 +2206,7 @@ PROJECTS_PATH="$(_json_read_field "${BROLIT_CONFIG_FILE}" "PROJECTS.path")"
 
 # Version
 BROLIT_VERSION="3.2.6"
-BROLIT_LITE_VERSION="3.2.6-111"
+BROLIT_LITE_VERSION="3.2.6-132"
 
 ################################################################################
 # Show firewall status

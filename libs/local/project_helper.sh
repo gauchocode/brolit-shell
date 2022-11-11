@@ -130,7 +130,7 @@ function project_set_config_var() {
 }
 
 ################################################################################
-# Check if project is excluded on config
+# Check if project is listed as ignored on config
 #
 # Arguments:
 #   $1= ${project}
