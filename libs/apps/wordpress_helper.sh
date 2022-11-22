@@ -255,7 +255,7 @@ function wp_update_wpconfig() {
 }
 
 ################################################################################
-# Change WordPress permissions
+# Change WordPress directory permissions
 #
 # Arguments:
 #  $1 = ${project_dir}

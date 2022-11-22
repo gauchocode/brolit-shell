@@ -2040,9 +2040,8 @@ function _dropbox_get_backup() {
     # First check if project is listed as ignored on brolit config
     if [[ $(_project_is_ignored "${project_domain}") == "true" ]]; then
 
-        backup_date="14-11-2022" #hardcoded date
-        backups_string="\"${backup_date}\":{\"files\":\"project-listed-as-ignored\",\"database\":\"project-listed-as-ignored\"} , "
-
+        backup_date="2022-11-14" #hardcoded date
+        backups_string="\"${backup_date}\":{\"files\":\"project-listed-as-ignored\",\"database\":\"project-listed-as-ignored\"}"
 
     else
 
