@@ -51,7 +51,8 @@ function _make_temp_files_backup() {
 
     # Log
     clear_previous_lines "1"
-    display --indent 6 --text "- Creating backup on temp directory" --result "DONE" --color GREEN
+    display --indent 6 --text "- Creating backup on temp directory:" --result "DONE" --color GREEN
+    display --indent 8 --text "${BROLIT_MAIN_DIR}/tmp/old_backups" --tcolor YELLOW
     log_event "info" "Temp backup completed and stored here: ${BROLIT_MAIN_DIR}/tmp/old_backups" "false"
 
     return 0
@@ -890,14 +891,37 @@ function restore_backup_files() {
     project_tmp_dir_old="${BROLIT_TMP_DIR}/${domain}"
     project_tmp_dir_new="${BROLIT_TMP_DIR}/${chosen_domain}"
 
-    # Rename directory
+    # Rename tmp directory
     [[ ${project_tmp_dir_old} != "${project_tmp_dir_new}" ]] && move_files "${project_tmp_dir_old}" "${project_tmp_dir_new}"
 
     # New destination directory
     destination_dir="${PROJECTS_PATH}/${chosen_domain}"
 
     # If exists, make a backup
-    [[ -d ${destination_dir} ]] && _make_temp_files_backup "${destination_dir}"
+    if [[ -d ${destination_dir} ]]; then
+
+      # Warning message
+      whiptail --title "Warning" --yesno "The project directory already exist. Do you want to continue? A backup of current directory will be stored on: " 10 60 3>&1 1>&2 2>&3
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Backup old project
+        _make_temp_files_backup "${destination_dir}"
+        got_error=$?
+        [[ ${got_error} -eq 1 ]] && return 1
+
+      else
+
+        # Log
+        log_event "info" "The project directory already exist. User skipped operation."
+        display --indent 6 --text "- Restore files" --result "SKIPPED" --color YELLOW
+
+        return 1
+
+      fi
+
+    fi
 
     # Restore files
     move_files "${project_tmp_dir_new}" "${PROJECTS_PATH}"
@@ -1481,6 +1505,8 @@ function restore_project() {
 
     # TODO: refactor this
     if [[ ${installation_type} != "docker" || ${project_install_type} != "docker-compose" ]]; then
+
+      # TODO: if and old project with same domain was found, ask what to do (delete old project or skip this step)
 
       # Post-restore/install tasks
       project_post_install_tasks "${install_path}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${chosen_domain}" "${new_project_domain}"

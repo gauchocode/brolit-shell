@@ -2647,6 +2647,22 @@ function project_update_domain_config() {
 
 }
 
+################################################################################
+# Project post install tasks
+#
+# Arguments:
+#  $1 = ${project_domain}
+#  $2 = ${project_type}
+#  $3 = ${project_name}
+#  $4 = ${project_stage}
+#  $5 = ${project_db_pass} - Optional (if empty, will not change it)
+#  $6 = ${old_project_domain}
+#  $7 = ${new_project_domain}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function project_post_install_tasks() {
 
   local install_path="${1}"
@@ -2654,11 +2670,15 @@ function project_post_install_tasks() {
   local project_name="${3}"
   local project_stage="${4}"
   local project_db_pass="${5}"
-  local old_project_domain="${6}"
+  local old_project_domain="${6}" # TODO: can change it for url? https://domain.com or http://domain.com
   local new_project_domain="${7}"
   #local project_port="${8}"
+  #local project_db_engine="${9}"
 
   local project_env
+
+  # TODO: check if update db credentials is needed
+  # TODO: update brolit project config file
 
   # Log
   log_subsection "Post Install Tasks"
@@ -2666,6 +2686,7 @@ function project_post_install_tasks() {
   # Check if is a WP project
   if [[ ${project_type} == "wordpress" ]]; then
 
+    # Change WordPress directory permissions
     wp_change_permissions "${install_path}"
 
     # Change wp-config.php database parameters
@@ -2693,15 +2714,27 @@ function project_post_install_tasks() {
       # Set debug mode to false
       wpcli_set_debug_mode "${install_path}" "false"
     else
+      # Block search engines indexation
       wpcli_change_wp_seo_visibility "${install_path}" "0"
+      # Set debug mode to true
+      wpcli_set_debug_mode "${install_path}" "true"
+      # De-activate cache plugins
+      wpcli_plugin_deactivate "${install_path}" "wp-rocket"
+      wpcli_plugin_deactivate "${install_path}" "w3-total-cache"
+      wpcli_plugin_deactivate "${install_path}" "wp-super-cache"
     fi
 
     wpcli_cache_flush "${install_path}"
 
+    # If .user.ini found, rename it (Wordfence issue workaround)
+    if [[ -f "${install_path}/.user.ini" ]]; then
+      mv "${install_path}/.user.ini" "${install_path}/.user.ini.bak"
+    fi
+
   else
 
-    # TODO: search .env file
-    project_env="${PROJECTS_PATH}/${new_project_domain}/.env"
+    # TODO: search .env file?
+    project_env="${install_path}/.env"
 
     if [[ -f ${project_env} ]]; then
 
