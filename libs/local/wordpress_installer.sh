@@ -263,7 +263,7 @@ function wordpress_project_copy() {
     cloudflare_set_record "${project_root_domain}" "${project_domain}" "CNAME" "false" "${project_root_domain}"
 
     # New site Nginx configuration
-    nginx_server_create "${project_domain}" "wordpress" "root_domain" "${project_root_domain}"
+    nginx_server_create "${project_domain}" "wordpress" "root_domain" "${project_root_domain}" ""
 
     if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
 
@@ -295,7 +295,7 @@ function wordpress_project_copy() {
       # New site Nginx configuration
       nginx_create_empty_nginx_conf "${PROJECTS_PATH}/${project_domain}"
       nginx_create_globals_config
-      nginx_server_create "${project_domain}" "wordpress" "single" ""
+      nginx_server_create "${project_domain}" "wordpress" "single" "" ""
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
@@ -306,12 +306,11 @@ function wordpress_project_copy() {
           cert_project_domain="$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
           exitstatus=$?
           if [[ ${exitstatus} -eq 0 ]]; then
-
+            # Install certificate and add http2 support
             certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${cert_project_domain}"
             [[ $? -eq 0 ]] && nginx_server_add_http2_support "${project_domain}"
-
           else
-
+            # Log
             log_event "info" "HTTPS support for ${project_domain} skipped" "false"
             display --indent 6 --text "- HTTPS support for ${project_domain}" --result "SKIPPED" --color YELLOW
 

@@ -2552,7 +2552,8 @@ function check_laravel_version() {
 # Arguments:
 #  $1 = ${project_domain}
 #  $2 = ${project_type}
-#  $3 = ${project_port}
+#  $3 = ${project_install_type}
+#  $4 = ${project_port}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -2692,7 +2693,7 @@ function project_post_install_tasks() {
     # Change wp-config.php database parameters
     wp_update_wpconfig "${install_path}" "${project_name}" "${project_stage}" "${project_db_pass}"
 
-    # TODO: non protocol before domains (need to check if http or https before)?
+    # TODO: need to check if http or https
     if [[ -n ${old_project_domain} && -n ${new_project_domain} ]]; then
       if [[ ${old_project_domain} != "${new_project_domain}" ]]; then
         # Change urls on database
