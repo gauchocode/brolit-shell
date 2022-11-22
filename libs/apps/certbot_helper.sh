@@ -28,8 +28,10 @@ function certbot_certificate_install() {
 
   local certbot_result
 
+  # Log
   log_event "debug" "Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains}" "false"
 
+  # Certbot command
   certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}" --quiet
 
   certbot_result=$?

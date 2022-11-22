@@ -30,7 +30,7 @@ function nginx_server_create() {
     local redirect_domains="${4}"
     local proxy_port="${5}"
 
-    local debug
+    #local debug
 
     # Log
     log_event "debug" "Project type: ${project_type}" "false"
@@ -38,7 +38,7 @@ function nginx_server_create() {
     log_event "info" "Creating nginx configuration file for domain: ${project_domain}" "false"
     log_event "info" "List of domains or subdomains that will be redirect to project_domain: ${redirect_domains}" "false"
 
-    # Create nginx config files for site
+    # Check if nginx config file already exists
     if [[ -f "${WSERVER}/sites-available/${project_domain}" ]]; then
 
         # Backup actual config
@@ -46,8 +46,10 @@ function nginx_server_create() {
         # Remove symbolic link
         rm "${WSERVER}/sites-enabled/${project_domain}"
 
-        # Show message
-        display --indent 6 --text "- Backup nginx server config" --result DONE --color GREEN
+        # Log
+        display --indent 6 --text "- Backup old nginx server config" --result DONE --color GREEN
+        display --indent 8 --text "${WSERVER}/sites-available/${project_domain}_backup" --tcolor YELLOW
+        log_event "info" "Backup old nginx server config: ${WSERVER}/sites-available/${project_domain}_backup" "false"
 
     fi
 
@@ -72,7 +74,9 @@ function nginx_server_create() {
 
         # Log
         display --indent 6 --text "- Creating nginx server config" --result DONE --color GREEN
-        display --indent 8 --text "Using '${server_type}' template"
+        display --indent 8 --text "Using '${project_type}_${server_type}' template"
+        log_event "info" "Creating nginx server config: ${nginx_server_file}" "false"
+        log_event "debug" "Using '${BROLIT_MAIN_DIR}/config/nginx/sites-available/${project_type}_${server_type}' template" "false"
 
         ;;
 
@@ -109,7 +113,9 @@ function nginx_server_create() {
 
         # Log
         display --indent 6 --text "- Creating nginx server config" --result DONE --color GREEN
-        display --indent 8 --text "Using '${server_type}' template"
+        display --indent 8 --text "Using '${project_type}_${server_type}' template"
+        log_event "info" "Creating nginx server config: ${nginx_server_file}" "false"
+        log_event "debug" "Using '${BROLIT_MAIN_DIR}/config/nginx/sites-available/${project_type}_${server_type}' template" "false"
 
         ;;
 
@@ -117,16 +123,16 @@ function nginx_server_create() {
 
         log_event "info" "TODO: implements multidomain support" "false"
         display --indent 6 --text "- Creating nginx server config" --result FAIL --color RED
-        display --indent 8 --text "Using '${server_type}' template"
+        #display --indent 8 --text "Using '${project_type}_${server_type}' template"
         display --indent 8 --text "TODO: implements multidomain support"
 
         ;;
 
     *)
 
-        log_event "error" "Nginx server config creation fail! Nginx server type '${server_type}' unknow." "false"
+        log_event "error" "Nginx server config creation fail! Nginx server type '${project_type}_${server_type}' unknow." "false"
         display --indent 6 --text "- Nginx server config creation" --result FAIL --color RED
-        display --indent 8 --text "Nginx server type '${server_type}' unknow!"
+        #display --indent 8 --text "Nginx server type '${project_type}_${server_type}' unknow!"
 
         return 1
 
@@ -555,7 +561,7 @@ function nginx_create_empty_nginx_conf() {
     if [[ -d "${path}" && ! -f "${path}/nginx.conf" ]]; then
 
         # Create empty file
-        touch "${path}/nginx.conf" &&  return 0
+        touch "${path}/nginx.conf" && return 0
 
     else
 
@@ -586,7 +592,7 @@ function nginx_generate_encrypted_auth() {
     log_event "info" "Creating nginx encrypted authentication" "false"
 
     [[ -n ${psw} ]] && encrypted_psw="$(mkpasswd -m sha-512 "${psw}")"
-    
+
     # Log
     log_event "info" "User: ${user}" "false"
     log_event "info" "Pass: ${psw}" "false"
