@@ -849,8 +849,8 @@ function project_get_config_file() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-      # Overwrite ${project_path}
-      project_path="${PROJECTS_PATH}${project_dir}"
+      # Overwrite ${project_path}, remove "." if exists at the beginning
+      project_path="${project_path}${project_dir#.}"
 
     else
 
@@ -868,10 +868,16 @@ function project_get_config_file() {
 
   if [[ -f "${project_config_file}" ]]; then
 
+    # Log
+    log_event "info" "Project config file: ${project_config_file}" "false"
+
     # Return
     echo "${project_config_file}" && return 0
 
   else
+
+    # Log
+    log_event "error" "Project config file: ${project_config_file} not found!" "false"
 
     # Return
     return 1
@@ -1495,7 +1501,7 @@ function project_set_configured_database_user() {
   wordpress)
 
     # Set/Update
-    _wp_config_set_option "${project_config_file}" "DB_USER" "${database_username}" 
+    _wp_config_set_option "${project_config_file}" "DB_USER" "${database_username}"
     got_error=$?
 
     ;;
