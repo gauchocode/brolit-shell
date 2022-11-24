@@ -486,14 +486,6 @@ function docker_project_install() {
     local port_available
     local php_version
 
-    # PUT ON A NEW FUNCTION?
-
-    # Project Type
-    #if [[ -z ${project_type} ]]; then
-    #    project_type="$(project_ask_type "")"
-    #    [[ $? -eq 1 ]] && return 1
-    #fi
-
     log_section "Project Installer (${project_type} on docker)"
 
     # Project Domain
@@ -617,7 +609,7 @@ function docker_project_install() {
 
         # Execute docker-compose commands
         docker-compose -f "${compose_file}" pull --quiet
-        docker-compose -f "${compose_file}" up --detach # Not quiet option. FRQ: https://github.com/docker/compose/issues/6026
+        docker-compose -f "${compose_file}" up --build --detach # Not quiet option. FRQ: https://github.com/docker/compose/issues/6026
 
         # Check exitcode
         exitstatus=$?
