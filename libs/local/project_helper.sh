@@ -1025,21 +1025,24 @@ function project_set_configured_database_engine() {
   laravel)
 
     # Set/Update Project Config File
-    project_set_config_var "${project_config_file}" "DB_CONNECTION" "${db_engine}" "none" || got_error=1
+    project_set_config_var "${project_config_file}" "DB_CONNECTION" "${db_engine}" "none"
+    got_error=$?
 
     ;;
 
   php)
 
     # Set/Update
-    project_set_config_var "${project_config_file}" "DB_CONNECTION" "${db_engine}" "none" || got_error=1
+    project_set_config_var "${project_config_file}" "DB_CONNECTION" "${db_engine}" "none"
+    got_error=$?
 
     ;;
 
   nodejs)
 
     # Set/Update
-    project_set_config_var "${project_config_file}" "DB_CONNECTION" "${db_engine}" "none" || got_error=1
+    project_set_config_var "${project_config_file}" "DB_CONNECTION" "${db_engine}" "none"
+    got_error=$?
 
     ;;
 
@@ -1108,28 +1111,32 @@ function project_set_configured_database_host() {
   wordpress)
 
     # Set/Update
-    _wp_config_set_option "${project_config_file}" "DB_HOST" "${database_host}" || got_error=1
+    _wp_config_set_option "${project_config_file}" "DB_HOST" "${database_host}"
+    got_error=$?
 
     ;;
 
   laravel)
 
     # Set/Update
-    project_set_config_var "${project_config_file}" "DB_HOST" "${database_host}" "none" || got_error=1
+    project_set_config_var "${project_config_file}" "DB_HOST" "${database_host}" "none"
+    got_error=$?
 
     ;;
 
   php)
 
     # Set/Update
-    project_set_config_var "${project_config_file}" "DB_HOST" "${database_host}" "none" || got_error=1
+    project_set_config_var "${project_config_file}" "DB_HOST" "${database_host}" "none"
+    got_error=$?
 
     ;;
 
   nodejs)
 
     # Set/Update
-    project_set_config_var "${project_config_file}" "DB_HOST" "${database_host}" "none" || got_error=1
+    project_set_config_var "${project_config_file}" "DB_HOST" "${database_host}" "none"
+    got_error=$?
 
     ;;
 
@@ -1301,28 +1308,31 @@ function project_set_configured_database() {
   wordpress)
 
     # Set/Update
-    _wp_config_set_option "${project_config_file}" "DB_NAME" "${database_name}" || got_error=1
+    _wp_config_set_option "${project_config_file}" "DB_NAME" "${database_name}"
+    got_error=$?
 
     ;;
 
   laravel)
 
     # Set/Update
-    project_set_config_var "${project_config_file}" "DB_DATABASE" "${database_name}" "none" || got_error=1
-
+    project_set_config_var "${project_config_file}" "DB_DATABASE" "${database_name}" "none"
+    got_error=$?
     ;;
 
   php)
 
     # Set/Update
-    project_set_config_var "${project_config_file}" "DB_DATABASE" "${database_name}" "none" || got_error=1
+    project_set_config_var "${project_config_file}" "DB_DATABASE" "${database_name}" "none"
+    got_error=$?
 
     ;;
 
   nodejs)
 
     # Set/Update
-    project_set_config_var "${project_config_file}" "DB_DATABASE" "${database_name}" "none" || got_error=1
+    project_set_config_var "${project_config_file}" "DB_DATABASE" "${database_name}" "none"
+    got_error=$?
 
     ;;
 
@@ -1485,28 +1495,32 @@ function project_set_configured_database_user() {
   wordpress)
 
     # Set/Update
-    _wp_config_set_option "${project_config_file}" "DB_USER" "${database_username}" || got_error=1
+    _wp_config_set_option "${project_config_file}" "DB_USER" "${database_username}" 
+    got_error=$?
 
     ;;
 
   laravel)
 
     # Set/Update
-    project_set_config_var "${project_config_file}" "DB_USERNAME" "${database_username}" "none" || got_error=1
+    project_set_config_var "${project_config_file}" "DB_USERNAME" "${database_username}" "none"
+    got_error=$?
 
     ;;
 
   php)
 
     # Set/Update
-    project_set_config_var "${project_config_file}" "DB_USERNAME" "${database_username}" "none" || got_error=1
+    project_set_config_var "${project_config_file}" "DB_USERNAME" "${database_username}" "none"
+    got_error=$?
 
     ;;
 
   nodejs)
 
     # Set/Update
-    project_set_config_var "${project_config_file}" "DB_USERNAME" "${database_username}" "none" || got_error=1
+    project_set_config_var "${project_config_file}" "DB_USERNAME" "${database_username}" "none"
+    got_error=$?
 
     ;;
 
@@ -1526,16 +1540,16 @@ function project_set_configured_database_user() {
     project_set_brolit_config_var "${project_path}" "project[].database[].config[].user" "${database_username}"
 
     # Log
-    log_event "info" "Database name set to ${database_username}" "false"
-    display --indent 6 --text "- Database name set to ${database_username}" --result DONE --color GREEN
+    log_event "info" "Database username set to ${database_username}" "false"
+    display --indent 6 --text "- Database username set to ${database_username}" --result DONE --color GREEN
 
     return 0
 
   else
 
     # Log
-    log_event "error" "Unable to set database name to ${database_username}" "false"
-    display --indent 6 --text "- Unable to set database name to ${database_username}" --result FAIL --color RED
+    log_event "error" "Unable to set database username to ${database_username}" "false"
+    display --indent 6 --text "- Unable to set database username to ${database_username}" --result FAIL --color RED
 
     return 1
 
