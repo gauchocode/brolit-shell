@@ -1076,6 +1076,96 @@ function project_set_configured_database_engine() {
 
 }
 
+# TODO: Get configured database host
+
+################################################################################
+# Set/Update database host
+#
+# Arguments:
+#  $1 = ${project_path}
+#  $2 = ${project_type}
+#  $3 = ${project_install_type}
+#  $4 = ${database_host} (localhost, docker_service_name)
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function project_set_configured_database_host() {
+
+  local project_path="${1}"
+  local project_type="${2}"
+  local project_install_type="${3}"
+  local database_host="${4}"
+
+  local got_error=0
+
+  # Get project config file
+  project_config_file="$(project_get_config_file "${project_path}" "${project_type}" "${project_install_type}")"
+
+  case ${project_type} in
+
+  wordpress)
+
+    # Set/Update
+    wp_config_set_option "${project_path}" "DB_HOST" "${database_host}" || got_error=1
+
+    ;;
+
+  laravel)
+
+    # Set/Update
+    project_set_config_var "${project_config_file}" "DB_HOST" "${database_host}" "none" || got_error=1
+
+    ;;
+
+  php)
+
+    # Set/Update
+    project_set_config_var "${project_config_file}" "DB_HOST" "${database_host}" "none" || got_error=1
+
+    ;;
+
+  nodejs)
+
+    # Set/Update
+    project_set_config_var "${project_config_file}" "DB_HOST" "${database_host}" "none" || got_error=1
+
+    ;;
+
+  *)
+
+    log_event "error" "Can't set database host on config file. Unknown project type" "false"
+
+    return 1
+
+    ;;
+
+  esac
+
+  if [[ ${got_error} -eq 0 ]]; then
+
+    # Set brolit project config var
+    project_set_brolit_config_var "${project_path}" "project[].database[].config[].host" "${database_host}"
+
+    # Log
+    log_event "info" "Database host set to ${database_host}" "false"
+    display --indent 6 --text "- Database host set to ${database_host}" --result DONE --color GREEN
+
+    return 0
+
+  else
+
+    # Log
+    log_event "error" "Unable to set database host to ${database_host}" "false"
+    display --indent 6 --text "- Unable to set database host to ${database_host}" --result FAIL --color RED
+
+    return 1
+
+  fi
+
+}
+
 ################################################################################
 # Get configured database
 #
@@ -1187,7 +1277,7 @@ function project_get_configured_database() {
 #  $1 = ${project_path}
 #  $2 = ${project_type}
 #  $3 = ${project_install_type}
-#  $4 = ${db_name}
+#  $4 = ${database_name}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1198,7 +1288,7 @@ function project_set_configured_database() {
   local project_path="${1}"
   local project_type="${2}"
   local project_install_type="${3}"
-  local db_name="${4}"
+  local database_name="${4}"
 
   local got_error=0
 
@@ -1210,28 +1300,28 @@ function project_set_configured_database() {
   wordpress)
 
     # Set/Update
-    wp_config_set_option "${project_path}" "DB_NAME" "${db_name}" || got_error=1
+    wp_config_set_option "${project_path}" "DB_NAME" "${database_name}" || got_error=1
 
     ;;
 
   laravel)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${db_name}" "none" || got_error=1
+    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${database_name}" "none" || got_error=1
 
     ;;
 
   php)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${db_name}" "none" || got_error=1
+    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${database_name}" "none" || got_error=1
 
     ;;
 
   nodejs)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${db_name}" "none" || got_error=1
+    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${database_name}" "none" || got_error=1
 
     ;;
 
@@ -1248,19 +1338,19 @@ function project_set_configured_database() {
   if [[ ${got_error} -eq 0 ]]; then
 
     # Set brolit project config var
-    project_set_brolit_config_var "${project_path}" "project[].database[].config[].name" "${db_name}"
+    project_set_brolit_config_var "${project_path}" "project[].database[].config[].name" "${database_name}"
 
     # Log
-    log_event "info" "Database name set to ${db_name}" "false"
-    display --indent 6 --text "- Database name set to ${db_name}" --result DONE --color GREEN
+    log_event "info" "Database name set to ${database_name}" "false"
+    display --indent 6 --text "- Database name set to ${database_name}" --result DONE --color GREEN
 
     return 0
 
   else
 
     # Log
-    log_event "error" "Unable to set database name to ${db_name}" "false"
-    display --indent 6 --text "- Unable to set database name to ${db_name}" --result FAIL --color RED
+    log_event "error" "Unable to set database name to ${database_name}" "false"
+    display --indent 6 --text "- Unable to set database name to ${database_name}" --result FAIL --color RED
 
     return 1
 
@@ -1435,16 +1525,16 @@ function project_set_configured_database_user() {
     project_set_brolit_config_var "${project_path}" "project[].database[].config[].user" "${database_username}"
 
     # Log
-    log_event "info" "Database name set to ${db_name}" "false"
-    display --indent 6 --text "- Database name set to ${db_name}" --result DONE --color GREEN
+    log_event "info" "Database name set to ${database_username}" "false"
+    display --indent 6 --text "- Database name set to ${database_username}" --result DONE --color GREEN
 
     return 0
 
   else
 
     # Log
-    log_event "error" "Unable to set database name to ${db_name}" "false"
-    display --indent 6 --text "- Unable to set database name to ${db_name}" --result FAIL --color RED
+    log_event "error" "Unable to set database name to ${database_username}" "false"
+    display --indent 6 --text "- Unable to set database name to ${database_username}" --result FAIL --color RED
 
     return 1
 
@@ -1626,16 +1716,16 @@ function project_set_configured_database_userpassw() {
     project_set_brolit_config_var "${project_path}" "project[].database[].config[].pass" "${db_user_passw}"
 
     # Log
-    log_event "info" "Database name set to ${db_name}" "false"
-    display --indent 6 --text "- Database name set to ${db_name}" --result DONE --color GREEN
+    log_event "info" "Database user password set to ${db_user_passw}" "false"
+    display --indent 6 --text "- Database user password set to ${db_user_passw}" --result DONE --color GREEN
 
     return 0
 
   else
 
     # Log
-    log_event "error" "Unable to set database name to ${db_name}" "false"
-    display --indent 6 --text "- Unable to set database name to ${db_name}" --result FAIL --color RED
+    log_event "error" "Unable to set database user password to ${db_user_passw}" "false"
+    display --indent 6 --text "- Unable to set database user password to ${db_user_passw}" --result FAIL --color RED
 
     return 1
 
