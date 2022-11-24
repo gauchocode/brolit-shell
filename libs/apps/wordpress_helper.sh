@@ -28,12 +28,12 @@ function wp_download() {
   if [[ -z ${wp_version} || ${wp_version} == "latest" ]]; then
 
     # Download latest version
-    ${CURL} -O "https://wordpress.org/latest.tar.gz" > "${destination_path}/wordpress.tar.gz"
+    ${CURL} "https://wordpress.org/latest.tar.gz" > "${destination_path}/wordpress.tar.gz"
 
   else
 
     # Download specific version
-    ${CURL} -O "https://wordpress.org/wordpress-${wp_version}.tar.gz" > "${destination_path}/wordpress.tar.gz"
+    ${CURL} "https://wordpress.org/wordpress-${wp_version}.tar.gz" > "${destination_path}/wordpress.tar.gz"
 
   fi
 
