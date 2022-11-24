@@ -1352,7 +1352,6 @@ function decompress() {
       ;;
 
     *.tar.gz)
-      #pv --width 70 "${file_path}" | tar xzvf -C "${directory_to_extract}"
       pigz -dc "${file_path}" | pv --width 70 | tar xf - -C "${directory_to_extract}"
       ;;
 
