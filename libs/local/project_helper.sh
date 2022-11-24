@@ -1108,7 +1108,7 @@ function project_set_configured_database_host() {
   wordpress)
 
     # Set/Update
-    wp_config_set_option "${project_path}" "DB_HOST" "${database_host}" || got_error=1
+    _wp_config_set_option "${project_config_file}" "DB_HOST" "${database_host}" || got_error=1
 
     ;;
 
@@ -1291,6 +1291,7 @@ function project_set_configured_database() {
   local database_name="${4}"
 
   local got_error=0
+  local project_config_file
 
   # Get project config file
   project_config_file="$(project_get_config_file "${project_path}" "${project_type}" "${project_install_type}")"
@@ -1300,28 +1301,28 @@ function project_set_configured_database() {
   wordpress)
 
     # Set/Update
-    wp_config_set_option "${project_path}" "DB_NAME" "${database_name}" || got_error=1
+    _wp_config_set_option "${project_config_file}" "DB_NAME" "${database_name}" || got_error=1
 
     ;;
 
   laravel)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${database_name}" "none" || got_error=1
+    project_set_config_var "${project_config_file}" "DB_DATABASE" "${database_name}" "none" || got_error=1
 
     ;;
 
   php)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${database_name}" "none" || got_error=1
+    project_set_config_var "${project_config_file}" "DB_DATABASE" "${database_name}" "none" || got_error=1
 
     ;;
 
   nodejs)
 
     # Set/Update
-    project_set_config_var "${project_path}/.env" "DB_DATABASE" "${database_name}" "none" || got_error=1
+    project_set_config_var "${project_config_file}" "DB_DATABASE" "${database_name}" "none" || got_error=1
 
     ;;
 
@@ -1484,7 +1485,7 @@ function project_set_configured_database_user() {
   wordpress)
 
     # Set/Update
-    wp_config_set_option "${project_path}" "DB_USER" "${database_username}" || got_error=1
+    _wp_config_set_option "${project_config_file}" "DB_USER" "${database_username}" || got_error=1
 
     ;;
 
@@ -1559,7 +1560,7 @@ function project_get_configured_database_userpassw() {
   local project_type="${2}"
   local project_install_type="${3}"
 
-  local db_user_passw
+  local database_userpassw
 
   # Get project config file
   project_config_file="$(project_get_config_file "${project_path}" "${project_type}" "${project_install_type}")"
@@ -1571,37 +1572,37 @@ function project_get_configured_database_userpassw() {
 
     wordpress)
 
-      db_user_passw="$(wp_config_get_option "${project_path}" "DB_PASSWORD")"
+      database_userpassw="$(wp_config_get_option "${project_path}" "DB_PASSWORD")"
 
       # Return
-      echo "${db_user_passw}" && return 0
+      echo "${database_userpassw}" && return 0
 
       ;;
 
     laravel)
 
-      db_user_passw="$(project_get_config_var "${project_config_file}" "DB_PASSWORD")"
+      database_userpassw="$(project_get_config_var "${project_config_file}" "DB_PASSWORD")"
 
       # Return
-      echo "${db_user_passw}" && return 0
+      echo "${database_userpassw}" && return 0
 
       ;;
 
     php)
 
-      db_user_passw="$(project_get_config_var "${project_config_file}" "DB_PASSWORD")"
+      database_userpassw="$(project_get_config_var "${project_config_file}" "DB_PASSWORD")"
 
       # Return
-      echo "${db_user_passw}" && return 0
+      echo "${database_userpassw}" && return 0
 
       ;;
 
     nodejs)
 
-      db_user_passw="$(project_get_config_var "${project_config_file}" "DB_PASSWORD")"
+      database_userpassw="$(project_get_config_var "${project_config_file}" "DB_PASSWORD")"
 
       # Return
-      echo "${db_user_passw}" && return 0
+      echo "${database_userpassw}" && return 0
 
       ;;
 
@@ -1616,19 +1617,19 @@ function project_get_configured_database_userpassw() {
   else
 
     # First try to read from brolit project config
-    db_user_passw="$(project_get_brolit_config_var "${project_path}" "project[].database[].config[].pass")"
+    database_userpassw="$(project_get_brolit_config_var "${project_path}" "project[].database[].config[].pass")"
 
-    if [[ -n ${db_user_passw} && ${db_user_passw} != "false" ]]; then
+    if [[ -n ${database_userpassw} && ${database_userpassw} != "false" ]]; then
 
-      log_event "debug" "Extracted db_user_passw: ${db_user_passw}" "false"
+      log_event "debug" "Extracted database_userpassw: ${database_userpassw}" "false"
 
       # Return
-      echo "${db_user_passw}" && return 0
+      echo "${database_userpassw}" && return 0
 
     else
 
       # Log error
-      log_event "error" "Unable to extract db_user_passw from brolit project config" "false"
+      log_event "error" "Unable to extract database_userpassw from brolit project config" "false"
 
       return 1
 
@@ -1645,7 +1646,7 @@ function project_get_configured_database_userpassw() {
 #  $1 = ${project_path}
 #  $2 = ${project_type}
 #  $3 = ${project_install_type}
-#  $4 = ${db_user_passw}
+#  $4 = ${database_userpassw}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1656,7 +1657,7 @@ function project_set_configured_database_userpassw() {
   local project_path="${1}"
   local project_type="${2}"
   local project_install_type="${3}"
-  local db_user_passw="${4}"
+  local database_userpassw="${4}"
 
   # Get project config file
   project_config_file="$(project_get_config_file "${project_path}" "${project_type}" "${project_install_type}")"
@@ -1666,7 +1667,7 @@ function project_set_configured_database_userpassw() {
   wordpress)
 
     # Set/Update
-    wp_config_set_option "${project_path}" "DB_PASSWORD" "${db_user_passw}"
+    _wp_config_set_option "${project_config_file}" "DB_PASSWORD" "${database_userpassw}"
 
     # Return
     return 0
@@ -1676,7 +1677,7 @@ function project_set_configured_database_userpassw() {
   laravel)
 
     # Set/Update
-    project_set_config_var "${project_config_file}" "DB_PASSWORD" "${db_user_passw}" "none"
+    project_set_config_var "${project_config_file}" "DB_PASSWORD" "${database_userpassw}" "none"
 
     return 0
 
@@ -1685,7 +1686,7 @@ function project_set_configured_database_userpassw() {
   php)
 
     # Set/Update
-    project_set_config_var "${project_config_file}" "DB_PASSWORD" "${db_user_passw}" "none"
+    project_set_config_var "${project_config_file}" "DB_PASSWORD" "${database_userpassw}" "none"
 
     return 0
 
@@ -1694,7 +1695,7 @@ function project_set_configured_database_userpassw() {
   nodejs)
 
     # Set/Update
-    project_set_config_var "${project_config_file}" "DB_PASSWORD" "${db_user_passw}" "none"
+    project_set_config_var "${project_config_file}" "DB_PASSWORD" "${database_userpassw}" "none"
 
     return 0
 
@@ -1713,19 +1714,19 @@ function project_set_configured_database_userpassw() {
   if [[ ${got_error} -eq 0 ]]; then
 
     # Set brolit project config var
-    project_set_brolit_config_var "${project_path}" "project[].database[].config[].pass" "${db_user_passw}"
+    project_set_brolit_config_var "${project_path}" "project[].database[].config[].pass" "${database_userpassw}"
 
     # Log
-    log_event "info" "Database user password set to ${db_user_passw}" "false"
-    display --indent 6 --text "- Database user password set to ${db_user_passw}" --result DONE --color GREEN
+    log_event "info" "Database user password set to ${database_userpassw}" "false"
+    display --indent 6 --text "- Database user password set to ${database_userpassw}" --result DONE --color GREEN
 
     return 0
 
   else
 
     # Log
-    log_event "error" "Unable to set database user password to ${db_user_passw}" "false"
-    display --indent 6 --text "- Unable to set database user password to ${db_user_passw}" --result FAIL --color RED
+    log_event "error" "Unable to set database user password to ${database_userpassw}" "false"
+    display --indent 6 --text "- Unable to set database user password to ${database_userpassw}" --result FAIL --color RED
 
     return 1
 
@@ -2754,6 +2755,8 @@ function project_update_domain_config() {
 #   0 if ok, 1 on error.
 ################################################################################
 
+# TODO: implements project_install_type
+
 function project_post_install_tasks() {
 
   local install_path="${1}"
@@ -2781,7 +2784,10 @@ function project_post_install_tasks() {
     wp_change_permissions "${install_path}"
 
     # Change wp-config.php database parameters
-    wp_update_wpconfig "${install_path}" "${project_name}" "${project_stage}" "${project_db_pass}"
+    project_set_configured_database_host "${install_path}" "${project_type}" "default" "localhost"
+    project_set_configured_database "${install_path}" "${project_type}" "default" "${project_name}_${project_stage}"
+    project_set_configured_database_user "${install_path}" "${project_type}" "default" "${project_name}_user"
+    project_set_configured_database_userpassw "${install_path}" "${project_type}" "default" "${project_db_pass}"
 
     # TODO: need to check if http or https
     if [[ -n ${old_project_domain} && -n ${new_project_domain} ]]; then
@@ -2807,12 +2813,12 @@ function project_post_install_tasks() {
     else
       # Block search engines indexation
       wpcli_change_wp_seo_visibility "${install_path}" "0"
-      # Set debug mode to true
-      wpcli_set_debug_mode "${install_path}" "true"
       # De-activate cache plugins
       wpcli_plugin_deactivate "${install_path}" "wp-rocket"
       wpcli_plugin_deactivate "${install_path}" "w3-total-cache"
       wpcli_plugin_deactivate "${install_path}" "wp-super-cache"
+      # Set debug mode to true
+      wpcli_set_debug_mode "${install_path}" "true"
     fi
 
     wpcli_cache_flush "${install_path}"
