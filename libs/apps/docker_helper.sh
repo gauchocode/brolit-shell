@@ -263,6 +263,8 @@ function docker_system_prune() {
 #   0 if ok, 1 on error.
 ################################################################################
 
+# TODO: Deprecated
+
 function docker_wordpress_install() {
 
     local project_path="${1}"
@@ -305,6 +307,10 @@ function docker_wordpress_install() {
     # Setting WP_PORT
     log_event "debug" "Setting WP_PORT=${docker_wp_port}" "false"
     sed -ie "s|^WP_PORT=.*$|WP_PORT=${docker_wp_port}|g" "${env_file}"
+
+    # Setting COMPOSE_PROJECT_NAME (Stack Name)
+    log_event "debug" "Setting COMPOSE_PROJECT_NAME=${project_name}_stack" "false"
+    sed -ie "s|^COMPOSE_PROJECT_NAME=.*$|COMPOSE_PROJECT_NAME=${project_name}_stack|g" "${env_file}"
 
     # Setting PROJECT_NAME
     log_event "debug" "Setting PROJECT_NAME=${project_name}" "false"
@@ -570,6 +576,11 @@ function docker_project_install() {
         # Copy docker-compose files
         copy_files "${BROLIT_MAIN_DIR}/config/docker-compose/wordpress/production-stack-proxy/" "${project_path}"
 
+        # Download Wordpress on project directory
+        wp_download "${project_path}" ""
+        # Decompress Wordpress files
+        decompress "${project_path}/wordpress.tar.gz" "${project_path}" ""
+
         # Replace .env vars
         local wp_port="${port_available}"
         local project_database="${project_name}_${project_stage}"
@@ -581,11 +592,18 @@ function docker_project_install() {
         project_database_user_passw="$(openssl rand -hex 5)"
         project_database_root_passw="$(openssl rand -hex 5)"
 
+        # Setting COMPOSE_PROJECT_NAME (Stack Name)
+        log_event "debug" "Setting COMPOSE_PROJECT_NAME=${project_name}_stack" "false"
+        sed -ie "s|^COMPOSE_PROJECT_NAME=.*$|COMPOSE_PROJECT_NAME=${project_name}_stack|g" "${env_file}"
+
         ## PROJECT
         sed -ie "s|^PROJECT_NAME=.*$|PROJECT_NAME=${project_name}|g" "${project_path}/.env"
         sed -ie "s|^PROJECT_DOMAIN=.*$|PROJECT_DOMAIN=${project_domain}|g" "${project_path}/.env"
 
-        ## WP
+        ## PHP
+        sed -ie "s|^PHP_VERSION=.*$|PHP_VERSION=${php_version}|g" "${project_path}/.env"
+
+        ## WP (Webserver)
         sed -ie "s|^WP_PORT=.*$|WP_PORT=${wp_port}|g" "${project_path}/.env"
 
         ##  MYSQL
@@ -609,7 +627,7 @@ function docker_project_install() {
 
             # Log
             wait 2
-            clear_previous_lines "6"
+            clear_previous_lines "7"
             log_event "info" "Downloading docker images." "false"
             log_event "info" "Building docker images." "false"
             display --indent 6 --text "- Downloading docker images" --result "DONE" --color GREEN
