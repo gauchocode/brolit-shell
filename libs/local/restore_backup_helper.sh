@@ -901,7 +901,7 @@ function restore_backup_files() {
     if [[ -d ${destination_dir} ]]; then
 
       # Warning message
-      whiptail --title "Warning" --yesno "The project directory already exist. Do you want to continue? A backup of current directory will be stored on: " 10 60 3>&1 1>&2 2>&3
+      whiptail --title "Warning" --yesno "The project directory already exist. Do you want to continue? A backup of current directory will be stored on BROLIT tmp folder." 10 60 3>&1 1>&2 2>&3
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
@@ -914,7 +914,7 @@ function restore_backup_files() {
       else
 
         # Log
-        log_event "info" "The project directory already exist. User skipped operation."
+        log_event "info" "The project directory already exist. User skipped operation." "false"
         display --indent 6 --text "- Restore files" --result "SKIPPED" --color YELLOW
 
         return 1
