@@ -12,8 +12,8 @@
 # Download Wordpress from official repository
 #
 # Arguments:
-#  ${1} = wp_version (latest, 6.0.3, 6.0.2, etc)
-#  ${2} = destination_path
+#  ${1} = destination_path
+#  ${2} = wp_version (latest, 6.0.3, 6.0.2, etc) - Optional
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -21,8 +21,9 @@
 
 function wp_download() {
 
-  local wp_version=${1}
-  local destination_path=${2}
+  local destination_path=${1}
+  local wp_version=${2}
+  
 
   if [[ -z ${wp_version} || ${wp_version} == "latest" ]]; then
 
