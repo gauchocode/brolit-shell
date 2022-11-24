@@ -180,10 +180,12 @@ function wp_config_get_option() {
 }
 
 ################################################################################
-# Set/Update WordPress config option
+# Private: Set/Update WordPress config option.
+#
+# Description: This function should only be used by project functions.
 #
 # Arguments:
-#  $1 = ${project_dir}
+#  $1 = ${wp_config_file}
 #  $2 = ${wp_option}
 #  $3 = ${wp_value}
 #
@@ -191,16 +193,19 @@ function wp_config_get_option() {
 #  0 if ok, 1 on error.
 ################################################################################
 
-function wp_config_set_option() {
+function _wp_config_set_option() {
 
-  local wp_project_dir="${1}"
+  local wp_config_file="${1}"
   local wp_option="${2}"
   local wp_value="${3}"
 
-  # Update wp-config.php
-  log_event "info" "Changing config parameters on ${wp_project_dir}/wp-config.php" "false"
+  # Check if wp_config_file exists
+  [[ ! -f ${wp_config_file} ]] && return 1
 
-  sed_output="$(sed -i "/${wp_option}/s/'[^']*'/'${wp_value}'/2" "${wp_project_dir}/wp-config.php")"
+  # Update wp-config.php
+  log_event "info" "Changing config parameters on ${wp_config_file}" "false"
+
+  sed_output="$(sed -i "/${wp_option}/s/'[^']*'/'${wp_value}'/2" "${wp_config_file}")"
 
   sed_result=$?
   if [[ ${sed_result} -eq 0 ]]; then
@@ -223,35 +228,6 @@ function wp_config_set_option() {
     return 1
 
   fi
-
-}
-
-################################################################################
-# Update WordPress config
-#
-# Arguments:
-#  $1 = ${project_dir}
-#  $2 = ${wp_project_name}
-#  $3 = ${wp_project_stage}
-#  $4 = ${db_user_pass}
-#
-# Outputs:
-#  0 if ok, 1 on error.
-################################################################################
-
-#TODO: why not use https://developer.wordpress.org/cli/commands/config/create/ ?
-function wp_update_wpconfig() {
-
-  local wp_project_dir="${1}"
-  local wp_project_name="${2}"
-  local wp_project_stage="${3}"
-  local db_user_pass="${4}"
-
-  # Commands
-  wp_config_set_option "${wp_project_dir}" "DB_HOST" "localhost"
-  wp_config_set_option "${wp_project_dir}" "DB_NAME" "${wp_project_name}_${wp_project_stage}"
-  wp_config_set_option "${wp_project_dir}" "DB_USER" "${wp_project_name}_user"
-  wp_config_set_option "${wp_project_dir}" "DB_PASSWORD" "${db_user_pass}"
 
 }
 
