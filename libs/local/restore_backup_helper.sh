@@ -1289,18 +1289,41 @@ function restore_project() {
 
       if [[ -d "${PROJECTS_PATH}/${chosen_project}" ]]; then
 
+        # Warning message
+        whiptail --title "Warning" --yesno "A docker project already exist for this domain. Do you want to restore the current backup on this docker stack? A backup of current directory will be stored on BROLIT tmp folder." 10 60 3>&1 1>&2 2>&3
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+          # Backup old project
+          _make_temp_files_backup "${PROJECTS_PATH}/${chosen_project}"
+          got_error=$?
+          [[ ${got_error} -eq 1 ]] && return 1
+
+        else
+
+          # Log
+          log_event "info" "The project directory already exist. User skipped operation." "false"
+          display --indent 6 --text "- Restore files" --result "SKIPPED" --color YELLOW
+
+          return 1
+
+        fi
+
         installation_type="docker"
 
-        # Remove actual wp-content
-        rm -R "${PROJECTS_PATH}/${chosen_project}/wordpress/wp-content"
+        # Remove actual wordpress files
+        #rm -R "${PROJECTS_PATH}/${chosen_project}/wordpress/wp-content"
+        rm -R "${PROJECTS_PATH}/${chosen_project}/wordpress"
 
-        move_files "${BROLIT_TMP_DIR}/${chosen_project}/wp-content" "${PROJECTS_PATH}/${chosen_project}/wordpress"
+        #move_files "${BROLIT_TMP_DIR}/${chosen_project}/wp-content" "${PROJECTS_PATH}/${chosen_project}/wordpress"
+        move_files "${BROLIT_TMP_DIR}/${chosen_project}" "${PROJECTS_PATH}/${chosen_project}/wordpress"
 
         display --indent 6 --text "- Import files into docker volume" --result "DONE" --color GREEN
 
         # TODO: update this to match monthly and weekly backups
         project_name="$(project_get_name_from_domain "${chosen_project}")"
-        project_stage=$(project_get_stage_from_domain "${chosen_project}")
+        project_stage="$(project_get_stage_from_domain "${chosen_project}")"
 
         db_name="${project_name}_${project_stage}"
         new_project_domain="${chosen_project}"
@@ -1329,6 +1352,8 @@ function restore_project() {
           # Clear screen output
           clear_previous_lines "3"
         fi
+
+        # TODO: update wp-config.php with .env docker stack credentials
 
         # Read .env to get mysql pass
         db_user_pass="$(project_get_config_var "${PROJECTS_PATH}/${chosen_project}/.env" "MYSQL_PASSWORD")"
