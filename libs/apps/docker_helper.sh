@@ -592,7 +592,7 @@ function docker_project_install() {
 
         # Setting COMPOSE_PROJECT_NAME (Stack Name)
         log_event "debug" "Setting COMPOSE_PROJECT_NAME=${project_name}_stack" "false"
-        sed -ie "s|^COMPOSE_PROJECT_NAME=.*$|COMPOSE_PROJECT_NAME=${project_name}_stack|g" "${env_file}"
+        sed -ie "s|^COMPOSE_PROJECT_NAME=.*$|COMPOSE_PROJECT_NAME=${project_name}_stack|g" "${project_path}/.env"
 
         ## PROJECT
         sed -ie "s|^PROJECT_NAME=.*$|PROJECT_NAME=${project_name}|g" "${project_path}/.env"
