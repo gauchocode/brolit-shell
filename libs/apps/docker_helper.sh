@@ -467,8 +467,6 @@ function docker_project_files_import() {
 
 }
 
-### NEW NEW NEW NEW NEW NEW NEW
-
 ################################################################################
 # Docker create new project install
 # Arguments:
@@ -642,7 +640,18 @@ function docker_project_install() {
             log_event "info" "Creating .htaccess with needed php parameters." "false"
             display --indent 6 --text "- Creating .htaccess on project" --result "DONE" --color GREEN
 
-            # Edit wp-config.php
+            # Rename wp-config-sample.php to wp-config.php
+            mv "${project_path}/wordpress/wp-config-sample.php" "${project_path}/wordpress/wp-config.php"
+
+            # Update wp-config.php
+            project_set_configured_database "${project_path}/wordpress" "wordpress" "docker" "${project_database}"
+            project_set_configured_database_host "${project_path}/wordpress" "wordpress" "docker" "mysql"
+            project_set_configured_database_user "${project_path}/wordpress" "wordpress" "docker" "${project_database_user}"
+            project_set_configured_database_password "${project_path}/wordpress" "wordpress" "docker" "${project_database_user_passw}"
+
+            # TODO: wp table prefix?
+
+            # Add specific docker installation values on wp-config.php
             echo "define('FORCE_SSL_ADMIN', true);" >>"${project_path}/wordpress/wp-config.php"
             echo "if (strpos(\$_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false){" >>"${project_path}/wordpress/wp-config.php"
             echo "  \$_SERVER['HTTPS'] = 'on';" >>"${project_path}/wordpress/wp-config.php"
