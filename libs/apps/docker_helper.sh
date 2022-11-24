@@ -644,10 +644,10 @@ function docker_project_install() {
             mv "${project_path}/wordpress/wp-config-sample.php" "${project_path}/wordpress/wp-config.php"
 
             # Update wp-config.php
-            project_set_configured_database "${project_path}/wordpress" "wordpress" "docker" "${project_database}"
-            project_set_configured_database_host "${project_path}/wordpress" "wordpress" "docker" "mysql"
-            project_set_configured_database_user "${project_path}/wordpress" "wordpress" "docker" "${project_database_user}"
-            project_set_configured_database_password "${project_path}/wordpress" "wordpress" "docker" "${project_database_user_passw}"
+            project_set_configured_database "${project_path}" "wordpress" "docker" "${project_database}"
+            project_set_configured_database_host "${project_path}" "wordpress" "docker" "mysql"
+            project_set_configured_database_user "${project_path}" "wordpress" "docker" "${project_database_user}"
+            project_set_configured_database_password "${project_path}" "wordpress" "docker" "${project_database_user_passw}"
 
             # TODO: wp table prefix?
 
