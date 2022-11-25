@@ -970,22 +970,23 @@ function move_files() {
   local source_path="${1}"
   local destination_path="${2}"
 
-  log_event "info" "Moving files from ${source_path} to ${destination_path}..." "false"
+  # Log
   display --indent 6 --text "- Moving files to ${destination_path}"
+  log_event "info" "Moving files from ${source_path} to ${destination_path}..." "false"
 
   # Moving
   mv "${source_path}" "${destination_path}"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
-
+    # Log
     clear_previous_lines "1"
     log_event "info" "Files moved from ${source_path} to ${destination_path}" "false"
     #display --indent 6 --text "- Moving files to ${destination_path}" --result "DONE" --color GREEN
     return 0
 
   else
-
+    # Log
     clear_previous_lines "2"
     log_event "error" "Moving files from ${source_path} to ${destination_path} failed!" "false"
     display --indent 6 --text "- Moving files to ${destination_path}" --result "FAIL" --color RED

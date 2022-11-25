@@ -14,19 +14,21 @@
 # with the same name.
 #
 # Arguments:
-#   $1 = ${folder_to_backup}
+#   ${1} = ${folder_to_backup}
+#   ${2} = ${operation} - (move or copy)
 #
 # Outputs:
 #   0 if ok, 1 on error.
 ################################################################################
 
-function _make_temp_files_backup() {
+function _create_tmp_copy() {
 
   local folder_to_backup="${1}"
+  local operation="${2}"
 
   local timestamp
 
-  display --indent 6 --text "- Creating backup on temp directory"
+  display --indent 6 --text "- Creating backup on brolit tmp directory"
 
   # Moving project files to temp directory
   mkdir -p "${BROLIT_MAIN_DIR}/tmp/old_backups"
@@ -37,34 +39,18 @@ function _make_temp_files_backup() {
   if [[ -d "${BROLIT_MAIN_DIR}/tmp/old_backups/${base_directory}" ]]; then
 
     timestamp=$(date +"%s")
-
     # Rename it with a timestamp
     mv "${BROLIT_MAIN_DIR}/tmp/old_backups/${base_directory}" "${BROLIT_MAIN_DIR}/tmp/old_backups/${base_directory}_${timestamp}"
 
   fi
 
-  # Moving files to tmp directory
-  mv "${folder_to_backup}" "${BROLIT_MAIN_DIR}/tmp/old_backups"
-
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    # Log
-    clear_previous_lines "1"
-    display --indent 6 --text "- Creating backup on temp directory:" --result "DONE" --color GREEN
-    display --indent 8 --text "${BROLIT_MAIN_DIR}/tmp/old_backups" --tcolor YELLOW
-    log_event "info" "Temp backup completed and stored here: ${BROLIT_MAIN_DIR}/tmp/old_backups" "false"
-
-    return 0
+  if [[ "${operation}" == "move" ]]; then
+    move_files "${folder_to_backup}" "${BROLIT_MAIN_DIR}/tmp/old_backups"
+    return $? # Return move_files exit code
 
   else
-
-    # Log
-    display --indent 6 --text "-- ERROR: Could not move project files to temp directory"
-    log_event "error" "Could not move project files to temp directory." "false"
-
-    return 1
-
+    copy_files "${folder_to_backup}" "${BROLIT_MAIN_DIR}/tmp/old_backups"
+    return $? # Return copy_files exit code
   fi
 
 }
@@ -907,7 +893,7 @@ function restore_backup_files() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         # Backup old project
-        _make_temp_files_backup "${destination_dir}"
+        _create_tmp_copy "${destination_dir}" "move"
         got_error=$?
         [[ ${got_error} -eq 1 ]] && return 1
 
@@ -1296,7 +1282,7 @@ function restore_project() {
         if [[ ${exitstatus} -eq 0 ]]; then
 
           # Backup old project
-          _make_temp_files_backup "${PROJECTS_PATH}/${chosen_project}"
+          _create_tmp_copy "${PROJECTS_PATH}/${chosen_project}" "copy"
           got_error=$?
           [[ ${got_error} -eq 1 ]] && return 1
 
