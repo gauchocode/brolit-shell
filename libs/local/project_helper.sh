@@ -2684,11 +2684,21 @@ function project_update_domain_config() {
   log_subsection "Update Domain Configuration"
 
   project_root_domain="$(domain_get_root "${project_domain}")"
-  #project_root_domain="$(ask_root_domain "${possible_root_domain}")"
 
   # TODO: if ${project_domain} == ${chosen_domain}, maybe ask if want to restore nginx and let's encrypt config files
   # restore_letsencrypt_site_files "${chosen_domain}" "${project_backup_date}"
   # restore_nginx_site_files "${chosen_domain}" "${project_backup_date}"
+
+  # TODO: Refactor this
+  #if [[ ${project_install_type} == "proxy" || ${project_install_type} == "docker"* ]]; then
+  #  # Nginx config
+  #  nginx_server_create "${project_domain}" "proxy" "single" "" "${project_port}"
+  #else
+  #  # Nginx config
+  #  nginx_server_create "${project_domain}" "${project_type}" "single" "" ""
+  #fi
+
+  [[ ${project_install_type} == "proxy" || ${project_install_type} == "docker"* ]] && project_type="proxy"
 
   # Working with root domain or www?
   if [[ ${project_domain} == "${project_root_domain}" || ${project_domain} == "www.${project_root_domain}" ]]; then
@@ -2720,17 +2730,8 @@ function project_update_domain_config() {
 
   else # Working with single domain
 
-    # TODO: Refactor this
-
-    if [[ ${project_install_type} == "proxy" || ${project_install_type} == "docker"* ]]; then
-      # Nginx config
-      nginx_server_create "${project_domain}" "proxy" "single" "" "${project_port}"
-
-    else
-      # Nginx config
-      nginx_server_create "${project_domain}" "${project_type}" "single" "" ""
-
-    fi
+    # Nginx config
+    nginx_server_create "${project_domain}" "${project_type}" "single" "" "${project_port}"
 
     # Cloudflare
     if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
