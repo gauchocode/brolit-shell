@@ -23,7 +23,9 @@ function database_ask_engine() {
     )
 
     chosen_database_engine="$(whiptail --title "DATABASE MANAGER" --menu " " 20 78 10 "${database_engine_options[@]}" 3>&1 1>&2 2>&3)"
-
+    exitstatus=$?
+    echo "${chosen_database_engine}" && return ${exitstatus}
+    
   else
 
     if [[ ${PACKAGES_MARIADB_STATUS} == "enabled" || ${PACKAGES_MYSQL_STATUS} == "enabled" ]]; then
@@ -57,6 +59,8 @@ function database_manager_menu() {
   local chosen_database_manager_option
   local database_list_options
   local chosen_database_list_option
+
+  log_section "Database Manager"
 
   # Select database engine
   chosen_database_engine="$(database_ask_engine)"
