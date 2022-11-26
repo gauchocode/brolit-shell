@@ -1691,7 +1691,6 @@ function menu_main_options() {
       # shellcheck source=${BROLIT_MAIN_DIR}/utils/database_manager.sh
       source "${BROLIT_MAIN_DIR}/utils/database_manager.sh"
 
-      log_section "Database Manager"
       database_manager_menu
 
     fi
