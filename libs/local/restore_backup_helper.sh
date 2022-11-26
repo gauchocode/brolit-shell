@@ -1511,6 +1511,7 @@ function restore_project() {
 
     fi
 
+    # TODO: if directory exist, it will overwrite the actual server conf.
     # Project domain configuration (webserver+certbot+DNS)
     https_enable="$(project_update_domain_config "${new_project_domain}" "${project_type}" "${project_install_type}" "${project_port}")"
 
