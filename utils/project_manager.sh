@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.6
+# Version: 3.2.7
 ################################################################################
 #
 # Project Manager: Perform project actions.
@@ -156,15 +156,14 @@ function project_manager_menu_new_project_type_utils() {
   whip_description=" "
 
   project_utils_options=(
-    "01)" "CREATE NEW PROJECT"
-    "02)" "DELETE PROJECT"
-    "03)" "GENERATE PROJECT CONFIG"
+    "01)" "RE-GENERATE PROJECT CONFIG"
+    "02)" "RE-GENERATE NGINX SERVER"
+    "03)" "DELETE PROJECT"
     "04)" "CREATE PROJECT DB  & USER"
     "05)" "RENAME DATABASE"
     "06)" "PUT PROJECT ONLINE"
     "07)" "PUT PROJECT OFFLINE"
-    "08)" "CREATE NGINX SERVER"
-    "09)" "BENCH PROJECT GTMETRIX"
+    "08)" "BENCH PROJECT GTMETRIX"
   )
 
   chosen_project_utils_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_utils_options[@]}" 3>&1 1>&2 2>&3)"
@@ -172,23 +171,9 @@ function project_manager_menu_new_project_type_utils() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
+    # RE-GENERATE PROJECT CONFIG
     if [[ ${chosen_project_utils_options} == *"01"* ]]; then
 
-      # CREATE NEW PROJECT
-      project_manager_menu_new_project_type_new_project
-
-    fi
-
-    if [[ ${chosen_project_utils_options} == *"02"* ]]; then
-
-      # DELETE PROJECT
-      project_delete "" ""
-
-    fi
-
-    if [[ ${chosen_project_utils_options} == *"03"* ]]; then
-
-      # GENERATE PROJECT CONFIG
       log_subsection "Project config"
 
       # Folder where sites are hosted: $PROJECTS_PATH
@@ -196,7 +181,7 @@ function project_manager_menu_new_project_type_utils() {
       directory_browser "${menu_title}" "${PROJECTS_PATH}"
 
       # Directory_broser returns: " $filepath"/"$filename
-      if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
+      if [[ -z "${filepath}" ]]; then
 
         log_event "info" "Operation cancelled!" "false"
 
@@ -208,9 +193,15 @@ function project_manager_menu_new_project_type_utils() {
 
     fi
 
+    # RE-GENERATE NGINX SERVER
+    [[ ${chosen_project_utils_options} == *"02"* ]] && project_create_nginx_server
+
+    # DELETE PROJECT
+    [[ ${chosen_project_utils_options} == *"03"* ]] && project_delete "" ""
+
+    # CREATE PROJECT DB  & USER
     if [[ ${chosen_project_utils_options} == *"04"* ]]; then
 
-      # CREATE PROJECT DB & USER
       log_subsection "Create Project DB & User"
 
       # Folder where sites are hosted: $PROJECTS_PATH
@@ -266,9 +257,9 @@ function project_manager_menu_new_project_type_utils() {
 
     fi
 
+    # RENAME DATABASE
     if [[ ${chosen_project_utils_options} == *"05"* ]]; then
 
-      # RENAME DATABASE
       local chosen_db
       local new_database_name
 
@@ -293,30 +284,15 @@ function project_manager_menu_new_project_type_utils() {
 
     fi
 
-    if [[ ${chosen_project_utils_options} == *"06"* ]]; then
+    # PUT PROJECT ONLINE
+    [[ ${chosen_project_utils_options} == *"06"* ]] && project_change_status "online"
 
-      # PUT PROJECT ONLINE
-      project_change_status "online"
+    # PUT PROJECT OFFLINE
+    [[ ${chosen_project_utils_options} == *"07"* ]] && project_change_status "offline"
 
-    fi
-
-    if [[ ${chosen_project_utils_options} == *"07"* ]]; then
-
-      # PUT PROJECT OFFLINE
-      project_change_status "offline"
-
-    fi
-
+    # BENCH PROJECT GTMETRIX
     if [[ ${chosen_project_utils_options} == *"08"* ]]; then
 
-      # REGENERATE NGINX SERVER
-      project_create_nginx_server
-
-    fi
-
-    if [[ ${chosen_project_utils_options} == *"09"* ]]; then
-
-      # BENCH PROJECT GTMETRIX
       URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
 
       exitstatus=$?
@@ -367,7 +343,15 @@ function project_manager_menu_new_project_type_new_project() {
   local whip_title
   local whip_description
 
-  whip_title="PROJECT UTILS"
+  # NEW
+  project_creation_type_options=(
+    "01)" "NEW CLEAN PROJECT"
+    "02)" "NEW PROJECT FROM BACKUP"
+    #"03)" "NEW PROJECT FROM EXISTING PROJECT"
+    #"04)" "NEW PROJECT FROM GIT REPOSITORY"
+  )
+
+  whip_title="PROJECT CREATION"
   whip_description=" "
 
   project_type_options=(

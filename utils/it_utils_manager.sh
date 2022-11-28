@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.6
+# Version: 3.2.7
 ################################################################################
 
 function it_utils_menu() {
@@ -10,39 +10,47 @@ function it_utils_menu() {
   local chosen_it_util_options
   local new_ssh_port
 
+  log_section "IT Utils"
+
   it_util_options=(
-    "01)" "SECURITY TOOLS"
-    "02)" "SERVER OPTIMIZATIONS"
-    "03)" "CHANGE SSH PORT"
-    "04)" "CHANGE HOSTNAME"
-    "05)" "ADD FLOATING IP"
-    "06)" "CREATE SFTP USER"
-    "07)" "DELETE SFTP USER"
-    "08)" "RESET MYSQL ROOT PSW"
-    "09)" "BLACKLIST CHECKER"
-    "10)" "BENCHMARK SERVER"
-    "11)" "INSTALL ALIASES"
-    "12)" "INSTALL WELCOME MESSAGE"
-    "13)" "ADD BROLIT UI INTEGRATION"
-    "14)" "ENABLE SSH ROOT ACCESS"
+    "01)" "INSTALLERS AND CONFIGURATORS"
+    "02)" "SECURITY TOOLS"
+    "03)" "SERVER OPTIMIZATIONS"
+    "04)" "CHANGE SSH PORT"
+    "05)" "CHANGE HOSTNAME"
+    "06)" "ADD FLOATING IP"
+    "07)" "CREATE SFTP USER"
+    "08)" "DELETE SFTP USER"
+    "09)" "RESET MYSQL ROOT PSW"
+    "10)" "BLACKLIST CHECKER"
+    "11)" "BENCHMARK SERVER"
+    "12)" "INSTALL ALIASES"
+    "13)" "INSTALL WELCOME MESSAGE"
+    "14)" "ADD BROLIT UI INTEGRATION"
+    "15)" "ENABLE SSH ROOT ACCESS"
   )
   chosen_it_util_options="$(whiptail --title "IT UTILS" --menu "Choose a script to Run" 20 78 10 "${it_util_options[@]}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    # SECURITY TOOLS
+    # INSTALLERS AND CONFIGURATORS
     if [[ ${chosen_it_util_options} == *"01"* ]]; then
+      installers_and_configurators
+    fi
+
+    # SECURITY TOOLS
+    if [[ ${chosen_it_util_options} == *"02"* ]]; then
       menu_security_utils
     fi
     # SERVER OPTIMIZATIONS
-    if [[ ${chosen_it_util_options} == *"02"* ]]; then
+    if [[ ${chosen_it_util_options} == *"03"* ]]; then
       # shellcheck source=${BROLIT_MAIN_DIR}/utils/server_and_image_optimizations.sh
       source "${BROLIT_MAIN_DIR}/utils/server_and_image_optimizations.sh"
       server_optimizations_menu
     fi
     # CHANGE SSH PORT
-    if [[ ${chosen_it_util_options} == *"03"* ]]; then
+    if [[ ${chosen_it_util_options} == *"04"* ]]; then
 
       new_ssh_port="$(whiptail --title "CHANGE SSH PORT" --inputbox "Insert the new SSH port:" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
@@ -51,7 +59,7 @@ function it_utils_menu() {
       fi
     fi
     # CHANGE HOSTNAME
-    if [[ ${chosen_it_util_options} == *"04"* ]]; then
+    if [[ ${chosen_it_util_options} == *"05"* ]]; then
 
       new_server_hostname="$(whiptail --title "CHANGE SERVER HOSTNAME" --inputbox "Insert the new hostname:" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
@@ -60,7 +68,7 @@ function it_utils_menu() {
       fi
     fi
     # ADD FLOATING IP
-    if [[ ${chosen_it_util_options} == *"05"* ]]; then
+    if [[ ${chosen_it_util_options} == *"06"* ]]; then
 
       floating_IP="$(whiptail --title "ADD FLOATING IP" --inputbox "Insert the floating IP:" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
@@ -69,7 +77,7 @@ function it_utils_menu() {
       fi
     fi
     # CREATE SFTP USER
-    if [[ ${chosen_it_util_options} == *"06"* ]]; then
+    if [[ ${chosen_it_util_options} == *"07"* ]]; then
 
       log_subsection "SFTP Manager"
 
@@ -89,7 +97,7 @@ function it_utils_menu() {
       fi
     fi
     # DELETE SFTP USER
-    if [[ ${chosen_it_util_options} == *"07"* ]]; then
+    if [[ ${chosen_it_util_options} == *"08"* ]]; then
 
       log_subsection "SFTP Manager"
 
@@ -100,7 +108,7 @@ function it_utils_menu() {
       fi
     fi
     # RESET MYSQL ROOT_PSW
-    if [[ ${chosen_it_util_options} == *"08"* ]]; then
+    if [[ ${chosen_it_util_options} == *"09"* ]]; then
 
       db_root_psw="$(whiptail --title "MYSQL ROOT PASSWORD" --inputbox "Insert the new root password for MySQL:" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
@@ -111,7 +119,7 @@ function it_utils_menu() {
       fi
     fi
     # BLACKLIST CHECKER
-    if [[ ${chosen_it_util_options} == *"09"* ]]; then
+    if [[ ${chosen_it_util_options} == *"10"* ]]; then
 
       IP_TO_TEST="$(whiptail --title "BLACKLIST CHECKER" --inputbox "Insert the IP or the domain you want to check." 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
@@ -121,35 +129,35 @@ function it_utils_menu() {
       fi
     fi
     # BENCHMARK SERVER
-    if [[ ${chosen_it_util_options} == *"10"* ]]; then
+    if [[ ${chosen_it_util_options} == *"11"* ]]; then
       # shellcheck source=${BROLIT_MAIN_DIR}/tools/bench_scripts.sh
       source "${BROLIT_MAIN_DIR}/tools/third-party/bench_scripts.sh"
 
     fi
     # INSTALL ALIASES
-    if [[ ${chosen_it_util_options} == *"11"* ]]; then
+    if [[ ${chosen_it_util_options} == *"12"* ]]; then
       install_script_aliases
 
     fi
     # INSTALL WELCOME MESSAGE
-    if [[ ${chosen_it_util_options} == *"12"* ]]; then
+    if [[ ${chosen_it_util_options} == *"13"* ]]; then
       customize_ubuntu_login_message
 
     fi
     # ADD BROLIT UI INTEGRATION
-    if [[ ${chosen_it_util_options} == *"13"* ]]; then
+    if [[ ${chosen_it_util_options} == *"14"* ]]; then
       brolit_ssh_keygen "/root/pem"
     fi
     # ENABLE SSH ROOT ACCESS
-    if [[ ${chosen_it_util_options} == *"14"* ]]; then
+    if [[ ${chosen_it_util_options} == *"15"* ]]; then
 
       log_subsection "Enable ssh root access"
 
       sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-      
+
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
-        
+
         log_event "info" "Permit ssh root login" "false"
         display --indent 6 --text "- Permit ssh root login" --result "DONE" --color GREEN
 
