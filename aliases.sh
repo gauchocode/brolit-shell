@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.6
+# Version: 3.2.7
 ################################################################################
 
 # Version
-SCRIPT_VERSION="3.2.6"
-ALIASES_VERSION="3.2.6-099"
+SCRIPT_VERSION="3.2.7"
+ALIASES_VERSION="3.2.7-099"
 
 ################################################################################
 

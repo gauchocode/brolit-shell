@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.6
+# Version: 3.2.7
 ################################################################################
 #
 # Project Helper: Perform project actions.
@@ -1934,25 +1934,43 @@ function project_delete_files() {
 
   local project_domain="${1}"
 
-  local bk_type
+  local backup_type
+  local compose_file
+  local project_type
+  local project_install_type
 
-  bk_type="site"
+  backup_type="site"
 
   # Log
   log_subsection "Delete Files"
 
-  # Trying to know project type
+  # Trying to know project type and project install type
   project_type=$(project_get_type "${PROJECTS_PATH}/${project_domain}")
+  project_install_type=$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
+    # If project_install_type == "docker", stop and delete containers
+    if [[ ${project_install_type} == "docker" ]]; then
+
+      compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
+
+      if [[ -f "${compose_file}" ]]; then
+        # Execute docker-compose commands
+        docker-compose -f "${compose_file}" stop --quiet
+        docker-compose -f "${compose_file}" rm
+        [[ $? -eq 1 ]] && return 1
+      fi
+
+    fi
+
     # Creating new folder structure for old projects
     storage_create_dir "/${SERVER_NAME}/projects-offline"
-    storage_create_dir "/${SERVER_NAME}/projects-offline/${bk_type}"
+    storage_create_dir "/${SERVER_NAME}/projects-offline/${backup_type}"
 
     # Moving old project backups to another directory
-    storage_move "/${SERVER_NAME}/projects-online/${bk_type}/${project_domain}" "/${SERVER_NAME}/projects-offline/${bk_type}"
+    storage_move "/${SERVER_NAME}/projects-online/${backup_type}/${project_domain}" "/${SERVER_NAME}/projects-offline/${backup_type}"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -1969,6 +1987,8 @@ function project_delete_files() {
 
       # Send notification
       send_notification "⚠️ ${SERVER_NAME}" "Project files for '${project_domain}' deleted."
+
+      return 0
 
     else
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.6
+# Version: 3.2.7
 ################################################################################
 #
 # Backup/Restore Manager: Perform backup and restore actions.
@@ -197,8 +197,8 @@ function restore_manager_menu() {
 
   restore_options=(
     "01)" "FROM DROPBOX"
-    "02)" "FROM PUBLIC LINK"
-    "03)" "FROM LOCAL FILE"
+    "02)" "FROM PUBLIC LINK (BETA)"
+    "03)" "FROM LOCAL FILE (BETA)"
     "04)" "FROM FTP (BETA)"
   )
 
