@@ -12,10 +12,10 @@
 # Download from ftp
 #
 # Arguments:
-#  $1 = ftp_ip
-#  $2 = ftp_path
-#  $3 = ftp_user
-#  $4 = ftp_pass
+#  ${1} = ftp_ip
+#  ${2} = ftp_path
+#  ${3} = ftp_user
+#  ${4} = ftp_pass
 #
 # Outputs:
 #  0 if ok, 1 on error.

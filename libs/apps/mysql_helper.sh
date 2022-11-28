@@ -57,7 +57,7 @@ function mysql_ask_root_psw() {
 # Ask database user scope
 #
 # Arguments:
-#  $1 = ${db_scope} - Optional
+#  ${1} = ${db_scope} - Optional
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -86,7 +86,7 @@ function mysql_ask_user_db_scope() {
 # Ask database selection
 #
 # Arguments:
-#  $1 = ${db_scope} - Optional
+#  ${1} = ${db_scope} - Optional
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -123,8 +123,8 @@ function mysql_ask_database_selection() {
 # Test user credentials
 #
 # Arguments:
-#  $1 = ${db_user}
-#  $2 = ${db_user_psw}
+#  ${1} = ${db_user}
+#  ${2} = ${db_user_psw}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -170,7 +170,7 @@ function mysql_test_user_credentials() {
 # Count databases on MySQL
 #
 # Arguments:
-#  $1 = ${databases}
+#  ${1} = ${databases}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -304,9 +304,9 @@ function mysql_list_users() {
 # Create database user
 #
 # Arguments:
-#  $1 = ${db_user}
-#  $2 = ${db_user_psw}
-#  $3 = ${db_user_scope} - optional
+#  ${1} = ${db_user}
+#  ${2} = ${db_user_psw}
+#  ${3} = ${db_user_scope} - optional
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -375,8 +375,8 @@ function mysql_user_create() {
 # Delete database user
 #
 # Arguments:
-#  $1 = ${db_user}
-#  $2 = ${db_user_scope} - optional
+#  ${1} = ${db_user}
+#  ${2} = ${db_user_scope} - optional
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -436,8 +436,8 @@ function mysql_user_delete() {
 # Change user password
 #
 # Arguments:
-#  $1 = ${db_user}
-#  $2 = ${db_user_psw}
+#  ${1} = ${db_user}
+#  ${2} = ${db_user_psw}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -488,7 +488,7 @@ function mysql_user_psw_change() {
 # Change root password
 #
 # Arguments:
-#  $1 = ${db_user_psw}
+#  ${1} = ${db_user_psw}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -555,9 +555,9 @@ function mysql_root_psw_change() {
 # Grant privileges to user
 #
 # Arguments:
-#  $1 = ${db_user}
-#  $2 = ${db_target}
-#  $3 = ${db_scope}
+#  ${1} = ${db_user}
+#  ${2} = ${db_target}
+#  ${3} = ${db_scope}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -620,7 +620,7 @@ function mysql_user_grant_privileges() {
 # Check if user exists
 #
 # Arguments:
-#  $1 = ${db_user}
+#  ${1} = ${db_user}
 #
 # Outputs:
 #  0 if user exists, 1 if not.
@@ -653,7 +653,7 @@ function mysql_user_exists() {
 # Check if database exists
 #
 # Arguments:
-#  $1 = ${db_user}
+#  ${1} = ${db_user}
 #
 # Outputs:
 #  0 if database exists, 1 if not.
@@ -683,7 +683,7 @@ function mysql_database_exists() {
 # Sanitize database name or username
 #
 # Arguments:
-#  $1 = ${string}
+#  ${1} = ${string}
 #
 # Outputs:
 #  Sanetized ${string}.
@@ -720,7 +720,7 @@ function mysql_name_sanitize() {
 # Create database
 #
 # Arguments:
-#  $1 = ${database}
+#  ${1} = ${database}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -770,7 +770,7 @@ function mysql_database_create() {
 # Delete database
 #
 # Arguments:
-#  $1 = ${database}
+#  ${1} = ${database}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -819,8 +819,8 @@ function mysql_database_drop() {
 # Database import
 #
 # Arguments:
-#  $1 = ${database} (.sql)
-#  $2 = ${dump_file}
+#  ${1} = ${database} (.sql)
+#  ${2} = ${dump_file}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -871,8 +871,8 @@ function mysql_database_import() {
 # Database export
 #
 # Arguments:
-#  $1 = ${database}
-#  $2 = ${dump_file}
+#  ${1} = ${database}
+#  ${2} = ${dump_file}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -923,7 +923,7 @@ function mysql_database_export() {
 #
 # Arguments:
 
-#  $2 = ${database_new_name}
+#  ${2} = ${database_new_name}
 #
 # Outputs:
 #  0 if ok, 1 on error.

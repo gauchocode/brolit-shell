@@ -12,9 +12,9 @@
 # Send Notification: send notification to configured apps.
 #
 # Arguments:
-#   $1 = {notification_title}
-#   $2 = {notification_content}
-#   $3 = {notification_type}
+#   ${1} = {notification_title}
+#   ${2} = {notification_content}
+#   ${3} = {notification_type}
 #
 # Outputs:
 #   0 if it utils were installed, 1 on error.

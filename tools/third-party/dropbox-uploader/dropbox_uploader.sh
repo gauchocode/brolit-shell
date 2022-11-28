@@ -455,8 +455,8 @@ function db_stat
 }
 
 #Generic upload wrapper around db_upload_file and db_upload_dir functions
-#$1 = Local source file/dir
-#$2 = Remote destination file/dir
+#${1} = Local source file/dir
+#${2} = Remote destination file/dir
 function db_upload
 {
     local SRC=$(normalize_path "$1")
@@ -521,8 +521,8 @@ function db_upload
 
 #Generic upload wrapper around db_chunked_upload_file and db_simple_upload_file
 #The final upload function will be choosen based on the file size
-#$1 = Local source file
-#$2 = Remote destination file
+#${1} = Local source file
+#${2} = Remote destination file
 function db_upload_file
 {
     local FILE_SRC=$(normalize_path "$1")
@@ -575,8 +575,8 @@ function db_upload_file
 }
 
 #Simple file upload
-#$1 = Local source file
-#$2 = Remote destination file
+#${1} = Local source file
+#${2} = Remote destination file
 function db_simple_upload_file
 {
     local FILE_SRC=$(normalize_path "$1")
@@ -606,8 +606,8 @@ function db_simple_upload_file
 }
 
 #Chunked file upload
-#$1 = Local source file
-#$2 = Remote destination file
+#${1} = Local source file
+#${2} = Remote destination file
 function db_chunked_upload_file
 {
     local FILE_SRC=$(normalize_path "$1")
@@ -724,8 +724,8 @@ function db_chunked_upload_file
 }
 
 #Directory upload
-#$1 = Local source dir
-#$2 = Remote destination dir
+#${1} = Local source dir
+#${2} = Remote destination dir
 function db_upload_dir
 {
     local DIR_SRC=$(normalize_path "$1")
@@ -740,8 +740,8 @@ function db_upload_dir
 }
 
 #Generic download wrapper
-#$1 = Remote source file/dir
-#$2 = Local destination file/dir
+#${1} = Remote source file/dir
+#${2} = Local destination file/dir
 function db_download
 {
     local SRC=$(normalize_path "$1")
@@ -840,8 +840,8 @@ function db_download
 }
 
 #Simple file download
-#$1 = Remote source file
-#$2 = Local destination file
+#${1} = Remote source file
+#${2} = Local destination file
 function db_download_file
 {
     local FILE_SRC=$(normalize_path "$1")
@@ -898,8 +898,8 @@ function db_download_file
 }
 
 #Saveurl
-#$1 = URL
-#$2 = Remote file destination
+#${1} = URL
+#${2} = Remote file destination
 function db_saveurl
 {
     local URL="$1"
@@ -1025,7 +1025,7 @@ function db_unlink
 }
 
 #Delete a remote file
-#$1 = Remote file to delete
+#${1} = Remote file to delete
 function db_delete
 {
     local FILE_DST=$(normalize_path "$1")
@@ -1045,8 +1045,8 @@ function db_delete
 }
 
 #Move/Rename a remote file
-#$1 = Remote file to rename or move
-#$2 = New file name or location
+#${1} = Remote file to rename or move
+#${2} = New file name or location
 function db_move
 {
     local FILE_SRC=$(normalize_path "$1")
@@ -1075,8 +1075,8 @@ function db_move
 }
 
 #Copy a remote file to a remote location
-#$1 = Remote file to rename or move
-#$2 = New file name or location
+#${1} = Remote file to rename or move
+#${2} = New file name or location
 function db_copy
 {
     local FILE_SRC=$(normalize_path "$1")
@@ -1105,7 +1105,7 @@ function db_copy
 }
 
 #Create a new directory
-#$1 = Remote directory to create
+#${1} = Remote directory to create
 function db_mkdir
 {
     local DIR_DST=$(normalize_path "$1")
@@ -1127,8 +1127,8 @@ function db_mkdir
 }
 
 #List a remote folder and returns the path to the file containing the output
-#$1 = Remote directory
-#$2 = Cursor (Optional)
+#${1} = Remote directory
+#${2} = Cursor (Optional)
 function db_list_outfile
 {
 
@@ -1195,7 +1195,7 @@ function db_list_outfile
 }
 
 #List remote directory
-#$1 = Remote directory
+#${1} = Remote directory
 function db_list
 {
     local DIR_DST=$(normalize_path "$1")
@@ -1268,8 +1268,8 @@ function db_list
 }
 
 #Longpoll remote directory only once
-#$1 = Timeout
-#$2 = Remote directory
+#${1} = Timeout
+#${2} = Remote directory
 function db_monitor_nonblock
 {
     local TIMEOUT="${1}"
@@ -1351,8 +1351,8 @@ function db_monitor_nonblock
 }
 
 #Longpoll continuously remote directory
-#$1 = Timeout
-#$2 = Remote directory
+#${1} = Timeout
+#${2} = Remote directory
 function db_monitor
 {
     local TIMEOUT="${1}"
@@ -1364,7 +1364,7 @@ function db_monitor
 }
 
 #Share remote file
-#$1 = Remote file
+#${1} = Remote file
 function db_share
 {
     local FILE_DST=$(normalize_path "$1")
@@ -1384,7 +1384,7 @@ function db_share
 }
 
 #Query existing shared link
-#$1 = Remote file
+#${1} = Remote file
 function get_Share
 {
     local FILE_DST=$(normalize_path "$1")
@@ -1406,7 +1406,7 @@ function get_Share
 }
 
 #Search on Dropbox
-#$1 = query
+#${1} = query
 function db_search
 {
     local QUERY="$1"
@@ -1493,7 +1493,7 @@ function db_search
 
 #Query the sha256-dropbox-sum of a remote file
 #see https://www.dropbox.com/developers/reference/content-hash for more information
-#$1 = Remote file
+#${1} = Remote file
 function db_sha
 {
     local FILE=$(normalize_path "$1")
@@ -1520,7 +1520,7 @@ function db_sha
 
 #Query the sha256-dropbox-sum of a local file
 #see https://www.dropbox.com/developers/reference/content-hash for more information
-#$1 = Local file
+#${1} = Local file
 function db_sha_local
 {
     local FILE=$(normalize_path "$1")

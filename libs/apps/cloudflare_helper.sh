@@ -14,7 +14,7 @@
 # Private: get the Cloudflare domain zone id
 #
 # Arguments:
-#   $1 = ${zone_name}
+#   ${1} = ${zone_name}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -69,7 +69,7 @@ function _cloudflare_get_zone_id() {
 # Get the Cloudflare domain zone information
 #
 # Arguments:
-#   $1 = ${zone_name}
+#   ${1} = ${zone_name}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -109,7 +109,7 @@ function cloudflare_get_zone_info() {
 # Check if domain exists on Cloudflare account
 #
 # Arguments:
-#   $1 = ${root_domain}
+#   ${1} = ${root_domain}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -133,7 +133,7 @@ function cloudflare_domain_exists() {
 # Clear Cloudflare cache for domain
 #
 # Arguments:
-#   $1 = ${root_domain}
+#   ${1} = ${root_domain}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -185,8 +185,8 @@ function cloudflare_clear_cache() {
 # Set develoment mode for domain
 #
 # Arguments:
-#   $1 = ${root_domain}
-#   $2 = ${dev_mode}
+#   ${1} = ${root_domain}
+#   ${2} = ${dev_mode}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -242,7 +242,7 @@ function cloudflare_set_development_mode() {
 # Get configured ssl mode for domain
 #
 # Arguments:
-#   $1 = ${root_domain}
+#   ${1} = ${root_domain}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -286,8 +286,8 @@ function cloudflare_get_ssl_mode() {
 # Set configured ssl mode for domain
 #
 # Arguments:
-#   $1 = ${root_domain}
-#   $2 = ${ssl_mode} default value: off, valid values: off, flexible, full, strict
+#   ${1} = ${root_domain}
+#   ${2} = ${ssl_mode} default value: off, valid values: off, flexible, full, strict
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -339,8 +339,8 @@ function cloudflare_set_ssl_mode() {
 # Check if record exists for the configured domain
 #
 # Arguments:
-#   $1 = ${domain}
-#   $2 = ${zone_id}
+#   ${1} = ${domain}
+#   ${2} = ${zone_id}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -390,9 +390,9 @@ function cloudflare_record_exists() {
 # Get record details for the configured domain
 #
 # Arguments:
-#   $1 = ${root_domain}
-#   $2 = ${domain}
-#   $3 = ${field} - Values: all, id, type, name, content, proxiable, proxied, ttl, locked, zone_id, zone_name, created_on, modified_on
+#   ${1} = ${root_domain}
+#   ${2} = ${domain}
+#   ${3} = ${field} - Values: all, id, type, name, content, proxiable, proxied, ttl, locked, zone_id, zone_name, created_on, modified_on
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -456,11 +456,11 @@ function cloudflare_get_record_details() {
 # Set record details for the configured domain
 #
 # Arguments:
-#   $1 = ${root_domain}
-#   $2 = ${domain}
-#   $3 = ${record_type} - valid values: A, AAAA, CNAME, HTTPS, TXT, SRV, LOC, MX, NS, SPF, CERT, DNSKEY, DS, NAPTR, SMIMEA, SSHFP, SVCB, TLSA, URI
-#   $4 = ${proxy_status} - true/false
-#   $5 = ${cur_ip}
+#   ${1} = ${root_domain}
+#   ${2} = ${domain}
+#   ${3} = ${record_type} - valid values: A, AAAA, CNAME, HTTPS, TXT, SRV, LOC, MX, NS, SPF, CERT, DNSKEY, DS, NAPTR, SMIMEA, SSHFP, SVCB, TLSA, URI
+#   ${4} = ${proxy_status} - true/false
+#   ${5} = ${cur_ip}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -578,11 +578,11 @@ function cloudflare_set_record() {
 # Update record details for the configured domain
 #
 # Arguments:
-#   $1 = ${root_domain}
-#   $2 = ${domain}
-#   $3 = ${record_type} - valid values: A, AAAA, CNAME, HTTPS, TXT, SRV, LOC, MX, NS, SPF, CERT, DNSKEY, DS, NAPTR, SMIMEA, SSHFP, SVCB, TLSA, URI
-#   $4 = ${proxy_status} - true/false
-#   $5 = ${cur_ip}
+#   ${1} = ${root_domain}
+#   ${2} = ${domain}
+#   ${3} = ${record_type} - valid values: A, AAAA, CNAME, HTTPS, TXT, SRV, LOC, MX, NS, SPF, CERT, DNSKEY, DS, NAPTR, SMIMEA, SSHFP, SVCB, TLSA, URI
+#   ${4} = ${proxy_status} - true/false
+#   ${5} = ${cur_ip}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -655,8 +655,8 @@ function cloudflare_update_record() {
 # Delete record
 #
 # Arguments:
-#   $1 = ${root_domain}
-#   $2 = ${domain}
+#   ${1} = ${root_domain}
+#   ${2} = ${domain}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -727,8 +727,8 @@ function cloudflare_delete_record() {
 # Set cache TTL
 #
 # Arguments:
-#   $1 = ${root_domain}
-#   $2 = ${cache_ttl_value} - default value: 14400, valid values: 0, 30, 60, 300, 1200, 1800, 3600, 7200, 10800, 14400, 18000, 28800, 43200, 57600, 72000, 86400, 172800, 259200, 345600, 432000, 691200, 1382400, 2073600, 2678400, 5356800, 16070400, 31536000
+#   ${1} = ${root_domain}
+#   ${2} = ${cache_ttl_value} - default value: 14400, valid values: 0, 30, 60, 300, 1200, 1800, 3600, 7200, 10800, 14400, 18000, 28800, 43200, 57600, 72000, 86400, 172800, 259200, 345600, 432000, 691200, 1382400, 2073600, 2678400, 5356800, 16070400, 31536000
 #                             setting a TTL of 0 is equivalent to selecting 'Respect Existing Headers'
 #
 # Outputs:
@@ -783,8 +783,8 @@ function cloudflare_set_cache_ttl_value() {
 # Set http3
 #
 # Arguments:
-#   $1 = ${root_domain}
-#   $2 = ${http3_setting} - default value: off, valid values: on, off
+#   ${1} = ${root_domain}
+#   ${2} = ${http3_setting} - default value: off, valid values: on, off
 #
 # Outputs:
 #   0 if ok, 1 on error.

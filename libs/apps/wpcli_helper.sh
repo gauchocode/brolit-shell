@@ -220,7 +220,7 @@ function wpcli_uninstall() {
 # Check if a wpcli package is installed
 #
 # Arguments:
-#   $1 = ${wpcli_package}
+#   ${1} = ${wpcli_package}
 #
 # Outputs:
 #   "true" if wpcli package is installed, "false" if not.
@@ -278,8 +278,8 @@ function wpcli_install_needed_extensions() {
 # Download WordPress core.
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${wp_version} - optional
+#   ${1} = ${wp_site}
+#   ${2} = ${wp_version} - optional
 #
 # Outputs:
 #   0 if WordPress is downloaded, 1 on error.
@@ -363,8 +363,8 @@ function wpcli_core_download() {
 # Re-install WordPress core (it will not delete others files).
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${wp_version} - optional
+#   ${1} = ${wp_site}
+#   ${2} = ${wp_version} - optional
 #
 # Outputs:
 #   0 if WordPress is downloaded, 1 on error.
@@ -417,7 +417,7 @@ function wpcli_core_reinstall() {
 # Update WordPress core.
 #
 # Arguments:
-#   $1 = ${wp_site}
+#   ${1} = ${wp_site}
 #
 # Outputs:
 #   0 if option was configured, 1 on error.
@@ -476,7 +476,7 @@ function wpcli_core_update() {
 # Verify WordPress core checksum
 #
 # Arguments:
-#   $1 = ${wp_site}
+#   ${1} = ${wp_site}
 #
 # Outputs:
 #   "true" if wpcli package is installed, "false" if not.
@@ -505,8 +505,8 @@ function wpcli_core_verify() {
 # Verify installation plugins checksum
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${plugin} could be --all?
+#   ${1} = ${wp_site}
+#   ${2} = ${plugin} could be --all?
 #
 # Outputs:
 #   "true" if wpcli package is installed, "false" if not.
@@ -538,8 +538,8 @@ function wpcli_plugin_verify() {
 # Install WordPress plugin
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
+#   ${1} = ${wp_site}
+#   ${2} = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
 #
 # Outputs:
 #   0 if plugin was installed, 1 if not.
@@ -584,8 +584,8 @@ function wpcli_install_plugin() {
 # Update WordPress plugin
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file) could be --all
+#   ${1} = ${wp_site}
+#   ${2} = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file) could be --all
 #
 # Outputs:
 #   0 if plugin was installed, 1 if not.
@@ -613,8 +613,8 @@ function wpcli_plugin_update() {
 # Get WordPress plugin version
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${plugin}
+#   ${1} = ${wp_site}
+#   ${2} = ${plugin}
 #
 # Outputs:
 #   ${plugin_version}
@@ -638,8 +638,8 @@ function wpcli_plugin_get_version() {
 # Activate WordPress plugin
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
+#   ${1} = ${wp_site}
+#   ${2} = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
 #
 # Outputs:
 #   0 if plugin was activated, 1 if not.
@@ -676,8 +676,8 @@ function wpcli_plugin_activate() {
 # Deactivate WordPress plugin
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
+#   ${1} = ${wp_site}
+#   ${2} = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
 #
 # Outputs:
 #   0 if plugin was deactivated, 1 if not.
@@ -714,8 +714,8 @@ function wpcli_plugin_deactivate() {
 # Delete WordPress plugin
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
+#   ${1} = ${wp_site}
+#   ${2} = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
 #
 # Outputs:
 #   0 if plugin was deleted, 1 if not.
@@ -760,8 +760,8 @@ function wpcli_plugin_delete() {
 # Check if plugin is active
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
+#   ${1} = ${wp_site}
+#   ${2} = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
 #
 # Outputs:
 #   0 if plugin was active, 1 if not.
@@ -806,8 +806,8 @@ function wpcli_plugin_is_active() {
 # Check if plugin is installed
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
+#   ${1} = ${wp_site}
+#   ${2} = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
 #
 # Outputs:
 #   0 if plugin was deleted, 1 if not.
@@ -829,8 +829,8 @@ function wpcli_plugin_is_installed() {
 # Force plugin reinstall
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
+#   ${1} = ${wp_site}
+#   ${2} = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
 #
 # Outputs:
 #   0 if plugin was deleted, 1 if not.
@@ -873,7 +873,7 @@ function wpcli_plugin_version_rollback() {
 
     # TODO: implement this
     # $1= wp_site
-    # $2= wp_plugin
+    # ${2} = wp_plugin
     # $3= wp_plugin_v (version to install)
 
     #sudo -u www-data wp --path="${wp_site}" plugin update "${wp_plugin}" --version="${wp_plugin_v}" --dry-run
@@ -889,8 +889,8 @@ function wpcli_plugin_version_rollback() {
 # Install WordPress theme
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${theme}
+#   ${1} = ${wp_site}
+#   ${2} = ${theme}
 #
 # Outputs:
 #   0 if plugin was deleted, 1 if not.
@@ -925,8 +925,8 @@ function wpcli_theme_install() {
 # Delete WordPress theme
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${theme}
+#   ${1} = ${wp_site}
+#   ${2} = ${theme}
 #
 # Outputs:
 #   0 if plugin was deleted, 1 if not.
@@ -965,12 +965,12 @@ function wpcli_theme_delete() {
 # Startup script (post-install actions)
 #
 # Arguments:
-#   $1 = ${wp_site}           - Site path
-#   $1 = ${site_url}          - Site URL
-#   $2 = ${site_name}         - Site Display Name
-#   $3 = ${wp_user_name}
-#   $4 = ${wp_user_passw}
-#   $5 = ${wp_user_mail}
+#   ${1} = ${wp_site}           - Site path
+#   ${1} = ${site_url}          - Site URL
+#   ${2} = ${site_name}         - Site Display Name
+#   ${3} = ${wp_user_name}
+#   ${4} = ${wp_user_passw}
+#   ${5} = ${wp_user_mail}
 #
 # Outputs:
 #   0 if plugin was deleted, 1 if not.
@@ -1076,11 +1076,11 @@ function wpcli_run_startup_script() {
 # Create new config
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${database}
-#   $3 = ${db_user_name}
-#   $4 = ${db_user_passw}
-#   $4 = ${wp_locale}
+#   ${1} = ${wp_site}
+#   ${2} = ${database}
+#   ${3} = ${db_user_name}
+#   ${4} = ${db_user_passw}
+#   ${4} = ${wp_locale}
 #
 # Outputs:
 #   0 if plugin was deleted, 1 if not.
@@ -1123,7 +1123,7 @@ function wpcli_create_config() {
 # Set/shuffle salts
 #
 # Arguments:
-#   $1 = ${wp_site}
+#   ${1} = ${wp_site}
 #
 # Outputs:
 #   0 if salts where set/shuffle, 1 if not.
@@ -1157,7 +1157,7 @@ function wpcli_set_salts() {
 # Delete not core files
 #
 # Arguments:
-#   $1 = ${wp_site}
+#   ${1} = ${wp_site}
 #
 # Outputs:
 #   0 if core files were deleted, 1 if not.
@@ -1198,7 +1198,7 @@ function wpcli_delete_not_core_files() {
 # Get maintenance mode status
 #
 # Arguments:
-#   $1 = ${wp_site}
+#   ${1} = ${wp_site}
 #
 # Outputs:
 #   ${maintenance_mode_status}
@@ -1235,8 +1235,8 @@ function wpcli_maintenance_mode_status() {
 # Set maintenance mode status
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${mode} - activate/deactivate
+#   ${1} = ${wp_site}
+#   ${2} = ${mode} - activate/deactivate
 #
 # Outputs:
 #   ${maintenance_mode_status}
@@ -1274,7 +1274,7 @@ function wpcli_maintenance_mode_set() {
 # Seo-yoast reindex
 #
 # Arguments:
-#   $1 = ${wp_site}
+#   ${1} = ${wp_site}
 #
 # Outputs:
 #   0 if the reindex was successful, 1 if not.
@@ -1319,7 +1319,7 @@ function wpcli_seoyoast_reindex() {
 # Plugin installer menu
 #
 # Arguments:
-#   $1 = ${wp_site}
+#   ${1} = ${wp_site}
 #
 # Outputs:
 #   none
@@ -1382,7 +1382,7 @@ function wpcli_default_plugins_installer() {
 # Get WordPress version
 #
 # Arguments:
-#   $1 = ${wp_site}
+#   ${1} = ${wp_site}
 #
 # Outputs:
 #   ${core_version}
@@ -1417,7 +1417,7 @@ function wpcli_get_wpcore_version() {
 # Get database prefix
 #
 # Arguments:
-#   $1 = ${wp_site}
+#   ${1} = ${wp_site}
 #
 # Outputs:
 #   ${db_prefix}
@@ -1456,7 +1456,7 @@ function wpcli_db_get_prefix() {
 # Check database credentials
 #
 # Arguments:
-#   $1 = ${wp_site}
+#   ${1} = ${wp_site}
 #
 # Outputs:
 #   ${db_check}
@@ -1497,8 +1497,8 @@ function wpcli_db_check() {
 # Check database credentials
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${db_prefix}
+#   ${1} = ${wp_site}
+#   ${2} = ${db_prefix}
 #
 # Outputs:
 #   0 on success, 1 on error
@@ -1541,9 +1541,9 @@ function wpcli_db_change_tables_prefix() {
 #   Ref: https://developer.wordpress.org/cli/commands/search-replace/
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${search}
-#   $3 = ${replace}
+#   ${1} = ${wp_site}
+#   ${2} = ${search}
+#   ${3} = ${replace}
 #
 # Outputs:
 #   0 on success, 1 on error
@@ -1614,9 +1614,9 @@ function wpcli_search_and_replace() {
 # Clean Database
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${search}
-#   $3 = ${replace}
+#   ${1} = ${wp_site}
+#   ${2} = ${search}
+#   ${3} = ${replace}
 #
 # Outputs:
 #   0 on success, 1 on error
@@ -1658,8 +1658,8 @@ function wpcli_clean_database() {
 # Database export
 #
 # Arguments:
-#   $1 = ${wp_site} (site path)
-#   $2 = ${dump_file}
+#   ${1} = ${wp_site} (site path)
+#   ${2} = ${dump_file}
 #
 # Outputs:
 #   0 on success, 1 on error
@@ -1698,10 +1698,10 @@ function wpcli_export_database() {
 # Create WordPress user
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${user}
-#   $3 = ${mail}
-#   $4 = ${role}
+#   ${1} = ${wp_site}
+#   ${2} = ${user}
+#   ${3} = ${mail}
+#   ${4} = ${role}
 #
 # Outputs:
 #   0 on success, 1 on error
@@ -1744,9 +1744,9 @@ function wpcli_user_create() {
 # Reset WordPress user password
 #
 # Arguments:
-#   $1 = ${wp_site} (site path)
-#   $2 = ${wp_user}
-#   $3 = ${wp_user_pass}
+#   ${1} = ${wp_site} (site path)
+#   ${2} = ${wp_user}
+#   ${3} = ${wp_user_pass}
 #
 # Outputs:
 #   0 on success, 1 on error
@@ -1793,8 +1793,8 @@ function wpcli_user_reset_passw() {
 # Change seo visibility
 #
 # Arguments:
-#   $1 = ${wp_site} (site path)
-#   $2 = ${visibility} (0=off or 1=on)
+#   ${1} = ${wp_site} (site path)
+#   ${2} = ${visibility} (0=off or 1=on)
 #
 # Outputs:
 #   0 on success, 1 on error
@@ -1837,8 +1837,8 @@ function wpcli_change_wp_seo_visibility() {
 # Update upload_path
 #
 # Arguments:
-#   $1 = ${wp_site} (site path)
-#   $2 = ${upload_path}
+#   ${1} = ${wp_site} (site path)
+#   ${2} = ${upload_path}
 #
 # Outputs:
 #   0 on success, 1 on error
@@ -1882,8 +1882,8 @@ function wpcli_update_upload_path() {
 # Set Debug mode
 #
 # Arguments:
-#   $1 = ${wp_site} (site path)
-#   $2 = ${debug_mode} (true or false)
+#   ${1} = ${wp_site} (site path)
+#   ${2} = ${debug_mode} (true or false)
 # Outputs:
 #   0 on success, 1 on error
 ################################################################################
@@ -1930,7 +1930,7 @@ function wpcli_set_debug_mode() {
 # Flush WordPress cache (core)
 #
 # Arguments:
-#   $1 = ${wp_site} (site path)
+#   ${1} = ${wp_site} (site path)
 #
 # Outputs:
 #   0 on success, 1 on error
@@ -1975,7 +1975,7 @@ function wpcli_cache_flush() {
 # WP Rocket: Clean cache
 #
 # Arguments:
-#   $1 = ${wp_site} (site path)
+#   ${1} = ${wp_site} (site path)
 #
 # Outputs:
 #   0 on success, 1 on error
@@ -2016,7 +2016,7 @@ function wpcli_rocket_cache_clean() {
 # WP Rocket: Activate cache
 #
 # Arguments:
-#   $1 = ${wp_site} (site path)
+#   ${1} = ${wp_site} (site path)
 #
 # Outputs:
 #   0 on success, 1 on error
@@ -2057,7 +2057,7 @@ function wpcli_rocket_cache_activate() {
 # WP Rocket: Deactivate cache
 #
 # Arguments:
-#   $1 = ${wp_site} (site path)
+#   ${1} = ${wp_site} (site path)
 #
 # Outputs:
 #   0 on success, 1 on error
@@ -2098,7 +2098,7 @@ function wpcli_rocket_cache_deactivate() {
 # WP Rocket: Export settings
 #
 # Arguments:
-#   $1 = ${wp_site} (site path)
+#   ${1} = ${wp_site} (site path)
 #
 # Outputs:
 #   0 on success, 1 on error
@@ -2139,8 +2139,8 @@ function wpcli_rocket_settings_export() {
 # WP Rocket: Import settings
 #
 # Arguments:
-#   $1 = ${wp_site} (site path)
-#   $2 = ${settings_json}
+#   ${1} = ${wp_site} (site path)
+#   ${2} = ${settings_json}
 #
 # Outputs:
 #   0 on success, 1 on error
@@ -2186,7 +2186,7 @@ function wpcli_rocket_settings_import() {
 # Get configured site home from WordPress installation options
 #
 # Arguments:
-#   $1 = ${wp_site}
+#   ${1} = ${wp_site}
 #
 # Outputs:
 #   ${wp_option_home}
@@ -2232,7 +2232,7 @@ function wpcli_option_get_home() {
 # Get configured site url from WordPress installation options
 #
 # Arguments:
-#   $1 = ${wp_site}
+#   ${1} = ${wp_site}
 #
 # Outputs:
 #   ${wp_option_siteurl}
@@ -2278,8 +2278,8 @@ function wpcli_option_get_siteurl() {
 # Get a configuration option on a WordPress installation.
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${wp_config_option}
+#   ${1} = ${wp_site}
+#   ${2} = ${wp_config_option}
 #
 # Outputs:
 #   0 if option was configured, 1 on error.
@@ -2316,9 +2316,9 @@ function wpcli_config_get() {
 # Set a configuration option on a WordPress installation.
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${wp_config_option}
-#   $3 = ${wp_config_option_value}
+#   ${1} = ${wp_site}
+#   ${2} = ${wp_config_option}
+#   ${3} = ${wp_config_option_value}
 #
 # Outputs:
 #   0 if option was configured, 1 on error.
@@ -2356,8 +2356,8 @@ function wpcli_config_set() {
 # Delete all comments marked as an specific status.
 #
 # Arguments:
-#   $1 = ${wp_site}
-#   $2 = ${wp_comment_status} - spam or hold
+#   ${1} = ${wp_site}
+#   ${2} = ${wp_comment_status} - spam or hold
 #
 # Outputs:
 #   0 if option was configured, 1 on error.

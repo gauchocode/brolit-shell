@@ -110,7 +110,7 @@ function system_timezone_configuration() {
 # Change current ssh port
 #
 # Arguments:
-#   $1 = ${new_ssh_port}
+#   ${1} = ${new_ssh_port}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -153,7 +153,7 @@ function system_change_current_ssh_port() {
 # Change server hostname
 #
 # Arguments:
-#   $1 = ${new_hostname}
+#   ${1} = ${new_hostname}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -192,7 +192,7 @@ function system_change_server_hostname() {
 # Detect IP version
 #
 # Arguments:
-#   $1 = ${ip_address}
+#   ${1} = ${ip_address}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -225,7 +225,7 @@ function system_detect_ip_version() {
 # Add floating IP
 #
 # Arguments:
-#   $1 = ${floating_IP}
+#   ${1} = ${floating_IP}
 #
 # Outputs:
 #   0 if ok, 1 on error.

@@ -174,7 +174,7 @@ function firewall_status() {
 # Allow specific services on firewall.
 #
 # Arguments:
-#   $1 = ${service} - service or port
+#   ${1} = ${service} - service or port
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -232,7 +232,7 @@ function firewall_allow() {
 # Deny specific services on firewall.
 #
 # Arguments:
-#   $1 = ${service}
+#   ${1} = ${service}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -288,7 +288,7 @@ function firewall_deny() {
 # Fail2ban status
 #
 # Arguments:
-#   $1 = {service} - Optional
+#   ${1} = {service} - Optional
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -346,7 +346,7 @@ function firewall_fail2ban_restart() {
 # Fail2ban ban IP
 #
 # Arguments:
-#   $1 = IP
+#   ${1} = IP
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -364,7 +364,7 @@ function firewall_fail2ban_ban_ip() {
 # Fail2ban unban IP
 #
 # Arguments:
-#   $1 = IP
+#   ${1} = IP
 #
 # Outputs:
 #   0 if ok, 1 on error.

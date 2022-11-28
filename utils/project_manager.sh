@@ -449,12 +449,12 @@ function project_manager_menu_new_project_type() {
 # Task handler for project functions
 #
 # Arguments:
-#  $1 = ${subtask}
-#  $2 = ${sites}
-#  $3 = ${ptype}
-#  $4 = ${domain}
-#  $5 = ${pname}
-#  $6 = ${pstate}
+#  ${1} = ${subtask}
+#  ${2} = ${sites}
+#  ${3} = ${ptype}
+#  ${4} = ${domain}
+#  ${5} = ${pname}
+#  ${6} = ${pstate}
 #
 # Outputs:
 #   global vars
@@ -501,12 +501,12 @@ function project_tasks_handler() {
 # Task handler for project functions
 #
 # Arguments:
-#  $1 = ${subtask}
-#  $2 = ${sites}
-#  $3 = ${ptype}
-#  $4 = ${domain}
-#  $5 = ${pname}
-#  $6 = ${pstate}
+#  ${1} = ${subtask}
+#  ${2} = ${sites}
+#  ${3} = ${ptype}
+#  ${4} = ${domain}
+#  ${5} = ${pname}
+#  ${6} = ${pstate}
 #
 # Outputs:
 #   global vars

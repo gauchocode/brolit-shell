@@ -12,7 +12,7 @@
 # wpcli manager function
 #
 # Arguments:
-#   $1 = none
+#   ${1} = none
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -83,7 +83,7 @@ function wpcli_manager() {
 # Main menu for wpcli functions
 #
 # Arguments:
-#   $1 = ${wp_site}
+#   ${1} = ${wp_site}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -356,7 +356,7 @@ function wpcli_main_menu() {
 
 function wpcli_profiler_menu() {
 
-  # $1 = ${wp_site}
+  # ${1} = ${wp_site}
 
   local wp_site="${1}"
 

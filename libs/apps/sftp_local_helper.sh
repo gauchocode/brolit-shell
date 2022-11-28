@@ -12,9 +12,9 @@
 # Private: add folder permission
 #
 # Arguments:
-#  $1 = ${username}
-#  $2 = ${dir_path}
-#  $3 = ${folder}
+#  ${1} = ${username}
+#  ${2} = ${dir_path}
+#  ${3} = ${folder}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -73,7 +73,7 @@ function _sftp_add_folder_permission() {
 # Private: test sftp connection
 #
 # Arguments:
-#  $1 = ${username}
+#  ${1} = ${username}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -91,9 +91,9 @@ function _sftp_test_connection() {
 # Create sftp user
 #
 # Arguments:
-#  $1 = ${username}
-#  $2 = ${groupname}
-#  $3 = ${shell_access} (true,false)
+#  ${1} = ${username}
+#  ${2} = ${groupname}
+#  ${3} = ${shell_access} (true,false)
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -189,7 +189,7 @@ function sftp_create_user() {
 # Create sftp group
 #
 # Arguments:
-#  $1 = ${groupname} #sftp_users
+#  ${1} = ${groupname} #sftp_users
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -220,7 +220,7 @@ function sftp_create_group() {
 # Delete sftp user
 #
 # Arguments:
-#  $1 = ${username}
+#  ${1} = ${username}
 #
 # Outputs:
 #  0 if ok, 1 on error.

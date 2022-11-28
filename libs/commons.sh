@@ -656,8 +656,8 @@ function cleanup() {
 # Die
 #
 # Arguments:
-#   $1 = {msg}
-#   $2 = {code}
+#   ${1} = {msg}
+#   ${2} = {code}
 #
 # Outputs:
 #   ${code}
@@ -694,7 +694,7 @@ function get_ubuntu_version() {
 # Array to checklist
 #
 # Arguments:
-#   $1 = {array}
+#   ${1} = {array}
 #
 # Outputs:
 #   ${checklist_array}
@@ -729,7 +729,7 @@ function array_to_checklist() {
 #
 # Arguments:
 #   $1= ${menutitle}
-#   $2= ${startdir}
+#   ${2} = ${startdir}
 #
 # Outputs:
 #   ${filename} and ${filepath}
@@ -787,7 +787,7 @@ function file_browser() {
 #
 # Arguments:
 #   $1= ${menutitle}
-#   $2= ${startdir}
+#   ${2} = ${startdir}
 #
 # Outputs:
 #   $filename and $filepath
@@ -909,7 +909,7 @@ function get_file_size() {
 #
 # Arguments:
 #   $1= ${source_path}
-#   $2= ${destination_path}
+#   ${2} = ${destination_path}
 #   $3= ${excluded_path} - Optional: Need to be a relative path
 #
 # Outputs:
@@ -959,7 +959,7 @@ function copy_files() {
 #
 # Arguments:
 #   $1= ${source_path}
-#   $2= ${destination_path}
+#   ${2} = ${destination_path}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1000,7 +1000,7 @@ function move_files() {
 # Calculates disk usage
 #
 # Arguments:
-#   $1 = ${disk_volume}
+#   ${1} = ${disk_volume}
 #
 # Outputs:
 #   An string with disk usage
@@ -1026,7 +1026,7 @@ function calculate_disk_usage() {
 # Check if a specific port is in use
 #
 # Arguments:
-#   $1 = ${port}
+#   ${1} = ${port}
 #
 # Outputs:
 #   0 if port is in use, or 1 if not
@@ -1054,8 +1054,8 @@ function network_port_is_use() {
 # Find next available port (port range for check)
 #
 # Arguments:
-#   $1 = ${port_start} - port range start
-#   $2 = ${port_end} - port range end
+#   ${1} = ${port_start} - port range start
+#   ${2} = ${port_end} - port range end
 #
 # Outputs:
 #   0 if port is in use, or 1 if not
@@ -1087,7 +1087,7 @@ function network_next_available_port() {
 # Count directories on a specific path
 #
 # Arguments:
-#   $1 = ${dir_path}
+#   ${1} = ${dir_path}
 #
 # Outputs:
 #   number of directories
@@ -1112,7 +1112,7 @@ function count_directories_on_directory() {
 # Count files on a specific path
 #
 # Arguments:
-#   $1 = ${dir_path}
+#   ${1} = ${dir_path}
 #
 # Outputs:
 #   number of files
@@ -1137,7 +1137,7 @@ function count_files_on_directory() {
 # Remove spaces chars from string
 #
 # Arguments:
-#   $1 = ${string}
+#   ${1} = ${string}
 #
 # Outputs:
 #   string
@@ -1156,7 +1156,7 @@ function string_remove_spaces() {
 # Remove first and last quote (") from a string
 #
 # Arguments:
-#   $1 = ${string}
+#   ${1} = ${string}
 #
 # Outputs:
 #   string
@@ -1179,7 +1179,7 @@ function string_remove_quotes() {
 # Remove special chars from string
 #
 # Arguments:
-#   $1 = ${string}
+#   ${1} = ${string}
 #
 # Outputs:
 #   string
@@ -1206,9 +1206,9 @@ function string_remove_special_chars() {
 # Change directory ownership
 #
 # Arguments:
-#   $1 = ${user}
-#   $2 = ${group}
-#   $3 = ${path}
+#   ${1} = ${user}
+#   ${2} = ${group}
+#   ${3} = ${path}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1293,7 +1293,7 @@ function prompt_return_or_finish() {
 # Prompt return or finish
 #
 # Arguments:
-#   $1 = ${file_with_path}
+#   ${1} = ${file_with_path}
 #
 # Outputs:
 #   $file_name
@@ -1316,9 +1316,9 @@ function extract_filename_from_path() {
 # Extract compressed files
 #
 # Arguments:
-#   $1 = ${file_path} - File to uncompress or extract
-#   $2 = ${directory_to_extract} - Dir to uncompress file
-#   $3 = ${compress_type} - Optional: compress-program (ex: lbzip2)
+#   ${1} = ${file_path} - File to uncompress or extract
+#   ${2} = ${directory_to_extract} - Dir to uncompress file
+#   ${3} = ${compress_type} - Optional: compress-program (ex: lbzip2)
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1451,9 +1451,9 @@ function decompress() {
 # Compress files or directories
 #
 # Arguments:
-#   $1 = ${file_path} - File to uncompress or extract
-#   $2 = ${directory_to_extract} - Dir to uncompress file
-#   $3 = ${compress_type} - Optional: compress-program (ex: lbzip2)
+#   ${1} = ${file_path} - File to uncompress or extract
+#   ${2} = ${directory_to_extract} - Dir to uncompress file
+#   ${3} = ${compress_type} - Optional: compress-program (ex: lbzip2)
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1532,8 +1532,8 @@ function compress() {
 # Install script on crontab
 #
 # Arguments:
-#   $1 = ${script}
-#   $2 = ${scheduled_time}
+#   ${1} = ${script}
+#   ${2} = ${scheduled_time}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1590,7 +1590,7 @@ function brolit_cronjob_install() {
 # SSH Keygen
 #
 # Arguments:
-#   $1 = ${keydir}
+#   ${1} = ${keydir}
 #
 # Outputs:
 #   $key
@@ -1995,7 +1995,7 @@ function show_help() {
 # Tasks handler
 #
 # Arguments:
-#   $1 = ${task}
+#   ${1} = ${task}
 #
 # Outputs:
 #   global vars

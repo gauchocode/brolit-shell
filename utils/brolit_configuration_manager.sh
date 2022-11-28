@@ -12,7 +12,7 @@
 # Private: load server configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -75,7 +75,7 @@ function _brolit_configuration_load_server_config() {
 # Private: load sftp backup configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -119,7 +119,7 @@ function _brolit_configuration_load_backup_sftp() {
 # Private: load dropbox backup configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -176,7 +176,7 @@ function _brolit_configuration_load_backup_dropbox() {
 # Private: load local backup configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -210,7 +210,7 @@ function _brolit_configuration_load_backup_local() {
 # Private: load s3 backup configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -281,7 +281,7 @@ function _brolit_configuration_load_backup_s3() {
 # Private: load duplicity backup configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -331,7 +331,7 @@ function _brolit_configuration_load_backup_duplicity() {
 # Private: load backup retentions configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -418,7 +418,7 @@ function _brolit_configuration_load_backup_config() {
 # Private: load backup retentions configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -476,7 +476,7 @@ function _brolit_configuration_load_backup_retention() {
 # Private: load email notifications configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -533,7 +533,7 @@ function _brolit_configuration_load_email() {
 # Private: load Telegram notifications configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -571,7 +571,7 @@ function _brolit_configuration_load_telegram() {
 # Private: load Discord notifications configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -607,7 +607,7 @@ function _brolit_configuration_load_discord() {
 # Private: load ufw configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -646,7 +646,7 @@ function _brolit_configuration_load_firewall_ufw() {
 # Private: load fail2ban configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -681,7 +681,7 @@ function _brolit_configuration_load_firewall_fail2ban() {
 # Private: load cloudflare support configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -723,7 +723,7 @@ function _brolit_configuration_load_cloudflare() {
 # Private: load nginx configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -784,7 +784,7 @@ function _brolit_configuration_load_nginx() {
 # Private: load php configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -898,7 +898,7 @@ function _brolit_configuration_load_php() {
 # Private: load mariadb configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -1001,7 +1001,7 @@ function _brolit_configuration_load_mariadb() {
 # Private: load mysql configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -1104,7 +1104,7 @@ function _brolit_configuration_load_mysql() {
 # Private: load postgres configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -1174,7 +1174,7 @@ function _brolit_configuration_load_postgres() {
 # Private: load redis configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -1223,7 +1223,7 @@ function _brolit_configuration_load_redis() {
 # Private: load certbot configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -1277,7 +1277,7 @@ function _brolit_configuration_load_certbot() {
 # Private: load monit configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -1345,7 +1345,7 @@ function _brolit_configuration_load_monit() {
 # Private: load netdata configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -1430,7 +1430,7 @@ function _brolit_configuration_load_netdata() {
 # Private: load cockpit configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -1487,7 +1487,7 @@ function _brolit_configuration_load_cockpit() {
 # Private: load zabbix configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -1540,7 +1540,7 @@ function _brolit_configuration_load_zabbix() {
 # Private: load docker configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -1596,7 +1596,7 @@ function _brolit_configuration_load_docker() {
 # Private: load portainer configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -1664,7 +1664,7 @@ function _brolit_configuration_load_portainer() {
 # Private: load portainer agent configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -1835,7 +1835,7 @@ function _brolit_configuration_load_custom_pkgs() {
 # Private: load ufw configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -1961,7 +1961,7 @@ function _brolit_configuration_app_mysql() {
 # Check brolit configuration file
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -2031,7 +2031,7 @@ function brolit_configuration_file_check() {
 # Load brolit setup configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing
@@ -2101,7 +2101,7 @@ function brolit_configuration_setup_check() {
 # Load Brolit configuration
 #
 # Arguments:
-#   $1 = ${server_config_file}
+#   ${1} = ${server_config_file}
 #
 # Outputs:
 #   nothing

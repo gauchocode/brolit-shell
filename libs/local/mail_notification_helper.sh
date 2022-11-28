@@ -39,8 +39,8 @@
 # Mail subject status.
 #
 # Arguments:
-#   $1 = ${email_subject} // Email's subject
-#   $2 = ${email_content} // Email's content
+#   ${1} = ${email_subject} // Email's subject
+#   ${2} = ${email_content} // Email's content
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -92,11 +92,11 @@ function mail_send_notification() {
 # Mail subject status.
 #
 # Arguments:
-#   $1 = ${status_d} // Database backup status
-#   $2 = ${status_f} // Files backup status
-#   $3 = ${status_s} // Server status
-#   $4 = ${status_c} // Certificates status
-#   $5 = ${outdated} // System Packages status
+#   ${1} = ${status_d} // Database backup status
+#   ${2} = ${status_f} // Files backup status
+#   ${3} = ${status_s} // Server status
+#   ${4} = ${status_c} // Certificates status
+#   ${5} = ${outdated} // System Packages status
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -149,7 +149,7 @@ function _remove_mail_notifications_files() {
 # Mail server status section.
 #
 # Arguments:
-#   $1 = ${server_status}
+#   ${1} = ${server_status}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -257,7 +257,7 @@ function mail_package_status_section() {
 # Mail files backup section.
 #
 # Arguments:
-#   $1 = ${PACKAGES} // Packages to be updated
+#   ${1} = ${PACKAGES} // Packages to be updated
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -398,10 +398,10 @@ function mail_certificates_section() {
 # Mail backup section.
 #
 # Arguments:
-#   $1 = ${error_msg}
-#   $2 = ${error_type}
-#   $3 = ${backup_type}
-#   $4 = ${backuped_list}
+#   ${1} = ${error_msg}
+#   ${2} = ${error_type}
+#   ${3} = ${backup_type}
+#   ${4} = ${backuped_list}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -499,7 +499,7 @@ function mail_backup_section() {
 # Mail footer.
 #
 # Arguments:
-#   $1 = ${script_v}
+#   ${1} = ${script_v}
 #
 # Outputs:
 #   0 if ok, 1 on error.

@@ -135,8 +135,8 @@ function wp_config_path() {
 # Get WordPress config option
 #
 # Arguments:
-#  $1 = ${project_dir}
-#  $2 = ${wp_option}
+#  ${1} = ${project_dir}
+#  ${2} = ${wp_option}
 #
 # Outputs:
 #  ${wp_value} if ok, 1 on error.
@@ -185,9 +185,9 @@ function wp_config_get_option() {
 # Description: This function should only be used by project functions.
 #
 # Arguments:
-#  $1 = ${wp_config_file}
-#  $2 = ${wp_option}
-#  $3 = ${wp_value}
+#  ${1} = ${wp_config_file}
+#  ${2} = ${wp_option}
+#  ${3} = ${wp_value}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -235,7 +235,7 @@ function _wp_config_set_option() {
 # Change WordPress directory permissions
 #
 # Arguments:
-#  $1 = ${project_dir}
+#  ${1} = ${project_dir}
 #
 # Outputs:
 #  None
@@ -269,8 +269,8 @@ function wp_change_permissions() {
 # Replace string on WordPress database (without wp-cli)
 #
 # Arguments:
-#  $1 = ${db_prefix}
-#  $2 = ${target_db}
+#  ${1} = ${db_prefix}
+#  ${2} = ${target_db}
 #
 # Outputs:
 #  None
@@ -373,7 +373,7 @@ function wp_replace_string_on_database() {
 # Ask string to replace on WordPress database
 #
 # Arguments:
-#  $1 = ${wp_path}
+#  ${1} = ${wp_path}
 #
 # Outputs:
 #  None

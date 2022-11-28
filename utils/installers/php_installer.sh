@@ -132,7 +132,7 @@ function php_check_installed_version() {
 # Reconfigure PHP
 #
 # Arguments:
-#  $1 = ${php_v} - Optional
+#  ${1} = ${php_v} - Optional
 #
 # Outputs:
 #  String with default version.
@@ -215,7 +215,7 @@ function php_reconfigure() {
 # Php installer
 #
 # Arguments:
-#   $1 = ${php_v} - optional
+#   ${1} = ${php_v} - optional
 #
 # Outputs:
 #   nothing

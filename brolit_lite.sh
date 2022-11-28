@@ -24,8 +24,8 @@ function _timestamp() {
 # Private: Read field from json file
 #
 # Arguments:
-#  $1 = ${json_file}
-#  $2 = ${json_field}
+#  ${1} = ${json_file}
+#  ${2} = ${json_field}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -49,9 +49,9 @@ function _json_read_field() {
 # Private: Write field to json file
 #
 # Arguments:
-#  $1 = ${json_file}
-#  $2 = ${json_field}}
-#  $3 = ${json_field_value}
+#  ${1} = ${json_file}
+#  ${2} = ${json_field}
+#  ${3} = ${json_field_value}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -72,8 +72,7 @@ function _json_write_field() {
 
     else
 
-        log_event "error" "Getting value from ${json_field}" "false"
-        return 1
+        echo "Getting value from ${json_field}" && return 1
 
     fi
 
@@ -83,7 +82,7 @@ function _json_write_field() {
 # Private: Transfor output to json
 #
 # Arguments:
-#  $1 = ${mode}
+#  ${1} = ${mode}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -158,7 +157,7 @@ function _jsonify_output() {
 # Private: Remove spaces from string
 #
 # Arguments:
-#  $1 = ${string}
+#  ${1} = ${string}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -177,7 +176,7 @@ function _string_remove_spaces() {
 # Remove first and last quote (") from a string
 #
 # Arguments:
-#   $1 = ${string}
+#   ${1} = ${string}
 #
 # Outputs:
 #   string
@@ -200,7 +199,7 @@ function _string_remove_quotes() {
 # Private: Replace /n for space char
 #
 # Arguments:
-#  $1 = ${string}
+#  ${1} = ${string}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -219,7 +218,7 @@ function _string_replace_newline_with_spaces() {
 # Private: Get Domain zone id from cloudflare
 #
 # Arguments:
-#  $1 = ${zone_name}
+#  ${1} = ${zone_name}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -308,7 +307,7 @@ function _cloudflare_get_record_details() {
 # Private: Check if package is installed
 #
 # Arguments:
-#  $1 = ${package}
+#  ${1} = ${package}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -612,7 +611,7 @@ function _apache_check_installed_version() {
 # Private: Get date from backup file
 #
 # Arguments:
-#  $1 = ${backup_file}
+#  ${1} = ${backup_file}
 #
 # Outputs:
 #   ${backup_date}.
@@ -635,7 +634,7 @@ function _backup_get_date() {
 # Private: Get date from backup file
 #
 # Arguments:
-#  $1 = ${domains} - (domain.com,www.domain.com)
+#  ${1} = ${domains} - (domain.com,www.domain.com)
 #
 # Outputs:
 #   ${cert_days}.
@@ -646,19 +645,20 @@ function _certbot_certificate_get_valid_days() {
     local domain="${1}"
 
     local cert_days
+    local cert_days_output
 
     cert_days_output="$(certbot certificates --domain "${domain}" 2>&1)"
     cert_days="$(echo "${cert_days_output}" | grep -Eo 'VALID: [0-9]+[0-9]' | cut -d ' ' -f 2)"
 
-    if [[ -z ${cert_days} ]]; then
+    if [[ -n ${cert_days} ]]; then
 
         # Return
-        echo "no-cert"
+        echo "${cert_days}" && return 0
 
     else
 
         # Return
-        echo "${cert_days}"
+        echo "no-cert" && return 1
 
     fi
 
@@ -668,7 +668,7 @@ function _certbot_certificate_get_valid_days() {
 # Private: Check if domain exists on Cloudflare account
 #
 # Arguments:
-#  $1 = ${root_domain}
+#  ${1} = ${root_domain}
 #
 # Outputs:
 #   true or false.
@@ -700,8 +700,8 @@ function _cloudflare_domain_exists() {
 # Private: Check if record exists on Cloudflare account
 #
 # Arguments:
-#  $1 = ${domain}
-#  $2 = ${zone_id}
+#  ${1} = ${domain}
+#  ${2} = ${zone_id}
 #
 # Outputs:
 #   true or false.
@@ -733,7 +733,7 @@ function _cloudflare_record_exists() {
 # Private: Get domain extension from domain
 #
 # Arguments:
-#  $1 = ${domain}
+#  ${1} = ${domain}
 #
 # Outputs:
 #   ${domain_ext}
@@ -785,7 +785,7 @@ function _get_domain_extension() {
 # Private: Get subdomain part from domain
 #
 # Arguments:
-#  $1 = ${domain}
+#  ${1} = ${domain}
 #
 # Outputs:
 #   ${subdomain_part}
@@ -837,7 +837,7 @@ function _get_subdomain_part() {
 # Private: Get root domain from domain
 #
 # Arguments:
-#  $1 = ${domain}
+#  ${1} = ${domain}
 #
 # Outputs:
 #   ${root_domain}
@@ -877,7 +877,7 @@ function _get_root_domain() {
 # Private: Extract domain extension from domain
 #
 # Arguments:
-#  $1 = ${domain}
+#  ${1} = ${domain}
 #
 # Outputs:
 #   ${domain_no_ext}
@@ -887,8 +887,9 @@ function _extract_domain_extension() {
 
     local domain="${1}"
 
-    local domain_extension
     local domain_no_ext
+    local domain_extension
+    local domain_extension_output
 
     domain_extension="$(_get_domain_extension "${domain}")"
     domain_extension_output=$?
@@ -897,7 +898,7 @@ function _extract_domain_extension() {
         domain_no_ext=${domain%"$domain_extension"}
 
         # Return
-        echo "${domain_no_ext}"
+        echo "${domain_no_ext}" && return 0
 
     else
 
@@ -911,7 +912,7 @@ function _extract_domain_extension() {
 # Private: Get Wordpress config path
 #
 # Arguments:
-#  $1 = ${dir_to_search}
+#  ${1} = ${dir_to_search}
 #
 # Outputs:
 #   ${find_output}
@@ -942,7 +943,7 @@ function _wp_config_path() {
 # Check if project is listed as ignored on config
 #
 # Arguments:
-#   $1= ${project}
+#   ${1} = ${project}
 #
 # Outputs:
 #   true or false
@@ -979,7 +980,7 @@ function _project_is_ignored() {
 # Private: Get project type
 #
 # Arguments:
-#   $1 = ${dir_path}
+#   ${1} = ${dir_path}
 #
 # Outputs:
 #   ${project_type}
@@ -1068,7 +1069,7 @@ function _project_get_type() {
 # Private: Get project installation type
 #
 # Arguments:
-#   $1 = ${dir_path}
+#   ${1} = ${dir_path}
 #
 # Outputs:
 #   ${project_installation_type}
@@ -1115,7 +1116,7 @@ function _project_get_install_type() {
 # Private: Get project name from domain
 #
 # Arguments:
-#   $1 = ${project_domain}
+#   ${1} = ${project_domain}
 #
 # Outputs:
 #   ${project_type}
@@ -1152,7 +1153,7 @@ function _project_get_name_from_domain() {
 # Private: Get project stage from domain
 #
 # Arguments:
-#   $1 = ${project_domain}
+#   ${1} = ${project_domain}
 #
 # Outputs:
 #   ${project_type}
@@ -1186,8 +1187,8 @@ function _project_get_stage_from_domain() {
 # Get project config
 #
 # Arguments:
-#  $1 = ${project_path}
-#  $2 = ${config_field}
+#  ${1} = ${project_path}
+#  ${2} = ${config_field}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1225,8 +1226,8 @@ function _project_get_brolit_config_file() {
 # Get project config var
 #
 # Arguments:
-#  $1 = ${project_path}
-#  $2 = ${config_field}
+#  ${1} = ${project_path}
+#  ${2} = ${config_field}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1263,7 +1264,7 @@ function _project_get_brolit_config_var() {
 # WordPress config path
 #
 # Arguments:
-#  $1 = ${dir_to_search}
+#  ${1} = ${dir_to_search}
 #
 # Outputs:
 #  String with wp-config path
@@ -1294,8 +1295,8 @@ function _wp_config_path() {
 # Get WordPress config option
 #
 # Arguments:
-#  $1 = ${project_dir}
-#  $2 = ${wp_option}
+#  ${1} = ${project_dir}
+#  ${2} = ${wp_option}
 #
 # Outputs:
 #  ${wp_value} if ok, 1 on error.
@@ -1331,8 +1332,8 @@ function _wp_config_get_option() {
 # Get project config option from env file
 #
 # Arguments:
-#  $1 = ${file}
-#  $2 = ${variable}
+#  ${1} = ${file}
+#  ${2} = ${variable}
 #
 # Outputs:
 #  ${content} if ok, 1 on error.
@@ -1367,6 +1368,18 @@ function _project_get_config_var() {
     fi
 
 }
+
+################################################################################
+# Get project config file
+#
+# Arguments:
+#  ${1} = ${project_path}
+#  ${2} = ${project_type}
+#  ${3} = ${project_install_type}
+#
+# Outputs:
+#  ${content} if ok, 1 on error.
+################################################################################
 
 function _project_get_config_file() {
 
@@ -1414,8 +1427,8 @@ function _project_get_config_file() {
 # Get configured database
 #
 # Arguments:
-#  $1 = ${project_path}
-#  $2 = ${project_type}
+#  ${1} = ${project_path}
+#  ${2} = ${project_type}
 #
 # Outputs:
 #   ${db_name} if ok, 1 on error.
@@ -1514,14 +1527,14 @@ function _project_get_configured_database() {
 
 }
 
-########################## UTILS FOR DEVOPS ###################################
+######################### UTILS FOR BROLIT-ADMIN ###############################
 
 ################################################################################
 # Private: Check if a script is installed as a cron job
 #
 # Arguments:
-#   $1 = ${script}
-#   $2 = ${cron_file}
+#   ${1} = ${script}
+#   ${2} = ${cron_file}
 #
 # Outputs:
 #   0 if not found, 1 if found
@@ -1559,8 +1572,8 @@ function _cronjob_check() {
 # Private: Install script as a cron job
 #
 # Arguments:
-#   $1 = ${script}
-#   $2 = ${scheduled_time}
+#   ${1} = ${script}
+#   ${2} = ${scheduled_time}
 #
 # Outputs:
 #   0 if script was installed ok, 1 on error
@@ -2335,7 +2348,7 @@ function firewall_get_apps_details() {
 # List package to upgrade, return JSON
 #
 # Arguments:
-#   $1 - ${force}
+#   ${1} = ${force}
 #
 # Outputs:
 #   json output with packages to upgrade
@@ -2404,7 +2417,7 @@ function _mysql_get_database_size() {
 # Show server data
 #
 # Arguments:
-#   $1 - ${force}
+#   ${1} - ${force}
 #
 # Outputs:
 #   0 if ok, 1 on error.

@@ -224,7 +224,7 @@ function cloudflare_ask_rootdomain() {
   # TODO: check with CF API if root domain exists
 
   # Parameters
-  # $1 = ${suggested_root_domain} (could be empty)
+  # ${1} = ${suggested_root_domain} (could be empty)
 
   local suggested_root_domain="${1}"
 
@@ -251,7 +251,7 @@ function cloudflare_ask_subdomains() {
   # TODO: MAKE IT WORKS
 
   # Parameters
-  # $1 = ${subdomains} optional to select default option (could be empty)
+  # ${1} = ${subdomains} optional to select default option (could be empty)
 
   local subdomains="${1}"
 

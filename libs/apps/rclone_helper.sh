@@ -63,7 +63,7 @@ function rclone_read_config() {
 # Create directory on rclone remote host
 #
 # Arguments:
-#   $1 = ${remote_directory}
+#   ${1} = ${remote_directory}
 #
 # Outputs:
 #   nothing
@@ -82,8 +82,8 @@ function rclone_create_dir() {
 # Upload backup from rclone remote host
 #
 # Arguments:
-#   $1 = ${file_to_upload} (entire file path)
-#   $2 = ${remote_directory}
+#   ${1} = ${file_to_upload} (entire file path)
+#   ${2} = ${remote_directory}
 #
 # Outputs:
 #   nothing
@@ -105,8 +105,8 @@ function rclone_upload() {
 # Download backup from rclone remote host
 #
 # Arguments:
-#   $1 = ${file_to_download} (entire file path)
-#   $2 = ${remote_directory}
+#   ${1} = ${file_to_download} (entire file path)
+#   ${2} = ${remote_directory}
 #
 # Outputs:
 #   nothing
