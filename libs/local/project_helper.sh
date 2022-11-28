@@ -12,8 +12,8 @@
 # Get project config option from env file
 #
 # Arguments:
-#  $1 = ${file}
-#  $2 = ${variable}
+#  ${1} = ${file}
+#  ${2} = ${variable}
 #
 # Outputs:
 #  ${content} if ok, 1 on error.
@@ -64,10 +64,10 @@ function project_get_config_var() {
 # Set project config option
 #
 # Arguments:
-#  $1 = ${file}
-#  $2 = ${variable}
-#  $3 = ${content}
-#  $4 = ${quotes} - optional (none, single, double)
+#  ${1} = ${file}
+#  ${2} = ${variable}
+#  ${3} = ${content}
+#  ${4} = ${quotes} - optional (none, single, double)
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -168,7 +168,7 @@ function project_is_ignored() {
 # Ask project stage
 #
 # Arguments:
-#   $1 = ${suggested_state} - optional to select default option#
+#   ${1} = ${suggested_state} - optional to select default option#
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -203,7 +203,7 @@ function project_ask_stage() {
 # Ask project name
 #
 # Arguments:
-#   $1 = ${project_name} - optional to select default option
+#   ${1} = ${project_name} - optional to select default option
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -240,7 +240,7 @@ function project_ask_name() {
 # Ask project domain
 #
 # Arguments:
-#   $1 = ${project_domain} - optional to select default option
+#   ${1} = ${project_domain} - optional to select default option
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -336,7 +336,7 @@ function project_ask_port() {
 # Ask projects main directory
 #
 # Arguments:
-#   $1 = ${folder_to_install}
+#   ${1} = ${folder_to_install}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -375,7 +375,7 @@ function project_ask_folder_to_install() {
 # Get project name from domain
 #
 # Arguments:
-#   $1 = ${project_domain}
+#   ${1} = ${project_domain}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -412,7 +412,7 @@ function project_get_name_from_domain() {
 # Get project stage from domain
 #
 # Arguments:
-#   $1 = ${project_domain}
+#   ${1} = ${project_domain}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -450,15 +450,15 @@ function project_get_stage_from_domain() {
 # Update/Create project config file
 #
 # Arguments:
-#  $1 = ${project_path}
-#  $2 = ${project_name}
-#  $3 = ${project_stage}
-#  $4 = ${project_type}
-#  $5 = ${project_db_status}
-#  $6 = ${project_db_engine}
-#  $7 = ${project_db_name}
-#  $8 = ${project_db_host}
-#  $9 = ${project_db_user}
+#  ${1} = ${project_path}
+#  ${2} = ${project_name}
+#  ${3} = ${project_stage}
+#  ${4} = ${project_type}
+#  ${5} = ${project_db_status}
+#  ${6} = ${project_db_engine}
+#  ${7} = ${project_db_name}
+#  ${8} = ${project_db_host}
+#  ${9} = ${project_db_user}
 #  $10 = ${project_db_pass}
 #  $11 = ${project_prymary_subdomain}
 #  $12 = ${project_secondary_subdomains}
@@ -577,7 +577,7 @@ function project_update_brolit_config() {
 # Generate project config
 #
 # Arguments:
-#  $1 = ${project_path}
+#  ${1} = ${project_path}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -678,15 +678,15 @@ function project_generate_brolit_config() {
   # Create project config file
 
   # Arguments:
-  #  $1 = ${project_path}
-  #  $2 = ${project_name}
-  #  $3 = ${project_stage}
-  #  $4 = ${project_type}
-  #  $5 = ${project_db_status}
-  #  $6 = ${project_db_engine}
-  #  $7 = ${project_db_name}
-  #  $8 = ${project_db_host}
-  #  $9 = ${project_db_user}
+  #  ${1} = ${project_path}
+  #  ${2} = ${project_name}
+  #  ${3} = ${project_stage}
+  #  ${4} = ${project_type}
+  #  ${5} = ${project_db_status}
+  #  ${6} = ${project_db_engine}
+  #  ${7} = ${project_db_name}
+  #  ${8} = ${project_db_host}
+  #  ${9} = ${project_db_user}
   #  $10 = ${project_db_pass}
   #  $11 = ${project_prymary_subdomain}
   #  $12 = ${project_secondary_subdomains}
@@ -702,8 +702,8 @@ function project_generate_brolit_config() {
 # Get project config var
 #
 # Arguments:
-#  $1 = ${project_path}
-#  $2 = ${config_field}
+#  ${1} = ${project_path}
+#  ${2} = ${config_field}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -738,9 +738,9 @@ function project_get_brolit_config_var() {
 # Update project config
 #
 # Arguments:
-#  $1 = ${project_path}
-#  $2 = ${config_field}
-#  $3 = ${config_value}
+#  ${1} = ${project_path}
+#  ${2} = ${config_field}
+#  ${3} = ${config_value}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -787,8 +787,8 @@ function project_set_brolit_config_var() {
 # Get brolit project config file
 #
 # Arguments:
-#  $1 = ${project_path}
-#  $2 = ${config_field}
+#  ${1} = ${project_path}
+#  ${2} = ${config_field}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -826,9 +826,9 @@ function project_get_brolit_config_file() {
 # Get project config file
 #
 # Arguments:
-#  $1 = ${project_path}
-#  $2 = ${project_type}
-#  $3 = ${project_install_type}
+#  ${1} = ${project_path}
+#  ${2} = ${project_type}
+#  ${3} = ${project_install_type}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -890,9 +890,9 @@ function project_get_config_file() {
 # Get configured database engine
 #
 # Arguments:
-#  $1 = ${project_path}
-#  $2 = ${project_type}
-#  $3 = ${project_install_type}
+#  ${1} = ${project_path}
+#  ${2} = ${project_type}
+#  ${3} = ${project_install_type}
 #
 # Outputs:
 #   ${db_engine} if ok, 1 on error.
@@ -997,10 +997,10 @@ function project_get_configured_database_engine() {
 # Set/Update database engine
 #
 # Arguments:
-#  $1 = ${project_path}
-#  $2 = ${project_type}
-#  $3 = ${project_install_type}
-#  $4 = ${db_engine}
+#  ${1} = ${project_path}
+#  ${2} = ${project_type}
+#  ${3} = ${project_install_type}
+#  ${4} = ${db_engine}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1091,10 +1091,10 @@ function project_set_configured_database_engine() {
 # Set/Update database host
 #
 # Arguments:
-#  $1 = ${project_path}
-#  $2 = ${project_type}
-#  $3 = ${project_install_type}
-#  $4 = ${database_host} (localhost, docker_service_name)
+#  ${1} = ${project_path}
+#  ${2} = ${project_type}
+#  ${3} = ${project_install_type}
+#  ${4} = ${database_host} (localhost, docker_service_name)
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1183,8 +1183,8 @@ function project_set_configured_database_host() {
 # Get configured database
 #
 # Arguments:
-#  $1 = ${project_path}
-#  $2 = ${project_type}
+#  ${1} = ${project_path}
+#  ${2} = ${project_type}
 #
 # Outputs:
 #   ${database_name} if ok, 1 on error.
@@ -1287,10 +1287,10 @@ function project_get_configured_database() {
 # Set/Update configured database
 #
 # Arguments:
-#  $1 = ${project_path}
-#  $2 = ${project_type}
-#  $3 = ${project_install_type}
-#  $4 = ${database_name}
+#  ${1} = ${project_path}
+#  ${2} = ${project_type}
+#  ${3} = ${project_install_type}
+#  ${4} = ${database_name}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1379,8 +1379,8 @@ function project_set_configured_database() {
 # Get configured database user
 #
 # Arguments:
-#  $1 = ${project_path}
-#  $2 = ${project_type}
+#  ${1} = ${project_path}
+#  ${2} = ${project_type}
 #
 # Outputs:
 #   ${db_user} if ok, 1 on error.
@@ -1475,10 +1475,10 @@ function project_get_configured_database_user() {
 # Set/Update database user
 #
 # Arguments:
-#  $1 = ${project_path}
-#  $2 = ${project_type}
-#  $3 = ${project_install_type}
-#  $4 = ${database_username}
+#  ${1} = ${project_path}
+#  ${2} = ${project_type}
+#  ${3} = ${project_install_type}
+#  ${4} = ${database_username}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1567,8 +1567,8 @@ function project_set_configured_database_user() {
 # Get configured database user password
 #
 # Arguments:
-#  $1 = ${project_path}
-#  $2 = ${project_type}
+#  ${1} = ${project_path}
+#  ${2} = ${project_type}
 #
 # Outputs:
 #   ${db_pass} if ok, 1 on error.
@@ -1663,10 +1663,10 @@ function project_get_configured_database_userpassw() {
 # Set/Update database user password
 #
 # Arguments:
-#  $1 = ${project_path}
-#  $2 = ${project_type}
-#  $3 = ${project_install_type}
-#  $4 = ${database_userpassw}
+#  ${1} = ${project_path}
+#  ${2} = ${project_type}
+#  ${3} = ${project_install_type}
+#  ${4} = ${database_userpassw}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1758,12 +1758,12 @@ function project_set_configured_database_userpassw() {
 # Project install
 #
 # Arguments:
-#  $1 = ${dir_path}
-#  $2 = ${project_type}
-#  $3 = ${project_domain}
-#  $4 = ${project_name}
-#  $5 = ${project_stage}
-#  $6 = ${project_root_domain}   # Optional
+#  ${1} = ${dir_path}
+#  ${2} = ${project_type}
+#  ${3} = ${project_domain}
+#  ${4} = ${project_name}
+#  ${5} = ${project_stage}
+#  ${6} = ${project_root_domain}   # Optional
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1924,7 +1924,7 @@ function project_install() {
 # Project delete files
 #
 # Arguments:
-#  $1 = ${project_domain}
+#  ${1} = ${project_domain}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -2012,8 +2012,8 @@ function project_delete_files() {
 # Project delete database
 #
 # Arguments:
-#  $1 = ${database_name}
-#  $2 = ${database_user} - Optional
+#  ${1} = ${database_name}
+#  ${2} = ${database_user} - Optional
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -2123,8 +2123,8 @@ function project_delete_database() {
 # Project delete (files, database, config, certs)
 #
 # Arguments:
-#  $1 = ${project_domain}
-#  $2 = ${delete_cf_entry} - optional (true or false)
+#  ${1} = ${project_domain}
+#  ${2} = ${delete_cf_entry} - optional (true or false)
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -2247,7 +2247,7 @@ function project_delete() {
 # Change project status (online or offline)
 #
 # Arguments:
-#   $1 = ${project_status} (online,offline)
+#   ${1} = ${project_status} (online,offline)
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -2272,7 +2272,7 @@ function project_change_status() {
 # Get project install type
 #
 # Arguments:
-#   $1 = ${dir_path}
+#   ${1} = ${dir_path}
 #
 # Outputs:
 #   ${project_install_type}
@@ -2323,7 +2323,7 @@ function project_get_install_type() {
 # Get project type
 #
 # Arguments:
-#   $1 = ${dir_path}
+#   ${1} = ${dir_path}
 #
 # Outputs:
 #   ${project_type}
@@ -2463,7 +2463,7 @@ function project_get_type() {
 # Create nginx server for an existing project
 #
 # Arguments:
-#   $1 = ${dir_path}
+#   ${1} = ${dir_path}
 #
 # Outputs:
 #   ${project_type}
@@ -2522,11 +2522,11 @@ function project_create_nginx_server() {
 # Install PHP project
 #
 # Arguments:
-#  $1 = ${project_path}
-#  $2 = ${project_domain}
-#  $3 = ${project_name}
-#  $4 = ${project_stage}
-#  $5 = ${project_root_domain}   # Optional
+#  ${1} = ${project_path}
+#  ${2} = ${project_domain}
+#  ${3} = ${project_name}
+#  ${4} = ${project_stage}
+#  ${5} = ${project_root_domain}   # Optional
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -2581,11 +2581,11 @@ function project_installer_php() {
 # Install nodejs project
 #
 # Arguments:
-#  $1 = ${project_path}
-#  $2 = ${project_domain}
-#  $3 = ${project_name}
-#  $4 = ${project_stage}
-#  $5 = ${project_root_domain}   # Optional
+#  ${1} = ${project_path}
+#  ${2} = ${project_domain}
+#  ${3} = ${project_name}
+#  ${4} = ${project_stage}
+#  ${5} = ${project_root_domain}   # Optional
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -2657,7 +2657,7 @@ function project_installer_nodejs() {
 # Get laravel version from project
 #
 # Arguments:
-#  $1 = ${project_dir}
+#  ${1} = ${project_dir}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -2681,10 +2681,10 @@ function check_laravel_version() {
 # Update domain configuration (Nginx + Cloudflare)
 #
 # Arguments:
-#  $1 = ${project_domain}
-#  $2 = ${project_type}
-#  $3 = ${project_install_type}
-#  $4 = ${project_port}
+#  ${1} = ${project_domain}
+#  ${2} = ${project_type}
+#  ${3} = ${project_install_type}
+#  ${4} = ${project_port}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -2784,13 +2784,13 @@ function project_update_domain_config() {
 # Project post install tasks
 #
 # Arguments:
-#  $1 = ${project_domain}
-#  $2 = ${project_type}
-#  $3 = ${project_name}
-#  $4 = ${project_stage}
-#  $5 = ${project_db_pass} - Optional (if empty, will not change it)
-#  $6 = ${old_project_domain}
-#  $7 = ${new_project_domain}
+#  ${1} = ${project_domain}
+#  ${2} = ${project_type}
+#  ${3} = ${project_name}
+#  ${4} = ${project_stage}
+#  ${5} = ${project_db_pass} - Optional (if empty, will not change it)
+#  ${6} = ${old_project_domain}
+#  ${7} = ${new_project_domain}
 #
 # Outputs:
 #   0 if ok, 1 on error.

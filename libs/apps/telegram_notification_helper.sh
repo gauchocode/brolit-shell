@@ -12,9 +12,9 @@
 # Telegram send notification
 #
 # Arguments:
-# 	$1 = {notification_title}
-# 	$2 = {notification_content}
-# 	$3 = {notification_type}
+# 	${1} = {notification_title}
+# 	${2} = {notification_content}
+# 	${3} = {notification_type}
 #
 # Outputs:
 #   0 if ok, 1 on error.

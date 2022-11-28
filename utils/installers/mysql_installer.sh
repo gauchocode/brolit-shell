@@ -117,7 +117,7 @@ function mysql_check_installed_version() {
 # MySQL initial config
 #
 # Arguments:
-#   $1 = ${project_domain}
+#   ${1} = ${project_domain}
 #
 # Outputs:
 #   0 if ok, 1 on error.

@@ -12,11 +12,11 @@
 # Create nginx server config
 #
 # Arguments:
-#   $1 = ${project_domain}
-#   $2 = ${project_type} (default, wordpress, symphony, phpmyadmin, netdata, proxy)
-#   $3 = ${server_type} (single, root_domain, multi_domain)
-#   $4 = ${redirect_domains} (list of domains or subdomains that will be redirect to project_domain) - Optional
-#   $5 = ${proxy_port} (only if project_type==proxy) - Optional
+#   ${1} = ${project_domain}
+#   ${2} = ${project_type} (default, wordpress, symphony, phpmyadmin, netdata, proxy)
+#   ${3} = ${server_type} (single, root_domain, multi_domain)
+#   ${4} = ${redirect_domains} (list of domains or subdomains that will be redirect to project_domain) - Optional
+#   ${5} = ${proxy_port} (only if project_type==proxy) - Optional
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -152,7 +152,7 @@ function nginx_server_create() {
 # Delete nginx server config
 #
 # Arguments:
-#   $1 = ${filename}
+#   ${1} = ${filename}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -186,8 +186,8 @@ function nginx_server_delete() {
 # Change nginx server status (online or offline)
 #
 # Arguments:
-#   $1 = ${project_domain}
-#   $2 = ${project_status} (online,offline)
+#   ${1} = ${project_domain}
+#   ${2} = ${project_status} (online,offline)
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -267,8 +267,8 @@ function nginx_server_change_status() {
 # Set nginx server domain
 #
 # Arguments:
-#   $1 = ${nginx_server_file} / ${tool} or ${project_domain}
-#   $2 = ${domain_name}
+#   ${1} = ${nginx_server_file} / ${tool} or ${project_domain}
+#   ${2} = ${domain_name}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -288,9 +288,9 @@ function nginx_server_set_domain() {
 # Change domain on nginx server configuration
 #
 # Arguments:
-#  $1 = ${nginx_server_file} / ${tool} or ${project_domain}
-#  $2 = ${domain_name_old}
-#  $3 = ${domain_name_new}
+#  ${1} = ${nginx_server_file} / ${tool} or ${project_domain}
+#  ${2} = ${domain_name_old}
+#  ${3} = ${domain_name_new}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -311,7 +311,7 @@ function nginx_server_change_domain() {
 # Get configured PHP version on nginx server
 #
 # Arguments:
-#  $1 = ${nginx_server_file} - Entire path
+#  ${1} = ${nginx_server_file} - Entire path
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -338,8 +338,8 @@ function nginx_server_get_current_phpv() {
 # Change PHP version on nginx server configuration
 #
 # Arguments:
-#  $1 = ${nginx_server_file} - Entire path
-#  $2 = ${new_php_v} optional
+#  ${1} = ${nginx_server_file} - Entire path
+#  ${2} = ${new_php_v} optional
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -548,7 +548,7 @@ function nginx_create_globals_config() {
 # Create empty nginx.conf file
 #
 # Arguments:
-#   $1 = ${path}
+#   ${1} = ${path}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -575,8 +575,8 @@ function nginx_create_empty_nginx_conf() {
 # Generate nginx auth config
 #
 # Arguments:
-#   $1 = ${user}
-#   $2 = ${psw}
+#   ${1} = ${user}
+#   ${2} = ${psw}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -618,7 +618,7 @@ function nginx_generate_encrypted_auth() {
 # Add http2 support to nginx server configuration
 #
 # Arguments:
-#   $1 = ${nginx_server_file}
+#   ${1} = ${nginx_server_file}
 #
 # Outputs:
 #   0 if ok, 1 on error.

@@ -42,8 +42,8 @@ function php_check_activated_version() {
 # Set/Update php version on config
 #
 # Arguments:
-#  $1 = ${php_v}
-#  $2 = ${config_file}
+#  ${1} = ${php_v}
+#  ${2} = ${config_file}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -90,7 +90,7 @@ function php_set_version_on_config() {
 # Set/Update php opcode config
 #
 # Arguments:
-#  $1 = ${php_v}
+#  ${1} = ${php_v}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -202,7 +202,7 @@ function php_count_installed_versions() {
 # PHP-FPM optimizations
 #
 # Arguments:
-#  $1 = ${php_v}
+#  ${1} = ${php_v}
 #
 # Outputs:
 #   0 if ok, 1 on error.

@@ -13,7 +13,7 @@
 #
 # Arguments:
 #  $1= ${json_file}
-#  $2= ${json_field}
+#  ${2} = ${json_field}
 #
 # Outputs:
 #  ${json_field_value}
@@ -49,7 +49,7 @@ function json_read_field() {
 #
 # Arguments:
 #  $1= ${json_file}
-#  $2= ${json_field}
+#  ${2} = ${json_field}
 #  $3= ${json_field_value}
 #
 # Outputs:

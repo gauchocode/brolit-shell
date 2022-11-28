@@ -14,7 +14,7 @@
 # Clamav Scan: Update clamav database and performs a scan.
 #
 # Arguments:
-#  $1 = {directory} - directory to scan
+#  ${1} = ${directory} - directory to scan
 #
 # Outputs:
 #  Clamav result.
@@ -86,7 +86,7 @@ function security_clamav_scan() {
 # Custom Scan: Performs a custom scan.
 #
 # Arguments:
-#  $1 = {directory} - directory to scan
+#  ${1} = ${directory} - directory to scan
 #
 # Outputs:
 #  Scan result.

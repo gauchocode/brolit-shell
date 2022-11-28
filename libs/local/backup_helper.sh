@@ -12,7 +12,7 @@
 # Get Backup filename
 #
 # Arguments:
-#  $1 = ${backup_prefix_name}
+#  ${1} = ${backup_prefix_name}
 #
 # Outputs:
 #   ${backup_filename}
@@ -72,7 +72,7 @@ function backup_get_filename() {
 # Get backup Date
 #
 # Arguments:
-#  $1 = ${backup_file}
+#  ${1} = ${backup_file}
 #
 # Outputs:
 #   ${backup_date}
@@ -95,7 +95,7 @@ function backup_get_date() {
 # Get backup rotation type (daily, weekly, monthtly)
 #
 # Arguments:
-#  $1 = ${backup_file}
+#  ${1} = ${backup_file}
 #
 # Outputs:
 #   ${backup_rotation_type}
@@ -123,10 +123,10 @@ function backup_get_rotation_type() {
 # Make server files Backup
 #
 # Arguments:
-#  $1 = ${backup_type} - Backup Type: configs, logs, data
-#  $2 = ${bk_sup_type} - Backup SubType: php, nginx, mysql
-#  $3 = ${backup_path} - Path folder to Backup
-#  $4 = ${directory_to_backup} - Folder to Backup
+#  ${1} = ${backup_type} - Backup Type: configs, logs, data
+#  ${2} = ${bk_sup_type} - Backup SubType: php, nginx, mysql
+#  ${3} = ${backup_path} - Path folder to Backup
+#  ${4} = ${directory_to_backup} - Folder to Backup
 #
 # Outputs:
 #   0 if ok, 1 if error
@@ -359,7 +359,7 @@ function backup_all_server_configs() {
 # Make Mailcow Backup
 #
 # Arguments:
-#  $1 = ${directory_to_backup} - Path folder to Backup
+#  ${1} = ${directory_to_backup} - Path folder to Backup
 #
 # Outputs:
 #   0 if ok, 1 if error
@@ -585,9 +585,9 @@ function backup_all_files() {
 # Make files Backup
 #
 # Arguments:
-#  $1 = ${backup_type} - Backup Type (site_configs or sites)
-#  $2 = ${backup_path} - Path where directories to backup are stored
-#  $3 = ${directory_to_backup} - The specific folder/file to backup
+#  ${1} = ${backup_type} - Backup Type (site_configs or sites)
+#  ${2} = ${backup_path} - Path where directories to backup are stored
+#  ${3} = ${directory_to_backup} - The specific folder/file to backup
 #
 # Outputs:
 #  0 if ok, 1 if error
@@ -818,8 +818,8 @@ function backup_all_databases() {
 # Make databases backup
 #
 # Arguments:
-#  $1 = ${databases}
-#  $2 = ${db_engine}
+#  ${1} = ${databases}
+#  ${2} = ${db_engine}
 #
 # Outputs:
 #  0 if ok, 1 if error
@@ -893,7 +893,7 @@ function backup_databases() {
 # Make database Backup
 #
 # Arguments:
-#  $1 = ${database}
+#  ${1} = ${database}
 #
 # Outputs:
 #  "backupfile backup_file_size" if ok, 1 if error
@@ -1007,8 +1007,8 @@ function backup_project_database() {
 # Make project Backup
 #
 # Arguments:
-#  $1 = ${project_domain}
-#  $2 = ${backup_type} - (all,configs,sites,databases) - Default: all
+#  ${1} = ${project_domain}
+#  ${2} = ${backup_type} - (all,configs,sites,databases) - Default: all
 #
 # Outputs:
 #   0 if ok, 1 if error
