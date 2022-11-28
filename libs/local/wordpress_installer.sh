@@ -12,11 +12,11 @@
 # Installer menu for a new WordPress Project
 #
 # Arguments:
-#   $1 = ${project_path}
-#   $2 = ${project_domain}
-#   $3 = ${project_name}
-#   $4 = ${project_stage}
-#   $5 = ${project_root_domain}   # Optional
+#   ${1} = ${project_path}
+#   ${2} = ${project_domain}
+#   ${3} = ${project_name}
+#   ${4} = ${project_stage}
+#   ${5} = ${project_root_domain}   # Optional
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -75,11 +75,11 @@ function wordpress_project_installer() {
 # New WordPress Project
 #
 # Arguments:
-#   $1 = ${project_path}
-#   $2 = ${project_domain}
-#   $3 = ${project_name}
-#   $4 = ${project_stage}
-#   $5 = ${project_root_domain}   # Optional
+#   ${1} = ${project_path}
+#   ${2} = ${project_domain}
+#   ${3} = ${project_name}
+#   ${4} = ${project_stage}
+#   ${5} = ${project_root_domain}   # Optional
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -141,11 +141,11 @@ function wordpress_project_install() {
 # Copy a WordPress Project
 #
 # Arguments:
-#   $1 = ${project_path}
-#   $2 = ${project_domain}
-#   $3 = ${project_name}
-#   $4 = ${project_stage}
-#   $5 = ${project_root_domain}   # Optional
+#   ${1} = ${project_path}
+#   ${2} = ${project_domain}
+#   ${3} = ${project_name}
+#   ${4} = ${project_stage}
+#   ${5} = ${project_root_domain}   # Optional
 #
 # Outputs:
 #   0 if ok, 1 on error.

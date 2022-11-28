@@ -106,7 +106,7 @@ function docker_list_containers() {
 # Stop docker container.
 #
 # Arguments:
-#   $1 = ${container_to_stop}
+#   ${1} = ${container_to_stop}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -172,7 +172,7 @@ function docker_list_images() {
 # Get container id
 #
 # Arguments:
-#   $1 = ${image_name}
+#   ${1} = ${image_name}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -202,7 +202,7 @@ function docker_get_container_id() {
 # Docker delete image.
 #
 # Arguments:
-#   $1 = ${image_to_delete}
+#   ${1} = ${image_to_delete}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -252,12 +252,12 @@ function docker_system_prune() {
 # Docker WordPress install.
 #
 # Arguments:
-#   $1 = ${project_path}
-#   $2 = ${project_domain}
-#   $3 = ${project_name}
-#   $4 = ${project_stage}
-#   $5 = ${project_root_domain}         # Optional
-#   $6 = ${docker_compose_template}     # Optional
+#   ${1} = ${project_path}
+#   ${2} = ${project_domain}
+#   ${3} = ${project_name}
+#   ${4} = ${project_stage}
+#   ${5} = ${project_root_domain}         # Optional
+#   ${6} = ${docker_compose_template}     # Optional
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -420,9 +420,9 @@ function docker_mysql_database_export() {
 # Docker project files import on volume
 #
 # Arguments:
-#   $1 = ${project_files}
-#   $2 = ${project_path}
-#   $3 = ${project_type}
+#   ${1} = ${project_files}
+#   ${2} = ${project_path}
+#   ${3} = ${project_type}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -470,8 +470,8 @@ function docker_project_files_import() {
 ################################################################################
 # Docker create new project install
 # Arguments:
-#   $1 = ${dir_path}
-#   $2 = ${project_type}
+#   ${1} = ${dir_path}
+#   ${2} = ${project_type}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -772,15 +772,15 @@ function docker_project_install() {
 
     # Create project config file
     # Arguments:
-    #  $1 = ${project_path}
-    #  $2 = ${project_name}
-    #  $3 = ${project_stage}
-    #  $4 = ${project_type}
-    #  $5 = ${project_db_status}
-    #  $6 = ${project_db_engine}
-    #  $7 = ${project_db_name}
-    #  $8 = ${project_db_host}
-    #  $9 = ${project_db_user}
+    #  ${1} = ${project_path}
+    #  ${2} = ${project_name}
+    #  ${3} = ${project_stage}
+    #  ${4} = ${project_type}
+    #  ${5} = ${project_db_status}
+    #  ${6} = ${project_db_engine}
+    #  ${7} = ${project_db_name}
+    #  ${8} = ${project_db_host}
+    #  ${9} = ${project_db_user}
     #  $10 = ${project_db_pass}
     #  $11 = ${project_prymary_subdomain}
     #  $12 = ${project_secondary_subdomains}

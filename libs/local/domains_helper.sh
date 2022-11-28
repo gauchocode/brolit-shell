@@ -12,7 +12,7 @@
 # Extract domain extension (from domain)
 #
 # Arguments:
-#   $1 = ${domain}
+#   ${1} = ${domain}
 #
 # Outputs:
 #   ${domain_no_ext}
@@ -51,7 +51,7 @@ function domain_extract_extension() {
 # Get root domain
 #
 # Arguments:
-#   $1 = ${domain}
+#   ${1} = ${domain}
 #
 # Outputs:
 #   ${root_domain}
@@ -95,7 +95,7 @@ function domain_get_root() {
 # Get subdomain part of domain
 #
 # Arguments:
-#   $1 = ${domain}
+#   ${1} = ${domain}
 #
 # Outputs:
 #   ${subdomain_part}
@@ -147,7 +147,7 @@ function domain_get_subdomain_part() {
 # Get domain extension
 #
 # Arguments:
-#   $1 = ${domain}
+#   ${1} = ${domain}
 #
 # Outputs:
 #   ${domain_ext}
@@ -208,7 +208,7 @@ function domain_get_extension() {
 # Ask root domain
 #
 # Arguments:
-#   $1 = ${suggested_root_domain}
+#   ${1} = ${suggested_root_domain}
 #
 # Outputs:
 #   ${root_domain}

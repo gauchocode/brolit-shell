@@ -14,14 +14,13 @@
 #   ${output}
 ################################################################################
 
-function dropbox_account_space() {
+function dropbox_account_space_free() {
 
     local output
 
-    output="$("${DROPBOX_UPLOADER}" space 2>&1)"
+    output="$("${DROPBOX_UPLOADER}" space | grep "Free:" | cut -d ":" -f 2 2>&1)"
 
-    # Return
-    echo "${output}"
+    [[ -n ${output} ]] && echo "${output}"
 
 }
 
@@ -71,8 +70,8 @@ function dropbox_check_if_file_exists() {
 # Check if directory exists on Dropbox account
 #
 # Arguments:
-#   ${1}- ${directory}
-#   ${2}- ${path}
+#   ${1} = ${directory}
+#   ${2} = ${path}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -120,7 +119,7 @@ function dropbox_check_if_directory_exists() {
 # Create directory in Dropbox
 #
 # Arguments:
-#   $1 = ${dir_to_create}
+#   ${1} = ${dir_to_create}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -172,8 +171,8 @@ function dropbox_create_dir() {
 # Upload file to Dropbox
 #
 # Arguments:
-#   $1 = ${file_to_upload}
-#   $2 = ${dropbox_directory}
+#   ${1} = ${file_to_upload}
+#   ${2} = ${dropbox_directory}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -225,8 +224,8 @@ function dropbox_upload() {
 # Drownload file from Dropbox
 #
 # Arguments:
-#   $1 = ${file_to_download}
-#   $2 = ${local_directory}
+#   ${1} = ${file_to_download}
+#   ${2} = ${local_directory}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -279,8 +278,8 @@ function dropbox_download() {
 # Delete file in Dropbox
 #
 # Arguments:
-#   $1 = ${to_delete} - full path to file or directory
-#   $2 = ${force_delete}
+#   ${1} = ${to_delete} - full path to file or directory
+#   ${2} = ${force_delete}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -352,7 +351,7 @@ function dropbox_delete() {
 # List directory on Dropbox
 #
 # Arguments:
-#   $1 = ${directory}
+#   ${1} = ${directory}
 #
 # Outputs:
 #   0 if ok, 1 on error.

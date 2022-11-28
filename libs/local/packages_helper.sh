@@ -95,7 +95,7 @@ function package_update() {
 # Check if package is installed. Ex: package_is_installed "mysql-server"
 #
 # Arguments:
-#   $1 = ${package}
+#   ${1} = ${package}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -131,7 +131,7 @@ function package_is_installed() {
 # Install package with apt command
 #
 # Arguments:
-#   $1 = ${package}
+#   ${1} = ${package}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -178,7 +178,7 @@ function package_install() {
 # Install package if not.
 #
 # Arguments:
-#   $1 = ${package}
+#   ${1} = ${package}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -390,7 +390,7 @@ function package_upgrade_all() {
 # Purge package
 #
 # Arguments:
-#   $1 = ${package}
+#   ${1} = ${package}
 #
 # Outputs:
 #   none

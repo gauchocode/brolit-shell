@@ -12,7 +12,7 @@
 # Docker exec function for database controller
 #
 # Arguments:
-#  $1 = ${docker_env_file}
+#  ${1} = ${docker_env_file}
 #
 # Outputs:
 #  ${mysql_docker_exec}
@@ -87,8 +87,8 @@ function database_list_all() {
 # Drop database
 #
 # Arguments:
-#  $1 = ${database_name}
-#  $2 = ${database_engine}
+#  ${1} = ${database_name}
+#  ${2} = ${database_engine}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -126,9 +126,9 @@ function database_drop() {
 # Drop database
 #
 # Arguments:
-#  $1 = ${database_user}
-#  $2 = ${database_user_scope}
-#  $3 = ${database_engine}
+#  ${1} = ${database_user}
+#  ${2} = ${database_user_scope}
+#  ${3} = ${database_engine}
 #
 # Outputs:
 #  0 if ok, 1 on error.

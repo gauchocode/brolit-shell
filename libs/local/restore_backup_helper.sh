@@ -612,8 +612,8 @@ function restore_backup_server_selection() {
 # Restore config files from dropbox
 #
 # Arguments:
-#   $1 = ${chosen_type_path}
-#   $2 = ${storage_project_list}
+#   ${1} = ${chosen_type_path}
+#   ${2} = ${storage_project_list}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -675,8 +675,8 @@ function restore_config_files_from_storage() {
 # Restore nginx site files
 #
 # Arguments:
-#   $1 = ${domain}
-#   $2 = ${date}
+#   ${1} = ${domain}
+#   ${2} = ${date}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -768,8 +768,8 @@ function restore_nginx_site_files() {
 # Restore letsencrypt files
 #
 # Arguments:
-#   $1 = ${domain}
-#   $2 = ${date}
+#   ${1} = ${domain}
+#   ${2} = ${date}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -840,8 +840,8 @@ function restore_letsencrypt_site_files() {
 # Restore site files
 #
 # Arguments:
-#   $1 = ${domain}
-#   $2 = ${backup_path}
+#   ${1} = ${domain}
+#   ${2} = ${backup_path}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -927,8 +927,8 @@ function restore_backup_files() {
 # Restore type selection from dropbox
 #
 # Arguments:
-#   $1 = ${chosen_server}
-#   $2 = ${remote_type_list}
+#   ${1} = ${chosen_server}
+#   ${2} = ${remote_type_list}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1193,8 +1193,8 @@ function restore_type_selection_from_storage() {
 # Restore project
 #
 # Arguments:
-#   $1 = ${chosen_server}
-#   $2 = ${chosen_status} - online or offline
+#   ${1} = ${chosen_server}
+#   ${2} = ${chosen_status} - online or offline
 #
 # Outputs:
 #   0 if ok, 1 on error.

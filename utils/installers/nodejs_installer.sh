@@ -32,7 +32,7 @@ function nodejs_check_if_installed() {
 
 function nodejs_installer() {
 
-    # $1 = ${nodejs_version} - optional
+    # ${1} = ${nodejs_version} - optional
 
     local nodejs_version="${1}"
 

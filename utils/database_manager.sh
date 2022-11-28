@@ -358,12 +358,12 @@ function database_manager_menu() {
 # Task handler for database functions
 #
 # Arguments:
-#  $1 = ${subtask}
-#  $2 = ${dbname}
-#  $3 = ${dbstage}
-#  $4 = ${dbname_n}
-#  $5 = ${dbuser}
-#  $6 = ${dbuser_psw}
+#  ${1} = ${subtask}
+#  ${2} = ${dbname}
+#  ${3} = ${dbstage}
+#  ${4} = ${dbname_n}
+#  ${5} = ${dbuser}
+#  ${6} = ${dbuser_psw}
 #
 # Outputs:
 #   global vars

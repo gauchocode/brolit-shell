@@ -12,11 +12,11 @@
 # Config minio cloud storage
 #
 # Arguments:
-#   $1 = ${server_alias}
-#   $2 = ${s3endpoint}
-#   $3 = ${access_key}
-#   $4 = ${secret_key}
-#   $5 = ${api_signature}   # Optional
+#   ${1} = ${server_alias}
+#   ${2} = ${s3endpoint}
+#   ${3} = ${access_key}
+#   ${4} = ${secret_key}
+#   ${5} = ${api_signature}   # Optional
 #
 # Outputs:
 #   nothing
@@ -39,8 +39,8 @@ function minio_add_cloud_storage() {
 # List files/dirs from minio storage
 #
 # Arguments:
-#   $1 = ${server_alias}
-#   $2 = ${bucket_name}
+#   ${1} = ${server_alias}
+#   ${2} = ${bucket_name}
 #
 # Outputs:
 #   nothing
@@ -59,11 +59,11 @@ function minio_list() {
 # Mirror directories
 #
 # Arguments:
-#   $1 = ${server_alias}
-#   $2 = ${bucket_name}
-#   $3 = ${file_to_delete}
-#   $4 = ${dir_name}
-#   $5 = ${to_backup}
+#   ${1} = ${server_alias}
+#   ${2} = ${bucket_name}
+#   ${3} = ${file_to_delete}
+#   ${4} = ${dir_name}
+#   ${5} = ${to_backup}
 #
 # Outputs:
 #   nothing
@@ -85,9 +85,9 @@ function minio_mirror() {
 # Remove files on minio storage
 #
 # Arguments:
-#   $1 = ${server_alias}
-#   $2 = ${bucket_name}
-#   $3 = ${file_to_delete}
+#   ${1} = ${server_alias}
+#   ${2} = ${bucket_name}
+#   ${3} = ${file_to_delete}
 #
 # Outputs:
 #   nothing

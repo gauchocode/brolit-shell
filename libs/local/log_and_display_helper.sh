@@ -89,7 +89,7 @@ function _spinner() {
 # Start spinner
 #
 # Arguments:
-#   $1 = msg to display
+#   ${1} = msg to display
 #
 # Outputs:
 #   nothing
@@ -111,7 +111,7 @@ function spinner_start() {
 # Stop spinner
 #
 # Arguments:
-#  $1 = command exit status
+#  ${1} = command exit status
 #
 # Outputs:
 #  nothing
@@ -130,7 +130,7 @@ function spinner_stop() {
 # Removes color related chars from a string
 #
 # Arguments:
-#   $1 = ${string}
+#   ${1} = ${string}
 #
 # Outputs:
 #   string
@@ -200,10 +200,10 @@ function _string_remove_color_chars() {
 # Write on log file *.log (or *.json if ${EXEC_TYPE} == "external").
 #
 # Arguments:
-#  $1 = {log_type} (success, info, warning, error, critical)
-#  $2 = {message}
-#  $3 = {console_display} optional (true or false, default is false)
-#  $4 = {status} optional (1 only if script execution ends)
+#  ${1} = {log_type} (success, info, warning, error, critical)
+#  ${2} = {message}
+#  ${3} = {console_display} optional (true or false, default is false)
+#  ${4} = {status} optional (1 only if script execution ends)
 #
 # Outputs:
 #  nothing
@@ -311,7 +311,7 @@ function log_event() {
 # Break line on log
 #
 # Arguments:
-#  $1 = {console_display} optional (true or false, emtpy equals false)
+#  ${1} = {console_display} optional (true or false, emtpy equals false)
 #
 # Outputs:
 #   nothing
@@ -341,7 +341,7 @@ function log_break() {
 # Log section
 #
 # Arguments:
-#  $1 = {message}
+#  ${1} = {message}
 #
 # Outputs:
 #   nothing
@@ -370,7 +370,7 @@ function log_section() {
 # Log sub-section
 #
 # Arguments:
-#  $1 = {message}
+#  ${1} = {message}
 #
 # Outputs:
 #   nothing
@@ -417,7 +417,7 @@ function clear_screen() {
 # Clear previous lines
 #
 # Arguments:
-#   $1 = {lines}
+#   ${1} = {lines}
 #
 # Outputs:
 #   nothing

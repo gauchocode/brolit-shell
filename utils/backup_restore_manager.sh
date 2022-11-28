@@ -240,7 +240,7 @@ function restore_manager_menu() {
 # Backup Sub-Tasks handler
 #
 # Arguments:
-#   $1 = ${subtask}
+#   ${1} = ${subtask}
 #
 # Outputs:
 #   nothing
@@ -309,7 +309,7 @@ function subtasks_backup_handler() {
 # Restore Sub-Tasks handler
 #
 # Arguments:
-#   $1 = ${subtask}
+#   ${1} = ${subtask}
 #
 # Outputs:
 #   nothing

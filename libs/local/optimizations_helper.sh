@@ -119,10 +119,10 @@ function optimize_ram_usage() {
 # Optimize images sizes
 #
 # Arguments:
-#  $1 = ${path}
-#  $2 = ${file_extension}
-#  $3 = ${img_max_width}
-#  $4 = ${img_max_height}
+#  ${1} = ${path}
+#  ${2} = ${file_extension}
+#  ${3} = ${img_max_width}
+#  ${4} = ${img_max_height}
 #
 # Outputs:
 #   nothing
@@ -173,9 +173,9 @@ function optimize_image_size() {
 # Optimize images compression
 #
 # Arguments:
-#  $1 = ${path}
-#  $2 = ${file_extension}
-#  $3 = ${img_compress}
+#  ${1} = ${path}
+#  ${2} = ${file_extension}
+#  ${3} = ${img_compress}
 #
 # Outputs:
 #   nothing

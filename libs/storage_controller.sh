@@ -31,7 +31,7 @@
 # List directory content
 #
 # Arguments:
-#   $1 = {remote_directory}
+#   ${1} = {remote_directory}
 #
 # Outputs:
 #   ${remote_list}
@@ -81,8 +81,8 @@ function storage_list_dir() {
 # Create directory (dropbox, sftp, etc)
 #
 # Arguments:
-#   $1 = {file_to_download}
-#   $2 = {remote_directory}
+#   ${1} = {file_to_download}
+#   ${2} = {remote_directory}
 #
 # Outputs:
 #   0 if it utils were installed, 1 on error.
@@ -114,8 +114,8 @@ function storage_create_dir() {
 # Move files or directory
 #
 # Arguments:
-#   $1 = {to_move}
-#   $2 = {destination}
+#   ${1} = {to_move}
+#   ${2} = {destination}
 #
 # Outputs:
 #   0 if it utils were installed, 1 on error.
@@ -163,8 +163,8 @@ function storage_move() {
 # Upload backup to configured storage (dropbox, sftp, etc)
 #
 # Arguments:
-#   $1 = {file_to_upload}
-#   $2 = {remote_directory}
+#   ${1} = {file_to_upload}
+#   ${2} = {remote_directory}
 #
 # Outputs:
 #   0 if it utils were installed, 1 on error.
@@ -214,8 +214,8 @@ function storage_upload_backup() {
 # Download backup from configured storage (dropbox, sftp, etc)
 #
 # Arguments:
-#   $1 = {file_to_download}
-#   $2 = {remote_directory}
+#   ${1} = {file_to_download}
+#   ${2} = {remote_directory}
 #
 # Outputs:
 #   0 if it utils were installed, 1 on error.
@@ -254,7 +254,7 @@ function storage_download_backup() {
 # Delete backup to configured storage (dropbox, sftp, etc)
 #
 # Arguments:
-#   $1 = {file_to_delete}
+#   ${1} = {file_to_delete}
 #
 # Outputs:
 #   0 if it utils were installed, 1 on error.

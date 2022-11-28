@@ -14,8 +14,8 @@
 # Install certificate with certbot
 #
 # Arguments:
-#  $1 = ${email}
-#  $2 = ${domains}
+#  ${1} = ${email}
+#  ${2} = ${domains}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -84,7 +84,7 @@ function certbot_certificate_install() {
 # Delete old certificate config
 #
 # Arguments:
-#  $1 = ${domains}
+#  ${1} = ${domains}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -122,8 +122,8 @@ function certbot_certificate_delete_old_config() {
 # Expand certificate
 #
 # Arguments:
-#  $1 = ${email}
-#  $2 = ${domains}
+#  ${1} = ${email}
+#  ${2} = ${domains}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -167,7 +167,7 @@ function certbot_certificate_expand() {
 # Expand certificate
 #
 # Arguments:
-#  $1 = ${domains}
+#  ${1} = ${domains}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -211,7 +211,7 @@ function certbot_certificate_renew() {
 # Test certificate renew
 #
 # Arguments:
-#  $1 = ${domains}
+#  ${1} = ${domains}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -255,7 +255,7 @@ function certbot_certificate_renew_test() {
 # Certificate force renew
 #
 # Arguments:
-#  $1 = ${domains}
+#  ${1} = ${domains}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -299,8 +299,8 @@ function certbot_certificate_force_renew() {
 # Certbot installer menu
 #
 # Arguments:
-#  $1 = ${email}
-#  $2 = ${domains}
+#  ${1} = ${email}
+#  ${2} = ${domains}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -397,8 +397,8 @@ function certbot_helper_installer_menu() {
 # Certbot install certificate with cloudflare
 #
 # Arguments:
-#  $1 = ${email}
-#  $2 = ${domains}
+#  ${1} = ${email}
+#  ${2} = ${domains}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -472,7 +472,7 @@ function certbot_certonly_cloudflare() {
 # Show certificates info
 #
 # Arguments:
-#  $1 = ${domains}
+#  ${1} = ${domains}
 #
 # Outputs:
 #   certificates info.
@@ -490,7 +490,7 @@ function certbot_show_certificates_info() {
 # Show certificates expiration date
 #
 # Arguments:
-#  $1 = ${domains}
+#  ${1} = ${domains}
 #
 # Outputs:
 #   list with certificates expiration dates.
@@ -510,7 +510,7 @@ function certbot_show_domain_certificates_expiration_date() {
 # Show certificates valid days
 #
 # Arguments:
-#  $1 = ${domains} - (domain.com,www.domain.com)
+#  ${1} = ${domains} - (domain.com,www.domain.com)
 #
 # Outputs:
 #   ${cert_days} if ok, "no-cert" on error.
@@ -566,7 +566,7 @@ function certbot_certificate_valid_days() {
 # Get certificate valid days
 #
 # Arguments:
-#  $1 = ${domains}
+#  ${1} = ${domains}
 #
 # Outputs:
 #  ${cert_days} if ok, "no-cert" on error.
@@ -603,7 +603,7 @@ function certbot_certificate_get_valid_days() {
 # Delete certificate with certbot
 #
 # Arguments:
-#  $1 = ${domains}
+#  ${1} = ${domains}
 #
 # Outputs:
 #  0 if ok, 1 on error.
