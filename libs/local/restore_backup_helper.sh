@@ -1124,7 +1124,6 @@ function restore_type_selection_from_storage() {
       storage_project_list="$(storage_list_dir "${remote_type_list}")"
 
       # At this point chosen_project is the new project domain
-      # TODO: Project domain asked inside this function again (need a refactor)
       # Restore site files
       project_domain="$(restore_backup_files "${chosen_project}")"
 
@@ -1474,6 +1473,7 @@ function restore_backup_database() {
   mysql_user_grant_privileges "${db_user}" "${db_name}" "localhost"
 
 }
+
 # TODO: needs refactor
 ## 1- Maybe project_domain is not needed
 ## 2- Maybe should use restore_project_files and restore_project_database
@@ -1482,6 +1482,11 @@ function restore_project_backup() {
   local project_backup_file="${1}"
   local project_domain="${2}"
   local project_domain_new="${3}"
+
+  # Log
+  log_event "debug" "project_backup_file=${project_backup_file}" "false"
+  log_event "info" "project_domain=${project_domain}" "false"
+  log_event "info" "project_domain_new=${project_domain_new}" "false"
 
   # Workaround if project_domain does not change
   [[ -z ${project_domain_new} ]] && project_domain_new="${project_domain}"
