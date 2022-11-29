@@ -46,7 +46,7 @@ function storage_list_dir() {
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
         # Dropbox API returns files names on the third column
-        remote_list="$(dropbox_list_directory"${remote_directory}")"
+        remote_list="$(dropbox_list_directory "${remote_directory}")"
 
         storage_result=$?
 
