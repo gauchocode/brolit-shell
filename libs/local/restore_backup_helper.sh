@@ -1067,7 +1067,7 @@ function restore_type_selection_from_storage() {
   project)
 
     #restore_project "${chosen_server}" "${chosen_status}"
-    restore_project_selection "${remote_type_list}" "${new_domain}"
+    restore_project_selection "${remote_list}" "${new_domain}"
 
     ;;
 
