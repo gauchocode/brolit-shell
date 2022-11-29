@@ -1357,6 +1357,8 @@ function restore_project_selection() {
     backup_to_dowload="${remote_backup_path}/${chosen_backup_to_restore}"
     storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
 
+    [[ $? -eq 1 ]] && display --indent 6 --text "- Downloading project backup" --result "ERROR" --color RED && return 1
+
     # NEW NEW NEW NEW (projet_domain should be passed by argument)
     # For convention ${chosen_project} == project_domain
     restore_project_backup "${chosen_backup_to_restore}" "${chosen_project}" "${new_domain}"
