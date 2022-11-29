@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Version: 3.3.0-beta
 ################################################################################
 #
 # Database Controller: Controller for database functions.
@@ -47,9 +47,9 @@ function database_docker_exec_mysql() {
 # List databases
 #
 # Arguments:
-#  $1 - ${stage} - Options: all, prod, dev, test, stage
-#  $2 - ${database_engine}
-#  $3 - ${install_type}
+#  ${1} - ${stage} - Options: all, prod, dev, test, stage
+#  ${2} - ${database_engine}
+#  ${3} - ${install_type}
 #
 # Outputs:
 #  ${databases}, 1 on error.
