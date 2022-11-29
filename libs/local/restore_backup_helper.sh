@@ -1060,6 +1060,7 @@ function restore_type_selection_from_storage() {
 
   # Detail of remote_type_list: "${chosen_server}/projects-${chosen_status}/${chosen_restore_type}"
   chosen_restore_type="$(basename "${remote_type_list}")" # project, site or database
+  remote_list="$(dirname "${remote_type_list}")"
 
   case ${chosen_restore_type} in
 
@@ -1072,8 +1073,6 @@ function restore_type_selection_from_storage() {
 
   configs)
 
-    remote_list="$(dirname "${remote_type_list}")"
-
     storage_project_list="$(storage_list_dir "${remote_list}")"
 
     restore_config_files_from_storage "${chosen_type_path}" "${storage_project_list}"
@@ -1081,8 +1080,6 @@ function restore_type_selection_from_storage() {
     ;;
 
   site)
-
-    remote_list="$(dirname "${remote_type_list}")"
 
     storage_project_list="$(storage_list_dir "${remote_list}")"
 
@@ -1326,8 +1323,9 @@ function restore_project_selection() {
 
   log_subsection "Restore Project Backup"
 
-  # Get dropbox folders list
   #storage_project_list="$(storage_list_dir "${chosen_server}/projects-${chosen_status}/site")"
+
+  # Get dropbox folders list
   storage_project_list="$(storage_list_dir "${remote_backup_path}/site")"
 
   # Select Project
