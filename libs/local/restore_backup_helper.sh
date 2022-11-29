@@ -1060,7 +1060,6 @@ function restore_type_selection_from_storage() {
 
   # Detail of remote_type_list: "${chosen_server}/projects-${chosen_status}/${chosen_restore_type}"
   chosen_restore_type="$(basename "${remote_type_list}")" # project, site or database
-  storage_project_list="$(storage_list_dir "${remote_type_list}")"
 
   case ${chosen_restore_type} in
 
@@ -1073,11 +1072,19 @@ function restore_type_selection_from_storage() {
 
   configs)
 
+    remote_list="$(dirname "${remote_type_list}")"
+
+    storage_project_list="$(storage_list_dir "${remote_list}")"
+
     restore_config_files_from_storage "${chosen_type_path}" "${storage_project_list}"
 
     ;;
 
   site)
+
+    remote_list="$(dirname "${remote_type_list}")"
+
+    storage_project_list="$(storage_list_dir "${remote_list}")"
 
     # Select Project
     chosen_project="$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${storage_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)"

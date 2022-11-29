@@ -368,17 +368,33 @@ function dropbox_list_directory() {
 
     # Dropbox API returns files names on the third column
     dir_list="$("${DROPBOX_UPLOADER}" -hq list "${directory}" | awk '{print $3;}')"
+    exitstatus=$?
 
     # If dir_list is empty, try to check the second column where directory names are
     if [[ -z ${dir_list} ]]; then
 
         dir_list="$("${DROPBOX_UPLOADER}" -hq list "${directory}" | awk '{print $2;}')"
+        exitstatus=$?
 
     fi
 
-    # Log
-    log_event "info" "Listing directory: ${directory}" "false"
-    log_event "info" "Remote list: ${dir_list}" "false"
-    log_event "debug" "Command executed: ${DROPBOX_UPLOADER} -hq list \"${directory}\" | awk '{print $ 3;}'" "false"
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        log_event "info" "Listing directory: ${directory}" "false"
+        log_event "info" "Remote list: ${dir_list}" "false"
+        
+
+        echo "${dir_list}" && sreturn 0
+
+    else
+
+        # Log
+        log_event "error" "Can't list directory ${directory} on Dropbox" "false"
+        log_event "debug" "Command executed: ${DROPBOX_UPLOADER} -hq list \"${directory}\" | awk '{print $ 3;}'" "false"
+
+        return 1
+
+    fi
 
 }
