@@ -142,7 +142,7 @@ function restore_backup_from_local() {
 
       # TODO: Project domain asked inside this function again (need a refactor)
       # Restore site files
-      project_domain="$(restore_backup_files "${project_domain}")"
+      restore_backup_files "${project_domain}"
 
       destination_dir="${PROJECTS_PATH}/${project_domain}"
 
@@ -1125,14 +1125,14 @@ function restore_type_selection_from_storage() {
 
       # At this point chosen_project is the new project domain
       # Restore site files
-      project_domain="$(restore_backup_files "${chosen_project}")"
+      restore_backup_files "${chosen_project}"
 
       # Get project install type
-      project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
+      project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${chosen_project}")"
 
       if [[ ${project_install_type} != "proxy" && ${project_install_type} != "docker"* ]]; then
         # Change ownership
-        change_ownership "www-data" "www-data" "${PROJECTS_PATH}/${project_domain}"
+        change_ownership "www-data" "www-data" "${PROJECTS_PATH}/${chosen_project}"
       fi
 
     fi
@@ -1372,12 +1372,12 @@ function restore_project_selection() {
       # TODO: if and old project with same domain was found, ask what to do (delete old project or skip this step)
 
       # Post-restore/install tasks
-      project_post_install_tasks "${install_path}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${chosen_domain}" "${new_project_domain}"
+      project_post_install_tasks "${install_path}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${chosen_domain}" "${new_domain}"
 
     fi
 
     # Create/update brolit_project_conf.json file with project info
-    project_update_brolit_config "${install_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "${db_engine}" "${project_name}_${project_stage}" "localhost" "${db_user}" "${db_pass}" "${new_project_domain}" "" "" "" ""
+    project_update_brolit_config "${install_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "${db_engine}" "${project_name}_${project_stage}" "localhost" "${db_user}" "${db_pass}" "${new_domain}" "" "" "" ""
 
     # Send notification
     send_notification "✅ ${SERVER_NAME}" "Project ${chosen_project} restored!" "0"
@@ -1485,8 +1485,8 @@ function restore_project_backup() {
 
   # Log
   log_event "debug" "project_backup_file=${project_backup_file}" "false"
-  log_event "info" "project_domain=${project_domain}" "false"
-  log_event "info" "project_domain_new=${project_domain_new}" "false"
+  log_event "debug" "project_domain=${project_domain}" "false"
+  log_event "debug" "project_domain_new=${project_domain_new}" "false"
 
   # Workaround if project_domain does not change
   [[ -z ${project_domain_new} ]] && project_domain_new="${project_domain}"
@@ -1506,21 +1506,22 @@ function restore_project_backup() {
   project_type="$(project_get_type "${project_tmp_dir_new}")"
 
   # Restore site files
-  new_project_domain="$(restore_backup_files "${project_domain_new}")"
+  restore_backup_files "${project_domain_new}"
+  [[ $? -eq 1 ]] && return 1
 
   # Project Install Type
-  project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${new_project_domain}")"
+  project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain_new}")"
 
   if [[ ${project_install_type} != "proxy" && ${project_install_type} != "docker"* ]]; then
     # Change ownership
-    change_ownership "www-data" "www-data" "${PROJECTS_PATH}/${new_project_domain}"
+    change_ownership "www-data" "www-data" "${PROJECTS_PATH}/${project_domain_new}"
   fi
 
   # Extract project name from domain
-  possible_project_name="$(project_get_name_from_domain "${new_project_domain}")"
+  possible_project_name="$(project_get_name_from_domain "${project_domain_new}")"
 
   # Asking project stage with suggested actual state
-  possible_project_stage=$(project_get_stage_from_domain "${new_project_domain}")
+  possible_project_stage=$(project_get_stage_from_domain "${project_domain_new}")
   project_stage="$(project_ask_stage "${possible_project_stage}")"
   [[ $? -eq 1 ]] && return 1
 
@@ -1528,7 +1529,7 @@ function restore_project_backup() {
   project_name="$(project_ask_name "${possible_project_name}")"
   [[ $? -eq 1 ]] && return 1
 
-  install_path="${PROJECTS_PATH}/${new_project_domain}"
+  install_path="${PROJECTS_PATH}/${project_domain_new}"
 
   # DOCKER WAY (NEW)
   if [[ ${project_install_type} == "docker"* ]]; then
@@ -1543,7 +1544,7 @@ function restore_project_backup() {
     display --indent 6 --text "- Trying to restore a docker project ..." # --result "DONE" --color GREEN
 
     # Rebuild docker image
-    docker-compose -f "${PROJECTS_PATH}/${new_project_domain}/docker-compose.yml" up --detach
+    docker-compose -f "${PROJECTS_PATH}/${project_domain_new}/docker-compose.yml" up --detach
 
     # Clear screen output
     clear_previous_lines "3"
@@ -1555,7 +1556,7 @@ function restore_project_backup() {
     project_port="default"
 
     # Create nginx.conf file if not exists
-    touch "${PROJECTS_PATH}/${new_project_domain}/nginx.conf"
+    touch "${PROJECTS_PATH}/${project_domain_new}/nginx.conf"
 
     # Reading config file
 
