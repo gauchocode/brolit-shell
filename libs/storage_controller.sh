@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Version: 3.3.0-beta
 ################################################################################
 #
 # Storage Controller: Controller to upload and download backups.
@@ -69,10 +69,15 @@ function storage_list_dir() {
     fi
 
     storage_result=$?
+
     if [[ ${storage_result} -eq 0 && -n ${remote_list} ]]; then
-        echo "${remote_list}"
+
+        echo "${remote_list}" && return 0
+
     else
+
         return 1
+
     fi
 
 }

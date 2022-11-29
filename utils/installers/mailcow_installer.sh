@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Version: 3.3.0-beta
 ################################################################################
 #
 # Mailcow Installer
@@ -21,7 +21,7 @@
 function mailcow_installer() {
 
     local mailcow
-    local mailcow_config_output
+    #local mailcow_config_output
 
     log_subsection "Mailcow Installer"
 

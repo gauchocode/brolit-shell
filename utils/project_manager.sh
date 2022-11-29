@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Version: 3.3.0-beta
 ################################################################################
 #
 # Project Manager: Perform project actions.
@@ -22,22 +22,19 @@ function project_manager_config_loader() {
   PROJECT_NAME="$(json_read_field "${project_config_file}" "project[].name")"
   if [[ -z ${PROJECT_NAME} ]]; then
     # Error
-    log_event "error" "Required var PROJECT_NAME not set!" "true"
-    exit 1
+    log_event "error" "Required var PROJECT_NAME not set!" "true" && exit 1
   fi
 
   PROJECT_STAGE="$(json_read_field "${project_config_file}" "project[].stage")"
   if [[ -z ${PROJECT_STAGE} ]]; then
     # Error
-    log_event "error" "Required var PROJECT_STAGE not set!" "true"
-    exit 1
+    log_event "error" "Required var PROJECT_STAGE not set!" "true" && exit 1
   fi
 
   PROJECT_TYPE="$(json_read_field "${project_config_file}" "project[].type")"
   if [[ -z ${PROJECT_TYPE} ]]; then
     # Error
-    log_event "error" "Required var PROJECT_TYPE not set!" "true"
-    exit 1
+    log_event "error" "Required var PROJECT_TYPE not set!" "true" && exit 1
   fi
 
   # Optional
@@ -51,8 +48,7 @@ function project_manager_config_loader() {
   PROJECT_PRIMARY_SUBDOMAIN="$(json_read_field "${project_config_file}" "project[].primary_subdomain")"
   if [[ -z ${PROJECT_PRIMARY_SUBDOMAIN} ]]; then
     # Error
-    log_event "error" "Required var PROJECT_PRIMARY_SUBDOMAIN not set!" "true"
-    exit 1
+    log_event "error" "Required var PROJECT_PRIMARY_SUBDOMAIN not set!" "true" && exit 1
   fi
 
   # TODO: read array values
@@ -65,15 +61,13 @@ function project_manager_config_loader() {
   PROJECT_USE_HTTP2="$(json_read_field "${project_config_file}" "project[].use_http2")"
   if [[ -z ${PROJECT_USE_HTTP2} ]]; then
     # Error
-    log_event "error" "Required var PROJECT_USE_HTTP2 not set!" "true"
-    exit 1
+    log_event "error" "Required var PROJECT_USE_HTTP2 not set!" "true" && exit 1
   fi
 
   PROJECT_CERTBOT_MODE="$(json_read_field "${project_config_file}" "project[].certbot_mode")"
   if [[ -z ${PROJECT_CERTBOT_MODE} ]]; then
     # Error
-    log_event "error" "Required var PROJECT_CERTBOT_MODE not set!" "true"
-    exit 1
+    log_event "error" "Required var PROJECT_CERTBOT_MODE not set!" "true" && exit 1
   fi
 
   PROJECT_FILES_STATUS="$(json_read_field "${project_config_file}" "project[].files[].status")"
@@ -164,6 +158,7 @@ function project_manager_menu_new_project_type_utils() {
     "06)" "PUT PROJECT ONLINE"
     "07)" "PUT PROJECT OFFLINE"
     "08)" "BENCH PROJECT GTMETRIX"
+    #"09)" "DOCKERIZE EXISTING PROJECT"
   )
 
   chosen_project_utils_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_utils_options[@]}" 3>&1 1>&2 2>&3)"
@@ -338,75 +333,193 @@ function project_manager_menu_new_project_type_utils() {
 
 function project_manager_menu_new_project_type_new_project() {
 
+  local project_creation_type_options
   local project_type_options
   local chosen_project_type_options
   local whip_title
   local whip_description
 
-  # NEW
-  project_creation_type_options=(
-    "01)" "NEW CLEAN PROJECT"
-    "02)" "NEW PROJECT FROM BACKUP"
-    #"03)" "NEW PROJECT FROM EXISTING PROJECT"
-    #"04)" "NEW PROJECT FROM GIT REPOSITORY"
-  )
-
+  # Whip menu vars
   whip_title="PROJECT CREATION"
   whip_description=" "
 
-  project_type_options=(
-    "01)" "NEW WORDPRESS PROJECT"
-    "02)" "NEW LARAVEL PROJECT"
-    "03)" "NEW PHP PROJECT"
-    "04)" "NEW NODEJS PROJECT"
-    "05)" "NEW WORDPRESS PROJECT (DOCKER) -BETA-"
-    "06)" "NEW PHP PROJECT (DOCKER) -BETA-"
+  # NEW
+  project_creation_type_options=(
+    "01)" "NEW PROJECT"
+    "02)" "NEW PROJECT FROM BACKUP"
+    #"03)" "NEW PROJECT FROM GIT REPOSITORY"
   )
 
-  chosen_project_type_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_type_options[@]}" 3>&1 1>&2 2>&3)"
+  chosen_project_creation_type_option="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_creation_type_options[@]}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    if [[ ${chosen_project_type_options} == *"01"* ]]; then
+    # NEW PROJECT
+    if [[ ${chosen_project_creation_type_option} == *"01"* ]]; then
 
-      # WP PROJECT
-      project_install "${PROJECTS_PATH}" "wordpress"
+      project_type_options=(
+        "01)" "NEW WORDPRESS PROJECT"
+        "02)" "NEW LARAVEL PROJECT"
+        "03)" "NEW PHP PROJECT"
+        "04)" "NEW NODEJS PROJECT"
+        "05)" "NEW WORDPRESS PROJECT (DOCKER) -BETA-"
+        "06)" "NEW PHP PROJECT (DOCKER) -BETA-"
+      )
+
+      chosen_project_type_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_type_options[@]}" 3>&1 1>&2 2>&3)"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        # NEW WORDPRESS PROJECT
+        [[ ${chosen_project_type_options} == *"01"* ]] && project_install "${PROJECTS_PATH}" "wordpress"
+
+        # NEW LARAVEL PROJECT
+        [[ ${chosen_project_type_options} == *"02"* ]] && project_install "${PROJECTS_PATH}" "laravel"
+
+        # NEW PHP PROJECT
+        [[ ${chosen_project_type_options} == *"03"* ]] && project_install "${PROJECTS_PATH}" "php"
+
+        # NEW NODEJS PROJECT
+        [[ ${chosen_project_type_options} == *"04"* ]] && project_install "${PROJECTS_PATH}" "nodejs"
+
+        # NEW WORDPRESS PROJECT (DOCKER) -BETA-
+        [[ ${chosen_project_type_options} == *"05"* ]] && docker_project_install "${PROJECTS_PATH}" "wordpress"
+
+        # NEW PHP PROJECT (DOCKER) -BETA-
+        [[ ${chosen_project_type_options} == *"06"* ]] && docker_project_install "${PROJECTS_PATH}" "php"
+
+      fi
 
     fi
 
-    if [[ ${chosen_project_type_options} == *"02"* ]]; then
+    # NEW PROJECT FROM BACKUP
+    if [[ ${chosen_project_creation_type_option} == *"02"* ]]; then
 
-      # LARAVEL PROJECT
-      project_install "${PROJECTS_PATH}" "laravel"
+      # TODO:
+      # 1- Ask for project domain
+      chosen_domain="$(whiptail --title "Project Domain" --inputbox "Want to change the project's domain? Default:" 10 60 "${domain}" 3>&1 1>&2 2>&3)"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        log_event "info" "Working with domain: ${chosen_domain}"
+        display --indent 6 --text "- Selecting project domain" --result "DONE" --color GREEN
+        display --indent 8 --text "${chosen_domain}" --tcolor YELLOW
+
+        # NEW NEW NEW NEW
+        #restore_project_selection "${chosen_domain}"
+        restore_backup_from_storage "${chosen_domain}"
+
+      else
+
+        return 1
+
+      fi
 
     fi
 
-    if [[ ${chosen_project_type_options} == *"03"* ]]; then
+    # TODO: move to another function
+    # DOCKERIZE EXISTING PROJECT
+    if [[ ${chosen_project_creation_type_option} == *"04"* ]]; then
+      # TODO: need to change this!
+      # If a directory exists, get project type & installation type
+      if [[ -d "${PROJECTS_PATH}/${chosen_project}" ]]; then
+        project_type="$(project_get_type "${PROJECTS_PATH}/${chosen_project}")"
+        project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${chosen_project}")"
+      fi
 
-      # OTHER PHP PROJECT
-      project_install "${PROJECTS_PATH}" "php"
+      # TODO: if project type==docker download, extract, move to /var/www, run docker commands, execute domain tasks
+      # TODO: if project type!=wordpress then... needs implementation
+      if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" && ${project_install_type} == "docker-compose" && ${project_type} == "wordpress" ]]; then
 
-    fi
+        if [[ -d "${PROJECTS_PATH}/${chosen_project}" ]]; then
 
-    if [[ ${chosen_project_type_options} == *"04"* ]]; then
+          # Warning message
+          whiptail --title "Warning" --yesno "A docker project already exist for this domain. Do you want to restore the current backup on this docker stack? A backup of current directory will be stored on BROLIT tmp folder." 10 60 3>&1 1>&2 2>&3
 
-      # NODE JS PROJECT
-      project_install "${PROJECTS_PATH}" "nodejs"
+          exitstatus=$?
+          if [[ ${exitstatus} -eq 0 ]]; then
 
-    fi
+            # Backup old project
+            _create_tmp_copy "${PROJECTS_PATH}/${chosen_project}" "copy"
+            got_error=$?
+            [[ ${got_error} -eq 1 ]] && return 1
 
-    if [[ ${chosen_project_type_options} == *"05"* ]]; then
+          else
 
-      # WORDPRESS PROJECT (DOCKER)
-      docker_project_install "${PROJECTS_PATH}" "wordpress"
+            # Log
+            log_event "info" "The project directory already exist. User skipped operation." "false"
+            display --indent 6 --text "- Restore files" --result "SKIPPED" --color YELLOW
 
-    fi
+            return 1
 
-    if [[ ${chosen_project_type_options} == *"06"* ]]; then
+          fi
 
-      # PHP PROJECT (DOCKER)
-      docker_project_install "${PROJECTS_PATH}" "php"
+          installation_type="docker"
+
+          # Remove actual wordpress files
+          #rm -R "${PROJECTS_PATH}/${chosen_project}/wordpress/wp-content"
+          rm -R "${PROJECTS_PATH}/${chosen_project}/wordpress"
+
+          #move_files "${BROLIT_TMP_DIR}/${chosen_project}/wp-content" "${PROJECTS_PATH}/${chosen_project}/wordpress"
+          move_files "${BROLIT_TMP_DIR}/${chosen_project}" "${PROJECTS_PATH}/${chosen_project}/wordpress"
+
+          display --indent 6 --text "- Import files into docker volume" --result "DONE" --color GREEN
+
+          # TODO: update this to match monthly and weekly backups
+          project_name="$(project_get_name_from_domain "${chosen_project}")"
+          project_stage="$(project_get_stage_from_domain "${chosen_project}")"
+
+          db_name="${project_name}_${project_stage}"
+          new_project_domain="${chosen_project}"
+
+          project_backup_date="$(backup_get_date "${chosen_backup_to_restore}")"
+
+          db_to_download="${chosen_server}/projects-${chosen_status}/database/${db_name}/${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+          db_to_restore="${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+          project_backup="${db_to_restore%%.*}.sql"
+
+          # Downloading Database Backup
+          storage_download_backup "${db_to_download}" "${BROLIT_TMP_DIR}"
+
+          # Decompress
+          decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+
+          # Read wp-config to get WP DATABASE PREFIX and replace on docker .env file
+          #database_prefix_to_restore="$(wp_config_get_option "${BROLIT_TMP_DIR}/${chosen_project}" "table_prefix")"
+          database_prefix_to_restore="$(cat "${BROLIT_TMP_DIR}/${chosen_project}"/wp-config.php | grep "\$table_prefix" | cut -d \' -f 2)"
+          database_prefix_actual="$(project_get_config_var "${PROJECTS_PATH}/${chosen_project}/.env" "WORDPRESS_TABLE_PREFIX")"
+          if [[ ${database_prefix_to_restore} != "${database_prefix_actual}" ]]; then
+            # Set new database prefix
+            project_set_config_var "${PROJECTS_PATH}/${chosen_project}/.env" "WORDPRESS_TABLE_PREFIX" "${database_prefix_to_restore}" "double"
+            # Rebuild docker image
+            docker-compose -f "${PROJECTS_PATH}/${chosen_project}/docker-compose.yml" up --detach
+            # Clear screen output
+            clear_previous_lines "3"
+          fi
+
+          # TODO: update wp-config.php with .env docker stack credentials
+
+          # Read .env to get mysql pass
+          db_user_pass="$(project_get_config_var "${PROJECTS_PATH}/${chosen_project}/.env" "MYSQL_PASSWORD")"
+
+          # Docker MySQL database import
+          docker_mysql_database_import "${project_name}_mysql" "${project_name}_user" "${db_user_pass}" "${project_name}_prod" "${BROLIT_TMP_DIR}/${project_backup}"
+
+          display --indent 6 --text "- Import database into docker volume" --result "DONE" --color GREEN
+
+        else
+
+          log_event "error" "Should implement restore without existing docker image!" "true"
+
+          return 1
+
+        fi
+
+      fi
 
     fi
 
@@ -433,13 +546,8 @@ function project_manager_menu_new_project_type() {
   project_types="Laravel,PHP"
 
   project_type="$(whiptail --title "NEW PROJECT TYPE" --menu "Choose an Installation Type" 20 78 10 "$(for x in ${project_types}; do echo "$x [X]"; done)" 3>&1 1>&2 2>&3)"
-
   exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    project_install "${PROJECTS_PATH}" "${project_type}"
-
-  fi
+  [[ ${exitstatus} -eq 0 ]] && project_install "${PROJECTS_PATH}" "${project_type}"
 
   menu_main_options
 
@@ -483,14 +591,14 @@ function project_tasks_handler() {
     # Second parameter with "true" will delete cloudflare entry
     project_delete "${domain}" "true"
 
-    exit
+    exit $? # exit with the exit code
     ;;
 
   *)
 
     log_event "error" "INVALID PROJECT TASK: ${subtask}" "true"
 
-    exit
+    exit 1
     ;;
 
   esac
@@ -536,7 +644,7 @@ function project_install_tasks_handler() {
 
     project_install "${PROJECT_FILES_CONFIG_PATH}" "${PROJECT_TYPE}" "${PROJECT_PRIMARY_SUBDOMAIN}" "${PROJECT_NAME}" "${PROJECT_STAGE}" "${project_install_type}"
 
-    exit
+    exit $? # exit with the exit code
     ;;
 
   copy)
@@ -544,14 +652,14 @@ function project_install_tasks_handler() {
     #project_install "${sites}" "${ptype}" "${domain}" "${pname}" "${pstate}"
     log_event "error" "Create new project from a template should be implemented." "true"
 
-    exit
+    exit 1
     ;;
 
   *)
 
     log_event "error" "Invalid project install type: ${project_install_type}" "true"
 
-    exit
+    exit 1
     ;;
 
   esac

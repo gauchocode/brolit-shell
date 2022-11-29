@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Version: 3.3.0-beta
 ################################################################################
 #
 # Server Config Manager: Brolit server configuration management.
@@ -741,7 +741,7 @@ function _brolit_configuration_load_nginx() {
     declare -g WSERVER="/etc/nginx" # Webserver config files location
 
     # NGINX
-    nginx_bin="$(package_is_installed "nginx")"
+    package_is_installed "nginx"
     exitstatus=$?
 
     PACKAGES_NGINX_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.nginx[].status")"

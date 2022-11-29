@@ -2,7 +2,7 @@
 #
 # Author: BROOBE - A Software Development Agency - https://broobe.com
 # Script Name: BROLIT Shell
-# Version: 3.2.7
+# Version: 3.3.0-beta
 ################################################################################
 
 ### Environment checks
