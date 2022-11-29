@@ -385,7 +385,7 @@ function dropbox_list_directory() {
         log_event "info" "Remote list: ${dir_list}" "false"
         
 
-        echo "${dir_list}" && sreturn 0
+        echo "${dir_list}" && return 0
 
     else
 
