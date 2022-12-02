@@ -162,7 +162,7 @@ function nginx_server_delete() {
 
     local filename="${1}"
 
-    if [[ ${filename} != "" ]]; then
+    if [[ -n "${filename}" ]]; then
 
         # Remove files
         rm --force "/etc/nginx/sites-available/${filename}"
