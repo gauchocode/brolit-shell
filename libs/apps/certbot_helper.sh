@@ -633,7 +633,7 @@ function certbot_certificate_delete() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log
-        clear_previous_lines "5"
+        clear_previous_lines "1"
         display --indent 6 --text "- Deleting certificate for ${domains}" --result "DONE" --color GREEN
 
         return 0
