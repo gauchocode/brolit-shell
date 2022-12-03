@@ -1963,11 +1963,16 @@ function project_delete_files() {
       if [[ -f "${compose_file}" ]]; then
 
         # Execute docker-compose command
-        docker-compose -f "${compose_file}" rm --force --stop --quiet
+        ## Options:
+        ##    -f, --force   Don't ask to confirm removal
+        ##    -s, --stop    Stop the containers, if required, before removing
+        ##    -v            Remove any anonymous volumes attached to containers
+        docker-compose -f "${compose_file}" rm --force -v --stop
 
         [[ $? -eq 1 ]] && return 1
 
         # Log
+        #clear_previous_lines "2"
         display --indent 6 --text "- Deleting docker containers for project" --result "DONE" --color GREEN
         log_event "info" "Deleting docker containers for project '${project_domain}' ..." "false"
         log_event "debug" "docker-compose -f ${compose_file} rm --force --stop" "false"

@@ -286,3 +286,176 @@ function storage_delete_backup() {
     return ${got_error}
 
 }
+
+################################################################################
+# Remote Server list from storage.
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function storage_remote_server_list() {
+
+  local remote_server_list # list servers directories
+  local chosen_server      # whiptail var
+
+  # Server selection
+  remote_server_list="$(storage_list_dir "/")"
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Show output
+    chosen_server="$(whiptail --title "BACKUP SELECTION" --menu "Choose a server to work with" 20 78 10 $(for x in ${remote_server_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+      log_event "debug" "chosen_server: ${chosen_server}" "false"
+
+      echo "${chosen_server}" && return 0
+
+    else
+
+      return 1
+
+    fi
+
+  else
+
+    log_event "error" "Storage list dir failed. Output: ${remote_server_list}. Exit status: ${exitstatus}" "false"
+
+    return 1
+
+  fi
+
+}
+
+################################################################################
+# Remote Type list from storage.
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function storage_remote_type_list() {
+
+  local remote_type_list
+  local chosen_restore_type
+
+  # List options
+  remote_type_list="project site database" # TODO: need to implement "other"
+
+  chosen_restore_type="$(whiptail --title "BACKUP SELECTION" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 $(for x in ${remote_type_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)"
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    echo "${chosen_restore_type}" && return 0
+
+  else
+
+    return 1
+
+  fi
+
+}
+
+################################################################################
+# Remote Status list from storage.
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function storage_remote_status_list() {
+
+  local remote_status_list
+  local chosen_restore_status
+
+  # List options
+  remote_status_list="online offline"
+
+  chosen_restore_status="$(whiptail --title "BACKUP SELECTION" --menu "Choose a backup status." 20 78 10 $(for x in ${remote_status_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)"
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    echo "${chosen_restore_status}" && return 0
+
+  else
+
+    return 1
+
+  fi
+
+}
+
+################################################################################
+# Storage Backup selection
+#
+# Arguments:
+#   ${1} = ${remote_backup_path}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function storage_backup_selection() {
+
+  local remote_backup_path="${1}"
+
+  local storage_project_list
+  local chosen_project
+  local remote_backup_path
+  local remote_backup_list
+  local chosen_backup_file
+
+  # Get dropbox folders list
+  storage_project_list="$(storage_list_dir "${remote_backup_path}/site")"
+
+  # Select Project
+  chosen_project="$(whiptail --title "BACKUP SELECTION" --menu "Choose a Project Backup to work with:" 20 78 10 $(for x in ${storage_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)"
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+    # Get backup list
+    remote_backup_path="${remote_backup_path}/site/${chosen_project}"
+    remote_backup_list="$(storage_list_dir "${remote_backup_path}")"
+
+  else
+
+    display --indent 6 --text "- Selecting Project Backup" --result "SKIPPED" --color YELLOW
+    return 1
+
+  fi
+
+  # Select Backup File
+  chosen_backup_file="$(whiptail --title "BACKUP SELECTION" --menu "Choose Backup to download" 20 78 10 $(for x in ${remote_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    display --indent 6 --text "- Selecting project backup" --result "DONE" --color GREEN
+    display --indent 8 --text "${chosen_backup_file}" --tcolor YELLOW
+
+    # Remote backup path
+    chosen_backup_file="${remote_backup_path}/${chosen_backup_file}"
+
+    echo "${chosen_backup_file}"
+
+    #storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
+    #[[ $? -eq 1 ]] && display --indent 6 --text "- Downloading project backup" --result "ERROR" --color RED && return 1
+
+  fi
+
+}

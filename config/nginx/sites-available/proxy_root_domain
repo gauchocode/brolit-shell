@@ -6,7 +6,7 @@ server {
 
     access_log off;
 
-    error_log /var/log/nginx/domain.com.error.log debug;
+    error_log /var/log/nginx/domain.com.error.log error;
 
     keepalive_timeout    70;
     client_max_body_size 50m;

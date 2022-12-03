@@ -5,7 +5,7 @@ server {
         server_name domain.com;
 
         access_log off;
-        #error_log /var/log/nginx/portainer.error.log debug;
+        #error_log /var/log/nginx/portainer.error.log error;
 
         keepalive_timeout    70;
         client_max_body_size 50m;
