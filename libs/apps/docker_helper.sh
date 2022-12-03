@@ -646,7 +646,11 @@ function docker_project_install() {
 
             # TODO: wp table prefix?
 
+            # Write wp-config.php file after "<?php"
+            sed -ie "s|^<?php|<?php\n\n/**\n * Brolit\n */\ndefine('FS_METHOD', 'direct');\n|g" "${project_path}/wordpress/wp-config.php"
+
             # Add specific docker installation values on wp-config.php
+            echo "/** Sets up HTTPS and other needed vars to let WordPress works behind a Proxy */" >>"${project_path}/wordpress/wp-config.php"
             echo "define('FORCE_SSL_ADMIN', true);" >>"${project_path}/wordpress/wp-config.php"
             echo "if (strpos(\$_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false){" >>"${project_path}/wordpress/wp-config.php"
             echo "  \$_SERVER['HTTPS'] = 'on';" >>"${project_path}/wordpress/wp-config.php"
@@ -657,6 +661,7 @@ function docker_project_install() {
             echo "}" >>"${project_path}/wordpress/wp-config.php"
             echo "define('WP_HOME','https://${project_domain}/');" >>"${project_path}/wordpress/wp-config.php"
             echo "define('WP_SITEURL','https://${project_domain}/');" >>"${project_path}/wordpress/wp-config.php"
+            echo "define('WP_REDIS_HOST','redis');" >>"${project_path}/wordpress/wp-config.php"
 
             # Log
             log_event "info" "Making changes on wp-config.php to work with nginx proxy on host." "false"
