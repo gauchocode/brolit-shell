@@ -568,8 +568,11 @@ function docker_project_install() {
 
         # Download Wordpress on project directory
         wp_download "${project_path}" ""
+        [[ $? -eq 1 ]] && return 1
+
         # Decompress Wordpress files
         decompress "${project_path}/wordpress.tar.gz" "${project_path}" ""
+        [[ $? -eq 1 ]] && return 1
 
         # Replace .env vars
         local wp_port="${port_available}"
