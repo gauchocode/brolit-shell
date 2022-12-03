@@ -453,9 +453,6 @@ function storage_backup_selection() {
 
     echo "${chosen_backup_file}"
 
-    #storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
-    #[[ $? -eq 1 ]] && display --indent 6 --text "- Downloading project backup" --result "ERROR" --color RED && return 1
-
   fi
 
 }

@@ -587,9 +587,11 @@ function restore_backup_from_storage() {
 
     # List status options
     chosen_remote_status="$(storage_remote_status_list)"
+    [[ -z ${chosen_remote_status} ]] && return 1
 
     # List type options
     chosen_remote_type="$(storage_remote_type_list)"
+    [[ -z ${chosen_remote_type} ]] && return 1
 
     chosen_remote_type_path="${chosen_server}/projects-${chosen_remote_status}/${chosen_remote_type}"
 

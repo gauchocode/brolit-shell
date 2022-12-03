@@ -957,7 +957,6 @@ function _brolit_configuration_load_mariadb() {
         fi
 
         MYSQLDUMP="$(command -v mysqldump)"
-
         if [[ -f ${MYSQL_CONF} ]]; then
             # Append login parameters to command
             MYSQL_ROOT="${MYSQL} --defaults-file=${MYSQL_CONF}"
@@ -972,13 +971,12 @@ function _brolit_configuration_load_mariadb() {
     else
 
         if [[ -x ${MYSQL} ]]; then
+
             # Check which mysql version is installed
             is_mariadb="$(mysql -V | grep MariaDB)"
 
             # Checking if MYSQL is installed and is not MariaDB
-            if [[ -n ${is_mariadb} ]]; then
-                menu_config_changes_detected "mariadb" "true"
-            fi
+            [[ -n ${is_mariadb} ]] && menu_config_changes_detected "mariadb" "true"
 
         fi
 
@@ -1069,23 +1067,19 @@ function _brolit_configuration_load_mysql() {
 
         fi
 
-    else
-        # ${PACKAGES_MYSQL_STATUS} == "disabled"
+    else # ${PACKAGES_MYSQL_STATUS} == "disabled"
 
         if [[ -x ${MYSQL} ]]; then
             # Check which mysql version is installed
             is_mariadb="$(mysql -V | grep MariaDB)"
 
             # Checking if MYSQL is installed and is not MariaDB
-            if [[ -z ${is_mariadb} ]]; then
-                menu_config_changes_detected "mysql" "true"
-            fi
+            [[ -z ${is_mariadb} ]] && menu_config_changes_detected "mysql" "true"
+
 
         fi
 
     fi
-
-    #_brolit_configuration_app_mysql
 
     export MHOST MUSER MYSQL_CONF_DIR MYSQL MYSQL_CONF MYSQL_ROOT MYSQLDUMP_ROOT MYSQLDUMP
     export PACKAGES_MYSQL_STATUS PACKAGES_MYSQL_CONFIG_VERSION PACKAGES_MYSQL_CONFIG_PORTS
@@ -1530,11 +1524,10 @@ function _brolit_configuration_load_docker() {
 
         # Checking if docker is not installed
         if [[ -z ${DOCKER} ]]; then
+
             menu_config_changes_detected "docker" "true"
 
-            if [[ ${PACKAGES_DOCKER_COMPOSE_STATUS} == "enabled" ]]; then
-                menu_config_changes_detected "docker-compose" "true"
-            fi
+            [[ ${PACKAGES_DOCKER_COMPOSE_STATUS} == "enabled" ]] && menu_config_changes_detected "docker-compose" "true"
 
         fi
 
@@ -2029,12 +2022,9 @@ function brolit_configuration_setup_check() {
         fi
 
         # Creating temporary folders
-        if [[ ! -d ${BROLIT_TMP_DIR} ]]; then
-            mkdir -p "${BROLIT_TMP_DIR}"
-        fi
-        if [[ ! -d "${BROLIT_TMP_DIR}/${NOW}" ]]; then
-            mkdir -p "${BROLIT_TMP_DIR}/${NOW}"
-        fi
+        [[ ! -d ${BROLIT_TMP_DIR} ]] && mkdir -p "${BROLIT_TMP_DIR}"
+        [[ ! -d "${BROLIT_TMP_DIR}/${NOW}" ]] && mkdir -p "${BROLIT_TMP_DIR}/${NOW}"
+
     fi
 
     export DEBUG SKIPTESTS CHECKPKGS BROLIT_TMP_DIR
