@@ -35,6 +35,7 @@ function nginx_installer() {
     if [ ${exitstatus} -eq 0 ]; then
 
         log_event "info" "Nginx is already installed" "false"
+        log_event "debug" "Nginx binary: ${nginx_bin}" "false"
 
         return 1
 
