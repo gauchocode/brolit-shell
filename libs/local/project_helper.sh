@@ -1951,16 +1951,20 @@ function project_delete_files() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    # If project_install_type == "docker", stop and delete containers
-    if [[ ${project_install_type} == "docker" ]]; then
+    # If project_install_type == "docker"*, stop and delete containers
+    if [[ ${project_install_type} == "docker"* ]]; then
 
       compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
 
       if [[ -f "${compose_file}" ]]; then
+      
         # Execute docker-compose commands
         docker-compose -f "${compose_file}" stop --quiet
-        docker-compose -f "${compose_file}" rm
+        
         [[ $? -eq 1 ]] && return 1
+
+        docker-compose -f "${compose_file}" rm
+        
       fi
 
     fi
