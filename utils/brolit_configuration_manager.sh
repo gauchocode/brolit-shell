@@ -741,7 +741,7 @@ function _brolit_configuration_load_nginx() {
     declare -g WSERVER="/etc/nginx" # Webserver config files location
 
     # NGINX
-    package_is_installed "nginx"
+    nginx_installer
     exitstatus=$?
 
     PACKAGES_NGINX_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.nginx[].status")"
@@ -763,16 +763,12 @@ function _brolit_configuration_load_nginx() {
         fi
 
         # Checking if nginx is not installed
-        if [[ ${exitstatus} -eq 1 ]]; then
-            menu_config_changes_detected "nginx" "true"
-        fi
+        [[ ${exitstatus} -eq 1 ]] && menu_config_changes_detected "nginx" "true"
 
     else
 
         # Checking if nginx is installed
-        if [[ ${exitstatus} -eq 0 ]]; then
-            menu_config_changes_detected "nginx" "true"
-        fi
+        [[ ${exitstatus} -eq 0 ]] && menu_config_changes_detected "nginx" "true"
 
     fi
 
@@ -877,16 +873,12 @@ function _brolit_configuration_load_php() {
         #package_is_installed "php${PHP_V}-fpm"
 
         # Checking if php is not installed
-        if [[ ! -x ${PHP} ]]; then
-            menu_config_changes_detected "php" "true"
-        fi
+        [[ ! -x ${PHP} ]] && menu_config_changes_detected "php" "true"
 
     else
 
         # Checking if php is installed
-        if [[ -x ${PHP} ]]; then
-            menu_config_changes_detected "php" "true"
-        fi
+        [[ -x ${PHP} ]] && menu_config_changes_detected "php" "true"
 
     fi
 
@@ -1146,9 +1138,7 @@ function _brolit_configuration_load_postgres() {
         fi
 
         # Checking if Postgres is not installed
-        if [[ ! -x ${POSTGRES} ]]; then
-            menu_config_changes_detected "postgres" "true"
-        fi
+        [[ ! -x ${POSTGRES} ]] && menu_config_changes_detected "postgres" "true"
 
         PSQLDUMP="$(command -v pg_dump)"
 
@@ -1159,9 +1149,7 @@ function _brolit_configuration_load_postgres() {
     else
 
         # Checking if Postgres is installed
-        if [[ -x ${POSTGRES} ]]; then
-            menu_config_changes_detected "postgres" "true"
-        fi
+        [[ -x ${POSTGRES} ]] && menu_config_changes_detected "postgres" "true"
 
     fi
 
@@ -1187,7 +1175,6 @@ function _brolit_configuration_load_redis() {
     # Globals
     declare -g PACKAGES_REDIS_STATUS
     declare -g PACKAGES_REDIS_CONFIG_VERSION
-    #declare -g PACKAGES_REDIS_CONFIG_PORTS
 
     REDIS="$(command -v redis-cli)"
 
@@ -1202,16 +1189,12 @@ function _brolit_configuration_load_redis() {
         fi
 
         # Checking if Redis is not installed
-        if [[ ! -x ${REDIS} ]]; then
-            menu_config_changes_detected "redis" "true"
-        fi
+        [[ ! -x ${REDIS} ]] && menu_config_changes_detected "redis" "true"
 
     else
 
         # Checking if Redis is  installed
-        if [[ -x ${REDIS} ]]; then
-            menu_config_changes_detected "redis" "true"
-        fi
+        [[ -x ${REDIS} ]] && menu_config_changes_detected "redis" "true"
 
     fi
 
@@ -1242,7 +1225,6 @@ function _brolit_configuration_load_certbot() {
     PACKAGES_CERTBOT_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.certbot[].status")"
 
     CERTBOT="$(which certbot)"
-    #CERTBOT="$(command -v certbot)"
     if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
 
         PACKAGES_CERTBOT_CONFIG_MAILA="$(json_read_field "${server_config_file}" "PACKAGES.certbot[].config[].email")"
@@ -1254,16 +1236,12 @@ function _brolit_configuration_load_certbot() {
         fi
 
         # Checking if Certbot is not installed
-        if [[ ! -x "${CERTBOT}" ]]; then
-            menu_config_changes_detected "certbot" "true"
-        fi
+        [[ ! -x "${CERTBOT}" ]] && menu_config_changes_detected "certbot" "true"
 
     else
 
         # Checking if Certbot is  installed
-        if [[ -x "${CERTBOT}" ]]; then
-            menu_config_changes_detected "certbot" "true"
-        fi
+        [[ -x "${CERTBOT}" ]] && menu_config_changes_detected "certbot" "true"
 
         display --indent 6 --text "- Certbot disabled" --result "WARNING" --color YELLOW
 
@@ -1324,16 +1302,12 @@ function _brolit_configuration_load_monit() {
         fi
 
         # Checking if Monit is not installed
-        if [[ ! -x ${MONIT} ]]; then
-            menu_config_changes_detected "monit" "true"
-        fi
+        [[ ! -x ${MONIT} ]] && menu_config_changes_detected "monit" "true"
 
     else
 
         # Checking if Monit is installed
-        if [[ -x ${MONIT} ]]; then
-            menu_config_changes_detected "monit" "true"
-        fi
+        [[ -x ${MONIT} ]] && menu_config_changes_detected "monit" "true"
 
     fi
 
@@ -1408,16 +1382,12 @@ function _brolit_configuration_load_netdata() {
         fi
 
         # Checking if Netdata is not installed
-        if [[ ! -x "${NETDATA}" && -z "${NETDATA_PR}" ]]; then
-            menu_config_changes_detected "netdata" "true"
-        fi
+        [[ ! -x "${NETDATA}" && -z "${NETDATA_PR}" ]] && menu_config_changes_detected "netdata" "true"
 
     else
 
         # Checking if Netdata is installed
-        if [[ -x "${NETDATA}" || -n "${NETDATA_PR}" ]]; then
-            menu_config_changes_detected "netdata" "true"
-        fi
+        [[ -x "${NETDATA}" || -n "${NETDATA_PR}" ]] && menu_config_changes_detected "netdata" "true"
 
     fi
 
@@ -1466,16 +1436,12 @@ function _brolit_configuration_load_cockpit() {
         fi
 
         # Checking if Cockpit is not installed
-        if [[ ! -x "${COCKPIT}" && -z "${COCKPIT_PR}" ]]; then
-            menu_config_changes_detected "cockpit" "true"
-        fi
+        [[ ! -x "${COCKPIT}" && -z "${COCKPIT_PR}" ]] && menu_config_changes_detected "cockpit" "true"
 
     else
 
         # Checking if Cockpit is installed
-        if [[ -x "${COCKPIT}" || -n "${COCKPIT_PR}" ]]; then
-            menu_config_changes_detected "cockpit" "true"
-        fi
+        [[ -x "${COCKPIT}" || -n "${COCKPIT_PR}" ]] && menu_config_changes_detected "cockpit" "true"
 
     fi
 
@@ -1519,16 +1485,12 @@ function _brolit_configuration_load_zabbix() {
         fi
 
         # Checking if Cockpit is not installed
-        if [[ ! -x "${ZABBIX}" && -z "${ZABBIX_PR}" ]]; then
-            menu_config_changes_detected "zabbix" "true"
-        fi
+        [[ ! -x "${ZABBIX}" && -z "${ZABBIX_PR}" ]] && menu_config_changes_detected "zabbix" "true"
 
     else
 
         # Checking if Cockpit is installed
-        if [[ -x "${ZABBIX}" || -n "${ZABBIX_PR}" ]]; then
-            menu_config_changes_detected "zabbix" "true"
-        fi
+        [[ -x "${ZABBIX}" || -n "${ZABBIX_PR}" ]] && menu_config_changes_detected "zabbix" "true"
 
     fi
 
@@ -1579,12 +1541,9 @@ function _brolit_configuration_load_docker() {
     else
 
         # Checking if docker is installed
-        if [[ -n ${DOCKER} ]]; then
-            menu_config_changes_detected "docker" "true"
-        fi
-        if [[ -n ${DOCKER_COMPOSE} ]]; then
-            menu_config_changes_detected "docker-compose" "true"
-        fi
+        [[ -n ${DOCKER} ]] && menu_config_changes_detected "docker" "true"
+        
+        [[ -n ${DOCKER_COMPOSE} ]] && menu_config_changes_detected "docker-compose" "true"
 
     fi
 
@@ -1643,16 +1602,12 @@ function _brolit_configuration_load_portainer() {
         fi
 
         # Checking if Portainer is not installed
-        if [[ -z ${PORTAINER} ]]; then
-            menu_config_changes_detected "portainer" "true"
-        fi
+        [[ -z ${PORTAINER} ]] && menu_config_changes_detected "portainer" "true"
 
     else
 
         # Checking if Portainer is installed
-        if [[ -n ${PORTAINER} ]]; then
-            menu_config_changes_detected "portainer" "true"
-        fi
+        [[ -n ${PORTAINER} ]] && menu_config_changes_detected "portainer" "true"
 
     fi
 
@@ -1707,16 +1662,12 @@ function _brolit_configuration_load_portainer_agent() {
         fi
 
         # Checking if Portainer Agent is not installed
-        if [[ -z ${PORTAINER_AGENT} ]]; then
-            menu_config_changes_detected "portainer_agent" "true"
-        fi
+        [[ -z ${PORTAINER_AGENT} ]] && menu_config_changes_detected "portainer_agent" "true"
 
     else
 
         # Checking if Portainer Agent is installed
-        if [[ -n ${PORTAINER_AGENT} ]]; then
-            menu_config_changes_detected "portainer_agent" "true"
-        fi
+        [[ -n ${PORTAINER_AGENT} ]] && menu_config_changes_detected "portainer_agent" "true"
 
     fi
 
@@ -1767,16 +1718,12 @@ function _brolit_configuration_load_mailcow() {
         fi
 
         # Checking if Portainer is not installed
-        if [[ -z ${MAILCOW} ]]; then
-            menu_config_changes_detected "mailcow" "true"
-        fi
+        [[ -z ${MAILCOW} ]] && menu_config_changes_detected "mailcow" "true"
 
     else
 
         # Checking if Portainer is installed
-        if [[ -n ${MAILCOW} ]]; then
-            menu_config_changes_detected "mailcow" "true"
-        fi
+        [[ -n ${MAILCOW} ]] && menu_config_changes_detected "mailcow" "true"
 
     fi
 
