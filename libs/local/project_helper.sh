@@ -2195,6 +2195,9 @@ function project_delete() {
     project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
     project_db_name=$(project_get_configured_database "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")
     project_db_user=$(project_get_configured_database_user "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")
+    project_db_engine="$(project_get_configured_database_engine "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")"
+    
+    [[ -z "${project_db_engine}" ]] && project_db_engine="$(database_ask_engine)"
 
     # Delete Files
     project_delete_files "${project_domain}"
@@ -2230,12 +2233,6 @@ function project_delete() {
 
   [[ -z ${project_type} ]] && project_type="$(project_ask_type)"
   [[ -z ${project_install_type} ]] && project_install_type="default"
-
-  if [[ -f ${PROJECTS_PATH}/${project_domain} ]]; then
-    project_db_engine="$(project_get_configured_database_engine "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")"
-  else
-    project_db_engine="$(database_ask_engine)"
-  fi
 
   if [[ -n ${project_db_engine} ]]; then
     # Delete Database
