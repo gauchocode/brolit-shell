@@ -769,7 +769,7 @@ function _brolit_configuration_load_nginx() {
 
     else
 
-        # Checking if nginx is  installed
+        # Checking if nginx is installed
         if [[ ${exitstatus} -eq 0 ]]; then
             menu_config_changes_detected "nginx" "true"
         fi
@@ -1949,11 +1949,7 @@ function _brolit_configuration_app_mysql() {
 
     is_mysql_installed="$(package_is_installed "mysql")"
 
-    if [[ ${is_mysql_installed} == "true" ]]; then
-
-        mysql_ask_root_psw
-
-    fi
+    [[ ${is_mysql_installed} == "true" ]] && mysql_ask_root_psw
 
 }
 

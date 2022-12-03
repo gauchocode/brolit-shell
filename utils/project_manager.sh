@@ -347,6 +347,7 @@ function project_manager_menu_new_project_type_new_project() {
   project_creation_type_options=(
     "01)" "NEW PROJECT"
     "02)" "NEW PROJECT FROM BACKUP"
+    "03)" "DOCKERIZE PROJECT FROM BACKUP"
     #"03)" "NEW PROJECT FROM GIT REPOSITORY"
   )
 
@@ -397,12 +398,20 @@ function project_manager_menu_new_project_type_new_project() {
     # NEW PROJECT FROM BACKUP
     if [[ ${chosen_project_creation_type_option} == *"02"* ]]; then
 
-      # TODO:
-      # 1- Ask for project domain
-      chosen_domain="$(whiptail --title "Project Domain" --inputbox "Want to change the project's domain? Default:" 10 60 "${domain}" 3>&1 1>&2 2>&3)"
+      chosen_domain="$(whiptail --title "Project Domain" --inputbox "New project's domain:" 10 60 "" 3>&1 1>&2 2>&3)"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Check if domain is a valid domainname
+        if [[ ! "${chosen_domain}" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$ ]]; then
+
+          display --indent 6 --text "- Domain is not valid" --result FAIL --color RED
+          log_event "error" "Domain is not valid" "false"
+          prompt_return_or_finish
+          project_manager_menu_new_project_type_new_project
+
+        fi
 
         # Log
         log_event "info" "Working with domain: ${chosen_domain}"
@@ -421,9 +430,19 @@ function project_manager_menu_new_project_type_new_project() {
 
     fi
 
-    # TODO: move to another function
     # DOCKERIZE EXISTING PROJECT
-    if [[ ${chosen_project_creation_type_option} == *"04"* ]]; then
+    if [[ ${chosen_project_creation_type_option} == *"03"* ]]; then
+
+      # TODO: move to another function
+
+      # Backup Selection
+      
+      ## TODO: Choose backup from storage
+
+      ## TODO: Download backup file
+
+      ## TODO: Extract backup file and restore on ${PROJECTS_PATH}
+
       # TODO: need to change this!
       # If a directory exists, get project type & installation type
       if [[ -d "${PROJECTS_PATH}/${chosen_project}" ]]; then
