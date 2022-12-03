@@ -593,20 +593,16 @@ function restore_backup_from_storage() {
 
     chosen_remote_type_path="${chosen_server}/projects-${chosen_remote_status}/${chosen_remote_type}"
 
-    # Select backup type
-    #restore_type_selection_from_storage "${chosen_remote_type_path}" "${new_domain}"
-
     log_section "Restore Backup"
 
-    # Detail of chosen_remote_type_path: "${chosen_server}/projects-${chosen_status}/${chosen_restore_type}"
+    # Details of chosen_remote_type_path:
+    #   "${chosen_server}/projects-${chosen_status}/${chosen_restore_type}"
     chosen_restore_type="$(basename "${chosen_remote_type_path}")" # project, site or database
     remote_list="$(dirname "${chosen_remote_type_path}")"
 
     case ${chosen_restore_type} in
 
     project)
-
-      #restore_project_selection "${remote_list}" "${new_domain}"
 
       log_subsection "Restore Project Backup"
 
@@ -619,10 +615,17 @@ function restore_backup_from_storage() {
       [[ $? -eq 1 ]] && display --indent 6 --text "- Downloading Project Backup" --result "ERROR" --color RED && return 1
 
       # NEW NEW NEW NEW (projet_domain should be passed by argument)
-      # For convention ${chosen_project} == project_domain
+      # Detail of backup_to_dowload: 
+      #   "${chosen_server}/projects-${chosen_status}/${chosen_restore_type}/${project_domain}/${backup_file}"
+      # For convention at this point ${chosen_project} == ${project_domain}
       backup_to_restore="$(basename "${backup_to_dowload}")"
-      # TODO: get chosen_project
+      # Get project_domain
+      chosen_project="$(dirname "${backup_to_dowload}")"
+      chosen_project="$(basename "${chosen_project}")"
+      
+      # Restore backup
       restore_project_backup "${backup_to_restore}" "${chosen_project}" "${new_domain}"
+      [[ $? -eq 1 ]] && display --indent 6 --text "- Project Restore" --result "SKIPPED" --color YELLOW && return 1
 
       # Send notification
       send_notification "✅ ${SERVER_NAME}" "Project ${chosen_project} restored!" "0"
