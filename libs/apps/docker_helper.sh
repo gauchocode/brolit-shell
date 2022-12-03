@@ -621,7 +621,7 @@ function docker_project_install() {
             # Log
             wait 2
             #clear_previous_lines "7"
-            clear_previous_lines "15"
+            clear_previous_lines "21"
             log_event "info" "Downloading docker images." "false"
             log_event "info" "Building docker images." "false"
             display --indent 6 --text "- Downloading docker images" --result "DONE" --color GREEN
@@ -648,18 +648,17 @@ function docker_project_install() {
             # Add specific docker installation values on wp-config.php
             ## Write wp-config.php after the first line
             sed -ie "2i \
-            /** Sets up HTTPS and other needed vars to let WordPress works behind a Proxy */\n\
-            define('FORCE_SSL_ADMIN', true);\n\
-            if (strpos(\$_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false){\n\
-                \$_SERVER['HTTPS']='on';\n\
-            }\n\
-            if (isset(\$_SERVER['HTTP_X_FORWARDED_HOST'])) {\n\
-                \$_SERVER['HTTP_HOST'] = \$_SERVER['HTTP_X_FORWARDED_HOST'];\n\
-            }\n\
-            define('WP_HOME','https://${project_domain}/');\n\
-            define('WP_SITEURL','https://${project_domain}/');\n\
-            define('WP_REDIS_HOST','redis');\n \
-            " "${project_path}/wordpress/wp-config.php"
+/** Sets up HTTPS and other needed vars to let WordPress works behind a Proxy */\n\
+define('FORCE_SSL_ADMIN', true);\n\
+if (strpos(\$_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false){\n\
+    \$_SERVER['HTTPS']='on';\n\
+}\n\
+if (isset(\$_SERVER['HTTP_X_FORWARDED_HOST'])) {\n\
+    \$_SERVER['HTTP_HOST'] = \$_SERVER['HTTP_X_FORWARDED_HOST'];\n\
+}\n\
+define('WP_HOME','https://${project_domain}/');\n\
+define('WP_SITEURL','https://${project_domain}/');\n\
+define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
 
             # Remove tmp file
             rm "${project_path}/wordpress/wp-config.phpe"
