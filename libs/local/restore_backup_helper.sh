@@ -574,29 +574,270 @@ function restore_backup_from_storage() {
 
   local new_domain="${1}"
 
-  local remote_server_list # list servers directories
-  local remote_type_list   # list backup types to restore
-  local chosen_path
+  local chosen_remote_type_path # list backup types to restore
   local chosen_server
   local chosen_remote_type
   local chosen_remote_status
 
   # Server selection
-  chosen_server="$(restore_backup_remote_server_list)"
+  chosen_server="$(storage_remote_server_list)"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # List status options
-    chosen_remote_status="$(restore_backup_remote_status_list)"
+    chosen_remote_status="$(storage_remote_status_list)"
 
     # List type options
-    chosen_remote_type="$(restore_backup_remote_type_list)"
+    chosen_remote_type="$(storage_remote_type_list)"
 
-    chosen_path="${chosen_server}/projects-${chosen_remote_status}/${chosen_remote_type}"
+    chosen_remote_type_path="${chosen_server}/projects-${chosen_remote_status}/${chosen_remote_type}"
 
     # Select backup type
-    restore_type_selection_from_storage "${chosen_path}" "${new_domain}"
+    #restore_type_selection_from_storage "${chosen_remote_type_path}" "${new_domain}"
+
+    log_section "Restore Backup"
+
+    # Detail of chosen_remote_type_path: "${chosen_server}/projects-${chosen_status}/${chosen_restore_type}"
+    chosen_restore_type="$(basename "${chosen_remote_type_path}")" # project, site or database
+    remote_list="$(dirname "${chosen_remote_type_path}")"
+
+    case ${chosen_restore_type} in
+
+    project)
+
+      #restore_project_selection "${remote_list}" "${new_domain}"
+
+      log_subsection "Restore Project Backup"
+
+      # Select project backup
+      backup_to_dowload="$(storage_backup_selection "${remote_list}")"
+
+      # Download backup
+      storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
+
+      [[ $? -eq 1 ]] && display --indent 6 --text "- Downloading Project Backup" --result "ERROR" --color RED && return 1
+
+      # NEW NEW NEW NEW (projet_domain should be passed by argument)
+      # For convention ${chosen_project} == project_domain
+      backup_to_restore="$(basename "${backup_to_dowload}")"
+      # TODO: get chosen_project
+      restore_project_backup "${backup_to_restore}" "${chosen_project}" "${new_domain}"
+
+      # Send notification
+      send_notification "✅ ${SERVER_NAME}" "Project ${chosen_project} restored!" "0"
+
+      ;;
+
+    configs)
+
+      storage_project_list="$(storage_list_dir "${remote_list}")"
+
+      restore_config_files_from_storage "${chosen_type_path}" "${storage_project_list}"
+
+      ;;
+
+    site)
+
+      storage_project_list="$(storage_list_dir "${remote_list}")"
+
+      # Select Project
+      chosen_project="$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${storage_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+        storage_chosen_backup_path="${chosen_type_path}/${chosen_project}"
+        storage_backup_list="$(storage_list_dir "${storage_chosen_backup_path}")"
+      else
+        return 1
+      fi
+      # Select Backup File
+      chosen_backup_to_restore="$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${storage_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Asking project stage with suggested actual state
+        suffix=${chosen_project%_*} ## strip the tail
+        project_stage="$(project_ask_stage "${suffix}")"
+
+        ## If chosen_project = project domain, we need to extract the domain extension
+        possible_project_name="$(project_get_name_from_domain "${chosen_project}")"
+
+        # Asking project name
+        project_name="$(project_ask_name "${possible_project_name}")"
+
+        # Sanitize ${project_name}
+        db_project_name="$(mysql_name_sanitize "${project_name}")"
+
+        project_backup_date="$(backup_get_date "${chosen_backup_to_restore}")"
+        backup_to_dowload="${chosen_type_path}/${chosen_project}/${chosen_backup_to_restore}"
+
+        # Downloading Backup
+        storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
+
+        # Decompress
+        decompress "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+
+        #chosen_type_path="${chosen_server}/projects-${chosen_status}/${chosen_restore_type}"
+        #storage_project_list="$(storage_list_dir "${chosen_type_path}")"
+        storage_project_list="$(storage_list_dir "${chosen_remote_type_path}")"
+
+        # At this point chosen_project is the new project domain
+        # Restore site files
+        restore_backup_files "${chosen_project}"
+
+        # Get project install type
+        project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${chosen_project}")"
+
+        if [[ ${project_install_type} != "proxy" && ${project_install_type} != "docker"* ]]; then
+          # Change ownership
+          change_ownership "www-data" "www-data" "${PROJECTS_PATH}/${chosen_project}"
+        fi
+
+      fi
+
+      ;;
+
+    database)
+
+      # Select Project
+      chosen_project="$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${storage_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+        storage_chosen_backup_path="${chosen_type_path}/${chosen_project}"
+        storage_backup_list="$(storage_list_dir "${storage_chosen_backup_path}")"
+      fi
+      # Select Backup File
+      chosen_backup_to_restore="$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${storage_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Asking project stage with suggested actual state
+        suffix=${chosen_project%_*} ## strip the tail
+        project_stage="$(project_ask_stage "${suffix}")"
+
+        # On site chosen_project = project domain, on database chosen_project = database name
+        ## If chosen_project = database name, we need to extract the original project_stage
+        possible_project_name=${chosen_project%$suffix} #Remove suffix
+
+        # Asking project name
+        project_name="$(project_ask_name "${possible_project_name}")"
+
+        # Sanitize ${project_name}
+        db_project_name="$(mysql_name_sanitize "${project_name}")"
+
+        project_backup_date="$(backup_get_date "${chosen_backup_to_restore}")"
+        backup_to_dowload="${chosen_type_path}/${chosen_project}/${chosen_backup_to_restore}"
+
+        # Downloading Backup
+        storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
+
+        # Decompress
+        decompress "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+
+        dump_file="${chosen_backup_to_restore%%.*}.sql"
+
+        # Ask with whiptail if the database is associated to an existing project (yes or no)
+        whiptail_message_with_skip_option "RESTORE BACKUP" "Is the database associated to an existing project?"
+
+        # If yes select a project from ${PROJECTS_PATH} directory
+        if [[ $? -eq 0 ]]; then
+          # Select project to work with
+          directory_browser "Select a project to work with" "${PROJECTS_PATH}" #return $filename
+
+          # Check project_install_type (default or docker)
+          project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${filename}")"
+          # Check project_type
+          project_type="$(project_get_type "${PROJECTS_PATH}/${filename}")"
+
+          if [[ ${project_install_type} == "docker-compose" ]]; then
+
+            [[ ${PACKAGES_DOCKER_STATUS} != "enabled" ]] && log_event "error" "Docker is not enabled from brolit_conf.json" "true" && exit 1
+
+            # Read MYSQL_DATABASE, MYSQL_USER and MYSQL_PASSWORD from docker .env file
+            docker_env_file="/${PROJECTS_PATH}/${filename}/.env"
+            if [[ -f "${docker_env_file}" ]]; then
+              docker_project_name="$(grep PROJECT_NAME "${docker_env_file}" | cut -d '=' -f2)"
+              docker_mysql_database="$(grep MYSQL_DATABASE "${docker_env_file}" | cut -d '=' -f2)"
+              docker_mysql_user="$(grep MYSQL_USER "${docker_env_file}" | cut -d '=' -f2)"
+              docker_mysql_user_pass="$(grep MYSQL_PASSWORD "${docker_env_file}" | cut -d '=' -f2)"
+            fi
+
+            # Restore database on docker container
+            docker_mysql_database_import "${docker_project_name}_mysql" "${docker_mysql_user}" "${docker_mysql_user_pass}" "${docker_mysql_database}" "${BROLIT_TMP_DIR}/${dump_file}"
+
+          else
+
+            # Get ${database_engine} from project config
+            database_engine="$(project_get_configured_database_engine "${PROJECTS_PATH}/${filename}" "${project_type}" "${project_install_type}")"
+            # Get ${database_name} from project config
+            database_name="$(project_get_configured_database "${PROJECTS_PATH}/${filename}" "${project_type}" "${project_install_type}")"
+            # Get ${database_user} from project config
+            database_user="$(project_get_configured_database_user "${PROJECTS_PATH}/${filename}" "${project_type}" "${project_install_type}")"
+            # Get ${database_user_pass} from project config
+            database_user_pass="$(project_get_configured_database_userpassw "${PROJECTS_PATH}/${filename}" "${project_type}" "${project_install_type}")"
+
+            # If database_ vars are not empty, restore database
+            if [[ -n "${database_engine}" ]] && [[ -n "${database_name}" ]] && [[ -n "${database_user}" ]] && [[ -n "${database_user_pass}" ]]; then
+
+              # TODO: check if volume is created? check if container is running?
+
+              # Restore Database Backup
+              restore_backup_database "${database_engine}" "${project_stage}" "${database_name}" "${database_user}" "${database_user_pass}" "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}"
+              return 0
+
+            else
+
+              log_event "error" "Can't read database config from project file. Please, check project config." "true"
+              return 1
+
+            fi
+
+          fi
+
+        else
+
+          # Get database backup type (mysql or postgres) from dump file
+          database_engine="$(backup_get_database_type "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}")"
+
+          database_engine="mysql"
+          database_name="${db_project_name}_${project_stage}"
+
+          # TODO: check if database exists
+
+          #if [[ -z ${db_user} ]]; then
+          database_user="${db_project_name}_user"
+          #fi
+          #if [[ -z ${db_pass} ]]; then
+          # Passw generator
+          database_user_pass="$(openssl rand -hex 12)"
+          #fi
+
+          # Restore Database Backup
+          restore_backup_database "${database_engine}" "${project_stage}" "${database_name}" "${database_user}" "${database_user_pass}" "${BROLIT_TMP_DIR}/${dump_file}"
+
+          # TODO: ask if want to change project db parameters and make Cloudflare changes
+
+          #folder_to_install="$(project_ask_folder_to_install "${PROJECTS_PATH}")"
+          #folder_to_install_result=$?
+          #[[ ${folder_to_install_result} -eq 1 ]] && return 1
+
+          #directory_browser "Site Selection Menu" "${PROJECTS_PATH}"
+          #directory_browser_result=$?
+          #[[ ${directory_browser_result} -eq 1 ]] && return 1
+
+          # TODO: check project type (WP, Laravel, etc)
+          #project_type="$(project_get_type "${PROJECTS_PATH}/${filename}")"
+
+          # Post-restore/install tasks
+          # TODO: neet to get old domain for replace on database
+          #project_post_install_tasks "${PROJECTS_PATH}/${filename}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${project_domain}" "${project_domain}"
+        fi
+
+      fi
+
+      ;;
+
+    esac
 
   else
 
@@ -605,120 +846,6 @@ function restore_backup_from_storage() {
   fi
 
   restore_manager_menu
-
-}
-
-################################################################################
-# Remote server list from storage.
-#
-# Arguments:
-#   none
-#
-# Outputs:
-#   0 if ok, 1 on error.
-################################################################################
-
-function restore_backup_remote_server_list() {
-
-  local remote_server_list # list servers directories
-  local remote_type_list   # list backup types to restore
-  local chosen_server      # whiptail var
-
-  # Server selection
-  remote_server_list="$(storage_list_dir "/")"
-
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    # Show output
-    chosen_server="$(whiptail --title "RESTORE BACKUP" --menu "Choose a server to work with" 20 78 10 $(for x in ${remote_server_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
-
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-
-      log_event "debug" "chosen_server: ${chosen_server}" "false"
-
-      echo "${chosen_server}" && return 0
-
-    else
-
-      return 1
-
-    fi
-
-  else
-
-    log_event "error" "Storage list dir failed. Output: ${remote_server_list}. Exit status: ${exitstatus}" "false"
-
-    return 1
-
-  fi
-
-}
-
-################################################################################
-# Remote type list from storage.
-#
-# Arguments:
-#   none
-#
-# Outputs:
-#   0 if ok, 1 on error.
-################################################################################
-
-function restore_backup_remote_type_list() {
-
-  local remote_type_list
-  local chosen_restore_type
-
-  # List options
-  remote_type_list="project site database" # TODO: need to implement "other"
-
-  chosen_restore_type="$(whiptail --title "RESTORE BACKUP" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 $(for x in ${remote_type_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)"
-
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    echo "${chosen_restore_type}" && return 0
-
-  else
-
-    return 1
-
-  fi
-
-}
-
-################################################################################
-# Remote status list from storage.
-#
-# Arguments:
-#   none
-#
-# Outputs:
-#   0 if ok, 1 on error.
-################################################################################
-
-function restore_backup_remote_status_list() {
-
-  local remote_status_list
-  local chosen_restore_status
-
-  # List options
-  remote_status_list="online offline"
-
-  chosen_restore_status="$(whiptail --title "RESTORE BACKUP" --menu "Choose a backup status." 20 78 10 $(for x in ${remote_status_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)"
-
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    echo "${chosen_restore_status}" && return 0
-
-  else
-
-    return 1
-
-  fi
 
 }
 
@@ -1014,378 +1141,6 @@ function restore_backup_files() {
 
 }
 
-################################################################################
-# Restore type selection from dropbox
-#
-# Arguments:
-#   ${1} = ${chosen_server}
-#   ${2} = ${remote_type_list}
-#
-# Outputs:
-#   0 if ok, 1 on error.
-################################################################################
-
-function restore_type_selection_from_storage() {
-
-  #local chosen_server="${1}"
-  #local remote_type_list="${2}"
-  local remote_type_list="${1}"
-  local new_domain="${2}"
-
-  local chosen_restore_type        # whiptail var
-  local chosen_backup_to_restore   # whiptail var
-  local chosen_type_path           # whiptail var
-  local storage_project_list       # list of projects on remote directory
-  local storage_chosen_backup_path # whiptail var
-  local storage_backup_list        # dropbox listing directories
-  local domain                     # extracted domain
-  local db_project_name            # extracted db name
-  local backup_to_dowload          # backup to download
-  local dump_file
-  local possible_project_name
-  local database_engine
-  local database_name
-  local database_user
-  local database_user_pass
-
-  #chosen_restore_type="$(whiptail --title "RESTORE BACKUP" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 $(for x in ${remote_type_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)"
-  #exitstatus=$?
-  #if [[ ${exitstatus} -eq 0 ]]; then
-
-  #project_status_list="online offline"
-  #chosen_status="$(whiptail --title "RESTORE BACKUP" --menu "Choose a backup status." 20 78 10 $(for x in ${project_status_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)"
-  #chosen_type_path="${chosen_server}/projects-${chosen_status}/${chosen_restore_type}"
-
-  log_section "Restore Backup"
-
-  # Detail of remote_type_list: "${chosen_server}/projects-${chosen_status}/${chosen_restore_type}"
-  chosen_restore_type="$(basename "${remote_type_list}")" # project, site or database
-  remote_list="$(dirname "${remote_type_list}")"
-
-  case ${chosen_restore_type} in
-
-  project)
-
-    #restore_project "${chosen_server}" "${chosen_status}"
-    restore_project_selection "${remote_list}" "${new_domain}"
-
-    ;;
-
-  configs)
-
-    storage_project_list="$(storage_list_dir "${remote_list}")"
-
-    restore_config_files_from_storage "${chosen_type_path}" "${storage_project_list}"
-
-    ;;
-
-  site)
-
-    storage_project_list="$(storage_list_dir "${remote_list}")"
-
-    # Select Project
-    chosen_project="$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${storage_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)"
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-      storage_chosen_backup_path="${chosen_type_path}/${chosen_project}"
-      storage_backup_list="$(storage_list_dir "${storage_chosen_backup_path}")"
-    else
-      return 1
-    fi
-    # Select Backup File
-    chosen_backup_to_restore="$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${storage_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-
-      # Asking project stage with suggested actual state
-      suffix=${chosen_project%_*} ## strip the tail
-      project_stage="$(project_ask_stage "${suffix}")"
-
-      ## If chosen_project = project domain, we need to extract the domain extension
-      possible_project_name="$(project_get_name_from_domain "${chosen_project}")"
-
-      # Asking project name
-      project_name="$(project_ask_name "${possible_project_name}")"
-
-      # Sanitize ${project_name}
-      db_project_name="$(mysql_name_sanitize "${project_name}")"
-
-      project_backup_date="$(backup_get_date "${chosen_backup_to_restore}")"
-      backup_to_dowload="${chosen_type_path}/${chosen_project}/${chosen_backup_to_restore}"
-
-      # Downloading Backup
-      storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
-
-      # Decompress
-      decompress "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
-
-      #chosen_type_path="${chosen_server}/projects-${chosen_status}/${chosen_restore_type}"
-      #storage_project_list="$(storage_list_dir "${chosen_type_path}")"
-      storage_project_list="$(storage_list_dir "${remote_type_list}")"
-
-      # At this point chosen_project is the new project domain
-      # Restore site files
-      restore_backup_files "${chosen_project}"
-
-      # Get project install type
-      project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${chosen_project}")"
-
-      if [[ ${project_install_type} != "proxy" && ${project_install_type} != "docker"* ]]; then
-        # Change ownership
-        change_ownership "www-data" "www-data" "${PROJECTS_PATH}/${chosen_project}"
-      fi
-
-    fi
-
-    ;;
-
-  database)
-
-    # Select Project
-    chosen_project="$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup Project" 20 78 10 $(for x in ${storage_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)"
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-      storage_chosen_backup_path="${chosen_type_path}/${chosen_project}"
-      storage_backup_list="$(storage_list_dir "${storage_chosen_backup_path}")"
-    fi
-    # Select Backup File
-    chosen_backup_to_restore="$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${storage_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-
-      # Asking project stage with suggested actual state
-      suffix=${chosen_project%_*} ## strip the tail
-      project_stage="$(project_ask_stage "${suffix}")"
-
-      # On site chosen_project = project domain, on database chosen_project = database name
-      ## If chosen_project = database name, we need to extract the original project_stage
-      possible_project_name=${chosen_project%$suffix} #Remove suffix
-
-      # Asking project name
-      project_name="$(project_ask_name "${possible_project_name}")"
-
-      # Sanitize ${project_name}
-      db_project_name="$(mysql_name_sanitize "${project_name}")"
-
-      project_backup_date="$(backup_get_date "${chosen_backup_to_restore}")"
-      backup_to_dowload="${chosen_type_path}/${chosen_project}/${chosen_backup_to_restore}"
-
-      # Downloading Backup
-      storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
-
-      # Decompress
-      decompress "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
-
-      dump_file="${chosen_backup_to_restore%%.*}.sql"
-
-      # Ask with whiptail if the database is associated to an existing project (yes or no)
-      whiptail_message_with_skip_option "RESTORE BACKUP" "Is the database associated to an existing project?"
-
-      # If yes select a project from ${PROJECTS_PATH} directory
-      if [[ $? -eq 0 ]]; then
-        # Select project to work with
-        directory_browser "Select a project to work with" "${PROJECTS_PATH}" #return $filename
-
-        # Check project_install_type (default or docker)
-        project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${filename}")"
-        # Check project_type
-        project_type="$(project_get_type "${PROJECTS_PATH}/${filename}")"
-
-        if [[ ${project_install_type} == "docker-compose" ]]; then
-
-          [[ ${PACKAGES_DOCKER_STATUS} != "enabled" ]] && log_event "error" "Docker is not enabled from brolit_conf.json" "true" && exit 1
-
-          # Read MYSQL_DATABASE, MYSQL_USER and MYSQL_PASSWORD from docker .env file
-          docker_env_file="/${PROJECTS_PATH}/${filename}/.env"
-          if [[ -f "${docker_env_file}" ]]; then
-            docker_project_name="$(grep PROJECT_NAME "${docker_env_file}" | cut -d '=' -f2)"
-            docker_mysql_database="$(grep MYSQL_DATABASE "${docker_env_file}" | cut -d '=' -f2)"
-            docker_mysql_user="$(grep MYSQL_USER "${docker_env_file}" | cut -d '=' -f2)"
-            docker_mysql_user_pass="$(grep MYSQL_PASSWORD "${docker_env_file}" | cut -d '=' -f2)"
-          fi
-
-          # Restore database on docker container
-          docker_mysql_database_import "${docker_project_name}_mysql" "${docker_mysql_user}" "${docker_mysql_user_pass}" "${docker_mysql_database}" "${BROLIT_TMP_DIR}/${dump_file}"
-
-        else
-
-          # Get ${database_engine} from project config
-          database_engine="$(project_get_configured_database_engine "${PROJECTS_PATH}/${filename}" "${project_type}" "${project_install_type}")"
-          # Get ${database_name} from project config
-          database_name="$(project_get_configured_database "${PROJECTS_PATH}/${filename}" "${project_type}" "${project_install_type}")"
-          # Get ${database_user} from project config
-          database_user="$(project_get_configured_database_user "${PROJECTS_PATH}/${filename}" "${project_type}" "${project_install_type}")"
-          # Get ${database_user_pass} from project config
-          database_user_pass="$(project_get_configured_database_userpassw "${PROJECTS_PATH}/${filename}" "${project_type}" "${project_install_type}")"
-
-          # If database_ vars are not empty, restore database
-          if [[ -n "${database_engine}" ]] && [[ -n "${database_name}" ]] && [[ -n "${database_user}" ]] && [[ -n "${database_user_pass}" ]]; then
-
-            # TODO: check if volume is created? check if container is running?
-
-            # Restore Database Backup
-            restore_backup_database "${database_engine}" "${project_stage}" "${database_name}" "${database_user}" "${database_user_pass}" "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}"
-            return 0
-
-          else
-
-            log_event "error" "Can't read database config from project file. Please, check project config." "true"
-            return 1
-
-          fi
-
-        fi
-
-      else
-
-        # Get database backup type (mysql or postgres) from dump file
-        database_engine="$(backup_get_database_type "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}")"
-
-        database_engine="mysql"
-        database_name="${db_project_name}_${project_stage}"
-
-        # TODO: check if database exists
-
-        #if [[ -z ${db_user} ]]; then
-        database_user="${db_project_name}_user"
-        #fi
-        #if [[ -z ${db_pass} ]]; then
-        # Passw generator
-        database_user_pass="$(openssl rand -hex 12)"
-        #fi
-
-        # Restore Database Backup
-        restore_backup_database "${database_engine}" "${project_stage}" "${database_name}" "${database_user}" "${database_user_pass}" "${BROLIT_TMP_DIR}/${dump_file}"
-
-        # TODO: ask if want to change project db parameters and make Cloudflare changes
-
-        #folder_to_install="$(project_ask_folder_to_install "${PROJECTS_PATH}")"
-        #folder_to_install_result=$?
-        #[[ ${folder_to_install_result} -eq 1 ]] && return 1
-
-        #directory_browser "Site Selection Menu" "${PROJECTS_PATH}"
-        #directory_browser_result=$?
-        #[[ ${directory_browser_result} -eq 1 ]] && return 1
-
-        # TODO: check project type (WP, Laravel, etc)
-        #project_type="$(project_get_type "${PROJECTS_PATH}/${filename}")"
-
-        # Post-restore/install tasks
-        # TODO: neet to get old domain for replace on database
-        #project_post_install_tasks "${PROJECTS_PATH}/${filename}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${project_domain}" "${project_domain}"
-      fi
-
-    fi
-
-    ;;
-
-  esac
-
-  #fi
-
-}
-
-################################################################################
-# Restore project
-#
-# Arguments:
-#   ${1} = ${chosen_server}
-#   ${2} = ${chosen_status} - online or offline
-#
-# Outputs:
-#   0 if ok, 1 on error.
-################################################################################
-
-# TODO: what if project is not a site? Maybe is a database-only project.
-function restore_project_selection() {
-
-  #local chosen_server="${1}"
-  #local chosen_status="${2}"
-  local remote_backup_path="${1}"
-  local new_domain="${2}"
-
-  local storage_project_list
-  local chosen_project
-  local remote_backup_path
-  local remote_backup_list
-  local backup_to_dowload
-  local chosen_backup_to_restore
-  local db_to_download
-  local project_db_status
-  local project_type
-  local db_engine
-  local db_name
-  local db_user
-  local db_pass
-
-  local installation_type
-
-  log_subsection "Restore Project Backup"
-
-  #storage_project_list="$(storage_list_dir "${chosen_server}/projects-${chosen_status}/site")"
-
-  # Get dropbox folders list
-  storage_project_list="$(storage_list_dir "${remote_backup_path}/site")"
-
-  # Select Project
-  chosen_project="$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose a project backup to restore:" 20 78 10 $(for x in ${storage_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)"
-
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-    # Get backup list
-    remote_backup_path="${remote_backup_path}/site/${chosen_project}"
-    remote_backup_list="$(storage_list_dir "${remote_backup_path}")"
-
-  else
-
-    display --indent 6 --text "- Restore project backup" --result "SKIPPED" --color YELLOW
-    return 1
-
-  fi
-
-  # Select Backup File
-  chosen_backup_to_restore="$(whiptail --title "RESTORE PROJECT BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${remote_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
-
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    display --indent 6 --text "- Selecting project backup" --result "DONE" --color GREEN
-    display --indent 8 --text "${chosen_backup_to_restore}" --tcolor YELLOW
-
-    # Download backup
-    backup_to_dowload="${remote_backup_path}/${chosen_backup_to_restore}"
-    storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
-
-    [[ $? -eq 1 ]] && display --indent 6 --text "- Downloading project backup" --result "ERROR" --color RED && return 1
-
-    # NEW NEW NEW NEW (projet_domain should be passed by argument)
-    # For convention ${chosen_project} == project_domain
-    restore_project_backup "${chosen_backup_to_restore}" "${chosen_project}" "${new_domain}"
-
-    # TODO: if directory exist, it will overwrite the actual server conf.
-    # Project domain configuration (webserver+certbot+DNS)
-    https_enable="$(project_update_domain_config "${chosen_project}" "${project_type}" "${project_install_type}" "${project_port}")"
-
-    # TODO: refactor this
-    if [[ ${installation_type} != "docker" || ${project_install_type} != "docker-compose" ]]; then
-
-      # TODO: if and old project with same domain was found, ask what to do (delete old project or skip this step)
-
-      # Post-restore/install tasks
-      project_post_install_tasks "${install_path}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${chosen_domain}" "${new_domain}"
-
-    fi
-
-    # Create/update brolit_project_conf.json file with project info
-    project_update_brolit_config "${install_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "${db_engine}" "${project_name}_${project_stage}" "localhost" "${db_user}" "${db_pass}" "${new_domain}" "" "" "" ""
-
-    # Send notification
-    send_notification "✅ ${SERVER_NAME}" "Project ${chosen_project} restored!" "0"
-
-  fi
-
-}
-
 # TODO: better name? should implement database engine option
 function restore_backup_database() {
 
@@ -1658,5 +1413,26 @@ function restore_project_backup() {
     fi
 
   fi
+
+  # TODO: refactor this
+
+  # TODO: if directory exist, it will overwrite the actual server conf.
+
+  # TODO: get project type, project install type and project port
+
+  # Project domain configuration (webserver+certbot+DNS)
+  https_enable="$(project_update_domain_config "${chosen_project}" "${project_type}" "${project_install_type}" "${project_port}")"
+
+  if [[ ${installation_type} != "docker"* ]]; then
+
+    # TODO: if and old project with same domain was found, ask what to do (delete old project or skip this step)
+
+    # Post-restore/install tasks
+    project_post_install_tasks "${install_path}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${chosen_domain}" "${new_domain}"
+
+  fi
+
+  # Create/update brolit_project_conf.json file with project info
+  project_update_brolit_config "${install_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "${db_engine}" "${project_name}_${project_stage}" "localhost" "${db_user}" "${db_pass}" "${new_domain}" "" "" "" ""
 
 }

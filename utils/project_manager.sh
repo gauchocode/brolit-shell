@@ -158,7 +158,6 @@ function project_manager_menu_new_project_type_utils() {
     "06)" "PUT PROJECT ONLINE"
     "07)" "PUT PROJECT OFFLINE"
     "08)" "BENCH PROJECT GTMETRIX"
-    #"09)" "DOCKERIZE EXISTING PROJECT"
   )
 
   chosen_project_utils_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_utils_options[@]}" 3>&1 1>&2 2>&3)"
