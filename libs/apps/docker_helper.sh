@@ -645,7 +645,22 @@ function docker_project_install() {
             project_set_configured_database_userpassw "${project_path}" "wordpress" "docker" "${project_database_user_passw}"
 
             # Add specific docker installation values on wp-config.php
-            sed -ie "s|^<?php$|<?php\n \
+            #sed -ie "s|^<?php$|<?php\n \
+            #/** Sets up HTTPS and other needed vars to let WordPress works behind a Proxy */\n \
+            #define('FORCE_SSL_ADMIN', true);\n \
+            #if (strpos(\$_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false){\n \
+            #\$_SERVER['HTTPS']='on';\n \
+            #}\n \
+            #if (isset(\$_SERVER['HTTP_X_FORWARDED_HOST'])) {\n \
+            #\$_SERVER['HTTP_HOST'] = \$_SERVER['HTTP_X_FORWARDED_HOST'];\n \
+            #}\n \
+            #define('WP_HOME','https://${project_domain}/');\n \
+            #define('WP_SITEURL','https://${project_domain}/');\n \
+            #define('WP_REDIS_HOST','redis');\n \
+            #|g" "${project_path}/wordpress/wp-config.php"
+
+            # Write wp-config.php after the first line
+            sed -ie "1i \n \
             /** Sets up HTTPS and other needed vars to let WordPress works behind a Proxy */\n \
             define('FORCE_SSL_ADMIN', true);\n \
             if (strpos(\$_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false){\n \
@@ -659,14 +674,12 @@ function docker_project_install() {
             define('WP_REDIS_HOST','redis');\n \
             |g" "${project_path}/wordpress/wp-config.php"
 
-            # TODO: wp table prefix?
+            # TODO: change wp table prefix
 
             # Log
             log_event "info" "Making changes on wp-config.php to work with nginx proxy on host." "false"
             display --indent 6 --text "- Making changes on wp-config.php" --result "DONE" --color GREEN
 
-            # Execute function
-            #wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}" "${project_install_mode}"
         fi
 
         ;;
@@ -735,8 +748,6 @@ function docker_project_install() {
             display --indent 6 --text "- Downloading docker images" --result "DONE" --color GREEN
             display --indent 6 --text "- Building docker images" --result "DONE" --color GREEN
 
-            # Execute function
-            #wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}" "${project_install_mode}"
         fi
 
         ;;
