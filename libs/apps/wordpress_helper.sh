@@ -49,7 +49,7 @@ function wp_download() {
 
     log_event "error" "Downloading WordPress ${wp_version}" "false"
     log_event "debug" "Command executed: ${CURL} -O https://wordpress.org/wordpress-${wp_version}.tar.gz" "false"
-    display --indent 6 --text "Downloading WordPress ${wp_version}" --result "FAIL" --color RED
+    display --indent 6 --text "- Downloading WordPress ${wp_version}" --result "FAIL" --color RED
 
     return 1
 
