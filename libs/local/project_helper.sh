@@ -1957,13 +1957,17 @@ function project_delete_files() {
       compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
 
       if [[ -f "${compose_file}" ]]; then
-      
+
         # Execute docker-compose commands
-        docker-compose -f "${compose_file}" stop --quiet
+        #docker-compose -f "${compose_file}" stop --quiet
+        docker-compose -f "${compose_file}" rm --force --stop
+
+        log_event "info" "Deleting docker containers for project '${project_domain}' ..." "false"
+        log_event "debug" "docker-compose -f ${compose_file} rm --force --stop" "false"
         
         [[ $? -eq 1 ]] && return 1
 
-        docker-compose -f "${compose_file}" rm
+        #docker-compose -f "${compose_file}" rm
         
       fi
 
@@ -2179,10 +2183,10 @@ function project_delete() {
     display --indent 6 --text "- Selecting ${project_domain} for deletion" --result "DONE" --color GREEN
 
     # Get project type and db credentials before delete files_skipped
-    project_type="$(project_get_type "${project_domain}")"
+    project_type="$(project_get_type "${PROJECTS_PATH}/${project_domain}")"
     project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
-    project_db_name=$(project_get_configured_database "${project_domain}" "${project_type}" "${project_install_type}")
-    project_db_user=$(project_get_configured_database_user "${project_domain}" "${project_type}" "${project_install_type}")
+    project_db_name=$(project_get_configured_database "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")
+    project_db_user=$(project_get_configured_database_user "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")
 
     # Delete Files
     project_delete_files "${project_domain}"
