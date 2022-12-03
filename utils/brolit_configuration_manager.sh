@@ -741,7 +741,7 @@ function _brolit_configuration_load_nginx() {
     declare -g WSERVER="/etc/nginx" # Webserver config files location
 
     # NGINX
-    nginx_installer
+    nginx_bin="$(package_is_installed "nginx")"
     exitstatus=$?
 
     PACKAGES_NGINX_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.nginx[].status")"
