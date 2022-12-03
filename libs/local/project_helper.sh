@@ -1405,7 +1405,9 @@ function project_get_configured_database_user() {
 
     wordpress)
 
-      db_user="$(wp_config_get_option "${project_path}" "DB_USER")"
+      wpconfig_path=$(wp_config_path "${project_config_file}")
+
+      db_user="$(wp_config_get_option "${wpconfig_path}" "DB_USER")"
 
       # Return
       echo "${db_user}" && return 0
@@ -1592,7 +1594,9 @@ function project_get_configured_database_userpassw() {
 
     wordpress)
 
-      database_userpassw="$(wp_config_get_option "${project_path}" "DB_PASSWORD")"
+      wpconfig_path=$(wp_config_path "${project_config_file}")
+
+      database_userpassw="$(wp_config_get_option "${wpconfig_path}" "DB_PASSWORD")"
 
       # Return
       echo "${database_userpassw}" && return 0
@@ -1958,17 +1962,16 @@ function project_delete_files() {
 
       if [[ -f "${compose_file}" ]]; then
 
-        # Execute docker-compose commands
-        #docker-compose -f "${compose_file}" stop --quiet
-        docker-compose -f "${compose_file}" rm --force --stop
+        # Execute docker-compose command
+        docker-compose -f "${compose_file}" rm --force --stop --quiet
 
-        log_event "info" "Deleting docker containers for project '${project_domain}' ..." "false"
-        log_event "debug" "docker-compose -f ${compose_file} rm --force --stop" "false"
-        
         [[ $? -eq 1 ]] && return 1
 
-        #docker-compose -f "${compose_file}" rm
-        
+        # Log
+        display --indent 6 --text "- Deleting docker containers for project" --result "DONE" --color GREEN
+        log_event "info" "Deleting docker containers for project '${project_domain}' ..." "false"
+        log_event "debug" "docker-compose -f ${compose_file} rm --force --stop" "false"
+
       fi
 
     fi
