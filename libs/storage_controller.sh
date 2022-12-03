@@ -379,26 +379,34 @@ function storage_remote_status_list() {
     local remote_status_list
     local chosen_restore_status
 
+    log_event "debug" "Backup status selection" "false"
+
     # List options
     remote_status_list=(
         "01)" "Online"
         "02)" "Offline"
     )
 
-    chosen_restore_status="$(whiptail --title "BACKUP SELECTION" --menu "Choose a backup status." 20 78 10 $(for x in ${remote_status_list}; do echo "${x}"; done) 3>&1 1>&2 2>&3)"
+    chosen_restore_status="$(whiptail --title "BACKUP SELECTION" --menu "Choose the backup status:" 20 78 10 $(for x in ${remote_status_list}; do echo "${x}"; done) 3>&1 1>&2 2>&3)"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
+        log_event "debug" "chosen_restore_status: ${chosen_restore_status}" "false"
+
         if [[ ${chosen_restore_status} == *"01"* ]]; then
+            log_event "debug" "chosen_restore_status: online" "false"
             echo "online" && return 0
         fi
 
         if [[ ${chosen_restore_status} == *"02"* ]]; then
+            log_event "debug" "chosen_restore_status: offline" "false"
             echo "offline" && return 0
         fi
 
     else
+
+        log_event "debug" "Backup status selection skipped." "false"
 
         return 1
 
