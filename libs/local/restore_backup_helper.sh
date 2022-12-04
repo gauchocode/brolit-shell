@@ -1281,7 +1281,8 @@ function restore_backup_project_database() {
 
 # TODO: needs refactor
 ## 1- Maybe project_domain is not needed
-## 2- Maybe should use restore_project_files and restore_project_database
+## 2- Should use restore_project_files and restore_project_database
+## 3- Extract all post-install tasks to a function
 function restore_project_backup() {
 
   local project_backup_file="${1}"
@@ -1300,7 +1301,6 @@ function restore_project_backup() {
   # Decompress
   decompress "${BROLIT_TMP_DIR}/${project_backup_file}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
   [[ $? -eq 1 ]] && return 1
-  # TODO: implement error type
 
   # If user change project domains, we need to do this
   project_tmp_dir_old="${BROLIT_TMP_DIR}/${project_domain}"
