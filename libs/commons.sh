@@ -1434,6 +1434,8 @@ function decompress() {
     log_event "info" "${file_path} extracted ok!" "false"
     display --indent 6 --text "- Extracting compressed file" --result "DONE" --color GREEN
 
+    return 0
+
   else
 
     clear_previous_lines "2"

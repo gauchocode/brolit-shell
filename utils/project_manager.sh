@@ -434,26 +434,63 @@ function project_manager_menu_new_project_type_new_project() {
 
       # TODO: move to another function
 
-      # Backup Selection
-      
-      ## TODO: Choose backup from storage
+      # Backup Server selection
+      chosen_server="$(storage_remote_server_list)"
 
-      ## TODO: Download backup file
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
 
-      ## TODO: Extract backup file and restore on ${PROJECTS_PATH}
+        # List status options
+        chosen_remote_status="$(storage_remote_status_list)"
+        [[ -z ${chosen_remote_status} ]] && return 1
 
-      # TODO: need to change this!
-      # If a directory exists, get project type & installation type
-      if [[ -d "${PROJECTS_PATH}/${chosen_project}" ]]; then
-        project_type="$(project_get_type "${PROJECTS_PATH}/${chosen_project}")"
-        project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${chosen_project}")"
-      fi
+        # List type options
+        chosen_remote_type="$(storage_remote_type_list)"
+        [[ -z ${chosen_remote_type} ]] && return 1
 
-      # TODO: if project type==docker download, extract, move to /var/www, run docker commands, execute domain tasks
-      # TODO: if project type!=wordpress then... needs implementation
-      if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" && ${project_install_type} == "docker-compose" && ${project_type} == "wordpress" ]]; then
+        chosen_remote_type_path="${chosen_server}/projects-${chosen_remote_status}/${chosen_remote_type}"
 
-        if [[ -d "${PROJECTS_PATH}/${chosen_project}" ]]; then
+        # Details of chosen_remote_type_path:
+        #   "${chosen_server}/projects-${chosen_status}/${chosen_restore_type}"
+        #chosen_restore_type="$(basename "${chosen_remote_type_path}")" # project, site or database
+        remote_list="$(dirname "${chosen_remote_type_path}")"
+
+        log_subsection "Dockerize Project Backup"
+
+        # Select project backup
+        backup_to_dowload="$(storage_backup_selection "${remote_list}" "site")"
+
+        # Download backup
+        storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
+        [[ $? -eq 1 ]] && display --indent 6 --text "- Downloading Project Backup" --result "ERROR" --color RED && return 1
+
+        # Extract backup
+        decompress "${BROLIT_TMP_DIR}/${backup_to_dowload}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+        [[ $? -eq 1 ]] && display --indent 6 --text "- Extracting Project Backup" --result "ERROR" --color RED && return 1
+
+        # Check project install type
+        project_install_type="$(project_get_install_type "${BROLIT_TMP_DIR}/${backup_to_dowload}")"
+        [[ -z ${project_install_type} ]] && display --indent 6 --text "- Checking Project Install Type" --result "ERROR" --color RED && return 1
+
+        # If project_install_type="default" ...
+        if [[ ${project_install_type} == "docker" ]]; then
+
+          # Log error
+          log_event "error" "Downloaded project already is a docker project" "false"
+          display --indent 6 --text "- Downloaded project already is a docker project" --result "ERROR" --color RED
+          return 1
+
+        fi
+
+        # Get project type
+        project_type="$(project_get_type "${BROLIT_TMP_DIR}/${backup_to_dowload}")"
+        [[ -z ${project_type} ]] && display --indent 6 --text "- Checking Project Type" --result "ERROR" --color RED && return 1
+
+        # Get project domain
+        project_domain="$(project_get_domain "${BROLIT_TMP_DIR}/${backup_to_dowload}")"
+        [[ -z ${project_domain} ]] && display --indent 6 --text "- Checking Project Domain" --result "ERROR" --color RED && return 1
+
+        if [[ -d ${PROJECTS_PATH}/${project_domain} ]]; then
 
           # Warning message
           whiptail --title "Warning" --yesno "A docker project already exist for this domain. Do you want to restore the current backup on this docker stack? A backup of current directory will be stored on BROLIT tmp folder." 10 60 3>&1 1>&2 2>&3
@@ -462,7 +499,7 @@ function project_manager_menu_new_project_type_new_project() {
           if [[ ${exitstatus} -eq 0 ]]; then
 
             # Backup old project
-            _create_tmp_copy "${PROJECTS_PATH}/${chosen_project}" "copy"
+            _create_tmp_copy "${PROJECTS_PATH}/${project_domain}" "copy"
             got_error=$?
             [[ ${got_error} -eq 1 ]] && return 1
 
@@ -476,27 +513,33 @@ function project_manager_menu_new_project_type_new_project() {
 
           fi
 
-          installation_type="docker"
+          # Create new docker-compose stack for the ${project_domain} and ${project_type}
+          docker_project_install "${PROJECTS_PATH}/${project_domain}" "${project_type}"
+          exitstatus=$?
+
+          # TODO: if project type!=wordpress then... needs implementation
+
+          #installation_type="docker"
 
           # Remove actual wordpress files
           #rm -R "${PROJECTS_PATH}/${chosen_project}/wordpress/wp-content"
-          rm -R "${PROJECTS_PATH}/${chosen_project}/wordpress"
+          rm -R "${PROJECTS_PATH}/${project_domain}/wordpress"
 
           #move_files "${BROLIT_TMP_DIR}/${chosen_project}/wp-content" "${PROJECTS_PATH}/${chosen_project}/wordpress"
-          move_files "${BROLIT_TMP_DIR}/${chosen_project}" "${PROJECTS_PATH}/${chosen_project}/wordpress"
+          move_files "${BROLIT_TMP_DIR}/${project_domain}" "${PROJECTS_PATH}/${project_domain}/wordpress"
 
           display --indent 6 --text "- Import files into docker volume" --result "DONE" --color GREEN
 
           # TODO: update this to match monthly and weekly backups
-          project_name="$(project_get_name_from_domain "${chosen_project}")"
-          project_stage="$(project_get_stage_from_domain "${chosen_project}")"
+          project_name="$(project_get_name_from_domain "${project_domain}")"
+          project_stage="$(project_get_stage_from_domain "${project_domain}")"
 
           db_name="${project_name}_${project_stage}"
-          new_project_domain="${chosen_project}"
+          #new_project_domain="${project_domain}"
 
-          project_backup_date="$(backup_get_date "${chosen_backup_to_restore}")"
+          project_backup_date="$(backup_get_date "${backup_to_dowload}")"
 
-          db_to_download="${chosen_server}/projects-${chosen_status}/database/${db_name}/${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+          db_to_download="${chosen_server}/projects-${project_domain}/database/${db_name}/${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
           db_to_restore="${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
           project_backup="${db_to_restore%%.*}.sql"
 
@@ -508,13 +551,13 @@ function project_manager_menu_new_project_type_new_project() {
 
           # Read wp-config to get WP DATABASE PREFIX and replace on docker .env file
           #database_prefix_to_restore="$(wp_config_get_option "${BROLIT_TMP_DIR}/${chosen_project}" "table_prefix")"
-          database_prefix_to_restore="$(cat "${BROLIT_TMP_DIR}/${chosen_project}"/wp-config.php | grep "\$table_prefix" | cut -d \' -f 2)"
-          database_prefix_actual="$(project_get_config_var "${PROJECTS_PATH}/${chosen_project}/.env" "WORDPRESS_TABLE_PREFIX")"
+          database_prefix_to_restore="$(cat "${BROLIT_TMP_DIR}/${project_domain}"/wp-config.php | grep "\$table_prefix" | cut -d \' -f 2)"
+          database_prefix_actual="$(project_get_config_var "${PROJECTS_PATH}/${project_domain}/.env" "WORDPRESS_TABLE_PREFIX")"
           if [[ ${database_prefix_to_restore} != "${database_prefix_actual}" ]]; then
             # Set new database prefix
-            project_set_config_var "${PROJECTS_PATH}/${chosen_project}/.env" "WORDPRESS_TABLE_PREFIX" "${database_prefix_to_restore}" "double"
+            project_set_config_var "${PROJECTS_PATH}/${project_domain}/.env" "WORDPRESS_TABLE_PREFIX" "${database_prefix_to_restore}" "double"
             # Rebuild docker image
-            docker-compose -f "${PROJECTS_PATH}/${chosen_project}/docker-compose.yml" up --detach
+            docker-compose -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" up --detach
             # Clear screen output
             clear_previous_lines "3"
           fi
@@ -522,18 +565,12 @@ function project_manager_menu_new_project_type_new_project() {
           # TODO: update wp-config.php with .env docker stack credentials
 
           # Read .env to get mysql pass
-          db_user_pass="$(project_get_config_var "${PROJECTS_PATH}/${chosen_project}/.env" "MYSQL_PASSWORD")"
+          db_user_pass="$(project_get_config_var "${PROJECTS_PATH}/${project_domain}/.env" "MYSQL_PASSWORD")"
 
           # Docker MySQL database import
           docker_mysql_database_import "${project_name}_mysql" "${project_name}_user" "${db_user_pass}" "${project_name}_prod" "${BROLIT_TMP_DIR}/${project_backup}"
 
           display --indent 6 --text "- Import database into docker volume" --result "DONE" --color GREEN
-
-        else
-
-          log_event "error" "Should implement restore without existing docker image!" "true"
-
-          return 1
 
         fi
 
