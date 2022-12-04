@@ -442,7 +442,7 @@ function docker_project_files_import() {
 
     rand="$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)"
     project_backup_path="${BROLIT_MAIN_DIR}/tmp/${rand}"
-    
+
     mkdir -p "${project_backup_path}"
 
     decompress "${project_backup_file}" "${project_backup_path}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
@@ -471,8 +471,9 @@ function docker_project_files_import() {
 ################################################################################
 # Docker create new project install
 # Arguments:
-#   ${1} = ${dir_path}
+#   ${1} = ${project_domain}
 #   ${2} = ${project_type}
+#   ${3} = ${dir_path}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -480,8 +481,9 @@ function docker_project_files_import() {
 
 function docker_project_install() {
 
-    local dir_path="${1}"
+    local project_domain="${1}"
     local project_type="${2}"
+    local dir_path="${3}"
 
     local project_path
     local port_available
