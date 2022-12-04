@@ -468,8 +468,12 @@ function project_manager_menu_new_project_type_new_project() {
         decompress "${BROLIT_TMP_DIR}/${backup_to_dowload}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
         [[ $? -eq 1 ]] && display --indent 6 --text "- Extracting Project Backup" --result "ERROR" --color RED && return 1
 
+        # Get project_domain
+        chosen_project="$(dirname "${backup_to_dowload}")"
+        project_domain="$(basename "${chosen_project}")"
+
         # Check project install type
-        project_install_type="$(project_get_install_type "${BROLIT_TMP_DIR}/${backup_to_dowload}")"
+        project_install_type="$(project_get_install_type "${BROLIT_TMP_DIR}/${project_domain}")"
         [[ -z ${project_install_type} ]] && display --indent 6 --text "- Checking Project Install Type" --result "ERROR" --color RED && return 1
 
         # If project_install_type="default" ...
@@ -483,12 +487,8 @@ function project_manager_menu_new_project_type_new_project() {
         fi
 
         # Get project type
-        project_type="$(project_get_type "${BROLIT_TMP_DIR}/${backup_to_dowload}")"
+        project_type="$(project_get_type "${BROLIT_TMP_DIR}/${project_domain}")"
         [[ -z ${project_type} ]] && display --indent 6 --text "- Checking Project Type" --result "ERROR" --color RED && return 1
-
-        # Get project domain
-        project_domain="$(project_get_domain "${BROLIT_TMP_DIR}/${backup_to_dowload}")"
-        [[ -z ${project_domain} ]] && display --indent 6 --text "- Checking Project Domain" --result "ERROR" --color RED && return 1
 
         if [[ -d ${PROJECTS_PATH}/${project_domain} ]]; then
 
