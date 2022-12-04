@@ -382,17 +382,12 @@ function storage_remote_status_list() {
     log_event "debug" "Backup status selection" "false"
 
     # List options
-    remote_status_list=(
-        "01)" "Online"
-        "02)" "Offline"
-    )
+    remote_status_list=("01) Online 02) Offline")
 
     chosen_restore_status="$(whiptail --title "BACKUP SELECTION" --menu "Choose the backup status:" 20 78 10 $(for x in ${remote_status_list}; do echo "${x}"; done) 3>&1 1>&2 2>&3)"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
-
-        log_event "debug" "chosen_restore_status: ${chosen_restore_status}" "false"
 
         if [[ ${chosen_restore_status} == *"01"* ]]; then
             log_event "debug" "chosen_restore_status: online" "false"
@@ -427,6 +422,7 @@ function storage_remote_status_list() {
 function storage_backup_selection() {
 
     local remote_backup_path="${1}"
+    local remote_backup_type="${2}"
 
     local storage_project_list
     local chosen_project
@@ -435,7 +431,7 @@ function storage_backup_selection() {
     local chosen_backup_file
 
     # Get dropbox folders list
-    storage_project_list="$(storage_list_dir "${remote_backup_path}/site")"
+    storage_project_list="$(storage_list_dir "${remote_backup_path}/${remote_backup_type}")"
 
     # Select Project
     chosen_project="$(whiptail --title "BACKUP SELECTION" --menu "Choose a Project Backup to work with:" 20 78 10 $(for x in ${storage_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)"
@@ -443,7 +439,7 @@ function storage_backup_selection() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
         # Get backup list
-        remote_backup_path="${remote_backup_path}/site/${chosen_project}"
+        remote_backup_path="${remote_backup_path}/${remote_backup_type}/${chosen_project}"
         remote_backup_list="$(storage_list_dir "${remote_backup_path}")"
 
     else
