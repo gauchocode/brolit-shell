@@ -464,12 +464,14 @@ function project_manager_menu_new_project_type_new_project() {
         storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
         [[ $? -eq 1 ]] && display --indent 6 --text "- Downloading Project Backup" --result "ERROR" --color RED && return 1
 
+        # Get backup file name
+        chosen_project="$(dirname "${backup_to_dowload}")"
+
         # Extract backup
-        decompress "${BROLIT_TMP_DIR}/${backup_to_dowload}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+        decompress "${BROLIT_TMP_DIR}/${chosen_project}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
         [[ $? -eq 1 ]] && display --indent 6 --text "- Extracting Project Backup" --result "ERROR" --color RED && return 1
 
         # Get project_domain
-        chosen_project="$(dirname "${backup_to_dowload}")"
         project_domain="$(basename "${chosen_project}")"
 
         # Check project install type
