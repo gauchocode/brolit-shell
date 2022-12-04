@@ -516,66 +516,69 @@ function project_manager_menu_new_project_type_new_project() {
 
           fi
 
-          # Create new docker-compose stack for the ${project_domain} and ${project_type}
-          docker_project_install "${PROJECTS_PATH}/${project_domain}" "${project_type}"
-          exitstatus=$?
-
-          # TODO: if project type!=wordpress then... needs implementation
-
-          #installation_type="docker"
-
-          # Remove actual wordpress files
-          #rm -R "${PROJECTS_PATH}/${chosen_project}/wordpress/wp-content"
-          rm -R "${PROJECTS_PATH}/${project_domain}/wordpress"
-
-          #move_files "${BROLIT_TMP_DIR}/${chosen_project}/wp-content" "${PROJECTS_PATH}/${chosen_project}/wordpress"
-          move_files "${BROLIT_TMP_DIR}/${project_domain}" "${PROJECTS_PATH}/${project_domain}/wordpress"
-
-          display --indent 6 --text "- Import files into docker volume" --result "DONE" --color GREEN
-
-          # TODO: update this to match monthly and weekly backups
-          project_name="$(project_get_name_from_domain "${project_domain}")"
-          project_stage="$(project_get_stage_from_domain "${project_domain}")"
-
-          db_name="${project_name}_${project_stage}"
-          #new_project_domain="${project_domain}"
-
-          project_backup_date="$(backup_get_date "${backup_to_dowload}")"
-
-          db_to_download="${chosen_server}/projects-${project_domain}/database/${db_name}/${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-          db_to_restore="${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
-          project_backup="${db_to_restore%%.*}.sql"
-
-          # Downloading Database Backup
-          storage_download_backup "${db_to_download}" "${BROLIT_TMP_DIR}"
-
-          # Decompress
-          decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
-
-          # Read wp-config to get WP DATABASE PREFIX and replace on docker .env file
-          #database_prefix_to_restore="$(wp_config_get_option "${BROLIT_TMP_DIR}/${chosen_project}" "table_prefix")"
-          database_prefix_to_restore="$(cat "${BROLIT_TMP_DIR}/${project_domain}"/wp-config.php | grep "\$table_prefix" | cut -d \' -f 2)"
-          database_prefix_actual="$(project_get_config_var "${PROJECTS_PATH}/${project_domain}/.env" "WORDPRESS_TABLE_PREFIX")"
-          if [[ ${database_prefix_to_restore} != "${database_prefix_actual}" ]]; then
-            # Set new database prefix
-            project_set_config_var "${PROJECTS_PATH}/${project_domain}/.env" "WORDPRESS_TABLE_PREFIX" "${database_prefix_to_restore}" "double"
-            # Rebuild docker image
-            docker-compose -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" up --detach
-            # Clear screen output
-            clear_previous_lines "3"
-          fi
-
-          # TODO: update wp-config.php with .env docker stack credentials
-
-          # Read .env to get mysql pass
-          db_user_pass="$(project_get_config_var "${PROJECTS_PATH}/${project_domain}/.env" "MYSQL_PASSWORD")"
-
-          # Docker MySQL database import
-          docker_mysql_database_import "${project_name}_mysql" "${project_name}_user" "${db_user_pass}" "${project_name}_prod" "${BROLIT_TMP_DIR}/${project_backup}"
-
-          display --indent 6 --text "- Import database into docker volume" --result "DONE" --color GREEN
-
         fi
+
+        # Create new docker-compose stack for the ${project_domain} and ${project_type}
+        docker_project_install "${PROJECTS_PATH}/${project_domain}" "${project_type}"
+        exitstatus=$?
+        [[ ${exitstatus} -eq 1 ]] && return 1
+
+        # TODO: if project type!=wordpress then... needs implementation
+
+        #installation_type="docker"
+
+        # Remove actual wordpress files
+        #rm -R "${PROJECTS_PATH}/${chosen_project}/wordpress/wp-content"
+        rm -R "${PROJECTS_PATH}/${project_domain}/wordpress"
+
+        #move_files "${BROLIT_TMP_DIR}/${chosen_project}/wp-content" "${PROJECTS_PATH}/${chosen_project}/wordpress"
+        move_files "${BROLIT_TMP_DIR}/${project_domain}" "${PROJECTS_PATH}/${project_domain}/wordpress"
+
+        display --indent 6 --text "- Import files into docker volume" --result "DONE" --color GREEN
+
+        # TODO: update this to match monthly and weekly backups
+        project_name="$(project_get_name_from_domain "${project_domain}")"
+        project_stage="$(project_get_stage_from_domain "${project_domain}")"
+
+        db_name="${project_name}_${project_stage}"
+        #new_project_domain="${project_domain}"
+
+        project_backup_date="$(backup_get_date "${backup_to_dowload}")"
+
+        db_to_download="${chosen_server}/projects-${project_domain}/database/${db_name}/${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+        db_to_restore="${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+        project_backup="${db_to_restore%%.*}.sql"
+
+        # Downloading Database Backup
+        storage_download_backup "${db_to_download}" "${BROLIT_TMP_DIR}"
+
+        # Decompress
+        decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+
+        # Read wp-config to get WP DATABASE PREFIX and replace on docker .env file
+        #database_prefix_to_restore="$(wp_config_get_option "${BROLIT_TMP_DIR}/${chosen_project}" "table_prefix")"
+        database_prefix_to_restore="$(cat "${BROLIT_TMP_DIR}/${project_domain}"/wp-config.php | grep "\$table_prefix" | cut -d \' -f 2)"
+        database_prefix_actual="$(project_get_config_var "${PROJECTS_PATH}/${project_domain}/.env" "WORDPRESS_TABLE_PREFIX")"
+        if [[ ${database_prefix_to_restore} != "${database_prefix_actual}" ]]; then
+          # Set new database prefix
+          project_set_config_var "${PROJECTS_PATH}/${project_domain}/.env" "WORDPRESS_TABLE_PREFIX" "${database_prefix_to_restore}" "double"
+          # Rebuild docker image
+          docker-compose -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" up --detach
+          # Clear screen output
+          clear_previous_lines "3"
+        fi
+
+        # TODO: update wp-config.php with .env docker stack credentials
+
+        # Read .env to get mysql pass
+        db_user_pass="$(project_get_config_var "${PROJECTS_PATH}/${project_domain}/.env" "MYSQL_PASSWORD")"
+
+        # Docker MySQL database import
+        docker_mysql_database_import "${project_name}_mysql" "${project_name}_user" "${db_user_pass}" "${project_name}_prod" "${BROLIT_TMP_DIR}/${project_backup}"
+
+        display --indent 6 --text "- Import database into docker volume" --result "DONE" --color GREEN
+
+        #fi
 
       fi
 
