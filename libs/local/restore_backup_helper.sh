@@ -1285,8 +1285,9 @@ function restore_backup_project_database() {
 function restore_project_backup() {
 
   local project_backup_file="${1}"
-  local project_domain="${2}"
-  local project_domain_new="${3}"
+  local project_backup_status="${2}"
+  local project_domain="${3}"
+  local project_domain_new="${4}"
 
   # Log
   log_event "debug" "project_backup_file=${project_backup_file}" "false"
@@ -1390,16 +1391,8 @@ function restore_project_backup() {
         db_to_restore="${db_name}_database_${project_backup_date}-${backup_rotation_type}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
       fi
 
-      # Get project status from project_backup_file
-      ## If string $project_backup_file contains "online"
-      if [[ ${project_backup_file} == *"online"* ]]; then
-        project_status="online"
-      else
-        project_status="offline"
-      fi
-
       # Database backup full remote path
-      db_to_download="${chosen_server}/projects-${project_status}/database/${db_name}/${db_to_restore}"
+      db_to_download="${chosen_server}/projects-${project_backup_status}/database/${db_name}/${db_to_restore}"
 
       # Downloading Database Backup
       storage_download_backup "${db_to_download}" "${BROLIT_TMP_DIR}"
@@ -1413,7 +1406,7 @@ function restore_project_backup() {
         if [[ ${exitstatus} -eq 0 ]]; then
 
           # Get dropbox backup list
-          remote_backup_path="${chosen_server}/projects-${project_status}/database/${db_name}"
+          remote_backup_path="${chosen_server}/projects-${project_backup_status}/database/${db_name}"
           remote_backup_list="$(storage_list_dir "${remote_backup_path}")"
 
           # Select Backup File
