@@ -490,6 +490,7 @@ function project_manager_menu_new_project_type_new_project() {
         fi
 
         # Get project type
+        # TODO: if project type!=wordpress then... needs implementation
         project_type="$(project_get_type "${BROLIT_TMP_DIR}/${project_domain}")"
         [[ -z ${project_type} ]] && display --indent 6 --text "- Checking Project Type" --result "ERROR" --color RED && return 1
 
@@ -523,18 +524,21 @@ function project_manager_menu_new_project_type_new_project() {
         exitstatus=$?
         [[ ${exitstatus} -eq 1 ]] && return 1
 
-        # TODO: if project type!=wordpress then... needs implementation
-
-        #installation_type="docker"
+        # Make a copy of wp-config.php
+        cp "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php" "${PROJECTS_PATH}/${project_domain}/wp-config.php"
 
         # Remove actual wordpress files
-        #rm -R "${PROJECTS_PATH}/${chosen_project}/wordpress/wp-content"
         rm -R "${PROJECTS_PATH}/${project_domain}/wordpress"
 
-        #move_files "${BROLIT_TMP_DIR}/${chosen_project}/wp-content" "${PROJECTS_PATH}/${chosen_project}/wordpress"
+        # Move project files to wordpress folder
         move_files "${BROLIT_TMP_DIR}/${project_domain}" "${PROJECTS_PATH}/${project_domain}/wordpress"
-
+        [[ $? -eq 1 ]] && display --indent 6 --text "- Import files into docker volume" --result "ERROR" --color RED && return 1
         display --indent 6 --text "- Import files into docker volume" --result "DONE" --color GREEN
+
+        # Make a copy of wp-config.php
+        cp "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php" "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php.bak"
+        # Move previous wp-config.php to project root
+        mv "${PROJECTS_PATH}/${project_domain}/wp-config.php" "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php"
 
         # TODO: update this to match monthly and weekly backups
         project_name="$(project_get_name_from_domain "${project_domain}")"
@@ -557,7 +561,7 @@ function project_manager_menu_new_project_type_new_project() {
 
         # Read wp-config to get WP DATABASE PREFIX and replace on docker .env file
         #database_prefix_to_restore="$(wp_config_get_option "${BROLIT_TMP_DIR}/${chosen_project}" "table_prefix")"
-        database_prefix_to_restore="$(cat "${BROLIT_TMP_DIR}/${project_domain}"/wp-config.php | grep "\$table_prefix" | cut -d \' -f 2)"
+        database_prefix_to_restore="$(cat "${PROJECTS_PATH}/${project_domain}"/wp-config.php | grep "\$table_prefix" | cut -d \' -f 2)"
         database_prefix_actual="$(project_get_config_var "${PROJECTS_PATH}/${project_domain}/.env" "WORDPRESS_TABLE_PREFIX")"
         if [[ ${database_prefix_to_restore} != "${database_prefix_actual}" ]]; then
           # Set new database prefix

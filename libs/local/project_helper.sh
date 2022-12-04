@@ -2196,7 +2196,7 @@ function project_delete() {
     project_db_name=$(project_get_configured_database "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")
     project_db_user=$(project_get_configured_database_user "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")
     project_db_engine="$(project_get_configured_database_engine "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")"
-    
+
     [[ -z "${project_db_engine}" ]] && project_db_engine="$(database_ask_engine)"
 
     # Delete Files
@@ -2211,14 +2211,32 @@ function project_delete() {
     if [[ ${delete_cf_entry} != "true" && ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
 
       # Cloudflare Manager
+      ## Delete Cloudflare entries
       project_domain="$(whiptail --title "CLOUDFLARE MANAGER" --inputbox "Do you want to delete the Cloudflare entries for the followings subdomains?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
-        # Delete Cloudflare entries
+
         project_root_domain="$(domain_get_root "${project_domain}")"
-        cloudflare_delete_record "${project_root_domain}" "${project_domain}" "A"
+
+        project_actual_ip="$(cloudflare_get_record_details "${project_root_domain}" "${project_domain}" "content")"
+
+        if [[ ${project_actual_ip} != "${SERVER_IP}" ]]; then
+
+          # Show warning message
+          whiptail --title "WARNING" --msgbox "The IP address of the Cloudflare entry is different from the server IP address. Please check it before delete it." 10 60
+
+        else
+
+          cloudflare_delete_record "${project_root_domain}" "${project_domain}" "A"
+
+        fi
+
       else
+
+        # Log
         log_event "info" "Cloudflare entries not deleted. Skipped by user." "false"
+        display --indent 6 --text "- Deleting Cloudflare entries" --result "SKIPPED" --color YELLOW
+
       fi
 
     else
