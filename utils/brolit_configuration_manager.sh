@@ -763,12 +763,12 @@ function _brolit_configuration_load_nginx() {
         fi
 
         # Checking if nginx is not installed
-        [[ ${exitstatus} -eq 1 ]] && menu_config_changes_detected "nginx" "true"
+        [[ ${exitstatus} -eq 1 || -z ${nginx_bin} ]] && menu_config_changes_detected "nginx" "true"
 
     else
 
         # Checking if nginx is installed
-        [[ ${exitstatus} -eq 0 ]] && menu_config_changes_detected "nginx" "true"
+        [[ ${exitstatus} -eq 0 && -n ${nginx_bin} ]] && menu_config_changes_detected "nginx" "true"
 
     fi
 
@@ -1075,7 +1075,6 @@ function _brolit_configuration_load_mysql() {
 
             # Checking if MYSQL is installed and is not MariaDB
             [[ -z ${is_mariadb} ]] && menu_config_changes_detected "mysql" "true"
-
 
         fi
 
@@ -1535,7 +1534,7 @@ function _brolit_configuration_load_docker() {
 
         # Checking if docker is installed
         [[ -n ${DOCKER} ]] && menu_config_changes_detected "docker" "true"
-        
+
         [[ -n ${DOCKER_COMPOSE} ]] && menu_config_changes_detected "docker-compose" "true"
 
     fi
