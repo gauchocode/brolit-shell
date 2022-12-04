@@ -442,9 +442,10 @@ function docker_project_files_import() {
 
     rand="$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)"
     project_backup_path="${BROLIT_MAIN_DIR}/tmp/${rand}"
+    
     mkdir -p "${project_backup_path}"
 
-    decompress "${project_backup_file}" "${project_backup_path}" "lbzip2"
+    decompress "${project_backup_file}" "${project_backup_path}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
 
     # Get inner directory (should be only one)
     inner_dir="$(get_all_directories "${project_backup_path}")"
