@@ -626,7 +626,7 @@ function restore_backup_from_storage() {
       chosen_project="$(basename "${chosen_project}")"
 
       # Restore backup
-      restore_project_backup "${backup_to_restore}" "${chosen_project}" "${new_domain}"
+      restore_project_backup "${backup_to_restore}" "${chosen_remote_status}" "${chosen_project}" "${new_domain}"
       [[ $? -eq 1 ]] && display --indent 6 --text "- Project Restore" --result "SKIPPED" --color YELLOW && return 1
 
       # Send notification
