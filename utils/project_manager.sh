@@ -434,6 +434,8 @@ function project_manager_menu_new_project_type_new_project() {
 
       # TODO: move to another function
 
+      log_subsection "Dockerize Project Backup"
+
       # Backup Server selection
       chosen_server="$(storage_remote_server_list)"
 
@@ -454,8 +456,6 @@ function project_manager_menu_new_project_type_new_project() {
         #   "${chosen_server}/projects-${chosen_status}/${chosen_restore_type}"
         #chosen_restore_type="$(basename "${chosen_remote_type_path}")" # project, site or database
         remote_list="$(dirname "${chosen_remote_type_path}")"
-
-        log_subsection "Dockerize Project Backup"
 
         # Select project backup
         backup_to_dowload="$(storage_backup_selection "${remote_list}" "site")"
