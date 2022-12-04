@@ -1466,12 +1466,12 @@ function restore_project_backup() {
   # Project domain configuration (webserver+certbot+DNS)
   https_enable="$(project_update_domain_config "${chosen_project}" "${project_type}" "${project_install_type}" "${project_port}")"
 
-  if [[ ${installation_type} != "docker"* ]]; then
+  if [[ ${project_install_type} != "docker"* ]]; then
 
     # TODO: if and old project with same domain was found, ask what to do (delete old project or skip this step)
 
     # Post-restore/install tasks
-    project_post_install_tasks "${install_path}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${chosen_domain}" "${new_domain}"
+    project_post_install_tasks "${install_path}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${project_domain}" "${project_domain_new}"
 
   fi
 
