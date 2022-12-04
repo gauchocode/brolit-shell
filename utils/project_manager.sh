@@ -373,22 +373,22 @@ function project_manager_menu_new_project_type_new_project() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         # NEW WORDPRESS PROJECT
-        [[ ${chosen_project_type_options} == *"01"* ]] && project_install "${PROJECTS_PATH}" "wordpress"
+        [[ ${chosen_project_type_options} == *"01"* ]] && project_install "" "${PROJECTS_PATH}" "wordpress"
 
         # NEW LARAVEL PROJECT
-        [[ ${chosen_project_type_options} == *"02"* ]] && project_install "${PROJECTS_PATH}" "laravel"
+        [[ ${chosen_project_type_options} == *"02"* ]] && project_install "" "${PROJECTS_PATH}" "laravel"
 
         # NEW PHP PROJECT
-        [[ ${chosen_project_type_options} == *"03"* ]] && project_install "${PROJECTS_PATH}" "php"
+        [[ ${chosen_project_type_options} == *"03"* ]] && project_install "" "${PROJECTS_PATH}" "php"
 
         # NEW NODEJS PROJECT
-        [[ ${chosen_project_type_options} == *"04"* ]] && project_install "${PROJECTS_PATH}" "nodejs"
+        [[ ${chosen_project_type_options} == *"04"* ]] && project_install "" "${PROJECTS_PATH}" "nodejs"
 
         # NEW WORDPRESS PROJECT (DOCKER) -BETA-
-        [[ ${chosen_project_type_options} == *"05"* ]] && docker_project_install "${PROJECTS_PATH}" "wordpress"
+        [[ ${chosen_project_type_options} == *"05"* ]] && docker_project_install "" "${PROJECTS_PATH}" "wordpress"
 
         # NEW PHP PROJECT (DOCKER) -BETA-
-        [[ ${chosen_project_type_options} == *"06"* ]] && docker_project_install "${PROJECTS_PATH}" "php"
+        [[ ${chosen_project_type_options} == *"06"* ]] && docker_project_install "" "${PROJECTS_PATH}" "php"
 
       fi
 
@@ -519,7 +519,7 @@ function project_manager_menu_new_project_type_new_project() {
         fi
 
         # Create new docker-compose stack for the ${project_domain} and ${project_type}
-        docker_project_install "${PROJECTS_PATH}/${project_domain}" "${project_type}"
+        docker_project_install "${project_domain}" "${project_type}" "${PROJECTS_PATH}"
         exitstatus=$?
         [[ ${exitstatus} -eq 1 ]] && return 1
 
@@ -545,7 +545,7 @@ function project_manager_menu_new_project_type_new_project() {
 
         project_backup_date="$(backup_get_date "${backup_to_dowload}")"
 
-        db_to_download="${chosen_server}/projects-${project_domain}/database/${db_name}/${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+        db_to_download="${chosen_server}/projects-${chosen_remote_status}/database/${db_name}/${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
         db_to_restore="${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
         project_backup="${db_to_restore%%.*}.sql"
 
