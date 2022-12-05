@@ -559,21 +559,6 @@ function project_manager_menu_new_project_type_new_project() {
         # Decompress
         decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
 
-        # Read wp-config to get WP DATABASE PREFIX and replace on docker .env file
-        #database_prefix_to_restore="$(wp_config_get_option "${BROLIT_TMP_DIR}/${chosen_project}" "table_prefix")"
-        database_prefix_to_restore="$(cat "${PROJECTS_PATH}/${project_domain}"/wp-config.php | grep "\$table_prefix" | cut -d \' -f 2)"
-        database_prefix_actual="$(project_get_config_var "${PROJECTS_PATH}/${project_domain}/.env" "WORDPRESS_TABLE_PREFIX")"
-        if [[ ${database_prefix_to_restore} != "${database_prefix_actual}" ]]; then
-          # Set new database prefix
-          project_set_config_var "${PROJECTS_PATH}/${project_domain}/.env" "WORDPRESS_TABLE_PREFIX" "${database_prefix_to_restore}" "double"
-          # Rebuild docker image
-          docker-compose -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" up --detach
-          # Clear screen output
-          clear_previous_lines "3"
-        fi
-
-        # TODO: update wp-config.php with .env docker stack credentials
-
         # Read .env to get mysql pass
         db_user_pass="$(project_get_config_var "${PROJECTS_PATH}/${project_domain}/.env" "MYSQL_PASSWORD")"
 
@@ -582,7 +567,17 @@ function project_manager_menu_new_project_type_new_project() {
 
         display --indent 6 --text "- Import database into docker volume" --result "DONE" --color GREEN
 
-        #fi
+        # Read wp-config to get WP DATABASE PREFIX and replace on docker .env file
+        #database_prefix_to_restore="$(wp_config_get_option "${BROLIT_TMP_DIR}/${chosen_project}" "table_prefix")"
+        database_prefix_to_restore="$(cat "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php.bak" | grep "\$table_prefix" | cut -d \' -f 2)"
+        if [[ -n ${database_prefix_to_restore} ]]; then
+          # Set new database prefix
+          project_set_config_var "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php" "table_prefix" "${database_prefix_to_restore}" "single"
+          # Rebuild docker image
+          docker-compose -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" up --detach
+          # Clear screen output
+          clear_previous_lines "5"
+        fi
 
       fi
 
