@@ -2896,9 +2896,7 @@ function project_post_install_tasks() {
     wpcli_cache_flush "${install_path}"
 
     # If .user.ini found, rename it (Wordfence issue workaround)
-    if [[ -f "${install_path}/.user.ini" ]]; then
-      mv "${install_path}/.user.ini" "${install_path}/.user.ini.bak"
-    fi
+    [[ -f "${install_path}/.user.ini" ]] && mv "${install_path}/.user.ini" "${install_path}/.user.ini.bak"
 
   else
 

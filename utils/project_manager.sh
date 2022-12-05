@@ -540,6 +540,9 @@ function project_manager_menu_new_project_type_new_project() {
         # Move previous wp-config.php to project root
         mv "${PROJECTS_PATH}/${project_domain}/wp-config.php" "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php"
 
+        # If .user.ini found, rename it (Wordfence issue workaround)
+        [[ -f "${PROJECTS_PATH}/${project_domain}/wordpress/.user.ini" ]] && mv "${PROJECTS_PATH}/${project_domain}/wordpress/.user.ini" "${PROJECTS_PATH}/${project_domain}/wordpress/.user.ini.bak"
+
         # TODO: update this to match monthly and weekly backups
         project_name="$(project_get_name_from_domain "${project_domain}")"
         project_stage="$(project_get_stage_from_domain "${project_domain}")"
