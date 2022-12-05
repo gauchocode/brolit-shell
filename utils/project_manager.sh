@@ -588,6 +588,18 @@ function project_manager_menu_new_project_type_new_project() {
           clear_previous_lines "15"
         fi
 
+        # Show final console message
+        display --indent 6 --text "- Restore and dockerize project" --result "DONE" --color GREEN
+        log_break "true"
+
+        echo "*****************************************************************"
+        echo "*                                                               *"
+        echo "*  Project ${project_domain} was restored successfully!         *"
+        echo "*                                                               *"
+        echo "*****************************************************************"
+
+        prompt_return_or_finish
+
       fi
 
     fi
