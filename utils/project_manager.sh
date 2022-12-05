@@ -573,10 +573,16 @@ function project_manager_menu_new_project_type_new_project() {
         if [[ -n ${database_prefix_to_restore} ]]; then
           # Set new database prefix
           project_set_config_var "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php" "table_prefix" "${database_prefix_to_restore}" "single"
+          # Execute docker-compose command
+          ## Options:
+          ##    -f, --force   Don't ask to confirm removal
+          ##    -s, --stop    Stop the containers, if required, before removing
+          ##    -v            Remove any anonymous volumes attached to containers
+          docker-compose -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" rm --force -v --stop
           # Rebuild docker image
           docker-compose -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" up --detach
           # Clear screen output
-          clear_previous_lines "5"
+          clear_previous_lines "15"
         fi
 
       fi
