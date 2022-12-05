@@ -574,8 +574,8 @@ function project_manager_menu_new_project_type_new_project() {
         #database_prefix_to_restore="$(wp_config_get_option "${BROLIT_TMP_DIR}/${chosen_project}" "table_prefix")"
         database_prefix_to_restore="$(cat "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php.bak" | grep "\$table_prefix" | cut -d \' -f 2)"
         if [[ -n ${database_prefix_to_restore} ]]; then
-          # Set new database prefix
-          project_set_config_var "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php" "\$table_prefix" "${database_prefix_to_restore}" "single"
+          # Set restored $table_prefix on wp-config.php file
+          sed -i "s/\$table_prefix = 'wp_'/\$table_prefix = '${database_prefix_to_restore}'/g" "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php"
           # Execute docker-compose command
           ## Options:
           ##    -f, --force   Don't ask to confirm removal
