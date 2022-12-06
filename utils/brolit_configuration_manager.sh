@@ -1573,7 +1573,7 @@ function _brolit_configuration_load_portainer() {
     docker_installed="$?"
     if [[ ${docker_installed} -eq 0 ]]; then
         log_event "debug" "Docker installed on: ${docker}. Now checking if Portainer image is present..." "false"
-        PORTAINER="$(docker_get_container_id "portainer")"
+        PORTAINER="$(docker_get_container_id "portainer-ce")"
     fi
 
     if [[ ${PACKAGES_PORTAINER_STATUS} == "enabled" ]]; then
@@ -1635,7 +1635,7 @@ function _brolit_configuration_load_portainer_agent() {
     docker_installed="$?"
     if [[ ${docker_installed} -eq 0 ]]; then
         log_event "debug" "Docker installed on: ${docker}. Now checking if Portainer Agent image is present..." "false"
-        PORTAINER_AGENT="$(docker_get_container_id "portainer_agent")"
+        PORTAINER_AGENT="$(docker_get_container_id "portainer/agent")"
     fi
 
     if [[ ${PACKAGES_PORTAINER_AGENT_STATUS} == "enabled" ]]; then
@@ -2173,6 +2173,7 @@ function brolit_configuration_load() {
 
     ### portainer
     _brolit_configuration_load_portainer "${server_config_file}"
+    _brolit_configuration_load_portainer_agent "${server_config_file}"
 
     ### mailcow
     #_brolit_configuration_load_mailcow "${server_config_file}"

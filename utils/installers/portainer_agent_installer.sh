@@ -21,6 +21,7 @@
 function portainer_agent_installer() {
 
     local portainer_agent
+    local portainer_agent_path="/root/agent_portainer"
 
     log_subsection "Portainer Agent Installer"
 
@@ -43,20 +44,23 @@ function portainer_agent_installer() {
     if [[ -z ${portainer_agent} ]]; then
 
         # Create project directory
-        mkdir -p "${PROJECTS_PATH}/${PACKAGES_PORTAINER_AGENT_CONFIG_SUBDOMAIN}"
+        mkdir -p "${portainer_agent_path}"
 
         # Copy docker-compose.yml and .env files to project directory
-        cp "${BROLIT_MAIN_DIR}/utils/installers/docker-compose/portainer_agent/docker-compose.yml" "${PROJECTS_PATH}/${PACKAGES_PORTAINER_AGENT_CONFIG_SUBDOMAIN}"
-        cp "${BROLIT_MAIN_DIR}/utils/installers/docker-compose/portainer_agent/.env" "${PROJECTS_PATH}/${PACKAGES_PORTAINER_AGENT_CONFIG_SUBDOMAIN}"
+        cp "${BROLIT_MAIN_DIR}/utils/installers/docker-compose/portainer_agent/docker-compose.yml" "${portainer_agent_path}"
+        cp "${BROLIT_MAIN_DIR}/utils/installers/docker-compose/portainer_agent/.env" "${portainer_agent_path}"
 
         # Configure .env file
-        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_AGENT_CONFIG_SUBDOMAIN}/.env" "PORTAINER_AGENT_PORT" "${PACKAGES_PORTAINER_CONFIG_PORT}" "none"
+        project_set_config_var "${portainer_agent_path}/.env" "PORTAINER_AGENT_PORT" "${PACKAGES_PORTAINER_CONFIG_PORT}" "none"
+
+        # Enable port 9001 in firewall
+        firewall_allow "9001"
 
         # Run docker-compose pull on specific directory
-        docker-compose -f "${PROJECTS_PATH}/${PACKAGES_PORTAINER_AGENT_CONFIG_SUBDOMAIN}/docker-compose.yml" pull
+        docker-compose -f "${portainer_agent_path}/docker-compose.yml" pull
 
         # Run docker-compose up -d on specific directory
-        docker-compose -f "${PROJECTS_PATH}/${PACKAGES_PORTAINER_AGENT_CONFIG_SUBDOMAIN}/docker-compose.yml" up -d
+        docker-compose -f "${portainer_agent_path}/docker-compose.yml" up -d
 
         clear_previous_lines "3"
 
