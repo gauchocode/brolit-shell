@@ -1162,11 +1162,11 @@ function restore_backup_project_database() {
   # Sanitize ${project_name}
   db_project_name="$(mysql_name_sanitize "${project_name}")"
 
-  project_backup_date="$(backup_get_date "${chosen_backup_to_restore}")"
-  backup_to_dowload="${chosen_type_path}/${chosen_project}/${chosen_backup_to_restore}"
+  #project_backup_date="$(backup_get_date "${chosen_backup_to_restore}")"
+  #backup_to_dowload="${chosen_type_path}/${chosen_project}/${chosen_backup_to_restore}"
 
   # Downloading Backup
-  storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
+  #storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
 
   # Decompress
   decompress "${BROLIT_TMP_DIR}/${chosen_backup_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
@@ -1175,9 +1175,8 @@ function restore_backup_project_database() {
 
   # Ask with whiptail if the database is associated to an existing project (yes or no)
   whiptail_message_with_skip_option "RESTORE BACKUP" "Is the database associated to an existing project?"
-
-  # If yes select a project from ${PROJECTS_PATH} directory
-  if [[ $? -eq 0 ]]; then
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
     # Select project to work with
     directory_browser "Select a project to work with" "${PROJECTS_PATH}" #return $filename
 
