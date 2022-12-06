@@ -51,10 +51,10 @@ function portainer_agent_installer() {
         cp "${BROLIT_MAIN_DIR}/utils/installers/docker-compose/portainer_agent/.env" "${portainer_agent_path}"
 
         # Configure .env file
-        project_set_config_var "${portainer_agent_path}/.env" "PORTAINER_AGENT_PORT" "${PACKAGES_PORTAINER_CONFIG_PORT}" "none"
+        project_set_config_var "${portainer_agent_path}/.env" "PORTAINER_AGENT_PORT" "${PACKAGES_PORTAINER_AGENT_CONFIG_PORT}" "none"
 
-        # Enable port 9001 in firewall
-        firewall_allow "9001"
+        # Enable port in firewall
+        firewall_allow "${PACKAGES_PORTAINER_AGENT_CONFIG_PORT}"
 
         # Run docker-compose pull on specific directory
         docker-compose -f "${portainer_agent_path}/docker-compose.yml" pull
