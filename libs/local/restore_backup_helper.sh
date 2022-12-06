@@ -1120,17 +1120,10 @@ function restore_backup_project_files() {
   # Asking project name
   project_name="$(project_ask_name "${possible_project_name}")"
 
-  #project_backup_date="$(backup_get_date "${chosen_backup_to_restore}")"
-  #backup_to_dowload="${chosen_remote_type_path}/${chosen_project}/${chosen_backup_to_restore}"
-
-  # Download Backup
-  #storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
-
   # Decompress
   decompress "${BROLIT_TMP_DIR}/${backup_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
 
   #chosen_type_path="${chosen_server}/projects-${chosen_status}/${chosen_restore_type}"
-  #storage_project_list="$(storage_list_dir "${chosen_type_path}")"
   storage_project_list="$(storage_list_dir "${chosen_remote_type_path}")"
 
   # At this point chosen_project is the new project domain
@@ -1341,16 +1334,17 @@ function restore_project_backup() {
   if [[ ${project_install_type} == "docker"* ]]; then
 
     # TODO: Check if docker and docker-compose are installed
+    # TODO: Check project type (WP, Laravel, etc)
 
-    # TODO: Check ports on .env or docker-compose.yml
-    project_port="$(project_ask_port "")"
+    # Read WP_PORT on .env
+    project_port="$(project_get_config_var "${install_path}/.env" "WP_PORT")"
 
     # Log
     log_event "info" "Trying to restore a docker project." "false"
     display --indent 6 --text "- Trying to restore a docker project ..." # --result "DONE" --color GREEN
 
     # Rebuild docker image
-    docker-compose -f "${PROJECTS_PATH}/${project_domain_new}/docker-compose.yml" up --detach
+    docker-compose -f "${install_path}/docker-compose.yml" up --detach --build
 
     # Clear screen output
     clear_previous_lines "3"
