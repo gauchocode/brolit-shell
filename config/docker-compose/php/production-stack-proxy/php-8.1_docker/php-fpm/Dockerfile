@@ -12,7 +12,6 @@ RUN apt-get update; \
         php8.1-imagick \ 
         php8.1-imap \ 
         php8.1-inotify \ 
-        php8.1-lz4 \ 
         php8.1-mcrypt \ 
         php8.1-mysql \ 
         php8.1-redis \ 
