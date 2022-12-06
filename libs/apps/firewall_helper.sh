@@ -190,7 +190,6 @@ function firewall_allow() {
     ufw_output="$(ufw allow "${service}")"
 
     exitstatus=$?
-
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Change brolit_conf.json
