@@ -64,22 +64,22 @@ services:
 #            PMA_HOST: mysql
 #        networks:
 #            - internal
-
-    server:
-        container_name: ${PROJECT_NAME}_ssh
-        build:
-            context: ./ssh_docker
-            args:
-                SSH_MASTER_USER: ${SSH_MASTER_USER}
-                SSH_MASTER_PASS: ${SSH_MASTER_PASS}
-        hostname: ${PROJECT_DOMAIN}
-        working_dir: /home/${SSH_MASTER_USER}/application
-        volumes:
-            - ${WWW_DATA_DIR}:/home/${SSH_MASTER_USER}/application
-        ports:
-            - "${SSH_HOST_PORT}:22"
-        networks:
-            - internal
+#
+#    server:
+#        container_name: ${PROJECT_NAME}_ssh
+#        build:
+#            context: ./ssh_docker
+#            args:
+#                SSH_MASTER_USER: ${SSH_MASTER_USER}
+#                SSH_MASTER_PASS: ${SSH_MASTER_PASS}
+#        hostname: ${PROJECT_DOMAIN}
+#        working_dir: /home/${SSH_MASTER_USER}/application
+#        volumes:
+#            - ${WWW_DATA_DIR}:/home/${SSH_MASTER_USER}/application
+#        ports:
+#            - "${SSH_HOST_PORT}:22"
+#        networks:
+#            - internal
 
 networks:
   internal:

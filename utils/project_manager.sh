@@ -594,7 +594,9 @@ function project_manager_menu_new_project_type_new_project() {
 
         echo "*****************************************************************"
         echo "*                                                               *"
-        echo "*  Project ${project_domain} was restored successfully!         *"
+        echo "  Project ${project_domain} was restored successfully!           "
+        echo "*                                                               *"
+        echo "  Now you can delete the project from the old server.            "
         echo "*                                                               *"
         echo "*****************************************************************"
 
