@@ -540,8 +540,8 @@ function docker_project_install() {
     fi
 
     # Project Port (docker internal)
-    ## Will find the next port available from 81 to 200
-    port_available="$(network_next_available_port "81" "200")"
+    ## Will find the next port available from 81 to 250
+    port_available="$(network_next_available_port "81" "250")"
 
     # TODO: Only for wordpress/laravel/php projects
     # PHP Version
