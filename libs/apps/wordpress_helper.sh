@@ -114,18 +114,39 @@ function wp_config_path() {
   # Find where wp-config.php is
   find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')"
 
-  # Check if directory exists
-  if [[ -d ${find_output} ]]; then
+  # If found more thant one directory, print the first one
+  if [[ $(echo "${find_output}" | wc -l) -gt 1 ]]; then
 
     # Log
-    log_event "debug" "wp-config.php found: ${find_output}" "false"
+    display --indent 6 --text "- Searching WordPress Installation" --result "WARNING" --color YELLOW
+    display --indent 8 --text "More than one WordPress installation found on directory" --tcolor YELLOW
+    log_event "warning" "Found more than one WordPress Installation on directory: ${dir_to_search}" "false"
+
+    # Print the first one
+    echo "${find_output}" | head -n 1
+
+    return 0
+
+  else
+
+  if [[ $(echo "${find_output}" | wc -l) -eq 1 ]]; then
+
+    # Log
+    log_event "info" "Found WordPress Installation on directory: ${dir_to_search}" "false"
 
     # Return
     echo "${find_output}" && return 0
 
-  else
-
-    return 1
+    else # empty ${find_output}
+      
+        # Log
+        display --indent 6 --text "- Searching WordPress Installation" --result "FAIL" --color RED
+        display --indent 8 --text "No WordPress installation found on directory" --tcolor RED
+        log_event "error" "No WordPress Installation found on directory: ${dir_to_search}" "false"
+  
+        return 1
+  
+      fi
 
   fi
 
