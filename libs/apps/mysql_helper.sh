@@ -890,7 +890,8 @@ function mysql_database_export() {
     spinner_start "- Making a backup of: ${database}"
 
     # Run mysqldump
-    ${MYSQLDUMP_ROOT} "${database}" >"${dump_file}"
+    # For large tables use --max_allowed_packet=128M or bigger (default is 25MB)
+    ${MYSQLDUMP_ROOT} --max_allowed_packet=512M "${database}" >"${dump_file}"
 
     dump_status=$?
     spinner_stop "${dump_status}"
