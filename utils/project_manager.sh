@@ -385,10 +385,10 @@ function project_manager_menu_new_project_type_new_project() {
         [[ ${chosen_project_type_options} == *"04"* ]] && project_install "${PROJECTS_PATH}" "nodejs" "" "" "" "clean"
 
         # NEW WORDPRESS PROJECT (DOCKER) -BETA-
-        [[ ${chosen_project_type_options} == *"05"* ]] && docker_project_install "" "${PROJECTS_PATH}" "wordpress"
+        [[ ${chosen_project_type_options} == *"05"* ]] && docker_project_install "${PROJECTS_PATH}" "wordpress" ""
 
         # NEW PHP PROJECT (DOCKER) -BETA-
-        [[ ${chosen_project_type_options} == *"06"* ]] && docker_project_install "" "${PROJECTS_PATH}" "php"
+        [[ ${chosen_project_type_options} == *"06"* ]] && docker_project_install "${PROJECTS_PATH}" "php" ""
 
       fi
 
@@ -520,7 +520,7 @@ function project_manager_menu_new_project_type_new_project() {
         fi
 
         # Create new docker-compose stack for the ${project_domain} and ${project_type}
-        docker_project_install "${project_domain}" "${project_type}" "${PROJECTS_PATH}"
+        docker_project_install "${PROJECTS_PATH}" "${project_type}" "${project_domain}"
         exitstatus=$?
         [[ ${exitstatus} -eq 1 ]] && return 1
 
