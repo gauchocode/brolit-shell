@@ -23,17 +23,16 @@ function wp_download() {
 
   local destination_path=${1}
   local wp_version=${2}
-  
 
   if [[ -z ${wp_version} || ${wp_version} == "latest" ]]; then
 
     # Download latest version
-    ${CURL} "https://wordpress.org/latest.tar.gz" > "${destination_path}/wordpress.tar.gz"
+    ${CURL} "https://wordpress.org/latest.tar.gz" >"${destination_path}/wordpress.tar.gz"
 
   else
 
     # Download specific version
-    ${CURL} "https://wordpress.org/wordpress-${wp_version}.tar.gz" > "${destination_path}/wordpress.tar.gz"
+    ${CURL} "https://wordpress.org/wordpress-${wp_version}.tar.gz" >"${destination_path}/wordpress.tar.gz"
 
   fi
 
@@ -129,24 +128,24 @@ function wp_config_path() {
 
   else
 
-  if [[ $(echo "${find_output}" | wc -l) -eq 1 ]]; then
+    if [[ $(echo "${find_output}" | wc -l) -eq 1 ]]; then
 
-    # Log
-    log_event "info" "Found WordPress Installation on directory: ${dir_to_search}" "false"
+      # Log
+      log_event "info" "Found WordPress Installation on directory: ${dir_to_search}" "false"
 
-    # Return
-    echo "${find_output}" && return 0
+      # Return
+      echo "${find_output}" && return 0
 
     else # empty ${find_output}
-      
-        # Log
-        display --indent 6 --text "- Searching WordPress Installation" --result "FAIL" --color RED
-        display --indent 8 --text "No WordPress installation found on directory" --tcolor RED
-        log_event "error" "No WordPress Installation found on directory: ${dir_to_search}" "false"
-  
-        return 1
-  
-      fi
+
+      # Log
+      display --indent 6 --text "- Searching WordPress Installation" --result "FAIL" --color RED
+      display --indent 8 --text "No WordPress installation found on directory" --tcolor RED
+      log_event "error" "No WordPress Installation found on directory: ${dir_to_search}" "false"
+
+      return 1
+
+    fi
 
   fi
 
@@ -170,18 +169,18 @@ function wp_config_get_option() {
 
   local wp_value
 
-  # Update wp-config.php
-  log_event "info" "Getting config option value in ${wp_project_dir}/wp-config.php" "false"
+  log_event "info" "Reading config option value in ${wp_project_dir}/wp-config.php" "false"
 
+  # Update wp-config.php
   wp_value="$(cat "${wp_project_dir}/wp-config.php" | grep "${wp_option}" | cut -d \' -f 4)"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 && -n ${wp_value} ]]; then
 
     # Log
-    log_event "info" "Option ${wp_option}=${wp_value}" "false"
-    display --indent 6 --text "- Getting wp-config.php option" --result "DONE" --color GREEN
-    display --indent 8 --text "${wp_option}=${wp_value}" --tcolor GREEN
+    log_event "info" "Reading '${wp_option}' value from wp-config: ${wp_value}" "false"
+    display --indent 6 --text "- Reading ${wp_option} value from wp-config.php" --result "DONE" --color GREEN
+    #display --indent 8 --text "${wp_option}=${wp_value}" --tcolor GREEN
 
     # Return
     echo "${wp_value}" && return 0
@@ -189,7 +188,7 @@ function wp_config_get_option() {
   else
 
     # Log
-    log_event "error" "Getting wp-config.php option: ${wp_option}" "false"
+    log_event "error" "Reading '${wp_option}' value from wp-config." "false"
     log_event "debug" "Output: ${wp_value}" "false"
     display --indent 6 --text "- Getting wp-config.php option" --result "FAIL" --color RED
     display --indent 8 --text "Please read the log file" --tcolor RED
@@ -233,17 +232,17 @@ function _wp_config_set_option() {
 
     # Log
     log_event "info" "Setting ${wp_option}=${wp_value}" "false"
-    display --indent 6 --text "- Setting wp-config.php option" --result "DONE" --color GREEN
-    display --indent 8 --text "${wp_option}=${wp_value}" --tcolor GREEN
+    display --indent 6 --text "- Setting ${wp_option} on wp-config.php" --result "DONE" --color GREEN
+    #display --indent 8 --text "Value: ${wp_value}" --tcolor GREEN
 
     return 0
 
   else
 
     # Log
-    log_event "error" "Setting/updating field: ${wp_option}" "false"
+    log_event "error" "Setting ${wp_option} option with value: ${wp_value}" "false"
     log_event "debug" "Output: ${sed_output}" "false"
-    display --indent 6 --text "- Setting wp-config.php option" --result "FAIL" --color RED
+    display --indent 6 --text "- Setting ${wp_option} on wp-config.php" --result "FAIL" --color RED
     display --indent 8 --text "Please read the log file" --tcolor RED
 
     return 1
