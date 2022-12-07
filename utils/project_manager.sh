@@ -373,16 +373,16 @@ function project_manager_menu_new_project_type_new_project() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         # NEW WORDPRESS PROJECT
-        [[ ${chosen_project_type_options} == *"01"* ]] && project_install "" "${PROJECTS_PATH}" "wordpress"
+        [[ ${chosen_project_type_options} == *"01"* ]] && project_install "${PROJECTS_PATH}" "wordpress" "" "" "" "clean"
 
         # NEW LARAVEL PROJECT
-        [[ ${chosen_project_type_options} == *"02"* ]] && project_install "" "${PROJECTS_PATH}" "laravel"
+        [[ ${chosen_project_type_options} == *"02"* ]] && project_install "${PROJECTS_PATH}" "laravel" "" "" "" "clean"
 
         # NEW PHP PROJECT
-        [[ ${chosen_project_type_options} == *"03"* ]] && project_install "" "${PROJECTS_PATH}" "php"
+        [[ ${chosen_project_type_options} == *"03"* ]] && project_install "${PROJECTS_PATH}" "php" "" "" "" "clean"
 
         # NEW NODEJS PROJECT
-        [[ ${chosen_project_type_options} == *"04"* ]] && project_install "" "${PROJECTS_PATH}" "nodejs"
+        [[ ${chosen_project_type_options} == *"04"* ]] && project_install "${PROJECTS_PATH}" "nodejs" "" "" "" "clean"
 
         # NEW WORDPRESS PROJECT (DOCKER) -BETA-
         [[ ${chosen_project_type_options} == *"05"* ]] && docker_project_install "" "${PROJECTS_PATH}" "wordpress"
