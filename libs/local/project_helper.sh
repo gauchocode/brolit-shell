@@ -251,16 +251,29 @@ function project_ask_domain() {
 
   local project_domain="${1}"
 
-  project_domain="$(whiptail --title "Domain" --inputbox "Insert the project's domain. Example: landing.domain.com" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
+  project_domain="$(whiptail --title "Subdomain" --inputbox "Insert project's subdomain. Example: www.domain.com" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Validate domain format
+    if [[ ! ${project_domain} =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]$ ]]; then
+
+      # Log
+      log_event "error" "Invalid domain format: ${project_domain}" "false"
+      display --indent 6 --text "- Domain format" --result "FAIL" --color RED
+      display --indent 8 --text "Invalid domain format: ${project_domain}" --tcolor RED
+      return 1
+
+    fi
 
     # Return
     echo "${project_domain}" && return 0
 
   else
 
+    # Log
+    log_event "error" "Domain not set" "false"
     return 1
 
   fi
