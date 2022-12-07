@@ -72,7 +72,6 @@ function nginx_server_create() {
 
         # Log
         display --indent 6 --text "- Creating nginx server config" --result DONE --color GREEN
-        display --indent 8 --text "Using '${project_type}_${server_type}' template"
         log_event "info" "Creating nginx server config: ${nginx_server_file}" "false"
         log_event "debug" "Using '${BROLIT_MAIN_DIR}/config/nginx/sites-available/${project_type}_${server_type}' template" "false"
 
@@ -107,7 +106,6 @@ function nginx_server_create() {
 
         # Log
         display --indent 6 --text "- Creating nginx server config" --result DONE --color GREEN
-        display --indent 8 --text "Using '${project_type}_${server_type}' template"
         log_event "info" "Creating nginx server config: ${nginx_server_file}" "false"
         log_event "debug" "Using '${BROLIT_MAIN_DIR}/config/nginx/sites-available/${project_type}_${server_type}' template" "false"
 
@@ -365,7 +363,7 @@ function nginx_server_change_phpv() {
     display --indent 8 --text "PHP version changed to ${new_php_v}"
     log_event "info" "PHP version for ${nginx_server_file} changed from ${current_php_v} to ${new_php_v}" "false"
 
-    #Test the validity of the nginx configuration
+    # Test nginx configuration
     nginx_configuration_test
 
 }
