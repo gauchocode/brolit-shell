@@ -590,15 +590,14 @@ function project_manager_menu_new_project_type_new_project() {
 
         # Show final console message
         display --indent 6 --text "- Restore and dockerize project" --result "DONE" --color GREEN
-        log_break "true"
-
-        echo "*****************************************************************"
-        echo "*                                                               *"
-        echo "  Project ${project_domain} was restored successfully!           "
-        echo "*                                                               *"
-        echo "  Now you can delete the project from the old server.            "
-        echo "*                                                               *"
-        echo "*****************************************************************"
+        #log_break "true"
+        echo "    *****************************************************************"
+        echo "    *                                                               *"
+        echo "    *  Project ${project_domain} was restored successfully!           "
+        echo "    *                                                               *"
+        echo "    *  Now you can delete the project from the old server.            "
+        echo "    *                                                               *"
+        echo "    *****************************************************************"
 
         prompt_return_or_finish
 
