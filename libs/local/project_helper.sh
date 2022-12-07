@@ -1802,6 +1802,15 @@ function project_install() {
 
   log_section "Project Installer (${project_type})"
 
+  # Check if nginx is installed
+  if [[ ! $(command -v nginx) ]]; then
+    # Log
+    log_event "error" "Nginx is not installed" "false"
+    display --indent 6 --text "- Creating WordPress project" --result "FAIL" --color RED
+    display --indent 8 --text "Nginx is not installed" --tcolor RED
+    return 1
+  fi
+
   # Project Type
   if [[ -z ${project_type} ]]; then
     project_type="$(project_ask_type "")"
@@ -1863,6 +1872,23 @@ function project_install() {
 
   wordpress)
 
+    # Check if php is installed
+    if [[ ! $(command -v php) ]]; then
+      # Log
+      display --indent 6 --text "- Installing WordPress project" --result "FAIL" --color RED
+      display --indent 8 --text "PHP is not installed, aborting ..."
+      log_event "error" "PHP is not installed, aborting ..." "false"
+      return 1
+    fi
+    # Check if mysql is installed
+    if [[ ! $(command -v mysql) ]]; then
+      # Log
+      display --indent 6 --text "- Installing WordPress project" --result "FAIL" --color RED
+      display --indent 8 --text "MySQL is not installed, aborting ..."
+      log_event "error" "MySQL is not installed, aborting ..." "false"
+      return 1
+    fi
+
     # Check if wp-cli is installed
     wpcli_install_if_not_installed
 
@@ -1873,6 +1899,7 @@ function project_install() {
     ;;
 
   laravel)
+  
     # Execute function
     # laravel_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
     # log_event "warning" "Laravel installer should be implemented soon, trying to install like pure php project ..."
