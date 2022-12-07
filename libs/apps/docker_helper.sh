@@ -624,7 +624,7 @@ function docker_project_install() {
             # Log
             wait 2
             #clear_previous_lines "7"
-            clear_previous_lines "21"
+            clear_previous_lines "22"
             log_event "info" "Downloading docker images." "false"
             log_event "info" "Building docker images." "false"
             display --indent 6 --text "- Downloading docker images" --result "DONE" --color GREEN
@@ -733,8 +733,8 @@ define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # Log
-            wait 2
-            clear_previous_lines "6"
+            #wait 2
+            clear_previous_lines "7"
             log_event "info" "Downloading docker images." "false"
             log_event "info" "Building docker images." "false"
             display --indent 6 --text "- Downloading docker images" --result "DONE" --color GREEN
