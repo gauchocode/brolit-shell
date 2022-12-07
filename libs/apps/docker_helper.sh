@@ -481,9 +481,9 @@ function docker_project_files_import() {
 
 function docker_project_install() {
 
-    local project_domain="${1}"
+    local dir_path="${1}"
     local project_type="${2}"
-    local dir_path="${3}"
+    local project_domain="${3}"
 
     local project_path
     local port_available
