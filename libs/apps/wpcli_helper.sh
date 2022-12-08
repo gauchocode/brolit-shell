@@ -1332,31 +1332,30 @@ function wpcli_seoyoast_reindex() {
 ################################################################################
 
 function wpcli_default_plugins_installer() {
-    
-        local wp_site="${1}"
-    
-        local wp_defaults_file="/root/.brolit_wp_defaults.json"
 
-        # Check if wp_defaults_file exists
-        if [[ ! -f "${wp_defaults_file}" ]]; then
+    local wp_site="${1}"
 
-            # Log
-            log_event "warning" "File ${wp_defaults_file} not found!" "false"
+    local wp_defaults_file="/root/.brolit_wp_defaults.json"
 
-            # Make a copy of the default file
-            cp "$BROLIT_MAIN_DIR/config/brolit/brolit_wp_defaults.json" "${wp_defaults_file}"
+    # Check if wp_defaults_file exists
+    if [[ ! -f "${wp_defaults_file}" ]]; then
 
-            # Whiptail message
-            whiptail_message "WP Plugin Installer" "The file ${wp_defaults_file} was not found. A copy of the default file was created. Please edit the file and press enter."
-            [[ $? -eq 1 ]] && return 1
+        # Log
+        log_event "warning" "File ${wp_defaults_file} not found!" "false"
 
-        fi
+        # Make a copy of the default file
+        cp "$BROLIT_MAIN_DIR/config/brolit/brolit_wp_defaults.json" "${wp_defaults_file}"
 
-
-        whiptail_message "WP Plugin Installer" "This installer will install and activate the WordPress plugins configured on the file: ${wp_defaults_file}"
+        # Whiptail message
+        whiptail_message "WP Plugin Installer" "The file ${wp_defaults_file} was not found. A copy of the default file was created. Please edit the file and press enter."
         [[ $? -eq 1 ]] && return 1
 
-        _load_brolit_wp_defaults "${wp_site}" "${wp_defaults_file}"
+    fi
+
+    whiptail_message "WP Plugin Installer" "This installer will install and activate the WordPress plugins configured on the file: ${wp_defaults_file}"
+    [[ $? -eq 1 ]] && return 1
+
+    _load_brolit_wp_defaults "${wp_site}" "${wp_defaults_file}"
 
 }
 
@@ -1373,26 +1372,35 @@ function _load_brolit_wp_defaults() {
     local plugin_url
     local plugin_activate
 
-    local i=0
+    local i
 
-    # File to work with: config/brolit/brolit_wp_defaults.json
-    # Read all plugins slug configured on file
-    while read -r plugin; do
+    local plugins_count
+
+    log_subsection "WP Plugin Installer"
+
+    # Count json_read_field "${wp_defaults_file}" "PLUGINS[].slug
+    plugins_count="$(json_read_field "${wp_defaults_file}" "PLUGINS[].slug" | wc -l)"
+
+    log_event "debug" "Plugins found: ${plugins_count}" "false"
+
+    i=0
+
+    # For each plugin
+    while [[ ${i} -lt ${plugins_count} ]]; do
 
         # Get plugin slug
-        # cat "/root/.brolit_wp_defaults.json" | jq -r ".PLUGINS[0].slug"
         plugin_slug="$(json_read_field "${wp_defaults_file}" "PLUGINS[$i].slug")"
 
         # Get plugin source
         plugin_source="$(json_read_field "${wp_defaults_file}" "PLUGINS[$i].source[].type")"
 
-        if [[ $plugin_source != "official" ]]; then
+        if [[ ${plugin_source} != "official" ]]; then
 
             # Get plugin url
             plugin_url="$(json_read_field "${wp_defaults_file}" "PLUGINS[$i].source[].config[].url")"
 
             # Install plugin
-            wpcli_plugin_install "${wp_site}" "${plugin_url}"
+            wpcli_plugin_install "${wp_site}" "${plugin_slug}" "${plugin_url}"
 
         else
 
@@ -1402,19 +1410,15 @@ function _load_brolit_wp_defaults() {
         fi
 
         # Get plugin activate
-        plugin_activate="$(json_read_field "${wp_defaults_file}" "PLUGINS[$i].activate")"
-
-        # Install plugin
-        wpcli_plugin_install "${wp_site}" "${plugin_slug}"
+        plugin_activate="$(json_read_field "${wp_defaults_file}" "PLUGINS[$i].activated")"
 
         # If plugin_activate==true, activate plugin
         [[ ${plugin_activate} == "true" ]] && wpcli_plugin_activate "${wp_site}" "${plugin_slug}"
 
-        i=$i+1
+        # Increment
+        i=$((i + 1))
 
-    done < <(json_read_field "${wp_defaults_file}" "PLUGINS[$i].slug")
-
-    #plugin="$(json_read_field "${wp_defaults_file}" "PLUGINS[].slug")"
+    done
 
 }
 
