@@ -1897,7 +1897,7 @@ function project_install() {
     ;;
 
   laravel)
-  
+
     # Execute function
     # laravel_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
     # log_event "warning" "Laravel installer should be implemented soon, trying to install like pure php project ..."
@@ -1935,7 +1935,22 @@ function project_install() {
   [[ ${https_enable} == "true" ]] && project_site_url="https://${project_domain}" || project_site_url="http://${project_domain}"
 
   # Startup Script for WordPress installation
-  [[ ${EXEC_TYPE} == "default" && ${project_type} == "wordpress" ]] && wpcli_run_startup_script "${project_path}" "${project_site_url}"
+  if [[ ${EXEC_TYPE} == "default" && ${project_type} == "wordpress" ]]; then
+
+    wpcli_run_startup_script "${project_path}" "${project_site_url}"
+
+    if [[ $? -eq 1 ]]; then
+      
+      # Show error message
+      display --indent 6 --text "- Installing WordPress project" --result "FAIL" --color RED
+      display --indent 8 --text "Visit ${project_site_url} and complete the installation" --tcolor YELLOW
+      display --indent 8 --text " or delete the project and star over again" --tcolor YELLOW
+
+      return 1
+
+    fi
+
+  fi
 
   # Post-restore/install tasks
   project_post_install_tasks "${project_path}" "${project_type}" "${project_name}" "${project_stage}" "${database_user_passw}" "" ""
