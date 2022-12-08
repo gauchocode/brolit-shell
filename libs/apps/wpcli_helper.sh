@@ -987,7 +987,7 @@ function wpcli_run_startup_script() {
 
     # Site Name
     if [[ -z ${site_name} ]]; then
-        site_name="$(whiptail_input "Site Name" "Insert the site name. Example: My Website" "")"
+        site_name="$(whiptail_input "Site Name" "Insert a site name for the website. Example: My Website" "")"
         [[ $? -eq 1 || -z ${site_name} ]] && return 1
     fi
 
@@ -998,24 +998,31 @@ function wpcli_run_startup_script() {
         [[ $? -eq 1 || -z ${site_url} ]] && return 1
     fi
 
-    # Wordpress User
+    # First WordPress Admin user
     if [[ -z ${wp_user_name} ]]; then
-        wp_user_name="$(whiptail_input "Wordpress User" "Insert a username for admin." "")"
+        wp_user_name="$(whiptail_input "WordPress User" "Insert a name for the WordPress administrator:" "")"
         [[ $? -eq 1 || -z ${wp_user_name} ]] && return 1
     fi
 
-    # Wordpress User Password
+    # WordPress User Password
     if [[ -z ${wp_user_passw} ]]; then
         local suggested_passw
         suggested_passw="$(openssl rand -hex 12)"
-        wp_user_passw="$(whiptail_input "Wordpress User Password" "Select this random generated password or insert a new one: " "${suggested_passw}")"
+        wp_user_passw="$(whiptail_input "WordPress User Password" "Select this random generated password or insert a new one: " "${suggested_passw}")"
         [[ $? -eq 1 || -z ${wp_user_passw} ]] && return 1
     fi
 
-    # Wordpress User Email
+    # WordPress User Email
     if [[ -z ${wp_user_mail} ]]; then
-        wp_user_mail="$(whiptail_input "Wordpress User Mail" "Insert the user email." "")"
-        [[ $? -eq 1 || -z ${wp_user_mail} ]] && return 1
+        wp_user_mail_status="1"
+        # $wp_user_mail_status = 1 ask user again
+        while [[ ${wp_user_mail_status} -eq 1 ]]; do
+            wp_user_mail="$(whiptail_input "WordPress User Mail" "Insert a valid user email:" "")"
+            [[ $? -eq 1 ]] && return 1
+            validator_email_format "${wp_user_mail}"
+            wp_user_mail_status=$?
+        done
+
     fi
 
     log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} core install --url=${site_url} --title=${site_name} --admin_user=${wp_user_name} --admin_password=${wp_user_passw} --admin_email=${wp_user_mail}"

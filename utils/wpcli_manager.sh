@@ -204,11 +204,7 @@ function wpcli_main_menu() {
 
       wpcli_core_reinstall "${wp_site}"
       exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        send_notification "⚠️ ${SERVER_NAME}" "WordPress re-installed on: ${wp_site}"
-
-      fi
+      [[ ${exitstatus} -eq 0 ]] && send_notification "⚠️ ${SERVER_NAME}" "WordPress re-installed on: ${wp_site}"
 
     fi
 
@@ -267,10 +263,7 @@ function wpcli_main_menu() {
       echo -e "${B_RED} > This script will delete all non-core wordpress files (except wp-content). Do you want to continue? [y/n]${ENDCOLOR}"
       read -r answer
 
-      if [[ ${answer} == "y" ]]; then
-        wpcli_delete_not_core_files "${wp_site}"
-
-      fi
+      [[ ${answer} == "y" ]] && wpcli_delete_not_core_files "${wp_site}"
 
     fi
 
@@ -278,7 +271,7 @@ function wpcli_main_menu() {
 
       log_subsection "WP Create User"
 
-      choosen_user="$(whiptail --title "WORDPRESS USER" --inputbox "Insert the username you want:" 10 60 "" 3>&1 1>&2 2>&3)"
+      choosen_user="$(whiptail --title "WORDPRESS USER" --inputbox "Insert a username:" 10 60 "" 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -286,13 +279,11 @@ function wpcli_main_menu() {
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
-          choosen_role="$(whiptail --title "WORDPRESS USER ROLE" --inputbox "Insert the user role (‘administrator’, ‘editor’, ‘author’, ‘contributor’, ‘subscriber’)" 10 60 "" 3>&1 1>&2 2>&3)"
+          # List options
+          wp_role_list=("administrator editor author contributor subscriber")
+          choosen_role="$(whiptail --title "WORDPRESS USER ROLE" --menu "Choose the user role:" 20 78 10 $(for x in ${wp_role_list}; do echo "${x}"; done) 3>&1 1>&2 2>&3)"
           exitstatus=$?
-          if [[ ${exitstatus} -eq 0 ]]; then
-
-            wpcli_user_create "${wp_site}" "${choosen_user}" "${choosen_email}" "${choosen_role}"
-
-          fi
+          [[ ${exitstatus} -eq 0 ]] && wpcli_user_create "${wp_site}" "${choosen_user}" "${choosen_email}" "${choosen_role}"
 
         fi
 
@@ -305,17 +296,13 @@ function wpcli_main_menu() {
       # RESET WP USER PASSW
       log_subsection "WP Reset User Pass"
 
-      choosen_user="$(whiptail --title "WORDPRESS USER" --inputbox "Insert the username you want:" 10 60 "" 3>&1 1>&2 2>&3)"
+      choosen_user="$(whiptail --title "WORDPRESS USER" --inputbox "Insert the username you want to reset the password:" 10 60 "" 3>&1 1>&2 2>&3)"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
         choosen_passw="$(whiptail --title "WORDPRESS USER PASSWORD" --inputbox "Insert the new password:" 10 60 "" 3>&1 1>&2 2>&3)"
         exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
-
-          wpcli_user_reset_passw "${wp_site}" "${choosen_user}" "${choosen_passw}"
-
-        fi
+        [[ ${exitstatus} -eq 0 ]] && wpcli_user_reset_passw "${wp_site}" "${choosen_user}" "${choosen_passw}"
 
       fi
 
@@ -335,11 +322,7 @@ function wpcli_main_menu() {
 
       choosen_mode="$(whiptail --title "WORDPRESS MAINTENANCE MODE" --inputbox "Set new maintenance mode (‘activate’, ‘deactivate’)" 10 60 "" 3>&1 1>&2 2>&3)"
       exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        wpcli_maintenance_mode_set "${wp_site}" "${choosen_mode}"
-
-      fi
+      [[ ${exitstatus} -eq 0 ]] && wpcli_maintenance_mode_set "${wp_site}" "${choosen_mode}"
 
     fi
 
