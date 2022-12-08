@@ -591,6 +591,7 @@ function die() {
   local msg="${1}"
   local code=${2-1} # default exit status 1
 
+  log_break "true"
   log_event "critical" "${msg}" "true"
 
   exit "${code}"
@@ -1647,11 +1648,7 @@ function menu_main_options() {
 
       else
 
-        display --indent 2 --text "- Cloudflare support is disabled" --result WARNING --color YELLOW
-        display --indent 4 --text "Configure the api key on brolit_conf.json"
-        log_event "warning" "Cloudflare support is disabled" "false"
-
-        exit 1
+        die "Cloudflare support is disabled. Configure the api key on brolit_conf.json"
 
       fi
 

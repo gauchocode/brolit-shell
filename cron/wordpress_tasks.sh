@@ -109,11 +109,9 @@ for site in ${all_sites}; do
 
   log_event "info" "Processed ${file_index} of ${count_all_sites} projects"
 
-  log_break
+  log_break "false"
 
 done
 
 # If NETDATA is installed, enable alarms
-if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
-  netdata_alerts_enable
-fi
+[[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]] && netdata_alerts_enable

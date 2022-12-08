@@ -418,7 +418,7 @@ function wpcli_tasks_handler() {
 
   plugin-install)
 
-    wpcli_install_plugin "${PROJECTS_PATH}/${DOMAIN}" "${TVALUE}"
+    wpcli_plugin_install "${PROJECTS_PATH}/${DOMAIN}" "${TVALUE}"
 
     exit
     ;;
