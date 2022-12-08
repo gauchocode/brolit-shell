@@ -125,7 +125,7 @@ function wpcli_main_menu() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # INSTALL PLUGINS
-    [[ ${chosen_wpcli_options} == *"01"* ]] && wpcli_default_plugins_installer
+    [[ ${chosen_wpcli_options} == *"01"* ]] && wpcli_default_plugins_installer "${wp_site}"
 
     if [[ ${chosen_wpcli_options} == *"02"* ]]; then
 
