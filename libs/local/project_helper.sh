@@ -27,7 +27,7 @@ function project_get_config_var() {
   local content
 
   # Check if config file exists
-  [[ ! -f ${file} ]] && log_event "error" "Config file doesn't exist: ${file}" "false" && exit 1
+  [[ ! -f ${file} ]] && die "Config file doesn't exist: ${file}"
 
   # Read "${file}"/.env to extract ${variable}
   content="$(grep -oP "^${variable}=\K.*" "${file}")"
@@ -81,7 +81,7 @@ function project_set_config_var() {
   local quotes="${4}"
 
   # Check if config file exists
-  [[ ! -f ${file} ]] && log_event "error" "Config file doesn't exist: ${file}" "false" && exit 1
+  [[ ! -f ${file} ]] && die "Config file doesn't exist: ${file}"
 
   case ${quotes} in
 
@@ -258,13 +258,11 @@ function project_ask_domain() {
 
     # Validate domain format
     if [[ ! ${project_domain} =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]$ ]]; then
-
       # Log
       log_event "error" "Invalid domain format: ${project_domain}" "false"
       display --indent 6 --text "- Domain format" --result "FAIL" --color RED
       display --indent 8 --text "Invalid domain format: ${project_domain}" --tcolor RED
       return 1
-
     fi
 
     # Return
@@ -1931,7 +1929,7 @@ function project_install() {
   esac
 
   # Project domain configuration (webserver+certbot+DNS)
-  https_enable="$(project_update_domain_config "${project_domain}" "default" "${project_type}" "")"
+  https_enable="$(project_update_domain_config "${project_domain}" "${project_type}" "default" "")"
 
   # Define project site url
   [[ ${https_enable} == "true" ]] && project_site_url="https://${project_domain}" || project_site_url="http://${project_domain}"

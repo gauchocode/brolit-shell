@@ -104,22 +104,16 @@ function wordpress_project_install() {
     change_ownership "www-data" "www-data" "${project_path}"
 
   else
-    # Log
-    display --indent 6 --text "- Creating WordPress project" --result "FAIL" --color RED
-    display --indent 8 --text "Destination folder '${project_path}' already exist"
-    log_event "error" "Destination folder '${project_path}' already exist, aborting ..." "false"
-
-    exit 1
+    # Die
+    die "Destination folder '${project_path}' already exist, aborting ..."
 
   fi
-
-  wp_change_permissions "${project_path}"
 
   # Create database and user
   db_project_name="$(mysql_name_sanitize "${project_name}")"
   database_name="${db_project_name}_${project_stage}"
   database_user="${db_project_name}_user"
-  database_user_passw=$(openssl rand -hex 12)
+  database_user_passw="$(openssl rand -hex 12)"
 
   mysql_database_create "${database_name}"
   mysql_user_create "${database_user}" "${database_user_passw}" "localhost"
@@ -128,6 +122,9 @@ function wordpress_project_install() {
   # Download WordPress
   wpcli_core_download "${project_path}" ""
   [[ $? -eq 1 ]] && return 1
+
+  # Set default wp permissions
+  wp_change_permissions "${project_path}"
 
   # Create wp-config.php
   wpcli_create_config "${project_path}" "${database_name}" "${database_user}" "${database_user_passw}" "es_ES"
