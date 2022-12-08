@@ -1940,7 +1940,7 @@ function project_install() {
     wpcli_run_startup_script "${project_path}" "${project_site_url}"
 
     if [[ $? -eq 1 ]]; then
-      
+
       # Show error message
       display --indent 6 --text "- Installing WordPress project" --result "FAIL" --color RED
       display --indent 8 --text "Visit ${project_site_url} and complete the installation" --tcolor YELLOW
@@ -2938,10 +2938,11 @@ function project_post_install_tasks() {
     else
       # Block search engines indexation
       wpcli_change_wp_seo_visibility "${install_path}" "0"
-      # De-activate cache plugins
-      wpcli_plugin_deactivate "${install_path}" "wp-rocket"
-      wpcli_plugin_deactivate "${install_path}" "w3-total-cache"
-      wpcli_plugin_deactivate "${install_path}" "wp-super-cache"
+      # De-activate cache plugins if present
+      wpcli_plugin_is_installed "${install_path}" "wp-rocket" && wpcli_deactivate_plugin "${install_path}" "wp-rocket"
+      wpcli_plugin_is_installed "${install_path}" "redis-cache" && wpcli_plugin_deactivate "${install_path}" "redis-cache"
+      wpcli_plugin_is_installed "${install_path}" "w3-total-cache" && wpcli_plugin_deactivate "${install_path}" "w3-total-cache"
+      wpcli_plugin_is_installed "${install_path}" "wp-super-cache" && wpcli_plugin_deactivate "${install_path}" "wp-super-cache"
       # Set debug mode to true
       wpcli_set_debug_mode "${install_path}" "true"
     fi

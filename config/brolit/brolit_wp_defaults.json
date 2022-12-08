@@ -1,0 +1,167 @@
+{
+    "brolit_wp_defaults": "1.0.0",
+    "PLUGINS": [
+        {
+            "slug": "duplicate-post",
+            "activated": "false",
+            "source": [
+                {
+                    "type": "official",
+                    "config": [
+                        {
+                            "url": "",
+                            "user": "",
+                            "pass": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "slug": "wordpress-seo",
+            "activated": "false",
+            "source": [
+                {
+                    "type": "official",
+                    "config": [
+                        {
+                            "url": "",
+                            "user": "",
+                            "pass": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "slug": "seo-by-rank-math",
+            "activated": "false",
+            "source": [
+                {
+                    "type": "official",
+                    "config": [
+                        {
+                            "url": "",
+                            "user": "",
+                            "pass": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "slug": "post-smtp",
+            "activated": "false",
+            "source": [
+                {
+                    "type": "official",
+                    "config": [
+                        {
+                            "url": "",
+                            "user": "",
+                            "pass": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "slug": "contact-form-7",
+            "activated": "false",
+            "source": [
+                {
+                    "type": "official",
+                    "config": [
+                        {
+                            "url": "",
+                            "user": "",
+                            "pass": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "slug": "flamingo",
+            "activated": "false",
+            "source": [
+                {
+                    "type": "official",
+                    "config": [
+                        {
+                            "url": "",
+                            "user": "",
+                            "pass": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "slug": "wordfence",
+            "activated": "false",
+            "source": [
+                {
+                    "type": "official",
+                    "config": [
+                        {
+                            "url": "",
+                            "user": "",
+                            "pass": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "slug": "wp-rocket",
+            "activated": "false",
+            "source": [
+                {
+                    "type": "public-link",
+                    "config": [
+                        {
+                            "url": "",
+                            "user": "",
+                            "pass": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "slug": "blocky-code",
+            "activated": "false",
+            "source": [
+                {
+                    "type": "private-repo",
+                    "config": [
+                        {
+                            "url": "",
+                            "user": "",
+                            "pass": ""
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "THEMES": [
+        {
+            "slug": "generatepress",
+            "activated": "true",
+            "source": [
+                {
+                    "type": "official",
+                    "config": [
+                        {
+                            "url": "",
+                            "user": "",
+                            "pass": ""
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
