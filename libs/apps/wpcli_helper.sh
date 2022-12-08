@@ -1367,12 +1367,11 @@ function _load_brolit_wp_defaults() {
     local wp_defaults_file="${2}"
 
     local plugin
-    local plugin_slug
     local plugin_source
     local plugin_url
     local plugin_activate
 
-    local i
+    local index=0
 
     local plugins_count
 
@@ -1380,43 +1379,42 @@ function _load_brolit_wp_defaults() {
 
     # Count json_read_field "${wp_defaults_file}" "PLUGINS[].slug
     plugins_count="$(json_read_field "${wp_defaults_file}" "PLUGINS[].slug" | wc -l)"
+    plugins="$(json_read_field "${wp_defaults_file}" "PLUGINS[].slug")"
 
     log_event "debug" "Plugins found: ${plugins_count}" "false"
 
-    i=0
-
     # For each plugin
-    while [[ ${i} -lt ${plugins_count} ]]; do
-
-        # Get plugin slug
-        plugin_slug="$(json_read_field "${wp_defaults_file}" "PLUGINS[$i].slug")"
+    for plugin in ${plugins}; do
+    
+    	log_event "debug" "Working with plugin: ${plugin}" "false"
 
         # Get plugin source
-        plugin_source="$(json_read_field "${wp_defaults_file}" "PLUGINS[$i].source[].type")"
+        plugin_source="$(json_read_field "${wp_defaults_file}" "PLUGINS[$index].source[].type")"
 
-        if [[ ${plugin_source} != "official" ]]; then
-
-            # Get plugin url
-            plugin_url="$(json_read_field "${wp_defaults_file}" "PLUGINS[$i].source[].config[].url")"
+        # If source is != official
+        if [[ "${plugin_source}" == "official" ]]; then
 
             # Install plugin
-            wpcli_plugin_install "${wp_site}" "${plugin_slug}" "${plugin_url}"
+            wpcli_plugin_install "${wp_site}" "${plugin}"
 
         else
 
+            # Get plugin url
+            plugin_url="$(json_read_field "${wp_defaults_file}" "PLUGINS[$index].source[].config[].url")"
+
             # Install plugin
-            wpcli_plugin_install "${wp_site}" "${plugin_slug}"
+            wpcli_plugin_install "${wp_site}" "${plugin_url}"
 
         fi
 
         # Get plugin activate
-        plugin_activate="$(json_read_field "${wp_defaults_file}" "PLUGINS[$i].activated")"
+        plugin_activate="$(json_read_field "${wp_defaults_file}" "PLUGINS[$index].activated")"
 
-        # If plugin_activate==true, activate plugin
-        [[ ${plugin_activate} == "true" ]] && wpcli_plugin_activate "${wp_site}" "${plugin_slug}"
+        # Activate plugin
+        [[ "${plugin_activate}" == "true" ]] && wpcli_plugin_activate "${wp_site}" "${plugin}"
 
         # Increment
-        i=$((i + 1))
+        index=$((index + 1))
 
     done
 
