@@ -188,8 +188,7 @@ function _check_root() {
   # Check if user is root
   if [[ ${is_root} -ne 0 ]]; then
     # $USER is a env var
-    log_event "critical" "Script runned by ${USER}, but must be root! Exiting ..." "true"
-    exit 1
+    die "Script runned by ${USER}, but must be root! Exiting ..."
 
   else
     log_event "debug" "Script runned by root" "false"
@@ -560,82 +559,6 @@ function validator_email_format() {
 }
 
 ################################################################################
-# Cron format validator
-#
-# Arguments:
-#   none
-#
-# Outputs:
-#   0 if ok, 1 on error
-################################################################################
-
-function validator_cron_format() {
-
-  # TODO: refactor
-  # Ref: http://litux.nl/Scripts/books/8015final/lib0066.html
-
-  local limit
-  local check_format
-  local crn_values
-
-  limit=59
-  check_format=''
-
-  if [[ "$2" = 'hour' ]]; then
-    limit=23
-  fi
-
-  if [[ "$2" = 'day' ]]; then
-    limit=31
-  fi
-
-  if [[ "$2" = 'month' ]]; then
-    limit=12
-  fi
-
-  if [[ "$2" = 'wday' ]]; then
-    limit=7
-  fi
-
-  if [[ "$1" = '*' ]]; then
-    check_format='ok'
-  fi
-
-  if [[ "$1" =~ ^[\*]+[/]+[0-9] ]]; then
-    if [[ "$(echo $1 | cut -f 2 -d /)" -lt ${limit} ]]; then
-      check_format='ok'
-    fi
-  fi
-
-  if [[ "$1" =~ ^[0-9][-|,|0-9]{0,70}[\/][0-9]$ ]]; then
-    check_format='ok'
-    crn_values=${1//,/ }
-    crn_values=${crn_values//-/ }
-    crn_values=${crn_values//\// }
-    for crn_vl in $crn_values; do
-      if [[ ${crn_vl} -gt ${limit} ]]; then
-        check_format='invalid'
-      fi
-    done
-  fi
-
-  crn_values=$(echo "$1" | tr "," " " | tr "-" " ")
-
-  for crn_vl in $crn_values; do
-    if [[ "$crn_vl" =~ ^[0-9]+$ ]] && [ "$crn_vl" -le $limit ]; then
-      check_format='ok'
-      return 0
-    fi
-  done
-
-  if [[ ${check_format} != 'ok' ]]; then
-    check_result "${E_INVALID}" "invalid $2 format :: $1"
-    return 1
-  fi
-
-}
-
-################################################################################
 # Clean up
 #
 # Arguments:
@@ -668,7 +591,7 @@ function die() {
   local msg="${1}"
   local code=${2-1} # default exit status 1
 
-  log_event "info" "${msg}" "false"
+  log_event "critical" "${msg}" "true"
 
   exit "${code}"
 
