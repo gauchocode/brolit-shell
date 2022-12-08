@@ -545,7 +545,7 @@ function wpcli_plugin_verify() {
 #   0 if plugin was installed, 1 if not.
 ################################################################################
 
-function wpcli_install_plugin() {
+function wpcli_plugin_install() {
 
     local wp_site="${1}"
     local plugin="${2}"
@@ -598,9 +598,7 @@ function wpcli_plugin_update() {
 
     local plugin_update
 
-    if [[ ${plugin} == "" ]]; then
-        plugin="--all"
-    fi
+    [[ -z ${plugin} ]] && plugin="--all"
 
     mapfile plugin_update < <(sudo -u www-data wp --path="${wp_site}" plugin update "${plugin}" --format=json --quiet 2>&1)
 
@@ -1324,7 +1322,7 @@ function wpcli_seoyoast_reindex() {
 }
 
 ################################################################################
-# Plugin installer menu
+# Plugin installer menu OLD
 #
 # Arguments:
 #   ${1} = ${wp_site}
@@ -1333,7 +1331,7 @@ function wpcli_seoyoast_reindex() {
 #   none
 ################################################################################
 
-function wpcli_default_plugins_installer() {
+function wpcli_default_plugins_installer_old() {
 
     local wp_site="${1}"
 
@@ -1348,7 +1346,7 @@ function wpcli_default_plugins_installer() {
     # Example 2: "SEO Yoast", "public-repo", "wordpress-seo", "true"
 
     # Array of plugin slugs to install
-    wp_plugins=(
+    #wp_plugins=(
         "duplicate-post" " " off
         "wordpress-seo" " " off
         "seo-by-rank-math" " " off
@@ -1381,24 +1379,102 @@ function wpcli_default_plugins_installer() {
 
         fi
 
-        wpcli_install_plugin "${wp_site}" "${plugin}"
+        wpcli_plugin_install "${wp_site}" "${plugin}"
 
     done
 
 }
 
+################################################################################
+# Plugin installer menu
+#
+# Arguments:
+#   ${1} = ${wp_site}
+#
+# Outputs:
+#   none
+################################################################################
+
+function wpcli_default_plugins_installer() {
+    
+        local wp_site="${1}"
+    
+        local wp_defaults_file="/root/.brolit_wp_defaults.json"
+
+        # Check if wp_defaults_file exists
+        if [[ ! -f "${wp_defaults_file}" ]]; then
+
+            # Log
+            log_event "warning" "File ${wp_defaults_file} not found!" "false"
+
+            # Make a copy of the default file
+            cp "$BROLIT_MAIN_DIR/config/brolit/brolit_wp_defaults.json" "${wp_defaults_file}"
+
+            # Whiptail message
+            whiptail_message "WP Plugin Installer" "The file ${wp_defaults_file} was not found. A copy of the default file was created. Please edit the file and press enter."
+            [[ $? -eq 1 ]] && return 1
+
+        fi
+
+
+        whiptail_message "WP Plugin Installer" "This installer will install and activate the WordPress plugins configured on the file: ${wp_defaults_file}"
+        [[ $? -eq 1 ]] && return 1
+
+        _load_brolit_wp_defaults "${wp_site}" "${wp_defaults_file}"
+
+}
+
+
 #### NEW NEW NEW NEW NEW
 
 function _load_brolit_wp_defaults() {
 
-    local wp_defaults_file="${1}"
+    local wp_site="${1}"
+    local wp_defaults_file="${2}"
 
-    # Read file (config/brolit/brolit_wp_defaults.json)
+    local plugin
+    local plugin_slug
+    local plugin_source
+    local plugin_url
+    local plugin_activate
 
-    # Read and loop through each plugin and install it
+    # File to work with: config/brolit/brolit_wp_defaults.json
+    # Read all plugins slug configured on file
+    while read -r plugin; do
+
+        # Get plugin slug
+        plugin_slug="$(json_read_field "${wp_defaults_file}" "PLUGINS[].slug")"
+
+        # Get plugin source
+        plugin_source="$(json_read_field "${wp_defaults_file}" "PLUGINS[].source")"
+
+        if [[ $plugin_source != "official" ]]; then
+
+            # Get plugin url
+            plugin_url="$(json_read_field "${wp_defaults_file}" "PLUGINS[].url")"
+
+            # Install plugin
+            wpcli_plugin_install "${wp_site}" "${plugin_url}"
+
+        else
+
+            # Install plugin
+            wpcli_plugin_install "${wp_site}" "${plugin_slug}"
+
+        fi
+
+        # Get plugin activate
+        plugin_activate="$(json_read_field "${wp_defaults_file}" "PLUGINS[].activate")"
+
+        # Install plugin
+        wpcli_plugin_install "${wp_site}" "${plugin_slug}"
+
+        # If plugin_activate==true, activate plugin
+        [[ ${plugin_activate} == "true" ]] && wpcli_plugin_activate "${wp_site}" "${plugin_slug}"
+
+    done < <(json_read_field "${wp_defaults_file}" "PLUGINS[].slug")
 
     #plugin="$(json_read_field "${wp_defaults_file}" "PLUGINS[].slug")"
-    
 
 }
 

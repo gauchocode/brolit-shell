@@ -380,9 +380,23 @@ function package_upgrade_all() {
   # apt commands
   apt-get --yes upgrade -qq >/dev/null
 
-  # Log
-  clear_previous_lines "1"
-  display --indent 6 --text "- Upgrading packages" --result "DONE" --color GREEN
+  # Check exitstatus
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Log
+    clear_previous_lines "1"
+    display --indent 6 --text "- Upgrading packages" --result "DONE" --color GREEN
+
+  else
+
+    # Log
+    clear_previous_lines "1"
+    display --indent 6 --text "- Upgrading packages" --result "FAIL" --color RED
+    log_event "error" "Upgrading packages failed" "false"
+    return 1
+
+  fi
 
 }
 
