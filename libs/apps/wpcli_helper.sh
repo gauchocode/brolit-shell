@@ -1373,20 +1373,23 @@ function _load_brolit_wp_defaults() {
     local plugin_url
     local plugin_activate
 
+    local i=0
+
     # File to work with: config/brolit/brolit_wp_defaults.json
     # Read all plugins slug configured on file
     while read -r plugin; do
 
         # Get plugin slug
-        plugin_slug="$(json_read_field "${wp_defaults_file}" "PLUGINS[].slug")"
+        # cat "/root/.brolit_wp_defaults.json" | jq -r ".PLUGINS[0].slug"
+        plugin_slug="$(json_read_field "${wp_defaults_file}" "PLUGINS[$i].slug")"
 
         # Get plugin source
-        plugin_source="$(json_read_field "${wp_defaults_file}" "PLUGINS[].source")"
+        plugin_source="$(json_read_field "${wp_defaults_file}" "PLUGINS[$i].source[].type")"
 
         if [[ $plugin_source != "official" ]]; then
 
             # Get plugin url
-            plugin_url="$(json_read_field "${wp_defaults_file}" "PLUGINS[].url")"
+            plugin_url="$(json_read_field "${wp_defaults_file}" "PLUGINS[$i].source[].config[].url")"
 
             # Install plugin
             wpcli_plugin_install "${wp_site}" "${plugin_url}"
@@ -1399,7 +1402,7 @@ function _load_brolit_wp_defaults() {
         fi
 
         # Get plugin activate
-        plugin_activate="$(json_read_field "${wp_defaults_file}" "PLUGINS[].activate")"
+        plugin_activate="$(json_read_field "${wp_defaults_file}" "PLUGINS[$i].activate")"
 
         # Install plugin
         wpcli_plugin_install "${wp_site}" "${plugin_slug}"
@@ -1407,7 +1410,9 @@ function _load_brolit_wp_defaults() {
         # If plugin_activate==true, activate plugin
         [[ ${plugin_activate} == "true" ]] && wpcli_plugin_activate "${wp_site}" "${plugin_slug}"
 
-    done < <(json_read_field "${wp_defaults_file}" "PLUGINS[].slug")
+        i=$i+1
+
+    done < <(json_read_field "${wp_defaults_file}" "PLUGINS[$i].slug")
 
     #plugin="$(json_read_field "${wp_defaults_file}" "PLUGINS[].slug")"
 
