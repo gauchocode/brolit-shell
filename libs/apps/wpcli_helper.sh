@@ -1424,7 +1424,6 @@ function wpcli_default_plugins_installer() {
 
 }
 
-
 #### NEW NEW NEW NEW NEW
 
 function _load_brolit_wp_defaults() {
