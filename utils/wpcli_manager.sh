@@ -124,11 +124,8 @@ function wpcli_main_menu() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    if [[ ${chosen_wpcli_options} == *"01"* ]]; then
-
-      wpcli_default_plugins_installer
-
-    fi
+    # INSTALL PLUGINS
+    [[ ${chosen_wpcli_options} == *"01"* ]] && wpcli_default_plugins_installer
 
     if [[ ${chosen_wpcli_options} == *"02"* ]]; then
 
