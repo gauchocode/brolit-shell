@@ -694,6 +694,7 @@ function wpcli_plugin_deactivate() {
 
     # Command
     sudo -u www-data wp --path="${wp_site}" plugin deactivate "${plugin}" --quiet
+    #sudo -u www-data wp --path="/var/www/test.broobe.net/" plugin deactivate "wp-rocket" --quiet
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -703,7 +704,7 @@ function wpcli_plugin_deactivate() {
 
     else
 
-        clear_previous_lines "1"
+        clear_previous_lines "2"
         display --indent 6 --text "- Deactivating plugin ${plugin}" --result "FAIL" --color RED
 
     fi
@@ -807,10 +808,10 @@ function wpcli_plugin_is_active() {
 #
 # Arguments:
 #   ${1} = ${wp_site}
-#   ${2} = ${plugin} (plugin to install, it could the plugin slug or a public access to the zip file)
+#   ${2} = ${plugin}
 #
 # Outputs:
-#   0 if plugin was deleted, 1 if not.
+#   0 if plugin is installed, 1 if not.
 ################################################################################
 
 function wpcli_plugin_is_installed() {
@@ -1348,17 +1349,18 @@ function wpcli_default_plugins_installer() {
 
     # Array of plugin slugs to install
     wp_plugins=(
+        "duplicate-post" " " off
         "wordpress-seo" " " off
         "seo-by-rank-math" " " off
         "duracelltomi-google-tag-manager" " " off
         "ewww-image-optimizer" " " off
         "post-smtp" " " off
+        "flamingo" " " off
         "contact-form-7" " " off
         "advanced-custom-fields" " " off
-        "acf-vc-integrator" " " off
         "wp-asset-clean-up" " " off
         "w3-total-cache" " " off
-        "iwp-client" " " off
+        "redis-cache" " " off
         "wordfence" " " off
         "better-wp-security" " " off
         "quttera-web-malware-scanner" " " off
@@ -1382,6 +1384,21 @@ function wpcli_default_plugins_installer() {
         wpcli_install_plugin "${wp_site}" "${plugin}"
 
     done
+
+}
+
+#### NEW NEW NEW NEW NEW
+
+function _load_brolit_wp_defaults() {
+
+    local wp_defaults_file="${1}"
+
+    # Read file (config/brolit/brolit_wp_defaults.json)
+
+    # Read and loop through each plugin and install it
+
+    #plugin="$(json_read_field "${wp_defaults_file}" "PLUGINS[].slug")"
+    
 
 }
 
