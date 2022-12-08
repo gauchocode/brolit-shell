@@ -24,41 +24,29 @@ function server_optimizations_menu() {
   local chosen_server_optimizations_options
 
   server_optimizations_options=(
-    "01)" "IMAGE OPTIMIZATION" 
-    "02)" "PDF OPTIMIZATION" 
-    "03)" "DELETE OLD LOGS" 
-    "04)" "REMOVE OLD PACKAGES" 
-    "05)" "REDUCE RAM USAGE"
+    "01)" "IMAGE OPTIMIZATION"
+    "02)" "DELETE OLD LOGS"
+    "03)" "REMOVE OLD PACKAGES"
+    "04)" "REDUCE RAM USAGE"
+    #"05)" "PDF OPTIMIZATION"
   )
   chosen_server_optimizations_options=$(whiptail --title "SERVER OPTIMIZATIONS" --menu "\n" 20 78 10 "${server_optimizations_options[@]}" 3>&1 1>&2 2>&3)
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    if [[ ${chosen_server_optimizations_options} == *"01"* ]]; then
+    [[ ${chosen_server_optimizations_options} == *"01"* ]] && optimize_images_complete
 
-      optimize_images_complete
+    [[ ${chosen_server_optimizations_options} == *"02"* ]] && delete_old_logs
 
-    fi
-    if [[ ${chosen_server_optimizations_options} == *"02"* ]]; then
+    [[ ${chosen_server_optimizations_options} == *"03"* ]] && packages_remove_old
+
+    [[ ${chosen_server_optimizations_options} == *"04"* ]] && optimize_ram_usage
+
+    if [[ ${chosen_server_optimizations_options} == *"05"* ]]; then
       # TODO: pdf optimization
       # Ref: https://github.com/or-yarok/reducepdf
 
       optimize_pdfs
-
-    fi
-    if [[ ${chosen_server_optimizations_options} == *"03"* ]]; then
-      # Remove old log files from system
-      delete_old_logs
-
-    fi
-    if [[ ${chosen_server_optimizations_options} == *"04"* ]]; then
-      # Remove old packages from system
-      packages_remove_old
-
-    fi
-    if [[ ${chosen_server_optimizations_options} == *"05"* ]]; then
-
-      optimize_ram_usage
 
     fi
 

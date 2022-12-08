@@ -1090,14 +1090,14 @@ function backup_project() {
 
     fi
 
-    log_break
+    log_break "false"
 
     # Delete backup from server
     rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${backup_type:?}"
     #log_event "info" "Deleting backup from server ..." "false"
 
     # Log
-    log_break
+    log_break "false"
     log_event "info" "Project Backup done" "false"
     display --indent 6 --text "- Project Backup" --result "DONE" --color GREEN
 
@@ -1106,7 +1106,7 @@ function backup_project() {
   else
 
     # Log
-    log_break
+    log_break "false"
     log_event "error" "Something went wrong making the files backup" "false"
     display --indent 6 --text "- Project Backup" --result "FAIL" --color RED
     display --indent 8 --text "Something went wrong making the files backup" --tcolor RED
