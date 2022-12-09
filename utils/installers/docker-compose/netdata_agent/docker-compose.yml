@@ -1,0 +1,33 @@
+version: '3'
+
+services:
+
+  netdata:
+    image: netdata/netdata:${NETDATA_VERSION}
+    container_name: agent_netdata
+    hostname: ${NETDATA_DOMAIN} # set to fqdn of host
+    ports:
+      - ${NETDATA_PORT}:19999
+    restart: unless-stopped
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      - netdataconfig:/etc/netdata
+      - netdatalib:/var/lib/netdata
+      - netdatacache:/var/cache/netdata
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc/os-release:/host/etc/os-release:ro
+    environment:
+      - NETDATA_CLAIM_TOKEN=${NETDATA_CLAIM_TOKEN}
+      - NETDATA_CLAIM_URL=https://app.netdata.cloud
+      - NETDATA_CLAIM_ROOMS=${NETDATA_CLAIM_ROOMS}
+
+volumes:
+  netdataconfig:
+  netdatalib:
+  netdatacache:
