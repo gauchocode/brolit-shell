@@ -50,16 +50,9 @@ function portainer_installer() {
         cp "${BROLIT_MAIN_DIR}/utils/installers/docker-compose/portainer/docker-compose.yml" "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}"
         cp "${BROLIT_MAIN_DIR}/utils/installers/docker-compose/portainer/.env" "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}"
 
-        # Configure .env file (portainer and watchtower)
+        # Configure .env file (portainer)
         project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "VIRTUAL_HOST" "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}" "none"
         project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "PORTAINER_PORT" "${PACKAGES_PORTAINER_CONFIG_PORT}" "none"
-        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_TIMEZONE" "${SERVER_TIMEZONE}" "none"
-        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_FROM" "${NOTIFICATION_EMAIL_SMTP_USER}" "none"
-        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_TO" "${NOTIFICATION_EMAIL_MAILA}" "none"
-        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_SERVER" "${NOTIFICATION_EMAIL_SMTP_SERVER}" "none"
-        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD" "${NOTIFICATION_EMAIL_SMTP_UPASS}" "none"
-        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER" "${NOTIFICATION_EMAIL_SMTP_USER}" "none"
-        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT" "${NOTIFICATION_EMAIL_SMTP_PORT}" "none"
 
         # Run docker-compose pull on specific directory
         docker-compose -f "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/docker-compose.yml" pull

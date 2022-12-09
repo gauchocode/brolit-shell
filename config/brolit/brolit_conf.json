@@ -405,6 +405,20 @@
                 ]
             }
         ],
+        "netdata_agent": [
+            {
+                "status": "disabled",
+                "version": "latest",
+                "config": [
+                    {
+                        "port": "9001",
+                        "subdomain": "",
+                        "claim_token": "",
+                        "claim_room": ""
+                    }
+                ]
+            }
+        ],
         "cockpit": [
             {
                 "status": "disabled",
