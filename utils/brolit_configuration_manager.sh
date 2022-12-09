@@ -1240,6 +1240,63 @@ function _brolit_configuration_load_netdata() {
 }
 
 ################################################################################
+# Private: load netdata agent configuration
+#
+# Arguments:
+#   ${1} = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function _brolit_configuration_load_netdata_agent() {
+
+    local server_config_file="${1}"
+
+    local docker
+    local docker_installed
+
+    # Globals
+    declare -g NETDATA_AGENT
+    declare -g PACKAGES_NETDATA_AGENT_STATUS
+    declare -g PACKAGES_NETDATA_AGENT_CONFIG_PORT
+
+    declare -g NETDATA_AGENT_PATH="/root/agent_netdata"
+
+    PACKAGES_NETDATA_AGENT_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].status")"
+
+    docker="$(package_is_installed "docker")"
+    docker_installed="$?"
+    if [[ ${docker_installed} -eq 0 ]]; then
+        log_event "debug" "Docker installed on: ${docker}. Now checking if Netdata Agent image is present..." "false"
+        NETDATA_AGENT="$(docker_get_container_id "agent_netdata")"
+    fi
+
+    if [[ ${PACKAGES_NETDATA_AGENT_STATUS} == "enabled" ]]; then
+
+        [[ ${docker_installed} -eq 1 ]] && die "In order to install Netdata Agent, docker and docker-compose must be installed."
+
+        PACKAGES_NETDATA_AGENT_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].config[].port")"
+        [[ -z ${PACKAGES_NETDATA_AGENT_CONFIG_PORT} ]] && die "Error reading PACKAGES_NETDATA_AGENT_CONFIG_PORT from config file"
+
+        PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_TOKEN="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].config[].claim_token")"
+        [[ -z ${PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_TOKEN} ]] && die "Error reading PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_TOKEN from config file"
+
+        # Checking if Netdata Agent is not installed
+        [[ -z ${NETDATA_AGENT} ]] && menu_config_changes_detected "netdata_agent" "true"
+
+    else
+
+        # Checking if Netdata Agent is installed
+        [[ -n ${NETDATA_AGENT} ]] && menu_config_changes_detected "netdata_agent" "true"
+
+    fi
+
+    export NETDATA_AGENT NETDATA_AGENT_PATH PACKAGES_NETDATA_AGENT_STATUS PACKAGES_NETDATA_AGENT_CONFIG_PORT
+
+}
+
+################################################################################
 # Private: load cockpit configuration
 #
 # Arguments:
@@ -1474,6 +1531,8 @@ function _brolit_configuration_load_portainer_agent() {
     declare -g PACKAGES_PORTAINER_AGENT_STATUS
     declare -g PACKAGES_PORTAINER_AGENT_CONFIG_PORT
 
+    declare -g PORTAINER_AGENT_PATH="/root/agent_portainer"
+
     PACKAGES_PORTAINER_AGENT_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.portainer_agent[].status")"
 
     docker="$(package_is_installed "docker")"
@@ -1500,7 +1559,7 @@ function _brolit_configuration_load_portainer_agent() {
 
     fi
 
-    export PORTAINER_AGENT PACKAGES_PORTAINER_AGENT_STATUS PACKAGES_PORTAINER_AGENT_CONFIG_PORT
+    export PORTAINER_AGENT PORTAINER_AGENT_PATH PACKAGES_PORTAINER_AGENT_STATUS PACKAGES_PORTAINER_AGENT_CONFIG_PORT
 
 }
 
@@ -2017,6 +2076,7 @@ function brolit_configuration_load() {
 
     ### netdata
     _brolit_configuration_load_netdata "${server_config_file}"
+    _brolit_configuration_load_netdata_agent "${server_config_file}"
 
     ### cockpit
     _brolit_configuration_load_cockpit "${server_config_file}"

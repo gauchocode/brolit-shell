@@ -375,10 +375,12 @@ function package_upgrade_all() {
 
   # Log
   log_event "info" "Upgrading packages ..." "false"
-  display --indent 6 --text "- Upgrading packages"
+  log_event "debug" "Running: apt-get --yes upgrade --fix-missing -qq >/dev/null" "false"
+  display --indent 6 --text "- Upgrading system packages"
 
-  # apt commands
-  apt-get --yes upgrade -qq >/dev/null
+  # Run apt commands
+  ## Using --fix-missing to avoid errors when a package is not available anymore
+  apt-get --yes upgrade --fix-missing -qq >/dev/null
 
   # Check exitstatus
   exitstatus=$?
@@ -386,14 +388,14 @@ function package_upgrade_all() {
 
     # Log
     clear_previous_lines "1"
-    display --indent 6 --text "- Upgrading packages" --result "DONE" --color GREEN
+    display --indent 6 --text "- Upgrading system packages" --result "DONE" --color GREEN
 
   else
 
     # Log
     clear_previous_lines "1"
-    display --indent 6 --text "- Upgrading packages" --result "FAIL" --color RED
-    log_event "error" "Upgrading packages failed" "false"
+    display --indent 6 --text "- Upgrading system packages" --result "FAIL" --color RED
+    log_event "error" "Upgrading system packages failed" "false"
     return 1
 
   fi

@@ -1344,7 +1344,7 @@ function wpcli_default_plugins_installer() {
         log_event "warning" "File ${wp_defaults_file} not found!" "false"
 
         # Make a copy of the default file
-        cp "$BROLIT_MAIN_DIR/config/brolit/brolit_wp_defaults.json" "${wp_defaults_file}"
+        cp "${BROLIT_MAIN_DIR}/config/brolit/brolit_wp_defaults.json" "${wp_defaults_file}"
 
         # Whiptail message
         whiptail_message "WP Plugin Installer" "The file ${wp_defaults_file} was not found. A copy of the default file was created. Please edit the file and press enter."
@@ -1359,7 +1359,15 @@ function wpcli_default_plugins_installer() {
 
 }
 
-#### NEW NEW NEW NEW NEW
+################################################################################
+# Plugin installer
+#
+# Arguments:
+#   ${1} = ${wp_site}
+#
+# Outputs:
+#   none
+################################################################################
 
 function _load_brolit_wp_defaults() {
 
