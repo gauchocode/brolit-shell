@@ -1496,8 +1496,7 @@ function _project_get_configured_database() {
 
         *)
 
-            #echo "no-database" && return 0
-            return 0
+            echo "no-database" && return 0
 
             ;;
 
@@ -1511,7 +1510,7 @@ function _project_get_configured_database() {
         if [[ ${exitstatus} -eq 0 ]]; then
 
             if [[ ${db_status} == "disabled" ]]; then
-                echo "" && return 0
+                echo "no-database" && return 0
             else
                 ## Get database name
                 database_name="$(_project_get_config_var "${project_path}" "project[].database[].config[].name")"
@@ -1993,16 +1992,16 @@ function _sites_directories() {
 function dropbox_get_site_backups() {
 
     local chosen_project="${1}"
+    local backup_type="${2:-site}"
+    local backup_status="${3:-online}"
 
     local dropbox_chosen_backup_path
     local dropbox_backup_list
 
     local backup_files
 
-    local backup_type="site"
-
     # Get dropbox backup list
-    dropbox_chosen_backup_path="${SERVER_NAME}/projects-online/${backup_type}/${chosen_project}"
+    dropbox_chosen_backup_path="${SERVER_NAME}/projects-${backup_status}/${backup_type}/${chosen_project}"
     dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}")"
 
     for backup_file in ${dropbox_backup_list}; do
@@ -2076,7 +2075,7 @@ function _dropbox_get_backup() {
 
             backup_date="$(_backup_get_date "${backup_file}")"
 
-            if [[ ${project_db} != "error" && ${project_db} != "" ]]; then
+            if [[ ${project_db} != "error" && ${project_db} != "no-database" ]]; then
 
                 # Database backup
                 backup_to_search="${project_db}_database_${backup_date}"
@@ -2090,7 +2089,7 @@ function _dropbox_get_backup() {
                 fi
 
             else
-                # At this point ${project_db} == error or "" (empty)
+                # At this point ${project_db} == error or no-database
                 backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"${project_db}\"} , "
 
             fi
@@ -2499,6 +2498,7 @@ function show_server_data() {
         # Remove first comma
         server_databases="$(printf "%s" "${server_databases#,}")"
 
+        # empty
         [[ -z ${server_databases} ]] && server_databases=""
 
         # Write JSON file
