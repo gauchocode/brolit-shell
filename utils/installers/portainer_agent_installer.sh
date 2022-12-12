@@ -26,7 +26,7 @@ function portainer_agent_installer() {
 
     package_update
 
-    package_install_if_not "docker.io"
+    package_install_if_not "docker"
     package_install_if_not "docker-compose"
 
     # Force update brolit_conf.json
@@ -39,7 +39,7 @@ function portainer_agent_installer() {
     # Check if portainer_agent is running
     portainer_agent="$(docker_get_container_id "agent_portainer")"
 
-    if [[ -z ${portainer_agent} ]]; then
+    if [[ -z ${portainer_agent} ]]; then                                               0
 
         # Create project directory
         mkdir -p "${PORTAINER_AGENT_PATH}"
