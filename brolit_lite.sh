@@ -1496,7 +1496,8 @@ function _project_get_configured_database() {
 
         *)
 
-            echo "no-database" && return 0
+            #echo "no-database" && return 0
+            return 0
 
             ;;
 
@@ -1882,7 +1883,8 @@ function _packages_get_data() {
     psql_v_installed="$(_psql_check_installed_version)"
     dbs_v_installed="${mysql_v_installed}${psql_v_installed}"
     if [[ -z ${dbs_v_installed} ]]; then
-        dbs_v_installed="\"no-database-engine\""
+        # empty
+        dbs_v_installed=""
     else
         # Remove 3 last chars
         dbs_v_installed="${dbs_v_installed::-3}"
@@ -1894,7 +1896,8 @@ function _packages_get_data() {
     nodejs_v_installed="$(_nodejs_check_installed_version)"
     lang_v_installed="${php_v_installed}${python_v_installed}${nodejs_v_installed}"
     if [[ -z ${lang_v_installed} ]]; then
-        lang_v_installed="\"no-languages\""
+        # empty
+        lang_v_installed=""
     else
         # Remove 3 last chars
         lang_v_installed="${lang_v_installed::-3}"

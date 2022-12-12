@@ -85,16 +85,21 @@ function _brolit_configuration_load_backup_sftp() {
 
     if [[ ${BACKUP_SFTP_STATUS} == "enabled" ]]; then
 
+        # Required
         BACKUP_SFTP_CONFIG_SERVER_IP="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_ip")"
-        BACKUP_SFTP_CONFIG_SERVER_PORT="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_port")"
-        BACKUP_SFTP_CONFIG_SERVER_USER="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_user")"
-        BACKUP_SFTP_CONFIG_SERVER_USER_PASSWORD="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_user_password")"
-        BACKUP_SFTP_CONFIG_SERVER_REMOTE_PATH="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_remote_path")"
+        [[ -z "${BACKUP_SFTP_CONFIG_SERVER_IP}" ]] && die "Error reading BACKUP_SFTP_CONFIG_SERVER_IP from server config file."
 
-        # Check if all required vars are set
-        if [ -z "${BACKUP_SFTP_CONFIG_SERVER_IP}" ] || [ -z "${BACKUP_SFTP_CONFIG_SERVER_PORT}" ] || [ -z "${BACKUP_SFTP_CONFIG_SERVER_USER}" ] || [ -z "${BACKUP_SFTP_CONFIG_SERVER_USER_PASSWORD}" ] || [ -z "${BACKUP_SFTP_CONFIG_SERVER_REMOTE_PATH}" ]; then
-            die "Missing required config vars for SFTP backup method"
-        fi
+        BACKUP_SFTP_CONFIG_SERVER_PORT="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_port")"
+        [[ -z "${BACKUP_SFTP_CONFIG_SERVER_PORT}" ]] && die "Error reading BACKUP_SFTP_CONFIG_SERVER_PORT from server config file."
+
+        BACKUP_SFTP_CONFIG_SERVER_USER="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_user")"
+        [[ -z "${BACKUP_SFTP_CONFIG_SERVER_USER}" ]] && die "Error reading BACKUP_SFTP_CONFIG_SERVER_USER from server config file."
+
+        BACKUP_SFTP_CONFIG_SERVER_USER_PASSWORD="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_user_password")"
+        [[ -z "${BACKUP_SFTP_CONFIG_SERVER_USER_PASSWORD}" ]] && die "Error reading BACKUP_SFTP_CONFIG_SERVER_USER_PASSWORD from server config file."
+
+        BACKUP_SFTP_CONFIG_SERVER_REMOTE_PATH="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_remote_path")"
+        [[ -z "${BACKUP_SFTP_CONFIG_SERVER_REMOTE_PATH}" ]] && die "Error reading BACKUP_SFTP_CONFIG_SERVER_REMOTE_PATH from server config file."
 
     fi
 
@@ -217,7 +222,7 @@ function _brolit_configuration_load_backup_s3() {
 
     if [[ ${BACKUP_S3_STATUS} == "enabled" ]]; then
 
-        # Check if all required vars are set
+        # Required
         BACKUP_S3_BUCKET="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].bucket")"
         [[ -z "${BACKUP_S3_BUCKET}" ]] && die "Error reading BACKUP_S3_BUCKET from server config file."
 
@@ -272,8 +277,7 @@ function _brolit_configuration_load_backup_duplicity() {
 
     if [[ ${BACKUP_DUPLICITY_STATUS} == "enabled" ]]; then
 
-        # Check if all required vars are set
-
+        # Required
         BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH="$(json_read_field "${server_config_file}" "BACKUPS.methods[].duplicity[].config[].backup_destination_path")"
         [[ -z "${BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH}" ]] && die "Error reading BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH from server config file."
 
@@ -444,29 +448,32 @@ function _brolit_configuration_load_email() {
     declare -g NOTIFICATION_EMAIL_SMTP_USER
     declare -g NOTIFICATION_EMAIL_SMTP_UPASS
 
-    #display --indent 2 --text "- Checking email notifications config"
-
-    ### email
+    ### Email
     NOTIFICATION_EMAIL_STATUS="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].status")"
 
     if [[ ${NOTIFICATION_EMAIL_STATUS} == "enabled" ]]; then
 
+        # Required
         NOTIFICATION_EMAIL_MAILA="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].maila")"
+        [[ -z ${NOTIFICATION_EMAIL_MAILA} ]] && die "Error reading NOTIFICATION_EMAIL_MAILA from server config file."
+
         NOTIFICATION_EMAIL_SMTP_SERVER="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].smtp_server")"
+        [[ -z ${NOTIFICATION_EMAIL_SMTP_SERVER} ]] && die "Error reading NOTIFICATION_EMAIL_SMTP_SERVER from server config file."
+
         NOTIFICATION_EMAIL_SMTP_PORT="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].smtp_port")"
+        [[ -z ${NOTIFICATION_EMAIL_SMTP_PORT} ]] && die "Error reading NOTIFICATION_EMAIL_SMTP_PORT from server config file."
+
         NOTIFICATION_EMAIL_SMTP_TLS="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].smtp_tls")"
+        [[ -z ${NOTIFICATION_EMAIL_SMTP_TLS} ]] && die "Error reading NOTIFICATION_EMAIL_SMTP_TLS from server config file."
+
         NOTIFICATION_EMAIL_SMTP_USER="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].smtp_user")"
+        [[ -z ${NOTIFICATION_EMAIL_SMTP_USER} ]] && die "Error reading NOTIFICATION_EMAIL_SMTP_USER from server config file."
+
         NOTIFICATION_EMAIL_SMTP_UPASS="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].smtp_user_pass")"
-
-        if [[ -z "${NOTIFICATION_EMAIL_MAILA}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_SERVER}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_PORT}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_USER}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_UPASS}" ]]; then
-
-            die "Missing required config vars for email notifications"
-
-        fi
+        [[ -z ${NOTIFICATION_EMAIL_SMTP_UPASS} ]] && die "Error reading NOTIFICATION_EMAIL_SMTP_UPASS from server config file."
 
     else
 
-        #clear_previous_lines "1"
         display --indent 6 --text "- Checking email notifications config" --result "WARNING" --color YELLOW
         display --indent 8 --text "Email notifications are disabled"
 
@@ -499,13 +506,12 @@ function _brolit_configuration_load_telegram() {
 
     if [[ ${NOTIFICATION_TELEGRAM_STATUS} == "enabled" ]]; then
 
+        # Required
         NOTIFICATION_TELEGRAM_BOT_TOKEN="$(json_read_field "${server_config_file}" "NOTIFICATIONS.telegram[].config[].bot_token")"
-        NOTIFICATION_TELEGRAM_CHAT_ID="$(json_read_field "${server_config_file}" "NOTIFICATIONS.telegram[].config[].chat_id")"
+        [[ -z ${NOTIFICATION_TELEGRAM_BOT_TOKEN} ]] && die "Error reading NOTIFICATION_TELEGRAM_BOT_TOKEN from server config file."
 
-        # Check if all required vars are set
-        if [[ -z "${NOTIFICATION_TELEGRAM_BOT_TOKEN}" ]] || [[ -z "${NOTIFICATION_TELEGRAM_CHAT_ID}" ]]; then
-            die "Missing required config vars for Telegram notifications"
-        fi
+        NOTIFICATION_TELEGRAM_CHAT_ID="$(json_read_field "${server_config_file}" "NOTIFICATIONS.telegram[].config[].chat_id")"
+        [[ -z ${NOTIFICATION_TELEGRAM_CHAT_ID} ]] && die "Error reading NOTIFICATION_TELEGRAM_CHAT_ID from server config file."
 
     fi
 
@@ -745,15 +751,7 @@ function _brolit_configuration_load_php() {
 
         source "${BROLIT_MAIN_DIR}/utils/installers/php_installer.sh"
 
-        if [[ ${PACKAGES_PHP_VERSION} == "default" ]]; then
-
-            PHP_V="$(php_get_distro_default_version)"
-
-        else
-
-            PHP_V="${PACKAGES_PHP_VERSION}"
-
-        fi
+        [[ ${PACKAGES_PHP_VERSION} == "default" ]] && PHP_V="$(php_get_distro_default_version)" || PHP_V="${PACKAGES_PHP_VERSION}"
 
         PACKAGES_PHP_CONFIG_OPCODE="$(json_read_field "${server_config_file}" "PACKAGES.php[].config[].opcode")"
         [[ -z ${PACKAGES_PHP_CONFIG_OPCODE} ]] && die "Error reading PACKAGES_PHP_CONFIG_OPCODE from server config file."
@@ -1197,14 +1195,17 @@ function _brolit_configuration_load_netdata() {
     if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
 
         if [[ ${PACKAGES_NETDATA_CONFIG_WEB_ADMIN} == "enabled" ]]; then
+            
+            # Required
             PACKAGES_NETDATA_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].subdomain")"
+            [[ -z "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}" ]] && die "Error reading PACKAGES_NETDATA_CONFIG_SUBDOMAIN from server config file."
+
             PACKAGES_NETDATA_CONFIG_USER="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].user")"
+            [[ -z "${PACKAGES_NETDATA_CONFIG_USER}" ]] && die "Error reading PACKAGES_NETDATA_CONFIG_USER from server config file."
+
             PACKAGES_NETDATA_CONFIG_USER_PASS="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].user_pass")"
-            # Check if all required vars are set
-            if [[ -z "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}" ]] || [[ -z "${PACKAGES_NETDATA_CONFIG_USER}" ]] || [[ -z "${PACKAGES_NETDATA_CONFIG_USER_PASS}" ]]; then
-                log_event "error" "Missing required config vars for netdata support" "true"
-                exit 1
-            fi
+            [[ -z "${PACKAGES_NETDATA_CONFIG_USER_PASS}" ]] && die "Error reading PACKAGES_NETDATA_CONFIG_USER_PASS from server config file."
+
         fi
 
         PACKAGES_NETDATA_NOTIFICATION_ALARM_LEVEL="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].notifications[].alarm_level")"
@@ -1213,14 +1214,12 @@ function _brolit_configuration_load_netdata() {
         PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].notifications[].telegram[].status")"
         if [[ ${PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_STATUS} == "enabled" ]]; then
 
+            # Required
             PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_BOT_TOKEN="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].notifications[].telegram[].config[].bot_token")"
-            PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_CHAT_ID="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].notifications[].telegram[].config[].chat_id")"
+            [[ -z "${PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_BOT_TOKEN}" ]] && die "Error reading PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_BOT_TOKEN from server config file."
 
-            # Check if all required vars are set
-            if [[ -z "${PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_BOT_TOKEN}" ]] || [[ -z "${PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_CHAT_ID}" ]]; then
-                log_event "error" "Missing required config vars for netdata notifications" "true"
-                exit 1
-            fi
+            PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_CHAT_ID="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].notifications[].telegram[].config[].chat_id")"
+            [[ -z "${PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_CHAT_ID}" ]] && die "Error reading PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_CHAT_ID from server config file."
 
         fi
 
@@ -1276,11 +1275,21 @@ function _brolit_configuration_load_netdata_agent() {
 
         [[ ${docker_installed} -eq 1 ]] && die "In order to install Netdata Agent, docker and docker-compose must be installed."
 
+        # Required
+        PACKAGES_NETDATA_AGENT_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].version")"
+        [[ -z ${PACKAGES_NETDATA_AGENT_VERSION} ]] && die "Error reading PACKAGES_NETDATA_AGENT_VERSION from config file"
+
         PACKAGES_NETDATA_AGENT_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].config[].port")"
         [[ -z ${PACKAGES_NETDATA_AGENT_CONFIG_PORT} ]] && die "Error reading PACKAGES_NETDATA_AGENT_CONFIG_PORT from config file"
 
+        PACKAGES_NETDATA_AGENT_CONFIG_DOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].config[].domain")"
+        [[ -z ${PACKAGES_NETDATA_AGENT_CONFIG_DOMAIN} ]] && die "Error reading PACKAGES_NETDATA_AGENT_CONFIG_DOMAIN from config file"
+
         PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_TOKEN="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].config[].claim_token")"
         [[ -z ${PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_TOKEN} ]] && die "Error reading PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_TOKEN from config file"
+
+        # Optional
+        PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_ROOMS="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].config[].claim_rooms")"
 
         # Checking if Netdata Agent is not installed
         [[ -z ${NETDATA_AGENT} ]] && menu_config_changes_detected "netdata_agent" "true"
@@ -1292,7 +1301,7 @@ function _brolit_configuration_load_netdata_agent() {
 
     fi
 
-    export NETDATA_AGENT NETDATA_AGENT_PATH PACKAGES_NETDATA_AGENT_STATUS PACKAGES_NETDATA_AGENT_CONFIG_PORT
+    export NETDATA_AGENT NETDATA_AGENT_PATH PACKAGES_NETDATA_AGENT_STATUS PACKAGES_NETDATA_AGENT_CONFIG_PORT PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_ROOMS
 
 }
 
