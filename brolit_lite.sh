@@ -1511,7 +1511,7 @@ function _project_get_configured_database() {
         if [[ ${exitstatus} -eq 0 ]]; then
 
             if [[ ${db_status} == "disabled" ]]; then
-                echo "no-database" && return 0
+                echo "" && return 0
             else
                 ## Get database name
                 database_name="$(_project_get_config_var "${project_path}" "project[].database[].config[].name")"
@@ -2076,7 +2076,7 @@ function _dropbox_get_backup() {
 
             backup_date="$(_backup_get_date "${backup_file}")"
 
-            if [[ ${project_db} != "error" && ${project_db} != "no-database" ]]; then
+            if [[ ${project_db} != "error" && ${project_db} != "" ]]; then
 
                 # Database backup
                 backup_to_search="${project_db}_database_${backup_date}"
@@ -2090,7 +2090,7 @@ function _dropbox_get_backup() {
                 fi
 
             else
-                # At this point ${project_db} == error or no-database
+                # At this point ${project_db} == error or "" (empty)
                 backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"${project_db}\"} , "
 
             fi
