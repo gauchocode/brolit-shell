@@ -189,7 +189,7 @@ function postgres_count_databases() {
         if [[ ${EXCLUDED_DATABASES_LIST} != *"${db}"* ]]; then # $EXCLUDED_DATABASES_LIST contains blacklisted databases
             total_databases=$((total_databases + 1))
         fi
-    
+
     done
 
     # Return
@@ -330,9 +330,7 @@ function postgres_user_create() {
     display --indent 6 --text "- Creating Postgres user ${db_user}"
 
     # DB user host
-    if [[ -z ${db_user_scope} ]]; then
-        db_user_scope="$(postgres_ask_user_db_scope "localhost")"
-    fi
+    [[ -z ${db_user_scope} ]] && db_user_scope="$(postgres_ask_user_db_scope "localhost")"
 
     # Query
     #if [[ -z ${db_user_psw} ]]; then
@@ -401,9 +399,7 @@ function postgres_user_delete() {
     log_event "info" "Deleting ${db_user} user in Postgres ..." "false"
 
     # DB user host
-    if [[ -z ${db_user_scope} || ${db_user_scope} == "" ]]; then
-        db_user_scope="$(postgres_ask_user_db_scope "localhost")"
-    fi
+    [[ -z ${db_user_scope} ]] && db_user_scope="$(postgres_ask_user_db_scope "localhost")"
 
     # Query
     query_1="DROP USER '${db_user}'@'${db_user_scope}';"
@@ -585,9 +581,7 @@ function postgres_user_grant_privileges() {
     display --indent 6 --text "- Granting privileges to ${db_user}"
 
     # DB user host
-    if [[ ${db_scope} == "" ]]; then
-        db_scope="$(postgres_ask_user_db_scope "localhost")"
-    fi
+    [[ -z ${db_scope} ]] && db_scope="$(postgres_ask_user_db_scope "localhost")"
 
     # Query
     query_1="GRANT ALL PRIVILEGES ON ${db_target}.* TO '${db_user}'@'${db_scope}';"
