@@ -2499,7 +2499,7 @@ function show_server_data() {
         # Remove first comma
         server_databases="$(printf "%s" "${server_databases#,}")"
 
-        [[ -z ${server_databases} ]] && server_databases="\"no-databases\""
+        [[ -z ${server_databases} ]] && server_databases=""
 
         # Write JSON file
         echo "{ \"${timestamp}\" : { \"server_info\": { ${server_info} }, \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] } }" >"${json_output_file}"
