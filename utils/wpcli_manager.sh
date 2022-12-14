@@ -25,7 +25,20 @@ function wpcli_manager() {
   local install_path
   local project_path
   local project_install_type
-  #local chosen_wp_path
+
+  # Check if php is installed
+  php_installed="$(php_check_if_installed)"
+  if [[ ${php_installed} == "false" ]]; then
+
+    whiptail_message "ERROR" "PHP is not installed. Please install it first."
+
+    # Log
+    log_event "debug" "PHP is not installed. Please install it first." "false"
+
+    # Return
+    menu_main_options
+
+  fi
 
   # Directory Browser
   startdir="${PROJECTS_PATH}"
@@ -49,10 +62,7 @@ function wpcli_manager() {
   # Search a WordPress installation on selected directory
   install_path="$(wp_config_path "${wp_site}")"
 
-  # Install_path could return more than one wp installation
-  project_path="$(wordpress_select_project_to_work_with "${install_path}")"
-
-  project_install_type="$(project_get_install_type "${project_path}")"
+  project_install_type="$(project_get_install_type "${wp_site}")"
 
   if [[ ${project_install_type} == "docker" ]]; then
 
@@ -62,6 +72,9 @@ function wpcli_manager() {
     log_event "debug" "WP-CLI on Dockerized projects are not implemented yet." "false"
 
   fi
+
+  # Install_path could return more than one wp installation
+  project_path="$(wordpress_select_project_to_work_with "${install_path}")"
 
   # If project_path is not empty
   if [[ -n ${project_path} ]]; then
@@ -160,7 +173,6 @@ function wpcli_main_menu() {
   local wp_site="${1}"
 
   local wpcli_options
-  #local wp_result
   local chosen_wpcli_options
   local chosen_del_theme_option
   local wp_del_themes
@@ -193,32 +205,18 @@ function wpcli_main_menu() {
     # INSTALL PLUGINS
     [[ ${chosen_wpcli_options} == *"01"* ]] && wpcli_default_plugins_installer "${wp_site}"
 
-    if [[ ${chosen_wpcli_options} == *"02"* ]]; then
+    # DELETE_THEMES
+    [[ ${chosen_wpcli_options} == *"02"* ]] && wpcli_delete_themes_menu "${wp_site}"
 
-      # DELETE_THEMES
-      wpcli_delete_themes_menu "${wp_site}"
+    # DELETE_PLUGINS
+    [[ ${chosen_wpcli_options} == *"03"* ]] && wpcli_delete_plugins_menu "${wp_site}"
 
-    fi
-    if [[ ${chosen_wpcli_options} == *"03"* ]]; then
+    # RE-INSTALL_PLUGINS
+    [[ ${chosen_wpcli_options} == *"04"* ]] && wpcli_plugin_reinstall "${wp_site}" "all"
 
-      # DELETE_PLUGINS
-      wpcli_delete_plugins_menu "${wp_site}"
-
-    fi
-
-    if [[ ${chosen_wpcli_options} == *"04"* ]]; then
-
-      #REINSTALL_PLUGINS
-
-      log_subsection "WP Re-install Plugins"
-
-      wpcli_plugin_reinstall "${wp_site}" "all"
-
-    fi
-
+    # VERIFY_WP
     if [[ ${chosen_wpcli_options} == *"05"* ]]; then
 
-      # VERIFY_WP
       log_subsection "WP Verify"
 
       wpcli_core_verify "${wp_site}"
@@ -226,18 +224,12 @@ function wpcli_main_menu() {
 
     fi
 
-    if [[ ${chosen_wpcli_options} == *"06"* ]]; then
+    # UPDATE_WP
+    [[ ${chosen_wpcli_options} == *"06"* ]] && wpcli_core_update "${wp_site}"
 
-      # UPDATE_WP
-      log_subsection "WP Core Update"
-
-      wpcli_core_update "${wp_site}"
-
-    fi
-
+    # REINSTALL_WP
     if [[ ${chosen_wpcli_options} == *"07"* ]]; then
 
-      # REINSTALL_WP
       log_subsection "WP Core Re-install"
 
       wpcli_core_reinstall "${wp_site}"
@@ -246,26 +238,15 @@ function wpcli_main_menu() {
 
     fi
 
-    if [[ ${chosen_wpcli_options} == *"08"* ]]; then
+    # CLEAN_DB
+    [[ ${chosen_wpcli_options} == *"08"* ]] && wpcli_clean_database "${wp_site}"
 
-      # CLEAN_DB
-      log_subsection "WP Clean Database"
+    # PROFILE_WP
+    [[ ${chosen_wpcli_options} == *"09"* ]] && wpcli_profiler_menu "${wp_site}"
 
-      wpcli_clean_database "${wp_site}"
-
-    fi
-
-    if [[ ${chosen_wpcli_options} == *"09"* ]]; then
-
-      # PROFILE_WP
-      log_subsection "WP Profile"
-
-      wpcli_profiler_menu "${wp_site}"
-
-    fi
+    # CHANGE_TABLES_PREFIX
     if [[ ${chosen_wpcli_options} == *"10"* ]]; then
 
-      # CHANGE_TABLES_PREFIX
       log_subsection "WP Change Tables Prefix"
 
       # Generate WP tables PREFIX
@@ -275,27 +256,16 @@ function wpcli_main_menu() {
       wpcli_db_change_tables_prefix "${wp_site}" "${TABLES_PREFIX}"
 
     fi
-    if [[ ${chosen_wpcli_options} == *"11"* ]]; then
 
-      # REPLACE_URLs
-      log_subsection "WP Replace URLs"
+    # REPLACE_URLs
+    [[ ${chosen_wpcli_options} == *"11"* ]] && wp_ask_url_search_and_replace "${wp_site}"
 
-      wp_ask_url_search_and_replace "${wp_site}"
+    # SEOYOAST_REINDEX
+    [[ ${chosen_wpcli_options} == *"12"* ]] && wpcli_seoyoast_reindex "${wp_site}"
 
-    fi
-
-    if [[ ${chosen_wpcli_options} == *"12"* ]]; then
-
-      # SEOYOAST_REINDEX
-      log_subsection "WP SEO Yoast Re-index"
-
-      wpcli_seoyoast_reindex "${wp_site}"
-
-    fi
-
+    # DELETE_NOT_CORE_FILES
     if [[ ${chosen_wpcli_options} == *"13"* ]]; then
 
-      # DELETE_NOT_CORE_FILES
       log_subsection "WP Delete not-core files"
 
       echo -e "${B_RED} > This script will delete all non-core wordpress files (except wp-content). Do you want to continue? [y/n]${ENDCOLOR}"
@@ -329,9 +299,9 @@ function wpcli_main_menu() {
 
     fi
 
+    # RESET WP USER PASSW
     if [[ ${chosen_wpcli_options} == *"15"* ]]; then
 
-      # RESET WP USER PASSW
       log_subsection "WP Reset User Pass"
 
       choosen_user="$(whiptail --title "WORDPRESS USER" --inputbox "Insert the username you want to reset the password:" 10 60 "" 3>&1 1>&2 2>&3)"
@@ -346,9 +316,9 @@ function wpcli_main_menu() {
 
     fi
 
+    # DELETE SPAM COMMENTS
     if [[ ${chosen_wpcli_options} == *"16"* ]]; then
 
-      # DELETE SPAM COMMENTS
       log_subsection "WP Delete Spam Comments"
 
       wpcli_delete_comments "${wp_site}" "spam"
@@ -377,13 +347,13 @@ function wpcli_main_menu() {
 
 function wpcli_profiler_menu() {
 
-  # ${1} = ${wp_site}
-
   local wp_site="${1}"
 
   local is_installed
   local profiler_options
   local chosen_profiler_option
+
+  log_subsection "WP Profile"
 
   is_installed="$(wpcli_check_if_package_is_installed "profile-command")"
   if [[ ${is_installed} == "true" ]]; then

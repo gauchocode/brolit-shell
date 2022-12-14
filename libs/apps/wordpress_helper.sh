@@ -407,6 +407,8 @@ function wp_ask_url_search_and_replace() {
   local existing_URL
   local new_URL
 
+  log_subsection "WP Replace URLs"
+
   if [[ -z ${existing_URL} ]]; then
 
     existing_URL="$(whiptail_input "URL TO CHANGE" "Insert the URL you want to change, including http:// or https://" "")"

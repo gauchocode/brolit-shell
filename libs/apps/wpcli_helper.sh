@@ -429,7 +429,8 @@ function wpcli_core_update() {
 
     local verify_core_update
 
-    log_section "WordPress Updater"
+    #log_section "WordPress Updater"
+    log_subsection "WP Core Update"
 
     # Command
     verify_core_update="$(sudo -u www-data wp --path="${wp_site}" core update | grep ":" | cut -d ':' -f1)"
@@ -841,6 +842,8 @@ function wpcli_plugin_reinstall() {
     local plugin="${2}"
 
     local verify_plugin
+
+    log_subsection "WP Re-install Plugins"
 
     if [[ -z ${plugin} || ${plugin} == "all" ]]; then
 
@@ -1290,6 +1293,8 @@ function wpcli_seoyoast_reindex() {
 
     local wp_site="${1}"
 
+    log_subsection "WP SEO Yoast Re-index"
+
     # Log
     display --indent 6 --text "- Running yoast re-index"
     log_event "info" "Running yoast re-index" "false"
@@ -1675,6 +1680,8 @@ function wpcli_search_and_replace() {
 function wpcli_clean_database() {
 
     local wp_site="${1}"
+
+    log_subsection "WP Clean Database"
 
     log_event "info" "Executing: wp --path=${wp_site} transient delete --expired --allow-root" "false"
 
