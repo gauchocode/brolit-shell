@@ -22,6 +22,9 @@ function wpcli_manager() {
 
   local wpcli_installed
   local wp_site
+  local install_path
+  local project_path
+  local project_install_type
   #local chosen_wp_path
 
   # Directory Browser
@@ -30,52 +33,115 @@ function wpcli_manager() {
   directory_browser "${menutitle}" "${startdir}"
 
   # If directory browser was cancelled
-  if [[ -z ${filename} ]]; then
+  [[ -z ${filename} ]] && menu_main_options
+
+  # Install wpcli if not installed
+  wpcli_installed="$(wpcli_check_if_installed)"
+  if [[ ${wpcli_installed} == "true" ]]; then
+    wpcli_update
+  else
+    wpcli_install
+  fi
+
+  # WP Path
+  wp_site="${filepath}/${filename}"
+
+  # Search a WordPress installation on selected directory
+  install_path="$(wp_config_path "${wp_site}")"
+
+  # Install_path could return more than one wp installation
+  project_path="$(wordpress_select_project_to_work_with "${install_path}")"
+
+  project_install_type="$(project_get_install_type "${project_path}")"
+
+  if [[ ${project_install_type} == "docker" ]]; then
+
+    whiptail_message "ERROR" "WP-CLI on Dockerized projects are not implemented yet."
+
+    # Log
+    log_event "debug" "WP-CLI on Dockerized projects are not implemented yet." "false"
+
+  fi
+
+  # If project_path is not empty
+  if [[ -n ${project_path} ]]; then
+
+    log_event "debug" "Working with ${project_path}" "false"
+
+    # Return
+    wpcli_main_menu "${project_path}"
+
+  else
+
+    # Log
+    log_event "debug" "project_path=${project_path}" "false"
+    log_event "info" "WordPress installation not found!" "false"
+    display --indent 2 --text "- Searching WordPress installation" --result "FAIL" --color RED
+
+    whiptail --title "WARNING" --msgbox "WordPress installation not found! Press Enter to return to the Main Menu." 8 78
 
     # Return
     menu_main_options
 
-  else
-
-    # Install wpcli if not installed
-    wpcli_installed="$(wpcli_check_if_installed)"
-    if [[ ${wpcli_installed} == "true" ]]; then
-      wpcli_update
-    else
-      wpcli_install
-    fi
-
-    # WP Path
-    wp_site="${filepath}/${filename}"
-
-    # Search a WordPress installation on selected directory
-    install_path="$(wp_config_path "${wp_site}")"
-
-    # Install_path could return more than one wp installation
-    project_path="$(wordpress_select_project_to_work_with "${install_path}")"
-
-    if [[ -n ${project_path} ]]; then
-
-      log_event "debug" "Working with ${project_path}" "false"
-
-      # Return
-      wpcli_main_menu "${project_path}"
-
-    else
-
-      # Log
-      log_event "debug" "project_path=${project_path}" "false"
-      log_event "info" "WordPress installation not found!" "false"
-      display --indent 2 --text "- Searching WordPress installation" --result "FAIL" --color RED
-
-      whiptail --title "WARNING" --msgbox "WordPress installation not found! Press Enter to return to the Main Menu." 8 78
-
-      # Return
-      menu_main_options
-
-    fi
-
   fi
+
+}
+
+function wpcli_delete_plugins_menu() {
+
+  local wp_site="${1}"
+
+  local wp_del_plugins
+  local chosen_del_plugin_option
+
+  # Listing installed plugins
+  wp_del_plugins="$(wp --path="${wp_site}" plugin list --quiet --field=name --status=inactive --allow-root)"
+
+  # Log
+  log_event "debug" "Running: wp --path=${wp_site} plugin list --quiet --field=name --status=inactive --allow-root" "false"
+  log_event "debug" "wp_del_plugins=${wp_del_plugins}" "false"
+
+  # Convert to checklist
+
+  array_to_checklist "${wp_del_plugins}"
+  chosen_del_plugin_option="$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to delete:" 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)"
+
+  log_subsection "WP Delete Plugins"
+
+  for plugin_del in ${chosen_del_plugin_option}; do
+
+    plugin_del=$(sed -e 's/^"//' -e 's/"$//' <<<${plugin_del}) #needed to ommit double quotes
+
+    wpcli_plugin_delete "${wp_site}" "${plugin_del}"
+
+  done
+
+}
+
+function wpcli_delete_themes_menu() {
+
+  local wp_site="${1}"
+
+  local wp_del_themes
+  local chosen_del_theme_option
+
+  # Listing installed themes
+  wp_del_themes="$(wp --path="${wp_site}" theme list --quiet --field=name --status=inactive --allow-root)"
+
+  # Log
+  log_event "debug" "Running: wp --path=${wp_site} theme list --quiet --field=name --status=inactive --allow-root" "false"
+  log_event "debug" "wp_del_themes=${wp_del_themes}" "false"
+
+  # Convert to checklist
+  array_to_checklist "${wp_del_themes}"
+  chosen_del_theme_option="$(whiptail --title "Theme Selection" --checklist "Select the themes you want to delete." 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)"
+
+  log_subsection "WP Delete Themes"
+
+  for theme_del in ${chosen_del_theme_option}; do
+    theme_del=$(sed -e 's/^"//' -e 's/"$//' <<<${theme_del}) #need to ommit double quotes
+    wpcli_theme_delete "${wp_site}" "${theme_del}"
+  done
 
 }
 
@@ -130,38 +196,13 @@ function wpcli_main_menu() {
     if [[ ${chosen_wpcli_options} == *"02"* ]]; then
 
       # DELETE_THEMES
-
-      # Listing installed themes
-      wp_del_themes="$(wp --path="${wp_site}" theme list --quiet --field=name --status=inactive --allow-root)"
-      array_to_checklist "${wp_del_themes}"
-      chosen_del_theme_option="$(whiptail --title "Theme Selection" --checklist "Select the themes you want to delete." 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)"
-
-      log_subsection "WP Delete Themes"
-
-      for theme_del in ${chosen_del_theme_option}; do
-        theme_del=$(sed -e 's/^"//' -e 's/"$//' <<<${theme_del}) #needed to ommit double quotes
-        wpcli_theme_delete "${wp_site}" "${theme_del}"
-      done
+      wpcli_delete_themes_menu "${wp_site}"
 
     fi
     if [[ ${chosen_wpcli_options} == *"03"* ]]; then
 
       # DELETE_PLUGINS
-
-      # Listing installed plugins
-      wp_del_plugins="$(wp --path="${wp_site}" plugin list --quiet --field=name --status=inactive --allow-root)"
-      array_to_checklist "${wp_del_plugins}"
-      chosen_del_plugin_option="$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to delete:" 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)"
-
-      log_subsection "WP Delete Plugins"
-
-      for plugin_del in ${chosen_del_plugin_option}; do
-
-        plugin_del=$(sed -e 's/^"//' -e 's/"$//' <<<${plugin_del}) #needed to ommit double quotes
-
-        wpcli_plugin_delete "${wp_site}" "${plugin_del}"
-
-      done
+      wpcli_delete_plugins_menu "${wp_site}"
 
     fi
 
