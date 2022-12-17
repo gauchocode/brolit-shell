@@ -9,6 +9,7 @@ RUN apt-get update; \
         php8.1-gd \ 
         php8.1-grpc \ 
         php8.1-http \ 
+        php8.1-intl \ 
         php8.1-imagick \ 
         php8.1-imap \ 
         php8.1-inotify \ 
