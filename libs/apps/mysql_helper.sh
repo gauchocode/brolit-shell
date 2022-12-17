@@ -198,7 +198,8 @@ function mysql_count_databases() {
 # List databases on MySQL
 #
 # Arguments:
-#  ${stage} - Options: all, prod, dev, test, stage
+#  ${1} = ${stage}          - Options: all, prod, dev, test, stage
+#  ${2} = ${container_name} - Optional
 #
 # Outputs:
 #  ${databases}, 1 on error.
@@ -207,21 +208,23 @@ function mysql_count_databases() {
 function mysql_list_databases() {
 
     local stage="${1}"
-    local install_type="${2}"
+    local container_name="${2}"
+    #local install_type="${2}"
 
     local mysql_exec
     local databases
 
-    [[ ${install_type} == "docker" ]] && mysql_exec="${MYSQL_DOCKER_EXEC}" || mysql_exec="${MYSQL_ROOT}"
+   # [[ ${install_type} == "docker" ]] && mysql_exec="${MYSQL_DOCKER_EXEC}" || mysql_exec="${MYSQL_ROOT}"
+   [[ -n ${container_name} ]] && mysql_exec="docker exec -i ${container_name} mysql" || mysql_exec="${MYSQL_ROOT}"
 
     log_event "info" "Listing '${stage}' MySQL databases" "false"
 
     if [[ ${stage} == "all" ]]; then
         # Run command
-        databases="$(${MYSQL_ROOT} -Bse 'show databases')"
+        databases="$(${mysql_exec} -Bse 'show databases')"
     else
         # Run command
-        databases="$(${MYSQL_ROOT} -Bse 'show databases' | grep "${stage}")"
+        databases="$(${mysql_exec} -Bse 'show databases' | grep "${stage}")"
     fi
 
     # Check result
@@ -245,7 +248,7 @@ function mysql_list_databases() {
         # Log
         display --indent 6 --text "- Listing MySQL databases" --result "FAIL" --color RED
         log_event "error" "Something went wrong listing MySQL databases" "false"
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -Bse 'show databases'" "false"
+        log_event "debug" "Last command executed: ${mysql_exec} -Bse 'show databases'" "false"
 
         return 1
 
