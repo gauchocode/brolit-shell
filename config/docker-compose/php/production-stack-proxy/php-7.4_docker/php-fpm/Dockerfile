@@ -5,6 +5,7 @@ RUN apt-get update; \
     apt-get -y --no-install-recommends install \
         php7.4-bcmath \ 
         php7.4-bz2 \ 
+        php7.4-intl \ 
         php7.4-imap \ 
         php7.4-imagick \ 
         php7.4-mysql \ 

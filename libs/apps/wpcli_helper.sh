@@ -968,11 +968,11 @@ function wpcli_theme_delete() {
 #
 # Arguments:
 #   ${1} = ${wp_site}           - Site path
-#   ${1} = ${site_url}          - Site URL
-#   ${2} = ${site_name}         - Site Display Name
-#   ${3} = ${wp_user_name}
-#   ${4} = ${wp_user_passw}
-#   ${5} = ${wp_user_mail}
+#   ${2} = ${site_url}          - Site URL
+#   ${3} = ${site_name}         - Site Display Name
+#   ${4} = ${wp_user_name}
+#   ${5} = ${wp_user_passw}
+#   ${6} = ${wp_user_mail}
 #
 # Outputs:
 #   0 if plugin was deleted, 1 if not.
