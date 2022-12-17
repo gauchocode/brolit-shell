@@ -128,7 +128,7 @@ function database_manager_menu() {
 
   # Select database engine
   [[ -z ${mysql_container_selected} ]] && chosen_database_engine="$(database_ask_engine)"
-  [[ -z ${chosen_database_engine} ]] && return 1
+  [[ -z ${mysql_container_selected} && -z ${chosen_database_engine} ]] && return 1
 
   database_manager_options=(
     "01)" "LIST DATABASES"
