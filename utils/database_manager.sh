@@ -119,7 +119,9 @@ function database_manager_menu() {
 
         # MySQL Container selection menu
         mysql_container_selected="$(whiptail --title "Select a MySQL Container" --menu "Choose a MySQL Container to work with" 20 78 10 $(for x in ${mysql_containers}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)"
-        
+        [[ ${exitstatus} -eq 1 ]] && return 1
+        chosen_database_engine="MYSQL"
+
       fi
 
     fi
@@ -127,8 +129,8 @@ function database_manager_menu() {
   fi
 
   # Select database engine
-  [[ -z ${mysql_container_selected} ]] && chosen_database_engine="$(database_ask_engine)"
-  [[ -z ${mysql_container_selected} && -z ${chosen_database_engine} ]] && return 1
+  [[ -z ${chosen_database_engine} ]] && chosen_database_engine="$(database_ask_engine)"
+  [[ -z ${chosen_database_engine} ]] && return 1
 
   database_manager_options=(
     "01)" "LIST DATABASES"
