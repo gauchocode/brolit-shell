@@ -217,9 +217,13 @@ function mysql_list_databases() {
    # [[ ${install_type} == "docker" ]] && mysql_exec="${MYSQL_DOCKER_EXEC}" || mysql_exec="${MYSQL_ROOT}"
    if [[ -n ${container_name} ]]; then
     
-    mysql_container_root_pssw="$(docker exec -i "${container_name}" printenv MYSQL_RANDOM_ROOT_PASSWORD)"
+    #mysql_container_root_pssw="$(docker exec -i "${container_name}" printenv MYSQL_RANDOM_ROOT_PASSWORD)"
+    #mysql_exec="docker exec -i ${container_name} mysql -u root -p ${mysql_container_root_pssw}" 
 
-    mysql_exec="docker exec -i ${container_name} mysql -u root -p ${mysql_container_root_pssw}" 
+    mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
+    mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
+    
+    mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}" 
     
     else
 
