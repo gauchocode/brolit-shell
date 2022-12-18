@@ -215,7 +215,17 @@ function mysql_list_databases() {
     local databases
 
    # [[ ${install_type} == "docker" ]] && mysql_exec="${MYSQL_DOCKER_EXEC}" || mysql_exec="${MYSQL_ROOT}"
-   [[ -n ${container_name} ]] && mysql_exec="docker exec -i ${container_name} mysql" || mysql_exec="${MYSQL_ROOT}"
+   if [[ -n ${container_name} ]]; then
+    
+    mysql_container_root_pssw="$(docker exec -i "${container_name}" printenv MYSQL_RANDOM_ROOT_PASSWORD)"
+
+    mysql_exec="docker exec -i ${container_name} mysql -u root -p ${mysql_container_root_pssw}" 
+    
+    else
+
+    mysql_exec="${MYSQL_ROOT}"
+
+    fi
 
     log_event "info" "Listing '${stage}' MySQL databases" "false"
 
