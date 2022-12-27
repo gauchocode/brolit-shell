@@ -180,9 +180,8 @@ function mysql_count_databases() {
 
     local databases="${1}"
 
-    local total_databases=0
-
     local db
+    local total_databases=0
 
     for db in ${databases}; do
         if [[ $EXCLUDED_DATABASES_LIST != *"${db}"* ]]; then # $EXCLUDED_DATABASES_LIST contains blacklisted databases
@@ -209,25 +208,23 @@ function mysql_list_databases() {
 
     local stage="${1}"
     local container_name="${2}"
-    #local install_type="${2}"
 
     local mysql_exec
     local databases
 
-   # [[ ${install_type} == "docker" ]] && mysql_exec="${MYSQL_DOCKER_EXEC}" || mysql_exec="${MYSQL_ROOT}"
-   if [[ -n ${container_name} ]]; then
-    
-    #mysql_container_root_pssw="$(docker exec -i "${container_name}" printenv MYSQL_RANDOM_ROOT_PASSWORD)"
-    #mysql_exec="docker exec -i ${container_name} mysql -u root -p ${mysql_container_root_pssw}" 
+    if [[ -n ${container_name} ]]; then
 
-    mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
-    mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
-    
-    mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}" 
-    
+        #mysql_container_root_pssw="$(docker exec -i "${container_name}" printenv MYSQL_RANDOM_ROOT_PASSWORD)"
+        #mysql_exec="docker exec -i ${container_name} mysql -u root -p ${mysql_container_root_pssw}"
+
+        mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
+        mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
+
+        mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
+
     else
 
-    mysql_exec="${MYSQL_ROOT}"
+        mysql_exec="${MYSQL_ROOT}"
 
     fi
 
@@ -502,7 +499,7 @@ function mysql_user_psw_change() {
 }
 
 ################################################################################
-# Change root password
+# Change mysql root password
 #
 # Arguments:
 #  ${1} = ${db_user_psw}

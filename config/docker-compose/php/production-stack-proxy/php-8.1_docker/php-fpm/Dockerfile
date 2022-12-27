@@ -1,5 +1,5 @@
 FROM phpdockerio/php:8.1-fpm
-WORKDIR "/wordpress"
+WORKDIR "/application"
 
 RUN apt-get update; \
     apt-get -y --no-install-recommends install \
