@@ -42,6 +42,36 @@ function database_ask_engine() {
 
 }
 
+function database_delete_menu() {
+
+  local database_engine="${1}"
+
+  # List databases
+      if [[ ${database_engine} == "MYSQL" ]]; then
+        databases="$(mysql_list_databases "all")"
+      else
+        databases="$(postgres_list_databases "all")"
+      fi
+
+      chosen_database="$(whiptail --title "DATABASE MANAGER" --menu "Choose the database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        if [[ ${database_engine} == "MYSQL" ]]; then
+
+          mysql_database_drop "${chosen_database}"
+
+        else
+
+          postgres_database_drop "${chosen_database}"
+
+        fi
+
+      fi
+
+}
+
 ################################################################################
 # Database List Menu
 #
@@ -179,39 +209,11 @@ function database_manager_menu() {
 
     fi
 
-    if [[ ${chosen_database_manager_option} == *"03"* ]]; then
+    # DELETE DATABASE
+    [[ ${chosen_database_manager_option} == *"03"* ]] && database_delete_menu "${chosen_database_engine}"
 
-      # DELETE DATABASE
-
-      # List databases
-      if [[ ${chosen_database_engine} == "MYSQL" ]]; then
-        databases="$(mysql_list_databases "all")"
-      else
-        databases="$(postgres_list_databases "all")"
-      fi
-
-      chosen_database="$(whiptail --title "DATABASE MANAGER" --menu "Choose the database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)"
-
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        if [[ ${chosen_database_engine} == "MYSQL" ]]; then
-
-          mysql_database_drop "${chosen_database}"
-
-        else
-
-          postgres_database_drop "${chosen_database}"
-
-        fi
-
-      fi
-
-    fi
-
+    # RENAME DATABASE
     if [[ ${chosen_database_manager_option} == "04" ]]; then
-
-      # RENAME DATABASE
 
       # List databases
       if [[ ${chosen_database_engine} == "MYSQL" ]]; then
@@ -245,9 +247,9 @@ function database_manager_menu() {
 
     fi
 
+    # LIST USERS
     if [[ ${chosen_database_manager_option} == *"05"* ]]; then
-
-      # LIST USERS
+      
       if [[ ${chosen_database_engine} == "MYSQL" ]]; then
         mysql_list_users
       else
@@ -289,9 +291,8 @@ function database_manager_menu() {
 
     fi
 
+    # DELETE USER
     if [[ ${chosen_database_manager_option} == *"07"* ]]; then
-
-      # DELETE USER
 
       # List users
       if [[ ${chosen_database_engine} == "MYSQL" ]]; then
@@ -319,9 +320,8 @@ function database_manager_menu() {
 
     fi
 
+    # RESET MYSQL USER PASSWORD
     if [[ ${chosen_database_manager_option} == *"08"* ]]; then
-
-      # RESET MYSQL USER PASSWORD
 
       # List users
       if [[ ${chosen_database_engine} == "MYSQL" ]]; then
@@ -356,9 +356,8 @@ function database_manager_menu() {
 
     fi
 
+    # GRANT PRIVILEGES
     if [[ ${chosen_database_manager_option} == *"09"* ]]; then
-
-      # GRANT PRIVILEGES
 
       # List users
       if [[ ${chosen_database_engine} == "MYSQL" ]]; then
