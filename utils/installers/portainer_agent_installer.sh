@@ -26,7 +26,7 @@ function portainer_agent_installer() {
 
     package_update
 
-    package_install_if_not "docker"
+    package_install_if_not "docker.io"
     package_install_if_not "docker-compose"
 
     # Force update brolit_conf.json

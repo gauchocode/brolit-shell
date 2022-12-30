@@ -59,7 +59,7 @@ function _netdata_agent_required_packages() {
   # Netdata agent requires docker and docker-compose
   package_update
 
-  package_install_if_not "docker"
+  package_install_if_not "docker.io"
   package_install_if_not "docker-compose"
 
   # Force update brolit_conf.json
@@ -206,7 +206,7 @@ function netdata_agent_installer() {
 
   package_update
 
-  package_install_if_not "docker"
+  package_install_if_not "docker.io"
   package_install_if_not "docker-compose"
 
   # Force update brolit_conf.json
