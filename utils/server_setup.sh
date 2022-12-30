@@ -202,7 +202,7 @@ function server_app_setup() {
 
         if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then
             log_subsection "Docker Installer"
-            package_install_if_not "docker"
+            package_install_if_not "docker.io"
         else
             package_purge "docker"
         fi

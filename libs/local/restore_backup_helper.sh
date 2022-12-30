@@ -140,14 +140,13 @@ function restore_backup_from_local() {
       # Moving project files to brolit temp directory
       mv "${basepath}/${project_domain}" "${BROLIT_TMP_DIR}"
 
-      # TODO: Project domain asked inside this function again (need a refactor)
+      # Get project install type
+      project_install_type="$(project_get_install_type "${BROLIT_TMP_DIR}/${project_domain}")"
+
       # Restore site files
-      restore_backup_files "${project_domain}"
+      restore_backup_files "${project_domain}" "${project_install_type}"
 
       destination_dir="${PROJECTS_PATH}/${project_domain}"
-
-      # Get project install type
-      project_install_type="$(project_get_install_type "${basepath}/${project_domain}")"
 
       if [[ ${project_install_type} != "proxy" && ${project_install_type} != "docker"* ]]; then
         # Change ownership
@@ -957,31 +956,27 @@ function restore_letsencrypt_site_files() {
 # Restore site files
 #
 # Arguments:
-#   ${1} = ${domain}
-#   ${2} = ${backup_path}
+#   ${1} = ${project_domain}
+#   ${2} = ${project_install_type}
 #
 # Outputs:
 #   0 if ok, 1 on error.
 ################################################################################
 
-# TODO: Refactor this function
-#       Extract the option to change project domain outside of this function
-#       Add an argument to change backup path
-
 function restore_backup_files() {
 
-  local domain="${1}"
-  #local backup_path="${2}"
+  local project_domain="${1}"
+  local project_install_type="${2}"
 
   local destination_dir
   local project_tmp_dir
 
   log_subsection "Restore Files Backup"
 
-  project_tmp_dir="${BROLIT_TMP_DIR}/${domain}"
+  project_tmp_dir="${BROLIT_TMP_DIR}/${project_domain}"
 
   # New destination directory
-  destination_dir="${PROJECTS_PATH}/${domain}"
+  destination_dir="${PROJECTS_PATH}/${project_domain}"
 
   # If exists, make a backup
   if [[ -d ${destination_dir} ]]; then
@@ -991,6 +986,17 @@ function restore_backup_files() {
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
+
+      # If project_install_type == docker, stop and remove containers
+      if [[ ${project_install_type} == "docker"* ]]; then
+
+        # Stop containers
+        docker-compose -f "${destination_dir}/docker-compose.yml" stop
+
+        # Remove containers
+        docker-compose -f "${destination_dir}/docker-compose.yml" rm --force
+
+      fi
 
       # Backup old project
       _create_tmp_copy "${destination_dir}" "move"
@@ -1126,12 +1132,12 @@ function restore_backup_project_files() {
   #chosen_type_path="${chosen_server}/projects-${chosen_status}/${chosen_restore_type}"
   storage_project_list="$(storage_list_dir "${chosen_remote_type_path}")"
 
+  # Get project install type
+  project_install_type="$(project_get_install_type "${BROLIT_TMP_DIR}/${chosen_project}")"
+
   # At this point chosen_project is the new project domain
   # Restore site files
-  restore_backup_files "${chosen_project}"
-
-  # Get project install type
-  project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${chosen_project}")"
+  restore_backup_files "${chosen_project}" "${project_install_type}"
 
   if [[ ${project_install_type} != "proxy" && ${project_install_type} != "docker"* ]]; then
     # Change ownership
@@ -1303,12 +1309,12 @@ function restore_project_backup() {
   # Project Type
   project_type="$(project_get_type "${project_tmp_dir_new}")"
 
-  # Restore site files
-  restore_backup_files "${project_domain_new}"
-  [[ $? -eq 1 ]] && return 1
-
   # Project Install Type
-  project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain_new}")"
+  project_install_type="$(project_get_install_type "${project_tmp_dir_new}")"
+
+  # Restore site files
+  restore_backup_files "${project_domain_new}" "${project_install_type}"
+  [[ $? -eq 1 ]] && return 1
 
   if [[ ${project_install_type} != "proxy" && ${project_install_type} != "docker"* ]]; then
     # Change ownership
