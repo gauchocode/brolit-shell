@@ -282,7 +282,7 @@ function project_ask_domain() {
 # Ask project type
 #
 # Arguments:
-#   none
+#   ${1} - ${suggested_project_type}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -295,7 +295,7 @@ function project_ask_type() {
   local project_types
   local project_type
 
-  project_types="wordpress laravel php react html docker proxy"
+  project_types="wordpress laravel php react html other"
 
   project_type="$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 $(for x in ${project_types}; do echo "${x} [D]"; done) --default-item "${suggested_project_type}" 3>&1 1>&2 2>&3)"
 
@@ -309,6 +309,45 @@ function project_ask_type() {
     echo "${project_type}" && return 0
 
   else
+
+    return 1
+
+  fi
+
+}
+
+################################################################################
+# Ask project isntall type
+#
+# Arguments:
+#   ${1} - ${suggested_project_install_type}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function project_ask_install_type() {
+
+  local suggested_project_install_type="${1}"
+
+  local project_install_types
+  local project_install_type
+
+  project_install_types="default docker proxy"
+
+  project_install_type="$(whiptail --title "SELECT PROJECT INSTALL TYPE" --menu " " 20 78 10 $(for x in ${project_install_types}; do echo "${x} [D]"; done) --default-item "${suggested_project_install_type}" 3>&1 1>&2 2>&3)"
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Lowercase
+    project_install_type="$(echo "${project_install_type}" | tr '[A-Z]' '[a-z]')"
+
+    # Return
+    echo "${project_install_type}" && return 0
+
+  else
+
     return 1
 
   fi
@@ -319,7 +358,7 @@ function project_ask_type() {
 # Ask project port
 #
 # Arguments:
-#   ${suggested_proxy_port}
+#   ${1} - ${suggested_proxy_port}
 #
 # Outputs:
 #   ${proxy_port} if ok, 1 on error.
@@ -334,11 +373,15 @@ function project_ask_port() {
   proxy_port="$(whiptail --title "Domain" --inputbox "Insert the internal port you want to proxy:" 10 60 "${suggested_proxy_port}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
+  if [[ ${exitstatus} -eq 0 && -n ${proxy_port} ]]; then
+
     # Return
     echo "${proxy_port}" && return 0
+
   else
+
     return 1
+
   fi
 
 }
@@ -362,8 +405,10 @@ function project_ask_folder_to_install() {
   if [[ -z ${folder_to_install} ]]; then
 
     folder_to_install="$(whiptail --title "Folder to work with" --inputbox "Please select the project folder you want to work with:" 10 60 "${folder_to_install}" 3>&1 1>&2 2>&3)"
+
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
+
       log_event "info" "Folder to work with: ${folder_to_install}" "false"
       # Return
       echo "${folder_to_install}" && return 0
@@ -2581,18 +2626,20 @@ function project_create_nginx_server() {
     # Extract root domain
     project_root_domain="$(domain_get_root "${project_domain}")"
 
-    # Try to get project type
+    # Try to get project type & project install type
     suggested_project_type="$(project_get_type "${filepath}/${filename}")"
+    suggested_project_install_type=$(project_get_install_type "${filepath}/${filename}")
 
     # Aks project type
     project_type="$(project_ask_type "${suggested_project_type}")"
-    if [[ ${project_type} == "docker" || ${project_type} == "proxy" ]]; then
-      project_type="proxy"
+    project_install_type="$(project_ask_install_type "${suggested_project_install_type}")"
+    if [[ ${project_install_type} == "docker" || ${project_install_type} == "proxy" ]]; then
+      project_install_type="proxy"
       project_port="$(project_ask_port "")"
     fi
 
     # Update project domain config
-    https_enable="$(project_update_domain_config "${project_domain}" "${project_type}" "${project_port}")"
+    https_enable="$(project_update_domain_config "${project_domain}" "${project_type}" "${project_install_type}" "${project_port}")"
 
   else
 

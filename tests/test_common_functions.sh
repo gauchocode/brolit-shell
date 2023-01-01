@@ -214,7 +214,7 @@ function test_jsonify_function_return() {
 
     log_subsection "jsonify_function_return"
 
-    databases="$(mysql_list_databases "all")"
+    databases="$(mysql_list_databases "all" "")"
 
     jsonify_output "value-list" "${databases}"
 

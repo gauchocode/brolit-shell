@@ -760,7 +760,7 @@ function backup_all_databases() {
   if [[ ${PACKAGES_MARIADB_STATUS} == "enabled" ]] || [[ ${PACKAGES_MYSQL_STATUS} == "enabled" ]]; then
 
     # Get MySQL databases
-    mysql_databases="$(mysql_list_databases "all")"
+    mysql_databases="$(mysql_list_databases "all" "")"
 
     # Count MySQL databases
     databases_count="$(mysql_count_databases "${mysql_databases}")"

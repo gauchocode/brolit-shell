@@ -55,7 +55,7 @@ function whiptail_message_with_skip_option() {
 }
 
 ################################################################################
-# Whiptail imput
+# Whiptail input
 #
 # Arguments:
 #  ${1} = {whip_title}
@@ -74,6 +74,41 @@ function whiptail_input() {
     local whip_return
 
     whip_return="$(whiptail --title "${whip_title}" --inputbox "${whip_message}" 15 60 "${whip_default}" 3>&1 1>&2 2>&3)"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Return
+        echo "${whip_return}" && return 0
+
+    else
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Whiptail selection menu
+#
+# Arguments:
+#  ${1} = {whip_title}
+#  ${2} = {whip_message}
+#
+# Outputs:
+#  ${whip_return} if ok, 1 on error.
+################################################################################
+
+function whiptail_selection_menu() {
+
+    local whip_title="${1}"
+    local whip_message="${2}"
+    local whip_options="${3}"
+
+    local whip_return
+
+    whip_return="$(whiptail --title "${whip_title}" --menu "${whip_message}" 15 60 4 "${whip_options}" 3>&1 1>&2 2>&3)"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
