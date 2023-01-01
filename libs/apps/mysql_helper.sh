@@ -98,7 +98,7 @@ function mysql_ask_database_selection() {
     local chosen_database
 
     # List databases
-    databases="$(mysql_list_databases "all")"
+    databases="$(mysql_list_databases "all" "")"
 
     # Database selection menu
     chosen_database="$(whiptail --title "MYSQL Databases" --menu "Choose a Database to work with" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) 3>&1 1>&2 2>&3)"

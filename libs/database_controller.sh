@@ -61,17 +61,31 @@ function database_list_all() {
     local database_engine="${2}"
     local install_type="${3}"
 
+    local mysql_containers
+    local mysql_container=""
+
+    # If install_type == docker
+    if [[ ${install_type} == "docker" ]]; then
+
+        # List all running mysql containers
+        mysql_containers="$(docker ps --filter "name=mariadb" --format "{{.Names}}")"
+
+        # Ask wich mysql container to use
+        mysql_container="$(whiptail --title "MySQL Container" --menu "Choose the MySQL container to use:" 20 78 10 ${mysql_containers} 3>&1 1>&2 2>&3)"
+
+    fi
+
     case ${database_engine} in
 
     mysql)
 
-        mysql_list_databases "${stage}" "${install_type}"
+        mysql_list_databases "${stage}" "${mysql_container}"
         return $?
         ;;
 
     postgres)
 
-        postgres_list_databases "${stage}" "${install_type}"
+        postgres_list_databases "${stage}" "${mysql_container}"
         return $?
         ;;
 
