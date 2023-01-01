@@ -33,6 +33,7 @@ function nginx_server_create() {
     # Log
     log_event "debug" "Project type: ${project_type}" "false"
     log_event "debug" "Server type: ${server_type}" "false"
+    log_event "debug" "Proxy port: ${proxy_port}" "false"
     log_event "info" "Creating nginx configuration file for domain: ${project_domain}" "false"
     log_event "info" "List of domains or subdomains that will be redirect to project_domain: ${redirect_domains}" "false"
 
@@ -67,8 +68,13 @@ function nginx_server_create() {
         # Search and replace domain.com string with ${project_domain}
         sed -i "s/domain.com/${project_domain}/g" "${nginx_server_file}"
 
-        # Search and replace PROXY_PORT string with ${proxy_port}
-        sed -i "s/PROXY_PORT/${proxy_port}/g" "${nginx_server_file}"
+        # If proxy_port is not empty
+        if [[ -n "${proxy_port}" ]]; then
+
+            # Search and replace PROXY_PORT string with ${proxy_port}
+            sed -i "s/PROXY_PORT/${proxy_port}/g" "${nginx_server_file}"
+
+        fi
 
         # Log
         display --indent 6 --text "- Creating nginx server config" --result DONE --color GREEN

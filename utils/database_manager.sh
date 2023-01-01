@@ -47,28 +47,24 @@ function database_delete_menu() {
   local database_engine="${1}"
 
   # List databases
-      if [[ ${database_engine} == "MYSQL" ]]; then
-        databases="$(mysql_list_databases "all")"
-      else
-        databases="$(postgres_list_databases "all")"
-      fi
+  databases="$(database_list_all "all" "${database_engine}" "")"
 
-      chosen_database="$(whiptail --title "DATABASE MANAGER" --menu "Choose the database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)"
+  chosen_database="$(whiptail --title "DATABASE MANAGER" --menu "Choose the database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)"
 
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
 
-        if [[ ${database_engine} == "MYSQL" ]]; then
+    if [[ ${database_engine} == "MYSQL" ]]; then
 
-          mysql_database_drop "${chosen_database}"
+      mysql_database_drop "${chosen_database}"
 
-        else
+    else
 
-          postgres_database_drop "${chosen_database}"
+      postgres_database_drop "${chosen_database}"
 
-        fi
+    fi
 
-      fi
+  fi
 
 }
 
@@ -140,8 +136,8 @@ function database_manager_menu() {
     # Whiptail to prompt user if want to use docker
     whiptail_message_with_skip_option "Docker Support" "Docker is present, do you want to work with an specific docker container?"
     exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]];then
-    
+    if [[ ${exitstatus} -eq 0 ]]; then
+
       # List mysql containers
       mysql_containers="$(docker ps --format "{{.Names}}" | grep mysql)"
 
@@ -249,7 +245,7 @@ function database_manager_menu() {
 
     # LIST USERS
     if [[ ${chosen_database_manager_option} == *"05"* ]]; then
-      
+
       if [[ ${chosen_database_engine} == "MYSQL" ]]; then
         mysql_list_users
       else
