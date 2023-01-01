@@ -1510,7 +1510,14 @@ function _brolit_configuration_load_portainer() {
     else
 
         # Checking if Portainer is installed
-        [[ -n ${PORTAINER} ]] && menu_config_changes_detected "portainer" "true"
+        if [[ -n ${PORTAINER} ]]; then
+
+            # Var needed for uninstall
+            PACKAGES_PORTAINER_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].config[].subdomain")"
+            # Uninstall portainer
+            menu_config_changes_detected "portainer" "true"
+
+        fi
 
     fi
 
