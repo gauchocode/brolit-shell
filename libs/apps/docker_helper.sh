@@ -187,6 +187,7 @@ function docker_get_container_id() {
     container_id="$(docker ps | grep "${image_name}" | awk '{print $1;}')"
 
     if [[ -n ${container_id} ]]; then
+    
         # Return
         echo "${container_id}" && return 0
 
