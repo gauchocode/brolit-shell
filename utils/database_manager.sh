@@ -129,19 +129,18 @@ function database_manager_menu() {
 
   log_section "Database Manager"
 
-  # Working with Docker?
-  ## Check if docker is installed
+  # Check if docker is installed
   if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then
 
-    # Whiptail to prompt user if want to use docker
-    whiptail_message_with_skip_option "Docker Support" "Docker is present, do you want to work with an specific docker container?"
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
+    # List mysql containers
+    mysql_containers="$(docker ps --format "{{.Names}}" | grep mysql)"
 
-      # List mysql containers
-      mysql_containers="$(docker ps --format "{{.Names}}" | grep mysql)"
+    if [[ -n ${mysql_containers} ]]; then
 
-      if [[ -n ${mysql_containers} ]]; then
+      # Whiptail to prompt user if want to use docker
+      whiptail_message_with_skip_option "Docker Support" "MySQL containers are running, do you want to work with an specific docker container?"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
 
         # MySQL Container selection menu
         mysql_container_selected="$(whiptail --title "Select a MySQL Container" --menu "Choose a MySQL Container to work with" 20 78 10 $(for x in ${mysql_containers}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)"

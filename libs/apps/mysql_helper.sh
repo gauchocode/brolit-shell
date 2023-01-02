@@ -214,9 +214,7 @@ function mysql_list_databases() {
 
     if [[ -n ${container_name} ]]; then
 
-        #mysql_container_root_pssw="$(docker exec -i "${container_name}" printenv MYSQL_RANDOM_ROOT_PASSWORD)"
-        #mysql_exec="docker exec -i ${container_name} mysql -u root -p ${mysql_container_root_pssw}"
-
+        # Get MYSQL_USER and MYSQL_PASSWORD from container
         mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
         mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
 
