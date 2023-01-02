@@ -615,7 +615,6 @@ function restore_backup_from_storage() {
 
       [[ $? -eq 1 ]] && display --indent 6 --text "- Downloading Project Backup" --result "ERROR" --color RED && return 1
 
-      # NEW NEW NEW NEW (projet_domain should be passed by argument?)
       # Detail of backup_to_dowload:
       #   "${chosen_server}/projects-${chosen_status}/${chosen_restore_type}/${project_domain}/${backup_file}"
       # For convention at this point ${chosen_project} == ${project_domain}
@@ -1457,13 +1456,10 @@ function restore_project_backup() {
   fi
 
   # TODO: refactor this
-
   # TODO: if directory exist, it will overwrite the actual server conf.
 
-  # TODO: get project type, project install type and project port
-
   # Project domain configuration (webserver+certbot+DNS)
-  https_enable="$(project_update_domain_config "${chosen_project}" "${project_type}" "${project_install_type}" "${project_port}")"
+  https_enable="$(project_update_domain_config "${project_domain_new}" "${project_type}" "${project_install_type}" "${project_port}")"
 
   if [[ ${project_install_type} != "docker"* ]]; then
 

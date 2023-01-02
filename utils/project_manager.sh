@@ -390,8 +390,7 @@ function project_manager_menu_new_project_type_new_project() {
         display --indent 6 --text "- Selecting project domain" --result "DONE" --color GREEN
         display --indent 8 --text "${chosen_domain}" --tcolor YELLOW
 
-        # NEW NEW NEW NEW
-        #restore_project_selection "${chosen_domain}"
+        # Restore backup from storage
         restore_backup_from_storage "${chosen_domain}"
 
       else
