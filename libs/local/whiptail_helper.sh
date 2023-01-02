@@ -50,7 +50,8 @@ function whiptail_message_with_skip_option() {
 
     whiptail --title "${whip_title}" --yesno "${whip_message}" 15 60 3>&1 1>&2 2>&3
     exitstatus=$?
-    [[ ${exitstatus} -eq 0 ]] && return 0 || return 1
+    [[ ${exitstatus} -eq 0 ]] && return 0
+    return 1
 
 }
 
