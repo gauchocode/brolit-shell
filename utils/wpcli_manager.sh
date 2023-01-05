@@ -48,14 +48,6 @@ function wpcli_manager() {
   # If directory browser was cancelled
   [[ -z ${filename} ]] && menu_main_options
 
-  # Install wpcli if not installed
-  wpcli_installed="$(wpcli_check_if_installed)"
-  if [[ ${wpcli_installed} == "true" ]]; then
-    wpcli_update
-  else
-    wpcli_install
-  fi
-
   # WP Path
   wp_site="${filepath}/${filename}"
 
@@ -66,10 +58,25 @@ function wpcli_manager() {
 
   if [[ ${project_install_type} == "docker" ]]; then
 
-    whiptail_message "ERROR" "WP-CLI on Dockerized projects are not implemented yet."
+    # Check if wp-cli service is present on docker-compose.yml
+    if grep -q "wordpress-cli:" docker-compose.yml; then
+      # Log
+      log_event "debug" "wp-cli service found in docker-compose.yml" "false"
+    else
+      # Log
+      log_event "error" "wp-cli service not found in docker-compose.yml" "true"
+    fi
 
-    # Log
-    log_event "debug" "WP-CLI on Dockerized projects are not implemented yet." "false"
+  else
+
+    # Install wpcli if not installed
+    wpcli_installed="$(wpcli_check_if_installed)"
+    if [[ ${wpcli_installed} == "true" ]]; then
+      wpcli_update
+    else
+      # TODO: ask for install?
+      wpcli_install
+    fi
 
   fi
 
@@ -82,7 +89,7 @@ function wpcli_manager() {
     log_event "debug" "Working with ${project_path}" "false"
 
     # Return
-    wpcli_main_menu "${project_path}"
+    wpcli_main_menu "${project_path}" "${project_install_type}"
 
   else
 
@@ -171,6 +178,7 @@ function wpcli_delete_themes_menu() {
 function wpcli_main_menu() {
 
   local wp_site="${1}"
+  local project_install_type="${2}"
 
   local wpcli_options
   local chosen_wpcli_options
@@ -203,7 +211,7 @@ function wpcli_main_menu() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # INSTALL PLUGINS
-    [[ ${chosen_wpcli_options} == *"01"* ]] && wpcli_default_plugins_installer "${wp_site}"
+    [[ ${chosen_wpcli_options} == *"01"* ]] && wpcli_default_plugins_installer "${wp_site}" "${project_install_type}"
 
     # DELETE_THEMES
     [[ ${chosen_wpcli_options} == *"02"* ]] && wpcli_delete_themes_menu "${wp_site}"
@@ -335,7 +343,7 @@ function wpcli_main_menu() {
     fi
 
     prompt_return_or_finish
-    wpcli_main_menu "${wp_site}"
+    wpcli_main_menu "${wp_site}" "${project_install_type}"
 
   else
 
