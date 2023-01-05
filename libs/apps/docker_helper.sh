@@ -654,14 +654,17 @@ function docker_project_install() {
             sed -ie "2i \
 /** Sets up HTTPS and other needed vars to let WordPress works behind a Proxy */\n\
 define('FORCE_SSL_ADMIN', true);\n\
-if (strpos(\$_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false){\n\
+define('FORCE_SSL_LOGIN', true);\n\
+if (isset(\$_SERVER['HTTP_X_FORWARDED_PROTO']) && \$_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https') { \n\
     \$_SERVER['HTTPS']='on';\n\
+    \$_SERVER['SERVER_PORT']=443;\n\
 }\n\
 if (isset(\$_SERVER['HTTP_X_FORWARDED_HOST'])) {\n\
     \$_SERVER['HTTP_HOST'] = \$_SERVER['HTTP_X_FORWARDED_HOST'];\n\
 }\n\
 define('WP_HOME','https://${project_domain}/');\n\
 define('WP_SITEURL','https://${project_domain}/');\n\
+define('DISALLOW_FILE_EDIT', true);\n\
 define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
 
             # Remove tmp file
