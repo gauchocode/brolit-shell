@@ -45,7 +45,7 @@ function wpcli_manager() {
   if [[ ${project_install_type} == "docker"* ]]; then
 
     # Check if wp-cli service is present on docker-compose.yml
-    if grep -q "wordpress-cli:" docker-compose.yml; then
+    if grep -q "wordpress-cli:" "${wp_site}/docker-compose.yml"; then
       # Log
       log_event "debug" "wp-cli service found in docker-compose.yml" "false"
     else
