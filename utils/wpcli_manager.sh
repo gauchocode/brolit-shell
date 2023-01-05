@@ -78,6 +78,8 @@ function wpcli_manager() {
       wpcli_install
     fi
 
+    
+
   fi
 
   # Install_path could return more than one wp installation
@@ -149,7 +151,7 @@ function wpcli_delete_themes_menu() {
 
   # Check project_install_type
   [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-  [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/docker-compose.yml run --rm wordpress-cli wp"
+  [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
 
   # Listing installed themes
   wp_del_themes="$("${wpcli_cmd}" theme list --quiet --field=name --status=inactive --allow-root)"
