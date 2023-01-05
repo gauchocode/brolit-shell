@@ -42,7 +42,7 @@ function wpcli_manager() {
 
   project_install_type="$(project_get_install_type "${wp_site}")"
 
-  if [[ ${project_install_type} == "docker" ]]; then
+  if [[ ${project_install_type} == "docker"* ]]; then
 
     # Check if wp-cli service is present on docker-compose.yml
     if grep -q "wordpress-cli:" docker-compose.yml; then
