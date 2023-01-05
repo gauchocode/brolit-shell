@@ -26,20 +26,6 @@ function wpcli_manager() {
   local project_path
   local project_install_type
 
-  # Check if php is installed
-  php_installed="$(php_check_if_installed)"
-  if [[ ${php_installed} == "false" ]]; then
-
-    whiptail_message "ERROR" "PHP is not installed. Please install it first."
-
-    # Log
-    log_event "debug" "PHP is not installed. Please install it first." "false"
-
-    # Return
-    menu_main_options
-
-  fi
-
   # Directory Browser
   startdir="${PROJECTS_PATH}"
   menutitle="Site Selection Menu"
@@ -68,6 +54,20 @@ function wpcli_manager() {
     fi
 
   else
+
+    # Check if php is installed
+    php_installed="$(php_check_if_installed)"
+    if [[ ${php_installed} == "false" ]]; then
+
+      whiptail_message "ERROR" "PHP is not installed. Please install it first."
+
+      # Log
+      log_event "debug" "PHP is not installed. Please install it first." "false"
+
+      # Return
+      menu_main_options
+
+    fi
 
     # Install wpcli if not installed
     wpcli_installed="$(wpcli_check_if_installed)"
