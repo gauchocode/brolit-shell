@@ -141,15 +141,21 @@ function wpcli_delete_plugins_menu() {
 function wpcli_delete_themes_menu() {
 
   local wp_site="${1}"
+  local install_type="${2}"
 
+  local wpcli_cmd
   local wp_del_themes
   local chosen_del_theme_option
 
+  # Check project_install_type
+  [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+  [[ ${install_type} == "docker" ]] && wpcli_cmd="docker-compose run --rm wordpress-cli wp"
+
   # Listing installed themes
-  wp_del_themes="$(wp --path="${wp_site}" theme list --quiet --field=name --status=inactive --allow-root)"
+  wp_del_themes="$("${wpcli_cmd}" theme list --quiet --field=name --status=inactive --allow-root)"
 
   # Log
-  log_event "debug" "Running: wp --path=${wp_site} theme list --quiet --field=name --status=inactive --allow-root" "false"
+  log_event "debug" "Running: ${wpcli_cmd} theme list --quiet --field=name --status=inactive --allow-root" "false"
   log_event "debug" "wp_del_themes=${wp_del_themes}" "false"
 
   # Convert to checklist
@@ -160,7 +166,7 @@ function wpcli_delete_themes_menu() {
 
   for theme_del in ${chosen_del_theme_option}; do
     theme_del=$(sed -e 's/^"//' -e 's/"$//' <<<${theme_del}) #need to ommit double quotes
-    wpcli_theme_delete "${wp_site}" "${theme_del}"
+    wpcli_theme_delete "${wp_site}" "${install_type}" "${theme_del}"
   done
 
 }
@@ -214,7 +220,7 @@ function wpcli_main_menu() {
     [[ ${chosen_wpcli_options} == *"01"* ]] && wpcli_default_plugins_installer "${wp_site}" "${project_install_type}"
 
     # DELETE_THEMES
-    [[ ${chosen_wpcli_options} == *"02"* ]] && wpcli_delete_themes_menu "${wp_site}"
+    [[ ${chosen_wpcli_options} == *"02"* ]] && wpcli_delete_themes_menu "${wp_site}" "${project_install_type}"
 
     # DELETE_PLUGINS
     [[ ${chosen_wpcli_options} == *"03"* ]] && wpcli_delete_plugins_menu "${wp_site}"
