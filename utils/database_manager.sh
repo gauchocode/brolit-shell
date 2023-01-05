@@ -100,7 +100,7 @@ function database_list_menu() {
       databases="$(postgres_list_databases "${chosen_database_list_option}" "${mysql_container}")"
     fi
 
-    display --indent 8 --text "Database:${databases}" --tcolor GREEN
+    display --indent 8 --text "Database: ${databases}" --tcolor GREEN
 
   fi
 

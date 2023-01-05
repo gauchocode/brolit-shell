@@ -549,14 +549,20 @@ function wpcli_plugin_verify() {
 function wpcli_plugin_install() {
 
     local wp_site="${1}"
-    local plugin="${2}"
+    local install_type="${2}"
+    local plugin="${3}"
+
+    local wpcli_cmd
+
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    [[ ${install_type} == "docker" ]] && wpcli_cmd="docker-compose run --rm wordpress-cli wp"
 
     # Log
     display --indent 6 --text "- Installing plugin ${plugin}"
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin install ${plugin}" "false"
 
     # Command
-    sudo -u www-data wp --path="${wp_site}" plugin install "${plugin}" --quiet
+    "${wpcli_cmd}" plugin install "${plugin}" --quiet
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -574,6 +580,7 @@ function wpcli_plugin_install() {
         clear_previous_lines "1"
         display --indent 6 --text "- Installing plugin ${plugin}" --result "FAIL" --color RED
         log_event "info" "Something went wrong when trying to install plugin: ${plugin}" "false"
+        log_event "error" "Last command executed: \"${wpcli_cmd}\" plugin install ${plugin}" "false"
 
         return 1
 
@@ -647,14 +654,19 @@ function wpcli_plugin_get_version() {
 function wpcli_plugin_activate() {
 
     local wp_site="${1}"
-    local plugin="${2}"
+    local install_type="${2}"
+    local plugin="${3}"
+
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    [[ ${install_type} == "docker" ]] && wpcli_cmd="docker-compose run --rm wordpress-cli wp"
 
     # Log
     display --indent 6 --text "- Activating plugin ${plugin}"
     log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin activate ${plugin}"
 
     # Command
-    sudo -u www-data wp --path="${wp_site}" plugin activate "${plugin}" --quiet
+    "${wpcli_cmd}" plugin activate "${plugin}" --quiet
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -1339,6 +1351,7 @@ function wpcli_seoyoast_reindex() {
 function wpcli_default_plugins_installer() {
 
     local wp_site="${1}"
+    local project_install_type="${2}"
 
     local wp_defaults_file="/root/.brolit_wp_defaults.json"
 
@@ -1360,7 +1373,7 @@ function wpcli_default_plugins_installer() {
     whiptail_message "WP Plugin Installer" "This installer will install and activate the WordPress plugins configured on the file: ${wp_defaults_file}"
     [[ $? -eq 1 ]] && return 1
 
-    _load_brolit_wp_defaults "${wp_site}" "${wp_defaults_file}"
+    _load_brolit_wp_defaults "${wp_site}" "${project_install_type}" "${wp_defaults_file}"
 
 }
 
@@ -1377,7 +1390,8 @@ function wpcli_default_plugins_installer() {
 function _load_brolit_wp_defaults() {
 
     local wp_site="${1}"
-    local wp_defaults_file="${2}"
+    local project_install_type="${2}"
+    local wp_defaults_file="${3}"
 
     local plugin
     local plugin_source
@@ -1398,8 +1412,8 @@ function _load_brolit_wp_defaults() {
 
     # For each plugin
     for plugin in ${plugins}; do
-    
-    	log_event "debug" "Working with plugin: ${plugin}" "false"
+
+        log_event "debug" "Working with plugin: ${plugin}" "false"
 
         # Get plugin source
         plugin_source="$(json_read_field "${wp_defaults_file}" "PLUGINS[$index].source[].type")"
@@ -1408,7 +1422,7 @@ function _load_brolit_wp_defaults() {
         if [[ "${plugin_source}" == "official" ]]; then
 
             # Install plugin
-            wpcli_plugin_install "${wp_site}" "${plugin}"
+            wpcli_plugin_install "${wp_site}" "${project_install_type}" "${plugin}"
 
         else
 
@@ -1416,7 +1430,7 @@ function _load_brolit_wp_defaults() {
             plugin_url="$(json_read_field "${wp_defaults_file}" "PLUGINS[$index].source[].config[].url")"
 
             # Install plugin
-            wpcli_plugin_install "${wp_site}" "${plugin_url}"
+            wpcli_plugin_install "${wp_site}" "${project_install_type}" "${plugin_url}"
 
         fi
 
@@ -1424,7 +1438,7 @@ function _load_brolit_wp_defaults() {
         plugin_activate="$(json_read_field "${wp_defaults_file}" "PLUGINS[$index].activated")"
 
         # Activate plugin
-        [[ "${plugin_activate}" == "true" ]] && wpcli_plugin_activate "${wp_site}" "${plugin}"
+        [[ "${plugin_activate}" == "true" ]] && wpcli_plugin_activate "${wp_site}" "${project_install_type}" "${plugin}"
 
         # Increment
         index=$((index + 1))
