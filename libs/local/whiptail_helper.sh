@@ -106,10 +106,11 @@ function whiptail_selection_menu() {
     local whip_title="${1}"
     local whip_message="${2}"
     local whip_options="${3}"
+    local default_item="${4}"
 
     local whip_return
 
-    whip_return="$(whiptail --title "${whip_title}" --menu "${whip_message}" 20 78 10 $(for x in ${whip_options}; do echo "${x}    [X]"; done) 3>&1 1>&2 2>&3)"
+    whip_return="$(whiptail --title "${whip_title}" --menu "${whip_message}" 20 78 10 $(for x in ${whip_options}; do echo "${x}    [X]"; done) --default-item "${default_item}" 3>&1 1>&2 2>&3)"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
