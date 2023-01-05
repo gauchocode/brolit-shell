@@ -9,9 +9,7 @@ RUN apt-get update; \
         php8.2-gmagick \ 
         php8.2-gmp \ 
         php8.2-grpc \ 
-        php8.2-imagick \ 
         php8.2-imap \ 
-        php8.2-mcrypt \ 
         php8.2-mysql \ 
         php8.2-pgsql \ 
         php8.2-redis \ 
