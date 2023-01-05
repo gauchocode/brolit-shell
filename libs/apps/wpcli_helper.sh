@@ -562,7 +562,7 @@ function wpcli_plugin_install() {
     display --indent 6 --text "- Installing plugin ${plugin}"
 
     # Command
-    "${wpcli_cmd}" plugin install "${plugin}" --quiet
+    ${wpcli_cmd} plugin install "${plugin}" --quiet
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -665,7 +665,7 @@ function wpcli_plugin_activate() {
     display --indent 6 --text "- Activating plugin ${plugin}"
 
     # Command
-    "${wpcli_cmd}" plugin activate "${plugin}" --quiet
+    ${wpcli_cmd} plugin activate "${plugin}" --quiet
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -961,7 +961,7 @@ function wpcli_theme_delete() {
     log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} theme delete ${theme}" "false"
 
     # Command
-    "${wpcli_cmd}" theme delete "${theme}" --quiet
+    ${wpcli_cmd} theme delete "${theme}" --quiet
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then

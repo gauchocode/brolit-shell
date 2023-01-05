@@ -154,7 +154,7 @@ function wpcli_delete_themes_menu() {
   [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
 
   # Listing installed themes
-  wp_del_themes="$("${wpcli_cmd}" theme list --quiet --field=name --status=inactive --allow-root)"
+  wp_del_themes="$(${wpcli_cmd} theme list --quiet --field=name --status=inactive --allow-root)"
 
   # Log
   log_event "debug" "Running: ${wpcli_cmd} theme list --quiet --field=name --status=inactive --allow-root" "false"
