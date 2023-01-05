@@ -34,7 +34,9 @@ function database_ask_engine() {
 
     else
 
-      [[ ${PACKAGES_POSTGRES_STATUS} == "enabled" ]] && echo "POSTGRESQL" || return 1
+      [[ ${PACKAGES_POSTGRES_STATUS} == "enabled" ]] && echo "POSTGRESQL" && return 0
+
+      return 1
 
     fi
 
@@ -85,19 +87,19 @@ function database_list_menu() {
   local mysql_container="${2}"
 
   local database_list_options
-  local chosen_database_list_option
+  local chosen_database_option
 
   database_list_options=("all prod stage test dev demo")
 
-  chosen_database_list_option="$(whiptail_selection_menu "DATABASE MANAGER" " " "${database_list_options}")"
+  chosen_database_option="$(whiptail_selection_menu "DATABASE MANAGER" "Select a project stage for the database:" "${database_list_options}" "prod")"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${database_engine} == "MYSQL" ]]; then
-      databases="$(mysql_list_databases "${chosen_database_list_option}" "${mysql_container}")"
+      databases="$(mysql_list_databases "${chosen_database_option}" "${mysql_container}")"
     else
-      databases="$(postgres_list_databases "${chosen_database_list_option}" "${mysql_container}")"
+      databases="$(postgres_list_databases "${chosen_database_option}" "${mysql_container}")"
     fi
 
     display --indent 8 --text "Database: ${databases}" --tcolor GREEN
@@ -175,30 +177,20 @@ function database_manager_menu() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # LIST DATABASES
-    if [[ ${chosen_database_manager_option} == *"01"* ]]; then
+    [[ ${chosen_database_manager_option} == *"01"* ]] && database_list_menu "${chosen_database_engine}" "${mysql_container_selected}"
 
-      database_list_menu "${chosen_database_engine}" "${mysql_container_selected}"
-
-    fi
-
+    # CREATE DATABASE
     if [[ ${chosen_database_manager_option} == *"02"* ]]; then
 
-      # CREATE DATABASE
       chosen_database_name="$(whiptail_input "DATABASE MANAGER" "Insert the database name you want to create, example: my_domain_prod" "")"
 
       exitstatus=$?
 
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        if [[ ${chosen_database_engine} == "MYSQL" ]]; then
+        [[ ${chosen_database_engine} == "MYSQL" ]] && mysql_database_create "${chosen_database_name}"
 
-          mysql_database_create "${chosen_database_name}"
-
-        else
-
-          postgres_database_create "${chosen_database_name}"
-
-        fi
+        [[ ${chosen_database_engine} == "POSTGRESQL" ]] && postgres_database_create "${chosen_database_name}"
 
       fi
 
