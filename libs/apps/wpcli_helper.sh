@@ -663,7 +663,6 @@ function wpcli_plugin_activate() {
 
     # Log
     display --indent 6 --text "- Activating plugin ${plugin}"
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin activate ${plugin}"
 
     # Command
     "${wpcli_cmd}" plugin activate "${plugin}" --quiet
@@ -675,9 +674,10 @@ function wpcli_plugin_activate() {
         display --indent 6 --text "- Activating plugin ${plugin}" --result "DONE" --color GREEN
 
     else
-
+        # Log
         clear_previous_lines "1"
         display --indent 6 --text "- Activating plugin ${plugin}" --result "FAIL" --color RED
+        log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin activate ${plugin}"
 
     fi
 
@@ -949,12 +949,19 @@ function wpcli_theme_install() {
 function wpcli_theme_delete() {
 
     local wp_site="${1}"
-    local theme="${2}"
+    local install_type="${2}"
+    local theme="${3}"
+
+    local wpcli_cmd
+
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    [[ ${install_type} == "docker" ]] && wpcli_cmd="docker-compose run --rm wordpress-cli wp"
 
     log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} theme delete ${theme}" "false"
 
     # Command
-    sudo -u www-data wp --path="${wp_site}" theme delete "${theme}" --quiet
+    "${wpcli_cmd}" theme delete "${theme}" --quiet
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
