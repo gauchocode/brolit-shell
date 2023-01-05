@@ -556,7 +556,7 @@ function wpcli_plugin_install() {
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-    [[ ${install_type} == "docker" ]] && wpcli_cmd="docker-compose run --rm wordpress-cli wp"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose run --rm wordpress-cli wp"
 
     # Log
     display --indent 6 --text "- Installing plugin ${plugin}"
@@ -659,7 +659,7 @@ function wpcli_plugin_activate() {
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-    [[ ${install_type} == "docker" ]] && wpcli_cmd="docker-compose run --rm wordpress-cli wp"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose run --rm wordpress-cli wp"
 
     # Log
     display --indent 6 --text "- Activating plugin ${plugin}"
@@ -956,7 +956,7 @@ function wpcli_theme_delete() {
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-    [[ ${install_type} == "docker" ]] && wpcli_cmd="docker-compose run --rm wordpress-cli wp"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose run --rm wordpress-cli wp"
 
     log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} theme delete ${theme}" "false"
 
