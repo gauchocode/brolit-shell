@@ -9,41 +9,6 @@
 ################################################################################
 
 ################################################################################
-# Docker exec function for database controller
-#
-# Arguments:
-#  ${1} = ${docker_env_file}
-#
-# Outputs:
-#  ${mysql_docker_exec}
-################################################################################
-
-function database_docker_exec_mysql() {
-
-    local docker_env_file="${1}"
-
-    local project_name
-    local container_name
-    local mysql_user
-    local mysql_user_passw
-
-    declare -g MYSQL_DOCKER_EXEC
-
-    # container_name: mariadb_${PROJECT_NAME}
-    project_name="$(project_get_config_var "${docker_env_file}" "PROJECT_NAME")"
-
-    container_name="${project_name}_mariadb"
-    mysql_user="$(project_get_config_var "${docker_env_file}" "MYSQL_USER")"
-    mysql_user_passw="$(project_get_config_var "${docker_env_file}" "MYSQL_PASSWORD")"
-
-    MYSQL_DOCKER_EXEC="docker exec -i ${container_name} mysql -u${mysql_user} -p${mysql_user_passw}"
-
-    #echo "${mysql_docker_exec}"
-    export MYSQL_DOCKER_EXEC
-
-}
-
-################################################################################
 # List databases
 #
 # Arguments:

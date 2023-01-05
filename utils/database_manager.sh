@@ -47,7 +47,7 @@ function database_delete_menu() {
   local database_engine="${1}"
 
   # List databases
-  databases="$(database_list_all "all" "${database_engine}" "")"
+  databases="$(database_list_all "all" "${database_engine}" "default")"
 
   chosen_database="$(whiptail --title "DATABASE MANAGER" --menu "Choose the database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)"
 
@@ -89,7 +89,7 @@ function database_list_menu() {
 
   database_list_options=("all prod stage test dev demo")
 
-  chosen_database_list_option="$(whiptail --title "DATABASE MANAGER" --menu " " 20 78 10 $(for x in ${database_list_options}; do echo "$x [X]"; done) --default-item "all" 3>&1 1>&2 2>&3)"
+  chosen_database_list_option="$(whiptail_selection_menu "DATABASE MANAGER" " " "${database_list_options}")"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
