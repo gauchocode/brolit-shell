@@ -2070,7 +2070,7 @@ function project_delete_files() {
         [[ $? -eq 1 ]] && return 1
 
         # Log
-        #clear_previous_lines "2"
+        clear_previous_lines "10"
         display --indent 6 --text "- Deleting docker containers for project" --result "DONE" --color GREEN
         log_event "info" "Deleting docker containers for project '${project_domain}' ..." "false"
         log_event "debug" "docker-compose -f ${compose_file} rm --force --stop" "false"

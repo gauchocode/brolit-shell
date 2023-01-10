@@ -187,7 +187,7 @@ function docker_get_container_id() {
     container_id="$(docker ps | grep "${image_name}" | awk '{print $1;}')"
 
     if [[ -n ${container_id} ]]; then
-    
+
         # Return
         echo "${container_id}" && return 0
 
@@ -469,6 +469,172 @@ function docker_project_files_import() {
 
 }
 
+function docker_restore_project() {
+
+    local backup_to_restore="${1}"
+    local backup_status="${2}"
+    local backup_server="${3}"
+    local project_domain="${4}"
+    local project_domain_new="${5}"
+
+    # Extract backup
+    decompress "${BROLIT_TMP_DIR}/${backup_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+    [[ $? -eq 1 ]] && display --indent 6 --text "- Extracting Project Backup" --result "ERROR" --color RED && return 1
+
+    # Check project install type
+    project_install_type="$(project_get_install_type "${BROLIT_TMP_DIR}/${project_domain}")"
+    [[ -z ${project_install_type} ]] && display --indent 6 --text "- Checking Project Install Type" --result "ERROR" --color RED && return 1
+
+    # If project_install_type="default" ...
+    if [[ ${project_install_type} == "docker" ]]; then
+        # Log error
+        log_event "error" "Downloaded project already is a docker project" "false"
+        display --indent 6 --text "- Downloaded project already is a docker project" --result "ERROR" --color RED
+        return 1
+    fi
+
+    # Get project type
+    project_type="$(project_get_type "${BROLIT_TMP_DIR}/${project_domain}")"
+    [[ -z ${project_type} ]] && display --indent 6 --text "- Checking Project Type" --result "ERROR" --color RED && return 1
+
+    # If directory already exist
+    if [[ -d ${PROJECTS_PATH}/${project_domain} ]]; then
+
+        # Warning message
+        whiptail --title "Warning" --yesno "A docker project already exist for this domain. Do you want to restore the current backup on this docker stack? A backup of current directory will be stored on BROLIT tmp folder." 10 60 3>&1 1>&2 2>&3
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+            # Backup old project
+            _create_tmp_copy "${PROJECTS_PATH}/${project_domain}" "copy"
+            got_error=$?
+            [[ ${got_error} -eq 1 ]] && return 1
+
+        else
+
+            # Log
+            log_event "info" "The project directory already exist. User skipped operation." "false"
+            display --indent 6 --text "- Restore files" --result "SKIPPED" --color YELLOW
+
+            return 1
+
+        fi
+
+    fi
+
+    # Create new docker-compose stack for the ${project_domain} and ${project_type}
+    docker_project_install "${PROJECTS_PATH}" "${project_type}" "${project_domain}"
+    exitstatus=$?
+    [[ ${exitstatus} -eq 1 ]] && return 1
+
+    # TODO
+    # WARNING: ONLY WORKS ON WORDPRESS PROJECTS
+    if [[ ${project_type} == "wordpress" ]]; then
+        # Make a copy of wp-config.php
+        cp "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php" "${PROJECTS_PATH}/${project_domain}/wp-config.php"
+
+        # Remove actual WordPress files
+        rm -R "${PROJECTS_PATH}/${project_domain}/wordpress"
+
+        # Move project files to wordpress folder
+        move_files "${BROLIT_TMP_DIR}/${project_domain}" "${PROJECTS_PATH}/${project_domain}/wordpress"
+        [[ $? -eq 1 ]] && display --indent 6 --text "- Import files into docker volume" --result "ERROR" --color RED && return 1
+        display --indent 6 --text "- Import files into docker volume" --result "DONE" --color GREEN
+
+        # Make a copy of wp-config.php
+        cp "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php" "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php.bak"
+        # Move previous wp-config.php to project root
+        mv "${PROJECTS_PATH}/${project_domain}/wp-config.php" "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php"
+
+        # If .user.ini found, rename it (Wordfence issue workaround)
+        [[ -f "${PROJECTS_PATH}/${project_domain}/wordpress/.user.ini" ]] && mv "${PROJECTS_PATH}/${project_domain}/wordpress/.user.ini" "${PROJECTS_PATH}/${project_domain}/wordpress/.user.ini.bak"
+    fi
+
+    # Need refactor
+    if [[ ${project_type} != "wordpress" ]]; then
+
+        # Remove actual files
+        rm -R "${PROJECTS_PATH}/${project_domain}/application"
+
+        # Move project files to application folder
+        move_files "${BROLIT_TMP_DIR}/${project_domain}" "${PROJECTS_PATH}/${project_domain}/application"
+
+    fi
+
+    # TODO: update this to match monthly and weekly backups
+    project_name="$(project_get_name_from_domain "${project_domain}")"
+    project_stage="$(project_get_stage_from_domain "${project_domain}")"
+
+    db_name="${project_name}_${project_stage}"
+    #new_project_domain="${project_domain}"
+
+    # TODO: same code as in restore_project_backup! Maybe create a function for this
+
+    # Get backup rotation type (daily, weekly, monthly)
+    backup_rotation_type="$(backup_get_rotation_type "${backup_to_restore}")"
+
+    # Get backup date
+    project_backup_date="$(backup_get_date "${backup_to_restore}")"
+
+    ## Check ${backup_rotation_type}
+    if [[ ${backup_rotation_type} == "daily" ]]; then
+        db_to_restore="${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+    else
+        db_to_restore="${db_name}_database_${project_backup_date}-${backup_rotation_type}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+    fi
+
+    # Database backup full remote path
+    db_to_download="${backup_server}/projects-${backup_status}/database/${db_name}/${db_to_restore}"
+
+    db_to_restore="${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+    project_backup="${db_to_restore%%.*}.sql"
+
+    # Downloading Database Backup
+    storage_download_backup "${db_to_download}" "${BROLIT_TMP_DIR}"
+
+    # Decompress
+    decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+
+    # Read .env to get mysql pass
+    db_user_pass="$(project_get_config_var "${PROJECTS_PATH}/${project_domain}/.env" "MYSQL_PASSWORD")"
+
+    # Docker MySQL database import
+    docker_mysql_database_import "${project_name}_mysql" "${project_name}_user" "${db_user_pass}" "${project_name}_prod" "${BROLIT_TMP_DIR}/${project_backup}"
+
+    display --indent 6 --text "- Import database into docker volume" --result "DONE" --color GREEN
+
+    # Read wp-config to get WP DATABASE PREFIX and replace on docker .env file
+    #database_prefix_to_restore="$(wp_config_get_option "${BROLIT_TMP_DIR}/${chosen_project}" "table_prefix")"
+    database_prefix_to_restore="$(cat "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php.bak" | grep "\$table_prefix" | cut -d \' -f 2)"
+    if [[ -n ${database_prefix_to_restore} ]]; then
+        # Set restored $table_prefix on wp-config.php file
+        sed -i "s/\$table_prefix = 'wp_'/\$table_prefix = '${database_prefix_to_restore}'/g" "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php"
+        # Execute docker-compose command
+        ## Options:
+        ##    -f, --force   Don't ask to confirm removal
+        ##    -s, --stop    Stop the containers, if required, before removing
+        ##    -v            Remove any anonymous volumes attached to containers
+        docker-compose -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" rm --force -v --stop
+        # Rebuild docker image
+        docker-compose -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" up --detach
+        # Clear screen output
+        clear_previous_lines "15"
+    fi
+
+    # Show final console message
+    display --indent 6 --text "- Restore and dockerize project" --result "DONE" --color GREEN
+    #log_break "true"
+    echo "    *****************************************************************"
+    echo "    *                                                               *"
+    echo "    *  Project ${project_domain} was restored successfully!           "
+    echo "    *                                                               *"
+    echo "    *  Now you can delete the project from the old server.            "
+    echo "    *                                                               *"
+    echo "    *****************************************************************"
+
+}
+
 ################################################################################
 # Docker create new project install
 # Arguments:
@@ -542,7 +708,7 @@ function docker_project_install() {
 
     # Project Port (docker internal)
     ## Will find the next port available from 81 to 250
-    port_available="$(network_next_available_port "81" "250")"
+    port_available="$(network_next_available_port "81" "350")"
 
     # TODO: Only for wordpress/laravel/php projects
     # PHP Version
@@ -689,7 +855,7 @@ define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
         #
         #        ;;
         #
-    php)
+    php | laravel)
 
         # Create project directory
         mkdir -p "${project_path}"
@@ -740,8 +906,8 @@ define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
             # Log
             #wait 2
             clear_previous_lines "7"
-            log_event "info" "Downloading docker images." "false"
-            log_event "info" "Building docker images." "false"
+            log_event "info" "Downloading docker images" "false"
+            log_event "info" "Building docker images" "false"
             display --indent 6 --text "- Downloading docker images" --result "DONE" --color GREEN
             display --indent 6 --text "- Building docker images" --result "DONE" --color GREEN
 
