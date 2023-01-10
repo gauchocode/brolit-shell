@@ -1345,10 +1345,10 @@ function restore_project_backup() {
     # TODO: Check project type (WP, Laravel, etc)
 
     ## Will find the next port available from 81 to 250
-    port_available="$(network_next_available_port "81" "350")"
+    project_port="$(network_next_available_port "81" "350")"
 
     ## WP (Webserver)
-    sed -ie "s|^WP_PORT=.*$|WP_PORT=${port_available}|g" "${install_path}/.env"
+    sed -ie "s|^WP_PORT=.*$|WP_PORT=${project_port}|g" "${install_path}/.env"
 
     # Log
     log_event "info" "Trying to restore a docker project ..." "false"
