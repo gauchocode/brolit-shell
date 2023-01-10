@@ -624,7 +624,7 @@ function restore_backup_from_storage() {
       chosen_project="$(basename "${chosen_project}")"
 
       # Restore backup
-      restore_project_backup "${backup_to_restore}" "${chosen_remote_status}" "${chosen_project}" "${new_domain}"
+      restore_project_backup "${backup_to_restore}" "${chosen_remote_status}" "${chosen_server}" "${chosen_project}" "${new_domain}"
       [[ $? -eq 1 ]] && display --indent 6 --text "- Project Restore" --result "SKIPPED" --color YELLOW && return 1
 
       # Send notification
@@ -890,6 +890,7 @@ function restore_nginx_site_files() {
 #   0 if ok, 1 on error.
 ################################################################################
 
+# TODO: Refactor, should receive the path of the backup to restore with letencrypt files
 function restore_letsencrypt_site_files() {
 
   local domain="${1}"
@@ -991,9 +992,11 @@ function restore_backup_files() {
 
         # Stop containers
         docker-compose -f "${destination_dir}/docker-compose.yml" stop
+        clear_previous_lines "4"
 
         # Remove containers
         docker-compose -f "${destination_dir}/docker-compose.yml" rm --force
+        clear_previous_lines "5"
 
       fi
 
@@ -1284,8 +1287,9 @@ function restore_project_backup() {
 
   local project_backup_file="${1}"
   local project_backup_status="${2}"
-  local project_domain="${3}"
-  local project_domain_new="${4}"
+  local project_backup_server="${3}"
+  local project_domain="${4}"
+  local project_domain_new="${5}"
 
   # Log
   log_event "debug" "project_backup_file=${project_backup_file}" "false"
@@ -1340,18 +1344,21 @@ function restore_project_backup() {
     # TODO: Check if docker and docker-compose are installed
     # TODO: Check project type (WP, Laravel, etc)
 
-    # Read WP_PORT on .env
-    project_port="$(project_get_config_var "${install_path}/.env" "WP_PORT")"
+    ## Will find the next port available from 81 to 250
+    port_available="$(network_next_available_port "81" "350")"
+
+    ## WP (Webserver)
+    sed -ie "s|^WP_PORT=.*$|WP_PORT=${port_available}|g" "${install_path}/.env"
 
     # Log
-    log_event "info" "Trying to restore a docker project." "false"
+    log_event "info" "Trying to restore a docker project ..." "false"
     display --indent 6 --text "- Trying to restore a docker project ..." # --result "DONE" --color GREEN
 
     # Rebuild docker image
     docker-compose -f "${install_path}/docker-compose.yml" up --detach --build
 
     # Clear screen output
-    clear_previous_lines "3"
+    clear_previous_lines "4"
 
     # TODO: Check errors
 
@@ -1365,8 +1372,8 @@ function restore_project_backup() {
     # Reading config file
 
     ## Get project_type && project_install_type
-    project_type="$(project_get_type "${install_path}")"
-    project_install_type="$(project_get_install_type "${install_path}")"
+    #project_type="$(project_get_type "${install_path}")"
+    #project_install_type="$(project_get_install_type "${install_path}")"
 
     ## Get database information
     db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}" "${project_install_type}")"
@@ -1381,8 +1388,8 @@ function restore_project_backup() {
 
       # Get backup date
       project_backup_date="$(backup_get_date "${project_backup_file}")"
-
-      # Download database backup
+      
+      ## Check ${backup_rotation_type}
       if [[ ${backup_rotation_type} == "daily" ]]; then
         db_to_restore="${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
       else
@@ -1390,7 +1397,7 @@ function restore_project_backup() {
       fi
 
       # Database backup full remote path
-      db_to_download="${chosen_server}/projects-${project_backup_status}/database/${db_name}/${db_to_restore}"
+      db_to_download="${project_backup_server}/projects-${project_backup_status}/database/${db_name}/${db_to_restore}"
 
       # Downloading Database Backup
       storage_download_backup "${db_to_download}" "${BROLIT_TMP_DIR}"
@@ -1404,7 +1411,7 @@ function restore_project_backup() {
         if [[ ${exitstatus} -eq 0 ]]; then
 
           # Get dropbox backup list
-          remote_backup_path="${chosen_server}/projects-${project_backup_status}/database/${db_name}"
+          remote_backup_path="${project_backup_server}/projects-${project_backup_status}/database/${db_name}"
           remote_backup_list="$(storage_list_dir "${remote_backup_path}")"
 
           # Select Backup File
