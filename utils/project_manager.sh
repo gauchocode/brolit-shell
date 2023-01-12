@@ -444,7 +444,7 @@ function project_manager_menu_new_project_type_new_project() {
         project_domain="$(basename "${chosen_project}")"
 
         # NEW NEW NEW NEW
-        docker_restore_project "${BROLIT_TMP_DIR}/${backup_to_restore}" "${chosen_remote_status}" "${chosen_server}" "${project_domain}" ""
+        docker_restore_project "${backup_to_restore}" "${chosen_remote_status}" "${chosen_server}" "${project_domain}" ""
 
         prompt_return_or_finish
 
