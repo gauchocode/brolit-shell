@@ -365,6 +365,7 @@ function dropbox_list_directory() {
 
     # Log
     log_event "debug" "Listing directory ${directory} on Dropbox" "false"
+    log_event "debug" "Executing: ${DROPBOX_UPLOADER} -hq list \"${directory}\" | awk '{print $ 3;}'" "false"
 
     # Dropbox API returns files names on the third column
     dir_list="$("${DROPBOX_UPLOADER}" -hq list "${directory}" | awk '{print $3;}')"
@@ -383,7 +384,6 @@ function dropbox_list_directory() {
         # Log
         log_event "info" "Listing directory: ${directory}" "false"
         log_event "info" "Remote list: ${dir_list}" "false"
-        
 
         echo "${dir_list}" && return 0
 
