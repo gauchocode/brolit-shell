@@ -215,6 +215,7 @@ function mysql_list_databases() {
     if [[ -n ${container_name} ]]; then
 
         # Get MYSQL_USER and MYSQL_PASSWORD from container
+        ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
         mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
         mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
 
