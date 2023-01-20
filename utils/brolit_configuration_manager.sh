@@ -1551,7 +1551,7 @@ function _brolit_configuration_load_portainer_agent() {
 
     PACKAGES_PORTAINER_AGENT_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.portainer_agent[].status")"
 
-    docker="$(package_is_installed "docker")"
+    docker="$(package_is_installed "docker.io")"
     docker_installed="$?"
     if [[ ${docker_installed} -eq 0 ]]; then
         log_event "debug" "Docker installed on: ${docker}. Now checking if Portainer Agent image is present..." "false"
