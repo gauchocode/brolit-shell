@@ -677,7 +677,6 @@ function _brolit_configuration_load_nginx() {
 
     # Globals
     declare -g PACKAGES_NGINX_STATUS
-    declare -g PACKAGES_NGINX_CONFIG_VERSION
     declare -g PACKAGES_NGINX_CONFIG_PORTS
 
     declare -g WSERVER="/etc/nginx" # Webserver config files location
@@ -689,9 +688,6 @@ function _brolit_configuration_load_nginx() {
     PACKAGES_NGINX_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.nginx[].status")"
 
     if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
-
-        PACKAGES_NGINX_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.nginx[].version")"
-        [[ -z ${PACKAGES_NGINX_CONFIG_VERSION} ]] && die "Error reading PACKAGES_NGINX_CONFIG_VERSION from server config file."
 
         PACKAGES_NGINX_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.nginx[].config[].port")"
         [[ -z ${PACKAGES_NGINX_CONFIG_PORTS} ]] && die "Error reading PACKAGES_NGINX_CONFIG_PORTS from server config file."
@@ -706,7 +702,7 @@ function _brolit_configuration_load_nginx() {
 
     fi
 
-    export NGINX WSERVER PACKAGES_NGINX_STATUS PACKAGES_NGINX_CONFIG_VERSION PACKAGES_NGINX_CONFIG_PORTS
+    export NGINX WSERVER PACKAGES_NGINX_STATUS PACKAGES_NGINX_CONFIG_PORTS
 
 }
 
@@ -1484,7 +1480,7 @@ function _brolit_configuration_load_portainer() {
 
     PACKAGES_PORTAINER_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].status")"
 
-    docker="$(package_is_installed "docker")"
+    docker="$(package_is_installed "docker.io")"
     docker_installed="$?"
     if [[ ${docker_installed} -eq 0 ]]; then
         log_event "debug" "Docker installed on: ${docker}. Now checking if Portainer image is present..." "false"
