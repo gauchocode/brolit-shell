@@ -1264,7 +1264,7 @@ function _brolit_configuration_load_netdata_agent() {
 
     PACKAGES_NETDATA_AGENT_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].status")"
 
-    docker="$(package_is_installed "docker")"
+    docker="$(package_is_installed "docker.io")"
     docker_installed="$?"
     if [[ ${docker_installed} -eq 0 ]]; then
         log_event "debug" "Docker installed on: ${docker}. Now checking if Netdata Agent image is present..." "false"
@@ -1431,7 +1431,7 @@ function _brolit_configuration_load_docker() {
     PACKAGES_DOCKER_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.docker[].status")"
     PACKAGES_DOCKER_COMPOSE_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.docker[].compose[].status")"
 
-    DOCKER="$(package_is_installed "docker")"
+    DOCKER="$(package_is_installed "docker.io")"
     DOCKER_COMPOSE="$(package_is_installed "docker-compose")"
 
     if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then
@@ -1608,7 +1608,7 @@ function _brolit_configuration_load_mailcow() {
 
     PACKAGES_MAILCOW_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.mailcow[].status")"
 
-    docker="$(package_is_installed "docker")"
+    docker="$(package_is_installed "docker.io")"
     docker_installed="$?"
     if [[ ${docker_installed} -eq 0 ]]; then
         log_event "debug" "Docker installed on: ${docker}. Now checking if Portainer image is present..." "false"
