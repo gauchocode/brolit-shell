@@ -1682,7 +1682,7 @@ function menu_main_options() {
 #   nothing
 ################################################################################
 
-function menu_config_changes_detected() {
+function pkg_config_changes_detected() {
 
   local app_setup="${1}"
   local bypass_prompt="${2}"
