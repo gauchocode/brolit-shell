@@ -204,7 +204,7 @@ function server_app_setup() {
             log_subsection "Docker Installer"
             package_install_if_not "docker.io"
         else
-            package_purge "docker"
+            package_purge "docker.io"
         fi
 
         ;;
