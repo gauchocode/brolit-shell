@@ -52,7 +52,7 @@ function _netdata_agent_alerts_configuration() {
 #  nothing
 ################################################################################
 
-# TODO: need update
+# TODO: needs update
 
 function _netdata_agent_required_packages() {
 
@@ -64,10 +64,10 @@ function _netdata_agent_required_packages() {
 
   # Force update brolit_conf.json
   PACKAGES_DOCKER_STATUS="enabled"
-  PACKAGES_DOCKER_COMPOSE_STATUS="enabled"
 
   json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.docker[].status" "${PACKAGES_DOCKER_STATUS}"
-  json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.docker-compose[].status" "${PACKAGES_DOCKER_COMPOSE_STATUS}"
+
+  export PACKAGES_DOCKER_STATUS
 
 }
 
@@ -211,10 +211,8 @@ function netdata_agent_installer() {
 
   # Force update brolit_conf.json
   PACKAGES_DOCKER_STATUS="enabled"
-  PACKAGES_DOCKER_COMPOSE_STATUS="enabled"
   json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.docker[].status" "${PACKAGES_DOCKER_STATUS}"
-  json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.docker[].compose[].status" "${PACKAGES_DOCKER_COMPOSE_STATUS}"
-  export PACKAGES_DOCKER_STATUS PACKAGES_DOCKER_COMPOSE_STATUS
+  export PACKAGES_DOCKER_STATUS
 
   # Check if netdata_agent is running
   netdata_agent="$(docker_get_container_id "agent_netdata")"

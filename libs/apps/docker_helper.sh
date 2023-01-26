@@ -28,9 +28,8 @@ function docker_version() {
 
         docker_version="$(docker version --format '{{.Server.Version}}')"
 
-        echo "${docker_version}"
+        echo "${docker_version}" && return 0
 
-        return 0
     else
 
         return 1

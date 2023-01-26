@@ -286,8 +286,7 @@
                 "status": "disabled",
                 "compose": [
                     {
-                        "status": "enabled",
-                        "version": "default"
+                        "status": "enabled"
                     }
                 ]
             }
