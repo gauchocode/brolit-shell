@@ -27,7 +27,7 @@
 
 function nginx_installer() {
 
-    local nginx_version="${1}"
+    local nginx_bin
 
     nginx_bin="$(package_is_installed "nginx")"
 
@@ -43,26 +43,26 @@ function nginx_installer() {
 
         log_subsection "Nginx Installer"
 
-        if [[ -z "${nginx_version}" || ${nginx_version} == "default" ]]; then
+#        if [[ -z "${nginx_version}" || ${nginx_version} == "default" ]]; then
 
             package_install_if_not "nginx"
 
-        else
-
-            display --indent 6 --text "- Nginx custom installation"
-
-            add_ppa "nginx/stable"
-
-            apt-get update -qq >/dev/null
-
-            # Install
-            apt-get --yes install nginx -qq >/dev/null
-
-            # Log
-            clear_previous_lines
-            display --indent 6 --text "- Nginx custom installation" --result "DONE" --color GREEN
-
-        fi
+#        else
+#
+#            display --indent 6 --text "- Nginx custom installation"
+#
+#            add_ppa "nginx/stable"
+#
+#            apt-get update -qq >/dev/null
+#
+#            # Install
+#            apt-get --yes install nginx -qq >/dev/null
+#
+#            # Log
+#            clear_previous_lines
+#            display --indent 6 --text "- Nginx custom installation" --result "DONE" --color GREEN
+#
+#        fi
 
     fi
 
@@ -163,13 +163,13 @@ function nginx_installer_menu() {
 
             if [[ ${chosen_nginx_installer_option} == *"01"* ]]; then
                 log_subsection "Nginx Installer"
-                nginx_installer "default"
+                nginx_installer
                 nginx_reconfigure
             fi
 
             if [[ ${chosen_nginx_installer_option} == *"02"* ]]; then
                 log_subsection "Nginx Installer"
-                nginx_installer ""
+                nginx_installer
                 nginx_reconfigure
             fi
 

@@ -92,7 +92,7 @@ function package_update() {
 }
 
 ################################################################################
-# Check if package is installed. Ex: package_is_installed "mysql-server"
+# Check if package is installed.
 #
 # Arguments:
 #   ${1} = ${package}
