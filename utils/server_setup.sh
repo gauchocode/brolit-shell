@@ -41,7 +41,7 @@ function server_app_setup() {
 
         if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
             # Nginx Installer
-            nginx_installer "${PACKAGES_NGINX_CONFIG_VERSION}"
+            nginx_installer
             # Reconfigure
             nginx_reconfigure
             nginx_new_default_server
@@ -94,7 +94,7 @@ function server_app_setup() {
             mysql_default_installer
             mysql_initial_config
         else
-            package_purge "mysql-server"
+            mysql_purge_installation
         fi
 
         ;;
@@ -282,7 +282,7 @@ function server_setup() {
         if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
 
             # Nginx Installer
-            nginx_installer "default"
+            nginx_installer
             nginx_reconfigure
 
         fi
