@@ -1422,35 +1422,26 @@ function _brolit_configuration_load_docker() {
     declare -g DOCKER
     declare -g PACKAGES_DOCKER_STATUS
     declare -g DOCKER_COMPOSE
-    declare -g PACKAGES_DOCKER_COMPOSE_STATUS
 
     PACKAGES_DOCKER_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.docker[].status")"
-    PACKAGES_DOCKER_COMPOSE_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.docker[].compose[].status")"
 
     DOCKER="$(package_is_installed "docker.io")"
     DOCKER_COMPOSE="$(package_is_installed "docker-compose")"
 
     if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then
 
-        # Checking if docker is not installed
-        if [[ -z ${DOCKER} ]]; then
+        # Checking if pkg is not installed
+        [[ -z ${DOCKER} || -z ${DOCKER_COMPOSE} ]] && menu_config_changes_detected "docker" "true"
 
-            menu_config_changes_detected "docker" "true"
-
-            [[ ${PACKAGES_DOCKER_COMPOSE_STATUS} == "enabled" ]] && menu_config_changes_detected "docker-compose" "true"
-
-        fi
 
     else
 
-        # Checking if docker is installed
-        [[ -n ${DOCKER} ]] && menu_config_changes_detected "docker" "true"
-
-        [[ -n ${DOCKER_COMPOSE} ]] && menu_config_changes_detected "docker-compose" "true"
+        # Checking if pkg is installed
+        [[ -n ${DOCKER} || -n ${DOCKER_COMPOSE} ]] && menu_config_changes_detected "docker" "true"
 
     fi
 
-    export DOCKER DOCKER_COMPOSE PACKAGES_DOCKER_STATUS PACKAGES_DOCKER_COMPOSE_STATUS
+    export DOCKER PACKAGES_DOCKER_STATUS DOCKER_COMPOSE
 
 }
 

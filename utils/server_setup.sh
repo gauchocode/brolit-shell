@@ -203,18 +203,9 @@ function server_app_setup() {
         if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then
             log_subsection "Docker Installer"
             package_install_if_not "docker.io"
-        else
-            package_purge "docker.io"
-        fi
-
-        ;;
-
-    "docker-compose")
-
-        if [[ ${PACKAGES_DOCKER_COMPOSE_STATUS} == "enabled" ]]; then
-            log_subsection "Docker compose Installer"
             package_install_if_not "docker-compose"
         else
+            package_purge "docker.io"
             package_purge "docker-compose"
         fi
 
