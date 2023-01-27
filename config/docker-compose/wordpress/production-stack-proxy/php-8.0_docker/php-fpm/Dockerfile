@@ -3,6 +3,7 @@ WORKDIR "/application"
 
 RUN apt-get update; \
     apt-get -y --no-install-recommends install \
+        vim \ 
         git \ 
         php8.0-bz2 \ 
         php8.0-gd \ 

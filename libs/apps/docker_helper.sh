@@ -595,6 +595,9 @@ function docker_restore_project() {
     # Decompress
     decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
 
+    # Change permissions
+    wp_change_permissions "${PROJECTS_PATH}/${project_domain}/wordpress"
+
     # Read .env to get mysql pass
     db_user_pass="$(project_get_config_var "${PROJECTS_PATH}/${project_domain}/.env" "MYSQL_PASSWORD")"
 
@@ -831,12 +834,16 @@ if (isset(\$_SERVER['HTTP_X_FORWARDED_HOST'])) {\n\
 define('WP_HOME','https://${project_domain}/');\n\
 define('WP_SITEURL','https://${project_domain}/');\n\
 define('DISALLOW_FILE_EDIT', true);\n\
+define('FS_METHOD', 'direct');\n\
 define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
+
+            # TODO: change wp table prefix
+
+            # Change permissions
+            wp_change_permissions "${project_path}/wordpress"
 
             # Remove tmp file
             rm "${project_path}/wordpress/wp-config.phpe"
-
-            # TODO: change wp table prefix
 
             # Log
             log_event "info" "Making changes on wp-config.php to work with nginx proxy on host." "false"
