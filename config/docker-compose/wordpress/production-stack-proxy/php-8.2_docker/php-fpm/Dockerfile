@@ -3,6 +3,8 @@ WORKDIR "/wordpress"
 
 RUN apt-get update; \
     apt-get -y --no-install-recommends install \
+        vim \ 
+        git \ 
         php8.2-bcmath \ 
         php8.2-bz2 \ 
         php8.2-gd \ 

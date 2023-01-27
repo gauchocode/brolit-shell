@@ -255,32 +255,31 @@ function _wp_config_set_option() {
 # Change WordPress directory permissions
 #
 # Arguments:
-#  ${1} = ${project_dir}
+#  ${1} = ${wordpress_dir}
 #
 # Outputs:
 #  None
 ################################################################################
 
-# TODO: check this ref: https://stackoverflow.com/questions/18352682/correct-file-permissions-for-wordpress
-
 function wp_change_permissions() {
 
-  local project_dir="${1}"
+  local wordpress_dir="${1}"
 
   # Change ownership
-  change_ownership "www-data" "www-data" "${project_dir}"
+  change_ownership "www-data" "www-data" "${wordpress_dir}"
 
-  find "${project_dir}" -type d -exec chmod g+s {} \;
+  find "${wordpress_dir}" -type d -exec chmod g+s {} \;
 
-  if [[ -d "${project_dir}/wp-content" ]]; then
+  if [[ -d "${wordpress_dir}/wp-content" ]]; then
 
-    chmod g+w "${project_dir}/wp-content"
-    chmod -R g+w "${project_dir}/wp-content/themes"
-    chmod -R g+w "${project_dir}/wp-content/plugins"
+    # Change directory permissions rwxr-xr-x
+    find "${wordpress_dir}" -type d -exec chmod 755 {} \;
+    # Change file permissions rw-r--r--
+    find "${wordpress_dir}" -type f -exec chmod 644 {} \;
 
   fi
 
-  log_event "info" "Permissions changes for: ${project_dir}" "false"
+  log_event "info" "Permissions changes for: ${wordpress_dir}" "false"
   display --indent 6 --text "- Setting default permissions on WordPress" --result "DONE" --color GREEN
 
 }
