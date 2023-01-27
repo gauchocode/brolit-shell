@@ -3,6 +3,8 @@ WORKDIR "/wordpress"
 
 RUN apt-get update; \
     apt-get -y --no-install-recommends install \
+        vim \ 
+        git \ 
         php7.4-bcmath \ 
         php7.4-bz2 \ 
         php7.4-intl \ 
