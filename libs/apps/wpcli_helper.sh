@@ -376,12 +376,18 @@ function wpcli_core_reinstall() {
     local wp_version="${2}"
 
     local wpcli_result
+    local wpcli_cmd
+
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
 
     if [[ -n ${wp_site} ]]; then
 
-        log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} core download --skip-content --force" "false"
+        log_event "debug" "Running: ${wpcli_cmd} core download --skip-content --force" "false"
 
-        wpcli_result=$(sudo -u www-data wp --path="${wp_site}" core download --skip-content --force 2>&1 | grep "Success" | cut -d ":" -f1)
+        # Command
+        wpcli_result=$(${wpcli_cmd} core download --skip-content --force 2>&1 | grep "Success" | cut -d ":" -f1)
 
         if [[ "${wpcli_result}" = "Success" ]]; then
 
