@@ -19,6 +19,7 @@ fi
 
 ### Load Main library
 chmod +x "${BROLIT_MAIN_DIR}/libs/commons.sh"
+# shellcheck source=/root/brolit-shell/libs/commons.sh
 source "${BROLIT_MAIN_DIR}/libs/commons.sh"
 
 ### Init #######################################################################
