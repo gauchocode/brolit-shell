@@ -315,12 +315,12 @@ function project_manager_menu_new_project_type_new_project() {
   whip_title="PROJECT CREATION"
   whip_description=" "
 
-  # NEW
   project_creation_type_options=(
     "01)" "NEW PROJECT"
     "02)" "NEW PROJECT FROM BACKUP"
     "03)" "DOCKERIZE PROJECT FROM BACKUP"
-    #"03)" "NEW PROJECT FROM GIT REPOSITORY"
+    #"04)" "DE-DOCKERIZE PROJECT FROM BACKUP"
+    #"04)" "NEW PROJECT FROM GIT REPOSITORY"
   )
 
   chosen_project_creation_type_option="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_creation_type_options[@]}" 3>&1 1>&2 2>&3)"
@@ -378,8 +378,10 @@ function project_manager_menu_new_project_type_new_project() {
         # Check if domain is a valid domainname
         if [[ ! "${chosen_domain}" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$ ]]; then
 
+          # Log
           display --indent 6 --text "- Domain is not valid" --result FAIL --color RED
           log_event "error" "Domain is not valid" "false"
+
           prompt_return_or_finish
           project_manager_menu_new_project_type_new_project
 

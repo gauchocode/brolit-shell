@@ -48,7 +48,7 @@ function discord_send_notification() {
         log_event "error" "Discord notification error." "false"
         log_event "error" "Please, check webhook url on .brolit_conf.json" "false"
         display --indent 6 --text "- Sending Discord notification" --result "FAIL" --color RED
-        display --indent 8 --text "Check webhook url on .brolit_conf.json" --result "FAIL" --color RED
+        display --indent 8 --text "Check webhook url on .brolit_conf.json" --tcolor YELLOW
 
         return 1
 
