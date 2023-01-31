@@ -33,7 +33,7 @@ count_all_sites=$(find "${PROJECTS_PATH}" -maxdepth 1 -type d -printf '.' | wc -
 count_all_sites=$((count_all_sites - 1))
 
 log_event "info" "Found ${count_all_sites} directories" "false"
-display --indent 2 --text "- Directories found" --result "${count_all_sites}" --color YELLOW
+display --indent 6 --text "- Directories found" --result "${count_all_sites}" --color WHITE
 
 # GLOBALS
 keyword="wp-content"

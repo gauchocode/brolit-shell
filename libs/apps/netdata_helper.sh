@@ -12,6 +12,8 @@
 
 function netdata_alerts_disable() {
 
+    local netdata_api_key
+
     # Doc: https://learn.netdata.cloud/docs/agent/web/api/health
 
     # The API is available by default, but it is protected by an api authorization token
@@ -33,6 +35,8 @@ function netdata_alerts_disable() {
 }
 
 function netdata_alerts_enable() {
+
+    local netdata_api_key
 
     # Doc: https://learn.netdata.cloud/docs/agent/web/api/health
 
