@@ -66,28 +66,40 @@ function wp_download() {
 #  0 if ok, 1 on error.
 ################################################################################
 
-function wp_is_project() {
+function wp_project() {
 
   local project_dir="${1}"
 
-  local is_wp="false"
+  local install_type
 
   log_event "info" "Checking if ${project_dir} is a WordPress project ..." "false"
 
   # Check if it has wp-config.php
   if [[ -f "${project_dir}/wp-config.php" ]]; then
 
-    is_wp="true"
-    log_event "info" "${project_dir} is a WordPress project" "false"
+    install_type="default"
+    log_event "info" "${project_dir} is a ${install_type} WordPress project" "false"
 
     # Return
-    echo "${is_wp}" && return 0
+    echo "${install_type}" && return 0
 
   else
 
-    log_event "info" "${project_dir} is not a WordPress project" "false"
+    if [[ -f "${project_dir}/wordpress/wp-config.php" ]]; then
 
-    return 1
+      install_type="docker"
+      log_event "info" "${project_dir} is a ${install_type} WordPress project" "false"
+
+      # Return
+      echo "${install_type}" && return 0
+
+    else
+
+      log_event "info" "${project_dir} is not a WordPress project" "false"
+
+      return 1
+
+    fi
 
   fi
 
