@@ -507,6 +507,9 @@ function wpcli_core_verify() {
     # Command
     mapfile verify_core < <(${wpcli_cmd} core verify-checksums 2>&1)
 
+    # Remove from array elements containing "readme.html"
+    verify_core=("${verify_core[@]//*readme.html*}")
+
     # TODO: check exit code
 
     display --indent 6 --text "- WordPress verify-checksums" --result "DONE" --color GREEN

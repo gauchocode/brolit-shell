@@ -13,6 +13,8 @@ _wordpress_cronned_tasks() {
   local notification_text
   local wpcli_core_verify_result
 
+  log_section "Verifying WordPress Checksums"
+
   # Get all directories
   all_sites="$(get_all_directories "${PROJECTS_PATH}")"
 
@@ -22,15 +24,15 @@ _wordpress_cronned_tasks() {
 
   # Log
   log_event "info" "Found ${count_all_sites} directories" "false"
-  display --indent 2 --text "- Directories found" --result "${count_all_sites}" --color YELLOW
+  display --indent 6 --text "- Directories found" --result "${count_all_sites}" --color WHITE
+  log_break "true"
 
   # GLOBALS
-  whitelisted_wp_files="readme.html,license.txt,wp-config-sample.php"
   file_index=0
 
   for site in ${all_sites}; do
 
-    log_event "info" "Processing [${site}] ..."
+    log_event "info" "Processing [${site}] ..." "false"
 
     project_name="$(basename "${site}")"
 
@@ -47,12 +49,14 @@ _wordpress_cronned_tasks() {
         notification_text=""
         [[ ${wp_install_type} == "docker" ]] && site="${site}/wordpress"
 
+        log_subsection "Working with ${site}"
+
         # VERIFY_WP
         mapfile -t wpcli_core_verify_results < <(wpcli_core_verify "${site}" "${wp_install_type}")
         for wpcli_core_verify_result in "${wpcli_core_verify_results[@]}"; do
 
           # Ommit empty elements created by spaces on mapfile
-          if [[ "${wpcli_core_verify_result}" != "" ]]; then
+          if [[ -n "${wpcli_core_verify_result}" ]]; then
 
             # Check results
             wpcli_core_verify_result_file="$(echo "${wpcli_core_verify_result}" | grep "File doesn't" | cut -d ":" -f3)"
@@ -61,7 +65,7 @@ _wordpress_cronned_tasks() {
             wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
 
             # Ommit empty elements
-            if [[ ${wpcli_core_verify_result_file} != "" ]] && [[ ${whitelisted_wp_files} != *"${wpcli_core_verify_result_file}"* ]]; then
+            if [[ -n ${wpcli_core_verify_result_file} ]]; then
 
               log_event "info" "${wpcli_core_verify_result_file}" "false"
 
@@ -79,7 +83,7 @@ _wordpress_cronned_tasks() {
           log_event "error" "WordPress Checksum failed!" "false"
 
           # Send notification
-          send_notification "⛔ ${SERVER_NAME}" "WordPress checksum failed for site ${project_name}: ${notification_text}"
+          send_notification "⛔ ${SERVER_NAME}" "WordPress checksum failed for site ${project_name}: ${notification_text}" ""
 
         else
 
@@ -98,8 +102,8 @@ _wordpress_cronned_tasks() {
     file_index=$((file_index + 1))
 
     # Log
-    log_event "info" "Processed ${file_index} of ${count_all_sites} projects"
-    log_break "false"
+    log_event "info" "Processed ${file_index} of ${count_all_sites} projects" "false"
+    log_break "true"
 
   done
 }
