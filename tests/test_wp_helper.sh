@@ -105,11 +105,11 @@ function test_is_wp_project() {
 
     log_subsection "Test: test_is_wp_project"
 
-    result="$(wp_is_project "${project_path}")"
+    result="$(wp_project "${project_path}")"
     if [[ ${result} = "true" ]]; then
-        display --indent 6 --text "- wp_is_project result ${result}" --result "PASS" --color WHITE
+        display --indent 6 --text "- wp_project result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- wp_is_project" --result "FAIL" --color RED
+        display --indent 6 --text "- wp_project" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
