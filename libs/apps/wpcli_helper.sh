@@ -511,7 +511,7 @@ function wpcli_core_verify() {
     verify_core=("${verify_core[@]//*readme.html*/}")
     verify_core=("${verify_core[@]//*WordPress installation*/}")
 
-    if [[ -n "${verify_core[1]}" ]]; then
+    if [[ -z "${verify_core[1]}" ]]; then
 
         # Log
         clear_previous_lines "1"
