@@ -649,14 +649,15 @@ function restore_backup_from_storage() {
       storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
       [[ $? -eq 1 ]] && display --indent 6 --text "- Downloading Project Backup" --result "ERROR" --color RED && return 1
 
-      # For convention at this point ${chosen_project} == ${project_domain}
-      backup_to_restore="$(basename "${backup_to_dowload}")"
-      # Get project_domain
-      chosen_project="$(dirname "${backup_to_dowload}")"
-      chosen_project="$(basename "${chosen_project}")"
+      # Get project backup file
+      project_backup_file="$(basename "${backup_to_dowload}")"
 
-      #restore_backup_project_files "${chosen_project}" "${backup_to_restore}"
-      restore_backup_project_files "${backup_to_restore}" "${chosen_project}" ""
+      # Get project_domain
+      ## For convention at this point ${chosen_project} == ${project_domain}
+      chosen_project="$(dirname "${backup_to_dowload}")"
+      project_domain="$(basename "${chosen_project}")"
+
+      restore_backup_project_files "${project_backup_file}" "${project_domain}" ""
 
       ;;
 
@@ -1138,6 +1139,8 @@ function restore_backup_project_files() {
 
   local install_path
   local exitstatus
+
+  [[ -z ${project_domain_new} ]] && project_domain_new="${project_domain}"
 
   install_path="${PROJECTS_PATH}/${project_domain_new}"
 
