@@ -12,6 +12,8 @@ _wordpress_cronned_tasks() {
   local count_all_sites
   local notification_text
   local wpcli_core_verify_result
+  local exitstatus
+  local verify_status
 
   log_section "Verifying WordPress Checksums"
 
@@ -51,31 +53,33 @@ _wordpress_cronned_tasks() {
 
         log_subsection "Site: ${site}"
 
-        # VERIFY_WP
-        mapfile -t wpcli_core_verify_results < <(wpcli_core_verify "${site}" "${wp_install_type}")
-        
-        for wpcli_core_verify_result in "${wpcli_core_verify_results[@]}"; do
+        # Verify WordPress Checksums
+        wpcli_core_verify_output="$(wpcli_core_verify "${site}" "${wp_install_type}")"
+        verify_status=$?
+        if [ ${verify_status} -eq 1 ]; then
 
-          # Ommit empty elements created by spaces on mapfile
-          if [[ -n "${wpcli_core_verify_result}" ]]; then
+          mapfile -t wpcli_core_verify_results < <("${wpcli_core_verify_output}")
 
-            # Check results
-            wpcli_core_verify_result_file="$(echo "${wpcli_core_verify_result}" | grep "File doesn't" | cut -d ":" -f3)"
+          for wpcli_core_verify_result in "${wpcli_core_verify_results[@]}"; do
 
-            # Remove white space
-            wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
+            # Will ommit empty elements created by spaces on mapfile
+            if [[ -n "${wpcli_core_verify_result}" ]]; then
 
-            # Log
-            log_event "info" "${wpcli_core_verify_result_file}" "false"
+              # Check results
+              wpcli_core_verify_result_file="$(echo "${wpcli_core_verify_result}" | grep "File doesn't" | cut -d ":" -f3)"
 
-            # Telegram text
-            notification_text+="${wpcli_core_verify_result_file}\n"
+              # Remove white space
+              wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
 
-          fi
+              # Log
+              log_event "info" "${wpcli_core_verify_result_file}" "false"
 
-        done
+              # Telegram text
+              notification_text+="${wpcli_core_verify_result_file}\n"
 
-        if [[ -n ${notification_text} ]]; then
+            fi
+
+          done
 
           log_event "error" "WordPress Checksum failed!" "false"
 
