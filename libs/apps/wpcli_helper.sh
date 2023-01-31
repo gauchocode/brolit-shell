@@ -507,6 +507,8 @@ function wpcli_core_verify() {
     # Command
     mapfile verify_core < <(${wpcli_cmd} core verify-checksums 2>&1)
 
+    # TODO: check exit code
+
     display --indent 6 --text "- WordPress verify-checksums" --result "DONE" --color GREEN
 
     # Return an array with wp-cli output
