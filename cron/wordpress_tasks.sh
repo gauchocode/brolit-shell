@@ -49,7 +49,7 @@ _wordpress_cronned_tasks() {
         notification_text=""
         [[ ${wp_install_type} == "docker" ]] && site="${site}/wordpress"
 
-        log_subsection "Working with ${site}"
+        log_subsection "Site: ${site}"
 
         # VERIFY_WP
         mapfile -t wpcli_core_verify_results < <(wpcli_core_verify "${site}" "${wp_install_type}")
@@ -67,6 +67,10 @@ _wordpress_cronned_tasks() {
             # Ommit empty elements
             if [[ -n ${wpcli_core_verify_result_file} ]]; then
 
+              # Log
+              clear_previous_lines "1"
+              display --indent 6 --text "- WordPress verify-checksums" --result "FAIL" --color RED
+              display --indent 8 --text "Read the log file for details" --tcolor YELLOW
               log_event "info" "${wpcli_core_verify_result_file}" "false"
 
               # Telegram text
