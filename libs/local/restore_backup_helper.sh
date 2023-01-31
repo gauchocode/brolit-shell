@@ -647,22 +647,16 @@ function restore_backup_from_storage() {
 
       # Download backup
       storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
-
       [[ $? -eq 1 ]] && display --indent 6 --text "- Downloading Project Backup" --result "ERROR" --color RED && return 1
 
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
+      # For convention at this point ${chosen_project} == ${project_domain}
+      backup_to_restore="$(basename "${backup_to_dowload}")"
+      # Get project_domain
+      chosen_project="$(dirname "${backup_to_dowload}")"
+      chosen_project="$(basename "${chosen_project}")"
 
-        # For convention at this point ${chosen_project} == ${project_domain}
-        backup_to_restore="$(basename "${backup_to_dowload}")"
-        # Get project_domain
-        chosen_project="$(dirname "${backup_to_dowload}")"
-        chosen_project="$(basename "${chosen_project}")"
-
-        #restore_backup_project_files "${chosen_project}" "${backup_to_restore}"
-        restore_backup_project_files "${backup_to_restore}" "${chosen_project}" ""
-
-      fi
+      #restore_backup_project_files "${chosen_project}" "${backup_to_restore}"
+      restore_backup_project_files "${backup_to_restore}" "${chosen_project}" ""
 
       ;;
 
