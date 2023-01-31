@@ -53,7 +53,7 @@ function telegram_send_notification() {
 	log_event "info" "Sending Telegram notification ..." "false"
 
 	# Telegram command
-	telegram_notif_response="$(curl --silent --insecure --max-time "${timeout}" --data chat_id="${NOTIFICATION_TELEGRAM_CHAT_ID}" --data "disable_notification=${notif_sound}" --data "parse_mode=${display_mode}" --data-urlencode "text=${notif_text}" "${notif_url}")"
+	telegram_notif_response="$(curl --silent --insecure --max-time "${timeout}" --data chat_id="${NOTIFICATION_TELEGRAM_CHAT_ID}" --data "disable_notification=${notif_sound}" --data "parse_mode=${display_mode}" --data "text=${notif_text}" "${notif_url}")"
 
 	# Check Result
 	telegram_notif_result="$(echo "${telegram_notif_response}" | grep "ok" | cut -d ":" -f2 | cut -d "," -f1)"
