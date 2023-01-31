@@ -502,7 +502,7 @@ function wpcli_core_verify() {
 
     # Log
     display --indent 6 --text "- Verifying WordPress core files"
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} core verify-checksums" "false"
+    log_event "debug" "Running: ${wpcli_cmd} core verify-checksums" "false"
 
     # Command
     mapfile verify_core < <(${wpcli_cmd} core verify-checksums 2>&1)
