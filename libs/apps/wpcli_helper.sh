@@ -492,12 +492,20 @@ function wpcli_core_update() {
 function wpcli_core_verify() {
 
     local wp_site="${1}"
+    local install_type="${2}"
 
     local verify_core
 
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
+
+    # Log
+    display --indent 6 --text "- Verifying WordPress core files"
     log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} core verify-checksums" "false"
 
-    mapfile verify_core < <(sudo -u www-data wp --path="${wp_site}" core verify-checksums 2>&1)
+    # Command
+    mapfile verify_core < <(${wpcli_cmd} core verify-checksums 2>&1)
 
     display --indent 6 --text "- WordPress verify-checksums" --result "DONE" --color GREEN
 
