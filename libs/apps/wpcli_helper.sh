@@ -518,7 +518,7 @@ function wpcli_core_verify() {
         display --indent 6 --text "- WordPress verify-checksums" --result "DONE" --color GREEN
 
         # Return
-        echo "${verify_core[@]}" && return 0
+        return 0
 
     else
 
@@ -527,7 +527,7 @@ function wpcli_core_verify() {
         display --indent 6 --text "- WordPress verify-checksums" --result "FAIL" --color RED
         display --indent 8 --text "Read the log file for details" --tcolor YELLOW
 
-        return 1
+        echo "${verify_core[@]}" && return 1
 
     fi
 
