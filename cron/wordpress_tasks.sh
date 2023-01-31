@@ -45,6 +45,7 @@ _wordpress_cronned_tasks() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         notification_text=""
+        [[ ${wp_install_type} == "true" ]] && site="${site}/wordpress"
 
         # VERIFY_WP
         mapfile -t wpcli_core_verify_results < <(wpcli_core_verify "${site}" "${wp_install_type}")
@@ -89,7 +90,7 @@ _wordpress_cronned_tasks() {
       fi
 
     else
-    
+
       log_event "info" "Omitting ${project_name} project (blacklisted) ..."
 
     fi
