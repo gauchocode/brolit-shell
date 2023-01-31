@@ -59,24 +59,16 @@ _wordpress_cronned_tasks() {
           if [[ -n "${wpcli_core_verify_result}" ]]; then
 
             # Check results
-            wpcli_core_verify_result_file="$(echo "${wpcli_core_verify_result}" | grep "File doesn't" | cut -d ":" -f3)"
+            #wpcli_core_verify_result_file="$(echo "${wpcli_core_verify_result}" | grep "File doesn't" | cut -d ":" -f3)"
 
             # Remove white space
-            wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
+            #wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
 
-            # Ommit empty elements
-            if [[ -n ${wpcli_core_verify_result_file} ]]; then
+            # Log
+            log_event "info" "${wpcli_core_verify_result}" "false"
 
-              # Log
-              clear_previous_lines "1"
-              display --indent 6 --text "- WordPress verify-checksums" --result "FAIL" --color RED
-              display --indent 8 --text "Read the log file for details" --tcolor YELLOW
-              log_event "info" "${wpcli_core_verify_result_file}" "false"
-
-              # Telegram text
-              notification_text+="${wpcli_core_verify_result} "
-
-            fi
+            # Telegram text
+            notification_text+="${wpcli_core_verify_result} "
 
           fi
 
