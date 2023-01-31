@@ -501,21 +501,35 @@ function wpcli_core_verify() {
     [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
 
     # Log
-    display --indent 6 --text "- Verifying WordPress core files"
+    display --indent 6 --text "- WordPress verify-checksums"
     log_event "debug" "Running: ${wpcli_cmd} core verify-checksums" "false"
 
     # Command
     mapfile verify_core < <(${wpcli_cmd} core verify-checksums 2>&1)
 
-    # Remove from array elements containing "readme.html"
+    # Remove from array elements containing unwanted errors
     verify_core=("${verify_core[@]//*readme.html*/}")
+    verify_core=("${verify_core[@]//*WordPress installation*/}")
 
-    # TODO: check exit code
+    if [[ -n "${verify_core[1]}" ]]; then
 
-    display --indent 6 --text "- WordPress verify-checksums" --result "DONE" --color GREEN
+        # Log
+        clear_previous_lines "1"
+        display --indent 6 --text "- WordPress verify-checksums" --result "DONE" --color GREEN
 
-    # Return an array with wp-cli output
-    echo "${verify_core[@]}"
+        # Return
+        echo "${verify_core[@]}" && return 0
+
+    else
+
+        # Log
+        clear_previous_lines "1"
+        display --indent 6 --text "- WordPress verify-checksums" --result "FAIL" --color RED
+        display --indent 8 --text "Read the log file for details" --tcolor YELLOW
+
+        return 1
+
+    fi
 
 }
 
