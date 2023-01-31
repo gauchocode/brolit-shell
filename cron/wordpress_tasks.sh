@@ -53,22 +53,23 @@ _wordpress_cronned_tasks() {
 
         # VERIFY_WP
         mapfile -t wpcli_core_verify_results < <(wpcli_core_verify "${site}" "${wp_install_type}")
+        
         for wpcli_core_verify_result in "${wpcli_core_verify_results[@]}"; do
 
           # Ommit empty elements created by spaces on mapfile
           if [[ -n "${wpcli_core_verify_result}" ]]; then
 
             # Check results
-            #wpcli_core_verify_result_file="$(echo "${wpcli_core_verify_result}" | grep "File doesn't" | cut -d ":" -f3)"
+            wpcli_core_verify_result_file="$(echo "${wpcli_core_verify_result}" | grep "File doesn't" | cut -d ":" -f3)"
 
             # Remove white space
-            #wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
+            wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
 
             # Log
-            log_event "info" "${wpcli_core_verify_result}" "false"
+            log_event "info" "${wpcli_core_verify_result_file}" "false"
 
             # Telegram text
-            notification_text+="${wpcli_core_verify_result} "
+            notification_text+="${wpcli_core_verify_result_file}\n"
 
           fi
 
@@ -79,7 +80,7 @@ _wordpress_cronned_tasks() {
           log_event "error" "WordPress Checksum failed!" "false"
 
           # Send notification
-          send_notification "⛔ ${SERVER_NAME}" "WordPress checksum failed for site ${project_name}: ${notification_text}" ""
+          send_notification "⛔ ${SERVER_NAME}" "WordPress checksum failed for site ${project_name}:\n\n${notification_text}" ""
 
         else
 
