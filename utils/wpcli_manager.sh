@@ -235,8 +235,8 @@ function wpcli_main_menu() {
 
       log_subsection "WP Verify"
 
-      wpcli_core_verify "${wp_site}"
-      wpcli_plugin_verify "${wp_site}"
+      wpcli_core_verify "${wp_site}" "${project_install_type}"
+      wpcli_plugin_verify "${wp_site}" "all" "${project_install_type}"
 
     fi
 
@@ -425,6 +425,7 @@ function wpcli_profiler_menu() {
 
 }
 
+# TODO: Needs refactor
 function wpcli_tasks_handler() {
 
   local subtask="${1}"
@@ -498,6 +499,7 @@ function wpcli_tasks_handler() {
 
   verify-installation)
 
+    # TODO: get install_type
     wpcli_core_verify "${PROJECTS_PATH}/${DOMAIN}"
     wpcli_plugin_verify "${PROJECTS_PATH}/${DOMAIN}"
 

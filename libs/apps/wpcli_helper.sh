@@ -508,7 +508,7 @@ function wpcli_core_verify() {
     mapfile verify_core < <(${wpcli_cmd} core verify-checksums 2>&1)
 
     # Remove from array elements containing "readme.html"
-    verify_core=("${verify_core[@]//*readme.html*}")
+    verify_core=("${verify_core[@]//*readme.html*/}")
 
     # TODO: check exit code
 
@@ -536,16 +536,19 @@ function wpcli_plugin_verify() {
 
     local wp_site="${1}"
     local plugin="${2}"
+    local install_type="${3}"
 
     local verify_plugin
 
-    if [[ -z ${plugin} || ${plugin} == "all" ]]; then
-        plugin="--all"
-    fi
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
 
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin verify-checksums ${plugin}" "false"
+    [[ -z ${plugin} || ${plugin} == "all" ]] && plugin="--all"
 
-    mapfile verify_plugin < <(sudo -u www-data wp --path="${wp_site}" plugin verify-checksums "${plugin}" 2>&1)
+    log_event "debug" "Running: ${wpcli_cmd} plugin verify-checksums ${plugin}" "false"
+
+    mapfile verify_plugin < <(${wpcli_cmd} plugin verify-checksums "${plugin}" 2>&1)
 
     display --indent 6 --text "- WordPress plugin verify-checksums" --result "DONE" --color GREEN
 
