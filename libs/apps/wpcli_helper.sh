@@ -508,6 +508,7 @@ function wpcli_core_verify() {
     mapfile verify_core < <(${wpcli_cmd} core verify-checksums 2>&1)
 
     # Remove from array elements containing unwanted errors
+    verify_core=("${verify_core[@]//*wordpress-cli_run*/}")
     verify_core=("${verify_core[@]//*readme.html*/}")
     verify_core=("${verify_core[@]//*WordPress installation*/}")
 
