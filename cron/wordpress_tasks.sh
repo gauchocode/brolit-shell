@@ -58,7 +58,8 @@ _wordpress_cronned_tasks() {
         verify_status=$?
         if [ ${verify_status} -eq 1 ]; then
 
-          mapfile -t wpcli_core_verify_results < <("${wpcli_core_verify_output}")
+          #mapfile -t wpcli_core_verify_results < <("${wpcli_core_verify_output}")
+          mapfile -t wpcli_core_verify_results <<< "${wpcli_core_verify_output}"
 
           for wpcli_core_verify_result in "${wpcli_core_verify_results[@]}"; do
 
@@ -66,16 +67,16 @@ _wordpress_cronned_tasks() {
             if [[ -n "${wpcli_core_verify_result}" ]]; then
 
               # Check results
-              wpcli_core_verify_result_file="$(echo "${wpcli_core_verify_result}" | grep "File doesn't" | cut -d ":" -f3)"
+              #wpcli_core_verify_result_file="$(echo "${wpcli_core_verify_result}" | grep "File doesn't" | cut -d ":" -f3)"
 
               # Remove white space
-              wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
+              #wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
 
               # Log
-              log_event "info" "${wpcli_core_verify_result_file}" "false"
+              log_event "info" "${wpcli_core_verify_result}" "false"
 
               # Telegram text
-              notification_text+="${wpcli_core_verify_result_file}\n"
+              notification_text+="${wpcli_core_verify_result}\n"
 
             fi
 
