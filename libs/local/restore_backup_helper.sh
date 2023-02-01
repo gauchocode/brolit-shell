@@ -1138,6 +1138,7 @@ function restore_backup_project_files() {
   local project_domain_new="${3}"
 
   local install_path
+  local app_dir
   local exitstatus
 
   [[ -z ${project_domain_new} ]] && project_domain_new="${project_domain}"
@@ -1164,8 +1165,9 @@ function restore_backup_project_files() {
 
   # Needs refactor
   if [[ ${project_install_type} == "docker"* || ${project_install_type} == "proxy" ]]; then
-    [[ ${project_type} != "wordpress" ]] && change_ownership "www-data" "www-data" "${install_path}/application"
-    [[ ${project_type} == "wordpress" ]] && change_ownership "www-data" "www-data" "${install_path}/wordpress"
+    [[ ${project_type} != "wordpress" ]] && app_dir="${install_path}/application"
+    [[ ${project_type} == "wordpress" ]] && app_dir="${install_path}/wordpress"
+    change_ownership "www-data" "www-data" "${install_path}/${app_dir}"
   else
     # Change ownership
     change_ownership "www-data" "www-data" "${install_path}"
@@ -1187,6 +1189,7 @@ function restore_backup_project_files() {
 
     # Log
     log_event "info" "Trying to restore a docker project ..." "false"
+    log_event "debug" "Running: docker-compose -f ${install_path}/docker-compose.yml up --detach --build" "false"
     display --indent 6 --text "- Trying to restore a docker project ..." # --result "DONE" --color GREEN
 
     # Rebuild docker image
@@ -1352,10 +1355,7 @@ function restore_project_backup() {
   local project_type
   local project_install_type
 
-  # Log
-  log_event "debug" "project_backup_file=${project_backup_file}" "false"
-  log_event "debug" "project_domain=${project_domain}" "false"
-  log_event "debug" "project_domain_new=${project_domain_new}" "false"
+ log_event "debug" "project_domain_new=${project_domain_new}" "false"
 
   # Workaround if project_domain does not change
   [[ -z ${project_domain_new} ]] && project_domain_new="${project_domain}"
@@ -1363,11 +1363,15 @@ function restore_project_backup() {
   # NEW NEW NEW NEW NEW
   #values=($(restore_backup_project_files "${project_backup_file}" "${project_domain}" "${project_domain_new}"))
   values=("$(restore_backup_project_files "${project_backup_file}" "${project_domain}" "${project_domain_new}")")
-  [[ $? -eq 1 ]] && return 1
+  #[[ $? -eq 1 ]] && return 1
 
   project_type=${values[0]}
   project_install_type=${values[1]}
-
+  
+  # Log
+  log_event "debug" "project_type=${project_type}" "false"
+  log_event "debug" "project_install_type=${project_install_type}" "false"
+ 
   # Extract project name from domain
   possible_project_name="$(project_get_name_from_domain "${project_domain_new}")"
   ## Asking project name
