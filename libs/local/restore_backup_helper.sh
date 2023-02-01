@@ -1361,8 +1361,8 @@ function restore_project_backup() {
   [[ -z ${project_domain_new} ]] && project_domain_new="${project_domain}"
 
   # NEW NEW NEW NEW NEW
-  #values=($(restore_backup_project_files "${project_backup_file}" "${project_domain}" "${project_domain_new}"))
-  values=("$(restore_backup_project_files "${project_backup_file}" "${project_domain}" "${project_domain_new}")")
+  values=($(restore_backup_project_files "${project_backup_file}" "${project_domain}" "${project_domain_new}"))
+  #values=("$(restore_backup_project_files "${project_backup_file}" "${project_domain}" "${project_domain_new}")")
   #[[ $? -eq 1 ]] && return 1
 
   project_type=${values[0]}
