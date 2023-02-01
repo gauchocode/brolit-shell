@@ -505,14 +505,23 @@ function wpcli_core_verify() {
     log_event "debug" "Running: ${wpcli_cmd} core verify-checksums" "false"
 
     # Command
-    mapfile verify_core < <(${wpcli_cmd} core verify-checksums 2>&1)
+    # Verify WordPress Checksums
+    wpcli_core_verify_output="$(${wpcli_cmd} core verify-checksums 2>&1)"
+    verify_status=$?
+    if [ ${verify_status} -eq 1 ]; then
+        # To Array
+        mapfile -t verify_core <<<"${wpcli_core_verify_output}"
+        #mapfile verify_core < <(${wpcli_cmd} core verify-checksums 2>&1)
 
-    # Remove from array elements containing unwanted errors
-    verify_core=("${verify_core[@]//*wordpress-cli_run*/}")
-    verify_core=("${verify_core[@]//*readme.html*/}")
-    verify_core=("${verify_core[@]//*WordPress installation*/}")
+        # Remove from array elements containing unwanted errors
+        verify_core=("${verify_core[@]//*wordpress-cli_run*/}")
+        verify_core=("${verify_core[@]//*readme.html*/}")
+        verify_core=("${verify_core[@]//*ERROR:*/}")
+        verify_core=("${verify_core[@]//*WordPress installation*/}")
+    fi
 
-    if [[ -z "${verify_core[1]}" ]]; then
+    # Check verify_core has elements
+    if [[ ${verify_status} -eq 0 || ${#verify_core[@]} -eq 0 ]]; then
 
         # Log
         clear_previous_lines "1"

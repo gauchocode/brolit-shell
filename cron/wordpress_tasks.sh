@@ -58,7 +58,6 @@ _wordpress_cronned_tasks() {
         verify_status=$?
         if [ ${verify_status} -eq 1 ]; then
 
-          #mapfile -t wpcli_core_verify_results < <("${wpcli_core_verify_output}")
           mapfile -t wpcli_core_verify_results <<< "${wpcli_core_verify_output}"
 
           for wpcli_core_verify_result in "${wpcli_core_verify_results[@]}"; do
