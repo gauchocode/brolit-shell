@@ -1164,8 +1164,8 @@ function restore_backup_project_files() {
 
   # Needs refactor
   if [[ ${project_install_type} == "docker"* || ${project_install_type} == "proxy" ]]; then
-    change_ownership "www-data" "www-data" "${install_path}/application"
-    change_ownership "www-data" "www-data" "${install_path}/wordpress"
+    [[ ${project_type} != "wordpress" ]] && change_ownership "www-data" "www-data" "${install_path}/application"
+    [[ ${project_type} == "wordpress" ]] && change_ownership "www-data" "www-data" "${install_path}/wordpress"
   else
     # Change ownership
     change_ownership "www-data" "www-data" "${install_path}"
