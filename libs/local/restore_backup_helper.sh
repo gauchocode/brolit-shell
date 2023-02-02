@@ -1137,6 +1137,7 @@ function restore_backup_project_files() {
   local project_domain="${2}"
   local project_domain_new="${3}"
 
+  local project_port
   local install_path
   local app_dir
   local exitstatus
@@ -1156,6 +1157,7 @@ function restore_backup_project_files() {
   [[ ${project_tmp_dir_old} != "${project_tmp_dir_new}" ]] && move_files "${project_tmp_dir_old}" "${project_tmp_dir_new}"
 
   # Project Type & Project Install Type
+  project_port="80" # default value
   project_type="$(project_get_type "${project_tmp_dir_new}")"
   project_install_type="$(project_get_install_type "${project_tmp_dir_new}")"
 
@@ -1199,13 +1201,13 @@ function restore_backup_project_files() {
     # Clear screen output
     clear_previous_lines "4"
 
-    # Return vars
-    to_return=("${project_type}" "${project_install_type}")
-    echo "${to_return[@]}"
-
-    return ${exitstatus}
-
   fi
+
+  # Return vars
+  to_return=("${project_type}" "${project_install_type}" "${project_port}")
+  echo "${to_return[@]}"
+
+  return ${exitstatus}
 
 }
 
@@ -1352,26 +1354,26 @@ function restore_project_backup() {
   local project_domain="${4}"
   local project_domain_new="${5}"
 
+  local project_port
   local project_type
   local project_install_type
 
- log_event "debug" "project_domain_new=${project_domain_new}" "false"
+  #log_event "debug" "project_domain_new=${project_domain_new}" "false"
 
   # Workaround if project_domain does not change
   [[ -z ${project_domain_new} ]] && project_domain_new="${project_domain}"
 
   # NEW NEW NEW NEW NEW
   values=($(restore_backup_project_files "${project_backup_file}" "${project_domain}" "${project_domain_new}"))
-  #values=("$(restore_backup_project_files "${project_backup_file}" "${project_domain}" "${project_domain_new}")")
   #[[ $? -eq 1 ]] && return 1
-
   project_type=${values[0]}
   project_install_type=${values[1]}
-  
+  project_port=${values[2]}
+
   # Log
   log_event "debug" "project_type=${project_type}" "false"
   log_event "debug" "project_install_type=${project_install_type}" "false"
- 
+
   # Extract project name from domain
   possible_project_name="$(project_get_name_from_domain "${project_domain_new}")"
   ## Asking project name
