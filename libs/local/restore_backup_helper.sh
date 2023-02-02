@@ -1191,15 +1191,11 @@ function restore_backup_project_files() {
 
     # Log
     log_event "info" "Trying to restore a docker project ..." "false"
-    log_event "debug" "Running: docker-compose -f ${install_path}/docker-compose.yml up --detach --build" "false"
     display --indent 6 --text "- Trying to restore a docker project ..." # --result "DONE" --color GREEN
 
     # Rebuild docker image
-    docker-compose -f "${install_path}/docker-compose.yml" up --detach --build
+    docker_compose_build "${install_path}/docker-compose.yml"
     exitstatus=$?
-
-    # Clear screen output
-    clear_previous_lines "4"
 
   fi
 
