@@ -76,6 +76,7 @@ function docker_compose_build() {
     local exitstatus
 
     # Log
+    display --indent 6 --text "- Restoring docker stack ..."
     log_event "debug" "Running: docker-compose -f ${compose_file} pull --quiet" "false"
 
     # Execute docker-compose command
@@ -84,15 +85,28 @@ function docker_compose_build() {
 
     # Log
     log_event "debug" "Running: docker-compose -f ${compose_file} up --detach --build" "false"
-    
+
     # Execute docker-compose command
-    docker-compose -f "${compose_file}" up --detach --build > /dev/null 2>&1
+    docker-compose -f "${compose_file}" up --detach --build >/dev/null 2>&1
     exitstatus=$?
 
-    # Clear screen output
-    # clear_previous_lines "4"
+    if [[ ${exitstatus} -eq 0 ]]; then
 
-    return ${exitstatus}
+        # Log
+        display --indent 6 --text "- Restore docker stack ..." --result "DONE" --color GREEN
+        log_event "info" "Docker stack restored" "false"
+
+        return 0
+
+    else
+
+        # Log
+        display --indent 6 --text "- Restore docker stack ..." --result "FAIL" --color RED
+        log_event "error" "Docker stack restore failed" "false"
+
+        return 1
+
+    fi
 
 }
 
