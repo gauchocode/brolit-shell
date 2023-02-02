@@ -1352,8 +1352,30 @@ function restore_project_backup() {
 
   #log_event "debug" "project_domain_new=${project_domain_new}" "false"
 
-  # Workaround if project_domain does not change
-  [[ -z ${project_domain_new} ]] && project_domain_new="${project_domain}"
+  if [[ -z ${project_domain_new} ]]; then
+
+    # Workaround if project_domain does not change
+    project_domain_new="${project_domain}"
+
+    # Extract project name from domain
+    project_name="$(project_get_name_from_domain "${project_domain_new}")"
+
+    # Asking project stage with suggested actual state
+    project_stage=$(project_get_stage_from_domain "${project_domain_new}")
+
+  else
+
+    # Asking project name with suggested name from domain
+    possible_project_name="$(project_get_name_from_domain "${project_domain_new}")"
+    project_name="$(project_ask_name "${possible_project_name}")"
+    [[ $? -eq 1 ]] && return 1
+
+    # Asking project stage with suggested actual state
+    possible_project_stage=$(project_get_stage_from_domain "${project_domain_new}")
+    project_stage="$(project_ask_stage "${possible_project_stage}")"
+    [[ $? -eq 1 ]] && return 1
+
+  fi
 
   # NEW NEW NEW NEW NEW
   values=($(restore_backup_project_files "${project_backup_file}" "${project_domain}" "${project_domain_new}"))
@@ -1365,17 +1387,6 @@ function restore_project_backup() {
   # Log
   log_event "debug" "project_type=${project_type}" "false"
   log_event "debug" "project_install_type=${project_install_type}" "false"
-
-  # Extract project name from domain
-  possible_project_name="$(project_get_name_from_domain "${project_domain_new}")"
-  ## Asking project name
-  project_name="$(project_ask_name "${possible_project_name}")"
-  [[ $? -eq 1 ]] && return 1
-
-  # Asking project stage with suggested actual state
-  possible_project_stage=$(project_get_stage_from_domain "${project_domain_new}")
-  project_stage="$(project_ask_stage "${possible_project_stage}")"
-  [[ $? -eq 1 ]] && return 1
 
   install_path="${PROJECTS_PATH}/${project_domain_new}"
 
