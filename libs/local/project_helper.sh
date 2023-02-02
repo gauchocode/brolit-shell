@@ -442,25 +442,28 @@ function project_get_name_from_domain() {
   local project_domain="${1}"
 
   local project_stages
-  local possible_project_name
+  local project_name
 
   declare -a possible_project_stages_on_subdomain=("www" "demo" "stage" "test" "beta" "dev")
 
   # Extract project name from domain
-  possible_project_name="$(domain_extract_extension "${project_domain}")"
+  project_name="$(domain_extract_extension "${project_domain}")"
 
   # Remove stage from domain
   for p in "${possible_project_stages_on_subdomain[@]}"; do
 
-    possible_project_name="$(echo "${possible_project_name}" | sed -r "s/${p}.//g")"
+    project_name="$(echo "${project_name}" | sed -r "s/${p}.//g")"
 
   done
 
   # Remove "-" char " and replace '.' with '_'
-  possible_project_name="$(echo "${possible_project_name}" | sed -r 's/[-]+//g' | sed -r 's/[.]+/_/g')"
+  project_name="$(echo "${project_name}" | sed -r 's/[-]+//g' | sed -r 's/[.]+/_/g')"
+
+  # Log
+  log_event "debug" "project_name=${project_name}" "false"
 
   # Return
-  echo "${possible_project_name}"
+  echo "${project_name}"
 
 }
 
@@ -479,26 +482,29 @@ function project_get_stage_from_domain() {
   local project_domain="${1}"
 
   local project_stages
-  local possible_project_stage
+  local project_stage
 
   project_stages="demo stage test beta dev"
 
   # Trying to extract project stage from domain
   subdomain_part="$(domain_get_subdomain_part "${project_domain}")"
-  possible_project_stage="$(echo "${subdomain_part}" | cut -d "." -f 1)"
+  project_stage="$(echo "${subdomain_part}" | cut -d "." -f 1)"
 
   # Log
   log_event "debug" "subdomain_part=${subdomain_part}" "false"
-  log_event "debug" "possible_project_stage=${possible_project_stage}" "false"
+  log_event "debug" "project_stage=${project_stage}" "false"
 
-  if [[ ${project_stages} != *"${possible_project_stage}"* || ${possible_project_stage} == "" ]]; then
+  if [[ ${project_stages} != *"${project_stage}"* || ${project_stage} == "" ]]; then
 
-    possible_project_stage="prod"
+    project_stage="prod"
 
   fi
 
+  # Log
+  log_event "debug" "project_stage=${project_stage}" "false"
+
   # Return
-  echo "${possible_project_stage}"
+  echo "${project_stage}"
 
 }
 
