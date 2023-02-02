@@ -93,6 +93,7 @@ function docker_compose_build() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log
+        clear_previous_lines "1"
         display --indent 6 --text "- Restore docker stack ..." --result "DONE" --color GREEN
         log_event "info" "Docker stack restored" "false"
 
@@ -101,6 +102,7 @@ function docker_compose_build() {
     else
 
         # Log
+        clear_previous_lines "1"
         display --indent 6 --text "- Restore docker stack ..." --result "FAIL" --color RED
         log_event "error" "Docker stack restore failed" "false"
 
