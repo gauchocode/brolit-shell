@@ -69,6 +69,33 @@ function docker_compose_version() {
 
 }
 
+function docker_compose_build() {
+
+    local compose_file="${1}"
+
+    local exitstatus
+
+    # Log
+    log_event "debug" "Running: docker-compose -f ${compose_file} pull --quiet" "false"
+
+    # Execute docker-compose command
+    docker-compose -f "${compose_file}" pull --quiet
+    [[ $? -eq 1 ]] && return 1
+
+    # Log
+    log_event "debug" "Running: docker-compose -f ${compose_file} up --detach --build" "false"
+    
+    # Execute docker-compose command
+    docker-compose -f "${compose_file}" up --detach --build > /dev/null 2>&1
+    exitstatus=$?
+
+    # Clear screen output
+    # clear_previous_lines "4"
+
+    return ${exitstatus}
+
+}
+
 ################################################################################
 # List docker containers.
 #
