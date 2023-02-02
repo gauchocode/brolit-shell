@@ -1696,14 +1696,16 @@ function wpcli_search_and_replace() {
     is_network=$?
     if [[ ${is_network} -eq 0 ]]; then
 
-        log_event "debug" "Running: wp --allow-root --path=${wp_site} search-replace --url=https://${wp_site_url} ${search} ${replace} --network" "false"
+        #log_event "debug" "Running: wp --allow-root --path=${wp_site} search-replace --url=https://${wp_site_url} ${search} ${replace} --network" "false"
+        log_event "debug" "Running: ${wpcli_cmd} search-replace ${search} ${replace} --network" "false"
 
         #wpcli_result="$(wp --allow-root --path="${wp_site}" search-replace --url=https://"${wp_site_url}" "${search}" "${replace}" --network)"
         wpcli_result="$(${wpcli_cmd} search-replace --url=https://"${wp_site_url}" "${search}" "${replace}" --network)"
 
     else
 
-        log_event "debug" "Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace}" "false"
+        #log_event "debug" "Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace}" "false"
+        log_event "debug" "Running: ${wpcli_cmd} search-replace ${search} ${replace}" "false"
 
         #wpcli_result="$(wp --allow-root --path="${wp_site}" search-replace "${search}" "${replace}")"
         wpcli_result="$(${wpcli_cmd} search-replace "${search}" "${replace}")"
