@@ -445,7 +445,7 @@ function wp_ask_url_search_and_replace() {
           project_name="$(basename "${wp_path}")"
           project_install_type="$(project_get_install_type "${wp_path}")"
 
-          wpcli_export_database "${wp_path}" "${BROLIT_TMP_DIR}/backups/${project_name}_bk_before_search_and_replace.sql"
+          wpcli_export_database "${wp_path}" "${BROLIT_TMP_DIR}/backups/${project_name}_bk_before_search_and_replace.sql" "${project_install_type}"
 
           wpcli_search_and_replace "${wp_path}" "${existing_URL}" "${new_URL}" "${project_install_type}"
 
