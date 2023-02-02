@@ -2056,8 +2056,9 @@ function project_delete_files() {
   project_type=$(project_get_type "${PROJECTS_PATH}/${project_domain}")
   project_install_type=$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")
 
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
+  clear_previous_lines "2"
+
+  if [[ -n ${project_type} && -n ${project_install_type} ]]; then
 
     # If project_install_type == "docker"*, stop and delete containers
     if [[ ${project_install_type} == "docker"* ]]; then
@@ -2066,20 +2067,11 @@ function project_delete_files() {
 
       if [[ -f "${compose_file}" ]]; then
 
-        # Execute docker-compose command
-        ## Options:
-        ##    -f, --force   Don't ask to confirm removal
-        ##    -s, --stop    Stop the containers, if required, before removing
-        ##    -v            Remove any anonymous volumes attached to containers
-        docker-compose -f "${compose_file}" rm --force -v --stop
-
+        docker_compose_stop "${compose_file}"
         [[ $? -eq 1 ]] && return 1
 
-        # Log
-        clear_previous_lines "10"
-        display --indent 6 --text "- Deleting docker containers for project" --result "DONE" --color GREEN
-        log_event "info" "Deleting docker containers for project '${project_domain}' ..." "false"
-        log_event "debug" "docker-compose -f ${compose_file} rm --force --stop" "false"
+        docker_compose_delete "${compose_file}"
+        [[ $? -eq 1 ]] && return 1
 
       fi
 
@@ -2121,6 +2113,10 @@ function project_delete_files() {
     fi
 
   else
+
+    # Log
+    log_event "info" "Something went wrong trying to know project type and project install type." "false"
+    display --indent 6 --text "- Deleting project files on server" --result "FAIL" --color RED
 
     return 1
 
@@ -2263,6 +2259,8 @@ function project_delete() {
 
   log_section "Project Delete"
 
+  log_subsection "Reading Project Config"
+
   if [[ -z ${project_domain} ]]; then
     # Folder where sites are hosted: ${PROJECTS_PATH}
     menu_title="PROJECT DIRECTORY TO DELETE"
@@ -2302,6 +2300,9 @@ function project_delete() {
     project_db_engine="$(project_get_configured_database_engine "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")"
 
     [[ -z "${project_db_engine}" ]] && project_db_engine="$(database_ask_engine)"
+
+    # Remove unwanted output
+    clear_previous_lines "2"
 
     # Delete Files
     project_delete_files "${project_domain}"

@@ -112,6 +112,69 @@ function docker_compose_build() {
 
 }
 
+function docker_compose_stop() {
+
+    local compose_file="${1}"
+
+    # Execute docker-compose command
+    ## Options:
+    ##    -f, --force   Don't ask to confirm removal
+    ##    -s, --stop    Stop the containers, if required, before removing
+    ##    -v            Remove any anonymous volumes attached to containers
+    docker-compose -f "${compose_file}" stop >/dev/null 2>&1
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        log_event "info" "Docker stack stopped" "false"
+        display --indent 6 --text "- Stop docker stack ..." --result "DONE" --color GREEN
+
+        return 0
+
+    else
+
+        # Log
+        log_event "error" "Docker stack stop failed" "false"
+        display --indent 6 --text "- Stop docker stack ..." --result "FAIL" --color RED
+
+        return 1
+
+    fi
+
+}
+
+function docker_compose_delete() {
+
+    local compose_file="${1}"
+
+    # Execute docker-compose command
+    ##    -f, --force   Don't ask to confirm removal
+    ##    -v            Remove any anonymous volumes attached to containers
+
+    docker-compose -f "${compose_file}" rm --volumes --remove-orphans >/dev/null 2>&1
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        log_event "info" "Docker stack deleted" "false"
+        display --indent 6 --text "- Delete docker stack ..." --result "DONE" --color GREEN
+
+        return 0
+
+    else
+
+        # Log
+        log_event "error" "Docker stack delete failed" "false"
+        display --indent 6 --text "- Delete docker stack ..." --result "FAIL" --color RED
+
+        return 1
+
+    fi
+    
+}
+
 ################################################################################
 # List docker containers.
 #
