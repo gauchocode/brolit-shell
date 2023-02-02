@@ -2971,7 +2971,7 @@ function project_post_install_tasks() {
     if [[ -n ${old_project_domain} && -n ${new_project_domain} ]]; then
       if [[ ${old_project_domain} != "${new_project_domain}" ]]; then
         # Change urls on database
-        wpcli_search_and_replace "${install_path}" "${old_project_domain}" "${new_project_domain}"
+        wpcli_search_and_replace "${install_path}" "${old_project_domain}" "${new_project_domain}" "default"
       fi
     fi
 
