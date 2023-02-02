@@ -1004,7 +1004,7 @@ function wpcli_theme_delete() {
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
     [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
 
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} theme delete ${theme}" "false"
+    log_event "debug" "Running: ${wpcli_cmd} theme delete ${theme}" "false"
 
     # Command
     ${wpcli_cmd} theme delete "${theme}" --quiet
@@ -1676,27 +1676,37 @@ function wpcli_search_and_replace() {
     local wp_site="${1}"
     local search="${2}"
     local replace="${3}"
+    local install_type="${4}"
 
     local wp_site_url
+
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
 
     # Folder Name need to be the Site URL
     wp_site_url="$(basename "${wp_site}")"
 
+    # Log
+    log_event "debug" "Running: ${wpcli_cmd} core is-installed --network" "false"
+
     # Command
-    wp --allow-root --path="${wp_site}" core is-installed --network
+    ${wpcli_cmd} core is-installed --network
 
     is_network=$?
     if [[ ${is_network} -eq 0 ]]; then
 
         log_event "debug" "Running: wp --allow-root --path=${wp_site} search-replace --url=https://${wp_site_url} ${search} ${replace} --network" "false"
 
-        wpcli_result="$(wp --allow-root --path="${wp_site}" search-replace --url=https://"${wp_site_url}" "${search}" "${replace}" --network)"
+        #wpcli_result="$(wp --allow-root --path="${wp_site}" search-replace --url=https://"${wp_site_url}" "${search}" "${replace}" --network)"
+        wpcli_result="$(${wpcli_cmd} search-replace --url=https://"${wp_site_url}" "${search}" "${replace}" --network)"
 
     else
 
         log_event "debug" "Running: wp --allow-root --path=${wp_site} search-replace ${search} ${replace}" "false"
 
-        wpcli_result="$(wp --allow-root --path="${wp_site}" search-replace "${search}" "${replace}")"
+        #wpcli_result="$(wp --allow-root --path="${wp_site}" search-replace "${search}" "${replace}")"
+        wpcli_result="$(${wpcli_cmd} search-replace "${search}" "${replace}")"
 
     fi
 
@@ -1793,12 +1803,18 @@ function wpcli_export_database() {
 
     local wp_site="${1}"
     local dump_file="${2}"
+    local install_type="${3}"
+
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
 
     # Log
-    log_event "debug" "Running: wp --allow-root --path=${wp_site} db export ${dump_file}" "false"
+    #log_event "debug" "Running: wp --allow-root --path=${wp_site} db export ${dump_file}" "false"
+    log_event "debug" "Running: ${wpcli_cmd} db export ${dump_file}" "false"
 
     # Command
-    wp --allow-root --path="${wp_site}" db export "${dump_file}" --quiet
+    ${wpcli_cmd} db export "${dump_file}" --quiet
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
