@@ -1240,12 +1240,17 @@ function wpcli_set_salts() {
 function wpcli_delete_not_core_files() {
 
     local wp_site="${1}"
+    local install_type="${2}"
+
+    local wpcli_core_verify_results
+    local wpcli_core_verify_result_file
 
     display --indent 6 --text "- Scanning for suspicious WordPress files" --result "DONE" --color GREEN
 
-    mapfile -t wpcli_core_verify_results < <(wpcli_core_verify "${wp_site}")
+    mapfile -t wpcli_core_verify_results < <(wpcli_core_verify "${wp_site}" "${install_type}")
 
     for wpcli_core_verify_result in "${wpcli_core_verify_results[@]}"; do
+        
         # Check results
         wpcli_core_verify_result_file=$(echo "${wpcli_core_verify_result}" | grep "should not exist" | cut -d ":" -f3)
 
@@ -1253,9 +1258,11 @@ function wpcli_delete_not_core_files() {
         wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
 
         if [[ -f "${wp_site}/${wpcli_core_verify_result_file}" ]]; then
-
+            
+            # Delete file
             rm "${wp_site}/${wpcli_core_verify_result_file}"
-
+            
+            # Log
             log_event "info" "Deleting not core file: ${wp_site}/${wpcli_core_verify_result_file}"
             display --indent 8 --text "Suspicious file: ${wpcli_core_verify_result_file}"
 
@@ -1263,6 +1270,7 @@ function wpcli_delete_not_core_files() {
 
     done
 
+    # Log
     log_event "info" "All unknown files in WordPress core deleted!"
     display --indent 6 --text "- Deleting suspicious WordPress files" --result "DONE" --color GREEN
 
