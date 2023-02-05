@@ -19,6 +19,8 @@
 #   0 if ok, 1 on error.
 ################################################################################
 
+# TODO: needs refactor
+
 function test_docker_helper_functions() {
 
     # TODO: create a function that change WP_PORT (always assign a new port that is not in use)
@@ -43,7 +45,7 @@ function test_docker_helper_functions() {
     project_name="$(project_get_name_from_domain "${project_domain}")"
 
     # Docker Wordpress Install
-    docker_wordpress_install "/var/www/${project_domain}" "${project_domain}" "${project_name}" "${project_stage}" "${root_domain}" "${project_port}" "default"
+    #docker_wordpress_install "/var/www/${project_domain}" "${project_domain}" "${project_name}" "${project_stage}" "${root_domain}" "${project_port}" "default"
 
     # TODO: read .env to get mysql pass
 
