@@ -172,7 +172,7 @@ function docker_compose_delete() {
         return 1
 
     fi
-    
+
 }
 
 ################################################################################
@@ -355,112 +355,6 @@ function docker_system_prune() {
 }
 
 ################################################################################
-# Docker WordPress install.
-#
-# Arguments:
-#   ${1} = ${project_path}
-#   ${2} = ${project_domain}
-#   ${3} = ${project_name}
-#   ${4} = ${project_stage}
-#   ${5} = ${project_root_domain}         # Optional
-#   ${6} = ${docker_compose_template}     # Optional
-#
-# Outputs:
-#   0 if ok, 1 on error.
-################################################################################
-
-# TODO: Deprecated
-
-function docker_wordpress_install() {
-
-    local project_path="${1}"
-    local project_domain="${2}"
-    local project_name="${3}"
-    local project_stage="${4}"
-    local project_root_domain="${5}"
-    local docker_wp_port="${6}"
-    local docker_compose_template="${7}"
-
-    local env_file
-
-    log_subsection "WordPress Install (Docker)"
-
-    # First checks
-    ## Directory
-    if [[ -d ${project_path} ]]; then
-        log_event "error" "Project directory already exists." "false"
-        return 1
-    fi
-    ## Local Port
-    network_port_is_use "${docker_wp_port}"
-    if [[ ${exitstatus} -eq 0 ]]; then
-        log_event "error" "Can't use port ${docker_wp_port}. Please choose another one." "false"
-        return 1
-    fi
-
-    # Create directory structure
-    mkdir -p "${project_path}"
-    log_event "info" "Working directory: ${project_path}" "false"
-
-    # Copy docker-compose template files
-    cp "${BROLIT_MAIN_DIR}/config/docker-compose/wordpress/.env" "${project_path}"
-    cp "${BROLIT_MAIN_DIR}/config/docker-compose/wordpress/docker-compose.yml" "${project_path}"
-
-    # Replace variables on .env file
-    env_file="${project_path}/.env"
-    compose_file="${project_path}/docker-compose.yml"
-
-    # Setting WP_PORT
-    log_event "debug" "Setting WP_PORT=${docker_wp_port}" "false"
-    sed -ie "s|^WP_PORT=.*$|WP_PORT=${docker_wp_port}|g" "${env_file}"
-
-    # Setting COMPOSE_PROJECT_NAME (Stack Name)
-    log_event "debug" "Setting COMPOSE_PROJECT_NAME=${project_name}_stack" "false"
-    sed -ie "s|^COMPOSE_PROJECT_NAME=.*$|COMPOSE_PROJECT_NAME=${project_name}_stack|g" "${env_file}"
-
-    # Setting PROJECT_NAME
-    log_event "debug" "Setting PROJECT_NAME=${project_name}" "false"
-    sed -ie "s|^PROJECT_NAME=.*$|PROJECT_NAME=${project_name}|g" "${env_file}"
-
-    # Setting PROJECT_DOMAIN
-    log_event "debug" "Setting PROJECT_DOMAIN=${project_domain}" "false"
-    sed -ie "s|^PROJECT_DOMAIN=.*$|PROJECT_DOMAIN=${project_domain}|g" "${env_file}"
-
-    # Setting PHPMYADMIN_DOMAIN
-    log_event "debug" "Setting PHPMYADMIN_DOMAIN=db.${project_domain}" "false"
-    sed -ie "s|^PHPMYADMIN_DOMAIN=.*$|PHPMYADMIN_DOMAIN=db.${project_domain}|g" "${env_file}"
-
-    # TODO: replace
-    #### MYSQL_DATABASE=db_name
-    #### MYSQL_USER=db_user
-    #### MYSQL_PASSWORD=db_user_pass
-    #### MYSQL_ROOT_PASSWORD='root_pass'
-    #### MYSQL_DATA_DIR=./mysql_data
-
-    # Run docker-compose commands
-    docker-compose -f "${compose_file}" pull
-    docker-compose -f "${compose_file}" up -d
-
-    # TODO:
-    ## 1- Create new nginx with proxy config.
-    ## 2- Update cloudflare DNS entries.
-    ## 3- Run certbot.
-    ## 4- Make changes on .htaccess
-    ### Add this lines:
-    ##### php_value upload_max_filesize 600M
-    ##### php_value post_max_size 600M
-    ## 5- Make changes on wp-config.php
-    ### At this lines at the top of the file (${DOMAIN} should be replaced):
-    ##### define('FORCE_SSL_ADMIN', true);
-    ##### define('FORCE_SSL_LOGIN', true);
-    ##### if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https'){ $_SERVER['HTTPS']='on'; }
-    ##### define('WP_HOME','https://${DOMAIN}/');
-    ##### define('WP_SITEURL','https://${DOMAIN}/');
-    ## 5- Create brolit project config.
-
-}
-
-################################################################################
 # Docker MySQL database import
 #
 # Arguments:
@@ -516,9 +410,6 @@ function docker_mysql_database_export() {
 
     # Docker command
     docker exec -i "${container_name}" mysqldump -u"${mysql_user}" -p"${mysql_user_passw}" "${mysql_database}" >"${dump_file}"
-
-    # Docker logs
-    #docker logs wordpress
 
 }
 
