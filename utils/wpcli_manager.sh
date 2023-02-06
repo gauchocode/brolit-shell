@@ -287,7 +287,13 @@ function wpcli_main_menu() {
       echo -e "${B_RED} > This script will delete all non-core wordpress files (except wp-content). Do you want to continue? [y/n]${ENDCOLOR}"
       read -r answer
 
-      [[ ${answer} == "y" ]] && wpcli_delete_not_core_files "${wp_site}" "${project_install_type}"
+      if [[ ${answer} == "y" ]]; then
+
+        clear_previous_lines "2"
+
+        wpcli_delete_not_core_files "${wp_site}" "${project_install_type}"
+
+      fi
 
     fi
 
