@@ -2313,42 +2313,45 @@ function project_delete() {
     # Delete certificates
     certbot_certificate_delete "${project_domain}"
 
-    if [[ ${delete_cf_entry} != "true" && ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
+    if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
 
-      # Cloudflare Manager
-      ## Delete Cloudflare entries
-      project_domain="$(whiptail --title "CLOUDFLARE MANAGER" --inputbox "Do you want to delete the Cloudflare entries for the followings subdomains?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
+      project_root_domain="$(domain_get_root "${project_domain}")"
+      project_actual_ip="$(cloudflare_get_record_details "${project_root_domain}" "${project_domain}" "content")"
 
-        project_root_domain="$(domain_get_root "${project_domain}")"
+      if [[ ${project_actual_ip} == "${SERVER_IP}" ]]; then
 
-        project_actual_ip="$(cloudflare_get_record_details "${project_root_domain}" "${project_domain}" "content")"
+        if [[ ${delete_cf_entry} != "true" ]]; then
 
-        if [[ ${project_actual_ip} != "${SERVER_IP}" ]]; then
+          # Cloudflare Manager
+          project_domain="$(whiptail --title "CLOUDFLARE MANAGER" --inputbox "Do you want to delete the Cloudflare entries for the followings subdomains?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
+          exitstatus=$?
+          if [[ ${exitstatus} -eq 0 ]]; then
 
-          # Show warning message
-          whiptail --title "WARNING" --msgbox "The IP address of the Cloudflare entry is different from the server IP address. Please check it before delete it." 10 60
+            # Delete Cloudflare entries
+            cloudflare_delete_record "${project_root_domain}" "${project_domain}" "A"
+
+          else
+
+            # Log
+            log_event "info" "Cloudflare entries not deleted. Skipped by user." "false"
+            display --indent 6 --text "- Deleting Cloudflare entries" --result "SKIPPED" --color YELLOW
+
+          fi
 
         else
 
+          # Delete Cloudflare entries
+          project_root_domain="$(domain_get_root "${project_domain}")"
           cloudflare_delete_record "${project_root_domain}" "${project_domain}" "A"
 
         fi
 
       else
 
-        # Log
-        log_event "info" "Cloudflare entries not deleted. Skipped by user." "false"
-        display --indent 6 --text "- Deleting Cloudflare entries" --result "SKIPPED" --color YELLOW
+        # Show warning message
+        whiptail --title "WARNING" --msgbox "The IP address of the Cloudflare entry is different from the server IP address. Please check it before delete it." 10 60
 
       fi
-
-    else
-
-      # Delete Cloudflare entries
-      project_root_domain="$(domain_get_root "${project_domain}")"
-      cloudflare_delete_record "${project_root_domain}" "${project_domain}" "A"
 
     fi
 

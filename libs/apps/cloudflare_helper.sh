@@ -693,9 +693,6 @@ function cloudflare_delete_record() {
             -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json")"
 
-        # Remove Cloudflare API garbage output
-        #clear_previous_lines "4"
-
         if [[ ${delete} == *"\"success\":false"* || ${delete} == "" ]]; then
             # Log
             log_event "error" "'${record_type}' record delete failed. Results:\n${delete}" "false"
