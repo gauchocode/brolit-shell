@@ -2347,9 +2347,11 @@ function project_delete() {
         fi
 
       else
-
-        # Show warning message
-        whiptail --title "WARNING" --msgbox "The IP address of the Cloudflare entry is different from the server IP address. Please check it before delete it." 10 60
+  
+        # Log
+        log_event "info" "Cloudflare entries not deleted. The IP address of the Cloudflare entry is different from the server IP address." "false"
+        display --indent 6 --text "- Deleting Cloudflare entries" --result "SKIPPED" --color YELLOW
+        display --indent 8 --text "The IP address of the Cloudflare entry is different from the server IP address." --tcolor YELLOW
 
       fi
 
