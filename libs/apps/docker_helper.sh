@@ -714,7 +714,6 @@ function docker_project_install() {
     # Whiptail menu to ask php version to work with
     php_versions="7.4 8.0 8.1 8.2"
     php_version="$(whiptail_selection_menu "PHP Version" "Choose a PHP version for the Docker container:" "${php_versions}" "7.4")"
-    #php_version="$(whiptail --title "PHP Version" --menu "Choose a PHP version for the Docker container:" 20 78 10 $(for x in ${php_versions}; do echo "$x [X]"; done) --default-item "7.4" 3>&1 1>&2 2>&3)"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 1 ]]; then

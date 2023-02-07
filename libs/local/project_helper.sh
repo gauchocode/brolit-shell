@@ -2362,7 +2362,7 @@ function project_delete() {
   [[ -z ${project_type} ]] && project_type="$(project_ask_type)"
   [[ -z ${project_install_type} ]] && project_install_type="default"
 
-  if [[ -n ${project_db_engine} ]]; then
+  if [[ -n ${project_db_engine} && ${project_install_type} == "default" ]]; then
     # Delete Database
     project_delete_database "${project_db_name}" "${project_db_user}" "${project_db_engine}" "${project_install_type}"
   else
