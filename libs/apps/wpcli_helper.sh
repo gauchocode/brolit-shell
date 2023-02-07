@@ -374,6 +374,7 @@ function wpcli_core_reinstall() {
 
     local wp_site="${1}"
     local wp_version="${2}"
+    local install_type="${3}"
 
     local wpcli_result
     local wpcli_cmd
