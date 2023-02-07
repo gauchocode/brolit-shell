@@ -436,30 +436,34 @@ function wpcli_core_update() {
 
     local verify_core_update
 
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
+
     #log_section "WordPress Updater"
     log_subsection "WP Core Update"
 
     # Command
-    verify_core_update="$(sudo -u www-data wp --path="${wp_site}" core update | grep ":" | cut -d ':' -f1)"
+    verify_core_update="$(${wpcli_cmd} core update | grep ":" | cut -d ':' -f1)"
 
     if [[ ${verify_core_update} == "Success" ]]; then
 
         display --indent 6 --text "- Download new WordPress version" --result "DONE" --color GREEN
 
         # Translations update
-        sudo -u www-data wp --path="${wp_site}" language core update
+        ${wpcli_cmd} language core update
         display --indent 6 --text "- Language update" --result "DONE" --color GREEN
 
         # Update database
-        sudo -u www-data wp --path="${wp_site}" core update-db
+        ${wpcli_cmd} core update-db
         display --indent 6 --text "- Database update" --result "DONE" --color GREEN
 
         # Cache Flush
-        sudo -u www-data wp --path="${wp_site}" cache flush
+        ${wpcli_cmd} cache flush
         display --indent 6 --text "- Flush cache" --result "DONE" --color GREEN
 
         # Rewrite Flush
-        sudo -u www-data wp --path="${wp_site}" rewrite flush
+        ${wpcli_cmd} rewrite flush
         display --indent 6 --text "- Flush rewrite" --result "DONE" --color GREEN
 
         log_event "info" "Wordpress core updated" "false"
@@ -539,7 +543,7 @@ function wpcli_core_verify() {
         display --indent 8 --text "Read the log file for details" --tcolor YELLOW
 
         echo "${verify_core[@]}"
-        
+
         return 1
 
     fi
@@ -1253,7 +1257,7 @@ function wpcli_delete_not_core_files() {
     mapfile -t wpcli_core_verify_results < <(wpcli_core_verify "${wp_site}" "${install_type}")
 
     for wpcli_core_verify_result in "${wpcli_core_verify_results[@]}"; do
-        
+
         # Check results
         wpcli_core_verify_result_file=$(echo "${wpcli_core_verify_result}" | grep "should not exist" | cut -d ":" -f3)
 
@@ -1261,10 +1265,10 @@ function wpcli_delete_not_core_files() {
         wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
 
         if [[ -f "${wp_site}/${wpcli_core_verify_result_file}" ]]; then
-            
+
             # Delete file
             rm "${wp_site}/${wpcli_core_verify_result_file}"
-            
+
             # Log
             log_event "info" "Deleting not core file: ${wp_site}/${wpcli_core_verify_result_file}"
             display --indent 8 --text "Suspicious file: ${wpcli_core_verify_result_file}"

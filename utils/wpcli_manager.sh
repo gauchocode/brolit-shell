@@ -241,7 +241,7 @@ function wpcli_main_menu() {
     fi
 
     # UPDATE_WP
-    [[ ${chosen_wpcli_options} == *"06"* ]] && wpcli_core_update "${wp_site}"
+    [[ ${chosen_wpcli_options} == *"06"* ]] && wpcli_core_update "${wp_site}" "${project_install_type}"
 
     # REINSTALL_WP
     if [[ ${chosen_wpcli_options} == *"07"* ]]; then
