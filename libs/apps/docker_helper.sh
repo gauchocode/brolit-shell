@@ -482,7 +482,7 @@ function docker_restore_project() {
     [[ -z ${project_install_type} ]] && display --indent 6 --text "- Checking Project Install Type" --result "ERROR" --color RED && return 1
 
     # If project_install_type="default" ...
-    if [[ ${project_install_type} == "docker" ]]; then
+    if [[ ${project_install_type} == "docker"* ]]; then
         # Log error
         log_event "error" "Downloaded project already is a docker project" "false"
         display --indent 6 --text "- Downloaded project already is a docker project" --result "ERROR" --color RED
