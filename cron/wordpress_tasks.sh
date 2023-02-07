@@ -49,7 +49,7 @@ _wordpress_cronned_tasks() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         notification_text=""
-        [[ ${wp_install_type} == "docker" ]] && site="${site}/wordpress"
+        [[ ${wp_install_type} == "docker"* ]] && site="${site}/wordpress"
 
         log_subsection "Site: ${site}"
 

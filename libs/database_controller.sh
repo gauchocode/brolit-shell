@@ -30,7 +30,7 @@ function database_list_all() {
     local mysql_container=""
 
     # If install_type == docker
-    if [[ ${install_type} == "docker" ]]; then
+    if [[ ${install_type} == "docker"* ]]; then
 
         # List all running mysql containers
         mysql_containers="$(docker ps --filter "name=mariadb" --format "{{.Names}}")"
