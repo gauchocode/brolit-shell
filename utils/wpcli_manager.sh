@@ -225,7 +225,7 @@ function wpcli_main_menu() {
     [[ ${chosen_wpcli_options} == *"02"* ]] && wpcli_delete_themes_menu "${wp_site}" "${project_install_type}"
 
     # DELETE_PLUGINS
-    [[ ${chosen_wpcli_options} == *"03"* ]] && wpcli_delete_plugins_menu "${wp_site}"
+    [[ ${chosen_wpcli_options} == *"03"* ]] && wpcli_delete_plugins_menu "${wp_site}" "${project_install_type}"
 
     # RE-INSTALL_PLUGINS
     [[ ${chosen_wpcli_options} == *"04"* ]] && wpcli_plugin_reinstall "${wp_site}" "all"
@@ -248,7 +248,7 @@ function wpcli_main_menu() {
 
       log_subsection "WP Core Re-install"
 
-      wpcli_core_reinstall "${wp_site}"
+      wpcli_core_reinstall "${wp_site}" "${project_install_type}"
       exitstatus=$?
       [[ ${exitstatus} -eq 0 ]] && send_notification "⚠️ ${SERVER_NAME}" "WordPress re-installed on: ${wp_site}"
 

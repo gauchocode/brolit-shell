@@ -432,6 +432,7 @@ function wpcli_core_reinstall() {
 function wpcli_core_update() {
 
     local wp_site="${1}"
+    local install_type="${2}"
 
     local verify_core_update
 
