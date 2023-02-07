@@ -475,7 +475,7 @@ function wpcli_core_update() {
 
         # Log
         log_event "error" "WordPress update failed" "false"
-        log_event "error" "Last command executed: sudo -u www-data wp --path=\"${wp_site}\" core update" "false"
+        log_event "error" "Last command executed: ${wpcli_cmd} core update" "false"
         display --indent 6 --text "- Download new WordPress version" --result "FAIL" --color RED
 
         return 1
