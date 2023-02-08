@@ -274,10 +274,10 @@ function wpcli_main_menu() {
     fi
 
     # REPLACE_URLs
-    [[ ${chosen_wpcli_options} == *"11"* ]] && wp_ask_url_search_and_replace "${wp_site}"
+    [[ ${chosen_wpcli_options} == *"11"* ]] && wp_ask_url_search_and_replace "${wp_site}" "${project_install_type}"
 
     # SEOYOAST_REINDEX
-    [[ ${chosen_wpcli_options} == *"12"* ]] && wpcli_seoyoast_reindex "${wp_site}"
+    [[ ${chosen_wpcli_options} == *"12"* ]] && wpcli_seoyoast_reindex "${wp_site}" "${project_install_type}"
 
     # DELETE_NOT_CORE_FILES
     if [[ ${chosen_wpcli_options} == *"13"* ]]; then
@@ -313,7 +313,7 @@ function wpcli_main_menu() {
           wp_role_list=("administrator editor author contributor subscriber")
           choosen_role="$(whiptail --title "WORDPRESS USER ROLE" --menu "Choose the user role:" 20 78 10 $(for x in ${wp_role_list}; do echo "${x}"; done) 3>&1 1>&2 2>&3)"
           exitstatus=$?
-          [[ ${exitstatus} -eq 0 ]] && wpcli_user_create "${wp_site}" "${choosen_user}" "${choosen_email}" "${choosen_role}"
+          [[ ${exitstatus} -eq 0 ]] && wpcli_user_create "${wp_site}" "${project_install_type}" "${choosen_user}" "${choosen_email}" "${choosen_role}"
 
         fi
 
@@ -442,7 +442,7 @@ function wpcli_tasks_handler() {
 
   #create-user)
   #
-  #  wpcli_user_create "${PROJECTS_PATH}/${DOMAIN}" "${choosen_user}" "${choosen_email}" "${choosen_role}"
+  #  wpcli_user_create "${PROJECTS_PATH}/${DOMAIN}" "${project_install_type}" "${choosen_user}" "${choosen_email}" "${choosen_role}"
   #
   #  exit
   #  ;;

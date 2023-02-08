@@ -2982,7 +2982,7 @@ function project_post_install_tasks() {
     fi
 
     # Shuffle salts
-    wpcli_set_salts "${install_path}"
+    wpcli_set_salts "${install_path}" "default"
 
     # Update upload_path
     ## Context: https://core.trac.wordpress.org/ticket/41947
@@ -2991,12 +2991,12 @@ function project_post_install_tasks() {
     # Changing WordPress visibility
     if [[ ${project_stage} == "prod" ]]; then
       # Let search engines index the project
-      wpcli_change_wp_seo_visibility "${install_path}" "1"
+      wpcli_change_wp_seo_visibility "${install_path}" "default" "1"
       # Set debug mode to false
       wpcli_set_debug_mode "${install_path}" "false"
     else
       # Block search engines indexation
-      wpcli_change_wp_seo_visibility "${install_path}" "0"
+      wpcli_change_wp_seo_visibility "${install_path}" "default" "0"
       # De-activate cache plugins if present
       wpcli_plugin_is_installed "${install_path}" "wp-rocket" && wpcli_deactivate_plugin "${install_path}" "wp-rocket"
       wpcli_plugin_is_installed "${install_path}" "redis-cache" && wpcli_plugin_deactivate "${install_path}" "redis-cache"
