@@ -11,7 +11,7 @@
 ################################################################################
 
 ################################################################################
-# Installs wpcli if not installed
+# Installs wpcli if not installed (only for not dockerize installation)
 #
 # Arguments:
 #   None
@@ -46,7 +46,7 @@ function wpcli_install_if_not_installed() {
 }
 
 ################################################################################
-# Check if wpcli is installed
+# Check if wpcli is installed (only for not dockerize installation)
 #
 # Arguments:
 #   None
@@ -57,17 +57,14 @@ function wpcli_install_if_not_installed() {
 
 function wpcli_check_if_installed() {
 
-    local wpcli_installed wpcli_v
+    local wpcli_installed
+    local wpcli_v
 
     wpcli_installed="true"
 
-    wpcli_v="$(wpcli_check_version)"
+    wpcli_v="$(wpcli_check_version "default")"
 
-    if [[ -z "${wpcli_v}" ]]; then
-
-        wpcli_installed="false"
-
-    fi
+    [[ -z "${wpcli_v}" ]] && wpcli_installed="false"
 
     # Return
     echo "${wpcli_installed}"
@@ -86,9 +83,15 @@ function wpcli_check_if_installed() {
 
 function wpcli_check_version() {
 
+    local install_type="${1}"
+
     local wpcli_v
 
-    wpcli_v="$(sudo -u www-data wp --info | grep "WP-CLI version:" | cut -d ':' -f2)"
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
+
+    wpcli_v="$(${wpcli_cmd} --info | grep "WP-CLI version:" | cut -d ':' -f2)"
 
     # Return
     echo "${wpcli_v}"
@@ -96,7 +99,7 @@ function wpcli_check_version() {
 }
 
 ################################################################################
-# Install wpcli
+# Install wpcli (default installation)
 #
 # Arguments:
 #   None
@@ -143,7 +146,7 @@ function wpcli_install() {
 }
 
 ################################################################################
-# Update wpcli
+# Update wpcli (default installation)
 #
 # Arguments:
 #   None
@@ -178,7 +181,7 @@ function wpcli_update() {
 }
 
 ################################################################################
-# Uninstall wpcli
+# Uninstall wpcli (default installation)
 #
 # Arguments:
 #   None
@@ -237,11 +240,7 @@ function wpcli_check_if_package_is_installed() {
 
     wpcli_packages_installed="$(wp package list --allow-root | grep 'wp-cli' | cut -d '/' -f2)"
 
-    if [[ ${wpcli_package} == *"${wpcli_packages_installed}"* ]]; then
-
-        is_installed="true"
-
-    fi
+    [[ ${wpcli_package} == *"${wpcli_packages_installed}"* ]] && is_installed="true"
 
     # Return
     echo "${is_installed}"
@@ -260,17 +259,23 @@ function wpcli_check_if_package_is_installed() {
 
 function wpcli_install_needed_extensions() {
 
+    local install_type="${1}"
+
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="wp --allow-root"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp --allow-root"
+
     # Rename DB Prefix
-    wp --allow-root package install "iandunn/wp-cli-rename-db-prefix"
+    ${wpcli_cmd} package install "iandunn/wp-cli-rename-db-prefix"
 
     # Salts
-    wp --allow-root package install "sebastiaandegeus/wp-cli-salts-comman"
+    ${wpcli_cmd} package install "sebastiaandegeus/wp-cli-salts-comman"
 
     # Vulnerability Scanner
-    wp --allow-root package install "git@github.com:10up/wp-vulnerability-scanner.git"
+    ${wpcli_cmd} package install "git@github.com:10up/wp-vulnerability-scanner.git"
 
     # WP-Rocket
-    wp --allow-root package install "wp-media/wp-rocket-cli:1.3"
+    ${wpcli_cmd} package install "wp-media/wp-rocket-cli:1.3"
 
 }
 
@@ -1214,11 +1219,16 @@ function wpcli_create_config() {
 function wpcli_set_salts() {
 
     local wp_site="${1}"
+    local install_type="${2}"
 
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} config shuffle-salts" "false"
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
+
+    log_event "debug" "Running: ${wpcli_cmd} config shuffle-salts" "false"
 
     # Command
-    sudo -u www-data wp --path="${wp_site}" config shuffle-salts --quiet
+    ${wpcli_cmd} config shuffle-salts --quiet
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -1775,13 +1785,18 @@ function wpcli_search_and_replace() {
 function wpcli_clean_database() {
 
     local wp_site="${1}"
+    local install_type="${3}"
+
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
 
     log_subsection "WP Clean Database"
 
-    log_event "info" "Executing: wp --path=${wp_site} transient delete --expired --allow-root" "false"
+    log_event "info" "Executing: ${wpcli_cmd} transient delete --expired --allow-root" "false"
 
     # Command
-    wp --path="${wp_site}" transient delete --expired --allow-root --quiet
+    ${wpcli_cmd} transient delete --expired --allow-root --quiet
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -1789,7 +1804,7 @@ function wpcli_clean_database() {
         display --indent 2 --text "- Deleting transient" --result "DONE" --color GREEN
 
         # Command
-        wp --path="${wp_site}" cache flush --allow-root --quiet
+        ${wpcli_cmd} cache flush --allow-root --quiet
 
         display --indent 2 --text "- Flushing cache" --result "DONE" --color GREEN
 
@@ -1857,9 +1872,10 @@ function wpcli_export_database() {
 #
 # Arguments:
 #   ${1} = ${wp_site}
-#   ${2} = ${user}
-#   ${3} = ${mail}
-#   ${4} = ${role}
+#   ${2} = ${install_type}
+#   ${3} = ${user}
+#   ${4} = ${mail}
+#   ${5} = ${role}
 #
 # Outputs:
 #   0 on success, 1 on error
@@ -1868,14 +1884,19 @@ function wpcli_export_database() {
 function wpcli_user_create() {
 
     local wp_site="${1}"
-    local user="${2}"
-    local mail="${3}"
-    local role="${4}"
+    local install_type="${2}"
+    local user="${3}"
+    local mail="${4}"
+    local role="${5}"
 
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} user create ${user} ${mail} --role=${role}" "false"
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
+
+    log_event "debug" "Running: ${wpcli_cmd} user create ${user} ${mail} --role=${role}" "false"
 
     # Command
-    sudo -u www-data wp --path="${wp_site}" user create "${user}" "${mail}" --role="${role}"
+    ${wpcli_cmd} user create "${user}" "${mail}" --role="${role}"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -1903,8 +1924,9 @@ function wpcli_user_create() {
 #
 # Arguments:
 #   ${1} = ${wp_site} (site path)
-#   ${2} = ${wp_user}
-#   ${3} = ${wp_user_pass}
+#   ${2} = ${install_type}
+#   ${3} = ${wp_user}
+#   ${4} = ${wp_user_pass}
 #
 # Outputs:
 #   0 on success, 1 on error
@@ -1913,15 +1935,20 @@ function wpcli_user_create() {
 function wpcli_user_reset_passw() {
 
     local wp_site="${1}"
-    local wp_user="${2}"
-    local wp_user_pass="${3}"
+    local install_type="${2}"
+    local wp_user="${3}"
+    local wp_user_pass="${4}"
+
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
 
     # Log
     log_event "info" "User password reset for ${wp_user}. New password: ${wp_user_pass}" "false"
-    log_event "debug" "Running: wp --allow-root --path=\"${wp_site}\" user update \"${wp_user}\" --user_pass=\"${wp_user_pass}\"" "false"
+    log_event "debug" "Running: ${wpcli_cmd} user update \"${wp_user}\" --user_pass=\"${wp_user_pass}\"" "false"
 
     # Command
-    wp --allow-root --path="${wp_site}" user update "${wp_user}" --user_pass="${wp_user_pass}" --skip-email
+    ${wpcli_cmd} user update "${wp_user}" --user_pass="${wp_user_pass}" --skip-email
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -1952,7 +1979,8 @@ function wpcli_user_reset_passw() {
 #
 # Arguments:
 #   ${1} = ${wp_site} (site path)
-#   ${2} = ${visibility} (0=off or 1=on)
+#   ${2} = ${install_type}
+#   ${3} = ${visibility} (0=off or 1=on)
 #
 # Outputs:
 #   0 on success, 1 on error
@@ -1961,12 +1989,17 @@ function wpcli_user_reset_passw() {
 function wpcli_change_wp_seo_visibility() {
 
     local wp_site="${1}"
-    local visibility="${2}"
+    local install_type="${2}"
+    local visibility="${3}"
 
-    log_event "debug" "Running: sudo -u www-data wp --path=\"${wp_site}\" option set blog_public ${visibility}" "false"
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
+
+    log_event "debug" "Running: ${wpcli_cmd} option set blog_public ${visibility}" "false"
 
     # Command
-    sudo -u www-data wp --path="${wp_site}" option set blog_public "${visibility}" --quiet
+    ${wpcli_cmd} option set blog_public "${visibility}" --quiet
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
