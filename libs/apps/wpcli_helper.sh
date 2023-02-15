@@ -536,7 +536,7 @@ function wpcli_core_verify() {
         #verify_core_string="$(string_remove_spaces "${verify_core_string}")"
         log_event "debug" "verify_core_string: ${verify_core_string}" "false"
         # Check if verify_core_string is empty or contains only spaces
-        if [[ -n ${verify_core_string} || ! "${verify_core_string}" =~ [a-zA-Z0-9]+ ]]; then
+        if [[ -n ${verify_core_string} || "${verify_core_string}" =~ [a-zA-Z0-9]+ ]]; then
             # To Array gain
             mapfile -t verify_core <<<"${verify_core_string}"
         fi
