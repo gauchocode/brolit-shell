@@ -305,6 +305,9 @@ function storage_remote_server_list() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
+        # Re-order Backup Directories
+        remote_server_list="$(sort_array_alphabetically "${remote_server_list}")"
+
         # Show output
         chosen_server="$(whiptail --title "BACKUP SELECTION" --menu "Choose a server to work with" 20 78 10 $(for x in ${remote_server_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
 
@@ -434,8 +437,8 @@ function storage_backup_selection() {
     storage_project_list="$(storage_list_dir "${remote_backup_path}/${remote_backup_type}")"
 
     # Re-order Backup Directories
-    remote_backup_list="$(sort_array_alphabetically "${remote_backup_list}")"
-    
+    remote_backup_list="$(sort_array_alphabetically "${storage_project_list}")"
+
     # Select Project
     chosen_project="$(whiptail --title "BACKUP SELECTION" --menu "Choose a Project Backup to work with:" 20 78 10 $(for x in ${storage_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)"
 
@@ -454,20 +457,25 @@ function storage_backup_selection() {
 
     # Re-order Backup files by date
     remote_backup_list="$(sort_files_by_date "${remote_backup_list}")"
-    
+
     # Select Backup File
     chosen_backup_file="$(whiptail --title "BACKUP SELECTION" --menu "Choose Backup to download" 20 78 10 $(for x in ${remote_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        display --indent 6 --text "- Selecting project backup" --result "DONE" --color GREEN
+        display --indent 6 --text "- Selecting project Backup" --result "DONE" --color GREEN
         display --indent 8 --text "${chosen_backup_file}" --tcolor YELLOW
 
         # Remote backup path
         chosen_backup_file="${remote_backup_path}/${chosen_backup_file}"
 
         echo "${chosen_backup_file}"
+
+     else
+
+        display --indent 6 --text "- Selecting Project Backup" --result "SKIPPED" --color YELLOW
+        return 1
 
     fi
 
