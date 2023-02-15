@@ -525,7 +525,7 @@ function wpcli_core_verify() {
 
         # To Array
         mapfile -t verify_core <<<"${wpcli_core_verify_output}"
-        
+
         # Remove from array elements containing unwanted errors
         verify_core=("${verify_core[@]//*wordpress-cli_run*/}")
         verify_core=("${verify_core[@]//*readme.html*/}")
@@ -534,9 +534,10 @@ function wpcli_core_verify() {
         verify_core_string="$(array_remove_newlines "${verify_core[@]}")"
         #verify_core_string="$(string_remove_special_chars "${verify_core[@]}")"
         #verify_core_string="$(string_remove_spaces "${verify_core_string}")"
-
-        # To Array gain
-        mapfile -t verify_core <<<"${verify_core_string}"
+        if [[ -n ${verify_core_string} ]]; then
+            # To Array gain
+            mapfile -t verify_core <<<"${verify_core_string}"
+        fi
     fi
 
     # Check verify_core has elements
