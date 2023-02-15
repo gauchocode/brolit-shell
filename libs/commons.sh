@@ -789,6 +789,31 @@ function get_all_directories() {
 }
 
 ################################################################################
+# Sort backup files by date
+#
+# Arguments:
+#   $1= ${files}
+#
+# Outputs:
+#   Array with sorted files
+################################################################################
+
+function sort_files_by_date {
+
+  local -a files=("$@")
+
+  local -a sorted_files
+
+  log_event "debug" "Running: echo ${files[@]} | tr ' ' '\n' | sort -r -t_ -k3 | tr '\n' ' '" "false"
+
+  sorted_files=($(echo "${files[@]}" | tr ' ' '\n' | sort -r -t_ -k3 | tr '\n' ' '))
+
+  # Return
+  echo "${sorted_files[@]}"
+
+}
+
+################################################################################
 # Get size of an specific file
 #
 # Arguments:
