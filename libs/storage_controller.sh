@@ -433,6 +433,9 @@ function storage_backup_selection() {
     # Get dropbox folders list
     storage_project_list="$(storage_list_dir "${remote_backup_path}/${remote_backup_type}")"
 
+    # Re-order Backup Directories
+    remote_backup_list="$(sort_array_alphabetically "${remote_backup_list}")"
+    
     # Select Project
     chosen_project="$(whiptail --title "BACKUP SELECTION" --menu "Choose a Project Backup to work with:" 20 78 10 $(for x in ${storage_project_list}; do echo "$x [D]"; done) 3>&1 1>&2 2>&3)"
 

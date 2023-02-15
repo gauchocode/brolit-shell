@@ -804,9 +804,34 @@ function sort_files_by_date {
 
   local -a sorted_files
 
-  log_event "debug" "Running: echo ${files[@]} | tr ' ' '\n' | sort -r -t_ -k3 | tr '\n' ' '" "false"
+  #log_event "debug" "Running: echo ${files[@]} | tr ' ' '\n' | sort -r -t_ -k3 | tr '\n' ' '" "false"
 
   sorted_files=($(echo "${files[@]}" | tr ' ' '\n' | sort -r -t_ -k3 | tr '\n' ' '))
+
+  # Return
+  echo "${sorted_files[@]}"
+
+}
+
+################################################################################
+# Sort array alphabetically
+#
+# Arguments:
+#   $1= ${files}
+#
+# Outputs:
+#   Array with sorted files
+################################################################################
+
+function sort_array_alphabetically {
+
+  local -a files=("$@")
+
+  local -a sorted_files
+
+  #log_event "debug" "Running: echo ${files[@]} | tr ' ' '\n' | sort | tr '\n' ' '" "false"
+
+  sorted_files=($(echo "${files[@]}" | tr ' ' '\n' | sort | tr '\n' ' '))
 
   # Return
   echo "${sorted_files[@]}"
