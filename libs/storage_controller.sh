@@ -449,6 +449,9 @@ function storage_backup_selection() {
 
     fi
 
+    # Re-order Backup files by date
+    remote_backup_list="$(sort_files_by_date "${remote_backup_list}")"
+    
     # Select Backup File
     chosen_backup_file="$(whiptail --title "BACKUP SELECTION" --menu "Choose Backup to download" 20 78 10 $(for x in ${remote_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
 
