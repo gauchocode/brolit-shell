@@ -529,7 +529,9 @@ function wpcli_core_verify() {
         verify_core=("${verify_core[@]//*readme.html*/}")
         verify_core=("${verify_core[@]//*ERROR: 1*/}")
         verify_core=("${verify_core[@]//*WordPress installation*/}")
-        verify_core=(string_remove_special_chars "${#verify_core[@]}")
+        verify_core_string="$(string_remove_special_chars "${#verify_core[@]}")"
+        # To Array gain
+        mapfile -t verify_core <<<"${verify_core_string}"
     fi
 
     # Check verify_core has elements
