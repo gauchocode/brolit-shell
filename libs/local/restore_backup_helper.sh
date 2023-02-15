@@ -609,6 +609,7 @@ function restore_backup_from_storage() {
 
       # Select project backup
       backup_to_dowload="$(storage_backup_selection "${remote_list}" "site")"
+      [[ $? -eq 1 ]] && return 1
 
       # Download backup
       storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
@@ -644,6 +645,7 @@ function restore_backup_from_storage() {
 
       # Select project backup
       backup_to_dowload="$(storage_backup_selection "${remote_list}" "site")"
+      [[ $? -eq 1 ]] && return 1
 
       # Download backup
       storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
@@ -675,6 +677,7 @@ function restore_backup_from_storage() {
 
       # Select project backup
       backup_to_dowload="$(storage_backup_selection "${remote_list}" "database")"
+      [[ $? -eq 1 ]] && return 1
 
       # Download backup
       storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
