@@ -509,7 +509,9 @@ function wpcli_core_verify() {
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
+    # Important! 
+    # We had to add the --log-level CRITICAL option to avoid unwanted docker-compose output
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
 
     # Log
     display --indent 6 --text "- WordPress verify-checksums"
@@ -522,12 +524,10 @@ function wpcli_core_verify() {
     if [ ${verify_status} -eq 1 ]; then
         # To Array
         mapfile -t verify_core <<<"${wpcli_core_verify_output}"
-        #mapfile verify_core < <(${wpcli_cmd} core verify-checksums 2>&1)
-
         # Remove from array elements containing unwanted errors
         verify_core=("${verify_core[@]//*wordpress-cli_run*/}")
         verify_core=("${verify_core[@]//*readme.html*/}")
-        verify_core=("${verify_core[@]//*ERROR:*/}")
+        verify_core=("${verify_core[@]//*ERROR: 1*/}")
         verify_core=("${verify_core[@]//*WordPress installation*/}")
     fi
 
@@ -718,7 +718,7 @@ function wpcli_plugin_activate() {
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
 
     # Log
     display --indent 6 --text "- Activating plugin ${plugin}"
