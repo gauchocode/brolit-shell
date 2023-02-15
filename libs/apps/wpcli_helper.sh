@@ -529,10 +529,11 @@ function wpcli_core_verify() {
         verify_core=("${verify_core[@]//*readme.html*/}")
         verify_core=("${verify_core[@]//*ERROR: 1*/}")
         verify_core=("${verify_core[@]//*WordPress installation*/}")
-        verify_core_string="$(string_remove_special_chars "${verify_core[@]}")"
+        verify_core=(array_remove_newlines "${verify_core[@]}")
+        #verify_core_string="$(string_remove_special_chars "${verify_core[@]}")"
         #verify_core_string="$(string_remove_spaces "${verify_core_string}")"
         # To Array gain
-        mapfile -t verify_core <<<"${verify_core_string}"
+       # mapfile -t verify_core <<<"${verify_core_string}"
     fi
 
     # Check verify_core has elements

@@ -1176,6 +1176,25 @@ function string_remove_special_chars() {
 
 }
 
+array_remove_newlines() {
+
+  # Declare an empty array to store the cleaned up elements
+  #local -a cleaned_array="${1}"
+  local -a cleaned_array=("$@")
+
+  # Loop through the original array and remove "\n" and "\r" characters from each element
+  for element in "${@}"; do
+    # Use the tr command to remove the "\n" and "\r" characters from each element
+    cleaned_element=$(echo "${element}" | tr -d '\n\r')
+
+    # Append the cleaned element to the new array
+    cleaned_array+=("${cleaned_element}")
+  done
+
+  # Output the cleaned up array
+  echo "${cleaned_array[@]}"
+}
+
 ################################################################################
 # Change directory ownership
 #
