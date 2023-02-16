@@ -505,13 +505,11 @@ function wpcli_core_verify() {
     local wp_site="${1}"
     local install_type="${2}"
 
-    local verify_core
-
     # Check project_install_type
-    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-    # Important! 
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site} --no-color"
+    # Important!
     # We had to add the --log-level CRITICAL option to avoid unwanted docker-compose output
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp --no-color"
 
     # Log
     display --indent 6 --text "- WordPress verify-checksums"
@@ -531,19 +529,13 @@ function wpcli_core_verify() {
         verify_core=("${verify_core[@]//*readme.html*/}")
         verify_core=("${verify_core[@]//*WordPress installation*/}")
         verify_core_string="$(array_remove_newlines "${verify_core[@]}")"
-        #verify_core_string="$(string_remove_special_chars "${verify_core[@]}")"
-        #verify_core_string="$(string_remove_spaces "${verify_core_string}")"
-        log_event "debug" "verify_core_string: ${verify_core_string}" "false"
-        # Check if verify_core_string is empty or contains only spaces
-        if [[ -n ${verify_core_string} || "${verify_core_string}" =~ [a-zA-Z0-9]+ ]]; then
-            # To Array gain
-            mapfile -t verify_core <<<"${verify_core_string}"
-        fi
+        verify_core_string="$(string_remove_special_chars "${verify_core_string}")"
+        verify_core_string="$(string_remove_spaces "${verify_core_string}")"
+
     fi
 
     # Check verify_core has elements
     if [[ ${verify_status} -eq 0 || -z ${verify_core_string} ]]; then
-
         # Log
         clear_previous_lines "1"
         display --indent 6 --text "- WordPress verify-checksums" --result "DONE" --color GREEN
