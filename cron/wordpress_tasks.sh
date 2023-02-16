@@ -65,23 +65,21 @@ _wordpress_cronned_tasks() {
             # Will ommit empty elements created by spaces on mapfile
             if [[ -n "${wpcli_core_verify_result}" ]]; then
 
-              # Check results
-              #wpcli_core_verify_result_file="$(echo "${wpcli_core_verify_result}" | grep "File doesn't" | cut -d ":" -f3)"
-
-              # Remove white space
-              #wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
-
               # Log
               log_event "info" "${wpcli_core_verify_result}" "false"
 
               # Telegram text
-              notification_text+="${wpcli_core_verify_result}\n"
+              notification_text+="</br><em>${wpcli_core_verify_result}</em>"
 
             fi
 
           done
 
           log_event "error" "WordPress Checksum failed!" "false"
+          
+          # TODO:
+          # 1- If text is XX long should divide it in more messages.
+          # 2- Should replace <br/> with "%0A" for Telegram and "\n" for Discord
 
           # Send notification
           send_notification "⛔ ${SERVER_NAME}" "WordPress checksum failed for site ${project_name}:\n\n${notification_text}" ""

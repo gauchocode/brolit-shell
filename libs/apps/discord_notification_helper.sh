@@ -27,6 +27,20 @@ function discord_send_notification() {
     local notification_content="${2}"
     #local notification_type="${3}"
 
+    # Replace <br/> with "\n"
+    notification_content="${notification_content//<br\/>/\\n}"
+
+    # Check ${notification_content} length
+	if [[ ${#notification_content} -gt 900 ]]; then
+
+		# Log
+		log_event "warning" "Discord notification content too long, truncating ..." "false"
+
+		# Truncate
+		notification_content="${notification_content:0:60}"
+
+	fi
+
     # Log
     log_event "info" "Sending Discord notification ..." "false"
     log_event "debug" "Running: ${CURL} -H \"Content-Type: application/json\" -X POST -d '{\"content\":\"'\"${notification_title} : ${notification_content}\"'\"}' \"${NOTIFICATION_DISCORD_WEBHOOK}\"" "false"
