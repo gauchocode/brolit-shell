@@ -529,7 +529,6 @@ function wpcli_core_verify() {
         # Remove from array elements containing unwanted errors
         verify_core=("${verify_core[@]//*wordpress-cli_run*/}")
         verify_core=("${verify_core[@]//*readme.html*/}")
-        verify_core=("${verify_core[@]//*ERROR: 1*/}")
         verify_core=("${verify_core[@]//*WordPress installation*/}")
         verify_core_string="$(array_remove_newlines "${verify_core[@]}")"
         #verify_core_string="$(string_remove_special_chars "${verify_core[@]}")"
@@ -543,7 +542,7 @@ function wpcli_core_verify() {
     fi
 
     # Check verify_core has elements
-    if [[ ${verify_status} -eq 0 || ${#verify_core[@]} -eq 0 ]]; then
+    if [[ ${verify_status} -eq 0 || -z ${verify_core_string} ]]; then
 
         # Log
         clear_previous_lines "1"
