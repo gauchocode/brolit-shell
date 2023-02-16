@@ -27,7 +27,7 @@ function discord_send_notification() {
     local notification_content="${2}"
     #local notification_type="${3}"
 
-    # Replace <br/> with "\n"
+    # Replace añl <br/> occurrences with "\n"
     notification_content="${notification_content//<br\/>/\\n}"
 
     # Check ${notification_content} length
