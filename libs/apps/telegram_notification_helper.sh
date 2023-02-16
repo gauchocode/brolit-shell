@@ -19,7 +19,6 @@
 # Outputs:
 #   0 if ok, 1 on error.
 ################################################################################
-#
 
 function telegram_send_notification() {
 
@@ -46,8 +45,8 @@ function telegram_send_notification() {
 	notif_sound=0
 	[[ ${notification_type} -eq 1 ]] && notif_sound=1
 
-	# Replace <br/> with "%0A"
-	notification_content="${notification_content//<br\/>/\%0A}"
+	# Replace añl <br/> occurrences with "%0A"
+	notification_content="${notification_content//<br\/>/%0A}"
 
 	# Check ${notification_content} length
 	if [[ ${#notification_content} -gt 60 ]]; then
@@ -61,7 +60,7 @@ function telegram_send_notification() {
 	fi
 
 	# Notification text
-	notif_text="<b>${notification_title}: </b>${notification_content}"
+	notif_text="<b>${notification_title}:</b>${notification_content}"
 
 	# Log
 	log_event "info" "Sending Telegram notification ..." "false"
