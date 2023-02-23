@@ -238,7 +238,7 @@ function wordpress_project_copy() {
     wpcli_db_change_tables_prefix "${project_dir}" "${tables_prefix}"
 
     # WP Search and Replace URL
-    wp_ask_url_search_and_replace "${project_dir}"
+    wp_ask_url_search_and_replace "${project_dir}" ""
 
   else
 
