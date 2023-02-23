@@ -1970,7 +1970,8 @@ function wpcli_clean_database() {
 #
 # Arguments:
 #   ${1} = ${wp_site} (site path)
-#   ${2} = ${dump_file}
+#   ${2} = ${install_type}
+#   ${3} = ${dump_file}
 #
 # Outputs:
 #   0 on success, 1 on error
@@ -1984,10 +1985,14 @@ function wpcli_export_database() {
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
+    ## Important!
+    ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
+    ## --log-level CRITICAL option to avoid unwanted docker-compose output
+    ## --no-color added to avoid unwanted wp-cli output
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
+
 
     # Log
-    #log_event "debug" "Running: wp --allow-root --path=${wp_site} db export ${dump_file}" "false"
     log_event "debug" "Running: ${wpcli_cmd} db export ${dump_file}" "false"
 
     # Command
@@ -2035,7 +2040,12 @@ function wpcli_user_create() {
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
+    ## Important!
+    ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
+    ## --log-level CRITICAL option to avoid unwanted docker-compose output
+    ## --no-color added to avoid unwanted wp-cli output
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
+
 
     log_event "debug" "Running: ${wpcli_cmd} user create ${user} ${mail} --role=${role}" "false"
 

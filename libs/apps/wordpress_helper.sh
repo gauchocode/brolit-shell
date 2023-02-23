@@ -405,6 +405,7 @@ function wp_replace_string_on_database() {
 #
 # Arguments:
 #  ${1} = ${wp_path}
+#  ${2} = ${project_install_type}
 #
 # Outputs:
 #  None
@@ -414,9 +415,9 @@ function wp_replace_string_on_database() {
 function wp_ask_url_search_and_replace() {
 
   local wp_path="${1}"
+  local project_install_type="${2}"
 
   local project_name
-  local project_install_type
   local existing_URL
   local new_URL
 
@@ -424,33 +425,32 @@ function wp_ask_url_search_and_replace() {
 
   if [[ -z ${existing_URL} ]]; then
 
-    existing_URL="$(whiptail_input "URL TO CHANGE" "Insert the URL you want to change, including http:// or https://" "")"
+    existing_URL="$(whiptail_input "URL To Change" "Insert the URL you want to change, including http:// or https://" "")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
       if [[ -z ${new_URL} ]]; then
 
-        new_URL="$(whiptail_input "THE NEW URL" "Insert the new URL , including http:// or https://" "")"
+        new_URL="$(whiptail_input "New URL" "Insert the new URL , including http:// or https://" "")"
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
           # Create temporary folder for backups
-          if [[ ! -d "${BROLIT_TMP_DIR}/backups" ]]; then
-            mkdir -p "${BROLIT_TMP_DIR}/backups"
-            log_event "info" "Temp files directory created: ${BROLIT_TMP_DIR}/backups" "false"
-          fi
+          [[ ! -d "${BROLIT_TMP_DIR}/backups" ]] && mkdir -p "${BROLIT_TMP_DIR}/backups"
 
           project_name="$(basename "${wp_path}")"
-          project_install_type="$(project_get_install_type "${wp_path}")"
 
+          [[ -z ${project_install_type} ]] && project_install_type="$(project_get_install_type "${wp_path}")"
+
+          # Backup database
           wpcli_export_database "${wp_path}" "${project_install_type}" "${BROLIT_TMP_DIR}/backups/${project_name}_bk_before_search_and_replace.sql"
 
+          # Run search and replace
           wpcli_search_and_replace "${wp_path}" "${project_install_type}" "${existing_URL}" "${new_URL}"
 
           exitstatus=$?
-
           # If wp-cli method fails, it will try to replace via SQL Query
           if [[ ${exitstatus} -eq 1 ]]; then
 
@@ -458,6 +458,7 @@ function wp_ask_url_search_and_replace() {
             db_prefix="$(cat "${wp_path}"/wp-config.php | grep "\$table_prefix" | cut -d \' -f 2)"
             target_db="$(sed -n "s/define( *'DB_NAME', *'\([^']*\)'.*/\1/p" "${wp_path}"/wp-config.php)"
 
+            # Run search and replace
             wp_replace_string_on_database "${db_prefix}" "${target_db}" "${existing_URL}" "${new_URL}"
 
           fi
