@@ -1988,7 +1988,7 @@ function project_install() {
   # Startup Script for WordPress installation
   if [[ ${EXEC_TYPE} == "default" && ${project_type} == "wordpress" ]]; then
 
-    wpcli_run_startup_script "${project_path}" "${project_site_url}"
+    wpcli_run_startup_script "${project_path}" "default" "${project_site_url}"
 
     if [[ $? -eq 1 ]]; then
 
@@ -2009,11 +2009,8 @@ function project_install() {
   # TODO: refactor this
   # Cert config files
   cert_path=""
-  if [[ -d "/etc/letsencrypt/live/${project_domain}" ]]; then
-    cert_path="/etc/letsencrypt/live/${project_domain}"
-  elif [[ -d "/etc/letsencrypt/live/www.${project_domain}" ]]; then
-    cert_path="/etc/letsencrypt/live/www.${project_domain}"
-  fi
+  [[ -d "/etc/letsencrypt/live/${project_domain}" ]] && cert_path="/etc/letsencrypt/live/${project_domain}"
+  [[ -d "/etc/letsencrypt/live/www.${project_domain}" ]] && cert_path="/etc/letsencrypt/live/www.${project_domain}"
 
   # Create project config file
   project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "${project_type} " "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "${project_secondary_subdomain}" "/etc/nginx/sites-available/${project_domain}" "" "${cert_path}"
@@ -2977,7 +2974,7 @@ function project_post_install_tasks() {
     if [[ -n ${old_project_domain} && -n ${new_project_domain} ]]; then
       if [[ ${old_project_domain} != "${new_project_domain}" ]]; then
         # Change urls on database
-        wpcli_search_and_replace "${install_path}" "${old_project_domain}" "${new_project_domain}" "default"
+        wpcli_search_and_replace "${install_path}" "default" "${old_project_domain}" "${new_project_domain}"
       fi
     fi
 
@@ -2986,27 +2983,27 @@ function project_post_install_tasks() {
 
     # Update upload_path
     ## Context: https://core.trac.wordpress.org/ticket/41947
-    wpcli_update_upload_path "${install_path}" "wp-content/uploads"
+    wpcli_update_upload_path "${install_path}" "default" "wp-content/uploads"
 
     # Changing WordPress visibility
     if [[ ${project_stage} == "prod" ]]; then
       # Let search engines index the project
       wpcli_change_wp_seo_visibility "${install_path}" "default" "1"
       # Set debug mode to false
-      wpcli_set_debug_mode "${install_path}" "false"
+      wpcli_set_debug_mode "${install_path}" "default" "false" 
     else
       # Block search engines indexation
       wpcli_change_wp_seo_visibility "${install_path}" "default" "0"
       # De-activate cache plugins if present
-      wpcli_plugin_is_installed "${install_path}" "wp-rocket" && wpcli_deactivate_plugin "${install_path}" "wp-rocket"
-      wpcli_plugin_is_installed "${install_path}" "redis-cache" && wpcli_plugin_deactivate "${install_path}" "redis-cache"
-      wpcli_plugin_is_installed "${install_path}" "w3-total-cache" && wpcli_plugin_deactivate "${install_path}" "w3-total-cache"
-      wpcli_plugin_is_installed "${install_path}" "wp-super-cache" && wpcli_plugin_deactivate "${install_path}" "wp-super-cache"
+      wpcli_plugin_is_installed "${install_path}" "default" "wp-rocket" && wpcli_deactivate_plugin "${install_path}" "wp-rocket"
+      wpcli_plugin_is_installed "${install_path}" "default" "redis-cache" && wpcli_plugin_deactivate "${install_path}" "redis-cache"
+      wpcli_plugin_is_installed "${install_path}" "default" "w3-total-cache" && wpcli_plugin_deactivate "${install_path}" "w3-total-cache"
+      wpcli_plugin_is_installed "${install_path}" "default" "wp-super-cache" && wpcli_plugin_deactivate "${install_path}" "wp-super-cache"
       # Set debug mode to true
-      wpcli_set_debug_mode "${install_path}" "true"
+      wpcli_set_debug_mode "${install_path}" "default" "true"
     fi
 
-    wpcli_cache_flush "${install_path}"
+    wpcli_cache_flush "${install_path}" "default"
 
     # If .user.ini found, rename it (Wordfence issue workaround)
     [[ -f "${install_path}/.user.ini" ]] && mv "${install_path}/.user.ini" "${install_path}/.user.ini.bak"
