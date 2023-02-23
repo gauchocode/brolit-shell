@@ -236,7 +236,7 @@ function wpcli_main_menu() {
       log_subsection "WP Verify"
 
       wpcli_core_verify "${wp_site}" "${project_install_type}"
-      wpcli_plugin_verify "${wp_site}" "all" "${project_install_type}"
+      wpcli_plugin_verify "${wp_site}" "${project_install_type}" "all"
 
     fi
 
@@ -248,7 +248,7 @@ function wpcli_main_menu() {
 
       log_subsection "WP Core Re-install"
 
-      wpcli_core_reinstall "${wp_site}" "" "${project_install_type}"
+      wpcli_core_reinstall "${wp_site}" "${project_install_type}" ""
       exitstatus=$?
       [[ ${exitstatus} -eq 0 ]] && send_notification "⚠️ ${SERVER_NAME}" "WordPress re-installed on: ${wp_site}"
 
@@ -332,7 +332,7 @@ function wpcli_main_menu() {
 
         choosen_passw="$(whiptail --title "WORDPRESS USER PASSWORD" --inputbox "Insert the new password:" 10 60 "" 3>&1 1>&2 2>&3)"
         exitstatus=$?
-        [[ ${exitstatus} -eq 0 ]] && wpcli_user_reset_passw "${wp_site}" "${choosen_user}" "${choosen_passw}"
+        [[ ${exitstatus} -eq 0 ]] && wpcli_user_reset_passw "${wp_site}" "${project_install_type}" "${choosen_user}" "${choosen_passw}"
 
       fi
 
@@ -343,8 +343,8 @@ function wpcli_main_menu() {
 
       log_subsection "WP Delete Spam Comments"
 
-      wpcli_delete_comments "${wp_site}" "spam"
-      wpcli_delete_comments "${wp_site}" "hold"
+      wpcli_delete_comments "${wp_site}" "${project_install_type}" "spam"
+      wpcli_delete_comments "${wp_site}" "${project_install_type}" "hold"
 
     fi
 
@@ -352,7 +352,7 @@ function wpcli_main_menu() {
 
       choosen_mode="$(whiptail --title "WORDPRESS MAINTENANCE MODE" --inputbox "Set new maintenance mode (‘activate’, ‘deactivate’)" 10 60 "" 3>&1 1>&2 2>&3)"
       exitstatus=$?
-      [[ ${exitstatus} -eq 0 ]] && wpcli_maintenance_mode_set "${wp_site}" "${choosen_mode}"
+      [[ ${exitstatus} -eq 0 ]] && wpcli_maintenance_mode_set "${wp_site}" "${project_install_type}" "${choosen_mode}"
 
     fi
 
@@ -477,21 +477,21 @@ function wpcli_tasks_handler() {
 
   plugin-update)
 
-    wpcli_plugin_update "${PROJECTS_PATH}/${DOMAIN}" "${TVALUE}"
+    wpcli_plugin_update "${PROJECTS_PATH}/${DOMAIN}" "${TVALUE}" ""
 
     exit
     ;;
 
   clear-cache)
 
-    wpcli_rocket_cache_clean "${PROJECTS_PATH}/${DOMAIN}"
+    wpcli_rocket_cache_clean "${PROJECTS_PATH}/${DOMAIN}" "${TVALUE}"
 
     exit
     ;;
 
   cache-activate)
 
-    wpcli_rocket_cache_activate "${PROJECTS_PATH}/${DOMAIN}"
+    wpcli_rocket_cache_activate "${PROJECTS_PATH}/${DOMAIN}" "${TVALUE}"
 
     exit
     ;;
@@ -506,8 +506,8 @@ function wpcli_tasks_handler() {
   verify-installation)
 
     # TODO: get install_type
-    wpcli_core_verify "${PROJECTS_PATH}/${DOMAIN}"
-    wpcli_plugin_verify "${PROJECTS_PATH}/${DOMAIN}"
+    wpcli_core_verify "${PROJECTS_PATH}/${DOMAIN}" "${TVALUE}"
+    wpcli_plugin_verify "${PROJECTS_PATH}/${DOMAIN}" "${TVALUE}" ""
 
     exit
     ;;
