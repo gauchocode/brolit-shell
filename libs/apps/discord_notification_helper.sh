@@ -31,6 +31,8 @@ function discord_send_notification() {
     notification_content="${notification_content//<br\/>/\\n}"
     # Replace all <em> occurrences with "*" (bold)
     notification_content="${notification_content//<em>/**}"
+    # Replace all </em> occurrences with "*" (bold)
+    notification_content="${notification_content//<\/em>/**}"
 
     # Check ${notification_content} length
 	if [[ ${#notification_content} -gt 900 ]]; then
@@ -39,7 +41,7 @@ function discord_send_notification() {
 		log_event "warning" "Discord notification content too long, truncating ..." "false"
 
 		# Truncate
-		notification_content="${notification_content:0:60}"
+		notification_content="${notification_content:0:120}"
 
 	fi
 
@@ -48,7 +50,7 @@ function discord_send_notification() {
     log_event "debug" "Running: ${CURL} -H \"Content-Type: application/json\" -X POST -d '{\"content\":\"'\"${notification_title} : ${notification_content}\"'\"}' \"${NOTIFICATION_DISCORD_WEBHOOK}\"" "false"
 
     # Discord command
-    ${CURL} -H "Content-Type: application/json" -X POST -d '{"content":"'"**${notification_title}**:\n${notification_content}"'"}' "${NOTIFICATION_DISCORD_WEBHOOK}"
+    ${CURL} -H "Content-Type: application/json" -X POST -d '{"content":"'"**${notification_title}**:${notification_content}"'"}' "${NOTIFICATION_DISCORD_WEBHOOK}"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
