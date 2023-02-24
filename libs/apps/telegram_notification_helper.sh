@@ -45,8 +45,10 @@ function telegram_send_notification() {
 	notif_sound=0
 	[[ ${notification_type} -eq 1 ]] && notif_sound=1
 
-	# Replace añl <br/> occurrences with "%0A"
+	# Replace all <br/> occurrences with "%0A"
 	notification_content="${notification_content//<br\/>/%0A}"
+	# Replace all \n occurrences with "%0A"
+	notification_content="${notification_content//\\n/%0A}"
 
 	# Check ${notification_content} length
 	if [[ ${#notification_content} -gt 60 ]]; then
@@ -54,8 +56,8 @@ function telegram_send_notification() {
 		# Log
 		log_event "warning" "Telegram notification content too long, truncating ..." "false"
 
-		# Truncate
-		notification_content="${notification_content:0:60}"
+		# Truncate 90 characters
+		notification_content="${notification_content:0:90}"
 
 	fi
 
