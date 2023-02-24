@@ -69,7 +69,7 @@ _wordpress_cronned_tasks() {
               log_event "info" "${wpcli_core_verify_result}" "false"
 
               # Telegram text
-              notification_text+="</br><em>${wpcli_core_verify_result}</em>"
+              notification_text+="<br/><em>${wpcli_core_verify_result}</em>"
 
             fi
 

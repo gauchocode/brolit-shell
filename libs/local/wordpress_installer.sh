@@ -235,7 +235,7 @@ function wordpress_project_copy() {
     # Generate WP tables PREFIX
     tables_prefix="$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)"
     # Change WP tables PREFIX
-    wpcli_db_change_tables_prefix "${project_dir}" "${tables_prefix}"
+    wpcli_db_change_tables_prefix "${project_dir}" "default" "${tables_prefix}"
 
     # WP Search and Replace URL
     wp_ask_url_search_and_replace "${project_dir}" ""

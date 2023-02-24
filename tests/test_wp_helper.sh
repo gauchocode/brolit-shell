@@ -40,7 +40,7 @@ function test_wpcli_helper_funtions() {
 
     #test_wpcli_db_get_prefix "${PROJECTS_PATH}/${project_domain}"
 
-    #test_wpcli_db_change_tables_prefix "${PROJECTS_PATH}/${project_domain}"
+    #test_wpcli_db_change_tables_prefix "${PROJECTS_PATH}/${project_domain}" "default"
 
     #test_wpcli_db_get_prefix "${PROJECTS_PATH}/${project_domain}"
 
