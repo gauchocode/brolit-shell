@@ -255,10 +255,10 @@ function wpcli_main_menu() {
     fi
 
     # CLEAN_DB
-    [[ ${chosen_wpcli_options} == *"08"* ]] && wpcli_clean_database "${wp_site}"
+    [[ ${chosen_wpcli_options} == *"08"* ]] && wpcli_clean_database "${wp_site}" "${project_install_type}"
 
     # PROFILE_WP
-    [[ ${chosen_wpcli_options} == *"09"* ]] && wpcli_profiler_menu "${wp_site}"
+    [[ ${chosen_wpcli_options} == *"09"* ]] && wpcli_profiler_menu "${wp_site}" "${project_install_type}"
 
     # CHANGE_TABLES_PREFIX
     if [[ ${chosen_wpcli_options} == *"10"* ]]; then
@@ -269,7 +269,7 @@ function wpcli_main_menu() {
       TABLES_PREFIX="$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)"
 
       # Change WP tables PREFIX
-      wpcli_db_change_tables_prefix "${wp_site}" "${TABLES_PREFIX}"
+      wpcli_db_change_tables_prefix "${wp_site}" "${project_install_type}" "${TABLES_PREFIX}"
 
     fi
 

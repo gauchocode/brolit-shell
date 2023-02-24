@@ -27,8 +27,10 @@ function discord_send_notification() {
     local notification_content="${2}"
     #local notification_type="${3}"
 
-    # Replace añl <br/> occurrences with "\n"
+    # Replace all <br/> occurrences with "\n"
     notification_content="${notification_content//<br\/>/\\n}"
+    # Replace all <em> occurrences with "*" (bold)
+    notification_content="${notification_content//<em>/**}"
 
     # Check ${notification_content} length
 	if [[ ${#notification_content} -gt 900 ]]; then
