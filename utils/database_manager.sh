@@ -434,13 +434,30 @@ function database_manager_menu() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        if [[ ${chosen_database_engine} == "MYSQL" ]]; then
+        # Select source file
+        dump_file=$(whiptail --title "Source File" --inputbox "Please insert project database's backup (full path):" 10 60 "/root/to_restore/backup.sql" 3>&1 1>&2 2>&3)
 
-          mysql_database_import "${chosen_database}" "false" "${database_container_selected}"
+        if [[ -f ${dump_file} ]]; then
+
+          display --indent 6 --text "Selected source: ${dump_file}"
 
         else
 
-          postgres_database_import "${chosen_database}" "false" "${database_container_selected}"
+          display --indent 6 --text "Selected source: ${dump_file}" --result "ERROR" --color RED
+          display --indent 6 --text "File not found" --tcolor RED
+          return 1
+
+        fi
+
+        log_event "info" "File to restore: ${dump_file}" "false"
+
+        if [[ ${chosen_database_engine} == "MYSQL" ]]; then
+
+          mysql_database_import "${chosen_database}" "${database_container_selected}" "${dump_file}"
+
+        else
+
+          postgres_database_import "${chosen_database}" "${database_container_selected}" "${dump_file}"
 
         fi
 
