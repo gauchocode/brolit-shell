@@ -61,9 +61,7 @@ function _setup_globals_and_options() {
   declare -g BROLIT_CONFIG_PATH="/etc/brolit"
 
   # Creating brolit folder
-  if [[ ! -d ${BROLIT_CONFIG_PATH} ]]; then
-    mkdir "${BROLIT_CONFIG_PATH}"
-  fi
+  [[ ! -d ${BROLIT_CONFIG_PATH} ]] && mkdir "${BROLIT_CONFIG_PATH}"
 
   # Apps globals
   declare -g TAR
