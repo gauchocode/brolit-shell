@@ -214,6 +214,9 @@ function mysql_list_databases() {
 
     if [[ -n ${container_name} ]]; then
 
+        local mysql_container_user
+        local mysql_container_user_pssw
+
         # Get MYSQL_USER and MYSQL_PASSWORD from container
         ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
         mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
@@ -833,7 +836,8 @@ function mysql_database_drop() {
 #
 # Arguments:
 #  ${1} = ${database} (.sql)
-#  ${2} = ${dump_file}
+#  ${2} = ${container_name}
+#  ${3} = ${dump_file}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -842,19 +846,40 @@ function mysql_database_drop() {
 function mysql_database_import() {
 
     local database="${1}"
-    local dump_file="${2}"
+    local container_name="${2}"
+    local dump_file="${3}"
+
+    local mysql_exec
+
+    if [[ -n ${container_name} ]]; then
+
+        local mysql_container_user
+        local mysql_container_user_pssw
+
+        # Get MYSQL_USER and MYSQL_PASSWORD from container
+        ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
+        mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
+        mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
+
+        mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
+
+    else
+
+        mysql_exec="${MYSQL_ROOT}"
+
+    fi
 
     # Log
     display --indent 6 --text "- Importing backup into: ${database}" --tcolor YELLOW
     log_event "info" "Importing dump file ${dump_file} into database: ${database}" "false"
-    log_event "debug" "Running: pv ${dump_file} | ${MYSQL_ROOT} -f -D ${database}" "false"
+    log_event "debug" "Running: pv ${dump_file} | ${mysql_exec} -f -D ${database}" "false"
 
     # String “utf8mb4_0900_ai_ci” replaced it with “utf8mb4_general_ci“
     # This is a workaround for a bug in MySQL 5.7.x and 5.6.x where the default collation is “utf8mb4_0900_ai_ci”.
     sed -i 's/utf8mb4_0900_ai_ci/utf8mb4_general_ci/g' "${dump_file}"
 
     # Execute command
-    pv --width 70 "${dump_file}" | ${MYSQL_ROOT} -f -D "${database}"
+    pv --width 70 "${dump_file}" | ${mysql_exec} -f -D "${database}"
 
     if [[ ${PIPESTATUS[1]} -eq 0 ]]; then
 
@@ -872,7 +897,7 @@ function mysql_database_import() {
         display --indent 6 --text "- Database backup import" --result "ERROR" --color RED
         display --indent 8 --text "Please, read the log file!" --tcolor RED
         log_event "error" "Something went wrong importing database: ${database}"
-        log_event "debug" "Last command executed: pv ${dump_file} | ${MYSQL_ROOT} -f -D ${database}"
+        log_event "debug" "Last command executed: pv ${dump_file} | ${mysql_exec} -f -D ${database}"
 
         return 1
 
@@ -885,7 +910,8 @@ function mysql_database_import() {
 #
 # Arguments:
 #  ${1} = ${database}
-#  ${2} = ${dump_file}
+#  ${2} = ${container_name}
+#  ${3} = ${dump_file}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -894,9 +920,29 @@ function mysql_database_import() {
 function mysql_database_export() {
 
     local database="${1}"
-    local dump_file="${2}"
+    local container_name="${2}"
+    local dump_file="${3}"
 
+    local mysql_exec
     local dump_status
+
+    if [[ -n ${container_name} ]]; then
+
+        local mysql_container_user
+        local mysql_container_user_pssw
+
+        # Get MYSQL_USER and MYSQL_PASSWORD from container
+        ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
+        mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
+        mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
+
+        mysql_exec="docker exec -i ${container_name} mysqldump -u${mysql_container_user} -p${mysql_container_user_pssw}"
+
+    else
+
+        mysql_exec="${MYSQLDUMP_ROOT}"
+
+    fi
 
     log_event "info" "Making a database backup of: ${database}" "false"
 
@@ -904,7 +950,7 @@ function mysql_database_export() {
 
     # Run mysqldump
     # For large tables use --max_allowed_packet=128M or bigger (default is 25MB)
-    ${MYSQLDUMP_ROOT} --max_allowed_packet=512M "${database}" >"${dump_file}"
+    ${mysql_exec} --max_allowed_packet=512M "${database}" >"${dump_file}"
 
     dump_status=$?
     spinner_stop "${dump_status}"
