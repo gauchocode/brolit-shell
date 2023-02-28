@@ -1,6 +1,12 @@
 FROM phpdockerio/php:8.2-fpm
 WORKDIR "/wordpress"
 
+# This image use the composer v2
+# If for whatever reason you need to roll back to v1, uncomment the following line:
+# COPY --from=composer:1 /usr/bin/composer /usr/bin/composer
+
+# Extensions already included on base image: 
+# APC, cURL, JSON, Sodium, MBString, OPCache, Readline, XML and Zip
 RUN apt-get update; \
     apt-get -y --no-install-recommends install \
         vim \ 
