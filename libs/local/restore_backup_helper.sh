@@ -1055,12 +1055,12 @@ function restore_backup_database() {
 
     # Make backup of actual database
     log_event "info" "MySQL database ${db_name} already exists" "false"
-    mysql_database_export "${db_name}" "${BROLIT_TMP_DIR}/backups/${db_name}_bk_before_restore.sql"
+    mysql_database_export "${db_name}" "false" "${BROLIT_TMP_DIR}/backups/${db_name}_bk_before_restore.sql"
 
   fi
 
   # Restore database
-  mysql_database_import "${db_name}" "${project_backup}"
+  mysql_database_import "${db_name}" "false" "${project_backup}"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 

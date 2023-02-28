@@ -360,7 +360,7 @@ function wp_replace_string_on_database() {
 
   if [[ -n "${existing_URL}" && -n "${new_URL}" ]]; then
 
-    #mysql_database_export "${chosen_db}" "${chosen_db}_bk_before_replace_urls.sql"
+    #mysql_database_export "${chosen_db}" "false" "${chosen_db}_bk_before_replace_urls.sql"
 
     # Queries
     SQL0="USE ${chosen_db};"

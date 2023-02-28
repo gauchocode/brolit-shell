@@ -212,7 +212,7 @@ function mysql_list_databases() {
     local mysql_exec
     local databases
 
-    if [[ -n ${container_name} ]]; then
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
 
         local mysql_container_user
         local mysql_container_user_pssw
@@ -851,7 +851,7 @@ function mysql_database_import() {
 
     local mysql_exec
 
-    if [[ -n ${container_name} ]]; then
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
 
         local mysql_container_user
         local mysql_container_user_pssw
@@ -926,7 +926,7 @@ function mysql_database_export() {
     local mysql_exec
     local dump_status
 
-    if [[ -n ${container_name} ]]; then
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
 
         local mysql_container_user
         local mysql_container_user_pssw
@@ -996,11 +996,11 @@ function mysql_database_rename() {
 
     local dump_file="${BROLIT_TMP_DIR}/${database_old_name}_bk_before_rename_db.sql"
 
-    mysql_database_export "${database_old_name}" "${dump_file}"
+    mysql_database_export "${database_old_name}" "false" "${dump_file}"
 
     mysql_database_create "${database_new_name}"
 
-    mysql_database_import "${database_new_name}" "${dump_file}"
+    mysql_database_import "${database_new_name}" "false" "${dump_file}"
 
     mysql_database_drop "${database_old_name}"
 
@@ -1014,10 +1014,10 @@ function mysql_database_clone() {
 
     local dump_file="${BROLIT_TMP_DIR}/${database_old_name}_bk_before_clone_db.sql"
 
-    mysql_database_export "${database_old_name}" "${dump_file}"
+    mysql_database_export "${database_old_name}" "false" "${dump_file}"
 
     mysql_database_create "${database_new_name}"
 
-    mysql_database_import "${database_new_name}" "${dump_file}"
+    mysql_database_import "${database_new_name}" "false" "${dump_file}"
 
 }
