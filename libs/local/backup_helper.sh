@@ -924,12 +924,12 @@ function backup_project_database() {
   # Database engine
   if [[ ${db_engine} == "mysql" ]]; then
     ## Create dump file
-    mysql_database_export "${database}" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
+    mysql_database_export "${database}" "false" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
   else
 
     if [[ ${db_engine} == "psql" ]]; then
       ## Create dump file
-      postgres_database_export "${database}" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
+      postgres_database_export "${database}" "false" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
     fi
 
   fi

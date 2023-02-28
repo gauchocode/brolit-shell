@@ -406,11 +406,11 @@ function database_manager_menu() {
 
         if [[ ${chosen_database_engine} == "MYSQL" ]]; then
 
-          mysql_database_export "${chosen_database}" "${database_container_selected}"
+          mysql_database_export "${chosen_database}" "${database_container_selected}" "${BROLIT_TMP_DIR}/${chosen_database}.sql"
 
         else
 
-          postgres_database_export "${chosen_database}" "${database_container_selected}"
+          postgres_database_export "${chosen_database}" "${database_container_selected}" "${BROLIT_TMP_DIR}/${chosen_database}.sql"
 
         fi
 
@@ -436,11 +436,11 @@ function database_manager_menu() {
 
         if [[ ${chosen_database_engine} == "MYSQL" ]]; then
 
-          mysql_database_import "${chosen_database}" "${database_container_selected}"
+          mysql_database_import "${chosen_database}" "false" "${database_container_selected}"
 
         else
 
-          postgres_database_import "${chosen_database}" "${database_container_selected}"
+          postgres_database_import "${chosen_database}" "false" "${database_container_selected}"
 
         fi
 
