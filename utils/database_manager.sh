@@ -75,7 +75,7 @@ function database_delete_menu() {
 #
 # Arguments:
 #   ${1} = ${database_engine}
-#   ${2} = ${mysql_container} - Optional
+#   ${2} = ${database_container} - Optional
 #
 # Outputs:
 #   nothing
@@ -84,7 +84,7 @@ function database_delete_menu() {
 function database_list_menu() {
 
   local database_engine="${1}"
-  local mysql_container="${2}"
+  local database_container="${2}"
 
   local database_list_options
   local chosen_database_option
@@ -97,9 +97,9 @@ function database_list_menu() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${database_engine} == "MYSQL" ]]; then
-      databases="$(mysql_list_databases "${chosen_database_option}" "${mysql_container}")"
+      databases="$(mysql_list_databases "${chosen_database_option}" "${database_container}")"
     else
-      databases="$(postgres_list_databases "${chosen_database_option}" "${mysql_container}")"
+      databases="$(postgres_list_databases "${chosen_database_option}" "${database_container}")"
     fi
 
     display --indent 8 --text "Database: ${databases}" --tcolor GREEN
@@ -124,10 +124,11 @@ function database_manager_menu() {
   local database_manager_options
   local chosen_database_manager_option
   local database_list_options
-  local chosen_database_list_option
+  local chosen_database
+  local chosen_database_name
 
-  local mysql_containers
-  local mysql_container_selected
+  local database_container
+  local database_container_selected
 
   log_section "Database Manager"
 
@@ -135,18 +136,19 @@ function database_manager_menu() {
   if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then
 
     # List mysql containers
-    mysql_containers="$(docker ps --format "{{.Names}}" | grep mysql)"
+    database_container="$(docker ps --format "{{.Names}}" | grep mysql)"
 
-    if [[ -n ${mysql_containers} ]]; then
+    if [[ -n ${database_container} ]]; then
 
       # Whiptail to prompt user if want to use docker
-      whiptail_message_with_skip_option "Docker Support" "MySQL containers are running, do you want to work with an specific docker container?"
+      whiptail_message_with_skip_option "Docker Support" "Database containers are running, do you want to work with an specific docker container?"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
         # MySQL Container selection menu
-        mysql_container_selected="$(whiptail --title "Select a MySQL Container" --menu "Choose a MySQL Container to work with" 20 78 10 $(for x in ${mysql_containers}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)"
+        database_container_selected="$(whiptail --title "Select a Database Container" --menu "Choose a Database Container to work with" 20 78 10 $(for x in ${database_container}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)"
         [[ ${exitstatus} -eq 1 ]] && return 1
+        # TODO: check if database engine (mysql, postgres)
         chosen_database_engine="MYSQL"
 
       fi
@@ -177,7 +179,7 @@ function database_manager_menu() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # LIST DATABASES
-    [[ ${chosen_database_manager_option} == *"01"* ]] && database_list_menu "${chosen_database_engine}" "${mysql_container_selected}"
+    [[ ${chosen_database_manager_option} == *"01"* ]] && database_list_menu "${chosen_database_engine}" "${database_container_selected}"
 
     # CREATE DATABASE
     if [[ ${chosen_database_manager_option} == *"02"* ]]; then
