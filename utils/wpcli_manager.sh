@@ -98,7 +98,7 @@ function wpcli_manager() {
     # Log
     log_event "debug" "project_path=${project_path}" "false"
     log_event "info" "WordPress installation not found!" "false"
-    display --indent 2 --text "- Searching WordPress installation" --result "FAIL" --color RED
+    display --indent 6 --text "- Searching WordPress installation" --result "FAIL" --color RED
 
     whiptail --title "WARNING" --msgbox "WordPress installation not found! Press Enter to return to the Main Menu." 8 78
 
@@ -195,7 +195,7 @@ function wpcli_main_menu() {
 
   wpcli_options=(
     "01)" "INSTALL PLUGINS"
-    "02)" "DELETE THEMES"
+    "02)" "LIST INSTALLED PLUGINS"
     "03)" "DELETE PLUGINS"
     "04)" "REINSTALL ALL PLUGINS"
     "05)" "VERIFY WP"
@@ -221,8 +221,11 @@ function wpcli_main_menu() {
     # INSTALL PLUGINS
     [[ ${chosen_wpcli_options} == *"01"* ]] && wpcli_default_plugins_installer "${wp_site}" "${project_install_type}"
 
-    # DELETE_THEMES
-    [[ ${chosen_wpcli_options} == *"02"* ]] && wpcli_delete_themes_menu "${wp_site}" "${project_install_type}"
+    # LIST INSTALLED PLUGINS
+    [[ ${chosen_wpcli_options} == *"02"* ]] && wpcli_plugin_list "${wp_site}" "${project_install_type}" "" ""
+
+    # DELETE THEMES
+    #[[ ${chosen_wpcli_options} == *"02"* ]] && wpcli_delete_themes_menu "${wp_site}" "${project_install_type}"
 
     # DELETE_PLUGINS
     [[ ${chosen_wpcli_options} == *"03"* ]] && wpcli_delete_plugins_menu "${wp_site}" "${project_install_type}"

@@ -591,8 +591,12 @@ function wpcli_plugin_verify() {
     local verify_plugin
 
     # Check project_install_type
-    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site} --no-color"
+    ## Important!
+    ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
+    ## --log-level CRITICAL option to avoid unwanted docker-compose output
+    ## --no-color added to avoid unwanted wp-cli output
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
 
     [[ -z ${wp_plugin} || ${wp_plugin} == "all" ]] && wp_plugin="--all"
 
@@ -627,8 +631,12 @@ function wpcli_plugin_install() {
     local wpcli_cmd
 
     # Check project_install_type
-    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site} --no-color"
+    ## Important!
+    ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
+    ## --log-level CRITICAL option to avoid unwanted docker-compose output
+    ## --no-color added to avoid unwanted wp-cli output
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
 
     # Log
     display --indent 6 --text "- Installing plugin ${wp_plugin}"
@@ -681,8 +689,12 @@ function wpcli_plugin_update() {
     local plugin_update
 
     # Check project_install_type
-    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site} --no-color"
+    ## Important!
+    ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
+    ## --log-level CRITICAL option to avoid unwanted docker-compose output
+    ## --no-color added to avoid unwanted wp-cli output
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
 
     [[ -z ${wp_plugin} ]] && plugin="--all"
 
@@ -714,8 +726,12 @@ function wpcli_plugin_get_version() {
     local plugin_update
 
     # Check project_install_type
-    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site} --no-color"
+    ## Important!
+    ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
+    ## --log-level CRITICAL option to avoid unwanted docker-compose output
+    ## --no-color added to avoid unwanted wp-cli output
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
 
     local plugin_version
 
@@ -744,8 +760,12 @@ function wpcli_plugin_activate() {
     local plugin="${3}"
 
     # Check project_install_type
-    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site} --no-color"
+    ## Important!
+    ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
+    ## --log-level CRITICAL option to avoid unwanted docker-compose output
+    ## --no-color added to avoid unwanted wp-cli output
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
 
     # Log
     display --indent 6 --text "- Activating plugin ${plugin}"
@@ -783,15 +803,23 @@ function wpcli_plugin_activate() {
 function wpcli_plugin_deactivate() {
 
     local wp_site="${1}"
-    local plugin="${2}"
+    local install_type="${2}"
+    local plugin="${3}"
+
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site} --no-color"
+    ## Important!
+    ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
+    ## --log-level CRITICAL option to avoid unwanted docker-compose output
+    ## --no-color added to avoid unwanted wp-cli output
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
 
     # Log
     display --indent 6 --text "- Deactivating plugin ${plugin}"
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin deactivate ${plugin}"
+    log_event "debug" "Running: ${wpcli_cmd} plugin deactivate ${plugin}"
 
     # Command
-    sudo -u www-data wp --path="${wp_site}" plugin deactivate "${plugin}" --quiet
-    #sudo -u www-data wp --path="/var/www/test.broobe.net/" plugin deactivate "wp-rocket" --quiet
+    ${wpcli_cmd} plugin deactivate "${plugin}" --quiet
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -950,6 +978,46 @@ function wpcli_plugin_is_installed() {
     [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
 
     ${wpcli_cmd} plugin is-installed "${plugin}"
+
+    # Return
+    echo $?
+
+}
+
+################################################################################
+# List installed plugins
+#
+# Arguments:
+#   ${1} = ${wp_site}
+#   ${2} = ${install_type}
+#   ${3} = ${status} (active, inactive, active-network, must-use, dropin)
+#   ${4} = ${format} (table, csv, count, json, yaml)
+#
+# Outputs:
+#   0 if plugin is installed, 1 if not.
+################################################################################
+
+function wpcli_plugin_list() {
+
+    local wp_site="${1}"
+    local install_type="${2}"
+    local status="${3}"
+    local format="${4}"
+
+    local wpcli_cmd
+
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    ## Important!
+    ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
+    ## --log-level CRITICAL option to avoid unwanted docker-compose output
+    ## --no-color added to avoid unwanted wp-cli output
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
+
+    [[ -z ${status} ]] && status="active"
+    [[ -z ${format} ]] && format="table"
+    
+    ${wpcli_cmd} plugin list --status="${status}" --format="${format}"
 
     # Return
     echo $?
