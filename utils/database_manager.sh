@@ -48,6 +48,9 @@ function database_delete_menu() {
 
   local database_engine="${1}"
 
+  local databases
+  local chosen_database
+
   # List databases
   databases="$(database_list_all "all" "${database_engine}" "default")"
 
@@ -102,7 +105,7 @@ function database_list_menu() {
       databases="$(postgres_list_databases "${chosen_database_option}" "${database_container}")"
     fi
 
-    display --indent 8 --text "Database: ${databases}" --tcolor GREEN
+    display --indent 8 --text "Databases: ${databases}" --tcolor GREEN
 
   fi
 
@@ -171,6 +174,8 @@ function database_manager_menu() {
     "07)" "DELETE USER"
     "08)" "CHANGE USER PASSWORD"
     "09)" "GRANT USER PRIVILEGES"
+    "10)" "EXPORT DATABASE DUMP"
+    "11)" "IMPORT DUMP INTO DATABASE"
   )
 
   chosen_database_manager_option="$(whiptail --title "DATABASE MANAGER" --menu " " 20 78 10 "${database_manager_options[@]}" 3>&1 1>&2 2>&3)"
@@ -247,9 +252,9 @@ function database_manager_menu() {
 
     fi
 
+    # CREATE USER DATABASE
     if [[ ${chosen_database_manager_option} == *"06"* ]]; then
 
-      # CREATE USER DATABASE
       chosen_username="$(whiptail_input "DATABASE MANAGER" "Insert the username you want to create, example: my_domain_user" "")"
 
       exitstatus=$?
@@ -377,6 +382,65 @@ function database_manager_menu() {
           else
             postgres_user_grant_privileges "${chosen_user}" "${chosen_database}" "localhost"
           fi
+
+        fi
+
+      fi
+
+    fi
+
+    # EXPORT DATABASE DUMP
+    if [[ ${chosen_database_manager_option} == *"10"* ]]; then
+
+      # List databases
+      if [[ ${chosen_database_engine} == "MYSQL" ]]; then
+        databases="$(mysql_list_databases "all" "${database_container_selected}")"
+      else
+        databases="$(postgres_list_databases "all" "${database_container_selected}")"
+      fi
+
+      chosen_database="$(whiptail --title "DATABASE MANAGER" --menu "Choose the database to export" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) 3>&1 1>&2 2>&3)"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        if [[ ${chosen_database_engine} == "MYSQL" ]]; then
+
+          mysql_database_export "${chosen_database}" "${database_container_selected}"
+
+        else
+
+          postgres_database_export "${chosen_database}" "${database_container_selected}"
+
+        fi
+
+      fi
+
+    fi
+
+
+    # IMPORT DATABASE DUMP
+    if [[ ${chosen_database_manager_option} == *"11"* ]]; then
+
+      # List databases
+      if [[ ${chosen_database_engine} == "MYSQL" ]]; then
+        databases="$(mysql_list_databases "all" "${database_container_selected}")"
+      else
+        databases="$(postgres_list_databases "all" "${database_container_selected}")"
+      fi
+
+      chosen_database="$(whiptail --title "DATABASE MANAGER" --menu "Choose the database to import" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) 3>&1 1>&2 2>&3)"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        if [[ ${chosen_database_engine} == "MYSQL" ]]; then
+
+          mysql_database_import "${chosen_database}" "${database_container_selected}"
+
+        else
+
+          postgres_database_import "${chosen_database}" "${database_container_selected}"
 
         fi
 
