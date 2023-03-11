@@ -4,7 +4,8 @@ WORKDIR "/application"
 RUN apt-get update; \
     apt-get -y --no-install-recommends install \
         vim \ 
-        git \ 
+        git \
+        php8.0-raphf \ 
         php8.0-bz2 \ 
         php8.0-gd \ 
         php8.0-imagick \ 
