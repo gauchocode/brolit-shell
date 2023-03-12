@@ -976,12 +976,14 @@ function restore_backup_files() {
       if [[ ${project_install_type} == "docker"* ]]; then
 
         # Stop containers
-        docker-compose -f "${destination_dir}/docker-compose.yml" stop
-        clear_previous_lines "4"
+        #docker-compose -f "${destination_dir}/docker-compose.yml" stop
+        docker_compose_stop "${destination_dir}/docker-compose.yml"
+        #clear_previous_lines "4"
 
         # Remove containers
-        docker-compose -f "${destination_dir}/docker-compose.yml" rm --force
-        clear_previous_lines "5"
+        #docker-compose -f "${destination_dir}/docker-compose.yml" rm --force
+        docker_compose_delete "${destination_dir}/docker-compose.yml"
+        #clear_previous_lines "5"
 
       fi
 
