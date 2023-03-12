@@ -39,7 +39,7 @@ function docker_version() {
 }
 
 ################################################################################
-# Get docker-compose version.
+# Get docker-compose version
 #
 # Arguments:
 #   none
@@ -68,6 +68,104 @@ function docker_compose_version() {
     fi
 
 }
+
+################################################################################
+# Execute a docker-compose pull
+#
+# Arguments:
+#   ${1} - ${compose_file}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function docker_compose_pull() {
+
+    local compose_file="${1}"
+
+    # Execute docker-compose command
+    ## Options:
+    ##    -f, --force   Don't ask to confirm removal
+    ##    -s, --stop    Stop the containers, if required, before removing
+    ##    -v            Remove any anonymous volumes attached to containers
+    docker-compose -f "${compose_file}" pull >/dev/null 2>&1
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        log_event "info" "Docker stack pulled ok" "false"
+        display --indent 6 --text "- Pulling docker stack images" --result "DONE" --color GREEN
+
+        return 0
+
+    else
+
+        # Log
+        log_event "error" "Docker stack pull failed" "false"
+        display --indent 6 --text "- Pulling docker stack images" --result "FAIL" --color RED
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Execute a docker-compose up
+#
+# Arguments:
+#   ${1} - ${compose_file}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function docker_compose_up() {
+
+    local compose_file="${1}"
+
+    local exitstatus
+
+    # Log
+    display --indent 6 --text "- Starting docker stack ..."
+    log_event "debug" "Running: docker-compose -f ${compose_file} up --detach" "false"
+
+    # Execute docker-compose command
+    docker-compose -f "${compose_file}" up --detach >/dev/null 2>&1
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        clear_previous_lines "1"
+        display --indent 6 --text "- Starting docker stack ..." --result "DONE" --color GREEN
+        log_event "info" "Docker stack started" "false"
+
+        return 0
+
+    else
+
+        # Log
+        clear_previous_lines "1"
+        display --indent 6 --text "- Starting docker stack ..." --result "FAIL" --color RED
+        log_event "error" "Docker stack start failed" "false"
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Execute a docker-compose build
+#
+# Arguments:
+#   ${1} - ${compose_file}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function docker_compose_build() {
 
@@ -112,6 +210,16 @@ function docker_compose_build() {
 
 }
 
+################################################################################
+# Execute a docker-compose stop
+#
+# Arguments:
+#   ${1} - ${compose_file}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function docker_compose_stop() {
 
     local compose_file="${1}"
@@ -143,6 +251,16 @@ function docker_compose_stop() {
     fi
 
 }
+
+################################################################################
+# Execute a docker-compose rm
+#
+# Arguments:
+#   ${1} - ${compose_file}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function docker_compose_delete() {
 
