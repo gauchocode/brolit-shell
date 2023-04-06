@@ -247,7 +247,7 @@ function wordpress_project_copy() {
   fi
 
   # Set WP salts
-  wpcli_set_salts "${project_dir}" "default"
+  wpcli_shuffle_salts "${project_dir}" "default"
 
   # If domain contains www, should work without www too
   common_subdomain='www'

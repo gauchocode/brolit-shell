@@ -1380,7 +1380,7 @@ function wpcli_create_config() {
 #   0 if salts where set/shuffle, 1 if not.
 ################################################################################
 
-function wpcli_set_salts() {
+function wpcli_shuffle_salts() {
 
     local wp_site="${1}"
     local install_type="${2}"
