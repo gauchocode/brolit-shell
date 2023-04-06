@@ -2979,7 +2979,7 @@ function project_post_install_tasks() {
     fi
 
     # Shuffle salts
-    wpcli_set_salts "${install_path}" "default"
+    wpcli_shuffle_salts "${install_path}" "default"
 
     # Update upload_path
     ## Context: https://core.trac.wordpress.org/ticket/41947

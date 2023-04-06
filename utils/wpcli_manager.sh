@@ -209,8 +209,9 @@ function wpcli_main_menu() {
     "13)" "DELETE NOT CORE FILES"
     "14)" "CREATE WP USER"
     "15)" "RESET WP USER PASSW"
-    "16)" "DELETE SPAM COMMENTS"
-    "17)" "SET MAINTENANCE MODE"
+    "16)" "SHUFFLE SALTS"
+    "17)" "DELETE SPAM COMMENTS"
+    "18)" "SET MAINTENANCE MODE"
   )
 
   chosen_wpcli_options="$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 "${wpcli_options[@]}" 3>&1 1>&2 2>&3)"
@@ -341,8 +342,17 @@ function wpcli_main_menu() {
 
     fi
 
-    # DELETE SPAM COMMENTS
+    # SHUFLE SALTS
     if [[ ${chosen_wpcli_options} == *"16"* ]]; then
+
+      log_subsection "WP Shuffle Salts"
+
+      wpcli_shuffle_salts "${wp_site}" "${project_install_type}"
+
+    fi
+
+    # DELETE SPAM COMMENTS
+    if [[ ${chosen_wpcli_options} == *"17"* ]]; then
 
       log_subsection "WP Delete Spam Comments"
 
@@ -351,7 +361,7 @@ function wpcli_main_menu() {
 
     fi
 
-    if [[ ${chosen_wpcli_options} == *"17"* ]]; then
+    if [[ ${chosen_wpcli_options} == *"18"* ]]; then
 
       choosen_mode="$(whiptail --title "WORDPRESS MAINTENANCE MODE" --inputbox "Set new maintenance mode (‘activate’, ‘deactivate’)" 10 60 "" 3>&1 1>&2 2>&3)"
       exitstatus=$?
