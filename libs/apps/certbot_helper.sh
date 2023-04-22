@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
 # Version: 3.3.0-beta
 ################################################################################
 #
@@ -680,7 +680,7 @@ function certbot_helper_ask_domains() {
 
   local domains
 
-  domains="$(whiptail_input "CERTBOT MANAGER" "Insert the domain and/or subdomains that you want to work with. Ex: broobe.com,www.broobe.com" "" )"
+  domains="$(whiptail_input "CERTBOT MANAGER" "Insert the domain and/or subdomains that you want to work with. Ex: gauchocode.com,www.gauchocode.com" "" )"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
