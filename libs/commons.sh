@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
 # Version: 3.3.0-beta
 ################################################################################
 
@@ -383,7 +383,7 @@ function script_init() {
   log_event "" "██╔══██╗██╔══██╗██║   ██║██║     ██║   ██║   " "true"
   log_event "" "██████╔╝██║  ██║╚██████╔╝███████╗██║   ██║   " "true"
   log_event "" "╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝   ╚═╝   " "true"
-  log_event "" "              ${SCRIPT_N} v${SCRIPT_V} by BROOBE" "true"
+  log_event "" "              ${SCRIPT_N} v${SCRIPT_V} by GauchoCode" "true"
   log_event "" "                                             " "true"
   log_event "" "------------------------------------------------------------" "true"
 

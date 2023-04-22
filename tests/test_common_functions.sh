@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
 # Version: 3.3.0-beta
 #############################################################################
 
@@ -20,51 +20,51 @@ function test_get_root_domain() {
 
     log_subsection "Test: domain_get_root"
 
-    result="$(domain_get_root "www.broobe.com")"
-    if [[ ${result} = "broobe.com" ]]; then
+    result="$(domain_get_root "www.gauchocode.com")"
+    if [[ ${result} = "gauchocode.com" ]]; then
         display --indent 6 --text "- domain_get_root result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- domain_get_root with www.broobe.com" --result "FAIL" --color RED
+        display --indent 6 --text "- domain_get_root with www.gauchocode.com" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
-    result="$(domain_get_root "dev.broobe.com")"
-    if [[ ${result} = "broobe.com" ]]; then
+    result="$(domain_get_root "dev.gauchocode.com")"
+    if [[ ${result} = "gauchocode.com" ]]; then
         display --indent 6 --text "- domain_get_root result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- domain_get_root with www.broobe.com" --result "FAIL" --color RED
+        display --indent 6 --text "- domain_get_root with www.gauchocode.com" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
-    result="$(domain_get_root "dev.www.broobe.com")"
-    if [[ ${result} = "broobe.com" ]]; then
+    result="$(domain_get_root "dev.www.gauchocode.com")"
+    if [[ ${result} = "gauchocode.com" ]]; then
         display --indent 6 --text "- domain_get_root result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- domain_get_root with dev.www.broobe.com" --result "FAIL" --color RED
+        display --indent 6 --text "- domain_get_root with dev.www.gauchocode.com" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
-    result="$(domain_get_root "broobe.hosting")"
-    if [[ ${result} = "broobe.hosting" ]]; then
+    result="$(domain_get_root "gauchocode.hosting")"
+    if [[ ${result} = "gauchocode.hosting" ]]; then
         display --indent 6 --text "- domain_get_root result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- domain_get_root with broobe.hosting" --result "FAIL" --color RED
+        display --indent 6 --text "- domain_get_root with gauchocode.hosting" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
-    result="$(domain_get_root "www.broobe.hosting")"
-    if [[ ${result} = "broobe.hosting" ]]; then
+    result="$(domain_get_root "www.gauchocode.hosting")"
+    if [[ ${result} = "gauchocode.hosting" ]]; then
         display --indent 6 --text "- domain_get_root result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- domain_get_root with www.broobe.hosting" --result "FAIL" --color RED
+        display --indent 6 --text "- domain_get_root with www.gauchocode.hosting" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
-    result="$(domain_get_root "www.dev.broobe.hosting")"
-    if [[ ${result} = "broobe.hosting" ]]; then
+    result="$(domain_get_root "www.dev.gauchocode.hosting")"
+    if [[ ${result} = "gauchocode.hosting" ]]; then
         display --indent 6 --text "- domain_get_root result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- domain_get_root with www.dev.broobe.hosting" --result "FAIL" --color RED
+        display --indent 6 --text "- domain_get_root with www.dev.gauchocode.hosting" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
@@ -76,43 +76,43 @@ function test_get_subdomain_part() {
 
     log_subsection "Test: domain_get_subdomain_part"
 
-    result="$(domain_get_subdomain_part "www.broobe.com")"
+    result="$(domain_get_subdomain_part "www.gauchocode.com")"
     if [[ ${result} = "www" ]]; then
         display --indent 6 --text "- domain_get_subdomain_part result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- domain_get_subdomain_part with www.broobe.com" --result "FAIL" --color RED
+        display --indent 6 --text "- domain_get_subdomain_part with www.gauchocode.com" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
-    result="$(domain_get_subdomain_part "broobe.com")"
+    result="$(domain_get_subdomain_part "gauchocode.com")"
     if [[ ${result} = "" ]]; then
         display --indent 6 --text "- domain_get_subdomain_part result 'empty_response'" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- domain_get_subdomain_part with broobe.com" --result "FAIL" --color RED
+        display --indent 6 --text "- domain_get_subdomain_part with gauchocode.com" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
-    result="$(domain_get_subdomain_part "test.broobe.com")"
+    result="$(domain_get_subdomain_part "test.gauchocode.com")"
     if [[ ${result} = "test" ]]; then
         display --indent 6 --text "- domain_get_subdomain_part result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- domain_get_subdomain_part with test.broobe.com" --result "FAIL" --color RED
+        display --indent 6 --text "- domain_get_subdomain_part with test.gauchocode.com" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
-    result="$(domain_get_subdomain_part "test.01.broobe.com")"
+    result="$(domain_get_subdomain_part "test.01.gauchocode.com")"
     if [[ ${result} = "test.01" ]]; then
         display --indent 6 --text "- domain_get_subdomain_part result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- domain_get_subdomain_part with test.01.broobe.com" --result "FAIL" --color RED
+        display --indent 6 --text "- domain_get_subdomain_part with test.01.gauchocode.com" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
-    result="$(domain_get_subdomain_part "dev.prueba.broobe.hosting")"
+    result="$(domain_get_subdomain_part "dev.prueba.gauchocode.hosting")"
     if [[ ${result} = "dev.prueba" ]]; then
         display --indent 6 --text "- domain_get_subdomain_part result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- domain_get_subdomain_part with dev.prueba.broobe.hosting" --result "FAIL" --color RED
+        display --indent 6 --text "- domain_get_subdomain_part with dev.prueba.gauchocode.hosting" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
@@ -124,83 +124,83 @@ function test_extract_domain_extension() {
 
     log_subsection "Testing Domain Functions"
 
-    result="$(domain_extract_extension "broobe.com")"
-    if [[ ${result} = "broobe" ]]; then
+    result="$(domain_extract_extension "gauchocode.com")"
+    if [[ ${result} = "gauchocode" ]]; then
         display --indent 6 --text "- domain_extract_extension result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- domain_extract_extension with broobe.com" --result "FAIL" --color RED
+        display --indent 6 --text "- domain_extract_extension with gauchocode.com" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
-    result="$(domain_extract_extension "broobe.com.ar")"
-    if [[ ${result} = "broobe" ]]; then
+    result="$(domain_extract_extension "gauchocode.com.ar")"
+    if [[ ${result} = "gauchocode" ]]; then
         display --indent 6 --text "- domain_extract_extension result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- domain_extract_extension with broobe.com.ar" --result "FAIL" --color RED
+        display --indent 6 --text "- domain_extract_extension with gauchocode.com.ar" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
-    result="$(domain_extract_extension "broobe.ar")"
-    if [[ ${result} = "broobe" ]]; then
+    result="$(domain_extract_extension "gauchocode.ar")"
+    if [[ ${result} = "gauchocode" ]]; then
         display --indent 6 --text "- domain_extract_extension result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- domain_extract_extension with broobe.ar" --result "FAIL" --color RED
+        display --indent 6 --text "- domain_extract_extension with gauchocode.ar" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
-    result="$(domain_extract_extension "test.broobe.com.ar")"
-    if [[ ${result} = "test.broobe" ]]; then
+    result="$(domain_extract_extension "test.gauchocode.com.ar")"
+    if [[ ${result} = "test.gauchocode" ]]; then
         display --indent 6 --text "- domain_extract_extension result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- domain_extract_extension with test.broobe.com.ar" --result "FAIL" --color RED
+        display --indent 6 --text "- domain_extract_extension with test.gauchocode.com.ar" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
-    result="$(domain_extract_extension "old.test.broobe.com.ar")"
-    if [[ ${result} = "old.test.broobe" ]]; then
+    result="$(domain_extract_extension "old.test.gauchocode.com.ar")"
+    if [[ ${result} = "old.test.gauchocode" ]]; then
         display --indent 6 --text "- domain_extract_extension result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- domain_extract_extension with old.test.broobe.com.ar" --result "FAIL" --color RED
+        display --indent 6 --text "- domain_extract_extension with old.test.gauchocode.com.ar" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
-    result="$(domain_extract_extension "old.test.broobe.ar")"
-    if [[ ${result} = "old.test.broobe" ]]; then
+    result="$(domain_extract_extension "old.test.gauchocode.ar")"
+    if [[ ${result} = "old.test.gauchocode" ]]; then
         display --indent 6 --text "- domain_extract_extension result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- domain_extract_extension with old.test.broobe.ar" --result "FAIL" --color RED
+        display --indent 6 --text "- domain_extract_extension with old.test.gauchocode.ar" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
-    result="$(domain_extract_extension "old.dev.test.broobe.com")"
-    if [[ ${result} = "old.dev.test.broobe" ]]; then
+    result="$(domain_extract_extension "old.dev.test.gauchocode.com")"
+    if [[ ${result} = "old.dev.test.gauchocode" ]]; then
         display --indent 6 --text "- domain_extract_extension result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- domain_extract_extension with old.dev.test.broobe.com" --result "FAIL" --color RED
+        display --indent 6 --text "- domain_extract_extension with old.dev.test.gauchocode.com" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
-    result="$(domain_extract_extension "old.dev.test.broobe")"
+    result="$(domain_extract_extension "old.dev.test.gauchocode")"
     if [[ ${result} = "" ]]; then
         display --indent 6 --text "- domain_extract_extension result 'empty response'" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- domain_extract_extension with old.dev.test.broobe" --result "FAIL" --color RED
+        display --indent 6 --text "- domain_extract_extension with old.dev.test.gauchocode" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
-    result="$(domain_extract_extension "old.dev.test.broobe.hosting")"
-    if [[ ${result} = "old.dev.test.broobe" ]]; then
+    result="$(domain_extract_extension "old.dev.test.gauchocode.hosting")"
+    if [[ ${result} = "old.dev.test.gauchocode" ]]; then
         display --indent 6 --text "- domain_extract_extension result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- domain_extract_extension with old.dev.test.broobe.hosting" --result "FAIL" --color RED
+        display --indent 6 --text "- domain_extract_extension with old.dev.test.gauchocode.hosting" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 
-    result="$(domain_extract_extension "old.dev.test.broobe.com.ar")"
-    if [[ ${result} = "old.dev.test.broobe" ]]; then
+    result="$(domain_extract_extension "old.dev.test.gauchocode.com.ar")"
+    if [[ ${result} = "old.dev.test.gauchocode" ]]; then
         display --indent 6 --text "- domain_extract_extension result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- domain_extract_extension with old.dev.test.broobe.com.ar" --result "FAIL" --color RED
+        display --indent 6 --text "- domain_extract_extension with old.dev.test.gauchocode.com.ar" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 

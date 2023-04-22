@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
 # Version: 3.3.0-beta
 #############################################################################
 
@@ -64,7 +64,7 @@ function test_docker_helper_functions() {
 
     # Create nginx proxy if nginx is installed
     ## TODO: read port from docker-compose .env file
-    nginx_server_create "dockertest.broobe.net" "proxy" "single" "" "${project_port}"
+    nginx_server_create "dockertest.gauchocode.net" "proxy" "single" "" "${project_port}"
 
     # TODO: run wp-cli commands?
 

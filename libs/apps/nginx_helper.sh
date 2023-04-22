@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
 # Version: 3.3.0-beta
 ################################################################################
 #
@@ -386,7 +386,7 @@ function nginx_server_change_phpv() {
 
 function nginx_reconfigure() {
 
-    # nginx.conf broobe standard configuration
+    # nginx.conf gauchocode standard configuration
     cat "${BROLIT_MAIN_DIR}/config/nginx/nginx.conf" >"/etc/nginx/nginx.conf"
     display --indent 6 --text "- Updating nginx.conf" --result "DONE" --color GREEN
 
@@ -506,7 +506,7 @@ function nginx_create_globals_config() {
 
     local nginx_globals
 
-    # nginx.conf broobe standard configuration
+    # nginx.conf gauchocode standard configuration
     nginx_globals="/etc/nginx/globals/"
 
     if [[ -d ${nginx_globals} ]]; then

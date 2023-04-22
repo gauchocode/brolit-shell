@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
 # Version: 3.3.0-beta
 #############################################################################
 
 function test_project_helper_funtions() {
 
-    local project_domain="dev.broobe.com"
+    local project_domain="dev.gauchocode.com"
 
     #test_project_install "${PROJECTS_PATH}" "wordpress"
     test_project_set_brolit_config_var "${PROJECTS_PATH}/${project_domain}" "project_db" "broobe_dev"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
 # Version: 3.3.0-beta
 #############################################################################
 #
@@ -77,7 +77,7 @@ function zabbix_installer() {
             # Add this line at the end of nginx.conf file
             echo 'stream {
                 upstream zabbixagent {
-                    server zabbix.broobe.net:10050;
+                    server zabbix.gauchocode.net:10050;
                 }
                 server {
                     listen 10051;
