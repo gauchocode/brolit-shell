@@ -255,7 +255,8 @@ function netdata_installer() {
           if [[ ${exitstatus} -eq 0 ]]; then
 
             if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
-
+              # Wait 2 seconds for DNS update
+              sleep 2
               # HTTPS with Certbot
               certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}"
 
