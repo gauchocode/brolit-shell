@@ -269,6 +269,9 @@ function wordpress_project_copy() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
+        # Wait 2 seconds for DNS update
+        sleep 2
+        # Let's Encrypt
         certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain},${project_root_domain}"
         [[ $? -eq 0 ]] && nginx_server_add_http2_support "${project_domain}"
 
@@ -303,6 +306,8 @@ function wordpress_project_copy() {
           cert_project_domain="$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
           exitstatus=$?
           if [[ ${exitstatus} -eq 0 ]]; then
+            # Wait 2 seconds for DNS update
+            sleep 2
             # Install certificate and add http2 support
             certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${cert_project_domain}"
             [[ $? -eq 0 ]] && nginx_server_add_http2_support "${project_domain}"

@@ -93,6 +93,9 @@ function zabbix_installer() {
                 cloudflare_set_record "${root_domain}" "${PACKAGES_ZABBIX_CONFIG_SUBDOMAIN}" "A" "false" "${SERVER_IP}"
 
                 if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
+                    # Wait 2 seconds for DNS update
+                    sleep 2
+                    # Let's Encrypt
                     certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${PACKAGES_ZABBIX_CONFIG_SUBDOMAIN}"
                 fi
 

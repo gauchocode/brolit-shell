@@ -122,6 +122,7 @@ function system_change_current_ssh_port() {
 
     local current_ssh_port
 
+    # Log
     log_subsection "Change SSH Port"
     log_event "info" "Trying to change current SSH port" "false"
 
@@ -141,9 +142,9 @@ function system_change_current_ssh_port() {
     # Restart ssh service
     service ssh restart
 
+    # Log
     log_event "info" "SSH service restarted" "false"
     display --indent 6 --text "- Restarting ssh service" --result "DONE" --color GREEN
-
     log_event "info" "New SSH port: ${new_ssh_port}" "false"
     display --indent 8 --text "- New SSH port: ${new_ssh_port}"
 
