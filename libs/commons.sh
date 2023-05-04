@@ -633,11 +633,11 @@ function array_to_checklist() {
   i=0
   for option in ${array}; do
 
-    checklist_array[$i]=$option
+    checklist_array[i]=$option
     i=$((i + 1))
-    checklist_array[$i]=" "
+    checklist_array[i]=" "
     i=$((i + 1))
-    checklist_array[$i]=off
+    checklist_array[i]=off
     i=$((i + 1))
 
   done
@@ -1174,7 +1174,17 @@ function string_remove_special_chars() {
 
 }
 
-array_remove_newlines() {
+################################################################################
+# Remove new lines from array
+#
+# Arguments:
+#   ${1} = ${string}
+#
+# Outputs:
+#   string
+################################################################################
+
+function array_remove_newlines() {
 
   # Declare an empty array to store the cleaned up elements
   #local -a cleaned_array="${1}"

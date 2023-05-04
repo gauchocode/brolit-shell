@@ -1,11 +1,11 @@
-FROM debian:9.5
+FROM debian:10.13-slim
  
 ARG SSH_MASTER_USER
 ARG SSH_MASTER_PASS
  
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-    nano \
+    vim \
     sudo \
     openssh-server
  
