@@ -224,7 +224,40 @@ function _check_scripts_permissions() {
 #   none
 #
 # Outputs:
+#   ${public_ip}
+################################################################################
+
+function get_server_ip() {
+
+  local default_interface
+  local public_ip
+
+  default_interface=$(ip route | awk '/default/ {print $5}')
+  public_ip=$(ip addr show dev "${default_interface}" | awk '/inet / {print $2}' | cut -d'/' -f1)
+
+  if [[ -z ${public_ip} ]]; then
+    # Alternative method
+    public_ip="$(curl --silent http://ipv4.icanhazip.com)"
+  fi
+
+  # Log
+  log_event "info" "LOCAL IPv4: ${LOCAL_IP}" "false"
+  log_event "info" "SERVER IPv4: ${SERVER_IP}" "false"
+  log_event "info" "SERVER IPv6: ${SERVER_IPv6}" "false"
+
+  # Return
+  echo "${public_ip}"
+
+}
+
+################################################################################
+# Get server IPs (legacy)
+#
+# Arguments:
 #   none
+#
+# Outputs:
+#   ${public_ip}
 ################################################################################
 
 # TODO: Should return server IPs
@@ -399,7 +432,8 @@ function script_init() {
   _check_scripts_permissions
 
   # Get server IPs
-  get_server_ips
+  #get_server_ips
+  get_server_ip
 
   # Clean old Brolit log files
   del_logs="$(find "${path_log}" -name "*.log" -type f -mtime +7 -print -delete | tr '\n' ' ')"
