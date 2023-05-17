@@ -101,16 +101,11 @@ function php_opcode_config() {
   local php_v="${1}"
 
   local config_file
-
   local val
 
+  [[ -z ${php_v} ]] && return 1
+
   log_subsection "PHP Opcode Config"
-
-  if [[ -z ${php_v} ]]; then
-
-    return 1
-
-  fi
 
   config_file="/etc/php/${php_v}/fpm/php.ini"
 
