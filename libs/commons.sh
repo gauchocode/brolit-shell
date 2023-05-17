@@ -227,7 +227,7 @@ function _check_scripts_permissions() {
 #   ${public_ip}
 ################################################################################
 
-function get_server_ip() {
+function get_server_public_ip() {
 
   local default_interface
   local public_ip
@@ -239,11 +239,6 @@ function get_server_ip() {
     # Alternative method
     public_ip="$(curl --silent http://ipv4.icanhazip.com)"
   fi
-
-  # Log
-  log_event "info" "LOCAL IPv4: ${LOCAL_IP}" "false"
-  log_event "info" "SERVER IPv4: ${SERVER_IP}" "false"
-  log_event "info" "SERVER IPv6: ${SERVER_IPv6}" "false"
 
   # Return
   echo "${public_ip}"
@@ -270,15 +265,11 @@ function get_server_ips() {
   # If the server has configured a floating ip, it will return this:
   LOCAL_IP="$(ip route get 1 | awk '{print $(NF-2);exit}')"
 
-  # PUBLIC IP (with https://www.ipify.org)
-  SERVER_IP="$(curl --silent 'https://api.ipify.org')"
-  if [[ -z ${SERVER_IP} ]]; then
-    # Alternative method
-    SERVER_IP="$(curl --silent http://ipv4.icanhazip.com)"
-  else
-    # If api.apify.org works, get IPv6 too
-    SERVER_IPv6="$(curl --silent 'https://api64.ipify.org')"
-  fi
+  # PUBLIC IP
+  SERVER_IP="$(get_server_public_ip)"
+
+  # Get IPv6 too
+  SERVER_IPv6="$(curl --silent 'https://api64.ipify.org')"
 
   log_event "info" "LOCAL IPv4: ${LOCAL_IP}" "false"
   log_event "info" "SERVER IPv4: ${SERVER_IP}" "false"
@@ -432,8 +423,7 @@ function script_init() {
   _check_scripts_permissions
 
   # Get server IPs
-  #get_server_ips
-  get_server_ip
+  get_server_ips
 
   # Clean old Brolit log files
   del_logs="$(find "${path_log}" -name "*.log" -type f -mtime +7 -print -delete | tr '\n' ' ')"
