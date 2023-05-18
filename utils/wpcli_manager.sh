@@ -317,7 +317,6 @@ function wpcli_main_menu() {
       if [[ -n ${choosen_user} ]]; then
 
         choosen_email="$(whiptail_input "WORDPRESS USER MAIL" "Insert the username email:" "")"
-        
         if [[ -n ${choosen_email} ]]; then
 
           # List options
