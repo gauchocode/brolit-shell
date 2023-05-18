@@ -85,7 +85,7 @@ function whiptail_input() {
     else
 
         # Log
-        log_event "error" "Executing: whiptail --title \"${whip_title}\" --inputbox \"${whip_message}\" 15 60 \"${whip_default}\" 3>&1 1>&2 2>&3"
+        log_event "error" "Executing: whiptail --title \"${whip_title}\" --inputbox \"${whip_message}\" 15 60 \"${whip_default}\" 3>&1 1>&2 2>&3" "false"
 
         return 1
 
