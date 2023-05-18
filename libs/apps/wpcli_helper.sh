@@ -1016,7 +1016,7 @@ function wpcli_plugin_list() {
 
     [[ -z ${status} ]] && status="active"
     [[ -z ${format} ]] && format="table"
-    
+
     ${wpcli_cmd} plugin list --status="${status}" --format="${format}"
 
     # Return
@@ -2092,6 +2092,55 @@ function wpcli_export_database() {
         return 1
 
     fi
+
+}
+
+################################################################################
+# List WordPress users
+#
+# Arguments:
+#   ${1} = ${wp_site}
+#   ${2} = ${install_type}
+#
+# Outputs:
+#   0 on success, 1 on error
+################################################################################
+
+function wpcli_user_list() {
+
+    local wp_site="${1}"
+    local install_type="${2}"
+
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    ## Important!
+    ## -u 33 -e HOME=/tmp to avoid permission denied error:
+    ## --log-level CRITICAL option to avoid unwanted docker-compose output
+    ## --no-color added to avoid unwanted wp-cli output
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
+    
+    # Log
+    log_event "debug" "Running: ${wpcli_cmd} user list --fields=user_login,user_email,roles --format=csv" "false"
+
+    # Command
+    ${wpcli_cmd} user list --fields=user_login,user_email,roles --format=csv --quiet
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        display --indent 6 --text "- Listing users" --result "DONE" --color GREEN
+
+        return 0
+
+    else
+
+        display --indent 6 --text "- Listing users" --result "FAIL" --color RED
+        log_event "error" "Listing users for site ${wp_site}" "false"
+
+        return 1
+
+    fi
+    
 
 }
 
