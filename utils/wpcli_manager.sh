@@ -320,10 +320,8 @@ function wpcli_main_menu() {
         if [[ -n ${choosen_email} ]]; then
 
           # List options
-          wp_role_list=("administrator editor author contributor subscriber")
-          choosen_role="$(whiptail --title "WORDPRESS USER ROLE" --menu "Choose the user role:" 20 78 10 $(for x in ${wp_role_list}; do echo "${x}"; done) 3>&1 1>&2 2>&3)"
-          exitstatus=$?
-          [[ ${exitstatus} -eq 0 ]] && wpcli_user_create "${wp_site}" "${project_install_type}" "${choosen_user}" "${choosen_email}" "${choosen_role}"
+          choosen_role="$(whiptail_selection_menu "WORDPRESS USER ROLE" "Choose the user role:" "administrator editor author contributor subscriber")"
+          [[ -n ${choosen_role} ]] && wpcli_user_create "${wp_site}" "${project_install_type}" "${choosen_user}" "${choosen_email}" "${choosen_role}"
 
         fi
 
