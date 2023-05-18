@@ -313,13 +313,12 @@ function wpcli_main_menu() {
 
       log_subsection "WP Create User"
 
-      choosen_user="$(whiptail --title "WORDPRESS USER" --inputbox "Insert a username:" 10 60 "" 3>&1 1>&2 2>&3)"
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
+      choosen_user="$(whiptail_input "WORDPRESS USERNAME" "Insert a username:" "")"
+      if [[ -n ${choosen_user} ]]; then
 
-        choosen_email="$(whiptail --title "WORDPRESS USER MAIL" --inputbox "Insert the username email:" 10 60 "" 3>&1 1>&2 2>&3)"
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
+        choosen_email="$(whiptail_input "WORDPRESS USER MAIL" "Insert the username email:" "")"
+        
+        if [[ -n ${choosen_email} ]]; then
 
           # List options
           wp_role_list=("administrator editor author contributor subscriber")
