@@ -207,7 +207,7 @@ function wpcli_main_menu() {
     "11)" "REPLACE URLs"
     "12)" "SEOYOAST RE-INDEX"
     "13)" "DELETE NOT CORE FILES"
-    "14)" "LIST WP USER"
+    "14)" "LIST WP USERS"
     "15)" "CREATE WP USER"
     "16)" "RESET WP USER PASSW"
     "17)" "SHUFFLE SALTS"
@@ -305,7 +305,7 @@ function wpcli_main_menu() {
     if [[ ${chosen_wpcli_options} == *"14"* ]]; then
 
       log_subsection "WP List Users"
-      wpcli_user_list
+      wpcli_user_list "${wp_site}" "${project_install_type}" 
 
     fi
 
