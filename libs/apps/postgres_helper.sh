@@ -843,17 +843,36 @@ function postgres_database_drop() {
 function postgres_database_import() {
 
     local database="${1}"
-    local dump_file="${2}"
+    local container_name="${2}"
+    local dump_file="${3}"
 
     local import_status
+
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+
+        local psql_container_user
+        local psql_container_user_pssw
+
+        # Get POSTGRES_USER and POSTGRES_PASSWORD from container
+        ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
+        psql_container_user="$(docker exec -i "${container_name}" printenv POSTGRES_USER)"
+        psql_container_user_pssw="$(docker exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
+        # Set psql_exec
+        psql_exec="docker exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} psql -U ${psql_container_user} --quiet"
+
+    else
+        # Set psql_exec
+        psql_exec="${PSQL_ROOT}"
+
+    fi
 
     # Log
     display --indent 6 --text "- Importing into database: ${database}" --tcolor YELLOW
     log_event "info" "Importing dump file ${dump_file} into database: ${database}" "false"
 
     # Execute command
-    ${PSQL_ROOT} "${database}" <"${dump_file}"
-    #pv --width 70 "${dump_file}" | ${PSQL_ROOT} -f -D "${database}"
+    ${psql_exec} "${database}" <"${dump_file}"
+    #pv --width 70 "${dump_file}" | ${psql_exec} -f -D "${database}"
 
     # Check result
     import_status=$?
@@ -873,7 +892,8 @@ function postgres_database_import() {
         display --indent 6 --text "- Database backup import" --result "ERROR" --color RED
         display --indent 8 --text "Please, read the log file!" --tcolor RED
         log_event "error" "Something went wrong importing database: ${database}"
-        log_event "debug" "Last command executed: pv ${dump_file} | ${PSQL_ROOT} -f -D ${database}"
+        log_event "debug" "Last command executed: ${psql_exec} ${database} < ${dump_file}"
+        #log_event "debug" "Last command executed: pv ${dump_file} | ${psql_exec} -f -D ${database}"
 
         return 1
 
@@ -911,7 +931,7 @@ function postgres_database_export() {
         psql_container_user="$(docker exec -i "${container_name}" printenv POSTGRES_USER)"
         psql_container_user_pssw="$(docker exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
         # Set psql_exec
-        psql_exec="docker exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} pg_dump -U ${psql_container_user} --quiet"
+        psql_exec="docker exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} pg_dump -U ${psql_container_user}"
 
     else
         # Set psql_exec
