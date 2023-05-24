@@ -73,9 +73,7 @@ function postgres_ask_user_db_scope() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Return
-        echo "${db_scope}"
-
-        return 0
+        echo "${db_scope}" && return 0
 
     else
         return 1
@@ -106,12 +104,10 @@ function postgres_ask_database_selection() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        log_event "debug" "Setting chosen_db=${chosen_db}"
+        log_event "debug" "Setting chosen_db=${chosen_db}" "false"
 
         # Return
-        echo "${chosen_db}"
-
-        return 0
+        echo "${chosen_db}" && return 0
 
     else
         return 1
@@ -209,18 +205,37 @@ function postgres_count_databases() {
 function postgres_list_databases() {
 
     local stage="${1}"
+    local container_name="${2}"
 
+    local psql_exec
     local databases
+
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+
+        local psql_container_user
+        local psql_container_user_pssw
+
+        # Get POSTGRES_USER and POSTGRES_PASSWORD from container
+        ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
+        psql_container_user="$(docker exec -i "${container_name}" printenv POSTGRES_USER)"
+        psql_container_user_pssw="$(docker exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
+        #PSQL_ROOT="sudo -u postgres -i psql --quiet"
+        psql_exec="docker exec -i ${container_name} -u${psql_container_user} -p${psql_container_user_pssw} i psql --quiet"
+
+    else
+
+        psql_exec="${PSQL_ROOT}"
+
+    fi
+
+
 
     log_event "info" "Listing '${stage}' Postgres databases" "false"
 
     if [[ ${stage} == "all" ]]; then
 
-        # Run command
-
         # List postgress databases
         databases="$(${PSQL_ROOT} -c "SELECT datname FROM pg_database WHERE datistemplate = false;" -t)"
-        #databases="$(${PSQL_ROOT} -t -A -c "SELECT datname FROM pg_database WHERE datname <> ALL ('{template0,template1,postgres}')")"
 
     else
 
