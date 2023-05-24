@@ -895,8 +895,10 @@ function postgres_database_import() {
 function postgres_database_export() {
 
     local database="${1}"
-    local dump_file="${2}"
+    local container_name="${2}"
+    local dump_file="${3}"
 
+    local psql_exec
     local dump_status
 
     if [[ -n ${container_name} && ${container_name} != "false" ]]; then
