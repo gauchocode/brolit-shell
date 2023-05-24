@@ -219,16 +219,14 @@ function postgres_list_databases() {
         ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
         psql_container_user="$(docker exec -i "${container_name}" printenv POSTGRES_USER)"
         psql_container_user_pssw="$(docker exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
-        #PSQL_ROOT="sudo -u postgres -i psql --quiet"
-        psql_exec="docker exec -i ${container_name} -u${psql_container_user} -p${psql_container_user_pssw} i psql --quiet"
+        # Set psql_exec
+        psql_exec="docker exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} psql -U ${psql_container_user} --quiet"
 
     else
-
+        # Set psql_exec
         psql_exec="${PSQL_ROOT}"
 
     fi
-
-
 
     log_event "info" "Listing '${stage}' Postgres databases" "false"
 
