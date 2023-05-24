@@ -235,12 +235,12 @@ function postgres_list_databases() {
     if [[ ${stage} == "all" ]]; then
 
         # List postgress databases
-        databases="$(${PSQL_ROOT} -c "SELECT datname FROM pg_database WHERE datistemplate = false;" -t)"
+        databases="$(${psql_exec} -c "SELECT datname FROM pg_database WHERE datistemplate = false;" -t)"
 
     else
 
         # Run command
-        databases="$(${PSQL_ROOT} -c "SELECT datname FROM pg_database WHERE datistemplate = false;" -t | grep "${stage}")"
+        databases="$(${psql_exec} -c "SELECT datname FROM pg_database WHERE datistemplate = false;" -t | grep "${stage}")"
 
     fi
 
@@ -258,14 +258,14 @@ function postgres_list_databases() {
         log_event "info" "Listing Postgres databases: '${databases}'" "false"
 
         # Return
-        echo "${databases}"
+        echo "${databases}" && return 0
 
     else
 
         # Log
         display --indent 6 --text "- Listing Postgres databases" --result "FAIL" --color RED
         log_event "error" "Something went wrong listing Postgres databases" "false"
-        log_event "debug" "Last command executed: ${PSQL_ROOT} -c \"SELECT datname FROM pg_database WHERE datistemplate = false;\" -t" "false"
+        log_event "debug" "Last command executed: ${psql_exec} -c \"SELECT datname FROM pg_database WHERE datistemplate = false;\" -t" "false"
 
         return 1
 
