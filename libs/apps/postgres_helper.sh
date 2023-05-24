@@ -899,12 +899,30 @@ function postgres_database_export() {
 
     local dump_status
 
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+
+        local psql_container_user
+        local psql_container_user_pssw
+
+        # Get POSTGRES_USER and POSTGRES_PASSWORD from container
+        ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
+        psql_container_user="$(docker exec -i "${container_name}" printenv POSTGRES_USER)"
+        psql_container_user_pssw="$(docker exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
+        # Set psql_exec
+        psql_exec="docker exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} pg_dump -U ${psql_container_user} --quiet"
+
+    else
+        # Set psql_exec
+        psql_exec="${PSQLDUMP_ROOT}"
+
+    fi
+
     log_event "info" "Making a database backup of: ${database}" "false"
 
     spinner_start "- Making a backup of: ${database}"
 
     # Run pg_dump
-    ${PSQLDUMP_ROOT} "${database}" >"${dump_file}"
+    ${psql_exec} "${database}" >"${dump_file}"
 
     dump_status=$?
     spinner_stop "${dump_status}"
@@ -924,7 +942,7 @@ function postgres_database_export() {
         display --indent 6 --text "- Database backup for ${YELLOW}${database}${ENDCOLOR}" --result "ERROR" --color RED
         display --indent 8 --text "Please, read the log file!" --tcolor RED
         log_event "error" "Something went wrong exporting database: ${database}." "false"
-        log_event "error" "Last command executed: ${PSQLDUMP_ROOT} ${database} > ${dump_file}" "false"
+        log_event "error" "Last command executed: ${psql_exec} ${database} > ${dump_file}" "false"
 
         return 1
 
