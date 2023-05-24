@@ -313,9 +313,7 @@ function docker_list_containers() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        echo "${docker_containers}"
-
-        return 0
+        echo "${docker_containers}" && return 0
 
     else
 
@@ -347,9 +345,7 @@ function docker_stop_container() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        echo "${docker_stop_container}"
-
-        return 0
+        echo "${docker_stop_container}" && return 0
 
     else
 
@@ -379,9 +375,7 @@ function docker_list_images() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        echo "${docker_images}"
-
-        return 0
+        echo "${docker_images}" && return 0
 
     else
 
@@ -444,9 +438,7 @@ function docker_delete_image() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        echo "${docker_delete_image}"
-
-        return 0
+        echo "${docker_delete_image}" && return 0
 
     else
 

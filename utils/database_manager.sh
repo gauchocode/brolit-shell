@@ -89,6 +89,7 @@ function database_list_menu() {
   local database_engine="${1}"
   local database_container="${2}"
 
+  local databases
   local database_list_options
   local chosen_database_option
 
@@ -125,10 +126,11 @@ function database_manager_menu() {
 
   local database_engine_options
   local database_manager_options
-  local chosen_database_manager_option
   local database_list_options
+  local chosen_database_manager_option
   local chosen_database
   local chosen_database_name
+  local chosen_database_engine
 
   local database_container
   local database_container_selected
@@ -137,12 +139,10 @@ function database_manager_menu() {
 
   # Check if docker is installed
   if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then
-
     # List mysql and postgres containers
     database_container="$(docker ps --format "{{.Names}}" | grep -e mysql -e postgres)"
-
+    # Is not empty?
     if [[ -n ${database_container} ]]; then
-
       # Whiptail to prompt user if want to use docker
       whiptail_message_with_skip_option "Docker Support" "Database containers are running, do you want to work with an specific docker container?"
       exitstatus=$?
@@ -164,9 +164,7 @@ function database_manager_menu() {
         fi
 
       fi
-
     fi
-
   fi
 
   # Select database engine
