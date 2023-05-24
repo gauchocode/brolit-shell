@@ -302,6 +302,7 @@ function wpcli_main_menu() {
 
     fi
 
+    # LIST WP USERS
     if [[ ${chosen_wpcli_options} == *"14"* ]]; then
 
       log_subsection "WP List Users"
@@ -309,6 +310,7 @@ function wpcli_main_menu() {
 
     fi
 
+    # CREATE WP USER
     if [[ ${chosen_wpcli_options} == *"15"* ]]; then
 
       log_subsection "WP Create User"
