@@ -138,8 +138,8 @@ function database_manager_menu() {
   # Check if docker is installed
   if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then
 
-    # List mysql containers
-    database_container="$(docker ps --format "{{.Names}}" | grep mysql)"
+    # List mysql and postgres containers
+    database_container="$(docker ps --format "{{.Names}}" | grep -e mysql -e postgres)"
 
     if [[ -n ${database_container} ]]; then
 
@@ -148,11 +148,20 @@ function database_manager_menu() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        # MySQL Container selection menu
+        # Database Container selection menu
         database_container_selected="$(whiptail --title "Select a Database Container" --menu "Choose a Database Container to work with" 20 78 10 $(for x in ${database_container}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)"
         [[ ${exitstatus} -eq 1 ]] && return 1
-        # TODO: check if database engine (mysql, postgres)
-        chosen_database_engine="MYSQL"
+
+        # Check if database engine is mysql or postgres
+        if [[ ${database_container_selected} == *"mysql"* ]]; then
+
+          chosen_database_engine="MYSQL"
+
+        elif [[ ${database_container_selected} == *"postgres"* ]]; then
+
+          chosen_database_engine="POSTGRESQL"
+
+        fi
 
       fi
 
@@ -162,7 +171,7 @@ function database_manager_menu() {
 
   # Select database engine
   [[ -z ${chosen_database_engine} ]] && chosen_database_engine="$(database_ask_engine)"
-  [[ -z ${chosen_database_engine} ]] && return 1
+  [[ -z ${chosen_database_engine} ]] && echo "No database engine found!" && menu_main_options
 
   database_manager_options=(
     "01)" "LIST DATABASES"
