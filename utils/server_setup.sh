@@ -350,7 +350,7 @@ function server_setup() {
         monit_configure
     fi
 
-    if [[ ${PACKAGES_NETDATA_CONFIG_STATUS} == "enabled" ]]; then
+    if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
         netdata_installer
     fi
 
