@@ -4,7 +4,7 @@
 # Version: 3.3.0-beta
 ################################################################################
 #
-# Netdata Installer
+# Nginx Installer
 #
 #   Refs:
 #       https://github.com/audioscavenger/nginx-server-config
