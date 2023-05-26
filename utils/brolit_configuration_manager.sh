@@ -1173,6 +1173,7 @@ function _brolit_configuration_load_netdata() {
     # Globals
     declare -g NETDATA
     declare -g NETDATA_PR
+    declare -g NETDATA_DOCKER
     declare -g PACKAGES_NETDATA_STATUS
     declare -g PACKAGES_NETDATA_CONFIG_WEB_ADMIN
     declare -g PACKAGES_NETDATA_CONFIG_SUBDOMAIN
@@ -1184,7 +1185,8 @@ function _brolit_configuration_load_netdata() {
     declare -g PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_CHAT_ID
 
     NETDATA="$(which netdata)"
-    NETDATA_PR="$(pgrep netdata)"
+    NETDATA_PR="$(pgrep netdata)" # This will detect if a netdata process is running, but could be a docker container
+    NETDATA_DOCKER="$(docker ps -q --filter name=netdata)" # This will detect if a netdata docker container is running
 
     PACKAGES_NETDATA_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].status")"
 
@@ -1220,12 +1222,12 @@ function _brolit_configuration_load_netdata() {
         fi
 
         # Checking if Netdata is not installed
-        [[ ! -x "${NETDATA}" && -z "${NETDATA_PR}" ]] && pkg_config_changes_detected "netdata" "true"
+        [[ ! -x "${NETDATA}" && -z "${NETDATA_PR}" && -z ${NETDATA_DOCKER} ]] && pkg_config_changes_detected "netdata" "true"
 
     else
 
         # Checking if Netdata is installed
-        [[ -x "${NETDATA}" || -n "${NETDATA_PR}" ]] && pkg_config_changes_detected "netdata" "true"
+        [[ -x "${NETDATA}" || -n "${NETDATA_PR}" || -n ${NETDATA_DOCKER} ]] && pkg_config_changes_detected "netdata" "true"
 
     fi
 
