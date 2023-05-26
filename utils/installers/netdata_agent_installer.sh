@@ -189,7 +189,7 @@ function _netdata_agent_telegram_config() {
 }
 
 ################################################################################
-# Netdata installer
+# Netdata Agent Installer
 #
 # Arguments:
 #  none
