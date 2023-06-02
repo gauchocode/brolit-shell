@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.0-beta
+# Version: 3.3.1-beta
 ################################################################################
 #
 # Project Manager: Perform project actions.
@@ -138,6 +138,8 @@ function project_manager_menu_new_project_type_utils() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
+  log_section "Project Utils"
+
     # RE-GENERATE PROJECT CONFIG
     if [[ ${chosen_project_utils_options} == *"01"* ]]; then
 
@@ -182,17 +184,21 @@ function project_manager_menu_new_project_type_utils() {
 
       else
 
+        # Select database engine
+        #[[ -z ${chosen_database_engine} ]] && 
+        chosen_database_engine="$(database_ask_engine)"
+
         project_stage="$(project_ask_stage "")"
         [[ $? -eq 1 ]] && return 1
 
         # Filename should be the project domain
         project_name="$(project_get_name_from_domain "${filename%/}")"
-        project_name="$(mysql_name_sanitize "${project_name}")"
+        project_name="$(database_name_sanitize "${project_name}")"
         project_name="$(project_ask_name "${project_name}")"
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 1 ]]; then
-
+          # Log
           log_event "info" "Operation cancelled!" "false"
           display --indent 2 --text "- Creating project database" --result SKIPPED --color YELLOW
 
@@ -202,13 +208,12 @@ function project_manager_menu_new_project_type_utils() {
 
         log_event "info" "project_name: ${project_name}" "false"
 
-        # TODO: Ask for database engine?
-
         # Database
         database_user_passw="$(openssl rand -hex 12)"
 
+        mysql_user_db_scope="$(mysql_ask_user_db_scope "localhost")"
+
         mysql_database_create "${project_name}_${project_stage}"
-        mysql_user_db_scope="$(mysql_ask_user_db_scope)"
         mysql_user_create "${project_name}_user" "${database_user_passw}" "${mysql_user_db_scope}"
         mysql_user_grant_privileges "${project_name}_user" "${project_name}_${project_stage}" "${mysql_user_db_scope}"
 
@@ -216,6 +221,7 @@ function project_manager_menu_new_project_type_utils() {
         # TODO: Ask to update project config
         project_type="$(project_get_type "${filepath}/${filename}")"
         project_install_type="$(project_get_install_type "${filepath}/${filename}")"
+
         project_set_configured_database "${filepath}/${filename}" "${project_type}" "${project_install_type}" "${project_name}_${project_stage}"
         project_set_configured_database_user "${filepath}/${filename}" "${project_type}" "${project_install_type}" "${project_name}_user"
         project_set_configured_database_userpassw "${filepath}/${filename}" "${project_type}" "${project_install_type}" "${database_user_passw}"
@@ -320,7 +326,7 @@ function project_manager_menu_new_project_type_new_project() {
     "02)" "NEW PROJECT FROM BACKUP"
     "03)" "DOCKERIZE PROJECT FROM BACKUP"
     #"04)" "DE-DOCKERIZE PROJECT FROM BACKUP"
-    #"04)" "NEW PROJECT FROM GIT REPOSITORY"
+    #"05)" "NEW PROJECT FROM GIT REPOSITORY"
   )
 
   chosen_project_creation_type_option="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_creation_type_options[@]}" 3>&1 1>&2 2>&3)"

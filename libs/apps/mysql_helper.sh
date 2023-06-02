@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.0-beta
+# Version: 3.3.1-beta
 ################################################################################
 #
 # MySQL Helper: Perform mysql actions.
@@ -705,13 +705,13 @@ function mysql_database_exists() {
 #  Sanetized ${string}.
 ################################################################################
 
-function mysql_name_sanitize() {
+function database_name_sanitize() {
 
     local string="${1}"
 
     local clean
 
-    #log_event "debug" "Running mysql_name_sanitize for ${string}" "true"
+    #log_event "debug" "Running database_name_sanitize for ${string}" "true"
 
     # First, strip "-"
     clean=${string//-/}

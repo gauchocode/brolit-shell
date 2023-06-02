@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.0-beta
+# Version: 3.3.1-beta
 ################################################################################
 #
 # Backup/Restore Helper: Backup and restore funtions.
@@ -77,7 +77,7 @@ function restore_backup_from_local() {
 
   local restore_type # whiptail array options
   local chosen_restore_type
-
+  local basepath
   local destination_dir
 
   restore_type=(
@@ -110,10 +110,11 @@ function restore_backup_from_local() {
         display --indent 6 --text "Selected source: ${YELLOW}${source_files}${ENDCOLOR}"
 
       else
-
+        # Log
         clear_previous_lines "1"
         display --indent 6 --text "Selected source: ${YELLOW}${source_files}${ENDCOLOR}" --result "ERROR" --color RED
         display --indent 6 --text "File not found" --tcolor RED
+
         return 1
 
       fi
@@ -332,6 +333,7 @@ function restore_backup_from_public_url() {
   local project_name
   local possible_project_name
   local root_domain
+  local find_result
 
   # RESTORE FILES
   log_subsection "Restore files from public URL"
@@ -375,18 +377,21 @@ function restore_backup_from_public_url() {
   log_event "info" "Downloading file backup ${source_files_url}" "false"
   log_event "debug" "Running: ${CURL} ${source_files_url} >${BROLIT_TMP_DIR}/${project_domain}/${backup_file}" "false"
 
+  spinner_start "- Downloading file backup"
+
   # Download File Backup
   ${CURL} "${source_files_url}" >"${BROLIT_TMP_DIR}/${project_domain}/${backup_file}"
 
   exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
 
+  spinner_stop "${exitstatus}"
+
+  if [[ ${exitstatus} -eq 0 ]]; then
     # Log
     clear_previous_lines "1"
     display --indent 6 --text "- Downloading file backup" --result "DONE" --color GREEN
 
   else
-
     # Log
     clear_previous_lines "2"
     log_event "error" "Download failed!" "false"
@@ -401,7 +406,6 @@ function restore_backup_from_public_url() {
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 1 ]]; then
-
     # Log
     log_event "error" "Restore project aborted." "false"
     display --indent 8 --text "Restore project aborted"--tcolor RED
@@ -414,20 +418,19 @@ function restore_backup_from_public_url() {
   rm --force "${BROLIT_TMP_DIR}/${project_domain}/${backup_file}"
 
   # Create database and user
-  db_project_name=$(mysql_name_sanitize "${project_name}")
+  db_project_name=$(database_name_sanitize "${project_name}")
 
   database_name="${db_project_name}_${project_stage}"
   database_user="${db_project_name}_user"
   database_user_passw=$(openssl rand -hex 12)
 
+  # TODO: Use database_create function
   mysql_database_create "${database_name}"
   mysql_user_create "${database_user}" "${database_user_passw}" "localhost"
   mysql_user_grant_privileges "${database_user}" "${database_name}" "localhost"
 
   # Search for .sql or sql.gz files
-  local find_result
-
-  # Find backups from downloaded ftp files
+  ## Find backups from downloaded ftp files
   find_result="$({
     find "${BROLIT_TMP_DIR}/${project_domain}" -name "*.sql"
     find "${BROLIT_TMP_DIR}/${project_domain}" -name "*.sql.gz"
@@ -1226,7 +1229,7 @@ function restore_backup_project_database() {
   project_name="$(project_ask_name "${possible_project_name}")"
 
   # Sanitize ${project_name}
-  db_project_name="$(mysql_name_sanitize "${project_name}")"
+  db_project_name="$(database_name_sanitize "${project_name}")"
 
   #project_backup_date="$(backup_get_date "${chosen_backup_to_restore}")"
   #backup_to_dowload="${chosen_type_path}/${chosen_project}/${chosen_backup_to_restore}"
@@ -1351,6 +1354,7 @@ function restore_project_backup() {
 
   local project_port
   local project_type
+  local project_install_path
   local project_install_type
 
   #log_event "debug" "project_domain_new=${project_domain_new}" "false"
@@ -1391,7 +1395,7 @@ function restore_project_backup() {
   log_event "debug" "project_type=${project_type}" "false"
   log_event "debug" "project_install_type=${project_install_type}" "false"
 
-  install_path="${PROJECTS_PATH}/${project_domain_new}"
+  project_install_path="${PROJECTS_PATH}/${project_domain_new}"
 
   if [[ ${project_install_type} != "docker"* ]]; then
 
@@ -1494,16 +1498,12 @@ function restore_project_backup() {
   # Project domain configuration (webserver+certbot+DNS)
   https_enable="$(project_update_domain_config "${project_domain_new}" "${project_type}" "${project_install_type}" "${project_port}")"
 
-  if [[ ${project_install_type} != "docker"* ]]; then
+  # TODO: if and old project with same domain was found, ask what to do (delete old project or skip this step)
 
-    # TODO: if and old project with same domain was found, ask what to do (delete old project or skip this step)
-
-    # Post-restore/install tasks
-    project_post_install_tasks "${install_path}" "${project_type}" "${project_name}" "${project_stage}" "${db_pass}" "${project_domain}" "${project_domain_new}"
-
-  fi
+  # Post-restore/install tasks
+  project_post_install_tasks "${project_install_path}" "${project_type}" "${project_install_type}" "${project_name}" "${project_stage}" "${db_pass}" "${project_domain}" "${project_domain_new}"
 
   # Create/update brolit_project_conf.json file with project info
-  project_update_brolit_config "${install_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "${db_engine}" "${project_name}_${project_stage}" "localhost" "${db_user}" "${db_pass}" "${project_domain_new}" "" "" "" ""
+  project_update_brolit_config "${project_install_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "${db_engine}" "${project_name}_${project_stage}" "localhost" "${db_user}" "${db_pass}" "${project_domain_new}" "" "" "" ""
 
 }

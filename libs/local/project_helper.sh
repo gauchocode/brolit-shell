@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.0-beta
+# Version: 3.3.1-beta
 ################################################################################
 #
 # Project Helper: Perform project actions.
@@ -2699,7 +2699,7 @@ function project_installer_php() {
 
   fi
 
-  db_project_name="$(mysql_name_sanitize "${project_name}")"
+  db_project_name="$(database_name_sanitize "${project_name}")"
   database_name="${db_project_name}_${project_stage}"
   database_user="${db_project_name}_user"
   database_user_passw="$(openssl rand -hex 12)"
@@ -2775,7 +2775,7 @@ function project_installer_nodejs() {
   fi
 
   # DB
-  db_project_name="$(mysql_name_sanitize "${project_name}")"
+  db_project_name="$(database_name_sanitize "${project_name}")"
   database_name="${db_project_name}_${project_stage}"
   database_user="${db_project_name}_user"
   database_user_passw="$(openssl rand -hex 12)"
@@ -2940,15 +2940,16 @@ function project_update_domain_config() {
 
 function project_post_install_tasks() {
 
-  local install_path="${1}"
+  local project_install_path="${1}"
   local project_type="${2}"
-  local project_name="${3}"
-  local project_stage="${4}"
-  local project_db_pass="${5}"
-  local old_project_domain="${6}" # TODO: can change it for url? https://domain.com or http://domain.com
-  local new_project_domain="${7}"
-  #local project_port="${8}"
-  #local project_db_engine="${9}"
+  local project_install_type="${3}"
+  local project_name="${4}"
+  local project_stage="${5}"
+  local project_db_pass="${6}"
+  local old_project_domain="${7}" # TODO: can change it for url? https://domain.com or http://domain.com
+  local new_project_domain="${8}"
+  #local project_port="${9}"
+  #local project_db_engine="${10}"
 
   local project_env
 
@@ -2961,57 +2962,59 @@ function project_post_install_tasks() {
   # Check if is a WP project
   if [[ ${project_type} == "wordpress" ]]; then
 
+    [[ ${project_install_type} == "docker" ]] && project_install_path="${project_install_path}/wordpress"
+
     # Change WordPress directory permissions
-    wp_change_permissions "${install_path}"
+    wp_change_permissions "${project_install_path}"
 
     # Change wp-config.php database parameters
-    project_set_configured_database_host "${install_path}" "${project_type}" "default" "localhost"
-    project_set_configured_database "${install_path}" "${project_type}" "default" "${project_name}_${project_stage}"
-    project_set_configured_database_user "${install_path}" "${project_type}" "default" "${project_name}_user"
-    project_set_configured_database_userpassw "${install_path}" "${project_type}" "default" "${project_db_pass}"
+    project_set_configured_database_host "${project_install_path}" "${project_type}" "${project_install_type}" "localhost"
+    project_set_configured_database "${project_install_path}" "${project_type}" "${project_install_type}" "${project_name}_${project_stage}"
+    project_set_configured_database_user "${project_install_path}" "${project_type}" "${project_install_type}" "${project_name}_user"
+    project_set_configured_database_userpassw "${project_install_path}" "${project_type}" "${project_install_type}" "${project_db_pass}"
 
     # TODO: need to check if http or https
     if [[ -n ${old_project_domain} && -n ${new_project_domain} ]]; then
       if [[ ${old_project_domain} != "${new_project_domain}" ]]; then
         # Change urls on database
-        wpcli_search_and_replace "${install_path}" "default" "${old_project_domain}" "${new_project_domain}"
+        wpcli_search_and_replace "${project_install_path}" "${project_install_type}" "${old_project_domain}" "${new_project_domain}"
       fi
     fi
 
     # Shuffle salts
-    wpcli_shuffle_salts "${install_path}" "default"
+    wpcli_shuffle_salts "${project_install_path}" "${project_install_type}"
 
     # Update upload_path
     ## Context: https://core.trac.wordpress.org/ticket/41947
-    wpcli_update_upload_path "${install_path}" "default" "wp-content/uploads"
+    wpcli_update_upload_path "${project_install_path}" "${project_install_type}" "wp-content/uploads"
 
     # Changing WordPress visibility
     if [[ ${project_stage} == "prod" ]]; then
       # Let search engines index the project
-      wpcli_change_wp_seo_visibility "${install_path}" "default" "1"
+      wpcli_change_wp_seo_visibility "${project_install_path}" "${project_install_type}" "1"
       # Set debug mode to false
-      wpcli_set_debug_mode "${install_path}" "default" "false" 
+      wpcli_set_debug_mode "${project_install_path}" "${project_install_type}" "false" 
     else
       # Block search engines indexation
-      wpcli_change_wp_seo_visibility "${install_path}" "default" "0"
+      wpcli_change_wp_seo_visibility "${project_install_path}" "${project_install_type}" "0"
       # De-activate cache plugins if present
-      wpcli_plugin_is_installed "${install_path}" "default" "wp-rocket" && wpcli_deactivate_plugin "${install_path}" "wp-rocket"
-      wpcli_plugin_is_installed "${install_path}" "default" "redis-cache" && wpcli_plugin_deactivate "${install_path}" "redis-cache"
-      wpcli_plugin_is_installed "${install_path}" "default" "w3-total-cache" && wpcli_plugin_deactivate "${install_path}" "w3-total-cache"
-      wpcli_plugin_is_installed "${install_path}" "default" "wp-super-cache" && wpcli_plugin_deactivate "${install_path}" "wp-super-cache"
+      wpcli_plugin_is_installed "${project_install_path}" "${project_install_type}" "wp-rocket" && wpcli_deactivate_plugin "${project_install_path}" "wp-rocket"
+      wpcli_plugin_is_installed "${project_install_path}" "${project_install_type}" "redis-cache" && wpcli_plugin_deactivate "${project_install_path}" "redis-cache"
+      wpcli_plugin_is_installed "${project_install_path}" "${project_install_type}" "w3-total-cache" && wpcli_plugin_deactivate "${project_install_path}" "w3-total-cache"
+      wpcli_plugin_is_installed "${project_install_path}" "${project_install_type}" "wp-super-cache" && wpcli_plugin_deactivate "${project_install_path}" "wp-super-cache"
       # Set debug mode to true
-      wpcli_set_debug_mode "${install_path}" "default" "true"
+      wpcli_set_debug_mode "${project_install_path}" "${project_install_type}" "true"
     fi
 
-    wpcli_cache_flush "${install_path}" "default"
+    wpcli_cache_flush "${project_install_path}" "${project_install_type}"
 
     # If .user.ini found, rename it (Wordfence issue workaround)
-    [[ -f "${install_path}/.user.ini" ]] && mv "${install_path}/.user.ini" "${install_path}/.user.ini.bak"
+    [[ -f "${project_install_path}/.user.ini" ]] && mv "${project_install_path}/.user.ini" "${project_install_path}/.user.ini.bak"
 
   else
 
     # TODO: search .env file?
-    project_env="${install_path}/.env"
+    project_env="${project_install_path}/.env"
 
     if [[ -f ${project_env} ]]; then
 
