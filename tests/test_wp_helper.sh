@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.0-beta
+# Version: 3.3.1-beta
 #############################################################################
 
 function test_wpcli_helper_funtions() {
@@ -17,7 +17,7 @@ function test_wpcli_helper_funtions() {
     project_path="${PROJECTS_PATH}/${project_domain}"
 
     # Create mock project
-    db_project_name=$(mysql_name_sanitize "${project_name}")
+    db_project_name=$(database_name_sanitize "${project_name}")
     database_name="${db_project_name}_${project_stage}"
     database_user="${db_project_name}_user"
     database_user_passw="$(openssl rand -hex 12)"

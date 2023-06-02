@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.0-beta
+# Version: 3.3.1-beta
 #############################################################################
 
 function test_mysql_helper() {
 
     # TODO tests for:
-    #   mysql_name_sanitize
+    #   database_name_sanitize
     #   mysql_user_psw_change
 
     #test_mysql_ask_root_psw
