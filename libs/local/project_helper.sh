@@ -2004,7 +2004,8 @@ function project_install() {
   fi
 
   # Post-restore/install tasks
-  project_post_install_tasks "${project_path}" "${project_type}" "${project_name}" "${project_stage}" "${database_user_passw}" "" ""
+  project_install_type="default"
+  project_post_install_tasks "${project_path}" "${project_type}" "${project_install_type}" "${project_name}" "${project_stage}" "${database_user_passw}" "" ""
 
   # TODO: refactor this
   # Cert config files
@@ -2953,6 +2954,8 @@ function project_post_install_tasks() {
 
   local project_env
 
+  local database_host="localhost"
+
   # TODO: check if update db credentials is needed
   # TODO: update brolit project config file
 
@@ -2962,13 +2965,13 @@ function project_post_install_tasks() {
   # Check if is a WP project
   if [[ ${project_type} == "wordpress" ]]; then
 
-    [[ ${project_install_type} == "docker" ]] && project_install_path="${project_install_path}/wordpress"
+    [[ ${project_install_type} == "docker"* ]] && project_install_path="${project_install_path}/wordpress" && database_host="mysql"
 
     # Change WordPress directory permissions
     wp_change_permissions "${project_install_path}"
 
     # Change wp-config.php database parameters
-    project_set_configured_database_host "${project_install_path}" "${project_type}" "${project_install_type}" "localhost"
+    project_set_configured_database_host "${project_install_path}" "${project_type}" "${project_install_type}" "${database_host}"
     project_set_configured_database "${project_install_path}" "${project_type}" "${project_install_type}" "${project_name}_${project_stage}"
     project_set_configured_database_user "${project_install_path}" "${project_type}" "${project_install_type}" "${project_name}_user"
     project_set_configured_database_userpassw "${project_install_path}" "${project_type}" "${project_install_type}" "${project_db_pass}"
@@ -2980,6 +2983,10 @@ function project_post_install_tasks() {
         wpcli_search_and_replace "${project_install_path}" "${project_install_type}" "${old_project_domain}" "${new_project_domain}"
       fi
     fi
+
+    # SET CONFIGS
+    wpcli_config_set "${project_install_path}" "${project_install_type}" "WP_HOME" "https://${new_project_domain}/"
+    wpcli_config_set "${project_install_path}" "${project_install_type}" "WP_SITEURL" "https://${new_project_domain}/"
 
     # Shuffle salts
     wpcli_shuffle_salts "${project_install_path}" "${project_install_type}"
