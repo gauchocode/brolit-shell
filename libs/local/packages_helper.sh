@@ -295,6 +295,7 @@ function package_install_optimization_utils() {
 
   log_subsection "Package Manager"
 
+  # Installing needed packages
   package_install_if_not "jpegoptim"
   package_install_if_not "optipng"
   package_install_if_not "pngquant"
@@ -303,17 +304,19 @@ function package_install_optimization_utils() {
   package_install_if_not "ghostscript"
   package_install_if_not "imagemagick"
 
-  # Load commands
-  declare -g MOGRIFY
-  declare -g JPEGOPTIM
-  declare -g OPTIPNG
-  declare -g GHOSTSCRIPT
+  # Read-only vars
+  readonly MOGRIFY
+  readonly JPEGOPTIM
+  readonly OPTIPNG
+  readonly GHOSTSCRIPT
 
+  # Load commands
   MOGRIFY="$(command -v mogrify)"
   JPEGOPTIM="$(command -v jpegoptim)"
   OPTIPNG="$(command -v optipng)"
   GHOSTSCRIPT="$(command -v ghostscript)"
 
+  # Making vars global
   export MOGRIFY JPEGOPTIM OPTIPNG GHOSTSCRIPT
 
 }
@@ -332,6 +335,7 @@ function package_install_security_utils() {
 
   log_subsection "Package Manager"
 
+  # Installing needed packages
   package_install_if_not "clamav"
   package_install_if_not "clamav-freshclam"
   package_install_if_not "lynis"

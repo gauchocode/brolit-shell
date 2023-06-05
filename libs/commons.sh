@@ -16,6 +16,9 @@
 
 function _source_all_scripts() {
 
+  local libs_apps_path
+  local libs_apps_scripts
+
   # Source all apps libs
   libs_apps_path="${BROLIT_MAIN_DIR}/libs/apps"
   libs_apps_scripts="$(find "${libs_apps_path}" -maxdepth 1 -name '*.sh' -type f -print)"
@@ -63,10 +66,6 @@ function _setup_globals_and_options() {
   # Creating brolit folder
   [[ ! -d ${BROLIT_CONFIG_PATH} ]] && mkdir "${BROLIT_CONFIG_PATH}"
 
-  # Apps globals
-  declare -g TAR
-  declare -g FIND
-
   # Main partition
   declare -g MAIN_VOL
   MAIN_VOL="$(df / | grep -Eo '/dev/[^ ]+')"
@@ -82,15 +81,14 @@ function _setup_globals_and_options() {
   declare -g startdir=""
   declare -g menutitle="Config Selection Menu"
 
-  # TAR
+  # Apps globals
+  declare -g TAR
+  declare -g FIND
+  declare -g CURL
+
   TAR="$(command -v tar)"
-
-  # FIND
   FIND="$(command -v find)"
-
-  # CURL (better curl to download files and getting http return codes)
-  ## Ref: https://everything.curl.dev/usingcurl/returns
-  CURL="curl --silent -L --fail --connect-timeout 3 --retry 0"
+  CURL="curl --silent -L --fail --connect-timeout 3 --retry 0"  # CURL (better curl to download files and getting http return codes). Ref: https://everything.curl.dev/usingcurl/returns
 
   export NOW NOWDISPLAY CURL TAR FIND MAIN_VOL
 
@@ -111,59 +109,77 @@ function _setup_colors_and_styles() {
   # Refs:
   # https://misc.flogisoft.com/bash/tip_colors_and_formatting
 
-  # Declare read-only global vars
-  declare -g NORMAL BOLD ITALIC UNDERLINED INVERTED
-  declare -g BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR F_DEFAULT
-  declare -g B_BLACK B_RED B_GREEN B_YELLOW B_ORANGE B_MAGENTA B_CYAN B_WHITE B_ENDCOLOR B_DEFAULT
-
   # RUNNING FROM TERMINAL
   if [[ -t 1 ]]; then
 
     # Text Styles
-    NORMAL="\033[m"
-    BOLD='\x1b[1m'
-    ITALIC='\x1b[3m'
-    UNDERLINED='\x1b[4m'
-    INVERTED='\x1b[7m'
+    readonly NORMAL="\033[m"
+    readonly BOLD='\x1b[1m'
+    readonly ITALIC='\x1b[3m'
+    readonly UNDERLINED='\x1b[4m'
+    readonly INVERTED='\x1b[7m'
 
     # Foreground/Text Colours
-    BLACK='\E[30;40m'
-    RED='\E[31;40m'
-    GREEN='\E[32;40m'
-    YELLOW='\E[33;40m'
-    ORANGE='\033[0;33m'
-    MAGENTA='\E[35;40m'
-    CYAN='\E[36;40m'
-    WHITE='\E[37;40m'
-    ENDCOLOR='\033[0m'
-    F_DEFAULT='\E[39m'
+    readonly BLACK='\E[30;40m'
+    readonly RED='\E[31;40m'
+    readonly GREEN='\E[32;40m'
+    readonly YELLOW='\E[33;40m'
+    readonly ORANGE='\033[0;33m'
+    readonly MAGENTA='\E[35;40m'
+    readonly CYAN='\E[36;40m'
+    readonly WHITE='\E[37;40m'
+    readonly ENDCOLOR='\033[0m'
+    readonly F_DEFAULT='\E[39m'
 
     # Background Colours
-    B_BLACK='\E[40m'
-    B_RED='\E[41m'
-    B_GREEN='\E[42m'
-    B_YELLOW='\E[43m'
-    B_ORANGE='\043[0m'
-    B_MAGENTA='\E[45m'
-    B_CYAN='\E[46m'
-    B_WHITE='\E[47m'
-    B_ENDCOLOR='\e[0m'
-    B_DEFAULT='\E[49m'
+    readonly B_BLACK='\E[40m'
+    readonly B_RED='\E[41m'
+    readonly B_GREEN='\E[42m'
+    readonly B_YELLOW='\E[43m'
+    readonly B_ORANGE='\043[0m'
+    readonly B_MAGENTA='\E[45m'
+    readonly B_CYAN='\E[46m'
+    readonly B_WHITE='\E[47m'
+    readonly B_ENDCOLOR='\e[0m'
+    readonly B_DEFAULT='\E[49m'
 
   else
 
     # Text Styles
-    NORMAL='' BOLD='' ITALIC='' UNDERLINED='' INVERTED=''
+    readonly NORMAL='' 
+    readonly BOLD='' 
+    readonly ITALIC='' 
+    readonly UNDERLINED='' 
+    readonly INVERTED=''
 
     # Foreground/Text Colours
-    BLACK='' RED='' GREEN='' YELLOW='' ORANGE='' MAGENTA='' CYAN='' WHITE='' ENDCOLOR='' F_DEFAULT=''
+    readonly BLACK='' 
+    readonly RED='' 
+    readonly GREEN='' 
+    readonly YELLOW='' 
+    readonly ORANGE='' 
+    readonly MAGENTA='' 
+    readonly CYAN='' 
+    readonly WHITE='' 
+    readonly ENDCOLOR='' 
+    readonly F_DEFAULT=''
 
     # Background Colours
-    B_BLACK='' B_RED='' B_GREEN='' B_YELLOW='' B_ORANGE='' B_MAGENTA='' B_CYAN='' B_WHITE='' B_ENDCOLOR='' B_DEFAULT=''
+    readonly B_BLACK='' 
+    readonly B_RED='' 
+    readonly B_GREEN='' 
+    readonly B_YELLOW='' 
+    readonly B_ORANGE='' 
+    readonly B_MAGENTA='' 
+    readonly B_CYAN='' 
+    readonly B_WHITE='' 
+    readonly B_ENDCOLOR='' 
+    readonly B_DEFAULT=''
 
   fi
 
-  export BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR
+  # Export all declared vars
+  export NORMAL BOLD ITALIC UNDERLINED INVERTED BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR F_DEFAULT B_BLACK B_RED B_GREEN B_YELLOW B_ORANGE B_MAGENTA B_CYAN B_WHITE B_ENDCOLOR B_DEFAULT
 
 }
 
@@ -208,12 +224,22 @@ function _check_root() {
 
 function _check_scripts_permissions() {
 
-  ### chmod
-  find ./ -name "*.sh" -exec chmod +x {} \;
-
   # Log
   log_event "info" "Checking scripts permissions" "false"
   log_event "debug" "Executing chmod +x on *.sh" "false"
+
+  ### chmod
+  find ./ -name "*.sh" -exec chmod +x {} \;
+
+  # Check errors
+  if [[ $? -ne 0 ]]; then
+    die "Error setting scripts permissions! Exiting ..."
+
+  else
+    log_event "debug" "Scripts permissions setted" "false"
+    return 0
+
+  fi
 
 }
 
@@ -255,9 +281,10 @@ function get_server_public_ip() {
 #   ${public_ip}
 ################################################################################
 
-# TODO: Should return server IPs
+# TODO: Should return server IPs?
 function get_server_ips() {
 
+  # Global vars
   declare -g LOCAL_IP
   declare -g SERVER_IP
   declare -g SERVER_IPv6
@@ -271,11 +298,10 @@ function get_server_ips() {
   # Get IPv6 too
   SERVER_IPv6="$(curl --silent 'https://api64.ipify.org')"
 
+  # Log
   log_event "info" "LOCAL IPv4: ${LOCAL_IP}" "false"
   log_event "info" "SERVER IPv4: ${SERVER_IP}" "false"
   log_event "info" "SERVER IPv6: ${SERVER_IPv6}" "false"
-
-  export LOCAL_IP SERVER_IP SERVER_IPv6
 
 }
 
@@ -291,6 +317,8 @@ function get_server_ips() {
 
 function _check_distro() {
 
+  declare -g DISTRO
+  
   # Running Ubuntu?
   DISTRO="$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $1}')"
 
