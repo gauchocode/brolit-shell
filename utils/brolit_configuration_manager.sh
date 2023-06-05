@@ -1189,6 +1189,7 @@ function _brolit_configuration_load_netdata() {
     NETDATA_DOCKER="$(docker ps -q --filter name=netdata)" # This will detect if a netdata docker container is running
 
     PACKAGES_NETDATA_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].status")"
+    PACKAGES_NETDATA_CONFIG_WEB_ADMIN="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].web_admin")"
 
     if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
 
