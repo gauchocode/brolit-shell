@@ -203,7 +203,7 @@ function _netdata_telegram_config() {
 
 function netdata_installer() {
 
-  local netdata_installer_exitstatus
+#  local netdata_installer_exitstatus
 
   declare -g NETDATA_INSTALL_DIR
 
@@ -217,7 +217,7 @@ function netdata_installer() {
   # Download and run
   bash <(curl -Ss https://my-netdata.io/kickstart.sh) --dont-wait --disable-telemetry &>/dev/null
 
-  netdata_installer_exitstatus=$?
+  #netdata_installer_exitstatus=$?
 
   # Kill netdata and copy service
   #killall netdata && cp system/netdata.service /etc/systemd/system/
@@ -225,7 +225,7 @@ function netdata_installer() {
   # Some operating systems will use /opt/netdata/etc/netdata/ as the config directory
   [[ -d "/etc/netdata" ]] && NETDATA_INSTALL_DIR="/etc/netdata" || NETDATA_INSTALL_DIR="/opt/netdata/etc/netdata"
 
-  if [[ ${netdata_installer_exitstatus} -eq 0 ]]; then
+#  if [[ ${netdata_installer_exitstatus} -eq 0 ]]; then
 
     if [[ ${PACKAGES_NETDATA_CONFIG_WEB_ADMIN} == "enabled" ]]; then
       # Log
@@ -278,11 +278,11 @@ function netdata_installer() {
 
     fi
 
-  else
-
-    return 1
-
-  fi
+  #else
+#
+#    return 1
+#
+#  fi
 
 }
 
