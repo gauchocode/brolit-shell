@@ -28,13 +28,13 @@ function database_list() {
 
     case ${database_engine} in
 
-    MYSQL|mysql|mariadb)
+    MYSQL | mysql | mariadb)
 
         mysql_list_databases "${stage}" "${database_container}"
         return $?
         ;;
 
-    POSTGRESQL|postgres|postgresql)
+    POSTGRESQL | postgres | postgresql)
 
         postgres_list_databases "${stage}" "${database_container}"
         return $?
@@ -65,28 +65,70 @@ function database_drop() {
 
     local database_name="${1}"
     local database_engine="${2}"
-    local install_type="${3}"
+    local database_container="${3}"
 
     case ${database_engine} in
 
-    mysql)
+    MYSQL | mysql | mariadb)
 
         mysql_database_drop "${database_name}" "${install_type}"
         return $?
         ;;
 
-    postgres)
+    POSTGRESQL | postgres | postgresql)
 
         postgres_database_drop "${database_name}" "${install_type}"
         return $?
         ;;
 
     *)
+        # Log
+        log "error" "Database engine not supported: ${database_engine}"
         return 1
         ;;
 
     esac
 
+}
+
+################################################################################
+# Create database
+#
+# Arguments:
+#  ${1} = ${database_name}
+#  ${2} = ${database_engine}
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
+
+function database_users_list() {
+    
+        local database_engine="${1}"
+        local database_container="${2}"
+    
+        case ${database_engine} in
+    
+        MYSQL | mysql | mariadb)
+    
+            mysql_users_list "${database_container}"
+            return $?
+            ;;
+    
+        POSTGRESQL | postgres | postgresql)
+    
+            postgres_users_list "${database_container}"
+            return $?
+            ;;
+    
+        *)
+            # Log
+            log "error" "Database engine not supported: ${database_engine}"
+            return 1
+            ;;
+    
+        esac
+    
 }
 
 ################################################################################
@@ -106,23 +148,25 @@ function database_user_delete() {
     local database_user="${1}"
     local database_user_scope="${2}"
     local database_engine="${3}"
-    local install_type="${4}"
+    local database_container="${4}"
 
     case ${database_engine} in
 
-    mysql)
+    MYSQL | mysql | mariadb)
 
-        mysql_user_delete "${database_user}" "${database_user_scope}" "${install_type}"
+        mysql_user_delete "${database_user}" "${database_user_scope}"
         return $?
         ;;
 
-    postgres)
+    POSTGRESQL | postgres | postgresql)
 
-        postgres_user_delete "${database_user}" "${database_user_scope}" "${install_type}"
+        postgres_user_delete "${database_user}" "${database_user_scope}"
         return $?
         ;;
 
     *)
+        # Log
+        log "error" "Database engine not supported: ${database_engine}"
         return 1
         ;;
 

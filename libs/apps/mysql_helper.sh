@@ -273,18 +273,38 @@ function mysql_list_databases() {
 # List users on MySQL
 #
 # Arguments:
-#  none
+#  ${1} = ${container_name}
 #
 # Outputs:
 #  ${users}, 1 on error.
 ################################################################################
 
-function mysql_list_users() {
+function mysql_users_list() {
+
+    local container_name="${1}"
 
     local users
 
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+
+        local mysql_container_user
+        local mysql_container_user_pssw
+
+        # Get MYSQL_USER and MYSQL_PASSWORD from container
+        ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
+        mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
+        mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
+
+        mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
+
+    else
+
+        mysql_exec="${MYSQL_ROOT}"
+
+    fi
+
     # Run command
-    users="$(${MYSQL_ROOT} -e 'SELECT user FROM mysql.user;')"
+    users="$(${mysql_exec} -e 'SELECT user FROM mysql.user;')"
 
     # Check result
     mysql_result=$?
