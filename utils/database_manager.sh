@@ -174,15 +174,8 @@ function database_manager_menu() {
         [[ ${exitstatus} -eq 1 ]] && return 1
 
         # Check if database engine is mysql or postgres
-        if [[ ${database_container_selected} == *"mysql"* ]]; then
-
-          chosen_database_engine="MYSQL"
-
-        elif [[ ${database_container_selected} == *"postgres"* ]]; then
-
-          chosen_database_engine="POSTGRESQL"
-
-        fi
+        [[ ${database_container_selected} == *"mysql"* ]] && chosen_database_engine="MYSQL"
+        [[ ${database_container_selected} == *"postgres"* ]] && chosen_database_engine="POSTGRESQL"
 
       fi
     fi
@@ -280,6 +273,8 @@ function database_manager_menu() {
 
       # List users
       database_users="$(database_users_list "${chosen_database_engine}" "${database_container_selected}")"
+
+      display --indent 8 --text "Database Users: ${database_users}" --tcolor GREEN
 
     fi
 
