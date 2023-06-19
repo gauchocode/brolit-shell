@@ -212,7 +212,12 @@ function database_manager_menu() {
       # List databases
       databases="$(database_list "${chosen_database_stage}" "${chosen_database_engine}" "${database_container_selected}")"
 
-      display --indent 8 --text "Databases: ${databases}" --tcolor GREEN
+      display --indent 8 --text "Databases:" --tcolor WHITE
+
+      # Database users list
+      for database in ${databases}; do
+        display --indent 12 --text "${database}" --tcolor GREEN
+      done
 
     fi
 
@@ -271,10 +276,15 @@ function database_manager_menu() {
     # LIST USERS
     if [[ ${chosen_database_manager_option} == *"05"* ]]; then
 
-      # List users
+      # Get users
       database_users="$(database_users_list "${chosen_database_engine}" "${database_container_selected}")"
 
-      display --indent 8 --text "Database Users: ${database_users}" --tcolor GREEN
+      display --indent 8 --text "Database Users:" --tcolor WHITE
+
+      # Database users list
+      for database_user in ${database_users}; do
+        display --indent 12 --text "${database_user}" --tcolor GREEN
+      done
 
     fi
 
