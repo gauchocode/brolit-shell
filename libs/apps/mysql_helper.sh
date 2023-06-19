@@ -284,6 +284,7 @@ function mysql_users_list() {
     local container_name="${1}"
 
     local users
+    local mysql_exec
 
     if [[ -n ${container_name} && ${container_name} != "false" ]]; then
 
@@ -328,7 +329,7 @@ function mysql_users_list() {
         # Log
         display --indent 6 --text "- Listing MySQL users" --result "FAIL" --color RED
         log_event "error" "Something went wrong listing MySQL users" "false"
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e SELECT user FROM mysql.user;'" "false"
+        log_event "debug" "Last command executed: ${mysql_exec} -e SELECT user FROM mysql.user;'" "false"
 
         return 1
 
