@@ -281,13 +281,34 @@ function postgres_list_databases() {
 #  ${users}, 1 on error.
 ################################################################################
 
-function postgres_list_users() {
+function postgres_users_list() {
 
+    local container_name="${1}"
+
+    local psql_exec
     local users
+
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+
+        local psql_container_user
+        local psql_container_user_pssw
+
+        # Get POSTGRES_USER and POSTGRES_PASSWORD from container
+        ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
+        psql_container_user="$(docker exec -i "${container_name}" printenv POSTGRES_USER)"
+        psql_container_user_pssw="$(docker exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
+        # Set psql_exec
+        psql_exec="docker exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} psql -U ${psql_container_user} --quiet"
+
+    else
+        # Set psql_exec
+        psql_exec="${PSQL_ROOT}"
+
+    fi
 
     # Run command
     # https://unix.stackexchange.com/questions/201666/command-to-list-postgresql-user-accounts
-    users="$(${PSQL_ROOT} -c 'SELECT u.usename AS "User Name" FROM pg_catalog.pg_user u;' -t)"
+    users="$(${psql_exec} -c 'SELECT u.usename AS "User Name" FROM pg_catalog.pg_user u;' -t)"
 
     # Check result
     postgres_result=$?
