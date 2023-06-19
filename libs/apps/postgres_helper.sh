@@ -332,7 +332,7 @@ function postgres_users_list() {
         # Log
         display --indent 6 --text "- Listing Postgres users" --result "FAIL" --color RED
         log_event "error" "Something went wrong listing Postgres users" "false"
-        log_event "debug" "Last command executed: ${PSQL_ROOT} -c 'SELECT u.usename AS \"User Name\" FROM pg_catalog.pg_user u;' -t" "false"
+        log_event "debug" "Last command executed: ${psql_exec} -c 'SELECT u.usename AS \"User Name\" FROM pg_catalog.pg_user u;' -t" "false"
 
         return 1
 
