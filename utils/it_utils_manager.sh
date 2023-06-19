@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.1-beta
+# Version: 3.3.2-beta
 ################################################################################
 
 function it_utils_menu() {
