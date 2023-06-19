@@ -10,6 +10,16 @@
 
 # TODO: use database controller
 
+################################################################################
+# Database Engine Menu
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   ${chosen_database_engine}
+################################################################################
+
 function database_ask_engine() {
 
   local database_engine_options
@@ -44,15 +54,27 @@ function database_ask_engine() {
 
 }
 
+################################################################################
+# Database Delete Menu
+#
+# Arguments:
+#   ${1} = ${database_engine}
+#   ${2} = ${database_container} - Optional
+#
+# Outputs:
+#   nothing
+################################################################################
+
 function database_delete_menu() {
 
   local database_engine="${1}"
+  local database="${2}"
 
   local databases
   local chosen_database
 
   # List databases
-  databases="$(database_list_all "all" "${database_engine}" "default")"
+  databases="$(database_list "all" "${database_engine}" "")"
 
   chosen_database="$(whiptail --title "DATABASE MANAGER" --menu "Choose the database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)"
 
@@ -65,7 +87,7 @@ function database_delete_menu() {
 
     else
 
-      postgres_database_drop "${chosen_database}"
+      [[ ${database_engine} == "POSTGRESQL" ]] && postgres_database_drop "${chosen_database}"
 
     fi
 
@@ -84,7 +106,7 @@ function database_delete_menu() {
 #   nothing
 ################################################################################
 
-function database_list_menu() {
+function database_stage_list_menu() {
 
   local database_engine="${1}"
   local database_container="${2}"
@@ -95,18 +117,16 @@ function database_list_menu() {
 
   database_list_options=("all prod stage test dev demo")
 
-  chosen_database_option="$(whiptail_selection_menu "DATABASE MANAGER" "Select a project stage for the database:" "${database_list_options}" "prod")"
+  chosen_database_option="$(whiptail_selection_menu "DATABASE MANAGER" "Select a project stage for the database:" "${database_list_options}" "all")"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    if [[ ${database_engine} == "MYSQL" ]]; then
-      databases="$(mysql_list_databases "${chosen_database_option}" "${database_container}")"
-    else
-      databases="$(postgres_list_databases "${chosen_database_option}" "${database_container}")"
-    fi
+    echo "${chosen_database_option}"
 
-    display --indent 8 --text "Databases: ${databases}" --tcolor GREEN
+  else
+
+    return 1
 
   fi
 
@@ -130,6 +150,7 @@ function database_manager_menu() {
   local chosen_database_manager_option
   local chosen_database
   local chosen_database_name
+  local chosen_database_stage
   local chosen_database_engine
 
   local database_container
@@ -191,7 +212,16 @@ function database_manager_menu() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # LIST DATABASES
-    [[ ${chosen_database_manager_option} == *"01"* ]] && database_list_menu "${chosen_database_engine}" "${database_container_selected}"
+    if [[ ${chosen_database_manager_option} == *"01"* ]]; then
+
+      chosen_database_stage="$(database_stage_list_menu "${chosen_database_engine}" "${database_container_selected}")"
+
+      # List databases
+      databases="$(database_list "${chosen_database_stage}" "${chosen_database_engine}" "${database_container_selected}")"
+
+      display --indent 8 --text "Databases: ${databases}" --tcolor GREEN
+
+    fi
 
     # CREATE DATABASE
     if [[ ${chosen_database_manager_option} == *"02"* ]]; then
@@ -211,17 +241,14 @@ function database_manager_menu() {
     fi
 
     # DELETE DATABASE
-    [[ ${chosen_database_manager_option} == *"03"* ]] && database_delete_menu "${chosen_database_engine}"
+    [[ ${chosen_database_manager_option} == *"03"* ]] && database_delete_menu "${chosen_database_engine}" ""
 
     # RENAME DATABASE
     if [[ ${chosen_database_manager_option} == "04" ]]; then
 
       # List databases
-      if [[ ${chosen_database_engine} == "MYSQL" ]]; then
-        databases="$(mysql_list_databases "all")"
-      else
-        databases="$(postgres_list_databases "all")"
-      fi
+      databases="$(database_list "${chosen_database_stage}" "${chosen_database_engine}" "${database_container_selected}")"
+
       chosen_database="$(whiptail --title "DATABASE MANAGER" --menu "Choose a database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)"
 
       exitstatus=$?
@@ -233,12 +260,12 @@ function database_manager_menu() {
         if [[ ${exitstatus} -eq 0 ]]; then
 
           if [[ ${chosen_database_engine} == "MYSQL" ]]; then
-
+            # MySQL
             mysql_database_rename "${chosen_database}" "${chosen_database_name}"
 
           else
-
-            postgres_database_rename "${chosen_database}" "${chosen_database_name}"
+            # PostgreSQL
+            [[ ${chosen_database_engine} == "POSTGRESQL" ]] && postgres_database_rename "${chosen_database}" "${chosen_database_name}"
 
           fi
 
@@ -252,9 +279,11 @@ function database_manager_menu() {
     if [[ ${chosen_database_manager_option} == *"05"* ]]; then
 
       if [[ ${chosen_database_engine} == "MYSQL" ]]; then
+        # MySQL
         mysql_list_users
       else
-        postgres_list_users
+        # PostgreSQL
+        [[ ${chosen_database_engine} == "POSTGRESQL" ]] && postgres_list_users
       fi
 
     fi
@@ -277,12 +306,12 @@ function database_manager_menu() {
         if [[ ${exitstatus} -eq 0 ]]; then
 
           if [[ ${chosen_database_engine} == "MYSQL" ]]; then
-
+            # MySQL
             mysql_user_create "${chosen_username}" "${chosen_userpsw}" "localhost"
 
           else
-
-            postgres_user_create "${chosen_username}" "${chosen_userpsw}" "localhost"
+            # PostgreSQL
+            [[ ${chosen_database_engine} == "POSTGRESQL" ]] && postgres_user_create "${chosen_username}" "${chosen_userpsw}" "localhost"
 
           fi
 
@@ -297,9 +326,11 @@ function database_manager_menu() {
 
       # List users
       if [[ ${chosen_database_engine} == "MYSQL" ]]; then
+        # MySQL
         database_users="$(mysql_list_users)"
       else
-        database_users="$(postgres_list_users)"
+        # PostgreSQL
+        [[ ${chosen_database_engine} == "POSTGRESQL" ]] && database_users="$(postgres_list_users)"
       fi
 
       chosen_user="$(whiptail --title "DATABASE MANAGER" --menu "Choose the user you want to delete" 20 78 10 $(for x in ${database_users}; do echo "$x [U]"; done) 3>&1 1>&2 2>&3)"
@@ -308,12 +339,12 @@ function database_manager_menu() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         if [[ ${chosen_database_engine} == "MYSQL" ]]; then
-
+          # MySQL
           mysql_user_delete "${chosen_user}" "localhost"
 
         else
-
-          postgres_user_delete "${chosen_user}" "localhost"
+          # PostgreSQL
+          [[ ${chosen_database_engine} == "POSTGRESQL" ]] && postgres_user_delete "${chosen_user}" "localhost"
 
         fi
 
@@ -326,9 +357,11 @@ function database_manager_menu() {
 
       # List users
       if [[ ${chosen_database_engine} == "MYSQL" ]]; then
+        # MySQL
         database_users="$(mysql_list_users)"
       else
-        database_users="$(postgres_list_users)"
+        # PostgreSQL
+        [[ ${chosen_database_engine} == "POSTGRESQL" ]] && database_users="$(postgres_list_users)"
       fi
 
       chosen_user="$(whiptail --title "DATABASE MANAGER" --menu "Choose a user to work with" 20 78 10 $(for x in ${database_users}; do echo "$x [U]"; done) 3>&1 1>&2 2>&3)"
@@ -342,12 +375,12 @@ function database_manager_menu() {
         if [[ ${exitstatus} -eq 0 ]]; then
 
           if [[ ${chosen_database_engine} == "MYSQL" ]]; then
-
+            # MySQL
             mysql_user_psw_change "${chosen_user}" "${new_user_psw}"
 
           else
-
-            postgres_user_psw_change "${chosen_user}" "${new_user_psw}"
+            # PostgreSQL
+            [[ ${chosen_database_engine} == "POSTGRESQL" ]] && postgres_user_psw_change "${chosen_user}" "${new_user_psw}"
 
           fi
 
@@ -362,9 +395,11 @@ function database_manager_menu() {
 
       # List users
       if [[ ${chosen_database_engine} == "MYSQL" ]]; then
+        # MySQL
         database_users="$(mysql_list_users)"
       else
-        database_users="$(postgres_list_users)"
+        # PostgreSQL
+        [[ ${chosen_database_engine} == "POSTGRESQL" ]] && database_users="$(postgres_list_users)"
       fi
 
       chosen_user="$(whiptail --title "DATABASE MANAGER" --menu "Choose a user to work with" 20 78 10 $(for x in ${database_users}; do echo "$x [U]"; done) 3>&1 1>&2 2>&3)"
@@ -374,9 +409,11 @@ function database_manager_menu() {
 
         # List databases
         if [[ ${chosen_database_engine} == "MYSQL" ]]; then
+          # MySQL
           databases="$(mysql_list_databases "all")"
         else
-          databases="$(postgres_list_databases "all")"
+          # PostgreSQL
+          [[ ${chosen_database_engine} == "POSTGRESQL" ]] && databases="$(postgres_list_databases "all")"
         fi
 
         chosen_database="$(whiptail --title "DATABASE MANAGER" --menu "Choose the database to grant privileges" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database}" 3>&1 1>&2 2>&3)"
@@ -385,9 +422,11 @@ function database_manager_menu() {
         if [[ ${exitstatus} -eq 0 ]]; then
 
           if [[ ${chosen_database_engine} == "MYSQL" ]]; then
+            # MySQL
             mysql_user_grant_privileges "${chosen_user}" "${chosen_database}" "localhost"
           else
-            postgres_user_grant_privileges "${chosen_user}" "${chosen_database}" "localhost"
+            # PostgreSQL
+            [[ ${chosen_database_engine} == "POSTGRESQL" ]] && postgres_user_grant_privileges "${chosen_user}" "${chosen_database}" "localhost"
           fi
 
         fi
@@ -400,11 +439,7 @@ function database_manager_menu() {
     if [[ ${chosen_database_manager_option} == *"10"* ]]; then
 
       # List databases
-      if [[ ${chosen_database_engine} == "MYSQL" ]]; then
-        databases="$(mysql_list_databases "all" "${database_container_selected}")"
-      else
-        databases="$(postgres_list_databases "all" "${database_container_selected}")"
-      fi
+      databases="$(database_list "${chosen_database_stage}" "${chosen_database_engine}" "${database_container_selected}")"
 
       chosen_database="$(whiptail --title "DATABASE MANAGER" --menu "Choose the database to export" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) 3>&1 1>&2 2>&3)"
 
@@ -412,12 +447,12 @@ function database_manager_menu() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         if [[ ${chosen_database_engine} == "MYSQL" ]]; then
-
+          # MySQL
           mysql_database_export "${chosen_database}" "${database_container_selected}" "${BROLIT_TMP_DIR}/${chosen_database}.sql"
 
         else
-
-          postgres_database_export "${chosen_database}" "${database_container_selected}" "${BROLIT_TMP_DIR}/${chosen_database}.sql"
+          # PostgreSQL
+          [[ ${chosen_database_engine} == "POSTGRESQL" ]] && postgres_database_export "${chosen_database}" "${database_container_selected}" "${BROLIT_TMP_DIR}/${chosen_database}.sql"
 
         fi
 
@@ -425,16 +460,11 @@ function database_manager_menu() {
 
     fi
 
-
     # IMPORT DATABASE DUMP
     if [[ ${chosen_database_manager_option} == *"11"* ]]; then
 
       # List databases
-      if [[ ${chosen_database_engine} == "MYSQL" ]]; then
-        databases="$(mysql_list_databases "all" "${database_container_selected}")"
-      else
-        databases="$(postgres_list_databases "all" "${database_container_selected}")"
-      fi
+      databases="$(database_list "${chosen_database_stage}" "${chosen_database_engine}" "${database_container_selected}")"
 
       chosen_database="$(whiptail --title "DATABASE MANAGER" --menu "Choose the database to import" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) 3>&1 1>&2 2>&3)"
 
@@ -459,12 +489,12 @@ function database_manager_menu() {
         log_event "info" "File to restore: ${dump_file}" "false"
 
         if [[ ${chosen_database_engine} == "MYSQL" ]]; then
-
+          # MySQL
           mysql_database_import "${chosen_database}" "${database_container_selected}" "${dump_file}"
 
         else
-
-          postgres_database_import "${chosen_database}" "${database_container_selected}" "${dump_file}"
+          # PostgreSQL
+          [[ ${chosen_database_engine} == "POSTGRESQL" ]] && postgres_database_import "${chosen_database}" "${database_container_selected}" "${dump_file}"
 
         fi
 

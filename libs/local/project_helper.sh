@@ -2142,9 +2142,11 @@ function project_delete_database() {
 
   local databases
   local chosen_database
+  local project_name
+  local backup_project_database_output
 
   # List databases
-  databases="$(database_list_all "all" "${database_engine}" "${project_install_type}")"
+  databases="$(database_list "all" "${database_engine}" "")"
   chosen_database="$(whiptail --title "DATABASES" --menu "Choose a Database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database_name}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
