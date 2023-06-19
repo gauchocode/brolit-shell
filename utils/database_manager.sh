@@ -278,13 +278,8 @@ function database_manager_menu() {
     # LIST USERS
     if [[ ${chosen_database_manager_option} == *"05"* ]]; then
 
-      if [[ ${chosen_database_engine} == "MYSQL" ]]; then
-        # MySQL
-        mysql_list_users
-      else
-        # PostgreSQL
-        [[ ${chosen_database_engine} == "POSTGRESQL" ]] && postgres_list_users
-      fi
+      # List users
+      database_users="$(database_users_list "${chosen_database_engine}" "${database_container_selected}")"
 
     fi
 
@@ -325,28 +320,14 @@ function database_manager_menu() {
     if [[ ${chosen_database_manager_option} == *"07"* ]]; then
 
       # List users
-      if [[ ${chosen_database_engine} == "MYSQL" ]]; then
-        # MySQL
-        database_users="$(mysql_list_users)"
-      else
-        # PostgreSQL
-        [[ ${chosen_database_engine} == "POSTGRESQL" ]] && database_users="$(postgres_list_users)"
-      fi
+      database_users="$(database_users_list "${chosen_database_engine}" "${database_container_selected}")"
 
       chosen_user="$(whiptail --title "DATABASE MANAGER" --menu "Choose the user you want to delete" 20 78 10 $(for x in ${database_users}; do echo "$x [U]"; done) 3>&1 1>&2 2>&3)"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        if [[ ${chosen_database_engine} == "MYSQL" ]]; then
-          # MySQL
-          mysql_user_delete "${chosen_user}" "localhost"
-
-        else
-          # PostgreSQL
-          [[ ${chosen_database_engine} == "POSTGRESQL" ]] && postgres_user_delete "${chosen_user}" "localhost"
-
-        fi
+        database_user_delete "${chosen_user}" "localhost" "${chosen_database_engine}" "${database_container_selected}"
 
       fi
 
@@ -356,13 +337,7 @@ function database_manager_menu() {
     if [[ ${chosen_database_manager_option} == *"08"* ]]; then
 
       # List users
-      if [[ ${chosen_database_engine} == "MYSQL" ]]; then
-        # MySQL
-        database_users="$(mysql_list_users)"
-      else
-        # PostgreSQL
-        [[ ${chosen_database_engine} == "POSTGRESQL" ]] && database_users="$(postgres_list_users)"
-      fi
+      database_users="$(database_users_list "${chosen_database_engine}" "${database_container_selected}")"
 
       chosen_user="$(whiptail --title "DATABASE MANAGER" --menu "Choose a user to work with" 20 78 10 $(for x in ${database_users}; do echo "$x [U]"; done) 3>&1 1>&2 2>&3)"
 
@@ -394,13 +369,7 @@ function database_manager_menu() {
     if [[ ${chosen_database_manager_option} == *"09"* ]]; then
 
       # List users
-      if [[ ${chosen_database_engine} == "MYSQL" ]]; then
-        # MySQL
-        database_users="$(mysql_list_users)"
-      else
-        # PostgreSQL
-        [[ ${chosen_database_engine} == "POSTGRESQL" ]] && database_users="$(postgres_list_users)"
-      fi
+      database_users="$(database_users_list "${chosen_database_engine}" "${database_container_selected}")"
 
       chosen_user="$(whiptail --title "DATABASE MANAGER" --menu "Choose a user to work with" 20 78 10 $(for x in ${database_users}; do echo "$x [U]"; done) 3>&1 1>&2 2>&3)"
 
@@ -569,7 +538,7 @@ function database_tasks_handler() {
 
   list_db_user)
 
-    mysql_list_users
+    mysql_users_list
 
     exit
     ;;
