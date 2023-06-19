@@ -12,45 +12,31 @@
 # List databases
 #
 # Arguments:
-#  ${1} - ${stage} - Options: all, prod, dev, test, stage
-#  ${2} - ${database_engine}
-#  ${3} - ${install_type}
+#  ${1} - ${stage}              - Options: all, prod, dev, test, stage
+#  ${2} - ${database_engine}    - Options: mysql, postgres
+#  ${3} - ${database_container} - Optional
 #
 # Outputs:
 #  ${databases}, 1 on error.
 ################################################################################
 
-function database_list_all() {
+function database_list() {
 
     local stage="${1}"
     local database_engine="${2}"
-    local install_type="${3}"
-
-    local mysql_containers
-    local mysql_container=""
-
-    # If install_type == docker
-    if [[ ${install_type} == "docker"* ]]; then
-
-        # List all running mysql containers
-        mysql_containers="$(docker ps --filter "name=mariadb" --format "{{.Names}}")"
-
-        # Ask wich mysql container to use
-        mysql_container="$(whiptail --title "MySQL Container" --menu "Choose the MySQL container to use:" 20 78 10 ${mysql_containers} 3>&1 1>&2 2>&3)"
-
-    fi
+    local database_container="${3}"
 
     case ${database_engine} in
 
     mysql)
 
-        mysql_list_databases "${stage}" "${mysql_container}"
+        mysql_list_databases "${stage}" "${database_container}"
         return $?
         ;;
 
     postgres)
 
-        postgres_list_databases "${stage}" "${mysql_container}"
+        postgres_list_databases "${stage}" "${database_container}"
         return $?
         ;;
 
