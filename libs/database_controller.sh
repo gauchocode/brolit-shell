@@ -28,19 +28,21 @@ function database_list() {
 
     case ${database_engine} in
 
-    mysql)
+    MYSQL|mysql|mariadb)
 
         mysql_list_databases "${stage}" "${database_container}"
         return $?
         ;;
 
-    postgres)
+    POSTGRESQL|postgres|postgresql)
 
         postgres_list_databases "${stage}" "${database_container}"
         return $?
         ;;
 
     *)
+        # Log
+        log "error" "Database engine not supported: ${database_engine}"
         return 1
         ;;
 
