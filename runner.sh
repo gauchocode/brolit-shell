@@ -2,7 +2,7 @@
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
 # Script Name: BROLIT Shell
-# Version: 3.3.1-beta
+# Version: 3.3.2-beta
 ################################################################################
 
 ### Environment checks
