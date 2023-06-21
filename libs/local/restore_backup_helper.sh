@@ -188,10 +188,19 @@ function restore_backup_from_local() {
       filename="$(basename "${source_files}")"
       backup_file="${tmp_dir}/${filename}"
 
-      # Decompress
-      decompress "${tmp_dir}/${filename}" "${tmp_dir}" ""
+      # If file extension is not .sql or .dump
+      if [[ "${filename}" != *.sql && "${filename}" != *.dump ]]; then
 
-      dump_file="$(find "${tmp_dir}" -maxdepth 1 -mindepth 1 -type f -not -path '*/.*')"
+        # Decompress
+        decompress "${tmp_dir}/${filename}" "${tmp_dir}" ""
+
+        dump_file="$(find "${tmp_dir}" -maxdepth 1 -mindepth 1 -type f -not -path '*/.*')"
+
+      else
+
+        dump_file="${backup_file}"
+
+      fi
 
       project_stage="$(project_ask_stage "prod")"
       [[ $? -eq 1 ]] && return 1
@@ -199,6 +208,7 @@ function restore_backup_from_local() {
       project_name="$(project_ask_name "")"
       [[ $? -eq 1 ]] && return 1
 
+      # Database credentials
       database_user="${project_name}_user"
       database_user_passw=$(openssl rand -hex 12)
 
