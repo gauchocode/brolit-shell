@@ -72,7 +72,7 @@ function _json_write_field() {
 
     else
 
-        echo "Getting value from ${json_field}" && return 1
+        echo "Error getting value from ${json_field}" && return 1
 
     fi
 
@@ -990,8 +990,6 @@ function _project_get_type() {
 
     local dir_path="${1}"
 
-    #local project_type
-
     local wp_path
     local laravel
     local php
@@ -1002,7 +1000,7 @@ function _project_get_type() {
 
     # TODO: if brolit_conf exists, should check this file and get project type
 
-    if [[ -n ${dir_path} ]]; then
+    if [[ -n ${dir_path} && -d ${dir_path} ]]; then
 
         # WP?
         wp_path="$(_wp_config_path "${dir_path}")"
@@ -1059,6 +1057,7 @@ function _project_get_type() {
 
     else
 
+        echo "Error: Can't get project type, directory '${dir_path}' doesn't exist." "false"
         return 1
 
     fi
@@ -1357,9 +1356,7 @@ function _project_get_config_var() {
         content="$(_string_remove_quotes "${content}")"
 
         # Return
-        echo "${content}"
-
-        return 0
+        echo "${content}" && return 0
 
     else
 
@@ -1556,13 +1553,11 @@ function _cronjob_check() {
     if [[ ${grep_result} != 0 ]]; then
 
         # Return JSON
-        echo "BROLIT_RESULT => { Cronjob not found }"
-        return 0
+        echo "BROLIT_RESULT => { Cronjob not found }" && return 0
 
     else
         # Return JSON
-        echo "BROLIT_RESULT => { Cronjob found }"
-        return 1
+        echo "BROLIT_RESULT => { Cronjob found }" && return 1
 
     fi
 
@@ -1604,14 +1599,12 @@ function _cronjob_install() {
         /bin/echo "${scheduled_time} ${script}" >>"${cron_file}"
 
         # Return JSON
-        echo "BROLIT_RESULT => { Cronjob installed }"
-        return 0
+        echo "BROLIT_RESULT => { Cronjob installed }" && return 0
 
     else
 
         # Return JSON
-        echo "BROLIT_RESULT => { Cronjob already exists }"
-        return 1
+        echo "BROLIT_RESULT => { Cronjob already exists }" && return 1
 
     fi
 
@@ -1770,14 +1763,12 @@ function _mysql_databases() {
         done
 
         # Return
-        echo "${databases}"
+        echo "${databases}" && return 0
 
     else
 
-        # Log
-        echo "Something went wrong listing MySQL databases!"
-
-        return 1
+        # Return
+        echo "Error: Something went wrong listing MySQL databases!" && return 1
 
     fi
 
@@ -1815,14 +1806,12 @@ function _psql_databases() {
         done
 
         # Return
-        echo "${databases}"
+        echo "${databases}" && return 0
 
     else
 
-        # Log
-        echo "Something went wrong listing PostgreSQL databases!"
-
-        return 1
+        # Return
+        echo "Error: Something went wrong listing PostgreSQL databases!" && return 1
 
     fi
 
@@ -1968,12 +1957,12 @@ function _sites_directories() {
         directories="${directories:3}"
 
         # Return
-        echo "${directories}"
+        echo "${directories}" && return 0
 
     else
 
         # Return
-        echo "\"no-sites\""
+        echo "\"no-sites\"" && return 0
 
     fi
 
@@ -2017,7 +2006,7 @@ function dropbox_get_site_backups() {
     fi
 
     # Return
-    echo "${backup_files}"
+    echo "${backup_files}" && return 0
 
 }
 
@@ -2079,7 +2068,7 @@ function _dropbox_get_backup() {
 
                 # Database backup
                 backup_to_search="${project_db}_database_${backup_date}"
-                search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${project_db}/${backup_to_search}" || ret=$?)" # using ret to bypass unexped errors
+                search_backup_db=$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${project_db}/${backup_to_search}" || ret="$?")
                 backup_db="$(basename "${search_backup_db}")"
 
                 if [[ -n ${search_backup_db} ]]; then
