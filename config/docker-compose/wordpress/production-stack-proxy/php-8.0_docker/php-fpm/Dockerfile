@@ -19,3 +19,7 @@ RUN apt-get update; \
         php8.0-xmlrpc; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*
+
+COPY php-ini-overrides.ini  /etc/php/8.0/fpm/conf.d/z-overrides.ini
+COPY opcache-prod.ini       /etc/php/8.0/fpm/conf.d/z-opcache.ini
+COPY php-fpm-pool-prod.conf /etc/php/8.0/fpm/pool.d/z-optimised.conf
