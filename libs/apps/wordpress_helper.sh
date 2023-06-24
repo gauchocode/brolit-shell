@@ -119,47 +119,57 @@ function wp_config_path() {
 
   local dir_to_search="${1}"
 
-  # Log
-  log_event "info" "Searching WordPress Installation on directory: ${dir_to_search}" "false"
+  local find_output
 
-  # Find where wp-config.php is
-  find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')"
-
-  if [[ -z ${find_output} ]]; then
+  if [[ -n "${dir_to_search}" && -d "${dir_to_search}" ]]; then
 
     # Log
-    #display --indent 6 --text "- Searching WordPress Installation" --result "FAIL" --color RED
-    #display --indent 8 --text "No WordPress installation found on directory" --tcolor RED
-    log_event "warning" "No WordPress Installation found on directory: ${dir_to_search}" "false"
+    log_event "info" "Searching WordPress Installation on directory: ${dir_to_search}" "false"
 
-    return 1
+    # Find where wp-config.php is
+    find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')"
 
-  fi
+    if [[ -z ${find_output} ]]; then
 
-  # If found more thant one directory, print the first one
-  if [[ $(echo "${find_output}" | wc -l) -gt 1 ]]; then
+      # Log
+      #display --indent 6 --text "- Searching WordPress Installation" --result "FAIL" --color RED
+      #display --indent 8 --text "No WordPress installation found on directory" --tcolor RED
+      log_event "warning" "No WordPress Installation found on directory: ${dir_to_search}" "false"
 
-    # Log
-    display --indent 6 --text "- Searching WordPress Installation" --result "WARNING" --color YELLOW
-    display --indent 8 --text "More than one WordPress installation found on directory" --tcolor YELLOW
-    log_event "warning" "Found more than one WordPress Installation on directory: ${dir_to_search}" "false"
+      return 1
 
-    # Print the first one
-    echo "${find_output}" | head -n 1
+    fi
 
-    return 0
+    # If found more thant one directory, print the first one
+    if [[ $(echo "${find_output}" | wc -l) -gt 1 ]]; then
+
+      # Log
+      display --indent 6 --text "- Searching WordPress Installation" --result "WARNING" --color YELLOW
+      display --indent 8 --text "More than one WordPress installation found on directory" --tcolor YELLOW
+      log_event "warning" "Found more than one WordPress Installation on directory: ${dir_to_search}" "false"
+
+      # Print the first one
+      echo "${find_output}" | head -n 1
+
+      return 0
+
+    else
+
+      if [[ $(echo "${find_output}" | wc -l) -eq 1 ]]; then
+
+        # Log
+        log_event "info" "Found WordPress Installation on directory: ${dir_to_search}" "false"
+
+        # Return
+        echo "${find_output}" && return 0
+
+      fi
+
+    fi
 
   else
 
-    if [[ $(echo "${find_output}" | wc -l) -eq 1 ]]; then
-
-      # Log
-      log_event "info" "Found WordPress Installation on directory: ${dir_to_search}" "false"
-
-      # Return
-      echo "${find_output}" && return 0
-
-    fi
+    return 1
 
   fi
 

@@ -922,20 +922,31 @@ function _wp_config_path() {
 
     local dir_to_search="${1}"
 
-    # Find where wp-config.php is
-    find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')"
+    local find_output
 
-    # Check if directory exists
-    if [[ -d ${find_output} ]]; then
+    if [[ -n "${dir_to_search}" && -d "${dir_to_search}" ]]; then
 
-        # Return
-        echo "${find_output}" && return 0
+        # Find where wp-config.php is
+        find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')"
+
+        # Check if directory exists
+        if [[ -d "${find_output}" ]]; then
+
+            # Return
+            echo "${find_output}" && return 0
+
+        else
+
+            return 1
+
+        fi
 
     else
 
+        echo "Error: Can't get project type, directory '${dir_to_search}' doesn't exist." "false"
         return 1
 
-    fi
+   fi
 
 }
 
@@ -954,6 +965,7 @@ function _project_is_ignored() {
     local project="${1}" #string
 
     local ignored="false"
+
     local ignored_list
     local excluded_projects_array
 
