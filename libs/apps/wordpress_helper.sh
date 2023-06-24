@@ -132,8 +132,6 @@ function wp_config_path() {
     if [[ -z ${find_output} ]]; then
 
       # Log
-      #display --indent 6 --text "- Searching WordPress Installation" --result "FAIL" --color RED
-      #display --indent 8 --text "No WordPress installation found on directory" --tcolor RED
       log_event "warning" "No WordPress Installation found on directory: ${dir_to_search}" "false"
 
       return 1
@@ -204,7 +202,6 @@ function wp_config_get_option() {
     # Log
     log_event "info" "Reading '${wp_option}' value from wp-config: ${wp_value}" "false"
     display --indent 6 --text "- Reading ${wp_option} value from wp-config.php" --result "DONE" --color GREEN
-    #display --indent 8 --text "${wp_option}=${wp_value}" --tcolor GREEN
 
     # Return
     echo "${wp_value}" && return 0

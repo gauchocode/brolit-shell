@@ -1272,37 +1272,6 @@ function _project_get_brolit_config_var() {
 }
 
 ################################################################################
-# WordPress config path
-#
-# Arguments:
-#  ${1} = ${dir_to_search}
-#
-# Outputs:
-#  String with wp-config path
-################################################################################
-
-function _wp_config_path() {
-
-    local dir_to_search="${1}"
-
-    # Find where wp-config.php is
-    find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')"
-
-    # Check if directory exists
-    if [[ -d ${find_output} ]]; then
-
-        # Return
-        echo "${find_output}" && return 0
-
-    else
-
-        return 1
-
-    fi
-
-}
-
-################################################################################
 # Get WordPress config option
 #
 # Arguments:
