@@ -2485,7 +2485,7 @@ function project_get_type() {
 
   # TODO: if brolit_conf exists, should check this file and get project type
 
-  if [[ -n ${dir_path} ]]; then
+  if [[ -n ${dir_path} && -d ${dir_path} ]]; then
 
     # WP?
     wp_path="$(wp_config_path "${dir_path}")"
