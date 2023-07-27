@@ -197,12 +197,7 @@
     "PACKAGES": {
         "nginx": [
             {
-                "status": "disabled",
-                "config": [
-                    {
-                        "port": "default"
-                    }
-                ]
+                "status": "disabled"
             }
         ],
         "mysql": [
@@ -281,52 +276,6 @@
                 ]
             }
         ],
-        "docker": [
-            {
-                "status": "disabled",
-                "compose": [
-                    {
-                        "status": "enabled"
-                    }
-                ]
-            }
-        ],
-        "portainer": [
-            {
-                "status": "disabled",
-                "version": "latest",
-                "config": [
-                    {
-                        "port": "9000",
-                        "nginx_proxy": "enabled",
-                        "subdomain": ""
-                    }
-                ]
-            }
-        ],
-        "portainer_agent": [
-            {
-                "status": "disabled",
-                "version": "latest",
-                "config": [
-                    {
-                        "port": "9001"
-                    }
-                ]
-            }
-        ],
-        "mailcow": [
-            {
-                "status": "disabled",
-                "version": "latest",
-                "config": [
-                    {
-                        "port": "default",
-                        "subdomain": ""
-                    }
-                ]
-            }
-        ],
         "certbot": [
             {
                 "status": "disabled",
@@ -360,6 +309,40 @@
                                 "redis": "disabled"
                             }
                         ]
+                    }
+                ]
+            }
+        ],
+        "docker": [
+            {
+                "status": "disabled",
+                "compose": [
+                    {
+                        "status": "enabled"
+                    }
+                ]
+            }
+        ],
+        "portainer": [
+            {
+                "status": "disabled",
+                "version": "latest",
+                "config": [
+                    {
+                        "port": "9000",
+                        "nginx_proxy": "enabled",
+                        "subdomain": ""
+                    }
+                ]
+            }
+        ],
+        "portainer_agent": [
+            {
+                "status": "disabled",
+                "version": "latest",
+                "config": [
+                    {
+                        "port": "9001"
                     }
                 ]
             }
@@ -418,6 +401,44 @@
                 ]
             }
         ],
+        "grafana": [
+            {
+                "status": "disabled",
+                "version": "latest",
+                "config": [
+                    {
+                        "port": "9090",
+                        "nginx_proxy": "disabled",
+                        "subdomain": ""
+                    }
+                ]
+            }
+        ],
+        "loki": [
+            {
+                "status": "disabled",
+                "version": "latest",
+                "config": [
+                    {
+                        "port": "3100",
+                        "nginx_proxy": "disabled",
+                        "subdomain": ""
+                    }
+                ]
+            }
+        ],
+        "promtail": [
+            {
+                "status": "disabled",
+                "version": "2.8.2",
+                "config": [
+                    {
+                        "port": "9080",
+                        "loki_url": ""
+                    }
+                ]
+            }
+        ],
         "cockpit": [
             {
                 "status": "disabled",
@@ -435,6 +456,18 @@
                 "status": "disabled",
                 "config": [
                     {
+                        "subdomain": ""
+                    }
+                ]
+            }
+        ],
+        "mailcow": [
+            {
+                "status": "disabled",
+                "version": "latest",
+                "config": [
+                    {
+                        "port": "default",
                         "subdomain": ""
                     }
                 ]

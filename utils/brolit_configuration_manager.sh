@@ -677,7 +677,7 @@ function _brolit_configuration_load_nginx() {
 
     # Globals
     declare -g PACKAGES_NGINX_STATUS
-    declare -g PACKAGES_NGINX_CONFIG_PORTS
+    #declare -g PACKAGES_NGINX_CONFIG_PORTS
 
     declare -g WSERVER="/etc/nginx" # Webserver config files location
 
@@ -689,8 +689,8 @@ function _brolit_configuration_load_nginx() {
 
     if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
 
-        PACKAGES_NGINX_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.nginx[].config[].port")"
-        [[ -z ${PACKAGES_NGINX_CONFIG_PORTS} ]] && die "Error reading PACKAGES_NGINX_CONFIG_PORTS from server config file."
+        #PACKAGES_NGINX_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.nginx[].config[].port")"
+        #[[ -z ${PACKAGES_NGINX_CONFIG_PORTS} ]] && die "Error reading PACKAGES_NGINX_CONFIG_PORTS from server config file."
 
         # Checking if nginx is not installed
         [[ ${exitstatus} -eq 1 || -z ${nginx_bin} ]] && pkg_config_changes_detected "nginx" "true"
@@ -702,7 +702,7 @@ function _brolit_configuration_load_nginx() {
 
     fi
 
-    export NGINX WSERVER PACKAGES_NGINX_STATUS PACKAGES_NGINX_CONFIG_PORTS
+    export NGINX WSERVER PACKAGES_NGINX_STATUS #PACKAGES_NGINX_CONFIG_PORTS
 
 }
 

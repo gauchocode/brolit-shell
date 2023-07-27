@@ -5,7 +5,8 @@ RUN apt-get update; \
     apt-get -y --no-install-recommends install \
         vim \ 
         git \ 
-        php8.1-bcmath \ 
+        php8.1-bcmath \
+        php8.1-raphf \
         php8.1-bz2 \ 
         php8.1-cgi \ 
         php8.1-gd \ 
