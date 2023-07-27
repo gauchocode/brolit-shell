@@ -555,6 +555,9 @@ function mysql_root_psw_change() {
         db_root_user='root'
     fi
 
+    # Log the output
+    display --indent 2 --text "- Setting new password for root" --tcolor YELLOW
+
     # Update root user with new password
     mysql mysql -e "USE mysql;UPDATE user SET Password=PASSWORD('${db_root_psw}') WHERE User='${db_root_user}';FLUSH PRIVILEGES;"
 
