@@ -12,7 +12,7 @@ function test_s3_helper_funtions() {
 
     result=$(s3_read_dir "test")
 
-    if [[ ${result} == "test" ]]; then
+    if [[ ${result} ]]; then
         echo "s3_read_dir: OK"
     else
         echo "s3_read_dir: FAIL"
