@@ -18,10 +18,30 @@ function s3_create_dir() {
 
   local dir_to_create="${1}"
 
-  aws s3api put-object --bucket "${S3_BUCKET_NAME}" --key "${dir_to_create}/"
+  aws --endpoint-url "{$ENDPOINT_URL}" s3api put-object --bucket "${S3_BUCKET_NAME}" --key "${dir_to_create}/" 
 
   return $?
 }
+
+
+################################################################################
+# Read directory in S3
+#
+# Arguments:
+#   ${1} = ${dir_to_read}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function s3_read_dir() {
+  local dir_to_read="${1}"
+
+  aws s3 ls "s3://${S3_BUCKET_NAME}" --endpoint-url="${ENDPOINT_URL}"
+
+  return $?
+}
+
 
 ################################################################################
 # Upload file to S3 storage
