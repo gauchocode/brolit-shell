@@ -212,6 +212,7 @@ function _brolit_configuration_load_backup_s3() {
     # Globals
     declare -g BACKUP_S3_STATUS
     declare -g BACKUP_S3_BUCKET
+    declare -g BACKUP_S3_ENDPOINT_URL
     declare -g BACKUP_S3_ACCESS_KEY
     declare -g BACKUP_S3_SECRET_KEY
     declare -g BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH
@@ -225,6 +226,9 @@ function _brolit_configuration_load_backup_s3() {
         # Required
         BACKUP_S3_BUCKET="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].bucket")"
         [[ -z "${BACKUP_S3_BUCKET}" ]] && die "Error reading BACKUP_S3_BUCKET from server config file."
+
+        BACKUP_S3_ENDPOINT_URL="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].endpoint_url")"
+        [[ -z "${BACKUP_S3_ENDPOINT_URL}" ]] && die "Error reading BACKUP_S3_ENDPOINT_URL from server config file."
 
         BACKUP_S3_ACCESS_KEY="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].access_key")"
         [[ -z "${BACKUP_S3_ACCESS_KEY}" ]] && die "Error reading BACKUP_S3_ACCESS_KEY from server config file."
@@ -249,7 +253,7 @@ function _brolit_configuration_load_backup_s3() {
 
     fi
 
-    export BACKUP_S3_STATUS BACKUP_S3_BUCKET BACKUP_S3_ACCESS_KEY BACKUP_S3_SECRET_KEY BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH
+    export BACKUP_S3_STATUS BACKUP_S3_BUCKET BACKUP_S3_ENDPOINT BACKUP_S3_ACCESS_KEY BACKUP_S3_SECRET_KEY BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH
 
 }
 

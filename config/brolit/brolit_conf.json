@@ -114,6 +114,7 @@
                             {
                                 "bucket": "",
                                 "backup_path": "",
+                                "endpoint_url": "",
                                 "access_key": "",
                                 "secret_key": ""
                             }
