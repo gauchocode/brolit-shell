@@ -37,7 +37,7 @@ function s3_create_dir() {
 function s3_read_dir() {
   local dir_to_read="${1}"
 
-  aws s3 ls "s3://${S3_BUCKET_NAME}" --endpoint-url="${ENDPOINT_URL}"
+  aws --endpoint-url="${ENDPOINT_URL}" s3 ls "s3://${S3_BUCKET_NAME}" 
 
   return $?
 }
@@ -59,7 +59,7 @@ function s3_upload_file() {
   local file_to_upload="${1}"
   local s3_directory="${2}"
 
-  aws s3 cp "${file_to_upload}" "s3://${S3_BUCKET_NAME}/${s3_directory}/"
+  aws --endpoint-url="${ENDPOINT_URL}" s3 cp "${file_to_upload}" "s3://${S3_BUCKET_NAME}/${s3_directory}/"
 
   return $?
 }
@@ -80,7 +80,7 @@ function s3_download_file() {
   local file_to_download="${1}"
   local local_directory="${2}"
 
-  aws s3 cp "s3://${S3_BUCKET_NAME}/${file_to_download}" "${local_directory}"
+  aws --endpoint-url="${ENDPOINT_URL}" s3 cp "s3://${S3_BUCKET_NAME}/${file_to_download}" "${local_directory}"
 
   return $?
 }
@@ -102,9 +102,9 @@ function s3_delete_file() {
   local force_delete="${2}"
 
   if [[ ${force_delete} == "true" ]]; then
-    aws s3 rm "s3://${S3_BUCKET_NAME}/${to_delete}" --recursive
+    aws --endpoint-url="${ENDPOINT_URL}" s3 rm "s3://${S3_BUCKET_NAME}/${to_delete}" --recursive
   else
-    aws s3 rm "s3://${S3_BUCKET_NAME}/${to_delete}"
+    aws --endpoint-url="${ENDPOINT_URL}" s3 rm "s3://${S3_BUCKET_NAME}/${to_delete}"
   fi
 
   return $?
