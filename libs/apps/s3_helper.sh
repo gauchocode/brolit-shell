@@ -18,7 +18,7 @@ function s3_create_dir() {
 
   local dir_to_create="${1}"
 
-  aws --endpoint-url "${BACKUP_S3_ENDPOINT_URL}" s3api put-object --bucket "${BACKUP_S3_BUCKET}" --key "${dir_to_create}/" 
+  aws --endpoint-url="${BACKUP_S3_ENDPOINT_URL}" s3api put-object --bucket="${BACKUP_S3_BUCKET}" --key="${dir_to_create}/" 
 
   return $?
 }
@@ -63,6 +63,28 @@ function s3_upload_file() {
 
   return $?
 }
+
+################################################################################
+# Upload folder to S3 storage
+#
+# Arguments:
+#   ${1} = ${folder_to_upload}
+#   ${2} = ${s3_directory}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function s3_upload_folder() {
+
+  local folder_to_upload="${1}"
+  local s3_directory="${2}"
+
+  aws --endpoint-url="${BACKUP_S3_ENDPOINT_URL}" s3 cp "${folder_to_upload}/" "s3://${BACKUP_S3_BUCKET}/${s3_directory}/" --recursive
+
+  return $?
+}
+
 
 ################################################################################
 # Drownload file from S3 storage
