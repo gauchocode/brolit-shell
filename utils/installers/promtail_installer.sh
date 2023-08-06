@@ -25,8 +25,8 @@ function promtail_installer() {
         # Install the Promtail package
         ### Create directory
         mkdir -p /opt/promtail
-        ### Unzip
-        unzip "promtail-linux-amd64.zip" -d /opt/promtail
+        ### Unzip force (expanded flags)
+        decompress "promtail-linux-amd64.zip" "/opt/promtail"
         ### Remove zip file
         rm -f "promtail-linux-amd64.zip"
         ### Set permissions
