@@ -1453,7 +1453,7 @@ function _brolit_configuration_load_promtail() {
     declare -g PACKAGES_PROMTAIL_CONFIG_LOKI_URL
     declare -g PACKAGES_PROMTAIL_CONFIG_LOKI_PORT
 
-    PROMTAIL="$(which promtail)"
+    PROMTAIL="$(pgrep promtail)"
 
     PACKAGES_PROMTAIL_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.promtail[].status")"
 
@@ -2232,7 +2232,7 @@ function brolit_configuration_load() {
     fi
 
     ## DNS
-    
+
     ### Cloudflare
     _brolit_configuration_load_cloudflare "${server_config_file}"
 
