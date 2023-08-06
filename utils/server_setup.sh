@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2-beta
+# Version: 3.3.2
 ################################################################################
 #
 # Server Setup: Perform server setup actions.
@@ -15,8 +15,8 @@ function server_prepare() {
     # Configuring packages
     system_timezone_configuration
 
-    # Unattended upgrades
-    system_unnatended_upgrades
+    # Unattended upgrades (disabled by default)
+    #system_unnatended_upgrades
 
     # Packages update
     package_update

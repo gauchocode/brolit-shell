@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2-beta
+# Version: 3.3.2
 ################################################################################
 #
 # Server Config Manager: Brolit server configuration management.
@@ -24,7 +24,7 @@ function _brolit_configuration_load_server_config() {
 
     # Globals
     declare -g SERVER_TIMEZONE
-    declare -g UNATTENDED_UPGRADES
+    #declare -g UNATTENDED_UPGRADES
     declare -g SERVER_ROLE_WEBSERVER
     declare -g SERVER_ROLE_DATABASE
     declare -g SERVER_ADDITIONAL_IPS
@@ -33,8 +33,8 @@ function _brolit_configuration_load_server_config() {
     SERVER_TIMEZONE="$(json_read_field "${server_config_file}" "SERVER_CONFIG.timezone")"
     [[ -z "${SERVER_TIMEZONE}" ]] && die "Error reading SERVER_TIMEZONE from server config file."
 
-    UNATTENDED_UPGRADES="$(json_read_field "${server_config_file}" "SERVER_CONFIG.unattended_upgrades")"
-    [[ -z "${UNATTENDED_UPGRADES}" ]] && die "Error reading UNATTENDED_UPGRADES from server config file."
+    #UNATTENDED_UPGRADES="$(json_read_field "${server_config_file}" "SERVER_CONFIG.unattended_upgrades")"
+    #[[ -z "${UNATTENDED_UPGRADES}" ]] && die "Error reading UNATTENDED_UPGRADES from server config file."
 
     if [[ -z "${SERVER_ROLE_WEBSERVER}" ]]; then
         SERVER_ROLE_WEBSERVER="$(json_read_field "${server_config_file}" "SERVER_CONFIG.config[].webserver")"
@@ -55,7 +55,8 @@ function _brolit_configuration_load_server_config() {
     # Read optional vars from server config file
     SERVER_ADDITIONAL_IPS="$(json_read_field "${server_config_file}" "SERVER_CONFIG.additional_ips")"
 
-    export SERVER_TIMEZONE UNATTENDED_UPGRADES SERVER_ROLE_WEBSERVER SERVER_ROLE_DATABASE SERVER_ADDITIONAL_IPS
+    export SERVER_TIMEZONE SERVER_ROLE_WEBSERVER SERVER_ROLE_DATABASE SERVER_ADDITIONAL_IPS
+    #export UNATTENDED_UPGRADES
 
 }
 
@@ -1189,7 +1190,7 @@ function _brolit_configuration_load_netdata() {
     declare -g PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_CHAT_ID
 
     NETDATA="$(which netdata)"
-    NETDATA_PR="$(pgrep netdata)" # This will detect if a netdata process is running, but could be a docker container
+    NETDATA_PR="$(pgrep netdata)"                          # This will detect if a netdata process is running, but could be a docker container
     NETDATA_DOCKER="$(docker ps -q --filter name=netdata)" # This will detect if a netdata docker container is running
 
     PACKAGES_NETDATA_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].status")"
@@ -1198,7 +1199,7 @@ function _brolit_configuration_load_netdata() {
     if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
 
         if [[ ${PACKAGES_NETDATA_CONFIG_WEB_ADMIN} == "enabled" ]]; then
-            
+
             # Required
             PACKAGES_NETDATA_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].subdomain")"
             [[ -z "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}" ]] && die "Error reading PACKAGES_NETDATA_CONFIG_SUBDOMAIN from server config file."
@@ -1267,14 +1268,17 @@ function _brolit_configuration_load_netdata_agent() {
 
     PACKAGES_NETDATA_AGENT_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].status")"
 
-    docker="$(package_is_installed "docker.io")"
-    docker_installed="$?"
-    if [[ ${docker_installed} -eq 0 ]]; then
-        log_event "debug" "Docker installed on: ${docker}. Now checking if Netdata Agent image is present..." "false"
-        NETDATA_AGENT="$(docker_get_container_id "agent_netdata")"
-    fi
-
     if [[ ${PACKAGES_NETDATA_AGENT_STATUS} == "enabled" ]]; then
+
+        docker="$(package_is_installed "docker.io")"
+        docker_installed="$?"
+        if [[ ${docker_installed} -eq 0 ]]; then
+            log_event "debug" "Docker installed on: ${docker}. Now checking if Netdata Agent image is present..." "false"
+            NETDATA_AGENT="$(docker_get_container_id "agent_netdata")"
+        else
+            # Netdata agent requires docker
+            die "In order to install Netdata Agent, docker and docker-compose must be installed."
+        fi
 
         [[ ${docker_installed} -eq 1 ]] && die "In order to install Netdata Agent, docker and docker-compose must be installed."
 
@@ -1305,6 +1309,187 @@ function _brolit_configuration_load_netdata_agent() {
     fi
 
     export NETDATA_AGENT NETDATA_AGENT_PATH PACKAGES_NETDATA_AGENT_STATUS PACKAGES_NETDATA_AGENT_CONFIG_PORT PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_ROOMS
+
+}
+
+################################################################################
+# Private: load Grafana configuration
+#
+# Arguments:
+#   ${1} = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function _brolit_configuration_load_grafana() {
+
+    local server_config_file="${1}"
+
+    # Globals
+    declare -g GRAFANA
+    declare -g GRAFANA_PR
+    declare -g GRAFANA_DOCKER
+    declare -g PACKAGES_GRAFANA_STATUS
+    declare -g PACKAGES_GRAFANA_CONFIG_SUBDOMAIN
+    declare -g PACKAGES_GRAFANA_CONFIG_NGINX_PROXY
+    declare -g PACKAGES_GRAFANA_CONFIG_PORT
+
+    GRAFANA="$(which grafana-server)"
+    GRAFANA_PR="$(pgrep grafana)"                          # This will detect if a grafana process is running, but could be a docker container
+    GRAFANA_DOCKER="$(docker ps -q --filter name=grafana)" # This will detect if a grafana docker container is running
+
+    PACKAGES_GRAFANA_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].status")"
+
+    if [[ ${PACKAGES_GRAFANA_STATUS} == "enabled" ]]; then
+
+        docker="$(package_is_installed "docker.io")"
+        docker_installed="$?"
+        if [[ ${docker_installed} -eq 0 ]]; then
+            log_event "debug" "Docker installed on: ${docker}. Now checking if Grafana image is present..." "false"
+            NETDATA_AGENT="$(docker_get_container_id "grafana")"
+        else
+            # Grafana requires docker
+            die "In order to install Grafana, docker and docker-compose must be installed."
+        fi
+
+        PACKAGES_GRAFANA_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].config[].subdomain")"
+        PACKAGES_GRAFANA_CONFIG_NGINX_PROXY="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].config[].nginx_proxy")"
+        PACKAGES_GRAFANA_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].config[].port")"
+
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_GRAFANA_CONFIG_SUBDOMAIN}" ]] || [[ -z "${PACKAGES_GRAFANA_CONFIG_NGINX_PROXY}" ]] || [[ -z "${PACKAGES_GRAFANA_CONFIG_PORT}" ]]; then
+            die "Missing required config vars for grafana support"
+        fi
+
+        # Checking if Grafana is not installed
+        [[ ! -x "${GRAFANA}" ]] && pkg_config_changes_detected "grafana" "true"
+
+    else
+
+        # Checking if Grafana is installed
+        [[ -x "${GRAFANA}" ]] && pkg_config_changes_detected "grafana" "true"
+
+    fi
+
+}
+
+################################################################################
+# Private: load Loki configuration
+#
+# Arguments:
+#   ${1} = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function _brolit_configuration_load_loki() {
+
+    local server_config_file="${1}"
+
+    # Globals
+    declare -g LOKI
+    declare -g LOKI_PR
+    declare -g LOKI_DOCKER
+    declare -g PACKAGES_LOKI_STATUS
+    declare -g PACKAGES_LOKI_CONFIG_SUBDOMAIN
+    declare -g PACKAGES_LOKI_CONFIG_NGINX_PROXY
+    declare -g PACKAGES_LOKI_CONFIG_PORT
+
+    LOKI="$(which loki)"
+    LOKI_PR="$(pgrep grafana)"                          # This will detect if a loki process is running, but could be a docker container
+    LOKI_DOCKER="$(docker ps -q --filter name=grafana)" # This will detect if a loki docker container is running
+
+    PACKAGES_LOKI_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.loki[].status")"
+
+    if [[ ${PACKAGES_LOKI_STATUS} == "enabled" ]]; then
+
+        docker="$(package_is_installed "docker.io")"
+        docker_installed="$?"
+        if [[ ${docker_installed} -eq 0 ]]; then
+            log_event "debug" "Docker installed on: ${docker}. Now checking if Loki image is present..." "false"
+            NETDATA_AGENT="$(docker_get_container_id "loki")"
+        else
+            # Loki requires docker
+            die "In order to install Loki, docker and docker-compose must be installed."
+        fi
+
+        PACKAGES_LOKI_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.loki[].config[].subdomain")"
+        PACKAGES_LOKI_CONFIG_NGINX_PROXY="$(json_read_field "${server_config_file}" "PACKAGES.loki[].config[].nginx_proxy")"
+        PACKAGES_LOKI_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.loki[].config[].port")"
+
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_LOKI_CONFIG_SUBDOMAIN}" ]] || [[ -z "${PACKAGES_LOKI_CONFIG_NGINX_PROXY}" ]] || [[ -z "${PACKAGES_LOKI_CONFIG_PORT}" ]]; then
+            die "Missing required config vars for loki support"
+        fi
+
+    fi
+
+    export PACKAGES_LOKI_STATUS PACKAGES_LOKI_CONFIG_SUBDOMAIN PACKAGES_LOKI_CONFIG_NGINX_PROXY PACKAGES_LOKI_CONFIG_PORT
+
+}
+
+################################################################################
+# Private: load Promtail configuration
+#
+# Arguments:
+#   ${1} = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function _brolit_configuration_load_promtail() {
+
+    local server_config_file="${1}"
+
+    # Globals
+    declare -g PROMTAIL
+    declare -g PACKAGES_PROMTAIL_STATUS
+    declare -g PACKAGES_PROMTAIL_VERSION
+    declare -g PACKAGES_PROMTAIL_CONFIG_PORT
+    declare -g PACKAGES_PROMTAIL_CONFIG_HOSTNAME
+    declare -g PACKAGES_PROMTAIL_CONFIG_LOKI_URL
+    declare -g PACKAGES_PROMTAIL_CONFIG_LOKI_PORT
+
+    PROMTAIL="$(which promtail)"
+
+    PACKAGES_PROMTAIL_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.promtail[].status")"
+
+    if [[ ${PACKAGES_PROMTAIL_STATUS} == "enabled" ]]; then
+
+        PACKAGES_PROMTAIL_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.promtail[].version")"
+        [[ -z "${PACKAGES_PROMTAIL_VERSION}" ]] && die "Error reading PACKAGES_PROMTAIL_VERSION from server config file."
+
+        PACKAGES_PROMTAIL_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.promtail[].config[].port")"
+        [[ -z "${PACKAGES_PROMTAIL_CONFIG_PORT}" ]] && die "Error reading PACKAGES_PROMTAIL_CONFIG_PORT from server config file."
+
+        PACKAGES_PROMTAIL_CONFIG_HOSTNAME="$(json_read_field "${server_config_file}" "PACKAGES.promtail[].config[].hostname")"
+        [[ -z "${PACKAGES_PROMTAIL_CONFIG_HOSTNAME}" ]] && die "Error reading PACKAGES_PROMTAIL_CONFIG_HOSTNAME from server config file."
+
+        PACKAGES_PROMTAIL_CONFIG_LOKI_URL="$(json_read_field "${server_config_file}" "PACKAGES.promtail[].config[].loki_url")"
+        [[ -z "${PACKAGES_PROMTAIL_CONFIG_LOKI_URL}" ]] && die "Error reading PACKAGES_PROMTAIL_CONFIG_LOKI_URL from server config file."
+
+        PACKAGES_PROMTAIL_CONFIG_LOKI_PORT="$(json_read_field "${server_config_file}" "PACKAGES.promtail[].config[].loki_port")"
+        [[ -z "${PACKAGES_PROMTAIL_CONFIG_LOKI_PORT}" ]] && die "Error reading PACKAGES_PROMTAIL_CONFIG_LOKI_PORT from server config file."
+
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_PROMTAIL_CONFIG_PORT}" ]] || [[ -z "${PACKAGES_PROMTAIL_CONFIG_HOSTNAME}" ]] || [[ -z "${PACKAGES_PROMTAIL_CONFIG_LOKI_URL}" ]] || [[ -z "${PACKAGES_PROMTAIL_CONFIG_LOKI_PORT}" ]]; then
+            die "Missing required config vars for promtail support"
+        fi
+
+        # Checking if Promtail is not installed
+        [[ ! -x "${PROMTAIL}" ]] && pkg_config_changes_detected "promtail" "true"
+
+    else
+
+        # Checking if Promtail is installed
+        [[ -x "${PROMTAIL}" ]] && pkg_config_changes_detected "promtail" "true"
+
+    fi
+
+    export PROMTAIL PACKAGES_PROMTAIL_STATUS PACKAGES_PROMTAIL_VERSION PACKAGES_PROMTAIL_CONFIG_PORT PACKAGES_PROMTAIL_CONFIG_HOSTNAME PACKAGES_PROMTAIL_CONFIG_LOKI_URL PACKAGES_PROMTAIL_CONFIG_LOKI_PORT
 
 }
 
@@ -1445,7 +1630,6 @@ function _brolit_configuration_load_docker() {
 
         # Checking if pkg is not installed
         [[ ${docker_installed} -eq 1 || ${docker_compose_installed} -eq 1 ]] && pkg_config_changes_detected "docker" "true"
-
 
     else
 
