@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2-beta
+# Version: 3.3.2
 ################################################################################
 #
 # System Helper: Perform system actions.
@@ -12,6 +12,7 @@
 # Enable system automatic updates
 # Ref:
 #   https://www.linuxbabe.com/ubuntu/automatic-security-update-unattended-upgrades-ubuntu
+#   https://www.digitalocean.com/community/tutorials/how-to-keep-ubuntu-20-04-servers-updated
 #
 # Arguments:
 #   none

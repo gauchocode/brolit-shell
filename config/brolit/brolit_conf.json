@@ -2,7 +2,7 @@
     "BROLIT_SETUP": {
         "config": [
             {
-                "version": "3.10.3",
+                "version": "3.10.5",
                 "debug": "true",
                 "skip_test": "true",
                 "tmp_dir": "tmp",
@@ -11,9 +11,8 @@
         ]
     },
     "SERVER_CONFIG": {
-        "timezone": "America/Argentina/Buenos_Aires",
         "type": "production",
-        "ftp_config": "/root/.brolit_ftp.conf",
+        "timezone": "America/Argentina/Buenos_Aires",
         "unattended_upgrades": "disabled",
         "additional_ips": [
             "",
@@ -431,11 +430,13 @@
         "promtail": [
             {
                 "status": "disabled",
-                "version": "2.8.2",
+                "version": "2.8.3",
                 "config": [
                     {
                         "port": "9080",
-                        "loki_url": ""
+                        "hostname": "default",
+                        "loki_url": "",
+                        "loki_port": "3100"
                     }
                 ]
             }
