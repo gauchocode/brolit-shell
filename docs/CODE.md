@@ -1,19 +1,12 @@
 # Code: Bash Best Practices
 An attempt to bring order in good advice on writing Bash scripts I collected from several sources.
 
-## Some sources
-* https://github.com/dylanaraps/pure-bash-bible
-* https://bertvv.github.io/cheat-sheets/Bash.html
-* https://github.com/anordal/shellharden/blob/master/how_to_do_things_safely_in_bash.md
-* https://stackoverflow.com/questions/10953833/passing-multiple-distinct-arrays-to-a-shell-function
-* https://www.reddit.com/r/commandline/comments/lha15t/bash_execution_tips_the_difference_between_and/
-
 ## Suggested tools
 * VSCode with shellcheck and Bash IDE extensions.
 * WSL or WSL2 on Windows 10/11 environments.
 
 ## Code: General
-The principles of Clean Code apply to Bash as well
+The principles of Clean Code apply to Bash as well.
 Always use long parameter notation when available. This makes the script more readable, especially for lesser known/used commands that you don’t remember all the options for.
 
   # Avoid:
@@ -40,12 +33,6 @@ Always use long parameter notation when available. This makes the script more re
     cd "${foo}"
     [...]
   )
-  # pushd and popd may also be useful:
-
-  pushd "${foo}"
-  [...]
-  popd
-  # Use nohup foo | cat & if foo must be started from a terminal and run in the background.
 
 ## Code: Variables
 
@@ -85,14 +72,52 @@ Correct: "`cmd`"
 Bad: `cmd`
 
 ## Code: Arrays
-arr=()	Create an empty array
-arr=(1 2 3)	Initialize array
-${arr[2]}	Retrieve third element
-${arr[@]}	Retrieve all elements
-${!arr[@]}	Retrieve array indices
-${#arr[@]}	Calculate array size
-arr[0]=3	Overwrite 1st element
-arr+=(4)	Append value(s)
-str=$(ls)	Save ls output as a string
-arr=( $(ls) )	Save ls output as an array of files
-${arr[@]:s:n}	Retrieve n elements starting at index s
+### Explicitly declare arrays to enhance code clarity and prevent unexpected behavior
+my_array=()
+
+### Initialize an array 
+my_array=(1 2 3)  
+
+### Retrieve third element 
+${my_array[2]}
+
+### Retrieve all elements 
+${my_array[@]} 
+
+### Retrieve array indices 
+${!my_array[@]} 
+
+### Calculate array size 
+${#my_array[@]} 
+
+### Overwrite 1st element 
+my_array[0]=3
+
+### Append value(s) 
+my_array+=(4) 
+
+### Save ls output as an array of files 
+my_array=( $(ls) )
+
+### Retrieve n elements starting at index s
+${my_array[@]:s:n}
+
+### Remove an element from an array
+unset my_array[2]
+
+### Iterate over array elements
+for element in "${my_array[@]}"; do
+    echo "${element}"
+done
+
+### Check if an array is empty
+if [[ ${#my_array[@]} -eq 0 ]]; then
+    echo "Array is empty"
+fi
+
+## Some sources
+* https://github.com/dylanaraps/pure-bash-bible
+* https://bertvv.github.io/cheat-sheets/Bash.html
+* https://github.com/anordal/shellharden/blob/master/how_to_do_things_safely_in_bash.md
+* https://stackoverflow.com/questions/10953833/passing-multiple-distinct-arrays-to-a-shell-function
+* https://www.gauchocode.com/mastering-bash-i-our-first-script/

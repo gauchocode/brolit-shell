@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # MySQL Helper: Perform mysql actions.
@@ -98,7 +98,7 @@ function mysql_ask_database_selection() {
     local chosen_database
 
     # List databases
-    databases="$(mysql_list_databases "all")"
+    databases="$(mysql_list_databases "all" "")"
 
     # Database selection menu
     chosen_database="$(whiptail --title "MYSQL Databases" --menu "Choose a Database to work with" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) 3>&1 1>&2 2>&3)"
@@ -180,9 +180,8 @@ function mysql_count_databases() {
 
     local databases="${1}"
 
-    local total_databases=0
-
     local db
+    local total_databases=0
 
     for db in ${databases}; do
         if [[ $EXCLUDED_DATABASES_LIST != *"${db}"* ]]; then # $EXCLUDED_DATABASES_LIST contains blacklisted databases
@@ -198,7 +197,8 @@ function mysql_count_databases() {
 # List databases on MySQL
 #
 # Arguments:
-#  ${stage} - Options: all, prod, dev, test, stage
+#  ${1} = ${stage}          - Options: all, prod, dev, test, stage
+#  ${2} = ${container_name} - Optional
 #
 # Outputs:
 #  ${databases}, 1 on error.
@@ -207,21 +207,37 @@ function mysql_count_databases() {
 function mysql_list_databases() {
 
     local stage="${1}"
-    local install_type="${2}"
+    local container_name="${2}"
 
     local mysql_exec
     local databases
 
-    [[ ${install_type} == "docker" ]] && mysql_exec="${MYSQL_DOCKER_EXEC}" || mysql_exec="${MYSQL_ROOT}"
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+
+        local mysql_container_user
+        local mysql_container_user_pssw
+
+        # Get MYSQL_USER and MYSQL_PASSWORD from container
+        ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
+        mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
+        mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
+
+        mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
+
+    else
+
+        mysql_exec="${MYSQL_ROOT}"
+
+    fi
 
     log_event "info" "Listing '${stage}' MySQL databases" "false"
 
     if [[ ${stage} == "all" ]]; then
         # Run command
-        databases="$(${MYSQL_ROOT} -Bse 'show databases')"
+        databases="$(${mysql_exec} -Bse 'show databases')"
     else
         # Run command
-        databases="$(${MYSQL_ROOT} -Bse 'show databases' | grep "${stage}")"
+        databases="$(${mysql_exec} -Bse 'show databases' | grep "${stage}")"
     fi
 
     # Check result
@@ -245,7 +261,7 @@ function mysql_list_databases() {
         # Log
         display --indent 6 --text "- Listing MySQL databases" --result "FAIL" --color RED
         log_event "error" "Something went wrong listing MySQL databases" "false"
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -Bse 'show databases'" "false"
+        log_event "debug" "Last command executed: ${mysql_exec} -Bse 'show databases'" "false"
 
         return 1
 
@@ -257,18 +273,39 @@ function mysql_list_databases() {
 # List users on MySQL
 #
 # Arguments:
-#  none
+#  ${1} = ${container_name}
 #
 # Outputs:
 #  ${users}, 1 on error.
 ################################################################################
 
-function mysql_list_users() {
+function mysql_users_list() {
+
+    local container_name="${1}"
 
     local users
+    local mysql_exec
+
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+
+        local mysql_container_user
+        local mysql_container_user_pssw
+
+        # Get MYSQL_USER and MYSQL_PASSWORD from container
+        ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
+        mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
+        mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
+
+        mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
+
+    else
+
+        mysql_exec="${MYSQL_ROOT}"
+
+    fi
 
     # Run command
-    users="$(${MYSQL_ROOT} -e 'SELECT user FROM mysql.user;')"
+    users="$(${mysql_exec} -e 'SELECT user FROM mysql.user;')"
 
     # Check result
     mysql_result=$?
@@ -292,7 +329,7 @@ function mysql_list_users() {
         # Log
         display --indent 6 --text "- Listing MySQL users" --result "FAIL" --color RED
         log_event "error" "Something went wrong listing MySQL users" "false"
-        log_event "debug" "Last command executed: ${MYSQL_ROOT} -e SELECT user FROM mysql.user;'" "false"
+        log_event "debug" "Last command executed: ${mysql_exec} -e SELECT user FROM mysql.user;'" "false"
 
         return 1
 
@@ -321,7 +358,7 @@ function mysql_user_create() {
     local query
 
     # Log
-    display --indent 6 --text "- Creating MySQL user ${db_user}"
+    display --indent 6 --text "- Creating MySQL user: ${db_user}"
 
     # DB user host
     [[ -z ${db_user_scope} ]] && db_user_scope="$(mysql_ask_user_db_scope "localhost")"
@@ -344,7 +381,7 @@ function mysql_user_create() {
 
         # Log
         clear_previous_lines "1"
-        display --indent 6 --text "- Creating MySQL user ${db_user}" --result "DONE" --color GREEN
+        display --indent 6 --text "- Creating MySQL user: ${db_user}" --result "DONE" --color GREEN
 
         if [[ -n ${db_user_psw} ]]; then
             display --indent 8 --text "User created with pass: ${db_user_psw}" --tcolor YELLOW
@@ -358,7 +395,7 @@ function mysql_user_create() {
 
         # Log
         clear_previous_lines "2"
-        display --indent 6 --text "- Creating MySQL user ${db_user}" --result "FAIL" --color RED
+        display --indent 6 --text "- Creating MySQL user: ${db_user}" --result "FAIL" --color RED
         display --indent 8 --text "Maybe the user already exists. Please read the log file." --tcolor RED
 
         log_event "error" "Something went wrong creating user: ${db_user}." "false"
@@ -485,7 +522,7 @@ function mysql_user_psw_change() {
 }
 
 ################################################################################
-# Change root password
+# Change mysql root password
 #
 # Arguments:
 #  ${1} = ${db_user_psw}
@@ -517,6 +554,9 @@ function mysql_root_psw_change() {
         db_root_psw=$(pwgen -scn "${db_root_psw_len}" 1)
         db_root_user='root'
     fi
+
+    # Log the output
+    display --indent 2 --text "- Setting new password for root" --tcolor YELLOW
 
     # Update root user with new password
     mysql mysql -e "USE mysql;UPDATE user SET Password=PASSWORD('${db_root_psw}') WHERE User='${db_root_user}';FLUSH PRIVILEGES;"
@@ -689,13 +729,13 @@ function mysql_database_exists() {
 #  Sanetized ${string}.
 ################################################################################
 
-function mysql_name_sanitize() {
+function database_name_sanitize() {
 
     local string="${1}"
 
     local clean
 
-    #log_event "debug" "Running mysql_name_sanitize for ${string}" "true"
+    #log_event "debug" "Running database_name_sanitize for ${string}" "true"
 
     # First, strip "-"
     clean=${string//-/}
@@ -820,7 +860,8 @@ function mysql_database_drop() {
 #
 # Arguments:
 #  ${1} = ${database} (.sql)
-#  ${2} = ${dump_file}
+#  ${2} = ${container_name}
+#  ${3} = ${dump_file}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -829,19 +870,40 @@ function mysql_database_drop() {
 function mysql_database_import() {
 
     local database="${1}"
-    local dump_file="${2}"
+    local container_name="${2}"
+    local dump_file="${3}"
+
+    local mysql_exec
+
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+
+        local mysql_container_user
+        local mysql_container_user_pssw
+
+        # Get MYSQL_USER and MYSQL_PASSWORD from container
+        ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
+        mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
+        mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
+
+        mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
+
+    else
+
+        mysql_exec="${MYSQL_ROOT}"
+
+    fi
 
     # Log
     display --indent 6 --text "- Importing backup into: ${database}" --tcolor YELLOW
     log_event "info" "Importing dump file ${dump_file} into database: ${database}" "false"
-    log_event "debug" "Running: pv ${dump_file} | ${MYSQL_ROOT} -f -D ${database}" "false"
+    log_event "debug" "Running: pv ${dump_file} | ${mysql_exec} -f -D ${database}" "false"
 
     # String “utf8mb4_0900_ai_ci” replaced it with “utf8mb4_general_ci“
     # This is a workaround for a bug in MySQL 5.7.x and 5.6.x where the default collation is “utf8mb4_0900_ai_ci”.
     sed -i 's/utf8mb4_0900_ai_ci/utf8mb4_general_ci/g' "${dump_file}"
 
     # Execute command
-    pv --width 70 "${dump_file}" | ${MYSQL_ROOT} -f -D "${database}"
+    pv --width 70 "${dump_file}" | ${mysql_exec} -f -D "${database}"
 
     if [[ ${PIPESTATUS[1]} -eq 0 ]]; then
 
@@ -859,7 +921,7 @@ function mysql_database_import() {
         display --indent 6 --text "- Database backup import" --result "ERROR" --color RED
         display --indent 8 --text "Please, read the log file!" --tcolor RED
         log_event "error" "Something went wrong importing database: ${database}"
-        log_event "debug" "Last command executed: pv ${dump_file} | ${MYSQL_ROOT} -f -D ${database}"
+        log_event "debug" "Last command executed: pv ${dump_file} | ${mysql_exec} -f -D ${database}"
 
         return 1
 
@@ -872,7 +934,8 @@ function mysql_database_import() {
 #
 # Arguments:
 #  ${1} = ${database}
-#  ${2} = ${dump_file}
+#  ${2} = ${container_name}
+#  ${3} = ${dump_file}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -881,16 +944,37 @@ function mysql_database_import() {
 function mysql_database_export() {
 
     local database="${1}"
-    local dump_file="${2}"
+    local container_name="${2}"
+    local dump_file="${3}"
 
+    local mysql_exec
     local dump_status
+
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+
+        local mysql_container_user
+        local mysql_container_user_pssw
+
+        # Get MYSQL_USER and MYSQL_PASSWORD from container
+        ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
+        mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
+        mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
+
+        mysql_exec="docker exec -i ${container_name} mysqldump -u${mysql_container_user} -p${mysql_container_user_pssw}"
+
+    else
+
+        mysql_exec="${MYSQLDUMP_ROOT}"
+
+    fi
 
     log_event "info" "Making a database backup of: ${database}" "false"
 
     spinner_start "- Making a backup of: ${database}"
 
     # Run mysqldump
-    ${MYSQLDUMP_ROOT} "${database}" >"${dump_file}"
+    # For large tables use --max_allowed_packet=128M or bigger (default is 25MB)
+    ${mysql_exec} --max_allowed_packet=512M "${database}" >"${dump_file}"
 
     dump_status=$?
     spinner_stop "${dump_status}"
@@ -936,11 +1020,11 @@ function mysql_database_rename() {
 
     local dump_file="${BROLIT_TMP_DIR}/${database_old_name}_bk_before_rename_db.sql"
 
-    mysql_database_export "${database_old_name}" "${dump_file}"
+    mysql_database_export "${database_old_name}" "false" "${dump_file}"
 
     mysql_database_create "${database_new_name}"
 
-    mysql_database_import "${database_new_name}" "${dump_file}"
+    mysql_database_import "${database_new_name}" "false" "${dump_file}"
 
     mysql_database_drop "${database_old_name}"
 
@@ -954,10 +1038,10 @@ function mysql_database_clone() {
 
     local dump_file="${BROLIT_TMP_DIR}/${database_old_name}_bk_before_clone_db.sql"
 
-    mysql_database_export "${database_old_name}" "${dump_file}"
+    mysql_database_export "${database_old_name}" "false" "${dump_file}"
 
     mysql_database_create "${database_new_name}"
 
-    mysql_database_import "${database_new_name}" "${dump_file}"
+    mysql_database_import "${database_new_name}" "false" "${dump_file}"
 
 }

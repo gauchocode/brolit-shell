@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # Netdata Installer
@@ -203,7 +203,7 @@ function _netdata_telegram_config() {
 
 function netdata_installer() {
 
-  local netdata_installer_exitstatus
+#  local netdata_installer_exitstatus
 
   declare -g NETDATA_INSTALL_DIR
 
@@ -255,7 +255,8 @@ function netdata_installer() {
           if [[ ${exitstatus} -eq 0 ]]; then
 
             if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
-
+              # Wait 2 seconds for DNS update
+              sleep 2
               # HTTPS with Certbot
               certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}"
 

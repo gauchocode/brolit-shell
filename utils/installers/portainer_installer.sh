@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # Portainer Installer
@@ -31,10 +31,8 @@ function portainer_installer() {
 
     # Force update brolit_conf.json
     PACKAGES_DOCKER_STATUS="enabled"
-    PACKAGES_DOCKER_COMPOSE_STATUS="enabled"
     json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.docker[].status" "${PACKAGES_DOCKER_STATUS}"
-    json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.docker[].compose[].status" "${PACKAGES_DOCKER_COMPOSE_STATUS}"
-    export PACKAGES_DOCKER_STATUS PACKAGES_DOCKER_COMPOSE_STATUS
+    export PACKAGES_DOCKER_STATUS
 
     # Check if portainer is running
     portainer="$(docker_get_container_id "portainer")"
@@ -50,16 +48,9 @@ function portainer_installer() {
         cp "${BROLIT_MAIN_DIR}/utils/installers/docker-compose/portainer/docker-compose.yml" "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}"
         cp "${BROLIT_MAIN_DIR}/utils/installers/docker-compose/portainer/.env" "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}"
 
-        # Configure .env file (portainer and watchtower)
+        # Configure .env file (portainer)
         project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "VIRTUAL_HOST" "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}" "none"
         project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "PORTAINER_PORT" "${PACKAGES_PORTAINER_CONFIG_PORT}" "none"
-        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_TIMEZONE" "${SERVER_TIMEZONE}" "none"
-        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_FROM" "${NOTIFICATION_EMAIL_SMTP_USER}" "none"
-        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_TO" "${NOTIFICATION_EMAIL_MAILA}" "none"
-        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_SERVER" "${NOTIFICATION_EMAIL_SMTP_SERVER}" "none"
-        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD" "${NOTIFICATION_EMAIL_SMTP_UPASS}" "none"
-        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER" "${NOTIFICATION_EMAIL_SMTP_USER}" "none"
-        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT" "${NOTIFICATION_EMAIL_SMTP_PORT}" "none"
 
         # Run docker-compose pull on specific directory
         docker-compose -f "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/docker-compose.yml" pull
@@ -182,6 +173,9 @@ function portainer_configure() {
         cloudflare_set_record "${root_domain}" "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}" "A" "false" "${SERVER_IP}"
 
         if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
+            # Wait 2 seconds for DNS update
+            sleep 2
+            # Let's Encrypt
             certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}"
         fi
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # Backup/Restore Manager: Perform backup and restore actions.
@@ -207,7 +207,7 @@ function restore_manager_menu() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_restore_options} == *"01"* ]]; then
-      restore_backup_server_selection
+      restore_backup_from_storage ""
 
     fi
     if [[ ${chosen_restore_options} == *"02"* ]]; then

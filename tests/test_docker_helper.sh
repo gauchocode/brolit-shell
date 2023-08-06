@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 #############################################################################
 
 ################################################################################
@@ -18,6 +18,8 @@
 # Outputs:
 #   0 if ok, 1 on error.
 ################################################################################
+
+# TODO: needs refactor
 
 function test_docker_helper_functions() {
 
@@ -43,7 +45,7 @@ function test_docker_helper_functions() {
     project_name="$(project_get_name_from_domain "${project_domain}")"
 
     # Docker Wordpress Install
-    docker_wordpress_install "/var/www/${project_domain}" "${project_domain}" "${project_name}" "${project_stage}" "${root_domain}" "${project_port}" "default"
+    #docker_wordpress_install "/var/www/${project_domain}" "${project_domain}" "${project_name}" "${project_stage}" "${root_domain}" "${project_port}" "default"
 
     # TODO: read .env to get mysql pass
 
@@ -62,7 +64,7 @@ function test_docker_helper_functions() {
 
     # Create nginx proxy if nginx is installed
     ## TODO: read port from docker-compose .env file
-    nginx_server_create "dockertest.broobe.net" "proxy" "single" "" "${project_port}"
+    nginx_server_create "dockertest.gauchocode.net" "proxy" "single" "" "${project_port}"
 
     # TODO: run wp-cli commands?
 

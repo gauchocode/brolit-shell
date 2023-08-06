@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # Security Helper: Perform security actions.
@@ -26,6 +26,7 @@ function security_clamav_scan() {
 
   local timestamp
   local report_file
+  local clamscan_result
 
   timestamp="$(date +%Y%m%d_%H%M%S)"
 
@@ -115,6 +116,16 @@ function security_custom_scan() {
   display --indent 2 --text "- Custom malware scanner" --result "DONE" --color GREEN
 
 }
+
+################################################################################
+# Lynis audit system
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  Audit result.
+################################################################################
 
 function menu_security_system_audit() {
 

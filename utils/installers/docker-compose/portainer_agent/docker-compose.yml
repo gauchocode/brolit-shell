@@ -4,7 +4,7 @@ services:
 
   agent:
     image: portainer/agent:2.6.3
-    container_name: portainer_agent
+    container_name: agent_portainer
     security_opt:
       - no-new-privileges:true
     restart: always

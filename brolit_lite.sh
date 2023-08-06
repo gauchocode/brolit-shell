@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 
 ################################################################################
@@ -72,7 +72,7 @@ function _json_write_field() {
 
     else
 
-        echo "Getting value from ${json_field}" && return 1
+        echo "Error getting value from ${json_field}" && return 1
 
     fi
 
@@ -922,20 +922,31 @@ function _wp_config_path() {
 
     local dir_to_search="${1}"
 
-    # Find where wp-config.php is
-    find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')"
+    local find_output
 
-    # Check if directory exists
-    if [[ -d ${find_output} ]]; then
+    if [[ -n "${dir_to_search}" && -d "${dir_to_search}" ]]; then
 
-        # Return
-        echo "${find_output}" && return 0
+        # Find where wp-config.php is
+        find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')"
+
+        # Check if directory exists
+        if [[ -d "${find_output}" ]]; then
+
+            # Return
+            echo "${find_output}" && return 0
+
+        else
+
+            return 1
+
+        fi
 
     else
 
+        echo "Error: Can't get project type, directory '${dir_to_search}' doesn't exist." "false"
         return 1
 
-    fi
+   fi
 
 }
 
@@ -954,6 +965,7 @@ function _project_is_ignored() {
     local project="${1}" #string
 
     local ignored="false"
+
     local ignored_list
     local excluded_projects_array
 
@@ -990,8 +1002,6 @@ function _project_get_type() {
 
     local dir_path="${1}"
 
-    #local project_type
-
     local wp_path
     local laravel
     local php
@@ -1002,7 +1012,7 @@ function _project_get_type() {
 
     # TODO: if brolit_conf exists, should check this file and get project type
 
-    if [[ -n ${dir_path} ]]; then
+    if [[ -n ${dir_path} && -d ${dir_path} ]]; then
 
         # WP?
         wp_path="$(_wp_config_path "${dir_path}")"
@@ -1059,6 +1069,7 @@ function _project_get_type() {
 
     else
 
+        echo "Error: Can't get project type, directory '${dir_path}' doesn't exist." "false"
         return 1
 
     fi
@@ -1261,37 +1272,6 @@ function _project_get_brolit_config_var() {
 }
 
 ################################################################################
-# WordPress config path
-#
-# Arguments:
-#  ${1} = ${dir_to_search}
-#
-# Outputs:
-#  String with wp-config path
-################################################################################
-
-function _wp_config_path() {
-
-    local dir_to_search="${1}"
-
-    # Find where wp-config.php is
-    find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')"
-
-    # Check if directory exists
-    if [[ -d ${find_output} ]]; then
-
-        # Return
-        echo "${find_output}" && return 0
-
-    else
-
-        return 1
-
-    fi
-
-}
-
-################################################################################
 # Get WordPress config option
 #
 # Arguments:
@@ -1357,9 +1337,7 @@ function _project_get_config_var() {
         content="$(_string_remove_quotes "${content}")"
 
         # Return
-        echo "${content}"
-
-        return 0
+        echo "${content}" && return 0
 
     else
 
@@ -1556,13 +1534,11 @@ function _cronjob_check() {
     if [[ ${grep_result} != 0 ]]; then
 
         # Return JSON
-        echo "BROLIT_RESULT => { Cronjob not found }"
-        return 0
+        echo "BROLIT_RESULT => { Cronjob not found }" && return 0
 
     else
         # Return JSON
-        echo "BROLIT_RESULT => { Cronjob found }"
-        return 1
+        echo "BROLIT_RESULT => { Cronjob found }" && return 1
 
     fi
 
@@ -1604,14 +1580,12 @@ function _cronjob_install() {
         /bin/echo "${scheduled_time} ${script}" >>"${cron_file}"
 
         # Return JSON
-        echo "BROLIT_RESULT => { Cronjob installed }"
-        return 0
+        echo "BROLIT_RESULT => { Cronjob installed }" && return 0
 
     else
 
         # Return JSON
-        echo "BROLIT_RESULT => { Cronjob already exists }"
-        return 1
+        echo "BROLIT_RESULT => { Cronjob already exists }" && return 1
 
     fi
 
@@ -1770,14 +1744,12 @@ function _mysql_databases() {
         done
 
         # Return
-        echo "${databases}"
+        echo "${databases}" && return 0
 
     else
 
-        # Log
-        echo "Something went wrong listing MySQL databases!"
-
-        return 1
+        # Return
+        echo "Error: Something went wrong listing MySQL databases!" && return 1
 
     fi
 
@@ -1815,14 +1787,12 @@ function _psql_databases() {
         done
 
         # Return
-        echo "${databases}"
+        echo "${databases}" && return 0
 
     else
 
-        # Log
-        echo "Something went wrong listing PostgreSQL databases!"
-
-        return 1
+        # Return
+        echo "Error: Something went wrong listing PostgreSQL databases!" && return 1
 
     fi
 
@@ -1882,7 +1852,8 @@ function _packages_get_data() {
     psql_v_installed="$(_psql_check_installed_version)"
     dbs_v_installed="${mysql_v_installed}${psql_v_installed}"
     if [[ -z ${dbs_v_installed} ]]; then
-        dbs_v_installed="\"no-database-engine\""
+        # empty
+        dbs_v_installed=""
     else
         # Remove 3 last chars
         dbs_v_installed="${dbs_v_installed::-3}"
@@ -1894,7 +1865,8 @@ function _packages_get_data() {
     nodejs_v_installed="$(_nodejs_check_installed_version)"
     lang_v_installed="${php_v_installed}${python_v_installed}${nodejs_v_installed}"
     if [[ -z ${lang_v_installed} ]]; then
-        lang_v_installed="\"no-languages\""
+        # empty
+        lang_v_installed=""
     else
         # Remove 3 last chars
         lang_v_installed="${lang_v_installed::-3}"
@@ -1966,12 +1938,12 @@ function _sites_directories() {
         directories="${directories:3}"
 
         # Return
-        echo "${directories}"
+        echo "${directories}" && return 0
 
     else
 
         # Return
-        echo "\"no-sites\""
+        echo "\"no-sites\"" && return 0
 
     fi
 
@@ -1990,16 +1962,16 @@ function _sites_directories() {
 function dropbox_get_site_backups() {
 
     local chosen_project="${1}"
+    local backup_type="${2:-site}"
+    local backup_status="${3:-online}"
 
     local dropbox_chosen_backup_path
     local dropbox_backup_list
 
     local backup_files
 
-    local backup_type="site"
-
     # Get dropbox backup list
-    dropbox_chosen_backup_path="${SERVER_NAME}/projects-online/${backup_type}/${chosen_project}"
+    dropbox_chosen_backup_path="${SERVER_NAME}/projects-${backup_status}/${backup_type}/${chosen_project}"
     dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}")"
 
     for backup_file in ${dropbox_backup_list}; do
@@ -2015,7 +1987,7 @@ function dropbox_get_site_backups() {
     fi
 
     # Return
-    echo "${backup_files}"
+    echo "${backup_files}" && return 0
 
 }
 
@@ -2077,7 +2049,7 @@ function _dropbox_get_backup() {
 
                 # Database backup
                 backup_to_search="${project_db}_database_${backup_date}"
-                search_backup_db="$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${project_db}/${backup_to_search}" || ret=$?)" # using ret to bypass unexped errors
+                search_backup_db=$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${project_db}/${backup_to_search}" || ret="$?")
                 backup_db="$(basename "${search_backup_db}")"
 
                 if [[ -n ${search_backup_db} ]]; then
@@ -2219,8 +2191,8 @@ declare -g PROJECTS_PATH
 PROJECTS_PATH="$(_json_read_field "${BROLIT_CONFIG_FILE}" "PROJECTS.path")"
 
 # Version
-BROLIT_VERSION="3.2.7"
-BROLIT_LITE_VERSION="3.2.7-132"
+BROLIT_VERSION="3.3.2"
+BROLIT_LITE_VERSION="3.3.2-132"
 
 ################################################################################
 # Show firewall status
@@ -2496,7 +2468,8 @@ function show_server_data() {
         # Remove first comma
         server_databases="$(printf "%s" "${server_databases#,}")"
 
-        [[ -z ${server_databases} ]] && server_databases="\"no-databases\""
+        # empty
+        [[ -z ${server_databases} ]] && server_databases=""
 
         # Write JSON file
         echo "{ \"${timestamp}\" : { \"server_info\": { ${server_info} }, \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] } }" >"${json_output_file}"

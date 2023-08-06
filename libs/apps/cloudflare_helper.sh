@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # Packages Helper: Perform apt actions.
@@ -692,9 +692,6 @@ function cloudflare_delete_record() {
             -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
             -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json")"
-
-        # Remove Cloudflare API garbage output
-        #clear_previous_lines "4"
 
         if [[ ${delete} == *"\"success\":false"* || ${delete} == "" ]]; then
             # Log

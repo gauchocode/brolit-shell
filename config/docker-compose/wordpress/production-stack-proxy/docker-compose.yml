@@ -11,7 +11,7 @@ services:
             MYSQL_DATABASE: ${MYSQL_DATABASE}
             MYSQL_USER: ${MYSQL_USER}
             MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-            MYSQL_RANDOM_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
         volumes:
             - ${MYSQL_DATA_DIR}:/var/lib/mysql
         networks:
@@ -40,7 +40,7 @@ services:
         volumes:
             - ${WWW_DATA_DIR}:/wordpress
             - ./php-${PHP_VERSION}_docker/php-fpm/php-ini-overrides.ini:/etc/php/${PHP_VERSION}/fpm/conf.d/99-overrides.ini
-            - ./php-${PHP_VERSION}_docker/php-fpm/www.conf-overrides:/etc/php/${PHP_VERSION}/fpm/pool.d/z-optimised.conf
+        #    - ./php-${PHP_VERSION}_docker/php-fpm/www.conf-overrides:/etc/php/${PHP_VERSION}/fpm/pool.d/z-optimised.conf
         networks:
             - internal
             

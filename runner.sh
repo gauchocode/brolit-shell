@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
 # Script Name: BROLIT Shell
-# Version: 3.2.7
+# Version: 3.3.2
 ################################################################################
 
 ### Environment checks
@@ -19,6 +19,7 @@ fi
 
 ### Load Main library
 chmod +x "${BROLIT_MAIN_DIR}/libs/commons.sh"
+# shellcheck source=/root/brolit-shell/libs/commons.sh
 source "${BROLIT_MAIN_DIR}/libs/commons.sh"
 
 ### Init #######################################################################

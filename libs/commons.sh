@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 
 ################################################################################
@@ -15,6 +15,9 @@
 ################################################################################
 
 function _source_all_scripts() {
+
+  local libs_apps_path
+  local libs_apps_scripts
 
   # Source all apps libs
   libs_apps_path="${BROLIT_MAIN_DIR}/libs/apps"
@@ -52,7 +55,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.2.7"
+  declare -g SCRIPT_V="3.3.2"
 
   # Hostname
   declare -g SERVER_NAME="$HOSTNAME"
@@ -61,13 +64,7 @@ function _setup_globals_and_options() {
   declare -g BROLIT_CONFIG_PATH="/etc/brolit"
 
   # Creating brolit folder
-  if [[ ! -d ${BROLIT_CONFIG_PATH} ]]; then
-    mkdir "${BROLIT_CONFIG_PATH}"
-  fi
-
-  # Apps globals
-  declare -g TAR
-  declare -g FIND
+  [[ ! -d ${BROLIT_CONFIG_PATH} ]] && mkdir "${BROLIT_CONFIG_PATH}"
 
   # Main partition
   declare -g MAIN_VOL
@@ -84,15 +81,14 @@ function _setup_globals_and_options() {
   declare -g startdir=""
   declare -g menutitle="Config Selection Menu"
 
-  # TAR
+  # Apps globals
+  declare -g TAR
+  declare -g FIND
+  declare -g CURL
+
   TAR="$(command -v tar)"
-
-  # FIND
   FIND="$(command -v find)"
-
-  # CURL (better curl to download files and getting http return codes)
-  ## Ref: https://everything.curl.dev/usingcurl/returns
-  CURL="curl --silent -L --fail --connect-timeout 3 --retry 0"
+  CURL="curl --silent -L --fail --connect-timeout 3 --retry 0"  # CURL (better curl to download files and getting http return codes). Ref: https://everything.curl.dev/usingcurl/returns
 
   export NOW NOWDISPLAY CURL TAR FIND MAIN_VOL
 
@@ -113,59 +109,77 @@ function _setup_colors_and_styles() {
   # Refs:
   # https://misc.flogisoft.com/bash/tip_colors_and_formatting
 
-  # Declare read-only global vars
-  declare -g NORMAL BOLD ITALIC UNDERLINED INVERTED
-  declare -g BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR F_DEFAULT
-  declare -g B_BLACK B_RED B_GREEN B_YELLOW B_ORANGE B_MAGENTA B_CYAN B_WHITE B_ENDCOLOR B_DEFAULT
-
   # RUNNING FROM TERMINAL
   if [[ -t 1 ]]; then
 
     # Text Styles
-    NORMAL="\033[m"
-    BOLD='\x1b[1m'
-    ITALIC='\x1b[3m'
-    UNDERLINED='\x1b[4m'
-    INVERTED='\x1b[7m'
+    readonly NORMAL="\033[m"
+    readonly BOLD='\x1b[1m'
+    readonly ITALIC='\x1b[3m'
+    readonly UNDERLINED='\x1b[4m'
+    readonly INVERTED='\x1b[7m'
 
     # Foreground/Text Colours
-    BLACK='\E[30;40m'
-    RED='\E[31;40m'
-    GREEN='\E[32;40m'
-    YELLOW='\E[33;40m'
-    ORANGE='\033[0;33m'
-    MAGENTA='\E[35;40m'
-    CYAN='\E[36;40m'
-    WHITE='\E[37;40m'
-    ENDCOLOR='\033[0m'
-    F_DEFAULT='\E[39m'
+    readonly BLACK='\E[30;40m'
+    readonly RED='\E[31;40m'
+    readonly GREEN='\E[32;40m'
+    readonly YELLOW='\E[33;40m'
+    readonly ORANGE='\033[0;33m'
+    readonly MAGENTA='\E[35;40m'
+    readonly CYAN='\E[36;40m'
+    readonly WHITE='\E[37;40m'
+    readonly ENDCOLOR='\033[0m'
+    readonly F_DEFAULT='\E[39m'
 
     # Background Colours
-    B_BLACK='\E[40m'
-    B_RED='\E[41m'
-    B_GREEN='\E[42m'
-    B_YELLOW='\E[43m'
-    B_ORANGE='\043[0m'
-    B_MAGENTA='\E[45m'
-    B_CYAN='\E[46m'
-    B_WHITE='\E[47m'
-    B_ENDCOLOR='\e[0m'
-    B_DEFAULT='\E[49m'
+    readonly B_BLACK='\E[40m'
+    readonly B_RED='\E[41m'
+    readonly B_GREEN='\E[42m'
+    readonly B_YELLOW='\E[43m'
+    readonly B_ORANGE='\043[0m'
+    readonly B_MAGENTA='\E[45m'
+    readonly B_CYAN='\E[46m'
+    readonly B_WHITE='\E[47m'
+    readonly B_ENDCOLOR='\e[0m'
+    readonly B_DEFAULT='\E[49m'
 
   else
 
     # Text Styles
-    NORMAL='' BOLD='' ITALIC='' UNDERLINED='' INVERTED=''
+    readonly NORMAL='' 
+    readonly BOLD='' 
+    readonly ITALIC='' 
+    readonly UNDERLINED='' 
+    readonly INVERTED=''
 
     # Foreground/Text Colours
-    BLACK='' RED='' GREEN='' YELLOW='' ORANGE='' MAGENTA='' CYAN='' WHITE='' ENDCOLOR='' F_DEFAULT=''
+    readonly BLACK='' 
+    readonly RED='' 
+    readonly GREEN='' 
+    readonly YELLOW='' 
+    readonly ORANGE='' 
+    readonly MAGENTA='' 
+    readonly CYAN='' 
+    readonly WHITE='' 
+    readonly ENDCOLOR='' 
+    readonly F_DEFAULT=''
 
     # Background Colours
-    B_BLACK='' B_RED='' B_GREEN='' B_YELLOW='' B_ORANGE='' B_MAGENTA='' B_CYAN='' B_WHITE='' B_ENDCOLOR='' B_DEFAULT=''
+    readonly B_BLACK='' 
+    readonly B_RED='' 
+    readonly B_GREEN='' 
+    readonly B_YELLOW='' 
+    readonly B_ORANGE='' 
+    readonly B_MAGENTA='' 
+    readonly B_CYAN='' 
+    readonly B_WHITE='' 
+    readonly B_ENDCOLOR='' 
+    readonly B_DEFAULT=''
 
   fi
 
-  export BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR
+  # Export all declared vars
+  export NORMAL BOLD ITALIC UNDERLINED INVERTED BLACK RED GREEN YELLOW ORANGE MAGENTA CYAN WHITE ENDCOLOR F_DEFAULT B_BLACK B_RED B_GREEN B_YELLOW B_ORANGE B_MAGENTA B_CYAN B_WHITE B_ENDCOLOR B_DEFAULT
 
 }
 
@@ -188,8 +202,7 @@ function _check_root() {
   # Check if user is root
   if [[ ${is_root} -ne 0 ]]; then
     # $USER is a env var
-    log_event "critical" "Script runned by ${USER}, but must be root! Exiting ..." "true"
-    exit 1
+    die "Script runned by ${USER}, but must be root! Exiting ..."
 
   else
     log_event "debug" "Script runned by root" "false"
@@ -211,12 +224,22 @@ function _check_root() {
 
 function _check_scripts_permissions() {
 
-  ### chmod
-  find ./ -name "*.sh" -exec chmod +x {} \;
-
   # Log
   log_event "info" "Checking scripts permissions" "false"
   log_event "debug" "Executing chmod +x on *.sh" "false"
+
+  ### chmod
+  find ./ -name "*.sh" -exec chmod +x {} \;
+
+  # Check errors
+  if [[ $? -ne 0 ]]; then
+    die "Error setting scripts permissions! Exiting ..."
+
+  else
+    log_event "debug" "Scripts permissions setted" "false"
+    return 0
+
+  fi
 
 }
 
@@ -227,12 +250,41 @@ function _check_scripts_permissions() {
 #   none
 #
 # Outputs:
-#   none
+#   ${public_ip}
 ################################################################################
 
-# TODO: Should return server IPs
+function get_server_public_ip() {
+
+  local default_interface
+  local public_ip
+
+  default_interface=$(ip route | awk '/default/ {print $5}')
+  public_ip=$(ip addr show dev "${default_interface}" | awk '/inet / {print $2}' | cut -d'/' -f1)
+
+  if [[ -z ${public_ip} ]]; then
+    # Alternative method
+    public_ip="$(curl --silent http://ipv4.icanhazip.com)"
+  fi
+
+  # Return
+  echo "${public_ip}"
+
+}
+
+################################################################################
+# Get server IPs (legacy)
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   ${public_ip}
+################################################################################
+
+# TODO: Should return server IPs?
 function get_server_ips() {
 
+  # Global vars
   declare -g LOCAL_IP
   declare -g SERVER_IP
   declare -g SERVER_IPv6
@@ -240,21 +292,16 @@ function get_server_ips() {
   # If the server has configured a floating ip, it will return this:
   LOCAL_IP="$(ip route get 1 | awk '{print $(NF-2);exit}')"
 
-  # PUBLIC IP (with https://www.ipify.org)
-  SERVER_IP="$(curl --silent 'https://api.ipify.org')"
-  if [[ -z ${SERVER_IP} ]]; then
-    # Alternative method
-    SERVER_IP="$(curl --silent http://ipv4.icanhazip.com)"
-  else
-    # If api.apify.org works, get IPv6 too
-    SERVER_IPv6="$(curl --silent 'https://api64.ipify.org')"
-  fi
+  # PUBLIC IP
+  SERVER_IP="$(get_server_public_ip)"
 
+  # Get IPv6 too
+  SERVER_IPv6="$(curl --silent 'https://api64.ipify.org')"
+
+  # Log
   log_event "info" "LOCAL IPv4: ${LOCAL_IP}" "false"
   log_event "info" "SERVER IPv4: ${SERVER_IP}" "false"
   log_event "info" "SERVER IPv6: ${SERVER_IPv6}" "false"
-
-  export LOCAL_IP SERVER_IP SERVER_IPv6
 
 }
 
@@ -270,6 +317,8 @@ function get_server_ips() {
 
 function _check_distro() {
 
+  declare -g DISTRO
+  
   # Running Ubuntu?
   DISTRO="$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $1}')"
 
@@ -386,7 +435,7 @@ function script_init() {
   log_event "" "██╔══██╗██╔══██╗██║   ██║██║     ██║   ██║   " "true"
   log_event "" "██████╔╝██║  ██║╚██████╔╝███████╗██║   ██║   " "true"
   log_event "" "╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝   ╚═╝   " "true"
-  log_event "" "              ${SCRIPT_N} v${SCRIPT_V} by BROOBE" "true"
+  log_event "" "              ${SCRIPT_N} v${SCRIPT_V} by GauchoCode" "true"
   log_event "" "                                             " "true"
   log_event "" "------------------------------------------------------------" "true"
 
@@ -560,82 +609,6 @@ function validator_email_format() {
 }
 
 ################################################################################
-# Cron format validator
-#
-# Arguments:
-#   none
-#
-# Outputs:
-#   0 if ok, 1 on error
-################################################################################
-
-function validator_cron_format() {
-
-  # TODO: refactor
-  # Ref: http://litux.nl/Scripts/books/8015final/lib0066.html
-
-  local limit
-  local check_format
-  local crn_values
-
-  limit=59
-  check_format=''
-
-  if [[ "$2" = 'hour' ]]; then
-    limit=23
-  fi
-
-  if [[ "$2" = 'day' ]]; then
-    limit=31
-  fi
-
-  if [[ "$2" = 'month' ]]; then
-    limit=12
-  fi
-
-  if [[ "$2" = 'wday' ]]; then
-    limit=7
-  fi
-
-  if [[ "$1" = '*' ]]; then
-    check_format='ok'
-  fi
-
-  if [[ "$1" =~ ^[\*]+[/]+[0-9] ]]; then
-    if [[ "$(echo $1 | cut -f 2 -d /)" -lt ${limit} ]]; then
-      check_format='ok'
-    fi
-  fi
-
-  if [[ "$1" =~ ^[0-9][-|,|0-9]{0,70}[\/][0-9]$ ]]; then
-    check_format='ok'
-    crn_values=${1//,/ }
-    crn_values=${crn_values//-/ }
-    crn_values=${crn_values//\// }
-    for crn_vl in $crn_values; do
-      if [[ ${crn_vl} -gt ${limit} ]]; then
-        check_format='invalid'
-      fi
-    done
-  fi
-
-  crn_values=$(echo "$1" | tr "," " " | tr "-" " ")
-
-  for crn_vl in $crn_values; do
-    if [[ "$crn_vl" =~ ^[0-9]+$ ]] && [ "$crn_vl" -le $limit ]; then
-      check_format='ok'
-      return 0
-    fi
-  done
-
-  if [[ ${check_format} != 'ok' ]]; then
-    check_result "${E_INVALID}" "invalid $2 format :: $1"
-    return 1
-  fi
-
-}
-
-################################################################################
 # Clean up
 #
 # Arguments:
@@ -668,7 +641,8 @@ function die() {
   local msg="${1}"
   local code=${2-1} # default exit status 1
 
-  log_event "info" "${msg}" "false"
+  log_break "true"
+  log_event "critical" "${msg}" "true"
 
   exit "${code}"
 
@@ -711,11 +685,11 @@ function array_to_checklist() {
   i=0
   for option in ${array}; do
 
-    checklist_array[$i]=$option
+    checklist_array[i]=$option
     i=$((i + 1))
-    checklist_array[$i]=" "
+    checklist_array[i]=" "
     i=$((i + 1))
-    checklist_array[$i]=off
+    checklist_array[i]=off
     i=$((i + 1))
 
   done
@@ -861,6 +835,56 @@ function get_all_directories() {
 
   # Return
   echo "${first_level_dir}"
+
+}
+
+################################################################################
+# Sort backup files by date
+#
+# Arguments:
+#   $1= ${files}
+#
+# Outputs:
+#   Array with sorted files
+################################################################################
+
+function sort_files_by_date {
+
+  local -a files=("$@")
+
+  local -a sorted_files
+
+  #log_event "debug" "Running: echo ${files[@]} | tr ' ' '\n' | sort -r -t_ -k3 | tr '\n' ' '" "false"
+
+  sorted_files=($(echo "${files[@]}" | tr ' ' '\n' | sort -r -t_ -k3 | tr '\n' ' '))
+
+  # Return
+  echo "${sorted_files[@]}"
+
+}
+
+################################################################################
+# Sort array alphabetically
+#
+# Arguments:
+#   $1= ${files}
+#
+# Outputs:
+#   Array with sorted files
+################################################################################
+
+function sort_array_alphabetically {
+
+  local -a files=("$@")
+
+  local -a sorted_files
+
+  #log_event "debug" "Running: echo ${files[@]} | tr ' ' '\n' | sort | tr '\n' ' '" "false"
+
+  sorted_files=($(echo "${files[@]}" | tr ' ' '\n' | sort | tr '\n' ' '))
+
+  # Return
+  echo "${sorted_files[@]}"
 
 }
 
@@ -1203,6 +1227,35 @@ function string_remove_special_chars() {
 }
 
 ################################################################################
+# Remove new lines from array
+#
+# Arguments:
+#   ${1} = ${string}
+#
+# Outputs:
+#   string
+################################################################################
+
+function array_remove_newlines() {
+
+  # Declare an empty array to store the cleaned up elements
+  #local -a cleaned_array="${1}"
+  local -a cleaned_array=("$@")
+
+  # Loop through the original array and remove "\n" and "\r" characters from each element
+  for element in "${@}"; do
+    # Use the tr command to remove the "\n" and "\r" characters from each element
+    cleaned_element=$(echo "${element}" | tr -d '\n\r')
+
+    # Append the cleaned element to the new array
+    cleaned_array+=("${cleaned_element}")
+  done
+
+  # Output the cleaned up array
+  echo "${cleaned_array[@]}"
+}
+
+################################################################################
 # Change directory ownership
 #
 # Arguments:
@@ -1433,6 +1486,8 @@ function decompress() {
 
     log_event "info" "${file_path} extracted ok!" "false"
     display --indent 6 --text "- Extracting compressed file" --result "DONE" --color GREEN
+
+    return 0
 
   else
 
@@ -1722,11 +1777,7 @@ function menu_main_options() {
 
       else
 
-        display --indent 2 --text "- Cloudflare support is disabled" --result WARNING --color YELLOW
-        display --indent 4 --text "Configure the api key on brolit_conf.json"
-        log_event "warning" "Cloudflare support is disabled" "false"
-
-        exit 1
+        die "Cloudflare support is disabled. Configure the api key on brolit_conf.json"
 
       fi
 
@@ -1760,7 +1811,7 @@ function menu_main_options() {
 #   nothing
 ################################################################################
 
-function menu_config_changes_detected() {
+function pkg_config_changes_detected() {
 
   local app_setup="${1}"
   local bypass_prompt="${2}"

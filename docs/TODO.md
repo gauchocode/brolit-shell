@@ -42,8 +42,8 @@
 - [ ] Core: Flags should receive a json file to deploy or restore a new project.
 - [ ] Core: On project creation/restore need to ask first the project stage, then project domain.
         If project stage != prod and subdomains is not containing the stage, need to suggest one.
-        Example: test.landing.broobe.net OK
-        Example 2: landing.broobe.net X (OK only if prod).
+        Example: test.landing.gauchocode.net OK
+        Example 2: landing.gauchocode.net X (OK only if prod).
 - [ ] Restore-database: granting privileges to user fails, database_name is empty.
 - [ ] Postgres: Better postgres support. On "DATABASE MANAGEMENT" Menu, add Database Engine selection.
 - [ ] Storage-controller: add function to list directories and files from storage.
@@ -108,7 +108,7 @@
 - [ ] WordPress: Fallback for replace strings on wp database (if wp-cli fails, use old script version).
 - [ ] Installers: Refactor of WORDPRESS_INSTALLER - COPY_FROM_PROJECT
         The idea is that you could create/copy/delete/update different kind of projects (WP, Laravel, React, Composer, Empty)
-        Maybe add this for Laravel: https://gitlab.com/broobe/laravel-boilerplate/-/tree/master
+        Maybe add this for Laravel: https://gitlab.com/gauchocode/laravel-boilerplate/-/tree/master
 - [ ] Installers: COPY_FROM_PROJECT option to exclude uploads directory
         rsync -ax --exclude [relative path to directory to exclude] /path/from /path/to
 - [ ] Server Optimization: Complete the pdf optimization process.

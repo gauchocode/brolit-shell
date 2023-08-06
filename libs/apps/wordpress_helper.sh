@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # WordPress Helper: Perform wordpress actions.
@@ -23,17 +23,16 @@ function wp_download() {
 
   local destination_path=${1}
   local wp_version=${2}
-  
 
   if [[ -z ${wp_version} || ${wp_version} == "latest" ]]; then
 
     # Download latest version
-    ${CURL} "https://wordpress.org/latest.tar.gz" > "${destination_path}/wordpress.tar.gz"
+    ${CURL} "https://wordpress.org/latest.tar.gz" >"${destination_path}/wordpress.tar.gz"
 
   else
 
     # Download specific version
-    ${CURL} "https://wordpress.org/wordpress-${wp_version}.tar.gz" > "${destination_path}/wordpress.tar.gz"
+    ${CURL} "https://wordpress.org/wordpress-${wp_version}.tar.gz" >"${destination_path}/wordpress.tar.gz"
 
   fi
 
@@ -49,7 +48,7 @@ function wp_download() {
 
     log_event "error" "Downloading WordPress ${wp_version}" "false"
     log_event "debug" "Command executed: ${CURL} -O https://wordpress.org/wordpress-${wp_version}.tar.gz" "false"
-    display --indent 6 --text "Downloading WordPress ${wp_version}" --result "FAIL" --color RED
+    display --indent 6 --text "- Downloading WordPress ${wp_version}" --result "FAIL" --color RED
 
     return 1
 
@@ -67,28 +66,40 @@ function wp_download() {
 #  0 if ok, 1 on error.
 ################################################################################
 
-function wp_is_project() {
+function wp_project() {
 
   local project_dir="${1}"
 
-  local is_wp="false"
+  local install_type
 
   log_event "info" "Checking if ${project_dir} is a WordPress project ..." "false"
 
   # Check if it has wp-config.php
   if [[ -f "${project_dir}/wp-config.php" ]]; then
 
-    is_wp="true"
-    log_event "info" "${project_dir} is a WordPress project" "false"
+    install_type="default"
+    log_event "info" "${project_dir} is a ${install_type} WordPress project" "false"
 
     # Return
-    echo "${is_wp}" && return 0
+    echo "${install_type}" && return 0
 
   else
 
-    log_event "info" "${project_dir} is not a WordPress project" "false"
+    if [[ -f "${project_dir}/wordpress/wp-config.php" ]]; then
 
-    return 1
+      install_type="docker"
+      log_event "info" "${project_dir} is a ${install_type} WordPress project" "false"
+
+      # Return
+      echo "${install_type}" && return 0
+
+    else
+
+      log_event "info" "${project_dir} is not a WordPress project" "false"
+
+      return 1
+
+    fi
 
   fi
 
@@ -108,20 +119,51 @@ function wp_config_path() {
 
   local dir_to_search="${1}"
 
-  # Log
-  log_event "info" "Searching WordPress Installation on directory: ${dir_to_search}" "false"
+  local find_output
 
-  # Find where wp-config.php is
-  find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')"
-
-  # Check if directory exists
-  if [[ -d ${find_output} ]]; then
+  if [[ -n "${dir_to_search}" && -d "${dir_to_search}" ]]; then
 
     # Log
-    log_event "debug" "wp-config.php found: ${find_output}" "false"
+    log_event "info" "Searching WordPress Installation on directory: ${dir_to_search}" "false"
 
-    # Return
-    echo "${find_output}" && return 0
+    # Find where wp-config.php is
+    find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')"
+
+    if [[ -z ${find_output} ]]; then
+
+      # Log
+      log_event "warning" "No WordPress Installation found on directory: ${dir_to_search}" "false"
+
+      return 1
+
+    fi
+
+    # If found more thant one directory, print the first one
+    if [[ $(echo "${find_output}" | wc -l) -gt 1 ]]; then
+
+      # Log
+      display --indent 6 --text "- Searching WordPress Installation" --result "WARNING" --color YELLOW
+      display --indent 8 --text "More than one WordPress installation found on directory" --tcolor YELLOW
+      log_event "warning" "Found more than one WordPress Installation on directory: ${dir_to_search}" "false"
+
+      # Print the first one
+      echo "${find_output}" | head -n 1
+
+      return 0
+
+    else
+
+      if [[ $(echo "${find_output}" | wc -l) -eq 1 ]]; then
+
+        # Log
+        log_event "info" "Found WordPress Installation on directory: ${dir_to_search}" "false"
+
+        # Return
+        echo "${find_output}" && return 0
+
+      fi
+
+    fi
 
   else
 
@@ -149,18 +191,17 @@ function wp_config_get_option() {
 
   local wp_value
 
-  # Update wp-config.php
-  log_event "info" "Getting config option value in ${wp_project_dir}/wp-config.php" "false"
+  log_event "info" "Reading config option value in ${wp_project_dir}/wp-config.php" "false"
 
+  # Update wp-config.php
   wp_value="$(cat "${wp_project_dir}/wp-config.php" | grep "${wp_option}" | cut -d \' -f 4)"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 && -n ${wp_value} ]]; then
 
     # Log
-    log_event "info" "Option ${wp_option}=${wp_value}" "false"
-    display --indent 6 --text "- Getting wp-config.php option" --result "DONE" --color GREEN
-    display --indent 8 --text "${wp_option}=${wp_value}" --tcolor GREEN
+    log_event "info" "Reading '${wp_option}' value from wp-config: ${wp_value}" "false"
+    display --indent 6 --text "- Reading ${wp_option} value from wp-config.php" --result "DONE" --color GREEN
 
     # Return
     echo "${wp_value}" && return 0
@@ -168,7 +209,7 @@ function wp_config_get_option() {
   else
 
     # Log
-    log_event "error" "Getting wp-config.php option: ${wp_option}" "false"
+    log_event "error" "Reading '${wp_option}' value from wp-config." "false"
     log_event "debug" "Output: ${wp_value}" "false"
     display --indent 6 --text "- Getting wp-config.php option" --result "FAIL" --color RED
     display --indent 8 --text "Please read the log file" --tcolor RED
@@ -212,17 +253,17 @@ function _wp_config_set_option() {
 
     # Log
     log_event "info" "Setting ${wp_option}=${wp_value}" "false"
-    display --indent 6 --text "- Setting wp-config.php option" --result "DONE" --color GREEN
-    display --indent 8 --text "${wp_option}=${wp_value}" --tcolor GREEN
+    display --indent 6 --text "- Setting ${wp_option} on wp-config.php" --result "DONE" --color GREEN
+    #display --indent 8 --text "Value: ${wp_value}" --tcolor GREEN
 
     return 0
 
   else
 
     # Log
-    log_event "error" "Setting/updating field: ${wp_option}" "false"
+    log_event "error" "Setting ${wp_option} option with value: ${wp_value}" "false"
     log_event "debug" "Output: ${sed_output}" "false"
-    display --indent 6 --text "- Setting wp-config.php option" --result "FAIL" --color RED
+    display --indent 6 --text "- Setting ${wp_option} on wp-config.php" --result "FAIL" --color RED
     display --indent 8 --text "Please read the log file" --tcolor RED
 
     return 1
@@ -235,33 +276,32 @@ function _wp_config_set_option() {
 # Change WordPress directory permissions
 #
 # Arguments:
-#  ${1} = ${project_dir}
+#  ${1} = ${wordpress_dir}
 #
 # Outputs:
 #  None
 ################################################################################
 
-# TODO: check this ref: https://stackoverflow.com/questions/18352682/correct-file-permissions-for-wordpress
-
 function wp_change_permissions() {
 
-  local project_dir="${1}"
+  local wordpress_dir="${1}"
 
   # Change ownership
-  change_ownership "www-data" "www-data" "${project_dir}"
+  change_ownership "www-data" "www-data" "${wordpress_dir}"
 
-  find "${project_dir}" -type d -exec chmod g+s {} \;
+  find "${wordpress_dir}" -type d -exec chmod g+s {} \;
 
-  if [[ -d "${project_dir}/wp-content" ]]; then
+  if [[ -d "${wordpress_dir}/wp-content" ]]; then
 
-    chmod g+w "${project_dir}/wp-content"
-    chmod -R g+w "${project_dir}/wp-content/themes"
-    chmod -R g+w "${project_dir}/wp-content/plugins"
+    # Change directory permissions rwxr-xr-x
+    find "${wordpress_dir}" -type d -exec chmod 755 {} \;
+    # Change file permissions rw-r--r--
+    find "${wordpress_dir}" -type f -exec chmod 644 {} \;
 
   fi
 
-  log_event "info" "Permissions changes for: ${project_dir}" "false"
-  display --indent 6 --text "- Setting default permissions on wordpress" --result "DONE" --color GREEN
+  log_event "info" "Permissions changes for: ${wordpress_dir}" "false"
+  display --indent 6 --text "- Setting default permissions on WordPress" --result "DONE" --color GREEN
 
 }
 
@@ -329,7 +369,7 @@ function wp_replace_string_on_database() {
 
   if [[ -n "${existing_URL}" && -n "${new_URL}" ]]; then
 
-    #mysql_database_export "${chosen_db}" "${chosen_db}_bk_before_replace_urls.sql"
+    #mysql_database_export "${chosen_db}" "false" "${chosen_db}_bk_before_replace_urls.sql"
 
     # Queries
     SQL0="USE ${chosen_db};"
@@ -374,6 +414,7 @@ function wp_replace_string_on_database() {
 #
 # Arguments:
 #  ${1} = ${wp_path}
+#  ${2} = ${project_install_type}
 #
 # Outputs:
 #  None
@@ -383,38 +424,42 @@ function wp_replace_string_on_database() {
 function wp_ask_url_search_and_replace() {
 
   local wp_path="${1}"
+  local project_install_type="${2}"
 
+  local project_name
   local existing_URL
   local new_URL
 
+  log_subsection "WP Replace URLs"
+
   if [[ -z ${existing_URL} ]]; then
 
-    existing_URL="$(whiptail_input "URL TO CHANGE" "Insert the URL you want to change, including http:// or https://" "")"
+    existing_URL="$(whiptail_input "URL To Change" "Insert the URL you want to change, including http:// or https://" "")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
       if [[ -z ${new_URL} ]]; then
 
-        new_URL="$(whiptail_input "THE NEW URL" "Insert the new URL , including http:// or https://" "")"
+        new_URL="$(whiptail_input "New URL" "Insert the new URL , including http:// or https://" "")"
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
           # Create temporary folder for backups
-          if [[ ! -d "${BROLIT_TMP_DIR}/backups" ]]; then
-            mkdir -p "${BROLIT_TMP_DIR}/backups"
-            log_event "info" "Temp files directory created: ${BROLIT_TMP_DIR}/backups" "false"
-          fi
+          [[ ! -d "${BROLIT_TMP_DIR}/backups" ]] && mkdir -p "${BROLIT_TMP_DIR}/backups"
 
           project_name="$(basename "${wp_path}")"
 
-          wpcli_export_database "${wp_path}" "${BROLIT_TMP_DIR}/backups/${project_name}_bk_before_search_and_replace.sql"
+          [[ -z ${project_install_type} ]] && project_install_type="$(project_get_install_type "${wp_path}")"
 
-          wpcli_search_and_replace "${wp_path}" "${existing_URL}" "${new_URL}"
+          # Backup database
+          wpcli_export_database "${wp_path}" "${project_install_type}" "${BROLIT_TMP_DIR}/backups/${project_name}_bk_before_search_and_replace.sql"
+
+          # Run search and replace
+          wpcli_search_and_replace "${wp_path}" "${project_install_type}" "${existing_URL}" "${new_URL}"
 
           exitstatus=$?
-
           # If wp-cli method fails, it will try to replace via SQL Query
           if [[ ${exitstatus} -eq 1 ]]; then
 
@@ -422,6 +467,7 @@ function wp_ask_url_search_and_replace() {
             db_prefix="$(cat "${wp_path}"/wp-config.php | grep "\$table_prefix" | cut -d \' -f 2)"
             target_db="$(sed -n "s/define( *'DB_NAME', *'\([^']*\)'.*/\1/p" "${wp_path}"/wp-config.php)"
 
+            # Run search and replace
             wp_replace_string_on_database "${db_prefix}" "${target_db}" "${existing_URL}" "${new_URL}"
 
           fi

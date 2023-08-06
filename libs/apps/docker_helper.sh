@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # Docker Helper: Perform docker actions.
@@ -23,14 +23,13 @@ function docker_version() {
     local docker_version
     local docker
 
-    docker="$(package_is_installed "docker")"
+    docker="$(package_is_installed "docker.io")"
     if [[ -n ${docker} ]]; then
 
         docker_version="$(docker version --format '{{.Server.Version}}')"
 
-        echo "${docker_version}"
+        echo "${docker_version}" && return 0
 
-        return 0
     else
 
         return 1
@@ -40,7 +39,7 @@ function docker_version() {
 }
 
 ################################################################################
-# Get docker-compose version.
+# Get docker-compose version
 #
 # Arguments:
 #   none
@@ -71,6 +70,230 @@ function docker_compose_version() {
 }
 
 ################################################################################
+# Execute a docker-compose pull
+#
+# Arguments:
+#   ${1} - ${compose_file}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function docker_compose_pull() {
+
+    local compose_file="${1}"
+
+    # Execute docker-compose command
+    ## Options:
+    ##    -f, --force   Don't ask to confirm removal
+    ##    -s, --stop    Stop the containers, if required, before removing
+    ##    -v            Remove any anonymous volumes attached to containers
+    docker-compose -f "${compose_file}" pull >/dev/null 2>&1
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        log_event "info" "Docker stack pulled ok" "false"
+        display --indent 6 --text "- Pulling docker stack images" --result "DONE" --color GREEN
+
+        return 0
+
+    else
+
+        # Log
+        log_event "error" "Docker stack pull failed" "false"
+        display --indent 6 --text "- Pulling docker stack images" --result "FAIL" --color RED
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Execute a docker-compose up
+#
+# Arguments:
+#   ${1} - ${compose_file}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function docker_compose_up() {
+
+    local compose_file="${1}"
+
+    local exitstatus
+
+    # Log
+    display --indent 6 --text "- Starting docker stack ..."
+    log_event "debug" "Running: docker-compose -f ${compose_file} up --detach" "false"
+
+    # Execute docker-compose command
+    docker-compose -f "${compose_file}" up --detach >/dev/null 2>&1
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        clear_previous_lines "1"
+        display --indent 6 --text "- Starting docker stack ..." --result "DONE" --color GREEN
+        log_event "info" "Docker stack started" "false"
+
+        return 0
+
+    else
+
+        # Log
+        clear_previous_lines "1"
+        display --indent 6 --text "- Starting docker stack ..." --result "FAIL" --color RED
+        log_event "error" "Docker stack start failed" "false"
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Execute a docker-compose build
+#
+# Arguments:
+#   ${1} - ${compose_file}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function docker_compose_build() {
+
+    local compose_file="${1}"
+
+    local exitstatus
+
+    # Log
+    display --indent 6 --text "- Restoring docker stack ..."
+    log_event "debug" "Running: docker-compose -f ${compose_file} pull --quiet" "false"
+
+    # Execute docker-compose command
+    docker-compose -f "${compose_file}" pull --quiet
+    [[ $? -eq 1 ]] && return 1
+
+    # Log
+    log_event "debug" "Running: docker-compose -f ${compose_file} up --detach --build" "false"
+
+    # Execute docker-compose command
+    docker-compose -f "${compose_file}" up --detach --build >/dev/null 2>&1
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        clear_previous_lines "1"
+        display --indent 6 --text "- Restore docker stack ..." --result "DONE" --color GREEN
+        log_event "info" "Docker stack restored" "false"
+
+        return 0
+
+    else
+
+        # Log
+        clear_previous_lines "1"
+        display --indent 6 --text "- Restore docker stack ..." --result "FAIL" --color RED
+        log_event "error" "Docker stack restore failed" "false"
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Execute a docker-compose stop
+#
+# Arguments:
+#   ${1} - ${compose_file}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function docker_compose_stop() {
+
+    local compose_file="${1}"
+
+    # Execute docker-compose command
+    ## Options:
+    ##    -f, --force   Don't ask to confirm removal
+    ##    -s, --stop    Stop the containers, if required, before removing
+    ##    -v            Remove any anonymous volumes attached to containers
+    docker-compose -f "${compose_file}" stop >/dev/null 2>&1
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        log_event "info" "Docker stack stopped" "false"
+        display --indent 6 --text "- Stop docker stack ..." --result "DONE" --color GREEN
+
+        return 0
+
+    else
+
+        # Log
+        log_event "error" "Docker stack stop failed" "false"
+        display --indent 6 --text "- Stop docker stack ..." --result "FAIL" --color RED
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Execute a docker-compose rm
+#
+# Arguments:
+#   ${1} - ${compose_file}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function docker_compose_delete() {
+
+    local compose_file="${1}"
+
+    # Execute docker-compose command
+    ##    -f, --force   Don't ask to confirm removal
+    ##    -v            Remove any anonymous volumes attached to containers
+
+    docker-compose -f "${compose_file}" rm --volumes --remove-orphans >/dev/null 2>&1
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        log_event "info" "Docker stack deleted" "false"
+        display --indent 6 --text "- Delete docker stack ..." --result "DONE" --color GREEN
+
+        return 0
+
+    else
+
+        # Log
+        log_event "error" "Docker stack delete failed" "false"
+        display --indent 6 --text "- Delete docker stack ..." --result "FAIL" --color RED
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
 # List docker containers.
 #
 # Arguments:
@@ -90,9 +313,7 @@ function docker_list_containers() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        echo "${docker_containers}"
-
-        return 0
+        echo "${docker_containers}" && return 0
 
     else
 
@@ -124,9 +345,7 @@ function docker_stop_container() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        echo "${docker_stop_container}"
-
-        return 0
+        echo "${docker_stop_container}" && return 0
 
     else
 
@@ -156,9 +375,7 @@ function docker_list_images() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        echo "${docker_images}"
-
-        return 0
+        echo "${docker_images}" && return 0
 
     else
 
@@ -187,6 +404,7 @@ function docker_get_container_id() {
     container_id="$(docker ps | grep "${image_name}" | awk '{print $1;}')"
 
     if [[ -n ${container_id} ]]; then
+
         # Return
         echo "${container_id}" && return 0
 
@@ -220,9 +438,7 @@ function docker_delete_image() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        echo "${docker_delete_image}"
-
-        return 0
+        echo "${docker_delete_image}" && return 0
 
     else
 
@@ -245,112 +461,6 @@ function docker_delete_image() {
 function docker_system_prune() {
 
     echo "Docker system prune: $(docker system prune)"
-
-}
-
-################################################################################
-# Docker WordPress install.
-#
-# Arguments:
-#   ${1} = ${project_path}
-#   ${2} = ${project_domain}
-#   ${3} = ${project_name}
-#   ${4} = ${project_stage}
-#   ${5} = ${project_root_domain}         # Optional
-#   ${6} = ${docker_compose_template}     # Optional
-#
-# Outputs:
-#   0 if ok, 1 on error.
-################################################################################
-
-# TODO: Deprecated
-
-function docker_wordpress_install() {
-
-    local project_path="${1}"
-    local project_domain="${2}"
-    local project_name="${3}"
-    local project_stage="${4}"
-    local project_root_domain="${5}"
-    local docker_wp_port="${6}"
-    local docker_compose_template="${7}"
-
-    local env_file
-
-    log_subsection "WordPress Install (Docker)"
-
-    # First checks
-    ## Directory
-    if [[ -d ${project_path} ]]; then
-        log_event "error" "Project directory already exists." "false"
-        return 1
-    fi
-    ## Local Port
-    network_port_is_use "${docker_wp_port}"
-    if [[ ${exitstatus} -eq 0 ]]; then
-        log_event "error" "Can't use port ${docker_wp_port}. Please choose another one." "false"
-        return 1
-    fi
-
-    # Create directory structure
-    mkdir -p "${project_path}"
-    log_event "info" "Working directory: ${project_path}" "false"
-
-    # Copy docker-compose template files
-    cp "${BROLIT_MAIN_DIR}/config/docker-compose/wordpress/.env" "${project_path}"
-    cp "${BROLIT_MAIN_DIR}/config/docker-compose/wordpress/docker-compose.yml" "${project_path}"
-
-    # Replace variables on .env file
-    env_file="${project_path}/.env"
-    compose_file="${project_path}/docker-compose.yml"
-
-    # Setting WP_PORT
-    log_event "debug" "Setting WP_PORT=${docker_wp_port}" "false"
-    sed -ie "s|^WP_PORT=.*$|WP_PORT=${docker_wp_port}|g" "${env_file}"
-
-    # Setting COMPOSE_PROJECT_NAME (Stack Name)
-    log_event "debug" "Setting COMPOSE_PROJECT_NAME=${project_name}_stack" "false"
-    sed -ie "s|^COMPOSE_PROJECT_NAME=.*$|COMPOSE_PROJECT_NAME=${project_name}_stack|g" "${env_file}"
-
-    # Setting PROJECT_NAME
-    log_event "debug" "Setting PROJECT_NAME=${project_name}" "false"
-    sed -ie "s|^PROJECT_NAME=.*$|PROJECT_NAME=${project_name}|g" "${env_file}"
-
-    # Setting PROJECT_DOMAIN
-    log_event "debug" "Setting PROJECT_DOMAIN=${project_domain}" "false"
-    sed -ie "s|^PROJECT_DOMAIN=.*$|PROJECT_DOMAIN=${project_domain}|g" "${env_file}"
-
-    # Setting PHPMYADMIN_DOMAIN
-    log_event "debug" "Setting PHPMYADMIN_DOMAIN=db.${project_domain}" "false"
-    sed -ie "s|^PHPMYADMIN_DOMAIN=.*$|PHPMYADMIN_DOMAIN=db.${project_domain}|g" "${env_file}"
-
-    # TODO: replace
-    #### MYSQL_DATABASE=db_name
-    #### MYSQL_USER=db_user
-    #### MYSQL_PASSWORD=db_user_pass
-    #### MYSQL_ROOT_PASSWORD='root_pass'
-    #### MYSQL_DATA_DIR=./mysql_data
-
-    # Run docker-compose commands
-    docker-compose -f "${compose_file}" pull
-    docker-compose -f "${compose_file}" up -d
-
-    # TODO:
-    ## 1- Create new nginx with proxy config.
-    ## 2- Update cloudflare DNS entries.
-    ## 3- Run certbot.
-    ## 4- Make changes on .htaccess
-    ### Add this lines:
-    ##### php_value upload_max_filesize 600M
-    ##### php_value post_max_size 600M
-    ## 5- Make changes on wp-config.php
-    ### At this lines at the top of the file (${DOMAIN} should be replaced):
-    ##### define('FORCE_SSL_ADMIN', true);
-    ##### define('FORCE_SSL_LOGIN', true);
-    ##### if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https'){ $_SERVER['HTTPS']='on'; }
-    ##### define('WP_HOME','https://${DOMAIN}/');
-    ##### define('WP_SITEURL','https://${DOMAIN}/');
-    ## 5- Create brolit project config.
 
 }
 
@@ -411,9 +521,6 @@ function docker_mysql_database_export() {
     # Docker command
     docker exec -i "${container_name}" mysqldump -u"${mysql_user}" -p"${mysql_user_passw}" "${mysql_database}" >"${dump_file}"
 
-    # Docker logs
-    #docker logs wordpress
-
 }
 
 ################################################################################
@@ -442,9 +549,10 @@ function docker_project_files_import() {
 
     rand="$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)"
     project_backup_path="${BROLIT_MAIN_DIR}/tmp/${rand}"
+
     mkdir -p "${project_backup_path}"
 
-    decompress "${project_backup_file}" "${project_backup_path}" "lbzip2"
+    decompress "${project_backup_file}" "${project_backup_path}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
 
     # Get inner directory (should be only one)
     inner_dir="$(get_all_directories "${project_backup_path}")"
@@ -467,11 +575,181 @@ function docker_project_files_import() {
 
 }
 
+function docker_restore_project() {
+
+    local backup_to_restore="${1}"
+    local backup_status="${2}"
+    local backup_server="${3}"
+    local project_domain="${4}"
+    local project_domain_new="${5}"
+
+    # Extract backup
+    decompress "${BROLIT_TMP_DIR}/${backup_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+    [[ $? -eq 1 ]] && display --indent 6 --text "- Extracting Project Backup" --result "ERROR" --color RED && return 1
+
+    # Check project install type
+    project_install_type="$(project_get_install_type "${BROLIT_TMP_DIR}/${project_domain}")"
+    [[ -z ${project_install_type} ]] && display --indent 6 --text "- Checking Project Install Type" --result "ERROR" --color RED && return 1
+
+    # If project_install_type="default" ...
+    if [[ ${project_install_type} == "docker"* ]]; then
+        # Log error
+        log_event "error" "Downloaded project already is a docker project" "false"
+        display --indent 6 --text "- Downloaded project already is a docker project" --result "ERROR" --color RED
+        return 1
+    fi
+
+    # Get project type
+    project_type="$(project_get_type "${BROLIT_TMP_DIR}/${project_domain}")"
+    [[ -z ${project_type} ]] && display --indent 6 --text "- Checking Project Type" --result "ERROR" --color RED && return 1
+
+    # If directory already exist
+    if [[ -d ${PROJECTS_PATH}/${project_domain} ]]; then
+
+        # Warning message
+        whiptail --title "Warning" --yesno "A docker project already exist for this domain. Do you want to restore the current backup on this docker stack? A backup of current directory will be stored on BROLIT tmp folder." 10 60 3>&1 1>&2 2>&3
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+            # Backup old project
+            _create_tmp_copy "${PROJECTS_PATH}/${project_domain}" "copy"
+            got_error=$?
+            [[ ${got_error} -eq 1 ]] && return 1
+
+        else
+
+            # Log
+            log_event "info" "The project directory already exist. User skipped operation." "false"
+            display --indent 6 --text "- Restore files" --result "SKIPPED" --color YELLOW
+
+            return 1
+
+        fi
+
+    fi
+
+    # Create new docker-compose stack for the ${project_domain} and ${project_type}
+    docker_project_install "${PROJECTS_PATH}" "${project_type}" "${project_domain}"
+    exitstatus=$?
+    [[ ${exitstatus} -eq 1 ]] && return 1
+
+    # TODO
+    # WARNING: ONLY WORKS ON WORDPRESS PROJECTS
+    if [[ ${project_type} == "wordpress" ]]; then
+        # Make a copy of wp-config.php
+        cp "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php" "${PROJECTS_PATH}/${project_domain}/wp-config.php"
+
+        # Remove actual WordPress files
+        rm -R "${PROJECTS_PATH}/${project_domain}/wordpress"
+
+        # Move project files to wordpress folder
+        move_files "${BROLIT_TMP_DIR}/${project_domain}" "${PROJECTS_PATH}/${project_domain}/wordpress"
+        [[ $? -eq 1 ]] && display --indent 6 --text "- Import files into docker volume" --result "ERROR" --color RED && return 1
+        display --indent 6 --text "- Import files into docker volume" --result "DONE" --color GREEN
+
+        # Make a copy of wp-config.php
+        cp "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php" "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php.bak"
+        # Move previous wp-config.php to project root
+        mv "${PROJECTS_PATH}/${project_domain}/wp-config.php" "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php"
+
+        # If .user.ini found, rename it (Wordfence issue workaround)
+        [[ -f "${PROJECTS_PATH}/${project_domain}/wordpress/.user.ini" ]] && mv "${PROJECTS_PATH}/${project_domain}/wordpress/.user.ini" "${PROJECTS_PATH}/${project_domain}/wordpress/.user.ini.bak"
+    fi
+
+    # Need refactor
+    if [[ ${project_type} != "wordpress" ]]; then
+
+        # Remove actual files
+        rm -R "${PROJECTS_PATH}/${project_domain}/application"
+
+        # Move project files to application folder
+        move_files "${BROLIT_TMP_DIR}/${project_domain}" "${PROJECTS_PATH}/${project_domain}/application"
+
+    fi
+
+    # TODO: update this to match monthly and weekly backups
+    project_name="$(project_get_name_from_domain "${project_domain}")"
+    project_stage="$(project_get_stage_from_domain "${project_domain}")"
+
+    db_name="${project_name}_${project_stage}"
+    #new_project_domain="${project_domain}"
+
+    # TODO: same code as in restore_project_backup! Maybe create a function for this
+
+    # Get backup rotation type (daily, weekly, monthly)
+    backup_rotation_type="$(backup_get_rotation_type "${backup_to_restore}")"
+
+    # Get backup date
+    project_backup_date="$(backup_get_date "${backup_to_restore}")"
+
+    ## Check ${backup_rotation_type}
+    if [[ ${backup_rotation_type} == "daily" ]]; then
+        db_to_restore="${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+    else
+        db_to_restore="${db_name}_database_${project_backup_date}-${backup_rotation_type}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+    fi
+
+    # Database backup full remote path
+    db_to_download="${backup_server}/projects-${backup_status}/database/${db_name}/${db_to_restore}"
+
+    db_to_restore="${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+    project_backup="${db_to_restore%%.*}.sql"
+
+    # Downloading Database Backup
+    storage_download_backup "${db_to_download}" "${BROLIT_TMP_DIR}"
+
+    # Decompress
+    decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+
+    # Change permissions
+    wp_change_permissions "${PROJECTS_PATH}/${project_domain}/wordpress"
+
+    # Read .env to get mysql pass
+    db_user_pass="$(project_get_config_var "${PROJECTS_PATH}/${project_domain}/.env" "MYSQL_PASSWORD")"
+
+    # Docker MySQL database import
+    docker_mysql_database_import "${project_name}_mysql" "${project_name}_user" "${db_user_pass}" "${project_name}_prod" "${BROLIT_TMP_DIR}/${project_backup}"
+
+    display --indent 6 --text "- Import database into docker volume" --result "DONE" --color GREEN
+
+    # Read wp-config to get WP DATABASE PREFIX and replace on docker .env file
+    #database_prefix_to_restore="$(wp_config_get_option "${BROLIT_TMP_DIR}/${chosen_project}" "table_prefix")"
+    database_prefix_to_restore="$(cat "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php.bak" | grep "\$table_prefix" | cut -d \' -f 2)"
+    if [[ -n ${database_prefix_to_restore} ]]; then
+        # Set restored $table_prefix on wp-config.php file
+        sed -i "s/\$table_prefix = 'wp_'/\$table_prefix = '${database_prefix_to_restore}'/g" "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php"
+        # Execute docker-compose command
+        ## Options:
+        ##    -f, --force   Don't ask to confirm removal
+        ##    -s, --stop    Stop the containers, if required, before removing
+        ##    -v            Remove any anonymous volumes attached to containers
+        docker-compose -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" rm --force -v --stop
+        # Rebuild docker image
+        docker-compose -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" up --detach
+        # Clear screen output
+        clear_previous_lines "15"
+    fi
+
+    # Show final console message
+    display --indent 6 --text "- Restore and dockerize project" --result "DONE" --color GREEN
+    #log_break "true"
+    echo "    *****************************************************************"
+    echo "    *                                                               *"
+    echo "    *  Project ${project_domain} was restored successfully!           "
+    echo "    *                                                               *"
+    echo "    *  Now you can delete the project from the old server.            "
+    echo "    *                                                               *"
+    echo "    *****************************************************************"
+
+}
+
 ################################################################################
 # Docker create new project install
 # Arguments:
-#   ${1} = ${dir_path}
+#   ${1} = ${project_domain}
 #   ${2} = ${project_type}
+#   ${3} = ${dir_path}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -481,6 +759,7 @@ function docker_project_install() {
 
     local dir_path="${1}"
     local project_type="${2}"
+    local project_domain="${3}"
 
     local project_path
     local port_available
@@ -537,14 +816,14 @@ function docker_project_install() {
     fi
 
     # Project Port (docker internal)
-    ## Will find the next port available from 81 to 200
-    port_available="$(network_next_available_port "81" "200")"
+    ## Will find the next port available from 81 to 250
+    port_available="$(network_next_available_port "81" "350")"
 
     # TODO: Only for wordpress/laravel/php projects
     # PHP Version
     # Whiptail menu to ask php version to work with
-    php_versions="7.4 8.1"
-    php_version="$(whiptail --title "PHP Version" --menu "Choose a PHP version for the Docker container:" 20 78 10 $(for x in ${php_versions}; do echo "$x [X]"; done) --default-item "7.4" 3>&1 1>&2 2>&3)"
+    php_versions="7.4 8.0 8.1 8.2"
+    php_version="$(whiptail_selection_menu "PHP Version" "Choose a PHP version for the Docker container:" "${php_versions}" "7.4")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 1 ]]; then
@@ -568,8 +847,11 @@ function docker_project_install() {
 
         # Download Wordpress on project directory
         wp_download "${project_path}" ""
+        [[ $? -eq 1 ]] && return 1
+
         # Decompress Wordpress files
         decompress "${project_path}/wordpress.tar.gz" "${project_path}" ""
+        [[ $? -eq 1 ]] && return 1
 
         # Replace .env vars
         local wp_port="${port_available}"
@@ -617,7 +899,8 @@ function docker_project_install() {
 
             # Log
             wait 2
-            clear_previous_lines "7"
+            #clear_previous_lines "7"
+            clear_previous_lines "22"
             log_event "info" "Downloading docker images." "false"
             log_event "info" "Building docker images." "false"
             display --indent 6 --text "- Downloading docker images" --result "DONE" --color GREEN
@@ -641,26 +924,37 @@ function docker_project_install() {
             project_set_configured_database_user "${project_path}" "wordpress" "docker" "${project_database_user}"
             project_set_configured_database_userpassw "${project_path}" "wordpress" "docker" "${project_database_user_passw}"
 
-            # TODO: wp table prefix?
-
             # Add specific docker installation values on wp-config.php
-            echo "define('FORCE_SSL_ADMIN', true);" >>"${project_path}/wordpress/wp-config.php"
-            echo "if (strpos(\$_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false){" >>"${project_path}/wordpress/wp-config.php"
-            echo "  \$_SERVER['HTTPS'] = 'on';" >>"${project_path}/wordpress/wp-config.php"
-            echo "  \$_SERVER['SERVER_PORT'] = 443;" >>"${project_path}/wordpress/wp-config.php"
-            echo "}" >>"${project_path}/wordpress/wp-config.php"
-            echo "if (isset(\$_SERVER['HTTP_X_FORWARDED_HOST'])) {" >>"${project_path}/wordpress/wp-config.php"
-            echo "  \$_SERVER['HTTP_HOST'] = \$_SERVER['HTTP_X_FORWARDED_HOST'];" >>"${project_path}/wordpress/wp-config.php"
-            echo "}" >>"${project_path}/wordpress/wp-config.php"
-            echo "define('WP_HOME','https://${project_domain}/');" >>"${project_path}/wordpress/wp-config.php"
-            echo "define('WP_SITEURL','https://${project_domain}/');" >>"${project_path}/wordpress/wp-config.php"
+            ## Write wp-config.php after the first line
+            sed -ie "2i \
+/** Sets up HTTPS and other needed vars to let WordPress works behind a Proxy */\n\
+define('FORCE_SSL_ADMIN', true);\n\
+define('FORCE_SSL_LOGIN', true);\n\
+if (isset(\$_SERVER['HTTP_X_FORWARDED_PROTO']) && \$_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https') { \n\
+    \$_SERVER['HTTPS']='on';\n\
+    \$_SERVER['SERVER_PORT']=443;\n\
+}\n\
+if (isset(\$_SERVER['HTTP_X_FORWARDED_HOST'])) {\n\
+    \$_SERVER['HTTP_HOST'] = \$_SERVER['HTTP_X_FORWARDED_HOST'];\n\
+}\n\
+define('WP_HOME','https://${project_domain}/');\n\
+define('WP_SITEURL','https://${project_domain}/');\n\
+define('DISALLOW_FILE_EDIT', true);\n\
+define('FS_METHOD', 'direct');\n\
+define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
+
+            # TODO: change wp table prefix
+
+            # Change permissions
+            wp_change_permissions "${project_path}/wordpress"
+
+            # Remove tmp file
+            rm "${project_path}/wordpress/wp-config.phpe"
 
             # Log
             log_event "info" "Making changes on wp-config.php to work with nginx proxy on host." "false"
             display --indent 6 --text "- Making changes on wp-config.php" --result "DONE" --color GREEN
 
-            # Execute function
-            #wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}" "${project_install_mode}"
         fi
 
         ;;
@@ -673,7 +967,7 @@ function docker_project_install() {
         #
         #        ;;
         #
-    php)
+    php | laravel)
 
         # Create project directory
         mkdir -p "${project_path}"
@@ -722,15 +1016,13 @@ function docker_project_install() {
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # Log
-            wait 2
-            clear_previous_lines "6"
-            log_event "info" "Downloading docker images." "false"
-            log_event "info" "Building docker images." "false"
+            #wait 2
+            clear_previous_lines "7"
+            log_event "info" "Downloading docker images" "false"
+            log_event "info" "Building docker images" "false"
             display --indent 6 --text "- Downloading docker images" --result "DONE" --color GREEN
             display --indent 6 --text "- Building docker images" --result "DONE" --color GREEN
 
-            # Execute function
-            #wordpress_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}" "${project_install_mode}"
         fi
 
         ;;

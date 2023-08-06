@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # WordPress Installer: WordPress installer functions.
@@ -104,22 +104,16 @@ function wordpress_project_install() {
     change_ownership "www-data" "www-data" "${project_path}"
 
   else
-    # Log
-    display --indent 6 --text "- Creating WordPress project" --result "FAIL" --color RED
-    display --indent 8 --text "Destination folder '${project_path}' already exist"
-    log_event "error" "Destination folder '${project_path}' already exist, aborting ..." "false"
-
-    exit 1
+    # Die
+    die "Destination folder '${project_path}' already exist, aborting ..."
 
   fi
 
-  wp_change_permissions "${project_path}"
-
   # Create database and user
-  db_project_name="$(mysql_name_sanitize "${project_name}")"
+  db_project_name="$(database_name_sanitize "${project_name}")"
   database_name="${db_project_name}_${project_stage}"
   database_user="${db_project_name}_user"
-  database_user_passw=$(openssl rand -hex 12)
+  database_user_passw="$(openssl rand -hex 12)"
 
   mysql_database_create "${database_name}"
   mysql_user_create "${database_user}" "${database_user_passw}" "localhost"
@@ -128,6 +122,9 @@ function wordpress_project_install() {
   # Download WordPress
   wpcli_core_download "${project_path}" ""
   [[ $? -eq 1 ]] && return 1
+
+  # Set default wp permissions
+  wp_change_permissions "${project_path}"
 
   # Create wp-config.php
   wpcli_create_config "${project_path}" "${database_name}" "${database_user}" "${database_user_passw}" "es_ES"
@@ -204,7 +201,7 @@ function wordpress_project_copy() {
   wp_change_permissions "${project_dir}"
 
   # Create database and user
-  db_project_name="$(mysql_name_sanitize "${project_name}")"
+  db_project_name="$(database_name_sanitize "${project_name}")"
   database_name="${db_project_name}_${project_stage}"
   database_user="${db_project_name}_user"
   database_user_passw="$(openssl rand -hex 12)"
@@ -225,7 +222,7 @@ function wordpress_project_copy() {
   bk_file="db-${db_tocopy}.sql"
 
   # Make a database Backup
-  mysql_database_export "${db_tocopy}" "${BROLIT_TMP_DIR}/${bk_file}"
+  mysql_database_export "${db_tocopy}" "false" "${BROLIT_TMP_DIR}/${bk_file}"
   mysql_database_export_result=$?
   if [[ ${mysql_database_export_result} -eq 0 ]]; then
 
@@ -233,15 +230,15 @@ function wordpress_project_copy() {
     target_db="${project_name}_${project_stage}"
 
     # Importing dump file
-    mysql_database_import "${target_db}" "${BROLIT_TMP_DIR}/${bk_file}"
+    mysql_database_import "${target_db}" "false" "${BROLIT_TMP_DIR}/${bk_file}"
 
     # Generate WP tables PREFIX
     tables_prefix="$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)"
     # Change WP tables PREFIX
-    wpcli_db_change_tables_prefix "${project_dir}" "${tables_prefix}"
+    wpcli_db_change_tables_prefix "${project_dir}" "default" "${tables_prefix}"
 
     # WP Search and Replace URL
-    wp_ask_url_search_and_replace "${project_dir}"
+    wp_ask_url_search_and_replace "${project_dir}" ""
 
   else
 
@@ -250,7 +247,7 @@ function wordpress_project_copy() {
   fi
 
   # Set WP salts
-  wpcli_set_salts "${project_dir}"
+  wpcli_shuffle_salts "${project_dir}" "default"
 
   # If domain contains www, should work without www too
   common_subdomain='www'
@@ -272,6 +269,9 @@ function wordpress_project_copy() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
+        # Wait 2 seconds for DNS update
+        sleep 2
+        # Let's Encrypt
         certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain},${project_root_domain}"
         [[ $? -eq 0 ]] && nginx_server_add_http2_support "${project_domain}"
 
@@ -306,6 +306,8 @@ function wordpress_project_copy() {
           cert_project_domain="$(whiptail --title "CERTBOT MANAGER" --inputbox "Do you want to install a SSL Certificate on the domain?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
           exitstatus=$?
           if [[ ${exitstatus} -eq 0 ]]; then
+            # Wait 2 seconds for DNS update
+            sleep 2
             # Install certificate and add http2 support
             certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${cert_project_domain}"
             [[ $? -eq 0 ]] && nginx_server_add_http2_support "${project_domain}"

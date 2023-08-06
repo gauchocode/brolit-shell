@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 
 # Version
-SCRIPT_VERSION="3.2.7"
-ALIASES_VERSION="3.2.7-099"
+SCRIPT_VERSION="3.3.2"
+ALIASES_VERSION="3.3.2-099"
 
 ################################################################################
 

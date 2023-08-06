@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # Telegram Notification Helper: Perform Telegram actions.
@@ -19,7 +19,6 @@
 # Outputs:
 #   0 if ok, 1 on error.
 ################################################################################
-#
 
 function telegram_send_notification() {
 
@@ -46,8 +45,24 @@ function telegram_send_notification() {
 	notif_sound=0
 	[[ ${notification_type} -eq 1 ]] && notif_sound=1
 
+	# Replace all <br/> occurrences with "%0A"
+	notification_content="${notification_content//<br\/>/%0A}"
+	# Replace all \n occurrences with "%0A"
+	notification_content="${notification_content//\\n/%0A}"
+
+	# Check ${notification_content} length
+	if [[ ${#notification_content} -gt 60 ]]; then
+
+		# Log
+		log_event "warning" "Telegram notification content too long, truncating ..." "false"
+
+		# Truncate 90 characters
+		notification_content="${notification_content:0:90}"
+
+	fi
+
 	# Notification text
-	notif_text="<b>${notification_title}: </b>${notification_content}"
+	notif_text="<b>${notification_title}:</b>${notification_content}"
 
 	# Log
 	log_event "info" "Sending Telegram notification ..." "false"

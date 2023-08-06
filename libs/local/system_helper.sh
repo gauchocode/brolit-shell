@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # System Helper: Perform system actions.
@@ -12,6 +12,7 @@
 # Enable system automatic updates
 # Ref:
 #   https://www.linuxbabe.com/ubuntu/automatic-security-update-unattended-upgrades-ubuntu
+#   https://www.digitalocean.com/community/tutorials/how-to-keep-ubuntu-20-04-servers-updated
 #
 # Arguments:
 #   none
@@ -122,6 +123,7 @@ function system_change_current_ssh_port() {
 
     local current_ssh_port
 
+    # Log
     log_subsection "Change SSH Port"
     log_event "info" "Trying to change current SSH port" "false"
 
@@ -141,9 +143,9 @@ function system_change_current_ssh_port() {
     # Restart ssh service
     service ssh restart
 
+    # Log
     log_event "info" "SSH service restarted" "false"
     display --indent 6 --text "- Restarting ssh service" --result "DONE" --color GREEN
-
     log_event "info" "New SSH port: ${new_ssh_port}" "false"
     display --indent 8 --text "- New SSH port: ${new_ssh_port}"
 

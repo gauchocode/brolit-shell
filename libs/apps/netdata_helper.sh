@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # Netdata Helper
@@ -11,6 +11,8 @@
 ################################################################################
 
 function netdata_alerts_disable() {
+
+    local netdata_api_key
 
     # Doc: https://learn.netdata.cloud/docs/agent/web/api/health
 
@@ -33,6 +35,8 @@ function netdata_alerts_disable() {
 }
 
 function netdata_alerts_enable() {
+
+    local netdata_api_key
 
     # Doc: https://learn.netdata.cloud/docs/agent/web/api/health
 
