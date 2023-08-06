@@ -2232,7 +2232,7 @@ function brolit_configuration_load() {
     fi
 
     ## DNS
-
+    
     ### Cloudflare
     _brolit_configuration_load_cloudflare "${server_config_file}"
 
@@ -2278,6 +2278,15 @@ function brolit_configuration_load() {
     _brolit_configuration_load_netdata "${server_config_file}"
     _brolit_configuration_load_netdata_agent "${server_config_file}"
 
+    ### grafana
+    _brolit_configuration_load_grafana "${server_config_file}"
+    
+    ### loki
+    _brolit_configuration_load_loki "${server_config_file}"
+
+    ### promtail
+    _brolit_configuration_load_promtail "${server_config_file}"
+
     ### cockpit
     _brolit_configuration_load_cockpit "${server_config_file}"
 
@@ -2286,6 +2295,8 @@ function brolit_configuration_load() {
 
     ### portainer
     _brolit_configuration_load_portainer "${server_config_file}"
+
+    ### portainer agent
     _brolit_configuration_load_portainer_agent "${server_config_file}"
 
     ### mailcow
