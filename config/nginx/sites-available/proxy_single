@@ -4,9 +4,9 @@ server {
 
     server_name domain.com;
 
+    # Log
     access_log off;
-
-    #error_log /var/log/nginx/domain.com.error.log debug;
+    error_log /var/log/nginx/domain.com.error.log;
 
     keepalive_timeout    70;
     client_max_body_size 50m;
@@ -21,8 +21,9 @@ server {
 		proxy_set_header   X-Forwarded-Host $server_name;
 		proxy_set_header   X-Forwarded-Proto https;
 		proxy_set_header   Upgrade $http_upgrade;
-		proxy_set_header   Connection "upgrade";
-		proxy_read_timeout 86400;
+        #proxy_set_header   Connection "upgrade";
+        proxy_set_header   Connection "";
+        proxy_read_timeout 86400;
     }
 
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 #############################################################################
 
 function test_wpcli_helper_funtions() {
@@ -17,7 +17,7 @@ function test_wpcli_helper_funtions() {
     project_path="${PROJECTS_PATH}/${project_domain}"
 
     # Create mock project
-    db_project_name=$(mysql_name_sanitize "${project_name}")
+    db_project_name=$(database_name_sanitize "${project_name}")
     database_name="${db_project_name}_${project_stage}"
     database_user="${db_project_name}_user"
     database_user_passw="$(openssl rand -hex 12)"
@@ -40,7 +40,7 @@ function test_wpcli_helper_funtions() {
 
     #test_wpcli_db_get_prefix "${PROJECTS_PATH}/${project_domain}"
 
-    #test_wpcli_db_change_tables_prefix "${PROJECTS_PATH}/${project_domain}"
+    #test_wpcli_db_change_tables_prefix "${PROJECTS_PATH}/${project_domain}" "default"
 
     #test_wpcli_db_get_prefix "${PROJECTS_PATH}/${project_domain}"
 
@@ -105,11 +105,11 @@ function test_is_wp_project() {
 
     log_subsection "Test: test_is_wp_project"
 
-    result="$(wp_is_project "${project_path}")"
+    result="$(wp_project "${project_path}")"
     if [[ ${result} = "true" ]]; then
-        display --indent 6 --text "- wp_is_project result ${result}" --result "PASS" --color WHITE
+        display --indent 6 --text "- wp_project result ${result}" --result "PASS" --color WHITE
     else
-        display --indent 6 --text "- wp_is_project" --result "FAIL" --color RED
+        display --indent 6 --text "- wp_project" --result "FAIL" --color RED
         display --indent 6 --text "result: ${result}" --tcolor RED
     fi
 

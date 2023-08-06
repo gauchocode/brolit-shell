@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # Postgres Helper: Perform postgres actions.
@@ -73,9 +73,7 @@ function postgres_ask_user_db_scope() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Return
-        echo "${db_scope}"
-
-        return 0
+        echo "${db_scope}" && return 0
 
     else
         return 1
@@ -106,12 +104,10 @@ function postgres_ask_database_selection() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        log_event "debug" "Setting chosen_db=${chosen_db}"
+        log_event "debug" "Setting chosen_db=${chosen_db}" "false"
 
         # Return
-        echo "${chosen_db}"
-
-        return 0
+        echo "${chosen_db}" && return 0
 
     else
         return 1
@@ -189,7 +185,7 @@ function postgres_count_databases() {
         if [[ ${EXCLUDED_DATABASES_LIST} != *"${db}"* ]]; then # $EXCLUDED_DATABASES_LIST contains blacklisted databases
             total_databases=$((total_databases + 1))
         fi
-    
+
     done
 
     # Return
@@ -209,23 +205,40 @@ function postgres_count_databases() {
 function postgres_list_databases() {
 
     local stage="${1}"
+    local container_name="${2}"
 
+    local psql_exec
     local databases
+
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+
+        local psql_container_user
+        local psql_container_user_pssw
+
+        # Get POSTGRES_USER and POSTGRES_PASSWORD from container
+        ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
+        psql_container_user="$(docker exec -i "${container_name}" printenv POSTGRES_USER)"
+        psql_container_user_pssw="$(docker exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
+        # Set psql_exec
+        psql_exec="docker exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} psql -U ${psql_container_user} --quiet"
+
+    else
+        # Set psql_exec
+        psql_exec="${PSQL_ROOT}"
+
+    fi
 
     log_event "info" "Listing '${stage}' Postgres databases" "false"
 
     if [[ ${stage} == "all" ]]; then
 
-        # Run command
-
         # List postgress databases
-        databases="$(${PSQL_ROOT} -c "SELECT datname FROM pg_database WHERE datistemplate = false;" -t)"
-        #databases="$(${PSQL_ROOT} -t -A -c "SELECT datname FROM pg_database WHERE datname <> ALL ('{template0,template1,postgres}')")"
+        databases="$(${psql_exec} -c "SELECT datname FROM pg_database WHERE datistemplate = false;" -t)"
 
     else
 
         # Run command
-        databases="$(${PSQL_ROOT} -c "SELECT datname FROM pg_database WHERE datistemplate = false;" -t | grep "${stage}")"
+        databases="$(${psql_exec} -c "SELECT datname FROM pg_database WHERE datistemplate = false;" -t | grep "${stage}")"
 
     fi
 
@@ -243,14 +256,14 @@ function postgres_list_databases() {
         log_event "info" "Listing Postgres databases: '${databases}'" "false"
 
         # Return
-        echo "${databases}"
+        echo "${databases}" && return 0
 
     else
 
         # Log
         display --indent 6 --text "- Listing Postgres databases" --result "FAIL" --color RED
         log_event "error" "Something went wrong listing Postgres databases" "false"
-        log_event "debug" "Last command executed: ${PSQL_ROOT} -c \"SELECT datname FROM pg_database WHERE datistemplate = false;\" -t" "false"
+        log_event "debug" "Last command executed: ${psql_exec} -c \"SELECT datname FROM pg_database WHERE datistemplate = false;\" -t" "false"
 
         return 1
 
@@ -268,13 +281,34 @@ function postgres_list_databases() {
 #  ${users}, 1 on error.
 ################################################################################
 
-function postgres_list_users() {
+function postgres_users_list() {
 
+    local container_name="${1}"
+
+    local psql_exec
     local users
+
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+
+        local psql_container_user
+        local psql_container_user_pssw
+
+        # Get POSTGRES_USER and POSTGRES_PASSWORD from container
+        ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
+        psql_container_user="$(docker exec -i "${container_name}" printenv POSTGRES_USER)"
+        psql_container_user_pssw="$(docker exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
+        # Set psql_exec
+        psql_exec="docker exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} psql -U ${psql_container_user} --quiet"
+
+    else
+        # Set psql_exec
+        psql_exec="${PSQL_ROOT}"
+
+    fi
 
     # Run command
     # https://unix.stackexchange.com/questions/201666/command-to-list-postgresql-user-accounts
-    users="$(${PSQL_ROOT} -c 'SELECT u.usename AS "User Name" FROM pg_catalog.pg_user u;' -t)"
+    users="$(${psql_exec} -c 'SELECT u.usename AS "User Name" FROM pg_catalog.pg_user u;' -t)"
 
     # Check result
     postgres_result=$?
@@ -298,7 +332,7 @@ function postgres_list_users() {
         # Log
         display --indent 6 --text "- Listing Postgres users" --result "FAIL" --color RED
         log_event "error" "Something went wrong listing Postgres users" "false"
-        log_event "debug" "Last command executed: ${PSQL_ROOT} -c 'SELECT u.usename AS \"User Name\" FROM pg_catalog.pg_user u;' -t" "false"
+        log_event "debug" "Last command executed: ${psql_exec} -c 'SELECT u.usename AS \"User Name\" FROM pg_catalog.pg_user u;' -t" "false"
 
         return 1
 
@@ -330,9 +364,7 @@ function postgres_user_create() {
     display --indent 6 --text "- Creating Postgres user ${db_user}"
 
     # DB user host
-    if [[ -z ${db_user_scope} ]]; then
-        db_user_scope="$(postgres_ask_user_db_scope "localhost")"
-    fi
+    [[ -z ${db_user_scope} ]] && db_user_scope="$(postgres_ask_user_db_scope "localhost")"
 
     # Query
     #if [[ -z ${db_user_psw} ]]; then
@@ -401,9 +433,7 @@ function postgres_user_delete() {
     log_event "info" "Deleting ${db_user} user in Postgres ..." "false"
 
     # DB user host
-    if [[ -z ${db_user_scope} || ${db_user_scope} == "" ]]; then
-        db_user_scope="$(postgres_ask_user_db_scope "localhost")"
-    fi
+    [[ -z ${db_user_scope} ]] && db_user_scope="$(postgres_ask_user_db_scope "localhost")"
 
     # Query
     query_1="DROP USER '${db_user}'@'${db_user_scope}';"
@@ -585,9 +615,7 @@ function postgres_user_grant_privileges() {
     display --indent 6 --text "- Granting privileges to ${db_user}"
 
     # DB user host
-    if [[ ${db_scope} == "" ]]; then
-        db_scope="$(postgres_ask_user_db_scope "localhost")"
-    fi
+    [[ -z ${db_scope} ]] && db_scope="$(postgres_ask_user_db_scope "localhost")"
 
     # Query
     query_1="GRANT ALL PRIVILEGES ON ${db_target}.* TO '${db_user}'@'${db_scope}';"
@@ -836,17 +864,36 @@ function postgres_database_drop() {
 function postgres_database_import() {
 
     local database="${1}"
-    local dump_file="${2}"
+    local container_name="${2}"
+    local dump_file="${3}"
 
     local import_status
+
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+
+        local psql_container_user
+        local psql_container_user_pssw
+
+        # Get POSTGRES_USER and POSTGRES_PASSWORD from container
+        ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
+        psql_container_user="$(docker exec -i "${container_name}" printenv POSTGRES_USER)"
+        psql_container_user_pssw="$(docker exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
+        # Set psql_exec
+        psql_exec="docker exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} psql -U ${psql_container_user} --quiet"
+
+    else
+        # Set psql_exec
+        psql_exec="${PSQL_ROOT}"
+
+    fi
 
     # Log
     display --indent 6 --text "- Importing into database: ${database}" --tcolor YELLOW
     log_event "info" "Importing dump file ${dump_file} into database: ${database}" "false"
 
     # Execute command
-    ${PSQL_ROOT} "${database}" <"${dump_file}"
-    #pv --width 70 "${dump_file}" | ${PSQL_ROOT} -f -D "${database}"
+    ${psql_exec} "${database}" <"${dump_file}"
+    #pv --width 70 "${dump_file}" | ${psql_exec} -f -D "${database}"
 
     # Check result
     import_status=$?
@@ -866,7 +913,8 @@ function postgres_database_import() {
         display --indent 6 --text "- Database backup import" --result "ERROR" --color RED
         display --indent 8 --text "Please, read the log file!" --tcolor RED
         log_event "error" "Something went wrong importing database: ${database}"
-        log_event "debug" "Last command executed: pv ${dump_file} | ${PSQL_ROOT} -f -D ${database}"
+        log_event "debug" "Last command executed: ${psql_exec} ${database} < ${dump_file}"
+        #log_event "debug" "Last command executed: pv ${dump_file} | ${psql_exec} -f -D ${database}"
 
         return 1
 
@@ -888,16 +936,36 @@ function postgres_database_import() {
 function postgres_database_export() {
 
     local database="${1}"
-    local dump_file="${2}"
+    local container_name="${2}"
+    local dump_file="${3}"
 
+    local psql_exec
     local dump_status
+
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+
+        local psql_container_user
+        local psql_container_user_pssw
+
+        # Get POSTGRES_USER and POSTGRES_PASSWORD from container
+        ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
+        psql_container_user="$(docker exec -i "${container_name}" printenv POSTGRES_USER)"
+        psql_container_user_pssw="$(docker exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
+        # Set psql_exec
+        psql_exec="docker exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} pg_dump -U ${psql_container_user}"
+
+    else
+        # Set psql_exec
+        psql_exec="${PSQLDUMP_ROOT}"
+
+    fi
 
     log_event "info" "Making a database backup of: ${database}" "false"
 
     spinner_start "- Making a backup of: ${database}"
 
     # Run pg_dump
-    ${PSQLDUMP_ROOT} "${database}" >"${dump_file}"
+    ${psql_exec} "${database}" >"${dump_file}"
 
     dump_status=$?
     spinner_stop "${dump_status}"
@@ -917,7 +985,7 @@ function postgres_database_export() {
         display --indent 6 --text "- Database backup for ${YELLOW}${database}${ENDCOLOR}" --result "ERROR" --color RED
         display --indent 8 --text "Please, read the log file!" --tcolor RED
         log_event "error" "Something went wrong exporting database: ${database}." "false"
-        log_event "error" "Last command executed: ${PSQLDUMP_ROOT} ${database} > ${dump_file}" "false"
+        log_event "error" "Last command executed: ${psql_exec} ${database} > ${dump_file}" "false"
 
         return 1
 

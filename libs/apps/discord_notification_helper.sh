@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # Discord Notification Helper: Perform Discord actions.
@@ -27,12 +27,30 @@ function discord_send_notification() {
     local notification_content="${2}"
     #local notification_type="${3}"
 
+    # Replace all <br/> occurrences with "\n"
+    notification_content="${notification_content//<br\/>/\\n}"
+    # Replace all <em> occurrences with "*" (bold)
+    notification_content="${notification_content//<em>/**}"
+    # Replace all </em> occurrences with "*" (bold)
+    notification_content="${notification_content//<\/em>/**}"
+
+    # Check ${notification_content} length
+	if [[ ${#notification_content} -gt 900 ]]; then
+
+		# Log
+		log_event "warning" "Discord notification content too long, truncating ..." "false"
+
+		# Truncate
+		notification_content="${notification_content:0:120}"
+
+	fi
+
     # Log
     log_event "info" "Sending Discord notification ..." "false"
     log_event "debug" "Running: ${CURL} -H \"Content-Type: application/json\" -X POST -d '{\"content\":\"'\"${notification_title} : ${notification_content}\"'\"}' \"${NOTIFICATION_DISCORD_WEBHOOK}\"" "false"
 
     # Discord command
-    ${CURL} -H "Content-Type: application/json" -X POST -d '{"content":"'"**${notification_title}**:\n${notification_content}"'"}' "${NOTIFICATION_DISCORD_WEBHOOK}"
+    ${CURL} -H "Content-Type: application/json" -X POST -d '{"content":"'"**${notification_title}**:${notification_content}"'"}' "${NOTIFICATION_DISCORD_WEBHOOK}"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -48,7 +66,7 @@ function discord_send_notification() {
         log_event "error" "Discord notification error." "false"
         log_event "error" "Please, check webhook url on .brolit_conf.json" "false"
         display --indent 6 --text "- Sending Discord notification" --result "FAIL" --color RED
-        display --indent 8 --text "Check webhook url on .brolit_conf.json" --result "FAIL" --color RED
+        display --indent 8 --text "Check webhook url on .brolit_conf.json" --tcolor YELLOW
 
         return 1
 

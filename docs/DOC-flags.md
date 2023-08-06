@@ -114,20 +114,20 @@ Options:
 #### Clear Cloudflare Cache
 
 ```
-./runner.sh --task "cloudflare-api" --subtask "clear_cache" --domain "broobe.com"
+./runner.sh --task "cloudflare-api" --subtask "clear_cache" --domain "gauchocode.com"
 ```
 
 #### Enable Dev Mode
 
 ```
-./runner.sh --task "cloudflare-api" --subtask "dev_mode" --task-value "on" --domain "broobe.com" 
+./runner.sh --task "cloudflare-api" --subtask "dev_mode" --task-value "on" --domain "gauchocode.com" 
 ```
 
 #### Change SSL Mode
 ##### Values: off, valid values: off, flexible, full, strict
 
 ```
-./runner.sh --task "cloudflare-api" --subtask "ssl_mode" --task-value "full" --domain "broobe.com" 
+./runner.sh --task "cloudflare-api" --subtask "ssl_mode" --task-value "full" --domain "gauchocode.com" 
 ```
 
 ### WP-CLI API
@@ -137,61 +137,61 @@ Options:
 ##### Examples: "wordpress-seo", "post-smtp", "https://link.to.zip"
 
 ```
-./runner.sh --task "wpcli" --subtask "plugin-install" --task-value "post-smtp" --domain "broobe.com"
+./runner.sh --task "wpcli" --subtask "plugin-install" --task-value "post-smtp" --domain "gauchocode.com"
 ```
 
 #### Activate WP Plugin
 
 ```
-./runner.sh --task "wpcli" --subtask "plugin-activate" --task-value "post-smtp" --domain "broobe.com"
+./runner.sh --task "wpcli" --subtask "plugin-activate" --task-value "post-smtp" --domain "gauchocode.com"
 ```
 
 #### Deactivate WP Plugin
 
 ```
-./runner.sh --task "wpcli" --subtask "plugin-deactivate" --task-value "post-smtp" --domain "broobe.com"
+./runner.sh --task "wpcli" --subtask "plugin-deactivate" --task-value "post-smtp" --domain "gauchocode.com"
 ```
 
 #### Update WP Plugin
 
 ```
-./runner.sh --task "wpcli" --subtask "plugin-update" --task-value "post-smtp" --domain "broobe.com"
+./runner.sh --task "wpcli" --subtask "plugin-update" --task-value "post-smtp" --domain "gauchocode.com"
 ```
 
 #### Get WP Plugin version
 
 ```
-./runner.sh --task "wpcli" --subtask "plugin-version" --task-value "post-smtp" --domain "broobe.com"
+./runner.sh --task "wpcli" --subtask "plugin-version" --task-value "post-smtp" --domain "gauchocode.com"
 ```
 
 #### Clear WP Rocket Cache
 
 ```
-./runner.sh --task "wpcli" --subtask "clear-cache" --domain "broobe.com"
+./runner.sh --task "wpcli" --subtask "clear-cache" --domain "gauchocode.com"
 ```
 
 #### Activate WP Rocket Cache
 
 ```
-./runner.sh --task "wpcli" --subtask "cache-activate" --domain "broobe.com" 
+./runner.sh --task "wpcli" --subtask "cache-activate" --domain "gauchocode.com" 
 ```
 
 #### Deactivate WP Rocket Cache
 
 ```
-./runner.sh --task "wpcli" --subtask "cache-deactivate" --domain "broobe.com" 
+./runner.sh --task "wpcli" --subtask "cache-deactivate" --domain "gauchocode.com" 
 ```
 
 #### Verify WP Installation
 
 ```
-./runner.sh --task "wpcli" --subtask "verify-installation" --domain "broobe.com" 
+./runner.sh --task "wpcli" --subtask "verify-installation" --domain "gauchocode.com" 
 ```
 
 #### Update WP Installation
 
 ```
-./runner.sh --task "wpcli" --subtask "core-update" --domain "broobe.com" 
+./runner.sh --task "wpcli" --subtask "core-update" --domain "gauchocode.com" 
 ```
 
 #### Search and Replace URLs (NOT IMPLEMENTED YET)

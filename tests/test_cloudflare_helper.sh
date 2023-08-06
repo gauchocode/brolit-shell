@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 #############################################################################
 
 function test_cloudflare_funtions() {
@@ -50,7 +50,7 @@ function test_cloudflare_set_record() {
 
     log_subsection "Test: test_cloudflare_set_record"
 
-    cloudflare_set_record "broobe.hosting" "bash.broobe.hosting" "A" "false" "${SERVER_IP}"
+    cloudflare_set_record "gauchocode.hosting" "bash.gauchocode.hosting" "A" "false" "${SERVER_IP}"
     cf_result=$?
     if [[ ${cf_result} -eq 0 ]]; then 
         display --indent 6 --text "- test_cloudflare_set_record" --result "PASS" --color WHITE
@@ -64,7 +64,7 @@ function test_cloudflare_delete_record() {
 
     log_subsection "Test: test_cloudflare_delete_record"
 
-    cloudflare_delete_record "broobe.hosting" "bash.broobe.hosting"
+    cloudflare_delete_record "gauchocode.hosting" "bash.gauchocode.hosting"
     cf_result=$?
     if [[ ${cf_result} -eq 0 ]]; then 
         display --indent 6 --text "- test_cloudflare_delete_record" --result "PASS" --color WHITE
@@ -78,7 +78,7 @@ function test_cloudflare_clear_cache() {
 
     log_subsection "Test: test_cloudflare_clear_cache"
 
-    cloudflare_clear_cache "broobe.hosting"
+    cloudflare_clear_cache "gauchocode.hosting"
     cf_result=$?
     if [[ ${cf_result} -eq 0 ]]; then 
         display --indent 6 --text "- test_cloudflare_clear_cache" --result "PASS" --color WHITE
@@ -92,11 +92,11 @@ function test_cloudflare_get_record_details() {
 
     log_subsection "Test: test_cloudflare_get_record_details"
 
-    cloudflare_get_record_details "broobe.hosting" "bash.broobe.hosting" "id"
-    cloudflare_get_record_details "broobe.hosting" "bash.broobe.hosting" "type"
-    cloudflare_get_record_details "broobe.hosting" "bash.broobe.hosting" "content"
-    cloudflare_get_record_details "broobe.hosting" "bash.broobe.hosting" "proxied"
-    cloudflare_get_record_details "broobe.hosting" "bash.broobe.hosting" "created_on"
-    cloudflare_get_record_details "broobe.hosting" "bash.broobe.hosting" "modified_on"
+    cloudflare_get_record_details "gauchocode.hosting" "bash.gauchocode.hosting" "id"
+    cloudflare_get_record_details "gauchocode.hosting" "bash.gauchocode.hosting" "type"
+    cloudflare_get_record_details "gauchocode.hosting" "bash.gauchocode.hosting" "content"
+    cloudflare_get_record_details "gauchocode.hosting" "bash.gauchocode.hosting" "proxied"
+    cloudflare_get_record_details "gauchocode.hosting" "bash.gauchocode.hosting" "created_on"
+    cloudflare_get_record_details "gauchocode.hosting" "bash.gauchocode.hosting" "modified_on"
 
 }

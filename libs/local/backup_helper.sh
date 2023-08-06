@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 #############################################################################
 #
 # Backup Helper: Perform backup actions.
@@ -760,7 +760,7 @@ function backup_all_databases() {
   if [[ ${PACKAGES_MARIADB_STATUS} == "enabled" ]] || [[ ${PACKAGES_MYSQL_STATUS} == "enabled" ]]; then
 
     # Get MySQL databases
-    mysql_databases="$(mysql_list_databases "all")"
+    mysql_databases="$(mysql_list_databases "all" "")"
 
     # Count MySQL databases
     databases_count="$(mysql_count_databases "${mysql_databases}")"
@@ -924,12 +924,12 @@ function backup_project_database() {
   # Database engine
   if [[ ${db_engine} == "mysql" ]]; then
     ## Create dump file
-    mysql_database_export "${database}" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
+    mysql_database_export "${database}" "false" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
   else
 
     if [[ ${db_engine} == "psql" ]]; then
       ## Create dump file
-      postgres_database_export "${database}" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
+      postgres_database_export "${database}" "false" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
     fi
 
   fi
@@ -1090,14 +1090,14 @@ function backup_project() {
 
     fi
 
-    log_break
+    log_break "false"
 
     # Delete backup from server
     rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${backup_type:?}"
     #log_event "info" "Deleting backup from server ..." "false"
 
     # Log
-    log_break
+    log_break "false"
     log_event "info" "Project Backup done" "false"
     display --indent 6 --text "- Project Backup" --result "DONE" --color GREEN
 
@@ -1106,7 +1106,7 @@ function backup_project() {
   else
 
     # Log
-    log_break
+    log_break "false"
     log_event "error" "Something went wrong making the files backup" "false"
     display --indent 6 --text "- Project Backup" --result "FAIL" --color RED
     display --indent 8 --text "Something went wrong making the files backup" --tcolor RED

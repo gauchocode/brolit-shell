@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 #############################################################################
 #
 # Zabbix Installer
@@ -77,7 +77,7 @@ function zabbix_installer() {
             # Add this line at the end of nginx.conf file
             echo 'stream {
                 upstream zabbixagent {
-                    server zabbix.broobe.net:10050;
+                    server zabbix.gauchocode.net:10050;
                 }
                 server {
                     listen 10051;
@@ -93,6 +93,9 @@ function zabbix_installer() {
                 cloudflare_set_record "${root_domain}" "${PACKAGES_ZABBIX_CONFIG_SUBDOMAIN}" "A" "false" "${SERVER_IP}"
 
                 if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
+                    # Wait 2 seconds for DNS update
+                    sleep 2
+                    # Let's Encrypt
                     certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${PACKAGES_ZABBIX_CONFIG_SUBDOMAIN}"
                 fi
 

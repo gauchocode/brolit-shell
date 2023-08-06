@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # Project Helper: Perform project actions.
@@ -27,7 +27,7 @@ function project_get_config_var() {
   local content
 
   # Check if config file exists
-  [[ ! -f ${file} ]] && log_event "error" "Config file doesn't exist: ${file}" "false" && exit 1
+  [[ ! -f ${file} ]] && die "Config file doesn't exist: ${file}"
 
   # Read "${file}"/.env to extract ${variable}
   content="$(grep -oP "^${variable}=\K.*" "${file}")"
@@ -81,7 +81,7 @@ function project_set_config_var() {
   local quotes="${4}"
 
   # Check if config file exists
-  [[ ! -f ${file} ]] && log_event "error" "Config file doesn't exist: ${file}" "false" && exit 1
+  [[ ! -f ${file} ]] && die "Config file doesn't exist: ${file}"
 
   case ${quotes} in
 
@@ -251,16 +251,27 @@ function project_ask_domain() {
 
   local project_domain="${1}"
 
-  project_domain="$(whiptail --title "Domain" --inputbox "Insert the project's domain. Example: landing.domain.com" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
+  project_domain="$(whiptail --title "Subdomain" --inputbox "Insert project's subdomain. Example: www.domain.com" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Validate domain format
+    if [[ ! ${project_domain} =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]$ ]]; then
+      # Log
+      log_event "error" "Invalid domain format: ${project_domain}" "false"
+      display --indent 6 --text "- Domain format" --result "FAIL" --color RED
+      display --indent 8 --text "Invalid domain format: ${project_domain}" --tcolor RED
+      return 1
+    fi
 
     # Return
     echo "${project_domain}" && return 0
 
   else
 
+    # Log
+    log_event "error" "Domain not set" "false"
     return 1
 
   fi
@@ -271,7 +282,7 @@ function project_ask_domain() {
 # Ask project type
 #
 # Arguments:
-#   none
+#   ${1} - ${suggested_project_type}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -284,7 +295,7 @@ function project_ask_type() {
   local project_types
   local project_type
 
-  project_types="wordpress laravel php react html docker proxy"
+  project_types="wordpress laravel php react html other"
 
   project_type="$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 $(for x in ${project_types}; do echo "${x} [D]"; done) --default-item "${suggested_project_type}" 3>&1 1>&2 2>&3)"
 
@@ -298,6 +309,45 @@ function project_ask_type() {
     echo "${project_type}" && return 0
 
   else
+
+    return 1
+
+  fi
+
+}
+
+################################################################################
+# Ask project isntall type
+#
+# Arguments:
+#   ${1} - ${suggested_project_install_type}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function project_ask_install_type() {
+
+  local suggested_project_install_type="${1}"
+
+  local project_install_types
+  local project_install_type
+
+  project_install_types="default docker proxy"
+
+  project_install_type="$(whiptail --title "SELECT PROJECT INSTALL TYPE" --menu " " 20 78 10 $(for x in ${project_install_types}; do echo "${x} [D]"; done) --default-item "${suggested_project_install_type}" 3>&1 1>&2 2>&3)"
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Lowercase
+    project_install_type="$(echo "${project_install_type}" | tr '[A-Z]' '[a-z]')"
+
+    # Return
+    echo "${project_install_type}" && return 0
+
+  else
+
     return 1
 
   fi
@@ -308,7 +358,7 @@ function project_ask_type() {
 # Ask project port
 #
 # Arguments:
-#   ${suggested_proxy_port}
+#   ${1} - ${suggested_proxy_port}
 #
 # Outputs:
 #   ${proxy_port} if ok, 1 on error.
@@ -323,11 +373,15 @@ function project_ask_port() {
   proxy_port="$(whiptail --title "Domain" --inputbox "Insert the internal port you want to proxy:" 10 60 "${suggested_proxy_port}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
+  if [[ ${exitstatus} -eq 0 && -n ${proxy_port} ]]; then
+
     # Return
     echo "${proxy_port}" && return 0
+
   else
+
     return 1
+
   fi
 
 }
@@ -351,8 +405,10 @@ function project_ask_folder_to_install() {
   if [[ -z ${folder_to_install} ]]; then
 
     folder_to_install="$(whiptail --title "Folder to work with" --inputbox "Please select the project folder you want to work with:" 10 60 "${folder_to_install}" 3>&1 1>&2 2>&3)"
+
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
+
       log_event "info" "Folder to work with: ${folder_to_install}" "false"
       # Return
       echo "${folder_to_install}" && return 0
@@ -386,25 +442,28 @@ function project_get_name_from_domain() {
   local project_domain="${1}"
 
   local project_stages
-  local possible_project_name
+  local project_name
 
   declare -a possible_project_stages_on_subdomain=("www" "demo" "stage" "test" "beta" "dev")
 
   # Extract project name from domain
-  possible_project_name="$(domain_extract_extension "${project_domain}")"
+  project_name="$(domain_extract_extension "${project_domain}")"
 
   # Remove stage from domain
   for p in "${possible_project_stages_on_subdomain[@]}"; do
 
-    possible_project_name="$(echo "${possible_project_name}" | sed -r "s/${p}.//g")"
+    project_name="$(echo "${project_name}" | sed -r "s/${p}.//g")"
 
   done
 
   # Remove "-" char " and replace '.' with '_'
-  possible_project_name="$(echo "${possible_project_name}" | sed -r 's/[-]+//g' | sed -r 's/[.]+/_/g')"
+  project_name="$(echo "${project_name}" | sed -r 's/[-]+//g' | sed -r 's/[.]+/_/g')"
+
+  # Log
+  log_event "debug" "project_name=${project_name}" "false"
 
   # Return
-  echo "${possible_project_name}"
+  echo "${project_name}"
 
 }
 
@@ -423,26 +482,29 @@ function project_get_stage_from_domain() {
   local project_domain="${1}"
 
   local project_stages
-  local possible_project_stage
+  local project_stage
 
   project_stages="demo stage test beta dev"
 
   # Trying to extract project stage from domain
   subdomain_part="$(domain_get_subdomain_part "${project_domain}")"
-  possible_project_stage="$(echo "${subdomain_part}" | cut -d "." -f 1)"
+  project_stage="$(echo "${subdomain_part}" | cut -d "." -f 1)"
 
   # Log
   log_event "debug" "subdomain_part=${subdomain_part}" "false"
-  log_event "debug" "possible_project_stage=${possible_project_stage}" "false"
+  log_event "debug" "project_stage=${project_stage}" "false"
 
-  if [[ ${project_stages} != *"${possible_project_stage}"* || ${possible_project_stage} == "" ]]; then
+  if [[ ${project_stages} != *"${project_stage}"* || ${project_stage} == "" ]]; then
 
-    possible_project_stage="prod"
+    project_stage="prod"
 
   fi
 
+  # Log
+  log_event "debug" "project_stage=${project_stage}" "false"
+
   # Return
-  echo "${possible_project_stage}"
+  echo "${project_stage}"
 
 }
 
@@ -1405,7 +1467,9 @@ function project_get_configured_database_user() {
 
     wordpress)
 
-      db_user="$(wp_config_get_option "${project_path}" "DB_USER")"
+      wpconfig_path=$(wp_config_path "${project_config_file}")
+
+      db_user="$(wp_config_get_option "${wpconfig_path}" "DB_USER")"
 
       # Return
       echo "${db_user}" && return 0
@@ -1592,7 +1656,9 @@ function project_get_configured_database_userpassw() {
 
     wordpress)
 
-      database_userpassw="$(wp_config_get_option "${project_path}" "DB_PASSWORD")"
+      wpconfig_path=$(wp_config_path "${project_config_file}")
+
+      database_userpassw="$(wp_config_get_option "${wpconfig_path}" "DB_PASSWORD")"
 
       # Return
       echo "${database_userpassw}" && return 0
@@ -1785,6 +1851,15 @@ function project_install() {
 
   log_section "Project Installer (${project_type})"
 
+  # Check if nginx is installed
+  if [[ ! $(command -v nginx) ]]; then
+    # Log
+    log_event "error" "Nginx is not installed" "false"
+    display --indent 6 --text "- Creating WordPress project" --result "FAIL" --color RED
+    display --indent 8 --text "Nginx is not installed" --tcolor RED
+    return 1
+  fi
+
   # Project Type
   if [[ -z ${project_type} ]]; then
     project_type="$(project_ask_type "")"
@@ -1846,6 +1921,23 @@ function project_install() {
 
   wordpress)
 
+    # Check if php is installed
+    if [[ ! $(command -v php) ]]; then
+      # Log
+      display --indent 6 --text "- Installing WordPress project" --result "FAIL" --color RED
+      display --indent 8 --text "PHP is not installed, aborting ..."
+      log_event "error" "PHP is not installed, aborting ..." "false"
+      return 1
+    fi
+    # Check if mysql is installed
+    if [[ ! $(command -v mysql) ]]; then
+      # Log
+      display --indent 6 --text "- Installing WordPress project" --result "FAIL" --color RED
+      display --indent 8 --text "MySQL is not installed, aborting ..."
+      log_event "error" "MySQL is not installed, aborting ..." "false"
+      return 1
+    fi
+
     # Check if wp-cli is installed
     wpcli_install_if_not_installed
 
@@ -1856,6 +1948,7 @@ function project_install() {
     ;;
 
   laravel)
+
     # Execute function
     # laravel_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
     # log_event "warning" "Laravel installer should be implemented soon, trying to install like pure php project ..."
@@ -1887,25 +1980,38 @@ function project_install() {
   esac
 
   # Project domain configuration (webserver+certbot+DNS)
-  https_enable="$(project_update_domain_config "${project_domain}" "default" "${project_type}" "")"
+  https_enable="$(project_update_domain_config "${project_domain}" "${project_type}" "default" "")"
 
   # Define project site url
   [[ ${https_enable} == "true" ]] && project_site_url="https://${project_domain}" || project_site_url="http://${project_domain}"
 
   # Startup Script for WordPress installation
-  [[ ${EXEC_TYPE} == "default" && ${project_type} == "wordpress" ]] && wpcli_run_startup_script "${project_path}" "${project_site_url}"
+  if [[ ${EXEC_TYPE} == "default" && ${project_type} == "wordpress" ]]; then
+
+    wpcli_run_startup_script "${project_path}" "default" "${project_site_url}"
+
+    if [[ $? -eq 1 ]]; then
+
+      # Show error message
+      display --indent 6 --text "- Installing WordPress project" --result "FAIL" --color RED
+      display --indent 8 --text "Visit ${project_site_url} and complete the installation" --tcolor YELLOW
+      display --indent 8 --text " or delete the project and star over again" --tcolor YELLOW
+
+      return 1
+
+    fi
+
+  fi
 
   # Post-restore/install tasks
-  project_post_install_tasks "${project_path}" "${project_type}" "${project_name}" "${project_stage}" "${database_user_passw}" "" ""
+  project_install_type="default"
+  project_post_install_tasks "${project_path}" "${project_type}" "${project_install_type}" "${project_name}" "${project_stage}" "${database_user_passw}" "" ""
 
   # TODO: refactor this
   # Cert config files
   cert_path=""
-  if [[ -d "/etc/letsencrypt/live/${project_domain}" ]]; then
-    cert_path="/etc/letsencrypt/live/${project_domain}"
-  elif [[ -d "/etc/letsencrypt/live/www.${project_domain}" ]]; then
-    cert_path="/etc/letsencrypt/live/www.${project_domain}"
-  fi
+  [[ -d "/etc/letsencrypt/live/${project_domain}" ]] && cert_path="/etc/letsencrypt/live/${project_domain}"
+  [[ -d "/etc/letsencrypt/live/www.${project_domain}" ]] && cert_path="/etc/letsencrypt/live/www.${project_domain}"
 
   # Create project config file
   project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "${project_type} " "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "${project_secondary_subdomain}" "/etc/nginx/sites-available/${project_domain}" "" "${cert_path}"
@@ -1948,19 +2054,23 @@ function project_delete_files() {
   project_type=$(project_get_type "${PROJECTS_PATH}/${project_domain}")
   project_install_type=$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")
 
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
+  clear_previous_lines "2"
 
-    # If project_install_type == "docker", stop and delete containers
-    if [[ ${project_install_type} == "docker" ]]; then
+  if [[ -n ${project_type} && -n ${project_install_type} ]]; then
+
+    # If project_install_type == "docker"*, stop and delete containers
+    if [[ ${project_install_type} == "docker"* ]]; then
 
       compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
 
       if [[ -f "${compose_file}" ]]; then
-        # Execute docker-compose commands
-        docker-compose -f "${compose_file}" stop --quiet
-        docker-compose -f "${compose_file}" rm
+
+        docker_compose_stop "${compose_file}"
         [[ $? -eq 1 ]] && return 1
+
+        docker_compose_delete "${compose_file}"
+        [[ $? -eq 1 ]] && return 1
+
       fi
 
     fi
@@ -2002,6 +2112,10 @@ function project_delete_files() {
 
   else
 
+    # Log
+    log_event "info" "Something went wrong trying to know project type and project install type." "false"
+    display --indent 6 --text "- Deleting project files on server" --result "FAIL" --color RED
+
     return 1
 
   fi
@@ -2028,9 +2142,11 @@ function project_delete_database() {
 
   local databases
   local chosen_database
+  local project_name
+  local backup_project_database_output
 
   # List databases
-  databases="$(database_list_all "all" "${database_engine}" "${project_install_type}")"
+  databases="$(database_list "all" "${database_engine}" "")"
   chosen_database="$(whiptail --title "DATABASES" --menu "Choose a Database to delete" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) --default-item "${database_name}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
@@ -2143,6 +2259,8 @@ function project_delete() {
 
   log_section "Project Delete"
 
+  log_subsection "Reading Project Config"
+
   if [[ -z ${project_domain} ]]; then
     # Folder where sites are hosted: ${PROJECTS_PATH}
     menu_title="PROJECT DIRECTORY TO DELETE"
@@ -2175,10 +2293,16 @@ function project_delete() {
     display --indent 6 --text "- Selecting ${project_domain} for deletion" --result "DONE" --color GREEN
 
     # Get project type and db credentials before delete files_skipped
-    project_type="$(project_get_type "${project_domain}")"
+    project_type="$(project_get_type "${PROJECTS_PATH}/${project_domain}")"
     project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
-    project_db_name=$(project_get_configured_database "${project_domain}" "${project_type}" "${project_install_type}")
-    project_db_user=$(project_get_configured_database_user "${project_domain}" "${project_type}" "${project_install_type}")
+    project_db_name=$(project_get_configured_database "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")
+    project_db_user=$(project_get_configured_database_user "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")
+    project_db_engine="$(project_get_configured_database_engine "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")"
+
+    [[ -z "${project_db_engine}" ]] && project_db_engine="$(database_ask_engine)"
+
+    # Remove unwanted output
+    clear_previous_lines "2"
 
     # Delete Files
     project_delete_files "${project_domain}"
@@ -2189,24 +2313,47 @@ function project_delete() {
     # Delete certificates
     certbot_certificate_delete "${project_domain}"
 
-    if [[ ${delete_cf_entry} != "true" && ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
+    if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
 
-      # Cloudflare Manager
-      project_domain="$(whiptail --title "CLOUDFLARE MANAGER" --inputbox "Do you want to delete the Cloudflare entries for the followings subdomains?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-        # Delete Cloudflare entries
-        project_root_domain="$(domain_get_root "${project_domain}")"
-        cloudflare_delete_record "${project_root_domain}" "${project_domain}" "A"
-      else
-        log_event "info" "Cloudflare entries not deleted. Skipped by user." "false"
-      fi
-
-    else
-
-      # Delete Cloudflare entries
       project_root_domain="$(domain_get_root "${project_domain}")"
-      cloudflare_delete_record "${project_root_domain}" "${project_domain}" "A"
+      project_actual_ip="$(cloudflare_get_record_details "${project_root_domain}" "${project_domain}" "content")"
+
+      if [[ ${project_actual_ip} == "${SERVER_IP}" ]]; then
+
+        if [[ ${delete_cf_entry} != "true" ]]; then
+
+          # Cloudflare Manager
+          project_domain="$(whiptail --title "CLOUDFLARE MANAGER" --inputbox "Do you want to delete the Cloudflare entries for the followings subdomains?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
+          exitstatus=$?
+          if [[ ${exitstatus} -eq 0 ]]; then
+
+            # Delete Cloudflare entries
+            cloudflare_delete_record "${project_root_domain}" "${project_domain}" "A"
+
+          else
+
+            # Log
+            log_event "info" "Cloudflare entries not deleted. Skipped by user." "false"
+            display --indent 6 --text "- Deleting Cloudflare entries" --result "SKIPPED" --color YELLOW
+
+          fi
+
+        else
+
+          # Delete Cloudflare entries
+          project_root_domain="$(domain_get_root "${project_domain}")"
+          cloudflare_delete_record "${project_root_domain}" "${project_domain}" "A"
+
+        fi
+
+      else
+  
+        # Log
+        log_event "info" "Cloudflare entries not deleted. The IP address of the Cloudflare entry is different from the server IP address." "false"
+        display --indent 6 --text "- Deleting Cloudflare entries" --result "SKIPPED" --color YELLOW
+        display --indent 8 --text "The IP address of the Cloudflare entry is different from the server IP address." --tcolor YELLOW
+
+      fi
 
     fi
 
@@ -2215,13 +2362,7 @@ function project_delete() {
   [[ -z ${project_type} ]] && project_type="$(project_ask_type)"
   [[ -z ${project_install_type} ]] && project_install_type="default"
 
-  if [[ -f ${PROJECTS_PATH}/${project_domain} ]]; then
-    project_db_engine="$(project_get_configured_database_engine "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")"
-  else
-    project_db_engine="$(database_ask_engine)"
-  fi
-
-  if [[ -n ${project_db_engine} ]]; then
+  if [[ -n ${project_db_engine} && ${project_install_type} == "default" ]]; then
     # Delete Database
     project_delete_database "${project_db_name}" "${project_db_user}" "${project_db_engine}" "${project_install_type}"
   else
@@ -2344,7 +2485,7 @@ function project_get_type() {
 
   # TODO: if brolit_conf exists, should check this file and get project type
 
-  if [[ -n ${dir_path} ]]; then
+  if [[ -n ${dir_path} && -d ${dir_path} ]]; then
 
     # WP?
     wp_path="$(wp_config_path "${dir_path}")"
@@ -2497,18 +2638,20 @@ function project_create_nginx_server() {
     # Extract root domain
     project_root_domain="$(domain_get_root "${project_domain}")"
 
-    # Try to get project type
+    # Try to get project type & project install type
     suggested_project_type="$(project_get_type "${filepath}/${filename}")"
+    suggested_project_install_type=$(project_get_install_type "${filepath}/${filename}")
 
     # Aks project type
     project_type="$(project_ask_type "${suggested_project_type}")"
-    if [[ ${project_type} == "docker" || ${project_type} == "proxy" ]]; then
-      project_type="proxy"
+    project_install_type="$(project_ask_install_type "${suggested_project_install_type}")"
+    if [[ ${project_install_type} == "docker" || ${project_install_type} == "proxy" ]]; then
+      project_install_type="proxy"
       project_port="$(project_ask_port "")"
     fi
 
     # Update project domain config
-    https_enable="$(project_update_domain_config "${project_domain}" "${project_type}" "${project_port}")"
+    https_enable="$(project_update_domain_config "${project_domain}" "${project_type}" "${project_install_type}" "${project_port}")"
 
   else
 
@@ -2559,7 +2702,7 @@ function project_installer_php() {
 
   fi
 
-  db_project_name="$(mysql_name_sanitize "${project_name}")"
+  db_project_name="$(database_name_sanitize "${project_name}")"
   database_name="${db_project_name}_${project_stage}"
   database_user="${db_project_name}_user"
   database_user_passw="$(openssl rand -hex 12)"
@@ -2635,7 +2778,7 @@ function project_installer_nodejs() {
   fi
 
   # DB
-  db_project_name="$(mysql_name_sanitize "${project_name}")"
+  db_project_name="$(database_name_sanitize "${project_name}")"
   database_name="${db_project_name}_${project_stage}"
   database_user="${db_project_name}_user"
   database_user_passw="$(openssl rand -hex 12)"
@@ -2800,17 +2943,20 @@ function project_update_domain_config() {
 
 function project_post_install_tasks() {
 
-  local install_path="${1}"
+  local project_install_path="${1}"
   local project_type="${2}"
-  local project_name="${3}"
-  local project_stage="${4}"
-  local project_db_pass="${5}"
-  local old_project_domain="${6}" # TODO: can change it for url? https://domain.com or http://domain.com
-  local new_project_domain="${7}"
-  #local project_port="${8}"
-  #local project_db_engine="${9}"
+  local project_install_type="${3}"
+  local project_name="${4}"
+  local project_stage="${5}"
+  local project_db_pass="${6}"
+  local old_project_domain="${7}" # TODO: can change it for url? https://domain.com or http://domain.com
+  local new_project_domain="${8}"
+  #local project_port="${9}"
+  #local project_db_engine="${10}"
 
   local project_env
+
+  local database_host="localhost"
 
   # TODO: check if update db credentials is needed
   # TODO: update brolit project config file
@@ -2821,58 +2967,63 @@ function project_post_install_tasks() {
   # Check if is a WP project
   if [[ ${project_type} == "wordpress" ]]; then
 
+    [[ ${project_install_type} == "docker"* ]] && project_install_path="${project_install_path}/wordpress" && database_host="mysql"
+
     # Change WordPress directory permissions
-    wp_change_permissions "${install_path}"
+    wp_change_permissions "${project_install_path}"
 
     # Change wp-config.php database parameters
-    project_set_configured_database_host "${install_path}" "${project_type}" "default" "localhost"
-    project_set_configured_database "${install_path}" "${project_type}" "default" "${project_name}_${project_stage}"
-    project_set_configured_database_user "${install_path}" "${project_type}" "default" "${project_name}_user"
-    project_set_configured_database_userpassw "${install_path}" "${project_type}" "default" "${project_db_pass}"
+    project_set_configured_database_host "${project_install_path}" "${project_type}" "${project_install_type}" "${database_host}"
+    project_set_configured_database "${project_install_path}" "${project_type}" "${project_install_type}" "${project_name}_${project_stage}"
+    project_set_configured_database_user "${project_install_path}" "${project_type}" "${project_install_type}" "${project_name}_user"
+    project_set_configured_database_userpassw "${project_install_path}" "${project_type}" "${project_install_type}" "${project_db_pass}"
 
     # TODO: need to check if http or https
     if [[ -n ${old_project_domain} && -n ${new_project_domain} ]]; then
       if [[ ${old_project_domain} != "${new_project_domain}" ]]; then
         # Change urls on database
-        wpcli_search_and_replace "${install_path}" "${old_project_domain}" "${new_project_domain}"
+        wpcli_search_and_replace "${project_install_path}" "${project_install_type}" "${old_project_domain}" "${new_project_domain}"
       fi
     fi
 
+    # SET CONFIGS
+    wpcli_config_set "${project_install_path}" "${project_install_type}" "WP_HOME" "https://${new_project_domain}/"
+    wpcli_config_set "${project_install_path}" "${project_install_type}" "WP_SITEURL" "https://${new_project_domain}/"
+
     # Shuffle salts
-    wpcli_set_salts "${install_path}"
+    wpcli_shuffle_salts "${project_install_path}" "${project_install_type}"
 
     # Update upload_path
     ## Context: https://core.trac.wordpress.org/ticket/41947
-    wpcli_update_upload_path "${install_path}" "wp-content/uploads"
+    wpcli_update_upload_path "${project_install_path}" "${project_install_type}" "wp-content/uploads"
 
     # Changing WordPress visibility
     if [[ ${project_stage} == "prod" ]]; then
       # Let search engines index the project
-      wpcli_change_wp_seo_visibility "${install_path}" "1"
+      wpcli_change_wp_seo_visibility "${project_install_path}" "${project_install_type}" "1"
       # Set debug mode to false
-      wpcli_set_debug_mode "${install_path}" "false"
+      wpcli_set_debug_mode "${project_install_path}" "${project_install_type}" "false" 
     else
       # Block search engines indexation
-      wpcli_change_wp_seo_visibility "${install_path}" "0"
-      # De-activate cache plugins
-      wpcli_plugin_deactivate "${install_path}" "wp-rocket"
-      wpcli_plugin_deactivate "${install_path}" "w3-total-cache"
-      wpcli_plugin_deactivate "${install_path}" "wp-super-cache"
+      wpcli_change_wp_seo_visibility "${project_install_path}" "${project_install_type}" "0"
+      # De-activate cache plugins if present
+      wpcli_plugin_is_installed "${project_install_path}" "${project_install_type}" "wp-rocket" && wpcli_deactivate_plugin "${project_install_path}" "wp-rocket"
+      wpcli_plugin_is_installed "${project_install_path}" "${project_install_type}" "redis-cache" && wpcli_plugin_deactivate "${project_install_path}" "redis-cache"
+      wpcli_plugin_is_installed "${project_install_path}" "${project_install_type}" "w3-total-cache" && wpcli_plugin_deactivate "${project_install_path}" "w3-total-cache"
+      wpcli_plugin_is_installed "${project_install_path}" "${project_install_type}" "wp-super-cache" && wpcli_plugin_deactivate "${project_install_path}" "wp-super-cache"
       # Set debug mode to true
-      wpcli_set_debug_mode "${install_path}" "true"
+      wpcli_set_debug_mode "${project_install_path}" "${project_install_type}" "true"
     fi
 
-    wpcli_cache_flush "${install_path}"
+    wpcli_cache_flush "${project_install_path}" "${project_install_type}"
 
     # If .user.ini found, rename it (Wordfence issue workaround)
-    if [[ -f "${install_path}/.user.ini" ]]; then
-      mv "${install_path}/.user.ini" "${install_path}/.user.ini.bak"
-    fi
+    [[ -f "${project_install_path}/.user.ini" ]] && mv "${project_install_path}/.user.ini" "${project_install_path}/.user.ini.bak"
 
   else
 
     # TODO: search .env file?
-    project_env="${install_path}/.env"
+    project_env="${project_install_path}/.env"
 
     if [[ -f ${project_env} ]]; then
 

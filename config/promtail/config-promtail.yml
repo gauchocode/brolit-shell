@@ -1,0 +1,48 @@
+server:
+  http_listen_port: ${PROMTAIL_PORT}
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yml
+
+clients:
+  - url: ${LOKI_HOST_URL}:${LOKI_PORT_URL}/loki/api/v1/push
+
+scrape_configs:
+  # system logs
+  - job_name: system
+    # system logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: varlogs
+          __path__: /var/log/*log
+          host: ${HOSTNAME}
+  - job_name: nginx_host
+    # nginx logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx_host
+          __path__: /var/log/nginx/*.log
+          host: ${HOSTNAME}
+  - job_name: mysql_host
+    # mysql logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: mysql_host
+          __path__: /var/log/mysql/*log
+          host: ${HOSTNAME}
+  - job_name: docker
+    # docker logs
+    pipeline_stages:
+      - docker: {}
+    static_configs:
+      - labels:
+          job: docker
+          __path__: /var/lib/docker/containers/*/*-json.log
+          host: ${HOSTNAME}

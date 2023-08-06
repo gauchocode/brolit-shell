@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # Certbot Helper: Certbot functions.
@@ -633,7 +633,7 @@ function certbot_certificate_delete() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log
-        clear_previous_lines "5"
+        clear_previous_lines "1"
         display --indent 6 --text "- Deleting certificate for ${domains}" --result "DONE" --color GREEN
 
         return 0
@@ -680,7 +680,7 @@ function certbot_helper_ask_domains() {
 
   local domains
 
-  domains="$(whiptail_input "CERTBOT MANAGER" "Insert the domain and/or subdomains that you want to work with. Ex: broobe.com,www.broobe.com" "" )"
+  domains="$(whiptail_input "CERTBOT MANAGER" "Insert the domain and/or subdomains that you want to work with. Ex: gauchocode.com,www.gauchocode.com" "" )"
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 

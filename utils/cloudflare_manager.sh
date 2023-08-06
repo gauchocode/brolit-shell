@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 #############################################################################
 
 function cloudflare_manager_menu() {
@@ -255,7 +255,7 @@ function cloudflare_ask_subdomains() {
 
   local subdomains="${1}"
 
-  subdomains="$(whiptail_input "Cloudflare Subdomains" "Insert the subdomains you want to update in Cloudflare (comma separated). Example: www.broobe.com,broobe.com" "${DOMAIN}")"
+  subdomains="$(whiptail_input "Cloudflare Subdomains" "Insert the subdomains you want to update in Cloudflare (comma separated). Example: www.gauchocode.com,gauchocode.com" "${DOMAIN}")"
   
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then

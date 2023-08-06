@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # Server Config Manager: Brolit server configuration management.
@@ -24,38 +24,26 @@ function _brolit_configuration_load_server_config() {
 
     # Globals
     declare -g SERVER_TIMEZONE
-    declare -g UNATTENDED_UPGRADES
+    #declare -g UNATTENDED_UPGRADES
     declare -g SERVER_ROLE_WEBSERVER
     declare -g SERVER_ROLE_DATABASE
     declare -g SERVER_ADDITIONAL_IPS
 
     # Read required vars from server config file
     SERVER_TIMEZONE="$(json_read_field "${server_config_file}" "SERVER_CONFIG.timezone")"
-    if [[ -z "${SERVER_TIMEZONE}" ]]; then
-        log_event "error" "Missing required config vars for server config" "true"
-        exit 1
-    fi
+    [[ -z "${SERVER_TIMEZONE}" ]] && die "Error reading SERVER_TIMEZONE from server config file."
 
-    UNATTENDED_UPGRADES="$(json_read_field "${server_config_file}" "SERVER_CONFIG.unattended_upgrades")"
-    if [[ -z "${UNATTENDED_UPGRADES}" ]]; then
-        log_event "error" "Missing required config vars for server config." "true"
-        exit 1
-    fi
+    #UNATTENDED_UPGRADES="$(json_read_field "${server_config_file}" "SERVER_CONFIG.unattended_upgrades")"
+    #[[ -z "${UNATTENDED_UPGRADES}" ]] && die "Error reading UNATTENDED_UPGRADES from server config file."
 
     if [[ -z "${SERVER_ROLE_WEBSERVER}" ]]; then
         SERVER_ROLE_WEBSERVER="$(json_read_field "${server_config_file}" "SERVER_CONFIG.config[].webserver")"
-        if [[ -z "${SERVER_ROLE_WEBSERVER}" ]]; then
-            log_event "error" "Missing required config vars for server role." "true"
-            exit 1
-        fi
+        [[ -z "${SERVER_ROLE_WEBSERVER}" ]] && die "Error reading SERVER_ROLE_WEBSERVER from server config file."
     fi
 
     if [[ -z "${SERVER_ROLE_DATABASE}" ]]; then
         SERVER_ROLE_DATABASE="$(json_read_field "${server_config_file}" "SERVER_CONFIG.config[].database")"
-        if [[ -z "${SERVER_ROLE_DATABASE}" ]]; then
-            log_event "error" "Missing required config vars for server role." "true"
-            exit 1
-        fi
+        [[ -z "${SERVER_ROLE_DATABASE}" ]] && die "Error reading SERVER_ROLE_DATABASE from server config file."
     fi
 
     if [[ ${SERVER_ROLE_WEBSERVER} != "enabled" ]] && [[ ${SERVER_ROLE_DATABASE} != "enabled" ]]; then
@@ -67,7 +55,8 @@ function _brolit_configuration_load_server_config() {
     # Read optional vars from server config file
     SERVER_ADDITIONAL_IPS="$(json_read_field "${server_config_file}" "SERVER_CONFIG.additional_ips")"
 
-    export SERVER_TIMEZONE UNATTENDED_UPGRADES SERVER_ROLE_WEBSERVER SERVER_ROLE_DATABASE SERVER_ADDITIONAL_IPS
+    export SERVER_TIMEZONE SERVER_ROLE_WEBSERVER SERVER_ROLE_DATABASE SERVER_ADDITIONAL_IPS
+    #export UNATTENDED_UPGRADES
 
 }
 
@@ -97,17 +86,21 @@ function _brolit_configuration_load_backup_sftp() {
 
     if [[ ${BACKUP_SFTP_STATUS} == "enabled" ]]; then
 
+        # Required
         BACKUP_SFTP_CONFIG_SERVER_IP="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_ip")"
-        BACKUP_SFTP_CONFIG_SERVER_PORT="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_port")"
-        BACKUP_SFTP_CONFIG_SERVER_USER="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_user")"
-        BACKUP_SFTP_CONFIG_SERVER_USER_PASSWORD="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_user_password")"
-        BACKUP_SFTP_CONFIG_SERVER_REMOTE_PATH="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_remote_path")"
+        [[ -z "${BACKUP_SFTP_CONFIG_SERVER_IP}" ]] && die "Error reading BACKUP_SFTP_CONFIG_SERVER_IP from server config file."
 
-        # Check if all required vars are set
-        if [ -z "${BACKUP_SFTP_CONFIG_SERVER_IP}" ] || [ -z "${BACKUP_SFTP_CONFIG_SERVER_PORT}" ] || [ -z "${BACKUP_SFTP_CONFIG_SERVER_USER}" ] || [ -z "${BACKUP_SFTP_CONFIG_SERVER_USER_PASSWORD}" ] || [ -z "${BACKUP_SFTP_CONFIG_SERVER_REMOTE_PATH}" ]; then
-            log_event "error" "Missing required config vars for SFTP backup method" "true"
-            exit 1
-        fi
+        BACKUP_SFTP_CONFIG_SERVER_PORT="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_port")"
+        [[ -z "${BACKUP_SFTP_CONFIG_SERVER_PORT}" ]] && die "Error reading BACKUP_SFTP_CONFIG_SERVER_PORT from server config file."
+
+        BACKUP_SFTP_CONFIG_SERVER_USER="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_user")"
+        [[ -z "${BACKUP_SFTP_CONFIG_SERVER_USER}" ]] && die "Error reading BACKUP_SFTP_CONFIG_SERVER_USER from server config file."
+
+        BACKUP_SFTP_CONFIG_SERVER_USER_PASSWORD="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_user_password")"
+        [[ -z "${BACKUP_SFTP_CONFIG_SERVER_USER_PASSWORD}" ]] && die "Error reading BACKUP_SFTP_CONFIG_SERVER_USER_PASSWORD from server config file."
+
+        BACKUP_SFTP_CONFIG_SERVER_REMOTE_PATH="$(json_read_field "${server_config_file}" "BACKUPS.methods[].sftp[].config[].server_remote_path")"
+        [[ -z "${BACKUP_SFTP_CONFIG_SERVER_REMOTE_PATH}" ]] && die "Error reading BACKUP_SFTP_CONFIG_SERVER_REMOTE_PATH from server config file."
 
     fi
 
@@ -162,7 +155,7 @@ function _brolit_configuration_load_backup_dropbox() {
             display --indent 8 --text "Config file not found: ${BACKUP_DROPBOX_CONFIG_FILE}" --tcolor YELLOW
             display --indent 8 --text "Please finish the configuration running: ${DROPBOX_UPLOADER}" --tcolor YELLOW
 
-            exit 1
+            die "Dropbox config file not found. Please finish the configuration running: ${DROPBOX_UPLOADER}"
 
         fi
 
@@ -193,12 +186,9 @@ function _brolit_configuration_load_backup_local() {
     BACKUP_LOCAL_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.methods[].local[].status")"
 
     if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
+
         BACKUP_LOCAL_CONFIG_BACKUP_PATH="$(json_read_field "${server_config_file}" "BACKUPS.methods[].local[].config[].backup_path")"
-        # Check if all required vars are set
-        if [ -z "${BACKUP_LOCAL_CONFIG_BACKUP_PATH}" ]; then
-            log_event "error" "Missing required config vars for local backup method" "true"
-            exit 1
-        fi
+        [[ -z "${BACKUP_LOCAL_CONFIG_BACKUP_PATH}" ]] && die "Error reading BACKUP_LOCAL_CONFIG_BACKUP_PATH from server config file."
 
     fi
 
@@ -223,6 +213,7 @@ function _brolit_configuration_load_backup_s3() {
     # Globals
     declare -g BACKUP_S3_STATUS
     declare -g BACKUP_S3_BUCKET
+    declare -g BACKUP_S3_ENDPOINT_URL
     declare -g BACKUP_S3_ACCESS_KEY
     declare -g BACKUP_S3_SECRET_KEY
     declare -g BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH
@@ -233,31 +224,21 @@ function _brolit_configuration_load_backup_s3() {
 
     if [[ ${BACKUP_S3_STATUS} == "enabled" ]]; then
 
-        # Check if all required vars are set
-
+        # Required
         BACKUP_S3_BUCKET="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].bucket")"
-        if [ -z "${BACKUP_S3_BUCKET}" ]; then
-            log_event "error" "Missing required config vars for s3 backup method" "true"
-            exit 1
-        fi
+        [[ -z "${BACKUP_S3_BUCKET}" ]] && die "Error reading BACKUP_S3_BUCKET from server config file."
+
+        BACKUP_S3_ENDPOINT_URL="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].endpoint_url")"
+        [[ -z "${BACKUP_S3_ENDPOINT_URL}" ]] && die "Error reading BACKUP_S3_ENDPOINT_URL from server config file."
 
         BACKUP_S3_ACCESS_KEY="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].access_key")"
-        if [ -z "${BACKUP_S3_ACCESS_KEY}" ]; then
-            log_event "error" "Missing required config vars for s3 backup method" "true"
-            exit 1
-        fi
+        [[ -z "${BACKUP_S3_ACCESS_KEY}" ]] && die "Error reading BACKUP_S3_ACCESS_KEY from server config file."
 
         BACKUP_S3_SECRET_KEY="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].secret_key")"
-        if [ -z "${BACKUP_S3_SECRET_KEY}" ]; then
-            log_event "error" "Missing required config vars for s3 backup method" "true"
-            exit 1
-        fi
+        [[ -z "${BACKUP_S3_SECRET_KEY}" ]] && die "Error reading BACKUP_S3_SECRET_KEY from server config file."
 
         BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].backup_path")"
-        if [ -z "${BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH}" ]; then
-            log_event "error" "Missing required config vars for s3 backup method" "true"
-            exit 1
-        fi
+        [[ -z "${BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH}" ]] && die "Error reading BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH from server config file."
 
         #BACKUP_S3_CONFIG_BACKUP_FREQUENCY="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].backup_frequency")"
         #if [ -z "${BACKUP_S3_CONFIG_BACKUP_FREQUENCY}" ]; then
@@ -273,7 +254,7 @@ function _brolit_configuration_load_backup_s3() {
 
     fi
 
-    export BACKUP_S3_STATUS BACKUP_S3_BUCKET BACKUP_S3_ACCESS_KEY BACKUP_S3_SECRET_KEY BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH
+    export BACKUP_S3_STATUS BACKUP_S3_BUCKET BACKUP_S3_ENDPOINT_URL BACKUP_S3_ACCESS_KEY BACKUP_S3_SECRET_KEY BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH
 
 }
 
@@ -301,25 +282,15 @@ function _brolit_configuration_load_backup_duplicity() {
 
     if [[ ${BACKUP_DUPLICITY_STATUS} == "enabled" ]]; then
 
-        # Check if all required vars are set
-
+        # Required
         BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH="$(json_read_field "${server_config_file}" "BACKUPS.methods[].duplicity[].config[].backup_destination_path")"
-        if [ -z "${BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH}" ]; then
-            log_event "error" "Missing required config vars for duplicity backup method" "true"
-            exit 1
-        fi
+        [[ -z "${BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH}" ]] && die "Error reading BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH from server config file."
 
         BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY="$(json_read_field "${server_config_file}" "BACKUPS.methods[].duplicity[].config[].backup_frequency")"
-        if [ -z "${BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY}" ]; then
-            log_event "error" "Missing required config vars for duplicity backup method" "true"
-            exit 1
-        fi
+        [[ -z "${BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY}" ]] && die "Error reading BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY from server config file."
 
         BACKUP_DUPLICITY_CONFIG_FULL_LIFE="$(json_read_field "${server_config_file}" "BACKUPS.methods[].duplicity[].config[].backup_full_life")"
-        if [ -z "${BACKUP_DUPLICITY_CONFIG_FULL_LIFE}" ]; then
-            log_event "error" "Missing required config vars for duplicity backup method" "true"
-            exit 1
-        fi
+        [[ -z "${BACKUP_DUPLICITY_CONFIG_FULL_LIFE}" ]] && die "Error reading BACKUP_DUPLICITY_CONFIG_FULL_LIFE from server config file."
 
     fi
 
@@ -356,10 +327,8 @@ function _brolit_configuration_load_backup_config() {
 
     ## Backup config projects
     BACKUP_CONFIG_PROJECTS_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].status")"
-    if [[ -z ${BACKUP_CONFIG_PROJECTS_STATUS} ]]; then
-        log_event "error" "Missing required config vars for backup retention" "true"
-        exit 1
-    fi
+    [[ -z ${BACKUP_CONFIG_PROJECTS_STATUS} ]] && die "Error reading BACKUP_CONFIG_PROJECTS_STATUS from server config file."
+
     BACKUP_CONFIG_FOLLOW_SYMLINKS="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].follow_symlinks")"
     IGNORED_PROJECTS_LIST="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].ignored[]")"
     EXCLUDED_FILES_LIST="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].excluded_on_tar[]")"
@@ -369,24 +338,19 @@ function _brolit_configuration_load_backup_config() {
 
     ## Backup config databases
     BACKUP_CONFIG_DATABASES_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.config[].databases[].status")"
-    if [[ -z ${BACKUP_CONFIG_DATABASES_STATUS} ]]; then
-        log_event "error" "Missing required config vars for backup retention" "true"
-        exit 1
-    fi
+    [[ -z ${BACKUP_CONFIG_DATABASES_STATUS} ]] && die "Error reading BACKUP_CONFIG_DATABASES_STATUS from server config file."
+
     EXCLUDED_DATABASES_LIST="$(json_read_field "${server_config_file}" "BACKUPS.config[].databases[].exclude[]")"
 
     ## Backup config server_cfg
     BACKUP_CONFIG_SERVER_CFG_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.config[].server_cfg")"
-    if [[ -z ${BACKUP_CONFIG_SERVER_CFG_STATUS} ]]; then
-        log_event "error" "Missing required config vars for backup retention" "true"
-        exit 1
-    fi
+    [[ -z ${BACKUP_CONFIG_SERVER_CFG_STATUS} ]] && die "Error reading BACKUP_CONFIG_SERVER_CFG_STATUS from server config file."
 
     ## Backup config compression_type
     BACKUP_CONFIG_COMPRESSION_TYPE="$(json_read_field "${server_config_file}" "BACKUPS.config[].compression_type")"
     if [[ -z ${BACKUP_CONFIG_COMPRESSION_TYPE} ]]; then
-        log_event "error" "Missing required config vars for backup retention" "true"
-        exit 1
+        die "Error reading BACKUP_CONFIG_COMPRESSION_TYPE from server config file."
+
     else
 
         case ${BACKUP_CONFIG_COMPRESSION_TYPE} in
@@ -448,16 +412,10 @@ function _brolit_configuration_load_backup_retention() {
     fi
 
     BACKUP_RETENTION_KEEP_WEEKLY="$(json_read_field "${server_config_file}" "BACKUPS.config[].retention[].keep_weekly")"
-    if [[ -z ${BACKUP_RETENTION_KEEP_WEEKLY} ]]; then
-        log_event "error" "Missing required config vars for backup retention" "true"
-        exit 1
-    fi
+    [[ -z ${BACKUP_RETENTION_KEEP_WEEKLY} ]] && die "Error reading BACKUP_RETENTION_KEEP_WEEKLY from server config file."
 
     BACKUP_RETENTION_KEEP_MONTHLY="$(json_read_field "${server_config_file}" "BACKUPS.config[].retention[].keep_monthly")"
-    if [[ -z ${BACKUP_RETENTION_KEEP_MONTHLY} ]]; then
-        log_event "error" "Missing required config vars for backup retention" "true"
-        exit 1
-    fi
+    [[ -z ${BACKUP_RETENTION_KEEP_MONTHLY} ]] && die "Error reading BACKUP_RETENTION_KEEP_MONTHLY from server config file."
 
     # Calculated vars
     DAYSAGO="$(date --date="${BACKUP_RETENTION_KEEP_DAILY} days ago" +"%Y-%m-%d")"
@@ -495,31 +453,32 @@ function _brolit_configuration_load_email() {
     declare -g NOTIFICATION_EMAIL_SMTP_USER
     declare -g NOTIFICATION_EMAIL_SMTP_UPASS
 
-    #display --indent 2 --text "- Checking email notifications config"
-
-    ### email
+    ### Email
     NOTIFICATION_EMAIL_STATUS="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].status")"
 
     if [[ ${NOTIFICATION_EMAIL_STATUS} == "enabled" ]]; then
 
+        # Required
         NOTIFICATION_EMAIL_MAILA="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].maila")"
+        [[ -z ${NOTIFICATION_EMAIL_MAILA} ]] && die "Error reading NOTIFICATION_EMAIL_MAILA from server config file."
+
         NOTIFICATION_EMAIL_SMTP_SERVER="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].smtp_server")"
+        [[ -z ${NOTIFICATION_EMAIL_SMTP_SERVER} ]] && die "Error reading NOTIFICATION_EMAIL_SMTP_SERVER from server config file."
+
         NOTIFICATION_EMAIL_SMTP_PORT="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].smtp_port")"
+        [[ -z ${NOTIFICATION_EMAIL_SMTP_PORT} ]] && die "Error reading NOTIFICATION_EMAIL_SMTP_PORT from server config file."
+
         NOTIFICATION_EMAIL_SMTP_TLS="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].smtp_tls")"
+        [[ -z ${NOTIFICATION_EMAIL_SMTP_TLS} ]] && die "Error reading NOTIFICATION_EMAIL_SMTP_TLS from server config file."
+
         NOTIFICATION_EMAIL_SMTP_USER="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].smtp_user")"
+        [[ -z ${NOTIFICATION_EMAIL_SMTP_USER} ]] && die "Error reading NOTIFICATION_EMAIL_SMTP_USER from server config file."
+
         NOTIFICATION_EMAIL_SMTP_UPASS="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].smtp_user_pass")"
-
-        if [[ -z "${NOTIFICATION_EMAIL_MAILA}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_SERVER}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_PORT}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_USER}" ]] || [[ -z "${NOTIFICATION_EMAIL_SMTP_UPASS}" ]]; then
-
-            #clear_previous_lines "1"
-            display --indent 4 --text "Missing required config vars for email notifications" --tcolor RED
-            exit 1
-
-        fi
+        [[ -z ${NOTIFICATION_EMAIL_SMTP_UPASS} ]] && die "Error reading NOTIFICATION_EMAIL_SMTP_UPASS from server config file."
 
     else
 
-        #clear_previous_lines "1"
         display --indent 6 --text "- Checking email notifications config" --result "WARNING" --color YELLOW
         display --indent 8 --text "Email notifications are disabled"
 
@@ -552,14 +511,12 @@ function _brolit_configuration_load_telegram() {
 
     if [[ ${NOTIFICATION_TELEGRAM_STATUS} == "enabled" ]]; then
 
+        # Required
         NOTIFICATION_TELEGRAM_BOT_TOKEN="$(json_read_field "${server_config_file}" "NOTIFICATIONS.telegram[].config[].bot_token")"
-        NOTIFICATION_TELEGRAM_CHAT_ID="$(json_read_field "${server_config_file}" "NOTIFICATIONS.telegram[].config[].chat_id")"
+        [[ -z ${NOTIFICATION_TELEGRAM_BOT_TOKEN} ]] && die "Error reading NOTIFICATION_TELEGRAM_BOT_TOKEN from server config file."
 
-        # Check if all required vars are set
-        if [[ -z "${NOTIFICATION_TELEGRAM_BOT_TOKEN}" ]] || [[ -z "${NOTIFICATION_TELEGRAM_CHAT_ID}" ]]; then
-            log_event "error" "Missing required config vars for telegram notifications" "true"
-            exit 1
-        fi
+        NOTIFICATION_TELEGRAM_CHAT_ID="$(json_read_field "${server_config_file}" "NOTIFICATIONS.telegram[].config[].chat_id")"
+        [[ -z ${NOTIFICATION_TELEGRAM_CHAT_ID} ]] && die "Error reading NOTIFICATION_TELEGRAM_CHAT_ID from server config file."
 
     fi
 
@@ -592,10 +549,7 @@ function _brolit_configuration_load_discord() {
         NOTIFICATION_DISCORD_WEBHOOK="$(json_read_field "${server_config_file}" "NOTIFICATIONS.discord[].config[].webhook")"
 
         # Check if all required vars are set
-        if [[ -z "${NOTIFICATION_DISCORD_WEBHOOK}" ]]; then
-            log_event "error" "Missing required config vars for Discord notifications" "true"
-            exit 1
-        fi
+        [[ -z "${NOTIFICATION_DISCORD_WEBHOOK}" ]] && die "Error reading NOTIFICATION_DISCORD_WEBHOOK from server config file."
 
     fi
 
@@ -629,10 +583,7 @@ function _brolit_configuration_load_firewall_ufw() {
         SECURITY_UFW_APP_LIST_SSH="$(json_read_field "${server_config_file}" "ufw[].config[].ssh")"
 
         # Check if all required vars are set
-        if [[ -z "${SECURITY_UFW_APP_LIST_SSH}" ]]; then
-            log_event "error" "Missing required config vars for firewall" "true"
-            exit 1
-        fi
+        [[ -z "${SECURITY_UFW_APP_LIST_SSH}" ]] && die "Error reading SECURITY_UFW_APP_LIST_SSH from server config file."
 
     fi
 
@@ -664,10 +615,7 @@ function _brolit_configuration_load_firewall_fail2ban() {
     if [[ ${FIREWALL_FAIL2BAN_STATUS} == "enabled" ]]; then
 
         # Check if all required vars are set
-        if [[ -z "${FIREWALL_FAIL2BAN_STATUS}" ]]; then
-            log_event "error" "Missing required config vars for firewall" "true"
-            exit 1
-        fi
+        [[ -z "${FIREWALL_FAIL2BAN_STATUS}" ]] && die "Error reading FIREWALL_FAIL2BAN_STATUS from server config file."
 
     fi
 
@@ -709,8 +657,7 @@ function _brolit_configuration_load_cloudflare() {
 
         # Check if all required vars are set
         if [[ -z "${SUPPORT_CLOUDFLARE_EMAIL}" ]] || [[ -z "${SUPPORT_CLOUDFLARE_API_KEY}" ]]; then
-            log_event "error" "Missing required config vars for Cloudflare support" "true"
-            exit 1
+            die "Missing required config vars for Cloudflare support"
         fi
 
     fi
@@ -735,8 +682,7 @@ function _brolit_configuration_load_nginx() {
 
     # Globals
     declare -g PACKAGES_NGINX_STATUS
-    declare -g PACKAGES_NGINX_CONFIG_VERSION
-    declare -g PACKAGES_NGINX_CONFIG_PORTS
+    #declare -g PACKAGES_NGINX_CONFIG_PORTS
 
     declare -g WSERVER="/etc/nginx" # Webserver config files location
 
@@ -748,35 +694,20 @@ function _brolit_configuration_load_nginx() {
 
     if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
 
-        PACKAGES_NGINX_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.nginx[].version")"
-        # Check if all required vars are set
-        if [[ -z ${PACKAGES_NGINX_CONFIG_VERSION} ]]; then
-            log_event "error" "Missing required config vars for nginx" "true"
-            exit 1
-        fi
-
-        PACKAGES_NGINX_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.nginx[].config[].port")"
-        # Check if all required vars are set
-        if [[ -z ${PACKAGES_NGINX_CONFIG_PORTS} ]]; then
-            log_event "error" "Missing required config vars for nginx" "true"
-            exit 1
-        fi
+        #PACKAGES_NGINX_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.nginx[].config[].port")"
+        #[[ -z ${PACKAGES_NGINX_CONFIG_PORTS} ]] && die "Error reading PACKAGES_NGINX_CONFIG_PORTS from server config file."
 
         # Checking if nginx is not installed
-        if [[ ${exitstatus} -eq 1 ]]; then
-            menu_config_changes_detected "nginx" "true"
-        fi
+        [[ ${exitstatus} -eq 1 || -z ${nginx_bin} ]] && pkg_config_changes_detected "nginx" "true"
 
     else
 
-        # Checking if nginx is  installed
-        if [[ ${exitstatus} -eq 0 ]]; then
-            menu_config_changes_detected "nginx" "true"
-        fi
+        # Checking if nginx is installed
+        [[ ${exitstatus} -eq 0 && -n ${nginx_bin} ]] && pkg_config_changes_detected "nginx" "true"
 
     fi
 
-    export NGINX WSERVER PACKAGES_NGINX_STATUS PACKAGES_NGINX_CONFIG_VERSION PACKAGES_NGINX_CONFIG_PORTS
+    export NGINX WSERVER PACKAGES_NGINX_STATUS #PACKAGES_NGINX_CONFIG_PORTS
 
 }
 
@@ -816,77 +747,35 @@ function _brolit_configuration_load_php() {
 
     if [[ ${PACKAGES_PHP_STATUS} == "enabled" ]]; then
 
+        PACKAGES_PHP_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.php[].version")"
+        [[ -z ${PACKAGES_PHP_VERSION} ]] && die "Missing required config vars for php"
+
         source "${BROLIT_MAIN_DIR}/utils/installers/php_installer.sh"
 
-        PACKAGES_PHP_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.php[].version")"
-        # Check if all required vars are set
-        if [[ -z ${PACKAGES_PHP_VERSION} ]]; then
-
-            log_event "error" "Missing required config vars for php" "true"
-            exit 1
-
-        else
-
-            if [[ ${PACKAGES_PHP_VERSION} == "default" ]]; then
-
-                PHP_V="$(php_get_distro_default_version)"
-
-            else
-
-                PHP_V="${PACKAGES_PHP_VERSION}"
-
-            fi
-
-        fi
+        [[ ${PACKAGES_PHP_VERSION} == "default" ]] && PHP_V="$(php_get_distro_default_version)" || PHP_V="${PACKAGES_PHP_VERSION}"
 
         PACKAGES_PHP_CONFIG_OPCODE="$(json_read_field "${server_config_file}" "PACKAGES.php[].config[].opcode")"
-        # Check if all required vars are set
-        if [[ -z ${PACKAGES_PHP_CONFIG_OPCODE} ]]; then
-            log_event "error" "Missing required config vars for php" "true"
-            exit 1
-        fi
+        [[ -z ${PACKAGES_PHP_CONFIG_OPCODE} ]] && die "Error reading PACKAGES_PHP_CONFIG_OPCODE from server config file."
 
         PACKAGES_PHP_EXTENSIONS_WPCLI="$(json_read_field "${server_config_file}" "PACKAGES.php[].extensions[].wpcli")"
-        # Check if all required vars are set
-        if [[ -z ${PACKAGES_PHP_EXTENSIONS_WPCLI} ]]; then
-            log_event "error" "Missing required config vars for php" "true"
-            exit 1
-        fi
+        [[ -z ${PACKAGES_PHP_EXTENSIONS_WPCLI} ]] && die "Error reading PACKAGES_PHP_EXTENSIONS_WPCLI from server config file."
 
         PACKAGES_PHP_EXTENSIONS_REDIS="$(json_read_field "${server_config_file}" "PACKAGES.php[].extensions[].redis")"
-        # Check if all required vars are set
-        if [[ -z ${PACKAGES_PHP_EXTENSIONS_REDIS} ]]; then
-            log_event "error" "Missing required config vars for php" "true"
-            exit 1
-        fi
+        [[ -z ${PACKAGES_PHP_EXTENSIONS_REDIS} ]] && die "Error reading PACKAGES_PHP_EXTENSIONS_REDIS from server config file."
 
         PACKAGES_PHP_EXTENSIONS_MEMCACHED="$(json_read_field "${server_config_file}" "PACKAGES.php[].extensions[].memcached")"
-        # Check if all required vars are set
-        if [[ -z ${PACKAGES_PHP_EXTENSIONS_MEMCACHED} ]]; then
-            log_event "error" "Missing required config vars for php" "true"
-            exit 1
-        fi
+        [[ -z ${PACKAGES_PHP_EXTENSIONS_MEMCACHED} ]] && die "Error reading PACKAGES_PHP_EXTENSIONS_MEMCACHED from server config file."
 
         PACKAGES_PHP_EXTENSIONS_COMPOSER="$(json_read_field "${server_config_file}" "PACKAGES.php[].extensions[].composer")"
-        # Check if all required vars are set
-        if [[ -z ${PACKAGES_PHP_EXTENSIONS_COMPOSER} ]]; then
-            log_event "error" "Missing required config vars for php" "true"
-            exit 1
-        fi
-
-        #package_is_installed "php${PHP_V}-fpm"
+        [[ -z ${PACKAGES_PHP_EXTENSIONS_COMPOSER} ]] && die "Error reading PACKAGES_PHP_EXTENSIONS_COMPOSER from server config file."
 
         # Checking if php is not installed
-        if [[ ! -x ${PHP} ]]; then
-            menu_config_changes_detected "php" "true"
-        fi
+        [[ ! -x ${PHP} ]] && pkg_config_changes_detected "php" "true"
 
     else
 
         # Checking if php is installed
-        if [[ -x ${PHP} ]]; then
-            menu_config_changes_detected "php" "true"
-        fi
+        [[ -x ${PHP} ]] && pkg_config_changes_detected "php" "true"
 
     fi
 
@@ -936,22 +825,14 @@ function _brolit_configuration_load_mariadb() {
     if [[ ${PACKAGES_MARIADB_STATUS} == "enabled" ]]; then
 
         PACKAGES_MARIADB_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.mariadb[].version")"
-        # Check if all required vars are set
-        if [[ -z ${PACKAGES_MARIADB_CONFIG_VERSION} ]]; then
-            log_event "error" "Missing required config vars for mariadb" "true"
-            exit 1
-        fi
+        [[ -z ${PACKAGES_MARIADB_CONFIG_VERSION} ]] && die "Error reading PACKAGES_MARIADB_CONFIG_VERSION from server config file."
 
         PACKAGES_MARIADB_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.mariadb[].config[].port")"
-        # Check if all required vars are set
-        if [[ -z ${PACKAGES_MARIADB_CONFIG_PORTS} ]]; then
-            log_event "error" "Missing required config vars for mariadb" "true"
-            exit 1
-        fi
+        [[ -z ${PACKAGES_MARIADB_CONFIG_PORTS} ]] && die "Error reading PACKAGES_MARIADB_CONFIG_PORTS from server config file."
 
         # Checking if MYSQL is not installed
         if [[ ! -x ${MYSQL} ]]; then
-            menu_config_changes_detected "mariadb" "true"
+            pkg_config_changes_detected "mariadb" "true"
 
         else
             # Check which mysql version is installed
@@ -965,7 +846,6 @@ function _brolit_configuration_load_mariadb() {
         fi
 
         MYSQLDUMP="$(command -v mysqldump)"
-
         if [[ -f ${MYSQL_CONF} ]]; then
             # Append login parameters to command
             MYSQL_ROOT="${MYSQL} --defaults-file=${MYSQL_CONF}"
@@ -980,13 +860,12 @@ function _brolit_configuration_load_mariadb() {
     else
 
         if [[ -x ${MYSQL} ]]; then
+
             # Check which mysql version is installed
             is_mariadb="$(mysql -V | grep MariaDB)"
 
             # Checking if MYSQL is installed and is not MariaDB
-            if [[ -n ${is_mariadb} ]]; then
-                menu_config_changes_detected "mariadb" "true"
-            fi
+            [[ -n ${is_mariadb} ]] && pkg_config_changes_detected "mariadb" "true"
 
         fi
 
@@ -1037,22 +916,14 @@ function _brolit_configuration_load_mysql() {
     if [[ ${PACKAGES_MYSQL_STATUS} == "enabled" ]]; then
 
         PACKAGES_MYSQL_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.mysql[].version")"
-        # Check if all required vars are set
-        if [[ -z ${PACKAGES_MYSQL_CONFIG_VERSION} ]]; then
-            log_event "error" "Missing required config vars for mysql" "true"
-            exit 1
-        fi
+        [[ -z ${PACKAGES_MYSQL_CONFIG_VERSION} ]] && die "Error reading PACKAGES_MYSQL_CONFIG_VERSION from server config file."
 
         PACKAGES_MYSQL_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.mysql[].config[].port")"
-        # Check if all required vars are set
-        if [[ -z ${PACKAGES_MYSQL_CONFIG_PORTS} ]]; then
-            log_event "error" "Missing required config vars for mysql" "true"
-            exit 1
-        fi
+        [[ -z ${PACKAGES_MYSQL_CONFIG_PORTS} ]] && die "Error reading PACKAGES_MYSQL_CONFIG_PORTS from server config file."
 
         # Checking if MYSQL is not installed
         if [[ ! -x ${MYSQL} ]]; then
-            menu_config_changes_detected "mysql" "true"
+            pkg_config_changes_detected "mysql" "true"
         else
 
             # Check which mysql version is installed
@@ -1077,23 +948,18 @@ function _brolit_configuration_load_mysql() {
 
         fi
 
-    else
-        # ${PACKAGES_MYSQL_STATUS} == "disabled"
+    else # ${PACKAGES_MYSQL_STATUS} == "disabled"
 
         if [[ -x ${MYSQL} ]]; then
             # Check which mysql version is installed
             is_mariadb="$(mysql -V | grep MariaDB)"
 
             # Checking if MYSQL is installed and is not MariaDB
-            if [[ -z ${is_mariadb} ]]; then
-                menu_config_changes_detected "mysql" "true"
-            fi
+            [[ -z ${is_mariadb} ]] && pkg_config_changes_detected "mysql" "true"
 
         fi
 
     fi
-
-    #_brolit_configuration_app_mysql
 
     export MHOST MUSER MYSQL_CONF_DIR MYSQL MYSQL_CONF MYSQL_ROOT MYSQLDUMP_ROOT MYSQLDUMP
     export PACKAGES_MYSQL_STATUS PACKAGES_MYSQL_CONFIG_VERSION PACKAGES_MYSQL_CONFIG_PORTS
@@ -1132,23 +998,13 @@ function _brolit_configuration_load_postgres() {
     if [[ ${PACKAGES_POSTGRES_STATUS} == "enabled" ]]; then
 
         PACKAGES_POSTGRES_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.postgres[].version")"
-        # Check if all required vars are set
-        if [[ -z ${PACKAGES_POSTGRES_CONFIG_VERSION} ]]; then
-            log_event "error" "Missing required config vars for postgres" "true"
-            exit 1
-        fi
+        [[ -z ${PACKAGES_POSTGRES_CONFIG_VERSION} ]] && die "Error reading PACKAGES_POSTGRES_CONFIG_VERSION from server config file."
 
         PACKAGES_POSTGRES_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.postgres[].config[].port")"
-        # Check if all required vars are set
-        if [[ -z ${PACKAGES_POSTGRES_CONFIG_PORTS} ]]; then
-            log_event "error" "Missing required config vars for postgres" "true"
-            exit 1
-        fi
+        [[ -z ${PACKAGES_POSTGRES_CONFIG_PORTS} ]] && die "Error reading PACKAGES_POSTGRES_CONFIG_PORTS from server config file."
 
         # Checking if Postgres is not installed
-        if [[ ! -x ${POSTGRES} ]]; then
-            menu_config_changes_detected "postgres" "true"
-        fi
+        [[ ! -x ${POSTGRES} ]] && pkg_config_changes_detected "postgres" "true"
 
         PSQLDUMP="$(command -v pg_dump)"
 
@@ -1159,9 +1015,7 @@ function _brolit_configuration_load_postgres() {
     else
 
         # Checking if Postgres is installed
-        if [[ -x ${POSTGRES} ]]; then
-            menu_config_changes_detected "postgres" "true"
-        fi
+        [[ -x ${POSTGRES} ]] && pkg_config_changes_detected "postgres" "true"
 
     fi
 
@@ -1187,7 +1041,6 @@ function _brolit_configuration_load_redis() {
     # Globals
     declare -g PACKAGES_REDIS_STATUS
     declare -g PACKAGES_REDIS_CONFIG_VERSION
-    #declare -g PACKAGES_REDIS_CONFIG_PORTS
 
     REDIS="$(command -v redis-cli)"
 
@@ -1195,23 +1048,15 @@ function _brolit_configuration_load_redis() {
     if [[ ${PACKAGES_REDIS_STATUS} == "enabled" ]]; then
 
         PACKAGES_REDIS_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.redis[].version")"
-        # Check if all required vars are set
-        if [[ -z ${PACKAGES_REDIS_CONFIG_VERSION} ]]; then
-            log_event "error" "Missing required config vars for redis" "true"
-            exit 1
-        fi
+        [[ -z ${PACKAGES_REDIS_CONFIG_VERSION} ]] && die "Error reading PACKAGES_REDIS_CONFIG_VERSION from server config file."
 
         # Checking if Redis is not installed
-        if [[ ! -x ${REDIS} ]]; then
-            menu_config_changes_detected "redis" "true"
-        fi
+        [[ ! -x ${REDIS} ]] && pkg_config_changes_detected "redis" "true"
 
     else
 
         # Checking if Redis is  installed
-        if [[ -x ${REDIS} ]]; then
-            menu_config_changes_detected "redis" "true"
-        fi
+        [[ -x ${REDIS} ]] && pkg_config_changes_detected "redis" "true"
 
     fi
 
@@ -1242,28 +1087,18 @@ function _brolit_configuration_load_certbot() {
     PACKAGES_CERTBOT_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.certbot[].status")"
 
     CERTBOT="$(which certbot)"
-    #CERTBOT="$(command -v certbot)"
     if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
 
         PACKAGES_CERTBOT_CONFIG_MAILA="$(json_read_field "${server_config_file}" "PACKAGES.certbot[].config[].email")"
-
-        # Check if all required vars are set
-        if [[ -z "${PACKAGES_CERTBOT_CONFIG_MAILA}" ]]; then
-            log_event "error" "Missing required config vars for certbot" "true"
-            exit 1
-        fi
+        [[ -z "${PACKAGES_CERTBOT_CONFIG_MAILA}" ]] && die "Error reading PACKAGES_CERTBOT_CONFIG_MAILA from server config file."
 
         # Checking if Certbot is not installed
-        if [[ ! -x "${CERTBOT}" ]]; then
-            menu_config_changes_detected "certbot" "true"
-        fi
+        [[ ! -x "${CERTBOT}" ]] && pkg_config_changes_detected "certbot" "true"
 
     else
 
         # Checking if Certbot is  installed
-        if [[ -x "${CERTBOT}" ]]; then
-            menu_config_changes_detected "certbot" "true"
-        fi
+        [[ -x "${CERTBOT}" ]] && pkg_config_changes_detected "certbot" "true"
 
         display --indent 6 --text "- Certbot disabled" --result "WARNING" --color YELLOW
 
@@ -1298,42 +1133,27 @@ function _brolit_configuration_load_monit() {
     if [[ ${PACKAGES_MONIT_STATUS} == "enabled" ]]; then
 
         PACKAGES_MONIT_CONFIG_MAILA="$(json_read_field "${server_config_file}" "PACKAGES.monit[].config[].monit_maila")"
-
-        # Check if all required vars are set
-        if [[ -z ${PACKAGES_MONIT_CONFIG_MAILA} ]]; then
-            log_event "error" "Missing required config vars for monit" "true"
-            exit 1
-        fi
+        [[ -z ${PACKAGES_MONIT_CONFIG_MAILA} ]] && die "Error reading PACKAGES_MONIT_CONFIG_MAILA from server config file."
 
         PACKAGES_MONIT_CONFIG_HTTPD_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.monit[].config[].monit_httpd[].status")"
-        PACKAGES_MONIT_CONFIG_HTTPD_USER="$(json_read_field "${server_config_file}" "PACKAGES.monit[].config[].monit_httpd[].user")"
-        PACKAGES_MONIT_CONFIG_HTTPD_PASS="$(json_read_field "${server_config_file}" "PACKAGES.monit[].config[].monit_httpd[].pass")"
+        [[ -z ${PACKAGES_MONIT_CONFIG_HTTPD_STATUS} ]] && die "Error reading PACKAGES_MONIT_CONFIG_HTTPD_STATUS from server config file."
 
-        # Check if all required vars are set
-        if [[ -z ${PACKAGES_MONIT_CONFIG_HTTPD_STATUS} ]]; then
-            log_event "error" "Missing required config vars for monit" "true"
-            exit 1
-        fi
+        PACKAGES_MONIT_CONFIG_HTTPD_USER="$(json_read_field "${server_config_file}" "PACKAGES.monit[].config[].monit_httpd[].user")"
+        [[ -z ${PACKAGES_MONIT_CONFIG_HTTPD_USER} ]] && die "Error reading PACKAGES_MONIT_CONFIG_HTTPD_USER from server config file."
+
+        PACKAGES_MONIT_CONFIG_HTTPD_PASS="$(json_read_field "${server_config_file}" "PACKAGES.monit[].config[].monit_httpd[].pass")"
+        [[ -z ${PACKAGES_MONIT_CONFIG_HTTPD_PASS} ]] && die "Error reading PACKAGES_MONIT_CONFIG_HTTPD_PASS from server config file."
 
         MONIT_CONFIG_SERVICES="$(json_read_field "${server_config_file}" "PACKAGES.monit[].config[].monit_services[]")"
-
-        # Check if all required vars are set
-        if [[ -z ${MONIT_CONFIG_SERVICES} ]]; then
-            log_event "error" "Missing required config vars for monit" "true"
-            exit 1
-        fi
+        [[ -z ${MONIT_CONFIG_SERVICES} ]] && die "Error reading MONIT_CONFIG_SERVICES from server config file."
 
         # Checking if Monit is not installed
-        if [[ ! -x ${MONIT} ]]; then
-            menu_config_changes_detected "monit" "true"
-        fi
+        [[ ! -x ${MONIT} ]] && pkg_config_changes_detected "monit" "true"
 
     else
 
         # Checking if Monit is installed
-        if [[ -x ${MONIT} ]]; then
-            menu_config_changes_detected "monit" "true"
-        fi
+        [[ -x ${MONIT} ]] && pkg_config_changes_detected "monit" "true"
 
     fi
 
@@ -1358,6 +1178,7 @@ function _brolit_configuration_load_netdata() {
     # Globals
     declare -g NETDATA
     declare -g NETDATA_PR
+    declare -g NETDATA_DOCKER
     declare -g PACKAGES_NETDATA_STATUS
     declare -g PACKAGES_NETDATA_CONFIG_WEB_ADMIN
     declare -g PACKAGES_NETDATA_CONFIG_SUBDOMAIN
@@ -1369,60 +1190,306 @@ function _brolit_configuration_load_netdata() {
     declare -g PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_CHAT_ID
 
     NETDATA="$(which netdata)"
-    NETDATA_PR="$(pgrep netdata)"
+    NETDATA_PR="$(pgrep netdata)"                          # This will detect if a netdata process is running, but could be a docker container
+    NETDATA_DOCKER="$(docker ps -q --filter name=netdata)" # This will detect if a netdata docker container is running
 
     PACKAGES_NETDATA_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].status")"
+    PACKAGES_NETDATA_CONFIG_WEB_ADMIN="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].web_admin")"
 
     if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
 
         if [[ ${PACKAGES_NETDATA_CONFIG_WEB_ADMIN} == "enabled" ]]; then
+
+            # Required
             PACKAGES_NETDATA_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].subdomain")"
+            [[ -z "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}" ]] && die "Error reading PACKAGES_NETDATA_CONFIG_SUBDOMAIN from server config file."
+
             PACKAGES_NETDATA_CONFIG_USER="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].user")"
+            [[ -z "${PACKAGES_NETDATA_CONFIG_USER}" ]] && die "Error reading PACKAGES_NETDATA_CONFIG_USER from server config file."
+
             PACKAGES_NETDATA_CONFIG_USER_PASS="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].user_pass")"
-            # Check if all required vars are set
-            if [[ -z "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}" ]] || [[ -z "${PACKAGES_NETDATA_CONFIG_USER}" ]] || [[ -z "${PACKAGES_NETDATA_CONFIG_USER_PASS}" ]]; then
-                log_event "error" "Missing required config vars for netdata support" "true"
-                exit 1
-            fi
+            [[ -z "${PACKAGES_NETDATA_CONFIG_USER_PASS}" ]] && die "Error reading PACKAGES_NETDATA_CONFIG_USER_PASS from server config file."
+
         fi
 
         PACKAGES_NETDATA_NOTIFICATION_ALARM_LEVEL="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].notifications[].alarm_level")"
-        # Check if all required vars are set
-        if [[ -z "${PACKAGES_NETDATA_NOTIFICATION_ALARM_LEVEL}" ]]; then
-            log_event "error" "Missing required config vars for netdata support" "true"
-            exit 1
-        fi
+        [[ -z "${PACKAGES_NETDATA_NOTIFICATION_ALARM_LEVEL}" ]] && die "Error reading PACKAGES_NETDATA_NOTIFICATION_ALARM_LEVEL from server config file."
 
         PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].notifications[].telegram[].status")"
         if [[ ${PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_STATUS} == "enabled" ]]; then
 
+            # Required
             PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_BOT_TOKEN="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].notifications[].telegram[].config[].bot_token")"
-            PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_CHAT_ID="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].notifications[].telegram[].config[].chat_id")"
+            [[ -z "${PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_BOT_TOKEN}" ]] && die "Error reading PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_BOT_TOKEN from server config file."
 
-            # Check if all required vars are set
-            if [[ -z "${PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_BOT_TOKEN}" ]] || [[ -z "${PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_CHAT_ID}" ]]; then
-                log_event "error" "Missing required config vars for netdata notifications" "true"
-                exit 1
-            fi
+            PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_CHAT_ID="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].notifications[].telegram[].config[].chat_id")"
+            [[ -z "${PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_CHAT_ID}" ]] && die "Error reading PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_CHAT_ID from server config file."
 
         fi
 
         # Checking if Netdata is not installed
-        if [[ ! -x "${NETDATA}" && -z "${NETDATA_PR}" ]]; then
-            menu_config_changes_detected "netdata" "true"
-        fi
+        [[ ! -x "${NETDATA}" && -z "${NETDATA_PR}" && -z ${NETDATA_DOCKER} ]] && pkg_config_changes_detected "netdata" "true"
 
     else
 
         # Checking if Netdata is installed
-        if [[ -x "${NETDATA}" || -n "${NETDATA_PR}" ]]; then
-            menu_config_changes_detected "netdata" "true"
-        fi
+        [[ -x "${NETDATA}" || -n "${NETDATA_PR}" || -n ${NETDATA_DOCKER} ]] && pkg_config_changes_detected "netdata" "true"
 
     fi
 
     export PACKAGES_NETDATA_STATUS PACKAGES_NETDATA_CONFIG_WEB_ADMIN PACKAGES_NETDATA_CONFIG_SUBDOMAIN PACKAGES_NETDATA_CONFIG_USER PACKAGES_NETDATA_CONFIG_USER_PASS PACKAGES_NETDATA_NOTIFICATION_ALARM_LEVEL
     export PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_STATUS PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_BOT_TOKEN PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_CHAT_ID
+
+}
+
+################################################################################
+# Private: load netdata agent configuration
+#
+# Arguments:
+#   ${1} = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function _brolit_configuration_load_netdata_agent() {
+
+    local server_config_file="${1}"
+
+    local docker
+    local docker_installed
+
+    # Globals
+    declare -g NETDATA_AGENT
+    declare -g PACKAGES_NETDATA_AGENT_STATUS
+    declare -g PACKAGES_NETDATA_AGENT_CONFIG_PORT
+
+    declare -g NETDATA_AGENT_PATH="/root/agent_netdata"
+
+    PACKAGES_NETDATA_AGENT_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].status")"
+
+    if [[ ${PACKAGES_NETDATA_AGENT_STATUS} == "enabled" ]]; then
+
+        docker="$(package_is_installed "docker.io")"
+        docker_installed="$?"
+        if [[ ${docker_installed} -eq 0 ]]; then
+            log_event "debug" "Docker installed on: ${docker}. Now checking if Netdata Agent image is present..." "false"
+            NETDATA_AGENT="$(docker_get_container_id "agent_netdata")"
+        else
+            # Netdata agent requires docker
+            die "In order to install Netdata Agent, docker and docker-compose must be installed."
+        fi
+
+        [[ ${docker_installed} -eq 1 ]] && die "In order to install Netdata Agent, docker and docker-compose must be installed."
+
+        # Required
+        PACKAGES_NETDATA_AGENT_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].version")"
+        [[ -z ${PACKAGES_NETDATA_AGENT_VERSION} ]] && die "Error reading PACKAGES_NETDATA_AGENT_VERSION from config file"
+
+        PACKAGES_NETDATA_AGENT_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].config[].port")"
+        [[ -z ${PACKAGES_NETDATA_AGENT_CONFIG_PORT} ]] && die "Error reading PACKAGES_NETDATA_AGENT_CONFIG_PORT from config file"
+
+        PACKAGES_NETDATA_AGENT_CONFIG_DOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].config[].domain")"
+        [[ -z ${PACKAGES_NETDATA_AGENT_CONFIG_DOMAIN} ]] && die "Error reading PACKAGES_NETDATA_AGENT_CONFIG_DOMAIN from config file"
+
+        PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_TOKEN="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].config[].claim_token")"
+        [[ -z ${PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_TOKEN} ]] && die "Error reading PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_TOKEN from config file"
+
+        # Optional
+        PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_ROOMS="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].config[].claim_rooms")"
+
+        # Checking if Netdata Agent is not installed
+        [[ -z ${NETDATA_AGENT} ]] && pkg_config_changes_detected "netdata_agent" "true"
+
+    else
+
+        # Checking if Netdata Agent is installed
+        [[ -n ${NETDATA_AGENT} ]] && pkg_config_changes_detected "netdata_agent" "true"
+
+    fi
+
+    export NETDATA_AGENT NETDATA_AGENT_PATH PACKAGES_NETDATA_AGENT_STATUS PACKAGES_NETDATA_AGENT_CONFIG_PORT PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_ROOMS
+
+}
+
+################################################################################
+# Private: load Grafana configuration
+#
+# Arguments:
+#   ${1} = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function _brolit_configuration_load_grafana() {
+
+    local server_config_file="${1}"
+
+    # Globals
+    declare -g GRAFANA
+    declare -g GRAFANA_PR
+    declare -g GRAFANA_DOCKER
+    declare -g PACKAGES_GRAFANA_STATUS
+    declare -g PACKAGES_GRAFANA_CONFIG_SUBDOMAIN
+    declare -g PACKAGES_GRAFANA_CONFIG_NGINX_PROXY
+    declare -g PACKAGES_GRAFANA_CONFIG_PORT
+
+    GRAFANA="$(which grafana-server)"
+    GRAFANA_PR="$(pgrep grafana)"                          # This will detect if a grafana process is running, but could be a docker container
+    GRAFANA_DOCKER="$(docker ps -q --filter name=grafana)" # This will detect if a grafana docker container is running
+
+    PACKAGES_GRAFANA_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].status")"
+
+    if [[ ${PACKAGES_GRAFANA_STATUS} == "enabled" ]]; then
+
+        docker="$(package_is_installed "docker.io")"
+        docker_installed="$?"
+        if [[ ${docker_installed} -eq 0 ]]; then
+            log_event "debug" "Docker installed on: ${docker}. Now checking if Grafana image is present..." "false"
+            NETDATA_AGENT="$(docker_get_container_id "grafana")"
+        else
+            # Grafana requires docker
+            die "In order to install Grafana, docker and docker-compose must be installed."
+        fi
+
+        PACKAGES_GRAFANA_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].config[].subdomain")"
+        PACKAGES_GRAFANA_CONFIG_NGINX_PROXY="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].config[].nginx_proxy")"
+        PACKAGES_GRAFANA_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].config[].port")"
+
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_GRAFANA_CONFIG_SUBDOMAIN}" ]] || [[ -z "${PACKAGES_GRAFANA_CONFIG_NGINX_PROXY}" ]] || [[ -z "${PACKAGES_GRAFANA_CONFIG_PORT}" ]]; then
+            die "Missing required config vars for grafana support"
+        fi
+
+        # Checking if Grafana is not installed
+        [[ ! -x "${GRAFANA}" ]] && pkg_config_changes_detected "grafana" "true"
+
+    else
+
+        # Checking if Grafana is installed
+        [[ -x "${GRAFANA}" ]] && pkg_config_changes_detected "grafana" "true"
+
+    fi
+
+}
+
+################################################################################
+# Private: load Loki configuration
+#
+# Arguments:
+#   ${1} = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function _brolit_configuration_load_loki() {
+
+    local server_config_file="${1}"
+
+    # Globals
+    declare -g LOKI
+    declare -g LOKI_PR
+    declare -g LOKI_DOCKER
+    declare -g PACKAGES_LOKI_STATUS
+    declare -g PACKAGES_LOKI_CONFIG_SUBDOMAIN
+    declare -g PACKAGES_LOKI_CONFIG_NGINX_PROXY
+    declare -g PACKAGES_LOKI_CONFIG_PORT
+
+    LOKI="$(which loki)"
+    LOKI_PR="$(pgrep grafana)"                          # This will detect if a loki process is running, but could be a docker container
+    LOKI_DOCKER="$(docker ps -q --filter name=grafana)" # This will detect if a loki docker container is running
+
+    PACKAGES_LOKI_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.loki[].status")"
+
+    if [[ ${PACKAGES_LOKI_STATUS} == "enabled" ]]; then
+
+        docker="$(package_is_installed "docker.io")"
+        docker_installed="$?"
+        if [[ ${docker_installed} -eq 0 ]]; then
+            log_event "debug" "Docker installed on: ${docker}. Now checking if Loki image is present..." "false"
+            NETDATA_AGENT="$(docker_get_container_id "loki")"
+        else
+            # Loki requires docker
+            die "In order to install Loki, docker and docker-compose must be installed."
+        fi
+
+        PACKAGES_LOKI_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.loki[].config[].subdomain")"
+        PACKAGES_LOKI_CONFIG_NGINX_PROXY="$(json_read_field "${server_config_file}" "PACKAGES.loki[].config[].nginx_proxy")"
+        PACKAGES_LOKI_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.loki[].config[].port")"
+
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_LOKI_CONFIG_SUBDOMAIN}" ]] || [[ -z "${PACKAGES_LOKI_CONFIG_NGINX_PROXY}" ]] || [[ -z "${PACKAGES_LOKI_CONFIG_PORT}" ]]; then
+            die "Missing required config vars for loki support"
+        fi
+
+    fi
+
+    export PACKAGES_LOKI_STATUS PACKAGES_LOKI_CONFIG_SUBDOMAIN PACKAGES_LOKI_CONFIG_NGINX_PROXY PACKAGES_LOKI_CONFIG_PORT
+
+}
+
+################################################################################
+# Private: load Promtail configuration
+#
+# Arguments:
+#   ${1} = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function _brolit_configuration_load_promtail() {
+
+    local server_config_file="${1}"
+
+    # Globals
+    declare -g PROMTAIL
+    declare -g PACKAGES_PROMTAIL_STATUS
+    declare -g PACKAGES_PROMTAIL_VERSION
+    declare -g PACKAGES_PROMTAIL_CONFIG_PORT
+    declare -g PACKAGES_PROMTAIL_CONFIG_HOSTNAME
+    declare -g PACKAGES_PROMTAIL_CONFIG_LOKI_URL
+    declare -g PACKAGES_PROMTAIL_CONFIG_LOKI_PORT
+
+    PROMTAIL="$(which promtail)"
+
+    PACKAGES_PROMTAIL_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.promtail[].status")"
+
+    if [[ ${PACKAGES_PROMTAIL_STATUS} == "enabled" ]]; then
+
+        PACKAGES_PROMTAIL_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.promtail[].version")"
+        [[ -z "${PACKAGES_PROMTAIL_VERSION}" ]] && die "Error reading PACKAGES_PROMTAIL_VERSION from server config file."
+
+        PACKAGES_PROMTAIL_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.promtail[].config[].port")"
+        [[ -z "${PACKAGES_PROMTAIL_CONFIG_PORT}" ]] && die "Error reading PACKAGES_PROMTAIL_CONFIG_PORT from server config file."
+
+        PACKAGES_PROMTAIL_CONFIG_HOSTNAME="$(json_read_field "${server_config_file}" "PACKAGES.promtail[].config[].hostname")"
+        [[ -z "${PACKAGES_PROMTAIL_CONFIG_HOSTNAME}" ]] && die "Error reading PACKAGES_PROMTAIL_CONFIG_HOSTNAME from server config file."
+
+        PACKAGES_PROMTAIL_CONFIG_LOKI_URL="$(json_read_field "${server_config_file}" "PACKAGES.promtail[].config[].loki_url")"
+        [[ -z "${PACKAGES_PROMTAIL_CONFIG_LOKI_URL}" ]] && die "Error reading PACKAGES_PROMTAIL_CONFIG_LOKI_URL from server config file."
+
+        PACKAGES_PROMTAIL_CONFIG_LOKI_PORT="$(json_read_field "${server_config_file}" "PACKAGES.promtail[].config[].loki_port")"
+        [[ -z "${PACKAGES_PROMTAIL_CONFIG_LOKI_PORT}" ]] && die "Error reading PACKAGES_PROMTAIL_CONFIG_LOKI_PORT from server config file."
+
+        # Check if all required vars are set
+        if [[ -z "${PACKAGES_PROMTAIL_CONFIG_PORT}" ]] || [[ -z "${PACKAGES_PROMTAIL_CONFIG_HOSTNAME}" ]] || [[ -z "${PACKAGES_PROMTAIL_CONFIG_LOKI_URL}" ]] || [[ -z "${PACKAGES_PROMTAIL_CONFIG_LOKI_PORT}" ]]; then
+            die "Missing required config vars for promtail support"
+        fi
+
+        # Checking if Promtail is not installed
+        [[ ! -x "${PROMTAIL}" ]] && pkg_config_changes_detected "promtail" "true"
+
+    else
+
+        # Checking if Promtail is installed
+        [[ -x "${PROMTAIL}" ]] && pkg_config_changes_detected "promtail" "true"
+
+    fi
+
+    export PROMTAIL PACKAGES_PROMTAIL_STATUS PACKAGES_PROMTAIL_VERSION PACKAGES_PROMTAIL_CONFIG_PORT PACKAGES_PROMTAIL_CONFIG_HOSTNAME PACKAGES_PROMTAIL_CONFIG_LOKI_URL PACKAGES_PROMTAIL_CONFIG_LOKI_PORT
 
 }
 
@@ -1461,21 +1528,16 @@ function _brolit_configuration_load_cockpit() {
 
         # Check if all required vars are set
         if [[ -z "${PACKAGES_COCKPIT_CONFIG_SUBDOMAIN}" ]] || [[ -z "${PACKAGES_COCKPIT_CONFIG_NGINX_PROXY}" ]] || [[ -z "${PACKAGES_COCKPIT_CONFIG_PORT}" ]]; then
-            log_event "error" "Missing required config vars for netdata support" "true"
-            exit 1
+            die "Missing required config vars for netdata support"
         fi
 
         # Checking if Cockpit is not installed
-        if [[ ! -x "${COCKPIT}" && -z "${COCKPIT_PR}" ]]; then
-            menu_config_changes_detected "cockpit" "true"
-        fi
+        [[ ! -x "${COCKPIT}" && -z "${COCKPIT_PR}" ]] && pkg_config_changes_detected "cockpit" "true"
 
     else
 
         # Checking if Cockpit is installed
-        if [[ -x "${COCKPIT}" || -n "${COCKPIT_PR}" ]]; then
-            menu_config_changes_detected "cockpit" "true"
-        fi
+        [[ -x "${COCKPIT}" || -n "${COCKPIT_PR}" ]] && pkg_config_changes_detected "cockpit" "true"
 
     fi
 
@@ -1519,16 +1581,12 @@ function _brolit_configuration_load_zabbix() {
         fi
 
         # Checking if Cockpit is not installed
-        if [[ ! -x "${ZABBIX}" && -z "${ZABBIX_PR}" ]]; then
-            menu_config_changes_detected "zabbix" "true"
-        fi
+        [[ ! -x "${ZABBIX}" && -z "${ZABBIX_PR}" ]] && pkg_config_changes_detected "zabbix" "true"
 
     else
 
         # Checking if Cockpit is installed
-        if [[ -x "${ZABBIX}" || -n "${ZABBIX_PR}" ]]; then
-            menu_config_changes_detected "zabbix" "true"
-        fi
+        [[ -x "${ZABBIX}" || -n "${ZABBIX_PR}" ]] && pkg_config_changes_detected "zabbix" "true"
 
     fi
 
@@ -1551,44 +1609,36 @@ function _brolit_configuration_load_docker() {
     local server_config_file="${1}"
 
     local exitstatus
+    local docker_installed
+    local docker_compose_installed
 
     # Globals
     declare -g DOCKER
     declare -g PACKAGES_DOCKER_STATUS
     declare -g DOCKER_COMPOSE
-    declare -g PACKAGES_DOCKER_COMPOSE_STATUS
 
     PACKAGES_DOCKER_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.docker[].status")"
-    PACKAGES_DOCKER_COMPOSE_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.docker[].compose[].status")"
 
-    DOCKER="$(package_is_installed "docker")"
+    # Docker
+    DOCKER="$(package_is_installed "docker.io")"
+    docker_installed="$?"
+    # Docker Compose
     DOCKER_COMPOSE="$(package_is_installed "docker-compose")"
+    docker_compose_installed="$?"
 
     if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then
 
-        # Checking if docker is not installed
-        if [[ -z ${DOCKER} ]]; then
-            menu_config_changes_detected "docker" "true"
-
-            if [[ ${PACKAGES_DOCKER_COMPOSE_STATUS} == "enabled" ]]; then
-                menu_config_changes_detected "docker-compose" "true"
-            fi
-
-        fi
+        # Checking if pkg is not installed
+        [[ ${docker_installed} -eq 1 || ${docker_compose_installed} -eq 1 ]] && pkg_config_changes_detected "docker" "true"
 
     else
 
-        # Checking if docker is installed
-        if [[ -n ${DOCKER} ]]; then
-            menu_config_changes_detected "docker" "true"
-        fi
-        if [[ -n ${DOCKER_COMPOSE} ]]; then
-            menu_config_changes_detected "docker-compose" "true"
-        fi
+        # Checking if pkg is installed
+        [[ ${docker_installed} -eq 0 || ${docker_compose_installed} -eq 0 ]] && pkg_config_changes_detected "docker" "true"
 
     fi
 
-    export DOCKER DOCKER_COMPOSE PACKAGES_DOCKER_STATUS PACKAGES_DOCKER_COMPOSE_STATUS
+    export DOCKER PACKAGES_DOCKER_STATUS DOCKER_COMPOSE
 
 }
 
@@ -1618,19 +1668,16 @@ function _brolit_configuration_load_portainer() {
 
     PACKAGES_PORTAINER_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].status")"
 
-    docker="$(package_is_installed "docker")"
+    docker="$(package_is_installed "docker.io")"
     docker_installed="$?"
     if [[ ${docker_installed} -eq 0 ]]; then
         log_event "debug" "Docker installed on: ${docker}. Now checking if Portainer image is present..." "false"
-        PORTAINER="$(docker_get_container_id "portainer")"
+        PORTAINER="$(docker_get_container_id "portainer-ce")"
     fi
 
     if [[ ${PACKAGES_PORTAINER_STATUS} == "enabled" ]]; then
 
-        if [[ ${docker_installed} -eq 1 ]]; then
-            log_event "error" "In order to install Portainer, docker and docker-compose must be installed." "true"
-            exit 1
-        fi
+        [[ ${docker_installed} -eq 1 ]] && die "In order to install Portainer, docker and docker-compose must be installed."
 
         PACKAGES_PORTAINER_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].config[].port")"
         PACKAGES_PORTAINER_CONFIG_NGINX="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].config[].nginx_proxy")"
@@ -1638,20 +1685,22 @@ function _brolit_configuration_load_portainer() {
 
         # Check if all required vars are set
         if [[ -z ${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN} ]] || [[ -z ${PACKAGES_PORTAINER_CONFIG_PORT} ]] || [[ -z ${PACKAGES_PORTAINER_CONFIG_NGINX} ]]; then
-            log_event "error" "Missing required config vars for portainer support" "true"
-            exit 1
+            die "Missing required config vars for portainer support"
         fi
 
         # Checking if Portainer is not installed
-        if [[ -z ${PORTAINER} ]]; then
-            menu_config_changes_detected "portainer" "true"
-        fi
+        [[ -z ${PORTAINER} ]] && pkg_config_changes_detected "portainer" "true"
 
     else
 
         # Checking if Portainer is installed
         if [[ -n ${PORTAINER} ]]; then
-            menu_config_changes_detected "portainer" "true"
+
+            # Var needed for uninstall
+            PACKAGES_PORTAINER_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].config[].subdomain")"
+            # Uninstall portainer
+            pkg_config_changes_detected "portainer" "true"
+
         fi
 
     fi
@@ -1682,47 +1731,47 @@ function _brolit_configuration_load_portainer_agent() {
     declare -g PACKAGES_PORTAINER_AGENT_STATUS
     declare -g PACKAGES_PORTAINER_AGENT_CONFIG_PORT
 
+    declare -g PORTAINER_AGENT_PATH="/root/agent_portainer"
+
     PACKAGES_PORTAINER_AGENT_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.portainer_agent[].status")"
 
-    docker="$(package_is_installed "docker")"
+    docker="$(package_is_installed "docker.io")"
     docker_installed="$?"
     if [[ ${docker_installed} -eq 0 ]]; then
         log_event "debug" "Docker installed on: ${docker}. Now checking if Portainer Agent image is present..." "false"
-        PORTAINER_AGENT="$(docker_get_container_id "portainer_agent")"
+        PORTAINER_AGENT="$(docker_get_container_id "portainer/agent")"
     fi
 
     if [[ ${PACKAGES_PORTAINER_AGENT_STATUS} == "enabled" ]]; then
 
-        if [[ ${docker_installed} -eq 1 ]]; then
-            log_event "error" "In order to install Portainer Agent, docker and docker-compose must be installed." "true"
-            exit 1
-        fi
+        [[ ${docker_installed} -eq 1 ]] && die "In order to install Portainer Agent, docker and docker-compose must be installed."
 
         PACKAGES_PORTAINER_AGENT_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.portainer_agent[].config[].port")"
-
-        # Check if all required vars are set
-        if [[ -z ${PACKAGES_PORTAINER_AGENT_CONFIG_PORT} ]]; then
-            log_event "error" "Missing required config vars for portainer support" "true"
-            exit 1
-        fi
+        [[ -z ${PACKAGES_PORTAINER_AGENT_CONFIG_PORT} ]] && die "Error reading PACKAGES_PORTAINER_AGENT_CONFIG_PORT from config file"
 
         # Checking if Portainer Agent is not installed
-        if [[ -z ${PORTAINER_AGENT} ]]; then
-            menu_config_changes_detected "portainer_agent" "true"
-        fi
+        [[ -z ${PORTAINER_AGENT} ]] && pkg_config_changes_detected "portainer_agent" "true"
 
     else
 
         # Checking if Portainer Agent is installed
-        if [[ -n ${PORTAINER_AGENT} ]]; then
-            menu_config_changes_detected "portainer_agent" "true"
-        fi
+        [[ -n ${PORTAINER_AGENT} ]] && pkg_config_changes_detected "portainer_agent" "true"
 
     fi
 
-    export PORTAINER_AGENT PACKAGES_PORTAINER_AGENT_STATUS PACKAGES_PORTAINER_AGENT_CONFIG_PORT
+    export PORTAINER_AGENT PORTAINER_AGENT_PATH PACKAGES_PORTAINER_AGENT_STATUS PACKAGES_PORTAINER_AGENT_CONFIG_PORT
 
 }
+
+################################################################################
+# Private: load mailcow configuration
+#
+# Arguments:
+#   ${1} = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
 
 function _brolit_configuration_load_mailcow() {
 
@@ -1743,7 +1792,7 @@ function _brolit_configuration_load_mailcow() {
 
     PACKAGES_MAILCOW_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.mailcow[].status")"
 
-    docker="$(package_is_installed "docker")"
+    docker="$(package_is_installed "docker.io")"
     docker_installed="$?"
     if [[ ${docker_installed} -eq 0 ]]; then
         log_event "debug" "Docker installed on: ${docker}. Now checking if Portainer image is present..." "false"
@@ -1767,22 +1816,28 @@ function _brolit_configuration_load_mailcow() {
         fi
 
         # Checking if Portainer is not installed
-        if [[ -z ${MAILCOW} ]]; then
-            menu_config_changes_detected "mailcow" "true"
-        fi
+        [[ -z ${MAILCOW} ]] && pkg_config_changes_detected "mailcow" "true"
 
     else
 
         # Checking if Portainer is installed
-        if [[ -n ${MAILCOW} ]]; then
-            menu_config_changes_detected "mailcow" "true"
-        fi
+        [[ -n ${MAILCOW} ]] && pkg_config_changes_detected "mailcow" "true"
 
     fi
 
     export MAILCOW MAILCOW_DIR MAILCOW_TMP_BK PACKAGES_MAILCOW_STATUS PACKAGES_MAILCOW_CONFIG_SUBDOMAIN PACKAGES_MAILCOW_CONFIG_PORT
 
 }
+
+################################################################################
+# Private: load custom package configuration
+#
+# Arguments:
+#   ${1} = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
 
 function _brolit_configuration_load_custom_pkgs() {
 
@@ -1949,11 +2004,7 @@ function _brolit_configuration_app_mysql() {
 
     is_mysql_installed="$(package_is_installed "mysql")"
 
-    if [[ ${is_mysql_installed} == "true" ]]; then
-
-        mysql_ask_root_psw
-
-    fi
+    [[ ${is_mysql_installed} == "true" ]] && mysql_ask_root_psw
 
 }
 
@@ -2050,24 +2101,21 @@ function brolit_configuration_setup_check() {
     if [[ -z ${DEBUG} ]]; then
         DEBUG="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].debug")"
         if [[ ${DEBUG} != "true" && ${DEBUG} != "false" ]]; then
-            echo "debug value should be 'true' or 'false'"
-            exit 1
+            die "debug value should be 'true' or 'false'"
         fi
     fi
 
     if [[ -z ${SKIPTESTS} ]]; then
         SKIPTESTS="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].skip_test")"
         if [[ ${SKIPTESTS} != "true" && ${SKIPTESTS} != "false" ]]; then
-            echo "skip_test value should be 'true' or 'false'"
-            exit 1
+            die "skip_test value should be 'true' or 'false'"
         fi
     fi
 
     if [[ -z ${CHECKPKGS} ]]; then
         CHECKPKGS="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].check_packages")"
         if [[ ${CHECKPKGS} != "true" && ${CHECKPKGS} != "false" ]]; then
-            echo "check_packages value should be 'true' or 'false'"
-            exit 1
+            die "check_packages value should be 'true' or 'false'"
         fi
     fi
 
@@ -2076,8 +2124,7 @@ function brolit_configuration_setup_check() {
         BROLIT_TMP_DIR="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].tmp_dir")"
 
         if [[ -z ${BROLIT_TMP_DIR} ]]; then
-            echo "Missing required config vars: tmp_dir"
-            exit 1
+            die "Missing required config vars: tmp_dir"
         fi
 
         # Check if $BROLIT_TMP_DIR starts with "/"
@@ -2086,12 +2133,9 @@ function brolit_configuration_setup_check() {
         fi
 
         # Creating temporary folders
-        if [[ ! -d ${BROLIT_TMP_DIR} ]]; then
-            mkdir -p "${BROLIT_TMP_DIR}"
-        fi
-        if [[ ! -d "${BROLIT_TMP_DIR}/${NOW}" ]]; then
-            mkdir -p "${BROLIT_TMP_DIR}/${NOW}"
-        fi
+        [[ ! -d ${BROLIT_TMP_DIR} ]] && mkdir -p "${BROLIT_TMP_DIR}"
+        [[ ! -d "${BROLIT_TMP_DIR}/${NOW}" ]] && mkdir -p "${BROLIT_TMP_DIR}/${NOW}"
+
     fi
 
     export DEBUG SKIPTESTS CHECKPKGS BROLIT_TMP_DIR
@@ -2232,6 +2276,7 @@ function brolit_configuration_load() {
 
     ### netdata
     _brolit_configuration_load_netdata "${server_config_file}"
+    _brolit_configuration_load_netdata_agent "${server_config_file}"
 
     ### cockpit
     _brolit_configuration_load_cockpit "${server_config_file}"
@@ -2241,6 +2286,7 @@ function brolit_configuration_load() {
 
     ### portainer
     _brolit_configuration_load_portainer "${server_config_file}"
+    _brolit_configuration_load_portainer_agent "${server_config_file}"
 
     ### mailcow
     #_brolit_configuration_load_mailcow "${server_config_file}"

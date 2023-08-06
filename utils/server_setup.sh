@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # Server Setup: Perform server setup actions.
@@ -15,8 +15,8 @@ function server_prepare() {
     # Configuring packages
     system_timezone_configuration
 
-    # Unattended upgrades
-    system_unnatended_upgrades
+    # Unattended upgrades (disabled by default)
+    #system_unnatended_upgrades
 
     # Packages update
     package_update
@@ -41,7 +41,7 @@ function server_app_setup() {
 
         if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
             # Nginx Installer
-            nginx_installer "${PACKAGES_NGINX_CONFIG_VERSION}"
+            nginx_installer
             # Reconfigure
             nginx_reconfigure
             nginx_new_default_server
@@ -94,7 +94,7 @@ function server_app_setup() {
             mysql_default_installer
             mysql_initial_config
         else
-            package_purge "mysql-server"
+            mysql_purge_installation
         fi
 
         ;;
@@ -202,19 +202,10 @@ function server_app_setup() {
 
         if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then
             log_subsection "Docker Installer"
-            package_install_if_not "docker"
-        else
-            package_purge "docker"
-        fi
-
-        ;;
-
-    "docker-compose")
-
-        if [[ ${PACKAGES_DOCKER_COMPOSE_STATUS} == "enabled" ]]; then
-            log_subsection "Docker compose Installer"
+            package_install_if_not "docker.io"
             package_install_if_not "docker-compose"
         else
+            package_purge "docker.io"
             package_purge "docker-compose"
         fi
 
@@ -282,7 +273,7 @@ function server_setup() {
         if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
 
             # Nginx Installer
-            nginx_installer "default"
+            nginx_installer
             nginx_reconfigure
 
         fi
@@ -359,7 +350,7 @@ function server_setup() {
         monit_configure
     fi
 
-    if [[ ${PACKAGES_NETDATA_CONFIG_STATUS} == "enabled" ]]; then
+    if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
         netdata_installer
     fi
 

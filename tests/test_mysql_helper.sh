@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 #############################################################################
 
 function test_mysql_helper() {
 
     # TODO tests for:
-    #   mysql_name_sanitize
+    #   database_name_sanitize
     #   mysql_user_psw_change
 
     #test_mysql_ask_root_psw

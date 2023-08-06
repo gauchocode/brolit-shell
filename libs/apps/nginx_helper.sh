@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # Nginx Helper: Perform nginx actions.
@@ -30,11 +30,10 @@ function nginx_server_create() {
     local redirect_domains="${4}"
     local proxy_port="${5}"
 
-    #local debug
-
     # Log
     log_event "debug" "Project type: ${project_type}" "false"
     log_event "debug" "Server type: ${server_type}" "false"
+    log_event "debug" "Proxy port: ${proxy_port}" "false"
     log_event "info" "Creating nginx configuration file for domain: ${project_domain}" "false"
     log_event "info" "List of domains or subdomains that will be redirect to project_domain: ${redirect_domains}" "false"
 
@@ -69,12 +68,16 @@ function nginx_server_create() {
         # Search and replace domain.com string with ${project_domain}
         sed -i "s/domain.com/${project_domain}/g" "${nginx_server_file}"
 
-        # Search and replace PROXY_PORT string with ${proxy_port}
-        sed -i "s/PROXY_PORT/${proxy_port}/g" "${nginx_server_file}"
+        # If proxy_port is not empty
+        if [[ -n "${proxy_port}" ]]; then
+
+            # Search and replace PROXY_PORT string with ${proxy_port}
+            sed -i "s/PROXY_PORT/${proxy_port}/g" "${nginx_server_file}"
+
+        fi
 
         # Log
         display --indent 6 --text "- Creating nginx server config" --result DONE --color GREEN
-        display --indent 8 --text "Using '${project_type}_${server_type}' template"
         log_event "info" "Creating nginx server config: ${nginx_server_file}" "false"
         log_event "debug" "Using '${BROLIT_MAIN_DIR}/config/nginx/sites-available/${project_type}_${server_type}' template" "false"
 
@@ -92,12 +95,8 @@ function nginx_server_create() {
         cp "${BROLIT_MAIN_DIR}/config/nginx/sites-available/${project_type}_${server_type}" "${nginx_server_file}"
 
         # -L returns true if the "file" exists and is a symbolic link
-        if [[ -L ${nginx_server_file_link} ]]; then
-
-            # Remove previous symbolic link
-            rm "${nginx_server_file_link}"
-
-        fi
+        ## Remove previous symbolic link
+        [[ -L ${nginx_server_file_link} ]] && rm "${nginx_server_file_link}"
 
         # Creating symbolic link
         ln -s "${nginx_server_file}" "${nginx_server_file_link}"
@@ -113,7 +112,6 @@ function nginx_server_create() {
 
         # Log
         display --indent 6 --text "- Creating nginx server config" --result DONE --color GREEN
-        display --indent 8 --text "Using '${project_type}_${server_type}' template"
         log_event "info" "Creating nginx server config: ${nginx_server_file}" "false"
         log_event "debug" "Using '${BROLIT_MAIN_DIR}/config/nginx/sites-available/${project_type}_${server_type}' template" "false"
 
@@ -162,7 +160,7 @@ function nginx_server_delete() {
 
     local filename="${1}"
 
-    if [[ ${filename} != "" ]]; then
+    if [[ -n "${filename}" ]]; then
 
         # Remove files
         rm --force "/etc/nginx/sites-available/${filename}"
@@ -213,15 +211,14 @@ function nginx_server_change_status() {
         log_event "info" "New project status: ${project_status}" "false"
 
         if [[ -f "${WSERVER}/sites-available/${project_domain}" ]]; then
-
             # Creating symbolic link
             ln -s "${WSERVER}/sites-available/${project_domain}" "${WSERVER}/sites-enabled/${project_domain}"
-            # Logging
+            # Log
             log_event "info" "Project config added to ${WSERVER}/sites-enabled/${project_domain}" "false"
             display --indent 6 --text "- Changing project status to ONLINE" --result "DONE" --color GREEN
 
         else
-            # Logging
+            # Log
             log_event "error" "${WSERVER}/sites-available/${project_domain} does not exist" "false"
             display --indent 6 --text "- Changing project status to ONLINE" --result "FAIL" --color RED
             display --indent 8 --text "${WSERVER}/sites-available/${project_domain} does not exist" --tcolor RED
@@ -322,7 +319,7 @@ function nginx_server_get_current_phpv() {
     local nginx_server_file="${1}"
 
     # Replace string to match PHP version
-    current_php_v_string=$(cat ${nginx_server_file} | grep fastcgi_pass | cut -d '/' -f 4 | cut -d '-' -f 1)
+    current_php_v_string=$(cat "${nginx_server_file}" | grep fastcgi_pass | cut -d '/' -f 4 | cut -d '-' -f 1)
     current_php_v=${current_php_v_string#"php"}
 
     # Log
@@ -372,7 +369,7 @@ function nginx_server_change_phpv() {
     display --indent 8 --text "PHP version changed to ${new_php_v}"
     log_event "info" "PHP version for ${nginx_server_file} changed from ${current_php_v} to ${new_php_v}" "false"
 
-    #Test the validity of the nginx configuration
+    # Test nginx configuration
     nginx_configuration_test
 
 }
@@ -389,7 +386,7 @@ function nginx_server_change_phpv() {
 
 function nginx_reconfigure() {
 
-    # nginx.conf broobe standard configuration
+    # nginx.conf gauchocode standard configuration
     cat "${BROLIT_MAIN_DIR}/config/nginx/nginx.conf" >"/etc/nginx/nginx.conf"
     display --indent 6 --text "- Updating nginx.conf" --result "DONE" --color GREEN
 
@@ -509,7 +506,7 @@ function nginx_create_globals_config() {
 
     local nginx_globals
 
-    # nginx.conf broobe standard configuration
+    # nginx.conf gauchocode standard configuration
     nginx_globals="/etc/nginx/globals/"
 
     if [[ -d ${nginx_globals} ]]; then
@@ -602,15 +599,17 @@ function nginx_generate_encrypted_auth() {
     printf "${user}:${encrypted_psw}" >"/etc/nginx/.passwords"
 
     exitstatus=$?
-    if [[ ${exitstatus} -eq 1 ]]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        chmod 640 "/etc/nginx/.passwords"
+        chown www-data:www-data "/etc/nginx/.passwords"
+
+    else
 
         log_event "error" "Something went wrong writing: /etc/nginx/.passwords" "false"
         return 1
 
     fi
-
-    chmod 640 "/etc/nginx/.passwords"
-    chown www-data:www-data "/etc/nginx/.passwords"
 
 }
 
@@ -631,12 +630,8 @@ function nginx_server_add_http2_support() {
     # Check if the file exists
     nginx_server_file="/etc/nginx/sites-available/${nginx_server_file}"
 
-    if [[ ! -f "${nginx_server_file}" ]]; then
-
-        log_event "error" "File ${nginx_server_file} not found" "false"
-        return 1
-
-    fi
+    # Return error if file doesn't exist
+    [[ ! -f "${nginx_server_file}" ]] && log_event "error" "File ${nginx_server_file} not found" "false" && return 1
 
     # Add http2 to ports
     sed -i "s/listen 443 ssl;/listen 443 ssl http2;/g" "${nginx_server_file}"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # Firewall Helper: Perform firewall actions.
@@ -190,7 +190,6 @@ function firewall_allow() {
     ufw_output="$(ufw allow "${service}")"
 
     exitstatus=$?
-
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Change brolit_conf.json

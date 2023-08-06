@@ -106,14 +106,14 @@ packages:
  - git
 runcmd:
 - cd /root/
-- git clone https://github.com/broobe/brolit-shell
+- git clone https://github.com/gauchocode/brolit-shell
 - chmod +x brolit-shell/runner.sh
 ```
 
 ### Manual
 Cloning repo:
 ```bash
-git clone https://github.com/broobe/brolit-shell
+git clone https://github.com/gauchocode/brolit-shell
 ```
 
 Change directories to the new ~/brolit-shell directory:
@@ -143,7 +143,7 @@ This means that if you setup the script with your user and then you try to run a
 ## Running tasks without menu
 You can run some tasks like this:
 ```
-./runner.sh --task "cloudflare-api" --subtask "clear_cache" --domain "broobe.com"
+./runner.sh --task "cloudflare-api" --subtask "clear_cache" --domain "gauchocode.com"
 ```
 
 More information here: [FLAGS](./docs/DOC-flags.md)
@@ -169,7 +169,7 @@ Please read [CONTRIBUTING](./docs/CONTRIBUTING.md) for details on our code of co
 [Best Practices](./docs/CODE.md)
 
 ## :busts_in_silhouette: Team
-This theme is maintained by the following person(s) and a bunch of [awesome contributors](https://github.com/broobe/brolit-shell/graphs/contributors).
+This theme is maintained by the following person(s) and a bunch of [awesome contributors](https://github.com/gauchocode/brolit-shell/graphs/contributors).
 
 [![Leandro Padula](https://github.com/lpadula.png?size=100)](https://github.com/lpadula) |
 --- |

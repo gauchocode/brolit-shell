@@ -2,7 +2,7 @@
     "BROLIT_SETUP": {
         "config": [
             {
-                "version": "3.10.3",
+                "version": "3.10.5",
                 "debug": "true",
                 "skip_test": "true",
                 "tmp_dir": "tmp",
@@ -11,9 +11,8 @@
         ]
     },
     "SERVER_CONFIG": {
-        "timezone": "America/Argentina/Buenos_Aires",
         "type": "production",
-        "ftp_config": "/root/.brolit_ftp.conf",
+        "timezone": "America/Argentina/Buenos_Aires",
         "unattended_upgrades": "disabled",
         "additional_ips": [
             "",
@@ -114,6 +113,7 @@
                             {
                                 "bucket": "",
                                 "backup_path": "",
+                                "endpoint_url": "",
                                 "access_key": "",
                                 "secret_key": ""
                             }
@@ -197,12 +197,7 @@
     "PACKAGES": {
         "nginx": [
             {
-                "status": "disabled",
-                "config": [
-                    {
-                        "port": "default"
-                    }
-                ]
+                "status": "disabled"
             }
         ],
         "mysql": [
@@ -281,53 +276,6 @@
                 ]
             }
         ],
-        "docker": [
-            {
-                "status": "disabled",
-                "compose": [
-                    {
-                        "status": "enabled",
-                        "version": "default"
-                    }
-                ]
-            }
-        ],
-        "portainer": [
-            {
-                "status": "disabled",
-                "version": "latest",
-                "config": [
-                    {
-                        "port": "9000",
-                        "nginx_proxy": "enabled",
-                        "subdomain": ""
-                    }
-                ]
-            }
-        ],
-        "portainer_agent": [
-            {
-                "status": "disabled",
-                "version": "latest",
-                "config": [
-                    {
-                        "port": "9001"
-                    }
-                ]
-            }
-        ],
-        "mailcow": [
-            {
-                "status": "disabled",
-                "version": "latest",
-                "config": [
-                    {
-                        "port": "default",
-                        "subdomain": ""
-                    }
-                ]
-            }
-        ],
         "certbot": [
             {
                 "status": "disabled",
@@ -361,6 +309,40 @@
                                 "redis": "disabled"
                             }
                         ]
+                    }
+                ]
+            }
+        ],
+        "docker": [
+            {
+                "status": "disabled",
+                "compose": [
+                    {
+                        "status": "enabled"
+                    }
+                ]
+            }
+        ],
+        "portainer": [
+            {
+                "status": "disabled",
+                "version": "latest",
+                "config": [
+                    {
+                        "port": "9000",
+                        "nginx_proxy": "enabled",
+                        "subdomain": ""
+                    }
+                ]
+            }
+        ],
+        "portainer_agent": [
+            {
+                "status": "disabled",
+                "version": "latest",
+                "config": [
+                    {
+                        "port": "9001"
                     }
                 ]
             }
@@ -405,6 +387,60 @@
                 ]
             }
         ],
+        "netdata_agent": [
+            {
+                "status": "disabled",
+                "version": "latest",
+                "config": [
+                    {
+                        "port": "9001",
+                        "subdomain": "",
+                        "claim_token": "",
+                        "claim_room": ""
+                    }
+                ]
+            }
+        ],
+        "grafana": [
+            {
+                "status": "disabled",
+                "version": "latest",
+                "config": [
+                    {
+                        "port": "9090",
+                        "nginx_proxy": "disabled",
+                        "subdomain": ""
+                    }
+                ]
+            }
+        ],
+        "loki": [
+            {
+                "status": "disabled",
+                "version": "latest",
+                "config": [
+                    {
+                        "port": "3100",
+                        "nginx_proxy": "disabled",
+                        "subdomain": ""
+                    }
+                ]
+            }
+        ],
+        "promtail": [
+            {
+                "status": "disabled",
+                "version": "2.8.3",
+                "config": [
+                    {
+                        "port": "9080",
+                        "hostname": "default",
+                        "loki_url": "",
+                        "loki_port": "3100"
+                    }
+                ]
+            }
+        ],
         "cockpit": [
             {
                 "status": "disabled",
@@ -422,6 +458,18 @@
                 "status": "disabled",
                 "config": [
                     {
+                        "subdomain": ""
+                    }
+                ]
+            }
+        ],
+        "mailcow": [
+            {
+                "status": "disabled",
+                "version": "latest",
+                "config": [
+                    {
+                        "port": "default",
                         "subdomain": ""
                     }
                 ]

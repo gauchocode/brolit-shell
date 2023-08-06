@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 
 function it_utils_menu() {
@@ -35,47 +35,39 @@ function it_utils_menu() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # INSTALLERS AND CONFIGURATORS
-    if [[ ${chosen_it_util_options} == *"01"* ]]; then
-      installers_and_configurators
-    fi
+    [[ ${chosen_it_util_options} == *"01"* ]] && installers_and_configurators
 
     # SECURITY TOOLS
-    if [[ ${chosen_it_util_options} == *"02"* ]]; then
-      menu_security_utils
-    fi
+    [[ ${chosen_it_util_options} == *"02"* ]] && menu_security_utils
+
     # SERVER OPTIMIZATIONS
     if [[ ${chosen_it_util_options} == *"03"* ]]; then
       # shellcheck source=${BROLIT_MAIN_DIR}/utils/server_and_image_optimizations.sh
       source "${BROLIT_MAIN_DIR}/utils/server_and_image_optimizations.sh"
       server_optimizations_menu
     fi
+
     # CHANGE SSH PORT
     if [[ ${chosen_it_util_options} == *"04"* ]]; then
-
       new_ssh_port="$(whiptail --title "CHANGE SSH PORT" --inputbox "Insert the new SSH port:" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-        system_change_current_ssh_port "${new_ssh_port}"
-      fi
+      [[ ${exitstatus} -eq 0 ]] && system_change_current_ssh_port "${new_ssh_port}"
     fi
+
     # CHANGE HOSTNAME
     if [[ ${chosen_it_util_options} == *"05"* ]]; then
-
       new_server_hostname="$(whiptail --title "CHANGE SERVER HOSTNAME" --inputbox "Insert the new hostname:" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-        system_change_server_hostname "${new_server_hostname}"
-      fi
+      [[ ${exitstatus} -eq 0 ]] && system_change_server_hostname "${new_server_hostname}"
     fi
+
     # ADD FLOATING IP
     if [[ ${chosen_it_util_options} == *"06"* ]]; then
-
       floating_IP="$(whiptail --title "ADD FLOATING IP" --inputbox "Insert the floating IP:" 10 60 3>&1 1>&2 2>&3)"
       exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-        system_add_floating_IP "${floating_IP}"
-      fi
+      [[ ${exitstatus} -eq 0 ]] && system_add_floating_IP "${floating_IP}"
     fi
+
     # CREATE SFTP USER
     if [[ ${chosen_it_util_options} == *"07"* ]]; then
 
@@ -96,6 +88,7 @@ function it_utils_menu() {
 
       fi
     fi
+
     # DELETE SFTP USER
     if [[ ${chosen_it_util_options} == *"08"* ]]; then
 
@@ -107,6 +100,7 @@ function it_utils_menu() {
         sftp_delete_user "${sftp_user}"
       fi
     fi
+
     # RESET MYSQL ROOT_PSW
     if [[ ${chosen_it_util_options} == *"09"* ]]; then
 
@@ -118,6 +112,7 @@ function it_utils_menu() {
         mysql_root_psw_change "${db_root_psw}"
       fi
     fi
+
     # BLACKLIST CHECKER
     if [[ ${chosen_it_util_options} == *"10"* ]]; then
 
@@ -128,26 +123,23 @@ function it_utils_menu() {
         source "${BROLIT_MAIN_DIR}/tools/third-party/blacklist-checker/bl.sh" "${IP_TO_TEST}"
       fi
     fi
+
     # BENCHMARK SERVER
     if [[ ${chosen_it_util_options} == *"11"* ]]; then
       # shellcheck source=${BROLIT_MAIN_DIR}/tools/bench_scripts.sh
       source "${BROLIT_MAIN_DIR}/tools/third-party/bench_scripts.sh"
 
     fi
+
     # INSTALL ALIASES
-    if [[ ${chosen_it_util_options} == *"12"* ]]; then
-      install_script_aliases
+    [[ ${chosen_it_util_options} == *"12"* ]] && install_script_aliases
 
-    fi
     # INSTALL WELCOME MESSAGE
-    if [[ ${chosen_it_util_options} == *"13"* ]]; then
-      customize_ubuntu_login_message
+    [[ ${chosen_it_util_options} == *"13"* ]] && customize_ubuntu_login_message
 
-    fi
     # ADD BROLIT UI INTEGRATION
-    if [[ ${chosen_it_util_options} == *"14"* ]]; then
-      brolit_ssh_keygen "/root/pem"
-    fi
+    [[ ${chosen_it_util_options} == *"14"* ]] && brolit_ssh_keygen "/root/pem"
+
     # ENABLE SSH ROOT ACCESS
     if [[ ${chosen_it_util_options} == *"15"* ]]; then
 
@@ -204,18 +196,14 @@ function menu_security_utils() {
 
     package_install_security_utils
 
-    if [[ ${chosen_security_options} == *"01"* ]]; then
-      menu_security_clamav_scan
+    # CLAMAV MALWARE SCAN
+    [[ ${chosen_security_options} == *"01"* ]] && menu_security_clamav_scan
 
-    fi
-    if [[ ${chosen_security_options} == *"02"* ]]; then
-      menu_security_custom_scan
+    # CUSTOM MALWARE SCAN
+    [[ ${chosen_security_options} == *"02"* ]] && menu_security_custom_scan
 
-    fi
-    if [[ ${chosen_security_options} == *"03"* ]]; then
-      menu_security_system_audit
-
-    fi
+    # LYNIS SYSTEM AUDIT
+    [[ ${chosen_security_options} == *"03"* ]] && menu_security_system_audit
 
     prompt_return_or_finish
     menu_security_utils

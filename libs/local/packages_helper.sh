@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # Packages Helper: Perform apt actions.
@@ -92,7 +92,7 @@ function package_update() {
 }
 
 ################################################################################
-# Check if package is installed. Ex: package_is_installed "mysql-server"
+# Check if package is installed.
 #
 # Arguments:
 #   ${1} = ${package}
@@ -295,6 +295,7 @@ function package_install_optimization_utils() {
 
   log_subsection "Package Manager"
 
+  # Installing needed packages
   package_install_if_not "jpegoptim"
   package_install_if_not "optipng"
   package_install_if_not "pngquant"
@@ -303,17 +304,19 @@ function package_install_optimization_utils() {
   package_install_if_not "ghostscript"
   package_install_if_not "imagemagick"
 
-  # Load commands
-  declare -g MOGRIFY
-  declare -g JPEGOPTIM
-  declare -g OPTIPNG
-  declare -g GHOSTSCRIPT
+  # Read-only vars
+  readonly MOGRIFY
+  readonly JPEGOPTIM
+  readonly OPTIPNG
+  readonly GHOSTSCRIPT
 
+  # Load commands
   MOGRIFY="$(command -v mogrify)"
   JPEGOPTIM="$(command -v jpegoptim)"
   OPTIPNG="$(command -v optipng)"
   GHOSTSCRIPT="$(command -v ghostscript)"
 
+  # Making vars global
   export MOGRIFY JPEGOPTIM OPTIPNG GHOSTSCRIPT
 
 }
@@ -332,6 +335,7 @@ function package_install_security_utils() {
 
   log_subsection "Package Manager"
 
+  # Installing needed packages
   package_install_if_not "clamav"
   package_install_if_not "clamav-freshclam"
   package_install_if_not "lynis"
@@ -375,14 +379,30 @@ function package_upgrade_all() {
 
   # Log
   log_event "info" "Upgrading packages ..." "false"
-  display --indent 6 --text "- Upgrading packages"
+  log_event "debug" "Running: apt-get --yes upgrade --fix-missing -qq >/dev/null" "false"
+  display --indent 6 --text "- Upgrading system packages"
 
-  # apt commands
-  apt-get --yes upgrade -qq >/dev/null
+  # Run apt commands
+  ## Using --fix-missing to avoid errors when a package is not available anymore
+  apt-get --yes upgrade --fix-missing -qq >/dev/null
 
-  # Log
-  clear_previous_lines "1"
-  display --indent 6 --text "- Upgrading packages" --result "DONE" --color GREEN
+  # Check exitstatus
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Log
+    clear_previous_lines "1"
+    display --indent 6 --text "- Upgrading system packages" --result "DONE" --color GREEN
+
+  else
+
+    # Log
+    clear_previous_lines "1"
+    display --indent 6 --text "- Upgrading system packages" --result "FAIL" --color RED
+    log_event "error" "Upgrading system packages failed" "false"
+    return 1
+
+  fi
 
 }
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # Portainer Agent Installer
@@ -31,32 +31,32 @@ function portainer_agent_installer() {
 
     # Force update brolit_conf.json
     PACKAGES_DOCKER_STATUS="enabled"
-    PACKAGES_DOCKER_COMPOSE_STATUS="enabled"
     json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.docker[].status" "${PACKAGES_DOCKER_STATUS}"
-    json_write_field "${BROLIT_CONFIG_FILE}" "PACKAGES.docker[].compose[].status" "${PACKAGES_DOCKER_COMPOSE_STATUS}"
-    export PACKAGES_DOCKER_STATUS PACKAGES_DOCKER_COMPOSE_STATUS
+    export PACKAGES_DOCKER_STATUS
 
     # Check if portainer_agent is running
-    portainer_agent="$(docker_get_container_id "portainer_agent")"
+    portainer_agent="$(docker_get_container_id "agent_portainer")"
 
-    exitstatus=$?
-    if [[ -z ${portainer_agent} ]]; then
+    if [[ -z ${portainer_agent} ]]; then                                               0
 
         # Create project directory
-        mkdir -p "${PROJECTS_PATH}/${PACKAGES_PORTAINER_AGENT_CONFIG_SUBDOMAIN}"
+        mkdir -p "${PORTAINER_AGENT_PATH}"
 
         # Copy docker-compose.yml and .env files to project directory
-        cp "${BROLIT_MAIN_DIR}/utils/installers/docker-compose/portainer_agent/docker-compose.yml" "${PROJECTS_PATH}/${PACKAGES_PORTAINER_AGENT_CONFIG_SUBDOMAIN}"
-        cp "${BROLIT_MAIN_DIR}/utils/installers/docker-compose/portainer_agent/.env" "${PROJECTS_PATH}/${PACKAGES_PORTAINER_AGENT_CONFIG_SUBDOMAIN}"
+        cp "${BROLIT_MAIN_DIR}/utils/installers/docker-compose/portainer_agent/docker-compose.yml" "${PORTAINER_AGENT_PATH}"
+        cp "${BROLIT_MAIN_DIR}/utils/installers/docker-compose/portainer_agent/.env" "${PORTAINER_AGENT_PATH}"
 
         # Configure .env file
-        project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_AGENT_CONFIG_SUBDOMAIN}/.env" "PORTAINER_AGENT_PORT" "${PACKAGES_PORTAINER_CONFIG_PORT}" "none"
+        project_set_config_var "${PORTAINER_AGENT_PATH}/.env" "PORTAINER_AGENT_PORT" "${PACKAGES_PORTAINER_AGENT_CONFIG_PORT}" "none"
+
+        # Enable port in firewall
+        firewall_allow "${PACKAGES_PORTAINER_AGENT_CONFIG_PORT}"
 
         # Run docker-compose pull on specific directory
-        docker-compose -f "${PROJECTS_PATH}/${PACKAGES_PORTAINER_AGENT_CONFIG_SUBDOMAIN}/docker-compose.yml" pull
+        docker_compose_pull "${PORTAINER_AGENT_PATH}/docker-compose.yml"
 
         # Run docker-compose up -d on specific directory
-        docker-compose -f "${PROJECTS_PATH}/${PACKAGES_PORTAINER_AGENT_CONFIG_SUBDOMAIN}/docker-compose.yml" up -d
+        docker_compose_up "${PORTAINER_AGENT_PATH}/docker-compose.yml"
 
         clear_previous_lines "3"
 
@@ -108,7 +108,7 @@ function portainer_agent_purge() {
     fi
 
     # Remove Portainer Data
-    rm --recursive "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN:?}"
+    rm --recursive "${PORTAINER_AGENT_PATH}"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 && ${PACKAGES_PORTAINER_AGENT_STATUS} == "enabled" ]]; then

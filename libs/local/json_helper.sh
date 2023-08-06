@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # Json Helper: Functions to read and write json files.
@@ -9,14 +9,15 @@
 ################################################################################
 
 ################################################################################
-# Read json field from file
+# Get the value of the field in the JSON file
 #
 # Arguments:
-#  $1= ${json_file}
-#  ${2} = ${json_field}
+#  ${1}= ${json_file}   - Path to the JSON file
+#  ${2} = ${json_field} - Field to get the value from
 #
 # Outputs:
 #  ${json_field_value}
+#  0 if the operation was successful, 1 otherwise
 ################################################################################
 
 function json_read_field() {

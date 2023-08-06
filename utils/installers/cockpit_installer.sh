@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 #############################################################################
 #
 # Cockpit Installer
@@ -67,6 +67,9 @@ function cockpit_installer() {
                 cloudflare_set_record "${root_domain}" "${PACKAGES_COCKPIT_CONFIG_SUBDOMAIN}" "A" "false" "${SERVER_IP}"
                 
                 if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
+                    # Wait 2 seconds for DNS update
+                    sleep 2
+                    # Let's Encrypt
                     certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${PACKAGES_COCKPIT_CONFIG_SUBDOMAIN}"
                 fi
 

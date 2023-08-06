@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://broobe.com
-# Version: 3.2.7
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.2
 ################################################################################
 #
 # Project Manager: Perform project actions.
@@ -22,22 +22,19 @@ function project_manager_config_loader() {
   PROJECT_NAME="$(json_read_field "${project_config_file}" "project[].name")"
   if [[ -z ${PROJECT_NAME} ]]; then
     # Error
-    log_event "error" "Required var PROJECT_NAME not set!" "true"
-    exit 1
+    log_event "error" "Required var PROJECT_NAME not set!" "true" && exit 1
   fi
 
   PROJECT_STAGE="$(json_read_field "${project_config_file}" "project[].stage")"
   if [[ -z ${PROJECT_STAGE} ]]; then
     # Error
-    log_event "error" "Required var PROJECT_STAGE not set!" "true"
-    exit 1
+    log_event "error" "Required var PROJECT_STAGE not set!" "true" && exit 1
   fi
 
   PROJECT_TYPE="$(json_read_field "${project_config_file}" "project[].type")"
   if [[ -z ${PROJECT_TYPE} ]]; then
     # Error
-    log_event "error" "Required var PROJECT_TYPE not set!" "true"
-    exit 1
+    log_event "error" "Required var PROJECT_TYPE not set!" "true" && exit 1
   fi
 
   # Optional
@@ -51,8 +48,7 @@ function project_manager_config_loader() {
   PROJECT_PRIMARY_SUBDOMAIN="$(json_read_field "${project_config_file}" "project[].primary_subdomain")"
   if [[ -z ${PROJECT_PRIMARY_SUBDOMAIN} ]]; then
     # Error
-    log_event "error" "Required var PROJECT_PRIMARY_SUBDOMAIN not set!" "true"
-    exit 1
+    log_event "error" "Required var PROJECT_PRIMARY_SUBDOMAIN not set!" "true" && exit 1
   fi
 
   # TODO: read array values
@@ -63,33 +59,19 @@ function project_manager_config_loader() {
   #fi
 
   PROJECT_USE_HTTP2="$(json_read_field "${project_config_file}" "project[].use_http2")"
-  if [[ -z ${PROJECT_USE_HTTP2} ]]; then
-    # Error
-    log_event "error" "Required var PROJECT_USE_HTTP2 not set!" "true"
-    exit 1
-  fi
+  [[ -z ${PROJECT_USE_HTTP2} ]] && die "Required var PROJECT_USE_HTTP2 not set!"
 
   PROJECT_CERTBOT_MODE="$(json_read_field "${project_config_file}" "project[].certbot_mode")"
-  if [[ -z ${PROJECT_CERTBOT_MODE} ]]; then
-    # Error
-    log_event "error" "Required var PROJECT_CERTBOT_MODE not set!" "true"
-    exit 1
-  fi
+  [[ -z ${PROJECT_CERTBOT_MODE} ]] && die "Required var PROJECT_CERTBOT_MODE not set!"
 
   PROJECT_FILES_STATUS="$(json_read_field "${project_config_file}" "project[].files[].status")"
   if [[ ${PROJECT_FILES_STATUS} == "enabled" ]]; then
 
     PROJECT_FILES_CONFIG_PATH="$(json_read_field "${project_config_file}" "project[].files[].config[].path")"
-    if [[ -z ${PROJECT_FILES_CONFIG_PATH} ]]; then
-      # Error
-      exit 1
-    fi
+    [[ -z ${PROJECT_FILES_CONFIG_PATH} ]] && die "Required var PROJECT_FILES_CONFIG_PATH not set!"
 
     PROJECT_FILES_CONFIG_HOST="$(json_read_field "${project_config_file}" "project[].files[].config[].path")"
-    if [[ -z ${PROJECT_FILES_CONFIG_HOST} ]]; then
-      # Error
-      exit 1
-    fi
+    [[ -z ${PROJECT_FILES_CONFIG_HOST} ]] && die "Required var PROJECT_FILES_CONFIG_HOST not set!"
 
   fi
 
@@ -97,34 +79,19 @@ function project_manager_config_loader() {
   if [[ ${PROJECT_DATABASE_STATUS} == "enabled" ]]; then
 
     PROJECT_DATABASE_ENGINE="$(json_read_field "${project_config_file}" "project[].database[].engine")"
-    if [[ -z ${PROJECT_DATABASE_ENGINE} ]]; then
-      # Error
-      exit 1
-    fi
+    [[ -z ${PROJECT_DATABASE_ENGINE} ]] && die "Required var PROJECT_DATABASE_ENGINE not set!"
 
     PROJECT_DATABASE_CONFIG_NAME="$(json_read_field "${project_config_file}" "project[].database[].config[].name")"
-    if [[ -z ${PROJECT_DATABASE_CONFIG_NAME} ]]; then
-      # Error
-      exit 1
-    fi
+    [[ -z ${PROJECT_DATABASE_CONFIG_NAME} ]] && die "Required var PROJECT_DATABASE_CONFIG_NAME not set!"
 
     PROJECT_DATABASE_CONFIG_HOST="$(json_read_field "${project_config_file}" "project[].database[].config[].host")"
-    if [[ -z ${PROJECT_DATABASE_CONFIG_HOST} ]]; then
-      # Error
-      exit 1
-    fi
+    [[ -z ${PROJECT_DATABASE_CONFIG_HOST} ]] && die "Required var PROJECT_DATABASE_CONFIG_HOST not set!"
 
     PROJECT_DATABASE_CONFIG_USER="$(json_read_field "${project_config_file}" "project[].database[].config[].user")"
-    if [[ -z ${PROJECT_DATABASE_CONFIG_USER} ]]; then
-      # Error
-      exit 1
-    fi
+    [[ -z ${PROJECT_DATABASE_CONFIG_USER} ]] && die "Required var PROJECT_DATABASE_CONFIG_USER not set!"
 
     PROJECT_DATABASE_CONFIG_PASS="$(json_read_field "${project_config_file}" "project[].database[].config[].pass")"
-    if [[ -z ${PROJECT_DATABASE_CONFIG_PASS} ]]; then
-      # Error
-      exit 1
-    fi
+    [[ -z ${PROJECT_DATABASE_CONFIG_PASS} ]] && die "Required var PROJECT_DATABASE_CONFIG_PASS not set!"
 
   fi
 
@@ -171,6 +138,8 @@ function project_manager_menu_new_project_type_utils() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
+  log_section "Project Utils"
+
     # RE-GENERATE PROJECT CONFIG
     if [[ ${chosen_project_utils_options} == *"01"* ]]; then
 
@@ -215,17 +184,21 @@ function project_manager_menu_new_project_type_utils() {
 
       else
 
+        # Select database engine
+        #[[ -z ${chosen_database_engine} ]] && 
+        chosen_database_engine="$(database_ask_engine)"
+
         project_stage="$(project_ask_stage "")"
         [[ $? -eq 1 ]] && return 1
 
         # Filename should be the project domain
         project_name="$(project_get_name_from_domain "${filename%/}")"
-        project_name="$(mysql_name_sanitize "${project_name}")"
+        project_name="$(database_name_sanitize "${project_name}")"
         project_name="$(project_ask_name "${project_name}")"
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 1 ]]; then
-
+          # Log
           log_event "info" "Operation cancelled!" "false"
           display --indent 2 --text "- Creating project database" --result SKIPPED --color YELLOW
 
@@ -235,13 +208,12 @@ function project_manager_menu_new_project_type_utils() {
 
         log_event "info" "project_name: ${project_name}" "false"
 
-        # TODO: Ask for database engine?
-
         # Database
         database_user_passw="$(openssl rand -hex 12)"
 
+        mysql_user_db_scope="$(mysql_ask_user_db_scope "localhost")"
+
         mysql_database_create "${project_name}_${project_stage}"
-        mysql_user_db_scope="$(mysql_ask_user_db_scope)"
         mysql_user_create "${project_name}_user" "${database_user_passw}" "${mysql_user_db_scope}"
         mysql_user_grant_privileges "${project_name}_user" "${project_name}_${project_stage}" "${mysql_user_db_scope}"
 
@@ -249,6 +221,7 @@ function project_manager_menu_new_project_type_utils() {
         # TODO: Ask to update project config
         project_type="$(project_get_type "${filepath}/${filename}")"
         project_install_type="$(project_get_install_type "${filepath}/${filename}")"
+
         project_set_configured_database "${filepath}/${filename}" "${project_type}" "${project_install_type}" "${project_name}_${project_stage}"
         project_set_configured_database_user "${filepath}/${filename}" "${project_type}" "${project_install_type}" "${project_name}_user"
         project_set_configured_database_userpassw "${filepath}/${filename}" "${project_type}" "${project_install_type}" "${database_user_passw}"
@@ -338,75 +311,152 @@ function project_manager_menu_new_project_type_utils() {
 
 function project_manager_menu_new_project_type_new_project() {
 
+  local project_creation_type_options
   local project_type_options
   local chosen_project_type_options
   local whip_title
   local whip_description
 
-  # NEW
-  project_creation_type_options=(
-    "01)" "NEW CLEAN PROJECT"
-    "02)" "NEW PROJECT FROM BACKUP"
-    #"03)" "NEW PROJECT FROM EXISTING PROJECT"
-    #"04)" "NEW PROJECT FROM GIT REPOSITORY"
-  )
-
+  # Whip menu vars
   whip_title="PROJECT CREATION"
   whip_description=" "
 
-  project_type_options=(
-    "01)" "NEW WORDPRESS PROJECT"
-    "02)" "NEW LARAVEL PROJECT"
-    "03)" "NEW PHP PROJECT"
-    "04)" "NEW NODEJS PROJECT"
-    "05)" "NEW WORDPRESS PROJECT (DOCKER) -BETA-"
-    "06)" "NEW PHP PROJECT (DOCKER) -BETA-"
+  project_creation_type_options=(
+    "01)" "NEW PROJECT"
+    "02)" "NEW PROJECT FROM BACKUP"
+    "03)" "DOCKERIZE PROJECT FROM BACKUP"
+    #"04)" "DE-DOCKERIZE PROJECT FROM BACKUP"
+    #"05)" "NEW PROJECT FROM GIT REPOSITORY"
   )
 
-  chosen_project_type_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_type_options[@]}" 3>&1 1>&2 2>&3)"
+  chosen_project_creation_type_option="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_creation_type_options[@]}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    if [[ ${chosen_project_type_options} == *"01"* ]]; then
+    # NEW PROJECT
+    if [[ ${chosen_project_creation_type_option} == *"01"* ]]; then
 
-      # WP PROJECT
-      project_install "${PROJECTS_PATH}" "wordpress"
+      project_type_options=(
+        "01)" "NEW WORDPRESS PROJECT"
+        "02)" "NEW LARAVEL PROJECT"
+        "03)" "NEW PHP PROJECT"
+        "04)" "NEW NODEJS PROJECT"
+        "05)" "NEW WORDPRESS PROJECT (DOCKER) -BETA-"
+        "06)" "NEW PHP PROJECT (DOCKER) -BETA-"
+      )
+
+      chosen_project_type_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_type_options[@]}" 3>&1 1>&2 2>&3)"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        # NEW WORDPRESS PROJECT
+        [[ ${chosen_project_type_options} == *"01"* ]] && project_install "${PROJECTS_PATH}" "wordpress" "" "" "" "clean"
+
+        # NEW LARAVEL PROJECT
+        [[ ${chosen_project_type_options} == *"02"* ]] && project_install "${PROJECTS_PATH}" "laravel" "" "" "" "clean"
+
+        # NEW PHP PROJECT
+        [[ ${chosen_project_type_options} == *"03"* ]] && project_install "${PROJECTS_PATH}" "php" "" "" "" "clean"
+
+        # NEW NODEJS PROJECT
+        [[ ${chosen_project_type_options} == *"04"* ]] && project_install "${PROJECTS_PATH}" "nodejs" "" "" "" "clean"
+
+        # NEW WORDPRESS PROJECT (DOCKER) -BETA-
+        [[ ${chosen_project_type_options} == *"05"* ]] && docker_project_install "${PROJECTS_PATH}" "wordpress" ""
+
+        # NEW PHP PROJECT (DOCKER) -BETA-
+        [[ ${chosen_project_type_options} == *"06"* ]] && docker_project_install "${PROJECTS_PATH}" "php" ""
+
+      fi
 
     fi
 
-    if [[ ${chosen_project_type_options} == *"02"* ]]; then
+    # NEW PROJECT FROM BACKUP
+    if [[ ${chosen_project_creation_type_option} == *"02"* ]]; then
 
-      # LARAVEL PROJECT
-      project_install "${PROJECTS_PATH}" "laravel"
+      chosen_domain="$(whiptail --title "Project Domain" --inputbox "New project's domain:" 10 60 "" 3>&1 1>&2 2>&3)"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Check if domain is a valid domainname
+        if [[ ! "${chosen_domain}" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$ ]]; then
+
+          # Log
+          display --indent 6 --text "- Domain is not valid" --result FAIL --color RED
+          log_event "error" "Domain is not valid" "false"
+
+          prompt_return_or_finish
+          project_manager_menu_new_project_type_new_project
+
+        fi
+
+        # Log
+        log_event "info" "Working with domain: ${chosen_domain}"
+        display --indent 6 --text "- Selecting project domain" --result "DONE" --color GREEN
+        display --indent 8 --text "${chosen_domain}" --tcolor YELLOW
+
+        # Restore backup from storage
+        restore_backup_from_storage "${chosen_domain}"
+
+      else
+
+        return 1
+
+      fi
 
     fi
 
-    if [[ ${chosen_project_type_options} == *"03"* ]]; then
+    # DOCKERIZE EXISTING PROJECT
+    if [[ ${chosen_project_creation_type_option} == *"03"* ]]; then
 
-      # OTHER PHP PROJECT
-      project_install "${PROJECTS_PATH}" "php"
+      # TODO: move to another function
 
-    fi
+      log_subsection "Dockerize Project Backup"
 
-    if [[ ${chosen_project_type_options} == *"04"* ]]; then
+      # Backup Server selection
+      chosen_server="$(storage_remote_server_list)"
 
-      # NODE JS PROJECT
-      project_install "${PROJECTS_PATH}" "nodejs"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
 
-    fi
+        # List status options
+        chosen_remote_status="$(storage_remote_status_list)"
+        [[ -z ${chosen_remote_status} ]] && return 1
 
-    if [[ ${chosen_project_type_options} == *"05"* ]]; then
+        # List type options
+        chosen_remote_type="$(storage_remote_type_list)"
+        [[ -z ${chosen_remote_type} ]] && return 1
 
-      # WORDPRESS PROJECT (DOCKER)
-      docker_project_install "${PROJECTS_PATH}" "wordpress"
+        chosen_remote_type_path="${chosen_server}/projects-${chosen_remote_status}/${chosen_remote_type}"
 
-    fi
+        # Details of chosen_remote_type_path:
+        #   "${chosen_server}/projects-${chosen_status}/${chosen_restore_type}"
+        #chosen_restore_type="$(basename "${chosen_remote_type_path}")" # project, site or database
+        remote_list="$(dirname "${chosen_remote_type_path}")"
 
-    if [[ ${chosen_project_type_options} == *"06"* ]]; then
+        # Select project backup
+        backup_to_dowload="$(storage_backup_selection "${remote_list}" "site")"
 
-      # PHP PROJECT (DOCKER)
-      docker_project_install "${PROJECTS_PATH}" "php"
+        # Download backup
+        storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
+        [[ $? -eq 1 ]] && display --indent 6 --text "- Downloading Project Backup" --result "ERROR" --color RED && return 1
+
+        # Get backup file name
+        backup_to_restore="$(basename "${backup_to_dowload}")"
+
+        # Get project_domain
+        chosen_project="$(dirname "${backup_to_dowload}")"
+        project_domain="$(basename "${chosen_project}")"
+
+        # NEW NEW NEW NEW
+        docker_restore_project "${backup_to_restore}" "${chosen_remote_status}" "${chosen_server}" "${project_domain}" ""
+
+        prompt_return_or_finish
+
+      fi
 
     fi
 
@@ -433,13 +483,8 @@ function project_manager_menu_new_project_type() {
   project_types="Laravel,PHP"
 
   project_type="$(whiptail --title "NEW PROJECT TYPE" --menu "Choose an Installation Type" 20 78 10 "$(for x in ${project_types}; do echo "$x [X]"; done)" 3>&1 1>&2 2>&3)"
-
   exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    project_install "${PROJECTS_PATH}" "${project_type}"
-
-  fi
+  [[ ${exitstatus} -eq 0 ]] && project_install "${PROJECTS_PATH}" "${project_type}"
 
   menu_main_options
 
@@ -483,14 +528,13 @@ function project_tasks_handler() {
     # Second parameter with "true" will delete cloudflare entry
     project_delete "${domain}" "true"
 
-    exit
+    exit $? # exit with the exit code
     ;;
 
   *)
 
-    log_event "error" "INVALID PROJECT TASK: ${subtask}" "true"
+    die "INVALID PROJECT TASK: ${subtask}"
 
-    exit
     ;;
 
   esac
@@ -518,9 +562,11 @@ function project_install_tasks_handler() {
   local project_install_type="${2}"
 
   if [[ ! -f ${project_config_file} ]]; then
-    log_event "error" "Project config file not found! Wrong path?" "true"
-    exit 1
+
+    die "Project config file not found! Wrong path?"
+
   else
+
     # Load config file
     project_manager_config_loader "${project_config_file}"
     log_event "debug" "PROJECT_FILES_CONFIG_PATH=${PROJECT_FILES_CONFIG_PATH}" "false"
@@ -528,6 +574,7 @@ function project_install_tasks_handler() {
     log_event "debug" "PROJECT_PRIMARY_SUBDOMAIN=${PROJECT_PRIMARY_SUBDOMAIN}" "false"
     log_event "debug" "PROJECT_NAME=${PROJECT_NAME}" "false"
     log_event "debug" "PROJECT_STAGE=${PROJECT_STAGE}" "false"
+
   fi
 
   case ${project_install_type} in
@@ -536,22 +583,20 @@ function project_install_tasks_handler() {
 
     project_install "${PROJECT_FILES_CONFIG_PATH}" "${PROJECT_TYPE}" "${PROJECT_PRIMARY_SUBDOMAIN}" "${PROJECT_NAME}" "${PROJECT_STAGE}" "${project_install_type}"
 
-    exit
+    exit $? # exit with the exit code
     ;;
 
   copy)
 
     #project_install "${sites}" "${ptype}" "${domain}" "${pname}" "${pstate}"
-    log_event "error" "Create new project from a template should be implemented." "true"
+    die "Create new project from a template should be implemented"
 
-    exit
     ;;
 
   *)
 
-    log_event "error" "Invalid project install type: ${project_install_type}" "true"
+    die "Invalid project install type: ${project_install_type}"
 
-    exit
     ;;
 
   esac
