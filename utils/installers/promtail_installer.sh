@@ -31,6 +31,9 @@ function promtail_installer() {
         # Create the Promtail service file
         promtail_create_service
 
+        # Confirm directory ownership
+        chown -R promtail:promtail /opt/promtail
+
         # Start the Promtail service
         systemctl start promtail.service
 
