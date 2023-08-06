@@ -233,6 +233,16 @@ function server_app_setup() {
 
         ;;
 
+    "promtail")
+
+        if [[ ${PACKAGES_PROMTAIL_STATUS} == "enabled" ]]; then
+            promtail_installer
+        else
+            promtail_purge
+        fi
+
+        ;;
+
     "mailcow")
 
         if [[ ${PACKAGES_MAILCOW_STATUS} == "enabled" ]]; then
