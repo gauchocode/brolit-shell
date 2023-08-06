@@ -20,10 +20,17 @@ function promtail_installer() {
         log_subsection "Promtail Installer"
 
         # Add the Loki repository
-        curl -s https://packagecloud.io/install/repositories/grafana/loki/script.deb.sh | sudo bash
+        curl -O -L "https://github.com/grafana/loki/releases/download/v${PACKAGES_PROMTAIL_VERSION}/promtail-linux-amd64.zip"
 
         # Install the Promtail package
-        apt-get --yes install promtail -qq >/dev/null
+        ### Create directory
+        mkdir -p /opt/promtail
+        ### Unzip
+        unzip "promtail-linux-amd64.zip" -d /opt/promtail
+        ### Remove zip file
+        rm -f "promtail-linux-amd64.zip"
+        ### Set permissions
+        chmod a+x /opt/promtail/promtail-linux-amd64
 
         # Create the Promtail configuration file
         promtail_create_configuration_file
