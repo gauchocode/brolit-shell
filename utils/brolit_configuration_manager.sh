@@ -1363,12 +1363,12 @@ function _brolit_configuration_load_grafana() {
         fi
 
         # Checking if Grafana is not installed
-        [[ ! -x "${GRAFANA}" ]] && pkg_config_changes_detected "grafana" "true"
+        [[ ! -x "${GRAFANA}" && -z "${GRAFANA_PR}" && -z ${GRAFANA_DOCKER} ]] && pkg_config_changes_detected "grafana" "true"
 
     else
 
         # Checking if Grafana is installed
-        [[ -x "${GRAFANA}" ]] && pkg_config_changes_detected "grafana" "true"
+        [[ -x "${GRAFANA}" && -n "${GRAFANA_PR}" && -n ${GRAFANA_DOCKER} ]] && pkg_config_changes_detected "grafana" "true"
 
     fi
 
@@ -1398,8 +1398,8 @@ function _brolit_configuration_load_loki() {
     declare -g PACKAGES_LOKI_CONFIG_PORT
 
     LOKI="$(which loki)"
-    LOKI_PR="$(pgrep grafana)"                          # This will detect if a loki process is running, but could be a docker container
-    LOKI_DOCKER="$(docker ps -q --filter name=grafana)" # This will detect if a loki docker container is running
+    LOKI_PR="$(pgrep loki)"                          # This will detect if a loki process is running, but could be a docker container
+    LOKI_DOCKER="$(docker ps -q --filter name=loki)" # This will detect if a loki docker container is running
 
     PACKAGES_LOKI_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.loki[].status")"
 
@@ -1424,9 +1424,17 @@ function _brolit_configuration_load_loki() {
             die "Missing required config vars for loki support"
         fi
 
+        # Checking if Loki is not installed
+        [[ ! -x "${LOKI}" && -z "${LOKI_PR}" && -z ${LOKI_DOCKER} ]] && pkg_config_changes_detected "loki" "true"
+
+    else
+
+        # Checking if Loki is installed
+        [[ -x "${LOKI}" && -n "${LOKI_PR}" && -n ${LOKI_DOCKER} ]] && pkg_config_changes_detected "loki" "true"
+
     fi
 
-    export PACKAGES_LOKI_STATUS PACKAGES_LOKI_CONFIG_SUBDOMAIN PACKAGES_LOKI_CONFIG_NGINX_PROXY PACKAGES_LOKI_CONFIG_PORT
+    export LOKI LOKI_PR LOKI_DOCKER PACKAGES_LOKI_STATUS PACKAGES_LOKI_CONFIG_SUBDOMAIN PACKAGES_LOKI_CONFIG_NGINX_PROXY PACKAGES_LOKI_CONFIG_PORT
 
 }
 
@@ -1454,6 +1462,7 @@ function _brolit_configuration_load_promtail() {
     declare -g PACKAGES_PROMTAIL_CONFIG_LOKI_PORT
 
     PROMTAIL="$(pgrep promtail)"
+    PROMTAIL_DOCKER="$(docker ps -q --filter name=promtail)"
 
     PACKAGES_PROMTAIL_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.promtail[].status")"
 
@@ -1480,16 +1489,16 @@ function _brolit_configuration_load_promtail() {
         fi
 
         # Checking if Promtail is not installed
-        [[ ! -x "${PROMTAIL}" ]] && pkg_config_changes_detected "promtail" "true"
+        [[ -z "${PROMTAIL}" && -z ${PROMTAIL_DOCKER} ]] && pkg_config_changes_detected "promtail" "true"
 
     else
 
         # Checking if Promtail is installed
-        [[ -x "${PROMTAIL}" ]] && pkg_config_changes_detected "promtail" "true"
+        [[ -n "${PROMTAIL}" && -n ${PROMTAIL_DOCKER} ]] && pkg_config_changes_detected "promtail" "true"
 
     fi
 
-    export PROMTAIL PACKAGES_PROMTAIL_STATUS PACKAGES_PROMTAIL_VERSION PACKAGES_PROMTAIL_CONFIG_PORT PACKAGES_PROMTAIL_CONFIG_HOSTNAME PACKAGES_PROMTAIL_CONFIG_LOKI_URL PACKAGES_PROMTAIL_CONFIG_LOKI_PORT
+    export PROMTAIL PROMTAIL_DOCKER PACKAGES_PROMTAIL_STATUS PACKAGES_PROMTAIL_VERSION PACKAGES_PROMTAIL_CONFIG_PORT PACKAGES_PROMTAIL_CONFIG_HOSTNAME PACKAGES_PROMTAIL_CONFIG_LOKI_URL PACKAGES_PROMTAIL_CONFIG_LOKI_PORT
 
 }
 
