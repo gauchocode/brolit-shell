@@ -8,7 +8,7 @@ server {
         auth_basic_user_file /etc/nginx/.passwords;
 
         access_log off;
-        #error_log /var/log/nginx/domain.com.error.log debug;
+        #error_log /var/log/nginx/domain.com.error.log error;
 
         location / {
                 proxy_set_header X-Real-IP $remote_addr;
@@ -27,7 +27,7 @@ server {
         server_name localhost 127.0.0.1;
 
         access_log off;
-        #error_log /var/log/nginx/php.error.log debug;
+        #error_log /var/log/nginx/php.error.log error;
 
         location /stub_status {
                 stub_status on;
