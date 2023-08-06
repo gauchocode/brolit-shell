@@ -53,12 +53,17 @@ function promtail_create_configuration_file() {
     # Replace VARIABLES in the Promtail configuration file
     ## PROMTAIL_PORT
     sed -i "s/PROMTAIL_PORT/${PACKAGES_PROMTAIL_CONFIG_PORT}/g" "/opt/promtail/config-promtail.yml"
-    ## HOSTNAME
-    sed -i "s/HOSTNAME/${HOSTNAME}/g" "/opt/promtail/config-promtail.yml"
     ## LOKI_URL
     sed -i "s/LOKI_HOST_URL/${PACKAGES_PROMTAIL_CONFIG_LOKI_URL}/g" "/opt/promtail/config-promtail.yml"
     ## LOKI_PORT
     sed -i "s/LOKI_HOST_PORT/${PACKAGES_PROMTAIL_CONFIG_LOKI_PORT}/g" "/opt/promtail/config-promtail.yml"
+    ## HOSTNAME
+    ### if $HOSTNAME == default, then use actual HOSTNAME
+    if [[ "${HOSTNAME}" == "default" ]]; then
+        sed -i "s/HOSTNAME/${HOSTNAME}/g" "/opt/promtail/config-promtail.yml"
+    else
+        sed -i "s/HOSTNAME/${PACKAGES_PROMTAIL_CONFIG_HOSTNAME}/g" "/opt/promtail/config-promtail.yml"
+    fi
 
     display --indent 6 --text "- Promtail configuration file" --result "DONE" --color GREEN
 
