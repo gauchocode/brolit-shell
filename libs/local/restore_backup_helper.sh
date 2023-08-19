@@ -300,13 +300,13 @@ function restore_backup_from_ftp() {
 
         ## Get project_type && project_install_type
         project_type="$(project_get_type "${project_name}")"
-        project_install_type="$(project_get_install_type "${install_path}")"
+        project_install_type="$(project_get_install_type "${project_install_path}")"
 
         ## Get database information
-        db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}" "${project_install_type}")"
-        db_name="$(project_get_configured_database "${install_path}" "${project_type}" "${project_install_type}")"
-        db_user="$(project_get_configured_database_user "${install_path}" "${project_type}" "${project_install_type}")"
-        db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}" "${project_install_type}")"
+        db_engine="$(project_get_configured_database_engine "${project_install_path}" "${project_type}" "${project_install_type}")"
+        db_name="$(project_get_configured_database "${project_install_path}" "${project_type}" "${project_install_type}")"
+        db_user="$(project_get_configured_database_user "${project_install_path}" "${project_type}" "${project_install_type}")"
+        db_pass="$(project_get_configured_database_userpassw "${project_install_path}" "${project_type}" "${project_install_type}")"
 
         restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${BROLIT_TMP_DIR}/${chosen_database_backup}"
 
@@ -341,6 +341,7 @@ function restore_backup_from_public_url() {
   local project_stage
   local project_domain
   local project_name
+  local project_install_path
   local possible_project_name
   local root_domain
   local find_result
@@ -462,13 +463,13 @@ function restore_backup_from_public_url() {
 
       ## Get project_type && project_install_type
       project_type="$(project_get_type "${project_name}")"
-      project_install_type="$(project_get_install_type "${install_path}")"
+      project_install_type="$(project_get_install_type "${project_install_path}")"
 
       ## Get database information
-      db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}" "${project_install_type}")"
-      db_name="$(project_get_configured_database "${install_path}" "${project_type}" "${project_install_type}")"
-      db_user="$(project_get_configured_database_user "${install_path}" "${project_type}" "${project_install_type}")"
-      db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}" "${project_install_type}")"
+      db_engine="$(project_get_configured_database_engine "${project_install_path}" "${project_type}" "${project_install_type}")"
+      db_name="$(project_get_configured_database "${project_install_path}" "${project_type}" "${project_install_type}")"
+      db_user="$(project_get_configured_database_user "${project_install_path}" "${project_type}" "${project_install_type}")"
+      db_pass="$(project_get_configured_database_userpassw "${project_install_path}" "${project_type}" "${project_install_type}")"
 
       restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${BROLIT_TMP_DIR}/${chosen_database_backup}"
 
@@ -497,13 +498,13 @@ function restore_backup_from_public_url() {
 
       ## Get project_type && project_install_type
       project_type="$(project_get_type "${project_name}")"
-      project_install_type="$(project_get_install_type "${install_path}")"
+      project_install_type="$(project_get_install_type "${project_install_path}")"
 
       ## Get database information
-      db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}" "${project_install_type}")"
-      db_name="$(project_get_configured_database "${install_path}" "${project_type}" "${project_install_type}")"
-      db_user="$(project_get_configured_database_user "${install_path}" "${project_type}" "${project_install_type}")"
-      db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}" "${project_install_type}")"
+      db_engine="$(project_get_configured_database_engine "${project_install_path}" "${project_type}" "${project_install_type}")"
+      db_name="$(project_get_configured_database "${project_install_path}" "${project_type}" "${project_install_type}")"
+      db_user="$(project_get_configured_database_user "${project_install_path}" "${project_type}" "${project_install_type}")"
+      db_pass="$(project_get_configured_database_userpassw "${project_install_path}" "${project_type}" "${project_install_type}")"
 
       restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${BROLIT_TMP_DIR}/${backup_file}"
 
@@ -535,7 +536,7 @@ function restore_backup_from_public_url() {
 
     # Post-restore/install tasks
     # TODO: neet to get old domain for replace on database
-    project_post_install_tasks "${install_path}" "${project_type}" "${project_install_type}" "${project_name}" "${project_stage}" "${db_pass}" "${project_domain}" "${project_domain}"
+    project_post_install_tasks "${project_install_path}" "${project_type}" "${project_install_type}" "${project_name}" "${project_stage}" "${db_pass}" "${project_domain}" "${project_domain}"
 
   else
 
@@ -547,7 +548,7 @@ function restore_backup_from_public_url() {
   fi
 
   # Create brolit_config.json file
-  project_update_brolit_config "${destination_dir}/${install_path}" "${project_name}" "${project_stage}" "${project_type}" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "" "true" ""
+  project_update_brolit_config "${destination_dir}/${project_install_path}" "${project_name}" "${project_stage}" "${project_type}" "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "" "" "true" ""
 
   # Remove tmp files
   log_event "info" "Removing temporary folders ..." "false"
@@ -756,7 +757,7 @@ function restore_config_files_from_storage() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Downloading Config Backup
-    display --indent 6 --text "- Downloading config backup from dropbox"
+    display --indent 6 --text "- Downloading config backup from Dropbox"
 
     #dropbox_download "${chosen_type_path}/${chosen_config_type}/${chosen_config_bk}" "${BROLIT_MAIN_DIR}/tmp"
     storage_download_backup "${chosen_type_path}/${chosen_config_type}/${chosen_config_bk}" "${BROLIT_MAIN_DIR}/tmp"
@@ -1154,13 +1155,13 @@ function restore_backup_project_files() {
   local project_domain_new="${3}"
 
   local project_port
-  local install_path
+  local project_install_path
   local app_dir
   local exitstatus
 
   [[ -z ${project_domain_new} ]] && project_domain_new="${project_domain}"
 
-  install_path="${PROJECTS_PATH}/${project_domain_new}"
+  project_install_path="${PROJECTS_PATH}/${project_domain_new}"
 
   # Decompress
   decompress "${BROLIT_TMP_DIR}/${project_backup_file}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
@@ -1183,12 +1184,12 @@ function restore_backup_project_files() {
 
   # Needs refactor
   if [[ ${project_install_type} == "docker"* || ${project_install_type} == "proxy" ]]; then
-    [[ ${project_type} != "wordpress" ]] && app_dir="${install_path}/application"
-    [[ ${project_type} == "wordpress" ]] && app_dir="${install_path}/wordpress"
+    [[ ${project_type} != "wordpress" ]] && app_dir="${project_install_path}/application"
+    [[ ${project_type} == "wordpress" ]] && app_dir="${project_install_path}/wordpress"
     change_ownership "www-data" "www-data" "${app_dir}"
   else
     # Change ownership
-    change_ownership "www-data" "www-data" "${install_path}"
+    change_ownership "www-data" "www-data" "${project_install_path}"
   fi
 
   # Return vars
@@ -1396,21 +1397,21 @@ function restore_project_backup() {
     # TODO: Update .env values (PORTS, COMPOSE_PROJECT_NAME, PROJECT_NAME, PROJECT_DOMAIN, SHH_MASTER_USER, SSH_MASTER_PASS)
 
     # Update COMPOSE_PROJECT_NAME
-    sed -ie "s|^COMPOSE_PROJECT_NAME=.*$|COMPOSE_PROJECT_NAME=${project_name}_stack|g" "${install_path}/.env" && rm "${install_path}/.enve"
+    sed -ie "s|^COMPOSE_PROJECT_NAME=.*$|COMPOSE_PROJECT_NAME=${project_name}_stack|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
 
     # Update PROJECT_NAME
-    sed -ie "s|^PROJECT_NAME=.*$|PROJECT_NAME=${project_name}|g" "${install_path}/.env" && rm "${install_path}/.enve"
+    sed -ie "s|^PROJECT_NAME=.*$|PROJECT_NAME=${project_name}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
 
     # Update PROJECT_DOMAIN
-    sed -ie "s|^PROJECT_DOMAIN=.*$|PROJECT_DOMAIN=${project_domain_new}|g" "${install_path}/.env" && rm "${install_path}/.enve"
+    sed -ie "s|^PROJECT_DOMAIN=.*$|PROJECT_DOMAIN=${project_domain_new}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
 
     # Update SSH_MASTER_USER
-    sed -ie "s|^SSH_MASTER_USER=.*$|SSH_MASTER_USER=${project_name}_sftp_user|g" "${install_path}/.env" && rm "${install_path}/.enve"
+    sed -ie "s|^SSH_MASTER_USER=.*$|SSH_MASTER_USER=${project_name}_sftp_user|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
 
     # Update SSH_MASTER_PASS
     ## Generate random password
     project_passw="$(openssl rand -hex 12)"
-    sed -ie "s|^SSH_MASTER_PASS=.*$|SSH_MASTER_PASS=${project_passw}|g" "${install_path}/.env" && rm "${install_path}/.enve"
+    sed -ie "s|^SSH_MASTER_PASS=.*$|SSH_MASTER_PASS=${project_passw}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
 
     ## Will find the next port available from 81 to 350
     project_port="$(network_next_available_port "81" "350")"
@@ -1418,11 +1419,11 @@ function restore_project_backup() {
     # TODO: Check project type (WP, Laravel, etc)
 
     ## Update WP_PORT or WEBSERVER_PORT, then remove tmp file generated by sed
-    sed -ie "s|^WP_PORT=.*$|WP_PORT=${project_port}|g" "${install_path}/.env" && rm "${install_path}/.enve"
-    sed -ie "s|^WEBSERVER_PORT=.*$|WEBSERVER_PORT=${project_port}|g" "${install_path}/.env" && rm "${install_path}/.enve"
+    sed -ie "s|^WP_PORT=.*$|WP_PORT=${project_port}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+    sed -ie "s|^WEBSERVER_PORT=.*$|WEBSERVER_PORT=${project_port}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
 
     # Rebuild docker image
-    docker_compose_build "${install_path}/docker-compose.yml"
+    docker_compose_build "${project_install_path}/docker-compose.yml"
     exitstatus=$?
 
   else
@@ -1434,10 +1435,10 @@ function restore_project_backup() {
 
     # Reading config file
     ## Get database information
-    db_engine="$(project_get_configured_database_engine "${install_path}" "${project_type}" "${project_install_type}")"
-    db_name="$(project_get_configured_database "${install_path}" "${project_type}" "${project_install_type}")"
-    db_user="$(project_get_configured_database_user "${install_path}" "${project_type}" "${project_install_type}")"
-    db_pass="$(project_get_configured_database_userpassw "${install_path}" "${project_type}" "${project_install_type}")"
+    db_engine="$(project_get_configured_database_engine "${project_install_path}" "${project_type}" "${project_install_type}")"
+    db_name="$(project_get_configured_database "${project_install_path}" "${project_type}" "${project_install_type}")"
+    db_user="$(project_get_configured_database_user "${project_install_path}" "${project_type}" "${project_install_type}")"
+    db_pass="$(project_get_configured_database_userpassw "${project_install_path}" "${project_type}" "${project_install_type}")"
 
     if [[ -n ${db_name} && ${db_name} != "no-database" ]]; then
 
