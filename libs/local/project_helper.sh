@@ -884,6 +884,36 @@ function project_get_brolit_config_file() {
 
 }
 
+function project_get_configured_docker_data_dir() {
+
+  local project_path="${1}"
+
+  local project_dir
+
+  # Get WWW_DATA_DIR value from .env file
+  project_dir="$(cat "${project_path}/.env" | grep WWW_DATA_DIR | cut -d "=" -f 2)"
+
+  # Check exitstatus
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Overwrite ${project_path}, remove "." if exists at the beginning
+    project_path="${project_path}${project_dir#.}"
+
+    echo "${project_path}" && return 0
+
+  else
+
+    # Log
+    log_event "error" "Unable to get WWW_DATA_DIR value from .env file" "false"
+    display --indent 6 --text "- Unable to get WWW_DATA_DIR value from .env file" --result FAIL --color RED
+
+    return 1
+
+  fi
+
+}
+
 ################################################################################
 # Get project config file
 #
@@ -906,25 +936,7 @@ function project_get_config_file() {
 
   if [[ ${project_install_type} == "docker"* ]]; then
 
-    # Get WWW_DATA_DIR value from .env file
-    project_dir="$(cat "${project_path}/../.env" | grep WWW_DATA_DIR | cut -d "=" -f 2)"
-
-    # Check exitstatus
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-
-      # Overwrite ${project_path}, remove "." if exists at the beginning
-      project_path="${project_path}${project_dir#.}"
-
-    else
-
-      # Log
-      log_event "error" "Unable to get WWW_DATA_DIR value from .env file" "false"
-      display --indent 6 --text "- Unable to get WWW_DATA_DIR value from .env file" --result FAIL --color RED
-
-      return 1
-
-    fi
+    project_path="$(project_get_configured_docker_data_dir "${project_path}")"
 
   fi
 
@@ -2349,7 +2361,7 @@ function project_delete() {
         fi
 
       else
-  
+
         # Log
         log_event "info" "Cloudflare entries not deleted. The IP address of the Cloudflare entry is different from the server IP address." "false"
         display --indent 6 --text "- Deleting Cloudflare entries" --result "SKIPPED" --color YELLOW
@@ -2909,15 +2921,15 @@ function project_update_domain_config() {
 
       if [[ ${cloudflare_exitstatus} -ne 1 ]]; then # If ${cloudflare_exitstatus} is empty, will pass too
 
-        # Wait 3 seconds for DNS update
+        # Wait 5 seconds for DNS update
         ## Log
-        display --indent 6 --text "- Waiting 3 seconds for DNS update .."
-        log_event "info" "Waiting 3 seconds for DNS update ..." "false"
+        display --indent 6 --text "- Waiting 5 seconds for DNS update .."
+        log_event "info" "Waiting 5 seconds for DNS update ..." "false"
         ## Sleep
-        sleep 3
+        sleep 5
         ## Log
         clear_previous_lines "1"
-        display --indent 6 --text "- Waiting 3 seconds for DNS update .." --result "DONE" --color GREEN
+        display --indent 6 --text "- Waiting 5 seconds for DNS update .." --result "DONE" --color GREEN
 
         # Generate certificate with Let's Encrypt
         certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain}"
@@ -2987,19 +2999,20 @@ function project_post_install_tasks() {
       # Extract project_db_pass from .env
       project_db_pass="$(grep -oP '(MYSQL_PASSWORD=).+' "${project_install_path}/.env" | grep -oP '[^=]+$')"
 
-      # Change project_install_path
-      project_install_path="${project_install_path}/wordpress"
-
     fi
-
-    # Change WordPress directory permissions
-    wp_change_permissions "${project_install_path}"
 
     # Change wp-config.php database parameters
     project_set_configured_database_host "${project_install_path}" "${project_type}" "${project_install_type}" "${database_host}"
     project_set_configured_database "${project_install_path}" "${project_type}" "${project_install_type}" "${project_name}_${project_stage}"
     project_set_configured_database_user "${project_install_path}" "${project_type}" "${project_install_type}" "${project_name}_user"
     project_set_configured_database_userpassw "${project_install_path}" "${project_type}" "${project_install_type}" "${project_db_pass}"
+
+    # Change project_install_path
+    #project_install_path="${project_install_path}/wordpress"
+    project_install_path="$(project_get_configured_docker_data_dir "${project_path}")"
+
+    # Change WordPress directory permissions
+    wp_change_permissions "${project_install_path}"
 
     # TODO: need to check if http or https
     if [[ -n ${old_project_domain} && -n ${new_project_domain} ]]; then
@@ -3025,7 +3038,7 @@ function project_post_install_tasks() {
       # Let search engines index the project
       wpcli_change_wp_seo_visibility "${project_install_path}" "${project_install_type}" "1"
       # Set debug mode to false
-      wpcli_set_debug_mode "${project_install_path}" "${project_install_type}" "false" 
+      wpcli_set_debug_mode "${project_install_path}" "${project_install_type}" "false"
     else
       # Block search engines indexation
       wpcli_change_wp_seo_visibility "${project_install_path}" "${project_install_type}" "0"
