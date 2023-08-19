@@ -2916,18 +2916,21 @@ function wpcli_config_set() {
     # wp-cli command
     wp_config="$(${wpcli_cmd} config set "${wp_config_option}")"
 
+    # get exit status
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
-
+        
+        # Log
+        [[ ${install_type} == "docker"* ]] && clear_previous_lines "1"
         log_event "debug" "Command executed: ${wpcli_cmd} config set ${wp_config_option} ${wp_config_option_value}" "false"
-        log_event "debug" "wp config get return:${wp_config}" "false"
+        log_event "debug" "wp config set return:${wp_config}" "false"
 
         return 0
 
     else
 
         log_event "debug" "Command executed: ${wpcli_cmd} config set ${wp_config_option} ${wp_config_option_value}" "false"
-        log_event "error" "wp config get return:${wp_config}" "false"
+        log_event "error" "wp config set return:${wp_config}" "false"
 
         return 1
 
