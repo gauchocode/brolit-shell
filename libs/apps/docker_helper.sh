@@ -717,23 +717,32 @@ function docker_restore_project() {
     #database_prefix_to_restore="$(wp_config_get_option "${BROLIT_TMP_DIR}/${chosen_project}" "table_prefix")"
     database_prefix_to_restore="$(cat "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php.bak" | grep "\$table_prefix" | cut -d \' -f 2)"
     if [[ -n ${database_prefix_to_restore} ]]; then
+       
         # Set restored $table_prefix on wp-config.php file
         sed -i "s/\$table_prefix = 'wp_'/\$table_prefix = '${database_prefix_to_restore}'/g" "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php"
+       
         # Execute docker-compose command
         ## Options:
         ##    -f, --force   Don't ask to confirm removal
         ##    -s, --stop    Stop the containers, if required, before removing
         ##    -v            Remove any anonymous volumes attached to containers
         docker-compose -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" rm --force -v --stop
+
+        # Pull
+        docker-compose -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" pull --quiet
+       
         # Rebuild docker image
         docker-compose -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" up --detach
+       
         # Clear screen output
         clear_previous_lines "15"
+
     fi
 
     # Show final console message
     display --indent 6 --text "- Restore and dockerize project" --result "DONE" --color GREEN
-    #log_break "true"
+
+    # Message
     echo "    *****************************************************************"
     echo "    *                                                               *"
     echo "    *  Project ${project_domain} was restored successfully!           "
@@ -1033,8 +1042,6 @@ define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
         ;;
 
     esac
-
-    ### NEW ###
 
     # Project domain configuration (webserver+certbot+DNS)
     https_enable="$(project_update_domain_config "${project_domain}" "proxy" "docker-compose" "${port_available}")"

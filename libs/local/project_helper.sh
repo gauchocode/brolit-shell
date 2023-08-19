@@ -834,12 +834,12 @@ function project_set_brolit_config_var() {
     content="$(jq ".${config_field} = \"${config_value}\"" "${project_config_file}")" && echo "${content}" >"${project_config_file}"
 
     # Log
-    display --indent 6 --text "- Updating project config file" --result DONE --color GREEN
+    display --indent 6 --text "- Updating BROLIT project config file" --result DONE --color GREEN
 
   else
 
     # Log
-    display --indent 6 --text "- Project config file dont exists" --result WARNING --color YELLOW
+    display --indent 6 --text "- BROLIT project config file dont exists" --result WARNING --color YELLOW
 
   fi
 
@@ -2904,17 +2904,30 @@ function project_update_domain_config() {
     fi
 
     if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
+
       if [[ ${cloudflare_exitstatus} -ne 1 ]]; then # If ${cloudflare_exitstatus} is empty, will pass too
-        # Wait 2 seconds for DNS update
-        sleep 2
-        # Let's Encrypt
+
+        # Wait 3 seconds for DNS update
+        ## Log
+        display --indent 6 --text "- Waiting 3 seconds for DNS update .."
+        log_event "info" "Waiting 3 seconds for DNS update ..." "false"
+        ## Sleep
+        sleep 3
+        ## Log
+        clear_previous_lines "1"
+        display --indent 6 --text "- Waiting 3 seconds for DNS update .." --result "DONE" --color GREEN
+
+        # Generate certificate with Let's Encrypt
         certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain}"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
+          # Enable HTTP2
           nginx_server_add_http2_support "${project_domain}"
           project_https_enable="true"
         fi
+
       fi
+
     fi
 
   fi
@@ -2967,7 +2980,18 @@ function project_post_install_tasks() {
   # Check if is a WP project
   if [[ ${project_type} == "wordpress" ]]; then
 
-    [[ ${project_install_type} == "docker"* ]] && project_install_path="${project_install_path}/wordpress" && database_host="mysql"
+    if [[ ${project_install_type} == "docker"* ]]; then
+
+      # Change database_host
+      database_host="mysql"
+
+      # Extract project_db_pass from .env
+      project_db_pass="$(grep -oP '(MYSQL_PASSWORD=).+' "${project_install_path}/.env" | grep -oP '[^=]+$')"
+
+      # Change project_install_path
+      project_install_path="${project_install_path}/wordpress"
+
+    fi
 
     # Change WordPress directory permissions
     wp_change_permissions "${project_install_path}"
