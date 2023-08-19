@@ -888,7 +888,7 @@ function project_get_brolit_config_file() {
 # Get project config file
 #
 # Arguments:
-#  ${1} = ${project_path}
+#  ${1} = ${project_path} - On default=${PROJECTS_PATH}/${project_domain} on docker=${PROJECTS_PATH}/${project_name}/(wordpress-application)
 #  ${2} = ${project_type}
 #  ${3} = ${project_install_type}
 #
@@ -902,10 +902,12 @@ function project_get_config_file() {
   local project_type="${2}"
   local project_install_type="${3}"
 
+  local project_dir
+
   if [[ ${project_install_type} == "docker"* ]]; then
 
     # Get WWW_DATA_DIR value from .env file
-    project_dir="$(cat "${project_path}/.env" | grep WWW_DATA_DIR | cut -d "=" -f 2)"
+    project_dir="$(cat "${project_path}/../.env" | grep WWW_DATA_DIR | cut -d "=" -f 2)"
 
     # Check exitstatus
     exitstatus=$?
@@ -2952,8 +2954,6 @@ function project_update_domain_config() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-# TODO: implements project_install_type
-
 function project_post_install_tasks() {
 
   local project_install_path="${1}"
@@ -2971,7 +2971,6 @@ function project_post_install_tasks() {
 
   local database_host="localhost"
 
-  # TODO: check if update db credentials is needed
   # TODO: update brolit project config file
 
   # Log

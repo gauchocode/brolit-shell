@@ -179,7 +179,7 @@ function docker_compose_build() {
 
     # Execute docker-compose command
     docker-compose -f "${compose_file}" pull --quiet
-    [[ $? -eq 1 ]] && return 1
+    [[ $? -eq 1 ]] && display --indent 6 --text "- Restoring docker stack ..." --result "FAIL" --color RED && return 1
 
     # Log
     log_event "debug" "Running: docker-compose -f ${compose_file} up --detach --build" "false"
