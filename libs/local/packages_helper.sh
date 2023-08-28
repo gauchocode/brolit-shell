@@ -434,6 +434,7 @@ function package_purge() {
     clear_previous_lines "1"
     display --indent 6 --text "- Uninstalling ${package}" --result "DONE" --color GREEN
     log_event "info" "${package} removed" "false"
+    log_event "debug" "Command executed: apt-get --yes purge ${package} -qq >/dev/null" "false"
 
     return 0
 

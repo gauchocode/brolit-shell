@@ -56,7 +56,7 @@ function mysql_purge_installation() {
   log_event "warning" "Purging mysql-* packages ..." "false"
   display --indent 6 --text "- Purging MySQL packages"
 
-  apt-get --yes purge mysql-server mysql-client mysql-common mysql-server-core-* mysql-client-core-* -qq >/dev/null
+  apt-get --yes purge mysql-server mysql-common mysql-server-core-* -qq >/dev/null
   rm --recursive --force /etc/mysql /var/lib/mysql
   
   # Remove old packages
