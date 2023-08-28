@@ -1012,7 +1012,7 @@ function _project_get_type() {
     if [[ -n ${dir_path} && -d ${dir_path} ]]; then
 
         # Check for WordPress
-        wp_path="$(wp_config_path "${dir_path}")"
+        wp_path="$(_wp_config_path "${dir_path}")"
         if [[ -n ${wp_path} ]]; then
 
             project_type="wordpress"
