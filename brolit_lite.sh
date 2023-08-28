@@ -1017,10 +1017,6 @@ function _project_get_type() {
 
             project_type="wordpress"
 
-            # Log
-            log_event "debug" "Project type '${project_type}' for ${dir_path}" "false"
-            display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
-
             # Return
             echo "${project_type}" && return 0
 
@@ -1036,10 +1032,6 @@ function _project_get_type() {
 
                 project_type="laravel"
 
-                # Log
-                log_event "debug" "Project type '${project_type}' for ${dir_path}" "false"
-                display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
-
                 # Return
                 echo "${project_type}" && return 0
 
@@ -1052,10 +1044,6 @@ function _project_get_type() {
 
             project_type="react"
 
-            # Log
-            log_event "debug" "Project type '${project_type}' for ${dir_path}" "false"
-            display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
-
             # Return
             echo "${project_type}" && return 0
 
@@ -1065,10 +1053,6 @@ function _project_get_type() {
         if [[ -f "${dir_path}/package.json" && (-f "${dir_path}/server.js" || -f "${dir_path}/app.js") ]]; then
 
             project_type="nodejs"
-
-            # Log
-            log_event "debug" "Project type '${project_type}' for ${dir_path}" "false"
-            display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
 
             # Return
             echo "${project_type}" && return 0
@@ -1080,10 +1064,6 @@ function _project_get_type() {
 
             project_type="python"
 
-            # Log
-            log_event "debug" "Project type '${project_type}' for ${dir_path}" "false"
-            display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
-
             # Return
             echo "${project_type}" && return 0
 
@@ -1093,10 +1073,6 @@ function _project_get_type() {
         if [[ $(find "${dir_path}" -maxdepth 1 -type f -name "*.php" | wc -l) -gt 0 ]]; then
 
             project_type="php"
-
-            # Log
-            log_event "debug" "Project type '${project_type}' for ${dir_path}" "false"
-            display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
 
             # Return
             echo "${project_type}" && return 0
@@ -1108,24 +1084,17 @@ function _project_get_type() {
 
             project_type="html"
 
-            # Log
-            log_event "debug" "Project type '${project_type}' for ${dir_path}" "false"
-            display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
-
             # Return
             echo "${project_type}" && return 0
 
         fi
-
-        # Unknown
-        log_event "debug" "Project type 'unknown' for ${dir_path}" "false"
 
         # Return
         echo "other" && return 0
 
     else
 
-        log_event "error" "Can't get project type, directory '${dir_path}' doesn't exist." "false"
+        echo "Can't get project type, directory '${dir_path}' doesn't exist."
 
         return 1
 
