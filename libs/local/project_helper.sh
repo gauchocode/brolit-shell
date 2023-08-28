@@ -2492,10 +2492,6 @@ function project_get_type() {
 
   local wp_path
   local laravel
-  local php
-  local nodejs
-  local react
-  local html
 
   # TODO: if brolit_conf exists, should check this file and get project type
 
@@ -2539,7 +2535,7 @@ function project_get_type() {
     fi
 
     # Check for React by looking for specific react-scripts in package.json
-    if [[ -f "$DIR/package.json" ]] && grep -q "react-scripts" "$DIR/package.json"; then
+    if [[ -f "${dir_path}/package.json" ]] && grep -q "react-scripts" "${dir_path}/package.json"; then
 
       project_type="react"
 
@@ -2553,7 +2549,7 @@ function project_get_type() {
     fi
 
     # Check for Node.js by looking for server.js or app.js files which are common entry points
-    if [[ -f "$DIR/package.json" && (-f "$DIR/server.js" || -f "$DIR/app.js") ]]; then
+    if [[ -f "${dir_path}/package.json" && (-f "${dir_path}/server.js" || -f "${dir_path}/app.js") ]]; then
 
       project_type="nodejs"
 
@@ -2567,7 +2563,7 @@ function project_get_type() {
     fi
 
     # Check for Python
-    if [[ -f "$DIR/setup.py" || -f "$DIR/Pipfile" || -f "$DIR/pyproject.toml" ]]; then
+    if [[ -f "${dir_path}/setup.py" || -f "${dir_path}/Pipfile" || -f "${dir_path}/pyproject.toml" ]]; then
 
       project_type="python"
 
@@ -2581,7 +2577,7 @@ function project_get_type() {
     fi
 
     # Check for simple PHP
-    if [[ $(find "$DIR" -maxdepth 1 -type f -name "*.php" | wc -l) -gt 0 ]]; then
+    if [[ $(find "${dir_path}" -maxdepth 1 -type f -name "*.php" | wc -l) -gt 0 ]]; then
 
       project_type="php"
 
@@ -2595,7 +2591,7 @@ function project_get_type() {
     fi
 
     # Check for simple HTML
-    if [[ $(find "$DIR" -maxdepth 1 -type f -name "*.html" | wc -l) -gt 0 && $(find "$DIR" -maxdepth 1 -type f \( -name "*.php" -o -name "*.py" \) | wc -l) -eq 0 ]]; then
+    if [[ $(find "${dir_path}" -maxdepth 1 -type f -name "*.html" | wc -l) -gt 0 && $(find "${dir_path}" -maxdepth 1 -type f \( -name "*.php" -o -name "*.py" \) | wc -l) -eq 0 ]]; then
 
       project_type="html"
 
