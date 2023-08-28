@@ -2489,7 +2489,6 @@ function project_get_type() {
   local dir_path="${1}"
 
   local project_type
-
   local wp_path
   local laravel
 

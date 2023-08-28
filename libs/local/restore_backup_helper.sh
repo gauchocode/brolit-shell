@@ -308,7 +308,17 @@ function restore_backup_from_ftp() {
         db_user="$(project_get_configured_database_user "${project_install_path}" "${project_type}" "${project_install_type}")"
         db_pass="$(project_get_configured_database_userpassw "${project_install_path}" "${project_type}" "${project_install_type}")"
 
-        restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${BROLIT_TMP_DIR}/${chosen_database_backup}"
+        # If db_engine, db_name, db_user are not empty
+        if [[ -n ${db_engine} && -n ${db_name} && -n ${db_user} ]]; then
+
+          restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${BROLIT_TMP_DIR}/${chosen_database_backup}"
+
+        else
+
+          log_event "error" "Database information not found on project config file" "false"
+          display --indent 6 --text "- Database backup selection" --result "SKIPPED" --color YELLOW
+
+        fi
 
       else
 
@@ -471,7 +481,17 @@ function restore_backup_from_public_url() {
       db_user="$(project_get_configured_database_user "${project_install_path}" "${project_type}" "${project_install_type}")"
       db_pass="$(project_get_configured_database_userpassw "${project_install_path}" "${project_type}" "${project_install_type}")"
 
-      restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${BROLIT_TMP_DIR}/${chosen_database_backup}"
+      # If db_engine, db_name, db_user are not empty
+      if [[ -n ${db_engine} && -n ${db_name} && -n ${db_user} ]]; then
+
+        restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${BROLIT_TMP_DIR}/${chosen_database_backup}"
+
+      else
+
+        log_event "error" "Database information not found on project config file" "false"
+        display --indent 6 --text "- Database backup selection" --result "SKIPPED" --color YELLOW
+
+      fi
 
     else
 
@@ -506,7 +526,17 @@ function restore_backup_from_public_url() {
       db_user="$(project_get_configured_database_user "${project_install_path}" "${project_type}" "${project_install_type}")"
       db_pass="$(project_get_configured_database_userpassw "${project_install_path}" "${project_type}" "${project_install_type}")"
 
-      restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${BROLIT_TMP_DIR}/${backup_file}"
+      # If db_engine, db_name, db_user are not empty
+      if [[ -n ${db_engine} && -n ${db_name} && -n ${db_user} ]]; then
+
+        restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${BROLIT_TMP_DIR}/${backup_file}"
+
+      else
+
+        log_event "error" "Database information not found on project config file" "false"
+        display --indent 6 --text "- Database backup selection" --result "SKIPPED" --color YELLOW
+
+      fi
 
     else
 
@@ -1109,42 +1139,6 @@ function restore_backup_database() {
 
   # Grant privileges to database user
   mysql_user_grant_privileges "${db_user}" "${db_name}" "localhost"
-
-}
-
-# TO DEPRECATE
-function _restore_backup_project_files() {
-
-  local chosen_project="${1}"
-  local backup_to_dowload="${2}"
-
-  # Asking project stage with suggested actual state
-  suffix=${chosen_project%_*} ## strip the tail
-  project_stage="$(project_ask_stage "${suffix}")"
-
-  ## If chosen_project = project domain, we need to extract the domain extension
-  possible_project_name="$(project_get_name_from_domain "${chosen_project}")"
-
-  # Asking project name
-  project_name="$(project_ask_name "${possible_project_name}")"
-
-  # Decompress
-  decompress "${BROLIT_TMP_DIR}/${backup_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
-
-  #chosen_type_path="${chosen_server}/projects-${chosen_status}/${chosen_restore_type}"
-  storage_project_list="$(storage_list_dir "${chosen_remote_type_path}")"
-
-  # Get project install type
-  project_install_type="$(project_get_install_type "${BROLIT_TMP_DIR}/${chosen_project}")"
-
-  # At this point chosen_project is the new project domain
-  # Restore site files
-  restore_backup_files "${chosen_project}" "${project_install_type}"
-
-  if [[ ${project_install_type} != "proxy" && ${project_install_type} != "docker"* ]]; then
-    # Change ownership
-    change_ownership "www-data" "www-data" "${PROJECTS_PATH}/${chosen_project}"
-  fi
 
 }
 
