@@ -106,6 +106,8 @@ function server_app_setup() {
             mysql_initial_config
         else
             package_purge "mariadb-server"
+            package_purge "mariadb-server-core-*"
+            package_purge "mariadb-common"
         fi
 
         ;;
