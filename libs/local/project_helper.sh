@@ -2499,9 +2499,10 @@ function project_get_type() {
 
   # TODO: if brolit_conf exists, should check this file and get project type
 
+  # Ensure the directory exists
   if [[ -n ${dir_path} && -d ${dir_path} ]]; then
 
-    # WP?
+    # Check for WordPress
     wp_path="$(wp_config_path "${dir_path}")"
     if [[ -n ${wp_path} ]]; then
 
@@ -2516,11 +2517,12 @@ function project_get_type() {
 
     fi
 
-    # Laravel?
+    # Check for Laravel
     composer="$(find "${dir_path}" -maxdepth 2 -name "composer.json" -type f)"
     if [[ -n ${composer} ]]; then
 
       laravel="$(cat "${composer}" | grep "laravel/framework")"
+
       if [[ -n ${laravel} ]]; then
 
         project_type="laravel"
@@ -2536,11 +2538,10 @@ function project_get_type() {
 
     fi
 
-    # other-php?
-    php="$(find "${dir_path}" -name "index.php" -type f)"
-    if [[ -n ${php} ]]; then
+    # Check for React by looking for specific react-scripts in package.json
+    if [[ -f "$DIR/package.json" ]] && grep -q "react-scripts" "$DIR/package.json"; then
 
-      project_type="php"
+      project_type="react"
 
       # Log
       log_event "debug" "Project type '${project_type}' for ${dir_path}" "false"
@@ -2551,9 +2552,8 @@ function project_get_type() {
 
     fi
 
-    # node.js?
-    nodejs="$(find "${dir_path}" -name "package.json" -type f)"
-    if [[ -n ${nodejs} ]]; then
+    # Check for Node.js by looking for server.js or app.js files which are common entry points
+    if [[ -f "$DIR/package.json" && (-f "$DIR/server.js" || -f "$DIR/app.js") ]]; then
 
       project_type="nodejs"
 
@@ -2566,26 +2566,36 @@ function project_get_type() {
 
     fi
 
-    # React?
-    if [[ -f "${dir_path}/node_modules/react/cjs/" ]]; then
-      react="$(find "${dir_path}/node_modules/react/cjs/" -name "react.development.js" -type f)"
-      if [[ -n ${react} ]]; then
+    # Check for Python
+    if [[ -f "$DIR/setup.py" || -f "$DIR/Pipfile" || -f "$DIR/pyproject.toml" ]]; then
 
-        project_type="react"
+      project_type="python"
 
-        # Log
-        log_event "debug" "Project type '${project_type}' for ${dir_path}" "false"
-        display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
+      # Log
+      log_event "debug" "Project type '${project_type}' for ${dir_path}" "false"
+      display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
 
-        # Return
-        echo "${project_type}" && return 0
+      # Return
+      echo "${project_type}" && return 0
 
-      fi
     fi
 
-    # html-only?
-    html="$(find "${dir_path}" -name "index.html" -type f)"
-    if [[ -n ${html} ]]; then
+    # Check for simple PHP
+    if [[ $(find "$DIR" -maxdepth 1 -type f -name "*.php" | wc -l) -gt 0 ]]; then
+
+      project_type="php"
+
+      # Log
+      log_event "debug" "Project type '${project_type}' for ${dir_path}" "false"
+      display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
+
+      # Return
+      echo "${project_type}" && return 0
+
+    fi
+
+    # Check for simple HTML
+    if [[ $(find "$DIR" -maxdepth 1 -type f -name "*.html" | wc -l) -gt 0 && $(find "$DIR" -maxdepth 1 -type f \( -name "*.php" -o -name "*.py" \) | wc -l) -eq 0 ]]; then
 
       project_type="html"
 
