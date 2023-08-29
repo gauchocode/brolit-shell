@@ -2928,13 +2928,13 @@ function project_update_domain_config() {
 
         # Wait 5 seconds for DNS update
         ## Log
-        display --indent 6 --text "- Waiting 5 seconds for DNS update .."
-        log_event "info" "Waiting 5 seconds for DNS update ..." "false"
+        display --indent 6 --text "- Waiting 7 seconds for DNS update .."
+        log_event "info" "Waiting 7 seconds for DNS update ..." "false"
         ## Sleep
-        sleep 5
+        sleep 7
         ## Log
         clear_previous_lines "1"
-        display --indent 6 --text "- Waiting 5 seconds for DNS update .." --result "DONE" --color GREEN
+        display --indent 6 --text "- Waiting 7 seconds for DNS update .." --result "DONE" --color GREEN
 
         # Generate certificate with Let's Encrypt
         certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain}"
@@ -3014,7 +3014,7 @@ function project_post_install_tasks() {
 
     # Change project_install_path
     #project_install_path="${project_install_path}/wordpress"
-    project_install_path="$(project_get_configured_docker_data_dir "${project_path}")"
+    project_install_path="$(project_get_configured_docker_data_dir "${project_install_path}")"
 
     # Change WordPress directory permissions
     wp_change_permissions "${project_install_path}"
@@ -3027,7 +3027,7 @@ function project_post_install_tasks() {
       fi
     fi
 
-    # SET CONFIGS
+    # Set WP_HOME & WP_SITEURL
     wpcli_config_set "${project_install_path}" "${project_install_type}" "WP_HOME" "https://${new_project_domain}/"
     wpcli_config_set "${project_install_path}" "${project_install_type}" "WP_SITEURL" "https://${new_project_domain}/"
 
