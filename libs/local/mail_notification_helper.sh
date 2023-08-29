@@ -51,6 +51,18 @@ function mail_send_notification() {
     local email_subject="${1}"
     local email_content="${2}"
 
+    # Check SMTP config
+    if [[ "${NOTIFICATION_EMAIL_SMTP_SERVER}" == "" ]] || [[ "${NOTIFICATION_EMAIL_SMTP_PORT}" == "" ]] || [[ "${NOTIFICATION_EMAIL_SMTP_USER}" == "" ]] || [[ "${NOTIFICATION_EMAIL_SMTP_UPASS}" == "" ]] || [[ "${NOTIFICATION_EMAIL_MAILA}" == "" ]]; then
+
+        # Log
+        log_event "warning" "SMTP config not found. Skipping email notification." "false"
+        display --indent 6 --text "- Sending Email notification" --result "SKIP" --color YELLOW
+        display --indent 8 --text "SMTP config not found. Skipping email notification."
+
+        return 1
+
+    fi
+
     # Log
     log_event "info" "Sending Email to ${NOTIFICATION_EMAIL_MAILA} ..." "false"
     log_event "debug" "Running: sendEmail -f \"${NOTIFICATION_EMAIL_SMTP_USER}\" -t \"${NOTIFICATION_EMAIL_MAILA}\" -u \"${email_subject}\" -o message-content-type=html -m \"${email_content}\" -s \"${NOTIFICATION_EMAIL_SMTP_SERVER}:${NOTIFICATION_EMAIL_SMTP_PORT}\" -o tls=\"${NOTIFICATION_EMAIL_SMTP_TLS}\" -xu \"${NOTIFICATION_EMAIL_SMTP_USER}\" -xp \"${NOTIFICATION_EMAIL_SMTP_UPASS}\"" "false"
