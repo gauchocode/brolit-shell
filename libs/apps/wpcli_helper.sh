@@ -527,20 +527,21 @@ function wpcli_core_verify() {
 
     # Command
     # Verify WordPress Checksums
-    wpcli_core_verify_output="$(${wpcli_cmd} core verify-checksums 2>&1)"
+    mapfile -t wpcli_core_verify_output=$(${wpcli_cmd} core verify-checksums 2>&1)
     verify_status=$?
     if [ ${verify_status} -eq 1 ]; then
 
         # To Array
-        mapfile -t verify_core <<<"${wpcli_core_verify_output}"
+        #mapfile -t verify_core <<<"${wpcli_core_verify_output}"
+        mapfile -t verify_core="($(echo ${wpcli_core_verify_output} | awk -F": " '/File (doesn'\''t|should not) exist/ {print $3}'))"
 
         # Remove from array elements containing unwanted errors
-        verify_core=("${verify_core[@]//*wordpress-cli_run*/}")
-        verify_core=("${verify_core[@]//*readme.html*/}")
-        verify_core=("${verify_core[@]//*WordPress installation*/}")
-        verify_core_string="$(array_remove_newlines "${verify_core[@]}")"
-        verify_core_string="$(string_remove_special_chars "${verify_core_string}")"
-        verify_core_string="$(string_remove_spaces "${verify_core_string}")"
+        #verify_core=("${verify_core[@]//*wordpress-cli_run*/}")
+        #verify_core=("${verify_core[@]//*readme.html*/}")
+        #verify_core=("${verify_core[@]//*WordPress installation*/}")
+        #verify_core_string="$(array_remove_newlines "${verify_core[@]}")"
+        #verify_core_string="$(string_remove_special_chars "${verify_core_string}")"
+        #verify_core_string="$(string_remove_spaces "${verify_core_string}")"
 
     fi
 
@@ -1430,6 +1431,8 @@ function wpcli_delete_not_core_files() {
     display --indent 6 --text "- Scanning for suspicious WordPress files" --result "DONE" --color GREEN
 
     mapfile -t wpcli_core_verify_results < <(wpcli_core_verify "${wp_site}" "${install_type}")
+
+    log_event "debug" "${wpcli_core_verify_results[@]}" "false"
 
     for wpcli_core_verify_result in "${wpcli_core_verify_results[@]}"; do
 
