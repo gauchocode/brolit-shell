@@ -514,7 +514,10 @@ function wpcli_core_verify() {
     local wp_site="${1}"
     local install_type="${2}"
 
-    local wp_verify_checksum_output_file="${BROLIT_MAIN_DIR}/tmp/wp_verify_checksum_${TIMESTAMP}.txt"
+    local timestamp
+    timestamp="$(date +%Y%m%d_%H%M%S)"
+    
+    local wp_verify_checksum_output_file="${BROLIT_MAIN_DIR}/tmp/wp_verify_checksum_${timestamp}.txt"
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site} --no-color"
@@ -1419,7 +1422,7 @@ function wpcli_delete_not_core_files() {
 
     display --indent 6 --text "- Scanning for suspicious WordPress files" --result "DONE" --color GREEN
 
-    wpcli_core_verify_results=$(wpcli_core_verify "${wp_site}" "${install_type}")
+    wpcli_core_verify_results="$(wpcli_core_verify "${wp_site}" "${install_type}")"
 
     while IFS=, read -ra path_array; do
 
