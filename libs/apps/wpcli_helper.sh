@@ -514,7 +514,7 @@ function wpcli_core_verify() {
     local wp_site="${1}"
     local install_type="${2}"
 
-    local wp_verify_checksum_output_file="${TMP_DIR}/wp_verify_checksum_${TIMESTAMP}.txt"
+    local wp_verify_checksum_output_file="${BROLIT_MAIN_DIR}/tmp/wp_verify_checksum_${TIMESTAMP}.txt"
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site} --no-color"
