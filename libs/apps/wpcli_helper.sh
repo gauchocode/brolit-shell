@@ -533,11 +533,12 @@ function wpcli_core_verify() {
 
     # Verify WordPress Checksums
     ${wpcli_cmd} core verify-checksums | awk -F": " '/File (doesn'\''t|should not) exist/ {print $3}' > "${wp_verify_checksum_output_file}"
-    verify_status=$?
-    if [[ ${verify_status} -eq 1 ]]; then
+    
+    # Replace new lines with ","
+    sed -i ':a;N;$!ba;s/\n/,/g' ${wp_verify_checksum_output_file}
 
-        # Replace new lines with ","
-        sed -i ':a;N;$!ba;s/\n/,/g' "${wp_verify_checksum_output_file}"
+    # Check if file is not empty
+    if [[ -s "${wp_verify_checksum_output_file}" ]]; then
 
         # Log
         clear_previous_lines "1"
