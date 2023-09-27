@@ -503,15 +503,18 @@ function wpcli_core_update() {
 #
 # Arguments:
 #   ${1} = ${wp_site}
+#   ${2} = ${install_type}
 #
 # Outputs:
-#   "true" if wpcli package is installed, "false" if not.
+#   ${wp_verify_checksum_output_file} if checksum is not ok.
 ################################################################################
 
 function wpcli_core_verify() {
 
     local wp_site="${1}"
     local install_type="${2}"
+
+    local wp_verify_checksum_output_file="${TMP_DIR}/wp_verify_checksum_${TIMESTAMP}.txt"
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site} --no-color"
@@ -525,45 +528,31 @@ function wpcli_core_verify() {
     display --indent 6 --text "- WordPress verify-checksums"
     log_event "debug" "Running: ${wpcli_cmd} core verify-checksums" "false"
 
-    # Command
     # Verify WordPress Checksums
-    mapfile -t wpcli_core_verify_output=$(${wpcli_cmd} core verify-checksums 2>&1)
+    ${wpcli_cmd} core verify-checksums | awk -F": " '/File (doesn'\''t|should not) exist/ {print $3}' > "${wp_verify_checksum_output_file}"
     verify_status=$?
-    if [ ${verify_status} -eq 1 ]; then
+    if [[ ${verify_status} -eq 1 ]]; then
 
-        # To Array
-        #mapfile -t verify_core <<<"${wpcli_core_verify_output}"
-        mapfile -t verify_core="($(echo ${wpcli_core_verify_output} | awk -F": " '/File (doesn'\''t|should not) exist/ {print $3}'))"
+        # Replace new lines with ","
+        sed -i ':a;N;$!ba;s/\n/,/g' "${wp_verify_checksum_output_file}"
 
-        # Remove from array elements containing unwanted errors
-        #verify_core=("${verify_core[@]//*wordpress-cli_run*/}")
-        #verify_core=("${verify_core[@]//*readme.html*/}")
-        #verify_core=("${verify_core[@]//*WordPress installation*/}")
-        #verify_core_string="$(array_remove_newlines "${verify_core[@]}")"
-        #verify_core_string="$(string_remove_special_chars "${verify_core_string}")"
-        #verify_core_string="$(string_remove_spaces "${verify_core_string}")"
+        # Log
+        clear_previous_lines "1"
+        display --indent 6 --text "- WordPress verify-checksums" --result "FAIL" --color RED
+        display --indent 8 --text "Read the log file for details" --tcolor YELLOW
+        display --indent 8 --text "Log file: ${wp_verify_checksum_output_file}" --tcolor YELLOW
 
-    fi
+        echo "${wp_verify_checksum_output_file}"
 
-    # Check verify_core has elements
-    if [[ ${verify_status} -eq 0 || -z ${verify_core_string} ]]; then
+        return 1
+        
+    else
         # Log
         clear_previous_lines "1"
         display --indent 6 --text "- WordPress verify-checksums" --result "DONE" --color GREEN
 
         # Return
         return 0
-
-    else
-
-        # Log
-        clear_previous_lines "1"
-        display --indent 6 --text "- WordPress verify-checksums" --result "FAIL" --color RED
-        display --indent 8 --text "Read the log file for details" --tcolor YELLOW
-
-        echo "${verify_core[@]}"
-
-        return 1
 
     fi
 
@@ -1430,30 +1419,22 @@ function wpcli_delete_not_core_files() {
 
     display --indent 6 --text "- Scanning for suspicious WordPress files" --result "DONE" --color GREEN
 
-    mapfile -t wpcli_core_verify_results < <(wpcli_core_verify "${wp_site}" "${install_type}")
+    wpcli_core_verify_results=$(wpcli_core_verify "${wp_site}" "${install_type}")
 
-    log_event "debug" "${wpcli_core_verify_results[@]}" "false"
+    while IFS=, read -ra path_array; do
 
-    for wpcli_core_verify_result in "${wpcli_core_verify_results[@]}"; do
-
-        # Check results
-        wpcli_core_verify_result_file=$(echo "${wpcli_core_verify_result}" | grep "should not exist" | cut -d ":" -f3)
-
-        # Remove white space
-        wpcli_core_verify_result_file=${wpcli_core_verify_result_file//[[:blank:]]/}
-
-        if [[ -f "${wp_site}/${wpcli_core_verify_result_file}" ]]; then
+        for wpcli_core_verify_result_file in "${path_array[@]}"; do
 
             # Delete file
-            rm "${wp_site}/${wpcli_core_verify_result_file}"
+            rm --force "${wp_site}/${wpcli_core_verify_result_file}"
 
             # Log
             log_event "info" "Deleting not core file: ${wp_site}/${wpcli_core_verify_result_file}" "false"
             display --indent 8 --text "Suspicious file: ${wpcli_core_verify_result_file}"
 
-        fi
+        done
 
-    done
+    done < "${wpcli_core_verify_results}"
 
     # Log
     log_event "info" "All unknown files in WordPress core deleted!" "false"
