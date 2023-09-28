@@ -1418,6 +1418,7 @@ function wpcli_delete_not_core_files() {
     local wp_site="${1}"
     local install_type="${2}"
 
+    local count=0
     local wpcli_core_verify_results
     local wpcli_core_verify_result_file
 
@@ -1430,7 +1431,10 @@ function wpcli_delete_not_core_files() {
         for wpcli_core_verify_result_file in "${path_array[@]}"; do
 
             # Delete file
-            rm --force "${wp_site}/${wpcli_core_verify_result_file}"
+            rm --force "${wp_site}/${wpcli_core_verify_result_file//$'\r'/}"
+
+            # Increment counter
+            count=$((count + 1))
 
             # Log
             log_event "info" "Deleting not core file: ${wp_site}/${wpcli_core_verify_result_file}" "false"
@@ -1441,8 +1445,9 @@ function wpcli_delete_not_core_files() {
     done < "${wpcli_core_verify_results}"
 
     # Log
-    log_event "info" "All unknown files in WordPress core deleted!" "false"
+    log_event "info" "${count} unknown files in WordPress deleted!" "false"
     display --indent 6 --text "- Deleting suspicious WordPress files" --result "DONE" --color GREEN
+    display --indent 8 --text "${count} unknown files in WordPress deleted!" --color YELLOW
 
 }
 
