@@ -1286,8 +1286,10 @@ function project_get_configured_database() {
 
     wordpress)
 
-      wpconfig_path=$(wp_config_path "${project_config_file}")
+      # Get path without filename from $project_config_file
+      wpconfig_path="$(dirname "${project_config_file}")"
 
+      # Get option value
       database_name="$(wp_config_get_option "${wpconfig_path}" "DB_NAME")"
 
       # Return
@@ -1481,8 +1483,10 @@ function project_get_configured_database_user() {
 
     wordpress)
 
-      wpconfig_path=$(wp_config_path "${project_config_file}")
+      # Get path without filename from $project_config_file
+      wpconfig_path="$(dirname "${project_config_file}")"
 
+      # Get option value
       db_user="$(wp_config_get_option "${wpconfig_path}" "DB_USER")"
 
       # Return
@@ -2309,6 +2313,8 @@ function project_delete() {
     # Get project type and db credentials before delete files_skipped
     project_type="$(project_get_type "${PROJECTS_PATH}/${project_domain}")"
     project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
+
+    # Get db credentials from project config
     project_db_name=$(project_get_configured_database "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")
     project_db_user=$(project_get_configured_database_user "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")
     project_db_engine="$(project_get_configured_database_engine "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")"

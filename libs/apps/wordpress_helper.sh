@@ -157,6 +157,7 @@ function wp_config_path() {
 
         # Log
         log_event "info" "Found WordPress Installation on directory: ${dir_to_search}" "false"
+        log_event "info" "Config file found at: ${find_output}" "false"
 
         # Return
         echo "${find_output}" && return 0
@@ -190,6 +191,9 @@ function wp_config_get_option() {
   local wp_option="${2}"
 
   local wp_value
+
+  # Check if wp-config.php exists
+  [[ ! -f "${wp_project_dir}/wp-config.php" ]] && return 1
 
   log_event "info" "Reading config option value in ${wp_project_dir}/wp-config.php" "false"
 
