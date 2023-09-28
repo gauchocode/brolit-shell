@@ -517,7 +517,7 @@ function wpcli_core_verify() {
     local timestamp
     timestamp="$(date +%Y%m%d_%H%M%S)"
     
-    local wp_verify_checksum_output_file="${BROLIT_MAIN_DIR}/tmp/wp_verify_checksum_${timestamp}.txt"
+    local wp_verify_checksum_output_file="${BROLIT_MAIN_DIR}/tmp/wp_verify_checksum_${timestamp}"
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site} --no-color"
@@ -535,13 +535,13 @@ function wpcli_core_verify() {
     ${wpcli_cmd} core verify-checksums | awk -F": " '/File (doesn'\''t|should not) exist/ {print $3}' > "${wp_verify_checksum_output_file}"
     
     # Replace new lines with ","
-    sed -i ':a;N;$!ba;s/\n/,/g' ${wp_verify_checksum_output_file}
+    sed -i 's/\r//g; :a;N;$!ba;s/\n/,/g' ${wp_verify_checksum_output_file}
 
     # Check if file is not empty
     if [[ -s "${wp_verify_checksum_output_file}" ]]; then
 
         # Log
-        clear_previous_lines "1"
+        clear_previous_lines "2"
         display --indent 6 --text "- WordPress verify-checksums" --result "FAIL" --color RED
         display --indent 8 --text "Read the log file for details" --tcolor YELLOW
         display --indent 8 --text "Log file: ${wp_verify_checksum_output_file}" --tcolor YELLOW
