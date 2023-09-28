@@ -516,7 +516,7 @@ function wpcli_core_verify() {
 
     local timestamp
     timestamp="$(date +%Y%m%d_%H%M%S)"
-    
+
     local wp_verify_checksum_output_file="${BROLIT_MAIN_DIR}/tmp/wp_verify_checksum_${timestamp}"
 
     # Check project_install_type
@@ -532,8 +532,8 @@ function wpcli_core_verify() {
     log_event "debug" "Running: ${wpcli_cmd} core verify-checksums" "false"
 
     # Verify WordPress Checksums
-    ${wpcli_cmd} core verify-checksums | awk -F": " '/File (doesn'\''t|should not) exist/ {print $3}' > "${wp_verify_checksum_output_file}"
-    
+    ${wpcli_cmd} core verify-checksums | awk -F": " '/File (doesn'\''t|should not) exist/ {print $3}' >"${wp_verify_checksum_output_file}"
+
     # Replace new lines with ","
     sed -i 's/\r//g; :a;N;$!ba;s/\n/,/g' ${wp_verify_checksum_output_file}
 
@@ -549,7 +549,7 @@ function wpcli_core_verify() {
         echo "${wp_verify_checksum_output_file}"
 
         return 1
-        
+
     else
         # Log
         clear_previous_lines "1"
@@ -1426,28 +1426,39 @@ function wpcli_delete_not_core_files() {
 
     wpcli_core_verify_results="$(wpcli_core_verify "${wp_site}" "${install_type}")"
 
-    while IFS=, read -ra path_array; do
+    # Check if there are suspicious files
+    if [[ -n ${wpcli_core_verify_results} ]]; then
 
-        for wpcli_core_verify_result_file in "${path_array[@]}"; do
+        while IFS=, read -ra path_array; do
 
-            # Delete file
-            rm --force "${wp_site}/${wpcli_core_verify_result_file//$'\r'/}"
+            for wpcli_core_verify_result_file in "${path_array[@]}"; do
 
-            # Increment counter
-            count=$((count + 1))
+                # Delete file
+                rm --force "${wp_site}/${wpcli_core_verify_result_file//$'\r'/}"
 
-            # Log
-            log_event "info" "Deleting not core file: ${wp_site}/${wpcli_core_verify_result_file}" "false"
-            display --indent 8 --text "Suspicious file: ${wpcli_core_verify_result_file}"
+                # Increment counter
+                count=$((count + 1))
 
-        done
+                # Log
+                log_event "info" "Deleting not core file: ${wp_site}/${wpcli_core_verify_result_file}" "false"
+                display --indent 8 --text "Suspicious file: ${wpcli_core_verify_result_file}"
 
-    done < "${wpcli_core_verify_results}"
+            done
 
-    # Log
-    log_event "info" "${count} unknown files in WordPress deleted!" "false"
-    display --indent 6 --text "- Deleting suspicious WordPress files" --result "DONE" --color GREEN
-    display --indent 8 --text "${count} unknown files in WordPress deleted!" --color YELLOW
+        done <"${wpcli_core_verify_results}"
+
+        # Log
+        log_event "info" "${count} unknown files in WordPress deleted!" "false"
+        display --indent 6 --text "- Deleting suspicious WordPress files" --result "DONE" --color GREEN
+        display --indent 8 --text "${count} unknown files in WordPress deleted!" --color YELLOW
+
+    else
+
+        display --indent 8 --text "No suspicious files found" --color GREEN
+
+        return 0
+
+    fi
 
 }
 
@@ -2111,7 +2122,7 @@ function wpcli_user_list() {
     ## --log-level CRITICAL option to avoid unwanted docker-compose output
     ## --no-color added to avoid unwanted wp-cli output
     [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
-    
+
     # Log
     log_event "debug" "Running: ${wpcli_cmd} user list --fields=user_login,user_email,roles --format=csv" "false"
 
@@ -2133,7 +2144,6 @@ function wpcli_user_list() {
         return 1
 
     fi
-    
 
 }
 
@@ -2912,7 +2922,7 @@ function wpcli_config_set() {
     # get exit status
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
-        
+
         # Log
         [[ ${install_type} == "docker"* ]] && clear_previous_lines "1"
         log_event "debug" "Command executed: ${wpcli_cmd} config set ${wp_config_option} ${wp_config_option_value}" "false"
