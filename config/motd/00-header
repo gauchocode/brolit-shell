@@ -15,12 +15,11 @@ printf "Welcome to %s (%s %s %s)\n" "${DISTRIB_DESCRIPTION}" "$(uname -o)" "$(un
 
 printf '\n%s' ""
 
-printf "%40s\n" "██████╗ ██████╗  ██████╗  ██████╗ ██████╗ ███████"
-printf "%40s\n" "██╔══██╗██╔══██╗██╔═══██╗██╔═══██╗██╔══██╗██╔══  "
-printf "%40s\n" "██████╔╝██████╔╝██║   ██║██║   ██║██████╔╝█████  "
-printf "%40s\n" "██╔══██╗██╔══██╗██║   ██║██║   ██║██╔══██╗██╔    "
-printf "%40s\n" "██████╔╝██║  ██║╚██████╔╝╚██████╔╝██████╔╝███████"
-printf "%40s\n" "╚═════╝ ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═════╝ ╚══════"
+printf "%40s\n" "   .aMMMMP .aMMMb  dMP dMP .aMMMb  dMP dMP .aMMMb  .aMMMb  .aMMMb  dMMMMb  dMMMMMP "
+printf "%40s\n" "  dMP'    dMP'dMP dMP dMP dMP'VMP dMP dMP dMP'dMP dMP'VMP dMP'dMP dMP VMP dMP      "
+printf "%40s\n" " dMP MMP'dMMMMMP dMP dMP dMP     dMMMMMP dMP dMP dMP     dMP dMP dMP dMP dMMMP     "
+printf "%40s\n" "dMP.dMP dMP dMP dMP.aMP dMP.aMP dMP dMP dMP.aMP dMP.aMP dMP.aMP dMP.aMP dMP        "
+printf "%40s\n" "VMMMP' dMP dMP  VMMMP'  VMMMP' dMP dMP  VMMMP'  VMMMP'  VMMMP' dMMMMP' dMMMMMP     "
 
 printf '\n%s' ""
 
@@ -29,8 +28,6 @@ printf '\n%s' ""
 #printf "%40s\n" "You can generate this tags here: http://patorjk.com/software/taag/"
 
 # if it is non-root user, skip
-if [ "$(id -u)" -ne 0 ]; then
-    exit 0
-fi
+[ "$(id -u)" -ne 0 ] && exit 0
 
 printf "%40s\n" "You are loggedin as root, please don't do anything stupid..."
