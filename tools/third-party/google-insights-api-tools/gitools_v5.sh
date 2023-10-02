@@ -41,7 +41,7 @@ PSI_FIVE_URL='https://www.googleapis.com/pagespeedonline/v5/runPagespeed'
 # Gtmetrix API settings
 GTMETRIX='y'
 GTEMAIL='dev@broobe.com'
-GTAPIKEY='3958171575d50ea11ef872934bddf1d1'
+GTAPIKEY=''
 GTBROWSER_WIDTH='1366'
 GTBROWSER_HEIGHT='768'
 GTVIDEO='n'
