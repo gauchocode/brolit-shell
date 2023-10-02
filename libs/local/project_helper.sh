@@ -2369,9 +2369,9 @@ function project_delete() {
       else
 
         # Log
-        log_event "info" "Cloudflare entries not deleted. The IP address of the Cloudflare entry is different from the server IP address." "false"
+        log_event "info" "Cloudflare entries not deleted. The Cloudflare entry's IP address differs from the server's IP address." "false"
         display --indent 6 --text "- Deleting Cloudflare entries" --result "SKIPPED" --color YELLOW
-        display --indent 8 --text "The IP address of the Cloudflare entry is different from the server IP address." --tcolor YELLOW
+        display --indent 8 --text "The Cloudflare entry's IP address differs from the server's IP address." --tcolor YELLOW
 
       fi
 
