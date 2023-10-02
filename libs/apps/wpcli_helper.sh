@@ -781,11 +781,15 @@ function wpcli_plugin_activate() {
         clear_previous_lines "1"
         display --indent 6 --text "- Activating plugin ${plugin}" --result "DONE" --color GREEN
 
+        return 0
+
     else
         # Log
         clear_previous_lines "1"
         display --indent 6 --text "- Activating plugin ${plugin}" --result "FAIL" --color RED
         log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin activate ${plugin}"
+
+        return 1
 
     fi
 
@@ -829,10 +833,14 @@ function wpcli_plugin_deactivate() {
         clear_previous_lines "1"
         display --indent 6 --text "- Deactivating plugin ${plugin}" --result "DONE" --color GREEN
 
+        return 0
+
     else
 
         clear_previous_lines "2"
         display --indent 6 --text "- Deactivating plugin ${plugin}" --result "FAIL" --color RED
+
+        return 1
 
     fi
 
@@ -3025,13 +3033,5 @@ function wpcli_delete_comments() {
         fi
 
     fi
-
-}
-
-function wpcli_rollback_wpcore_version() {
-
-    # TODO: implement this
-
-    wpcli_get_wp_version
 
 }
