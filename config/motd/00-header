@@ -11,20 +11,20 @@ if [ -z "${DISTRIB_DESCRIPTION}" ] && [ -x /usr/bin/lsb_release ]; then
 	DISTRIB_DESCRIPTION="$(lsb_release -s -d)"
 fi
 
+# If exists, clear MOTD
+[ -f /etc/motd ] && echo "" > /etc/motd
+
+# New message
 printf "Welcome to %s (%s %s %s)\n" "${DISTRIB_DESCRIPTION}" "$(uname -o)" "$(uname -r)" "$(uname -m)"
-
 printf '\n%s' ""
-
 printf "%40s\n" "   .aMMMMP .aMMMb  dMP dMP .aMMMb  dMP dMP .aMMMb  .aMMMb  .aMMMb  dMMMMb  dMMMMMP "
 printf "%40s\n" "  dMP'    dMP'dMP dMP dMP dMP'VMP dMP dMP dMP'dMP dMP'VMP dMP'dMP dMP VMP dMP      "
 printf "%40s\n" " dMP MMP'dMMMMMP dMP dMP dMP     dMMMMMP dMP dMP dMP     dMP dMP dMP dMP dMMMP     "
 printf "%40s\n" "dMP.dMP dMP dMP dMP.aMP dMP.aMP dMP dMP dMP.aMP dMP.aMP dMP.aMP dMP.aMP dMP        "
 printf "%40s\n" "VMMMP' dMP dMP  VMMMP'  VMMMP' dMP dMP  VMMMP'  VMMMP'  VMMMP' dMMMMP' dMMMMMP     "
-
 printf '\n%s' ""
 
 #printf '\n%s\n' "$(echo ${HOSTNAME})"
-
 #printf "%40s\n" "You can generate this tags here: http://patorjk.com/software/taag/"
 
 # if it is non-root user, skip
