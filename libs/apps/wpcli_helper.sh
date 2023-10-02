@@ -1765,6 +1765,7 @@ function wpcli_get_wpcore_version() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log
+        clear_previous_lines "1"
         log_event "debug" "WordPress core version: ${core_version}" "false"
         display --indent 6 --text "- Getting WordPress core version" --result "DONE" --color GREEN
         display --indent 8 --text "WordPress core version: ${core_version}"
@@ -1775,6 +1776,7 @@ function wpcli_get_wpcore_version() {
     else
 
         # Log
+        clear_previous_lines "1"
         log_event "error" "Getting WordPress core version" "false"
         display --indent 6 --text "- Getting WordPress core version" --result "FAIL" --color RED
 
