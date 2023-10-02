@@ -1770,7 +1770,7 @@ function wpcli_get_wpcore_version() {
         display --indent 8 --text "WordPress core version: ${core_version}"
 
         # Return
-        echo "${core_version}" && return 0
+        echo "${core_version//$'\r'/}" && return 0
 
     else
 
