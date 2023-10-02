@@ -280,7 +280,7 @@ function wpcli_install_needed_extensions() {
 }
 
 ################################################################################
-# Download WordPress core.
+# Download WordPress core
 #
 # Arguments:
 #   ${1} = ${wp_site}
@@ -383,6 +383,7 @@ function wpcli_core_reinstall() {
 
     local wpcli_result
     local wpcli_cmd
+    local wp_version
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
@@ -394,24 +395,31 @@ function wpcli_core_reinstall() {
 
     if [[ -n ${wp_site} ]]; then
 
-        log_event "debug" "Running: ${wpcli_cmd} core download --skip-content --force" "false"
+        # Get wp version
+        wp_version="$(wpcli_get_wpcore_version "${wp_site}" "${install_type}")"
+
+        # Log
+        log_event "debug" "Running: ${wpcli_cmd} core download --version=${wp_version} --skip-content --force" "false"
+        display --indent 6 --text "- WordPress re-install for ${wp_site}"
 
         # Command
-        wpcli_result=$(${wpcli_cmd} core download --skip-content --force 2>&1 | grep "Success" | cut -d ":" -f1)
+        wpcli_result=$(${wpcli_cmd} core download --version="${wp_version}" --skip-content --force 2>&1 | grep "Success" | cut -d ":" -f1)
 
         if [[ "${wpcli_result}" = "Success" ]]; then
 
             # Log Success
-            log_event "info" "Wordpress re-installed" "false"
-            display --indent 6 --text "- Wordpress re-install for ${wp_site}" --result "DONE" --color GREEN
+            clear_previous_lines "1"
+            log_event "info" "WordPress re-installed" "false"
+            display --indent 6 --text "- WordPress re-install for ${wp_site}" --result "DONE" --color GREEN
 
             return 0
 
         else
 
             # Log failure
+            clear_previous_lines "1"
             log_event "fail" "Something went wrong installing WordPress" "false"
-            display --indent 6 --text "- Wordpress re-install for ${wp_site}" --result "FAIL" --color RED
+            display --indent 6 --text "- WordPress re-install for ${wp_site}" --result "FAIL" --color RED
 
             return 1
 
@@ -430,7 +438,7 @@ function wpcli_core_reinstall() {
 }
 
 ################################################################################
-# Update WordPress core.
+# Update WordPress core
 #
 # Arguments:
 #   ${1} = ${wp_site}
@@ -1724,7 +1732,7 @@ function _load_brolit_wp_defaults() {
 }
 
 ################################################################################
-# Get WordPress version
+# Get WordPress Core version
 #
 # Arguments:
 #   ${1} = ${wp_site}
@@ -1756,10 +1764,19 @@ function wpcli_get_wpcore_version() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
+        # Log
+        log_event "debug" "WordPress core version: ${core_version}" "false"
+        display --indent 6 --text "- Getting WordPress core version" --result "DONE" --color GREEN
+        display --indent 8 --text "WordPress core version: ${core_version}"
+
         # Return
         echo "${core_version}" && return 0
 
     else
+
+        # Log
+        log_event "error" "Getting WordPress core version" "false"
+        display --indent 6 --text "- Getting WordPress core version" --result "FAIL" --color RED
 
         return 1
 
