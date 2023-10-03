@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.3
 ################################################################################
 
 ################################################################################
@@ -2217,8 +2217,8 @@ declare -g PROJECTS_PATH
 PROJECTS_PATH="$(_json_read_field "${BROLIT_CONFIG_FILE}" "PROJECTS.path")"
 
 # Version
-BROLIT_VERSION="3.3.2"
-BROLIT_LITE_VERSION="3.3.2-132"
+BROLIT_VERSION="3.3.3"
+BROLIT_LITE_VERSION="3.3.3-132"
 
 ################################################################################
 # Show firewall status
