@@ -1461,8 +1461,9 @@ function _brolit_configuration_load_promtail() {
     declare -g PACKAGES_PROMTAIL_CONFIG_LOKI_URL
     declare -g PACKAGES_PROMTAIL_CONFIG_LOKI_PORT
 
-    PROMTAIL="$(pgrep promtail)"
-    PROMTAIL_DOCKER="$(docker ps -q --filter name=promtail)"
+    #PROMTAIL="$(pgrep promtail)"
+    PROMTAIL="/opt/promtail/promtail-linux-amd64"
+    PROMTAIL_CONFIG_FILE="/opt/promtail/config-promtail.yml"
 
     PACKAGES_PROMTAIL_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.promtail[].status")"
 
@@ -1489,16 +1490,17 @@ function _brolit_configuration_load_promtail() {
         fi
 
         # Checking if Promtail is not installed
-        [[ -z "${PROMTAIL}" && -z ${PROMTAIL_DOCKER} ]] && pkg_config_changes_detected "promtail" "true"
+        #[[ -z "${PROMTAIL}" && ! -f ${PROMTAIL_CONFIG_FILE} ]] && pkg_config_changes_detected "promtail" "true"
+        [[ ! -f "${PROMTAIL}" || ! -f ${PROMTAIL_CONFIG_FILE} ]] && pkg_config_changes_detected "promtail" "true"
 
     else
 
         # Checking if Promtail is installed
-        [[ -n "${PROMTAIL}" && -n ${PROMTAIL_DOCKER} ]] && pkg_config_changes_detected "promtail" "true"
+        [[ -f "${PROMTAIL}" && -f ${PROMTAIL_CONFIG_FILE} ]] && pkg_config_changes_detected "promtail" "true"
 
     fi
 
-    export PROMTAIL PROMTAIL_DOCKER PACKAGES_PROMTAIL_STATUS PACKAGES_PROMTAIL_VERSION PACKAGES_PROMTAIL_CONFIG_PORT PACKAGES_PROMTAIL_CONFIG_HOSTNAME PACKAGES_PROMTAIL_CONFIG_LOKI_URL PACKAGES_PROMTAIL_CONFIG_LOKI_PORT
+    export PROMTAIL PROMTAIL_CONFIG_FILE PACKAGES_PROMTAIL_STATUS PACKAGES_PROMTAIL_VERSION PACKAGES_PROMTAIL_CONFIG_PORT PACKAGES_PROMTAIL_CONFIG_HOSTNAME PACKAGES_PROMTAIL_CONFIG_LOKI_URL PACKAGES_PROMTAIL_CONFIG_LOKI_PORT
 
 }
 

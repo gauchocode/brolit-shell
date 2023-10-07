@@ -18,7 +18,7 @@ function promtail_installer() {
     log_subsection "Promtail Installer"
 
     # Check if /opt/promtail/promtail-linux-amd64 and /opt/promtail/config-promtail.yml exists
-    if [[ -f "/opt/promtail/promtail-linux-amd64" ]] || [[ ! -f "/opt/promtail/config-promtail.yml" ]]; then
+    if [[ -f "/opt/promtail/promtail-linux-amd64" ]] && [[ -f "/opt/promtail/config-promtail.yml" ]]; then
 
         log_event "info" "Promtail is already installed" "false"
         return 1
