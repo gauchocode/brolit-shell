@@ -4,14 +4,22 @@
 # Version: 3.3.3
 #############################################################################
 
+################################################################################
+# Install Promtail
+#
+# Arguments:
+#
+# Outputs:
+#   nothing
+################################################################################
+
 function promtail_installer() {
 
-    log_subsection "Monit Installer"
+    log_subsection "Promtail Installer"
 
-    promtail_bin="$(package_is_installed "promtail")"
+    # Check if /opt/promtail/promtail-linux-amd64 and /opt/promtail/config-promtail.yml exists
+    if [[ -f "/opt/promtail/promtail-linux-amd64" ]] || [[ ! -f "/opt/promtail/config-promtail.yml" ]]; then
 
-    exitstatus=$?
-    if [ ${exitstatus} -eq 0 ]; then
         log_event "info" "Promtail is already installed" "false"
         return 1
 
@@ -25,10 +33,13 @@ function promtail_installer() {
         # Install the Promtail package
         ### Create directory
         mkdir -p /opt/promtail
+
         ### Unzip force (expanded flags)
-        decompress "promtail-linux-amd64.zip" "/opt/promtail"
+        decompress "promtail-linux-amd64.zip" "/opt/promtail" ""
+
         ### Remove zip file
         rm -f "promtail-linux-amd64.zip"
+
         ### Set permissions
         chmod a+x /opt/promtail/promtail-linux-amd64
 
@@ -51,6 +62,15 @@ function promtail_installer() {
     fi
 
 }
+
+################################################################################
+# Create the Promtail configuration file
+#
+# Arguments:
+#
+# Outputs:
+#   nothing
+################################################################################
 
 function promtail_create_configuration_file() {
 
@@ -76,6 +96,15 @@ function promtail_create_configuration_file() {
 
 }
 
+################################################################################
+# Create the Promtail service file
+#
+# Arguments:
+#
+# Outputs:
+#   nothing
+################################################################################
+
 function promtail_create_service() {
 
     useradd --system promtail
@@ -89,6 +118,15 @@ function promtail_create_service() {
 
 }
 
+################################################################################
+# Check if Promtail is installed
+#
+# Arguments:
+#
+# Outputs:
+#   nothing
+
+
 function promtail_check_if_installed() {
 
     PROMTAIL="$(which promtail)"
@@ -97,6 +135,15 @@ function promtail_check_if_installed() {
     fi
 
 }
+
+################################################################################
+# Purge Promtail
+#
+# Arguments:
+#
+# Outputs:
+#   nothing
+################################################################################
 
 function promtail_purge() {
 
