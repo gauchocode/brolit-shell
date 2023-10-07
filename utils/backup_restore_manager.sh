@@ -28,6 +28,7 @@ function backup_manager_menu() {
     "02)" "BACKUP DATABASES"
     "03)" "BACKUP FILES"
     "04)" "BACKUP PROJECT"
+    "05)" "BACKUP DOCKER VOLUMES (BETA)"
   )
 
   chosen_backup_type="$(whiptail --title "SELECT BACKUP TYPE" --menu " " 20 78 10 "${backup_options[@]}" 3>&1 1>&2 2>&3)"
@@ -35,6 +36,7 @@ function backup_manager_menu() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
+    # BACKUP ALL
     if [[ ${chosen_backup_type} == *"01"* ]]; then
 
       # BACKUP_ALL
@@ -97,7 +99,8 @@ function backup_manager_menu() {
       send_notification "✅ ${SERVER_NAME}" "Task: 'Backup All' completed." ""
 
     fi
-
+    
+    # BACKUP DATABASES
     if [[ ${chosen_backup_type} == *"02"* ]]; then
 
       # DATABASE_BACKUP
@@ -120,6 +123,8 @@ function backup_manager_menu() {
       send_notification "✅ ${SERVER_NAME}" "Task: 'Databases Backup' completed." ""
 
     fi
+
+    # BACKUP FILES
     if [[ ${chosen_backup_type} == *"03"* ]]; then
 
       # FILES_BACKUP
@@ -145,6 +150,7 @@ function backup_manager_menu() {
 
     fi
 
+    # BACKUP PROJECT
     if [[ ${chosen_backup_type} == *"04"* ]]; then
 
       # PROJECT_BACKUP
@@ -172,9 +178,122 @@ function backup_manager_menu() {
 
     fi
 
+    # BACKUP DOCKER VOLUMES
+    if [[ ${chosen_backup_type} == *"05"* ]]; then
+
+      # DOCKER_VOLUMES_BACKUP
+      log_section "Docker Volumes Backup"
+
+      # Preparing Mail Notifications Template
+      mail_server_status_section
+
+      # Docker Volumes Backup
+      backup_all_docker_volumes
+
+      # Footer
+      mail_footer "${SCRIPT_V}"
+
+      # Preparing Mail Notifications Template
+      email_template="default"
+
+      # New full email file
+      email_html_file="${BROLIT_TMP_DIR}/full-email-${NOW}.mail"
+
+      # Copy from template
+      cp "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/main-tpl.html" "${email_html_file}"
+
+      # Begin to replace
+      sed -i '/{{server_info}}/r '"${BROLIT_TMP_DIR}/server_info-${NOW}.mail" "${email_html_file}"
+      sed -i '/{{databases_backup_section}}/r '"${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail" "${email_html_file}"
+      sed -i '/{{configs_backup_section}}/r '"${BROLIT_TMP_DIR}/configuration-bk-${NOW}.mail" "${email_html_file}"
+      sed -i '/{{files_backup_section}}/r '"${BROLIT_TMP_DIR}/files-bk-${NOW}.mail" "${email_html_file}"
+      sed -i '/{{footer}}/r '"${BROLIT_TMP_DIR}/footer-${NOW}.mail" "${email_html_file}"
+
+      # Delete vars not used anymore
+      grep -v "{{packages_section}}" "${email_html_file}" >"${email_html_file}_tmp"
+      mv "${email_html_file}_tmp" "${email_html_file}"
+      grep -v "{{certificates_section}}" "${email_html_file}" >"${email_html_file}_tmp"
+      mv "${email_html_file}_tmp" "${email_html_file}"
+      grep -v "{{server_info}}" "${email_html_file}" >"${email_html_file}_tmp"
+      mv "${email_html_file}_tmp" "${email_html_file}"
+      grep -v "{{databases_backup_section}}" "${email_html_file}" >"${email_html_file}_tmp"
+      mv "${email_html_file}_tmp" "${email_html_file}"
+      grep -v "{{configs_backup_section}}" "${email_html_file}" >"${email_html_file}_tmp"
+      mv "${email_html_file}_tmp" "${email_html_file}"
+      grep -v "{{files_backup_section}}" "${email_html_file}"
+
+    fi
+
   fi
 
   menu_main_options
+
+}
+
+################################################################################
+# Backup All Docker Volumes
+#
+# Arguments:
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function backup_all_docker_volumes() {
+
+  local volumes_to_backup
+  local remote_path
+
+  # Remote Path
+  remote_path="${SERVER_NAME}/docker-volumes"
+
+  # Get a list of all Docker volumes
+  volumes_to_backup="$(docker volume ls --format "{{.Name}}")"
+
+  # If there are no volumes to backup, exit
+  if [[ -z "${volumes_to_backup}" ]]; then
+
+    # Log
+    log_event "info" "No Docker volumes to backup" "false"
+    display --indent 6 --text "- Docker volumes backup" --result "SKIPPED" --color YELLOW
+    display --indent 8 --text "- No Docker volumes to backup" --tcolor YELLOW
+
+    return
+
+  fi
+
+  # Create remote path directory
+  storage_create_dir "${remote_path}"
+
+  # Loop through volumes
+  while IFS= read -r volume; do
+
+    # Create backup file
+    ## Runs a temporary Docker container that has access to the volume and the backup directory, and uses tar to create a backup file of the volume.
+    docker run --rm -v "${volume}:/volume" -v "${BROLIT_TMP_DIR}:/backup" alpine tar -cjf "/backup/${volume}-${NOW}.tar.bz2" -C /volume ./
+
+    # Check if backup file was created
+    if [[ -f "${BROLIT_TMP_DIR}/${volume}-${NOW}.tar.bz2" ]]; then
+
+      # Upload backup file to Dropbox
+      storage_upload_backup "${BROLIT_TMP_DIR}/${volume}-${NOW}.tar.bz2" "${remote_path}"
+
+      # Send notification
+      send_notification "✅ ${SERVER_NAME}" "Docker volume backup completed for ${volume}." ""
+
+    else
+
+      # Log
+      log_event "debug" "Command executed: docker run --rm -v ${volume}:/volume -v ${BROLIT_TMP_DIR}:/backup alpine tar -cjf /backup/${volume}-${NOW}.tar.bz2 -C /volume ./" "false"
+      log_event "error" "Docker volume backup failed for ${volume}" "false"
+      display --indent 6 --text "- Docker volumes backup" --result "FAILED" --color RED
+
+      # Send notification
+      send_notification "❌ ${SERVER_NAME}" "Docker volume backup failed for ${volume}." ""
+
+    fi
+  
+  done <<<"${volumes_to_backup}"
 
 }
 
