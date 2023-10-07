@@ -88,7 +88,7 @@ function _setup_globals_and_options() {
 
   TAR="$(command -v tar)"
   FIND="$(command -v find)"
-  CURL="curl --silent -L --fail --connect-timeout 3 --retry 0"  # CURL (better curl to download files and getting http return codes). Ref: https://everything.curl.dev/usingcurl/returns
+  CURL="curl --silent -L --fail --connect-timeout 3 --retry 0" # CURL (better curl to download files and getting http return codes). Ref: https://everything.curl.dev/usingcurl/returns
 
   export NOW NOWDISPLAY CURL TAR FIND MAIN_VOL
 
@@ -146,34 +146,34 @@ function _setup_colors_and_styles() {
   else
 
     # Text Styles
-    readonly NORMAL='' 
-    readonly BOLD='' 
-    readonly ITALIC='' 
-    readonly UNDERLINED='' 
+    readonly NORMAL=''
+    readonly BOLD=''
+    readonly ITALIC=''
+    readonly UNDERLINED=''
     readonly INVERTED=''
 
     # Foreground/Text Colours
-    readonly BLACK='' 
-    readonly RED='' 
-    readonly GREEN='' 
-    readonly YELLOW='' 
-    readonly ORANGE='' 
-    readonly MAGENTA='' 
-    readonly CYAN='' 
-    readonly WHITE='' 
-    readonly ENDCOLOR='' 
+    readonly BLACK=''
+    readonly RED=''
+    readonly GREEN=''
+    readonly YELLOW=''
+    readonly ORANGE=''
+    readonly MAGENTA=''
+    readonly CYAN=''
+    readonly WHITE=''
+    readonly ENDCOLOR=''
     readonly F_DEFAULT=''
 
     # Background Colours
-    readonly B_BLACK='' 
-    readonly B_RED='' 
-    readonly B_GREEN='' 
-    readonly B_YELLOW='' 
-    readonly B_ORANGE='' 
-    readonly B_MAGENTA='' 
-    readonly B_CYAN='' 
-    readonly B_WHITE='' 
-    readonly B_ENDCOLOR='' 
+    readonly B_BLACK=''
+    readonly B_RED=''
+    readonly B_GREEN=''
+    readonly B_YELLOW=''
+    readonly B_ORANGE=''
+    readonly B_MAGENTA=''
+    readonly B_CYAN=''
+    readonly B_WHITE=''
+    readonly B_ENDCOLOR=''
     readonly B_DEFAULT=''
 
   fi
@@ -318,7 +318,7 @@ function get_server_ips() {
 function _check_distro() {
 
   declare -g DISTRO
-  
+
   # Running Ubuntu?
   DISTRO="$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $1}')"
 
@@ -1714,7 +1714,7 @@ function menu_main_options() {
     "01)" "BACKUP OPTIONS"
     "02)" "RESTORE OPTIONS"
     "03)" "PROJECT CREATION"
-    "04)" "OTHERS PROJECT UTILS"
+    "04)" "MORE PROJECT UTILS"
     "05)" "DATABASE MANAGER"
     "06)" "WP-CLI MANAGER"
     "07)" "CERTBOT MANAGER"
@@ -1740,6 +1740,7 @@ function menu_main_options() {
     # OTHERS PROJECT UTILS
     [[ ${chosen_type} == *"04"* ]] && project_manager_menu_new_project_type_utils
 
+    # DATABASE MANAGER
     if [[ ${chosen_type} == *"05"* ]]; then
       # shellcheck source=${BROLIT_MAIN_DIR}/utils/database_manager.sh
       source "${BROLIT_MAIN_DIR}/utils/database_manager.sh"
@@ -1747,6 +1748,8 @@ function menu_main_options() {
       database_manager_menu
 
     fi
+
+    # WP-CLI MANAGER
     if [[ ${chosen_type} == *"06"* ]]; then
       # shellcheck source=${BROLIT_MAIN_DIR}/utils/wpcli_manager.sh
       source "${BROLIT_MAIN_DIR}/utils/wpcli_manager.sh"
@@ -1755,12 +1758,28 @@ function menu_main_options() {
       wpcli_manager
 
     fi
-    if [[ ${chosen_type} == *"07"* ]]; then
-      # shellcheck source=${BROLIT_MAIN_DIR}/utils/certbot_manager.sh
-      source "${BROLIT_MAIN_DIR}/utils/certbot_manager.sh"
 
-      log_section "Certbot Manager"
-      certbot_manager_menu
+    # CERTBOT MANAGER
+    if [[ ${chosen_type} == *"07"* ]]; then
+
+      if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
+
+        # shellcheck source=${BROLIT_MAIN_DIR}/utils/certbot_manager.sh
+        source "${BROLIT_MAIN_DIR}/utils/certbot_manager.sh"
+
+        log_section "Certbot Manager"
+        certbot_manager_menu
+
+      else
+
+        # Log
+        display --indent 6 --text "- Certbot support is disabled. Enable it on brolit_conf.json" --tcolor YELLOW
+        # Press any key to return to main menu
+        read -n 1 -s -r -p "Press any key to continue"
+        # Return to main menu
+        menu_main_options
+
+      fi
 
     fi
 
@@ -1777,7 +1796,12 @@ function menu_main_options() {
 
       else
 
-        die "Cloudflare support is disabled. Configure the api key on brolit_conf.json"
+        # Log
+        display --indent 6 --text "Cloudflare support is disabled. Configure the api key on brolit_conf.json" --tcolor YELLOW
+        # Press any key to return to main menu
+        read -n 1 -s -r -p "Press any key to continue"
+        # Return to main menu
+        menu_main_options
 
       fi
 
