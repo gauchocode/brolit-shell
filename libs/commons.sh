@@ -1513,6 +1513,7 @@ function compress() {
   local exclude_parameters="${4}"
 
   local backup_file_size
+  local compress_parameter
 
   # Only for better displaying
   if [[ ${to_backup} == "." ]]; then
@@ -1525,20 +1526,27 @@ function compress() {
   display --indent 6 --text "- Compressing ${to_backup_string}"
   log_event "info" "Compressing ${to_backup_string} ..." "false"
 
-  # Compress
+  # Prepare compress command
+  if [[ -n ${BACKUP_CONFIG_COMPRESSION_CORES} ]]; then
+    compress_parameter="-p${BACKUP_CONFIG_COMPRESSION_CORES}"
+  fi
+  if [[ -n ${BACKUP_CONFIG_COMPRESSION_LEVEL} ]]; then
+    compress_parameter="${compress_parameter} -${BACKUP_CONFIG_COMPRESSION_LEVEL}"
+  fi
+
   if [[ ${BACKUP_CONFIG_FOLLOW_SYMLINKS} == "true" ]]; then
     ## -h will follow symlinks
     ### IMPORTANT: not add "" on ${exclude_parameters}
-    ${TAR} -cf - --directory="${backup_base_dir}" ${exclude_parameters} -h "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | ${BACKUP_CONFIG_COMPRESSION_TYPE} >"${file_output}"
-    log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" ${exclude_parameters} -h \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | ${BACKUP_CONFIG_COMPRESSION_TYPE} >\"${file_output}\"" "false"
+    ${TAR} -cf - --directory="${backup_base_dir}" ${exclude_parameters} -h "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | ${BACKUP_CONFIG_COMPRESSION_TYPE} "${compress_parameter}">"${file_output}"
+    log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" ${exclude_parameters} -h \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${compress_parameter}>\"${file_output}\"" "false"
 
   else
-    ${TAR} -cf - --directory="${backup_base_dir}" ${exclude_parameters} "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | ${BACKUP_CONFIG_COMPRESSION_TYPE} >"${file_output}"
-    log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" ${exclude_parameters} \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | ${BACKUP_CONFIG_COMPRESSION_TYPE} >\"${file_output}\"" "false"
+    ${TAR} -cf - --directory="${backup_base_dir}" ${exclude_parameters} "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | ${BACKUP_CONFIG_COMPRESSION_TYPE} "${compress_parameter}">"${file_output}"
+    log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" ${exclude_parameters} \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${compress_parameter}>\"${file_output}\"" "false"
   fi
 
-  # If ${BACKUP_CONFIG_TEST_COMPRESSION} == "true" then test backup file
-  if [[ ${BACKUP_CONFIG_TEST_COMPRESSION} == "true" ]]; then
+  # Compress result
+  if [[ ${BACKUP_CONFIG_COMPRESSION_TEST} == "true" ]]; then
 
     # Log
     clear_previous_lines "2"
@@ -1558,6 +1566,7 @@ function compress() {
       # Get file size
       backup_file_size="$(get_file_size "${file_output}")"
 
+      # Log
       log_event "info" "Backup file test finished ok." "false"
 
       # Return
@@ -1565,6 +1574,7 @@ function compress() {
 
     else
 
+      # Log
       display --indent 6 --text "- Compressing ${to_backup_string}" --result "FAIL" --color RED
       display --indent 8 --text "Something went wrong making backup file: ${file_output}" --tcolor RED
 
