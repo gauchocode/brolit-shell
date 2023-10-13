@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.3
+# Version: 3.3.4
 ################################################################################
 #
 # Database Controller: Controller for database functions.

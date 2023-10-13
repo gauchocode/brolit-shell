@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.3
+# Version: 3.3.4
 #############################################################################
 
 ################################################################################
@@ -14,8 +14,6 @@
 ################################################################################
 
 function promtail_installer() {
-
-    log_subsection "Promtail Installer"
 
     # Check if /opt/promtail/promtail-linux-amd64 and /opt/promtail/config-promtail.yml exists
     if [[ -f "/opt/promtail/promtail-linux-amd64" ]] && [[ -f "/opt/promtail/config-promtail.yml" ]]; then
@@ -74,22 +72,28 @@ function promtail_installer() {
 
 function promtail_create_configuration_file() {
 
+    # Promtail configuration file
+    local promtail_config_file="/opt/promtail/config-promtail.yml"
+
     # Copy the Promtail configuration file
-    cp "${BROLIT_MAIN_DIR}/config/promtail/config-promtail.yml" "/opt/promtail/config-promtail.yml"
+    cp "${BROLIT_MAIN_DIR}/config/promtail/config-promtail.yml" "${promtail_config_file}"
 
     # Replace VARIABLES in the Promtail configuration file
     ## PROMTAIL_PORT
-    sed -i "s/PROMTAIL_PORT/${PACKAGES_PROMTAIL_CONFIG_PORT}/g" "/opt/promtail/config-promtail.yml"
+    sed -i "s/PROMTAIL_PORT/${PACKAGES_PROMTAIL_CONFIG_PORT}/g" "${promtail_config_file}"
+    
     ## LOKI_URL
-    sed -i "s/LOKI_HOST_URL/${PACKAGES_PROMTAIL_CONFIG_LOKI_URL}/g" "/opt/promtail/config-promtail.yml"
+    sed -i "s/LOKI_HOST_URL/${PACKAGES_PROMTAIL_CONFIG_LOKI_URL}/g" "${promtail_config_file}"
+   
     ## LOKI_PORT
-    sed -i "s/LOKI_HOST_PORT/${PACKAGES_PROMTAIL_CONFIG_LOKI_PORT}/g" "/opt/promtail/config-promtail.yml"
+    sed -i "s/LOKI_HOST_PORT/${PACKAGES_PROMTAIL_CONFIG_LOKI_PORT}/g" "${promtail_config_file}"
+    
     ## HOSTNAME
     ### if $HOSTNAME == default, then use actual HOSTNAME
     if [[ "${HOSTNAME}" == "default" ]]; then
-        sed -i "s/HOSTNAME/${HOSTNAME}/g" "/opt/promtail/config-promtail.yml"
+        sed -i "s/HOSTNAME/${HOSTNAME}/g" "${promtail_config_file}"
     else
-        sed -i "s/HOSTNAME/${PACKAGES_PROMTAIL_CONFIG_HOSTNAME}/g" "/opt/promtail/config-promtail.yml"
+        sed -i "s/HOSTNAME/${PACKAGES_PROMTAIL_CONFIG_HOSTNAME}/g" "${promtail_config_file}"
     fi
 
     display --indent 6 --text "- Promtail configuration file" --result "DONE" --color GREEN

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.3
+# Version: 3.3.4
 ################################################################################
 #
 # Packages Helper: Perform apt actions.
@@ -227,7 +227,9 @@ function package_check_required() {
   # Install packages if not
   package_install_if_not "pv"
   package_install_if_not "bc"
+  package_install_if_not "pigz"
   package_install_if_not "lbzip2"
+  package_install_if_not "pbzip2"
   package_install_if_not "zip"
   package_install_if_not "unzip"
   package_install_if_not "git"
