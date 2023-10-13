@@ -2,7 +2,7 @@
     "BROLIT_SETUP": {
         "config": [
             {
-                "version": "3.10.5",
+                "version": "3.10.6",
                 "debug": "true",
                 "skip_test": "true",
                 "tmp_dir": "tmp",
@@ -60,10 +60,16 @@
                         ]
                     }
                 ],
-                "compression_type": "lbzip2",
+                "compression": [
+                    {
+                        "type": "lbzip2",
+                        "level": "5",
+                        "cores": ""
+                    }
+                ],
                 "retention": [
                     {
-                        "keep_daily": "7",
+                        "keep_daily": "3",
                         "keep_weekly": "0",
                         "keep_monthly": "0"
                     }

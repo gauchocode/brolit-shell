@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.3
+# Version: 3.3.4
 ################################################################################
 #
 # Project Helper: Perform project actions.
@@ -2072,7 +2072,7 @@ function project_delete_files() {
   project_type=$(project_get_type "${PROJECTS_PATH}/${project_domain}")
   project_install_type=$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")
 
-  clear_previous_lines "2"
+  clear_previous_lines "1"
 
   if [[ -n ${project_type} && -n ${project_install_type} ]]; then
 
