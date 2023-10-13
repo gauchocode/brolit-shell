@@ -64,7 +64,8 @@
                     {
                         "type": "lbzip2",
                         "level": "5",
-                        "cores": ""
+                        "cores": "",
+                        "test": "true"
                     }
                 ],
                 "retention": [
