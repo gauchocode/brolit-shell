@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.3
+# Version: 3.3.4
 ################################################################################
 
 ################################################################################
@@ -55,7 +55,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.3.3"
+  declare -g SCRIPT_V="3.3.4"
 
   # Hostname
   declare -g SERVER_NAME="$HOSTNAME"
@@ -1391,6 +1391,7 @@ function decompress() {
 
   # Log
   log_event "info" "Extracting compressed file: ${file_path}" "false"
+  log_event "debug" "Compress type: ${compress_type}" "false"
   display --indent 6 --text "- Extracting compressed file"
 
   if [[ -f "${file_path}" ]]; then
@@ -1410,52 +1411,42 @@ function decompress() {
       ;;
 
     *.bz2)
-      #bunzip2 "${file_path}" "${directory_to_extract}"
       pv --width 70 "${file_path}" | bunzip2 >"${directory_to_extract}/${filename}"
       ;;
 
     *.rar)
-      #unrar x "${file_path}" "${directory_to_extract}"
       unrar x "${file_path}" "${directory_to_extract}" | pv -l >/dev/null
       ;;
 
     *.gz)
-      #gunzip "${file_path}" -C "${directory_to_extract}"
       pv --width 70 "${file_path}" | gunzip -C "${directory_to_extract}"
       ;;
 
     *.tar)
-      #tar xf "${file_path}" -C "${directory_to_extract}"
       pv --width 70 "${file_path}" | tar xf -C "${directory_to_extract}"
       ;;
 
     *.tbz2)
-      #tar xjf "${file_path}" -C "${directory_to_extract}"
       pv --width 70 "${file_path}" | tar xjf -C "${directory_to_extract}"
       ;;
 
     *.tgz)
-      #tar xzf "${file_path}" -C "${directory_to_extract}"
       pv --width 70 "${file_path}" | tar xzf -C "${directory_to_extract}"
       ;;
 
     *.xz)
-      #tar xvf "${file_path}" -C "${directory}"
       pv --width 70 "${file_path}" | tar xvf -C "${directory_to_extract}"
       ;;
 
     *.zip)
-      #unzip "${file_path}" "${directory}"
       unzip -o "${file_path}" -d "${directory_to_extract}" | pv -l >/dev/null
       ;;
 
     *.zst)
-      #tar --use-compress-program zstd -cf "${file_path}" "${directory_to_extract}"
       pv --width 70 "${file_path}" | tar xp -C "${directory_to_extract}" --use-compress-program="${compress_type}"
       ;;
 
     *.Z)
-      #uncompress "${file_path}" "${directory}"
       pv --width 70 "${file_path}" | uncompress "${directory_to_extract}"
       ;;
 
@@ -1546,38 +1537,53 @@ function compress() {
     log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" ${exclude_parameters} \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | ${BACKUP_CONFIG_COMPRESSION_TYPE} >\"${file_output}\"" "false"
   fi
 
-  # Log
-  clear_previous_lines "2"
-  log_event "info" "Testing backup file: ${file_output}" "false"
-  display --indent 6 --text "- Testing backup file"
+  # If ${BACKUP_CONFIG_TEST_COMPRESSION} == "true" then test backup file
+  if [[ ${BACKUP_CONFIG_TEST_COMPRESSION} == "true" ]]; then
 
-  # Test backup with pv output
-  pv --width 70 "${file_output}" | ${BACKUP_CONFIG_COMPRESSION_TYPE} --test
+    # Log
+    clear_previous_lines "2"
+    log_event "info" "Testing backup file: ${file_output}" "false"
+    display --indent 6 --text "- Testing backup file"
 
-  compress_result=$?
+    # Test backup with pv output
+    pv --width 70 "${file_output}" | ${BACKUP_CONFIG_COMPRESSION_TYPE} --test
 
-  # Clear output
-  clear_previous_lines "2"
+    compress_result=$?
 
-  if [[ ${compress_result} -eq 0 ]]; then
+    # Clear output
+    clear_previous_lines "2"
+
+    if [[ ${compress_result} -eq 0 ]]; then
+
+      # Get file size
+      backup_file_size="$(get_file_size "${file_output}")"
+
+      log_event "info" "Backup file test finished ok." "false"
+
+      # Return
+      echo "${backup_file_size}" && return 0
+
+    else
+
+      display --indent 6 --text "- Compressing ${to_backup_string}" --result "FAIL" --color RED
+      display --indent 8 --text "Something went wrong making backup file: ${file_output}" --tcolor RED
+
+      log_event "error" "Something went wrong making backup file: ${file_output}" "false"
+      log_event "debug" "Output: ${compress_result}" "false"
+
+      return 1
+
+    fi
+
+  else
 
     # Get file size
     backup_file_size="$(get_file_size "${file_output}")"
 
-    log_event "info" "Backup file test finished ok." "false"
+    log_event "info" "Backup file test skipped." "false"
 
     # Return
     echo "${backup_file_size}" && return 0
-
-  else
-
-    display --indent 6 --text "- Compressing ${to_backup_string}" --result "FAIL" --color RED
-    display --indent 8 --text "Something went wrong making backup file: ${file_output}" --tcolor RED
-
-    log_event "error" "Something went wrong making backup file: ${file_output}" "false"
-    log_event "debug" "Output: ${compress_result}" "false"
-
-    return 1
 
   fi
 

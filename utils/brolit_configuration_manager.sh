@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.3
+# Version: 3.3.4
 ################################################################################
 #
 # Server Config Manager: Brolit server configuration management.
@@ -319,6 +319,8 @@ function _brolit_configuration_load_backup_config() {
     declare -g BACKUP_CONFIG_ADDITIONAL_DIRS
     declare -g BACKUP_CONFIG_FOLLOW_SYMLINKS
     declare -g BACKUP_CONFIG_COMPRESSION_TYPE
+    declare -g BACKUP_CONFIG_COMPRESSION_LEVEL
+    declare -g BACKUP_CONFIG_COMPRESSION_CORES
     declare -g BACKUP_CONFIG_COMPRESSION_EXTENSION
 
     declare -g IGNORED_PROJECTS_LIST #".wp-cli,.ssh,.local,.cert,html,phpmyadmin"
@@ -347,7 +349,7 @@ function _brolit_configuration_load_backup_config() {
     [[ -z ${BACKUP_CONFIG_SERVER_CFG_STATUS} ]] && die "Error reading BACKUP_CONFIG_SERVER_CFG_STATUS from server config file."
 
     ## Backup config compression_type
-    BACKUP_CONFIG_COMPRESSION_TYPE="$(json_read_field "${server_config_file}" "BACKUPS.config[].compression_type")"
+    BACKUP_CONFIG_COMPRESSION_TYPE="$(json_read_field "${server_config_file}" "BACKUPS.config[].compression[].type")"
     if [[ -z ${BACKUP_CONFIG_COMPRESSION_TYPE} ]]; then
         die "Error reading BACKUP_CONFIG_COMPRESSION_TYPE from server config file."
 
@@ -355,7 +357,7 @@ function _brolit_configuration_load_backup_config() {
 
         case ${BACKUP_CONFIG_COMPRESSION_TYPE} in
 
-        lbzip2)
+        lbzip2|pbzip2|pigz)
             BACKUP_CONFIG_COMPRESSION_EXTENSION="tar.bz2"
             ;;
 
@@ -372,8 +374,11 @@ function _brolit_configuration_load_backup_config() {
 
     fi
 
+    BACKUP_CONFIG_COMPRESSION_LEVEL="$(json_read_field "${server_config_file}" "BACKUPS.config[].compression[].level")"
+    BACKUP_CONFIG_COMPRESSION_CORES="$(json_read_field "${server_config_file}" "BACKUPS.config[].compression[].cores")"
+
     export BACKUP_CONFIG_PROJECTS_STATUS BACKUP_CONFIG_DATABASES_STATUS BACKUP_CONFIG_SERVER_CFG_STATUS BACKUP_CONFIG_ADDITIONAL_DIRS
-    export BACKUP_CONFIG_FOLLOW_SYMLINKS BACKUP_CONFIG_COMPRESSION_TYPE BACKUP_CONFIG_COMPRESSION_EXTENSION
+    export BACKUP_CONFIG_FOLLOW_SYMLINKS BACKUP_CONFIG_COMPRESSION_TYPE BACKUP_CONFIG_COMPRESSION_EXTENSION BACKUP_CONFIG_COMPRESSION_LEVEL BACKUP_CONFIG_COMPRESSION_CORES
     export IGNORED_PROJECTS_LIST EXCLUDED_FILES_LIST EXCLUDED_DATABASES_LIST
 
 }
@@ -2291,7 +2296,7 @@ function brolit_configuration_load() {
 
     ### grafana
     _brolit_configuration_load_grafana "${server_config_file}"
-    
+
     ### loki
     _brolit_configuration_load_loki "${server_config_file}"
 
