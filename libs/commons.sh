@@ -1516,18 +1516,14 @@ function compress() {
   local compress_parameter
 
   # Only for better displaying
-  if [[ ${to_backup} == "." ]]; then
-    to_backup_string="$(basename "${backup_base_dir}")"
-  else
-    to_backup_string="${to_backup}"
-  fi
+  [[ ${to_backup} == "." ]] && to_backup_string="$(basename "${backup_base_dir}")" || to_backup_string="${to_backup}"
 
   # Log
   display --indent 6 --text "- Compressing ${to_backup_string}"
   log_event "info" "Compressing ${to_backup_string} ..." "false"
 
   # Prepare compress command
-  if [[ -n ${BACKUP_CONFIG_COMPRESSION_CORES} ]]; then
+  if [[ -n ${BACKUP_CONFIG_COMPRESSION_CORES} && ${BACKUP_CONFIG_COMPRESSION_TYPE} == "pbzip2" ]]; then
     compress_parameter="-p${BACKUP_CONFIG_COMPRESSION_CORES}"
   fi
   if [[ -n ${BACKUP_CONFIG_COMPRESSION_LEVEL} ]]; then
@@ -1537,11 +1533,11 @@ function compress() {
   if [[ ${BACKUP_CONFIG_FOLLOW_SYMLINKS} == "true" ]]; then
     ## -h will follow symlinks
     ### IMPORTANT: not add "" on ${exclude_parameters}
-    ${TAR} -cf - --directory="${backup_base_dir}" ${exclude_parameters} -h "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | ${BACKUP_CONFIG_COMPRESSION_TYPE} "${compress_parameter}">"${file_output}"
+    ${TAR} -cf - --directory="${backup_base_dir}" ${exclude_parameters} -h "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | ${BACKUP_CONFIG_COMPRESSION_TYPE} "${compress_parameter}" >"${file_output}"
     log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" ${exclude_parameters} -h \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${compress_parameter}>\"${file_output}\"" "false"
 
   else
-    ${TAR} -cf - --directory="${backup_base_dir}" ${exclude_parameters} "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | ${BACKUP_CONFIG_COMPRESSION_TYPE} "${compress_parameter}">"${file_output}"
+    ${TAR} -cf - --directory="${backup_base_dir}" ${exclude_parameters} "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | ${BACKUP_CONFIG_COMPRESSION_TYPE} "${compress_parameter}" >"${file_output}"
     log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" ${exclude_parameters} \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${compress_parameter}>\"${file_output}\"" "false"
   fi
 
@@ -1590,6 +1586,9 @@ function compress() {
     # Get file size
     backup_file_size="$(get_file_size "${file_output}")"
 
+    # Log
+    display --indent 6 --text "- Compressing ${to_backup_string}" --result "DONE" --color GREEN
+    display --indent 6 --text "- Testing backup file" --result "SKIPPED" --color YELLOW
     log_event "info" "Backup file test skipped." "false"
 
     # Return
