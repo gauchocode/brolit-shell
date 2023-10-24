@@ -1197,8 +1197,11 @@ function _brolit_configuration_load_netdata() {
     declare -g PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_CHAT_ID
 
     NETDATA="$(which netdata)"
-    NETDATA_PR="$(pgrep netdata)"                          # This will detect if a netdata process is running, but could be a docker container
-    NETDATA_DOCKER="$(docker ps -q --filter name=netdata)" # This will detect if a netdata docker container is running
+    NETDATA_PR="$(pgrep netdata)" # This will detect if a netdata process is running, but could be a docker container
+    # If docker is installed
+    if [[ -x "$(command -v docker)" ]]; then
+        NETDATA_DOCKER="$(docker ps -q --filter name=netdata)" # This will detect if a netdata docker container is running
+    fi
 
     PACKAGES_NETDATA_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].status")"
     PACKAGES_NETDATA_CONFIG_WEB_ADMIN="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].web_admin")"
@@ -1343,8 +1346,11 @@ function _brolit_configuration_load_grafana() {
     declare -g PACKAGES_GRAFANA_CONFIG_PORT
 
     GRAFANA="$(which grafana-server)"
-    GRAFANA_PR="$(pgrep grafana)"                          # This will detect if a grafana process is running, but could be a docker container
-    GRAFANA_DOCKER="$(docker ps -q --filter name=grafana)" # This will detect if a grafana docker container is running
+    GRAFANA_PR="$(pgrep grafana)" # This will detect if a grafana process is running, but could be a docker container
+    # If docker is installed
+    if [[ -x "$(command -v docker)" ]]; then
+        GRAFANA_DOCKER="$(docker ps -q --filter name=grafana)" # This will detect if a grafana docker container is running
+    fi
 
     PACKAGES_GRAFANA_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].status")"
 
@@ -1405,9 +1411,12 @@ function _brolit_configuration_load_loki() {
     declare -g PACKAGES_LOKI_CONFIG_PORT
 
     LOKI="$(which loki)"
-    LOKI_PR="$(pgrep loki)"                          # This will detect if a loki process is running, but could be a docker container
-    LOKI_DOCKER="$(docker ps -q --filter name=loki)" # This will detect if a loki docker container is running
-
+    LOKI_PR="$(pgrep loki)" # This will detect if a loki process is running, but could be a docker container
+    # If docker is installed
+    if [[ -x "$(command -v docker)" ]]; then
+        LOKI_DOCKER="$(docker ps -q --filter name=loki)" # This will detect if a loki docker container is running
+    fi
+    
     PACKAGES_LOKI_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.loki[].status")"
 
     if [[ ${PACKAGES_LOKI_STATUS} == "enabled" ]]; then

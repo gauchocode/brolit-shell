@@ -1580,7 +1580,7 @@ function compress() {
 
       # Log
       clear_previous_lines "2"
-      
+
       display --indent 6 --text "- Compressing ${to_backup_string}" --result "FAIL" --color RED
       display --indent 8 --text "Something went wrong making backup file: ${file_output}" --tcolor RED
 
@@ -1597,8 +1597,11 @@ function compress() {
     backup_file_size="$(get_file_size "${file_output}")"
 
     # Log
+    clear_previous_lines "2"
+    
     display --indent 6 --text "- Compressing ${to_backup_string}" --result "DONE" --color GREEN
     display --indent 6 --text "- Testing backup file" --result "SKIPPED" --color YELLOW
+
     log_event "info" "Backup file test skipped." "false"
 
     # Return
