@@ -1497,9 +1497,10 @@ function decompress() {
 # Compress files or directories
 #
 # Arguments:
-#   ${1} = ${file_path} - File to uncompress or extract
-#   ${2} = ${directory_to_extract} - Dir to uncompress file
-#   ${3} = ${compress_type} - Optional: compress-program (ex: lbzip2)
+#   ${1} = ${file_path}
+#   ${2} = ${to_backup} - Could be a file or a directory.
+#   ${3} = ${file_output}
+#   ${4} = ${exclude_parameters}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1508,12 +1509,13 @@ function decompress() {
 function compress() {
 
   local backup_base_dir="${1}"
-  local to_backup="${2}" # could be a file or a directory. Ex: database.sql or foldername
+  local to_backup="${2}"
   local file_output="${3}"
   local exclude_parameters="${4}"
 
   local backup_file_size
   local compress_parameter
+  local decompress_parameter
 
   # Only for better displaying
   [[ ${to_backup} == "." ]] && to_backup_string="$(basename "${backup_base_dir}")" || to_backup_string="${to_backup}"
@@ -1523,9 +1525,15 @@ function compress() {
   log_event "info" "Compressing ${to_backup_string} ..." "false"
 
   # Prepare compress command
+  if [[ -n ${BACKUP_CONFIG_COMPRESSION_CORES} && ${BACKUP_CONFIG_COMPRESSION_TYPE} == "lbzip2" ]]; then
+    compress_parameter="-n ${BACKUP_CONFIG_COMPRESSION_CORES}"
+    decompress_parameter="-n ${BACKUP_CONFIG_COMPRESSION_CORES}"
+  fi
   if [[ -n ${BACKUP_CONFIG_COMPRESSION_CORES} && ${BACKUP_CONFIG_COMPRESSION_TYPE} == "pbzip2" ]]; then
     compress_parameter="-p${BACKUP_CONFIG_COMPRESSION_CORES}"
   fi
+  ## Set the compression block size during compression
+  ## Example: $ lbzip2 -1 filename
   if [[ -n ${BACKUP_CONFIG_COMPRESSION_LEVEL} ]]; then
     compress_parameter="${compress_parameter} -${BACKUP_CONFIG_COMPRESSION_LEVEL}"
   fi
@@ -1550,7 +1558,7 @@ function compress() {
     display --indent 6 --text "- Testing backup file"
 
     # Test backup with pv output
-    pv --width 70 "${file_output}" | ${BACKUP_CONFIG_COMPRESSION_TYPE} --test
+    pv --width 70 "${file_output}" | ${BACKUP_CONFIG_COMPRESSION_TYPE} "${decompress_parameter}" --test
 
     compress_result=$?
 
