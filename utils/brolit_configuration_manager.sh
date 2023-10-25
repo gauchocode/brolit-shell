@@ -1591,12 +1591,12 @@ function _brolit_configuration_load_zabbix() {
 
     # Globals
     declare -g ZABBIX
-    declare -g ZABBIX_PR
+    #declare -g ZABBIX_PR
     declare -g PACKAGES_ZABBIX_STATUS
     declare -g PACKAGES_ZABBIX_CONFIG_SUBDOMAIN
 
     ZABBIX="$(which zabbix)"
-    ZABBIX_PR="$(pgrep zabbix)"
+    #ZABBIX_PR="$(pgrep zabbix)"
 
     PACKAGES_ZABBIX_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.zabbix[].status")"
 
@@ -1611,12 +1611,12 @@ function _brolit_configuration_load_zabbix() {
         fi
 
         # Checking if Cockpit is not installed
-        [[ ! -x "${ZABBIX}" && -z "${ZABBIX_PR}" ]] && pkg_config_changes_detected "zabbix" "true"
+        [[ ! -x "${ZABBIX}" ]] && pkg_config_changes_detected "zabbix" "true"
 
     else
 
         # Checking if Cockpit is installed
-        [[ -x "${ZABBIX}" || -n "${ZABBIX_PR}" ]] && pkg_config_changes_detected "zabbix" "true"
+        [[ -x "${ZABBIX}" ]] && pkg_config_changes_detected "zabbix" "true"
 
     fi
 
