@@ -181,16 +181,6 @@
                     }
                 ]
             }
-        ],
-        "mailcow": [
-            {
-                "status": "disabled",
-                "config": [
-                    {
-                        "mailcow_path": "/opt/mailcow-dockerized"
-                    }
-                ]
-            }
         ]
     }
 }

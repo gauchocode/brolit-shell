@@ -470,18 +470,6 @@
                 ]
             }
         ],
-        "mailcow": [
-            {
-                "status": "disabled",
-                "version": "latest",
-                "config": [
-                    {
-                        "port": "default",
-                        "subdomain": ""
-                    }
-                ]
-            }
-        ],
         "custom": [
             {
                 "status": "disabled",
