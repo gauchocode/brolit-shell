@@ -75,7 +75,6 @@ BROLIT Shell is a **BASH** based cloud server control software which can be used
 | **Cockpit** | 0.102.x | default config |
 | **Zabbix** | 0.102.x | default config |
 | **Portainer** | latest | dockerized (optional nginx proxy support) |
-| **Mailcow** | latest | dockerized |
 | **Grafana** | SOON | default config |
 | **Teleport** | SOON | default config |
 

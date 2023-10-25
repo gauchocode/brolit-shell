@@ -34,6 +34,7 @@
 - [ ] Restore-project: big refactor.
 - [ ] Core: Generate project config file (/etc/brolit/domain_conf.json).
 - [ ] Backups: Backup retention configuration from brolit_conf.json
+- [ ] Postgres: Better postgres support. On "DATABASE MANAGEMENT" Menu, add Database Engine selection.
 
 ### In Progress
 
@@ -45,7 +46,6 @@
         Example: test.landing.gauchocode.net OK
         Example 2: landing.gauchocode.net X (OK only if prod).
 - [ ] Restore-database: granting privileges to user fails, database_name is empty.
-- [ ] Postgres: Better postgres support. On "DATABASE MANAGEMENT" Menu, add Database Engine selection.
 - [ ] Storage-controller: add function to list directories and files from storage.
 - [ ] PHP: At BROLIT init, if php is installed, check default version.
         https://stackoverflow.com/questions/42619312/switch-php-versions-on-commandline-ubuntu-16-04
@@ -59,7 +59,6 @@
 - [ ] Core: Refactor: croned tasks. Maybe should run the runner with flags.
 - [ ] Core: Create warning if multiple WP installation found on backup to restore.
 - [ ] Core: Docker support: installer, create nginx proxy for dockerized projects, backup, restore, delete, list containers, status.
-- [ ] Core: Docker compose support (installer).
 - [ ] Restore: Refactor function restore_config_files_from_dropbox.
 - [ ] Nginx: Multidomain support for nginx.
 - [ ] MySQL: Rename database (with and without WP).
@@ -127,7 +126,6 @@
         https://easyengine.io/blog/easyengine-v4-0-15-released/
 - [ ] Installers: Option to select netdata metrics to be reported.
         https://docs.netdata.cloud/health/notifications/discord/
-- [ ] Installers: Mailcow installer and backup.
 - [ ] Include network (lan and internet) tests with iperf and speedtest-cli.
 - [ ] Support for rclone: https://github.com/rclone/rclone
       Add support to others storage service (Google Drive, SFTP, etc)
