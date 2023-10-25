@@ -1369,23 +1369,23 @@ function restore_project_backup() {
 
   fi
 
-  # NEW NEW NEW NEW NEW
+  # Restore project files
   values=($(restore_backup_project_files "${project_backup_file}" "${project_domain}" "${project_domain_new}"))
-  #[[ $? -eq 1 ]] && return 1
+  ## Extract values
   project_type=${values[0]}
   project_install_type=${values[1]}
   project_port=${values[2]}
+
+  project_install_path="${PROJECTS_PATH}/${project_domain_new}"
 
   # Log
   log_event "debug" "project_type=${project_type}" "false"
   log_event "debug" "project_install_type=${project_install_type}" "false"
 
-  project_install_path="${PROJECTS_PATH}/${project_domain_new}"
-
   if [[ ${project_install_type} == "docker"* ]]; then
 
     # Check if docker and docker-compose are installed
-    package_is_installed "docker.io"
+    package_is_installed "docker.io" || package_is_installed "docker"
     [[ $? -eq 1 ]] && return 1
 
     # TODO: Update .env values (PORTS, COMPOSE_PROJECT_NAME, PROJECT_NAME, PROJECT_DOMAIN, SHH_MASTER_USER, SSH_MASTER_PASS)

@@ -26,8 +26,13 @@ function portainer_installer() {
 
     package_update
 
-    package_install_if_not "docker.io"
-    package_install_if_not "docker-compose"
+    # Check if docker or docker.io package are installed
+    docker="$(package_is_installed "docker" || package_is_installed "docker.io")"
+    docker_installed="$?"
+    if [[ ${docker_installed} -eq 1 ]]; then
+        package_install "docker.io"
+        package_install "docker-compose"
+    fi
 
     # Force update brolit_conf.json
     PACKAGES_DOCKER_STATUS="enabled"
