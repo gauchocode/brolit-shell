@@ -478,7 +478,8 @@
                         "vim": "true",
                         "lynis": "true",
                         "clamav": "true",
-                        "bat": "true"
+                        "bat": "true",
+                        "htop": "true"
                     }
                 ]
             }

@@ -1529,9 +1529,6 @@ function compress() {
     compress_parameter="-n ${BACKUP_CONFIG_COMPRESSION_CORES}"
     decompress_parameter="-n ${BACKUP_CONFIG_COMPRESSION_CORES}"
   fi
-  if [[ -n ${BACKUP_CONFIG_COMPRESSION_CORES} && ${BACKUP_CONFIG_COMPRESSION_TYPE} == "pbzip2" ]]; then
-    compress_parameter="-p${BACKUP_CONFIG_COMPRESSION_CORES}"
-  fi
   ## Set the compression block size during compression
   ## Example: $ lbzip2 -1 filename
   if [[ -n ${BACKUP_CONFIG_COMPRESSION_LEVEL} ]]; then
