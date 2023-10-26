@@ -229,7 +229,6 @@ function package_check_required() {
   package_install_if_not "bc"
   package_install_if_not "pigz"
   package_install_if_not "lbzip2"
-  package_install_if_not "pbzip2"
   package_install_if_not "zip"
   package_install_if_not "unzip"
   package_install_if_not "git"
