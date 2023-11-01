@@ -490,8 +490,8 @@ function backup_project_files() {
   local backup_file
   local backup_file_old
   local backup_prefix_name
-  local storage_path
   local exclude_parameters
+  #local storage_path
 
   # Backups file names
   backup_prefix_name="${directory_to_backup}_${backup_type}-files"
@@ -543,8 +543,11 @@ function backup_project_files() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        # Delete old backup from Dropbox
-        storage_delete_backup "${remote_path}/${backup_file_old}"
+        # List all storage backups
+        backup_list="$(storage_list_dir "${remote_path}")"
+
+        # Delete old backups
+        delete_old_backups "${backup_list}"
 
         # Delete temp backup
         rm --force "${BROLIT_TMP_DIR}/${NOW}/${backup_file}"
@@ -567,6 +570,67 @@ function backup_project_files() {
 
     fi
 
+  fi
+
+}
+
+# Function to delete old backups
+function delete_old_backups() {
+
+  # Input is comma-separated filenames
+  local filenames_string="${1}"
+  
+  # Convert the string to an array
+  IFS=',' read -ra filenames <<< "$filenames_string"
+
+  # Arrays to hold various types of backups
+  declare -a daily_backups
+  declare -a weekly_backups
+  declare -a monthly_backups
+
+  # Categorize backups into daily, weekly, and monthly
+  for i in "${filenames[@]}"; do
+    if [[ $i == *"-weekly"* ]]; then
+      weekly_backups+=("$i")
+    elif [[ $i == *"-monthly"* ]]; then
+      monthly_backups+=("$i")
+    else
+      daily_backups+=("$i")
+    fi
+  done
+
+  # Sort the arrays
+  sorted_daily=($(printf '%s\n' "${daily_backups[@]}"|sort -r))
+  sorted_weekly=($(printf '%s\n' "${weekly_backups[@]}"|sort -r))
+  sorted_monthly=($(printf '%s\n' "${monthly_backups[@]}"|sort -r))
+
+  # Configuration for backup retention
+  keep_daily=3
+  keep_weekly=1
+  keep_monthly=1
+
+  # Delete old daily backups
+  if [ ${#sorted_daily[@]} -gt $keep_daily ]; then
+    to_delete_daily=("${sorted_daily[@]:$keep_daily}")
+    for i in "${to_delete_daily[@]}"; do
+      storage_delete_backup "${remote_path}/${i}"
+    done
+  fi
+
+  # Delete old weekly backups
+  if [ ${#sorted_weekly[@]} -gt $keep_weekly ]; then
+    to_delete_weekly=("${sorted_weekly[@]:$keep_weekly}")
+    for i in "${to_delete_weekly[@]}"; do
+      storage_delete_backup "${remote_path}/${i}"
+    done
+  fi
+
+  # Delete old monthly backups
+  if [ ${#sorted_monthly[@]} -gt $keep_monthly ]; then
+    to_delete_monthly=("${sorted_monthly[@]:$keep_monthly}")
+    for i in "${to_delete_monthly[@]}"; do
+      storage_delete_backup "${remote_path}/${i}"
+    done
   fi
 
 }
@@ -980,13 +1044,13 @@ function backup_project() {
 
     log_break "false"
 
-    # Delete backup from server
+    # Delete local backup
     rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${backup_type:?}"
     #log_event "info" "Deleting backup from server ..." "false"
 
     # Log
     log_break "false"
-    log_event "info" "Project Backup done" "false"
+    log_event "info" "Project backup finished!" "false"
     display --indent 6 --text "- Project Backup" --result "DONE" --color GREEN
 
     return ${got_error}

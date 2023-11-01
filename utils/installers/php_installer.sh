@@ -20,10 +20,7 @@ function php_get_distro_default_version() {
 
   DISTRO_V="$(get_ubuntu_version)"
 
-  if [[ ${DISTRO_V} -eq "1804" ]]; then
-    php_v="7.2" #Ubuntu 18.04 LTS Default
-
-  elif [[ ${DISTRO_V} -eq "2004" ]]; then
+  if [[ ${DISTRO_V} -eq "2004" ]]; then
     php_v="7.4" #Ubuntu 20.04 LTS Default
 
   elif [[ ${DISTRO_V} -eq "2204" ]]; then
@@ -302,14 +299,10 @@ function php_select_version_to_install() {
   local phpv
 
   phpv_to_install=(
+    "8.2" " " off
     "8.1" " " off
     "8.0" " " off
     "7.4" " " off
-    "7.3" " " off
-    "7.2" " " off
-    "7.1" " " off
-    "7.0" " " off
-    "5.6" " " off
   )
 
   chosen_phpv="$(whiptail --title "PHP Version Selection" --checklist "Select the versions of PHP you want to install:" 20 78 15 "${phpv_to_install[@]}" 3>&1 1>&2 2>&3)"
@@ -674,6 +667,7 @@ function php_installer_menu() {
       php_custom_installer
       mail_utils_installer
       #php_redis_installer
+      #php_reconfigure "${PHP_V}"
 
     fi
 
