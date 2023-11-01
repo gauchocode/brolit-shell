@@ -11,7 +11,7 @@ function tests_suite_menu() {
 
   tests_options=(
     "00)" "RUN ALL TESTS"
-    "01)" "RUN S3 TESTS"
+    "01)" "RUN BORG TESTS"
     "02)" "RUN JSON HELPER TESTS"
     "03)" "RUN MYSQL TESTS"
     "04)" "RUN PHP TESTS"
@@ -38,10 +38,9 @@ function tests_suite_menu() {
       test_wordpress_helper_funtions
       test_cloudflare_funtions
       test_common_funtions
-
     fi
     if [[ ${chosen_tests_options} == *"01"* ]]; then
-      test_s3_helper_funtions
+      test_borg_helper_funtions
 
     fi
     if [[ ${chosen_tests_options} == *"02"* ]]; then
