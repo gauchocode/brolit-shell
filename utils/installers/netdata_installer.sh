@@ -58,11 +58,7 @@ function _netdata_required_packages() {
 
   display --indent 6 --text "- Installing netdata required packages"
 
-  if [[ ${ubuntu_version} == "1804" ]]; then
-
-    apt-get --yes install zlib1g-dev uuid-dev libuv1-dev liblz4-dev libjudy-dev libssl-dev libmnl-dev gcc make git autoconf autoconf-archive autogen automake pkg-config curl python python-mysqldb lm-sensors libmnl netcat nodejs python-ipaddress python-dnspython iproute2 python-beanstalkc libuv liblz4 Judy openssl -qq >/dev/null
-
-  elif [[ ${ubuntu_version} == "2004" ]]; then
+  if [[ ${ubuntu_version} == "2004" || ${ubuntu_version} == "2204" ]]; then
 
     apt-get --yes install curl python3-mysqldb python3-pip lm-sensors libmnl-dev netcat openssl -qq >/dev/null
 
@@ -201,9 +197,7 @@ function _netdata_telegram_config() {
 #  nothing
 ################################################################################
 
-function netdata_installer() {
-
-#  local netdata_installer_exitstatus
+function netdata_installer() {  
 
   declare -g NETDATA_INSTALL_DIR
 

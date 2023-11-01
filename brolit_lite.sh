@@ -2352,13 +2352,13 @@ function firewall_get_apps_details() {
 #   json output with packages to upgrade
 ################################################################################
 
-function list_packages_to_upgrade() {
+function list_packages_ready_to_upgrade() {
 
     local force="${1}"
 
     local timestamp
 
-    local json_output_file="${BROLIT_LITE_OUTPUT_DIR}/list_packages_to_upgrade.json"
+    local json_output_file="${BROLIT_LITE_OUTPUT_DIR}/list_packages_ready_to_upgrade.json"
 
     if [[ ${force} == "true" || ! -f "${json_output_file}" ]]; then
 
