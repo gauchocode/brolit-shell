@@ -546,6 +546,9 @@ function backup_project_files() {
         # List all storage backups
         backup_list="$(storage_list_dir "${remote_path}")"
 
+        # Transform backup_list into comma separated list
+        backup_list="$(echo "${backup_list}" | tr '\n' ',')"
+
         # Delete old storage backups
         delete_old_backups "${backup_list}"
 
@@ -1002,6 +1005,8 @@ function backup_project() {
     # Delete old backup from storage
     ## List all storage backups
     backup_list="$(storage_list_dir "${remote_path}")"
+    ## Transform backup_list into comma separated list
+    backup_list="$(echo "${backup_list}" | tr '\n' ',')"
     ## Delete old storage backups
     delete_old_backups "${backup_list}"
 
