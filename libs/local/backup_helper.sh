@@ -579,6 +579,10 @@ function delete_old_backups() {
 
   # Input is comma-separated filenames
   local filenames_string="${1}"
+
+  # Log
+  log_event "info" "Preparing to delete old backups" "false"
+  display --indent 6 --text "- Preparing to delete old backups" --result "DONE" --color GREEN
   
   # Convert the string to an array
   IFS=',' read -ra filenames <<< "$filenames_string"
@@ -603,6 +607,11 @@ function delete_old_backups() {
   sorted_daily=($(printf '%s\n' "${daily_backups[@]}"|sort -r))
   sorted_weekly=($(printf '%s\n' "${weekly_backups[@]}"|sort -r))
   sorted_monthly=($(printf '%s\n' "${monthly_backups[@]}"|sort -r))
+
+  # Log
+  log_event "debug" "Daily backups: ${sorted_daily[@]}" "false"
+  log_event "debug" "Weekly backups: ${sorted_weekly[@]}" "false"
+  log_event "debug" "Monthly backups: ${sorted_monthly[@]}" "false"
 
   # Configuration for backup retention
   keep_daily=3
