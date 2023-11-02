@@ -546,10 +546,10 @@ function backup_project_files() {
         # List all storage backups
         backup_list="$(storage_list_dir "${remote_path}")"
 
-        # Transform backup_list into comma separated list
-        backup_list="$(echo "${backup_list}" | tr '\n' ',')"
-
         # Delete old storage backups
+        ## Transform backup_list into comma separated list
+        backup_list="$(echo "${backup_list}" | tr '\n' ',')"
+        ## Delete backups
         delete_old_backups "${backup_list}"
 
         # Delete temp backup
@@ -997,18 +997,6 @@ function backup_project() {
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
-
-    # Delete local backup
-    #rm --recursive --force "${BROLIT_TMP_DIR}/${NOW:?}"
-    rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${backup_type:?}"
-
-    # Delete old backup from storage
-    ## List all storage backups
-    backup_list="$(storage_list_dir "${remote_path}")"
-    ## Transform backup_list into comma separated list
-    backup_list="$(echo "${backup_list}" | tr '\n' ',')"
-    ## Delete old storage backups
-    delete_old_backups "${backup_list}"
 
     # Project Type
     project_type="$(project_get_type "${PROJECTS_PATH}/${project_domain}")"
