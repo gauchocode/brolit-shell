@@ -259,6 +259,9 @@ function storage_download_backup() {
 function storage_delete_backup() {
 
     local file_to_delete="${1}"
+    #local force_delete="${2}" # or should be a global var?
+
+    local force_delete="true"
 
     local got_error=0
     #local error_msg="none"
@@ -266,7 +269,7 @@ function storage_delete_backup() {
 
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
-        dropbox_delete "${file_to_delete}" "false"
+        dropbox_delete "${file_to_delete}" "${force_delete}"
         [[ $? -eq 1 ]] && error_type="dropbox" && got_error=1
 
     fi
