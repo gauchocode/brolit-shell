@@ -301,6 +301,11 @@ function storage_delete_old_backups() {
 
     local storage_path="${1}"
 
+    # Configuration for backup retention
+    local keep_daily=${BACKUP_RETENTION_KEEP_DAILY}
+    local keep_weekly=${BACKUP_RETENTION_KEEP_WEEKLY}
+    local keep_monthly=${BACKUP_RETENTION_KEEP_MONTHLY}
+
     # List all storage backups
     backup_list="$(storage_list_dir "${storage_path}")"
 
@@ -341,10 +346,8 @@ function storage_delete_old_backups() {
     log_event "debug" "Weekly backups: ${sorted_weekly[@]}" "false"
     log_event "debug" "Monthly backups: ${sorted_monthly[@]}" "false"
 
-    # Configuration for backup retention
-    keep_daily=3
-    keep_weekly=1
-    keep_monthly=1
+    # Log
+    display --indent 6 --text "- Deleting old files from Dropbox"
 
     # Delete old daily backups
     if [ ${#sorted_daily[@]} -gt $keep_daily ]; then
@@ -369,6 +372,10 @@ function storage_delete_old_backups() {
             storage_delete_backup "${storage_path}/${i}"
         done
     fi
+
+    # Log
+    clear_previous_lines "1"
+    display --indent 6 --text "- Deleting old files from Dropbox" --result "DONE" --color GREEN
 
 }
 

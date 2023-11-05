@@ -319,13 +319,15 @@ function dropbox_delete() {
         dropbox_remove_result=$?
         if [[ ${dropbox_remove_result} -eq 0 ]]; then
 
-            display --indent 6 --text "- Deleting old files from Dropbox" --result "DONE" --color GREEN
-            log_event "info" "Files deleted from Dropbox" "false"
+            # Log
+            #display --indent 6 --text "- Deleting old files from Dropbox" --result "DONE" --color GREEN
+            log_event "info" "File deleted from Dropbox: ${to_delete}" "false"
 
             return 0
 
         else
 
+            # Log
             display --indent 6 --text "- Deleting old files from Dropbox" --result "WARNING" --color YELLOW
             display --indent 8 --text "Can't remove backup from Dropbox." --tcolor YELLOW
 
