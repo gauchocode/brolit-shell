@@ -253,7 +253,7 @@ function storage_download_backup() {
 #   ${1} = {file_to_delete}
 #
 # Outputs:
-#   0 if it utils were installed, 1 on error.
+#   0 on success, 1 on error.
 ################################################################################
 
 function storage_delete_backup() {
@@ -284,6 +284,91 @@ function storage_delete_backup() {
     [[ ${error_type} != "none" ]] && echo "${error_type}"
 
     return ${got_error}
+
+}
+
+################################################################################
+# Delete old backups on configured storage (dropbox, sftp, etc)
+#
+# Arguments:
+#   ${1} = {storage_path}
+#
+# Outputs:
+#   0 on success, 1 on error.
+################################################################################
+
+function storage_delete_old_backups() {
+
+    local storage_path="${1}"
+
+    # List all storage backups
+    backup_list="$(storage_list_dir "${storage_path}")"
+
+    # Delete old storage backups
+    ## Transform backup_list into comma separated list
+    backup_list="$(echo "${backup_list}" | tr '\n' ',')"
+
+    # Log
+    log_event "info" "Preparing to delete old backups" "false"
+    display --indent 6 --text "- Preparing to delete old backups" --result "DONE" --color GREEN
+
+    # Convert the string to an array
+    IFS=',' read -ra filenames <<<"$backup_list"
+
+    # Arrays to hold various types of backups
+    declare -a daily_backups
+    declare -a weekly_backups
+    declare -a monthly_backups
+
+    # Categorize backups into daily, weekly, and monthly
+    for i in "${filenames[@]}"; do
+        if [[ $i == *"-weekly"* ]]; then
+            weekly_backups+=("$i")
+        elif [[ $i == *"-monthly"* ]]; then
+            monthly_backups+=("$i")
+        else
+            daily_backups+=("$i")
+        fi
+    done
+
+    # Sort the arrays
+    sorted_daily=($(printf '%s\n' "${daily_backups[@]}" | sort -r))
+    sorted_weekly=($(printf '%s\n' "${weekly_backups[@]}" | sort -r))
+    sorted_monthly=($(printf '%s\n' "${monthly_backups[@]}" | sort -r))
+
+    # Log
+    log_event "debug" "Daily backups: ${sorted_daily[@]}" "false"
+    log_event "debug" "Weekly backups: ${sorted_weekly[@]}" "false"
+    log_event "debug" "Monthly backups: ${sorted_monthly[@]}" "false"
+
+    # Configuration for backup retention
+    keep_daily=3
+    keep_weekly=1
+    keep_monthly=1
+
+    # Delete old daily backups
+    if [ ${#sorted_daily[@]} -gt $keep_daily ]; then
+        to_delete_daily=("${sorted_daily[@]:$keep_daily}")
+        for i in "${to_delete_daily[@]}"; do
+            storage_delete_backup "${storage_path}/${i}"
+        done
+    fi
+
+    # Delete old weekly backups
+    if [ ${#sorted_weekly[@]} -gt $keep_weekly ]; then
+        to_delete_weekly=("${sorted_weekly[@]:$keep_weekly}")
+        for i in "${to_delete_weekly[@]}"; do
+            storage_delete_backup "${storage_path}/${i}"
+        done
+    fi
+
+    # Delete old monthly backups
+    if [ ${#sorted_monthly[@]} -gt $keep_monthly ]; then
+        to_delete_monthly=("${sorted_monthly[@]:$keep_monthly}")
+        for i in "${to_delete_monthly[@]}"; do
+            storage_delete_backup "${storage_path}/${i}"
+        done
+    fi
 
 }
 
@@ -475,7 +560,7 @@ function storage_backup_selection() {
 
         echo "${chosen_backup_file}"
 
-     else
+    else
 
         display --indent 6 --text "- Selecting Project Backup" --result "SKIPPED" --color YELLOW
         return 1

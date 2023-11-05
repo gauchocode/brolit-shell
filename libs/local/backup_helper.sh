@@ -21,12 +21,10 @@
 function backup_get_filename() {
 
   local backup_prefix_name="${1}"
-  local backup_date="${2}"
-  local backup_extension="${3}"
+  local backup_extension="${2}"
 
   local daysago
   local backup_file
-  local backup_file_old
   local backup_keep_daily
   local daysago
 
@@ -34,12 +32,10 @@ function backup_get_filename() {
   if [[ $((10#$MONTH_DAY)) -eq 1 && $((10#$BACKUP_RETENTION_KEEP_MONTHLY)) -gt 0 ]]; then
     ## On first month day do
     backup_file="${backup_prefix_name}_${NOW}-monthly.${backup_extension}"
-    backup_file_old="${backup_prefix_name}_${MONTHSAGO}-monthly.${backup_extension}"
   else
     ## On saturdays do
     if [[ $((10#$WEEK_DAY)) -eq 6 && $((10#$BACKUP_RETENTION_KEEP_WEEKLY)) -gt 0 ]]; then
       backup_file="${backup_prefix_name}_${NOW}-weekly.${backup_extension}"
-      backup_file_old="${backup_prefix_name}_${WEEKSAGO}-weekly.${backup_extension}"
     else
       if [[ $((10#$WEEK_DAY)) -eq 7 && $((10#$BACKUP_RETENTION_KEEP_WEEKLY)) -gt 0 ||
         $((10#$MONTH_DAY)) -eq 2 && $((10#$BACKUP_RETENTION_KEEP_MONTHLY)) -gt 0 ]]; then
@@ -47,24 +43,17 @@ function backup_get_filename() {
         backup_keep_daily=$((BACKUP_RETENTION_KEEP_DAILY - 1))
         daysago="$(date --date="${backup_keep_daily} days ago" +"%Y-%m-%d")"
         backup_file="${backup_prefix_name}_${NOW}.${backup_extension}"
-        backup_file_old="${backup_prefix_name}_${daysago}.${backup_extension}"
       else
         ## On any regular day do
         backup_file="${backup_prefix_name}_${NOW}.${backup_extension}"
-        backup_file_old="${backup_prefix_name}_${DAYSAGO}.${backup_extension}"
       fi
     fi
   fi
 
   log_event "debug" "backup_get_filename: backup_file=${backup_file}" "false"
-  log_event "debug" "backup_get_filename: backup_file_old=${backup_file_old}" "false"
 
   # Return
-  if [[ ${backup_date} == "old" ]]; then
-    echo "${backup_file_old}"
-  else
-    echo "${backup_file}"
-  fi
+  echo "${backup_file}"
 
 }
 
@@ -140,17 +129,14 @@ function backup_server_config() {
   local directory_to_backup="${4}"
 
   local backup_file
-  local backup_file_old
-  local daysago
-  local remote_path
+  local storage_path
   local backup_keep_daily
   local upload_result
 
   if [[ -n ${backup_path} ]]; then
 
     backup_prefix_name="${bk_sup_type}-${backup_type}-files"
-    backup_file="$(backup_get_filename "${backup_prefix_name}" "actual" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
-    backup_file_old="$(backup_get_filename "${backup_prefix_name}" "old" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
+    backup_file="$(backup_get_filename "${backup_prefix_name}" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
 
     # Log
     display --indent 6 --text "- Files backup for ${YELLOW}${bk_sup_type}${ENDCOLOR}"
@@ -169,7 +155,7 @@ function backup_server_config() {
       display --indent 8 --text "Final backup size: ${YELLOW}${backup_file_size}${ENDCOLOR}"
 
       # Remote Path
-      remote_path="${SERVER_NAME}/server-config/${bk_sup_type}"
+      storage_path="${SERVER_NAME}/server-config/${bk_sup_type}"
 
       # Create folder structure
       storage_create_dir "${SERVER_NAME}"
@@ -177,13 +163,13 @@ function backup_server_config() {
       storage_create_dir "${SERVER_NAME}/server-config/${bk_sup_type}"
 
       # Uploading backup files
-      upload_result="$(storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${remote_path}")"
+      upload_result="$(storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${storage_path}")"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
         # Deleting old backup file
-        storage_delete_backup "${remote_path}/${backup_file_old}"
+        storage_delete_old_backups "${storage_path}"
 
         # Deleting tmp backup file
         rm --force "${BROLIT_TMP_DIR}/${NOW}/${backup_file}"
@@ -488,15 +474,13 @@ function backup_project_files() {
   local directory_to_backup="${3}"
 
   local backup_file
-  local backup_file_old
   local backup_prefix_name
   local exclude_parameters
-  #local storage_path
+  local storage_path
 
   # Backups file names
   backup_prefix_name="${directory_to_backup}_${backup_type}-files"
-  backup_file="$(backup_get_filename "${backup_prefix_name}" "actual" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
-  backup_file_old="$(backup_get_filename "${backup_prefix_name}" "old" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
+  backup_file="$(backup_get_filename "${backup_prefix_name}" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
 
   # Create directory structure
   storage_create_dir "${SERVER_NAME}"
@@ -504,7 +488,7 @@ function backup_project_files() {
   storage_create_dir "${SERVER_NAME}/projects-online/${backup_type}"
   storage_create_dir "${SERVER_NAME}/projects-online/${backup_type}/${directory_to_backup}"
 
-  remote_path="${SERVER_NAME}/projects-online/${backup_type}/${directory_to_backup}"
+  storage_path="${SERVER_NAME}/projects-online/${backup_type}/${directory_to_backup}"
 
   if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" || ${BACKUP_SFTP_STATUS} == "enabled" ]]; then
 
@@ -538,19 +522,13 @@ function backup_project_files() {
       log_event "info" "Backup ${BROLIT_TMP_DIR}/${NOW}/${backup_file} created, final size: ${backup_file_size}" "false"
 
       # Upload backup
-      upload_result="$(storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${remote_path}")"
+      upload_result="$(storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${storage_path}")"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        # List all storage backups
-        backup_list="$(storage_list_dir "${remote_path}")"
-
-        # Delete old storage backups
-        ## Transform backup_list into comma separated list
-        backup_list="$(echo "${backup_list}" | tr '\n' ',')"
-        ## Delete backups
-        delete_old_backups "${backup_list}"
+        # Delete old backups
+        storage_delete_old_backups "${storage_path}"
 
         # Delete temp backup
         rm --force "${BROLIT_TMP_DIR}/${NOW}/${backup_file}"
@@ -573,76 +551,6 @@ function backup_project_files() {
 
     fi
 
-  fi
-
-}
-
-# Function to delete old backups
-function delete_old_backups() {
-
-  # Input is comma-separated filenames
-  local filenames_string="${1}"
-
-  # Log
-  log_event "info" "Preparing to delete old backups" "false"
-  display --indent 6 --text "- Preparing to delete old backups" --result "DONE" --color GREEN
-  
-  # Convert the string to an array
-  IFS=',' read -ra filenames <<< "$filenames_string"
-
-  # Arrays to hold various types of backups
-  declare -a daily_backups
-  declare -a weekly_backups
-  declare -a monthly_backups
-
-  # Categorize backups into daily, weekly, and monthly
-  for i in "${filenames[@]}"; do
-    if [[ $i == *"-weekly"* ]]; then
-      weekly_backups+=("$i")
-    elif [[ $i == *"-monthly"* ]]; then
-      monthly_backups+=("$i")
-    else
-      daily_backups+=("$i")
-    fi
-  done
-
-  # Sort the arrays
-  sorted_daily=($(printf '%s\n' "${daily_backups[@]}"|sort -r))
-  sorted_weekly=($(printf '%s\n' "${weekly_backups[@]}"|sort -r))
-  sorted_monthly=($(printf '%s\n' "${monthly_backups[@]}"|sort -r))
-
-  # Log
-  log_event "debug" "Daily backups: ${sorted_daily[@]}" "false"
-  log_event "debug" "Weekly backups: ${sorted_weekly[@]}" "false"
-  log_event "debug" "Monthly backups: ${sorted_monthly[@]}" "false"
-
-  # Configuration for backup retention
-  keep_daily=3
-  keep_weekly=1
-  keep_monthly=1
-
-  # Delete old daily backups
-  if [ ${#sorted_daily[@]} -gt $keep_daily ]; then
-    to_delete_daily=("${sorted_daily[@]:$keep_daily}")
-    for i in "${to_delete_daily[@]}"; do
-      storage_delete_backup "${remote_path}/${i}"
-    done
-  fi
-
-  # Delete old weekly backups
-  if [ ${#sorted_weekly[@]} -gt $keep_weekly ]; then
-    to_delete_weekly=("${sorted_weekly[@]:$keep_weekly}")
-    for i in "${to_delete_weekly[@]}"; do
-      storage_delete_backup "${remote_path}/${i}"
-    done
-  fi
-
-  # Delete old monthly backups
-  if [ ${#sorted_monthly[@]} -gt $keep_monthly ]; then
-    to_delete_monthly=("${sorted_monthly[@]:$keep_monthly}")
-    for i in "${to_delete_monthly[@]}"; do
-      storage_delete_backup "${remote_path}/${i}"
-    done
   fi
 
 }
@@ -872,8 +780,7 @@ function backup_project_database() {
 
   local dump_file
   local backup_file
-  local backup_file_old
-
+  local storage_path
   local error_type
   local error_msg
 
@@ -881,9 +788,8 @@ function backup_project_database() {
 
   # Backups file names
   backup_prefix_name="${database}_database"
-  dump_file="$(backup_get_filename "${backup_prefix_name}" "actual" "sql")"
-  backup_file="$(backup_get_filename "${backup_prefix_name}" "actual" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
-  backup_file_old="$(backup_get_filename "${backup_prefix_name}" "old" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
+  dump_file="$(backup_get_filename "${backup_prefix_name}" "sql")"
+  backup_file="$(backup_get_filename "${backup_prefix_name}" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
 
   # Database engine
   if [[ ${db_engine} == "mysql" ]]; then
@@ -917,14 +823,14 @@ function backup_project_database() {
       storage_create_dir "/${SERVER_NAME}/projects-online/database/${database}"
 
       # Upload database backup
-      remote_path="/${SERVER_NAME}/projects-online/database/${database}"
-      upload_result="$(storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${remote_path}")"
+      storage_path="/${SERVER_NAME}/projects-online/database/${database}"
+      upload_result="$(storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${storage_path}")"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
         # Delete old backup from storage
-        storage_delete_backup "/${SERVER_NAME}/projects-online/database/${database}/${backup_file_old}"
+        storage_delete_old_backups "${storage_path}"
 
         # Delete local temp files
         rm --force "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
