@@ -200,6 +200,16 @@ function server_app_setup() {
 
         ;;
 
+    "borg")
+
+        if [[ ${PACKAGES_BORG_STATUS} == "enabled" ]]; then
+            borg_installer
+        else
+            borg_purge
+        fi
+
+        ;;
+
     "docker")
 
         if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then

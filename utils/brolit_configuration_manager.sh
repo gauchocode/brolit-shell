@@ -674,6 +674,41 @@ function _brolit_configuration_load_cloudflare() {
 }
 
 ################################################################################
+# Private: load borg configuration
+#
+# Arguments:
+#   ${1} = ${server_config_file}
+#
+# Outputs:
+#   nothing
+
+function _brolit_configuration_load_borg () {
+    local server_config_file="${1}"
+
+    # Globals
+    declare -g PACKAGES_BORG_STATUS
+
+    # BORG
+    borg_bin="$(package_is_installed "borgbackup")"
+    exitstatus=$?
+
+    PACKAGES_BORG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.borg[].status")"
+
+    if [[ ${PACKAGES_BORG_STATUS} == "enabled" ]]; then
+
+        [[ ${exitstatus} -eq 1 || -z ${borg_bin} ]] && pkg_config_changes_detected "borg" "true"
+
+    else
+
+        [[ ${exitstatus} -eq 0 && -n ${borg_bin} ]] && pkg_config_changes_detected "borg" "true"
+
+    fi
+
+    export PACKAGES_BORG_STATUS
+}
+
+
+################################################################################
 # Private: load nginx configuration
 #
 # Arguments:
@@ -1624,6 +1659,8 @@ function _brolit_configuration_load_zabbix() {
 
 }
 
+
+
 ################################################################################
 # Private: load docker configuration
 #
@@ -2231,6 +2268,9 @@ function brolit_configuration_load() {
 
     ### php-fpm
     _brolit_configuration_load_php "${server_config_file}"
+
+    ## borg
+    _brolit_configuration_load_borg "${server_config_file}"
 
     ### certbot
     _brolit_configuration_load_certbot "${server_config_file}"
