@@ -330,6 +330,11 @@
                 ]
             }
         ],
+        "borg": [
+            {
+                "status": "disabled"
+            }
+        ],
         "portainer": [
             {
                 "status": "disabled",
