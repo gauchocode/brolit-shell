@@ -89,11 +89,13 @@ function wordfencecli_malware_scan() {
 
     local scan_option
 
-    if [[ $include_all_files == "true" ]]; then
-        local scan_option="--include-all-files"
-    else
-        local scan_option=""
-    fi
+    # If include_all_files is true, set scan_option
+    [[ $include_all_files == "true" ]] && scan_option="--include-all-files" || scan_option=""
+
+    # Log
+    log_event "info" "Starting wordfence-cli malware scan on: ${directory_to_scan}" "false"
+    log_event "debug" "Running: docker run -v /var/www:/var/www wordfence-cli:latest malware-scan ${scan_option} --license $(cat /root/.config/wordfence/wordfence-cli.ini) ${directory_to_scan}" "false"
+    display --indent 6 --text "- Starting wordfence-cli malware scan on: ${directory_to_scan}"
 
     # Malware Scan command
     docker run -v /var/www:/var/www wordfence-cli:latest malware-scan ${scan_option} --license $(cat /root/.config/wordfence/wordfence-cli.ini) "${directory_to_scan}"
@@ -118,11 +120,13 @@ function wordfencecli_vulnerabilities_scan() {
 
     local scan_option
 
-    if [[ $include_all_files == "true" ]]; then
-        local scan_option="--include-all-files"
-    else
-        local scan_option=""
-    fi
+    # If include_all_files is true, set scan_option
+    [[ $include_all_files == "true" ]] && scan_option="--include-all-files" || scan_option=""
+
+    # Log
+    log_event "info" "Starting wordfence-cli vulnerabilities scan on: ${directory_to_scan}" "false"
+    log_event "debug" "Running: docker run -v /var/www:/var/www wordfence-cli:latest vuln-scan ${scan_option} --license $(cat /root/.config/wordfence/wordfence-cli.ini) ${directory_to_scan}" "false"
+    display --indent 6 --text "- Starting wordfence-cli vulnerabilities scan on: ${directory_to_scan}"
 
     # Vulnerabilities Scan command
     docker run -v /var/www:/var/www wordfence-cli:latest vuln-scan ${scan_option} --license $(cat /root/.config/wordfence/wordfence-cli.ini) "${directory_to_scan}"
