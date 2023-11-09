@@ -127,8 +127,6 @@
 - [ ] Installers: Option to select netdata metrics to be reported.
         https://docs.netdata.cloud/health/notifications/discord/
 - [ ] Include network (lan and internet) tests with iperf and speedtest-cli.
-- [ ] Support for rclone: https://github.com/rclone/rclone
-      Add support to others storage service (Google Drive, SFTP, etc)
 - [ ] Database Management: Add suport to create databases and users on other server.
 
 ## For release 4.0

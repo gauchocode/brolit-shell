@@ -15,11 +15,6 @@
 #   Backup Uploader:
 #       Simple way to upload backup file to this cloud service.
 #
-#   Rclone:
-#       Good way to store backups on a SFTP Server and cloud services.
-#       Option to "sync" files.
-#       Read: https://forum.rclone.org/t/incremental-backups-and-efficiency-continued/10763
-#
 #   Duplicity:
 #       Best way to backup projects of 10GBs+. Incremental backups.
 #       Need to use SFTP option (non native cloud services support).
@@ -232,12 +227,6 @@ function storage_download_backup() {
 
         dropbox_download "${file_to_download}" "${remote_directory}"
         [[ $? -eq 1 ]] && error_type="dropbox" && got_error=1
-
-    fi
-    if [[ ${BACKUP_RCLONE_STATUS} == "enabled" ]]; then
-
-        rclone_download "${file_to_download}" "${remote_directory}"
-        [[ $? -eq 1 ]] && error_type="rsync" && got_error=1
 
     fi
 

@@ -3,6 +3,9 @@
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
 # Version: 3.3.4
 ################################################################################
+#
+# Ref: https://github.com/wordfence/wordfence-cli
+#
 
 _security_tasks() {
 
