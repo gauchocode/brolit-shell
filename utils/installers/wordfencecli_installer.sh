@@ -37,8 +37,8 @@ function wordfencecli_installer () {
     clear_previous_lines "2"
     display --indent 6 --text "- Downloading Wordfence-cli" --result "DONE" --color GREEN
 
-    # Docker build
-    docker build -t wordfence-cli:latest /root/wordfence-cli
+    # Docker build (silent mode)
+    docker build -t wordfence-cli:latest /root/wordfence-cli > /dev/null 2>&1
 
     # Log
     log_event "info" "Wordfence-cli installer finished" "false"
@@ -81,8 +81,8 @@ function wordfencecli_updater () {
   clear_previous_lines "2"
   display --indent 6 --text "- Updating Wordfence-cli" --result "DONE" --color GREEN
 
-  # Docker build
-  docker build -t wordfence-cli:latest /root/wordfence-cli
+  # Docker build (silent mode)
+  docker build -t wordfence-cli:latest /root/wordfence-cli > /dev/null 2>&1
 
   # Log
   log_event "info" "Wordfence-cli update finished" "false"
