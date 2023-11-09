@@ -30,9 +30,9 @@ function wordfencecli_installer () {
 
     # Download wordfence-cli
     display --indent 6 --text "- Downloading Wordfence-cli"
-    log_event "debug" "Running: git clone git@github.com:wordfence/wordfence-cli.git /root/wordfence-cli" "false"
+    log_event "debug" "Running: git clone https://github.com/wordfence/wordfence-cli.git /root/wordfence-cli" "false"
     
-    git clone git@github.com:wordfence/wordfence-cli.git /root/wordfence-cli
+    git clone https://github.com/wordfence/wordfence-cli.git /root/wordfence-cli
     
     clear_previous_lines "2"
     display --indent 6 --text "- Downloading Wordfence-cli" --result "DONE" --color GREEN
