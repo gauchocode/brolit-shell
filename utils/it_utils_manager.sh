@@ -198,7 +198,7 @@ function menu_security_utils() {
     package_install_security_utils
 
     # WORFENCE-CLI MALWARE SCAN
-    [[ ${chosen_security_options} == *"01"* ]] && menu_security_worfencecli_scan
+    [[ ${chosen_security_options} == *"01"* ]] && menu_security_wordfencecli_scan
 
     # CLAMAV MALWARE SCAN
     [[ ${chosen_security_options} == *"02"* ]] && menu_security_clamav_scan
