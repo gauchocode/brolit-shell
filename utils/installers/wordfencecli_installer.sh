@@ -43,7 +43,11 @@ function wordfencecli_installer () {
     # Log
     log_event "info" "Wordfence-cli installer finished" "false"
     display --indent 6 --text "- Installing Wordfence-cli" --result "DONE" --color GREEN
-    #log_break
+    
+    # Ask for license
+    read -p "Enter Wordfence-cli license key: " wordfencecli_license_key
+    wordfencecli_write_license "${wordfencecli_license_key}"
+
 
   else
 
@@ -85,4 +89,46 @@ function wordfencecli_updater () {
   display --indent 6 --text "- Updating Wordfence-cli" --result "DONE" --color GREEN
   #log_break
 
+}
+
+################################################################################
+# Worfence-cli uninstaller (docker)
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function wordfencecli_uninstall() {
+  
+    log_subsection "Wordfence-cli Uninstaller"
+  
+    # Check if wordfence-cli:latest exists
+    if [[ "$(docker images -q wordfence-cli:latest 2> /dev/null)" != "" ]]; then
+  
+      # Remove wordfence-cli
+      display --indent 6 --text "- Removing Wordfence-cli"
+      log_event "debug" "Running: docker rmi wordfence-cli:latest" "false"
+      
+      docker rmi wordfence-cli:latest
+      
+      clear_previous_lines "2"
+      display --indent 6 --text "- Removing Wordfence-cli" --result "DONE" --color GREEN
+  
+      # Log
+      log_event "info" "Wordfence-cli uninstaller finished" "false"
+      display --indent 6 --text "- Uninstalling Wordfence-cli" --result "DONE" --color GREEN
+  
+    else
+  
+      # Log
+      log_event "error" "Wordfence-cli not installed" "false"
+      display --indent 6 --text "- Wordfence-cli not installed" --result "ERROR" --color RED
+
+      return 1
+  
+    fi
+    
 }
