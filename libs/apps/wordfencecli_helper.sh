@@ -29,6 +29,11 @@ function wordfencecli_write_license() {
 
     if [[ ${wordfencecli_license_key} != "" ]]; then
 
+        # Create directory if not exists
+        mkdir -p /root/.config
+        mkdir -p /root/.config/wordfence
+
+        # Write license
         echo "${wordfencecli_license_key}" > ${wordfencecli_license_file}
 
         return 0
