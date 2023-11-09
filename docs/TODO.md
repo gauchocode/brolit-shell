@@ -1,6 +1,6 @@
 # TODO List
 
-## For release 3.3 (final)
+## For release 3.4 (final)
 
 ### Know Bugs
 
@@ -19,7 +19,6 @@
 
 ### Need improvements
 
-- [ ] Core: Main menu should not show options disabled on .brolit_conf.json
 - [ ] Core: need to check if select domain is a root domain or www domain, and ask if the user want to create a redirection.
 - [ ] Cloudflare-Certbot: Change proxy mode with Cloudflare API when create a certificate with Cloudflare.
         Also, if you use www, it should ask you if you want to use the root domain too.
@@ -33,58 +32,42 @@
 - [ ] Core: PHP composer support (installer).
 - [ ] Restore-project: big refactor.
 - [ ] Core: Generate project config file (/etc/brolit/domain_conf.json).
-- [ ] Backups: Backup retention configuration from brolit_conf.json
 - [ ] Postgres: Better postgres support. On "DATABASE MANAGEMENT" Menu, add Database Engine selection.
 
 ### In Progress
 
-- [ ] Brolit-ui: Integration without brolit_lite.sh
-- [ ] Core: Performance improvements.
+- [ ] Core: Docker support: backup and restore databases.
 - [ ] Core: Flags should receive a json file to deploy or restore a new project.
 - [ ] Core: On project creation/restore need to ask first the project stage, then project domain.
         If project stage != prod and subdomains is not containing the stage, need to suggest one.
         Example: test.landing.gauchocode.net OK
         Example 2: landing.gauchocode.net X (OK only if prod).
 - [ ] Restore-database: granting privileges to user fails, database_name is empty.
-- [ ] Storage-controller: add function to list directories and files from storage.
 - [ ] PHP: At BROLIT init, if php is installed, check default version.
         https://stackoverflow.com/questions/42619312/switch-php-versions-on-commandline-ubuntu-16-04
 
-## For release 3.4
+## For release 3.5
 
 - [ ] Core: Resolve small "TODOs" comments.
-- [ ] Notifications: After install a new project (with credentials info?).
-- [ ] Core: Create a brolit_server_conf.json with server information (IPs, SSH users, /etc/fstab config). Should be updated periodically.
+- [ ] Core: Main menu should not show options that are disabled on .brolit_conf.json
+- [ ] Core: Add borg & borgmatic support.
+- [ ] Brolit-ui: Integration without brolit_lite.sh
+- [ ] Notifications: Email notification after install a new project (with credentials info).
 - [ ] Core: Implementation of brolit_project.json (intall, copy and restore).
-- [ ] Core: Refactor: croned tasks. Maybe should run the runner with flags.
 - [ ] Core: Create warning if multiple WP installation found on backup to restore.
-- [ ] Core: Docker support: installer, create nginx proxy for dockerized projects, backup, restore, delete, list containers, status.
 - [ ] Restore: Refactor function restore_config_files_from_dropbox.
 - [ ] Nginx: Multidomain support for nginx.
 - [ ] MySQL: Rename database (with and without WP).
 - [ ] PHP: php_reconfigure maybe PHP config files need to have specific version template.
 - [ ] Nginx: Better nginx config. 
         Ref https://www.digitalocean.com/community/tools/nginx
-
-## For release 3.5
-
-- [ ] MySQL: Optimization script.
-- [ ] Core: Extend ufw support.
-- [ ] Core: Extend fail2ban support.
-- [ ] Core: Git deployment support.
-- [ ] Core: Prevent execute the script more than once at a time.
-- [ ] Core: IPv6 support for nginx, certbot and cloudflare helpers.
-        https://geekflare.com/es/enable-ipv6-nginx-apache/
 - [ ] Core: Create a way to check if nginx, php, and mysql are configured with the script recommendations.
-- [ ] Core: Docker support (deploy, backup, restore, delete, list containers, status).
+- [ ] Core: Docker support (create project from backup).
         https://github.com/urre/wordpress-nginx-docker-compose
         https://serverfault.com/questions/1009841/backup-of-dockerized-wordpress
 - [ ] Core: Add support to create projects with a database on different server.
         https://www.digitalocean.com/community/tutorials/automating-the-deployment-of-a-scalable-wordpress-site
         https://spinupwp.com/scaling-wordpress-dedicated-database-server/
-- [ ] Core: Make new standard directory structure for projects "${PROJECTS_PATH}/${SUBDOMAIN}/public". ?
-      Logs could be stored on "${PROJECTS_PATH}/${SUBDOMAIN}/log"
-- [ ] Core: node.js support (installer, project creation, project backup/restore).
 - [ ] Core: maybe with could ask for database user nomenclature. Today is "PROJECTNAME_user" and it could be "PROJECTNAME_PROJECTSTATE_user".
 - [ ] Backups: On backup failure, the email must show what files fails and what files are correct backuped.
 - [ ] Backups: Implement on restore_from_backup easy way to restore all sites.
@@ -96,14 +79,19 @@
 - [ ] SFTP: option to create SFTP user when create a new project.
 - [ ] SFTP: Option to create a user jail on sftp_create_user.
         Important:https://www.electricmonk.nl/log/2015/07/13/ssh-chrootdirectory-sftponly-not-working-fixed/
-- [ ] Core: Add react-project support:
-        https://www.digitalocean.com/community/tutorials/how-to-deploy-a-react-application-with-nginx-on-ubuntu-20-04
-- [ ] Security: Option to auto-install security updates on Ubuntu: 
-        https://help.ubuntu.com/lts/serverguide/automatic-updates.html
 
 ## For release 3.6
 
-- [ ] Core: Add an option to backup/restore an entired server. Add a server offline structure on backup storage.
+- [ ] Core: Add react-project support.
+- [ ] Core: Extend ufw support.
+- [ ] Core: Extend fail2ban support.
+- [ ] Core: Git deployment support.
+- [ ] Core: Prevent execute the script more than once at a time.
+- [ ] Core: More performance improvements.
+- [ ] Core: Refactor: croned tasks. Maybe should run the runner with flags.
+- [ ] Core: Add an option to backup/restore an entired server.
+- [ ] Core: IPv6 support for nginx, certbot and cloudflare helpers.
+        https://geekflare.com/es/enable-ipv6-nginx-apache/
 - [ ] WordPress: Fallback for replace strings on wp database (if wp-cli fails, use old script version).
 - [ ] Installers: Refactor of WORDPRESS_INSTALLER - COPY_FROM_PROJECT
         The idea is that you could create/copy/delete/update different kind of projects (WP, Laravel, React, Composer, Empty)
@@ -111,14 +99,11 @@
 - [ ] Installers: COPY_FROM_PROJECT option to exclude uploads directory
         rsync -ax --exclude [relative path to directory to exclude] /path/from /path/to
 - [ ] Server Optimization: Complete the pdf optimization process.
-- [ ] Woocommerce support: https://github.com/woocommerce/woocommerce/wiki/WC-CLI-Commands
-- [ ] Buddypress support: https://github.com/buddypress/wp-cli-buddypress
-- [ ] IT Utils: Control of mounted partitions or directories.
-- [ ] IT Utils: Better malware detection with https://github.com/rfxn/linux-malware-detect
-- [ ] Addon: Fileover support with hetzner? https://community.hetzner.com/tutorials/failover-script
 
 ## For release 3.7
 
+- [ ] Core: Make new standard directory structure for projects "${PROJECTS_PATH}/${SUBDOMAIN}/public". Logs could be stored on "${PROJECTS_PATH}/${SUBDOMAIN}/log"
+- [ ] MySQL: Optimization script.
 - [ ] Backups: S3 storage support.
 - [ ] Backups: Expand Duplicity support with a restore option.
 - [ ] Backups: Rsync support on mounted device or with SSH config.
@@ -139,3 +124,10 @@
 - [ ] Core: Accept command via Telegram: https://github.com/topkecleon/telegram-bot-bash
 - [ ] Nginx: bad bot blocker.
       https://github.com/mitchellkrogza/nginx-ultimate-bad-bot-blocker
+- [ ] Security: Option to auto-install security updates on Ubuntu: 
+        https://help.ubuntu.com/lts/serverguide/automatic-updates.html
+- [ ] Woocommerce support: https://github.com/woocommerce/woocommerce/wiki/WC-CLI-Commands
+- [ ] Buddypress support: https://github.com/buddypress/wp-cli-buddypress
+- [ ] IT Utils: Control of mounted partitions or directories.
+- [ ] IT Utils: Better malware detection with https://github.com/rfxn/linux-malware-detect
+- [ ] Addon: Fileover support with hetzner? https://community.hetzner.com/tutorials/failover-script
