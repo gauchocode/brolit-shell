@@ -243,8 +243,6 @@ function menu_security_wordfencecli_scan() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-      log_event "info" "Starting wordfence-cli malware scan on: ${to_scan}" "false"
-
       wordfencecli_malware_scan "${to_scan}" "${include_all_files}"
 
     fi
