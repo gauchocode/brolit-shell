@@ -59,7 +59,9 @@ function borg_installer() {
     # Installing borg
     display --indent 6 --text "- Installing borg and dependencies"
 
-    package_install  "borgbackup"
+    package_install "borgbackup"
+    package_install "pipx"
+    borgmatic_installer
 
     exitstatus=$?
 
@@ -96,6 +98,8 @@ function borg_purge() {
     log_subsection "Borg Uninstaller"
 
     package_purge "borgbackup"
+    sudo pipx uninstall borgmatic
+    package_purge "pipx"
 
     return $?
 }
@@ -153,5 +157,45 @@ function borg_installer_menu() {
 
         fi
 
+    fi
+}
+
+##############################################################################
+# Install borgmatic.
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if borg was installed, 1 on error.
+##############################################################################
+
+function borgmatic_installer() {
+
+    display --indent 6 --text "- Updating repositories"
+
+    # Update repositories
+    sudo pipx install borgmatic > /dev/null 2>&1
+
+    if [[ $exitstatus -eq 0 ]]; then
+
+        # Log
+        clear_previous_lines "1"
+        log_event "info" "Borgmatic installed" "false"
+        display --indent 6 --text "- Installing borgmatic" --result "DONE" --color GREEN
+        pipx ensurepath >/dev/null
+        return 0
+    
+    else
+
+        # Log   
+        clear_previous_lines "1"
+        log_event "info" "Borgmatic not installed" "false"
+        display --indent 6 --text "- Installing borgmatic" --result "FAILED" --color RED
+        display --indent 8 --text "Read the log file for more information" --tcolor RED
+        log_event "error" "Borgmatic not installed" "false"
+
+        return 1
+    
     fi
 }
