@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.4
+# Version: 3.3.5
 ################################################################################
 #
 # Ref: https://github.com/wordfence/wordfence-cli
@@ -10,6 +10,21 @@
 _security_tasks() {
 
   log_section "Security Tasks"
+
+  # Wordfence-cli Scan
+  wordfencecli_scan_result="$(wordfencecli_malware_scan "${PROJECTS_PATH}" "true")"
+
+  if [[ ${wordfencecli_scan_result} == "true" ]]; then
+
+    log_event "info" "Wordfence-cli found malware files! Please check result file." "false"
+
+    send_notification "⚠️ ${SERVER_NAME}" "Wordfence-cli found malware files! Please check result file on server." ""
+
+  else
+
+    log_event "info" "Wordfence-cli has not found malware files" "false"
+
+  fi
 
   # Clamav Scan
   clamscan_result="$(security_clamav_scan "${PROJECTS_PATH}")"
