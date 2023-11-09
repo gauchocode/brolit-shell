@@ -19,28 +19,38 @@
 
 function wordfencecli_installer () {
 
-  log_subsection "Wordfence-cli Installer"
+  # Check if wordfence-cli:latest not exists
+  if [[ "$(docker images -q wordfence-cli:latest 2> /dev/null)" == "" ]]; then
 
-  # Dependencies
-  package_install_if_not "git"
-  package_install_if_not "docker"
+    # Dependencies
+    package_install_if_not "git"
+    package_install_if_not "docker"
 
-  # Download wordfence-cli
-  display --indent 6 --text "- Downloading Wordfence-cli"
-  log_event "debug" "Running: git clone git@github.com:wordfence/wordfence-cli.git /root/wordfence-cli" "false"
-  
-  git clone git@github.com:wordfence/wordfence-cli.git /root/wordfence-cli
-  
-  clear_previous_lines "2"
-  display --indent 6 --text "- Downloading Wordfence-cli" --result "DONE" --color GREEN
+    log_subsection "Wordfence-cli Installer"
 
-  # Docker build
-  docker build -t wordfence-cli:latest /root/wordfence-cli
+    # Download wordfence-cli
+    display --indent 6 --text "- Downloading Wordfence-cli"
+    log_event "debug" "Running: git clone git@github.com:wordfence/wordfence-cli.git /root/wordfence-cli" "false"
+    
+    git clone git@github.com:wordfence/wordfence-cli.git /root/wordfence-cli
+    
+    clear_previous_lines "2"
+    display --indent 6 --text "- Downloading Wordfence-cli" --result "DONE" --color GREEN
 
-  # Log
-  log_event "info" "Wordfence-cli installer finished" "false"
-  display --indent 6 --text "- Installing Wordfence-cli" --result "DONE" --color GREEN
-  #log_break
+    # Docker build
+    docker build -t wordfence-cli:latest /root/wordfence-cli
+
+    # Log
+    log_event "info" "Wordfence-cli installer finished" "false"
+    display --indent 6 --text "- Installing Wordfence-cli" --result "DONE" --color GREEN
+    #log_break
+
+  else
+
+    # Update
+    wordfencecli_updater
+
+  fi
 
 }
 
