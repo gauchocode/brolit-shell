@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.4
+# Version: 3.3.5
 ################################################################################
 #
 # Backup/Restore Helper: Backup and restore funtions.
@@ -1385,7 +1385,7 @@ function restore_project_backup() {
   if [[ ${project_install_type} == "docker"* ]]; then
 
     # Check if docker and docker-compose are installed
-    package_is_installed "docker.io" || package_is_installed "docker"
+    package_is_installed "docker-ce"
     [[ $? -eq 1 ]] && return 1
 
     # TODO: Update .env values (PORTS, COMPOSE_PROJECT_NAME, PROJECT_NAME, PROJECT_DOMAIN, SHH_MASTER_USER, SSH_MASTER_PASS)

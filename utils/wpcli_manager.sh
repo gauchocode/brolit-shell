@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.4
+# Version: 3.3.5
 ################################################################################
 #
 # WP-CLI Manager: WP-CLI functions manager.
@@ -109,75 +109,12 @@ function wpcli_manager() {
 
 }
 
-function wpcli_delete_plugins_menu() {
-
-  local wp_site="${1}"
-
-  local wp_del_plugins
-  local chosen_del_plugin_option
-
-  # Listing installed plugins
-  wp_del_plugins="$(wp --path="${wp_site}" plugin list --quiet --field=name --status=inactive --allow-root)"
-
-  # Log
-  log_event "debug" "Running: wp --path=${wp_site} plugin list --quiet --field=name --status=inactive --allow-root" "false"
-  log_event "debug" "wp_del_plugins=${wp_del_plugins}" "false"
-
-  # Convert to checklist
-
-  array_to_checklist "${wp_del_plugins}"
-  chosen_del_plugin_option="$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to delete:" 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)"
-
-  log_subsection "WP Delete Plugins"
-
-  for plugin_del in ${chosen_del_plugin_option}; do
-
-    plugin_del=$(sed -e 's/^"//' -e 's/"$//' <<<${plugin_del}) #needed to ommit double quotes
-
-    wpcli_plugin_delete "${wp_site}" "${plugin_del}"
-
-  done
-
-}
-
-function wpcli_delete_themes_menu() {
-
-  local wp_site="${1}"
-  local install_type="${2}"
-
-  local wpcli_cmd
-  local wp_del_themes
-  local chosen_del_theme_option
-
-  # Check project_install_type
-  [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-  [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
-
-  # Listing installed themes
-  wp_del_themes="$(${wpcli_cmd} theme list --quiet --field=name --status=inactive --allow-root)"
-
-  # Log
-  log_event "debug" "Running: ${wpcli_cmd} theme list --quiet --field=name --status=inactive --allow-root" "false"
-  log_event "debug" "wp_del_themes=${wp_del_themes}" "false"
-
-  # Convert to checklist
-  array_to_checklist "${wp_del_themes}"
-  chosen_del_theme_option="$(whiptail --title "Theme Selection" --checklist "Select the themes you want to delete." 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)"
-
-  log_subsection "WP Delete Themes"
-
-  for theme_del in ${chosen_del_theme_option}; do
-    theme_del=$(sed -e 's/^"//' -e 's/"$//' <<<${theme_del}) #need to ommit double quotes
-    wpcli_theme_delete "${wp_site}" "${install_type}" "${theme_del}"
-  done
-
-}
-
 ################################################################################
 # Main menu for wpcli functions
 #
 # Arguments:
 #   ${1} = ${wp_site}
+#   ${2} = ${project_install_type}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -386,9 +323,112 @@ function wpcli_main_menu() {
 
 }
 
+################################################################################
+# wpcli delete plugins menu
+#
+# Arguments:
+#  ${1} = ${wp_site}
+#  ${2} = ${install_type}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function wpcli_delete_plugins_menu() {
+
+  local wp_site="${1}"
+  local install_type="${2}"
+
+  local wp_del_plugins
+  local chosen_del_plugin_option
+
+  # Check project_install_type
+  [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+  [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
+
+  # Listing installed plugins
+  wp_del_plugins="$(${wpcli_cmd} --path="${wp_site}" plugin list --quiet --field=name --status=inactive --allow-root)"
+
+  # Log
+  log_event "debug" "Running: wp --path=${wp_site} plugin list --quiet --field=name --status=inactive --allow-root" "false"
+  log_event "debug" "wp_del_plugins=${wp_del_plugins}" "false"
+
+  # Convert to checklist
+
+  array_to_checklist "${wp_del_plugins}"
+  chosen_del_plugin_option="$(whiptail --title "Plugin Selection" --checklist "Select the plugins you want to delete:" 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)"
+
+  log_subsection "WP Delete Plugins"
+
+  for plugin_del in ${chosen_del_plugin_option}; do
+
+    plugin_del=$(sed -e 's/^"//' -e 's/"$//' <<<${plugin_del}) #needed to ommit double quotes
+
+    wpcli_plugin_delete "${wp_site}" "${plugin_del}"
+
+  done
+
+}
+
+################################################################################
+# wpcli delete themes menu
+#
+# Arguments:
+#  ${1} = ${wp_site}
+#  ${2} = ${install_type}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function wpcli_delete_themes_menu() {
+
+  local wp_site="${1}"
+  local install_type="${2}"
+
+  local wpcli_cmd
+  local wp_del_themes
+  local chosen_del_theme_option
+
+  # Check project_install_type
+  [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+  [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
+
+  # Listing installed themes
+  wp_del_themes="$(${wpcli_cmd} theme list --quiet --field=name --status=inactive --allow-root)"
+
+  # Log
+  log_event "debug" "Running: ${wpcli_cmd} theme list --quiet --field=name --status=inactive --allow-root" "false"
+  log_event "debug" "wp_del_themes=${wp_del_themes}" "false"
+
+  # Convert to checklist
+  array_to_checklist "${wp_del_themes}"
+  chosen_del_theme_option="$(whiptail --title "Theme Selection" --checklist "Select the themes you want to delete." 20 78 15 "${checklist_array[@]}" 3>&1 1>&2 2>&3)"
+
+  log_subsection "WP Delete Themes"
+
+  for theme_del in ${chosen_del_theme_option}; do
+    theme_del=$(sed -e 's/^"//' -e 's/"$//' <<<${theme_del}) #need to ommit double quotes
+    wpcli_theme_delete "${wp_site}" "${install_type}" "${theme_del}"
+  done
+
+}
+
+################################################################################
+# wpcli profiler menu
+#
+# Arguments:
+#  ${1} = ${wp_site}
+#  ${2} = ${install_type}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function wpcli_profiler_menu() {
 
   local wp_site="${1}"
+  local install_type="${2}"
 
   local is_installed
   local profiler_options
@@ -396,10 +436,15 @@ function wpcli_profiler_menu() {
 
   log_subsection "WP Profile"
 
+  # Check project_install_type
+  [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+  [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
+
+
   is_installed="$(wpcli_check_if_package_is_installed "profile-command")"
   if [[ ${is_installed} == "true" ]]; then
     #https://guides.wp-bullet.com/using-wp-cli-wp-profile-to-diagnose-wordpress-performance-issues/
-    wp package install wp-cli/profile-command:@stable --allow-root
+    ${wpcli_cmd} package install wp-cli/profile-command:@stable --allow-root
   fi
 
   profiler_options=(
@@ -416,33 +461,33 @@ function wpcli_profiler_menu() {
 
     if [[ ${chosen_profiler_option} == *"01"* ]]; then
       #This command shows the stages of loading WordPress
-      log_event "info" "Executing: wp --path=${wp_site} profile stage --allow-root" "false"
-      wp --path="${wp_site}" profile stage --allow-root
+      log_event "info" "Executing: ${wpcli_cmd} --path=${wp_site} profile stage --allow-root" "false"
+      ${wpcli_cmd} --path="${wp_site}" profile stage --allow-root
 
     fi
     if [[ ${chosen_profiler_option} == *"02"* ]]; then
       #Can drill down into each stage, here we drill down into the bootstrap stage
-      log_event "info" "Executing: wp --path=${wp_site} profile stage bootstrap --allow-root" "false"
-      wp --path="${wp_site}" profile stage bootstrap --allow-root
+      log_event "info" "Executing: ${wpcli_cmd} --path=${wp_site} profile stage bootstrap --allow-root" "false"
+      ${wpcli_cmd} --path="${wp_site}" profile stage bootstrap --allow-root
 
     fi
     if [[ ${chosen_profiler_option} == *"03"* ]]; then
       #All stage
       #You can also use the --spotlight flag to filter out zero-like values for easier reading
-      log_event "info" "Executing: wp --path=${wp_site} profile stage --all --spotlight --orderby=time --allow-root" "false"
-      wp --path="${wp_site}" profile stage --all --spotlight --orderby=time --allow-root
+      log_event "info" "Executing: ${wpcli_cmd} --path=${wp_site} profile stage --all --spotlight --orderby=time --allow-root" "false"
+      ${wpcli_cmd} --path="${wp_site}" profile stage --all --spotlight --orderby=time --allow-root
 
     fi
     if [[ ${chosen_profiler_option} == *"04"* ]]; then
       #Here we dig into the wp hook
-      log_event "info" "Executing: wp --path=${wp_site} profile hook wp --allow-root" "false"
-      wp --path="${wp_site}" profile hook wp --allow-root
+      log_event "info" "Executing: ${wpcli_cmd} --path=${wp_site} profile hook wp --allow-root" "false"
+      ${wpcli_cmd} --path="${wp_site}" profile hook wp --allow-root
 
     fi
     if [[ ${chosen_profiler_option} == *"05"* ]]; then
       #Here we dig into the wp hook
-      log_event "info" "Executing: wp --path=${wp_site} profile hook --all --spotlight --allow-root" "false"
-      wp --path="${wp_site}" profile hook --all --spotlight --allow-root
+      log_event "info" "Executing: ${wpcli_cmd} --path=${wp_site} profile hook --all --spotlight --allow-root" "false"
+      ${wpcli_cmd} --path="${wp_site}" profile hook --all --spotlight --allow-root
 
     fi
 

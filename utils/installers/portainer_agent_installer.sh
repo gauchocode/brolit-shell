@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.4
+# Version: 3.3.5
 ################################################################################
 #
 # Portainer Agent Installer
@@ -26,12 +26,11 @@ function portainer_agent_installer() {
 
     package_update
 
-    # Check if docker or docker.io package are installed
-    docker="$(package_is_installed "docker" || package_is_installed "docker.io")"
+    # Check if docker package are installed
+    docker="$(package_is_installed "docker-ce")"
     docker_installed="$?"
     if [[ ${docker_installed} -eq 1 ]]; then
-        package_install "docker.io"
-        package_install "docker-compose"
+        docker_installer
     fi
 
     # Force update brolit_conf.json

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.4
+# Version: 3.3.5
 ################################################################################
 #
 # Server Setup: Perform server setup actions.
@@ -213,17 +213,18 @@ function server_app_setup() {
     "docker")
 
         if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then
-            log_subsection "Docker Installer"
-            # Check if docker or docker.io package are installed
-            docker="$(package_is_installed "docker" || package_is_installed "docker.io")"
+            # Check if docker package are installed
+            package_is_installed "docker-ce"
             docker_installed="$?"
             if [[ ${docker_installed} -eq 1 ]]; then
-                package_install "docker.io"
-                package_install "docker-compose"
+                # Remove old docker packages
+                docker_purge
+                # Install docker
+                docker_installer
             fi
         else
-            package_purge "docker.io"
-            package_purge "docker-compose"
+            # Purge docker packages
+            docker_purge
         fi
 
         ;;

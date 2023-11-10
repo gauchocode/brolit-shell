@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.4
+# Version: 3.3.5
 ################################################################################
 #
 # Project Manager: Perform project actions.
@@ -130,7 +130,6 @@ function project_manager_menu_new_project_type_utils() {
     "05)" "RENAME DATABASE"
     "06)" "PUT PROJECT ONLINE"
     "07)" "PUT PROJECT OFFLINE"
-    "08)" "BENCH PROJECT GTMETRIX"
   )
 
   chosen_project_utils_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_utils_options[@]}" 3>&1 1>&2 2>&3)"
@@ -262,33 +261,6 @@ function project_manager_menu_new_project_type_utils() {
 
     # PUT PROJECT OFFLINE
     [[ ${chosen_project_utils_options} == *"07"* ]] && project_change_status "offline"
-
-    # BENCH PROJECT GTMETRIX
-    if [[ ${chosen_project_utils_options} == *"08"* ]]; then
-
-      URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
-
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        log_section "GTMETRIX"
-
-        display --indent 2 --text "- Testing project ${URL_TO_TEST}"
-
-        # shellcheck source=${BROLIT_MAIN_DIR}/tools/third-party/google-insights-api-tools/gitools_v5.sh
-        gtmetrix_result="$("${BROLIT_MAIN_DIR}/tools/third-party/google-insights-api-tools/gitools_v5.sh" gtmetrix "${URL_TO_TEST}")"
-
-        gtmetrix_results_url="$(echo "${gtmetrix_result}" | grep -Po '(?<=Report:)[^"]*' | head -1 | cut -d " " -f 2)"
-
-        clear_previous_lines "1"
-        display --indent 2 --text "- Testing project ${URL_TO_TEST}" --result DONE --color GREEN
-        display --indent 4 --text "Please check results on:"
-        display --indent 4 --text "${gtmetrix_results_url}" --tcolor MAGENTA
-        log_event "info" "gtmetrix_result: ${gtmetrix_result}" "false"
-
-      fi
-
-    fi
 
     prompt_return_or_finish
     project_manager_menu_new_project_type_utils

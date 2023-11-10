@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.4
+# Version: 3.3.5
 ################################################################################
 #
 # Storage Controller: Controller to upload and download backups.
@@ -14,11 +14,6 @@
 #
 #   Backup Uploader:
 #       Simple way to upload backup file to this cloud service.
-#
-#   Rclone:
-#       Good way to store backups on a SFTP Server and cloud services.
-#       Option to "sync" files.
-#       Read: https://forum.rclone.org/t/incremental-backups-and-efficiency-continued/10763
 #
 #   Duplicity:
 #       Best way to backup projects of 10GBs+. Incremental backups.
@@ -234,12 +229,6 @@ function storage_download_backup() {
         [[ $? -eq 1 ]] && error_type="dropbox" && got_error=1
 
     fi
-    if [[ ${BACKUP_RCLONE_STATUS} == "enabled" ]]; then
-
-        rclone_download "${file_to_download}" "${remote_directory}"
-        [[ $? -eq 1 ]] && error_type="rsync" && got_error=1
-
-    fi
 
     [[ ${error_type} != "none" ]] && echo "${error_type}"
 
@@ -253,12 +242,15 @@ function storage_download_backup() {
 #   ${1} = {file_to_delete}
 #
 # Outputs:
-#   0 if it utils were installed, 1 on error.
+#   0 on success, 1 on error.
 ################################################################################
 
 function storage_delete_backup() {
 
     local file_to_delete="${1}"
+    #local force_delete="${2}" # or should be a global var?
+
+    local force_delete="true"
 
     local got_error=0
     #local error_msg="none"
@@ -266,7 +258,7 @@ function storage_delete_backup() {
 
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
-        dropbox_delete "${file_to_delete}" "false"
+        dropbox_delete "${file_to_delete}" "${force_delete}"
         [[ $? -eq 1 ]] && error_type="dropbox" && got_error=1
 
     fi
@@ -281,6 +273,98 @@ function storage_delete_backup() {
     [[ ${error_type} != "none" ]] && echo "${error_type}"
 
     return ${got_error}
+
+}
+
+################################################################################
+# Delete old backups on configured storage (dropbox, sftp, etc)
+#
+# Arguments:
+#   ${1} = {storage_path}
+#
+# Outputs:
+#   0 on success, 1 on error.
+################################################################################
+
+function storage_delete_old_backups() {
+
+    local storage_path="${1}"
+
+    # Configuration for backup retention
+    local keep_daily=${BACKUP_RETENTION_KEEP_DAILY}
+    local keep_weekly=${BACKUP_RETENTION_KEEP_WEEKLY}
+    local keep_monthly=${BACKUP_RETENTION_KEEP_MONTHLY}
+
+    # List all storage backups
+    backup_list="$(storage_list_dir "${storage_path}")"
+
+    # Delete old storage backups
+    ## Transform backup_list into comma separated list
+    backup_list="$(echo "${backup_list}" | tr '\n' ',')"
+
+    # Log
+    log_event "info" "Preparing to delete old backups" "false"
+    display --indent 6 --text "- Preparing to delete old backups" --result "DONE" --color GREEN
+
+    # Convert the string to an array
+    IFS=',' read -ra filenames <<<"$backup_list"
+
+    # Arrays to hold various types of backups
+    declare -a daily_backups
+    declare -a weekly_backups
+    declare -a monthly_backups
+
+    # Categorize backups into daily, weekly, and monthly
+    for i in "${filenames[@]}"; do
+        if [[ $i == *"-weekly"* ]]; then
+            weekly_backups+=("$i")
+        elif [[ $i == *"-monthly"* ]]; then
+            monthly_backups+=("$i")
+        else
+            daily_backups+=("$i")
+        fi
+    done
+
+    # Sort the arrays
+    sorted_daily=($(printf '%s\n' "${daily_backups[@]}" | sort -r))
+    sorted_weekly=($(printf '%s\n' "${weekly_backups[@]}" | sort -r))
+    sorted_monthly=($(printf '%s\n' "${monthly_backups[@]}" | sort -r))
+
+    # Log
+    log_event "debug" "Daily backups: ${sorted_daily[@]}" "false"
+    log_event "debug" "Weekly backups: ${sorted_weekly[@]}" "false"
+    log_event "debug" "Monthly backups: ${sorted_monthly[@]}" "false"
+
+    # Log
+    display --indent 6 --text "- Deleting old files from Dropbox"
+
+    # Delete old daily backups
+    if [ ${#sorted_daily[@]} -gt $keep_daily ]; then
+        to_delete_daily=("${sorted_daily[@]:$keep_daily}")
+        for i in "${to_delete_daily[@]}"; do
+            storage_delete_backup "${storage_path}/${i}"
+        done
+    fi
+
+    # Delete old weekly backups
+    if [ ${#sorted_weekly[@]} -gt $keep_weekly ]; then
+        to_delete_weekly=("${sorted_weekly[@]:$keep_weekly}")
+        for i in "${to_delete_weekly[@]}"; do
+            storage_delete_backup "${storage_path}/${i}"
+        done
+    fi
+
+    # Delete old monthly backups
+    if [ ${#sorted_monthly[@]} -gt $keep_monthly ]; then
+        to_delete_monthly=("${sorted_monthly[@]:$keep_monthly}")
+        for i in "${to_delete_monthly[@]}"; do
+            storage_delete_backup "${storage_path}/${i}"
+        done
+    fi
+
+    # Log
+    clear_previous_lines "1"
+    display --indent 6 --text "- Deleting old files from Dropbox" --result "DONE" --color GREEN
 
 }
 
@@ -472,7 +556,7 @@ function storage_backup_selection() {
 
         echo "${chosen_backup_file}"
 
-     else
+    else
 
         display --indent 6 --text "- Selecting Project Backup" --result "SKIPPED" --color YELLOW
         return 1
