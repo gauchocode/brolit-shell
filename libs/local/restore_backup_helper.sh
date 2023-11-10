@@ -1385,7 +1385,7 @@ function restore_project_backup() {
   if [[ ${project_install_type} == "docker"* ]]; then
 
     # Check if docker and docker-compose are installed
-    package_is_installed "docker"
+    package_is_installed "docker-ce"
     [[ $? -eq 1 ]] && return 1
 
     # TODO: Update .env values (PORTS, COMPOSE_PROJECT_NAME, PROJECT_NAME, PROJECT_DOMAIN, SHH_MASTER_USER, SSH_MASTER_PASS)

@@ -27,7 +27,7 @@ function portainer_installer() {
     package_update
 
     # Check if docker package are installed
-    docker="$(package_is_installed "docker")"
+    docker="$(package_is_installed "docker-ce")"
     docker_installed="$?"
     if [[ ${docker_installed} -eq 1 ]]; then
         docker_installer
