@@ -334,12 +334,7 @@
         ],
         "docker": [
             {
-                "status": "disabled",
-                "compose": [
-                    {
-                        "status": "enabled"
-                    }
-                ]
+                "status": "disabled"
             }
         ],
         "borg": [

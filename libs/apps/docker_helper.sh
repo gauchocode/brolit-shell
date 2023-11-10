@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.4
+# Version: 3.3.5
 ################################################################################
 #
 # Docker Helper: Perform docker actions.
@@ -23,7 +23,7 @@ function docker_version() {
     local docker_version
     local docker
 
-    docker="$(package_is_installed "docker.io" || package_is_installed "docker")"
+    docker="$(package_is_installed "docker-ce")"
     if [[ -n ${docker} ]]; then
 
         docker_version="$(docker version --format '{{.Server.Version}}')"
