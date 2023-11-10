@@ -203,14 +203,17 @@ function server_app_setup() {
     "docker")
 
         if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then
-            log_subsection "Docker Installer"
-            # Check if docker or docker.io package are installed
-            docker="$(package_is_installed "docker" || package_is_installed "docker.io")"
+            # Check if docker package are installed
+            package_is_installed "docker"
             docker_installed="$?"
             if [[ ${docker_installed} -eq 1 ]]; then
+                # Remove old docker packages
+                docker_purge
+                # Install docker
                 docker_installer
             fi
         else
+            # Purge docker packages
             docker_purge
         fi
 
