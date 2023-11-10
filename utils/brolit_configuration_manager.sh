@@ -1281,7 +1281,7 @@ function _brolit_configuration_load_netdata_agent() {
     if [[ ${PACKAGES_NETDATA_AGENT_STATUS} == "enabled" ]]; then
 
         # Check if docker package are installed
-        docker="$(package_is_installed "docker")"
+        docker="$(package_is_installed "docker-ce")"
         docker_installed="$?"
         if [[ ${docker_installed} -eq 0 ]]; then
             log_event "debug" "Docker installed on: ${docker}. Now checking if Netdata Agent image is present..." "false"
@@ -1358,7 +1358,7 @@ function _brolit_configuration_load_grafana() {
     if [[ ${PACKAGES_GRAFANA_STATUS} == "enabled" ]]; then
 
         # Check if docker package are installed
-        docker="$(package_is_installed "docker")"
+        docker="$(package_is_installed "docker-ce")"
         docker_installed="$?"
         if [[ ${docker_installed} -eq 0 ]]; then
             log_event "debug" "Docker installed on: ${docker}. Now checking if Grafana image is present..." "false"
@@ -1424,7 +1424,7 @@ function _brolit_configuration_load_loki() {
     if [[ ${PACKAGES_LOKI_STATUS} == "enabled" ]]; then
 
         # Check if docker or package are installed
-        docker="$(package_is_installed "docker")"
+        docker="$(package_is_installed "docker-ce")"
         docker_installed="$?"
         if [[ ${docker_installed} -eq 0 ]]; then
             log_event "debug" "Docker installed on: ${docker}. Now checking if Loki image is present..." "false"
@@ -1649,7 +1649,7 @@ function _brolit_configuration_load_docker() {
 
     # Docker
     # Check if docker package are installed
-    DOCKER="$(package_is_installed "docker")"
+    DOCKER="$(package_is_installed "docker-ce")"
     docker_installed="$?"
 
     if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then
@@ -1695,7 +1695,7 @@ function _brolit_configuration_load_portainer() {
     PACKAGES_PORTAINER_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].status")"
 
     # Check if docker package are installed
-    docker="$(package_is_installed "docker")"
+    docker="$(package_is_installed "docker-ce")"
     docker_installed="$?"
     if [[ ${docker_installed} -eq 0 ]]; then
         log_event "debug" "Docker installed on: ${docker}. Now checking if Portainer image is present..." "false"
@@ -1763,7 +1763,7 @@ function _brolit_configuration_load_portainer_agent() {
     PACKAGES_PORTAINER_AGENT_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.portainer_agent[].status")"
 
     # Check if docker package are installed
-    docker="$(package_is_installed "docker")"
+    docker="$(package_is_installed "docker-ce")"
     docker_installed="$?"
     if [[ ${docker_installed} -eq 0 ]]; then
         log_event "debug" "Docker installed on: ${docker}. Now checking if Portainer Agent image is present..." "false"

@@ -23,7 +23,7 @@ function docker_version() {
     local docker_version
     local docker
 
-    docker="$(package_is_installed "docker")"
+    docker="$(package_is_installed "docker-ce")"
     if [[ -n ${docker} ]]; then
 
         docker_version="$(docker version --format '{{.Server.Version}}')"
