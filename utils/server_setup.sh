@@ -204,7 +204,7 @@ function server_app_setup() {
 
         if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then
             # Check if docker package are installed
-            package_is_installed "docker"
+            package_is_installed "docker-ce"
             docker_installed="$?"
             if [[ ${docker_installed} -eq 1 ]]; then
                 # Remove old docker packages

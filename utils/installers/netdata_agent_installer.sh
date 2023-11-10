@@ -59,7 +59,7 @@ function _netdata_agent_required_packages() {
   package_update
 
   # Check if docker package are installed
-  docker="$(package_is_installed "docker")"
+  docker="$(package_is_installed "docker-ce")"
   docker_installed="$?"
   if [[ ${docker_installed} -eq 1 ]]; then
       docker_installer
@@ -210,7 +210,7 @@ function netdata_agent_installer() {
   package_update
 
   # Check if docker package are installed
-  docker="$(package_is_installed "docker")"
+  docker="$(package_is_installed "docker-ce")"
   docker_installed="$?"
   if [[ ${docker_installed} -eq 1 ]]; then
       docker_installer
