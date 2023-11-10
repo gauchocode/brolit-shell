@@ -208,12 +208,10 @@ function server_app_setup() {
             docker="$(package_is_installed "docker" || package_is_installed "docker.io")"
             docker_installed="$?"
             if [[ ${docker_installed} -eq 1 ]]; then
-                package_install "docker.io"
-                package_install "docker-compose"
+                docker_installer
             fi
         else
-            package_purge "docker.io"
-            package_purge "docker-compose"
+            docker_purge
         fi
 
         ;;

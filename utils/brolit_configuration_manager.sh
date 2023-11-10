@@ -1640,12 +1640,10 @@ function _brolit_configuration_load_docker() {
 
     local exitstatus
     local docker_installed
-    local docker_compose_installed
 
     # Globals
     declare -g DOCKER
     declare -g PACKAGES_DOCKER_STATUS
-    declare -g DOCKER_COMPOSE
 
     PACKAGES_DOCKER_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.docker[].status")"
 
@@ -1653,23 +1651,20 @@ function _brolit_configuration_load_docker() {
     # Check if docker or docker.io package are installed
     DOCKER="$(package_is_installed "docker" || package_is_installed "docker.io")"
     docker_installed="$?"
-    # Docker Compose
-    DOCKER_COMPOSE="$(package_is_installed "docker-compose")"
-    docker_compose_installed="$?"
 
     if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then
 
         # Checking if pkg is not installed
-        [[ ${docker_installed} -eq 1 || ${docker_compose_installed} -eq 1 ]] && pkg_config_changes_detected "docker" "true"
+        [[ ${docker_installed} -eq 1 ]] && pkg_config_changes_detected "docker" "true"
 
     else
 
         # Checking if pkg is installed
-        [[ ${docker_installed} -eq 0 || ${docker_compose_installed} -eq 0 ]] && pkg_config_changes_detected "docker" "true"
+        [[ ${docker_installed} -eq 0 ]] && pkg_config_changes_detected "docker" "true"
 
     fi
 
-    export DOCKER PACKAGES_DOCKER_STATUS DOCKER_COMPOSE
+    export DOCKER PACKAGES_DOCKER_STATUS
 
 }
 

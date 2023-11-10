@@ -77,17 +77,14 @@ function wordfencecli_updater () {
   log_event "debug" "Running: (cd /root/wordfence-cli && git pull)" "false"
   
   (cd /root/wordfence-cli && git pull)
-  
-  clear_previous_lines "2"
-  display --indent 6 --text "- Updating Wordfence-cli" --result "DONE" --color GREEN
 
   # Docker build (silent mode)
   docker build -t wordfence-cli:latest /root/wordfence-cli > /dev/null 2>&1
 
   # Log
+  clear_previous_lines "1"
   log_event "info" "Wordfence-cli update finished" "false"
   display --indent 6 --text "- Updating Wordfence-cli" --result "DONE" --color GREEN
-  #log_break
 
 }
 
