@@ -89,7 +89,7 @@ function wpcli_check_version() {
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
 
     wpcli_v="$(${wpcli_cmd} --info | grep "WP-CLI version:" | cut -d ':' -f2)"
 
@@ -263,7 +263,7 @@ function wpcli_install_needed_extensions() {
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="wp --allow-root"
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp --allow-root"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp --allow-root"
 
     # Rename DB Prefix
     ${wpcli_cmd} package install "iandunn/wp-cli-rename-db-prefix"
@@ -1397,7 +1397,7 @@ function wpcli_shuffle_salts() {
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
 
     log_event "debug" "Running: ${wpcli_cmd} config shuffle-salts" "false"
 
@@ -2309,7 +2309,7 @@ function wpcli_change_wp_seo_visibility() {
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose -f ${wp_site}/../docker-compose.yml run --rm wordpress-cli wp"
 
     log_event "debug" "Running: ${wpcli_cmd} option set blog_public ${visibility}" "false"
 
@@ -2888,9 +2888,9 @@ function wpcli_config_get() {
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
     ## Important!
     ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
-    ## --log-level CRITICAL option to avoid unwanted docker-compose output
+    ## --log-level CRITICAL option to avoid unwanted docker compose output
     ## --no-color added to avoid unwanted wp-cli output
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
 
     # wp-cli command
     wp_config="$(${wpcli_cmd} config get "${wp_config_option}")"
@@ -2939,9 +2939,9 @@ function wpcli_config_set() {
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
     ## Important!
     ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
-    ## --log-level CRITICAL option to avoid unwanted docker-compose output
+    ## --log-level CRITICAL option to avoid unwanted docker compose output
     ## --no-color added to avoid unwanted wp-cli output
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
 
     # wp-cli command
     wp_config="$(${wpcli_cmd} config set "${wp_config_option}")"
@@ -2991,9 +2991,9 @@ function wpcli_delete_comments() {
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
     ## Important!
     ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
-    ## --log-level CRITICAL option to avoid unwanted docker-compose output
+    ## --log-level CRITICAL option to avoid unwanted docker compose output
     ## --no-color added to avoid unwanted wp-cli output
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker-compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --log-level CRITICAL -f ${wp_site}/../docker-compose.yml run -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
 
     # List comments ids
     comments_ids="$(${wpcli_cmd} comment list --status="${wp_comment_status}" --format=ids)"

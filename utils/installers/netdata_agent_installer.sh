@@ -239,13 +239,9 @@ function netdata_agent_installer() {
     # Enable port in firewall
     firewall_allow "${PACKAGES_NETDATA_AGENT_CONFIG_PORT}"
 
-    # Run docker-compose pull on specific directory
-    docker-compose -f "${NETDATA_AGENT_PATH}/docker-compose.yml" pull
-
-    # Run docker-compose up -d on specific directory
-    docker-compose -f "${NETDATA_AGENT_PATH}/docker-compose.yml" up -d
-
-    clear_previous_lines "3"
+    # Run docker-compose
+    docker_compose_pull "${NETDATA_AGENT_PATH}/docker-compose.yml"
+    docker_compose_up "${NETDATA_AGENT_PATH}/docker-compose.yml"
 
     return 0
 
