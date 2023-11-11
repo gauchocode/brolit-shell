@@ -56,10 +56,8 @@ function portainer_agent_installer() {
         # Enable port in firewall
         firewall_allow "${PACKAGES_PORTAINER_AGENT_CONFIG_PORT}"
 
-        # Run docker-compose pull on specific directory
+        # Run docker-compose
         docker_compose_pull "${PORTAINER_AGENT_PATH}/docker-compose.yml"
-
-        # Run docker-compose up -d on specific directory
         docker_compose_up "${PORTAINER_AGENT_PATH}/docker-compose.yml"
 
         clear_previous_lines "3"

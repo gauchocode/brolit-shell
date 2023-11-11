@@ -39,38 +39,7 @@ function docker_version() {
 }
 
 ################################################################################
-# Get docker-compose version
-#
-# Arguments:
-#   none
-#
-# Outputs:
-#   ${docker_compose_version} if ok, 1 on error.
-################################################################################
-
-function docker_compose_version() {
-
-    local docker_compose_version
-    local docker_compose
-
-    docker_compose="$(package_is_installed "docker-compose")"
-    if [[ -n ${docker_compose} ]]; then
-
-        docker_compose_version="$(docker-compose --version | awk '{print $3}' | cut -d ',' -f1)"
-
-        echo "${docker_compose_version}"
-
-        return 0
-    else
-
-        return 1
-
-    fi
-
-}
-
-################################################################################
-# Execute a docker-compose pull
+# Execute a docker compose pull
 #
 # Arguments:
 #   ${1} - ${compose_file}
@@ -83,12 +52,12 @@ function docker_compose_pull() {
 
     local compose_file="${1}"
 
-    # Execute docker-compose command
+    # Execute docker compose command
     ## Options:
     ##    -f, --force   Don't ask to confirm removal
     ##    -s, --stop    Stop the containers, if required, before removing
     ##    -v            Remove any anonymous volumes attached to containers
-    docker-compose -f "${compose_file}" pull >/dev/null 2>&1
+    docker compose -f "${compose_file}" pull >/dev/null 2>&1
     exitstatus=$?
 
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -112,7 +81,7 @@ function docker_compose_pull() {
 }
 
 ################################################################################
-# Execute a docker-compose up
+# Execute a docker compose up
 #
 # Arguments:
 #   ${1} - ${compose_file}
@@ -129,10 +98,10 @@ function docker_compose_up() {
 
     # Log
     display --indent 6 --text "- Starting docker stack ..."
-    log_event "debug" "Running: docker-compose -f ${compose_file} up --detach" "false"
+    log_event "debug" "Running: docker compose -f ${compose_file} up --detach" "false"
 
-    # Execute docker-compose command
-    docker-compose -f "${compose_file}" up --detach >/dev/null 2>&1
+    # Execute docker compose command
+    docker compose -f "${compose_file}" up --detach >/dev/null 2>&1
     exitstatus=$?
 
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -158,7 +127,7 @@ function docker_compose_up() {
 }
 
 ################################################################################
-# Execute a docker-compose build
+# Execute a docker compose build
 #
 # Arguments:
 #   ${1} - ${compose_file}
@@ -175,17 +144,17 @@ function docker_compose_build() {
 
     # Log
     display --indent 6 --text "- Restoring docker stack ..."
-    log_event "debug" "Running: docker-compose -f ${compose_file} pull --quiet" "false"
+    log_event "debug" "Running: docker compose -f ${compose_file} pull --quiet" "false"
 
-    # Execute docker-compose command
-    docker-compose -f "${compose_file}" pull --quiet
+    # Execute docker compose command
+    docker compose -f "${compose_file}" pull --quiet
     [[ $? -eq 1 ]] && display --indent 6 --text "- Restoring docker stack ..." --result "FAIL" --color RED && return 1
 
     # Log
-    log_event "debug" "Running: docker-compose -f ${compose_file} up --detach --build" "false"
+    log_event "debug" "Running: docker compose -f ${compose_file} up --detach --build" "false"
 
-    # Execute docker-compose command
-    docker-compose -f "${compose_file}" up --detach --build >/dev/null 2>&1
+    # Execute docker compose command
+    docker compose -f "${compose_file}" up --detach --build >/dev/null 2>&1
     exitstatus=$?
 
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -211,7 +180,7 @@ function docker_compose_build() {
 }
 
 ################################################################################
-# Execute a docker-compose stop
+# Execute a docker compose stop
 #
 # Arguments:
 #   ${1} - ${compose_file}
@@ -223,13 +192,9 @@ function docker_compose_build() {
 function docker_compose_stop() {
 
     local compose_file="${1}"
+    local 
 
-    # Execute docker-compose command
-    ## Options:
-    ##    -f, --force   Don't ask to confirm removal
-    ##    -s, --stop    Stop the containers, if required, before removing
-    ##    -v            Remove any anonymous volumes attached to containers
-    docker-compose -f "${compose_file}" stop >/dev/null 2>&1
+    docker compose -f "${compose_file}" stop >/dev/null 2>&1
     exitstatus=$?
 
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -253,7 +218,7 @@ function docker_compose_stop() {
 }
 
 ################################################################################
-# Execute a docker-compose rm
+# Execute a docker compose rm
 #
 # Arguments:
 #   ${1} - ${compose_file}
@@ -262,15 +227,17 @@ function docker_compose_stop() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function docker_compose_delete() {
+function docker_compose_rm() {
 
     local compose_file="${1}"
 
-    # Execute docker-compose command
+    # Execute docker compose command
+    ## Options:
     ##    -f, --force   Don't ask to confirm removal
+    ##    -s, --stop    Stop the containers, if required, before removing
     ##    -v            Remove any anonymous volumes attached to containers
 
-    docker-compose -f "${compose_file}" rm --volumes --remove-orphans >/dev/null 2>&1
+    docker compose -f "${compose_file}" rm --force --volumes --remove-orphans >/dev/null 2>&1
     exitstatus=$?
 
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -629,7 +596,7 @@ function docker_restore_project() {
 
     fi
 
-    # Create new docker-compose stack for the ${project_domain} and ${project_type}
+    # Create new docker compose stack for the ${project_domain} and ${project_type}
     docker_project_install "${PROJECTS_PATH}" "${project_type}" "${project_domain}"
     exitstatus=$?
     [[ ${exitstatus} -eq 1 ]] && return 1
@@ -721,21 +688,20 @@ function docker_restore_project() {
         # Set restored $table_prefix on wp-config.php file
         sed -i "s/\$table_prefix = 'wp_'/\$table_prefix = '${database_prefix_to_restore}'/g" "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php"
        
-        # Execute docker-compose command
+        # Execute docker compose command
         ## Options:
         ##    -f, --force   Don't ask to confirm removal
         ##    -s, --stop    Stop the containers, if required, before removing
         ##    -v            Remove any anonymous volumes attached to containers
-        docker-compose -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" rm --force -v --stop
+        #docker compose -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" rm --force -v --stop
+        docker_compose_stop "${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
+        docker_compose_rm "${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
 
         # Pull
-        docker-compose -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" pull --quiet
-       
+        docker_compose_pull "${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
+
         # Rebuild docker image
-        docker-compose -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" up --detach
-       
-        # Clear screen output
-        clear_previous_lines "15"
+        docker_compose_build "${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
 
     fi
 
@@ -851,7 +817,7 @@ function docker_project_install() {
         # Create project directory
         mkdir -p "${project_path}"
 
-        # Copy docker-compose files
+        # Copy docker compose files
         copy_files "${BROLIT_MAIN_DIR}/config/docker-compose/wordpress/production-stack-proxy/" "${project_path}"
 
         # Download Wordpress on project directory
@@ -898,9 +864,11 @@ function docker_project_install() {
 
         local compose_file="${project_path}/docker-compose.yml"
 
-        # Execute docker-compose commands
-        docker-compose -f "${compose_file}" pull --quiet
-        docker-compose -f "${compose_file}" up --build --detach # Not quiet option. FRQ: https://github.com/docker/compose/issues/6026
+        # Execute docker compose commands
+        docker_compose_up "${compose_file}"
+        [[ $? -eq 1 ]] && return 1
+        docker_compose_build "${compose_file}"
+        [[ $? -eq 1 ]] && return 1
 
         # Check exitcode
         exitstatus=$?
@@ -981,7 +949,7 @@ define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
         # Create project directory
         mkdir -p "${project_path}"
 
-        # Copy docker-compose files
+        # Copy docker compose files
         copy_files "${BROLIT_MAIN_DIR}/config/docker-compose/php/production-stack-proxy/" "${project_path}"
 
         # Replace .env vars
@@ -1016,22 +984,19 @@ define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
 
         local compose_file="${project_path}/docker-compose.yml"
 
-        # Execute docker-compose commands
-        docker-compose -f "${compose_file}" pull --quiet
-        docker-compose -f "${compose_file}" up --detach # Not quiet option. FRQ: https://github.com/docker/compose/issues/6026
-
+        # Execute docker compose commands
+        docker_compose_pull "${compose_file}"
+        [[ $? -eq 1 ]] && return 1
+        docker_compose_up "${compose_file}"
         # Check exitcode
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
-
             # Log
-            #wait 2
             clear_previous_lines "7"
             log_event "info" "Downloading docker images" "false"
             log_event "info" "Building docker images" "false"
             display --indent 6 --text "- Downloading docker images" --result "DONE" --color GREEN
             display --indent 6 --text "- Building docker images" --result "DONE" --color GREEN
-
         fi
 
         ;;

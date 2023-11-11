@@ -1021,11 +1021,9 @@ function restore_backup_files() {
 
         # Stop containers
         docker_compose_stop "${destination_dir}/docker-compose.yml"
-        #clear_previous_lines "4"
 
         # Remove containers
-        docker_compose_delete "${destination_dir}/docker-compose.yml"
-        #clear_previous_lines "5"
+        docker_compose_rm "${destination_dir}/docker-compose.yml"
 
       fi
 
