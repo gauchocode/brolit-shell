@@ -2086,7 +2086,7 @@ function project_delete_files() {
         docker_compose_stop "${compose_file}"
         [[ $? -eq 1 ]] && return 1
 
-        docker_compose_delete "${compose_file}"
+        docker_compose_rm "${compose_file}"
         [[ $? -eq 1 ]] && return 1
 
       fi
