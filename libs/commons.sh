@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.5
+# Version: 3.3.6
 ################################################################################
 
 ################################################################################
@@ -55,7 +55,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.3.5"
+  declare -g SCRIPT_V="3.3.6"
 
   # Hostname
   declare -g SERVER_NAME="$HOSTNAME"
