@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.5
+# Version: 3.3.6
 ################################################################################
 #
 #   Ref: https://github.com/nodesource/distributions#debinstall
