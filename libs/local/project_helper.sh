@@ -2004,7 +2004,7 @@ function project_install() {
   [[ ${https_enable} == "true" ]] && project_site_url="https://${project_domain}" || project_site_url="http://${project_domain}"
 
   # Startup Script for WordPress installation
-  if [[ ${EXEC_TYPE} == "default" && ${project_type} == "wordpress" ]]; then
+  if [[ ${BROLIT_EXEC_TYPE} == "default" && ${project_type} == "wordpress" ]]; then
 
     wpcli_run_startup_script "${project_path}" "default" "${project_site_url}"
 
@@ -2326,6 +2326,17 @@ function project_delete() {
 
     # Delete Files
     project_delete_files "${project_domain}"
+    if [[ $? -eq 1 ]]; then
+      
+      # Log
+      display --indent 6 --text "- Deleting project files" --result "FAIL" --color RED
+      display --indent 8 --text "Please read the log file for more information:" --tcolor YELLOW
+      display --indent 8 --text "${BROLIT_LOG_FILE}" --tcolor YELLOW
+      log_event "error" "Project files deletion failed." "false"
+
+      return 1
+
+    fi
 
     # Delete nginx configuration file
     nginx_server_delete "${project_domain}"

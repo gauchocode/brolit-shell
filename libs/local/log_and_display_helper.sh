@@ -97,7 +97,7 @@ function _spinner() {
 
 function spinner_start() {
 
-  [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]] && return 0
+  [[ ${QUIET} == "true" || ${BROLIT_EXEC_TYPE} != "default" ]] && return 0
 
   _spinner "start" "${1}" &
 
@@ -119,7 +119,7 @@ function spinner_start() {
 
 function spinner_stop() {
 
-  [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]] && return 0
+  [[ ${QUIET} == "true" || ${BROLIT_EXEC_TYPE} != "default" ]] && return 0
 
   _spinner "stop" "${1}" "${_sp_pid}"
   unset _sp_pid
@@ -197,7 +197,7 @@ function _string_remove_color_chars() {
 }
 
 ################################################################################
-# Write on log file *.log (or *.json if ${EXEC_TYPE} == "external").
+# Write on log file *.log (or *.json if ${BROLIT_EXEC_TYPE} == "external").
 #
 # Arguments:
 #  ${1} = {log_type} (success, info, warning, error, critical)
@@ -224,11 +224,11 @@ function log_event() {
 
   # Do not log
   [[ ${DEBUG} == "false" && ${log_type} == "debug" ]] && return 0
-  [[ ${EXEC_TYPE} == "external" && -z ${log_type} ]] && return 0
-  [[ ${EXEC_TYPE} == "alias" ]] && return 0
+  [[ ${BROLIT_EXEC_TYPE} == "external" && -z ${log_type} ]] && return 0
+  [[ ${BROLIT_EXEC_TYPE} == "alias" ]] && return 0
 
   # If is a BROLIT UI exec
-  if [[ ${EXEC_TYPE} == "external" && -n ${log_type} ]]; then
+  if [[ ${BROLIT_EXEC_TYPE} == "external" && -n ${log_type} ]]; then
 
     inner=$(
       jq -n --arg time "$(_timestamp)" \
@@ -243,9 +243,9 @@ function log_event() {
     )
 
     if [[ ${status} == "1" ]]; then
-      echo "${final}]" >>"${LOG}"
+      echo "${final}]" >>"${BROLIT_LOG_FILE}"
     else
-      echo "${final}," >>"${LOG}"
+      echo "${final}," >>"${BROLIT_LOG_FILE}"
     fi
 
     return 0
@@ -255,49 +255,49 @@ function log_event() {
   case ${log_type} in
 
   success)
-    echo "$(_timestamp) > SUCCESS: ${message}" >>"${LOG}"
+    echo "$(_timestamp) > SUCCESS: ${message}" >>"${BROLIT_LOG_FILE}"
     if [[ ${console_display} == "true" && ${QUIET} != "true" ]]; then
       echo -e "${B_GREEN} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   info)
-    echo "$(_timestamp) > INFO: ${message}" >>"${LOG}"
+    echo "$(_timestamp) > INFO: ${message}" >>"${BROLIT_LOG_FILE}"
     if [[ ${console_display} == "true" && ${QUIET} != "true" ]]; then
       echo -e "${B_CYAN} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   warning)
-    echo "$(_timestamp) > WARNING: ${message}" >>"${LOG}"
+    echo "$(_timestamp) > WARNING: ${message}" >>"${BROLIT_LOG_FILE}"
     if [[ ${console_display} == "true" && ${QUIET} != "true" ]]; then
       echo -e "${YELLOW}${ITALIC} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   error)
-    echo "$(_timestamp) > ERROR: ${message}" >>"${LOG}"
+    echo "$(_timestamp) > ERROR: ${message}" >>"${BROLIT_LOG_FILE}"
     if [[ ${console_display} == "true" && ${QUIET} != "true" ]]; then
       echo -e "${RED} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   critical)
-    echo "$(_timestamp) > CRITICAL: ${message}" >>"${LOG}"
+    echo "$(_timestamp) > CRITICAL: ${message}" >>"${BROLIT_LOG_FILE}"
     if [[ ${console_display} == "true" && ${QUIET} != "true" ]]; then
       echo -e "${B_RED} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   debug)
-    echo "$(_timestamp) > DEBUG: ${message}" >>"${LOG}"
+    echo "$(_timestamp) > DEBUG: ${message}" >>"${BROLIT_LOG_FILE}"
     if [[ ${console_display} == "true" && ${QUIET} != "true" ]]; then
       echo -e "${B_MAGENTA} > ${message}${ENDCOLOR}" >&2
     fi
     ;;
 
   *)
-    echo "$(_timestamp) > ${message}" >>"${LOG}"
+    echo "$(_timestamp) > ${message}" >>"${BROLIT_LOG_FILE}"
     if [[ ${console_display} == "true" && ${QUIET} != "true" ]]; then
       echo -e "${CYAN}${B_DEFAULT} > ${message}${ENDCOLOR}" >&2
     fi
@@ -323,7 +323,7 @@ function log_break() {
 
   local log_break
 
-  [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]] && return 0
+  [[ ${QUIET} == "true" || ${BROLIT_EXEC_TYPE} != "default" ]] && return 0
 
   # Console Display
   if [[ ${console_display} == "true" ]]; then
@@ -333,7 +333,7 @@ function log_break() {
 
   # Write log file
   log_break="$(_timestamp) > ------------------------------------------------------------"
-  echo "${log_break}" >>"${LOG}"
+  echo "${log_break}" >>"${BROLIT_LOG_FILE}"
 
 }
 
@@ -351,7 +351,7 @@ function log_section() {
 
   local message="${1}"
 
-  [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]] && return 0
+  [[ ${QUIET} == "true" || ${BROLIT_EXEC_TYPE} != "default" ]] && return 0
 
   # Console Display
   echo "" >&2
@@ -360,9 +360,9 @@ function log_section() {
   echo "—————————————————————————————————————————————————————————" >&2
 
   # Write log file
-  echo "$(_timestamp) > ------------------------------------------------------------" >>"${LOG}"
-  echo "$(_timestamp) > [+] Performing Action: ${message}" >>"${LOG}"
-  echo "$(_timestamp) > ------------------------------------------------------------" >>"${LOG}"
+  echo "$(_timestamp) > ------------------------------------------------------------" >>"${BROLIT_LOG_FILE}"
+  echo "$(_timestamp) > [+] Performing Action: ${message}" >>"${BROLIT_LOG_FILE}"
+  echo "$(_timestamp) > ------------------------------------------------------------" >>"${BROLIT_LOG_FILE}"
 
 }
 
@@ -380,7 +380,7 @@ function log_subsection() {
 
   local message="${1}"
 
-  [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]] && return 0
+  [[ ${QUIET} == "true" || ${BROLIT_EXEC_TYPE} != "default" ]] && return 0
 
   # Console Display
   echo "" >&2
@@ -388,9 +388,9 @@ function log_subsection() {
   echo "    —————————————————————————————————————————————————————" >&2
 
   # Write log file
-  echo "$(_timestamp) > ------------------------------------------------------------" >>"${LOG}"
-  echo "$(_timestamp) > [·] ${message}" >>"${LOG}"
-  echo "$(_timestamp) > ------------------------------------------------------------" >>"${LOG}"
+  echo "$(_timestamp) > ------------------------------------------------------------" >>"${BROLIT_LOG_FILE}"
+  echo "$(_timestamp) > [·] ${message}" >>"${BROLIT_LOG_FILE}"
+  echo "$(_timestamp) > ------------------------------------------------------------" >>"${BROLIT_LOG_FILE}"
 
 }
 
@@ -406,7 +406,7 @@ function log_subsection() {
 
 function clear_screen() {
 
-  [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]] && return 0
+  [[ ${QUIET} == "true" || ${BROLIT_EXEC_TYPE} != "default" ]] && return 0
 
   # Console Display
   echo -en "\ec" >&2
@@ -427,7 +427,7 @@ function clear_previous_lines() {
 
   local lines="${1}"
 
-  [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]] && return 0
+  [[ ${QUIET} == "true" || ${BROLIT_EXEC_TYPE} != "default" ]] && return 0
 
   # Loop starting $lines going down to 0
   for ((i = lines; i > 0; i--)); do
@@ -462,7 +462,7 @@ function display() {
   COLOR=""
   SPACES=0
 
-  [[ ${QUIET} == "true" || ${EXEC_TYPE} != "default" ]] && return 0
+  [[ ${QUIET} == "true" || ${BROLIT_EXEC_TYPE} != "default" ]] && return 0
 
   while [ $# -ge 1 ]; do
 
