@@ -180,6 +180,8 @@ function server_app_setup() {
                 docker_purge
                 # Install docker
                 docker_installer
+                # Restart docker service
+                service docker restart
             fi
         else
             # Purge docker packages
