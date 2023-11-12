@@ -1287,11 +1287,13 @@ function _brolit_configuration_load_netdata_agent() {
             log_event "debug" "Docker installed on: ${docker}. Now checking if Netdata Agent image is present..." "false"
             NETDATA_AGENT="$(docker_get_container_id "agent_netdata")"
         else
-            # Netdata agent requires docker
-            die "In order to install Netdata Agent, docker and docker-compose must be installed."
+            if [[ ${CHECKPKGS} == "true" ]]; then
+                # Netdata agent requires docker
+                die "In order to install Netdata Agent, docker must be installed."
+            fi
         fi
 
-        [[ ${docker_installed} -eq 1 ]] && die "In order to install Netdata Agent, docker and docker-compose must be installed."
+        [[ ${docker_installed} -eq 1 ]] && die "In order to install Netdata Agent, docker must be installed."
 
         # Required
         PACKAGES_NETDATA_AGENT_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].version")"
@@ -1364,8 +1366,10 @@ function _brolit_configuration_load_grafana() {
             log_event "debug" "Docker installed on: ${docker}. Now checking if Grafana image is present..." "false"
             NETDATA_AGENT="$(docker_get_container_id "grafana")"
         else
-            # Grafana requires docker
-            die "In order to install Grafana, docker and docker-compose must be installed."
+            if [[ ${CHECKPKGS} == "true" ]]; then
+                # Grafana requires docker
+                die "In order to install Grafana, docker must be installed."
+            fi
         fi
 
         PACKAGES_GRAFANA_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].config[].subdomain")"
@@ -1428,10 +1432,12 @@ function _brolit_configuration_load_loki() {
         docker_installed="$?"
         if [[ ${docker_installed} -eq 0 ]]; then
             log_event "debug" "Docker installed on: ${docker}. Now checking if Loki image is present..." "false"
-            NETDATA_AGENT="$(docker_get_container_id "loki")"
+            LOKI="$(docker_get_container_id "loki")"
         else
-            # Loki requires docker
-            die "In order to install Loki, docker and docker-compose must be installed."
+            if [[ ${CHECKPKGS} == "true" ]]; then
+                # Loki requires docker
+                die "In order to install Loki, docker must be installed."
+            fi
         fi
 
         PACKAGES_LOKI_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.loki[].config[].subdomain")"
@@ -1704,7 +1710,11 @@ function _brolit_configuration_load_portainer() {
 
     if [[ ${PACKAGES_PORTAINER_STATUS} == "enabled" ]]; then
 
-        [[ ${docker_installed} -eq 1 ]] && die "In order to install Portainer, docker and docker-compose must be installed."
+        if [[ ${docker_installed} -eq 1 ]]; then
+            if [[ ${CHECKPKGS} == "true" ]]; then
+                die "In order to install Portainer, docker must be installed."
+            fi
+        fi
 
         PACKAGES_PORTAINER_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].config[].port")"
         PACKAGES_PORTAINER_CONFIG_NGINX="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].config[].nginx_proxy")"
@@ -1772,7 +1782,11 @@ function _brolit_configuration_load_portainer_agent() {
 
     if [[ ${PACKAGES_PORTAINER_AGENT_STATUS} == "enabled" ]]; then
 
-        [[ ${docker_installed} -eq 1 ]] && die "In order to install Portainer Agent, docker and docker-compose must be installed."
+        if [[ ${docker_installed} -eq 1 ]]; then
+            if [[ ${CHECKPKGS} == "true" ]]; then
+                die "In order to install Portainer Agent, docker must be installed."
+            fi
+        fi
 
         PACKAGES_PORTAINER_AGENT_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.portainer_agent[].config[].port")"
         [[ -z ${PACKAGES_PORTAINER_AGENT_CONFIG_PORT} ]] && die "Error reading PACKAGES_PORTAINER_AGENT_CONFIG_PORT from config file"
