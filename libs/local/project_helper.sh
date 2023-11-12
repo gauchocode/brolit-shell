@@ -2321,7 +2321,7 @@ function project_delete() {
     [[ -z "${project_db_engine}" ]] && project_db_engine="$(database_ask_engine)"
 
     # Remove unwanted output
-    #clear_previous_lines "2"
+    clear_previous_lines "2"
 
     # Make one last backup
     backup_project "${project_domain}" "all"

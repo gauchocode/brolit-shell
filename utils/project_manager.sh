@@ -127,9 +127,8 @@ function project_manager_menu_new_project_type_utils() {
     "02)" "RE-GENERATE NGINX SERVER"
     "03)" "DELETE PROJECT"
     "04)" "CREATE PROJECT DB  & USER"
-    "05)" "RENAME DATABASE"
-    "06)" "PUT PROJECT ONLINE"
-    "07)" "PUT PROJECT OFFLINE"
+    "05)" "PUT PROJECT ONLINE"
+    "06)" "PUT PROJECT OFFLINE"
   )
 
   chosen_project_utils_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_utils_options[@]}" 3>&1 1>&2 2>&3)"
@@ -137,11 +136,10 @@ function project_manager_menu_new_project_type_utils() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    log_section "Project Utils"
-
     # RE-GENERATE PROJECT CONFIG
     if [[ ${chosen_project_utils_options} == *"01"* ]]; then
 
+      log_section "Project Utils"
       log_subsection "Project config"
 
       # Folder where sites are hosted: $PROJECTS_PATH
@@ -170,6 +168,7 @@ function project_manager_menu_new_project_type_utils() {
     # CREATE PROJECT DB  & USER
     if [[ ${chosen_project_utils_options} == *"04"* ]]; then
 
+      log_section "Project Utils"
       log_subsection "Create Project DB & User"
 
       # Folder where sites are hosted: $PROJECTS_PATH
@@ -229,38 +228,11 @@ function project_manager_menu_new_project_type_utils() {
 
     fi
 
-    # RENAME DATABASE
-    if [[ ${chosen_project_utils_options} == *"05"* ]]; then
-
-      local chosen_db
-      local new_database_name
-
-      chosen_db="$(mysql_ask_database_selection)"
-
-      new_database_name="$(whiptail_input "Database Name" "Insert a new database name (only separator allow is '_'). Old name was: ${chosen_db}" "")"
-
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        log_event "debug" "Setting new_database_name: ${new_database_name}" "false"
-
-        # Return
-        #echo "${new_database_name}"
-        mysql_database_rename "${chosen_db}" "${new_database_name}"
-
-      else
-
-        return 1
-
-      fi
-
-    fi
-
     # PUT PROJECT ONLINE
-    [[ ${chosen_project_utils_options} == *"06"* ]] && project_change_status "online"
+    [[ ${chosen_project_utils_options} == *"05"* ]] && project_change_status "online"
 
     # PUT PROJECT OFFLINE
-    [[ ${chosen_project_utils_options} == *"07"* ]] && project_change_status "offline"
+    [[ ${chosen_project_utils_options} == *"06"* ]] && project_change_status "offline"
 
     prompt_return_or_finish
     project_manager_menu_new_project_type_utils

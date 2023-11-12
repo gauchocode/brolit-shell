@@ -197,6 +197,7 @@ function database_manager_menu() {
     "09)" "GRANT USER PRIVILEGES"
     "10)" "EXPORT DATABASE DUMP"
     "11)" "IMPORT DUMP INTO DATABASE"
+    "12)" "RENAME DATABASE (ALPHA)"
   )
 
   chosen_database_manager_option="$(whiptail --title "DATABASE MANAGER" --menu " " 20 78 10 "${database_manager_options[@]}" 3>&1 1>&2 2>&3)"
@@ -471,6 +472,34 @@ function database_manager_menu() {
           [[ ${chosen_database_engine} == "POSTGRESQL" ]] && postgres_database_import "${chosen_database}" "${database_container_selected}" "${dump_file}"
 
         fi
+
+      fi
+
+    fi
+
+    # RENAME DATABASE (ALPHA)
+    if [[ ${chosen_database_manager_option} == *"12"* ]]; then
+
+      log_section "Project Utils"
+      log_subsection "Rename database"
+
+      local chosen_db
+      local new_database_name
+
+      chosen_db="$(mysql_ask_database_selection)"
+
+      new_database_name="$(whiptail_input "Database Name" "Insert a new database name (only separator allow is '_'). Old name was: ${chosen_db}" "")"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        log_event "debug" "Setting new_database_name: ${new_database_name}" "false"
+
+        mysql_database_rename "${chosen_db}" "${new_database_name}"
+
+      else
+
+        return 1
 
       fi
 
