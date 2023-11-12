@@ -5,6 +5,34 @@
 #############################################################################
 
 ################################################################################
+# Check if Promtail is installed
+#
+# Arguments:
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function promtail_check_if_installed() {
+
+    # Check if promtail is installed (could be installed but not running)
+    if [[ -f "/opt/promtail/promtail-linux-amd64" ]] && [[ -f "/opt/promtail/config-promtail.yml" ]]; then
+
+        log_event "debug" "Promtail is already installed" "false"
+
+        return 0
+
+    else
+
+        log_event "debug" "Promtail is not installed" "false"
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
 # Install Promtail
 #
 # Arguments:
@@ -15,49 +43,43 @@
 
 function promtail_installer() {
 
-    # Check if /opt/promtail/promtail-linux-amd64 and /opt/promtail/config-promtail.yml exists
-    if [[ -f "/opt/promtail/promtail-linux-amd64" ]] && [[ -f "/opt/promtail/config-promtail.yml" ]]; then
+    # If promtail is already installed, then exit
+    promtail_check_if_installed
+    [[ $? -eq 0 ]] && return 1
 
-        log_event "info" "Promtail is already installed" "false"
-        return 1
+    log_subsection "Promtail Installer"
 
-    else
+    # Add the Loki repository
+    curl -O -L "https://github.com/grafana/loki/releases/download/v${PACKAGES_PROMTAIL_VERSION}/promtail-linux-amd64.zip"
 
-        log_subsection "Promtail Installer"
+    # Install the Promtail package
+    ### Create directory
+    mkdir -p /opt/promtail
 
-        # Add the Loki repository
-        curl -O -L "https://github.com/grafana/loki/releases/download/v${PACKAGES_PROMTAIL_VERSION}/promtail-linux-amd64.zip"
+    ### Unzip force (expanded flags)
+    decompress "promtail-linux-amd64.zip" "/opt/promtail" ""
 
-        # Install the Promtail package
-        ### Create directory
-        mkdir -p /opt/promtail
+    ### Remove zip file
+    rm -f "promtail-linux-amd64.zip"
 
-        ### Unzip force (expanded flags)
-        decompress "promtail-linux-amd64.zip" "/opt/promtail" ""
+    ### Set permissions
+    chmod a+x /opt/promtail/promtail-linux-amd64
 
-        ### Remove zip file
-        rm -f "promtail-linux-amd64.zip"
+    # Create the Promtail configuration file
+    promtail_create_configuration_file
 
-        ### Set permissions
-        chmod a+x /opt/promtail/promtail-linux-amd64
+    # Create the Promtail service file
+    promtail_create_service
 
-        # Create the Promtail configuration file
-        promtail_create_configuration_file
+    # Confirm directory ownership
+    chown -R promtail:promtail /opt/promtail
 
-        # Create the Promtail service file
-        promtail_create_service
+    # Start the Promtail service
+    systemctl start promtail.service
 
-        # Confirm directory ownership
-        chown -R promtail:promtail /opt/promtail
+    display --indent 6 --text "- Promtail installation" --result "DONE" --color GREEN
 
-        # Start the Promtail service
-        systemctl start promtail.service
-
-        display --indent 6 --text "- Promtail installation" --result "DONE" --color GREEN
-
-        return 0
-
-    fi
+    return 0
 
 }
 
@@ -81,13 +103,13 @@ function promtail_create_configuration_file() {
     # Replace VARIABLES in the Promtail configuration file
     ## PROMTAIL_PORT
     sed -i "s/PROMTAIL_PORT/${PACKAGES_PROMTAIL_CONFIG_PORT}/g" "${promtail_config_file}"
-    
+
     ## LOKI_URL
     sed -i "s/LOKI_HOST_URL/${PACKAGES_PROMTAIL_CONFIG_LOKI_URL}/g" "${promtail_config_file}"
-   
+
     ## LOKI_PORT
     sed -i "s/LOKI_HOST_PORT/${PACKAGES_PROMTAIL_CONFIG_LOKI_PORT}/g" "${promtail_config_file}"
-    
+
     ## HOSTNAME
     ### if $HOSTNAME == default, then use actual HOSTNAME
     if [[ "${HOSTNAME}" == "default" ]]; then
@@ -117,14 +139,14 @@ function promtail_create_service() {
 
     # Reload systemctl
     systemctl daemon-reload
-    
+
     # Enable the Promtail service
     systemctl enable promtail.service
 
 }
 
 ################################################################################
-# Check if Promtail is installed
+# Delete the Promtail service file
 #
 # Arguments:
 #
@@ -132,18 +154,13 @@ function promtail_create_service() {
 #   nothing
 ################################################################################
 
-function promtail_check_if_installed() {
+function promtail_delete_service() {
 
-    # Check if promtail is installed (could be installed but not running)
-    if [[ -f "/opt/promtail/promtail-linux-amd64" ]] && [[ -f "/opt/promtail/config-promtail.yml" ]]; then
+    # Delete the Promtail service file
+    rm -f "/etc/systemd/system/promtail.service"
 
-        echo "true" && return 0
-
-    else
-
-        echo "false" && return 1
-
-    fi
+    # Reload systemctl
+    systemctl daemon-reload
 
 }
 
@@ -161,8 +178,7 @@ function promtail_purge() {
     log_subsection "Promtail Purge"
 
     promtail_check_if_installed
-
-    if [[ ${promtail_installed} == "false" ]]; then
+    if [[ $? -eq 1 ]]; then
 
         log_event "info" "Promtail is not installed" "false"
         return 1
@@ -172,13 +188,15 @@ function promtail_purge() {
         # Stop the Promtail service
         systemctl stop promtail.service
 
-        # Remove the Promtail service file
-        rm -f "/etc/systemd/system/promtail.service"
+        # Remove the Promtail service
+        promtail_delete_service
 
-        # Remove the Promtail package
-        apt-get --yes purge promtail -qq >/dev/null
+        # Remove the Promtail directory
+        rm -rf /opt/promtail
 
+        # Log
         display --indent 6 --text "- Promtail purge" --result "DONE" --color GREEN
+        log_event "info" "Promtail uninstalled" "false"
 
         return 0
 
