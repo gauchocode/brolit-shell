@@ -2276,7 +2276,6 @@ function project_delete() {
   local files_skipped="false"
 
   log_section "Project Delete"
-
   log_subsection "Reading Project Config"
 
   if [[ -z ${project_domain} ]]; then
@@ -2322,7 +2321,11 @@ function project_delete() {
     [[ -z "${project_db_engine}" ]] && project_db_engine="$(database_ask_engine)"
 
     # Remove unwanted output
-    clear_previous_lines "2"
+    #clear_previous_lines "2"
+
+    # Make one last backup
+    backup_project "${project_domain}" "all"
+    [[ $? -eq 1 ]] && return 1
 
     # Delete Files
     project_delete_files "${project_domain}"
