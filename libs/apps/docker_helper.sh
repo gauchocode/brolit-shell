@@ -52,6 +52,10 @@ function docker_compose_pull() {
 
     local compose_file="${1}"
 
+    # Log
+    display --indent 6 --text "- Pulling docker stack images"
+    log_event "debug" "Running: docker compose -f ${compose_file} pull" "false"
+
     # Execute docker compose command
     ## Options:
     ##    -f, --force   Don't ask to confirm removal
@@ -63,16 +67,18 @@ function docker_compose_pull() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log
-        log_event "info" "Docker stack pulled ok" "false"
+        clear_previous_lines "1"
         display --indent 6 --text "- Pulling docker stack images" --result "DONE" --color GREEN
+        log_event "info" "Docker stack pulled ok" "false"
 
         return 0
 
     else
 
         # Log
-        log_event "error" "Docker stack pull failed" "false"
+        clear_previous_lines "1"
         display --indent 6 --text "- Pulling docker stack images" --result "FAIL" --color RED
+        log_event "error" "Docker stack pull failed" "false"
 
         return 1
 
@@ -192,24 +198,30 @@ function docker_compose_build() {
 function docker_compose_stop() {
 
     local compose_file="${1}"
-    local 
+    
+    # Log
+    display --indent 6 --text "- Stop docker stack ..."
+    log_event "debug" "Running: docker compose -f ${compose_file} stop" "false" 
 
+    # Execute docker compose command
     docker compose -f "${compose_file}" stop >/dev/null 2>&1
     exitstatus=$?
 
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log
-        log_event "info" "Docker stack stopped" "false"
+        clear_previous_lines "1"
         display --indent 6 --text "- Stop docker stack ..." --result "DONE" --color GREEN
+        log_event "info" "Docker stack stopped" "false"
 
         return 0
 
     else
 
         # Log
-        log_event "error" "Docker stack stop failed" "false"
+        clear_previous_lines "1"
         display --indent 6 --text "- Stop docker stack ..." --result "FAIL" --color RED
+        log_event "error" "Docker stack stop failed" "false"
 
         return 1
 
@@ -311,7 +323,7 @@ function docker_stop_container() {
 
     local docker_stop_container
 
-    # Stop docker container.
+    # Stop docker container
     docker_stop_container="$(docker stop "${container_to_stop}")"
 
     exitstatus=$?
@@ -741,6 +753,7 @@ function docker_project_install() {
     local project_type="${2}"
     local project_domain="${3}"
 
+    local compose_file
     local project_path
     local port_available
     local php_version
@@ -867,7 +880,7 @@ function docker_project_install() {
         # Remove tmp file
         rm "${project_path}/.enve"
 
-        local compose_file="${project_path}/docker-compose.yml"
+        compose_file="${project_path}/docker-compose.yml"
 
         # Execute docker compose commands
         docker_compose_up "${compose_file}"
@@ -987,7 +1000,7 @@ define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
         # Remove tmp file
         rm "${project_path}/.enve"
 
-        local compose_file="${project_path}/docker-compose.yml"
+        compose_file="${project_path}/docker-compose.yml"
 
         # Execute docker compose commands
         docker_compose_pull "${compose_file}"
