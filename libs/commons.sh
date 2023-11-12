@@ -367,8 +367,8 @@ function script_init() {
   declare -g SKIPTESTS="${1}"
 
   # Define log name
-  declare -g LOG
-  declare -g EXEC_TYPE
+  declare -g BROLIT_LOG_FILE
+  declare -g BROLIT_EXEC_TYPE
 
   declare -g BROLIT_CONFIG_FILE=~/.brolit_conf.json
 
@@ -394,15 +394,15 @@ function script_init() {
     # And add second parameter to the log name
     #log_name="log_lemp_utils_${SLOG}.log"
     log_name="${SLOG}.json"
-    EXEC_TYPE="external"
+    BROLIT_EXEC_TYPE="external"
   else
     # Default log name
     log_name="brolit_shell_${timestamp}.log"
-    EXEC_TYPE="default"
+    BROLIT_EXEC_TYPE="default"
   fi
-  export EXEC_TYPE
+  export BROLIT_EXEC_TYPE
 
-  LOG="${path_log}/${log_name}"
+  BROLIT_LOG_FILE="${path_log}/${log_name}"
 
   # Source all scripts
   _source_all_scripts
@@ -470,7 +470,7 @@ function script_init() {
   # EXPORT VARS
   export SCRIPT_V SERVER_NAME BROLIT_CONFIG_PATH BROLIT_MAIN_DIR PACKAGES
   export DISK_U ONE_FILE_BK NOTIFICATION_EMAIL_SMTP_SERVER NOTIFICATION_EMAIL_SMTP_PORT NOTIFICATION_EMAIL_SMTP_TLS NOTIFICATION_EMAIL_SMTP_USER NOTIFICATION_EMAIL_SMTP_UPASS
-  export LOG DEBUG SKIPTESTS
+  export BROLIT_LOG_FILE DEBUG SKIPTESTS
   export BROLIT_CONFIG_FILE
 
 }
@@ -1377,7 +1377,7 @@ function extract_filename_from_path() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-# TODO: pv only if EXEC_TYPE == default
+# TODO: pv only if BROLIT_EXEC_TYPE == default
 
 function decompress() {
 
