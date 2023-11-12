@@ -231,28 +231,33 @@ function docker_compose_rm() {
 
     local compose_file="${1}"
 
+    # Log
+    display --indent 6 --text "- Delete docker stack ..."
+    log_event "debug" "Running: docker compose -f ${compose_file} rm --force --volumes" "false"
+
     # Execute docker compose command
     ## Options:
     ##    -f, --force   Don't ask to confirm removal
     ##    -s, --stop    Stop the containers, if required, before removing
     ##    -v            Remove any anonymous volumes attached to containers
-
-    docker compose -f "${compose_file}" rm --force --volumes --remove-orphans >/dev/null 2>&1
+    docker compose -f "${compose_file}" rm --force --volumes >/dev/null 2>&1
     exitstatus=$?
 
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log
-        log_event "info" "Docker stack deleted" "false"
+        clear_previous_lines "1"
         display --indent 6 --text "- Delete docker stack ..." --result "DONE" --color GREEN
+        log_event "info" "Docker stack deleted" "false"
 
         return 0
 
     else
 
         # Log
-        log_event "error" "Docker stack delete failed" "false"
+        clear_previous_lines "1"
         display --indent 6 --text "- Delete docker stack ..." --result "FAIL" --color RED
+        log_event "error" "Docker stack delete failed" "false"
 
         return 1
 
@@ -1018,7 +1023,7 @@ define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
     #    project_site_url="http://${project_domain}"
     #fi
 
-    #[[ ${EXEC_TYPE} == "default" && ${project_type} == "wordpress" ]] && wpcli_run_startup_script "${project_path}" "${project_site_url}"
+    #[[ ${BROLIT_EXEC_TYPE} == "default" && ${project_type} == "wordpress" ]] && wpcli_run_startup_script "${project_path}" "${project_site_url}"
 
     # Post-restore/install tasks
     #project_post_install_tasks "${project_path}" "${project_type}" "${project_name}" "${project_stage}" "${database_user_passw}" "" ""

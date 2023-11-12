@@ -592,8 +592,8 @@ function backup_duplicity() {
 
     done
 
-    [ $exitstatus -eq 0 ] && echo "*** DUPLICITY SUCCESS ***" >>"${LOG}"
-    [ $exitstatus -ne 0 ] && echo "*** DUPLICITY ERROR ***" >>"${LOG}"
+    [ $exitstatus -eq 0 ] && echo "*** DUPLICITY SUCCESS ***" >>"${BROLIT_LOG_FILE}"
+    [ $exitstatus -ne 0 ] && echo "*** DUPLICITY ERROR ***" >>"${BROLIT_LOG_FILE}"
 
   fi
 
