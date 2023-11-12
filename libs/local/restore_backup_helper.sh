@@ -1029,8 +1029,7 @@ function restore_backup_files() {
 
       # Backup old project
       _create_tmp_copy "${destination_dir}" "move"
-      got_error=$?
-      [[ ${got_error} -eq 1 ]] && return 1
+      [[ $? -eq 1 ]] && return 1
 
     else
 
