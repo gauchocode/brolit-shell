@@ -1732,7 +1732,7 @@ function menu_main_options() {
   local runner_options   # whiptail array options
   local chosen_type      # whiptail var
 
-  whip_title="BROLIT SHELL MENU"
+  whip_title="BROLIT-SHELL MAIN MENU"
   whip_description=" "
 
   runner_options=(

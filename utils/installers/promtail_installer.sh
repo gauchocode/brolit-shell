@@ -117,6 +117,7 @@ function promtail_create_service() {
 
     # Reload systemctl
     systemctl daemon-reload
+    
     # Enable the Promtail service
     systemctl enable promtail.service
 
@@ -129,13 +130,19 @@ function promtail_create_service() {
 #
 # Outputs:
 #   nothing
-
+################################################################################
 
 function promtail_check_if_installed() {
 
-    PROMTAIL="$(which promtail)"
-    if [[ ! -x "${PROMTAIL}" ]]; then
-        promtail_installed="false"
+    # Check if promtail is installed (could be installed but not running)
+    if [[ -f "/opt/promtail/promtail-linux-amd64" ]] && [[ -f "/opt/promtail/config-promtail.yml" ]]; then
+
+        echo "true" && return 0
+
+    else
+
+        echo "false" && return 1
+
     fi
 
 }
