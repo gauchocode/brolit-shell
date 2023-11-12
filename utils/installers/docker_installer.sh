@@ -70,6 +70,10 @@ function docker_purge() {
         package_purge ${pkg}
     done
 
+    # Remove old docker files
+    #rm -rf /var/lib/docker /etc/docker /etc/apparmor.d/docker /etc/systemd/system/docker.service /etc/systemd/system/docker.socket /usr/lib/systemd/system/docker.service.d /usr/lib/systemd/system/docker.socket.d /usr/bin/docker /usr/bin/docker-containerd /usr/bin/docker-containerd-ctr /usr/bin/docker-containerd-shim /usr/bin/docker-runc /usr/bin/dockerd /usr/bin/docker-init /usr/bin/docker-proxy /usr/bin/docker-compose /usr/bin/docker-compose-v2 /usr/bin/docker-buildx /usr/bin/docker-buildx-v2 /usr/bin/docker-buildx-v2.0.0-beta.6 /usr/bin/docker-buildx-v2.0.0-beta.7 /usr/bin/docker-buildx-v2.0.0-rc.1 /usr/bin/docker-buildx-v2.0.0-rc.2 /usr/bin/docker-buildx-v2.0.0-rc.3 /usr/bin/docker-buildx-v2.0.0-rc.4 /usr/bin/docker-buildx-v2.0.0-rc.5 /usr/bin/docker-buildx-v2.0.0-rc.6 /usr/bin/docker-buildx-v2.0.0-rc.7 /usr/bin/docker-buildx-v2.0.0-rc.8 /usr/bin/docker-buildx-v2.0.0-rc.9 /usr/bin/docker-buildx-v2.0.0-rc.10 /usr/bin/docker-buildx-v2.0.0-rc.11 /usr/bin/docker-buildx-v2.0.0-rc.12 /usr/bin/docker-buildx-v2.0.0-rc.13 /usr/bin/docker-buildx-v2.0.0-rc.14 /usr/bin/docker-buildx-v2.0.0-rc.15 /usr/bin/docker-buildx-v2.0.0-rc.16 /usr/bin/docker-buildx-v2.0.0-rc.17 /usr/bin/docker-buildx-v2.0.0-rc.18 /usr/bin/docker-buildx-v2.0.0-rc.19 /usr/bin/docker-buildx-v2.0.0-rc.20 /usr/bin/docker-buildx-v2.0.0-rc.21 /usr/bin/docker-buildx-v2.0.
+    rm -rf /etc/docker/daemon.json
+
 }
 
 ################################################################################

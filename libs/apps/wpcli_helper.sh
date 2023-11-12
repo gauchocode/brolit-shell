@@ -430,6 +430,7 @@ function wpcli_core_reinstall() {
 #
 # Arguments:
 #   ${1} = ${wp_site}
+#   ${2} = ${install_type}
 #
 # Outputs:
 #   0 if option was configured, 1 on error.
