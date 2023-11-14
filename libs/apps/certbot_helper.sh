@@ -45,7 +45,7 @@ function certbot_certificate_install() {
   else
 
     # Log
-    #clear_previous_lines "3"
+    clear_previous_lines "1"
     log_event "warning" "Certificate installation failed, trying force-install ..." "false"
     display --indent 6 --text "- Installing certificate on domains" --result "FAIL" --color RED
 

@@ -89,7 +89,7 @@ function _spinner() {
 # Start spinner
 #
 # Arguments:
-#   ${1} = msg to display
+#   ${1} = ${msg_to_display}
 #
 # Outputs:
 #   nothing
@@ -97,9 +97,11 @@ function _spinner() {
 
 function spinner_start() {
 
+  local msg_to_display="${1}"
+
   [[ ${QUIET} == "true" || ${BROLIT_EXEC_TYPE} != "default" ]] && return 0
 
-  _spinner "start" "${1}" &
+  _spinner "start" "${msg_to_display}" &
 
   # set global spinner pid
   _sp_pid=$!
@@ -111,7 +113,7 @@ function spinner_start() {
 # Stop spinner
 #
 # Arguments:
-#  ${1} = command exit status
+#  ${1} = ${exit_status} - command exit status
 #
 # Outputs:
 #  nothing
@@ -119,9 +121,11 @@ function spinner_start() {
 
 function spinner_stop() {
 
+  local exit_status="${1}"
+
   [[ ${QUIET} == "true" || ${BROLIT_EXEC_TYPE} != "default" ]] && return 0
 
-  _spinner "stop" "${1}" "${_sp_pid}"
+  _spinner "stop" "${exit_status}" "${_sp_pid}"
   unset _sp_pid
 
 }
