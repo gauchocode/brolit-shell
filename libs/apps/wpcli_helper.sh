@@ -2867,8 +2867,9 @@ function wpcli_config_get() {
 #
 # Arguments:
 #   ${1} = ${wp_site}
-#   ${2} = ${wp_config_option}
-#   ${3} = ${wp_config_option_value}
+#   ${2} = ${install_type}
+#   ${3} = ${wp_config_option}
+#   ${4} = ${wp_config_option_value}
 #
 # Outputs:
 #   0 if option was configured, 1 on error.
@@ -2889,14 +2890,17 @@ function wpcli_config_set() {
     ## --no-color added to avoid unwanted wp-cli output
     [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker --log-level=error compose -f ${wp_site}/../docker-compose.yml run -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
 
+    # Log
+    log_event "debug" "Running: ${wpcli_cmd} config set ${wp_config_option} ${wp_config_option_value}" "false"
+
     # wp-cli command
-    wp_config="$(${wpcli_cmd} config set "${wp_config_option}")"
+    wp_config="$(${wpcli_cmd} config set "${wp_config_option} ${wp_config_option_value}")"
 
     # get exit status
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        # Log
+        # Log success
         [[ ${install_type} == "docker"* ]] && clear_previous_lines "1"
         log_event "debug" "Command executed: ${wpcli_cmd} config set ${wp_config_option} ${wp_config_option_value}" "false"
         log_event "debug" "wp config set return:${wp_config}" "false"
@@ -2905,6 +2909,8 @@ function wpcli_config_set() {
 
     else
 
+        # Log failure
+        #[[ ${install_type} == "docker"* ]] && clear_previous_lines "1"
         log_event "debug" "Command executed: ${wpcli_cmd} config set ${wp_config_option} ${wp_config_option_value}" "false"
         log_event "error" "wp config set return:${wp_config}" "false"
 
@@ -2919,7 +2925,8 @@ function wpcli_config_set() {
 #
 # Arguments:
 #   ${1} = ${wp_site}
-#   ${2} = ${wp_comment_status} - spam or hold
+#   ${2} = ${install_type}
+#   ${3} = ${wp_comment_status} - spam or hold
 #
 # Outputs:
 #   0 if option was configured, 1 on error.
@@ -2944,7 +2951,7 @@ function wpcli_delete_comments() {
 
     if [[ -z "${comments_ids}" ]]; then
 
-        # Log
+        # Log success
         log_event "info" "There are no comments marked as ${wp_comment_status} for ${wp_site}" "false"
         display --indent 6 --text "- Deleting comments marked as ${wp_comment_status}" --result "0" --color WHITE
 
@@ -2958,7 +2965,7 @@ function wpcli_delete_comments() {
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
-            # Log
+            # Log failure
             log_event "info" "Comments marked as ${wp_comment_status} deleted for ${wp_site}" "false"
             log_event "debug" "Command result: ${wpcli_result}" "false"
             display --indent 6 --text "- Deleting comments marked as ${wp_comment_status}" --result "DONE" --color GREEN
