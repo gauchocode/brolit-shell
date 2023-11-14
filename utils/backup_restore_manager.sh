@@ -298,6 +298,72 @@ function backup_all_docker_volumes() {
 }
 
 ################################################################################
+# Restore Docker Volume
+#
+# Arguments:
+#   ${1} = ${volume}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function restore_docker_volume() {
+  
+    local volume="${1}"
+
+    local remote_path
+    local backup_file
+  
+    # Remote Path
+    remote_path="${SERVER_NAME}/docker-volumes"
+  
+    # Get latest backup file
+    backup_file="$(storage_get_latest_backup "${remote_path}" "${volume}")"
+  
+    # If there are no backup files, exit
+    if [[ -z "${backup_file}" ]]; then
+  
+      # Log
+      log_event "info" "No backup files for ${volume}" "false"
+      display --indent 6 --text "- Docker volume restore" --result "SKIPPED" --color YELLOW
+      display --indent 8 --text "- No backup files for ${volume}" --tcolor YELLOW
+  
+      return 1
+  
+    fi
+  
+    # Download backup file
+    storage_download_backup "${remote_path}/${backup_file}" "${BROLIT_TMP_DIR}"
+  
+    # Check if backup file was downloaded
+    if [[ -f "${BROLIT_TMP_DIR}/${backup_file}" ]]; then
+  
+      # Restore backup file
+      ## Runs a temporary Docker container that has access to the volume and the backup directory, and uses tar to create a backup file of the volume.
+      docker run --rm -v "${volume}:/volume" -v "${BROLIT_TMP_DIR}:/backup" alpine tar -xjf "/backup/${backup_file}" -C /volume
+  
+      # Send notification
+      send_notification "✅ ${SERVER_NAME}" "Docker volume restore completed for ${volume}." ""
+  
+      return 0
+      
+    else
+  
+      # Log
+      log_event "debug" "Command executed: docker run --rm -v ${volume}:/volume -v ${BROLIT_TMP_DIR}:/backup alpine tar -xjf /backup/${backup_file} -C /volume" "false"
+      log_event "error" "Docker volume restore failed for ${volume}" "false"
+      display --indent 6 --text "- Docker volume restore" --result "FAILED" --color RED
+  
+      # Send notification
+      send_notification "❌ ${SERVER_NAME}" "Docker volume restore failed for ${volume}." ""
+  
+      return 1
+
+    fi
+
+}
+
+################################################################################
 # Restore Manager Menu
 #
 # Arguments:

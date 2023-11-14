@@ -150,10 +150,10 @@ function docker_compose_build() {
 
     # Log
     display --indent 6 --text "- Restoring docker stack ..."
-    log_event "debug" "Running: docker compose -f ${compose_file} pull --quiet" "false"
+    log_event "debug" "Running: docker compose -f ${compose_file} pull" "false"
 
     # Execute docker compose command
-    docker compose -f "${compose_file}" pull --quiet
+    docker compose -f "${compose_file}" pull >/dev/null 2>&1
     [[ $? -eq 1 ]] && display --indent 6 --text "- Restoring docker stack ..." --result "FAIL" --color RED && return 1
 
     # Log
