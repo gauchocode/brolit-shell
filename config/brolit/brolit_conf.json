@@ -357,7 +357,9 @@
                         "web_admin": "disabled",
                         "subdomain": "",
                         "user": "",
-                        "user_pass": ""
+                        "user_pass": "",
+                        "claim_token": "",
+                        "claim_room": ""
                     }
                 ],
                 "notifications": [
@@ -385,20 +387,6 @@
                                 ]
                             }
                         ]
-                    }
-                ]
-            }
-        ],
-        "netdata_agent": [
-            {
-                "status": "disabled",
-                "version": "latest",
-                "config": [
-                    {
-                        "port": "9001",
-                        "subdomain": "",
-                        "claim_token": "",
-                        "claim_room": ""
                     }
                 ]
             }

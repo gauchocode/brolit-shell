@@ -1191,6 +1191,8 @@ function _brolit_configuration_load_netdata() {
     declare -g PACKAGES_NETDATA_CONFIG_SUBDOMAIN
     declare -g PACKAGES_NETDATA_CONFIG_USER
     declare -g PACKAGES_NETDATA_CONFIG_USER_PASS
+    declare -g PACKAGES_NETDATA_CONFIG_CLAIM_TOKEN
+    declare -g PACKAGES_NETDATA_CONFIG_CLAIM_ROOMS
     declare -g PACKAGES_NETDATA_NOTIFICATION_ALARM_LEVEL
     declare -g PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_STATUS
     declare -g PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_BOT_TOKEN
@@ -1237,6 +1239,12 @@ function _brolit_configuration_load_netdata() {
 
         fi
 
+        PACKAGES_NETDATA_CONFIG_CLAIM_TOKEN="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].claim_token")"
+        [[ -z ${PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_TOKEN} ]] && die "Error reading PACKAGES_NETDATA_CONFIG_CLAIM_TOKEN from config file"
+
+        # Optional
+        PACKAGES_NETDATA_CONFIG_CLAIM_ROOMS="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].claim_rooms")"
+
         # Checking if Netdata is not installed
         [[ ! -x "${NETDATA}" && -z "${NETDATA_PR}" && -z ${NETDATA_DOCKER} ]] && pkg_config_changes_detected "netdata" "true"
 
@@ -1249,79 +1257,7 @@ function _brolit_configuration_load_netdata() {
 
     export PACKAGES_NETDATA_STATUS PACKAGES_NETDATA_CONFIG_WEB_ADMIN PACKAGES_NETDATA_CONFIG_SUBDOMAIN PACKAGES_NETDATA_CONFIG_USER PACKAGES_NETDATA_CONFIG_USER_PASS PACKAGES_NETDATA_NOTIFICATION_ALARM_LEVEL
     export PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_STATUS PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_BOT_TOKEN PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_CHAT_ID
-
-}
-
-################################################################################
-# Private: load netdata agent configuration
-#
-# Arguments:
-#   ${1} = ${server_config_file}
-#
-# Outputs:
-#   nothing
-################################################################################
-
-function _brolit_configuration_load_netdata_agent() {
-
-    local server_config_file="${1}"
-
-    local docker
-    local docker_installed
-
-    # Globals
-    declare -g NETDATA_AGENT
-    declare -g PACKAGES_NETDATA_AGENT_STATUS
-    declare -g PACKAGES_NETDATA_AGENT_CONFIG_PORT
-
-    declare -g NETDATA_AGENT_PATH="/root/agent_netdata"
-
-    PACKAGES_NETDATA_AGENT_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].status")"
-
-    if [[ ${PACKAGES_NETDATA_AGENT_STATUS} == "enabled" ]]; then
-
-        # Check if docker package are installed
-        docker="$(package_is_installed "docker-ce")"
-        docker_installed="$?"
-        if [[ ${docker_installed} -eq 0 ]]; then
-            log_event "debug" "Docker installed on: ${docker}. Now checking if Netdata Agent image is present..." "false"
-            NETDATA_AGENT="$(docker_get_container_id "agent_netdata")"
-        else
-            if [[ ${CHECKPKGS} == "true" ]]; then
-                # Netdata agent requires docker
-                die "In order to install Netdata Agent, docker must be installed."
-            fi
-        fi
-
-        [[ ${docker_installed} -eq 1 ]] && die "In order to install Netdata Agent, docker must be installed."
-
-        # Required
-        PACKAGES_NETDATA_AGENT_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].version")"
-        [[ -z ${PACKAGES_NETDATA_AGENT_VERSION} ]] && die "Error reading PACKAGES_NETDATA_AGENT_VERSION from config file"
-
-        PACKAGES_NETDATA_AGENT_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].config[].port")"
-        [[ -z ${PACKAGES_NETDATA_AGENT_CONFIG_PORT} ]] && die "Error reading PACKAGES_NETDATA_AGENT_CONFIG_PORT from config file"
-
-        PACKAGES_NETDATA_AGENT_CONFIG_DOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].config[].domain")"
-        [[ -z ${PACKAGES_NETDATA_AGENT_CONFIG_DOMAIN} ]] && die "Error reading PACKAGES_NETDATA_AGENT_CONFIG_DOMAIN from config file"
-
-        PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_TOKEN="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].config[].claim_token")"
-        [[ -z ${PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_TOKEN} ]] && die "Error reading PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_TOKEN from config file"
-
-        # Optional
-        PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_ROOMS="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].config[].claim_rooms")"
-
-        # Checking if Netdata Agent is not installed
-        [[ -z ${NETDATA_AGENT} ]] && pkg_config_changes_detected "netdata_agent" "true"
-
-    else
-
-        # Checking if Netdata Agent is installed
-        [[ -n ${NETDATA_AGENT} ]] && pkg_config_changes_detected "netdata_agent" "true"
-
-    fi
-
-    export NETDATA_AGENT NETDATA_AGENT_PATH PACKAGES_NETDATA_AGENT_STATUS PACKAGES_NETDATA_AGENT_CONFIG_PORT PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_ROOMS
+    export PACKAGES_NETDATA_CONFIG_CLAIM_TOKEN PACKAGES_NETDATA_CONFIG_CLAIM_ROOMS
 
 }
 
@@ -1364,7 +1300,7 @@ function _brolit_configuration_load_grafana() {
         docker_installed="$?"
         if [[ ${docker_installed} -eq 0 ]]; then
             log_event "debug" "Docker installed on: ${docker}. Now checking if Grafana image is present..." "false"
-            NETDATA_AGENT="$(docker_get_container_id "grafana")"
+            GRAFANA="$(docker_get_container_id "grafana")"
         else
             if [[ ${CHECKPKGS} == "true" ]]; then
                 # Grafana requires docker
@@ -2158,11 +2094,7 @@ function brolit_configuration_load() {
     #### BACKUPS Method: s3
     _brolit_configuration_load_backup_s3 "${server_config_file}"
 
-    # TODO:
-    #### BACKUPS Method: duplicity
-    #_brolit_configuration_load_backup_duplicity "${server_config_file}"
-
-    #### if all required vars are disabled, show error
+    #### If all required vars are disabled, show error
     if [[ ${BACKUP_DROPBOX_STATUS} != "enabled" ]] &&
         [[ ${BACKUP_SFTP_STATUS} != "enabled" ]] &&
         [[ ${BACKUP_S3_STATUS} != "enabled" ]] &&
@@ -2231,7 +2163,7 @@ function brolit_configuration_load() {
         [[ ${PACKAGES_MYSQL_STATUS} != "enabled" ]] &&
         [[ ${PACKAGES_POSTGRES_STATUS} != "enabled" ]] &&
         [[ ${SERVER_ROLE_DATABASE} == "enabled" ]]; then
-        log_event "warning" "No database engine is enabled" "true"
+        log_event "warning" "Server role defined as 'database' but no database engine is enabled" "true"
         exit 1
     fi
 
@@ -2252,7 +2184,6 @@ function brolit_configuration_load() {
 
     ### netdata
     _brolit_configuration_load_netdata "${server_config_file}"
-    _brolit_configuration_load_netdata_agent "${server_config_file}"
 
     ### grafana
     _brolit_configuration_load_grafana "${server_config_file}"
