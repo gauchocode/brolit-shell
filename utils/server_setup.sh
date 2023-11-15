@@ -266,7 +266,7 @@ function server_app_setup() {
         ;;
 
     *)
-        echo "App not supported yet."
+        log_event "warning" "App ${app_setup} is not supported yet" "true"
         ;;
 
     esac
