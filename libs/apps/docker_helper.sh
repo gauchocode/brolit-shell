@@ -157,6 +157,7 @@ function docker_compose_build() {
     [[ $? -eq 1 ]] && display --indent 6 --text "- Pulling docker stack ..." --result "FAIL" --color RED && return 1
 
     # Log
+    clear_previous_lines "2"
     spinner_start "- Building docker stack ..."
     log_event "debug" "Running: docker compose -f ${compose_file} up --detach --build" "false"
 
@@ -203,7 +204,7 @@ function docker_compose_stop() {
     local compose_file="${1}"
     
     # Log
-    display --indent 6 --text "- Stop docker stack ..."
+    display --indent 6 --text "- Stopping docker stack ..."
     log_event "debug" "Running: docker compose -f ${compose_file} stop" "false" 
 
     # Execute docker compose command
@@ -214,7 +215,7 @@ function docker_compose_stop() {
 
         # Log
         clear_previous_lines "1"
-        display --indent 6 --text "- Stop docker stack ..." --result "DONE" --color GREEN
+        display --indent 6 --text "- Stopping docker stack" --result "DONE" --color GREEN
         log_event "info" "Docker stack stopped" "false"
 
         return 0
@@ -223,7 +224,7 @@ function docker_compose_stop() {
 
         # Log
         clear_previous_lines "1"
-        display --indent 6 --text "- Stop docker stack ..." --result "FAIL" --color RED
+        display --indent 6 --text "- Stopping docker stack" --result "FAIL" --color RED
         log_event "error" "Docker stack stop failed" "false"
 
         return 1
@@ -247,7 +248,7 @@ function docker_compose_rm() {
     local compose_file="${1}"
 
     # Log
-    display --indent 6 --text "- Delete docker stack ..."
+    display --indent 6 --text "- Deleting docker stack ..."
     log_event "debug" "Running: docker compose -f ${compose_file} rm --force --volumes" "false"
 
     # Execute docker compose command
@@ -260,18 +261,18 @@ function docker_compose_rm() {
 
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        # Log
+        # Log success
         clear_previous_lines "1"
-        display --indent 6 --text "- Delete docker stack ..." --result "DONE" --color GREEN
+        display --indent 6 --text "- Deleting docker stack ..." --result "DONE" --color GREEN
         log_event "info" "Docker stack deleted" "false"
 
         return 0
 
     else
 
-        # Log
+        # Log failure
         clear_previous_lines "1"
-        display --indent 6 --text "- Delete docker stack ..." --result "FAIL" --color RED
+        display --indent 6 --text "- Deleting docker stack ..." --result "FAIL" --color RED
         log_event "error" "Docker stack delete failed" "false"
 
         return 1
