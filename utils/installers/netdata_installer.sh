@@ -221,6 +221,15 @@ function netdata_installer() {
 
   if [[ ${netdata_installer_exitstatus} -eq 0 ]]; then
 
+    # Check if claim token is set
+    if [[ ${PACKAGES_NETDATA_CONFIG_CLAIM_TOKEN} != "" ]]; then
+
+      # Execute claim script
+      wget -O /tmp/netdata-kickstart.sh https://my-netdata.io/kickstart.sh && sh /tmp/netdata-kickstart.sh --nightly-channel --claim-token "${PACKAGES_NETDATA_CONFIG_CLAIM_TOKEN}" --claim-rooms "${PACKAGES_NETDATA_CONFIG_CLAIM_ROOMS}" --claim-url https://app.netdata.cloud
+    
+    fi
+
+    # Check if Web Admin is enabled
     if [[ ${PACKAGES_NETDATA_CONFIG_WEB_ADMIN} == "enabled" ]]; then
       # Log
       clear_previous_lines "1"
