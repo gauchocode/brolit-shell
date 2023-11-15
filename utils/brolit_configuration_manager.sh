@@ -166,6 +166,36 @@ function _brolit_configuration_load_backup_dropbox() {
 }
 
 ################################################################################
+# Private: load borg backup configuration
+#
+# Arguments:
+#   ${1} = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function _brolit_configuration_load_backup_borg() {
+    local server_config_file="${1}"
+
+    #Globals
+    declare -g BACKUP_BORG_STATUS
+    declare -g BACKUP_BORG_CONFIG_FILE
+
+    BACKUP_BORG_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].status")"
+
+    if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
+
+        BACKUP_BORG_CONFIG_FILE="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[].file")"
+
+
+    fi 
+
+    export BACKUP_BORG_STATUS
+}
+
+
+################################################################################
 # Private: load local backup configuration
 #
 # Arguments:
@@ -2172,6 +2202,9 @@ function brolit_configuration_load() {
     #### BACKUPS Method: dropbox
     _brolit_configuration_load_backup_dropbox "${server_config_file}"
 
+    #### BACKUPS Method: borg
+    _brolit_configuration_load_backup_borg "${server_config_file}"
+
     #### BACKUPS Method: sftp
     _brolit_configuration_load_backup_sftp "${server_config_file}"
 
@@ -2189,6 +2222,7 @@ function brolit_configuration_load() {
     if [[ ${BACKUP_DROPBOX_STATUS} != "enabled" ]] &&
         [[ ${BACKUP_SFTP_STATUS} != "enabled" ]] &&
         [[ ${BACKUP_S3_STATUS} != "enabled" ]] &&
+        [[ ${BACKUP_BORG_STATUS} != "enabled" ]] &&
         [[ ${BACKUP_LOCAL_STATUS} != "enabled" ]]; then
         log_event "warning" "No backup method enabled" "false"
         display --indent 6 --text "- Backup method selected" --result "NONE" --color RED
