@@ -757,10 +757,10 @@ function restore_backup_from_storage() {
         backup_to_restore="$(basename "${backup_to_dowload}")"
         # Get project_name
         chosen_project="$(dirname "${backup_to_dowload}")"
-        chosen_project="$(basename "${chosen_project}")"
-  
-        #restore_backup_project_docker_volumes "${chosen_project}" "${backup_to_restore}"
-        restore_docker_volume "${backup_to_restore}"
+        volume="$(basename "${chosen_project}")"
+
+        # Restore
+        restore_docker_volume "${backup_to_restore}" "${volume}"
   
         ;;
 
