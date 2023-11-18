@@ -428,7 +428,7 @@ function dropbox_get_modified_date() {
     log_event "debug" "Executing: ${DROPBOX_UPLOADER} -hq list \"${remote_path}\" | awk '{print $ 3;}'" "false"
 
     # Dropbox API returns files names on the fourth column (brolit modified version)
-    output="$("${DROPBOX_UPLOADER}" -hq list "${file}")"
+    output="$("${DROPBOX_UPLOADER}" -hq list "${remote_path}")"
     exitstatus=$?
 
     if [[ ${exitstatus} -eq 0 ]]; then
