@@ -66,24 +66,12 @@
                             }
                         ]
                     }
-                ],
-                "duplicity": [
-                    {
-                        "status": "disabled",
-                        "config": [
-                            {
-                                "backup_destination_path": "",
-                                "backup_frequency": "7D",
-                                "backup_full_life": "14D"
-                            }
-                        ]
-                    }
                 ]
             }
         ],
         "retention": [
             {
-                "keep_daily": "7",
+                "keep_daily": "2",
                 "keep_weekly": "0",
                 "keep_monthly": "0"
             }

@@ -112,32 +112,6 @@
                             }
                         ]
                     }
-                ],
-                "s3": [
-                    {
-                        "status": "disabled",
-                        "config": [
-                            {
-                                "bucket": "",
-                                "backup_path": "",
-                                "endpoint_url": "",
-                                "access_key": "",
-                                "secret_key": ""
-                            }
-                        ]
-                    }
-                ],
-                "duplicity": [
-                    {
-                        "status": "disabled",
-                        "config": [
-                            {
-                                "backup_path": "",
-                                "backup_frequency": "7D",
-                                "backup_full_life": "14D"
-                            }
-                        ]
-                    }
                 ]
             }
         ]
