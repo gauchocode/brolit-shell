@@ -462,8 +462,11 @@ function storage_remote_type_list() {
     local remote_type_list
     local chosen_restore_type
 
+    # Log
+    log_event "debug" "Backup type selection" "false"
+
     # List options
-    remote_type_list="project site database" # TODO: need to implement "other"
+    remote_type_list="project site database docker-volume" # TODO: need to implement "other"
 
     chosen_restore_type="$(whiptail --title "BACKUP SELECTION" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 $(for x in ${remote_type_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)"
 
@@ -495,6 +498,7 @@ function storage_remote_status_list() {
     local remote_status_list
     local chosen_restore_status
 
+    # Log
     log_event "debug" "Backup status selection" "false"
 
     # List options
