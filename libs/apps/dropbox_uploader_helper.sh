@@ -18,7 +18,7 @@ function dropbox_account_space_free() {
 
     local output
 
-    output="$("${DROPBOX_UPLOADER}" space | grep "Free:" | cut -d ":" -f 2 2>&1)"
+    output="$("${DROPBOX_UPLOADER}" space | grep "Free:" | awk -F " " '{print $2}' 2>&1)"
 
     [[ -n ${output} ]] && echo "${output}"
 
@@ -28,8 +28,8 @@ function dropbox_account_space_free() {
 # Check if file exists on Dropbox account
 #
 # Arguments:
-#   ${1}- ${file}
-#   ${2}- ${path}
+#   ${1} = ${file}
+#   ${2} = ${path}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -356,7 +356,7 @@ function dropbox_delete() {
 #   ${1} = ${directory}
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#   ${dir_list} if ok, 1 on error.
 ################################################################################
 
 function dropbox_list_directory() {
@@ -367,15 +367,16 @@ function dropbox_list_directory() {
 
     # Log
     log_event "debug" "Listing directory ${directory} on Dropbox" "false"
-    log_event "debug" "Executing: ${DROPBOX_UPLOADER} -hq list \"${directory}\" | awk '{print $ 3;}'" "false"
+    log_event "debug" "Executing: ${DROPBOX_UPLOADER} -hq list \"${directory}\" | awk '{print $ 4;}'" "false"
 
-    # Dropbox API returns files names on the third column
-    dir_list="$("${DROPBOX_UPLOADER}" -hq list "${directory}" | awk '{print $3;}')"
+    # Dropbox API returns files names on the fourth column (brolit modified version)
+    dir_list="$("${DROPBOX_UPLOADER}" -hq list "${directory}" | awk '{print $4;}')"
     exitstatus=$?
 
     # If dir_list is empty, try to check the second column where directory names are
     if [[ -z ${dir_list} ]]; then
 
+        # Dropbox API returns directories names on the second column
         dir_list="$("${DROPBOX_UPLOADER}" -hq list "${directory}" | awk '{print $2;}')"
         exitstatus=$?
 
@@ -387,13 +388,58 @@ function dropbox_list_directory() {
         log_event "info" "Listing directory: ${directory}" "false"
         log_event "info" "Remote list: ${dir_list}" "false"
 
+        # Return
         echo "${dir_list}" && return 0
 
     else
 
         # Log
         log_event "error" "Can't list directory ${directory} on Dropbox" "false"
-        log_event "debug" "Command executed: ${DROPBOX_UPLOADER} -hq list \"${directory}\" | awk '{print $ 3;}'" "false"
+        log_event "debug" "Command executed: ${DROPBOX_UPLOADER} -hq list \"${directory}\" | awk '{print $ 4;}'" "false"
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Get file modified date from Dropbox
+#
+# Arguments:
+#   ${1} = ${file}
+#
+# Outputs:
+#   ${output} if ok, 1 on error.
+################################################################################
+
+function dropbox_get_modified_date() {
+
+    local file="${1}"
+
+    local output
+
+    # Log
+    log_event "debug" "Getting modified date from ${file} on Dropbox" "false"
+    log_event "debug" "Executing: ${DROPBOX_UPLOADER} -hq list \"${file}\" | awk '{print $ 3;}'" "false"
+
+    # Dropbox API returns files names on the fourth column (brolit modified version)
+    output="$("${DROPBOX_UPLOADER}" -hq list "${file}" | awk '{print $3;}')"
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        log_event "info" "Modified date: ${output}" "false"
+
+        # Return
+        echo "${output}" && return 0
+
+    else
+
+        # Log
+        log_event "error" "Can't get modified date from ${file} on Dropbox" "false"
+        log_event "debug" "Command executed: ${DROPBOX_UPLOADER} -hq list \"${file}\" | awk '{print $ 3;}'" "false"
 
         return 1
 
