@@ -740,10 +740,10 @@ function restore_backup_from_storage() {
 
       ;;
 
-    docker-volumes)
+    docker-volume)
       
         # Select project backup
-        backup_to_dowload="$(storage_backup_selection "${remote_list}" "docker-volumes")"
+        backup_to_dowload="$(storage_backup_selection "${remote_list}" "docker-volume")"
         [[ $? -eq 1 ]] && return 1
   
         # Download backup

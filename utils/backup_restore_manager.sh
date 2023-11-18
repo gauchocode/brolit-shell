@@ -230,7 +230,7 @@ function backup_all_docker_volumes() {
   local error_type=""
 
   # Remote Path
-  remote_path="${SERVER_NAME}/docker-volumes"
+  remote_path="${SERVER_NAME}/projects-online/docker-volume"
 
   # Get a list of all Docker volumes
   volumes_to_backup="$(docker volume ls --format "{{.Name}}")"
@@ -239,9 +239,9 @@ function backup_all_docker_volumes() {
   if [[ -z "${volumes_to_backup}" ]]; then
 
     # Log
-    log_event "info" "No Docker volumes to backup" "false"
     display --indent 6 --text "- Docker volumes backup" --result "SKIPPED" --color YELLOW
     display --indent 8 --text "- No Docker volumes to backup" --tcolor YELLOW
+    log_event "info" "No Docker volumes to backup" "false"
 
     return 0
 
@@ -253,12 +253,19 @@ function backup_all_docker_volumes() {
   # Loop through volumes
   while IFS= read -r volume; do
 
+    # Log
+    display --indent 6 --text "- Creating backup for ${volume}"
+
     # Create backup file
     ## Runs a temporary Docker container that has access to the volume and the backup directory, and uses tar to create a backup file of the volume.
-    docker run --rm -v "${volume}:/volume" -v "${BROLIT_TMP_DIR}:/backup" alpine tar -cjf "/backup/${volume}-${NOW}.tar.bz2" -C /volume ./
+    "$(docker run --rm -v "${volume}:/volume" -v "${BROLIT_TMP_DIR}:/backup" alpine tar -cjf "/backup/${volume}-${NOW}.tar.bz2" -C /volume ./)"
 
     # Check if backup file was created
     if [[ -f "${BROLIT_TMP_DIR}/${volume}-${NOW}.tar.bz2" ]]; then
+
+      # Log
+      clear_previous_lines "2"
+      display --indent 6 --text "- Creating backup for ${volume}" --result "OK" --color GREEN
 
       # Upload backup file to Dropbox
       storage_upload_backup "${BROLIT_TMP_DIR}/${volume}-${NOW}.tar.bz2" "${remote_path}" ""
@@ -266,9 +273,10 @@ function backup_all_docker_volumes() {
     else
 
       # Log
+      display --indent 6 --text "- Creating backup for ${volume}" --result "FAILED" --color RED
+      display --indent 8 --text "Please read the log file" --tcolor YELLOW
       log_event "debug" "Command executed: docker run --rm -v ${volume}:/volume -v ${BROLIT_TMP_DIR}:/backup alpine tar -cjf /backup/${volume}-${NOW}.tar.bz2 -C /volume ./" "false"
       log_event "error" "Docker volume backup failed for ${volume}" "false"
-      display --indent 6 --text "- Docker volumes backup" --result "FAILED" --color RED
 
       exitstatus=1
       error_msg="${volume},${error_msg}"
@@ -304,10 +312,10 @@ function restore_docker_volume() {
     local backup_file
   
     # Remote Path
-    remote_path="${SERVER_NAME}/docker-volumes"
+    remote_path="${SERVER_NAME}/projects-online/docker-volume"
   
     # Get latest backup file
-    backup_file="$(storage_backup_selection "${remote_path}" "docker-volumes")"
+    backup_file="$(storage_backup_selection "${remote_path}" "docker-volume")"
   
     # If there are no backup files, exit
     if [[ -z "${backup_file}" ]]; then
