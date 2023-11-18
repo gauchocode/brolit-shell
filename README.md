@@ -24,14 +24,14 @@ BROLIT Shell is a server management tool built on **BASH**, designed to expedien
 
 ![ScreenShot](./screenshot.png)
 
-### Motivation
-* Standardize server configurations.
-* Automate IT/DevOps tasks for efficiency.
-* Minimize time spent and errors in IT/DevOps operations.
-
 ### :space_invader: Why Bash?
 * Natively pre-installed on Linux systems.
 * Lightweight with minimal dependencies.
+
+### :bulb: Benefits
+* Standardize server configurations.
+* Automate IT/DevOps tasks for efficiency.
+* Minimize time spent and errors in IT/DevOps operations.
 
 ### :dart: Features
 * Fully open-source.
@@ -86,9 +86,6 @@ BROLIT Shell uses some third-party tools:
 
 #### Dropbox Uploader
 Dropbox Uploader is a BASH script which can be used to upload, download, list or delete files from Dropbox, an online file sharing, synchronization and backup service.
-
-#### Google PageSpeed Insights API Tools
-gitool.sh shell script to query Google PageSpeed Insights v4 & v5 API for site & origin metrics for FCP & DCL with additional support for GTMetrix & WebpageTest.org API tests.
 
 #### Blacklist Checker
 Blacklist check UNIX/Linux utility.
