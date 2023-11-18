@@ -267,8 +267,11 @@ function backup_all_docker_volumes() {
       clear_previous_lines "2"
       display --indent 6 --text "- Creating backup for ${volume}" --result "OK" --color GREEN
 
+      # Create remote path directory
+      storage_create_dir "${remote_path}/${volume}"
+
       # Upload backup file to Dropbox
-      storage_upload_backup "${BROLIT_TMP_DIR}/${volume}-${NOW}.tar.bz2" "${remote_path}" ""
+      storage_upload_backup "${BROLIT_TMP_DIR}/${volume}-${NOW}.tar.bz2" "${remote_path}/${volume}" ""
 
     else
 
