@@ -740,6 +740,30 @@ function restore_backup_from_storage() {
 
       ;;
 
+    docker-volumes)
+      
+        # Select project backup
+        backup_to_dowload="$(storage_backup_selection "${remote_list}" "docker-volumes")"
+        [[ $? -eq 1 ]] && return 1
+  
+        # Download backup
+        storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
+  
+        [[ $? -eq 1 ]] && display --indent 6 --text "- Downloading Volume Backup" --result "ERROR" --color RED && return 1
+  
+        # Detail of backup_to_dowload:
+        #   "${chosen_server}/projects-${chosen_status}/${chosen_restore_type}/${project_name}/${backup_file}"
+        # For convention at this point ${chosen_project} == ${project_name}
+        backup_to_restore="$(basename "${backup_to_dowload}")"
+        # Get project_name
+        chosen_project="$(dirname "${backup_to_dowload}")"
+        chosen_project="$(basename "${chosen_project}")"
+  
+        #restore_backup_project_docker_volumes "${chosen_project}" "${backup_to_restore}"
+        restore_docker_volume "${backup_to_restore}"
+  
+        ;;
+
     esac
 
   else
