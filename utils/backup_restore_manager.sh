@@ -334,11 +334,20 @@ function restore_docker_volume() {
   
     # Check if backup file was downloaded
     if [[ -f "${BROLIT_TMP_DIR}/${backup_file}" ]]; then
+
+      # Log
+      display --indent 6 --text "- Docker volume restore"
+      log_event "debug" "Command executed: docker run --rm -v ${volume}:/volume -v ${BROLIT_TMP_DIR}:/backup alpine tar -xjf /backup/${backup_file} -C /volume" "false"
   
       # Restore backup file
       ## Runs a temporary Docker container that has access to the volume and the backup directory, and uses tar to create a backup file of the volume.
       docker run --rm -v "${volume}:/volume" -v "${BROLIT_TMP_DIR}:/backup" alpine tar -xjf "/backup/${backup_file}" -C /volume
   
+      # Log
+      clear_previous_lines "2"
+      display --indent 6 --text "- Docker volume restore" --result "DONE" --color GREEN
+      log_event "info" "Docker volume restore completed for ${volume}" "false"
+      
       # Send notification
       send_notification "✅ ${SERVER_NAME}" "Docker volume restore completed for ${volume}." ""
   
