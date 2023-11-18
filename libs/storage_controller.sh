@@ -179,6 +179,12 @@ function storage_upload_backup() {
 
         # Check if account has enough space
         storage_space_free="$(dropbox_account_space_free)"
+
+        # Log
+        log_event "debug" "Dropbox account space free: ${storage_space_free}" "false"
+        log_event "debug" "File to upload size: ${file_to_upload_size}" "false"
+
+        # Compare
         [[ ${storage_space_free} -lt ${file_to_upload_size} ]] && error_type="dropbox" && got_error=1
 
         # Upload
