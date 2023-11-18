@@ -194,14 +194,14 @@ function backup_manager_menu() {
         display --indent 6 --text "- Docker Volumes Backup" --result "FAILED" --color RED
 
         # Send notification
-        send_notification "❌ ${SERVER_NAME}" "Docker Volumes Backup failed." ""
+        send_notification "❌ ${SERVER_NAME} " "Docker Volumes Backup failed." ""
 
         return 1
 
       fi
 
       # Send notification
-      send_notification "✅ ${SERVER_NAME}" "Task: 'Docker Volumes Backup' completed." ""
+      send_notification "✅ ${SERVER_NAME} " "Task: 'Docker Volumes Backup' completed." ""
 
     fi
 
@@ -309,62 +309,39 @@ function backup_all_docker_volumes() {
 
 function restore_docker_volume() {
   
-    local volume="${1}"
-
-    local remote_path
-    local backup_file
-  
-    # Remote Path
-    remote_path="${SERVER_NAME}/projects-online/docker-volume"
-  
-    # Get latest backup file
-    backup_file="$(storage_backup_selection "${remote_path}" "docker-volume")"
-  
-    # If there are no backup files, exit
-    if [[ -z "${backup_file}" ]]; then
-  
-      # Log
-      log_event "info" "No backup files for ${volume}" "false"
-      display --indent 6 --text "- Docker volume restore" --result "SKIPPED" --color YELLOW
-      display --indent 8 --text "- No backup files for ${volume}" --tcolor YELLOW
-  
-      return 1
-  
-    fi
-  
-    # Download backup file
-    storage_download_backup "${remote_path}/${backup_file}" "${BROLIT_TMP_DIR}"
+    local backup_to_restore="${1}"
+    local docker_volume="${2}"
   
     # Check if backup file was downloaded
-    if [[ -f "${BROLIT_TMP_DIR}/${backup_file}" ]]; then
+    if [[ -f "${BROLIT_TMP_DIR}/${backup_to_restore}" ]]; then
 
       # Log
       display --indent 6 --text "- Docker volume restore"
-      log_event "debug" "Command executed: docker run --rm -v ${volume}:/volume -v ${BROLIT_TMP_DIR}:/backup alpine tar -xjf /backup/${backup_file} -C /volume" "false"
+      log_event "debug" "Command executed: docker run --rm -v ${docker_volume}:/volume -v ${BROLIT_TMP_DIR}:/backup alpine tar -xjf /backup/${backup_to_restore} -C /volume" "false"
   
       # Restore backup file
       ## Runs a temporary Docker container that has access to the volume and the backup directory, and uses tar to create a backup file of the volume.
-      docker run --rm -v "${volume}:/volume" -v "${BROLIT_TMP_DIR}:/backup" alpine tar -xjf "/backup/${backup_file}" -C /volume
+      docker run --rm -v "${docker_volume}:/volume" -v "${BROLIT_TMP_DIR}:/backup" alpine tar -xjf "/backup/${backup_to_restore}" -C /volume
   
       # Log
       clear_previous_lines "2"
       display --indent 6 --text "- Docker volume restore" --result "DONE" --color GREEN
-      log_event "info" "Docker volume restore completed for ${volume}" "false"
+      log_event "info" "Docker volume restore completed for ${docker_volume}" "false"
       
       # Send notification
-      send_notification "✅ ${SERVER_NAME}" "Docker volume restore completed for ${volume}." ""
+      send_notification "✅ ${SERVER_NAME} " "Docker volume restore completed for ${docker_volume}." ""
   
       return 0
       
     else
   
       # Log
-      log_event "debug" "Command executed: docker run --rm -v ${volume}:/volume -v ${BROLIT_TMP_DIR}:/backup alpine tar -xjf /backup/${backup_file} -C /volume" "false"
-      log_event "error" "Docker volume restore failed for ${volume}" "false"
+      log_event "debug" "Command executed: docker run --rm -v ${docker_volume}:/volume -v ${BROLIT_TMP_DIR}:/backup alpine tar -xjf /backup/${backup_to_restore} -C /volume" "false"
+      log_event "error" "Docker volume restore failed for ${docker_volume}" "false"
       display --indent 6 --text "- Docker volume restore" --result "FAILED" --color RED
   
       # Send notification
-      send_notification "❌ ${SERVER_NAME}" "Docker volume restore failed for ${volume}." ""
+      send_notification "❌ ${SERVER_NAME} " "Docker volume restore failed for ${docker_volume}." ""
   
       return 1
 

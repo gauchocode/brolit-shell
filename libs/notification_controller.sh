@@ -34,7 +34,7 @@ function send_notification() {
 
     if [[ ${NOTIFICATION_DISCORD_STATUS} == "enabled" ]]; then
     
-        discord_send_notification "${notification_title}" "${notification_content}" "${notification_type}"
+        discord_send_notification "${notification_title}" "${notification_content}"
     
     fi
 
