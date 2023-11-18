@@ -417,9 +417,6 @@ function backup_all_projects_files() {
   # Deleting old backup files
   rm --recursive --force "${BROLIT_TMP_DIR:?}/${NOW}"
 
-  # DUPLICITY
-  #backup_duplicity
-
   # Configure Files Backup Section for Email Notification
   mail_backup_section "${error_msg}" "${error_type}" "files" "${backuped_files_list[@]}"
 
@@ -556,50 +553,6 @@ function backup_project_files() {
       return 1
 
     fi
-
-  fi
-
-}
-
-################################################################################
-# Duplicity Backup (BETA)
-#
-# Arguments:
-#  none
-#
-# Outputs:
-#   0 if ok, 1 if error
-################################################################################
-
-function backup_duplicity() {
-
-  if [[ ${BACKUP_DUPLICITY_STATUS} == "enabled" ]]; then
-
-    log_event "warning" "duplicity backup is in BETA state" "true"
-
-    # Check if DUPLICITY is installed
-    package_install_if_not "duplicity"
-
-    # Get all directories
-    all_sites="$(get_all_directories "${PROJECTS_PATH}")"
-
-    # Loop in to Directories
-    for i in ${all_sites}; do
-
-      log_event "debug" "Running: duplicity --full-if-older-than \"${BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY}\" -v4 --no-encryption\" ${PROJECTS_PATH}\"\"${i}\" file://\"${BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH}\"\"${i}\"" "true"
-
-      duplicity --full-if-older-than "${BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY}" -v4 --no-encryption" ${PROJECTS_PATH}""${i}" file://"${BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH}""${i}"
-      exitstatus=$?
-
-      log_event "debug" "exitstatus=$?" "false"
-
-      # TODO: should only remove old entries only if ${exitstatus} -eq 0
-      duplicity remove-older-than "${BACKUP_DUPLICITY_CONFIG_FULL_LIFE}" --force "${BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH}"/"${i}"
-
-    done
-
-    [[ ${exitstatus} -eq 0 ]] && echo "*** DUPLICITY SUCCESS ***" >>"${BROLIT_LOG_FILE}"
-    [[ ${exitstatus} -ne 0 ]] && echo "*** DUPLICITY ERROR ***" >>"${BROLIT_LOG_FILE}"
 
   fi
 

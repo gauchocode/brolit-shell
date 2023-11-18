@@ -197,108 +197,6 @@ function _brolit_configuration_load_backup_local() {
 }
 
 ################################################################################
-# Private: load s3 backup configuration
-#
-# Arguments:
-#   ${1} = ${server_config_file}
-#
-# Outputs:
-#   nothing
-################################################################################
-
-function _brolit_configuration_load_backup_s3() {
-
-    local server_config_file="${1}"
-
-    # Globals
-    declare -g BACKUP_S3_STATUS
-    declare -g BACKUP_S3_BUCKET
-    declare -g BACKUP_S3_ENDPOINT_URL
-    declare -g BACKUP_S3_ACCESS_KEY
-    declare -g BACKUP_S3_SECRET_KEY
-    declare -g BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH
-    #declare -g BACKUP_S3_CONFIG_BACKUP_FREQUENCY
-    #declare -g BACKUP_S3_CONFIG_FULL_LIFE
-
-    BACKUP_S3_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].status")"
-
-    if [[ ${BACKUP_S3_STATUS} == "enabled" ]]; then
-
-        # Required
-        BACKUP_S3_BUCKET="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].bucket")"
-        [[ -z "${BACKUP_S3_BUCKET}" ]] && die "Error reading BACKUP_S3_BUCKET from server config file."
-
-        BACKUP_S3_ENDPOINT_URL="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].endpoint_url")"
-        [[ -z "${BACKUP_S3_ENDPOINT_URL}" ]] && die "Error reading BACKUP_S3_ENDPOINT_URL from server config file."
-
-        BACKUP_S3_ACCESS_KEY="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].access_key")"
-        [[ -z "${BACKUP_S3_ACCESS_KEY}" ]] && die "Error reading BACKUP_S3_ACCESS_KEY from server config file."
-
-        BACKUP_S3_SECRET_KEY="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].secret_key")"
-        [[ -z "${BACKUP_S3_SECRET_KEY}" ]] && die "Error reading BACKUP_S3_SECRET_KEY from server config file."
-
-        BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].backup_path")"
-        [[ -z "${BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH}" ]] && die "Error reading BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH from server config file."
-
-        #BACKUP_S3_CONFIG_BACKUP_FREQUENCY="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].backup_frequency")"
-        #if [ -z "${BACKUP_S3_CONFIG_BACKUP_FREQUENCY}" ]; then
-        #    log_event "error" "Missing required config vars for s3 backup method" "true"
-        #    exit 1
-        #fi
-
-        #BACKUP_S3_CONFIG_FULL_LIFE="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].backup_full_life")"
-        #if [ -z "${BACKUP_S3_CONFIG_FULL_LIFE}" ]; then
-        #    log_event "error" "Missing required config vars for s3 backup method" "true"
-        #    exit 1
-        #fi
-
-    fi
-
-    export BACKUP_S3_STATUS BACKUP_S3_BUCKET BACKUP_S3_ENDPOINT_URL BACKUP_S3_ACCESS_KEY BACKUP_S3_SECRET_KEY BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH
-
-}
-
-################################################################################
-# Private: load duplicity backup configuration
-#
-# Arguments:
-#   ${1} = ${server_config_file}
-#
-# Outputs:
-#   nothing
-################################################################################
-
-function _brolit_configuration_load_backup_duplicity() {
-
-    local server_config_file="${1}"
-
-    # Globals
-    declare -g BACKUP_DUPLICITY_STATUS
-    declare -g BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH
-    declare -g BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY
-    declare -g BACKUP_DUPLICITY_CONFIG_FULL_LIFE
-
-    BACKUP_DUPLICITY_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.methods[].duplicity[].status")"
-
-    if [[ ${BACKUP_DUPLICITY_STATUS} == "enabled" ]]; then
-
-        # Required
-        BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH="$(json_read_field "${server_config_file}" "BACKUPS.methods[].duplicity[].config[].backup_destination_path")"
-        [[ -z "${BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH}" ]] && die "Error reading BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH from server config file."
-
-        BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY="$(json_read_field "${server_config_file}" "BACKUPS.methods[].duplicity[].config[].backup_frequency")"
-        [[ -z "${BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY}" ]] && die "Error reading BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY from server config file."
-
-        BACKUP_DUPLICITY_CONFIG_FULL_LIFE="$(json_read_field "${server_config_file}" "BACKUPS.methods[].duplicity[].config[].backup_full_life")"
-        [[ -z "${BACKUP_DUPLICITY_CONFIG_FULL_LIFE}" ]] && die "Error reading BACKUP_DUPLICITY_CONFIG_FULL_LIFE from server config file."
-
-    fi
-
-    export BACKUP_DUPLICITY_STATUS BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY BACKUP_DUPLICITY_CONFIG_FULL_LIFE
-
-}
-
-################################################################################
 # Private: load backup retentions configuration
 #
 # Arguments:
@@ -2089,13 +1987,9 @@ function brolit_configuration_load() {
     #### BACKUPS Method: local
     _brolit_configuration_load_backup_local "${server_config_file}"
 
-    #### BACKUPS Method: s3
-    _brolit_configuration_load_backup_s3 "${server_config_file}"
-
     #### If all required vars are disabled, show error
     if [[ ${BACKUP_DROPBOX_STATUS} != "enabled" ]] &&
         [[ ${BACKUP_SFTP_STATUS} != "enabled" ]] &&
-        [[ ${BACKUP_S3_STATUS} != "enabled" ]] &&
         [[ ${BACKUP_LOCAL_STATUS} != "enabled" ]]; then
         log_event "warning" "No backup method enabled" "false"
         display --indent 6 --text "- Backup method selected" --result "NONE" --color RED

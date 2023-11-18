@@ -9,20 +9,6 @@
 ################################################################################
 
 ################################################################################
-#
-# Important: Backup/Restore utils selection.
-#
-#   Backup Uploader:
-#       Simple way to upload backup file to this cloud service.
-#
-#   Duplicity:
-#       Best way to backup projects of 10GBs+. Incremental backups.
-#       Need to use SFTP option (non native cloud services support).
-#       Read: https://zertrin.org/how-to/installation-and-configuration-of-duplicity-for-encrypted-sftp-remote-backup/
-#
-################################################################################
-
-################################################################################
 # List directory content
 #
 # Arguments:
