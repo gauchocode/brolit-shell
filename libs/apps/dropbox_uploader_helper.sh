@@ -419,15 +419,25 @@ function dropbox_get_modified_date() {
 
     local output
 
+    # Get path from file
+    local remote_path
+    remote_path="$(dirname "${file}")"
+
     # Log
     log_event "debug" "Getting modified date from ${file} on Dropbox" "false"
-    log_event "debug" "Executing: ${DROPBOX_UPLOADER} -hq list \"${file}\" | awk '{print $ 3;}'" "false"
+    log_event "debug" "Executing: ${DROPBOX_UPLOADER} -hq list \"${remote_path}\" | awk '{print $ 3;}'" "false"
 
     # Dropbox API returns files names on the fourth column (brolit modified version)
-    output="$("${DROPBOX_UPLOADER}" -hq list "${file}" | awk '{print $3;}')"
+    output="$("${DROPBOX_UPLOADER}" -hq list "${file}")"
     exitstatus=$?
 
     if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Match file with output
+        output="$(echo "${output}" | grep "${file}" | awk '{print $3;}')"
+
+        # This will return 2023-11-16;00:56:37 need to replace ; with space
+        output="$(echo "${output}" | sed 's/;/ /g')"
 
         # Log
         log_event "info" "Modified date: ${output}" "false"
