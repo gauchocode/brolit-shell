@@ -1176,8 +1176,11 @@ function db_list_outfile
                 local FILE=$(echo "$line" | sed -n 's/.*"path_display": *"\([^"]*\)".*/\1/p')
                 local TYPE=$(echo "$line" | sed -n 's/.*".tag": *"\([^"]*\).*/\1/p')
                 local SIZE=$(convert_bytes $(echo "$line" | sed -n 's/.*"size": *\([0-9]*\).*/\1/p'))
+                local DATE=$(echo "$line" | sed -n 's/.*"client_modified": *"\([^"]*\)".*/\1/p')
 
-                echo -e "$FILE:$TYPE;$SIZE" >> "$OUT_FILE"
+                DATE=$(date -d "$DATE" '+%Y-%m-%d;%H:%M:%S')
+
+                echo -e "$FILE:$TYPE;$SIZE;$DATE" >> "$OUT_FILE"
 
             done < "$TEMP_FILE"
 
@@ -1222,6 +1225,7 @@ function db_list
         local FILE=${line%:*}
         local META=${line##*:}
         local SIZE=${META#*;}
+        local DATE=${META##*;}
 
         if [[ ${#SIZE} -gt $padding ]]; then
             padding=${#SIZE}
@@ -1235,13 +1239,14 @@ function db_list
         local META=${line##*:}
         local TYPE=${META%;*}
         local SIZE=${META#*;}
+        local DATE=${META##*;}
 
         #Removing unneeded /
         FILE=${FILE##*/}
 
         if [[ $TYPE == "folder" ]]; then
             FILE=$(echo -e "$FILE")
-            $PRINTF " [D] %-${padding}s %s\n" "$SIZE" "$FILE"
+            $PRINTF " [D] %-${padding}s %s %s\n" "$SIZE" "$DATE" "$FILE"
         fi
 
     done < "$OUT_FILE"
@@ -1249,17 +1254,16 @@ function db_list
     #For each entry, printing files...
     while read -r line; do
 
-        local FILE=${line%:*}
-        local META=${line##*:}
-        local TYPE=${META%;*}
-        local SIZE=${META#*;}
+        # Divide the line into FILE, TYPE, SIZE and DATE
+        IFS=':;' read -r FILE TYPE SIZE DATE <<< "$line"
 
-        #Removing unneeded /
-        FILE=${FILE##*/}
+        # Extracting filename from path
+        FILENAME=$(basename "$FILE")
 
+        # Print result
         if [[ $TYPE == "file" ]]; then
-            FILE=$(echo -e "$FILE")
-            $PRINTF " [F] %-${padding}s %s\n" "$SIZE" "$FILE"
+            #FILE=$(echo -e "$FILE")
+            printf " [F] %-${padding}s %s %s\n" "$SIZE" "$DATE" "$FILENAME"
         fi
 
     done < "$OUT_FILE"

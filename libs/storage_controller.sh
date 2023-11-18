@@ -159,6 +159,7 @@ function storage_move() {
 # Arguments:
 #   ${1} = {file_to_upload}
 #   ${2} = {remote_directory}
+#   ${3} = {file_to_upload_size}
 #
 # Outputs:
 #   0 if it utils were installed, 1 on error.
@@ -168,14 +169,20 @@ function storage_upload_backup() {
 
     local file_to_upload="${1}"
     local remote_directory="${2}"
+    local file_to_upload_size="${3}"
 
     local got_error=0
     local error_type
+    local storage_space_free
 
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
-        dropbox_upload "${file_to_upload}" "${remote_directory}"
+        # Check if account has enough space
+        storage_space_free="$(dropbox_account_space_free)"
+        [[ ${storage_space_free} -lt ${file_to_upload_size} ]] && error_type="dropbox" && got_error=1
 
+        # Upload
+        dropbox_upload "${file_to_upload}" "${remote_directory}"
         [[ $? -eq 1 ]] && error_type="dropbox" && got_error=1
 
     fi
@@ -221,12 +228,23 @@ function storage_download_backup() {
     local remote_directory="${2}"
 
     local got_error=0
-    local error_type="none"
+    local error_type
+    local backup_date
 
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
+        # Check if local storage has enough space
+        
+        # Check date from file to download
+        backup_date="$(dropbox_get_modified_date "${file_to_download}")"
+
+        # Show whiptail message with backup date
+        whiptail_message_with_skip_option "Backup date" "${backup_date}"
+        [[ $? -eq 1 ]] && error_type="dropbox_skipped" && got_error=1
+
+        # Download
         dropbox_download "${file_to_download}" "${remote_directory}"
-        [[ $? -eq 1 ]] && error_type="dropbox" && got_error=1
+        [[ $? -eq 1 ]] && error_type="dropbox_download" && got_error=1
 
     fi
 
@@ -253,8 +271,8 @@ function storage_delete_backup() {
     local force_delete="true"
 
     local got_error=0
-    #local error_msg="none"
     local error_type="none"
+    #local error_msg="none"
 
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
@@ -336,7 +354,7 @@ function storage_delete_old_backups() {
     log_event "debug" "Monthly backups: ${sorted_monthly[@]}" "false"
 
     # Log
-    display --indent 6 --text "- Deleting old files from Dropbox"
+    display --indent 6 --text "- Deleting old files from storage"
 
     # Delete old daily backups
     if [ ${#sorted_daily[@]} -gt $keep_daily ]; then
@@ -364,7 +382,7 @@ function storage_delete_old_backups() {
 
     # Log
     clear_previous_lines "1"
-    display --indent 6 --text "- Deleting old files from Dropbox" --result "DONE" --color GREEN
+    display --indent 6 --text "- Deleting old files from storage" --result "DONE" --color GREEN
 
 }
 
