@@ -175,6 +175,9 @@ function storage_upload_backup() {
     local error_type
     local storage_space_free
 
+    # Remove string from $file_to_upload_size
+    file_to_upload_size="${file_to_upload_size//[^0-9]/}"
+
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
         # Check if account has enough space
