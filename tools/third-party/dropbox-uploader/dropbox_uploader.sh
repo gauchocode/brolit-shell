@@ -1222,31 +1222,28 @@ function db_list
     #to calculate the padding to use
     local padding=0
     while read -r line; do
-        local FILE=${line%:*}
-        local META=${line##*:}
-        local SIZE=${META#*;}
-        local DATE=${META##*;}
+        
+        # Divide the line into FILE, TYPE, SIZE and DATE
+        IFS=':;' read -r FILE TYPE SIZE DATE <<< "$line"
 
         if [[ ${#SIZE} -gt $padding ]]; then
             padding=${#SIZE}
         fi
+        
     done < "$OUT_FILE"
 
     #For each entry, printing directories...
     while read -r line; do
 
-        local FILE=${line%:*}
-        local META=${line##*:}
-        local TYPE=${META%;*}
-        local SIZE=${META#*;}
-        local DATE=${META##*;}
+        # Divide the line into FILE, TYPE, SIZE and DATE
+        IFS=':;' read -r FILE TYPE SIZE DATE <<< "$line"
 
         #Removing unneeded /
         FILE=${FILE##*/}
 
         if [[ $TYPE == "folder" ]]; then
             FILE=$(echo -e "$FILE")
-            $PRINTF " [D] %-${padding}s %s %s\n" "$SIZE" "$DATE" "$FILE"
+            $PRINTF " [D] %-${padding}s %s %s\n" "$FILE"
         fi
 
     done < "$OUT_FILE"
@@ -1257,12 +1254,15 @@ function db_list
         # Divide the line into FILE, TYPE, SIZE and DATE
         IFS=':;' read -r FILE TYPE SIZE DATE <<< "$line"
 
+        #Removing unneeded /
+        FILE=${FILE##*/}
+
         # Extracting filename from path
         FILENAME=$(basename "$FILE")
 
         # Print result
         if [[ $TYPE == "file" ]]; then
-            #FILE=$(echo -e "$FILE")
+            FILE=$(echo -e "$FILE")
             printf " [F] %-${padding}s %s %s\n" "$SIZE" "$DATE" "$FILENAME"
         fi
 
