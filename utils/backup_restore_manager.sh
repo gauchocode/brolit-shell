@@ -184,43 +184,24 @@ function backup_manager_menu() {
       # DOCKER_VOLUMES_BACKUP
       log_section "Docker Volumes Backup"
 
-      # Preparing Mail Notifications Template
-      mail_server_status_section
-
       # Docker Volumes Backup
-      backup_all_docker_volumes
+      catch_error="$(backup_all_docker_volumes)"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 1 ]]; then
 
-      # Footer
-      mail_footer "${SCRIPT_V}"
+        # Log
+        log_event "error" "Docker Volumes Backup failed: ${catch_error}" "false"
+        display --indent 6 --text "- Docker Volumes Backup" --result "FAILED" --color RED
 
-      # Preparing Mail Notifications Template
-      email_template="default"
+        # Send notification
+        send_notification "❌ ${SERVER_NAME}" "Docker Volumes Backup failed." ""
 
-      # New full email file
-      email_html_file="${BROLIT_TMP_DIR}/full-email-${NOW}.mail"
+        return 1
 
-      # Copy from template
-      cp "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/main-tpl.html" "${email_html_file}"
+      fi
 
-      # Begin to replace
-      sed -i '/{{server_info}}/r '"${BROLIT_TMP_DIR}/server_info-${NOW}.mail" "${email_html_file}"
-      sed -i '/{{databases_backup_section}}/r '"${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail" "${email_html_file}"
-      sed -i '/{{configs_backup_section}}/r '"${BROLIT_TMP_DIR}/configuration-bk-${NOW}.mail" "${email_html_file}"
-      sed -i '/{{files_backup_section}}/r '"${BROLIT_TMP_DIR}/files-bk-${NOW}.mail" "${email_html_file}"
-      sed -i '/{{footer}}/r '"${BROLIT_TMP_DIR}/footer-${NOW}.mail" "${email_html_file}"
-
-      # Delete vars not used anymore
-      grep -v "{{packages_section}}" "${email_html_file}" >"${email_html_file}_tmp"
-      mv "${email_html_file}_tmp" "${email_html_file}"
-      grep -v "{{certificates_section}}" "${email_html_file}" >"${email_html_file}_tmp"
-      mv "${email_html_file}_tmp" "${email_html_file}"
-      grep -v "{{server_info}}" "${email_html_file}" >"${email_html_file}_tmp"
-      mv "${email_html_file}_tmp" "${email_html_file}"
-      grep -v "{{databases_backup_section}}" "${email_html_file}" >"${email_html_file}_tmp"
-      mv "${email_html_file}_tmp" "${email_html_file}"
-      grep -v "{{configs_backup_section}}" "${email_html_file}" >"${email_html_file}_tmp"
-      mv "${email_html_file}_tmp" "${email_html_file}"
-      grep -v "{{files_backup_section}}" "${email_html_file}"
+      # Send notification
+      send_notification "✅ ${SERVER_NAME}" "Task: 'Docker Volumes Backup' completed." ""
 
     fi
 
@@ -241,8 +222,12 @@ function backup_manager_menu() {
 
 function backup_all_docker_volumes() {
 
-  local volumes_to_backup
   local remote_path
+  local volumes_to_backup
+
+  local exitstatus=0
+  local error_msg=""
+  local error_type=""
 
   # Remote Path
   remote_path="${SERVER_NAME}/docker-volumes"
@@ -258,7 +243,7 @@ function backup_all_docker_volumes() {
     display --indent 6 --text "- Docker volumes backup" --result "SKIPPED" --color YELLOW
     display --indent 8 --text "- No Docker volumes to backup" --tcolor YELLOW
 
-    return
+    return 0
 
   fi
 
@@ -278,9 +263,6 @@ function backup_all_docker_volumes() {
       # Upload backup file to Dropbox
       storage_upload_backup "${BROLIT_TMP_DIR}/${volume}-${NOW}.tar.bz2" "${remote_path}" ""
 
-      # Send notification
-      send_notification "✅ ${SERVER_NAME}" "Docker volume backup completed for ${volume}." ""
-
     else
 
       # Log
@@ -288,12 +270,19 @@ function backup_all_docker_volumes() {
       log_event "error" "Docker volume backup failed for ${volume}" "false"
       display --indent 6 --text "- Docker volumes backup" --result "FAILED" --color RED
 
-      # Send notification
-      send_notification "❌ ${SERVER_NAME}" "Docker volume backup failed for ${volume}." ""
+      exitstatus=1
+      error_msg="${volume},${error_msg}"
+      error_type="docker_volume_backup"
 
     fi
   
   done <<<"${volumes_to_backup}"
+
+  # Clean ${error_msg}
+  error_msg="${error_msg//, /,}"
+
+  # Return
+  echo "${error_type};${error_msg}" && return ${exitstatus}
 
 }
 
@@ -318,7 +307,7 @@ function restore_docker_volume() {
     remote_path="${SERVER_NAME}/docker-volumes"
   
     # Get latest backup file
-    backup_file="$(storage_get_latest_backup "${remote_path}" "${volume}")"
+    backup_file="$(storage_backup_selection "${remote_path}" "docker-volumes")"
   
     # If there are no backup files, exit
     if [[ -z "${backup_file}" ]]; then
