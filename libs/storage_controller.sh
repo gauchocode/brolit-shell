@@ -239,7 +239,7 @@ function storage_download_backup() {
         backup_date="$(dropbox_get_modified_date "${file_to_download}")"
 
         # Show whiptail message
-        whiptail_message_with_skip_option "Backup date" "This backup date is: ${backup_date}. Do you want to continue?"
+        whiptail_message_with_skip_option "Backup date" "\n\nThis backup date is: ${backup_date}\n\nDo you want to continue?"
         [[ $? -eq 1 ]] && error_type="dropbox_skipped" && return 1
 
         # Download
