@@ -1239,10 +1239,8 @@ function _brolit_configuration_load_netdata() {
 
         fi
 
-        PACKAGES_NETDATA_CONFIG_CLAIM_TOKEN="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].claim_token")"
-        [[ -z ${PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_TOKEN} ]] && die "Error reading PACKAGES_NETDATA_CONFIG_CLAIM_TOKEN from config file"
-
         # Optional
+        PACKAGES_NETDATA_CONFIG_CLAIM_TOKEN="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].claim_token")"
         PACKAGES_NETDATA_CONFIG_CLAIM_ROOMS="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].claim_rooms")"
 
         # Checking if Netdata is not installed
