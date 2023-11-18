@@ -1,26 +1,7 @@
-# BROLIT Shell
+# BROLIT-SHELL
 
-<!-- Table of Contents -->
-## :notebook_with_decorative_cover: Table of Contents
-- [About the Project](#star2-about-the-project)
-  * [Motivation](#motivation)
-  * [Why Bash?](#space_invader-why-bash)
-  * [Features](#dart-features)
-  * [Support](#warning-Supports)
-- [Getting Started](#toolbox-getting-started)
-  * [Prerequisites](#bangbang-prerequisites)
-  * [Installation](#gear-installation)
-  * [Run](#running-run)
-  * [Deployment](#triangular_flag_on_post-deployment)
-- [Roadmap](#compass-roadmap)
-- [Contributing](#wave-contributing)
-  * [Code of Conduct](#scroll-code-of-conduct)
-- [FAQ](#grey_question-faq)
-- [Team](#team)
-- [License](#license)
-- [Acknowledgements](#gem-acknowledgements)
-## :star2: About the Project
-BROLIT Shell is a server management tool built on **BASH**, designed to expediently set up a LEMP Stack on Ubuntu servers (versions 20.04, and 22.04). It streamlines the process of automating and restoring backups, deploying PHP projects, and executing various essential IT tasks efficiently.
+## :star2: About the project
+BROLIT-SHELL is a server management tool built on **BASH**, designed to expediently set up a LEMP Stack on Ubuntu servers (versions 20.04, and 22.04). It streamlines the process of automating and restoring backups, deploying PHP projects, and executing various essential IT tasks efficiently.
 
 ![ScreenShot](./screenshot.png)
 
@@ -66,35 +47,30 @@ BROLIT Shell is a server management tool built on **BASH**, designed to expedien
 | **Lets Encrypt** | O.S default | default config |
 | **MySQL** | O.S default | `my.cnf` |
 | **MariaDB** | O.S default | `my.cnf` |
-| **PHP-FPM** | 7.4.x/8.1.x | `php.ini` + `php-fpm.conf` + `www.conf` |
+| **PHP-FPM** | 7.4.x/8.2.x | `php.ini` + `php-fpm.conf` + `www.conf` |
 | **Redis** | O.S default | `redis.conf` + `object-cache.php` |
-| **WordPress** | latest | default config |
-| **WP-CLI** | 2.6.0 | default config |
 | **Monit** | O.S default | `monitrc` + `mysql` + `phpfpm` + `nginx` + `redis` + `system` |
-| **Netdata** | 1.32.x | `health_alarm_notify.conf` + custom `health.d` conf |
-| **UFW Firewall** | O.S default | default config |
-| **Fail2Ban** | O.S default | default config |
-| **ClamAV** | O.S default | `freshclam.conf` |
-| **Lynis** | 2.6.x | default config |
-| **Cockpit** | 0.102.x | default config |
-| **Zabbix** | 0.102.x | default config |
-| **Portainer** | latest | dockerized (optional nginx proxy support) |
-| **Grafana** | SOON | default config |
+| **WordPress** | latest | default config |
+| **WP-CLI** | latest | default config |
+| **Docker** | latest | default config |
 
-### Third Party Utils
+### Enhanced installation support for leading tools
+Experience streamlined setup for a range of exceptional tools including Netdata, Grafana, Loki, Promtail, Portainer, Portainer Agent, Cockpit, Zabbix, and more.
+
+### Third party utils
 BROLIT Shell uses some third-party tools:
 
 #### Dropbox Uploader
 Dropbox Uploader is a BASH script which can be used to upload, download, list or delete files from Dropbox, an online file sharing, synchronization and backup service.
+
+#### Wordfence-cli
+Wordfence-cli is a widely-used security tool for WordPress that provides features like malware scanning, and security monitoring.
 
 #### Blacklist Checker
 Blacklist check UNIX/Linux utility.
 
 #### Nench
 VPS benchmark script — based on the popular bench.sh, plus CPU and ioping tests, and dual-stack IPv4 and v6 speedtests by default.
-
-#### Wordfence-cli
-Wordfence-cli is a widely-used security tool for WordPress that provides features like malware scanning, and security monitoring.
 
 ## :gear: Installation
 
