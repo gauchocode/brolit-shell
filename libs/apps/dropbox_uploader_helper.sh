@@ -18,6 +18,11 @@ function dropbox_account_space_free() {
 
     local output
 
+    # Log
+    log_event "debug" "Getting Dropbox account space left" "false"
+    log_event "debug" "Running: \"${DROPBOX_UPLOADER}\" space | grep \"Free:\" | awk -F \" \" "'{print $2}'"" "false"
+
+    # Command
     output="$("${DROPBOX_UPLOADER}" space | grep "Free:" | awk -F " " '{print $2}' 2>&1)"
 
     [[ -n ${output} ]] && echo "${output}"
