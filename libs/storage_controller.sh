@@ -175,8 +175,8 @@ function storage_upload_backup() {
     local error_type
     local storage_space_free
 
-    # Remove string from $file_to_upload_size
-    file_to_upload_size="${file_to_upload_size//[^0-9]/}"
+    # Only numbers
+    file_to_upload_size="$(echo "${file_to_upload_size}" | sed -E 's/[^0-9.]+//g')"
 
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
@@ -188,11 +188,13 @@ function storage_upload_backup() {
         log_event "debug" "File to upload size: ${file_to_upload_size}" "false"
 
         # Compare
-        [[ ${storage_space_free} -lt ${file_to_upload_size} ]] && error_type="dropbox" && got_error=1
+        ## Need to do this because Bash doesn't support floating point arithmetic on [[]]
+        result=$(echo "${storage_space_free} < ${file_to_upload_size}" | bc)
+        [[ ${result} -eq 1 ]] && error_type="dropbox_space" && got_error=1
 
         # Upload
         dropbox_upload "${file_to_upload}" "${remote_directory}"
-        [[ $? -eq 1 ]] && error_type="dropbox" && got_error=1
+        [[ $? -eq 1 ]] && error_type="dropbox_upload" && got_error=1
 
     fi
     if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
