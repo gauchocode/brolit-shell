@@ -702,7 +702,7 @@ function array_to_checklist() {
 # File browser
 #
 # Arguments:
-#   $1= ${menutitle}
+#   ${1} = ${menutitle}
 #   ${2} = ${startdir}
 #
 # Outputs:
@@ -760,7 +760,7 @@ function file_browser() {
 # Directory browser
 #
 # Arguments:
-#   $1= ${menutitle}
+#   ${1} = ${menutitle}
 #   ${2} = ${startdir}
 #
 # Outputs:
@@ -820,7 +820,7 @@ function directory_browser() {
 # Get all directories from specific location
 #
 # Arguments:
-#   $1= ${main_dir}
+#   ${1} = ${main_dir}
 #
 # Outputs:
 #   String with directories
@@ -842,7 +842,7 @@ function get_all_directories() {
 # Sort backup files by date
 #
 # Arguments:
-#   $1= ${files}
+#   ${1} = ${files}
 #
 # Outputs:
 #   Array with sorted files
@@ -867,7 +867,7 @@ function sort_files_by_date {
 # Sort array alphabetically
 #
 # Arguments:
-#   $1= ${files}
+#   ${1} = ${files}
 #
 # Outputs:
 #   Array with sorted files
@@ -892,7 +892,7 @@ function sort_array_alphabetically {
 # Get size of an specific file
 #
 # Arguments:
-#   $1= ${file}
+#   ${1} = ${file}
 #
 # Outputs:
 #   String with directories
@@ -908,6 +908,7 @@ function get_file_size() {
   file_size_result=$?
   if [[ ${file_size_result} -eq 0 ]]; then
 
+    # Log
     log_event "info" "File size: ${backup_file_size}" "false"
 
     # Prepare string
@@ -918,6 +919,7 @@ function get_file_size() {
 
   else
 
+    # Log
     log_event "error" "Something went wrong trying to get file size of: ${file}" "false"
     log_event "debug" "Last command executed: du --apparent-size -s -k \"${file}\" | awk '{ print $1 }' | awk '{printf \"%.3f MiB %s\n\", $1/1024, $2}'" "false"
     log_event "debug" "Output: ${file_size_result}" "false"
@@ -932,9 +934,9 @@ function get_file_size() {
 # Copy files (with rsync)
 #
 # Arguments:
-#   $1= ${source_path}
+#   ${1} = ${source_path}
 #   ${2} = ${destination_path}
-#   $3= ${excluded_path} - Optional: Need to be a relative path
+#   ${3} = ${excluded_path} - Optional: Need to be a relative path
 #
 # Outputs:
 #   0 if ok, 1 on error.

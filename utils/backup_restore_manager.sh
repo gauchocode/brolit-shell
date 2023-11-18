@@ -276,7 +276,7 @@ function backup_all_docker_volumes() {
     if [[ -f "${BROLIT_TMP_DIR}/${volume}-${NOW}.tar.bz2" ]]; then
 
       # Upload backup file to Dropbox
-      storage_upload_backup "${BROLIT_TMP_DIR}/${volume}-${NOW}.tar.bz2" "${remote_path}"
+      storage_upload_backup "${BROLIT_TMP_DIR}/${volume}-${NOW}.tar.bz2" "${remote_path}" ""
 
       # Send notification
       send_notification "✅ ${SERVER_NAME}" "Docker volume backup completed for ${volume}." ""
