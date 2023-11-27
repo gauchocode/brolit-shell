@@ -98,6 +98,11 @@ function storage_create_dir() {
         mkdir --force "${BACKUP_LOCAL_CONFIG_BACKUP_PATH}/${remote_directory}"
 
     fi
+    if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
+
+        ssh -p "${BORG_SSH_PORT}" "${BORG_SSH_USER}@${BORG_SSH_HOST}" "mkdir --parent ${remote_directory}"
+
+    fi
 
     storage_result=$?
     [[ ${storage_result} -eq 1 ]] && return 1
