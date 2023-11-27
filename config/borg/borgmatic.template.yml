@@ -1,0 +1,155 @@
+constants:
+    project: domain-example.com             # e.g : gauchocode.com  
+    group: group_server                     # e.g: broobe-hosts
+    hostname: hostname_server repository    # e.g broobe-docker-host03-cmuse    
+    # prefix: myprefix
+
+# List of source directories and files to back up. Globs and tildes
+# are expanded. Do not backslash spaces in path names.
+source_directories:
+    - /var/www/{project}
+
+repositories:
+  - path: ssh://u372319@u372319.your-storagebox.de:23/./applications/{group}/{hostname}/projects-online/{project}
+    label: {project}
+
+exclude_patterns:
+    - '*.o'
+    - '*.log'
+    - '*.tmp'
+    - '*.cache'
+    - '*.git'
+    # - '*.pyc'
+    # - /home/*/.cache
+    # - '*/.vim*.tmp'
+    # - /etc/ssl
+    # - /home/user/path with spaces
+
+archive_name_format: '{project}_site-files-{now:%Y-%m-%dT%H:%M:%S}'
+# Keep all archives within this time interval.
+keep_within: 1m #Equivale a 2 meses
+
+# Number of secondly archives to keep.
+# keep_secondly: 60
+
+# Number of minutely archives to keep.
+# keep_minutely: 60
+
+# Number of hourly archives to keep.
+# keep_hourly: 24
+
+# Number of daily archives to keep.
+# keep_daily: 7
+
+# Number of weekly archives to keep.
+# keep_weekly: 4
+
+# Number of monthly archives to keep.
+keep_monthly: 6
+
+# Number of yearly archives to keep.
+keep_yearly: 1
+
+checks:
+    - name: archives
+    - name: repository
+      frequency: 2 weeks
+
+check_last: 3
+
+# before_actions:
+    # - echo Starting actions.
+
+# List of one or more shell commands or scripts to execute before
+# creating a backup, run once per repository.
+before_backup:
+    - echo "Arrancando backup" 
+
+# List of one or more shell commands or scripts to execute before
+# pruning, run once per repository.
+# before_prune:
+    # - echo Starting pruning.
+
+# List of one or more shell commands or scripts to execute before
+# compaction, run once per repository.
+# before_compact:
+    # - echo Starting compaction.
+
+# List of one or more shell commands or scripts to execute before
+# consistency checks, run once per repository.
+# before_check:
+    # - echo Starting checks.
+
+# List of one or more shell commands or scripts to execute before
+# extracting a backup, run once per repository.
+# before_extract:
+    # - echo Starting extracting.
+
+# List of one or more shell commands or scripts to execute after
+# creating a backup, run once per repository.
+after_backup:
+    - echo "Backup terminado!"
+
+on_error:
+    - echo Error during create/prune/compact/check.
+
+ntfy:
+    # The topic to publish to. See https://ntfy.sh/docs/publish/
+    # for details.
+    topic: backups_broobe
+
+    # The address of your self-hosted ntfy.sh instance.
+    server: https://ntfy.broobe.net
+
+    # The username used for authentication.
+    username: broobe
+
+    # The password used for authentication.
+    password: Br00b34dm1n*
+
+    start:
+        # The title of the message.
+        title: Arrancando backup!
+
+        # The message body to publish.
+        message: Proyecto {project} - Server {hostname}
+
+        # The priority to set.
+        priority: default
+
+        # Tags to attach to the message.
+        tags: rotating_light
+
+    finish:
+        # The title of the message.
+        title: Backup terminado!
+
+        # The message body to publish.
+        message: Backup de {project} terminado! 
+
+        # The priority to set.
+        priority: default
+
+        # Tags to attach to the message.
+        tags: white_check_mark
+
+    fail:
+        # The title of the message.
+        title: Backup error!
+
+        # The message body to publish.
+        message: Los backups de {project} han fallado. Ver logs
+
+        # The priority to set.
+        priority: high
+
+        # Tags to attach to the message.
+        tags: x
+
+    # List of one or more monitoring states to ping for: "start",
+    # "finish", and/or "fail". Defaults to pinging for failure
+    # only.
+    states:
+        - start
+        - finish
+        - fail
