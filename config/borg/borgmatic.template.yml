@@ -10,7 +10,7 @@ source_directories:
     - /var/www/{project}
 
 repositories:
-  - path: ssh://u372319@u372319.your-storagebox.de:23/./applications/{group}/{hostname}/projects-online/{project}
+  - path: ssh://u372319@u372319.your-storagebox.de:23/./applications/{group}/{hostname}/projects-online/site/{project}
     label: {project}
 
 exclude_patterns:
