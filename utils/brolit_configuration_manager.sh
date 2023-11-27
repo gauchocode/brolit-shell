@@ -180,18 +180,26 @@ function _brolit_configuration_load_backup_borg() {
 
     #Globals
     declare -g BACKUP_BORG_STATUS
-    declare -g BACKUP_BORG_CONFIG_FILE
+    declare -g BACKUP_BORG_USER
+    declare -g BACKUP_BORG_SERVER
+    declare -g BACKUP_BORG_PORT
 
     BACKUP_BORG_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].status")"
 
     if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
 
-        BACKUP_BORG_CONFIG_FILE="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[].file")"
+        BACKUP_BORG_USER="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[].user")"
+        [[ -z "${BACKUP_BORG_USER}" ]] && die "Error reading BACKUP_BORG_USER from server config file."
 
+        BACKUP_BORG_SERVER="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[].server")"
+        [[ -z "${BACKUP_BORG_SERVER}" ]] && die "Error reading BACKUP_BORG_SERVER from server config file."
+
+        BACKUP_BORG_PORT="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[].port")"
+        [[ -z "${BACKUP_BORG_PORT}" ]] && die "Error reading BACKUP_BORG_PORT from server config file."
 
     fi 
 
-    export BACKUP_BORG_STATUS
+    export BACKUP_BORG_STATUS BACKUP_BORG_CONFIG_FILE BACKUP_BORG_USER BACKUP_BORG_SERVER BACKUP_BORG_PORT
 }
 
 
