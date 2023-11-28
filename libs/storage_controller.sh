@@ -72,7 +72,7 @@ function storage_list_dir() {
 }
 
 ################################################################################
-# Create directory (dropbox, sftp, etc)
+# Create directory (dropbox, sftp, ssh, etc)
 #
 # Arguments:
 #   ${1} = {file_to_download}
@@ -100,7 +100,7 @@ function storage_create_dir() {
     fi
     if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
 
-        ssh -p "${BORG_SSH_PORT}" "${BORG_SSH_USER}@${BORG_SSH_HOST}" "mkdir --parent ${remote_directory}"
+        ssh -p "${BACKUP_BORG_PORT}" "${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}" "mkdir -p ${remote_directory}"
 
     fi
 
