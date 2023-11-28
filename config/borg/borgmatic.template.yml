@@ -1,7 +1,7 @@
 constants:
-    project: domain-example.com             # e.g : gauchocode.com  
+    project: domain-example.com             # e.g: gauchocode.com  
     group: group_server                     # e.g: broobe-hosts
-    hostname: hostname_server repository    # e.g broobe-docker-host03-cmuse    
+    hostname: hostname_server repository    # e.g: broobe-docker-host03-cmuse    
     # prefix: myprefix
 
 # List of source directories and files to back up. Globs and tildes
