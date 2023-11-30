@@ -4,7 +4,7 @@
 
 directorio="/var/www"
 
-if [ !d "$directorio" ]; then
+if [ ! -d "$directorio" ]; then
 	echo "El directorio '$directorio' no existe"
 	exit 1
 fi
