@@ -3,7 +3,6 @@
 # Por cada direcorio existenten en /www/var generar un archivo .yml
 
 group="broobe-hosts"
-hostname="brolit-dev"
 
 directorio="/var/www"
 
@@ -29,7 +28,7 @@ if [ -d "$carpeta" ]; then
 
 			PROJECT=$nombre_carpeta yq -i '.constants.project = strenv(PROJECT)' "/etc/borgmatic.d/$archivo_yml"
 			GROUP=$group yq -i '.constants.group = strenv(GROUP)' "/etc/borgmatic.d/$archivo_yml"
-			HOST=$hostname yq -i '.constants.hostname = strenv(HOST)' "/etc/borgmatic.d/$archivo_yml"
+			HOST=$HOSTNAME yq -i '.constants.hostname = strenv(HOST)' "/etc/borgmatic.d/$archivo_yml"
 			echo "Archivo $archivo_yml generado."
 			echo "Esperando 3 segundos..."
 			sleep 3
