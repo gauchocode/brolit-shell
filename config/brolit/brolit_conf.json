@@ -146,7 +146,8 @@
                             {
                                 "user": "",
                                 "server": "",
-                                "port": ""
+                                "port": "",
+                                "group": ""
                             }
                         ]        
                     }
