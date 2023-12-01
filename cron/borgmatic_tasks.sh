@@ -17,7 +17,12 @@ for carpeta in "$directorio"/*; do
 		archivo_yml="$nombre_carpeta.yml"
 
 		borgmatic config generate --destination "/etc/borgmatic.d/$archivo_yml"
-		echo "Esperando 5 segundos..."
+		cp borgmatic.template.yml "/etc/borgmatic.d/$archivo_yml"
+
+        PROJECT=$nombre_carpeta yq -i '.constants.project = strenv(PROJECT)' "/etc/borgmatic.d/$archivo_yml"
+        yq -i '.constants.group = "broobe-hosts"' "/etc/borgmatic.d/$archivo_yml"
+        HOST="broobe-docker-host01-clusc" yq -i '.constants.hostname = strenv(HOST)' "/etc/borgmatic.d/$archivo_yml"
+        echo "Esperando 5 segundos..."
 		sleep 5
 
 	echo "Archivo $archivo_yml generado."
