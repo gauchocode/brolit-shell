@@ -2,7 +2,10 @@ constants:
     project: domain-example.com             # e.g: gauchocode.com  
     group: group_server                     # e.g: broobe-hosts
     hostname: hostname_server               # e.g: broobe-docker-host03-cmuse    
-    database: database_name                 # eg.g gauchocode_prod. Este sirve para projectos con bases de datos no dockerizadas. (local)
+    database: database_name                 # e.g: gauchocode_prod. Este sirve para projectos con bases de datos no dockerizadas. (local)
+    username: user                          # e.g: root
+    server: server_or_IP                    # e.g: ip
+    port: port_to_connect                   # e.g: 23
     # prefix: myprefix
 
 # List of source directories and files to back up. Globs and tildes
