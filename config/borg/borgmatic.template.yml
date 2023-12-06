@@ -105,7 +105,7 @@ ntfy:
     username: broobe
 
     # The password used for authentication.
-    password: Br00b34dm1n*
+    password: 
 
     start:
         # The title of the message.
