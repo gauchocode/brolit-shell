@@ -165,6 +165,8 @@ function backup_manager_menu() {
         DOMAIN="$(basename "${filepath}/${filename}")"
 
         backup_project "${DOMAIN}" "all"
+        
+        backup_project_with_borg "${DOMAIN}" "all"
 
         # Sending notifications
         #mail_send_notification "${email_subject}" "${email_content}"
