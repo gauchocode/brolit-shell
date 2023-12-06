@@ -2,6 +2,9 @@ constants:
     project: domain-example.com             # e.g: gauchocode.com  
     group: group_server                     # e.g: broobe-hosts
     hostname: hostname_server               # e.g: broobe-docker-host03-cmuse    
+    username: user 
+    server: server_or_IP
+    port: port_to_connect
     # prefix: myprefix
 
 # List of source directories and files to back up. Globs and tildes
@@ -10,7 +13,7 @@ source_directories:
     - /var/www/{project}
 
 repositories:
-  - path: ssh://u372319@u372319.your-storagebox.de:23/./applications/{group}/{hostname}/projects-online/site/{project}
+  - path: ssh://{username}@{server}:{port}/./applications/{group}/{hostname}/projects-online/site/{project}
     label: "{project}"
 
 exclude_patterns:
