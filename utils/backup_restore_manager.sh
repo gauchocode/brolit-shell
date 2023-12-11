@@ -51,6 +51,9 @@ function backup_manager_menu() {
       # Files Backup
       backup_all_files
 
+      # Configs Backup
+      backup_all_files_with_borg
+
       # Footer
       mail_footer "${SCRIPT_V}"
 
