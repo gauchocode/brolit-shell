@@ -1609,6 +1609,47 @@ function compress() {
 }
 
 ################################################################################
+# Install borgmatic cronjob
+#
+# Arguments:
+#   ${1} = ${scheduled_time}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function brolit_borgmatic_cronjob_install() {
+
+  local scheduled_time="${1}"
+
+  log_section "Cron Tasks"
+
+  borgmatic_cron_file="/etc/cron.d/borgmatic"
+
+  if [[ ! -f ${borgmatic_cron_file} ]]; then
+
+    log_event "info" "Cron file for root does not exist, creating ..." "false"
+
+    touch $borgmatic_cron_file
+    echo "0 50 * * * root PATH=$PATH:/usr/bin:/usr/local/bin /root/.local/bin/borgmatic --verbosity -1 --syslog-verbosity 1" >> $borgmatic_cron_file
+
+    chmod +x $borgmatic_cron_file
+
+    log_event "info" "Cron file created"
+    display --indent 2 --text "- Creating log file" --result DONE --color GREEN
+
+    service cron reload
+
+    log_event "info" "Updating cron job for script: ${script}" "false"
+    /bin/echo "${scheduled_time} ${script}" >>"${cron_file}"
+
+    display --indent 2 --text "- Updating cron job" --result DONE --color GREEN
+
+  fi
+}
+
+
+################################################################################
 # Install script on crontab
 #
 # Arguments:
@@ -1973,6 +2014,10 @@ function menu_cron_script_tasks() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/backups_tasks.sh" "${scheduled_time}"
+
+        # Borgmatic jobs
+        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/borgmatic_tasks.sh" "0 * * * *"
+        brolit_borgmatic_cronjob_install 
 
       fi
 
