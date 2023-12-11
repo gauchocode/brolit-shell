@@ -1292,7 +1292,7 @@ function change_ownership() {
     log_event "debug" "Command executed: chown -R ${user}:${group} ${path}" "false"
 
     clear_previous_lines "1"
-    display --indent 6 --text "- Changing directory ownership" --result FAIL --color RED
+    display --indent 6 --text "- Changing directory ownership" --result FAIL --color YELLOW
 
     return 1
 
