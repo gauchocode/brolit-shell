@@ -1620,9 +1620,10 @@ function compress() {
 
 function brolit_borgmatic_cronjob_install() {
 
-  local scheduled_time="${1}"
+  local script="${1}"
+  local scheduled_time="${2}"
 
-  log_section "Cron Tasks"
+  log_section "Borgmatic Tasks"
 
   borgmatic_cron_file="/etc/cron.d/borgmatic"
 
@@ -1638,16 +1639,16 @@ function brolit_borgmatic_cronjob_install() {
     log_event "info" "Cron file created"
     display --indent 2 --text "- Creating log file" --result DONE --color GREEN
 
-    service cron reload
-
     log_event "info" "Updating cron job for script: ${script}" "false"
-    /bin/echo "${scheduled_time} ${script}" >>"${cron_file}"
-
+    service cron reload
     display --indent 2 --text "- Updating cron job" --result DONE --color GREEN
 
+  else
+    log_event "info" "Script file already exists"
+    display --indent 2 --text "- Not updated" --result FAIL --color RED 
   fi
-}
 
+}
 
 ################################################################################
 # Install script on crontab
