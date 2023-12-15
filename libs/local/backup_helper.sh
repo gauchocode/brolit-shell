@@ -456,6 +456,51 @@ function backup_all_files() {
 }
 
 ################################################################################
+# Make all files Backup with Borg
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 if ok, 1 if error
+################################################################################
+
+
+function backup_all_files_with_borg() {
+
+  # BACKUP ALL PROJECTS WITH BORG
+  borgmatic --verbosity 1 
+
+}
+
+################################################################################
+# Make files Backup with Borg
+#
+# Arguments:
+#  ${1} = ${backup_type} - Backup Type (site_configs or sites)
+#  ${2} = ${backup_path} - Path where directories to backup are stored
+#  ${3} = ${directory_to_backup} - The specific folder/file to backup
+#
+# Outputs:
+#  0 if ok, 1 if error
+################################################################################
+function backup_project_files_borg() {
+
+  local group_name="${1}"
+  local backup_type="${2}"
+  local directory_to_backup="${3}" 
+
+  local backup_filk
+  local backup_prefix_name
+  local exclude_parameters
+  local storage_path
+
+  #backup_prefix_name="${directory_to_backup}_${backup_type}-files"
+
+  storage_create_dir "/home/applications/${group_name}/${SERVER_NAME}/projects-online/${backup_type}/${directory_to_backup}"
+}
+
+################################################################################
 # Make files Backup
 #
 # Arguments:
@@ -873,6 +918,45 @@ function backup_project_database() {
 
 }
 
+################################################################################
+# Make project Backup with Borg
+#
+# Arguments:
+#  ${1} = ${project_domain}
+#
+# Outputs:
+#  "backupfile backup_file_size" if ok, 1 if error
+################################################################################
+
+function backup_project_with_borg() {
+
+  local project_domain="${1}"
+  #local backup_type="${2}"
+  local config_directory="/etc/borgmatic.d/${project_domain}.yml"
+
+  local got_error=0
+
+  #local db_stage
+  #local db_name
+  #local db_engine
+  #local backup_file
+  #local project_type
+
+  # Backup files
+  log_subsection "Backup Project Files"
+  #backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${project_domain}")"
+
+  project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
+
+  if [[ ${project_install_type} == "docker"* && ${project_type} != "html" ]]; then
+
+    # Esto ya hace backup de todo.
+    borgmatic --verbosity 1 --config ${config_directory}
+
+  fi
+  ## Faltaria para los projectos no dockerizados o sea "default"
+
+}
 ################################################################################
 # Make project Backup
 #

@@ -169,7 +169,7 @@ function backup_manager_menu() {
 
         backup_project "${DOMAIN}" "all"
         
-        backup_project_with_borg "${DOMAIN}" "all"
+        backup_project_with_borg "${DOMAIN}"
 
         # Sending notifications
         #mail_send_notification "${email_subject}" "${email_content}"
