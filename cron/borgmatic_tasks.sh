@@ -14,19 +14,9 @@ if [ ! -d "$directorio" ]; then
 	exit 1
 fi
 
-function _json_read_field() {
-
-    local json_file="${1}"
-    local json_field="${2}"
-
-    local json_field_value
-
-    json_field_value="$(cat "${json_file}" | jq -r ".${json_field}")"
-
-    # Return
-    echo "${json_field_value}"
-
-}
+source "${BROLIT_MAIN_DIR}/brolit_lite.sh"
+source "${BROLIT_MAIN_DIR}/libs/local/project_helper.sh"
+source "${BROLIT_MAIN_DIR}/libs/commons.sh"
 
 function _brolit_configuration_load_backup_borg() {
     local server_config_file="${1}"
@@ -64,42 +54,53 @@ function _brolit_configuration_load_backup_borg() {
 
 _brolit_configuration_load_backup_borg "/root/.brolit_conf.json"
 
-echo $BACKUP_BORG_GROUP
-
-echo ${BACKUP_BORG_GROUP}
-
-
 if [ "${BACKUP_BORG_STATUS}" == "enabled" ]; then
+
 	for carpeta in "$directorio"/*; do
-	if [ -d "$carpeta" ]; then
+		if [ -d "$carpeta" ]; then
 			nombre_carpeta=$(basename "$carpeta")
 			archivo_yml="$nombre_carpeta.yml"
+			project_install_type="$(_project_get_install_type "/var/www/${nombre_carpeta}")"
+
+            #if [ ${project_install_type} == "default" ]; then
+            #    echo "Install type ${project_install_type}"
+            #    project_type="$(project_get_type "/var/www/${project_domain}")"
+            #    db_name="$(project_get_configured_database "${PROJECTS_PATH}/${nombre_carpeta}" "wordpress" "${project_install_type}")"
+
+            #    echo "----------------- Project type: ${project_type} ------- "
+            #    echo "----------------- DB NAME: ${db_name} ----------------- "
+            #fi
 
 			if [ $nombre_carpeta == "html" ]; then
 				continue
 			fi
 
-			if [ ! -f "/etc/borgmatic.d/$archivo_yml" ]; then
-				borgmatic config generate --destination "/etc/borgmatic.d/$archivo_yml"
-				cp /root/brolit-shell/config/borg/borgmatic.template.yml "/etc/borgmatic.d/$archivo_yml"
+            if [ ! -f "/etc/borgmatic.d/$archivo_yml" ]; then
 
-				PROJECT=$nombre_carpeta yq -i '.constants.project = strenv(PROJECT)' "/etc/borgmatic.d/$archivo_yml"
-				GROUP=$BACKUP_BORG_GROUP yq -i '.constants.group = strenv(GROUP)' "/etc/borgmatic.d/$archivo_yml"
-				HOST=$HOSTNAME yq -i '.constants.hostname = strenv(HOST)' "/etc/borgmatic.d/$archivo_yml"
-				USER=$BACKUP_BORG_USER yq -i '.constants.username = strenv(USER)' "/etc/borgmatic.d/$archivo_yml"
-				SERVER=$BACKUP_BORG_SERVER yq -i '.constants.server = strenv(SERVER)' "/etc/borgmatic.d/$archivo_yml"
-				PORT=$BACKUP_BORG_PORT yq -i '.constants.port = strenv(PORT)' "/etc/borgmatic.d/$archivo_yml"
-				echo "Archivo $archivo_yml generado."
-				echo "Esperando 3 segundos..."
-				sleep 3
-			else
-				echo "El archivo $archivo_yml ya existe."	
-				sleep 1
-			fi	
-			echo "Inicializando repo"
-			ssh -p ${BACKUP_BORG_PORT} ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER} 'mkdir -p /home/applications/'$BACKUP_BORG_GROUP'/'$hostname'/projects-online/site/'$nombre_carpeta''
-			sleep 1
-			borgmatic init --encryption=none --config "/etc/borgmatic.d/$archivo_yml"
+                if [ ${project_install_type} == "default" ]; then
+                    cp "${BROLIT_MAIN_DIR}/config/borg/borgmatic.template-default.yml" "/etc/borgmatic.d/$archivo_yml"
+                else
+                    echo "---- Projecto no dockerizado escribir el nombre de la base de datos manualmente!! ----"
+                    cp "${BROLIT_MAIN_DIR}/config/borg/borgmatic.template.yml" "/etc/borgmatic.d/$archivo_yml"
+                fi
+
+                PROJECT=$nombre_carpeta yq -i '.constants.project = strenv(PROJECT)' "/etc/borgmatic.d/$archivo_yml"
+                GROUP=$BACKUP_BORG_GROUP yq -i '.constants.group = strenv(GROUP)' "/etc/borgmatic.d/$archivo_yml"
+                HOST=$HOSTNAME yq -i '.constants.hostname = strenv(HOST)' "/etc/borgmatic.d/$archivo_yml"
+                USER=$BACKUP_BORG_USER yq -i '.constants.username = strenv(USER)' "/etc/borgmatic.d/$archivo_yml"
+                SERVER=$BACKUP_BORG_SERVER yq -i '.constants.server = strenv(SERVER)' "/etc/borgmatic.d/$archivo_yml"
+                PORT=$BACKUP_BORG_PORT yq -i '.constants.port = strenv(PORT)' "/etc/borgmatic.d/$archivo_yml"
+                echo "Archivo $archivo_yml generado."
+                echo "Esperando 3 segundos..."
+                sleep 3
+            else
+                echo "El archivo $archivo_yml ya existe."	
+                sleep 1
+            fi	
+                echo "Inicializando repo"
+                ssh -p ${BACKUP_BORG_PORT} ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER} 'mkdir -p /home/applications/'$BACKUP_BORG_GROUP'/'$hostname'/projects-online/site/'$nombre_carpeta''
+                sleep 1
+                borgmatic init --encryption=none --config "/etc/borgmatic.d/$archivo_yml"
 		fi
 	done
 else
