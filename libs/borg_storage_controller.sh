@@ -79,12 +79,15 @@ function restore_backup_with_borg() {
     
     local storage_box_directory="/mnt/storage-box"
 
+    # Create storage box directory if not exists where it will be mounted
     [[ ! -d ${storage_box_directory} ]] && mkdir ${storage_box_directory}
 
     log_section "Restore Backup"
 
+    # umount storage box
     umount_storage_box ${storage_box_directory} && sleep 1
 
+    # mount storage box
     mount_storage_box ${storage_box_directory} && sleep 1
 
     local storage_box_directory=${storage_box_directory}
@@ -95,11 +98,43 @@ function restore_backup_with_borg() {
 
     if [[ ${chosen_server} != ""  ]]; then
         restore_project_with_borg "${chosen_server}"
+    else
+        display --indent 6 --text "- Selecting Project Backup" --result "SKIPPED" --color YELLOW
+        return 1
     fi
 
     umount_storage_box ${storage_box_directory}
 
 }
+
+function generate_tar_and_decompress() {
+    
+    local chosen_archive="${1}"
+    local project_backup_file=${chosen_archive}.tar.bz2
+
+    borg export-tar --tar-filter='auto' --progress ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_domain}::${chosen_archive} ${BROLIT_MAIN_DIR}/tmp/${project_backup_file}
+
+    if [ $? -eq 0 ]; then
+
+      echo "Archivo ${project_backup_file} descargado satisfactoriamente"
+      tar --force-local -C / -xvf "${BROLIT_MAIN_DIR}/tmp/${project_backup_file}" var/www
+      [[ $? -eq 1 ]] && exit 1 
+
+      log_subsection
+      sleep 1
+
+      rm -rf ${BROLIT_MAIN_DIR}/tmp/${project_backup_file}
+      [[ $? -eq 0 ]] && echo "Eliminando archivos temporales"
+
+    else
+
+      echo "Error al exportar el archivo ${project_backup_file}"
+      exit 1
+
+    fi
+
+}
+
 
 #################################################
 # restore project with borg
@@ -124,34 +159,13 @@ function restore_project_with_borg() {
 
     if [[ ${chosen_domain} != "" ]]; then
 
-      arhives="$(borg list --format '{archive}{NL}' ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_domain} | sort -r)"
+        arhives="$(borg list --format '{archive}{NL}' ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_domain} | sort -r)"
 
-      chosen_archive="$(whiptail --title "BACKUP SELECTION" --menu "Choose an archive to work with" 20 78 10 $(for x in ${arhives}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
+        chosen_archive="$(whiptail --title "BACKUP SELECTION" --menu "Choose an archive to work with" 20 78 10 $(for x in ${arhives}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
 
-      [[ ${chosen_archive} == "" ]] && return 1
+        [[ ${chosen_archive} == "" ]] && return 1
 
-      project_backup_file=${chosen_archive}.tar.bz2
-
-      borg export-tar --tar-filter='auto' --progress ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_domain}::${chosen_archive} ${BROLIT_MAIN_DIR}/tmp/${project_backup_file}
-
-      if [ $? -ne 0 ]; then
-        echo "Error al exportar el archivo ${project_backup_file}"
-        exit 1
-      else
-        echo "Archivo ${project_backup_file} descargado satisfactoriamente"
-
-        tar --force-local -C / -xvf "${BROLIT_MAIN_DIR}/tmp/${project_backup_file}" var/www
-
-        [[ $? -eq 1 ]] && exit 1 
-
-        echo "Archivo ${project_backup_file} descomprimido satisfactoriamente"
-
-        sleep 1
-
-        rm -rf ${BROLIT_MAIN_DIR}/tmp/${project_backup_file}
-        [[ $? -eq 0 ]] && echo "Eliminando archivos temporales"
-
-      fi
+        generate_tar_and_decompress "${chosen_archive}" 
 
     fi 
 
