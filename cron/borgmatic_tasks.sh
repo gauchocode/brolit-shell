@@ -98,7 +98,7 @@ if [ "${BACKUP_BORG_STATUS}" == "enabled" ]; then
                 sleep 1
             fi	
                 echo "Inicializando repo"
-                ssh -p ${BACKUP_BORG_PORT} ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER} "mkdir -p /home/applications/'${$BACKUP_BORG_GROUP}/'${hostname}'/projects-online/site/'$nombre_carpeta'"
+                ssh -p ${BACKUP_BORG_PORT} ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER} "mkdir -p /home/applications/'$BACKUP_BORG_GROUP'/'$HOSTNAME'/projects-online/site/'$nombre_carpeta'"
                 sleep 1
                 borgmatic init --encryption=none --config "/etc/borgmatic.d/$archivo_yml"
 		fi
