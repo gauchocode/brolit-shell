@@ -97,6 +97,7 @@ function restore_backup_with_borg() {
     local chosen_server=$(whiptail --title "BACKUP SELECTION" --menu "Choose a server to work with" 20 78 10 $(for x in ${remote_server_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)
 
     if [[ ${chosen_server} != ""  ]]; then
+        log_subsection "Restore Project Backup"
         restore_project_with_borg "${chosen_server}"
     else
         display --indent 6 --text "- Selecting Project Backup" --result "SKIPPED" --color YELLOW
@@ -114,22 +115,52 @@ function generate_tar_and_decompress() {
 
     borg export-tar --tar-filter='auto' --progress ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_domain}::${chosen_archive} ${BROLIT_MAIN_DIR}/tmp/${project_backup_file}
 
-    if [ $? -eq 0 ]; then
+    exitstatus=$?
 
-      echo "Archivo ${project_backup_file} descargado satisfactoriamente"
-      tar --force-local -C / -xvf "${BROLIT_MAIN_DIR}/tmp/${project_backup_file}" var/www
-      [[ $? -eq 1 ]] && exit 1 
+    if [[ exitstatus -eq 0 ]]; then
+        display --indent 6 --text "- Exporting compressed file from storage box" --result "DONE" --color GREEN
+        log_event "info" "${project_backup_file} downloaded" "false"
+    else
+        echo "Error al exportar el archivo ${project_backup_file}"
+        exit 1
+    fi
 
-      log_subsection
-      sleep 1
+    #log_event "info" "Extracting compressed file: ${project_backup_file}" "false"
+    #display --indent 6 --text "- Extracting compressed file"
 
-      rm -rf ${BROLIT_MAIN_DIR}/tmp/${project_backup_file}
-      [[ $? -eq 0 ]] && echo "Eliminando archivos temporales"
+    if [ -f "${BROLIT_MAIN_DIR}/tmp/${project_backup_file}" ]; then
 
+        echo "Archivo ${project_backup_file} descargado satisfactoriamente"
+        pv --width 70 "${BROLIT_MAIN_DIR}/tmp/${project_backup_file}" | tar xpj -C / var/www
+
+        if [[ $? -eq 0 ]]; then
+
+            clear_previous_lines "2"
+
+            log_event "info" "${file_path} extracted ok!" "false"
+            display --indent 6 --text "- Extracting compressed file" --result "DONE" --color GREEN
+
+            return 0
+
+        else
+
+            clear_previous_lines "2"
+
+            log_event "error" "Error extracting ${file_path}" "false"
+            display --indent 6 --text "- Extracting compressed file" --result "FAIL" --color RED
+
+            return 1
+
+        fi       
+
+        sleep 1
+
+        rm -rf ${BROLIT_MAIN_DIR}/tmp/${project_backup_file}
+        [[ $? -eq 0 ]] && echo "Eliminando archivos temporales"
     else
 
-      echo "Error al exportar el archivo ${project_backup_file}"
-      exit 1
+        echo "Error al exportar el archivo ${project_backup_file}"
+        exit 1
 
     fi
 
@@ -152,7 +183,6 @@ function restore_project_with_borg() {
     local storage_box_directory="/mnt/storage-box"
 
     # Create storage-box directory if not exists
-
     remote_domain_list=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}" -maxdepth 3 -mindepth 3 -type d -exec basename {} \; | sort)
 
     chosen_domain="$(whiptail --title "BACKUP SELECTION" --menu "Choose a domain to work with" 20 78 10 $(for x in ${remote_domain_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
@@ -163,10 +193,13 @@ function restore_project_with_borg() {
 
         chosen_archive="$(whiptail --title "BACKUP SELECTION" --menu "Choose an archive to work with" 20 78 10 $(for x in ${arhives}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
 
-        [[ ${chosen_archive} == "" ]] && return 1
-
-        generate_tar_and_decompress "${chosen_archive}" 
-
+        if [[ ${chosen_archive} != "" ]]; then
+            display --indent 6 --text "- Selecting Project Backup" --result "DONE" --color GREEN
+            generate_tar_and_decompress "${chosen_archive}" 
+        else
+            display --indent 6 --text "- Selecting Project Backup" --result "SKIPPED" --color YELLOW
+            return 1
+        fi
     fi 
 
 }
