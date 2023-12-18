@@ -17,25 +17,6 @@
 #
 ################################################################################
 
-################################################################################
-# List directory content
-#
-# Arguments:
-#   ${1} = {remote_directory}
-#
-# Outputs:
-#   ${remote_list}
-################################################################################
-
-function load_borg_config_file() {
-
-}
-
-
-function connect_to_server() {
-
-}
-
 ################################################
 # umount storage box
 #
@@ -85,25 +66,42 @@ function mount_storage_box() {
 
 
 #################################################
-# List directory content
+# restore backup with borg
 #
 # Arguments:
 #   ${1} = {server_hostname}
 #
 # Outputs:
-#   {chosen_domain}
+#   None
 ################################################
 
-function borg_storage_list_dir() {
-    local server_hostname="${1}"
+function restore_backup_with_borg() {
+
+    umount_storage_box "/mnt/storage-box" && sleep 1
+
+    mount_storage_box "/mnt/storage-box" && sleep 1
+
     local storage_box_directory="/mnt/storage-box"
+    local remote_server_list=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}" -maxdepth 1 -mindepth 1 -type d -exec basename {} \;)
+    
+    # Menu
+    local chosen_server=$(whiptail --title "BACKUP SELECTION" --menu "Choose a server to work with" 20 78 10 $(for x in ${remote_server_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)
 
-    remote_server_list=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}" -maxdepth 3 -mindepth 3 -type d -exec basename {} \; | sort)
-    #echo "El hostname directory: ${hostname_directory}"
-    chosen_domain="$(whiptail --title "BACKUP SELECTION" --menu "Choose a domain to work with" 20 78 10 $(for x in ${remote_server_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
+    restore_project_with_borg "${chosen_server}"
 
-    return chosen_domain
+    umount_storage_box "/mnt/storage-box"
+
 }
+
+#################################################
+# restore project with borg
+#
+# Arguments:
+#   ${1} = {server_hostname}
+#
+# Outputs:
+#   None
+################################################
 
 function restore_project_with_borg() {
 
@@ -113,15 +111,9 @@ function restore_project_with_borg() {
     # Create storage-box directory if not exists
     [[ ! -d ${storage_box_directory} ]] && mkdir ${storage_box_directory}
 
-    umount_storage_box ${storage_box_directory}
+    remote_domain_list=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}" -maxdepth 3 -mindepth 3 -type d -exec basename {} \; | sort)
 
-    sleep 1
-
-    mount_storage_box ${storage_box_directory}
-
-    sleep 1
-
-    chosen_domain=borg_storage_list_dir "${server_hostname}"
+    chosen_domain="$(whiptail --title "BACKUP SELECTION" --menu "Choose a domain to work with" 20 78 10 $(for x in ${remote_domain_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
 
     if [ ${chosen_domain} != "" ]; then
 
@@ -156,5 +148,4 @@ function restore_project_with_borg() {
 
     fi 
 
-    umount_storage_box ${storage_box_directory}
 }

@@ -324,6 +324,7 @@ function restore_manager_menu() {
     "02)" "FROM PUBLIC LINK (BETA)"
     "03)" "FROM LOCAL FILE (BETA)"
     "04)" "FROM FTP (BETA)"
+    "05)" "FROM BORG (BETA)"
   )
 
   chosen_restore_options="$(whiptail --title "RESTORE BACKUP" --menu " " 20 78 10 "${restore_options[@]}" 3>&1 1>&2 2>&3)"
@@ -348,6 +349,9 @@ function restore_manager_menu() {
 
       restore_backup_from_ftp
 
+    fi
+    if [[ ${chosen_restore_options} == *"05"* ]]; then
+      restore_backup_with_borg 
     fi
 
   else
