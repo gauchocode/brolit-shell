@@ -35,8 +35,8 @@ function umount_storage_box() {
   is_mounted=$(mount -v | grep "storage-box" > /dev/null; echo "$?")
 
   if [[ ${is_mounted} -eq 0 ]]; then
-      echo "Desmontando storage-box"
-      umount ${directory}
+        log_subsection "Desmontando storage-box"
+        umount ${directory}
   fi
 
 }
@@ -58,7 +58,7 @@ function mount_storage_box() {
   is_mounted=$(mount -v | grep "storage-box" > /dev/null; echo "$?")
 
   if [[ ${is_mounted} -eq 1 ]]; then
-      echo "Montando storage-box"
+      log_subsection "Montando storage-box"
       sshfs -o default_permissions -p ${BACKUP_BORG_PORT} ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:/home/applications ${directory}
   fi
 
@@ -72,24 +72,32 @@ function mount_storage_box() {
 #   ${1} = {server_hostname}
 #
 # Outputs:
-#   None
+#   Return 0 if ok, 1 on error. 
 ################################################
 
 function restore_backup_with_borg() {
-
-    umount_storage_box "/mnt/storage-box" && sleep 1
-
-    mount_storage_box "/mnt/storage-box" && sleep 1
-
-    local storage_box_directory="/mnt/storage-box"
-    local remote_server_list=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}" -maxdepth 1 -mindepth 1 -type d -exec basename {} \;)
     
+    local storage_box_directory="/mnt/storage-box"
+
+    [[ ! -d ${storage_box_directory} ]] && mkdir ${storage_box_directory}
+
+    log_section "Restore Backup"
+
+    umount_storage_box ${storage_box_directory} && sleep 1
+
+    mount_storage_box ${storage_box_directory} && sleep 1
+
+    local storage_box_directory=${storage_box_directory}
+    local remote_server_list=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}" -maxdepth 1 -mindepth 1 -type d -exec basename {} \;)
+
     # Menu
     local chosen_server=$(whiptail --title "BACKUP SELECTION" --menu "Choose a server to work with" 20 78 10 $(for x in ${remote_server_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)
 
-    restore_project_with_borg "${chosen_server}"
+    if [[ ${chosen_server} != ""  ]]; then
+        restore_project_with_borg "${chosen_server}"
+    fi
 
-    umount_storage_box "/mnt/storage-box"
+    umount_storage_box ${storage_box_directory}
 
 }
 
@@ -109,13 +117,12 @@ function restore_project_with_borg() {
     local storage_box_directory="/mnt/storage-box"
 
     # Create storage-box directory if not exists
-    [[ ! -d ${storage_box_directory} ]] && mkdir ${storage_box_directory}
 
     remote_domain_list=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}" -maxdepth 3 -mindepth 3 -type d -exec basename {} \; | sort)
 
     chosen_domain="$(whiptail --title "BACKUP SELECTION" --menu "Choose a domain to work with" 20 78 10 $(for x in ${remote_domain_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
 
-    if [ ${chosen_domain} != "" ]; then
+    if [[ ${chosen_domain} != "" ]]; then
 
       arhives="$(borg list --format '{archive}{NL}' ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_domain} | sort -r)"
 
