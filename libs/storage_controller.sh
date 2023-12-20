@@ -100,7 +100,7 @@ function storage_create_dir() {
     fi
     if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
 
-        ssh -p "${BACKUP_BORG_PORT}" "${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}" "mkdir -p ${remote_directory}"
+        ssh -p "${BACKUP_BORG_PORT}" "${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}" "mkdir -p /home/applications/${BACKUP_BORG_GROUP}/${remote_directory}"
 
     fi
 
