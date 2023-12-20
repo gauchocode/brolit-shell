@@ -13,43 +13,83 @@ function test_borg_helper_funtions() {
     #echo "BORG PASS: ${BACKUP_BORG_PORT}"
 }
 
+function umount_storage_box() {
+
+  local directory="${1}"
+
+  is_mounted=$(mount -v | grep "storage-box" > /dev/null; echo "$?")
+
+  if [[ ${is_mounted} -eq 0 ]]; then
+      echo "Desmontando storage-box"
+      umount ${directory}
+  fi
+
+}
+
+function mount_storage_box() {
+
+
+  return 0
+
+}
+
+
 function borg_list_directory_on_server() {
 
-    #Create storage-box directory if not exists
-
     local server_hostname="${1}"
+    local storage_box_directory="/mnt/storage-box"
 
-    [[ ! -d "/mnt/storage-box" ]] && mkdir "/mnt/storage-box"
 
-    is_mounted=$(mount -v | grep "storage-box" > /dev/null; echo "$?")
+    # Create storage-box directory if not exists
+    [[ ! -d ${storage_box_directory} ]] && mkdir ${storage_box_directory}
 
-    if [[ ${is_mounted} -eq 0 ]]; then
-        echo "Desmonando storage-box"
-        umount /mnt/storage-box
-    fi
+    umount_storage_box ${storage_box_directory}
 
     sleep 1
 
-    echo "Montando storage-box"
-    sshfs -o default_permissions -p ${BACKUP_BORG_PORT} ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:/home/applications /mnt/storage-box
+    mount_storage_box ${storage_box_directory}
 
     sleep 1
 
-    remote_server_list=$(find "/mnt/storage-box/${BACKUP_BORG_GROUP}/${server_hostname}" -maxdepth 3 -mindepth 3 -type d -exec basename {} \; | sort)
+    remote_server_list=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}" -maxdepth 3 -mindepth 3 -type d -exec basename {} \; | sort)
     #echo "El hostname directory: ${hostname_directory}"
 
-    chosen_server="$(whiptail --title "BACKUP SELECTION" --menu "Choose a server to work with" 20 78 10 $(for x in ${remote_server_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
+    chosen_domain="$(whiptail --title "BACKUP SELECTION" --menu "Choose a domain to work with" 20 78 10 $(for x in ${remote_server_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
 
-    arhives="$(borg list --format '{archive}{NL}' ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_server} | sort -r)"
+    if [ ${chosen_domain} != "" ]; then
 
-    chosen_archive="$(whiptail --title "BACKUP SELECTION" --menu "Choose an archive to work with" 20 78 10 $(for x in ${arhives}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
+      arhives="$(borg list --format '{archive}{NL}' ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_domain} | sort -r)"
 
-    borg export-tar --tar-filter='auto' --progress ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_server}::${chosen_archive} ${BROLIT_MAIN_DIR}/tmp/${chosen_archive}.tar.bz2
+      chosen_archive="$(whiptail --title "BACKUP SELECTION" --menu "Choose an archive to work with" 20 78 10 $(for x in ${arhives}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
 
-    umount /mnt/storage-box
+      [[ ${chosen_archive} == "" ]] && return 1
 
-    # Projectos en el server:
-    # find /mnt/storage-box/broobe-hosts/broobe-docker-host03-cmuse -maxdepth 2 -mindepth 2 -type d | awk -F/ '{print $NF}'
+      project_backup_file=${chosen_archive}.tar.bz2
+
+      borg export-tar --tar-filter='auto' --progress ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_domain}::${chosen_archive} ${BROLIT_MAIN_DIR}/tmp/${project_backup_file}
+
+      if [ $? -ne 0 ]; then
+        echo "Error al exportar el archivo ${project_backup_file}"
+        exit 1
+      else
+        echo "Archivo ${project_backup_file} descargado satisfactoriamente"
+
+        tar --force-local -C / -xvf "${BROLIT_MAIN_DIR}/tmp/${project_backup_file}" var/www
+
+        [[ $? -eq 1 ]] && exit 1 
+
+        echo "Archivo ${project_backup_file} descomprimido satisfactoriamente"
+
+        sleep 1
+
+        rm -rf ${BROLIT_MAIN_DIR}/tmp/${project_backup_file}
+        [[ $? -eq 0 ]] && echo "Eliminando archivos temporales"
+
+      fi
+
+    fi 
+
+    umount_storage_box ${storage_box_directory}
 }
 
 
