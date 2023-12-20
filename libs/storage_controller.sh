@@ -1,24 +1,10 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.5
+# Version: 3.3.7
 ################################################################################
 #
 # Storage Controller: Controller to upload and download backups.
-#
-################################################################################
-
-################################################################################
-#
-# Important: Backup/Restore utils selection.
-#
-#   Backup Uploader:
-#       Simple way to upload backup file to this cloud service.
-#
-#   Duplicity:
-#       Best way to backup projects of 10GBs+. Incremental backups.
-#       Need to use SFTP option (non native cloud services support).
-#       Read: https://zertrin.org/how-to/installation-and-configuration-of-duplicity-for-encrypted-sftp-remote-backup/
 #
 ################################################################################
 
@@ -164,6 +150,7 @@ function storage_move() {
 # Arguments:
 #   ${1} = {file_to_upload}
 #   ${2} = {remote_directory}
+#   ${3} = {file_to_upload_size}
 #
 # Outputs:
 #   0 if it utils were installed, 1 on error.
@@ -173,15 +160,32 @@ function storage_upload_backup() {
 
     local file_to_upload="${1}"
     local remote_directory="${2}"
+    local file_to_upload_size="${3}"
 
     local got_error=0
     local error_type
+    local storage_space_free
+
+    # Only numbers
+    file_to_upload_size="$(echo "${file_to_upload_size}" | sed -E 's/[^0-9.]+//g')"
 
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
-        dropbox_upload "${file_to_upload}" "${remote_directory}"
+        # Check if account has enough space
+        storage_space_free="$(dropbox_account_space_free)"
 
-        [[ $? -eq 1 ]] && error_type="dropbox" && got_error=1
+        # Log
+        log_event "debug" "Dropbox account space free: ${storage_space_free}" "false"
+        log_event "debug" "File to upload size: ${file_to_upload_size}" "false"
+
+        # Compare
+        ## Need to do this because Bash doesn't support floating point arithmetic on [[]]
+        result=$(echo "${storage_space_free} < ${file_to_upload_size}" | bc)
+        [[ ${result} -eq 1 ]] && error_type="dropbox_space" && got_error=1
+
+        # Upload
+        dropbox_upload "${file_to_upload}" "${remote_directory}"
+        [[ $? -eq 1 ]] && error_type="dropbox_upload" && got_error=1
 
     fi
     if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
@@ -214,7 +218,7 @@ function storage_upload_backup() {
 #
 # Arguments:
 #   ${1} = {file_to_download}
-#   ${2} = {remote_directory}
+#   ${2} = {local_directory}
 #
 # Outputs:
 #   0 if it utils were installed, 1 on error.
@@ -223,15 +227,28 @@ function storage_upload_backup() {
 function storage_download_backup() {
 
     local file_to_download="${1}"
-    local remote_directory="${2}"
+    local local_directory="${2}"
 
     local got_error=0
-    local error_type="none"
+    local error_type
+    local backup_date
+    local local_space_free
 
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
-        dropbox_download "${file_to_download}" "${remote_directory}"
-        [[ $? -eq 1 ]] && error_type="dropbox" && got_error=1
+        # Check if local storage has enough space
+        local_space_free="$(calculate_disk_usage "${MAIN_VOL}")"
+        
+        # Check date from file to download
+        backup_date="$(dropbox_get_modified_date "${file_to_download}")"
+
+        # Show whiptail message
+        whiptail_message_with_skip_option "Backup date" "\n\nThis backup date is: ${backup_date}\n\nDo you want to continue?"
+        [[ $? -eq 1 ]] && error_type="dropbox_skipped" && return 1
+
+        # Download
+        dropbox_download "${file_to_download}" "${local_directory}"
+        [[ $? -eq 1 ]] && error_type="dropbox_download" && got_error=1
 
     fi
 
@@ -258,8 +275,8 @@ function storage_delete_backup() {
     local force_delete="true"
 
     local got_error=0
-    #local error_msg="none"
     local error_type="none"
+    #local error_msg="none"
 
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
@@ -341,7 +358,7 @@ function storage_delete_old_backups() {
     log_event "debug" "Monthly backups: ${sorted_monthly[@]}" "false"
 
     # Log
-    display --indent 6 --text "- Deleting old files from Dropbox"
+    display --indent 6 --text "- Deleting old files from storage"
 
     # Delete old daily backups
     if [ ${#sorted_daily[@]} -gt $keep_daily ]; then
@@ -369,7 +386,7 @@ function storage_delete_old_backups() {
 
     # Log
     clear_previous_lines "1"
-    display --indent 6 --text "- Deleting old files from Dropbox" --result "DONE" --color GREEN
+    display --indent 6 --text "- Deleting old files from storage" --result "DONE" --color GREEN
 
 }
 
@@ -387,6 +404,9 @@ function storage_remote_server_list() {
 
     local remote_server_list # list servers directories
     local chosen_server      # whiptail var
+
+    # Log
+    log_event "info" "Running server selection menu" "false"
 
     # Server selection
     remote_server_list="$(storage_list_dir "/")"
@@ -438,13 +458,19 @@ function storage_remote_type_list() {
     local remote_type_list
     local chosen_restore_type
 
-    # List options
-    remote_type_list="project site database" # TODO: need to implement "other"
+    # Log
+    log_event "info" "Running backup type selection menu" "false"
 
-    chosen_restore_type="$(whiptail --title "BACKUP SELECTION" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 $(for x in ${remote_type_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)"
+    # List options
+    remote_type_list="project site database docker-volume"
+
+    chosen_restore_type="$(whiptail --title "BACKUP TYPE SELECTION" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 $(for x in ${remote_type_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        log_event "debug" "chosen_restore_type: ${chosen_restore_type}" "false"
 
         echo "${chosen_restore_type}" && return 0
 
@@ -471,7 +497,8 @@ function storage_remote_status_list() {
     local remote_status_list
     local chosen_restore_status
 
-    log_event "debug" "Backup status selection" "false"
+    # Log
+    log_event "debug" "Running backup status selection" "false"
 
     # List options
     remote_status_list=("01) Online 02) Offline")
@@ -493,6 +520,7 @@ function storage_remote_status_list() {
 
     else
 
+        # Log
         log_event "debug" "Backup status selection skipped." "false"
 
         return 1
@@ -522,6 +550,9 @@ function storage_backup_selection() {
     local remote_backup_list
     local chosen_backup_file
 
+    # Log
+    log_event "info" "Running backup selection menu" "false"
+
     # Get dropbox folders list
     storage_project_list="$(storage_list_dir "${remote_backup_path}/${remote_backup_type}")"
 
@@ -533,6 +564,10 @@ function storage_backup_selection() {
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        log_event "debug" "chosen_project: ${chosen_project}" "false"
+
         # Get backup list
         remote_backup_path="${remote_backup_path}/${remote_backup_type}/${chosen_project}"
         remote_backup_list="$(storage_list_dir "${remote_backup_path}")"
@@ -559,7 +594,7 @@ function storage_backup_selection() {
         # Remote backup path
         chosen_backup_file="${remote_backup_path}/${chosen_backup_file}"
 
-        echo "${chosen_backup_file}"
+        echo "${chosen_backup_file}" && return 0
 
     else
 

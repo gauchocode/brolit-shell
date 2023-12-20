@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.5
+# Version: 3.3.7
 ################################################################################
 #
 # Backup/Restore Manager: Perform backup and restore actions.
@@ -189,43 +189,24 @@ function backup_manager_menu() {
       # DOCKER_VOLUMES_BACKUP
       log_section "Docker Volumes Backup"
 
-      # Preparing Mail Notifications Template
-      mail_server_status_section
-
       # Docker Volumes Backup
-      backup_all_docker_volumes
+      catch_error="$(backup_all_docker_volumes)"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 1 ]]; then
 
-      # Footer
-      mail_footer "${SCRIPT_V}"
+        # Log
+        log_event "error" "Docker Volumes Backup failed: ${catch_error}" "false"
+        display --indent 6 --text "- Docker Volumes Backup" --result "FAILED" --color RED
 
-      # Preparing Mail Notifications Template
-      email_template="default"
+        # Send notification
+        send_notification "❌ ${SERVER_NAME} " "Docker Volumes Backup failed." ""
 
-      # New full email file
-      email_html_file="${BROLIT_TMP_DIR}/full-email-${NOW}.mail"
+        return 1
 
-      # Copy from template
-      cp "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/main-tpl.html" "${email_html_file}"
+      fi
 
-      # Begin to replace
-      sed -i '/{{server_info}}/r '"${BROLIT_TMP_DIR}/server_info-${NOW}.mail" "${email_html_file}"
-      sed -i '/{{databases_backup_section}}/r '"${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail" "${email_html_file}"
-      sed -i '/{{configs_backup_section}}/r '"${BROLIT_TMP_DIR}/configuration-bk-${NOW}.mail" "${email_html_file}"
-      sed -i '/{{files_backup_section}}/r '"${BROLIT_TMP_DIR}/files-bk-${NOW}.mail" "${email_html_file}"
-      sed -i '/{{footer}}/r '"${BROLIT_TMP_DIR}/footer-${NOW}.mail" "${email_html_file}"
-
-      # Delete vars not used anymore
-      grep -v "{{packages_section}}" "${email_html_file}" >"${email_html_file}_tmp"
-      mv "${email_html_file}_tmp" "${email_html_file}"
-      grep -v "{{certificates_section}}" "${email_html_file}" >"${email_html_file}_tmp"
-      mv "${email_html_file}_tmp" "${email_html_file}"
-      grep -v "{{server_info}}" "${email_html_file}" >"${email_html_file}_tmp"
-      mv "${email_html_file}_tmp" "${email_html_file}"
-      grep -v "{{databases_backup_section}}" "${email_html_file}" >"${email_html_file}_tmp"
-      mv "${email_html_file}_tmp" "${email_html_file}"
-      grep -v "{{configs_backup_section}}" "${email_html_file}" >"${email_html_file}_tmp"
-      mv "${email_html_file}_tmp" "${email_html_file}"
-      grep -v "{{files_backup_section}}" "${email_html_file}"
+      # Send notification
+      send_notification "✅ ${SERVER_NAME} " "Task: 'Docker Volumes Backup' completed." ""
 
     fi
 
@@ -246,11 +227,15 @@ function backup_manager_menu() {
 
 function backup_all_docker_volumes() {
 
-  local volumes_to_backup
   local remote_path
+  local volumes_to_backup
+
+  local exitstatus=0
+  local error_msg=""
+  local error_type=""
 
   # Remote Path
-  remote_path="${SERVER_NAME}/docker-volumes"
+  remote_path="${SERVER_NAME}/projects-online/docker-volume"
 
   # Get a list of all Docker volumes
   volumes_to_backup="$(docker volume ls --format "{{.Name}}")"
@@ -259,11 +244,11 @@ function backup_all_docker_volumes() {
   if [[ -z "${volumes_to_backup}" ]]; then
 
     # Log
-    log_event "info" "No Docker volumes to backup" "false"
     display --indent 6 --text "- Docker volumes backup" --result "SKIPPED" --color YELLOW
     display --indent 8 --text "- No Docker volumes to backup" --tcolor YELLOW
+    log_event "info" "No Docker volumes to backup" "false"
 
-    return
+    return 0
 
   fi
 
@@ -273,32 +258,99 @@ function backup_all_docker_volumes() {
   # Loop through volumes
   while IFS= read -r volume; do
 
+    # Log
+    display --indent 6 --text "- Creating backup for ${volume}"
+
     # Create backup file
     ## Runs a temporary Docker container that has access to the volume and the backup directory, and uses tar to create a backup file of the volume.
-    docker run --rm -v "${volume}:/volume" -v "${BROLIT_TMP_DIR}:/backup" alpine tar -cjf "/backup/${volume}-${NOW}.tar.bz2" -C /volume ./
+    "$(docker run --rm -v "${volume}:/volume" -v "${BROLIT_TMP_DIR}:/backup" alpine tar -cjf "/backup/${volume}-${NOW}.tar.bz2" -C /volume ./)"
 
     # Check if backup file was created
     if [[ -f "${BROLIT_TMP_DIR}/${volume}-${NOW}.tar.bz2" ]]; then
 
-      # Upload backup file to Dropbox
-      storage_upload_backup "${BROLIT_TMP_DIR}/${volume}-${NOW}.tar.bz2" "${remote_path}"
+      # Log
+      clear_previous_lines "2"
+      display --indent 6 --text "- Creating backup for ${volume}" --result "OK" --color GREEN
 
-      # Send notification
-      send_notification "✅ ${SERVER_NAME}" "Docker volume backup completed for ${volume}." ""
+      # Create remote path directory
+      storage_create_dir "${remote_path}/${volume}"
+
+      # Upload backup file to Dropbox
+      storage_upload_backup "${BROLIT_TMP_DIR}/${volume}-${NOW}.tar.bz2" "${remote_path}/${volume}" ""
 
     else
 
       # Log
+      display --indent 6 --text "- Creating backup for ${volume}" --result "FAILED" --color RED
+      display --indent 8 --text "Please read the log file" --tcolor YELLOW
       log_event "debug" "Command executed: docker run --rm -v ${volume}:/volume -v ${BROLIT_TMP_DIR}:/backup alpine tar -cjf /backup/${volume}-${NOW}.tar.bz2 -C /volume ./" "false"
       log_event "error" "Docker volume backup failed for ${volume}" "false"
-      display --indent 6 --text "- Docker volumes backup" --result "FAILED" --color RED
 
-      # Send notification
-      send_notification "❌ ${SERVER_NAME}" "Docker volume backup failed for ${volume}." ""
+      exitstatus=1
+      error_msg="${volume},${error_msg}"
+      error_type="docker_volume_backup"
 
     fi
   
   done <<<"${volumes_to_backup}"
+
+  # Clean ${error_msg}
+  error_msg="${error_msg//, /,}"
+
+  # Return
+  echo "${error_type};${error_msg}" && return ${exitstatus}
+
+}
+
+################################################################################
+# Restore Docker Volume
+#
+# Arguments:
+#   ${1} = ${volume}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function restore_docker_volume() {
+  
+    local backup_to_restore="${1}"
+    local docker_volume="${2}"
+  
+    # Check if backup file was downloaded
+    if [[ -f "${BROLIT_TMP_DIR}/${backup_to_restore}" ]]; then
+
+      # Log
+      display --indent 6 --text "- Docker volume restore"
+      log_event "debug" "Command executed: docker run --rm -v ${docker_volume}:/volume -v ${BROLIT_TMP_DIR}:/backup alpine tar -xjf /backup/${backup_to_restore} -C /volume" "false"
+  
+      # Restore backup file
+      ## Runs a temporary Docker container that has access to the volume and the backup directory, and uses tar to create a backup file of the volume.
+      docker run --rm -v "${docker_volume}:/volume" -v "${BROLIT_TMP_DIR}:/backup" alpine tar -xjf "/backup/${backup_to_restore}" -C /volume
+  
+      # Log
+      clear_previous_lines "2"
+      display --indent 6 --text "- Docker volume restore" --result "DONE" --color GREEN
+      log_event "info" "Docker volume restore completed for ${docker_volume}" "false"
+      
+      # Send notification
+      send_notification "✅ ${SERVER_NAME} " "Docker volume restore completed for ${docker_volume}." ""
+  
+      return 0
+      
+    else
+  
+      # Log
+      log_event "debug" "Command executed: docker run --rm -v ${docker_volume}:/volume -v ${BROLIT_TMP_DIR}:/backup alpine tar -xjf /backup/${backup_to_restore} -C /volume" "false"
+      log_event "error" "Docker volume restore failed for ${docker_volume}" "false"
+      display --indent 6 --text "- Docker volume restore" --result "FAILED" --color RED
+  
+      # Send notification
+      send_notification "❌ ${SERVER_NAME} " "Docker volume restore failed for ${docker_volume}." ""
+  
+      return 1
+
+    fi
 
 }
 

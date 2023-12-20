@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.5
+# Version: 3.3.7
 ################################################################################
 #
 # Server Setup: Perform server setup actions.
@@ -169,37 +169,6 @@ function server_app_setup() {
 
         ;;
 
-    "netdata")
-
-        if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
-            netdata_installer
-            netdata_configuration
-        else
-            netdata_uninstaller
-        fi
-
-        ;;
-
-    "cockpit")
-
-        if [[ ${PACKAGES_COCKPIT_STATUS} == "enabled" ]]; then
-            cockpit_installer
-        else
-            cockpit_purge
-        fi
-
-        ;;
-
-    "zabbix")
-
-        if [[ ${PACKAGES_ZABBIX_STATUS} == "enabled" ]]; then
-            zabbix_installer
-        else
-            zabbix_purge
-        fi
-
-        ;;
-
     "borg")
 
         if [[ ${PACKAGES_BORG_STATUS} == "enabled" ]]; then
@@ -221,6 +190,8 @@ function server_app_setup() {
                 docker_purge
                 # Install docker
                 docker_installer
+                # Restart docker service
+                service docker restart
             fi
         else
             # Purge docker packages
@@ -261,8 +232,51 @@ function server_app_setup() {
 
         ;;
 
+    "loki")
+
+        if [[ ${PACKAGES_LOKI_STATUS} == "enabled" ]]; then
+            #loki_installer
+            echo "Loki installer not implemented yet"
+        else
+            #loki_purge
+            echo "Loki purge not implemented yet"
+        fi
+
+        ;;
+
+    "netdata")
+
+        if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
+            netdata_installer
+            netdata_configuration
+        else
+            netdata_uninstaller
+        fi
+
+        ;;
+
+    "cockpit")
+
+        if [[ ${PACKAGES_COCKPIT_STATUS} == "enabled" ]]; then
+            cockpit_installer
+        else
+            cockpit_purge
+        fi
+
+        ;;
+
+    "zabbix")
+
+        if [[ ${PACKAGES_ZABBIX_STATUS} == "enabled" ]]; then
+            zabbix_installer
+        else
+            zabbix_purge
+        fi
+
+        ;;
+
     *)
-        echo "App not supported yet."
+        log_event "warning" "App ${app_setup} is not supported yet" "true"
         ;;
 
     esac

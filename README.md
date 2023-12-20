@@ -1,60 +1,45 @@
-# BROLIT Shell
+# BROLIT-SHELL
 
-<!-- Table of Contents -->
-## :notebook_with_decorative_cover: Table of Contents
-- [About the Project](#star2-about-the-project)
-  * [Motivation](#motivation)
-  * [Why Bash?](#space_invader-why-bash)
-  * [Features](#dart-features)
-  * [Support](#warning-Supports)
-- [Getting Started](#toolbox-getting-started)
-  * [Prerequisites](#bangbang-prerequisites)
-  * [Installation](#gear-installation)
-  * [Run](#running-run)
-  * [Deployment](#triangular_flag_on_post-deployment)
-- [Roadmap](#compass-roadmap)
-- [Contributing](#wave-contributing)
-  * [Code of Conduct](#scroll-code-of-conduct)
-- [FAQ](#grey_question-faq)
-- [Team](#team)
-- [License](#license)
-- [Acknowledgements](#gem-acknowledgements)
-## :star2: About the Project
-BROLIT Shell is a **BASH** based cloud server control software which can be used to quickly install a LEMP Stack on Ubuntu 18.04, 20.04 and 22.04 servers, automate and restore backups, install PHP projects, and some usefull IT tasks.
+## :star2: About the project
+BROLIT-SHELL is a server management tool built on **BASH**, designed to expediently set up a LEMP Stack on Ubuntu servers (versions 20.04, and 22.04). It streamlines the process of automating and restoring backups, deploying PHP projects, and executing various essential IT tasks efficiently.
 
 ![ScreenShot](./screenshot.png)
 
-### Motivation
-* Standarize servers configuration.
-* Automatization of IT/DevOps tasks.
-* Reduce time and errors on IT/DevOps tasks.
-
 ### :space_invader: Why Bash?
-* Pre-installed on linux systems.
-* Not overloaded with dependencies.
+* Natively pre-installed on Linux systems.
+* Lightweight with minimal dependencies.
+
+### :bulb: Benefits
+* Standardize server configurations.
+* Automate IT/DevOps tasks for efficiency.
+* Minimize time spent and errors in IT/DevOps operations.
 
 ### :dart: Features
-* Open-source.
-* LEMP automated installer (Nginx, MySQL/MariaDB, PHP).
-* Backup and restore projects easily.
-* Upload backups to Dropbox (API v2) or FTP server.
-* Restore backups from Dropbox, URL or local files.
-* Create, deploy and host php projects.
-* WordPress automated installer.
-* WP-CLI actions helper.
-* Let's Encrypt actions helper.
-* Cloudflare support (via API).
-* PHP-FPM optimization tool (beta).
-* Image optimization tools.
-* UFW and Fail2ban support.
-* Security Tools with malware scanners.
-* IP/Domain blacklist checker.
-* Email and Telegram notifications.
-* And more ...
+* Fully open-source.
+* Automated LEMP stack installation (Nginx, MySQL/MariaDB, PHP).
+* Simplified backup and restoration processes.
+* Backup upload functionality to Dropbox or an FTP server.
+* Restore backups from Dropbox, URLs, or local files.
+* Streamlined creation, deployment, and hosting of PHP projects.
+* WordPress automated installation feature.
+* WP-CLI actions helper for WordPress management.
+* Integration of Let's Encrypt for SSL/TLS management.
+* Cloudflare support through API integration.
+* Image optimization tools to enhance web performance.
+* Comprehensive security tools, including malware scanners.
+* IP/Domain blacklist checking tool.
+* Email and Telegram notifications for system alerts.
+* Additional features and tools for enhanced server management.
+
+### :dart: New features! (since v 3.3.7)
+* Enhanced Docker Integration:
+  * Facilitates backing up, restoring, and deploying new projects within Docker containers.
+  * Offers WordPress-cli support specifically tailored for Docker environments.
+* Wordfence-cli scanning capabilities for WordPress sites.
 
 ### :warning: Supports
 
-**Ubuntu LTS** 18.04, 20.04 or 22.04
+**Ubuntu LTS** 20.04 or 22.04
 
 | Packages | Versions | BROLIT config |
 | :------------- | :----------: | :----------: |
@@ -62,30 +47,24 @@ BROLIT Shell is a **BASH** based cloud server control software which can be used
 | **Lets Encrypt** | O.S default | default config |
 | **MySQL** | O.S default | `my.cnf` |
 | **MariaDB** | O.S default | `my.cnf` |
-| **PHP-FPM** | 7.4.x/8.1.x | `php.ini` + `php-fpm.conf` + `www.conf` |
+| **PHP-FPM** | 7.4.x/8.2.x | `php.ini` + `php-fpm.conf` + `www.conf` |
 | **Redis** | O.S default | `redis.conf` + `object-cache.php` |
-| **WordPress** | latest | default config |
-| **WP-CLI** | 2.6.0 | default config |
 | **Monit** | O.S default | `monitrc` + `mysql` + `phpfpm` + `nginx` + `redis` + `system` |
-| **Netdata** | 1.32.x | `health_alarm_notify.conf` + custom `health.d` conf |
-| **UFW Firewall** | O.S default | default config |
-| **Fail2Ban** | O.S default | default config |
-| **ClamAV** | O.S default | `freshclam.conf` |
-| **Lynis** | 2.6.x | default config |
-| **Cockpit** | 0.102.x | default config |
-| **Zabbix** | 0.102.x | default config |
-| **Portainer** | latest | dockerized (optional nginx proxy support) |
-| **Grafana** | SOON | default config |
-| **Teleport** | SOON | default config |
+| **WordPress** | latest | default config |
+| **WP-CLI** | latest | default config |
+| **Docker** | latest | default config |
 
-### Third Party Utils
+### Enhanced installation support for leading tools
+Experience streamlined setup for a range of exceptional tools including Netdata, Grafana, Loki, Promtail, Portainer, Portainer Agent, Cockpit, Zabbix, and more.
+
+### Third party utils
 BROLIT Shell uses some third-party tools:
 
 #### Dropbox Uploader
 Dropbox Uploader is a BASH script which can be used to upload, download, list or delete files from Dropbox, an online file sharing, synchronization and backup service.
 
-#### Google PageSpeed Insights API Tools
-gitool.sh shell script to query Google PageSpeed Insights v4 & v5 API for site & origin metrics for FCP & DCL with additional support for GTMetrix & WebpageTest.org API tests.
+#### Wordfence-cli
+Wordfence-cli is a widely-used security tool for WordPress that provides features like malware scanning, and security monitoring.
 
 #### Blacklist Checker
 Blacklist check UNIX/Linux utility.
@@ -148,7 +127,7 @@ You can run some tasks like this:
 More information here: [FLAGS](./docs/DOC-flags.md)
 
 ## 🚨 Update
-**BREAKING CHANGES SINCE VERSION 3.0**
+**BREAKING CHANGES SINCE VERSION 3.2**
 
 Before upgrade:
 
@@ -156,7 +135,7 @@ Before upgrade:
 2. Run updater.sh
 3. Run runner.sh to regenerate .brolit_conf.json
 4. Edit .brolit_conf.json
-5. If you use dropbox as backup system, please move old backups to another folder (new directory structure since version 3.2)
+5. If you use Dropbox as backup system, please move old backups to another folder (new directory structure since version 3.2)
 6. Run runner.sh
 
 ## :compass: TODO List

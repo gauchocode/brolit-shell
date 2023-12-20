@@ -6,7 +6,7 @@ server {
     index index.php;
     server_name domain.com;
 
-    # LOG
+    # BROLIT_LOG_FILE
     error_log   /var/log/nginx/domain.com-error.log;
 
 

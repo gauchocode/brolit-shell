@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.5
+# Version: 3.3.7
 ################################################################################
 #
 # Backup/Restore Helper: Backup and restore funtions.
@@ -740,6 +740,30 @@ function restore_backup_from_storage() {
 
       ;;
 
+    docker-volume)
+      
+        # Select project backup
+        backup_to_dowload="$(storage_backup_selection "${remote_list}" "docker-volume")"
+        [[ $? -eq 1 ]] && return 1
+  
+        # Download backup
+        storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
+  
+        [[ $? -eq 1 ]] && display --indent 6 --text "- Downloading Volume Backup" --result "ERROR" --color RED && return 1
+  
+        # Detail of backup_to_dowload:
+        #   "${chosen_server}/projects-${chosen_status}/${chosen_restore_type}/${project_name}/${backup_file}"
+        # For convention at this point ${chosen_project} == ${project_name}
+        backup_to_restore="$(basename "${backup_to_dowload}")"
+        # Get project_name
+        chosen_project="$(dirname "${backup_to_dowload}")"
+        volume="$(basename "${chosen_project}")"
+
+        # Restore
+        restore_docker_volume "${backup_to_restore}" "${volume}"
+  
+        ;;
+
     esac
 
   else
@@ -1021,18 +1045,15 @@ function restore_backup_files() {
 
         # Stop containers
         docker_compose_stop "${destination_dir}/docker-compose.yml"
-        #clear_previous_lines "4"
 
         # Remove containers
-        docker_compose_delete "${destination_dir}/docker-compose.yml"
-        #clear_previous_lines "5"
+        docker_compose_rm "${destination_dir}/docker-compose.yml"
 
       fi
 
       # Backup old project
       _create_tmp_copy "${destination_dir}" "move"
-      got_error=$?
-      [[ ${got_error} -eq 1 ]] && return 1
+      [[ $? -eq 1 ]] && return 1
 
     else
 
