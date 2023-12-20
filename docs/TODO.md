@@ -48,6 +48,7 @@
 
 ## For release 3.5
 
+- [ ] Backups: Borg support.
 - [ ] Core: Resolve small "TODOs" comments.
 - [ ] Core: Main menu should not show options that are disabled on .brolit_conf.json
 - [ ] Core: Add borg & borgmatic support.
@@ -104,8 +105,6 @@
 
 - [ ] Core: Make new standard directory structure for projects "${PROJECTS_PATH}/${SUBDOMAIN}/public". Logs could be stored on "${PROJECTS_PATH}/${SUBDOMAIN}/log"
 - [ ] MySQL: Optimization script.
-- [ ] Backups: S3 storage support.
-- [ ] Backups: Expand Duplicity support with a restore option.
 - [ ] Backups: Rsync support on mounted device or with SSH config.
 - [ ] PHP: Option to change php version on installed site.
         https://easyengine.io/blog/easyengine-v4-0-15-released/

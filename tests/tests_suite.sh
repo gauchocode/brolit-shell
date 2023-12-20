@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.5
+# Version: 3.3.7
 #############################################################################
 
 function tests_suite_menu() {
@@ -30,7 +30,7 @@ function tests_suite_menu() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    if [[ ${chosen_tests_options} == *"00"* ]]; then
+    if [[ ${chosen_tests_options} == *"01"* ]]; then
       test_display_functions
       test_mysql_helper
       test_php_helper_funtions
