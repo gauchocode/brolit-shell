@@ -30,7 +30,7 @@ function tests_suite_menu() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    if [[ ${chosen_tests_options} == *"01"* ]]; then
+    if [[ ${chosen_tests_options} == *"00"* ]]; then
       test_display_functions
       test_mysql_helper
       test_php_helper_funtions
@@ -38,6 +38,7 @@ function tests_suite_menu() {
       test_wordpress_helper_funtions
       test_cloudflare_funtions
       test_common_funtions
+      test_borg_helper_funtions
     fi
     if [[ ${chosen_tests_options} == *"01"* ]]; then
       test_borg_helper_funtions
