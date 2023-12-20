@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.5
+# Version: 3.3.7
 ################################################################################
 #
 # Notification Controller: Send notification to configured apps.
@@ -34,7 +34,7 @@ function send_notification() {
 
     if [[ ${NOTIFICATION_DISCORD_STATUS} == "enabled" ]]; then
     
-        discord_send_notification "${notification_title}" "${notification_content}" "${notification_type}"
+        discord_send_notification "${notification_title}" "${notification_content}"
     
     fi
 

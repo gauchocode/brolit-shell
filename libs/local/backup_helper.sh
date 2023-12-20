@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.5
+# Version: 3.3.7
 #############################################################################
 #
 # Backup Helper: Perform backup actions.
@@ -131,7 +131,7 @@ function backup_server_config() {
   local backup_file
   local storage_path
   local backup_keep_daily
-  local upload_result
+  local storage_result
 
   if [[ -n ${backup_path} ]]; then
 
@@ -163,7 +163,7 @@ function backup_server_config() {
       storage_create_dir "${SERVER_NAME}/server-config/${bk_sup_type}"
 
       # Uploading backup files
-      upload_result="$(storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${storage_path}")"
+      storage_result="$(storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${storage_path}" "${backup_file_size}")"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
@@ -180,12 +180,7 @@ function backup_server_config() {
       else
 
         # Log
-        log_event "debug" "storage_upload_backup return: ${upload_result}" "false"
-
-        # Error
-        #got_error=1
-        error_type="upload_error"
-        error_msg="Error running storage upload backup on: ${upload_result}."
+        log_event "debug" "storage_upload_backup return: ${storage_result}" "false"
 
         # Return
         echo "${error_type};${error_msg}" && return 1
@@ -422,9 +417,6 @@ function backup_all_projects_files() {
   # Deleting old backup files
   rm --recursive --force "${BROLIT_TMP_DIR:?}/${NOW}"
 
-  # DUPLICITY
-  backup_duplicity
-
   # Configure Files Backup Section for Email Notification
   mail_backup_section "${error_msg}" "${error_type}" "files" "${backuped_files_list[@]}"
 
@@ -522,6 +514,7 @@ function backup_project_files() {
   local backup_prefix_name
   local exclude_parameters
   local storage_path
+  local storage_result
 
   # Backups file names
   backup_prefix_name="${directory_to_backup}_${backup_type}-files"
@@ -563,11 +556,10 @@ function backup_project_files() {
       clear_previous_lines "1"
       display --indent 6 --text "- Files backup for ${YELLOW}${directory_to_backup}${ENDCOLOR}" --result "DONE" --color GREEN
       display --indent 8 --text "Final backup size: ${YELLOW}${backup_file_size}${ENDCOLOR}"
-
       log_event "info" "Backup ${BROLIT_TMP_DIR}/${NOW}/${backup_file} created, final size: ${backup_file_size}" "false"
 
       # Upload backup
-      upload_result="$(storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${storage_path}")"
+      storage_result="$(storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${storage_path}" "${backup_file_size}")"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
@@ -584,6 +576,14 @@ function backup_project_files() {
         # Return
         echo "${backup_file_size}" && return 0
 
+      else
+
+        # Log
+        log_event "debug" "storage_upload_backup return: ${storage_result}" "false"
+
+        # Return
+        echo "${error_type};${error_msg}" && return 1
+
       fi
 
     else
@@ -591,54 +591,13 @@ function backup_project_files() {
       # Log
       clear_previous_lines "1"
       display --indent 6 --text "- Files backup for ${directory_to_backup}" --result "FAIL" --color RED
+      display --indent 8 --text "Please see the log file" --tcolor RED
+      log_event "error" "Something went wrong making a backup of ${directory_to_backup}." "false"
+      log_event "debug" "compress result: ${compress_result}" "false"
 
       return 1
 
     fi
-
-  fi
-
-}
-
-################################################################################
-# Duplicity Backup (BETA)
-#
-# Arguments:
-#  none
-#
-# Outputs:
-#   0 if ok, 1 if error
-################################################################################
-
-function backup_duplicity() {
-
-  if [[ ${BACKUP_DUPLICITY_STATUS} == "enabled" ]]; then
-
-    log_event "warning" "duplicity backup is in BETA state" "true"
-
-    # Check if DUPLICITY is installed
-    package_install_if_not "duplicity"
-
-    # Get all directories
-    all_sites="$(get_all_directories "${PROJECTS_PATH}")"
-
-    # Loop in to Directories
-    for i in ${all_sites}; do
-
-      log_event "debug" "Running: duplicity --full-if-older-than \"${BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY}\" -v4 --no-encryption\" ${PROJECTS_PATH}\"\"${i}\" file://\"${BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH}\"\"${i}\"" "true"
-
-      duplicity --full-if-older-than "${BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY}" -v4 --no-encryption" ${PROJECTS_PATH}""${i}" file://"${BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH}""${i}"
-      exitstatus=$?
-
-      log_event "debug" "exitstatus=$?" "false"
-
-      # TODO: should only remove old entries only if ${exitstatus} -eq 0
-      duplicity remove-older-than "${BACKUP_DUPLICITY_CONFIG_FULL_LIFE}" --force "${BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH}"/"${i}"
-
-    done
-
-    [ $exitstatus -eq 0 ] && echo "*** DUPLICITY SUCCESS ***" >>"${LOG}"
-    [ $exitstatus -ne 0 ] && echo "*** DUPLICITY ERROR ***" >>"${LOG}"
 
   fi
 
@@ -811,6 +770,7 @@ function backup_databases() {
 #
 # Arguments:
 #  ${1} = ${database}
+#  ${2} = ${db_engine}
 #
 # Outputs:
 #  "backupfile backup_file_size" if ok, 1 if error
@@ -826,6 +786,7 @@ function backup_project_database() {
   local dump_file
   local backup_file
   local storage_path
+  local storage_result
   local error_type
   local error_msg
 
@@ -869,7 +830,7 @@ function backup_project_database() {
 
       # Upload database backup
       storage_path="/${SERVER_NAME}/projects-online/database/${database}"
-      upload_result="$(storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${storage_path}")"
+      storage_result="$(storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${storage_path}" "${backup_file_size}")"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
@@ -887,7 +848,7 @@ function backup_project_database() {
       else
 
         error_type="upload_backup"
-        error_msg="Error uploading file: ${backup_file}. Upload result: ${upload_result}"
+        error_msg="Error uploading file: ${backup_file}. Upload result: ${storage_result}"
 
         log_event "error" "${error_msg}" "false"
 

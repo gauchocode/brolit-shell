@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.5
+# Version: 3.3.7
 ################################################################################
 
 ################################################################################
@@ -56,7 +56,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.3.5"
+  declare -g SCRIPT_V="3.3.7"
 
   # Hostname
   declare -g SERVER_NAME="$HOSTNAME"
@@ -368,8 +368,8 @@ function script_init() {
   declare -g SKIPTESTS="${1}"
 
   # Define log name
-  declare -g LOG
-  declare -g EXEC_TYPE
+  declare -g BROLIT_LOG_FILE
+  declare -g BROLIT_EXEC_TYPE
 
   declare -g BROLIT_CONFIG_FILE=~/.brolit_conf.json
 
@@ -395,15 +395,15 @@ function script_init() {
     # And add second parameter to the log name
     #log_name="log_lemp_utils_${SLOG}.log"
     log_name="${SLOG}.json"
-    EXEC_TYPE="external"
+    BROLIT_EXEC_TYPE="external"
   else
     # Default log name
     log_name="brolit_shell_${timestamp}.log"
-    EXEC_TYPE="default"
+    BROLIT_EXEC_TYPE="default"
   fi
-  export EXEC_TYPE
+  export BROLIT_EXEC_TYPE
 
-  LOG="${path_log}/${log_name}"
+  BROLIT_LOG_FILE="${path_log}/${log_name}"
 
   # Source all scripts
   _source_all_scripts
@@ -471,7 +471,7 @@ function script_init() {
   # EXPORT VARS
   export SCRIPT_V SERVER_NAME BROLIT_CONFIG_PATH BROLIT_MAIN_DIR PACKAGES
   export DISK_U ONE_FILE_BK NOTIFICATION_EMAIL_SMTP_SERVER NOTIFICATION_EMAIL_SMTP_PORT NOTIFICATION_EMAIL_SMTP_TLS NOTIFICATION_EMAIL_SMTP_USER NOTIFICATION_EMAIL_SMTP_UPASS
-  export LOG DEBUG SKIPTESTS
+  export BROLIT_LOG_FILE DEBUG SKIPTESTS
   export BROLIT_CONFIG_FILE
 
 }
@@ -703,7 +703,7 @@ function array_to_checklist() {
 # File browser
 #
 # Arguments:
-#   $1= ${menutitle}
+#   ${1} = ${menutitle}
 #   ${2} = ${startdir}
 #
 # Outputs:
@@ -761,7 +761,7 @@ function file_browser() {
 # Directory browser
 #
 # Arguments:
-#   $1= ${menutitle}
+#   ${1} = ${menutitle}
 #   ${2} = ${startdir}
 #
 # Outputs:
@@ -821,7 +821,7 @@ function directory_browser() {
 # Get all directories from specific location
 #
 # Arguments:
-#   $1= ${main_dir}
+#   ${1} = ${main_dir}
 #
 # Outputs:
 #   String with directories
@@ -843,7 +843,7 @@ function get_all_directories() {
 # Sort backup files by date
 #
 # Arguments:
-#   $1= ${files}
+#   ${1} = ${files}
 #
 # Outputs:
 #   Array with sorted files
@@ -868,7 +868,7 @@ function sort_files_by_date {
 # Sort array alphabetically
 #
 # Arguments:
-#   $1= ${files}
+#   ${1} = ${files}
 #
 # Outputs:
 #   Array with sorted files
@@ -893,7 +893,7 @@ function sort_array_alphabetically {
 # Get size of an specific file
 #
 # Arguments:
-#   $1= ${file}
+#   ${1} = ${file}
 #
 # Outputs:
 #   String with directories
@@ -909,6 +909,7 @@ function get_file_size() {
   file_size_result=$?
   if [[ ${file_size_result} -eq 0 ]]; then
 
+    # Log
     log_event "info" "File size: ${backup_file_size}" "false"
 
     # Prepare string
@@ -919,6 +920,7 @@ function get_file_size() {
 
   else
 
+    # Log
     log_event "error" "Something went wrong trying to get file size of: ${file}" "false"
     log_event "debug" "Last command executed: du --apparent-size -s -k \"${file}\" | awk '{ print $1 }' | awk '{printf \"%.3f MiB %s\n\", $1/1024, $2}'" "false"
     log_event "debug" "Output: ${file_size_result}" "false"
@@ -933,9 +935,9 @@ function get_file_size() {
 # Copy files (with rsync)
 #
 # Arguments:
-#   $1= ${source_path}
+#   ${1} = ${source_path}
 #   ${2} = ${destination_path}
-#   $3= ${excluded_path} - Optional: Need to be a relative path
+#   ${3} = ${excluded_path} - Optional: Need to be a relative path
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1378,7 +1380,7 @@ function extract_filename_from_path() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-# TODO: pv only if EXEC_TYPE == default
+# TODO: pv only if BROLIT_EXEC_TYPE == default
 
 function decompress() {
 
@@ -1775,7 +1777,7 @@ function menu_main_options() {
   local runner_options   # whiptail array options
   local chosen_type      # whiptail var
 
-  whip_title="BROLIT SHELL MENU"
+  whip_title="BROLIT-SHELL MAIN MENU"
   whip_description=" "
 
   runner_options=(

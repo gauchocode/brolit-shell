@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.5
+# Version: 3.3.7
 ################################################################################
 #
 # Project Helper: Perform project actions.
@@ -2004,7 +2004,7 @@ function project_install() {
   [[ ${https_enable} == "true" ]] && project_site_url="https://${project_domain}" || project_site_url="http://${project_domain}"
 
   # Startup Script for WordPress installation
-  if [[ ${EXEC_TYPE} == "default" && ${project_type} == "wordpress" ]]; then
+  if [[ ${BROLIT_EXEC_TYPE} == "default" && ${project_type} == "wordpress" ]]; then
 
     wpcli_run_startup_script "${project_path}" "default" "${project_site_url}"
 
@@ -2086,7 +2086,7 @@ function project_delete_files() {
         docker_compose_stop "${compose_file}"
         [[ $? -eq 1 ]] && return 1
 
-        docker_compose_delete "${compose_file}"
+        docker_compose_rm "${compose_file}"
         [[ $? -eq 1 ]] && return 1
 
       fi
@@ -2276,7 +2276,6 @@ function project_delete() {
   local files_skipped="false"
 
   log_section "Project Delete"
-
   log_subsection "Reading Project Config"
 
   if [[ -z ${project_domain} ]]; then
@@ -2324,8 +2323,23 @@ function project_delete() {
     # Remove unwanted output
     clear_previous_lines "2"
 
+    # Make one last backup
+    backup_project "${project_domain}" "all"
+    [[ $? -eq 1 ]] && return 1
+
     # Delete Files
     project_delete_files "${project_domain}"
+    if [[ $? -eq 1 ]]; then
+      
+      # Log
+      display --indent 6 --text "- Deleting project files" --result "FAIL" --color RED
+      display --indent 8 --text "Please read the log file for more information:" --tcolor YELLOW
+      display --indent 8 --text "${BROLIT_LOG_FILE}" --tcolor YELLOW
+      log_event "error" "Project files deletion failed." "false"
+
+      return 1
+
+    fi
 
     # Delete nginx configuration file
     nginx_server_delete "${project_domain}"

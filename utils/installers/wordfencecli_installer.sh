@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.5
+# Version: 3.3.7
 #############################################################################
 #
 # Ref: https://github.com/wordfence/wordfence-cli
@@ -28,11 +28,12 @@ function wordfencecli_installer () {
 
     log_subsection "Wordfence-cli Installer"
 
-    # Download wordfence-cli
+    # Log
     display --indent 6 --text "- Downloading Wordfence-cli"
     log_event "debug" "Running: git clone https://github.com/wordfence/wordfence-cli.git /root/wordfence-cli" "false"
     
-    git clone https://github.com/wordfence/wordfence-cli.git /root/wordfence-cli
+    # Download wordfence-cli
+    git clone https://github.com/wordfence/wordfence-cli.git /root/wordfence-cli > /dev/null 2>&1
     
     clear_previous_lines "2"
     display --indent 6 --text "- Downloading Wordfence-cli" --result "DONE" --color GREEN
