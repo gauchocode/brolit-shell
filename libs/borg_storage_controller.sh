@@ -251,6 +251,18 @@ function restore_project_with_borg() {
                 log_subsection "Restore Files Backup"
                 docker_setup_configuration "${project_name}" "${destination_dir}" "${chosen_domain}"
                 docker_compose_build "${destination_dir}/docker-compose.yml"
+
+
+                # Project domain configuration (webserver+certbot+DNS)
+                https_enable="$(project_update_domain_config "${project_domain_new}" "${project_type}" "${project_install_type}" "${project_port}")"
+
+                # TODO: if and old project with same domain was found, ask what to do (delete old project or skip this step)
+
+                # Post-restore/install tasks
+                project_post_install_tasks "${project_install_path}" "${project_type}" "${project_install_type}" "${project_name}" "${project_stage}" "${db_pass}" "${project_domain}" "${project_domain_new}"
+
+                # Create/update brolit_project_conf.json file with project info
+                project_update_brolit_config "${project_install_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "${db_engine}" "${project_name}_${project_stage}" "localhost" "${db_user}" "${db_pass}" "${project_domain_new}" "" "" "" ""
             fi                
         else
             display --indent 6 --text "- Selecting Project Backup" --result "SKIPPED" --color YELLOW
