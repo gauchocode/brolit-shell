@@ -111,8 +111,11 @@ function restore_backup_with_borg() {
 function generate_tar_and_decompress() {
     
     local chosen_archive="${1}"
+    local project_domain="${2}"
+    local project_install_type="${3}"
     local project_backup_file=${chosen_archive}.tar.bz2
-
+    local destination_dir="${PROJECTS_PATH}/${project_domain}"
+    
     borg export-tar --tar-filter='auto' --progress ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_domain}::${chosen_archive} ${BROLIT_MAIN_DIR}/tmp/${project_backup_file}
 
     exitstatus=$?
@@ -130,9 +133,45 @@ function generate_tar_and_decompress() {
 
     if [ -f "${BROLIT_MAIN_DIR}/tmp/${project_backup_file}" ]; then
 
-        echo "Archivo ${project_backup_file} descargado satisfactoriamente"
+        # If project directory exists, make a backup of it
+        if [[ -d "${destination_dir}" ]]; then
+
+            whiptail --title "Warning" --yesno "The project directory already exist. Do you want to continue? A backup of current directory will be stored on BROLIT tmp folder." 10 60 3>&1 1>&2 2>&3
+
+            exitstatus=$?
+            if [[ ${exitstatus} -eq 0 ]]; then
+
+            # If project_install_type == docker, stop and remove containers
+            if [[ ${project_install_type} == "docker"* ]]; then
+
+                # Stop containers
+                docker_compose_stop "${destination_dir}/docker-compose.yml"
+
+                # Remove containers
+                docker_compose_rm "${destination_dir}/docker-compose.yml"
+
+            fi
+
+            # Backup old project
+            _create_tmp_copy "${destination_dir}" "move"
+            [[ $? -eq 1 ]] && return 1
+
+            else
+
+            # Log
+            log_event "info" "The project directory already exist. User skipped operation." "false"
+            display --indent 6 --text "- Restore files" --result "SKIPPED" --color YELLOW
+
+            return 1
+
+            fi
+
+        fi
+
+        # Extract project
         pv --width 70 "${BROLIT_MAIN_DIR}/tmp/${project_backup_file}" | tar xpj -C / var/www
 
+        # if extracted ok then
         if [[ $? -eq 0 ]]; then
 
             clear_previous_lines "2"
@@ -187,6 +226,15 @@ function restore_project_with_borg() {
 
     chosen_domain="$(whiptail --title "BACKUP SELECTION" --menu "Choose a domain to work with" 20 78 10 $(for x in ${remote_domain_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
 
+    local project_name="$(project_get_name_from_domain "${chosen_domain}")"
+    local destination_dir="${PROJECTS_PATH}/${chosen_domain}"
+
+    if [[ -d $destination_dir ]]; then
+        local project_install_type="$(project_get_install_type "${destination_dir}")"
+    else
+        log_event "info" "${project_domain} not found - Downloading project" "false"
+    fi
+
     if [[ ${chosen_domain} != "" ]]; then
 
         arhives="$(borg list --format '{archive}{NL}' ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_domain} | sort -r)"
@@ -195,11 +243,20 @@ function restore_project_with_borg() {
 
         if [[ ${chosen_archive} != "" ]]; then
             display --indent 6 --text "- Selecting Project Backup" --result "DONE" --color GREEN
-            generate_tar_and_decompress "${chosen_archive}" 
+            display --indent 8 --text "${chosen_archive}.tar.bz2" --tcolor YELLOW
+            generate_tar_and_decompress "${chosen_archive}" "${chosen_domain}" "${project_install_type}"
+
+            # If project_install_type == docker, build containers
+            if [[ ${project_install_type} == "docker"* ]]; then
+                log_subsection "Restore Files Backup"
+                docker_setup_configuration "${project_name}" "${destination_dir}" "${chosen_domain}"
+                docker_compose_build "${destination_dir}/docker-compose.yml"
+            fi                
         else
             display --indent 6 --text "- Selecting Project Backup" --result "SKIPPED" --color YELLOW
             return 1
         fi
+
     fi 
 
 }
