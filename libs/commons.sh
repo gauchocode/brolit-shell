@@ -1635,7 +1635,7 @@ function brolit_borgmatic_cronjob_install() {
     log_event "info" "Cron file for root does not exist, creating ..." "false"
 
     touch $borgmatic_cron_file
-    echo "0 50 * * * root PATH=$PATH:/usr/bin:/usr/local/bin /root/.local/bin/borgmatic --verbosity -1 --syslog-verbosity 1" >> $borgmatic_cron_file
+    echo "50 00 * * * root PATH=$PATH:/usr/bin:/usr/local/bin /root/.local/bin/borgmatic --verbosity -1 --syslog-verbosity 1" >> $borgmatic_cron_file
 
     chmod +x $borgmatic_cron_file
 
