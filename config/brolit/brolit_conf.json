@@ -112,6 +112,19 @@
                             }
                         ]
                     }
+                ],
+                "borg": [
+                    {
+                        "status": "disabled",
+                        "config": [
+                            {
+                                "user": "",
+                                "server": "",
+                                "port": "",
+                                "group": ""
+                            }
+                        ]
+                    }
                 ]
             }
         ]
