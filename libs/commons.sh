@@ -1648,7 +1648,7 @@ function brolit_borgmatic_cronjob_install() {
 
   else
     log_event "info" "Script file already exists"
-    display --indent 2 --text "- Not updated" --result FAIL --color RED 
+    display --indent 2 --text "- Script already exists, not updated" --result SKIPPED --color YELLOW
   fi
 
 }

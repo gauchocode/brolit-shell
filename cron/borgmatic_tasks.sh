@@ -78,9 +78,9 @@ if [ "${BACKUP_BORG_STATUS}" == "enabled" ]; then
             if [ ! -f "/etc/borgmatic.d/$archivo_yml" ]; then
 
                 if [ ${project_install_type} == "default" ]; then
+                    echo "---- Projecto no dockerizado escribir el nombre de la base de datos manualmente!! ----"
                     cp "${BROLIT_MAIN_DIR}/config/borg/borgmatic.template-default.yml" "/etc/borgmatic.d/$archivo_yml"
                 else
-                    echo "---- Projecto no dockerizado escribir el nombre de la base de datos manualmente!! ----"
                     cp "${BROLIT_MAIN_DIR}/config/borg/borgmatic.template.yml" "/etc/borgmatic.d/$archivo_yml"
                 fi
 
