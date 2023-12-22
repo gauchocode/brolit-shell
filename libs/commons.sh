@@ -1998,11 +1998,12 @@ function menu_cron_script_tasks() {
 
   runner_options=(
     "01)" "BACKUPS TASKS"
-    "02)" "OPTIMIZER TASKS"
-    "03)" "WORDPRESS TASKS"
-    "04)" "SECURITY TASKS"
-    "05)" "UPTIME TASKS"
-    "06)" "BROLIT UI HELPER"
+    "02)" "BORGMATIC TASKS"
+    "03)" "OPTIMIZER TASKS"
+    "04)" "WORDPRESS TASKS"
+    "05)" "SECURITY TASKS"
+    "06)" "UPTIME TASKS"
+    "07)" "BROLIT UI HELPER"
   )
   chosen_type="$(whiptail --title "CRONEABLE TASKS" --menu "\n" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)"
 
@@ -2019,14 +2020,23 @@ function menu_cron_script_tasks() {
 
         brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/backups_tasks.sh" "${scheduled_time}"
 
-        # Borgmatic jobs
-        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/borgmatic_tasks.sh" "0 * * * *"
-        brolit_borgmatic_cronjob_install 
-
       fi
 
     fi
     if [[ ${chosen_type} == *"02"* ]]; then
+
+      # BORGMATIC-TASKS
+      suggested_cron="0 * * * *" # Every hour 
+      scheduled_time="$(whiptail_input "CRON BORGMATIC-TASKS" "Insert a cron expression for selected task:" "${suggested_cron}")"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+        # Borgmatic jobs
+        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/borgmatic_tasks.sh" "0 * * * *"
+        brolit_borgmatic_cronjob_install 
+      fi
+
+    fi
+    if [[ ${chosen_type} == *"03"* ]]; then
 
       # OPTIMIZER-TASKS
       suggested_cron="45 04 * * *" # Every day at 04:45 AM
@@ -2039,7 +2049,7 @@ function menu_cron_script_tasks() {
       fi
 
     fi
-    if [[ ${chosen_type} == *"03"* ]]; then
+    if [[ ${chosen_type} == *"04"* ]]; then
 
       # WORDPRESS-TASKS
       suggested_cron="45 23 * * *" # Every day at 23:45 AM
@@ -2052,7 +2062,7 @@ function menu_cron_script_tasks() {
       fi
 
     fi
-    if [[ ${chosen_type} == *"04"* ]]; then
+    if [[ ${chosen_type} == *"05"* ]]; then
 
       # UPTIME-TASKS
       suggested_cron="55 03 * * *" # Every day at 22:45 AM
@@ -2065,7 +2075,7 @@ function menu_cron_script_tasks() {
       fi
 
     fi
-    if [[ ${chosen_type} == *"05"* ]]; then
+    if [[ ${chosen_type} == *"06"* ]]; then
 
       # UPTIME-TASKS
       suggested_cron="45 22 * * *" # Every day at 22:45 AM
@@ -2078,7 +2088,7 @@ function menu_cron_script_tasks() {
       fi
 
     fi
-    if [[ ${chosen_type} == *"06"* ]]; then
+    if [[ ${chosen_type} == *"07"* ]]; then
 
       # BROLIT HELPER
       suggested_cron="*/30 * * * *" # Every 30 minutes
