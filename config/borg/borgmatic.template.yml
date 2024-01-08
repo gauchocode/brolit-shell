@@ -5,6 +5,10 @@ constants:
     username: user 
     server: server_or_IP
     port: port_to_connect
+    ntfy_server: ntfy_server
+    ntfy_username: ntfy_username
+    ntfy_password: ntfy_password
+    ntfy_topic: ntfy_topic
     # prefix: myprefix
 
 # List of source directories and files to back up. Globs and tildes
@@ -99,16 +103,16 @@ on_error:
 ntfy:
     # The topic to publish to. See https://ntfy.sh/docs/publish/
     # for details.
-    topic: backups_broobe
+    topic: {ntfy_topic}
 
     # The address of your self-hosted ntfy.sh instance.
-    server: https://ntfy.broobe.net
+    server:  {ntfy_server}
 
     # The username used for authentication.
-    username: broobe
+    username:  {ntfy_username}
 
     # The password used for authentication.
-    password: 
+    password: {ntfy_password}
 
     start:
         # The title of the message.
