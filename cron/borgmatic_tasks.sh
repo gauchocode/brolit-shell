@@ -48,9 +48,44 @@ function _brolit_configuration_load_backup_borg() {
     export BACKUP_BORG_STATUS BACKUP_BORG_USER BACKUP_BORG_SERVER BACKUP_BORG_PORT BACKUP_BORG_GROUP
 }
 
+
+function _brolit_configuration_load_ntfy() {
+
+    local server_config_file="${1}"
+
+
+    # Globals
+    declare -g NOTIFICATION_NTFY_STATUS
+    declare -g NOTIFICATION_NTFY_USERNAME
+    declare -g NOTIFICATION_NTFY_PASSWORD
+    declare -g NOTIFICATION_NTFY_SERVER
+    declare -g NOTIFICATION_NTFY_TOPIC
+    
+    NOTIFICATION_NTFY_STATUS="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].status")"
+
+    if [[ ${NOTIFICATION_NTFY_STATUS} == "enabled" ]]; then
+
+        # Required
+        NOTIFICATION_NTFY_USERNAME="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].username")"
+        [[ -z ${NOTIFICATION_NTFY_USERNAME} ]] && die "Error reading NOTIFICATION_NTFY_USERNAME from server config file."
+
+        NOTIFICATION_NTFY_PASSWORD="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].password")"
+        [[ -z ${NOTIFICATION_NTFY_PASSWORD} ]] && die "Error reading NOTIFICATION_NTFY_PASSWORD from server config file."
+
+        NOTIFICATION_NTFY_SERVER="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].server")"
+        [[ -z ${NOTIFICATION_NTFY_SERVER} ]] && die "Error reading NOTIFICATION_NTFY_SERVER from server config file."
+
+        NOTIFICATION_NTFY_TOPIC="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].topic")"
+        [[ -z ${NOTIFICATION_NTFY_TOPIC} ]] && die "Error reading NOTIFICATION_NTFY_TOPIC from server config file."
+    fi
+
+    export NOTIFICATION_NTFY_STATUS NOTIFICATION_NTFY_USERNAME NOTIFICATION_NTFY_PASSWORD NOTIFICATION_NTFY_SERVER NOTIFICATION_NTFY_TOPIC
+
+}
+
 # shellcheck source=${BROLIT_MAIN_DIR}/libs/commons.sh
 
-	# Iteramos las carpetas sobre el directorio
+# Iteramos las carpetas sobre el directorio
 
 _brolit_configuration_load_backup_borg "/root/.brolit_conf.json"
 
@@ -90,6 +125,10 @@ if [ "${BACKUP_BORG_STATUS}" == "enabled" ]; then
                 USER=$BACKUP_BORG_USER yq -i '.constants.username = strenv(USER)' "/etc/borgmatic.d/$archivo_yml"
                 SERVER=$BACKUP_BORG_SERVER yq -i '.constants.server = strenv(SERVER)' "/etc/borgmatic.d/$archivo_yml"
                 PORT=$BACKUP_BORG_PORT yq -i '.constants.port = strenv(PORT)' "/etc/borgmatic.d/$archivo_yml"
+                NTFY_USER=$NOTIFICATION_NTFY_USERNAME yq -i '.constants.ntfy_username = strenv(NTFY_USER)' "/etc/borgmatic.d/$archivo_yml"
+                NTFY_PASS=$NOTIFICATION_NTFY_PASSWORD yq -i '.constants.ntfy_password = strenv(NTFY_PASS)' "/etc/borgmatic.d/$archivo_yml"
+                NTFY_SERVER=$NOTIFICATION_NTFY_SERVER yq -i '.constants.ntfy_server = strenv(NTFY_SERVER)' "/etc/borgmatic.d/$archivo_yml"
+                NTFY_TOPIC=$NOTIFICATION_NTFY_TOPIC yq -i '.constants.ntfy_topic = strenv(NTFY_TOPIC)' "/etc/borgmatic.d/$archivo_yml"
                 echo "Archivo $archivo_yml generado."
                 echo "Esperando 3 segundos..."
                 sleep 3
