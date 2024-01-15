@@ -17,6 +17,7 @@ fi
 source "${BROLIT_MAIN_DIR}/brolit_lite.sh"
 source "${BROLIT_MAIN_DIR}/libs/local/project_helper.sh"
 source "${BROLIT_MAIN_DIR}/libs/commons.sh"
+source "${BROLIT_MAIN_DIR}/utils/brolit_configuration_manager.sh"
 
 function _brolit_configuration_load_backup_borg() {
     local server_config_file="${1}"
@@ -53,7 +54,6 @@ function _brolit_configuration_load_ntfy() {
 
     local server_config_file="${1}"
 
-
     # Globals
     declare -g NOTIFICATION_NTFY_STATUS
     declare -g NOTIFICATION_NTFY_USERNAME
@@ -61,22 +61,19 @@ function _brolit_configuration_load_ntfy() {
     declare -g NOTIFICATION_NTFY_SERVER
     declare -g NOTIFICATION_NTFY_TOPIC
     
-    NOTIFICATION_NTFY_STATUS="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].status")"
+    NOTIFICATION_NTFY_STATUS="$(_json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].status")"
 
     if [[ ${NOTIFICATION_NTFY_STATUS} == "enabled" ]]; then
 
         # Required
-        NOTIFICATION_NTFY_USERNAME="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].username")"
+        NOTIFICATION_NTFY_USERNAME="$(_json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].username")"
         [[ -z ${NOTIFICATION_NTFY_USERNAME} ]] && die "Error reading NOTIFICATION_NTFY_USERNAME from server config file."
 
-        NOTIFICATION_NTFY_PASSWORD="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].password")"
+        NOTIFICATION_NTFY_PASSWORD="$(_json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].password")"
         [[ -z ${NOTIFICATION_NTFY_PASSWORD} ]] && die "Error reading NOTIFICATION_NTFY_PASSWORD from server config file."
 
-        NOTIFICATION_NTFY_SERVER="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].server")"
+        NOTIFICATION_NTFY_SERVER="$(_json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].server")"
         [[ -z ${NOTIFICATION_NTFY_SERVER} ]] && die "Error reading NOTIFICATION_NTFY_SERVER from server config file."
-
-        NOTIFICATION_NTFY_TOPIC="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].topic")"
-        [[ -z ${NOTIFICATION_NTFY_TOPIC} ]] && die "Error reading NOTIFICATION_NTFY_TOPIC from server config file."
     fi
 
     export NOTIFICATION_NTFY_STATUS NOTIFICATION_NTFY_USERNAME NOTIFICATION_NTFY_PASSWORD NOTIFICATION_NTFY_SERVER NOTIFICATION_NTFY_TOPIC
@@ -88,6 +85,7 @@ function _brolit_configuration_load_ntfy() {
 # Iteramos las carpetas sobre el directorio
 
 _brolit_configuration_load_backup_borg "/root/.brolit_conf.json"
+_brolit_configuration_load_ntfy "/root/.brolit_conf.json"
 
 if [ "${BACKUP_BORG_STATUS}" == "enabled" ]; then
 
@@ -128,7 +126,7 @@ if [ "${BACKUP_BORG_STATUS}" == "enabled" ]; then
                 NTFY_USER=$NOTIFICATION_NTFY_USERNAME yq -i '.constants.ntfy_username = strenv(NTFY_USER)' "/etc/borgmatic.d/$archivo_yml"
                 NTFY_PASS=$NOTIFICATION_NTFY_PASSWORD yq -i '.constants.ntfy_password = strenv(NTFY_PASS)' "/etc/borgmatic.d/$archivo_yml"
                 NTFY_SERVER=$NOTIFICATION_NTFY_SERVER yq -i '.constants.ntfy_server = strenv(NTFY_SERVER)' "/etc/borgmatic.d/$archivo_yml"
-                NTFY_TOPIC=$NOTIFICATION_NTFY_TOPIC yq -i '.constants.ntfy_topic = strenv(NTFY_TOPIC)' "/etc/borgmatic.d/$archivo_yml"
+                #NTFY_TOPIC=$NOTIFICATION_NTFY_TOPIC yq -i '.constants.ntfy_topic = strenv(NTFY_TOPIC)' "/etc/borgmatic.d/$archivo_yml"
                 echo "Archivo $archivo_yml generado."
                 echo "Esperando 3 segundos..."
                 sleep 3
