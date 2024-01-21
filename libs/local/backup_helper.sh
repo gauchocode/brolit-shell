@@ -461,7 +461,7 @@ function backup_all_files() {
 function backup_all_files_with_borg() {
 
   # BACKUP ALL PROJECTS WITH BORG
-  borgmatic --verbosity 1 
+  borgmatic --verbosity 1
 
 }
 
