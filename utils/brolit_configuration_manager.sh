@@ -166,6 +166,48 @@ function _brolit_configuration_load_backup_dropbox() {
 }
 
 ################################################################################
+# Private: load borg backup configuration
+#
+# Arguments:
+#   ${1} = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function _brolit_configuration_load_backup_borg() {
+    local server_config_file="${1}"
+
+    #Globals
+    declare -g BACKUP_BORG_STATUS
+    declare -g BACKUP_BORG_USER
+    declare -g BACKUP_BORG_SERVER
+    declare -g BACKUP_BORG_PORT
+    declare -g BACKUP_BORG_GROUP
+
+    BACKUP_BORG_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].status")"
+
+    if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
+
+        BACKUP_BORG_USER="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[].user")"
+        [[ -z "${BACKUP_BORG_USER}" ]] && die "Error reading BACKUP_BORG_USER from server config file."
+
+        BACKUP_BORG_SERVER="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[].server")"
+        [[ -z "${BACKUP_BORG_SERVER}" ]] && die "Error reading BACKUP_BORG_SERVER from server config file."
+
+        BACKUP_BORG_PORT="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[].port")"
+        [[ -z "${BACKUP_BORG_PORT}" ]] && die "Error reading BACKUP_BORG_PORT from server config file."
+
+        BACKUP_BORG_GROUP="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[].group")"
+        [[ -z "${BACKUP_BORG_GROUP}" ]] && die "Error reading BACKUP_BORG_GROUP from server config file."
+
+    fi 
+
+    export BACKUP_BORG_STATUS BACKUP_BORG_USER BACKUP_BORG_SERVER BACKUP_BORG_PORT BACKUP_BORG_GROUP
+}
+
+
+################################################################################
 # Private: load local backup configuration
 #
 # Arguments:
@@ -394,6 +436,50 @@ function _brolit_configuration_load_email() {
 }
 
 ################################################################################
+# Private: load ntfy notifications configuration
+#
+# Arguments:
+#   ${1} = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function _brolit_configuration_load_ntfy() {
+
+    local server_config_file="${1}"
+
+
+    # Globals
+    declare -g NOTIFICATION_NTFY_STATUS
+    declare -g NOTIFICATION_NTFY_USERNAME
+    declare -g NOTIFICATION_NTFY_PASSWORD
+    declare -g NOTIFICATION_NTFY_SERVER
+    declare -g NOTIFICATION_NTFY_TOPIC
+    
+    NOTIFICATION_NTFY_STATUS="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].status")"
+
+    if [[ ${NOTIFICATION_NTFY_STATUS} == "enabled" ]]; then
+
+        # Required
+        NOTIFICATION_NTFY_USERNAME="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].username")"
+        [[ -z ${NOTIFICATION_NTFY_USERNAME} ]] && die "Error reading NOTIFICATION_NTFY_USERNAME from server config file."
+
+        NOTIFICATION_NTFY_PASSWORD="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].password")"
+        [[ -z ${NOTIFICATION_NTFY_PASSWORD} ]] && die "Error reading NOTIFICATION_NTFY_PASSWORD from server config file."
+
+        NOTIFICATION_NTFY_SERVER="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].server")"
+        [[ -z ${NOTIFICATION_NTFY_SERVER} ]] && die "Error reading NOTIFICATION_NTFY_SERVER from server config file."
+
+        NOTIFICATION_NTFY_TOPIC="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].topic")"
+        [[ -z ${NOTIFICATION_NTFY_TOPIC} ]] && die "Error reading NOTIFICATION_NTFY_TOPIC from server config file."
+    fi
+
+    export NOTIFICATION_NTFY_STATUS NOTIFICATION_NTFY_USERNAME NOTIFICATION_NTFY_PASSWORD NOTIFICATION_NTFY_SERVER NOTIFICATION_NTFY_TOPIC
+
+}
+
+################################################################################
 # Private: load Telegram notifications configuration
 #
 # Arguments:
@@ -570,6 +656,41 @@ function _brolit_configuration_load_cloudflare() {
     export SUPPORT_CLOUDFLARE_STATUS SUPPORT_CLOUDFLARE_EMAIL SUPPORT_CLOUDFLARE_API_KEY
 
 }
+
+################################################################################
+# Private: load borg configuration
+#
+# Arguments:
+#   ${1} = ${server_config_file}
+#
+# Outputs:
+#   nothing
+
+function _brolit_configuration_load_borg () {
+    local server_config_file="${1}"
+
+    # Globals
+    declare -g PACKAGES_BORG_STATUS
+
+    # BORG
+    borg_bin="$(package_is_installed "borgbackup")"
+    exitstatus=$?
+
+    PACKAGES_BORG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.borg[].status")"
+
+    if [[ ${PACKAGES_BORG_STATUS} == "enabled" ]]; then
+
+        [[ ${exitstatus} -eq 1 || -z ${borg_bin} ]] && pkg_config_changes_detected "borg" "true"
+
+    else
+
+        [[ ${exitstatus} -eq 0 && -n ${borg_bin} ]] && pkg_config_changes_detected "borg" "true"
+
+    fi
+
+    export PACKAGES_BORG_STATUS
+}
+
 
 ################################################################################
 # Private: load nginx configuration
@@ -1462,6 +1583,8 @@ function _brolit_configuration_load_zabbix() {
 
 }
 
+
+
 ################################################################################
 # Private: load docker configuration
 #
@@ -1981,6 +2104,9 @@ function brolit_configuration_load() {
     #### BACKUPS Method: dropbox
     _brolit_configuration_load_backup_dropbox "${server_config_file}"
 
+    #### BACKUPS Method: borg
+    _brolit_configuration_load_backup_borg "${server_config_file}"
+
     #### BACKUPS Method: sftp
     _brolit_configuration_load_backup_sftp "${server_config_file}"
 
@@ -1990,6 +2116,8 @@ function brolit_configuration_load() {
     #### If all required vars are disabled, show error
     if [[ ${BACKUP_DROPBOX_STATUS} != "enabled" ]] &&
         [[ ${BACKUP_SFTP_STATUS} != "enabled" ]] &&
+        [[ ${BACKUP_S3_STATUS} != "enabled" ]] &&
+        [[ ${BACKUP_BORG_STATUS} != "enabled" ]] &&
         [[ ${BACKUP_LOCAL_STATUS} != "enabled" ]]; then
         log_event "warning" "No backup method enabled" "false"
         display --indent 6 --text "- Backup method selected" --result "NONE" --color RED
@@ -2064,6 +2192,9 @@ function brolit_configuration_load() {
 
     ### php-fpm
     _brolit_configuration_load_php "${server_config_file}"
+
+    ## borg
+    _brolit_configuration_load_borg "${server_config_file}"
 
     ### certbot
     _brolit_configuration_load_certbot "${server_config_file}"

@@ -43,6 +43,16 @@
                         ]
                     }
                 ],
+                "borg": [
+                    {
+                        "status": "disabled",
+                        "config": [
+                            {
+                                "file": "/root/.borg_server"
+                            }
+                        ]
+                    }
+                ],
                 "sftp": [
                     {
                         "status": "disabled",

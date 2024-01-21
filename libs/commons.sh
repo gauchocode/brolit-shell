@@ -38,6 +38,7 @@ function _source_all_scripts() {
   source "${BROLIT_MAIN_DIR}/libs/notification_controller.sh"
   source "${BROLIT_MAIN_DIR}/libs/database_controller.sh"
   source "${BROLIT_MAIN_DIR}/libs/storage_controller.sh"
+  source "${BROLIT_MAIN_DIR}/libs/borg_storage_controller.sh"
 
 }
 
@@ -1294,7 +1295,7 @@ function change_ownership() {
     log_event "debug" "Command executed: chown -R ${user}:${group} ${path}" "false"
 
     clear_previous_lines "1"
-    display --indent 6 --text "- Changing directory ownership" --result FAIL --color RED
+    display --indent 6 --text "- Changing directory ownership" --result FAIL --color YELLOW
 
     return 1
 
@@ -1606,6 +1607,48 @@ function compress() {
     # Return
     echo "${backup_file_size}" && return 0
 
+  fi
+
+}
+
+################################################################################
+# Install borgmatic cronjob
+#
+# Arguments:
+#   ${1} = ${scheduled_time}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function brolit_borgmatic_cronjob_install() {
+
+  local script="${1}"
+  local scheduled_time="${2}"
+
+  log_section "Borgmatic Tasks"
+
+  borgmatic_cron_file="/etc/cron.d/borgmatic"
+
+  if [[ ! -f ${borgmatic_cron_file} ]]; then
+
+    log_event "info" "Cron file for root does not exist, creating ..." "false"
+
+    touch $borgmatic_cron_file
+    echo "50 00 * * * root PATH=$PATH:/usr/bin:/usr/local/bin /root/.local/bin/borgmatic --verbosity -1 --syslog-verbosity 1" >> $borgmatic_cron_file
+
+    chmod +x $borgmatic_cron_file
+
+    log_event "info" "Cron file created"
+    display --indent 2 --text "- Creating log file" --result DONE --color GREEN
+
+    log_event "info" "Updating cron job for script: ${script}" "false"
+    service cron reload
+    display --indent 2 --text "- Updating cron job" --result DONE --color GREEN
+
+  else
+    log_event "info" "Script file already exists"
+    display --indent 2 --text "- Script already exists, not updated" --result SKIPPED --color YELLOW
   fi
 
 }
@@ -1955,11 +1998,12 @@ function menu_cron_script_tasks() {
 
   runner_options=(
     "01)" "BACKUPS TASKS"
-    "02)" "OPTIMIZER TASKS"
-    "03)" "WORDPRESS TASKS"
-    "04)" "SECURITY TASKS"
-    "05)" "UPTIME TASKS"
-    "06)" "BROLIT UI HELPER"
+    "02)" "BORGMATIC TASKS"
+    "03)" "OPTIMIZER TASKS"
+    "04)" "WORDPRESS TASKS"
+    "05)" "SECURITY TASKS"
+    "06)" "UPTIME TASKS"
+    "07)" "BROLIT UI HELPER"
   )
   chosen_type="$(whiptail --title "CRONEABLE TASKS" --menu "\n" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)"
 
@@ -1981,6 +2025,19 @@ function menu_cron_script_tasks() {
     fi
     if [[ ${chosen_type} == *"02"* ]]; then
 
+      # BORGMATIC-TASKS
+      suggested_cron="0 * * * *" # Every hour 
+      scheduled_time="$(whiptail_input "CRON BORGMATIC-TASKS" "Insert a cron expression for selected task:" "${suggested_cron}")"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+        # Borgmatic jobs
+        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/borgmatic_tasks.sh" "0 * * * *"
+        brolit_borgmatic_cronjob_install 
+      fi
+
+    fi
+    if [[ ${chosen_type} == *"03"* ]]; then
+
       # OPTIMIZER-TASKS
       suggested_cron="45 04 * * *" # Every day at 04:45 AM
       scheduled_time="$(whiptail_input "CRON OPTIMIZER-TASKS" "Insert a cron expression for selected task:" "${suggested_cron}")"
@@ -1992,7 +2049,7 @@ function menu_cron_script_tasks() {
       fi
 
     fi
-    if [[ ${chosen_type} == *"03"* ]]; then
+    if [[ ${chosen_type} == *"04"* ]]; then
 
       # WORDPRESS-TASKS
       suggested_cron="45 23 * * *" # Every day at 23:45 AM
@@ -2005,7 +2062,7 @@ function menu_cron_script_tasks() {
       fi
 
     fi
-    if [[ ${chosen_type} == *"04"* ]]; then
+    if [[ ${chosen_type} == *"05"* ]]; then
 
       # UPTIME-TASKS
       suggested_cron="55 03 * * *" # Every day at 22:45 AM
@@ -2018,7 +2075,7 @@ function menu_cron_script_tasks() {
       fi
 
     fi
-    if [[ ${chosen_type} == *"05"* ]]; then
+    if [[ ${chosen_type} == *"06"* ]]; then
 
       # UPTIME-TASKS
       suggested_cron="45 22 * * *" # Every day at 22:45 AM
@@ -2031,7 +2088,7 @@ function menu_cron_script_tasks() {
       fi
 
     fi
-    if [[ ${chosen_type} == *"06"* ]]; then
+    if [[ ${chosen_type} == *"07"* ]]; then
 
       # BROLIT HELPER
       suggested_cron="*/30 * * * *" # Every 30 minutes
