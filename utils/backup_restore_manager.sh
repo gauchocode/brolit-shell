@@ -51,6 +51,9 @@ function backup_manager_menu() {
       # Files Backup
       backup_all_files
 
+      # Configs Backup
+      backup_all_files_with_borg
+
       # Footer
       mail_footer "${SCRIPT_V}"
 
@@ -165,6 +168,8 @@ function backup_manager_menu() {
         DOMAIN="$(basename "${filepath}/${filename}")"
 
         backup_project "${DOMAIN}" "all"
+        
+        backup_project_with_borg "${DOMAIN}"
 
         # Sending notifications
         #mail_send_notification "${email_subject}" "${email_content}"
@@ -371,6 +376,7 @@ function restore_manager_menu() {
     "02)" "FROM PUBLIC LINK (BETA)"
     "03)" "FROM LOCAL FILE (BETA)"
     "04)" "FROM FTP (BETA)"
+    "05)" "FROM BORG (BETA)"
   )
 
   chosen_restore_options="$(whiptail --title "RESTORE BACKUP" --menu " " 20 78 10 "${restore_options[@]}" 3>&1 1>&2 2>&3)"
@@ -395,6 +401,9 @@ function restore_manager_menu() {
 
       restore_backup_from_ftp
 
+    fi
+    if [[ ${chosen_restore_options} == *"05"* ]]; then
+      restore_backup_with_borg 
     fi
 
   else

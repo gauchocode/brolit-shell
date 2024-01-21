@@ -112,6 +112,19 @@
                             }
                         ]
                     }
+                ],
+                "borg": [
+                    {
+                        "status": "disabled",
+                        "config": [
+                            {
+                                "user": "",
+                                "server": "",
+                                "port": "",
+                                "group": ""
+                            }
+                        ]
+                    }
                 ]
             }
         ]
@@ -152,6 +165,19 @@
                     }
                 ]
             }
+        ],
+        "ntfy": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "username": "",
+                        "password": "",
+                        "server": "",
+                        "topic": ""
+                    }
+                ]
+            } 
         ]
     },
     "SECURITY": {
@@ -295,6 +321,11 @@
             }
         ],
         "docker": [
+            {
+                "status": "disabled"
+            }
+        ],
+        "borg": [
             {
                 "status": "disabled"
             }
