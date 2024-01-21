@@ -10,7 +10,8 @@ function tests_suite_menu() {
   local chosen_tests_options # whiptail var
 
   tests_options=(
-    "01)" "RUN ALL TESTS"
+    "00)" "RUN ALL TESTS"
+    "01)" "RUN BORG TESTS"
     "02)" "RUN JSON HELPER TESTS"
     "03)" "RUN MYSQL TESTS"
     "04)" "RUN PHP TESTS"
@@ -29,7 +30,7 @@ function tests_suite_menu() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    if [[ ${chosen_tests_options} == *"01"* ]]; then
+    if [[ ${chosen_tests_options} == *"00"* ]]; then
       test_display_functions
       test_mysql_helper
       test_php_helper_funtions
@@ -37,6 +38,10 @@ function tests_suite_menu() {
       test_wordpress_helper_funtions
       test_cloudflare_funtions
       test_common_funtions
+      test_borg_helper_funtions
+    fi
+    if [[ ${chosen_tests_options} == *"01"* ]]; then
+      test_borg_helper_funtions
 
     fi
     if [[ ${chosen_tests_options} == *"02"* ]]; then
