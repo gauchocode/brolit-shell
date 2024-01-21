@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.7
+# Version: 3.3.8
 ################################################################################
 #
 # Nginx Helper: Perform nginx actions.
