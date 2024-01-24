@@ -460,8 +460,13 @@ function backup_all_files() {
 
 function backup_all_files_with_borg() {
 
-  # BACKUP ALL PROJECTS WITH BORG
-  borgmatic --verbosity 1
+  if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
+    # BACKUP ALL PROJECTS WITH BORG
+    borgmatic --verbosity 1 --list --stats
+  else
+    log_event "error" "borg backup support is not enabled" "false"
+    display --indent 6 --text "- backup with borg" --result "FAIL" --color RED
+  fi
 
 }
 
