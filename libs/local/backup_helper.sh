@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.7
+# Version: 3.3.8
 #############################################################################
 #
 # Backup Helper: Perform backup actions.
@@ -461,7 +461,7 @@ function backup_all_files() {
 function backup_all_files_with_borg() {
 
   # BACKUP ALL PROJECTS WITH BORG
-  borgmatic --verbosity 1 
+  borgmatic --verbosity 1
 
 }
 
