@@ -29,6 +29,7 @@
 
 ### Need more testing
 
+- [ ] Borg support.
 - [ ] Core: PHP composer support (installer).
 - [ ] Restore-project: big refactor.
 - [ ] Core: Generate project config file (/etc/brolit/domain_conf.json).
@@ -119,7 +120,6 @@
 - [ ] Uptime Kuma support: 
         https://github.com/louislam/uptime-kuma
 - [ ] WordPress: WP Network support (nginx config, and wp-cli commands).
-- [ ] Support for borgmatic?: https://github.com/witten/borgmatic
 - [ ] Core: Accept command via Telegram: https://github.com/topkecleon/telegram-bot-bash
 - [ ] Nginx: bad bot blocker.
       https://github.com/mitchellkrogza/nginx-ultimate-bad-bot-blocker
