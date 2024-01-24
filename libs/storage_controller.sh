@@ -61,8 +61,7 @@ function storage_list_dir() {
 # Create directory (dropbox, sftp, ssh, etc)
 #
 # Arguments:
-#   ${1} = {file_to_download}
-#   ${2} = {remote_directory}
+#   ${1} = {remote_directory}
 #
 # Outputs:
 #   0 if it utils were installed, 1 on error.
