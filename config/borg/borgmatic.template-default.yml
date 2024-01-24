@@ -14,7 +14,7 @@ source_directories:
     - /var/www/{project}
 
 repositories:
-  - path: ssh://u372319@u372319.your-storagebox.de:23/./applications/{group}/{hostname}/projects-online/site/{project}
+  - path: ssh://{username}@{server}:{port}/./applications/{group}/{hostname}/projects-online/site/{project}
     label: "{project}"
 
 exclude_patterns:
@@ -31,7 +31,7 @@ exclude_patterns:
 
 archive_name_format: '{project}_site-files-{now:%Y-%m-%dT%H:%M:%S}'
 # Keep all archives within this time interval.
-keep_within: 1m #Equivale a 2 meses
+keep_within: 2m # two months of backup
 
 # Number of secondly archives to keep.
 # keep_secondly: 60
