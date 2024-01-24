@@ -38,4 +38,10 @@ function send_notification() {
     
     fi
 
+    if [[ ${NOTIFICATION_NTFY_STATUS} == "enabled" ]]; then
+
+        ntfy_send_notification "${notification_title}" "${notification_content}"
+
+    fi
+
 }
