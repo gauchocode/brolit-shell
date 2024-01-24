@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Por cada direcorio existenten en /www/var generar un archivo .yml
+# For every directory in /www/var generates a yml file
 
 BROLIT_MAIN_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 BROLIT_MAIN_DIR=$(cd "$(dirname "${BROLIT_MAIN_DIR}")" && pwd)
@@ -10,7 +10,7 @@ BROLIT_MAIN_DIR=$(cd "$(dirname "${BROLIT_MAIN_DIR}")" && pwd)
 directorio="/var/www"
 
 if [ ! -d "$directorio" ]; then
-	echo "El directorio '$directorio' no existe"
+	echo "The directory '$directorio' doesn't exists"
 	exit 1
 fi
 
@@ -111,7 +111,7 @@ if [ "${BACKUP_BORG_STATUS}" == "enabled" ]; then
             if [ ! -f "/etc/borgmatic.d/$archivo_yml" ]; then
 
                 if [ ${project_install_type} == "default" ]; then
-                    echo "---- Projecto no dockerizado escribir el nombre de la base de datos manualmente!! ----"
+                    echo "---- Project it's not dockerized, write the database name manually!! ----"
                     cp "${BROLIT_MAIN_DIR}/config/borg/borgmatic.template-default.yml" "/etc/borgmatic.d/$archivo_yml"
                 else
                     cp "${BROLIT_MAIN_DIR}/config/borg/borgmatic.template.yml" "/etc/borgmatic.d/$archivo_yml"
@@ -127,19 +127,19 @@ if [ "${BACKUP_BORG_STATUS}" == "enabled" ]; then
                 NTFY_PASS=$NOTIFICATION_NTFY_PASSWORD yq -i '.constants.ntfy_password = strenv(NTFY_PASS)' "/etc/borgmatic.d/$archivo_yml"
                 NTFY_SERVER=$NOTIFICATION_NTFY_SERVER yq -i '.constants.ntfy_server = strenv(NTFY_SERVER)' "/etc/borgmatic.d/$archivo_yml"
                 #NTFY_TOPIC=$NOTIFICATION_NTFY_TOPIC yq -i '.constants.ntfy_topic = strenv(NTFY_TOPIC)' "/etc/borgmatic.d/$archivo_yml"
-                echo "Archivo $archivo_yml generado."
-                echo "Esperando 3 segundos..."
+                echo "File $archivo_yml generated."
+                echo "Please wait 3 seconds..."
                 sleep 3
             else
-                echo "El archivo $archivo_yml ya existe."	
+                echo "The file $archivo_yml exists."	
                 sleep 1
             fi	
-                echo "Inicializando repo"
+                echo "Initializing repo"
                 ssh -p ${BACKUP_BORG_PORT} ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER} "mkdir -p /home/applications/'$BACKUP_BORG_GROUP'/'$HOSTNAME'/projects-online/site/'$nombre_carpeta'"
                 sleep 1
                 borgmatic init --encryption=none --config "/etc/borgmatic.d/$archivo_yml"
 		fi
 	done
 else
-	echo "Borg no esta habilitado"
+	echo "Borg it's not enabled"
 fi

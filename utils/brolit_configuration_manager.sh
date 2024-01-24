@@ -2142,6 +2142,9 @@ function brolit_configuration_load() {
     ### Discord
     _brolit_configuration_load_discord "${server_config_file}"
 
+    ## ntfy
+    _brolit_configuration_load_ntfy "${server_config_file}"
+
     ## SECURITY
     SECURITY_STATUS="$(json_read_field "${server_config_file}" "SECURITY.status")"
     if [[ ${SECURITY_STATUS} == "enabled" ]]; then
