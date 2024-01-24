@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.7
+# Version: 3.3.8
 ################################################################################
 #
 # Ref: https://github.com/wordfence/wordfence-cli
@@ -113,11 +113,11 @@ function wordfencecli_malware_scan() {
 
         # Log
         log_event "info" "Starting wordfence-cli malware scan on: ${directory_to_scan}" "false"
-        log_event "debug" "Running: docker run -v /var/www:/var/www wordfence-cli:latest malware-scan ${scan_option} --license ${license} ${directory_to_scan}" "false"
+        log_event "debug" "Running: docker run -v /var/www:/var/www wordfence-cli:latest malware-scan ${scan_option} --accept-terms --license ${license} ${directory_to_scan}" "false"
         display --indent 6 --text "- Starting wordfence-cli malware scan on: ${directory_to_scan}"
 
         # Malware Scan command
-        docker run -v /var/www:/var/www wordfence-cli:latest malware-scan ${scan_option} --license ${license} "${directory_to_scan}"
+        docker run -v /var/www:/var/www wordfence-cli:latest malware-scan ${scan_option} --accept-terms --license ${license} "${directory_to_scan}"
 
     else
 
@@ -161,11 +161,11 @@ function wordfencecli_vulnerabilities_scan() {
 
         # Log
         log_event "info" "Starting wordfence-cli vulnerabilities scan on: ${directory_to_scan}" "false"
-        log_event "debug" "Running: docker run -v /var/www:/var/www wordfence-cli:latest vuln-scan ${scan_option} --license ${license} ${directory_to_scan}" "false"
+        log_event "debug" "Running: docker run -v /var/www:/var/www wordfence-cli:latest vuln-scan ${scan_option} --accept-terms --license ${license} ${directory_to_scan}" "false"
         display --indent 6 --text "- Starting wordfence-cli vulnerabilities scan on: ${directory_to_scan}"
 
         # Vulnerabilities Scan command
-        docker run -v /var/www:/var/www wordfence-cli:latest vuln-scan ${scan_option} --license ${license} "${directory_to_scan}"
+        docker run -v /var/www:/var/www wordfence-cli:latest vuln-scan ${scan_option} --accept-terms --license ${license} "${directory_to_scan}"
 
     else
 
