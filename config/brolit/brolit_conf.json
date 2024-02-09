@@ -79,6 +79,19 @@
         ],
         "methods": [
             {
+                "borg": [
+                    {
+                        "status": "disabled",
+                        "config": [
+                            {
+                                "user": "",
+                                "server": "",
+                                "port": "",
+                                "group": ""
+                            }
+                        ]
+                    }
+                ],
                 "dropbox": [
                     {
                         "status": "disabled",
@@ -112,19 +125,6 @@
                             }
                         ]
                     }
-                ],
-                "borg": [
-                    {
-                        "status": "disabled",
-                        "config": [
-                            {
-                                "user": "",
-                                "server": "",
-                                "port": "",
-                                "group": ""
-                            }
-                        ]
-                    }
                 ]
             }
         ]
@@ -144,6 +144,19 @@
                     }
                 ]
             }
+        ],
+        "ntfy": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "username": "",
+                        "password": "",
+                        "server": "",
+                        "topic": ""
+                    }
+                ]
+            } 
         ],
         "discord": [
             {
@@ -165,19 +178,6 @@
                     }
                 ]
             }
-        ],
-        "ntfy": [
-            {
-                "status": "disabled",
-                "config": [
-                    {
-                        "username": "",
-                        "password": "",
-                        "server": "",
-                        "topic": ""
-                    }
-                ]
-            } 
         ]
     },
     "SECURITY": {

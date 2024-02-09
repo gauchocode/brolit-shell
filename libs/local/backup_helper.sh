@@ -487,14 +487,8 @@ function backup_project_files_borg() {
   local backup_type="${2}"
   local directory_to_backup="${3}" 
 
-  local backup_filk
-  local backup_prefix_name
-  local exclude_parameters
-  local storage_path
-
-  #backup_prefix_name="${directory_to_backup}_${backup_type}-files"
-
   storage_create_dir "/home/applications/${group_name}/${SERVER_NAME}/projects-online/${backup_type}/${directory_to_backup}"
+
 }
 
 ################################################################################
