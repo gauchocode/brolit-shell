@@ -6,17 +6,24 @@
 
 
 ################################################################################
-# Ntfy send notification
+# Ntfy Send Notification
 #
+# Arguments:
+#   ${1} = {notification_title}
+#   ${2} = {notification_content}
+#   ${3} = {notification_type}
+#
+# Outputs:
+#   0 if it utils were installed, 1 on error.
 ################################################################################
 
 function ntfy_send_notification() {
 
     local notification_title="${1}"
     local notification_content="${2}"
-    local notification_type="${3}"
+    #local notification_type="${3}"
 
-    echo ${notification_title}
+    echo "${notification_title}"
 
     curl -H "Title: ${notification_title}" -d "${notification_content}" -u "${NOTIFICATION_NTFY_USERNAME}:${NOTIFICATION_NTFY_PASSWORD}" "${NOTIFICATION_NTFY_SERVER}/${NOTIFICATION_NTFY_TOPIC}"
 
@@ -39,4 +46,5 @@ function ntfy_send_notification() {
         return 1
 
     fi
+
 }

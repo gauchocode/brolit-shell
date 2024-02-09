@@ -47,6 +47,7 @@ function storage_list_dir() {
 
     if [[ ${storage_result} -eq 0 && -n ${remote_list} ]]; then
 
+        # Return
         echo "${remote_list}" && return 0
 
     else
@@ -61,8 +62,7 @@ function storage_list_dir() {
 # Create directory (dropbox, sftp, ssh, etc)
 #
 # Arguments:
-#   ${1} = {file_to_download}
-#   ${2} = {remote_directory}
+#   ${1} = {remote_directory}
 #
 # Outputs:
 #   0 if it utils were installed, 1 on error.
@@ -209,6 +209,7 @@ function storage_upload_backup() {
 
     [[ ${error_type} != "none" ]] && echo "${error_type}"
 
+    # Return
     return ${got_error}
 
 }
@@ -232,12 +233,12 @@ function storage_download_backup() {
     local got_error=0
     local error_type
     local backup_date
-    local local_space_free
+    #local local_space_free
 
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
         # Check if local storage has enough space
-        local_space_free="$(calculate_disk_usage "${MAIN_VOL}")"
+        #local_space_free="$(calculate_disk_usage "${MAIN_VOL}")"
         
         # Check date from file to download
         backup_date="$(dropbox_get_modified_date "${file_to_download}")"
@@ -254,7 +255,9 @@ function storage_download_backup() {
 
     [[ ${error_type} != "none" ]] && echo "${error_type}"
 
+    # Return
     return ${got_error}
+
 }
 
 ################################################################################
@@ -294,6 +297,7 @@ function storage_delete_backup() {
 
     [[ ${error_type} != "none" ]] && echo "${error_type}"
 
+    # Return
     return ${got_error}
 
 }
@@ -353,9 +357,9 @@ function storage_delete_old_backups() {
     sorted_monthly=($(printf '%s\n' "${monthly_backups[@]}" | sort -r))
 
     # Log
-    log_event "debug" "Daily backups: ${sorted_daily[@]}" "false"
-    log_event "debug" "Weekly backups: ${sorted_weekly[@]}" "false"
-    log_event "debug" "Monthly backups: ${sorted_monthly[@]}" "false"
+    #log_event "debug" "Daily backups: ${sorted_daily[@]}" "false"
+    #log_event "debug" "Weekly backups: ${sorted_weekly[@]}" "false"
+    #log_event "debug" "Monthly backups: ${sorted_monthly[@]}" "false"
 
     # Log
     display --indent 6 --text "- Deleting old files from storage"
@@ -423,8 +427,10 @@ function storage_remote_server_list() {
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
+            # Log
             log_event "debug" "chosen_server: ${chosen_server}" "false"
 
+            # Return
             echo "${chosen_server}" && return 0
 
         else
@@ -435,8 +441,10 @@ function storage_remote_server_list() {
 
     else
 
+        # Log
         log_event "error" "Storage list dir failed. Output: ${remote_server_list}. Exit status: ${exitstatus}" "false"
 
+        # Return
         return 1
 
     fi
@@ -472,6 +480,7 @@ function storage_remote_type_list() {
         # Log
         log_event "debug" "chosen_restore_type: ${chosen_restore_type}" "false"
 
+        # Return
         echo "${chosen_restore_type}" && return 0
 
     else
@@ -509,13 +518,23 @@ function storage_remote_status_list() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         if [[ ${chosen_restore_status} == *"01"* ]]; then
+
+            # Log
             log_event "debug" "chosen_restore_status: online" "false"
+
+            # Return
             echo "online" && return 0
+
         fi
 
         if [[ ${chosen_restore_status} == *"02"* ]]; then
+
+            # Log
             log_event "debug" "chosen_restore_status: offline" "false"
+
+            # Return
             echo "offline" && return 0
+
         fi
 
     else
@@ -523,6 +542,7 @@ function storage_remote_status_list() {
         # Log
         log_event "debug" "Backup status selection skipped." "false"
 
+        # Return
         return 1
 
     fi
@@ -574,7 +594,10 @@ function storage_backup_selection() {
 
     else
 
+        # Log
         display --indent 6 --text "- Selecting Project Backup" --result "SKIPPED" --color YELLOW
+
+        # Return        
         return 1
 
     fi
@@ -588,17 +611,22 @@ function storage_backup_selection() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
+        # Log
         display --indent 6 --text "- Selecting project Backup" --result "DONE" --color GREEN
         display --indent 8 --text "${chosen_backup_file}" --tcolor YELLOW
 
         # Remote backup path
         chosen_backup_file="${remote_backup_path}/${chosen_backup_file}"
 
+        # Return
         echo "${chosen_backup_file}" && return 0
 
     else
 
+        # Log
         display --indent 6 --text "- Selecting Project Backup" --result "SKIPPED" --color YELLOW
+
+        # Return
         return 1
 
     fi
