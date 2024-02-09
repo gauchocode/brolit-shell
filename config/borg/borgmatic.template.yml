@@ -8,6 +8,7 @@ constants:
     ntfy_server: ntfy_server
     ntfy_username: ntfy_username
     ntfy_password: ntfy_password
+    loki_url: loki_url
 
 # List of source directories and files to back up. Globs and tildes
 # are expanded. Do not backslash spaces in path names.
@@ -155,6 +156,10 @@ ntfy:
     # "finish", and/or "fail". Defaults to pinging for failure
     # only.
     states:
-        - start
-        - finish
         - fail
+loki:
+    url: {loki_url}:3100/loki/api/v1/push
+    labels:
+        app: borgmatic
+        project: __config
+        hostname: __hostname
