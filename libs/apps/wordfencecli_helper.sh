@@ -71,7 +71,8 @@ function wordfencecli_read_license() {
     if [[ ${WORDFENCECLI_LICENSE} != "" ]]; then
 
         export WORDFENCECLI_LICENSE
-
+        
+        # Return
         echo "${WORDFENCECLI_LICENSE}" && return 0
 
     else
