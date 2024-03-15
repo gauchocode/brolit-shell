@@ -1603,7 +1603,7 @@ function wpcli_seoyoast_reindex() {
 
     # Log
     display --indent 6 --text "- Running yoast re-index"
-    log_event "info" "Running yoast re-index" "false"
+    log_event "debug" "Running: ${wpcli_cmd} yoast index --reindex" "false"
 
     # Command
     ${wpcli_cmd} yoast index --reindex > /dev/null 2>&1
