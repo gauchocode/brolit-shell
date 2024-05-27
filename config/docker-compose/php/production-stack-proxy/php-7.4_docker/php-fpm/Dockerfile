@@ -17,6 +17,7 @@ RUN apt-get update; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*
 
+COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 COPY php-ini-overrides.ini  /etc/php/7.4/fpm/conf.d/z-overrides.ini
 COPY opcache-prod.ini       /etc/php/7.4/fpm/conf.d/z-opcache.ini
 COPY php-fpm-pool-prod.conf /etc/php/7.4/fpm/pool.d/z-optimised.conf
