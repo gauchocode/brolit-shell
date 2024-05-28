@@ -20,8 +20,7 @@ RUN apt-get update; \
         php8.0-xmlrpc; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*
-
-COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer    
+   
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer    
 COPY php-ini-overrides.ini  /etc/php/8.0/fpm/conf.d/z-overrides.ini
 COPY opcache-prod.ini       /etc/php/8.0/fpm/conf.d/z-opcache.ini
