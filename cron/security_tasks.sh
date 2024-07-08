@@ -11,20 +11,19 @@ _security_tasks() {
 
   log_section "Security Tasks"
 
-  # Wordfence-cli Scan
-  wordfencecli_scan_result="$(wordfencecli_malware_scan "${PROJECTS_PATH}" "true")"
+  for project_dir in /var/www/*; do
+    if [[ -d "$project_dir/wordpress" ]]; then
+      # Wordfence-cli Scan
+      wordfencecli_scan_result="$(wordfencecli_malware_scan "${project_dir}" "true")"
 
-  if [[ ${wordfencecli_scan_result} == "true" ]]; then
-
-    log_event "info" "Wordfence-cli found malware files! Please check result file." "false"
-
-    send_notification "⚠️ ${SERVER_NAME}" "Wordfence-cli found malware files! Please check result file on server." ""
-
-  else
-
-    log_event "info" "Wordfence-cli has not found malware files" "false"
-
-  fi
+      if [[ ${wordfencecli_scan_result} == "true" ]]; then
+        log_event "info" "Wordfence-cli found malware files in ${project_dir}! Please check result file." "false"
+        send_notification "⚠️ ${SERVER_NAME}" "Wordfence-cli found malware files in ${project_dir}! Please check result file on server." ""
+      else
+        log_event "info" "Wordfence-cli has not found malware files in ${project_dir}" "false"
+      fi
+    fi
+  done
 
   # Clamav Scan
   clamscan_result="$(security_clamav_scan "${PROJECTS_PATH}")"
