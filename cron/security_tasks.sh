@@ -11,17 +11,30 @@ _security_tasks() {
 
   log_section "Security Tasks"
 
-  for project_dir in /var/www/*; do
-    if [[ -d "$project_dir/wordpress" ]]; then
+  for project_dir in "${PROJECTS_PATH}"/*; do
+
+    if [[ -d "$project_dir" ]]; then
+
+    if [[ -d "$project_dir/wordpress" || ( -f "$project_dir/index.php" && -d "$project_dir/wp-content" ) ]]; then
+
       # Wordfence-cli Scan
       wordfencecli_scan_result="$(wordfencecli_malware_scan "${project_dir}" "true")"
 
       if [[ ${wordfencecli_scan_result} == "true" ]]; then
+
         log_event "info" "Wordfence-cli found malware files in ${project_dir}! Please check result file." "false"
+
         send_notification "⚠️ ${SERVER_NAME}" "Wordfence-cli found malware files in ${project_dir}! Please check result file on server." ""
+
       else
+
         log_event "info" "Wordfence-cli has not found malware files in ${project_dir}" "false"
+
+        send_notification "⚠️ ${SERVER_NAME}" "Wordfence-cli did not find any malware files in ${project_dir}. No action needed." ""
+
       fi
+    fi
+
     fi
   done
 
