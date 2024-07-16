@@ -931,7 +931,7 @@ function backup_project_with_borg() {
 function backup_project() {
 
   local project_domain="${1}"
-  local backup_type="${2}"
+  local backup_type="${2:-all}"  # Default backup type is 'all'
 
   local got_error=0
 
@@ -962,19 +962,49 @@ function backup_project() {
         log_event "error" "No se pudo encontrar un contenedor para ${project_domain}" "false"
         container_name="false"
       fi
-    else
-      container_name="false"
     fi
 
-    if [[ ${project_install_type} == "default" && ${project_type} != "html" ]]; then
-
+    # Backup database only if it's a Docker project
+    if [[ ${project_install_type} == "docker" && (${backup_type} == "all" || ${backup_type} == "databases") ]]; then
       log_event "info" "Trying to get database name from project config file..." "false"
 
       db_name="$(project_get_configured_database "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")"
       db_engine="$(project_get_configured_database_engine "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")"
 
       if [[ -z "${db_name}" ]]; then
+        log_event "warning" "Trying to get database name from convention name..." "false"
+        db_stage="$(project_get_stage_from_domain "${project_domain}")"
+        db_name="$(project_get_name_from_domain "${project_domain}")"
+        db_name="${db_name}_${db_stage}"
+      fi
 
+      if [[ -z "${db_engine}" ]]; then
+        # Check on Mysql
+        [[ $(mysql_database_exists "${db_name}") -eq 0 ]] && db_engine="mysql"
+        # Check on Postgres
+        [[ $(postgres_database_exists "${db_name}") -eq 0 ]] && db_engine="postgres"
+      fi
+
+      if [[ "${db_engine}" == "mysql" ]]; then
+        # Backup database
+        log_subsection "Backup Project Database"
+        backup_file="$(backup_project_database "${db_name}" "mysql")"
+        got_error=$?
+      elif [[ "${db_engine}" == "postgres" ]]; then
+        # Backup database
+        log_subsection "Backup Project Database"
+        backup_file="$(backup_project_database "${db_name}" "postgres")"
+        got_error=$?
+      fi
+    fi
+
+    if [[ ${project_install_type} == "default" && ${project_type} != "html" ]]; then
+      log_event "info" "Trying to get database name from project config file..." "false"
+
+      db_name="$(project_get_configured_database "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")"
+      db_engine="$(project_get_configured_database_engine "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")"
+
+      if [[ -z "${db_name}" ]]; then
         log_event "warning" "Trying to get database name from convention name..." "false"
 
         db_stage="$(project_get_stage_from_domain "${project_domain}")"
@@ -999,16 +1029,12 @@ function backup_project() {
         backup_file="$(backup_project_database "${db_name}" "mysql")"
         got_error=$?
 
-      else
+      elif [[ "${db_engine}" == "postgres" ]]; then
 
-        if [[ "${db_engine}" == "postgres" ]]; then
-
-          # Backup database
-          log_subsection "Backup Project Database"
-          backup_file="$(backup_project_database "${db_name}" "postgres")"
-          got_error=$?
-
-        fi
+        # Backup database
+        log_subsection "Backup Project Database"
+        backup_file="$(backup_project_database "${db_name}" "postgres")"
+        got_error=$?
 
       fi
 
