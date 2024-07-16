@@ -954,8 +954,18 @@ function backup_project() {
     # Project install type
     project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
 
-    # If ${project_install_type} == docker -> docker_mysql_database_backup ?
-    # Should consider the case where a project is dockerized but uses an external database?
+    local container_name
+
+    if [[ ${project_install_type} == "docker" ]]; then
+      container_name="$(docker ps --format '{{.Names}}' --filter "name=${project_domain}")"
+      if [[ -z "${container_name}" ]]; then
+        log_event "error" "No se pudo encontrar un contenedor para ${project_domain}" "false"
+        container_name="false"
+      fi
+    else
+      container_name="false"
+    fi
+
     if [[ ${project_install_type} == "default" && ${project_type} != "html" ]]; then
 
       log_event "info" "Trying to get database name from project config file..." "false"
