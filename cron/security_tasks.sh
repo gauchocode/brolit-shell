@@ -30,7 +30,7 @@ _security_tasks() {
 
         log_event "info" "Wordfence-cli has not found malware files in ${project_dir}" "false"
 
-        send_notification "⚠️ ${SERVER_NAME}" "Wordfence-cli did not find any malware files in ${project_dir}. No action needed." ""
+        send_notification "🟢 ${SERVER_NAME}" "Wordfence-cli did not find any malware files in ${project_dir}. No action needed." ""
 
       fi
     fi
