@@ -779,6 +779,7 @@ function backup_project_database() {
 
   local database="${1}"
   local db_engine="${2}"
+  local container_name="${3}"
 
   local export_result
 
@@ -799,12 +800,12 @@ function backup_project_database() {
   # Database engine
   if [[ ${db_engine} == "mysql" ]]; then
     ## Create dump file
-    mysql_database_export "${database}" "false" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
+    mysql_database_export "${database}" "${container_name}" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
   else
 
     if [[ ${db_engine} == "psql" ]]; then
       ## Create dump file
-      postgres_database_export "${database}" "false" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
+      postgres_database_export "${database}" "${container_name}" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
     fi
 
   fi
@@ -1017,7 +1018,7 @@ function backup_project() {
 
     return ${got_error}
 
-    if [[ ${project_install_type} == "docker" ]]; then
+    if [[ ${project_install_type} == "docker"* && ${project_type} != "html" ]]; then
 
       log_event "info" "Trying to get database name from project config file..." "false"
 
