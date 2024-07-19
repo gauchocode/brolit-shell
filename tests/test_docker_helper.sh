@@ -75,5 +75,5 @@ function test_docker_helper_functions() {
 function test_docker_database_backup() {
     
 
-    _project_get_install_type "/var/www/stage.ipfone.broobe.net" 
+    project_get_install_type "/var/www/stage.ipfone.broobe.net" 
 }
