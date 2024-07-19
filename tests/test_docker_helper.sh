@@ -71,3 +71,9 @@ function test_docker_helper_functions() {
     # TODO: generate certbot certificates and install it.
 
 }
+
+function test_docker_database_backup() {
+    
+
+    _project_get_install_type "/var/www/stage.ipfone.broobe.net" 
+}
