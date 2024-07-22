@@ -75,5 +75,8 @@ function test_docker_helper_functions() {
 function test_docker_database_backup() {
     
 
-    project_get_install_type "/var/www/stage.ipfone.example.net" 
+    project_get_install_type "/var/www/wordpress39.example.net"
+
+    # Docker MySQL database backup
+    mysql_database_export "wordpress39_prod" "wordpress39_mysql" "assets/dump.sql"
 }
