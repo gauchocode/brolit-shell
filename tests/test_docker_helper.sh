@@ -74,9 +74,66 @@ function test_docker_helper_functions() {
 
 function test_docker_database_backup() {
     
+#project_get_install_type "/var/www/wordpress39.broobe.net"
+# Docker MySQL database backup
+#mysql_database_export "wordpress39_prod" "wordpress39_mysql" "assets/dump.sql"
+#backup_project_database "wordpress39_prod" "mysql" "wordpress39_mysql"
+#backup_project "wordpress39.broobe.net" "databases" Este no funciona para docker!
 
-    project_get_install_type "/var/www/wordpress39.broobe.net"
+  local project_domain="${1}"
+  local backup_type="${2}"
 
-    # Docker MySQL database backup
-    mysql_database_export "wordpress39_prod" "wordpress39_mysql" "assets/dump.sql"
+  local got_error=0
+
+  local db_stage
+  local db_name
+  local db_engine
+  local backup_file
+  local project_type
+
+    # Backup files
+    log_subsection "Backup Project Files"
+    backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${project_domain}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+      # Project Type
+      project_type="$(project_get_type "${PROJECTS_PATH}/${project_domain}")"
+
+      # Project install type
+      project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
+
+      # If ${project_install_type} == docker -> docker_mysql_database_backup ?
+      # Should consider the case where a project is dockerized but uses an external database?
+      if [[ ${project_install_type} == "docker"* && ${project_type} != "html" ]]; then
+
+          backup_project_database "${db_name}" "${db_engine}" "${container_name}"
+
+      fi
+
+      log_break "false"
+
+      # Delete local backup
+      rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${backup_type:?}"
+      #log_event "info" "Deleting backup from server ..." "false"
+
+      # Log
+      log_break "false"
+      log_event "info" "Project backup finished!" "false"
+      display --indent 6 --text "- Project Backup" --result "DONE" --color GREEN
+
+      return ${got_error}
+
+    else
+
+      # Log
+      log_break "false"
+      log_event "error" "Something went wrong making the files backup" "false"
+      display --indent 6 --text "- Project Backup" --result "FAIL" --color RED
+      display --indent 8 --text "Something went wrong making the files backup" --tcolor RED
+
+      return 1
+
+    fi
 }
