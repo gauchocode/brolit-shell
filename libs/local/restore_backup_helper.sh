@@ -1376,6 +1376,9 @@ function docker_setup_configuration() {
   project_passw="$(openssl rand -hex 12)"
   sed -ie "s|^SSH_MASTER_PASS=.*$|SSH_MASTER_PASS=${project_passw}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
 
+  ## Update MYSQL DATABASE
+  sed -i -e "s|^MYSQL_DATABASE=.*$|MYSQL_DATABASE=${project_name}_${project_stage}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+  
   ## Will find the next port available from 81 to 350
   project_port="$(network_next_available_port "81" "350")"
 
