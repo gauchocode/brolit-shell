@@ -129,6 +129,7 @@ function project_manager_menu_new_project_type_utils() {
     "04)" "CREATE PROJECT DB  & USER"
     "05)" "PUT PROJECT ONLINE"
     "06)" "PUT PROJECT OFFLINE"
+    "07)" "DELETE PROJECT DOCKER"
   )
 
   chosen_project_utils_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_utils_options[@]}" 3>&1 1>&2 2>&3)"
@@ -234,6 +235,9 @@ function project_manager_menu_new_project_type_utils() {
     # PUT PROJECT OFFLINE
     [[ ${chosen_project_utils_options} == *"06"* ]] && project_change_status "offline"
 
+    # DELETE PROJECT
+    [[ ${chosen_project_utils_options} == *"07"* ]] && delete_docker_project
+    
     prompt_return_or_finish
     project_manager_menu_new_project_type_utils
 
