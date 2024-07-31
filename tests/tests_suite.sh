@@ -83,8 +83,8 @@ function tests_suite_menu() {
     fi
     if [[ ${chosen_tests_options} == *"11"* ]]; then
       #test_docker_helper_functions
-      test_docker_database_backup
-
+      #test_docker_database_backup
+      test_project_delete_database_docker
     fi
     if [[ ${chosen_tests_options} == *"12"* ]]; then
       send_notification "${SERVER_NAME}" "This is a notification test message!" ""
