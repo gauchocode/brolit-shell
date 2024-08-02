@@ -2432,19 +2432,6 @@ function delete_docker_project() {
 
   local project_domain="${1}"
 
-
-  echo "Debug: Project domain is '${project_domain}'"
-
-  # Verification
-  if [[ -z "${project_domain}" ]]; then
-    echo "Error: No project domain provided."
-    return 1
-  fi
-
-  local db_name
-  local db_engine
-  local container_name
-
   # Make database backup
   backup_docker_project "${project_domain}" "all"
 
