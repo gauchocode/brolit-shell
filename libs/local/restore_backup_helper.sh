@@ -1360,10 +1360,10 @@ function docker_setup_configuration() {
   # TODO: Update .env values (PORTS, COMPOSE_PROJECT_NAME, PROJECT_NAME, PROJECT_DOMAIN, SHH_MASTER_USER, SSH_MASTER_PASS)
 
   # Update COMPOSE_PROJECT_NAME
-  sed -ie "s|^COMPOSE_PROJECT_NAME=.*$|COMPOSE_PROJECT_NAME=${project_name}_stack|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+  sed -ie "s|^COMPOSE_PROJECT_NAME=.*$|COMPOSE_PROJECT_NAME=${project_stage}_${project_name}_stack|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
 
   # Update PROJECT_NAME
-  sed -ie "s|^PROJECT_NAME=.*$|PROJECT_NAME=${project_name}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+  sed -ie "s|^PROJECT_NAME=.*$|PROJECT_NAME=${project_name}_${project_stage}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
 
   # Update PROJECT_DOMAIN
   sed -ie "s|^PROJECT_DOMAIN=.*$|PROJECT_DOMAIN=${project_domain_new}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
