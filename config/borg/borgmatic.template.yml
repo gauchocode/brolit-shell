@@ -3,7 +3,7 @@ constants:
     group: group_server                     # e.g: broobe-hosts
     hostname: hostname_server               # e.g: broobe-docker-host03-cmuse    
     username: user 
-    server: server_or_IP
+    server: server
     port: port_to_connect
     ntfy_server: ntfy_server
     ntfy_username: ntfy_username
@@ -158,7 +158,7 @@ ntfy:
     states:
         - fail
 loki:
-    url: {loki_url}:3100/loki/api/v1/push
+    url: __loki_url:3100/loki/api/v1/push
     labels:
         app: borgmatic
         project: __config
