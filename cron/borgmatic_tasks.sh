@@ -108,7 +108,14 @@ if [ "${BACKUP_BORG_STATUS}" == "enabled" ]; then
 				continue
 			fi
 
+            echo "------------------------ Project name: ${nombre_carpeta} ------------------------ "
+
             if [ ! -f "/etc/borgmatic.d/$archivo_yml" ]; then
+
+                # Crea el archivo de configuracion
+                echo "El archivo $archivo_yml no existe"
+                echo "Generando"
+                sleep 2
 
                 if [ ${project_install_type} == "default" ]; then
                     echo "---- Project it's not dockerized, write the database name manually!! ----"
@@ -126,7 +133,8 @@ if [ "${BACKUP_BORG_STATUS}" == "enabled" ]; then
                 NTFY_USER=$NOTIFICATION_NTFY_USERNAME yq -i '.constants.ntfy_username = strenv(NTFY_USER)' "/etc/borgmatic.d/$archivo_yml"
                 NTFY_PASS=$NOTIFICATION_NTFY_PASSWORD yq -i '.constants.ntfy_password = strenv(NTFY_PASS)' "/etc/borgmatic.d/$archivo_yml"
                 NTFY_SERVER=$NOTIFICATION_NTFY_SERVER yq -i '.constants.ntfy_server = strenv(NTFY_SERVER)' "/etc/borgmatic.d/$archivo_yml"
-                #NTFY_TOPIC=$NOTIFICATION_NTFY_TOPIC yq -i '.constants.ntfy_topic = strenv(NTFY_TOPIC)' "/etc/borgmatic.d/$archivo_yml"
+                NTFY_TOPIC=$NOTIFICATION_NTFY_TOPIC yq -i '.constants.ntfy_topic = strenv(NTFY_TOPIC)' "/etc/borgmatic.d/$archivo_yml"
+
                 echo "File $archivo_yml generated."
                 echo "Please wait 3 seconds..."
                 sleep 3
@@ -141,5 +149,5 @@ if [ "${BACKUP_BORG_STATUS}" == "enabled" ]; then
 		fi
 	done
 else
-	echo "Borg it's not enabled"
+	echo "Borg is not enabled"
 fi
