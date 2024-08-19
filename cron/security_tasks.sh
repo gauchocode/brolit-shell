@@ -11,20 +11,32 @@ _security_tasks() {
 
   log_section "Security Tasks"
 
-  # Wordfence-cli Scan
-  wordfencecli_scan_result="$(wordfencecli_malware_scan "${PROJECTS_PATH}" "true")"
+  for project_dir in "${PROJECTS_PATH}"/*; do
 
-  if [[ ${wordfencecli_scan_result} == "true" ]]; then
+    if [[ -d "$project_dir" ]]; then
 
-    log_event "info" "Wordfence-cli found malware files! Please check result file." "false"
+    if [[ -d "$project_dir/wordpress" || ( -f "$project_dir/index.php" && -d "$project_dir/wp-content" ) ]]; then
 
-    send_notification "⚠️ ${SERVER_NAME}" "Wordfence-cli found malware files! Please check result file on server." ""
+      # Wordfence-cli Scan
+      wordfencecli_scan_result="$(wordfencecli_malware_scan "${project_dir}" "true")"
 
-  else
+      if [[ ${wordfencecli_scan_result} == "true" ]]; then
 
-    log_event "info" "Wordfence-cli has not found malware files" "false"
+        log_event "info" "Wordfence-cli found malware files in ${project_dir}! Please check result file." "false"
 
-  fi
+        send_notification "⚠️ ${SERVER_NAME}" "Wordfence-cli found malware files in ${project_dir}! Please check result file on server." ""
+
+      else
+
+        log_event "info" "Wordfence-cli has not found malware files in ${project_dir}" "false"
+
+        #send_notification "🟢 ${SERVER_NAME}" "Wordfence-cli did not find any malware files in ${project_dir}. No action needed." ""
+
+      fi
+    fi
+
+    fi
+  done
 
   # Clamav Scan
   clamscan_result="$(security_clamav_scan "${PROJECTS_PATH}")"

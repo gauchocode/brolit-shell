@@ -71,7 +71,8 @@ function wordfencecli_read_license() {
     if [[ ${WORDFENCECLI_LICENSE} != "" ]]; then
 
         export WORDFENCECLI_LICENSE
-
+        
+        # Return
         echo "${WORDFENCECLI_LICENSE}" && return 0
 
     else
@@ -83,6 +84,33 @@ function wordfencecli_read_license() {
     fi
 
 }
+
+################################################################################
+# Build Wordfence CLI Docker image
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function build_wordfencecli_docker_image() {
+
+    local target_directory="/root/brolit-shell/tmp"
+
+    if [[ ! -d "${target_directory}/wordfence-cli" ]]; then
+        git clone https://github.com/wordfence/wordfence-cli.git "${target_directory}/wordfence-cli"
+    else
+        echo "Wordfence CLI repository already cloned."
+    fi
+
+    cd "${target_directory}/wordfence-cli"
+    docker build -t wordfence-cli:latest . > /dev/null 2>&1
+    cd "${target_directory}"
+
+}
+
 
 ################################################################################
 # Malware scan directory with wordfence-cli
@@ -102,6 +130,9 @@ function wordfencecli_malware_scan() {
 
     local scan_option
     local license
+
+    # Build the Wordfence CLI Docker image
+    build_wordfencecli_docker_image
 
     # Read license 
     license="$(wordfencecli_read_license)"
@@ -150,6 +181,9 @@ function wordfencecli_vulnerabilities_scan() {
 
     local scan_option
     local license
+
+    # Build the Wordfence CLI Docker image
+    build_wordfencecli_docker_image
 
     # Read license 
     license="$(wordfencecli_read_license)"
