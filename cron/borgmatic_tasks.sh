@@ -114,7 +114,24 @@ if [ "${BACKUP_BORG_STATUS}" == "enabled" ]; then
                     echo "---- Project it's not dockerized, write the database name manually!! ----"
                     cp "${BROLIT_MAIN_DIR}/config/borg/borgmatic.template-default.yml" "/etc/borgmatic.d/$archivo_yml"
                 else
-                    cp "${BROLIT_MAIN_DIR}/config/borg/borgmatic.template.yml" "/etc/borgmatic.d/$archivo_yml"
+
+                    # Read the .env file
+                    if [[ -f "${directorio}/${nombre_carpeta}/.env" ]]; then
+
+                        export $(grep -v '^#' "${directorio}/${nombre_carpeta}/.env" | xargs)
+                        mysql_database="${MYSQL_DATABASE}"
+                        container_name="${PROJECT_NAME}_mysql"
+                        mysql_user="${MYSQL_USER}"
+                        mysql_password="${MYSQL_PASSWORD}"
+
+                    else
+
+                        echo "Error: .env file not found in ${directorio}/${nombre_carpeta}/."
+                        return 1
+
+                    fi
+
+                    cp "${BROLIT_MAIN_DIR}/config/borg/borgmatic.template-docker.yml" "/etc/borgmatic.d/$archivo_yml"
                 fi
 
                 PROJECT=$nombre_carpeta yq -i '.constants.project = strenv(PROJECT)' "/etc/borgmatic.d/$archivo_yml"
@@ -135,10 +152,48 @@ if [ "${BACKUP_BORG_STATUS}" == "enabled" ]; then
                 sleep 1
             fi	
                 echo "Initializing repo"
+                ssh -p ${BACKUP_BORG_PORT} ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER} "mkdir -p /home/applications/'$BACKUP_BORG_GROUP'/'$HOSTNAME'/projects-online/database/'$nombre_carpeta'"
                 ssh -p ${BACKUP_BORG_PORT} ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER} "mkdir -p /home/applications/'$BACKUP_BORG_GROUP'/'$HOSTNAME'/projects-online/site/'$nombre_carpeta'"
                 sleep 1
                 borgmatic init --encryption=none --config "/etc/borgmatic.d/$archivo_yml"
-		fi
+                
+            # dump
+            dump_file="/var/www/${nombre_carpeta}/${mysql_database}_dump.sql"
+            echo "Generating database $dump_file..."
+            docker exec "$container_name" sh -c "mysqldump -u$mysql_user -p$mysql_password $mysql_database > /tmp/database_dump.sql"
+            docker cp "$container_name:/tmp/database_dump.sql" "$dump_file"
+
+            if [ -f "$dump_file" ]; then
+                 echo "Importing database from $dump_file..."
+                docker exec -i "$container_name" mysql -u"$mysql_user" -p"$mysql_password" "$mysql_database" < "$dump_file"
+                if [ $? -eq 0 ]; then
+                    echo "Database import completed successfully."
+                else
+                    echo "Error during database import."
+                fi
+            fi
+
+            scp -P ${BACKUP_BORG_PORT} "$dump_file" ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:/home/applications/"$BACKUP_BORG_GROUP"/"$HOSTNAME"/projects-online/database/"$nombre_carpeta"
+
+            if [ $? -eq 0 ]; then
+                echo "Dump uploaded successfully."
+                if [ -f "$dump_file" ]; then
+                    echo "Deleting dump file: $dump_file"
+                    rm "$dump_file"
+                    if [ $? -eq 0 ]; then
+                        echo "Dump file deleted successfully."
+                    else
+                        echo "Error deleting dump file."
+                    fi
+                else
+                    echo "Error: Dump file does not exist."
+                fi
+            else
+                echo "Error uploading dump to remote server."
+            fi
+        else
+            echo "Error: Dump file not generated."
+        fi
 	done
 else
 	echo "Borg it's not enabled"
