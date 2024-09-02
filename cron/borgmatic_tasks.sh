@@ -158,10 +158,10 @@ if [ "${BACKUP_BORG_STATUS}" == "enabled" ]; then
                 borgmatic init --encryption=none --config "/etc/borgmatic.d/$archivo_yml"
 
             # Generate timestamp for the SQL dump file
-            now=$(date +"%Y-%m-%dT%H:%M:%S")
+            now=$(date +"%Y-%m-%d")
                 
             # dump
-            dump_file="/var/www/${nombre_carpeta}/${mysql_database}_database-files-${now}.sql"
+            dump_file="/var/www/${nombre_carpeta}/${mysql_database}_database_${now}.sql"
             echo "Generating database $dump_file..."
             docker exec "$container_name" sh -c "mysqldump -u$mysql_user -p$mysql_password $mysql_database > /tmp/database_dump.sql"
             docker cp "$container_name:/tmp/database_dump.sql" "$dump_file"
